@@ -39,10 +39,10 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
 import java.util.ArrayList;
 import java.util.List;
-import sun.management.ManagementFactoryHelper;
 import static com.oracle.java.testlibrary.Asserts.*;
 import com.oracle.java.testlibrary.ProcessTools;
 import com.oracle.java.testlibrary.OutputAnalyzer;
+import com.sun.management.HotSpotDiagnosticMXBean;
 
 public class TestShrinkDefragmentedHeap {
     // Since we store all the small objects, they become old and old regions are also allocated at the bottom of the heap
@@ -144,9 +144,11 @@ public class TestShrinkDefragmentedHeap {
                     "committed free heap size is not less than committed full heap size, heap hasn't been shrunk?%n"
                     + "%s = %s%n%s = %s",
                     MIN_FREE_RATIO_FLAG_NAME,
-                    ManagementFactoryHelper.getDiagnosticMXBean().getVMOption(MIN_FREE_RATIO_FLAG_NAME).getValue(),
+                    ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class)
+                        .getVMOption(MIN_FREE_RATIO_FLAG_NAME).getValue(),
                     MAX_FREE_RATIO_FLAG_NAME,
-                    ManagementFactoryHelper.getDiagnosticMXBean().getVMOption(MAX_FREE_RATIO_FLAG_NAME).getValue()
+                    ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class)
+                        .getVMOption(MAX_FREE_RATIO_FLAG_NAME).getValue()
             );
         }
 

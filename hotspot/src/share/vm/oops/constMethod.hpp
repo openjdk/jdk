@@ -32,7 +32,6 @@
 // processes in a read-only section with Class Data Sharing (CDS).  It's important
 // that this class doesn't have virtual functions because the vptr cannot be shared
 // with CDS.
-//   (*)RewriteByteCodes and RewriteFrequentPairs is an exception but turned off in CDS
 //
 // Note that most applications load thousands of methods, so keeping the size of this
 // structure small has a big impact on footprint.

@@ -777,11 +777,11 @@ void LinkResolver::resolve_field(fieldDescriptor& fd, KlassHandle resolved_klass
                                  TRAPS) {
   assert(byte == Bytecodes::_getstatic || byte == Bytecodes::_putstatic ||
          byte == Bytecodes::_getfield  || byte == Bytecodes::_putfield  ||
+         byte == Bytecodes::_nofast_getfield  || byte == Bytecodes::_nofast_putfield  ||
          (byte == Bytecodes::_nop && !check_access), "bad field access bytecode");
 
   bool is_static = (byte == Bytecodes::_getstatic || byte == Bytecodes::_putstatic);
-  bool is_put    = (byte == Bytecodes::_putfield  || byte == Bytecodes::_putstatic);
-
+  bool is_put    = (byte == Bytecodes::_putfield  || byte == Bytecodes::_putstatic || byte == Bytecodes::_nofast_putfield);
   // Check if there's a resolved klass containing the field
   if (resolved_klass.is_null()) {
     ResourceMark rm(THREAD);
@@ -1406,10 +1406,11 @@ methodHandle LinkResolver::resolve_virtual_call_or_null(
                                                  KlassHandle resolved_klass,
                                                  Symbol* name,
                                                  Symbol* signature,
-                                                 KlassHandle current_klass) {
+                                                 KlassHandle current_klass,
+                                                 bool check_access) {
   EXCEPTION_MARK;
   CallInfo info;
-  resolve_virtual_call(info, Handle(), receiver_klass, resolved_klass, name, signature, current_klass, true, false, THREAD);
+  resolve_virtual_call(info, Handle(), receiver_klass, resolved_klass, name, signature, current_klass, check_access, false, THREAD);
   if (HAS_PENDING_EXCEPTION) {
     CLEAR_PENDING_EXCEPTION;
     return methodHandle();
@@ -1422,10 +1423,11 @@ methodHandle LinkResolver::resolve_interface_call_or_null(
                                                  KlassHandle resolved_klass,
                                                  Symbol* name,
                                                  Symbol* signature,
-                                                 KlassHandle current_klass) {
+                                                 KlassHandle current_klass,
+                                                 bool check_access) {
   EXCEPTION_MARK;
   CallInfo info;
-  resolve_interface_call(info, Handle(), receiver_klass, resolved_klass, name, signature, current_klass, true, false, THREAD);
+  resolve_interface_call(info, Handle(), receiver_klass, resolved_klass, name, signature, current_klass, check_access, false, THREAD);
   if (HAS_PENDING_EXCEPTION) {
     CLEAR_PENDING_EXCEPTION;
     return methodHandle();
@@ -1453,10 +1455,11 @@ methodHandle LinkResolver::resolve_static_call_or_null(
                                                   KlassHandle resolved_klass,
                                                   Symbol* name,
                                                   Symbol* signature,
-                                                  KlassHandle current_klass) {
+                                                  KlassHandle current_klass,
+                                                  bool check_access) {
   EXCEPTION_MARK;
   CallInfo info;
-  resolve_static_call(info, resolved_klass, name, signature, current_klass, true, false, THREAD);
+  resolve_static_call(info, resolved_klass, name, signature, current_klass, check_access, false, THREAD);
   if (HAS_PENDING_EXCEPTION) {
     CLEAR_PENDING_EXCEPTION;
     return methodHandle();
@@ -1464,11 +1467,15 @@ methodHandle LinkResolver::resolve_static_call_or_null(
   return info.selected_method();
 }
 
-methodHandle LinkResolver::resolve_special_call_or_null(KlassHandle resolved_klass, Symbol* name, Symbol* signature,
-                                                        KlassHandle current_klass) {
+methodHandle LinkResolver::resolve_special_call_or_null(
+                                                  KlassHandle resolved_klass,
+                                                  Symbol* name,
+                                                  Symbol* signature,
+                                                  KlassHandle current_klass,
+                                                  bool check_access) {
   EXCEPTION_MARK;
   CallInfo info;
-  resolve_special_call(info, resolved_klass, name, signature, current_klass, true, THREAD);
+  resolve_special_call(info, resolved_klass, name, signature, current_klass, check_access, THREAD);
   if (HAS_PENDING_EXCEPTION) {
     CLEAR_PENDING_EXCEPTION;
     return methodHandle();

@@ -1049,6 +1049,15 @@ Node *Matcher::xform( Node *n, int max_stack ) {
         mstack.push(m, Visit, n, -1);
       }
 
+      // Handle precedence edges for interior nodes
+      for (i = n->len()-1; (uint)i >= n->req(); i--) {
+        Node *m = n->in(i);
+        if (m == NULL || C->node_arena()->contains(m)) continue;
+        n->rm_prec(i);
+        // set -1 to call add_prec() instead of set_req() during Step1
+        mstack.push(m, Visit, n, -1);
+      }
+
       // For constant debug info, I'd rather have unmatched constants.
       int cnt = n->req();
       JVMState* jvms = n->jvms();
@@ -1738,6 +1747,14 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
   return ex;
 }
 
+void Matcher::handle_precedence_edges(Node* n, MachNode *mach) {
+  for (uint i = n->req(); i < n->len(); i++) {
+    if (n->in(i) != NULL) {
+      mach->add_prec(n->in(i));
+    }
+  }
+}
+
 void Matcher::ReduceInst_Chain_Rule( State *s, int rule, Node *&mem, MachNode *mach ) {
   // 'op' is what I am expecting to receive
   int op = _leftOp[rule];
@@ -1772,6 +1789,8 @@ void Matcher::ReduceInst_Chain_Rule( State *s, int rule, Node *&mem, MachNode *m
 
 
 uint Matcher::ReduceInst_Interior( State *s, int rule, Node *&mem, MachNode *mach, uint num_opnds ) {
+  handle_precedence_edges(s->_leaf, mach);
+
   if( s->_leaf->is_Load() ) {
     Node *mem2 = s->_leaf->in(MemNode::Memory);
     assert( mem == (Node*)1 || mem == mem2, "multiple Memories being matched at once?" );
@@ -1854,6 +1873,9 @@ void Matcher::ReduceOper( State *s, int rule, Node *&mem, MachNode *mach ) {
     mem = s->_leaf->in(MemNode::Memory);
     debug_only(_mem_node = s->_leaf;)
   }
+
+  handle_precedence_edges(s->_leaf, mach);
+
   if( s->_leaf->in(0) && s->_leaf->req() > 1) {
     if( !mach->in(0) )
       mach->set_req(0,s->_leaf->in(0));

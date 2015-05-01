@@ -23,9 +23,12 @@
  */
 
 #include "precompiled.hpp"
+#include "gc_implementation/g1/g1_specialized_oop_closures.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
 #include "gc_implementation/g1/g1ParScanThreadState.hpp"
+#include "memory/iterator.inline.hpp"
+#include "utilities/stack.inline.hpp"
 
 G1ParCopyHelper::G1ParCopyHelper(G1CollectedHeap* g1,  G1ParScanThreadState* par_scan_state) :
   G1ParClosureSuper(g1, par_scan_state), _scanned_klass(NULL),
@@ -50,3 +53,6 @@ void G1ParClosureSuper::set_par_scan_thread_state(G1ParScanThreadState* par_scan
   assert(_worker_id < MAX2((uint)ParallelGCThreads, 1u),
          err_msg("The given worker id %u must be less than the number of threads %u", _worker_id, MAX2((uint)ParallelGCThreads, 1u)));
 }
+
+// Generate G1 specialized oop_oop_iterate functions.
+SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_G1(ALL_KLASS_OOP_OOP_ITERATE_DEFN)

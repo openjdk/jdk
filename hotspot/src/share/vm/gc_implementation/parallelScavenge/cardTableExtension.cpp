@@ -76,9 +76,7 @@ class CheckForUnmarkedObjects : public ObjectClosure {
 
  public:
   CheckForUnmarkedObjects() {
-    ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-    assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
-
+    ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
     _young_gen = heap->young_gen();
     _card_table = barrier_set_cast<CardTableExtension>(heap->barrier_set());
     // No point in asserting barrier set type here. Need to make CardTableExtension
@@ -325,9 +323,7 @@ void CardTableExtension::scavenge_contents_parallel(ObjectStartArray* start_arra
 void CardTableExtension::verify_all_young_refs_imprecise() {
   CheckForUnmarkedObjects check;
 
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
-
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSOldGen* old_gen = heap->old_gen();
 
   old_gen->object_iterate(&check);
@@ -335,9 +331,7 @@ void CardTableExtension::verify_all_young_refs_imprecise() {
 
 // This should be called immediately after a scavenge, before mutators resume.
 void CardTableExtension::verify_all_young_refs_precise() {
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
-
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSOldGen* old_gen = heap->old_gen();
 
   CheckForPreciseMarks check(
@@ -351,7 +345,7 @@ void CardTableExtension::verify_all_young_refs_precise() {
 
 void CardTableExtension::verify_all_young_refs_precise_helper(MemRegion mr) {
   CardTableExtension* card_table =
-    barrier_set_cast<CardTableExtension>(Universe::heap()->barrier_set());
+    barrier_set_cast<CardTableExtension>(ParallelScavengeHeap::heap()->barrier_set());
 
   jbyte* bot = card_table->byte_for(mr.start());
   jbyte* top = card_table->byte_for(mr.end());
@@ -523,7 +517,7 @@ bool CardTableExtension::resize_commit_uncommit(int changed_region,
     cur_committed = new_committed;
   }
 #ifdef ASSERT
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   assert(cur_committed.start() ==
     (HeapWord*) align_size_up((uintptr_t) cur_committed.start(),
                               os::vm_page_size()),

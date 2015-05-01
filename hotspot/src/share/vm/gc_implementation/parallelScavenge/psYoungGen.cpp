@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ void PSYoungGen::initialize_work() {
 
   MemRegion cmr((HeapWord*)virtual_space()->low(),
                 (HeapWord*)virtual_space()->high());
-  Universe::heap()->barrier_set()->resize_covered_region(cmr);
+  ParallelScavengeHeap::heap()->barrier_set()->resize_covered_region(cmr);
 
   if (ZapUnusedHeapArea) {
     // Mangle newly committed space immediately because it
@@ -103,7 +103,7 @@ void PSYoungGen::initialize_work() {
                                            _max_gen_size, _virtual_space);
 
   // Compute maximum space sizes for performance counters
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   size_t alignment = heap->space_alignment();
   size_t size = virtual_space()->reserved_size();
 
@@ -153,8 +153,7 @@ void PSYoungGen::initialize_work() {
 }
 
 void PSYoungGen::compute_initial_space_boundaries() {
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
   // Compute sizes
   size_t alignment = heap->space_alignment();
@@ -208,7 +207,7 @@ void PSYoungGen::set_space_boundaries(size_t eden_size, size_t survivor_size) {
 
 #ifndef PRODUCT
 void PSYoungGen::space_invariants() {
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   const size_t alignment = heap->space_alignment();
 
   // Currently, our eden size cannot shrink to zero
@@ -494,7 +493,7 @@ void PSYoungGen::resize_spaces(size_t requested_eden_size,
   char* to_start   = (char*)to_space()->bottom();
   char* to_end     = (char*)to_space()->end();
 
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   const size_t alignment = heap->space_alignment();
   const bool maintain_minimum =
     (requested_eden_size + 2 * requested_survivor_size) <= min_gen_size();
@@ -546,8 +545,6 @@ void PSYoungGen::resize_spaces(size_t requested_eden_size,
 
     // Does the optimal to-space overlap from-space?
     if (to_start < (char*)from_space()->end()) {
-      assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
-
       // Calculate the minimum offset possible for from_end
       size_t from_size = pointer_delta(from_space()->top(), from_start, sizeof(char));
 
@@ -708,9 +705,7 @@ void PSYoungGen::resize_spaces(size_t requested_eden_size,
   assert(from_space()->top() == old_from_top, "from top changed!");
 
   if (PrintAdaptiveSizePolicy) {
-    ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-    assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
-
+    ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
     gclog_or_tty->print("AdaptiveSizePolicy::survivor space sizes: "
                   "collection: %d "
                   "(" SIZE_FORMAT ", " SIZE_FORMAT ") -> "
@@ -843,7 +838,7 @@ size_t PSYoungGen::available_to_min_gen() {
 // from-space.
 size_t PSYoungGen::available_to_live() {
   size_t delta_in_survivor = 0;
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   const size_t space_alignment = heap->space_alignment();
   const size_t gen_alignment = heap->generation_alignment();
 
@@ -927,7 +922,7 @@ void PSYoungGen::post_resize() {
 
   MemRegion cmr((HeapWord*)virtual_space()->low(),
                 (HeapWord*)virtual_space()->high());
-  Universe::heap()->barrier_set()->resize_covered_region(cmr);
+  ParallelScavengeHeap::heap()->barrier_set()->resize_covered_region(cmr);
   space_invariants();
 }
 

@@ -224,10 +224,13 @@ class Assembler : public AbstractAssembler {
     ADDIS_OPCODE  = (15u << OPCODE_SHIFT),
     ADDIC__OPCODE = (13u << OPCODE_SHIFT),
     ADDE_OPCODE   = (31u << OPCODE_SHIFT | 138u << 1),
+    ADDME_OPCODE  = (31u << OPCODE_SHIFT | 234u << 1),
+    ADDZE_OPCODE  = (31u << OPCODE_SHIFT | 202u << 1),
     SUBF_OPCODE   = (31u << OPCODE_SHIFT |  40u << 1),
     SUBFC_OPCODE  = (31u << OPCODE_SHIFT |   8u << 1),
     SUBFE_OPCODE  = (31u << OPCODE_SHIFT | 136u << 1),
     SUBFIC_OPCODE = (8u  << OPCODE_SHIFT),
+    SUBFME_OPCODE = (31u << OPCODE_SHIFT | 232u << 1),
     SUBFZE_OPCODE = (31u << OPCODE_SHIFT | 200u << 1),
     DIVW_OPCODE   = (31u << OPCODE_SHIFT | 491u << 1),
     MULLW_OPCODE  = (31u << OPCODE_SHIFT | 235u << 1),
@@ -657,6 +660,9 @@ class Assembler : public AbstractAssembler {
     SYNC_OPCODE    = (31u << OPCODE_SHIFT |  598u << 1),
     EIEIO_OPCODE   = (31u << OPCODE_SHIFT |  854u << 1),
 
+    // Wait instructions for polling.
+    WAIT_OPCODE    = (31u << OPCODE_SHIFT |   62u << 1),
+
     // Trap instructions
     TDI_OPCODE     = (2u  << OPCODE_SHIFT),
     TWI_OPCODE     = (3u  << OPCODE_SHIFT),
@@ -666,8 +672,10 @@ class Assembler : public AbstractAssembler {
     // Atomics.
     LWARX_OPCODE   = (31u << OPCODE_SHIFT |   20u << 1),
     LDARX_OPCODE   = (31u << OPCODE_SHIFT |   84u << 1),
+    LQARX_OPCODE   = (31u << OPCODE_SHIFT |  276u << 1),
     STWCX_OPCODE   = (31u << OPCODE_SHIFT |  150u << 1),
-    STDCX_OPCODE   = (31u << OPCODE_SHIFT |  214u << 1)
+    STDCX_OPCODE   = (31u << OPCODE_SHIFT |  214u << 1),
+    STQCX_OPCODE   = (31u << OPCODE_SHIFT |  182u << 1)
 
   };
 
@@ -1171,6 +1179,14 @@ class Assembler : public AbstractAssembler {
   inline void adde_(  Register d, Register a, Register b);
   inline void subfe(  Register d, Register a, Register b);
   inline void subfe_( Register d, Register a, Register b);
+  inline void addme(  Register d, Register a);
+  inline void addme_( Register d, Register a);
+  inline void subfme( Register d, Register a);
+  inline void subfme_(Register d, Register a);
+  inline void addze(  Register d, Register a);
+  inline void addze_( Register d, Register a);
+  inline void subfze( Register d, Register a);
+  inline void subfze_(Register d, Register a);
   inline void neg(    Register d, Register a);
   inline void neg_(   Register d, Register a);
   inline void mulli(  Register d, Register a, int si16);
@@ -1188,6 +1204,38 @@ class Assembler : public AbstractAssembler {
   inline void divd_(  Register d, Register a, Register b);
   inline void divw(   Register d, Register a, Register b);
   inline void divw_(  Register d, Register a, Register b);
+
+  // Fixed-Point Arithmetic Instructions with Overflow detection
+  inline void addo(    Register d, Register a, Register b);
+  inline void addo_(   Register d, Register a, Register b);
+  inline void subfo(   Register d, Register a, Register b);
+  inline void subfo_(  Register d, Register a, Register b);
+  inline void addco(   Register d, Register a, Register b);
+  inline void addco_(  Register d, Register a, Register b);
+  inline void subfco(  Register d, Register a, Register b);
+  inline void subfco_( Register d, Register a, Register b);
+  inline void addeo(   Register d, Register a, Register b);
+  inline void addeo_(  Register d, Register a, Register b);
+  inline void subfeo(  Register d, Register a, Register b);
+  inline void subfeo_( Register d, Register a, Register b);
+  inline void addmeo(  Register d, Register a);
+  inline void addmeo_( Register d, Register a);
+  inline void subfmeo( Register d, Register a);
+  inline void subfmeo_(Register d, Register a);
+  inline void addzeo(  Register d, Register a);
+  inline void addzeo_( Register d, Register a);
+  inline void subfzeo( Register d, Register a);
+  inline void subfzeo_(Register d, Register a);
+  inline void nego(    Register d, Register a);
+  inline void nego_(   Register d, Register a);
+  inline void mulldo(  Register d, Register a, Register b);
+  inline void mulldo_( Register d, Register a, Register b);
+  inline void mullwo(  Register d, Register a, Register b);
+  inline void mullwo_( Register d, Register a, Register b);
+  inline void divdo(   Register d, Register a, Register b);
+  inline void divdo_(  Register d, Register a, Register b);
+  inline void divwo(   Register d, Register a, Register b);
+  inline void divwo_(  Register d, Register a, Register b);
 
   // extended mnemonics
   inline void li(   Register d, int si16);
@@ -1303,7 +1351,7 @@ class Assembler : public AbstractAssembler {
   inline void isel_0( Register d, ConditionRegister cr, Condition cc, Register b = noreg);
 
   // PPC 1, section 3.3.11, Fixed-Point Logical Instructions
-         void andi(   Register a, Register s, int ui16);   // optimized version
+         void andi(   Register a, Register s, long ui16);   // optimized version
   inline void andi_(  Register a, Register s, int ui16);
   inline void andis_( Register a, Register s, int ui16);
   inline void ori(    Register a, Register s, int ui16);
@@ -1688,14 +1736,21 @@ class Assembler : public AbstractAssembler {
   inline void isync();
   inline void elemental_membar(int e); // Elemental Memory Barriers (>=Power 8)
 
+  // Wait instructions for polling. Attention: May result in SIGILL.
+  inline void wait();
+  inline void waitrsv(); // >=Power7
+
   // atomics
   inline void lwarx_unchecked(Register d, Register a, Register b, int eh1 = 0);
   inline void ldarx_unchecked(Register d, Register a, Register b, int eh1 = 0);
+  inline void lqarx_unchecked(Register d, Register a, Register b, int eh1 = 0);
   inline bool lxarx_hint_exclusive_access();
   inline void lwarx(  Register d, Register a, Register b, bool hint_exclusive_access = false);
   inline void ldarx(  Register d, Register a, Register b, bool hint_exclusive_access = false);
+  inline void lqarx(  Register d, Register a, Register b, bool hint_exclusive_access = false);
   inline void stwcx_( Register s, Register a, Register b);
   inline void stdcx_( Register s, Register a, Register b);
+  inline void stqcx_( Register s, Register a, Register b);
 
   // Instructions for adjusting thread priority for simultaneous
   // multithreading (SMT) on Power5.
@@ -2054,10 +2109,13 @@ class Assembler : public AbstractAssembler {
   // Atomics: use ra0mem to disallow R0 as base.
   inline void lwarx_unchecked(Register d, Register b, int eh1);
   inline void ldarx_unchecked(Register d, Register b, int eh1);
+  inline void lqarx_unchecked(Register d, Register b, int eh1);
   inline void lwarx( Register d, Register b, bool hint_exclusive_access);
   inline void ldarx( Register d, Register b, bool hint_exclusive_access);
+  inline void lqarx( Register d, Register b, bool hint_exclusive_access);
   inline void stwcx_(Register s, Register b);
   inline void stdcx_(Register s, Register b);
+  inline void stqcx_(Register s, Register b);
   inline void lfs(   FloatRegister d, int si16);
   inline void lfsx(  FloatRegister d, Register b);
   inline void lfd(   FloatRegister d, int si16);
@@ -2118,6 +2176,20 @@ class Assembler : public AbstractAssembler {
          int load_const_optimized(Register d, long a,  Register tmp = noreg, bool return_simm16_rest = false);
   inline int load_const_optimized(Register d, void* a, Register tmp = noreg, bool return_simm16_rest = false) {
     return load_const_optimized(d, (long)(unsigned long)a, tmp, return_simm16_rest);
+  }
+
+  // If return_simm16_rest, the return value needs to get added afterwards.
+         int add_const_optimized(Register d, Register s, long x, Register tmp = R0, bool return_simm16_rest = false);
+  inline int add_const_optimized(Register d, Register s, void* a, Register tmp = R0, bool return_simm16_rest = false) {
+    return add_const_optimized(d, s, (long)(unsigned long)a, tmp, return_simm16_rest);
+  }
+
+  // If return_simm16_rest, the return value needs to get added afterwards.
+  inline int sub_const_optimized(Register d, Register s, long x, Register tmp = R0, bool return_simm16_rest = false) {
+    return add_const_optimized(d, s, -x, tmp, return_simm16_rest);
+  }
+  inline int sub_const_optimized(Register d, Register s, void* a, Register tmp = R0, bool return_simm16_rest = false) {
+    return sub_const_optimized(d, s, (long)(unsigned long)a, tmp, return_simm16_rest);
   }
 
   // Creation

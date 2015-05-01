@@ -39,7 +39,7 @@ public class CDSCompressedKPtrs {
     if (Platform.is64bit()) {
       pb = ProcessTools.createJavaProcessBuilder(
         "-XX:+UseCompressedClassPointers", "-XX:+UseCompressedOops",
-        "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./sample.jsa", "-Xshare:dump");
+        "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./CDSCompressedKPtrs.jsa", "-Xshare:dump");
       OutputAnalyzer output = new OutputAnalyzer(pb.start());
       try {
         output.shouldContain("Loading classes to share");
@@ -47,7 +47,7 @@ public class CDSCompressedKPtrs {
 
         pb = ProcessTools.createJavaProcessBuilder(
           "-XX:+UseCompressedClassPointers", "-XX:+UseCompressedOops",
-          "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./sample.jsa", "-Xshare:on", "-version");
+          "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./CDSCompressedKPtrs.jsa", "-Xshare:on", "-version");
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("sharing");
         output.shouldHaveExitValue(0);

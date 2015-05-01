@@ -31,7 +31,6 @@
 #include "gc_implementation/g1/survRateGroup.hpp"
 #include "gc_implementation/shared/ageTable.hpp"
 #include "gc_implementation/shared/spaceDecorator.hpp"
-#include "memory/space.inline.hpp"
 #include "memory/watermark.hpp"
 #include "utilities/macros.hpp"
 
@@ -45,6 +44,7 @@
 // The solution is to remove this method from the definition
 // of a Space.
 
+class G1CollectedHeap;
 class HeapRegionRemSet;
 class HeapRegionRemSetIterator;
 class HeapRegion;

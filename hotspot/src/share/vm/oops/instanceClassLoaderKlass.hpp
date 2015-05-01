@@ -48,34 +48,60 @@ public:
 
   InstanceClassLoaderKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
 
-  // Iterators
-  int oop_oop_iterate(oop obj, ExtendedOopClosure* blk) {
-    return oop_oop_iterate_v(obj, blk);
-  }
-  int oop_oop_iterate_m(oop obj, ExtendedOopClosure* blk, MemRegion mr) {
-    return oop_oop_iterate_v_m(obj, blk, mr);
-  }
+  // GC specific object visitors
+  //
+  // Mark Sweep
+  void oop_ms_follow_contents(oop obj);
+  int  oop_ms_adjust_pointers(oop obj);
+#if INCLUDE_ALL_GCS
+  // Parallel Scavenge
+  void oop_ps_push_contents(  oop obj, PSPromotionManager* pm);
+  // Parallel Compact
+  void oop_pc_follow_contents(oop obj, ParCompactionManager* cm);
+  void oop_pc_update_pointers(oop obj);
+#endif
 
-#define InstanceClassLoaderKlass_OOP_OOP_ITERATE_DECL(OopClosureType, nv_suffix)                \
-  int oop_oop_iterate##nv_suffix(oop obj, OopClosureType* blk);                         \
+  // Oop fields (and metadata) iterators
+  //  [nv = true]  Use non-virtual calls to do_oop_nv.
+  //  [nv = false] Use virtual calls to do_oop.
+  //
+  // The InstanceClassLoaderKlass iterators also visit the CLD pointer (or mirror of anonymous klasses.)
+
+ private:
+  // Forward iteration
+  // Iterate over the oop fields and metadata.
+  template <bool nv, class OopClosureType>
+  inline int oop_oop_iterate(oop obj, OopClosureType* closure);
+
+#if INCLUDE_ALL_GCS
+  // Reverse iteration
+  // Iterate over the oop fields and metadata.
+  template <bool nv, class OopClosureType>
+  inline int oop_oop_iterate_reverse(oop obj, OopClosureType* closure);
+#endif
+
+  // Bounded range iteration
+  // Iterate over the oop fields and metadata.
+  template <bool nv, class OopClosureType>
+  inline int oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
+
+ public:
+
+#define InstanceClassLoaderKlass_OOP_OOP_ITERATE_DECL(OopClosureType, nv_suffix)   \
+  int oop_oop_iterate##nv_suffix(oop obj, OopClosureType* blk);                    \
   int oop_oop_iterate##nv_suffix##_m(oop obj, OopClosureType* blk, MemRegion mr);
 
   ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceClassLoaderKlass_OOP_OOP_ITERATE_DECL)
   ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceClassLoaderKlass_OOP_OOP_ITERATE_DECL)
 
 #if INCLUDE_ALL_GCS
-#define InstanceClassLoaderKlass_OOP_OOP_ITERATE_BACKWARDS_DECL(OopClosureType, nv_suffix)      \
+#define InstanceClassLoaderKlass_OOP_OOP_ITERATE_BACKWARDS_DECL(OopClosureType, nv_suffix)  \
   int oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* blk);
 
   ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceClassLoaderKlass_OOP_OOP_ITERATE_BACKWARDS_DECL)
   ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceClassLoaderKlass_OOP_OOP_ITERATE_BACKWARDS_DECL)
 #endif // INCLUDE_ALL_GCS
 
-    // Garbage collection
-  void oop_follow_contents(oop obj);
-
-  // Parallel Scavenge and Parallel Old
-  PARALLEL_GC_DECLS
 };
 
 #endif // SHARE_VM_OOPS_INSTANCECLASSLOADERKLASS_HPP

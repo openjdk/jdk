@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ CardGeneration::CardGeneration(ReservedSpace rs, size_t initial_byte_size,
   // which would cause problems when we commit/uncommit memory, and when we
   // clear and dirty cards.
   guarantee(_rs->is_aligned(reserved_mr.start()), "generation must be card aligned");
-  if (reserved_mr.end() != Universe::heap()->reserved_region().end()) {
+  if (reserved_mr.end() != GenCollectedHeap::heap()->reserved_region().end()) {
     // Don't check at the very end of the heap as we'll assert that we're probing off
     // the end if we try.
     guarantee(_rs->is_aligned(reserved_mr.end()), "generation must be card aligned");
@@ -78,7 +78,7 @@ bool CardGeneration::grow_by(size_t bytes) {
        heap_word_size(_virtual_space.committed_size());
     MemRegion mr(space()->bottom(), new_word_size);
     // Expand card table
-    Universe::heap()->barrier_set()->resize_covered_region(mr);
+    GenCollectedHeap::heap()->barrier_set()->resize_covered_region(mr);
     // Expand shared block offset array
     _bts->resize(new_word_size);
 
@@ -170,7 +170,7 @@ void CardGeneration::shrink(size_t bytes) {
   _bts->resize(new_word_size);
   MemRegion mr(space()->bottom(), new_word_size);
   // Shrink the card table
-  Universe::heap()->barrier_set()->resize_covered_region(mr);
+  GenCollectedHeap::heap()->barrier_set()->resize_covered_region(mr);
 
   if (Verbose && PrintGC) {
     size_t new_mem_size = _virtual_space.committed_size();
