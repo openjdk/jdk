@@ -28,4 +28,7 @@
 public class RedefineMethodInBacktraceTargetB {
     public static void methodToRedefine() {
     }
+
+    public static void callMethodToDelete() {
+    }
 }

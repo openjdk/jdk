@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,6 +128,15 @@ final public class InterfaceTypeImpl extends InvokableTypeImpl
     @Override
     ClassType superclass() {
         return null;
+    }
+
+    @Override
+    boolean isAssignableTo(ReferenceType type) {
+        if (type.name().equals("java.lang.Object")) {
+            // interfaces are always assignable to j.l.Object
+            return true;
+        }
+        return super.isAssignableTo(type);
     }
 
     @Override

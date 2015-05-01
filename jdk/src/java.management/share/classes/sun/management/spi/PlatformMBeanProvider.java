@@ -205,7 +205,7 @@ public abstract class PlatformMBeanProvider {
      * Instantiates a new PlatformMBeanProvider.
      *
      * @throws SecurityException if the subclass (and calling code) does not
-     *    have {@code RuntimePermission("sun.management.spi.PlatformMBeanProvider", "subclass")}
+     *    have {@code RuntimePermission("sun.management.spi.PlatformMBeanProvider.subclass")}
      */
     protected PlatformMBeanProvider () {
         this(checkSubclassPermission());
@@ -226,7 +226,7 @@ public abstract class PlatformMBeanProvider {
     private static Void checkSubclassPermission() {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            sm.checkPermission(new RuntimePermission(PlatformMBeanProvider.class.getName(), "subclass"));
+            sm.checkPermission(new RuntimePermission(PlatformMBeanProvider.class.getName()+".subclass"));
         }
         return null;
     }

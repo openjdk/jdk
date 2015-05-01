@@ -4,7 +4,7 @@
    on host 1
 4. run 
 
-   ${TESTJAVA}/bin/java -server JMXStartStopDoSomething \
+   ${TESTJAVA}/bin/java -server TestApp \
    -Dcom.sun.management.jmxremote.port=50234 \
    -Dcom.sun.management.jmxremote.rmi.port=50235 \
    -Dcom.sun.management.jmxremote.authenticate=false \
