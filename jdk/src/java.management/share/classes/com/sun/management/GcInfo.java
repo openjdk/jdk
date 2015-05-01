@@ -52,13 +52,13 @@ import sun.management.GcInfoBuilder;
  * </blockquote>
  *
  * <p>
- * <tt>GcInfo</tt> is a {@link CompositeData CompositeData}
+ * {@code GcInfo} is a {@link CompositeData CompositeData}
  * The GC-specific attributes can be obtained via the CompositeData
  * interface.  This is a historical relic, and other classes should
  * not copy this pattern.  Use {@link CompositeDataView} instead.
  *
  * <h4>MXBean Mapping</h4>
- * <tt>GcInfo</tt> is mapped to a {@link CompositeData CompositeData}
+ * {@code GcInfo} is mapped to a {@link CompositeData CompositeData}
  * with attributes as specified in the {@link #from from} method.
  *
  * @author  Mandy Chung
@@ -152,11 +152,11 @@ public class GcInfo implements CompositeData, CompositeDataView {
      * Returns the memory usage of all memory pools
      * at the beginning of this GC.
      * This method returns
-     * a <tt>Map</tt> of the name of a memory pool
+     * a {@code Map} of the name of a memory pool
      * to the memory usage of the corresponding
      * memory pool before GC starts.
      *
-     * @return a <tt>Map</tt> of memory pool names to the memory
+     * @return a {@code Map} of memory pool names to the memory
      * usage of a memory pool before GC starts.
      */
     public Map<String, MemoryUsage> getMemoryUsageBeforeGc() {
@@ -167,11 +167,11 @@ public class GcInfo implements CompositeData, CompositeDataView {
      * Returns the memory usage of all memory pools
      * at the end of this GC.
      * This method returns
-     * a <tt>Map</tt> of the name of a memory pool
+     * a {@code Map} of the name of a memory pool
      * to the memory usage of the corresponding
      * memory pool when GC finishes.
      *
-     * @return a <tt>Map</tt> of memory pool names to the memory
+     * @return a {@code Map} of memory pool names to the memory
      * usage of a memory pool when GC finishes.
      */
     public Map<String, MemoryUsage> getMemoryUsageAfterGc() {
@@ -179,12 +179,11 @@ public class GcInfo implements CompositeData, CompositeDataView {
     }
 
    /**
-     * Returns a <tt>GcInfo</tt> object represented by the
-     * given <tt>CompositeData</tt>. The given
-     * <tt>CompositeData</tt> must contain
+     * Returns a {@code GcInfo} object represented by the
+     * given {@code CompositeData}. The given
+     * {@code CompositeData} must contain
      * all the following attributes:
      *
-     * <p>
      * <blockquote>
      * <table border>
      * <tr>
@@ -193,33 +192,33 @@ public class GcInfo implements CompositeData, CompositeDataView {
      * </tr>
      * <tr>
      *   <td>index</td>
-     *   <td><tt>java.lang.Long</tt></td>
+     *   <td>{@code java.lang.Long}</td>
      * </tr>
      * <tr>
      *   <td>startTime</td>
-     *   <td><tt>java.lang.Long</tt></td>
+     *   <td>{@code java.lang.Long}</td>
      * </tr>
      * <tr>
      *   <td>endTime</td>
-     *   <td><tt>java.lang.Long</tt></td>
+     *   <td>{@code java.lang.Long}</td>
      * </tr>
      * <tr>
      *   <td>memoryUsageBeforeGc</td>
-     *   <td><tt>javax.management.openmbean.TabularData</tt></td>
+     *   <td>{@code javax.management.openmbean.TabularData}</td>
      * </tr>
      * <tr>
      *   <td>memoryUsageAfterGc</td>
-     *   <td><tt>javax.management.openmbean.TabularData</tt></td>
+     *   <td>{@code javax.management.openmbean.TabularData}</td>
      * </tr>
      * </table>
      * </blockquote>
      *
-     * @throws IllegalArgumentException if <tt>cd</tt> does not
-     *   represent a <tt>GcInfo</tt> object with the attributes
+     * @throws IllegalArgumentException if {@code cd} does not
+     *   represent a {@code GcInfo} object with the attributes
      *   described above.
      *
-     * @return a <tt>GcInfo</tt> object represented by <tt>cd</tt>
-     * if <tt>cd</tt> is not <tt>null</tt>; <tt>null</tt> otherwise.
+     * @return a {@code GcInfo} object represented by {@code cd}
+     * if {@code cd} is not {@code null}; {@code null} otherwise.
      */
     public static GcInfo from(CompositeData cd) {
         if (cd == null) {
@@ -272,7 +271,7 @@ public class GcInfo implements CompositeData, CompositeDataView {
     }
 
     /**
-     * <p>Return the {@code CompositeData} representation of this
+     * Return the {@code CompositeData} representation of this
      * {@code GcInfo}, including any GC-specific attributes.  The
      * returned value will have at least all the attributes described
      * in the {@link #from(CompositeData) from} method, plus optionally

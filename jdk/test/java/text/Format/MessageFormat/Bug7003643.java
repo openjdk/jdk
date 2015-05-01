@@ -25,6 +25,7 @@
  * @test
  * @bug 7003643
  * @summary Make sure MessageFormat.toPattern produces correct quoting. (SPI part is tested in PluggableLocale tests.)
+ * @key randomness
  */
 
 import java.text.*;

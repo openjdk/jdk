@@ -571,7 +571,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
                             break;
                         }
                         if (oidTable == null) {
-                            oidTable = new HashMap<String,ObjectIdentifier>();
+                            oidTable = new HashMap<>();
                         }
                         oidString = alias.substring(index);
                         String stdAlgName = provs[i].getProperty(alias);
@@ -588,7 +588,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
             }
 
             if (oidTable == null) {
-                oidTable = new HashMap<String,ObjectIdentifier>(1);
+                oidTable = new HashMap<>(1);
             }
             initOidTable = true;
         }
@@ -887,7 +887,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
      */
         sha1WithDSA_oid = ObjectIdentifier.newInternal(dsaWithSHA1_PKIX_data);
 
-        nameTable = new HashMap<ObjectIdentifier,String>();
+        nameTable = new HashMap<>();
         nameTable.put(MD5_oid, "MD5");
         nameTable.put(MD2_oid, "MD2");
         nameTable.put(SHA_oid, "SHA-1");

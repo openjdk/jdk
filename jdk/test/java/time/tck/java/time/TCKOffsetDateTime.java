@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,8 +104,6 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.time.Clock;
@@ -235,16 +233,17 @@ public class TCKOffsetDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void now() {
+        final long DELTA = 20_000_000_000L;    // 20 seconds of nanos leeway
         OffsetDateTime expected = OffsetDateTime.now(Clock.systemDefaultZone());
         OffsetDateTime test = OffsetDateTime.now();
         long diff = Math.abs(test.toLocalTime().toNanoOfDay() - expected.toLocalTime().toNanoOfDay());
-        if (diff >= 100000000) {
+        if (diff >= DELTA) {
             // may be date change
             expected = OffsetDateTime.now(Clock.systemDefaultZone());
             test = OffsetDateTime.now();
             diff = Math.abs(test.toLocalTime().toNanoOfDay() - expected.toLocalTime().toNanoOfDay());
         }
-        assertTrue(diff < 100000000);  // less than 0.1 secs
+        assertTrue(diff < DELTA);
     }
 
     //-----------------------------------------------------------------------

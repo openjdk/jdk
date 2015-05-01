@@ -29,6 +29,7 @@
  * @library ..
  * @compile -XDignore.symbol.file TestCurves.java
  * @run main TestCurves
+ * @key randomness
  */
 
 import java.util.*;

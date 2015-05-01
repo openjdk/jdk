@@ -62,6 +62,7 @@ public class sun.misc.FloatingDecimal {
  * @build DoubleConsts FloatConsts
  * @run main TestFloatingDecimal
  * @author Brian Burkhalter
+ * @key randomness
  */
 public class TestFloatingDecimal {
     private static enum ResultType {

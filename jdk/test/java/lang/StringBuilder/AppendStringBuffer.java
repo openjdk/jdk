@@ -24,6 +24,7 @@
 /* @test
  * @bug 6206780
  * @summary Test StringBuilder.append(StringBuffer);
+ * @key randomness
  */
 
 import java.util.Random;

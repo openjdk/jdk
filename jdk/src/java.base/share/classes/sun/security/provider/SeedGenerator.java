@@ -165,7 +165,7 @@ abstract class SeedGenerator {
         md.update(b);
 
         java.security.AccessController.doPrivileged
-            (new java.security.PrivilegedAction<Void>() {
+            (new java.security.PrivilegedAction<>() {
                 @Override
                 public Void run() {
                     try {
@@ -295,7 +295,7 @@ abstract class SeedGenerator {
 
             final ThreadGroup[] finalsg = new ThreadGroup[1];
             Thread t = java.security.AccessController.doPrivileged
-                (new java.security.PrivilegedAction<Thread>() {
+                (new java.security.PrivilegedAction<>() {
                         @Override
                         public Thread run() {
                             ThreadGroup parent, group =
@@ -501,7 +501,7 @@ abstract class SeedGenerator {
             final URL device = new URL(deviceName);
             try {
                 seedStream = java.security.AccessController.doPrivileged
-                    (new java.security.PrivilegedExceptionAction<InputStream>() {
+                    (new java.security.PrivilegedExceptionAction<>() {
                         @Override
                         public InputStream run() throws IOException {
                             /*

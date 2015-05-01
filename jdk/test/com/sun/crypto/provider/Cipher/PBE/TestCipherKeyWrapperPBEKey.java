@@ -45,6 +45,7 @@ import javax.crypto.spec.PBEParameterSpec;
  * @author Bill Situ
  * @author Yun Ke
  * @run main TestCipherKeyWrapperPBEKey
+ * @key randomness
  */
 public class TestCipherKeyWrapperPBEKey {
 

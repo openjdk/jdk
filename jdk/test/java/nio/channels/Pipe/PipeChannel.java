@@ -23,6 +23,7 @@
 
 /* @test
  * @summary Test reading and writing from Pipes
+ * @key randomness
  */
 
 import java.io.*;
@@ -37,7 +38,7 @@ import java.util.Random;
  */
 public class PipeChannel {
 
-    private static Random generator = new Random();
+   private static Random generator = new Random();
 
     public static void main(String[] args) throws Exception {
         for (int x=0; x<100; x++) {

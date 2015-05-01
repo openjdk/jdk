@@ -29,6 +29,7 @@
  * @run clean MissingNotificationTest
  * @run build MissingNotificationTest
  * @run main MissingNotificationTest
+ * @key randomness
  */
 
 import java.util.Date;

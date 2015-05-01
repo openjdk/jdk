@@ -29,6 +29,7 @@
  * @run clean ThreadMXBeanTest
  * @run build ThreadMXBeanTest
  * @run main ThreadMXBeanTest
+ * @key randomness
  */
 
 import java.lang.management.*;
