@@ -260,15 +260,15 @@ inline void CMTask::push(oop obj) {
              ++_local_pushes );
 }
 
-inline bool CMTask::is_below_finger(HeapWord* objAddr,
-                                    HeapWord* global_finger) const {
-  // If objAddr is above the global finger, then the mark bitmap scan
+inline bool CMTask::is_below_finger(oop obj, HeapWord* global_finger) const {
+  // If obj is above the global finger, then the mark bitmap scan
   // will find it later, and no push is needed.  Similarly, if we have
-  // a current region and objAddr is between the local finger and the
+  // a current region and obj is between the local finger and the
   // end of the current region, then no push is needed.  The tradeoff
   // of checking both vs only checking the global finger is that the
   // local check will be more accurate and so result in fewer pushes,
   // but may also be a little slower.
+  HeapWord* objAddr = (HeapWord*)obj;
   if (_finger != NULL) {
     // We have a current region.
 
@@ -278,7 +278,7 @@ inline bool CMTask::is_below_finger(HeapWord* objAddr,
     assert(_region_limit != NULL, "invariant");
     assert(_region_limit <= global_finger, "invariant");
 
-    // True if objAddr is less than the local finger, or is between
+    // True if obj is less than the local finger, or is between
     // the region limit and the global finger.
     if (objAddr < _finger) {
       return true;
@@ -290,13 +290,65 @@ inline bool CMTask::is_below_finger(HeapWord* objAddr,
   return objAddr < global_finger;
 }
 
+inline void CMTask::make_reference_grey(oop obj, HeapRegion* hr) {
+  if (_cm->par_mark_and_count(obj, hr, _marked_bytes_array, _card_bm)) {
+
+    if (_cm->verbose_high()) {
+      gclog_or_tty->print_cr("[%u] marked object " PTR_FORMAT,
+                             _worker_id, p2i(obj));
+    }
+
+    // No OrderAccess:store_load() is needed. It is implicit in the
+    // CAS done in CMBitMap::parMark() call in the routine above.
+    HeapWord* global_finger = _cm->finger();
+
+    // We only need to push a newly grey object on the mark
+    // stack if it is in a section of memory the mark bitmap
+    // scan has already examined.  Mark bitmap scanning
+    // maintains progress "fingers" for determining that.
+    //
+    // Notice that the global finger might be moving forward
+    // concurrently. This is not a problem. In the worst case, we
+    // mark the object while it is above the global finger and, by
+    // the time we read the global finger, it has moved forward
+    // past this object. In this case, the object will probably
+    // be visited when a task is scanning the region and will also
+    // be pushed on the stack. So, some duplicate work, but no
+    // correctness problems.
+    if (is_below_finger(obj, global_finger)) {
+      if (obj->is_typeArray()) {
+        // Immediately process arrays of primitive types, rather
+        // than pushing on the mark stack.  This keeps us from
+        // adding humongous objects to the mark stack that might
+        // be reclaimed before the entry is processed - see
+        // selection of candidates for eager reclaim of humongous
+        // objects.  The cost of the additional type test is
+        // mitigated by avoiding a trip through the mark stack,
+        // by only doing a bookkeeping update and avoiding the
+        // actual scan of the object - a typeArray contains no
+        // references, and the metadata is built-in.
+        process_grey_object<false>(obj);
+      } else {
+        if (_cm->verbose_high()) {
+          gclog_or_tty->print_cr("[%u] below a finger (local: " PTR_FORMAT
+                                 ", global: " PTR_FORMAT ") pushing "
+                                 PTR_FORMAT " on mark stack",
+                                 _worker_id, p2i(_finger),
+                                 p2i(global_finger), p2i(obj));
+        }
+        push(obj);
+      }
+    }
+  }
+}
+
 inline void CMTask::deal_with_reference(oop obj) {
   if (_cm->verbose_high()) {
     gclog_or_tty->print_cr("[%u] we're dealing with reference = "PTR_FORMAT,
                            _worker_id, p2i((void*) obj));
   }
 
-  ++_refs_reached;
+  increment_refs_reached();
 
   HeapWord* objAddr = (HeapWord*) obj;
   assert(obj->is_oop_or_null(true /* ignore mark word */), err_msg("Expected an oop or NULL at " PTR_FORMAT, p2i(obj)));
@@ -308,55 +360,7 @@ inline void CMTask::deal_with_reference(oop obj) {
       // anything with it).
       HeapRegion* hr = _g1h->heap_region_containing_raw(obj);
       if (!hr->obj_allocated_since_next_marking(obj)) {
-        if (_cm->verbose_high()) {
-          gclog_or_tty->print_cr("[%u] "PTR_FORMAT" is not considered marked",
-                                 _worker_id, p2i((void*) obj));
-        }
-
-        // we need to mark it first
-        if (_cm->par_mark_and_count(obj, hr, _marked_bytes_array, _card_bm)) {
-          // No OrderAccess:store_load() is needed. It is implicit in the
-          // CAS done in CMBitMap::parMark() call in the routine above.
-          HeapWord* global_finger = _cm->finger();
-
-          // We only need to push a newly grey object on the mark
-          // stack if it is in a section of memory the mark bitmap
-          // scan has already examined.  Mark bitmap scanning
-          // maintains progress "fingers" for determining that.
-          //
-          // Notice that the global finger might be moving forward
-          // concurrently. This is not a problem. In the worst case, we
-          // mark the object while it is above the global finger and, by
-          // the time we read the global finger, it has moved forward
-          // past this object. In this case, the object will probably
-          // be visited when a task is scanning the region and will also
-          // be pushed on the stack. So, some duplicate work, but no
-          // correctness problems.
-          if (is_below_finger(objAddr, global_finger)) {
-            if (obj->is_typeArray()) {
-              // Immediately process arrays of primitive types, rather
-              // than pushing on the mark stack.  This keeps us from
-              // adding humongous objects to the mark stack that might
-              // be reclaimed before the entry is processed - see
-              // selection of candidates for eager reclaim of humongous
-              // objects.  The cost of the additional type test is
-              // mitigated by avoiding a trip through the mark stack,
-              // by only doing a bookkeeping update and avoiding the
-              // actual scan of the object - a typeArray contains no
-              // references, and the metadata is built-in.
-              process_grey_object<false>(obj);
-            } else {
-              if (_cm->verbose_high()) {
-                gclog_or_tty->print_cr("[%u] below a finger (local: " PTR_FORMAT
-                                       ", global: " PTR_FORMAT ") pushing "
-                                       PTR_FORMAT " on mark stack",
-                                       _worker_id, p2i(_finger),
-                                       p2i(global_finger), p2i(objAddr));
-              }
-              push(obj);
-            }
-          }
-        }
+        make_reference_grey(obj, hr);
       }
     }
   }
