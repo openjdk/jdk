@@ -2268,7 +2268,7 @@ public class Check {
             }
         }
         if (complete)
-            complete = ((c.flags_field & UNATTRIBUTED) == 0) && c.completer == null;
+            complete = ((c.flags_field & UNATTRIBUTED) == 0) && c.isCompleted();
         if (complete) c.flags_field |= ACYCLIC;
         return complete;
     }
@@ -2999,7 +2999,7 @@ public class Check {
 
     /** Is the annotation applicable to types? */
     protected boolean isTypeAnnotation(JCAnnotation a, boolean isTypeParameter) {
-        List<Attribute> targets = typeAnnotations.annotationTargets(a.attribute);
+        List<Attribute> targets = typeAnnotations.annotationTargets(a.annotationType.type.tsym);
         return (targets == null) ?
                 false :
                 targets.stream()
