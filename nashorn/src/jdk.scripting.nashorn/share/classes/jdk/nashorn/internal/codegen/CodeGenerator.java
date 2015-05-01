@@ -4526,7 +4526,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         }
 
         if (addInitializer && !compiler.isOnDemandCompilation()) {
-            compiler.addFunctionInitializer(data, functionNode);
+            functionNode.getCompileUnit().addFunctionInitializer(data, functionNode);
         }
 
         // We don't emit a ScriptFunction on stack for the outermost compiled function (as there's no code being

@@ -27,7 +27,7 @@ package jdk.nashorn.internal.runtime;
 
 import java.io.Serializable;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -77,44 +77,70 @@ public final class StoredScript implements Serializable {
         return compilationId;
     }
 
-    /**
-     * Returns the main class name.
-     * @return the main class name
-     */
-    public String getMainClassName() {
-        return mainClassName;
-    }
+    private Map<String, Class<?>> installClasses(final Source source, final CodeInstaller<ScriptEnvironment> installer) {
+        final Map<String, Class<?>> installedClasses = new HashMap<>();
+        final byte[]   mainClassBytes = classBytes.get(mainClassName);
+        final Class<?> mainClass      = installer.install(mainClassName, mainClassBytes);
 
-    /**
-     * Returns a map of class names to class bytes.
-     * @return map of class bytes
-     */
-    public Map<String, byte[]> getClassBytes() {
-        final Map<String, byte[]> clonedMap = new LinkedHashMap<>();
+        installedClasses.put(mainClassName, mainClass);
+
         for (final Map.Entry<String, byte[]> entry : classBytes.entrySet()) {
-            clonedMap.put(entry.getKey(), entry.getValue().clone());
+            final String className = entry.getKey();
+
+            if (!className.equals(mainClassName)) {
+                installedClasses.put(className, installer.install(className, entry.getValue()));
+            }
         }
-        return clonedMap;
+
+        installer.initialize(installedClasses.values(), source, constants);
+        return installedClasses;
+    }
+
+    FunctionInitializer installFunction(final RecompilableScriptFunctionData data, final CodeInstaller<ScriptEnvironment> installer) {
+        final Map<String, Class<?>> installedClasses = installClasses(data.getSource(), installer);
+
+        assert initializers != null;
+        assert initializers.size() == 1;
+        final FunctionInitializer initializer = initializers.values().iterator().next();
+
+        for (int i = 0; i < constants.length; i++) {
+            if (constants[i] instanceof RecompilableScriptFunctionData) {
+                // replace deserialized function data with the ones we already have
+                final RecompilableScriptFunctionData newData = data.getScriptFunctionData(((RecompilableScriptFunctionData) constants[i]).getFunctionNodeId());
+                assert newData != null;
+                newData.initTransients(data.getSource(), installer);
+                constants[i] = newData;
+            }
+        }
+
+        initializer.setCode(installedClasses.get(initializer.getClassName()));
+        return initializer;
     }
 
     /**
-     * Returns the constants array.
-     * @return constants array
+     * Install as script.
+     *
+     * @param source the source
+     * @param installer the installer
+     * @return main script class
      */
-    public Object[] getConstants() {
-        return constants.clone();
-    }
+    Class<?> installScript(final Source source, final CodeInstaller<ScriptEnvironment> installer) {
 
-    /**
-     * Returns the function initializers map.
-     * @return The initializers map.
-     */
-    public Map<Integer, FunctionInitializer> getInitializers() {
-        final Map<Integer, FunctionInitializer> clonedMap = new LinkedHashMap<>();
-        for (final Map.Entry<Integer, FunctionInitializer> entry : initializers.entrySet()) {
-            clonedMap.put(entry.getKey(), new FunctionInitializer(entry.getValue()));
+        final Map<String, Class<?>> installedClasses = installClasses(source, installer);
+
+        for (final Object constant : constants) {
+            if (constant instanceof RecompilableScriptFunctionData) {
+                final RecompilableScriptFunctionData data = (RecompilableScriptFunctionData) constant;
+                data.initTransients(source, installer);
+                final FunctionInitializer initializer = initializers.get(data.getFunctionNodeId());
+                if (initializer != null) {
+                    initializer.setCode(installedClasses.get(initializer.getClassName()));
+                    data.initializeCode(initializer);
+                }
+            }
         }
-        return clonedMap;
+
+        return installedClasses.get(mainClassName);
     }
 
     @Override
