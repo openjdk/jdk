@@ -243,7 +243,10 @@ public class Annotate {
                         log.error(annotations.head.pos, "already.annotated", Kinds.kindName(s), s);
 
                     Assert.checkNonNull(s, "Symbol argument to actualEnterAnnotations is null");
-                    annotateNow(s, annotations, localEnv, false);
+
+                    // false is passed as fifth parameter since annotateLater is
+                    // never called for a type parameter
+                    annotateNow(s, annotations, localEnv, false, false);
                 } finally {
                     if (prevLint != null)
                         chk.setLint(prevLint);
@@ -327,7 +330,8 @@ public class Annotate {
      * then continue on with repeating annotations processing.
      */
     private <T extends Attribute.Compound> void annotateNow(Symbol toAnnotate,
-            List<JCAnnotation> withAnnotations, Env<AttrContext> env, boolean typeAnnotations)
+            List<JCAnnotation> withAnnotations, Env<AttrContext> env, boolean typeAnnotations,
+            boolean isTypeParam)
     {
         Map<TypeSymbol, ListBuffer<T>> annotated = new LinkedHashMap<>();
         Map<T, DiagnosticPosition> pos = new HashMap<>();
@@ -377,7 +381,7 @@ public class Annotate {
                 buf = buf.prepend(lb.first());
             } else {
                 AnnotationContext<T> ctx = new AnnotationContext<>(env, annotated, pos, typeAnnotations);
-                T res = makeContainerAnnotation(lb.toList(), ctx, toAnnotate);
+                T res = makeContainerAnnotation(lb.toList(), ctx, toAnnotate, isTypeParam);
                 if (res != null)
                     buf = buf.prepend(res);
             }
@@ -698,7 +702,7 @@ public class Annotate {
      * annotation are invalid.  This method reports errors/warnings.
      */
     private <T extends Attribute.Compound> T processRepeatedAnnotations(List<T> annotations,
-            AnnotationContext<T> ctx, Symbol on)
+            AnnotationContext<T> ctx, Symbol on, boolean isTypeParam)
     {
         T firstOccurrence = annotations.head;
         List<Attribute> repeated = List.nil();
@@ -752,7 +756,8 @@ public class Annotate {
 
         if (!repeated.isEmpty()) {
             repeated = repeated.reverse();
-            TreeMaker m = make.at(ctx.pos.get(firstOccurrence));
+            DiagnosticPosition pos = ctx.pos.get(firstOccurrence);
+            TreeMaker m = make.at(pos);
             Pair<MethodSymbol, Attribute> p =
                     new Pair<MethodSymbol, Attribute>(containerValueSymbol,
                             new Attribute.Array(arrayOfOrigAnnoType, repeated));
@@ -768,7 +773,14 @@ public class Annotate {
                 Attribute.TypeCompound at = new Attribute.TypeCompound(targetContainerType, List.of(p),
                         ((Attribute.TypeCompound)annotations.head).position);
 
-                // TODO: annotation applicability checks from below?
+                JCAnnotation annoTree = m.TypeAnnotation(at);
+                if (!chk.validateAnnotationDeferErrors(annoTree))
+                    log.error(annoTree.pos(), Errors.DuplicateAnnotationInvalidRepeated(origAnnoType));
+
+                if (!chk.isTypeAnnotation(annoTree, isTypeParam)) {
+                    log.error(pos, isTypeParam ? Errors.InvalidRepeatableAnnotationNotApplicable(targetContainerType, on)
+                                               : Errors.InvalidRepeatableAnnotationNotApplicableInContext(targetContainerType));
+                }
 
                 at.setSynthesized(true);
 
@@ -925,11 +937,11 @@ public class Annotate {
     }
 
     private <T extends Attribute.Compound> T makeContainerAnnotation(List<T> toBeReplaced,
-            AnnotationContext<T> ctx, Symbol sym)
+            AnnotationContext<T> ctx, Symbol sym, boolean isTypeParam)
     {
         // Process repeated annotations
         T validRepeated =
-                processRepeatedAnnotations(toBeReplaced, ctx, sym);
+                processRepeatedAnnotations(toBeReplaced, ctx, sym, isTypeParam);
 
         if (validRepeated != null) {
             // Check that the container isn't manually
@@ -955,7 +967,7 @@ public class Annotate {
      * Attribute the list of annotations and enter them onto s.
      */
     public void enterTypeAnnotations(List<JCAnnotation> annotations, Env<AttrContext> env,
-            Symbol s, DiagnosticPosition deferPos)
+            Symbol s, DiagnosticPosition deferPos, boolean isTypeParam)
     {
         Assert.checkNonNull(s, "Symbol argument to actualEnterTypeAnnotations is nul/");
         JavaFileObject prev = log.useSource(env.toplevel.sourcefile);
@@ -965,7 +977,7 @@ public class Annotate {
             prevLintPos = deferredLintHandler.setPos(deferPos);
         }
         try {
-            annotateNow(s, annotations, env, true);
+            annotateNow(s, annotations, env, true, isTypeParam);
         } finally {
             if (prevLintPos != null)
                 deferredLintHandler.setPos(prevLintPos);
@@ -1048,21 +1060,21 @@ public class Annotate {
 
         @Override
         public void visitAnnotatedType(JCAnnotatedType tree) {
-            enterTypeAnnotations(tree.annotations, env, sym, deferPos);
+            enterTypeAnnotations(tree.annotations, env, sym, deferPos, false);
             scan(tree.underlyingType);
         }
 
         @Override
         public void visitTypeParameter(JCTypeParameter tree) {
-            enterTypeAnnotations(tree.annotations, env, sym, deferPos);
+            enterTypeAnnotations(tree.annotations, env, sym, deferPos, true);
             scan(tree.bounds);
         }
 
         @Override
         public void visitNewArray(JCNewArray tree) {
-            enterTypeAnnotations(tree.annotations, env, sym, deferPos);
+            enterTypeAnnotations(tree.annotations, env, sym, deferPos, false);
             for (List<JCAnnotation> dimAnnos : tree.dimAnnotations)
-                enterTypeAnnotations(dimAnnos, env, sym, deferPos);
+                enterTypeAnnotations(dimAnnos, env, sym, deferPos, false);
             scan(tree.elemtype);
             scan(tree.elems);
         }
@@ -1241,7 +1253,7 @@ public class Annotate {
 
         private void init() {
             // Make sure metaDataFor is member entered
-            while (metaDataFor.completer != null)
+            while (!metaDataFor.isCompleted())
                 metaDataFor.complete();
 
             if (annotationTypeCompleter != null) {
