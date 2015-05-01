@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,121 +55,42 @@ class MethodHandleNatives {
     static native Object staticFieldBase(MemberName self);  // e.g., returns clazz
     static native Object getMemberVMInfo(MemberName self);  // returns {vmindex,vmtarget}
 
-    /// MethodHandle support
-
-    /** Fetch MH-related JVM parameter.
-     *  which=0 retrieves MethodHandlePushLimit
-     *  which=1 retrieves stack slot push size (in address units)
-     */
-    static native int getConstant(int which);
-
-    static final boolean COUNT_GWT;
-
     /// CallSite support
 
     /** Tell the JVM that we need to change the target of a CallSite. */
     static native void setCallSiteTargetNormal(CallSite site, MethodHandle target);
     static native void setCallSiteTargetVolatile(CallSite site, MethodHandle target);
 
+    /** Invalidate CallSite context: clean up dependent nmethods and reset call site context to initial state (null). */
+    static native void invalidateDependentNMethods(CallSite site);
+
     private static native void registerNatives();
     static {
         registerNatives();
-        COUNT_GWT                   = getConstant(Constants.GC_COUNT_GWT) != 0;
 
         // The JVM calls MethodHandleNatives.<clinit>.  Cascade the <clinit> calls as needed:
         MethodHandleImpl.initStatics();
     }
 
-    // All compile-time constants go here.
-    // There is an opportunity to check them against the JVM's idea of them.
+    /**
+     * Compile-time constants go here. This collection exists not only for
+     * reference from clients, but also for ensuring the VM and JDK agree on the
+     * values of these constants (see {@link #verifyConstants()}).
+     */
     static class Constants {
         Constants() { } // static only
-        // MethodHandleImpl
-        static final int // for getConstant
-                GC_COUNT_GWT = 4,
-                GC_LAMBDA_SUPPORT = 5;
 
-        // MemberName
-        // The JVM uses values of -2 and above for vtable indexes.
-        // Field values are simple positive offsets.
-        // Ref: src/share/vm/oops/methodOop.hpp
-        // This value is negative enough to avoid such numbers,
-        // but not too negative.
         static final int
-                MN_IS_METHOD           = 0x00010000, // method (not constructor)
-                MN_IS_CONSTRUCTOR      = 0x00020000, // constructor
-                MN_IS_FIELD            = 0x00040000, // field
-                MN_IS_TYPE             = 0x00080000, // nested type
-                MN_CALLER_SENSITIVE    = 0x00100000, // @CallerSensitive annotation detected
-                MN_REFERENCE_KIND_SHIFT = 24, // refKind
-                MN_REFERENCE_KIND_MASK = 0x0F000000 >> MN_REFERENCE_KIND_SHIFT,
-                // The SEARCH_* bits are not for MN.flags but for the matchFlags argument of MHN.getMembers:
-                MN_SEARCH_SUPERCLASSES = 0x00100000,
-                MN_SEARCH_INTERFACES   = 0x00200000;
-
-        /**
-         * Basic types as encoded in the JVM.  These code values are not
-         * intended for use outside this class.  They are used as part of
-         * a private interface between the JVM and this class.
-         */
-        static final int
-            T_BOOLEAN  =  4,
-            T_CHAR     =  5,
-            T_FLOAT    =  6,
-            T_DOUBLE   =  7,
-            T_BYTE     =  8,
-            T_SHORT    =  9,
-            T_INT      = 10,
-            T_LONG     = 11,
-            T_OBJECT   = 12,
-            //T_ARRAY    = 13
-            T_VOID     = 14,
-            //T_ADDRESS  = 15
-            T_ILLEGAL  = 99;
-
-        /**
-         * Constant pool entry types.
-         */
-        static final byte
-            CONSTANT_Utf8                = 1,
-            CONSTANT_Integer             = 3,
-            CONSTANT_Float               = 4,
-            CONSTANT_Long                = 5,
-            CONSTANT_Double              = 6,
-            CONSTANT_Class               = 7,
-            CONSTANT_String              = 8,
-            CONSTANT_Fieldref            = 9,
-            CONSTANT_Methodref           = 10,
-            CONSTANT_InterfaceMethodref  = 11,
-            CONSTANT_NameAndType         = 12,
-            CONSTANT_MethodHandle        = 15,  // JSR 292
-            CONSTANT_MethodType          = 16,  // JSR 292
-            CONSTANT_InvokeDynamic       = 18,
-            CONSTANT_LIMIT               = 19;   // Limit to tags found in classfiles
-
-        /**
-         * Access modifier flags.
-         */
-        static final char
-            ACC_PUBLIC                 = 0x0001,
-            ACC_PRIVATE                = 0x0002,
-            ACC_PROTECTED              = 0x0004,
-            ACC_STATIC                 = 0x0008,
-            ACC_FINAL                  = 0x0010,
-            ACC_SYNCHRONIZED           = 0x0020,
-            ACC_VOLATILE               = 0x0040,
-            ACC_TRANSIENT              = 0x0080,
-            ACC_NATIVE                 = 0x0100,
-            ACC_INTERFACE              = 0x0200,
-            ACC_ABSTRACT               = 0x0400,
-            ACC_STRICT                 = 0x0800,
-            ACC_SYNTHETIC              = 0x1000,
-            ACC_ANNOTATION             = 0x2000,
-            ACC_ENUM                   = 0x4000,
-            // aliases:
-            ACC_SUPER                  = ACC_SYNCHRONIZED,
-            ACC_BRIDGE                 = ACC_VOLATILE,
-            ACC_VARARGS                = ACC_TRANSIENT;
+            MN_IS_METHOD           = 0x00010000, // method (not constructor)
+            MN_IS_CONSTRUCTOR      = 0x00020000, // constructor
+            MN_IS_FIELD            = 0x00040000, // field
+            MN_IS_TYPE             = 0x00080000, // nested type
+            MN_CALLER_SENSITIVE    = 0x00100000, // @CallerSensitive annotation detected
+            MN_REFERENCE_KIND_SHIFT = 24, // refKind
+            MN_REFERENCE_KIND_MASK = 0x0F000000 >> MN_REFERENCE_KIND_SHIFT,
+            // The SEARCH_* bits are not for MN.flags but for the matchFlags argument of MHN.getMembers:
+            MN_SEARCH_SUPERCLASSES = 0x00100000,
+            MN_SEARCH_INTERFACES   = 0x00200000;
 
         /**
          * Constant pool reference-kind codes, as used by CONSTANT_MethodHandle CP entries.
@@ -314,6 +235,7 @@ class MethodHandleNatives {
             return Invokers.linkToTargetMethod(type);
         } else {
             appendixResult[0] = callSite;
+            callSite.initContext(caller);
             return Invokers.linkToCallSiteMethod(type);
         }
     }

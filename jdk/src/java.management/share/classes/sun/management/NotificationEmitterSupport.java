@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,13 +34,12 @@ import javax.management.NotificationListener;
 
 import java.util.List;
 import java.util.ArrayList;
-import java.util.ListIterator;
 import java.util.Collections;
 
 /**
  * Abstract helper class for notification emitter support.
  */
-abstract class NotificationEmitterSupport implements NotificationEmitter {
+public abstract class NotificationEmitterSupport implements NotificationEmitter {
 
     protected NotificationEmitterSupport() {
     }
@@ -135,7 +134,7 @@ abstract class NotificationEmitterSupport implements NotificationEmitter {
         }
     }
 
-    void sendNotification(Notification notification) {
+    public void sendNotification(Notification notification) {
 
         if (notification == null) {
             return;
@@ -162,7 +161,7 @@ abstract class NotificationEmitterSupport implements NotificationEmitter {
         }
     }
 
-    boolean hasListeners() {
+    public boolean hasListeners() {
         synchronized (listenerLock) {
             return !listenerList.isEmpty();
         }

@@ -29,4 +29,8 @@ public class RedefineMethodInBacktraceTarget {
     public static void methodToRedefine() {
         throw new RuntimeException("Test exception 2");
     }
+
+    public static void callMethodToDelete() {
+        throw new RuntimeException("Test exception 2 in callMethodToDelete");
+    }
 }
