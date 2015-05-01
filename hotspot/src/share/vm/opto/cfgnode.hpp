@@ -263,6 +263,30 @@ class IfNode : public MultiBranchNode {
   // Size is bigger to hold the probability field.  However, _prob does not
   // change the semantics so it does not appear in the hash & cmp functions.
   virtual uint size_of() const { return sizeof(*this); }
+
+private:
+  ProjNode* range_check_trap_proj(int& flip, Node*& l, Node*& r);
+  ProjNode* range_check_trap_proj() {
+    int flip_test = 0;
+    Node* l = NULL;
+    Node* r = NULL;
+    return range_check_trap_proj(flip_test, l, r);
+  }
+
+  // Helper methods for fold_compares
+  bool cmpi_folds(PhaseIterGVN* igvn);
+  bool is_ctrl_folds(Node* ctrl, PhaseIterGVN* igvn);
+  bool has_shared_region(ProjNode* proj, ProjNode*& success, ProjNode*& fail);
+  bool has_only_uncommon_traps(ProjNode* proj, ProjNode*& success, ProjNode*& fail, PhaseIterGVN* igvn);
+  static void merge_uncommon_traps(ProjNode* proj, ProjNode* success, ProjNode* fail, PhaseIterGVN* igvn);
+  static void improve_address_types(Node* l, Node* r, ProjNode* fail, PhaseIterGVN* igvn);
+  bool is_cmp_with_loadrange(ProjNode* proj);
+  bool is_null_check(ProjNode* proj, PhaseIterGVN* igvn);
+  bool is_side_effect_free_test(ProjNode* proj, PhaseIterGVN* igvn);
+  void reroute_side_effect_free_unc(ProjNode* proj, ProjNode* dom_proj, PhaseIterGVN* igvn);
+  ProjNode* uncommon_trap_proj(CallStaticJavaNode*& call) const;
+  bool fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* fail, PhaseIterGVN* igvn);
+
 public:
 
   // Degrees of branch prediction probability by order of magnitude:
@@ -348,7 +372,7 @@ public:
   virtual const RegMask &out_RegMask() const;
   void dominated_by(Node* prev_dom, PhaseIterGVN* igvn);
   int is_range_check(Node* &range, Node* &index, jint &offset);
-  Node* fold_compares(PhaseGVN* phase);
+  Node* fold_compares(PhaseIterGVN* phase);
   static Node* up_one_dom(Node* curr, bool linear_only = false);
 
   // Takes the type of val and filters it through the test represented

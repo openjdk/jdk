@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2663,6 +2663,9 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // slow case of monitor enter.  Inline a special case of call_VM that
     // disallows any pending_exception.
     __ mov(L3_box, O1);
+
+    // Pass in current thread pointer
+    __ mov(G2_thread, O2);
 
     __ call(CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_unlocking_C), relocInfo::runtime_call_type);
     __ delayed()->mov(L4, O0);              // Need oop in O0

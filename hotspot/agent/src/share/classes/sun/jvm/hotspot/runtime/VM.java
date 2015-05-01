@@ -259,8 +259,7 @@ public class VM {
      saProps = new Properties();
      URL url = null;
      try {
-       url = VM.class.getClassLoader().getResource("sa.properties");
-       saProps.load(new BufferedInputStream(url.openStream()));
+       saProps.load(VM.class.getResourceAsStream("/sa.properties"));
      } catch (Exception e) {
        System.err.println("Unable to load properties  " +
                                   (url == null ? "null" : url.toString()) +

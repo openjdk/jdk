@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2014 SAP AG. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
                          Register tmp1, Register tmp2, Register tmp3, Label &ok_is_subtype);
 
   // Load object from cpool->resolved_references(index).
-  void load_resolved_reference_at_index(Register result, Register index);
+  void load_resolved_reference_at_index(Register result, Register index, Label *is_null = NULL);
 
   void generate_stack_overflow_check_with_compare_and_throw(Register Rmem_frame_size, Register Rscratch1);
   void load_receiver(Register Rparam_count, Register Rrecv_dst);
@@ -137,7 +137,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void field_offset_at(int n, Register tmp, Register dest, Register base);
   int  field_offset_at(Register object, address bcp, int offset);
   void fast_iaaccess(int n, address bcp);
-  void fast_iagetfield(address bcp);
   void fast_iaputfield(address bcp, bool do_store_check);
 
   void index_check(Register array, Register index, int index_shift, Register tmp, Register res);

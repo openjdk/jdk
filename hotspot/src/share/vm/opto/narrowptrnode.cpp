@@ -67,10 +67,6 @@ const Type *EncodePNode::Value( PhaseTransform *phase ) const {
 }
 
 
-Node *EncodeNarrowPtrNode::Ideal_DU_postCCP( PhaseCCP *ccp ) {
-  return MemNode::Ideal_common_DU_postCCP(ccp, this, in(1));
-}
-
 Node* DecodeNKlassNode::Identity(PhaseTransform* phase) {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return in(1);

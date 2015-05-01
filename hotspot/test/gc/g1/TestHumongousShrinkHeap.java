@@ -34,11 +34,11 @@
  * TestHumongousShrinkHeap
  */
 
+import com.sun.management.HotSpotDiagnosticMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
 import java.util.ArrayList;
 import java.util.List;
-import sun.management.ManagementFactoryHelper;
 import static com.oracle.java.testlibrary.Asserts.*;
 
 public class TestHumongousShrinkHeap {
@@ -83,9 +83,11 @@ public class TestHumongousShrinkHeap {
                 "committed free heap size is not less than committed full heap size, heap hasn't been shrunk?%n"
                 + "%s = %s%n%s = %s",
                 MIN_FREE_RATIO_FLAG_NAME,
-                ManagementFactoryHelper.getDiagnosticMXBean().getVMOption(MIN_FREE_RATIO_FLAG_NAME).getValue(),
+                ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class)
+                    .getVMOption(MIN_FREE_RATIO_FLAG_NAME).getValue(),
                 MAX_FREE_RATIO_FLAG_NAME,
-                ManagementFactoryHelper.getDiagnosticMXBean().getVMOption(MAX_FREE_RATIO_FLAG_NAME).getValue()
+                ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class)
+                    .getVMOption(MAX_FREE_RATIO_FLAG_NAME).getValue()
         ));
     }
 

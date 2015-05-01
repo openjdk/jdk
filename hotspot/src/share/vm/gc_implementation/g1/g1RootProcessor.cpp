@@ -116,7 +116,7 @@ void G1RootProcessor::wait_until_all_strong_classes_discovered() {
 G1RootProcessor::G1RootProcessor(G1CollectedHeap* g1h) :
     _g1h(g1h),
     _process_strong_tasks(new SubTasksDone(G1RP_PS_NumElements)),
-    _srs(g1h),
+    _srs(),
     _lock(Mutex::leaf, "G1 Root Scanning barrier lock", false, Monitor::_safepoint_check_never),
     _n_workers_discovered_strong_classes(0) {}
 
@@ -253,7 +253,8 @@ void G1RootProcessor::process_java_roots(OopClosure* strong_roots,
 
   {
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::ThreadRoots, worker_i);
-    Threads::possibly_parallel_oops_do(strong_roots, thread_stack_clds, strong_code);
+    bool is_par = _g1h->n_par_threads() > 0;
+    Threads::possibly_parallel_oops_do(is_par, strong_roots, thread_stack_clds, strong_code);
   }
 }
 
@@ -323,10 +324,6 @@ void G1RootProcessor::process_vm_roots(OopClosure* strong_roots,
 void G1RootProcessor::scan_remembered_sets(G1ParPushHeapRSClosure* scan_rs,
                                            OopClosure* scan_non_heap_weak_roots,
                                            uint worker_i) {
-  G1GCPhaseTimes* phase_times = _g1h->g1_policy()->phase_times();
-  G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::CodeCacheRoots, worker_i);
-
-  // Now scan the complement of the collection set.
   G1CodeBlobClosure scavenge_cs_nmethods(scan_non_heap_weak_roots);
 
   _g1h->g1_rem_set()->oops_into_collection_set_do(scan_rs, &scavenge_cs_nmethods, worker_i);

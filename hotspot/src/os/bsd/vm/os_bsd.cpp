@@ -190,20 +190,6 @@ julong os::physical_memory() {
   return Bsd::physical_memory();
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// environment support
-
-bool os::getenv(const char* name, char* buf, int len) {
-  const char* val = ::getenv(name);
-  if (val != NULL && strlen(val) < (size_t)len) {
-    strcpy(buf, val);
-    return true;
-  }
-  if (len > 0) buf[0] = 0;  // return a null string
-  return false;
-}
-
-
 // Return true if user is running as root.
 
 bool os::have_special_privileges() {
@@ -1146,6 +1132,10 @@ void os::shutdown() {
 // called from signal handler. Before adding something to os::abort(), make
 // sure it is async-safe and can handle partially initialized VM.
 void os::abort(bool dump_core) {
+  abort(dump_core, NULL, NULL);
+}
+
+void os::abort(bool dump_core, void* siginfo, void* context) {
   os::shutdown();
   if (dump_core) {
 #ifndef PRODUCT
@@ -1195,12 +1185,18 @@ pid_t os::Bsd::gettid() {
   guarantee(retval != 0, "just checking");
   return retval;
 
-#elif __FreeBSD__
+#else
+  #ifdef __FreeBSD__
   retval = syscall(SYS_thr_self);
-#elif __OpenBSD__
+  #else
+    #ifdef __OpenBSD__
   retval = syscall(SYS_getthrid);
-#elif __NetBSD__
+    #else
+      #ifdef __NetBSD__
   retval = (pid_t) syscall(SYS__lwp_self);
+      #endif
+    #endif
+  #endif
 #endif
 
   if (retval == -1) {

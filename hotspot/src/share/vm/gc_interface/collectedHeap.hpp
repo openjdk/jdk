@@ -75,9 +75,8 @@ class GCHeapLog : public EventLogBase<GCMessage> {
 
 //
 // CollectedHeap
-//   SharedHeap
-//     GenCollectedHeap
-//     G1CollectedHeap
+//   GenCollectedHeap
+//   G1CollectedHeap
 //   ParallelScavengeHeap
 //
 class CollectedHeap : public CHeapObj<mtInternal> {
@@ -205,7 +204,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // In many heaps, there will be a need to perform some initialization activities
   // after the Universe is fully formed, but before general heap allocation is allowed.
   // This is the correct place to place such initialization methods.
-  virtual void post_initialize() = 0;
+  virtual void post_initialize();
 
   // Stop any onging concurrent work and prepare for exit.
   virtual void stop() {}
@@ -240,22 +239,11 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   }
 
   // Returns "TRUE" iff "p" points into the committed areas of the heap.
-  // Since this method can be expensive in general, we restrict its
-  // use to assertion checking only.
+  // This method can be expensive so avoid using it in performance critical
+  // code.
   virtual bool is_in(const void* p) const = 0;
 
-  bool is_in_or_null(const void* p) const {
-    return p == NULL || is_in(p);
-  }
-
-  bool is_in_place(Metadata** p) {
-    return !Universe::heap()->is_in(p);
-  }
-  bool is_in_place(oop* p) { return Universe::heap()->is_in(p); }
-  bool is_in_place(narrowOop* p) {
-    oop o = oopDesc::load_decode_heap_oop_not_null(p);
-    return Universe::heap()->is_in((const void*)o);
-  }
+  DEBUG_ONLY(bool is_in_or_null(const void* p) const { return p == NULL || is_in(p); })
 
   // Let's define some terms: a "closed" subset of a heap is one that
   //
@@ -451,9 +439,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // remembered set.
   virtual void flush_deferred_store_barrier(JavaThread* thread);
 
-  // Does this heap support heap inspection (+PrintClassHistogram?)
-  virtual bool supports_heap_inspection() const = 0;
-
   // Perform a collection of the heap; intended for use in implementing
   // "System.gc".  This probably implies as full a collection as the
   // "CollectedHeap" supports.
@@ -470,6 +455,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 
   // Returns the barrier set for this heap
   BarrierSet* barrier_set() { return _barrier_set; }
+  void set_barrier_set(BarrierSet* barrier_set);
 
   // Returns "true" iff there is a stop-world GC in progress.  (I assume
   // that it should answer "false" for the concurrent part of a concurrent
@@ -496,12 +482,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 
   // Return the CollectorPolicy for the heap
   virtual CollectorPolicy* collector_policy() const = 0;
-
-  void oop_iterate_no_header(OopClosure* cl);
-
-  // Iterate over all the ref-containing fields of all objects, calling
-  // "cl.do_oop" on each.
-  virtual void oop_iterate(ExtendedOopClosure* cl) = 0;
 
   // Iterate over all objects, calling "cl.do_object" on each.
   virtual void object_iterate(ObjectClosure* cl) = 0;

@@ -41,13 +41,14 @@
 #include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/management.hpp"
+#include "utilities/stack.inline.hpp"
 
 //
 // ThreadRootsMarkingTask
 //
 
 void ThreadRootsMarkingTask::do_it(GCTaskManager* manager, uint which) {
-  assert(Universe::heap()->is_gc_active(), "called outside gc");
+  assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
 
   ResourceMark rm;
 
@@ -78,7 +79,7 @@ void ThreadRootsMarkingTask::do_it(GCTaskManager* manager, uint which) {
 
 
 void MarkFromRootsTask::do_it(GCTaskManager* manager, uint which) {
-  assert(Universe::heap()->is_gc_active(), "called outside gc");
+  assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
 
   NOT_PRODUCT(GCTraceTime tm("MarkFromRootsTask",
     PrintGCDetails && TraceParallelOldGCTasks, true, NULL, PSParallelCompact::gc_tracer()->gc_id()));
@@ -149,7 +150,7 @@ void MarkFromRootsTask::do_it(GCTaskManager* manager, uint which) {
 
 void RefProcTaskProxy::do_it(GCTaskManager* manager, uint which)
 {
-  assert(Universe::heap()->is_gc_active(), "called outside gc");
+  assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
 
   NOT_PRODUCT(GCTraceTime tm("RefProcTask",
     PrintGCDetails && TraceParallelOldGCTasks, true, NULL, PSParallelCompact::gc_tracer()->gc_id()));
@@ -167,7 +168,7 @@ void RefProcTaskProxy::do_it(GCTaskManager* manager, uint which)
 
 void RefProcTaskExecutor::execute(ProcessTask& task)
 {
-  ParallelScavengeHeap* heap = PSParallelCompact::gc_heap();
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   uint parallel_gc_threads = heap->gc_task_manager()->workers();
   uint active_gc_threads = heap->gc_task_manager()->active_workers();
   RegionTaskQueueSet* qset = ParCompactionManager::region_array();
@@ -188,7 +189,7 @@ void RefProcTaskExecutor::execute(ProcessTask& task)
 
 void RefProcTaskExecutor::execute(EnqueueTask& task)
 {
-  ParallelScavengeHeap* heap = PSParallelCompact::gc_heap();
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   uint parallel_gc_threads = heap->gc_task_manager()->workers();
   GCTaskQueue* q = GCTaskQueue::create();
   for(uint i=0; i<parallel_gc_threads; i++) {
@@ -205,7 +206,7 @@ StealMarkingTask::StealMarkingTask(ParallelTaskTerminator* t) :
   _terminator(t) {}
 
 void StealMarkingTask::do_it(GCTaskManager* manager, uint which) {
-  assert(Universe::heap()->is_gc_active(), "called outside gc");
+  assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
 
   NOT_PRODUCT(GCTraceTime tm("StealMarkingTask",
     PrintGCDetails && TraceParallelOldGCTasks, true, NULL, PSParallelCompact::gc_tracer()->gc_id()));
@@ -237,7 +238,7 @@ StealRegionCompactionTask::StealRegionCompactionTask(ParallelTaskTerminator* t):
   _terminator(t) {}
 
 void StealRegionCompactionTask::do_it(GCTaskManager* manager, uint which) {
-  assert(Universe::heap()->is_gc_active(), "called outside gc");
+  assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
 
   NOT_PRODUCT(GCTraceTime tm("StealRegionCompactionTask",
     PrintGCDetails && TraceParallelOldGCTasks, true, NULL, PSParallelCompact::gc_tracer()->gc_id()));
@@ -319,7 +320,7 @@ void UpdateDensePrefixTask::do_it(GCTaskManager* manager, uint which) {
 }
 
 void DrainStacksCompactionTask::do_it(GCTaskManager* manager, uint which) {
-  assert(Universe::heap()->is_gc_active(), "called outside gc");
+  assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
 
   NOT_PRODUCT(GCTraceTime tm("DrainStacksCompactionTask",
     PrintGCDetails && TraceParallelOldGCTasks, true, NULL, PSParallelCompact::gc_tracer()->gc_id()));

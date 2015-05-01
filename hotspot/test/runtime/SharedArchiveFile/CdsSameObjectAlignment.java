@@ -55,10 +55,11 @@ public class CdsSameObjectAlignment {
         System.out.println("dumpAndLoadSharedArchive(): objectAlignmentInBytes = "
             + objectAlignmentInBytes);
 
+        String filename = "./CdsSameObjectAlignment" + objectAlignmentInBytes + ".jsa";
         // create shared archive
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:SharedArchiveFile=./sample.jsa",
+            "-XX:SharedArchiveFile=" + filename,
             "-Xshare:dump",
             objectAlignmentArg);
 
@@ -70,7 +71,7 @@ public class CdsSameObjectAlignment {
         // run using the shared archive
         pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:SharedArchiveFile=./sample.jsa",
+            "-XX:SharedArchiveFile=" + filename,
             "-Xshare:on",
             objectAlignmentArg,
             "-version");
