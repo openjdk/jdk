@@ -74,7 +74,8 @@ LP64=1
 
 !if "$(BUILDARCH)" == "i486"
 MACHINE=I386
-CXX_FLAGS=$(CXX_FLAGS) /D "IA32"
+# VS2013 generates bad l2f without /arch:IA32
+CXX_FLAGS=$(CXX_FLAGS) /D "IA32" /arch:IA32
 !endif
 
 CXX_FLAGS=$(CXX_FLAGS) /D "WIN32" /D "_WINDOWS"
