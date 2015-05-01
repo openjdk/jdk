@@ -24,6 +24,7 @@
 /* @test
  * @bug 4806007
  * @summary Checks for vague exceptions from writeUTF/readUTF
+ * @key randomness
  */
 
 import java.io.*;

@@ -28,19 +28,19 @@ package com.sun.security.auth;
 import java.security.Principal;
 
 /**
- * <p> This class implements the <code>Principal</code> interface
+ * This class implements the {@code Principal} interface
  * and represents the name of the Windows NT domain into which the
  * user authenticated.  This will be a domain name if the user logged
  * into a Windows NT domain, a workgroup name if the user logged into
  * a workgroup, or a machine name if the user logged into a standalone
  * configuration.
  *
- * <p> Principals such as this <code>NTDomainPrincipal</code>
- * may be associated with a particular <code>Subject</code>
- * to augment that <code>Subject</code> with an additional
- * identity.  Refer to the <code>Subject</code> class for more information
+ * <p> Principals such as this {@code NTDomainPrincipal}
+ * may be associated with a particular {@code Subject}
+ * to augment that {@code Subject} with an additional
+ * identity.  Refer to the {@code Subject} class for more information
  * on how to achieve this.  Authorization decisions can then be based upon
- * the Principals associated with a <code>Subject</code>.
+ * the Principals associated with a {@code Subject}.
  *
  * @see java.security.Principal
  * @see javax.security.auth.Subject
@@ -56,14 +56,12 @@ public class NTDomainPrincipal implements Principal, java.io.Serializable {
     private String name;
 
     /**
-     * Create an <code>NTDomainPrincipal</code> with a Windows NT domain name.
+     * Create an {@code NTDomainPrincipal} with a Windows NT domain name.
      *
-     * <p>
+     * @param name the Windows NT domain name for this user.
      *
-     * @param name the Windows NT domain name for this user. <p>
-     *
-     * @exception NullPointerException if the <code>name</code>
-     *                  is <code>null</code>.
+     * @exception NullPointerException if the {@code name}
+     *                  is {@code null}.
      */
     public NTDomainPrincipal(String name) {
         if (name == null) {
@@ -79,23 +77,19 @@ public class NTDomainPrincipal implements Principal, java.io.Serializable {
 
     /**
      * Return the Windows NT domain name for this
-     * <code>NTDomainPrincipal</code>.
-     *
-     * <p>
+     * {@code NTDomainPrincipal}.
      *
      * @return the Windows NT domain name for this
-     *                  <code>NTDomainPrincipal</code>
+     *                  {@code NTDomainPrincipal}
      */
     public String getName() {
         return name;
     }
 
     /**
-     * Return a string representation of this <code>NTDomainPrincipal</code>.
+     * Return a string representation of this {@code NTDomainPrincipal}.
      *
-     * <p>
-     *
-     * @return a string representation of this <code>NTDomainPrincipal</code>.
+     * @return a string representation of this {@code NTDomainPrincipal}.
      */
     public String toString() {
         java.text.MessageFormat form = new java.text.MessageFormat
@@ -107,18 +101,16 @@ public class NTDomainPrincipal implements Principal, java.io.Serializable {
     }
 
     /**
-     * Compares the specified Object with this <code>NTDomainPrincipal</code>
+     * Compares the specified Object with this {@code NTDomainPrincipal}
      * for equality.  Returns true if the given object is also a
-     * <code>NTDomainPrincipal</code> and the two NTDomainPrincipals
+     * {@code NTDomainPrincipal} and the two NTDomainPrincipals
      * have the same name.
      *
-     * <p>
-     *
      * @param o Object to be compared for equality with this
-     *          <code>NTDomainPrincipal</code>.
+     *          {@code NTDomainPrincipal}.
      *
      * @return true if the specified Object is equal to this
-     *          <code>NTDomainPrincipal</code>.
+     *          {@code NTDomainPrincipal}.
      */
     public boolean equals(Object o) {
         if (o == null)
@@ -137,11 +129,9 @@ public class NTDomainPrincipal implements Principal, java.io.Serializable {
     }
 
     /**
-     * Return a hash code for this <code>NTDomainPrincipal</code>.
+     * Return a hash code for this {@code NTDomainPrincipal}.
      *
-     * <p>
-     *
-     * @return a hash code for this <code>NTDomainPrincipal</code>.
+     * @return a hash code for this {@code NTDomainPrincipal}.
      */
     public int hashCode() {
         return this.getName().hashCode();

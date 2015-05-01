@@ -26,6 +26,7 @@
  * @bug 4937853
  * @summary Make sure normal calls of NullCipher does not throw NPE.
  * @author Valerie Peng
+ * @key randomness
  */
 import java.util.Arrays;
 import java.security.AlgorithmParameters;

@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@
 # Parameters:
 #    providersToTest: [foo|bar|foobar]
 #    java class name: <class name>
-#    providersInExtDir: [true|false]
+#    java security policy file: (Optional. Installs security manager if exists)
 
 if [ "${TESTSRC}" = "" ]
 then
@@ -113,8 +113,14 @@ else
   exit $result
 fi
 
+# security options
+if [ "$3" != "" ]
+then
+  SECURITYOPTS="-Djava.security.manager -Djava.security.policy=${TESTSRC}${FS}$3"
+fi
+
 # run
-RUNCMD="${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -classpath ${CLASSPATHARG} $2 "
+RUNCMD="${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} ${SECURITYOPTS} -classpath ${CLASSPATHARG} $2 "
 
 echo ${RUNCMD}
 ${RUNCMD}

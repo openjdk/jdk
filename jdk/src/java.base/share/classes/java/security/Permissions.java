@@ -99,7 +99,7 @@ implements Serializable
      * Creates a new Permissions object containing no PermissionCollections.
      */
     public Permissions() {
-        permsMap = new HashMap<Class<?>, PermissionCollection>(11);
+        permsMap = new HashMap<>(11);
         allPermission = null;
     }
 
@@ -394,7 +394,7 @@ implements Serializable
         @SuppressWarnings("unchecked")
         Hashtable<Class<?>, PermissionCollection> perms =
             (Hashtable<Class<?>, PermissionCollection>)gfields.get("perms", null);
-        permsMap = new HashMap<Class<?>, PermissionCollection>(perms.size()*2);
+        permsMap = new HashMap<>(perms.size()*2);
         permsMap.putAll(perms);
 
         // Set hasUnresolved
@@ -488,7 +488,7 @@ implements Serializable
      */
 
     PermissionsHash() {
-        permsMap = new HashMap<Permission, Permission>(11);
+        permsMap = new HashMap<>(11);
     }
 
     /**
@@ -597,7 +597,7 @@ implements Serializable
         @SuppressWarnings("unchecked")
         Hashtable<Permission, Permission> perms =
                 (Hashtable<Permission, Permission>)gfields.get("perms", null);
-        permsMap = new HashMap<Permission, Permission>(perms.size()*2);
+        permsMap = new HashMap<>(perms.size()*2);
         permsMap.putAll(perms);
     }
 }

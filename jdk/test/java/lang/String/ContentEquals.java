@@ -25,6 +25,7 @@
  * @test
  * @bug 4242309 4982981
  * @summary Test equals and contentEquals in String
+ * @key randomness
  */
 import java.util.Random;
 import java.nio.CharBuffer;

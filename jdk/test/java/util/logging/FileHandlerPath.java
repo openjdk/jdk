@@ -56,6 +56,7 @@ import java.util.logging.LoggingPermission;
  * @run main/othervm FileHandlerPath UNSECURE
  * @run main/othervm FileHandlerPath SECURE
  * @author danielfuchs
+ * @key randomness
  */
 public class FileHandlerPath {
 

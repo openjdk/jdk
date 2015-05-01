@@ -24,6 +24,7 @@
 /* @test
  * @bug 4517279
  * @summary Stochastic test of thread-local coder caches
+ * @key randomness
  */
 
 import java.nio.*;

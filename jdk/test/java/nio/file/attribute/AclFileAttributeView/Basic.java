@@ -25,6 +25,7 @@
  * @bug 4313887 6838333 6891404
  * @summary Unit test for java.nio.file.attribute.AclFileAttribueView
  * @library ../..
+ * @key randomness
  */
 
 import java.nio.file.*;

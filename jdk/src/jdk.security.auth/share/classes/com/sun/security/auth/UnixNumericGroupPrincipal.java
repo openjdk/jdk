@@ -28,15 +28,15 @@ package com.sun.security.auth;
 import java.security.Principal;
 
 /**
- * <p> This class implements the <code>Principal</code> interface
+ * This class implements the {@code Principal} interface
  * and represents a user's Unix group identification number (GID).
  *
- * <p> Principals such as this <code>UnixNumericGroupPrincipal</code>
- * may be associated with a particular <code>Subject</code>
- * to augment that <code>Subject</code> with an additional
- * identity.  Refer to the <code>Subject</code> class for more information
+ * <p> Principals such as this {@code UnixNumericGroupPrincipal}
+ * may be associated with a particular {@code Subject}
+ * to augment that {@code Subject} with an additional
+ * identity.  Refer to the {@code Subject} class for more information
  * on how to achieve this.  Authorization decisions can then be based upon
- * the Principals associated with a <code>Subject</code>.
+ * the Principals associated with a {@code Subject}.
  *
  * @see java.security.Principal
  * @see javax.security.auth.Subject
@@ -59,20 +59,18 @@ public class UnixNumericGroupPrincipal implements
     private boolean primaryGroup;
 
     /**
-     * Create a <code>UnixNumericGroupPrincipal</code> using a
-     * <code>String</code> representation of the user's
+     * Create a {@code UnixNumericGroupPrincipal} using a
+     * {@code String} representation of the user's
      * group identification number (GID).
      *
-     * <p>
-     *
      * @param name the user's group identification number (GID)
-     *                  for this user. <p>
+     *                  for this user.
      *
      * @param primaryGroup true if the specified GID represents the
      *                  primary group to which this user belongs.
      *
-     * @exception NullPointerException if the <code>name</code>
-     *                  is <code>null</code>.
+     * @exception NullPointerException if the {@code name}
+     *                  is {@code null}.
      */
     public UnixNumericGroupPrincipal(String name, boolean primaryGroup) {
         if (name == null) {
@@ -89,13 +87,11 @@ public class UnixNumericGroupPrincipal implements
     }
 
     /**
-     * Create a <code>UnixNumericGroupPrincipal</code> using a
+     * Create a {@code UnixNumericGroupPrincipal} using a
      * long representation of the user's group identification number (GID).
      *
-     * <p>
-     *
      * @param name the user's group identification number (GID) for this user
-     *                  represented as a long. <p>
+     *                  represented as a long.
      *
      * @param primaryGroup true if the specified GID represents the
      *                  primary group to which this user belongs.
@@ -108,12 +104,10 @@ public class UnixNumericGroupPrincipal implements
 
     /**
      * Return the user's group identification number (GID) for this
-     * <code>UnixNumericGroupPrincipal</code>.
-     *
-     * <p>
+     * {@code UnixNumericGroupPrincipal}.
      *
      * @return the user's group identification number (GID) for this
-     *          <code>UnixNumericGroupPrincipal</code>
+     *          {@code UnixNumericGroupPrincipal}
      */
     public String getName() {
         return name;
@@ -121,12 +115,10 @@ public class UnixNumericGroupPrincipal implements
 
     /**
      * Return the user's group identification number (GID) for this
-     * <code>UnixNumericGroupPrincipal</code> as a long.
-     *
-     * <p>
+     * {@code UnixNumericGroupPrincipal} as a long.
      *
      * @return the user's group identification number (GID) for this
-     *          <code>UnixNumericGroupPrincipal</code> as a long.
+     *          {@code UnixNumericGroupPrincipal} as a long.
      */
     public long longValue() {
         return Long.parseLong(name);
@@ -135,8 +127,6 @@ public class UnixNumericGroupPrincipal implements
     /**
      * Return whether this group identification number (GID) represents
      * the primary group to which this user belongs.
-     *
-     * <p>
      *
      * @return true if this group identification number (GID) represents
      *          the primary group to which this user belongs,
@@ -148,12 +138,10 @@ public class UnixNumericGroupPrincipal implements
 
     /**
      * Return a string representation of this
-     * <code>UnixNumericGroupPrincipal</code>.
-     *
-     * <p>
+     * {@code UnixNumericGroupPrincipal}.
      *
      * @return a string representation of this
-     *          <code>UnixNumericGroupPrincipal</code>.
+     *          {@code UnixNumericGroupPrincipal}.
      */
     public String toString() {
 
@@ -176,19 +164,17 @@ public class UnixNumericGroupPrincipal implements
 
     /**
      * Compares the specified Object with this
-     * <code>UnixNumericGroupPrincipal</code>
+     * {@code UnixNumericGroupPrincipal}
      * for equality.  Returns true if the given object is also a
-     * <code>UnixNumericGroupPrincipal</code> and the two
+     * {@code UnixNumericGroupPrincipal} and the two
      * UnixNumericGroupPrincipals
      * have the same group identification number (GID).
      *
-     * <p>
-     *
      * @param o Object to be compared for equality with this
-     *          <code>UnixNumericGroupPrincipal</code>.
+     *          {@code UnixNumericGroupPrincipal}.
      *
      * @return true if the specified Object is equal to this
-     *          <code>UnixNumericGroupPrincipal</code>.
+     *          {@code UnixNumericGroupPrincipal}.
      */
     public boolean equals(Object o) {
         if (o == null)
@@ -208,11 +194,9 @@ public class UnixNumericGroupPrincipal implements
     }
 
     /**
-     * Return a hash code for this <code>UnixNumericGroupPrincipal</code>.
+     * Return a hash code for this {@code UnixNumericGroupPrincipal}.
      *
-     * <p>
-     *
-     * @return a hash code for this <code>UnixNumericGroupPrincipal</code>.
+     * @return a hash code for this {@code UnixNumericGroupPrincipal}.
      */
     public int hashCode() {
         return toString().hashCode();

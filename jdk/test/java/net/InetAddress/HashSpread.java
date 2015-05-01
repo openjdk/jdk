@@ -26,6 +26,7 @@
  * @bug 4687909
  * @summary Check Inet6Address.hashCode returns a reasonable spread of hash
  *          codes.
+ * @key randomness
  */
 import java.net.InetAddress;
 import java.net.UnknownHostException;
