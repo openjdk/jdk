@@ -24,6 +24,7 @@
 /*
  * @test TestLargePageUseForAuxMemory.java
  * @bug 8058354
+ * @ignore 8079208
  * @key gc
  * @library /testlibrary /../../test/lib
  * @requires (vm.gc=="G1" | vm.gc=="null")
