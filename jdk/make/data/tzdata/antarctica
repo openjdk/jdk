@@ -38,41 +38,6 @@
 # I made up all time zone abbreviations mentioned here; corrections welcome!
 # FORMAT is 'zzz' and GMTOFF is 0 for locations while uninhabited.
 
-# These rules are stolen from the 'southamerica' file.
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	ArgAQ	1964	1966	-	Mar	 1	0:00	0	-
-Rule	ArgAQ	1964	1966	-	Oct	15	0:00	1:00	S
-Rule	ArgAQ	1967	only	-	Apr	 2	0:00	0	-
-Rule	ArgAQ	1967	1968	-	Oct	Sun>=1	0:00	1:00	S
-Rule	ArgAQ	1968	1969	-	Apr	Sun>=1	0:00	0	-
-Rule	ArgAQ	1974	only	-	Jan	23	0:00	1:00	S
-Rule	ArgAQ	1974	only	-	May	 1	0:00	0	-
-Rule	ChileAQ	1972	1986	-	Mar	Sun>=9	3:00u	0	-
-Rule	ChileAQ	1974	1987	-	Oct	Sun>=9	4:00u	1:00	S
-Rule	ChileAQ	1987	only	-	Apr	12	3:00u	0	-
-Rule	ChileAQ	1988	1989	-	Mar	Sun>=9	3:00u	0	-
-Rule	ChileAQ	1988	only	-	Oct	Sun>=1	4:00u	1:00	S
-Rule	ChileAQ	1989	only	-	Oct	Sun>=9	4:00u	1:00	S
-Rule	ChileAQ	1990	only	-	Mar	18	3:00u	0	-
-Rule	ChileAQ	1990	only	-	Sep	16	4:00u	1:00	S
-Rule	ChileAQ	1991	1996	-	Mar	Sun>=9	3:00u	0	-
-Rule	ChileAQ	1991	1997	-	Oct	Sun>=9	4:00u	1:00	S
-Rule	ChileAQ	1997	only	-	Mar	30	3:00u	0	-
-Rule	ChileAQ	1998	only	-	Mar	Sun>=9	3:00u	0	-
-Rule	ChileAQ	1998	only	-	Sep	27	4:00u	1:00	S
-Rule	ChileAQ	1999	only	-	Apr	 4	3:00u	0	-
-Rule	ChileAQ	1999	2010	-	Oct	Sun>=9	4:00u	1:00	S
-Rule	ChileAQ	2000	2007	-	Mar	Sun>=9	3:00u	0	-
-# N.B.: the end of March 29 in Chile is March 30 in Universal time,
-# which is used below in specifying the transition.
-Rule	ChileAQ	2008	only	-	Mar	30	3:00u	0	-
-Rule	ChileAQ	2009	only	-	Mar	Sun>=9	3:00u	0	-
-Rule	ChileAQ	2010	only	-	Apr	Sun>=1	3:00u	0	-
-Rule	ChileAQ	2011	only	-	May	Sun>=2	3:00u	0	-
-Rule	ChileAQ	2011	only	-	Aug	Sun>=16	4:00u	1:00	S
-Rule	ChileAQ	2012	2015	-	Apr	Sun>=23	3:00u	0	-
-Rule	ChileAQ	2012	2014	-	Sep	Sun>=2	4:00u	1:00	S
-
 # Argentina - year-round bases
 # Belgrano II, Confin Coast, -770227-0343737, since 1972-02-05
 # Carlini, Potter Cove, King George Island, -6414-0602320, since 1982-01
@@ -367,21 +332,7 @@ Zone Antarctica/Rothera	0	-	zzz	1976 Dec  1
 # USA - year-round bases
 #
 # Palmer, Anvers Island, since 1965 (moved 2 miles in 1968)
-#
-# From Ethan Dicks (1996-10-06):
-# It keeps the same time as Punta Arenas, Chile, because, just like us
-# and the South Pole, that's the other end of their supply line....
-# I verified with someone who was there that since 1980,
-# Palmer has followed Chile.  Prior to that, before the Falklands War,
-# Palmer used to be supplied from Argentina.
-#
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone Antarctica/Palmer	0	-	zzz	1965
-			-4:00	ArgAQ	AR%sT	1969 Oct  5
-			-3:00	ArgAQ	AR%sT	1982 May
-			-4:00	ChileAQ	CL%sT	2015 Apr 26 3:00u
-			-3:00	-	CLT
-#
+# See 'southamerica' for Antarctica/Palmer, since it uses South American DST.
 #
 # McMurdo Station, Ross Island, since 1955-12
 # Amundsen-Scott South Pole Station, continuously occupied since 1956-11-20
