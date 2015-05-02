@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 8057967
+ * @ignore 8079205
  * @run main/bootclasspath -Xbatch java.lang.invoke.CallSiteDepContextTest
  */
 package java.lang.invoke;
