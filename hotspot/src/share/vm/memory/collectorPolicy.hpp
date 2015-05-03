@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -208,7 +208,8 @@ class ClearedAllSoftRefs : public StackObj {
 };
 
 class GenCollectorPolicy : public CollectorPolicy {
-friend class TestGenCollectorPolicy;
+  friend class TestGenCollectorPolicy;
+  friend class VMStructs;
  protected:
   size_t _min_young_size;
   size_t _initial_young_size;
@@ -221,7 +222,8 @@ friend class TestGenCollectorPolicy;
   // time. When using large pages they can differ.
   size_t _gen_alignment;
 
-  GenerationSpec **_generations;
+  GenerationSpec* _young_gen_spec;
+  GenerationSpec* _old_gen_spec;
 
   // Return true if an allocation should be attempted in the older generation
   // if it fails in the younger generation.  Return false, otherwise.
@@ -261,9 +263,14 @@ friend class TestGenCollectorPolicy;
 
   int number_of_generations() { return 2; }
 
-  virtual GenerationSpec **generations() {
-    assert(_generations != NULL, "Sanity check");
-    return _generations;
+  GenerationSpec* young_gen_spec() const {
+    assert(_young_gen_spec != NULL, "_young_gen_spec should have been initialized");
+    return _young_gen_spec;
+  }
+
+  GenerationSpec* old_gen_spec() const {
+    assert(_old_gen_spec != NULL, "_old_gen_spec should have been initialized");
+    return _old_gen_spec;
   }
 
   virtual GenCollectorPolicy* as_generation_policy() { return this; }

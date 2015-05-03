@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @summary Test reserve/commit/uncommit/release of virtual memory and that we track it correctly
  * @key nmt jcmd
  * @library /testlibrary /../../test/lib
+ * @modules java.base/sun.misc
+ *          java.management
  * @build VirtualAllocCommitUncommitRecommit
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=detail VirtualAllocCommitUncommitRecommit
@@ -49,13 +51,6 @@ public class VirtualAllocCommitUncommitRecommit {
         String pid = Integer.toString(ProcessTools.getProcessId());
         ProcessBuilder pb = new ProcessBuilder();
 
-        boolean has_nmt_detail = wb.NMTIsDetailSupported();
-        if (has_nmt_detail) {
-            System.out.println("NMT detail support detected.");
-        } else {
-            System.out.println("NMT detail support not detected.");
-        }
-
         // reserve
         addr = wb.NMTReserveMemory(reserveSize);
         pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid,
@@ -63,11 +58,9 @@ public class VirtualAllocCommitUncommitRecommit {
 
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("Test (reserved=4096KB, committed=0KB)");
-        if (has_nmt_detail) {
-            output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*"
-                    + Long.toHexString(addr + reserveSize)
-                    + "\\] reserved 4096KB for Test");
-        }
+        output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*"
+                           + Long.toHexString(addr + reserveSize)
+                           + "\\] reserved 4096KB for Test");
 
         long addrA = addr;
         long addrB = addr + commitSize;
@@ -85,11 +78,9 @@ public class VirtualAllocCommitUncommitRecommit {
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("Test (reserved=4096KB, committed=512KB)");
 
-        if (has_nmt_detail) {
-            output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*"
-                    + Long.toHexString(addr + reserveSize)
-                    + "\\] reserved 4096KB for Test");
-        }
+        output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*"
+                           + Long.toHexString(addr + reserveSize)
+                           + "\\] reserved 4096KB for Test");
         // uncommit BC
         wb.NMTUncommitMemory(addrB, commitSize);
         wb.NMTUncommitMemory(addrC, commitSize);
@@ -97,11 +88,9 @@ public class VirtualAllocCommitUncommitRecommit {
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("Test (reserved=4096KB, committed=256KB)");
 
-        if (has_nmt_detail) {
-            output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*"
-                    + Long.toHexString(addr + reserveSize)
-                    + "\\] reserved 4096KB for Test");
-        }
+        output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*"
+                            + Long.toHexString(addr + reserveSize)
+                            + "\\] reserved 4096KB for Test");
 
         // commit EF
         wb.NMTCommitMemory(addrE, commitSize);
@@ -109,22 +98,18 @@ public class VirtualAllocCommitUncommitRecommit {
 
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("Test (reserved=4096KB, committed=512KB)");
-        if (has_nmt_detail) {
-            output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*"
-                    + Long.toHexString(addr + reserveSize)
-                    + "\\] reserved 4096KB for Test");
-        }
+        output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*"
+                           + Long.toHexString(addr + reserveSize)
+                           + "\\] reserved 4096KB for Test");
 
         // uncommit A
         wb.NMTUncommitMemory(addrA, commitSize);
 
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("Test (reserved=4096KB, committed=384KB)");
-        if (has_nmt_detail) {
-            output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*"
-                    + Long.toHexString(addr + reserveSize)
-                    + "\\] reserved 4096KB for Test");
-        }
+        output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*"
+                           + Long.toHexString(addr + reserveSize)
+                           + "\\] reserved 4096KB for Test");
 
         // commit ABC
         wb.NMTCommitMemory(addrA, commitSize);
@@ -133,11 +118,9 @@ public class VirtualAllocCommitUncommitRecommit {
 
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("Test (reserved=4096KB, committed=768KB)");
-        if (has_nmt_detail) {
-            output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*"
-                    + Long.toHexString(addr + reserveSize)
-                    + "\\] reserved 4096KB for Test");
-        }
+        output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*"
+                           + Long.toHexString(addr + reserveSize)
+                           + "\\] reserved 4096KB for Test");
 
         // uncommit ABCDEF
         wb.NMTUncommitMemory(addrA, commitSize);
@@ -149,11 +132,9 @@ public class VirtualAllocCommitUncommitRecommit {
 
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("Test (reserved=4096KB, committed=0KB)");
-        if (has_nmt_detail) {
-            output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*"
-                    + Long.toHexString(addr + reserveSize)
-                    + "\\] reserved 4096KB for Test");
-        }
+        output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*"
+                           + Long.toHexString(addr + reserveSize)
+                           + "\\] reserved 4096KB for Test");
 
         // release
         wb.NMTReleaseMemory(addr, reserveSize);

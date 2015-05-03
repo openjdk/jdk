@@ -54,6 +54,7 @@ import sun.awt.FontConfiguration;
 import sun.awt.SunToolkit;
 import sun.awt.util.ThreadGroupUtils;
 import sun.java2d.FontSupport;
+import sun.misc.InnocuousThread;
 import sun.util.logging.PlatformLogger;
 
 /**
@@ -2529,18 +2530,17 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                           });
                       }
                     };
-                    AccessController.doPrivileged(
-                            (PrivilegedAction<Void>) () -> {
-                                /* The thread must be a member of a thread group
-                                 * which will not get GCed before VM exit.
-                                 * Make its parent the top-level thread group.
-                                 */
-                                ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
-                                fileCloser = new Thread(rootTG, fileCloserRunnable);
-                                fileCloser.setContextClassLoader(null);
-                                Runtime.getRuntime().addShutdownHook(fileCloser);
-                                return null;
-                            });
+                    AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                        if (System.getSecurityManager() == null) {
+                            ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
+                            fileCloser = new Thread(rootTG, fileCloserRunnable);
+                        } else {
+                            fileCloser = new InnocuousThread(fileCloserRunnable);
+                        }
+                        fileCloser.setContextClassLoader(null);
+                        Runtime.getRuntime().addShutdownHook(fileCloser);
+                        return null;
+                    });
                 }
             }
         }

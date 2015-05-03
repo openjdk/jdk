@@ -32,8 +32,6 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.inline.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 //
 // GCTask
 //
@@ -101,7 +99,7 @@ void GCTask::destruct() {
 NOT_PRODUCT(
 void GCTask::print(const char* message) const {
   tty->print(INTPTR_FORMAT " <- " INTPTR_FORMAT "(%u) -> " INTPTR_FORMAT,
-             newer(), this, affinity(), older());
+             p2i(newer()), p2i(this), affinity(), p2i(older()));
 }
 )
 
@@ -113,7 +111,7 @@ GCTaskQueue* GCTaskQueue::create() {
   GCTaskQueue* result = new GCTaskQueue(false);
   if (TraceGCTaskQueue) {
     tty->print_cr("GCTaskQueue::create()"
-                  " returns " INTPTR_FORMAT, result);
+                  " returns " INTPTR_FORMAT, p2i(result));
   }
   return result;
 }
@@ -123,7 +121,7 @@ GCTaskQueue* GCTaskQueue::create_on_c_heap() {
   if (TraceGCTaskQueue) {
     tty->print_cr("GCTaskQueue::create_on_c_heap()"
                   " returns " INTPTR_FORMAT,
-                  result);
+                  p2i(result));
   }
   return result;
 }
@@ -134,7 +132,7 @@ GCTaskQueue::GCTaskQueue(bool on_c_heap) :
   if (TraceGCTaskQueue) {
     tty->print_cr("[" INTPTR_FORMAT "]"
                   " GCTaskQueue::GCTaskQueue() constructor",
-                  this);
+                  p2i(this));
   }
 }
 
@@ -147,7 +145,7 @@ void GCTaskQueue::destroy(GCTaskQueue* that) {
     tty->print_cr("[" INTPTR_FORMAT "]"
                   " GCTaskQueue::destroy()"
                   "  is_c_heap_obj:  %s",
-                  that,
+                  p2i(that),
                   that->is_c_heap_obj() ? "true" : "false");
   }
   // That instance may have been allocated as a CHeapObj,
@@ -173,7 +171,7 @@ void GCTaskQueue::enqueue(GCTask* task) {
     tty->print_cr("[" INTPTR_FORMAT "]"
                   " GCTaskQueue::enqueue(task: "
                   INTPTR_FORMAT ")",
-                  this, task);
+                  p2i(this), p2i(task));
     print("before:");
   }
   assert(task != NULL, "shouldn't have null task");
@@ -200,7 +198,7 @@ void GCTaskQueue::enqueue(GCTaskQueue* list) {
     tty->print_cr("[" INTPTR_FORMAT "]"
                   " GCTaskQueue::enqueue(list: "
                   INTPTR_FORMAT ")",
-                  this, list);
+                  p2i(this), p2i(list));
     print("before:");
     list->print("list:");
   }
@@ -234,14 +232,14 @@ void GCTaskQueue::enqueue(GCTaskQueue* list) {
 GCTask* GCTaskQueue::dequeue() {
   if (TraceGCTaskQueue) {
     tty->print_cr("[" INTPTR_FORMAT "]"
-                  " GCTaskQueue::dequeue()", this);
+                  " GCTaskQueue::dequeue()", p2i(this));
     print("before:");
   }
   assert(!is_empty(), "shouldn't dequeue from empty list");
   GCTask* result = remove();
   assert(result != NULL, "shouldn't have NULL task");
   if (TraceGCTaskQueue) {
-    tty->print_cr("    return: " INTPTR_FORMAT, result);
+    tty->print_cr("    return: " INTPTR_FORMAT, p2i(result));
     print("after:");
   }
   return result;
@@ -251,7 +249,7 @@ GCTask* GCTaskQueue::dequeue() {
 GCTask* GCTaskQueue::dequeue(uint affinity) {
   if (TraceGCTaskQueue) {
     tty->print_cr("[" INTPTR_FORMAT "]"
-                  " GCTaskQueue::dequeue(%u)", this, affinity);
+                  " GCTaskQueue::dequeue(%u)", p2i(this), affinity);
     print("before:");
   }
   assert(!is_empty(), "shouldn't dequeue from empty list");
@@ -275,7 +273,7 @@ GCTask* GCTaskQueue::dequeue(uint affinity) {
     result = remove();
   }
   if (TraceGCTaskQueue) {
-    tty->print_cr("    return: " INTPTR_FORMAT, result);
+    tty->print_cr("    return: " INTPTR_FORMAT, p2i(result));
     print("after:");
   }
   return result;
@@ -345,7 +343,7 @@ void GCTaskQueue::print(const char* message) const {
                 "  remove_end: " INTPTR_FORMAT
                 "  length:       %d"
                 "  %s",
-                this, insert_end(), remove_end(), length(), message);
+                p2i(this), p2i(insert_end()), p2i(remove_end()), length(), message);
   uint count = 0;
   for (GCTask* element = insert_end();
        element != NULL;
@@ -486,7 +484,7 @@ void GCTaskManager::set_active_gang() {
 
   assert(!all_workers_active() || active_workers() == ParallelGCThreads,
          err_msg("all_workers_active() is  incorrect: "
-                 "active %d  ParallelGCThreads %d", active_workers(),
+                 "active %d  ParallelGCThreads " UINTX_FORMAT, active_workers(),
                  ParallelGCThreads));
   if (TraceDynamicGCThreads) {
     gclog_or_tty->print_cr("GCTaskManager::set_active_gang(): "
@@ -598,7 +596,7 @@ void GCTaskManager::add_task(GCTask* task) {
   MutexLockerEx ml(monitor(), Mutex::_no_safepoint_check_flag);
   if (TraceGCTaskManager) {
     tty->print_cr("GCTaskManager::add_task(" INTPTR_FORMAT " [%s])",
-                  task, GCTask::Kind::to_string(task->kind()));
+                  p2i(task), GCTask::Kind::to_string(task->kind()));
   }
   queue()->enqueue(task);
   // Notify with the lock held to avoid missed notifies.
@@ -678,7 +676,7 @@ GCTask* GCTaskManager::get_task(uint which) {
   assert(result != NULL, "shouldn't have null task");
   if (TraceGCTaskManager) {
     tty->print_cr("GCTaskManager::get_task(%u) => " INTPTR_FORMAT " [%s]",
-                  which, result, GCTask::Kind::to_string(result->kind()));
+                  which, p2i(result), GCTask::Kind::to_string(result->kind()));
     tty->print_cr("     %s", result->name());
   }
   if (!result->is_idle_task()) {
@@ -864,7 +862,7 @@ void IdleGCTask::do_it(GCTaskManager* manager, uint which) {
     tty->print_cr("[" INTPTR_FORMAT "]"
                   " IdleGCTask:::do_it()"
       "  should_wait: %s",
-      this, wait_for_task->should_wait() ? "true" : "false");
+      p2i(this), wait_for_task->should_wait() ? "true" : "false");
   }
   MutexLockerEx ml(manager->monitor(), Mutex::_no_safepoint_check_flag);
   if (TraceDynamicGCThreads) {
@@ -878,7 +876,7 @@ void IdleGCTask::do_it(GCTaskManager* manager, uint which) {
       tty->print_cr("[" INTPTR_FORMAT "]"
                     " IdleGCTask::do_it()"
         "  [" INTPTR_FORMAT "] (%s)->wait()",
-        this, manager->monitor(), manager->monitor()->name());
+        p2i(this), p2i(manager->monitor()), manager->monitor()->name());
     }
     manager->monitor()->wait(Mutex::_no_safepoint_check_flag, 0);
   }
@@ -890,7 +888,7 @@ void IdleGCTask::do_it(GCTaskManager* manager, uint which) {
     tty->print_cr("[" INTPTR_FORMAT "]"
                   " IdleGCTask::do_it() returns"
       "  should_wait: %s",
-      this, wait_for_task->should_wait() ? "true" : "false");
+      p2i(this), wait_for_task->should_wait() ? "true" : "false");
   }
   // Release monitor().
 }
@@ -1000,7 +998,7 @@ WaitForBarrierGCTask::WaitForBarrierGCTask(bool on_c_heap) :
     tty->print_cr("[" INTPTR_FORMAT "]"
                   " WaitForBarrierGCTask::WaitForBarrierGCTask()"
                   "  monitor: " INTPTR_FORMAT,
-                  this, monitor());
+                  p2i(this), p2i(monitor()));
   }
 }
 
@@ -1011,9 +1009,9 @@ void WaitForBarrierGCTask::destroy(WaitForBarrierGCTask* that) {
                     " WaitForBarrierGCTask::destroy()"
                     "  is_c_heap_obj: %s"
                     "  monitor: " INTPTR_FORMAT,
-                    that,
+                    p2i(that),
                     that->is_c_heap_obj() ? "true" : "false",
-                    that->monitor());
+                    p2i(that->monitor()));
     }
     that->destruct();
     if (that->is_c_heap_obj()) {
@@ -1028,7 +1026,7 @@ void WaitForBarrierGCTask::destruct() {
     tty->print_cr("[" INTPTR_FORMAT "]"
                   " WaitForBarrierGCTask::destruct()"
                   "  monitor: " INTPTR_FORMAT,
-                  this, monitor());
+                  p2i(this), p2i(monitor()));
   }
   this->BarrierGCTask::destruct();
   // Clean up that should be in the destructor,
@@ -1044,7 +1042,7 @@ void WaitForBarrierGCTask::do_it(GCTaskManager* manager, uint which) {
     tty->print_cr("[" INTPTR_FORMAT "]"
                   " WaitForBarrierGCTask::do_it() waiting for idle"
                   "  monitor: " INTPTR_FORMAT,
-                  this, monitor());
+                  p2i(this), p2i(monitor()));
   }
   {
     // First, wait for the barrier to arrive.
@@ -1062,7 +1060,7 @@ void WaitForBarrierGCTask::do_it(GCTaskManager* manager, uint which) {
       tty->print_cr("[" INTPTR_FORMAT "]"
                     " WaitForBarrierGCTask::do_it()"
                     "  [" INTPTR_FORMAT "] (%s)->notify_all()",
-                    this, monitor(), monitor()->name());
+                    p2i(this), p2i(monitor()), monitor()->name());
     }
     monitor()->notify_all();
     // Release monitor().
@@ -1074,7 +1072,7 @@ void WaitForBarrierGCTask::wait_for(bool reset) {
     tty->print_cr("[" INTPTR_FORMAT "]"
                   " WaitForBarrierGCTask::wait_for()"
       "  should_wait: %s",
-      this, should_wait() ? "true" : "false");
+      p2i(this), should_wait() ? "true" : "false");
   }
   {
     // Grab the lock and check again.
@@ -1084,7 +1082,7 @@ void WaitForBarrierGCTask::wait_for(bool reset) {
         tty->print_cr("[" INTPTR_FORMAT "]"
                       " WaitForBarrierGCTask::wait_for()"
           "  [" INTPTR_FORMAT "] (%s)->wait()",
-          this, monitor(), monitor()->name());
+          p2i(this), p2i(monitor()), monitor()->name());
       }
       monitor()->wait(Mutex::_no_safepoint_check_flag, 0);
     }
@@ -1096,7 +1094,7 @@ void WaitForBarrierGCTask::wait_for(bool reset) {
       tty->print_cr("[" INTPTR_FORMAT "]"
                     " WaitForBarrierGCTask::wait_for() returns"
         "  should_wait: %s",
-        this, should_wait() ? "true" : "false");
+        p2i(this), should_wait() ? "true" : "false");
     }
     // Release monitor().
   }

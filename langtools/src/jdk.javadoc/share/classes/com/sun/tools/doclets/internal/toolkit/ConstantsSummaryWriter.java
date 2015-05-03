@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,12 +81,12 @@ public interface ConstantsSummaryWriter {
         Set<String> WriteedPackageHeaders, Content contentListTree);
 
     /**
-     * Get the content list to be added to the documentation tree.
+     * Add the content list to the documentation tree.
      *
+     * @param contentTree the tree to which the contents list will be added
      * @param contentListTree the content that will be added to the list
-     * @return content list that will be added to the documentation tree
      */
-    public abstract Content getContentsList(Content contentListTree);
+    public abstract void addContentsList(Content contentTree, Content contentListTree);
 
     /**
      * Get the constant summaries for the document.
@@ -98,16 +98,15 @@ public interface ConstantsSummaryWriter {
     /**
      * Adds the given package name.
      *
-     * @param pkg the {@link PackageDoc} to index.
      * @param parsedPackageName the parsed package name.  We only Write the
      *                          first 2 directory levels of the package
      *                          name. For example, java.lang.ref would be
      *                          indexed as java.lang.*.
-     * @param summariesTree the documentation tree to which the package name will
+     * @param summariesTree the summaries documentation tree
+     * @param first true if the first package is listed
      *                    be written
      */
-    public abstract void addPackageName(PackageDoc pkg,
-        String parsedPackageName, Content summariesTree);
+    public abstract void addPackageName(String parsedPackageName, Content summariesTree, boolean first);
 
     /**
      * Get the class summary header for the constants summary.
@@ -115,6 +114,14 @@ public interface ConstantsSummaryWriter {
      * @return the header content for the class constants summary
      */
     public abstract Content getClassConstantHeader();
+
+    /**
+     * Add the content list to the documentation summaries tree.
+     *
+     * @param summariesTree the tree to which the class constants list will be added
+     * @param classConstantTree the class constant tree that will be added to the list
+     */
+    public abstract void addClassConstant(Content summariesTree, Content classConstantTree);
 
     /**
      * Adds the constant member table to the documentation tree.
@@ -126,6 +133,14 @@ public interface ConstantsSummaryWriter {
      */
     public abstract void addConstantMembers(ClassDoc cd, List<FieldDoc> fields,
             Content classConstantTree);
+
+    /**
+     * Add the summaries list to the content tree.
+     *
+     * @param contentTree the tree to which the summaries list will be added
+     * @param summariesTree the summaries content tree that will be added to the list
+     */
+    public abstract void addConstantSummaries(Content contentTree, Content summariesTree);
 
     /**
      * Adds the footer for the summary documentation.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -310,6 +310,8 @@ int AwtInputTextInfor::GetClauseInfor(int*& lpBndClauseW, jstring*& lpReadingCla
             readingMergedClauseW = new jstring[cMergedClauseW];
         } catch (std::bad_alloc&) {
             delete [] bndMergedClauseW;
+            delete [] bndClauseW;
+            delete [] readingClauseW;
             throw;
         }
 
@@ -394,6 +396,8 @@ int AwtInputTextInfor::GetAttributeInfor(int*& lpBndAttrW, BYTE*& lpValAttrW) {
             valMergedAttrW = new BYTE[cMergedAttrW];
         } catch (std::bad_alloc&) {
             delete [] bndMergedAttrW;
+            delete [] bndAttrW;
+            delete [] valAttrW;
             throw;
         }
         bndMergedAttrW[0] = 0;

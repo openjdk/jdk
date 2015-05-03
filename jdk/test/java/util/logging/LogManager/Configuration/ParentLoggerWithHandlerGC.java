@@ -59,6 +59,7 @@ import java.util.logging.LoggingPermission;
  * @run main/othervm ParentLoggerWithHandlerGC UNSECURE
  * @run main/othervm ParentLoggerWithHandlerGC SECURE
  * @author danielfuchs
+ * @key randomness
  */
 public class ParentLoggerWithHandlerGC {
 

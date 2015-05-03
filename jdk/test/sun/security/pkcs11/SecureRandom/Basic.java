@@ -27,6 +27,7 @@
  * @summary basic test for PKCS#11 SecureRandom
  * @author Andreas Sterbenz
  * @library ..
+ * @key randomness
  */
 
 import java.io.*;

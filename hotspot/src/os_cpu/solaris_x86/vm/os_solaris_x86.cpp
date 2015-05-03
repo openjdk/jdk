@@ -174,6 +174,10 @@ ExtendedPC os::Solaris::ucontext_get_ExtendedPC(ucontext_t *uc) {
   return ExtendedPC((address)uc->uc_mcontext.gregs[REG_PC]);
 }
 
+void os::Solaris::ucontext_set_pc(ucontext_t* uc, address pc) {
+  uc->uc_mcontext.gregs [REG_PC]  = (greg_t) pc;
+}
+
 // Assumes ucontext is valid
 intptr_t* os::Solaris::ucontext_get_sp(ucontext_t *uc) {
   return (intptr_t*)uc->uc_mcontext.gregs[REG_SP];
@@ -411,7 +415,7 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
     pc = (address) uc->uc_mcontext.gregs[REG_PC];
 
     if (StubRoutines::is_safefetch_fault(pc)) {
-      uc->uc_mcontext.gregs[REG_PC] = intptr_t(StubRoutines::continuation_for_safefetch_fault(pc));
+      os::Solaris::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
       return true;
     }
 
@@ -614,8 +618,7 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
     if (thread != NULL) thread->set_saved_exception_pc(pc);
     // 12/02/99: On Sparc it appears that the full context is also saved
     // but as yet, no one looks at or restores that saved context
-    // factor me: setPC
-    uc->uc_mcontext.gregs[REG_PC] = (greg_t)stub;
+    os::Solaris::ucontext_set_pc(uc, stub);
     return true;
   }
 

@@ -26,9 +26,6 @@
 package com.sun.jndi.ldap;
 
 import javax.naming.*;
-import javax.naming.directory.*;
-import javax.naming.spi.*;
-import java.net.URL;
 import java.net.MalformedURLException;
 import java.io.UnsupportedEncodingException;
 import java.util.StringTokenizer;
@@ -211,43 +208,52 @@ final public class LdapURL extends Uri {
 
         // query begins with a '?' or is null
 
-        if (query == null) {
+        if (query == null || query.length() < 2) {
             return;
         }
 
-        int qmark2 = query.indexOf('?', 1);
+        int currentIndex = 1;
+        int nextQmark;
+        int endIndex;
 
-        if (qmark2 < 0) {
-            attributes = query.substring(1);
+        // attributes:
+        nextQmark = query.indexOf('?', currentIndex);
+        endIndex = nextQmark == -1 ? query.length() : nextQmark;
+        if (endIndex - currentIndex > 0) {
+            attributes = query.substring(currentIndex, endIndex);
+        }
+        currentIndex = endIndex + 1;
+        if (currentIndex >= query.length()) {
             return;
-        } else if (qmark2 != 1) {
-            attributes = query.substring(1, qmark2);
         }
 
-        int qmark3 = query.indexOf('?', qmark2 + 1);
-
-        if (qmark3 < 0) {
-            scope = query.substring(qmark2 + 1);
+        // scope:
+        nextQmark = query.indexOf('?', currentIndex);
+        endIndex = nextQmark == -1 ? query.length() : nextQmark;
+        if (endIndex - currentIndex > 0) {
+            scope = query.substring(currentIndex, endIndex);
+        }
+        currentIndex = endIndex + 1;
+        if (currentIndex >= query.length()) {
             return;
-        } else if (qmark3 != qmark2 + 1) {
-            scope = query.substring(qmark2 + 1, qmark3);
         }
 
-        int qmark4 = query.indexOf('?', qmark3 + 1);
-
-        if (qmark4 < 0) {
-            filter = query.substring(qmark3 + 1);
-        } else {
-            if (qmark4 != qmark3 + 1) {
-                filter = query.substring(qmark3 + 1, qmark4);
-            }
-            extensions = query.substring(qmark4 + 1);
-            if (extensions.length() > 0) {
-                extensions = UrlUtil.decode(extensions, "UTF8");
-            }
-        }
-        if (filter != null && filter.length() > 0) {
+        // filter:
+        nextQmark = query.indexOf('?', currentIndex);
+        endIndex = nextQmark == -1 ? query.length() : nextQmark;
+        if (endIndex - currentIndex > 0) {
+            filter = query.substring(currentIndex, endIndex);
             filter = UrlUtil.decode(filter, "UTF8");
+        }
+        currentIndex = endIndex + 1;
+        if (currentIndex >= query.length()) {
+            return;
+        }
+
+        // extensions:
+        if (query.length() - currentIndex > 0) {
+            extensions = query.substring(currentIndex);
+            extensions = UrlUtil.decode(extensions, "UTF8");
         }
     }
 

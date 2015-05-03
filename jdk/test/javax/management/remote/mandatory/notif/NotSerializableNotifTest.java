@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,36 +34,30 @@
 // java imports
 //
 import java.net.MalformedURLException;
-import java.util.Map;
-
-// JMX imports
-//
-import javax.management.* ;
-
-import javax.management.remote.*;
+import javax.management.MBeanNotificationInfo;
+import javax.management.MBeanServer;
+import javax.management.MBeanServerConnection;
+import javax.management.MBeanServerFactory;
+import javax.management.Notification;
+import javax.management.NotificationBroadcasterSupport;
+import javax.management.NotificationListener;
+import javax.management.ObjectName;
+import javax.management.remote.JMXConnector;
+import javax.management.remote.JMXConnectorFactory;
+import javax.management.remote.JMXConnectorServer;
+import javax.management.remote.JMXConnectorServerFactory;
 import javax.management.remote.JMXServiceURL;
 
 public class NotSerializableNotifTest {
     private static final MBeanServer mbeanServer = MBeanServerFactory.createMBeanServer();
     private static ObjectName emitter;
-    private static int port = 2468;
 
     private static String[] protocols;
 
     private static final int sentNotifs = 10;
 
-    private static double timeoutFactor = 1.0;
-    private static final double defaultTimeout = 10;
-
     public static void main(String[] args) throws Exception {
         System.out.println(">>> Test to send a not serializable notification");
-
-        String timeoutVal = System.getProperty("test.timeout.factor");
-        if (timeoutVal != null) {
-            timeoutFactor = Double.parseDouble(
-                System.getProperty("test.timeout.factor")
-            );
-        }
 
         // IIOP fails on JDK1.4, see 5034318
         final String v = System.getProperty("java.version");
@@ -77,35 +71,18 @@ public class NotSerializableNotifTest {
         emitter = new ObjectName("Default:name=NotificationEmitter");
         mbeanServer.registerMBean(new NotificationEmitter(), emitter);
 
-        boolean ok = true;
         for (int i = 0; i < protocols.length; i++) {
-            try {
-                if (!test(protocols[i])) {
-                    System.out.println(">>> Test failed for " + protocols[i]);
-                    ok = false;
-                } else {
-                    System.out.println(">>> Test successed for " + protocols[i]);
-                }
-            } catch (Exception e) {
-                System.out.println(">>> Test failed for " + protocols[i]);
-                e.printStackTrace(System.out);
-                ok = false;
-            }
+            test(protocols[i]);
         }
 
-        if (ok) {
-            System.out.println(">>> Test passed");
-        } else {
-            System.out.println(">>> TEST FAILED");
-            System.exit(1);
-        }
+        System.out.println(">>> Test passed");
     }
 
 
-    private static boolean test(String proto) throws Exception {
+    private static void test(String proto) throws Exception {
         System.out.println("\n>>> Test for protocol " + proto);
 
-        JMXServiceURL url = new JMXServiceURL(proto, null, port++);
+        JMXServiceURL url = new JMXServiceURL(proto, null, 0);
 
         System.out.println(">>> Create a server: "+url);
 
@@ -115,7 +92,7 @@ public class NotSerializableNotifTest {
         } catch (MalformedURLException e) {
             System.out.println("System does not recognize URL: " + url +
                                "; ignoring");
-            return true;
+            return;
         }
 
         server.start();
@@ -146,25 +123,10 @@ public class NotSerializableNotifTest {
 
         // waiting ...
         synchronized (listener) {
-            int top = (int)Math.ceil(timeoutFactor * defaultTimeout);
-            for (int i=0; i<top; i++) {
-                if (listener.received() < sentNotifs) {
-                    listener.wait(1000);
-                } else {
-                    break;
-                }
+            while (listener.received() < sentNotifs) {
+                listener.wait(); // either pass or test timeout (killed by test harness)
+
             }
-        }
-
-        // check
-        boolean ok = true;
-
-        if (listener.received() != sentNotifs) {
-           System.out.println("Failed: received "+listener.received()+
-                                   " but should be "+sentNotifs);
-           ok = false;
-        } else {
-           System.out.println("The client received all notifications.");
         }
 
         // clean
@@ -172,8 +134,6 @@ public class NotSerializableNotifTest {
 
         conn.close();
         server.stop();
-
-        return ok;
     }
 
 //--------------------------

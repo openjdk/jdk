@@ -26,7 +26,6 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc_implementation/shared/liveRange.hpp"
-#include "gc_implementation/shared/markSweep.hpp"
 #include "gc_implementation/shared/spaceDecorator.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
 #include "memory/blockOffsetTable.inline.hpp"
@@ -44,8 +43,6 @@
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 HeapWord* DirtyCardToOopClosure::get_actual_top(HeapWord* top,
                                                 HeapWord* top_obj) {
@@ -353,15 +350,6 @@ void ContiguousSpace::mangle_unused_area() {
 void ContiguousSpace::mangle_unused_area_complete() {
   mangler()->mangle_unused_area_complete();
 }
-void ContiguousSpace::mangle_region(MemRegion mr) {
-  // Although this method uses SpaceMangler::mangle_region() which
-  // is not specific to a space, the when the ContiguousSpace version
-  // is called, it is always with regard to a space and this
-  // bounds checking is appropriate.
-  MemRegion space_mr(bottom(), end());
-  assert(space_mr.contains(mr), "Mangling outside space");
-  SpaceMangler::mangle_region(mr);
-}
 #endif  // NOT_PRODUCT
 
 void CompactibleSpace::initialize(MemRegion mr,
@@ -388,7 +376,7 @@ HeapWord* CompactibleSpace::forward(oop q, size_t size,
     cp->space->set_compaction_top(compact_top);
     cp->space = cp->space->next_compaction_space();
     if (cp->space == NULL) {
-      cp->gen = GenCollectedHeap::heap()->prev_gen(cp->gen);
+      cp->gen = GenCollectedHeap::heap()->young_gen();
       assert(cp->gen != NULL, "compaction must succeed");
       cp->space = cp->gen->first_compaction_space();
       assert(cp->space != NULL, "generation must have a first compaction space");
@@ -466,20 +454,20 @@ void Space::print() const { print_on(tty); }
 void Space::print_on(outputStream* st) const {
   print_short_on(st);
   st->print_cr(" [" INTPTR_FORMAT ", " INTPTR_FORMAT ")",
-                bottom(), end());
+                p2i(bottom()), p2i(end()));
 }
 
 void ContiguousSpace::print_on(outputStream* st) const {
   print_short_on(st);
   st->print_cr(" [" INTPTR_FORMAT ", " INTPTR_FORMAT ", " INTPTR_FORMAT ")",
-                bottom(), top(), end());
+                p2i(bottom()), p2i(top()), p2i(end()));
 }
 
 void OffsetTableContigSpace::print_on(outputStream* st) const {
   print_short_on(st);
   st->print_cr(" [" INTPTR_FORMAT ", " INTPTR_FORMAT ", "
                 INTPTR_FORMAT ", " INTPTR_FORMAT ")",
-              bottom(), top(), _offsets.threshold(), end());
+              p2i(bottom()), p2i(top()), p2i(_offsets.threshold()), p2i(end()));
 }
 
 void ContiguousSpace::verify() const {
@@ -602,7 +590,7 @@ ALL_SINCE_SAVE_MARKS_CLOSURES(ContigSpace_OOP_SINCE_SAVE_MARKS_DEFN)
 HeapWord* ContiguousSpace::block_start_const(const void* p) const {
   assert(MemRegion(bottom(), end()).contains(p),
          err_msg("p (" PTR_FORMAT ") not in space [" PTR_FORMAT ", " PTR_FORMAT ")",
-                  p, bottom(), end()));
+                  p2i(p), p2i(bottom()), p2i(end())));
   if (p >= top()) {
     return top();
   } else {
@@ -613,7 +601,7 @@ HeapWord* ContiguousSpace::block_start_const(const void* p) const {
       cur += oop(cur)->size();
     }
     assert(oop(last)->is_oop(),
-           err_msg(PTR_FORMAT " should be an object start", last));
+           err_msg(PTR_FORMAT " should be an object start", p2i(last)));
     return last;
   }
 }
@@ -621,15 +609,15 @@ HeapWord* ContiguousSpace::block_start_const(const void* p) const {
 size_t ContiguousSpace::block_size(const HeapWord* p) const {
   assert(MemRegion(bottom(), end()).contains(p),
          err_msg("p (" PTR_FORMAT ") not in space [" PTR_FORMAT ", " PTR_FORMAT ")",
-                  p, bottom(), end()));
+                  p2i(p), p2i(bottom()), p2i(end())));
   HeapWord* current_top = top();
   assert(p <= current_top,
          err_msg("p > current top - p: " PTR_FORMAT ", current top: " PTR_FORMAT,
-                  p, current_top));
+                  p2i(p), p2i(current_top)));
   assert(p == current_top || oop(p)->is_oop(),
          err_msg("p (" PTR_FORMAT ") is not a block start - "
                  "current_top: " PTR_FORMAT ", is_oop: %s",
-                 p, current_top, BOOL_TO_STR(oop(p)->is_oop())));
+                 p2i(p), p2i(current_top), BOOL_TO_STR(oop(p)->is_oop())));
   if (p < current_top) {
     return oop(p)->size();
   } else {

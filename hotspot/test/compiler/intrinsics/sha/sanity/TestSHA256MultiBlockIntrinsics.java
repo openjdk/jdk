@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ import sha.predicate.IntrinsicPredicates;
  * @bug 8035968
  * @summary Verify that SHA-256 multi block intrinsic is actually used.
  * @library /testlibrary /../../test/lib /compiler/testlibrary ../
+ * @modules java.base/sun.misc
+ *          java.management
  * @build TestSHA intrinsics.Verifier TestSHA256MultiBlockIntrinsics
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

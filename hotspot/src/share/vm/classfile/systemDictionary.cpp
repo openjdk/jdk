@@ -1368,8 +1368,6 @@ void SystemDictionary::define_instance_class(instanceKlassHandle k, TRAPS) {
   ClassLoaderData* loader_data = k->class_loader_data();
   Handle class_loader_h(THREAD, loader_data->class_loader());
 
-  for (uintx it = 0; it < GCExpandToAllocateDelayMillis; it++){}
-
  // for bootstrap and other parallel classloaders don't acquire lock,
  // use placeholder token
  // If a parallelCapable class loader calls define_instance_class instead of
@@ -1690,9 +1688,11 @@ public:
 
 // Assumes classes in the SystemDictionary are only unloaded at a safepoint
 // Note: anonymous classes are not in the SD.
-bool SystemDictionary::do_unloading(BoolObjectClosure* is_alive, bool clean_alive) {
+bool SystemDictionary::do_unloading(BoolObjectClosure* is_alive,
+                                    bool clean_previous_versions) {
   // First, mark for unload all ClassLoaderData referencing a dead class loader.
-  bool unloading_occurred = ClassLoaderDataGraph::do_unloading(is_alive, clean_alive);
+  bool unloading_occurred = ClassLoaderDataGraph::do_unloading(is_alive,
+                                                               clean_previous_versions);
   if (unloading_occurred) {
     dictionary()->do_unloading();
     constraints()->purge_loader_constraints();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,11 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  */
 public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
 
+    /**
+     * The HTML tree for main tag.
+     */
+    protected HtmlTree mainTree = HtmlTree.MAIN();
+
     public SubWriterHolderWriter(ConfigurationImpl configuration, DocPath filename)
             throws IOException {
         super(configuration, filename);
@@ -92,8 +97,9 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         else {
             caption = getTableCaption(mw.getCaption());
         }
-        Content table = HtmlTree.TABLE(HtmlStyle.memberSummary, 0, 3, 0,
-                mw.getTableSummary(), caption);
+        Content table = (configuration.isOutputHtml5())
+                ? HtmlTree.TABLE(HtmlStyle.memberSummary, caption)
+                : HtmlTree.TABLE(HtmlStyle.memberSummary, mw.getTableSummary(), caption);
         table.addContent(getSummaryTableHeader(mw.getSummaryTableHeader(cd), "col"));
         for (Content tableContent : tableContents) {
             table.addContent(tableContent);
@@ -261,6 +267,31 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
     }
 
     /**
+     * Add the class content tree.
+     *
+     * @param contentTree content tree to which the class content will be added
+     * @param classContentTree class content tree which will be added to the content tree
+     */
+    public void addClassContentTree(Content contentTree, Content classContentTree) {
+        if (configuration.allowTag(HtmlTag.MAIN)) {
+            mainTree.addContent(classContentTree);
+            contentTree.addContent(mainTree);
+        } else {
+            contentTree.addContent(classContentTree);
+        }
+    }
+
+    /**
+     * Add the annotation content tree.
+     *
+     * @param contentTree content tree to which the annotation content will be added
+     * @param annotationContentTree annotation content tree which will be added to the content tree
+     */
+    public void addAnnotationContentTree(Content contentTree, Content annotationContentTree) {
+        addClassContentTree(contentTree, annotationContentTree);
+    }
+
+    /**
      * Get the member header tree
      *
      * @return a content tree the member header
@@ -269,6 +300,21 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         HtmlTree li = new HtmlTree(HtmlTag.LI);
         li.addStyle(HtmlStyle.blockList);
         return li;
+    }
+
+    /**
+     * Add the member tree.
+     *
+     * @param memberSummaryTree the content tree representing the member summary
+     * @param memberTree the content tree representing the member
+     */
+    public void addMemberTree(Content memberSummaryTree, Content memberTree) {
+        if (configuration.allowTag(HtmlTag.SECTION)) {
+            HtmlTree htmlTree = HtmlTree.SECTION(getMemberTree(memberTree));
+            memberSummaryTree.addContent(htmlTree);
+        } else {
+            memberSummaryTree.addContent(getMemberTree(memberTree));
+        }
     }
 
     /**

@@ -199,12 +199,21 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
     }
 
     /**
+     * Return a sharable empty map for the given object class.
+     * @param clazz the base object class
+     * @return New empty {@link PropertyMap}.
+     */
+    public static PropertyMap newMap(final Class<? extends ScriptObject> clazz) {
+        return new PropertyMap(EMPTY_HASHMAP, clazz.getName(), 0, 0, 0, false);
+    }
+
+    /**
      * Return a sharable empty map.
      *
      * @return New empty {@link PropertyMap}.
      */
     public static PropertyMap newMap() {
-        return new PropertyMap(EMPTY_HASHMAP, JO.class.getName(), 0, 0, 0, false);
+        return newMap(JO.class);
     }
 
     /**

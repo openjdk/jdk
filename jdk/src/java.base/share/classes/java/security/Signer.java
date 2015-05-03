@@ -140,7 +140,7 @@ public abstract class Signer extends Identity {
         }
         try {
             AccessController.doPrivileged(
-                new PrivilegedExceptionAction<Void>() {
+                new PrivilegedExceptionAction<>() {
                 public Void run() throws KeyManagementException {
                     setPublicKey(pub);
                     return null;

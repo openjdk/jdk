@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,16 +30,16 @@
 // (see globals.hpp)
 //
 
-define_pd_global(uintx, JVMInvokeMethodSlack,    12288);
+define_pd_global(size_t, JVMInvokeMethodSlack,   12288);
 define_pd_global(intx, CompilerThreadStackSize,  0);
 
 // Used on 64 bit platforms for UseCompressedOops base address
 #ifdef _LP64
 // use 6G as default base address because by default the OS maps the application
 // to 4G on Solaris-Sparc. This leaves at least 2G for the native heap.
-define_pd_global(uintx, HeapBaseMinAddress,      CONST64(6)*G);
+define_pd_global(size_t, HeapBaseMinAddress,     CONST64(6)*G);
 #else
-define_pd_global(uintx, HeapBaseMinAddress,      2*G);
+define_pd_global(size_t, HeapBaseMinAddress,     2*G);
 #endif
 
 

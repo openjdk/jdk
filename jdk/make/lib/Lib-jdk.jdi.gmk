@@ -43,7 +43,6 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
       LIBRARY := dt_shmem, \
       OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(LIBDT_SHMEM_SRC), \
-      LANG := C, \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) $(CFLAGS_WARNINGS_ARE_ERRORS) -DUSE_MMAP \
           $(LIBDT_SHMEM_CPPFLAGS), \

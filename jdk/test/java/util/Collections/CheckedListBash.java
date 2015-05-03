@@ -26,6 +26,7 @@
  * @bug     4904067
  * @summary Unit test for Collections.checkedList
  * @author  Josh Bloch
+ * @key randomness
  */
 
 import java.util.*;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Random;
+import sun.misc.ManagedLocalsThread;
 import sun.security.util.Debug;
 
 abstract class SeedGenerator {
@@ -164,7 +165,7 @@ abstract class SeedGenerator {
         md.update(b);
 
         java.security.AccessController.doPrivileged
-            (new java.security.PrivilegedAction<Void>() {
+            (new java.security.PrivilegedAction<>() {
                 @Override
                 public Void run() {
                     try {
@@ -294,7 +295,7 @@ abstract class SeedGenerator {
 
             final ThreadGroup[] finalsg = new ThreadGroup[1];
             Thread t = java.security.AccessController.doPrivileged
-                (new java.security.PrivilegedAction<Thread>() {
+                (new java.security.PrivilegedAction<>() {
                         @Override
                         public Thread run() {
                             ThreadGroup parent, group =
@@ -304,7 +305,7 @@ abstract class SeedGenerator {
                             }
                             finalsg[0] = new ThreadGroup
                                 (group, "SeedGenerator ThreadGroup");
-                            Thread newT = new Thread(finalsg[0],
+                            Thread newT = new ManagedLocalsThread(finalsg[0],
                                 ThreadedSeedGenerator.this,
                                 "SeedGenerator Thread");
                             newT.setPriority(Thread.MIN_PRIORITY);
@@ -341,7 +342,7 @@ abstract class SeedGenerator {
                         // Start some noisy threads
                         try {
                             BogusThread bt = new BogusThread();
-                            Thread t = new Thread
+                            Thread t = new ManagedLocalsThread
                                 (seedGroup, bt, "SeedGenerator Thread");
                             t.start();
                         } catch (Exception e) {
@@ -500,7 +501,7 @@ abstract class SeedGenerator {
             final URL device = new URL(deviceName);
             try {
                 seedStream = java.security.AccessController.doPrivileged
-                    (new java.security.PrivilegedExceptionAction<InputStream>() {
+                    (new java.security.PrivilegedExceptionAction<>() {
                         @Override
                         public InputStream run() throws IOException {
                             /*

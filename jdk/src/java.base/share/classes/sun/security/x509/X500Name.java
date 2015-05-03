@@ -342,7 +342,7 @@ public class X500Name implements GeneralNameInterface, Principal {
     public List<AVA> allAvas() {
         List<AVA> list = allAvaList;
         if (list == null) {
-            list = new ArrayList<AVA>();
+            list = new ArrayList<>();
             for (int i = 0; i < names.length; i++) {
                 list.addAll(names[i].avas());
             }
@@ -1382,7 +1382,7 @@ public class X500Name implements GeneralNameInterface, Principal {
      */
     static {
         PrivilegedExceptionAction<Object[]> pa =
-                new PrivilegedExceptionAction<Object[]>() {
+                new PrivilegedExceptionAction<>() {
             public Object[] run() throws Exception {
                 Class<X500Principal> pClass = X500Principal.class;
                 Class<?>[] args = new Class<?>[] { X500Name.class };

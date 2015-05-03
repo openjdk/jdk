@@ -64,7 +64,7 @@ public class ProgressMonitor
      * Return a snapshot of the ProgressSource list
      */
     public ArrayList<ProgressSource> getProgressSources()    {
-        ArrayList<ProgressSource> snapshot = new ArrayList<ProgressSource>();
+        ArrayList<ProgressSource> snapshot = new ArrayList<>();
 
         try {
             synchronized(progressSourceList)    {
@@ -114,7 +114,7 @@ public class ProgressMonitor
         if (progressListenerList.size() > 0)
         {
             // Notify progress listener if there is progress change
-            ArrayList<ProgressListener> listeners = new ArrayList<ProgressListener>();
+            ArrayList<ProgressListener> listeners = new ArrayList<>();
 
             // Copy progress listeners to another list to avoid holding locks
             synchronized(progressListenerList) {
@@ -151,7 +151,7 @@ public class ProgressMonitor
         if (progressListenerList.size() > 0)
         {
             // Notify progress listener if there is progress change
-            ArrayList<ProgressListener> listeners = new ArrayList<ProgressListener>();
+            ArrayList<ProgressListener> listeners = new ArrayList<>();
 
             // Copy progress listeners to another list to avoid holding locks
             synchronized(progressListenerList) {
@@ -183,7 +183,7 @@ public class ProgressMonitor
         if (progressListenerList.size() > 0)
         {
             // Notify progress listener if there is progress change
-            ArrayList<ProgressListener> listeners = new ArrayList<ProgressListener>();
+            ArrayList<ProgressListener> listeners = new ArrayList<>();
 
             // Copy progress listeners to another list to avoid holding locks
             synchronized(progressListenerList)  {

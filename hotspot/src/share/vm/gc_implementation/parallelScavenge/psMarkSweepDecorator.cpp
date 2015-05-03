@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -303,7 +303,7 @@ void PSMarkSweepDecorator::adjust_pointers() {
 
     while (q < end) {
       // point all the oops to the new location
-      size_t size = oop(q)->adjust_pointers();
+      size_t size = MarkSweep::adjust_pointers(oop(q));
       q += size;
     }
 
@@ -324,7 +324,7 @@ void PSMarkSweepDecorator::adjust_pointers() {
     if (oop(q)->is_gc_marked()) {
       // q is alive
       // point all the oops to the new location
-      size_t size = oop(q)->adjust_pointers();
+      size_t size = MarkSweep::adjust_pointers(oop(q));
       debug_only(prev_q = q);
       q += size;
     } else {

@@ -399,7 +399,7 @@ final class DateTimeParseContext {
      */
     void addChronoChangedListener(Consumer<Chronology> listener) {
         if (chronoListeners == null) {
-            chronoListeners = new ArrayList<Consumer<Chronology>>();
+            chronoListeners = new ArrayList<>();
         }
         chronoListeners.add(listener);
     }

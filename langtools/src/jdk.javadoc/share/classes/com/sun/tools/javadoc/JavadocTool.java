@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 
 import com.sun.tools.javac.code.ClassFinder;
+import com.sun.tools.javac.code.Symbol.Completer;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
 import com.sun.tools.javac.comp.Enter;
 import com.sun.tools.javac.tree.JCTree;
@@ -141,7 +142,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
         docenv.docClasses = docClasses;
         docenv.legacyDoclet = legacyDoclet;
 
-        javadocFinder.sourceCompleter = docClasses ? null : sourceCompleter;
+        javadocFinder.sourceCompleter = docClasses ? Completer.NULL_COMPLETER : sourceCompleter;
 
         ListBuffer<String> names = new ListBuffer<>();
         ListBuffer<JCCompilationUnit> classTrees = new ListBuffer<>();

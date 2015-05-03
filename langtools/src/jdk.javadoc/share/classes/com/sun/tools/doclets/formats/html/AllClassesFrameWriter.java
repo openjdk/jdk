@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,8 +119,10 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
         Content ul = new HtmlTree(HtmlTag.UL);
         // Generate the class links and add it to the tdFont tree.
         addAllClasses(ul, wantFrames);
-        Content div = HtmlTree.DIV(HtmlStyle.indexContainer, ul);
-        body.addContent(div);
+        HtmlTree htmlTree = (configuration.allowTag(HtmlTag.MAIN))
+                ? HtmlTree.MAIN(HtmlStyle.indexContainer, ul)
+                : HtmlTree.DIV(HtmlStyle.indexContainer, ul);
+        body.addContent(htmlTree);
         printHtmlDocument(null, false, body);
     }
 

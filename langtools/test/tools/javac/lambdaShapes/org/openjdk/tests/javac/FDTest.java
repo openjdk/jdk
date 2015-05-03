@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,9 +108,10 @@ public class FDTest {
     public static List<Pair<TestKind, Hierarchy>> generateCases() {
         ArrayList<Pair<TestKind,Hierarchy>> list = new ArrayList<>();
         HierarchyGenerator hg = new HierarchyGenerator();
+        int i = 0;
         for (TestKind tk : TestKind.values()) {
             for (Hierarchy hs : tk.getHierarchy(hg)) {
-                list.add(new Pair<>(tk, hs));
+                list.add((i++ % 2) == 0 ? new Pair<>(tk, hs) {} : new Pair<>(tk, hs));
             }
         }
         return list;

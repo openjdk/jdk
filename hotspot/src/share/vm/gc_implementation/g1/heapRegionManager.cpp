@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,6 +145,24 @@ void HeapRegionManager::make_regions_available(uint start, uint num_regions) {
   }
 }
 
+MemoryUsage HeapRegionManager::get_auxiliary_data_memory_usage() const {
+  size_t used_sz =
+    _prev_bitmap_mapper->committed_size() +
+    _next_bitmap_mapper->committed_size() +
+    _bot_mapper->committed_size() +
+    _cardtable_mapper->committed_size() +
+    _card_counts_mapper->committed_size();
+
+  size_t committed_sz =
+    _prev_bitmap_mapper->reserved_size() +
+    _next_bitmap_mapper->reserved_size() +
+    _bot_mapper->reserved_size() +
+    _cardtable_mapper->reserved_size() +
+    _card_counts_mapper->reserved_size();
+
+  return MemoryUsage(0, used_sz, committed_sz, committed_sz);
+}
+
 uint HeapRegionManager::expand_by(uint num_regions) {
   return expand_at(0, num_regions);
 }
@@ -270,7 +288,7 @@ void HeapRegionManager::par_iterate(HeapRegionClosure* blk, uint worker_id, Heap
   const uint n_regions = hrclaimer->n_regions();
   for (uint count = 0; count < n_regions; count++) {
     const uint index = (start_index + count) % n_regions;
-    assert(0 <= index && index < n_regions, "sanity");
+    assert(index < n_regions, "sanity");
     // Skip over unavailable regions
     if (!is_available(index)) {
       continue;

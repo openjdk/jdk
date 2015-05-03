@@ -38,6 +38,11 @@ LIBMANAGEMENT_CFLAGS := -I$(JDK_TOPDIR)/src/java.management/share/native/include
     $(LIBJAVA_HEADER_FLAGS) \
     #
 
+# In (at least) VS2013 and later, -DPSAPI_VERSION=1 is needed to generate
+# a binary that is compatible with windows versions older than 7/2008R2.
+# See MSDN documentation for GetProcessMemoryInfo for more information.
+BUILD_LIBMANAGEMENT_CFLAGS += -DPSAPI_VERSION=1
+
 LIBMANAGEMENT_OPTIMIZATION := HIGH
 ifneq ($(findstring $(OPENJDK_TARGET_OS), solaris linux), )
   ifeq ($(ENABLE_DEBUG_SYMBOLS), true)
@@ -49,7 +54,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBMANAGEMENT, \
     LIBRARY := management, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBMANAGEMENT_SRC), \
-    LANG := C, \
     OPTIMIZATION := $(LIBMANAGEMENT_OPTIMIZATION), \
     CFLAGS := $(CFLAGS_JDKLIB) $(CFLAGS_WARNINGS_ARE_ERRORS) $(LIBMANAGEMENT_CFLAGS), \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libmanagement/mapfile-vers, \

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8004102
+ * @bug 8004102 8078024
  * @summary Add support for generic functional descriptors
  * @compile/fail/ref=MethodReference58.out -XDrawDiagnostics MethodReference58.java
  */

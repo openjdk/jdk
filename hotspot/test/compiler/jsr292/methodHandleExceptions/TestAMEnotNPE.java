@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import p.Dok;
  * @test @bug 8025260 8016839
  * @summary Ensure that AbstractMethodError and IllegalAccessError are thrown appropriately, not NullPointerException
  *
+ * @modules java.base/jdk.internal.org.objectweb.asm
  * @compile -XDignore.symbol.file TestAMEnotNPE.java ByteClassLoader.java p/C.java p/Dok.java p/E.java p/F.java p/I.java p/Tdirect.java p/Treflect.java
  *
  * @run main/othervm TestAMEnotNPE

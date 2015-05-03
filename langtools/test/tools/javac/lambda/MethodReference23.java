@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8003280
+ * @bug 8003280 8075184
  * @summary Add lambda tests
  *  check that pair of bound/non-bound constructor references is flagged as ambiguous
  * @author  Maurizio Cimadamore

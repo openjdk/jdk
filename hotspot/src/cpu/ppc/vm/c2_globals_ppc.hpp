@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -49,7 +49,7 @@ define_pd_global(intx, FreqInlineSize,               175);
 define_pd_global(intx, MinJumpTableSize,             10);
 define_pd_global(intx, INTPRESSURE,                  25);
 define_pd_global(intx, InteriorEntryAlignment,       16);
-define_pd_global(intx, NewSizeThreadIncrease,        ScaleForWordSize(4*K));
+define_pd_global(size_t, NewSizeThreadIncrease,      ScaleForWordSize(4*K));
 define_pd_global(intx, RegisterCostAreaRatio,        16000);
 define_pd_global(bool, UseTLAB,                      true);
 define_pd_global(bool, ResizeTLAB,                   true);
@@ -85,14 +85,14 @@ define_pd_global(intx, NonNMethodCodeHeapSize,       5*M  );
 define_pd_global(intx, CodeCacheExpansionSize,       64*K);
 
 // Ergonomics related flags
-define_pd_global(uint64_t,MaxRAM,                    4ULL*G);
+define_pd_global(uint64_t, MaxRAM,                   4ULL*G);
 define_pd_global(uintx, CodeCacheMinBlockLength,     4);
 define_pd_global(uintx, CodeCacheMinimumUseSpace,    400*K);
 
 define_pd_global(bool,  TrapBasedRangeChecks,        true);
 
 // Heap related flags
-define_pd_global(uintx,MetaspaceSize,                ScaleForWordSize(16*M));
+define_pd_global(size_t, MetaspaceSize,              ScaleForWordSize(16*M));
 
 // Ergonomics related flags
 define_pd_global(bool, NeverActAsServerClassMachine, false);

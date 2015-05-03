@@ -42,10 +42,10 @@ import javax.management.openmbean.CompositeData;
  * be set dynamically via a management interface after
  * the VM was started.
  *
- * A <tt>VMOption</tt> contains the value of a VM option
- * and the origin of that value at the time this <tt>VMOption</tt>
+ * A {@code VMOption} contains the value of a VM option
+ * and the origin of that value at the time this {@code VMOption}
  * object was constructed.  The value of the VM option
- * may be changed after the <tt>VMOption</tt> object was constructed,
+ * may be changed after the {@code VMOption} object was constructed,
  *
  * @see <a href="{@docRoot}/../../../../technotes/guides/vm/index.html">
  *         Java Virtual Machine</a>
@@ -108,15 +108,15 @@ public class VMOption {
     }
 
     /**
-     * Constructs a <tt>VMOption</tt>.
+     * Constructs a {@code VMOption}.
      *
      * @param name Name of a VM option.
      * @param value Value of a VM option.
-     * @param writeable <tt>true</tt> if a VM option can be set dynamically,
-     *                  or <tt>false</tt> otherwise.
+     * @param writeable {@code true} if a VM option can be set dynamically,
+     *                  or {@code false} otherwise.
      * @param origin where the value of a VM option came from.
      *
-     * @throws NullPointerException if the name or value is <tt>null</tt>
+     * @throws NullPointerException if the name or value is {@code null}
      */
     public VMOption(String name, String value, boolean writeable, Origin origin) {
         this.name = name;
@@ -126,7 +126,7 @@ public class VMOption {
     }
 
     /**
-     * Constructs a <tt>VMOption</tt> object from a
+     * Constructs a {@code VMOption} object from a
      * {@link CompositeData CompositeData}.
      */
     private VMOption(CompositeData cd) {
@@ -150,10 +150,10 @@ public class VMOption {
 
     /**
      * Returns the value of this VM option at the time when
-     * this <tt>VMOption</tt> was created. The value could have been changed.
+     * this {@code VMOption} was created. The value could have been changed.
      *
      * @return the value of the VM option at the time when
-     *         this <tt>VMOption</tt> was created.
+     *         this {@code VMOption} was created.
      */
     public String getValue() {
         return value;
@@ -174,7 +174,7 @@ public class VMOption {
      * it can be set by the {@link HotSpotDiagnosticMXBean#setVMOption
      * HotSpotDiagnosticMXBean.setVMOption} method.
      *
-     * @return <tt>true</tt> if this VM option is writeable; <tt>false</tt>
+     * @return {@code true} if this VM option is writeable; {@code false}
      * otherwise.
      */
     public boolean isWriteable() {
@@ -189,10 +189,10 @@ public class VMOption {
     }
 
     /**
-     * Returns a <tt>VMOption</tt> object represented by the
-     * given <tt>CompositeData</tt>. The given <tt>CompositeData</tt>
+     * Returns a {@code VMOption} object represented by the
+     * given {@code CompositeData}. The given {@code CompositeData}
      * must contain the following attributes:
-     * <p>
+     *
      * <blockquote>
      * <table border>
      * <tr>
@@ -201,32 +201,32 @@ public class VMOption {
      * </tr>
      * <tr>
      *   <td>name</td>
-     *   <td><tt>java.lang.String</tt></td>
+     *   <td>{@code java.lang.String}</td>
      * </tr>
      * <tr>
      *   <td>value</td>
-     *   <td><tt>java.lang.String</tt></td>
+     *   <td>{@code java.lang.String}</td>
      * </tr>
      * <tr>
      *   <td>origin</td>
-     *   <td><tt>java.lang.String</tt></td>
+     *   <td>{@code java.lang.String}</td>
      * </tr>
      * <tr>
      *   <td>writeable</td>
-     *   <td><tt>java.lang.Boolean</tt></td>
+     *   <td>{@code java.lang.Boolean}</td>
      * </tr>
      * </table>
      * </blockquote>
      *
-     * @param cd <tt>CompositeData</tt> representing a <tt>VMOption</tt>
+     * @param cd {@code CompositeData} representing a {@code VMOption}
      *
-     * @throws IllegalArgumentException if <tt>cd</tt> does not
-     *   represent a <tt>VMOption</tt> with the attributes described
+     * @throws IllegalArgumentException if {@code cd} does not
+     *   represent a {@code VMOption} with the attributes described
      *   above.
      *
-     * @return a <tt>VMOption</tt> object represented by <tt>cd</tt>
-     *         if <tt>cd</tt> is not <tt>null</tt>;
-     *         <tt>null</tt> otherwise.
+     * @return a {@code VMOption} object represented by {@code cd}
+     *         if {@code cd} is not {@code null};
+     *         {@code null} otherwise.
      */
     public static VMOption from(CompositeData cd) {
         if (cd == null) {

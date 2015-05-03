@@ -30,6 +30,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.WindowEvent;
 
 import java.util.ArrayList;
+
+import sun.misc.ManagedLocalsThread;
 import sun.util.logging.PlatformLogger;
 
 import sun.awt.dnd.SunDragSourceContextPeer;
@@ -53,7 +55,7 @@ import sun.awt.dnd.SunDragSourceContextPeer;
  *
  * @since 1.1
  */
-class EventDispatchThread extends Thread {
+class EventDispatchThread extends ManagedLocalsThread {
 
     private static final PlatformLogger eventLog = PlatformLogger.getLogger("java.awt.event.EventDispatchThread");
 
@@ -65,7 +67,7 @@ class EventDispatchThread extends Thread {
     private ArrayList<EventFilter> eventFilters = new ArrayList<EventFilter>();
 
     EventDispatchThread(ThreadGroup group, String name, EventQueue queue) {
-        super(group, name);
+        super(group, null, name);
         setEventQueue(queue);
     }
 

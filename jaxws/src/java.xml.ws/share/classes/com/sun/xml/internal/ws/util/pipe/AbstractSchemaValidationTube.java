@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,7 @@ public abstract class AbstractSchemaValidationTube extends AbstractFilterTubeImp
         super(next);
         this.binding = binding;
         feature = binding.getFeature(SchemaValidationFeature.class);
-        sf = allowExternalAccess(SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI), "file", false);
+        sf = allowExternalAccess(SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI), "all", false);
     }
 
     protected AbstractSchemaValidationTube(AbstractSchemaValidationTube that, TubeCloner cloner) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,6 @@
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/virtualspace.hpp"
 #include "runtime/vmThread.hpp"
-
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 void CardTableModRefBS::non_clean_card_iterate_parallel_work(Space* sp, MemRegion mr,
                                                              OopsInGenClosure* cl,
@@ -153,8 +151,7 @@ process_stride(Space* sp,
     // result of the dirty card iteration below.
     OrderAccess::storestore();
 
-    // We do not call the non_clean_card_iterate_serial() version because
-    // we want to clear the cards: clear_cl here does the work of finding
+    // We want to clear the cards: clear_cl here does the work of finding
     // contiguous dirty ranges of cards to process and clear.
     clear_cl.do_MemRegion(chunk_mr);
 
@@ -195,8 +192,9 @@ process_chunk_boundaries(Space* sp,
   // our closures depend on this property and do not protect against
   // double scans.
 
-  uintptr_t cur_chunk_index = addr_to_chunk_index(chunk_mr.start());
-  cur_chunk_index           = cur_chunk_index - lowest_non_clean_base_chunk_index;
+  uintptr_t start_chunk_index = addr_to_chunk_index(chunk_mr.start());
+  assert(start_chunk_index >= lowest_non_clean_base_chunk_index, "Bounds error.");
+  uintptr_t cur_chunk_index   = start_chunk_index - lowest_non_clean_base_chunk_index;
 
   NOISY(tty->print_cr("===========================================================================");)
   NOISY(tty->print_cr(" process_chunk_boundary: Called with [" PTR_FORMAT "," PTR_FORMAT ")",
@@ -242,8 +240,7 @@ process_chunk_boundaries(Space* sp,
     if (first_dirty_card != NULL) {
       NOISY(tty->print_cr(" LNC: Found a dirty card at " PTR_FORMAT " in current chunk",
                     first_dirty_card);)
-      assert(0 <= cur_chunk_index && cur_chunk_index < lowest_non_clean_chunk_size,
-             "Bounds error.");
+      assert(cur_chunk_index < lowest_non_clean_chunk_size, "Bounds error.");
       assert(lowest_non_clean[cur_chunk_index] == NULL,
              "Write exactly once : value should be stable hereafter for this round");
       lowest_non_clean[cur_chunk_index] = first_dirty_card;
@@ -376,13 +373,14 @@ process_chunk_boundaries(Space* sp,
                          " does not exceed used.end() = " PTR_FORMAT ","
                          " yet last_chunk_index_to_check " INTPTR_FORMAT
                          " exceeds last_chunk_index " INTPTR_FORMAT,
-                         last_block, last_block + last_block_size,
-                         used.end(),
+                         p2i(last_block), p2i(last_block + last_block_size),
+                         p2i(used.end()),
                          last_chunk_index_to_check, last_chunk_index));
           assert(sp->used_region().end() > used.end(),
                  err_msg("Expansion did not happen: "
                          "[" PTR_FORMAT "," PTR_FORMAT ") -> [" PTR_FORMAT "," PTR_FORMAT ")",
-                         sp->used_region().start(), sp->used_region().end(), used.start(), used.end()));
+                         p2i(sp->used_region().start()), p2i(sp->used_region().end()),
+                         p2i(used.start()), p2i(used.end())));
           NOISY(tty->print_cr(" process_chunk_boundary: heap expanded; explicitly bounding last_chunk");)
           last_chunk_index_to_check = last_chunk_index;
         }

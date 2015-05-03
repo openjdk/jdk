@@ -489,7 +489,7 @@ public abstract class Preferences {
      *       <tt>MAX_VALUE_LENGTH</tt>.
      * @throws IllegalStateException if this node (or an ancestor) has been
      *         removed with the {@link #removeNode()} method.
-     * @throws IllegalArgumentException if either the key or the value contain
+     * @throws IllegalArgumentException if either key or value contain
      *         the null control character, code point U+0000.
      */
     public abstract void put(String key, String value);
@@ -514,6 +514,8 @@ public abstract class Preferences {
      *         removed with the {@link #removeNode()} method.
      * @throws NullPointerException if <tt>key</tt> is <tt>null</tt>.  (A
      *         <tt>null</tt> value for <tt>def</tt> <i>is</i> permitted.)
+     * @throws IllegalArgumentException if key contains the null control
+     *         character, code point U+0000.
      */
     public abstract String get(String key, String def);
 
@@ -530,6 +532,8 @@ public abstract class Preferences {
      * @throws NullPointerException if <tt>key</tt> is <tt>null</tt>.
      * @throws IllegalStateException if this node (or an ancestor) has been
      *         removed with the {@link #removeNode()} method.
+     * @throws IllegalArgumentException if key contains the null control
+     *         character, code point U+0000.
      */
     public abstract void remove(String key);
 
@@ -566,6 +570,8 @@ public abstract class Preferences {
      *         <tt>MAX_KEY_LENGTH</tt>.
      * @throws IllegalStateException if this node (or an ancestor) has been
      *         removed with the {@link #removeNode()} method.
+     * @throws IllegalArgumentException if key contains
+     *         the null control character, code point U+0000.
      * @see #getInt(String,int)
      */
     public abstract void putInt(String key, int value);
@@ -597,6 +603,8 @@ public abstract class Preferences {
      * @throws IllegalStateException if this node (or an ancestor) has been
      *         removed with the {@link #removeNode()} method.
      * @throws NullPointerException if <tt>key</tt> is <tt>null</tt>.
+     * @throws IllegalArgumentException if key contains the null control
+     *         character, code point U+0000.
      * @see #putInt(String,int)
      * @see #get(String,String)
      */
@@ -616,6 +624,8 @@ public abstract class Preferences {
      *         <tt>MAX_KEY_LENGTH</tt>.
      * @throws IllegalStateException if this node (or an ancestor) has been
      *         removed with the {@link #removeNode()} method.
+     * @throws IllegalArgumentException if key contains
+     *         the null control character, code point U+0000.
      * @see #getLong(String,long)
      */
     public abstract void putLong(String key, long value);
@@ -647,6 +657,8 @@ public abstract class Preferences {
      * @throws IllegalStateException if this node (or an ancestor) has been
      *         removed with the {@link #removeNode()} method.
      * @throws NullPointerException if <tt>key</tt> is <tt>null</tt>.
+     * @throws IllegalArgumentException if key contains the null control
+     *         character, code point U+0000.
      * @see #putLong(String,long)
      * @see #get(String,String)
      */
@@ -666,6 +678,8 @@ public abstract class Preferences {
      *         <tt>MAX_KEY_LENGTH</tt>.
      * @throws IllegalStateException if this node (or an ancestor) has been
      *         removed with the {@link #removeNode()} method.
+     * @throws IllegalArgumentException if key contains
+     *         the null control character, code point U+0000.
      * @see #getBoolean(String,boolean)
      * @see #get(String,String)
      */
@@ -702,6 +716,8 @@ public abstract class Preferences {
      * @throws IllegalStateException if this node (or an ancestor) has been
      *         removed with the {@link #removeNode()} method.
      * @throws NullPointerException if <tt>key</tt> is <tt>null</tt>.
+     * @throws IllegalArgumentException if key contains the null control
+     *         character, code point U+0000.
      * @see #get(String,String)
      * @see #putBoolean(String,boolean)
      */
@@ -721,6 +737,8 @@ public abstract class Preferences {
      *         <tt>MAX_KEY_LENGTH</tt>.
      * @throws IllegalStateException if this node (or an ancestor) has been
      *         removed with the {@link #removeNode()} method.
+     * @throws IllegalArgumentException if key contains
+     *         the null control character, code point U+0000.
      * @see #getFloat(String,float)
      */
     public abstract void putFloat(String key, float value);
@@ -751,6 +769,8 @@ public abstract class Preferences {
      * @throws IllegalStateException if this node (or an ancestor) has been
      *         removed with the {@link #removeNode()} method.
      * @throws NullPointerException if <tt>key</tt> is <tt>null</tt>.
+     * @throws IllegalArgumentException if key contains the null control
+     *         character, code point U+0000.
      * @see #putFloat(String,float)
      * @see #get(String,String)
      */
@@ -770,6 +790,8 @@ public abstract class Preferences {
      *         <tt>MAX_KEY_LENGTH</tt>.
      * @throws IllegalStateException if this node (or an ancestor) has been
      *         removed with the {@link #removeNode()} method.
+     * @throws IllegalArgumentException if key contains
+     *         the null control character, code point U+0000.
      * @see #getDouble(String,double)
      */
     public abstract void putDouble(String key, double value);
@@ -800,6 +822,8 @@ public abstract class Preferences {
      * @throws IllegalStateException if this node (or an ancestor) has been
      *         removed with the {@link #removeNode()} method.
      * @throws NullPointerException if <tt>key</tt> is <tt>null</tt>.
+     * @throws IllegalArgumentException if key contains the null control
+     *         character, code point U+0000.
      * @see #putDouble(String,double)
      * @see #get(String,String)
      */
@@ -825,6 +849,8 @@ public abstract class Preferences {
      *         or if value.length exceeds MAX_VALUE_LENGTH*3/4.
      * @throws IllegalStateException if this node (or an ancestor) has been
      *         removed with the {@link #removeNode()} method.
+     * @throws IllegalArgumentException if key contains
+     *         the null control character, code point U+0000.
      * @see #getByteArray(String,byte[])
      * @see #get(String,String)
      */
@@ -864,6 +890,8 @@ public abstract class Preferences {
      *         removed with the {@link #removeNode()} method.
      * @throws NullPointerException if <tt>key</tt> is <tt>null</tt>.  (A
      *         <tt>null</tt> value for <tt>def</tt> <i>is</i> permitted.)
+     * @throws IllegalArgumentException if key contains the null control
+     *         character, code point U+0000.
      * @see #get(String,String)
      * @see #putByteArray(String,byte[])
      */

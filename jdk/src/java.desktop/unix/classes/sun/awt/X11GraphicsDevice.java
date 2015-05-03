@@ -43,6 +43,7 @@ import sun.java2d.xr.XRGraphicsConfig;
 import sun.java2d.loops.SurfaceType;
 
 import sun.awt.util.ThreadGroupUtils;
+import sun.misc.InnocuousThread;
 
 /**
  * This is an implementation of a GraphicsDevice object for a single
@@ -428,7 +429,6 @@ public class X11GraphicsDevice
             // hook will have no effect)
             shutdownHookRegistered = true;
             PrivilegedAction<Void> a = () -> {
-                ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
                 Runnable r = () -> {
                     Window old = getFullScreenWindow();
                     if (old != null) {
@@ -436,7 +436,13 @@ public class X11GraphicsDevice
                         setDisplayMode(origDisplayMode);
                     }
                 };
-                Thread t = new Thread(rootTG, r,"Display-Change-Shutdown-Thread-"+screen);
+                String name = "Display-Change-Shutdown-Thread-" + screen;
+                Thread t;
+                if (System.getSecurityManager() == null) {
+                    t = new Thread(ThreadGroupUtils.getRootThreadGroup(), r, name);
+                } else {
+                    t = new InnocuousThread(r, name);
+                }
                 t.setContextClassLoader(null);
                 Runtime.getRuntime().addShutdownHook(t);
                 return null;

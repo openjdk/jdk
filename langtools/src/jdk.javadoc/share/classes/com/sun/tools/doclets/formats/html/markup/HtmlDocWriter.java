@@ -307,11 +307,13 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      *
      * @param title Title of this HTML document
      * @param configuration the configuration object
-     * @param frame the frame content tree to be added to the HTML document
+     * @param body the body content tree to be added to the HTML document
      */
     public void printFramesDocument(String title, ConfigurationImpl configuration,
             HtmlTree body) throws IOException {
-        Content htmlDocType = DocType.TRANSITIONAL;
+        Content htmlDocType = configuration.isOutputHtml5()
+                ? DocType.HTML5
+                : DocType.TRANSITIONAL;
         Content htmlComment = new Comment(configuration.getText("doclet.New_Page"));
         Content head = new HtmlTree(HtmlTag.HEAD);
         head.addContent(getGeneratedBy(!configuration.notimestamp));

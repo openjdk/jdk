@@ -68,7 +68,7 @@ public class WindowsDesktopManager extends DefaultDesktopManager
             if (currentFrame != null && f != currentFrame) {
                 // If the current frame is maximized, transfer that
                 // attribute to the frame being activated.
-                if (currentFrame.isMaximum() &&
+                if (!currentFrame.isClosed() && currentFrame.isMaximum() &&
                     (f.getClientProperty("JInternalFrame.frameType") !=
                     "optionDialog") ) {
                     //Special case.  If key binding was used to select next

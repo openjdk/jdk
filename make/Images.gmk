@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ $(eval $(call IncludeCustomExtension, , Images-pre.gmk))
 ############################################################################
 
 MAIN_MODULES += java.se java.smartcardio jdk.httpserver jdk.sctp \
-               jdk.security.auth jdk.security.jgss jdk.pack200
+               jdk.security.auth jdk.security.jgss jdk.pack200 jdk.xml.dom
 
 # providers
 PROVIDER_MODULES += jdk.charsets jdk.crypto.ec jdk.crypto.pkcs11 jdk.jvmstat jdk.localedata \
@@ -55,6 +55,10 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS), solaris)
   PROVIDER_MODULES += jdk.crypto.ucrypto
+endif
+
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  MAIN_MODULES += jdk.accessibility
 endif
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)

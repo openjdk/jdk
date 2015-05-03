@@ -34,7 +34,7 @@ import java.io.IOException;
  * data they should operate on.  JavaBeans that don't implement
  * this interface may be used as well.  Such commands may obtain
  * the data using the Externalizable interface, or using an
- * application-specific method.<p>
+ * application-specific method.
  *
  * @since 1.6
  */
@@ -44,7 +44,7 @@ public interface CommandObject {
      * Initialize the Command with the verb it is requested to handle
      * and the DataHandler that describes the data it will
      * operate on. <b>NOTE:</b> it is acceptable for the caller
-     * to pass <i>null</i> as the value for <code>DataHandler</code>.
+     * to pass <i>null</i> as the value for {@code DataHandler}.
      *
      * @param verb The Command Verb this object refers to.
      * @param dh The DataHandler.

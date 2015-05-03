@@ -25,6 +25,7 @@
  * @test
  * @bug 7088989 8014374
  * @summary Ensure the AES ciphers of OracleUcrypto provider works correctly
+ * @key randomness
  */
 
 import java.io.*;

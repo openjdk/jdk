@@ -28,15 +28,15 @@ package com.sun.security.auth;
 import java.security.Principal;
 
 /**
- * <p> This class implements the <code>Principal</code> interface
+ * This class implements the {@code Principal} interface
  * and represents a Solaris user.
  *
- * <p> Principals such as this <code>SolarisPrincipal</code>
- * may be associated with a particular <code>Subject</code>
- * to augment that <code>Subject</code> with an additional
- * identity.  Refer to the <code>Subject</code> class for more information
+ * <p> Principals such as this {@code SolarisPrincipal}
+ * may be associated with a particular {@code Subject}
+ * to augment that {@code Subject} with an additional
+ * identity.  Refer to the {@code Subject} class for more information
  * on how to achieve this.  Authorization decisions can then be based upon
- * the Principals associated with a <code>Subject</code>.
+ * the Principals associated with a {@code Subject}.
  *
  * @deprecated As of JDK&nbsp;1.4, replaced by
  *             {@link UnixPrincipal}.
@@ -68,12 +68,10 @@ public class SolarisPrincipal implements Principal, java.io.Serializable {
     /**
      * Create a SolarisPrincipal with a Solaris username.
      *
-     * <p>
-     *
      * @param name the Unix username for this user.
      *
-     * @exception NullPointerException if the <code>name</code>
-     *                  is <code>null</code>.
+     * @exception NullPointerException if the {@code name}
+     *                  is {@code null}.
      */
     public SolarisPrincipal(String name) {
         if (name == null)
@@ -83,40 +81,34 @@ public class SolarisPrincipal implements Principal, java.io.Serializable {
     }
 
     /**
-     * Return the Unix username for this <code>SolarisPrincipal</code>.
+     * Return the Unix username for this {@code SolarisPrincipal}.
      *
-     * <p>
-     *
-     * @return the Unix username for this <code>SolarisPrincipal</code>
+     * @return the Unix username for this {@code SolarisPrincipal}
      */
     public String getName() {
         return name;
     }
 
     /**
-     * Return a string representation of this <code>SolarisPrincipal</code>.
+     * Return a string representation of this {@code SolarisPrincipal}.
      *
-     * <p>
-     *
-     * @return a string representation of this <code>SolarisPrincipal</code>.
+     * @return a string representation of this {@code SolarisPrincipal}.
      */
     public String toString() {
         return(rb.getString("SolarisPrincipal.") + name);
     }
 
     /**
-     * Compares the specified Object with this <code>SolarisPrincipal</code>
+     * Compares the specified Object with this {@code SolarisPrincipal}
      * for equality.  Returns true if the given object is also a
-     * <code>SolarisPrincipal</code> and the two SolarisPrincipals
+     * {@code SolarisPrincipal} and the two SolarisPrincipals
      * have the same username.
      *
-     * <p>
-     *
      * @param o Object to be compared for equality with this
-     *          <code>SolarisPrincipal</code>.
+     *          {@code SolarisPrincipal}.
      *
      * @return true if the specified Object is equal to this
-     *          <code>SolarisPrincipal</code>.
+     *          {@code SolarisPrincipal}.
      */
     public boolean equals(Object o) {
         if (o == null)
@@ -135,11 +127,9 @@ public class SolarisPrincipal implements Principal, java.io.Serializable {
     }
 
     /**
-     * Return a hash code for this <code>SolarisPrincipal</code>.
+     * Return a hash code for this {@code SolarisPrincipal}.
      *
-     * <p>
-     *
-     * @return a hash code for this <code>SolarisPrincipal</code>.
+     * @return a hash code for this {@code SolarisPrincipal}.
      */
     public int hashCode() {
         return name.hashCode();
