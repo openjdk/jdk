@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,10 @@ public class SynthSliderUI extends BasicSliderUI
         return new SynthSliderUI((JSlider)c);
     }
 
+    /**
+     * Constructs a {@code SynthSliderUI}.
+     * @param c a slider
+     */
     protected SynthSliderUI(JSlider c) {
         super(c);
     }
@@ -308,14 +312,14 @@ public class SynthSliderUI extends BasicSliderUI
     public Dimension getPreferredSize(JComponent c)  {
         recalculateIfInsetsChanged();
         Dimension d = new Dimension(contentRect.width, contentRect.height);
+        Insets i = slider.getInsets();
         if (slider.getOrientation() == JSlider.VERTICAL) {
             d.height = 200;
+            d.height += i.top + i.bottom;
         } else {
             d.width = 200;
+            d.width += i.left + i.right;
         }
-        Insets i = slider.getInsets();
-        d.width += i.left + i.right;
-        d.height += i.top + i.bottom;
         return d;
     }
 

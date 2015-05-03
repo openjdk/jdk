@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,13 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
         Content memberTree = writer.getMemberTreeHeader();
         writer.addSummaryHeader(this, classDoc, memberTree);
         return memberTree;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void addMemberTree(Content memberSummaryTree, Content memberTree) {
+        writer.addMemberTree(memberSummaryTree, memberTree);
     }
 
     /**
@@ -140,6 +147,10 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     public Content getEnumConstantsDetails(Content enumConstantsDetailsTree) {
+        if (configuration.allowTag(HtmlTag.SECTION)) {
+            HtmlTree htmlTree = HtmlTree.SECTION(getMemberTree(enumConstantsDetailsTree));
+            return htmlTree;
+        }
         return getMemberTree(enumConstantsDetailsTree);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,22 +66,22 @@ public class Kinds {
         MTH(Category.BASIC, KindName.METHOD, KindSelector.MTH),
         POLY(Category.BASIC, KindSelector.POLY),
         ERR(Category.ERROR, KindSelector.ERR),
-        AMBIGUOUS(Category.OVERLOAD),
-        HIDDEN(Category.OVERLOAD),
-        STATICERR(Category.OVERLOAD),
-        MISSING_ENCL(Category.OVERLOAD),
-        ABSENT_VAR(Category.OVERLOAD, KindName.VAR),
-        WRONG_MTHS(Category.OVERLOAD, KindName.METHOD),
-        WRONG_MTH(Category.OVERLOAD, KindName.METHOD),
-        ABSENT_MTH(Category.OVERLOAD, KindName.METHOD),
-        ABSENT_TYP(Category.OVERLOAD, KindName.CLASS);
+        AMBIGUOUS(Category.RESOLUTION_TARGET),                         // overloaded       target
+        HIDDEN(Category.RESOLUTION_TARGET),                            // not overloaded   non-target
+        STATICERR(Category.RESOLUTION_TARGET),                         // overloaded?      target
+        MISSING_ENCL(Category.RESOLUTION),                             // not overloaded   non-target
+        ABSENT_VAR(Category.RESOLUTION_TARGET, KindName.VAR),          // not overloaded   non-target
+        WRONG_MTHS(Category.RESOLUTION_TARGET, KindName.METHOD),       // overloaded       target
+        WRONG_MTH(Category.RESOLUTION_TARGET, KindName.METHOD),        // not overloaded   target
+        ABSENT_MTH(Category.RESOLUTION_TARGET, KindName.METHOD),       // not overloaded   non-target
+        ABSENT_TYP(Category.RESOLUTION_TARGET, KindName.CLASS);        // not overloaded   non-target
 
         // There are essentially two "levels" to the Kind datatype.
         // The first is a totally-ordered set of categories of
         // solutions.  Within each category, we have more
         // possibilities.
         private enum Category {
-            BASIC, ERROR, OVERLOAD;
+            BASIC, ERROR, RESOLUTION, RESOLUTION_TARGET;
         }
 
         private final KindName kindName;
@@ -127,8 +127,12 @@ public class Kinds {
             return selector.contains(kindSelectors);
         }
 
-        public boolean isOverloadError() {
-            return category == Category.OVERLOAD;
+        public boolean isResolutionError() {
+            return category == Category.RESOLUTION || category == Category.RESOLUTION_TARGET;
+        }
+
+        public boolean isResolutionTargetError() {
+            return category == Category.RESOLUTION_TARGET;
         }
 
         public boolean isValid() {

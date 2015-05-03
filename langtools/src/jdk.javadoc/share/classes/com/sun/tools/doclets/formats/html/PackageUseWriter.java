@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
 
     final PackageDoc pkgdoc;
     final SortedMap<String,Set<ClassDoc>> usingPackageToUsedClasses = new TreeMap<>();
+    protected HtmlTree mainTree = HtmlTree.MAIN();
 
     /**
      * Constructor.
@@ -112,7 +113,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      * Generate the package use list.
      */
     protected void generatePackageUseFile() throws IOException {
-        Content body = getPackageUseHeader();
+        HtmlTree body = getPackageUseHeader();
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.addStyle(HtmlStyle.contentContainer);
         if (usingPackageToUsedClasses.isEmpty()) {
@@ -121,9 +122,20 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         } else {
             addPackageUse(div);
         }
-        body.addContent(div);
-        addNavLinks(false, body);
-        addBottom(body);
+        if (configuration.allowTag(HtmlTag.MAIN)) {
+            mainTree.addContent(div);
+            body.addContent(mainTree);
+        } else {
+            body.addContent(div);
+        }
+        HtmlTree tree = (configuration.allowTag(HtmlTag.FOOTER))
+                ? HtmlTree.FOOTER()
+                : body;
+        addNavLinks(false, tree);
+        addBottom(tree);
+        if (configuration.allowTag(HtmlTag.FOOTER)) {
+            body.addContent(tree);
+        }
         printHtmlDocument(null, true, body);
     }
 
@@ -148,10 +160,12 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      * @param contentTree the content tree to which the package list will be added
      */
     protected void addPackageList(Content contentTree) throws IOException {
-        Content table = HtmlTree.TABLE(HtmlStyle.useSummary, 0, 3, 0, useTableSummary,
-                getTableCaption(configuration.getResource(
+        Content caption = getTableCaption(configuration.getResource(
                 "doclet.ClassUse_Packages.that.use.0",
-                getPackageLink(pkgdoc, utils.getPackageName(pkgdoc)))));
+                getPackageLink(pkgdoc, utils.getPackageName(pkgdoc))));
+        Content table = (configuration.isOutputHtml5())
+                ? HtmlTree.TABLE(HtmlStyle.useSummary, caption)
+                : HtmlTree.TABLE(HtmlStyle.useSummary, useTableSummary, caption);
         table.addContent(getSummaryTableHeader(packageTableHeader, "col"));
         Content tbody = new HtmlTree(HtmlTag.TBODY);
         Iterator<String> it = usingPackageToUsedClasses.keySet().iterator();
@@ -191,11 +205,13 @@ public class PackageUseWriter extends SubWriterHolderWriter {
             }
             String tableSummary = configuration.getText("doclet.Use_Table_Summary",
                                                         configuration.getText("doclet.classes"));
-            Content table = HtmlTree.TABLE(HtmlStyle.useSummary, 0, 3, 0, tableSummary,
-                                           getTableCaption(configuration.getResource(
-                                                   "doclet.ClassUse_Classes.in.0.used.by.1",
-                                                   getPackageLink(pkgdoc, utils.getPackageName(pkgdoc)),
-                                                   getPackageLink(usingPackage, utils.getPackageName(usingPackage)))));
+            Content caption = getTableCaption(configuration.getResource(
+                    "doclet.ClassUse_Classes.in.0.used.by.1",
+                    getPackageLink(pkgdoc, utils.getPackageName(pkgdoc)),
+                    getPackageLink(usingPackage, utils.getPackageName(usingPackage))));
+            Content table = (configuration.isOutputHtml5())
+                    ? HtmlTree.TABLE(HtmlStyle.useSummary, caption)
+                    : HtmlTree.TABLE(HtmlStyle.useSummary, tableSummary, caption);
             table.addContent(getSummaryTableHeader(classTableHeader, "col"));
             Content tbody = new HtmlTree(HtmlTag.TBODY);
             Iterator<ClassDoc> itc =
@@ -259,14 +275,20 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      *
      * @return a content tree representing the package use header
      */
-    protected Content getPackageUseHeader() {
+    protected HtmlTree getPackageUseHeader() {
         String packageText = configuration.getText("doclet.Package");
         String name = pkgdoc.name();
         String title = configuration.getText("doclet.Window_ClassUse_Header",
                 packageText, name);
-        Content bodyTree = getBody(true, getWindowTitle(title));
-        addTop(bodyTree);
-        addNavLinks(true, bodyTree);
+        HtmlTree bodyTree = getBody(true, getWindowTitle(title));
+        HtmlTree htmlTree = (configuration.allowTag(HtmlTag.HEADER))
+                ? HtmlTree.HEADER()
+                : bodyTree;
+        addTop(htmlTree);
+        addNavLinks(true, htmlTree);
+        if (configuration.allowTag(HtmlTag.HEADER)) {
+            bodyTree.addContent(htmlTree);
+        }
         ContentBuilder headContent = new ContentBuilder();
         headContent.addContent(getResource("doclet.ClassUse_Title", packageText));
         headContent.addContent(new HtmlTree(HtmlTag.BR));
@@ -274,7 +296,11 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, true,
                 HtmlStyle.title, headContent);
         Content div = HtmlTree.DIV(HtmlStyle.header, heading);
-        bodyTree.addContent(div);
+        if (configuration.allowTag(HtmlTag.MAIN)) {
+            mainTree.addContent(div);
+        } else {
+            bodyTree.addContent(div);
+        }
         return bodyTree;
     }
 

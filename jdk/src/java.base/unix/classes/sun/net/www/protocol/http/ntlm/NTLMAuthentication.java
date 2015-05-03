@@ -95,7 +95,7 @@ public class NTLMAuthentication extends AuthenticationInfo {
     private void init0() {
 
         hostname = java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<String>() {
+            new java.security.PrivilegedAction<>() {
             public String run() {
                 String localhost;
                 try {

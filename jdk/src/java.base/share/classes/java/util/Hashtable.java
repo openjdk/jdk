@@ -1000,6 +1000,16 @@ public class Hashtable<K,V>
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p>This method will, on a best-effort basis, throw a
+     * {@link java.util.ConcurrentModificationException} if the mapping
+     * function modified this map during computation.
+     *
+     * @throws ConcurrentModificationException if it is detected that the
+     * mapping function modified this map
+     */
     @Override
     public synchronized V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
         Objects.requireNonNull(mappingFunction);
@@ -1016,7 +1026,9 @@ public class Hashtable<K,V>
             }
         }
 
+        int mc = modCount;
         V newValue = mappingFunction.apply(key);
+        if (mc != modCount) { throw new ConcurrentModificationException(); }
         if (newValue != null) {
             addEntry(hash, key, newValue, index);
         }
@@ -1024,6 +1036,16 @@ public class Hashtable<K,V>
         return newValue;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p>This method will, on a best-effort basis, throw a
+     * {@link java.util.ConcurrentModificationException} if the remapping
+     * function modified this map during computation.
+     *
+     * @throws ConcurrentModificationException if it is detected that the
+     * remapping function modified this map
+     */
     @Override
     public synchronized V computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         Objects.requireNonNull(remappingFunction);
@@ -1035,14 +1057,18 @@ public class Hashtable<K,V>
         Entry<K,V> e = (Entry<K,V>)tab[index];
         for (Entry<K,V> prev = null; e != null; prev = e, e = e.next) {
             if (e.hash == hash && e.key.equals(key)) {
+                int mc = modCount;
                 V newValue = remappingFunction.apply(key, e.value);
+                if (mc != modCount) {
+                    throw new ConcurrentModificationException();
+                }
                 if (newValue == null) {
                     if (prev != null) {
                         prev.next = e.next;
                     } else {
                         tab[index] = e.next;
                     }
-                    modCount++;
+                    modCount = mc + 1;
                     count--;
                 } else {
                     e.value = newValue;
@@ -1052,7 +1078,16 @@ public class Hashtable<K,V>
         }
         return null;
     }
-
+    /**
+     * {@inheritDoc}
+     *
+     * <p>This method will, on a best-effort basis, throw a
+     * {@link java.util.ConcurrentModificationException} if the remapping
+     * function modified this map during computation.
+     *
+     * @throws ConcurrentModificationException if it is detected that the
+     * remapping function modified this map
+     */
     @Override
     public synchronized V compute(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         Objects.requireNonNull(remappingFunction);
@@ -1064,14 +1099,18 @@ public class Hashtable<K,V>
         Entry<K,V> e = (Entry<K,V>)tab[index];
         for (Entry<K,V> prev = null; e != null; prev = e, e = e.next) {
             if (e.hash == hash && Objects.equals(e.key, key)) {
+                int mc = modCount;
                 V newValue = remappingFunction.apply(key, e.value);
+                if (mc != modCount) {
+                    throw new ConcurrentModificationException();
+                }
                 if (newValue == null) {
                     if (prev != null) {
                         prev.next = e.next;
                     } else {
                         tab[index] = e.next;
                     }
-                    modCount++;
+                    modCount = mc + 1;
                     count--;
                 } else {
                     e.value = newValue;
@@ -1080,7 +1119,9 @@ public class Hashtable<K,V>
             }
         }
 
+        int mc = modCount;
         V newValue = remappingFunction.apply(key, null);
+        if (mc != modCount) { throw new ConcurrentModificationException(); }
         if (newValue != null) {
             addEntry(hash, key, newValue, index);
         }
@@ -1088,6 +1129,16 @@ public class Hashtable<K,V>
         return newValue;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p>This method will, on a best-effort basis, throw a
+     * {@link java.util.ConcurrentModificationException} if the remapping
+     * function modified this map during computation.
+     *
+     * @throws ConcurrentModificationException if it is detected that the
+     * remapping function modified this map
+     */
     @Override
     public synchronized V merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
         Objects.requireNonNull(remappingFunction);
@@ -1099,14 +1150,18 @@ public class Hashtable<K,V>
         Entry<K,V> e = (Entry<K,V>)tab[index];
         for (Entry<K,V> prev = null; e != null; prev = e, e = e.next) {
             if (e.hash == hash && e.key.equals(key)) {
+                int mc = modCount;
                 V newValue = remappingFunction.apply(e.value, value);
+                if (mc != modCount) {
+                    throw new ConcurrentModificationException();
+                }
                 if (newValue == null) {
                     if (prev != null) {
                         prev.next = e.next;
                     } else {
                         tab[index] = e.next;
                     }
-                    modCount++;
+                    modCount = mc + 1;
                     count--;
                 } else {
                     e.value = newValue;

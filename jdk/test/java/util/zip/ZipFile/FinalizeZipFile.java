@@ -24,6 +24,7 @@
 /* @test
  * @bug 7007609 7009618
  * @summary Check that ZipFile objects are always collected
+ * @key randomness
  */
 
 import java.io.*;

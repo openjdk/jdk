@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8066974
+ * @bug 8066974 8062373
  * @summary Compiler doesn't infer method's generic type information in lambda body
  * @compile/fail/ref=T8066974.out -XDrawDiagnostics T8066974.java
  */
@@ -34,11 +34,13 @@ class T8066974 {
         map(p->p.m(rt));
         map(mapper(rt));
         map(new ThrowingMapper<>(rt));
+        map(new ThrowingMapper<>(rt) {});
     }
 
     void testChecked(CheckedThrowing ct) {
         map(p->p.m(ct));
         map(mapper(ct));
         map(new ThrowingMapper<>(ct));
+        map(new ThrowingMapper<>(ct) {});
     }
 }

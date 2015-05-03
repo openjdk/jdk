@@ -183,7 +183,6 @@ class ByteCodeMachine extends StackMachine {
                 case OPCode.NULL_CHECK_START:           opNullCheckStart();        continue;
                 case OPCode.NULL_CHECK_END:             opNullCheckEnd();          continue;
                 case OPCode.NULL_CHECK_END_MEMST:       opNullCheckEndMemST();     continue;
-                case OPCode.NULL_CHECK_END_MEMST_PUSH:  opNullCheckEndMemSTPush(); continue;
 
                 case OPCode.JUMP:                       opJump();                  continue;
                 case OPCode.PUSH:                       opPush();                  continue;
@@ -1022,29 +1021,6 @@ class ByteCodeMachine extends StackMachine {
 
             if (isNull == -1) {opFail(); return;}
             nullCheckFound();
-        }
-    }
-
-    // USE_SUBEXP_CALL
-    private void opNullCheckEndMemSTPush() {
-        final int mem = code[ip++];   /* mem: null check id */
-
-        int isNull;
-        if (Config.USE_MONOMANIAC_CHECK_CAPTURES_IN_ENDLESS_REPEAT) {
-            isNull = nullCheckMemStRec(mem, s);
-        } else {
-            isNull = nullCheckRec(mem, s);
-        }
-
-        if (isNull != 0) {
-            if (Config.DEBUG_MATCH) {
-                Config.log.println("NULL_CHECK_END_MEMST_PUSH: skip  id:" + mem + ", s:" + s);
-            }
-
-            if (isNull == -1) {opFail(); return;}
-            nullCheckFound();
-        } else {
-            pushNullCheckEnd(mem);
         }
     }
 

@@ -46,6 +46,7 @@ import java.util.logging.Logger;
  *          caused by synchronization issues in Logger and LogManager.
  * @run main/othervm TestLogConfigurationDeadLockWithConf
  * @author danielfuchs
+ * @key randomness
  */
 // This test is a best effort to try & detect issues. The test itself will run
 // for 8secs. This is usually sufficient to detect issues.

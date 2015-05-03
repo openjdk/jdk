@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6939620 7020044
+ * @bug 6939620 7020044 8062373
  *
  * @summary  basic test for diamond (generic/non-generic constructors)
  * @author mcimadamore
@@ -48,7 +48,17 @@ public class Pos01<X> {
         Pos01<? extends Integer> p6 = new Pos01<>(1, "");
         Pos01<?> p7 = new Pos01<>(1, "");
         Pos01<? super Integer> p8 = new Pos01<>(1, "");
-    }
+
+        Pos01<Integer> p9 = new Pos01<>(1){};
+        Pos01<? extends Integer> p10 = new Pos01<>(1){};
+        Pos01<?> p11 = new Pos01<>(1){};
+        Pos01<? super Integer> p12 = new Pos01<>(1){};
+
+        Pos01<Integer> p13 = new Pos01<>(1, ""){};
+        Pos01<? extends Integer> p14= new Pos01<>(1, ""){};
+        Pos01<?> p15 = new Pos01<>(1, ""){};
+        Pos01<? super Integer> p16 = new Pos01<>(1, ""){};
+   }
 
     public static void main(String[] args) {
         Pos01<String> p1 = new Pos01<>("");

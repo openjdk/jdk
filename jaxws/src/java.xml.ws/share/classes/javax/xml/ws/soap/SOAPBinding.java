@@ -31,7 +31,7 @@ import javax.xml.ws.Binding;
 import javax.xml.soap.SOAPFactory;
 import javax.xml.soap.MessageFactory;
 
-/** The <code>SOAPBinding</code> interface is an abstraction for
+/** The {@code SOAPBinding} interface is an abstraction for
  *  the SOAP binding.
  *
  *  @since 1.6, JAX-WS 2.0
@@ -63,7 +63,7 @@ public interface SOAPBinding extends Binding {
 
   /** Gets the roles played by the SOAP binding instance.
    *
-   *  @return Set&lt;String> The set of roles played by the binding instance.
+   *  @return {@code Set<String>} The set of roles played by the binding instance.
   **/
   public Set<String> getRoles();
 
@@ -76,9 +76,9 @@ public interface SOAPBinding extends Binding {
   public void setRoles(Set<String> roles);
 
   /**
-   * Returns <code>true</code> if the use of MTOM is enabled.
+   * Returns {@code true} if the use of MTOM is enabled.
    *
-   * @return <code>true</code> if and only if the use of MTOM is enabled.
+   * @return {@code true} if and only if the use of MTOM is enabled.
   **/
 
   public boolean isMTOMEnabled();
@@ -86,7 +86,7 @@ public interface SOAPBinding extends Binding {
   /**
    * Enables or disables use of MTOM.
    *
-   * @param flag   A <code>boolean</code> specifying whether the use of MTOM should
+   * @param flag   A {@code boolean} specifying whether the use of MTOM should
    *               be enabled or disabled.
    * @throws WebServiceException If the specified setting is not supported
    *                  by this binding instance.
@@ -95,14 +95,14 @@ public interface SOAPBinding extends Binding {
   public void setMTOMEnabled(boolean flag);
 
   /**
-   * Gets the SAAJ <code>SOAPFactory</code> instance used by this SOAP binding.
+   * Gets the SAAJ {@code SOAPFactory} instance used by this SOAP binding.
    *
    * @return SOAPFactory instance used by this SOAP binding.
   **/
   public SOAPFactory getSOAPFactory();
 
   /**
-   * Gets the SAAJ <code>MessageFactory</code> instance used by this SOAP binding.
+   * Gets the SAAJ {@code MessageFactory} instance used by this SOAP binding.
    *
    * @return MessageFactory instance used by this SOAP binding.
   **/

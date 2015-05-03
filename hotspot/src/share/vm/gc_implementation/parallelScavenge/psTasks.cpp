@@ -35,11 +35,11 @@
 #include "memory/iterator.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oop.psgc.inline.hpp"
 #include "runtime/fprofiler.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/management.hpp"
+#include "utilities/stack.inline.hpp"
 #include "utilities/taskqueue.hpp"
 
 //

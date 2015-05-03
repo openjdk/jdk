@@ -24,6 +24,7 @@
 /* @test
    @bug 4905777
    @summary PrintStream.println(Object) oversynchronized, can deadlock
+   @key randomness
 */
 
 import java.io.PrintStream;

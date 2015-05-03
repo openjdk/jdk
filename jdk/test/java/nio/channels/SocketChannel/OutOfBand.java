@@ -24,6 +24,7 @@
 /* @test
  * @summary Test socket adapter sendUrgentData method
  * @bug 6963907
+ * @key randomness
  */
 
 import java.net.*;

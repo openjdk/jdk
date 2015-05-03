@@ -145,9 +145,6 @@ final class ArrayCompiler extends Compiler {
             case TargetInfo.IS_EMPTY_MEM:
                 addOpcode(OPCode.NULL_CHECK_END_MEMST);
                 break;
-            case TargetInfo.IS_EMPTY_REC:
-                addOpcode(OPCode.NULL_CHECK_END_MEMST_PUSH);
-                break;
             default:
                 break;
             } // switch

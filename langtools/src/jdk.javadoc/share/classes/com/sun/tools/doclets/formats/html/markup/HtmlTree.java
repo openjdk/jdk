@@ -32,6 +32,7 @@ import java.nio.charset.*;
 
 import com.sun.tools.doclets.internal.toolkit.Content;
 import com.sun.tools.doclets.internal.toolkit.util.*;
+import com.sun.tools.doclets.formats.html.markup.HtmlAttr.Role;
 
 /**
  * Class for generating HTML tree for javadoc output.
@@ -85,6 +86,10 @@ public class HtmlTree extends Content {
 
     public void setTitle(Content body) {
         addAttr(HtmlAttr.TITLE, stripHtml(body));
+    }
+
+    public void setRole(Role role) {
+        addAttr(HtmlAttr.ROLE, role.toString());
     }
 
     /**
@@ -221,27 +226,16 @@ public class HtmlTree extends Content {
     }
 
     /**
-     * Generates an HTML anchor tag with name attribute and content.
+     * Generates an HTML anchor tag with id attribute and content.
      *
-     * @param name name for the anchor tag
+     * @param id id for the anchor tag
      * @param body content for the anchor tag
      * @return an HtmlTree object
      */
-    public static HtmlTree A_NAME(String name, Content body) {
-        HtmlTree htmltree = HtmlTree.A_NAME(name);
-        htmltree.addContent(nullCheck(body));
-        return htmltree;
-    }
-
-    /**
-     * Generates an HTML anchor tag with name attribute.
-     *
-     * @param name name for the anchor tag
-     * @return an HtmlTree object
-     */
-    public static HtmlTree A_NAME(String name) {
+    public static HtmlTree A_ID(String id, Content body) {
         HtmlTree htmltree = new HtmlTree(HtmlTag.A);
-        htmltree.addAttr(HtmlAttr.NAME, nullCheck(name));
+        htmltree.addAttr(HtmlAttr.ID, nullCheck(id));
+        htmltree.addContent(nullCheck(body));
         return htmltree;
     }
 
@@ -326,18 +320,24 @@ public class HtmlTree extends Content {
     }
 
     /**
-     * Generates a IFRAME tag.
+     * Generates a FOOTER tag with role attribute.
      *
-     * @param src the url of the document to be shown in the frame
-     * @param name specifies the name of the frame
-     * @param title the title for the frame
-     * @return an HtmlTree object for the IFRAME tag
+     * @return an HtmlTree object for the FOOTER tag
      */
-    public static HtmlTree IFRAME(String src, String name, String title) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.IFRAME);
-        htmltree.addAttr(HtmlAttr.SRC, nullCheck(src));
-        htmltree.addAttr(HtmlAttr.NAME, nullCheck(name));
-        htmltree.addAttr(HtmlAttr.TITLE, nullCheck(title));
+    public static HtmlTree FOOTER() {
+        HtmlTree htmltree = new HtmlTree(HtmlTag.FOOTER);
+        htmltree.setRole(Role.CONTENTINFO);
+        return htmltree;
+    }
+
+    /**
+     * Generates a HEADER tag with role attribute.
+     *
+     * @return an HtmlTree object for the HEADER tag
+     */
+    public static HtmlTree HEADER() {
+        HtmlTree htmltree = new HtmlTree(HtmlTag.HEADER);
+        htmltree.setRole(Role.BANNER);
         return htmltree;
     }
 
@@ -414,6 +414,22 @@ public class HtmlTree extends Content {
     }
 
     /**
+     * Generates a IFRAME tag.
+     *
+     * @param src the url of the document to be shown in the frame
+     * @param name specifies the name of the frame
+     * @param title the title for the frame
+     * @return an HtmlTree object for the IFRAME tag
+     */
+    public static HtmlTree IFRAME(String src, String name, String title) {
+        HtmlTree htmltree = new HtmlTree(HtmlTag.IFRAME);
+        htmltree.addAttr(HtmlAttr.SRC, nullCheck(src));
+        htmltree.addAttr(HtmlAttr.NAME, nullCheck(name));
+        htmltree.addAttr(HtmlAttr.TITLE, nullCheck(title));
+        return htmltree;
+    }
+
+    /**
      * Generates a LI tag with some content.
      *
      * @param body content for the tag
@@ -456,6 +472,44 @@ public class HtmlTree extends Content {
     }
 
     /**
+     * Generates a MAIN tag with role attribute.
+     *
+     * @return an HtmlTree object for the MAIN tag
+     */
+    public static HtmlTree MAIN() {
+        HtmlTree htmltree = new HtmlTree(HtmlTag.MAIN);
+        htmltree.setRole(Role.MAIN);
+        return htmltree;
+    }
+
+    /**
+     * Generates a MAIN tag with role attribute and some content.
+     *
+     * @param body content of the MAIN tag
+     * @return an HtmlTree object for the MAIN tag
+     */
+    public static HtmlTree MAIN(Content body) {
+        HtmlTree htmltree = new HtmlTree(HtmlTag.MAIN, nullCheck(body));
+        htmltree.setRole(Role.MAIN);
+        return htmltree;
+    }
+
+    /**
+     * Generates a MAIN tag with role attribute, style attribute and some content.
+     *
+     * @param styleClass style of the MAIN tag
+     * @param body content of the MAIN tag
+     * @return an HtmlTree object for the MAIN tag
+     */
+    public static HtmlTree MAIN(HtmlStyle styleClass, Content body) {
+        HtmlTree htmltree = HtmlTree.MAIN(body);
+        if (styleClass != null) {
+            htmltree.addStyle(styleClass);
+        }
+        return htmltree;
+    }
+
+    /**
      * Generates a META tag with the http-equiv, content and charset attributes.
      *
      * @param httpEquiv http equiv attribute for the META tag
@@ -482,6 +536,17 @@ public class HtmlTree extends Content {
         HtmlTree htmltree = new HtmlTree(HtmlTag.META);
         htmltree.addAttr(HtmlAttr.NAME, nullCheck(name));
         htmltree.addAttr(HtmlAttr.CONTENT, nullCheck(content));
+        return htmltree;
+    }
+
+    /**
+     * Generates a NAV tag with the role attribute.
+     *
+     * @return an HtmlTree object for the NAV tag
+     */
+    public static HtmlTree NAV() {
+        HtmlTree htmltree = new HtmlTree(HtmlTag.NAV);
+        htmltree.setRole(Role.NAVIGATION);
         return htmltree;
     }
 
@@ -527,10 +592,43 @@ public class HtmlTree extends Content {
      * @param src the path for the script
      * @return an HtmlTree object for the SCRIPT tag
      */
-    public static HtmlTree SCRIPT(String type, String src) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.SCRIPT);
-        htmltree.addAttr(HtmlAttr.TYPE, nullCheck(type));
+    public static HtmlTree SCRIPT(String src) {
+        HtmlTree htmltree = HtmlTree.SCRIPT();
         htmltree.addAttr(HtmlAttr.SRC, nullCheck(src));
+        return htmltree;
+    }
+
+    /**
+     * Generates a SCRIPT tag with the type attribute.
+     *
+     * @return an HtmlTree object for the SCRIPT tag
+     */
+    public static HtmlTree SCRIPT() {
+        HtmlTree htmltree = new HtmlTree(HtmlTag.SCRIPT);
+        htmltree.addAttr(HtmlAttr.TYPE, "text/javascript");
+        return htmltree;
+    }
+
+    /**
+     * Generates a SECTION tag with role attribute.
+     *
+     * @return an HtmlTree object for the SECTION tag
+     */
+    public static HtmlTree SECTION() {
+        HtmlTree htmltree = new HtmlTree(HtmlTag.SECTION);
+        htmltree.setRole(Role.REGION);
+        return htmltree;
+    }
+
+    /**
+     * Generates a SECTION tag with role attribute and some content.
+     *
+     * @param body content of the section tag
+     * @return an HtmlTree object for the SECTION tag
+     */
+    public static HtmlTree SECTION(Content body) {
+        HtmlTree htmltree = new HtmlTree(HtmlTag.SECTION, nullCheck(body));
+        htmltree.setRole(Role.REGION);
         return htmltree;
     }
 
@@ -587,26 +685,33 @@ public class HtmlTree extends Content {
     }
 
     /**
-     * Generates a Table tag with style class, border, cell padding,
-     * cellspacing and summary attributes and some content.
+     * Generates a Table tag with style class and summary attributes and some content.
      *
      * @param styleClass style of the table
-     * @param border border for the table
-     * @param cellPadding cell padding for the table
-     * @param cellSpacing cell spacing for the table
      * @param summary summary for the table
      * @param body content for the table
      * @return an HtmlTree object for the TABLE tag
      */
-    public static HtmlTree TABLE(HtmlStyle styleClass, int border, int cellPadding,
-            int cellSpacing, String summary, Content body) {
+    public static HtmlTree TABLE(HtmlStyle styleClass, String summary, Content body) {
         HtmlTree htmltree = new HtmlTree(HtmlTag.TABLE, nullCheck(body));
         if (styleClass != null)
             htmltree.addStyle(styleClass);
-        htmltree.addAttr(HtmlAttr.BORDER, Integer.toString(border));
-        htmltree.addAttr(HtmlAttr.CELLPADDING, Integer.toString(cellPadding));
-        htmltree.addAttr(HtmlAttr.CELLSPACING, Integer.toString(cellSpacing));
         htmltree.addAttr(HtmlAttr.SUMMARY, nullCheck(summary));
+        return htmltree;
+    }
+
+    /**
+     * Generates a Table tag with style class attribute and some content.
+     *
+     * @param styleClass style of the table
+     * @param body content for the table
+     * @return an HtmlTree object for the TABLE tag
+     */
+    public static HtmlTree TABLE(HtmlStyle styleClass, Content body) {
+        HtmlTree htmltree = new HtmlTree(HtmlTag.TABLE, nullCheck(body));
+        if (styleClass != null) {
+            htmltree.addStyle(styleClass);
+        }
         return htmltree;
     }
 
@@ -741,7 +846,7 @@ public class HtmlTree extends Content {
     public boolean isValid() {
         switch (htmlTag) {
             case A :
-                return (hasAttr(HtmlAttr.NAME) || (hasAttr(HtmlAttr.HREF) && hasContent()));
+                return (hasAttr(HtmlAttr.ID) || (hasAttr(HtmlAttr.HREF) && hasContent()));
             case BR :
                 return (!hasContent() && (!hasAttrs() || hasAttr(HtmlAttr.CLEAR)));
             case IFRAME :

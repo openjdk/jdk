@@ -231,7 +231,7 @@ public class CertificateRevokedException extends CertificateException {
         if (size == 0) {
             extensions = Collections.emptyMap();
         } else {
-            extensions = new HashMap<String, Extension>(size);
+            extensions = new HashMap<>(size);
         }
 
         // Read in the extensions and put the mappings in the extensions map

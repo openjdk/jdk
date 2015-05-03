@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,15 +93,21 @@ public class PackageFrameWriter extends HtmlDocletWriter {
         try {
             packgen = new PackageFrameWriter(configuration, packageDoc);
             String pkgName = configuration.utils.getPackageName(packageDoc);
-            Content body = packgen.getBody(false, packgen.getWindowTitle(pkgName));
+            HtmlTree body = packgen.getBody(false, packgen.getWindowTitle(pkgName));
             Content pkgNameContent = new StringContent(pkgName);
+            HtmlTree htmlTree = (configuration.allowTag(HtmlTag.MAIN))
+                    ? HtmlTree.MAIN()
+                    : body;
             Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, HtmlStyle.bar,
                     packgen.getTargetPackageLink(packageDoc, "classFrame", pkgNameContent));
-            body.addContent(heading);
+            htmlTree.addContent(heading);
             HtmlTree div = new HtmlTree(HtmlTag.DIV);
             div.addStyle(HtmlStyle.indexContainer);
             packgen.addClassListing(div);
-            body.addContent(div);
+            htmlTree.addContent(div);
+            if (configuration.allowTag(HtmlTag.MAIN)) {
+                body.addContent(htmlTree);
+            }
             packgen.printHtmlDocument(
                     configuration.metakeywords.getMetaKeywords(packageDoc), false, body);
             packgen.close();
@@ -120,7 +126,7 @@ public class PackageFrameWriter extends HtmlDocletWriter {
      *
      * @param contentTree the content tree to which the listing will be added
      */
-    protected void addClassListing(Content contentTree) {
+    protected void addClassListing(HtmlTree contentTree) {
         Configuration config = configuration;
         if (packageDoc.isIncluded()) {
             addClassKindListing(packageDoc.interfaces(),
@@ -160,11 +166,14 @@ public class PackageFrameWriter extends HtmlDocletWriter {
      * @param contentTree the content tree to which the class kind listing will be added
      */
     protected void addClassKindListing(ClassDoc[] arr, Content labelContent,
-            Content contentTree) {
+            HtmlTree contentTree) {
         arr = utils.filterOutPrivateClasses(arr, configuration.javafx);
         if(arr.length > 0) {
             Arrays.sort(arr);
             boolean printedHeader = false;
+            HtmlTree htmlTree = (configuration.allowTag(HtmlTag.SECTION))
+                    ? HtmlTree.SECTION()
+                    : contentTree;
             HtmlTree ul = new HtmlTree(HtmlTag.UL);
             ul.setTitle(labelContent);
             for (ClassDoc classDoc : arr) {
@@ -177,7 +186,7 @@ public class PackageFrameWriter extends HtmlDocletWriter {
                 if (!printedHeader) {
                     Content heading = HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING,
                                                        true, labelContent);
-                    contentTree.addContent(heading);
+                    htmlTree.addContent(heading);
                     printedHeader = true;
                 }
                 Content arr_i_name = new StringContent(classDoc.name());
@@ -188,7 +197,10 @@ public class PackageFrameWriter extends HtmlDocletWriter {
                 Content li = HtmlTree.LI(link);
                 ul.addContent(li);
             }
-            contentTree.addContent(ul);
+            htmlTree.addContent(ul);
+            if (configuration.allowTag(HtmlTag.SECTION)) {
+                contentTree.addContent(htmlTree);
+            }
         }
     }
 }

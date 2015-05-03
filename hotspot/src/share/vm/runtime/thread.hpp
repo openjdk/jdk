@@ -255,9 +255,6 @@ class Thread: public ThreadShadow {
   jlong _allocated_bytes;                       // Cumulative number of bytes allocated on
                                                 // the Java heap
 
-  // Thread-local buffer used by MetadataOnStackMark.
-  MetadataOnStackBuffer* _metadata_on_stack_buffer;
-
   TRACE_DATA _trace_data;                       // Thread-local data for tracing
 
   ThreadExt _ext;
@@ -478,7 +475,7 @@ class Thread: public ThreadShadow {
   void nmethods_do(CodeBlobClosure* cf);
 
   // jvmtiRedefineClasses support
-  void metadata_do(void f(Metadata*));
+  void metadata_handles_do(void f(Metadata*));
 
   // Used by fast lock support
   virtual bool is_lock_owned(address adr) const;
@@ -493,9 +490,6 @@ class Thread: public ThreadShadow {
   // Sets this thread as starting thread. Returns failure if thread
   // creation fails due to lack of memory, too many threads etc.
   bool set_as_starting_thread();
-
-  void set_metadata_on_stack_buffer(MetadataOnStackBuffer* buffer) { _metadata_on_stack_buffer = buffer; }
-  MetadataOnStackBuffer* metadata_on_stack_buffer() const          { return _metadata_on_stack_buffer; }
 
 protected:
   // OS data associated with the thread
@@ -557,6 +551,7 @@ protected:
   Monitor* owned_locks() const                   { return _owned_locks;          }
   bool owns_locks() const                        { return owned_locks() != NULL; }
   bool owns_locks_but_compiled_lock() const;
+  int oops_do_parity() const                     { return _oops_do_parity; }
 
   // Deadlock detection
   bool allow_allocation()                        { return _allow_allocation_count == 0; }
@@ -1861,6 +1856,7 @@ class Threads: AllStatic {
   static int         _number_of_threads;
   static int         _number_of_non_daemon_threads;
   static int         _return_code;
+  static int         _thread_claim_parity;
 #ifdef ASSERT
   static bool        _vm_complete;
 #endif
@@ -1890,9 +1886,10 @@ class Threads: AllStatic {
   // Does not include JNI_VERSION_1_1
   static jboolean is_supported_jni_version(jint version);
 
-  // Garbage collection
-  static void follow_other_roots(void f(oop*));
+  static int thread_claim_parity() { return _thread_claim_parity; }
+  static void change_thread_claim_parity();
 
+  static void assert_all_threads_claimed() PRODUCT_RETURN;
   // Apply "f->do_oop" to all root oops in all threads.
   // This version may only be called by sequential code.
   static void oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf);
@@ -1915,6 +1912,7 @@ class Threads: AllStatic {
 
   // RedefineClasses support
   static void metadata_do(void f(Metadata*));
+  static void metadata_handles_do(void f(Metadata*));
 
 #ifdef ASSERT
   static bool is_vm_complete() { return _vm_complete; }

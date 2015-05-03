@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6843077 8006775
+ * @bug 6843077 8006775 8031744
  * @summary random tests for new locations
  * @author Matt Papi
  * @compile BasicTest.java
@@ -41,12 +41,16 @@ import java.io.*;
 @interface C {}
 @Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})
 @interface D {}
+@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})
+@interface E {}
+@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})
+@interface F {}
 
 /**
  * Tests basic JSR 308 parser functionality. We don't really care about what
  * the parse tree looks like, just that these annotations can be parsed.
  */
-class BasicTest<T extends @A Object> extends @B LinkedList<T> implements @C List<T> {
+class BasicTest<@D T extends @A Object> extends @B LinkedList<@E T> implements @C List<@F T> {
 
     void test() {
 

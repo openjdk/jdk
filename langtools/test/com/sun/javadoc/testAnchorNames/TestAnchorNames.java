@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,15 +53,15 @@ public class TestAnchorNames extends JavadocTester {
 
         // Test some section markers and links to these markers
         checkOutput("pkg1/RegClass.html", true,
-                "<a name=\"skip.navbar.top\">",
+                "<a id=\"skip.navbar.top\">",
                 "<a href=\"#skip.navbar.top\" title=\"Skip navigation links\">",
-                "<a name=\"nested.class.summary\">",
+                "<a id=\"nested.class.summary\">",
                 "<a href=\"#nested.class.summary\">",
-                "<a name=\"method.summary\">",
+                "<a id=\"method.summary\">",
                 "<a href=\"#method.summary\">",
-                "<a name=\"field.detail\">",
+                "<a id=\"field.detail\">",
                 "<a href=\"#field.detail\">",
-                "<a name=\"constructor.detail\">",
+                "<a id=\"constructor.detail\">",
                 "<a href=\"#constructor.detail\">");
 
         // Test some members and link to these members
@@ -72,59 +72,59 @@ public class TestAnchorNames extends JavadocTester {
 
         // Test some fields
         checkOutput("pkg1/RegClass.html", true,
-                "<a name=\"Z:Z_\">",
+                "<a id=\"Z:Z_\">",
                 "<a href=\"../pkg1/RegClass.html#Z:Z_\">",
-                "<a name=\"Z:Z_:D\">",
+                "<a id=\"Z:Z_:D\">",
                 "<a href=\"../pkg1/RegClass.html#Z:Z_:D\">",
-                "<a name=\"Z:Z:D_\">",
+                "<a id=\"Z:Z:D_\">",
                 "<a href=\"../pkg1/RegClass.html#Z:Z:D_\">",
-                "<a name=\"Z:Z:Dfield\">",
+                "<a id=\"Z:Z:Dfield\">",
                 "<a href=\"../pkg1/RegClass.html#Z:Z:Dfield\">",
-                "<a name=\"fieldInCla:D:D\">",
+                "<a id=\"fieldInCla:D:D\">",
                 "<a href=\"../pkg1/RegClass.html#fieldInCla:D:D\">",
-                "<a name=\"S_:D:D:D:D:DINT\">",
+                "<a id=\"S_:D:D:D:D:DINT\">",
                 "<a href=\"../pkg1/RegClass.html#S_:D:D:D:D:DINT\">",
-                "<a name=\"method:D:D\">",
+                "<a id=\"method:D:D\">",
                 "<a href=\"../pkg1/RegClass.html#method:D:D\">");
 
         checkOutput("pkg1/DeprMemClass.html", true,
-                "<a name=\"Z:Z_field_In_Class\">",
+                "<a id=\"Z:Z_field_In_Class\">",
                 "<a href=\"../pkg1/DeprMemClass.html#Z:Z_field_In_Class\">");
 
         // Test constructor
         checkOutput("pkg1/RegClass.html", true,
-                "<a name=\"RegClass-java.lang.String-int-\">",
+                "<a id=\"RegClass-java.lang.String-int-\">",
                 "<a href=\"../pkg1/RegClass.html#RegClass-java.lang.String-int-\">");
 
         // Test some methods
         checkOutput("pkg1/RegClass.html", true,
-                "<a name=\"Z:Z_methodInClass-java.lang.String-\">",
+                "<a id=\"Z:Z_methodInClass-java.lang.String-\">",
                 "<a href=\"../pkg1/RegClass.html#Z:Z_methodInClass-java.lang.String-\">",
-                "<a name=\"method--\">",
+                "<a id=\"method--\">",
                 "<a href=\"../pkg1/RegClass.html#method--\">",
-                "<a name=\"foo-java.util.Map-\">",
+                "<a id=\"foo-java.util.Map-\">",
                 "<a href=\"../pkg1/RegClass.html#foo-java.util.Map-\">",
-                "<a name=\"methodInCla:Ds-java.lang.String:A-\">",
+                "<a id=\"methodInCla:Ds-java.lang.String:A-\">",
                 "<a href=\"../pkg1/RegClass.html#methodInCla:Ds-java.lang.String:A-\">",
-                "<a name=\"Z:Z_methodInClas:D-java.lang.String-int-\">",
+                "<a id=\"Z:Z_methodInClas:D-java.lang.String-int-\">",
                 "<a href=\"../pkg1/RegClass.html#Z:Z_methodInClas:D-java.lang.String-int-\">",
-                "<a name=\"methodD-pkg1.RegClass.:DA-\">",
+                "<a id=\"methodD-pkg1.RegClass.:DA-\">",
                 "<a href=\"../pkg1/RegClass.html#methodD-pkg1.RegClass.:DA-\">",
-                "<a name=\"methodD-pkg1.RegClass.D:A-\">",
+                "<a id=\"methodD-pkg1.RegClass.D:A-\">",
                 "<a href=\"../pkg1/RegClass.html#methodD-pkg1.RegClass.D:A-\">");
 
         checkOutput("pkg1/DeprMemClass.html", true,
-                "<a name=\"Z:Z:Dmethod_In_Class--\">",
+                "<a id=\"Z:Z:Dmethod_In_Class--\">",
                 "<a href=\"../pkg1/DeprMemClass.html#Z:Z:Dmethod_In_Class--\">");
 
         // Test enum
         checkOutput("pkg1/RegClass.Te$t_Enum.html", true,
-                "<a name=\"Z:Z:DFLD2\">",
+                "<a id=\"Z:Z:DFLD2\">",
                 "<a href=\"../pkg1/RegClass.Te$t_Enum.html#Z:Z:DFLD2\">");
 
         // Test nested class
         checkOutput("pkg1/RegClass._NestedClas$.html", true,
-                "<a name=\"Z:Z_NestedClas:D--\">",
+                "<a id=\"Z:Z_NestedClas:D--\">",
                 "<a href=\"../pkg1/RegClass._NestedClas$.html#Z:Z_NestedClas:D--\">");
 
         // Test class use page
@@ -143,11 +143,11 @@ public class TestAnchorNames extends JavadocTester {
         // Test serialized form page
         checkOutput("serialized-form.html", true,
                 //This is the marker for the link that appears in the pkg1.RegClass.html page
-                "<a name=\"pkg1.RegClass\">");
+                "<a id=\"pkg1.RegClass\">");
 
         // Test member name index page
         checkOutput("index-all.html", true,
-                "<a name=\"I:Z:Z:D\">",
+                "<a id=\"I:Z:Z:D\">",
                 "<a href=\"#I:Z:Z:D\">$",
                 "<a href=\"#I:Z:Z_\">_");
 

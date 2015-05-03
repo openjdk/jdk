@@ -25,6 +25,7 @@
  * @bug 4429043 8002180
  * @summary Test file mapping with FileChannel
  * @run main/othervm MapTest
+ * @key randomness
  */
 
 import java.io.*;

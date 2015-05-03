@@ -37,84 +37,102 @@ default:
 # serially, regardless of -j.
 .NOTPARALLEL:
 
-# If included from the top-level Makefile then topdir is set, but not when
-# recursively calling ourself with a spec.
-ifeq ($(topdir),)
-  topdir := $(strip $(patsubst %/make/, %, $(dir $(lastword $(MAKEFILE_LIST)))))
-endif
-
-# Our helper functions. Will include $(SPEC) if $(HAS_SPEC) is true.
-include $(topdir)/make/InitSupport.gmk
-
-# Here are "global" targets, i.e. targets that can be executed without having a configuration.
-# This will define ALL_GLOBAL_TARGETS.
-include $(topdir)/make/Help.gmk
-
-# Extract main targets from Main.gmk.
-ifneq ($(any_spec_file), )
-  ifeq ($(wildcard $(dir $(any_spec_file))/make-support/module-deps.gmk),)
-    # If make-support does not exist, we need to build the genmodules java tool first.
-    $(info Creating data for first make execution in new configuration...)
-    ignore_output := $(shell $(MAKE) -r -R -f $(topdir)/make/Main.gmk \
-        -I $(topdir)/make/common SPEC=$(any_spec_file) NO_RECIPES=true FRC)
-    $(info Done)
-  endif
-  ALL_MAIN_TARGETS := $(shell $(MAKE) -r -R -f $(topdir)/make/Main.gmk \
-      -I $(topdir)/make/common SPEC=$(any_spec_file) NO_RECIPES=true print-targets)
-else
-  # Without at least a single valid configuration, we cannot extract any real
-  # targets. To provide a helpful error message about the missing configuration
-  # later on, accept whatever targets the user has provided for now.
-  ALL_MAIN_TARGETS := $(if $(MAKECMDGOALS), $(MAKECMDGOALS), default)
-endif
-
-# Targets provided by this file.
-ALL_INIT_TARGETS := reconfigure
-
-ALL_TARGETS := $(sort $(ALL_GLOBAL_TARGETS) $(ALL_MAIN_TARGETS) $(ALL_INIT_TARGETS))
-
-ifneq ($(findstring qp, $(MAKEFLAGS)),)
+ifeq ($(HAS_SPEC),)
   ##############################################################################
-  # When called with -qp, assume an external part (e.g. bash completion) is trying
-  # to understand our targets. Just list our targets and do no more checking.
+  # This is the default mode. We have not been recursively called with a SPEC.
   ##############################################################################
 
-  $(ALL_TARGETS):
+  # Include our helper functions.
+  include $(topdir)/make/InitSupport.gmk
 
-  .PHONY: $(ALL_TARGETS)
+  # Here are "global" targets, i.e. targets that can be executed without having
+  # a configuration. This will define ALL_GLOBAL_TARGETS.
+  include $(topdir)/make/Help.gmk
 
-else ifeq ($(HAS_SPEC),)
-
-  ##############################################################################
-  # This is the normal case, we have been called from the command line by the
-  # user and we need to call ourself back with a proper SPEC.
-  ##############################################################################
-
-  $(eval $(call CheckControlVariables))
-  $(eval $(call CheckDeprecatedEnvironment))
-  $(eval $(call CheckInvalidMakeFlags))
-
-  $(eval $(call ParseConfCheckOption))
-
-  # Check that the LOG given is valid, and set LOG_LEVEL, LOG_NOFILE and MAKE_LOG_FLAGS.
-  $(eval $(call ParseLogLevel))
-
-  ifneq ($(findstring $(LOG_LEVEL),info debug trace),)
-    $(info Running make as '$(strip $(MAKE) $(MFLAGS) $(COMMAND_LINE_VARIABLES) $(MAKECMDGOALS))')
-  endif
+  # Targets provided by Init.gmk.
+  ALL_INIT_TARGETS := print-modules print-targets reconfigure
 
   # CALLED_TARGETS is the list of targets that the user provided,
   # or "default" if unspecified.
   CALLED_TARGETS := $(if $(MAKECMDGOALS), $(MAKECMDGOALS), default)
-  CALLED_SPEC_TARGETS := $(filter $(ALL_MAIN_TARGETS) $(ALL_INIT_TARGETS), $(CALLED_TARGETS))
-  ifneq ($(CALLED_SPEC_TARGETS),)
-    # We have at least one non-global target, which need a SPEC
-    $(eval $(call ParseConfAndSpec))
-    # Now SPECS contain 1..N spec files (otherwise ParseConfAndSpec fails)
 
+  # Extract non-global targets that require a spec file.
+  CALLED_SPEC_TARGETS := $(filter-out $(ALL_GLOBAL_TARGETS), $(CALLED_TARGETS))
+
+  # If we have only global targets, or if we are called with -qp (assuming an
+  # external part, e.g. bash completion, is trying to understand our targets),
+  # we will skip SPEC location and the sanity checks.
+  ifeq ($(CALLED_SPEC_TARGETS), )
+    ONLY_GLOBAL_TARGETS := true
+  endif
+  ifneq ($(findstring qp, $(MAKEFLAGS)),)
+    ONLY_GLOBAL_TARGETS := true
+  endif
+
+  ifeq ($(ONLY_GLOBAL_TARGETS), true)
+    ############################################################################
+    # We have only global targets, or are called with -pq.
+    ############################################################################
+
+    ifeq ($(wildcard $(SPEC)), )
+      # If we have no SPEC provided, we will just make a "best effort" target list.
+      # First try to grab any available pre-existing main-targets.gmk.
+      main_targets_file := $(firstword $(wildcard $(build_dir)/*/make-support/main-targets.gmk))
+      ifneq ($(main_targets_file), )
+        # Extract the SPEC that corresponds to this main-targets.gmk file.
+        SPEC := $(patsubst %/make-support/main-targets.gmk, %/spec.gmk, $(main_targets_file))
+      else
+        # None found, pick an arbitrary SPEC for which to generate a file
+        SPEC := $(firstword $(all_spec_files))
+      endif
+    endif
+
+    ifneq ($(wildcard $(SPEC)), )
+      $(eval $(call DefineMainTargets, LAZY, $(SPEC)))
+    else
+      # If we have no configurations we can not provide any main targets.
+      ALL_MAIN_TARGETS :=
+    endif
+
+    ALL_TARGETS := $(sort $(ALL_GLOBAL_TARGETS) $(ALL_MAIN_TARGETS) $(ALL_INIT_TARGETS))
+
+    # Just list all our targets.
+    $(ALL_TARGETS):
+
+    .PHONY: $(ALL_TARGETS)
+
+  else
+    ############################################################################
+    # This is the normal case, we have been called from the command line by the
+    # user and we need to call ourself back with a proper SPEC.
+    # We have at least one non-global target, so we need to find a spec file.
+    ############################################################################
+
+    # Basic checks on environment and command line.
+    $(eval $(call CheckControlVariables))
+    $(eval $(call CheckDeprecatedEnvironment))
+    $(eval $(call CheckInvalidMakeFlags))
+
+    # Check that CONF_CHECK is valid.
+    $(eval $(call ParseConfCheckOption))
+
+    # Check that the LOG given is valid, and set LOG_LEVEL, LOG_NOFILE and MAKE_LOG_FLAGS.
+    $(eval $(call ParseLogLevel))
+
+    # After this SPECS contain 1..N spec files (otherwise ParseConfAndSpec fails).
+    $(eval $(call ParseConfAndSpec))
+
+    # Extract main targets from Main.gmk using the spec(s) provided. In theory,
+    # with multiple specs, we should find the intersection of targets provided
+    # by all specs, but we approximate this by an arbitrary spec from the list.
+    # This will setup ALL_MAIN_TARGETS.
+    $(eval $(call DefineMainTargets, FORCE, $(firstword $(SPECS))))
+
+    # Separate called targets depending on type.
     INIT_TARGETS := $(filter $(ALL_INIT_TARGETS), $(CALLED_SPEC_TARGETS))
-    SEQUENTIAL_TARGETS := $(filter dist-clean clean%, $(CALLED_SPEC_TARGETS))
-    PARALLEL_TARGETS := $(filter-out $(INIT_TARGETS) $(SEQUENTIAL_TARGETS), $(CALLED_SPEC_TARGETS))
+    MAIN_TARGETS := $(filter $(ALL_MAIN_TARGETS), $(CALLED_SPEC_TARGETS))
+    SEQUENTIAL_TARGETS := $(filter dist-clean clean%, $(MAIN_TARGETS))
+    PARALLEL_TARGETS := $(filter-out $(SEQUENTIAL_TARGETS), $(MAIN_TARGETS))
 
     # The spec files depend on the autoconf source code. This check makes sure
     # the configuration is up to date after changes to configure.
@@ -126,30 +144,41 @@ else ifeq ($(HAS_SPEC),)
         else ifeq ($(CONF_CHECK), auto)
 	  @echo "Note: The configuration is not up to date for '$(lastword $(subst /, , $(dir $@)))'."
 	  @( cd $(topdir) && \
-	      $(MAKE) $(MFLAGS) $(MAKE_LOG_FLAGS) -f $(topdir)/make/Init.gmk SPEC=$@ HAS_SPEC=true \
+	      $(MAKE) $(MFLAGS) $(MAKE_LOG_FLAGS) -r -R -f $(topdir)/make/Init.gmk \
+	      SPEC=$@ HAS_SPEC=true ACTUAL_TOPDIR=$(topdir) \
 	      reconfigure )
         else ifeq ($(CONF_CHECK), ignore)
           # Do nothing
         endif
 
-    # Unless reconfigure is explicitely called, let all targets depend on the spec files to be up to date.
-    ifeq ($(findstring reconfigure, $(CALLED_SPEC_TARGETS)), )
-      $(CALLED_SPEC_TARGETS): $(SPECS)
+    # Unless reconfigure is explicitely called, let all main targets depend on
+    # the spec files to be up to date.
+    ifeq ($(findstring reconfigure, $(INIT_TARGETS)), )
+      $(MAIN_TARGETS): $(SPECS)
     endif
 
-    # The recipe will be run once for every target specified, but we only want to execute the
-    # recipe a single time, hence the TARGET_DONE with a dummy command if true.
-    $(ALL_MAIN_TARGETS) $(ALL_INIT_TARGETS):
+    make-info:
+        ifneq ($(findstring $(LOG_LEVEL),info debug trace),)
+	  $(info Running make as '$(strip $(MAKE) $(MFLAGS) \
+	      $(COMMAND_LINE_VARIABLES) $(MAKECMDGOALS))')
+        endif
+
+    # Now the init and main targets will be called, once for each SPEC. The
+    # recipe will be run once for every target specified, but we only want to
+    # execute the recipe a single time, hence the TARGET_DONE with a dummy
+    # command if true.
+    $(ALL_INIT_TARGETS) $(ALL_MAIN_TARGETS): make-info
 	@$(if $(TARGET_DONE), \
 	  true \
 	, \
 	  $(foreach spec, $(SPECS), \
 	    ( cd $(topdir) && \
-	    $(MAKE) $(MFLAGS) $(MAKE_LOG_FLAGS) -j 1 -f $(topdir)/make/Init.gmk \
-	        SPEC=$(spec) HAS_SPEC=true \
+	    $(MAKE) $(MFLAGS) $(MAKE_LOG_FLAGS) -r -R -j 1 -f $(topdir)/make/Init.gmk \
+	        SPEC=$(spec) HAS_SPEC=true ACTUAL_TOPDIR=$(topdir) \
 	        USER_MAKE_VARS="$(USER_MAKE_VARS)" MAKE_LOG_FLAGS=$(MAKE_LOG_FLAGS) \
 	        LOG_LEVEL=$(LOG_LEVEL) LOG_NOFILE=$(LOG_NOFILE) \
-	        INIT_TARGETS="$(INIT_TARGETS)" SEQUENTIAL_TARGETS="$(SEQUENTIAL_TARGETS)" \
+	        INIT_TARGETS="$(INIT_TARGETS)" \
+	        SEQUENTIAL_TARGETS="$(SEQUENTIAL_TARGETS)" \
 	        PARALLEL_TARGETS="$(PARALLEL_TARGETS)"  \
 	        main ) && \
 	  ) true \
@@ -158,7 +187,7 @@ else ifeq ($(HAS_SPEC),)
 
     .PHONY: $(ALL_MAIN_TARGETS) $(ALL_INIT_TARGETS)
 
-  endif # has $(CALLED_SPEC_TARGETS)
+  endif # $(ONLY_GLOBAL_TARGETS)!=true
 
 else # HAS_SPEC=true
 
@@ -167,6 +196,14 @@ else # HAS_SPEC=true
   # trampoline to call the Main.gmk with the value of $(MAKE) found in the spec
   # file.
   ##############################################################################
+
+  include $(SPEC)
+
+  # Our helper functions.
+  include $(TOPDIR)/make/InitSupport.gmk
+
+  # Verify that the spec file we included seems okay.
+  $(eval $(call CheckSpecSanity))
 
   ifeq ($(LOG_NOFILE), true)
     # Disable log wrapper if LOG=[level,]nofile was given
@@ -177,7 +214,19 @@ else # HAS_SPEC=true
     OUTPUT_SYNC_FLAG := -O$(OUTPUT_SYNC)
   endif
 
-  $(eval $(call CheckSpecSanity))
+  ##############################################################################
+  # Init targets
+  ##############################################################################
+
+  print-modules:
+	( cd $(TOPDIR) && \
+	    $(MAKE) $(MAKE_ARGS) -j 1 -f make/Main.gmk $(USER_MAKE_VARS) \
+	    NO_RECIPES=true print-modules )
+
+  print-targets:
+	( cd $(TOPDIR) && \
+	    $(MAKE) $(MAKE_ARGS) -j 1 -f make/Main.gmk $(USER_MAKE_VARS) \
+	    NO_RECIPES=true print-targets )
 
   reconfigure:
         ifneq ($(CONFIGURE_COMMAND_LINE), )
@@ -188,42 +237,43 @@ else # HAS_SPEC=true
 	( cd $(OUTPUT_ROOT) && PATH="$(ORIGINAL_PATH)" \
 	    $(BASH) $(TOPDIR)/configure $(CONFIGURE_COMMAND_LINE) )
 
-  main-init:
-	$(call RotateLogFiles)
-	$(BUILD_LOG_WRAPPER) $(PRINTF) "Building target(s) '$(strip \
-	    $(INIT_TARGETS) $(SEQUENTIAL_TARGETS) $(PARALLEL_TARGETS) \
-	    )' in configuration '$(CONF_NAME)'\n"
+  ##############################################################################
+  # The main target, for delegating into Main.gmk
+  ##############################################################################
 
+  MAIN_TARGETS := $(SEQUENTIAL_TARGETS) $(PARALLEL_TARGETS)
+  TARGET_DESCRIPTION := target$(if $(word 2, $(MAIN_TARGETS)),s) \
+      '$(strip $(MAIN_TARGETS))' in configuration '$(CONF_NAME)'
 
   # MAKEOVERRIDES is automatically set and propagated by Make to sub-Make calls.
   # We need to clear it of the init-specific variables. The user-specified
   # variables are explicitely propagated using $(USER_MAKE_VARS).
   main: MAKEOVERRIDES :=
 
-  main: $(INIT_TARGETS) main-init
-        ifneq ($(SEQUENTIAL_TARGETS), )
-          # Don't touch build output dir since we might be cleaning. That means
-	  # no log wrapper.
-	  ( cd $(TOPDIR) && \
-	      $(MAKE) $(MAKE_ARGS) -j 1 -f make/Main.gmk $(USER_MAKE_VARS) \
-	      $(SEQUENTIAL_TARGETS) \
-	  )
+  main: $(INIT_TARGETS)
+        ifneq ($(SEQUENTIAL_TARGETS)$(PARALLEL_TARGETS), )
+	  $(call RotateLogFiles)
+	  $(BUILD_LOG_WRAPPER) $(PRINTF) "Building $(TARGET_DESCRIPTION)\n"
+          ifneq ($(SEQUENTIAL_TARGETS), )
+            # Don't touch build output dir since we might be cleaning. That
+            # means no log wrapper.
+	    ( cd $(TOPDIR) && \
+	        $(MAKE) $(MAKE_ARGS) -j 1 -f make/Main.gmk $(USER_MAKE_VARS) \
+	        $(SEQUENTIAL_TARGETS) )
+          endif
+          ifneq ($(PARALLEL_TARGETS), )
+	    $(call StartGlobalTimer)
+	    $(call PrepareSmartJavac)
+	    ( cd $(TOPDIR) && \
+	        $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) $(OUTPUT_SYNC_FLAG) \
+	        -j $(JOBS) -f make/Main.gmk $(USER_MAKE_VARS) \
+	        $(PARALLEL_TARGETS) )
+	    $(call CleanupSmartJavac)
+	    $(call StopGlobalTimer)
+	    $(call ReportBuildTimes)
+          endif
+	  $(BUILD_LOG_WRAPPER) $(PRINTF) "Finished building $(TARGET_DESCRIPTION)\n"
         endif
-        ifneq ($(PARALLEL_TARGETS), )
-	  $(call StartGlobalTimer)
-	  $(call PrepareSmartJavac)
-	  ( cd $(TOPDIR) && \
-	      $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) $(OUTPUT_SYNC_FLAG) \
-	      -j $(JOBS) -f make/Main.gmk $(USER_MAKE_VARS) \
-	      $(PARALLEL_TARGETS) \
-	  )
-	  $(call CleanupSmartJavac)
-	  $(call StopGlobalTimer)
-	  $(call ReportBuildTimes)
-        endif
-	$(BUILD_LOG_WRAPPER) $(PRINTF) "Finished building target(s) '$(strip \
-	    $(INIT_TARGETS) $(SEQUENTIAL_TARGETS) $(PARALLEL_TARGETS) \
-	    )' in configuration '$(CONF_NAME)'\n"
 
-  .PHONY: reconfigure main-init main
+  .PHONY: print-targets print-modules reconfigure main
 endif

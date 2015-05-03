@@ -55,6 +55,8 @@ import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 import sun.awt.InputMethodSupport;
 import sun.awt.SunToolkit;
+import sun.misc.InnocuousThread;
+import sun.misc.ManagedLocalsThread;
 
 /**
  * <code>InputMethodManager</code> is an abstract class that manages the input
@@ -165,7 +167,12 @@ public abstract class InputMethodManager {
                 // to choose from. Otherwise, just keep the instance.
                 if (imm.hasMultipleInputMethods()) {
                     imm.initialize();
-                    Thread immThread = new Thread(imm, threadName);
+                    Thread immThread;
+                    if (System.getSecurityManager() == null) {
+                        immThread = new Thread(imm, threadName);
+                    } else {
+                        immThread = new ManagedLocalsThread(imm, threadName);
+                    }
                     immThread.setDaemon(true);
                     immThread.setPriority(Thread.NORM_PRIORITY + 1);
                     immThread.start();

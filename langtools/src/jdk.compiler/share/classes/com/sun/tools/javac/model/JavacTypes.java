@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,13 @@
 
 package com.sun.tools.javac.model;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.lang.model.element.*;
 import javax.lang.model.type.*;
@@ -115,14 +117,17 @@ public class JavacTypes implements javax.lang.model.util.Types {
     @DefinedBy(Api.LANGUAGE_MODEL)
     public List<Type> directSupertypes(TypeMirror t) {
         validateTypeNotIn(t, EXEC_OR_PKG);
-        return types.directSupertypes((Type) t);
+        Type ty = (Type)t;
+        return types.directSupertypes(ty).stream()
+                .map(Type::stripMetadataIfNeeded)
+                .collect(Collectors.toList());
     }
 
     @DefinedBy(Api.LANGUAGE_MODEL)
     public TypeMirror erasure(TypeMirror t) {
         if (t.getKind() == TypeKind.PACKAGE)
             throw new IllegalArgumentException(t.toString());
-        return types.erasure((Type) t);
+        return types.erasure((Type)t).stripMetadataIfNeeded();
     }
 
     @DefinedBy(Api.LANGUAGE_MODEL)
@@ -143,7 +148,7 @@ public class JavacTypes implements javax.lang.model.util.Types {
     @DefinedBy(Api.LANGUAGE_MODEL)
     public TypeMirror capture(TypeMirror t) {
         validateTypeNotIn(t, EXEC_OR_PKG);
-        return types.capture((Type) t);
+        return types.capture((Type)t).stripMetadataIfNeeded();
     }
 
     @DefinedBy(Api.LANGUAGE_MODEL)

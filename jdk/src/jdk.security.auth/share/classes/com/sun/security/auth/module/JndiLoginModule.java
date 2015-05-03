@@ -44,28 +44,28 @@ import com.sun.security.auth.UnixNumericGroupPrincipal;
 
 
 /**
- * <p> The module prompts for a username and password
+ * The module prompts for a username and password
  * and then verifies the password against the password stored in
  * a directory service configured under JNDI.
  *
- * <p> This <code>LoginModule</code> interoperates with
+ * <p> This {@code LoginModule} interoperates with
  * any conformant JNDI service provider.  To direct this
- * <code>LoginModule</code> to use a specific JNDI service provider,
- * two options must be specified in the login <code>Configuration</code>
- * for this <code>LoginModule</code>.
+ * {@code LoginModule} to use a specific JNDI service provider,
+ * two options must be specified in the login {@code Configuration}
+ * for this {@code LoginModule}.
  * <pre>
  *      user.provider.url=<b>name_service_url</b>
  *      group.provider.url=<b>name_service_url</b>
  * </pre>
  *
  * <b>name_service_url</b> specifies
- * the directory service and path where this <code>LoginModule</code>
+ * the directory service and path where this {@code LoginModule}
  * can access the relevant user and group information.  Because this
- * <code>LoginModule</code> only performs one-level searches to
- * find the relevant user information, the <code>URL</code>
+ * {@code LoginModule} only performs one-level searches to
+ * find the relevant user information, the {@code URL}
  * must point to a directory one level above where the user and group
  * information is stored in the directory service.
- * For example, to instruct this <code>LoginModule</code>
+ * For example, to instruct this {@code LoginModule}
  * to contact a NIS server, the following URLs must be specified:
  * <pre>
  *    user.provider.url="nis://<b>NISServerHostName</b>/<b>NISDomain</b>/user"
@@ -90,14 +90,14 @@ import com.sun.security.auth.UnixNumericGroupPrincipal;
  *
  * <p> The format in which the user's information must be stored in
  * the directory service is specified in RFC 2307.  Specifically,
- * this <code>LoginModule</code> will search for the user's entry in the
+ * this {@code LoginModule} will search for the user's entry in the
  * directory service using the user's <i>uid</i> attribute,
  * where <i>uid=<b>username</b></i>.  If the search succeeds,
- * this <code>LoginModule</code> will then
+ * this {@code LoginModule} will then
  * obtain the user's encrypted password from the retrieved entry
  * using the <i>userPassword</i> attribute.
- * This <code>LoginModule</code> assumes that the password is stored
- * as a byte array, which when converted to a <code>String</code>,
+ * This {@code LoginModule} assumes that the password is stored
+ * as a byte array, which when converted to a {@code String},
  * has the following format:
  * <pre>
  *      "{crypt}<b>encrypted_password</b>"
@@ -106,12 +106,12 @@ import com.sun.security.auth.UnixNumericGroupPrincipal;
  * The LDAP directory server must be configured
  * to permit read access to the userPassword attribute.
  * If the user entered a valid username and password,
- * this <code>LoginModule</code> associates a
- * <code>UnixPrincipal</code>, <code>UnixNumericUserPrincipal</code>,
+ * this {@code LoginModule} associates a
+ * {@code UnixPrincipal}, {@code UnixNumericUserPrincipal},
  * and the relevant UnixNumericGroupPrincipals with the
- * <code>Subject</code>.
+ * {@code Subject}.
  *
- * <p> This LoginModule also recognizes the following <code>Configuration</code>
+ * <p> This LoginModule also recognizes the following {@code Configuration}
  * options:
  * <pre>
  *    debug          if, true, debug messages are output to System.out.
@@ -144,7 +144,7 @@ import com.sun.security.auth.UnixNumericGroupPrincipal;
  *                   exist for the username and password in the shared state,
  *                   or if authentication fails.
  *
- *    clearPass     if, true, this <code>LoginModule</code> clears the
+ *    clearPass     if, true, this {@code LoginModule} clears the
  *                  username and password stored in the module's shared state
  *                  after both phases of authentication (login and commit)
  *                  have completed.
@@ -208,21 +208,19 @@ public class JndiLoginModule implements LoginModule {
     private static final String PWD = "javax.security.auth.login.password";
 
     /**
-     * Initialize this <code>LoginModule</code>.
+     * Initialize this {@code LoginModule}.
      *
-     * <p>
+     * @param subject the {@code Subject} to be authenticated.
      *
-     * @param subject the <code>Subject</code> to be authenticated. <p>
-     *
-     * @param callbackHandler a <code>CallbackHandler</code> for communicating
+     * @param callbackHandler a {@code CallbackHandler} for communicating
      *                  with the end user (prompting for usernames and
-     *                  passwords, for example). <p>
+     *                  passwords, for example).
      *
-     * @param sharedState shared <code>LoginModule</code> state. <p>
+     * @param sharedState shared {@code LoginModule} state.
      *
      * @param options options specified in the login
-     *                  <code>Configuration</code> for this particular
-     *                  <code>LoginModule</code>.
+     *                  {@code Configuration} for this particular
+     *                  {@code LoginModule}.
      */
     // Unchecked warning from (Map<String, Object>)sharedState is safe
     // since javax.security.auth.login.LoginContext passes a raw HashMap.
@@ -255,17 +253,15 @@ public class JndiLoginModule implements LoginModule {
     }
 
     /**
-     * <p> Prompt for username and password.
+     * Prompt for username and password.
      * Verify the password against the relevant name service.
      *
-     * <p>
-     *
-     * @return true always, since this <code>LoginModule</code>
+     * @return true always, since this {@code LoginModule}
      *          should not be ignored.
      *
-     * @exception FailedLoginException if the authentication fails. <p>
+     * @exception FailedLoginException if the authentication fails.
      *
-     * @exception LoginException if this <code>LoginModule</code>
+     * @exception LoginException if this {@code LoginModule}
      *          is unable to perform the authentication.
      */
     public boolean login() throws LoginException {
@@ -367,14 +363,12 @@ public class JndiLoginModule implements LoginModule {
      *
      * <p> If this LoginModule's own authentication attempt
      * succeeded (checked by retrieving the private state saved by the
-     * <code>login</code> method), then this method associates a
-     * <code>UnixPrincipal</code>
-     * with the <code>Subject</code> located in the
-     * <code>LoginModule</code>.  If this LoginModule's own
+     * {@code login} method), then this method associates a
+     * {@code UnixPrincipal}
+     * with the {@code Subject} located in the
+     * {@code LoginModule}.  If this LoginModule's own
      * authentication attempted failed, then this method removes
      * any state that was originally saved.
-     *
-     * <p>
      *
      * @exception LoginException if the commit fails
      *
@@ -418,17 +412,15 @@ public class JndiLoginModule implements LoginModule {
     }
 
     /**
-     * <p> This method is called if the LoginContext's
+     * This method is called if the LoginContext's
      * overall authentication failed.
      * (the relevant REQUIRED, REQUISITE, SUFFICIENT and OPTIONAL LoginModules
      * did not succeed).
      *
      * <p> If this LoginModule's own authentication attempt
      * succeeded (checked by retrieving the private state saved by the
-     * <code>login</code> and <code>commit</code> methods),
+     * {@code login} and {@code commit} methods),
      * then this method cleans up any state that was originally saved.
-     *
-     * <p>
      *
      * @exception LoginException if the abort fails.
      *
@@ -464,13 +456,11 @@ public class JndiLoginModule implements LoginModule {
      * Logout a user.
      *
      * <p> This method removes the Principals
-     * that were added by the <code>commit</code> method.
-     *
-     * <p>
+     * that were added by the {@code commit} method.
      *
      * @exception LoginException if the logout fails.
      *
-     * @return true in all cases since this <code>LoginModule</code>
+     * @return true in all cases since this {@code LoginModule}
      *          should not be ignored.
      */
     public boolean logout() throws LoginException {
@@ -505,8 +495,6 @@ public class JndiLoginModule implements LoginModule {
 
     /**
      * Attempt authentication
-     *
-     * <p>
      *
      * @param getPasswdFromSharedState boolean that tells this method whether
      *          to retrieve the password from the sharedState.
@@ -673,8 +661,6 @@ public class JndiLoginModule implements LoginModule {
      * <p> Also note that this method will set the username and password
      * values in the shared state in case subsequent LoginModules
      * want to use them via use/tryFirstPass.
-     *
-     * <p>
      *
      * @param getPasswdFromSharedState boolean that tells this method whether
      *          to retrieve the password from the sharedState.

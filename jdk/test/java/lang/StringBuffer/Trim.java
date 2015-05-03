@@ -24,6 +24,7 @@
 /* @test
  * @bug 4546734 5007612
  * @summary Test StringBuffer.trimToSize
+ * @key randomness
  */
 
 import java.util.Random;

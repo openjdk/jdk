@@ -142,7 +142,7 @@ public abstract class X509Certificate extends Certificate {
 
     static {
         X509Provider = AccessController.doPrivileged(
-            new PrivilegedAction<String>() {
+            new PrivilegedAction<>() {
                 public String run() {
                     return Security.getProperty(X509_PROVIDER);
                 }

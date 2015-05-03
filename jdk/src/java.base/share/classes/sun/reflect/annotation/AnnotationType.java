@@ -106,16 +106,16 @@ public class AnnotationType {
             throw new IllegalArgumentException("Not an annotation type");
 
         Method[] methods =
-            AccessController.doPrivileged(new PrivilegedAction<Method[]>() {
+            AccessController.doPrivileged(new PrivilegedAction<>() {
                 public Method[] run() {
                     // Initialize memberTypes and defaultValues
                     return annotationClass.getDeclaredMethods();
                 }
             });
 
-        memberTypes = new HashMap<String,Class<?>>(methods.length+1, 1.0f);
-        memberDefaults = new HashMap<String, Object>(0);
-        members = new HashMap<String, Method>(methods.length+1, 1.0f);
+        memberTypes = new HashMap<>(methods.length+1, 1.0f);
+        memberDefaults = new HashMap<>(0);
+        members = new HashMap<>(methods.length+1, 1.0f);
 
         for (Method method : methods) {
             if (method.getParameterTypes().length != 0)

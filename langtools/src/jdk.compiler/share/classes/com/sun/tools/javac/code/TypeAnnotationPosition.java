@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,14 +118,10 @@ public class TypeAnnotationPosition {
 
     public static final List<TypePathEntry> emptyPath = List.nil();
 
-    // NOTE: All of these will be converted to final fields eventually.
-
     public final TargetType type;
 
     // For generic/array types.
 
-    // This field is in the process of being made final.  Do not
-    // introduce new mutations.
     public List<TypePathEntry> location;
 
     // Tree position.

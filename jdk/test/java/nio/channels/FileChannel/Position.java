@@ -24,6 +24,7 @@
 /* @test
  * @bug 4429043 6526860
  * @summary Test position method of FileChannel
+ * @key randomness
  */
 
 import java.io.*;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -810,7 +810,9 @@ public class Infer {
                 Infer infer = inferenceContext.infer();
                 for (Type b1 : uv.getBounds(InferenceBound.UPPER)) {
                     for (Type b2 : uv.getBounds(InferenceBound.LOWER)) {
-                        isSubtype(inferenceContext.asUndetVar(b2), inferenceContext.asUndetVar(b1), warn , infer);
+                        if (!isSubtype(inferenceContext.asUndetVar(b2), inferenceContext.asUndetVar(b1), warn , infer)) {
+                            infer.reportBoundError(uv, BoundErrorKind.BAD_UPPER_LOWER);
+                        }
                     }
                 }
             }
@@ -831,7 +833,9 @@ public class Infer {
                 Infer infer = inferenceContext.infer();
                 for (Type b1 : uv.getBounds(InferenceBound.UPPER)) {
                     for (Type b2 : uv.getBounds(InferenceBound.EQ)) {
-                        isSubtype(inferenceContext.asUndetVar(b2), inferenceContext.asUndetVar(b1), warn, infer);
+                        if (!isSubtype(inferenceContext.asUndetVar(b2), inferenceContext.asUndetVar(b1), warn, infer)) {
+                            infer.reportBoundError(uv, BoundErrorKind.BAD_UPPER_EQUAL);
+                        }
                     }
                 }
             }
@@ -852,7 +856,9 @@ public class Infer {
                 Infer infer = inferenceContext.infer();
                 for (Type b1 : uv.getBounds(InferenceBound.EQ)) {
                     for (Type b2 : uv.getBounds(InferenceBound.LOWER)) {
-                        isSubtype(inferenceContext.asUndetVar(b2), inferenceContext.asUndetVar(b1), warn, infer);
+                        if (!isSubtype(inferenceContext.asUndetVar(b2), inferenceContext.asUndetVar(b1), warn, infer)) {
+                            infer.reportBoundError(uv, BoundErrorKind.BAD_EQUAL_LOWER);
+                        }
                     }
                 }
             }
@@ -926,7 +932,9 @@ public class Infer {
                 for (Type b1 : uv.getBounds(InferenceBound.EQ)) {
                     for (Type b2 : uv.getBounds(InferenceBound.EQ)) {
                         if (b1 != b2) {
-                            isSameType(inferenceContext.asUndetVar(b2), inferenceContext.asUndetVar(b1), infer);
+                            if (!isSameType(inferenceContext.asUndetVar(b2), inferenceContext.asUndetVar(b1), infer)) {
+                                infer.reportBoundError(uv, BoundErrorKind.BAD_EQ);
+                            }
                         }
                     }
                 }
@@ -1232,6 +1240,46 @@ public class Infer {
             InapplicableMethodException setMessage(InferenceException ex, UndetVar uv) {
                 return ex.setMessage("incompatible.upper.bounds", uv.qtype,
                         uv.getBounds(InferenceBound.UPPER));
+            }
+        },
+        /**
+         * The (uninstantiated) inference variable has incompatible equality constraints.
+         */
+        BAD_EQ() {
+            @Override
+            InapplicableMethodException setMessage(InferenceException ex, UndetVar uv) {
+                return ex.setMessage("incompatible.eq.bounds", uv.qtype,
+                        uv.getBounds(InferenceBound.EQ));
+            }
+        },
+        /**
+         * The (uninstantiated) inference variable has incompatible upper lower bounds.
+         */
+        BAD_UPPER_LOWER() {
+            @Override
+            InapplicableMethodException setMessage(InferenceException ex, UndetVar uv) {
+                return ex.setMessage("incompatible.upper.lower.bounds", uv.qtype,
+                        uv.getBounds(InferenceBound.UPPER), uv.getBounds(InferenceBound.LOWER));
+            }
+        },
+        /**
+         * The (uninstantiated) inference variable has incompatible upper equal bounds.
+         */
+        BAD_UPPER_EQUAL() {
+            @Override
+            InapplicableMethodException setMessage(InferenceException ex, UndetVar uv) {
+                return ex.setMessage("incompatible.upper.eq.bounds", uv.qtype,
+                        uv.getBounds(InferenceBound.UPPER), uv.getBounds(InferenceBound.EQ));
+            }
+        },
+        /**
+         * The (uninstantiated) inference variable has incompatible upper equal bounds.
+         */
+        BAD_EQUAL_LOWER() {
+            @Override
+            InapplicableMethodException setMessage(InferenceException ex, UndetVar uv) {
+                return ex.setMessage("incompatible.eq.lower.bounds", uv.qtype,
+                        uv.getBounds(InferenceBound.EQ), uv.getBounds(InferenceBound.LOWER));
             }
         },
         /**

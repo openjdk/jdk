@@ -45,8 +45,6 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
 import com.sun.tools.javac.file.JavacFileManager;
-import com.sun.tools.javac.nio.JavacPathFileManager;
-import com.sun.tools.javac.nio.PathFileManager;
 import com.sun.tools.javac.util.Context;
 
 /**
@@ -59,7 +57,7 @@ public class GetTask_FileManagerTest extends APITest {
 
     /**
      * Verify that an alternate file manager can be specified:
-     * in this case, a PathFileManager.
+     * in this case, a TestFileManager.
      */
     @Test
     public void testFileManager() throws Exception {

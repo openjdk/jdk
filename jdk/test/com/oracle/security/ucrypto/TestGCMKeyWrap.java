@@ -25,6 +25,7 @@
  * @test
  * @bug 8014374
  * @summary Ensure key wrap/unwrap works using AES/GCM/NoPadding
+ * @key randomness
  */
 
 import java.io.*;

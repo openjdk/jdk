@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,23 +36,23 @@ typedef ChunkedList<Metadata*, mtInternal> MetadataOnStackBuffer;
 // or executing methods, so that it can't be deleted during class redefinition
 // and class unloading.
 // This is also used for other things that can be deallocated, like class
-// metadata during parsing, relocated methods, and methods in backtraces.
+// metadata during parsing if errors occur, relocated methods, and temporary
+// constant pools.
 class MetadataOnStackMark : public StackObj {
   NOT_PRODUCT(static bool _is_active;)
-
-  static volatile MetadataOnStackBuffer* _used_buffers;
-  static volatile MetadataOnStackBuffer* _free_buffers;
+  static MetadataOnStackBuffer* _used_buffers;
+  static MetadataOnStackBuffer* _free_buffers;
+  static MetadataOnStackBuffer* _current_buffer;
 
   static MetadataOnStackBuffer* allocate_buffer();
   static void retire_buffer(MetadataOnStackBuffer* buffer);
 
  public:
-  MetadataOnStackMark(bool visit_code_cache);
+  MetadataOnStackMark(bool redefinition_walk);
    ~MetadataOnStackMark();
 
-  static void record(Metadata* m, Thread* thread);
-  static void retire_buffer_for_thread(Thread* thread);
-  static bool has_buffer_for_thread(Thread* thread);
+  static void record(Metadata* m);
+  static void retire_current_buffer();
 };
 
 #endif // SHARE_VM_CLASSFILE_METADATAONSTACKMARK_HPP

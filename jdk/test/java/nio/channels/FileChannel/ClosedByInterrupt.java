@@ -25,6 +25,7 @@
  * @bug 6979009
  * @summary Ensure ClosedByInterruptException is thrown when I/O operation
  *     interrupted by Thread.interrupt
+ * @key randomness
  */
 
 import java.io.*;

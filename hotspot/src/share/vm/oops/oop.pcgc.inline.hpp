@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,30 +52,6 @@ inline void oopDesc::follow_contents(ParCompactionManager* cm) {
   assert (PSParallelCompact::mark_bitmap()->is_marked(this),
     "should be marked");
   klass()->oop_follow_contents(cm, this);
-}
-
-inline oop oopDesc::forward_to_atomic(oop p) {
-  assert(ParNewGeneration::is_legal_forward_ptr(p),
-         "illegal forwarding pointer value.");
-  markOop oldMark = mark();
-  markOop forwardPtrMark = markOopDesc::encode_pointer_as_mark(p);
-  markOop curMark;
-
-  assert(forwardPtrMark->decode_pointer() == p, "encoding must be reversable");
-  assert(sizeof(markOop) == sizeof(intptr_t), "CAS below requires this.");
-
-  while (!oldMark->is_marked()) {
-    curMark = (markOop)Atomic::cmpxchg_ptr(forwardPtrMark, &_mark, oldMark);
-    assert(is_forwarded(), "object should have been forwarded");
-    if (curMark == oldMark) {
-      return NULL;
-    }
-    // If the CAS was unsuccessful then curMark->is_marked()
-    // should return true as another thread has CAS'd in another
-    // forwarding pointer.
-    oldMark = curMark;
-  }
-  return forwardee();
 }
 
 #endif // SHARE_VM_OOPS_OOP_PCGC_INLINE_HPP
