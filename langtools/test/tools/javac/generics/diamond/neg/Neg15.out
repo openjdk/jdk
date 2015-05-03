@@ -1,0 +1,4 @@
+Neg15.java:48:28: compiler.err.method.does.not.override.superclass
+Neg15.java:52:21: compiler.err.method.does.not.override.superclass
+Neg15.java:56:31: compiler.err.method.does.not.override.superclass
+3 errors

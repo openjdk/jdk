@@ -4,7 +4,7 @@ java.corba
 java.transaction
 java.xml.bind
 java.xml.ws
-jdk.accessbridge
+jdk.accessibility
 jdk.crypto.ec
 jdk.crypto.mscapi
 jdk.crypto.pkcs11
@@ -12,4 +12,5 @@ jdk.crypto.ucrypto
 jdk.localedata
 jdk.naming.dns
 jdk.scripting.nashorn
+jdk.xml.dom
 jdk.zipfs

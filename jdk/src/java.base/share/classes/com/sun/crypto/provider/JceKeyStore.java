@@ -711,7 +711,7 @@ public final class JceKeyStore extends KeyStoreSpi {
                     cf = CertificateFactory.getInstance("X509");
                 } else {
                     // version 2
-                    cfs = new Hashtable<String, CertificateFactory>(3);
+                    cfs = new Hashtable<>(3);
                 }
 
                 entries.clear();

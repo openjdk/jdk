@@ -1387,12 +1387,6 @@ bool Node::remove_dead_region(PhaseGVN *phase, bool can_reshape) {
   return false;
 }
 
-//------------------------------Ideal_DU_postCCP-------------------------------
-// Idealize graph, using DU info.  Must clone result into new-space
-Node *Node::Ideal_DU_postCCP( PhaseCCP * ) {
-  return NULL;                 // Default to no change
-}
-
 //------------------------------hash-------------------------------------------
 // Hash function over Nodes.
 uint Node::hash() const {
@@ -2079,6 +2073,14 @@ Node* Node::unique_ctrl_out() const {
     }
   }
   return found;
+}
+
+void Node::ensure_control_or_add_prec(Node* c) {
+  if (in(0) == NULL) {
+    set_req(0, c);
+  } else if (in(0) != c) {
+    add_prec(c);
+  }
 }
 
 //=============================================================================

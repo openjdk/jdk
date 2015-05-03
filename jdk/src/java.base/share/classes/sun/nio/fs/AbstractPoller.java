@@ -30,6 +30,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.io.IOException;
 import java.util.*;
+import sun.misc.ManagedLocalsThread;
 
 /**
  * Base implementation of background poller thread used in watch service
@@ -47,7 +48,7 @@ abstract class AbstractPoller implements Runnable {
     private boolean shutdown;
 
     protected AbstractPoller() {
-        this.requestList = new LinkedList<Request>();
+        this.requestList = new LinkedList<>();
         this.shutdown = false;
     }
 
@@ -56,10 +57,10 @@ abstract class AbstractPoller implements Runnable {
      */
     public void start() {
         final Runnable thisRunnable = this;
-        AccessController.doPrivileged(new PrivilegedAction<Object>() {
+        AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override
             public Object run() {
-                Thread thr = new Thread(thisRunnable);
+                Thread thr = new ManagedLocalsThread(thisRunnable);
                 thr.setDaemon(true);
                 thr.start();
                 return null;

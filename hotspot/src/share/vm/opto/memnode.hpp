@@ -84,10 +84,6 @@ public:
   // This one should probably be a phase-specific function:
   static bool all_controls_dominate(Node* dom, Node* sub);
 
-  // Find any cast-away of null-ness and keep its control.
-  static  Node *Ideal_common_DU_postCCP( PhaseCCP *ccp, Node* n, Node* adr );
-  virtual Node *Ideal_DU_postCCP( PhaseCCP *ccp );
-
   virtual const class TypePtr *adr_type() const;  // returns bottom_type of address
 
   // Shared code for Ideal methods:

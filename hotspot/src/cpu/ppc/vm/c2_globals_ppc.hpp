@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2014 SAP AG. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ define_pd_global(intx, ConditionalMoveLimit,         3);
 define_pd_global(intx, FLOATPRESSURE,                28);
 define_pd_global(intx, FreqInlineSize,               175);
 define_pd_global(intx, MinJumpTableSize,             10);
-define_pd_global(intx, INTPRESSURE,                  25);
+define_pd_global(intx, INTPRESSURE,                  26);
 define_pd_global(intx, InteriorEntryAlignment,       16);
 define_pd_global(size_t, NewSizeThreadIncrease,      ScaleForWordSize(4*K));
 define_pd_global(intx, RegisterCostAreaRatio,        16000);

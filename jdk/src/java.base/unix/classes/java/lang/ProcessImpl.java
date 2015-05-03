@@ -285,8 +285,6 @@ final class ProcessImpl extends Process {
      *   1 - fork(2) and exec(2)
      *   2 - posix_spawn(3P)
      *   3 - vfork(2) and exec(2)
-     *
-     *  (4 - clone(2) and exec(2) - obsolete and currently disabled in native code)
      * </pre>
      * @param fds an array of three file descriptors.
      *        Indexes 0, 1, and 2 correspond to standard input,
@@ -496,12 +494,11 @@ final class ProcessImpl extends Process {
     public synchronized boolean waitFor(long timeout, TimeUnit unit)
             throws InterruptedException
     {
+        long remainingNanos = unit.toNanos(timeout);    // throw NPE before other conditions
         if (hasExited) return true;
         if (timeout <= 0) return false;
 
-        long remainingNanos = unit.toNanos(timeout);
         long deadline = System.nanoTime() + remainingNanos;
-
         do {
             // Round up to next millisecond
             wait(TimeUnit.NANOSECONDS.toMillis(remainingNanos + 999_999L));

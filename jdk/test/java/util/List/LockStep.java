@@ -26,6 +26,7 @@
  * @bug     6359979
  * @summary Compare List implementations for identical behavior
  * @author  Martin Buchholz
+ * @key randomness
  */
 
 import java.io.*;

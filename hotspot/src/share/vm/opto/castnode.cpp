@@ -73,16 +73,6 @@ Node *ConstraintCastNode::Ideal(PhaseGVN *phase, bool can_reshape){
   return (in(0) && remove_dead_region(phase, can_reshape)) ? this : NULL;
 }
 
-//------------------------------Ideal_DU_postCCP-------------------------------
-// Throw away cast after constant propagation
-Node *ConstraintCastNode::Ideal_DU_postCCP( PhaseCCP *ccp ) {
-  const Type *t = ccp->type(in(1));
-  ccp->hash_delete(this);
-  set_type(t);                   // Turn into ID function
-  ccp->hash_insert(this);
-  return this;
-}
-
 uint CastIINode::size_of() const {
   return sizeof(*this);
 }
@@ -164,13 +154,6 @@ const Type *CastIINode::Value(PhaseTransform *phase) const {
   return res;
 }
 
-Node *CastIINode::Ideal_DU_postCCP(PhaseCCP *ccp) {
-  if (_carry_dependency) {
-    return NULL;
-  }
-  return ConstraintCastNode::Ideal_DU_postCCP(ccp);
-}
-
 #ifndef PRODUCT
 void CastIINode::dump_spec(outputStream *st) const {
   TypeNode::dump_spec(st);
@@ -179,20 +162,6 @@ void CastIINode::dump_spec(outputStream *st) const {
   }
 }
 #endif
-
-//=============================================================================
-
-//------------------------------Ideal_DU_postCCP-------------------------------
-// If not converting int->oop, throw away cast after constant propagation
-Node *CastPPNode::Ideal_DU_postCCP( PhaseCCP *ccp ) {
-  const Type *t = ccp->type(in(1));
-  if (!t->isa_oop_ptr() || ((in(1)->is_DecodeN()) && Matcher::gen_narrow_oop_implicit_null_checks())) {
-    return NULL; // do not transform raw pointers or narrow oops
-  }
-  return ConstraintCastNode::Ideal_DU_postCCP(ccp);
-}
-
-
 
 //=============================================================================
 //------------------------------Identity---------------------------------------

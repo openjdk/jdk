@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,16 @@ public class AttrContext {
      */
     boolean isSpeculative = false;
 
+    /**
+     *  Is this an attribution environment for an anonymous class instantiated using <> ?
+     */
+    boolean isAnonymousDiamond = false;
+
+    /**
+     *  Is this an attribution environment for an instance creation expression?
+     */
+    boolean isNewClass = false;
+
     /** Are arguments to current function applications boxed into an array for varargs?
      */
     Resolve.MethodResolutionPhase pendingResolutionPhase = null;
@@ -100,6 +110,8 @@ public class AttrContext {
         info.defaultSuperCallSite = defaultSuperCallSite;
         info.isSerializable = isSerializable;
         info.isSpeculative = isSpeculative;
+        info.isAnonymousDiamond = isAnonymousDiamond;
+        info.isNewClass = isNewClass;
         return info;
     }
 

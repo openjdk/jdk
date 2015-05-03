@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,22 +101,36 @@ public class TreeWriter extends AbstractTreeWriter {
      * Generate the interface hierarchy and class hierarchy.
      */
     public void generateTreeFile() throws IOException {
-        Content body = getTreeHeader();
+        HtmlTree body = getTreeHeader();
         Content headContent = getResource("doclet.Hierarchy_For_All_Packages");
         Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, false,
                 HtmlStyle.title, headContent);
         Content div = HtmlTree.DIV(HtmlStyle.header, heading);
         addPackageTreeLinks(div);
-        body.addContent(div);
+        HtmlTree htmlTree = (configuration.allowTag(HtmlTag.MAIN))
+                ? HtmlTree.MAIN()
+                : body;
+        htmlTree.addContent(div);
         HtmlTree divTree = new HtmlTree(HtmlTag.DIV);
         divTree.addStyle(HtmlStyle.contentContainer);
         addTree(classtree.baseclasses(), "doclet.Class_Hierarchy", divTree);
         addTree(classtree.baseinterfaces(), "doclet.Interface_Hierarchy", divTree);
         addTree(classtree.baseAnnotationTypes(), "doclet.Annotation_Type_Hierarchy", divTree);
         addTree(classtree.baseEnums(), "doclet.Enum_Hierarchy", divTree);
-        body.addContent(divTree);
-        addNavLinks(false, body);
-        addBottom(body);
+        htmlTree.addContent(divTree);
+        if (configuration.allowTag(HtmlTag.MAIN)) {
+            body.addContent(htmlTree);
+        }
+        if (configuration.allowTag(HtmlTag.FOOTER)) {
+            htmlTree = HtmlTree.FOOTER();
+        } else {
+            htmlTree = body;
+        }
+        addNavLinks(false, htmlTree);
+        addBottom(htmlTree);
+        if (configuration.allowTag(HtmlTag.FOOTER)) {
+            body.addContent(htmlTree);
+        }
         printHtmlDocument(null, true, body);
     }
 
@@ -164,11 +178,17 @@ public class TreeWriter extends AbstractTreeWriter {
      *
      * @return a content tree for the tree header
      */
-    protected Content getTreeHeader() {
+    protected HtmlTree getTreeHeader() {
         String title = configuration.getText("doclet.Window_Class_Hierarchy");
-        Content bodyTree = getBody(true, getWindowTitle(title));
-        addTop(bodyTree);
-        addNavLinks(true, bodyTree);
+        HtmlTree bodyTree = getBody(true, getWindowTitle(title));
+        HtmlTree htmlTree = (configuration.allowTag(HtmlTag.HEADER))
+                ? HtmlTree.HEADER()
+                : bodyTree;
+        addTop(htmlTree);
+        addNavLinks(true, htmlTree);
+        if (configuration.allowTag(HtmlTag.HEADER)) {
+            bodyTree.addContent(htmlTree);
+        }
         return bodyTree;
     }
 

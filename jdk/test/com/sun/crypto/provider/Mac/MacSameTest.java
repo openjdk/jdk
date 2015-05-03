@@ -35,6 +35,7 @@ import javax.crypto.spec.SecretKeySpec;
  * @author Yu-Ching Valerie Peng, Bill Situ, Alexander Fomin
  * @build Utils
  * @run main MacSameTest
+ * @key randomness
  */
 public class MacSameTest implements MacTest {
 

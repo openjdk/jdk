@@ -602,6 +602,9 @@ public class ErrorMessages extends ListResourceBundle {
         {ErrorMsg.JAXP_INVALID_ATTR_ERR,
         "TransformerFactory does not recognise attribute ''{0}''."},
 
+        {ErrorMsg.JAXP_INVALID_ATTR_VALUE_ERR,
+        "Incorrect value specified for ''{0}'' attribute."},
+
         /*
          * Note to translators:  "setResult()" and "startDocument()" are Java
          * method names that should not be translated.

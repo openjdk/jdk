@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ package org.ietf.jgss;
  * mechanism implementation is responsible for setting appropriate minor
  * status codes when throwing this exception.  Aside from delivering the
  * numeric error codes to the caller, this class performs the mapping from
- * their numeric values to textual representations. <p>
+ * their numeric values to textual representations.
  *
  * @author Mayank Upadhyay
  * @since 1.4

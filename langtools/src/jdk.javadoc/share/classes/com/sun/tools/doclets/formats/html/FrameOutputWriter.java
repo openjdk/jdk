@@ -96,7 +96,12 @@ public class FrameOutputWriter extends HtmlDocletWriter {
     protected void generateFrameFile() throws IOException {
         Content frame = getFrameDetails();
         HtmlTree body = new HtmlTree(HtmlTag.BODY);
-        body.addContent(frame);
+        if (configuration.allowTag(HtmlTag.MAIN)) {
+            HtmlTree main = HtmlTree.MAIN(frame);
+            body.addContent(main);
+        } else {
+            body.addContent(frame);
+        }
         if (configuration.windowtitle.length() > 0) {
             printFramesDocument(configuration.windowtitle, configuration,
                     body);

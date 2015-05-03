@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2013, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -375,23 +375,22 @@ void TemplateTable::fast_aldc(bool wide) {
 
   int index_size = wide ? sizeof(u2) : sizeof(u1);
   const Register Rscratch = R11_scratch1;
-  Label resolved;
+  Label is_null;
 
   // We are resolved if the resolved reference cache entry contains a
   // non-null object (CallSite, etc.)
   __ get_cache_index_at_bcp(Rscratch, 1, index_size);  // Load index.
-  __ load_resolved_reference_at_index(R17_tos, Rscratch);
-  __ cmpdi(CCR0, R17_tos, 0);
-  __ bne(CCR0, resolved);
+  __ load_resolved_reference_at_index(R17_tos, Rscratch, &is_null);
+  __ verify_oop(R17_tos);
+  __ dispatch_epilog(atos, Bytecodes::length_for(bytecode()));
+
+  __ bind(is_null);
   __ load_const_optimized(R3_ARG1, (int)bytecode());
 
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_ldc);
 
   // First time invocation - must resolve first.
   __ call_VM(R17_tos, entry, R3_ARG1);
-
-  __ align(32, 12);
-  __ bind(resolved);
   __ verify_oop(R17_tos);
 }
 
@@ -3859,9 +3858,9 @@ void TemplateTable::instanceof() {
   transition(atos, itos);
 
   Label Ldone, Lis_null, Lquicked, Lresolved;
-  Register Roffset         = R5_ARG3,
+  Register Roffset         = R6_ARG4,
            RobjKlass       = R4_ARG2,
-           RspecifiedKlass = R6_ARG4, // Generate_ClassCastException_verbose_handler will expect the value in this register.
+           RspecifiedKlass = R5_ARG3,
            Rcpool          = R11_scratch1,
            Rtags           = R12_scratch2;
 

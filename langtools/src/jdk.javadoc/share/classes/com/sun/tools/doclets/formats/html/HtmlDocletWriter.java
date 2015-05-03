@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,8 +183,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return a content tree for the script
      */
     public Content getAllClassesLinkScript(String id) {
-        HtmlTree script = new HtmlTree(HtmlTag.SCRIPT);
-        script.addAttr(HtmlAttr.TYPE, "text/javascript");
+        HtmlTree script = HtmlTree.SCRIPT();
         String scriptCode = "<!--" + DocletConstants.NL +
                 "  allClassesLink = document.getElementById(\"" + id + "\");" + DocletConstants.NL +
                 "  if(window==top) {" + DocletConstants.NL +
@@ -197,6 +196,9 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         Content scriptContent = new RawHtml(scriptCode);
         script.addContent(scriptContent);
         Content div = HtmlTree.DIV(script);
+        Content div_noscript = HtmlTree.DIV(getResource("doclet.No_Script_Message"));
+        Content noScript = HtmlTree.NOSCRIPT(div_noscript);
+        div.addContent(noScript);
         return div;
     }
 
@@ -342,8 +344,9 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         if(classes.length > 0) {
             Arrays.sort(classes);
             Content caption = getTableCaption(new RawHtml(label));
-            Content table = HtmlTree.TABLE(HtmlStyle.typeSummary, 0, 3, 0,
-                    tableSummary, caption);
+            Content table = (configuration.isOutputHtml5())
+                    ? HtmlTree.TABLE(HtmlStyle.typeSummary, caption)
+                    : HtmlTree.TABLE(HtmlStyle.typeSummary, tableSummary, caption);
             table.addContent(getSummaryTableHeader(tableHeader, "col"));
             Content tbody = new HtmlTree(HtmlTag.TBODY);
             for (int i = 0; i < classes.length; i++) {
@@ -393,7 +396,9 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     public void printHtmlDocument(String[] metakeywords, boolean includeScript,
             Content body) throws IOException {
-        Content htmlDocType = DocType.TRANSITIONAL;
+        Content htmlDocType = configuration.isOutputHtml5()
+                ? DocType.HTML5
+                : DocType.TRANSITIONAL;
         Content htmlComment = new Comment(configuration.getText("doclet.New_Page"));
         Content head = new HtmlTree(HtmlTag.HEAD);
         head.addContent(getGeneratedBy(!configuration.notimestamp));
@@ -404,7 +409,9 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         head.addContent(meta);
         if (!configuration.notimestamp) {
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-            meta = HtmlTree.META("date", dateFormat.format(new Date()));
+            meta = HtmlTree.META(configuration.isOutputHtml5()
+                    ? "dc.created"
+                    : "date", dateFormat.format(new Date()));
             head.addContent(meta);
         }
         if (metakeywords != null) {
@@ -459,38 +466,41 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     /**
      * Adds the user specified top.
      *
-     * @param body the content tree to which user specified top will be added
+     * @param htmlTree the content tree to which user specified top will be added
      */
-    public void addTop(Content body) {
+    public void addTop(Content htmlTree) {
         Content top = new RawHtml(replaceDocRootDir(configuration.top));
-        body.addContent(top);
+        htmlTree.addContent(top);
     }
 
     /**
      * Adds the user specified bottom.
      *
-     * @param body the content tree to which user specified bottom will be added
+     * @param htmlTree the content tree to which user specified bottom will be added
      */
-    public void addBottom(Content body) {
+    public void addBottom(Content htmlTree) {
         Content bottom = new RawHtml(replaceDocRootDir(configuration.bottom));
         Content small = HtmlTree.SMALL(bottom);
         Content p = HtmlTree.P(HtmlStyle.legalCopy, small);
-        body.addContent(p);
+        htmlTree.addContent(p);
     }
 
     /**
      * Adds the navigation bar for the Html page at the top and and the bottom.
      *
      * @param header If true print navigation bar at the top of the page else
-     * @param body the HtmlTree to which the nav links will be added
+     * @param htmlTree the HtmlTree to which the nav links will be added
      */
-    protected void addNavLinks(boolean header, Content body) {
+    protected void addNavLinks(boolean header, Content htmlTree) {
         if (!configuration.nonavbar) {
+            Content tree = (configuration.allowTag(HtmlTag.NAV))
+                    ? HtmlTree.NAV()
+                    : htmlTree;
             String allClassesId = "allclasses_";
             HtmlTree navDiv = new HtmlTree(HtmlTag.DIV);
             Content skipNavLinks = configuration.getResource("doclet.Skip_navigation_links");
             if (header) {
-                body.addContent(HtmlConstants.START_OF_TOP_NAVBAR);
+                tree.addContent(HtmlConstants.START_OF_TOP_NAVBAR);
                 navDiv.addStyle(HtmlStyle.topNav);
                 allClassesId += "navbar_top";
                 Content a = getMarkerAnchor(SectionName.NAVBAR_TOP);
@@ -501,7 +511,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     skipNavLinks.toString(), ""));
                 navDiv.addContent(skipLinkContent);
             } else {
-                body.addContent(HtmlConstants.START_OF_BOTTOM_NAVBAR);
+                tree.addContent(HtmlConstants.START_OF_BOTTOM_NAVBAR);
                 navDiv.addStyle(HtmlStyle.bottomNav);
                 allClassesId += "navbar_bottom";
                 Content a = getMarkerAnchor(SectionName.NAVBAR_BOTTOM);
@@ -548,7 +558,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             navDiv.addContent(navList);
             Content aboutDiv = HtmlTree.DIV(HtmlStyle.aboutLanguage, getUserHeaderFooter(header));
             navDiv.addContent(aboutDiv);
-            body.addContent(navDiv);
+            tree.addContent(navDiv);
             Content ulNav = HtmlTree.UL(HtmlStyle.navList, getNavLinkPrevious());
             ulNav.addContent(getNavLinkNext());
             Content subDiv = HtmlTree.DIV(HtmlStyle.subNav, ulNav);
@@ -562,12 +572,15 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             addSummaryDetailLinks(subDiv);
             if (header) {
                 subDiv.addContent(getMarkerAnchor(SectionName.SKIP_NAVBAR_TOP));
-                body.addContent(subDiv);
-                body.addContent(HtmlConstants.END_OF_TOP_NAVBAR);
+                tree.addContent(subDiv);
+                tree.addContent(HtmlConstants.END_OF_TOP_NAVBAR);
             } else {
                 subDiv.addContent(getMarkerAnchor(SectionName.SKIP_NAVBAR_BOTTOM));
-                body.addContent(subDiv);
-                body.addContent(HtmlConstants.END_OF_BOTTOM_NAVBAR);
+                tree.addContent(subDiv);
+                tree.addContent(HtmlConstants.END_OF_BOTTOM_NAVBAR);
+            }
+            if (configuration.allowTag(HtmlTag.NAV)) {
+                htmlTree.addContent(tree);
             }
         }
     }
@@ -904,7 +917,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     public Content getMarkerAnchor(String anchorName, Content anchorContent) {
         if (anchorContent == null)
             anchorContent = new Comment(" ");
-        Content markerAnchor = HtmlTree.A_NAME(anchorName, anchorContent);
+        Content markerAnchor = HtmlTree.A_ID(anchorName, anchorContent);
         return markerAnchor;
     }
 
@@ -942,8 +955,10 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     protected void addPackageDeprecatedAPI(List<Doc> deprPkgs, String headingKey,
             String tableSummary, String[] tableHeader, Content contentTree) {
         if (deprPkgs.size() > 0) {
-            Content table = HtmlTree.TABLE(HtmlStyle.deprecatedSummary, 0, 3, 0, tableSummary,
-                    getTableCaption(configuration.getResource(headingKey)));
+            Content caption = getTableCaption(configuration.getResource(headingKey));
+            Content table = (configuration.isOutputHtml5())
+                    ? HtmlTree.TABLE(HtmlStyle.deprecatedSummary, caption)
+                    : HtmlTree.TABLE(HtmlStyle.deprecatedSummary, tableSummary, caption);
             table.addContent(getSummaryTableHeader(tableHeader, "col"));
             Content tbody = new HtmlTree(HtmlTag.TBODY);
             for (int i = 0; i < deprPkgs.size(); i++) {
@@ -1829,8 +1844,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return an HtmlTree for the Script tag which provides the JavaScript location
      */
     public HtmlTree getScriptProperties() {
-        HtmlTree script = HtmlTree.SCRIPT("text/javascript",
-                pathToRoot.resolve(DocPaths.JAVASCRIPT).getPath());
+        HtmlTree script = HtmlTree.SCRIPT(pathToRoot.resolve(DocPaths.JAVASCRIPT).getPath());
         return script;
     }
 

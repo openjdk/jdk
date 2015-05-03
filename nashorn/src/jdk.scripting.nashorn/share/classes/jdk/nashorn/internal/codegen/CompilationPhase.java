@@ -57,7 +57,6 @@ import jdk.nashorn.internal.ir.debug.ASTWriter;
 import jdk.nashorn.internal.ir.debug.PrintVisitor;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.CodeInstaller;
-import jdk.nashorn.internal.runtime.FunctionInitializer;
 import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
@@ -581,18 +580,7 @@ enum CompilationPhase {
                     continue;
                 }
                 unit.setCode(installedClasses.get(unit.getUnitClassName()));
-            }
-
-            if (!compiler.isOnDemandCompilation()) {
-                // Initialize functions
-                final Map<Integer, FunctionInitializer> initializers = compiler.getFunctionInitializers();
-                if (initializers != null) {
-                    for (final Entry<Integer, FunctionInitializer> entry : initializers.entrySet()) {
-                        final FunctionInitializer initializer = entry.getValue();
-                        initializer.setCode(installedClasses.get(initializer.getClassName()));
-                        compiler.getScriptFunctionData(entry.getKey()).initializeCode(initializer);
-                    }
-                }
+                unit.initializeFunctionsCode();
             }
 
             if (log.isEnabled()) {

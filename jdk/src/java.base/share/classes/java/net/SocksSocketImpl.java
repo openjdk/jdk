@@ -82,7 +82,7 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
     {
         try {
             AccessController.doPrivileged(
-                new java.security.PrivilegedExceptionAction<Void>() {
+                new java.security.PrivilegedExceptionAction<>() {
                     public Void run() throws IOException {
                               superConnectServer(host, port, timeout);
                               cmdIn = getInputStream();
@@ -157,7 +157,7 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
             final InetAddress addr = InetAddress.getByName(server);
             PasswordAuthentication pw =
                 java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction<PasswordAuthentication>() {
+                    new java.security.PrivilegedAction<>() {
                         public PasswordAuthentication run() {
                                 return Authenticator.requestPasswordAuthentication(
                                        server, addr, serverPort, "SOCKS5", "SOCKS authentication", null);
@@ -351,7 +351,7 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
             // server is not null only when the socket was created with a
             // specified proxy in which case it does bypass the ProxySelector
             ProxySelector sel = java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<ProxySelector>() {
+                new java.security.PrivilegedAction<>() {
                     public ProxySelector run() {
                             return ProxySelector.getDefault();
                         }
@@ -595,7 +595,7 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
         InetAddress naddr = baddr;
         if (naddr.isAnyLocalAddress()) {
             naddr = AccessController.doPrivileged(
-                        new PrivilegedAction<InetAddress>() {
+                        new PrivilegedAction<>() {
                             public InetAddress run() {
                                 return cmdsock.getLocalAddress();
 
@@ -671,7 +671,7 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
             // server is not null only when the socket was created with a
             // specified proxy in which case it does bypass the ProxySelector
             ProxySelector sel = java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<ProxySelector>() {
+                new java.security.PrivilegedAction<>() {
                     public ProxySelector run() {
                             return ProxySelector.getDefault();
                         }
@@ -724,7 +724,7 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
                 // Connects to the SOCKS server
                 try {
                     AccessController.doPrivileged(
-                        new PrivilegedExceptionAction<Void>() {
+                        new PrivilegedExceptionAction<>() {
                             public Void run() throws Exception {
                                 cmdsock = new Socket(new PlainSocketImpl());
                                 cmdsock.connect(new InetSocketAddress(server, serverPort));
@@ -755,7 +755,7 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
         } else {
             try {
                 AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<Void>() {
+                    new PrivilegedExceptionAction<>() {
                         public Void run() throws Exception {
                             cmdsock = new Socket(new PlainSocketImpl());
                             cmdsock.connect(new InetSocketAddress(server, serverPort));

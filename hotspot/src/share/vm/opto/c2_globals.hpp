@@ -593,9 +593,6 @@
   develop(bool, PoisonOSREntry, true,                                       \
            "Detect abnormal calls to OSR code")                             \
                                                                             \
-  product(bool, UseCondCardMark, false,                                     \
-          "Check for already marked card before updating card table")       \
-                                                                            \
   develop(bool, SoftMatchFailure, trueInProduct,                            \
           "If the DFA fails to match a node, print a message and bail out") \
                                                                             \

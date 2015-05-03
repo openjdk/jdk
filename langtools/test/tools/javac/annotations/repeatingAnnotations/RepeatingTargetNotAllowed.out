@@ -1,2 +1,2 @@
-RepeatingTargetNotAllowed.java:43:5: compiler.err.invalid.repeatable.annotation.incompatible.target: Foos, Foo
+RepeatingTargetNotAllowed.java:43:5: compiler.err.invalid.repeatable.annotation.not.applicable: Foos, f
 1 error

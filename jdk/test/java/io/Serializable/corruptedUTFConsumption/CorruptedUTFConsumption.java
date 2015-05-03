@@ -28,6 +28,7 @@
  *          ObjectInputStream consumes at most the expected number of utf
  *          bytes, even if the last byte(s) of the utf string indicate that the
  *          string overflows its expected length.
+ * @key randomness
  */
 
 import java.io.*;

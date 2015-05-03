@@ -266,21 +266,26 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             awtUnlock();
         }
         PrivilegedAction<Void> a = () -> {
-            Thread shutdownThread = new Thread(ThreadGroupUtils.getRootThreadGroup(), "XToolkt-Shutdown-Thread") {
-                    public void run() {
-                        XSystemTrayPeer peer = XSystemTrayPeer.getPeerInstance();
-                        if (peer != null) {
-                            peer.dispose();
-                        }
-                        if (xs != null) {
-                            ((XAWTXSettings)xs).dispose();
-                        }
-                        freeXKB();
-                        if (log.isLoggable(PlatformLogger.Level.FINE)) {
-                            dumpPeers();
-                        }
-                    }
-                };
+            Runnable r = () -> {
+                XSystemTrayPeer peer = XSystemTrayPeer.getPeerInstance();
+                if (peer != null) {
+                    peer.dispose();
+                }
+                if (xs != null) {
+                    ((XAWTXSettings)xs).dispose();
+                }
+                freeXKB();
+                if (log.isLoggable(PlatformLogger.Level.FINE)) {
+                    dumpPeers();
+                }
+            };
+            String name = "XToolkt-Shutdown-Thread";
+            Thread shutdownThread;
+            if (System.getSecurityManager() == null) {
+                shutdownThread = new Thread(ThreadGroupUtils.getRootThreadGroup(), r, name);
+            } else {
+                shutdownThread = new InnocuousThread(r, name);
+            }
             shutdownThread.setContextClassLoader(null);
             Runtime.getRuntime().addShutdownHook(shutdownThread);
             return null;
@@ -326,7 +331,13 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             XWM.init();
 
             toolkitThread = AccessController.doPrivileged((PrivilegedAction<Thread>) () -> {
-                Thread thread = new Thread(ThreadGroupUtils.getRootThreadGroup(), XToolkit.this, "AWT-XAWT");
+                String name = "AWT-XAWT";
+                Thread thread;
+                if (System.getSecurityManager() == null) {
+                    thread = new Thread(ThreadGroupUtils.getRootThreadGroup(), XToolkit.this, name);
+                } else {
+                    thread = new InnocuousThread(XToolkit.this, name);
+                }
                 thread.setContextClassLoader(null);
                 thread.setPriority(Thread.NORM_PRIORITY + 1);
                 thread.setDaemon(true);

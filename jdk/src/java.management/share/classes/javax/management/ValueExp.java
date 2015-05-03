@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,10 +80,13 @@ public interface ValueExp extends java.io.Serializable {
      *
      * @return  The <CODE>ValueExp</CODE>.
      *
-     * @exception BadStringOperationException
-     * @exception BadBinaryOpValueExpException
-     * @exception BadAttributeValueExpException
-     * @exception InvalidApplicationException
+     * @throws BadStringOperationException when an invalid string
+     * operation is passed to a method for constructing a query
+     * @throws BadBinaryOpValueExpException when an invalid expression
+     * is passed to a method for constructing a query
+     * @throws BadAttributeValueExpException when an invalid MBean
+     * attribute is passed to a query constructing method
+     * @throws InvalidApplicationException when an invalid apply is attempted
      */
     public ValueExp apply(ObjectName name)
             throws BadStringOperationException, BadBinaryOpValueExpException,

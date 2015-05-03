@@ -102,21 +102,22 @@ InjectedField* JavaClasses::get_injected(Symbol* class_name, int* field_count) {
 static bool find_field(InstanceKlass* ik,
                        Symbol* name_symbol, Symbol* signature_symbol,
                        fieldDescriptor* fd,
-                       bool allow_super = false) {
-  if (allow_super)
-    return ik->find_field(name_symbol, signature_symbol, fd) != NULL;
-  else
+                       bool is_static = false, bool allow_super = false) {
+  if (allow_super || is_static) {
+    return ik->find_field(name_symbol, signature_symbol, is_static, fd) != NULL;
+  } else {
     return ik->find_local_field(name_symbol, signature_symbol, fd);
+  }
 }
 
 // Helpful routine for computing field offsets at run time rather than hardcoding them
 static void
 compute_offset(int &dest_offset,
                Klass* klass_oop, Symbol* name_symbol, Symbol* signature_symbol,
-               bool allow_super = false) {
+               bool is_static = false, bool allow_super = false) {
   fieldDescriptor fd;
   InstanceKlass* ik = InstanceKlass::cast(klass_oop);
-  if (!find_field(ik, name_symbol, signature_symbol, &fd, allow_super)) {
+  if (!find_field(ik, name_symbol, signature_symbol, &fd, is_static, allow_super)) {
     ResourceMark rm;
     tty->print_cr("Invalid layout of %s at %s", ik->external_name(), name_symbol->as_C_string());
 #ifndef PRODUCT
@@ -2965,14 +2966,49 @@ int java_lang_invoke_MethodType::rtype_slot_count(oop mt) {
 // Support for java_lang_invoke_CallSite
 
 int java_lang_invoke_CallSite::_target_offset;
+int java_lang_invoke_CallSite::_context_offset;
+int java_lang_invoke_CallSite::_default_context_offset;
 
 void java_lang_invoke_CallSite::compute_offsets() {
   Klass* k = SystemDictionary::CallSite_klass();
   if (k != NULL) {
     compute_offset(_target_offset, k, vmSymbols::target_name(), vmSymbols::java_lang_invoke_MethodHandle_signature());
+    compute_offset(_context_offset, k, vmSymbols::context_name(), vmSymbols::sun_misc_Cleaner_signature());
+    compute_offset(_default_context_offset, k,
+                   vmSymbols::DEFAULT_CONTEXT_name(), vmSymbols::sun_misc_Cleaner_signature(),
+                   /*is_static=*/true, /*allow_super=*/false);
   }
 }
 
+oop java_lang_invoke_CallSite::context_volatile(oop call_site) {
+  assert(java_lang_invoke_CallSite::is_instance(call_site), "");
+
+  oop dep_oop = call_site->obj_field_volatile(_context_offset);
+  return dep_oop;
+}
+
+void java_lang_invoke_CallSite::set_context_volatile(oop call_site, oop context) {
+  assert(java_lang_invoke_CallSite::is_instance(call_site), "");
+  call_site->obj_field_put_volatile(_context_offset, context);
+}
+
+bool java_lang_invoke_CallSite::set_context_cas(oop call_site, oop context, oop expected) {
+  assert(java_lang_invoke_CallSite::is_instance(call_site), "");
+  HeapWord* context_addr = call_site->obj_field_addr<HeapWord>(_context_offset);
+  oop res = oopDesc::atomic_compare_exchange_oop(context, context_addr, expected, true);
+  bool success = (res == expected);
+  if (success) {
+    update_barrier_set((void*)context_addr, context);
+  }
+  return success;
+}
+
+oop java_lang_invoke_CallSite::default_context() {
+  InstanceKlass* ik = InstanceKlass::cast(SystemDictionary::CallSite_klass());
+  oop def_context_oop = ik->java_mirror()->obj_field(_default_context_offset);
+  assert(!oopDesc::is_null(def_context_oop), "");
+  return def_context_oop;
+}
 
 // Support for java_security_AccessControlContext
 

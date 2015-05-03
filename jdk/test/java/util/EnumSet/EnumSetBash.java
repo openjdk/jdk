@@ -28,6 +28,7 @@
  * @author  Josh Bloch
  * @author  Neal Gafter
  * @author  Yo Ma Ma
+ * @key randomness
  */
 
 import java.util.*;

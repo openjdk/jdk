@@ -25,6 +25,8 @@
 
 package sun.print;
 
+import sun.misc.ManagedLocalsThread;
+
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -97,7 +99,12 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
                 return;
             }
             // start the printer listener thread
-            PrinterChangeListener thr = new PrinterChangeListener();
+            Thread thr;
+            if (System.getSecurityManager() == null) {
+                thr = new Thread(new PrinterChangeListener());
+            } else {
+                thr = new ManagedLocalsThread(new PrinterChangeListener());
+            }
             thr.setDaemon(true);
             thr.start();
         } /* else condition ought to never happen! */
@@ -316,12 +323,13 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
         return defaultPrintService;
     }
 
-    class PrinterChangeListener extends Thread {
+    class PrinterChangeListener implements Runnable {
         long chgObj;
         PrinterChangeListener() {
             chgObj = notifyFirstPrinterChange(null);
         }
 
+        @Override
         public void run() {
             if (chgObj != -1) {
                 while (true) {

@@ -36,6 +36,7 @@ import java.util.Map;
  * @author jim.gish@oracle.com
  * @build DrainFindDeadlockTest
  * @run main/othervm/timeout=10 DrainFindDeadlockTest
+ * @key randomness
  */
 
 /**

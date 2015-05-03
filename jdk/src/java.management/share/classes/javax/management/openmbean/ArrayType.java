@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -793,6 +793,7 @@ public class ArrayType<T> extends OpenType<T> {
      * array type description = 3-dimension array of java.lang.String
      * }</pre>
      *
+     * @param <E> the Java type that described instances must have
      * @param  elementType  the <i>open type</i> of element values contained
      *                      in the arrays described by this <tt>ArrayType</tt>
      *                      instance; must be an instance of either
@@ -800,7 +801,7 @@ public class ArrayType<T> extends OpenType<T> {
      *                      <tt>TabularType</tt> or another <tt>ArrayType</tt>
      *                      with a <tt>SimpleType</tt>, <tt>CompositeType</tt>
      *                      or <tt>TabularType</tt> as its <tt>elementType</tt>.
-     *
+     * @return an {@code ArrayType} instance
      * @throws OpenDataException if <var>elementType's className</var> is not
      *                           one of the allowed Java class names for open
      *                           data.
@@ -834,12 +835,14 @@ public class ArrayType<T> extends OpenType<T> {
      * array type description = 3-dimension array of int
      * }</pre>
      *
+     * @param <T> the Java type that described instances must have
      * @param arrayClass a primitive array class such as {@code int[].class},
      *                   {@code boolean[][].class}, etc. The {@link
      *                   #getElementOpenType()} method of the returned
      *                   {@code ArrayType} returns the {@link SimpleType}
      *                   corresponding to the wrapper type of the primitive
      *                   type of the array.
+     * @return an {@code ArrayType} instance
      *
      * @throws IllegalArgumentException if <var>arrayClass</var> is not
      *                                  a primitive array.
