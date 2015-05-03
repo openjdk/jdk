@@ -30,6 +30,7 @@ import java.io.NotSerializableException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.net.URL;
+import sun.misc.InnocuousThread;
 
 /**
  * A class that implements a cache of idle Http connections for keep-alive
@@ -93,17 +94,9 @@ public class KeepAliveCache
              */
             final KeepAliveCache cache = this;
             java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<Void>() {
+                new java.security.PrivilegedAction<>() {
                 public Void run() {
-                   // We want to create the Keep-Alive-Timer in the
-                    // system threadgroup
-                    ThreadGroup grp = Thread.currentThread().getThreadGroup();
-                    ThreadGroup parent = null;
-                    while ((parent = grp.getParent()) != null) {
-                        grp = parent;
-                    }
-
-                    keepAliveTimer = new Thread(grp, cache, "Keep-Alive-Timer");
+                    keepAliveTimer = new InnocuousThread(cache, "Keep-Alive-Timer");
                     keepAliveTimer.setDaemon(true);
                     keepAliveTimer.setPriority(Thread.MAX_PRIORITY - 2);
                     // Set the context class loader to null in order to avoid
@@ -185,7 +178,7 @@ public class KeepAliveCache
                 long currentTime = System.currentTimeMillis();
 
                 ArrayList<KeepAliveKey> keysToRemove
-                    = new ArrayList<KeepAliveKey>();
+                    = new ArrayList<>();
 
                 for (KeepAliveKey key : keySet()) {
                     ClientVector v = get(key);

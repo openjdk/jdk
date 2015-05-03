@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6970584 8006694
+ * @bug 6970584 8006694 8062373
  * @summary assorted position errors in compiler syntax trees
  *  temporarily workaround combo tests are causing time out in several platforms
  * @library ../lib
@@ -290,7 +290,7 @@ public class CheckAttributedTree extends JavacTestingAbstractThreadedTest {
             }
             public void finished(TaskEvent e) { }
         });
-
+        int i = 0;
         try {
             Iterable<? extends CompilationUnitTree> trees = task.parse();
 //            JavaCompiler c = JavaCompiler.instance(((JavacTaskImpl) task).getContext());
@@ -308,7 +308,7 @@ public class CheckAttributedTree extends JavacTestingAbstractThreadedTest {
                    if (def.hasTag(CLASSDEF) &&
                            analyzedElems.contains(((JCTree.JCClassDecl)def).sym)) {
                        //System.err.println("Adding pair..." + cu.sourcefile + " " + ((JCTree.JCClassDecl) def).name);
-                       res.add(new Pair<>(cu, def));
+                       res.add((i++ % 2) == 0 ? new Pair<>(cu, def) {} : new Pair<>(cu, def));
                    }
                }
             }

@@ -49,6 +49,7 @@ import sun.awt.datatransfer.DataTransferer;
 import sun.java2d.d3d.D3DRenderQueue;
 import sun.java2d.opengl.OGLRenderQueue;
 
+import sun.misc.InnocuousThread;
 import sun.print.PrintJob2D;
 
 import java.awt.dnd.DragSource;
@@ -247,11 +248,17 @@ public final class WToolkit extends SunToolkit implements Runnable {
          */
         AWTAutoShutdown.notifyToolkitThreadBusy();
 
-        // Find a root TG and attach Appkit thread to it
+        // Find a root TG and attach toolkit thread to it
         ThreadGroup rootTG = AccessController.doPrivileged(
                 (PrivilegedAction<ThreadGroup>) ThreadGroupUtils::getRootThreadGroup);
         if (!startToolkitThread(this, rootTG)) {
-            Thread toolkitThread = new Thread(rootTG, this, "AWT-Windows");
+            String name = "AWT-Windows";
+            Thread toolkitThread;
+            if (System.getSecurityManager() == null) {
+                toolkitThread = new Thread(rootTG, this, name);
+            } else {
+                toolkitThread = new InnocuousThread(this, name);
+            }
             toolkitThread.setDaemon(true);
             toolkitThread.start();
         }
@@ -278,7 +285,12 @@ public final class WToolkit extends SunToolkit implements Runnable {
 
     private void registerShutdownHook() {
         AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-            Thread shutdown = new Thread(ThreadGroupUtils.getRootThreadGroup(), this::shutdown);
+            Thread shutdown;
+            if (System.getSecurityManager() == null) {
+                shutdown = new Thread(ThreadGroupUtils.getRootThreadGroup(), this::shutdown);
+            } else {
+                shutdown = new InnocuousThread(this::shutdown);
+            }
             shutdown.setContextClassLoader(null);
             Runtime.getRuntime().addShutdownHook(shutdown);
             return null;

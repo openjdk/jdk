@@ -449,7 +449,7 @@ reg_class no_special_reg32(
     R26
  /* R27, */                     // heapbase
  /* R28, */                     // thread
- /* R29, */                     // fp
+    R29,                        // fp
  /* R30, */                     // lr
  /* R31 */                      // sp
 );
@@ -483,7 +483,7 @@ reg_class no_special_reg(
     R26, R26_H,
  /* R27, R27_H, */              // heapbase
  /* R28, R28_H, */              // thread
- /* R29, R29_H, */              // fp
+    R29, R29_H,                 // fp
  /* R30, R30_H, */              // lr
  /* R31, R31_H */               // sp
 );
@@ -758,6 +758,8 @@ definitions %{
 
 source_hpp %{
 
+#include "memory/cardTableModRefBS.hpp"
+
 class CallStubImpl {
 
   //--------------------------------------------------------------
@@ -793,37 +795,831 @@ class HandlerImpl {
   }
 };
 
-  bool preceded_by_ordered_load(const Node *barrier);
+  // graph traversal helpers
+  MemBarNode *has_parent_membar(const Node *n,
+				ProjNode *&ctl, ProjNode *&mem);
+  MemBarNode *has_child_membar(const MemBarNode *n,
+			       ProjNode *&ctl, ProjNode *&mem);
+
+  // predicates controlling emit of ldr<x>/ldar<x> and associated dmb
+  bool unnecessary_acquire(const Node *barrier);
+  bool needs_acquiring_load(const Node *load);
+
+  // predicates controlling emit of str<x>/stlr<x> and associated dmbs
+  bool unnecessary_release(const Node *barrier);
+  bool unnecessary_volatile(const Node *barrier);
+  bool needs_releasing_store(const Node *store);
 
   // Use barrier instructions rather than load acquire / store
   // release.
-  const bool UseBarriersForVolatile = true;
+  const bool UseBarriersForVolatile = false;
+  // Use barrier instructions for unsafe volatile gets rather than
+  // trying to identify an exact signature for them
+  const bool UseBarriersForUnsafeVolatileGet = false;
 %}
 
 source %{
 
-  // AArch64 has load acquire and store release instructions which we
-  // use for ordered memory accesses, e.g. for volatiles.  The ideal
-  // graph generator also inserts memory barriers around volatile
-  // accesses, and we don't want to generate both barriers and acq/rel
-  // instructions.  So, when we emit a MemBarAcquire we look back in
-  // the ideal graph for an ordered load and only emit the barrier if
-  // we don't find one.
+  // AArch64 has ldar<x> and stlr<x> instructions which we can safely
+  // use to implement volatile reads and writes. For a volatile read
+  // we simply need
+  //
+  //   ldar<x>
+  //
+  // and for a volatile write we need
+  //
+  //   stlr<x>
+  // 
+  // Alternatively, we can implement them by pairing a normal
+  // load/store with a memory barrier. For a volatile read we need
+  // 
+  //   ldr<x>
+  //   dmb ishld
+  //
+  // for a volatile write
+  //
+  //   dmb ish
+  //   str<x>
+  //   dmb ish
+  //
+  // In order to generate the desired instruction sequence we need to
+  // be able to identify specific 'signature' ideal graph node
+  // sequences which i) occur as a translation of a volatile reads or
+  // writes and ii) do not occur through any other translation or
+  // graph transformation. We can then provide alternative aldc
+  // matching rules which translate these node sequences to the
+  // desired machine code sequences. Selection of the alternative
+  // rules can be implemented by predicates which identify the
+  // relevant node sequences.
+  //
+  // The ideal graph generator translates a volatile read to the node
+  // sequence
+  //
+  //   LoadX[mo_acquire]
+  //   MemBarAcquire
+  //
+  // As a special case when using the compressed oops optimization we
+  // may also see this variant
+  //
+  //   LoadN[mo_acquire]
+  //   DecodeN
+  //   MemBarAcquire
+  //
+  // A volatile write is translated to the node sequence
+  //
+  //   MemBarRelease
+  //   StoreX[mo_release]
+  //   MemBarVolatile
+  //
+  // n.b. the above node patterns are generated with a strict
+  // 'signature' configuration of input and output dependencies (see
+  // the predicates below for exact details). The two signatures are
+  // unique to translated volatile reads/stores -- they will not
+  // appear as a result of any other bytecode translation or inlining
+  // nor as a consequence of optimizing transforms.
+  //
+  // We also want to catch inlined unsafe volatile gets and puts and
+  // be able to implement them using either ldar<x>/stlr<x> or some
+  // combination of ldr<x>/stlr<x> and dmb instructions.
+  //
+  // Inlined unsafe volatiles puts manifest as a minor variant of the
+  // normal volatile put node sequence containing an extra cpuorder
+  // membar
+  //
+  //   MemBarRelease
+  //   MemBarCPUOrder
+  //   StoreX[mo_release]
+  //   MemBarVolatile
+  //
+  // n.b. as an aside, the cpuorder membar is not itself subject to
+  // matching and translation by adlc rules.  However, the rule
+  // predicates need to detect its presence in order to correctly
+  // select the desired adlc rules.
+  //
+  // Inlined unsafe volatiles gets manifest as a somewhat different
+  // node sequence to a normal volatile get
+  //
+  //   MemBarCPUOrder
+  //        ||       \\
+  //   MemBarAcquire LoadX[mo_acquire]
+  //        ||
+  //   MemBarCPUOrder
+  //
+  // In this case the acquire membar does not directly depend on the
+  // load. However, we can be sure that the load is generated from an
+  // inlined unsafe volatile get if we see it dependent on this unique
+  // sequence of membar nodes. Similarly, given an acquire membar we
+  // can know that it was added because of an inlined unsafe volatile
+  // get if it is fed and feeds a cpuorder membar and if its feed
+  // membar also feeds an acquiring load.
+  //
+  // So, where we can identify these volatile read and write
+  // signatures we can choose to plant either of the above two code
+  // sequences. For a volatile read we can simply plant a normal
+  // ldr<x> and translate the MemBarAcquire to a dmb. However, we can
+  // also choose to inhibit translation of the MemBarAcquire and
+  // inhibit planting of the ldr<x>, instead planting an ldar<x>.
+  //
+  // When we recognise a volatile store signature we can choose to
+  // plant at a dmb ish as a translation for the MemBarRelease, a
+  // normal str<x> and then a dmb ish for the MemBarVolatile.
+  // Alternatively, we can inhibit translation of the MemBarRelease
+  // and MemBarVolatile and instead plant a simple stlr<x>
+  // instruction.
+  //
+  // Of course, the above only applies when we see these signature
+  // configurations. We still want to plant dmb instructions in any
+  // other cases where we may see a MemBarAcquire, MemBarRelease or
+  // MemBarVolatile. For example, at the end of a constructor which
+  // writes final/volatile fields we will see a MemBarRelease
+  // instruction and this needs a 'dmb ish' lest we risk the
+  // constructed object being visible without making the
+  // final/volatile field writes visible.
+  //
+  // n.b. the translation rules below which rely on detection of the
+  // volatile signatures and insert ldar<x> or stlr<x> are failsafe.
+  // If we see anything other than the signature configurations we
+  // always just translate the loads and stors to ldr<x> and str<x>
+  // and translate acquire, release and volatile membars to the
+  // relevant dmb instructions.
+  //
+  // n.b.b as a case in point for the above comment, the current
+  // predicates don't detect the precise signature for certain types
+  // of volatile object stores (where the heap_base input type is not
+  // known at compile-time to be non-NULL). In those cases the
+  // MemBarRelease and MemBarVolatile bracket an if-then-else sequence
+  // with a store in each branch (we need a different store depending
+  // on whether heap_base is actually NULL). In such a case we will
+  // just plant a dmb both before and after the branch/merge. The
+  // predicate could (and probably should) be fixed later to also
+  // detect this case.
 
-bool preceded_by_ordered_load(const Node *barrier) {
-  Node *x = barrier->lookup(TypeFunc::Parms);
+  // graph traversal helpers
 
-  if (! x)
+  // if node n is linked to a parent MemBarNode by an intervening
+  // Control or Memory ProjNode return the MemBarNode otherwise return
+  // NULL.
+  //
+  // n may only be a Load or a MemBar.
+  //
+  // The ProjNode* references c and m are used to return the relevant
+  // nodes.
+
+  MemBarNode *has_parent_membar(const Node *n, ProjNode *&c, ProjNode *&m)
+  {
+    Node *ctl = NULL;
+    Node *mem = NULL;
+    Node *membar = NULL;
+
+    if (n->is_Load()) {
+      ctl = n->lookup(LoadNode::Control);
+      mem = n->lookup(LoadNode::Memory);
+    } else if (n->is_MemBar()) {
+      ctl = n->lookup(TypeFunc::Control);
+      mem = n->lookup(TypeFunc::Memory);
+    } else {
+	return NULL;
+    }
+
+    if (!ctl || !mem || !ctl->is_Proj() || !mem->is_Proj())
+      return NULL;
+
+    c = ctl->as_Proj();
+
+    membar = ctl->lookup(0);
+
+    if (!membar || !membar->is_MemBar())
+      return NULL;
+
+    m = mem->as_Proj();
+
+    if (mem->lookup(0) != membar)
+      return NULL;
+
+    return membar->as_MemBar();
+  }
+
+  // if n is linked to a child MemBarNode by intervening Control and
+  // Memory ProjNodes return the MemBarNode otherwise return NULL.
+  //
+  // The ProjNode** arguments c and m are used to return pointers to
+  // the relevant nodes. A null argument means don't don't return a
+  // value.
+
+  MemBarNode *has_child_membar(const MemBarNode *n, ProjNode *&c, ProjNode *&m)
+  {
+    ProjNode *ctl = n->proj_out(TypeFunc::Control);
+    ProjNode *mem = n->proj_out(TypeFunc::Memory);
+
+    // MemBar needs to have both a Ctl and Mem projection
+    if (! ctl || ! mem)
+      return NULL;
+
+    c = ctl;
+    m = mem;
+
+    MemBarNode *child = NULL;
+    Node *x;
+
+    for (DUIterator_Fast imax, i = ctl->fast_outs(imax); i < imax; i++) {
+      x = ctl->fast_out(i);
+      // if we see a membar we keep hold of it. we may also see a new
+      // arena copy of the original but it will appear later
+      if (x->is_MemBar()) {
+	  child = x->as_MemBar();
+	  break;
+      }
+    }
+
+    if (child == NULL)
+      return NULL;
+
+    for (DUIterator_Fast imax, i = mem->fast_outs(imax); i < imax; i++) {
+      x = mem->fast_out(i);
+      // if we see a membar we keep hold of it. we may also see a new
+      // arena copy of the original but it will appear later
+      if (x == child) {
+	return child;
+      }
+    }
+    return NULL;
+  }
+
+  // predicates controlling emit of ldr<x>/ldar<x> and associated dmb
+
+bool unnecessary_acquire(const Node *barrier) {
+  // assert barrier->is_MemBar();
+  if (UseBarriersForVolatile)
+    // we need to plant a dmb
     return false;
 
-  if (x->is_DecodeNarrowPtr())
-    x = x->in(1);
+  // a volatile read derived from bytecode (or also from an inlined
+  // SHA field read via LibraryCallKit::load_field_from_object)
+  // manifests as a LoadX[mo_acquire] followed by an acquire membar
+  // with a bogus read dependency on it's preceding load. so in those
+  // cases we will find the load node at the PARMS offset of the
+  // acquire membar.  n.b. there may be an intervening DecodeN node.
+  //
+  // a volatile load derived from an inlined unsafe field access
+  // manifests as a cpuorder membar with Ctl and Mem projections
+  // feeding both an acquire membar and a LoadX[mo_acquire]. The
+  // acquire then feeds another cpuorder membar via Ctl and Mem
+  // projections. The load has no output dependency on these trailing
+  // membars because subsequent nodes inserted into the graph take
+  // their control feed from the final membar cpuorder meaning they
+  // are all ordered after the load.
 
-  if (x->is_Load())
-    return ! x->as_Load()->is_unordered();
+  Node *x = barrier->lookup(TypeFunc::Parms);
+  if (x) {
+    // we are starting from an acquire and it has a fake dependency
+    //
+    // need to check for
+    //
+    //   LoadX[mo_acquire]
+    //   {  |1   }
+    //   {DecodeN}
+    //      |Parms
+    //   MemBarAcquire*
+    //
+    // where * tags node we were passed
+    // and |k means input k
+    if (x->is_DecodeNarrowPtr())
+      x = x->in(1);
 
-  return false;
+    return (x->is_Load() && x->as_Load()->is_acquire());
+  }
+  
+  // only continue if we want to try to match unsafe volatile gets
+  if (UseBarriersForUnsafeVolatileGet)
+    return false;
+
+  // need to check for
+  //
+  //     MemBarCPUOrder
+  //        ||       \\
+  //   MemBarAcquire* LoadX[mo_acquire]
+  //        ||
+  //   MemBarCPUOrder
+  //
+  // where * tags node we were passed
+  // and || or \\ are Ctl+Mem feeds via intermediate Proj Nodes
+
+  // check for a parent MemBarCPUOrder
+  ProjNode *ctl;
+  ProjNode *mem;
+  MemBarNode *parent = has_parent_membar(barrier, ctl, mem);
+  if (!parent || parent->Opcode() != Op_MemBarCPUOrder)
+    return false;
+  // ensure the proj nodes both feed a LoadX[mo_acquire]
+  LoadNode *ld = NULL;
+  for (DUIterator_Fast imax, i = ctl->fast_outs(imax); i < imax; i++) {
+    x = ctl->fast_out(i);
+    // if we see a load we keep hold of it and stop searching
+    if (x->is_Load()) {
+      ld = x->as_Load();
+      break;
+    }
+  }
+  // it must be an acquiring load
+  if (! ld || ! ld->is_acquire())
+    return false;
+  for (DUIterator_Fast imax, i = mem->fast_outs(imax); i < imax; i++) {
+    x = mem->fast_out(i);
+    // if we see the same load we drop it and stop searching
+    if (x == ld) {
+      ld = NULL;
+      break;
+    }
+  }
+  // we must have dropped the load
+  if (ld)
+    return false;
+  // check for a child cpuorder membar
+  MemBarNode *child  = has_child_membar(barrier->as_MemBar(), ctl, mem);
+  if (!child || child->Opcode() != Op_MemBarCPUOrder)
+    return false;
+
+  return true;
 }
+
+bool needs_acquiring_load(const Node *n)
+{
+  // assert n->is_Load();
+  if (UseBarriersForVolatile)
+    // we use a normal load and a dmb
+    return false;
+
+  LoadNode *ld = n->as_Load();
+
+  if (!ld->is_acquire())
+    return false;
+
+  // check if this load is feeding an acquire membar
+  //
+  //   LoadX[mo_acquire]
+  //   {  |1   }
+  //   {DecodeN}
+  //      |Parms
+  //   MemBarAcquire*
+  //
+  // where * tags node we were passed
+  // and |k means input k
+
+  Node *start = ld;
+  Node *mbacq = NULL;
+
+  // if we hit a DecodeNarrowPtr we reset the start node and restart
+  // the search through the outputs
+ restart:
+
+  for (DUIterator_Fast imax, i = start->fast_outs(imax); i < imax; i++) {
+    Node *x = start->fast_out(i);
+    if (x->is_MemBar() && x->Opcode() == Op_MemBarAcquire) {
+      mbacq = x;
+    } else if (!mbacq &&
+	       (x->is_DecodeNarrowPtr() ||
+		(x->is_Mach() && x->Opcode() == Op_DecodeN))) {
+      start = x;
+      goto restart;
+    }
+  }
+
+  if (mbacq) {
+    return true;
+  }
+
+  // only continue if we want to try to match unsafe volatile gets
+  if (UseBarriersForUnsafeVolatileGet)
+    return false;
+
+  // check if Ctl and Proj feed comes from a MemBarCPUOrder
+  //
+  //     MemBarCPUOrder
+  //        ||       \\
+  //   MemBarAcquire* LoadX[mo_acquire]
+  //        ||
+  //   MemBarCPUOrder
+
+  MemBarNode *membar;
+  ProjNode *ctl;
+  ProjNode *mem;
+
+  membar = has_parent_membar(ld, ctl, mem);
+
+  if (!membar || !membar->Opcode() == Op_MemBarCPUOrder)
+    return false;
+
+  // ensure that there is a CPUOrder->Acquire->CPUOrder membar chain
+
+  membar = has_child_membar(membar, ctl, mem);
+
+  if (!membar || !membar->Opcode() == Op_MemBarAcquire)
+    return false;
+
+  membar = has_child_membar(membar, ctl, mem);
+  
+  if (!membar || !membar->Opcode() == Op_MemBarCPUOrder)
+    return false;
+
+  return true;
+}
+
+bool unnecessary_release(const Node *n) {
+  // assert n->is_MemBar();
+  if (UseBarriersForVolatile)
+    // we need to plant a dmb
+    return false;
+
+  // ok, so we can omit this release barrier if it has been inserted
+  // as part of a volatile store sequence
+  //
+  //   MemBarRelease
+  //  {      ||      }
+  //  {MemBarCPUOrder} -- optional
+  //         ||     \\
+  //         ||     StoreX[mo_release]
+  //         | \     /
+  //         | MergeMem
+  //         | /
+  //   MemBarVolatile
+  //
+  // where
+  //  || and \\ represent Ctl and Mem feeds via Proj nodes
+  //  | \ and / indicate further routing of the Ctl and Mem feeds
+  // 
+  // so we need to check that
+  //
+  // ia) the release membar (or its dependent cpuorder membar) feeds
+  // control to a store node (via a Control project node)
+  //
+  // ii) the store is ordered release
+  //
+  // iii) the release membar (or its dependent cpuorder membar) feeds
+  // control to a volatile membar (via the same Control project node)
+  //
+  // iv) the release membar feeds memory to a merge mem and to the
+  // same store (both via a single Memory proj node)
+  //
+  // v) the store outputs to the merge mem
+  //
+  // vi) the merge mem outputs to the same volatile membar
+  //
+  // n.b. if this is an inlined unsafe node then the release membar
+  // may feed its control and memory links via an intervening cpuorder
+  // membar. this case can be dealt with when we check the release
+  // membar projections. if they both feed a single cpuorder membar
+  // node continue to make the same checks as above but with the
+  // cpuorder membar substituted for the release membar. if they don't
+  // both feed a cpuorder membar then the check fails.
+  //
+  // n.b.b. for an inlined unsafe store of an object in the case where
+  // !TypePtr::NULL_PTR->higher_equal(type(heap_base_oop)) we may see
+  // an embedded if then else where we expect the store. this is
+  // needed to do the right type of store depending on whether
+  // heap_base is NULL. We could check for that but for now we can
+  // just take the hit of on inserting a redundant dmb for this
+  // redundant volatile membar
+
+  MemBarNode *barrier = n->as_MemBar();
+  ProjNode *ctl;
+  ProjNode *mem;
+  // check for an intervening cpuorder membar
+  MemBarNode *b = has_child_membar(barrier, ctl, mem);
+  if (b && b->Opcode() == Op_MemBarCPUOrder) {
+    // ok, so start form the dependent cpuorder barrier
+    barrier = b;
+  }
+  // check the ctl and mem flow
+  ctl = barrier->proj_out(TypeFunc::Control);
+  mem = barrier->proj_out(TypeFunc::Memory);
+
+  // the barrier needs to have both a Ctl and Mem projection
+  if (! ctl || ! mem)
+    return false;
+
+  Node *x = NULL;
+  Node *mbvol = NULL;
+  StoreNode * st = NULL;
+
+  // For a normal volatile write the Ctl ProjNode should have output
+  // to a MemBarVolatile and a Store marked as releasing
+  //
+  // n.b. for an inlined unsafe store of an object in the case where
+  // !TypePtr::NULL_PTR->higher_equal(type(heap_base_oop)) we may see
+  // an embedded if then else where we expect the store. this is
+  // needed to do the right type of store depending on whether
+  // heap_base is NULL. We could check for that case too but for now
+  // we can just take the hit of inserting a dmb and a non-volatile
+  // store to implement the volatile store
+
+  for (DUIterator_Fast imax, i = ctl->fast_outs(imax); i < imax; i++) {
+    x = ctl->fast_out(i);
+    if (x->is_MemBar() && x->Opcode() == Op_MemBarVolatile) {
+      if (mbvol) {
+	return false;
+      }
+      mbvol = x;
+    } else if (x->is_Store()) {
+      st = x->as_Store();
+      if (! st->is_release()) {
+	return false;
+      }
+    } else if (!x->is_Mach()) {
+      // we may see mach nodes added during matching but nothing else
+      return false;
+    }
+  }
+
+  if (!mbvol || !st)
+    return false;
+
+  // the Mem ProjNode should output to a MergeMem and the same Store
+  Node *mm = NULL;
+  for (DUIterator_Fast imax, i = mem->fast_outs(imax); i < imax; i++) {
+    x = mem->fast_out(i);
+    if (!mm && x->is_MergeMem()) {
+      mm = x;
+    } else if (x != st && !x->is_Mach()) {
+      // we may see mach nodes added during matching but nothing else
+      return false;
+    }
+  }
+
+  if (!mm)
+    return false;
+
+  // the MergeMem should output to the MemBarVolatile
+  for (DUIterator_Fast imax, i = mm->fast_outs(imax); i < imax; i++) {
+    x = mm->fast_out(i);
+    if (x != mbvol && !x->is_Mach()) {
+      // we may see mach nodes added during matching but nothing else
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool unnecessary_volatile(const Node *n) {
+  // assert n->is_MemBar();
+  if (UseBarriersForVolatile)
+    // we need to plant a dmb
+    return false;
+
+  // ok, so we can omit this volatile barrier if it has been inserted
+  // as part of a volatile store sequence
+  //
+  //   MemBarRelease
+  //  {      ||      }
+  //  {MemBarCPUOrder} -- optional
+  //         ||     \\
+  //         ||     StoreX[mo_release]
+  //         | \     /
+  //         | MergeMem
+  //         | /
+  //   MemBarVolatile
+  //
+  // where
+  //  || and \\ represent Ctl and Mem feeds via Proj nodes
+  //  | \ and / indicate further routing of the Ctl and Mem feeds
+  // 
+  // we need to check that
+  //
+  // i) the volatile membar gets its control feed from a release
+  // membar (or its dependent cpuorder membar) via a Control project
+  // node
+  //
+  // ii) the release membar (or its dependent cpuorder membar) also
+  // feeds control to a store node via the same proj node
+  //
+  // iii) the store is ordered release
+  //
+  // iv) the release membar (or its dependent cpuorder membar) feeds
+  // memory to a merge mem and to the same store (both via a single
+  // Memory proj node)
+  //
+  // v) the store outputs to the merge mem
+  //
+  // vi) the merge mem outputs to the volatile membar
+  //
+  // n.b. for an inlined unsafe store of an object in the case where
+  // !TypePtr::NULL_PTR->higher_equal(type(heap_base_oop)) we may see
+  // an embedded if then else where we expect the store. this is
+  // needed to do the right type of store depending on whether
+  // heap_base is NULL. We could check for that but for now we can
+  // just take the hit of on inserting a redundant dmb for this
+  // redundant volatile membar
+
+  MemBarNode *mbvol = n->as_MemBar();
+  Node *x = n->lookup(TypeFunc::Control);
+
+  if (! x || !x->is_Proj())
+    return false;
+
+  ProjNode *proj = x->as_Proj();
+
+  x = proj->lookup(0);
+
+  if (!x || !x->is_MemBar())
+    return false;
+
+  MemBarNode *barrier = x->as_MemBar();
+
+  // if the barrier is a release membar we have what we want. if it is
+  // a cpuorder membar then we need to ensure that it is fed by a
+  // release membar in which case we proceed to check the graph below
+  // this cpuorder membar as the feed
+
+  if (x->Opcode() != Op_MemBarRelease) {
+    if (x->Opcode() != Op_MemBarCPUOrder)
+      return false;
+    ProjNode *ctl;
+    ProjNode *mem;
+    MemBarNode *b = has_parent_membar(x, ctl, mem);
+    if (!b || !b->Opcode() == Op_MemBarRelease)
+      return false;
+  }
+
+  ProjNode *ctl = barrier->proj_out(TypeFunc::Control);
+  ProjNode *mem = barrier->proj_out(TypeFunc::Memory);
+
+  // barrier needs to have both a Ctl and Mem projection
+  // and we need to have reached it via the Ctl projection
+  if (! ctl || ! mem || ctl != proj)
+    return false;
+
+  StoreNode * st = NULL;
+
+  // The Ctl ProjNode should have output to a MemBarVolatile and
+  // a Store marked as releasing
+  for (DUIterator_Fast imax, i = ctl->fast_outs(imax); i < imax; i++) {
+    x = ctl->fast_out(i);
+    if (x->is_MemBar() && x->Opcode() == Op_MemBarVolatile) {
+      if (x != mbvol) {
+	return false;
+      }
+    } else if (x->is_Store()) {
+      st = x->as_Store();
+      if (! st->is_release()) {
+	return false;
+      }
+    } else if (!x->is_Mach()){
+      // we may see mach nodes added during matching but nothing else
+      return false;
+    }
+  }
+
+  if (!st)
+    return false;
+
+  // the Mem ProjNode should output to a MergeMem and the same Store
+  Node *mm = NULL;
+  for (DUIterator_Fast imax, i = mem->fast_outs(imax); i < imax; i++) {
+    x = mem->fast_out(i);
+    if (!mm && x->is_MergeMem()) {
+      mm = x;
+    } else if (x != st && !x->is_Mach()) {
+      // we may see mach nodes added during matching but nothing else
+      return false;
+    }
+  }
+
+  if (!mm)
+    return false;
+
+  // the MergeMem should output to the MemBarVolatile
+  for (DUIterator_Fast imax, i = mm->fast_outs(imax); i < imax; i++) {
+    x = mm->fast_out(i);
+    if (x != mbvol && !x->is_Mach()) {
+      // we may see mach nodes added during matching but nothing else
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
+
+bool needs_releasing_store(const Node *n)
+{
+  // assert n->is_Store();
+  if (UseBarriersForVolatile)
+    // we use a normal store and dmb combination
+    return false;
+
+  StoreNode *st = n->as_Store();
+
+  if (!st->is_release())
+    return false;
+
+  // check if this store is bracketed by a release (or its dependent
+  // cpuorder membar) and a volatile membar
+  //
+  //   MemBarRelease
+  //  {      ||      }
+  //  {MemBarCPUOrder} -- optional
+  //         ||     \\
+  //         ||     StoreX[mo_release]
+  //         | \     /
+  //         | MergeMem
+  //         | /
+  //   MemBarVolatile
+  //
+  // where
+  //  || and \\ represent Ctl and Mem feeds via Proj nodes
+  //  | \ and / indicate further routing of the Ctl and Mem feeds
+  // 
+
+
+  Node *x = st->lookup(TypeFunc::Control);
+
+  if (! x || !x->is_Proj())
+    return false;
+
+  ProjNode *proj = x->as_Proj();
+
+  x = proj->lookup(0);
+
+  if (!x || !x->is_MemBar())
+    return false;
+
+  MemBarNode *barrier = x->as_MemBar();
+
+  // if the barrier is a release membar we have what we want. if it is
+  // a cpuorder membar then we need to ensure that it is fed by a
+  // release membar in which case we proceed to check the graph below
+  // this cpuorder membar as the feed
+
+  if (x->Opcode() != Op_MemBarRelease) {
+    if (x->Opcode() != Op_MemBarCPUOrder)
+      return false;
+    Node *ctl = x->lookup(TypeFunc::Control);
+    Node *mem = x->lookup(TypeFunc::Memory);
+    if (!ctl || !ctl->is_Proj() || !mem || !mem->is_Proj())
+      return false;
+    x = ctl->lookup(0);
+    if (!x || !x->is_MemBar() || !x->Opcode() == Op_MemBarRelease)
+      return false;
+    Node *y = mem->lookup(0);
+    if (!y || y != x)
+      return false;
+  }
+
+  ProjNode *ctl = barrier->proj_out(TypeFunc::Control);
+  ProjNode *mem = barrier->proj_out(TypeFunc::Memory);
+
+  // MemBarRelease needs to have both a Ctl and Mem projection
+  // and we need to have reached it via the Ctl projection
+  if (! ctl || ! mem || ctl != proj)
+    return false;
+
+  MemBarNode *mbvol = NULL;
+
+  // The Ctl ProjNode should have output to a MemBarVolatile and
+  // a Store marked as releasing
+  for (DUIterator_Fast imax, i = ctl->fast_outs(imax); i < imax; i++) {
+    x = ctl->fast_out(i);
+    if (x->is_MemBar() && x->Opcode() == Op_MemBarVolatile) {
+      mbvol = x->as_MemBar();
+    } else if (x->is_Store()) {
+      if (x != st) {
+	return false;
+      }
+    } else if (!x->is_Mach()){
+      return false;
+    }
+  }
+
+  if (!mbvol)
+    return false;
+
+  // the Mem ProjNode should output to a MergeMem and the same Store
+  Node *mm = NULL;
+  for (DUIterator_Fast imax, i = mem->fast_outs(imax); i < imax; i++) {
+    x = mem->fast_out(i);
+    if (!mm && x->is_MergeMem()) {
+      mm = x;
+    } else if (x != st && !x->is_Mach()) {
+      return false;
+    }
+  }
+
+  if (!mm)
+    return false;
+
+  // the MergeMem should output to the MemBarVolatile
+  for (DUIterator_Fast imax, i = mm->fast_outs(imax); i < imax; i++) {
+    x = mm->fast_out(i);
+    if (x != mbvol && !x->is_Mach()) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
 
 #define __ _masm.
 
@@ -1744,7 +2540,7 @@ RegMask Matcher::modL_proj_mask() {
 }
 
 const RegMask Matcher::method_handle_invoke_SP_save_mask() {
-  return RegMask();
+  return FP_REG_mask();
 }
 
 // helper for encoding java_to_runtime calls on sim
@@ -5182,7 +5978,7 @@ define %{
 instruct loadB(iRegINoSp dst, memory mem)
 %{
   match(Set dst (LoadB mem));
-  predicate(UseBarriersForVolatile || n->as_Load()->is_unordered());
+  predicate(!needs_acquiring_load(n));
 
   ins_cost(4 * INSN_COST);
   format %{ "ldrsbw  $dst, $mem\t# byte" %}
@@ -5196,7 +5992,7 @@ instruct loadB(iRegINoSp dst, memory mem)
 instruct loadB2L(iRegLNoSp dst, memory mem)
 %{
   match(Set dst (ConvI2L (LoadB mem)));
-  predicate(UseBarriersForVolatile || n->in(1)->as_Load()->is_unordered());
+  predicate(!needs_acquiring_load(n->in(1)));
 
   ins_cost(4 * INSN_COST);
   format %{ "ldrsb  $dst, $mem\t# byte" %}
@@ -5210,7 +6006,7 @@ instruct loadB2L(iRegLNoSp dst, memory mem)
 instruct loadUB(iRegINoSp dst, memory mem)
 %{
   match(Set dst (LoadUB mem));
-  predicate(UseBarriersForVolatile || n->as_Load()->is_unordered());
+  predicate(!needs_acquiring_load(n));
 
   ins_cost(4 * INSN_COST);
   format %{ "ldrbw  $dst, $mem\t# byte" %}
@@ -5224,7 +6020,7 @@ instruct loadUB(iRegINoSp dst, memory mem)
 instruct loadUB2L(iRegLNoSp dst, memory mem)
 %{
   match(Set dst (ConvI2L (LoadUB mem)));
-  predicate(UseBarriersForVolatile || n->in(1)->as_Load()->is_unordered());
+  predicate(!needs_acquiring_load(n->in(1)));
 
   ins_cost(4 * INSN_COST);
   format %{ "ldrb  $dst, $mem\t# byte" %}
@@ -5238,7 +6034,7 @@ instruct loadUB2L(iRegLNoSp dst, memory mem)
 instruct loadS(iRegINoSp dst, memory mem)
 %{
   match(Set dst (LoadS mem));
-  predicate(UseBarriersForVolatile || n->as_Load()->is_unordered());
+  predicate(!needs_acquiring_load(n));
 
   ins_cost(4 * INSN_COST);
   format %{ "ldrshw  $dst, $mem\t# short" %}
@@ -5252,7 +6048,7 @@ instruct loadS(iRegINoSp dst, memory mem)
 instruct loadS2L(iRegLNoSp dst, memory mem)
 %{
   match(Set dst (ConvI2L (LoadS mem)));
-  predicate(UseBarriersForVolatile || n->in(1)->as_Load()->is_unordered());
+  predicate(!needs_acquiring_load(n->in(1)));
 
   ins_cost(4 * INSN_COST);
   format %{ "ldrsh  $dst, $mem\t# short" %}
@@ -5266,7 +6062,7 @@ instruct loadS2L(iRegLNoSp dst, memory mem)
 instruct loadUS(iRegINoSp dst, memory mem)
 %{
   match(Set dst (LoadUS mem));
-  predicate(UseBarriersForVolatile || n->as_Load()->is_unordered());
+  predicate(!needs_acquiring_load(n));
 
   ins_cost(4 * INSN_COST);
   format %{ "ldrh  $dst, $mem\t# short" %}
@@ -5280,7 +6076,7 @@ instruct loadUS(iRegINoSp dst, memory mem)
 instruct loadUS2L(iRegLNoSp dst, memory mem)
 %{
   match(Set dst (ConvI2L (LoadUS mem)));
-  predicate(UseBarriersForVolatile || n->in(1)->as_Load()->is_unordered());
+  predicate(!needs_acquiring_load(n->in(1)));
 
   ins_cost(4 * INSN_COST);
   format %{ "ldrh  $dst, $mem\t# short" %}
@@ -5294,7 +6090,7 @@ instruct loadUS2L(iRegLNoSp dst, memory mem)
 instruct loadI(iRegINoSp dst, memory mem)
 %{
   match(Set dst (LoadI mem));
-  predicate(UseBarriersForVolatile || n->as_Load()->is_unordered());
+  predicate(!needs_acquiring_load(n));
 
   ins_cost(4 * INSN_COST);
   format %{ "ldrw  $dst, $mem\t# int" %}
@@ -5308,7 +6104,7 @@ instruct loadI(iRegINoSp dst, memory mem)
 instruct loadI2L(iRegLNoSp dst, memory mem)
 %{
   match(Set dst (ConvI2L (LoadI mem)));
-  predicate(UseBarriersForVolatile || n->in(1)->as_Load()->is_unordered());
+  predicate(!needs_acquiring_load(n->in(1)));
 
   ins_cost(4 * INSN_COST);
   format %{ "ldrsw  $dst, $mem\t# int" %}
@@ -5322,7 +6118,7 @@ instruct loadI2L(iRegLNoSp dst, memory mem)
 instruct loadUI2L(iRegLNoSp dst, memory mem, immL_32bits mask)
 %{
   match(Set dst (AndL (ConvI2L (LoadI mem)) mask));
-  predicate(UseBarriersForVolatile || n->in(1)->in(1)->as_Load()->is_unordered());
+  predicate(!needs_acquiring_load(n->in(1)->in(1)->as_Load()));
 
   ins_cost(4 * INSN_COST);
   format %{ "ldrw  $dst, $mem\t# int" %}
@@ -5336,7 +6132,7 @@ instruct loadUI2L(iRegLNoSp dst, memory mem, immL_32bits mask)
 instruct loadL(iRegLNoSp dst, memory mem)
 %{
   match(Set dst (LoadL mem));
-  predicate(UseBarriersForVolatile || n->as_Load()->is_unordered());
+  predicate(!needs_acquiring_load(n));
 
   ins_cost(4 * INSN_COST);
   format %{ "ldr  $dst, $mem\t# int" %}
@@ -5363,7 +6159,7 @@ instruct loadRange(iRegINoSp dst, memory mem)
 instruct loadP(iRegPNoSp dst, memory mem)
 %{
   match(Set dst (LoadP mem));
-  predicate(UseBarriersForVolatile || n->as_Load()->is_unordered());
+  predicate(!needs_acquiring_load(n));
 
   ins_cost(4 * INSN_COST);
   format %{ "ldr  $dst, $mem\t# ptr" %}
@@ -5377,7 +6173,7 @@ instruct loadP(iRegPNoSp dst, memory mem)
 instruct loadN(iRegNNoSp dst, memory mem)
 %{
   match(Set dst (LoadN mem));
-  predicate(UseBarriersForVolatile || n->as_Load()->is_unordered());
+  predicate(!needs_acquiring_load(n));
 
   ins_cost(4 * INSN_COST);
   format %{ "ldrw  $dst, $mem\t# compressed ptr" %}
@@ -5391,7 +6187,7 @@ instruct loadN(iRegNNoSp dst, memory mem)
 instruct loadKlass(iRegPNoSp dst, memory mem)
 %{
   match(Set dst (LoadKlass mem));
-  predicate(UseBarriersForVolatile || n->as_Load()->is_unordered());
+  predicate(!needs_acquiring_load(n));
 
   ins_cost(4 * INSN_COST);
   format %{ "ldr  $dst, $mem\t# class" %}
@@ -5405,7 +6201,7 @@ instruct loadKlass(iRegPNoSp dst, memory mem)
 instruct loadNKlass(iRegNNoSp dst, memory mem)
 %{
   match(Set dst (LoadNKlass mem));
-  predicate(UseBarriersForVolatile || n->as_Load()->is_unordered());
+  predicate(!needs_acquiring_load(n));
 
   ins_cost(4 * INSN_COST);
   format %{ "ldrw  $dst, $mem\t# compressed class ptr" %}
@@ -5419,7 +6215,7 @@ instruct loadNKlass(iRegNNoSp dst, memory mem)
 instruct loadF(vRegF dst, memory mem)
 %{
   match(Set dst (LoadF mem));
-  predicate(UseBarriersForVolatile || n->as_Load()->is_unordered());
+  predicate(!needs_acquiring_load(n));
 
   ins_cost(4 * INSN_COST);
   format %{ "ldrs  $dst, $mem\t# float" %}
@@ -5433,7 +6229,7 @@ instruct loadF(vRegF dst, memory mem)
 instruct loadD(vRegD dst, memory mem)
 %{
   match(Set dst (LoadD mem));
-  predicate(UseBarriersForVolatile || n->as_Load()->is_unordered());
+  predicate(!needs_acquiring_load(n));
 
   ins_cost(4 * INSN_COST);
   format %{ "ldrd  $dst, $mem\t# double" %}
@@ -5664,7 +6460,7 @@ instruct storeimmCM0(immI0 zero, memory mem)
 instruct storeB(iRegIorL2I src, memory mem)
 %{
   match(Set mem (StoreB mem src));
-  predicate(UseBarriersForVolatile || n->as_Store()->is_unordered());
+  predicate(!needs_releasing_store(n));
 
   ins_cost(INSN_COST);
   format %{ "strb  $src, $mem\t# byte" %}
@@ -5678,7 +6474,7 @@ instruct storeB(iRegIorL2I src, memory mem)
 instruct storeimmB0(immI0 zero, memory mem)
 %{
   match(Set mem (StoreB mem zero));
-  predicate(UseBarriersForVolatile || n->as_Store()->is_unordered());
+  predicate(!needs_releasing_store(n));
 
   ins_cost(INSN_COST);
   format %{ "strb zr, $mem\t# byte" %}
@@ -5692,7 +6488,7 @@ instruct storeimmB0(immI0 zero, memory mem)
 instruct storeC(iRegIorL2I src, memory mem)
 %{
   match(Set mem (StoreC mem src));
-  predicate(UseBarriersForVolatile || n->as_Store()->is_unordered());
+  predicate(!needs_releasing_store(n));
 
   ins_cost(INSN_COST);
   format %{ "strh  $src, $mem\t# short" %}
@@ -5705,7 +6501,7 @@ instruct storeC(iRegIorL2I src, memory mem)
 instruct storeimmC0(immI0 zero, memory mem)
 %{
   match(Set mem (StoreC mem zero));
-  predicate(UseBarriersForVolatile || n->as_Store()->is_unordered());
+  predicate(!needs_releasing_store(n));
 
   ins_cost(INSN_COST);
   format %{ "strh  zr, $mem\t# short" %}
@@ -5720,7 +6516,7 @@ instruct storeimmC0(immI0 zero, memory mem)
 instruct storeI(iRegIorL2I src, memory mem)
 %{
   match(Set mem(StoreI mem src));
-  predicate(UseBarriersForVolatile || n->as_Store()->is_unordered());
+  predicate(!needs_releasing_store(n));
 
   ins_cost(INSN_COST);
   format %{ "strw  $src, $mem\t# int" %}
@@ -5733,7 +6529,7 @@ instruct storeI(iRegIorL2I src, memory mem)
 instruct storeimmI0(immI0 zero, memory mem)
 %{
   match(Set mem(StoreI mem zero));
-  predicate(UseBarriersForVolatile || n->as_Store()->is_unordered());
+  predicate(!needs_releasing_store(n));
 
   ins_cost(INSN_COST);
   format %{ "strw  zr, $mem\t# int" %}
@@ -5747,7 +6543,7 @@ instruct storeimmI0(immI0 zero, memory mem)
 instruct storeL(iRegL src, memory mem)
 %{
   match(Set mem (StoreL mem src));
-  predicate(UseBarriersForVolatile || n->as_Store()->is_unordered());
+  predicate(!needs_releasing_store(n));
 
   ins_cost(INSN_COST);
   format %{ "str  $src, $mem\t# int" %}
@@ -5761,7 +6557,7 @@ instruct storeL(iRegL src, memory mem)
 instruct storeimmL0(immL0 zero, memory mem)
 %{
   match(Set mem (StoreL mem zero));
-  predicate(UseBarriersForVolatile || n->as_Store()->is_unordered());
+  predicate(!needs_releasing_store(n));
 
   ins_cost(INSN_COST);
   format %{ "str  zr, $mem\t# int" %}
@@ -5775,7 +6571,7 @@ instruct storeimmL0(immL0 zero, memory mem)
 instruct storeP(iRegP src, memory mem)
 %{
   match(Set mem (StoreP mem src));
-  predicate(UseBarriersForVolatile || n->as_Store()->is_unordered());
+  predicate(!needs_releasing_store(n));
 
   ins_cost(INSN_COST);
   format %{ "str  $src, $mem\t# ptr" %}
@@ -5789,7 +6585,7 @@ instruct storeP(iRegP src, memory mem)
 instruct storeimmP0(immP0 zero, memory mem)
 %{
   match(Set mem (StoreP mem zero));
-  predicate(UseBarriersForVolatile || n->as_Store()->is_unordered());
+  predicate(!needs_releasing_store(n));
 
   ins_cost(INSN_COST);
   format %{ "str zr, $mem\t# ptr" %}
@@ -5803,7 +6599,7 @@ instruct storeimmP0(immP0 zero, memory mem)
 instruct storeN(iRegN src, memory mem)
 %{
   match(Set mem (StoreN mem src));
-  predicate(UseBarriersForVolatile || n->as_Store()->is_unordered());
+  predicate(!needs_releasing_store(n));
 
   ins_cost(INSN_COST);
   format %{ "strw  $src, $mem\t# compressed ptr" %}
@@ -5818,7 +6614,7 @@ instruct storeImmN0(iRegIHeapbase heapbase, immN0 zero, memory mem)
   match(Set mem (StoreN mem zero));
   predicate(Universe::narrow_oop_base() == NULL &&
             Universe::narrow_klass_base() == NULL &&
-            (UseBarriersForVolatile || n->as_Store()->is_unordered()));
+            (!needs_releasing_store(n)));
 
   ins_cost(INSN_COST);
   format %{ "strw  rheapbase, $mem\t# compressed ptr (rheapbase==0)" %}
@@ -5832,7 +6628,7 @@ instruct storeImmN0(iRegIHeapbase heapbase, immN0 zero, memory mem)
 instruct storeF(vRegF src, memory mem)
 %{
   match(Set mem (StoreF mem src));
-  predicate(UseBarriersForVolatile || n->as_Store()->is_unordered());
+  predicate(!needs_releasing_store(n));
 
   ins_cost(INSN_COST);
   format %{ "strs  $src, $mem\t# float" %}
@@ -5849,7 +6645,7 @@ instruct storeF(vRegF src, memory mem)
 instruct storeD(vRegD src, memory mem)
 %{
   match(Set mem (StoreD mem src));
-  predicate(UseBarriersForVolatile || n->as_Store()->is_unordered());
+  predicate(!needs_releasing_store(n));
 
   ins_cost(INSN_COST);
   format %{ "strd  $src, $mem\t# double" %}
@@ -5862,7 +6658,7 @@ instruct storeD(vRegD src, memory mem)
 // Store Compressed Klass Pointer
 instruct storeNKlass(iRegN src, memory mem)
 %{
-  predicate(UseBarriersForVolatile || n->as_Store()->is_unordered());
+  predicate(!needs_releasing_store(n));
   match(Set mem (StoreNKlass mem src));
 
   ins_cost(INSN_COST);
@@ -6324,7 +7120,7 @@ instruct load_fence() %{
 %}
 
 instruct unnecessary_membar_acquire() %{
-  predicate(! UseBarriersForVolatile && preceded_by_ordered_load(n));
+  predicate(unnecessary_acquire(n));
   match(MemBarAcquire);
   ins_cost(0);
 
@@ -6376,6 +7172,19 @@ instruct store_fence() %{
   ins_pipe(pipe_serial);
 %}
 
+instruct unnecessary_membar_release() %{
+  predicate(unnecessary_release(n));
+  match(MemBarRelease);
+  ins_cost(0);
+
+  format %{ "membar_release (elided)" %}
+
+  ins_encode %{
+    __ block_comment("membar_release (elided)");
+  %}
+  ins_pipe(pipe_serial);
+%}
+
 instruct membar_release() %{
   match(MemBarRelease);
   ins_cost(VOLATILE_REF_COST);
@@ -6408,6 +7217,20 @@ instruct membar_release_lock() %{
 
   ins_encode %{
     __ membar(Assembler::LoadStore|Assembler::StoreStore);
+  %}
+
+  ins_pipe(pipe_serial);
+%}
+
+instruct unnecessary_membar_volatile() %{
+  predicate(unnecessary_volatile(n));
+  match(MemBarVolatile);
+  ins_cost(0);
+
+  format %{ "membar_volatile (elided)" %}
+
+  ins_encode %{
+    __ block_comment("membar_volatile (elided)");
   %}
 
   ins_pipe(pipe_serial);

@@ -29,11 +29,10 @@
  * forever, so make this test future safe, we specify them explicitly
  *
  * @test
- * @fork
- * @option -Dnashorn.compiler.splitter.threshold=1000
- * @fork
  * @runif external.octane
+ * @fork
  * @option -scripting
+ * @option -Dnashorn.compiler.splitter.threshold=1000
  * @option -Dnashorn.typeInfo.disabled=true
  * @option --class-cache-size=0
  * @option --persistent-code-cache=false

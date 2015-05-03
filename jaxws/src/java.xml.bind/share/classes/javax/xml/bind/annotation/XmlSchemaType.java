@@ -65,14 +65,15 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *         &#64;XmlSchemaType(name="date")
  *         public XMLGregorianCalendar date;
  *     }
+ * {@code
  *
- *     &lt;!-- Example: Local XML Schema element --&gt;
- *     &lt;xs:complexType name="USPrice"/&gt;
- *       &lt;xs:sequence&gt;
- *         &lt;xs:element name="date" type="xs:date"/&gt;
- *       &lt;/sequence&gt;
- *     &lt;/xs:complexType&gt;
- * </pre>
+ *     <!-- Example: Local XML Schema element -->
+ *     <xs:complexType name="USPrice"/>
+ *       <xs:sequence>
+ *         <xs:element name="date" type="xs:date"/>
+ *       </sequence>
+ *     </xs:complexType>
+ * }</pre>
  *
  * <p> <b> Example 2: </b> Customize mapping of XMLGregorianCalendar at package
  *     level </p>

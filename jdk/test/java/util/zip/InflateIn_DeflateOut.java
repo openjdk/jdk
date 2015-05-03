@@ -25,6 +25,7 @@
  * @test
  * @bug 4206909 4813885
  * @summary Test basic functionality of DeflaterOutputStream/InflaterInputStream and GZIPOutputStream/GZIPInputStream, including flush
+ * @key randomness
  */
 
 import java.io.*;

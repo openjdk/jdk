@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     6650759
+ * @bug     6650759 8078024
  * @summary Inference of formal type parameter (unused in formal parameters) is not performed
  * @compile/fail/ref=T6650759m.out T6650759m.java -XDrawDiagnostics
  */

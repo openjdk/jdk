@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 package sun.security.provider.certpath;
 
 import java.security.InvalidAlgorithmParameterException;
-import java.security.KeyStore;
 import java.security.PublicKey;
 import java.security.cert.*;
 import java.security.interfaces.DSAPublicKey;
@@ -194,7 +193,6 @@ class PKIX {
 
     static class BuilderParams extends ValidatorParams {
         private PKIXBuilderParameters params;
-        private boolean buildForward = true;
         private List<CertStore> stores;
         private X500Principal targetSubject;
 
@@ -213,10 +211,6 @@ class PKIX {
                     + "targetCertConstraints parameter must be an "
                     + "X509CertSelector");
             }
-            if (params instanceof SunCertPathBuilderParameters) {
-                buildForward =
-                    ((SunCertPathBuilderParameters)params).getBuildForward();
-            }
             this.params = params;
             this.targetSubject = getTargetSubject(
                 certStores(), (X509CertSelector)targetCertConstraints());
@@ -230,7 +224,6 @@ class PKIX {
             return stores;
         }
         int maxPathLength() { return params.getMaxPathLength(); }
-        boolean buildForward() { return buildForward; }
         PKIXBuilderParameters params() { return params; }
         X500Principal targetSubject() { return targetSubject; }
 

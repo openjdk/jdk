@@ -60,6 +60,7 @@ import sun.management.AgentConfigurationError;
  * @run main/othervm/timeout=600 -XX:+UsePerfData JMXStartStopTest
  * @summary Makes sure that enabling/disabling the management agent through JCMD
  *          achieves the desired results
+ * @key randomness
  */
 public class JMXStartStopTest {
 
@@ -90,7 +91,6 @@ public class JMXStartStopTest {
                         }
                     }
                 }
-                System.err.println("*** port = " + port);
                 ports[i] = port;
             }
             return ports;

@@ -25,6 +25,7 @@
  * @test
  * @bug 6952330
  * @summary Test StringBuffer/StringBuilder capacity handling.
+ * @key randomness
  */
 
 import java.util.Random;

@@ -24,6 +24,7 @@
 /* @test
  * @bug 6191269 6709457 8000330
  * @summary Test truncate method of FileChannel
+ * @key randomness
  */
 
 import java.io.*;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,10 +38,17 @@ package javax.transaction;
 @SuppressWarnings("serial")             // serialVersionUID intentionally omitted
 public class TransactionRequiredException extends java.rmi.RemoteException {
 
+    /**
+     * Constructs a {@code TransactionRequiredException}.
+     */
     public TransactionRequiredException() {
         super();
     }
 
+    /**
+     * Constructs a {@code TransactionRequiredException}.
+     * @param msg the detail message
+     */
     public TransactionRequiredException(String msg) {
         super(msg);
     }

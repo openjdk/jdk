@@ -35,6 +35,7 @@ import java.security.*;
 import java.util.*;
 
 import sun.awt.*;
+import sun.misc.InnocuousThread;
 import sun.print.*;
 import sun.awt.util.ThreadGroupUtils;
 
@@ -71,22 +72,32 @@ public abstract class LWToolkit extends SunToolkit implements Runnable {
      */
     protected final void init() {
         AWTAutoShutdown.notifyToolkitThreadBusy();
-
-        ThreadGroup rootTG = AccessController.doPrivileged(
-                (PrivilegedAction<ThreadGroup>) ThreadGroupUtils::getRootThreadGroup);
-
-        Runtime.getRuntime().addShutdownHook(
-            new Thread(rootTG, () -> {
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            Runnable shutdownRunnable = () -> {
                 shutdown();
                 waitForRunState(STATE_CLEANUP);
-            })
-        );
+            };
+            Thread shutdown;
+            if (System.getSecurityManager() == null) {
+                shutdown = new Thread(ThreadGroupUtils.getRootThreadGroup(), shutdownRunnable);
+            } else {
+                shutdown = new InnocuousThread(shutdownRunnable);
+            }
+            shutdown.setContextClassLoader(null);
+            Runtime.getRuntime().addShutdownHook(shutdown);
 
-        Thread toolkitThread = new Thread(rootTG, this, "AWT-LW");
-        toolkitThread.setDaemon(true);
-        toolkitThread.setPriority(Thread.NORM_PRIORITY + 1);
-        toolkitThread.start();
-
+            String name = "AWT-LW";
+            Thread toolkitThread;
+            if (System.getSecurityManager() == null) {
+                toolkitThread = new Thread(ThreadGroupUtils.getRootThreadGroup(), LWToolkit.this, name);
+            } else {
+                toolkitThread = new InnocuousThread(LWToolkit.this, name);
+            }
+            toolkitThread.setDaemon(true);
+            toolkitThread.setPriority(Thread.NORM_PRIORITY + 1);
+            toolkitThread.start();
+            return null;
+        });
         waitForRunState(STATE_MESSAGELOOP);
     }
 

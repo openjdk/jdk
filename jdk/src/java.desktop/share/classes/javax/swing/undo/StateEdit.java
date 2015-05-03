@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,9 @@ import java.util.Vector;
 public class StateEdit
         extends AbstractUndoableEdit {
 
+    /**
+     * Obsolete RCS version identity.
+     */
     protected static final String RCSID = "$Id: StateEdit.java,v 1.6 1997/10/01 20:05:51 sandipc Exp $";
 
     //
@@ -114,6 +117,11 @@ public class StateEdit
         init (anObject,name);
     }
 
+    /**
+     * Initialize the state edit.
+     * @param anObject The object to watch for changing state
+     * @param name The presentation name to be used for this edit
+     */
     protected void init (StateEditable anObject, String name) {
         this.object = anObject;
         this.preState = new Hashtable<Object, Object>(11);

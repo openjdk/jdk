@@ -250,7 +250,7 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(
     // Cleaner references to be temporary, and don't want to deal with
     // possible incompatibilities arising from making it more visible.
     phantom_count +=
-      process_discovered_reflist(_discoveredCleanerRefs, NULL, false,
+      process_discovered_reflist(_discoveredCleanerRefs, NULL, true,
                                  is_alive, keep_alive, complete_gc, task_executor);
   }
 

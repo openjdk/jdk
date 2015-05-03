@@ -53,9 +53,9 @@ import sun.util.calendar.ZoneInfo;
  * ------------------------------------------------------
  * }</pre>
  *
- * <p><code>ERA</code> value 0 specifies the years before Meiji and
- * the Gregorian year values are used. Unlike {@link
- * GregorianCalendar}, the Julian to Gregorian transition is not
+ * <p>{@code ERA} value 0 specifies the years before Meiji and
+ * the Gregorian year values are used. Unlike
+ * {@link GregorianCalendar}, the Julian to Gregorian transition is not
  * supported because it doesn't make any sense to the Japanese
  * calendar systems used before Meiji. To represent the years before
  * Gregorian year 1, 0 and negative values are used. The Japanese
@@ -66,7 +66,7 @@ import sun.util.calendar.ZoneInfo;
  * <p>A new era can be specified using property
  * jdk.calendar.japanese.supplemental.era. The new era is added to the
  * predefined eras. The syntax of the property is as follows.
- * <p><pre>
+ * <pre>
  *   {@code name=<name>,abbr=<abbr>,since=<time['u']>}
  * </pre>
  * where
@@ -83,7 +83,7 @@ import sun.util.calendar.ZoneInfo;
  * ignored.
  *
  * <p>The following is an example of the property usage.
- * <p><pre>
+ * <pre>
  *   java -Djdk.calendar.japanese.supplemental.era="name=NewEra,abbr=N,since=253374307200000"
  * </pre>
  * The property specifies an era change to NewEra at 9999-02-11T00:00:00 local time.
@@ -315,7 +315,7 @@ class JapaneseImperialCalendar extends Calendar {
     private transient int[] originalFields;
 
     /**
-     * Constructs a <code>JapaneseImperialCalendar</code> based on the current time
+     * Constructs a {@code JapaneseImperialCalendar} based on the current time
      * in the given time zone with the given locale.
      *
      * @param zone the given time zone.
@@ -351,16 +351,16 @@ class JapaneseImperialCalendar extends Calendar {
     }
 
     /**
-     * Compares this <code>JapaneseImperialCalendar</code> to the specified
-     * <code>Object</code>. The result is <code>true</code> if and
-     * only if the argument is a <code>JapaneseImperialCalendar</code> object
+     * Compares this {@code JapaneseImperialCalendar} to the specified
+     * {@code Object}. The result is {@code true} if and
+     * only if the argument is a {@code JapaneseImperialCalendar} object
      * that represents the same time value (millisecond offset from
      * the <a href="Calendar.html#Epoch">Epoch</a>) under the same
-     * <code>Calendar</code> parameters.
+     * {@code Calendar} parameters.
      *
      * @param obj the object to compare with.
-     * @return <code>true</code> if this object is equal to <code>obj</code>;
-     * <code>false</code> otherwise.
+     * @return {@code true} if this object is equal to {@code obj};
+     * {@code false} otherwise.
      * @see Calendar#compareTo(Calendar)
      */
     @Override
@@ -371,7 +371,7 @@ class JapaneseImperialCalendar extends Calendar {
 
     /**
      * Generates the hash code for this
-     * <code>JapaneseImperialCalendar</code> object.
+     * {@code JapaneseImperialCalendar} object.
      */
     @Override
     public int hashCode() {
@@ -382,27 +382,27 @@ class JapaneseImperialCalendar extends Calendar {
      * Adds the specified (signed) amount of time to the given calendar field,
      * based on the calendar's rules.
      *
-     * <p><em>Add rule 1</em>. The value of <code>field</code>
-     * after the call minus the value of <code>field</code> before the
-     * call is <code>amount</code>, modulo any overflow that has occurred in
-     * <code>field</code>. Overflow occurs when a field value exceeds its
+     * <p><em>Add rule 1</em>. The value of {@code field}
+     * after the call minus the value of {@code field} before the
+     * call is {@code amount}, modulo any overflow that has occurred in
+     * {@code field}. Overflow occurs when a field value exceeds its
      * range and, as a result, the next larger field is incremented or
      * decremented and the field value is adjusted back into its range.</p>
      *
      * <p><em>Add rule 2</em>. If a smaller field is expected to be
      * invariant, but it is impossible for it to be equal to its
      * prior value because of changes in its minimum or maximum after
-     * <code>field</code> is changed, then its value is adjusted to be as close
+     * {@code field} is changed, then its value is adjusted to be as close
      * as possible to its expected value. A smaller field represents a
-     * smaller unit of time. <code>HOUR</code> is a smaller field than
-     * <code>DAY_OF_MONTH</code>. No adjustment is made to smaller fields
+     * smaller unit of time. {@code HOUR} is a smaller field than
+     * {@code DAY_OF_MONTH}. No adjustment is made to smaller fields
      * that are not expected to be invariant. The calendar system
      * determines what fields are expected to be invariant.</p>
      *
      * @param field the calendar field.
      * @param amount the amount of date or time to be added to the field.
-     * @exception IllegalArgumentException if <code>field</code> is
-     * <code>ZONE_OFFSET</code>, <code>DST_OFFSET</code>, or unknown,
+     * @exception IllegalArgumentException if {@code field} is
+     * {@code ZONE_OFFSET}, {@code DST_OFFSET}, or unknown,
      * or if any calendar fields have out-of-range values in
      * non-lenient mode.
      */
@@ -548,12 +548,12 @@ class JapaneseImperialCalendar extends Calendar {
      * <p>This method calls {@link #complete()} before adding the
      * amount so that all the calendar fields are normalized. If there
      * is any calendar field having an out-of-range value in non-lenient mode, then an
-     * <code>IllegalArgumentException</code> is thrown.
+     * {@code IllegalArgumentException} is thrown.
      *
      * @param field the calendar field.
-     * @param amount the signed amount to add to <code>field</code>.
-     * @exception IllegalArgumentException if <code>field</code> is
-     * <code>ZONE_OFFSET</code>, <code>DST_OFFSET</code>, or unknown,
+     * @param amount the signed amount to add to {@code field}.
+     * @exception IllegalArgumentException if {@code field} is
+     * {@code ZONE_OFFSET}, {@code DST_OFFSET}, or unknown,
      * or if any calendar fields have out-of-range values in
      * non-lenient mode.
      * @see #roll(int,boolean)
@@ -1055,9 +1055,9 @@ class JapaneseImperialCalendar extends Calendar {
 
     /**
      * Returns the minimum value for the given calendar field of this
-     * <code>Calendar</code> instance. The minimum value is
-     * defined as the smallest value returned by the {@link
-     * Calendar#get(int) get} method for any possible time value,
+     * {@code Calendar} instance. The minimum value is
+     * defined as the smallest value returned by the
+     * {@link Calendar#get(int) get} method for any possible time value,
      * taking into consideration the current values of the
      * {@link Calendar#getFirstDayOfWeek() getFirstDayOfWeek},
      * {@link Calendar#getMinimalDaysInFirstWeek() getMinimalDaysInFirstWeek},
@@ -1077,9 +1077,9 @@ class JapaneseImperialCalendar extends Calendar {
 
     /**
      * Returns the maximum value for the given calendar field of this
-     * <code>GregorianCalendar</code> instance. The maximum value is
-     * defined as the largest value returned by the {@link
-     * Calendar#get(int) get} method for any possible time value,
+     * {@code GregorianCalendar} instance. The maximum value is
+     * defined as the largest value returned by the
+     * {@link Calendar#get(int) get} method for any possible time value,
      * taking into consideration the current values of the
      * {@link Calendar#getFirstDayOfWeek() getFirstDayOfWeek},
      * {@link Calendar#getMinimalDaysInFirstWeek() getMinimalDaysInFirstWeek},
@@ -1108,7 +1108,7 @@ class JapaneseImperialCalendar extends Calendar {
 
     /**
      * Returns the highest minimum value for the given calendar field
-     * of this <code>GregorianCalendar</code> instance. The highest
+     * of this {@code GregorianCalendar} instance. The highest
      * minimum value is defined as the largest value returned by
      * {@link #getActualMinimum(int)} for any possible time value,
      * taking into consideration the current values of the
@@ -1130,7 +1130,7 @@ class JapaneseImperialCalendar extends Calendar {
 
     /**
      * Returns the lowest maximum value for the given calendar field
-     * of this <code>GregorianCalendar</code> instance. The lowest
+     * of this {@code GregorianCalendar} instance. The lowest
      * maximum value is defined as the smallest value returned by
      * {@link #getActualMaximum(int)} for any possible time value,
      * taking into consideration the current values of the
@@ -1166,7 +1166,7 @@ class JapaneseImperialCalendar extends Calendar {
      *
      * @param field the calendar field
      * @return the minimum of the given field for the time value of
-     * this <code>JapaneseImperialCalendar</code>
+     * this {@code JapaneseImperialCalendar}
      * @see #getMinimum(int)
      * @see #getMaximum(int)
      * @see #getGreatestMinimum(int)
@@ -1269,13 +1269,13 @@ class JapaneseImperialCalendar extends Calendar {
      * and
      * {@link Calendar#getTimeZone() getTimeZone} methods.
      * For example, if the date of this instance is Heisei 16February 1,
-     * the actual maximum value of the <code>DAY_OF_MONTH</code> field
+     * the actual maximum value of the {@code DAY_OF_MONTH} field
      * is 29 because Heisei 16 is a leap year, and if the date of this
      * instance is Heisei 17 February 1, it's 28.
      *
      * @param field the calendar field
      * @return the maximum of the given field for the time value of
-     * this <code>JapaneseImperialCalendar</code>
+     * this {@code JapaneseImperialCalendar}
      * @see #getMinimum(int)
      * @see #getMaximum(int)
      * @see #getGreatestMinimum(int)
@@ -1558,7 +1558,7 @@ class JapaneseImperialCalendar extends Calendar {
      * href="Calendar.html#Epoch">Epoch</a>) to calendar field values.
      * The time is <em>not</em>
      * recomputed first; to recompute the time, then the fields, call the
-     * <code>complete</code> method.
+     * {@code complete} method.
      *
      * @see Calendar#complete
      */

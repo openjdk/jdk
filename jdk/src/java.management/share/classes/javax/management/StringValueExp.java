@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,11 +95,12 @@ public class StringValueExp implements ValueExp   {
      *
      * @return  The <CODE>ValueExp</CODE>.
      *
-     * @exception BadStringOperationException
-     * @exception BadBinaryOpValueExpException
-     * @exception BadAttributeValueExpException
-     * @exception InvalidApplicationException
+     * @throws BadStringOperationException {@inheritDoc}
+     * @throws BadBinaryOpValueExpException {@inheritDoc}
+     * @throws BadAttributeValueExpException {@inheritDoc}
+     * @throws InvalidApplicationException  {@inheritDoc}
      */
+    @Override
     public ValueExp apply(ObjectName name) throws BadStringOperationException, BadBinaryOpValueExpException,
         BadAttributeValueExpException, InvalidApplicationException  {
         return this;

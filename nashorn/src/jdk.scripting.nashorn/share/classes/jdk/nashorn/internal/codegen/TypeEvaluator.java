@@ -227,7 +227,8 @@ final class TypeEvaluator {
             // gradually introduce them as needed. An easy one would be to do the same for .call(this) idiom.
             final CallNode callExpr = (CallNode)expr;
             final Expression fnExpr = callExpr.getFunction();
-            if (fnExpr instanceof FunctionNode) {
+            // Skip evaluation if running with eager compilation as we may violate constraints in RecompilableScriptFunctionData
+            if (fnExpr instanceof FunctionNode && compiler.getContext().getEnv()._lazy_compilation) {
                 final FunctionNode fn = (FunctionNode)fnExpr;
                 if (callExpr.getArgs().isEmpty()) {
                     final RecompilableScriptFunctionData data = compiler.getScriptFunctionData(fn.getId());

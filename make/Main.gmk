@@ -26,14 +26,19 @@
 ################################################################################
 # This is the main makefile containing most actual top level targets. It needs
 # to be called with a SPEC file defined.
+################################################################################
 
 # Declare default target
 default:
 
+ifeq ($(wildcard $(SPEC)),)
+  $(error Main.gmk needs SPEC set to a proper spec.gmk)
+endif
+
 # Now load the spec
 include $(SPEC)
 
-include $(SRC_ROOT)/make/MakeHelpers.gmk
+include $(SRC_ROOT)/make/MainSupport.gmk
 
 # Load the vital tools for all the makefiles.
 include $(SRC_ROOT)/make/common/MakeBase.gmk
@@ -215,7 +220,8 @@ $(SUPPORT_OUTPUTDIR)/source_tips: FRC
 BOOTCYCLE_TARGET := product-images
 bootcycle-images:
 	@$(ECHO) Boot cycle build step 2: Building a new JDK image using previously built image
-	+$(MAKE) $(MAKE_ARGS) -f Main.gmk SPEC=$(dir $(SPEC))bootcycle-spec.gmk $(BOOTCYCLE_TARGET)
+	+$(MAKE) $(MAKE_ARGS) -f $(SRC_ROOT)/make/Main.gmk \
+	    SPEC=$(dir $(SPEC))bootcycle-spec.gmk $(BOOTCYCLE_TARGET)
 
 zip-security:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f ZipSecurity.gmk)
@@ -386,6 +392,9 @@ else
   # links against libosxapp.
   jdk.deploy.osx-libs: java.desktop-libs
 
+  # jdk.accessibility depends on java.desktop
+  jdk.accessibility-libs: java.desktop-libs
+
   # This dependency needs to be explicitly declared. jdk.jdi-gensrc generates a
   # header file used by jdk.jdwp.agent-libs. The jdk.jdwp.agent-gensrc is a
   # virtual target.
@@ -535,7 +544,7 @@ CLEAN_DIRS += hotspot jdk bootcycle-build test buildtools support \
 CLEAN_DIR_TARGETS := $(addprefix clean-, $(CLEAN_DIRS))
 CLEAN_TESTS += hotspot-jtreg-native jdk-jtreg-native
 CLEAN_TEST_TARGETS += $(addprefix clean-test-, $(CLEAN_TESTS))
-CLEAN_PHASES := gensrc java native include
+CLEAN_PHASES := gensrc java native include docs
 CLEAN_PHASE_TARGETS := $(addprefix clean-, $(CLEAN_PHASES))
 CLEAN_MODULE_TARGETS := $(addprefix clean-, $(ALL_MODULES))
 # Construct targets of the form clean-$module-$phase
@@ -544,7 +553,7 @@ CLEAN_MODULE_PHASE_TARGETS := $(addprefix clean-, $(foreach m, $(ALL_MODULES), \
 
 # Remove everything, except the output from configure.
 clean: $(CLEAN_DIR_TARGETS)
-	($(CD) $(OUTPUT_ROOT) && $(RM) -r source_tips build.log* build-trace*.log*)
+	($(CD) $(OUTPUT_ROOT) && $(RM) -r build*.log*)
 	$(ECHO) Cleaned all build artifacts.
 
 $(CLEAN_DIR_TARGETS):
@@ -568,13 +577,11 @@ $(CLEAN_MODULE_PHASE_TARGETS):
 # while classes and touch files end up in jdk.
 clean-support: clean-jdk
 
-clean-docs: clean-docstemp
-
-# Remove everything, including configure configuration.
-# If the output directory was created by configure and now becomes empty, remove it as well.
+# Remove everything, including configure configuration. If the output
+# directory was created by configure and now becomes empty, remove it as well.
 dist-clean: clean
-	($(CD) $(OUTPUT_ROOT) && $(RM) -r *spec.gmk config.* configure-arguments \
-	    Makefile compare.sh tmp javacservers)
+	($(CD) $(OUTPUT_ROOT) && \
+	    $(RM) -r *spec.gmk $(CONFIGURESUPPORT_OUTPUTDIR) Makefile compare.sh ide)
 	$(if $(filter $(CONF_NAME),$(notdir $(OUTPUT_ROOT))), \
 	  if test "x`$(LS) $(OUTPUT_ROOT)`" != x; then \
 	    $(ECHO) "Warning: Not removing non-empty configuration directory for '$(CONF_NAME)'" ; \
@@ -589,42 +596,34 @@ ALL_TARGETS += clean dist-clean $(CLEAN_DIR_TARGETS) $(CLEAN_TEST_TARGETS) \
     $(CLEAN_PHASE_TARGETS) $(CLEAN_MODULE_TARGETS) $(CLEAN_MODULE_PHASE_TARGETS)
 
 ################################################################################
-
-# Setup a rule for SPEC file that fails if executed. This check makes sure the
-# configuration is up to date after changes to configure.
-ifeq ($(findstring reconfigure, $(MAKECMDGOALS)), )
-  $(SPEC): $(wildcard $(SRC_ROOT)/common/autoconf/*)
-	@$(ECHO) "ERROR: $(SPEC) is not up to date."
-	@$(ECHO) "Please rerun configure! Easiest way to do this is by running"
-	@$(ECHO) "'make reconfigure'."
-	@$(ECHO) "It may also be ignored by setting IGNORE_OLD_CONFIG=true"
-	@if test "x$(IGNORE_OLD_CONFIG)" != "xtrue"; then exit 1; fi
-endif
-
-# The reconfigure target is automatically run serially from everything else
-# by the Makefile calling this file.
-
-reconfigure:
-        ifneq ($(CONFIGURE_COMMAND_LINE), )
-	  @$(ECHO) "Re-running configure using arguments '$(CONFIGURE_COMMAND_LINE)'"
-        else
-	  @$(ECHO) "Re-running configure using default settings"
-        endif
-	@( cd $(OUTPUT_ROOT) && PATH="$(ORIGINAL_PATH)" \
-	    $(BASH) $(TOPDIR)/configure $(CONFIGURE_COMMAND_LINE) )
-
-ALL_TARGETS += reconfigure
-
-################################################################################
 # Declare *-only targets for each normal target
 $(foreach t, $(ALL_TARGETS), $(eval $(t)-only: $(t)))
 
-ALL_TARGETS += $(addsuffix -only, $(filter-out clean%, $(ALL_TARGETS)))
+ALL_TARGETS += $(addsuffix -only, $(filter-out dist-clean clean%, $(ALL_TARGETS)))
+
+################################################################################
+
+# Include JPRT targets
+include $(SRC_ROOT)/make/Jprt.gmk
+
+################################################################################
+
+# The following targets are intentionally not added to ALL_TARGETS since they
+# are internal only, to support Init.gmk.
+
+print-targets:
+	  @$(ECHO) $(sort $(ALL_TARGETS))
+
+print-modules:
+	  @$(ECHO) $(sort $(ALL_MODULES))
+
+create-main-targets-include:
+	  @$(ECHO) $(LOG_INFO) Generating main target list
+	  @$(ECHO) ALL_MAIN_TARGETS := $(sort $(ALL_TARGETS)) > \
+	      $(MAKESUPPORT_OUTPUTDIR)/main-targets.gmk
 
 ################################################################################
 
 .PHONY: $(ALL_TARGETS)
-
-include $(SRC_ROOT)/make/Jprt.gmk
 
 FRC: # Force target

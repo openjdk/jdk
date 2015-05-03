@@ -7,9 +7,3 @@
 // Icon
 //
 IDI_ICON           ICON    DISCARDABLE     "awt.ico"
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// RT_MANIFEST
-//
-1                  RT_MANIFEST             "java.manifest"

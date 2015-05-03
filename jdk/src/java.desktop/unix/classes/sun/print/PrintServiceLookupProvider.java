@@ -25,6 +25,8 @@
 
 package sun.print;
 
+import sun.misc.ManagedLocalsThread;
+
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -211,7 +213,12 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
     public PrintServiceLookupProvider() {
         // start the printer listener thread
         if (pollServices) {
-            PrinterChangeListener thr = new PrinterChangeListener();
+            Thread thr;
+            if (System.getSecurityManager() == null) {
+                thr = new Thread(new PrinterChangeListener());
+            } else {
+                thr = new ManagedLocalsThread(new PrinterChangeListener());
+            }
             thr.setDaemon(true);
             thr.start();
             IPPPrintService.debug_println(debugPrefix+"polling turned on");
@@ -934,8 +941,9 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
         }
     }
 
-    private class PrinterChangeListener extends Thread {
+    private class PrinterChangeListener implements Runnable {
 
+        @Override
         public void run() {
             int refreshSecs;
             while (true) {
@@ -954,7 +962,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
                     refreshSecs = minRefreshTime;
                 }
                 try {
-                    sleep(refreshSecs * 1000);
+                    Thread.sleep(refreshSecs * 1000);
                 } catch (InterruptedException e) {
                     break;
                 }

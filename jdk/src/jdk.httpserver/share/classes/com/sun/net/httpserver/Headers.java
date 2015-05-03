@@ -29,18 +29,21 @@ import java.util.*;
 
 /**
  * HTTP request and response headers are represented by this class which implements
- * the interface {@link java.util.Map}&lt;
- * {@link java.lang.String},{@link java.util.List}&lt;{@link java.lang.String}&gt;&gt;.
+ * the interface
+ * {@link java.util.Map}{@literal <}{@link java.lang.String}, {@link java.util.List}
+ * {@literal <}{@link java.lang.String}{@literal >>}.
  * The keys are case-insensitive Strings representing the header names and
- * the value associated with each key is a {@link List}&lt;{@link String}&gt; with one
+ * the value associated with each key is
+ * a {@link List}{@literal <}{@link String}{@literal >} with one
  * element for each occurrence of the header name in the request or response.
  * <p>
- * For example, if a response header instance contains one key "HeaderName" with two values "value1 and value2"
+ * For example, if a response header instance contains
+ * one key "HeaderName" with two values "value1 and value2"
  * then this object is output as two header lines:
  * <blockquote><pre>
  * HeaderName: value1
  * HeaderName: value2
- * </blockquote></pre>
+ * </pre></blockquote>
  * <p>
  * All the normal {@link java.util.Map} methods are provided, but the following
  * additional convenience methods are most likely to be used:

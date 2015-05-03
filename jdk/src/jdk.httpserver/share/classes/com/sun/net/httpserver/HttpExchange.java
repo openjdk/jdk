@@ -116,9 +116,9 @@ public abstract class HttpExchange {
     public abstract HttpContext getHttpContext ();
 
     /**
-     * Ends this exchange by doing the following in sequence:<p><ol>
-     * <li>close the request InputStream, if not already closed<p></li>
-     * <li>close the response OutputStream, if not already closed. </li>
+     * Ends this exchange by doing the following in sequence:<ol>
+     * <li>close the request InputStream, if not already closed;</li>
+     * <li>close the response OutputStream, if not already closed.</li>
      * </ol>
      */
     public abstract void close () ;
@@ -163,9 +163,9 @@ public abstract class HttpExchange {
      * and the numeric response code as specified in this method. The response body length is also specified
      * as follows. If the response length parameter is greater than zero, this specifies an exact
      * number of bytes to send and the application must send that exact amount of data.
-     * If the response length parameter is <code>zero</code>, then chunked transfer encoding is
+     * If the response length parameter is {@code zero}, then chunked transfer encoding is
      * used and an arbitrary amount of data may be sent. The application terminates the
-     * response body by closing the OutputStream. If response length has the value <code>-1</code>
+     * response body by closing the OutputStream. If response length has the value {@code -1}
      * then no response body is being sent.
      * <p>
      * If the content-length response header has not already been set then
@@ -192,7 +192,7 @@ public abstract class HttpExchange {
 
     /**
      * Returns the response code, if it has already been set
-     * @return the response code, if available. <code>-1</code> if not available yet.
+     * @return the response code, if available. {@code -1} if not available yet.
      */
     public abstract int getResponseCode ();
 
@@ -219,7 +219,7 @@ public abstract class HttpExchange {
      * available.
      * @param name the name of the attribute to retrieve
      * @return the attribute object, or null if it does not exist
-     * @throws NullPointerException if name is <code>null</code>
+     * @throws NullPointerException if name is {@code null}
      */
     public abstract Object getAttribute (String name) ;
 
@@ -231,9 +231,9 @@ public abstract class HttpExchange {
      * Each Filter class will document the attributes which they make
      * available.
      * @param name the name to associate with the attribute value
-     * @param value the object to store as the attribute value. <code>null</code>
+     * @param value the object to store as the attribute value. {@code null}
      * value is permitted.
-     * @throws NullPointerException if name is <code>null</code>
+     * @throws NullPointerException if name is {@code null}
      */
     public abstract void setAttribute (String name, Object value) ;
 
@@ -248,9 +248,9 @@ public abstract class HttpExchange {
      * required to be) sub-classes of {@link java.io.FilterInputStream}
      * and {@link java.io.FilterOutputStream}.
      * @param i the filtered input stream to set as this object's inputstream,
-     *          or <code>null</code> if no change.
+     *          or {@code null} if no change.
      * @param o the filtered output stream to set as this object's outputstream,
-     *          or <code>null</code> if no change.
+     *          or {@code null} if no change.
      */
     public abstract void setStreams (InputStream i, OutputStream o);
 
@@ -259,7 +259,7 @@ public abstract class HttpExchange {
      * If an authenticator is set on the HttpContext that owns this exchange,
      * then this method will return the {@link HttpPrincipal} that represents
      * the authenticated user for this HttpExchange.
-     * @return the HttpPrincipal, or <code>null</code> if no authenticator is set.
+     * @return the HttpPrincipal, or {@code null} if no authenticator is set.
      */
     public abstract HttpPrincipal getPrincipal ();
 }

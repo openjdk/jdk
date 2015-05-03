@@ -142,8 +142,10 @@ REGISTER_DECLARATION(Register, r15_thread, r15); // callee-saved
 
 #endif // _LP64
 
-// JSR 292 fixed register usages:
-REGISTER_DECLARATION(Register, rbp_mh_SP_save, rbp);
+// JSR 292
+// On x86, the SP does not have to be saved when invoking method handle intrinsics
+// or compiled lambda forms. We indicate that by setting rbp_mh_SP_save to noreg.
+REGISTER_DECLARATION(Register, rbp_mh_SP_save, noreg);
 
 // Address is an abstraction used to represent a memory location
 // using any of the amd64 addressing modes with one object.

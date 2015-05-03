@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -797,7 +797,7 @@ public class DocCommentParser {
         loop:
         while (isIdentifierStart(ch)) {
             int namePos = bp;
-            Name name = readIdentifier();
+            Name name = readAttributeName();
             skipWhitespace();
             List<DCTree> value = null;
             ValueKind vkind = ValueKind.EMPTY;
@@ -901,6 +901,14 @@ public class DocCommentParser {
         int start = bp;
         nextChar();
         while (bp < buflen && Character.isUnicodeIdentifierPart(ch))
+            nextChar();
+        return names.fromChars(buf, start, bp - start);
+    }
+
+    protected Name readAttributeName() {
+        int start = bp;
+        nextChar();
+        while (bp < buflen && (Character.isUnicodeIdentifierPart(ch) || ch == '-'))
             nextChar();
         return names.fromChars(buf, start, bp - start);
     }

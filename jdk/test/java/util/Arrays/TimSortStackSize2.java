@@ -24,22 +24,63 @@
 /*
  * @test
  * @bug 8072909
- * @run main/othervm -Xms385m TimSortStackSize2 67108864
+ * @library /lib/testlibrary /../../test/lib
+ * @build jdk.testlibrary.*
+ * @build TimSortStackSize2
+ * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *     -XX:+WhiteBoxAPI TimSortStackSize2
  * @summary Test TimSort stack size on big arrays
- * big tests not for regular execution on all platforms:
- * run main/othervm -Xmx8g TimSortStackSize2 1073741824
- * run main/othervm -Xmx16g TimSortStackSize2 2147483644
  */
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
+
+import jdk.testlibrary.OutputAnalyzer;
+import jdk.testlibrary.ProcessTools;
+import jdk.testlibrary.Utils;
+import sun.hotspot.WhiteBox;
 
 public class TimSortStackSize2 {
 
     public static void main(String[] args) {
-        int lengthOfTest = Integer.parseInt(args[0]);
+        if ( args == null || args.length == 0 ){
+            startMeWithArgs();
+        } else {
+            doTestOfTwoTimSorts(Integer.parseInt(args[0]));
+        }
+    }
+
+    private static void startMeWithArgs(){
+        /*
+         * big tests not for regular execution on all platforms:
+         * run main/othervm -Xmx8g TimSortStackSize2 1073741824
+         * run main/othervm -Xmx16g TimSortStackSize2 2147483644
+         */
+        try {
+            Boolean compressedOops = WhiteBox.getWhiteBox()
+                .getBooleanVMFlag("UseCompressedOops");
+            final String xmsValue = "-Xms" +
+                ((compressedOops == null || compressedOops) ? "385" : "770")
+                + "m";
+            System.out.println( "compressedOops: " + compressedOops
+                + "; Test will be started with \"" + xmsValue + "\"");
+            ProcessBuilder processBuilder = ProcessTools
+                .createJavaProcessBuilder(Utils.addTestJavaOpts(xmsValue,
+                    "TimSortStackSize2", "67108864"
+                )
+            );
+            OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);
+            System.out.println(output.getOutput());
+            output.shouldHaveExitValue(0);
+        } catch( Exception e ){
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void doTestOfTwoTimSorts(final int lengthOfTest){
         boolean passed = doTest("TimSort", lengthOfTest,
             (Integer [] a) -> Arrays.sort(a));
         passed = doTest("ComparableTimSort", lengthOfTest, (Integer [] a) ->

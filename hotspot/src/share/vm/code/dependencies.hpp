@@ -174,7 +174,7 @@ class Dependencies: public ResourceObj {
     klass_types         = all_types & ~non_klass_types,
 
     non_ctxk_types      = (1 << evol_method),
-    implicit_ctxk_types = (1 << call_site_target_value),
+    implicit_ctxk_types = 0,
     explicit_ctxk_types = all_types & ~(non_ctxk_types | implicit_ctxk_types),
 
     max_arg_count = 3,   // current maximum number of arguments (incl. ctxk)
@@ -330,7 +330,7 @@ class Dependencies: public ResourceObj {
   static Klass* check_exclusive_concrete_methods(Klass* ctxk, Method* m1, Method* m2,
                                                    KlassDepChange* changes = NULL);
   static Klass* check_has_no_finalizable_subclasses(Klass* ctxk, KlassDepChange* changes = NULL);
-  static Klass* check_call_site_target_value(oop call_site, oop method_handle, CallSiteDepChange* changes = NULL);
+  static Klass* check_call_site_target_value(Klass* recorded_ctxk, oop call_site, oop method_handle, CallSiteDepChange* changes = NULL);
   // A returned Klass* is NULL if the dependency assertion is still
   // valid.  A non-NULL Klass* is a 'witness' to the assertion
   // failure, a point in the class hierarchy where the assertion has
@@ -496,7 +496,7 @@ class Dependencies: public ResourceObj {
     bool next();
 
     DepType type()               { return _type; }
-    bool has_oop_argument()      { return type() == call_site_target_value; }
+    bool is_oop_argument(int i)  { return type() == call_site_target_value && i > 0; }
     uintptr_t get_identifier(int i);
 
     int argument_count()         { return dep_args(type()); }
@@ -682,7 +682,7 @@ class CallSiteDepChange : public DepChange {
       _method_handle(method_handle)
   {
     assert(_call_site()    ->is_a(SystemDictionary::CallSite_klass()),     "must be");
-    assert(_method_handle()->is_a(SystemDictionary::MethodHandle_klass()), "must be");
+    assert(_method_handle.is_null() || _method_handle()->is_a(SystemDictionary::MethodHandle_klass()), "must be");
   }
 
   // What kind of DepChange is this?

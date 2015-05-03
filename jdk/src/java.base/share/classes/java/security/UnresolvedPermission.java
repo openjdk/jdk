@@ -560,7 +560,7 @@ implements java.io.Serializable
         if (size > 0) {
             // we know of 3 different cert types: X.509, PGP, SDSI, which
             // could all be present in the stream at the same time
-            cfs = new Hashtable<String, CertificateFactory>(3);
+            cfs = new Hashtable<>(3);
             this.certs = new java.security.cert.Certificate[size];
         }
 

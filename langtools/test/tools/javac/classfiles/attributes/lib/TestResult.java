@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,9 @@ public class TestResult extends TestBase {
     public boolean checkEquals(Object actual, Object expected, String message) {
         echo("Testing : " + message);
         if (!Objects.equals(actual, expected)) {
-            getLastTestCase().addAssert(new AssertionFailedException(
-                    String.format("%s%nGot: %s, Expected: %s", message, actual, expected)));
+            getLastTestCase().addAssert(String.format("%s\n" +
+                            "Expected: %s,\n" +
+                            "     Got: %s", message, expected, actual));
             return false;
         }
         return true;
@@ -70,8 +71,7 @@ public class TestResult extends TestBase {
     public boolean checkNotNull(Object actual, String message) {
         echo("Testing : " + message);
         if (Objects.isNull(actual)) {
-            getLastTestCase().addAssert(new AssertionFailedException(
-                    message + " : Expected not null value"));
+            getLastTestCase().addAssert(message + " : Expected not null value");
             return false;
         }
         return true;
@@ -88,7 +88,11 @@ public class TestResult extends TestBase {
     public boolean checkContains(Set<?> found, Set<?> expected, String message) {
         Set<?> copy = new HashSet<>(expected);
         copy.removeAll(found);
-        return checkTrue(found.containsAll(expected), message + " : " + copy);
+        if (!found.containsAll(expected)) {
+            return checkTrue(false, message + " FAIL : not found elements : " + copy);
+        } else {
+            return checkTrue(true, message + " PASS : all elements found");
+        }
     }
 
     public void addFailure(Throwable th) {
@@ -119,7 +123,7 @@ public class TestResult extends TestBase {
     private class Info {
 
         private final String info;
-        private final List<AssertionFailedException> asserts;
+        private final List<String> asserts;
         private final List<Throwable> errors;
 
         private Info(String info) {
@@ -141,19 +145,25 @@ public class TestResult extends TestBase {
             printf("[ERROR] : %s\n", getStackTrace(th));
         }
 
-        public void addAssert(AssertionFailedException e) {
+        public void addAssert(String e) {
             asserts.add(e);
-            printf("[ASSERT] : %s\n", getStackTrace(e));
+            printf("[ASSERT] : %s\n", e);
         }
 
         public String getMessage() {
-            return (asserts.size() > 0 ? getErrorMessage("[ASSERT]", asserts) + "\n" : "")
-                    + getErrorMessage("[ERROR]", errors);
+            return (asserts.size() > 0 ? getAssertMessages(asserts) + "\n" : "")
+                    + getErrorMessages(errors);
         }
 
-        public String getErrorMessage(String header, List<? extends Throwable> list) {
+        public String getAssertMessages(List<String> list) {
             return list.stream()
-                    .map(throwable -> String.format("%s : %s", header, getStackTrace(throwable)))
+                    .map(message -> String.format("[ASSERT] : %s", message))
+                    .collect(Collectors.joining("\n"));
+        }
+
+        public String getErrorMessages(List<? extends Throwable> list) {
+            return list.stream()
+                    .map(throwable -> String.format("[ERROR] : %s", getStackTrace(throwable)))
                     .collect(Collectors.joining("\n"));
         }
 

@@ -530,7 +530,7 @@ public class PKCS7 {
         // CRLs (optional)
         if (crls != null && crls.length != 0) {
             // cast to X509CRLImpl[] since X509CRLImpl implements DerEncoder
-            Set<X509CRLImpl> implCRLs = new HashSet<X509CRLImpl>(crls.length);
+            Set<X509CRLImpl> implCRLs = new HashSet<>(crls.length);
             for (X509CRL crl: crls) {
                 if (crl instanceof X509CRLImpl)
                     implCRLs.add((X509CRLImpl) crl);
@@ -590,7 +590,7 @@ public class PKCS7 {
     public SignerInfo[] verify(byte[] bytes)
     throws NoSuchAlgorithmException, SignatureException {
 
-        Vector<SignerInfo> intResult = new Vector<SignerInfo>();
+        Vector<SignerInfo> intResult = new Vector<>();
         for (int i = 0; i < signerInfos.length; i++) {
 
             SignerInfo signerInfo = verify(signerInfos[i], bytes);

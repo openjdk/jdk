@@ -24,6 +24,7 @@
 
 package sun.hotspot;
 
+import java.lang.management.MemoryUsage;
 import java.lang.reflect.Executable;
 import java.util.Arrays;
 import java.util.List;
@@ -95,8 +96,10 @@ public class WhiteBox {
   // G1
   public native boolean g1InConcurrentMark();
   public native boolean g1IsHumongous(Object o);
+  public native long    g1NumMaxRegions();
   public native long    g1NumFreeRegions();
   public native int     g1RegionSize();
+  public native MemoryUsage g1AuxiliaryMemoryUsage();
   public native Object[]    parseCommandLine(String commandline, char delim, DiagnosticCommand[] args);
 
   // NMT
@@ -107,7 +110,6 @@ public class WhiteBox {
   public native void NMTUncommitMemory(long addr, long size);
   public native void NMTReleaseMemory(long addr, long size);
   public native long NMTMallocWithPseudoStack(long size, int index);
-  public native boolean NMTIsDetailSupported();
   public native boolean NMTChangeTrackingLevel();
   public native int NMTGetHashSize();
 

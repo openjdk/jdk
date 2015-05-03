@@ -27,6 +27,7 @@
  * @summary Decode many byte sequences in many ways
  * @run main/timeout=1800 FindDecoderBugs
  * @author Martin Buchholz
+ * @key randomness
  */
 
 import java.util.*;

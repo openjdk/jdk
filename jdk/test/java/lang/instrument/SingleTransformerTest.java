@@ -30,6 +30,7 @@
  * @run build SingleTransformerTest
  * @run shell MakeJAR.sh redefineAgent
  * @run main/othervm -javaagent:redefineAgent.jar SingleTransformerTest SingleTransformerTest
+ * @key randomness
  */
 public class
 SingleTransformerTest

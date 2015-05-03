@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,37 +48,30 @@ public class TestHtmlTableStyles extends JavadocTester {
 
         checkOutput("pkg1/TestTable.html", true,
                 "<table summary=\"Summary\" border cellpadding=3 cellspacing=1>",
-                "<table class=\"memberSummary\" border=\"0\" cellpadding=\"3\" "
-                + "cellspacing=\"0\" summary=\"Field Summary table, listing fields, "
+                "<table class=\"memberSummary\" summary=\"Field Summary table, listing fields, "
                 + "and an explanation\">",
-                "<table class=\"memberSummary\" border=\"0\" cellpadding=\"3\" "
-                + "cellspacing=\"0\" summary=\"Constructor Summary table, listing "
+                "<table class=\"memberSummary\" summary=\"Constructor Summary table, listing "
                 + "constructors, and an explanation\">",
-                "<table class=\"memberSummary\" border=\"0\" cellpadding=\"3\" "
-                + "cellspacing=\"0\" summary=\"Method Summary table, listing methods, "
+                "<table class=\"memberSummary\" summary=\"Method Summary table, listing methods, "
                 + "and an explanation\">");
 
         checkOutput("pkg1/package-summary.html", true,
-                "<table class=\"typeSummary\" border=\"0\" cellpadding=\"3\" "
-                + "cellspacing=\"0\" summary=\"Class Summary table, listing classes, "
+                "<table class=\"typeSummary\" summary=\"Class Summary table, listing classes, "
                 + "and an explanation\">");
 
         checkOutput("pkg1/class-use/TestTable.html", true,
-                "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" "
-                + "cellspacing=\"0\" summary=\"Use table, listing fields, and an explanation\">");
+                "<table class=\"useSummary\" summary=\"Use table, listing fields, and an explanation\">");
 
         checkOutput("overview-summary.html", true,
-                "<table class=\"overviewSummary\" border=\"0\" cellpadding=\"3\" "
-                + "cellspacing=\"0\" summary=\"Packages table, listing packages, and an explanation\">");
+                "<table class=\"overviewSummary\" "
+                + "summary=\"Packages table, listing packages, and an explanation\">");
 
         checkOutput("deprecated-list.html", true,
-            "<table class=\"deprecatedSummary\" border=\"0\" cellpadding=\"3\" " +
-            "cellspacing=\"0\" summary=\"Deprecated Methods table, listing " +
+            "<table class=\"deprecatedSummary\" summary=\"Deprecated Methods table, listing " +
             "deprecated methods, and an explanation\">");
 
         checkOutput("constant-values.html", true,
-            "<table class=\"constantsSummary\" border=\"0\" cellpadding=\"3\" " +
-            "cellspacing=\"0\" summary=\"Constant Field Values table, listing " +
+            "<table class=\"constantsSummary\" summary=\"Constant Field Values table, listing " +
             "constant fields, and values\">");
     }
 }

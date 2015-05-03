@@ -26,15 +26,15 @@
 package com.sun.security.auth;
 
 /**
- * <p> This class extends <code>NTSid</code>
+ * This class extends {@code NTSid}
  * and represents a Windows NT user's SID.
  *
- * <p> Principals such as this <code>NTSidUserPrincipal</code>
- * may be associated with a particular <code>Subject</code>
- * to augment that <code>Subject</code> with an additional
- * identity.  Refer to the <code>Subject</code> class for more information
+ * <p> Principals such as this {@code NTSidUserPrincipal}
+ * may be associated with a particular {@code Subject}
+ * to augment that {@code Subject} with an additional
+ * identity.  Refer to the {@code Subject} class for more information
  * on how to achieve this.  Authorization decisions can then be based upon
- * the Principals associated with a <code>Subject</code>.
+ * the Principals associated with a {@code Subject}.
  *
  * @see java.security.Principal
  * @see javax.security.auth.Subject
@@ -45,25 +45,21 @@ public class NTSidUserPrincipal extends NTSid {
     private static final long serialVersionUID = -5573239889517749525L;
 
     /**
-     * Create an <code>NTSidUserPrincipal</code> with a Windows NT SID.
+     * Create an {@code NTSidUserPrincipal} with a Windows NT SID.
      *
-     * <p>
+     * @param name a string version of the Windows NT SID for this user.
      *
-     * @param name a string version of the Windows NT SID for this user.<p>
-     *
-     * @exception NullPointerException if the <code>name</code>
-     *                  is <code>null</code>.
+     * @exception NullPointerException if the {@code name}
+     *                  is {@code null}.
      */
     public NTSidUserPrincipal(String name) {
         super(name);
     }
 
     /**
-     * Return a string representation of this <code>NTSidUserPrincipal</code>.
+     * Return a string representation of this {@code NTSidUserPrincipal}.
      *
-     * <p>
-     *
-     * @return a string representation of this <code>NTSidUserPrincipal</code>.
+     * @return a string representation of this {@code NTSidUserPrincipal}.
      */
     public String toString() {
         java.text.MessageFormat form = new java.text.MessageFormat
@@ -75,18 +71,16 @@ public class NTSidUserPrincipal extends NTSid {
     }
 
     /**
-     * Compares the specified Object with this <code>NTSidUserPrincipal</code>
+     * Compares the specified Object with this {@code NTSidUserPrincipal}
      * for equality.  Returns true if the given object is also a
-     * <code>NTSidUserPrincipal</code> and the two NTSidUserPrincipals
+     * {@code NTSidUserPrincipal} and the two NTSidUserPrincipals
      * have the same SID.
      *
-     * <p>
-     *
      * @param o Object to be compared for equality with this
-     *          <code>NTSidUserPrincipal</code>.
+     *          {@code NTSidUserPrincipal}.
      *
      * @return true if the specified Object is equal to this
-     *          <code>NTSidUserPrincipal</code>.
+     *          {@code NTSidUserPrincipal}.
      */
     public boolean equals(Object o) {
             if (o == null)

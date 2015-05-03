@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +97,14 @@ public interface ProfileSummaryWriter {
      */
     public abstract void addClassesSummary(ClassDoc[] classes, String label,
             String tableSummary, String[] tableHeader, Content packageSummaryContentTree);
+
+    /**
+     * Adds the profile content tree to the documentation tree.
+     *
+     * @param contentTree the tree to which the profile content tree will be added
+     * @param profileContentTree the content tree that will be added
+     */
+    public abstract void addProfileContent(Content contentTree, Content profileContentTree);
 
     /**
      * Adds the footer to the documentation tree.

@@ -72,7 +72,8 @@ public final class JSONFunctions {
     public static Object parse(final Object text, final Object reviver) {
         final String     str    = JSType.toString(text);
         final Global     global = Context.getGlobal();
-        final JSONParser parser = new JSONParser(str, global);
+        final boolean    dualFields = ((ScriptObject) global).useDualFields();
+        final JSONParser parser = new JSONParser(str, global, dualFields);
         final Object     value;
 
         try {

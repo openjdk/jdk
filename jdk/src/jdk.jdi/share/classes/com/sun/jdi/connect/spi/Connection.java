@@ -51,7 +51,7 @@ import java.io.IOException;
  *
  * <p> A Connection is safe for access by multiple concurrent threads,
  * although at most one thread may be reading and at most one thread may
- * be writing at any given time. </p>
+ * be writing at any given time.
  *
  * @since 1.5
  */
@@ -70,18 +70,18 @@ public abstract class Connection {
      *
      * <p> Reading a packet does not do any integrity checking on
      * the packet aside from a check that the length of the packet
-     * (as indicated by the value of the <tt>length</tt> field, the
+     * (as indicated by the value of the {@code length} field, the
      * first four bytes of the packet) is 11 or more bytes.
-     * If the value of the <tt>length</tt> value is less then 11
-     * then an <tt>IOException</tt> is thrown.
+     * If the value of the {@code length} value is less then 11
+     * then an {@code IOException} is thrown.
      *
      * <p> Returns a byte array of a length equal to the length
      * of the received packet, or a byte array of length 0 when an
      * end of stream is encountered. If end of stream is encountered
      * after some, but not all bytes of a packet, are read then it
-     * is considered an I/O error and an <tt>IOException</tt> is
+     * is considered an I/O error and an {@code IOException} is
      * thrown. The first byte of the packet is stored in element
-     * <tt>0</tt> of the byte array, the second in element <tt>1</tt>,
+     * {@code 0} of the byte array, the second in element {@code 1},
      * and so on. The bytes in the byte array are laid out as per the
      * <a href="../../../../../../../../../technotes/guides/jpda/jdwp-spec.html">
      * JDWP specification</a>. That is, all fields in the packet
@@ -90,7 +90,7 @@ public abstract class Connection {
      * <p> This method may be invoked at any time.  If another thread has
      * already initiated a {@link #readPacket readPacket} on this
      * connection then the invocation of this method will block until the
-     * first operation is complete. </p>
+     * first operation is complete.
      *
      * @return  the packet read from the target VM
      *
@@ -123,21 +123,21 @@ public abstract class Connection {
      * href="../../../../../../../../../technotes/guides/jpda/jdwp-spec.html">
      * JDWP specification</a>. That is, all fields in the packet
      * are in big endian order. The first byte, that is element
-     * <tt>pkt[0]</tt>, is the first byte of the <tt>length</tt> field.
-     * <tt>pkt[1]</tt> is the second byte of the <tt>length</tt> field,
+     * {@code pkt[0]}, is the first byte of the {@code length} field.
+     * {@code pkt[1]} is the second byte of the {@code length} field,
      * and so on.
      *
      * <p> Writing a packet does not do any integrity checking on
      * the packet aside from checking the packet length. Checking
      * the packet length requires checking that the value of the
-     * <tt>length</tt> field (as indicated by the first four bytes
+     * {@code length} field (as indicated by the first four bytes
      * of the packet) is 11 or greater. Consequently the length of
      * the byte array provided to this method, that is
-     * <tt>pkt.length</tt>, must be 11 or more, and must be equal
-     * or greater than the value of the <tt>length</tt> field. If the
+     * {@code pkt.length}, must be 11 or more, and must be equal
+     * or greater than the value of the {@code length} field. If the
      * length of the byte array is greater than the value of
-     * the <tt>length</tt> field then all bytes from element
-     * <tt>pkt[length]</tt> onwards are ignored. In other words,
+     * the {@code length} field then all bytes from element
+     * {@code pkt[length]} onwards are ignored. In other words,
      * any additional bytes that follow the packet in the byte
      * array are ignored and will not be transmitted to the target
      * VM.
@@ -152,7 +152,7 @@ public abstract class Connection {
      * <p> This method may be invoked at any time.  If another thread has
      * already initiated a write operation upon this Connection then
      * a subsequent invocation of this method will block until the first
-     * operation is complete. </p>
+     * operation is complete.
      *
      * @param   pkt
      *          The packet to write to the target VM.
@@ -165,7 +165,7 @@ public abstract class Connection {
      *          If an I/O error occurs.
      *
      * @throws  IllegalArgumentException
-     *          If the value of the <tt>length</tt> field is invalid,
+     *          If the value of the {@code length} field is invalid,
      *          or the byte array is of insufficient length.
      */
     public abstract void writePacket(byte pkt[]) throws IOException;
@@ -185,7 +185,7 @@ public abstract class Connection {
      * <p> This method may be invoked at any time.  If some other thread has
      * already invoked it, however, then another invocation will block until
      * the first invocation is complete, after which it will return without
-     * effect. </p>
+     * effect.
      *
      * @throws  java.io.IOException
      *          If an I/O error occurs
@@ -193,9 +193,9 @@ public abstract class Connection {
     public abstract void close() throws IOException;
 
     /**
-     * Tells whether or not this connection is open.  </p>
+     * Tells whether or not this connection is open.
      *
-     * @return <tt>true</tt> if, and only if, this connection is open
+     * @return {@code true} if and only if this connection is open
      */
     public abstract boolean isOpen();
 }

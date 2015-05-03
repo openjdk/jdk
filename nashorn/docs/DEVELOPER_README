@@ -63,16 +63,19 @@ SYSTEM PROPERTY: -Dnashorn.codegen.debug.trace=<x>
 See the description of the codegen logger below.
 
 
-SYSTEM PROPERTY: -Dnashorn.fields.objects
+SYSTEM PROPERTY: -Dnashorn.fields.objects, -Dnashorn.fields.dual
 
-When this property is true, Nashorn will only use object fields for
-AccessorProperties. This means that primitive values must be boxed
-when stored in a field, which is significantly slower than using
-primitive fields.
+When the nashorn.fields.objects property is true, Nashorn will always
+use object fields for AccessorProperties, requiring boxing for all
+primitive property values. When nashorn.fields.dual is set, Nashorn
+will always use dual long/object fields, which allows primitives to be
+stored without boxing. When neither system property is set, Nashorn
+chooses a setting depending on the optimistic types setting (dual
+fields when optimistic types are enabled, object-only fields otherwise).
 
-By default, Nashorn uses dual object and long fields. Ints are
-represented as the 32 low bits of the long fields. Doubles are
-represented as the doubleToLongBits of their value. This way a
+With dual fields, Nashorn uses long fields to store primitive values.
+Ints are represented as the 32 low bits of the long fields. Doubles
+are represented as the doubleToLongBits of their value. This way a
 single field can be used for all primitive types. Packing and
 unpacking doubles to their bit representation is intrinsified by
 the JVM and extremely fast.

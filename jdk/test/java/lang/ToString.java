@@ -25,6 +25,7 @@
  * @test
  * @bug 4031762
  * @summary Test the primitive wrappers static toString()
+ * @key randomness
  */
 
 import java.util.Random;

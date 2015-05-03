@@ -26,6 +26,7 @@
  * @bug 4726380 8037097
  * @summary Check that different sorts give equivalent results.
  * @run testng Correct
+ * @key randomness
  */
 
 import java.util.*;

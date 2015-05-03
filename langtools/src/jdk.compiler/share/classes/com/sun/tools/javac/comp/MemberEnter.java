@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,8 @@
 
 package com.sun.tools.javac.comp;
 
-import javax.tools.JavaFileObject;
+import java.util.EnumSet;
+import java.util.Set;
 
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Scope.WriteableScope;
@@ -224,10 +225,12 @@ public class MemberEnter extends JCTree.Visitor {
         annotate.annotateLater(tree.mods.annotations, localEnv, m, tree.pos());
         // Visit the signature of the method. Note that
         // TypeAnnotate doesn't descend into the body.
-        annotate.annotateTypeLater(tree, localEnv, m, tree.pos());
+        annotate.queueScanTreeAndTypeAnnotate(tree, localEnv, m, tree.pos());
 
-        if (tree.defaultValue != null)
-            annotateDefaultValueLater(tree.defaultValue, localEnv, m, tree.pos());
+        if (tree.defaultValue != null) {
+            m.defaultValue = annotate.unfinishedDefaultValue(); // set it to temporary sentinel for now
+            annotate.annotateDefaultValueLater(tree.defaultValue, localEnv, m, tree.pos());
+        }
     }
 
     /** Create a fresh environment for method bodies.
@@ -255,6 +258,7 @@ public class MemberEnter extends JCTree.Visitor {
             localEnv.info.staticLevel++;
         }
         DiagnosticPosition prevLintPos = deferredLintHandler.setPos(tree.pos());
+
         try {
             if (TreeInfo.isEnumInit(tree)) {
                 attr.attribIdentAsEnumType(localEnv, (JCIdent)tree.vartype);
@@ -297,7 +301,7 @@ public class MemberEnter extends JCTree.Visitor {
         }
 
         annotate.annotateLater(tree.mods.annotations, localEnv, v, tree.pos());
-        annotate.annotateTypeLater(tree.vartype, localEnv, v, tree.pos());
+        annotate.queueScanTreeAndTypeAnnotate(tree.vartype, localEnv, v, tree.pos());
 
         v.pos = tree.pos;
     }
@@ -334,43 +338,49 @@ public class MemberEnter extends JCTree.Visitor {
         return initTreeVisitor.result;
     }
 
-    /** Visitor class for expressions which might be constant expressions.
+    /** Visitor class for expressions which might be constant expressions,
+     *  as per JLS 15.28 (Constant Expressions).
      */
     static class InitTreeVisitor extends JCTree.Visitor {
+
+        private static final Set<Tag> ALLOWED_OPERATORS =
+                EnumSet.of(Tag.POS, Tag.NEG, Tag.NOT, Tag.COMPL, Tag.PLUS, Tag.MINUS,
+                           Tag.MUL, Tag.DIV, Tag.MOD, Tag.SL, Tag.SR, Tag.USR,
+                           Tag.LT, Tag.LE, Tag.GT, Tag.GE, Tag.EQ, Tag.NE,
+                           Tag.BITAND, Tag.BITXOR, Tag.BITOR, Tag.AND, Tag.OR);
 
         private boolean result = true;
 
         @Override
-        public void visitTree(JCTree tree) {}
-
-        @Override
-        public void visitNewClass(JCNewClass that) {
+        public void visitTree(JCTree tree) {
             result = false;
         }
 
         @Override
-        public void visitNewArray(JCNewArray that) {
-            result = false;
+        public void visitLiteral(JCLiteral that) {}
+
+        @Override
+        public void visitTypeCast(JCTypeCast tree) {
+            tree.expr.accept(this);
         }
 
         @Override
-        public void visitLambda(JCLambda that) {
-            result = false;
+        public void visitUnary(JCUnary that) {
+            if (!ALLOWED_OPERATORS.contains(that.getTag())) {
+                result = false;
+                return ;
+            }
+            that.arg.accept(this);
         }
 
         @Override
-        public void visitReference(JCMemberReference that) {
-            result = false;
-        }
-
-        @Override
-        public void visitApply(JCMethodInvocation that) {
-            result = false;
-        }
-
-        @Override
-        public void visitSelect(JCFieldAccess tree) {
-            tree.selected.accept(this);
+        public void visitBinary(JCBinary that) {
+            if (!ALLOWED_OPERATORS.contains(that.getTag())) {
+                result = false;
+                return ;
+            }
+            that.lhs.accept(this);
+            that.rhs.accept(this);
         }
 
         @Override
@@ -386,8 +396,11 @@ public class MemberEnter extends JCTree.Visitor {
         }
 
         @Override
-        public void visitTypeCast(JCTypeCast tree) {
-            tree.expr.accept(this);
+        public void visitIdent(JCIdent that) {}
+
+        @Override
+        public void visitSelect(JCFieldAccess tree) {
+            tree.selected.accept(this);
         }
     }
 
@@ -434,53 +447,4 @@ public class MemberEnter extends JCTree.Visitor {
         Env<AttrContext> iEnv = initEnv(tree, env);
         return iEnv;
     }
-
-    /** Queue processing of an attribute default value. */
-    void annotateDefaultValueLater(final JCExpression defaultValue,
-                                   final Env<AttrContext> localEnv,
-                                   final MethodSymbol m,
-                                   final DiagnosticPosition deferPos) {
-        annotate.normal(new Annotate.Worker() {
-                @Override
-                public String toString() {
-                    return "annotate " + m.owner + "." +
-                        m + " default " + defaultValue;
-                }
-
-                @Override
-                public void run() {
-                    JavaFileObject prev = log.useSource(localEnv.toplevel.sourcefile);
-                    DiagnosticPosition prevLintPos = deferredLintHandler.setPos(deferPos);
-                    try {
-                        enterDefaultValue(defaultValue, localEnv, m);
-                    } finally {
-                        deferredLintHandler.setPos(prevLintPos);
-                        log.useSource(prev);
-                    }
-                }
-            });
-        annotate.validate(new Annotate.Worker() { //validate annotations
-            @Override
-            public void run() {
-                JavaFileObject prev = log.useSource(localEnv.toplevel.sourcefile);
-                try {
-                    // if default value is an annotation, check it is a well-formed
-                    // annotation value (e.g. no duplicate values, no missing values, etc.)
-                    chk.validateAnnotationTree(defaultValue);
-                } finally {
-                    log.useSource(prev);
-                }
-            }
-        });
-    }
-
-    /** Enter a default value for an attribute method. */
-    private void enterDefaultValue(final JCExpression defaultValue,
-                                   final Env<AttrContext> localEnv,
-                                   final MethodSymbol m) {
-        m.defaultValue = annotate.enterAttributeValue(m.type.getReturnType(),
-                                                      defaultValue,
-                                                      localEnv);
-    }
-
 }

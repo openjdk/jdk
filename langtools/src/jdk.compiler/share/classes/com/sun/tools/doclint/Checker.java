@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,6 +108,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     public enum Flag {
         TABLE_HAS_CAPTION,
         HAS_ELEMENT,
+        HAS_HEADING,
         HAS_INLINE_TAG,
         HAS_TEXT,
         REPORTED_BAD_INLINE
@@ -282,6 +283,8 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         final HtmlTag t = HtmlTag.get(treeName);
         if (t == null) {
             env.messages.error(HTML, tree, "dc.tag.unknown", treeName);
+        } else if (t.allowedVersion != HtmlVersion.ALL && t.allowedVersion != env.htmlVersion) {
+            env.messages.error(HTML, tree, "dc.tag.not.supported", treeName);
         } else {
             boolean done = false;
             for (TagStackItem tsi: tagStack) {
@@ -343,6 +346,12 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     case CAPTION:
                         if (parent != null && parent.tag == HtmlTag.TABLE)
                             parent.flags.add(Flag.TABLE_HAS_CAPTION);
+                        break;
+
+                    case H1: case H2: case H3: case H4: case H5: case H6:
+                        if (parent != null && (parent.tag == HtmlTag.SECTION || parent.tag == HtmlTag.ARTICLE)) {
+                            parent.flags.add(Flag.HAS_HEADING);
+                        }
                         break;
 
                     case IMG:
@@ -460,6 +469,14 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                                 env.messages.error(ACCESSIBILITY, tree,
                                         "dc.no.summary.or.caption.for.table");
                             }
+                            break;
+
+                        case SECTION:
+                        case ARTICLE:
+                            if (env.htmlVersion == HtmlVersion.HTML5 && !top.flags.contains(Flag.HAS_HEADING)) {
+                                env.messages.error(HTML, tree, "dc.tag.requires.heading", treeName);
+                            }
+                            break;
                     }
                     warnIfEmpty(top, tree);
                     tagStack.pop();
@@ -519,25 +536,21 @@ public class Checker extends DocTreePathScanner<Void, Void> {
             Name name = tree.getName();
             HtmlTag.Attr attr = currTag.getAttr(name);
             if (attr != null) {
+                if (env.htmlVersion == HtmlVersion.HTML4 && attr.name().contains("-")) {
+                    env.messages.error(HTML, tree, "dc.attr.not.supported.html4", name);
+                }
                 boolean first = tagStack.peek().attrs.add(attr);
                 if (!first)
                     env.messages.error(HTML, tree, "dc.attr.repeated", name);
             }
             AttrKind k = currTag.getAttrKind(name);
-            switch (k) {
-                case OK:
+            switch (env.htmlVersion) {
+                case HTML4:
+                    validateHtml4Attrs(tree, name, k);
                     break;
 
-                case INVALID:
-                    env.messages.error(HTML, tree, "dc.attr.unknown", name);
-                    break;
-
-                case OBSOLETE:
-                    env.messages.warning(ACCESSIBILITY, tree, "dc.attr.obsolete", name);
-                    break;
-
-                case USE_CSS:
-                    env.messages.warning(ACCESSIBILITY, tree, "dc.attr.obsolete.use.css", name);
+                case HTML5:
+                    validateHtml5Attrs(tree, name, k);
                     break;
             }
 
@@ -590,6 +603,20 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                             }
                         }
                         break;
+
+                    case BORDER:
+                        if (currTag == HtmlTag.TABLE) {
+                            String v = getAttrValue(tree);
+                            try {
+                                if (env.htmlVersion == HtmlVersion.HTML5
+                                        && (v == null || (!v.isEmpty() && Integer.parseInt(v) != 1))) {
+                                    env.messages.error(HTML, tree, "dc.attr.table.border.html5", attr);
+                                }
+                            } catch (NumberFormatException ex) {
+                                env.messages.error(HTML, tree, "dc.attr.table.border.html5", attr);
+                            }
+                        }
+                        break;
                 }
             }
         }
@@ -597,6 +624,45 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         // TODO: basic check on value
 
         return super.visitAttribute(tree, ignore);
+    }
+
+    private void validateHtml4Attrs(AttributeTree tree, Name name, AttrKind k) {
+        switch (k) {
+            case ALL:
+            case HTML4:
+                break;
+
+            case INVALID:
+                env.messages.error(HTML, tree, "dc.attr.unknown", name);
+                break;
+
+            case OBSOLETE:
+                env.messages.warning(ACCESSIBILITY, tree, "dc.attr.obsolete", name);
+                break;
+
+            case USE_CSS:
+                env.messages.warning(ACCESSIBILITY, tree, "dc.attr.obsolete.use.css", name);
+                break;
+
+            case HTML5:
+                env.messages.error(HTML, tree, "dc.attr.not.supported.html4", name);
+                break;
+        }
+    }
+
+    private void validateHtml5Attrs(AttributeTree tree, Name name, AttrKind k) {
+        switch (k) {
+            case ALL:
+            case HTML5:
+                break;
+
+            case INVALID:
+            case OBSOLETE:
+            case USE_CSS:
+            case HTML4:
+                env.messages.error(HTML, tree, "dc.attr.not.supported.html5", name);
+                break;
+        }
     }
 
     private boolean checkAnchor(String name) {

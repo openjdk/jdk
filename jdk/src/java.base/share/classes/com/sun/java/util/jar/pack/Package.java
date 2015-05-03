@@ -1210,7 +1210,7 @@ class Package {
         // This keeps files of similar format near each other.
         // Put class files at the end, keeping their fixed order.
         // Be sure the JAR file's required manifest stays at the front. (4893051)
-        Collections.sort(files, new Comparator<File>() {
+        Collections.sort(files, new Comparator<>() {
                 public int compare(File r0, File r1) {
                     // Get the file name.
                     String f0 = r0.nameString;

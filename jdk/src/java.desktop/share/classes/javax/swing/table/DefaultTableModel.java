@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -314,15 +314,7 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
 
     /**
      * Obsolete as of Java 2 platform v1.3.  Please use <code>setRowCount</code> instead.
-     */
-    /*
-     *  Sets the number of rows in the model.  If the new size is greater
-     *  than the current size, new rows are added to the end of the model
-     *  If the new size is less than the current size, all
-     *  rows at index <code>rowCount</code> and greater are discarded.
-     *
      * @param   rowCount   the new number of rows
-     * @see #setRowCount
      */
     public void setNumRows(int rowCount) {
         int old = getRowCount();

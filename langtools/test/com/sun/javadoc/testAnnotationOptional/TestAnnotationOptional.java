@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,6 @@ public class TestAnnotationOptional extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/AnnotationOptional.html", true,
-            "<a name=\"annotation.type.element.detail\">");
+            "<a id=\"annotation.type.element.detail\">");
     }
 }

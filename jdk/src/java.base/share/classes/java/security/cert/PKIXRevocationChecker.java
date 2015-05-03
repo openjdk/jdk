@@ -170,7 +170,7 @@ public abstract class PKIXRevocationChecker extends PKIXCertPathChecker {
     {
         this.ocspExtensions = (extensions == null)
                               ? Collections.<Extension>emptyList()
-                              : new ArrayList<Extension>(extensions);
+                              : new ArrayList<>(extensions);
     }
 
     /**
@@ -232,7 +232,7 @@ public abstract class PKIXRevocationChecker extends PKIXCertPathChecker {
     public void setOptions(Set<Option> options) {
         this.options = (options == null)
                        ? Collections.<Option>emptySet()
-                       : new HashSet<Option>(options);
+                       : new HashSet<>(options);
     }
 
     /**

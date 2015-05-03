@@ -479,7 +479,7 @@ public class HttpClient extends NetworkClient {
     {
         try {
             java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedExceptionAction<Void>() {
+                new java.security.PrivilegedExceptionAction<>() {
                     public Void run() throws IOException {
                     openServer(server.getHostString(), server.getPort());
                     return null;

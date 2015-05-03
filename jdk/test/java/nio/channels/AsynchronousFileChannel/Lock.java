@@ -25,6 +25,7 @@
 /* @test
  * @bug 4607272 6814948 6842687
  * @summary Unit test for AsynchronousFileChannel#lock method
+ * @key randomness
  */
 
 import java.net.*;
