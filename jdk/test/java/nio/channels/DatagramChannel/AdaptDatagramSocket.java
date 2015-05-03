@@ -25,6 +25,7 @@
  * @bug 4313882 4981129
  * @summary Unit test for datagram-socket-channel adaptors
  * @library ..
+ * @key randomness
  */
 
 import java.net.*;

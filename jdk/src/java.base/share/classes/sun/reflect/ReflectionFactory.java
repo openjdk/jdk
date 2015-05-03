@@ -375,7 +375,7 @@ public class ReflectionFactory {
     private static void checkInitted() {
         if (initted) return;
         AccessController.doPrivileged(
-            new PrivilegedAction<Void>() {
+            new PrivilegedAction<>() {
                 public Void run() {
                     // Tests to ensure the system properties table is fully
                     // initialized. This is needed because reflection code is

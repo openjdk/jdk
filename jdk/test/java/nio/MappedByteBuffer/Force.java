@@ -25,6 +25,7 @@
  * @bug 4625907
  * @summary Testing force()
  * @run main/othervm Force
+ * @key randomness
  */
 
 import java.io.*;

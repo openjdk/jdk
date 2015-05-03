@@ -25,6 +25,7 @@
  * @bug 4607272
  * @summary Test Channels methods for interoperability between streams and
  *     asynchronous byte channels
+ * @key randomness
  */
 
 import java.net.*;

@@ -1,0 +1,175 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+#include "accessBridgeResource.h"
+
+#define XSTR(x) STR(x)
+#define STR(x)  #x
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#define APSTUDIO_HIDDEN_SYMBOLS
+#include "windows.h"
+#undef APSTUDIO_HIDDEN_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+ACCESSBRIDGESTATUSWINDOW DIALOGEX 160, 78, 209, 163
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_CLIENTEDGE
+CAPTION "Access Bridge status"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    EDITTEXT        cVMID,67,23,121,13,ES_READONLY
+    EDITTEXT        cStatusText,40,147,162,13,ES_READONLY
+    LTEXT           "Java VM ID:",IDC_STATIC,23,25,40,8
+    LTEXT           "Status:",IDC_STATIC,11,149,23,8
+    EDITTEXT        cWindowsID,67,39,121,13,ES_READONLY
+    LTEXT           "Windows ID:",IDC_STATIC,21,41,42,8
+    EDITTEXT        cCallInfo,12,65,184,75,ES_MULTILINE | ES_AUTOVSCROLL | 
+                    ES_AUTOHSCROLL | ES_READONLY | WS_VSCROLL
+    GROUPBOX        "Call info",IDC_STATIC,4,55,197,90
+    EDITTEXT        cInvokedByText,67,1,121,13,ES_READONLY
+    LTEXT           "Invoked by:",IDC_STATIC,25,3,38,8
+END
+
+IDD_DIALOG1 DIALOG DISCARDABLE  0, 0, 186, 95
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Dialog"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,129,7,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,129,24,50,14
+END
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#define APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "#include ""windows.h""\r\n"
+    "#undef APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    "ACCESSBRIDGESTATUSWINDOW", DIALOG
+    BEGIN
+        LEFTMARGIN, 4
+        RIGHTMARGIN, 202
+        BOTTOMMARGIN, 160
+    END
+
+    "IDD_DIALOG1", DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 179
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 88
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+#ifndef _MAC
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION    JDK_FVER
+ PRODUCTVERSION JDK_FVER
+ FILEFLAGSMASK 0x3fL
+#ifdef DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE JDK_FTYPE
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "Comments", "Java Access Bridge\0"
+            VALUE "CompanyName", XSTR(JDK_COMPANY) "\0"
+            VALUE "FileDescription", XSTR(JDK_COMPONENT) "\0"
+            VALUE "FileVersion", XSTR(JDK_VER) "\0"
+            VALUE "Full Version", XSTR(JDK_BUILD_ID) "\0"
+            VALUE "InternalName", XSTR(JDK_INTERNAL_NAME) "\0"
+            VALUE "LegalCopyright", XSTR(JDK_COPYRIGHT) "\0"
+            VALUE "OriginalFilename", XSTR(JDK_FNAME) "\0"
+            VALUE "ProductName",  XSTR(JDK_NAME) "\0"
+            VALUE "ProductVersion", XSTR(JDK_VER) "\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
+
+#endif    // !_MAC
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

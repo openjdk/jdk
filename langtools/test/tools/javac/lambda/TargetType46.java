@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8003280
+ * @bug 8003280 8062373
  * @summary Add lambda tests
  *  compiler doesn't report accessibility problem due to inaccessible target
  * @compile/fail/ref=TargetType46.out -XDrawDiagnostics TargetType46.java
@@ -22,6 +22,7 @@ class TargetType46 {
         outer.m(()->{}); //access error
         outer.m(this::g); //access error
         outer.m(new ArrayList<>()); //ok
+        outer.m(new ArrayList<>() {}); // access error
         outer.m(Collections.emptyList()); //ok
     }
 

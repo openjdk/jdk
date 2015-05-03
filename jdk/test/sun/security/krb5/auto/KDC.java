@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,6 +149,9 @@ public class KDC {
     private List<String> conf = new ArrayList<>();
 
     private Thread thread1, thread2, thread3;
+    private volatile boolean udpConsumerReady = false;
+    private volatile boolean tcpConsumerReady = false;
+    private volatile boolean dispatcherReady = false;
     DatagramSocket u1 = null;
     ServerSocket t1 = null;
 
@@ -1228,6 +1231,7 @@ public class KDC {
         // The UDP consumer
         thread1 = new Thread() {
             public void run() {
+                udpConsumerReady = true;
                 while (true) {
                     try {
                         byte[] inbuf = new byte[8192];
@@ -1248,6 +1252,7 @@ public class KDC {
         // The TCP consumer
         thread2 = new Thread() {
             public void run() {
+                tcpConsumerReady = true;
                 while (true) {
                     try {
                         Socket socket = tcp.accept();
@@ -1270,6 +1275,7 @@ public class KDC {
         // The dispatcher
         thread3 = new Thread() {
             public void run() {
+                dispatcherReady = true;
                 while (true) {
                     try {
                         q.take().send();
@@ -1280,6 +1286,19 @@ public class KDC {
         };
         thread3.setDaemon(true);
         thread3.start();
+
+        // wait for the KDC is ready
+        try {
+            while (!isReady()) {
+                Thread.sleep(100);
+            }
+        } catch(InterruptedException e) {
+            throw new IOException(e);
+        }
+    }
+
+    boolean isReady() {
+        return udpConsumerReady && tcpConsumerReady && dispatcherReady;
     }
 
     public void terminate() {

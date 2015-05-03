@@ -244,7 +244,7 @@ class MessageHeader {
     public synchronized Map<String, List<String>> filterAndAddHeaders(
             String[] excludeList, Map<String, List<String>>  include) {
         boolean skipIt = false;
-        Map<String, List<String>> m = new HashMap<String, List<String>>();
+        Map<String, List<String>> m = new HashMap<>();
         for (int i = nkeys; --i >= 0;) {
             if (excludeList != null) {
                 // check if the key is in the excludeList.
@@ -260,7 +260,7 @@ class MessageHeader {
             if (!skipIt) {
                 List<String> l = m.get(keys[i]);
                 if (l == null) {
-                    l = new ArrayList<String>();
+                    l = new ArrayList<>();
                     m.put(keys[i], l);
                 }
                 l.add(values[i]);
@@ -274,7 +274,7 @@ class MessageHeader {
                 for (Map.Entry<String,List<String>> entry: include.entrySet()) {
                 List<String> l = m.get(entry.getKey());
                 if (l == null) {
-                    l = new ArrayList<String>();
+                    l = new ArrayList<>();
                     m.put(entry.getKey(), l);
                 }
                 l.addAll(entry.getValue());

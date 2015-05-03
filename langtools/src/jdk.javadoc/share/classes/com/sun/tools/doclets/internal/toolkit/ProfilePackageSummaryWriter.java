@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,15 @@ public interface ProfilePackageSummaryWriter {
      *                           be added
      */
     public abstract void addPackageTags(Content packageContentTree);
+
+    /**
+     * Adds the tag information from the "packages.html" or "package-info.java" file to the
+     * documentation tree.
+     *
+     * @param contentTree the content tree to which the package content tree will be added
+     * @param packageContentTree the package content tree to be added
+     */
+    public abstract void addPackageContent(Content contentTree, Content packageContentTree);
 
     /**
      * Adds the footer to the documentation tree.

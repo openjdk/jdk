@@ -1455,7 +1455,7 @@ class SecurityManager {
             if (!packageAccessValid) {
                 String tmpPropertyStr =
                     AccessController.doPrivileged(
-                        new PrivilegedAction<String>() {
+                        new PrivilegedAction<>() {
                             public String run() {
                                 return java.security.Security.getProperty(
                                     "package.access");
@@ -1524,7 +1524,7 @@ class SecurityManager {
             if (!packageDefinitionValid) {
                 String tmpPropertyStr =
                     AccessController.doPrivileged(
-                        new PrivilegedAction<String>() {
+                        new PrivilegedAction<>() {
                             public String run() {
                                 return java.security.Security.getProperty(
                                     "package.definition");

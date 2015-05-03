@@ -27,6 +27,8 @@
  * @bug 6857159
  * @summary local schedule failed with checkcast of Thread.currentThread()
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.management
  */
 
 import com.oracle.java.testlibrary.*;

@@ -26,6 +26,7 @@
  * @bug 5037068
  * @summary Test import/export constructors and methods
  * @author Martin Buchholz
+ * @key randomness
  */
 
 import java.nio.*;

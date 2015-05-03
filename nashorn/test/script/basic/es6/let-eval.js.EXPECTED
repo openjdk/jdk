@@ -14,3 +14,7 @@ c: 0
 2 1 0
 2 1 0 undefined
 undefined undefined undefined undefined undefined
+v: 1
+v: 2
+this.v: undefined
+v: 2

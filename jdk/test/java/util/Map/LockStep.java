@@ -25,6 +25,7 @@
  * @test
  * @bug 6612102
  * @summary Test Map implementations for mutual compatibility
+ * @key randomness
  */
 
 import java.util.*;

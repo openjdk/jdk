@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ package org.omg.CORBA;
  * <code>org.omg.CORBA.Object</code>
  * are provided in the class <code>org.omg.CORBA.portable.ObjectImpl</code>,
  * which is the base class for stubs and object implementations.
- * <p>
+ *
  * @see org.omg.CORBA.portable.ObjectImpl
  */
 

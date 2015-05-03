@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,7 @@
 #include "memory/memRegion.hpp"
 #include "memory/padded.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oop.psgc.inline.hpp"
-
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
+#include "utilities/stack.inline.hpp"
 
 PaddedEnd<PSPromotionManager>* PSPromotionManager::_manager_array = NULL;
 OopStarTaskQueueSet*           PSPromotionManager::_stack_array_depth = NULL;
@@ -324,7 +322,7 @@ oop PSPromotionManager::oop_promotion_failed(oop obj, markOop obj_mark) {
 
     _promotion_failed_info.register_copy_failure(obj->size());
 
-    obj->push_contents(this);
+    push_contents(obj);
 
     // Save the mark if needed
     PSScavenge::oop_promotion_failed(obj, obj_mark);
@@ -341,7 +339,7 @@ oop PSPromotionManager::oop_promotion_failed(oop obj, markOop obj_mark) {
     gclog_or_tty->print_cr("{%s %s " PTR_FORMAT " (%d)}",
                            "promotion-failure",
                            obj->klass()->internal_name(),
-                           (void *)obj, obj->size());
+                           p2i(obj), obj->size());
 
   }
 #endif

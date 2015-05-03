@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,16 @@ public class ProfilePackageWriterImpl extends HtmlDocletWriter
     protected int profileValue;
 
     /**
+     * The HTML tree for main tag.
+     */
+    protected HtmlTree mainTree = HtmlTree.MAIN();
+
+    /**
+     * The HTML tree for section tag.
+     */
+    protected HtmlTree sectionTree = HtmlTree.SECTION();
+
+    /**
      * Constructor to construct ProfilePackageWriter object and to generate
      * "profilename-package-summary.html" file in the respective package directory.
      * For example for profile compact1 and package "java.lang" this will generate file
@@ -103,9 +113,15 @@ public class ProfilePackageWriterImpl extends HtmlDocletWriter
      * {@inheritDoc}
      */
     public Content getPackageHeader(String heading) {
-        Content bodyTree = getBody(true, getWindowTitle(utils.getPackageName(packageDoc)));
-        addTop(bodyTree);
-        addNavLinks(true, bodyTree);
+        HtmlTree bodyTree = getBody(true, getWindowTitle(utils.getPackageName(packageDoc)));
+        HtmlTree htmlTree = (configuration.allowTag(HtmlTag.HEADER))
+                ? HtmlTree.HEADER()
+                : bodyTree;
+        addTop(htmlTree);
+        addNavLinks(true, htmlTree);
+        if (configuration.allowTag(HtmlTag.HEADER)) {
+            bodyTree.addContent(htmlTree);
+        }
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.addStyle(HtmlStyle.header);
         Content profileContent = new StringContent(profileName);
@@ -133,7 +149,11 @@ public class ProfilePackageWriterImpl extends HtmlDocletWriter
             Content descPara = new HtmlTree(HtmlTag.P, seeLabel, space, descLink);
             div.addContent(descPara);
         }
-        bodyTree.addContent(div);
+        if (configuration.allowTag(HtmlTag.MAIN)) {
+            mainTree.addContent(div);
+        } else {
+            bodyTree.addContent(div);
+        }
         return bodyTree;
     }
 
@@ -199,9 +219,14 @@ public class ProfilePackageWriterImpl extends HtmlDocletWriter
             Content h2Content = new StringContent(
                     configuration.getText("doclet.Package_Description",
                     packageDoc.name()));
-            packageContentTree.addContent(HtmlTree.HEADING(HtmlConstants.PACKAGE_HEADING,
-                    true, h2Content));
-            addInlineComment(packageDoc, packageContentTree);
+            Content heading = HtmlTree.HEADING(HtmlConstants.PACKAGE_HEADING, true, h2Content);
+            if (configuration.allowTag(HtmlTag.SECTION)) {
+                sectionTree.addContent(heading);
+                addInlineComment(packageDoc, sectionTree);
+            } else {
+                packageContentTree.addContent(heading);
+                addInlineComment(packageDoc, packageContentTree);
+            }
         }
     }
 
@@ -209,15 +234,37 @@ public class ProfilePackageWriterImpl extends HtmlDocletWriter
      * {@inheritDoc}
      */
     public void addPackageTags(Content packageContentTree) {
-        addTagsInfo(packageDoc, packageContentTree);
+        Content htmlTree = (configuration.allowTag(HtmlTag.SECTION))
+                ? sectionTree
+                : packageContentTree;
+        addTagsInfo(packageDoc, htmlTree);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void addPackageContent(Content contentTree, Content packageContentTree) {
+        if (configuration.allowTag(HtmlTag.MAIN)) {
+            packageContentTree.addContent(sectionTree);
+            mainTree.addContent(packageContentTree);
+            contentTree.addContent(mainTree);
+        } else {
+            contentTree.addContent(packageContentTree);
+        }
     }
 
     /**
      * {@inheritDoc}
      */
     public void addPackageFooter(Content contentTree) {
-        addNavLinks(false, contentTree);
-        addBottom(contentTree);
+        Content htmlTree = (configuration.allowTag(HtmlTag.FOOTER))
+                ? HtmlTree.FOOTER()
+                : contentTree;
+        addNavLinks(false, htmlTree);
+        addBottom(htmlTree);
+        if (configuration.allowTag(HtmlTag.FOOTER)) {
+            contentTree.addContent(htmlTree);
+        }
     }
 
     /**

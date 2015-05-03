@@ -121,6 +121,10 @@ public final class NativeDate extends ScriptObject {
         this.timezone = env._timezone;
     }
 
+    NativeDate(final double time, final ScriptObject proto) {
+        this(time, proto, $nasgenmap$);
+    }
+
     NativeDate(final double time, final Global global) {
         this(time, global.getDatePrototype(), $nasgenmap$);
     }
@@ -1276,7 +1280,7 @@ public final class NativeDate extends ScriptObject {
         if (self instanceof NativeDate) {
             return (NativeDate)self;
         } else if (self != null && self == Global.instance().getDatePrototype()) {
-            return Global.instance().DEFAULT_DATE;
+            return Global.instance().getDefaultDate();
         } else {
             throw typeError("not.a.date", ScriptRuntime.safeToString(self));
         }

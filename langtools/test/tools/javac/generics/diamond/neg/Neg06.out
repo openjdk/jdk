@@ -1,2 +1,6 @@
-Neg06.java:16:37: compiler.err.prob.found.req: (compiler.misc.cant.apply.diamond.1: (compiler.misc.diamond: Neg06.CFoo), (compiler.misc.incompatible.eq.upper.bounds: X, java.lang.String, java.lang.Number))
-1 error
+Neg06.java:18:36: compiler.err.prob.found.req: (compiler.misc.cant.apply.diamond.1: (compiler.misc.diamond: Neg06.IFoo), (compiler.misc.incompatible.eq.upper.bounds: X, java.lang.String, java.lang.Number))
+Neg06.java:18:28: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: compiler.misc.anonymous.class: java.lang.Object, Neg06.ISuperFoo<java.lang.String>)
+Neg06.java:19:37: compiler.err.prob.found.req: (compiler.misc.cant.apply.diamond.1: (compiler.misc.diamond: Neg06.CFoo), (compiler.misc.incompatible.eq.upper.bounds: X, java.lang.String, java.lang.Number))
+Neg06.java:20:37: compiler.err.prob.found.req: (compiler.misc.cant.apply.diamond.1: (compiler.misc.diamond: Neg06.CFoo), (compiler.misc.incompatible.eq.upper.bounds: X, java.lang.String, java.lang.Number))
+Neg06.java:20:29: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: compiler.misc.anonymous.class: <any>, Neg06.CSuperFoo<java.lang.String>)
+5 errors

@@ -26,6 +26,7 @@
  * @bug 8014374
  * @summary Test basic CipherInputStream/OutputStream func w/ GCM mode.
  * @author Valerie Peng
+ * @key randomness
  */
 
 import java.security.*;

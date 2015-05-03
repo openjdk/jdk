@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import javax.tools.JavaFileManager;
 
 import com.sun.tools.javac.api.BasicJavacTask;
 import com.sun.tools.javac.file.CacheFSInfo;
+import com.sun.tools.javac.file.BaseFileManager;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.processing.AnnotationProcessingError;
 import com.sun.tools.javac.util.*;
@@ -221,12 +222,20 @@ public class Main {
         if (args.isEmpty())
             return Result.OK;
 
+        // init Depeendencies
+        if (options.isSet("completionDeps")) {
+            Dependencies.GraphDependencies.preRegister(context);
+        }
+
         // init plugins
         Set<List<String>> pluginOpts = args.getPluginOpts();
         if (!pluginOpts.isEmpty()) {
             BasicJavacTask t = (BasicJavacTask) BasicJavacTask.instance(context);
             t.initPlugins(pluginOpts);
         }
+
+        // init JavaCompiler
+        JavaCompiler comp = JavaCompiler.instance(context);
 
         // init doclint
         List<String> docLintOpts = args.getDocLintOpts();
@@ -235,13 +244,6 @@ public class Main {
             t.initDocLint(docLintOpts);
         }
 
-        // init Depeendencies
-        if (options.isSet("completionDeps")) {
-            Dependencies.GraphDependencies.preRegister(context);
-        }
-
-        // init JavaCompiler
-        JavaCompiler comp = JavaCompiler.instance(context);
         if (options.get(Option.XSTDOUT) != null) {
             // Stdout reassigned - ask compiler to close it when it is done
             comp.closeables = comp.closeables.prepend(log.getWriter(WriterKind.NOTICE));

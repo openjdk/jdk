@@ -58,7 +58,7 @@ public class CertificatePolicySet {
      * @exception IOException on decoding errors.
      */
     public CertificatePolicySet(DerInputStream in) throws IOException {
-        ids = new Vector<CertificatePolicyId>();
+        ids = new Vector<>();
         DerValue[] seq = in.getSequence(5);
 
         for (int i = 0; i < seq.length; i++) {

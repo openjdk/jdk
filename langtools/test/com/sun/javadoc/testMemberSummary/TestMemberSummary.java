@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,9 +58,9 @@ public class TestMemberSummary extends JavadocTester {
 
         // Legacy anchor dimensions (6290760)
         checkOutput("pkg2/A.html", true,
-                "<a name=\"f-java.lang.Object:A-\">\n"
+                "<a id=\"f-java.lang.Object:A-\">\n"
                 + "<!--   -->\n"
-                + "</a><a name=\"f-T:A-\">\n"
+                + "</a><a id=\"f-T:A-\">\n"
                 + "<!--   -->\n"
                 + "</a>");
     }

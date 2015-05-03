@@ -26,6 +26,7 @@
  * @bug 8014374
  * @summary Test CipherInputStream/OutputStream func w/ GCM mode and AAD.
  * @author Valerie Peng
+ * @key randomness
  */
 
 import java.io.*;

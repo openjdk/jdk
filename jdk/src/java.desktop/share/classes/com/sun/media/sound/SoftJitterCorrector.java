@@ -24,12 +24,13 @@
  */
 package com.sun.media.sound;
 
-import java.io.EOFException;
-import java.io.IOException;
-import java.io.InputStream;
+import sun.misc.ManagedLocalsThread;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * A jitter corrector to be used with SoftAudioPusher.
@@ -215,7 +216,11 @@ public final class SoftJitterCorrector extends AudioInputStream {
                 }
             };
 
-            thread = new Thread(runnable);
+            if (System.getSecurityManager() == null) {
+                thread = new Thread(runnable);
+            } else {
+                thread = new ManagedLocalsThread(runnable);
+            }
             thread.setDaemon(true);
             thread.setPriority(Thread.MAX_PRIORITY);
             thread.start();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@
 
 package com.sun.tools.internal.ws.wsdl.parser;
 
+import com.sun.tools.internal.ws.util.xml.XmlUtil;
 import com.sun.tools.internal.ws.api.wsdl.TWSDLExtensible;
 import com.sun.tools.internal.ws.api.wsdl.TWSDLExtension;
 import com.sun.tools.internal.ws.api.wsdl.TWSDLParserContext;
-import com.sun.tools.internal.ws.util.xml.XmlUtil;
 import com.sun.tools.internal.ws.wsdl.document.*;
 import com.sun.tools.internal.ws.wsdl.document.jaxws.CustomName;
 import com.sun.tools.internal.ws.wsdl.document.jaxws.JAXWSBinding;
@@ -57,7 +57,7 @@ public class JAXWSBindingExtensionHandler extends AbstractExtensionHandler {
     private static final ContextClassloaderLocal<XPathFactory> xpf = new ContextClassloaderLocal<XPathFactory>() {
         @Override
         protected XPathFactory initialValue() throws Exception {
-            return XPathFactory.newInstance();
+            return XmlUtil.newXPathFactory(false);
         }
     };
 

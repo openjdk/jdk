@@ -29,6 +29,7 @@
  * @run main TestCICOWithGCMAndAAD
  * @summary Test CipherInputStream/OutputStream with AES GCM mode with AAD.
  * @author Valerie Peng
+ * @key randomness
  */
 import java.io.*;
 import java.security.*;

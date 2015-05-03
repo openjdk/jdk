@@ -498,44 +498,6 @@ extends ParentNode implements Document  {
      * @since DOM Level 3
      */
     public Object getFeature(String feature, String version) {
-
-        boolean anyVersion = version == null || version.length() == 0;
-
-        // if a plus sign "+" is prepended to any feature name, implementations
-        // are considered in which the specified feature may not be directly
-        // castable DOMImplementation.getFeature(feature, version). Without a
-        // plus, only features whose interfaces are directly castable are
-        // considered.
-        if ((feature.equalsIgnoreCase("+XPath"))
-            && (anyVersion || version.equals("3.0"))) {
-
-            // If an XPathEvaluator was created previously
-            // return it otherwise create a new one.
-            if (fXPathEvaluator != null) {
-                return fXPathEvaluator;
-            }
-
-            try {
-                Class xpathClass = ObjectFactory.findProviderClass (
-                        "com.sun.org.apache.xpath.internal.domapi.XPathEvaluatorImpl", true);
-                Constructor xpathClassConstr =
-                    xpathClass.getConstructor(new Class[] { Document.class });
-
-                // Check if the DOM XPath implementation implements
-                // the interface org.w3c.dom.XPathEvaluator
-                Class interfaces[] = xpathClass.getInterfaces();
-                for (int i = 0; i < interfaces.length; i++) {
-                    if (interfaces[i].getName().equals(
-                    "org.w3c.dom.xpath.XPathEvaluator")) {
-                        fXPathEvaluator = xpathClassConstr.newInstance(new Object[] { this });
-                        return fXPathEvaluator;
-                    }
-                }
-                return null;
-            } catch (Exception e) {
-                return null;
-            }
-        }
         return super.getFeature(feature, version);
     }
 

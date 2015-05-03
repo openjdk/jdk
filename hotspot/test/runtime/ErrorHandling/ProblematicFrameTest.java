@@ -26,6 +26,10 @@
  * @bug 8050167
  * @summary Test that error is not occurred during printing problematic frame
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.compiler
+ *          java.management
+ *          jdk.jvmstat/sun.jvmstat.monitor
  * @build com.oracle.java.testlibrary.*
  * @run driver ProblematicFrameTest
  */

@@ -64,6 +64,7 @@ import sun.awt.SunToolkit;
 import sun.awt.OSInfo;
 import sun.awt.shell.ShellFolder;
 import sun.font.FontUtilities;
+import sun.misc.ManagedLocalsThread;
 import sun.security.action.GetPropertyAction;
 
 import sun.swing.DefaultLayoutStyle;
@@ -2037,7 +2038,11 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             if (audioRunnable != null) {
                 // Runnable appears to block until completed playing, hence
                 // start up another thread to handle playing.
-                new Thread(audioRunnable).start();
+                if (System.getSecurityManager() == null) {
+                    new Thread(audioRunnable).start();
+                } else {
+                    new ManagedLocalsThread(audioRunnable).start();
+                }
             }
         }
     }

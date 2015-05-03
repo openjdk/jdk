@@ -25,6 +25,7 @@
  * @bug 5092263
  * @summary GZIPInputStream o GZIPOutputStream === the identity stream
  * @author Martin Buchholz
+ * @key randomness
 */
 
 // To manually test for uncompressed streams larger than 2GB, do

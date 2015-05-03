@@ -26,9 +26,8 @@
 package com.sun.security.auth;
 
 /**
- * <p> This class abstracts an NT security token
+ * This class abstracts an NT security token
  * and provides a mechanism to do same-process security impersonation.
- *
  */
 
 @jdk.Exported
@@ -37,12 +36,9 @@ public class NTNumericCredential {
     private long impersonationToken;
 
     /**
-     * Create an <code>NTNumericCredential</code> with an integer value.
+     * Create an {@code NTNumericCredential} with an integer value.
      *
-     * <p>
-     *
-     * @param token the Windows NT security token for this user. <p>
-     *
+     * @param token the Windows NT security token for this user.
      */
     public NTNumericCredential(long token) {
         this.impersonationToken = token;
@@ -50,23 +46,19 @@ public class NTNumericCredential {
 
     /**
      * Return an integer representation of this
-     * <code>NTNumericCredential</code>.
-     *
-     * <p>
+     * {@code NTNumericCredential}.
      *
      * @return an integer representation of this
-     *          <code>NTNumericCredential</code>.
+     *          {@code NTNumericCredential}.
      */
     public long getToken() {
         return impersonationToken;
     }
 
     /**
-     * Return a string representation of this <code>NTNumericCredential</code>.
+     * Return a string representation of this {@code NTNumericCredential}.
      *
-     * <p>
-     *
-     * @return a string representation of this <code>NTNumericCredential</code>.
+     * @return a string representation of this {@code NTNumericCredential}.
      */
     public String toString() {
         java.text.MessageFormat form = new java.text.MessageFormat
@@ -78,18 +70,16 @@ public class NTNumericCredential {
     }
 
     /**
-     * Compares the specified Object with this <code>NTNumericCredential</code>
+     * Compares the specified Object with this {@code NTNumericCredential}
      * for equality.  Returns true if the given object is also a
-     * <code>NTNumericCredential</code> and the two NTNumericCredentials
+     * {@code NTNumericCredential} and the two NTNumericCredentials
      * represent the same NT security token.
      *
-     * <p>
-     *
      * @param o Object to be compared for equality with this
-     *          <code>NTNumericCredential</code>.
+     *          {@code NTNumericCredential}.
      *
      * @return true if the specified Object is equal to this
-     *          <code>NTNumericCredential</code>.
+     *          {@code NTNumericCredential}.
      */
     public boolean equals(Object o) {
         if (o == null)
@@ -108,11 +98,9 @@ public class NTNumericCredential {
     }
 
     /**
-     * Return a hash code for this <code>NTNumericCredential</code>.
+     * Return a hash code for this {@code NTNumericCredential}.
      *
-     * <p>
-     *
-     * @return a hash code for this <code>NTNumericCredential</code>.
+     * @return a hash code for this {@code NTNumericCredential}.
      */
     public int hashCode() {
         return (int)this.impersonationToken;

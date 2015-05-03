@@ -50,7 +50,6 @@
 #include "memory/referenceProcessor.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oop.pcgc.inline.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "runtime/fprofiler.hpp"
 #include "runtime/safepoint.hpp"
@@ -62,8 +61,6 @@
 #include "utilities/stack.inline.hpp"
 
 #include <math.h>
-
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 // All sizes are in HeapWords.
 const size_t ParallelCompactData::Log2RegionSize  = 16; // 64K words
@@ -223,7 +220,7 @@ print_generic_summary_region(size_t i, const ParallelCompactData::RegionData* c)
                 REGION_IDX_FORMAT " " PTR_FORMAT " "
                 REGION_DATA_FORMAT " " REGION_DATA_FORMAT " "
                 REGION_DATA_FORMAT " " REGION_IDX_FORMAT " %d",
-                i, c->data_location(), dci, c->destination(),
+                i, p2i(c->data_location()), dci, p2i(c->destination()),
                 c->partial_obj_size(), c->live_obj_size(),
                 c->data_size(), c->source_region(), c->destination_count());
 
@@ -273,7 +270,7 @@ print_initial_summary_region(size_t i,
   tty->print(SIZE_FORMAT_W(5) " " PTR_FORMAT " "
              SIZE_FORMAT_W(5) " " SIZE_FORMAT_W(5) " "
              SIZE_FORMAT_W(5) " " SIZE_FORMAT_W(5) " %d",
-             i, c->destination(),
+             i, p2i(c->destination()),
              c->partial_obj_size(), c->live_obj_size(),
              c->data_size(), c->source_region(), c->destination_count());
   if (newline) tty->cr();
@@ -634,13 +631,13 @@ ParallelCompactData::summarize_split_space(size_t src_region,
     const char * split_type = partial_obj_size == 0 ? "easy" : "hard";
     gclog_or_tty->print_cr("%s split:  src=" PTR_FORMAT " src_c=" SIZE_FORMAT
                            " pos=" SIZE_FORMAT,
-                           split_type, source_next, split_region,
+                           split_type, p2i(source_next), split_region,
                            partial_obj_size);
     gclog_or_tty->print_cr("%s split:  dst=" PTR_FORMAT " dst_c=" SIZE_FORMAT
                            " tn=" PTR_FORMAT,
-                           split_type, split_destination,
+                           split_type, p2i(split_destination),
                            addr_to_region_idx(split_destination),
-                           *target_next);
+                           p2i(*target_next));
 
     if (partial_obj_size != 0) {
       HeapWord* const po_beg = split_info.destination();
@@ -649,8 +646,8 @@ ParallelCompactData::summarize_split_space(size_t src_region,
                              "po_beg=" PTR_FORMAT " " SIZE_FORMAT " "
                              "po_end=" PTR_FORMAT " " SIZE_FORMAT,
                              split_type,
-                             po_beg, addr_to_region_idx(po_beg),
-                             po_end, addr_to_region_idx(po_end));
+                             p2i(po_beg), addr_to_region_idx(po_beg),
+                             p2i(po_end), addr_to_region_idx(po_end));
     }
   }
 
@@ -667,8 +664,8 @@ bool ParallelCompactData::summarize(SplitInfo& split_info,
     HeapWord* const source_next_val = source_next == NULL ? NULL : *source_next;
     tty->print_cr("sb=" PTR_FORMAT " se=" PTR_FORMAT " sn=" PTR_FORMAT
                   "tb=" PTR_FORMAT " te=" PTR_FORMAT " tn=" PTR_FORMAT,
-                  source_beg, source_end, source_next_val,
-                  target_beg, target_end, *target_next);
+                  p2i(source_beg), p2i(source_end), p2i(source_next_val),
+                  p2i(target_beg), p2i(target_end), p2i(*target_next));
   }
 
   size_t cur_region = addr_to_region_idx(source_beg);
@@ -1133,9 +1130,9 @@ PSParallelCompact::compute_dense_prefix_via_density(const SpaceId id,
     const size_t cur_deadwood = pointer_delta(dense_prefix, region_destination);
     if (TraceParallelOldGCDensePrefix && Verbose) {
       tty->print_cr("c#=" SIZE_FORMAT_W(4) " dst=" PTR_FORMAT " "
-                    "dp=" SIZE_FORMAT_W(8) " " "cdw=" SIZE_FORMAT_W(8),
-                    sd.region(cp), region_destination,
-                    dense_prefix, cur_deadwood);
+                    "dp=" PTR_FORMAT " " "cdw=" SIZE_FORMAT_W(8),
+                    sd.region(cp), p2i(region_destination),
+                    p2i(dense_prefix), cur_deadwood);
     }
 
     if (cur_deadwood >= deadwood_goal) {
@@ -1201,7 +1198,7 @@ void PSParallelCompact::print_dense_prefix_stats(const char* const algorithm,
                 "d2l=" SIZE_FORMAT " d2l%%=%6.4f "
                 "d2r=" SIZE_FORMAT " l2r=" SIZE_FORMAT
                 " ratio=%10.8f",
-                algorithm, addr, region_idx,
+                algorithm, p2i(addr), region_idx,
                 space_live,
                 dead_to_left, dead_to_left_pct,
                 dead_to_right, live_to_right,
@@ -1469,7 +1466,7 @@ PSParallelCompact::fill_with_live_objects(SpaceId id, HeapWord* const start,
 {
   if (TraceParallelOldGCSummaryPhase) {
     tty->print_cr("fill_with_live_objects [" PTR_FORMAT " " PTR_FORMAT ") "
-                  SIZE_FORMAT, start, start + words, words);
+                  SIZE_FORMAT, p2i(start), p2i(start + words), words);
   }
 
   ObjectStartArray* const start_array = _space_info[id].start_array();
@@ -1811,9 +1808,9 @@ PSParallelCompact::summarize_space(SpaceId id, bool maximum_compaction)
     tty->print_cr("id=%d cap=" SIZE_FORMAT " dp=" PTR_FORMAT " "
                   "dp_region=" SIZE_FORMAT " " "dp_count=" SIZE_FORMAT " "
                   "cr_count=" SIZE_FORMAT " " "nt=" PTR_FORMAT,
-                  id, space->capacity_in_words(), dense_prefix_end,
+                  id, space->capacity_in_words(), p2i(dense_prefix_end),
                   dp_region, dp_words / region_size,
-                  cr_words / region_size, new_top);
+                  cr_words / region_size, p2i(new_top));
   }
 }
 
@@ -1831,10 +1828,10 @@ void PSParallelCompact::summary_phase_msg(SpaceId dst_space_id,
                   SIZE_FORMAT "-" SIZE_FORMAT,
                   src_space_id, space_names[src_space_id],
                   dst_space_id, space_names[dst_space_id],
-                  src_beg, src_end,
+                  p2i(src_beg), p2i(src_end),
                   _summary_data.addr_to_region_idx(src_beg),
                   _summary_data.addr_to_region_idx(src_end),
-                  dst_beg, dst_end,
+                  p2i(dst_beg), p2i(dst_end),
                   _summary_data.addr_to_region_idx(dst_beg),
                   _summary_data.addr_to_region_idx(dst_end));
   }
@@ -2234,8 +2231,8 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
   heap->trace_heap_after_gc(&_gc_tracer);
 
   if (PrintGCTaskTimeStamps) {
-    gclog_or_tty->print_cr("VM-Thread " INT64_FORMAT " " INT64_FORMAT " "
-                           INT64_FORMAT,
+    gclog_or_tty->print_cr("VM-Thread " JLONG_FORMAT " " JLONG_FORMAT " "
+                           JLONG_FORMAT,
                            marking_start.ticks(), compaction_start.ticks(),
                            collection_exit.ticks());
     gc_task_manager()->print_task_time_stamps();
@@ -2754,7 +2751,7 @@ void PSParallelCompact::verify_complete(SpaceId space_id) {
     const RegionData* const c = sd.region(cur_region);
     if (!c->completed()) {
       warning("region " SIZE_FORMAT " not filled:  "
-              "destination_count=" SIZE_FORMAT,
+              "destination_count=%u",
               cur_region, c->destination_count());
       issued_a_warning = true;
     }
@@ -2764,7 +2761,7 @@ void PSParallelCompact::verify_complete(SpaceId space_id) {
     const RegionData* const c = sd.region(cur_region);
     if (!c->available()) {
       warning("region " SIZE_FORMAT " not empty:   "
-              "destination_count=" SIZE_FORMAT,
+              "destination_count=%u",
               cur_region, c->destination_count());
       issued_a_warning = true;
     }
@@ -2775,6 +2772,11 @@ void PSParallelCompact::verify_complete(SpaceId space_id) {
   }
 }
 #endif  // #ifdef ASSERT
+
+inline void UpdateOnlyClosure::do_addr(HeapWord* addr) {
+  _start_array->allocate_block(addr);
+  compaction_manager()->update_contents(oop(addr));
+}
 
 // Update interior oops in the ranges of regions [beg_region, end_region).
 void
@@ -2876,7 +2878,7 @@ void PSParallelCompact::update_deferred_objects(ParCompactionManager* cm,
       if (start_array != NULL) {
         start_array->allocate_block(addr);
       }
-      oop(addr)->update_contents(cm);
+      cm->update_contents(oop(addr));
       assert(oop(addr)->is_oop_or_null(), err_msg("Expected an oop or NULL at " PTR_FORMAT, p2i(oop(addr))));
     }
   }
@@ -3294,7 +3296,7 @@ jlong PSParallelCompact::millis_since_last_gc() {
   jlong ret_val = now - _time_of_last_gc;
   // XXX See note in genCollectedHeap::millis_since_last_gc().
   if (ret_val < 0) {
-    NOT_PRODUCT(warning("time warp: "INT64_FORMAT, ret_val);)
+    NOT_PRODUCT(warning("time warp: " JLONG_FORMAT, ret_val);)
     return 0;
   }
   return ret_val;
@@ -3360,7 +3362,7 @@ MoveAndUpdateClosure::do_addr(HeapWord* addr, size_t words) {
   }
 
   oop moved_oop = (oop) destination();
-  moved_oop->update_contents(compaction_manager());
+  compaction_manager()->update_contents(moved_oop);
   assert(moved_oop->is_oop_or_null(), err_msg("Expected an oop or NULL at " PTR_FORMAT, p2i(moved_oop)));
 
   update_state(words);

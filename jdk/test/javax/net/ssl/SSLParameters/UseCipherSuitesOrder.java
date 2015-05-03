@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
  */
 
 import java.io.*;
-import java.net.*;
+import java.security.Security;
 import javax.net.ssl.*;
 import java.util.Arrays;
 
@@ -195,6 +195,10 @@ public class UseCipherSuitesOrder {
     volatile Exception clientException = null;
 
     public static void main(String[] args) throws Exception {
+        // reset the security property to make sure that the algorithms
+        // and keys used in this test are not disabled.
+        Security.setProperty("jdk.tls.disabledAlgorithms", "");
+
         // parse the arguments
         parseArguments(args);
 

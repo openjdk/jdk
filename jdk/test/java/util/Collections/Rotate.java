@@ -25,6 +25,7 @@
  * @test
  * @bug 4323074
  * @summary Basic test for new rotate algorithm
+ * @key randomness
  */
 
 import java.util.*;

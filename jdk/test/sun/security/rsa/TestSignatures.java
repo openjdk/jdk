@@ -26,6 +26,7 @@
  * @bug 4853305 4963723
  * @summary Test signing/verifying using all the signature algorithms
  * @author Andreas Sterbenz
+ * @key randomness
  */
 
 import java.io.*;

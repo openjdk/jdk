@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8016175
+ * @bug 8016175 8078024
  * @summary Add bottom-up type-checking support for unambiguous method references
  * @compile/fail/ref=MethodReference68.out -XDrawDiagnostics MethodReference68.java
  */

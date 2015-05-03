@@ -26,20 +26,20 @@
 package com.sun.jdi;
 
 /**
- * The <code>JDIPermission</code> class represents access rights to
- * the <code>VirtualMachineManager</code>.  This is the permission
+ * The {@code JDIPermission} class represents access rights to
+ * the {@code VirtualMachineManager}.  This is the permission
  * which the SecurityManager will check when code that is running with
  * a SecurityManager requests access to the VirtualMachineManager, as
  * defined in the Java Debug Interface (JDI) for the Java platform.
  * <P>
- * A <code>JDIPermission</code> object contains a name (also referred
+ * A {@code JDIPermission} object contains a name (also referred
  * to as a "target name") but no actions list; you either have the
  * named permission or you don't.
  * <P>
  * The following table provides a summary description of what the
  * permission allows, and discusses the risks of granting code the
  * permission.
- * <P>
+ *
  * <table border=1 cellpadding=5 summary="Table shows permission
  * target name, what the permission allows, and associated risks">
  * <tr>
@@ -51,10 +51,10 @@ package com.sun.jdi;
  * <tr>
  *   <td>virtualMachineManager</td>
  *   <td>Ability to inspect and modify the JDI objects in the
- *   <code>VirtualMachineManager</code>
+ *   {@code VirtualMachineManager}
  *   </td>
  *   <td>This allows an attacker to control the
- *   <code>VirtualMachineManager</code> and cause the system to
+ *   {@code VirtualMachineManager} and cause the system to
  *   misbehave.
  *   </td>
  * </tr>
@@ -82,8 +82,8 @@ package com.sun.jdi;
 public final class JDIPermission extends java.security.BasicPermission {
     private static final long serialVersionUID = -6988461416938786271L;
     /**
-     * The <code>JDIPermission</code> class represents access rights to the
-     * <code>VirtualMachineManager</code>
+     * The {@code JDIPermission} class represents access rights to the
+     * {@code VirtualMachineManager}
      * @param name Permission name. Must be "virtualMachineManager".
      * @throws IllegalArgumentException if the name argument is invalid.
      */

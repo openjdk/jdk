@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,10 @@ public abstract class FileSystemView {
     private boolean useSystemExtensionHiding =
             UIManager.getDefaults().getBoolean("FileChooser.useSystemExtensionHiding");
 
+    /**
+     * Returns the file system view.
+     * @return the file system view
+     */
     public static FileSystemView getFileSystemView() {
         if(File.separatorChar == '\\') {
             if(windowsFileSystemView == null) {
@@ -101,6 +105,9 @@ public abstract class FileSystemView {
         return genericFileSystemView;
     }
 
+    /**
+     * Constructs a FileSystemView.
+     */
     public FileSystemView() {
         final WeakReference<FileSystemView> weakReference = new WeakReference<FileSystemView>(this);
 
@@ -424,6 +431,10 @@ public abstract class FileSystemView {
     // code. If a given OS can't, override these methods in its
     // implementation.
 
+    /**
+     * Returns the home directory.
+     * @return the home directory
+     */
     public File getHomeDirectory() {
         return createFileObject(System.getProperty("user.home"));
     }

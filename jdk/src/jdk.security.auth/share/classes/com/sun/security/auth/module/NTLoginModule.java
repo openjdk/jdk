@@ -41,10 +41,10 @@ import com.sun.security.auth.NTSidGroupPrincipal;
 import com.sun.security.auth.NTNumericCredential;
 
 /**
- * <p> This <code>LoginModule</code>
+ * This {@code LoginModule}
  * renders a user's NT security information as some number of
- * <code>Principal</code>s
- * and associates them with a <code>Subject</code>.
+ * {@code Principal}s
+ * and associates them with a {@code Subject}.
  *
  * <p> This LoginModule recognizes the debug option.
  * If set to true in the login Configuration,
@@ -85,23 +85,21 @@ public class NTLoginModule implements LoginModule {
     private NTNumericCredential iToken;                 // impersonation token
 
     /**
-     * Initialize this <code>LoginModule</code>.
+     * Initialize this {@code LoginModule}.
      *
-     * <p>
+     * @param subject the {@code Subject} to be authenticated.
      *
-     * @param subject the <code>Subject</code> to be authenticated. <p>
-     *
-     * @param callbackHandler a <code>CallbackHandler</code> for communicating
+     * @param callbackHandler a {@code CallbackHandler} for communicating
      *          with the end user (prompting for usernames and
      *          passwords, for example). This particular LoginModule only
      *          extracts the underlying NT system information, so this
-     *          parameter is ignored.<p>
+     *          parameter is ignored.
      *
-     * @param sharedState shared <code>LoginModule</code> state. <p>
+     * @param sharedState shared {@code LoginModule} state.
      *
      * @param options options specified in the login
-     *                  <code>Configuration</code> for this particular
-     *                  <code>LoginModule</code>.
+     *                  {@code Configuration} for this particular
+     *                  {@code LoginModule}.
      */
     public void initialize(Subject subject, CallbackHandler callbackHandler,
                            Map<String,?> sharedState,
@@ -125,14 +123,12 @@ public class NTLoginModule implements LoginModule {
     /**
      * Import underlying NT system identity information.
      *
-     * <p>
-     *
-     * @return true in all cases since this <code>LoginModule</code>
+     * @return true in all cases since this {@code LoginModule}
      *          should not be ignored.
      *
-     * @exception FailedLoginException if the authentication fails. <p>
+     * @exception FailedLoginException if the authentication fails.
      *
-     * @exception LoginException if this <code>LoginModule</code>
+     * @exception LoginException if this {@code LoginModule}
      *          is unable to perform the authentication.
      */
     public boolean login() throws LoginException {
@@ -221,21 +217,19 @@ public class NTLoginModule implements LoginModule {
     }
 
     /**
-     * <p> This method is called if the LoginContext's
+     * This method is called if the LoginContext's
      * overall authentication succeeded
      * (the relevant REQUIRED, REQUISITE, SUFFICIENT and OPTIONAL LoginModules
      * succeeded).
      *
      * <p> If this LoginModule's own authentication attempt
      * succeeded (checked by retrieving the private state saved by the
-     * <code>login</code> method), then this method associates some
-     * number of various <code>Principal</code>s
-     * with the <code>Subject</code> located in the
-     * <code>LoginModuleContext</code>.  If this LoginModule's own
+     * {@code login} method), then this method associates some
+     * number of various {@code Principal}s
+     * with the {@code Subject} located in the
+     * {@code LoginModuleContext}.  If this LoginModule's own
      * authentication attempted failed, then this method removes
      * any state that was originally saved.
-     *
-     * <p>
      *
      * @exception LoginException if the commit fails.
      *
@@ -290,17 +284,15 @@ public class NTLoginModule implements LoginModule {
 
 
     /**
-     * <p> This method is called if the LoginContext's
+     * This method is called if the LoginContext's
      * overall authentication failed.
      * (the relevant REQUIRED, REQUISITE, SUFFICIENT and OPTIONAL LoginModules
      * did not succeed).
      *
      * <p> If this LoginModule's own authentication attempt
      * succeeded (checked by retrieving the private state saved by the
-     * <code>login</code> and <code>commit</code> methods),
+     * {@code login} and {@code commit} methods),
      * then this method cleans up any state that was originally saved.
-     *
-     * <p>
      *
      * @exception LoginException if the abort fails.
      *
@@ -336,17 +328,15 @@ public class NTLoginModule implements LoginModule {
     /**
      * Logout the user.
      *
-     * <p> This method removes the <code>NTUserPrincipal</code>,
-     * <code>NTDomainPrincipal</code>, <code>NTSidUserPrincipal</code>,
-     * <code>NTSidDomainPrincipal</code>, <code>NTSidGroupPrincipal</code>s,
-     * and <code>NTSidPrimaryGroupPrincipal</code>
-     * that may have been added by the <code>commit</code> method.
-     *
-     * <p>
+     * <p> This method removes the {@code NTUserPrincipal},
+     * {@code NTDomainPrincipal}, {@code NTSidUserPrincipal},
+     * {@code NTSidDomainPrincipal}, {@code NTSidGroupPrincipal}s,
+     * and {@code NTSidPrimaryGroupPrincipal}
+     * that may have been added by the {@code commit} method.
      *
      * @exception LoginException if the logout fails.
      *
-     * @return true in all cases since this <code>LoginModule</code>
+     * @return true in all cases since this {@code LoginModule}
      *          should not be ignored.
      */
     public boolean logout() throws LoginException {
