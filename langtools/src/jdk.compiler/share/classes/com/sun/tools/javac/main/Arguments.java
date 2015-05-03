@@ -42,7 +42,7 @@ import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.jvm.Profile;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.main.OptionHelper.GrumpyHelper;
-import com.sun.tools.javac.util.BaseFileManager;
+import com.sun.tools.javac.file.BaseFileManager;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;

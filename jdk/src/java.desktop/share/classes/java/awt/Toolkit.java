@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1766,6 +1766,7 @@ public abstract class Toolkit {
      *
      * subclasses should override this to provide their own implementation
      *
+     * @param <T> the type of DragGestureRecognizer to create
      * @param abstractRecognizerClass The abstract class of the required recognizer
      * @param ds                      The DragSource
      * @param c                       The Component target for the DragGestureRecognizer
@@ -1867,7 +1868,9 @@ public abstract class Toolkit {
     }
 
     /**
-     * an opportunity to lazily evaluate desktop property values.
+     * An opportunity to lazily evaluate desktop property values.
+     * @return the desktop property or null
+     * @param name the name
      */
     protected Object lazilyLoadDesktopProperty(String name) {
         return null;
@@ -1947,8 +1950,14 @@ public abstract class Toolkit {
         return desktopPropsSupport.getPropertyChangeListeners(propertyName);
     }
 
+    /**
+     * The desktop properties.
+     */
     protected final Map<String,Object> desktopProperties =
             new HashMap<String,Object>();
+    /**
+     * The desktop properties change support.
+     */
     protected final PropertyChangeSupport desktopPropsSupport =
             Toolkit.createPropertyChangeSupport(this);
 

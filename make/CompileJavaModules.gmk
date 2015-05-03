@@ -151,9 +151,19 @@ java.desktop_EXCLUDE_FILES += \
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
   # exclude all X11 on Mac.
-  java.desktop_EXCLUDES += sun/awt/X11
+  java.desktop_EXCLUDES += \
+      sun/awt/X11 \
+      sun/java2d/x11 \
+      sun/java2d/jules \
+      sun/java2d/xr \
+      com/sun/java/swing/plaf/gtk \
+      #
   java.desktop_EXCLUDE_FILES += \
-      $(JDK_TOPDIR)/src/java.desktop/unix/classes/sun/java2d/BackBufferCapsProvider.java \
+      $(wildcard $(JDK_TOPDIR)/src/java.desktop/unix/classes/sun/java2d/*.java) \
+      $(wildcard $(JDK_TOPDIR)/src/java.desktop/unix/classes/sun/java2d/opengl/*.java) \
+      $(wildcard $(JDK_TOPDIR)/src/java.desktop/unix/classes/sun/awt/*.java) \
+      $(wildcard $(JDK_TOPDIR)/src/java.desktop/unix/classes/sun/awt/motif/*.java) \
+      $(wildcard $(JDK_TOPDIR)/src/java.desktop/unix/classes/sun/font/*.java) \
       #
 else
   # TBD: figure out how to eliminate this long list
@@ -252,6 +262,26 @@ java.scripting_CLEAN := .properties
 
 ################################################################################
 
+java.instrument_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
+
+################################################################################
+
+java.logging_ADD_JAVAC_FLAGS := -Xdoclint:all/protected,-reference '-Xdoclint/package:java.*,javax.*'
+
+################################################################################
+
+java.management_ADD_JAVAC_FLAGS := -Xdoclint:all/protected,-reference '-Xdoclint/package:java.*,javax.*'
+
+################################################################################
+
+java.prefs_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
+
+################################################################################
+
+java.transaction_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
+
+################################################################################
+
 java.sql_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
 java.sql_SETUP := GENERATE_JDKBYTECODE_NOWARNINGS
 
@@ -327,6 +357,14 @@ java.naming_CLEAN := jndiprovider.properties
 
 java.security.saaj_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
 java.security.saaj_CLEAN := .properties
+
+################################################################################
+
+java.security.jgss_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
+
+################################################################################
+
+java.smartcardio_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
 
 ################################################################################
 

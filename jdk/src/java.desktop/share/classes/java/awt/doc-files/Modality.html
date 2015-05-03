@@ -1,5 +1,5 @@
 <!--
- Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,6 @@
       <u>Scope of blocking (SB)</u> - the set of windows (instances of
       <code>java.awt.Window</code> and all derived classes) that are blocked by 
       the modal dialog while it is visible.
-    </p><p>
      <blockquote><hr>
       <b>Note</b>: Everywhere in this document the notion of "window" is equal
       to a top-level window in the Java programming language &mdash; in other words
@@ -109,8 +108,7 @@
       </li></ul>
       A dialog is, by default, modeless.  A modal dialog is, by default,
       application-modal.
-    <p>
-    </p><ol>
+    <ol>
       <li><u>Modeless dialogs</u><br>
         A modeless dialog doesn't block any windows while visible.
       </li><li><u>Document-modal dialogs</u><br>
@@ -156,7 +154,6 @@
           its owner. Thus, in this case the only thing that the owner
           affects is the Z-order: the dialog always stays on top of its owner.
       </li></ul>
-    <p>
     <blockquote><hr>
       <b>Implementation note</b>: Changing the modality type for a visible
       dialog may have no effect until it is hidden and then shown again.
@@ -277,8 +274,7 @@
         </li><li>Exclusion from blocking of application-modal dialogs
       </li></ul>
       By default, a window's modal exclusion property is turned off.
-    <p>
-      </p><ol>
+      <ol>
         <li><u>Application-modal exclusion</u><br>
           If a window is application-modal excluded, it is not blocked by any
           application-modal dialogs. Also, it is not blocked by document-modal
@@ -288,7 +284,6 @@
           by any application- or toolkit-modal dialogs. Also, it is not
           blocked by document-modal dialogs from outside of their child hierarchy.
       </li></ol>
-    <p>
     <blockquote>
       <hr>
         <b>Implementation note</b>: Changing the modal exclusion type for a visible window
@@ -399,7 +394,7 @@
           <br>
         </td>
         <td align="center">
-          <img src="modal-example1.gif">
+          <img src="modal-example1.gif" alt="Example 1">
           <br>
         </td>
       </tr>
@@ -418,7 +413,7 @@
 	 <br>
         </td>
         <td align="center">
-          <img src="modal-example2.gif">
+          <img src="modal-example2.gif" alt="Example 2">
           <br>
         </td>
       </tr>
@@ -440,7 +435,7 @@
           <br>
         </td>
         <td align="center">
-          <img src="modal-example3.gif">
+          <img src="modal-example3.gif" alt="Example 3">
           <br>
         </td>
       </tr>
@@ -462,7 +457,7 @@
           <br>
         </td>
         <td align="center">
-          <img src="modal-example4.gif">
+          <img src="modal-example4.gif" alt="Example 4">
           <br>
         </td>
       </tr>

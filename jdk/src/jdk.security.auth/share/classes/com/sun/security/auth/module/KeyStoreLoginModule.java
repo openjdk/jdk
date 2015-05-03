@@ -55,53 +55,53 @@ import sun.security.util.Password;
 /**
  * Provides a JAAS login module that prompts for a key store alias and
  * populates the subject with the alias's principal and credentials. Stores
- * an <code>X500Principal</code> for the subject distinguished name of the
+ * an {@code X500Principal} for the subject distinguished name of the
  * first certificate in the alias's credentials in the subject's principals,
  * the alias's certificate path in the subject's public credentials, and a
- * <code>X500PrivateCredential</code> whose certificate is the first
+ * {@code X500PrivateCredential} whose certificate is the first
  * certificate in the alias's certificate path and whose private key is the
  * alias's private key in the subject's private credentials. <p>
  *
  * Recognizes the following options in the configuration file:
  * <dl>
  *
- * <dt> <code>keyStoreURL</code> </dt>
+ * <dt> {@code keyStoreURL} </dt>
  * <dd> A URL that specifies the location of the key store.  Defaults to
  *      a URL pointing to the .keystore file in the directory specified by the
- *      <code>user.home</code> system property.  The input stream from this
- *      URL is passed to the <code>KeyStore.load</code> method.
- *      "NONE" may be specified if a <code>null</code> stream must be
- *      passed to the <code>KeyStore.load</code> method.
+ *      {@code user.home} system property.  The input stream from this
+ *      URL is passed to the {@code KeyStore.load} method.
+ *      "NONE" may be specified if a {@code null} stream must be
+ *      passed to the {@code KeyStore.load} method.
  *      "NONE" should be specified if the KeyStore resides
  *      on a hardware token device, for example.</dd>
  *
- * <dt> <code>keyStoreType</code> </dt>
+ * <dt> {@code keyStoreType} </dt>
  * <dd> The key store type.  If not specified, defaults to the result of
- *      calling <code>KeyStore.getDefaultType()</code>.
+ *      calling {@code KeyStore.getDefaultType()}.
  *      If the type is "PKCS11", then keyStoreURL must be "NONE"
  *      and privateKeyPasswordURL must not be specified.</dd>
  *
- * <dt> <code>keyStoreProvider</code> </dt>
+ * <dt> {@code keyStoreProvider} </dt>
  * <dd> The key store provider.  If not specified, uses the standard search
  *      order to find the provider. </dd>
  *
- * <dt> <code>keyStoreAlias</code> </dt>
+ * <dt> {@code keyStoreAlias} </dt>
  * <dd> The alias in the key store to login as.  Required when no callback
  *      handler is provided.  No default value. </dd>
  *
- * <dt> <code>keyStorePasswordURL</code> </dt>
+ * <dt> {@code keyStorePasswordURL} </dt>
  * <dd> A URL that specifies the location of the key store password.  Required
  *      when no callback handler is provided and
- *      <code>protected</code> is false.
+ *      {@code protected} is false.
  *      No default value. </dd>
  *
- * <dt> <code>privateKeyPasswordURL</code> </dt>
+ * <dt> {@code privateKeyPasswordURL} </dt>
  * <dd> A URL that specifies the location of the specific private key password
  *      needed to access the private key for this alias.
  *      The keystore password
  *      is used if this value is needed and not specified. </dd>
  *
- * <dt> <code>protected</code> </dt>
+ * <dt> {@code protected} </dt>
  * <dd> This value should be set to "true" if the KeyStore
  *      has a separate, protected authentication path
  *      (for example, a dedicated PIN-pad attached to a smart card).
@@ -174,22 +174,20 @@ public class KeyStoreLoginModule implements LoginModule {
     /* -- Methods -- */
 
     /**
-     * Initialize this <code>LoginModule</code>.
+     * Initialize this {@code LoginModule}.
      *
-     * <p>
+     * @param subject the {@code Subject} to be authenticated.
      *
-     * @param subject the <code>Subject</code> to be authenticated. <p>
-     *
-     * @param callbackHandler a <code>CallbackHandler</code> for communicating
+     * @param callbackHandler a {@code CallbackHandler} for communicating
      *                  with the end user (prompting for usernames and
      *                  passwords, for example),
-     *                  which may be <code>null</code>. <p>
+     *                  which may be {@code null}.
      *
-     * @param sharedState shared <code>LoginModule</code> state. <p>
+     * @param sharedState shared {@code LoginModule} state.
      *
      * @param options options specified in the login
-     *                  <code>Configuration</code> for this particular
-     *                  <code>LoginModule</code>.
+     *                  {@code Configuration} for this particular
+     *                  {@code LoginModule}.
      */
     // Unchecked warning from (Map<String, Object>)sharedState is safe
     // since javax.security.auth.login.LoginContext passes a raw HashMap.
@@ -258,11 +256,9 @@ public class KeyStoreLoginModule implements LoginModule {
      * <p> Get the Keystore alias and relevant passwords.
      * Retrieve the alias's principal and credentials from the Keystore.
      *
-     * <p>
+     * @exception FailedLoginException if the authentication fails.
      *
-     * @exception FailedLoginException if the authentication fails. <p>
-     *
-     * @return true in all cases (this <code>LoginModule</code>
+     * @return true in all cases (this {@code LoginModule}
      *          should not be ignored).
      */
 
@@ -719,18 +715,16 @@ public class KeyStoreLoginModule implements LoginModule {
      *
      * <p> If this LoginModule's own authentication attempt
      * succeeded (checked by retrieving the private state saved by the
-     * <code>login</code> method), then this method associates a
-     * <code>X500Principal</code> for the subject distinguished name of the
+     * {@code login} method), then this method associates a
+     * {@code X500Principal} for the subject distinguished name of the
      * first certificate in the alias's credentials in the subject's
      * principals,the alias's certificate path in the subject's public
-     * credentials, and a<code>X500PrivateCredential</code> whose certificate
+     * credentials, and a {@code X500PrivateCredential} whose certificate
      * is the first  certificate in the alias's certificate path and whose
      * private key is the alias's private key in the subject's private
      * credentials.  If this LoginModule's own
      * authentication attempted failed, then this method removes
      * any state that was originally saved.
-     *
-     * <p>
      *
      * @exception LoginException if the commit fails
      *
@@ -774,21 +768,19 @@ public class KeyStoreLoginModule implements LoginModule {
     }
 
     /**
-     * <p> This method is called if the LoginContext's
+     * This method is called if the LoginContext's
      * overall authentication failed.
      * (the relevant REQUIRED, REQUISITE, SUFFICIENT and OPTIONAL LoginModules
      * did not succeed).
      *
      * <p> If this LoginModule's own authentication attempt
      * succeeded (checked by retrieving the private state saved by the
-     * <code>login</code> and <code>commit</code> methods),
+     * {@code login} and {@code commit} methods),
      * then this method cleans up any state that was originally saved.
      *
      * <p> If the loaded KeyStore's provider extends
-     * <code>java.security.AuthProvider</code>,
-     * then the provider's <code>logout</code> method is invoked.
-     *
-     * <p>
+     * {@code java.security.AuthProvider},
+     * then the provider's {@code logout} method is invoked.
      *
      * @exception LoginException if the abort fails.
      *
@@ -815,17 +807,15 @@ public class KeyStoreLoginModule implements LoginModule {
      * Logout a user.
      *
      * <p> This method removes the Principals, public credentials and the
-     * private credentials that were added by the <code>commit</code> method.
+     * private credentials that were added by the {@code commit} method.
      *
      * <p> If the loaded KeyStore's provider extends
-     * <code>java.security.AuthProvider</code>,
-     * then the provider's <code>logout</code> method is invoked.
-     *
-     * <p>
+     * {@code java.security.AuthProvider},
+     * then the provider's {@code logout} method is invoked.
      *
      * @exception LoginException if the logout fails.
      *
-     * @return true in all cases since this <code>LoginModule</code>
+     * @return true in all cases since this {@code LoginModule}
      *          should not be ignored.
      */
 

@@ -25,7 +25,6 @@
 
 package jdk.nashorn.internal.runtime;
 
-import static jdk.nashorn.internal.codegen.ObjectClassGenerator.OBJECT_FIELDS_ONLY;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
@@ -139,11 +138,11 @@ public class SpillProperty extends AccessorProperty {
         }
     }
 
-    private static MethodHandle primitiveGetter(final int slot) {
-        return OBJECT_FIELDS_ONLY ? null : Accessors.getCached(slot, true, true);
+    private static MethodHandle primitiveGetter(final int slot, final int flags) {
+        return (flags & DUAL_FIELDS) == DUAL_FIELDS ? Accessors.getCached(slot, true, true) : null;
     }
-    private static MethodHandle primitiveSetter(final int slot) {
-        return OBJECT_FIELDS_ONLY ? null : Accessors.getCached(slot, true, false);
+    private static MethodHandle primitiveSetter(final int slot, final int flags) {
+        return (flags & DUAL_FIELDS) == DUAL_FIELDS ? Accessors.getCached(slot, true, false) : null;
     }
     private static MethodHandle objectGetter(final int slot) {
         return Accessors.getCached(slot, false, true);
@@ -160,8 +159,7 @@ public class SpillProperty extends AccessorProperty {
      * @param slot   spill slot
      */
     public SpillProperty(final String key, final int flags, final int slot) {
-        super(key, flags, slot, primitiveGetter(slot), primitiveSetter(slot), objectGetter(slot), objectSetter(slot));
-        assert !OBJECT_FIELDS_ONLY || getLocalType() == Object.class;
+        super(key, flags, slot, primitiveGetter(slot, flags), primitiveSetter(slot, flags), objectGetter(slot), objectSetter(slot));
     }
 
     /**
@@ -173,7 +171,7 @@ public class SpillProperty extends AccessorProperty {
      */
     public SpillProperty(final String key, final int flags, final int slot, final Class<?> initialType) {
         this(key, flags, slot);
-        setType(OBJECT_FIELDS_ONLY ? Object.class : initialType);
+        setType(hasDualFields() ? initialType : Object.class);
     }
 
     SpillProperty(final String key, final int flags, final int slot, final ScriptObject owner, final Object initialValue) {
@@ -216,8 +214,8 @@ public class SpillProperty extends AccessorProperty {
     @Override
     void initMethodHandles(final Class<?> structure) {
         final int slot  = getSlot();
-        primitiveGetter = primitiveGetter(slot);
-        primitiveSetter = primitiveSetter(slot);
+        primitiveGetter = primitiveGetter(slot, getFlags());
+        primitiveSetter = primitiveSetter(slot, getFlags());
         objectGetter    = objectGetter(slot);
         objectSetter    = objectSetter(slot);
     }

@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8030741
+ * @bug 8030741 8078024
  * @summary Inference: implement eager resolution of return types, consistent with JDK-8028800
  * @compile/fail/ref=EagerReturnTypeResolutionTestb.out -XDrawDiagnostics EagerReturnTypeResolutionTestb.java
  * @author Dan Smith

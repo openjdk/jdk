@@ -45,6 +45,7 @@ import javax.crypto.spec.PBEParameterSpec;
  * @author Bill Situ
  * @author Alexander Fomin
  * @run main PBESealedObject
+ * @key randomness
  */
 public class PBESealedObject {
 

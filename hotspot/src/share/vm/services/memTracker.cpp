@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,11 +53,7 @@ NMT_TrackingLevel MemTracker::init_tracking_level() {
     if (strcmp(nmt_option, "summary") == 0) {
       level = NMT_summary;
     } else if (strcmp(nmt_option, "detail") == 0) {
-#if PLATFORM_NATIVE_STACK_WALKING_SUPPORTED
       level = NMT_detail;
-#else
-      level = NMT_summary;
-#endif // PLATFORM_NATIVE_STACK_WALKING_SUPPORTED
     } else if (strcmp(nmt_option, "off") != 0) {
       // The option value is invalid
       _is_nmt_env_valid = false;
@@ -95,17 +91,9 @@ void MemTracker::init() {
 
 bool MemTracker::check_launcher_nmt_support(const char* value) {
   if (strcmp(value, "=detail") == 0) {
-#if !PLATFORM_NATIVE_STACK_WALKING_SUPPORTED
-      jio_fprintf(defaultStream::error_stream(),
-        "NMT detail is not supported on this platform.  Using NMT summary instead.\n");
-    if (MemTracker::tracking_level() != NMT_summary) {
-    return false;
-  }
-#else
     if (MemTracker::tracking_level() != NMT_detail) {
       return false;
     }
-#endif
   } else if (strcmp(value, "=summary") == 0) {
     if (MemTracker::tracking_level() != NMT_summary) {
       return false;

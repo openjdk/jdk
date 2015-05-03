@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,9 +45,6 @@ import java.io.StreamCorruptedException;
 import java.lang.reflect.Modifier;
 
 import java.net.URL;
-
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -183,16 +180,10 @@ public class Beans {
 
         // Try to find a serialized object with this name
         final String serName = beanName.replace('.','/').concat(".ser");
-        final ClassLoader loader = cls;
-        ins = AccessController.doPrivileged
-            (new PrivilegedAction<InputStream>() {
-                public InputStream run() {
-                    if (loader == null)
-                        return ClassLoader.getSystemResourceAsStream(serName);
-                    else
-                        return loader.getResourceAsStream(serName);
-                }
-        });
+        if (cls == null)
+            ins =  ClassLoader.getSystemResourceAsStream(serName);
+        else
+            ins =  cls.getResourceAsStream(serName);
         if (ins != null) {
             try {
                 if (cls == null) {
@@ -283,19 +274,10 @@ public class Beans {
                     URL docBase   = null;
 
                     // Now get the URL correponding to the resource name.
-
-                    final ClassLoader cloader = cls;
-                    objectUrl =
-                        AccessController.doPrivileged
-                        (new PrivilegedAction<URL>() {
-                            public URL run() {
-                                if (cloader == null)
-                                    return ClassLoader.getSystemResource
-                                                                (resourceName);
-                                else
-                                    return cloader.getResource(resourceName);
-                            }
-                    });
+                    if (cls == null) {
+                        objectUrl = ClassLoader.getSystemResource(resourceName);
+                    } else
+                        objectUrl = cls.getResource(resourceName);
 
                     // If we found a URL, we try to locate the docbase by taking
                     // of the final path name component, and the code base by taking

@@ -73,17 +73,18 @@ import static java.lang.annotation.RetentionPolicy.*;
  *        public void setCustomerID(String id);
  *        .... other properties not shown
  *    }
+ * {@code
  *
- *    &lt;!-- Example: XML Schema fragment --&gt;
- *    &lt;xs:complexType name="Customer"&gt;
- *      &lt;xs:complexContent&gt;
- *        &lt;xs:sequence&gt;
+ *    <!-- Example: XML Schema fragment -->
+ *    <xs:complexType name="Customer">
+ *      <xs:complexContent>
+ *        <xs:sequence>
  *          ....
- *        &lt;/xs:sequence&gt;
- *        &lt;xs:attribute name="customerID" type="xs:ID"/&gt;
- *      &lt;/xs:complexContent&gt;
- *    &lt;/xs:complexType&gt;
- * </pre>
+ *        </xs:sequence>
+ *        <xs:attribute name="customerID" type="xs:ID"/>
+ *      </xs:complexContent>
+ *    </xs:complexType>
+ * }</pre>
  *
  * @author Sekhar Vajjhala, Sun Microsystems, Inc.
  * @see XmlIDREF

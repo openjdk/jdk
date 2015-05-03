@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,18 +61,18 @@ class KlassClosure;
 //    counts the number of tasks that have been done and then reset
 //    the SubTasksDone so that it can be used again.  When the number of
 //    tasks is set to the number of GC workers, then _n_threads must
-//    be set to the number of active GC workers. G1CollectedHeap,
-//    HRInto_G1RemSet, GenCollectedHeap and SharedHeap have SubTasksDone.
-//    This seems too many.
+//    be set to the number of active GC workers. G1RootProcessor and
+//    GenCollectedHeap have SubTasksDone.
 //    3) SequentialSubTasksDone has an _n_threads that is used in
 //    a way similar to SubTasksDone and has the same dependency on the
 //    number of active GC workers.  CompactibleFreeListSpace and Space
 //    have SequentialSubTasksDone's.
-// Example of using SubTasksDone and SequentialSubTasksDone
-// G1CollectedHeap::g1_process_roots()
-//  to SharedHeap::process_roots() and uses
-//  SubTasksDone* _process_strong_tasks to claim tasks.
-//  process_roots() calls
+//
+// Examples of using SubTasksDone and SequentialSubTasksDone:
+//  G1RootProcessor and GenCollectedHeap::process_roots() use
+//  SubTasksDone* _process_strong_tasks to claim tasks for workers
+//
+//  GenCollectedHeap::gen_process_roots() calls
 //      rem_set()->younger_refs_iterate()
 //  to scan the card table and which eventually calls down into
 //  CardTableModRefBS::par_non_clean_card_iterate_work().  This method
@@ -104,29 +104,18 @@ class SharedHeap : public CollectedHeap {
   friend class VM_GC_Operation;
   friend class VM_CGC_Operation;
 
-private:
-  // For claiming strong_roots tasks.
-  SubTasksDone* _process_strong_tasks;
-
 protected:
   // There should be only a single instance of "SharedHeap" in a program.
   // This is enforced with the protected constructor below, which will also
   // set the static pointer "_sh" to that instance.
   static SharedHeap* _sh;
 
-  // A gc policy, controls global gc resource issues
-  CollectorPolicy *_collector_policy;
-
-  // See the discussion below, in the specification of the reader function
-  // for this variable.
-  int _strong_roots_parity;
-
   // If we're doing parallel GC, use this gang of threads.
   FlexibleWorkGang* _workers;
 
   // Full initialization is done in a concrete subtype's "initialize"
   // function.
-  SharedHeap(CollectorPolicy* policy_);
+  SharedHeap();
 
   // Returns true if the calling thread holds the heap lock,
   // or the calling thread is a par gc thread and the heap_lock is held
@@ -140,7 +129,6 @@ public:
   static SharedHeap* heap() { return _sh; }
 
   void set_barrier_set(BarrierSet* bs);
-  SubTasksDone* process_strong_tasks() { return _process_strong_tasks; }
 
   // Does operations required after initialization has been done.
   virtual void post_initialize();
@@ -161,7 +149,10 @@ public:
 
   bool no_gc_in_progress() { return !is_gc_active(); }
 
-  // Some collectors will perform "process_strong_roots" in parallel.
+  // Note, the below comment needs to be updated to reflect the changes
+  // introduced by JDK-8076225. This should be done as part of JDK-8076289.
+  //
+  //Some collectors will perform "process_strong_roots" in parallel.
   // Such a call will involve claiming some fine-grained tasks, such as
   // scanning of threads.  To make this process simpler, we provide the
   // "strong_roots_parity()" method.  Collectors that start parallel tasks
@@ -187,74 +178,22 @@ public:
   //      task-claiming variables may be initialized, to indicate "never
   //      claimed".
  public:
-  int strong_roots_parity() { return _strong_roots_parity; }
 
   // Call these in sequential code around process_roots.
   // strong_roots_prologue calls change_strong_roots_parity, if
   // parallel tasks are enabled.
   class StrongRootsScope : public MarkingCodeBlobClosure::MarkScope {
-    // Used to implement the Thread work barrier.
-    static Monitor* _lock;
-
     SharedHeap*   _sh;
-    volatile jint _n_workers_done_with_threads;
 
    public:
     StrongRootsScope(SharedHeap* heap, bool activate = true);
     ~StrongRootsScope();
-
-    // Mark that this thread is done with the Threads work.
-    void mark_worker_done_with_threads(uint n_workers);
-    // Wait until all n_workers are done with the Threads work.
-    void wait_until_all_workers_done_with_threads(uint n_workers);
   };
-  friend class StrongRootsScope;
-
-  // The current active StrongRootScope
-  StrongRootsScope* _strong_roots_scope;
-
-  StrongRootsScope* active_strong_roots_scope() const;
 
  private:
-  void register_strong_roots_scope(StrongRootsScope* scope);
-  void unregister_strong_roots_scope(StrongRootsScope* scope);
-  void change_strong_roots_parity();
 
  public:
-  enum ScanningOption {
-    SO_None                =  0x0,
-    SO_AllCodeCache        =  0x8,
-    SO_ScavengeCodeCache   = 0x10
-  };
-
   FlexibleWorkGang* workers() const { return _workers; }
-
-  // Invoke the "do_oop" method the closure "roots" on all root locations.
-  // The "so" argument determines which roots the closure is applied to:
-  // "SO_None" does none;
-  // "SO_AllCodeCache" applies the closure to all elements of the CodeCache.
-  // "SO_ScavengeCodeCache" applies the closure to elements on the scavenge root list in the CodeCache.
-  void process_roots(bool activate_scope,
-                     ScanningOption so,
-                     OopClosure* strong_roots,
-                     OopClosure* weak_roots,
-                     CLDClosure* strong_cld_closure,
-                     CLDClosure* weak_cld_closure,
-                     CodeBlobClosure* code_roots);
-  void process_all_roots(bool activate_scope,
-                         ScanningOption so,
-                         OopClosure* roots,
-                         CLDClosure* cld_closure,
-                         CodeBlobClosure* code_roots);
-  void process_strong_roots(bool activate_scope,
-                            ScanningOption so,
-                            OopClosure* roots,
-                            CLDClosure* cld_closure,
-                            CodeBlobClosure* code_roots);
-
-
-  // Apply "root_closure" to the JNI weak roots..
-  void process_weak_roots(OopClosure* root_closure);
 
   // The functions below are helper functions that a subclass of
   // "SharedHeap" can use in the implementation of its virtual
@@ -269,23 +208,6 @@ public:
   // Sets the number of parallel threads that will be doing tasks
   // (such as process roots) subsequently.
   virtual void set_par_threads(uint t);
-
-  int n_termination();
-  void set_n_termination(int t);
-
-  //
-  // New methods from CollectedHeap
-  //
-
-  // Some utilities.
-  void print_size_transition(outputStream* out,
-                             size_t bytes_before,
-                             size_t bytes_after,
-                             size_t capacity);
 };
-
-inline SharedHeap::ScanningOption operator|(SharedHeap::ScanningOption so0, SharedHeap::ScanningOption so1) {
-  return static_cast<SharedHeap::ScanningOption>(static_cast<int>(so0) | static_cast<int>(so1));
-}
 
 #endif // SHARE_VM_MEMORY_SHAREDHEAP_HPP

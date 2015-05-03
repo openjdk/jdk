@@ -45,11 +45,19 @@ function LOAD_FX_CLASSES(clsList) {
 
     var SUFFIX_LENGTH    = ".class".length;
 
+    // TODO - temporary patch until fx is moved to module system.
+    // <patch>
+    var jfxrtJar;
     try {
-        var jfxrtJar = new ZipFile(System.getProperty("java.home") + "/lib/ext/jfxrt.jar");
-    } catch (ex) {
-        throw new Error("JavaFX runtime not found");
+        jfxrtJar = new ZipFile(System.getProperty("java.home") + "/lib/jfxrt.jar");
+    } catch (ex1) {
+        try {
+            jfxrtJar = new ZipFile(System.getProperty("java.home") + "/lib/ext/jfxrt.jar");
+        } catch (ex2) {
+            throw new Error("JavaFX runtime not found");
+        }
     }
+    // </patch>
 
     var entries = jfxrtJar.entries();
 

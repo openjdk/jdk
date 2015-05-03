@@ -138,7 +138,6 @@ jdk_time = \
 
 jdk_rmi = \
     java/rmi \
-    javax/rmi/ssl \
     sun/rmi
 
 jdk_security1 = \
@@ -237,6 +236,7 @@ jdk_tools = \
 jdk_other = \
     java/sql \
     javax/sql \
+    javax/rmi \
     javax/naming \
     javax/script \
     javax/smartcardio \
@@ -453,7 +453,6 @@ needs_jdk = \
   java/util/jar/JarInputStream/ExtraFileInMetaInf.java \
   java/util/logging/TestLoggerWeakRefLeak.java \
   java/util/zip/3GBZipFiles.sh \
-  jdk/lambda/FDTest.java \
   jdk/lambda/separate/Compiler.java \
   sun/management/jmxremote/bootstrap/JvmstatCountersTest.java \
   sun/management/jmxremote/bootstrap/LocalManagementTest.java \

@@ -74,17 +74,16 @@ public final class Bootstrap {
      * of object fields only, it is fine. However, with dual fields, in order to get
      * performance on benchmarks with a lot of object instantiation and then field
      * reassignment, it can take slightly more relinks to become stable with type
-     * changes swapping out an entire proprety map and making a map guard fail.
-     * Therefore the relink threshold is set to 16 for dual fields (now the default).
-     * This doesn't seem to have any other negative performance implication.
+     * changes swapping out an entire property map and making a map guard fail.
+     * Since we need to set this value statically it must work with possibly changing
+     * optimistic types and dual fields settings. A higher value does not seem to have
+     * any other negative performance implication when running with object-only fields,
+     * so we choose a higher value here.
      *
      * See for example octane.gbemu, run with --log=fields:warning to study
      * megamorphic behavior
      */
-    private static final int NASHORN_DEFAULT_UNSTABLE_RELINK_THRESHOLD =
-            ObjectClassGenerator.OBJECT_FIELDS_ONLY ?
-                     8 :
-                    16;
+    private static final int NASHORN_DEFAULT_UNSTABLE_RELINK_THRESHOLD = 16;
 
     // do not create me!!
     private Bootstrap() {

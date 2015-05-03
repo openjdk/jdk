@@ -66,7 +66,7 @@ public final class Security {
         // things in initialize that might require privs.
         // (the FileInputStream call and the File.exists call,
         // the securityPropFile call, etc)
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+        AccessController.doPrivileged(new PrivilegedAction<>() {
             public Void run() {
                 initialize();
                 return null;
@@ -810,7 +810,7 @@ public final class Security {
         final boolean pd = key.equals("package.definition");
 
         if (pa || pd) {
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            AccessController.doPrivileged(new PrivilegedAction<>() {
                 public Void run() {
                     try {
                         /* Get the class via the bootstrap class loader. */

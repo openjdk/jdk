@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.builders.*;
 import com.sun.tools.doclets.internal.toolkit.taglets.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
+
 import java.io.IOException;
 
 /**
@@ -160,9 +161,15 @@ public class ClassWriterImpl extends SubWriterHolderWriter
         String pkgname = (classDoc.containingPackage() != null)?
             classDoc.containingPackage().name(): "";
         String clname = classDoc.name();
-        Content bodyTree = getBody(true, getWindowTitle(clname));
-        addTop(bodyTree);
-        addNavLinks(true, bodyTree);
+        HtmlTree bodyTree = getBody(true, getWindowTitle(clname));
+        HtmlTree htmlTree = (configuration.allowTag(HtmlTag.HEADER))
+                ? HtmlTree.HEADER()
+                : bodyTree;
+        addTop(htmlTree);
+        addNavLinks(true, htmlTree);
+        if (configuration.allowTag(HtmlTag.HEADER)) {
+            bodyTree.addContent(htmlTree);
+        }
         bodyTree.addContent(HtmlConstants.START_OF_CLASS_DATA);
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.addStyle(HtmlStyle.header);
@@ -194,7 +201,11 @@ public class ClassWriterImpl extends SubWriterHolderWriter
                 HtmlStyle.title, headerContent);
         heading.addContent(getTypeParameterLinks(linkInfo));
         div.addContent(heading);
-        bodyTree.addContent(div);
+        if (configuration.allowTag(HtmlTag.MAIN)) {
+            mainTree.addContent(div);
+        } else {
+            bodyTree.addContent(div);
+        }
         return bodyTree;
     }
 
@@ -210,8 +221,14 @@ public class ClassWriterImpl extends SubWriterHolderWriter
      */
     public void addFooter(Content contentTree) {
         contentTree.addContent(HtmlConstants.END_OF_CLASS_DATA);
-        addNavLinks(false, contentTree);
-        addBottom(contentTree);
+        Content htmlTree = (configuration.allowTag(HtmlTag.FOOTER))
+                ? HtmlTree.FOOTER()
+                : contentTree;
+        addNavLinks(false, htmlTree);
+        addBottom(htmlTree);
+        if (configuration.allowTag(HtmlTag.FOOTER)) {
+            contentTree.addContent(htmlTree);
+        }
     }
 
     /**

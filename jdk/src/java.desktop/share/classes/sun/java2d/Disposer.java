@@ -26,6 +26,7 @@
 package sun.java2d;
 
 import sun.awt.util.ThreadGroupUtils;
+import sun.misc.InnocuousThread;
 
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
@@ -81,21 +82,21 @@ public class Disposer implements Runnable {
             }
         }
         disposerInstance = new Disposer();
-        AccessController.doPrivileged(
-                (PrivilegedAction<Void>) () -> {
-                     /* The thread must be a member of a thread group
-                      * which will not get GCed before VM exit.
-                      * Make its parent the top-level thread group.
-                      */
-                     ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
-                     Thread t = new Thread(rootTG, disposerInstance, "Java2D Disposer");
-                     t.setContextClassLoader(null);
-                     t.setDaemon(true);
-                     t.setPriority(Thread.MAX_PRIORITY);
-                     t.start();
-                     return null;
-                 }
-         );
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            String name = "Java2D Disposer";
+            Thread t;
+            if (System.getSecurityManager() == null) {
+                ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
+                t = new Thread(rootTG, disposerInstance, name);
+            } else {
+                t = new InnocuousThread(disposerInstance, name);
+            }
+            t.setContextClassLoader(null);
+            t.setDaemon(true);
+            t.setPriority(Thread.MAX_PRIORITY);
+            t.start();
+            return null;
+        });
     }
 
     /**

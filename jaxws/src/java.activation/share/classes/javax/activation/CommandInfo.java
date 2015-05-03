@@ -85,10 +85,10 @@ public class CommandInfo {
      * Return the instantiated JavaBean component.
      * <p>
      * Begin by instantiating the component with
-     * <code>Beans.instantiate()</code>.
+     * {@code Beans.instantiate()}.
      * <p>
-     * If the bean implements the <code>javax.activation.CommandObject</code>
-     * interface, call its <code>setCommandContext</code> method.
+     * If the bean implements the {@code javax.activation.CommandObject}
+     * interface, call its {@code setCommandContext} method.
      * <p>
      * If the DataHandler parameter is null, then the bean is
      * instantiated with no data. NOTE: this may be useful
@@ -102,7 +102,7 @@ public class CommandInfo {
      * this method will check if it implements the
      * java.io.Externalizable interface. If it does, the bean's
      * readExternal method will be called if an InputStream
-     * can be acquired from the DataHandler.<p>
+     * can be acquired from the DataHandler.
      *
      * @param dh        The DataHandler that describes the data to be
      *                  passed to the command.

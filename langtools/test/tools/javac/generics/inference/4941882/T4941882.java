@@ -1,6 +1,6 @@
 /*
  * @test    /nodynamiccopyright/
- * @bug     4941882
+ * @bug     4941882 8078024
  * @summary incorrect inference for result of lub(int[], float[])
  * @compile/fail/ref=T4941882.out -XDrawDiagnostics  T4941882.java
  */

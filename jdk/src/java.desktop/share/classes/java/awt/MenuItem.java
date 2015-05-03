@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -595,6 +595,7 @@ public class MenuItem extends MenuComponent implements Accessible {
      *
      * If no such listeners exist, this method returns an empty array.
      *
+     * @param <T> the type of the listeners
      * @param listenerType the type of listeners requested; this parameter
      *          should specify an interface that descends from
      *          <code>java.util.EventListener</code>

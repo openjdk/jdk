@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,14 @@ public interface SerializedFormWriter {
      * @return the package serialized form header tree
      */
     public Content getPackageSerializedHeader();
+
+    /**
+     * Add the serialized tree per package to the serialized summaries tree.
+     *
+     * @param serializedSummariesTree the serialized tree to which the package serialized tree will be added
+     * @param packageSerializedTree the serialized tree per package that needs to be added
+     */
+    public void addPackageSerializedTree(Content serializedSummariesTree, Content packageSerializedTree);
 
     /**
      * Get the given package header.

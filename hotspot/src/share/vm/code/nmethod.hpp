@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -592,9 +592,6 @@ public:
   //  Unload a nmethod if the *root object is dead.
   bool can_unload(BoolObjectClosure* is_alive, oop* root, bool unloading_occurred);
   bool unload_if_dead_at(RelocIterator *iter_at_oop, BoolObjectClosure* is_alive, bool unloading_occurred);
-
-  void mark_metadata_on_stack_at(RelocIterator* iter_at_metadata);
-  void mark_metadata_on_stack_non_relocs();
 
  public:
   void preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map,

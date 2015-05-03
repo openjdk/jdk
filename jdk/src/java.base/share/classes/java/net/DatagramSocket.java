@@ -308,7 +308,7 @@ class DatagramSocket implements java.io.Closeable {
         // getDeclaredMethod, therefore we need permission to access the member
         try {
             AccessController.doPrivileged(
-                new PrivilegedExceptionAction<Void>() {
+                new PrivilegedExceptionAction<>() {
                     public Void run() throws NoSuchMethodException {
                         Class<?>[] cl = new Class<?>[1];
                         cl[0] = DatagramPacket.class;

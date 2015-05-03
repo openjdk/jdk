@@ -131,6 +131,23 @@ public final class Context {
     private static MethodType CREATE_PROGRAM_FUNCTION_TYPE = MethodType.methodType(ScriptFunction.class, ScriptObject.class);
 
     /**
+     * Should scripts use only object slots for fields, or dual long/object slots? The default
+     * behaviour is to couple this to optimistic types, using dual representation if optimistic types are enabled
+     * and single field representation otherwise. This can be overridden by setting either the "nashorn.fields.objects"
+     * or "nashorn.fields.dual" system property.
+     */
+    private final FieldMode fieldMode;
+
+    private static enum FieldMode {
+        /** Value for automatic field representation depending on optimistic types setting */
+        AUTO,
+        /** Value for object field representation regardless of optimistic types setting */
+        OBJECTS,
+        /** Value for dual primitive/object field representation regardless of optimistic types setting */
+        DUAL
+    }
+
+    /**
      * Keeps track of which builtin prototypes and properties have been relinked
      * Currently we are conservative and associate the name of a builtin class with all
      * its properties, so it's enough to invalidate a property to break all assumptions
@@ -434,7 +451,7 @@ public final class Context {
      * @param appLoader application class loader
      */
     public Context(final Options options, final ErrorManager errors, final ClassLoader appLoader) {
-        this(options, errors, appLoader, (ClassFilter)null);
+        this(options, errors, appLoader, null);
     }
 
     /**
@@ -522,6 +539,14 @@ public final class Context {
             getErr().println("nashorn full version " + Version.fullVersion());
         }
 
+        if (Options.getBooleanProperty("nashorn.fields.dual")) {
+            fieldMode = FieldMode.DUAL;
+        } else if (Options.getBooleanProperty("nashorn.fields.objects")) {
+            fieldMode = FieldMode.OBJECTS;
+        } else {
+            fieldMode = FieldMode.AUTO;
+        }
+
         initLoggers();
     }
 
@@ -573,6 +598,14 @@ public final class Context {
      */
     public PrintWriter getErr() {
         return env.getErr();
+    }
+
+    /**
+     * Should scripts compiled by this context use dual field representation?
+     * @return true if using dual fields, false for object-only fields
+     */
+    public boolean useDualFields() {
+        return fieldMode == FieldMode.DUAL || (fieldMode == FieldMode.AUTO && env._optimistic_types);
     }
 
     /**
@@ -1248,7 +1281,7 @@ public final class Context {
             compiler.persistClassInfo(cacheKey, compiledFunction);
         } else {
             Compiler.updateCompilationId(storedScript.getCompilationId());
-            script = install(storedScript, source, installer);
+            script = storedScript.installScript(source, installer);
         }
 
         cacheClass(source, script);
@@ -1267,51 +1300,6 @@ public final class Context {
 
     private long getUniqueScriptId() {
         return uniqueScriptId.getAndIncrement();
-    }
-
-    /**
-     * Install a previously compiled class from the code cache.
-     *
-     * @param storedScript cached script containing class bytes and constants
-     * @return main script class
-     */
-    private static Class<?> install(final StoredScript storedScript, final Source source, final CodeInstaller<ScriptEnvironment> installer) {
-
-        final Map<String, Class<?>> installedClasses = new HashMap<>();
-        final Map<String, byte[]>   classBytes       = storedScript.getClassBytes();
-        final Object[] constants       = storedScript.getConstants();
-        final String   mainClassName   = storedScript.getMainClassName();
-        final byte[]   mainClassBytes  = classBytes.get(mainClassName);
-        final Class<?> mainClass       = installer.install(mainClassName, mainClassBytes);
-        final Map<Integer, FunctionInitializer> initializers = storedScript.getInitializers();
-
-        installedClasses.put(mainClassName, mainClass);
-
-        for (final Map.Entry<String, byte[]> entry : classBytes.entrySet()) {
-            final String className = entry.getKey();
-            if (className.equals(mainClassName)) {
-                continue;
-            }
-            final byte[] code = entry.getValue();
-
-            installedClasses.put(className, installer.install(className, code));
-        }
-
-        installer.initialize(installedClasses.values(), source, constants);
-
-        for (final Object constant : constants) {
-            if (constant instanceof RecompilableScriptFunctionData) {
-                final RecompilableScriptFunctionData data = (RecompilableScriptFunctionData) constant;
-                data.initTransients(source, installer);
-                final FunctionInitializer initializer = initializers.get(data.getFunctionNodeId());
-                if (initializer != null) {
-                    initializer.setCode(installedClasses.get(initializer.getClassName()));
-                    data.initializeCode(initializer);
-                }
-            }
-        }
-
-        return mainClass;
     }
 
     /**

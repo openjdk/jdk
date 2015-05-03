@@ -402,7 +402,7 @@ public final class Files {
     public static SeekableByteChannel newByteChannel(Path path, OpenOption... options)
         throws IOException
     {
-        Set<OpenOption> set = new HashSet<OpenOption>(options.length);
+        Set<OpenOption> set = new HashSet<>(options.length);
         Collections.addAll(set, options);
         return newByteChannel(path, set);
     }
@@ -516,7 +516,7 @@ public final class Files {
         // create a matcher and return a filter that uses it.
         FileSystem fs = dir.getFileSystem();
         final PathMatcher matcher = fs.getPathMatcher("glob:" + glob);
-        DirectoryStream.Filter<Path> filter = new DirectoryStream.Filter<Path>() {
+        DirectoryStream.Filter<Path> filter = new DirectoryStream.Filter<>() {
             @Override
             public boolean accept(Path entry)  {
                 return matcher.matches(entry.getFileName());
@@ -1541,7 +1541,7 @@ public final class Files {
         // creates the default file type detector
         private static FileTypeDetector createDefaultFileTypeDetector() {
             return AccessController
-                .doPrivileged(new PrivilegedAction<FileTypeDetector>() {
+                .doPrivileged(new PrivilegedAction<>() {
                     @Override public FileTypeDetector run() {
                         return sun.nio.fs.DefaultFileTypeDetector.create();
                 }});
@@ -1550,7 +1550,7 @@ public final class Files {
         // loads all installed file type detectors
         private static List<FileTypeDetector> loadInstalledDetectors() {
             return AccessController
-                .doPrivileged(new PrivilegedAction<List<FileTypeDetector>>() {
+                .doPrivileged(new PrivilegedAction<>() {
                     @Override public List<FileTypeDetector> run() {
                         List<FileTypeDetector> list = new ArrayList<>();
                         ServiceLoader<FileTypeDetector> loader = ServiceLoader
@@ -3468,7 +3468,7 @@ public final class Files {
             final Iterator<Path> delegate = ds.iterator();
 
             // Re-wrap DirectoryIteratorException to UncheckedIOException
-            Iterator<Path> iterator = new Iterator<Path>() {
+            Iterator<Path> iterator = new Iterator<>() {
                 @Override
                 public boolean hasNext() {
                     try {

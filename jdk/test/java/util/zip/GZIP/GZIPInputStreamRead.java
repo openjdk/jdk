@@ -25,6 +25,7 @@
  * @bug 4691425
  * @summary Test the read and write of GZIPInput/OutputStream, including
  *          concatenated .gz inputstream
+ * @key randomness
  */
 
 import java.io.*;

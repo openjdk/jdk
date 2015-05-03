@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ public class DupUnsharedTest {
     }
 
     void runScopeContentTest() throws Exception {
-        Set<Symbol> expected = Collections.newSetFromMap(new IdentityHashMap<>());
+        Set<Symbol> expected = Collections.newSetFromMap(new IdentityHashMap<>() {});
         Set<Symbol> notExpected = Collections.newSetFromMap(new IdentityHashMap<>());
         WriteableScope s1 = WriteableScope.create(symtab.rootPackage);
         ClassSymbol acceptSym = symtab.arrayClass;
@@ -105,7 +105,7 @@ public class DupUnsharedTest {
     }
 
     Set<Symbol> toSet(Iterable<Symbol> it) {
-        Set<Symbol> result = Collections.newSetFromMap(new IdentityHashMap<>());
+        Set<Symbol> result = Collections.newSetFromMap(new IdentityHashMap<>() {});
 
         for (Symbol sym : it) {
             result.add(sym);

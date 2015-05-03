@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7021614
+ * @bug 7021614 8076026
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @build DocCommentTester
  * @run main DocCommentTester AttrTest.java
@@ -49,6 +49,30 @@ DocComment[DOC_COMMENT, pos:1
     ]
     Text[TEXT, pos:18, foo]
     EndElement[END_ELEMENT, pos:21, a]
+  body: empty
+  block tags: empty
+]
+*/
+
+    /**
+     * <a name-test=hyphened>foo</a>
+     */
+    void hyphened_attr() { }
+/*
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: 3
+    StartElement[START_ELEMENT, pos:1
+      name:a
+      attributes: 1
+        Attribute[ATTRIBUTE, pos:4
+          name: name-test
+          vkind: UNQUOTED
+          value: 1
+            Text[TEXT, pos:14, hyphened]
+        ]
+    ]
+    Text[TEXT, pos:23, foo]
+    EndElement[END_ELEMENT, pos:26, a]
   body: empty
   block tags: empty
 ]

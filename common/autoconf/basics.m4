@@ -78,7 +78,7 @@ AC_DEFUN([BASIC_PREPEND_TO_PATH],
 AC_DEFUN([BASIC_FIXUP_PATH],
 [
   # Only process if variable expands to non-empty
-  
+
   if test "x[$]$1" != x; then
     if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
       BASIC_FIXUP_PATH_CYGWIN($1)
@@ -118,7 +118,7 @@ AC_DEFUN([BASIC_FIXUP_PATH],
 AC_DEFUN([BASIC_FIXUP_EXECUTABLE],
 [
   # Only process if variable expands to non-empty
-  
+
   if test "x[$]$1" != x; then
     if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
       BASIC_FIXUP_EXECUTABLE_CYGWIN($1)
@@ -459,14 +459,32 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
   AC_MSG_RESULT([$TOPDIR])
   AC_SUBST(TOPDIR)
 
+  # Save the original version of TOPDIR for string comparisons
+  ORIGINAL_TOPDIR="$TOPDIR"
+  AC_SUBST(ORIGINAL_TOPDIR)
+
   # We can only call BASIC_FIXUP_PATH after BASIC_CHECK_PATHS_WINDOWS.
   BASIC_FIXUP_PATH(CURDIR)
   BASIC_FIXUP_PATH(TOPDIR)
   # SRC_ROOT is a traditional alias for TOPDIR.
   SRC_ROOT=$TOPDIR
 
+  # Calculate a canonical version of TOPDIR for string comparisons
+  CANONICAL_TOPDIR=$TOPDIR
+  BASIC_REMOVE_SYMBOLIC_LINKS([CANONICAL_TOPDIR])
+  AC_SUBST(CANONICAL_TOPDIR)
+
   # Locate the directory of this script.
   AUTOCONF_DIR=$TOPDIR/common/autoconf
+])
+
+# Evaluates platform specific overrides for devkit variables.
+# $1: Name of variable
+AC_DEFUN([BASIC_EVAL_DEVKIT_VARIABLE],
+[
+  if test "x[$]$1" = x; then
+    eval $1="\${$1_${OPENJDK_TARGET_CPU}}"
+  fi
 ])
 
 AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
@@ -478,12 +496,27 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
         DEVKIT_ROOT="$with_devkit"
         # Check for a meta data info file in the root of the devkit
         if test -f "$DEVKIT_ROOT/devkit.info"; then
-          # This potentially sets the following:
-          # DEVKIT_NAME: A descriptive name of the devkit
-          # DEVKIT_TOOLCHAIN_PATH: Corresponds to --with-toolchain-path
-          # DEVKIT_EXTRA_PATH: Corresponds to --with-extra-path
-          # DEVKIT_SYSROOT: Corresponds to --with-sysroot
           . $DEVKIT_ROOT/devkit.info
+          # This potentially sets the following:
+          # A descriptive name of the devkit
+          BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_NAME])
+          # Corresponds to --with-extra-path
+          BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_EXTRA_PATH])
+          # Corresponds to --with-toolchain-path
+          BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_TOOLCHAIN_PATH])
+          # Corresponds to --with-sysroot
+          BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_SYSROOT])
+
+          # Identifies the Visual Studio version in the devkit
+          BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_VS_VERSION])
+          # The Visual Studio include environment variable
+          BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_VS_INCLUDE])
+          # The Visual Studio lib environment variable
+          BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_VS_LIB])
+          # Corresponds to --with-msvcr-dll
+          BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_MSVCR_DLL])
+          # Corresponds to --with-msvcp-dll
+          BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_MSVCP_DLL])
         fi
 
         AC_MSG_CHECKING([for devkit])
@@ -493,9 +526,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
           AC_MSG_RESULT([$DEVKIT_ROOT])
         fi
 
-        if test "x$DEVKIT_EXTRA_PATH" != x; then
-          BASIC_PREPEND_TO_PATH([EXTRA_PATH],$DEVKIT_EXTRA_PATH)
-        fi
+        BASIC_PREPEND_TO_PATH([EXTRA_PATH],$DEVKIT_EXTRA_PATH)
 
         # Fallback default of just /bin if DEVKIT_PATH is not defined
         if test "x$DEVKIT_TOOLCHAIN_PATH" = x; then
@@ -672,8 +703,12 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
       files_present=`$LS $OUTPUT_ROOT`
       # Configure has already touched config.log and confdefs.h in the current dir when this check
       # is performed.
-      filtered_files=`$ECHO "$files_present" | $SED -e 's/config.log//g' -e 's/confdefs.h//g' -e 's/ //g' \
-      | $TR -d '\n'`
+      filtered_files=`$ECHO "$files_present" \
+          | $SED -e 's/config.log//g' \
+	      -e 's/confdefs.h//g' \
+	      -e 's/fixpath.exe//g' \
+	      -e 's/ //g' \
+          | $TR -d '\n'`
       if test "x$filtered_files" != x; then
         AC_MSG_NOTICE([Current directory is $CURDIR.])
         AC_MSG_NOTICE([Since this is not the source root, configure will output the configuration here])
@@ -691,9 +726,13 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
 
   BASIC_FIXUP_PATH(OUTPUT_ROOT)
 
+  CONFIGURESUPPORT_OUTPUTDIR="$OUTPUT_ROOT/configure-support"
+  $MKDIR -p "$CONFIGURESUPPORT_OUTPUTDIR"
+
   AC_SUBST(SPEC, $OUTPUT_ROOT/spec.gmk)
   AC_SUBST(CONF_NAME, $CONF_NAME)
   AC_SUBST(OUTPUT_ROOT, $OUTPUT_ROOT)
+  AC_SUBST(CONFIGURESUPPORT_OUTPUTDIR)
 
   # The spec.gmk file contains all variables for the make system.
   AC_CONFIG_FILES([$OUTPUT_ROOT/spec.gmk:$AUTOCONF_DIR/spec.gmk.in])
@@ -709,18 +748,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
   AC_CONFIG_FILES([$OUTPUT_ROOT/Makefile:$AUTOCONF_DIR/Makefile.in])
 ])
 
-AC_DEFUN_ONCE([BASIC_SETUP_LOGGING],
-[
-  # Setup default logging of stdout and stderr to build.log in the output root.
-  BUILD_LOG='$(OUTPUT_ROOT)/build.log'
-  BUILD_LOG_PREVIOUS='$(OUTPUT_ROOT)/build.log.old'
-  BUILD_LOG_WRAPPER='$(BASH) $(SRC_ROOT)/common/bin/logger.sh $(BUILD_LOG)'
-  AC_SUBST(BUILD_LOG)
-  AC_SUBST(BUILD_LOG_PREVIOUS)
-  AC_SUBST(BUILD_LOG_WRAPPER)
-])
-
-
 #%%% Simple tools %%%
 
 # Check if we have found a usable version of make
@@ -730,6 +757,16 @@ AC_DEFUN([BASIC_CHECK_MAKE_VERSION],
 [
   MAKE_CANDIDATE="$1"
   DESCRIPTION="$2"
+
+  # On Cygwin, we require a newer version of make than on other platforms
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    MAKE_VERSION_EXPR="-e 4\."
+    MAKE_REQUIRED_VERSION="4.0"
+   else
+    MAKE_VERSION_EXPR="-e 3\.8[[12]] -e 4\."
+    MAKE_REQUIRED_VERSION="3.81"
+  fi
+
   if test "x$MAKE_CANDIDATE" != x; then
     AC_MSG_NOTICE([Testing potential make at $MAKE_CANDIDATE, found using $DESCRIPTION])
     MAKE_VERSION_STRING=`$MAKE_CANDIDATE --version | $HEAD -n 1`
@@ -737,9 +774,9 @@ AC_DEFUN([BASIC_CHECK_MAKE_VERSION],
     if test "x$IS_GNU_MAKE" = x; then
       AC_MSG_NOTICE([Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring.])
     else
-      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP -e '3\.8[[12]]' -e '4\.'`
+      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP $MAKE_VERSION_EXPR`
       if test "x$IS_MODERN_MAKE" = x; then
-        AC_MSG_NOTICE([Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring.])
+        AC_MSG_NOTICE([Found GNU make at $MAKE_CANDIDATE, however this is not version $MAKE_REQUIRED_VERSION or later. (it is: $MAKE_VERSION_STRING). Ignoring.])
       else
         if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
           if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
@@ -803,7 +840,7 @@ AC_DEFUN([BASIC_CHECK_GNU_MAKE],
     fi
     BASIC_CHECK_MAKE_VERSION("$MAKE", [user supplied MAKE=$MAKE])
     if test "x$FOUND_MAKE" = x; then
-      AC_MSG_ERROR([The specified make (by MAKE=$MAKE) is not GNU make 3.81 or newer.])
+      AC_MSG_ERROR([The specified make (by MAKE=$MAKE) is not GNU make $MAKE_REQUIRED_VERSION or newer.])
     fi
   else
     # Try our hardest to locate a correct version of GNU make
@@ -831,13 +868,13 @@ AC_DEFUN([BASIC_CHECK_GNU_MAKE],
     fi
 
     if test "x$FOUND_MAKE" = x; then
-      AC_MSG_ERROR([Cannot find GNU make 3.81 or newer! Please put it in the path, or add e.g. MAKE=/opt/gmake3.81/make as argument to configure.])
+      AC_MSG_ERROR([Cannot find GNU make $MAKE_REQUIRED_VERSION or newer! Please put it in the path, or add e.g. MAKE=/opt/gmake3.81/make as argument to configure.])
     fi
   fi
 
   MAKE=$FOUND_MAKE
   AC_SUBST(MAKE)
-  AC_MSG_NOTICE([Using GNU make 3.81 (or later) at $FOUND_MAKE (version: $MAKE_VERSION_STRING)])
+  AC_MSG_NOTICE([Using GNU make at $FOUND_MAKE (version: $MAKE_VERSION_STRING)])
 
   BASIC_CHECK_MAKE_OUTPUT_SYNC
 ])

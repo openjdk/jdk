@@ -214,14 +214,20 @@ Page header and footer styles
     margin:0 20px;
     padding:5px 0 0 0;
 }
-.indexHeader {
+.indexNav {
     margin:10px;
     position:relative;
 }
-.indexHeader span{
-    margin-right:15px;
+.indexNav ul {
+    padding:0;
+    margin:0;
 }
-.indexHeader h1 {
+.indexNav ul li {
+    display:inline;
+    list-style-type:none;
+    padding-right:10px;
+}
+.indexNav h1 {
     font-size:13px;
 }
 .title {
@@ -314,6 +320,9 @@ Page layout container styles
 /*
 List styles
 */
+li.circle {
+    list-style:circle;
+}
 ul.horizontal li {
     display:inline;
     font-size:0.9em;
@@ -370,6 +379,7 @@ Table styles
 */
 .overviewSummary, .memberSummary, .typeSummary, .useSummary, .constantsSummary, .deprecatedSummary {
     width:100%;
+    border-spacing:0;
     border-left:1px solid #EEE; 
     border-right:1px solid #EEE; 
     border-bottom:1px solid #EEE; 
@@ -637,4 +647,10 @@ IFRAME specific styles
     width:100%;
     overflow:visible;
     margin-bottom:30px;
+}
+/*
+HTML5 specific styles
+*/
+main, nav, header, footer, section {
+    display:block;
 }

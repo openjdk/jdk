@@ -2,7 +2,7 @@
 
 <!--
 
-   Copyright (c) 2014 Oracle and/or its affiliates. All rights reserved.
+   Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved.
    DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
    This code is free software; you can redistribute it and/or modify it
@@ -248,18 +248,24 @@
       <to>java.logging</to>
       <to>java.management</to>
       <to>java.naming</to>
+      <to>java.prefs</to>
       <to>java.rmi</to>
       <to>java.security.jgss</to>
       <to>java.security.sasl</to>
       <to>java.sql</to>
+      <to>java.xml</to>
+      <to>java.xml.ws</to>
       <to>jdk.charsets</to>
+      <to>jdk.crypto.pkcs11</to>
       <to>jdk.deploy.osx</to>
+      <to>jdk.httpserver</to>
       <to>jdk.jartool</to>
       <to>jdk.jconsole</to>
       <to>jdk.jvmstat</to>
       <to>jdk.pack200</to>
       <to>jdk.security.auth</to>
       <to>jdk.security.jgss</to>
+      <to>jdk.snmp</to>
     </export>
     <export>
       <name>sun.net.dns</name>
@@ -751,7 +757,7 @@
     </export>
     <export>
       <name>sun.awt</name>
-      <to>jdk.accessbridge</to>
+      <to>jdk.accessibility</to>
     </export>
   </module>
   <module>
@@ -1838,6 +1844,23 @@
     </export>
   </module>
   <module>
+    <name>jdk.xml.dom</name>
+    <depend>java.base</depend>
+    <depend re-exports="true">java.xml</depend>
+    <export>
+      <name>org.w3c.dom.css</name>
+    </export>
+    <export>
+      <name>org.w3c.dom.html</name>
+    </export>
+    <export>
+      <name>org.w3c.dom.stylesheets</name>
+    </export>
+    <export>
+      <name>org.w3c.dom.xpath</name>
+    </export>
+  </module>
+  <module>
     <name>jdk.xml.ws</name>
     <depend>java.base</depend>
     <depend>java.compiler</depend>
@@ -1851,5 +1874,10 @@
   <module>
     <name>jdk.zipfs</name>
     <depend>java.base</depend>
+  </module>
+  <module>
+    <name>jdk.accessibility</name>
+    <depend>java.base</depend>
+    <depend>java.desktop</depend>
   </module>
 </modules>

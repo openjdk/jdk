@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8065986
+ * @bug 8065986 8062373
  *
  * @summary Compiler fails to NullPointerException when calling super with Object<>()
  * @compile/fail/ref=T8065986b.out T8065986b.java -XDrawDiagnostics
@@ -29,5 +29,12 @@ class T8065986b {
         this(cond ? o1 : o2);
     }
 
+    T8065986b(int x) {
+        this(new Object<>() {});
+    }
+
+    T8065986b(int x, int y) {
+        this(new ArrayList<>() {});
+    }
     static void m() { }
 }

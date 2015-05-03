@@ -26,9 +26,8 @@ import java.util.prefs.PreferencesFactory;
 
 /*
  * @test
- * @bug 8068373
- * @requires os.family == "linux" | os.family == "solaris"
- * @summary Ensure writing a code point U+0000 null control character is detected.
+ * @bug 8068373 8075110 8075156
+ * @summary Ensure a code point U+0000 null control character is detected.
  */
 public class CodePointZeroPrefsTest
 {
@@ -36,51 +35,69 @@ public class CodePointZeroPrefsTest
     {
         int failures = 0;
 
-        // Deliberately reflect so you can reproduce it on any platform.
-        Constructor<? extends PreferencesFactory> constructor =
-            Class.forName("java.util.prefs.FileSystemPreferencesFactory").asSubclass(PreferencesFactory.class).getDeclaredConstructor();
-        constructor.setAccessible(true);
-        PreferencesFactory factory = constructor.newInstance();
+        Preferences node = Preferences.userRoot().node("com/acme/testing");
 
-        Preferences node = factory.userRoot().node("com/acme/testing");
+        // --- put() ---
 
         // legal key and value
         try {
             node.put("a", "1");
         } catch (IllegalArgumentException iae) {
-            System.err.println("Unexpected IllegalArgumentException for legal key");
+            System.err.println("Unexpected IllegalArgumentException for legal put() key");
             failures++;
         }
 
         // illegal key only
-        int numIAEs = 0;
         try {
             node.put("a\u0000b", "1");
-            System.err.println("IllegalArgumentException not thrown for illegal key");
+            System.err.println("IllegalArgumentException not thrown for illegal put() key");
             failures++;
         } catch (IllegalArgumentException iae) {
             // do nothing
         }
 
         // illegal value only
-        numIAEs = 0;
         try {
             node.put("ab", "2\u00003");
-            System.err.println("IllegalArgumentException not thrown for illegal value");
+            System.err.println("IllegalArgumentException not thrown for illegal put() value");
             failures++;
         } catch (IllegalArgumentException iae) {
             // do nothing
         }
 
         // illegal key and value
-        numIAEs = 0;
         try {
             node.put("a\u0000b", "2\u00003");
-            System.err.println("IllegalArgumentException not thrown for illegal entry");
+            System.err.println("IllegalArgumentException not thrown for illegal put() entry");
             failures++;
         } catch (IllegalArgumentException iae) {
             // do nothing
         }
+
+        // --- get ---
+
+        // illegal key only
+        try {
+            String theDefault = "default";
+            String value = node.get("a\u0000b", theDefault);
+            System.err.println("IllegalArgumentException not thrown for illegal get() key");
+            failures++;
+        } catch (IllegalArgumentException iae) {
+            // do nothing
+        }
+
+        // --- remove ---
+
+        // illegal key only
+        try {
+            node.remove("a\u0000b");
+            System.err.println("IllegalArgumentException not thrown for illegal remove() key");
+            failures++;
+        } catch (IllegalArgumentException iae) {
+            // do nothing
+        }
+
+        node.removeNode();
 
         if (failures != 0) {
             throw new RuntimeException("CodePointZeroPrefsTest failed with "

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ public interface InvokeHandler {
      * <p>5. Marshal reply into OutputStream returned by
      *    ResponseHandler.
      * <p>6. Return OutputStream to ORB.
-     * <p>
+     *
      * @param method The method name.
      * @param input The <code>InputStream</code> containing the marshalled arguments.
      * @param handler The <code>ResponseHandler</code> which the servant uses

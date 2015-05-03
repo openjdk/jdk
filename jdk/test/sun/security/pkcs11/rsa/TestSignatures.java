@@ -27,6 +27,7 @@
  * @summary Test signing/verifying using all the signature algorithms
  * @author Andreas Sterbenz
  * @library ..
+ * @key randomness
  */
 
 import java.io.*;

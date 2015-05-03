@@ -23,24 +23,6 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Vector;
-import java.util.jar.JarEntry;
-import java.util.jar.JarOutputStream;
-import java.util.jar.Manifest;
-import javax.xml.XMLConstants;
-
 import com.sun.org.apache.bcel.internal.classfile.JavaClass;
 import com.sun.org.apache.xalan.internal.XalanConstants;
 import com.sun.org.apache.xalan.internal.utils.FeatureManager;
@@ -50,7 +32,27 @@ import com.sun.org.apache.xalan.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util;
 import com.sun.org.apache.xml.internal.dtm.DTM;
-
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Vector;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
+import javax.xml.XMLConstants;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
 
@@ -153,11 +155,25 @@ public final class XSLTC {
     private final FeatureManager _featureManager;
 
     /**
+    *  Extension function class loader variables
+    */
+
+    /* Class loader reference that will be used to external extension functions loading */
+    private ClassLoader _extensionClassLoader;
+
+    /**
+    *  HashSet with the loaded classes
+    */
+    private final Map<String, Class> _externalExtensionFunctions;
+
+    /**
      * XSLTC compiler constructor
      */
     public XSLTC(boolean useServicesMechanism, FeatureManager featureManager) {
         _parser = new Parser(this, useServicesMechanism);
         _featureManager = featureManager;
+        _extensionClassLoader = null;
+        _externalExtensionFunctions = new HashMap<>();
     }
 
     /**
@@ -207,6 +223,8 @@ public final class XSLTC {
             return _accessExternalDTD;
         } else if (name.equals(XalanConstants.SECURITY_MANAGER)) {
             return _xmlSecurityManager;
+        } else if (name.equals(XalanConstants.JDK_EXTENSION_CLASSLOADER)) {
+            return _extensionClassLoader;
         }
         return null;
     }
@@ -222,6 +240,11 @@ public final class XSLTC {
             _accessExternalDTD = (String)value;
         } else if (name.equals(XalanConstants.SECURITY_MANAGER)) {
             _xmlSecurityManager = (XMLSecurityManager)value;
+        } else if (name.equals(XalanConstants.JDK_EXTENSION_CLASSLOADER)) {
+            _extensionClassLoader = (ClassLoader) value;
+            /* Clear the external extension functions HashMap if extension class
+               loader was changed */
+            _externalExtensionFunctions.clear();
         }
     }
 
@@ -256,6 +279,41 @@ public final class XSLTC {
         _bcelClasses = new Vector();
     }
 
+    private void setExternalExtensionFunctions(String name, Class clazz) {
+        if (_isSecureProcessing && clazz != null && !_externalExtensionFunctions.containsKey(name)) {
+            _externalExtensionFunctions.put(name, clazz);
+        }
+    }
+
+    /*
+     * Function loads an external external extension functions.
+     * The filtering of function types (external,internal) takes place in FunctionCall class
+     *
+     */
+    Class loadExternalFunction(String name) throws ClassNotFoundException {
+        Class loaded = null;
+        //Check if the function is not loaded already
+        if (_externalExtensionFunctions.containsKey(name)) {
+            loaded = _externalExtensionFunctions.get(name);
+        } else if (_extensionClassLoader != null) {
+            loaded = Class.forName(name, true, _extensionClassLoader);
+            setExternalExtensionFunctions(name, loaded);
+        }
+        if (loaded == null) {
+            throw new ClassNotFoundException(name);
+        }
+        //Return loaded class
+        return (Class) loaded;
+    }
+
+    /*
+     * Returns unmodifiable view of HashMap with loaded external extension
+     * functions - will be needed for the TransformerImpl
+    */
+    public Map<String, Class> getExternalExtensionFunctions() {
+        return Collections.unmodifiableMap(_externalExtensionFunctions);
+    }
+
     /**
      * Initializes the compiler to produce a new translet
      */
@@ -283,6 +341,7 @@ public final class XSLTC {
             -1,         // LEVEL_MULTIPLE
             -1          // LEVEL_ANY
         };
+        _externalExtensionFunctions.clear();
     }
 
     /**

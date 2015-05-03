@@ -26,6 +26,7 @@
  * @summary verify that P11Signature impl will error out when initialized
  * with unsupported key sizes
  * @library ..
+ * @key randomness
  */
 
 

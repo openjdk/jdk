@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,12 +102,24 @@ public final class RSACore {
 
     /**
      * Perform an RSA private key operation. Uses CRT if the key is a
-     * CRT key.
+     * CRT key with additional verification check after the signature
+     * is computed.
      */
+    @Deprecated
     public static byte[] rsa(byte[] msg, RSAPrivateKey key)
             throws BadPaddingException {
+        return rsa(msg, key, true);
+    }
+
+    /**
+     * Perform an RSA private key operation. Uses CRT if the key is a
+     * CRT key. Set 'verify' to true if this function is used for
+     * generating a signature.
+     */
+    public static byte[] rsa(byte[] msg, RSAPrivateKey key, boolean verify)
+            throws BadPaddingException {
         if (key instanceof RSAPrivateCrtKey) {
-            return crtCrypt(msg, (RSAPrivateCrtKey)key);
+            return crtCrypt(msg, (RSAPrivateCrtKey)key, verify);
         } else {
             return priCrypt(msg, key.getModulus(), key.getPrivateExponent());
         }
@@ -148,10 +160,11 @@ public final class RSACore {
      * RSA private key operations with CRT. Algorithm and variable naming
      * are taken from PKCS#1 v2.1, section 5.1.2.
      */
-    private static byte[] crtCrypt(byte[] msg, RSAPrivateCrtKey key)
-            throws BadPaddingException {
+    private static byte[] crtCrypt(byte[] msg, RSAPrivateCrtKey key,
+            boolean verify) throws BadPaddingException {
         BigInteger n = key.getModulus();
-        BigInteger c = parseMsg(msg, n);
+        BigInteger c0 = parseMsg(msg, n);
+        BigInteger c = c0;
         BigInteger p = key.getPrimeP();
         BigInteger q = key.getPrimeQ();
         BigInteger dP = key.getPrimeExponentP();
@@ -183,6 +196,9 @@ public final class RSACore {
 
         if (ENABLE_BLINDING) {
             m = m.multiply(brp.v).mod(n);
+        }
+        if (verify && !c0.equals(m.modPow(e, n))) {
+            throw new BadPaddingException("RSA private key operation failed");
         }
 
         return toByteArray(m, getByteLength(n));

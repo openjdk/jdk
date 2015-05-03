@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4759491 6303183 7012868 8015666 8023713 8068790
+ * @bug 4759491 6303183 7012868 8015666 8023713 8068790 8076641
  * @summary Test ZOS and ZIS timestamp in extra field correctly
  */
 
@@ -39,7 +39,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
-
 
 public class TestExtraTime {
 
@@ -71,6 +70,7 @@ public class TestExtraTime {
         }
 
         testNullHandling();
+        testTagOnlyHandling();
         testTimeConversions();
     }
 
@@ -206,6 +206,44 @@ public class TestExtraTime {
                 throw new RuntimeException("getTime after setTime, expected: " +
                         time + " got: " + ze.getTime());
             }
+        }
+    }
+
+    static void check(ZipEntry ze, byte[] extra) {
+        if (extra != null) {
+            byte[] extra1 = ze.getExtra();
+            if (extra1 == null || extra1.length < extra.length ||
+                !Arrays.equals(Arrays.copyOfRange(extra1,
+                                                  extra1.length - extra.length,
+                                                  extra1.length),
+                               extra)) {
+                throw new RuntimeException("Timestamp: storing extra field failed!");
+            }
+        }
+    }
+
+    static void testTagOnlyHandling() throws Throwable {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        byte[] extra = new byte[] { 0x0a, 0, 4, 0, 0, 0, 0, 0 };
+        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+            ZipEntry ze = new ZipEntry("TestExtraTime.java");
+            ze.setExtra(extra);
+            zos.putNextEntry(ze);
+            zos.write(new byte[] { 1,2 ,3, 4});
+        }
+        try (ZipInputStream zis = new ZipInputStream(
+                 new ByteArrayInputStream(baos.toByteArray()))) {
+            ZipEntry ze = zis.getNextEntry();
+            check(ze, extra);
+        }
+        Path zpath = Paths.get(System.getProperty("test.dir", "."),
+                               "TestExtraTime.zip");
+        Files.copy(new ByteArrayInputStream(baos.toByteArray()), zpath);
+        try (ZipFile zf = new ZipFile(zpath.toFile())) {
+            ZipEntry ze = zf.getEntry("TestExtraTime.java");
+            check(ze, extra);
+        } finally {
+            Files.delete(zpath);
         }
     }
 }

@@ -30,6 +30,7 @@
  * @summary Run many tests on many Collection and Map implementations
  * @author  Martin Buchholz
  * @run main MOAT
+ * @key randomness
  */
 
 /* Mother Of All (Collection) Tests

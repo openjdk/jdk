@@ -26,6 +26,7 @@
  * @summary Sanity test for Sun-specific sensitivity level watch event modifier
  * @library ..
  * @run main/timeout=240 SensitivityModifier
+ * @key randomness
  */
 
 import java.nio.file.*;

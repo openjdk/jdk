@@ -121,7 +121,7 @@ class UnixPath implements Path {
             ce = Util.jnuEncoding().newEncoder()
                 .onMalformedInput(CodingErrorAction.REPORT)
                 .onUnmappableCharacter(CodingErrorAction.REPORT);
-            encoder.set(new SoftReference<CharsetEncoder>(ce));
+            encoder.set(new SoftReference<>(ce));
         }
 
         char[] ca = fs.normalizeNativePath(input.toCharArray());

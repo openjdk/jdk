@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,11 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
     private Content contentTree;
 
     /**
+     * True if first package is listed.
+     */
+    private boolean first = true;
+
+    /**
      * Construct a new ConstantsSummaryBuilder.
      *
      * @param context       the build context.
@@ -159,7 +164,7 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
                                                printedPackageHeaders, contentListTree);
             }
         }
-        contentTree.addContent(writer.getContentsList(contentListTree));
+        writer.addContentsList(contentTree, contentListTree);
     }
 
     /**
@@ -176,9 +181,10 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
                 currentPackage = aPackage;
                 //Build the documentation for the current package.
                 buildChildren(node, summariesTree);
+                first = false;
             }
         }
-        contentTree.addContent(summariesTree);
+        writer.addConstantSummaries(contentTree, summariesTree);
     }
 
     /**
@@ -190,8 +196,7 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
     public void buildPackageHeader(XMLNode node, Content summariesTree) {
         String parsedPackageName = parsePackageName(currentPackage.name());
         if (! printedPackageHeaders.contains(parsedPackageName)) {
-            writer.addPackageName(currentPackage,
-                parsePackageName(currentPackage.name()), summariesTree);
+            writer.addPackageName(parsePackageName(currentPackage.name()), summariesTree, first);
             printedPackageHeaders.add(parsedPackageName);
         }
     }
@@ -218,7 +223,7 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
             //Build the documentation for the current class.
             buildChildren(node, classConstantTree);
         }
-        summariesTree.addContent(classConstantTree);
+        writer.addClassConstant(summariesTree, classConstantTree);
     }
 
     /**

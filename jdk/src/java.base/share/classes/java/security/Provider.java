@@ -711,7 +711,7 @@ public abstract class Provider extends Properties {
 
         legacyChanged = true;
         if (legacyStrings == null) {
-            legacyStrings = new LinkedHashMap<String,String>();
+            legacyStrings = new LinkedHashMap<>();
         }
         return true;
     }
@@ -773,7 +773,7 @@ public abstract class Provider extends Properties {
     private void implReplaceAll(BiFunction<? super Object, ? super Object, ? extends Object> function) {
         legacyChanged = true;
         if (legacyStrings == null) {
-            legacyStrings = new LinkedHashMap<String,String>();
+            legacyStrings = new LinkedHashMap<>();
         } else {
             legacyStrings.replaceAll((BiFunction<? super String, ? super String, ? extends String>) function);
         }
@@ -905,7 +905,7 @@ public abstract class Provider extends Properties {
         }
         serviceSet = null;
         if (legacyMap == null) {
-            legacyMap = new LinkedHashMap<ServiceKey,Service>();
+            legacyMap = new LinkedHashMap<>();
         } else {
             legacyMap.clear();
         }
@@ -1133,7 +1133,7 @@ public abstract class Provider extends Properties {
                     ("service.getProvider() must match this Provider object");
         }
         if (serviceMap == null) {
-            serviceMap = new LinkedHashMap<ServiceKey,Service>();
+            serviceMap = new LinkedHashMap<>();
         }
         servicesChanged = true;
         String type = s.getType();
@@ -1305,7 +1305,7 @@ public abstract class Provider extends Properties {
     }
 
     static {
-        knownEngines = new HashMap<String,EngineDescription>();
+        knownEngines = new HashMap<>();
         // JCA
         addEngine("AlgorithmParameterGenerator",        false, null);
         addEngine("AlgorithmParameters",                false, null);
@@ -1431,14 +1431,14 @@ public abstract class Provider extends Properties {
 
         private void addAlias(String alias) {
             if (aliases.isEmpty()) {
-                aliases = new ArrayList<String>(2);
+                aliases = new ArrayList<>(2);
             }
             aliases.add(alias);
         }
 
         void addAttribute(String type, String value) {
             if (attributes.isEmpty()) {
-                attributes = new HashMap<UString,String>(8);
+                attributes = new HashMap<>(8);
             }
             attributes.put(new UString(type), value);
         }
@@ -1471,12 +1471,12 @@ public abstract class Provider extends Properties {
             if (aliases == null) {
                 this.aliases = Collections.<String>emptyList();
             } else {
-                this.aliases = new ArrayList<String>(aliases);
+                this.aliases = new ArrayList<>(aliases);
             }
             if (attributes == null) {
                 this.attributes = Collections.<UString,String>emptyMap();
             } else {
-                this.attributes = new HashMap<UString,String>();
+                this.attributes = new HashMap<>();
                 for (Map.Entry<String,String> entry : attributes.entrySet()) {
                     this.attributes.put(new UString(entry.getKey()), entry.getValue());
                 }
@@ -1644,7 +1644,7 @@ public abstract class Provider extends Properties {
                             ("class configured for " + type + " (provider: " +
                             provider.getName() + ") is not public.");
                     }
-                    classRef = new WeakReference<Class<?>>(clazz);
+                    classRef = new WeakReference<>(clazz);
                 }
                 return clazz;
             } catch (ClassNotFoundException e) {

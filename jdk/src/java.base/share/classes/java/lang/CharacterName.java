@@ -45,7 +45,7 @@ class CharacterName {
         DataInputStream dis = null;
         try {
             dis = new DataInputStream(new InflaterInputStream(
-                AccessController.doPrivileged(new PrivilegedAction<InputStream>()
+                AccessController.doPrivileged(new PrivilegedAction<>()
                 {
                     public InputStream run() {
                         return getClass().getResourceAsStream("uniName.dat");

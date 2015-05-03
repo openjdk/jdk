@@ -631,7 +631,7 @@ class LambdaForm {
      * as a sort of pre-invocation linkage step.)
      */
     public void prepare() {
-        if (COMPILE_THRESHOLD == 0) {
+        if (COMPILE_THRESHOLD == 0 && !isCompiled) {
             compileToBytecode();
         }
         if (this.vmentry != null) {
@@ -645,11 +645,11 @@ class LambdaForm {
 
     /** Generate optimizable bytecode for this form. */
     MemberName compileToBytecode() {
-        MethodType invokerType = methodType();
-        assert(vmentry == null || vmentry.getMethodType().basicType().equals(invokerType));
         if (vmentry != null && isCompiled) {
             return vmentry;  // already compiled somehow
         }
+        MethodType invokerType = methodType();
+        assert(vmentry == null || vmentry.getMethodType().basicType().equals(invokerType));
         try {
             vmentry = InvokerBytecodeGenerator.generateCustomizedCode(this, invokerType);
             if (TRACE_INTERPRETER)

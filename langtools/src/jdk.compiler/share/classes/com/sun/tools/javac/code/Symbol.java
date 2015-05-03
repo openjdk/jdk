@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,11 @@ import java.util.concurrent.Callable;
 import javax.lang.model.element.*;
 import javax.tools.JavaFileObject;
 
+import com.sun.tools.javac.code.Attribute.Compound;
+import com.sun.tools.javac.code.TypeAnnotations.AnnotationType;
+import com.sun.tools.javac.code.TypeMetadata.Entry;
+import com.sun.tools.javac.comp.Annotate.AnnotationTypeCompleter;
+import com.sun.tools.javac.comp.Annotate.AnnotationTypeMetadata;
 import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.comp.Attr;
@@ -91,6 +96,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
     public Symbol owner;
 
     /** The completer of this symbol.
+     * This should never equal null (NULL_COMPLETER should be used instead).
      */
     public Completer completer;
 
@@ -188,6 +194,10 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         return (metadata != null && !metadata.isTypesEmpty());
     }
 
+    public boolean isCompleted() {
+        return completer.isTerminal();
+    }
+
     public void prependAttributes(List<Attribute.Compound> l) {
         if (l.nonEmpty()) {
             initedMetadata().prepend(l);
@@ -238,7 +248,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         this.flags_field = flags;
         this.type = type;
         this.owner = owner;
-        this.completer = null;
+        this.completer = Completer.NULL_COMPLETER;
         this.erasure_field = null;
         this.name = name;
     }
@@ -563,9 +573,9 @@ public abstract class Symbol extends AnnoConstruct implements Element {
     /** Complete the elaboration of this symbol's definition.
      */
     public void complete() throws CompletionFailure {
-        if (completer != null) {
+        if (completer != Completer.NULL_COMPLETER) {
             Completer c = completer;
-            completer = null;
+            completer = Completer.NULL_COMPLETER;
             c.complete(this);
         }
     }
@@ -738,6 +748,13 @@ public abstract class Symbol extends AnnoConstruct implements Element {
             return list;
         }
 
+        public AnnotationTypeMetadata getAnnotationTypeMetadata() {
+            Assert.error("Only on ClassSymbol");
+            return null; //unreachable
+        }
+
+        public boolean isAnnotationType() { return false; }
+
         @Override
         public <R, P> R accept(Symbol.Visitor<R, P> v, P p) {
             return v.visitTypeSymbol(this, p);
@@ -860,19 +877,19 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         }
 
         public WriteableScope members() {
-            if (completer != null) complete();
+            complete();
             return members_field;
         }
 
         public long flags() {
-            if (completer != null) complete();
+            complete();
             return flags_field;
         }
 
         @Override
         public List<Attribute.Compound> getRawAttributes() {
-            if (completer != null) complete();
-            if (package_info != null && package_info.completer != null) {
+            complete();
+            if (package_info != null) {
                 package_info.complete();
                 mergeAttributes();
             }
@@ -958,6 +975,9 @@ public abstract class Symbol extends AnnoConstruct implements Element {
          */
         public Pool pool;
 
+        /** the annotation metadata attached to this class */
+        private AnnotationTypeMetadata annotationTypeMetadata;
+
         public ClassSymbol(long flags, Name name, Type type, Symbol owner) {
             super(TYP, flags, name, type, owner);
             this.members_field = null;
@@ -966,6 +986,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
             this.sourcefile = null;
             this.classfile = null;
             this.pool = null;
+            this.annotationTypeMetadata = AnnotationTypeMetadata.notAnAnnotationType();
         }
 
         public ClassSymbol(long flags, Name name, Symbol owner) {
@@ -984,24 +1005,24 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         }
 
         public long flags() {
-            if (completer != null) complete();
+            complete();
             return flags_field;
         }
 
         public WriteableScope members() {
-            if (completer != null) complete();
+            complete();
             return members_field;
         }
 
         @Override
         public List<Attribute.Compound> getRawAttributes() {
-            if (completer != null) complete();
+            complete();
             return super.getRawAttributes();
         }
 
         @Override
         public List<Attribute.TypeCompound> getRawTypeAttributes() {
-            if (completer != null) complete();
+            complete();
             return super.getRawTypeAttributes();
         }
 
@@ -1202,8 +1223,24 @@ public abstract class Symbol extends AnnoConstruct implements Element {
                 t.all_interfaces_field = null;
             }
             metadata = null;
+            annotationTypeMetadata = AnnotationTypeMetadata.notAnAnnotationType();
         }
 
+        @Override
+        public AnnotationTypeMetadata getAnnotationTypeMetadata() {
+            return annotationTypeMetadata;
+        }
+
+        @Override
+        public boolean isAnnotationType() {
+            return (flags_field & Flags.ANNOTATION) != 0;
+        }
+
+        public void setAnnotationTypeMetadata(AnnotationTypeMetadata a) {
+            Assert.checkNonNull(a);
+            Assert.check(!annotationTypeMetadata.isMetadataForAnnotationType());
+            this.annotationTypeMetadata = a;
+        }
     }
 
 
@@ -1360,7 +1397,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         /** The names of the parameters */
         public List<Name> savedParameterNames;
 
-        /** For an attribute field accessor, its default value if any.
+        /** For an annotation type element, its default value if any.
          *  The value is null if none appeared in the method
          *  declaration.
          */
@@ -1750,7 +1787,29 @@ public abstract class Symbol extends AnnoConstruct implements Element {
     /** Symbol completer interface.
      */
     public static interface Completer {
+
+        /** Dummy completer to be used when the symbol has been completed or
+         * does not need completion.
+         */
+        public final static Completer NULL_COMPLETER = new Completer() {
+            public void complete(Symbol sym) { }
+            public boolean isTerminal() { return true; }
+        };
+
         void complete(Symbol sym) throws CompletionFailure;
+
+        /** Returns true if this completer is <em>terminal</em>. A terminal
+         * completer is used as a place holder when the symbol is completed.
+         * Calling complete on a terminal completer will not affect the symbol.
+         *
+         * The dummy NULL_COMPLETER and the GraphDependencies completer are
+         * examples of terminal completers.
+         *
+         * @return true iff this completer is terminal
+         */
+        default boolean isTerminal() {
+            return false;
+        }
     }
 
     public static class CompletionFailure extends RuntimeException {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,16 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
     private final String[] constantsTableHeader;
 
     /**
+     * The HTML tree for main tag.
+     */
+    private HtmlTree mainTree = HtmlTree.MAIN();
+
+    /**
+     * The HTML tree for constant values summary.
+     */
+    private HtmlTree summaryTree;
+
+    /**
      * Construct a ConstantsSummaryWriter.
      * @param configuration the configuration used in this run
      *        of the standard doclet.
@@ -85,9 +95,15 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
      */
     public Content getHeader() {
         String label = configuration.getText("doclet.Constants_Summary");
-        Content bodyTree = getBody(true, getWindowTitle(label));
-        addTop(bodyTree);
-        addNavLinks(true, bodyTree);
+        HtmlTree bodyTree = getBody(true, getWindowTitle(label));
+        HtmlTree htmlTree = (configuration.allowTag(HtmlTag.HEADER))
+                ? HtmlTree.HEADER()
+                : bodyTree;
+        addTop(htmlTree);
+        addNavLinks(true, htmlTree);
+        if (configuration.allowTag(HtmlTag.HEADER)) {
+            bodyTree.addContent(htmlTree);
+        }
         return bodyTree;
     }
 
@@ -123,7 +139,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
     /**
      * {@inheritDoc}
      */
-    public Content getContentsList(Content contentListTree) {
+    public void addContentsList(Content contentTree, Content contentListTree) {
         Content titleContent = getResource(
                 "doclet.Constants_Summary");
         Content pHeading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, true,
@@ -131,10 +147,18 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
         Content div = HtmlTree.DIV(HtmlStyle.header, pHeading);
         Content headingContent = getResource(
                 "doclet.Contents");
-        div.addContent(HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING, true,
-                headingContent));
-        div.addContent(contentListTree);
-        return div;
+        Content heading = HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING, true,
+                headingContent);
+        if (configuration.allowTag(HtmlTag.SECTION)) {
+            HtmlTree section = HtmlTree.SECTION(heading);
+            section.addContent(contentListTree);
+            div.addContent(section);
+            mainTree.addContent(div);
+        } else {
+            div.addContent(heading);
+            div.addContent(contentListTree);
+            contentTree.addContent(div);
+        }
     }
 
     /**
@@ -149,9 +173,11 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
     /**
      * {@inheritDoc}
      */
-    public void addPackageName(PackageDoc pkg, String parsedPackageName,
-            Content summariesTree) {
+    public void addPackageName(String parsedPackageName, Content summariesTree, boolean first) {
         Content pkgNameContent;
+        if (!first && configuration.allowTag(HtmlTag.SECTION)) {
+            summariesTree.addContent(summaryTree);
+        }
         if (parsedPackageName.length() == 0) {
             summariesTree.addContent(getMarkerAnchor(
                     SectionName.UNNAMED_PACKAGE_ANCHOR));
@@ -165,7 +191,11 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
         Content heading = HtmlTree.HEADING(HtmlConstants.PACKAGE_HEADING, true,
                 pkgNameContent);
         heading.addContent(headingContent);
-        summariesTree.addContent(heading);
+        if (configuration.allowTag(HtmlTag.SECTION)) {
+            summaryTree = HtmlTree.SECTION(heading);
+        } else {
+            summariesTree.addContent(heading);
+        }
     }
 
     /**
@@ -175,6 +205,17 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
         ul.addStyle(HtmlStyle.blockList);
         return ul;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void addClassConstant(Content summariesTree, Content classConstantTree) {
+        if (configuration.allowTag(HtmlTag.SECTION)) {
+            summaryTree.addContent(classConstantTree);
+        } else {
+            summariesTree.addContent(classConstantTree);
+        }
     }
 
     /**
@@ -208,8 +249,10 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
      * @return the table caption and header
      */
     protected Content getClassName(Content classStr) {
-        Content table = HtmlTree.TABLE(HtmlStyle.constantsSummary, 0, 3, 0, constantsTableSummary,
-                getTableCaption(classStr));
+        Content caption = getTableCaption(classStr);
+        Content table = (configuration.isOutputHtml5())
+                ? HtmlTree.TABLE(HtmlStyle.constantsSummary, caption)
+                : HtmlTree.TABLE(HtmlStyle.constantsSummary, constantsTableSummary, caption);
         table.addContent(getSummaryTableHeader(constantsTableHeader, "col"));
         return table;
     }
@@ -300,9 +343,30 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
     /**
      * {@inheritDoc}
      */
+    public void addConstantSummaries(Content contentTree, Content summariesTree) {
+        if (configuration.allowTag(HtmlTag.SECTION) && summaryTree != null) {
+            summariesTree.addContent(summaryTree);
+        }
+        if (configuration.allowTag(HtmlTag.MAIN)) {
+            mainTree.addContent(summariesTree);
+            contentTree.addContent(mainTree);
+        } else {
+            contentTree.addContent(summariesTree);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public void addFooter(Content contentTree) {
-        addNavLinks(false, contentTree);
-        addBottom(contentTree);
+        Content htmlTree = (configuration.allowTag(HtmlTag.FOOTER))
+                ? HtmlTree.FOOTER()
+                : contentTree;
+        addNavLinks(false, htmlTree);
+        addBottom(htmlTree);
+        if (configuration.allowTag(HtmlTag.FOOTER)) {
+            contentTree.addContent(htmlTree);
+        }
     }
 
     /**

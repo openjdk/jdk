@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,49 +259,54 @@ public class Symtab {
 
     public void synthesizeEmptyInterfaceIfMissing(final Type type) {
         final Completer completer = type.tsym.completer;
-        if (completer != null) {
-            type.tsym.completer = new Completer() {
-                public void complete(Symbol sym) throws CompletionFailure {
-                    try {
-                        completer.complete(sym);
-                    } catch (CompletionFailure e) {
-                        sym.flags_field |= (PUBLIC | INTERFACE);
-                        ((ClassType) sym.type).supertype_field = objectType;
-                    }
+        type.tsym.completer = new Completer() {
+            public void complete(Symbol sym) throws CompletionFailure {
+                try {
+                    completer.complete(sym);
+                } catch (CompletionFailure e) {
+                    sym.flags_field |= (PUBLIC | INTERFACE);
+                    ((ClassType) sym.type).supertype_field = objectType;
                 }
-            };
-        }
+            }
+
+            @Override
+            public boolean isTerminal() {
+                return completer.isTerminal();
+            }
+        };
     }
 
     public void synthesizeBoxTypeIfMissing(final Type type) {
         ClassSymbol sym = enterClass(boxedName[type.getTag().ordinal()]);
         final Completer completer = sym.completer;
-        if (completer != null) {
-            sym.completer = new Completer() {
-                public void complete(Symbol sym) throws CompletionFailure {
-                    try {
-                        completer.complete(sym);
-                    } catch (CompletionFailure e) {
-                        sym.flags_field |= PUBLIC;
-                        ((ClassType) sym.type).supertype_field = objectType;
-                        MethodSymbol boxMethod =
-                            new MethodSymbol(PUBLIC | STATIC, names.valueOf,
-                                             new MethodType(List.of(type), sym.type,
-                                    List.<Type>nil(), methodClass),
-                                sym);
-                        sym.members().enter(boxMethod);
-                        MethodSymbol unboxMethod =
-                            new MethodSymbol(PUBLIC,
-                                type.tsym.name.append(names.Value), // x.intValue()
-                                new MethodType(List.<Type>nil(), type,
-                                    List.<Type>nil(), methodClass),
-                                sym);
-                        sym.members().enter(unboxMethod);
-                    }
+        sym.completer = new Completer() {
+            public void complete(Symbol sym) throws CompletionFailure {
+                try {
+                    completer.complete(sym);
+                } catch (CompletionFailure e) {
+                    sym.flags_field |= PUBLIC;
+                    ((ClassType) sym.type).supertype_field = objectType;
+                    MethodSymbol boxMethod =
+                        new MethodSymbol(PUBLIC | STATIC, names.valueOf,
+                                         new MethodType(List.of(type), sym.type,
+                                List.<Type>nil(), methodClass),
+                            sym);
+                    sym.members().enter(boxMethod);
+                    MethodSymbol unboxMethod =
+                        new MethodSymbol(PUBLIC,
+                            type.tsym.name.append(names.Value), // x.intValue()
+                            new MethodType(List.<Type>nil(), type,
+                                List.<Type>nil(), methodClass),
+                            sym);
+                    sym.members().enter(unboxMethod);
                 }
-            };
-        }
+            }
 
+            @Override
+            public boolean isTerminal() {
+                return completer.isTerminal();
+            }
+        };
     }
 
     // Enter a synthetic class that is used to mark classes in ct.sym.
@@ -309,7 +314,7 @@ public class Symtab {
     private Type enterSyntheticAnnotation(String name) {
         ClassType type = (ClassType)enterClass(name);
         ClassSymbol sym = (ClassSymbol)type.tsym;
-        sym.completer = null;
+        sym.completer = Completer.NULL_COMPLETER;
         sym.flags_field = PUBLIC|ACYCLIC|ANNOTATION|INTERFACE;
         sym.erasure_field = type;
         sym.members_field = WriteableScope.create(sym);

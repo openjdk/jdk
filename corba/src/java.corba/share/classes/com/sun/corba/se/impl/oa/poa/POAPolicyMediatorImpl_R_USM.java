@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package com.sun.corba.se.impl.oa.poa ;
 
 import java.util.Set ;
-
 import org.omg.CORBA.SystemException ;
 
 import org.omg.PortableServer.ServantActivator ;
@@ -50,6 +49,7 @@ import com.sun.corba.se.impl.javax.rmi.CORBA.Util ;
 
 import com.sun.corba.se.spi.oa.OAInvocationInfo ;
 import com.sun.corba.se.spi.oa.NullServant ;
+import com.sun.corba.se.impl.transport.ManagedLocalsThread;
 
 /** Implementation of POARequesHandler that provides policy specific
  * operations on the POA.
@@ -303,12 +303,13 @@ public class POAPolicyMediatorImpl_R_USM extends POAPolicyMediatorBase_R {
         throw new WrongPolicy();
     }
 
-    class Etherealizer extends Thread {
+    class Etherealizer extends ManagedLocalsThread {
         private POAPolicyMediatorImpl_R_USM mediator ;
         private ActiveObjectMap.Key key ;
         private AOMEntry entry ;
         private Servant servant ;
         private boolean debug ;
+
 
         public Etherealizer( POAPolicyMediatorImpl_R_USM mediator,
             ActiveObjectMap.Key key, AOMEntry entry, Servant servant,

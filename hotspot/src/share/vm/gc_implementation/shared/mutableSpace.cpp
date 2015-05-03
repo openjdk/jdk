@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +33,8 @@
 #include "runtime/thread.hpp"
 #endif // INCLUDE_ALL_GCS
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 MutableSpace::MutableSpace(size_t alignment): ImmutableSpace(), _top(NULL), _alignment(alignment) {
-  assert(MutableSpace::alignment() >= 0 &&
-         MutableSpace::alignment() % os::vm_page_size() == 0,
+  assert(MutableSpace::alignment() % os::vm_page_size() == 0,
          "Space should be aligned");
   _mangler = new MutableSpaceMangler(this);
 }
@@ -254,7 +251,7 @@ void MutableSpace::print() const { print_on(tty); }
 void MutableSpace::print_on(outputStream* st) const {
   MutableSpace::print_short_on(st);
   st->print_cr(" [" INTPTR_FORMAT "," INTPTR_FORMAT "," INTPTR_FORMAT ")",
-                 bottom(), top(), end());
+                 p2i(bottom()), p2i(top()), p2i(end()));
 }
 
 void MutableSpace::verify() {

@@ -24,11 +24,13 @@ dnl Process this file with m4 aarch64_ad.m4 to generate the arithmetic
 dnl and shift patterns patterns used in aarch64.ad.
 dnl
 // BEGIN This section of the file is automatically generated. Do not edit --------------
-
+dnl
+define(`ORL2I', `ifelse($1,I,orL2I)')
+dnl
 define(`BASE_SHIFT_INSN',
 `
 instruct $2$1_reg_$4_reg(iReg$1NoSp dst,
-                         iReg$1 src1, iReg$1 src2,
+                         iReg$1`'ORL2I($1) src1, iReg$1`'ORL2I($1) src2,
                          immI src3, rFlagsReg cr) %{
   match(Set dst ($2$1 src1 ($4$1 src2 src3)));
 
@@ -48,7 +50,7 @@ instruct $2$1_reg_$4_reg(iReg$1NoSp dst,
 define(`BASE_INVERTED_INSN',
 `
 instruct $2$1_reg_not_reg(iReg$1NoSp dst,
-                         iReg$1 src1, iReg$1 src2, imm$1_M1 m1,
+                         iReg$1`'ORL2I($1) src1, iReg$1`'ORL2I($1) src2, imm$1_M1 m1,
                          rFlagsReg cr) %{
 dnl This ifelse is because hotspot reassociates (xor (xor ..)..)
 dnl into this canonical form.
@@ -70,7 +72,7 @@ dnl into this canonical form.
 define(`INVERTED_SHIFT_INSN',
 `
 instruct $2$1_reg_$4_not_reg(iReg$1NoSp dst,
-                         iReg$1 src1, iReg$1 src2,
+                         iReg$1`'ORL2I($1) src1, iReg$1`'ORL2I($1) src2,
                          immI src3, imm$1_M1 src4, rFlagsReg cr) %{
 dnl This ifelse is because hotspot reassociates (xor (xor ..)..)
 dnl into this canonical form.
@@ -92,7 +94,7 @@ dnl into this canonical form.
 %}')dnl
 define(`NOT_INSN',
 `instruct reg$1_not_reg(iReg$1NoSp dst,
-                         iReg$1 src1, imm$1_M1 m1,
+                         iReg$1`'ORL2I($1) src1, imm$1_M1 m1,
                          rFlagsReg cr) %{
   match(Set dst (Xor$1 src1 m1));
   ins_cost(INSN_COST);
@@ -113,7 +115,7 @@ define(`BOTH_SHIFT_INSNS',
 BASE_SHIFT_INSN(L, $1, $2, $3, $4)')dnl
 dnl
 define(`BOTH_INVERTED_INSNS',
-`BASE_INVERTED_INSN(I, $1, $2, $3, $4)
+`BASE_INVERTED_INSN(I, $1, $2w, $3, $4)
 BASE_INVERTED_INSN(L, $1, $2, $3, $4)')dnl
 dnl
 define(`BOTH_INVERTED_SHIFT_INSNS',
@@ -149,7 +151,7 @@ define(`EXTEND', `($2$1 (LShift$1 $3 $4) $5)')
 define(`BFM_INSN',`
 // Shift Left followed by Shift Right.
 // This idiom is used by the compiler for the i2b bytecode etc.
-instruct $4$1(iReg$1NoSp dst, iReg$1 src, immI lshift_count, immI rshift_count)
+instruct $4$1(iReg$1NoSp dst, iReg$1`'ORL2I($1) src, immI lshift_count, immI rshift_count)
 %{
   match(Set dst EXTEND($1, $3, src, lshift_count, rshift_count));
   // Make sure we are not going to exceed what $4 can do.
@@ -176,7 +178,7 @@ BFM_INSN(I, 31, URShift, ubfmw)
 dnl
 // Bitfield extract with shift & mask
 define(`BFX_INSN',
-`instruct $3$1(iReg$1NoSp dst, iReg$1 src, immI rshift, imm$1_bitmask mask)
+`instruct $3$1(iReg$1NoSp dst, iReg$1`'ORL2I($1) src, immI rshift, imm$1_bitmask mask)
 %{
   match(Set dst (And$1 ($2$1 src rshift) mask));
 
@@ -215,7 +217,7 @@ instruct ubfxIConvI2L(iRegLNoSp dst, iRegIorL2I src, immI rshift, immI_bitmask m
 // Rotations
 
 define(`EXTRACT_INSN',
-`instruct extr$3$1(iReg$1NoSp dst, iReg$1 src1, iReg$1 src2, immI lshift, immI rshift, rFlagsReg cr)
+`instruct extr$3$1(iReg$1NoSp dst, iReg$1`'ORL2I($1) src1, iReg$1`'ORL2I($1) src2, immI lshift, immI rshift, rFlagsReg cr)
 %{
   match(Set dst ($3$1 (LShift$1 src1 lshift) (URShift$1 src2 rshift)));
   predicate(0 == ((n->in(1)->in(2)->get_int() + n->in(2)->in(2)->get_int()) & $2));
@@ -299,7 +301,7 @@ ROR_INSN(I, 0, ror)
 // Add/subtract (extended)
 dnl ADD_SUB_EXTENDED(mode, size, add node, shift node, insn, shift type, wordsize
 define(`ADD_SUB_CONV', `
-instruct $3Ext$1(iReg$2NoSp dst, iReg$2 src1, iReg$1orL2I src2, rFlagsReg cr)
+instruct $3Ext$1(iReg$2NoSp dst, iReg$2`'ORL2I($2) src1, iReg$1`'ORL2I($1) src2, rFlagsReg cr)
 %{
   match(Set dst ($3$2 src1 (ConvI2L src2)));
   ins_cost(INSN_COST);
@@ -315,7 +317,7 @@ ADD_SUB_CONV(I,L,Add,add,sxtw);
 ADD_SUB_CONV(I,L,Sub,sub,sxtw);
 dnl
 define(`ADD_SUB_EXTENDED', `
-instruct $3Ext$1_$6(iReg$1NoSp dst, iReg$1 src1, iReg$1 src2, immI_`'eval($7-$2) lshift, immI_`'eval($7-$2) rshift, rFlagsReg cr)
+instruct $3Ext$1_$6(iReg$1NoSp dst, iReg$1`'ORL2I($1) src1, iReg$1`'ORL2I($1) src2, immI_`'eval($7-$2) lshift, immI_`'eval($7-$2) rshift, rFlagsReg cr)
 %{
   match(Set dst ($3$1 src1 EXTEND($1, $4, src2, lshift, rshift)));
   ins_cost(INSN_COST);
@@ -337,7 +339,7 @@ ADD_SUB_EXTENDED(L,8,Add,URShift,add,uxtb,64)
 dnl
 dnl ADD_SUB_ZERO_EXTEND(mode, size, add node, insn, shift type)
 define(`ADD_SUB_ZERO_EXTEND', `
-instruct $3Ext$1_$5_and(iReg$1NoSp dst, iReg$1 src1, iReg$1 src2, imm$1_$2 mask, rFlagsReg cr)
+instruct $3Ext$1_$5_and(iReg$1NoSp dst, iReg$1`'ORL2I($1) src1, iReg$1`'ORL2I($1) src2, imm$1_$2 mask, rFlagsReg cr)
 %{
   match(Set dst ($3$1 src1 (And$1 src2 mask)));
   ins_cost(INSN_COST);

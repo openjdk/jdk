@@ -32,9 +32,9 @@ import sun.reflect.Reflection;
 
 /**
  * Every Java application has a single instance of class
- * <code>Runtime</code> that allows the application to interface with
+ * {@code Runtime} that allows the application to interface with
  * the environment in which the application is running. The current
- * runtime can be obtained from the <code>getRuntime</code> method.
+ * runtime can be obtained from the {@code getRuntime} method.
  * <p>
  * An application cannot create its own instance of this class.
  *
@@ -48,10 +48,10 @@ public class Runtime {
 
     /**
      * Returns the runtime object associated with the current Java application.
-     * Most of the methods of class <code>Runtime</code> are instance
+     * Most of the methods of class {@code Runtime} are instance
      * methods and must be invoked with respect to the current runtime object.
      *
-     * @return  the <code>Runtime</code> object associated with the current
+     * @return  the {@code Runtime} object associated with the current
      *          Java application.
      */
     public static Runtime getRuntime() {
@@ -72,8 +72,7 @@ public class Runtime {
      * if any, are started in some unspecified order and allowed to run
      * concurrently until they finish.  In the second phase all uninvoked
      * finalizers are run if {@link #runFinalizersOnExit finalization-on-exit}
-     * has been enabled.  Once this is done the virtual machine {@link #halt
-     * halts}.
+     * has been enabled.  Once this is done the virtual machine {@link #halt halts}.
      *
      * <p> If this method is invoked after the virtual machine has begun its
      * shutdown sequence then if shutdown hooks are being run this method will
@@ -82,7 +81,7 @@ public class Runtime {
      * with the given status code if the status is nonzero; otherwise, it
      * blocks indefinitely.
      *
-     * <p> The <tt>{@link System#exit(int) System.exit}</tt> method is the
+     * <p> The {@link System#exit(int) System.exit} method is the
      * conventional and convenient means of invoking this method.
      *
      * @param  status
@@ -90,8 +89,8 @@ public class Runtime {
      *         indicates abnormal termination.
      *
      * @throws SecurityException
-     *         If a security manager is present and its <tt>{@link
-     *         SecurityManager#checkExit checkExit}</tt> method does not permit
+     *         If a security manager is present and its
+     *         {@link SecurityManager#checkExit checkExit} method does not permit
      *         exiting with the specified status
      *
      * @see java.lang.SecurityException
@@ -118,11 +117,11 @@ public class Runtime {
      *   <ul>
      *
      *   <li> The program <i>exits</i> normally, when the last non-daemon
-     *   thread exits or when the <tt>{@link #exit exit}</tt> (equivalently,
+     *   thread exits or when the {@link #exit exit} (equivalently,
      *   {@link System#exit(int) System.exit}) method is invoked, or
      *
      *   <li> The virtual machine is <i>terminated</i> in response to a
-     *   user interrupt, such as typing <tt>^C</tt>, or a system-wide event,
+     *   user interrupt, such as typing {@code ^C}, or a system-wide event,
      *   such as user logoff or system shutdown.
      *
      *   </ul>
@@ -134,17 +133,16 @@ public class Runtime {
      * run all uninvoked finalizers if finalization-on-exit has been enabled.
      * Finally, the virtual machine will halt.  Note that daemon threads will
      * continue to run during the shutdown sequence, as will non-daemon threads
-     * if shutdown was initiated by invoking the <tt>{@link #exit exit}</tt>
-     * method.
+     * if shutdown was initiated by invoking the {@link #exit exit} method.
      *
      * <p> Once the shutdown sequence has begun it can be stopped only by
-     * invoking the <tt>{@link #halt halt}</tt> method, which forcibly
+     * invoking the {@link #halt halt} method, which forcibly
      * terminates the virtual machine.
      *
      * <p> Once the shutdown sequence has begun it is impossible to register a
      * new shutdown hook or de-register a previously-registered hook.
      * Attempting either of these operations will cause an
-     * <tt>{@link IllegalStateException}</tt> to be thrown.
+     * {@link IllegalStateException} to be thrown.
      *
      * <p> Shutdown hooks run at a delicate time in the life cycle of a virtual
      * machine and should therefore be coded defensively.  They should, in
@@ -156,7 +154,7 @@ public class Runtime {
      * deadlocks.
      *
      * <p> Shutdown hooks should also finish their work quickly.  When a
-     * program invokes <tt>{@link #exit exit}</tt> the expectation is
+     * program invokes {@link #exit exit} the expectation is
      * that the virtual machine will promptly shut down and exit.  When the
      * virtual machine is terminated due to user logoff or system shutdown the
      * underlying operating system may only allow a fixed amount of time in
@@ -165,17 +163,17 @@ public class Runtime {
      * hook.
      *
      * <p> Uncaught exceptions are handled in shutdown hooks just as in any
-     * other thread, by invoking the <tt>{@link ThreadGroup#uncaughtException
-     * uncaughtException}</tt> method of the thread's <tt>{@link
-     * ThreadGroup}</tt> object.  The default implementation of this method
-     * prints the exception's stack trace to <tt>{@link System#err}</tt> and
+     * other thread, by invoking the
+     * {@link ThreadGroup#uncaughtException uncaughtException} method of the
+     * thread's {@link ThreadGroup} object. The default implementation of this
+     * method prints the exception's stack trace to {@link System#err} and
      * terminates the thread; it does not cause the virtual machine to exit or
      * halt.
      *
      * <p> In rare circumstances the virtual machine may <i>abort</i>, that is,
      * stop running without shutting down cleanly.  This occurs when the
      * virtual machine is terminated externally, for example with the
-     * <tt>SIGKILL</tt> signal on Unix or the <tt>TerminateProcess</tt> call on
+     * {@code SIGKILL} signal on Unix or the {@code TerminateProcess} call on
      * Microsoft Windows.  The virtual machine may also abort if a native
      * method goes awry by, for example, corrupting internal data structures or
      * attempting to access nonexistent memory.  If the virtual machine aborts
@@ -183,7 +181,7 @@ public class Runtime {
      * will be run.
      *
      * @param   hook
-     *          An initialized but unstarted <tt>{@link Thread}</tt> object
+     *          An initialized but unstarted {@link Thread} object
      *
      * @throws  IllegalArgumentException
      *          If the specified hook has already been registered,
@@ -196,7 +194,7 @@ public class Runtime {
      *
      * @throws  SecurityException
      *          If a security manager is present and it denies
-     *          <tt>{@link RuntimePermission}("shutdownHooks")</tt>
+     *          {@link RuntimePermission}("shutdownHooks")
      *
      * @see #removeShutdownHook
      * @see #halt(int)
@@ -212,11 +210,11 @@ public class Runtime {
     }
 
     /**
-     * De-registers a previously-registered virtual-machine shutdown hook. <p>
+     * De-registers a previously-registered virtual-machine shutdown hook.
      *
      * @param hook the hook to remove
-     * @return <tt>true</tt> if the specified hook had previously been
-     * registered and was successfully de-registered, <tt>false</tt>
+     * @return {@code true} if the specified hook had previously been
+     * registered and was successfully de-registered, {@code false}
      * otherwise.
      *
      * @throws  IllegalStateException
@@ -225,7 +223,7 @@ public class Runtime {
      *
      * @throws  SecurityException
      *          If a security manager is present and it denies
-     *          <tt>{@link RuntimePermission}("shutdownHooks")</tt>
+     *          {@link RuntimePermission}("shutdownHooks")
      *
      * @see #addShutdownHook
      * @see #exit(int)
@@ -244,23 +242,23 @@ public class Runtime {
      * method never returns normally.
      *
      * <p> This method should be used with extreme caution.  Unlike the
-     * <tt>{@link #exit exit}</tt> method, this method does not cause shutdown
+     * {@link #exit exit} method, this method does not cause shutdown
      * hooks to be started and does not run uninvoked finalizers if
      * finalization-on-exit has been enabled.  If the shutdown sequence has
      * already been initiated then this method does not wait for any running
      * shutdown hooks or finalizers to finish their work.
      *
      * @param  status
-     *         Termination status.  By convention, a nonzero status code
-     *         indicates abnormal termination.  If the <tt>{@link Runtime#exit
-     *         exit}</tt> (equivalently, <tt>{@link System#exit(int)
-     *         System.exit}</tt>) method has already been invoked then this
-     *         status code will override the status code passed to that method.
+     *         Termination status. By convention, a nonzero status code
+     *         indicates abnormal termination. If the {@link Runtime#exit exit}
+     *         (equivalently, {@link System#exit(int) System.exit}) method
+     *         has already been invoked then this status code
+     *         will override the status code passed to that method.
      *
      * @throws SecurityException
-     *         If a security manager is present and its <tt>{@link
-     *         SecurityManager#checkExit checkExit}</tt> method does not permit
-     *         an exit with the specified status
+     *         If a security manager is present and its
+     *         {@link SecurityManager#checkExit checkExit} method
+     *         does not permit an exit with the specified status
      *
      * @see #exit
      * @see #addShutdownHook
@@ -282,7 +280,7 @@ public class Runtime {
      * By default, finalization on exit is disabled.
      *
      * <p>If there is a security manager,
-     * its <code>checkExit</code> method is first called
+     * its {@code checkExit} method is first called
      * with 0 as its argument to ensure the exit is allowed.
      * This could result in a SecurityException.
      *
@@ -293,7 +291,7 @@ public class Runtime {
      *      behavior or deadlock.
      *
      * @throws  SecurityException
-     *        if a security manager exists and its <code>checkExit</code>
+     *        if a security manager exists and its {@code checkExit}
      *        method doesn't allow the exit.
      *
      * @see     java.lang.Runtime#exit(int)
@@ -318,9 +316,9 @@ public class Runtime {
      * Executes the specified string command in a separate process.
      *
      * <p>This is a convenience method.  An invocation of the form
-     * <tt>exec(command)</tt>
+     * {@code exec(command)}
      * behaves in exactly the same way as the invocation
-     * <tt>{@link #exec(String, String[], File) exec}(command, null, null)</tt>.
+     * {@link #exec(String, String[], File) exec}{@code (command, null, null)}.
      *
      * @param   command   a specified system command.
      *
@@ -335,10 +333,10 @@ public class Runtime {
      *          If an I/O error occurs
      *
      * @throws  NullPointerException
-     *          If <code>command</code> is <code>null</code>
+     *          If {@code command} is {@code null}
      *
      * @throws  IllegalArgumentException
-     *          If <code>command</code> is empty
+     *          If {@code command} is empty
      *
      * @see     #exec(String[], String[], File)
      * @see     ProcessBuilder
@@ -352,16 +350,16 @@ public class Runtime {
      * specified environment.
      *
      * <p>This is a convenience method.  An invocation of the form
-     * <tt>exec(command, envp)</tt>
+     * {@code exec(command, envp)}
      * behaves in exactly the same way as the invocation
-     * <tt>{@link #exec(String, String[], File) exec}(command, envp, null)</tt>.
+     * {@link #exec(String, String[], File) exec}{@code (command, envp, null)}.
      *
      * @param   command   a specified system command.
      *
      * @param   envp      array of strings, each element of which
      *                    has environment variable settings in the format
      *                    <i>name</i>=<i>value</i>, or
-     *                    <tt>null</tt> if the subprocess should inherit
+     *                    {@code null} if the subprocess should inherit
      *                    the environment of the current process.
      *
      * @return  A new {@link Process} object for managing the subprocess
@@ -375,11 +373,11 @@ public class Runtime {
      *          If an I/O error occurs
      *
      * @throws  NullPointerException
-     *          If <code>command</code> is <code>null</code>,
-     *          or one of the elements of <code>envp</code> is <code>null</code>
+     *          If {@code command} is {@code null},
+     *          or one of the elements of {@code envp} is {@code null}
      *
      * @throws  IllegalArgumentException
-     *          If <code>command</code> is empty
+     *          If {@code command} is empty
      *
      * @see     #exec(String[], String[], File)
      * @see     ProcessBuilder
@@ -393,29 +391,29 @@ public class Runtime {
      * specified environment and working directory.
      *
      * <p>This is a convenience method.  An invocation of the form
-     * <tt>exec(command, envp, dir)</tt>
+     * {@code exec(command, envp, dir)}
      * behaves in exactly the same way as the invocation
-     * <tt>{@link #exec(String[], String[], File) exec}(cmdarray, envp, dir)</tt>,
-     * where <code>cmdarray</code> is an array of all the tokens in
-     * <code>command</code>.
+     * {@link #exec(String[], String[], File) exec}{@code (cmdarray, envp, dir)},
+     * where {@code cmdarray} is an array of all the tokens in
+     * {@code command}.
      *
-     * <p>More precisely, the <code>command</code> string is broken
+     * <p>More precisely, the {@code command} string is broken
      * into tokens using a {@link StringTokenizer} created by the call
-     * <code>new {@link StringTokenizer}(command)</code> with no
+     * {@code new {@link StringTokenizer}(command)} with no
      * further modification of the character categories.  The tokens
      * produced by the tokenizer are then placed in the new string
-     * array <code>cmdarray</code>, in the same order.
+     * array {@code cmdarray}, in the same order.
      *
      * @param   command   a specified system command.
      *
      * @param   envp      array of strings, each element of which
      *                    has environment variable settings in the format
      *                    <i>name</i>=<i>value</i>, or
-     *                    <tt>null</tt> if the subprocess should inherit
+     *                    {@code null} if the subprocess should inherit
      *                    the environment of the current process.
      *
      * @param   dir       the working directory of the subprocess, or
-     *                    <tt>null</tt> if the subprocess should inherit
+     *                    {@code null} if the subprocess should inherit
      *                    the working directory of the current process.
      *
      * @return  A new {@link Process} object for managing the subprocess
@@ -429,11 +427,11 @@ public class Runtime {
      *          If an I/O error occurs
      *
      * @throws  NullPointerException
-     *          If <code>command</code> is <code>null</code>,
-     *          or one of the elements of <code>envp</code> is <code>null</code>
+     *          If {@code command} is {@code null},
+     *          or one of the elements of {@code envp} is {@code null}
      *
      * @throws  IllegalArgumentException
-     *          If <code>command</code> is empty
+     *          If {@code command} is empty
      *
      * @see     ProcessBuilder
      * @since 1.3
@@ -454,9 +452,9 @@ public class Runtime {
      * Executes the specified command and arguments in a separate process.
      *
      * <p>This is a convenience method.  An invocation of the form
-     * <tt>exec(cmdarray)</tt>
+     * {@code exec(cmdarray)}
      * behaves in exactly the same way as the invocation
-     * <tt>{@link #exec(String[], String[], File) exec}(cmdarray, null, null)</tt>.
+     * {@link #exec(String[], String[], File) exec}{@code (cmdarray, null, null)}.
      *
      * @param   cmdarray  array containing the command to call and
      *                    its arguments.
@@ -472,12 +470,12 @@ public class Runtime {
      *          If an I/O error occurs
      *
      * @throws  NullPointerException
-     *          If <code>cmdarray</code> is <code>null</code>,
-     *          or one of the elements of <code>cmdarray</code> is <code>null</code>
+     *          If {@code cmdarray} is {@code null},
+     *          or one of the elements of {@code cmdarray} is {@code null}
      *
      * @throws  IndexOutOfBoundsException
-     *          If <code>cmdarray</code> is an empty array
-     *          (has length <code>0</code>)
+     *          If {@code cmdarray} is an empty array
+     *          (has length {@code 0})
      *
      * @see     ProcessBuilder
      */
@@ -490,9 +488,9 @@ public class Runtime {
      * with the specified environment.
      *
      * <p>This is a convenience method.  An invocation of the form
-     * <tt>exec(cmdarray, envp)</tt>
+     * {@code exec(cmdarray, envp)}
      * behaves in exactly the same way as the invocation
-     * <tt>{@link #exec(String[], String[], File) exec}(cmdarray, envp, null)</tt>.
+     * {@link #exec(String[], String[], File) exec}{@code (cmdarray, envp, null)}.
      *
      * @param   cmdarray  array containing the command to call and
      *                    its arguments.
@@ -500,7 +498,7 @@ public class Runtime {
      * @param   envp      array of strings, each element of which
      *                    has environment variable settings in the format
      *                    <i>name</i>=<i>value</i>, or
-     *                    <tt>null</tt> if the subprocess should inherit
+     *                    {@code null} if the subprocess should inherit
      *                    the environment of the current process.
      *
      * @return  A new {@link Process} object for managing the subprocess
@@ -514,13 +512,13 @@ public class Runtime {
      *          If an I/O error occurs
      *
      * @throws  NullPointerException
-     *          If <code>cmdarray</code> is <code>null</code>,
-     *          or one of the elements of <code>cmdarray</code> is <code>null</code>,
-     *          or one of the elements of <code>envp</code> is <code>null</code>
+     *          If {@code cmdarray} is {@code null},
+     *          or one of the elements of {@code cmdarray} is {@code null},
+     *          or one of the elements of {@code envp} is {@code null}
      *
      * @throws  IndexOutOfBoundsException
-     *          If <code>cmdarray</code> is an empty array
-     *          (has length <code>0</code>)
+     *          If {@code cmdarray} is an empty array
+     *          (has length {@code 0})
      *
      * @see     ProcessBuilder
      */
@@ -533,17 +531,17 @@ public class Runtime {
      * Executes the specified command and arguments in a separate process with
      * the specified environment and working directory.
      *
-     * <p>Given an array of strings <code>cmdarray</code>, representing the
-     * tokens of a command line, and an array of strings <code>envp</code>,
+     * <p>Given an array of strings {@code cmdarray}, representing the
+     * tokens of a command line, and an array of strings {@code envp},
      * representing "environment" variable settings, this method creates
      * a new process in which to execute the specified command.
      *
-     * <p>This method checks that <code>cmdarray</code> is a valid operating
+     * <p>This method checks that {@code cmdarray} is a valid operating
      * system command.  Which commands are valid is system-dependent,
      * but at the very least the command must be a non-empty list of
      * non-null strings.
      *
-     * <p>If <tt>envp</tt> is <tt>null</tt>, the subprocess inherits the
+     * <p>If {@code envp} is {@code null}, the subprocess inherits the
      * environment settings of the current process.
      *
      * <p>A minimal set of system dependent environment variables may
@@ -554,14 +552,14 @@ public class Runtime {
      * <p>{@link ProcessBuilder#start()} is now the preferred way to
      * start a process with a modified environment.
      *
-     * <p>The working directory of the new subprocess is specified by <tt>dir</tt>.
-     * If <tt>dir</tt> is <tt>null</tt>, the subprocess inherits the
+     * <p>The working directory of the new subprocess is specified by {@code dir}.
+     * If {@code dir} is {@code null}, the subprocess inherits the
      * current working directory of the current process.
      *
      * <p>If a security manager exists, its
      * {@link SecurityManager#checkExec checkExec}
      * method is invoked with the first component of the array
-     * <code>cmdarray</code> as its argument. This may result in a
+     * {@code cmdarray} as its argument. This may result in a
      * {@link SecurityException} being thrown.
      *
      * <p>Starting an operating system process is highly system-dependent.
@@ -586,11 +584,11 @@ public class Runtime {
      * @param   envp      array of strings, each element of which
      *                    has environment variable settings in the format
      *                    <i>name</i>=<i>value</i>, or
-     *                    <tt>null</tt> if the subprocess should inherit
+     *                    {@code null} if the subprocess should inherit
      *                    the environment of the current process.
      *
      * @param   dir       the working directory of the subprocess, or
-     *                    <tt>null</tt> if the subprocess should inherit
+     *                    {@code null} if the subprocess should inherit
      *                    the working directory of the current process.
      *
      * @return  A new {@link Process} object for managing the subprocess
@@ -607,13 +605,13 @@ public class Runtime {
      *          If an I/O error occurs
      *
      * @throws  NullPointerException
-     *          If <code>cmdarray</code> is <code>null</code>,
-     *          or one of the elements of <code>cmdarray</code> is <code>null</code>,
-     *          or one of the elements of <code>envp</code> is <code>null</code>
+     *          If {@code cmdarray} is {@code null},
+     *          or one of the elements of {@code cmdarray} is {@code null},
+     *          or one of the elements of {@code envp} is {@code null}
      *
      * @throws  IndexOutOfBoundsException
-     *          If <code>cmdarray</code> is an empty array
-     *          (has length <code>0</code>)
+     *          If {@code cmdarray} is an empty array
+     *          (has length {@code 0})
      *
      * @see     ProcessBuilder
      * @since 1.3
@@ -643,8 +641,8 @@ public class Runtime {
     /**
      * Returns the amount of free memory in the Java Virtual Machine.
      * Calling the
-     * <code>gc</code> method may result in increasing the value returned
-     * by <code>freeMemory.</code>
+     * {@code gc} method may result in increasing the value returned
+     * by {@code freeMemory.}
      *
      * @return  an approximation to the total amount of memory currently
      *          available for future allocated objects, measured in bytes.
@@ -665,9 +663,9 @@ public class Runtime {
     public native long totalMemory();
 
     /**
-     * Returns the maximum amount of memory that the Java virtual machine will
-     * attempt to use.  If there is no inherent limit then the value {@link
-     * java.lang.Long#MAX_VALUE} will be returned.
+     * Returns the maximum amount of memory that the Java virtual machine
+     * will attempt to use.  If there is no inherent limit then the value
+     * {@link java.lang.Long#MAX_VALUE} will be returned.
      *
      * @return  the maximum amount of memory that the virtual machine will
      *          attempt to use, measured in bytes
@@ -683,10 +681,10 @@ public class Runtime {
      * returns from the method call, the virtual machine has made
      * its best effort to recycle all discarded objects.
      * <p>
-     * The name <code>gc</code> stands for "garbage
+     * The name {@code gc} stands for "garbage
      * collector". The virtual machine performs this recycling
      * process automatically as needed, in a separate thread, even if the
-     * <code>gc</code> method is not invoked explicitly.
+     * {@code gc} method is not invoked explicitly.
      * <p>
      * The method {@link System#gc()} is the conventional and convenient
      * means of invoking this method.
@@ -699,15 +697,15 @@ public class Runtime {
     /**
      * Runs the finalization methods of any objects pending finalization.
      * Calling this method suggests that the Java virtual machine expend
-     * effort toward running the <code>finalize</code> methods of objects
-     * that have been found to be discarded but whose <code>finalize</code>
+     * effort toward running the {@code finalize} methods of objects
+     * that have been found to be discarded but whose {@code finalize}
      * methods have not yet been run. When control returns from the
      * method call, the virtual machine has made a best effort to
      * complete all outstanding finalizations.
      * <p>
      * The virtual machine performs the finalization process
      * automatically as needed, in a separate thread, if the
-     * <code>runFinalization</code> method is not invoked explicitly.
+     * {@code runFinalization} method is not invoked explicitly.
      * <p>
      * The method {@link System#runFinalization()} is the conventional
      * and convenient means of invoking this method.
@@ -720,7 +718,7 @@ public class Runtime {
 
     /**
      * Enables/Disables tracing of instructions.
-     * If the <code>boolean</code> argument is <code>true</code>, this
+     * If the {@code boolean} argument is {@code true}, this
      * method suggests that the Java virtual machine emit debugging
      * information for each instruction in the virtual machine as it
      * is executed. The format of this information, and the file or other
@@ -729,18 +727,18 @@ public class Runtime {
      * this feature. The destination of the trace output is system
      * dependent.
      * <p>
-     * If the <code>boolean</code> argument is <code>false</code>, this
+     * If the {@code boolean} argument is {@code false}, this
      * method causes the virtual machine to stop performing the
      * detailed instruction trace it is performing.
      *
-     * @param   on   <code>true</code> to enable instruction tracing;
-     *               <code>false</code> to disable this feature.
+     * @param   on   {@code true} to enable instruction tracing;
+     *               {@code false} to disable this feature.
      */
     public void traceInstructions(boolean on) { }
 
     /**
      * Enables/Disables tracing of method calls.
-     * If the <code>boolean</code> argument is <code>true</code>, this
+     * If the {@code boolean} argument is {@code true}, this
      * method suggests that the Java virtual machine emit debugging
      * information for each method in the virtual machine as it is
      * called. The format of this information, and the file or other output
@@ -751,8 +749,8 @@ public class Runtime {
      * Calling this method with argument false suggests that the
      * virtual machine cease emitting per-call debugging information.
      *
-     * @param   on   <code>true</code> to enable instruction tracing;
-     *               <code>false</code> to disable this feature.
+     * @param   on   {@code true} to enable instruction tracing;
+     *               {@code false} to disable this feature.
      */
     public void traceMethodCalls(boolean on) { }
 
@@ -760,7 +758,7 @@ public class Runtime {
      * Loads the native library specified by the filename argument.  The filename
      * argument must be an absolute path name.
      * (for example
-     * <code>Runtime.getRuntime().load("/home/avh/lib/libX11.so");</code>).
+     * {@code Runtime.getRuntime().load("/home/avh/lib/libX11.so");}).
      *
      * If the filename argument, when stripped of any platform-specific library
      * prefix, path, and file extension, indicates a library whose name is,
@@ -773,8 +771,8 @@ public class Runtime {
      * Otherwise, the filename argument is mapped to a native library image in
      * an implementation-dependent manner.
      * <p>
-     * First, if there is a security manager, its <code>checkLink</code>
-     * method is called with the <code>filename</code> as its argument.
+     * First, if there is a security manager, its {@code checkLink}
+     * method is called with the {@code filename} as its argument.
      * This may result in a security exception.
      * <p>
      * This is similar to the method {@link #loadLibrary(String)}, but it
@@ -786,14 +784,14 @@ public class Runtime {
      *
      * @param      filename   the file to load.
      * @exception  SecurityException  if a security manager exists and its
-     *             <code>checkLink</code> method doesn't allow
+     *             {@code checkLink} method doesn't allow
      *             loading of the specified dynamic library
      * @exception  UnsatisfiedLinkError  if either the filename is not an
      *             absolute path name, the native library is not statically
      *             linked with the VM, or the library cannot be mapped to
      *             a native library image by the host system.
-     * @exception  NullPointerException if <code>filename</code> is
-     *             <code>null</code>
+     * @exception  NullPointerException if {@code filename} is
+     *             {@code null}
      * @see        java.lang.Runtime#getRuntime()
      * @see        java.lang.SecurityException
      * @see        java.lang.SecurityManager#checkLink(java.lang.String)
@@ -816,26 +814,26 @@ public class Runtime {
     }
 
     /**
-     * Loads the native library specified by the <code>libname</code>
-     * argument.  The <code>libname</code> argument must not contain any platform
+     * Loads the native library specified by the {@code libname}
+     * argument.  The {@code libname} argument must not contain any platform
      * specific prefix, file extension or path. If a native library
-     * called <code>libname</code> is statically linked with the VM, then the
-     * JNI_OnLoad_<code>libname</code> function exported by the library is invoked.
+     * called {@code libname} is statically linked with the VM, then the
+     * JNI_OnLoad_{@code libname} function exported by the library is invoked.
      * See the JNI Specification for more details.
      *
      * Otherwise, the libname argument is loaded from a system library
      * location and mapped to a native library image in an implementation-
      * dependent manner.
      * <p>
-     * First, if there is a security manager, its <code>checkLink</code>
-     * method is called with the <code>libname</code> as its argument.
+     * First, if there is a security manager, its {@code checkLink}
+     * method is called with the {@code libname} as its argument.
      * This may result in a security exception.
      * <p>
      * The method {@link System#loadLibrary(String)} is the conventional
      * and convenient means of invoking this method. If native
      * methods are to be used in the implementation of a class, a standard
      * strategy is to put the native code in a library file (call it
-     * <code>LibFile</code>) and then to put a static initializer:
+     * {@code LibFile}) and then to put a static initializer:
      * <blockquote><pre>
      * static { System.loadLibrary("LibFile"); }
      * </pre></blockquote>
@@ -848,14 +846,14 @@ public class Runtime {
      *
      * @param      libname   the name of the library.
      * @exception  SecurityException  if a security manager exists and its
-     *             <code>checkLink</code> method doesn't allow
+     *             {@code checkLink} method doesn't allow
      *             loading of the specified dynamic library
      * @exception  UnsatisfiedLinkError if either the libname argument
      *             contains a file path, the native library is not statically
      *             linked with the VM,  or the library cannot be mapped to a
      *             native library image by the host system.
-     * @exception  NullPointerException if <code>libname</code> is
-     *             <code>null</code>
+     * @exception  NullPointerException if {@code libname} is
+     *             {@code null}
      * @see        java.lang.SecurityException
      * @see        java.lang.SecurityManager#checkLink(java.lang.String)
      */
@@ -878,7 +876,7 @@ public class Runtime {
 
     /**
      * Creates a localized version of an input stream. This method takes
-     * an <code>InputStream</code> and returns an <code>InputStream</code>
+     * an {@code InputStream} and returns an {@code InputStream}
      * equivalent to the argument in all respects except that it is
      * localized: as characters in the local character set are read from
      * the stream, they are automatically converted from the local
@@ -894,7 +892,7 @@ public class Runtime {
      * @see        java.io.InputStreamReader#InputStreamReader(java.io.InputStream)
      * @deprecated As of JDK&nbsp;1.1, the preferred way to translate a byte
      * stream in the local encoding into a character stream in Unicode is via
-     * the <code>InputStreamReader</code> and <code>BufferedReader</code>
+     * the {@code InputStreamReader} and {@code BufferedReader}
      * classes.
      */
     @Deprecated
@@ -904,8 +902,8 @@ public class Runtime {
 
     /**
      * Creates a localized version of an output stream. This method
-     * takes an <code>OutputStream</code> and returns an
-     * <code>OutputStream</code> equivalent to the argument in all respects
+     * takes an {@code OutputStream} and returns an
+     * {@code OutputStream} equivalent to the argument in all respects
      * except that it is localized: as Unicode characters are written to
      * the stream, they are automatically converted to the local
      * character set.
@@ -915,8 +913,8 @@ public class Runtime {
      *
      * @deprecated As of JDK&nbsp;1.1, the preferred way to translate a
      * Unicode character stream into a byte stream in the local encoding is via
-     * the <code>OutputStreamWriter</code>, <code>BufferedWriter</code>, and
-     * <code>PrintWriter</code> classes.
+     * the {@code OutputStreamWriter}, {@code BufferedWriter}, and
+     * {@code PrintWriter} classes.
      *
      * @param      out OutputStream to localize
      * @return     a localized output stream
