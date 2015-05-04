@@ -30,9 +30,9 @@
  * @run driver TestLargePageSizeInBytes
  */
 
-import com.oracle.java.testlibrary.OutputAnalyzer;
-import com.oracle.java.testlibrary.Platform;
-import com.oracle.java.testlibrary.ProcessTools;
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.Platform;
+import jdk.test.lib.ProcessTools;
 
 public class TestLargePageSizeInBytes {
     private static long M = 1024L * 1024L;

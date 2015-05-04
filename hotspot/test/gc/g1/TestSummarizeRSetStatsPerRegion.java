@@ -32,7 +32,7 @@
  * @run main TestSummarizeRSetStatsPerRegion
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 import java.lang.Thread;
 import java.util.ArrayList;
 import java.util.Arrays;

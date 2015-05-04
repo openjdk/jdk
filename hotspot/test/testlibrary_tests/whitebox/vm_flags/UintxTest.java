@@ -34,7 +34,7 @@
  * @summary testing of WB::set/getUintxVMFlag()
  * @author igor.ignatyev@oracle.com
  */
-import com.oracle.java.testlibrary.Platform;
+import jdk.test.lib.Platform;
 
 public class UintxTest {
     private static final String FLAG_NAME = "VerifyGCStartAt";

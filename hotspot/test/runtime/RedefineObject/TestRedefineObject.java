@@ -21,7 +21,7 @@
  * questions.
  */
 import java.io.PrintWriter;
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 /*
  * Test to redefine java/lang/Object and verify that it doesn't crash on vtable

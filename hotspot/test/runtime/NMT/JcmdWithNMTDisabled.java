@@ -31,7 +31,7 @@
  * @run main JcmdWithNMTDisabled 1
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 public class JcmdWithNMTDisabled {
   static ProcessBuilder pb = new ProcessBuilder();

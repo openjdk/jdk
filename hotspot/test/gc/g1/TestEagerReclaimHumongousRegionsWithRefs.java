@@ -39,9 +39,9 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.LinkedList;
 
-import com.oracle.java.testlibrary.OutputAnalyzer;
-import com.oracle.java.testlibrary.ProcessTools;
-import static com.oracle.java.testlibrary.Asserts.*;
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.ProcessTools;
+import static jdk.test.lib.Asserts.*;
 
 class RefHolder {
   Object ref;

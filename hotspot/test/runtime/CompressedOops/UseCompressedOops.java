@@ -32,7 +32,7 @@
  */
 import java.util.ArrayList;
 import java.util.Collections;
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 public class UseCompressedOops {
 
