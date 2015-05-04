@@ -31,7 +31,7 @@
  * @modules java.base/sun.misc
  *          java.management
  */
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 public class CheckReservedInitialCodeCacheSizeArgOrder {
   public static void main(String[] args) throws Exception {

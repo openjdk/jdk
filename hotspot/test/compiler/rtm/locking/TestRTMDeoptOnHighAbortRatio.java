@@ -38,9 +38,9 @@
  */
 
 import java.util.List;
-import com.oracle.java.testlibrary.*;
-import com.oracle.java.testlibrary.cli.CommandLineOptionTest;
-import com.oracle.java.testlibrary.cli.predicate.AndPredicate;
+import jdk.test.lib.*;
+import jdk.test.lib.cli.CommandLineOptionTest;
+import jdk.test.lib.cli.predicate.AndPredicate;
 import rtm.*;
 import rtm.predicate.SupportedCPU;
 import rtm.predicate.SupportedVM;

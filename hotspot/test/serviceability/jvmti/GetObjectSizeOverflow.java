@@ -21,7 +21,7 @@
  * questions.
  */
 import java.io.PrintWriter;
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 /*
  * Test to verify GetObjectSize does not overflow on a 600M element int[]
@@ -34,7 +34,7 @@ import com.oracle.java.testlibrary.*;
  *          java.instrument
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
- * @build ClassFileInstaller com.oracle.java.testlibrary.* GetObjectSizeOverflowAgent
+ * @build ClassFileInstaller jdk.test.lib.* GetObjectSizeOverflowAgent
  * @run main ClassFileInstaller GetObjectSizeOverflowAgent
  * @run main GetObjectSizeOverflow
  */

@@ -33,7 +33,7 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=summary JcmdSummaryDiff
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 import sun.hotspot.WhiteBox;
 
