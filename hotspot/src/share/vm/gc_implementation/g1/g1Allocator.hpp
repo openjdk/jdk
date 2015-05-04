@@ -53,7 +53,7 @@ public:
    virtual void release_mutator_alloc_region() = 0;
 
    virtual void init_gc_alloc_regions(EvacuationInfo& evacuation_info) = 0;
-   virtual void release_gc_alloc_regions(uint no_of_gc_workers, EvacuationInfo& evacuation_info) = 0;
+   virtual void release_gc_alloc_regions(EvacuationInfo& evacuation_info) = 0;
    virtual void abandon_gc_alloc_regions() = 0;
 
    virtual MutatorAllocRegion*    mutator_alloc_region(AllocationContext_t context) = 0;
@@ -114,7 +114,7 @@ public:
   virtual void release_mutator_alloc_region();
 
   virtual void init_gc_alloc_regions(EvacuationInfo& evacuation_info);
-  virtual void release_gc_alloc_regions(uint no_of_gc_workers, EvacuationInfo& evacuation_info);
+  virtual void release_gc_alloc_regions(EvacuationInfo& evacuation_info);
   virtual void abandon_gc_alloc_regions();
 
   virtual bool is_retained_old_region(HeapRegion* hr) {
@@ -188,12 +188,6 @@ protected:
   // architectures have a special compare against zero instructions.
   const uint _survivor_alignment_bytes;
 
-  size_t _alloc_buffer_waste;
-  size_t _undo_waste;
-
-  void add_to_alloc_buffer_waste(size_t waste) { _alloc_buffer_waste += waste; }
-  void add_to_undo_waste(size_t waste)         { _undo_waste += waste; }
-
   virtual void retire_alloc_buffers() = 0;
   virtual G1PLAB* alloc_buffer(InCSetState dest, AllocationContext_t context) = 0;
 
@@ -213,15 +207,12 @@ protected:
 
 public:
   G1ParGCAllocator(G1CollectedHeap* g1h) :
-    _g1h(g1h), _survivor_alignment_bytes(calc_survivor_alignment_bytes()),
-    _alloc_buffer_waste(0), _undo_waste(0) {
-  }
+    _g1h(g1h), _survivor_alignment_bytes(calc_survivor_alignment_bytes()) { }
   virtual ~G1ParGCAllocator() { }
 
   static G1ParGCAllocator* create_allocator(G1CollectedHeap* g1h);
 
-  size_t alloc_buffer_waste() { return _alloc_buffer_waste; }
-  size_t undo_waste() {return _undo_waste; }
+  virtual void waste(size_t& wasted, size_t& undo_wasted) = 0;
 
   // Allocate word_sz words in dest, either directly into the regions or by
   // allocating a new PLAB. Returns the address of the allocated memory, NULL if
@@ -253,14 +244,7 @@ public:
   }
 
   void undo_allocation(InCSetState dest, HeapWord* obj, size_t word_sz, AllocationContext_t context) {
-    if (alloc_buffer(dest, context)->contains(obj)) {
-      assert(alloc_buffer(dest, context)->contains(obj + word_sz - 1),
-             "should contain whole object");
-      alloc_buffer(dest, context)->undo_allocation(obj, word_sz);
-    } else {
-      CollectedHeap::fill_with_object(obj, word_sz);
-      add_to_undo_waste(word_sz);
-    }
+    alloc_buffer(dest, context)->undo_allocation(obj, word_sz);
   }
 };
 
@@ -280,7 +264,9 @@ public:
     return _alloc_buffers[dest.value()];
   }
 
-  virtual void retire_alloc_buffers() ;
+  virtual void retire_alloc_buffers();
+
+  virtual void waste(size_t& wasted, size_t& undo_wasted);
 };
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1ALLOCATOR_HPP

@@ -276,7 +276,7 @@ private:
   void init_gc_alloc_regions(EvacuationInfo& evacuation_info);
 
   // It releases the GC alloc regions at the end of a GC.
-  void release_gc_alloc_regions(uint no_of_gc_workers, EvacuationInfo& evacuation_info);
+  void release_gc_alloc_regions(EvacuationInfo& evacuation_info);
 
   // It does any cleanup that needs to be done on the GC alloc regions
   // before a Full GC.

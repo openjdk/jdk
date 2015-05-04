@@ -193,8 +193,9 @@ int AdaptiveSizePolicy::calc_active_workers(uintx total_workers,
      (!FLAG_IS_DEFAULT(ParallelGCThreads) && !ForceDynamicNumberOfGCThreads)) {
     new_active_workers = total_workers;
   } else {
+    uintx min_workers = (total_workers == 1) ? 1 : 2;
     new_active_workers = calc_default_active_workers(total_workers,
-                                                     2, /* Minimum number of workers */
+                                                     min_workers,
                                                      active_workers,
                                                      application_workers);
   }

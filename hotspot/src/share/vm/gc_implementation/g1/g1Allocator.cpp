@@ -83,7 +83,7 @@ void G1DefaultAllocator::init_gc_alloc_regions(EvacuationInfo& evacuation_info) 
                             &_retained_old_gc_alloc_region);
 }
 
-void G1DefaultAllocator::release_gc_alloc_regions(uint no_of_gc_workers, EvacuationInfo& evacuation_info) {
+void G1DefaultAllocator::release_gc_alloc_regions(EvacuationInfo& evacuation_info) {
   AllocationContext_t context = AllocationContext::current();
   evacuation_info.set_allocation_regions(survivor_gc_alloc_region(context)->count() +
                                          old_gc_alloc_region(context)->count());
@@ -99,8 +99,8 @@ void G1DefaultAllocator::release_gc_alloc_regions(uint no_of_gc_workers, Evacuat
   }
 
   if (ResizePLAB) {
-    _g1h->alloc_buffer_stats(InCSetState::Young)->adjust_desired_plab_sz(no_of_gc_workers);
-    _g1h->alloc_buffer_stats(InCSetState::Old)->adjust_desired_plab_sz(no_of_gc_workers);
+    _g1h->alloc_buffer_stats(InCSetState::Young)->adjust_desired_plab_sz();
+    _g1h->alloc_buffer_stats(InCSetState::Old)->adjust_desired_plab_sz();
   }
 }
 
@@ -119,7 +119,6 @@ HeapWord* G1ParGCAllocator::allocate_direct_or_new_plab(InCSetState dest,
   size_t gclab_word_size = _g1h->desired_plab_sz(dest);
   if (word_sz * 100 < gclab_word_size * ParallelGCBufferWastePct) {
     G1PLAB* alloc_buf = alloc_buffer(dest, context);
-    add_to_alloc_buffer_waste(alloc_buf->words_remaining());
     alloc_buf->retire();
 
     HeapWord* buf = _g1h->par_allocate_during_gc(dest, gclab_word_size, context);
@@ -153,8 +152,19 @@ void G1DefaultParGCAllocator::retire_alloc_buffers() {
   for (uint state = 0; state < InCSetState::Num; state++) {
     G1PLAB* const buf = _alloc_buffers[state];
     if (buf != NULL) {
-      add_to_alloc_buffer_waste(buf->words_remaining());
       buf->flush_and_retire_stats(_g1h->alloc_buffer_stats(state));
+    }
+  }
+}
+
+void G1DefaultParGCAllocator::waste(size_t& wasted, size_t& undo_wasted) {
+  wasted = 0;
+  undo_wasted = 0;
+  for (uint state = 0; state < InCSetState::Num; state++) {
+    G1PLAB * const buf = _alloc_buffers[state];
+    if (buf != NULL) {
+      wasted += buf->waste();
+      undo_wasted += buf->undo_waste();
     }
   }
 }
