@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_IMPLEMENTATION_G1_ROOTPROCESSOR_HPP
-#define SHARE_VM_GC_IMPLEMENTATION_G1_ROOTPROCESSOR_HPP
+#ifndef SHARE_VM_GC_IMPLEMENTATION_G1_G1ROOTPROCESSOR_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_G1_G1ROOTPROCESSOR_HPP
 
 #include "memory/allocation.hpp"
 #include "memory/strongRootsScope.hpp"
@@ -118,4 +118,4 @@ public:
   void set_num_workers(int active_workers);
 };
 
-#endif // SHARE_VM_GC_IMPLEMENTATION_G1_ROOTPROCESSOR_HPP
+#endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1ROOTPROCESSOR_HPP
