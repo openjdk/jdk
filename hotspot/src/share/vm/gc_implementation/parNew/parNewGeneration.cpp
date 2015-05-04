@@ -54,6 +54,7 @@
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.inline.hpp"
+#include "utilities/taskqueue.inline.hpp"
 #include "utilities/workgroup.hpp"
 
 #ifdef _MSC_VER
@@ -272,16 +273,8 @@ HeapWord* ParScanThreadState::alloc_in_to_space_slow(size_t word_sz) {
 }
 
 
-void ParScanThreadState::undo_alloc_in_to_space(HeapWord* obj,
-                                                size_t word_sz) {
-  // Is the alloc in the current alloc buffer?
-  if (to_space_alloc_buffer()->contains(obj)) {
-    assert(to_space_alloc_buffer()->contains(obj + word_sz - 1),
-           "Should contain whole object.");
-    to_space_alloc_buffer()->undo_allocation(obj, word_sz);
-  } else {
-    CollectedHeap::fill_with_object(obj, word_sz);
-  }
+void ParScanThreadState::undo_alloc_in_to_space(HeapWord* obj, size_t word_sz) {
+  to_space_alloc_buffer()->undo_allocation(obj, word_sz);
 }
 
 void ParScanThreadState::print_promotion_failure_size() {
@@ -1040,7 +1033,7 @@ void ParNewGeneration::collect(bool   full,
   to()->set_concurrent_iteration_safe_limit(to()->top());
 
   if (ResizePLAB) {
-    plab_stats()->adjust_desired_plab_sz(n_workers);
+    plab_stats()->adjust_desired_plab_sz();
   }
 
   if (PrintGC && !PrintGCDetails) {
@@ -1076,6 +1069,10 @@ void ParNewGeneration::collect(bool   full,
   _gc_timer->register_gc_end();
 
   _gc_tracer.report_gc_end(_gc_timer->gc_end(), _gc_timer->time_partitions());
+}
+
+size_t ParNewGeneration::desired_plab_sz() {
+  return _plab_stats.desired_plab_sz(GenCollectedHeap::heap()->workers()->active_workers());
 }
 
 static int sum;

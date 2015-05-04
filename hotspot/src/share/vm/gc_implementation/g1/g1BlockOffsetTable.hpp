@@ -179,6 +179,11 @@ public:
     return ReservedSpace::allocation_align_size_up(number_of_slots);
   }
 
+  // Returns how many bytes of the heap a single byte of the BOT corresponds to.
+  static size_t heap_map_factor() {
+    return N_bytes;
+  }
+
   enum SomePublicConstants {
     LogN = 9,
     LogN_words = LogN - LogHeapWordSize,

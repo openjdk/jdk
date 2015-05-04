@@ -66,6 +66,7 @@
 #include "runtime/vmThread.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.inline.hpp"
+#include "utilities/taskqueue.inline.hpp"
 
 size_t G1CollectedHeap::_humongous_object_threshold_in_words = 0;
 
@@ -1166,6 +1167,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
   SvcGCMarker sgcm(SvcGCMarker::FULL);
   ResourceMark rm;
 
+  G1Log::update_level();
   print_heap_before_gc();
   trace_heap_before_gc(gc_tracer);
 
@@ -1890,24 +1892,24 @@ jint G1CollectedHeap::initialize() {
   G1RegionToSpaceMapper* bot_storage =
     create_aux_memory_mapper("Block offset table",
                              G1BlockOffsetSharedArray::compute_size(g1_rs.size() / HeapWordSize),
-                             G1BlockOffsetSharedArray::N_bytes);
+                             G1BlockOffsetSharedArray::heap_map_factor());
 
   ReservedSpace cardtable_rs(G1SATBCardTableLoggingModRefBS::compute_size(g1_rs.size() / HeapWordSize));
   G1RegionToSpaceMapper* cardtable_storage =
     create_aux_memory_mapper("Card table",
                              G1SATBCardTableLoggingModRefBS::compute_size(g1_rs.size() / HeapWordSize),
-                             G1BlockOffsetSharedArray::N_bytes);
+                             G1SATBCardTableLoggingModRefBS::heap_map_factor());
 
   G1RegionToSpaceMapper* card_counts_storage =
     create_aux_memory_mapper("Card counts table",
-                             G1BlockOffsetSharedArray::compute_size(g1_rs.size() / HeapWordSize),
-                             G1BlockOffsetSharedArray::N_bytes);
+                             G1CardCounts::compute_size(g1_rs.size() / HeapWordSize),
+                             G1CardCounts::heap_map_factor());
 
   size_t bitmap_size = CMBitMap::compute_size(g1_rs.size());
   G1RegionToSpaceMapper* prev_bitmap_storage =
-    create_aux_memory_mapper("Prev Bitmap", bitmap_size, CMBitMap::mark_distance());
+    create_aux_memory_mapper("Prev Bitmap", bitmap_size, CMBitMap::heap_map_factor());
   G1RegionToSpaceMapper* next_bitmap_storage =
-    create_aux_memory_mapper("Next Bitmap", bitmap_size, CMBitMap::mark_distance());
+    create_aux_memory_mapper("Next Bitmap", bitmap_size, CMBitMap::heap_map_factor());
 
   _hrm.initialize(heap_storage, prev_bitmap_storage, next_bitmap_storage, bot_storage, cardtable_storage, card_counts_storage);
   g1_barrier_set()->initialize(cardtable_storage);
@@ -3648,6 +3650,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
   SvcGCMarker sgcm(SvcGCMarker::MINOR);
   ResourceMark rm;
 
+  G1Log::update_level();
   print_heap_before_gc();
   trace_heap_before_gc(_gc_tracer_stw);
 
@@ -5438,7 +5441,7 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
     phase_times->record_string_dedup_fixup_time(fixup_time_ms);
   }
 
-  _allocator->release_gc_alloc_regions(n_workers, evacuation_info);
+  _allocator->release_gc_alloc_regions(evacuation_info);
   g1_rem_set()->cleanup_after_oops_into_collection_set_do();
 
   // Reset and re-enable the hot card cache.

@@ -45,6 +45,7 @@ protected:
   // In support of ergonomic sizing of PLAB's
   size_t    _allocated;     // in HeapWord units
   size_t    _wasted;        // in HeapWord units
+  size_t    _undo_wasted;
   char      tail[32];
   static size_t AlignmentReserve;
 
@@ -61,6 +62,12 @@ protected:
   // Fill in remaining space with a dummy object and invalidate the PLAB. Returns
   // the amount of remaining space.
   size_t retire_internal();
+
+  void add_undo_waste(HeapWord* obj, size_t word_sz);
+
+  // Undo the last allocation in the buffer, which is required to be of the
+  // "obj" of the given "word_sz".
+  void undo_last_allocation(HeapWord* obj, size_t word_sz);
 
 public:
   // Initializes the buffer to be empty, but with the given "word_sz".
@@ -90,17 +97,16 @@ public:
   // Allocate the object aligned to "alignment_in_bytes".
   HeapWord* allocate_aligned(size_t word_sz, unsigned short alignment_in_bytes);
 
-  // Undo the last allocation in the buffer, which is required to be of the
+  // Undo any allocation in the buffer, which is required to be of the
   // "obj" of the given "word_sz".
-  void undo_allocation(HeapWord* obj, size_t word_sz) {
-    assert(pointer_delta(_top, _bottom) >= word_sz, "Bad undo");
-    assert(pointer_delta(_top, obj)     == word_sz, "Bad undo");
-    _top = obj;
-  }
+  void undo_allocation(HeapWord* obj, size_t word_sz);
 
   // The total (word) size of the buffer, including both allocated and
   // unallocated space.
   size_t word_sz() { return _word_sz; }
+
+  size_t waste() { return _wasted; }
+  size_t undo_waste() { return _undo_wasted; }
 
   // Should only be done if we are about to reset with a new buffer of the
   // given size.
@@ -144,24 +150,27 @@ public:
 
 // PLAB book-keeping.
 class PLABStats VALUE_OBJ_CLASS_SPEC {
-  size_t _allocated;      // Total allocated
-  size_t _wasted;         // of which wasted (internal fragmentation)
-  size_t _unused;         // Unused in last buffer
-  size_t _desired_plab_sz;// Output of filter (below), suitably trimmed and quantized
+  size_t _allocated;           // Total allocated
+  size_t _wasted;              // of which wasted (internal fragmentation)
+  size_t _undo_wasted;         // of which wasted on undo (is not used for calculation of PLAB size)
+  size_t _unused;              // Unused in last buffer
+  size_t _desired_net_plab_sz; // Output of filter (below), suitably trimmed and quantized
   AdaptiveWeightedAverage
-         _filter;         // Integrator with decay
+         _filter;              // Integrator with decay
 
   void reset() {
-    _allocated = 0;
-    _wasted    = 0;
-    _unused    = 0;
+    _allocated   = 0;
+    _wasted      = 0;
+    _undo_wasted = 0;
+    _unused      = 0;
   }
  public:
-  PLABStats(size_t desired_plab_sz_, unsigned wt) :
+  PLABStats(size_t desired_net_plab_sz_, unsigned wt) :
     _allocated(0),
     _wasted(0),
+    _undo_wasted(0),
     _unused(0),
-    _desired_plab_sz(desired_plab_sz_),
+    _desired_net_plab_sz(desired_net_plab_sz_),
     _filter(wt)
   { }
 
@@ -173,13 +182,12 @@ class PLABStats VALUE_OBJ_CLASS_SPEC {
     return PLAB::max_size();
   }
 
-  size_t desired_plab_sz() {
-    return _desired_plab_sz;
-  }
+  // Calculates plab size for current number of gc worker threads.
+  size_t desired_plab_sz(uint no_of_gc_workers);
 
-  // Updates the current desired PLAB size. Computes the new desired PLAB size,
+  // Updates the current desired PLAB size. Computes the new desired PLAB size with one gc worker thread,
   // updates _desired_plab_sz and clears sensor accumulators.
-  void adjust_desired_plab_sz(uint no_of_gc_workers);
+  void adjust_desired_plab_sz();
 
   void add_allocated(size_t v) {
     Atomic::add_ptr(v, &_allocated);
@@ -191,6 +199,10 @@ class PLABStats VALUE_OBJ_CLASS_SPEC {
 
   void add_wasted(size_t v) {
     Atomic::add_ptr(v, &_wasted);
+  }
+
+  void add_undo_wasted(size_t v) {
+    Atomic::add_ptr(v, &_undo_wasted);
   }
 };
 

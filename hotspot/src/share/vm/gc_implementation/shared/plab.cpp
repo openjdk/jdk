@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc_implementation/shared/plab.hpp"
+#include "gc_interface/collectedHeap.hpp"
 #include "memory/threadLocalAllocBuffer.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/oop.inline.hpp"
@@ -39,7 +40,7 @@ size_t PLAB::max_size() {
 
 PLAB::PLAB(size_t desired_plab_sz_) :
   _word_sz(desired_plab_sz_), _bottom(NULL), _top(NULL),
-  _end(NULL), _hard_end(NULL), _allocated(0), _wasted(0)
+  _end(NULL), _hard_end(NULL), _allocated(0), _wasted(0), _undo_wasted(0)
 {
   // ArrayOopDesc::header_size depends on command line initialization.
   AlignmentReserve = oopDesc::header_size() > MinObjAlignment ? align_object_size(arrayOopDesc::header_size(T_INT)) : 0;
@@ -62,13 +63,15 @@ void PLAB::flush_and_retire_stats(PLABStats* stats) {
   // Now flush the statistics.
   stats->add_allocated(_allocated);
   stats->add_wasted(_wasted);
+  stats->add_undo_wasted(_undo_wasted);
   stats->add_unused(unused);
 
   // Since we have flushed the stats we need to clear  the _allocated and _wasted
   // fields in case somebody retains an instance of this over GCs. Not doing so
   // will artifically inflate the values in the statistics.
-  _allocated = 0;
-  _wasted = 0;
+  _allocated   = 0;
+  _wasted      = 0;
+  _undo_wasted = 0;
 }
 
 void PLAB::retire() {
@@ -84,10 +87,39 @@ size_t PLAB::retire_internal() {
   return result;
 }
 
-// Compute desired plab size and latch result for later
+void PLAB::add_undo_waste(HeapWord* obj, size_t word_sz) {
+  CollectedHeap::fill_with_object(obj, word_sz);
+  _undo_wasted += word_sz;
+}
+
+void PLAB::undo_last_allocation(HeapWord* obj, size_t word_sz) {
+  assert(pointer_delta(_top, _bottom) >= word_sz, "Bad undo");
+  assert(pointer_delta(_top, obj) == word_sz, "Bad undo");
+  _top = obj;
+}
+
+void PLAB::undo_allocation(HeapWord* obj, size_t word_sz) {
+  // Is the alloc in the current alloc buffer?
+  if (contains(obj)) {
+    assert(contains(obj + word_sz - 1),
+      "should contain whole object");
+    undo_last_allocation(obj, word_sz);
+  } else {
+    add_undo_waste(obj, word_sz);
+  }
+}
+
+// Calculates plab size for current number of gc worker threads.
+size_t PLABStats::desired_plab_sz(uint no_of_gc_workers) {
+  assert(no_of_gc_workers > 0, "Number of GC workers should be larger than zero");
+
+  return align_object_size(_desired_net_plab_sz / MAX2(no_of_gc_workers, 1U));
+}
+
+// Compute desired plab size for one gc worker thread and latch result for later
 // use. This should be called once at the end of parallel
 // scavenge; it clears the sensor accumulators.
-void PLABStats::adjust_desired_plab_sz(uint no_of_gc_workers) {
+void PLABStats::adjust_desired_plab_sz() {
   assert(ResizePLAB, "Not set");
 
   assert(is_object_aligned(max_size()) && min_size() <= max_size(),
@@ -98,8 +130,9 @@ void PLABStats::adjust_desired_plab_sz(uint no_of_gc_workers) {
            err_msg("Inconsistency in PLAB stats: "
                    "_allocated: "SIZE_FORMAT", "
                    "_wasted: "SIZE_FORMAT", "
-                   "_unused: "SIZE_FORMAT,
-                   _allocated, _wasted, _unused));
+                   "_unused: "SIZE_FORMAT", "
+                   "_undo_wasted: "SIZE_FORMAT,
+                   _allocated, _wasted, _unused, _undo_wasted));
 
     _allocated = 1;
   }
@@ -109,7 +142,8 @@ void PLABStats::adjust_desired_plab_sz(uint no_of_gc_workers) {
     target_refills = 1;
   }
   size_t used = _allocated - _wasted - _unused;
-  size_t recent_plab_sz = used / (target_refills * no_of_gc_workers);
+  // Assumed to have 1 gc worker thread
+  size_t recent_plab_sz = used / target_refills;
   // Take historical weighted average
   _filter.sample(recent_plab_sz);
   // Clip from above and below, and align to object boundary
@@ -120,7 +154,7 @@ void PLABStats::adjust_desired_plab_sz(uint no_of_gc_workers) {
   if (PrintPLAB) {
     gclog_or_tty->print(" (plab_sz = " SIZE_FORMAT" desired_plab_sz = " SIZE_FORMAT") ", recent_plab_sz, new_plab_sz);
   }
-  _desired_plab_sz = new_plab_sz;
+  _desired_net_plab_sz = new_plab_sz;
 
   reset();
 }
