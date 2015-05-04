@@ -225,16 +225,12 @@ ConcurrentMarkSweepGeneration::ConcurrentMarkSweepGeneration(
            "Offset of FreeChunk::_prev within FreeChunk must match"
            "  that of OopDesc::_klass within OopDesc");
   )
-  if (CollectedHeap::use_parallel_gc_threads()) {
-    typedef CMSParGCThreadState* CMSParGCThreadStatePtr;
-    _par_gc_thread_states =
-      NEW_C_HEAP_ARRAY(CMSParGCThreadStatePtr, ParallelGCThreads, mtGC);
-    for (uint i = 0; i < ParallelGCThreads; i++) {
-      _par_gc_thread_states[i] = new CMSParGCThreadState(cmsSpace());
-    }
-  } else {
-    _par_gc_thread_states = NULL;
+
+  _par_gc_thread_states = NEW_C_HEAP_ARRAY(CMSParGCThreadState*, ParallelGCThreads, mtGC);
+  for (uint i = 0; i < ParallelGCThreads; i++) {
+    _par_gc_thread_states[i] = new CMSParGCThreadState(cmsSpace());
   }
+
   _incremental_collection_failed = false;
   // The "dilatation_factor" is the expansion that can occur on
   // account of the fact that the minimum object size in the CMS
@@ -460,7 +456,6 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
   _markBitMap(0, Mutex::leaf + 1, "CMS_markBitMap_lock"),
   _modUnionTable((CardTableModRefBS::card_shift - LogHeapWordSize),
                  -1 /* lock-free */, "No_lock" /* dummy */),
-  _modUnionClosure(&_modUnionTable),
   _modUnionClosurePar(&_modUnionTable),
   // Adjust my span to cover old (cms) gen
   _span(cmsGen->reserved()),
@@ -2130,10 +2125,7 @@ void CMSCollector::gc_prologue(bool full) {
 
   bool registerClosure = duringMarking;
 
-  ModUnionClosure* muc = CollectedHeap::use_parallel_gc_threads() ?
-                                               &_modUnionClosurePar
-                                               : &_modUnionClosure;
-  _cmsGen->gc_prologue_work(full, registerClosure, muc);
+  _cmsGen->gc_prologue_work(full, registerClosure, &_modUnionClosurePar);
 
   if (!full) {
     stats().record_gc0_begin();
@@ -3006,7 +2998,7 @@ void CMSCollector::checkpointRootsInitialWork() {
 
   {
     COMPILER2_PRESENT(DerivedPointerTableDeactivate dpt_deact;)
-    if (CMSParallelInitialMarkEnabled && CollectedHeap::use_parallel_gc_threads()) {
+    if (CMSParallelInitialMarkEnabled) {
       // The parallel version.
       FlexibleWorkGang* workers = gch->workers();
       assert(workers != NULL, "Need parallel worker threads.");
@@ -4348,7 +4340,7 @@ void CMSCollector::checkpointRootsFinalWork() {
     // dirtied since the first checkpoint in this GC cycle and prior to
     // the most recent young generation GC, minus those cleaned up by the
     // concurrent precleaning.
-    if (CMSParallelRemarkEnabled && CollectedHeap::use_parallel_gc_threads()) {
+    if (CMSParallelRemarkEnabled) {
       GCTraceTime t("Rescan (parallel) ", PrintGCDetails, false, _gc_timer_cm, _gc_tracer_cm->gc_id());
       do_remark_parallel();
     } else {
