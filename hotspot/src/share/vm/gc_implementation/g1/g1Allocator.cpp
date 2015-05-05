@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc_implementation/g1/g1Allocator.hpp"
-#include "gc_implementation/g1/g1CollectedHeap.hpp"
+#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1CollectorPolicy.hpp"
 #include "gc_implementation/g1/heapRegion.inline.hpp"
 #include "gc_implementation/g1/heapRegionSet.inline.hpp"
