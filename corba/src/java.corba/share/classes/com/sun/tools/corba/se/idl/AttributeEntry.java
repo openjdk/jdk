@@ -80,7 +80,7 @@ public class AttributeEntry extends MethodEntry
   } // generate
 
   /** Access the attribute generator.
-      @returns an object which implements the AttributeGen interface.
+      @return an object which implements the AttributeGen interface.
       @see AttributeGen */
   public Generator generator ()
   {

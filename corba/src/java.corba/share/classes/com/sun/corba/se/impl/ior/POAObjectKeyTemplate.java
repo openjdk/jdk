@@ -42,9 +42,6 @@ import com.sun.corba.se.spi.ior.ObjectAdapterId ;
 
 import com.sun.corba.se.impl.ior.ObjectKeyFactoryImpl ;
 
-/**
- * @author
- */
 public final class POAObjectKeyTemplate extends NewObjectKeyTemplateBase
 {
     /** This constructor reads the template ONLY from the stream.

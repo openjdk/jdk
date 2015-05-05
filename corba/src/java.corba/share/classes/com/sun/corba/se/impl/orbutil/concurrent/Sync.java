@@ -276,10 +276,9 @@ package com.sun.corba.se.impl.orbutil.concurrent;
  * For example, you can use an ObservableSync
  * (perhaps as part of a LayeredSync) in order to obtain callbacks
  * before and after each method invocation for a given class.
- * <p>
-
+ *
  * <p>[<a href="http://gee.cs.oswego.edu/dl/classes/EDU/oswego/cs/dl/util/concurrent/intro.html"> Introduction to this package. </a>]
-**/
+ **/
 
 
 public interface Sync {

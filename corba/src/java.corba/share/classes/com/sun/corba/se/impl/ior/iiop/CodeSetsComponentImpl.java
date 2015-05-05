@@ -38,9 +38,6 @@ import com.sun.corba.se.impl.encoding.CodeSetComponentInfo ;
 import com.sun.corba.se.impl.encoding.MarshalOutputStream ;
 import com.sun.corba.se.impl.encoding.MarshalInputStream ;
 
-/**
- * @author
- */
 public class CodeSetsComponentImpl extends TaggedComponentBase
     implements CodeSetsComponent
 {

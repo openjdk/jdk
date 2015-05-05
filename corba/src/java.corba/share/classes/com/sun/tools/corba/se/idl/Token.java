@@ -332,7 +332,7 @@ class Token
   * @param boolean[] collidesWithKeyword is an array containing one value: a flag
   * representing whether this string is an identifier that collides with a keyword.
   * This is set by this method.
-  * @returns Token The resulting Token corresponding to string.
+  * @return Token The resulting Token corresponding to string.
   */
   public static Token makeKeywordToken(
     String string, float corbaLevel, boolean escapedOK, boolean[] collision )
