@@ -37,4 +37,16 @@ public class RedefineMethodInBacktraceTargetB {
             // ignore, test will fail
         }
     }
+
+    public static void callMethodToDelete() {
+        try {
+            // signal that we are here
+            RedefineMethodInBacktraceApp.called.countDown();
+
+            // wait until test is done
+            RedefineMethodInBacktraceApp.stop.await();
+        } catch (InterruptedException ex) {
+            // ignore, test will fail
+        }
+    }
 }
