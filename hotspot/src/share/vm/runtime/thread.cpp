@@ -3230,6 +3230,8 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
 
   // Initialize java_lang.System (needed before creating the thread)
   initialize_class(vmSymbols::java_lang_System(), CHECK);
+  // The VM creates & returns objects of this class. Make sure it's initialized.
+  initialize_class(vmSymbols::java_lang_Class(), CHECK);
   initialize_class(vmSymbols::java_lang_ThreadGroup(), CHECK);
   Handle thread_group = create_initial_thread_group(CHECK);
   Universe::set_main_thread_group(thread_group());
@@ -3240,9 +3242,6 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   // been started and running.
   java_lang_Thread::set_thread_status(thread_object,
                                       java_lang_Thread::RUNNABLE);
-
-  // The VM creates & returns objects of this class. Make sure it's initialized.
-  initialize_class(vmSymbols::java_lang_Class(), CHECK);
 
   // The VM preresolves methods to these classes. Make sure that they get initialized
   initialize_class(vmSymbols::java_lang_reflect_Method(), CHECK);
