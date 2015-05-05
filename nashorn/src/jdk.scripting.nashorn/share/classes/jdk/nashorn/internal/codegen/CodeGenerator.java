@@ -1275,7 +1275,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         return true;
     }
 
-    private boolean useOptimisticTypes() {
+    boolean useOptimisticTypes() {
         return !lc.inSplitNode() && compiler.useOptimisticTypes();
     }
 

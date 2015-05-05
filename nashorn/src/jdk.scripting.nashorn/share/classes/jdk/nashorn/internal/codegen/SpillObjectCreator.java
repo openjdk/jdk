@@ -146,6 +146,8 @@ public final class SpillObjectCreator extends ObjectCreator<Expression> {
         // instantiate the script object with spill objects
         method.invoke(constructorNoLookup(objectClass, PropertyMap.class, long[].class, Object[].class));
 
+        helpOptimisticRecognizeDuplicateIdentity(method);
+
         // Set prefix array data if any
         if (arrayData.length() > 0) {
             method.dup();
