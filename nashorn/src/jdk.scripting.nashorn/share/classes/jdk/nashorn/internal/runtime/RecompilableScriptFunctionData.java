@@ -491,7 +491,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
             log.info("Parameter type specialization of '", functionName, "' signature: ", actualCallSiteType);
         }
 
-        final boolean persistentCache = usePersistentCodeCache() && persist;
+        final boolean persistentCache = persist && usePersistentCodeCache();
         String cacheKey = null;
         if (persistentCache) {
             final TypeMap typeMap = typeMap(actualCallSiteType);
@@ -518,8 +518,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
     }
 
     boolean usePersistentCodeCache() {
-        final ScriptEnvironment env = installer.getOwner();
-        return env._persistent_cache && env._optimistic_types;
+        return installer != null && installer.getOwner()._persistent_cache;
     }
 
     private MethodType explicitParams(final MethodType callSiteType) {
