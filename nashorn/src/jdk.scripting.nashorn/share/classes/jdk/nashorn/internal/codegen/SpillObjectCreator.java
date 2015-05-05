@@ -130,43 +130,20 @@ public final class SpillObjectCreator extends ObjectCreator<Expression> {
             pos++;
         }
 
-        //assert postsetValues.isEmpty() : "test me " + postsetValues;
-
         // create object and invoke constructor
         method._new(objectClass).dup();
         codegen.loadConstant(propertyMap);
 
-        //load primitive values to j spill array
+        // load primitive value spill array
         if (dualFields) {
             codegen.loadConstant(jpresetValues);
-            for (final int i : postsetValues) {
-                final MapTuple<Expression> tuple = tuples.get(i);
-                final Property property = propertyMap.findProperty(tuple.key);
-                if (property != null && tuple.isPrimitive()) {
-                    method.dup();
-                    method.load(property.getSlot());
-                    loadTuple(method, tuple);
-                    method.arraystore();
-                }
-            }
         } else {
             method.loadNull();
         }
-
-        //load object values to o spill array
+        // load object value spill array
         codegen.loadConstant(opresetValues);
-        for (final int i : postsetValues) {
-            final MapTuple<Expression> tuple = tuples.get(i);
-            final Property property = propertyMap.findProperty(tuple.key);
-            if (property != null && (!dualFields || !tuple.isPrimitive())) {
-                method.dup();
-                method.load(property.getSlot());
-                loadTuple(method, tuple);
-                method.arraystore();
-            }
-        }
 
-        //instantiate the script object with spill objects
+        // instantiate the script object with spill objects
         method.invoke(constructorNoLookup(objectClass, PropertyMap.class, long[].class, Object[].class));
 
         // Set prefix array data if any
@@ -176,7 +153,7 @@ public final class SpillObjectCreator extends ObjectCreator<Expression> {
             method.invoke(virtualCallNoLookup(ScriptObject.class, "setArray", void.class, ArrayData.class));
         }
 
-        // set postfix
+        // set postfix values
         for (final int i : postsetValues) {
             final MapTuple<Expression> tuple = tuples.get(i);
             final Property property = propertyMap.findProperty(tuple.key);
@@ -188,6 +165,10 @@ public final class SpillObjectCreator extends ObjectCreator<Expression> {
                 //method.println("putting " + tuple + " into arraydata");
                 loadTuple(method, tuple);
                 method.dynamicSetIndex(callSiteFlags);
+            } else {
+                method.dup();
+                loadTuple(method, tuple);
+                method.dynamicSet(property.getKey(), codegen.getCallSiteFlags(), false);
             }
         }
     }
