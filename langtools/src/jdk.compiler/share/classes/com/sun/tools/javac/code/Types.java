@@ -645,7 +645,7 @@ public class Types {
         Symbol descSym = findDescriptorSymbol(targets.head.tsym);
         Type descType = findDescriptorType(targets.head);
         ClassSymbol csym = new ClassSymbol(cflags, name, env.enclClass.sym.outermostClass());
-        csym.completer = null;
+        csym.completer = Completer.NULL_COMPLETER;
         csym.members_field = WriteableScope.create(csym);
         MethodSymbol instDescSym = new MethodSymbol(descSym.flags(), descSym.name, descType, csym);
         csym.members_field.enter(instDescSym);

@@ -26,6 +26,7 @@
  * @bug 7142509
  * @summary Cipher.doFinal(ByteBuffer,ByteBuffer) fails to
  *     process when in.remaining() == 0
+ * @key randomness
  */
 
 import java.nio.ByteBuffer;

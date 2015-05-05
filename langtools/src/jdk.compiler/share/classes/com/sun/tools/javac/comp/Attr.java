@@ -2425,6 +2425,11 @@ public class Attr extends JCTree.Visitor {
             resultInfo.checkContext.report(that, cause);
             result = that.type = types.createErrorType(pt());
             return;
+        } catch (Throwable t) {
+            //when an unexpected exception happens, avoid attempts to attribute the same tree again
+            //as that would likely cause the same exception again.
+            needsRecovery = false;
+            throw t;
         } finally {
             localEnv.info.scope.leave();
             if (needsRecovery) {

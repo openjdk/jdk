@@ -320,7 +320,7 @@ public class Enter extends JCTree.Visitor {
             ClassSymbol c = syms.enterClass(name, tree.packge);
             c.flatname = names.fromString(tree.packge + "." + name);
             c.sourcefile = tree.sourcefile;
-            c.completer = null;
+            c.completer = Completer.NULL_COMPLETER;
             c.members_field = WriteableScope.create(c);
             tree.packge.package_info = c;
         }
@@ -386,7 +386,7 @@ public class Enter extends JCTree.Visitor {
         typeEnvs.put(c, localEnv);
 
         // Fill out class fields.
-        c.completer = null; // do not allow the initial completer linger on.
+        c.completer = Completer.NULL_COMPLETER; // do not allow the initial completer linger on.
         c.flags_field = chk.checkFlags(tree.pos(), tree.mods.flags, c, tree);
         c.sourcefile = env.toplevel.sourcefile;
         c.members_field = WriteableScope.create(c);

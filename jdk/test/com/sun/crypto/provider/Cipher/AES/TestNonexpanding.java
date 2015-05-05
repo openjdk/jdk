@@ -40,6 +40,7 @@ import javax.crypto.spec.GCMParameterSpec;
  * @bug 8043836
  * @summary Test AES encryption with no padding. Expect the original data length
  *          is the same as the encrypted data.
+ * @key randomness
  */
 public class TestNonexpanding {
 

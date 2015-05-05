@@ -25,6 +25,9 @@
 
 package com.sun.tools.javac.comp;
 
+import java.util.EnumSet;
+import java.util.Set;
+
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.tree.*;
@@ -335,43 +338,49 @@ public class MemberEnter extends JCTree.Visitor {
         return initTreeVisitor.result;
     }
 
-    /** Visitor class for expressions which might be constant expressions.
+    /** Visitor class for expressions which might be constant expressions,
+     *  as per JLS 15.28 (Constant Expressions).
      */
     static class InitTreeVisitor extends JCTree.Visitor {
+
+        private static final Set<Tag> ALLOWED_OPERATORS =
+                EnumSet.of(Tag.POS, Tag.NEG, Tag.NOT, Tag.COMPL, Tag.PLUS, Tag.MINUS,
+                           Tag.MUL, Tag.DIV, Tag.MOD, Tag.SL, Tag.SR, Tag.USR,
+                           Tag.LT, Tag.LE, Tag.GT, Tag.GE, Tag.EQ, Tag.NE,
+                           Tag.BITAND, Tag.BITXOR, Tag.BITOR, Tag.AND, Tag.OR);
 
         private boolean result = true;
 
         @Override
-        public void visitTree(JCTree tree) {}
-
-        @Override
-        public void visitNewClass(JCNewClass that) {
+        public void visitTree(JCTree tree) {
             result = false;
         }
 
         @Override
-        public void visitNewArray(JCNewArray that) {
-            result = false;
+        public void visitLiteral(JCLiteral that) {}
+
+        @Override
+        public void visitTypeCast(JCTypeCast tree) {
+            tree.expr.accept(this);
         }
 
         @Override
-        public void visitLambda(JCLambda that) {
-            result = false;
+        public void visitUnary(JCUnary that) {
+            if (!ALLOWED_OPERATORS.contains(that.getTag())) {
+                result = false;
+                return ;
+            }
+            that.arg.accept(this);
         }
 
         @Override
-        public void visitReference(JCMemberReference that) {
-            result = false;
-        }
-
-        @Override
-        public void visitApply(JCMethodInvocation that) {
-            result = false;
-        }
-
-        @Override
-        public void visitSelect(JCFieldAccess tree) {
-            tree.selected.accept(this);
+        public void visitBinary(JCBinary that) {
+            if (!ALLOWED_OPERATORS.contains(that.getTag())) {
+                result = false;
+                return ;
+            }
+            that.lhs.accept(this);
+            that.rhs.accept(this);
         }
 
         @Override
@@ -387,8 +396,11 @@ public class MemberEnter extends JCTree.Visitor {
         }
 
         @Override
-        public void visitTypeCast(JCTypeCast tree) {
-            tree.expr.accept(this);
+        public void visitIdent(JCIdent that) {}
+
+        @Override
+        public void visitSelect(JCFieldAccess tree) {
+            tree.selected.accept(this);
         }
     }
 

@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -49,9 +49,9 @@ set -u
 #----------------------------------------------------------------
 Cleanup() {
     Sys rm -rf GooSrc GooJar GooZip GooClass
-	 Sys rm -rf SpeSrc SpeJar SpeZip SpeClass
+         Sys rm -rf SpeSrc SpeJar SpeZip SpeClass
     Sys rm -rf BadSrc BadJar BadZip BadClass
-	 Sys rm -rf JarNClass StarJar MixJar StarDir
+         Sys rm -rf JarNClass StarJar MixJar StarDir
     Sys rm -rf OneDir *.class Main*.java MANIFEST.MF
 }
 
@@ -127,11 +127,9 @@ starDir() {
     printf "Running tests with directory named \"*\"\n"
     Sys rm -rf ./StarDir
     Sys mkdir -p StarDir/"*"
-    Sys cp -p "GooClass/Lib3.class" "GooClass/Lib.class" ./
     Sys cp "GooClass/Lib2.class" "StarDir/*/Lib2.class"
-    Sys "$jar" cf "StarDir/Lib3.jar" "Lib3.class"
-    Sys "$jar" cf "StarDir/*/Lib.jar" "Lib.class"
-    Sys rm -f "./Lib.class" "./Lib3.class"
+    Sys "$jar" cf "StarDir/Lib3.jar" -C GooClass "Lib3.class"
+    Sys "$jar" cf "StarDir/*/Lib.jar" -C GooClass "Lib.class"
     CheckFiles "StarDir/*/Lib.jar" "StarDir/*/Lib2.class" "StarDir/Lib3.jar"
     Sys cp Main6.java ./StarDir/.
     Sys cp Main.java  ./StarDir/"*"/.

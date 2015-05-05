@@ -33,6 +33,7 @@ import java.util.Random;
  * @summary Check md.getDigestLength() equal digest output length with various
  *          algorithm/dataLen/(update,digest methods).
  * @author Kevin Liu
+ * @key randomness
  */
 
 public class TestSameLength {

@@ -26,6 +26,7 @@
  * @bug 4955844
  * @summary ensure that the NONEwithRSA adapter works correctly
  * @author Andreas Sterbenz
+ * @key randomness
  */
 
 import java.util.*;

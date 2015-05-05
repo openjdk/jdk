@@ -41,7 +41,12 @@ public class LotsOfOutput {
         long initMemory = Runtime.getRuntime().totalMemory();
         for (int i=1; i< 10; i++) {
             Thread.sleep(100);
-            if (Runtime.getRuntime().totalMemory() > initMemory + 1000000)
+            long totalMemory = Runtime.getRuntime().totalMemory();
+            if (totalMemory != initMemory) {
+                System.out.printf("consuming memory: i: %d, initial: %d, total: %d, delta: %d%n",
+                        i, initMemory, totalMemory, totalMemory - initMemory);
+            }
+            if (totalMemory > initMemory + 1000000)
                 throw new Exception("Process consumes memory.");
         }
 

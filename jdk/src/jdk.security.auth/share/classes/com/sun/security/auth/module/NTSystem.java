@@ -26,7 +26,7 @@
 package com.sun.security.auth.module;
 
 /**
- * <p> This class implementation retrieves and makes available NT
+ * This class implementation retrieves and makes available NT
  * security information for the current user.
  *
  */
@@ -45,7 +45,7 @@ public class NTSystem {
     private long   impersonationToken;
 
     /**
-     * Instantiate an <code>NTSystem</code> and load
+     * Instantiate an {@code NTSystem} and load
      * the native library to access the underlying system information.
      */
     public NTSystem() {
@@ -53,7 +53,7 @@ public class NTSystem {
     }
 
     /**
-     * Instantiate an <code>NTSystem</code> and load
+     * Instantiate an {@code NTSystem} and load
      * the native library to access the underlying system information.
      */
     NTSystem(boolean debug) {
@@ -64,8 +64,6 @@ public class NTSystem {
     /**
      * Get the username for the current NT user.
      *
-     * <p>
-     *
      * @return the username for the current NT user.
      */
     public String getName() {
@@ -74,8 +72,6 @@ public class NTSystem {
 
     /**
      * Get the domain for the current NT user.
-     *
-     * <p>
      *
      * @return the domain for the current NT user.
      */
@@ -86,8 +82,6 @@ public class NTSystem {
     /**
      * Get a printable SID for the current NT user's domain.
      *
-     * <p>
-     *
      * @return a printable SID for the current NT user's domain.
      */
     public String getDomainSID() {
@@ -96,8 +90,6 @@ public class NTSystem {
 
     /**
      * Get a printable SID for the current NT user.
-     *
-     * <p>
      *
      * @return a printable SID for the current NT user.
      */
@@ -108,8 +100,6 @@ public class NTSystem {
     /**
      * Get a printable primary group SID for the current NT user.
      *
-     * <p>
-     *
      * @return the primary group SID for the current NT user.
      */
     public String getPrimaryGroupID() {
@@ -119,8 +109,6 @@ public class NTSystem {
     /**
      * Get the printable group SIDs for the current NT user.
      *
-     * <p>
-     *
      * @return the group SIDs for the current NT user.
      */
     public String[] getGroupIDs() {
@@ -129,8 +117,6 @@ public class NTSystem {
 
     /**
      * Get an impersonation token for the current NT user.
-     *
-     * <p>
      *
      * @return an impersonation token for the current NT user.
      */

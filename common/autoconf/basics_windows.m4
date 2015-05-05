@@ -66,7 +66,7 @@ AC_DEFUN([BASIC_MAKE_WINDOWS_SPACE_SAFE_CYGWIN],
       # Going to short mode and back again did indeed matter. Since short mode is
       # case insensitive, let's make it lowercase to improve readability.
       shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-      # Now convert it back to Unix-stile (cygpath)
+      # Now convert it back to Unix-style (cygpath)
       input_path=`$CYGPATH -u "$shortmode_path"`
       new_path="$input_path"
     fi
@@ -320,8 +320,8 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
     WINDOWS_ENV_VENDOR='cygwin'
     WINDOWS_ENV_VERSION="$CYGWIN_VERSION"
 
-    CYGWIN_VERSION_OK=`$ECHO $CYGWIN_VERSION | $GREP ^1.7.`
-    if test "x$CYGWIN_VERSION_OK" = x; then
+    CYGWIN_VERSION_OLD=`$ECHO $CYGWIN_VERSION | $GREP -e '^1\.[0-6]'`
+    if test "x$CYGWIN_VERSION_OLD" != x; then
       AC_MSG_NOTICE([Your cygwin is too old. You are running $CYGWIN_VERSION, but at least cygwin 1.7 is required. Please upgrade.])
       AC_MSG_ERROR([Cannot continue])
     fi

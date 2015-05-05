@@ -22,8 +22,9 @@
  */
 
 /* @test
-   @bug 4526754
+ * @bug 4526754
  * @summary Test Pipe scattering reads
+ * @key randomness
  */
 
 import java.nio.channels.*;

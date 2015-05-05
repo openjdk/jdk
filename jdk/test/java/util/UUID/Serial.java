@@ -25,6 +25,7 @@
  * @test
  * @bug 5014447
  * @summary Test deserialization of UUID
+ * @key randomness
  */
 
 import java.io.*;

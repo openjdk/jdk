@@ -212,7 +212,7 @@ final class AllPermissionCollection
      * @return an enumeration of all the AllPermission objects.
      */
     public Enumeration<Permission> elements() {
-        return new Enumeration<Permission>() {
+        return new Enumeration<>() {
             private boolean hasMore = all_allowed;
 
             public boolean hasMoreElements() {

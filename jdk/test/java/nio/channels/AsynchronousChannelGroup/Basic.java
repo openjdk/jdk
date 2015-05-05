@@ -24,6 +24,7 @@
 /* @test
  * @bug 4607272
  * @summary Unit test for AsynchronousChannelGroup
+ * @key randomness
  */
 
 import java.nio.ByteBuffer;

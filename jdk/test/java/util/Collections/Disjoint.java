@@ -26,6 +26,7 @@
  * @bug     4339792
  * @summary Basic test for Collections.disjoint
  * @author  Josh Bloch
+ * @key randomness
  */
 
 import java.util.*;
