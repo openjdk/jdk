@@ -26,14 +26,12 @@ package sun.jvm.hotspot.runtime;
 
 import java.io.*;
 import java.util.*;
-import sun.jvm.hotspot.*;
+
 import sun.jvm.hotspot.code.*;
 import sun.jvm.hotspot.compiler.*;
-import sun.jvm.hotspot.c1.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.interpreter.*;
 import sun.jvm.hotspot.oops.*;
-import sun.jvm.hotspot.runtime.sparc.SPARCFrame;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.*;
 
@@ -626,7 +624,7 @@ public abstract class Frame implements Cloneable {
       Assert.that(cb != null, "sanity check");
     }
     if (cb.getOopMaps() != null) {
-      OopMapSet.oopsDo(this, cb, regMap, oopVisitor, VM.getVM().isDebugging());
+      ImmutableOopMapSet.oopsDo(this, cb, regMap, oopVisitor, VM.getVM().isDebugging());
 
       // FIXME: add in traversal of argument oops (skipping this for
       // now until we have the other stuff tested)

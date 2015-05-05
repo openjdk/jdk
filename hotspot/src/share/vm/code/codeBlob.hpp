@@ -77,7 +77,7 @@ class CodeBlob VALUE_OBJ_CLASS_SPEC {
                                                  // which we don't detect.
   int        _data_offset;                       // offset to where data region begins
   int        _frame_size;                        // size of stack frame
-  OopMapSet* _oop_maps;                          // OopMap for this CodeBlob
+  ImmutableOopMapSet* _oop_maps;                 // OopMap for this CodeBlob
   CodeStrings _strings;
 
  public:
@@ -171,9 +171,9 @@ class CodeBlob VALUE_OBJ_CLASS_SPEC {
   virtual bool is_alive() const                  = 0;
 
   // OopMap for frame
-  OopMapSet* oop_maps() const                    { return _oop_maps; }
+  ImmutableOopMapSet* oop_maps() const           { return _oop_maps; }
   void set_oop_maps(OopMapSet* p);
-  OopMap* oop_map_for_return_address(address return_address);
+  const ImmutableOopMap* oop_map_for_return_address(address return_address);
   virtual void preserve_callee_argument_oops(frame fr, const RegisterMap* reg_map, OopClosure* f)  { ShouldNotReachHere(); }
 
   // Frame support

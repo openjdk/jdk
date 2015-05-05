@@ -32,15 +32,17 @@ import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.*;
 
-public class OopMapSet extends VMObject {
-  private static final boolean DEBUG = System.getProperty("sun.jvm.hotspot.compiler.OopMapSet.DEBUG") != null;
+public class ImmutableOopMapSet extends VMObject {
+  private static final boolean DEBUG = System.getProperty("sun.jvm.hotspot.compiler.ImmutableOopMapSet.DEBUG") != null;
 
-  private static CIntegerField omCountField;
-  private static CIntegerField omSizeField;
-  private static AddressField  omDataField;
+  private static CIntegerField countField;
+  private static CIntegerField sizeField;
+  private static AddressField omDataField;
   private static int REG_COUNT;
   private static int SAVED_ON_ENTRY_REG_COUNT;
   private static int C_SAVED_ON_ENTRY_REG_COUNT;
+  private static long classSize;
+
   private static class MyVisitor implements OopMapVisitor {
     private AddressVisitor addressVisitor;
 
@@ -60,7 +62,7 @@ public class OopMapSet extends VMObject {
       if (VM.getVM().isClientCompiler()) {
         Assert.that(false, "should not reach here");
       } else if (VM.getVM().isServerCompiler() &&
-                 VM.getVM().useDerivedPointerTable()) {
+          VM.getVM().useDerivedPointerTable()) {
         Assert.that(false, "FIXME: add derived pointer table");
       }
     }
@@ -75,18 +77,18 @@ public class OopMapSet extends VMObject {
 
   static {
     VM.registerVMInitializedObserver(new Observer() {
-        public void update(Observable o, Object data) {
-          initialize(VM.getVM().getTypeDataBase());
-        }
-      });
+      public void update(Observable o, Object data) {
+        initialize(VM.getVM().getTypeDataBase());
+      }
+    });
   }
 
   private static void initialize(TypeDataBase db) {
-    Type type = db.lookupType("OopMapSet");
+    Type type = db.lookupType("ImmutableOopMapSet");
 
-    omCountField  = type.getCIntegerField("_om_count");
-    omSizeField   = type.getCIntegerField("_om_size");
-    omDataField   = type.getAddressField("_om_data");
+    countField = type.getCIntegerField("_count");
+    sizeField = type.getCIntegerField("_size");
+    classSize = type.getSize();
 
     if (!VM.getVM().isCore()) {
       REG_COUNT = db.lookupIntConstant("REG_COUNT").intValue();
@@ -97,29 +99,41 @@ public class OopMapSet extends VMObject {
     }
   }
 
-  public OopMapSet(Address addr) {
+  public ImmutableOopMapSet(Address addr) {
     super(addr);
   }
 
-  /** Returns the number of OopMaps in this OopMapSet */
+  /**
+   * Returns the number of OopMaps in this ImmutableOopMapSet
+   */
   public long getSize() {
-    return omCountField.getValue(addr);
+    return countField.getValue(addr);
   }
 
-  /** returns the OopMap at a given index */
-  public OopMap getMapAt(int index) {
+  public int getCount() { return (int) countField.getValue(addr); }
+
+  private Address dataStart() {
+    return (addr.addOffsetTo(ImmutableOopMapSet.classSize * getCount()));
+  }
+
+  public ImmutableOopMapPair pairAt(int index) {
+    Assert.that((index >= 0) && (index < getCount()), "bad index");
+    return new ImmutableOopMapPair(addr.addOffsetTo(index * ImmutableOopMapPair.classSize()));
+  }
+
+  /**
+   * returns the OopMap at a given index
+   */
+  public ImmutableOopMap getMapAt(int index) {
     if (Assert.ASSERTS_ENABLED) {
-      Assert.that((index >= 0) && (index <= getSize()),"bad index");
+      Assert.that((index >= 0) && (index <= getSize()), "bad index");
     }
-    Address omDataAddr = omDataField.getValue(addr);
-    Address oopMapAddr = omDataAddr.getAddressAt(index * VM.getVM().getAddressSize());
-    if (oopMapAddr == null) {
-      return null;
-    }
-    return new OopMap(oopMapAddr);
+
+    ImmutableOopMapPair immutableOopMapPair = pairAt(index);
+    return getMap(immutableOopMapPair);
   }
 
-  public OopMap findMapAtOffset(long pcOffset, boolean debugging) {
+  public ImmutableOopMap findMapAtOffset(long pcOffset, boolean debugging) {
     int i;
     int len = (int) getSize();
     if (Assert.ASSERTS_ENABLED) {
@@ -129,7 +143,7 @@ public class OopMapSet extends VMObject {
     // Scan through oopmaps. Stop when current offset is either equal or greater
     // than the one we are looking for.
     for (i = 0; i < len; i++) {
-      if (getMapAt(i).getOffset() >= pcOffset) {
+      if (pairAt(i).getPC() >= pcOffset) {
         break;
       }
     }
@@ -137,7 +151,7 @@ public class OopMapSet extends VMObject {
     if (!debugging) {
       if (Assert.ASSERTS_ENABLED) {
         Assert.that(i < len, "oopmap not found for pcOffset = " + pcOffset + "; len = " + len);
-        Assert.that(getMapAt(i).getOffset() == pcOffset, "oopmap not found");
+        Assert.that(pairAt(i).getPC() == pcOffset, "oopmap not found");
       }
     } else {
       if (i == len) {
@@ -145,7 +159,7 @@ public class OopMapSet extends VMObject {
           System.out.println("can't find oopmap at " + pcOffset);
           System.out.print("Oopmap offsets are [ ");
           for (i = 0; i < len; i++) {
-            System.out.print(getMapAt(i).getOffset());
+            System.out.print(pairAt(i).getPC());
           }
           System.out.println("]");
         }
@@ -154,28 +168,32 @@ public class OopMapSet extends VMObject {
       }
     }
 
-    OopMap m = getMapAt(i);
+    ImmutableOopMap m = getMapAt(i);
     return m;
   }
 
-  /** Visitation -- iterates through the frame for a compiled method.
-      This is a very generic mechanism that requires the Address to be
-      dereferenced by the callee. Other, more specialized, visitation
-      mechanisms are given below. */
+  /**
+   * Visitation -- iterates through the frame for a compiled method.
+   * This is a very generic mechanism that requires the Address to be
+   * dereferenced by the callee. Other, more specialized, visitation
+   * mechanisms are given below.
+   */
   public static void oopsDo(Frame fr, CodeBlob cb, RegisterMap regMap, AddressVisitor oopVisitor, boolean debugging) {
     allDo(fr, cb, regMap, new MyVisitor(oopVisitor), debugging);
   }
 
-  /** Note that there are 4 required AddressVisitors: one for oops,
-      one for derived oops, one for values, and one for dead values */
+  /**
+   * Note that there are 4 required AddressVisitors: one for oops,
+   * one for derived oops, one for values, and one for dead values
+   */
   public static void allDo(Frame fr, CodeBlob cb, RegisterMap regMap, OopMapVisitor visitor, boolean debugging) {
     if (Assert.ASSERTS_ENABLED) {
       CodeBlob tmpCB = VM.getVM().getCodeCache().findBlob(fr.getPC());
       Assert.that(tmpCB != null && cb.equals(tmpCB), "wrong codeblob passed in");
     }
 
-    OopMapSet maps = cb.getOopMaps();
-    OopMap map = cb.getOopMapForReturnAddress(fr.getPC(), debugging);
+    ImmutableOopMapSet maps = cb.getOopMaps();
+    ImmutableOopMap map = cb.getOopMapForReturnAddress(fr.getPC(), debugging);
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(map != null, "no ptr map found");
     }
@@ -191,7 +209,7 @@ public class OopMapSet extends VMObject {
         omv = oms.getCurrent();
         Address loc = fr.oopMapRegToLocation(omv.getReg(), regMap);
         if (loc != null) {
-          Address baseLoc    = fr.oopMapRegToLocation(omv.getContentReg(), regMap);
+          Address baseLoc = fr.oopMapRegToLocation(omv.getContentReg(), regMap);
           Address derivedLoc = loc;
           visitor.visitDerivedOopLocation(baseLoc, derivedLoc);
         }
@@ -199,8 +217,8 @@ public class OopMapSet extends VMObject {
     }
 
     // We want narow oop, value and oop oop_types
-    OopMapValue.OopTypes[] values = new OopMapValue.OopTypes[] {
-      OopMapValue.OopTypes.OOP_VALUE, OopMapValue.OopTypes.VALUE_VALUE, OopMapValue.OopTypes.NARROWOOP_VALUE
+    OopMapValue.OopTypes[] values = new OopMapValue.OopTypes[]{
+        OopMapValue.OopTypes.OOP_VALUE, OopMapValue.OopTypes.VALUE_VALUE, OopMapValue.OopTypes.NARROWOOP_VALUE
     };
 
     {
@@ -223,8 +241,10 @@ public class OopMapSet extends VMObject {
     }
   }
 
-  /** Update callee-saved register info for the following frame.
-      Should only be called in non-core builds. */
+  /**
+   * Update callee-saved register info for the following frame.
+   * Should only be called in non-core builds.
+   */
   public static void updateRegisterMap(Frame fr, CodeBlob cb, RegisterMap regMap, boolean debugging) {
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(!VM.getVM().isCore(), "non-core builds only");
@@ -232,14 +252,14 @@ public class OopMapSet extends VMObject {
 
     if (!VM.getVM().isDebugging()) {
       if (Assert.ASSERTS_ENABLED) {
-        OopMapSet maps = cb.getOopMaps();
-        Assert.that((maps != null) && (maps.getSize() > 0), "found null or empty OopMapSet for CodeBlob");
+        ImmutableOopMapSet maps = cb.getOopMaps();
+        Assert.that((maps != null) && (maps.getSize() > 0), "found null or empty ImmutableOopMapSet for CodeBlob");
       }
     } else {
       // Hack for some topmost frames that have been found with empty
       // OopMapSets. (Actually have not seen the null case, but don't
       // want to take any chances.) See HSDB.showThreadStackMemory().
-      OopMapSet maps = cb.getOopMaps();
+      ImmutableOopMapSet maps = cb.getOopMaps();
       if ((maps == null) || (maps.getSize() == 0)) {
         return;
       }
@@ -250,18 +270,18 @@ public class OopMapSet extends VMObject {
 
     int nofCallee = 0;
     Address[] locs = new Address[2 * REG_COUNT + 1];
-    VMReg  [] regs = new VMReg  [2 * REG_COUNT + 1];
+    VMReg[] regs = new VMReg[2 * REG_COUNT + 1];
     // ("+1" because REG_COUNT might be zero)
 
     // Scan through oopmap and find location of all callee-saved registers
     // (we do not do update in place, since info could be overwritten)
-    OopMap map  = cb.getOopMapForReturnAddress(fr.getPC(), debugging);
+    ImmutableOopMap map = cb.getOopMapForReturnAddress(fr.getPC(), debugging);
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(map != null, "no ptr map found");
     }
 
     OopMapValue omv = null;
-    for(OopMapStream oms = new OopMapStream(map, OopMapValue.OopTypes.CALLEE_SAVED_VALUE); !oms.isDone(); oms.next()) {
+    for (OopMapStream oms = new OopMapStream(map, OopMapValue.OopTypes.CALLEE_SAVED_VALUE); !oms.isDone(); oms.next()) {
       omv = oms.getCurrent();
       if (Assert.ASSERTS_ENABLED) {
         Assert.that(nofCallee < 2 * REG_COUNT, "overflow");
@@ -276,8 +296,8 @@ public class OopMapSet extends VMObject {
     if (Assert.ASSERTS_ENABLED) {
       if (VM.getVM().isServerCompiler()) {
         Assert.that(!cb.isRuntimeStub() ||
-                    (nofCallee >= SAVED_ON_ENTRY_REG_COUNT || nofCallee >= C_SAVED_ON_ENTRY_REG_COUNT),
-                    "must save all");
+                (nofCallee >= SAVED_ON_ENTRY_REG_COUNT || nofCallee >= C_SAVED_ON_ENTRY_REG_COUNT),
+            "must save all");
       }
     }
 
@@ -285,5 +305,14 @@ public class OopMapSet extends VMObject {
     for (int i = 0; i < nofCallee; i++) {
       regMap.setLocation(regs[i], locs[i]);
     }
+  }
+
+  public ImmutableOopMapPair getPairAt(int index) {
+    return pairAt(index);
+  }
+
+  public ImmutableOopMap getMap(ImmutableOopMapPair pair) {
+    Assert.that(pair.getOffset() < (int) sizeField.getValue(), "boundary check");
+    return new ImmutableOopMap(dataStart().addOffsetTo(pair.getOffset()));
   }
 }
