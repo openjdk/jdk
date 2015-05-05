@@ -170,6 +170,8 @@ private:
 
   bool is_card_boundary(HeapWord* p) const;
 
+  void check_index(size_t index, const char* msg) const NOT_DEBUG_RETURN;
+
 public:
 
   // Return the number of slots needed for an offset array
