@@ -43,7 +43,15 @@
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
-                        <specification-version>6.6.1.1</specification-version>
+                        <specification-version>6.21.1</specification-version>
+                    </run-dependency>
+                </dependency>
+                <dependency>
+                    <code-name-base>org.openide.awt</code-name-base>
+                    <build-prerequisite/>
+                    <compile-dependency/>
+                    <run-dependency>
+                        <specification-version>7.39.1</specification-version>
                     </run-dependency>
                 </dependency>
                 <dependency>
@@ -51,7 +59,7 @@
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
-                        <specification-version>7.5.1</specification-version>
+                        <specification-version>7.18.1</specification-version>
                     </run-dependency>
                 </dependency>
                 <dependency>
@@ -59,7 +67,7 @@
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
-                        <specification-version>6.12.1</specification-version>
+                        <specification-version>6.34.1</specification-version>
                     </run-dependency>
                 </dependency>
                 <dependency>
@@ -67,7 +75,7 @@
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
-                        <specification-version>7.3.1</specification-version>
+                        <specification-version>7.46.1</specification-version>
                     </run-dependency>
                 </dependency>
                 <dependency>
@@ -75,7 +83,7 @@
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
-                        <specification-version>6.7.1</specification-version>
+                        <specification-version>7.20.1</specification-version>
                     </run-dependency>
                 </dependency>
                 <dependency>
@@ -83,7 +91,7 @@
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
-                        <specification-version>7.2.1.1</specification-version>
+                        <specification-version>7.20.1</specification-version>
                     </run-dependency>
                 </dependency>
                 <dependency>
@@ -91,7 +99,15 @@
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
-                        <specification-version>7.10.1.1</specification-version>
+                        <specification-version>8.14.1</specification-version>
+                    </run-dependency>
+                </dependency>
+                <dependency>
+                    <code-name-base>org.openide.util.lookup</code-name-base>
+                    <build-prerequisite/>
+                    <compile-dependency/>
+                    <run-dependency>
+                        <specification-version>8.6.1</specification-version>
                     </run-dependency>
                 </dependency>
                 <dependency>
@@ -99,7 +115,7 @@
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
-                        <specification-version>6.18.1</specification-version>
+                        <specification-version>6.39.1</specification-version>
                     </run-dependency>
                 </dependency>
             </module-dependencies>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,37 +23,25 @@
  */
 package com.sun.hotspot.igv.coordinator;
 
-import com.sun.hotspot.igv.coordinator.actions.ImportAction;
-import com.sun.hotspot.igv.coordinator.actions.RemoveAction;
-import com.sun.hotspot.igv.coordinator.actions.RemoveAllAction;
-import com.sun.hotspot.igv.coordinator.actions.SaveAllAction;
-import com.sun.hotspot.igv.coordinator.actions.SaveAsAction;
-import com.sun.hotspot.igv.coordinator.actions.StructuredViewAction;
+import com.sun.hotspot.igv.connection.Server;
+import com.sun.hotspot.igv.coordinator.actions.*;
 import com.sun.hotspot.igv.data.GraphDocument;
-import com.sun.hotspot.igv.data.ChangedListener;
 import com.sun.hotspot.igv.data.Group;
 import com.sun.hotspot.igv.data.services.GroupCallback;
-import com.sun.hotspot.igv.data.services.GroupOrganizer;
-import com.sun.hotspot.igv.data.services.GroupReceiver;
 import java.awt.BorderLayout;
-import java.awt.Component;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
-import javax.swing.BoxLayout;
-import javax.swing.JPanel;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
 import org.openide.ErrorManager;
+import org.openide.actions.GarbageCollectAction;
 import org.openide.awt.Toolbar;
 import org.openide.awt.ToolbarPool;
 import org.openide.explorer.ExplorerManager;
 import org.openide.explorer.ExplorerUtils;
 import org.openide.explorer.view.BeanTreeView;
-import org.openide.util.Lookup;
 import org.openide.util.LookupEvent;
 import org.openide.util.LookupListener;
 import org.openide.util.NbBundle;
@@ -72,7 +60,8 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     private ExplorerManager manager;
     private GraphDocument document;
     private FolderNode root;
-    private GroupOrganizer organizer;
+    private Server server;
+    private Server binaryServer;
 
     private OutlineTopComponent() {
         initComponents();
@@ -88,17 +77,9 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
 
     private void initListView() {
         manager = new ExplorerManager();
-        organizer = new StandardGroupOrganizer();
-        root = new FolderNode("", organizer, new ArrayList<String>(), document.getGroups());
+        root = new FolderNode(document);
         manager.setRootContext(root);
-        ((BeanTreeView) this.jScrollPane1).setRootVisible(false);
-
-        document.getChangedEvent().addListener(new ChangedListener<GraphDocument>() {
-
-            public void changed(GraphDocument document) {
-                updateStructure();
-            }
-        });
+        ((BeanTreeView) this.treeView).setRootVisible(false);
 
         associateLookup(ExplorerUtils.createLookup(manager, getActionMap()));
     }
@@ -111,61 +92,41 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         this.add(toolbar, BorderLayout.NORTH);
 
         toolbar.add(ImportAction.get(ImportAction.class));
-        toolbar.add(((NodeAction) RemoveAction.get(RemoveAction.class)).createContextAwareInstance(this.getLookup()));
-        toolbar.add(RemoveAllAction.get(RemoveAllAction.class));
 
         toolbar.add(((NodeAction) SaveAsAction.get(SaveAsAction.class)).createContextAwareInstance(this.getLookup()));
         toolbar.add(SaveAllAction.get(SaveAllAction.class));
 
-        toolbar.add(StructuredViewAction.get(StructuredViewAction.class).getToolbarPresenter());
+        toolbar.add(((NodeAction) RemoveAction.get(RemoveAction.class)).createContextAwareInstance(this.getLookup()));
+        toolbar.add(RemoveAllAction.get(RemoveAllAction.class));
+
+        toolbar.add(GarbageCollectAction.get(GarbageCollectAction.class).getToolbarPresenter());
 
         for (Toolbar tb : ToolbarPool.getDefault().getToolbars()) {
             tb.setVisible(false);
         }
-
-        initOrganizers();
-    }
-
-    public void setOrganizer(GroupOrganizer organizer) {
-        this.organizer = organizer;
-        updateStructure();
-    }
-
-    private void initOrganizers() {
-
     }
 
     private void initReceivers() {
 
         final GroupCallback callback = new GroupCallback() {
 
+            @Override
             public void started(Group g) {
-                getDocument().addGroup(g);
+                synchronized(OutlineTopComponent.this) {
+                    getDocument().addElement(g);
+                }
             }
         };
 
-        Collection<? extends GroupReceiver> receivers = Lookup.getDefault().lookupAll(GroupReceiver.class);
-        if (receivers.size() > 0) {
-            JPanel panel = new JPanel();
-            panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-
-            for (GroupReceiver r : receivers) {
-                Component c = r.init(callback);
-                panel.add(c);
-            }
-
-            jPanel2.add(panel, BorderLayout.PAGE_START);
-        }
-    }
-
-    private void updateStructure() {
-        root.init("", organizer, new ArrayList<String>(), document.getGroups());
+        server = new Server(getDocument(), callback, false);
+        binaryServer = new Server(getDocument(), callback, true);
     }
 
     public void clear() {
         document.clear();
     }
 
+    @Override
     public ExplorerManager getExplorerManager() {
         return manager;
     }
@@ -221,6 +182,25 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         return PREFERRED_ID;
     }
 
+    @Override
+    public void requestActive() {
+        super.requestActive();
+        treeView.requestFocus();
+    }
+
+    @Override
+    public boolean requestFocus(boolean temporary) {
+        treeView.requestFocus();
+        return super.requestFocus(temporary);
+    }
+
+    @Override
+    protected boolean requestFocusInWindow(boolean temporary) {
+        treeView.requestFocus();
+        return super.requestFocusInWindow(temporary);
+    }
+
+    @Override
     public void resultChanged(LookupEvent lookupEvent) {
     }
 
@@ -228,7 +208,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     public void readExternal(ObjectInput objectInput) throws IOException, ClassNotFoundException {
         // Not called when user starts application for the first time
         super.readExternal(objectInput);
-        ((BeanTreeView) this.jScrollPane1).setRootVisible(false);
+        ((BeanTreeView) this.treeView).setRootVisible(false);
     }
 
     @Override
@@ -253,19 +233,13 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jPanel2 = new javax.swing.JPanel();
-        jScrollPane1 = new BeanTreeView();
+        treeView = new BeanTreeView();
 
         setLayout(new java.awt.BorderLayout());
-
-        jPanel2.setLayout(new java.awt.BorderLayout());
-        jPanel2.add(jScrollPane1, java.awt.BorderLayout.CENTER);
-
-        add(jPanel2, java.awt.BorderLayout.CENTER);
+        add(treeView, java.awt.BorderLayout.CENTER);
     }// </editor-fold>//GEN-END:initComponents
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JPanel jPanel2;
-    private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JScrollPane treeView;
     // End of variables declaration//GEN-END:variables
 }

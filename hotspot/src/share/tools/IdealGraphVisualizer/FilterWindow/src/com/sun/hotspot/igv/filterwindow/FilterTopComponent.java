@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,65 +23,38 @@
  */
 package com.sun.hotspot.igv.filterwindow;
 
-import com.sun.hotspot.igv.filterwindow.actions.MoveFilterDownAction;
-import com.sun.hotspot.igv.filterwindow.actions.MoveFilterUpAction;
-import com.sun.hotspot.igv.filterwindow.actions.NewFilterAction;
-import com.sun.hotspot.igv.filterwindow.actions.RemoveFilterAction;
-import com.sun.hotspot.igv.filterwindow.actions.RemoveFilterSettingsAction;
-import com.sun.hotspot.igv.filterwindow.actions.SaveFilterSettingsAction;
+import com.sun.hotspot.igv.data.ChangedEvent;
+import com.sun.hotspot.igv.data.ChangedListener;
 import com.sun.hotspot.igv.filter.CustomFilter;
 import com.sun.hotspot.igv.filter.Filter;
 import com.sun.hotspot.igv.filter.FilterChain;
 import com.sun.hotspot.igv.filter.FilterSetting;
-import com.sun.hotspot.igv.data.ChangedEvent;
-import com.sun.hotspot.igv.data.ChangedListener;
+import com.sun.hotspot.igv.filterwindow.actions.*;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Serializable;
-import java.io.Writer;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.io.*;
+import java.util.*;
 import javax.swing.JComboBox;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
 import org.openide.DialogDisplayer;
 import org.openide.ErrorManager;
 import org.openide.NotifyDescriptor;
+import org.openide.awt.Toolbar;
 import org.openide.awt.ToolbarPool;
 import org.openide.explorer.ExplorerManager;
 import org.openide.explorer.ExplorerUtils;
+import org.openide.filesystems.FileLock;
+import org.openide.filesystems.FileObject;
+import org.openide.filesystems.FileUtil;
 import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
 import org.openide.nodes.Node;
-import org.openide.util.Exceptions;
-import org.openide.util.Lookup;
-import org.openide.util.LookupEvent;
-import org.openide.util.LookupListener;
-import org.openide.util.NbBundle;
-import org.openide.util.Utilities;
-import org.openide.awt.Toolbar;
-import org.openide.filesystems.FileLock;
+import org.openide.util.*;
 import org.openide.util.actions.SystemAction;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
-import org.openide.filesystems.Repository;
-import org.openide.filesystems.FileSystem;
-import org.openide.filesystems.FileObject;
 
 /**
  *
@@ -98,13 +71,14 @@ public final class FilterTopComponent extends TopComponent implements LookupList
     private ExplorerManager manager;
     private FilterChain filterChain;
     private FilterChain sequence;
-    private Lookup.Result result;
+    private Lookup.Result<FilterChain> result;
     private JComboBox comboBox;
     private List<FilterSetting> filterSettings;
     private FilterSetting customFilterSetting = new FilterSetting("-- Custom --");
     private ChangedEvent<FilterTopComponent> filterSettingsChangedEvent;
     private ActionListener comboBoxActionListener = new ActionListener() {
 
+        @Override
         public void actionPerformed(ActionEvent e) {
             comboBoxSelectionChanged();
         }
@@ -139,8 +113,8 @@ public final class FilterTopComponent extends TopComponent implements LookupList
 
         if (s != customFilterSetting) {
             FilterChain chain = getFilterChain();
-            chain.beginAtomic();
-            List<Filter> toRemove = new ArrayList<Filter>();
+            chain.getChangedEvent().beginAtomic();
+            List<Filter> toRemove = new ArrayList<>();
             for (Filter f : chain.getFilters()) {
                 if (!s.containsFilter(f)) {
                     toRemove.add(f);
@@ -156,7 +130,7 @@ public final class FilterTopComponent extends TopComponent implements LookupList
                 }
             }
 
-            chain.endAtomic();
+            chain.getChangedEvent().endAtomic();
             filterSettingsChangedEvent.fire();
         } else {
             this.updateComboBoxSelection();
@@ -177,14 +151,14 @@ public final class FilterTopComponent extends TopComponent implements LookupList
     }
 
     public void addFilterSetting() {
-        NotifyDescriptor.InputLine l = new NotifyDescriptor.InputLine("Enter a name:", "Filter");
+        NotifyDescriptor.InputLine l = new NotifyDescriptor.InputLine("Name of the new profile:", "Filter Profile");
         if (DialogDisplayer.getDefault().notify(l) == NotifyDescriptor.OK_OPTION) {
             String name = l.getInputText();
 
             FilterSetting toRemove = null;
             for (FilterSetting s : filterSettings) {
                 if (s.getName().equals(name)) {
-                    NotifyDescriptor.Confirmation conf = new NotifyDescriptor.Confirmation("Filter \"" + name + "\" already exists, to you want to overwrite?", "Filter");
+                    NotifyDescriptor.Confirmation conf = new NotifyDescriptor.Confirmation("Filter profile \"" + name + "\" already exists, do you want to replace it?", "Filter");
                     if (DialogDisplayer.getDefault().notify(conf) == NotifyDescriptor.YES_OPTION) {
                         toRemove = s;
                         break;
@@ -203,6 +177,7 @@ public final class FilterTopComponent extends TopComponent implements LookupList
             // Sort alphabetically
             Collections.sort(filterSettings, new Comparator<FilterSetting>() {
 
+                @Override
                 public int compare(FilterSetting o1, FilterSetting o2) {
                     return o1.getName().compareTo(o2.getName());
                 }
@@ -223,7 +198,7 @@ public final class FilterTopComponent extends TopComponent implements LookupList
             FilterSetting f = (FilterSetting) o;
             assert f != customFilterSetting;
             assert filterSettings.contains(f);
-            NotifyDescriptor.Confirmation l = new NotifyDescriptor.Confirmation("Do you really want to remove filter \"" + f + "\"?", "Filter");
+            NotifyDescriptor.Confirmation l = new NotifyDescriptor.Confirmation("Do you really want to remove filter profile \"" + f + "\"?", "Filter Profile");
             if (DialogDisplayer.getDefault().notify(l) == NotifyDescriptor.YES_OPTION) {
                 filterSettings.remove(f);
                 updateComboBox();
@@ -267,28 +242,26 @@ public final class FilterTopComponent extends TopComponent implements LookupList
         }
     }
 
-    private class FilterChildren extends Children.Keys implements ChangedListener<CheckNode> {
+    private class FilterChildren extends Children.Keys<Filter> implements ChangedListener<CheckNode> {
 
-        //private Node[] oldSelection;
-        //private ArrayList<Node> newSelection;
-        private HashMap<Object, Node> nodeHash = new HashMap<Object, Node>();
+        private HashMap<Filter, Node> nodeHash = new HashMap<>();
 
-        protected Node[] createNodes(Object object) {
-            if (nodeHash.containsKey(object)) {
-                return new Node[]{nodeHash.get(object)};
+        @Override
+        protected Node[] createNodes(Filter filter) {
+            if (nodeHash.containsKey(filter)) {
+                return new Node[]{nodeHash.get(filter)};
             }
 
-            assert object instanceof Filter;
-            Filter filter = (Filter) object;
-            com.sun.hotspot.igv.filterwindow.FilterNode node = new com.sun.hotspot.igv.filterwindow.FilterNode(filter);
+            FilterNode node = new FilterNode(filter);
             node.getSelectionChangedEvent().addListener(this);
-            nodeHash.put(object, node);
+            nodeHash.put(filter, node);
             return new Node[]{node};
         }
 
         public FilterChildren() {
             sequence.getChangedEvent().addListener(new ChangedListener<FilterChain>() {
 
+                @Override
                 public void changed(FilterChain source) {
                     addNotify();
                 }
@@ -297,11 +270,13 @@ public final class FilterTopComponent extends TopComponent implements LookupList
             setBefore(false);
         }
 
+        @Override
         protected void addNotify() {
             setKeys(sequence.getFilters());
             updateSelection();
         }
 
+        @Override
         public void changed(CheckNode source) {
             FilterNode node = (FilterNode) source;
             Filter f = node.getFilter();
@@ -322,16 +297,11 @@ public final class FilterTopComponent extends TopComponent implements LookupList
     }
 
     public FilterChain getFilterChain() {
-        return filterChain;/*
-    EditorTopComponent tc = EditorTopComponent.getActive();
-    if (tc == null) {
-    return filterChain;
-    }
-    return tc.getFilterChain();*/
+        return filterChain;
     }
 
     private FilterTopComponent() {
-        filterSettingsChangedEvent = new ChangedEvent<FilterTopComponent>(this);
+        filterSettingsChangedEvent = new ChangedEvent<>(this);
         initComponents();
         setName(NbBundle.getMessage(FilterTopComponent.class, "CTL_FilterTopComponent"));
         setToolTipText(NbBundle.getMessage(FilterTopComponent.class, "HINT_FilterTopComponent"));
@@ -355,13 +325,13 @@ public final class FilterTopComponent extends TopComponent implements LookupList
         toolBar.add(SaveFilterSettingsAction.get(SaveFilterSettingsAction.class));
         toolBar.add(RemoveFilterSettingsAction.get(RemoveFilterSettingsAction.class));
         toolBar.addSeparator();
+        toolBar.add(NewFilterAction.get(NewFilterAction.class));
+        toolBar.add(RemoveFilterAction.get(RemoveFilterAction.class).createContextAwareInstance(this.getLookup()));
         toolBar.add(MoveFilterUpAction.get(MoveFilterUpAction.class).createContextAwareInstance(this.getLookup()));
         toolBar.add(MoveFilterDownAction.get(MoveFilterDownAction.class).createContextAwareInstance(this.getLookup()));
-        toolBar.add(RemoveFilterAction.get(RemoveFilterAction.class).createContextAwareInstance(this.getLookup()));
-        toolBar.add(NewFilterAction.get(NewFilterAction.class));
         this.add(view, BorderLayout.CENTER);
 
-        filterSettings = new ArrayList<FilterSetting>();
+        filterSettings = new ArrayList<>();
         updateComboBox();
 
         comboBox.addActionListener(comboBoxActionListener);
@@ -401,6 +371,7 @@ public final class FilterTopComponent extends TopComponent implements LookupList
             filter = cf;
         }
 
+        @Override
         public void changed(Filter source) {
             try {
                 if (!fileObject.getName().equals(filter.getName())) {
@@ -409,15 +380,14 @@ public final class FilterTopComponent extends TopComponent implements LookupList
                     lock.releaseLock();
                     FileObject newFileObject = fileObject.getParent().getFileObject(filter.getName());
                     fileObject = newFileObject;
-
                 }
 
                 FileLock lock = fileObject.lock();
                 OutputStream os = fileObject.getOutputStream(lock);
-                Writer w = new OutputStreamWriter(os);
-                String s = filter.getCode();
-                w.write(s);
-                w.close();
+                try (Writer w = new OutputStreamWriter(os)) {
+                    String s = filter.getCode();
+                    w.write(s);
+                }
                 lock.releaseLock();
 
             } catch (IOException ex) {
@@ -427,15 +397,13 @@ public final class FilterTopComponent extends TopComponent implements LookupList
     }
 
     public void initFilters() {
-
-        FileSystem fs = Repository.getDefault().getDefaultFileSystem();
-        FileObject folder = fs.getRoot().getFileObject(FOLDER_ID);
+        FileObject folder = FileUtil.getConfigRoot().getFileObject(FOLDER_ID);
         FileObject[] children = folder.getChildren();
 
-        List<CustomFilter> customFilters = new ArrayList<CustomFilter>();
-        HashMap<CustomFilter, String> afterMap = new HashMap<CustomFilter, String>();
-        Set<CustomFilter> enabledSet = new HashSet<CustomFilter>();
-        HashMap<String, CustomFilter> map = new HashMap<String, CustomFilter>();
+        List<CustomFilter> customFilters = new ArrayList<>();
+        HashMap<CustomFilter, String> afterMap = new HashMap<>();
+        Set<CustomFilter> enabledSet = new HashSet<>();
+        HashMap<String, CustomFilter> map = new HashMap<>();
 
         for (final FileObject fo : children) {
             InputStream is = null;
@@ -447,13 +415,12 @@ public final class FilterTopComponent extends TopComponent implements LookupList
                 is = fo.getInputStream();
                 BufferedReader r = new BufferedReader(new InputStreamReader(is));
                 String s;
-                StringBuffer sb = new StringBuffer();
+                StringBuilder sb = new StringBuilder();
                 while ((s = r.readLine()) != null) {
                     sb.append(s);
                     sb.append("\n");
                 }
                 code = sb.toString();
-
             } catch (FileNotFoundException ex) {
                 Exceptions.printStackTrace(ex);
             } catch (IOException ex) {
@@ -488,7 +455,7 @@ public final class FilterTopComponent extends TopComponent implements LookupList
 
         for (int j = 0; j < customFilters.size(); j++) {
             for (int i = 0; i < customFilters.size(); i++) {
-                List<CustomFilter> copiedList = new ArrayList<CustomFilter>(customFilters);
+                List<CustomFilter> copiedList = new ArrayList<>(customFilters);
                 for (CustomFilter cf : copiedList) {
 
                     String after = afterMap.get(cf);
@@ -573,7 +540,7 @@ public final class FilterTopComponent extends TopComponent implements LookupList
 
     @Override
     public void componentOpened() {
-        Lookup.Template<FilterChain> tpl = new Lookup.Template<FilterChain>(FilterChain.class);
+        Lookup.Template<FilterChain> tpl = new Lookup.Template<>(FilterChain.class);
         result = Utilities.actionsGlobalContext().lookup(tpl);
         result.addLookupListener(this);
     }
@@ -584,13 +551,9 @@ public final class FilterTopComponent extends TopComponent implements LookupList
         result = null;
     }
 
+    @Override
     public void resultChanged(LookupEvent lookupEvent) {
         setChain(Utilities.actionsGlobalContext().lookup(FilterChain.class));
-    /*
-    EditorTopComponent tc = EditorTopComponent.getActive();
-    if (tc != null) {
-    setChain(tc.getFilterChain());
-    }*/
     }
 
     public void setChain(FilterChain chain) {
@@ -598,15 +561,33 @@ public final class FilterTopComponent extends TopComponent implements LookupList
     }
 
     private FileObject getFileObject(CustomFilter cf) {
-        FileObject fo = Repository.getDefault().getDefaultFileSystem().getRoot().getFileObject(FOLDER_ID + "/" + cf.getName());
+        FileObject fo = FileUtil.getConfigRoot().getFileObject(FOLDER_ID + "/" + cf.getName());
         if (fo == null) {
             try {
-                fo = org.openide.filesystems.Repository.getDefault().getDefaultFileSystem().getRoot().getFileObject(FOLDER_ID).createData(cf.getName());
+                fo = FileUtil.getConfigRoot().getFileObject(FOLDER_ID).createData(cf.getName());
             } catch (IOException ex) {
                 Exceptions.printStackTrace(ex);
             }
         }
         return fo;
+    }
+
+    @Override
+    public boolean requestFocus(boolean temporary) {
+        view.requestFocus();
+        return super.requestFocus(temporary);
+    }
+
+    @Override
+    protected boolean requestFocusInWindow(boolean temporary) {
+        view.requestFocus();
+        return super.requestFocusInWindow(temporary);
+    }
+
+    @Override
+    public void requestActive() {
+        super.requestActive();
+        view.requestFocus();
     }
 
     @Override
