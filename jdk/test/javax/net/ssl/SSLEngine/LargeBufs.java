@@ -33,6 +33,7 @@
  * @run main/othervm -Djsse.enableCBCProtection=false LargeBufs
  *
  * @author Brad R. Wetmore
+ * @key randomness
  */
 
 import javax.net.ssl.*;

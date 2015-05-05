@@ -903,7 +903,7 @@ public class TypeEnter implements Completer {
             memberEnter.memberEnter(tree.defs, env);
 
             if (tree.sym.isAnnotationType()) {
-                Assert.checkNull(tree.sym.completer);
+                Assert.check(tree.sym.isCompleted());
                 tree.sym.setAnnotationTypeMetadata(new AnnotationTypeMetadata(tree.sym, annotate.annotationTypeSourceCompleter()));
             }
         }

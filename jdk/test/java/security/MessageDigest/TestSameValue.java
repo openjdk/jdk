@@ -34,6 +34,7 @@ import java.util.Random;
  * @summary Check md.digest(data) value whether same with digest output value
  *          with various update/digest methods.
  * @author Kevin Liu
+ * @key randomness
  */
 
 public class TestSameValue {

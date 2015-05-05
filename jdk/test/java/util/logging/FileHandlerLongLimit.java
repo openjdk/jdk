@@ -55,6 +55,7 @@ import java.util.logging.LoggingPermission;
  * @run main/othervm FileHandlerLongLimit UNSECURE
  * @run main/othervm FileHandlerLongLimit SECURE
  * @author danielfuchs
+ * @key randomness
  */
 public class FileHandlerLongLimit {
 

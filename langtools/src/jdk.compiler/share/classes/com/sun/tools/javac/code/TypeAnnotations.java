@@ -28,11 +28,11 @@ package com.sun.tools.javac.code;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.type.TypeKind;
-
 import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.code.Attribute.Array;
 import com.sun.tools.javac.code.Attribute.TypeCompound;
+import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import com.sun.tools.javac.code.Type.ArrayType;
 import com.sun.tools.javac.code.Type.CapturedType;
 import com.sun.tools.javac.code.Type.ClassType;
@@ -153,8 +153,8 @@ public class TypeAnnotations {
 
     public enum AnnotationType { DECLARATION, TYPE, NONE, BOTH }
 
-    public List<Attribute> annotationTargets(Attribute.Compound anno) {
-        Attribute.Compound atTarget = anno.type.tsym.getAnnotationTypeMetadata().getTarget();
+    public List<Attribute> annotationTargets(TypeSymbol tsym) {
+        Attribute.Compound atTarget = tsym.getAnnotationTypeMetadata().getTarget();
         if (atTarget == null) {
             return null;
         }
@@ -177,7 +177,7 @@ public class TypeAnnotations {
      * a type annotation, or both.
      */
     public AnnotationType annotationTargetType(Attribute.Compound a, Symbol s) {
-        List<Attribute> targets = annotationTargets(a);
+        List<Attribute> targets = annotationTargets(a.type.tsym);
         return (targets == null) ?
                 AnnotationType.DECLARATION :
                 targets.stream()

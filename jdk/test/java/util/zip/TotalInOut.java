@@ -24,6 +24,7 @@
 /* @test
  * @bug 7188852
  * @summary Test De/Inflater.getBytesRead/Written()
+ * @key randomness
  */
 
 import java.io.*;

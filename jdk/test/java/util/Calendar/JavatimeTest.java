@@ -25,6 +25,7 @@
  *@test
  *@bug 8007520 8008254
  *@summary Test those bridge methods to/from java.time date/time classes
+ * @key randomness
  */
 
 import java.util.Calendar;

@@ -24,6 +24,7 @@
 /* @test
  * @bug 6913877
  * @summary Stress AsynchronousFileChannel.write
+ * @key randomness
  */
 
 import java.io.*;

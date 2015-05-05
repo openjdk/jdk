@@ -641,7 +641,7 @@ public class Lower extends TreeTranslator {
             c.flatname = chk.localClassName(c);
         }
         c.sourcefile = owner.sourcefile;
-        c.completer = null;
+        c.completer = Completer.NULL_COMPLETER;
         c.members_field = WriteableScope.create(c);
         c.flags_field = flags;
         ClassType ctype = (ClassType) c.type;

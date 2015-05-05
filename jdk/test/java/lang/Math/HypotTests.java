@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,13 @@
 
 /*
  * @test
- * @bug 4851638 4939441
- * @summary Tests for {Math, StrictMath}.hypot
+ * @library /lib/testlibrary/
+ * @build jdk.testlibrary.*
+ * @run main HypotTests
+ * @bug 4851638 4939441 8078672
+ * @summary Tests for {Math, StrictMath}.hypot (use -Dseed=X to set PRNG seed)
  * @author Joseph D. Darcy
+ * @key randomness
  */
 
 public class HypotTests {
@@ -119,7 +123,7 @@ public class HypotTests {
          * exponent).  While the exponent of r is less than or equal
          * to (MAX_EXPONENT - 3), the computation should not overflow.
          */
-        java.util.Random rand = new java.util.Random();
+        java.util.Random rand = RandomFactory.getRandom();
         for(int i = 0; i < 1000; i++) {
             double d = rand.nextDouble();
             // Scale d to have an exponent equal to MAX_EXPONENT -15

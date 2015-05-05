@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,13 @@
 
 /*
  * @test
- * @bug     4495754
- * @summary Basic test for long bit twiddling
+ * @library /lib/testlibrary/
+ * @build jdk.testlibrary.*
+ * @run main BitTwiddle
+ * @bug     4495754 8078672
+ * @summary Basic test for long bit twiddling (use -Dseed=X to set PRNG seed)
  * @author  Josh Bloch
+ * @key randomness
  */
 
 import java.util.Random;
@@ -35,7 +39,7 @@ public class BitTwiddle {
     private static final int N = 1000; // # of repetitions per test
 
     public static void main(String args[]) {
-        Random rnd = new Random();
+        Random rnd = RandomFactory.getRandom();
 
         if (highestOneBit(0) != 0)
             throw new RuntimeException("a");

@@ -33,7 +33,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.management.DynamicMBean;
 import javax.management.ObjectName;
 import sun.management.ManagementFactoryHelper;
 import sun.management.spi.PlatformMBeanProvider;
@@ -162,8 +161,7 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
             @Override
             public Set<Class<? extends MemoryManagerMXBean>> mbeanInterfaces() {
                 return Stream.of(MemoryManagerMXBean.class,
-                        GarbageCollectorMXBean.class,
-                        com.sun.management.GarbageCollectorMXBean.class).collect(Collectors.toSet());
+                        GarbageCollectorMXBean.class).collect(Collectors.toSet());
             }
 
             @Override
@@ -463,39 +461,6 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
             }
 
         });
-
-        /**
-         * DynamicMBean
-         */
-        HashMap<ObjectName, DynamicMBean> dynmbeans
-                = ManagementFactoryHelper.getPlatformDynamicMBeans();
-        final Set<String> dynamicMBeanInterfaceNames =
-            Collections.unmodifiableSet(Collections.singleton("javax.management.DynamicMBean"));
-        for (Map.Entry<ObjectName, DynamicMBean> e : dynmbeans.entrySet()) {
-            initMBeanList.add(new PlatformComponent<DynamicMBean>() {
-                @Override
-                public Set<Class<? extends DynamicMBean>> mbeanInterfaces() {
-                    return Collections.emptySet();
-                }
-
-                @Override
-                public Set<String> mbeanInterfaceNames() {
-                    return dynamicMBeanInterfaceNames;
-                }
-
-                @Override
-                public String getObjectNamePattern() {
-                    return e.getKey().getCanonicalName();
-                }
-
-                @Override
-                public Map<String, DynamicMBean> nameToMBeanMap() {
-                    return Collections.<String, DynamicMBean>singletonMap(
-                            e.getKey().getCanonicalName(),
-                            e.getValue());
-                }
-            });
-        }
 
         initMBeanList.trimToSize();
         return initMBeanList;

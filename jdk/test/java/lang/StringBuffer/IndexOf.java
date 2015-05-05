@@ -24,6 +24,7 @@
 /* @test
  * @bug 4162796 4162796
  * @summary Test indexOf and lastIndexOf
+ * @key randomness
  */
 
 import java.util.Random;

@@ -32,6 +32,7 @@ public class TestJstatdExternalRegistry {
 
     public static void main(String[] args) throws Throwable {
         JstatdTest test = new JstatdTest();
+        test.setUseDefaultPort(false);
         test.setWithExternalRegistry(true);
         test.doTest();
     }
