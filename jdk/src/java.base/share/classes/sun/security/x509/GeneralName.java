@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,6 +113,15 @@ public class GeneralName {
                 name = new DNSName(encName);
             } else {
                 throw new IOException("Invalid encoding of DNS name");
+            }
+            break;
+
+        case GeneralNameInterface.NAME_X400:
+            if (encName.isContextSpecific() && encName.isConstructed()) {
+                encName.resetTag(DerValue.tag_IA5String);
+                name = new X400Address(encName);
+            } else {
+                throw new IOException("Invalid encoding of X400Address name");
             }
             break;
 
