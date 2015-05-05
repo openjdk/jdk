@@ -31,15 +31,9 @@ import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 
-public class OopMap extends VMObject {
-  private static CIntegerField pcOffsetField;
-  private static CIntegerField omvCountField;
-  private static CIntegerField omvDataSizeField;
-  private static AddressField  omvDataField;
-  private static AddressField  compressedWriteStreamField;
-
-  // This is actually a field inside class CompressedStream
-  private static AddressField  compressedStreamBufferField;
+public class ImmutableOopMap extends VMObject {
+  private static CIntegerField countField;
+  private static long classSize;
 
   static {
     VM.registerVMInitializedObserver(new Observer() {
@@ -50,52 +44,24 @@ public class OopMap extends VMObject {
   }
 
   private static void initialize(TypeDataBase db) {
-    Type type = db.lookupType("OopMap");
-
-    pcOffsetField              = type.getCIntegerField("_pc_offset");
-    omvCountField              = type.getCIntegerField("_omv_count");
-    omvDataSizeField           = type.getCIntegerField("_omv_data_size");
-    omvDataField               = type.getAddressField("_omv_data");
-    compressedWriteStreamField = type.getAddressField("_write_stream");
-
-    type = db.lookupType("CompressedStream");
-    compressedStreamBufferField = type.getAddressField("_buffer");
+    Type type = db.lookupType("ImmutableOopMap");
+    countField = type.getCIntegerField("_count");
+    classSize = type.getSize();
   }
 
-  public OopMap(Address addr) {
+  public ImmutableOopMap(Address addr) {
     super(addr);
-  }
-
-  public long getOffset() {
-    return pcOffsetField.getValue(addr);
   }
 
   //--------------------------------------------------------------------------------
   // Internals only below this point
   //
 
-  // Accessors -- package private for now
-  Address getOMVData() {
-    return omvDataField.getValue(addr);
+  long getCount() {
+    return countField.getValue(addr);
   }
 
-  long getOMVDataSize() {
-    return omvDataSizeField.getValue(addr);
-  }
-
-  long getOMVCount() {
-    return omvCountField.getValue(addr);
-  }
-
-  CompressedWriteStream getWriteStream() {
-    Address wsAddr = compressedWriteStreamField.getValue(addr);
-    if (wsAddr == null) {
-      return null;
-    }
-    Address bufferAddr = compressedStreamBufferField.getValue(wsAddr);
-    if (bufferAddr == null) {
-      return null;
-    }
-    return new CompressedWriteStream(bufferAddr);
+  public Address getData() {
+    return addr.addOffsetTo(classSize);
   }
 }
