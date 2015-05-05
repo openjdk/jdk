@@ -6,5 +6,7 @@
 ^src/share/tools/IdealGraphVisualizer/[a-zA-Z0-9]*/build/
 ^src/share/tools/IdealGraphVisualizer/build/
 ^src/share/tools/IdealGraphVisualizer/dist/
+^src/share/tools/IdealGraphVisualizer/nbplatform/
+.igv.log
 ^.hgtip
 .DS_Store
