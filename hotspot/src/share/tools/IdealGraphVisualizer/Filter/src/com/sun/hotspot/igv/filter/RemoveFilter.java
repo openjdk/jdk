@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,7 @@ package com.sun.hotspot.igv.filter;
 
 import com.sun.hotspot.igv.graph.Diagram;
 import com.sun.hotspot.igv.graph.Figure;
-import com.sun.hotspot.igv.graph.InputSlot;
 import com.sun.hotspot.igv.graph.Selector;
-import com.sun.hotspot.igv.data.Properties;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -44,56 +42,36 @@ public class RemoveFilter extends AbstractFilter {
 
     public RemoveFilter(String name) {
         this.name = name;
-        rules = new ArrayList<RemoveRule>();
+        rules = new ArrayList<>();
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public void apply(Diagram diagram) {
-
         for (RemoveRule r : rules) {
+            List<Figure> selected = r.getSelector().selected(diagram);
+            Set<Figure> toRemove = new HashSet<>(selected);
 
-            List<Figure> list = r.getSelector().selected(diagram);
-            Set<Figure> figuresToRemove = new HashSet<Figure>();
-
-            List<Figure> protectedFigures = null;
-            if (r.getRemoveAllWithoutPredecessor()) {
-                protectedFigures = diagram.getRootFigures();
-            }
-
-            for (Figure f : list) {
-                if (r.getRemoveOnlyInputs()) {
-                    List<InputSlot> inputSlots = new ArrayList<InputSlot>();
-                    for (InputSlot is : f.getInputSlots()) {
-                        inputSlots.add(is);
-                    }
-                    for (InputSlot is : inputSlots) {
-                        f.removeSlot(is);
-                    }
-
-                    f.createInputSlot();
-                } else {
-                    figuresToRemove.add(f);
-                }
-            }
-
-            if (r.getRemoveAllWithoutPredecessor()) {
-                boolean progress = true;
-                while (progress) {
-                    List<Figure> rootFigures = diagram.getRootFigures();
-                    progress = false;
-                    for (Figure f : rootFigures) {
-                        if (!protectedFigures.contains(f)) {
-                            figuresToRemove.add(f);
-                            progress = true;
+            if (r.getRemoveOrphans()) {
+                boolean changed;
+                do {
+                    changed = false;
+                    for (Figure f : diagram.getFigures()) {
+                        if (!toRemove.contains(f)) {
+                            if (toRemove.containsAll(f.getPredecessors()) && toRemove.containsAll(f.getSuccessors())) {
+                                toRemove.add(f);
+                                changed = true;
+                            }
                         }
                     }
-                }
+                } while (changed);
             }
 
-            diagram.removeAllFigures(figuresToRemove);
+            diagram.removeAllFigures(toRemove);
         }
     }
 
@@ -104,29 +82,23 @@ public class RemoveFilter extends AbstractFilter {
     public static class RemoveRule {
 
         private Selector selector;
-        private boolean removeAllWithoutPredecessor;
-        private boolean removeOnlyInputs;
+        private boolean removeOrphans;
 
-        public RemoveRule(Selector selector, boolean b) {
-            this(selector, b, false);
+        public RemoveRule(Selector selector) {
+            this(selector, false);
         }
 
-        public RemoveRule(Selector selector, boolean removeAllWithoutPredecessor, boolean removeOnlyInputs) {
+        public RemoveRule(Selector selector, boolean removeOrphans) {
             this.selector = selector;
-            this.removeOnlyInputs = removeOnlyInputs;
-            this.removeAllWithoutPredecessor = removeAllWithoutPredecessor;
+            this.removeOrphans = removeOrphans;
         }
 
         public Selector getSelector() {
             return selector;
         }
 
-        public boolean getRemoveOnlyInputs() {
-            return removeOnlyInputs;
-        }
-
-        public boolean getRemoveAllWithoutPredecessor() {
-            return removeAllWithoutPredecessor;
+        public boolean getRemoveOrphans() {
+            return removeOrphans;
         }
     }
 }
