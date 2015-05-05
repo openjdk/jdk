@@ -111,7 +111,7 @@ import com.sun.corba.se.spi.ior.IORTemplate ;
 *   <li>oa.returnServant()</li>
 *   <li>oa.exit()</li>
 *   <li>pop info</li>
-*   <ol>
+*   </ol>
 * </li>
 * REVISIT: Is this the required order for exit/pop?  Cna they be nested instead?
 * Note that getInvocationServant and returnServant may throw exceptions.  In such cases,

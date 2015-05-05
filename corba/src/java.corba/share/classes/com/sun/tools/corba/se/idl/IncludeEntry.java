@@ -81,7 +81,7 @@ public class IncludeEntry extends SymtabEntry
   } // generate
 
   /** Access the Include type generator.
-      @returns an object which implements the IncludeGen interface.
+      @return an object which implements the IncludeGen interface.
       @see IncludeGen */
   public Generator generator ()
   {

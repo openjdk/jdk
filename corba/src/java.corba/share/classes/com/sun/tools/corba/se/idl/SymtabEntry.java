@@ -127,7 +127,7 @@ public class SymtabEntry
 
   /** Get the name of this entry's module.  If there are modules within
       modules, each module name is separated by '/'.
-      @returns this entry's module name. */
+      @return this entry's module name. */
   public String module ()
   {
     return _module;
