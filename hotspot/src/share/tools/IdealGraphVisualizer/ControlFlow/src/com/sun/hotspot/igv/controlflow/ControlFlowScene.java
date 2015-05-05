@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,17 @@
  */
 package com.sun.hotspot.igv.controlflow;
 
-import com.sun.hotspot.igv.data.InputBlock;
 import com.sun.hotspot.igv.data.InputBlockEdge;
+import com.sun.hotspot.igv.data.InputBlock;
 import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.data.InputNode;
+import com.sun.hotspot.igv.util.LookupHistory;
 import java.awt.Color;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.HashMap;
 import java.util.Set;
 import javax.swing.BorderFactory;
 import org.netbeans.api.visual.action.ActionFactory;
@@ -44,15 +44,14 @@ import org.netbeans.api.visual.action.SelectProvider;
 import org.netbeans.api.visual.action.WidgetAction;
 import org.netbeans.api.visual.anchor.AnchorFactory;
 import org.netbeans.api.visual.anchor.AnchorShape;
-import org.netbeans.api.visual.layout.LayoutFactory;
 import org.netbeans.api.visual.router.RouterFactory;
 import org.netbeans.api.visual.widget.LayerWidget;
 import org.netbeans.api.visual.widget.Widget;
 import org.netbeans.api.visual.graph.GraphScene;
 import org.netbeans.api.visual.graph.layout.GraphLayout;
+import org.netbeans.api.visual.layout.LayoutFactory;
 import org.netbeans.api.visual.layout.SceneLayout;
 import org.netbeans.api.visual.widget.ConnectionWidget;
-import org.openide.util.Lookup;
 
 /**
  *
@@ -61,13 +60,12 @@ import org.openide.util.Lookup;
 public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> implements SelectProvider, MoveProvider, RectangularSelectDecorator, RectangularSelectProvider {
 
     private HashSet<BlockWidget> selection;
-    private HashMap<InputBlock, BlockWidget> blockMap;
     private InputGraph oldGraph;
     private LayerWidget edgeLayer;
     private LayerWidget mainLayer;
     private LayerWidget selectLayer;
     private WidgetAction hoverAction = this.createWidgetHoverAction();
-    private WidgetAction selectAction = ActionFactory.createSelectAction(this);
+    private WidgetAction selectAction = new DoubleClickSelectAction(this);
     private WidgetAction moveAction = ActionFactory.createMoveAction(null, this);
 
     public ControlFlowScene() {
@@ -111,25 +109,19 @@ public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> imp
             addNode(b);
         }
 
-        for (InputBlock b : g.getBlocks()) {
-            for (InputBlockEdge e : b.getOutputs()) {
-                addEdge(e);
-                assert g.getBlocks().contains(e.getFrom());
-                assert g.getBlocks().contains(e.getTo());
-                this.setEdgeSource(e, e.getFrom());
-                this.setEdgeTarget(e, e.getTo());
-            }
+        for (InputBlockEdge e : g.getBlockEdges()) {
+            addEdge(e);
+            assert g.getBlocks().contains(e.getFrom());
+            assert g.getBlocks().contains(e.getTo());
+            this.setEdgeSource(e, e.getFrom());
+            this.setEdgeTarget(e, e.getTo());
         }
 
-        GraphLayout layout = new HierarchicalGraphLayout();//GridGraphLayout();
+        GraphLayout<InputBlock, InputBlockEdge> layout = new HierarchicalGraphLayout<InputBlock, InputBlockEdge>();//GridGraphLayout();
         SceneLayout sceneLayout = LayoutFactory.createSceneGraphLayout(this, layout);
         sceneLayout.invokeLayout();
 
         this.validate();
-    }
-
-    public BlockWidget getBlockWidget(InputBlock b) {
-        return blockMap.get(b);
     }
 
     public void clearSelection() {
@@ -141,7 +133,7 @@ public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> imp
     }
 
     public void selectionChanged() {
-        InputGraphProvider p = Lookup.getDefault().lookup(InputGraphProvider.class);
+        InputGraphProvider p = LookupHistory.getLast(InputGraphProvider.class);//)Utilities.actionsGlobalContext().lookup(InputGraphProvider.class);
         if (p != null) {
             Set<InputNode> inputNodes = new HashSet<InputNode>();
             for (BlockWidget w : selection) {
@@ -204,15 +196,19 @@ public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> imp
     }
 
     public void setNewLocation(Widget widget, Point location) {
-        Point originalLocation = getOriginalLocation(widget);
-        int xOffset = location.x - originalLocation.x;
-        int yOffset = location.y - originalLocation.y;
-        for (Widget w : this.selection) {
-            Point p = new Point(w.getPreferredLocation());
-            p.translate(xOffset, yOffset);
-            w.setPreferredLocation(p);
+        if (selection.contains(widget)) {
+            // move entire selection
+            Point originalLocation = getOriginalLocation(widget);
+            int xOffset = location.x - originalLocation.x;
+            int yOffset = location.y - originalLocation.y;
+            for (Widget w : selection) {
+                Point p = new Point(w.getPreferredLocation());
+                p.translate(xOffset, yOffset);
+                w.setPreferredLocation(p);
+            }
+        } else {
+            widget.setPreferredLocation(location);
         }
-
     }
 
     public Widget createSelectionWidget() {
@@ -271,7 +267,15 @@ public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> imp
     }
 
     protected Widget attachEdgeWidget(InputBlockEdge edge) {
-        ConnectionWidget w = new BlockConnectionWidget(this, edge);
+        BlockConnectionWidget w = new BlockConnectionWidget(this, edge);
+        switch (edge.getState()) {
+            case NEW:
+                w.setBold(true);
+                break;
+            case DELETED:
+                w.setDashed(true);
+                break;
+        }
         w.setRouter(RouterFactory.createDirectRouter());
         w.setTargetAnchorShape(AnchorShape.TRIANGLE_FILLED);
         edgeLayer.addChild(w);

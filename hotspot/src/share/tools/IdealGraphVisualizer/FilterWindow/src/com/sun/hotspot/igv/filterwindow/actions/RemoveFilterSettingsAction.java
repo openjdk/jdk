@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,16 +35,18 @@ import org.openide.util.actions.CallableSystemAction;
  */
 public final class RemoveFilterSettingsAction extends CallableSystemAction {
 
+    @Override
     public void performAction() {
         FilterTopComponent.findInstance().removeFilterSetting();
     }
 
+    @Override
     public String getName() {
         return NbBundle.getMessage(RemoveFilterSettingsAction.class, "CTL_RemoveFilterSettingsAction");
     }
 
     public RemoveFilterSettingsAction() {
-        putValue(Action.SHORT_DESCRIPTION, "Remove filter profile");
+        putValue(Action.SHORT_DESCRIPTION, "Delete current filter profile");
     }
 
     @Override
@@ -52,6 +54,7 @@ public final class RemoveFilterSettingsAction extends CallableSystemAction {
         super.initialize();
     }
 
+    @Override
     public HelpCtx getHelpCtx() {
         return HelpCtx.DEFAULT_HELP;
     }
@@ -63,6 +66,6 @@ public final class RemoveFilterSettingsAction extends CallableSystemAction {
 
     @Override
     protected String iconResource() {
-        return "com/sun/hotspot/igv/filterwindow/images/delete.gif";
+        return "com/sun/hotspot/igv/filterwindow/images/delete.png";
     }
 }
