@@ -27,6 +27,7 @@
  * @summary basic test of SHA1withDSA and RawDSA signing/verifying
  * @author Andreas Sterbenz
  * @library ..
+ * @key randomness
  */
 
 import java.io.*;

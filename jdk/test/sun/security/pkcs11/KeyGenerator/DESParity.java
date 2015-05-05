@@ -27,6 +27,7 @@
  * @summary Verify that the parity bits are set correctly
  * @author Andreas Sterbenz
  * @library ..
+ * @key randomness
  */
 
 import java.io.*;

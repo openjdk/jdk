@@ -25,6 +25,7 @@
  * @bug 4217676
  * @summary Ensure that object streams support serialization of long strings
  *          (strings whose UTF representation > 64k in length)
+ * @key randomness
  */
 
 import java.io.*;

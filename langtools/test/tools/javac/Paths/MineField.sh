@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -323,7 +323,7 @@ In GooClass Failure "$javac" ${TESTTOOLVMOPTS} -cp ".." ../Main.java
 In GooClass Failure "$java" ${TESTVMOPTS}  -cp ".." Main
 
 # Unspecified classpath defaults to "."
-Sys mkdir OneDir; Sys cp -p Main.java GooClass/Lib.class OneDir/.
+Sys mkdir OneDir; Sys cp Main.java GooClass/Lib.class OneDir/.
 In OneDir Success "$javac" ${TESTTOOLVMOPTS} Main.java
 In OneDir Success "$java" ${TESTVMOPTS}  Main
 

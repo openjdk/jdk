@@ -27,6 +27,7 @@
  * @summary ensures various salt lengths can be used for
  * HmacPBESHA1.
  * @author Valerie Peng
+ * @key randomness
  */
 
 import java.io.*;

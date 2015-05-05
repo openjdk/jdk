@@ -170,7 +170,7 @@ public abstract class Policy {
                 PolicyInfo pinfo = policy.get();
                 if (pinfo.policy == null) {
                     String policy_class = AccessController.doPrivileged(
-                        new PrivilegedAction<String>() {
+                        new PrivilegedAction<>() {
                         public String run() {
                             return Security.getProperty("policy.provider");
                         }
@@ -199,7 +199,7 @@ public abstract class Policy {
 
                         final String pc = policy_class;
                         Policy pol = AccessController.doPrivileged(
-                            new PrivilegedAction<Policy>() {
+                            new PrivilegedAction<>() {
                             public Policy run() {
                                 try {
                                     ClassLoader cl =
@@ -303,7 +303,7 @@ public abstract class Policy {
          */
 
         ProtectionDomain policyDomain =
-        AccessController.doPrivileged(new PrivilegedAction<ProtectionDomain>() {
+        AccessController.doPrivileged(new PrivilegedAction<>() {
             public ProtectionDomain run() {
                 return p.getClass().getProtectionDomain();
             }

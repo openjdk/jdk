@@ -59,11 +59,11 @@ public class GeneralSubtrees implements Cloneable {
      * The default constructor for the class.
      */
     public GeneralSubtrees() {
-        trees = new ArrayList<GeneralSubtree>();
+        trees = new ArrayList<>();
     }
 
     private GeneralSubtrees(GeneralSubtrees source) {
-        trees = new ArrayList<GeneralSubtree>(source.trees);
+        trees = new ArrayList<>(source.trees);
     }
 
     /**

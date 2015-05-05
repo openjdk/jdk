@@ -25,6 +25,7 @@
  * @test
  * @bug 4679743
  * @summary Test basic functionality of DeflaterInputStream and InflaterOutputStream
+ * @key randomness
  */
 
 import java.io.*;

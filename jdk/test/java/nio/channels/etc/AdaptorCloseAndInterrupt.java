@@ -24,6 +24,7 @@
 /* @test
  * @bug 7184932
  * @summary Test asynchronous close and interrupt of timed socket adapter methods
+ * @key randomness
  */
 
 import java.io.*;

@@ -27,6 +27,7 @@
  * @summary
  * @author Andreas Sterbenz
  * @library ..
+ * @key randomness
  */
 
 import java.util.*;

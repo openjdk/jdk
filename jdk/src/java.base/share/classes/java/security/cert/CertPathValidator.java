@@ -313,7 +313,7 @@ public class CertPathValidator {
      */
     public final static String getDefaultType() {
         String cpvtype =
-            AccessController.doPrivileged(new PrivilegedAction<String>() {
+            AccessController.doPrivileged(new PrivilegedAction<>() {
                 public String run() {
                     return Security.getProperty(CPV_TYPE);
                 }

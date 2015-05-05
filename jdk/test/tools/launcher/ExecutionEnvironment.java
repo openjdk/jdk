@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,15 +184,7 @@ public class ExecutionEnvironment extends TestHelper {
 
         Map<String, String> env = new HashMap<>();
 
-        if (TestHelper.isLinux || TestHelper.isMacOSX || TestHelper.isAIX) {
-            for (String x : LD_PATH_STRINGS) {
-                String pairs[] = x.split("=");
-                env.put(pairs[0], pairs[1]);
-            }
-
-            tr = doExec(env, javaCmd, "-jar", testJarFile.getAbsolutePath());
-            verifyJavaLibraryPathGeneric(tr);
-        } else { // Solaris
+        if (TestHelper.isSolaris) {
             // no override
             env.clear();
             env.put(LD_LIBRARY_PATH, LD_LIBRARY_PATH_VALUE);
@@ -208,6 +200,14 @@ public class ExecutionEnvironment extends TestHelper {
             // verify the override occurs for 64-bit system
             tr = doExec(env, javaCmd, "-jar", testJarFile.getAbsolutePath());
             verifyJavaLibraryPathOverride(tr, false);
+        } else {
+            for (String x : LD_PATH_STRINGS) {
+                String pairs[] = x.split("=");
+                env.put(pairs[0], pairs[1]);
+            }
+
+            tr = doExec(env, javaCmd, "-jar", testJarFile.getAbsolutePath());
+            verifyJavaLibraryPathGeneric(tr);
         }
     }
 
