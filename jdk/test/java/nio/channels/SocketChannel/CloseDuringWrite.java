@@ -23,6 +23,7 @@
 
 /* @test
  * @summary Test asynchronous close during a blocking write
+ * @key randomness
  */
 
 import java.io.Closeable;

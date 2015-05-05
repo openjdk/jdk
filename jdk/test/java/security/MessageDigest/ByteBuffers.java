@@ -26,6 +26,7 @@
  * @bug 4844847
  * @summary Test the MessageDigest.update(ByteBuffer) method
  * @author Andreas Sterbenz
+ * @key randomness
  */
 
 import java.util.*;

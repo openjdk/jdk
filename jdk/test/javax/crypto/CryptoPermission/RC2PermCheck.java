@@ -27,6 +27,7 @@
  * @summary Ensure the crypto permission check on cipher algorithms
  * with restricted parameter values are correctly enforced.
  * @author Valerie Peng
+ * @key randomness
  */
 
 import java.io.*;

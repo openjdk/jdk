@@ -27,6 +27,7 @@
  * @summary basic test for RSA/ECB/NoPadding cipher
  * @author Valerie Peng
  * @library ..
+ * @key randomness
  */
 
 import javax.crypto.*;

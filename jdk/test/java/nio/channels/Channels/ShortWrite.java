@@ -25,6 +25,7 @@
  * @bug 6448457
  * @summary Test Channels.newOutputStream returns OutputStream that handles
  *     short writes from the underlying channel
+ * @key randomness
  */
 
 import java.io.OutputStream;

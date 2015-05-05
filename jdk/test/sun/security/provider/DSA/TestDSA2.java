@@ -26,6 +26,7 @@
  * @run main/othervm/timeout=250 TestDSA2
  * @summary verify that DSA signature works using SHA and SHA-224 and
  *          SHA-256 digests.
+ * @key randomness
  */
 
 

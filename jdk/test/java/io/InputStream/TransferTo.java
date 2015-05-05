@@ -37,6 +37,7 @@ import static java.lang.String.format;
  * @bug 8066867
  * @summary tests whether java.io.InputStream.transferTo conforms to its
  *          contract defined in the javadoc
+ * @key randomness
  */
 public class TransferTo {
 

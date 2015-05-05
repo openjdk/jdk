@@ -23,6 +23,7 @@
 
 /* @test
  * @summary Test selection of ready pipe
+ * @key randomness
  */
 
 import java.io.*;

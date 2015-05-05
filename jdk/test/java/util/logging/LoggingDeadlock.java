@@ -30,6 +30,10 @@
  *
  * @build    LoggingDeadlock
  * @run  main/timeout=15 LoggingDeadlock
+ * @key randomness
+ */
+
+/*
  *
  * There can be a deadlock between two class initializations.
  * It happens if the LogManager.<clinit> and the Logger.<clinit>

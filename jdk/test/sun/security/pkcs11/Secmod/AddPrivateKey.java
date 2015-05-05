@@ -28,6 +28,7 @@
  * @author Andreas Sterbenz
  * @library ..
  * @run main/othervm AddPrivateKey
+ * @key randomness
  */
 
 import java.io.*;
