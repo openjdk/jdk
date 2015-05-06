@@ -342,6 +342,9 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         if (functionNode.isVarArg()) {
             flags |= IS_VARIABLE_ARITY;
         }
+        if (functionNode.getKind() == FunctionNode.Kind.GETTER || functionNode.getKind() == FunctionNode.Kind.SETTER) {
+            flags |= IS_PROPERTY_ACCESSOR;
+        }
         return flags;
     }
 
@@ -382,7 +385,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         parser.setReparsedFunction(this);
 
         final FunctionNode program = parser.parse(CompilerConstants.PROGRAM.symbolName(), descPosition,
-                Token.descLength(token), true);
+                Token.descLength(token), isPropertyAccessor());
         // Parser generates a program AST even if we're recompiling a single function, so when we are only
         // recompiling a single function, extract it from the program.
         return (isProgram() ? program : extractFunctionFromScript(program)).setName(null, functionName);
