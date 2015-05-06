@@ -202,7 +202,7 @@ public class GeneralName {
      * Compare this GeneralName with another
      *
      * @param other GeneralName to compare to this
-     * @returns true if match
+     * @return true if match
      */
     public boolean equals(Object other) {
         if (this == other) {

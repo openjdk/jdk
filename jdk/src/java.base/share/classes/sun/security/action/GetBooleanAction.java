@@ -33,7 +33,7 @@ package sun.security.action;
  * <code>AccessController.doPrivileged</code>.
  *
  * <p>The following code retrieves the boolean value of the system
- * property named <code>"prop"</code> as a privileged action: <p>
+ * property named <code>"prop"</code> as a privileged action:
  *
  * <pre>
  * boolean b = java.security.AccessController.doPrivileged
