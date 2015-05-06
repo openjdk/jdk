@@ -690,10 +690,10 @@ SYMBOLS_IMAGE_SUBDIR:=symbols
 SYMBOLS_IMAGE_DIR=$(IMAGES_OUTPUTDIR)/$(SYMBOLS_IMAGE_SUBDIR)
 
 # Macosx bundles directory definitions
-JDK_BUNDLE_SUBDIR=jdk-bundle/jdk$(JDK_VERSION).jdk/Contents
-JRE_BUNDLE_SUBDIR=jre-bundle/jre$(JDK_VERSION).jre/Contents
-JDK_BUNDLE_DIR=$(IMAGES_OUTPUTDIR)/$(JDK_BUNDLE_SUBDIR)
-JRE_BUNDLE_DIR=$(IMAGES_OUTPUTDIR)/$(JRE_BUNDLE_SUBDIR)
+JDK_MACOSX_BUNDLE_SUBDIR=jdk-bundle/jdk$(JDK_VERSION).jdk/Contents
+JRE_MACOSX_BUNDLE_SUBDIR=jre-bundle/jre$(JDK_VERSION).jre/Contents
+JDK_MACOSX_BUNDLE_DIR=$(IMAGES_OUTPUTDIR)/$(JDK_MACOSX_BUNDLE_SUBDIR)
+JRE_MACOSX_BUNDLE_DIR=$(IMAGES_OUTPUTDIR)/$(JRE_MACOSX_BUNDLE_SUBDIR)
 
 # This macro is called to allow inclusion of closed source counterparts.
 # Unless overridden in closed sources, it expands to nothing.
