@@ -42,7 +42,7 @@ public class PathList {
      * Utility method for appending path from pathFrom to pathTo.
      *
      * @param pathTo the target path
-     * @param pathSource the path to be appended to pathTo
+     * @param pathFrom the path to be appended to pathTo
      * @return the resulting path
      */
     public static String appendPath(String pathTo, String pathFrom) {
