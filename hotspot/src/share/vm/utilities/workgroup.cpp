@@ -29,8 +29,6 @@
 #include "runtime/os.hpp"
 #include "utilities/workgroup.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 // Definitions of WorkGang methods.
 
 AbstractWorkGang::AbstractWorkGang(const char* name,
@@ -155,7 +153,7 @@ void WorkGang::run_task(AbstractGangTask* task, uint no_of_parallel_workers) {
   // Wait for them to be finished
   while (finished_workers() < no_of_parallel_workers) {
     if (TraceWorkGang) {
-      tty->print_cr("Waiting in work gang %s: %d/%d finished sequence %d",
+      tty->print_cr("Waiting in work gang %s: %u/%u finished sequence %d",
                     name(), finished_workers(), no_of_parallel_workers,
                     _sequence_number);
     }
@@ -163,11 +161,11 @@ void WorkGang::run_task(AbstractGangTask* task, uint no_of_parallel_workers) {
   }
   _task = NULL;
   if (TraceWorkGang) {
-    tty->print_cr("\nFinished work gang %s: %d/%d sequence %d",
+    tty->print_cr("\nFinished work gang %s: %u/%u sequence %d",
                   name(), finished_workers(), no_of_parallel_workers,
                   _sequence_number);
     Thread* me = Thread::current();
-    tty->print_cr("  T: 0x%x  VM_thread: %d", me, me->is_VM_thread());
+    tty->print_cr("  T: " PTR_FORMAT "  VM_thread: %d", p2i(me), me->is_VM_thread());
   }
 }
 
@@ -190,7 +188,7 @@ void AbstractWorkGang::stop() {
   monitor()->notify_all();
   while (finished_workers() < active_workers()) {
     if (TraceWorkGang) {
-      tty->print_cr("Waiting in work gang %s: %d/%d finished",
+      tty->print_cr("Waiting in work gang %s: %u/%u finished",
                     name(), finished_workers(), active_workers());
     }
     monitor()->wait(/* no_safepoint_check */ true);
@@ -251,7 +249,7 @@ void GangWorker::initialize() {
   assert(_gang != NULL, "No gang to run in");
   os::set_priority(this, NearMaxPriority);
   if (TraceWorkGang) {
-    tty->print_cr("Running gang worker for gang %s id %d",
+    tty->print_cr("Running gang worker for gang %s id %u",
                   gang()->name(), id());
   }
   // The VM thread should not execute here because MutexLocker's are used
@@ -274,7 +272,7 @@ void GangWorker::loop() {
       // in the outer loop.
       gang()->internal_worker_poll(&data);
       if (TraceWorkGang) {
-        tty->print("Polled outside for work in gang %s worker %d",
+        tty->print("Polled outside for work in gang %s worker %u",
                    gang()->name(), id());
         tty->print("  terminate: %s",
                    data.terminate() ? "true" : "false");
@@ -308,7 +306,7 @@ void GangWorker::loop() {
         gang_monitor->wait(/* no_safepoint_check */ true);
         gang()->internal_worker_poll(&data);
         if (TraceWorkGang) {
-          tty->print("Polled inside for work in gang %s worker %d",
+          tty->print("Polled inside for work in gang %s worker %u",
                      gang()->name(), id());
           tty->print("  terminate: %s",
                      data.terminate() ? "true" : "false");
@@ -325,14 +323,14 @@ void GangWorker::loop() {
       // Drop gang mutex.
     }
     if (TraceWorkGang) {
-      tty->print("Work for work gang %s id %d task %s part %d",
+      tty->print("Work for work gang %s id %u task %s part %d",
                  gang()->name(), id(), data.task()->name(), part);
     }
     assert(data.task() != NULL, "Got null task");
     data.task()->work(part);
     {
       if (TraceWorkGang) {
-        tty->print("Finish for work gang %s id %d task %s part %d",
+        tty->print("Finish for work gang %s id %u task %s part %d",
                    gang()->name(), id(), data.task()->name(), part);
       }
       // Grab the gang mutex.

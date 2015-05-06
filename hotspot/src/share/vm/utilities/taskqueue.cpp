@@ -31,8 +31,6 @@
 #include "utilities/stack.inline.hpp"
 #include "utilities/taskqueue.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 #ifdef TRACESPINNING
 uint ParallelTaskTerminator::_total_yields = 0;
 uint ParallelTaskTerminator::_total_spins = 0;
@@ -216,8 +214,8 @@ ParallelTaskTerminator::offer_termination(TerminatorTerminator* terminator) {
       } else {
         if (PrintGCDetails && Verbose) {
          gclog_or_tty->print_cr("ParallelTaskTerminator::offer_termination() "
-           "thread %d sleeps after %d yields",
-           Thread::current(), yield_count);
+           "thread " PTR_FORMAT " sleeps after %u yields",
+           p2i(Thread::current()), yield_count);
         }
         yield_count = 0;
         // A sleep will cause this processor to seek work on another processor's
