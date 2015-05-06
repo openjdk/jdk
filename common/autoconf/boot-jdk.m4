@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -306,7 +306,6 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
   BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAVAC, javac)
   BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAVAH, javah)
   BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAR, jar)
-  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(NATIVE2ASCII, native2ascii)
   BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JARSIGNER, jarsigner)
 
   # Finally, set some other options...
