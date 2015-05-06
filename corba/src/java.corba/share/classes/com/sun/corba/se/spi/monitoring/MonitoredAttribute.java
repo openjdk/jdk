@@ -42,7 +42,7 @@ public interface MonitoredAttribute {
 /**
  * Gets the Monitored Attribute Info for the attribute.
  *
- * @param monitoredAttributeInfo for this Monitored Attribute.
+ * @return monitoredAttributeInfo for this Monitored Attribute.
  */
     public MonitoredAttributeInfo getAttributeInfo();
 /**
@@ -67,7 +67,7 @@ public interface MonitoredAttribute {
  * getvalue is same as the one specified in MonitoredAttributeInfo for this
  * attribute.
  *
- * @param value is the current value for this MonitoredAttribute
+ * @return the current value for this MonitoredAttribute
  */
     public Object getValue();
 /**

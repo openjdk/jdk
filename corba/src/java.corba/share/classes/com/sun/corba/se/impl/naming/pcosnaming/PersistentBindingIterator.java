@@ -64,7 +64,6 @@ public class PersistentBindingIterator extends BindingIteratorImpl
      * @param orb a org.omg.CORBA.ORB object.
      * @param aTable A hashtable containing InternalBindingValues which is
      * the content of the PersistentNamingContext.
-     * @param java.lang.Exception a Java exception.
      * @exception Exception a Java exception thrown of the base class cannot
      * initialize.
    */

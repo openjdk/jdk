@@ -121,7 +121,7 @@ public class ValueBoxGen24 extends ValueBoxGen
   } // helperRead
 
   /**
-   * <d62023>
+   * d62023
    **/
   public void helperWrite (SymtabEntry entry, PrintWriter stream)
   {

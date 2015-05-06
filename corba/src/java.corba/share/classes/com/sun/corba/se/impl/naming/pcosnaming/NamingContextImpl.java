@@ -116,8 +116,8 @@ public class NamingContextImpl
      * Runs the super constructor.
      * @param orb an ORB object.
      * @param objKey as String
-     * @param TheNameService as NameService
-     * @param TheServantManagerImpl as ServantManagerImpl
+     * @param theNameService as NameService
+     * @param theServantManagerImpl as ServantManagerImpl
      * @exception java.lang.Exception a Java exception.
      */
 
@@ -223,7 +223,7 @@ public class NamingContextImpl
    * exists. The NamingContext will participate in recursive resolving.
    * @param n a sequence of NameComponents which is the name under which
    * the object will be bound.
-   * @param obj the NamingContect object reference to be bound.
+   * @param nc the NamingContect object reference to be bound.
    * @exception org.omg.CosNaming.NamingContextPackage.NotFound A name with multiple
    * components was supplied, but the first component could not be
    * resolved.
@@ -301,7 +301,7 @@ public class NamingContextImpl
    * unbound first. The NamingContext will participate in recursive resolving.
    * @param n a sequence of NameComponents which is the name under which
    * the object will be bound.
-   * @param obj the object reference to be bound.
+   * @param nc the object reference to be bound.
    * @exception org.omg.CosNaming.NamingContextPackage.NotFound A name with multiple
    * components was supplied, but the first component could not be
    * resolved.
@@ -907,7 +907,7 @@ public class NamingContextImpl
     * The doResolve( ) method calls Resolve( ) recursively to resolve n level
     * Names.
     * @param n a sequence of NameComponents which is the name to be resolved.
-    * @param bt Type of binding (as object or as context).
+    * @param bth Type of binding (as object or as context).
     * @return the object reference bound under the supplied name.
     * @exception org.omg.CosNaming.NamingContextPackage.NotFound Neither a NamingContext
     * or a Corba Object reference not found under this Name

@@ -46,29 +46,21 @@ import com.sun.tools.corba.se.idl.TypedefEntry;
  * of what it may contain:
  * <dl>
  * <dt>
- * <pre>
- * case 1: short x;
- * </pre>
- * <dd><short x, <1>, false>
+ * {@code case 1: short x;}
+ * <dd>{@code <short x, <1>, false>}
  * <dt>
- * <pre>
- * case 0:
- * case 8:
- * case 2: long x;
- * </pre>
- * <dd><long x, <0, 8, 2>, false>
+ * {@code case 0:}<br>
+ * {@code case 8:}<br>
+ * {@code case 2: long x;}
+ * <dd>{@code <long x, <0, 8, 2>, false>}
  * <dt>
- * <pre>
- * default: long x;
- * </pre>
- * <dd><long x, <>, true>
+ * {@code default: long x;}
+ * <dd>{@code <long x, <>, true>}
  * <dt>
- * <pre>
- * case 0:
- * case 2:
- * default: char c;
- * </pre>
- * <dd><char c, <0, 2>, true>
+ * {@code case 0:}<br>
+ * {@code case 2:}<br>
+ * {@code default: char c;}
+ * <dd>{@code <char c, <0, 2>, true>}
  * </dl>
  **/
 public class UnionBranch

@@ -68,9 +68,9 @@ public class Arguments
    * must check the arguments passed to it for validity and process the
    * arguments appropriately.  If it detects an invalid argument, it should
    * throw an InvalidArgument exception.  Arguments MUST be of the form
-   * `/<arg> [<qualifiers>]' or `-<arg> [<qualifiers>]' where <qualifiers>
-   * is optional (for example, -iC:\includes, `C:\includes' is the qualifier
-   * for the argument `i').
+   * {@code '/<arg> [<qualifiers>]'} or {@code '-<arg> [<qualifiers>]'} where {@code <qualifiers>}
+   * is optional (for example, -iC:\includes, 'C:\includes' is the qualifier
+   * for the argument 'i').
    * @param args The arguments which are unknown by the framework.
    * @param properties Environment-style properties collected from the
    * file idl.config.
@@ -289,7 +289,7 @@ public class Arguments
   public Hashtable definedSymbols = new Hashtable ();
 
   /**
-   * <f46082.46.01> True if new module entries are created for each
+   * (f46082.46.01) True if new module entries are created for each
    * re-opened module.
    **/
   public boolean cppModule = false;
