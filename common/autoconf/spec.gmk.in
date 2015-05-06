@@ -455,7 +455,6 @@ JAVA_CMD:=@JAVA@
 JAVAC_CMD:=@JAVAC@
 JAVAH_CMD:=@JAVAH@
 JAR_CMD:=@JAR@
-NATIVE2ASCII_CMD:=@NATIVE2ASCII@
 JARSIGNER_CMD:=@JARSIGNER@
 SJAVAC_SERVER_JAVA_CMD:=@SJAVAC_SERVER_JAVA@
 # These variables are meant to be used. They are defined with = instead of := to make
@@ -465,7 +464,6 @@ JAVA_SMALL=@FIXPATH@ $(JAVA_CMD) $(JAVA_FLAGS_SMALL) $(JAVA_FLAGS)
 JAVAC=@FIXPATH@ $(JAVAC_CMD)
 JAVAH=@FIXPATH@ $(JAVAH_CMD)
 JAR=@FIXPATH@ $(JAR_CMD)
-NATIVE2ASCII=@FIXPATH@ $(NATIVE2ASCII_CMD) $(JAVA_TOOL_FLAGS_SMALL)
 JARSIGNER=@FIXPATH@ $(JARSIGNER_CMD)
 # A specific java binary with specific options can be used to run
 # the long running background sjavac servers and other long running tasks.
