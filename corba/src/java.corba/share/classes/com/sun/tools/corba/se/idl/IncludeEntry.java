@@ -97,7 +97,7 @@ public class IncludeEntry extends SymtabEntry
 
   //d44810
   /** Access the fully-qualified file specification of this include.
-      @returns a string containing the path of the include file. */
+      @return a string containing the path of the include file. */
   public String absFilename ()
   {
     return _absFilename;

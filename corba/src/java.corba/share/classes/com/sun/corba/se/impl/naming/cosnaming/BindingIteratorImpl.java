@@ -114,7 +114,7 @@ public abstract class BindingIteratorImpl extends BindingIteratorPOA
      * scope, It will be called from NamingContext.list() operation or
      * this.next_n().
      * @param how_many The number of requested bindings in the BindingList.
-     * @param bl The BindingList as an out parameter.
+     * @param blh The BindingList as an out parameter.
      * @return true if there were more bindings.
      */
     public boolean list( int how_many, org.omg.CosNaming.BindingListHolder blh)
