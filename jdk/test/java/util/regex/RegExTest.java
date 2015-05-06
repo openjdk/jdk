@@ -36,7 +36,7 @@
  * @library /lib/testlibrary
  * @build jdk.testlibrary.*
  * @run main RegExTest
- * @key randomness
+ * @key intermittent randomness
  */
 
 import java.util.function.Function;
