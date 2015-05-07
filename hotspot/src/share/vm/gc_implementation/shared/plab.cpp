@@ -109,17 +109,10 @@ void PLAB::undo_allocation(HeapWord* obj, size_t word_sz) {
   }
 }
 
-// Calculates plab size for current number of gc worker threads.
-size_t PLABStats::desired_plab_sz(uint no_of_gc_workers) {
-  assert(no_of_gc_workers > 0, "Number of GC workers should be larger than zero");
-
-  return align_object_size(_desired_net_plab_sz / MAX2(no_of_gc_workers, 1U));
-}
-
-// Compute desired plab size for one gc worker thread and latch result for later
+// Compute desired plab size and latch result for later
 // use. This should be called once at the end of parallel
 // scavenge; it clears the sensor accumulators.
-void PLABStats::adjust_desired_plab_sz() {
+void PLABStats::adjust_desired_plab_sz(uint no_of_gc_workers) {
   assert(ResizePLAB, "Not set");
 
   assert(is_object_aligned(max_size()) && min_size() <= max_size(),
@@ -142,8 +135,7 @@ void PLABStats::adjust_desired_plab_sz() {
     target_refills = 1;
   }
   size_t used = _allocated - _wasted - _unused;
-  // Assumed to have 1 gc worker thread
-  size_t recent_plab_sz = used / target_refills;
+  size_t recent_plab_sz = used / (target_refills * no_of_gc_workers);
   // Take historical weighted average
   _filter.sample(recent_plab_sz);
   // Clip from above and below, and align to object boundary
@@ -154,7 +146,7 @@ void PLABStats::adjust_desired_plab_sz() {
   if (PrintPLAB) {
     gclog_or_tty->print(" (plab_sz = " SIZE_FORMAT" desired_plab_sz = " SIZE_FORMAT") ", recent_plab_sz, new_plab_sz);
   }
-  _desired_net_plab_sz = new_plab_sz;
+  _desired_plab_sz = new_plab_sz;
 
   reset();
 }

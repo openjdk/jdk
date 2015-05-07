@@ -5439,7 +5439,7 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
     phase_times->record_string_dedup_fixup_time(fixup_time_ms);
   }
 
-  _allocator->release_gc_alloc_regions(evacuation_info);
+  _allocator->release_gc_alloc_regions(n_workers, evacuation_info);
   g1_rem_set()->cleanup_after_oops_into_collection_set_do();
 
   // Reset and re-enable the hot card cache.

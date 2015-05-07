@@ -83,7 +83,7 @@ void G1DefaultAllocator::init_gc_alloc_regions(EvacuationInfo& evacuation_info) 
                             &_retained_old_gc_alloc_region);
 }
 
-void G1DefaultAllocator::release_gc_alloc_regions(EvacuationInfo& evacuation_info) {
+void G1DefaultAllocator::release_gc_alloc_regions(uint no_of_gc_workers, EvacuationInfo& evacuation_info) {
   AllocationContext_t context = AllocationContext::current();
   evacuation_info.set_allocation_regions(survivor_gc_alloc_region(context)->count() +
                                          old_gc_alloc_region(context)->count());
@@ -99,8 +99,8 @@ void G1DefaultAllocator::release_gc_alloc_regions(EvacuationInfo& evacuation_inf
   }
 
   if (ResizePLAB) {
-    _g1h->alloc_buffer_stats(InCSetState::Young)->adjust_desired_plab_sz();
-    _g1h->alloc_buffer_stats(InCSetState::Old)->adjust_desired_plab_sz();
+    _g1h->alloc_buffer_stats(InCSetState::Young)->adjust_desired_plab_sz(no_of_gc_workers);
+    _g1h->alloc_buffer_stats(InCSetState::Old)->adjust_desired_plab_sz(no_of_gc_workers);
   }
 }
 
