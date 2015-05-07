@@ -36,6 +36,17 @@ import jdk.test.lib.hprof.parser.Reader;
  */
 public class HprofParser {
 
+    public static void main(String[] args) throws Exception {
+        if (args.length < 1) {
+            System.out.println("No arguments supplied");
+        }
+        File dump = new File(args[0]);
+        if (!dump.exists() || !dump.isFile()) {
+            throw new RuntimeException("The dump file does not exist or not a file");
+        }
+        parse(dump);
+    }
+
     /**
      * @see #parse(File, boolean, boolean, boolean)
      */
