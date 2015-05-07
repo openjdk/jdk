@@ -368,6 +368,10 @@ hotspot_basicvmtest:
 	for variant in $(JVM_VARIANTS);                                           \
 	do                                                                        \
 	    $(MAKE) JAVA_ARGS="$(JAVA_ARGS) -$$variant" hotspot_$${variant}test;  \
+	    res=$$?;                                                              \
+	    if [ $$res -ne 0 ]; then                                              \
+	        exit $$res;                                                       \
+	    fi;                                                                   \
 	done
 
 PHONY_LIST += hotspot_basicvmtest
