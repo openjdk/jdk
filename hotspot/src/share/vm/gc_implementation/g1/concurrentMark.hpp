@@ -139,6 +139,11 @@ class CMBitMap : public CMBitMapRO {
   static size_t compute_size(size_t heap_size);
   // Returns the amount of bytes on the heap between two marks in the bitmap.
   static size_t mark_distance();
+  // Returns how many bytes (or bits) of the heap a single byte (or bit) of the
+  // mark bitmap corresponds to. This is the same as the mark distance above.
+  static size_t heap_map_factor() {
+    return mark_distance();
+  }
 
   CMBitMap() : CMBitMapRO(LogMinObjAlignment), _listener() { _listener.set_bitmap(this); }
 
@@ -671,9 +676,7 @@ public:
   }
 
   // Attempts to steal an object from the task queues of other tasks
-  bool try_stealing(uint worker_id, int* hash_seed, oop& obj) {
-    return _task_queues->steal(worker_id, hash_seed, obj);
-  }
+  bool try_stealing(uint worker_id, int* hash_seed, oop& obj);
 
   ConcurrentMark(G1CollectedHeap* g1h,
                  G1RegionToSpaceMapper* prev_bitmap_storage,
@@ -1095,9 +1098,9 @@ private:
   void regular_clock_call();
   bool concurrent() { return _concurrent; }
 
-  // Test whether objAddr might have already been passed over by the
+  // Test whether obj might have already been passed over by the
   // mark bitmap scan, and so needs to be pushed onto the mark stack.
-  bool is_below_finger(HeapWord* objAddr, HeapWord* global_finger) const;
+  bool is_below_finger(oop obj, HeapWord* global_finger) const;
 
   template<bool scan> void process_grey_object(oop obj);
 
@@ -1148,8 +1151,18 @@ public:
 
   void set_cm_oop_closure(G1CMOopClosure* cm_oop_closure);
 
-  // It grays the object by marking it and, if necessary, pushing it
-  // on the local queue
+  // Increment the number of references this task has visited.
+  void increment_refs_reached() { ++_refs_reached; }
+
+  // Grey the object by marking it.  If not already marked, push it on
+  // the local queue if below the finger.
+  // Precondition: obj is in region.
+  // Precondition: obj is below region's NTAMS.
+  inline void make_reference_grey(oop obj, HeapRegion* region);
+
+  // Grey the object (by calling make_grey_reference) if required,
+  // e.g. obj is below its containing region's NTAMS.
+  // Precondition: obj is a valid heap object.
   inline void deal_with_reference(oop obj);
 
   // It scans an object and visits its children.

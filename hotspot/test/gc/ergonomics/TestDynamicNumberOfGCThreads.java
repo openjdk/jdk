@@ -44,14 +44,24 @@ public class TestDynamicNumberOfGCThreads {
   }
 
   private static void verifyDynamicNumberOfGCThreads(OutputAnalyzer output) {
+    output.shouldHaveExitValue(0); // test should run succesfully
     output.shouldContain("new_active_workers");
-    output.shouldHaveExitValue(0);
   }
 
   private static void testDynamicNumberOfGCThreads(String gcFlag) throws Exception {
     // UseDynamicNumberOfGCThreads and TraceDynamicGCThreads enabled
-    ProcessBuilder pb_enabled =
-      ProcessTools.createJavaProcessBuilder("-XX:+" + gcFlag, "-Xmx10M", "-XX:+PrintGCDetails",  "-XX:+UseDynamicNumberOfGCThreads", "-XX:+TraceDynamicGCThreads", GCTest.class.getName());
+    String[] baseArgs = {"-XX:+" + gcFlag, "-Xmx10M", "-XX:+PrintGCDetails",  "-XX:+UseDynamicNumberOfGCThreads", "-XX:+TraceDynamicGCThreads", GCTest.class.getName()};
+
+    // Base test with gc and +UseDynamicNumberOfGCThreads:
+    ProcessBuilder pb_enabled = ProcessTools.createJavaProcessBuilder(baseArgs);
+    verifyDynamicNumberOfGCThreads(new OutputAnalyzer(pb_enabled.start()));
+
+    // Ensure it also works on uniprocessors or if user specifies -XX:ParallelGCThreads=1:
+    String[] extraArgs = {"-XX:+UnlockDiagnosticVMOptions", "-XX:+ForceDynamicNumberOfGCThreads", "-XX:ParallelGCThreads=1"};
+    String[] finalArgs = new String[baseArgs.length + extraArgs.length];
+    System.arraycopy(extraArgs, 0, finalArgs, 0,                extraArgs.length);
+    System.arraycopy(baseArgs,  0, finalArgs, extraArgs.length, baseArgs.length);
+    pb_enabled = ProcessTools.createJavaProcessBuilder(finalArgs);
     verifyDynamicNumberOfGCThreads(new OutputAnalyzer(pb_enabled.start()));
   }
 
