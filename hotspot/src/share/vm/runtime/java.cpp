@@ -651,11 +651,15 @@ void JDK_Version::initialize() {
       minor = micro;
       micro = 0;
     }
+    // Incompatible with pre-4243978 JDK.
+    if (info.pending_list_uses_discovered_field == 0) {
+      vm_exit_during_initialization(
+        "Incompatible JDK is not using Reference.discovered field for pending list");
+    }
     _current = JDK_Version(major, minor, micro, info.update_version,
                            info.special_update_version, build,
                            info.thread_park_blocker == 1,
-                           info.post_vm_init_hook_enabled == 1,
-                           info.pending_list_uses_discovered_field == 1);
+                           info.post_vm_init_hook_enabled == 1);
   }
 }
 
