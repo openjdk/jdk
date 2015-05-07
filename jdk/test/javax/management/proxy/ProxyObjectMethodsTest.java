@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 6177524
  * @summary Test how to execute the 3 Object methods by a Proxy.
  * @author Shanliang JIANG
+ * @modules java.management
  * @run clean ProxyObjectMethodsTest
  * @run build ProxyObjectMethodsTest
  * @run main ProxyObjectMethodsTest

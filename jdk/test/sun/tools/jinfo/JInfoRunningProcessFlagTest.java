@@ -35,6 +35,7 @@ import static jdk.testlibrary.Asserts.assertTrue;
  * @test
  * @summary The test sanity checks 'jinfo -flag' option.
  * @library /lib/testlibrary
+ * @modules java.management
  * @build jdk.testlibrary.* JInfoHelper
  * @run main/othervm -XX:+HeapDumpOnOutOfMemoryError JInfoRunningProcessFlagTest
  */

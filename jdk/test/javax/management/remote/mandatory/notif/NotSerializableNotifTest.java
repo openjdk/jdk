@@ -26,6 +26,7 @@
  * @summary Tests to send a not serializable notification.
  * @bug 5022196
  * @author Shanliang JIANG
+ * @modules java.management
  * @run clean NotSerializableNotifTest
  * @run build NotSerializableNotifTest
  * @run main NotSerializableNotifTest

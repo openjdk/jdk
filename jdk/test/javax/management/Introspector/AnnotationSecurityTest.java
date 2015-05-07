@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
  * @summary Test that having a security manager doesn't trigger a
  *          NotCompliantMBeanException
  * @author Daniel Fuchs, Yves Joan
+ * @modules java.desktop
+ *          java.management
  * @run clean AnnotationSecurityTest Described UnDescribed DescribedMBean
  *            UnDescribedMBean SqeDescriptorKey DescribedMX DescribedMXBean
  * @run build AnnotationSecurityTest Described UnDescribed DescribedMBean

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
  * to encapsulate the transport. This tests that the connectors are
  * created and that they have an "address" argument.
  *
+ * @modules jdk.jdi
  * @build GeneratedConnectors NullTransportService
  * @run main/othervm GeneratedConnectors
  */
