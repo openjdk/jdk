@@ -42,27 +42,18 @@
 
 // OopMapStream
 
-OopMapStream::OopMapStream(OopMap* oop_map) {
-  if(oop_map->omv_data() == NULL) {
-    _stream = new CompressedReadStream(oop_map->write_stream()->buffer());
-  } else {
-    _stream = new CompressedReadStream(oop_map->omv_data());
-  }
-  _mask = OopMapValue::type_mask_in_place;
+OopMapStream::OopMapStream(OopMap* oop_map, int oop_types_mask) {
+  _stream = new CompressedReadStream(oop_map->write_stream()->buffer());
+  _mask = oop_types_mask;
   _size = oop_map->omv_count();
   _position = 0;
   _valid_omv = false;
 }
 
-
-OopMapStream::OopMapStream(OopMap* oop_map, int oop_types_mask) {
-  if(oop_map->omv_data() == NULL) {
-    _stream = new CompressedReadStream(oop_map->write_stream()->buffer());
-  } else {
-    _stream = new CompressedReadStream(oop_map->omv_data());
-  }
+OopMapStream::OopMapStream(const ImmutableOopMap* oop_map, int oop_types_mask) {
+  _stream = new CompressedReadStream(oop_map->data_addr());
   _mask = oop_types_mask;
-  _size = oop_map->omv_count();
+  _size = oop_map->count();
   _position = 0;
   _valid_omv = false;
 }
@@ -87,7 +78,6 @@ void OopMapStream::find_next() {
 OopMap::OopMap(int frame_size, int arg_count) {
   // OopMaps are usually quite so small, so pick a small initial size
   set_write_stream(new CompressedWriteStream(32));
-  set_omv_data(NULL);
   set_omv_count(0);
 
 #ifdef ASSERT
@@ -102,7 +92,6 @@ OopMap::OopMap(OopMap::DeepCopyToken, OopMap* source) {
   // This constructor does a deep copy
   // of the source OopMap.
   set_write_stream(new CompressedWriteStream(source->omv_count() * 2));
-  set_omv_data(NULL);
   set_omv_count(0);
   set_offset(source->offset());
 
@@ -125,25 +114,14 @@ OopMap* OopMap::deep_copy() {
   return new OopMap(_deep_copy_token, this);
 }
 
-
-void OopMap::copy_to(address addr) {
-  memcpy(addr,this,sizeof(OopMap));
-  memcpy(addr + sizeof(OopMap),write_stream()->buffer(),write_stream()->position());
-  OopMap* new_oop = (OopMap*)addr;
-  new_oop->set_omv_data_size(write_stream()->position());
-  new_oop->set_omv_data((unsigned char *)(addr + sizeof(OopMap)));
-  new_oop->set_write_stream(NULL);
+void OopMap::copy_data_to(address addr) const {
+  memcpy(addr, write_stream()->buffer(), write_stream()->position());
 }
-
 
 int OopMap::heap_size() const {
   int size = sizeof(OopMap);
   int align = sizeof(void *) - 1;
-  if(write_stream() != NULL) {
-    size += write_stream()->position();
-  } else {
-    size += omv_data_size();
-  }
+  size += write_stream()->position();
   // Align to a reasonable ending point
   size = ((size+align) & ~align);
   return size;
@@ -219,30 +197,6 @@ void OopMapSet::grow_om_data() {
   memcpy(new_data,om_data(),om_size() * sizeof(OopMap*));
   set_om_size(new_size);
   set_om_data(new_data);
-}
-
-
-void OopMapSet::copy_to(address addr) {
-  address temp = addr;
-  int align = sizeof(void *) - 1;
-  // Copy this
-  memcpy(addr,this,sizeof(OopMapSet));
-  temp += sizeof(OopMapSet);
-  temp = (address)((intptr_t)(temp + align) & ~align);
-  // Do the needed fixups to the new OopMapSet
-  OopMapSet* new_set = (OopMapSet*)addr;
-  new_set->set_om_data((OopMap**)temp);
-  // Allow enough space for the OopMap pointers
-  temp += (om_count() * sizeof(OopMap*));
-
-  for(int i=0; i < om_count(); i++) {
-    OopMap* map = at(i);
-    map->copy_to((address)temp);
-    new_set->set(i,(OopMap*)temp);
-    temp += map->heap_size();
-  }
-  // This "locks" the OopMapSet
-  new_set->set_om_size(-1);
 }
 
 
@@ -334,8 +288,8 @@ static void trace_codeblob_maps(const frame *fr, const RegisterMap *reg_map) {
   // Print oopmap and regmap
   tty->print_cr("------ ");
   CodeBlob* cb = fr->cb();
-  OopMapSet* maps = cb->oop_maps();
-  OopMap* map = cb->oop_map_for_return_address(fr->pc());
+  ImmutableOopMapSet* maps = cb->oop_maps();
+  const ImmutableOopMap* map = cb->oop_map_for_return_address(fr->pc());
   map->print();
   if( cb->is_nmethod() ) {
     nmethod* nm = (nmethod*)cb;
@@ -371,8 +325,8 @@ void OopMapSet::all_do(const frame *fr, const RegisterMap *reg_map,
 
   NOT_PRODUCT(if (TraceCodeBlobStacks) trace_codeblob_maps(fr, reg_map);)
 
-  OopMapSet* maps = cb->oop_maps();
-  OopMap* map = cb->oop_map_for_return_address(fr->pc());
+  ImmutableOopMapSet* maps = cb->oop_maps();
+  const ImmutableOopMap* map = cb->oop_map_for_return_address(fr->pc());
   assert(map != NULL, "no ptr map found");
 
   // handle derived pointers first (otherwise base pointer may be
@@ -483,7 +437,7 @@ void OopMapSet::update_register_map(const frame *fr, RegisterMap *reg_map) {
   // (we do not do update in place, since info could be overwritten)
 
   address pc = fr->pc();
-  OopMap* map  = cb->oop_map_for_return_address(pc);
+  const ImmutableOopMap* map  = cb->oop_map_for_return_address(pc);
   assert(map != NULL, "no ptr map found");
   DEBUG_ONLY(int nof_callee = 0;)
 
@@ -508,7 +462,7 @@ void OopMapSet::update_register_map(const frame *fr, RegisterMap *reg_map) {
 
 #ifndef PRODUCT
 
-bool OopMap::has_derived_pointer() const {
+bool ImmutableOopMap::has_derived_pointer() const {
 #ifndef TIERED
   COMPILER1_PRESENT(return false);
 #endif // !TIERED
@@ -550,7 +504,6 @@ void print_register_type(OopMapValue::oop_types x, VMReg optional,
   }
 }
 
-
 void OopMapValue::print_on(outputStream* st) const {
   reg()->print_on(st);
   st->print("=");
@@ -558,6 +511,15 @@ void OopMapValue::print_on(outputStream* st) const {
   st->print(" ");
 }
 
+void ImmutableOopMap::print_on(outputStream* st) const {
+  OopMapValue omv;
+  st->print("ImmutableOopMap{");
+  for(OopMapStream oms(this); !oms.is_done(); oms.next()) {
+    omv = oms.current();
+    omv.print_on(st);
+  }
+  st->print("}");
+}
 
 void OopMap::print_on(outputStream* st) const {
   OopMapValue omv;
@@ -569,6 +531,20 @@ void OopMap::print_on(outputStream* st) const {
   st->print("off=%d}", (int) offset());
 }
 
+void ImmutableOopMapSet::print_on(outputStream* st) const {
+  const ImmutableOopMap* last = NULL;
+  for (int i = 0; i < _count; ++i) {
+    const ImmutableOopMapPair* pair = pair_at(i);
+    const ImmutableOopMap* map = pair->get_from(this);
+    if (map != last) {
+      st->cr();
+      map->print_on(st);
+      st->print("pc offsets: ");
+    }
+    last = map;
+    st->print("%d ", pair->pc_offset());
+  }
+}
 
 void OopMapSet::print_on(outputStream* st) const {
   int i, len = om_count();
@@ -583,6 +559,217 @@ void OopMapSet::print_on(outputStream* st) const {
   }
 }
 
+bool OopMap::equals(const OopMap* other) const {
+  if (other->_omv_count != _omv_count) {
+    return false;
+  }
+  if (other->write_stream()->position() != write_stream()->position()) {
+    return false;
+  }
+  if (memcmp(other->write_stream()->buffer(), write_stream()->buffer(), write_stream()->position()) != 0) {
+    return false;
+  }
+  return true;
+}
+
+const ImmutableOopMap* ImmutableOopMapSet::find_map_at_offset(int pc_offset) const {
+  ImmutableOopMapPair* pairs = get_pairs();
+  ImmutableOopMapPair* last = NULL;
+
+  for (int i = 0; i < _count; ++i) {
+    if (pairs[i].pc_offset() >= pc_offset) {
+      last = &pairs[i];
+      break;
+    }
+  }
+
+  assert(last->pc_offset() == pc_offset, "oopmap not found");
+  return last->get_from(this);
+}
+
+const ImmutableOopMap* ImmutableOopMapPair::get_from(const ImmutableOopMapSet* set) const {
+  return set->oopmap_at_offset(_oopmap_offset);
+}
+
+ImmutableOopMap::ImmutableOopMap(const OopMap* oopmap) : _count(oopmap->count()) {
+  address addr = data_addr();
+  oopmap->copy_data_to(addr);
+}
+
+class ImmutableOopMapBuilder {
+private:
+  class Mapping;
+
+private:
+  const OopMapSet* _set;
+  const OopMap* _empty;
+  const OopMap* _last;
+  int _empty_offset;
+  int _last_offset;
+  int _offset;
+  Mapping* _mapping;
+  ImmutableOopMapSet* _new_set;
+
+  /* Used for bookkeeping when building ImmutableOopMaps */
+  class Mapping : public ResourceObj {
+  public:
+    enum kind_t { OOPMAP_UNKNOWN = 0, OOPMAP_NEW = 1, OOPMAP_EMPTY = 2, OOPMAP_DUPLICATE = 3 };
+
+    kind_t _kind;
+    int _offset;
+    int _size;
+    const OopMap* _map;
+    const OopMap* _other;
+
+    Mapping() : _kind(OOPMAP_UNKNOWN), _offset(-1), _size(-1), _map(NULL) {}
+
+    void set(kind_t kind, int offset, int size, const OopMap* map = 0, const OopMap* other = 0) {
+      _kind = kind;
+      _offset = offset;
+      _size = size;
+      _map = map;
+      _other = other;
+    }
+  };
+
+public:
+  ImmutableOopMapBuilder(const OopMapSet* set) : _set(set), _new_set(NULL), _empty(NULL), _last(NULL), _empty_offset(-1), _last_offset(-1), _offset(0) {
+    _mapping = NEW_RESOURCE_ARRAY(Mapping, _set->size());
+  }
+
+  int heap_size();
+  ImmutableOopMapSet* build();
+private:
+  bool is_empty(const OopMap* map) const {
+    return map->count() == 0;
+  }
+
+  bool is_last_duplicate(const OopMap* map) {
+    if (_last != NULL && _last->count() > 0 && _last->equals(map)) {
+      return true;
+    }
+    return false;
+  }
+
+#ifdef ASSERT
+  void verify(address buffer, int size);
+#endif
+
+  bool has_empty() const {
+    return _empty_offset != -1;
+  }
+
+  int size_for(const OopMap* map) const;
+  void fill_pair(ImmutableOopMapPair* pair, const OopMap* map, int offset);
+  int fill_map(ImmutableOopMapPair* pair, const OopMap* map, int offset);
+  void fill(ImmutableOopMapSet* set, int size);
+};
+
+int ImmutableOopMapBuilder::size_for(const OopMap* map) const {
+  return align_size_up(sizeof(ImmutableOopMap) + map->data_size(), 8);
+}
+
+int ImmutableOopMapBuilder::heap_size() {
+  int base = sizeof(ImmutableOopMapSet);
+  base = align_size_up(base, 8);
+
+  // all of ours pc / offset pairs
+  int pairs = _set->size() * sizeof(ImmutableOopMapPair);
+  pairs = align_size_up(pairs, 8);
+
+  for (int i = 0; i < _set->size(); ++i) {
+    int size = 0;
+    OopMap* map = _set->at(i);
+
+    if (is_empty(map)) {
+      /* only keep a single empty map in the set */
+      if (has_empty()) {
+        _mapping[i].set(Mapping::OOPMAP_EMPTY, _empty_offset, 0, map, _empty);
+      } else {
+        _empty_offset = _offset;
+        _empty = map;
+        size = size_for(map);
+        _mapping[i].set(Mapping::OOPMAP_NEW, _offset, size, map);
+      }
+    } else if (is_last_duplicate(map)) {
+      /* if this entry is identical to the previous one, just point it there */
+      _mapping[i].set(Mapping::OOPMAP_DUPLICATE, _last_offset, 0, map, _last);
+    } else {
+      /* not empty, not an identical copy of the previous entry */
+      size = size_for(map);
+      _mapping[i].set(Mapping::OOPMAP_NEW, _offset, size, map);
+      _last_offset = _offset;
+      _last = map;
+    }
+
+    assert(_mapping[i]._map == map, "check");
+    _offset += size;
+  }
+
+  int total = base + pairs + _offset;
+  DEBUG_ONLY(total += 8);
+  return total;
+}
+
+void ImmutableOopMapBuilder::fill_pair(ImmutableOopMapPair* pair, const OopMap* map, int offset) {
+  new ((address) pair) ImmutableOopMapPair(map->offset(), offset);
+}
+
+int ImmutableOopMapBuilder::fill_map(ImmutableOopMapPair* pair, const OopMap* map, int offset) {
+  fill_pair(pair, map, offset);
+  address addr = (address) pair->get_from(_new_set); // location of the ImmutableOopMap
+
+  new (addr) ImmutableOopMap(map);
+  return align_size_up(sizeof(ImmutableOopMap) + map->data_size(), 8);
+}
+
+void ImmutableOopMapBuilder::fill(ImmutableOopMapSet* set, int sz) {
+  ImmutableOopMapPair* pairs = set->get_pairs();
+
+  for (int i = 0; i < set->count(); ++i) {
+    const OopMap* map = _mapping[i]._map;
+    ImmutableOopMapPair* pair = NULL;
+    int size = 0;
+
+    if (_mapping[i]._kind == Mapping::OOPMAP_NEW) {
+      size = fill_map(&pairs[i], map, _mapping[i]._offset);
+    } else if (_mapping[i]._kind == Mapping::OOPMAP_DUPLICATE || _mapping[i]._kind == Mapping::OOPMAP_EMPTY) {
+      fill_pair(&pairs[i], map, _mapping[i]._offset);
+    }
+
+    const ImmutableOopMap* nv = set->find_map_at_offset(map->offset());
+    assert(memcmp(map->data(), nv->data_addr(), map->data_size()) == 0, "check identity");
+  }
+}
+
+#ifdef ASSERT
+void ImmutableOopMapBuilder::verify(address buffer, int size) {
+  for (int i = 0; i < 8; ++i) {
+    assert(buffer[size - 8 + i] == (unsigned char) 0xff, "overwritten memory check");
+  }
+}
+#endif
+
+ImmutableOopMapSet* ImmutableOopMapBuilder::build() {
+  int required = heap_size();
+
+  // We need to allocate a chunk big enough to hold the ImmutableOopMapSet and all of its ImmutableOopMaps
+  address buffer = (address) NEW_C_HEAP_ARRAY(unsigned char, required, mtCode);
+  DEBUG_ONLY(memset(&buffer[required-8], 0xff, 8));
+
+  _new_set = new (buffer) ImmutableOopMapSet(_set, required);
+  fill(_new_set, required);
+
+  DEBUG_ONLY(verify(buffer, required));
+
+  return _new_set;
+}
+
+ImmutableOopMapSet* ImmutableOopMapSet::build_from(const OopMapSet* oopmap_set) {
+  ResourceMark mark;
+  ImmutableOopMapBuilder builder(oopmap_set);
+  return builder.build();
+}
 
 
 //------------------------------DerivedPointerTable---------------------------

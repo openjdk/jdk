@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,8 +44,8 @@ public class CheckListView extends ListView {
     }
 
     @Override
-    protected JList createList() {
-        JList tmpList = super.createList();
+    protected JList<Object> createList() {
+        JList<Object> tmpList = super.createList();
         tmpList.setCellRenderer(new CheckRenderer(tmpList));
         return tmpList;
     }

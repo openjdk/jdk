@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import org.netbeans.spi.options.OptionsCategory;
 import org.netbeans.spi.options.OptionsPanelController;
+import org.openide.util.ImageUtilities;
 import org.openide.util.NbBundle;
-import org.openide.util.Utilities;
 
 /**
  *
@@ -38,17 +38,20 @@ public final class ViewOptionsCategory extends OptionsCategory {
 
     @Override
     public Icon getIcon() {
-        return new ImageIcon(Utilities.loadImage("com/sun/hotspot/igv/settings/settings.gif"));
+        return new ImageIcon(ImageUtilities.loadImage("com/sun/hotspot/igv/settings/settings.png"));
     }
 
+    @Override
     public String getCategoryName() {
         return NbBundle.getMessage(ViewOptionsCategory.class, "OptionsCategory_Name_View");
     }
 
+    @Override
     public String getTitle() {
         return NbBundle.getMessage(ViewOptionsCategory.class, "OptionsCategory_Title_View");
     }
 
+    @Override
     public OptionsPanelController create() {
         return new ViewOptionsPanelController();
     }

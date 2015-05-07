@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,14 @@
 package com.sun.hotspot.igv.data;
 
 /**
- *
+ * Provides a changed event object.
  * @author Thomas Wuerthinger
+ * @param <T> Class for which the changed event fires.
  */
 public interface ChangedEventProvider<T> {
 
-    public ChangedEvent<T> getChangedEvent();
+    /**
+     * Returns the changed event object. Should always return the same instance.
+     */
+    ChangedEvent<T> getChangedEvent();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ImageIcon;
+import org.openide.util.ImageUtilities;
 
 /**
  *
@@ -38,11 +39,12 @@ public class OverviewAction extends AbstractAction {
     public static final String STATE = "state";
 
     public OverviewAction() {
-        putValue(AbstractAction.SMALL_ICON, new ImageIcon(org.openide.util.Utilities.loadImage(iconResource())));
+        putValue(AbstractAction.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage(iconResource())));
         putValue(Action.SHORT_DESCRIPTION, "Show satellite view of whole graph");
         setState(false);
     }
 
+    @Override
     public void actionPerformed(ActionEvent ev) {
         setState(!state);
     }
@@ -53,6 +55,6 @@ public class OverviewAction extends AbstractAction {
     }
 
     protected String iconResource() {
-        return "com/sun/hotspot/igv/view/images/overview.gif";
+        return "com/sun/hotspot/igv/view/images/overview.png";
     }
 }
