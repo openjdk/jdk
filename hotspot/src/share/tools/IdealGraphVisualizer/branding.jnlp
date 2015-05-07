@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE jnlp PUBLIC "-//Sun Microsystems, Inc//DTD JNLP Descriptor 6.0//EN" "http://java.sun.com/dtd/JNLP-6.0.dtd">
+<jnlp spec="1.0+" codebase="$$codebase">
+  <information>
+      <title>${app.title}</title>
+      <vendor>${app.title} vendor</vendor>
+      <description>${app.name} application</description>
+      <icon href="${app.icon}"/>
+  </information>
+  ${jnlp.permissions}
+  <resources>
+    ${jnlp.branding.jars}
+  </resources>
+  <component-desc/>
+</jnlp>  

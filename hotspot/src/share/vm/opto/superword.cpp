@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
   _mem_slice_head(arena(), 8,  0, NULL),  // memory slice heads
   _mem_slice_tail(arena(), 8,  0, NULL),  // memory slice tails
   _node_info(arena(), 8,  0, SWNodeInfo::initial), // info needed per node
+  _clone_map(phase->C->clone_map()),      // map of nodes created in cloning
   _align_to_ref(NULL),                    // memory reference to align vectors to
   _disjoint_ptrs(arena(), 8,  0, OrderedPair::initial), // runtime disambiguated pointer pairs
   _dg(_arena),                            // dependence graph
@@ -66,7 +67,14 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
   _lp(NULL),                              // LoopNode
   _bb(NULL),                              // basic block
   _iv(NULL),                              // induction var
-  _race_possible(false)                   // cases where SDMU is true
+  _race_possible(false),                  // cases where SDMU is true
+  _num_work_vecs(0),                      // amount of vector work we have
+  _num_reductions(0),                     // amount of reduction work we have
+  _do_vector_loop(phase->C->do_vector_loop()),  // whether to do vectorization/simd style
+  _ii_first(-1),                          // first loop generation index - only if do_vector_loop()
+  _ii_last(-1),                           // last loop generation index - only if do_vector_loop()
+  _ii_order(arena(), 8, 0, 0),
+  _vector_loop_debug(phase->C->has_method() && phase->C->method_has_option("VectorizeDebug"))
 {}
 
 //------------------------------transform_loop---------------------------
@@ -145,13 +153,52 @@ void SuperWord::transform_loop(IdealLoopTree* lpt) {
 //
 void SuperWord::SLP_extract() {
 
+#ifndef PRODUCT
+  if (_do_vector_loop && TraceSuperWord) {
+    tty->print("SuperWord::SLP_extract\n");
+    tty->print("input loop\n");
+    _lpt->dump_head();
+    _lpt->dump();
+    for (uint i = 0; i < _lpt->_body.size(); i++) {
+      _lpt->_body.at(i)->dump();
+    }
+  }
+#endif
   // Ready the block
-  if (!construct_bb())
+  if (!construct_bb()) {
     return; // Exit if no interesting nodes or complex graph.
-
+  }
+  // build    _dg, _disjoint_ptrs
   dependence_graph();
 
+  // compute function depth(Node*)
   compute_max_depth();
+
+  if (_do_vector_loop) {
+    if (mark_generations() != -1) {
+      hoist_loads_in_graph(); // this only rebuild the graph; all basic structs need rebuild explicitly
+
+      if (!construct_bb()) {
+        return; // Exit if no interesting nodes or complex graph.
+      }
+      dependence_graph();
+      compute_max_depth();
+    }
+
+#ifndef PRODUCT
+    if (TraceSuperWord) {
+      tty->print_cr("\nSuperWord::_do_vector_loop: graph after hoist_loads_in_graph");
+      _lpt->dump_head();
+      for (int j = 0; j < _block.length(); j++) {
+        Node* n = _block.at(j);
+        int d = depth(n);
+        for (int i = 0;  i < d; i++) tty->print("%s", "  ");
+        tty->print("%d :", d);
+        n->dump();
+      }
+    }
+#endif
+  }
 
   compute_vector_element_type();
 
@@ -160,6 +207,17 @@ void SuperWord::SLP_extract() {
   find_adjacent_refs();
 
   extend_packlist();
+
+  if (_do_vector_loop) {
+    if (_packset.length() == 0) {
+#ifndef PRODUCT
+      if (TraceSuperWord) {
+        tty->print_cr("\nSuperWord::_do_vector_loop DFA could not build packset, now trying to build anyway");
+      }
+#endif
+      pack_parallel();
+    }
+  }
 
   combine_packs();
 
@@ -226,7 +284,7 @@ void SuperWord::find_adjacent_refs() {
     // Create initial pack pairs of memory operations for which
     // alignment is set and vectors will be aligned.
     bool create_pack = true;
-    if (memory_alignment(mem_ref, best_iv_adjustment) == 0) {
+    if (memory_alignment(mem_ref, best_iv_adjustment) == 0 || _do_vector_loop) {
       if (!Matcher::misaligned_vectors_ok()) {
         int vw = vector_width(mem_ref);
         int vw_best = vector_width(best_align_to_mem_ref);
@@ -272,7 +330,9 @@ void SuperWord::find_adjacent_refs() {
               Node_List* pair = new Node_List();
               pair->push(s1);
               pair->push(s2);
-              _packset.append(pair);
+              if (!_do_vector_loop || _clone_map.idx(s1->_idx) == _clone_map.idx(s2->_idx)) {
+                _packset.append(pair);
+              }
             }
           }
         }
@@ -417,7 +477,7 @@ MemNode* SuperWord::find_align_to_ref(Node_List &memops) {
 
 #ifdef ASSERT
   if (TraceSuperWord && Verbose) {
-    tty->print_cr("\nVector memops after find_align_to_refs");
+    tty->print_cr("\nVector memops after find_align_to_ref");
     for (uint i = 0; i < memops.size(); i++) {
       MemNode* s = memops.at(i)->as_Mem();
       s->dump();
@@ -526,6 +586,14 @@ void SuperWord::dependence_graph() {
     // Get slice in predecessor order (last is first)
     mem_slice_preds(n_tail, n, _nlist);
 
+#ifndef PRODUCT
+    if(TraceSuperWord && Verbose) {
+      tty->print_cr("SuperWord::dependence_graph: built a new mem slice");
+      for (int j = _nlist.length() - 1; j >= 0 ; j--) {
+        _nlist.at(j)->dump();
+      }
+    }
+#endif
     // Make the slice dependent on the root
     DepMem* slice = _dg.dep(n);
     _dg.make_edge(_dg.root(), slice);
@@ -1112,7 +1180,6 @@ void SuperWord::construct_my_pack_map() {
 //------------------------------filter_packs---------------------------
 // Remove packs that are not implemented or not profitable.
 void SuperWord::filter_packs() {
-
   // Remove packs that are not implemented
   for (int i = _packset.length() - 1; i >= 0; i--) {
     Node_List* pk = _packset.at(i);
@@ -1125,6 +1192,12 @@ void SuperWord::filter_packs() {
       }
 #endif
       remove_pack_at(i);
+    }
+    Node *n = pk->at(0);
+    if (n->is_reduction()) {
+      _num_reductions++;
+    } else {
+      _num_work_vecs++;
     }
   }
 
@@ -1167,7 +1240,12 @@ bool SuperWord::implemented(Node_List* p) {
     uint size = p->size();
     if (p0->is_reduction()) {
       const Type *arith_type = p0->bottom_type();
-      retValue = ReductionNode::implemented(opc, size, arith_type->basic_type());
+      // Length 2 reductions of INT/LONG do not offer performance benefits
+      if (((arith_type->basic_type() == T_INT) || (arith_type->basic_type() == T_LONG)) && (size == 2)) {
+        retValue = false;
+      } else {
+        retValue = ReductionNode::implemented(opc, size, arith_type->basic_type());
+      }
     } else {
       retValue = VectorNode::implemented(opc, size, velt_basic_type(p0));
     }
@@ -1210,8 +1288,9 @@ bool SuperWord::profitable(Node_List* p) {
   if (p0->is_reduction()) {
     Node* second_in = p0->in(2);
     Node_List* second_pk = my_pack(second_in);
-    if (second_pk == NULL) {
-      // Remove reduction flag if no parent pack, it is not profitable
+    if ((second_pk == NULL) || (_num_work_vecs == _num_reductions)) {
+      // Remove reduction flag if no parent pack or if not enough work
+      // to cover reduction expansion overhead
       p0->remove_flag(Node::Flag_is_reduction);
       return false;
     } else if (second_pk->size() != p->size()) {
@@ -2349,12 +2428,29 @@ void SuperWord::init() {
   _data_entry.clear();
   _mem_slice_head.clear();
   _mem_slice_tail.clear();
+  _iteration_first.clear();
+  _iteration_last.clear();
   _node_info.clear();
   _align_to_ref = NULL;
   _lpt = NULL;
   _lp = NULL;
   _bb = NULL;
   _iv = NULL;
+  _race_possible = 0;
+  _num_work_vecs = 0;
+  _num_reductions = 0;
+}
+
+//------------------------------restart---------------------------
+void SuperWord::restart() {
+  _dg.init();
+  _packset.clear();
+  _disjoint_ptrs.clear();
+  _block.clear();
+  _data_entry.clear();
+  _mem_slice_head.clear();
+  _mem_slice_tail.clear();
+  _node_info.clear();
 }
 
 //------------------------------print_packset---------------------------
@@ -2734,3 +2830,401 @@ void DepSuccs::next() {
     _done = true;
   }
 }
+
+//
+// --------------------------------- vectorization/simd -----------------------------------
+//
+Node*  SuperWord::find_phi_for_mem_dep(LoadNode* ld) {
+  assert(in_bb(ld), "must be in block");
+  if (_clone_map.gen(ld->_idx) == _ii_first) {
+#ifndef PRODUCT
+    if (_vector_loop_debug) {
+      tty->print_cr("SuperWord::find_phi_for_mem_dep _clone_map.gen(ld->_idx)=%d",
+                    _clone_map.gen(ld->_idx));
+    }
+#endif
+    return NULL; //we think that any ld in the first gen being vectorizable
+  }
+
+  Node* mem = ld->in(MemNode::Memory);
+  if (mem->outcnt() <= 1) {
+    // we don't want to remove the only edge from mem node to load
+#ifndef PRODUCT
+    if (_vector_loop_debug) {
+      tty->print_cr("SuperWord::find_phi_for_mem_dep input node %d to load %d has no other outputs and edge mem->load cannot be removed",
+                    mem->_idx, ld->_idx);
+      ld->dump();
+      mem->dump();
+    }
+#endif
+    return NULL;
+  }
+  if (!in_bb(mem) || _clone_map.gen(mem->_idx) == _clone_map.gen(ld->_idx)) {
+#ifndef PRODUCT
+    if (_vector_loop_debug) {
+      tty->print_cr("SuperWord::find_phi_for_mem_dep _clone_map.gen(mem->_idx)=%d",
+                    _clone_map.gen(mem->_idx));
+    }
+#endif
+    return NULL; // does not depend on loop volatile node or depends on the same generation
+  }
+
+  //otherwise first node should depend on mem-phi
+  Node* first = first_node(ld);
+  assert(first->is_Load(), "must be Load");
+  Node* phi = first->as_Load()->in(MemNode::Memory);
+  if (!phi->is_Phi() || phi->bottom_type() != Type::MEMORY) {
+#ifndef PRODUCT
+    if (_vector_loop_debug) {
+      tty->print_cr("SuperWord::find_phi_for_mem_dep load is not vectorizable node, since it's `first` does not take input from mem phi");
+      ld->dump();
+      first->dump();
+    }
+#endif
+    return NULL;
+  }
+
+  Node* tail = 0;
+  for (int m = 0; m < _mem_slice_head.length(); m++) {
+    if (_mem_slice_head.at(m) == phi) {
+      tail = _mem_slice_tail.at(m);
+    }
+  }
+  if (tail == 0) { //test that found phi is in the list  _mem_slice_head
+#ifndef PRODUCT
+    if (_vector_loop_debug) {
+      tty->print_cr("SuperWord::find_phi_for_mem_dep load %d is not vectorizable node, its phi %d is not _mem_slice_head",
+                    ld->_idx, phi->_idx);
+      ld->dump();
+      phi->dump();
+    }
+#endif
+    return NULL;
+  }
+
+  // now all conditions are met
+  return phi;
+}
+
+Node* SuperWord::first_node(Node* nd) {
+  for (int ii = 0; ii < _iteration_first.length(); ii++) {
+    Node* nnn = _iteration_first.at(ii);
+    if (_clone_map.idx(nnn->_idx) == _clone_map.idx(nd->_idx)) {
+#ifndef PRODUCT
+      if (_vector_loop_debug) {
+        tty->print_cr("SuperWord::first_node: %d is the first iteration node for %d (_clone_map.idx(nnn->_idx) = %d)",
+                      nnn->_idx, nd->_idx, _clone_map.idx(nnn->_idx));
+      }
+#endif
+      return nnn;
+    }
+  }
+
+#ifndef PRODUCT
+  if (_vector_loop_debug) {
+    tty->print_cr("SuperWord::first_node: did not find first iteration node for %d (_clone_map.idx(nd->_idx)=%d)",
+                  nd->_idx, _clone_map.idx(nd->_idx));
+  }
+#endif
+  return 0;
+}
+
+Node* SuperWord::last_node(Node* nd) {
+  for (int ii = 0; ii < _iteration_last.length(); ii++) {
+    Node* nnn = _iteration_last.at(ii);
+    if (_clone_map.idx(nnn->_idx) == _clone_map.idx(nd->_idx)) {
+#ifndef PRODUCT
+      if (_vector_loop_debug) {
+        tty->print_cr("SuperWord::last_node _clone_map.idx(nnn->_idx)=%d, _clone_map.idx(nd->_idx)=%d",
+                      _clone_map.idx(nnn->_idx), _clone_map.idx(nd->_idx));
+      }
+#endif
+      return nnn;
+    }
+  }
+  return 0;
+}
+
+int SuperWord::mark_generations() {
+  Node *ii_err = 0, *tail_err;
+  for (int i = 0; i < _mem_slice_head.length(); i++) {
+    Node* phi  = _mem_slice_head.at(i);
+    assert(phi->is_Phi(), "must be phi");
+
+    Node* tail = _mem_slice_tail.at(i);
+    if (_ii_last == -1) {
+      tail_err = tail;
+      _ii_last = _clone_map.gen(tail->_idx);
+    }
+    else if (_ii_last != _clone_map.gen(tail->_idx)) {
+#ifndef PRODUCT
+      if (TraceSuperWord && Verbose) {
+        tty->print_cr("SuperWord::mark_generations _ii_last error - found different generations in two tail nodes ");
+        tail->dump();
+        tail_err->dump();
+      }
+#endif
+      return -1;
+    }
+
+    // find first iteration in the loop
+    for (DUIterator_Fast imax, i = phi->fast_outs(imax); i < imax; i++) {
+      Node* ii = phi->fast_out(i);
+      if (in_bb(ii) && ii->is_Store()) { // we speculate that normally Stores of one and one only generation have deps from mem phi
+        if (_ii_first == -1) {
+          ii_err = ii;
+          _ii_first = _clone_map.gen(ii->_idx);
+        } else if (_ii_first != _clone_map.gen(ii->_idx)) {
+#ifndef PRODUCT
+          if (TraceSuperWord && Verbose) {
+            tty->print_cr("SuperWord::mark_generations _ii_first error - found different generations in two nodes ");
+            ii->dump();
+            ii_err->dump();
+          }
+#endif
+          return -1; // this phi has Stores from different generations of unroll and cannot be simd/vectorized
+        }
+      }
+    }//for (DUIterator_Fast imax,
+  }//for (int i...
+
+  if (_ii_first == -1 || _ii_last == -1) {
+#ifndef PRODUCT
+    if (TraceSuperWord && Verbose) {
+      tty->print_cr("SuperWord::mark_generations unknown error, something vent wrong");
+    }
+#endif
+    return -1; // something vent wrong
+  }
+  // collect nodes in the first and last generations
+  assert(_iteration_first.length() == 0, "_iteration_first must be empty");
+  assert(_iteration_last.length() == 0, "_iteration_last must be empty");
+  for (int j = 0; j < _block.length(); j++) {
+    Node* n = _block.at(j);
+    node_idx_t gen = _clone_map.gen(n->_idx);
+    if ((signed)gen == _ii_first) {
+      _iteration_first.push(n);
+    } else if ((signed)gen == _ii_last) {
+      _iteration_last.push(n);
+    }
+  }
+
+  // building order of iterations
+  assert(_ii_order.length() == 0, "should be empty");
+  if (ii_err != 0) {
+    assert(in_bb(ii_err) && ii_err->is_Store(), "should be Store in bb");
+    Node* nd = ii_err;
+    while(_clone_map.gen(nd->_idx) != _ii_last) {
+      _ii_order.push(_clone_map.gen(nd->_idx));
+      bool found = false;
+      for (DUIterator_Fast imax, i = nd->fast_outs(imax); i < imax; i++) {
+        Node* use = nd->fast_out(i);
+        if (_clone_map.idx(use->_idx) == _clone_map.idx(nd->_idx) && use->as_Store()->in(MemNode::Memory) == nd) {
+          found = true;
+          nd = use;
+          break;
+        }
+      }//for
+
+      if (found == false) {
+#ifndef PRODUCT
+        if (TraceSuperWord && Verbose) {
+          tty->print_cr("SuperWord::mark_generations: Cannot build order of iterations - no dependent Store for %d", nd->_idx);
+        }
+#endif
+        _ii_order.clear();
+        return -1;
+      }
+    } //while
+    _ii_order.push(_clone_map.gen(nd->_idx));
+  }
+
+#ifndef PRODUCT
+  if (_vector_loop_debug) {
+    tty->print_cr("SuperWord::mark_generations");
+    tty->print_cr("First generation (%d) nodes:", _ii_first);
+    for (int ii = 0; ii < _iteration_first.length(); ii++)  _iteration_first.at(ii)->dump();
+    tty->print_cr("Last generation (%d) nodes:", _ii_last);
+    for (int ii = 0; ii < _iteration_last.length(); ii++)  _iteration_last.at(ii)->dump();
+    tty->print_cr(" ");
+
+    tty->print("SuperWord::List of generations: ");
+    for (int jj = 0; jj < _ii_order.length(); ++jj) {
+      tty->print("%d:%d ", jj, _ii_order.at(jj));
+    }
+    tty->print_cr(" ");
+  }
+#endif
+
+  return _ii_first;
+}
+
+bool SuperWord::fix_commutative_inputs(Node* gold, Node* fix) {
+  assert(gold->is_Add() && fix->is_Add() || gold->is_Mul() && fix->is_Mul(), "should be only Add or Mul nodes");
+  assert(_clone_map.idx(gold->_idx) == _clone_map.idx(fix->_idx), "should be clones of the same node");
+  Node* gin1 = gold->in(1);
+  Node* gin2 = gold->in(2);
+  Node* fin1 = fix->in(1);
+  Node* fin2 = fix->in(2);
+  bool swapped = false;
+
+  if (in_bb(gin1) && in_bb(gin2) && in_bb(fin1) && in_bb(fin1)) {
+    if (_clone_map.idx(gin1->_idx) == _clone_map.idx(fin1->_idx) &&
+        _clone_map.idx(gin2->_idx) == _clone_map.idx(fin2->_idx)) {
+      return true; // nothing to fix
+    }
+    if (_clone_map.idx(gin1->_idx) == _clone_map.idx(fin2->_idx) &&
+        _clone_map.idx(gin2->_idx) == _clone_map.idx(fin1->_idx)) {
+      fix->swap_edges(1, 2);
+      swapped = true;
+    }
+  }
+  // at least one input comes from outside of bb
+  if (gin1->_idx == fin1->_idx)  {
+    return true; // nothing to fix
+  }
+  if (!swapped && (gin1->_idx == fin2->_idx || gin2->_idx == fin1->_idx))  { //swapping is expensive, check condition first
+    fix->swap_edges(1, 2);
+    swapped = true;
+  }
+
+  if (swapped) {
+#ifndef PRODUCT
+    if (_vector_loop_debug) {
+      tty->print_cr("SuperWord::fix_commutative_inputs: fixed node %d", fix->_idx);
+    }
+#endif
+    return true;
+  }
+
+#ifndef PRODUCT
+  if (TraceSuperWord && Verbose) {
+    tty->print_cr("SuperWord::fix_commutative_inputs: cannot fix node %d", fix->_idx);
+  }
+#endif
+  return false;
+}
+
+bool SuperWord::pack_parallel() {
+#ifndef PRODUCT
+  if (_vector_loop_debug) {
+    tty->print_cr("SuperWord::pack_parallel: START");
+  }
+#endif
+
+  _packset.clear();
+
+  for (int ii = 0; ii < _iteration_first.length(); ii++) {
+    Node* nd = _iteration_first.at(ii);
+    if (in_bb(nd) && (nd->is_Load() || nd->is_Store() || nd->is_Add() || nd->is_Mul())) {
+      Node_List* pk = new Node_List();
+      pk->push(nd);
+      for (int gen = 1; gen < _ii_order.length(); ++gen) {
+        for (int kk = 0; kk < _block.length(); kk++) {
+          Node* clone = _block.at(kk);
+          if (_clone_map.idx(clone->_idx) == _clone_map.idx(nd->_idx) &&
+              _clone_map.gen(clone->_idx) == _ii_order.at(gen)) {
+            if (nd->is_Add() || nd->is_Mul()) {
+              fix_commutative_inputs(nd, clone);
+            }
+            pk->push(clone);
+            if (pk->size() == 4) {
+              _packset.append(pk);
+#ifndef PRODUCT
+              if (_vector_loop_debug) {
+                tty->print_cr("SuperWord::pack_parallel: added pack ");
+                pk->dump();
+              }
+#endif
+              if (_clone_map.gen(clone->_idx) != _ii_last) {
+                pk = new Node_List();
+              }
+            }
+            break;
+          }
+        }
+      }//for
+    }//if
+  }//for
+
+#ifndef PRODUCT
+  if (_vector_loop_debug) {
+    tty->print_cr("SuperWord::pack_parallel: END");
+  }
+#endif
+
+  return true;
+}
+
+bool SuperWord::hoist_loads_in_graph() {
+  GrowableArray<Node*> loads;
+
+#ifndef PRODUCT
+  if (_vector_loop_debug) {
+    tty->print_cr("SuperWord::hoist_loads_in_graph: total number _mem_slice_head.length() = %d", _mem_slice_head.length());
+  }
+#endif
+
+  for (int i = 0; i < _mem_slice_head.length(); i++) {
+    Node* n = _mem_slice_head.at(i);
+    if ( !in_bb(n) || !n->is_Phi() || n->bottom_type() != Type::MEMORY) {
+#ifndef PRODUCT
+      if (TraceSuperWord && Verbose) {
+        tty->print_cr("SuperWord::hoist_loads_in_graph: skipping unexpected node n=%d", n->_idx);
+      }
+#endif
+      continue;
+    }
+
+#ifndef PRODUCT
+    if (_vector_loop_debug) {
+      tty->print_cr("SuperWord::hoist_loads_in_graph: processing phi %d  = _mem_slice_head.at(%d);", n->_idx, i);
+    }
+#endif
+
+    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+      Node* ld = n->fast_out(i);
+      if (ld->is_Load() && ld->as_Load()->in(MemNode::Memory) == n && in_bb(ld)) {
+        for (int i = 0; i < _block.length(); i++) {
+          Node* ld2 = _block.at(i);
+          if (ld2->is_Load() &&
+              _clone_map.idx(ld->_idx) == _clone_map.idx(ld2->_idx) &&
+              _clone_map.gen(ld->_idx) != _clone_map.gen(ld2->_idx)) { // <= do not collect the first generation ld
+#ifndef PRODUCT
+            if (_vector_loop_debug) {
+              tty->print_cr("SuperWord::hoist_loads_in_graph: will try to hoist load ld2->_idx=%d, cloned from %d (ld->_idx=%d)",
+                            ld2->_idx, _clone_map.idx(ld->_idx), ld->_idx);
+            }
+#endif
+            // could not do on-the-fly, since iterator is immutable
+            loads.push(ld2);
+          }
+        }// for
+      }//if
+    }//for (DUIterator_Fast imax,
+  }//for (int i = 0; i
+
+  for (int i = 0; i < loads.length(); i++) {
+    LoadNode* ld = loads.at(i)->as_Load();
+    Node* phi = find_phi_for_mem_dep(ld);
+    if (phi != NULL) {
+#ifndef PRODUCT
+      if (_vector_loop_debug) {
+        tty->print_cr("SuperWord::hoist_loads_in_graph replacing MemNode::Memory(%d) edge in %d with one from %d",
+                      MemNode::Memory, ld->_idx, phi->_idx);
+      }
+#endif
+      _igvn.replace_input_of(ld, MemNode::Memory, phi);
+    }
+  }//for
+
+  restart(); // invalidate all basic structures, since we rebuilt the graph
+
+#ifndef PRODUCT
+  if (TraceSuperWord && Verbose) {
+    tty->print_cr("\nSuperWord::hoist_loads_in_graph() the graph was rebuilt, all structures invalidated and need rebuild");
+  }
+#endif
+  return true;
+}
+

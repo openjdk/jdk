@@ -252,7 +252,7 @@ class ChunkManager : public CHeapObj<mtInternal> {
 // Used to manage the free list of Metablocks (a block corresponds
 // to the allocation of a quantum of metadata).
 class BlockFreelist VALUE_OBJ_CLASS_SPEC {
-  BlockTreeDictionary* _dictionary;
+  BlockTreeDictionary* const _dictionary;
 
   // Only allocate and split from freelist if the size of the allocation
   // is at least 1/4th the size of the available block.
@@ -269,13 +269,7 @@ class BlockFreelist VALUE_OBJ_CLASS_SPEC {
   MetaWord* get_block(size_t word_size);
   void return_block(MetaWord* p, size_t word_size);
 
-  size_t total_size() {
-  if (dictionary() == NULL) {
-    return 0;
-  } else {
-    return dictionary()->total_size();
-  }
-}
+  size_t total_size() { return dictionary()->total_size(); }
 
   void print_on(outputStream* st) const;
 };
@@ -814,30 +808,21 @@ void VirtualSpaceNode::verify_container_count() {
 
 // BlockFreelist methods
 
-BlockFreelist::BlockFreelist() : _dictionary(NULL) {}
+BlockFreelist::BlockFreelist() : _dictionary(new BlockTreeDictionary()) {}
 
 BlockFreelist::~BlockFreelist() {
-  if (_dictionary != NULL) {
-    if (Verbose && TraceMetadataChunkAllocation) {
-      _dictionary->print_free_lists(gclog_or_tty);
-    }
-    delete _dictionary;
+  if (Verbose && TraceMetadataChunkAllocation) {
+    dictionary()->print_free_lists(gclog_or_tty);
   }
+  delete _dictionary;
 }
 
 void BlockFreelist::return_block(MetaWord* p, size_t word_size) {
   Metablock* free_chunk = ::new (p) Metablock(word_size);
-  if (dictionary() == NULL) {
-   _dictionary = new BlockTreeDictionary();
-  }
   dictionary()->return_chunk(free_chunk);
 }
 
 MetaWord* BlockFreelist::get_block(size_t word_size) {
-  if (dictionary() == NULL) {
-    return NULL;
-  }
-
   if (word_size < TreeChunk<Metablock, FreeList<Metablock> >::min_size()) {
     // Dark matter.  Too small for dictionary.
     return NULL;
@@ -866,9 +851,6 @@ MetaWord* BlockFreelist::get_block(size_t word_size) {
 }
 
 void BlockFreelist::print_on(outputStream* st) const {
-  if (dictionary() == NULL) {
-    return;
-  }
   dictionary()->print_free_lists(st);
 }
 

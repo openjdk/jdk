@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,12 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
-import com.sun.hotspot.igv.view.DiagramViewModel;
 import com.sun.hotspot.igv.data.ChangedListener;
 import com.sun.hotspot.igv.util.ContextAction;
+import com.sun.hotspot.igv.view.DiagramViewModel;
 import javax.swing.Action;
 import javax.swing.ImageIcon;
-import org.openide.util.HelpCtx;
-import org.openide.util.Lookup;
-import org.openide.util.NbBundle;
-import org.openide.util.Utilities;
+import org.openide.util.*;
 
 /**
  *
@@ -47,13 +44,15 @@ public final class NextDiagramAction extends ContextAction<DiagramViewModel> imp
 
     public NextDiagramAction(Lookup lookup) {
         putValue(Action.SHORT_DESCRIPTION, "Show next graph of current group");
-        putValue(Action.SMALL_ICON, new ImageIcon(Utilities.loadImage("com/sun/hotspot/igv/view/images/next_diagram.png")));
+        putValue(Action.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage("com/sun/hotspot/igv/view/images/next_diagram.png")));
     }
 
+    @Override
     public String getName() {
         return NbBundle.getMessage(NextDiagramAction.class, "CTL_NextDiagramAction");
     }
 
+    @Override
     public HelpCtx getHelpCtx() {
         return HelpCtx.DEFAULT_HELP;
     }
@@ -95,10 +94,12 @@ public final class NextDiagramAction extends ContextAction<DiagramViewModel> imp
         return model.getSecondPosition() != model.getPositions().size() - 1;
     }
 
+    @Override
     public Action createContextAwareInstance(Lookup arg0) {
         return new NextDiagramAction(arg0);
     }
 
+    @Override
     public void changed(DiagramViewModel source) {
         update(source);
     }
