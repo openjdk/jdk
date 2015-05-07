@@ -27,6 +27,9 @@
  * @summary Tests and benchmarks the JVMTI RedefineClasses when a
  *          single class (and its parent) contains many methods.
  *
+ * @modules java.compiler
+ *          java.instrument
+ *          jdk.compiler
  * @run build ManyMethodsBenchmarkApp ManyMethodsBenchmarkAgent
  * @run shell MakeJAR3.sh ManyMethodsBenchmarkAgent 'Can-Retransform-Classes: true'
  * @run main/othervm -javaagent:ManyMethodsBenchmarkAgent.jar ManyMethodsBenchmarkApp

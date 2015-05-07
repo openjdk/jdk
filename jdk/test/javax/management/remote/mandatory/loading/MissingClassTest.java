@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 4915825 4921009 4934965 4977469 8019584
  * @summary Tests behavior when client or server gets object of unknown class
  * @author Eamonn McManus
+ * @modules java.management
  * @run clean MissingClassTest SingleClassLoader
  * @run build MissingClassTest SingleClassLoader
  * @run main MissingClassTest

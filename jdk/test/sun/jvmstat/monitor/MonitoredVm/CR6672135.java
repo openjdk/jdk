@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import sun.jvmstat.monitor.VmIdentifier;
  * @bug 6672135
  * @summary setInterval() for local MonitoredHost and local MonitoredVm
  * @author Tomas Hurka
+ * @modules jdk.jvmstat/sun.jvmstat.monitor
  * @run main/othervm -XX:+UsePerfData CR6672135
  */
 public class CR6672135 {
