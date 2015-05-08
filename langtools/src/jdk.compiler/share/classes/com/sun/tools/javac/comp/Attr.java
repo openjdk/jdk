@@ -165,8 +165,6 @@ public class Attr extends JCTree.Visitor {
         unknownTypeInfo = new ResultInfo(KindSelector.TYP, Type.noType);
         unknownTypeExprInfo = new ResultInfo(KindSelector.VAL_TYP, Type.noType);
         recoveryInfo = new RecoveryInfo(deferredAttr.emptyDeferredAttrContext);
-
-        noCheckTree = make.at(-1).Skip();
     }
 
     /** Switch: relax some constraints for retrofit mode.
@@ -225,26 +223,6 @@ public class Attr extends JCTree.Visitor {
                final Type found,
                final KindSelector ownkind,
                final ResultInfo resultInfo) {
-        return check(tree, found, ownkind, resultInfo, true);
-    }
-    /** Check kind and type of given tree against protokind and prototype.
-     *  If check succeeds, store type in tree and return it.
-     *  If check fails, store errType in tree and return it.
-     *  No checks are performed if the prototype is a method type.
-     *  It is not necessary in this case since we know that kind and type
-     *  are correct.
-     *
-     *  @param tree     The tree whose kind and type is checked
-     *  @param found    The computed type of the tree
-     *  @param ownkind  The computed kind of the tree
-     *  @param resultInfo  The expected result of the tree
-     *  @param recheckPostInference If true and inference is underway, arrange to recheck the tree after inference finishes.
-     */
-    Type check(final JCTree tree,
-               final Type found,
-               final KindSelector ownkind,
-               final ResultInfo resultInfo,
-               boolean recheckPostInference) {
         InferenceContext inferenceContext = resultInfo.checkContext.inferenceContext();
         Type owntype;
         boolean shouldCheck = !found.hasTag(ERROR) &&
@@ -259,12 +237,12 @@ public class Attr extends JCTree.Visitor {
             //delay the check if there are inference variables in the found type
             //this means we are dealing with a partially inferred poly expression
             owntype = shouldCheck ? resultInfo.pt : found;
-            if (recheckPostInference) {
+            if (resultInfo.checkMode.installPostInferenceHook()) {
                 inferenceContext.addFreeTypeListener(List.of(found, resultInfo.pt),
                         instantiatedContext -> {
                             ResultInfo pendingResult =
                                     resultInfo.dup(inferenceContext.asInstType(resultInfo.pt));
-                            check(tree, inferenceContext.asInstType(found), ownkind, pendingResult, false);
+                            check(tree, inferenceContext.asInstType(found), ownkind, pendingResult);
                         });
             }
         } else {
@@ -272,7 +250,7 @@ public class Attr extends JCTree.Visitor {
             resultInfo.check(tree, found) :
             found;
         }
-        if (tree != noCheckTree) {
+        if (resultInfo.checkMode.updateTreeType()) {
             tree.type = owntype;
         }
         return owntype;
@@ -455,20 +433,60 @@ public class Attr extends JCTree.Visitor {
         }
     }
 
+    /**
+     * Mode controlling behavior of Attr.Check
+     */
+    enum CheckMode {
+
+        NORMAL,
+
+        NO_TREE_UPDATE {     // Mode signalling 'fake check' - skip tree update
+            @Override
+            public boolean updateTreeType() {
+                return false;
+            }
+        },
+        NO_INFERENCE_HOOK { // Mode signalling that caller will manage free types in tree decorations.
+            @Override
+            public boolean installPostInferenceHook() {
+                return false;
+            }
+        };
+
+        public boolean updateTreeType() {
+            return true;
+        }
+        public boolean installPostInferenceHook() {
+            return true;
+        }
+    }
+
+
     class ResultInfo {
         final KindSelector pkind;
         final Type pt;
         final CheckContext checkContext;
+        final CheckMode checkMode;
 
         ResultInfo(KindSelector pkind, Type pt) {
-            this(pkind, pt, chk.basicHandler);
+            this(pkind, pt, chk.basicHandler, CheckMode.NORMAL);
+        }
+
+        ResultInfo(KindSelector pkind, Type pt, CheckMode checkMode) {
+            this(pkind, pt, chk.basicHandler, checkMode);
         }
 
         protected ResultInfo(KindSelector pkind,
                              Type pt, CheckContext checkContext) {
+            this(pkind, pt, checkContext, CheckMode.NORMAL);
+        }
+
+        protected ResultInfo(KindSelector pkind,
+                             Type pt, CheckContext checkContext, CheckMode checkMode) {
             this.pkind = pkind;
             this.pt = pt;
             this.checkContext = checkContext;
+            this.checkMode = checkMode;
         }
 
         protected Type check(final DiagnosticPosition pos, final Type found) {
@@ -476,15 +494,23 @@ public class Attr extends JCTree.Visitor {
         }
 
         protected ResultInfo dup(Type newPt) {
-            return new ResultInfo(pkind, newPt, checkContext);
+            return new ResultInfo(pkind, newPt, checkContext, checkMode);
         }
 
         protected ResultInfo dup(CheckContext newContext) {
-            return new ResultInfo(pkind, pt, newContext);
+            return new ResultInfo(pkind, pt, newContext, checkMode);
         }
 
         protected ResultInfo dup(Type newPt, CheckContext newContext) {
-            return new ResultInfo(pkind, newPt, newContext);
+            return new ResultInfo(pkind, newPt, newContext, checkMode);
+        }
+
+        protected ResultInfo dup(Type newPt, CheckContext newContext, CheckMode newMode) {
+            return new ResultInfo(pkind, newPt, newContext, newMode);
+        }
+
+        protected ResultInfo dup(CheckMode newMode) {
+            return new ResultInfo(pkind, pt, checkContext, newMode);
         }
 
         @Override
@@ -549,10 +575,6 @@ public class Attr extends JCTree.Visitor {
     /** Visitor result: the computed type.
      */
     Type result;
-
-    /** Synthetic tree to be used during 'fake' checks.
-     */
-    JCTree noCheckTree;
 
     /** Visitor method: attribute a tree, catching any completion failure
      *  exceptions. Return the tree's type.
@@ -2055,9 +2077,9 @@ public class Attr extends JCTree.Visitor {
                         enclosingContext.report(tree.clazz,
                                 diags.fragment("cant.apply.diamond.1", diags.fragment("diamond", csym), details));
                     }
-                });
+                }, CheckMode.NO_TREE_UPDATE);
                 Type constructorType = tree.constructorType = types.createErrorType(clazztype);
-                constructorType = checkId(noCheckTree, site,
+                constructorType = checkId(tree, site,
                         constructor,
                         diamondEnv,
                         diamondResult);
@@ -2083,11 +2105,11 @@ public class Attr extends JCTree.Visitor {
                 tree.constructor = rs.resolveConstructor(
                     tree.pos(), rsEnv, clazztype, argtypes, typeargtypes);
                 if (cdef == null) { //do not check twice!
-                    tree.constructorType = checkId(noCheckTree,
+                    tree.constructorType = checkId(tree,
                             clazztype,
                             tree.constructor,
                             rsEnv,
-                            new ResultInfo(pkind, newMethodTemplate(syms.voidType, argtypes, typeargtypes)));
+                            new ResultInfo(pkind, newMethodTemplate(syms.voidType, argtypes, typeargtypes), CheckMode.NO_TREE_UPDATE));
                     if (rsEnv.info.lastResolveVarargs())
                         Assert.check(tree.constructorType.isErroneous() || tree.varargsElement != null);
                 }
@@ -2220,15 +2242,15 @@ public class Attr extends JCTree.Visitor {
                         tree.pos(), localEnv, clazztype, finalargtypes, typeargtypes);
                 Assert.check(!sym.kind.isResolutionError());
                 tree.constructor = sym;
-                tree.constructorType = checkId(noCheckTree,
+                tree.constructorType = checkId(tree,
                         clazztype,
                         tree.constructor,
                         localEnv,
-                        new ResultInfo(pkind, newMethodTemplate(syms.voidType, finalargtypes, typeargtypes)));
+                        new ResultInfo(pkind, newMethodTemplate(syms.voidType, finalargtypes, typeargtypes), CheckMode.NO_TREE_UPDATE));
             }
             Type owntype = (tree.constructor != null && tree.constructor.kind == MTH) ?
                                 clazztype : types.createErrorType(tree.type);
-            result = check(tree, owntype, KindSelector.VAL, resultInfo, false);
+            result = check(tree, owntype, KindSelector.VAL, resultInfo.dup(CheckMode.NO_INFERENCE_HOOK));
             chk.validate(tree.typeargs, localEnv);
         }
 
@@ -2840,9 +2862,9 @@ public class Attr extends JCTree.Visitor {
                     resultInfo.dup(newMethodTemplate(
                         desc.getReturnType().hasTag(VOID) ? Type.noType : desc.getReturnType(),
                         that.kind.isUnbound() ? argtypes.tail : argtypes, typeargtypes),
-                        new FunctionalReturnContext(resultInfo.checkContext));
+                        new FunctionalReturnContext(resultInfo.checkContext), CheckMode.NO_TREE_UPDATE);
 
-            Type refType = checkId(noCheckTree, lookupHelper.site, refSym, localEnv, checkInfo);
+            Type refType = checkId(that, lookupHelper.site, refSym, localEnv, checkInfo);
 
             if (that.kind.isUnbound() &&
                     resultInfo.checkContext.inferenceContext().free(argtypes.head)) {
@@ -3996,8 +4018,8 @@ public class Attr extends JCTree.Visitor {
                 all_multicatchTypes.append(ctype);
             }
         }
-        Type t = check(noCheckTree, types.lub(multicatchTypes.toList()),
-                KindSelector.TYP, resultInfo);
+        Type t = check(tree, types.lub(multicatchTypes.toList()),
+                KindSelector.TYP, resultInfo.dup(CheckMode.NO_TREE_UPDATE));
         if (t.hasTag(CLASS)) {
             List<Type> alternatives =
                 ((all_multicatchTypes == null) ? multicatchTypes : all_multicatchTypes).toList();

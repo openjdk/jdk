@@ -2006,6 +2006,8 @@ public class Resolve {
      *  @param name      The type's name.
      */
     Symbol findType(Env<AttrContext> env, Name name) {
+        if (name == names.empty)
+            return typeNotFound; // do not allow inadvertent "lookup" of anonymous types
         Symbol bestSoFar = typeNotFound;
         Symbol sym;
         boolean staticOnly = false;
