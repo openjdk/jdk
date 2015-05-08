@@ -190,6 +190,7 @@ Thread::Thread() {
   set_stack_size(0);
   set_self_raw_id(0);
   set_lgrp_id(-1);
+  DEBUG_ONLY(clear_suspendible_thread();)
 
   // allocated data structures
   set_osthread(NULL);
