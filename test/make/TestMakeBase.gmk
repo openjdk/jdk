@@ -33,6 +33,16 @@ DEPS := $(THIS_FILE) \
     $(SRC_ROOT)/make/common/MakeBase.gmk \
     #
 
+# Assert two strings are equal
+# 1 - Tested value
+# 2 - Exepected value
+# 3 - Error message
+define assert-equals
+  ifneq ($$(strip $1),$$(strip $2))
+    $$(error $3 - Expected >$$(strip $2)< - Got >$$(strip $1)<)
+  endif
+endef
+
 # On macosx, file system timestamps only have 1 second resultion so must add
 # sleeps to properly test dependencies.
 ifeq ($(OPENJDK_BUILD_OS), macosx)
@@ -75,6 +85,17 @@ endif
 ifeq ($(call equals, $(EQUALS_VALUE1), $(EQUALS_VALUE1)), )
   $(error The strings >$(EQUALS_VALUE1)< and >$(EQUALS_VALUE1)< are not equal)
 endif
+
+################################################################################
+# Test remove-prefixes
+
+$(eval $(call assert-equals, \
+    $(call remove-prefixes, pre, prefix postfix), fix postfix, \
+    Prefixes not properly removed))
+
+$(eval $(call assert-equals, \
+    $(call remove-prefixes, pre post, prefix postfix), fix fix, \
+    Prefixes not properly removed))
 
 ################################################################################
 # Test ShellQuote
