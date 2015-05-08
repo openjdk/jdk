@@ -684,6 +684,7 @@ ZIP_DEBUGINFO_FILES
 ENABLE_DEBUG_SYMBOLS
 CFLAGS_WARNINGS_ARE_ERRORS
 DISABLE_WARNING_PREFIX
+WARNINGS_AS_ERRORS
 COMPILER_SUPPORTS_TARGET_BITS_FLAG
 ZERO_ARCHFLAG
 LDFLAGS_TESTEXE_SUFFIX
@@ -727,7 +728,6 @@ SET_SHARED_LIBRARY_MAPFILE
 SET_SHARED_LIBRARY_NAME
 SET_SHARED_LIBRARY_ORIGIN
 SET_EXECUTABLE_ORIGIN
-SHARED_LIBRARY_FLAGS
 CXX_FLAG_REORDER
 C_FLAG_REORDER
 SYSROOT_LDFLAGS
@@ -1086,6 +1086,7 @@ with_jtreg
 with_extra_cflags
 with_extra_cxxflags
 with_extra_ldflags
+enable_warnings_as_errors
 enable_debug_symbols
 enable_zip_debug_info
 enable_native_coverage
@@ -1852,6 +1853,9 @@ Optional Features:
   --enable-rmiconnector-iiop
                           enable the JMX RMIConnector iiop transport
                           [disabled]
+  --disable-warnings-as-errors
+                          do not consider native warnings to be an error
+                          [enabled]
   --disable-debug-symbols disable generation of debug symbols [enabled]
   --disable-zip-debug-info
                           disable zipping of debug-info files [enabled]
@@ -4359,7 +4363,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1430918902
+DATE_WHEN_GENERATED=1431074105
 
 ###############################################################################
 #
@@ -41761,7 +41765,6 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
 
 
 
-
   if test "x$OPENJDK_TARGET_OS" = xsolaris; then
     CFLAGS_JDK="${CFLAGS_JDK} -D__solaris__"
     CXXFLAGS_JDK="${CXXFLAGS_JDK} -D__solaris__"
@@ -42469,6 +42472,31 @@ $as_echo "$supports" >&6; }
     COMPILER_SUPPORTS_TARGET_BITS_FLAG=false
   fi
 
+
+
+  # Check whether --enable-warnings-as-errors was given.
+if test "${enable_warnings_as_errors+set}" = set; then :
+  enableval=$enable_warnings_as_errors;
+fi
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if native warnings are errors" >&5
+$as_echo_n "checking if native warnings are errors... " >&6; }
+  if test "x$enable_warnings_as_errors" = "xyes"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes (explicitely set)" >&5
+$as_echo "yes (explicitely set)" >&6; }
+    WARNINGS_AS_ERRORS=true
+  elif test "x$enable_warnings_as_errors" = "xno"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+    WARNINGS_AS_ERRORS=false
+  elif test "x$enable_warnings_as_errors" = "x"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes (default)" >&5
+$as_echo "yes (default)" >&6; }
+    WARNINGS_AS_ERRORS=true
+  else
+    as_fn_error $? "--enable-warnings-as-errors accepts no argument" "$LINENO" 5
+  fi
 
 
   case "${TOOLCHAIN_TYPE}" in

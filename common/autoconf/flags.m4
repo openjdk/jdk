@@ -231,7 +231,6 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_LIBS],
 
   AC_SUBST(C_FLAG_REORDER)
   AC_SUBST(CXX_FLAG_REORDER)
-  AC_SUBST(SHARED_LIBRARY_FLAGS)
   AC_SUBST(SET_EXECUTABLE_ORIGIN)
   AC_SUBST(SET_SHARED_LIBRARY_ORIGIN)
   AC_SUBST(SET_SHARED_LIBRARY_NAME)
@@ -899,6 +898,24 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_MISC],
       [COMPILER_SUPPORTS_TARGET_BITS_FLAG=true],
       [COMPILER_SUPPORTS_TARGET_BITS_FLAG=false])
   AC_SUBST(COMPILER_SUPPORTS_TARGET_BITS_FLAG)
+
+  AC_ARG_ENABLE([warnings-as-errors], [AS_HELP_STRING([--disable-warnings-as-errors],
+      [do not consider native warnings to be an error @<:@enabled@:>@])])
+
+  AC_MSG_CHECKING([if native warnings are errors])
+  if test "x$enable_warnings_as_errors" = "xyes"; then
+    AC_MSG_RESULT([yes (explicitely set)])
+    WARNINGS_AS_ERRORS=true
+  elif test "x$enable_warnings_as_errors" = "xno"; then
+    AC_MSG_RESULT([no])
+    WARNINGS_AS_ERRORS=false
+  elif test "x$enable_warnings_as_errors" = "x"; then
+    AC_MSG_RESULT([yes (default)])
+    WARNINGS_AS_ERRORS=true
+  else
+    AC_MSG_ERROR([--enable-warnings-as-errors accepts no argument])
+  fi
+  AC_SUBST(WARNINGS_AS_ERRORS)
 
   case "${TOOLCHAIN_TYPE}" in
     microsoft)
