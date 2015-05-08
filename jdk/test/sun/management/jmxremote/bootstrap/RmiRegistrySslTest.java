@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import java.util.regex.Pattern;
  * @library /lib/testlibrary
  * @bug 6228231
  * @summary Test that RMI registry uses SSL.
+ * @modules java.management
  * @build jdk.testlibrary.* RmiRegistrySslTestApp
  * @run main/timeout=300 RmiRegistrySslTest
  * @author Luis-Miguel Alventosa, Taras Ledkov

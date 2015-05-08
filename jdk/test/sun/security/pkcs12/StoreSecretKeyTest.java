@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,14 @@
 
 /*
  * @test
- * @bug 8005408
+ * @bug 8005408 8079129
  * @summary KeyStore API enhancements
  */
 
 import java.io.*;
 import java.security.*;
+import java.security.cert.*;
+import java.security.cert.Certificate;
 import java.util.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
@@ -39,7 +41,9 @@ public class StoreSecretKeyTest {
     private final static String DIR = System.getProperty("test.src", ".");
     private static final char[] PASSWORD = "passphrase".toCharArray();
     private static final String KEYSTORE = "keystore.p12";
-    private static final String ALIAS = "my secret key";
+    private static final String CERT = DIR + "/trusted.pem";
+    private static final String ALIAS = "my trusted cert";
+    private static final String ALIAS2 = "my secret key";
 
     public static void main(String[] args) throws Exception {
 
@@ -56,8 +60,13 @@ public class StoreSecretKeyTest {
         KeyStore keystore = KeyStore.getInstance("PKCS12");
         keystore.load(null, null);
 
-        // Set entry
+        // Set trusted certificate entry
+        Certificate cert = loadCertificate(CERT);
         keystore.setEntry(ALIAS,
+            new KeyStore.TrustedCertificateEntry(cert), null);
+
+        // Set secret key entry
+        keystore.setEntry(ALIAS2,
             new KeyStore.SecretKeyEntry(generateSecretKey("AES", 128)),
                 new KeyStore.PasswordProtection(PASSWORD));
 
@@ -73,7 +82,7 @@ public class StoreSecretKeyTest {
                 " entries");
         }
 
-        KeyStore.Entry entry = keystore.getEntry(ALIAS,
+        KeyStore.Entry entry = keystore.getEntry(ALIAS2,
             new KeyStore.PasswordProtection(PASSWORD));
         System.out.println("Retrieved entry: " + entry);
 
@@ -100,5 +109,15 @@ public class StoreSecretKeyTest {
         KeyGenerator generator = KeyGenerator.getInstance(algorithm);
         generator.init(size);
         return generator.generateKey();
+    }
+
+    private static Certificate loadCertificate(String certFile)
+        throws Exception {
+        X509Certificate cert = null;
+        try (FileInputStream certStream = new FileInputStream(certFile)) {
+            CertificateFactory factory =
+                CertificateFactory.getInstance("X.509");
+            return factory.generateCertificate(certStream);
+        }
     }
 }

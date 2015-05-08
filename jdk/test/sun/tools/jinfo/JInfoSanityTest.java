@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import jdk.testlibrary.OutputAnalyzer;
  * @summary The test sanity checks functionality of 'jinfo -h', 'jinfo -help',
  *          and verifies jinfo exits abnormally if started with invalid options.
  * @library /lib/testlibrary
+ * @modules java.management
  * @build jdk.testlibrary.* JInfoHelper
  * @run main JInfoSanityTest
  */

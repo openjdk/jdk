@@ -2,10 +2,10 @@
 .\" Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
 .\" Title: jstat
 .\" Language: English
-.\" Date: 2011ǯ5��10��
-.\" SectDesc: ��˥���󥰡��ġ���
+.\" Date: 2011年5月10日
+.\" SectDesc: モニタリング・ツール
 .\" Software: JDK 8
-.\" Arch: ����
+.\" Arch: 汎用
 .\"
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
@@ -28,7 +28,7 @@
 .\" questions.
 .\"
 .pl 99999
-.TH "jstat" "1" "2011ǯ5��10��" "JDK 8" "��˥���󥰡��ġ���"
+.TH "jstat" "1" "2011年5月10日" "JDK 8" "モニタリング・ツール"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -49,8 +49,8 @@
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
 .SH "NAME"
-jstat \- Java���ۥޥ���(JVM)�����פ�ƻ뤷�ޤ������Υ��ޥ�ɤϻŪ�ʤ�Τǡ����ݡ��Ȥ���Ƥ��ޤ���
-.SH "����"
+jstat \- Java仮想マシン(JVM)の統計を監視します。このコマンドは試験的なもので、サポートされていません。
+.SH "概要"
 .sp
 .if n \{\
 .RS 4
@@ -64,17 +64,17 @@ jstat \- Java���ۥޥ���(JVM)�����פ�ƻ뤷�ޤ������Υ��ޥ�ɤϻŪ�ʤ�Τǡ���
 .PP
 \fIgeneralOption\fR
 .RS 4
-ñ�Ȥǻ��Ѥ������Ū�ʥ��ޥ�ɥ饤�󡦥��ץ����Ǥ�(\fI\-help\fR�ޤ���\fI\-options\fR)������Ū�ʥ��ץ����򻲾Ȥ��Ƥ���������
+単独で使用する一般的なコマンドライン・オプションです(\fI\-help\fRまたは\fI\-options\fR)。一般的なオプションを参照してください。
 .RE
 .PP
 \fIoutputOptions\fR
 .RS 4
-ñ���\fIstatOption\fR��\fI\-t\fR��\fI\-h\fR�����\fI\-J\fR�Τ����줫�Υ��ץ����ǹ��������1�İʾ�ν��ϥ��ץ���󡣽��ϥ��ץ����򻲾Ȥ��Ƥ���������
+単一の\fIstatOption\fRと\fI\-t\fR、\fI\-h\fRおよび\fI\-J\fRのいずれかのオプションで構成される1つ以上の出力オプション。出力オプションを参照してください。
 .RE
 .PP
 \fIvmid\fR
 .RS 4
-�������å�JVM�򼨤�ʸ����Ǥ��벾�ۥޥ����̻ҤǤ�������Ū�ʹ�ʸ�ϼ��ΤȤ���Ǥ���
+ターゲットJVMを示す文字列である仮想マシン識別子です。一般的な構文は次のとおりです。
 .sp
 .if n \{\
 .RS 4
@@ -85,24 +85,24 @@ jstat \- Java���ۥޥ���(JVM)�����פ�ƻ뤷�ޤ������Υ��ޥ�ɤϻŪ�ʤ�Τǡ���
 .if n \{\
 .RE
 .\}
-\fIvmid\fRʸ����ι�ʸ�ϡ�URI�ι�ʸ���б����Ƥ��ޤ���\fIvmid\fRʸ����ϡ���������JVM��ɽ��ñ����������顢�̿��ץ��ȥ��롢�ݡ����ֹ桢�����¾�μ�����ͭ���ͤ򼨤�ʣ���ʹ�¤�ޤǡ��͡��˰ۤʤ�ޤ������ۥޥ����̻Ҥ򻲾Ȥ��Ƥ���������
+\fIvmid\fR文字列の構文は、URIの構文に対応しています。\fIvmid\fR文字列は、ローカルJVMを表す単純な整数から、通信プロトコル、ポート番号、および他の実装固有の値を示す複雑な構造まで、様々に異なります。仮想マシン識別子を参照してください。
 .RE
 .PP
 \fIinterval\fR [s|ms]
 .RS 4
-��(s)�ޤ��ϥߥ���(ms)�Τ������ꤷ��ñ�̤ǤΥ���ץ�󥰴ֳ֤Ǥ����ǥե���Ȥ�ñ�̤ϥߥ��äǤ������������ˤ���ɬ�פ�����ޤ������ꤷ����硢\fIjstat\fR���ޥ�ɤϳƴֳ֤ǽ��Ϥ��������ޤ���
+秒(s)またはミリ秒(ms)のうち指定した単位でのサンプリング間隔です。デフォルトの単位はミリ秒です。正の整数にする必要があります。指定した場合、\fIjstat\fRコマンドは各間隔で出力を生成します。
 .RE
 .PP
 \fIcount\fR
 .RS 4
-ɽ�����륵��ץ���Ǥ����ǥե�����ͤ�̵�¤ǡ��������å�JVM����λ����ޤǡ��ޤ���\fIjstat\fR���ޥ�ɤ���λ����ޤǡ�\fIjstat\fR���ޥ�ɤ����ץǡ�����ɽ�����ޤ��������ͤϡ����������Ǥ���ɬ�פ�����ޤ���
+表示するサンプル数です。デフォルト値は無限で、ターゲットJVMが終了するまで、または\fIjstat\fRコマンドが終了するまで、\fIjstat\fRコマンドは統計データを表示します。この値は、正の整数である必要があります。
 .RE
-.SH "����"
+.SH "説明"
 .PP
-\fIjstat\fR���ޥ�ɤϡ����֤���Ƥ���Java HotSpot VM�Υѥե����ޥ����ץǡ�����ɽ�����ޤ����������å�JVM�ϡ����ۥޥ����̻Ҥޤ���\fIvmid\fR���ץ����ˤ�äƼ��̤���ޤ���
-.SH "���ۥޥ����̻�"
+\fIjstat\fRコマンドは、設置されているJava HotSpot VMのパフォーマンス統計データを表示します。ターゲットJVMは、仮想マシン識別子または\fIvmid\fRオプションによって識別されます。
+.SH "仮想マシン識別子"
 .PP
-\fIvmid\fRʸ����ι�ʸ�ϡ�URI�ι�ʸ���б����Ƥ��ޤ���
+\fIvmid\fR文字列の構文は、URIの構文に対応しています。
 .sp
 .if n \{\
 .RS 4
@@ -116,380 +116,380 @@ jstat \- Java���ۥޥ���(JVM)�����פ�ƻ뤷�ޤ������Υ��ޥ�ɤϻŪ�ʤ�Τǡ���
 .PP
 \fIprotocol\fR
 .RS 4
-�̿��ץ��ȥ���Ǥ���\fIprotocol\fR�ͤ���ά���졢�ۥ���̾�����ꤵ��Ƥ��ʤ���硢�ǥե���ȤΥץ��ȥ��뤬���ץ�åȥե������ͭ�κ�Ŭ�����줿�������롦�ץ��ȥ���ˤʤ�ޤ���\fIprotocol\fR�ͤ���ά���졢�ۥ���̾�����ꤵ��Ƥ�����ϡ��ǥե���ȡ��ץ��ȥ����\fIrmi\fR�ˤʤ�ޤ���
+通信プロトコルです。\fIprotocol\fR値が省略され、ホスト名が指定されていない場合、デフォルトのプロトコルが、プラットフォーム固有の最適化されたローカル・プロトコルになります。\fIprotocol\fR値が省略され、ホスト名が指定されている場合は、デフォルト・プロトコルは\fIrmi\fRになります。
 .RE
 .PP
 \fIlvmid\fR
 .RS 4
-�������å�JVM�Υ������벾�ۥޥ����̻ҤǤ���\fIlvmid\fR�ϡ������ƥ���JVM���դ˼��̤���ץ�åȥե������ͭ���ͤǤ���\fIlvmid\fR�ϡ����ۥޥ����̻Ҥ�ͣ���ɬ�����ǤǤ���\fIlvmid\fR�ϡ�����Ū�ˤϥ������å�JVM�ץ��������Ф��륪�ڥ졼�ƥ��󥰡������ƥ�Υץ��������̻ҤǤ�����ɬ�����⤽���Ǥ���Ȥϸ¤�ޤ���\fIjps\fR���ޥ�ɤ���Ѥ��ơ�\fIlvmid\fR������Ǥ��ޤ����ޤ���UNIX�ץ�åȥե�����Ǥ�\fIps\fR���ޥ�ɤ���Ѥ��ơ�Windows�Ǥ�Windows���������ޥ͡��������Ѥ��ơ�\fIlvmid\fR������Ǥ��ޤ���
+ターゲットJVMのローカル仮想マシン識別子です。\fIlvmid\fRは、システム上のJVMを一意に識別するプラットフォーム固有の値です。\fIlvmid\fRは、仮想マシン識別子の唯一の必須要素です。\fIlvmid\fRは、一般的にはターゲットJVMプロセスに対するオペレーティング・システムのプロセス識別子ですが、必ずしもそうであるとは限りません。\fIjps\fRコマンドを使用して、\fIlvmid\fRを特定できます。また、UNIXプラットフォームでは\fIps\fRコマンドを使用して、WindowsではWindowsタスク・マネージャを使用して、\fIlvmid\fRを特定できます。
 .RE
 .PP
 \fIhostname\fR
 .RS 4
-�������åȡ��ۥ��Ȥ򼨤��ۥ���̾�ޤ���IP���ɥ쥹�Ǥ���\fIhostname\fR�ͤ���ά����Ƥ�����ϡ��������åȡ��ۥ��Ȥϥ������롦�ۥ��Ȥˤʤ�ޤ���
+ターゲット・ホストを示すホスト名またはIPアドレスです。\fIhostname\fR値が省略されている場合は、ターゲット・ホストはローカル・ホストになります。
 .RE
 .PP
 \fIport\fR
 .RS 4
-��⡼�ȡ������С����̿����뤿��Υǥե���ȡ��ݡ��ȤǤ���\fIhostname\fR�ͤ���ά����Ƥ��뤫����Ŭ�����줿�������롦�ץ��ȥ��뤬\fIprotocol\fR�ͤ˻��ꤵ��Ƥ����硢\fIport\fR�ͤ�̵�뤵��ޤ�������ʳ��ξ�硢\fIport\fR�ѥ�᡼���ΰ����ϡ������ˤ�äưۤʤ�ޤ����ǥե���Ȥ�\fIrmi\fR�ץ��ȥ���ξ�硢�ݡ����ͤϡ���⡼�ȡ��ۥ��Ⱦ��rmiregistry�Υݡ����ֹ�򼨤��ޤ���\fIport\fR�ͤ���ά���졢\fIprotocol\fR�ͤ�\fIrmi\fR�����ꤵ��Ƥ����硢�ǥե���Ȥ�rmiregistry�ݡ���(1099)�����Ѥ���ޤ���
+リモート・サーバーと通信するためのデフォルト・ポートです。\fIhostname\fR値が省略されているか、最適化されたローカル・プロトコルが\fIprotocol\fR値に指定されている場合、\fIport\fR値は無視されます。それ以外の場合、\fIport\fRパラメータの扱いは、実装によって異なります。デフォルトの\fIrmi\fRプロトコルの場合、ポート値は、リモート・ホスト上のrmiregistryのポート番号を示します。\fIport\fR値が省略され、\fIprotocol\fR値で\fIrmi\fRが指定されている場合、デフォルトのrmiregistryポート(1099)が使用されます。
 .RE
 .PP
 \fIservername\fR
 .RS 4
-\fIservername\fR�ѥ�᡼���ΰ����ϡ������ˤ�äưۤʤ�ޤ�����Ŭ�����줿�������롦�ץ��ȥ���ξ�硢���Υե�����ɤ�̵�뤵��ޤ���\fIrmi\fR�ץ��ȥ���ξ�硢����ϡ���⡼�ȡ��ۥ��Ⱦ��RMI�꥽���������֥������Ȥ�̾����ɽ���ޤ���
+\fIservername\fRパラメータの扱いは、実装によって異なります。最適化されたローカル・プロトコルの場合、このフィールドは無視されます。\fIrmi\fRプロトコルの場合、これは、リモート・ホスト上のRMIリソース・オブジェクトの名前を表します。
 .RE
-.SH "���ץ����"
+.SH "オプション"
 .PP
-\fIjstat\fR���ޥ�ɤϡ�����Ū�ʥ��ץ����Ƚ��ϥ��ץ�����2�ĤΥ����פΥ��ץ����򥵥ݡ��Ȥ��Ƥ��ޤ�������Ū�ʥ��ץ�������Ѥ�����硢\fIjstat\fR���ޥ�ɤϴ�ñ�ʻ���Ψ����ӥС����������ɽ�����ޤ������ϥ��ץ����ˤ�äơ����ץǡ������Ϥ����Ƥȷ�������ޤ�ޤ���
+\fIjstat\fRコマンドは、一般的なオプションと出力オプションの2つのタイプのオプションをサポートしています。一般的なオプションを使用した場合、\fIjstat\fRコマンドは簡単な使用率およびバージョン情報を表示します。出力オプションによって、統計データ出力の内容と形式が決まります。
 .PP
-���٤ƤΥ��ץ����Ȥ��ε�ǽ�ϡ�����Υ�꡼�����ѹ��ޤ����ѻߤ�����ǽ��������ޤ���
-.SS "����Ū�ʥ��ץ����"
+すべてのオプションとその機能は、将来のリリースで変更または廃止される可能性があります。
+.SS "一般的なオプション"
 .PP
-�����줫�ΰ���Ū�ʥ��ץ�������ꤷ����硢¾�Υ��ץ����ޤ��ϥѥ�᡼���ϰ��ڻ���Ǥ��ޤ���
+いずれかの一般的なオプションを指定した場合、他のオプションまたはパラメータは一切指定できません。
 .PP
 \-help
 .RS 4
-�إ�ס���å�������ɽ�����ޤ���
+ヘルプ・メッセージを表示します。
 .RE
 .PP
 \-options
 .RS 4
-Static���ץ����Υꥹ�Ȥ�ɽ�����ޤ������ϥ��ץ����򻲾Ȥ��Ƥ���������
+Staticオプションのリストを表示します。出力オプションを参照してください。
 .RE
-.SS "���ϥ��ץ����"
+.SS "出力オプション"
 .PP
-����Ū�ʥ��ץ�������ꤷ�ʤ����ˡ����ϥ��ץ��������Ǥ��ޤ������ϥ��ץ����ϡ�\fIjstat\fR���ޥ�ɤν��Ϥ����Ƥȷ�������ꤷ��ñ���\fIstatOption\fR�Ȥ����줫�ν��ϥ��ץ����(\fI\-h\fR��\fI\-t\fR�����\fI\-J\fR)�ǹ�������ޤ���\fIstatOption\fR�Ϻǽ�˵��Ҥ���ɬ�פ�����ޤ���
+一般的なオプションを指定しない場合に、出力オプションを指定できます。出力オプションは、\fIjstat\fRコマンドの出力の内容と形式を決定し、単一の\fIstatOption\fRといずれかの出力オプション(\fI\-h\fR、\fI\-t\fRおよび\fI\-J\fR)で構成されます。\fIstatOption\fRは最初に記述する必要があります。
 .PP
-���Ϥϡ����󤬶���Ƕ��ڤ�줿ɽ�η����ˤʤ�ޤ��������ȥ��ޤ�إå����Ԥˤ�äơ�����ΰ�̣���狼��ޤ����إå�����ɽ�����٤����ꤹ��ˤϡ�\fI\-h\fR���ץ�������Ѥ��ޤ�����Υإå���̾�ϡ��͡��ʥ��ץ����֤ǰ�������ݤ���Ƥ��ޤ������̤ˡ�2�ĤΥ��ץ�����Ʊ��̾�����󤬻��Ѥ���Ƥ���С�2�Ĥ���Υǡ�������������Ʊ���Ǥ���
+出力は、各列が空白で区切られた表の形式になります。タイトルを含むヘッダー行によって、各列の意味がわかります。ヘッダーの表示頻度を設定するには、\fI\-h\fRオプションを使用します。列のヘッダー名は、様々なオプション間で一貫性が保たれています。一般に、2つのオプションで同じ名前の列が使用されていれば、2つの列のデータ・ソースは同じです。
 .PP
-\fI\-t\fR���ץ�������Ѥ���ȡ�Timestamp�Ȥ�����٥���դ��������ॹ����פ��󤬡����Ϥκǽ����Ȥ���ɽ������ޤ���Timestamp��ˤϡ��������å�JVM�ε�ư����ηв���֤�����ñ�̤�ɽ������ޤ��������ॹ����פ����٤ϡ��͡����װ��ˤ�äưۤʤꡢ���̤���٤Τ����ä������ƥ�ǤΥ���åɡ��������塼����ٱ�ˤ����ư���ޤ���
+\fI\-t\fRオプションを使用すると、Timestampというラベルの付いたタイムスタンプの列が、出力の最初の列として表示されます。Timestamp列には、ターゲットJVMの起動からの経過時間が、秒単位で表示されます。タイムスタンプの精度は、様々な要因によって異なり、大量の負荷のかかったシステムでのスレッド・スケジュールの遅延により変動します。
 .PP
-interval�����count�ѥ�᡼������Ѥ��ơ�\fIjstat\fR���ޥ�ɤ����ν��Ϥ�ɽ���������٤Ȳ���򤽤줾����ꤷ�ޤ���
+intervalおよびcountパラメータを使用して、\fIjstat\fRコマンドがその出力を表示する頻度と回数をそれぞれ指定します。
 .PP
-\fB����:\fR
-����Υ�꡼���Ǥ��η������ѹ�������ǽ�������뤿�ᡢ\fIjstat\fR���ޥ�ɤν��Ϥ���Ϥ��륹����ץȤϺ������ʤǤ���������\fIjstat\fR���ޥ�ɤν��Ϥ���Ϥ��륹����ץȤ����������ϡ����Υġ���ξ���Υ�꡼���ǡ����Υ�����ץȤ��ѹ�����ɬ�פ����뤳�Ȥ�α�դ��Ƥ���������
+\fB注意:\fR
+将来のリリースでこの形式は変更される可能性があるため、\fIjstat\fRコマンドの出力を解析するスクリプトは作成しなでください。\fIjstat\fRコマンドの出力を解析するスクリプトを作成する場合は、このツールの将来のリリースで、そのスクリプトを変更する必要があることに留意してください。
 .PP
 \-\fIstatOption\fR
 .RS 4
-\fIjstat\fR���ޥ�ɤ�ɽ���������ץǡ����������ꤷ�ޤ������ˡ����Ѳ�ǽ�ʥ��ץ����ΰ����򼨤��ޤ�������Υץ�åȥե����ࡦ���󥹥ȡ���Υ��ץ��������ɽ������ˤϡ�����Ū�ʥ��ץ�����\fI\-options\fR����Ѥ��ޤ���Stat���ץ���󤪤�ӽ��Ϥ򻲾Ȥ��Ƥ���������
+\fIjstat\fRコマンドが表示する統計データ情報を指定します。次に、利用可能なオプションの一覧を示します。特定のプラットフォーム・インストールのオプションを一覧表示するには、一般的なオプションの\fI\-options\fRを使用します。Statオプションおよび出力を参照してください。
 .sp
-\fIclass\fR: ���饹������������ư��˴ؤ������ץǡ�����ɽ�����ޤ���
+\fIclass\fR: クラス・ローダーの動作に関する統計データを表示します。
 .sp
-\fIcompiler\fR: Java HotSpot VM Just\-in\-Time����ѥ����ư��˴ؤ������ץǡ�����ɽ�����ޤ���
+\fIcompiler\fR: Java HotSpot VM Just\-in\-Timeコンパイラの動作に関する統計データを表示します。
 .sp
-\fIgc\fR: ���١��������쥯�Ȥ��줿�ҡ��פ�ư��˴ؤ������ץǡ�����ɽ�����ޤ���
+\fIgc\fR: ガベージ・コレクトされたヒープの動作に関する統計データを表示します。
 .sp
-\fIgccapacity\fR: ���头�Ȥ����̤��б������ΰ�˴ؤ������ץǡ�����ɽ�����ޤ���
+\fIgccapacity\fR: 世代ごとの容量と対応する領域に関する統計データを表示します。
 .sp
-\fIgccause\fR: ���١��������쥯��������ץǡ����Υ��ޥ꡼(\fI\-gcutil\fR��Ʊ��)�ȡ�ľ������Ӹ���(Ŭ�Ѳ�ǽ�ʾ��)�Υ��١��������쥯����󡦥��٥�Ȥθ�����ɽ�����ޤ���
+\fIgccause\fR: ガベージ・コレクション統計データのサマリー(\fI\-gcutil\fRと同じ)と、直前および現在(適用可能な場合)のガベージ・コレクション・イベントの原因を表示します。
 .sp
-\fIgcnew\fR: New�����ư��˴ؤ������ץǡ�����ɽ�����ޤ���
+\fIgcnew\fR: New世代の動作に関する統計データを表示します。
 .sp
-\fIgcnewcapacity\fR: New����Υ��������б������ΰ�˴ؤ������ץǡ�����ɽ�����ޤ���
+\fIgcnewcapacity\fR: New世代のサイズと対応する領域に関する統計データを表示します。
 .sp
-\fIgcold\fR: Old�����ư��ȥ᥿���ڡ����˴ؤ������ץǡ�����ɽ�����ޤ���
+\fIgcold\fR: Old世代の動作とメタスペースに関する統計データを表示します。
 .sp
-\fIgcoldcapacity\fR: Old����Υ������˴ؤ������ץǡ�����ɽ�����ޤ���
+\fIgcoldcapacity\fR: Old世代のサイズに関する統計データを表示します。
 .sp
-\fIgcmetacapacity\fR: �᥿���ڡ����Υ������˴ؤ������ץǡ�����ɽ�����ޤ���
+\fIgcmetacapacity\fR: メタスペースのサイズに関する統計データを表示します。
 .sp
-\fIgcutil\fR: ���١��������쥯�����Υ��ޥ꡼�˴ؤ������ץǡ�����ɽ�����ޤ���
+\fIgcutil\fR: ガベージ・コレクションのサマリーに関する統計データを表示します。
 .sp
-\fIprintcompilation\fR: Java HotSpot VM����ѥ��롦�᥽�åɤ����ץǡ�����ɽ�����ޤ���
+\fIprintcompilation\fR: Java HotSpot VMコンパイル・メソッドの統計データを表示します。
 .RE
 .PP
 \-h \fIn\fR
 .RS 4
-\fIn\fR����ץ�(���Ϲ�)���Ȥ���إå�����ɽ�����ޤ��������ǡ�\fIn\fR�����������ͤǤ����ǥե�����ͤ�0�Ǥ������ξ�硢�ǡ����κǽ�ιԤξ����إå�����ɽ������ޤ���
+\fIn\fRサンプル(出力行)ごとに列ヘッダーを表示します。ここで、\fIn\fRは正の整数値です。デフォルト値は0です。この場合、データの最初の行の上に列ヘッダーが表示されます。
 .RE
 .PP
 \-t
 .RS 4
-�����ॹ����������Ϥκǽ����Ȥ���ɽ�����ޤ��������ॹ����פϡ��������å�JVM�ε�ư������ηв���֤Ǥ���
+タイムスタンプ列を出力の最初の列として表示します。タイムスタンプは、ターゲットJVMの起動時からの経過時間です。
 .RE
 .PP
 \-J\fIjavaOption\fR
 .RS 4
-\fIjavaOption\fR��Java���ץꥱ�������ư�ġ�����Ϥ��ޤ������Ȥ��С�\fI\-J\-Xms48m\fR�Ȼ��ꤹ��ȡ��������ȥ��åס����꡼��48MB�����ꤵ��ޤ������ץ����δ����ʥꥹ�ȤˤĤ��Ƥϡ�java(1)�򻲾Ȥ��Ƥ���������
+\fIjavaOption\fRをJavaアプリケーション起動ツールに渡します。たとえば、\fI\-J\-Xms48m\fRと指定すると、スタートアップ・メモリーは48MBに設定されます。オプションの完全なリストについては、java(1)を参照してください。
 .RE
-.SS "Stat���ץ���󤪤�ӽ���"
+.SS "Statオプションおよび出力"
 .PP
-���ξ���ϡ�\fIjstat\fR���ޥ�ɤ���\fIstatOption\fR�ˤĤ��ƽ��Ϥ������ޤȤ᤿��ΤǤ���
+次の情報は、\fIjstat\fRコマンドが各\fIstatOption\fRについて出力する列をまとめたものです。
 .PP
 \-class \fIoption\fR
 .RS 4
-���饹���������������ץǡ�����
+クラス・ローダーの統計データ。
 .sp
-\fILoaded\fR: �����ɤ��줿���饹�ο���
+\fILoaded\fR: ロードされたクラスの数。
 .sp
-\fIBytes\fR: �����ɤ��줿KB�ο���
+\fIBytes\fR: ロードされたKBの数。
 .sp
-\fIUnloaded\fR: ��������ɤ��줿���饹�ο���
+\fIUnloaded\fR: アンロードされたクラスの数。
 .sp
-\fIBytes\fR: ��������ɤ��줿KB�ο���
+\fIBytes\fR: アンロードされたKBの数。
 .sp
-\fITime\fR: ���饹�Υ����ɤ䥢������ɽ������פ������֡�
+\fITime\fR: クラスのロードやアンロード処理に要した時間。
 .RE
 .PP
 \-compiler \fIoption\fR
 .RS 4
-Java HotSpot VM Just\-in\-Time����ѥ�������ץǡ�����
+Java HotSpot VM Just\-in\-Timeコンパイラの統計データ。
 .sp
-\fICompiled\fR: �¹Ԥ��줿����ѥ��롦�������ο���
+\fICompiled\fR: 実行されたコンパイル・タスクの数。
 .sp
-\fIFailed\fR: ���Ԥ�������ѥ��롦�������ο���
+\fIFailed\fR: 失敗したコンパイル・タスクの数。
 .sp
-\fIInvalid\fR: ̵���ˤ��줿����ѥ��롦�������ο���
+\fIInvalid\fR: 無効にされたコンパイル・タスクの数。
 .sp
-\fITime\fR: ����ѥ��롦�������μ¹Ԥ��פ������֡�
+\fITime\fR: コンパイル・タスクの実行に要した時間。
 .sp
-\fIFailedType\fR: �Ǹ�˼��Ԥ�������ѥ���Υ���ѥ��롦�����ס�
+\fIFailedType\fR: 最後に失敗したコンパイルのコンパイル・タイプ。
 .sp
-\fIFailedMethod\fR: �Ǹ�˼��Ԥ�������ѥ���Υ��饹̾�ȥ᥽�åɡ�
+\fIFailedMethod\fR: 最後に失敗したコンパイルのクラス名とメソッド。
 .RE
 .PP
 \-gc \fIoption\fR
 .RS 4
-���١��������쥯�Ȥ��줿�ҡ��פ����ץǡ�����
+ガベージ・コレクトされたヒープの統計データ。
 .sp
-\fIS0C\fR: Survivor�ΰ�0�θ��ߤ�����(KB)��
+\fIS0C\fR: Survivor領域0の現在の容量(KB)。
 .sp
-\fIS1C\fR: Survivor�ΰ�1�θ��ߤ�����(KB)��
+\fIS1C\fR: Survivor領域1の現在の容量(KB)。
 .sp
-\fIS0U\fR: Survivor�ΰ�0�λ���Ψ(KB)��
+\fIS0U\fR: Survivor領域0の使用率(KB)。
 .sp
-\fIS1U\fR: Survivor�ΰ�1�λ���Ψ(KB)��
+\fIS1U\fR: Survivor領域1の使用率(KB)。
 .sp
-\fIEC\fR: Eden�ΰ�θ��ߤ�����(KB)��
+\fIEC\fR: Eden領域の現在の容量(KB)。
 .sp
-\fIEU\fR: Eden�ΰ�λ���Ψ(KB)��
+\fIEU\fR: Eden領域の使用率(KB)。
 .sp
-\fIOC\fR: Old�ΰ�θ��ߤ�����(KB)��
+\fIOC\fR: Old領域の現在の容量(KB)。
 .sp
-\fIOU\fR: Old�ΰ�λ���Ψ(KB)��
+\fIOU\fR: Old領域の使用率(KB)。
 .sp
-\fIMC\fR: �᥿���ڡ���������(KB)��
+\fIMC\fR: メタスペースの容量(KB)。
 .sp
-\fIMU\fR: �᥿���ڡ����λ���Ψ(KB)��
+\fIMU\fR: メタスペースの使用率(KB)。
 .sp
-\fIYGC\fR: �㤤����Υ��١��������쥯����󡦥��٥�Ȥο���
+\fIYGC\fR: 若い世代のガベージ・コレクション・イベントの数。
 .sp
-\fIYGCT\fR: �㤤����Υ��١��������쥯�������֡�
+\fIYGCT\fR: 若い世代のガベージ・コレクション時間。
 .sp
-\fIFGC\fR: �ե�GC���٥�ȿ���
+\fIFGC\fR: フルGCイベント数。
 .sp
-\fIFGCT\fR: �ե륬�١��������쥯�������֡�
+\fIFGCT\fR: フルガベージ・コレクション時間。
 .sp
-\fIGCT\fR: ���١��������쥯����������֡�
+\fIGCT\fR: ガベージ・コレクション総時間。
 .RE
 .PP
 \-gccapacity \fIoption\fR
 .RS 4
-���꡼���ס������太����ΰ����̡�
+メモリー・プール世代および領域容量。
 .sp
-\fINGCMN\fR: New����κǾ�����(KB)��
+\fINGCMN\fR: New世代の最小容量(KB)。
 .sp
-\fINGCMX\fR: New����κ�������(KB)��
+\fINGCMX\fR: New世代の最大容量(KB)。
 .sp
-\fINGC\fR: New����θ��ߤ�����(KB)��
+\fINGC\fR: New世代の現在の容量(KB)。
 .sp
-\fIS0C\fR: Survivor�ΰ�0�θ��ߤ�����(KB)��
+\fIS0C\fR: Survivor領域0の現在の容量(KB)。
 .sp
-\fIS1C\fR: Survivor�ΰ�1�θ��ߤ�����(KB)��
+\fIS1C\fR: Survivor領域1の現在の容量(KB)。
 .sp
-\fIEC\fR: Eden�ΰ�θ��ߤ�����(KB)��
+\fIEC\fR: Eden領域の現在の容量(KB)。
 .sp
-\fIOGCMN\fR: Old����κǾ�����(KB)��
+\fIOGCMN\fR: Old世代の最小容量(KB)。
 .sp
-\fIOGCMX\fR: Old����κ�������(KB)��
+\fIOGCMX\fR: Old世代の最大容量(KB)。
 .sp
-\fIOGC\fR: Old����θ��ߤ�����(KB)��
+\fIOGC\fR: Old世代の現在の容量(KB)。
 .sp
-\fIOC\fR: Old�ΰ�θ��ߤ�����(KB)��
+\fIOC\fR: Old領域の現在の容量(KB)。
 .sp
-\fIMCMN\fR: �᥿���ڡ����κǾ�����(KB)��
+\fIMCMN\fR: メタスペースの最小容量(KB)。
 .sp
-\fIMCMX\fR: �᥿���ڡ����κ�������(KB)��
+\fIMCMX\fR: メタスペースの最大容量(KB)。
 .sp
-\fIMC\fR: �᥿���ڡ���������(KB)��
+\fIMC\fR: メタスペースの容量(KB)。
 .sp
-\fIYGC\fR: �㤤�����GC���٥�ȿ���
+\fIYGC\fR: 若い世代のGCイベント数。
 .sp
-\fIFGC\fR: �ե�GC���٥�ȿ���
+\fIFGC\fR: フルGCイベント数。
 .RE
 .PP
 \-gccause \fIoption\fR
 .RS 4
-���Υ��ץ����ϡ�\fI\-gcutil\fR���ץ�����Ʊ�����١��������쥯��������ץǡ����Υ��ޥ꡼��ɽ�����ޤ������Ǹ�Υ��١��������쥯����󡦥��٥�Ȥ�(Ŭ�Ѳ�ǽ�ʾ���)���ߤΥ��١��������쥯����󡦥��٥�Ȥθ������ޤޤ�ޤ���\fI\-gcutil\fR�ǰ���ɽ���������Τۤ������Υ��ץ����Ǥϼ������ɲä���ޤ���
+このオプションは、\fI\-gcutil\fRオプションと同じガベージ・コレクション統計データのサマリーを表示しますが、最後のガベージ・コレクション・イベントと(適用可能な場合は)現在のガベージ・コレクション・イベントの原因が含まれます。\fI\-gcutil\fRで一覧表示される列のほか、このオプションでは次の列が追加されます。
 .sp
-���١��������쥯����󡦥��٥�Ȥ�ޤ६�١��������쥯��������ץǡ�����
+ガベージ・コレクション・イベントを含むガベージ・コレクション統計データ。
 .sp
-\fILGCC\fR: �Ǹ�Υ��١��������쥯�����θ�����
+\fILGCC\fR: 最後のガベージ・コレクションの原因。
 .sp
-\fIGCC\fR: ���ߤΥ��١��������쥯�����θ�����
+\fIGCC\fR: 現在のガベージ・コレクションの原因。
 .RE
 .PP
 \-gcnew \fIoption\fR
 .RS 4
-New��������ץǡ�����
+New世代の統計データ。
 .sp
-\fIS0C\fR: Survivor�ΰ�0�θ��ߤ�����(KB)��
+\fIS0C\fR: Survivor領域0の現在の容量(KB)。
 .sp
-\fIS1C\fR: Survivor�ΰ�1�θ��ߤ�����(KB)��
+\fIS1C\fR: Survivor領域1の現在の容量(KB)。
 .sp
-\fIS0U\fR: Survivor�ΰ�0�λ���Ψ(KB)��
+\fIS0U\fR: Survivor領域0の使用率(KB)。
 .sp
-\fIS1U\fR: Survivor�ΰ�1�λ���Ψ(KB)��
+\fIS1U\fR: Survivor領域1の使用率(KB)。
 .sp
-\fITT\fR: ��Ʋ���ꤷ�����͡�
+\fITT\fR: 殿堂入りしきい値。
 .sp
-\fIMTT\fR: ������Ʋ���ꤷ�����͡�
+\fIMTT\fR: 最大殿堂入りしきい値。
 .sp
-\fIDSS\fR: Ŭ�ڤ�Survivor������(KB)��
+\fIDSS\fR: 適切なSurvivorサイズ(KB)。
 .sp
-\fIEC\fR: Eden�ΰ�θ��ߤ�����(KB)��
+\fIEC\fR: Eden領域の現在の容量(KB)。
 .sp
-\fIEU\fR: Eden�ΰ�λ���Ψ(KB)��
+\fIEU\fR: Eden領域の使用率(KB)。
 .sp
-\fIYGC\fR: �㤤�����GC���٥�ȿ���
+\fIYGC\fR: 若い世代のGCイベント数。
 .sp
-\fIYGCT\fR: �㤤����Υ��١��������쥯�������֡�
+\fIYGCT\fR: 若い世代のガベージ・コレクション時間。
 .RE
 .PP
 \-gcnewcapacity \fIoption\fR
 .RS 4
-New�����ΰ襵���������ץǡ�����
+New世代領域サイズの統計データ。
 .sp
-NGCMN: New����κǾ�����(KB)��
+NGCMN: New世代の最小容量(KB)。
 .sp
-\fINGCMX\fR: New����κ�������(KB)��
+\fINGCMX\fR: New世代の最大容量(KB)。
 .sp
-\fINGC\fR: New����θ��ߤ�����(KB)��
+\fINGC\fR: New世代の現在の容量(KB)。
 .sp
-\fIS0CMX\fR: Survivor�ΰ�0�κ�������(KB)��
+\fIS0CMX\fR: Survivor領域0の最大容量(KB)。
 .sp
-\fIS0C\fR: Survivor�ΰ�0�θ��ߤ�����(KB)��
+\fIS0C\fR: Survivor領域0の現在の容量(KB)。
 .sp
-\fIS1CMX\fR: Survivor�ΰ�1�κ�������(KB)��
+\fIS1CMX\fR: Survivor領域1の最大容量(KB)。
 .sp
-\fIS1C\fR: Survivor�ΰ�1�θ��ߤ�����(KB)��
+\fIS1C\fR: Survivor領域1の現在の容量(KB)。
 .sp
-\fIECMX\fR: Eden�ΰ�κ�������(KB)��
+\fIECMX\fR: Eden領域の最大容量(KB)。
 .sp
-\fIEC\fR: Eden�ΰ�θ��ߤ�����(KB)��
+\fIEC\fR: Eden領域の現在の容量(KB)。
 .sp
-\fIYGC\fR: �㤤�����GC���٥�ȿ���
+\fIYGC\fR: 若い世代のGCイベント数。
 .sp
-\fIFGC\fR: �ե�GC���٥�ȿ���
+\fIFGC\fR: フルGCイベント数。
 .RE
 .PP
 \-gcold \fIoption\fR
 .RS 4
-Old�����Permanent��������ץǡ�����
+OldおよびPermanent世代の統計データ。
 .sp
-\fIMC\fR: �᥿���ڡ���������(KB)��
+\fIMC\fR: メタスペースの容量(KB)。
 .sp
-\fIMU\fR: �᥿���ڡ����λ���Ψ(KB)��
+\fIMU\fR: メタスペースの使用率(KB)。
 .sp
-\fIOC\fR: Old�ΰ�θ��ߤ�����(KB)��
+\fIOC\fR: Old領域の現在の容量(KB)。
 .sp
-\fIOU\fR: Old�ΰ�λ���Ψ(KB)��
+\fIOU\fR: Old領域の使用率(KB)。
 .sp
-\fIYGC\fR: �㤤�����GC���٥�ȿ���
+\fIYGC\fR: 若い世代のGCイベント数。
 .sp
-\fIFGC\fR: �ե�GC���٥�ȿ���
+\fIFGC\fR: フルGCイベント数。
 .sp
-\fIFGCT\fR: �ե륬�١��������쥯�������֡�
+\fIFGCT\fR: フルガベージ・コレクション時間。
 .sp
-\fIGCT\fR: ���١��������쥯����������֡�
+\fIGCT\fR: ガベージ・コレクション総時間。
 .RE
 .PP
 \-gcoldcapacity \fIoption\fR
 .RS 4
-Old��������ץǡ�����
+Old世代の統計データ。
 .sp
-\fIOGCMN\fR: Old����κǾ�����(KB)��
+\fIOGCMN\fR: Old世代の最小容量(KB)。
 .sp
-\fIOGCMX\fR: Old����κ�������(KB)��
+\fIOGCMX\fR: Old世代の最大容量(KB)。
 .sp
-\fIOGC\fR: Old����θ��ߤ�����(KB)��
+\fIOGC\fR: Old世代の現在の容量(KB)。
 .sp
-\fIOC\fR: Old�ΰ�θ��ߤ�����(KB)��
+\fIOC\fR: Old領域の現在の容量(KB)。
 .sp
-\fIYGC\fR: �㤤�����GC���٥�ȿ���
+\fIYGC\fR: 若い世代のGCイベント数。
 .sp
-\fIFGC\fR: �ե�GC���٥�ȿ���
+\fIFGC\fR: フルGCイベント数。
 .sp
-\fIFGCT\fR: �ե륬�١��������쥯�������֡�
+\fIFGCT\fR: フルガベージ・コレクション時間。
 .sp
-\fIGCT\fR: ���١��������쥯����������֡�
+\fIGCT\fR: ガベージ・コレクション総時間。
 .RE
 .PP
 \-gcmetacapacity \fIoption\fR
 .RS 4
-Permanent��������ץǡ�����
+Permanent世代の統計データ。
 .sp
-\fIMCMN\fR: �᥿���ڡ����κǾ�����(KB)��
+\fIMCMN\fR: メタスペースの最小容量(KB)。
 .sp
-\fIMCMX\fR: �᥿���ڡ����κ�������(KB)��
+\fIMCMX\fR: メタスペースの最大容量(KB)。
 .sp
-\fIMC\fR: �᥿���ڡ���������(KB)��
+\fIMC\fR: メタスペースの容量(KB)。
 .sp
-\fIYGC\fR: �㤤�����GC���٥�ȿ���
+\fIYGC\fR: 若い世代のGCイベント数。
 .sp
-\fIFGC\fR: �ե�GC���٥�ȿ���
+\fIFGC\fR: フルGCイベント数。
 .sp
-\fIFGCT\fR: �ե륬�١��������쥯�������֡�
+\fIFGCT\fR: フルガベージ・コレクション時間。
 .sp
-\fIGCT\fR: ���١��������쥯����������֡�
+\fIGCT\fR: ガベージ・コレクション総時間。
 .RE
 .PP
 \-gcutil \fIoption\fR
 .RS 4
-���١��������쥯��������ץǡ����Υ��ޥ꡼
+ガベージ・コレクション統計データのサマリー
 .sp
-\fIS0\fR: Survivor�ΰ�0�λ���Ψ(���ߤ����̤��Ф���ѡ�����ơ���)��
+\fIS0\fR: Survivor領域0の使用率(現在の容量に対するパーセンテージ)。
 .sp
-\fIS1\fR: Survivor�ΰ�1�λ���Ψ(���ߤ����̤��Ф���ѡ�����ơ���)��
+\fIS1\fR: Survivor領域1の使用率(現在の容量に対するパーセンテージ)。
 .sp
-\fIE\fR: Eden�ΰ�λ���Ψ(���ߤ����̤��Ф���ѡ�����ơ���)��
+\fIE\fR: Eden領域の使用率(現在の容量に対するパーセンテージ)。
 .sp
-\fIO\fR: Old�ΰ�λ���Ψ(���ߤ����̤��Ф���ѡ�����ơ���)��
+\fIO\fR: Old領域の使用率(現在の容量に対するパーセンテージ)。
 .sp
-\fIM\fR: �᥿���ڡ����λ���Ψ(�ΰ�θ��ߤ����̤��Ф���ѡ�����ơ���)��
+\fIM\fR: メタスペースの使用率(領域の現在の容量に対するパーセンテージ)。
 .sp
-\fIYGC\fR: �㤤�����GC���٥�ȿ���
+\fIYGC\fR: 若い世代のGCイベント数。
 .sp
-\fIYGCT\fR: �㤤����Υ��١��������쥯�������֡�
+\fIYGCT\fR: 若い世代のガベージ・コレクション時間。
 .sp
-\fIFGC\fR: �ե�GC���٥�ȿ���
+\fIFGC\fR: フルGCイベント数。
 .sp
-\fIFGCT\fR: �ե륬�١��������쥯�������֡�
+\fIFGCT\fR: フルガベージ・コレクション時間。
 .sp
-\fIGCT\fR: ���١��������쥯����������֡�
+\fIGCT\fR: ガベージ・コレクション総時間。
 .RE
 .PP
 \-printcompilation \fIoption\fR
 .RS 4
-Java HotSpot VM����ѥ��롦�᥽�åɤ����ץǡ�����
+Java HotSpot VMコンパイル・メソッドの統計データ。
 .sp
-\fICompiled\fR: �Ƕᥳ��ѥ��뤵�줿�᥽�åɤǼ¹Ԥ��줿����ѥ��롦�������ο���
+\fICompiled\fR: 最近コンパイルされたメソッドで実行されたコンパイル・タスクの数。
 .sp
-\fISize\fR: �Ƕᥳ��ѥ��뤵�줿�᥽�åɤΥХ��ȡ������ɤΥХ��ȿ���
+\fISize\fR: 最近コンパイルされたメソッドのバイト・コードのバイト数。
 .sp
-\fIType\fR: �Ƕᥳ��ѥ��뤵�줿�᥽�åɤΥ���ѥ��롦�����ס�
+\fIType\fR: 最近コンパイルされたメソッドのコンパイル・タイプ。
 .sp
-\fIMethod\fR: �Ƕᥳ��ѥ��뤵�줿�᥽�åɤ����ꤹ�륯�饹̾�ȥ᥽�å�̾�����饹̾�Ǥϡ�̾�����֤ζ��ڤ�ʸ���Ȥ��ơ��ɥå�(\&.)�Τ����˥���å���(/)�����Ѥ���ޤ����᥽�å�̾�ϡ����ꤵ�줿���饹��Υ᥽�åɤǤ���������2�ĤΥե�����ɤη����ϡ�HotSpot
-\fI\-XX:+PrintComplation\fR���ץ������б����Ƥ��ޤ���
+\fIMethod\fR: 最近コンパイルされたメソッドを特定するクラス名とメソッド名。クラス名では、名前空間の区切り文字として、ドット(\&.)のかわりにスラッシュ(/)が使用されます。メソッド名は、指定されたクラス内のメソッドです。これらの2つのフィールドの形式は、HotSpot
+\fI\-XX:+PrintComplation\fRオプションと対応しています。
 .RE
-.SH "��"
+.SH "例"
 .PP
-���ι�Ǥϡ�21891��\fIlvmid\fR����ĥ�������JVM���˥���󥰤�����򼨤��ޤ���
-.SS "gcutil���ץ����"
+この項では、21891の\fIlvmid\fRを持つローカルJVMをモニタリングする例を示します。
+.SS "gcutilオプション"
 .PP
-������Ǥϡ�lvmid 21891����³���ơ�250�ߥ��ôֳ֤�7�ĤΥ���ץ���������\-\fIgcutil\fR���ץ����Ǥλ���˽��äƽ��Ϥ�ɽ�����ޤ���
+この例では、lvmid 21891に接続して、250ミリ秒間隔で7つのサンプルを取得し、\-\fIgcutil\fRオプションでの指定に従って出力を表示します。
 .PP
-������ν��Ϥϡ��㤤����Υ��쥯�����3���ܤ�4���ܤΥ���ץ�֤ǹԤ�줿���Ȥ򼨤��Ƥ��ޤ������쥯�����ˤ�0\&.001�ä����äƤ��ꡢ���֥������Ȥ�Eden�ΰ�(E)����Old�ΰ�(O)�˾��ʤ������ᡢOld�ΰ�λ���Ψ��9\&.49%����9\&.51%�����ä��Ƥ��ޤ���Survivor�ΰ�ϡ����쥯���������12\&.44%�����Ѥ���Ƥ��ޤ����������쥯������λ��Ѥ�7\&.74%�ΤߤǤ���
+この例の出力は、若い世代のコレクションが3番目と4番目のサンプル間で行われたことを示しています。コレクションには0\&.001秒かかっており、オブジェクトがEden領域(E)からOld領域(O)に昇格したため、Old領域の使用率は9\&.49%から9\&.51%に増加しています。Survivor領域は、コレクション前は12\&.44%が使用されていましたが、コレクション後の使用は7\&.74%のみです。
 .sp
 .if n \{\
 .RS 4
@@ -508,13 +508,13 @@ jstat \-gcutil 21891 250 7
 .if n \{\
 .RE
 .\}
-.SS "��إå���ʸ����η��֤�"
+.SS "列ヘッダー文字列の繰返し"
 .PP
-������Ǥϡ�lvmid 21891����³���ơ�250�ߥ��ôֳ֤ǥ���ץ���������\fI\-gcutil\fR���ץ����Ǥλ���˽��äƽ��Ϥ�ɽ�����ޤ�������ˡ�\fI\-h3\fR���ץ�������Ѥ��ơ��ǡ�����3��ɽ������뤴�Ȥ���إå�������Ϥ��ޤ���
+この例では、lvmid 21891に接続して、250ミリ秒間隔でサンプルを取得し、\fI\-gcutil\fRオプションでの指定に従って出力を表示します。さらに、\fI\-h3\fRオプションを使用して、データが3行表示されるごとに列ヘッダーを出力します。
 .PP
-������Ǥϡ��إå���ʸ����η��֤���ɽ������Ƥ���ۤ���2���ܤ�3���ܤΥ���ץ�֤�Young GC���Ԥ�줿���Ȥ��狼��ޤ������η�³���֤�0\&.001�äǤ��������Υ��쥯�����Ǥϡ�Survivor�ΰ�0�λ���Ψ(S0U)��Ŭ�ڤ�Survivor������(DSS)��Ķ�᤹�뤳�Ȥˤʤ륢���ƥ��֡��ǡ��������Ф���ޤ��������η�̡����֥������Ȥϡ�Old����(���ν��Ϥˤ���ɽ��)�ؾ��ʤ��졢��Ʋ���ꤷ������(TT)����31����2�ع߳ʤ���ޤ�����
+この例では、ヘッダー文字列の繰返しが表示されているほか、2番目と3番目のサンプル間でYoung GCが行われたことがわかります。この継続時間は0\&.001秒でした。このコレクションでは、Survivor領域0の使用率(S0U)が適切なSurvivorサイズ(DSS)を超過することになるアクティブ・データが検出されました。この結果、オブジェクトは、Old世代(この出力には非表示)へ昇格され、殿堂入りしきい値(TT)が、31から2へ降格されました。
 .PP
-�̤Υ��쥯����󤬡�5���ܤ�6���ܤΥ���ץ�֤ǹԤ��Ƥ��ޤ������Υ��쥯�����Ǥϡ�Survivor���ۤȤ�ɸ���줺����Ʋ���ꤷ�����ͤ�31���ᤷ�ޤ�����
+別のコレクションが、5番目と6番目のサンプル間で行われています。このコレクションでは、Survivorがほとんど見られず、殿堂入りしきい値を31に戻しました。
 .sp
 .if n \{\
 .RS 4
@@ -535,11 +535,11 @@ jstat \-gcnew \-h3 21891 250
 .if n \{\
 .RE
 .\}
-.SS "����ץ뤴�ȤΥ����ॹ����פ�����"
+.SS "サンプルごとのタイムスタンプの挿入"
 .PP
-������Ǥϡ�lvmid21891����³����250�ߥ��ôֳ֤�3�ĤΥ���ץ��������Ƥ��ޤ���\fI\-t\fR���ץ�������Ѥ��ơ��ǽ����˥���ץ뤴�ȤΥ����ॹ����פ�ɽ�����Ƥ��ޤ���
+この例では、lvmid21891へ接続し、250ミリ秒間隔で3つのサンプルを取得しています。\fI\-t\fRオプションを使用して、最初の列にサンプルごとのタイムスタンプを表示しています。
 .PP
-Timestamp��ˤϡ��������å�JVM�ε�ư������ηв���֤�����ñ�̤ǥ�ݡ��Ȥ���Ƥ��ޤ�������ˡ�\fI\-gcoldcapacity\fR���ϤǤϡ������ꥯ�����Ȥޤ��Ͼ��ʥꥯ�����Ȥ��뤤�Ϥ���ξ��������������˥ҡ��פ���ĥ���뤿�Ӥˡ�Old���������(OGC)��Old�ΰ������(OC)�Ȥ����ä��Ƥ��뤳�Ȥ��狼��ޤ���81���ܤΥե롦���١��������쥯�����(FGC)�θ塢Old���������(OGC)��11,696 KB����13820 KB�����ä��ޤ�������������(������ΰ�)�κ������̤ϡ�60,544 KB (OGCMX)�ʤΤǡ��ޤ���ĥ�Ǥ���;͵���Ĥ���Ƥ��ޤ���
+Timestamp列には、ターゲットJVMの起動時からの経過時間が、秒単位でレポートされています。さらに、\fI\-gcoldcapacity\fR出力では、割当リクエストまたは昇格リクエストあるいはその両方を満たすためにヒープが拡張するたびに、Old世代の容量(OGC)とOld領域の容量(OC)とが増加していることがわかります。81番目のフル・ガベージ・コレクション(FGC)の後、Old世代の容量(OGC)は11,696 KBから13820 KBに増加しました。この世代(および領域)の最大容量は、60,544 KB (OGCMX)なので、まだ拡張できる余裕が残されています。
 .sp
 .if n \{\
 .RS 4
@@ -553,11 +553,11 @@ Timestamp      OGCMN    OGCMX     OGC       OC       YGC   FGC    FGCT    GCT
 .if n \{\
 .RE
 .\}
-.SS "��⡼��JVM�Υ��󥹥ȥ�����ơ������δƻ�"
+.SS "リモートJVMのインストゥルメンテーションの監視"
 .PP
-������ϡ�\fI\-gcutil\fR���ץ�������Ѥ��ơ�remote\&.domain�Ȥ��������ƥ���lvmid 40496����³��������ץ����ñ�̤�̵���¤˼������Ƥ��ޤ���
+この例は、\fI\-gcutil\fRオプションを使用して、remote\&.domainというシステム上のlvmid 40496に接続し、サンプルを秒単位で無期限に取得しています。
 .PP
-lvmid�ϡ���⡼�ȡ��ۥ��Ȥ�̾���ȷ�礵��ơ�\fI40496@remote\&.domain\fR��\fIvmid\fR�������Ƥ��ޤ�����̤Ȥ��ơ�����vmid�ϡ�\fIrmi\fR�ץ��ȥ������Ѥ��ơ���⡼�ȡ��ۥ��Ⱦ�Υǥե���Ȥ�\fIjstatd\fR�����С����̿����ޤ���\fIjstatd\fR�����С��ϡ�rmiregistry����Ѥ��ơ��ǥե���Ȥ�rmiregistry�ݡ���(�ݡ���1099)�˥Х���ɤ��줿\fIremote\&.domain\fR�����֤���ޤ���
+lvmidは、リモート・ホストの名前と結合されて、\fI40496@remote\&.domain\fRの\fIvmid\fRを構成しています。結果として、このvmidは、\fIrmi\fRプロトコルを使用して、リモート・ホスト上のデフォルトの\fIjstatd\fRサーバーと通信します。\fIjstatd\fRサーバーは、rmiregistryを使用して、デフォルトのrmiregistryポート(ポート1099)にバインドされた\fIremote\&.domain\fRに配置されます。
 .sp
 .if n \{\
 .RS 4
@@ -569,7 +569,7 @@ jstat \-gcutil 40496@remote\&.domain 1000
 .if n \{\
 .RE
 .\}
-.SH "��Ϣ����"
+.SH "関連項目"
 .sp
 .RS 4
 .ie n \{\

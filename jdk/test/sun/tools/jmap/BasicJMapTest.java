@@ -38,6 +38,7 @@ import jdk.testlibrary.ProcessTools;
  * @summary Unit test for jmap utility
  * @library /lib/testlibrary
  * @library /../../test/lib/share/classes
+ * @modules java.management
  * @build jdk.testlibrary.*
  * @build jdk.test.lib.hprof.*
  * @build jdk.test.lib.hprof.module.*

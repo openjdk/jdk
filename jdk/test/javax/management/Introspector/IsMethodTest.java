@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 4947001 4954369 4954409 4954410
  * @summary Test that "Boolean isX()" and "int isX()" define operations
  * @author Eamonn McManus
+ * @modules java.management
  * @run clean IsMethodTest
  * @run build IsMethodTest
  * @run main IsMethodTest

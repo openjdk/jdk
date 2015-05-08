@@ -83,8 +83,8 @@ public class TimestampToken {
     /**
      * Constructs an object to store a timestamp token.
      *
-     * @param status A buffer containing the ASN.1 BER encoding of the
-     *               TSTInfo element defined in RFC 3161.
+     * @param timestampTokenInfo A buffer containing the ASN.1 BER encoding of the
+     *                           TSTInfo element defined in RFC 3161.
      */
     public TimestampToken(byte[] timestampTokenInfo) throws IOException {
         if (timestampTokenInfo == null) {

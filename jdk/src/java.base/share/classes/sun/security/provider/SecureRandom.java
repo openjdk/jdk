@@ -208,7 +208,7 @@ implements java.io.Serializable {
     /**
      * Generates a user-specified number of random bytes.
      *
-     * @param bytes the array to be filled in with random bytes.
+     * @param result the array to be filled in with random bytes.
      */
     @Override
     public synchronized void engineNextBytes(byte[] result) {

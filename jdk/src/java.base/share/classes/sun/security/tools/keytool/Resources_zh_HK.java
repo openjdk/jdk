@@ -26,7 +26,7 @@
 package sun.security.tools.keytool;
 
 /**
- * <p> This class represents the <code>ResourceBundle</code>
+ * This class represents the <code>ResourceBundle</code>
  * for the keytool.
  *
  */
@@ -419,8 +419,6 @@ public class Resources_zh_HK extends java.util.ListResourceBundle {
 
     /**
      * Returns the contents of this <code>ResourceBundle</code>.
-     *
-     * <p>
      *
      * @return the contents of this <code>ResourceBundle</code>.
      */
