@@ -4209,13 +4209,13 @@ void Threads::print_on(outputStream* st, bool print_stacks,
                Abstract_VM_Version::vm_info_string());
   st->cr();
 
-#if INCLUDE_ALL_GCS
+#if INCLUDE_SERVICES
   // Dump concurrent locks
   ConcurrentLocksDump concurrent_locks;
   if (print_concurrent_locks) {
     concurrent_locks.dump_at_safepoint();
   }
-#endif // INCLUDE_ALL_GCS
+#endif // INCLUDE_SERVICES
 
   ALL_JAVA_THREADS(p) {
     ResourceMark rm;
@@ -4228,11 +4228,11 @@ void Threads::print_on(outputStream* st, bool print_stacks,
       }
     }
     st->cr();
-#if INCLUDE_ALL_GCS
+#if INCLUDE_SERVICES
     if (print_concurrent_locks) {
       concurrent_locks.print_locks_on(p, st);
     }
-#endif // INCLUDE_ALL_GCS
+#endif // INCLUDE_SERVICES
   }
 
   VMThread::vm_thread()->print_on(st);

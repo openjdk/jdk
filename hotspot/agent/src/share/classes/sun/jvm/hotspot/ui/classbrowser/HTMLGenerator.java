@@ -31,11 +31,9 @@ import sun.jvm.hotspot.code.*;
 import sun.jvm.hotspot.compiler.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.interpreter.*;
-import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.tools.jcore.*;
-import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.*;
 
 public class HTMLGenerator implements /* imports */ ClassConstants {
@@ -887,7 +885,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
       private Formatter buf;
       private SymbolFinder symFinder = createSymbolFinder();
       private long pc;
-      private OopMapSet oms;
+      private ImmutableOopMapSet oms;
       private CodeBlob blob;
       private NMethod nmethod;
 
@@ -954,13 +952,13 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
 
          if (oms != null) {
             long base = addressToLong(blob.codeBegin());
-            for (int i = 0, imax = (int)oms.getSize(); i < imax; i++) {
-               OopMap om = oms.getMapAt(i);
-               long omspc = base + om.getOffset();
+            for (int i = 0, imax = oms.getCount(); i < imax; i++) {
+               ImmutableOopMapPair pair = oms.getPairAt(i);
+               long omspc = base + pair.getPC();
                if (omspc > pc) {
                   if (omspc <= endPc) {
                      buf.br();
-                     buf.append(genOopMapInfo(om));
+                     buf.append(genOopMapInfo(oms.getMap(pair)));
                      // st.move_to(column);
                      // visitor.print("; ");
                         // om.print_on(st);
@@ -1167,7 +1165,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
         }
     }
 
-   protected String genHTMLForOopMap(OopMap map) {
+   protected String genHTMLForOopMap(ImmutableOopMap map) {
       final int stack0 = VMRegImpl.getStack0().getValue();
       Formatter buf = new Formatter(genHTML);
 
@@ -1237,11 +1235,11 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
 
 
    protected String genOopMapInfo(NMethod nmethod, PCDesc pcDesc) {
-      OopMapSet mapSet = nmethod.getOopMaps();
+      ImmutableOopMapSet mapSet = nmethod.getOopMaps();
       if (mapSet == null || (mapSet.getSize() <= 0))
         return "";
       int pcOffset = pcDesc.getPCOffset();
-      OopMap map = mapSet.findMapAtOffset(pcOffset, VM.getVM().isDebugging());
+      ImmutableOopMap map = mapSet.findMapAtOffset(pcOffset, VM.getVM().isDebugging());
       if (map == null) {
          throw new IllegalArgumentException("no oopmap at safepoint!");
       }
@@ -1249,7 +1247,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
       return genOopMapInfo(map);
    }
 
-   protected String genOopMapInfo(OopMap map) {
+   protected String genOopMapInfo(ImmutableOopMap map) {
      Formatter buf = new Formatter(genHTML);
      buf.beginTag("pre");
      buf.append("OopMap: ");

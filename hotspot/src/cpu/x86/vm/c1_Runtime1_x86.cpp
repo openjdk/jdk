@@ -1631,36 +1631,22 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
         NOT_LP64(__ get_thread(thread);)
 
-        Address in_progress(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                             PtrQueue::byte_offset_of_active()));
-
         Address queue_index(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
                                              PtrQueue::byte_offset_of_index()));
         Address buffer(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
                                         PtrQueue::byte_offset_of_buf()));
-
 
         Label done;
         Label runtime;
 
         // Can we store original value in the thread's buffer?
 
-#ifdef _LP64
-        __ movslq(tmp, queue_index);
-        __ cmpq(tmp, 0);
-#else
-        __ cmpl(queue_index, 0);
-#endif
-        __ jcc(Assembler::equal, runtime);
-#ifdef _LP64
-        __ subq(tmp, wordSize);
-        __ movl(queue_index, tmp);
-        __ addq(tmp, buffer);
-#else
-        __ subl(queue_index, wordSize);
-        __ movl(tmp, buffer);
-        __ addl(tmp, queue_index);
-#endif
+        __ movptr(tmp, queue_index);
+        __ testptr(tmp, tmp);
+        __ jcc(Assembler::zero, runtime);
+        __ subptr(tmp, wordSize);
+        __ movptr(queue_index, tmp);
+        __ addptr(tmp, buffer);
 
         // prev_val (rax)
         f.load_argument(0, pre_val);
@@ -1713,6 +1699,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
 
         Label done;
+        Label enqueued;
         Label runtime;
 
         // At this point we know new_value is non-NULL and the new_value crosses regions.
@@ -1752,28 +1739,19 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
         __ movb(Address(card_addr, 0), (int)CardTableModRefBS::dirty_card_val());
 
-        __ cmpl(queue_index, 0);
-        __ jcc(Assembler::equal, runtime);
-        __ subl(queue_index, wordSize);
+        const Register tmp = rdx;
+        __ push(rdx);
 
-        const Register buffer_addr = rbx;
-        __ push(rbx);
-
-        __ movptr(buffer_addr, buffer);
-
-#ifdef _LP64
-        __ movslq(rscratch1, queue_index);
-        __ addptr(buffer_addr, rscratch1);
-#else
-        __ addptr(buffer_addr, queue_index);
-#endif
-        __ movptr(Address(buffer_addr, 0), card_addr);
-
-        __ pop(rbx);
-        __ jmp(done);
+        __ movptr(tmp, queue_index);
+        __ testptr(tmp, tmp);
+        __ jcc(Assembler::zero, runtime);
+        __ subptr(tmp, wordSize);
+        __ movptr(queue_index, tmp);
+        __ addptr(tmp, buffer);
+        __ movptr(Address(tmp, 0), card_addr);
+        __ jmp(enqueued);
 
         __ bind(runtime);
-        __ push(rdx);
 #ifdef _LP64
         __ push(r8);
         __ push(r9);
@@ -1795,12 +1773,12 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         __ pop(r9);
         __ pop(r8);
 #endif
+        __ bind(enqueued);
         __ pop(rdx);
-        __ bind(done);
 
+        __ bind(done);
         __ pop(rcx);
         __ pop(rax);
-
       }
       break;
 #endif // INCLUDE_ALL_GCS
