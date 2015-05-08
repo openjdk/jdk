@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
  * @test JdpDefaultsTest
  * @summary Assert that we can read JDP packets from a multicast socket connection, on default IP and port.
  * @library /lib/testlibrary
+ * @modules java.management/sun.management.jdp
  * @build jdk.testlibrary.* ClientConnection JdpTestUtil JdpTestCase JdpOnTestCase DynamicLauncher
  * @run main JdpDefaultsTest
  */

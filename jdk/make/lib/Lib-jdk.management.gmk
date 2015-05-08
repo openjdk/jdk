@@ -1,0 +1,80 @@
+#
+# Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+include LibCommon.gmk
+
+# Hook to include the corresponding custom file, if present.
+$(eval $(call IncludeCustomExtension, jdk, lib/Lib-jdk.management.gmk))
+
+################################################################################
+
+LIBMANAGEMENT_EXT_SRC += $(JDK_TOPDIR)/src/jdk.management/share/native/libmanagement_ext \
+    $(JDK_TOPDIR)/src/jdk.management/$(OPENJDK_TARGET_OS_TYPE)/native/libmanagement_ext       \
+    $(JDK_TOPDIR)/src/jdk.management/$(OPENJDK_TARGET_OS)/native/libmanagement_ext
+LIBMANAGEMENT_EXT_CFLAGS := -I$(JDK_TOPDIR)/src/java.management/share/native/include \
+    $(addprefix -I,$(LIBMANAGEMENT_EXT_SRC)) \
+    -I$(SUPPORT_OUTPUTDIR)/headers/jdk.management \
+    $(LIBJAVA_HEADER_FLAGS) \
+    #
+
+# In (at least) VS2013 and later, -DPSAPI_VERSION=1 is needed to generate
+# a binary that is compatible with windows versions older than 7/2008R2.
+# See MSDN documentation for GetProcessMemoryInfo for more information.
+BUILD_LIBMANAGEMENT_EXT_CFLAGS += -DPSAPI_VERSION=1
+
+LIBMANAGEMENT_EXT_OPTIMIZATION := HIGH
+ifneq ($(findstring $(OPENJDK_TARGET_OS), solaris linux), )
+  ifeq ($(ENABLE_DEBUG_SYMBOLS), true)
+    LIBMANAGEMENT_EXT_OPTIMIZATION := LOW
+  endif
+endif
+
+$(eval $(call SetupNativeCompilation,BUILD_LIBMANAGEMENT_EXT, \
+    LIBRARY := management_ext, \
+    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+    SRC := $(LIBMANAGEMENT_EXT_SRC), \
+    LANG := C, \
+    OPTIMIZATION := $(LIBMANAGEMENT_EXT_OPTIMIZATION), \
+    CFLAGS := $(CFLAGS_JDKLIB) $(CFLAGS_WARNINGS_ARE_ERRORS) $(LIBMANAGEMENT_EXT_CFLAGS), \
+    MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libmanagement_ext/mapfile-vers, \
+    LDFLAGS := $(LDFLAGS_JDKLIB) \
+        $(call SET_SHARED_LIBRARY_ORIGIN), \
+    LDFLAGS_solaris := -lkstat, \
+    LDFLAGS_SUFFIX := $(LDFLAGS_JDKLIB_SUFFIX), \
+    LDFLAGS_SUFFIX_windows := jvm.lib psapi.lib $(WIN_JAVA_LIB) advapi32.lib, \
+    LDFLAGS_SUFFIX_aix := -lperfstat,\
+    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
+    RC_FLAGS := $(RC_FLAGS) \
+        -D "JDK_FNAME=management_ext.dll" \
+        -D "JDK_INTERNAL_NAME=management_ext" \
+        -D "JDK_FTYPE=0x2L", \
+    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libmanagement_ext, \
+    DEBUG_SYMBOLS := true))
+
+$(BUILD_LIBMANAGEMENT_EXT): $(call FindLib, java.base, java)
+
+TARGETS += $(BUILD_LIBMANAGEMENT_EXT)
+
+################################################################################

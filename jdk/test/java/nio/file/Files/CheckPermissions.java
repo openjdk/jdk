@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 6866804 7006126 8028270
+ * @bug 6866804 7006126 8028270 8065109
  * @summary Unit test for java.nio.file.Files
  * @library ..
  * @build CheckPermissions
@@ -37,6 +37,7 @@ import java.nio.file.attribute.*;
 import java.nio.channels.SeekableByteChannel;
 import java.security.Permission;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
@@ -426,8 +427,40 @@ public class CheckPermissions {
             }
             createFile(file); // restore file
 
+            // -- newBufferedReader/newBufferedWriter --
 
-            // -- newInputStream/newOutptuStream --
+            prepare();
+            try (BufferedReader br = newBufferedReader(file)) {
+                assertCheckRead(file);
+            }
+
+            prepare();
+            try (BufferedWriter bw = newBufferedWriter(file, WRITE)) {
+                assertCheckWrite(file);
+            }
+
+            prepare();
+            try (BufferedWriter bw = newBufferedWriter(file, DELETE_ON_CLOSE)) {
+                assertCheckWrite(file);
+                assertCheckDelete(file);
+            }
+            createFile(file); // restore file
+
+            prepare();
+            try (BufferedWriter bw = newBufferedWriter(file,
+                StandardCharsets.UTF_16, WRITE)) {
+                assertCheckWrite(file);
+            }
+
+            prepare();
+            try (BufferedWriter bw = newBufferedWriter(file,
+                StandardCharsets.UTF_16, DELETE_ON_CLOSE)) {
+                assertCheckWrite(file);
+                assertCheckDelete(file);
+            }
+            createFile(file); // restore file
+
+            // -- newInputStream/newOutputStream --
 
             prepare();
             try (InputStream in = newInputStream(file)) {
@@ -437,6 +470,42 @@ public class CheckPermissions {
             try (OutputStream out = newOutputStream(file)) {
                 assertCheckWrite(file);
             }
+
+            // -- write --
+
+            prepare();
+            Files.write(file, new byte[]{(byte) 42, (byte) 666}, WRITE);
+            assertCheckWrite(file);
+
+            prepare();
+            Files.write(file, new byte[]{(byte) 42, (byte) 666}, WRITE,
+                DELETE_ON_CLOSE);
+            assertCheckWrite(file);
+            assertCheckDelete(file);
+            createFile(file); // restore file
+
+            List<String> lines = Arrays.asList("42", "666");
+
+            prepare();
+            Files.write(file, lines, StandardCharsets.UTF_16, WRITE);
+            assertCheckWrite(file);
+
+            prepare();
+            Files.write(file, lines, StandardCharsets.UTF_16, WRITE,
+                DELETE_ON_CLOSE);
+            assertCheckWrite(file);
+            assertCheckDelete(file);
+            createFile(file); // restore file
+
+            prepare();
+            Files.write(file, lines, WRITE);
+            assertCheckWrite(file);
+
+            prepare();
+            Files.write(file, lines, WRITE, DELETE_ON_CLOSE);
+            assertCheckWrite(file);
+            assertCheckDelete(file);
+            createFile(file); // restore file
 
             // -- newDirectoryStream --
 

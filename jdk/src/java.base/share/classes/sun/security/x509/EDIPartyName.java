@@ -146,7 +146,7 @@ public class EDIPartyName implements GeneralNameInterface {
     /**
      * Return the assignerName
      *
-     * @returns String assignerName
+     * @return String assignerName
      */
     public String getAssignerName() {
         return assigner;
@@ -155,7 +155,7 @@ public class EDIPartyName implements GeneralNameInterface {
     /**
      * Return the partyName
      *
-     * @returns String partyName
+     * @return String partyName
      */
     public String getPartyName() {
         return party;
@@ -166,7 +166,7 @@ public class EDIPartyName implements GeneralNameInterface {
      * comparison without regard to type of the partyName and
      * the assignerName.
      *
-     * @returns true if the two names match
+     * @return true if the two names match
      */
     public boolean equals(Object other) {
         if (!(other instanceof EDIPartyName))
@@ -226,7 +226,7 @@ public class EDIPartyName implements GeneralNameInterface {
      * certification path verification.
      *
      * @param inputName to be checked for being constrained
-     * @returns constraint type above
+     * @return constraint type above
      * @throws UnsupportedOperationException if name is same type, but comparison operations are
      *          not supported for this name type.
      */
@@ -247,7 +247,7 @@ public class EDIPartyName implements GeneralNameInterface {
      * NameConstraints minimum and maximum bounds and for calculating
      * path lengths in name subtrees.
      *
-     * @returns distance of name from root
+     * @return distance of name from root
      * @throws UnsupportedOperationException if not supported for this name type
      */
     public int subtreeDepth() throws UnsupportedOperationException {

@@ -153,9 +153,6 @@ public final class TimeZoneNames_de extends TimeZoneNamesBundle {
         String GST[] = new String[] {"Golf Normalzeit", "GST",
                                      "Golf Sommerzeit", "GDT",
                                      "Zeitzone f\u00FCr Persischen Golf", "GT"};
-        String HAST[] = new String[] {"Hawaii-Aleutische Normalzeit", "HAST",
-                                      "Hawaii-Aleutische Sommerzeit", "HADT",
-                                      "Zeitzone f\u00FCr Hawaii und Al\u00EButen", "HAT"};
         String HKT[] =  new String[] {"Hongkong Zeit", "HKT",
                                       "Hongkong Sommerzeit", "HKST",
                                       "Hongkong Zeit", "HKT"};
@@ -372,7 +369,7 @@ public final class TimeZoneNames_de extends TimeZoneNamesBundle {
             {"Africa/Tripoli", EET},
             {"Africa/Tunis", CET},
             {"Africa/Windhoek", WAT},
-            {"America/Adak", HAST},
+            {"America/Adak", HST},
             {"America/Anguilla", AST},
             {"America/Antigua", AST},
             {"America/Araguaina", BRT},
@@ -394,7 +391,7 @@ public final class TimeZoneNames_de extends TimeZoneNamesBundle {
                                                "Paraguay Sommerzeit", "PYST",
                                                "Paraguay Zeit", "PYT"}},
             {"America/Atikokan", EST},
-            {"America/Atka", HAST},
+            {"America/Atka", HST},
             {"America/Bahia", BRT},
             {"America/Bahia_Banderas", CST},
             {"America/Barbados", AST},
@@ -1024,7 +1021,7 @@ public final class TimeZoneNames_de extends TimeZoneNamesBundle {
             {"UCT", UTC},
             {"Universal", UTC},
             {"US/Alaska", AKST},
-            {"US/Aleutian", HAST},
+            {"US/Aleutian", HST},
             {"US/Arizona", MST},
             {"US/Central", CST},
             {"US/Eastern", EST},

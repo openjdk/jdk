@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,25 +28,27 @@
  *          ThreadInfo.getThreadState()
  * @author  Mandy Chung
  *
- * @run build Semaphore Utils
+ * @modules java.management
+ * @run build Utils
  * @run main ThreadStackTrace
  */
 
 import java.lang.management.*;
+import java.util.concurrent.Phaser;
 
 public class ThreadStackTrace {
-    private static ThreadMXBean mbean
+    private static final ThreadMXBean mbean
         = ManagementFactory.getThreadMXBean();
     private static boolean notified = false;
-    private static Object lockA = new Object();
-    private static Object lockB = new Object();
+    private static final Object lockA = new Object();
+    private static final Object lockB = new Object();
     private static volatile boolean testFailed = false;
-    private static String[] blockedStack = {"run", "test", "A", "B", "C", "D"};
-    private static int bsDepth = 6;
-    private static int methodB = 4;
-    private static String[] examinerStack = {"run", "examine1", "examine2"};
-    private static int esDepth = 3;
-    private static int methodExamine1= 2;
+    private static final String[] blockedStack = {"run", "test", "A", "B", "C", "D"};
+    private static final int bsDepth = 6;
+    private static final int methodB = 4;
+    private static final String[] examinerStack = {"run", "examine1", "examine2"};
+    private static final int esDepth = 3;
+    private static final int methodExamine1= 2;
 
     private static void checkNullThreadInfo(Thread t) throws Exception {
         ThreadInfo ti = mbean.getThreadInfo(t.getId());
@@ -69,8 +71,10 @@ public class ThreadStackTrace {
             trace = true;
         }
 
-        Examiner examiner = new Examiner("Examiner");
-        BlockedThread blocked = new BlockedThread("BlockedThread");
+        final Phaser p = new Phaser(2);
+
+        Examiner examiner = new Examiner("Examiner", p);
+        BlockedThread blocked = new BlockedThread("BlockedThread", p);
         examiner.setThread(blocked);
 
         checkNullThreadInfo(examiner);
@@ -79,8 +83,8 @@ public class ThreadStackTrace {
         // Start the threads and check them in  Blocked and Waiting states
         examiner.start();
 
-        // block until examiner begins doing its real work
-        examiner.waitForStarted();
+        // #1 - block until examiner begins doing its real work
+        p.arriveAndAwaitAdvance();
 
         System.out.println("Checking stack trace for the examiner thread " +
                            "is waiting to begin.");
@@ -145,35 +149,11 @@ public class ThreadStackTrace {
     }
 
     static class BlockedThread extends Thread {
-        private Semaphore handshake = new Semaphore();
+        private final Phaser phaser;
 
-        BlockedThread(String name) {
+        BlockedThread(String name, Phaser phaser) {
             super(name);
-        }
-        boolean hasWaitersForBlocked() {
-            return (handshake.getWaiterCount() > 0);
-        }
-
-        void waitUntilBlocked() {
-            handshake.semaP();
-
-            // give a chance for the examiner thread to really wait
-            Utils.goSleep(20);
-        }
-
-        void waitUntilLockAReleased() {
-            handshake.semaP();
-
-            // give a chance for the examiner thread to really wait
-            Utils.goSleep(50);
-        }
-
-        private void notifyWaiter() {
-            // wait until the examiner waits on the semaphore
-            while (handshake.getWaiterCount() == 0) {
-                Utils.goSleep(20);
-            }
-            handshake.semaV();
+            this.phaser = phaser;
         }
 
         private void test() {
@@ -185,25 +165,24 @@ public class ThreadStackTrace {
         private void B() {
             C();
 
-            // notify the examiner about to block on lockB
-            notifyWaiter();
+            // #4 - notify the examiner about to block on lockB
+            phaser.arriveAndAwaitAdvance();
 
-            synchronized (lockB) {
-            };
+            synchronized (lockB) {};
         }
         private void C() {
             D();
         }
         private void D() {
-            // Notify that examiner about to enter lockA
-            notifyWaiter();
+            // #2 - Notify that examiner about to enter lockA
+            phaser.arriveAndAwaitAdvance();
 
             synchronized (lockA) {
                 notified = false;
                 while (!notified) {
                     try {
-                        // notify the examiner about to release lockA
-                        notifyWaiter();
+                        // #3 - notify the examiner about to release lockA
+                        phaser.arriveAndAwaitAdvance();
                         // Wait and let examiner thread check the mbean
                         lockA.wait();
                     } catch (InterruptedException e) {
@@ -216,6 +195,7 @@ public class ThreadStackTrace {
             }
         }
 
+        @Override
         public void run() {
             test();
         } // run()
@@ -223,26 +203,15 @@ public class ThreadStackTrace {
 
     static class Examiner extends Thread {
         private static BlockedThread blockedThread;
-        private Semaphore handshake = new Semaphore();
+        private final Phaser phaser;
 
-        Examiner(String name) {
+        Examiner(String name, Phaser phaser) {
             super(name);
+            this.phaser = phaser;
         }
 
         public void setThread(BlockedThread thread) {
             blockedThread = thread;
-        }
-
-        public synchronized void waitForStarted() {
-            // wait until the examiner is about to block
-            handshake.semaP();
-
-            // wait until the examiner is waiting for blockedThread's notification
-            while (!blockedThread.hasWaitersForBlocked()) {
-                Utils.goSleep(50);
-            }
-            // give a chance for the examiner thread to really wait
-            Utils.goSleep(20);
         }
 
         private Thread itself;
@@ -254,8 +223,9 @@ public class ThreadStackTrace {
                     Utils.checkThreadState(itself, Thread.State.RUNNABLE);
                     checkStack(itself, examinerStack, methodExamine1);
 
-                    // wait until blockedThread is blocked on lockB
-                    blockedThread.waitUntilBlocked();
+                    // #4 - wait until blockedThread is blocked on lockB
+                    phaser.arriveAndAwaitAdvance();
+                    Utils.waitForThreadState(blockedThread, State.BLOCKED);
 
                     System.out.println("Checking stack trace for " +
                         "BlockedThread - should be blocked on lockB.");
@@ -271,15 +241,12 @@ public class ThreadStackTrace {
 
         private void examine2() {
             synchronized (lockA) {
-                // wait until main thread gets signalled of the semaphore
-                while (handshake.getWaiterCount() == 0) {
-                    Utils.goSleep(20);
-                }
-
-                handshake.semaV();  // notify the main thread
+                // #1 - examiner ready to do the real work
+                phaser.arriveAndAwaitAdvance();
                 try {
-                    // Wait until BlockedThread is about to block on lockA
-                    blockedThread.waitUntilBlocked();
+                    // #2 - Wait until BlockedThread is about to block on lockA
+                    phaser.arriveAndAwaitAdvance();
+                    Utils.waitForThreadState(blockedThread, State.BLOCKED);
 
                     System.out.println("Checking examiner's its own stack trace");
                     Utils.checkThreadState(itself, Thread.State.RUNNABLE);
@@ -297,9 +264,10 @@ public class ThreadStackTrace {
                 }
             }
 
-            // release lockA and let BlockedThread to get the lock
+            // #3 - release lockA and let BlockedThread to get the lock
             // and wait on lockA
-            blockedThread.waitUntilLockAReleased();
+            phaser.arriveAndAwaitAdvance();
+            Utils.waitForThreadState(blockedThread, State.WAITING);
 
             synchronized (lockA) {
                 try {
@@ -321,6 +289,7 @@ public class ThreadStackTrace {
             Utils.goSleep(50);
         } // examine2()
 
+        @Override
         public void run() {
             itself = Thread.currentThread();
             examine1();

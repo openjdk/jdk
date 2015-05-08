@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
 package sun.management;
 
 import java.lang.management.*;
-
-import javax.management.DynamicMBean;
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanServer;
@@ -38,30 +36,35 @@ import javax.management.RuntimeOperationsException;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-
 import sun.util.logging.LoggingSupport;
-
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import com.sun.management.DiagnosticCommandMBean;
-import com.sun.management.HotSpotDiagnosticMXBean;
 
 /**
  * ManagementFactoryHelper provides static factory methods to create
  * instances of the management interface.
  */
 public class ManagementFactoryHelper {
+    static {
+        // make sure that the management lib is loaded within
+        // java.lang.management.ManagementFactory
+        sun.misc.Unsafe.getUnsafe().ensureClassInitialized(ManagementFactory.class);
+    }
+
+    private static final VMManagement jvm = new VMManagementImpl();
+
     private ManagementFactoryHelper() {};
 
-    private static VMManagement jvm;
+    public static VMManagement getVMManagement() {
+        return jvm;
+    }
 
     private static ClassLoadingImpl    classMBean = null;
     private static MemoryImpl          memoryMBean = null;
     private static ThreadImpl          threadMBean = null;
     private static RuntimeImpl         runtimeMBean = null;
     private static CompilationImpl     compileMBean = null;
-    private static OperatingSystemImpl osMBean = null;
+    private static BaseOperatingSystemImpl osMBean = null;
 
     public static synchronized ClassLoadingMXBean getClassLoadingMXBean() {
         if (classMBean == null) {
@@ -100,7 +103,7 @@ public class ManagementFactoryHelper {
 
     public static synchronized OperatingSystemMXBean getOperatingSystemMXBean() {
         if (osMBean == null) {
-            osMBean = new OperatingSystemImpl(jvm);
+            osMBean = new BaseOperatingSystemImpl(jvm);
         }
         return osMBean;
     }
@@ -123,7 +126,7 @@ public class ManagementFactoryHelper {
         return result;
     }
 
-    public static List<GarbageCollectorMXBean> getGarbageCollectorMXBeans() {
+     public static List<GarbageCollectorMXBean> getGarbageCollectorMXBeans() {
         MemoryManagerMXBean[]  mgrs = MemoryImpl.getMemoryManagers();
         List<GarbageCollectorMXBean> result = new ArrayList<>(mgrs.length);
         for (MemoryManagerMXBean m : mgrs) {
@@ -257,20 +260,11 @@ public class ManagementFactoryHelper {
         };
     }
 
-    private static HotSpotDiagnostic hsDiagMBean = null;
     private static HotspotRuntime hsRuntimeMBean = null;
     private static HotspotClassLoading hsClassMBean = null;
     private static HotspotThread hsThreadMBean = null;
     private static HotspotCompilation hsCompileMBean = null;
     private static HotspotMemory hsMemoryMBean = null;
-    private static DiagnosticCommandImpl hsDiagCommandMBean = null;
-
-    public static synchronized HotSpotDiagnosticMXBean getDiagnosticMXBean() {
-        if (hsDiagMBean == null) {
-            hsDiagMBean = new HotSpotDiagnostic();
-        }
-        return hsDiagMBean;
-    }
 
     /**
      * This method is for testing only.
@@ -310,14 +304,6 @@ public class ManagementFactoryHelper {
             hsMemoryMBean = new HotspotMemory(jvm);
         }
         return hsMemoryMBean;
-    }
-
-    public static synchronized DiagnosticCommandMBean getDiagnosticCommandMBean() {
-        // Remote Diagnostic Commands may not be supported
-        if (hsDiagCommandMBean == null && jvm.isRemoteDiagnosticCommandsSupported()) {
-            hsDiagCommandMBean = new DiagnosticCommandImpl(jvm);
-        }
-        return hsDiagCommandMBean;
     }
 
     /**
@@ -374,18 +360,6 @@ public class ManagementFactoryHelper {
     private final static String HOTSPOT_THREAD_MBEAN_NAME =
         "sun.management:type=HotspotThreading";
 
-    final static String HOTSPOT_DIAGNOSTIC_COMMAND_MBEAN_NAME =
-        "com.sun.management:type=DiagnosticCommand";
-
-    public static HashMap<ObjectName, DynamicMBean> getPlatformDynamicMBeans() {
-        HashMap<ObjectName, DynamicMBean> map = new HashMap<>();
-        DiagnosticCommandMBean diagMBean = getDiagnosticCommandMBean();
-        if (diagMBean != null) {
-            map.put(Util.newObjectName(HOTSPOT_DIAGNOSTIC_COMMAND_MBEAN_NAME), diagMBean);
-        }
-        return map;
-    }
-
     static void registerInternalMBeans(MBeanServer mbs) {
         // register all internal MBeans if not registered
         // No exception is thrown if a MBean with that object name
@@ -441,17 +415,6 @@ public class ManagementFactoryHelper {
         }
     }
 
-    static {
-        AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Void>() {
-                public Void run() {
-                    System.loadLibrary("management");
-                    return null;
-                }
-            });
-        jvm = new VMManagementImpl();
-    }
-
     public static boolean isThreadSuspended(int state) {
         return ((state & JMM_THREAD_STATE_FLAG_SUSPENDED) != 0);
     }
@@ -471,4 +434,20 @@ public class ManagementFactoryHelper {
     private static final int JMM_THREAD_STATE_FLAG_SUSPENDED = 0x00100000;
     private static final int JMM_THREAD_STATE_FLAG_NATIVE = 0x00400000;
 
+    // Invoked by the VM
+    private static MemoryPoolMXBean createMemoryPool
+        (String name, boolean isHeap, long uThreshold, long gcThreshold) {
+        return new MemoryPoolImpl(name, isHeap, uThreshold, gcThreshold);
+    }
+
+    private static MemoryManagerMXBean createMemoryManager(String name) {
+        return new MemoryManagerImpl(name);
+    }
+
+    private static GarbageCollectorMXBean
+        createGarbageCollector(String name, String type) {
+
+        // ignore type parameter which is for future extension
+        return new GarbageCollectorImpl(name);
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 4990825 7092186
  * @library /lib/testlibrary
+ * @modules java.management
  * @build jdk.testlibrary.* JstatdTest JstatGCUtilParser
  * @run main/timeout=60 TestJstatdExternalRegistry
  */
@@ -32,6 +33,7 @@ public class TestJstatdExternalRegistry {
 
     public static void main(String[] args) throws Throwable {
         JstatdTest test = new JstatdTest();
+        test.setUseDefaultPort(false);
         test.setWithExternalRegistry(true);
         test.doTest();
     }

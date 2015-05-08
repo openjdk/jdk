@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  * @summary Test checks case when target application finishes execution and jstat didn't complete work.
             jstat is started with interval = 100 (jstat -compiler 100) and monitored application finishes
             after 500ms. This shouldn't cause crash or hang in target application or in jstat.
+ * @modules java.management
  * @build jdk.testlibrary.* JStatInterval
  * @run main JStatInterval
  */
