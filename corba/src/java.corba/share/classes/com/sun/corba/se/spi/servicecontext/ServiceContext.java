@@ -42,9 +42,8 @@ import com.sun.corba.se.impl.orbutil.ORBUtility ;
 * the service context and provides any needed methods for manipulating
 * the service context.  Each subclass must provide the following
 * members:
-* <p>
 * <ul>
-* </li>a public static final int SERVICE_CONTEXT_ID that gives the OMG
+* <li>a public static final int SERVICE_CONTEXT_ID that gives the OMG
 * (or other) defined id for the service context.  This is needed for the
 * registration mechanism defined in ServiceContexts. OMG defined
 * service context ids are taken from section 13.6.7 of ptc/98-12-04.</li>

@@ -93,8 +93,8 @@ public interface Guard
     * input is retried when the thread runs again.
     * </ul>
     *
-    * @param FSM fsm is the state machine causing this action.
-    * @param Input in is the input that caused the transition.
+    * @param fsm is the state machine causing this action.
+    * @param in is the input that caused the transition.
     */
     public Result evaluate( FSM fsm, Input in ) ;
 }

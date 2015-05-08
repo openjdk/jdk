@@ -29,9 +29,6 @@ import java.util.Arrays ;
 import com.sun.corba.se.spi.ior.ObjectId ;
 import org.omg.CORBA_2_3.portable.OutputStream ;
 
-/**
- * @author
- */
 public final class ObjectIdImpl implements ObjectId
 {
     private byte[] id;

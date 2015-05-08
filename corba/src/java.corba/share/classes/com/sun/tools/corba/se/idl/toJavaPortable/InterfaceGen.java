@@ -190,17 +190,19 @@ public class InterfaceGen implements com.sun.tools.corba.se.idl.InterfaceGen, Ja
 
   /**
    * Generate the interface. Provides general algorithm for binding generation:
-   * 1.) Initialize members unique to this generator. - init ()
-   * 2.) Open print stream - openStream ()
-   * 3.) Write class heading (package, prologue, class statement, open curly - writeHeading ()
-   * 4.) Write class body (member data and methods) - write*Body ()
-   * 5.) Write class closing (close curly) - writeClosing ()
-   * 6.) Close the print stream - closeStream ()
+   * <ol>
+   * <li> Initialize members unique to this generator - init()</li>
+   * <li> Open print stream - openStream()</li>
+   * <li> Write class heading (package, prologue, class statement, open curly - writeHeading()</li>
+   * <li> Write class body (member data and methods) - write*Body()</li>
+   * <li> Write class closing (close curly) - writeClosing()</li>
+   * <li> Close the print stream - closeStream ()</li>
+   * </ol>
    *
    * For CORBA 2.3, interfaces are mapped to Operations and Signature
    * interfaces. The Operations interface contains the method definitions.
    * The Signature interface extends the Operations interface and adds
-   * CORBA::Object. <klr>
+   * CORBA::Object. (klr)
    **/
   protected void generateInterface ()
   {
