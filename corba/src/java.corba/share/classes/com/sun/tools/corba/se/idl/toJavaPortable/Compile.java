@@ -87,37 +87,37 @@ import com.sun.tools.corba.se.idl.InvalidArgument;
  *
  * Options:
  * <dl>
- *   <dt>-i &lt;include path&gt;
+ *   <dt>{@code -i <include path>}
  *   <dd>By default, the current directory is scanned for included files.
  *   This option adds another directory.  See also the note below.
  *
- *   <dt>-d &lt;symbol&gt;
+ *   <dt>{@code -d <symbol>}
  *   <dd>This is equivalent to the following line in an IDL file:
- *   #define &lt;symbol&gt;
+ *   {@code #define <symbol>}
  *
- *   <dt>-f<side>
- *   <dd>Defines what bindings to emit.  <side> is one of client, server, all,
+ *   <dt>{@code -f <side>}
+ *   <dd>Defines what bindings to emit. {@code <side>} is one of client, server, all,
  *   serverTIE, allTIE.  serverTIE and allTIE cause delegate model skeletons
  *   to be emitted. If this flag is not used, -fclient is assumed.
  *   allPOA has the same effect as all, except for generation POA type skeletons.
  *
- *   <dt>-keep
+ *   <dt>{@code -keep}
  *   <dd>If a file to be generated already exists, do not overwrite it. By
  *   default it is overwritten.
  *
- *   <dt>-sep <string>
+ *   <dt>{@code -sep <string>}
  *   <dd>Only valid with -m.  Replace the file separator character with
- *     <string> in the file names listed in the .u file.
+ *     {@code <string>} in the file names listed in the .u file.
  *
- *   <dt>-emitAll
+ *   <dt>{@code -emitAll}
  *   <dd>Emit all types, including those found in #included files.
  *
- *   <dt>-v
+ *   <dt>{@code -v}
  *   <dd>Verbose mode.
  *
- *   <dt>-pkgPrefix <type> <package>
- *   <dd>Whereever <type> is encountered, make sure it resides within
- *   &lt;package&gt; in all generated files.  &lt;type&gt; is a fully
+ *   <dt>{@code -pkgPrefix <type> <package>}
+ *   <dd>Whereever {@code <type>} is encountered, make sure it resides within
+ *   {@code <package>} in all generated files.  {@code <type>} is a fully
  *   qualified, java-style name.
  * </dl>
  *
@@ -127,9 +127,9 @@ import com.sun.tools.corba.se.idl.InvalidArgument;
  * called idl.config.  This file must be in the CLASSPATH.  The format of
  * the includes line is:
  *
- * <pre>
+ * <pre>{@code
  * includes=<path1>;<path2>;...;<pathN>
- * </pre>
+ * }</pre>
  *
  * Note that the path separator character, here shown as a semicolon,
  * is machine dependent.  For instance, on Windows 95 this character

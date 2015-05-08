@@ -69,7 +69,7 @@ public class ValueBoxGen24 extends ValueBoxGen
   } // ctor
 
   /**
-   * <d62023> - Move from helper to mapped class
+   * d62023 - Move from helper to mapped class
    **/
   protected void writeTruncatable () // <d60929>
   {
@@ -84,7 +84,7 @@ public class ValueBoxGen24 extends ValueBoxGen
 
 
   /**
-   * <d62023>
+   * d62023
    **/
   public void helperRead (String entryName, SymtabEntry entry, PrintWriter stream)
   {
@@ -121,7 +121,7 @@ public class ValueBoxGen24 extends ValueBoxGen
   } // helperRead
 
   /**
-   * <d62023>
+   * d62023
    **/
   public void helperWrite (SymtabEntry entry, PrintWriter stream)
   {
@@ -144,7 +144,7 @@ public class ValueBoxGen24 extends ValueBoxGen
   } // helperWrite
 
   /**
-   * <d62023>
+   * d62023
    **/
   public int write (int index, String indent, String name, SymtabEntry entry, PrintWriter stream)
   {

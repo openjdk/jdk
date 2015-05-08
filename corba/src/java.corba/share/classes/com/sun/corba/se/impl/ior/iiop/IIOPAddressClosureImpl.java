@@ -32,9 +32,6 @@ import org.omg.CORBA_2_3.portable.OutputStream ;
 
 import com.sun.corba.se.spi.orbutil.closure.Closure ;
 
-/**
- * @author
- */
 public final class IIOPAddressClosureImpl extends IIOPAddressBase
 {
     private Closure host;
