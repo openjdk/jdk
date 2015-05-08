@@ -113,7 +113,7 @@ final class IRTranslator extends NodeVisitor<LexicalContext> {
             final ExpressionTree srcTree = translateExpr(binaryNode.getAssignmentSource());
             final ExpressionTree destTree = translateExpr(binaryNode.getAssignmentDest());
 
-            if (binaryNode.tokenType() == TokenType.ASSIGN) {
+            if (binaryNode.isTokenType(TokenType.ASSIGN)) {
                 curExpr = new AssignmentTreeImpl(binaryNode, destTree, srcTree);
             } else {
                 curExpr = new CompoundAssignmentTreeImpl(binaryNode, destTree, srcTree);
@@ -122,7 +122,7 @@ final class IRTranslator extends NodeVisitor<LexicalContext> {
             final ExpressionTree leftTree = translateExpr(binaryNode.lhs());
             final ExpressionTree rightTree = translateExpr(binaryNode.rhs());
 
-            if (binaryNode.tokenType() == TokenType.INSTANCEOF) {
+            if (binaryNode.isTokenType(TokenType.INSTANCEOF)) {
                 curExpr = new InstanceOfTreeImpl(binaryNode, leftTree, rightTree);
             } else {
                 curExpr = new BinaryTreeImpl(binaryNode, leftTree, rightTree);
@@ -385,7 +385,7 @@ final class IRTranslator extends NodeVisitor<LexicalContext> {
 
     @Override
     public boolean enterUnaryNode(final UnaryNode unaryNode) {
-        if (unaryNode.tokenType() == TokenType.NEW) {
+        if (unaryNode.isTokenType(TokenType.NEW)) {
             curExpr = new NewTreeImpl(unaryNode,
                     translateExpr(unaryNode.getExpression()));
         } else {

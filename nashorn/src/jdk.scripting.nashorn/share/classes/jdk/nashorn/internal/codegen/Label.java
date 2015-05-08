@@ -333,7 +333,7 @@ public final class Label implements Serializable {
          * @param slot the slot written to
          * @param onlySymbolLiveValue if true, this is the symbol's only live value, and other values of the symbol
          * should be marked dead
-         * @param Type the type written to the slot
+         * @param type the type written to the slot
          */
         void onLocalStore(final Type type, final int slot, final boolean onlySymbolLiveValue) {
             if(onlySymbolLiveValue) {
