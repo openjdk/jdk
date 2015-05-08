@@ -329,6 +329,6 @@ void G1RootProcessor::scan_remembered_sets(G1ParPushHeapRSClosure* scan_rs,
   _g1h->g1_rem_set()->oops_into_collection_set_do(scan_rs, &scavenge_cs_nmethods, worker_i);
 }
 
-void G1RootProcessor::set_num_workers(int active_workers) {
+void G1RootProcessor::set_num_workers(uint active_workers) {
   _process_strong_tasks->set_n_threads(active_workers);
 }

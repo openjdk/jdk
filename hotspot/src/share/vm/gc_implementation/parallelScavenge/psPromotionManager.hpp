@@ -45,10 +45,6 @@
 // FIX ME FIX ME Add a destructor, and don't rely on the user to drain/flush/deallocate!
 //
 
-// Move to some global location
-#define HAS_BEEN_MOVED 0x1501d01d
-// End move to some global location
-
 class MutableSpace;
 class PSOldGen;
 class ParCompactionManager;
@@ -143,9 +139,7 @@ class PSPromotionManager VALUE_OBJ_CLASS_SPEC {
                                                     int start, int end);
   void process_array_chunk(oop old);
 
-  template <class T> void push_depth(T* p) {
-    claimed_stack_depth()->push(p);
-  }
+  template <class T> void push_depth(T* p);
 
   inline void promotion_trace_event(oop new_obj, oop old_obj, size_t obj_size,
                                     uint age, bool tenured,
@@ -163,9 +157,7 @@ class PSPromotionManager VALUE_OBJ_CLASS_SPEC {
   static PSPromotionManager* gc_thread_promotion_manager(int index);
   static PSPromotionManager* vm_thread_promotion_manager();
 
-  static bool steal_depth(int queue_num, int* seed, StarTask& t) {
-    return stack_array_depth()->steal(queue_num, seed, t);
-  }
+  static bool steal_depth(int queue_num, int* seed, StarTask& t);
 
   PSPromotionManager();
 

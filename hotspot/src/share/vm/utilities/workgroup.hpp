@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ public:
   // and may inherit this method that does nothing.  Some
   // tasks do some coordination on termination and override
   // this method to implement that coordination.
-  virtual void set_for_termination(int active_workers) {};
+  virtual void set_for_termination(uint active_workers) {};
 
   // Debugging accessor for the name.
   const char* name() const PRODUCT_RETURN_(return NULL;);
@@ -102,7 +102,7 @@ class AbstractGangTaskWOopQueues : public AbstractGangTask {
   AbstractGangTaskWOopQueues(const char* name, OopTaskQueueSet* queues) :
     AbstractGangTask(name), _queues(queues), _terminator(0, _queues) {}
   ParallelTaskTerminator* terminator() { return &_terminator; }
-  virtual void set_for_termination(int active_workers) {
+  virtual void set_for_termination(uint active_workers) {
     terminator()->reset_for_reuse(active_workers);
   }
   OopTaskQueueSet* queues() { return _queues; }

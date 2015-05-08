@@ -2987,11 +2987,12 @@ void nmethod::print_code_comment_on(outputStream* st, int column, u_char* begin,
   // We use the odd half-closed interval so that oop maps and scope descs
   // which are tied to the byte after a call are printed with the call itself.
   address base = code_begin();
-  OopMapSet* oms = oop_maps();
+  ImmutableOopMapSet* oms = oop_maps();
   if (oms != NULL) {
     for (int i = 0, imax = oms->size(); i < imax; i++) {
-      OopMap* om = oms->at(i);
-      address pc = base + om->offset();
+      const ImmutableOopMapPair* pair = oms->pair_at(i);
+      const ImmutableOopMap* om = pair->get_from(oms);
+      address pc = base + pair->pc_offset();
       if (pc > begin) {
         if (pc <= end) {
           st->move_to(column);

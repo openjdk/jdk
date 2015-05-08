@@ -76,7 +76,6 @@ public class TestShrinkAuxiliaryData {
         printTestInfo(maxCacheSize);
 
         vmOpts.add("-XX:G1ConcRSLogCacheSize=" + hotCardTableSize);
-        vmOpts.addAll(Arrays.asList(Utils.getTestJavaOpts()));
 
         // for 32 bits ObjectAlignmentInBytes is not a option
         if (Platform.is32bit()) {
@@ -98,7 +97,7 @@ public class TestShrinkAuxiliaryData {
 
     private void performTest(List<String> opts) throws Exception {
         ProcessBuilder pb
-                = ProcessTools.createJavaProcessBuilder(
+                = ProcessTools.createJavaProcessBuilder(true,
                         opts.toArray(new String[opts.size()])
                 );
 
