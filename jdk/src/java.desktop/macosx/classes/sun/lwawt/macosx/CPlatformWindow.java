@@ -61,9 +61,9 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     private static native void nativeSetEnabled(long nsWindowPtr, boolean isEnabled);
     private static native void nativeSynthesizeMouseEnteredExitedEvents();
     private static native void nativeDispose(long nsWindowPtr);
-    private static native CPlatformWindow nativeGetTopmostPlatformWindowUnderMouse();
     private static native void nativeEnterFullScreenMode(long nsWindowPtr);
     private static native void nativeExitFullScreenMode(long nsWindowPtr);
+    static native CPlatformWindow nativeGetTopmostPlatformWindowUnderMouse();
 
     // Loger to report issues happened during execution but that do not affect functionality
     private static final PlatformLogger logger = PlatformLogger.getLogger("sun.lwawt.macosx.CPlatformWindow");
@@ -748,10 +748,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     @Override
     public void setAlwaysOnTop(boolean isAlwaysOnTop) {
         setStyleBits(ALWAYS_ON_TOP, isAlwaysOnTop);
-    }
-
-    public PlatformWindow getTopmostPlatformWindowUnderMouse(){
-        return CPlatformWindow.nativeGetTopmostPlatformWindowUnderMouse();
     }
 
     @Override
