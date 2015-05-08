@@ -567,8 +567,12 @@ public final class MultiDOM implements DOM {
     }
 
     public NodeList makeNodeList(DTMAxisIterator iter) {
-        // TODO: gather nodes from all DOMs ?
-        return _main.makeNodeList(iter);
+        int index = iter.next();
+        if (index == DTM.NULL) {
+            return null;
+        }
+        iter.reset();
+        return _adapters[getDTMId(index)].makeNodeList(iter);
     }
 
     public String getLanguage(int node) {
