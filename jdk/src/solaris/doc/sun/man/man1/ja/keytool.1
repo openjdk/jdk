@@ -2,10 +2,10 @@
 .\" Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
 .\" Title: keytool
 .\" Language: English
-.\" Date: 2013ǯ8��6��
-.\" SectDesc: �������ƥ����ġ���
+.\" Date: 2013年8月6日
+.\" SectDesc: セキュリティ・ツール
 .\" Software: JDK 8
-.\" Arch: ����
+.\" Arch: 汎用
 .\"
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
@@ -28,7 +28,7 @@
 .\" questions.
 .\"
 .pl 99999
-.TH "keytool" "1" "2013ǯ8��6��" "JDK 8" "�������ƥ����ġ���"
+.TH "keytool" "1" "2013年8月6日" "JDK 8" "セキュリティ・ツール"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -49,8 +49,8 @@
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
 .SH "NAME"
-keytool \- �Ź沽����X\&.509������������󤪤�ӿ���Ǥ���������ޤ७�����ȥ�(�ǡ����١���)��������ޤ���
-.SH "����"
+keytool \- 暗号化鍵、X\&.509証明書チェーンおよび信頼できる証明書を含むキーストア(データベース)を管理します。
+.SH "概要"
 .sp
 .if n \{\
 .RS 4
@@ -64,7 +64,7 @@ keytool \- �Ź沽����X\&.509������������󤪤�ӿ���Ǥ���������ޤ७�����ȥ�
 .PP
 \fIcommands\fR
 .RS 4
-���ޥ�ɤ򻲾Ȥ��Ƥ��������������Υ��ޥ�ɤϡ����Τ褦�˥������̤�ʬ�व��ޤ���
+コマンドを参照してください。これらのコマンドは、次のようにタスク別に分類されます。
 .sp
 .RS 4
 .ie n \{\
@@ -74,7 +74,7 @@ keytool \- �Ź沽����X\&.509������������󤪤�ӿ���Ǥ���������ޤ७�����ȥ�
 .sp -1
 .IP \(bu 2.3
 .\}
-�������ȥ��ؤΥǡ����κ����ޤ����ɲ�
+キーストアへのデータの作成または追加
 .sp
 .RS 4
 .ie n \{\
@@ -140,7 +140,7 @@ keytool \- �Ź沽����X\&.509������������󤪤�ӿ���Ǥ���������ޤ७�����ȥ�
 .sp -1
 .IP \(bu 2.3
 .\}
-�̤Υ������ȥ������ƤΥ���ݡ���
+別のキーストアの内容のインポート
 .sp
 .RS 4
 .ie n \{\
@@ -162,7 +162,7 @@ keytool \- �Ź沽����X\&.509������������󤪤�ӿ���Ǥ���������ޤ७�����ȥ�
 .sp -1
 .IP \(bu 2.3
 .\}
-������ꥯ�����Ȥ�����
+証明書リクエストの生成
 .sp
 .RS 4
 .ie n \{\
@@ -184,7 +184,7 @@ keytool \- �Ź沽����X\&.509������������󤪤�ӿ���Ǥ���������ޤ७�����ȥ�
 .sp -1
 .IP \(bu 2.3
 .\}
-�ǡ����Υ������ݡ���
+データのエクスポート
 .sp
 .RS 4
 .ie n \{\
@@ -206,7 +206,7 @@ keytool \- �Ź沽����X\&.509������������󤪤�ӿ���Ǥ���������ޤ७�����ȥ�
 .sp -1
 .IP \(bu 2.3
 .\}
-�ǡ�����ɽ��
+データの表示
 .sp
 .RS 4
 .ie n \{\
@@ -261,7 +261,7 @@ keytool \- �Ź沽����X\&.509������������󤪤�ӿ���Ǥ���������ޤ७�����ȥ�
 .sp -1
 .IP \(bu 2.3
 .\}
-�������ȥ��δ���
+キーストアの管理
 .sp
 .RS 4
 .ie n \{\
@@ -316,7 +316,7 @@ keytool \- �Ź沽����X\&.509������������󤪤�ӿ���Ǥ���������ޤ७�����ȥ�
 .sp -1
 .IP \(bu 2.3
 .\}
-�إ�פ�ɽ��
+ヘルプの表示
 .sp
 .RS 4
 .ie n \{\
@@ -330,18 +330,18 @@ keytool \- �Ź沽����X\&.509������������󤪤�ӿ���Ǥ���������ޤ७�����ȥ�
 .RE
 .RE
 .RE
-.SH "����"
+.SH "説明"
 .PP
-\fIkeytool\fR���ޥ�ɤϡ����Ⱦ������������뤿��Υ桼�ƥ���ƥ��Ǥ�������ˤ�ꡢ�桼�����ϼ�ʬ�θ���������̩���Υڥ�����Ӵ�Ϣ������������������ǥ������̾����Ѥ�������ǧ��(¾�Υ桼�����ޤ��ϥ����ӥ����Ф��Ƽ�ʬ���Ȥ�ǧ�ڤ��뤳��)�䡢�ǡ������������Ⱦ�����˴ؤ��륵���ӥ������Ѥ��뤳�Ȥ��Ǥ��ޤ���\fIkeytool\fR���ޥ�ɤǤϡ��̿����Ƥ���ԥ��θ������򥭥�å��夹�뤳�Ȥ�Ǥ��ޤ�(������Υե������)��
+\fIkeytool\fRコマンドは、鍵と証明書を管理するためのユーティリティです。これにより、ユーザーは自分の公開鍵と秘密鍵のペアおよび関連する証明書を管理し、デジタル署名を使用した自己認証(他のユーザーまたはサービスに対して自分自身を認証すること)や、データの整合性と証明書に関するサービスを利用することができます。\fIkeytool\fRコマンドでは、通信しているピアの公開鍵をキャッシュすることもできます(証明書のフォームで)。
 .PP
-������Ȥϡ����륨��ƥ��ƥ�(��ʪ����Ҥʤ�)����Υǥ������̾�դ���ʸ��Τ��ȤǤ���������ˤϡ�¾�Τ��륨��ƥ��ƥ��θ�����(����Ӥ���¾�ξ���)�����̤��ͤ���äƤ��뤳�Ȥ��񤫤�Ƥ��ޤ���(������򻲾Ȥ��Ƥ���������)�ǡ����˥ǥ������̾���դ��Ƥ�����ϡ��ǥ������̾�򸡾ڤ��뤳�Ȥǡ��ǡ���������������ӥǡ�������ʪ�Ǥ��뤳�Ȥ�����å��Ǥ��ޤ����ǡ������������Ȥϡ��ǡ������ѹ����줿�ꡢ���Ѥ��줿�ꤷ�Ƥ��ʤ����Ȥ��̣���ޤ����ޤ����ǡ�������ʪ�Ǥ���Ȥϡ����Υǡ��������ǡ�����������ƽ�̾�����ȾΤ����ʪ�����Ϥ��줿�ǡ����Ǥ��뤳�Ȥ��̣���ޤ���
+証明書とは、あるエンティティ(人物、会社など)からのデジタル署名付きの文書のことです。証明書には、他のあるエンティティの公開鍵(およびその他の情報)が特別な値を持っていることが書かれています。(証明書を参照してください。)データにデジタル署名が付いている場合は、デジタル署名を検証することで、データの整合性およびデータが本物であることをチェックできます。データの整合性とは、データが変更されたり、改変されたりしていないことを意味します。また、データが本物であるとは、そのデータが、データを作成して署名したと称する人物から渡されたデータであることを意味します。
 .PP
-�ޤ���\fIkeytool\fR���ޥ�ɤ���Ѥ���С��оΰŹ沽/���沽(DES)�ǻ��Ѥ������̩������ӥѥ��ե졼����������뤳�Ȥ�Ǥ��ޤ���
+また、\fIkeytool\fRコマンドを使用すれば、対称暗号化/復号化(DES)で使用される秘密鍵およびパスフレーズを管理することもできます。
 .PP
-\fIkeytool\fR���ޥ�ɤϡ����Ⱦ�����򥭡����ȥ��˳�Ǽ���ޤ����������ȥ�����̾�򻲾Ȥ��Ƥ���������
-.SH "���ޥ�ɤȥ��ץ����˴ؤ�������"
+\fIkeytool\fRコマンドは、鍵と証明書をキーストアに格納します。キーストアの別名を参照してください。
+.SH "コマンドとオプションに関する注意"
 .PP
-�͡��ʥ��ޥ�ɤȤ��������ˤĤ��Ƥϡ����ޥ�ɤ򻲾Ȥ��Ƥ���������
+様々なコマンドとその説明については、コマンドを参照してください。
 .sp
 .RS 4
 .ie n \{\
@@ -351,7 +351,7 @@ keytool \- �Ź沽����X\&.509������������󤪤�ӿ���Ǥ���������ޤ७�����ȥ�
 .sp -1
 .IP \(bu 2.3
 .\}
-�ɤΥ��ޥ��̾����ӥ��ץ����̾�ˤ���Ƭ�˥ޥ��ʥ�����(\-)���դ��ޤ���
+どのコマンド名およびオプション名にも先頭にマイナス記号(\-)が付きます。
 .RE
 .sp
 .RS 4
@@ -362,7 +362,7 @@ keytool \- �Ź沽����X\&.509������������󤪤�ӿ���Ǥ���������ޤ७�����ȥ�
 .sp -1
 .IP \(bu 2.3
 .\}
-�ƥ��ޥ�ɤΥ��ץ�����Ǥ�դν���ǻ���Ǥ��ޤ���
+各コマンドのオプションは任意の順序で指定できます。
 .RE
 .sp
 .RS 4
@@ -373,7 +373,7 @@ keytool \- �Ź沽����X\&.509������������󤪤�ӿ���Ǥ���������ޤ७�����ȥ�
 .sp -1
 .IP \(bu 2.3
 .\}
-������å��ΤˤʤäƤ��ʤ����٤Ƥι��ܡ��ޤ����楫�å����ѥ��å��ǰϤޤ�Ƥ��뤹�٤Ƥι��ܤϡ����ΤȤ���˻��ꤹ��ɬ�פ�����ޤ���
+イタリック体になっていないすべての項目、または中カッコか角カッコで囲まれているすべての項目は、そのとおりに指定する必要があります。
 .RE
 .sp
 .RS 4
@@ -384,7 +384,7 @@ keytool \- �Ź沽����X\&.509������������󤪤�ӿ���Ǥ���������ޤ७�����ȥ�
 .sp -1
 .IP \(bu 2.3
 .\}
-���ץ�����Ϥ��楫�å��ϡ����Υ��ץ����򥳥ޥ�ɥ饤��ǻ��ꤷ�ʤ��ä����ˡ��ǥե�����ͤ����Ѥ���뤳�Ȥ��̣���ޤ������ץ����Υǥե�����ͤ򻲾Ȥ��Ƥ����������楫�å��ϡ�\fI\-v\fR��\fI\-rfc\fR�����\fI\-J\fR���ץ�����Ϥि��ˤ���Ѥ���ޤ����������Υ��ץ����ϥ��ޥ�ɥ饤��ǻ��ꤵ�줿���ˤΤ߰�̣������ޤ������ꤵ��Ƥ��ʤ����ʳ����ǥե�����ͤϤ���ޤ���
+オプションを囲む中カッコは、そのオプションをコマンドラインで指定しなかった場合に、デフォルト値が使用されることを意味します。オプションのデフォルト値を参照してください。中カッコは、\fI\-v\fR、\fI\-rfc\fRおよび\fI\-J\fRオプションを囲むためにも使用されますが、これらのオプションはコマンドラインで指定された場合にのみ意味を持ちます。指定されていない場合以外、デフォルト値はありません。
 .RE
 .sp
 .RS 4
@@ -395,7 +395,7 @@ keytool \- �Ź沽����X\&.509������������󤪤�ӿ���Ǥ���������ޤ७�����ȥ�
 .sp -1
 .IP \(bu 2.3
 .\}
-���ץ�����Ϥ�ѥ��å��ϡ����Υ��ץ����򥳥ޥ�ɥ饤��ǻ��ꤷ�ʤ��ä����ˡ��ͤ����Ϥ�����뤳�Ȥ��̣���ޤ���\fI\-keypass\fR���ץ����ξ�硢���ץ����򥳥ޥ�ɥ饤��ǻ��ꤷ�ʤ��ä����ϡ�\fIkeytool\fR���ޥ�ɤ��ޤ��������ȥ��Υѥ���ɤ���Ѥ��������/��̩�����������ߤޤ������λ�ߤ����Ԥ�����硢\fIkeytool\fR���ޥ�ɤˤ�ꡢ�����/��̩���Υѥ���ɤ����Ϥ�����ޤ���
+オプションを囲む角カッコは、そのオプションをコマンドラインで指定しなかった場合に、値の入力を求められることを意味します。\fI\-keypass\fRオプションの場合、オプションをコマンドラインで指定しなかった場合は、\fIkeytool\fRコマンドがまずキーストアのパスワードを使用して非公開/秘密鍵の復元を試みます。この試みが失敗した場合、\fIkeytool\fRコマンドにより、非公開/秘密鍵のパスワードの入力を求められます。
 .RE
 .sp
 .RS 4
@@ -406,11 +406,11 @@ keytool \- �Ź沽����X\&.509������������󤪤�ӿ���Ǥ���������ޤ७�����ȥ�
 .sp -1
 .IP \(bu 2.3
 .\}
-������å��Τι��ܤμºݤ���(���ץ�������)�ϡ����ꤹ��ɬ�פ�����ޤ������Ȥ��С�\fI\-printcert\fR���ޥ�ɤη����ϼ��ΤȤ���Ǥ���
+イタリック体の項目の実際の値(オプションの値)は、指定する必要があります。たとえば、\fI\-printcert\fRコマンドの形式は次のとおりです。
 .sp
 \fIkeytool \-printcert {\-file cert_file} {\-v}\fR
 .sp
-\fI\-printcert\fR���ޥ�ɤ���ꤹ����ϡ�\fIcert_file\fR��ºݤΥե�����̾���֤������ޤ�����:
+\fI\-printcert\fRコマンドを指定する場合は、\fIcert_file\fRを実際のファイル名で置き換えます。例:
 \fIkeytool \-printcert \-file VScert\&.cer\fR
 .RE
 .sp
@@ -422,7 +422,7 @@ keytool \- �Ź沽����X\&.509������������󤪤�ӿ���Ǥ���������ޤ७�����ȥ�
 .sp -1
 .IP \(bu 2.3
 .\}
-���ץ������ͤ˶���(���ڡ���)���ޤޤ�Ƥ�����ϡ��ͤ������ǰϤ�ɬ�פ�����ޤ���
+オプションの値に空白(スペース)が含まれている場合は、値を引用符で囲む必要があります。
 .RE
 .sp
 .RS 4
@@ -433,11 +433,11 @@ keytool \- �Ź沽����X\&.509������������󤪤�ӿ���Ǥ���������ޤ७�����ȥ�
 .sp -1
 .IP \(bu 2.3
 .\}
-\fI\-help\fR���ץ���󤬥ǥե���ȤǤ���\fIkeytool\fR���ޥ�ɤϡ�\fIkeytool \-help\fR��Ʊ���Ǥ���
+\fI\-help\fRオプションがデフォルトです。\fIkeytool\fRコマンドは、\fIkeytool \-help\fRと同じです。
 .RE
-.SH "���ץ����Υǥե������"
+.SH "オプションのデフォルト値"
 .PP
-������ǡ��͡��ʥ��ץ�����ͤΥǥե�����ͤ򼨤��ޤ���
+次の例で、様々なオプション値のデフォルト値を示します。
 .sp
 .if n \{\
 .RS 4
@@ -474,7 +474,7 @@ keytool \- �Ź沽����X\&.509������������󤪤�ӿ���Ǥ���������ޤ७�����ȥ�
 .RE
 .\}
 .PP
-����/��̩���ڥ��������ˤ����ơ���̾���르�ꥺ��(\fI\-sigalg\fR���ץ����)�ϡ���ˤʤ���̩���Υ��르�ꥺ�फ���������ޤ���
+公開/秘密鍵ペアの生成において、署名アルゴリズム(\fI\-sigalg\fRオプション)は、基になる秘密鍵のアルゴリズムから派生します。
 .sp
 .RS 4
 .ie n \{\
@@ -484,7 +484,7 @@ keytool \- �Ź沽����X\&.509������������󤪤�ӿ���Ǥ���������ޤ७�����ȥ�
 .sp -1
 .IP \(bu 2.3
 .\}
-��ˤʤ���̩����DSA�����פǤ�����ϡ�\fI\-sigalg\fR���ץ����Υǥե�����ͤ�SHA1withDSA�ˤʤ�ޤ���
+基になる秘密鍵がDSAタイプである場合は、\fI\-sigalg\fRオプションのデフォルト値はSHA1withDSAになります。
 .RE
 .sp
 .RS 4
@@ -495,7 +495,7 @@ keytool \- �Ź沽����X\&.509������������󤪤�ӿ���Ǥ���������ޤ७�����ȥ�
 .sp -1
 .IP \(bu 2.3
 .\}
-��ˤʤ���̩����RSA�����פǤ�����ϡ�\fI\-sigalg\fR���ץ����Υǥե�����ͤ�SHA256withRSA�ˤʤ�ޤ���
+基になる秘密鍵がRSAタイプである場合は、\fI\-sigalg\fRオプションのデフォルト値はSHA256withRSAになります。
 .RE
 .sp
 .RS 4
@@ -506,40 +506,40 @@ keytool \- �Ź沽����X\&.509������������󤪤�ӿ���Ǥ���������ޤ७�����ȥ�
 .sp -1
 .IP \(bu 2.3
 .\}
-��ˤʤ���̩����EC�����פǤ�����ϡ�\fI\-sigalg\fR���ץ����Υǥե�����ͤ�SHA256withECDSA�ˤʤ�ޤ���
+基になる秘密鍵がECタイプである場合は、\fI\-sigalg\fRオプションのデフォルト値はSHA256withECDSAになります。
 .RE
 .PP
-\fI\-keyalg\fR�����\fI\-sigalg\fR�����δ����ʥꥹ�ȤˤĤ��Ƥϡ�
-http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/security/crypto/CryptoSpec\&.html#AppA�Ρ�Java Cryptography Architecture (JCA) Reference Guide�פ򻲾Ȥ��Ƥ���������
-.SH "���̥��ץ����"
+\fI\-keyalg\fRおよび\fI\-sigalg\fR引数の完全なリストについては、
+http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/security/crypto/CryptoSpec\&.html#AppAの「Java Cryptography Architecture (JCA) Reference Guide」を参照してください。
+.SH "一般オプション"
 .PP
-\fI\-v\fR���ץ����ϡ�\fI\-help\fR���ޥ�ɤ�������٤ƤΥ��ޥ�ɤǻ��ѤǤ��ޤ���\fI\-v\fR���ץ�������ꤷ����硢���ޥ�ɤϾ�Ĺ�⡼�ɤǼ¹Ԥ��졢�ܺ٤ʾ��󤬽��Ϥ���ޤ���
+\fI\-v\fRオプションは、\fI\-help\fRコマンドを除くすべてのコマンドで使用できます。\fI\-v\fRオプションを指定した場合、コマンドは冗長モードで実行され、詳細な情報が出力されます。
 .PP
-Ǥ�դΥ��ޥ�ɤǻ���Ǥ���\fI\-Jjavaoption\fR�����⤢��ޤ���\fI\-Jjavaoption\fR����ꤷ����硢���ꤵ�줿\fIjavaoption\fRʸ����Java���󥿥ץ꥿��ľ���Ϥ���ޤ������Υ��ץ����ˤϡ������ޤ�뤳�ȤϤǤ��ޤ��󡣤��Υ��ץ����ϡ��¹ԴĶ��ޤ��ϥ��꡼���Ѥ�Ĵ��������������Ǥ�������Ǥ��륤�󥿥ץ꥿�����ץ��������ɽ������ˤϡ����ޥ�ɥ饤���\fIjava \-h\fR�ޤ���\fIjava \-X\fR�����Ϥ��Ƥ���������
+任意のコマンドで指定できる\fI\-Jjavaoption\fR引数もあります。\fI\-Jjavaoption\fRを指定した場合、指定された\fIjavaoption\fR文字列がJavaインタプリタに直接渡されます。このオプションには、空白を含めることはできません。このオプションは、実行環境またはメモリー使用を調整する場合に便利です。指定できるインタプリタ・オプションを一覧表示するには、コマンドラインで\fIjava \-h\fRまたは\fIjava \-X\fRと入力してください。
 .PP
-���Υ��ץ����ϡ��������ȥ����Ф�������Ԥ����٤ƤΥ��ޥ�ɤǻ���Ǥ��ޤ���
+次のオプションは、キーストアに対する操作を行うすべてのコマンドで指定できます。
 .PP
 \-storetype \fIstoretype\fR
 .RS 4
-���ν����Ҥϡ����󥹥��󥹤��������륭�����ȥ��Υ����פ���ꤷ�ޤ���
+この修飾子は、インスタンスを生成するキーストアのタイプを指定します。
 .RE
 .PP
 \-keystore \fIkeystore\fR
 .RS 4
-�������ȥ��ξ�����ꤷ�ޤ���
+キーストアの場所を指定します。
 .sp
-�����\fIkeytool\fR���ޥ�ɤ�¹Ԥ���ݤˡ�JKS
-\fIstoretype\fR�����Ѥ��졢���ĥ������ȥ����ե����뤬�ޤ�¸�ߤ��Ƥ��ʤ��ä���硢�������������ȥ����ե����뤬��������ޤ������Ȥ��С�\fIkeytool \-genkeypair\fR�θƽФ�����\fI\-keystore\fR���ץ���󤬻��ꤵ��ʤ��ä���硢\fI\&.keystore\fR�Ȥ���̾���Υǥե���ȡ��������ȥ����ե����뤬�桼�����Υۡ��ࡦ�ǥ��쥯�ȥ���ˤޤ�¸�ߤ��Ƥ��ʤ���С������˺�������ޤ���Ʊ�ͤˡ�\fI\-keystore ks_file\fR�Ȥ������ץ���󤬻��ꤵ��Ƥ⤽��ks_file��¸�ߤ��ʤ��ä���硢���Υե����뤬��������ޤ���JKS
-\fIstoretype\fR�ξܺ٤ϡ�\fI��\fRKeyStore�μ����������ȥ�����̾�˴ؤ����򻲾Ȥ��Ƥ���������
+特定の\fIkeytool\fRコマンドを実行する際に、JKS
+\fIstoretype\fRが使用され、かつキーストア・ファイルがまだ存在していなかった場合、新しいキーストア・ファイルが作成されます。たとえば、\fIkeytool \-genkeypair\fRの呼出し時に\fI\-keystore\fRオプションが指定されなかった場合、\fI\&.keystore\fRという名前のデフォルト・キーストア・ファイルがユーザーのホーム・ディレクトリ内にまだ存在していなければ、そこに作成されます。同様に、\fI\-keystore ks_file\fRというオプションが指定されてもそのks_fileが存在しなかった場合、そのファイルが作成されます。JKS
+\fIstoretype\fRの詳細は、\fIの\fRKeyStoreの実装キーストアの別名に関する項を参照してください。
 .sp
-\fI\-keystore\fR���ץ���󤫤�����ϥ��ȥ꡼��ϡ�\fIKeyStore\&.load\fR�᥽�åɤ��Ϥ���ޤ���URL�Ȥ���\fINONE\fR�����ꤵ��Ƥ�����ϡ�null�Υ��ȥ꡼�ब\fIKeyStore\&.load\fR�᥽�åɤ��Ϥ���ޤ���\fINONE\fR�ϡ�KeyStore���ե�����١����ǤϤʤ����˻��ꤷ�Ƥ������������Ȥ��С��ϡ��ɥ��������ȡ����󡦥ǥХ������¸�ߤ��Ƥ�����ʤɤǤ���
+\fI\-keystore\fRオプションからの入力ストリームは、\fIKeyStore\&.load\fRメソッドに渡されます。URLとして\fINONE\fRが指定されている場合は、nullのストリームが\fIKeyStore\&.load\fRメソッドに渡されます。\fINONE\fRは、KeyStoreがファイルベースではない場合に指定してください。たとえば、ハードウェア・トークン・デバイス上に存在している場合などです。
 .RE
 .PP
 \-storepass[:\fIenv\fR| :\fIfile\fR] argument
 .RS 4
-�������ȥ������������ݸ�뤿��˻��Ѥ���ѥ���ɤ���ꤷ�ޤ���
+キーストアの整合性を保護するために使用するパスワードを指定します。
 .sp
-������\fIenv\fR�ޤ���\fIfile\fR����ꤷ�ʤ���硢�ѥ���ɤ��ͤ�\fIargument\fR�ˤʤ�ޤ��������ͤϡ�6ʸ���ʾ�ˤ���ɬ�פ�����ޤ�������ʳ��ξ�硢�ѥ���ɤϼ��Τ褦�ˤ��Ƽ�������ޤ���
+修飾子\fIenv\fRまたは\fIfile\fRを指定しない場合、パスワードの値は\fIargument\fRになります。この値は、6文字以上にする必要があります。それ以外の場合、パスワードは次のようにして取得されます。
 .sp
 .RS 4
 .ie n \{\
@@ -550,7 +550,7 @@ http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/security/crypto/Crypto
 .IP \(bu 2.3
 .\}
 \fIenv\fR:
-\fIargument\fR�Ȥ���̾���δĶ��ѿ�����ѥ���ɤ�������ޤ���
+\fIargument\fRという名前の環境変数からパスワードを取得します。
 .RE
 .sp
 .RS 4
@@ -561,119 +561,119 @@ http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/security/crypto/Crypto
 .sp -1
 .IP \(bu 2.3
 .\}
-\fIfile\fR: argument�Ȥ���̾���Υե����뤫��ѥ���ɤ�������ޤ���
+\fIfile\fR: argumentという名前のファイルからパスワードを取得します。
 .RE
 .sp
-\fB����:\fR
-\fI\-keypass\fR��\fI\-srckeypass\fR��\-\fIdestkeypass\fR��\fI\-srcstorepass\fR��\fI\-deststorepass\fR�ʤɤΥѥ���ɤ�ɬ�פȤ��뤽��¾�Υ��ץ����Ϥ��٤ơ�\fIenv\fR�����\fIfile\fR�����Ҥ�����դ��ޤ����ѥ���ɡ����ץ����Ƚ����Ҥϡ�ɬ��������(:)�Ƕ��ڤäƤ���������
+\fB注意:\fR
+\fI\-keypass\fR、\fI\-srckeypass\fR、\-\fIdestkeypass\fR、\fI\-srcstorepass\fR、\fI\-deststorepass\fRなどのパスワードを必要とするその他のオプションはすべて、\fIenv\fRおよび\fIfile\fR修飾子を受け付けます。パスワード・オプションと修飾子は、必ずコロン(:)で区切ってください。
 .sp
-�ѥ���ɤϡ��������ȥ������Ƥ˥����������뤹�٤ƤΥ��ޥ�ɤǻ��Ѥ���ޤ������μ�Υ��ޥ�ɤ�¹Ԥ���Ȥ��ˡ����ޥ�ɥ饤���\fI\-storepass\fR���ץ�������ꤷ�ʤ��ä����ϡ��ѥ���ɤ����Ϥ�����ޤ���
+パスワードは、キーストアの内容にアクセスするすべてのコマンドで使用されます。この種のコマンドを実行するときに、コマンドラインで\fI\-storepass\fRオプションを指定しなかった場合は、パスワードの入力を求められます。
 .sp
-�������ȥ�����������������硢�ѥ���ɤϾ�ά��ǽ�Ǥ����ѥ���ɤ����ꤵ��Ƥ��ʤ����ϡ���������������������򸡾ڤǤ������ٹ�ɽ������ޤ���
+キーストアから情報を取得する場合、パスワードは省略可能です。パスワードが指定されていない場合は、取得した情報の整合性を検証できず、警告が表示されます。
 .RE
 .PP
 \-providerName \fIprovider_name\fR
 .RS 4
-�������ƥ����ץ��ѥƥ����ե�������˴ޤޤ��Ź沽�����ӥ����ץ��Х���̾�����ꤹ�뤿��˻��Ѥ���ޤ���
+セキュリティ・プロパティ・ファイル内に含まれる暗号化サービス・プロバイダ名を特定するために使用されます。
 .RE
 .PP
 \-providerClass \fIprovider_class_name\fR
 .RS 4
-�Ź沽�����ӥ����ץ��Х������������ƥ����ץ��ѥƥ����ե�����˻��ꤵ��Ƥ��ʤ��Ȥ��ϡ����Υޥ����������饹���ե������̾������ꤹ��Ȥ��˻��Ѥ���ޤ���
+暗号化サービス・プロバイダがセキュリティ・プロパティ・ファイルに指定されていないときは、そのマスター・クラス・ファイルの名前を指定するときに使用されます。
 .RE
 .PP
 \-providerArg \fIprovider_arg\fR
 .RS 4
-\fI\-providerClass\fR���ץ����ȤȤ�˻��Ѥ��졢\fIprovider_class_name\fR�Υ��󥹥ȥ饯���Υ��ץ�����ʸ�������ϰ�����ɽ���ޤ���
+\fI\-providerClass\fRオプションとともに使用され、\fIprovider_class_name\fRのコンストラクタのオプションの文字列入力引数を表します。
 .RE
 .PP
 \-protected
 .RS 4
-\fItrue\fR�ޤ���\fIfalse\fR�Τ����줫���ѥ���ɤ�����PIN�꡼�����ʤɤ��ݸ�줿ǧ�ڥѥ���ͳ�ǻ��ꤹ��ɬ�פ�������ϡ������ͤ�\fItrue\fR�˻��ꤹ��ɬ�פ�����ޤ���\fI\-importkeystore\fR���ޥ�ɤˤ�2�ĤΥ������ȥ�����Ϣ���Ƥ��뤿�ᡢ���������������ȥ��Ȱ��襭�����ȥ��ˤ��줾�켡��2�ĤΥ��ץ����\fI\-srcprotected\fR��\-\fIdestprotected\fR���Ѱդ���Ƥ��ޤ���
+\fItrue\fRまたは\fIfalse\fRのいずれか。パスワードを専用PINリーダーなどの保護された認証パス経由で指定する必要がある場合は、この値を\fItrue\fRに指定する必要があります。\fI\-importkeystore\fRコマンドには2つのキーストアが関連しているため、ソース・キーストアと宛先キーストアにそれぞれ次の2つのオプション、\fI\-srcprotected\fRと\-\fIdestprotected\fRが用意されています。
 .RE
 .PP
 \-ext \fI{name{:critical} {=value}}\fR
 .RS 4
-X\&.509�����񥨥����ƥ󥷥��򼨤��ޤ������Υ��ץ�����\fI\-genkeypair\fR�����\fI\-gencert\fR�ǻ��Ѥ��ơ���������������ޤ���\fI\-certreq\fR�˥������ƥ󥷥��������ߡ�������ꥯ�����Ȥǥꥯ�����Ȥ���륨�����ƥ󥷥��򼨤����Ȥ��Ǥ��ޤ������Υ��ץ�����ʣ�������Ǥ��ޤ���\fIname\fR�����ˤϡ����ݡ��Ȥ���Ƥ��륨�����ƥ󥷥��̾(̾���դ��������ƥ󥷥��򻲾�)�ޤ���Ǥ�դ�OID�ֹ�����Ǥ��ޤ������ꤵ��Ƥ����硢\fIvalue\fR�����ϥ������ƥ󥷥��ΰ�����ؤ��ޤ���\fIvalue\fR���ά������硢�������ƥ󥷥��Υǥե�����ͤޤ��ϥ������ƥ󥷥�󤬰�����ɬ�פȤ��ʤ����Ȥ򼨤��ޤ���\fI:critical\fR�����Ҥ����ꤵ�줿��硢�������ƥ󥷥���\fIisCritical\fR°����\fItrue\fR�ǡ����ꤵ��ʤ�����\fIfalse\fR�Ǥ���\fI:critical\fR�Τ�����\fI:c\fR����ѤǤ��ޤ���
+X\&.509証明書エクステンションを示します。このオプションを\fI\-genkeypair\fRおよび\fI\-gencert\fRで使用して、生成される証明書または\fI\-certreq\fRにエクステンションを埋め込み、証明書リクエストでリクエストされるエクステンションを示すことができます。このオプションは複数回指定できます。\fIname\fR引数には、サポートされているエクステンション名(名前付きエクステンションを参照)または任意のOID番号を指定できます。指定されている場合、\fIvalue\fR引数はエクステンションの引数を指します。\fIvalue\fRを省略した場合、エクステンションのデフォルト値またはエクステンションが引数を必要としないことを示します。\fI:critical\fR修飾子が指定された場合、エクステンションの\fIisCritical\fR属性は\fItrue\fRで、指定されない場合は\fIfalse\fRです。\fI:critical\fRのかわりに\fI:c\fRを使用できます。
 .RE
-.SH "̾���դ��������ƥ󥷥��"
+.SH "名前付きエクステンション"
 .PP
-\fIkeytool\fR���ޥ�ɤϡ�����̾���Υ������ƥ󥷥��򥵥ݡ��Ȥ��Ƥ��ޤ���̾������/��ʸ���϶��̤���ޤ���
+\fIkeytool\fRコマンドは、次の名前のエクステンションをサポートしています。名前の大/小文字は区別されません。
 .PP
-BC�ޤ���BasicContraints
+BCまたはBasicContraints
 .RS 4
-\fB��\fR: �����ʷ����ϼ��ΤȤ���Ǥ�:
-\fIca:{true|false}[,pathlen:<len>]\fR�ޤ���\fI<len>\fR(����ϡ�\fIca:true,pathlen:<len>\fR��û�̷��Ǥ�)��<\fIlen\fR>���ά����ȡ�\fIca:true\fR�ΰ�̣�ˤʤ�ޤ���
-.RE
-.PP
-KU�ޤ���KeyUsage
-.RS 4
-\fB��\fR:
-\fIusage\fR(\fIusage\fR)*��\fIusage\fR�ˤ�\fIdigitalSignature\fR��\fInonRepudiation\fR
-(contentCommitment)��\fIkeyEncipherment\fR��\fIdataEncipherment\fR��\fIkeyAgreement\fR��\fIkeyCertSign\fR��\fIcRLSign\fR��\fIencipherOnly\fR��\fIdecipherOnly\fR�Τ����줫�����Ǥ��ޤ���\fIusage\fR�����ϡ������Τˤʤ�ʤ������ꡢ�ǽ�ο�ʸ��(\fIdigitalSignature\fR�ξ���\fIdig\fR)�ޤ��ϥ����륱��������������(\fIdigitalSignature\fR�ξ���\fIdS\fR��\fIcRLSign\fR�ξ���\fIcRLS\fR)�Ǿ�άɽ���Ǥ��ޤ���\fIusage\fR�ͤϡ���ʸ���Ⱦ�ʸ�������̤���ޤ���
+\fB値\fR: 完全な形式は次のとおりです:
+\fIca:{true|false}[,pathlen:<len>]\fRまたは\fI<len>\fR(これは、\fIca:true,pathlen:<len>\fRの短縮形です)。<\fIlen\fR>を省略すると、\fIca:true\fRの意味になります。
 .RE
 .PP
-EKU�ޤ���ExtendedKeyUsage
+KUまたはKeyUsage
 .RS 4
-\fB��\fR:
-\fIusage\fR(\fIusage\fR)*��\fIusage\fR�ˤ�\fIanyExtendedKeyUsage\fR��\fIserverAuth\fR��\fIclientAuth\fR��\fIcodeSigning\fR��\fIemailProtection\fR��\fItimeStamping\fR��\fIOCSPSigning\fR�ޤ���Ǥ�դ�\fIOIDʸ����\fR�Τ����줫�����Ǥ��ޤ���\fIusage\fR�����ϡ������Τˤʤ�ʤ������ꡢ�ǽ�ο�ʸ���ޤ��ϥ����륱��������������Ǿ�άɽ���Ǥ��ޤ���\fIusage\fR�ͤϡ���ʸ���Ⱦ�ʸ�������̤���ޤ���
+\fB値\fR:
+\fIusage\fR(\fIusage\fR)*、\fIusage\fRには\fIdigitalSignature\fR、\fInonRepudiation\fR
+(contentCommitment)、\fIkeyEncipherment\fR、\fIdataEncipherment\fR、\fIkeyAgreement\fR、\fIkeyCertSign\fR、\fIcRLSign\fR、\fIencipherOnly\fR、\fIdecipherOnly\fRのいずれかを指定できます。\fIusage\fR引数は、不明確にならないかぎり、最初の数文字(\fIdigitalSignature\fRの場合は\fIdig\fR)またはキャメルケース・スタイル(\fIdigitalSignature\fRの場合は\fIdS\fR、\fIcRLSign\fRの場合は\fIcRLS\fR)で省略表記できます。\fIusage\fR値は、大文字と小文字が区別されます。
 .RE
 .PP
-SAN�ޤ���SubjectAlternativeName
+EKUまたはExtendedKeyUsage
 .RS 4
-\fB��\fR:
+\fB値\fR:
+\fIusage\fR(\fIusage\fR)*、\fIusage\fRには\fIanyExtendedKeyUsage\fR、\fIserverAuth\fR、\fIclientAuth\fR、\fIcodeSigning\fR、\fIemailProtection\fR、\fItimeStamping\fR、\fIOCSPSigning\fRまたは任意の\fIOID文字列\fRのいずれかを指定できます。\fIusage\fR引数は、不明確にならないかぎり、最初の数文字またはキャメルケース・スタイルで省略表記できます。\fIusage\fR値は、大文字と小文字が区別されます。
+.RE
+.PP
+SANまたはSubjectAlternativeName
+.RS 4
+\fB値\fR:
 \fItype\fR:\fIvalue\fR
-(t\fIype:value\fR)*��\fItype\fR�ˤ�\fIEMAIL\fR��\fIURI\fR��\fIDNS\fR��\fIIP\fR�ޤ���\fIOID\fR�����Ǥ��ޤ���\fIvalue\fR�����ϡ�\fItype\fR��ʸ����������ͤǤ���
+(t\fIype:value\fR)*、\fItype\fRには\fIEMAIL\fR、\fIURI\fR、\fIDNS\fR、\fIIP\fRまたは\fIOID\fRを指定できます。\fIvalue\fR引数は、\fItype\fRの文字列形式の値です。
 .RE
 .PP
-IAN�ޤ���IssuerAlternativeName
+IANまたはIssuerAlternativeName
 .RS 4
-\fB��\fR:
-\fISubjectAlternativeName\fR��Ʊ���Ǥ���
+\fB値\fR:
+\fISubjectAlternativeName\fRと同じです。
 .RE
 .PP
-SIA�ޤ���SubjectInfoAccess
+SIAまたはSubjectInfoAccess
 .RS 4
-\fB��\fR:
+\fB値\fR:
 \fImethod\fR:\fIlocation\-type\fR:\fIlocation\-value\fR
-(\fImethod:location\-type\fR:\fIlocation\-value\fR)*��\fImethod\fR�ˤ�\fItimeStamping\fR��\fIcaRepository\fR�ޤ���Ǥ�դ�OID�����Ǥ��ޤ���\fIlocation\-type\fR�����\fIlocation\-value\fR�����ˤϡ�\fISubjectAlternativeName\fR�������ƥ󥷥��ǥ��ݡ��Ȥ����Ǥ�դ�\fItype\fR:\fIvalue\fR�����Ǥ��ޤ���
+(\fImethod:location\-type\fR:\fIlocation\-value\fR)*、\fImethod\fRには\fItimeStamping\fR、\fIcaRepository\fRまたは任意のOIDを指定できます。\fIlocation\-type\fRおよび\fIlocation\-value\fR引数には、\fISubjectAlternativeName\fRエクステンションでサポートされる任意の\fItype\fR:\fIvalue\fRを指定できます。
 .RE
 .PP
-AIA�ޤ���AuthorityInfoAccess
+AIAまたはAuthorityInfoAccess
 .RS 4
-\fB��\fR:
-\fISubjectInfoAccess\fR��Ʊ���Ǥ���\fImethod\fR�����ˤϡ�\fIocsp\fR��\fIcaIssuers\fR�ޤ���Ǥ�դ�OID�����Ǥ��ޤ���
+\fB値\fR:
+\fISubjectInfoAccess\fRと同じです。\fImethod\fR引数には、\fIocsp\fR、\fIcaIssuers\fRまたは任意のOIDを指定できます。
 .RE
 .PP
-\fIname\fR��OID�ξ�硢OCTET STRING�����פ�Ĺ���ΥХ��Ȥ���������������ƥ󥷥��ˤĤ��Ƥϡ��ͤ�\fIextnValue\fR��16�ʥ���פ�DER���󥳡��ǥ��󥰤Ǥ���HEXʸ����Ǥϡ�ɸ���16�ʿ�(0\-9��a\-f��A\-F)�ʳ���ʸ����̵�뤵��ޤ����������äơ�01:02:03:04��01020304��ξ���Ȥ�Ʊ����ͤȤ��Ƽ����դ����ޤ����ͤ��ʤ���硢�������ƥ󥷥����ͥե�����ɤ϶��ˤʤ�ޤ���
+\fIname\fRがOIDの場合、OCTET STRINGタイプと長さのバイトを除外したエクステンションについては、値は\fIextnValue\fRの16進ダンプのDERエンコーディングです。HEX文字列では、標準の16進数(0\-9、a\-f、A\-F)以外の文字は無視されます。したがって、01:02:03:04と01020304の両方とも同一の値として受け付けられます。値がない場合、エクステンションの値フィールドは空になります。
 .PP
-\fI\-gencert\fR�ǤΤ߻��Ѥ���\fIhonored\fR�Ȥ������̤�̾���ϡ�������ꥯ�����Ȥ˴ޤޤ�륨�����ƥ󥷥���ͥ�褹����ˡ�򼨤��ޤ�������̾�����ͤϡ�\fIall\fR(�ꥯ�����Ȥ���뤹�٤ƤΥ������ƥ󥷥��ͥ�褵���)��\fIname{:[critical|non\-critical]}\fR(̾���դ��Υ������ƥ󥷥��ͥ�褵��뤬���̤�\fIisCritical\fR°������Ѥ���)�������\fI\-name\fR(\fIall\fR�ȤȤ�˻��Ѥ����㳰�򼨤�)�Υ���޶��ڤ�ꥹ�ȤǤ����ǥե���ȤǤϡ��ꥯ�����Ȥ���륨�����ƥ󥷥���ͥ�褵��ޤ���
+\fI\-gencert\fRでのみ使用する\fIhonored\fRという特別な名前は、証明書リクエストに含まれるエクステンションを優先する方法を示します。この名前の値は、\fIall\fR(リクエストされるすべてのエクステンションが優先される)、\fIname{:[critical|non\-critical]}\fR(名前付きのエクステンションが優先されるが、別の\fIisCritical\fR属性を使用する)、および\fI\-name\fR(\fIall\fRとともに使用し、例外を示す)のカンマ区切りリストです。デフォルトでは、リクエストされるエクステンションは優先されません。
 .PP
-\fI\-ext honored\fR���ץ����˲ä����̤�̾���Ρ��ޤ���OID
-\fI\-ext\fR�Υ��ץ�������ꤷ�����ϡ����Υ������ƥ󥷥�󤬡����Ǥ�ͥ�褵��Ƥ��륨�����ƥ󥷥����ɲä���ޤ���������������̾��(�ޤ���OID)��ͥ�褵����ͤǤ���Ѥ������ϡ������ͤȽ��������ꥯ�����Ȥ˴ޤޤ���Τ򥪡��С��饤�ɤ��ޤ���
+\fI\-ext honored\fRオプションに加え、別の名前の、またはOID
+\fI\-ext\fRのオプションを指定した場合は、このエクステンションが、すでに優先されているエクステンションに追加されます。ただし、この名前(またはOID)を優先される値でも使用した場合は、その値と重要性がリクエストに含まれるものをオーバーライドします。
 .PP
-\fIsubjectKeyIdentifier\fR�������ƥ󥷥��Ͼ�˺�������ޤ������ʽ�̾�Ǥʤ�������ξ��ϡ�\fIauthorityKeyIdentifier\fR����������ޤ���
+\fIsubjectKeyIdentifier\fRエクステンションは常に作成されます。自己署名でない証明書の場合は、\fIauthorityKeyIdentifier\fRが作成されます。
 .PP
-\fB����:\fR
-�桼�����ϡ��������ƥ󥷥��(����Ӿ������¾�Υե������)���ȹ礻�ˤ�äƤϡ����󥿡��ͥåȤ�ɸ��˽�򤷤ʤ���礬���뤳�Ȥ����դ��Ƥ���������������ν��˴ؤ���ٹ�򻲾Ȥ��Ƥ���������
-.SH "���ޥ��"
+\fB注意:\fR
+ユーザーは、エクステンション(および証明書の他のフィールド)の組合せによっては、インターネットの標準に準拠しない場合があることに注意してください。証明書の準拠に関する警告を参照してください。
+.SH "コマンド"
 .PP
 \-gencert
 .RS 4
 \fI{\-rfc} {\-infile infile} {\-outfile outfile} {\-alias alias} {\-sigalg sigalg} {\-dname dname} {\-startdate startdate {\-ext ext}* {\-validity valDays} [\-keypass keypass] {\-keystore keystore} [\-storepass storepass] {\-storetype storetype} {\-providername provider_name} {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v} {\-protected} {\-Jjavaoption}\fR
 .sp
-������ꥯ�����ȡ��ե�����(\fIkeytool\fR
-\fI\-certreq\fR���ޥ�ɤǺ�����ǽ)���Ф���쥹�ݥ󥹤Ȥ��ƾ�������������ޤ������Υ��ޥ�ɤϡ�\fIinfile\fR����(��ά�������ϡ�ɸ�����Ϥ���)�ꥯ�����Ȥ��ɤ߹��ߡ���̾����̩������Ѥ��Ƥ��Υꥯ�����Ȥ˽�̾���ơ�X\&.509�������\fIoutfile\fR��(��ά�������ϡ�ɸ����Ϥ�)���Ϥ��ޤ���\fI\-rfc\fR����ꤷ����硢���Ϸ�����BASE64��沽��PEM�ˤʤ�ޤ�������ʳ��ξ��ϡ��Х��ʥ�DER����������ޤ���
+証明書リクエスト・ファイル(\fIkeytool\fR
+\fI\-certreq\fRコマンドで作成可能)に対するレスポンスとして証明書を生成します。このコマンドは、\fIinfile\fRから(省略した場合は、標準入力から)リクエストを読み込み、別名の秘密鍵を使用してそのリクエストに署名して、X\&.509証明書を\fIoutfile\fRに(省略した場合は、標準出力に)出力します。\fI\-rfc\fRを指定した場合、出力形式はBASE64符号化のPEMになります。それ以外の場合は、バイナリDERが作成されます。
 .sp
-\fIsigalg\fR�ͤˤϡ�������˽�̾���դ���Ȥ��˻��Ѥ��륢�르�ꥺ�����ꤷ�ޤ���\fIstartdate\fR�����ϡ��������ͭ�����������Ǥ���\fIvalDays\fR�����ϡ��������ͭ�������򼨤��ޤ���
+\fIsigalg\fR値には、証明書に署名を付けるときに使用するアルゴリズムを指定します。\fIstartdate\fR引数は、証明書の有効開始日時です。\fIvalDays\fR引数は、証明書の有効日数を示します。
 .sp
-\fIdname\fR����ꤹ��ȡ���������������μ��ΤȤ��ƻ��Ѥ���ޤ�������ʳ��ξ��ϡ�������ꥯ�����Ȥ����̾�������Ѥ���ޤ���
+\fIdname\fRを指定すると、生成される証明書の主体として使用されます。それ以外の場合は、証明書リクエストからの名前が使用されます。
 .sp
-\fIext\fR�ͤϡ�������������ޤ��X\&.509�������ƥ󥷥��򼨤��ޤ���\fI\-ext\fR�ι�ʸ�ˤĤ��Ƥϡ����̥��ץ����򻲾Ȥ��Ƥ���������
+\fIext\fR値は、証明書に埋め込まれるX\&.509エクステンションを示します。\fI\-ext\fRの構文については、一般オプションを参照してください。
 .sp
-\fI\-gencert\fR���ץ�������Ѥ���ȡ�������������������Ǥ��ޤ���������Ǥϡ�\fIe1\fR�Ȥ����������������ޤ������ξ�����ξ������������ˤϡ�3�Ĥξ����񤬴ޤޤ�Ƥ��ޤ���
+\fI\-gencert\fRオプションを使用すると、証明書チェーンを作成できます。次の例では、\fIe1\fRという証明書を作成します。この証明書の証明書チェーンには、3つの証明書が含まれています。
 .sp
-���Υ��ޥ�ɤϡ�\fIca\fR��\fIca1\fR��\fIca2\fR�����\fIe1\fR��4�Ĥθ��ڥ���������ޤ���
+次のコマンドは、\fIca\fR、\fIca1\fR、\fIca2\fRおよび\fIe1\fRの4つの鍵ペアを作成します。
 .sp
 .if n \{\
 .RS 4
@@ -687,7 +687,7 @@ keytool \-alias e1 \-dname CN=E1 \-genkeypair
 .if n \{\
 .RE
 .\}
-����2�ĤΥ��ޥ�ɤϡ���̾�դ�������Υ��������������ޤ���\fIca\fR��\fIca1\fR�˽�̾����\fIca1\fR��\fIca2\fR�˽�̾���ޤ������٤Ƽ���ȯ�ԤǤ���
+次の2つのコマンドは、署名付き証明書のチェーンを作成します。\fIca\fRは\fIca1\fRに署名し、\fIca1\fRは\fIca2\fRに署名します。すべて自己発行です。
 .sp
 .if n \{\
 .RS 4
@@ -704,7 +704,7 @@ keytool \-alias ca2 \-certreq |
 .if n \{\
 .RE
 .\}
-���Υ��ޥ�ɤϡ�������\fIe1\fR��������ƥե�����\fIe1\&.cert\fR�˳�Ǽ���ޤ������ξ������\fIca2\fR�ˤ�äƽ�̾����ޤ������η�̡�\fIe1\fR�ξ������������ˤ�\fIca\fR��\fIca1\fR�����\fIca2\fR���ޤޤ�뤳�Ȥˤʤ�ޤ���
+次のコマンドは、証明書\fIe1\fRを作成してファイル\fIe1\&.cert\fRに格納します。この証明書は\fIca2\fRによって署名されます。その結果、\fIe1\fRの証明書チェーンには\fIca\fR、\fIca1\fRおよび\fIca2\fRが含まれることになります。
 .sp
 .if n \{\
 .RS 4
@@ -721,23 +721,23 @@ keytool \-alias e1 \-certreq | keytool \-alias ca2 \-gencert > e1\&.cert
 .RS 4
 \fI{\-alias alias} {\-keyalg keyalg} {\-keysize keysize} {\-sigalg sigalg} [\-dname dname] [\-keypass keypass] {\-startdate value} {\-ext ext}* {\-validity valDays} {\-storetype storetype} {\-keystore keystore} [\-storepass storepass] {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v} {\-protected} {\-Jjavaoption}\fR
 .sp
-���Υڥ�(����������Ӵ�Ϣ������̩��)���������ޤ�����������X\&.509 v3���ʽ�̾������ǥ�åפ���ޤ���������ϡ�ñ������Ǥ���ľ������������Ȥ��Ƴ�Ǽ����ޤ������ξ���������������̩���ϡ�alias�����ꤵ��뿷�����������ȥ�������ȥ�˳�Ǽ����ޤ���
+鍵のペア(公開鍵および関連する秘密鍵)を生成します。公開鍵はX\&.509 v3自己署名証明書でラップされます。証明書は、単一の要素を持つ証明書チェーンとして格納されます。この証明書チェーンと秘密鍵は、aliasで特定される新しいキーストア・エントリに格納されます。
 .sp
-\fIkeyalg\fR�ͤϸ��ڥ��������˻��Ѥ��륢�르�ꥺ���\fIkeysize\fR�ͤ���������Ƹ��Υ������򡢤��줾����ꤷ�ޤ���\fIsigalg\fR�ͤϡ����ʽ�̾������˽�̾���դ��뤿��˻��Ѥ��륢�르�ꥺ�����ꤷ�ޤ������Υ��르�ꥺ���\fIkeyalg\fR�ͤȸߴ���������ɬ�פ�����ޤ���
+\fIkeyalg\fR値は鍵ペアの生成に使用するアルゴリズムを、\fIkeysize\fR値は生成する各鍵のサイズを、それぞれ指定します。\fIsigalg\fR値は、自己署名証明書に署名を付けるために使用するアルゴリズムを指定します。このアルゴリズムは\fIkeyalg\fR値と互換性がある必要があります。
 .sp
-\fIdname\fR�ͤˤϡ�\fIalias\fR�ͤ˴�Ϣ�դ������ʽ�̾�������issuer�ե�����ɤ�subject�ե�����ɤȤ��ƻ��Ѥ���X\&.500����̾����ꤷ�ޤ������ޥ�ɥ饤��Ǽ���̾����ꤷ�ʤ��ä����ϡ�����̾�����Ϥ�����ޤ���
+\fIdname\fR値には、\fIalias\fR値に関連付け、自己署名証明書のissuerフィールドとsubjectフィールドとして使用するX\&.500識別名を指定します。コマンドラインで識別名を指定しなかった場合は、識別名の入力を求められます。
 .sp
-\fIkeypass\fR�ͤˤϡ���������븰�Υڥ��Τ�������̩�����ݸ��Τ˻��Ѥ���ѥ���ɤ���ꤷ�ޤ����ѥ���ɤ���ꤷ�ʤ��ä����ϡ��ѥ���ɤ����Ϥ�����ޤ������ΤȤ���\fI[Return]����\fR�򲡤��ȡ��������ȥ��Υѥ���ɤ�Ʊ���ѥ���ɤ����Υѥ���ɤ����ꤵ��ޤ���\fIkeypass\fR�ͤϡ�6ʸ���ʾ�ˤ���ɬ�פ�����ޤ���
+\fIkeypass\fR値には、生成される鍵のペアのうち、秘密鍵を保護するのに使用するパスワードを指定します。パスワードを指定しなかった場合は、パスワードの入力を求められます。このとき、\fI[Return]キー\fRを押すと、キーストアのパスワードと同じパスワードが鍵のパスワードに設定されます。\fIkeypass\fR値は、6文字以上にする必要があります。
 .sp
-\fIstartdate\fR�ͤˤϡ��������ȯ�Ի������ꤷ�ޤ�������ϡ�X\&.509������Ρ�Validity�ץե�����ɤΡ�Not Before���ͤȤ�ƤФ�ޤ���
+\fIstartdate\fR値には、証明書の発行時刻を指定します。これは、X\&.509証明書の「Validity」フィールドの「Not Before」値とも呼ばれます。
 .sp
-���ץ������ͤϡ�����2�Ĥη����Τ����줫������Ǥ��ޤ���
+オプションの値は、次の2つの形式のいずれかで設定できます。
 .sp
 \fI([+\-]nnn[ymdHMS])+\fR
 .sp
 \fI[yyyy/mm/dd] [HH:MM:SS]\fR
 .sp
-�ǽ�η����Ǥϡ�ȯ�Ի���ϡ����ꤵ����ͤ�ʬ�����ߤλ��狼��ܤ�ޤ������ꤵ����ͤϡ���Ϣ�β��̤��ͤ�Ϣ�뤷����Τˤʤ�ޤ������̤γ��ͤǡ��ץ饹����(��+��)�ϻ��֤��ʤळ�Ȥ򡢥ޥ��ʥ�����(��\-��)�ϻ��֤���뤳�Ȥ��̣���Ƥ��ޤ����ܤ���֤�\fInnn\fR�ǡ�ñ�̤�ǯ����������֡�ʬ�ޤ����äǤ�(���줾�졢1ʸ����\fIy\fR��\fIm\fR��\fId\fR��\fIH\fR��\fIM\fR�ޤ���\fIS\fR�פǼ�����Ƥ��ޤ�)�����̤γ��ͤ�\fIjava\&.util\&.GregorianCalendar\&.add(int field, int amount)\fR�᥽�åɤ���Ѥ��뤳�Ȥǡ�ȯ�Ի�����ɲä��ͤ������鱦�ط׻�����ޤ������Ȥ��С����ꤹ��ȡ�ȯ�Ի���ϼ��Τ褦�ˤʤ�ޤ���
+最初の形式では、発行時刻は、指定される値の分、現在の時刻から移ります。指定される値は、一連の下位の値を連結したものになります。下位の各値で、プラス記号(「+」)は時間が進むことを、マイナス記号(「\-」)は時間が戻ることを意味しています。移る時間は\fInnn\fRで、単位は年、月、日、時間、分または秒です(それぞれ、1文字の\fIy\fR、\fIm\fR、\fId\fR、\fIH\fR、\fIM\fRまたは\fIS\fR」で示されています)。下位の各値で\fIjava\&.util\&.GregorianCalendar\&.add(int field, int amount)\fRメソッドを使用することで、発行時刻の追加の値が左から右へ計算されます。たとえば、指定すると、発行時刻は次のようになります。
 .sp
 .if n \{\
 .RS 4
@@ -752,182 +752,182 @@ return c\&.getTime()
 .if n \{\
 .RE
 .\}
-2���ܤη����Ǥϡ��桼�����ϡ�ǯ/��/���Ȼ���:ʬ:�ä�2�Ĥ���ʬ�Ǹ�̩�ʳ��ϻ�������ꤷ�ޤ�(�ϸ��λ����Ӥ����)���桼�����ϡ�1�Ĥ���ʬ�Τߤ����Ǥ��ޤ�������ϡ��⤦1�Ĥ���ʬ�ϸ��ߤ�����(�ޤ��ϻ���)��Ʊ���ˤʤ�Ȥ������ȤǤ����桼�����ϡ�����������˼�����Ƥ���褦�ˡ������̩�˻��ꤹ��ɬ�פ�����ޤ�(û������0�����ޤ�)�����դȻ����ξ�������ꤵ�줿���֤ǡ�2�Ĥ���ʬ�δ֤˶���ʸ����1��(1�ĤΤ�)����ޤ������֤Ͼ��24���ַ����ǻ��ꤷ�Ƥ���������
+2番目の形式では、ユーザーは、年/月/日と時間:分:秒の2つの部分で厳密な開始時刻を設定します(地元の時間帯を使用)。ユーザーは、1つの部分のみを指定できます。これは、もう1つの部分は現在の日付(または時刻)と同じになるということです。ユーザーは、形式の定義に示されているように、桁数を厳密に指定する必要があります(短い場合は0で埋めます)。日付と時刻の両方が指定された状態で、2つの部分の間に空白文字が1つ(1つのみ)あります。時間は常に24時間形式で指定してください。
 .sp
-���ץ�������ꤷ�ʤ��ȡ��������դϸ��ߤλ���ˤʤ�ޤ������ץ����ϡ������1�����Ǥ��ޤ���
+オプションを指定しないと、開始日付は現在の時刻になります。オプションは、最大で1回指定できます。
 .sp
-\fIvalDays\fR���ͤˤϡ��������ͭ����������ꤷ�ޤ�(\fI\-startdate\fR�ǻ��ꤵ�줿���ա��ޤ���\fI\-startdate\fR�����ꤵ��Ƥ��ʤ����ϸ��ߤ����դ���Ϥޤ�ޤ�)��
+\fIvalDays\fRの値には、証明書の有効日数を指定します(\fI\-startdate\fRで指定された日付、または\fI\-startdate\fRが指定されていない場合は現在の日付から始まります)。
 .sp
-���Υ��ޥ�ɤϡ������Υ�꡼���Ǥ�\fI\-genkey\fR�Ȥ���̾���Ǥ��������Υ�꡼���Ǥϡ�����³���Ť�̾�������ݡ��Ȥ���Ƥ��ޤ�������ϡ�������̾��\fI\-genkeypair\fR��ͥ�褵��ޤ���
+このコマンドは、以前のリリースでは\fI\-genkey\fRという名前でした。このリリースでは、引き続き古い名前がサポートされています。今後は、新しい名前\fI\-genkeypair\fRが優先されます。
 .RE
 .PP
 \-genseckey
 .RS 4
 \fI\-genseckey {\-alias alias} {\-keyalg keyalg} {\-keysize keysize} [\-keypass keypass] {\-storetype storetype} {\-keystore keystore} [\-storepass storepass] {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v} {\-protected} {\-Jjavaoption}\fR
 .sp
-��̩����������������򿷤���\fIKeyStore\&.SecretKeyEntry\fR(\fIalias\fR�����ꤵ���)��˳�Ǽ���ޤ���
+秘密鍵を生成し、それを新しい\fIKeyStore\&.SecretKeyEntry\fR(\fIalias\fRで特定される)内に格納します。
 .sp
-\fIkeyalg\fR�ͤϸ��ڥ��������˻��Ѥ��륢�르�ꥺ���\fIkeysize\fR�ͤ���������Ƹ��Υ������򡢤��줾����ꤷ�ޤ���\fIkeypass\fR�ͤϡ���̩�����ݸ��ѥ���ɤǤ����ѥ���ɤ���ꤷ�ʤ��ä����ϡ��ѥ���ɤ����Ϥ�����ޤ������ΤȤ���[Return]�����򲡤��ȡ�\fIkeystore\fR�Υѥ���ɤ�Ʊ���ѥ���ɤ����Υѥ���ɤ����ꤵ��ޤ���\fIkeypass\fR�ͤϡ�6ʸ���ʾ�ˤ���ɬ�פ�����ޤ���
+\fIkeyalg\fR値は鍵ペアの生成に使用するアルゴリズムを、\fIkeysize\fR値は生成する各鍵のサイズを、それぞれ指定します。\fIkeypass\fR値は、秘密鍵を保護するパスワードです。パスワードを指定しなかった場合は、パスワードの入力を求められます。このとき、[Return]キーを押すと、\fIkeystore\fRのパスワードと同じパスワードが鍵のパスワードに設定されます。\fIkeypass\fR値は、6文字以上にする必要があります。
 .RE
 .PP
 \-importcert
 .RS 4
 \fI\-importcert {\-alias alias} {\-file cert_file} [\-keypass keypass] {\-noprompt} {\-trustcacerts} {\-storetype storetype} {\-keystore keystore} [\-storepass storepass] {\-providerName provider_name} {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v} {\-protected} {\-Jjavaoption}\fR
 .sp
-�ե�����\fIcert_file\fR���������ޤ��Ͼ������������(�������������ξ��ϡ�PKCS#7�����α����ޤ��ϰ�Ϣ��X\&.509��������󶡤������)���ɤ߹��ߡ�\fIalias\fR�ˤ�ä����ꤵ���\fIkeystore\fR����ȥ�˳�Ǽ���ޤ����ե����뤬���ꤵ��Ƥ��ʤ����ϡ�\fIstdin\fR���������ޤ��Ͼ��������������ɤ߹��ߤޤ���
+ファイル\fIcert_file\fRから証明書または証明書チェーン(証明書チェーンの場合は、PKCS#7形式の応答または一連のX\&.509証明書で提供されるもの)を読み込み、\fIalias\fRによって特定される\fIkeystore\fRエントリに格納します。ファイルが指定されていない場合は、\fIstdin\fRから証明書または証明書チェーンを読み込みます。
 .sp
-\fIkeytool\fR���ޥ�ɤǤϡ�X\&.509 v1��v2��v3�ξ����񡢤����PKCS#7�����ξ����񤫤鹽������Ƥ���PKCS#7�����ξ������������򥤥�ݡ��ȤǤ��ޤ�������ݡ��Ȥ���ǡ����ϡ��Х��ʥ���沽�������ޤ��Ͻ��ϲ�ǽ��沽����(Base64��沽�Ȥ�ƤФ��)�Τɤ��餫���󶡤���ɬ�פ�����ޤ������ϲ�ǽ��沽�����ϡ����󥿡��ͥå�RFC 1421��������沽���ʤ��������Ƥ��ޤ���������沽�����ξ�硢�������\fI\-\fR\fI\-\-\-\-BEGIN\fR�ǻϤޤ�ʸ����ǳ��Ϥ��졢\fI\-\-\-\-\-END\fR�ǻϤޤ�ʸ����ǽ�λ����ɬ�פ�����ޤ���
+\fIkeytool\fRコマンドでは、X\&.509 v1、v2、v3の証明書、およびPKCS#7形式の証明書から構成されているPKCS#7形式の証明書チェーンをインポートできます。インポートするデータは、バイナリ符号化方式、または出力可能符号化方式(Base64符号化とも呼ばれる)のどちらかで提供する必要があります。出力可能符号化方式は、インターネットRFC 1421証明書符号化規格で定義されています。この符号化方式の場合、証明書は\fI\-\fR\fI\-\-\-\-BEGIN\fRで始まる文字列で開始され、\fI\-\-\-\-\-END\fRで始まる文字列で終了する必要があります。
 .sp
-������ϡ�����Ǥ��������Υꥹ�Ȥ��ɲä��뤿�ᡢ�����ǧ�ڶ�(CA)�˾������̾�ꥯ�����Ȥ�����������̤Ȥ���CA���������������������򥤥�ݡ��Ȥ��뤿��(���ޥ�ɤ�\fI\-certreq\fR���ץ����򻲾�)�Ȥ���2�Ĥ���ͳ�ǥ���ݡ��Ȥ��ޤ���
+証明書は、信頼できる証明書のリストに追加するため、および認証局(CA)に証明書署名リクエストを送信した結果としてCAから受信した証明書応答をインポートするため(コマンドの\fI\-certreq\fRオプションを参照)という2つの理由でインポートします。
 .sp
-�ɤ���Υ����פΥ���ݡ��Ȥ�Ԥ����ϡ�\fI\-alias\fR���ץ������ͤˤ�äƻ��ꤷ�ޤ�����̾������������ȥ��ݥ���Ȥ��ʤ���硢\fIkeytool\fR���ޥ�ɤϥ桼����������Ǥ�������񥨥�ȥ���ɲä��褦�Ȥ��Ƥ����ΤȤߤʤ��ޤ������ξ�硢��̾���������ȥ����¸�ߤ��Ƥ��ʤ����Ȥ�ɬ�פǤ�����̾�����Ǥ�¸�ߤ��Ƥ����硢������̾�ο���Ǥ�������񤬤��Ǥ�¸�ߤ��뤳�Ȥˤʤ�Τǡ�\fIkeytool\fR���ޥ�ɤϥ��顼����Ϥ���������Υ���ݡ��Ȥ�Ԥ��ޤ�����̾������������ȥ��ݥ���Ȥ����硢\fIkeytool\fR���ޥ�ɤϥ桼����������������򥤥�ݡ��Ȥ��褦�Ȥ��Ƥ����ΤȤߤʤ��ޤ���
+どちらのタイプのインポートを行うかは、\fI\-alias\fRオプションの値によって指定します。別名がキー・エントリをポイントしない場合、\fIkeytool\fRコマンドはユーザーが信頼できる証明書エントリを追加しようとしているものとみなします。この場合、別名がキーストア内に存在していないことが必要です。別名がすでに存在している場合、その別名の信頼できる証明書がすでに存在することになるので、\fIkeytool\fRコマンドはエラーを出力し、証明書のインポートを行いません。別名がキー・エントリをポイントする場合、\fIkeytool\fRコマンドはユーザーが証明書応答をインポートしようとしているものとみなします。
 .RE
 .PP
 \-importpassword
 .RS 4
 \fI{\-alias alias} [\-keypass keypass] {\-storetype storetype} {\-keystore keystore} [\-storepass storepass] {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v} {\-protected} {\-Jjavaoption}\fR
 .sp
-�ѥ��ե졼���򥤥�ݡ��Ȥ���\fIalias\fR�Ǽ��̤���뿷��\fIKeyStore\&.SecretKeyEntry\fR�˳�Ǽ���ޤ����ѥ��ե졼���ϡ�ɸ�����ϥ��ȥ꡼���𤷤��󶡤Ǥ��ޤ����ޤ��ϡ��桼�����ˤ��Υץ���ץȤ�ɽ������ޤ���\fIkeypass\fR�ϡ�����ݡ��Ȥ����ѥ��ե졼�����ݸ�˻��Ѥ����ѥ���ɤǤ����ѥ���ɤ���ꤷ�ʤ��ä����ϡ��ѥ���ɤ����Ϥ�����ޤ������ΤȤ���[Return]�����򲡤��ȡ�\fIkeystore\fR�Υѥ���ɤ�Ʊ���ѥ���ɤ����Υѥ���ɤ����ꤵ��ޤ���\fIkeypass\fR�ϡ�6ʸ���ʾ�ˤ���ɬ�פ�����ޤ���
+パスフレーズをインポートし、\fIalias\fRで識別される新規\fIKeyStore\&.SecretKeyEntry\fRに格納します。パスフレーズは、標準入力ストリームを介して提供できます。または、ユーザーにそのプロンプトが表示されます。\fIkeypass\fRは、インポートされるパスフレーズの保護に使用されるパスワードです。パスワードを指定しなかった場合は、パスワードの入力を求められます。このとき、[Return]キーを押すと、\fIkeystore\fRのパスワードと同じパスワードが鍵のパスワードに設定されます。\fIkeypass\fRは、6文字以上にする必要があります。
 .RE
 .PP
 \-importkeystore
 .RS 4
 \fI{\-srcstoretype srcstoretype} {\-deststoretype deststoretype} [\-srcstorepass srcstorepass] [\-deststorepass deststorepass] {\-srcprotected} {\-destprotected} {\-srcalias srcalias {\-destalias destalias} [\-srckeypass srckeypass] } [\-destkeypass destkeypass] {\-noprompt} {\-srcProviderName src_provider_name} {\-destProviderName dest_provider_name} {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v} {\-protected} {\-Jjavaoption}\fR
 .sp
-���������������ȥ����饿�����åȡ��������ȥ��ء�ñ��Υ���ȥ�ޤ��Ϥ��٤ƤΥ���ȥ�򥤥�ݡ��Ȥ��ޤ���
+ソース・キーストアからターゲット・キーストアへ、単一のエントリまたはすべてのエントリをインポートします。
 .sp
-\fI\-srcalias\fR���ץ���󤬻��ꤵ�줿��硢���Υ��ޥ�ɤϡ�������̾�����ꤵ���ñ��Υ���ȥ�򥿡����åȡ��������ȥ��˥���ݡ��Ȥ��ޤ���\fIdestalias\fR��ͳ�ǥ������å���̾�����ꤵ��ʤ��ä���硢\fIsrcalias\fR���������å���̾�Ȥ��ƻ��Ѥ���ޤ����������Υ���ȥ꤬�ѥ���ɤ��ݸ��Ƥ�����硢\fIsrckeypass\fR����Ѥ��Ƥ��Υ���ȥ꤬��������ޤ���\fIsrckeypass\fR�����ꤵ��ʤ��ä���硢\fIkeytool\fR���ޥ�ɤ�\fIsrcstorepass\fR����Ѥ��Ƥ��Υ���ȥ��������褦�Ȥ��ޤ���\fIsrcstorepass\fR�����ꤵ��ʤ��ä����������ʤ��ä���硢�桼�����ϥѥ���ɤ����Ϥ�����ޤ����������åȤΥ���ȥ��\fIdestkeypass\fR�ˤ�ä��ݸ��ޤ���\fIdestkeypass\fR�����ꤵ��ʤ��ä���硢�������åȡ�����ȥ�ϥ�����������ȥ�Υѥ���ɤˤ�ä��ݸ��ޤ������Ȥ��С��ۤȤ�ɤΥ����ɡ��ѡ��ƥ����ġ���Ǥϡ�PKCS #12�������ȥ���\fIstorepass\fR��\fIkeypass\fR��Ʊ���Ǥ���ɬ�פ�����ޤ��������Υġ����PKCS #12�������ȥ������������ϡ����\fI\-destkeypass\fR��\fI\-deststorepass\fR��Ʊ���ˤʤ�褦�˻��ꤷ�ޤ���
+\fI\-srcalias\fRオプションが指定された場合、このコマンドは、その別名で特定される単一のエントリをターゲット・キーストアにインポートします。\fIdestalias\fR経由でターゲット別名が指定されなかった場合、\fIsrcalias\fRがターゲット別名として使用されます。ソースのエントリがパスワードで保護されていた場合、\fIsrckeypass\fRを使用してそのエントリが回復されます。\fIsrckeypass\fRが指定されなかった場合、\fIkeytool\fRコマンドは\fIsrcstorepass\fRを使用してそのエントリを回復しようとします。\fIsrcstorepass\fRが指定されなかったか正しくなかった場合、ユーザーはパスワードの入力を求められます。ターゲットのエントリは\fIdestkeypass\fRによって保護されます。\fIdestkeypass\fRが指定されなかった場合、ターゲット・エントリはソース・エントリのパスワードによって保護されます。たとえば、ほとんどのサード・パーティ・ツールでは、PKCS #12キーストアで\fIstorepass\fRと\fIkeypass\fRが同じである必要があります。これらのツールのPKCS #12キーストアを作成する場合は、常に\fI\-destkeypass\fRと\fI\-deststorepass\fRが同じになるように指定します。
 .sp
-\fI\-srcalias\fR���ץ���󤬻��ꤵ��ʤ��ä���硢���������������ȥ���Τ��٤ƤΥ���ȥ꤬�������åȡ��������ȥ���˥���ݡ��Ȥ���ޤ����ƥ������åȡ�����ȥ���б����륽����������ȥ����̾�β��˳�Ǽ����ޤ����������Υ���ȥ꤬�ѥ���ɤ��ݸ��Ƥ�����硢\fIsrcstorepass\fR����Ѥ��Ƥ��Υ���ȥ꤬��������ޤ���\fIsrcstorepass\fR�����ꤵ��ʤ��ä����������ʤ��ä���硢�桼�����ϥѥ���ɤ����Ϥ�����ޤ������������������ȥ���Τ��륨��ȥꡦ�����פ��������åȡ��������ȥ��ǥ��ݡ��Ȥ���Ƥ��ʤ����䡢���륨��ȥ�򥿡����åȡ��������ȥ��˳�Ǽ����ݤ˥��顼��ȯ��������硢�桼�����Ϥ��Υ���ȥ�򥹥��åפ��ƽ�����³�Ԥ��뤫�����뤤�Ͻ��������Ǥ��뤫�����������ޤ����������åȡ�����ȥ�ϥ�����������ȥ�Υѥ���ɤˤ�ä��ݸ��ޤ���
+\fI\-srcalias\fRオプションが指定されなかった場合、ソース・キーストア内のすべてのエントリがターゲット・キーストア内にインポートされます。各ターゲット・エントリは対応するソース・エントリの別名の下に格納されます。ソースのエントリがパスワードで保護されていた場合、\fIsrcstorepass\fRを使用してそのエントリが回復されます。\fIsrcstorepass\fRが指定されなかったか正しくなかった場合、ユーザーはパスワードの入力を求められます。ソース・キーストア内のあるエントリ・タイプがターゲット・キーストアでサポートされていない場合や、あるエントリをターゲット・キーストアに格納する際にエラーが発生した場合、ユーザーはそのエントリをスキップして処理を続行するか、あるいは処理を中断するかの選択を求められます。ターゲット・エントリはソース・エントリのパスワードによって保護されます。
 .sp
-�������å���̾���������åȡ��������ȥ���ˤ��Ǥ�¸�ߤ��Ƥ�����硢�桼�����ϡ����Υ���ȥ���񤭤��뤫�����뤤�ϰۤʤ���̾�β��ǿ���������ȥ��������뤫�����������ޤ���
+ターゲット別名がターゲット・キーストア内にすでに存在していた場合、ユーザーは、そのエントリを上書きするか、あるいは異なる別名の下で新しいエントリを作成するかの選択を求められます。
 .sp
 
-\fI\-noprompt\fR���ץ�������ꤷ����硢�桼�����Ͽ������������å���̾�����Ϥ�����ޤ��󡣴�¸�Υ���ȥ꤬���Υ������å���̾�Ǿ�񤭤���ޤ�������ݡ��ȤǤ��ʤ�����ȥ�ϥ����åפ��졢�ٹ𤬽��Ϥ���ޤ���
+\fI\-noprompt\fRオプションを指定した場合、ユーザーは新しいターゲット別名の入力を求められません。既存のエントリがそのターゲット別名で上書きされます。インポートできないエントリはスキップされ、警告が出力されます。
 .RE
 .PP
 \-printcertreq
 .RS 4
 \fI{\-file file}\fR
 .sp
-PKCS#10�����ξ�����ꥯ�����Ȥ����Ƥ���Ϥ��ޤ������Υꥯ�����Ȥϡ�\fIkeytool\fR
-\fI\-certreq\fR���ޥ�ɤ������Ǥ��ޤ������Υ��ޥ�ɤϡ��ե����뤫��ꥯ�����Ȥ��ɤ߼��ޤ����ե����뤬¸�ߤ��ʤ���硢�ꥯ�����Ȥ�ɸ�����Ϥ����ɤ߼���ޤ���
+PKCS#10形式の証明書リクエストの内容を出力します。このリクエストは、\fIkeytool\fR
+\fI\-certreq\fRコマンドで生成できます。このコマンドは、ファイルからリクエストを読み取ります。ファイルが存在しない場合、リクエストは標準入力から読み取られます。
 .RE
 .PP
 \-certreq
 .RS 4
 \fI{\-alias alias} {\-dname dname} {\-sigalg sigalg} {\-file certreq_file} [\-keypass keypass] {\-storetype storetype} {\-keystore keystore} [\-storepass storepass] {\-providerName provider_name} {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v} {\-protected} {\-Jjavaoption}\fR
 .sp
-PKCS#10��������Ѥ��ƾ������̾�ꥯ������(CSR)���������ޤ���
+PKCS#10形式を使用して証明書署名リクエスト(CSR)を生成します。
 .sp
-CSR�ϡ�������ȯ�Զ�(CA)���������뤳�Ȥ���Ū�Ȥ�����ΤǤ���CA�ϡ��������׵�Ԥ�(�̾�ϥ��ե饤���)ǧ�ڤ���������ޤ��Ͼ������������������֤��ޤ������ξ�����ޤ��Ͼ������������ϡ��������ȥ���δ�¸�ξ������������(�ǽ��1�Ĥμ��ʽ�̾�����񤫤鹽�������)���֤������ƻ��Ѥ��ޤ���
+CSRは、証明書発行局(CA)に送信することを目的としたものです。CAは、証明書要求者を(通常はオフラインで)認証し、証明書または証明書チェーンを送り返します。この証明書または証明書チェーンは、キーストア内の既存の証明書チェーン(最初は1つの自己署名証明書から構成される)に置き換えて使用します。
 .sp
-alias�˴�Ϣ�դ���줿��̩���ϡ�PKCS#10������ꥯ�����Ȥ��������Τ˻��Ѥ���ޤ�����̩���˥�����������ˤϡ��������ѥ���ɤ���ꤹ��ɬ�פ�����ޤ������ޥ�ɥ饤���\fIkeypass\fR����ꤷ�Ƥ��餺����̩���Υѥ���ɤ��������ȥ��Υѥ���ɤȰۤʤ���ϡ���̩���Υѥ���ɤ����Ϥ�����ޤ���\fIdname\fR�����ꤵ��Ƥ�����ϡ����줬CSR�Ǽ��ΤȤ��ƻ��Ѥ���ޤ�������ʳ��ξ��ϡ���̾�˴�Ϣ�դ���줿X\&.500����̾�����Ѥ���ޤ���
+aliasに関連付けられた秘密鍵は、PKCS#10証明書リクエストを作成するのに使用されます。秘密鍵にアクセスするには、正しいパスワードを指定する必要があります。コマンドラインで\fIkeypass\fRを指定しておらず、秘密鍵のパスワードがキーストアのパスワードと異なる場合は、秘密鍵のパスワードの入力を求められます。\fIdname\fRが指定されている場合は、それがCSRで主体として使用されます。それ以外の場合は、別名に関連付けられたX\&.500識別名が使用されます。
 .sp
-\fIsigalg\fR�ͤˤϡ�CSR�˽�̾���դ���Ȥ��˻��Ѥ��륢�르�ꥺ�����ꤷ�ޤ���
+\fIsigalg\fR値には、CSRに署名を付けるときに使用するアルゴリズムを指定します。
 .sp
-CSR�ϡ��ե�����certreq_file�˳�Ǽ����ޤ����ե����뤬���ꤵ��Ƥ��ʤ����ϡ�\fIstdout\fR��CSR�����Ϥ���ޤ���
+CSRは、ファイルcertreq_fileに格納されます。ファイルが指定されていない場合は、\fIstdout\fRにCSRが出力されます。
 .sp
-CA����Υ쥹�ݥ󥹤򥤥�ݡ��Ȥ���ˤϡ�\fIimportcert\fR���ޥ�ɤ���Ѥ��ޤ���
+CAからのレスポンスをインポートするには、\fIimportcert\fRコマンドを使用します。
 .RE
 .PP
 \-exportcert
 .RS 4
 \fI{\-alias alias} {\-file cert_file} {\-storetype storetype} {\-keystore keystore} [\-storepass storepass] {\-providerName provider_name} {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-rfc} {\-v} {\-protected} {\-Jjavaoption}\fR
 .sp
-\fIalias\fR�˴�Ϣ�դ���줿������򥭡����ȥ������ɤ߹��ߡ��ե�����cert_file�˳�Ǽ���ޤ����ե����뤬���ꤵ��Ƥ��ʤ����ϡ�\fIstdout\fR�˾����񤬽��Ϥ���ޤ���
+\fIalias\fRに関連付けられた証明書をキーストアから読み込み、ファイルcert_fileに格納します。ファイルが指定されていない場合は、\fIstdout\fRに証明書が出力されます。
 .sp
-�ǥե���ȤǤϡ�������ϥХ��ʥ���沽�ǽ��Ϥ���ޤ���\fI\-rfc\fR���ץ���󤬻��ꤵ��Ƥ����硢���ϲ�ǽ��沽�����ν��Ϥϥ��󥿡��ͥå�RFC 1421��������沽���ʤ��������ޤ���
+デフォルトでは、証明書はバイナリ符号化で出力されます。\fI\-rfc\fRオプションが指定されている場合、出力可能符号化方式の出力はインターネットRFC 1421証明書符号化規格で定義されます。
 .sp
-\fIalias\fR��������Ǥ��������򻲾Ȥ��Ƥ�����ϡ�������������񤬽��Ϥ���ޤ�������ʳ��ξ�硢\fIalias\fR�ϡ���Ϣ�դ���줿����������������ĸ�����ȥ�򻲾Ȥ��ޤ������ξ��ϡ�����������κǽ�ξ������֤���ޤ������ξ�����ϡ�\fIalias\fR�ˤ�ä�ɽ����륨��ƥ��ƥ��θ�������ǧ�ڤ��������Ǥ���
+\fIalias\fRが、信頼できる証明書を参照している場合は、該当する証明書が出力されます。それ以外の場合、\fIalias\fRは、関連付けられた証明書チェーンを持つ鍵エントリを参照します。この場合は、チェーン内の最初の証明書が返されます。この証明書は、\fIalias\fRによって表されるエンティティの公開鍵を認証する証明書です。
 .sp
-���Υ��ޥ�ɤϡ������Υ�꡼���Ǥ�\fI\-export\fR�Ȥ���̾���Ǥ��������Υ�꡼���Ǥϡ�����³���Ť�̾�������ݡ��Ȥ���Ƥ��ޤ�������ϡ�������̾��\fI\-exportcert\fR��ͥ�褵��ޤ���
+このコマンドは、以前のリリースでは\fI\-export\fRという名前でした。このリリースでは、引き続き古い名前がサポートされています。今後は、新しい名前\fI\-exportcert\fRが優先されます。
 .RE
 .PP
 \-list
 .RS 4
 \fI{\-alias alias} {\-storetype storetype} {\-keystore keystore} [\-storepass storepass] {\-providerName provider_name} {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v | \-rfc} {\-protected} {\-Jjavaoption}\fR
 .sp
-\fIalias\fR�����ꤵ��륭�����ȥ�������ȥ�����Ƥ�\fIstdout\fR�˽��Ϥ��ޤ���\fIalias\fR�����ꤵ��Ƥ��ʤ����ϡ��������ȥ����Τ����Ƥ�ɽ������ޤ���
+\fIalias\fRで特定されるキーストア・エントリの内容を\fIstdout\fRに出力します。\fIalias\fRが指定されていない場合は、キーストア全体の内容が表示されます。
 .sp
-���Υ��ޥ�ɤϡ��ǥե���ȤǤϾ������SHA1�ե��󥬡��ץ��Ȥ�ɽ�����ޤ���
-\fI\-v\fR���ץ���󤬻��ꤵ��Ƥ�����ϡ���ͭ�ԡ�ȯ�Լԡ����ꥢ���ֹ桢��ĥ��ǽ�ʤɤ��ղ�Ū�ʾ���ȤȤ�ˡ��ʹ֤��ɤळ�ȤΤǤ�������Ǿ�����ɽ������ޤ���\fI\-rfc\fR���ץ���󤬻��ꤵ��Ƥ�����ϡ����ϲ�ǽ��沽�����Ǿ���������Ƥ����Ϥ���ޤ������ϲ�ǽ��沽�����ϡ����󥿡��ͥå�RFC 1421��������沽���ʤ��������Ƥ��ޤ���
+このコマンドは、デフォルトでは証明書のSHA1フィンガープリントを表示します。
+\fI\-v\fRオプションが指定されている場合は、所有者、発行者、シリアル番号、拡張機能などの付加的な情報とともに、人間が読むことのできる形式で証明書が表示されます。\fI\-rfc\fRオプションが指定されている場合は、出力可能符号化方式で証明書の内容が出力されます。出力可能符号化方式は、インターネットRFC 1421証明書符号化規格で定義されています。
 .sp
-\fI\-v\fR���ץ�����\fI\-rfc\fR���ץ�����Ʊ���˻��ꤹ�뤳�ȤϤǤ��ޤ���
+\fI\-v\fRオプションと\fI\-rfc\fRオプションを同時に指定することはできません。
 .RE
 .PP
 \-printcert
 .RS 4
 \fI{\-file cert_file | \-sslserver host[:port]} {\-jarfile JAR_file {\-rfc} {\-v} {\-Jjavaoption}\fR
 .sp
-�ե�����cert_file��host:port�ˤ���SSL�����С����ޤ��Ͻ�̾�դ�JAR�ե�����\fIJAR_file\fR(\fI\-jarfile\fR���ץ��������)�����������ɤ߹��ߡ��ʹ֤��ɤळ�ȤΤǤ�������Ǿ���������Ƥ�ɽ�����ޤ����ݡ��Ȥ����ꤵ��Ƥ��ʤ����ϡ�ɸ���HTTPS�ݡ���443�����ꤵ��ޤ���\fI\-sslserver\fR�����\-file���ץ�����Ʊ���˻��ꤹ�뤳�ȤϤǤ��ޤ��󡣤����ȿ�����硢���顼����𤵤�ޤ������ץ���󤬻��ꤵ��Ƥ��ʤ����ϡ�\fIstdin\fR�����������ɤ߹��ߤޤ���
+ファイルcert_file、host:portにあるSSLサーバー、または署名付きJARファイル\fIJAR_file\fR(\fI\-jarfile\fRオプションを指定)から証明書を読み込み、人間が読むことのできる形式で証明書の内容を表示します。ポートが指定されていない場合は、標準のHTTPSポート443が想定されます。\fI\-sslserver\fRおよび\-fileオプションを同時に指定することはできません。これに反する場合、エラーが報告されます。オプションが指定されていない場合は、\fIstdin\fRから証明書を読み込みます。
 .sp
-\fI\-rfc\fR�����ꤵ��Ƥ����硢\fIkeytool\fR���ޥ�ɤϡ����󥿡��ͥå�RFC 1421��������沽ɸ����������Ƥ���褦�ˡ�PEM�⡼�ɤǾ��������Ϥ��ޤ������󥿡��ͥå�RFC 1421��������沽���ʤ򻲾Ȥ��Ƥ���������
+\fI\-rfc\fRが指定されている場合、\fIkeytool\fRコマンドは、インターネットRFC 1421証明書符号化標準で定義されているように、PEMモードで証明書を出力します。インターネットRFC 1421証明書符号化規格を参照してください。
 .sp
-�ե�����ޤ���\fIstdin\fR�����������ɤ߹����硢���ξ�����ϡ����󥿡��ͥå�RFC 1421��������沽ɸ����������Ƥ���褦�ˡ��Х��ʥ���沽�����ޤ��Ͻ��ϲ�ǽ��沽������ɽ���Ǥ��ޤ���
+ファイルまたは\fIstdin\fRから証明書を読み込む場合、その証明書は、インターネットRFC 1421証明書符号化標準で定義されているように、バイナリ符号化方式または出力可能符号化方式で表示できます。
 .sp
-SSL�����С����ե���������������ظ�ˤ�����ϡ�\fI\-J\-Dhttps\&.proxyHost=proxyhost\fR�����\fI\-J\-Dhttps\&.proxyPort=proxyport\fR���ץ����򥳥ޥ�ɥ饤��ǻ��ꤷ�ơ��ץ��������ȥ�ͥ�󥰤���ѤǤ��ޤ���http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/security/jsse/JSSERefGuide\&.html��
-��Java Secure Socket Extension (JSSE) Reference Guide�פ򻲾Ȥ��Ƥ�������
+SSLサーバーがファイアウォールの背後にある場合は、\fI\-J\-Dhttps\&.proxyHost=proxyhost\fRおよび\fI\-J\-Dhttps\&.proxyPort=proxyport\fRオプションをコマンドラインで指定して、プロキシ・トンネリングを使用できます。http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/security/jsse/JSSERefGuide\&.htmlの
+「Java Secure Socket Extension (JSSE) Reference Guide」を参照してください
 .sp
-\fB����:\fR
-���Υ��ץ����ϥ������ȥ��Ȥϴط��ʤ����ѤǤ��ޤ���
+\fB注意:\fR
+このオプションはキーストアとは関係なく使用できます。
 .RE
 .PP
 \-printcrl
 .RS 4
 \fI\-file crl_ {\-v}\fR
 .sp
-�ե�����\fIcrl_\fR��������񼺸��ꥹ��(CRL)���ɤ߹��ߤޤ���CRL�ϡ�ȯ�Ԥ���CA�ˤ�äƼ������줿�ǥ����������Υꥹ�ȤǤ���CA�ϡ�\fIcrl_\fR���������ޤ���
+ファイル\fIcrl_\fRから証明書失効リスト(CRL)を読み込みます。CRLは、発行したCAによって失効されたデジタル証明書のリストです。CAは、\fIcrl_\fRを生成します。
 .sp
-\fB����:\fR
-���Υ��ץ����ϥ������ȥ��Ȥϴط��ʤ����ѤǤ��ޤ���
+\fB注意:\fR
+このオプションはキーストアとは関係なく使用できます。
 .RE
 .PP
 \-storepasswd
 .RS 4
 \fI[\-new new_storepass] {\-storetype storetype} {\-keystore keystore} [\-storepass storepass] {\-providerName provider_name} {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v} {\-Jjavaoption}\fR
 .sp
-�������ȥ������Ƥ����������ݸ�뤿��˻��Ѥ���ѥ���ɤ��ѹ����ޤ���\fInew_storepass\fR�ˤϡ��������ѥ���ɤ���ꤷ�ޤ���new_storepass�ϡ�6ʸ���ʾ�Ǥ���ɬ�פ�����ޤ���
+キーストアの内容の整合性を保護するために使用するパスワードを変更します。\fInew_storepass\fRには、新しいパスワードを指定します。new_storepassは、6文字以上である必要があります。
 .RE
 .PP
 \-keypasswd
 .RS 4
 \fI{\-alias alias} [\-keypass old_keypass] [\-new new_keypass] {\-storetype storetype} {\-keystore keystore} [\-storepass storepass] {\-providerName provider_name} {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v} {\-Jjavaoption}\fR
 .sp
-\fIalias\fR�ˤ�ä����ꤵ��������/��̩�����ݸ�뤿��Υѥ���ɤ�\fIold_keypass\fR����\fInew_keypass\fR���ѹ����ޤ���new_keypass�ϡ�6ʸ���ʾ�Ǥ���ɬ�פ�����ޤ���
+\fIalias\fRによって特定される非公開/秘密鍵を保護するためのパスワードを、\fIold_keypass\fRから\fInew_keypass\fRに変更します。new_keypassは、6文字以上である必要があります。
 .sp
-���ޥ�ɥ饤���\fI\-keypass\fR���ץ�������ꤷ�Ƥ��餺�����Υѥ���ɤ��������ȥ��Υѥ���ɤȰۤʤ���ϡ����Υѥ���ɤ����Ϥ�����ޤ���
+コマンドラインで\fI\-keypass\fRオプションを指定しておらず、鍵のパスワードがキーストアのパスワードと異なる場合は、鍵のパスワードの入力を求められます。
 .sp
-���ޥ�ɥ饤���\fI\-new\fR���ץ�������ꤷ�ʤ��ä����ϡ��������ѥ���ɤ����Ϥ�����ޤ���
+コマンドラインで\fI\-new\fRオプションを指定しなかった場合は、新しいパスワードの入力を求められます。
 .RE
 .PP
 \-delete
 .RS 4
 \fI[\-alias alias] {\-storetype storetype} {\-keystore keystore} [\-storepass storepass] {\-providerName provider_name} {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v} {\-protected} {\-Jjavaoption}\fR
 .sp
-\fIalias\fR�ˤ�ä����ꤵ��륨��ȥ�򥭡����ȥ����������ޤ������ޥ�ɥ饤�����̾����ꤷ�ʤ��ä����ϡ���̾�����Ϥ�����ޤ���
+\fIalias\fRによって特定されるエントリをキーストアから削除します。コマンドラインで別名を指定しなかった場合は、別名の入力を求められます。
 .RE
 .PP
 \-changealias
 .RS 4
 \fI{\-alias alias} [\-destalias destalias] [\-keypass keypass] {\-storetype storetype} {\-keystore keystore} [\-storepass storepass] {\-providerName provider_name} {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v} {\-protected} {\-Jjavaoption}\fR
 .sp
-���ꤵ�줿\fIalias\fR���鿷������̾\fIdestalias\fR�ء���¸�Υ������ȥ�������ȥ���ư���ޤ����������å���̾����ꤷ�ʤ��ä���硢�������å���̾�����Ϥ�����ޤ������Υ���ȥ꤬����ȥꡦ�ѥ���ɤ��ݸ��Ƥ�����硢\fI\-keypass\fR���ץ����Ǥ��Υѥ���ɤ����Ǥ��ޤ������ѥ���ɤ����ꤵ��ʤ��ä���硢\fIstorepass\fR(���ꤵ�줿���)���ޤ���ߤ��ޤ������λ�ߤ����Ԥ���ȡ��桼�����ϥѥ���ɤ����Ϥ�����ޤ���
+指定された\fIalias\fRから新しい別名\fIdestalias\fRへ、既存のキーストア・エントリを移動します。ターゲット別名を指定しなかった場合、ターゲット別名の入力を求められます。元のエントリがエントリ・パスワードで保護されていた場合、\fI\-keypass\fRオプションでそのパスワードを指定できます。鍵パスワードが指定されなかった場合、\fIstorepass\fR(指定された場合)がまず試みられます。その試みが失敗すると、ユーザーはパスワードの入力を求められます。
 .RE
 .PP
 \-help
 .RS 4
-����Ū�ʥ��ޥ�ɤȤ��Υ��ץ����ΰ�����ɽ�����ޤ���
+基本的なコマンドとそのオプションの一覧を表示します。
 .sp
-����Υ��ޥ�ɤξܺ٤򻲾Ȥ���ˤϡ����Τ褦�����Ϥ��Ƥ�������:
-\fIkeytool \-command_name \-help\fR��\fIcommand_name\fR�ϥ��ޥ�ɤ�̾���Ǥ���
+特定のコマンドの詳細を参照するには、次のように入力してください:
+\fIkeytool \-command_name \-help\fR。\fIcommand_name\fRはコマンドの名前です。
 .RE
-.SH "��"
+.SH "例"
 .PP
-������Ǥϡ�����/��̩���Υڥ�����ӿ���Ǥ��륨��ƥ��ƥ�����ξ������������뤿��Υ������ȥ������������򼨤��ޤ���
-.SS "���Υڥ�������"
+この例では、公開/秘密鍵のペアおよび信頼できるエンティティからの証明書を管理するためのキーストアを作成する手順を示します。
+.SS "鍵のペアの生成"
 .PP
-�ޤ����������ȥ���������Ƹ��Υڥ����������ޤ���ñ��Ԥ����Ϥ��롢���Τ褦�ʥ��ޥ�ɤ���ѤǤ��ޤ���
+まず、キーストアを作成して鍵のペアを生成します。単一行に入力する、次のようなコマンドを使用できます。
 .sp
 .if n \{\
 .RS 4
@@ -942,11 +942,11 @@ keytool \-genkeypair \-dname "cn=Mark Jones, ou=Java, o=Oracle, c=US"
 .RE
 .\}
 .PP
-���ޥ�ɤϡ�working�ǥ��쥯�ȥ��\fImykeystore\fR�Ȥ���̾���Υ������ȥ��������(�������ȥ��Ϥޤ�¸�ߤ��Ƥ��ʤ��Ȳ���)�����������������ȥ��ˡ�\fI<new password for keystore>\fR�ǻ��ꤷ���ѥ���ɤ������Ƥޤ��������������������̩���Υڥ����б����륨��ƥ��ƥ��Ρּ���̾�פϡ��̾Τ�Mark Jones���ȿ�ñ�̤�Java���ȿ���Oracle��2ʸ���ι��ֹ椬US�Ǥ�������������̩���Υ������Ϥɤ����1024�ӥåȤǡ����κ����ˤϥǥե���Ȥ�DSA���������르�ꥺ�����Ѥ��ޤ���
+コマンドは、workingディレクトリに\fImykeystore\fRという名前のキーストアを作成し(キーストアはまだ存在していないと仮定)、作成したキーストアに、\fI<new password for keystore>\fRで指定したパスワードを割り当てます。生成する公開鍵と秘密鍵のペアに対応するエンティティの「識別名」は、通称がMark Jones、組織単位がJava、組織がOracle、2文字の国番号がUSです。公開鍵と秘密鍵のサイズはどちらも1024ビットで、鍵の作成にはデフォルトのDSA鍵生成アルゴリズムを使用します。
 .PP
-���Υ��ޥ�ɤϡ��ǥե���Ȥ�SHA1withDSA��̾���르�ꥺ�����Ѥ��ơ��������ȼ���̾�����ޤ༫�ʽ�̾�������������ޤ����������ͭ�����֤�180���Ǥ���������ϡ���̾\fIbusiness\fR�����ꤵ��륭�����ȥ�������ȥ������̩���˴�Ϣ�դ����ޤ�����̩���ˤϡ�\fI<new password for private key>\fR�ǻ��ꤷ���ѥ���ɤ�������Ƥ��ޤ���
+このコマンドは、デフォルトのSHA1withDSA署名アルゴリズムを使用して、公開鍵と識別名情報を含む自己署名証明書を作成します。証明書の有効期間は180日です。証明書は、別名\fIbusiness\fRで特定されるキーストア・エントリ内の秘密鍵に関連付けられます。秘密鍵には、\fI<new password for private key>\fRで指定したパスワードが割り当てられます。
 .PP
-���ץ����Υǥե�����ͤ���Ѥ����硢���ޥ�ɤ�������û���ʤ�ޤ������ξ�硢���ץ��������פǤ����ǥե�����ͤ���ĥ��ץ����Ǥϡ����ץ�������ꤷ�ʤ���Хǥե�����ͤ����Ѥ���ޤ���ɬ���ͤ����Ϥ�����ޤ������Ѳ�ǽ���ͤϼ��ΤȤ���Ǥ���
+オプションのデフォルト値を使用する場合、コマンドは大幅に短くなります。この場合、オプションは不要です。デフォルト値を持つオプションでは、オプションを指定しなければデフォルト値が使用されます。必須値の入力を求められます。使用可能な値は次のとおりです。
 .sp
 .if n \{\
 .RS 4
@@ -958,12 +958,12 @@ keytool \-genkeypair
 .RE
 .\}
 .PP
-���ξ��ϡ�\fImykey\fR�Ȥ�����̾�ǥ������ȥ�������ȥ꤬�������졢�������������줿���Υڥ��������90����ͭ���ʾ����񤬤��Υ���ȥ�˳�Ǽ����ޤ������Υ���ȥ�ϡ��ۡ��ࡦ�ǥ��쥯�ȥ����\fI\&.keystore\fR�Ȥ���̾���Υ������ȥ����֤���ޤ����������ȥ��ϡ��ޤ�¸�ߤ��Ƥ��ʤ����˺�������ޤ�������̾���󡢥������ȥ��Υѥ���ɤ������̩���Υѥ���ɤ����Ϥ�����ޤ���
+この場合は、\fImykey\fRという別名でキーストア・エントリが作成され、新しく生成された鍵のペア、および90日間有効な証明書がこのエントリに格納されます。このエントリは、ホーム・ディレクトリ内の\fI\&.keystore\fRという名前のキーストアに置かれます。キーストアは、まだ存在していない場合に作成されます。識別名情報、キーストアのパスワードおよび秘密鍵のパスワードの入力を求められます。
 .PP
-�ʹߤǤϡ����ץ�������ꤷ�ʤ���\fI\-genkeypair\fR���ޥ�ɤ�¹Ԥ�����ΤȤ�����򼨤��ޤ�����������Ϥ����줿���ϡ��ǽ�˼�����\fI\-genkeypair\fR���ޥ�ɤ��ͤ����Ϥ�����ΤȤ��ޤ������Ȥ��м���̾�ˤ�\fIcn=Mark Jones\fR��\fIou=Java\fR��\fIo=Oracle\fR��\fIc=US\fR�Ȼ��ꤷ�ޤ���
-.SS "CA����ν�̾�դ�������Υꥯ������"
+以降では、オプションを指定しないで\fI\-genkeypair\fRコマンドを実行したものとして例を示します。情報の入力を求められた場合は、最初に示した\fI\-genkeypair\fRコマンドの値を入力したものとします。たとえば識別名には\fIcn=Mark Jones\fR、\fIou=Java\fR、\fIo=Oracle\fR、\fIc=US\fRと指定します。
+.SS "CAからの署名付き証明書のリクエスト"
 .PP
-���ʽ�̾�������������븰�Υڥ���������������˾�����ȯ�Զ�(CA)�ν�̾���դ��Ƥ���С�¾�Υ桼������������񤬿��ꤵ����ǽ����⤯�ʤ�ޤ���CA�ν�̾���������ˤϡ��ޤ����������̾�ꥯ������(CSR)���������ޤ������Ȥ��С����Τ褦�ˤ��ޤ���
+自己署名証明書を作成する鍵のペアの生成。証明書に証明書発行局(CA)の署名が付いていれば、他のユーザーから証明書が信頼される可能性も高くなります。CAの署名を取得するには、まず、証明書署名リクエスト(CSR)を生成します。たとえば、次のようにします。
 .sp
 .if n \{\
 .RS 4
@@ -975,12 +975,12 @@ keytool \-certreq \-file MarkJ\&.csr
 .RE
 .\}
 .PP
-CSR(�ǥե������̾\fImykey\fR�ˤ�ä����ꤵ��륨��ƥ��ƥ���CSR)���������졢MarkJ\&.csr�Ȥ���̾���Υե�������֤���ޤ������Υե������CA (VeriSign�ʤ�)����Ф��ޤ���CA���׵�Ԥ�(�̾�ϥ��ե饤���)ǧ�ڤ����׵�Ԥθ�������ǧ�ڤ�����̾�դ��ξ�����������֤��ޤ������ˤ�äƤϡ�CA��������Υ���������֤����Ȥ⤢��ޤ���������Υ�������Ǥϡ��ƾ����񤬥���������Τ������ν�̾�Ԥθ�������ǧ�ڤ��ޤ���
-.SS "CA����ξ�����Υ���ݡ���"
+CSR(デフォルト別名\fImykey\fRによって特定されるエンティティのCSR)が作成され、MarkJ\&.csrという名前のファイルに置かれます。このファイルをCA (VeriSignなど)に提出します。CAは要求者を(通常はオフラインで)認証し、要求者の公開鍵を認証した署名付きの証明書を送り返します。場合によっては、CAが証明書のチェーンを返すこともあります。証明書のチェーンでは、各証明書がチェーン内のその前の署名者の公開鍵を認証します。
+.SS "CAからの証明書のインポート"
 .PP
-�����������ʽ�̾������ϡ����������������֤�������ɬ�פ�����ޤ����������������Ǥϡ��ƾ����񤬡��֥롼�ȡ�CA�����Ȥ������������μ��ξ�����ν�̾�Ԥθ�������ǧ�ڤ��ޤ���
+作成した自己署名証明書は、証明書チェーンで置き換える必要があります。証明書チェーンでは、各証明書が、「ルート」CAを起点とするチェーン内の次の証明書の署名者の公開鍵を認証します。
 .PP
-CA����ξ���������򥤥�ݡ��Ȥ���ˤϡ��������ȥ�����\fIcacerts\fR�������ȥ����ե��������1�İʾ�ο���Ǥ�������񤬤���ɬ�פ�����ޤ���\fI��\fR\-importcert���ޥ�ɤ򻲾Ȥ��Ƥ���������
+CAからの証明書応答をインポートするには、キーストアか、\fIcacerts\fRキーストア・ファイル内に1つ以上の信頼できる証明書がある必要があります。\fIの\fR\-importcertコマンドを参照してください。
 .sp
 .RS 4
 .ie n \{\
@@ -990,7 +990,7 @@ CA����ξ���������򥤥�ݡ��Ȥ���ˤϡ��������ȥ�����\fIcacerts\fR�������ȥ����
 .sp -1
 .IP \(bu 2.3
 .\}
-�����������������������ξ��ϡ���������κǾ�̾�����ɬ�פǤ���CA�θ�������ǧ�ڤ���롼��CA������
+証明応答が証明書チェーンの場合は、チェーンの最上位証明書が必要です。CAの公開鍵を認証するルートCA証明書。
 .RE
 .sp
 .RS 4
@@ -1001,14 +1001,14 @@ CA����ξ���������򥤥�ݡ��Ȥ���ˤϡ��������ȥ�����\fIcacerts\fR�������ȥ����
 .sp -1
 .IP \(bu 2.3
 .\}
-�����������ñ��ξ�����ξ��ϡ�ȯ��CA(��̾����)�ξ�����ɬ�פǤ������ξ����񤬼��ʽ�̾�Ǥʤ����ϡ����ν�̾�Ԥξ�����ɬ�פǤ��ꡢ���Τ褦�ˤ��Ƽ��ʽ�̾�롼�Ⱦ�����ɬ�פˤʤ�ޤ���
+証明書応答が単一の証明書の場合は、発行CA(署名した)の証明書が必要です。その証明書が自己署名でない場合は、その署名者の証明書が必要であり、このようにして自己署名ルート証明書が必要になります。
 .RE
 .PP
-\fIcacerts\fR�������ȥ����ե�����ϡ������Ĥ���VeriSign�롼��CA�������ޤ�����֤ǽв٤���Ƥ���Τǡ�VeriSign�ξ�����򡢿���Ǥ��������Ȥ��ƥ������ȥ���˥���ݡ��Ȥ���ɬ�פ��ʤ���礬����ޤ�����������¾��CA���Ф��ƽ�̾�դ��������ꥯ�����Ȥ��Ƥ��ơ�����CA�θ�������ǧ�ڤ�������񤬡�\fIcacerts\fR�ˤޤ��ɲä���Ƥ��ʤ����ϡ���������CA����ξ�����򡢡ֿ���Ǥ��������פȤ��ƥ���ݡ��Ȥ���ɬ�פ�����ޤ���
+\fIcacerts\fRキーストア・ファイルは、いくつかのVeriSignルートCA証明書を含んだ状態で出荷されているので、VeriSignの証明書を、信頼できる証明書としてキーストア内にインポートする必要がない場合があります。ただし、他のCAに対して署名付き証明書をリクエストしていて、このCAの公開鍵を認証する証明書が、\fIcacerts\fRにまだ追加されていない場合は、該当するCAからの証明書を、「信頼できる証明書」としてインポートする必要があります。
 .PP
-�̾CA����ξ�����ϡ����ʽ�̾�����񡢤ޤ���¾��CA�ˤ�äƽ�̾���줿������Ǥ�(��Ԥξ��ϡ���������¾��CA�θ�������ǧ�ڤ��������ɬ��)��ABC, Inc\&.,��CA�ǡ�ABC���鼫�ʽ�̾������Ǥ���A\fIBCCA\&.cer\fR�Ȥ���̾���Υե��������������Ȥ��ޤ�(���ξ������CA�θ�������ǧ�ڤ��ޤ�)������Ǥ��������Ȥ��ƾ�����򥤥�ݡ��Ȥ���Ȥ��ϡ�������ͭ���Ǥ��뤳�Ȥ��ǧ����ɬ�פ�����ޤ����ޤ���\fIkeytool \-printcert\fR���ޥ�ɤޤ���\fI\-noprompt\fR���ץ����ʤ���\fIkeytool \-importcert\fR���ޥ�ɤǤ����ɽ������ɽ�����줿������Υե��󥬡��ץ��Ȥ����Ԥ�����ΤȰ��פ��뤫�ɤ������ǧ���ޤ��������������������ʪ��Ϣ���������ο�ʪ���󼨤���(�ޤ��ϰ����ʸ������Υ�ݥ��ȥ�ˤ�ä��󼨤����)�ե��󥬡��ץ��Ȥȡ���Υ��ޥ�ɤ�ɽ�����줿�ե��󥬡��ץ��ȤȤ���Ӥ��ޤ����ե��󥬡��ץ��Ȥ����פ���С����������¾�β��Ԥ�(����Ԥʤ�)�ˤ�������Τ����ؤ����Ԥ��Ƥ��ʤ����Ȥ��ǧ�Ǥ��ޤ�����������Ǥ��μ�ι��⤬�Ԥ��Ƥ�����硢�����å���Ԥ鷺�˾�����򥤥�ݡ��Ȥ���ȡ�����Ԥˤ�äƽ�̾���줿���٤ƤΤ�Τ��ꤹ�뤳�Ȥˤʤ�ޤ���
+通常、CAからの証明書は、自己署名証明書、または他のCAによって署名された証明書です(後者の場合は、該当する他のCAの公開鍵を認証する証明書が必要)。ABC, Inc\&.,がCAで、ABCから自己署名証明書であるA\fIBCCA\&.cer\fRという名前のファイルを取得したとします(この証明書はCAの公開鍵を認証します)。信頼できる証明書として証明書をインポートするときは、証明書が有効であることを確認する必要があります。まず、\fIkeytool \-printcert\fRコマンドまたは\fI\-noprompt\fRオプションなしの\fIkeytool \-importcert\fRコマンドでそれを表示し、表示された証明書のフィンガープリントが期待されるものと一致するかどうかを確認します。証明書を送信した人物に連絡し、この人物が提示した(または安全な公開鍵のリポジトリによって提示される)フィンガープリントと、上のコマンドで表示されたフィンガープリントとを比較します。フィンガープリントが一致すれば、送信途中で他の何者か(攻撃者など)による証明書のすり替えが行われていないことを確認できます。送信途中でこの種の攻撃が行われていた場合、チェックを行わずに証明書をインポートすると、攻撃者によって署名されたすべてのものを信頼することになります。
 .PP
-������ͭ���Ǥ���ȿ��ꤹ����ϡ����Υ��ޥ�ɤǥ������ȥ����ɲäǤ��ޤ���
+証明書が有効であると信頼する場合は、次のコマンドでキーストアに追加できます。
 .sp
 .if n \{\
 .RS 4
@@ -1020,12 +1020,12 @@ keytool \-importcert \-alias abc \-file ABCCA\&.cer
 .RE
 .\}
 .PP
-ABCCA\&.cer�ե�����Υǡ�����ޤ࿮��Ǥ��������Υ���ȥ꤬�������ȥ���˺������졢�������륨��ȥ��\fIabc\fR�Ȥ�����̾��������Ƥ��ޤ���
-.SS "CA����ξ���������Υ���ݡ���"
+ABCCA\&.cerファイルのデータを含む信頼できる証明書のエントリがキーストア内に作成され、該当するエントリに\fIabc\fRという別名が割り当てられます。
+.SS "CAからの証明書応答のインポート"
 .PP
-�������̾�ꥯ�����Ȥ�������CA�θ�������ǧ�ڤ��������򥤥�ݡ��Ȥ������(�ޤ���Ʊ��ξ����񤬤��Ǥ�cacerts�ե��������¸�ߤ��Ƥ������)�����������򥤥�ݡ��Ȥ������ʽ�̾���������������������֤������뤳�Ȥ��Ǥ��ޤ������Υ�������ϡ�CA�α�������������ξ��ˡ��ꥯ�����Ȥ��Ф���쥹�ݥ󥹤Ȥ���CA���������֤��줿�������������Ǥ����ޤ���CA�α�����ñ��ξ�����ξ��ϡ����ξ��������ȡ�����ݡ�����Υ������ȥ���ޤ���\fIcacerts\fR�������ȥ��ե�������ˤ��Ǥ�¸�ߤ��뿮��Ǥ��������Ȥ���Ѥ��ƹ��ۤ����������������Ǥ���
+証明書署名リクエストの提出先のCAの公開鍵を認証する証明書をインポートした後は(または同種の証明書がすでにcacertsファイル内に存在している場合は)、証明応答をインポートし、自己署名証明書を証明書チェーンで置き換えることができます。このチェーンは、CAの応答がチェーンの場合に、リクエストに対するレスポンスとしてCAから送り返された証明書チェーンです。また、CAの応答が単一の証明書の場合は、この証明応答と、インポート先のキーストア内または\fIcacerts\fRキーストアファイル内にすでに存在する信頼できる証明書とを使用して構築した証明書チェーンです。
 .PP
-���Ȥ��С��������̾�ꥯ�����Ȥ�VeriSign�����������硢�����֤��줿�������̾����VSMarkJ\&.cer���Ȥ���ȡ����Τ褦�ˤ��Ʊ����򥤥�ݡ��ȤǤ��ޤ���
+たとえば、証明書署名リクエストをVeriSignに送信する場合、送り返された証明書の名前がVSMarkJ\&.cerだとすると、次のようにして応答をインポートできます。
 .sp
 .if n \{\
 .RS 4
@@ -1036,11 +1036,11 @@ keytool \-importcert \-trustcacerts \-file VSMarkJ\&.cer
 .if n \{\
 .RE
 .\}
-.SS "��������ǧ�ڤ��������Υ������ݡ���"
+.SS "公開鍵を認証する証明書のエクスポート"
 .PP
-\fIjarsigner\fR���ޥ�ɤ���Ѥ���Java Archive (JAR)�ե�����˽�̾�����硢���Υե��������Ѥ��륯�饤����ȤϽ�̾��ǧ�ڤ���ɬ�פ�����ޤ������饤����Ȥ���̾��ǧ�ڤ�����ˡ��1�Ĥˡ��ޤ���ʬ�θ������ξ��������Ǥ��륨��ȥ�Ȥ��ƥ��饤����ȤΥ������ȥ��˥���ݡ��Ȥ�����ˡ������ޤ���
+\fIjarsigner\fRコマンドを使用してJava Archive (JAR)ファイルに署名する場合、このファイルを使用するクライアントは署名を認証する必要があります。クライアントが署名を認証する方法の1つに、まず自分の公開鍵の証明書を信頼できるエントリとしてクライアントのキーストアにインポートする方法があります。
 .PP
-���Τ���ˤϡ�������򥨥����ݡ��Ȥ��ơ����饤����Ȥ��󶡤��ޤ�����Ȥ��ơ����Υ��ޥ�ɤ���Ѥ��ơ�MJ\&.cer�Ȥ���̾���Υե�����˾�����򥳥ԡ��Ǥ��ޤ������Υ��ޥ�ɤǤϡ�����ȥ����̾\fImykey\fR������Ȳ��ꤷ�Ƥ��ޤ���
+そのためには、証明書をエクスポートして、クライアントに提供します。例として、次のコマンドを使用して、MJ\&.cerという名前のファイルに証明書をコピーできます。このコマンドでは、エントリに別名\fImykey\fRがあると仮定しています。
 .sp
 .if n \{\
 .RS 4
@@ -1052,12 +1052,12 @@ keytool \-exportcert \-alias mykey \-file MJ\&.cer
 .RE
 .\}
 .PP
-������Ƚ�̾�դ�JAR�ե���������ꤷ�����饤����Ȥϡ�\fIjarsigner\fR���ޥ�ɤ���Ѥ��ƽ�̾��ǧ�ڤǤ��ޤ���
-.SS "�������ȥ��Υ���ݡ���"
+証明書と署名付きJARファイルを入手したクライアントは、\fIjarsigner\fRコマンドを使用して署名を認証できます。
+.SS "キーストアのインポート"
 .PP
-���ޥ��\fIimportkeystore\fR����Ѥ���С����륭�����ȥ������Τ��̤Υ������ȥ���˥���ݡ��ȤǤ��ޤ�������ϡ����������Ȥ��ä��������������ȥ���Τ��٤ƤΥ���ȥ꤬��ñ��Υ��ޥ�ɤ���Ѥ��ƥ������åȥ������ȥ���˥���ݡ��Ȥ���뤳�Ȥ��̣���ޤ������Υ��ޥ�ɤ���Ѥ���С��ۤʤ륿���פΥ������ȥ���˴ޤޤ�륨��ȥ�򥤥�ݡ��Ȥ��뤳�Ȥ��Ǥ��ޤ�������ݡ��Ȼ��ˤϡ��������åȡ��������ȥ���ο���������ȥ�Ϥ��٤ơ�����Ʊ����̾�����(��̩������̩���ξ���)�ݸ��ѥѥ���ɤ�����ޤ����������������ȥ���������/��̩����ꥫ�Х�Ǥ��ʤ���硢\fIkeytool\fR���ޥ�ɤϥ桼�����˥ѥ���ɤ����Ϥ���ޤ������Υ��ޥ�ɤϡ���̾�ν�ʣ�򸡽Ф���ȡ��桼�����˿�������̾�����Ϥ���ޤ����桼�����ϡ���������̾����ꤹ�뤳�Ȥ⡢ñ��˴�¸����̾�ξ�񤭤�\fIkeytool\fR���ޥ�ɤ˵��Ĥ��뤳�Ȥ�Ǥ��ޤ���
+コマンド\fIimportkeystore\fRを使用すれば、あるキーストアの全体を別のキーストア内にインポートできます。これは、鍵や証明書といったソースキーストア内のすべてのエントリが、単一のコマンドを使用してターゲットキーストア内にインポートされることを意味します。このコマンドを使用すれば、異なるタイプのキーストア内に含まれるエントリをインポートすることができます。インポート時には、ターゲット・キーストア内の新しいエントリはすべて、元と同じ別名および(秘密鍵や秘密鍵の場合は)保護用パスワードを持ちます。ソースキーストア内の非公開/秘密鍵をリカバリできない場合、\fIkeytool\fRコマンドはユーザーにパスワードの入力を求めます。このコマンドは、別名の重複を検出すると、ユーザーに新しい別名の入力を求めます。ユーザーは、新しい別名を指定することも、単純に既存の別名の上書きを\fIkeytool\fRコマンドに許可することもできます。
 .PP
-���Ȥ��С��̾��JKS�����פΥ������ȥ�key\&.jks��Υ���ȥ��PKCS#11�����פΥϡ��ɥ��������١����Υ������ȥ���˥���ݡ��Ȥ���ˤϡ����Υ��ޥ�ɤ���Ѥ��ޤ���
+たとえば、通常のJKSタイプのキーストアkey\&.jks内のエントリをPKCS#11タイプのハードウェア・ベースのキーストア内にインポートするには、次のコマンドを使用します。
 .sp
 .if n \{\
 .RS 4
@@ -1073,7 +1073,7 @@ keytool \-importkeystore
 .RE
 .\}
 .PP
-�ޤ���\fIimportkeystore\fR���ޥ�ɤ���Ѥ���С����륽�������������ȥ����ñ��Υ���ȥ�򥿡����åȡ��������ȥ��˥���ݡ��Ȥ��뤳�Ȥ�Ǥ��ޤ������ξ��ϡ�����Υ��ץ����˲ä��ơ�����ݡ��Ȥ�����̾����ꤹ��ɬ�פ�����ޤ���\fI\-srcalias\fR���ץ�������ꤹ����ˤϡ��������å���̾�⥳�ޥ�ɥ饤�󤫤����Ǥ���ۤ�����̩/��̩�����ݸ��ѥѥ���ɤ䥿�����å��ݸ��ѥѥ���ɤ����Ǥ��ޤ���������ˡ�򼨤����ޥ�ɤ򼡤˼����ޤ���
+また、\fIimportkeystore\fRコマンドを使用すれば、あるソース・キーストア内の単一のエントリをターゲット・キーストアにインポートすることもできます。この場合は、前例のオプションに加えて、インポートする別名を指定する必要があります。\fI\-srcalias\fRオプションを指定する場合には、ターゲット別名もコマンドラインから指定できるほか、秘密/秘密鍵の保護用パスワードやターゲット保護用パスワードも指定できます。その方法を示すコマンドを次に示します。
 .sp
 .if n \{\
 .RS 4
@@ -1092,9 +1092,9 @@ keytool \-importkeystore
 .if n \{\
 .RE
 .\}
-.SS "SSL�����С��ξ����������"
+.SS "SSLサーバーの証明書の生成"
 .PP
-���ˡ�3�ĤΥ���ƥ��ƥ����Ĥޤ�롼��CA(\fIroot\fR)�����CA(\fIca\fR)�����SSL�����С�(\fIserver\fR)�Ѥθ��ڥ��Ⱦ��������������\fIkeytool\fR���ޥ�ɤ򼨤��ޤ������٤Ƥξ������Ʊ���������ȥ��˳�Ǽ����褦�ˤ��Ƥ�����������������Ǥϡ�RSA���侩����븰�Υ��르�ꥺ��Ǥ���
+次に、3つのエンティティ、つまりルートCA(\fIroot\fR)、中間CA(\fIca\fR)およびSSLサーバー(\fIserver\fR)用の鍵ペアと証明書を生成する\fIkeytool\fRコマンドを示します。すべての証明書を同じキーストアに格納するようにしてください。これらの例では、RSAが推奨される鍵のアルゴリズムです。
 .sp
 .if n \{\
 .RS 4
@@ -1120,30 +1120,30 @@ cat root\&.pem ca\&.pem server\&.pem |
 .if n \{\
 .RE
 .\}
-.SH "�Ѹ�"
+.SH "用語"
 .PP
-�������ȥ�
+キーストア
 .RS 4
-�������ȥ��ϡ��Ź沽�θ��Ⱦ�������Ǽ���뤿��ε�ǽ�Ǥ���
+キーストアは、暗号化の鍵と証明書を格納するための機能です。
 .RE
 .PP
-�������ȥ��Υ���ȥ�
+キーストアのエントリ
 .RS 4
-�������ȥ��ˤϰۤʤ륿���פΥ���ȥ��ޤ�뤳�Ȥ��Ǥ��ޤ���\fIkeytool\fR���ޥ�ɤǺǤ�Ŭ���ϰϤι�������ȥꡦ�����פϡ�����2�ĤǤ���
+キーストアには異なるタイプのエントリを含めることができます。\fIkeytool\fRコマンドで最も適用範囲の広いエントリ・タイプは、次の2つです。
 .sp
-\fB���Υ���ȥ�\fR
-\- �ƥ���ȥ�ϡ����˽��פʰŹ沽�θ��ξ�����ݻ����ޤ������ξ���ϡ����Ĥ��Ƥ��ʤ������������ɤ�����ˡ��ݸ�줿���ǳ�Ǽ����ޤ������̤ˡ����μ�Υ���ȥ�Ȥ��Ƴ�Ǽ����븰�ϡ���̩�������б�����������ξ�������������ȼ����̩���Ǥ����������������򻲾Ȥ��Ƥ���������\fIkeytool\fR���ޥ�ɤ�����ξ���Υ����פΥ���ȥ������Ǥ���Τ��Ф���\fIjarsigner\fR�ġ���ϸ�ԤΥ����פΥ���ȥꡢ�Ĥޤ���̩���Ȥ���˴�Ϣ�դ���줿�������������Τߤ�������ޤ���
+\fB鍵のエントリ\fR
+\- 各エントリは、非常に重要な暗号化の鍵の情報を保持します。この情報は、許可していないアクセスを防ぐために、保護された形で格納されます。一般に、この種のエントリとして格納される鍵は、秘密鍵か、対応する公開鍵の証明書チェーンを伴う秘密鍵です。証明書チェーンを参照してください。\fIkeytool\fRコマンドがこの両方のタイプのエントリを処理できるのに対し、\fIjarsigner\fRツールは後者のタイプのエントリ、つまり秘密鍵とそれに関連付けられた証明書チェーンのみを処理します。
 .sp
-\fB����Ǥ��������Υ���ȥ�\fR: �ƥ���ȥ�ϡ��軰�Ԥ���θ������������1�Ĵޤ�Ǥ��ޤ������Υ���ȥ�ϡ�����Ǥ��������ȸƤФ�ޤ�������ϡ���������θ����������������Subject(��ͭ��)�ˤ�ä����ꤵ��륢���ǥ�ƥ��ƥ���ͳ�褹���ΤǤ��뤳�Ȥ򡢥������ȥ��ν�ͭ�Ԥ����ꤹ�뤫��Ǥ����������ȯ�ԼԤϡ�������˽�̾���դ��뤳�Ȥˤ�äơ��������Ƥ��ݾڤ��ޤ���
+\fB信頼できる証明書のエントリ\fR: 各エントリは、第三者からの公開鍵証明書を1つ含んでいます。このエントリは、信頼できる証明書と呼ばれます。それは、証明書内の公開鍵が、証明書のSubject(所有者)によって特定されるアイデンティティに由来するものであることを、キーストアの所有者が信頼するからです。証明書の発行者は、証明書に署名を付けることによって、その内容を保証します。
 .RE
 .PP
-�������ȥ�����̾
+キーストアの別名
 .RS 4
-�������ȥ��Τ��٤ƤΥ���ȥ�(������ӿ���Ǥ�������񥨥�ȥ�)�ϡ���դ���̾��𤷤ƥ�����������ޤ���
+キーストアのすべてのエントリ(鍵および信頼できる証明書エントリ)は、一意の別名を介してアクセスされます。
 .sp
-��̾����ꤹ��Τϡ�\fI\-genseckey\fR���ޥ�ɤ���Ѥ�����̩�������������ꡢ\fI\-genkeypair\fR���ޥ�ɤ���Ѥ��Ƹ��ڥ�(����������̩��)�����������ꡢ\fI\-importcert\fR���ޥ�ɤ���Ѥ��ƾ�����ޤ��Ͼ���������������Ǥ��������Υꥹ�Ȥ��ɲä���ʤɡ�����Υ���ƥ��ƥ��򥭡����ȥ����ɲä�����Ǥ�������ʸ塢\fIkeytool\fR���ޥ�ɤǥ���ƥ��ƥ��򻲾Ȥ�����ϡ����ΤȤ��˻��ꤷ����̾����Ѥ���ɬ�פ�����ޤ���
+別名を指定するのは、\fI\-genseckey\fRコマンドを使用して秘密鍵を生成したり、\fI\-genkeypair\fRコマンドを使用して鍵ペア(公開鍵と秘密鍵)を生成したり、\fI\-importcert\fRコマンドを使用して証明書または証明書チェーンを信頼できる証明書のリストに追加するなど、特定のエンティティをキーストアに追加する場合です。これ以後、\fIkeytool\fRコマンドでエンティティを参照する場合は、このときに指定した別名を使用する必要があります。
 .sp
-���Ȥ��С�\fIduke\fR�Ȥ�����̾����Ѥ��ƿ���������������̩���Υڥ������������������򼫸ʽ�̾������ǥ�åפ���Ȥ��ޤ������ξ��ϡ����Υ��ޥ�ɤ�¹Ԥ��ޤ����������������򻲾Ȥ��Ƥ���������
+たとえば、\fIduke\fRという別名を使用して新しい公開鍵と秘密鍵のペアを生成し、公開鍵を自己署名証明書でラップするとします。この場合は、次のコマンドを実行します。証明書チェーンを参照してください。
 .sp
 .if n \{\
 .RS 4
@@ -1154,7 +1154,7 @@ keytool \-genkeypair \-alias duke \-keypass dukekeypasswd
 .if n \{\
 .RE
 .\}
-������Ǥϡ�����ѥ���ɤȤ���\fIdukekeypasswd\fR����ꤷ�Ƥ��ޤ����ʸ塢��̾\fIduke\fR�˴�Ϣ�դ���줿��̩���˥����������륳�ޥ�ɤ�¹Ԥ���Ȥ��ϡ����Υѥ���ɤ�ɬ�פˤʤ�ޤ���Duke����̩���Υѥ���ɤ򤢤Ȥ����ѹ�����ˤϡ����Υ��ޥ�ɤ�¹Ԥ��ޤ���
+この例では、初期パスワードとして\fIdukekeypasswd\fRを指定しています。以後、別名\fIduke\fRに関連付けられた秘密鍵にアクセスするコマンドを実行するときは、このパスワードが必要になります。Dukeの秘密鍵のパスワードをあとから変更するには、次のコマンドを実行します。
 .sp
 .if n \{\
 .RS 4
@@ -1165,29 +1165,29 @@ keytool \-keypasswd \-alias duke \-keypass dukekeypasswd \-new newpass
 .if n \{\
 .RE
 .\}
-�ѥ���ɤ���\fIdukekeypasswd\fR����\fInewpass\fR���ѹ�����ޤ����ƥ��Ȥ���Ū�Ȥ����硢�ޤ��ϰ����Ǥ��뤳�Ȥ��狼�äƤ��륷���ƥ�Ǽ¹Ԥ�����ʳ��ϡ����ޥ�ɥ饤��䥹����ץȤǥѥ���ɤ���ꤷ�ʤ��Ǥ���������ɬ�פʥѥ���ɤΥ��ץ����򥳥ޥ�ɥ饤��ǻ��ꤷ�ʤ��ä����ϡ��ѥ���ɤ����Ϥ�����ޤ���
+パスワードが、\fIdukekeypasswd\fRから\fInewpass\fRに変更されます。テストを目的とする場合、または安全であることがわかっているシステムで実行する場合以外は、コマンドラインやスクリプトでパスワードを指定しないでください。必要なパスワードのオプションをコマンドラインで指定しなかった場合は、パスワードの入力を求められます。
 .RE
 .PP
-�������ȥ��μ���
+キーストアの実装
 .RS 4
-\fIjava\&.security\fR�ѥå��������󶡤���Ƥ���\fIKeyStore\fR���饹�ϡ��������ȥ���ξ���ؤΥ�����������Ӿ�����ѹ���Ԥ�����Ρ����Τ�������줿���󥿥ե��������󶡤��ޤ����������ȥ��θ�������Ȥ��Ƥϡ����줾�줬����Υ����פΥ������ȥ����оݤȤ���ʣ���ΰۤʤ������¸�߲�ǽ�Ǥ���
+\fIjava\&.security\fRパッケージで提供されている\fIKeyStore\fRクラスは、キーストア内の情報へのアクセスおよび情報の変更を行うための、明確に定義されたインタフェースを提供します。キーストアの固定実装としては、それぞれが特定のタイプのキーストアを対象とする複数の異なる実装が存在可能です。
 .sp
-���ߡ�\fIkeytool\fR��\fIjarsigner\fR��2�ĤΥ��ޥ�ɥ饤�󡦥ġ���ȡ�Policy Tool�Ȥ���̾����GUI�١����Υġ��뤬���������ȥ��μ�������Ѥ��Ƥ��ޤ���\fIKeyStore\fR���饹��\fIpublic\fR�Ǥ��뤿�ᡢ�桼������KeyStore����Ѥ���¾�Υ������ƥ������ץꥱ������������Ǥ��ޤ���
+現在、\fIkeytool\fRと\fIjarsigner\fRの2つのコマンドライン・ツールと、Policy Toolという名前のGUIベースのツールが、キーストアの実装を使用しています。\fIKeyStore\fRクラスは\fIpublic\fRであるため、ユーザーはKeyStoreを使用した他のセキュリティ・アプリケーションも作成できます。
 .sp
-�������ȥ��ˤϡ�Oracle���󶡤����ȹ��ߤΥǥե���Ȥμ���������ޤ�������ϡ�JKS�Ȥ���̾�����ȼ��Υ������ȥ���������(����)�����Ѥ����Τǡ��������ȥ���ե�����Ȥ��Ƽ������Ƥ��ޤ������μ����Ǥϡ��ġ�����̩���ϸ��̤Υѥ���ɤˤ�ä��ݸ�졢�������ȥ����Τ���������(��̩���Ȥ��̤�)�ѥ���ɤˤ�ä��ݸ��ޤ���
+キーストアには、Oracleが提供する組込みのデフォルトの実装があります。これは、JKSという名前の独自のキーストア・タイプ(形式)を利用するもので、キーストアをファイルとして実装しています。この実装では、個々の秘密鍵は個別のパスワードによって保護され、キーストア全体の整合性も(秘密鍵とは別の)パスワードによって保護されます。
 .sp
-�������ȥ��μ����ϡ��ץ��Х����١����Ǥ�������Ū�ˤϡ�\fIKeyStore\fR�ˤ�ä��󶡤���륢�ץꥱ������󡦥��󥿥ե������������ӥ����ץ��Х��������󥿥ե�����(SPI)�˴�Ť��Ƽ�������ޤ����Ĥޤꡢ�б�����\fIKeystoreSpi\fR��ݥ��饹(�����\fIjava\&.security\fR�ѥå������˴ޤޤ�Ƥ��ޤ�)�����ꡢ���Υ��饹�����ץ��Х�������������ɬ�פΤ���Service Provider Interface�Υ᥽�åɤ�������Ƥ��ޤ��������ǡ�\fI�ץ��Х���\fR�Ȥϡ�Java Security API�ˤ�äƥ���������ǽ�ʥ����ӥ��Υ��֥��åȤ��Ф������θ���������󶡤���ѥå������ޤ��ϥѥå������ν���Τ��ȤǤ����������ȥ��μ������󶡤���ˤϡ�http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/security/crypto/HowToImplAProvider\&.html�ˤ���
-Java�Ź沽�������ƥ�����Υץ��Х����μ�����ˡ���������Ƥ���褦�ˡ����饤����Ȥϥץ��Х������������\fIKeystoreSpi\fR���֥��饹�μ������󶡤���ɬ�פ�����ޤ���
+キーストアの実装は、プロバイダベースです。具体的には、\fIKeyStore\fRによって提供されるアプリケーション・インタフェースがサービス・プロバイダ・インタフェース(SPI)に基づいて実装されます。つまり、対応する\fIKeystoreSpi\fR抽象クラス(これも\fIjava\&.security\fRパッケージに含まれています)があり、このクラスが、プロバイダが実装する必要のあるService Provider Interfaceのメソッドを定義しています。ここで、\fIプロバイダ\fRとは、Java Security APIによってアクセス可能なサービスのサブセットに対し、その固定実装を提供するパッケージまたはパッケージの集合のことです。キーストアの実装を提供するには、http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/security/crypto/HowToImplAProvider\&.htmlにある
+Java暗号化アーキテクチャのプロバイダの実装方法で説明しているように、クライアントはプロバイダを実装し、\fIKeystoreSpi\fRサブクラスの実装を提供する必要があります。
 .sp
-���ץꥱ�������Ǥϡ�\fIKeyStore\fR���饹���󶡤���\fIgetInstance\fR�ե����ȥꡦ�᥽�åɤ���Ѥ��뤳�Ȥǡ��͡��ʥץ��Х�������ۤʤ륿���פΥ������ȥ��μ���������Ǥ��ޤ����������ȥ��Υ����פϡ��������ȥ�����γ�Ǽ�����ȥǡ����������������ȤȤ�ˡ��������ȥ���������/��̩���ȥ������ȥ������������ݸ�뤿��˻��Ѥ���륢�르�ꥺ���������ޤ����ۤʤ륿���פΥ������ȥ��μ����ˤϡ��ߴ����Ϥ���ޤ���
+アプリケーションでは、\fIKeyStore\fRクラスが提供する\fIgetInstance\fRファクトリ・メソッドを使用することで、様々なプロバイダから異なるタイプのキーストアの実装を選択できます。キーストアのタイプは、キーストア情報の格納形式とデータ形式を定義するとともに、キーストア内の非公開/秘密鍵とキーストアの整合性を保護するために使用されるアルゴリズムを定義します。異なるタイプのキーストアの実装には、互換性はありません。
 .sp
-\fIkeytool\fR���ޥ�ɤϡ�Ǥ�դΥե�����١����Υ������ȥ�������ư��ޤ������ޥ�ɡ��饤����Ϥ��줿�������ȥ��ξ���ե�����̾�Ȥ��ư��äơ�\fIFileInputStream\fR���Ѵ������������饭�����ȥ����������ɤ��ޤ���\fIjarsigner\fR�����\fIpolicytool\fR���ޥ�ɤϡ�URL�ǻ���Ǥ���Ǥ�դξ�꤫�饭�����ȥ����ɤ߼�뤳�Ȥ��Ǥ��ޤ���
+\fIkeytool\fRコマンドは、任意のファイルベースのキーストア実装で動作します。コマンド・ラインで渡されたキーストアの場所をファイル名として扱って、\fIFileInputStream\fRに変換し、ここからキーストア情報をロードします。\fIjarsigner\fRおよび\fIpolicytool\fRコマンドは、URLで指定できる任意の場所からキーストアを読み取ることができます。
 .sp
-\fIkeytool\fR��\fIjarsigner\fR�ξ�硢\fI\-storetype\fR���ץ�������Ѥ��ƥ��ޥ�ɥ饤��ǥ������ȥ��Υ����פ����Ǥ��ޤ���Policy Tool�ξ��ϡ��֥������ȥ��ץ�˥塼�ˤ�äƥ������ȥ��Υ����פ����Ǥ��ޤ���
+\fIkeytool\fRと\fIjarsigner\fRの場合、\fI\-storetype\fRオプションを使用してコマンドラインでキーストアのタイプを指定できます。Policy Toolの場合は、「キーストア」メニューによってキーストアのタイプを指定できます。
 .sp
-�桼�������������ȥ��Υ����פ�����Ū�˻��ꤷ�ʤ��ä���硢�������ƥ����ץ��ѥƥ����ե�����ǻ��ꤵ�줿\fIkeystore\&.type\fR�ץ��ѥƥ����ͤ˴�Ť��ơ��ġ���ˤ�äƥ������ȥ��μ��������򤵤�ޤ������Υ������ƥ����ץ��ѥƥ����ե������\fIjava\&.security\fR�ȸƤФ졢Windows�Ǥϥ������ƥ����ץ��ѥƥ����ǥ��쥯�ȥ�\fIjava\&.home\elib\esecurity\fR��Oracle Solaris�Ǥ�\fIjava\&.home/lib/security\fR�ˤ���ޤ���\fIjava\&.home\fR�ϡ��¹Ի��Ķ��Υǥ��쥯�ȥ�Ǥ���\fIjre\fR�ǥ��쥯�ȥ�ϡ�SDK�ޤ���Java Runtime Environment (JRE)�κǾ�̤Υǥ��쥯�ȥ�ˤ���ޤ���
+ユーザーがキーストアのタイプを明示的に指定しなかった場合、セキュリティ・プロパティ・ファイルで指定された\fIkeystore\&.type\fRプロパティの値に基づいて、ツールによってキーストアの実装が選択されます。このセキュリティ・プロパティ・ファイルは\fIjava\&.security\fRと呼ばれ、Windowsではセキュリティ・プロパティ・ディレクトリ\fIjava\&.home\elib\esecurity\fR、Oracle Solarisでは\fIjava\&.home/lib/security\fRにあります。\fIjava\&.home\fRは、実行時環境のディレクトリです。\fIjre\fRディレクトリは、SDKまたはJava Runtime Environment (JRE)の最上位のディレクトリにあります。
 .sp
-�ƥġ���ϡ�\fIkeystore\&.type\fR���ͤ�������������ͤǻ��ꤵ�줿�����פΥ������ȥ���������Ƥ���ץ��Х��������Ĥ���ޤǡ����ߥ��󥹥ȡ��뤵��Ƥ��뤹�٤ƤΥץ��Х�����Ĵ�٤ޤ������Υץ��Х�������Υ������ȥ��μ�������Ѥ��ޤ���\fIKeyStore\fR���饹���������Ƥ���static�᥽�å�\fIgetDefaultType\fR����Ѥ���ȡ����ץꥱ�������䥢�ץ�åȤ���\fIkeystore\&.type\fR�ץ��ѥƥ����ͤ�����Ǥ��ޤ������Υ����ɤϡ��ǥե���ȤΥ������ȥ���������(\fIkeystore\&.type\fR�ץ��ѥƥ��ǻ��ꤵ�줿������)�Υ��󥹥��󥹤��������ޤ���
+各ツールは、\fIkeystore\&.type\fRの値を取得し、この値で指定されたタイプのキーストアを実装しているプロバイダが見つかるまで、現在インストールされているすべてのプロバイダを調べます。そのプロバイダからのキーストアの実装を使用します。\fIKeyStore\fRクラスに定義されているstaticメソッド\fIgetDefaultType\fRを使用すると、アプリケーションやアプレットから\fIkeystore\&.type\fRプロパティの値を取得できます。次のコードは、デフォルトのキーストア・タイプ(\fIkeystore\&.type\fRプロパティで指定されたタイプ)のインスタンスを生成します。
 .sp
 .if n \{\
 .RS 4
@@ -1198,7 +1198,7 @@ KeyStore keyStore = KeyStore\&.getInstance(KeyStore\&.getDefaultType());
 .if n \{\
 .RE
 .\}
-�ǥե���ȤΥ������ȥ��������פ�\fIjks\fR�ǡ������Oracle���󶡤����ȼ��Υ����פΥ������ȥ��μ����Ǥ�������ϡ��������ƥ����ץ��ѥƥ����ե�������μ��ιԤˤ�äƻ��ꤵ��Ƥ��ޤ���
+デフォルトのキーストア・タイプは\fIjks\fRで、これはOracleが提供する独自のタイプのキーストアの実装です。これは、セキュリティ・プロパティ・ファイル内の次の行によって指定されています。
 .sp
 .if n \{\
 .RS 4
@@ -1209,7 +1209,7 @@ keystore\&.type=jks
 .if n \{\
 .RE
 .\}
-�ƥġ���ǥǥե���Ȱʳ��Υ������ȥ��μ�������Ѥ���ˤϡ���ιԤ��ѹ������̤Υ������ȥ��Υ����פ���ꤷ�ޤ������Ȥ��С�\fIpkcs12\fR�ȸƤФ�륭�����ȥ��Υ����פΥ������ȥ��μ������󶡤���ץ��Х������ѥå������������硢�Ԥ򼡤Τ褦���ѹ����ޤ���
+各ツールでデフォルト以外のキーストアの実装を使用するには、上の行を変更して別のキーストアのタイプを指定します。たとえば、\fIpkcs12\fRと呼ばれるキーストアのタイプのキーストアの実装を提供するプロバイダ・パッケージがある場合、行を次のように変更します。
 .sp
 .if n \{\
 .RS 4
@@ -1220,56 +1220,56 @@ keystore\&.type=pkcs12
 .if n \{\
 .RE
 .\}
-\fB����:\fR
-�������ȥ��Υ����פλ���Ǥϡ���ʸ���Ⱦ�ʸ���϶��̤���ޤ��󡣤��Ȥ��С�JKS��jks��Ʊ����ΤȤ��ư����ޤ���
+\fB注意:\fR
+キーストアのタイプの指定では、大文字と小文字は区別されません。たとえば、JKSとjksは同じものとして扱われます。
 .RE
 .PP
-������
+証明書
 .RS 4
-������(������������)�Ȥϡ����륨��ƥ��ƥ�(ȯ�Լ�)����Υǥ������̾�դ���ʸ��Τ��ȤǤ���������ˤϡ�¾�Τ��륨��ƥ��ƥ�(��̾��)�θ�����(����Ӥ���¾�ξ���)�����̤��ͤ���äƤ��뤳�Ȥ��񤫤�Ƥ��ޤ��������Ѹ�ϡ�������˴�Ϣ���Ƥ��ޤ���
+証明書(公開鍵証明書)とは、あるエンティティ(発行者)からのデジタル署名付きの文書のことです。証明書には、他のあるエンティティ(署名者)の公開鍵(およびその他の情報)が特別な値を持っていることが書かれています。次の用語は、証明書に関連しています。
 .sp
-\fB������\fR: �������ϡ�����Υ���ƥ��ƥ��˴�Ϣ�դ���줿���Ǥ����������ϡ��������륨��ƥ��ƥ��Ȥδ֤˿���Ǥ���ط������ɬ�פ����뤹�٤Ƥοͤ��Ф��Ƹ������뤳�Ȥ�տޤ�����ΤǤ����������ϡ���̾�򸡾ڤ���Τ˻��Ѥ���ޤ���
+\fB公開鍵\fR: 公開鍵は、特定のエンティティに関連付けられた数です。公開鍵は、該当するエンティティとの間に信頼できる関係を持つ必要があるすべての人に対して公開することを意図したものです。公開鍵は、署名を検証するのに使用されます。
 .sp
-\fB�ǥ������̾\fR: �ǡ������ǥ������̾�����ȡ����Υǡ����ϡ�����ƥ��ƥ��Υ����ǥ�ƥ��ƥ��ȡ����Υ���ƥ��ƥ����ǡ��������ƤˤĤ����ΤäƤ��뤳�Ȥ�����񤹤��̾�ȤȤ�˳�Ǽ����ޤ�������ƥ��ƥ�����̩������Ѥ��ƥǡ����˽�̾���դ���ȡ��ǡ����ε�¤���Բ�ǽ�ˤʤ�ޤ���
+\fBデジタル署名\fR: データがデジタル署名されると、そのデータは、エンティティのアイデンティティと、そのエンティティがデータの内容について知っていることを証明書する署名とともに格納されます。エンティティの秘密鍵を使用してデータに署名を付けると、データの偽造は不可能になります。
 .sp
-\fB�����ǥ�ƥ��ƥ�\fR: ����ƥ��ƥ��򥢥ɥ쥹���ꤹ����Τ���ˡ�������ƥ�ˤ�äƤϡ��������򥢥��ǥ�ƥ��ƥ��ˤ����Τ�����ޤ�����������¾�ˤ⡢Oracle Solaris UID���Żҥ᡼�롦���ɥ쥹��X\&.509����̾�ʤɡ��͡��ʤ�Τ򥢥��ǥ�ƥ��ƥ��Ȥ��뤳�Ȥ��Ǥ��ޤ���
+\fBアイデンティティ\fR: エンティティをアドレス指定する既知の方法。システムによっては、公開鍵をアイデンティティにするものがあります。公開鍵の他にも、Oracle Solaris UIDや電子メール・アドレス、X\&.509識別名など、様々なものをアイデンティティとすることができます。
 .sp
-\fB��̾\fR: ��̾�ϡ��ʤ�餫�Υǡ������˥���ƥ��ƥ�����̩������Ѥ��Ʒ׻�����ޤ�����̾�ԡ�������ξ���ȯ�ԼԤȤ�ƤФ�ޤ���
+\fB署名\fR: 署名は、なんらかのデータを基にエンティティの秘密鍵を使用して計算されます。署名者、証明書の場合は発行者とも呼ばれます。
 .sp
-\fB��̩��\fR: ��̩��������Υ���ƥ��ƥ��Τߤ��ΤäƤ�����Τ��Ȥǡ����ο��Τ��Ȥ򡢤��Υ���ƥ��ƥ�����̩���Ȥ����ޤ�����̩���ϡ�¾���Τ��ʤ��褦����̩�ˤ��Ƥ������Ȥ�����ˤʤäƤ��ޤ�����̩���ȸ������ϡ����٤Ƥθ������Ź沽�����ƥ���Фˤʤä�¸�ߤ��Ƥ��ޤ���DSA�ʤɤ�ŵ��Ū�ʸ������Ź沽�����ƥ�ξ�硢1�Ĥ���̩�������Τ�1�Ĥθ��������б����ޤ�����̩���ϡ���̾��׻�����Τ˻��Ѥ���ޤ���
+\fB秘密鍵\fR: 秘密鍵は特定のエンティティのみが知っている数のことで、この数のことを、そのエンティティの秘密鍵といいます。秘密鍵は、他に知られないように秘密にしておくことが前提になっています。秘密鍵と公開鍵は、すべての公開鍵暗号化システムで対になって存在しています。DSAなどの典型的な公開鍵暗号化システムの場合、1つの秘密鍵は正確に1つの公開鍵に対応します。秘密鍵は、署名を計算するのに使用されます。
 .sp
-\fB����ƥ��ƥ�\fR: ����ƥ��ƥ��ϡ��͡��ȿ����ץ�����ࡢ����ԥ塼������ȡ���Ԥʤɡ�������ٹ礤�ǿ�����оݤȤʤ��͡��ʤ�Τ�ؤ��ޤ���
+\fBエンティティ\fR: エンティティは、人、組織、プログラム、コンピュータ、企業、銀行など、一定の度合いで信頼の対象となる様々なものを指します。
 .sp
-�������Ź沽�Ǥϡ��桼�����θ������˥�����������ɬ�פ�����ޤ����絬�Ϥʥͥåȥ���Ķ��Ǥϡ��ߤ����̿����Ƥ��륨��ƥ��ƥ��֤ǰ����δط�����³����Ω����Ƥ���Ȳ��ꤷ���ꡢ���Ѥ���Ƥ��뤹�٤Ƥθ���������᤿����Ǥ����ݥ��ȥ꤬¸�ߤ���Ȳ��ꤷ���ꤹ�뤳�Ȥ��Բ�ǽ�Ǥ������Τ褦�ʸ����������ۤ˴ؤ���������褹�뤿��˾����񤬹ͰƤ���ޤ��������ߤǤϡ�������ȯ�Զ�(CA)������Ǥ����軰�ԤȤ��Ƶ�ǽ���ޤ���CA�ϡ�¾�Υ���ƥ��ƥ��ξ�����˽�̾����(ȯ�Ԥ���)�԰٤򡢿��ꤷ��Ǥ����Ƥ��륨��ƥ��ƥ�(��Ȥʤ�)�Ǥ���CA��ˡΧ��η���˹�«�����Τǡ�ͭ�����Ŀ���Ǥ��������Τߤ���������ΤȤ��ư����ޤ���VeriSign��Thawte��Entrust��Ϥ��ᡢ¿���θ�Ū�ʾ�����ȯ�Զɤ�¸�ߤ��ޤ���
+公開鍵暗号化では、ユーザーの公開鍵にアクセスする必要があります。大規模なネットワーク環境では、互いに通信しているエンティティ間で以前の関係が引続き確立されていると仮定したり、使用されているすべての公開鍵を収めた信頼できるリポジトリが存在すると仮定したりすることは不可能です。このような公開鍵の配布に関する問題を解決するために証明書が考案されました。現在では、証明書発行局(CA)が信頼できる第三者として機能します。CAは、他のエンティティの証明書に署名する(発行する)行為を、信頼して任されているエンティティ(企業など)です。CAは法律上の契約に拘束されるので、有効かつ信頼できる証明書のみを作成するものとして扱われます。VeriSign、Thawte、Entrustをはじめ、多くの公的な証明書発行局が存在します。
 .sp
-Microsoft��ǧ�ڥ����С���Entrust��CA���ʤʤɤ��°�ȿ�������Ѥ���С��ȼ��ξ�����ȯ�Զɤ򱿱Ĥ��뤳�Ȥ��ǽ�Ǥ���\fIkeytool\fR���ޥ�ɤ���Ѥ���ȡ��������ɽ��������ݡ��Ȥ���ӥ������ݡ��Ȥ�Ԥ����Ȥ��Ǥ��ޤ����ޤ������ʽ�̾��������������뤳�Ȥ�Ǥ��ޤ���
+Microsoftの認証サーバー、EntrustのCA製品などを所属組織内で利用すれば、独自の証明書発行局を運営することも可能です。\fIkeytool\fRコマンドを使用すると、証明書の表示、インポートおよびエクスポートを行うことができます。また、自己署名証明書を生成することもできます。
 .sp
-���ߡ�\fIkeytool\fR���ޥ�ɤ�X\&.509��������оݤˤ��Ƥ��ޤ���
+現在、\fIkeytool\fRコマンドはX\&.509証明書を対象にしています。
 .RE
 .PP
-X\&.509������
+X\&.509証明書
 .RS 4
-X\&.509���ʤǤϡ�������˴ޤ������������Ƥ��ꡢ���ξ���������˽񤭹�����ˡ(�ǡ�������)�ˤĤ��Ƥ⵭�Ҥ���Ƥ��ޤ���������Τ��٤ƤΥǡ����ϡ�ASN\&.1/DER�ȸƤФ��2�Ĥδ�Ϣ���ʤ���Ѥ�����沽����ޤ���Abstract Syntax Notation 1�ϥǡ����ˤĤ��Ƶ��Ҥ��Ƥ��ޤ���Definite Encoding Rules�ϡ��ǡ�������¸�����ž������ˡ�ˤĤ��Ƶ��Ҥ��Ƥ��ޤ���
+X\&.509規格では、証明書に含める情報が定義されており、この情報を証明書に書き込む方法(データ形式)についても記述されています。証明書のすべてのデータは、ASN\&.1/DERと呼ばれる2つの関連規格を使用して符号化されます。Abstract Syntax Notation 1はデータについて記述しています。Definite Encoding Rulesは、データの保存および転送の方法について記述しています。
 .sp
-���٤Ƥ�X\&.509������ϡ���̾��¾�˼��Υǡ�����ޤ�Ǥ��ޤ���
+すべてのX\&.509証明書は、署名の他に次のデータを含んでいます。
 .sp
-\fB�С������\fR: �������Ŭ�Ѥ����X\&.509���ʤΥС����������ꤷ�ޤ���������˻���Ǥ������ϡ��С������ˤ�äưۤʤ�ޤ������ΤȤ�����3�ĤΥС�������������Ƥ��ޤ���\fIkeytool\fR���ޥ�ɤǤϡ�v1��v2��v3�ξ�����򥤥�ݡ��Ȥ���ӥ������ݡ��ȤǤ��ޤ���v3�ξ�������������ޤ���
+\fBバージョン\fR: 証明書に適用されるX\&.509規格のバージョンを特定します。証明書に指定できる情報は、バージョンによって異なります。今のところ、3つのバージョンが定義されています。\fIkeytool\fRコマンドでは、v1、v2、v3の証明書をインポートおよびエクスポートできます。v3の証明書を生成します。
 .sp
-X\&.509 Version 1�ϡ�1988ǯ�������Ѥ���ƹ�����ڤ��Ƥ��ꡢ�Ǥ����Ū�Ǥ���
+X\&.509 Version 1は、1988年から利用されて広く普及しており、最も一般的です。
 .sp
-X\&.509 Version 2�Ǥϡ�Subject��ȯ�ԼԤ�̾���򤢤ȤǺ����ѤǤ���褦�ˤ��뤿��ˡ�Subject��ȯ�ԼԤΰ�ռ��̻Ҥγ�ǰ��Ƴ������ޤ������ۤȤ�ɤξ�����ץ��ե�����ʸ��Ǥϡ�̾����ƻ��Ѥ��ʤ����Ȥȡ�������ǰ�դμ��̻Ҥ���Ѥ��ʤ����Ȥ��������侩����Ƥ��ޤ���Version 2�ξ�����ϡ������ϻ��Ѥ���Ƥ��ޤ���
+X\&.509 Version 2では、Subjectや発行者の名前をあとで再利用できるようにするために、Subjectと発行者の一意識別子の概念が導入されました。ほとんどの証明書プロファイル文書では、名前を再使用しないことと、証明書で一意の識別子を使用しないことが、強く推奨されています。Version 2の証明書は、広くは使用されていません。
 .sp
-X\&.509 Version 3�ϺǤ⿷����(1996ǯ)���ʤǡ��������ƥ󥷥��γ�ǰ�򥵥ݡ��Ȥ��Ƥ��ޤ����������ƥ󥷥���ï�Ǥ�������뤳�Ȥ��Ǥ���������˴ޤ�뤳�Ȥ��Ǥ��ޤ�������Ū�ʥ������ƥ󥷥��Ȥ��Ƥϡ�KeyUsage(\fI��̾����\fR�ʤɡ����λ��Ѥ��������Ū�����¤���)��AlternativeNames(DNS̾���Żҥ᡼�롦���ɥ쥹��IP���ɥ쥹�ʤɡ�¾�Υ����ǥ�ƥ��ƥ���������˴�Ϣ�դ��뤳�Ȥ��Ǥ���)�ʤɤ�����ޤ����������ƥ󥷥��ˤϡ�critical�Ȥ����ޡ������դ��ơ����Υ������ƥ󥷥��Υ����å��Ȼ��Ѥ��̳�Ť��뤳�Ȥ��Ǥ��ޤ������Ȥ��С�critical�ȥޡ������졢\fIkeyCertSign\fR�����ꤵ�줿KeyUsage�������ƥ󥷥�󤬾�����˴ޤޤ�Ƥ����硢���ξ������SSL�̿�����󼨤���ȡ������񤬵��ݤ���ޤ�������ϡ�������Υ������ƥ󥷥��ˤ�äơ���Ϣ������̩����������ν�̾���ѤȤ��ƻ��ꤵ��Ƥ��ꡢSSL�Ǥϻ��ѤǤ��ʤ�����Ǥ���
+X\&.509 Version 3は最も新しい(1996年)規格で、エクステンションの概念をサポートしています。エクステンションは誰でも定義することができ、証明書に含めることができます。一般的なエクステンションとしては、KeyUsage(\fI署名専用\fRなど、鍵の使用を特定の目的に制限する)、AlternativeNames(DNS名、電子メール・アドレス、IPアドレスなど、他のアイデンティティを公開鍵に関連付けることができる)などがあります。エクステンションには、criticalというマークを付けて、そのエクステンションのチェックと使用を義務づけることができます。たとえば、criticalとマークされ、\fIkeyCertSign\fRが設定されたKeyUsageエクステンションが証明書に含まれている場合、この証明書をSSL通信中に提示すると、証明書が拒否されます。これは、証明書のエクステンションによって、関連する秘密鍵が証明書の署名専用として指定されており、SSLでは使用できないためです。
 .sp
-\fB���ꥢ���ֹ�\fR: ������������������ƥ��ƥ��ϡ����Υ���ƥ��ƥ���ȯ�Ԥ���¾�ξ�����ȶ��̤��뤿��ˡ�������˥��ꥢ���ֹ�������Ƥޤ������ξ���ϡ��͡�����ˡ�ǻ��Ѥ���ޤ������Ȥ��С������񤬼��ä����ȡ����ꥢ���ֹ椬�����񼺸��ꥹ��(CRL)�˳�Ǽ����ޤ���
+\fBシリアル番号\fR: 証明書を作成したエンティティは、そのエンティティが発行する他の証明書と区別するために、証明書にシリアル番号を割り当てます。この情報は、様々な方法で使用されます。たとえば、証明書が取り消されると、シリアル番号が証明書失効リスト(CRL)に格納されます。
 .sp
-\fB�����񥢥르�ꥺ�༱�̻�\fR: ������˽�̾���դ���Ȥ���CA�����Ѥ������르�ꥺ������ꤷ�ޤ���
+\fB証明書アルゴリズム識別子\fR: 証明書に署名を付けるときにCAが使用したアルゴリズムを特定します。
 .sp
-\fBȯ�Լ�̾\fR: ������˽�̾���դ�������ƥ��ƥ���X\&.500����̾�Ǥ���X\&.500����̾�򻲾Ȥ��Ƥ����������̾��CA�Ǥ������ξ��������Ѥ��뤳�Ȥϡ�������˽�̾���դ�������ƥ��ƥ����ꤹ�뤳�Ȥ��̣���ޤ����롼�ȤĤޤ�ȥåץ�٥��CA�ξ�����ʤɡ����ˤ�äƤ�ȯ�ԼԤ����Ȥξ�����˽�̾���դ��뤳�Ȥ�����ޤ���
+\fB発行者名\fR: 証明書に署名を付けたエンティティのX\&.500識別名です。X\&.500識別名を参照してください。通常はCAです。この証明書を使用することは、証明書に署名を付けたエンティティを信頼することを意味します。ルートつまりトップレベルのCAの証明書など、場合によっては発行者が自身の証明書に署名を付けることがあります。
 .sp
-\fBͭ������\fR: �ƾ�����ϸ¤�줿���֤Τ�ͭ���Ǥ������δ��֤ϳ��Ϥ������Ƚ�λ�������ˤ�äƻ��ꤵ�졢���ä�û�����֤���100ǯ�Ȥ���Ĺ���ˤ錄�뤳�Ȥ⤢��ޤ������򤵤��ͭ�����֤ϡ�������ؤν�̾�˻��Ѥ������̩���ζ��٤������˻�ʧ����ۤʤɡ��͡����װ��ǰۤʤ�ޤ���ͭ�����֤ϡ���Ϣ������̩����»���ʤ����ˡ�����ƥ��ƥ�������������Ǥ���ȴ��Ԥ������֤Ǥ���
+\fB有効期間\fR: 各証明書は限られた期間のみ有効です。この期間は開始の日時と終了の日時によって指定され、数秒の短い期間から100年という長期にわたることもあります。選択される有効期間は、証明書への署名に使用される秘密鍵の強度や証明書に支払う金額など、様々な要因で異なります。有効期間は、関連する秘密鍵が損われない場合に、エンティティが公開鍵を信頼できると期待される期間です。
 .sp
-\fB����̾\fR: ������Ǹ�������ǧ�ڤ��륨��ƥ��ƥ���̾��������̾����X\&.500ɸ�����Ѥ���Τǡ����󥿡��ͥå����Τǰ�դʤ�Τ����ꤵ��ޤ�������ϡ�����ƥ��ƥ���X\&.500����̾(DN)�Ǥ���X\&.500����̾�򻲾Ȥ��Ƥ���������������򼨤��ޤ���
+\fB主体名\fR: 証明書で公開鍵を認証するエンティティの名前。この名前はX\&.500標準を使用するので、インターネット全体で一意なものと想定されます。これは、エンティティのX\&.500識別名(DN)です。X\&.500識別名を参照してください。次に例を示します。
 .sp
 .if n \{\
 .RS 4
@@ -1280,33 +1280,33 @@ CN=Java Duke, OU=Java Software Division, O=Oracle Corporation, C=US
 .if n \{\
 .RE
 .\}
-�����Ϥ��줾����Τ��̾�(CN)���ȿ�ñ��(OU)���ȿ�(O)����(C)��ɽ���ޤ���
+これらはそれぞれ主体の通称(CN)、組織単位(OU)、組織(O)、国(C)を表します。
 .sp
-\fB���Τθ���������\fR: ̾�����դ���줿����ƥ��ƥ��θ������ȥ��르�ꥺ�༱�̻ҤǤ������르�ꥺ�༱�̻ҤǤϡ����������Ф��ƻ��Ѥ���Ƥ���������Ź沽�����ƥप��Ӵ�Ϣ���븰�ѥ�᡼�������ꤵ��Ƥ��ޤ���
+\fB主体の公開鍵情報\fR: 名前を付けられたエンティティの公開鍵とアルゴリズム識別子です。アルゴリズム識別子では、公開鍵に対して使用されている公開鍵暗号化システムおよび関連する鍵パラメータが指定されています。
 .RE
 .PP
-�������������
+証明書チェーン
 .RS 4
-\fIkeytool\fR���ޥ�ɤǤϡ���̩������Ӵ�Ϣ�����������������ޤ७�����ȥ��θ�����ȥ����������������뤳�Ȥ��Ǥ��ޤ������Τ褦�ʥ���ȥ�Ǥϡ���̩�����б�����������ϡ���������κǽ�ξ�����˴ޤޤ�Ƥ��ޤ���
+\fIkeytool\fRコマンドでは、秘密鍵および関連する証明書チェーンを含むキーストアの鍵エントリを作成し、管理することができます。このようなエントリでは、秘密鍵に対応する公開鍵は、チェーンの最初の証明書に含まれています。
 .sp
-������ƺ�������ȡ����ʽ�̾������Ȥ���1�Ĥ����ǤΤߤ�ޤ�������󤬳��Ϥ���ޤ���\fI��\fR\-genkeypair���ޥ�ɤ򻲾Ȥ��Ƥ������������ʽ�̾�������ȯ�Լ�(��̾��)�����Τ�Ʊ���Ǥ������Τϡ����θ�������������ˤ�ä�ǧ�ڤ���륨��ƥ��ƥ��Ǥ���\fI\-genkeypair\fR���ޥ�ɤ�ƤӽФ��ƿ���������������̩���Υڥ����������ȡ��������Ͼ�˼��ʽ�̾������ǥ�åפ���ޤ���
+鍵を初めて作成すると、自己署名証明書という1つの要素のみを含むチェーンが開始されます。\fIの\fR\-genkeypairコマンドを参照してください。自己署名証明書は発行者(署名者)が主体と同じです。主体は、その公開鍵が証明書によって認証されるエンティティです。\fI\-genkeypair\fRコマンドを呼び出して新しい公開鍵と秘密鍵のペアを作成すると、公開鍵は常に自己署名証明書でラップされます。
 .sp
-���θ塢�������̾�ꥯ������(CSR)��\fI\-certreq\fR���ޥ�ɤ���������ơ�CSR��������ȯ�Զ�(CA)�����������ȡ�CA����Υ쥹�ݥ󥹤�\fI\-importcert\fR�ǥ���ݡ��Ȥ��졢���μ��ʽ�̾������Ͼ������������ˤ�ä��֤��������ޤ������ޥ�ɤ�\fI\-certreq\fR�����\fI\-importcert\fR���ץ����򻲾Ȥ��Ƥ�����������������κǸ�ˤ���Τϡ�Subject�θ�������ǧ�ڤ���CA��ȯ�Ԥ���������(����)�Ǥ�������������Τ������ξ�����ϡ�CA�θ�������ǧ�ڤ��������Ǥ���
+この後、証明書署名リクエスト(CSR)が\fI\-certreq\fRコマンドで生成されて、CSRが証明書発行局(CA)に送信されると、CAからのレスポンスが\fI\-importcert\fRでインポートされ、元の自己署名証明書は証明書チェーンによって置き換えられます。コマンドの\fI\-certreq\fRおよび\fI\-importcert\fRオプションを参照してください。チェーンの最後にあるのは、Subjectの公開鍵を認証したCAが発行した証明書(応答)です。チェーン内のその前の証明書は、CAの公開鍵を認証する証明書です。
 .sp
-CA�θ�������ǧ�ڤ��������ϡ�¿���ξ�硢���ʽ�̾������(�Ĥޤ�CA�����Ȥθ�������ǧ�ڤ���������)�Ǥ��ꡢ����ϥ�������κǽ�ξ�����ˤʤ�ޤ������ˤ�äƤϡ�CA��������Υ���������֤����Ȥ⤢��ޤ������ξ�硢����������κǸ�ξ�����(CA�ˤ�äƽ�̾���졢������ȥ�θ�������ǧ�ڤ��������)���Ѥ��Ϥ���ޤ��󤬡�����������Τ������ξ�����ϡ�CSR���������CA�Ȥ��̤�CA�ˤ�äƽ�̾���졢CSR���������CA�θ�������ǧ�ڤ��������ˤʤ�ޤ�������������Τ������ξ�����ϡ�����CA�θ���ǧ�ڤ��������ˤʤ�ޤ����ʲ�Ʊ�ͤˡ����ʽ�̾���줿�֥롼�ȡ׾������ã����ޤǥ�������³���ޤ����������äơ������������(�ǽ�ξ�����ʸ��)�ƾ�����Ǥϡ�����������μ��ξ�����ν�̾�Ԥθ�������ǧ�ڤ���Ƥ��뤳�Ȥˤʤ�ޤ���
+CAの公開鍵を認証する証明書は、多くの場合、自己署名証明書(つまりCAが自身の公開鍵を認証した証明書)であり、これはチェーンの最初の証明書になります。場合によっては、CAが証明書のチェーンを返すこともあります。この場合、チェーン内の最後の証明書(CAによって署名され、鍵エントリの公開鍵を認証する証明書)に変わりはありませんが、チェーン内のその前の証明書は、CSRの送信先のCAとは別のCAによって署名され、CSRの送信先のCAの公開鍵を認証する証明書になります。チェーン内のその前の証明書は、次のCAの鍵を認証する証明書になります。以下同様に、自己署名された「ルート」証明書に達するまでチェーンが続きます。したがって、チェーン内の(最初の証明書以後の)各証明書では、チェーン内の次の証明書の署名者の公開鍵が認証されていることになります。
 .sp
-¿����CA�ϡ���������򥵥ݡ��Ȥ�����ȯ�ԺѤξ�����Τߤ��֤��ޤ����äˡ���֤�CA��¸�ߤ��ʤ��ե�åȤʳ��ع�¤�ξ��ϡ����η����������Ǥ������Τ褦�ʾ��ϡ��������ȥ��ˤ��Ǥ˳�Ǽ����Ƥ��뿮��Ǥ����������󤫤顢���������������Ω����ɬ�פ�����ޤ���
+多くのCAは、チェーンをサポートせずに発行済の証明書のみを返します。特に、中間のCAが存在しないフラットな階層構造の場合は、その傾向が顕著です。このような場合は、キーストアにすでに格納されている信頼できる証明書情報から、証明書チェーンを確立する必要があります。
 .sp
-�̤α�������(PKCS#7���������Ƥ������)�Ǥϡ�ȯ�ԺѾ�����˲ä����������������Υ��ݡ��Ȥ��ޤޤ�Ƥ��ޤ���\fIkeytool\fR���ޥ�ɤǤϡ��ɤ���α��������ⰷ�����Ȥ��Ǥ��ޤ���
+別の応答形式(PKCS#7で定義されている形式)では、発行済証明書に加え、証明書チェーンのサポートが含まれています。\fIkeytool\fRコマンドでは、どちらの応答形式も扱うことができます。
 .sp
-�ȥåץ�٥�(�롼��)CA�ξ�����ϡ����ʽ�̾������Ǥ������������롼�Ȥθ������ؤο���ϡ��롼�Ⱦ������Τ���ǤϤʤ�����ʹ�ʤ�¾�Υ����������������ޤ�������ϡ�VeriSign�롼��CA�ʤɤμ���̾����Ѥ��ơ�ï�Ǥ⼫�ʽ�̾��������������Ǥ��뤿��Ǥ����롼��CA�θ������Ϲ����Τ��Ƥ��ޤ����롼��CA�θ������������˳�Ǽ������ͳ�ϡ�������Ȥ��������ˤ��뤳�Ȥ�¿���Υġ��뤫�����ѤǤ���褦�ˤʤ뤫��ˤ����ޤ��󡣤Ĥޤꡢ������ϡ��롼��CA�θ������򱿤֡����ΡפȤ������Ѥ����ΤߤǤ����롼��CA�ξ�����򥭡����ȥ����ɲä���Ȥ��ϡ�\fI\-printcert\fR���ץ�������Ѥ��ơ��������˾���������Ƥ�ɽ������ɽ�����줿�ե��󥬡��ץ��Ȥȡ���ʹ��롼��CA��Web�ڡ����ʤɤ������ꤷ�����ΤΥե��󥬡��ץ��ȤȤ���Ӥ���ɬ�פ�����ޤ���
+トップレベル(ルート)CAの証明書は、自己署名証明書です。ただし、ルートの公開鍵への信頼は、ルート証明書自体からではなく、新聞など他のソースから取得されます。これは、VeriSignルートCAなどの識別名を使用して、誰でも自己署名型証明書を生成できるためです。ルートCAの公開鍵は広く知られています。ルートCAの公開鍵を証明書に格納する理由は、証明書という形式にすることで多くのツールから利用できるようになるからにすぎません。つまり、証明書は、ルートCAの公開鍵を運ぶ「媒体」として利用されるのみです。ルートCAの証明書をキーストアに追加するときは、\fI\-printcert\fRオプションを使用して、その前に証明書の内容を表示し、表示されたフィンガープリントと、新聞やルートCAのWebページなどから入手した既知のフィンガープリントとを比較する必要があります。
 .RE
 .PP
-cacerts������ե�����
+cacerts証明書ファイル
 .RS 4
-\fIcacerts\fR�Ȥ���̾���ξ�����ե�����ϡ�Windows�Ǥϥ������ƥ����ץ��ѥƥ����ǥ��쥯�ȥ�\fIjava\&.home\elib\esecurity\fR��Oracle Solaris�Ǥ�\fIjava\&.home/lib/security\fR���֤���Ƥ��ޤ���\fIjava\&.home\fR�ϡ��¹ԴĶ��Υǥ��쥯�ȥ�(SDK��\fIjre\fR�ǥ��쥯�ȥ�ޤ���JRE�κǾ�̥ǥ��쥯�ȥ�)�Ǥ���
+\fIcacerts\fRという名前の証明書ファイルは、Windowsではセキュリティ・プロパティ・ディレクトリ\fIjava\&.home\elib\esecurity\fR、Oracle Solarisでは\fIjava\&.home/lib/security\fRに置かれています。\fIjava\&.home\fRは、実行環境のディレクトリ(SDKの\fIjre\fRディレクトリまたはJREの最上位ディレクトリ)です。
 .sp
-\fIcacerts\fR�ե�����ϡ�CA�ξ������ޤࡢ�����ƥ����ΤΥ������ȥ��Ǥ��������ƥ�����Ԥϡ��������ȥ��������פ�\fIjks\fR����ꤹ�뤳�Ȥǡ�\fIkeytool\fR���ޥ�ɤ���Ѥ��Ƥ��Υե�����ι����ȴ�����Ԥ����Ȥ��Ǥ��ޤ���\fIcacerts\fR�������ȥ����ե�����ϡ��롼��CA������Υǥե���ȡ����åȤ�ޤ�����֤ǽв٤���Ƥ��ޤ����ǥե���Ȥξ���������ɽ������ˤϡ����Υ��ޥ�ɤ���Ѥ��ޤ���
+\fIcacerts\fRファイルは、CAの証明書を含む、システム全体のキーストアです。システム管理者は、キーストア・タイプに\fIjks\fRを指定することで、\fIkeytool\fRコマンドを使用してこのファイルの構成と管理を行うことができます。\fIcacerts\fRキーストア・ファイルは、ルートCA証明書のデフォルト・セットを含んだ状態で出荷されています。デフォルトの証明書を一覧表示するには、次のコマンドを使用します。
 .sp
 .if n \{\
 .RS 4
@@ -1317,23 +1317,23 @@ keytool \-list \-keystore java\&.home/lib/security/cacerts
 .if n \{\
 .RE
 .\}
-\fIcacerts\fR�������ȥ����ե�����ν���ѥ���ɤϡ�\fIchangeit\fR�Ǥ��������ƥ�����Ԥϡ�SDK�Υ��󥹥ȡ���塢���Υե�����Υѥ���ɤȥǥե���ȡ��������������ѹ�����ɬ�פ�����ޤ���
+\fIcacerts\fRキーストア・ファイルの初期パスワードは、\fIchangeit\fRです。システム管理者は、SDKのインストール後、このファイルのパスワードとデフォルト・アクセス権を変更する必要があります。
 .sp
-\fB����:\fR
-\fIcacerts\fR�ե�������ǧ���뤳�Ȥ����פǤ���\fIcacerts\fR�ե��������CA�ϡ���̾�����¾�Υ���ƥ��ƥ��ؤξ�����ȯ�ԤΤ���Υ���ƥ��ƥ��Ȥ��ƿ��ꤵ��뤿�ᡢ\fIcacerts\fR�ե�����δ����Ͽ��Ť˹Ԥ�ɬ�פ�����ޤ���\fIcacerts\fR�ե�����ˤϡ����ꤹ��CA�ξ�����Τߤ��ޤޤ�Ƥ���ɬ�פ�����ޤ����桼�����ϡ����Ȥ���Ǥ�ˤ����ơ�\fIcacerts\fR�ե�����˥Х�ɥ뤵��Ƥ��뿮��Ǥ���롼��CA������򸡾ڤ����������˴ؤ����ȼ��η����Ԥ��ޤ���
+\fB注意:\fR
+\fIcacerts\fRファイルを確認することが重要です。\fIcacerts\fRファイル内のCAは、署名および他のエンティティへの証明書発行のためのエンティティとして信頼されるため、\fIcacerts\fRファイルの管理は慎重に行う必要があります。\fIcacerts\fRファイルには、信頼するCAの証明書のみが含まれている必要があります。ユーザーは、自身の責任において、\fIcacerts\fRファイルにバンドルされている信頼できるルートCA証明書を検証し、信頼性に関する独自の決定を行います。
 .sp
-����Ǥ��ʤ�CA�������\fIcacerts\fR�ե����뤫��������ˤϡ�\fIkeytool\fR���ޥ�ɤ�\fIdelete\fR���ץ�������Ѥ��ޤ���\fIcacerts\fR�ե������JRE�Υ��󥹥ȡ��롦�ǥ��쥯�ȥ�ˤ���ޤ������Υե�������Խ����륢�����������ʤ����ϡ������ƥ�����Ԥ�Ϣ�����Ƥ�������
+信頼できないCA証明書を\fIcacerts\fRファイルから削除するには、\fIkeytool\fRコマンドの\fIdelete\fRオプションを使用します。\fIcacerts\fRファイルはJREのインストール・ディレクトリにあります。このファイルを編集するアクセス権がない場合は、システム管理者に連絡してください
 .RE
 .PP
-���󥿡��ͥå�RFC 1421��������沽����
+インターネットRFC 1421証明書符号化規格
 .RS 4
-¿���ξ�硢������ϡ��Х��ʥ���沽�ǤϤʤ������󥿡��ͥå�RFC 1421���ʤ��������Ƥ�����ϲ�ǽ��沽��������Ѥ��Ƴ�Ǽ����ޤ���Base 64��沽�Ȥ�ƤФ�뤳�ξ���������Ǥϡ��Żҥ᡼��䤽��¾�ε������̤��ơ�¾�Υ��ץꥱ�������˾�������ưפ˥������ݡ��ȤǤ��ޤ���
+多くの場合、証明書は、バイナリ符号化ではなく、インターネットRFC 1421規格で定義されている出力可能符号化方式を使用して格納されます。Base 64符号化とも呼ばれるこの証明書形式では、電子メールやその他の機構を通じて、他のアプリケーションに証明書を容易にエクスポートできます。
 .sp
-\fI\-importcert\fR��\fI\-printcert\fR���ޥ�ɤǤϡ����η����ξ�����ȥХ��ʥ���沽�ξ�������ɤ߹��ळ�Ȥ��Ǥ��ޤ���\fI\-exportcert\fR���ޥ�ɤǤϡ��ǥե���ȤǥХ��ʥ���沽�ξ����񤬽��Ϥ���ޤ�����������\fI\-rfc\fR���ץ�������ꤷ�����ϡ����ϲ�ǽ��沽�����ξ����񤬽��Ϥ���ޤ���
+\fI\-importcert\fRと\fI\-printcert\fRコマンドでは、この形式の証明書とバイナリ符号化の証明書を読み込むことができます。\fI\-exportcert\fRコマンドでは、デフォルトでバイナリ符号化の証明書が出力されます。ただし、\fI\-rfc\fRオプションを指定した場合は、出力可能符号化方式の証明書が出力されます。
 .sp
-\fI\-list\fR���ޥ�ɤǤϡ��ǥե���ȤǾ������SHA1�ե��󥬡��ץ��Ȥ����Ϥ���ޤ���\fI\-v\fR���ץ���󤬻��ꤵ��Ƥ����硢������Ͽͤ�����Ǥ�������ǽ��Ϥ���ޤ���\fI\-rfc\fR���ץ���󤬻��ꤵ��Ƥ����硢������Ͻ��ϲ�ǽ��沽�����ǽ��Ϥ���ޤ���
+\fI\-list\fRコマンドでは、デフォルトで証明書のSHA1フィンガープリントが出力されます。\fI\-v\fRオプションが指定されている場合、証明書は人が理解できる形式で出力されます。\fI\-rfc\fRオプションが指定されている場合、証明書は出力可能符号化方式で出力されます。
 .sp
-���ϲ�ǽ��沽��������沽���줿������ϡ����Υƥ����ȤǻϤޤꡢ���Υƥ����Ȥǽ�λ���ޤ���
+出力可能符号化方式で符号化された証明書は、次のテキストで始まり、次のテキストで終了します。
 .sp
 .if n \{\
 .RS 4
@@ -1350,21 +1350,21 @@ encoded certificate goes here\&.
 .\}
 .RE
 .PP
-X\&.500����̾
+X\&.500識別名
 .RS 4
-X\&.500����̾�ϡ�����ƥ��ƥ������ꤹ�뤿��˻��Ѥ���ޤ������Ȥ��С�X\&.509�������\fIsubject\fR�ե�����ɤ�\fIissuer\fR(��̾��)�ե�����ɤǻ��ꤵ���̾���ϡ�X\&.500����̾�Ǥ���\fIkeytool\fR���ޥ�ɤϡ����Υ��֥ѡ��Ȥ򥵥ݡ��Ȥ��Ƥ��ޤ���
+X\&.500識別名は、エンティティを特定するために使用されます。たとえば、X\&.509証明書の\fIsubject\fRフィールドと\fIissuer\fR(署名者)フィールドで指定される名前は、X\&.500識別名です。\fIkeytool\fRコマンドは、次のサブパートをサポートしています。
 .sp
-\fBcommonName\fR: Susan Jones�ʤɡ��ͤ��̾Ρ�
+\fBcommonName\fR: Susan Jonesなど、人の通称。
 .sp
-\fBorganizationUnit\fR: �������ȿ�(�����ݤʤ�)��̾�Ρ�Purchasing�ʤɤǤ���
+\fBorganizationUnit\fR: 小さな組織(部、課など)の名称。Purchasingなどです。
 .sp
-\fBlocalityName\fR: �ϰ�(�Ի�)̾��Palo Alto�ʤɡ�
+\fBlocalityName\fR: 地域(都市)名。Palo Altoなど。
 .sp
-\fBstateName\fR: ��̾�ޤ�������̾��California�ʤɡ�
+\fBstateName\fR: 州名または地方名。Californiaなど。
 .sp
-\fBcountry\fR: 2ʸ���ι񥳡��ɡ�CH�ʤɡ�
+\fBcountry\fR: 2文字の国コード。CHなど。
 .sp
-����̾ʸ�����\fI\-dname\fR���ץ������ͤȤ��ƻ��ꤹ����(���Ȥ���\fI\-genkeypair\fR���ޥ�ɤ�)��ʸ����ϼ��η����ˤ���ɬ�פ�����ޤ���
+識別名文字列を\fI\-dname\fRオプションの値として指定する場合(たとえば\fI\-genkeypair\fRコマンドに)、文字列は次の形式にする必要があります。
 .sp
 .if n \{\
 .RS 4
@@ -1375,7 +1375,7 @@ CN=cName, OU=orgUnit, O=org, L=city, S=state, C=countryCode
 .if n \{\
 .RE
 .\}
-������å��Τι��ܤϡ��ºݤ˻��ꤹ���ͤ�ɽ���ޤ���û�̷��Υ�����ɤΰ�̣�ϡ����ΤȤ���Ǥ���
+イタリック体の項目は、実際に指定する値を表します。短縮形のキーワードの意味は、次のとおりです。
 .sp
 .if n \{\
 .RS 4
@@ -1391,7 +1391,7 @@ C=country
 .if n \{\
 .RE
 .\}
-���˼����Τϡ�����̾ʸ�������Ǥ���
+次に示すのは、識別名文字列の例です。
 .sp
 .if n \{\
 .RS 4
@@ -1402,7 +1402,7 @@ CN=Mark Smith, OU=Java, O=Oracle, L=Cupertino, S=California, C=US
 .if n \{\
 .RE
 .\}
-����ʸ�������Ѥ������ޥ�ɤ���Ǥ���
+この文字列を使用したコマンドの例です。
 .sp
 .if n \{\
 .RS 4
@@ -1414,9 +1414,9 @@ S=California, C=US" \-alias mark
 .if n \{\
 .RE
 .\}
-������ɤ�û�̷��Ǥϡ���ʸ���Ⱦ�ʸ���϶��̤���ޤ��󡣤��Ȥ��С�CN��cn�����Cn�ϡ��ɤ��Ʊ����ΤȤ��ư����ޤ���
+キーワードの短縮形では、大文字と小文字は区別されません。たとえば、CN、cnおよびCnは、どれも同じものとして扱われます。
 .sp
-������������ɤλ������ˤϰ�̣�����ꡢ�ƥ��֥���ݡ��ͥ�ȤϾ�˼���������ǻ��ꤹ��ɬ�פ�����ޤ��������������֥���ݡ��ͥ�Ȥ򤹤٤ƻ��ꤹ��ɬ�פϤ���ޤ��󡣤��Ȥ��С����Τ褦�˰����Υ��֥���ݡ��ͥ�ȤΤߤ����Ǥ��ޤ���
+一方、キーワードの指定順序には意味があり、各サブコンポーネントは上に示した順序で指定する必要があります。ただし、サブコンポーネントをすべて指定する必要はありません。たとえば、次のように一部のサブコンポーネントのみを指定できます。
 .sp
 .if n \{\
 .RS 4
@@ -1427,7 +1427,7 @@ CN=Steve Meier, OU=Java, O=Oracle, C=US
 .if n \{\
 .RE
 .\}
-����̾ʸ������ͤ˥���ޤ��ޤޤ����ˡ����ޥ�ɥ饤���ʸ�������ꤹ��Ȥ��ˤϡ����Τ褦�˥���ޤ�Хå�����å���ʸ��(\e)�ǥ��������פ���ɬ�פ�����ޤ���
+識別名文字列の値にカンマが含まれる場合に、コマンドラインで文字列を指定するときには、次のようにカンマをバックスラッシュ文字(\e)でエスケープする必要があります。
 .sp
 .if n \{\
 .RS 4
@@ -1438,14 +1438,14 @@ cn=Peter Schuster, ou=Java\e, Product Development, o=Oracle, c=US
 .if n \{\
 .RE
 .\}
-����̾ʸ����򥳥ޥ�ɥ饤��ǻ��ꤹ��ɬ�פϤ���ޤ��󡣼���̾��ɬ�פȤ��륳�ޥ�ɤ�¹Ԥ���Ȥ��ˡ����ޥ�ɥ饤��Ǽ���̾����ꤷ�ʤ��ä����ϡ��ƥ��֥���ݡ��ͥ�Ȥ����Ϥ�����ޤ������ξ��ϡ�����ޤ�Хå�����å���(\e)�ǥ��������פ���ɬ�פϤ���ޤ���
+識別名文字列をコマンドラインで指定する必要はありません。識別名を必要とするコマンドを実行するときに、コマンドラインで識別名を指定しなかった場合は、各サブコンポーネントの入力を求められます。この場合は、カンマをバックスラッシュ(\e)でエスケープする必要はありません。
 .RE
-.SH "�ٹ�"
-.SS "����Ǥ��������Υ���ݡ��ȷٹ�"
+.SH "警告"
+.SS "信頼できる証明書のインポート警告"
 .PP
-\fB����\fR: ����Ǥ��������Ȥ��ƾ�����򥤥�ݡ��Ȥ������ˡ�����������Ƥ򿵽Ť�Ĵ�٤Ƥ���������
-Windows����:.PP
-�ޤ���\fI\-noprompt\fR���ץ�������ꤻ����\fI\-printcert\fR���ޥ�ɤޤ���\fI\-importcert\fR���ޥ�ɤ���Ѥ��ơ��������ɽ�����ޤ���ɽ�����줿������Υե��󥬡��ץ��Ȥ������Ԥ����ե��󥬡��ץ��ȤȰ��פ��뤳�Ȥ��ǧ���ޤ������Ȥ��С������������Ƥ��ơ����ξ������\fI\etmp\ecert\fR�Ȥ���̾���ǥե�����˳�Ǽ���Ƥ���Ȥ��ޤ������ξ��ϡ�����Ǥ��������Υꥹ�Ȥˤ��ξ�������ɲä������ˡ�\fI\-printcert\fR���ޥ�ɤ�¹Ԥ��ƥե��󥬡��ץ��Ȥ�ɽ���Ǥ��ޤ������Ȥ��С����Τ褦�ˤ��ޤ���
+\fB重要\fR: 信頼できる証明書として証明書をインポートする前に、証明書の内容を慎重に調べてください。
+Windowsの例:.PP
+まず、\fI\-noprompt\fRオプションを指定せずに\fI\-printcert\fRコマンドまたは\fI\-importcert\fRコマンドを使用して、証明書を表示します。表示された証明書のフィンガープリントが、期待されるフィンガープリントと一致することを確認します。たとえば、証明書が送られてきて、この証明書を\fI\etmp\ecert\fRという名前でファイルに格納しているとします。この場合は、信頼できる証明書のリストにこの証明書を追加する前に、\fI\-printcert\fRコマンドを実行してフィンガープリントを表示できます。たとえば、次のようにします。
 .sp
 .if n \{\
 .RS 4
@@ -1465,8 +1465,8 @@ Windows����:.PP
 .if n \{\
 .RE
 .\}
-Oracle Solaris����:.PP
-�ޤ���\fI\-noprompt\fR���ץ�������ꤻ����\fI\-printcert\fR���ޥ�ɤޤ���\fI\-importcert\fR���ޥ�ɤ���Ѥ��ơ��������ɽ�����ޤ���ɽ�����줿������Υե��󥬡��ץ��Ȥ������Ԥ����ե��󥬡��ץ��ȤȰ��פ��뤳�Ȥ��ǧ���ޤ������Ȥ��С�����桼������������������Ƥ��ơ����ξ������\fI/tmp/cert\fR�Ȥ���̾���ǥե�����˳�Ǽ���Ƥ���Ȥ��ޤ������ξ��ϡ�����Ǥ��������Υꥹ�Ȥˤ��ξ�������ɲä������ˡ�\fI\-printcert\fR���ޥ�ɤ�¹Ԥ��ƥե��󥬡��ץ��Ȥ�ɽ���Ǥ��ޤ������Ȥ��С����Τ褦�ˤ��ޤ���
+Oracle Solarisの例:.PP
+まず、\fI\-noprompt\fRオプションを指定せずに\fI\-printcert\fRコマンドまたは\fI\-importcert\fRコマンドを使用して、証明書を表示します。表示された証明書のフィンガープリントが、期待されるフィンガープリントと一致することを確認します。たとえば、あるユーザーから証明書が送られてきて、この証明書を\fI/tmp/cert\fRという名前でファイルに格納しているとします。この場合は、信頼できる証明書のリストにこの証明書を追加する前に、\fI\-printcert\fRコマンドを実行してフィンガープリントを表示できます。たとえば、次のようにします。
 .sp
 .if n \{\
 .RS 4
@@ -1487,32 +1487,32 @@ Oracle Solaris����:.PP
 .RE
 .\}
 .PP
-���ˡ������������������ʪ��Ϣ���������ο�ʪ���󼨤����ե��󥬡��ץ��Ȥȡ���Υ��ޥ�ɤ�ɽ�����줿�ե��󥬡��ץ��ȤȤ���Ӥ��ޤ����ե��󥬡��ץ��Ȥ����פ���С����������¾�β��Ԥ�(����Ԥʤ�)�ˤ�������Τ����ؤ����Ԥ��Ƥ��ʤ����Ȥ��ǧ�Ǥ��ޤ�����������Ǥ��μ�ι��⤬�Ԥ��Ƥ�����硢�����å���Ԥ鷺�˾�����򥤥�ݡ��Ȥ���ȡ�����Ԥˤ�äƽ�̾���줿���٤ƤΤ��(����Ū�տޤ���ĥ��饹���ե������ޤ��JAR�ե�����ʤ�)���ꤹ�뤳�Ȥˤʤ�ޤ���
+次に、証明書を送信した人物に連絡し、この人物が提示したフィンガープリントと、上のコマンドで表示されたフィンガープリントとを比較します。フィンガープリントが一致すれば、送信途中で他の何者か(攻撃者など)による証明書のすり替えが行われていないことを確認できます。送信途中でこの種の攻撃が行われていた場合、チェックを行わずに証明書をインポートすると、攻撃者によって署名されたすべてのもの(攻撃的意図を持つクラス・ファイルを含んだJARファイルなど)を信頼することになります。
 .PP
-\fB����:\fR
-������򥤥�ݡ��Ȥ�������\fI\-printcert\fR���ޥ�ɤ�¹Ԥ���ɬ�פϤ���ޤ��󡣥������ȥ���ο���Ǥ��������Υꥹ�Ȥ˾�������ɲä������ˡ�\fI\-importcert\fR���ޥ�ɤˤ�äƾ�����ξ���ɽ�����졢��ǧ������å�������ɽ������뤿��Ǥ����桼�����ϥ���ݡ���������ߤǤ��ޤ����������������¹ԤǤ���Τϡ�\fI\-noprompt\fR���ץ�������ꤻ����\fI\-importcert\fR���ޥ�ɤ�ƤӽФ����ΤߤǤ���\fI\-noprompt\fR���ץ���󤬻��ꤵ��Ƥ����硢�桼�����Ȥ����äϹԤ��ޤ���
-.SS "�ѥ���ɷٹ�"
+\fB注意:\fR
+証明書をインポートする前に\fI\-printcert\fRコマンドを実行する必要はありません。キーストア内の信頼できる証明書のリストに証明書を追加する前に、\fI\-importcert\fRコマンドによって証明書の情報が表示され、確認を求めるメッセージが表示されるためです。ユーザーはインポート操作を停止できます。ただし、これを実行できるのは、\fI\-noprompt\fRオプションを指定せずに\fI\-importcert\fRコマンドを呼び出す場合のみです。\fI\-noprompt\fRオプションが指定されている場合、ユーザーとの対話は行われません。
+.SS "パスワード警告"
 .PP
-�������ȥ����Ф�������Ԥ��ۤȤ�ɤΥ��ޥ�ɤǤϡ����ȥ��Υѥ���ɤ�ɬ�פǤ����ޤ��������Υ��ޥ�ɤǤϡ������/��̩���Υѥ���ɤ�ɬ�פˤʤ뤳�Ȥ�����ޤ����ѥ���ɤϥ��ޥ�ɥ饤��ǻ���Ǥ��ޤ�(\fI\-storepass\fR���ץ�����\fI\-keypass\fR���ץ��������)�����������ƥ��Ȥ���Ū�Ȥ����硢�ޤ��ϰ����Ǥ��뤳�Ȥ��狼�äƤ��륷���ƥ�Ǽ¹Ԥ�����ʳ��ϡ����ޥ�ɥ饤��䥹����ץȤǥѥ���ɤ���ꤷ�ʤ��Ǥ���������ɬ�פʥѥ���ɤΥ��ץ����򥳥ޥ�ɥ饤��ǻ��ꤷ�ʤ��ä����ϡ��ѥ���ɤ����Ϥ�����ޤ���
-.SS "������ν��˴ؤ���ٹ�"
+キーストアに対する操作を行うほとんどのコマンドでは、ストアのパスワードが必要です。また、一部のコマンドでは、非公開/秘密鍵のパスワードが必要になることがあります。パスワードはコマンドラインで指定できます(\fI\-storepass\fRオプションと\fI\-keypass\fRオプションを使用)。ただし、テストを目的とする場合、または安全であることがわかっているシステムで実行する場合以外は、コマンドラインやスクリプトでパスワードを指定しないでください。必要なパスワードのオプションをコマンドラインで指定しなかった場合は、パスワードの入力を求められます。
+.SS "証明書の準拠に関する警告"
 .PP
-���󥿡��ͥå�ɸ��RFC 5280�Ǥϡ�X\&.509������ν��˴ؤ���ץ��ե����뤬�������Ƥ��ꡢ������Υե�����ɤ���ӥ������ƥ󥷥���ͭ�����ͤ�����ͤ��ȹ礻�����ܤ���Ƥ��ޤ���ɸ��ˤĤ��Ƥϡ�
-http://tools\&.ietf\&.org/rfc/rfc5280\&.txt�򻲾Ȥ��Ƥ�������
+インターネット標準RFC 5280では、X\&.509証明書の準拠に関するプロファイルが定義されており、証明書のフィールドおよびエクステンションに有効な値および値の組合せが記載されています。標準については、
+http://tools\&.ietf\&.org/rfc/rfc5280\&.txtを参照してください
 .PP
-\fIkeytool\fR���ޥ�ɤǤϡ������Υ롼�뤹�٤Ƥ�Ŭ�Ѥ����櫓�ǤϤʤ����ᡢɸ��˽�򤷤ʤ�������������Ǥ��ޤ���ɸ��˽�򤷤ʤ�������ϡ�JRE��¾�Υ��ץꥱ�������ǵ��ݤ���뤳�Ȥ�����ޤ����桼�����ϡ�\fI\-dname\fR��\fI\-ext\fR�ʤɤ�Ŭ���ʥ��ץ�������ꤹ��褦�ˤ��Ƥ���������
-.SH "����"
-.SS "����������Ǥ��������Υ���ݡ���"
+\fIkeytool\fRコマンドでは、これらのルールすべてが適用されるわけではないため、標準に準拠しない証明書を生成できます。標準に準拠しない証明書は、JREや他のアプリケーションで拒否されることがあります。ユーザーは、\fI\-dname\fRや\fI\-ext\fRなどで適正なオプションを指定するようにしてください。
+.SH "注意"
+.SS "新しい信頼できる証明書のインポート"
 .PP
-\fIkeytool\fR���ޥ�ɤϡ��������ȥ��˾�������ɲä������ˡ��������ȥ���ˤ��Ǥ�¸�ߤ��뿮��Ǥ�����������Ѥ��ơ�����ݡ��Ȥ�������񤫤�(�롼��CA��)���ʽ�̾������˻��ޤǤο���Υ�������ι��ۤ��ߤޤ���
+\fIkeytool\fRコマンドは、キーストアに証明書を追加する前に、キーストア内にすでに存在する信頼できる証明書を使用して、インポートする証明書から(ルートCAの)自己署名証明書に至るまでの信頼のチェーンの構築を試みます。
 .PP
-\fI\-trustcacerts\fR���ץ�������ꤷ����硢�ɲäξ�����Ͽ���Ǥ��뤹�ʤ��\fIcacerts\fR�Ȥ���̾���Υե�����˴ޤޤ�������Υ�������Ȥߤʤ���ޤ���
+\fI\-trustcacerts\fRオプションを指定した場合、追加の証明書は信頼できるすなわち\fIcacerts\fRという名前のファイルに含まれる証明書のチェーンとみなされます。
 .PP
-\fIkeytool\fR���ޥ�ɤ�������ݡ��Ȥ�������񤫤鼫�ʽ�̾������(�������ȥ��ޤ���\fIcacerts\fR�ե�����˴ޤޤ�Ƥ��뼫�ʽ�̾������)�˻��ޤǤο���Υѥ��ι��ۤ˼��Ԥ������ϡ�����ݡ��Ȥ��������ξ����ɽ�������桼�����˳�ǧ����ޤ������ξ��ϡ�ɽ�����줿������Υե��󥬡��ץ��Ȥȡ�¾�Τʤ�餫��(����Ǥ���)����(������ν�ͭ�Ԥʤ�)�������ꤷ���ե��󥬡��ץ��ȤȤ���Ӥ��ޤ�������Ǥ��������Ȥ��ƾ�����򥤥�ݡ��Ȥ���Ȥ��ϡ�������ͭ���Ǥ��뤳�Ȥ򿵽Ť˳�ǧ����ɬ�פ�����ޤ�������Ǥ��������Υ���ݡ��ȷٹ�򻲾Ȥ��Ƥ�������������ݡ������ϡ���������ǧ�����������ߤǤ��ޤ���\fI\-noprompt\fR���ץ���󤬻��ꤵ��Ƥ����硢�桼�����Ȥ����äϹԤ��ޤ���
-.SS "����������Υ���ݡ���"
+\fIkeytool\fRコマンドが、インポートする証明書から自己署名証明書(キーストアまたは\fIcacerts\fRファイルに含まれている自己署名証明書)に至るまでの信頼のパスの構築に失敗した場合は、インポートする証明書の情報を表示し、ユーザーに確認を求めます。この場合は、表示された証明書のフィンガープリントと、他のなんらかの(信頼できる)情報源(証明書の所有者など)から入手したフィンガープリントとを比較します。信頼できる証明書として証明書をインポートするときは、証明書が有効であることを慎重に確認する必要があります。信頼できる証明書のインポート警告を参照してください。インポート操作は、証明書を確認する時点で中止できます。\fI\-noprompt\fRオプションが指定されている場合、ユーザーとの対話は行われません。
+.SS "証明書応答のインポート"
 .PP
-����������򥤥�ݡ��Ȥ���Ȥ��ϡ��������ȥ���ο���Ǥ�������񡢤����(\fI\-trustcacert\fR\fIs\fR���ץ���󤬻��ꤵ��Ƥ������)\fIcacerts\fR�������ȥ����ե�����ǹ������줿���������Ѥ��ƾ������������������ޤ���cacerts������ե�����򻲾Ȥ��Ƥ���������
+証明書応答をインポートするときは、キーストア内の信頼できる証明書、および(\fI\-trustcacert\fR\fIs\fRオプションが指定されている場合は)\fIcacerts\fRキーストア・ファイルで構成された証明書を使用して証明書応答が検査されます。cacerts証明書ファイルを参照してください。
 .PP
-���������������Ǥ��뤫�ɤ�������ꤹ����ˡ�ϼ��ΤȤ���Ǥ���
+証明書応答が信頼できるかどうかを決定する方法は次のとおりです。
 .sp
 .RS 4
 .ie n \{\
@@ -1522,7 +1522,7 @@ http://tools\&.ietf\&.org/rfc/rfc5280\&.txt�򻲾Ȥ��Ƥ�������
 .sp -1
 .IP \(bu 2.3
 .\}
-�����������ñ���X\&.509������Ǥ����硢\fIkeytool\fR���ޥ�ɤϡ��������������(�롼��CA��)���ʽ�̾������˻��ޤǤο����������γ�Ω���ߤޤ�������������ȡ������������ǧ�ڤ˻��Ѥ���������γ��ع�¤�ϡ�alias�ο�������������������������ޤ�������������󤬳�Ω����ʤ���硢����������ϥ���ݡ��Ȥ���ޤ��󡣤��ξ�硢\fIkeytool\fR���ޥ�ɤϾ��������Ϥ������桼�����˸��ڤ����ץ���ץȤ�ɽ�����ޤ����桼����������������ο�������Ƚ�Ǥ���Τ������񤷤�����Ǥ���
+証明書応答が単一のX\&.509証明書である場合、\fIkeytool\fRコマンドは、証明書応答から(ルートCAの)自己署名証明書に至るまでの信頼チェーンの確立を試みます。証明書応答と、証明書応答の認証に使用される証明書の階層構造は、aliasの新しい証明書チェーンを形成します。信頼チェーンが確立されない場合、証明書応答はインポートされません。この場合、\fIkeytool\fRコマンドは証明書を出力せず、ユーザーに検証を求めるプロンプトを表示します。ユーザーが証明書応答の信頼性を判断するのは非常に難しいためです。
 .RE
 .sp
 .RS 4
@@ -1533,13 +1533,13 @@ http://tools\&.ietf\&.org/rfc/rfc5280\&.txt�򻲾Ȥ��Ƥ�������
 .sp -1
 .IP \(bu 2.3
 .\}
-�����������PKCS#7�����ξ������������ޤ��ϰ�Ϣ��X\&.509������Ǥ����硢��������ϡ��桼�����ξ����񤬺ǽ�ˡ�0�ʾ��CA�����񤬤��μ��ˤ���褦���¤٤��ޤ����������󤬼��ʽ�̾�Υ롼��CA������ǽ���ꡢ\fI \-trustcacerts\fR���ץ���󤬻��ꤵ��Ƥ����硢\fIkeytool\fR���ޥ�ɤϡ����ξ�����ȡ��������ȥ���ޤ���\fIcacerts\fR�������ȥ����ե�������ο���Ǥ��뤹�٤Ƥξ������ȹ礷�褦�Ȥ��ޤ����������󤬼��ʽ�̾�Υ롼��CA������ǽ���äƤ��餺��\fI\-trustcacerts\fR���ץ���󤬻��ꤵ��Ƥ����硢\fIkeytool\fR���ޥ�ɤϡ��������ȥ���ޤ���\fIcacerts\fR�������ȥ����ե�������ο���Ǥ�������񤫤鼫�ʽ�̾�Υ롼��CA������򸫤Ĥ��Ƥ�������������������ɲä��褦�Ȥ��ޤ������ξ����񤬸��Ĥ��餺��\fI\-noprompt\fR���ץ���󤬻��ꤵ��Ƥ��ʤ����ϡ�����������κǸ�ξ�����ξ��󤬽��Ϥ��졢�桼�����ϳ�ǧ������ޤ���
+証明書応答がPKCS#7形式の証明書チェーンまたは一連のX\&.509証明書である場合、チェーンは、ユーザーの証明書が最初に、0以上のCA証明書がその次にくるように並べられます。チェーンが自己署名のルートCA証明書で終わり、\fI \-trustcacerts\fRオプションが指定されている場合、\fIkeytool\fRコマンドは、その証明書と、キーストア内または\fIcacerts\fRキーストア・ファイル内の信頼できるすべての証明書を照合しようとします。チェーンが自己署名のルートCA証明書で終わっておらず、\fI\-trustcacerts\fRオプションが指定されている場合、\fIkeytool\fRコマンドは、キーストア内または\fIcacerts\fRキーストア・ファイル内の信頼できる証明書から自己署名のルートCA証明書を見つけてそれをチェーンの末尾に追加しようとします。その証明書が見つからず、\fI\-noprompt\fRオプションが指定されていない場合は、チェーン内の最後の証明書の情報が出力され、ユーザーは確認を求められます。
 .RE
 .PP
-�����������θ�������\fIalias\fR�Ǥ��Ǥ˳�Ǽ����Ƥ���桼�����θ������˰��פ�����硢�Ť�������������󤬱�����ο��������������������֤��������ޤ��������ξ�������������ͭ����\fIkeypass\fR���֤������뤳�Ȥ��Ǥ���Τϡ�����ȥ����̩�����ݸ�뤿��Υѥ���ɤ���ꤷ�����ΤߤǤ����ѥ���ɤ���ꤷ�Ƥ��餺����̩���Υѥ���ɤ��������ȥ��Υѥ���ɤȰۤʤ���ϡ���̩���Υѥ���ɤ����Ϥ�����ޤ���
+証明書応答内の公開鍵が\fIalias\fRですでに格納されているユーザーの公開鍵に一致した場合、古い証明書チェーンが応答内の新しい証明書チェーンで置き換えられます。以前の証明書チェーンを有効な\fIkeypass\fRで置き換えることができるのは、エントリの秘密鍵を保護するためのパスワードを指定した場合のみです。パスワードを指定しておらず、秘密鍵のパスワードがキーストアのパスワードと異なる場合は、秘密鍵のパスワードの入力を求められます。
 .PP
-���Υ��ޥ�ɤϡ������Υ�꡼���Ǥ�\fI\-import\fR�Ȥ���̾���Ǥ��������Υ�꡼���Ǥϡ�����³���Ť�̾�������ݡ��Ȥ���Ƥ��ޤ�������ϡ�������̾��\fI\-importcert\fR��ͥ�褵��ޤ���
-.SH "��Ϣ����"
+このコマンドは、以前のリリースでは\fI\-import\fRという名前でした。このリリースでは、引き続き古い名前がサポートされています。今後は、新しい名前\fI\-importcert\fRが優先されます。
+.SH "関連項目"
 .sp
 .RS 4
 .ie n \{\
@@ -1571,8 +1571,8 @@ jarsigner(1)
 .sp -1
 .IP \(bu 2.3
 .\}
-http://docs\&.oracle\&.com/javase/tutorial/security/index\&.html�ˤ���
-�֥�����: Java SE�Υ������ƥ���ǽ��
+http://docs\&.oracle\&.com/javase/tutorial/security/index\&.htmlにある
+「コース: Java SEのセキュリティ機能」
 .RE
 .br
 'pl 8.5i

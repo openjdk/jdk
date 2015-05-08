@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 # @summary Method annotations are incorrectly set when redefining classes.
 # @author Stefan Karlsson
 #
+# @modules java.instrument
 # @run shell MakeJAR3.sh RedefineMethodWithAnnotationsAgent 'Can-Redefine-Classes: true'
 # @run build RedefineMethodWithAnnotationsTarget RedefineMethodWithAnnotationsApp RedefineMethodWithAnnotationsAnnotations
 # @run shell RedefineMethodWithAnnotations.sh

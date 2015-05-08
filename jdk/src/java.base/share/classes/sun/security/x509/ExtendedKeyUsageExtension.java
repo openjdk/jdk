@@ -75,7 +75,7 @@ import sun.security.util.ObjectIdentifier;
  * processed independently and the certificate MUST only be used for a
  * purpose consistent with both fields.  If there is no purpose
  * consistent with both fields, then the certificate MUST NOT be used
- * for any purpose.<p>
+ * for any purpose.
  *
  * @since       1.4
  */
