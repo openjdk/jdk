@@ -607,7 +607,7 @@ loop:
      * @return whether the ident can be used as L-value
      */
     private static boolean checkIdentLValue(final IdentNode ident) {
-        return Token.descType(ident.getToken()).getKind() != TokenKind.KEYWORD;
+        return ident.tokenType().getKind() != TokenKind.KEYWORD;
     }
 
     /**

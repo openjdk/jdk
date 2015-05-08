@@ -146,4 +146,28 @@ public abstract class ObjectCreator<T> {
         return loadTuple(method, tuple, true);
     }
 
+    /**
+     * If using optimistic typing, let the code generator realize that the newly created object on the stack
+     * when DUP-ed will be the same value. Basically: {NEW, DUP, INVOKESPECIAL init, DUP} will leave a stack
+     * load specification {unknown, unknown} on stack (that is "there's two values on the stack, but neither
+     * comes from a known local load"). If there's an optimistic operation in the literal initializer,
+     * OptimisticOperation.storeStack will allocate two temporary locals for it and store them as
+     * {ASTORE 4, ASTORE 3}. If we instead do {NEW, DUP, INVOKESPECIAL init, ASTORE 3, ALOAD 3, DUP} we end up
+     * with stack load specification {ALOAD 3, ALOAD 3} (as DUP can track that the value it duplicated came
+     * from a local load), so if/when a continuation needs to be recreated from it, it'll be
+     * able to emit ALOAD 3, ALOAD 3 to recreate the stack. If we didn't do this, deoptimization within an
+     * object literal initialization could in rare cases cause an incompatible change in the shape of the
+     * local variable table for the temporaries, e.g. in the following snippet where a variable is reassigned
+     * to a wider type in an object initializer:
+     * <code>var m = 1; var obj = {p0: m, p1: m = "foo", p2: m}</code>
+     * @param method the current method emitter.
+     */
+    void helpOptimisticRecognizeDuplicateIdentity(final MethodEmitter method) {
+        if (codegen.useOptimisticTypes()) {
+            final Type objectType = method.peekType();
+            final int tempSlot = method.defineTemporaryLocalVariable(objectType.getSlots());
+            method.storeHidden(objectType, tempSlot);
+            method.load(objectType, tempSlot);
+        }
+    }
 }
