@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1131,15 +1131,16 @@ JNIEXPORT jobject
 JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeGetTopmostPlatformWindowUnderMouse
 (JNIEnv *env, jclass clazz)
 {
-    jobject topmostWindowUnderMouse = nil;
+    __block jobject topmostWindowUnderMouse = nil;
 
     JNF_COCOA_ENTER(env);
-    AWT_ASSERT_APPKIT_THREAD;
 
-    AWTWindow *awtWindow = [AWTWindow getTopmostWindowUnderMouse];
-    if (awtWindow != nil) {
-        topmostWindowUnderMouse = [awtWindow.javaPlatformWindow jObject];
-    }
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^{
+        AWTWindow *awtWindow = [AWTWindow getTopmostWindowUnderMouse];
+        if (awtWindow != nil) {
+            topmostWindowUnderMouse = [awtWindow.javaPlatformWindow jObject];
+        }
+    }];
 
     JNF_COCOA_EXIT(env);
 
