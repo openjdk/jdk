@@ -210,7 +210,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
   # For solaris we really need solaris tools, and not the GNU equivalent.
   # The build tools on Solaris reside in /usr/ccs (C Compilation System),
   # so add that to path before starting to probe.
-  # FIXME: This was originally only done for AS,NM,GNM,STRIP,MCS,OBJCOPY,OBJDUMP.
+  # FIXME: This was originally only done for AS,NM,GNM,STRIP,OBJCOPY,OBJDUMP.
   if test "x$OPENJDK_BUILD_OS" = xsolaris; then
     PATH="/usr/ccs/bin:$PATH"
   fi
@@ -569,9 +569,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
     BASIC_FIXUP_EXECUTABLE(NM)
     BASIC_PATH_PROGS(GNM, gnm)
     BASIC_FIXUP_EXECUTABLE(GNM)
-
-    BASIC_PATH_PROGS(MCS, mcs)
-    BASIC_FIXUP_EXECUTABLE(MCS)
   elif test "x$OPENJDK_TARGET_OS" != xwindows; then
     # FIXME: we should unify this with the solaris case above.
     BASIC_CHECK_TOOLS(STRIP, strip)
