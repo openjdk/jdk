@@ -59,7 +59,7 @@ public class ManifestDigester {
      *
      * @pos set by
      *
-     * @returns false if end of bytes has been reached, otherwise returns
+     * @return false if end of bytes has been reached, otherwise returns
      *          true
      */
     @SuppressWarnings("fallthrough")

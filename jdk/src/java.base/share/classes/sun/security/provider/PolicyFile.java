@@ -186,7 +186,7 @@ import sun.net.www.ParseUtil;
  * <p> Case is unimportant for the identifiers (<code>permission</code>,
  * <code>signedBy</code>, <code>codeBase</code>, etc.) but is
  * significant for the <i>Type</i>
- * or for any string that is passed in as a value. <p>
+ * or for any string that is passed in as a value.
  *
  * <p> An example of two entries in a policy configuration file is
  * <pre>
@@ -212,7 +212,7 @@ import sun.net.www.ParseUtil;
  *  with one or more Principal class/name pairs.  The exact
  *  replacement performed depends upon the contents of the
  *  grant clause to which the permission belongs.
- *<p>
+ * <p>
  *
  *  If the grant clause does not contain any principal information,
  *  the permission will be ignored (permissions containing
@@ -220,11 +220,11 @@ import sun.net.www.ParseUtil;
  *  of a principal-based grant clause).  For example, BarPermission
  *  will always be ignored in the following grant clause:
  *
- *<pre>
+ * <pre>
  *    grant codebase "www.foo.com", signedby "duke" {
  *      permission BarPermission "... ${{self}} ...";
  *    };
- *</pre>
+ * </pre>
  *
  *  If the grant clause contains principal information, <b>${{self}}</b>
  *  will be replaced with that same principal information.
@@ -389,7 +389,7 @@ public class PolicyFile extends java.security.Policy {
      * <p>Case is unimportant for the identifiers (<code>permission</code>,
      * <code>signedBy</code>, <code>codeBase</code>, etc.) but is
      * significant for the <i>Type</i>
-     * or for any string that is passed in as a value. <p>
+     * or for any string that is passed in as a value.
      *
      * <p>An example of two entries in a policy configuration file is
      * <pre>
@@ -399,7 +399,7 @@ public class PolicyFile extends java.security.Policy {
      *   grant signedBy "Duke" {
      *          permission java.io.FilePermission "/tmp/*", "read,write";
      *   };
-     * <p>
+     *
      *   // grant everyone the following permission
      *
      *   grant {
@@ -1044,8 +1044,8 @@ public class PolicyFile extends java.security.Policy {
      * the ProtectionDomain and tests whether the permission is
      * granted.
      *
-     * @param domain the ProtectionDomain to test
-     * @param permission the Permission object to be tested for implication.
+     * @param pd the ProtectionDomain to test
+     * @param p the Permission object to be tested for implication.
      *
      * @return true if "permission" is a proper subset of a permission
      * granted to this ProtectionDomain.
@@ -1093,8 +1093,6 @@ public class PolicyFile extends java.security.Policy {
      * originally granted permission, as well as the Class and name
      * for the respective <code>Principal</code>.
      *
-     * <p>
-     *
      * @param domain the Permissions granted to this
      *          <code>ProtectionDomain</code> are returned.
      *
@@ -1131,7 +1129,7 @@ public class PolicyFile extends java.security.Policy {
      * Examines this Policy and creates a PermissionCollection object with
      * the set of permissions for the specified CodeSource.
      *
-     * @param CodeSource the codesource associated with the caller.
+     * @param codesource the CodeSource associated with the caller.
      * This encapsulates the original location of the code (where the code
      * came from) and the public key(s) of its signer.
      *
@@ -1430,9 +1428,7 @@ public class PolicyFile extends java.security.Policy {
     }
 
     /**
-     * <p>
-     *
-     * @param sp the SelfPermission that needs to be expanded <p>
+     * @param sp the SelfPermission that needs to be expanded.
      *
      * @param entryPs list of principals for the Policy entry.
      *

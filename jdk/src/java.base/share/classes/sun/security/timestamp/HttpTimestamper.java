@@ -68,7 +68,7 @@ public class HttpTimestamper implements Timestamper {
     /**
      * Creates a timestamper that connects to the specified TSA.
      *
-     * @param tsa The location of the TSA. It must be an HTTP or HTTPS URI.
+     * @param tsaURI The location of the TSA. It must be an HTTP or HTTPS URI.
      * @throws IllegalArgumentException if tsaURI is not an HTTP or HTTPS URI
      */
     public HttpTimestamper(URI tsaURI) {

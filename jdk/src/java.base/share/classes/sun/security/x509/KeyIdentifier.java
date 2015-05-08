@@ -69,7 +69,7 @@ public class KeyIdentifier {
      * <li>The keyIdentifier is composed of the 160-bit SHA-1 hash of the
      * value of the BIT STRING subjectPublicKey (excluding the tag,
      * length, and number of unused bits).
-     * <p>
+     *
      * <li>The keyIdentifier is composed of a four bit type field with
      * the value 0100 followed by the least significant 60 bits of the
      * SHA-1 hash of the value of the BIT STRING subjectPublicKey.

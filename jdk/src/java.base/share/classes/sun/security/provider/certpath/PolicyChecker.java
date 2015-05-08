@@ -849,7 +849,7 @@ class PolicyChecker extends PKIXCertPathChecker {
      * @param initPolicies the Set of policies required by the user
      * @param currCertPolicies the CertificatePoliciesExtension of the
      * certificate being processed
-     * @returns the root node of the valid policy tree after modification
+     * @return the root node of the valid policy tree after modification
      * @exception CertPathValidatorException Exception thrown if error occurs.
      */
     private static PolicyNodeImpl removeInvalidNodes(PolicyNodeImpl rootNode,
@@ -909,7 +909,7 @@ class PolicyChecker extends PKIXCertPathChecker {
      * valid policy tree is null. Marks each node of the returned tree
      * immutable and thread-safe.
      *
-     * @returns the root node of the valid policy tree, or null if
+     * @return the root node of the valid policy tree, or null if
      * the valid policy tree is null
      */
     PolicyNode getPolicyTree() {

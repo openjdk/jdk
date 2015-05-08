@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 6229368 8025207
  * @summary Wrong threshold value in CounterMonitor with offset and modulus.
  * @author Luis-Miguel Alventosa
+ * @modules java.management
  * @run clean CounterMonitorThresholdTest
  * @run build CounterMonitorThresholdTest
  * @run main CounterMonitorThresholdTest

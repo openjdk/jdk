@@ -342,35 +342,29 @@ Rule	Egypt	2007	only	-	Sep	Thu>=1	24:00	0	-
 # above) says DST had no affect on electricity consumption.  There is
 # no information about when DST will end this fall.  See:
 # http://abcnews.go.com/International/wireStory/el-sissi-pushes-egyptians-line-23614833
+
+# From Steffen Thorsen (2015-04-08):
+# Egypt will start DST on midnight after Thursday, April 30, 2015.
+# This is based on a law (no 35) from May 15, 2014 saying it starts the last
+# Thursday of April....  Clocks will still be turned back for Ramadan, but
+# dates not yet announced....
+# http://almogaz.com/news/weird-news/2015/04/05/1947105 ...
+# http://www.timeanddate.com/news/time/egypt-starts-dst-2015.html
+
+# From Ahmed Nazmy (2015-04-20):
+# Egypt's ministers cabinet just announced ... that it will cancel DST at
+# least for 2015.
 #
-# For now, guess that later spring and fall transitions will use
-# 2010's rules, and guess that Egypt will switch to standard time at
-# 24:00 the last Thursday before Ramadan, and back to DST at 00:00 the
-# first Friday after Ramadan.  To implement this,
-# transition dates for 2015 through 2037 were determined by running
-# the following program under GNU Emacs 24.3, with the results integrated
-# by hand into the table below.  Ramadan again intrudes on the guessed
-# DST starting in 2038, but that's beyond our somewhat-arbitrary cutoff.
-# (let ((islamic-year 1436))
-#   (while (< islamic-year 1460)
-#     (let ((a (calendar-islamic-to-absolute (list 9 1 islamic-year)))
-#           (b (calendar-islamic-to-absolute (list 10 1 islamic-year)))
-#           (friday 5))
-#       (while (/= friday (mod a 7))
-#         (setq a (1- a)))
-#       (while (/= friday (mod b 7))
-#         (setq b (1+ b)))
-#       (setq a (1- a))
-#       (setq b (1- b))
-#       (setq a (calendar-gregorian-from-absolute a))
-#       (setq b (calendar-gregorian-from-absolute b))
-#       (insert
-#        (format
-#         (concat "Rule\tEgypt\t%d\tonly\t-\t%s\t%2d\t24:00\t0\t-\n"
-#                 "Rule\tEgypt\t%d\tonly\t-\t%s\t%2d\t24:00\t1:00\tS\n")
-#         (car (cdr (cdr a))) (calendar-month-name (car a) t) (car (cdr a))
-#         (car (cdr (cdr b))) (calendar-month-name (car b) t) (car (cdr b)))))
-#     (setq islamic-year (+ 1 islamic-year))))
+# From Tim Parenti (2015-04-20):
+# http://english.ahram.org.eg/WriterArticles/NewsContentP/1/128195/Egypt/No-daylight-saving-this-summer-Egypts-prime-minist.aspx
+# "Egypt's cabinet agreed on Monday not to switch clocks for daylight saving
+# time this summer, and carry out studies on the possibility of canceling the
+# practice altogether in future years."
+#
+# From Paul Eggert (2015-04-20):
+# For now, assume DST will be canceled.  Any resumption would likely
+# use different rules anyway.
+
 Rule	Egypt	2008	only	-	Aug	lastThu	24:00	0	-
 Rule	Egypt	2009	only	-	Aug	20	24:00	0	-
 Rule	Egypt	2010	only	-	Aug	10	24:00	0	-
@@ -379,22 +373,7 @@ Rule	Egypt	2010	only	-	Sep	lastThu	24:00	0	-
 Rule	Egypt	2014	only	-	May	15	24:00	1:00	S
 Rule	Egypt	2014	only	-	Jun	26	24:00	0	-
 Rule	Egypt	2014	only	-	Jul	31	24:00	1:00	S
-Rule	Egypt	2014	max	-	Sep	lastThu	24:00	0	-
-Rule	Egypt	2015	2019	-	Apr	lastFri	 0:00s	1:00	S
-Rule	Egypt	2015	only	-	Jun	11	24:00	0	-
-Rule	Egypt	2015	only	-	Jul	23	24:00	1:00	S
-Rule	Egypt	2016	only	-	Jun	 2	24:00	0	-
-Rule	Egypt	2016	only	-	Jul	 7	24:00	1:00	S
-Rule	Egypt	2017	only	-	May	25	24:00	0	-
-Rule	Egypt	2017	only	-	Jun	29	24:00	1:00	S
-Rule	Egypt	2018	only	-	May	10	24:00	0	-
-Rule	Egypt	2018	only	-	Jun	14	24:00	1:00	S
-Rule	Egypt	2019	only	-	May	 2	24:00	0	-
-Rule	Egypt	2019	only	-	Jun	 6	24:00	1:00	S
-Rule	Egypt	2020	only	-	May	28	24:00	1:00	S
-Rule	Egypt	2021	only	-	May	13	24:00	1:00	S
-Rule	Egypt	2022	only	-	May	 5	24:00	1:00	S
-Rule	Egypt	2023	max	-	Apr	lastFri	 0:00s	1:00	S
+Rule	Egypt	2014	only	-	Sep	lastThu	24:00	0	-
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Africa/Cairo	2:05:09 -	LMT	1900 Oct

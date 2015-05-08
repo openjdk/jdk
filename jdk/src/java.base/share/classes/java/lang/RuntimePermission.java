@@ -333,6 +333,19 @@ import java.util.StringTokenizer;
  *   "../../../technotes/guides/plugin/developer_guide/rsa_how.html#use">
  *   usePolicy Permission</a>.</td>
  * </tr>
+ *
+ * <tr>
+ *   <td>localeServiceProvider</td>
+ *   <td>This {@code RuntimePermission} is required to be granted to
+ *   classes which subclass and implement
+ *   {@code java.util.spi.LocaleServiceProvider}. The permission is
+ *   checked during invocation of the abstract base class constructor.
+ *   This permission ensures trust in classes which implement this
+ *   security-sensitive provider mechanism. </td>
+ *   <td>See <a href= "../util/spi/LocaleServiceProvider.html">
+ *   {@code java.util.spi.LocaleServiceProvider}</a> for more
+ *   information.</td>
+ * </tr>
  * </table>
  *
  * @see java.security.BasicPermission
