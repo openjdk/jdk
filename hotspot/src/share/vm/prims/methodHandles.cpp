@@ -186,7 +186,9 @@ oop MethodHandles::init_MemberName(Handle mname, Handle target) {
 oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
   assert(info.resolved_appendix().is_null(), "only normal methods here");
   methodHandle m = info.resolved_method();
+  assert(m.not_null(), "null method handle");
   KlassHandle m_klass = m->method_holder();
+  assert(m.not_null(), "null holder for method handle");
   int flags = (jushort)( m->access_flags().as_short() & JVM_RECOGNIZED_METHOD_MODIFIERS );
   int vmindex = Method::invalid_vtable_index;
 
