@@ -40,6 +40,7 @@ import java.io.ObjectOutputStream;
 import java.util.Arrays;
 import java.math.BigInteger;
 import java.util.Random;
+import jdk.testlibrary.RandomFactory;
 
 public class SymmetricRangeTests {
 
