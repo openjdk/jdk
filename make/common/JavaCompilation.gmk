@@ -276,7 +276,7 @@ define SetupArchiveBody
 	$$($1_GREP_EXCLUDE_OUTPUT)
         # If the vardeps file is part of the newer prereq list, it means that
         # either the jar file does not exist, or we need to recreate it from
-        # from scratch anyway since a simple update will not catch all the 
+        # from scratch anyway since a simple update will not catch all the
         # potential changes.
 	$$(if $$(filter $$($1_VARDEPS_FILE) $$($1_MANIFEST), $$?), \
 	  $$(if $$($1_MANIFEST), \
@@ -321,8 +321,8 @@ define add_file_to_copy
   $$(foreach i,$$($1_SRC),$$(eval $$(call remove_string,$$i,$2_TARGET)))
   # To allow for automatic overrides, do not create a rule for a target file that
   # already has one
-  ifeq ($$(findstring $$($2_TARGET), $$($1_COPY_LIST)), )
-    $1_COPY_LIST += $$($2_TARGET)
+  ifneq ($$($1_COPY_$$($2_TARGET)), 1)
+    $1_COPY_$$($2_TARGET) := 1
     # Now we can setup the depency that will trigger the copying.
     $$($1_BIN)$$($2_TARGET) : $2
 	$(MKDIR) -p $$(@D)
@@ -365,7 +365,11 @@ define add_file_to_clean
   # Remove the source prefix.
   $$(foreach i,$$($1_SRC),$$(eval $$(call remove_string,$$i,$2_TARGET)))
   # Now we can setup the depency that will trigger the copying.
-  $$($1_BIN)$$($2_TARGET) : $2
+  # To allow for automatic overrides, do not create a rule for a target file that
+  # already has one
+  ifneq ($$($1_CLEAN_$$($2_TARGET)), 1)
+    $1_CLEAN_$$($2_TARGET) := 1
+    $$($1_BIN)$$($1_MODULE_SUBDIR)$$($2_TARGET) : $2
 	$(MKDIR) -p $$(@D)
 	export LC_ALL=C ; ( $(CAT) $$< && $(ECHO) "" ) \
 	    | $(SED) -e 's/\([^\\]\):/\1\\:/g' -e 's/\([^\\]\)=/\1\\=/g' \
@@ -378,8 +382,9 @@ define add_file_to_clean
 	    | $(SORT) > $$@
 	$(CHMOD) -f ug+w $$@
 
-  # And do not forget this target
-  $1_ALL_COPY_CLEAN_TARGETS += $$($1_BIN)$$($2_TARGET)
+    # And do not forget this target
+    $1_ALL_COPY_CLEAN_TARGETS += $$($1_BIN)$$($2_TARGET)
+  endif
 endef
 
 define remove_string
@@ -396,7 +401,8 @@ endef
 #   SETUP:=must point to a previously setup java compiler, for example: SETUP:=BOOTJAVAC
 #   JVM:=path to ..bin/java
 #   ADD_JAVAC_FLAGS:=javac flags to append to the default ones.
-#   SRC:=one or more directories to search for sources
+#   SRC:=one or more directories to search for sources. The order of the source roots
+#        is significant. The first found file of a certain name has priority.
 #   BIN:=store classes here
 #   INCLUDES:=myapp.foo means will only compile java files in myapp.foo or any of its sub-packages.
 #   EXCLUDES:=myapp.foo means will do not compile java files in myapp.foo or any of its sub-packages.
@@ -432,7 +438,7 @@ define SetupJavaCompilationBody
   # Handle addons and overrides.
   $1_SRC:=$$(call ADD_SRCS,$$($1_SRC))
   # Make sure the dirs exist.
-  $$(foreach d,$$($1_SRC), $$(if $$(wildcard $$d),,$$(error SRC specified to SetupJavaCompilation $1 contains missing directory $$d)))
+  $$(foreach d,$$($1_SRC), $$(if $$(wildcard $$d),,$$(error SRC specified to SetupJavaCompilation $1 contains missing directory >$$d<)))
   $$(call MakeDir,$$($1_BIN))
   # Add all source roots to the find cache since we are likely going to run find
   # on these more than once. The cache will only be updated if necessary.
@@ -450,15 +456,6 @@ define SetupJavaCompilationBody
     $1_SRCS := $$(filter $$($1_INCLUDE_FILES), $$($1_SRCS))
   endif
 
-  # Now we have a list of all java files to compile: $$($1_SRCS)
-
-  # Create the corresponding smart javac wrapper command line.
-  $1_SJAVAC_ARGS:=$$(addprefix -x ,$$(addsuffix /*,$$($1_EXCLUDES))) \
-      $$(addprefix -i ,$$(addsuffix /*,$$($1_INCLUDES))) \
-      $$(addprefix -xf *,$$(strip $$($1_EXCLUDE_FILES))) \
-      $$(addprefix -if *,$$(strip $$($1_INCLUDE_FILES))) \
-      -src "$$(subst $$(SPACE),$$(PATH_SEP),$$(strip $$($1_SRC)))"
-
   # Prepend the source/bin path to the filter expressions.
   ifneq ($$($1_INCLUDES),)
     $1_SRC_INCLUDES := $$(foreach i,$$($1_SRC),$$(addprefix $$i/,$$(addsuffix /%,$$($1_INCLUDES))))
@@ -468,6 +465,25 @@ define SetupJavaCompilationBody
     $1_SRC_EXCLUDES := $$(foreach i,$$($1_SRC),$$(addprefix $$i/,$$(addsuffix /%,$$($1_EXCLUDES))))
     $1_SRCS := $$(filter-out $$($1_SRC_EXCLUDES),$$($1_SRCS))
   endif
+
+  # Remove duplicate source files by keeping the first found of each duplicate.
+  # This allows for automatic overrides with custom or platform specific versions
+  # source files.
+  #
+  # For the smart javac wrapper case, add each removed file to an extra exclude
+  # file list to prevent sjavac from finding duplicate sources.
+  $1_SRCS := $$(strip $$(foreach s, $$($1_SRCS), \
+      $$(eval relative_src := $$(call remove-prefixes, $$($1_SRC), $$(s))) \
+      $$(if $$($1_$$(relative_src)), \
+        $$(eval $1_SJAVAC_EXCLUDE_FILES += $$(s)), \
+        $$(eval $1_$$(relative_src) := 1) $$(s))))
+
+ # Create the corresponding smart javac wrapper command line.
+  $1_SJAVAC_ARGS:=$$(addprefix -x ,$$(addsuffix /*,$$($1_EXCLUDES))) \
+      $$(addprefix -i ,$$(addsuffix /*,$$($1_INCLUDES))) \
+      $$(addprefix -xf *,$$(strip $$($1_EXCLUDE_FILES) $$($1_SJAVAC_EXCLUDE_FILES))) \
+      $$(addprefix -if *,$$(strip $$($1_INCLUDE_FILES))) \
+      -src "$$(subst $$(SPACE),$$(PATH_SEP),$$(strip $$($1_SRC)))"
 
   # All files below META-INF are always copied.
   $1_ALL_COPIES := $$(filter $$(addsuffix /META-INF%,$$($1_SRC)),$$($1_ALL_SRCS))
