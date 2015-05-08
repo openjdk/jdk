@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ size_t ASPSYoungGen::available_for_expansion() {
   size_t current_committed_size = virtual_space()->committed_size();
   assert((gen_size_limit() >= current_committed_size),
     "generation size limit is wrong");
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   size_t result =  gen_size_limit() - current_committed_size;
   size_t result_aligned = align_size_down(result, heap->generation_alignment());
   return result_aligned;
@@ -91,7 +91,7 @@ size_t ASPSYoungGen::available_for_contraction() {
 
   if (eden_space()->is_empty()) {
     // Respect the minimum size for eden and for the young gen as a whole.
-    ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
+    ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
     const size_t eden_alignment = heap->space_alignment();
     const size_t gen_alignment = heap->generation_alignment();
 
@@ -128,7 +128,7 @@ size_t ASPSYoungGen::available_for_contraction() {
 // If to_space is below from_space, to_space is not considered.
 // to_space can be.
 size_t ASPSYoungGen::available_to_live() {
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   const size_t alignment = heap->space_alignment();
 
   // Include any space that is committed but is not in eden.
@@ -292,7 +292,7 @@ void ASPSYoungGen::resize_spaces(size_t requested_eden_size,
 
   assert(eden_start < from_start, "Cannot push into from_space");
 
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   const size_t alignment = heap->space_alignment();
   const bool maintain_minimum =
     (requested_eden_size + 2 * requested_survivor_size) <= min_gen_size();
@@ -345,8 +345,6 @@ void ASPSYoungGen::resize_spaces(size_t requested_eden_size,
 
     // Does the optimal to-space overlap from-space?
     if (to_start < (char*)from_space()->end()) {
-      assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
-
       // Calculate the minimum offset possible for from_end
       size_t from_size =
         pointer_delta(from_space()->top(), from_start, sizeof(char));
@@ -509,9 +507,7 @@ void ASPSYoungGen::resize_spaces(size_t requested_eden_size,
   assert(from_space()->top() == old_from_top, "from top changed!");
 
   if (PrintAdaptiveSizePolicy) {
-    ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-    assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
-
+    ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
     gclog_or_tty->print("AdaptiveSizePolicy::survivor space sizes: "
                   "collection: %d "
                   "(" SIZE_FORMAT ", " SIZE_FORMAT ") -> "
@@ -542,7 +538,7 @@ void ASPSYoungGen::reset_after_change() {
   }
   MemRegion cmr((HeapWord*)virtual_space()->low(),
                 (HeapWord*)virtual_space()->high());
-  Universe::heap()->barrier_set()->resize_covered_region(cmr);
+  ParallelScavengeHeap::heap()->barrier_set()->resize_covered_region(cmr);
 
   space_invariants();
 }

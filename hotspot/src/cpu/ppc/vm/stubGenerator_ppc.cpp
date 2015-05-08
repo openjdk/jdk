@@ -261,9 +261,6 @@ class StubGenerator: public StubCodeGenerator {
       // global toc register
       __ load_const(R29, MacroAssembler::global_toc(), R11_scratch1);
 
-      // Load narrow oop base.
-      __ reinit_heapbase(R30, R11_scratch1);
-
       // Remember the senderSP so we interpreter can pop c2i arguments off of the stack
       // when called via a c2i.
 
@@ -417,6 +414,23 @@ class StubGenerator: public StubCodeGenerator {
   // exception.  The pending exception check happened in the runtime
   // or native call stub.  The pending exception in Thread is
   // converted into a Java-level exception.
+  //
+  // Read:
+  //
+  //   LR:     The pc the runtime library callee wants to return to.
+  //           Since the exception occurred in the callee, the return pc
+  //           from the point of view of Java is the exception pc.
+  //   thread: Needed for method handles.
+  //
+  // Invalidate:
+  //
+  //   volatile registers (except below).
+  //
+  // Update:
+  //
+  //   R4_ARG2: exception
+  //
+  // (LR is unchanged and is live out).
   //
   address generate_forward_exception() {
     StubCodeMark mark(this, "StubRoutines", "forward_exception");
@@ -1256,9 +1270,9 @@ class StubGenerator: public StubCodeGenerator {
     Register tmp3 = R8_ARG6;
 
 #if defined(ABI_ELFv2)
-     address nooverlap_target = aligned ?
-       StubRoutines::arrayof_jbyte_disjoint_arraycopy() :
-       StubRoutines::jbyte_disjoint_arraycopy();
+    address nooverlap_target = aligned ?
+      StubRoutines::arrayof_jbyte_disjoint_arraycopy() :
+      StubRoutines::jbyte_disjoint_arraycopy();
 #else
     address nooverlap_target = aligned ?
       ((FunctionDescriptor*)StubRoutines::arrayof_jbyte_disjoint_arraycopy())->entry() :

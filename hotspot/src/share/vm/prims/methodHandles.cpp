@@ -35,6 +35,7 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
+#include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/reflection.hpp"
@@ -939,6 +940,24 @@ int MethodHandles::find_MemberNames(KlassHandle k,
   return rfill + overflow;
 }
 
+// Get context class for a CallSite instance: either extract existing context or use default one.
+InstanceKlass* MethodHandles::get_call_site_context(oop call_site) {
+  // In order to extract a context the following traversal is performed:
+  //   CallSite.context => Cleaner.referent => Class._klass => Klass
+  assert(java_lang_invoke_CallSite::is_instance(call_site), "");
+  oop context_oop = java_lang_invoke_CallSite::context_volatile(call_site);
+  if (oopDesc::is_null(context_oop)) {
+    return NULL; // The context hasn't been initialized yet.
+  }
+  oop context_class_oop = java_lang_ref_Reference::referent(context_oop);
+  if (oopDesc::is_null(context_class_oop)) {
+    // The context reference was cleared by GC, so current dependency context
+    // isn't usable anymore. Context should be fetched from CallSite again.
+    return NULL;
+  }
+  return InstanceKlass::cast(java_lang_Class::as_Klass(context_class_oop));
+}
+
 //------------------------------------------------------------------------------
 // MemberNameTable
 //
@@ -965,21 +984,41 @@ void MemberNameTable::add_member_name(jweak mem_name_wref) {
 
 #if INCLUDE_JVMTI
 // It is called at safepoint only for RedefineClasses
-void MemberNameTable::adjust_method_entries(Method** old_methods, Method** new_methods,
-                                            int methods_length, bool *trace_name_printed) {
+void MemberNameTable::adjust_method_entries(InstanceKlass* holder, bool * trace_name_printed) {
   assert(SafepointSynchronize::is_at_safepoint(), "only called at safepoint");
   // For each redefined method
-  for (int j = 0; j < methods_length; j++) {
-    Method* old_method = old_methods[j];
-    Method* new_method = new_methods[j];
+  for (int idx = 0; idx < length(); idx++) {
+    oop mem_name = JNIHandles::resolve(this->at(idx));
+    if (mem_name == NULL) {
+      continue;
+    }
+    Method* old_method = (Method*)java_lang_invoke_MemberName::vmtarget(mem_name);
 
-    // search the MemberNameTable for uses of either obsolete or EMCP methods
-    for (int idx = 0; idx < length(); idx++) {
-      oop mem_name = JNIHandles::resolve(this->at(idx));
-      if (mem_name != NULL) {
-        java_lang_invoke_MemberName::adjust_vmtarget(mem_name, old_method, new_method,
-                                                     trace_name_printed);
+    if (old_method == NULL || !old_method->is_old()) {
+      continue; // skip uninteresting entries
+    }
+    if (old_method->is_deleted()) {
+      // skip entries with deleted methods
+      continue;
+    }
+    Method* new_method = holder->method_with_idnum(old_method->orig_method_idnum());
+
+    assert(new_method != NULL, "method_with_idnum() should not be NULL");
+    assert(old_method != new_method, "sanity check");
+
+    java_lang_invoke_MemberName::set_vmtarget(mem_name, new_method);
+
+    if (RC_TRACE_IN_RANGE(0x00100000, 0x00400000)) {
+      if (!(*trace_name_printed)) {
+        // RC_TRACE_MESG macro has an embedded ResourceMark
+        RC_TRACE_MESG(("adjust: name=%s",
+                       old_method->method_holder()->external_name()));
+        *trace_name_printed = true;
       }
+      // RC_TRACE macro has an embedded ResourceMark
+      RC_TRACE(0x00400000, ("MemberName method update: %s(%s)",
+                            new_method->name()->as_C_string(),
+                            new_method->signature()->as_C_string()));
     }
   }
 }
@@ -994,22 +1033,8 @@ void MemberNameTable::adjust_method_entries(Method** old_methods, Method** new_m
 // that intrinsic (non-JNI) native methods are defined in HotSpot.
 //
 
-JVM_ENTRY(jint, MHN_getConstant(JNIEnv *env, jobject igcls, jint which)) {
-  switch (which) {
-  case MethodHandles::GC_COUNT_GWT:
-#ifdef COMPILER2
-    return true;
-#else
-    return false;
-#endif
-  }
-  return 0;
-}
-JVM_END
-
 #ifndef PRODUCT
 #define EACH_NAMED_CON(template, requirement) \
-    template(MethodHandles,GC_COUNT_GWT) \
     template(java_lang_invoke_MemberName,MN_IS_METHOD) \
     template(java_lang_invoke_MemberName,MN_IS_CONSTRUCTOR) \
     template(java_lang_invoke_MemberName,MN_IS_FIELD) \
@@ -1019,7 +1044,6 @@ JVM_END
     template(java_lang_invoke_MemberName,MN_SEARCH_INTERFACES) \
     template(java_lang_invoke_MemberName,MN_REFERENCE_KIND_SHIFT) \
     template(java_lang_invoke_MemberName,MN_REFERENCE_KIND_MASK) \
-    template(MethodHandles,GC_LAMBDA_SUPPORT) \
     /*end*/
 
 #define IGNORE_REQ(req_expr) /* req_expr */
@@ -1246,7 +1270,7 @@ JVM_END
 
 JVM_ENTRY(void, MHN_setCallSiteTargetNormal(JNIEnv* env, jobject igcls, jobject call_site_jh, jobject target_jh)) {
   Handle call_site(THREAD, JNIHandles::resolve_non_null(call_site_jh));
-  Handle target   (THREAD, JNIHandles::resolve(target_jh));
+  Handle target   (THREAD, JNIHandles::resolve_non_null(target_jh));
   {
     // Walk all nmethods depending on this call site.
     MutexLocker mu(Compile_lock, thread);
@@ -1258,12 +1282,39 @@ JVM_END
 
 JVM_ENTRY(void, MHN_setCallSiteTargetVolatile(JNIEnv* env, jobject igcls, jobject call_site_jh, jobject target_jh)) {
   Handle call_site(THREAD, JNIHandles::resolve_non_null(call_site_jh));
-  Handle target   (THREAD, JNIHandles::resolve(target_jh));
+  Handle target   (THREAD, JNIHandles::resolve_non_null(target_jh));
   {
     // Walk all nmethods depending on this call site.
     MutexLocker mu(Compile_lock, thread);
     CodeCache::flush_dependents_on(call_site, target);
     java_lang_invoke_CallSite::set_target_volatile(call_site(), target());
+  }
+}
+JVM_END
+
+JVM_ENTRY(void, MHN_invalidateDependentNMethods(JNIEnv* env, jobject igcls, jobject call_site_jh)) {
+  Handle call_site(THREAD, JNIHandles::resolve_non_null(call_site_jh));
+  {
+    // Walk all nmethods depending on this call site.
+    MutexLocker mu1(Compile_lock, thread);
+
+    CallSiteDepChange changes(call_site(), Handle());
+
+    InstanceKlass* ctxk = MethodHandles::get_call_site_context(call_site());
+    if (ctxk == NULL) {
+      return; // No dependencies to invalidate yet.
+    }
+    int marked = 0;
+    {
+      MutexLockerEx mu2(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+      marked = ctxk->mark_dependent_nmethods(changes);
+    }
+    java_lang_invoke_CallSite::set_context_volatile(call_site(), NULL); // Reset call site to initial state
+    if (marked > 0) {
+      // At least one nmethod has been marked for deoptimization
+      VM_Deoptimize op;
+      VMThread::execute(&op);
+    }
   }
 }
 JVM_END
@@ -1313,7 +1364,6 @@ static JNINativeMethod MHN_methods[] = {
   {CC"init",                      CC"("MEM""OBJ")V",                     FN_PTR(MHN_init_Mem)},
   {CC"expand",                    CC"("MEM")V",                          FN_PTR(MHN_expand_Mem)},
   {CC"resolve",                   CC"("MEM""CLS")"MEM,                   FN_PTR(MHN_resolve_Mem)},
-  {CC"getConstant",               CC"(I)I",                              FN_PTR(MHN_getConstant)},
   //  static native int getNamedCon(int which, Object[] name)
   {CC"getNamedCon",               CC"(I["OBJ")I",                        FN_PTR(MHN_getNamedCon)},
   //  static native int getMembers(Class<?> defc, String matchName, String matchSig,
@@ -1322,6 +1372,7 @@ static JNINativeMethod MHN_methods[] = {
   {CC"objectFieldOffset",         CC"("MEM")J",                          FN_PTR(MHN_objectFieldOffset)},
   {CC"setCallSiteTargetNormal",   CC"("CS""MH")V",                       FN_PTR(MHN_setCallSiteTargetNormal)},
   {CC"setCallSiteTargetVolatile", CC"("CS""MH")V",                       FN_PTR(MHN_setCallSiteTargetVolatile)},
+  {CC"invalidateDependentNMethods", CC"("CS")V",                         FN_PTR(MHN_invalidateDependentNMethods)},
   {CC"staticFieldOffset",         CC"("MEM")J",                          FN_PTR(MHN_staticFieldOffset)},
   {CC"staticFieldBase",           CC"("MEM")"OBJ,                        FN_PTR(MHN_staticFieldBase)},
   {CC"getMemberVMInfo",           CC"("MEM")"OBJ,                        FN_PTR(MHN_getMemberVMInfo)}

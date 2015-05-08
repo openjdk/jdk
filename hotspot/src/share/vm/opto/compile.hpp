@@ -879,9 +879,11 @@ class Compile : public Phase {
   ciMethod* optimize_virtual_call(ciMethod* caller, int bci, ciInstanceKlass* klass,
                                   ciKlass* holder, ciMethod* callee,
                                   const TypeOopPtr* receiver_type, bool is_virtual,
-                                  bool &call_does_dispatch, int &vtable_index);
+                                  bool &call_does_dispatch, int &vtable_index,
+                                  bool check_access = true);
   ciMethod* optimize_inlining(ciMethod* caller, int bci, ciInstanceKlass* klass,
-                              ciMethod* callee, const TypeOopPtr* receiver_type);
+                              ciMethod* callee, const TypeOopPtr* receiver_type,
+                              bool check_access = true);
 
   // Report if there were too many traps at a current method and bci.
   // Report if a trap was recorded, and/or PerMethodTrapLimit was exceeded.

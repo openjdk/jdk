@@ -124,6 +124,8 @@ class Matcher : public PhaseTransform {
   // Mach node for ConP #NULL
   MachNode* _mach_null;
 
+  void handle_precedence_edges(Node* n, MachNode *mach);
+
 public:
   int LabelRootDepth;
   // Convert ideal machine register to a register mask for spill-loads

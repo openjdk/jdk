@@ -250,7 +250,6 @@ VectorNode* VectorNode::make(int opc, Node* n1, Node* n2, uint vlen, BasicType b
   int vopc = VectorNode::opcode(opc, bt);
   // This method should not be called for unimplemented vectors.
   guarantee(vopc > 0, err_msg_res("Vector for '%s' is not implemented", NodeClassNames[opc]));
-
   switch (vopc) {
   case Op_AddVB: return new AddVBNode(n1, n2, vt);
   case Op_AddVS: return new AddVSNode(n1, n2, vt);
@@ -439,5 +438,74 @@ Node* ExtractNode::make(Node* v, uint position, BasicType bt) {
   }
   fatal(err_msg_res("Type '%s' is not supported for vectors", type2name(bt)));
   return NULL;
+}
+
+int ReductionNode::opcode(int opc, BasicType bt) {
+  int vopc = opc;
+  switch (opc) {
+    case Op_AddI:
+      assert(bt == T_INT, "must be");
+      vopc = Op_AddReductionVI;
+      break;
+    case Op_AddL:
+      assert(bt == T_LONG, "must be");
+      vopc = Op_AddReductionVL;
+      break;
+    case Op_AddF:
+      assert(bt == T_FLOAT, "must be");
+      vopc = Op_AddReductionVF;
+      break;
+    case Op_AddD:
+      assert(bt == T_DOUBLE, "must be");
+      vopc = Op_AddReductionVD;
+      break;
+    case Op_MulI:
+      assert(bt == T_INT, "must be");
+      vopc = Op_MulReductionVI;
+      break;
+    case Op_MulF:
+      assert(bt == T_FLOAT, "must be");
+      vopc = Op_MulReductionVF;
+      break;
+    case Op_MulD:
+      assert(bt == T_DOUBLE, "must be");
+      vopc = Op_MulReductionVD;
+      break;
+    // TODO: add MulL for targets that support it
+    default:
+      break;
+  }
+  return vopc;
+}
+
+// Return the appropriate reduction node.
+ReductionNode* ReductionNode::make(int opc, Node *ctrl, Node* n1, Node* n2, BasicType bt) {
+
+  int vopc = opcode(opc, bt);
+
+  // This method should not be called for unimplemented vectors.
+  guarantee(vopc != opc, err_msg_res("Vector for '%s' is not implemented", NodeClassNames[opc]));
+
+  switch (vopc) {
+  case Op_AddReductionVI: return new AddReductionVINode(ctrl, n1, n2);
+  case Op_AddReductionVL: return new AddReductionVLNode(ctrl, n1, n2);
+  case Op_AddReductionVF: return new AddReductionVFNode(ctrl, n1, n2);
+  case Op_AddReductionVD: return new AddReductionVDNode(ctrl, n1, n2);
+  case Op_MulReductionVI: return new MulReductionVINode(ctrl, n1, n2);
+  case Op_MulReductionVF: return new MulReductionVFNode(ctrl, n1, n2);
+  case Op_MulReductionVD: return new MulReductionVDNode(ctrl, n1, n2);
+  }
+  fatal(err_msg_res("Missed vector creation for '%s'", NodeClassNames[vopc]));
+  return NULL;
+}
+
+bool ReductionNode::implemented(int opc, uint vlen, BasicType bt) {
+  if (is_java_primitive(bt) &&
+      (vlen > 1) && is_power_of_2(vlen) &&
+      Matcher::vector_size_supported(bt, vlen)) {
+    int vopc = ReductionNode::opcode(opc, bt);
+    return vopc != opc && Matcher::match_rule_supported(vopc);
+  }
+  return false;
 }
 

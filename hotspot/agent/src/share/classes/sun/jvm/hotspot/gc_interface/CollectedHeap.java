@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 
-public class CollectedHeap extends VMObject {
+public abstract class CollectedHeap extends VMObject {
   private static long         reservedFieldOffset;
 
   static {
@@ -73,9 +73,7 @@ public class CollectedHeap extends VMObject {
     return reservedRegion().contains(a);
   }
 
-  public CollectedHeapName kind() {
-    return CollectedHeapName.ABSTRACT;
-  }
+  public abstract CollectedHeapName kind();
 
   public void print() { printOn(System.out); }
   public void printOn(PrintStream tty) {

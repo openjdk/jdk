@@ -34,7 +34,7 @@
 #include "gc_implementation/parallelScavenge/psMarkSweep.hpp"
 #include "gc_implementation/parallelScavenge/psMarkSweepDecorator.hpp"
 #include "gc_implementation/parallelScavenge/psOldGen.hpp"
-#include "gc_implementation/parallelScavenge/psParallelCompact.hpp"
+#include "gc_implementation/parallelScavenge/psParallelCompact.inline.hpp"
 #include "gc_implementation/parallelScavenge/psPromotionManager.inline.hpp"
 #include "gc_implementation/parallelScavenge/psScavenge.hpp"
 #include "gc_implementation/parallelScavenge/psYoungGen.hpp"
@@ -48,7 +48,10 @@
 #include "memory/gcLocker.inline.hpp"
 #include "memory/referencePolicy.hpp"
 #include "memory/referenceProcessor.hpp"
+#include "oops/instanceKlass.inline.hpp"
+#include "oops/instanceMirrorKlass.inline.hpp"
 #include "oops/methodData.hpp"
+#include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "runtime/fprofiler.hpp"
@@ -745,7 +748,7 @@ bool ParallelCompactData::summarize(SplitInfo& split_info,
 
 HeapWord* ParallelCompactData::calc_new_pointer(HeapWord* addr) {
   assert(addr != NULL, "Should detect NULL oop earlier");
-  assert(PSParallelCompact::gc_heap()->is_in(addr), "not in heap");
+  assert(ParallelScavengeHeap::heap()->is_in(addr), "not in heap");
   assert(PSParallelCompact::mark_bitmap()->is_marked(addr), "not marked");
 
   // Region covering the object.
@@ -823,15 +826,7 @@ void PSParallelCompact::KeepAliveClosure::do_oop(narrowOop* p) { PSParallelCompa
 PSParallelCompact::AdjustPointerClosure PSParallelCompact::_adjust_pointer_closure;
 PSParallelCompact::AdjustKlassClosure PSParallelCompact::_adjust_klass_closure;
 
-void PSParallelCompact::AdjustPointerClosure::do_oop(oop* p)       { adjust_pointer(p); }
-void PSParallelCompact::AdjustPointerClosure::do_oop(narrowOop* p) { adjust_pointer(p); }
-
 void PSParallelCompact::FollowStackClosure::do_void() { _compaction_manager->follow_marking_stacks(); }
-
-void PSParallelCompact::MarkAndPushClosure::do_oop(oop* p)       {
-  mark_and_push(_compaction_manager, p);
-}
-void PSParallelCompact::MarkAndPushClosure::do_oop(narrowOop* p) { mark_and_push(_compaction_manager, p); }
 
 void PSParallelCompact::FollowKlassClosure::do_klass(Klass* klass) {
   klass->oops_do(_mark_and_push_closure);
@@ -841,9 +836,7 @@ void PSParallelCompact::AdjustKlassClosure::do_klass(Klass* klass) {
 }
 
 void PSParallelCompact::post_initialize() {
-  ParallelScavengeHeap* heap = gc_heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
-
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   MemRegion mr = heap->reserved_region();
   _ref_processor =
     new ReferenceProcessor(mr,            // span
@@ -860,8 +853,7 @@ void PSParallelCompact::post_initialize() {
 }
 
 bool PSParallelCompact::initialize() {
-  ParallelScavengeHeap* heap = gc_heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   MemRegion mr = heap->reserved_region();
 
   // Was the old gen get allocated successfully?
@@ -895,7 +887,7 @@ void PSParallelCompact::initialize_space_info()
 {
   memset(&_space_info, 0, sizeof(_space_info));
 
-  ParallelScavengeHeap* heap = gc_heap();
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSYoungGen* young_gen = heap->young_gen();
 
   _space_info[old_space_id].set_space(heap->old_gen()->object_space());
@@ -978,7 +970,7 @@ void PSParallelCompact::pre_compact(PreGCValues* pre_gc_values)
   // promotion failure does not swap spaces) because an unknown number of minor
   // collections will have swapped the spaces an unknown number of times.
   GCTraceTime tm("pre compact", print_phases(), true, &_gc_timer, _gc_tracer.gc_id());
-  ParallelScavengeHeap* heap = gc_heap();
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   _space_info[from_space_id].set_space(heap->young_gen()->from_space());
   _space_info[to_space_id].set_space(heap->young_gen()->to_space());
 
@@ -1033,7 +1025,7 @@ void PSParallelCompact::post_compact()
   MutableSpace* const from_space = _space_info[from_space_id].space();
   MutableSpace* const to_space   = _space_info[to_space_id].space();
 
-  ParallelScavengeHeap* heap = gc_heap();
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   bool eden_empty = eden_space->is_empty();
   if (!eden_empty) {
     eden_empty = absorb_live_data_from_eden(heap->size_policy(),
@@ -1971,7 +1963,7 @@ void PSParallelCompact::invoke(bool maximum_heap_compaction) {
   assert(Thread::current() == (Thread*)VMThread::vm_thread(),
          "should be in vm thread");
 
-  ParallelScavengeHeap* heap = gc_heap();
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   GCCause::Cause gc_cause = heap->gc_cause();
   assert(!heap->is_gc_active(), "not reentrant");
 
@@ -1999,7 +1991,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     return false;
   }
 
-  ParallelScavengeHeap* heap = gc_heap();
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
   _gc_timer.register_gc_start();
   _gc_tracer.report_gc_start(heap->gc_cause(), _gc_timer.gc_start());
@@ -2352,7 +2344,7 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
   // Recursively traverse all live objects and mark them
   GCTraceTime tm("marking phase", print_phases(), true, &_gc_timer, _gc_tracer.gc_id());
 
-  ParallelScavengeHeap* heap = gc_heap();
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   uint parallel_gc_threads = heap->gc_task_manager()->workers();
   uint active_gc_threads = heap->gc_task_manager()->active_workers();
   TaskQueueSetSuper* qset = ParCompactionManager::region_array();
@@ -2692,8 +2684,7 @@ void PSParallelCompact::compact() {
   // trace("5");
   GCTraceTime tm("compaction phase", print_phases(), true, &_gc_timer, _gc_tracer.gc_id());
 
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSOldGen* old_gen = heap->old_gen();
   old_gen->start_array()->reset();
   uint parallel_gc_threads = heap->gc_task_manager()->workers();
@@ -2844,7 +2835,7 @@ PSParallelCompact::update_and_deadwood_in_dense_prefix(ParCompactionManager* cm,
 // heap, last_space_id is returned.  In debug mode it expects the address to be
 // in the heap and asserts such.
 PSParallelCompact::SpaceId PSParallelCompact::space_id(HeapWord* addr) {
-  assert(Universe::heap()->is_in_reserved(addr), "addr not in the heap");
+  assert(ParallelScavengeHeap::heap()->is_in_reserved(addr), "addr not in the heap");
 
   for (unsigned int id = old_space_id; id < last_space_id; ++id) {
     if (_space_info[id].space()->contains(addr)) {
@@ -3336,6 +3327,71 @@ void MoveAndUpdateClosure::copy_partial_obj()
     Copy::aligned_conjoint_words(source(), destination(), words);
   }
   update_state(words);
+}
+
+void InstanceKlass::oop_pc_update_pointers(oop obj) {
+  oop_oop_iterate_oop_maps<true>(obj, PSParallelCompact::adjust_pointer_closure());
+}
+
+void InstanceMirrorKlass::oop_pc_update_pointers(oop obj) {
+  InstanceKlass::oop_pc_update_pointers(obj);
+
+  oop_oop_iterate_statics<true>(obj, PSParallelCompact::adjust_pointer_closure());
+}
+
+void InstanceClassLoaderKlass::oop_pc_update_pointers(oop obj) {
+  InstanceKlass::oop_pc_update_pointers(obj);
+}
+
+#ifdef ASSERT
+template <class T> static void trace_reference_gc(const char *s, oop obj,
+                                                  T* referent_addr,
+                                                  T* next_addr,
+                                                  T* discovered_addr) {
+  if(TraceReferenceGC && PrintGCDetails) {
+    gclog_or_tty->print_cr("%s obj " PTR_FORMAT, s, p2i(obj));
+    gclog_or_tty->print_cr("     referent_addr/* " PTR_FORMAT " / "
+                           PTR_FORMAT, p2i(referent_addr),
+                           referent_addr ? p2i(oopDesc::load_decode_heap_oop(referent_addr)) : NULL);
+    gclog_or_tty->print_cr("     next_addr/* " PTR_FORMAT " / "
+                           PTR_FORMAT, p2i(next_addr),
+                           next_addr ? p2i(oopDesc::load_decode_heap_oop(next_addr)) : NULL);
+    gclog_or_tty->print_cr("     discovered_addr/* " PTR_FORMAT " / "
+                           PTR_FORMAT, p2i(discovered_addr),
+                           discovered_addr ? p2i(oopDesc::load_decode_heap_oop(discovered_addr)) : NULL);
+  }
+}
+#endif
+
+template <class T>
+static void oop_pc_update_pointers_specialized(oop obj) {
+  T* referent_addr = (T*)java_lang_ref_Reference::referent_addr(obj);
+  PSParallelCompact::adjust_pointer(referent_addr);
+  T* next_addr = (T*)java_lang_ref_Reference::next_addr(obj);
+  PSParallelCompact::adjust_pointer(next_addr);
+  T* discovered_addr = (T*)java_lang_ref_Reference::discovered_addr(obj);
+  PSParallelCompact::adjust_pointer(discovered_addr);
+  debug_only(trace_reference_gc("InstanceRefKlass::oop_update_ptrs", obj,
+                                referent_addr, next_addr, discovered_addr);)
+}
+
+void InstanceRefKlass::oop_pc_update_pointers(oop obj) {
+  InstanceKlass::oop_pc_update_pointers(obj);
+
+  if (UseCompressedOops) {
+    oop_pc_update_pointers_specialized<narrowOop>(obj);
+  } else {
+    oop_pc_update_pointers_specialized<oop>(obj);
+  }
+}
+
+void ObjArrayKlass::oop_pc_update_pointers(oop obj) {
+  assert(obj->is_objArray(), "obj must be obj array");
+  oop_oop_iterate_elements<true>(objArrayOop(obj), PSParallelCompact::adjust_pointer_closure());
+}
+
+void TypeArrayKlass::oop_pc_update_pointers(oop obj) {
+  assert(obj->is_typeArray(),"must be a type array");
 }
 
 ParMarkBitMapClosure::IterationStatus

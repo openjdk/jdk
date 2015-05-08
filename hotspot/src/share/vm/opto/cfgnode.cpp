@@ -525,13 +525,16 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // Cut the backedge input and remove phis since no data paths left.
       // We don't cut outputs to other nodes here since we need to put them
       // on the worklist.
+      PhaseIterGVN *igvn = phase->is_IterGVN();
+      if (in(1)->outcnt() == 1) {
+        igvn->_worklist.push(in(1));
+      }
       del_req(1);
       cnt = 0;
       assert( req() == 1, "no more inputs expected" );
       uint max = outcnt();
       bool progress = true;
       Node *top = phase->C->top();
-      PhaseIterGVN *igvn = phase->is_IterGVN();
       DUIterator j;
       while(progress) {
         progress = false;

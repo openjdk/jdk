@@ -959,13 +959,15 @@ void Parse::count_compiled_calls(bool at_method_entry, bool is_inline) {
 ciMethod* Compile::optimize_virtual_call(ciMethod* caller, int bci, ciInstanceKlass* klass,
                                          ciKlass* holder, ciMethod* callee,
                                          const TypeOopPtr* receiver_type, bool is_virtual,
-                                         bool& call_does_dispatch, int& vtable_index) {
+                                         bool& call_does_dispatch, int& vtable_index,
+                                         bool check_access) {
   // Set default values for out-parameters.
   call_does_dispatch = true;
   vtable_index       = Method::invalid_vtable_index;
 
   // Choose call strategy.
-  ciMethod* optimized_virtual_method = optimize_inlining(caller, bci, klass, callee, receiver_type);
+  ciMethod* optimized_virtual_method = optimize_inlining(caller, bci, klass, callee,
+                                                         receiver_type, check_access);
 
   // Have the call been sufficiently improved such that it is no longer a virtual?
   if (optimized_virtual_method != NULL) {
@@ -980,7 +982,8 @@ ciMethod* Compile::optimize_virtual_call(ciMethod* caller, int bci, ciInstanceKl
 
 // Identify possible target method and inlining style
 ciMethod* Compile::optimize_inlining(ciMethod* caller, int bci, ciInstanceKlass* klass,
-                                     ciMethod* callee, const TypeOopPtr* receiver_type) {
+                                     ciMethod* callee, const TypeOopPtr* receiver_type,
+                                     bool check_access) {
   // only use for virtual or interface calls
 
   // If it is obviously final, do not bother to call find_monomorphic_target,
@@ -1020,7 +1023,7 @@ ciMethod* Compile::optimize_inlining(ciMethod* caller, int bci, ciInstanceKlass*
   }
 
   ciInstanceKlass*   calling_klass = caller->holder();
-  ciMethod* cha_monomorphic_target = callee->find_monomorphic_target(calling_klass, klass, actual_receiver);
+  ciMethod* cha_monomorphic_target = callee->find_monomorphic_target(calling_klass, klass, actual_receiver, check_access);
   if (cha_monomorphic_target != NULL) {
     assert(!cha_monomorphic_target->is_abstract(), "");
     // Look at the method-receiver type.  Does it add "too much information"?

@@ -340,18 +340,6 @@ class FlexibleWorkGang: public WorkGang {
   }
 };
 
-// Work gangs in garbage collectors: 2009-06-10
-//
-// SharedHeap - work gang for stop-the-world parallel collection.
-//   Used by
-//     ParNewGeneration
-//     CMSParRemarkTask
-//     CMSRefProcTaskExecutor
-//     G1CollectedHeap
-//     G1ParFinalCountTask
-// ConcurrentMark
-// CMSCollector
-
 // A class that acts as a synchronisation barrier. Workers enter
 // the barrier and must wait until all other workers have entered
 // before any of them may leave.

@@ -298,19 +298,6 @@ class oopDesc {
 
   // garbage collection
   bool is_gc_marked() const;
-  // Apply "MarkSweep::mark_and_push" to (the address of) every non-NULL
-  // reference field in "this".
-  void follow_contents(void);
-
-#if INCLUDE_ALL_GCS
-  // Parallel Scavenge
-  void push_contents(PSPromotionManager* pm);
-
-  // Parallel Old
-  void update_contents(ParCompactionManager* cm);
-
-  void follow_contents(ParCompactionManager* cm);
-#endif // INCLUDE_ALL_GCS
 
   bool is_scavengable() const;
 
@@ -334,9 +321,6 @@ class oopDesc {
   uint age() const;
   void incr_age();
 
-  // Adjust all pointers in this object to point at it's forwarded location and
-  // return the size of this oop.  This is used by the MarkSweep collector.
-  int adjust_pointers();
 
   // mark-sweep support
   void follow_body(int begin, int end);
@@ -344,6 +328,22 @@ class oopDesc {
   // Fast access to barrier set
   static BarrierSet* bs()            { return _bs; }
   static void set_bs(BarrierSet* bs) { _bs = bs; }
+
+  // Garbage Collection support
+
+  // Mark Sweep
+  void ms_follow_contents();
+  // Adjust all pointers in this object to point at it's forwarded location and
+  // return the size of this oop.  This is used by the MarkSweep collector.
+  int  ms_adjust_pointers();
+#if INCLUDE_ALL_GCS
+  // Parallel Compact
+  void pc_follow_contents(ParCompactionManager* pc);
+  void pc_update_contents();
+  // Parallel Scavenge
+  void ps_push_contents(PSPromotionManager* pm);
+#endif
+
 
   // iterators, returns size of object
 #define OOP_ITERATE_DECL(OopClosureType, nv_suffix)                      \

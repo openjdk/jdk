@@ -53,6 +53,8 @@ class ConstructRule;
 // ***** Register Section *****
 class RegDef;
 class RegClass;
+class CodeSnippetRegClass;
+class ConditionalRegClass;
 class AllocClass;
 class ResourceForm;
 // ***** Pipeline Section *****
@@ -125,6 +127,7 @@ protected:
   // Parse components of the register section
   void reg_def_parse(void);              // Parse register definition
   void reg_class_parse(void);            // Parse register class definition
+  void reg_class_dynamic_parse(void);    // Parse dynamic register class definition
   void alloc_class_parse(void);          // Parse allocation class definition
 
   // Parse components of the definition section

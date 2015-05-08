@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 #define IS_VALID_PID(p) (p > 0 && p < MAX_PID)
 
 // Check core dump limit and report possible place where core can be found
-void os::check_or_create_dump(void* exceptionRecord, void* contextRecord, char* buffer, size_t bufferSize) {
+void os::check_dump_limit(char* buffer, size_t bufferSize) {
   int n;
   struct rlimit rlim;
   bool success;
@@ -82,7 +82,7 @@ void os::check_or_create_dump(void* exceptionRecord, void* contextRecord, char* 
     }
   }
 
-  VMError::report_coredump_status(buffer, success);
+  VMError::record_coredump_status(buffer, success);
 }
 
 int os::get_native_stack(address* stack, int frames, int toSkip) {

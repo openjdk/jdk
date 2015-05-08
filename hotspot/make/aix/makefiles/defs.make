@@ -184,17 +184,17 @@ LIBRARY_SUFFIX=so
 EXPORT_LIST += $(EXPORT_DOCS_DIR)/platform/jvmti/jvmti.html
 
 # client and server subdirectories have symbolic links to ../libjsig.so
-EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libjsig.$(LIBRARY_SUFFIX)
+EXPORT_LIST += $(EXPORT_LIB_ARCH_DIR)/libjsig.$(LIBRARY_SUFFIX)
 #ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
 #  ifeq ($(ZIP_DEBUGINFO_FILES),1)
-#    EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libjsig.diz
+#    EXPORT_LIST += $(EXPORT_LIB_ARCH_DIR)/libjsig.diz
 #  else
-#    EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libjsig.debuginfo
+#    EXPORT_LIST += $(EXPORT_LIB_ARCH_DIR)/libjsig.debuginfo
 #  endif
 #endif
-EXPORT_SERVER_DIR = $(EXPORT_JRE_LIB_ARCH_DIR)/server
-EXPORT_CLIENT_DIR = $(EXPORT_JRE_LIB_ARCH_DIR)/client
-EXPORT_MINIMAL_DIR = $(EXPORT_JRE_LIB_ARCH_DIR)/minimal
+EXPORT_SERVER_DIR = $(EXPORT_LIB_ARCH_DIR)/server
+EXPORT_CLIENT_DIR = $(EXPORT_LIB_ARCH_DIR)/client
+EXPORT_MINIMAL_DIR = $(EXPORT_LIB_ARCH_DIR)/minimal
 
 ifeq ($(findstring true, $(JVM_VARIANT_SERVER) $(JVM_VARIANT_ZERO) $(JVM_VARIANT_ZEROSHARK) $(JVM_VARIANT_CORE)), true)
   EXPORT_LIST += $(EXPORT_SERVER_DIR)/Xusage.txt
