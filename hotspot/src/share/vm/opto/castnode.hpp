@@ -42,7 +42,6 @@ class ConstraintCastNode: public TypeNode {
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual int Opcode() const;
   virtual uint ideal_reg() const = 0;
-  virtual Node *Ideal_DU_postCCP( PhaseCCP * );
 };
 
 //------------------------------CastIINode-------------------------------------
@@ -63,7 +62,6 @@ class CastIINode: public ConstraintCastNode {
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual Node *Identity( PhaseTransform *phase );
   virtual const Type *Value( PhaseTransform *phase ) const;
-  virtual Node *Ideal_DU_postCCP( PhaseCCP * );
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif
@@ -76,7 +74,6 @@ class CastPPNode: public ConstraintCastNode {
   CastPPNode (Node *n, const Type *t ): ConstraintCastNode(n, t) {}
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegP; }
-  virtual Node *Ideal_DU_postCCP( PhaseCCP * );
 };
 
 //------------------------------CheckCastPPNode--------------------------------
@@ -94,9 +91,6 @@ class CheckCastPPNode: public TypeNode {
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual int   Opcode() const;
   virtual uint  ideal_reg() const { return Op_RegP; }
-  // No longer remove CheckCast after CCP as it gives me a place to hang
-  // the proper address type - which is required to compute anti-deps.
-  //virtual Node *Ideal_DU_postCCP( PhaseCCP * );
 };
 
 

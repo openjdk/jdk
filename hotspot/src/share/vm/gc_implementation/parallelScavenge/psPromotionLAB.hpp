@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSPROMOTIONLAB_HPP
 
 #include "gc_implementation/parallelScavenge/objectStartArray.hpp"
-#include "gc_interface/collectedHeap.inline.hpp"
+#include "gc_interface/collectedHeap.hpp"
 #include "memory/allocation.hpp"
 
 //
@@ -59,7 +59,7 @@ class PSPromotionLAB : public CHeapObj<mtGC> {
   // The shared initialize code invokes this.
   debug_only(virtual bool lab_is_valid(MemRegion lab) { return false; });
 
-  PSPromotionLAB() : _top(NULL), _bottom(NULL), _end(NULL) { }
+  PSPromotionLAB() : _top(NULL), _bottom(NULL), _end(NULL), _state(zero_size) { }
 
  public:
   // Filling and flushing.

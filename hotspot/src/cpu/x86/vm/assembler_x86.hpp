@@ -142,8 +142,10 @@ REGISTER_DECLARATION(Register, r15_thread, r15); // callee-saved
 
 #endif // _LP64
 
-// JSR 292 fixed register usages:
-REGISTER_DECLARATION(Register, rbp_mh_SP_save, rbp);
+// JSR 292
+// On x86, the SP does not have to be saved when invoking method handle intrinsics
+// or compiled lambda forms. We indicate that by setting rbp_mh_SP_save to noreg.
+REGISTER_DECLARATION(Register, rbp_mh_SP_save, noreg);
 
 // Address is an abstraction used to represent a memory location
 // using any of the amd64 addressing modes with one object.
@@ -1777,6 +1779,12 @@ private:
   void vxorpd(XMMRegister dst, XMMRegister nds, Address src, bool vector256);
   void vxorps(XMMRegister dst, XMMRegister nds, Address src, bool vector256);
 
+  // Add horizontal packed integers
+  void vphaddw(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
+  void vphaddd(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
+  void phaddw(XMMRegister dst, XMMRegister src);
+  void phaddd(XMMRegister dst, XMMRegister src);
+
   // Add packed integers
   void paddb(XMMRegister dst, XMMRegister src);
   void paddw(XMMRegister dst, XMMRegister src);
@@ -1869,6 +1877,7 @@ private:
   // Copy low 128bit into high 128bit of YMM registers.
   void vinsertf128h(XMMRegister dst, XMMRegister nds, XMMRegister src);
   void vinserti128h(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vextractf128h(XMMRegister dst, XMMRegister src);
 
   // Load/store high 128bit of YMM registers which does not destroy other half.
   void vinsertf128h(XMMRegister dst, Address src);

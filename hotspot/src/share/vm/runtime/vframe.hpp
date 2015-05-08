@@ -389,12 +389,12 @@ inline void vframeStreamCommon::fill_from_compiled_frame(int decode_offset) {
       decode_offset < 0 ||
       decode_offset >= nm()->scopes_data_size()) {
     // 6379830 AsyncGetCallTrace sometimes feeds us wild frames.
-    // If we attempt to read nmethod::scopes_data at serialized_null (== 0),
-    // or if we read some at other crazy offset,
-    // we will decode garbage and make wild references into the heap,
-    // leading to crashes in product mode.
-    // (This isn't airtight, of course, since there are internal
-    // offsets which are also crazy.)
+    // If we read nmethod::scopes_data at serialized_null (== 0)
+    // or if read some at other invalid offset, invalid values will be decoded.
+    // Based on these values, invalid heap locations could be referenced
+    // that could lead to crashes in product mode.
+    // Therefore, do not use the decode offset if invalid, but fill the frame
+    // as it were a native compiled frame (no Java-level assumptions).
 #ifdef ASSERT
     if (WizardMode) {
       tty->print_cr("Error in fill_from_frame: pc_desc for "
@@ -514,9 +514,15 @@ inline void vframeStreamCommon::fill_from_interpreter_frame() {
   address   bcp    = _frame.interpreter_frame_bcp();
   int       bci    = method->validate_bci_from_bcp(bcp);
   // 6379830 AsyncGetCallTrace sometimes feeds us wild frames.
+  // AsyncGetCallTrace interrupts the VM asynchronously. As a result
+  // it is possible to access an interpreter frame for which
+  // no Java-level information is yet available (e.g., becasue
+  // the frame was being created when the VM interrupted it).
+  // In this scenario, pretend that the interpreter is at the point
+  // of entering the method.
   if (bci < 0) {
     found_bad_method_frame();
-    bci = 0;  // pretend it's on the point of entering
+    bci = 0;
   }
   _mode   = interpreted_mode;
   _method = method;

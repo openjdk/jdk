@@ -446,7 +446,7 @@ void InterpreterMacroAssembler::get_u4(Register Rdst, Register Rsrc, int offset,
 }
 
 // Load object from cpool->resolved_references(index).
-void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result, Register index) {
+void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result, Register index, Label *is_null) {
   assert_different_registers(result, index);
   get_constant_pool(result);
 
@@ -469,7 +469,7 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result
 #endif
   // Add in the index.
   add(result, tmp, result);
-  load_heap_oop(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT), result);
+  load_heap_oop(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT), result, is_null);
 }
 
 // Generate a subtype check: branch to ok_is_subtype if sub_klass is
@@ -876,7 +876,6 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
     // If condition is true we are done and hence we can store 0 in the displaced
     // header indicating it is a recursive lock.
     bne(CCR0, slow_case);
-    release();
     std(R0/*==0!*/, BasicObjectLock::lock_offset_in_bytes() +
         BasicLock::displaced_header_offset_in_bytes(), monitor);
     b(done);
@@ -1861,7 +1860,7 @@ void InterpreterMacroAssembler::profile_parameters_type(Register tmp1, Register 
     const Register mdp = tmp1;
     add(mdp, tmp1, R28_mdx);
 
-    // Pffset of the current profile entry to update.
+    // Offset of the current profile entry to update.
     const Register entry_offset = tmp2;
     // entry_offset = array len in number of cells
     ld(entry_offset, in_bytes(ArrayData::array_len_offset()), mdp);

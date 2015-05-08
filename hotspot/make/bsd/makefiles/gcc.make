@@ -313,22 +313,13 @@ endif
 
 # Work around some compiler bugs.
 ifeq ($(USE_CLANG), true)
-  # Clang 4.2
-  ifeq ($(shell expr $(CC_VER_MAJOR) = 4 \& $(CC_VER_MINOR) = 2), 1)
+  # Clang <= 6.1
+  ifeq ($(shell expr \
+      $(CC_VER_MAJOR) \< 6 \| \
+      \( $(CC_VER_MAJOR) = 6 \& $(CC_VER_MINOR) \<= 1 \) \
+    ), 1)
     OPT_CFLAGS/loopTransform.o += $(OPT_CFLAGS/NOOPT)
     OPT_CFLAGS/unsafe.o += -O1
-  # Clang 5.0
-  else ifeq ($(shell expr $(CC_VER_MAJOR) = 5 \& $(CC_VER_MINOR) = 0), 1)
-    OPT_CFLAGS/loopTransform.o += $(OPT_CFLAGS/NOOPT)
-    OPT_CFLAGS/unsafe.o += -O1
-  # Clang 5.1
-  else ifeq ($(shell expr $(CC_VER_MAJOR) = 5 \& $(CC_VER_MINOR) = 1), 1)
-    OPT_CFLAGS/loopTransform.o += $(OPT_CFLAGS/NOOPT)
-    OPT_CFLAGS/unsafe.o += -O1
-  # Clang 6.0 
-  else ifeq ($(shell expr $(CC_VER_MAJOR) = 6 \& $(CC_VER_MINOR) = 0), 1) 
-    OPT_CFLAGS/loopTransform.o += $(OPT_CFLAGS/NOOPT) 
-    OPT_CFLAGS/unsafe.o += -O1 
   else
     $(error "Update compiler workarounds for Clang $(CC_VER_MAJOR).$(CC_VER_MINOR)")
   endif
@@ -336,7 +327,7 @@ else
   # 6835796. Problem in GCC 4.3.0 with mulnode.o optimized compilation.
   ifeq ($(shell expr $(CC_VER_MAJOR) = 4 \& $(CC_VER_MINOR) = 3), 1)
     OPT_CFLAGS/mulnode.o += $(OPT_CFLAGS/NOOPT)
-  endif
+  endif 
 endif
 
 # Flags for generating make dependency flags.

@@ -63,6 +63,7 @@ class Deoptimization : AllStatic {
     Reason_speculate_null_check,  // saw unexpected null from type speculation
     Reason_rtm_state_change,      // rtm state change detected
     Reason_unstable_if,           // a branch predicted always false was taken
+    Reason_unstable_fused_if,     // fused two ifs that had each one untaken branch. One is now taken.
 
     // Reason_tenured is counted separately, add normal counted Reasons above.
     // Related to MethodData::_trap_hist_limit where Reason_tenured isn't included
@@ -326,6 +327,8 @@ class Deoptimization : AllStatic {
       return Reason_null_check;
     else if (reason == Reason_unstable_if)
       return Reason_intrinsic;
+    else if (reason == Reason_unstable_fused_if)
+      return Reason_range_check;
     else
       return Reason_none;
   }

@@ -3392,7 +3392,7 @@ const char *MatchNode::reduce_left(FormDict &globals) const {
 // Count occurrences of operands names in the leaves of the instruction
 // match rule.
 void MatchNode::count_instr_names( Dict &names ) {
-  if( !this ) return;
+  if( this == NULL ) return;
   if( _lChild ) _lChild->count_instr_names(names);
   if( _rChild ) _rChild->count_instr_names(names);
   if( !_lChild && !_rChild ) {
@@ -4043,6 +4043,13 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"ReplicateL")==0 ||
         strcmp(opType,"ReplicateF")==0 ||
         strcmp(opType,"ReplicateD")==0 ||
+        strcmp(opType,"AddReductionVI")==0 ||
+        strcmp(opType,"AddReductionVL")==0 ||
+        strcmp(opType,"AddReductionVF")==0 ||
+        strcmp(opType,"AddReductionVD")==0 ||
+        strcmp(opType,"MulReductionVI")==0 ||
+        strcmp(opType,"MulReductionVF")==0 ||
+        strcmp(opType,"MulReductionVD")==0 ||
         0 /* 0 to line up columns nicely */ )
       return 1;
   }
@@ -4135,6 +4142,10 @@ bool MatchRule::is_vector() const {
     "MulVS","MulVI","MulVF","MulVD",
     "DivVF","DivVD",
     "AndV" ,"XorV" ,"OrV",
+    "AddReductionVI", "AddReductionVL",
+    "AddReductionVF", "AddReductionVD",
+    "MulReductionVI",
+    "MulReductionVF", "MulReductionVD",
     "LShiftCntV","RShiftCntV",
     "LShiftVB","LShiftVS","LShiftVI","LShiftVL",
     "RShiftVB","RShiftVS","RShiftVI","RShiftVL",

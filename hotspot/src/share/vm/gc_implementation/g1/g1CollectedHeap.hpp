@@ -39,10 +39,9 @@
 #include "gc_implementation/g1/heapRegionManager.hpp"
 #include "gc_implementation/g1/heapRegionSet.hpp"
 #include "gc_implementation/shared/hSpaceCounters.hpp"
-#include "gc_implementation/shared/parGCAllocBuffer.hpp"
+#include "gc_interface/collectedHeap.hpp"
 #include "memory/barrierSet.hpp"
 #include "memory/memRegion.hpp"
-#include "memory/sharedHeap.hpp"
 #include "utilities/stack.hpp"
 
 // A "G1CollectedHeap" is an implementation of a java heap for HotSpot.
@@ -76,6 +75,7 @@ class G1OldTracer;
 class EvacuationFailedInfo;
 class nmethod;
 class Ticks;
+class FlexibleWorkGang;
 
 typedef OverflowTaskQueue<StarTask, mtGC>         RefToScanQueue;
 typedef GenericTaskQueueSet<RefToScanQueue, mtGC> RefToScanQueueSet;
@@ -177,7 +177,7 @@ class G1RegionMappingChangedListener : public G1MappingChangedListener {
   virtual void on_commit(uint start_idx, size_t num_regions, bool zero_filled);
 };
 
-class G1CollectedHeap : public SharedHeap {
+class G1CollectedHeap : public CollectedHeap {
   friend class VM_CollectForMetadataAllocation;
   friend class VM_G1CollectForAllocation;
   friend class VM_G1CollectFull;
@@ -201,8 +201,7 @@ class G1CollectedHeap : public SharedHeap {
   friend class G1CheckCSetFastTableClosure;
 
 private:
-  // The one and only G1CollectedHeap, so static functions can find it.
-  static G1CollectedHeap* _g1h;
+  FlexibleWorkGang* _workers;
 
   static size_t _humongous_object_threshold_in_words;
 
@@ -217,7 +216,6 @@ private:
   // It keeps track of the humongous regions.
   HeapRegionSet _humongous_set;
 
-  void clear_humongous_is_live_table();
   void eagerly_reclaim_humongous_regions();
 
   // The number of regions we could create by expansion.
@@ -287,22 +285,26 @@ private:
   // Helper for monitoring and management support.
   G1MonitoringSupport* _g1mm;
 
-  // Records whether the region at the given index is kept live by roots or
-  // references from the young generation.
-  class HumongousIsLiveBiasedMappedArray : public G1BiasedMappedArray<bool> {
+  // Records whether the region at the given index is (still) a
+  // candidate for eager reclaim.  Only valid for humongous start
+  // regions; other regions have unspecified values.  Humongous start
+  // regions are initialized at start of collection pause, with
+  // candidates removed from the set as they are found reachable from
+  // roots or the young generation.
+  class HumongousReclaimCandidates : public G1BiasedMappedArray<bool> {
    protected:
     bool default_value() const { return false; }
    public:
     void clear() { G1BiasedMappedArray<bool>::clear(); }
-    void set_live(uint region) {
-      set_by_index(region, true);
+    void set_candidate(uint region, bool value) {
+      set_by_index(region, value);
     }
-    bool is_live(uint region) {
+    bool is_candidate(uint region) {
       return get_by_index(region);
     }
   };
 
-  HumongousIsLiveBiasedMappedArray _humongous_is_live;
+  HumongousReclaimCandidates _humongous_reclaim_candidates;
   // Stores whether during humongous object registration we found candidate regions.
   // If not, we can skip a few steps.
   bool _has_humongous_reclaim_candidates;
@@ -350,6 +352,12 @@ private:
   // If the HR printer is active, dump the state of the regions in the
   // heap after a compaction.
   void print_hrm_post_compaction();
+
+  // Create a memory mapper for auxiliary data structures of the given size and
+  // translation factor.
+  static G1RegionToSpaceMapper* create_aux_memory_mapper(const char* description,
+                                                         size_t size,
+                                                         size_t translation_factor);
 
   double verify(bool guard, const char* msg);
   void verify_before_gc();
@@ -605,6 +613,7 @@ protected:
   void enqueue_discovered_references(uint no_of_gc_workers);
 
 public:
+  FlexibleWorkGang* workers() const { return _workers; }
 
   G1Allocator* allocator() {
     return _allocator;
@@ -630,21 +639,18 @@ public:
   inline AllocationContextStats& allocation_context_stats();
 
   // Do anything common to GC's.
-  virtual void gc_prologue(bool full);
-  virtual void gc_epilogue(bool full);
+  void gc_prologue(bool full);
+  void gc_epilogue(bool full);
 
+  // Modify the reclaim candidate set and test for presence.
+  // These are only valid for starts_humongous regions.
+  inline void set_humongous_reclaim_candidate(uint region, bool value);
+  inline bool is_humongous_reclaim_candidate(uint region);
+
+  // Remove from the reclaim candidate set.  Also remove from the
+  // collection set so that later encounters avoid the slow path.
   inline void set_humongous_is_live(oop obj);
 
-  bool humongous_is_live(uint region) {
-    return _humongous_is_live.is_live(region);
-  }
-
-  // Returns whether the given region (which must be a humongous (start) region)
-  // is to be considered conservatively live regardless of any other conditions.
-  bool humongous_region_is_always_live(uint index);
-  // Returns whether the given region (which must be a humongous (start) region)
-  // is considered a candidate for eager reclamation.
-  bool humongous_region_is_candidate(uint index);
   // Register the given region to be part of the collection set.
   inline void register_humongous_region_with_cset(uint index);
   // Register regions with humongous objects (actually on the start region) in
@@ -1000,11 +1006,14 @@ public:
   // Return the (conservative) maximum heap alignment for any G1 heap
   static size_t conservative_max_heap_alignment();
 
+  // Does operations required after initialization has been done.
+  void post_initialize();
+
   // Initialize weak reference processing.
-  virtual void ref_processing_init();
+  void ref_processing_init();
 
   // Explicitly import set_par_threads into this scope
-  using SharedHeap::set_par_threads;
+  using CollectedHeap::set_par_threads;
   // Set _n_par_threads according to a policy TBD.
   void set_par_threads();
 
@@ -1251,19 +1260,12 @@ public:
 
   // Iteration functions.
 
-  // Iterate over all the ref-containing fields of all objects, calling
-  // "cl.do_oop" on each.
-  virtual void oop_iterate(ExtendedOopClosure* cl);
-
   // Iterate over all objects, calling "cl.do_object" on each.
   virtual void object_iterate(ObjectClosure* cl);
 
   virtual void safe_object_iterate(ObjectClosure* cl) {
     object_iterate(cl);
   }
-
-  // Iterate over all spaces in use in the heap, in ascending address order.
-  virtual void space_iterate(SpaceClosure* cl);
 
   // Iterate over heap regions, in address order, terminating the
   // iteration early if the "doHeapRegion" method returns "true".
@@ -1307,10 +1309,6 @@ public:
 
   HeapRegion* next_compaction_region(const HeapRegion* from) const;
 
-  // A CollectedHeap will contain some number of spaces.  This finds the
-  // space containing a given address, or else returns NULL.
-  virtual Space* space_containing(const void* addr) const;
-
   // Returns the HeapRegion that contains addr. addr must not be NULL.
   template <class T>
   inline HeapRegion* heap_region_containing_raw(const T addr) const;
@@ -1343,9 +1341,6 @@ public:
   // Requires "addr" to be the start of a block, and returns "TRUE" iff
   // the block is an object.
   virtual bool block_is_obj(const HeapWord* addr) const;
-
-  // Does this heap support heap inspection? (+PrintClassHistogram)
-  virtual bool supports_heap_inspection() const { return true; }
 
   // Section on thread-local allocation buffers (TLABs)
   // See CollectedHeap for semantics.

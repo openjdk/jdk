@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "gc_implementation/g1/g1CollectedHeap.hpp"
 #include "gc_implementation/g1/g1StringDedup.hpp"
 #include "gc_implementation/g1/g1StringDedupQueue.hpp"
 #include "memory/gcLocker.hpp"
@@ -163,7 +164,7 @@ void G1StringDedupQueue::verify() {
     while (!iter.is_empty()) {
       oop obj = iter.next();
       if (obj != NULL) {
-        guarantee(Universe::heap()->is_in_reserved(obj), "Object must be on the heap");
+        guarantee(G1CollectedHeap::heap()->is_in_reserved(obj), "Object must be on the heap");
         guarantee(!obj->is_forwarded(), "Object must not be forwarded");
         guarantee(java_lang_String::is_instance(obj), "Object must be a String");
       }
