@@ -4760,8 +4760,8 @@ jint os::init_2(void) {
             FLAG_IS_DEFAULT(UseSHM) &&
             FLAG_IS_DEFAULT(UseHugeTLBFS)) {
           UseLargePages = false;
-        } else {
-          warning("UseNUMA is not fully compatible with SHM/HugeTLBFS large pages, disabling adaptive resizing");
+        } else if (UseAdaptiveSizePolicy || UseAdaptiveNUMAChunkSizing) {
+          warning("UseNUMA is not fully compatible with SHM/HugeTLBFS large pages, disabling adaptive resizing (-XX:-UseAdaptiveSizePolicy -XX:-UseAdaptiveNUMAChunkSizing)");
           UseAdaptiveSizePolicy = false;
           UseAdaptiveNUMAChunkSizing = false;
         }
