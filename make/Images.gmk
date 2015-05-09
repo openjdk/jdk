@@ -254,30 +254,13 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
 	$(ECHO) $(LOG_INFO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
 	$(install-file)
 
-  define install-ja-manpage
-	$(MKDIR) -p $(@D)
-	$(CAT) $< \
-	    | $(NATIVE2ASCII) -encoding eucJP \
-	    | $(SED) 's/@@VERSION@@/$(THIS_JDK_VERSION)/g' \
-	    | $(NATIVE2ASCII) -reverse -encoding $1 \
-	    > $@
-  endef
-
   $(JRE_IMAGE_DIR)/man/ja_JP.UTF-8/man1/%: $(MAN_SRC_DIR)/$(MAN1_SUBDIR)/ja/%
-	$(ECHO) $(LOG_INFO) Converting $(patsubst $(OUTPUT_ROOT)/%,%,$@)
-	$(call install-ja-manpage, UTF-8)
+	$(ECHO) $(LOG_INFO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(install-file)
 
   $(JDK_IMAGE_DIR)/man/ja_JP.UTF-8/man1/%: $(MAN_SRC_DIR)/$(MAN1_SUBDIR)/ja/%
-	$(ECHO) $(LOG_INFO) Converting $(patsubst $(OUTPUT_ROOT)/%,%,$@)
-	$(call install-ja-manpage, UTF-8)
-
-  $(JRE_IMAGE_DIR)/man/ja_JP.PCK/man1/%: $(MAN_SRC_DIR)/$(MAN1_SUBDIR)/ja/%
-	$(ECHO) $(LOG_INFO) Converting $(patsubst $(OUTPUT_ROOT)/%,%,$@)
-	$(call install-ja-manpage, PCK)
-
-  $(JDK_IMAGE_DIR)/man/ja_JP.PCK/man1/%: $(MAN_SRC_DIR)/$(MAN1_SUBDIR)/ja/%
-	$(ECHO) $(LOG_INFO) Converting $(patsubst $(OUTPUT_ROOT)/%,%,$@)
-	$(call install-ja-manpage, PCK)
+	$(ECHO) $(LOG_INFO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(install-file)
 
   ifeq ($(OPENJDK_TARGET_OS), solaris)
     $(JRE_IMAGE_DIR)/man/ja/man1/%: $(MAN_SRC_DIR)/$(MAN1_SUBDIR)/ja/%
