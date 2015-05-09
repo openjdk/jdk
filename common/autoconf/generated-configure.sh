@@ -737,7 +737,6 @@ AR_OUT_OPTION
 LD_OUT_OPTION
 EXE_OUT_OPTION
 CC_OUT_OPTION
-POST_MCS_CMD
 POST_STRIP_CMD
 ARFLAGS
 COMPILER_TARGET_BITS_FLAG
@@ -759,7 +758,6 @@ ac_ct_OBJCOPY
 OBJCOPY
 ac_ct_NM
 ac_ct_STRIP
-MCS
 GNM
 NM
 STRIP
@@ -820,7 +818,6 @@ LANGTOOLS_TOPDIR
 JAVAC_FLAGS
 BOOT_JDK_SOURCETARGET
 JARSIGNER
-NATIVE2ASCII
 JAR
 JAVAH
 JAVAC
@@ -1189,7 +1186,6 @@ JAVA
 JAVAC
 JAVAH
 JAR
-NATIVE2ASCII
 JARSIGNER
 CC
 CFLAGS
@@ -1207,7 +1203,6 @@ LIPO
 STRIP
 NM
 GNM
-MCS
 OBJCOPY
 OBJDUMP
 BUILD_CC
@@ -2070,8 +2065,6 @@ Some influential environment variables:
   JAVAC       Override default value for JAVAC
   JAVAH       Override default value for JAVAH
   JAR         Override default value for JAR
-  NATIVE2ASCII
-              Override default value for NATIVE2ASCII
   JARSIGNER   Override default value for JARSIGNER
   CC          C compiler command
   CFLAGS      C compiler flags
@@ -2090,7 +2083,6 @@ Some influential environment variables:
   STRIP       Override default value for STRIP
   NM          Override default value for NM
   GNM         Override default value for GNM
-  MCS         Override default value for MCS
   OBJCOPY     Override default value for OBJCOPY
   OBJDUMP     Override default value for OBJDUMP
   BUILD_CC    Override default value for BUILD_CC
@@ -3599,7 +3591,7 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 # ... then the rest
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -4367,7 +4359,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1430331133
+DATE_WHEN_GENERATED=1430918902
 
 ###############################################################################
 #
@@ -14052,8 +14044,8 @@ $as_echo "$CYGWIN_VERSION" >&6; }
     WINDOWS_ENV_VENDOR='cygwin'
     WINDOWS_ENV_VERSION="$CYGWIN_VERSION"
 
-    CYGWIN_VERSION_OK=`$ECHO $CYGWIN_VERSION | $GREP ^1.7.`
-    if test "x$CYGWIN_VERSION_OK" = x; then
+    CYGWIN_VERSION_OLD=`$ECHO $CYGWIN_VERSION | $GREP -e '^1\.0-6'`
+    if test "x$CYGWIN_VERSION_OLD" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: Your cygwin is too old. You are running $CYGWIN_VERSION, but at least cygwin 1.7 is required. Please upgrade." >&5
 $as_echo "$as_me: Your cygwin is too old. You are running $CYGWIN_VERSION, but at least cygwin 1.7 is required. Please upgrade." >&6;}
       as_fn_error $? "Cannot continue" "$LINENO" 5
@@ -26059,133 +26051,6 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$NATIVE2ASCII" = x; then
-    # The variable is not set by user, try to locate tool using the code snippet
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for native2ascii in Boot JDK" >&5
-$as_echo_n "checking for native2ascii in Boot JDK... " >&6; }
-      NATIVE2ASCII=$BOOT_JDK/bin/native2ascii
-      if test ! -x $NATIVE2ASCII; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
-$as_echo "not found" >&6; }
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
-$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
-        as_fn_error $? "Could not find native2ascii in the Boot JDK" "$LINENO" 5
-      fi
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
-
-
-  else
-    # The variable is set, but is it from the command line or the environment?
-
-    # Try to remove the string !NATIVE2ASCII! from our list.
-    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!NATIVE2ASCII!/}
-    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
-      # If it failed, the variable was not from the command line. Ignore it,
-      # but warn the user (except for BASH, which is always set by the calling BASH).
-      if test "xNATIVE2ASCII" != xBASH; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of NATIVE2ASCII from the environment. Use command line variables instead." >&5
-$as_echo "$as_me: WARNING: Ignoring value of NATIVE2ASCII from the environment. Use command line variables instead." >&2;}
-      fi
-      # Try to locate tool using the code snippet
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for native2ascii in Boot JDK" >&5
-$as_echo_n "checking for native2ascii in Boot JDK... " >&6; }
-      NATIVE2ASCII=$BOOT_JDK/bin/native2ascii
-      if test ! -x $NATIVE2ASCII; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
-$as_echo "not found" >&6; }
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
-$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
-        as_fn_error $? "Could not find native2ascii in the Boot JDK" "$LINENO" 5
-      fi
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
-
-
-    else
-      # If it succeeded, then it was overridden by the user. We will use it
-      # for the tool.
-
-      # First remove it from the list of overridden variables, so we can test
-      # for unknown variables in the end.
-      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
-
-      # Check if the provided tool contains a complete path.
-      tool_specified="$NATIVE2ASCII"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool NATIVE2ASCII=$tool_basename" >&5
-$as_echo "$as_me: Will search for user supplied tool NATIVE2ASCII=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
-set dummy $tool_basename; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_NATIVE2ASCII+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $NATIVE2ASCII in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_NATIVE2ASCII="$NATIVE2ASCII" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_NATIVE2ASCII="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-NATIVE2ASCII=$ac_cv_path_NATIVE2ASCII
-if test -n "$NATIVE2ASCII"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $NATIVE2ASCII" >&5
-$as_echo "$NATIVE2ASCII" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-        if test "x$NATIVE2ASCII" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool NATIVE2ASCII=$tool_specified" >&5
-$as_echo "$as_me: Will use user supplied tool NATIVE2ASCII=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for NATIVE2ASCII" >&5
-$as_echo_n "checking for NATIVE2ASCII... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
-$as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool NATIVE2ASCII=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
-$as_echo "$tool_specified" >&6; }
-      fi
-    fi
-  fi
-
-
-
-  # Use user overridden value if available, otherwise locate tool in the Boot JDK.
-
-  # Publish this variable in the help.
-
-
   if test "x$JARSIGNER" = x; then
     # The variable is not set by user, try to locate tool using the code snippet
 
@@ -28232,7 +28097,7 @@ $as_echo "$as_me: or run \"bash.exe -l\" from a VS command prompt and then run c
   # For solaris we really need solaris tools, and not the GNU equivalent.
   # The build tools on Solaris reside in /usr/ccs (C Compilation System),
   # so add that to path before starting to probe.
-  # FIXME: This was originally only done for AS,NM,GNM,STRIP,MCS,OBJCOPY,OBJDUMP.
+  # FIXME: This was originally only done for AS,NM,GNM,STRIP,OBJCOPY,OBJDUMP.
   if test "x$OPENJDK_BUILD_OS" = xsolaris; then
     PATH="/usr/ccs/bin:$PATH"
   fi
@@ -36672,479 +36537,6 @@ $as_echo "$as_me: Rewriting GNM to \"$new_complete\"" >&6;}
     fi
   fi
 
-
-
-
-  # Publish this variable in the help.
-
-
-  if test "x$MCS" = x; then
-    # The variable is not set by user, try to locate tool using the code snippet
-    for ac_prog in mcs
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_MCS+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $MCS in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_MCS="$MCS" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_MCS="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-MCS=$ac_cv_path_MCS
-if test -n "$MCS"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MCS" >&5
-$as_echo "$MCS" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  test -n "$MCS" && break
-done
-
-  else
-    # The variable is set, but is it from the command line or the environment?
-
-    # Try to remove the string !MCS! from our list.
-    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!MCS!/}
-    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
-      # If it failed, the variable was not from the command line. Ignore it,
-      # but warn the user (except for BASH, which is always set by the calling BASH).
-      if test "xMCS" != xBASH; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of MCS from the environment. Use command line variables instead." >&5
-$as_echo "$as_me: WARNING: Ignoring value of MCS from the environment. Use command line variables instead." >&2;}
-      fi
-      # Try to locate tool using the code snippet
-      for ac_prog in mcs
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_MCS+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $MCS in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_MCS="$MCS" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_MCS="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-MCS=$ac_cv_path_MCS
-if test -n "$MCS"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MCS" >&5
-$as_echo "$MCS" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  test -n "$MCS" && break
-done
-
-    else
-      # If it succeeded, then it was overridden by the user. We will use it
-      # for the tool.
-
-      # First remove it from the list of overridden variables, so we can test
-      # for unknown variables in the end.
-      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
-
-      # Check if the provided tool contains a complete path.
-      tool_specified="$MCS"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool MCS=$tool_basename" >&5
-$as_echo "$as_me: Will search for user supplied tool MCS=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
-set dummy $tool_basename; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_MCS+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $MCS in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_MCS="$MCS" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_MCS="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-MCS=$ac_cv_path_MCS
-if test -n "$MCS"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MCS" >&5
-$as_echo "$MCS" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-        if test "x$MCS" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool MCS=$tool_specified" >&5
-$as_echo "$as_me: Will use user supplied tool MCS=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MCS" >&5
-$as_echo_n "checking for MCS... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
-$as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool MCS=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
-$as_echo "$tool_specified" >&6; }
-      fi
-    fi
-  fi
-
-
-
-  # Only process if variable expands to non-empty
-
-  if test "x$MCS" != x; then
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-
-  # First separate the path from the arguments. This will split at the first
-  # space.
-  complete="$MCS"
-  path="${complete%% *}"
-  tmp="$complete EOL"
-  arguments="${tmp#* }"
-
-  # Input might be given as Windows format, start by converting to
-  # unix format.
-  new_path=`$CYGPATH -u "$path"`
-
-  # Now try to locate executable using which
-  new_path=`$WHICH "$new_path" 2> /dev/null`
-  # bat and cmd files are not always considered executable in cygwin causing which
-  # to not find them
-  if test "x$new_path" = x \
-      && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
-      && test "x`$LS \"$path\" 2>/dev/null`" != x; then
-    new_path=`$CYGPATH -u "$path"`
-  fi
-  if test "x$new_path" = x; then
-    # Oops. Which didn't find the executable.
-    # The splitting of arguments from the executable at a space might have been incorrect,
-    # since paths with space are more likely in Windows. Give it another try with the whole
-    # argument.
-    path="$complete"
-    arguments="EOL"
-    new_path=`$CYGPATH -u "$path"`
-    new_path=`$WHICH "$new_path" 2> /dev/null`
-    # bat and cmd files are not always considered executable in cygwin causing which
-    # to not find them
-    if test "x$new_path" = x \
-        && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
-        && test "x`$LS \"$path\" 2>/dev/null`" != x; then
-      new_path=`$CYGPATH -u "$path"`
-    fi
-    if test "x$new_path" = x; then
-      # It's still not found. Now this is an unrecoverable error.
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MCS, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of MCS, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: You might be mixing spaces in the path and extra arguments, which is not allowed." >&5
-$as_echo "$as_me: You might be mixing spaces in the path and extra arguments, which is not allowed." >&6;}
-      fi
-      as_fn_error $? "Cannot locate the the path of MCS" "$LINENO" 5
-    fi
-  fi
-
-  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
-  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
-  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
-  # "foo.exe" is OK but "foo" is an error.
-  #
-  # This test is therefore slightly more accurate than "test -f" to check for file presence.
-  # It is also a way to make sure we got the proper file name for the real test later on.
-  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
-  if test "x$test_shortpath" = x; then
-    # Short path failed, file does not exist as specified.
-    # Try adding .exe or .cmd
-    if test -f "${new_path}.exe"; then
-      input_to_shortpath="${new_path}.exe"
-    elif test -f "${new_path}.cmd"; then
-      input_to_shortpath="${new_path}.cmd"
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MCS, which resolves as \"$new_path\", is invalid." >&5
-$as_echo "$as_me: The path of MCS, which resolves as \"$new_path\", is invalid." >&6;}
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" >&5
-$as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" >&6;}
-      as_fn_error $? "Cannot locate the the path of MCS" "$LINENO" 5
-    fi
-  else
-    input_to_shortpath="$new_path"
-  fi
-
-  # Call helper function which possibly converts this using DOS-style short mode.
-  # If so, the updated path is stored in $new_path.
-  new_path="$input_to_shortpath"
-
-  input_path="$input_to_shortpath"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
-    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
-    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
-      # Going to short mode and back again did indeed matter. Since short mode is
-      # case insensitive, let's make it lowercase to improve readability.
-      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-      # Now convert it back to Unix-style (cygpath)
-      input_path=`$CYGPATH -u "$shortmode_path"`
-      new_path="$input_path"
-    fi
-  fi
-
-  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
-  if test "x$test_cygdrive_prefix" = x; then
-    # As a simple fix, exclude /usr/bin since it's not a real path.
-    if test "x`$ECHO $input_to_shortpath | $GREP ^/usr/bin/`" = x; then
-      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
-      # a path prefixed by /cygdrive for fixpath to work.
-      new_path="$CYGWIN_ROOT_PATH$input_path"
-    fi
-  fi
-
-  # remove trailing .exe if any
-  new_path="${new_path/%.exe/}"
-
-    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-
-  # First separate the path from the arguments. This will split at the first
-  # space.
-  complete="$MCS"
-  path="${complete%% *}"
-  tmp="$complete EOL"
-  arguments="${tmp#* }"
-
-  # Input might be given as Windows format, start by converting to
-  # unix format.
-  new_path="$path"
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-
-  # Now try to locate executable using which
-  new_path=`$WHICH "$new_path" 2> /dev/null`
-
-  if test "x$new_path" = x; then
-    # Oops. Which didn't find the executable.
-    # The splitting of arguments from the executable at a space might have been incorrect,
-    # since paths with space are more likely in Windows. Give it another try with the whole
-    # argument.
-    path="$complete"
-    arguments="EOL"
-    new_path="$path"
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-
-    new_path=`$WHICH "$new_path" 2> /dev/null`
-    # bat and cmd files are not always considered executable in MSYS causing which
-    # to not find them
-    if test "x$new_path" = x \
-        && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
-        && test "x`$LS \"$path\" 2>/dev/null`" != x; then
-      new_path="$path"
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-    fi
-
-    if test "x$new_path" = x; then
-      # It's still not found. Now this is an unrecoverable error.
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MCS, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of MCS, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: You might be mixing spaces in the path and extra arguments, which is not allowed." >&5
-$as_echo "$as_me: You might be mixing spaces in the path and extra arguments, which is not allowed." >&6;}
-      fi
-      as_fn_error $? "Cannot locate the the path of MCS" "$LINENO" 5
-    fi
-  fi
-
-  # Now new_path has a complete unix path to the binary
-  if test "x`$ECHO $new_path | $GREP ^/bin/`" != x; then
-    # Keep paths in /bin as-is, but remove trailing .exe if any
-    new_path="${new_path/%.exe/}"
-    # Do not save /bin paths to all_fixpath_prefixes!
-  else
-    # Not in mixed or Windows style, start by that.
-    new_path=`cmd //c echo $new_path`
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-  fi
-
-    # Output is in $new_path
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-    # remove trailing .exe if any
-    new_path="${new_path/%.exe/}"
-
-    # Save the first 10 bytes of this path to the storage, so fixpath can work.
-    all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
-  fi
-
-    else
-      # We're on a unix platform. Hooray! :)
-      # First separate the path from the arguments. This will split at the first
-      # space.
-      complete="$MCS"
-      path="${complete%% *}"
-      tmp="$complete EOL"
-      arguments="${tmp#* }"
-
-      # Cannot rely on the command "which" here since it doesn't always work.
-      is_absolute_path=`$ECHO "$path" | $GREP ^/`
-      if test -z "$is_absolute_path"; then
-        # Path to executable is not absolute. Find it.
-        IFS_save="$IFS"
-        IFS=:
-        for p in $PATH; do
-          if test -f "$p/$path" && test -x "$p/$path"; then
-            new_path="$p/$path"
-            break
-          fi
-        done
-        IFS="$IFS_save"
-      else
-        # This is an absolute path, we can use it without further modifications.
-        new_path="$path"
-      fi
-
-      if test "x$new_path" = x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MCS, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of MCS, which resolves as \"$complete\", is not found." >&6;}
-        has_space=`$ECHO "$complete" | $GREP " "`
-        if test "x$has_space" != x; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
-$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
-        fi
-        as_fn_error $? "Cannot locate the the path of MCS" "$LINENO" 5
-      fi
-    fi
-
-    # Now join together the path and the arguments once again
-    if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
-    else
-      new_complete="$new_path"
-    fi
-
-    if test "x$complete" != "x$new_complete"; then
-      MCS="$new_complete"
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MCS to \"$new_complete\"" >&5
-$as_echo "$as_me: Rewriting MCS to \"$new_complete\"" >&6;}
-    fi
-  fi
-
   elif test "x$OPENJDK_TARGET_OS" != xwindows; then
     # FIXME: we should unify this with the solaris case above.
 
@@ -41629,12 +41021,6 @@ $as_echo "$tool_specified" >&6; }
 
   if test "x$OPENJDK_TARGET_OS" != xwindows; then
     POST_STRIP_CMD="$STRIP $STRIPFLAGS"
-  fi
-
-
-  if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-    # FIXME: break out into MCSFLAGS
-    POST_MCS_CMD="$MCS -d -a \"JDK $FULL_VERSION\""
   fi
 
 
