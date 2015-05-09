@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.awt.Point;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -75,6 +75,10 @@ public class HierarchicalGraphLayout<N, E> extends GraphLayout<N, E> {
 
         public void setControlPoints(List<Point> list) {
         // Do nothing for now
+        }
+
+        public boolean isVIP() {
+            return false;
         }
     }
 
@@ -127,6 +131,7 @@ public class HierarchicalGraphLayout<N, E> extends GraphLayout<N, E> {
         }
 
         public int compareTo(Vertex o) {
+            @SuppressWarnings("unchecked")
             VertexWrapper vw = (VertexWrapper) o;
             return node.toString().compareTo(vw.node.toString());
         }
@@ -138,8 +143,8 @@ public class HierarchicalGraphLayout<N, E> extends GraphLayout<N, E> {
 
     protected void performGraphLayout(UniversalGraph<N, E> graph) {
 
-        Set<LinkWrapper> links = new HashSet<LinkWrapper>();
-        Set<VertexWrapper> vertices = new HashSet<VertexWrapper>();
+        Set<LinkWrapper> links = new LinkedHashSet<LinkWrapper>();
+        Set<VertexWrapper> vertices = new LinkedHashSet<VertexWrapper>();
         Map<N, VertexWrapper> vertexMap = new HashMap<N, VertexWrapper>();
 
         for (N node : graph.getNodes()) {

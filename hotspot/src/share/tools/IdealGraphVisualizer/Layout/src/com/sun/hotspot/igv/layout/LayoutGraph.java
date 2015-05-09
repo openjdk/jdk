@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,7 @@
  */
 package com.sun.hotspot.igv.layout;
 
-import java.util.HashSet;
-import java.util.HashMap;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.*;
 
 /**
  *
@@ -49,10 +45,10 @@ public class LayoutGraph {
         this.links = links;
         assert verify();
 
-        vertices = new TreeSet<Vertex>();
-        portLinks = new HashMap<Port, Set<Link>>();
-        inputPorts = new HashMap<Vertex, Set<Port>>();
-        outputPorts = new HashMap<Vertex, Set<Port>>();
+        vertices = new TreeSet<>();
+        portLinks = new HashMap<>(links.size());
+        inputPorts = new HashMap<>(links.size());
+        outputPorts = new HashMap<>(links.size());
 
         for (Link l : links) {
             Port p = l.getFrom();
@@ -76,7 +72,7 @@ public class LayoutGraph {
             }
 
             if (!portLinks.containsKey(p)) {
-                HashSet<Link> hashSet = new HashSet<Link>(3);
+                HashSet<Link> hashSet = new HashSet<>(3);
                 portLinks.put(p, hashSet);
             }
 
@@ -152,7 +148,7 @@ public class LayoutGraph {
     //   whole graph is visited.
     public Set<Vertex> findRootVertices(Set<Vertex> startingRoots) {
 
-        Set<Vertex> notRootSet = new HashSet<Vertex>();
+        Set<Vertex> notRootSet = new HashSet<>();
         for (Vertex v : startingRoots) {
             if (!notRootSet.contains(v)) {
                 markNotRoot(notRootSet, v, v);
@@ -174,7 +170,7 @@ public class LayoutGraph {
             }
         }
 
-        Set<Vertex> result = new HashSet<Vertex>();
+        Set<Vertex> result = new HashSet<>();
         for (Vertex v : tmpVertices) {
             if (!notRootSet.contains(v)) {
                 result.add(v);

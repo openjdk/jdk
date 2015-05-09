@@ -28,29 +28,30 @@
  * @library /testlibrary
  * @modules java.base/sun.misc
  *          java.management
- * @ignore 8073669
  * @build TestSoftReferencesBehaviorOnOOME
  * @run main/othervm -Xmx128m TestSoftReferencesBehaviorOnOOME 512 2k
  * @run main/othervm -Xmx128m TestSoftReferencesBehaviorOnOOME 128k 256k
- * @run main/othervm -Xmx128m TestSoftReferencesBehaviorOnOOME 2k 32k 10
+ * @run main/othervm -Xmx128m TestSoftReferencesBehaviorOnOOME 2k 32k
  */
 import jdk.test.lib.Utils;
+import jdk.test.lib.Asserts;
 import java.lang.ref.SoftReference;
 import java.util.LinkedList;
 import java.util.Random;
 
 public class TestSoftReferencesBehaviorOnOOME {
 
-    private static final Random rndGenerator = Utils.getRandomInstance();
-
+    /**
+     * Test generates a lot of soft references to objects with random payloads.
+     * Then it provokes OOME and checks that all SoftReferences has been gone
+     * @param args - [minSize] [maxSize] [freq]
+     *  where
+     *  - minSize - min size of random objects
+     *  - maxSize - max size of random objects
+     */
     public static void main(String[] args) {
-        int semiRefAllocFrequency = DEFAULT_FREQUENCY;
-        long minSize = DEFAULT_MIN_SIZE,
-                maxSize = DEFAULT_MAX_SIZE;
-
-        if ( args.length >= 3 ) {
-            semiRefAllocFrequency = Integer.parseInt(args[2]);
-        }
+        long minSize = DEFAULT_MIN_SIZE;
+        long maxSize = DEFAULT_MAX_SIZE;
 
         if ( args.length >= 2) {
             maxSize = getBytesCount(args[1]);
@@ -60,46 +61,49 @@ public class TestSoftReferencesBehaviorOnOOME {
             minSize = getBytesCount(args[0]);
         }
 
-        new TestSoftReferencesBehaviorOnOOME().softReferencesOom(minSize, maxSize, semiRefAllocFrequency);
+        new TestSoftReferencesBehaviorOnOOME().softReferencesOom(minSize, maxSize);
     }
 
     /**
      * Test that all SoftReferences has been cleared at time of OOM.
      */
-    void softReferencesOom(long minSize, long maxSize, int semiRefAllocFrequency) {
-        System.out.format( "minSize = %d, maxSize = %d, freq = %d%n", minSize, maxSize, semiRefAllocFrequency );
-        long counter = 0;
+    void softReferencesOom(long minSize, long maxSize) {
+        System.out.format( "minSize = %d, maxSize = %d%n", minSize, maxSize );
+
+        LinkedList<SoftReference> arrSoftRefs = new LinkedList();
+        staticRef = arrSoftRefs;
+        LinkedList arrObjects = new LinkedList();
+        staticRef = arrObjects;
 
         long multiplier = maxSize - minSize;
-        LinkedList<SoftReference> arrSoftRefs = new LinkedList();
-        LinkedList arrObjects = new LinkedList();
         long numberOfNotNulledObjects = 0;
-        long oomSoftArraySize = 0;
 
         try {
-            while (true) {
-                // Keep every Xth object to make sure we hit OOM pretty fast
-                if (counter % semiRefAllocFrequency != 0) {
-                    long allocationSize = ((int) (rndGenerator.nextDouble() * multiplier))
-                            + minSize;
-                    arrObjects.add(new byte[(int)allocationSize]);
-                } else {
-                    arrSoftRefs.add(new SoftReference(new Object()));
-                }
 
-                counter++;
-                if (counter == Long.MAX_VALUE) {
-                    counter = 0;
-                }
+            // Lets allocate as many as we can - taking size of all SoftRerefences
+            // by minimum. So it can provoke some GC but we surely will allocate enough.
+            long numSofts = (long) ((0.95 * Runtime.getRuntime().totalMemory()) / minSize);
+            System.out.println("num Soft: " + numSofts);
+
+            while (numSofts-- > 0) {
+                int allocationSize = ((int) (RND_GENERATOR.nextDouble() * multiplier))
+                            + (int)minSize;
+                arrSoftRefs.add(new SoftReference(new byte[allocationSize]));
             }
+
+            System.out.println("free: " + Runtime.getRuntime().freeMemory());
+
+            // provoke OOME.
+            while (true) {
+                arrObjects.add(new byte[(int) Runtime.getRuntime().totalMemory()]);
+            }
+
         } catch (OutOfMemoryError oome) {
+
             // Clear allocated ballast, so we don't get another OOM.
-
+            staticRef = null;
             arrObjects = null;
-
-            // Get the number of soft refs first, so we don't trigger
-            // another OOM.
-            oomSoftArraySize = arrSoftRefs.size();
+            long oomSoftArraySize = arrSoftRefs.size();
 
             for (SoftReference sr : arrSoftRefs) {
                 Object o = sr.get();
@@ -111,15 +115,14 @@ public class TestSoftReferencesBehaviorOnOOME {
 
             // Make sure we clear all refs before we return failure
             arrSoftRefs = null;
-
-            if (numberOfNotNulledObjects > 0) {
-                throw new RuntimeException(numberOfNotNulledObjects + " out of "
-                        + oomSoftArraySize + " SoftReferences was not "
-                        + "null at time of OutOfMemoryError");
-            }
+            Asserts.assertFalse(numberOfNotNulledObjects > 0,
+                    "" + numberOfNotNulledObjects + " out of "
+                    + oomSoftArraySize + " SoftReferences was not "
+                    + "null at time of OutOfMemoryError"
+            );
         } finally {
-            arrSoftRefs = null;
-            arrObjects = null;
+            Asserts.assertTrue(arrObjects == null, "OOME hasn't been provoked");
+            Asserts.assertTrue(arrSoftRefs == null, "OOME hasn't been provoked");
         }
     }
 
@@ -128,9 +131,7 @@ public class TestSoftReferencesBehaviorOnOOME {
         long mod = 1;
 
         if (arg.trim().length() >= 2) {
-            mod = postfixes.indexOf(
-                    arg.trim().charAt(arg.length() - 1)
-            );
+            mod = postfixes.indexOf(arg.trim().charAt(arg.length() - 1));
 
             if (mod != -1) {
                 mod = (long) Math.pow(1024, mod+1);
@@ -143,7 +144,8 @@ public class TestSoftReferencesBehaviorOnOOME {
         return Long.parseLong(arg) * mod;
     }
 
+    private static final Random RND_GENERATOR = Utils.getRandomInstance();
     private static final long DEFAULT_MIN_SIZE = 512;
     private static final long DEFAULT_MAX_SIZE = 1024;
-    private static final int DEFAULT_FREQUENCY = 4;
+    private static Object staticRef; // to prevent compile optimisations
 }

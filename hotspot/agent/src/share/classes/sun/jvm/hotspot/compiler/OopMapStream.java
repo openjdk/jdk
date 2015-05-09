@@ -28,30 +28,26 @@ import sun.jvm.hotspot.code.*;
 
 public class OopMapStream {
   private CompressedReadStream stream;
-  private OopMap oopMap;
+  private ImmutableOopMap oopMap;
   private int mask;
   private int size;
   private int position;
   private OopMapValue omv;
   private boolean omvValid;
 
-  public OopMapStream(OopMap oopMap) {
+  public OopMapStream(ImmutableOopMap oopMap) {
     this(oopMap, (OopMapValue.OopTypes[]) null);
   }
 
-  public OopMapStream(OopMap oopMap, OopMapValue.OopTypes type) {
+  public OopMapStream(ImmutableOopMap oopMap, OopMapValue.OopTypes type) {
     this(oopMap, (OopMapValue.OopTypes[]) null);
     mask = type.getValue();
   }
 
-  public OopMapStream(OopMap oopMap, OopMapValue.OopTypes[] types) {
-    if (oopMap.getOMVData() == null) {
-      stream = new CompressedReadStream(oopMap.getWriteStream().getBuffer());
-    } else {
-      stream = new CompressedReadStream(oopMap.getOMVData());
-    }
+  public OopMapStream(ImmutableOopMap oopMap, OopMapValue.OopTypes[] types) {
+    stream = new CompressedReadStream(oopMap.getData());
     mask = computeMask(types);
-    size = (int) oopMap.getOMVCount();
+    size = (int) oopMap.getCount();
     position = 0;
     omv = new OopMapValue();
     omvValid = false;

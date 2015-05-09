@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,7 @@ public class ClusterNode implements Vertex {
         outputSlot = new Port() {
 
             public Point getRelativePosition() {
-                return new Point(size.width / 2, size.height);
+                return new Point(size.width / 2, 0);//size.height);
             }
 
             public Vertex getVertex() {
@@ -183,7 +183,7 @@ public class ClusterNode implements Vertex {
 
         for (Link e : subEdges) {
             List<Point> arr = e.getControlPoints();
-            ArrayList<Point> newArr = new ArrayList<Point>();
+            ArrayList<Point> newArr = new ArrayList<Point>(arr.size());
             for (Point p : arr) {
                 if (p != null) {
                     Point p2 = new Point(p);

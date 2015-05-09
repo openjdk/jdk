@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,10 @@ public class InvertSelector implements Selector {
         this.selector = selector;
     }
 
+    @Override
     public List<Figure> selected(Diagram d) {
 
-        List<Figure> result = new ArrayList<Figure>();
+        List<Figure> result = new ArrayList<>();
         List<Figure> otherResult = selector.selected(d);
         for (Figure f : d.getFigures()) {
             if (!otherResult.contains(f)) {

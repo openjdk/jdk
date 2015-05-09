@@ -860,7 +860,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(CodeBlob,                    _frame_complete_offset,                        int)                                   \
   nonstatic_field(CodeBlob,                    _data_offset,                                  int)                                   \
   nonstatic_field(CodeBlob,                    _frame_size,                                   int)                                   \
-  nonstatic_field(CodeBlob,                    _oop_maps,                                     OopMapSet*)                            \
+  nonstatic_field(CodeBlob,                    _oop_maps,                                     ImmutableOopMapSet*)                   \
                                                                                                                                      \
   nonstatic_field(RuntimeStub,                 _caller_must_gc_arguments,                     bool)                                  \
                                                                                                                                      \
@@ -966,12 +966,18 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
                                                                                                                                      \
   nonstatic_field(OopMap,                      _pc_offset,                                    int)                                   \
   nonstatic_field(OopMap,                      _omv_count,                                    int)                                   \
-  nonstatic_field(OopMap,                      _omv_data_size,                                int)                                   \
-  nonstatic_field(OopMap,                      _omv_data,                                     unsigned char*)                        \
   nonstatic_field(OopMap,                      _write_stream,                                 CompressedWriteStream*)                \
   nonstatic_field(OopMapSet,                   _om_count,                                     int)                                   \
   nonstatic_field(OopMapSet,                   _om_size,                                      int)                                   \
   nonstatic_field(OopMapSet,                   _om_data,                                      OopMap**)                              \
+                                                                                                                                     \
+  nonstatic_field(ImmutableOopMapSet,          _count,                                        int)                                   \
+  nonstatic_field(ImmutableOopMapSet,          _size,                                         int)                                   \
+                                                                                                                                     \
+  nonstatic_field(ImmutableOopMapPair,         _pc_offset,                                    int)                                   \
+  nonstatic_field(ImmutableOopMapPair,         _oopmap_offset,                                int)                                   \
+                                                                                                                                     \
+  nonstatic_field(ImmutableOopMap,             _count,                                        int)                                   \
                                                                                                                                      \
   /*********************************/                                                                                                \
   /* JNIHandles and JNIHandleBlock */                                                                                                \
@@ -1689,6 +1695,9 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
                                                                           \
   declare_toplevel_type(OopMap)                                           \
   declare_toplevel_type(OopMapSet)                                        \
+  declare_toplevel_type(ImmutableOopMapSet)                               \
+  declare_toplevel_type(ImmutableOopMapPair)                              \
+  declare_toplevel_type(ImmutableOopMap)                                  \
                                                                           \
   /********************/                                                  \
   /* CompressedStream */                                                  \
