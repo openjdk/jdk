@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @summary Test if getObjectName handles properly when called by
  *          multiple threads simultaneously. Run in othervm mode to
  *          make sure the object name is not initialized to begin with.
+ * @modules java.management
  * @run main/othervm GetObjectName
  */
 

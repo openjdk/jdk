@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Check that OnUnregister is an allowed value for persistPolicy
  * in ModelMBeanAttributeInfo
  * @author Eamonn McManus
+ * @modules java.management
  * @run clean OnUnregisterTest
  * @run build OnUnregisterTest
  * @run main OnUnregisterTest

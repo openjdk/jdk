@@ -41,6 +41,8 @@ import jdk.testlibrary.ProcessTools;
  * @test
  * @bug 6434402 8004926
  * @library /lib/testlibrary
+ * @modules java.management/sun.management
+ *          java.management
  * @build jdk.testlibrary.*
  * @build TestManager TestApplication CustomLauncherTest
  * @run main/othervm CustomLauncherTest
