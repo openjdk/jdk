@@ -318,6 +318,9 @@
   notproduct(bool, TraceLoopUnswitching, false,                             \
           "Trace loop unswitching")                                         \
                                                                             \
+  product(bool, AllowVectorizeOnDemand, true,                               \
+          "Globally supress vectorization set in VectorizeMethod")          \
+                                                                            \
   product(bool, UseSuperWord, true,                                         \
           "Transform scalar operations into superword operations")          \
                                                                             \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,33 +25,27 @@
 package com.sun.hotspot.igv.util;
 
 import com.sun.hotspot.igv.data.ChangedListener;
-import java.awt.Color;
-import java.awt.Cursor;
-import java.awt.Dimension;
-import java.awt.FontMetrics;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.awt.RenderingHints;
+import java.awt.*;
+import java.awt.geom.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.util.List;
-import javax.swing.JComponent;
+import javax.swing.*;
 
 /**
  *
  * @author Thomas Wuerthinger
  */
-public class RangeSlider extends JComponent implements ChangedListener<RangeSliderModel>, MouseListener, MouseMotionListener {
+public class RangeSlider extends JComponent implements ChangedListener<RangeSliderModel>, MouseListener, MouseMotionListener, Scrollable {
 
     public static final int HEIGHT = 40;
-    public static final int BAR_HEIGHT = 22;
-    public static final int BAR_SELECTION_ENDING_HEIGHT = 16;
-    public static final int BAR_SELECTION_HEIGHT = 10;
-    public static final int BAR_THICKNESS = 2;
-    public static final int BAR_CIRCLE_SIZE = 9;
+    public static final float BAR_HEIGHT = 22;
+    public static final float BAR_SELECTION_ENDING_HEIGHT = 16;
+    public static final float BAR_SELECTION_HEIGHT = 10;
+    public static final float BAR_THICKNESS = 2;
+    public static final float BAR_CIRCLE_SIZE = 9;
+    public static final float BAR_CIRCLE_CONNECTOR_SIZE = 6;
     public static final int MOUSE_ENDING_OFFSET = 3;
     public static final Color BACKGROUND_COLOR = Color.white;
     public static final Color BAR_COLOR = Color.black;
@@ -98,14 +92,61 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
         return model;
     }
 
+    /**
+     * Returns the preferred size of the viewport for a view component.
+     * For example, the preferred size of a <code>JList</code> component
+     * is the size required to accommodate all of the cells in its list.
+     * However, the value of <code>preferredScrollableViewportSize</code>
+     * is the size required for <code>JList.getVisibleRowCount</code> rows.
+     * A component without any properties that would affect the viewport
+     * size should just return <code>getPreferredSize</code> here.
+     *
+     * @return the preferredSize of a <code>JViewport</code> whose view
+     *    is this <code>Scrollable</code>
+     * @see JViewport#getPreferredSize
+     */
+    public Dimension getPreferredScrollableViewportSize() {
+        return getPreferredSize();
+    }
+
+    public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
+        if (orientation == SwingConstants.VERTICAL) {
+            return 1;
+        }
+
+        return (int)(BAR_CIRCLE_SIZE + BAR_CIRCLE_CONNECTOR_SIZE);
+    }
+
+    public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
+        return orientation == SwingConstants.VERTICAL ? visibleRect.height / 2 : visibleRect.width / 2;
+    }
+
+    public boolean getScrollableTracksViewportWidth() {
+        return false;
+    }
+
+    public boolean getScrollableTracksViewportHeight() {
+        return true;
+    }
+
     @Override
     public Dimension getPreferredSize() {
         Dimension d = super.getPreferredSize();
         d.height = HEIGHT;
+        d.width = Math.max(d.width, (int)(2 * BAR_CIRCLE_CONNECTOR_SIZE + getPaintingModel().getPositions().size() * (BAR_CIRCLE_SIZE + BAR_CIRCLE_CONNECTOR_SIZE)));
         return d;
     }
 
+    @Override
     public void changed(RangeSliderModel source) {
+        revalidate();
+
+        float barStartY = getBarStartY();
+        int circleCenterY = (int)(barStartY + BAR_HEIGHT / 2);
+        int startX = (int)getStartXPosition(model.getFirstPosition());
+        int endX = (int)getEndXPosition(model.getSecondPosition());
+        Rectangle r = new Rectangle(startX, circleCenterY, endX - startX, 1);
+        scrollRectToVisible(r);
         update();
     }
 
@@ -113,22 +154,22 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
         this.repaint();
     }
 
-    private int getXPosition(int index) {
+    private float getXPosition(int index) {
         assert index >= 0 && index < getPaintingModel().getPositions().size();
         return getXOffset() * (index + 1);
     }
 
-    private int getXOffset() {
+    private float getXOffset() {
         int size = getPaintingModel().getPositions().size();
-        int width = getWidth();
+        float width = (float)getWidth();
         return (width / (size + 1));
     }
 
-    private int getEndXPosition(int index) {
+    private float getEndXPosition(int index) {
         return getXPosition(index) + getXOffset() / 2;
     }
 
-    private int getStartXPosition(int index) {
+    private float getStartXPosition(int index) {
         return getXPosition(index) - getXOffset() / 2;
     }
 
@@ -142,7 +183,7 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
         int height = getHeight();
 
         g2.setColor(BACKGROUND_COLOR);
-        g2.fillRect(0, 0, width, height);
+        g2.fill(new Rectangle2D.Float(0, 0, width, height));
 
         // Nothing to paint?
         if (getPaintingModel() == null || getPaintingModel().getPositions().size() == 0) {
@@ -157,30 +198,30 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
 
     }
 
-    private int getBarStartY() {
-        return getHeight() - BAR_HEIGHT;
+    private float getBarStartY() {
+        return getHeight() / 2 - BAR_HEIGHT / 2;
     }
 
     private void paintBar(Graphics2D g) {
         List<String> list = getPaintingModel().getPositions();
-        int barStartY = getBarStartY();
+        float barStartY = getBarStartY();
 
         g.setColor(BAR_COLOR);
-        g.fillRect(getXPosition(0), barStartY + BAR_HEIGHT / 2 - BAR_THICKNESS / 2, getXPosition(list.size() - 1) - getXPosition(0), BAR_THICKNESS);
+        g.fill(new Rectangle2D.Float(getXPosition(0), barStartY + BAR_HEIGHT / 2 - BAR_THICKNESS / 2, getXPosition(list.size() - 1) - getXPosition(0), BAR_THICKNESS));
 
-        int circleCenterY = barStartY + BAR_HEIGHT / 2;
+        float circleCenterY = barStartY + BAR_HEIGHT / 2;
         for (int i = 0; i < list.size(); i++) {
-            int curX = getXPosition(i);
+            float curX = getXPosition(i);
             g.setColor(getPaintingModel().getColors().get(i));
-            g.fillOval(curX - BAR_CIRCLE_SIZE / 2, circleCenterY - BAR_CIRCLE_SIZE / 2, BAR_CIRCLE_SIZE, BAR_CIRCLE_SIZE);
+            g.fill(new Ellipse2D.Float(curX - BAR_CIRCLE_SIZE / 2, circleCenterY - BAR_CIRCLE_SIZE / 2, BAR_CIRCLE_SIZE, BAR_CIRCLE_SIZE));
             g.setColor(Color.black);
-            g.drawOval(curX - BAR_CIRCLE_SIZE / 2, circleCenterY - BAR_CIRCLE_SIZE / 2, BAR_CIRCLE_SIZE, BAR_CIRCLE_SIZE);
+            g.draw(new Ellipse2D.Float(curX - BAR_CIRCLE_SIZE / 2, circleCenterY - BAR_CIRCLE_SIZE / 2, BAR_CIRCLE_SIZE, BAR_CIRCLE_SIZE));
 
 
             String curS = list.get(i);
             if (curS != null && curS.length() > 0) {
-                int startX = getStartXPosition(i);
-                int endX = getEndXPosition(i);
+                float startX = getStartXPosition(i);
+                float endX = getEndXPosition(i);
                 FontMetrics metrics = g.getFontMetrics();
                 Rectangle bounds = metrics.getStringBounds(curS, g).getBounds();
                 if (bounds.width < endX - startX && bounds.height < barStartY) {
@@ -194,10 +235,10 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
 
     private void paintSelected(Graphics2D g, int start, int end) {
 
-        int startX = getStartXPosition(start);
-        int endX = getEndXPosition(end);
-        int barStartY = getBarStartY();
-        int barSelectionEndingStartY = barStartY + BAR_HEIGHT / 2 - BAR_SELECTION_ENDING_HEIGHT / 2;
+        float startX = getStartXPosition(start);
+        float endX = getEndXPosition(end);
+        float barStartY = getBarStartY();
+        float barSelectionEndingStartY = barStartY + BAR_HEIGHT / 2 - BAR_SELECTION_ENDING_HEIGHT / 2;
         paintSelectedEnding(g, startX, barSelectionEndingStartY);
         paintSelectedEnding(g, endX, barSelectionEndingStartY);
 
@@ -207,18 +248,18 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
         } else if (isOverBar) {
             g.setColor(BAR_SELECTION_COLOR_ROLLOVER);
         }
-        g.fillRect(startX, barStartY + BAR_HEIGHT / 2 - BAR_SELECTION_HEIGHT / 2, endX - startX, BAR_SELECTION_HEIGHT);
+        g.fill(new Rectangle2D.Float(startX, barStartY + BAR_HEIGHT / 2 - BAR_SELECTION_HEIGHT / 2, endX - startX, BAR_SELECTION_HEIGHT));
     }
 
-    private void paintSelectedEnding(Graphics g, int x, int y) {
+    private void paintSelectedEnding(Graphics2D g, float x, float y) {
         g.setColor(BAR_COLOR);
-        g.fillRect(x - BAR_THICKNESS / 2, y, BAR_THICKNESS, BAR_SELECTION_ENDING_HEIGHT);
+        g.fill(new Rectangle2D.Float(x - BAR_THICKNESS / 2, y, BAR_THICKNESS, BAR_SELECTION_ENDING_HEIGHT));
     }
 
     private boolean isOverSecondPosition(Point p) {
         if (p.y >= getBarStartY()) {
-            int destX = getEndXPosition(getPaintingModel().getSecondPosition());
-            int off = Math.abs(destX - p.x);
+            float destX = getEndXPosition(getPaintingModel().getSecondPosition());
+            float off = Math.abs(destX - p.x);
             return off <= MOUSE_ENDING_OFFSET;
         }
         return false;
@@ -226,8 +267,8 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
 
     private boolean isOverFirstPosition(Point p) {
         if (p.y >= getBarStartY()) {
-            int destX = getStartXPosition(getPaintingModel().getFirstPosition());
-            int off = Math.abs(destX - p.x);
+            float destX = getStartXPosition(getPaintingModel().getFirstPosition());
+            float off = Math.abs(destX - p.x);
             return off <= MOUSE_ENDING_OFFSET;
         }
         return false;
@@ -240,10 +281,14 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
         return false;
     }
 
+    @Override
     public void mouseDragged(MouseEvent e) {
+        Rectangle r = new Rectangle(e.getX(), e.getY(), 1, 1);
+        scrollRectToVisible(r);
+
         if (state == State.DragBar) {
-            int firstX = this.getStartXPosition(model.getFirstPosition());
-            int newFirstX = firstX + e.getPoint().x - startPoint.x;
+            float firstX = this.getStartXPosition(model.getFirstPosition());
+            float newFirstX = firstX + e.getPoint().x - startPoint.x;
             int newIndex = getIndexFromPosition(newFirstX) + 1;
             if (newIndex + model.getSecondPosition() - model.getFirstPosition() >= model.getPositions().size()) {
                 newIndex = model.getPositions().size() - (model.getSecondPosition() - model.getFirstPosition()) - 1;
@@ -270,13 +315,13 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
         }
     }
 
-    private int getIndexFromPosition(int x) {
+    private int getIndexFromPosition(float x) {
         if (x < getXPosition(0)) {
             return -1;
         }
         for (int i = 0; i < getPaintingModel().getPositions().size() - 1; i++) {
-            int startX = getXPosition(i);
-            int endX = getXPosition(i + 1);
+            float startX = getXPosition(i);
+            float endX = getXPosition(i + 1);
             if (x >= startX && x <= endX) {
                 return i;
             }
@@ -286,7 +331,7 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
 
     private int getCircleIndexFromPosition(int x) {
         int result = 0;
-        for (int i = 1; i < getPaintingModel().getPositions().size() - 1; i++) {
+        for (int i = 1; i < getPaintingModel().getPositions().size(); i++) {
             if (x > getStartXPosition(i)) {
                 result = i;
             }
@@ -294,6 +339,7 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
         return result;
     }
 
+    @Override
     public void mouseMoved(MouseEvent e) {
         isOverBar = false;
         if (model == null) {
@@ -313,6 +359,7 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
         repaint();
     }
 
+    @Override
     public void mouseClicked(MouseEvent e) {
         if (e.getClickCount() > 1) {
             // Double click
@@ -321,6 +368,7 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
         }
     }
 
+    @Override
     public void mousePressed(MouseEvent e) {
         if (model == null) {
             return;
@@ -341,6 +389,7 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
         tempModel = model.copy();
     }
 
+    @Override
     public void mouseReleased(MouseEvent e) {
         if (model == null || tempModel == null) {
             return;
@@ -350,9 +399,11 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
         tempModel = null;
     }
 
+    @Override
     public void mouseEntered(MouseEvent e) {
     }
 
+    @Override
     public void mouseExited(MouseEvent e) {
         isOverBar = false;
         repaint();

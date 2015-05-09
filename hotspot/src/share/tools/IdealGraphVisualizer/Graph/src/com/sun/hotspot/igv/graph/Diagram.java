@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,17 +28,9 @@ import com.sun.hotspot.igv.data.InputEdge;
 import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.data.Properties;
+import com.sun.hotspot.igv.data.Properties.StringPropertyMatcher;
 import java.awt.Font;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  *
@@ -51,20 +43,33 @@ public class Diagram {
     private InputGraph graph;
     private int curId;
     private String nodeText;
-    private Font font;
+    private final Font font;
+    private final Font slotFont;
+    private final Font boldFont;
 
     public Font getFont() {
         return font;
     }
 
+    public Font getSlotFont() {
+        return slotFont;
+    }
+
+    public Font getBoldFont() {
+        return boldFont;
+    }
+
     private Diagram() {
-        figures = new ArrayList<Figure>();
-        blocks = new HashMap<InputBlock, Block>();
+        figures = new ArrayList<>();
+        blocks = new LinkedHashMap<>(8);
         this.nodeText = "";
-        this.font = new Font("Serif", Font.PLAIN, 14);
+        this.font = new Font("Arial", Font.PLAIN, 12);
+        this.slotFont = new Font("Arial", Font.PLAIN, 10);
+        this.boldFont = this.font.deriveFont(Font.BOLD);
     }
 
     public Block getBlock(InputBlock b) {
+        assert blocks.containsKey(b);
         return blocks.get(b);
     }
 
@@ -72,12 +77,7 @@ public class Diagram {
         return nodeText;
     }
 
-    public void schedule(Collection<InputBlock> newBlocks) {
-        graph.schedule(newBlocks);
-        updateBlocks();
-    }
-
-    private void updateBlocks() {
+    public void updateBlocks() {
         blocks.clear();
         for (InputBlock b : graph.getBlocks()) {
             Block curBlock = new Block(b, this);
@@ -108,10 +108,26 @@ public class Diagram {
         return f;
     }
 
-    public Connection createConnection(InputSlot inputSlot, OutputSlot outputSlot) {
+    public Connection createConnection(InputSlot inputSlot, OutputSlot outputSlot, String label, String type) {
         assert inputSlot.getFigure().getDiagram() == this;
         assert outputSlot.getFigure().getDiagram() == this;
-        return new Connection(inputSlot, outputSlot);
+        return new Connection(inputSlot, outputSlot, label, type);
+    }
+
+    public Map<InputNode, Set<Figure>> calcSourceToFigureRelation() {
+        Map<InputNode, Set<Figure>> map = new HashMap<>();
+
+        for(InputNode node : this.getGraph().getNodes()) {
+            map.put(node, new HashSet<Figure>());
+        }
+
+        for(Figure f : this.getFigures()) {
+            for(InputNode node : f.getSource().getSourceNodes()) {
+                map.get(node).add(f);
+            }
+        }
+
+        return map;
     }
 
     public static Diagram createDiagram(InputGraph graph, String nodeText) {
@@ -126,11 +142,12 @@ public class Diagram {
         d.updateBlocks();
 
         Collection<InputNode> nodes = graph.getNodes();
-        HashMap<Integer, Figure> figureHash = new HashMap<Integer, Figure>();
+        Hashtable<Integer, Figure> figureHash = new Hashtable<>();
         for (InputNode n : nodes) {
             Figure f = d.createFigure();
             f.getSource().addSourceNode(n);
             f.getProperties().add(n.getProperties());
+            f.setSubgraphs(n.getSubgraphs());
             figureHash.put(n.getId(), f);
         }
 
@@ -140,23 +157,23 @@ public class Diagram {
             int to = e.getTo();
             Figure fromFigure = figureHash.get(from);
             Figure toFigure = figureHash.get(to);
+
+            if(fromFigure == null || toFigure == null) continue;
             assert fromFigure != null && toFigure != null;
 
-            int toIndex = e.getToIndex();
-
-            while (fromFigure.getOutputSlots().size() <= 0) {
+            int fromIndex = e.getFromIndex();
+            while (fromFigure.getOutputSlots().size() <= fromIndex) {
                 fromFigure.createOutputSlot();
             }
+            OutputSlot outputSlot = fromFigure.getOutputSlots().get(fromIndex);
 
-            OutputSlot outputSlot = fromFigure.getOutputSlots().get(0);
-
+            int toIndex = e.getToIndex();
             while (toFigure.getInputSlots().size() <= toIndex) {
                 toFigure.createInputSlot();
             }
-
             InputSlot inputSlot = toFigure.getInputSlots().get(toIndex);
 
-            Connection c = d.createConnection(inputSlot, outputSlot);
+            Connection c = d.createConnection(inputSlot, outputSlot, e.getLabel(), e.getType());
 
             if (e.getState() == InputEdge.State.NEW) {
                 c.setStyle(Connection.ConnectionStyle.BOLD);
@@ -174,7 +191,7 @@ public class Diagram {
             freeFigure(f);
         }
 
-        ArrayList<Figure> newFigures = new ArrayList<Figure>();
+        ArrayList<Figure> newFigures = new ArrayList<>();
         for (Figure f : this.figures) {
             if (!figuresToRemove.contains(f)) {
                 newFigures.add(f);
@@ -185,12 +202,12 @@ public class Diagram {
 
     private void freeFigure(Figure succ) {
 
-        List<InputSlot> inputSlots = new ArrayList<InputSlot>(succ.getInputSlots());
+        List<InputSlot> inputSlots = new ArrayList<>(succ.getInputSlots());
         for (InputSlot s : inputSlots) {
             succ.removeInputSlot(s);
         }
 
-        List<OutputSlot> outputSlots = new ArrayList<OutputSlot>(succ.getOutputSlots());
+        List<OutputSlot> outputSlots = new ArrayList<>(succ.getOutputSlots());
         for (OutputSlot s : outputSlots) {
             succ.removeOutputSlot(s);
         }
@@ -219,7 +236,7 @@ public class Diagram {
 
     public Set<Connection> getConnections() {
 
-        Set<Connection> connections = new HashSet<Connection>();
+        Set<Connection> connections = new HashSet<>();
         for (Figure f : figures) {
 
             for (InputSlot s : f.getInputSlots()) {
@@ -231,10 +248,10 @@ public class Diagram {
     }
 
     public Figure getRootFigure() {
-        Properties.PropertySelector<Figure> selector = new Properties.PropertySelector<Figure>(figures);
-        Figure root = selector.selectSingle("name", "Root");
+        Properties.PropertySelector<Figure> selector = new Properties.PropertySelector<>(figures);
+        Figure root = selector.selectSingle(new StringPropertyMatcher("name", "Root"));
         if (root == null) {
-            root = selector.selectSingle("name", "Start");
+            root = selector.selectSingle(new StringPropertyMatcher("name", "Start"));
         }
         if (root == null) {
             List<Figure> rootFigures = getRootFigures();
@@ -258,9 +275,10 @@ public class Diagram {
         System.out.println("Number of figures: " + tmpFigures.size());
         System.out.println("Number of connections: " + connections.size());
 
-        List<Figure> figuresSorted = new ArrayList<Figure>(tmpFigures);
+        List<Figure> figuresSorted = new ArrayList<>(tmpFigures);
         Collections.sort(figuresSorted, new Comparator<Figure>() {
 
+            @Override
             public int compare(Figure a, Figure b) {
                 return b.getPredecessors().size() + b.getSuccessors().size() - a.getPredecessors().size() - a.getSuccessors().size();
             }
@@ -283,7 +301,7 @@ public class Diagram {
     }
 
     public List<Figure> getRootFigures() {
-        ArrayList<Figure> rootFigures = new ArrayList<Figure>();
+        ArrayList<Figure> rootFigures = new ArrayList<>();
         for (Figure f : figures) {
             if (f.getPredecessors().size() == 0) {
                 rootFigures.add(f);

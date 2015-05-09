@@ -54,6 +54,7 @@
 #include "runtime/atomic.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/taskqueue.inline.hpp"
 
 // Concurrent marking bit map wrapper
 
@@ -2314,13 +2315,13 @@ private:
   G1CollectedHeap* _g1h;
   ConcurrentMark*  _cm;
   WorkGang*        _workers;
-  int              _active_workers;
+  uint             _active_workers;
 
 public:
   G1CMRefProcTaskExecutor(G1CollectedHeap* g1h,
-                        ConcurrentMark* cm,
-                        WorkGang* workers,
-                        int n_workers) :
+                          ConcurrentMark* cm,
+                          WorkGang* workers,
+                          uint n_workers) :
     _g1h(g1h), _cm(cm),
     _workers(workers), _active_workers(n_workers) { }
 
@@ -2551,31 +2552,50 @@ void ConcurrentMark::swapMarkBitMaps() {
   _nextMarkBitMap  = (CMBitMap*)  temp;
 }
 
-class CMObjectClosure;
-
-// Closure for iterating over objects, currently only used for
-// processing SATB buffers.
-class CMObjectClosure : public ObjectClosure {
+// Closure for marking entries in SATB buffers.
+class CMSATBBufferClosure : public SATBBufferClosure {
 private:
   CMTask* _task;
+  G1CollectedHeap* _g1h;
 
-public:
-  void do_object(oop obj) {
-    _task->deal_with_reference(obj);
+  // This is very similar to CMTask::deal_with_reference, but with
+  // more relaxed requirements for the argument, so this must be more
+  // circumspect about treating the argument as an object.
+  void do_entry(void* entry) const {
+    _task->increment_refs_reached();
+    HeapRegion* hr = _g1h->heap_region_containing_raw(entry);
+    if (entry < hr->next_top_at_mark_start()) {
+      // Until we get here, we don't know whether entry refers to a valid
+      // object; it could instead have been a stale reference.
+      oop obj = static_cast<oop>(entry);
+      assert(obj->is_oop(true /* ignore mark word */),
+             err_msg("Invalid oop in SATB buffer: " PTR_FORMAT, p2i(obj)));
+      _task->make_reference_grey(obj, hr);
+    }
   }
 
-  CMObjectClosure(CMTask* task) : _task(task) { }
+public:
+  CMSATBBufferClosure(CMTask* task, G1CollectedHeap* g1h)
+    : _task(task), _g1h(g1h) { }
+
+  virtual void do_buffer(void** buffer, size_t size) {
+    for (size_t i = 0; i < size; ++i) {
+      do_entry(buffer[i]);
+    }
+  }
 };
 
 class G1RemarkThreadsClosure : public ThreadClosure {
-  CMObjectClosure _cm_obj;
+  CMSATBBufferClosure _cm_satb_cl;
   G1CMOopClosure _cm_cl;
   MarkingCodeBlobClosure _code_cl;
   int _thread_parity;
 
  public:
   G1RemarkThreadsClosure(G1CollectedHeap* g1h, CMTask* task) :
-    _cm_obj(task), _cm_cl(g1h, g1h->concurrent_mark(), task), _code_cl(&_cm_cl, !CodeBlobToOopClosure::FixRelocations),
+    _cm_satb_cl(task, g1h),
+    _cm_cl(g1h, g1h->concurrent_mark(), task),
+    _code_cl(&_cm_cl, !CodeBlobToOopClosure::FixRelocations),
     _thread_parity(Threads::thread_claim_parity()) {}
 
   void do_thread(Thread* thread) {
@@ -2591,11 +2611,11 @@ class G1RemarkThreadsClosure : public ThreadClosure {
         // live by the SATB invariant but other oops recorded in nmethods may behave differently.
         jt->nmethods_do(&_code_cl);
 
-        jt->satb_mark_queue().apply_closure_and_empty(&_cm_obj);
+        jt->satb_mark_queue().apply_closure_and_empty(&_cm_satb_cl);
       }
     } else if (thread->is_VM_thread()) {
       if (thread->claim_oops_do(true, _thread_parity)) {
-        JavaThread::satb_mark_queue_set().shared_satb_queue()->apply_closure_and_empty(&_cm_obj);
+        JavaThread::satb_mark_queue_set().shared_satb_queue()->apply_closure_and_empty(&_cm_satb_cl);
       }
     }
   }
@@ -2630,7 +2650,7 @@ public:
     }
   }
 
-  CMRemarkTask(ConcurrentMark* cm, int active_workers) :
+  CMRemarkTask(ConcurrentMark* cm, uint active_workers) :
     AbstractGangTask("Par Remark"), _cm(cm) {
     _cm->terminator()->reset_for_reuse(active_workers);
   }
@@ -3008,7 +3028,7 @@ protected:
   ConcurrentMark* _cm;
   BitMap* _cm_card_bm;
   uint _max_worker_id;
-  int _active_workers;
+  uint _active_workers;
   HeapRegionClaimer _hrclaimer;
 
 public:
@@ -3016,7 +3036,7 @@ public:
                            ConcurrentMark* cm,
                            BitMap* cm_card_bm,
                            uint max_worker_id,
-                           int n_workers) :
+                           uint n_workers) :
       AbstractGangTask("Count Aggregation"),
       _g1h(g1h), _cm(cm), _cm_card_bm(cm_card_bm),
       _max_worker_id(max_worker_id),
@@ -3033,7 +3053,7 @@ public:
 
 
 void ConcurrentMark::aggregate_count_data() {
-  int n_workers = _g1h->workers()->active_workers();
+  uint n_workers = _g1h->workers()->active_workers();
 
   G1AggregateCountDataTask g1_par_agg_task(_g1h, this, &_card_bm,
                                            _max_worker_id, n_workers);
@@ -3693,13 +3713,13 @@ void CMTask::drain_satb_buffers() {
   // very counter productive if it did that. :-)
   _draining_satb_buffers = true;
 
-  CMObjectClosure oc(this);
+  CMSATBBufferClosure satb_cl(this, _g1h);
   SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
 
   // This keeps claiming and applying the closure to completed buffers
   // until we run out of buffers or we need to abort.
   while (!has_aborted() &&
-         satb_mq_set.apply_closure_to_completed_buffer(&oc)) {
+         satb_mq_set.apply_closure_to_completed_buffer(&satb_cl)) {
     if (_cm->verbose_medium()) {
       gclog_or_tty->print_cr("[%u] processed an SATB buffer", _worker_id);
     }
@@ -3756,6 +3776,10 @@ void CMTask::print_stats() {
   gclog_or_tty->print_cr("    time out: " SIZE_FORMAT ", SATB: " SIZE_FORMAT ", termination: " SIZE_FORMAT,
                          _aborted_timed_out, _aborted_satb, _aborted_termination);
 #endif // _MARKING_STATS_
+}
+
+bool ConcurrentMark::try_stealing(uint worker_id, int* hash_seed, oop& obj) {
+  return _task_queues->steal(worker_id, hash_seed, obj);
 }
 
 /*****************************************************************************
