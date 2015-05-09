@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @summary tests RegExp framework
+ * @summary tests RegExp framework (use -Dseed=X to set PRNG seed)
  * @author Mike McCloskey
  * @bug 4481568 4482696 4495089 4504687 4527731 4599621 4631553 4619345
  * 4630911 4672616 4711773 4727935 4750573 4792284 4803197 4757029 4808962
@@ -33,7 +33,10 @@
  * 6350801 6676425 6878475 6919132 6931676 6948903 6990617 7014645 7039066
  * 7067045 7014640 7189363 8007395 8013252 8013254 8012646 8023647 6559590
  * 8027645 8035076 8039124 8035975 8074678
- * @key randomness
+ * @library /lib/testlibrary
+ * @build jdk.testlibrary.*
+ * @run main RegExTest
+ * @key intermittent randomness
  */
 
 import java.util.function.Function;
@@ -50,7 +53,7 @@ import java.util.function.Predicate;
  */
 public class RegExTest {
 
-    private static Random generator = new Random();
+    private static Random generator = RandomFactory.getRandom();
     private static boolean failure = false;
     private static int failCount = 0;
     private static String firstFailure = null;

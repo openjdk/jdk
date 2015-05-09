@@ -228,7 +228,7 @@ public abstract class Validator {
      * used (see JSSE X509TrustManager specification). In the future, it
      * could be used to pass in a PKCS#7 object for code signing to check time
      * stamps.
-     * <p>
+     *
      * @return a non-empty chain that was used to validate the path. The
      * end entity cert is at index 0, the trust anchor at index n-1.
      */

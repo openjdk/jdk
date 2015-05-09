@@ -1887,7 +1887,7 @@ public final class Main {
 
     /**
      * Load the srckeystore from a stream, used in -importkeystore
-     * @returns the src KeyStore
+     * @return the src KeyStore
      */
     KeyStore loadSourceKeyStore() throws Exception {
         boolean isPkcs11 = false;
@@ -2005,7 +2005,7 @@ public final class Main {
 
     /**
      * Import a single entry named alias from srckeystore
-     * @returns 1 if the import action succeed
+     * @return  1 if the import action succeed
      *          0 if user choose to ignore an alias-dumplicated entry
      *          2 if setEntry throws Exception
      */
@@ -2836,7 +2836,7 @@ public final class Main {
     /**
      * Prompts user for alias name.
      * @param prompt the {0} of "Enter {0} alias name:  " in prompt line
-     * @returns the string entered by the user, without the \n at the end
+     * @return the string entered by the user, without the \n at the end
      */
     private String getAlias(String prompt) throws Exception {
         if (prompt != null) {
@@ -2854,7 +2854,7 @@ public final class Main {
     /**
      * Prompts user for an input string from the command line (System.in)
      * @prompt the prompt string printed
-     * @returns the string entered by the user, without the \n at the end
+     * @return the string entered by the user, without the \n at the end
      */
     private String inputStringFromStdin(String prompt) throws Exception {
         System.err.print(prompt);

@@ -2,10 +2,10 @@
 .\" Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
 .\" Title: wsgen
 .\" Language: English
-.\" Date: 2013ǯ11��21��
-.\" SectDesc: Java Web�����ӥ����ġ���
+.\" Date: 2013年11月21日
+.\" SectDesc: Java Webサービス・ツール
 .\" Software: JDK 8
-.\" Arch: ����
+.\" Arch: 汎用
 .\"
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
@@ -28,7 +28,7 @@
 .\" questions.
 .\"
 .pl 99999
-.TH "wsgen" "1" "2013ǯ11��21��" "JDK 8" "Java Web�����ӥ����ġ���"
+.TH "wsgen" "1" "2013年11月21日" "JDK 8" "Java Webサービス・ツール"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -49,8 +49,8 @@
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
 .SH "NAME"
-wsgen \- Web�����ӥ��Υ���ɥݥ���ȼ���(SEI)���饹���ɼ�ꡢWeb�����ӥ��Υǥץ������ȤȸƽФ���ɬ�פʤ��٤ƤΥ����ƥ��ե����Ȥ��������ޤ���
-.SH "����"
+wsgen \- Webサービスのエンドポイント実装(SEI)クラスを読取り、Webサービスのデプロイメントと呼出しに必要なすべてのアーティファクトを生成します。
+.SH "概要"
 .sp
 .if n \{\
 .RS 4
@@ -64,20 +64,20 @@ wsgen \- Web�����ӥ��Υ���ɥݥ���ȼ���(SEI)���饹���ɼ�ꡢWeb�����ӥ��Υǥץ�
 .PP
 \fIoptions\fR
 .RS 4
-���ޥ�ɥ饤�󡦥��ץ���󡣥��ץ����򻲾Ȥ��Ƥ���������
+コマンドライン・オプション。オプションを参照してください。
 .RE
 .PP
 \fISEI\fR
 .RS 4
-�ɤ߼��Web�����ӥ��Υ���ɥݥ���ȼ������饹(SEI)�Ǥ���
+読み取るWebサービスのエンドポイント実装クラス(SEI)です。
 .RE
-.SH "����"
+.SH "説明"
 .PP
-\fIwsgen\fR���ޥ�ɤϡ�JAX\-WS Web�����ӥ��ǻ��Ѥ����JAX\-WS�ݡ����֥롦�����ƥ��ե����Ȥ��������ޤ������Υġ���ϡ�Web�����ӥ��Υ���ɥݥ���ȡ����饹���ɼ�ꡢWeb�����ӥ��Υǥץ������ȤȸƽФ���ɬ�פʤ��٤ƤΥ����ƥ��ե����Ȥ��������ޤ���JAXWS 2\&.1\&.1 RI�Ǥ�\fIwsgen\fR
-Ant���������󶡤���ޤ���
-http://jax\-ws\&.java\&.net/nonav/2\&.1\&.1/docs/wsgenant\&.html��JAX\-WS (wsgen)�ڡ�����Tools���֤򻲾Ȥ��Ƥ���������
+\fIwsgen\fRコマンドは、JAX\-WS Webサービスで使用されるJAX\-WSポータブル・アーティファクトを生成します。このツールは、Webサービスのエンドポイント・クラスを読取り、Webサービスのデプロイメントと呼出しに必要なすべてのアーティファクトを生成します。JAXWS 2\&.1\&.1 RIでは\fIwsgen\fR
+Antタスクも提供されます。
+http://jax\-ws\&.java\&.net/nonav/2\&.1\&.1/docs/wsgenant\&.htmlのJAX\-WS (wsgen)ページのToolsタブを参照してください。
 .PP
-\fIwsgen\fR���ޥ�ɤ�ư����ˤϡ�����Ԥ��ޤ���
+\fIwsgen\fRコマンドを起動するには、次を行います。
 .sp
 .if n \{\
 .RS 4
@@ -89,79 +89,79 @@ $JAXWS_HOME/bin/wsgen\&.sh \-help
 .if n \{\
 .RE
 .\}
-.SH "���ץ����"
+.SH "オプション"
 .PP
 \-classpath \fIpath\fR
 .RS 4
-���ϥ��饹���ե�����ξ�ꡣ
+入力クラス・ファイルの場所。
 .RE
 .PP
 \-cp \fIpath\fR
 .RS 4
-���ϥ��饹���ե�����ξ�ꡣ
+入力クラス・ファイルの場所。
 .RE
 .PP
 \-d \fIdirectory\fR
 .RS 4
-�������줿���ϥե�������Ǽ�����ꡣ
+生成された出力ファイルを格納する場所。
 .RE
 .PP
 \-extension
 .RS 4
-�٥������ĥ����Ѳ�ǽ�ˤ��ޤ�����ĥ����Ѥ���ȡ����ץꥱ�������ΰܿ���������줿�ꡢ¾�μ�����Ϣ�ȤǤ��ʤ��ʤ��ǽ��������ޤ���
+ベンダー拡張を使用可能にします。拡張を使用すると、アプリケーションの移植性が失われたり、他の実装と連携できなくなる可能性があります。
 .RE
 .PP
 \-help
 .RS 4
-\fIwsgen\fR���ޥ�ɤ˴ؤ���إ�ס���å�������ɽ�����ޤ���
+\fIwsgen\fRコマンドに関するヘルプ・メッセージを表示します。
 .RE
 .PP
 \-keep
 .RS 4
-�������줿�ե��������¸���ޤ���
+生成されたファイルを保存します。
 .RE
 .PP
 \-r \fIdirectory\fR
 .RS 4
-���Υ��ץ�����\fI\-wsdl\fR���ץ����ȤȤ�˻��Ѥ��ơ�WSDL�ʤ��������줿�꥽�������ե���������֤��������ꤷ�ޤ���
+このオプションを\fI\-wsdl\fRオプションとともに使用して、WSDLなど生成されたリソース・ファイルを配置する場所を指定します。
 .RE
 .PP
 \-s \fIdirectory\fR
 .RS 4
-�������줿���������ե�������Ǽ�����ꡣ
+生成されたソース・ファイルを格納する場所。
 .RE
 .PP
 \-verbose
 .RS 4
-����ѥ��顦��å�������ɽ�����ޤ���
+コンパイラ・メッセージを表示します。
 .RE
 .PP
 \-version
 .RS 4
-��꡼���������Ϥ��ޤ���
+リリース情報を出力します。
 .RE
 .PP
 \-wsdl [ :protocol ]
 .RS 4
-����ɥݥ���Ȥ�ǥץ����������˳�ǧ����WSDL�ե�������������륪�ץ���󡦥��ޥ�ɡ�WSDL�ե�����ˤϡ������ӥ���ƤӽФ���ˡ���ѥ�᡼����ɬ�פ��͡��֤����ǡ�����¤�ˤĤ��ƤΥ���ԥ塼�����ɼ���ǽ�ʵ��Ҥ��ޤޤ�ޤ���
+エンドポイントをデプロイする前に確認するWSDLファイルを生成するオプション・コマンド。WSDLファイルには、サービスを呼び出す方法、パラメータに必要な値、返されるデータ構造についてのコンピュータで読取り可能な記述が含まれます。
 .sp
-�ǥե���ȤǤ�\fIwsgen\fR���ޥ�ɤ�WSDL�ե�������������ޤ���\fIprotocol\fR�ͤϾ�ά��ǽ�Ǥ��ꡢWSDL�Х���ǥ���(\fIwsdl:binding\fR)�ǻ��Ѥ���ץ��ȥ������ꤹ�뤿��˻��Ѥ���ޤ���ͭ���ʥץ��ȥ���ϡ�\fIsoap1\&.1\fR��\fIXsoap1\&.2\fR�Ǥ����ǥե���Ȥ�\fIsoap1\&.1\fR�Ǥ���\fIXsoap1\&.2\fR�ץ��ȥ����ɸ��ǤϤʤ����ᡢ\fI\-extension\fR���ץ����ȤȤ�ˤΤ߻��Ѳ�ǽ�Ǥ���
+デフォルトでは\fIwsgen\fRコマンドはWSDLファイルを生成しません。\fIprotocol\fR値は省略可能であり、WSDLバインディング(\fIwsdl:binding\fR)で使用するプロトコルを指定するために使用されます。有効なプロトコルは、\fIsoap1\&.1\fRと\fIXsoap1\&.2\fRです。デフォルトは\fIsoap1\&.1\fRです。\fIXsoap1\&.2\fRプロトコルは標準ではないため、\fI\-extension\fRオプションとともにのみ使用可能です。
 .RE
 .PP
 \-servicename \fIname\fR
 .RS 4
-\fI\-wsdl\fR���ץ����ȤȤ�ˤΤ߻��Ѥ��ơ�WSDL����������������WSDL�����ӥ�(\fIwsdl:service\fR)̾����ꤷ�ޤ�����:
-\fI\-servicename "{http://mynamespace/}MyService"\fR��
+\fI\-wsdl\fRオプションとともにのみ使用して、WSDLで生成される特定のWSDLサービス(\fIwsdl:service\fR)名を指定します。例:
+\fI\-servicename "{http://mynamespace/}MyService"\fR。
 .RE
 .PP
 \-portname \fIname\fR
 .RS 4
-\fI\-wsdl\fR���ץ����ȤȤ�ˤΤ߻��Ѥ��ơ�WSDL����������������WSDL�ݡ���(\fIwsdl:port\fR)̾����ꤷ�ޤ�����:
-\fI\-portname "{http://mynamespace/}MyPort"\fR��
+\fI\-wsdl\fRオプションとともにのみ使用して、WSDLで生成される特定のWSDLポート(\fIwsdl:port\fR)名を指定します。例:
+\fI\-portname "{http://mynamespace/}MyPort"\fR。
 .RE
-.SH "��"
+.SH "例"
 .PP
-������Ǥϡ�Stock�ǥ��쥯�ȥ����\fI@WebService\fR��������\fIStockService\fR�Υ�åѡ������饹���������ޤ���
+次の例では、Stockディレクトリ内に\fI@WebService\fR注釈を持つ\fIStockService\fRのラッパー・クラスを生成します。
 .sp
 .if n \{\
 .RS 4
@@ -173,7 +173,7 @@ wsgen \-d stock \-cp myclasspath stock\&.StockService
 .RE
 .\}
 .PP
-������Ǥϡ�SOAP 1\&.1 WSDL�����\fI@WebService\fR��������\fIstock\&.StockService\fR���饹�Υ������ޤ��������ޤ���
+次の例では、SOAP 1\&.1 WSDLおよび\fI@WebService\fR注釈を持つ\fIstock\&.StockService\fRクラスのスキーマを生成します。
 .sp
 .if n \{\
 .RS 4
@@ -185,7 +185,7 @@ wsgen \-wsdl \-d stock \-cp myclasspath stock\&.StockService
 .RE
 .\}
 .PP
-������Ǥϡ�SOAP 1\&.2 WSDL���������ޤ���
+次の例では、SOAP 1\&.2 WSDLを生成します。
 .sp
 .if n \{\
 .RS 4
@@ -197,9 +197,9 @@ wsgen \-wsdl:Xsoap1\&.2 \-d stock \-cp myclasspath stock\&.StockService
 .RE
 .\}
 .PP
-\fB����:\fR
-�����ӥ��Υǥץ�������JAXWS�¹Ի��Ķ���WSDL����������뤿�ᡢ��ȯ����WSDL����������ɬ�פϤ���ޤ���
-.SH "��Ϣ����"
+\fB注意:\fR
+サービスのデプロイ時にJAXWS実行時環境でWSDLが生成されるため、開発時にWSDLを生成する必要はありません。
+.SH "関連項目"
 .sp
 .RS 4
 .ie n \{\
@@ -220,8 +220,8 @@ wsimport(1)
 .sp -1
 .IP \(bu 2.3
 .\}
-http://jax\-ws\&.java\&.net/nonav/2\&.1\&.1/docs/wsgenant\&.html��
-JAX\-WS (wsgen)�ڡ�����Tools���֤򻲾Ȥ��Ƥ���������
+http://jax\-ws\&.java\&.net/nonav/2\&.1\&.1/docs/wsgenant\&.htmlの
+JAX\-WS (wsgen)ページのToolsタブを参照してください。
 .RE
 .br
 'pl 8.5i
