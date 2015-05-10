@@ -180,24 +180,11 @@ class CMMarkStack VALUE_OBJ_CLASS_SPEC {
   jint _index;       // one more than last occupied index
   jint _capacity;    // max #elements
   jint _saved_index; // value of _index saved at start of GC
-  NOT_PRODUCT(jint _max_depth;)   // max depth plumbed during run
 
   bool  _overflow;
   bool  _should_expand;
   DEBUG_ONLY(bool _drain_in_progress;)
   DEBUG_ONLY(bool _drain_in_progress_yields;)
-
- public:
-  CMMarkStack(ConcurrentMark* cm);
-  ~CMMarkStack();
-
-#ifndef PRODUCT
-  jint max_depth() const {
-    return _max_depth;
-  }
-#endif
-
-  bool allocate(size_t capacity);
 
   oop pop() {
     if (!isEmpty()) {
@@ -206,27 +193,11 @@ class CMMarkStack VALUE_OBJ_CLASS_SPEC {
     return NULL;
   }
 
-  // If overflow happens, don't do the push, and record the overflow.
-  // *Requires* that "ptr" is already marked.
-  void push(oop ptr) {
-    if (isFull()) {
-      // Record overflow.
-      _overflow = true;
-      return;
-    } else {
-      _base[_index++] = ptr;
-      NOT_PRODUCT(_max_depth = MAX2(_max_depth, _index));
-    }
-  }
-  // Non-block impl.  Note: concurrency is allowed only with other
-  // "par_push" operations, not with "pop" or "drain".  We would need
-  // parallel versions of them if such concurrency was desired.
-  void par_push(oop ptr);
+ public:
+  CMMarkStack(ConcurrentMark* cm);
+  ~CMMarkStack();
 
-  // Pushes the first "n" elements of "ptr_arr" on the stack.
-  // Non-block impl.  Note: concurrency is allowed only with other
-  // "par_adjoin_arr" or "push" operations, not with "pop" or "drain".
-  void par_adjoin_arr(oop* ptr_arr, int n);
+  bool allocate(size_t capacity);
 
   // Pushes the first "n" elements of "ptr_arr" on the stack.
   // Locking impl: concurrency is allowed only with
@@ -254,7 +225,6 @@ class CMMarkStack VALUE_OBJ_CLASS_SPEC {
   bool drain(OopClosureClass* cl, CMBitMap* bm, bool yield_after = false);
 
   bool isEmpty()    { return _index == 0; }
-  bool isFull()     { return _index == _capacity; }
   int  maxElems()   { return _capacity; }
 
   bool overflow() { return _overflow; }
@@ -378,7 +348,6 @@ class ConcurrentMark: public CHeapObj<mtGC> {
   friend class ConcurrentMarkThread;
   friend class CMTask;
   friend class CMBitMapClosure;
-  friend class CMGlobalObjectClosure;
   friend class CMRemarkTask;
   friend class CMConcurrentMarkingTask;
   friend class G1ParNoteEndTask;
@@ -473,8 +442,8 @@ protected:
   // All of these times are in ms
   NumberSeq _init_times;
   NumberSeq _remark_times;
-  NumberSeq   _remark_mark_times;
-  NumberSeq   _remark_weak_ref_times;
+  NumberSeq _remark_mark_times;
+  NumberSeq _remark_weak_ref_times;
   NumberSeq _cleanup_times;
   double    _total_counting_time;
   double    _total_rs_scrub_time;
@@ -623,19 +592,9 @@ protected:
 
 public:
   // Manipulation of the global mark stack.
-  // Notice that the first mark_stack_push is CAS-based, whereas the
-  // two below are Mutex-based. This is OK since the first one is only
-  // called during evacuation pauses and doesn't compete with the
-  // other two (which are called by the marking tasks during
-  // concurrent marking or remark).
-  bool mark_stack_push(oop p) {
-    _markStack.par_push(p);
-    if (_markStack.overflow()) {
-      set_has_overflown();
-      return false;
-    }
-    return true;
-  }
+  // The push and pop operations are used by tasks for transfers
+  // between task-local queues and the global mark stack, and use
+  // locking for concurrency safety.
   bool mark_stack_push(oop* arr, int n) {
     _markStack.par_push_arr(arr, n);
     if (_markStack.overflow()) {
