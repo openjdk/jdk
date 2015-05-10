@@ -275,7 +275,6 @@ bool CMMarkStack::allocate(size_t capacity) {
   _capacity = (jint) capacity;
   _saved_index = -1;
   _should_expand = false;
-  NOT_PRODUCT(_max_depth = 0);
   return true;
 }
 
@@ -331,54 +330,6 @@ CMMarkStack::~CMMarkStack() {
   }
 }
 
-void CMMarkStack::par_push(oop ptr) {
-  while (true) {
-    if (isFull()) {
-      _overflow = true;
-      return;
-    }
-    // Otherwise...
-    jint index = _index;
-    jint next_index = index+1;
-    jint res = Atomic::cmpxchg(next_index, &_index, index);
-    if (res == index) {
-      _base[index] = ptr;
-      // Note that we don't maintain this atomically.  We could, but it
-      // doesn't seem necessary.
-      NOT_PRODUCT(_max_depth = MAX2(_max_depth, next_index));
-      return;
-    }
-    // Otherwise, we need to try again.
-  }
-}
-
-void CMMarkStack::par_adjoin_arr(oop* ptr_arr, int n) {
-  while (true) {
-    if (isFull()) {
-      _overflow = true;
-      return;
-    }
-    // Otherwise...
-    jint index = _index;
-    jint next_index = index + n;
-    if (next_index > _capacity) {
-      _overflow = true;
-      return;
-    }
-    jint res = Atomic::cmpxchg(next_index, &_index, index);
-    if (res == index) {
-      for (int i = 0; i < n; i++) {
-        int  ind = index + i;
-        assert(ind < _capacity, "By overflow test above.");
-        _base[ind] = ptr_arr[i];
-      }
-      NOT_PRODUCT(_max_depth = MAX2(_max_depth, next_index));
-      return;
-    }
-    // Otherwise, we need to try again.
-  }
-}
-
 void CMMarkStack::par_push_arr(oop* ptr_arr, int n) {
   MutexLockerEx x(ParGCRareEvent_lock, Mutex::_no_safepoint_check_flag);
   jint start = _index;
@@ -394,7 +345,6 @@ void CMMarkStack::par_push_arr(oop* ptr_arr, int n) {
     assert(ind < _capacity, "By overflow test above.");
     _base[ind] = ptr_arr[i];
   }
-  NOT_PRODUCT(_max_depth = MAX2(_max_depth, next_index));
 }
 
 bool CMMarkStack::par_pop_arr(oop* ptr_arr, int max, int* n) {
