@@ -103,6 +103,10 @@ class OptoReg VALUE_OBJ_CLASS_SPEC {
     return r - stack0();
   }
 
+  static void invalidate(Name n) {
+    vm2opto[n] = Bad;
+  }
+
   // convert a stack slot number into an OptoReg::Name
   static OptoReg::Name stack2reg( int idx) {
     return Name(stack0() + idx);

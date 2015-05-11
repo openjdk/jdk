@@ -166,6 +166,13 @@ class StubGenerator: public StubCodeGenerator {
     __ movptr(saved_rdi, rdi);
     __ movptr(saved_rsi, rsi);
     __ movptr(saved_rbx, rbx);
+
+    // provide initial value for required masks
+    if (UseAVX > 2) {
+      __ movl(rbx, 0xffff);
+      __ kmovdl(k1, rbx);
+    }
+
     // save and initialize %mxcsr
     if (sse_save) {
       Label skip_ldmx;
@@ -794,7 +801,10 @@ class StubGenerator: public StubCodeGenerator {
   __ BIND(L_copy_64_bytes_loop);
 
     if (UseUnalignedLoadStores) {
-      if (UseAVX >= 2) {
+      if (UseAVX > 2) {
+        __ evmovdqu(xmm0, Address(from, 0), Assembler::AVX_512bit);
+        __ evmovdqu(Address(from, to_from, Address::times_1, 0), xmm0, Assembler::AVX_512bit);
+      } else if (UseAVX == 2) {
         __ vmovdqu(xmm0, Address(from,  0));
         __ vmovdqu(Address(from, to_from, Address::times_1,  0), xmm0);
         __ vmovdqu(xmm1, Address(from, 32));
@@ -833,7 +843,7 @@ class StubGenerator: public StubCodeGenerator {
     __ subl(qword_count, 8);
     __ jcc(Assembler::greaterEqual, L_copy_64_bytes_loop);
 
-    if (UseUnalignedLoadStores && (UseAVX >= 2)) {
+    if (UseUnalignedLoadStores && (UseAVX == 2)) {
       // clean upper bits of YMM registers
       __ vpxor(xmm0, xmm0);
       __ vpxor(xmm1, xmm1);

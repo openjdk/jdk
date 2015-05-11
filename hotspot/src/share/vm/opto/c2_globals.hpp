@@ -96,7 +96,7 @@
   product(intx, MaxLoopPad, (OptoLoopAlignment-1),                          \
           "Align a loop if padding size in bytes is less or equal to this value") \
                                                                             \
-  product(intx, MaxVectorSize, 32,                                          \
+  product(intx, MaxVectorSize, 64,                                          \
           "Max vector size in bytes, "                                      \
           "actual size could be less depending on elements type")           \
                                                                             \

@@ -2010,6 +2010,8 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_c2_type(SubVFNode, VectorNode)                                  \
   declare_c2_type(SubVDNode, VectorNode)                                  \
   declare_c2_type(MulVSNode, VectorNode)                                  \
+  declare_c2_type(MulVLNode, VectorNode)                                  \
+  declare_c2_type(MulReductionVLNode, ReductionNode)                      \
   declare_c2_type(MulVINode, VectorNode)                                  \
   declare_c2_type(MulReductionVINode, ReductionNode)                      \
   declare_c2_type(MulVFNode, VectorNode)                                  \
