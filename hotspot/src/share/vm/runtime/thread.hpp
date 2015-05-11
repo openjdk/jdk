@@ -204,10 +204,24 @@ class Thread: public ThreadShadow {
  private:
   int _num_nested_signal;
 
+  DEBUG_ONLY(bool _suspendible_thread;)
+
  public:
   void enter_signal_handler() { _num_nested_signal++; }
   void leave_signal_handler() { _num_nested_signal--; }
   bool is_inside_signal_handler() const { return _num_nested_signal > 0; }
+
+#ifdef ASSERT
+  void set_suspendible_thread() {
+    _suspendible_thread = true;
+  }
+
+  void clear_suspendible_thread() {
+    _suspendible_thread = false;
+  }
+
+  bool is_suspendible_thread() { return _suspendible_thread; }
+#endif
 
  private:
   // Active_handles points to a block of handles
