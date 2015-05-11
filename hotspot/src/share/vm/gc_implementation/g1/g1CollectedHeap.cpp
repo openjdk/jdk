@@ -1877,13 +1877,18 @@ jint G1CollectedHeap::initialize() {
   // Carve out the G1 part of the heap.
 
   ReservedSpace g1_rs = heap_rs.first_part(max_byte_size);
+  size_t page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
   G1RegionToSpaceMapper* heap_storage =
     G1RegionToSpaceMapper::create_mapper(g1_rs,
                                          g1_rs.size(),
-                                         UseLargePages ? os::large_page_size() : os::vm_page_size(),
+                                         page_size,
                                          HeapRegion::GrainBytes,
                                          1,
                                          mtJavaHeap);
+  os::trace_page_sizes("G1 Heap", collector_policy()->min_heap_byte_size(),
+                       max_byte_size, page_size,
+                       heap_rs.base(),
+                       heap_rs.size());
   heap_storage->set_mapping_changed_listener(&_listener);
 
   // Create storage for the BOT, card table, card counts table (hot card cache) and the bitmaps.
