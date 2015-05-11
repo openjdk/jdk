@@ -324,7 +324,7 @@ public:
   const ImmutableOopMapPair* pair_at(int index) const { assert(index >= 0 && index < _count, "check"); return &get_pairs()[index]; }
 
   int count() const { return _count; }
-  int size() const { return _size; }
+  int nr_of_bytes() const { return _size; }
 
   void print_on(outputStream* st) const;
   void print() const { print_on(tty); }
