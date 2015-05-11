@@ -477,7 +477,7 @@ class Heap$Type$Buffer$RW$
 #if[rw]
 
     public float getFloat() {
-        int x = unsafe.getIntUnaligned(hb, byteOffset(nextPutIndex(4)), bigEndian);
+        int x = unsafe.getIntUnaligned(hb, byteOffset(nextGetIndex(4)), bigEndian);
         return Float.intBitsToFloat(x);
     }
 
