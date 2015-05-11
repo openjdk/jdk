@@ -193,13 +193,8 @@ public:
       _cl(cl), _suspendible(suspendible), AbstractGangTask("Parallel Clear Bitmap Task"), _hrclaimer(n_workers) {}
 
   void work(uint worker_id) {
-    if (_suspendible) {
-      SuspendibleThreadSet::join();
-    }
+    SuspendibleThreadSetJoiner sts_join(_suspendible);
     G1CollectedHeap::heap()->heap_region_par_iterate(_cl, worker_id, &_hrclaimer, true);
-    if (_suspendible) {
-      SuspendibleThreadSet::leave();
-    }
   }
 };
 
@@ -956,19 +951,17 @@ void ConcurrentMark::checkpointRootsInitialPost() {
  */
 
 void ConcurrentMark::enter_first_sync_barrier(uint worker_id) {
+  bool barrier_aborted;
+
   if (verbose_low()) {
     gclog_or_tty->print_cr("[%u] entering first barrier", worker_id);
   }
 
-  if (concurrent()) {
-    SuspendibleThreadSet::leave();
+  {
+    SuspendibleThreadSetLeaver sts_leave(concurrent());
+    barrier_aborted = !_first_overflow_barrier_sync.enter();
   }
 
-  bool barrier_aborted = !_first_overflow_barrier_sync.enter();
-
-  if (concurrent()) {
-    SuspendibleThreadSet::join();
-  }
   // at this point everyone should have synced up and not be doing any
   // more work
 
@@ -1015,19 +1008,17 @@ void ConcurrentMark::enter_first_sync_barrier(uint worker_id) {
 }
 
 void ConcurrentMark::enter_second_sync_barrier(uint worker_id) {
+  bool barrier_aborted;
+
   if (verbose_low()) {
     gclog_or_tty->print_cr("[%u] entering second barrier", worker_id);
   }
 
-  if (concurrent()) {
-    SuspendibleThreadSet::leave();
+  {
+    SuspendibleThreadSetLeaver sts_leave(concurrent());
+    barrier_aborted = !_second_overflow_barrier_sync.enter();
   }
 
-  bool barrier_aborted = !_second_overflow_barrier_sync.enter();
-
-  if (concurrent()) {
-    SuspendibleThreadSet::join();
-  }
   // at this point everything should be re-initialized and ready to go
 
   if (verbose_low()) {
@@ -1078,40 +1069,41 @@ public:
 
     double start_vtime = os::elapsedVTime();
 
-    SuspendibleThreadSet::join();
+    {
+      SuspendibleThreadSetJoiner sts_join;
 
-    assert(worker_id < _cm->active_tasks(), "invariant");
-    CMTask* the_task = _cm->task(worker_id);
-    the_task->record_start_time();
-    if (!_cm->has_aborted()) {
-      do {
-        double start_vtime_sec = os::elapsedVTime();
-        double mark_step_duration_ms = G1ConcMarkStepDurationMillis;
+      assert(worker_id < _cm->active_tasks(), "invariant");
+      CMTask* the_task = _cm->task(worker_id);
+      the_task->record_start_time();
+      if (!_cm->has_aborted()) {
+        do {
+          double start_vtime_sec = os::elapsedVTime();
+          double mark_step_duration_ms = G1ConcMarkStepDurationMillis;
 
-        the_task->do_marking_step(mark_step_duration_ms,
-                                  true  /* do_termination */,
-                                  false /* is_serial*/);
+          the_task->do_marking_step(mark_step_duration_ms,
+                                    true  /* do_termination */,
+                                    false /* is_serial*/);
 
-        double end_vtime_sec = os::elapsedVTime();
-        double elapsed_vtime_sec = end_vtime_sec - start_vtime_sec;
-        _cm->clear_has_overflown();
+          double end_vtime_sec = os::elapsedVTime();
+          double elapsed_vtime_sec = end_vtime_sec - start_vtime_sec;
+          _cm->clear_has_overflown();
 
-        _cm->do_yield_check(worker_id);
+          _cm->do_yield_check(worker_id);
 
-        jlong sleep_time_ms;
-        if (!_cm->has_aborted() && the_task->has_aborted()) {
-          sleep_time_ms =
-            (jlong) (elapsed_vtime_sec * _cm->sleep_factor() * 1000.0);
-          SuspendibleThreadSet::leave();
-          os::sleep(Thread::current(), sleep_time_ms, false);
-          SuspendibleThreadSet::join();
-        }
-      } while (!_cm->has_aborted() && the_task->has_aborted());
+          jlong sleep_time_ms;
+          if (!_cm->has_aborted() && the_task->has_aborted()) {
+            sleep_time_ms =
+              (jlong) (elapsed_vtime_sec * _cm->sleep_factor() * 1000.0);
+            {
+              SuspendibleThreadSetLeaver sts_leave;
+              os::sleep(Thread::current(), sleep_time_ms, false);
+            }
+          }
+        } while (!_cm->has_aborted() && the_task->has_aborted());
+      }
+      the_task->record_end_time();
+      guarantee(!the_task->has_aborted() || _cm->has_aborted(), "invariant");
     }
-    the_task->record_end_time();
-    guarantee(!the_task->has_aborted() || _cm->has_aborted(), "invariant");
-
-    SuspendibleThreadSet::leave();
 
     double end_vtime = os::elapsedVTime();
     _cm->update_accum_task_vtime(worker_id, end_vtime - start_vtime);
