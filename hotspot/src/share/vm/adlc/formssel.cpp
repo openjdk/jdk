@@ -3919,6 +3919,7 @@ bool MatchRule::is_base_register(FormDict &globals) const {
          strcmp(opType,"VecD")==0 ||
          strcmp(opType,"VecX")==0 ||
          strcmp(opType,"VecY")==0 ||
+         strcmp(opType,"VecZ")==0 ||
          strcmp(opType,"Reg" )==0) ) {
       return 1;
     }
@@ -4048,6 +4049,7 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"AddReductionVF")==0 ||
         strcmp(opType,"AddReductionVD")==0 ||
         strcmp(opType,"MulReductionVI")==0 ||
+        strcmp(opType,"MulReductionVL")==0 ||
         strcmp(opType,"MulReductionVF")==0 ||
         strcmp(opType,"MulReductionVD")==0 ||
         0 /* 0 to line up columns nicely */ )
@@ -4139,12 +4141,12 @@ bool MatchRule::is_vector() const {
   static const char *vector_list[] = {
     "AddVB","AddVS","AddVI","AddVL","AddVF","AddVD",
     "SubVB","SubVS","SubVI","SubVL","SubVF","SubVD",
-    "MulVS","MulVI","MulVF","MulVD",
+    "MulVS","MulVI","MulVL","MulVF","MulVD",
     "DivVF","DivVD",
     "AndV" ,"XorV" ,"OrV",
     "AddReductionVI", "AddReductionVL",
     "AddReductionVF", "AddReductionVD",
-    "MulReductionVI",
+    "MulReductionVI", "MulReductionVL",
     "MulReductionVF", "MulReductionVD",
     "LShiftCntV","RShiftCntV",
     "LShiftVB","LShiftVS","LShiftVI","LShiftVL",
