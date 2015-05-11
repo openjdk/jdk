@@ -192,7 +192,7 @@ void ConcurrentMarkThread::run() {
       } else {
         // We don't want to update the marking status if a GC pause
         // is already underway.
-        SuspendibleThreadSetJoiner sts;
+        SuspendibleThreadSetJoiner sts_join;
         g1h->set_marking_complete();
       }
 
@@ -262,7 +262,7 @@ void ConcurrentMarkThread::run() {
       // not needed any more as the concurrent mark state has been
       // already reset).
       {
-        SuspendibleThreadSetJoiner sts;
+        SuspendibleThreadSetJoiner sts_join;
         if (!cm()->has_aborted()) {
           g1_policy->record_concurrent_mark_cleanup_completed();
         }
@@ -291,7 +291,7 @@ void ConcurrentMarkThread::run() {
     // Java thread is waiting for a full GC to happen (e.g., it
     // called System.gc() with +ExplicitGCInvokesConcurrent).
     {
-      SuspendibleThreadSetJoiner sts;
+      SuspendibleThreadSetJoiner sts_join;
       g1h->increment_old_marking_cycles_completed(true /* concurrent */);
       g1h->register_concurrent_cycle_end();
     }
