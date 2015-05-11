@@ -2557,6 +2557,11 @@ SWPointer::SWPointer(MemNode* mem, SuperWord* slp) :
   }
   // Match AddP(base, AddP(ptr, k*iv [+ invariant]), constant)
   Node* base = adr->in(AddPNode::Base);
+  // The base address should be loop invariant
+  if (!invariant(base)) {
+    assert(!valid(), "base address is loop variant");
+    return;
+  }
   //unsafe reference could not be aligned appropriately without runtime checking
   if (base == NULL || base->bottom_type() == Type::TOP) {
     assert(!valid(), "unsafe access");
