@@ -653,7 +653,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBFONTMANAGER, \
     DISABLED_WARNINGS_clang := unused-value incompatible-pointer-types \
         tautological-constant-out-of-range-compare int-to-pointer-cast, \
     DISABLED_WARNINGS_solstudio := truncwarn, \
-    DISABLED_WARNINGS_microsoft := 4267 4244 4018 4090 4996, \
+    DISABLED_WARNINGS_microsoft := 4267 4244 4018 4090 4996 4146, \
     WARNINGS_AS_ERRORS_gcc := false, \
     WARNINGS_AS_ERRORS_solstudio := false, \
     MAPFILE := $(BUILD_LIBFONTMANAGER_MAPFILE), \
