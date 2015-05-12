@@ -73,7 +73,7 @@ public final class ScriptEnvironment {
     /** Generate line number table in class files */
     public final boolean _debug_lines;
 
-    /** Package to which generated class files are added */
+    /** Directory in which source files and generated class files are dumped */
     public final String  _dest_dir;
 
     /** Display stack trace upon error, default is false */
