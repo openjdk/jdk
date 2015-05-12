@@ -936,8 +936,9 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
             ((AbstractDocument)doc).readLock();
         }
         try {
-            if ((d.width > (i.left + i.right)) && (d.height > (i.top + i.bottom))) {
-                rootView.setSize(d.width - i.left - i.right, d.height - i.top - i.bottom);
+            if ((d.width > (i.left + i.right + caretMargin)) && (d.height > (i.top + i.bottom))) {
+                rootView.setSize(d.width - i.left - i.right -
+                        caretMargin, d.height - i.top - i.bottom);
             }
             else if (d.width == 0 || d.height == 0) {
                 // Probably haven't been layed out yet, force some sort of
