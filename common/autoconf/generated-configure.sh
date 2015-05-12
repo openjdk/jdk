@@ -4366,7 +4366,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1431414369
+DATE_WHEN_GENERATED=1431429776
 
 ###############################################################################
 #
@@ -15342,9 +15342,9 @@ $as_echo "in current directory" >&6; }
       # is performed.
       filtered_files=`$ECHO "$files_present" \
           | $SED -e 's/config.log//g' \
-	      -e 's/confdefs.h//g' \
-	      -e 's/fixpath.exe//g' \
-	      -e 's/ //g' \
+              -e 's/configure.log//g' \
+              -e 's/confdefs.h//g' \
+              -e 's/ //g' \
           | $TR -d '\n'`
       if test "x$filtered_files" != x; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Current directory is $CURDIR." >&5
