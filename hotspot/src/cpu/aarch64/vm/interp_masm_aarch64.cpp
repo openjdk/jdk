@@ -1314,7 +1314,7 @@ void InterpreterMacroAssembler::profile_switch_case(Register index,
     // case_array_offset_in_bytes()
     movw(reg2, in_bytes(MultiBranchData::per_case_size()));
     movw(rscratch1, in_bytes(MultiBranchData::case_array_offset()));
-    maddw(index, index, reg2, rscratch1);
+    Assembler::maddw(index, index, reg2, rscratch1);
 
     // Update the case count
     increment_mdp_data_at(mdp,

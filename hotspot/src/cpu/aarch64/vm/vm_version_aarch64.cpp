@@ -59,6 +59,9 @@
 
 int VM_Version::_cpu;
 int VM_Version::_model;
+int VM_Version::_model2;
+int VM_Version::_variant;
+int VM_Version::_revision;
 int VM_Version::_stepping;
 int VM_Version::_cpuFeatures;
 const char*           VM_Version::_features_str = "";
@@ -122,13 +125,47 @@ void VM_Version::get_processor_features() {
 
   char buf[512];
 
-  strcpy(buf, "simd");
+  _cpuFeatures = auxv;
+
+  int cpu_lines = 0;
+  if (FILE *f = fopen("/proc/cpuinfo", "r")) {
+    char buf[128], *p;
+    while (fgets(buf, sizeof (buf), f) != NULL) {
+      if (p = strchr(buf, ':')) {
+        long v = strtol(p+1, NULL, 0);
+        if (strncmp(buf, "CPU implementer", sizeof "CPU implementer" - 1) == 0) {
+          _cpu = v;
+          cpu_lines++;
+        } else if (strncmp(buf, "CPU variant", sizeof "CPU variant" - 1) == 0) {
+          _variant = v;
+        } else if (strncmp(buf, "CPU part", sizeof "CPU part" - 1) == 0) {
+          if (_model != v)  _model2 = _model;
+          _model = v;
+        } else if (strncmp(buf, "CPU revision", sizeof "CPU revision" - 1) == 0) {
+          _revision = v;
+        }
+      }
+    }
+    fclose(f);
+  }
+
+  // Enable vendor specific features
+  if (_cpu == CPU_CAVIUM && _variant == 0) _cpuFeatures |= CPU_DMB_ATOMICS;
+  if (_cpu == CPU_ARM && (_model == 0xd03 || _model2 == 0xd03)) _cpuFeatures |= CPU_A53MAC;
+  // If an olde style /proc/cpuinfo (cpu_lines == 1) then if _model is an A57 (0xd07)
+  // we assume the worst and assume we could be on a big little system and have
+  // undisclosed A53 cores which we could be swapped to at any stage
+  if (_cpu == CPU_ARM && cpu_lines == 1 && _model == 0xd07) _cpuFeatures |= CPU_A53MAC;
+
+  sprintf(buf, "0x%02x:0x%x:0x%03x:%d", _cpu, _variant, _model, _revision);
+  if (_model2) sprintf(buf+strlen(buf), "(0x%03x)", _model2);
+  if (auxv & HWCAP_ASIMD) strcat(buf, ", simd");
   if (auxv & HWCAP_CRC32) strcat(buf, ", crc");
   if (auxv & HWCAP_AES)   strcat(buf, ", aes");
   if (auxv & HWCAP_SHA1)  strcat(buf, ", sha1");
   if (auxv & HWCAP_SHA2)  strcat(buf, ", sha256");
 
-  _features_str = strdup(buf);
+  _features_str = os::strdup(buf);
 
   if (FLAG_IS_DEFAULT(UseCRC32)) {
     UseCRC32 = (auxv & HWCAP_CRC32) != 0;
@@ -200,6 +237,10 @@ void VM_Version::get_processor_features() {
 
   if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
     UseMultiplyToLenIntrinsic = true;
+  }
+
+  if (FLAG_IS_DEFAULT(UseBarriersForVolatile)) {
+    UseBarriersForVolatile = (_cpuFeatures & CPU_DMB_ATOMICS) != 0;
   }
 
 #ifdef COMPILER2
