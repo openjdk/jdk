@@ -4366,7 +4366,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1431344623
+DATE_WHEN_GENERATED=1431414369
 
 ###############################################################################
 #
@@ -42035,6 +42035,10 @@ fi
   #    CXXFLAGS_JDK  - C++ Compiler flags
   #    COMMON_CCXXFLAGS_JDK - common to C and C++
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
+    if test "x$OPENJDK_TARGET_CPU" = xx86; then
+      # Force compatibility with i586 on 32 bit intel platforms.
+      COMMON_CCXXFLAGS="${COMMON_CCXXFLAGS} -march=i586"
+    fi
     COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS $COMMON_CCXXFLAGS_JDK -Wall -Wextra -Wno-unused -Wno-unused-parameter -Wformat=2 \
         -pipe -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE"
     case $OPENJDK_TARGET_CPU_ARCH in
