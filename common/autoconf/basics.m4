@@ -705,9 +705,9 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
       # is performed.
       filtered_files=`$ECHO "$files_present" \
           | $SED -e 's/config.log//g' \
-	      -e 's/confdefs.h//g' \
-	      -e 's/fixpath.exe//g' \
-	      -e 's/ //g' \
+              -e 's/configure.log//g' \
+              -e 's/confdefs.h//g' \
+              -e 's/ //g' \
           | $TR -d '\n'`
       if test "x$filtered_files" != x; then
         AC_MSG_NOTICE([Current directory is $CURDIR.])
