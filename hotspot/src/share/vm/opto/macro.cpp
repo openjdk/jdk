@@ -26,6 +26,7 @@
 #include "compiler/compileLog.hpp"
 #include "libadt/vectset.hpp"
 #include "opto/addnode.hpp"
+#include "opto/arraycopynode.hpp"
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
@@ -613,7 +614,10 @@ bool PhaseMacroExpand::can_eliminate_allocation(AllocateNode *alloc, GrowableArr
         for (DUIterator_Fast kmax, k = use->fast_outs(kmax);
                                    k < kmax && can_eliminate; k++) {
           Node* n = use->fast_out(k);
-          if (!n->is_Store() && n->Opcode() != Op_CastP2X) {
+          if (!n->is_Store() && n->Opcode() != Op_CastP2X &&
+              !(n->is_ArrayCopy() &&
+                n->as_ArrayCopy()->is_clonebasic() &&
+                n->in(ArrayCopyNode::Dest) == use)) {
             DEBUG_ONLY(disq_node = n;)
             if (n->is_Load() || n->is_LoadStore()) {
               NOT_PRODUCT(fail_eliminate = "Field load";)
@@ -623,6 +627,12 @@ bool PhaseMacroExpand::can_eliminate_allocation(AllocateNode *alloc, GrowableArr
             can_eliminate = false;
           }
         }
+      } else if (use->is_ArrayCopy() &&
+                 (use->as_ArrayCopy()->is_arraycopy_validated() ||
+                  use->as_ArrayCopy()->is_copyof_validated() ||
+                  use->as_ArrayCopy()->is_copyofrange_validated()) &&
+                 use->in(ArrayCopyNode::Dest) == res) {
+        // ok to eliminate
       } else if (use->is_SafePoint()) {
         SafePointNode* sfpt = use->as_SafePoint();
         if (sfpt->is_Call() && sfpt->as_Call()->has_non_debug_use(res)) {
@@ -887,11 +897,49 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
             }
 #endif
             _igvn.replace_node(n, n->in(MemNode::Memory));
+          } else if (n->is_ArrayCopy()) {
+            // Disconnect ArrayCopy node
+            ArrayCopyNode* ac = n->as_ArrayCopy();
+            assert(ac->is_clonebasic(), "unexpected array copy kind");
+            Node* ctl_proj = ac->proj_out(TypeFunc::Control);
+            Node* mem_proj = ac->proj_out(TypeFunc::Memory);
+            if (ctl_proj != NULL) {
+              _igvn.replace_node(ctl_proj, n->in(0));
+            }
+            if (mem_proj != NULL) {
+              _igvn.replace_node(mem_proj, n->in(TypeFunc::Memory));
+            }
           } else {
             eliminate_card_mark(n);
           }
           k -= (oc2 - use->outcnt());
         }
+      } else if (use->is_ArrayCopy()) {
+        // Disconnect ArrayCopy node
+        ArrayCopyNode* ac = use->as_ArrayCopy();
+        assert(ac->is_arraycopy_validated() ||
+               ac->is_copyof_validated() ||
+               ac->is_copyofrange_validated(), "unsupported");
+        CallProjections callprojs;
+        ac->extract_projections(&callprojs, true);
+
+        _igvn.replace_node(callprojs.fallthrough_ioproj, ac->in(TypeFunc::I_O));
+        _igvn.replace_node(callprojs.fallthrough_memproj, ac->in(TypeFunc::Memory));
+        _igvn.replace_node(callprojs.fallthrough_catchproj, ac->in(TypeFunc::Control));
+
+        // Set control to top. IGVN will remove the remaining projections
+        ac->set_req(0, top());
+        ac->replace_edge(res, top());
+
+        // Disconnect src right away: it can help find new
+        // opportunities for allocation elimination
+        Node* src = ac->in(ArrayCopyNode::Src);
+        ac->replace_edge(src, top());
+        if (src->outcnt() == 0) {
+          _igvn.remove_dead_node(src);
+        }
+
+        _igvn._worklist.push(ac);
       } else {
         eliminate_card_mark(use);
       }

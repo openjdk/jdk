@@ -28,6 +28,7 @@
 #include "libadt/vectset.hpp"
 #include "memory/allocation.hpp"
 #include "opto/c2compiler.hpp"
+#include "opto/arraycopynode.hpp"
 #include "opto/callnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/compile.hpp"
@@ -113,6 +114,7 @@ bool ConnectionGraph::compute_escape() {
   GrowableArray<Node*> alloc_worklist;
   GrowableArray<Node*> ptr_cmp_worklist;
   GrowableArray<Node*> storestore_worklist;
+  GrowableArray<ArrayCopyNode*> arraycopy_worklist;
   GrowableArray<PointsToNode*>   ptnodes_worklist;
   GrowableArray<JavaObjectNode*> java_objects_worklist;
   GrowableArray<JavaObjectNode*> non_escaped_worklist;
@@ -173,6 +175,10 @@ bool ConnectionGraph::compute_escape() {
       // Collect address nodes for graph verification.
       addp_worklist.append(n);
 #endif
+    } else if (n->is_ArrayCopy()) {
+      // Keep a list of ArrayCopy nodes so if one of its input is non
+      // escaping, we can record a unique type
+      arraycopy_worklist.append(n->as_ArrayCopy());
     }
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
       Node* m = n->fast_out(i);   // Get user
@@ -289,7 +295,7 @@ bool ConnectionGraph::compute_escape() {
       C->AliasLevel() >= 3 && EliminateAllocations) {
     // Now use the escape information to create unique types for
     // scalar replaceable objects.
-    split_unique_types(alloc_worklist);
+    split_unique_types(alloc_worklist, arraycopy_worklist);
     if (C->failing())  return false;
     C->print_method(PHASE_AFTER_EA, 2);
 
@@ -333,7 +339,7 @@ void ConnectionGraph::add_objload_to_connection_graph(Node *n, Unique_Node_List 
 // Populate Connection Graph with PointsTo nodes and create simple
 // connection graph edges.
 void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *delayed_worklist) {
-  assert(!_verify, "this method sould not be called for verification");
+  assert(!_verify, "this method should not be called for verification");
   PhaseGVN* igvn = _igvn;
   uint n_idx = n->_idx;
   PointsToNode* n_ptn = ptnode_adr(n_idx);
@@ -901,8 +907,7 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
       // are still a few direct calls to the copy subroutines (See
       // PhaseStringOpts::copy_string())
       is_arraycopy = (call->Opcode() == Op_ArrayCopy) ||
-        (call->as_CallLeaf()->_name != NULL &&
-         strstr(call->as_CallLeaf()->_name, "arraycopy") != 0);
+        call->as_CallLeaf()->is_call_to_arraycopystub();
       // fall through
     case Op_CallLeaf: {
       // Stub calls, objects do not escape but they are not scale replaceable.
@@ -980,7 +985,17 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
               !arg_is_arraycopy_dest) {
             continue;
           }
-          set_escape_state(arg_ptn, PointsToNode::ArgEscape);
+          PointsToNode::EscapeState es = PointsToNode::ArgEscape;
+          if (call->is_ArrayCopy()) {
+            ArrayCopyNode* ac = call->as_ArrayCopy();
+            if (ac->is_clonebasic() ||
+                ac->is_arraycopy_validated() ||
+                ac->is_copyof_validated() ||
+                ac->is_copyofrange_validated()) {
+              es = PointsToNode::NoEscape;
+            }
+          }
+          set_escape_state(arg_ptn, es);
           if (arg_is_arraycopy_dest) {
             Node* src = call->in(TypeFunc::Parms);
             if (src->is_AddP()) {
@@ -994,7 +1009,7 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
               // as base since objects escape states are not related.
               // Only escape state of destination object's fields affects
               // escape state of fields in source object.
-              add_arraycopy(call, PointsToNode::ArgEscape, src_ptn, arg_ptn);
+              add_arraycopy(call, es, src_ptn, arg_ptn);
             }
           }
         }
@@ -1272,12 +1287,12 @@ bool ConnectionGraph::find_non_escaped_objects(GrowableArray<PointsToNode*>& ptn
         if ((e->escape_state() < field_es) &&
             e->is_Field() && ptn->is_JavaObject() &&
             e->as_Field()->is_oop()) {
-          // Change escape state of referenced fileds.
+          // Change escape state of referenced fields.
           set_escape_state(e, field_es);
-          es_changed = true;;
+          es_changed = true;
         } else if (e->escape_state() < es) {
           set_escape_state(e, es);
-          es_changed = true;;
+          es_changed = true;
         }
         if (es_changed) {
           escape_worklist.push(e);
@@ -1389,7 +1404,7 @@ void ConnectionGraph::add_field_uses_to_worklist(FieldNode* field) {
           for (UseIterator k(arycp); k.has_next(); k.next()) {
             PointsToNode* abase = k.get();
             if (abase->arraycopy_dst() && abase != base) {
-              // Look for the same arracopy reference.
+              // Look for the same arraycopy reference.
               add_fields_to_worklist(field, abase);
             }
           }
@@ -1469,12 +1484,13 @@ int ConnectionGraph::find_init_values(JavaObjectNode* pta, PointsToNode* init_va
   int new_edges = 0;
   Node* alloc = pta->ideal_node();
   if (init_val == phantom_obj) {
-    // Do nothing for Allocate nodes since its fields values are "known".
-    if (alloc->is_Allocate())
+    // Do nothing for Allocate nodes since its fields values are
+    // "known" unless they are initialized by arraycopy/clone.
+    if (alloc->is_Allocate() && !pta->arraycopy_dst())
       return 0;
-    assert(alloc->as_CallStaticJava(), "sanity");
+    assert(pta->arraycopy_dst() || alloc->as_CallStaticJava(), "sanity");
 #ifdef ASSERT
-    if (alloc->as_CallStaticJava()->method() == NULL) {
+    if (!pta->arraycopy_dst() && alloc->as_CallStaticJava()->method() == NULL) {
       const char* name = alloc->as_CallStaticJava()->_name;
       assert(strncmp(name, "_multianewarray", 15) == 0, "sanity");
     }
@@ -1623,11 +1639,12 @@ void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj) {
   //
   for (UseIterator i(jobj); i.has_next(); i.next()) {
     PointsToNode* use = i.get();
-    assert(!use->is_Arraycopy(), "sanity");
+    if (use->is_Arraycopy()) {
+      continue;
+    }
     if (use->is_Field()) {
       FieldNode* field = use->as_Field();
-      assert(field->is_oop() && field->scalar_replaceable() &&
-             field->fields_escape_state() == PointsToNode::NoEscape, "sanity");
+      assert(field->is_oop() && field->scalar_replaceable(), "sanity");
       if (field->offset() == Type::OffsetBot) {
         jobj->set_scalar_replaceable(false);
         return;
@@ -1660,6 +1677,10 @@ void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj) {
   }
 
   for (EdgeIterator j(jobj); j.has_next(); j.next()) {
+    if (j.get()->is_Arraycopy()) {
+      continue;
+    }
+
     // Non-escaping object node should point only to field nodes.
     FieldNode* field = j.get()->as_Field();
     int offset = field->as_Field()->offset();
@@ -2636,6 +2657,7 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
       if (proj_in->is_Allocate() && proj_in->_idx == (uint)toop->instance_id()) {
         break;  // hit one of our sentinels
       } else if (proj_in->is_Call()) {
+        // ArrayCopy node processed here as well
         CallNode *call = proj_in->as_Call();
         if (!call->may_modify(toop, igvn)) {
           result = call->in(TypeFunc::Memory);
@@ -2648,6 +2670,15 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
           result = proj_in->in(TypeFunc::Memory);
         }
       } else if (proj_in->is_MemBar()) {
+        if (proj_in->in(TypeFunc::Memory)->is_MergeMem() &&
+            proj_in->in(TypeFunc::Memory)->as_MergeMem()->in(Compile::AliasIdxRaw)->is_Proj() &&
+            proj_in->in(TypeFunc::Memory)->as_MergeMem()->in(Compile::AliasIdxRaw)->in(0)->is_ArrayCopy()) {
+          // clone
+          ArrayCopyNode* ac = proj_in->in(TypeFunc::Memory)->as_MergeMem()->in(Compile::AliasIdxRaw)->in(0)->as_ArrayCopy();
+          if (ac->may_modify(toop, igvn)) {
+            break;
+          }
+        }
         result = proj_in->in(TypeFunc::Memory);
       }
     } else if (result->is_MergeMem()) {
@@ -2724,7 +2755,7 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
 //
 //  Phase 1:  Process possible allocations from alloc_worklist.  Create instance
 //            types for the CheckCastPP for allocations where possible.
-//            Propagate the the new types through users as follows:
+//            Propagate the new types through users as follows:
 //               casts and Phi:  push users on alloc_worklist
 //               AddP:  cast Base and Address inputs to the instance type
 //                      push any AddP users on alloc_worklist and push any memnode
@@ -2803,7 +2834,7 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
 //    90  LoadP    _ 120  30   ... alias_index=6
 //   100  LoadP    _  80  20   ... alias_index=4
 //
-void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist) {
+void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist, GrowableArray<ArrayCopyNode*> &arraycopy_worklist) {
   GrowableArray<Node *>  memnode_worklist;
   GrowableArray<PhiNode *>  orig_phis;
   PhaseIterGVN  *igvn = _igvn;
@@ -2912,9 +2943,12 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
       if (alloc->is_Allocate() && (t->isa_instptr() || t->isa_aryptr())) {
 
         // First, put on the worklist all Field edges from Connection Graph
-        // which is more accurate then putting immediate users from Ideal Graph.
+        // which is more accurate than putting immediate users from Ideal Graph.
         for (EdgeIterator e(ptn); e.has_next(); e.next()) {
           PointsToNode* tgt = e.get();
+          if (tgt->is_Arraycopy()) {
+            continue;
+          }
           Node* use = tgt->ideal_node();
           assert(tgt->is_Field() && use->is_AddP(),
                  "only AddP nodes are Field edges in CG");
@@ -3068,6 +3102,38 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
     }
 
   }
+
+  // Go over all ArrayCopy nodes and if one of the inputs has a unique
+  // type, record it in the ArrayCopy node so we know what memory this
+  // node uses/modified.
+  for (int next = 0; next < arraycopy_worklist.length(); next++) {
+    ArrayCopyNode* ac = arraycopy_worklist.at(next);
+    Node* dest = ac->in(ArrayCopyNode::Dest);
+    if (dest->is_AddP()) {
+      dest = get_addp_base(dest);
+    }
+    JavaObjectNode* jobj = unique_java_object(dest);
+    if (jobj != NULL) {
+      Node *base = get_map(jobj->idx());
+      if (base != NULL) {
+        const TypeOopPtr *base_t = _igvn->type(base)->isa_oopptr();
+        ac->_dest_type = base_t;
+      }
+    }
+    Node* src = ac->in(ArrayCopyNode::Src);
+    if (src->is_AddP()) {
+      src = get_addp_base(src);
+    }
+    jobj = unique_java_object(src);
+    if (jobj != NULL) {
+      Node* base = get_map(jobj->idx());
+      if (base != NULL) {
+        const TypeOopPtr *base_t = _igvn->type(base)->isa_oopptr();
+        ac->_src_type = base_t;
+      }
+    }
+  }
+
   // New alias types were created in split_AddP().
   uint new_index_end = (uint) _compile->num_alias_types();
   assert(unique_old == _compile->unique(), "there should be no new ideal nodes after Phase 1");
