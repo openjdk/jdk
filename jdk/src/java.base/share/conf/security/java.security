@@ -156,7 +156,8 @@ login.configuration.provider=sun.security.provider.ConfigFile
 
 #
 # Class to instantiate as the system Policy. This is the name of the class
-# that will be used as the Policy object.
+# that will be used as the Policy object. The system class loader is used to
+# locate this class.
 #
 policy.provider=sun.security.provider.PolicyFile
 
