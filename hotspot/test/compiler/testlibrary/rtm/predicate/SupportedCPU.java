@@ -28,7 +28,7 @@ import sun.hotspot.cpuinfo.CPUInfo;
 
 import java.util.function.BooleanSupplier;
 
-import com.oracle.java.testlibrary.Platform;
+import jdk.test.lib.Platform;
 
 public class SupportedCPU implements BooleanSupplier {
     @Override
