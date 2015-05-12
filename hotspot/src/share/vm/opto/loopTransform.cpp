@@ -475,7 +475,7 @@ void PhaseIdealLoop::do_peeling( IdealLoopTree *loop, Node_List &old_new ) {
 
   C->set_major_progress();
   // Peeling a 'main' loop in a pre/main/post situation obfuscates the
-  // 'pre' loop from the main and the 'pre' can no longer have it's
+  // 'pre' loop from the main and the 'pre' can no longer have its
   // iterations adjusted.  Therefore, we need to declare this loop as
   // no longer a 'main' loop; it will need new pre and post loops before
   // we can do further RCE.
@@ -1911,7 +1911,7 @@ void PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
     return;
   assert(opqzm->in(1) == main_limit, "do not understand situation");
 
-  // Find the pre-loop limit; we will expand it's iterations to
+  // Find the pre-loop limit; we will expand its iterations to
   // not ever trip low tests.
   Node *p_f = iffm->in(0);
   // pre loop may have been optimized out
@@ -2218,6 +2218,56 @@ void IdealLoopTree::adjust_loop_exit_prob( PhaseIdealLoop *phase ) {
   }
 }
 
+#ifdef ASSERT
+static CountedLoopNode* locate_pre_from_main(CountedLoopNode *cl) {
+  Node *ctrl  = cl->in(LoopNode::EntryControl);
+  assert(ctrl->Opcode() == Op_IfTrue || ctrl->Opcode() == Op_IfFalse, "");
+  Node *iffm = ctrl->in(0);
+  assert(iffm->Opcode() == Op_If, "");
+  Node *p_f = iffm->in(0);
+  assert(p_f->Opcode() == Op_IfFalse, "");
+  CountedLoopEndNode *pre_end = p_f->in(0)->as_CountedLoopEnd();
+  assert(pre_end->loopnode()->is_pre_loop(), "");
+  return pre_end->loopnode();
+}
+#endif
+
+// Remove the main and post loops and make the pre loop execute all
+// iterations. Useful when the pre loop is found empty.
+void IdealLoopTree::remove_main_post_loops(CountedLoopNode *cl, PhaseIdealLoop *phase) {
+  CountedLoopEndNode* pre_end = cl->loopexit();
+  Node* pre_cmp = pre_end->cmp_node();
+  if (pre_cmp->in(2)->Opcode() != Op_Opaque1) {
+    // Only safe to remove the main loop if the compiler optimized it
+    // out based on an unknown number of iterations
+    return;
+  }
+
+  // Can we find the main loop?
+  if (_next == NULL) {
+    return;
+  }
+
+  Node* next_head = _next->_head;
+  if (!next_head->is_CountedLoop()) {
+    return;
+  }
+
+  CountedLoopNode* main_head = next_head->as_CountedLoop();
+  if (!main_head->is_main_loop()) {
+    return;
+  }
+
+  assert(locate_pre_from_main(main_head) == cl, "bad main loop");
+  Node* main_iff = main_head->in(LoopNode::EntryControl)->in(0);
+
+  // Remove the Opaque1Node of the pre loop and make it execute all iterations
+  phase->_igvn.replace_input_of(pre_cmp, 2, pre_cmp->in(2)->in(2));
+  // Remove the Opaque1Node of the main loop so it can be optimized out
+  Node* main_cmp = main_iff->in(1)->in(1);
+  assert(main_cmp->in(2)->Opcode() == Op_Opaque1, "main loop has no opaque node?");
+  phase->_igvn.replace_input_of(main_cmp, 2, main_cmp->in(2)->in(1));
+}
 
 //------------------------------policy_do_remove_empty_loop--------------------
 // Micro-benchmark spamming.  Policy is to always remove empty loops.
@@ -2235,6 +2285,12 @@ bool IdealLoopTree::policy_do_remove_empty_loop( PhaseIdealLoop *phase ) {
     return false; // Malformed loop
   if (!phase->is_member(this, phase->get_ctrl(cl->loopexit()->in(CountedLoopEndNode::TestValue))))
     return false;             // Infinite loop
+
+  if (cl->is_pre_loop()) {
+    // If the loop we are removing is a pre-loop then the main and
+    // post loop can be removed as well
+    remove_main_post_loops(cl, phase);
+  }
 
 #ifdef ASSERT
   // Ensure only one phi which is the iv.
