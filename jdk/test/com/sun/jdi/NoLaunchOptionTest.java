@@ -26,15 +26,15 @@ import jdk.testlibrary.OutputAnalyzer;
 import jdk.testlibrary.ProcessTools;
 
 /*
- *   @test       NoLaunchOptionTest.java
- *   @bug        4554734 4724714
- *   @summary    Test for -Xrunjdwp:[onthrow,onuncaught] suboptions require launch suboption
- *   @author     Tim Bell
- *
- *  @modules jdk.jdi
- *  @run compile -g NoLaunchOptionTest.java
- *  @build VMConnection
- *  @run driver NoLaunchOptionTest
+ * @test       NoLaunchOptionTest.java
+ * @bug        4554734 4724714
+ * @summary    Test for -Xrunjdwp:[onthrow,onuncaught] suboptions require launch suboption
+ * @author     Tim Bell
+ * @library /lib/testlibrary
+ * @modules jdk.jdi
+ * @run compile -g NoLaunchOptionTest.java
+ * @build jdk.testlibrary.* VMConnection
+ * @run driver NoLaunchOptionTest
  */
 public class NoLaunchOptionTest extends Object {
 
