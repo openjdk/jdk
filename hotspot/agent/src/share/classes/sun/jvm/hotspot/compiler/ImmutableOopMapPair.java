@@ -65,7 +65,7 @@ public class ImmutableOopMapPair {
   }
 
   private static void initialize(TypeDataBase db) {
-    Type type = db.lookupType("ImmutableOopMapSet");
+    Type type = db.lookupType("ImmutableOopMapPair");
 
     pcField = type.getCIntegerField("_pc_offset");
     offsetField = type.getCIntegerField("_oopmap_offset");
