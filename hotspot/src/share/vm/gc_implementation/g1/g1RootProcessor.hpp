@@ -26,7 +26,7 @@
 #define SHARE_VM_GC_IMPLEMENTATION_G1_ROOTPROCESSOR_HPP
 
 #include "memory/allocation.hpp"
-#include "memory/sharedHeap.hpp"
+#include "memory/strongRootsScope.hpp"
 #include "runtime/mutex.hpp"
 
 class CLDClosure;
@@ -46,7 +46,7 @@ class SubTasksDone;
 class G1RootProcessor : public StackObj {
   G1CollectedHeap* _g1h;
   SubTasksDone* _process_strong_tasks;
-  SharedHeap::StrongRootsScope _srs;
+  StrongRootsScope _srs;
 
   // Used to implement the Thread work barrier.
   Monitor _lock;

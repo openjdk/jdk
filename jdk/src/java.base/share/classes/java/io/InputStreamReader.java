@@ -179,6 +179,7 @@ public class InputStreamReader extends Reader {
      *             stream has been reached
      *
      * @exception  IOException  If an I/O error occurs
+     * @exception  IndexOutOfBoundsException {@inheritDoc}
      */
     public int read(char cbuf[], int offset, int length) throws IOException {
         return sd.read(cbuf, offset, length);

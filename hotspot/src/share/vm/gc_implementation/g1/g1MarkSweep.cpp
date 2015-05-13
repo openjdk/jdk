@@ -61,9 +61,8 @@ void G1MarkSweep::invoke_at_safepoint(ReferenceProcessor* rp,
                                       bool clear_all_softrefs) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
 
-  SharedHeap* sh = SharedHeap::heap();
 #ifdef ASSERT
-  if (sh->collector_policy()->should_clear_all_soft_refs()) {
+  if (G1CollectedHeap::heap()->collector_policy()->should_clear_all_soft_refs()) {
     assert(clear_all_softrefs, "Policy should have been checked earler");
   }
 #endif
@@ -102,11 +101,6 @@ void G1MarkSweep::invoke_at_safepoint(ReferenceProcessor* rp,
   BiasedLocking::restore_marks();
   GenMarkSweep::deallocate_stacks();
 
-  // "free at last gc" is calculated from these.
-  // CHF: cheating for now!!!
-  //  Universe::set_heap_capacity_at_last_gc(Universe::heap()->capacity());
-  //  Universe::set_heap_used_at_last_gc(Universe::heap()->used());
-
   CodeCache::gc_epilogue();
   JvmtiExport::gc_epilogue();
 
@@ -125,7 +119,6 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
                                     bool clear_all_softrefs) {
   // Recursively traverse all live objects and mark them
   GCTraceTime tm("phase 1", G1Log::fine() && Verbose, true, gc_timer(), gc_tracer()->gc_id());
-  GenMarkSweep::trace(" 1");
 
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
@@ -168,12 +161,12 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
   Klass::clean_weak_klass_links(&GenMarkSweep::is_alive);
 
   // Delete entries for dead interned string and clean up unreferenced symbols in symbol table.
-  G1CollectedHeap::heap()->unlink_string_and_symbol_table(&GenMarkSweep::is_alive);
+  g1h->unlink_string_and_symbol_table(&GenMarkSweep::is_alive);
 
   if (VerifyDuringGC) {
     HandleMark hm;  // handle scope
     COMPILER2_PRESENT(DerivedPointerTableDeactivate dpt_deact);
-    Universe::heap()->prepare_for_verify();
+    g1h->prepare_for_verify();
     // Note: we can verify only the heap here. When an object is
     // marked, the previous value of the mark word (including
     // identity hash values, ages, etc) is preserved, and the mark
@@ -187,7 +180,7 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
     if (!VerifySilently) {
       gclog_or_tty->print(" VerifyDuringGC:(full)[Verifying ");
     }
-    Universe::heap()->verify(VerifySilently, VerifyOption_G1UseMarkWord);
+    g1h->verify(VerifySilently, VerifyOption_G1UseMarkWord);
     if (!VerifySilently) {
       gclog_or_tty->print_cr("]");
     }
@@ -205,7 +198,6 @@ void G1MarkSweep::mark_sweep_phase2() {
   // tracking expects us to do so. See comment under phase4.
 
   GCTraceTime tm("phase 2", G1Log::fine() && Verbose, true, gc_timer(), gc_tracer()->gc_id());
-  GenMarkSweep::trace("2");
 
   prepare_compaction();
 }
@@ -239,7 +231,6 @@ void G1MarkSweep::mark_sweep_phase3() {
 
   // Adjust the pointers to reflect the new locations
   GCTraceTime tm("phase 3", G1Log::fine() && Verbose, true, gc_timer(), gc_tracer()->gc_id());
-  GenMarkSweep::trace("3");
 
   // Need cleared claim bits for the roots processing
   ClassLoaderDataGraph::clear_claimed_marks();
@@ -301,7 +292,6 @@ void G1MarkSweep::mark_sweep_phase4() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
   GCTraceTime tm("phase 4", G1Log::fine() && Verbose, true, gc_timer(), gc_tracer()->gc_id());
-  GenMarkSweep::trace("4");
 
   G1SpaceCompactClosure blk;
   g1h->heap_region_iterate(&blk);

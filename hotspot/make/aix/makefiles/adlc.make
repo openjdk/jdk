@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -140,13 +140,7 @@ ADLCFLAGS += $(SYSDEFS)
 # Note "+="; it is a hook so flags.make can add more flags, like -g or -DFOO.
 ADLCFLAGS += -q -T
 
-# Normally, debugging is done directly on the ad_<arch>*.cpp files.
-# But -g will put #line directives in those files pointing back to <arch>.ad.
-# Some builds of gcc 3.2 have a bug that gets tickled by the extra #line directives
-# so skip it for 3.2 and ealier.
-ifneq "$(shell expr \( $(CC_VER_MAJOR) \> 3 \) \| \( \( $(CC_VER_MAJOR) = 3 \) \& \( $(CC_VER_MINOR) \>= 3 \) \))" "0"
 ADLCFLAGS += -g
-endif
 
 ifdef LP64
 ADLCFLAGS += -D_LP64

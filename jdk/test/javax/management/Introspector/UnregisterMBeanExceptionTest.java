@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  *          the supplied MBean although DynamicMBean.getMBeanInfo() throws
  *          a runtime exception.
  * @author Luis-Miguel Alventosa
+ * @modules java.management
  * @run clean UnregisterMBeanExceptionTest
  * @run build UnregisterMBeanExceptionTest
  * @run main UnregisterMBeanExceptionTest

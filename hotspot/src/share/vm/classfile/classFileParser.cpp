@@ -4838,20 +4838,21 @@ void ClassFileParser::verify_legal_method_modifiers(
       }
     }
   } else { // not interface
-    if (is_initializer) {
-      if (is_static || is_final || is_synchronized || is_native ||
-          is_abstract || (major_gte_15 && is_bridge)) {
-        is_illegal = true;
-      }
-    } else { // not initializer
-      if (is_abstract) {
-        if ((is_final || is_native || is_private || is_static ||
-            (major_gte_15 && (is_synchronized || is_strict)))) {
+    if (has_illegal_visibility(flags)) {
+      is_illegal = true;
+    } else {
+      if (is_initializer) {
+        if (is_static || is_final || is_synchronized || is_native ||
+            is_abstract || (major_gte_15 && is_bridge)) {
           is_illegal = true;
         }
-      }
-      if (has_illegal_visibility(flags)) {
-        is_illegal = true;
+      } else { // not initializer
+        if (is_abstract) {
+          if ((is_final || is_native || is_private || is_static ||
+              (major_gte_15 && (is_synchronized || is_strict)))) {
+            is_illegal = true;
+          }
+        }
       }
     }
   }

@@ -23,16 +23,17 @@
  */
 
 #include "precompiled.hpp"
+#include "gc_interface/collectedHeap.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/cardTableModRefBS.inline.hpp"
 #include "memory/cardTableRS.hpp"
-#include "memory/sharedHeap.hpp"
+#include "memory/genCollectedHeap.hpp"
 #include "memory/space.hpp"
 #include "memory/space.inline.hpp"
 #include "memory/universe.hpp"
+#include "memory/virtualspace.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/virtualspace.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/macros.hpp"
 #ifdef COMPILER1
@@ -450,21 +451,20 @@ void CardTableModRefBS::non_clean_card_iterate_possibly_parallel(Space* sp,
     // This is an example of where n_par_threads() is used instead
     // of workers()->active_workers().  n_par_threads can be set to 0 to
     // turn off parallelism.  For example when this code is called as
-    // part of verification and SharedHeap::process_roots() is being
-    // used, then n_par_threads() may have been set to 0.  active_workers
-    // is not overloaded with the meaning that it is a switch to disable
-    // parallelism and so keeps the meaning of the number of
-    // active gc workers.  If parallelism has not been shut off by
-    // setting n_par_threads to 0, then n_par_threads should be
-    // equal to active_workers.  When a different mechanism for shutting
-    // off parallelism is used, then active_workers can be used in
+    // part of verification during root processing then n_par_threads()
+    // may have been set to 0. active_workers is not overloaded with
+    // the meaning that it is a switch to disable parallelism and so keeps
+    // the meaning of the number of active gc workers. If parallelism has
+    // not been shut off by setting n_par_threads to 0, then n_par_threads
+    // should be equal to active_workers.  When a different mechanism for
+    // shutting off parallelism is used, then active_workers can be used in
     // place of n_par_threads.
-    int n_threads =  SharedHeap::heap()->n_par_threads();
+    int n_threads =  GenCollectedHeap::heap()->n_par_threads();
     bool is_par = n_threads > 0;
     if (is_par) {
 #if INCLUDE_ALL_GCS
-      assert(SharedHeap::heap()->n_par_threads() ==
-             SharedHeap::heap()->workers()->active_workers(), "Mismatch");
+      assert(GenCollectedHeap::heap()->n_par_threads() ==
+             GenCollectedHeap::heap()->workers()->active_workers(), "Mismatch");
       non_clean_card_iterate_parallel_work(sp, mr, cl, ct, n_threads);
 #else  // INCLUDE_ALL_GCS
       fatal("Parallel gc not supported here.");

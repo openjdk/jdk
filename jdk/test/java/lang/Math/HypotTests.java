@@ -32,6 +32,8 @@
  * @key randomness
  */
 
+import jdk.testlibrary.RandomFactory;
+
 public class HypotTests {
     private HypotTests(){}
 

@@ -35,9 +35,6 @@ import org.omg.CORBA_2_3.portable.InputStream ;
 
 import org.omg.CORBA.INTERNAL ;
 
-/**
- * @author
- */
 public class TaggedProfileTemplateFactoryFinderImpl extends
     IdentifiableFactoryFinderBase
 {

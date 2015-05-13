@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
  *
  *  @author Staffan Larsen
  *
+ *  @modules jdk.jdi
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g LambdaBreakpointTest.java
  *  @run driver LambdaBreakpointTest
@@ -51,7 +52,7 @@ import com.sun.jdi.event.StepEvent;
 class LambdaBreakpointTestTarg {
 
     static int[] breakpointLines = {
-            62, 66, 63, 64, 65, 67
+            63, 67, 64, 65, 66, 68
     };
 
     public static void main(String[] args) {

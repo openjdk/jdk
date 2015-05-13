@@ -36,9 +36,6 @@ import com.sun.corba.se.spi.logging.CORBALogDomains ;
 
 import com.sun.corba.se.impl.logging.IORSystemException ;
 
-/**
- * @author
- */
 public final class IIOPAddressImpl extends IIOPAddressBase
 {
     private ORB orb ;

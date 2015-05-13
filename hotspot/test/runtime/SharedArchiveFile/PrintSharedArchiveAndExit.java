@@ -34,8 +34,10 @@ import com.oracle.java.testlibrary.*;
 
 public class PrintSharedArchiveAndExit {
   public static void main(String[] args) throws Exception {
+    String filename = "./PrintSharedArchiveAndExit.jsa";
+
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-        "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./sample.jsa", "-Xshare:dump");
+        "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=" + filename, "-Xshare:dump");
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     try {
       output.shouldContain("Loading classes to share");
@@ -43,7 +45,7 @@ public class PrintSharedArchiveAndExit {
 
       // (1) With a valid archive
       pb = ProcessTools.createJavaProcessBuilder(
-          "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./sample.jsa",
+          "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=" + filename,
           "-XX:+PrintSharedArchiveAndExit", "-version");
       output = new OutputAnalyzer(pb.start());
       output.shouldContain("archive is valid");
@@ -51,7 +53,7 @@ public class PrintSharedArchiveAndExit {
       output.shouldHaveExitValue(0);               // Should report success in error code.
 
       pb = ProcessTools.createJavaProcessBuilder(
-          "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./sample.jsa",
+          "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=" + filename,
           "-XX:+PrintSharedArchiveAndExit");
       output = new OutputAnalyzer(pb.start());
       output.shouldContain("archive is valid");
@@ -61,7 +63,7 @@ public class PrintSharedArchiveAndExit {
       // (2) With an invalid archive (boot class path has been prepended)
       pb = ProcessTools.createJavaProcessBuilder(
           "-Xbootclasspath/p:foo.jar",
-          "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./sample.jsa",
+          "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=" + filename,
           "-XX:+PrintSharedArchiveAndExit", "-version");
       output = new OutputAnalyzer(pb.start());
       output.shouldContain("archive is invalid");
@@ -70,7 +72,7 @@ public class PrintSharedArchiveAndExit {
 
       pb = ProcessTools.createJavaProcessBuilder(
           "-Xbootclasspath/p:foo.jar",
-          "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./sample.jsa",
+          "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=" + filename,
           "-XX:+PrintSharedArchiveAndExit");
       output = new OutputAnalyzer(pb.start());
       output.shouldContain("archive is invalid");

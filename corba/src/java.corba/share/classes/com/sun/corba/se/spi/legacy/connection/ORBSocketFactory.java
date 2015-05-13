@@ -48,7 +48,7 @@ import com.sun.corba.se.spi.transport.SocketInfo;
  *
  * property. <p>
  *
- * Example: <p>
+ * Example:
 
  * <pre>
  *   -Dcom.sun.CORBA.connection.ORBSocketFactoryClass=MySocketFactory
@@ -145,7 +145,7 @@ public interface ORBSocketFactory
      *
      * property. <p>
      *
-     * Example usage:<p>
+     * Example usage:
      *
      * <pre>
      *    ... \
@@ -203,7 +203,7 @@ public interface ORBSocketFactory
      * Once you have the port you may add information to references
      * created by the associated adapter by calling
      *
-     *    <code>IORInfo::add_ior_component</code><p> <p>
+     *    <code>IORInfo::add_ior_component</code><p>
      *
      *
      * Note: if one is using a POA and the lifespan policy of that
@@ -247,7 +247,7 @@ public interface ORBSocketFactory
      *
      *    <code>ORBConstants.BAD_SERVER_ID_HANDLER_CLASS_PROPERTY</code> <p>
      *
-     * Example: <p>
+     * Example:
      *
      * <pre>
      *
@@ -271,7 +271,7 @@ public interface ORBSocketFactory
      *     <code>SOCKET_FACTORY_CLASS_PROPERTY</code> and
      *     <code>LISTEN_SOCKET_PROPERTY</code>
      *
-     * as used by other clients and servers in your distributed system. <p>
+     * as used by other clients and servers in your distributed system.
      *
      */
     public ServerSocket createServerSocket(String type, int port)
@@ -324,7 +324,7 @@ public interface ORBSocketFactory
      *
      * The <code>SocketInfo</code> given to <code>getEndPointInfo</code>
      * is either null or an object obtained
-     * from <code>GetEndPointInfoAgainException</code> <p>
+     * from <code>GetEndPointInfoAgainException</code>
      *
      */
     public SocketInfo getEndPointInfo(org.omg.CORBA.ORB orb,
@@ -333,7 +333,7 @@ public interface ORBSocketFactory
 
 
     /**
-     * DEPRECATED.  DEPRECATED. DEPRECATED. DEPRECATED. <p
+     * DEPRECATED.  DEPRECATED. DEPRECATED. DEPRECATED. <p>
      *
      * This method is used by a client side ORB. <p>
      *
@@ -346,7 +346,7 @@ public interface ORBSocketFactory
      *
      * If this method throws GetEndPointInfoAgainException then the
      * ORB calls <code>getEndPointInfo</code> again, passing it the
-     * <code>SocketInfo</code> object contained in the exception. <p>
+     * <code>SocketInfo</code> object contained in the exception.
      *
      */
     public Socket createSocket(SocketInfo socketInfo)

@@ -174,8 +174,7 @@ import jdk.nashorn.internal.runtime.options.Options;
  * This quickly became apparent when the code generator was generalized to work
  * with all types, and not just numbers or objects.
  * <p>
- * The CodeGenerator visits nodes only once, tags them as resolved and emits
- * bytecode for them.
+ * The CodeGenerator visits nodes only once and emits bytecode for them.
  */
 @Logger(name="codegen")
 final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContext> implements Loggable {
@@ -1275,7 +1274,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         return true;
     }
 
-    private boolean useOptimisticTypes() {
+    boolean useOptimisticTypes() {
         return !lc.inSplitNode() && compiler.useOptimisticTypes();
     }
 
@@ -1714,11 +1713,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     @Override
     public boolean enterEmptyNode(final EmptyNode emptyNode) {
-        if(!method.isReachable()) {
-            return false;
-        }
-        enterStatement(emptyNode);
-
+        // Don't even record the line number, it's irrelevant as there's no code.
         return false;
     }
 
@@ -2646,8 +2641,6 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             return false;
         }
         enterStatement(returnNode);
-
-        method.registerReturn();
 
         final Type returnType = lc.getCurrentFunction().getReturnType();
 

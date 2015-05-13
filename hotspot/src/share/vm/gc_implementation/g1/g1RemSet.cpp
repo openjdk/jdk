@@ -38,6 +38,7 @@
 #include "oops/oop.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/intHisto.hpp"
+#include "utilities/stack.inline.hpp"
 
 #define CARD_REPEAT_HISTO 0
 

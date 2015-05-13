@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
  * @summary Test that all the platform MXBeans are wrapped in StandardMBean so
  *          an MBeanServer which does not have support for MXBeans can be used.
  * @author Luis-Miguel Alventosa
+ * @modules java.management
+ *          jdk.management
  * @run clean MBeanServerMXBeanUnsupportedTest
  * @run build MBeanServerMXBeanUnsupportedTest
  * @run main/othervm MBeanServerMXBeanUnsupportedTest

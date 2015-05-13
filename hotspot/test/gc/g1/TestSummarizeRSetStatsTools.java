@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,11 @@
  * Common helpers for TestSummarizeRSetStats* tests
  */
 
-import sun.management.ManagementFactoryHelper;
 import com.sun.management.HotSpotDiagnosticMXBean;
 import com.sun.management.VMOption;
 
 import com.oracle.java.testlibrary.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.lang.Thread;
+import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -74,7 +71,8 @@ public class TestSummarizeRSetStatsTools {
 
     // the VM is currently run using G1GC, i.e. trying to test G1 functionality.
     public static boolean testingG1GC() {
-        HotSpotDiagnosticMXBean diagnostic = ManagementFactoryHelper.getDiagnosticMXBean();
+        HotSpotDiagnosticMXBean diagnostic =
+            ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
 
         VMOption option = diagnostic.getVMOption("UseG1GC");
         if (option.getValue().equals("false")) {
@@ -150,4 +148,3 @@ public class TestSummarizeRSetStatsTools {
         }
     }
 }
-

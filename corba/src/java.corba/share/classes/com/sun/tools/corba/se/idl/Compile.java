@@ -52,7 +52,7 @@ import com.sun.tools.corba.se.idl.constExpr.DefaultExprFactory;
  * Compiler usage:
  * <br><br>
  *
- * java com.sun.tools.corba.se.idl.toJava.compile [options] <idl file>
+ * {@code java com.sun.tools.corba.se.idl.toJava.compile [options] <idl file>}
  * <br><br>
  *
  * where &lt;idl file&gt; is the name of a file containing IDL definitions,
@@ -62,17 +62,17 @@ import com.sun.tools.corba.se.idl.constExpr.DefaultExprFactory;
  *
  * Options:
  * <dl>
- * <dt>-i &lt;include path&gt;
+ * <dt>{@code -i <include path>}
  * <dd>By default, the current directory is scanned for included files.
  *     This option adds another directory.  See also Note 1 below.
  *
- * <dt>-d &lt;symbol&gt;
- * <dd>This is equivalent to the following line in an IDL file: #define &lt;symbol&gt;
+ * <dt>{@code -d <symbol>}
+ * <dd>This is equivalent to the following line in an IDL file: {@code #define <symbol>}
  *
- * <dt>-emitAll
+ * <dt>{@code -emitAll}
  * <dd>Emit all types, including those found in #included files.
  *
- * <dt>-v
+ * <dt>{@code -v}
  * <dd>Verbose mode.
  * </dl>
  *
@@ -81,9 +81,9 @@ import com.sun.tools.corba.se.idl.constExpr.DefaultExprFactory;
  * time.  Instead, these can be placed into a config file called idl.config.
  * This file must be in the CLASSPATH.  The format of the includes line is:
  *
- * <pre>
+ * <pre>{@code
  * includes=<path1>;<path2>;...;<pathN>
- * </pre>
+ * }</pre>
  *
  * Note that the path separator character, here shown as a semicolon, is
  * machine dependent.  For instance, on Windows 95 this character is a
@@ -481,10 +481,10 @@ public class Compile
    **/
   public Arguments arguments           = null;
   /**
-   * This hashtable contains <real name, alias> pairs.  It is filled in by
+   * This hashtable contains {@code <real name, alias>} pairs. It is filled in by
    * extenders in cases where they wish to override an IDL type name with
    * some other name.  For instance, when mapping to Java, there could be
-   * an overrideNames entry of <"TRUE", "true">.  NOTE:  Do NOT change this
+   * an overrideNames entry of {@code <"TRUE", "true">}.  NOTE:  Do NOT change this
    * variable to a new Hash table.  Just add elements to it.
    **/
   protected Hashtable overrideNames    = new Hashtable ();
@@ -495,8 +495,8 @@ public class Compile
    **/
   protected Hashtable symbolTable      = new Hashtable ();
   /**
-   * This is a vector of strings of the form "IDLfile" or <IDLfile>.  It is
-   * a list of the files included in the given IDL file.  It will be empty
+   * This is a vector of strings of the form {@code "IDLfile"} or {@code <IDLfile>}.
+   * It is a list of the files included in the given IDL file. It will be empty
    * until the parse method executes.  If errors are encountered, the state
    * of this vector is undefined.
    **/

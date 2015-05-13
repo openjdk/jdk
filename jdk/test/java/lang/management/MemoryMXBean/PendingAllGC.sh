@@ -27,6 +27,7 @@
 # @summary 
 # @author  Mandy Chung
 # @requires vm.gc=="null"
+# @modules java.base/sun.misc
 # @run compile Pending.java
 # @run shell PendingAllGC.sh
 #

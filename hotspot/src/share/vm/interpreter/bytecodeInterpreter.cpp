@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -576,10 +576,10 @@ BytecodeInterpreter::run(interpreterState istate) {
 /* 0xD8 */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
 /* 0xDC */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
 
-/* 0xE0 */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
-/* 0xE4 */ &&opc_default,     &&opc_fast_aldc,      &&opc_fast_aldc_w,  &&opc_return_register_finalizer,
-/* 0xE8 */ &&opc_invokehandle,&&opc_default,        &&opc_default,      &&opc_default,
-/* 0xEC */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
+/* 0xE0 */ &&opc_default,     &&opc_default,        &&opc_default,         &&opc_default,
+/* 0xE4 */ &&opc_default,     &&opc_fast_aldc,      &&opc_fast_aldc_w,     &&opc_return_register_finalizer,
+/* 0xE8 */ &&opc_invokehandle,&&opc_default,        &&opc_default,         &&opc_default,
+/* 0xEC */ &&opc_default,     &&opc_default,        &&opc_default,         &&opc_default,
 
 /* 0xF0 */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
 /* 0xF4 */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
@@ -1942,7 +1942,7 @@ run:
 
           cache = cp->entry_at(index);
           if (!cache->is_resolved((Bytecodes::Code)opcode)) {
-            CALL_VM(InterpreterRuntime::resolve_get_put(THREAD, (Bytecodes::Code)opcode),
+            CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, (Bytecodes::Code)opcode),
                     handle_exception);
             cache = cp->entry_at(index);
           }
@@ -2040,7 +2040,7 @@ run:
           u2 index = Bytes::get_native_u2(pc+1);
           ConstantPoolCacheEntry* cache = cp->entry_at(index);
           if (!cache->is_resolved((Bytecodes::Code)opcode)) {
-            CALL_VM(InterpreterRuntime::resolve_get_put(THREAD, (Bytecodes::Code)opcode),
+            CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, (Bytecodes::Code)opcode),
                     handle_exception);
             cache = cp->entry_at(index);
           }
@@ -2416,7 +2416,7 @@ run:
         // This kind of CP cache entry does not need to match the flags byte, because
         // there is a 1-1 relation between bytecode type and CP entry type.
         if (! cache->is_resolved((Bytecodes::Code) opcode)) {
-          CALL_VM(InterpreterRuntime::resolve_invokedynamic(THREAD),
+          CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, (Bytecodes::Code)opcode),
                   handle_exception);
           cache = cp->constant_pool()->invokedynamic_cp_cache_entry_at(index);
         }
@@ -2447,7 +2447,7 @@ run:
         ConstantPoolCacheEntry* cache = cp->entry_at(index);
 
         if (! cache->is_resolved((Bytecodes::Code) opcode)) {
-          CALL_VM(InterpreterRuntime::resolve_invokehandle(THREAD),
+          CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, (Bytecodes::Code)opcode),
                   handle_exception);
           cache = cp->entry_at(index);
         }
@@ -2480,7 +2480,7 @@ run:
 
         ConstantPoolCacheEntry* cache = cp->entry_at(index);
         if (!cache->is_resolved((Bytecodes::Code)opcode)) {
-          CALL_VM(InterpreterRuntime::resolve_invoke(THREAD, (Bytecodes::Code)opcode),
+          CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, (Bytecodes::Code)opcode),
                   handle_exception);
           cache = cp->entry_at(index);
         }
@@ -2571,7 +2571,7 @@ run:
         // out so c++ compiler has a chance for constant prop to fold everything possible away.
 
         if (!cache->is_resolved((Bytecodes::Code)opcode)) {
-          CALL_VM(InterpreterRuntime::resolve_invoke(THREAD, (Bytecodes::Code)opcode),
+          CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, (Bytecodes::Code)opcode),
                   handle_exception);
           cache = cp->entry_at(index);
         }

@@ -1067,8 +1067,11 @@ void CodeCache::flush_dependents_on(Handle call_site, Handle method_handle) {
   int marked = 0;
   {
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    InstanceKlass* call_site_klass = InstanceKlass::cast(call_site->klass());
-    marked = call_site_klass->mark_dependent_nmethods(changes);
+    InstanceKlass* ctxk = MethodHandles::get_call_site_context(call_site());
+    if (ctxk == NULL) {
+      return; // No dependencies to invalidate yet.
+    }
+    marked = ctxk->mark_dependent_nmethods(changes);
   }
   if (marked > 0) {
     // At least one nmethod has been marked for deoptimization

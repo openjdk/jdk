@@ -97,7 +97,7 @@ public class CompressedClassPointers {
         // Test small heaps
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:SharedArchiveFile=./sample.jsa",
+            "-XX:SharedArchiveFile=./CompressedClassPointers.jsa",
             "-Xmx128m",
             "-XX:SharedBaseAddress=8g",
             "-XX:+PrintCompressedOopsMode",
@@ -110,7 +110,7 @@ public class CompressedClassPointers {
 
           pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:SharedArchiveFile=./sample.jsa",
+            "-XX:SharedArchiveFile=./CompressedClassPointers.jsa",
             "-Xmx128m",
             "-XX:SharedBaseAddress=8g",
             "-XX:+PrintCompressedOopsMode",

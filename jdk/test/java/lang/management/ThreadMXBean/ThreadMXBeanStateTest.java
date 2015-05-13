@@ -32,6 +32,7 @@
  *
  * @library ../../Thread
  * @library /lib/testlibrary
+ * @modules java.management
  * @build jdk.testlibrary.*
  * @build ThreadMXBeanStateTest ThreadStateController
  * @run main ThreadMXBeanStateTest
