@@ -39,7 +39,7 @@
 #include "utilities/macros.hpp"
 #include "vmreg_x86.inline.hpp"
 #if INCLUDE_ALL_GCS
-#include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
+#include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #endif
 
 

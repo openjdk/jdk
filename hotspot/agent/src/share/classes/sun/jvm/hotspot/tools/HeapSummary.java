@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@
 package sun.jvm.hotspot.tools;
 
 import java.util.*;
-import sun.jvm.hotspot.gc_interface.*;
-import sun.jvm.hotspot.gc_implementation.g1.*;
-import sun.jvm.hotspot.gc_implementation.parallelScavenge.*;
-import sun.jvm.hotspot.gc_implementation.shared.*;
+import sun.jvm.hotspot.gc.shared.*;
+import sun.jvm.hotspot.gc.g1.*;
+import sun.jvm.hotspot.gc.parallel.*;
+import sun.jvm.hotspot.gc.shared.*;
 import sun.jvm.hotspot.debugger.JVMDebugger;
 import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.oops.*;

@@ -25,11 +25,11 @@
 #ifndef SHARE_VM_SERVICES_MEMORYSERVICE_HPP
 #define SHARE_VM_SERVICES_MEMORYSERVICE_HPP
 
+#include "gc/shared/gcCause.hpp"
+#include "gc/shared/generation.hpp"
 #include "memory/allocation.hpp"
-#include "memory/generation.hpp"
 #include "runtime/handles.hpp"
 #include "services/memoryUsage.hpp"
-#include "gc_interface/gcCause.hpp"
 
 // Forward declaration
 class MemoryPool;

@@ -41,7 +41,7 @@
 #include "code/codeBlob.hpp"
 #include "code/nmethod.hpp"
 #include "code/pcDesc.hpp"
-#include "gc_interface/collectedHeap.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "memory/heap.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/universe.hpp"

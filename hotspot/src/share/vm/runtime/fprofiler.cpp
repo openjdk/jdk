@@ -26,7 +26,7 @@
 #include "classfile/classLoader.hpp"
 #include "code/codeCache.hpp"
 #include "code/vtableStubs.hpp"
-#include "gc_interface/collectedHeap.inline.hpp"
+#include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/universe.inline.hpp"

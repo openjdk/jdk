@@ -28,7 +28,7 @@
 #include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerOracle.hpp"
-#include "gc_implementation/shared/isGCActiveMark.hpp"
+#include "gc/shared/isGCActiveMark.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/symbol.hpp"

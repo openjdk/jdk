@@ -26,12 +26,12 @@
 #define SHARE_VM_CLASSFILE_VERIFIER_HPP
 
 #include "classfile/verificationType.hpp"
-#include "memory/gcLocker.hpp"
+#include "gc/shared/gcLocker.hpp"
 #include "oops/klass.hpp"
 #include "oops/method.hpp"
 #include "runtime/handles.hpp"
-#include "utilities/growableArray.hpp"
 #include "utilities/exceptions.hpp"
+#include "utilities/growableArray.hpp"
 
 // The verifier class
 class Verifier : AllStatic {

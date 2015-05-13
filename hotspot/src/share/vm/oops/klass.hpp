@@ -25,9 +25,9 @@
 #ifndef SHARE_VM_OOPS_KLASS_HPP
 #define SHARE_VM_OOPS_KLASS_HPP
 
+#include "gc/shared/specialized_oop_closures.hpp"
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
-#include "memory/specialized_oop_closures.hpp"
 #include "oops/metadata.hpp"
 #include "oops/oop.hpp"
 #include "trace/traceMacros.hpp"

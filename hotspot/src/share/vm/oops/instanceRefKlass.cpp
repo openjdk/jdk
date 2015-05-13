@@ -25,13 +25,13 @@
 #include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "gc_interface/collectedHeap.inline.hpp"
-#include "memory/genCollectedHeap.hpp"
-#include "memory/specialized_oop_closures.hpp"
+#include "gc/shared/collectedHeap.inline.hpp"
+#include "gc/shared/genCollectedHeap.hpp"
+#include "gc/shared/specialized_oop_closures.hpp"
 #include "oops/instanceRefKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "utilities/preserveException.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/preserveException.hpp"
 
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 

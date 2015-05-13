@@ -28,7 +28,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
-#include "gc_interface/collectedHeap.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/linkResolver.hpp"

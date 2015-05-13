@@ -142,7 +142,7 @@ LIBJVM   = lib$(JVM).so
 LIBJVM_DEBUGINFO   = lib$(JVM).debuginfo
 LIBJVM_DIZ         = lib$(JVM).diz
 
-SPECIAL_PATHS:=adlc c1 gc_implementation opto shark libadt
+SPECIAL_PATHS:=adlc c1 gc opto shark libadt
 
 SOURCE_PATHS=\
   $(shell find $(HS_COMMON_SRC)/share/vm/* -type d \! \

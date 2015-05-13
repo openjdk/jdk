@@ -26,9 +26,9 @@
 #define SHARE_VM_OOPS_INSTANCEREFKLASS_INLINE_HPP
 
 #include "classfile/javaClasses.hpp"
-#include "memory/referenceProcessor.hpp"
-#include "oops/instanceRefKlass.hpp"
+#include "gc/shared/referenceProcessor.hpp"
 #include "oops/instanceKlass.inline.hpp"
+#include "oops/instanceRefKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
