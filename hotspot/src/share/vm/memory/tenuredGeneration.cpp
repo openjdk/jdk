@@ -36,6 +36,9 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
 #include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
+#include "gc_implementation/parNew/parOopClosures.hpp"
+#endif
 
 TenuredGeneration::TenuredGeneration(ReservedSpace rs,
                                      size_t initial_byte_size, int level,

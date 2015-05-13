@@ -164,8 +164,7 @@ class os: AllStatic {
   // Override me as needed
   static int    file_name_strcmp(const char* s1, const char* s2);
 
-  // get/unset environment variable
-  static bool getenv(const char* name, char* buffer, int len);
+  // unset environment variable
   static bool unsetenv(const char* name);
 
   static bool have_special_privileges();
@@ -493,6 +492,7 @@ class os: AllStatic {
 
   // Terminate with an error.  Default is to generate a core file on platforms
   // that support such things.  This calls shutdown() and then aborts.
+  static void abort(bool dump_core, void *siginfo, void *context);
   static void abort(bool dump_core = true);
 
   // Die immediately, no exit hook, no abort hook, no cleanup.
@@ -591,7 +591,7 @@ class os: AllStatic {
   static void pd_print_cpu_info(outputStream* st);
   static void print_memory_info(outputStream* st);
   static void print_dll_info(outputStream* st);
-  static void print_environment_variables(outputStream* st, const char** env_list, char* buffer, int len);
+  static void print_environment_variables(outputStream* st, const char** env_list);
   static void print_context(outputStream* st, void* context);
   static void print_register_info(outputStream* st, void* context);
   static void print_siginfo(outputStream* st, void* siginfo);
@@ -717,8 +717,13 @@ class os: AllStatic {
   // Structured OS Exception support
   static void os_exception_wrapper(java_call_t f, JavaValue* value, methodHandle* method, JavaCallArguments* args, Thread* thread);
 
-  // On Windows this will create an actual minidump, on Linux/Solaris it will simply check core dump limits
-  static void check_or_create_dump(void* exceptionRecord, void* contextRecord, char* buffer, size_t bufferSize);
+  // On Posix compatible OS it will simply check core dump limits while on Windows
+  // it will check if dump file can be created. Check or prepare a core dump to be
+  // taken at a later point in the same thread in os::abort(). Use the caller
+  // provided buffer as a scratch buffer. The status message which will be written
+  // into the error log either is file location or a short error message, depending
+  // on the checking result.
+  static void check_dump_limit(char* buffer, size_t bufferSize);
 
   // Get the default path to the core file
   // Returns the length of the string

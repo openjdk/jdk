@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  * null name in it and calling setFields with a field names array with an
  * empty name in it throw the expected exceptions.
  * @author Luis-Miguel Alventosa
+ * @modules java.management
  * @run clean ImmutableDescriptorSetFieldsTest
  * @run build ImmutableDescriptorSetFieldsTest
  * @run main ImmutableDescriptorSetFieldsTest

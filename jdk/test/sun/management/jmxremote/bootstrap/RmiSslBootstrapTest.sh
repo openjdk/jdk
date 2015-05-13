@@ -27,9 +27,11 @@
 # @summary Test RMI Bootstrap with SSL
 #
 # @library /lib/testlibrary
+# @modules java.management/sun.management
+#          java.management/sun.management.jmxremote
+# @ignore 8077924
 # @build jdk.testlibrary.* TestLogger Utils RmiBootstrapTest
 # @run shell/timeout=300  RmiSslBootstrapTest.sh
-# @ignore 8077924
 
 # Define the Java class test name
 TESTCLASS="RmiBootstrapTest"

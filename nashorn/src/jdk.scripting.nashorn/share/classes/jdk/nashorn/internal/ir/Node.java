@@ -235,26 +235,28 @@ public abstract class Node implements Cloneable, Serializable {
     }
 
     /**
-     * Return token tokenType from a token descriptor.
+     * Returns this node's token's type. If you want to check for the node having a specific token type,
+     * consider using {@link #isTokenType(TokenType)} instead.
      *
-     * @return Type of token.
+     * @return type of token.
      */
     public TokenType tokenType() {
         return Token.descType(token);
     }
 
     /**
-     * Test token tokenType.
+     * Tests if this node has the specific token type.
      *
-     * @param type a type to check this token against
+     * @param type a token type to check this node's token type against
      * @return true if token types match.
      */
     public boolean isTokenType(final TokenType type) {
-        return Token.descType(token) == type;
+        return tokenType() == type;
     }
 
     /**
-     * Get the token for this location
+     * Get the token for this node. If you want to retrieve the token's type, consider using
+     * {@link #tokenType()} or {@link #isTokenType(TokenType)} instead.
      * @return the token
      */
     public long getToken() {

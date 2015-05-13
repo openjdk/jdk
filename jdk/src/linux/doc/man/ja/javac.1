@@ -2,10 +2,10 @@
 .\" Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
 .\" Title: javac
 .\" Language: English
-.\" Date: 2013ǯ11��21��
-.\" SectDesc: ���ܥġ���
+.\" Date: 2013年11月21日
+.\" SectDesc: 基本ツール
 .\" Software: JDK 8
-.\" Arch: ����
+.\" Arch: 汎用
 .\"
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
@@ -28,7 +28,7 @@
 .\" questions.
 .\"
 .pl 99999
-.TH "javac" "1" "2013ǯ11��21��" "JDK 8" "���ܥġ���"
+.TH "javac" "1" "2013年11月21日" "JDK 8" "基本ツール"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -49,8 +49,8 @@
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
 .SH "NAME"
-javac \- Java���饹����ӥ��󥿥ե�������������ɤ߼�ꡢ�Х��ȥ����ɤ���ӥ��饹���ե�����˥���ѥ��뤷�ޤ���
-.SH "����"
+javac \- Javaクラスおよびインタフェースの定義を読み取り、バイトコードおよびクラス・ファイルにコンパイルします。
+.SH "概要"
 .sp
 .if n \{\
 .RS 4
@@ -62,32 +62,32 @@ javac \- Java���饹����ӥ��󥿥ե�������������ɤ߼�ꡢ�Х��ȥ����ɤ���ӥ���
 .RE
 .\}
 .PP
-��������ꤹ������Ǥ�դǤ���
+引数を指定する順序は任意です。
 .PP
 \fIoptions\fR
 .RS 4
-���ޥ�ɥ饤�󡦥��ץ���󡣥��ץ����򻲾Ȥ��Ƥ���������
+コマンドライン・オプション。オプションを参照してください。
 .RE
 .PP
 \fIsourcefiles\fR
 .RS 4
-����ѥ��뤵���1�İʾ�Υ��������ե�����(\fIMyClass\&.java\fR�ʤ�)��
+コンパイルされる1つ以上のソース・ファイル(\fIMyClass\&.java\fRなど)。
 .RE
 .PP
 \fIclasses\fR
 .RS 4
-����ν����оݤȤʤ�1�İʾ�Υ��饹(\fIMyPackage\&.MyClass\fR�ʤ�)��
+注釈の処理対象となる1つ以上のクラス(\fIMyPackage\&.MyClass\fRなど)。
 .RE
 .PP
 \fI@argfiles\fR
 .RS 4
-���ץ����ȥ��������ե���������ɽ������1�İʾ�Υե����롣���Υե��������Ǥ�\fI\-J\fR���ץ����ϻ���Ǥ��ޤ��󡣥��ޥ�ɥ饤������ե�����򻲾Ȥ��Ƥ���������
+オプションとソース・ファイルを一覧表示する1つ以上のファイル。このファイルの中では\fI\-J\fRオプションは指定できません。コマンドライン引数ファイルを参照してください。
 .RE
-.SH "����"
+.SH "説明"
 .PP
-\fIjavac\fR���ޥ�ɤϡ�Java�ץ�����ߥ󥰸���ǵ��Ҥ��줿���饹�ȥ��󥿥ե�������������ɤ߼�ꡢ�Х��ȥ����ɤΥ��饹���ե�����˥���ѥ��뤷�ޤ���\fIjavac\fR���ޥ�ɤǤϡ�Java���������ե����뤪��ӥ��饹�������ν�����Ǥ��ޤ���
+\fIjavac\fRコマンドは、Javaプログラミング言語で記述されたクラスとインタフェースの定義を読み取り、バイトコードのクラス・ファイルにコンパイルします。\fIjavac\fRコマンドでは、Javaソース・ファイルおよびクラス内の注釈の処理もできます。
 .PP
-�������������ɤΥե�����̾��\fIjavac\fR���Ϥ��ˤϡ�2�Ĥ���ˡ������ޤ���
+ソース・コードのファイル名を\fIjavac\fRに渡すには、2つの方法があります。
 .sp
 .RS 4
 .ie n \{\
@@ -97,40 +97,7 @@ javac \- Java���饹����ӥ��󥿥ե�������������ɤ߼�ꡢ�Х��ȥ����ɤ���ӥ���
 .sp -1
 .IP \(bu 2.3
 .\}
-���������ե�����ο������ʤ����ϡ��ե�����̾�򥳥ޥ�ɥ饤��ǻ��ꤷ�ޤ���
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-���������ե�����ο���¿�����ϡ��ե�������Υե�����̾�����ޤ��ϲ��ԤǶ��ڤäƻ��ꤷ�ޤ���\fIjavac\fR���ޥ�ɤǡ��ꥹ�ȡ��ե�����̾����Ƭ�˥��åȥޡ���(@)����Ѥ��ޤ���
-.RE
-.PP
-�������������ɤΥե�����̾��\&.java��ĥ�Ҥ򡢥��饹�Υե�����̾��\&.class��ĥ�Ҥ���äƤ���ɬ�פ�����ޤ����ޤ������������ե�����ȥ��饹���ե�����Τɤ���⡢�������륯�饹���б�����롼��̾����äƤ���ɬ�פ�����ޤ������Ȥ��С�\fIMyClass\fR�Ȥ���̾���Υ��饹�ϡ�\fIMyClass\&.java\fR�Ȥ���̾���Υ��������ե�����˵��Ҥ���ޤ������Υ��������ե�����ϡ�\fIMyClass\&.class\fR�Ȥ���̾���ΥХ��ȥ����ɡ����饹���ե�����˥���ѥ��뤵��ޤ���
-.PP
-�������饹���������Ƥ���ȡ��ɲäΥ��饹���ե����뤬��������ޤ��������Υ��饹���ե������̾���ϡ�\fIMyClass$MyInnerClass\&.class\fR�Τ褦�ˡ��������饹̾�ȳ������饹̾���Ȥ߹礻����Τˤʤ�ޤ���
-.PP
-���������ե�����ϡ��ѥå��������ĥ꡼��ȿ�Ǥ����ǥ��쥯�ȥꡦ�ĥ꡼�����֤��ޤ������Ȥ��С����٤ƤΥ��������ե����뤬\fI/workspace\fR�ˤ����硢\fIcom\&.mysoft\&.mypack\&.MyClass\fR�Υ������������ɤ�\fI/workspace/com/mysoft/mypack/MyClass\&.java\fR�˳�Ǽ���ޤ���
-.PP
-�ǥե���ȤǤϡ�����ѥ���ϡ��ƥ��饹���ե�������б����륽�������ե������Ʊ���ǥ��쥯�ȥ�˳�Ǽ���ޤ���\fI\-d\fR���ץ�������Ѥ��ơ��̤ν�����ǥ��쥯�ȥ�����Ǥ��ޤ���
-.SH "���ץ����"
-.PP
-����ѥ���ˤϡ����ߤγ�ȯ�Ķ��ǥ��ݡ��Ȥ����ɸ�४�ץ����Υ��åȤ�����ޤ�������ʳ�����ɸ�४�ץ����ϡ����ߤβ��ۥޥ��󤪤�ӥ���ѥ���μ����˸�ͭ�Υ��ץ����ǡ����衢�ѹ�������ǽ��������ޤ�����ɸ�४�ץ����ϡ�\fI\-X\fR���ץ����ǻϤޤ�ޤ���
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-����������ѥ��롦���ץ����򻲾Ȥ��Ƥ���������
+ソース・ファイルの数が少ない場合は、ファイル名をコマンドラインで指定します。
 .RE
 .sp
 .RS 4
@@ -141,230 +108,263 @@ javac \- Java���饹����ӥ��󥿥ե�������������ɤ߼�ꡢ�Х��ȥ����ɤ���ӥ���
 .sp -1
 .IP \(bu 2.3
 .\}
-��ɸ�४�ץ����򻲾Ȥ��Ƥ���������
+ソース・ファイルの数が多い場合は、ファイル内のファイル名を空白または改行で区切って指定します。\fIjavac\fRコマンドで、リスト・ファイル名の先頭にアットマーク(@)を使用します。
 .RE
-.SS "ɸ�४�ץ����"
+.PP
+ソース・コードのファイル名は\&.java拡張子を、クラスのファイル名は\&.class拡張子を持っている必要があります。また、ソース・ファイルとクラス・ファイルのどちらも、該当するクラスに対応するルート名を持っている必要があります。たとえば、\fIMyClass\fRという名前のクラスは、\fIMyClass\&.java\fRという名前のソース・ファイルに記述されます。このソース・ファイルは、\fIMyClass\&.class\fRという名前のバイトコード・クラス・ファイルにコンパイルされます。
+.PP
+内部クラスが定義されていると、追加のクラス・ファイルが生成されます。これらのクラス・ファイルの名前は、\fIMyClass$MyInnerClass\&.class\fRのように、内部クラス名と外部クラス名を組み合せたものになります。
+.PP
+ソース・ファイルは、パッケージ・ツリーを反映したディレクトリ・ツリーに配置します。たとえば、すべてのソース・ファイルが\fI/workspace\fRにある場合、\fIcom\&.mysoft\&.mypack\&.MyClass\fRのソース・コードを、\fI/workspace/com/mysoft/mypack/MyClass\&.java\fRに格納します。
+.PP
+デフォルトでは、コンパイラは、各クラス・ファイルを対応するソース・ファイルと同じディレクトリに格納します。\fI\-d\fRオプションを使用して、別の出力先ディレクトリを指定できます。
+.SH "オプション"
+.PP
+コンパイラには、現在の開発環境でサポートされる標準オプションのセットがあります。これ以外の非標準オプションは、現在の仮想マシンおよびコンパイラの実装に固有のオプションで、将来、変更される可能性があります。非標準オプションは、\fI\-X\fRオプションで始まります。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+クロスコンパイル・オプションを参照してください。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+非標準オプションを参照してください。
+.RE
+.SS "標準オプション"
 .PP
 \-A\fIkey\fR[\fI=value\fR]
 .RS 4
-����ץ����å����Ϥ����ץ�������ꤷ�ޤ��������Υ��ץ����ϡ�\fIjavac\fR��ľ�ܲ�᤹��ΤǤϤʤ������줾��Υץ����å��ǻ��ѤǤ���褦�ˤʤ�ޤ���\fIkey\fR���ͤϡ�1�Ĥޤ���ʣ���μ��̻Ҥ�ɥå�(\&.)�Ƕ��ڤ�ɬ�פ�����ޤ���
+注釈プロセッサに渡すオプションを指定します。これらのオプションは、\fIjavac\fRが直接解釈するのではなく、それぞれのプロセッサで使用できるようになります。\fIkey\fRの値は、1つまたは複数の識別子をドット(\&.)で区切る必要があります。
 .RE
 .PP
 \-cp \fIpath\fR or \-classpath \fIpath\fR
 .RS 4
-�桼���������饹���ե����롢�����(���ץ�����)����ץ����å��ȥ��������ե�����򸡺����������ꤷ�ޤ������Υ��饹���ѥ���\fICLASSPATH\fR�Ķ��ѿ��Υ桼���������饹���ѥ��򥪡��С��饤�ɤ��ޤ���\fICLASSPATH\fR��\fI\-cp\fR��\fI\-classpath\fR�Τ��������ꤵ��Ƥ��ʤ���硢�桼������\fI���饹���ѥ�\fR�ϡ����ߤΥǥ��쥯�ȥ�ˤʤ�ޤ���Setting the Class Path �򻲾Ȥ��Ƥ���������
+ユーザー・クラス・ファイル、および(オプションで)注釈プロセッサとソース・ファイルを検索する場所を指定します。このクラス・パスは\fICLASSPATH\fR環境変数のユーザー・クラス・パスをオーバーライドします。\fICLASSPATH\fR、\fI\-cp\fR、\fI\-classpath\fRのいずれも指定されていない場合、ユーザーの\fIクラス・パス\fRは、現在のディレクトリになります。Setting the Class Path を参照してください。
 .sp
-\fI\-sourcepath\fR���ץ���󤬻��ꤵ��Ƥ��ʤ���硢���������ե������桼���������饹���ѥ����鸡������ޤ���
+\fI\-sourcepath\fRオプションが指定されていない場合、ソース・ファイルもユーザー・クラス・パスから検索されます。
 .sp
-\fI\-processorpath\fR���ץ���󤬻��ꤵ��Ƥ��ʤ���硢����ץ����å��⥯�饹���ѥ����鸡������ޤ���
+\fI\-processorpath\fRオプションが指定されていない場合、注釈プロセッサもクラス・パスから検索されます。
 .RE
 .PP
 \-Djava\&.ext\&.dirs=\fIdirectories\fR
 .RS 4
-���󥹥ȡ���ѳ�ĥ��ǽ�ΰ��֤򥪡��С��饤�ɤ��ޤ���
+インストール済拡張機能の位置をオーバーライドします。
 .RE
 .PP
 \-Djava\&.endorsed\&.dirs=\fIdirectories\fR
 .RS 4
-��ǧ���줿ɸ��ѥ��ΰ��֤򥪡��С��饤�ɤ��ޤ���
+承認された標準パスの位置をオーバーライドします。
 .RE
 .PP
 \-d \fIdirectory\fR
 .RS 4
-���饹���ե�����ν�����ǥ��쥯�ȥ�����ꤷ�ޤ������Υǥ��쥯�ȥ��\fIjavac\fR�ǤϺ�������ʤ����ᡢ���Ǥ�¸�ߤ��Ƥ���ɬ�פ�����ޤ������饹���ѥå������ΰ����Ǥ����硢\fIjavac\fR�ϡ��ѥå�����̾��ȿ�Ǥ������֥ǥ��쥯�ȥ���˥��饹���ե�������Ǽ����ɬ�פ˱����ƥǥ��쥯�ȥ��������ޤ���
+クラス・ファイルの出力先ディレクトリを設定します。そのディレクトリは\fIjavac\fRでは作成されないため、すでに存在している必要があります。クラスがパッケージの一部である場合、\fIjavac\fRは、パッケージ名を反映したサブディレクトリ内にクラス・ファイルを格納し、必要に応じてディレクトリを作成します。
 .sp
 \fI\-d\fR
-\fI/home/myclasses\fR�Ȼ��ꤷ�����饹��̾����\fIcom\&.mypackage\&.MyClass\fR�Ǥ����硢���饹���ե������\fI/home/myclasses/com/mypackage/MyClass\&.class\fR�ˤʤ�ޤ���
+\fI/home/myclasses\fRと指定し、クラスの名前が\fIcom\&.mypackage\&.MyClass\fRである場合、クラス・ファイルは\fI/home/myclasses/com/mypackage/MyClass\&.class\fRになります。
 .sp
-\fI\-d\fR���ץ���󤬻��ꤵ��ʤ��ä���硢\fIjavac\fR�ϡ��ƥ��饹���ե�����򡢤����������Ȥʤ륽�������ե������Ʊ���ǥ��쥯�ȥ���˳�Ǽ���ޤ���
+\fI\-d\fRオプションが指定されなかった場合、\fIjavac\fRは、各クラス・ファイルを、その生成元となるソース・ファイルと同じディレクトリ内に格納します。
 .sp
-\fB����:\fR
-\fI\-d\fR���ץ����ˤ�äƻ��ꤵ�줿�ǥ��쥯�ȥ�ϡ��桼���������饹���ѥ��˼�ưŪ���ɲä���ޤ���
+\fB注意:\fR
+\fI\-d\fRオプションによって指定されたディレクトリは、ユーザー・クラス・パスに自動的に追加されません。
 .RE
 .PP
 \-deprecation
 .RS 4
-��侩�Υ��С��ޤ��ϥ��饹�����Ѥޤ��ϥ����С��饤�ɤ���뤿�Ӥˡ�������ɽ�����ޤ���\fI\-deprecation\fR���ץ���󤬻��ꤵ��Ƥ��ʤ���硢\fIjavac\fR�ϡ���侩�Υ��С��ޤ��ϥ��饹����Ѥޤ��ϥ����С��饤�ɤ��Ƥ��륽�������ե�����Υ��ޥ꡼��ɽ�����ޤ���\fI\-deprecation\fR���ץ����ϡ�\fI\-Xlint:deprecation\fR�ξ�άɽ���Ǥ���
+非推奨のメンバーまたはクラスが使用またはオーバーライドされるたびに、説明を表示します。\fI\-deprecation\fRオプションが指定されていない場合、\fIjavac\fRは、非推奨のメンバーまたはクラスを使用またはオーバーライドしているソース・ファイルのサマリーを表示します。\fI\-deprecation\fRオプションは、\fI\-Xlint:deprecation\fRの省略表記です。
 .RE
 .PP
 \-encoding \fIencoding\fR
 .RS 4
-���������ե�����Υ��󥳡��ǥ���̾(EUC\-JP��UTF\-8�ʤ�)�����ꤷ�ޤ���\fI\-encoding\fR���ץ���󤬻��ꤵ��Ƥ��ʤ����ϡ��ץ�åȥե�����Υǥե���ȡ�����С��������Ѥ���ޤ���
+ソース・ファイルのエンコーディング名(EUC\-JPやUTF\-8など)を設定します。\fI\-encoding\fRオプションが指定されていない場合は、プラットフォームのデフォルト・コンバータが使用されます。
 .RE
 .PP
 \-endorseddirs \fIdirectories\fR
 .RS 4
-��ǧ���줿ɸ��ѥ��ΰ��֤򥪡��С��饤�ɤ��ޤ���
+承認された標準パスの位置をオーバーライドします。
 .RE
 .PP
 \-extdirs \fIdirectories\fR
 .RS 4
-\fIext\fR�ǥ��쥯�ȥ�ΰ��֤򥪡��С��饤�ɤ��ޤ���directories�ѿ��ˤϡ�������Ƕ��ڤä��ǥ��쥯�ȥ�Υꥹ�Ȥ���ꤷ�ޤ������ꤷ���ǥ��쥯�ȥ���γ�JAR�ե����뤫�顢���饹���ե����뤬��������ޤ������Ф��줿���٤Ƥ�JAR�ե�����ϡ����饹���ѥ��ΰ����ˤʤ�ޤ���
+\fIext\fRディレクトリの位置をオーバーライドします。directories変数には、コロンで区切ったディレクトリのリストを指定します。指定したディレクトリ内の各JARファイルから、クラス・ファイルが検索されます。検出されたすべてのJARファイルは、クラス・パスの一部になります。
 .sp
-����������ѥ���(�ۤʤ�Java�ץ�åȥե�����˼������줿�֡��ȥ��ȥ�åס����饹���ĥ��ǽ���饹���Ф��ƥ���ѥ����Ԥ�)��¹Ԥ����硢���Υ��ץ����ˤϳ�ĥ��ǽ���饹��ޤ�ǥ��쥯�ȥ����ꤷ�ޤ����ܺ٤ϥ���������ѥ��롦���ץ����򻲾Ȥ��Ƥ���������
+クロスコンパイル(異なるJavaプラットフォームに実装されたブートストラップ・クラスや拡張機能クラスに対してコンパイルを行う)を実行する場合、このオプションには拡張機能クラスを含むディレクトリを指定します。詳細はクロスコンパイル・オプションを参照してください。
 .RE
 .PP
 \-g
 .RS 4
-���������ѿ���ޤह�٤ƤΥǥХå�������������ޤ����ǥե���ȤǤϡ����ֹ椪��ӥ��������ե��������Τߤ���������ޤ���
+ローカル変数を含むすべてのデバッグ情報を生成します。デフォルトでは、行番号およびソース・ファイル情報のみが生成されます。
 .RE
 .PP
 \-g:none
 .RS 4
-�ǥХå�������������ޤ���
+デバッグ情報を生成しません。
 .RE
 .PP
 \-g:[\fIkeyword list\fR]
 .RS 4
-����ޤǶ��ڤ�줿������ɡ��ꥹ�Ȥˤ����ꤵ�줿������μ���ΥǥХå�����Τߤ��������ޤ������Υ�����ɤ�ͭ���Ǥ���
+カンマで区切られたキーワード・リストにより指定された、特定の種類のデバッグ情報のみを生成します。次のキーワードが有効です。
 .PP
 source
 .RS 4
-���������ե�����ΥǥХå�����
+ソース・ファイルのデバッグ情報。
 .RE
 .PP
 lines
 .RS 4
-���ֹ�ΥǥХå�����
+行番号のデバッグ情報。
 .RE
 .PP
 vars
 .RS 4
-���������ѿ��ΥǥХå�����
+ローカル変数のデバッグ情報。
 .RE
 .RE
 .PP
 \-help
 .RS 4
-ɸ�४�ץ����γ��פ���Ϥ��ޤ���
+標準オプションの概要を出力します。
 .RE
 .PP
 \-implicit:[\fIclass, none\fR]
 .RS 4
-����Ū�˥����ɤ��줿���������ե�������Ф��륯�饹���ե���������������椷�ޤ������饹���ե������ư��������ˤϡ�\fI\-implicit:class\fR����Ѥ��ޤ������饹���ե��������������������ˤϡ�\fI\-implicit:none\fR����Ѥ��ޤ������Υ��ץ���󤬻��ꤵ��ʤ��ä����Υǥե����ư��ϡ����饹���ե�����μ�ư�����ˤʤ�ޤ������ξ�硢���Τ褦�ʥ��饹���ե����뤬�������줿�������������¹Ԥ����ȡ�����ѥ��餫��ٹ�ȯ�Ԥ���ޤ���\fI\-implicit\fR���ץ��������Ū�����ꤵ�줿��硢�ٹ��ȯ�Ԥ���ޤ��󡣷��θ����򻲾Ȥ��Ƥ���������
+暗黙的にロードされたソース・ファイルに対するクラス・ファイルの生成を制御します。クラス・ファイルを自動生成するには、\fI\-implicit:class\fRを使用します。クラス・ファイルの生成を抑制するには、\fI\-implicit:none\fRを使用します。このオプションが指定されなかった場合のデフォルト動作は、クラス・ファイルの自動生成になります。その場合、そのようなクラス・ファイルが生成された時に注釈処理も実行されると、コンパイラから警告が発行されます。\fI\-implicit\fRオプションが明示的に設定された場合、警告は発行されません。型の検索を参照してください。
 .RE
 .PP
 \-J\fIoption\fR
 .RS 4
-Java���ۥޥ���(JVM)��\fIoption\fR���Ϥ��ޤ���option�ˤϡ�Java��ư�ġ���Υ�ե���󥹡��ڡ����˵��ܤ���Ƥ��륪�ץ�����1�Ļ��ꤷ�ޤ������Ȥ��С�\fI\-J\-Xms48m\fR�Ȼ��ꤹ��ȡ��������ȥ��åס����꡼��48MB�����ꤵ��ޤ���java(1)�򻲾Ȥ��Ƥ���������
+Java仮想マシン(JVM)に\fIoption\fRを渡します。optionには、Java起動ツールのリファレンス・ページに記載されているオプションを1つ指定します。たとえば、\fI\-J\-Xms48m\fRと指定すると、スタートアップ・メモリーは48MBに設定されます。java(1)を参照してください。
 .sp
-\fB����:\fR
-\fICLASSPATH\fR��\fI\-classpath\fR��\fI\-bootclasspath\fR�����\fI\-extdirs\fR���ץ����ϡ�\fIjavac\fR�μ¹Ԥ˻��Ѥ���륯�饹����ꤷ�ޤ��󡣤����Υ��ץ���󤪤���ѿ�����Ѥ��ƥ���ѥ���μ����򥫥����ޥ������褦�Ȥ���ȡ��ꥹ�����⤯��¿���ξ�硢ɬ�פʽ������¹Ԥ���ޤ��󡣥���ѥ���μ����򥫥����ޥ�������ɬ�פ������硢\fI\-J\fR���ץ�������Ѥ��ơ����äȤʤ�Java��ư�ġ���˥��ץ������Ϥ��ޤ���
+\fB注意:\fR
+\fICLASSPATH\fR、\fI\-classpath\fR、\fI\-bootclasspath\fRおよび\fI\-extdirs\fRオプションは、\fIjavac\fRの実行に使用されるクラスを指定しません。これらのオプションおよび変数を使用してコンパイラの実装をカスタマイズしようとすると、リスクが高く、多くの場合、必要な処理が実行されません。コンパイラの実装をカスタマイズする必要がある場合、\fI\-J\fRオプションを使用して、基礎となるJava起動ツールにオプションを渡します。
 .RE
 .PP
 \-nowarn
 .RS 4
-�ٹ��å�������̵���ˤ��ޤ������Υ��ץ����ϡ�\fI\-Xlint:none\fR���ץ�����Ʊ���褦��ư��ޤ���
+警告メッセージを無効にします。このオプションは、\fI\-Xlint:none\fRオプションと同じように動作します。
 .RE
 .PP
 \-parameters
 .RS 4
-��ե쥯�����API�Υ᥽�å�\fIjava\&.lang\&.reflect\&.Executable\&.getParameters\fR�������Ǥ���褦�ˡ���������륯�饹���ե�������Υ��󥹥ȥ饯���ȥ᥽�åɤβ��ѥ�᡼��̾���Ǽ���ޤ���
+リフレクションAPIのメソッド\fIjava\&.lang\&.reflect\&.Executable\&.getParameters\fRが取得できるように、生成されるクラス・ファイル内のコンストラクタとメソッドの仮パラメータ名を格納します。
 .RE
 .PP
 \-proc: [\fInone\fR, \fIonly\fR]
 .RS 4
-�����������ӥ���ѥ����¹Ԥ��뤫�����椷�ޤ���\fI\-proc:none\fR�ϡ���������ʤ��ǥ���ѥ��뤬�¹Ԥ���뤳�Ȥ��̣���ޤ���\fI\-proc:only\fR�ϡ���������Τߤ��¹Ԥ��졢��³�Υ���ѥ���Ϥޤä����¹Ԥ���ʤ����Ȥ��̣���ޤ���
+注釈処理およびコンパイルを実行するかを制御します。\fI\-proc:none\fRは、注釈処理なしでコンパイルが実行されることを意味します。\fI\-proc:only\fRは、注釈処理のみが実行され、後続のコンパイルはまったく実行されないことを意味します。
 .RE
 .PP
 \-processor \fIclass1\fR [,\fIclass2\fR,\fIclass3\fR\&.\&.\&.]
 .RS 4
-�¹Ԥ�������ץ����å���̾�����������ꤷ����硢�ǥե���Ȥθ��������Ͼ�ά����ޤ���
+実行する注釈プロセッサの名前。これを指定した場合、デフォルトの検索処理は省略されます。
 .RE
 .PP
 \-processorpath \fIpath\fR
 .RS 4
-����ץ����å��򸡺����������ꤷ�ޤ������Υ��ץ���󤬻��Ѥ���ʤ���硢���饹���ѥ��Υץ����å�����������ޤ���
+注釈プロセッサを検索する場所を指定します。このオプションが使用されない場合、クラス・パスのプロセッサが検索されます。
 .RE
 .PP
 \-s \fIdir\fR
 .RS 4
-�������줿���������ե�����γ�Ǽ��Ȥʤ�ǥ��쥯�ȥ����ꤷ�ޤ������Υǥ��쥯�ȥ��\fIjavac\fR�ǤϺ�������ʤ����ᡢ���Ǥ�¸�ߤ��Ƥ���ɬ�פ�����ޤ������饹���ѥå������ΰ����Ǥ����硢����ѥ���ϡ��ѥå�����̾��ȿ�Ǥ������֥ǥ��쥯�ȥ���˥��������ե�������Ǽ����ɬ�פ˱����ƥǥ��쥯�ȥ��������ޤ���
+生成されたソース・ファイルの格納先となるディレクトリを指定します。そのディレクトリは\fIjavac\fRでは作成されないため、すでに存在している必要があります。クラスがパッケージの一部である場合、コンパイラは、パッケージ名を反映したサブディレクトリ内にソース・ファイルを格納し、必要に応じてディレクトリを作成します。
 .sp
-\fI\-s /home/mysrc\fR�Ȼ��ꤷ�����饹��̾����\fIcom\&.mypackage\&.MyClass\fR�Ǥ����硢���������ե������\fI/home/mysrc/com/mypackage/MyClass\&.java\fR�˳�Ǽ����ޤ���
+\fI\-s /home/mysrc\fRと指定し、クラスの名前が\fIcom\&.mypackage\&.MyClass\fRである場合、ソース・ファイルは\fI/home/mysrc/com/mypackage/MyClass\&.java\fRに格納されます。
 .RE
 .PP
 \-source \fIrelease\fR
 .RS 4
-�����դ��륽�����������ɤΥС���������ꤷ�ޤ���\fIrelease\fR�ˤϼ����ͤ����Ǥ��ޤ���
+受け付けるソース・コードのバージョンを指定します。\fIrelease\fRには次の値を指定できます。
 .PP
 1\&.3
 .RS 4
-���Υ���ѥ���Ǥϡ�Java SE 1\&.3�ʹߤ�Ƴ�����줿��������������Τޤ���¾�θ��쵡ǽ�򥵥ݡ��Ȥ��ޤ���
+このコンパイラでは、Java SE 1\&.3以降に導入されたアサーション、総称または他の言語機能をサポートしません。
 .RE
 .PP
 1\&.4
 .RS 4
-Java SE 1\&.4��Ƴ�����줿��������������ޤॳ���ɤ�����դ��ޤ���
+Java SE 1\&.4で導入された、アサーションを含むコードを受け付けます。
 .RE
 .PP
 1\&.5
 .RS 4
-Java SE 5��Ƴ�����줿���Τ����¾�θ��쵡ǽ��ޤ�������ɤ�����դ��ޤ���
+Java SE 5で導入された総称および他の言語機能を含んだコードを受け付けます。
 .RE
 .PP
 5
 .RS 4
-1\&.5��Ʊ���Ǥ���
+1\&.5と同義です。
 .RE
 .PP
 1\&.6
 .RS 4
-Java SE 6�Ǥϸ�����Ф����ѹ���Ƴ������ޤ���Ǥ����������������������ե�������Υ��󥳡��ǥ��󥰡����顼����Java Platform, Standard Edition�ΰ����Υ�꡼���褦�ʷٹ�ǤϤʤ������顼�Ȥ�����𤵤��褦�ˤʤ�ޤ�����
+Java SE 6では言語に対する変更は導入されませんでした。しかし、ソース・ファイル内のエンコーディング・エラーが、Java Platform, Standard Editionの以前のリリースような警告ではなく、エラーとして報告されるようになりました。
 .RE
 .PP
 6
 .RS 4
-1\&.6��Ʊ���Ǥ���
+1\&.6と同義です。
 .RE
 .PP
 1\&.7
 .RS 4
-���줬�ǥե�����ͤǤ���Java SE 7��Ƴ�����줿��ǽ��ޤॳ���ɤ�����դ��ޤ���
+これがデフォルト値です。Java SE 7で導入された機能を含むコードを受け付けます。
 .RE
 .PP
 7
 .RS 4
-1\&.7��Ʊ���Ǥ���
+1\&.7と同義です。
 .RE
 .RE
 .PP
 \-sourcepath \fIsourcepath\fR
 .RS 4
-���饹�ޤ��ϥ��󥿥ե�����������򸡺����륽�����������ɡ��ѥ�����ꤷ�ޤ����桼���������饹���ѥ���Ʊ�ͤˡ����������ѥ��Υ���ȥ�ϡ�Oracle Solaris�Ǥϥ�����(:)�ǡ�Windows�Ǥϥ��ߥ�����Ƕ��ڤꡢ�����ˤϡ��ǥ��쥯�ȥꡢJAR���������֤ޤ���ZIP���������֤����Ǥ��ޤ����ѥå���������Ѥ��Ƥ�����ϡ��ǥ��쥯�ȥ�ޤ��ϥ�����������Υ������롦�ѥ�̾���ѥå�����̾��ȿ�Ǥ��Ƥ���ɬ�פ�����ޤ���
+クラスまたはインタフェースの定義を検索するソース・コード・パスを指定します。ユーザー・クラス・パスと同様に、ソース・パスのエントリは、Oracle Solarisではコロン(:)で、Windowsではセミコロンで区切り、ここには、ディレクトリ、JARアーカイブまたはZIPアーカイブを指定できます。パッケージを使用している場合は、ディレクトリまたはアーカイブ内のローカル・パス名がパッケージ名を反映している必要があります。
 .sp
-\fB����:\fR
-���������ե�����⸫�Ĥ��ä���硢���饹���ѥ��ˤ�긫�Ĥ��ä����饹�Ϻƥ���ѥ��뤵����ǽ��������ޤ������θ����򻲾Ȥ��Ƥ���������
+\fB注意:\fR
+ソース・ファイルも見つかった場合、クラス・パスにより見つかったクラスは再コンパイルされる可能性があります。型の検索を参照してください。
 .RE
 .PP
 \-verbose
 .RS 4
-�����ɤ���륯�饹����ӥ���ѥ��뤵��륽�������ե����뤴�Ȥξ��󤬽��Ϥ���롢�ܺٽ��Ϥ���Ѥ��ޤ���
+ロードされるクラスおよびコンパイルされるソース・ファイルごとの情報が出力される、詳細出力を使用します。
 .RE
 .PP
 \-version
 .RS 4
-��꡼���������Ϥ��ޤ���
+リリース情報を出力します。
 .RE
 .PP
 \-werror
 .RS 4
-�ٹ�ȯ���������˥���ѥ����λ���ޤ���
+警告が発生した場合にコンパイルを終了します。
 .RE
 .PP
 \-X
 .RS 4
-��ɸ�४�ץ����˴ؤ�������ɽ�����ƽ�λ���ޤ���
+非標準オプションに関する情報を表示して終了します。
 .RE
-.SS "����������ѥ��롦���ץ����"
+.SS "クロスコンパイル・オプション"
 .PP
-�ǥե���ȤǤϡ����饹�Υ���ѥ���ϡ�\fIjavac\fR��ź�դ���Ƥ���ץ�åȥե�����Υ֡��ȥ��ȥ�åס����饹����ӳ�ĥ��ǽ���饹���Ф��ƹԤ��ޤ�����������\fIjavac\fR�ϡ��ۤʤ�Java�ץ�åȥե�����˼������줿�֡��ȥ��ȥ�åס����饹����ӳ�ĥ��ǽ���饹���Ф��ƥ���ѥ����Ԥ�����������ѥ���⥵�ݡ��Ȥ��Ƥ��ޤ�������������ѥ����Ԥ����ϡ�\fI\-bootclasspath\fR�����\fI\-extdirs\fR���ץ�������Ѥ��뤳�Ȥ����פǤ���
+デフォルトでは、クラスのコンパイルは、\fIjavac\fRが添付されているプラットフォームのブートストラップ・クラスおよび拡張機能クラスに対して行われます。ただし、\fIjavac\fRは、異なるJavaプラットフォームに実装されたブートストラップ・クラスおよび拡張機能クラスに対してコンパイルを行うクロスコンパイルもサポートしています。クロスコンパイルを行う場合は、\fI\-bootclasspath\fRおよび\fI\-extdirs\fRオプションを使用することが重要です。
 .PP
 \-target \fIversion\fR
 .RS 4
-���ۥޥ���λ��ꤵ�줿��꡼�����оݤȤ��륯�饹���ե�������������ޤ������饹���ե�����ϡ����ꤵ�줿�������åȰʹߤΥ�꡼���Ǥ�ư��ޤ��������������Υ�꡼����JVM�Ǥ�ư��ޤ���ͭ���ʥ������åȤϡ�1\&.1��1\&.2��1\&.3��1\&.4��1\&.5 (5���)��1\&.6 (6���)�����1\&.7 (7���)�Ǥ���
+仮想マシンの指定されたリリースを対象とするクラス・ファイルを生成します。クラス・ファイルは、指定されたターゲット以降のリリースでは動作しますが、それより前のリリースのJVMでは動作しません。有効なターゲットは、1\&.1、1\&.2、1\&.3、1\&.4、1\&.5 (5も可)、1\&.6 (6も可)および1\&.7 (7も可)です。
 .sp
-\fI\-target\fR���ץ����Υǥե���Ȥϡ�\fI\-source\fR���ץ������ͤˤ�äưۤʤ�ޤ���
+\fI\-target\fRオプションのデフォルトは、\fI\-source\fRオプションの値によって異なります。
 .sp
 .RS 4
 .ie n \{\
@@ -374,7 +374,7 @@ Java SE 6�Ǥϸ�����Ф����ѹ���Ƴ������ޤ���Ǥ����������������������ե�������
 .sp -1
 .IP \(bu 2.3
 .\}
-\fI\-source\fR���ץ���󤬻��ꤵ��Ƥ��ʤ���硢\fI\-target\fR���ץ������ͤ�1\&.7�Ǥ���
+\fI\-source\fRオプションが指定されていない場合、\fI\-target\fRオプションの値は1\&.7です。
 .RE
 .sp
 .RS 4
@@ -385,7 +385,7 @@ Java SE 6�Ǥϸ�����Ф����ѹ���Ƴ������ޤ���Ǥ����������������������ե�������
 .sp -1
 .IP \(bu 2.3
 .\}
-\fI\-source\fR���ץ����1\&.2�ξ�硢\fI\-target\fR���ץ������ͤ�1\&.4�Ǥ���
+\fI\-source\fRオプションが1\&.2の場合、\fI\-target\fRオプションの値は1\&.4です。
 .RE
 .sp
 .RS 4
@@ -396,7 +396,7 @@ Java SE 6�Ǥϸ�����Ф����ѹ���Ƴ������ޤ���Ǥ����������������������ե�������
 .sp -1
 .IP \(bu 2.3
 .\}
-\fI\-source\fR���ץ����1\&.3�ξ�硢\fI\-target\fR���ץ������ͤ�1\&.4�Ǥ���
+\fI\-source\fRオプションが1\&.3の場合、\fI\-target\fRオプションの値は1\&.4です。
 .RE
 .sp
 .RS 4
@@ -407,7 +407,7 @@ Java SE 6�Ǥϸ�����Ф����ѹ���Ƴ������ޤ���Ǥ����������������������ե�������
 .sp -1
 .IP \(bu 2.3
 .\}
-\fI\-source\fR���ץ����1\&.5�ξ�硢\fI\-target\fR���ץ������ͤ�1\&.7�Ǥ���
+\fI\-source\fRオプションが1\&.5の場合、\fI\-target\fRオプションの値は1\&.7です。
 .RE
 .sp
 .RS 4
@@ -418,7 +418,7 @@ Java SE 6�Ǥϸ�����Ф����ѹ���Ƴ������ޤ���Ǥ����������������������ե�������
 .sp -1
 .IP \(bu 2.3
 .\}
-\fI\-source\fR���ץ����1\&.6�ξ�硢\fI\-target\fR���ץ������ͤ�1\&.7�Ǥ���
+\fI\-source\fRオプションが1\&.6の場合、\fI\-target\fRオプションの値は1\&.7です。
 .RE
 .sp
 .RS 4
@@ -429,23 +429,23 @@ Java SE 6�Ǥϸ�����Ф����ѹ���Ƴ������ޤ���Ǥ����������������������ե�������
 .sp -1
 .IP \(bu 2.3
 .\}
-\fI\-source\fR���ץ�����¾�Τ��٤Ƥ��ͤξ�硢\fI\-target\fR���ץ������ͤϡ�\fI\-source\fR���ץ������ͤˤʤ�ޤ���
+\fI\-source\fRオプションの他のすべての値の場合、\fI\-target\fRオプションの値は、\fI\-source\fRオプションの値になります。
 .RE
 .RE
 .PP
 \-bootclasspath \fIbootclasspath\fR
 .RS 4
-���ꤵ�줿��Ϣ�Υ֡��ȡ����饹���Ф��ƥ���������ѥ����Ԥ��ޤ����桼���������饹���ѥ���Ʊ�ͤˡ��֡��ȡ����饹���ѥ��Υ���ȥ�ϥ�����(:)�Ƕ��ڤꡢ�����ˤϡ��ǥ��쥯�ȥꡢJAR���������֤ޤ���ZIP���������֤����Ǥ��ޤ���
+指定された一連のブート・クラスに対してクロスコンパイルを行います。ユーザー・クラス・パスと同様に、ブート・クラス・パスのエントリはコロン(:)で区切り、ここには、ディレクトリ、JARアーカイブまたはZIPアーカイブを指定できます。
 .RE
-.SS "����ѥ��ȡ��ץ��ե����롦���ץ����"
+.SS "コンパクト・プロファイル・オプション"
 .PP
-JDK 8�ʹߤ��顢\fIjavac\fR����ѥ���ϥ���ѥ��ȡ��ץ��ե�����򥵥ݡ��Ȥ��ޤ�������ѥ��ȡ��ץ��ե��������Ѥ���ȡ�Java�ץ�åȥե��������Τ�ɬ�פȤ��ʤ����ץꥱ�������ϡ��ǥץ�����ǽ�ǡ��������եåȥץ��ȤǼ¹ԤǤ��ޤ�������ѥ��ȡ��ץ��ե����뵡ǽ�ϡ����ץꥱ������󡦥��ȥ�����Υ��ץꥱ�������Υ���������ɻ��֤�û�̤���Τ˻��ѤǤ��ޤ������ε�ǽ�ϡ�JRE��Х�ɥ뤹��Java���ץꥱ�������Ρ���ꥳ��ѥ��Ȥʥǥץ������Ȥ���Ω���ޤ������ε�ǽ�ϡ��������ǥХ����Ǥ���Ω���ޤ���
+JDK 8以降から、\fIjavac\fRコンパイラはコンパクト・プロファイルをサポートします。コンパクト・プロファイルを使用すると、Javaプラットフォーム全体を必要としないアプリケーションは、デプロイ可能で、小さいフットプリントで実行できます。コンパクト・プロファイル機能は、アプリケーション・ストアからのアプリケーションのダウンロード時間を短縮するのに使用できます。この機能は、JREをバンドルするJavaアプリケーションの、よりコンパクトなデプロイメントに役立ちます。この機能は、小さいデバイスでも役立ちます。
 .PP
-���ݡ��Ȥ���Ƥ���ץ��ե������ͤϡ�\fIcompact1\fR��\fIcompact2\fR�����\fIcompact3\fR�Ǥ��������ϡ��ɲäΥ쥤�䡼�Ǥ����礭���ֹ�γƥ���ѥ��ȡ��ץ��ե�����ˤϡ��������ֹ��̾���Υץ��ե�������Τ��٤Ƥ�API���ޤޤ�ޤ���
+サポートされているプロファイル値は、\fIcompact1\fR、\fIcompact2\fRおよび\fIcompact3\fRです。これらは、追加のレイヤーです。大きい番号の各コンパクト・プロファイルには、小さい番号の名前のプロファイル内のすべてのAPIが含まれます。
 .PP
 \-profile
 .RS 4
-����ѥ��ȡ��ץ��ե��������Ѥ����硢���Υ��ץ����ϡ�����ѥ�����˥ץ��ե�����̾����ꤷ�ޤ���������򼨤��ޤ���
+コンパクト・プロファイルを使用する場合、このオプションは、コンパイル時にプロファイル名を指定します。次に例を示します。
 .sp
 .if n \{\
 .RS 4
@@ -456,7 +456,7 @@ javac \-profile compact1 Hello\&.java
 .if n \{\
 .RE
 .\}
-javac�ϡ����ꤵ�줿�ץ��ե�����ˤʤ�Ǥ�դ�Java SE API����Ѥ��륽�����������ɤ򥳥�ѥ��뤷�ޤ��󡣤���ϡ����Τ褦�ʥ������������ɤ򥳥�ѥ��뤷�褦�Ȥ��뤳�Ȥˤ�ä������륨�顼����å���������Ǥ���
+javacは、指定されたプロファイルにない任意のJava SE APIを使用するソース・コードをコンパイルしません。これは、そのようなソース・コードをコンパイルしようとすることによって生じるエラー・メッセージの例です。
 .sp
 .if n \{\
 .RS 4
@@ -470,32 +470,32 @@ import java\&.applet\&.Applet;
 .if n \{\
 .RE
 .\}
-������Ǥϡ�\fIApplet\fR���饹����Ѥ��ʤ��褦�˥��������ѹ����뤳�Ȥˤ�äơ����顼�����Ǥ��ޤ���\-profile���ץ�������ꤻ���˥���ѥ��뤹�뤳�Ȥˤ�äơ����顼�������뤳�Ȥ�Ǥ��ޤ�������ѥ���ϡ�Java SE API�δ����ʥ��åȤ��Ф��Ƽ¹Ԥ���ޤ���(�ɤΥ���ѥ��ȡ��ץ��ե�����ˤ⡢\fIApplet\fR���饹�ϴޤޤ�Ƥ��ޤ���)
+この例では、\fIApplet\fRクラスを使用しないようにソースを変更することによって、エラーを修正できます。\-profileオプションを指定せずにコンパイルすることによって、エラーを修正することもできます。コンパイルは、Java SE APIの完全なセットに対して実行されます。(どのコンパクト・プロファイルにも、\fIApplet\fRクラスは含まれていません。)
 .sp
-����ѥ��ȡ��ץ��ե��������Ѥ��ƥ���ѥ��뤹�뤿����̤���ˡ�Ȥ��ơ�\fI\-bootclasspath\fR���ץ�������Ѥ��ơ��ץ��ե�����Υ��᡼������ꤹ��\fIrt\&.jar\fR�ե�����ؤΥѥ�����ꤷ�ޤ���������\fI\-profile\fR���ץ�������Ѥ���ȡ��ץ��ե����롦���᡼���ϡ�����ѥ�����˥����ƥ���¸�ߤ���ɬ�פ�����ޤ��󡣤���ϡ�����������ѥ��������Ω���ޤ���
+コンパクト・プロファイルを使用してコンパイルするための別の方法として、\fI\-bootclasspath\fRオプションを使用して、プロファイルのイメージを指定する\fIrt\&.jar\fRファイルへのパスを指定します。かわりに\fI\-profile\fRオプションを使用すると、プロファイル・イメージは、コンパイル時にシステム上に存在する必要がありません。これは、クロスコンパイル時に役立ちます。
 .RE
-.SS "��ɸ�४�ץ����"
+.SS "非標準オプション"
 .PP
 \-Xbootclasspath/p:\fIpath\fR
 .RS 4
-�֡��ȥ��ȥ�åס����饹���ѥ������������ɲä��ޤ���
+ブートストラップ・クラス・パスに接尾辞を追加します。
 .RE
 .PP
 \-Xbootclasspath/a:\fIpath\fR
 .RS 4
-�֡��ȥ��ȥ�åס����饹���ѥ�����Ƭ�����ɲä��ޤ���
+ブートストラップ・クラス・パスに接頭辞を追加します。
 .RE
 .PP
 \-Xbootclasspath/:\fIpath\fR
 .RS 4
-�֡��ȥ��ȥ�åס����饹���ե�����ΰ��֤򥪡��С��饤�ɤ��ޤ���
+ブートストラップ・クラス・ファイルの位置をオーバーライドします。
 .RE
 .PP
 \-Xdoclint:[\-]\fIgroup\fR [\fI/access\fR]
 .RS 4
-\fIgroup\fR���ͤ�\fIaccessibility\fR��\fIsyntax\fR��\fIreference\fR��\fIhtml\fR�ޤ���\fImissing\fR�Τ����줫�Ǥ�������Υ����å������롼�פ�ͭ���ޤ���̵���ˤ��ޤ��������Υ����å������롼�פξܺ٤ϡ�\fIjavadoc\fR���ޥ�ɤ�\fI\-Xdoclint\fR���ץ����򻲾Ȥ��Ƥ���������\fI\-Xdoclint\fR���ץ����ϡ�\fIjavac\fR���ޥ�ɤǤϥǥե���Ȥ�̵���ˤʤ�ޤ���
+\fIgroup\fRの値が\fIaccessibility\fR、\fIsyntax\fR、\fIreference\fR、\fIhtml\fRまたは\fImissing\fRのいずれかである特定のチェック・グループを有効または無効にします。これらのチェック・グループの詳細は、\fIjavadoc\fRコマンドの\fI\-Xdoclint\fRオプションを参照してください。\fI\-Xdoclint\fRオプションは、\fIjavac\fRコマンドではデフォルトで無効になります。
 .sp
-�ѿ�\fIaccess\fR�ϡ�\fI\-Xdoclint\fR���ץ���󤬥����å����륯�饹�ȥ��С��κǾ��βĻ�����٥����ꤷ�ޤ���\fIpublic\fR��\fIprotected\fR��\fIpackage\fR�����\fIprivate\fR����(�Ļ����ι⤤��)��1�Ĥ���Ĥ��Ȥ��Ǥ��ޤ������Ȥ��С����Υ��ץ����ϡ�(protected��package��public��ޤ�) protected�ʾ�Υ�����������٥����ĥ��饹����ӥ��С���(���٤ƤΥ����å������롼�פ�)�����å����ޤ���
+変数\fIaccess\fRは、\fI\-Xdoclint\fRオプションがチェックするクラスとメンバーの最小の可視性レベルを指定します。\fIpublic\fR、\fIprotected\fR、\fIpackage\fRおよび\fIprivate\fRの値(可視性の高い順)の1つを持つことができます。たとえば、次のオプションは、(protected、package、publicを含む) protected以上のアクセス・レベルを持つクラスおよびメンバーを(すべてのチェック・グループで)チェックします。
 .sp
 .if n \{\
 .RS 4
@@ -506,7 +506,7 @@ import java\&.applet\&.Applet;
 .if n \{\
 .RE
 .\}
-���Υ��ץ����ϡ�package�ʾ�Υ���������(package�����public��ޤ�)����ĥ��饹����ӥ��С����Ф���HTML���顼������å����ʤ����Ȥ���������٤ƤΥ�����������٥���Ф��Ƥ��٤ƤΥ����å������롼�פ�ͭ���ˤ��ޤ���
+次のオプションは、package以上のアクセス権(packageおよびpublicを含む)を持つクラスおよびメンバーに対するHTMLエラーをチェックしないことを除き、すべてのアクセス・レベルに対してすべてのチェック・グループを有効にします。
 .sp
 .if n \{\
 .RS 4
@@ -521,103 +521,103 @@ import java\&.applet\&.Applet;
 .PP
 \-Xdoclint:none
 .RS 4
-���٤ƤΥ����å������롼�פ�̵���ˤ��ޤ���
+すべてのチェック・グループを無効にします。
 .RE
 .PP
 \-Xdoclint:all[\fI/access\fR]
 .RS 4
-���٤ƤΥ����å������롼�פ�ͭ���ˤ��ޤ���
+すべてのチェック・グループを有効にします。
 .RE
 .PP
 \-Xlint
 .RS 4
-�侩����뤹�٤Ƥηٹ��ͭ���ˤ��ޤ������Υ�꡼���Ǥϡ����Ѳ�ǽ�ʤ��٤Ƥηٹ��ͭ���ˤ��뤳�Ȥ����ᤷ�ޤ���
+推奨されるすべての警告を有効にします。このリリースでは、利用可能なすべての警告を有効にすることをお薦めします。
 .RE
 .PP
 \-Xlint:all
 .RS 4
-�侩����뤹�٤Ƥηٹ��ͭ���ˤ��ޤ������Υ�꡼���Ǥϡ����Ѳ�ǽ�ʤ��٤Ƥηٹ��ͭ���ˤ��뤳�Ȥ����ᤷ�ޤ���
+推奨されるすべての警告を有効にします。このリリースでは、利用可能なすべての警告を有効にすることをお薦めします。
 .RE
 .PP
 \-Xlint:none
 .RS 4
-���٤Ƥηٹ��̵���ˤ��ޤ���
+すべての警告を無効にします。
 .RE
 .PP
 \-Xlint:\fIname\fR
 .RS 4
-�ٹ�̾��̵���ˤ��ޤ������Υ��ץ�����̵���ˤǤ���ٹ�Υꥹ�Ȥϡ�\-Xlint���ץ�������Ѥ����ٹ��ͭ�����ޤ���̵�����򻲾Ȥ��Ƥ���������
+警告名を無効にします。このオプションで無効にできる警告のリストは、\-Xlintオプションを使用した警告の有効化または無効化を参照してください。
 .RE
 .PP
 \-Xlint:\fI\-name\fR
 .RS 4
-�ٹ�̾��̵���ˤ��ޤ������Υ��ץ�����̵���ˤǤ���ٹ�Υꥹ�Ȥ��������ˤϡ�\-Xlint���ץ�������Ѥ����ٹ��ͭ�����ޤ���̵����\-Xlint\fI���ץ�������Ѥ���\fR�򻲾Ȥ��Ƥ���������
+警告名を無効にします。このオプションで無効にできる警告のリストを取得するには、\-Xlintオプションを使用した警告の有効化または無効化\-Xlint\fIオプションを使用した\fRを参照してください。
 .RE
 .PP
 \-Xmaxerrs \fInumber\fR
 .RS 4
-�������륨�顼�κ���������ꤷ�ޤ���
+印刷するエラーの最大数を設定します。
 .RE
 .PP
 \-Xmaxwarns \fInumber\fR
 .RS 4
-��������ٹ�κ���������ꤷ�ޤ���
+印刷する警告の最大数を設定します。
 .RE
 .PP
 \-Xstdout \fIfilename\fR
 .RS 4
-����ѥ���Υ�å������򡢻��ꤵ�줿�ե�������������ޤ����ǥե���ȤǤϡ�����ѥ���Υ�å�������\fISystem\&.err\fR�������ޤ���
+コンパイラのメッセージを、指定されたファイルに送信します。デフォルトでは、コンパイラのメッセージは\fISystem\&.err\fRに送られます。
 .RE
 .PP
 \-Xprefer:[\fInewer,source\fR]
 .RS 4
-���뷿���Ф��ƥ��������ե�����ȥ��饹���ե������ξ�������Ĥ��ä���硢���Τɤ���Υե�������ɤ߼�뤫����ꤷ�ޤ���(���θ����򻲾Ȥ��Ƥ�������)��\fI\-Xprefer:newer\fR���ץ�������Ѥ�����硢���뷿���Ф��륽�������ե�����ȥ��饹���ե�����Τ��������������ɤ߼���ޤ�(�ǥե����)��\fI\-Xprefer:source\fR���ץ�������Ѥ�����硢���������ե����뤬�ɤ߼���ޤ���\fISOURCE\fR����¸�ݥꥷ������Ѥ���������줿�����Ǥ�դ�����ץ����å������������Ǥ���褦�ˤ�����ϡ�\fI\-Xprefer:source\fR����Ѥ��Ƥ���������
+ある型に対してソース・ファイルとクラス・ファイルの両方が見つかった場合、そのどちらのファイルを読み取るかを指定します。(型の検索を参照してください)。\fI\-Xprefer:newer\fRオプションを使用した場合、ある型に対するソース・ファイルとクラス・ファイルのうち新しい方が読み取られます(デフォルト)。\fI\-Xprefer:source\fRオプションを使用した場合、ソース・ファイルが読み取られます。\fISOURCE\fRの保存ポリシーを使用して宣言された注釈に任意の注釈プロセッサがアクセスできるようにする場合は、\fI\-Xprefer:source\fRを使用してください。
 .RE
 .PP
 \-Xpkginfo:[\fIalways\fR,\fIlegacy\fR,\fInonempty\fR]
 .RS 4
-javac��package\-info\&.java�ե����뤫��\fIpackage\-info\&.class\fR�ե�������������뤫�ɤ��������椷�ޤ������Υ��ץ����ǻ��Ѳ�ǽ��mode�����ϼ��ΤȤ���Ǥ���
+javacがpackage\-info\&.javaファイルから\fIpackage\-info\&.class\fRファイルを生成するかどうかを制御します。このオプションで使用可能なmode引数は次のとおりです。
 .PP
 always
 .RS 4
-���٤Ƥ�\fIpackage\-info\&.java\fR�ե������\fIpackage\-info\&.class\fR�ե���������������ޤ������Υ��ץ����ϡ���\fI\&.java\fR�ե�������б�����\fI\&.class\fR�ե����뤬���뤳�Ȥ��ǧ����Ant�ʤɤΥӥ�ɡ������ƥ����Ѥ��������Ω�Ĥ��Ȥ�����ޤ���
+すべての\fIpackage\-info\&.java\fRファイルの\fIpackage\-info\&.class\fRファイルを常に生成します。このオプションは、各\fI\&.java\fRファイルに対応する\fI\&.class\fRファイルがあることを確認するAntなどのビルド・システムを使用する場合に役立つことがあります。
 .RE
 .PP
 legacy
 .RS 4
-package\-info\&.java�����᤬�ޤޤ����ˤΤ�\fIpackage\-info\&.class\fR�ե�������������ޤ���package\-info\&.java�˥����ȤΤߴޤޤ�����\fIpackage\-info\&.class\fR�ե�������������ޤ���
+package\-info\&.javaに注釈が含まれる場合にのみ\fIpackage\-info\&.class\fRファイルを生成します。package\-info\&.javaにコメントのみ含まれる場合に\fIpackage\-info\&.class\fRファイルを生成しません。
 .sp
-\fB����:\fR
-\fIpackage\-info\&.class\fR�ե�����������Ǥ��ޤ�����package\-info\&.java�ե�������Τ��٤Ƥ������\fIRetentionPolicy\&.SOURCE\fR��������϶��ˤʤ�ޤ���
+\fB注意:\fR
+\fIpackage\-info\&.class\fRファイルは生成できますが、package\-info\&.javaファイル内のすべての注釈に\fIRetentionPolicy\&.SOURCE\fRがある場合は空になります。
 .RE
 .PP
 nonempty
 .RS 4
-package\-info\&.java��\fIRetentionPolicy\&.CLASS\fR�ޤ���\fIRetentionPolicy\&.RUNTIME\fR�ȤȤ�����᤬�ޤޤ����ˤΤ�\fIpackage\-info\&.class\fR�ե�������������ޤ���
+package\-info\&.javaに\fIRetentionPolicy\&.CLASS\fRまたは\fIRetentionPolicy\&.RUNTIME\fRとともに注釈が含まれる場合にのみ\fIpackage\-info\&.class\fRファイルを生成します。
 .RE
 .RE
 .PP
 \-Xprint
 .RS 4
-�ǥХå���Ū�ǻ��ꤷ�����Υƥ�����ɽ������Ϥ��ޤ�����������⥳��ѥ����¹Ԥ���ޤ��󡣽��Ϸ������ѹ�������ǽ��������ޤ���
+デバッグ目的で指定した型のテキスト表示を出力します。注釈処理もコンパイルも実行されません。出力形式は変更される可能性があります。
 .RE
 .PP
 \-XprintProcessorInfo
 .RS 4
-��������Υץ����å�����������ꤵ��Ƥ�������˴ؤ���������Ϥ��ޤ���
+ある特定のプロセッサが処理を依頼されている注釈に関する情報を出力します。
 .RE
 .PP
 \-XprintRounds
 .RS 4
-��󤪤�Ӹ�³����������饦��ɤ˴ؤ���������Ϥ��ޤ���
+初回および後続の注釈処理ラウンドに関する情報を出力します。
 .RE
-.SH "-XLINT���ץ�������Ѥ����ٹ��ͭ�����ޤ���̵����"
+.SH "-XLINTオプションを使用した警告の有効化または無効化"
 .PP
-\fI\-Xlint:name\fR���ץ�������Ѥ��Ʒٹ�\fIname\fR��ͭ���ˤ��ޤ��������ǡ�\fIname\fR�ϼ��ηٹ�̾�Τ����줫�ˤʤ�ޤ���\fI\-Xlint:\-name:\fR���ץ�������Ѥ��ơ��ٹ��̵�����Ǥ��ޤ���
+\fI\-Xlint:name\fRオプションを使用して警告\fIname\fRを有効にします。ここで、\fIname\fRは次の警告名のいずれかになります。\fI\-Xlint:\-name:\fRオプションを使用して、警告を無効化できます。
 .PP
 cast
 .RS 4
-���פǾ�Ĺ�ʥ��㥹�ȤˤĤ��Ʒٹ𤷤ޤ������Ȥ��С����Τ褦�ˤʤ�ޤ���
+不要で冗長なキャストについて警告します。たとえば、次のようになります。
 .sp
 .if n \{\
 .RS 4
@@ -632,12 +632,12 @@ String s = (String) "Hello!"
 .PP
 classfile
 .RS 4
-���饹���ե���������Ƥ˴�Ϣ��������ˤĤ��Ʒٹ𤷤ޤ���
+クラス・ファイルの内容に関連した問題について警告します。
 .RE
 .PP
 deprecation
 .RS 4
-��侩�ι��ܤλ��ѤˤĤ��Ʒٹ𤷤ޤ������Ȥ��С����Τ褦�ˤʤ�ޤ���
+非推奨の項目の使用について警告します。たとえば、次のようになります。
 .sp
 .if n \{\
 .RS 4
@@ -649,13 +649,13 @@ int currentDay = myDate\&.getDay();
 .if n \{\
 .RE
 .\}
-�᥽�å�\fIjava\&.util\&.Date\&.getDay\fR��JDK 1\&.1�ʹߤ���侩�ˤʤ�ޤ�����
+メソッド\fIjava\&.util\&.Date\&.getDay\fRはJDK 1\&.1以降は非推奨になりました。
 .RE
 .PP
 dep\-ann
 .RS 4
 \fI@deprecated\fR
-Javadoc�����Ȥǥɥ�����Ȳ�����Ƥ��뤬��\fI@Deprecated\fR���᤬�դ��Ƥ��ʤ����ܤˤĤ��Ʒٹ𤷤ޤ������Ȥ��С����Τ褦�ˤʤ�ޤ���
+Javadocコメントでドキュメント化されているが、\fI@Deprecated\fR注釈が付いていない項目について警告します。たとえば、次のようになります。
 .sp
 .if n \{\
 .RS 4
@@ -674,7 +674,7 @@ public static void newMethod() { }
 .PP
 divzero
 .RS 4
-������0�ǽ�������뤳�ȤˤĤ��Ʒٹ𤷤ޤ������Ȥ��С����Τ褦�ˤʤ�ޤ���
+定整数0で除算されることについて警告します。たとえば、次のようになります。
 .sp
 .if n \{\
 .RS 4
@@ -689,7 +689,7 @@ int divideByZero = 42 / 0;
 .PP
 empty
 .RS 4
-\fIif \fRʸ�ʹߤ�����ʸ�Ǥ��뤳�ȤˤĤ��Ʒٹ𤷤ޤ������Ȥ��С����Τ褦�ˤʤ�ޤ���
+\fIif \fR文以降が空の文であることについて警告します。たとえば、次のようになります。
 .sp
 .if n \{\
 .RS 4
@@ -708,7 +708,7 @@ class E {
 .PP
 fallthrough
 .RS 4
-fall\-through��������switch�֥��å�������å��������Ф��줿��Τ��Ф��Ʒٹ��å�������ɽ�����ޤ���Fall\-through�������ϡ�switch�֥��å���κǸ�Υ�����������������Ǥ������Υ����ɤˤ�breakʸ�ϴޤޤ�ޤ��󡣥����ɤμ¹Ԥ򤽤Υ��������鼡�Υ������ذ�ư���ޤ������Ȥ��С�����switch�֥��å����case 1��٥��³�������ɤϡ�breakʸ�ǽ���äƤ��ޤ���
+fall\-throughケースのswitchブロックをチェックし、検出されたものに対して警告メッセージを表示します。Fall\-throughケースは、switchブロック内の最後のケースを除くケースです。このコードにはbreak文は含まれません。コードの実行をそのケースから次のケースへ移動します。たとえば、このswitchブロック内のcase 1ラベルに続くコードは、break文で終わっていません。
 .sp
 .if n \{\
 .RS 4
@@ -725,12 +725,12 @@ case 2:
 .if n \{\
 .RE
 .\}
-���Υ����ɤΥ���ѥ������\fI\-Xlint:fallthrough\fR���ץ���󤬻��Ѥ���Ƥ�����硢����ѥ���ϡ�����ˤʤäƤ��륱�����ι��ֹ�ȤȤ�ˡ�case��fall\-through�����ǽ�������뤳�Ȥ򼨤��ٹ��ȯ�Ԥ��ޤ���
+このコードのコンパイル時に\fI\-Xlint:fallthrough\fRオプションが使用されていた場合、コンパイラは、問題になっているケースの行番号とともに、caseにfall\-throughする可能性があることを示す警告を発行します。
 .RE
 .PP
 finally
 .RS 4
-����˴�λ�Ǥ��ʤ�\fIfinally\fR��ˤĤ��Ʒٹ𤷤ޤ������Ȥ��С����Τ褦�ˤʤ�ޤ���
+正常に完了できない\fIfinally\fR句について警告します。たとえば、次のようになります。
 .sp
 .if n \{\
 .RS 4
@@ -750,17 +750,17 @@ public static int m() {
 .if n \{\
 .RE
 .\}
-������Ǥϡ�����ѥ����\fIfinally\fR�֥��å��˴ؤ���ٹ���������ޤ���\fIint\fR�᥽�åɤ��ƤӽФ����ȡ���0���֤���ޤ���\fIfinally\fR�֥��å��ϡ�\fItry\fR�֥��å�����λ����ȼ¹Ԥ���ޤ���������Ǥϡ����椬\fIcatch\fR�֥��å��˰ܤ��줿��硢\fIint\fR�᥽�åɤϽ�λ���ޤ�����������\fIfinally\fR�֥��å��ϼ¹Ԥ����ɬ�פ����뤿�ᡢ���椬�᥽�åɤγ����˰ܤ���Ƥ��Ƥ⡢���Υ֥��å��ϼ¹Ԥ���ޤ���
+この例では、コンパイラは\fIfinally\fRブロックに関する警告を生成します。\fIint\fRメソッドが呼び出されると、値0が返されます。\fIfinally\fRブロックは、\fItry\fRブロックが終了すると実行されます。この例では、制御が\fIcatch\fRブロックに移された場合、\fIint\fRメソッドは終了します。ただし、\fIfinally\fRブロックは実行される必要があるため、制御がメソッドの外部に移されていても、このブロックは実行されます。
 .RE
 .PP
 options
 .RS 4
-���ޥ�ɥ饤�󡦥��ץ����λ��Ѥ˴ؤ�������ˤĤ��Ʒٹ𤷤ޤ�������������ѥ��롦���ץ����򻲾Ȥ��Ƥ���������
+コマンドライン・オプションの使用に関する問題について警告します。クロスコンパイル・オプションを参照してください。
 .RE
 .PP
 overrides
 .RS 4
-�᥽�åɤΥ����С��饤�ɤ˴ؤ�������ˤĤ��Ʒٹ𤷤ޤ������Ȥ��С�����2�ĤΥ��饹������Ȥ��ޤ���
+メソッドのオーバーライドに関する問題について警告します。たとえば、次の2つのクラスがあるとします。
 .sp
 .if n \{\
 .RS 4
@@ -778,7 +778,7 @@ public class ClassWithOverridingMethod extends ClassWithVarargsMethod {
 .if n \{\
 .RE
 .\}
-����ѥ���ϡ����Τ褦�ʷٹ���������ޤ���
+コンパイラは、次のような警告を生成します。
 .sp
 .if n \{\
 .RS 4
@@ -791,12 +791,12 @@ method is missing \*(Aq\&.\&.\&.\*(Aq
 .if n \{\
 .RE
 .\}
-����ѥ���ϡ�\fIvarargs\fR�᥽�åɤ򸡽Ф���ȡ�\fIvarargs\fR�β��ѥ�᡼����������Ѵ����ޤ����᥽�å�\fIClassWithVarargsMethod\&.varargsMethod\fR�Ǥϡ�����ѥ����\fIvarargs\fR�β��ѥ�᡼��\fIString\&.\&.\&. s\fR�򲾥ѥ�᡼��\fIString[] s\fR���Ѵ����ޤ�������ϡ��᥽�å�\fIClassWithOverridingMethod\&.varargsMethod\fR�β��ѥ�᡼�����б���������Ǥ������η�̡�������Ǥϥ���ѥ��뤬�Ԥ��ޤ���
+コンパイラは、\fIvarargs\fRメソッドを検出すると、\fIvarargs\fRの仮パラメータを配列に変換します。メソッド\fIClassWithVarargsMethod\&.varargsMethod\fRでは、コンパイラは\fIvarargs\fRの仮パラメータ\fIString\&.\&.\&. s\fRを仮パラメータ\fIString[] s\fRに変換します。これは、メソッド\fIClassWithOverridingMethod\&.varargsMethod\fRの仮パラメータに対応する配列です。その結果、この例ではコンパイルが行われます。
 .RE
 .PP
 path
 .RS 4
-���ޥ�ɥ饤��Ǥ�̵���ʥѥ����Ǥ�¸�ߤ��ʤ��ѥ����ǥ��쥯�ȥ�ˤĤ��Ʒٹ𤷤ޤ�(���饹���ѥ������������ѥ��ʤɤΥѥ���Ϣ)�����Τ褦�ʷٹ��\fI@SuppressWarnings\fR������������뤳�ȤϤǤ��ޤ��󡣤��Ȥ��С����Τ褦�ˤʤ�ޤ���
+コマンドラインでの無効なパス要素と存在しないパス・ディレクトリについて警告します(クラス・パス、ソース・パスなどのパス関連)。このような警告を\fI@SuppressWarnings\fR注釈で抑制することはできません。たとえば、次のようになります。
 .sp
 .if n \{\
 .RS 4
@@ -811,9 +811,9 @@ javac \-Xlint:path \-classpath /nonexistentpath Example\&.java
 .PP
 processing
 .RS 4
-��������˴ؤ�������ˤĤ��Ʒٹ𤷤ޤ�������ѥ��餬���ηٹ����������Τϡ������ޤ९�饹������Ȥ��ˡ����Ѥ��Ƥ�������ץ����å��Ǥ��Υ����פ��㳰������Ǥ��ʤ����Ǥ������Ȥ��С�ñ�������ץ����å��򼡤˼����ޤ���
+注釈処理に関する問題について警告します。コンパイラがこの警告を生成するのは、注釈を含むクラスがあるときに、使用している注釈プロセッサでそのタイプの例外を処理できない場合です。たとえば、単純な注釈プロセッサを次に示します。
 .sp
-\fB���������ե�����AnnocProc\&.java\fR:
+\fBソース・ファイルAnnocProc\&.java\fR:
 .sp
 .if n \{\
 .RS 4
@@ -838,7 +838,7 @@ public class AnnoProc extends AbstractProcessor {
 .if n \{\
 .RE
 .\}
-\fB���������ե�����AnnosWithoutProcessors\&.java\fR:
+\fBソース・ファイルAnnosWithoutProcessors\&.java\fR:
 .sp
 .if n \{\
 .RS 4
@@ -852,7 +852,7 @@ class AnnosWithoutProcessors { }
 .if n \{\
 .RE
 .\}
-���Υ��ޥ�ɤϡ�����ץ����å�\fIAnnoProc\fR�򥳥�ѥ��뤷����������ץ����å��򥽡������ե�����\fIAnnosWithoutProcessors\&.java\fR���Ф��Ƽ¹Ԥ��ޤ���
+次のコマンドは、注釈プロセッサ\fIAnnoProc\fRをコンパイルし、この注釈プロセッサをソース・ファイル\fIAnnosWithoutProcessors\&.java\fRに対して実行します。
 .sp
 .if n \{\
 .RS 4
@@ -864,7 +864,7 @@ javac \-cp \&. \-Xlint:processing \-processor AnnoProc \-proc:only AnnosWithoutP
 .if n \{\
 .RE
 .\}
-����ѥ��餬���������ե�����\fIAnnosWithoutProcessors\&.java\fR���Ф�������ץ����å���¹Ԥ���ȡ����ηٹ���������ޤ���
+コンパイラがソース・ファイル\fIAnnosWithoutProcessors\&.java\fRに対して注釈プロセッサを実行すると、次の警告が生成されます。
 .sp
 .if n \{\
 .RS 4
@@ -876,12 +876,12 @@ warning: [processing] No processor claimed any of these annotations: Anno
 .if n \{\
 .RE
 .\}
-����������褹�뤿��ˡ����饹\fIAnnosWithoutProcessors\fR���������ӻ��Ѥ���������̾����\fIAnno\fR����\fINotAnno\fR���ѹ��Ǥ��ޤ���
+この問題を解決するために、クラス\fIAnnosWithoutProcessors\fRで定義および使用される注釈の名前を、\fIAnno\fRから\fINotAnno\fRに変更できます。
 .RE
 .PP
 rawtypes
 .RS 4
-raw�����Ф���̤�������ˤĤ��Ʒٹ𤷤ޤ�������ʸ�Ǥϡ�\fIrawtypes\fR�ٹ���������ޤ���
+raw型に対する未検査操作について警告します。次の文では、\fIrawtypes\fR警告が生成されます。
 .sp
 .if n \{\
 .RS 4
@@ -892,7 +892,7 @@ void countElements(List l) { \&.\&.\&. }
 .if n \{\
 .RE
 .\}
-������Ǥϡ�\fIrawtypes\fR�ٹ����������ޤ���
+次の例では、\fIrawtypes\fR警告は生成されません。
 .sp
 .if n \{\
 .RS 4
@@ -903,12 +903,12 @@ void countElements(List<?> l) { \&.\&.\&. }
 .if n \{\
 .RE
 .\}
-\fIList\fR��raw���Ǥ�����������\fIList<?>\fR�ϡ�����Х���ɷ����Υ磻��ɥ����ɤΥѥ�᡼�������줿���Ǥ���\fIList\fR�ϥѥ�᡼�������줿���󥿥ե������Ǥ��뤿�ᡢ��ˤ��η���������ꤷ�ޤ���������Ǥϡ�\fIList\fR�β������ϥ���Х���ɷ����Υ磻��ɥ�����(\fI?\fR)����Ѥ��Ƥ��β����ѥ�᡼���Ȥ��ƻ��ꤵ��ޤ����Ĥޤꡢ\fIcountElements\fR�᥽�åɤ�\fIList\fR���󥿥ե������ΤɤΥ��󥹥��󥹲�������դ��뤳�Ȥ��Ǥ��ޤ���
+\fIList\fRはraw型です。ただし、\fIList<?>\fRは、アンバウンド形式のワイルドカードのパラメータ化された型です。\fIList\fRはパラメータ化されたインタフェースであるため、常にその型引数を指定します。この例では、\fIList\fRの仮引数はアンバウンド形式のワイルドカード(\fI?\fR)を使用してその仮型パラメータとして指定されます。つまり、\fIcountElements\fRメソッドは\fIList\fRインタフェースのどのインスタンス化も受け付けることができます。
 .RE
 .PP
 Serial
 .RS 4
-ľ�󲽲�ǽ���饹��\fIserialVersionUID\fR������ʤ����Ȥ�ٹ𤷤ޤ������Ȥ��С����Τ褦�ˤʤ�ޤ���
+直列化可能クラスに\fIserialVersionUID\fR定義がないことを警告します。たとえば、次のようになります。
 .sp
 .if n \{\
 .RS 4
@@ -930,7 +930,7 @@ public class PersistentTime implements Serializable
 .if n \{\
 .RE
 .\}
-����ѥ���ϼ��ηٹ���������ޤ���
+コンパイラは次の警告を生成します。
 .sp
 .if n \{\
 .RS 4
@@ -942,12 +942,12 @@ serialVersionUID
 .if n \{\
 .RE
 .\}
-ľ�󲽲�ǽ���饹��\fIserialVersionUID\fR�Ȥ���̾���Υե�����ɤ�����Ū��������ʤ���硢ľ�󲽥�󥿥���Ķ��Ǥϡ���Java���֥�������ľ�󲽻��͡פ���������Ƥ���褦�ˡ����饹���͡���¦�̤˴�Ť��ơ����饹��\fIserialVersionUID\fR�Υǥե�����ͤ�׻����ޤ��������������٤Ƥ�ľ�󲽲�ǽ���饹��\fIserialVersionUID\fR�ͤ�����Ū��������뤳�Ȥ򶯤������ᤷ�ޤ��� ����ϡ�\fIserialVersionUID\fR�ͤ�׻�����ǥե���ȤΥץ�������������ѥ���μ����ˤ�äưۤʤ��ǽ���Τ��륯�饹�ξܺ٤ˤ����Ʊƶ�������䤹�������η�̡�ľ���������ͽ�����ʤ�\fIInvalidClassExceptions\fR��ȯ�������ǽ�������뤿��Ǥ���Java����ѥ���μ������ۤʤäƤ�\fIserialVersionUID\fR�ͤΰ��������ݤˤ���ˤϡ�ľ�󲽲�ǽ���饹��\fIserialVersionUID\fR�ͤ�����Ū���������ɬ�פ�����ޤ���
+直列化可能クラスが\fIserialVersionUID\fRという名前のフィールドを明示的に宣言しない場合、直列化ランタイム環境では、「Javaオブジェクト直列化仕様」で説明されているように、クラスの様々な側面に基づいて、クラスの\fIserialVersionUID\fRのデフォルト値を計算します。ただし、すべての直列化可能クラスが\fIserialVersionUID\fR値を明示的に宣言することを強くお薦めします。 これは、\fIserialVersionUID\fR値を計算するデフォルトのプロセスが、コンパイラの実装によって異なる可能性のあるクラスの詳細にきわめて影響を受けやすく、その結果、直列化復元中に予期しない\fIInvalidClassExceptions\fRが発生する可能性があるためです。Javaコンパイラの実装が異なっても\fIserialVersionUID\fR値の一貫性を確保にするには、直列化可能クラスが\fIserialVersionUID\fR値を明示的に宣言する必要があります。
 .RE
 .PP
 static
 .RS 4
-static�λ��Ѥ˴ؤ�������ˤĤ��Ʒٹ𤷤ޤ������Ȥ��С����Τ褦�ˤʤ�ޤ���
+staticの使用に関する問題について警告します。たとえば、次のようになります。
 .sp
 .if n \{\
 .RS 4
@@ -961,7 +961,7 @@ class XLintStatic {
 .if n \{\
 .RE
 .\}
-����ѥ���ϼ��ηٹ���������ޤ���
+コンパイラは次の警告を生成します。
 .sp
 .if n \{\
 .RS 4
@@ -973,7 +973,7 @@ XLintStatic, instead of by an expression
 .if n \{\
 .RE
 .\}
-����������褹�뤿��ˡ����Τ褦��\fIstatic\fR�᥽�å�\fIm1\fR��ƤӽФ����Ȥ��Ǥ��ޤ���
+この問題を解決するために、次のように\fIstatic\fRメソッド\fIm1\fRを呼び出すことができます。
 .sp
 .if n \{\
 .RS 4
@@ -984,12 +984,12 @@ XLintStatic\&.m1();
 .if n \{\
 .RE
 .\}
-���뤤�ϡ�\fIstatic\fR������ɤ�᥽�å�\fIm1\fR��������������뤳�Ȥ�Ǥ��ޤ���
+あるいは、\fIstatic\fRキーワードをメソッド\fIm1\fRの宣言から削除することもできます。
 .RE
 .PP
 try
 .RS 4
-try\-with\-resourcesʸ��ޤࡢ\fItry\fR�֥��å��λ��Ѥ˴ؤ�������ˤĤ��Ʒٹ𤷤ޤ������Ȥ��С�\fItry\fR�֥��å���������줿�꥽����\fIac\fR�����Ѥ���ʤ�����ˡ�����ʸ���Ф��Ʒٹ���������ޤ���
+try\-with\-resources文を含む、\fItry\fRブロックの使用に関する問題について警告します。たとえば、\fItry\fRブロックで宣言されたリソース\fIac\fRが使用されないために、次の文に対して警告が生成されます。
 .sp
 .if n \{\
 .RS 4
@@ -1004,7 +1004,7 @@ try ( AutoCloseable ac = getResource() ) {    // do nothing}
 .PP
 unchecked
 .RS 4
-Java������ͤǻ��ꤵ��Ƥ���̤�����Ѵ��ٹ�ξܺ٤򼨤��ޤ������Ȥ��С����Τ褦�ˤʤ�ޤ���
+Java言語仕様で指定されている未検査変換警告の詳細を示します。たとえば、次のようになります。
 .sp
 .if n \{\
 .RS 4
@@ -1016,19 +1016,19 @@ List<String> ls = l;       // unchecked warning
 .if n \{\
 .RE
 .\}
-���ξõ���ˡ���\fIArrayList<Number>\fR�����\fIList<String>\fR�ϡ����줾��\fIArrayList\fR�����\fIList\fR�ˤʤ�ޤ���
+型の消去中に、型\fIArrayList<Number>\fRおよび\fIList<String>\fRは、それぞれ\fIArrayList\fRおよび\fIList\fRになります。
 .sp
-\fIls\fR���ޥ�ɤˤϡ��ѥ�᡼�������줿��\fIList<String>\fR�����ꤵ��Ƥ��ޤ���\fIl\fR�ˤ�äƻ��Ȥ����\fIList\fR��\fIls\fR�˳�����Ƥ�줿��硢����ѥ����̤�����ٹ���������ޤ�������ѥ�����ˡ�����ѥ��餪���JVM�ϡ�\fIl\fR��\fIList<String>\fR���򻲾Ȥ��뤫�ɤ�����Ƚ�̤Ǥ��ޤ��󡣤��ξ�硢\fIl\fR�ϡ�\fIList<String>\fR���򻲾Ȥ��ޤ��󡣤��η�̡��ҡ��ױ�����ȯ�����ޤ���
+\fIls\fRコマンドには、パラメータ化された型\fIList<String>\fRが指定されています。\fIl\fRによって参照される\fIList\fRが\fIls\fRに割り当てられた場合、コンパイラは未検査警告を生成します。コンパイル時に、コンパイラおよびJVMは、\fIl\fRが\fIList<String>\fR型を参照するかどうかを判別できません。この場合、\fIl\fRは、\fIList<String>\fR型を参照しません。その結果、ヒープ汚染が発生します。
 .sp
-�ҡ��ױ������֤�ȯ������Τϡ�\fIList\fR���֥�������\fIl\fR
-(����static����\fIList<Number>\fR)���̤�\fIList\fR���֥�������\fIls\fR
-(�ۤʤ�static��\fIList<String>\fR�����)�������������Ǥ���������������ѥ���ǤϤ��������򤤤ޤ��˵��Ĥ��Ƥ��ޤ������Τ򥵥ݡ��Ȥ��ʤ�Java SE�Υ�꡼���Ȥβ��̸ߴ�������ݤ��뤿��ˡ�������������Ĥ���ɬ�פ�����ޤ������õ�ˤ�ꡢ\fIList<Number>\fR�����\fIList<String>\fR�ϡ�ξ���Ȥ�\fIList\fR�ˤʤ�ޤ������η�̡�����ѥ���ϥ��֥�������\fIl\fR
-(\fIList\fR�Ȥ���raw�������)�򥪥֥�������\fIls\fR���������뤳�Ȥ���Ĥ��ޤ���
+ヒープ汚染状態が発生するのは、\fIList\fRオブジェクト\fIl\fR
+(そのstatic型は\fIList<Number>\fR)が別の\fIList\fRオブジェクト\fIls\fR
+(異なるstatic型\fIList<String>\fRを持つ)に代入される場合です。しかし、コンパイラではこの代入をいまだに許可しています。総称をサポートしないJava SEのリリースとの下位互換性を確保するために、この代入を許可する必要があります。型消去により、\fIList<Number>\fRおよび\fIList<String>\fRは、両方とも\fIList\fRになります。その結果、コンパイラはオブジェクト\fIl\fR
+(\fIList\fRというraw型を持つ)をオブジェクト\fIls\fRに代入することを許可します。
 .RE
 .PP
 varargs
 .RS 4
-���Ѱ���(\fIvarargs\fR)�᥽�åɡ��ä����ݲ���ǽ������ޤ��Τλ��Ѥ������Ǥʤ����Ȥ�ٹ𤷤ޤ������Ȥ��С����Τ褦�ˤʤ�ޤ���
+可変引数(\fIvarargs\fR)メソッド、特に非具象化可能引数を含むものの使用が安全でないことを警告します。たとえば、次のようになります。
 .sp
 .if n \{\
 .RS 4
@@ -1045,10 +1045,10 @@ public class ArrayBuilder {
 .if n \{\
 .RE
 .\}
-\fB����:\fR
-���ݲ���ǽ���ϡ������󤬼¹Ի��˴����˻����Բ�ǽ�ʷ��Ǥ���
+\fB注意:\fR
+非具象化可能型は、型情報が実行時に完全に使用不可能な型です。
 .sp
-����ѥ���ϡ��᥽�å�\fIArrayBuilder\&.addToList\fR������˴ؤ��뼡�ηٹ���������ޤ���
+コンパイラは、メソッド\fIArrayBuilder\&.addToList\fRの定義に関する次の警告を生成します。
 .sp
 .if n \{\
 .RS 4
@@ -1059,21 +1059,21 @@ warning: [varargs] Possible heap pollution from parameterized vararg type T
 .if n \{\
 .RE
 .\}
-����ѥ���ϡ�varargs�᥽�åɤ򸡽Ф���ȡ�\fIvarargs\fR�β��ѥ�᡼����������Ѵ����ޤ�����������Java�ץ�����ߥ󥰸���Ǥϡ��ѥ�᡼�������줿��������κ�������Ĥ��Ƥ��ޤ��󡣥᥽�å�\fIArrayBuilder\&.addToList\fR�Ǥϡ�����ѥ����\fIvarargs\fR�β��ѥ�᡼��\fIT\&.\&.\&.\fR���Ǥ򲾥ѥ�᡼��\fIT[]\fR����(����)���Ѵ����ޤ��������������õ�ˤ�ꡢ����ѥ����\fIvarargs\fR�β��ѥ�᡼����\fIObject[]\fR���Ǥ��Ѵ����ޤ������η�̡��ҡ��ױ�����ȯ�������ǽ��������ޤ���
+コンパイラは、varargsメソッドを検出すると、\fIvarargs\fRの仮パラメータを配列に変換します。しかし、Javaプログラミング言語では、パラメータ化された型の配列の作成を許可していません。メソッド\fIArrayBuilder\&.addToList\fRでは、コンパイラは\fIvarargs\fRの仮パラメータ\fIT\&.\&.\&.\fR要素を仮パラメータ\fIT[]\fR要素(配列)に変換します。しかし、型消去により、コンパイラは\fIvarargs\fRの仮パラメータを\fIObject[]\fR要素に変換します。その結果、ヒープ汚染が発生する可能性があります。
 .RE
-.SH "���ޥ�ɥ饤������ե�����"
+.SH "コマンドライン引数ファイル"
 .PP
-\fIjavac\fR���ޥ�ɤ�û��������ʷ�ˤ����ꤹ�뤿��ˡ�\fIjavac\fR���ޥ�ɤ��Ф������(\fI\-J\fR���ץ��������)��ޤ�1�İʾ�Υե��������ꤹ�뤳�Ȥ��Ǥ��ޤ�������ˤ�ꡢ�ɤΥ��ڥ졼�ƥ��󥰡������ƥ��Ǥ⡢Ǥ�դ�Ĺ����\fIjavac\fR���ޥ�ɤ�����Ǥ��ޤ���
+\fIjavac\fRコマンドを短くしたり簡潔にしたりするために、\fIjavac\fRコマンドに対する引数(\fI\-J\fRオプションを除く)を含む1つ以上のファイルを指定することができます。これにより、どのオペレーティング・システム上でも、任意の長さの\fIjavac\fRコマンドを作成できます。
 .PP
-�����ե�����ˤϡ�\fIjavac\fR�Υ��ץ����ȥ��������ե�����̾��ͳ���Ȥ߹礻�Ƶ��ҤǤ��ޤ����ե�������ΰ����ϡ�����ޤ��ϲ���ʸ���Ƕ��ڤ뤳�Ȥ��Ǥ��ޤ����ե�����̾�������ޤ줿���򤬤����硢�ե�����̾���Τ���Ű�����ǰϤߤޤ���
+引数ファイルには、\fIjavac\fRのオプションとソース・ファイル名を自由に組み合せて記述できます。ファイル内の引数は、空白または改行文字で区切ることができます。ファイル名に埋め込まれた空白がある場合、ファイル名全体を二重引用符で囲みます。
 .PP
-�����ե�������Υե�����̾�ϡ������ե�����ΰ��֤ǤϤʤ������ߤΥǥ��쥯�ȥ������Ū�Ȥʤ�ޤ��������Υꥹ�ȤǤϡ��磻��ɥ�����(*)�ϻ��ѤǤ��ޤ���(���Ȥ��С�\fI*\&.java\fR�Ȥϻ���Ǥ��ޤ���)�����åȥޡ���(@)����Ѥ����ե�����κƵ�Ū�ʲ��ϥ��ݡ��Ȥ���Ƥ��ޤ��󡣤ޤ���\fI\-J\fR���ץ����⥵�ݡ��Ȥ���Ƥ��ޤ��󡣤��Υ��ץ����ϵ�ư�ġ�����Ϥ���ޤ�������ư�ġ���Ǥϰ����ե�����򥵥ݡ��Ȥ��Ƥ��ʤ�����Ǥ���
+引数ファイル内のファイル名は、引数ファイルの位置ではなく、現在のディレクトリに相対的となります。これらのリストでは、ワイルドカード(*)は使用できません(たとえば、\fI*\&.java\fRとは指定できません)。アットマーク(@)を使用したファイルの再帰的な解釈はサポートされていません。また、\fI\-J\fRオプションもサポートされていません。このオプションは起動ツールに渡されますが、起動ツールでは引数ファイルをサポートしていないからです。
 .PP
-\fIjavac\fR���ޥ�ɤ�¹Ԥ���Ȥ��ˡ��ư����ե�����Υѥ���̾������Ƭ�˥��åȥޡ���(@)ʸ�����դ����Ϥ��ޤ���\fIjavac\fR���ޥ�ɤϡ����åȥޡ���(@)�ǻϤޤ�����򸫤Ĥ���ȡ����Υե���������Ƥ�Ÿ�����ư����ꥹ�Ȥ��������ޤ���
+\fIjavac\fRコマンドを実行するときに、各引数ファイルのパスと名前の先頭にアットマーク(@)文字を付けて渡します。\fIjavac\fRコマンドは、アットマーク(@)で始まる引数を見つけると、そのファイルの内容を展開して引数リストに挿入します。
 .PP
-\fBExample 1\fR, ñ��ΰ����ե�����
+\fBExample 1\fR, 単一の引数ファイル
 .RS 4
-\fIargfile\fR�Ȥ���̾����ñ��ΰ����ե��������Ѥ��ơ����٤Ƥ�\fIjavac\fR�������Ǽ������ϡ����Τ褦�˻��ꤷ�ޤ���
+\fIargfile\fRという名前の単一の引数ファイルを使用して、すべての\fIjavac\fR引数を格納する場合は、次のように指定します。
 .sp
 .if n \{\
 .RS 4
@@ -1084,14 +1084,14 @@ javac @argfile
 .if n \{\
 .RE
 .\}
-���ΰ����ե�����ˤϡ���2�Ǽ�����Ƥ���ξ���Υե���������Ƥ�����뤳�Ȥ��Ǥ��ޤ���
+この引数ファイルには、例2で示されている両方のファイルの内容を入れることができます。
 .RE
 .PP
-\fBExample 2\fR, 2�Ĥΰ����ե�����
+\fBExample 2\fR, 2つの引数ファイル
 .RS 4
-\fIjavac\fR���ץ�����Ѥȥ��������ե�����̾�Ѥˡ�2�Ĥΰ����ե����������Ǥ��ޤ������Υꥹ�Ȥˤϡ��Ԥη�³ʸ���Ϥ���ޤ���
+\fIjavac\fRオプション用とソース・ファイル名用に、2つの引数ファイルを作成できます。次のリストには、行の継続文字はありません。
 .sp
-����ޤ�options�Ȥ���̾���Υե������������ޤ���
+次を含むoptionsという名前のファイルを作成します。
 .sp
 .if n \{\
 .RS 4
@@ -1113,7 +1113,7 @@ javac @argfile
 .if n \{\
 .RE
 .\}
-����ޤ�classes�Ȥ���̾���Υե������������ޤ���
+次を含むclassesという名前のファイルを作成します。
 .sp
 .if n \{\
 .RS 4
@@ -1126,7 +1126,7 @@ MyClass3\&.java
 .if n \{\
 .RE
 .\}
-���줫�顢���Τ褦��\fIjavac\fR���ޥ�ɤ�¹Ԥ��ޤ���
+それから、次のように\fIjavac\fRコマンドを実行します。
 .sp
 .if n \{\
 .RS 4
@@ -1139,9 +1139,9 @@ javac @options @classes
 .\}
 .RE
 .PP
-\fBExample 3\fR, �ѥ�����Ѥ��������ե�����
+\fBExample 3\fR, パスを使用した引数ファイル
 .RS 4
-�����ե�����ϥѥ������Ǥ��ޤ������ե�������Τ��٤ƤΥե�����̾�ϡ�(\fIpath1\fR��\fIpath2\fR�ǤϤʤ�)���Τ褦�˸��ߤκ�ȥǥ��쥯�ȥ������Ū�Ȥʤ�ޤ���
+引数ファイルはパスを指定できますが、ファイル内のすべてのファイル名は、(\fIpath1\fRや\fIpath2\fRではなく)次のように現在の作業ディレクトリに相対的となります。
 .sp
 .if n \{\
 .RS 4
@@ -1153,46 +1153,46 @@ javac @path1/options @path2/classes
 .RE
 .\}
 .RE
-.SH "�������"
+.SH "注釈処理"
 .PP
-\fIjavac\fR���ޥ�ɤ����������ľ�ܥ��ݡ��Ȥ��Ƥ��뤿�ᡢ��Ω��������������ޥ�ɤǤ���\fIapt\fR����Ѥ���ɬ�פ��ʤ��ʤ�ޤ�����
+\fIjavac\fRコマンドが注釈処理を直接サポートしているため、独立した注釈処理コマンドである\fIapt\fRを使用する必要がなくなりました。
 .PP
-����ץ����å���API�ϡ�\fIjavax\&.annotation\&.processing\fR�����\fIjavax\&.lang\&.model\fR�ѥå������Ȥ��Υ��֥ѥå���������������Ƥ��ޤ���
-.SS "���������Ԥ���ˡ"
+注釈プロセッサのAPIは、\fIjavax\&.annotation\&.processing\fRおよび\fIjavax\&.lang\&.model\fRパッケージとそのサブパッケージ内に定義されています。
+.SS "注釈処理を行う方法"
 .PP
-\fI\-proc:none\fR���ץ����ˤ�ä����������̵��������ʤ��¤ꡢ����ѥ���ϻ��Ѳ�ǽ�ʤ��٤Ƥ�����ץ����å��򸡺����ޤ��������ѥ��ϡ�\fI\-processorpath\fR���ץ�������Ѥ��ƻ���Ǥ��ޤ����ѥ�����ꤷ�ʤ���硢�桼���������饹���ѥ������Ѥ���ޤ����ץ����å��θ����ϡ������ѥ����\fIMETA\-INF/services/javax\&.annotation\&.processing\fR\&.Processor�Ȥ���̾���Υ����ӥ����ץ��Х��������ե�����˴�Ť��ƹԤ��ޤ������Τ褦�ʥե�����ˤϡ����Ѥ��뤹�٤Ƥ�����ץ����å���̾����1�Ԥ�1�Ĥ��Ĵޤ�Ƥ����������ޤ����̤���ˡ�Ȥ��ơ�\fI\-processor\fR���ץ�������Ѥ��ƥץ����å�������Ū�˻��ꤹ�뤳�Ȥ�Ǥ��ޤ���
+\fI\-proc:none\fRオプションによって注釈処理が無効化されない限り、コンパイラは使用可能なすべての注釈プロセッサを検索します。検索パスは、\fI\-processorpath\fRオプションを使用して指定できます。パスを指定しない場合、ユーザー・クラス・パスが使用されます。プロセッサの検索は、検索パス上の\fIMETA\-INF/services/javax\&.annotation\&.processing\fR\&.Processorという名前のサービス・プロバイダ構成ファイルに基づいて行われます。このようなファイルには、使用するすべての注釈プロセッサの名前を、1行に1つずつ含めてください。また、別の方法として、\fI\-processor\fRオプションを使用してプロセッサを明示的に指定することもできます。
 .PP
-����ѥ���ϡ����ޥ�ɥ饤��Υ��������ե�����䥯�饹���������뤳�Ȥǡ��ɤΤ褦�����᤬¸�ߤ��Ƥ��뤫���ǧ�������ȡ��ץ����å����Ф�����礻��Ԥ��������Υץ����å����ɤ����������Ǥ���Τ����ǧ���ޤ������פ����Τ����Ĥ��ä���硢���Υץ����å����ƤӽФ���ޤ����ƥץ����å��ϡ����Ȥ���������������׵�Ǥ��ޤ������ξ�硢������������Ф����̤Υץ����å��򸫤Ĥ����ߤϹԤ��ޤ��󡣤��٤Ƥ����᤬�׵ᤵ���ȡ�����ѥ���Ϥ���ʾ�ץ����å��θ�����Ԥ��ޤ���
+コンパイラは、コマンドラインのソース・ファイルやクラスを走査することで、どのような注釈が存在しているかを確認し終わると、プロセッサに対して問合せを行い、それらのプロセッサがどの注釈を処理できるのかを確認します。一致するものが見つかった場合、そのプロセッサが呼び出されます。各プロセッサは、自身が処理する注釈を要求できます。その場合、それらの注釈に対する別のプロセッサを見つける試みは行われません。すべての注釈が要求されると、コンパイラはそれ以上プロセッサの検索を行いません。
 .PP
-�����줫�Υץ����å��ˤ�äƿ��������������ե����뤬���������ȡ����������2���ܤΥ饦��ɤ����Ϥ���ޤ����������������줿���٤ƤΥ��������ե����뤬������󤵤졢�����Ʊ�ͤ����᤬��������ޤ��������Υ饦��ɤǸƤӽФ��줿�ץ����å��Ϥ��٤ơ���³�ΤɤΥ饦��ɤǤ�ƤӽФ���ޤ������줬�����������������ե����뤬��������ʤ��ʤ�ޤ�³���ޤ���
+いずれかのプロセッサによって新しいソース・ファイルが生成されると、注釈処理の2回目のラウンドが開始されます。新しく生成されたすべてのソース・ファイルがスキャンされ、前回と同様に注釈が処理されます。以前のラウンドで呼び出されたプロセッサはすべて、後続のどのラウンドでも呼び出されます。これが、新しいソース・ファイルが生成されなくなるまで続きます。
 .PP
-����饦��ɤǿ��������������ե����뤬��������ʤ��ä���硢����ץ����å�������1��Τ߸ƤӽФ��졢�Ĥ�ν�����¹Ԥ��뵡��Ϳ�����ޤ����Ǹ�ˡ�\fI\-proc:only\fR���ץ���󤬻��Ѥ���ʤ������ꡢ����ѥ���ϡ����Υ��������ե�������������줿���٤ƤΥ��������ե�����򥳥�ѥ��뤷�ޤ���
-.SS "����Ū�˥����ɤ��줿���������ե�����"
+あるラウンドで新しいソース・ファイルが生成されなかった場合、注釈プロセッサがあと1回のみ呼び出され、残りの処理を実行する機会が与えられます。最後に、\fI\-proc:only\fRオプションが使用されないかぎり、コンパイラは、元のソース・ファイルと生成されたすべてのソース・ファイルをコンパイルします。
+.SS "暗黙的にロードされたソース・ファイル"
 .PP
-����ѥ���ϡ���Ϣ�Υ��������ե�����򥳥�ѥ��뤹��ݤˡ��̤Υ��������ե���������Ū�˥����ɤ��뤳�Ȥ�ɬ�פʾ�礬����ޤ������θ����򻲾Ȥ��Ƥ������������Τ褦�ʥե�����ϡ��������Ǥ�����������оݤˤʤ�ޤ��󡣥ǥե���ȤǤϡ�����������¹Ԥ��졢���İ���Ū�˥����ɤ��줿Ǥ�դΥ��������ե����뤬����ѥ��뤵�줿��硢����ѥ���Ϸٹ��ȯ�Ԥ��ޤ���\fI\-implicit\fR���ץ����Ǥϡ��ٹ������������ˡ���󶡤���ޤ���
-.SH "���θ���"
+コンパイラは、一連のソース・ファイルをコンパイルする際に、別のソース・ファイルを暗黙的にロードすることが必要な場合があります。型の検索を参照してください。そのようなファイルは、現時点では注釈処理の対象になりません。デフォルトでは、注釈処理が実行され、かつ暗黙的にロードされた任意のソース・ファイルがコンパイルされた場合、コンパイラは警告を発行します。\fI\-implicit\fRオプションでは、警告を抑制する方法が提供されます。
+.SH "型の検索"
 .PP
-���������ե�����򥳥�ѥ��뤹�뤿��ˡ�����ѥ�����̾���˴ؤ�������ɬ�פȤ��ޤ��������η�������ϥ��ޥ�ɥ饤��ǻ��ꤷ�����������ե�����ˤ���ޤ��󡣥���ѥ���ϡ����������ե�����ǻ��Ѥ���Ƥ��륯�饹�ޤ��ϥ��󥿥ե���������ĥ����Ƥ��륯�饹�ޤ��ϥ��󥿥ե����������뤤�ϼ�������Ƥ��륯�饹�ޤ��ϥ��󥿥ե��������٤ƤˤĤ��ơ����ξ����ɬ�פȤ��ޤ�������ˤϡ����������ե����������Ū�ˤϸ��ڤ���Ƥ��ʤ��Ƥ⡢�Ѿ����̤��ƾ�����󶡤��륯�饹�ȥ��󥿥ե�������ޤޤ�ޤ���
+ソース・ファイルをコンパイルするために、コンパイラは通常、型に関する情報を必要としますが、その型の定義はコマンドラインで指定したソース・ファイルにありません。コンパイラは、ソース・ファイルで使用されているクラスまたはインタフェース、拡張されているクラスまたはインタフェース、あるいは実装されているクラスまたはインタフェースすべてについて、型の情報を必要とします。これには、ソース・ファイルで明示的には言及されていなくても、継承を通じて情報を提供するクラスとインタフェースも含まれます。
 .PP
-���Ȥ��С����֥��饹\fIjava\&.applet\&.Applet\fR���������ȡ�\fI���ץ�å�\fR������Υ��饹(\fIjava\&.awt\&.Panel\fR��\fIjava\&.awt\&.Container\fR��\fIjava\&.awt\&.Component\fR�����\fIjava\&.lang\&.Object\fR)����Ѥ��Ƥ��뤳�Ȥˤ�ʤ�ޤ���
+たとえば、サブクラス\fIjava\&.applet\&.Applet\fRを作成すると、\fIアプレット\fRの祖先のクラス(\fIjava\&.awt\&.Panel\fR、\fIjava\&.awt\&.Container\fR、\fIjava\&.awt\&.Component\fRおよび\fIjava\&.lang\&.Object\fR)を使用していることにもなります。
 .PP
-����ѥ���ϡ����ξ���ɬ�פˤʤ�ȡ����η���������Ƥ��륽�������ե�����ޤ��ϥ��饹���ե�����򸡺����ޤ����ޤ����֡��ȥ��ȥ�åס����饹�ȳ�ĥ��ǽ���饹�򸡺�����³���ƥ桼���������饹���ѥ�(�ǥե���ȤǤϸ��ߤΥǥ��쥯�ȥ�)�򸡺����ޤ����桼���������饹���ѥ��ϡ�\fICLASSPATH\fR�Ķ��ѿ������ꤷ��������뤫���ޤ���\fI\-classpath\fR���ץ�������Ѥ���������ޤ���
+コンパイラは、型の情報が必要になると、その型を定義しているソース・ファイルまたはクラス・ファイルを検索します。まず、ブートストラップ・クラスと拡張機能クラスを検索し、続いてユーザー・クラス・パス(デフォルトでは現在のディレクトリ)を検索します。ユーザー・クラス・パスは、\fICLASSPATH\fR環境変数を設定して定義するか、または\fI\-classpath\fRオプションを使用して定義します。
 .PP
-\fI\-sourcepath\fR���ץ�������ꤵ��Ƥ����硢����ѥ���ϡ����ꤵ�줿�ѥ����饽�������ե�����򸡺����ޤ�������ʳ��ξ�硢����ѥ���ϡ��桼���������饹���ѥ����饯�饹���ե�����ȥ��������ե������ξ���򸡺����ޤ���
+\fI\-sourcepath\fRオプションが設定されている場合、コンパイラは、指定されたパスからソース・ファイルを検索します。それ以外の場合、コンパイラは、ユーザー・クラス・パスからクラス・ファイルとソース・ファイルの両方を検索します。
 .PP
-\fI\-bootclasspath\fR���ץ���󤪤��\fI\-extdirs\fR���ץ�������Ѥ��ơ��̤Υ֡��ȥ��ȥ�åס����饹���ĥ��ǽ���饹�����Ǥ��ޤ�������������ѥ��롦���ץ����򻲾Ȥ��Ƥ���������
+\fI\-bootclasspath\fRオプションおよび\fI\-extdirs\fRオプションを使用して、別のブートストラップ・クラスや拡張機能クラスを指定できます。クロスコンパイル・オプションを参照してください。
 .PP
-���θ��������������Ȥ����������̤ϡ����饹���ե����롢���������ե����롢�ޤ��Ϥ���ξ���Ǥ����礬����ޤ���ξ�������Ĥ��ä���硢���Τɤ������Ѥ��뤫��\fI\-Xprefer\fR���ץ����ǥ���ѥ���˻ؼ��Ǥ��ޤ���\fInewer\fR�����ꤵ�줿��硢����ѥ����2�ĤΥե�����Τ���������������Ѥ��ޤ���\fIsource\fR�����ꤵ�줿��硢����ѥ���ϥ��������ե��������Ѥ��ޤ����ǥե���Ȥ�\fInewer\fR�Ǥ���
+型の検索に成功したときに得られる結果は、クラス・ファイル、ソース・ファイル、またはその両方である場合があります。両方が見つかった場合、そのどちらを使用するかを\fI\-Xprefer\fRオプションでコンパイラに指示できます。\fInewer\fRが指定された場合、コンパイラは2つのファイルのうち新しい方を使用します。\fIsource\fRが指定された場合、コンパイラはソース・ファイルを使用します。デフォルトは\fInewer\fRです。
 .PP
-���θ������Τˤ�äơ��ޤ���\fI\-Xprefer\fR���ץ�������ꤵ�줿��̤Ȥ���ɬ�פʷ��Υ��������ե����뤬���Ĥ��ä���硢����ѥ���Ϥ��Υ��������ե�������ɤ߼�ꡢɬ�פʾ����������ޤ����ǥե���ȤǤϡ�����ѥ���ϥ��������ե�����Υ���ѥ����Ԥ��ޤ���\fI\-implicit\fR���ץ�������Ѥ��Ƥ���ư������Ǥ��ޤ���\fInone\fR�����ꤵ�줿��硢���������ե�������Ф��ƥ��饹���ե��������������ޤ���\fIclass\fR�����ꤵ�줿��硢���������ե�������Ф��ƥ��饹���ե����뤬��������ޤ���
+型の検索自体によって、または\fI\-Xprefer\fRオプションが設定された結果として必要な型のソース・ファイルが見つかった場合、コンパイラはそのソース・ファイルを読み取り、必要な情報を取得します。デフォルトでは、コンパイラはソース・ファイルのコンパイルも行います。\fI\-implicit\fRオプションを使用してその動作を指定できます。\fInone\fRが指定された場合、ソース・ファイルに対してクラス・ファイルは生成されません。\fIclass\fRが指定された場合、ソース・ファイルに対してクラス・ファイルが生成されます。
 .PP
-����ѥ���ϡ������������λ����ޤǡ����뷿�����ɬ������ǧ�����ʤ���礬����ޤ��������󤬥��������ե�������˸��Ĥ��ꡢ����\fI\-implicit\fR���ץ���󤬻��ꤵ��Ƥ��ʤ���硢����ѥ���ˤ�äơ����Υե����뤬����������оݤȤʤ餺�˥���ѥ��뤵��뤳�Ȥ��ٹ𤵤�ޤ������ηٹ��̵���ˤ���ˤϡ�(���Υե����뤬����������оݤȤʤ�褦��)���Υե�����򥳥ޥ�ɥ饤��˻��ꤹ�뤫�����뤤�Ϥ��Τ褦�ʥ��������ե�������Ф��ƥ��饹���ե��������������ɬ�פ����뤫�ɤ�����\fI\-implicit\fR���ץ�������Ѥ��ƻ��ꤷ�ޤ���
-.SH "�ץ�����ޥƥ��å������󥿥ե�����"
+コンパイラは、注釈処理が完了するまで、ある型情報の必要性を認識しない場合があります。型情報がソース・ファイル内に見つかり、かつ\fI\-implicit\fRオプションが指定されていない場合、コンパイラによって、そのファイルが注釈処理の対象とならずにコンパイルされることが警告されます。この警告を無効にするには、(そのファイルが注釈処理の対象となるように)そのファイルをコマンドラインに指定するか、あるいはそのようなソース・ファイルに対してクラス・ファイルを生成する必要があるかどうかを\fI\-implicit\fRオプションを使用して指定します。
+.SH "プログラマティック・インタフェース"
 .PP
-\fIjavac\fR���ޥ�ɤϡ�\fIjavax\&.tools\fR�ѥå�������Υ��饹�ȥ��󥿥ե������ˤ�ä��������뿷����Java Compiler API�򥵥ݡ��Ȥ��ޤ���
-.SS "��"
+\fIjavac\fRコマンドは、\fIjavax\&.tools\fRパッケージ内のクラスとインタフェースによって定義される新しいJava Compiler APIをサポートします。
+.SS "例"
 .PP
-���ޥ�ɥ饤���������ꤹ��褦�˥���ѥ��뤹��ˤϡ����ι�ʸ����Ѥ��ޤ���
+コマンドライン引数を指定するようにコンパイルするには、次の構文を使用します。
 .sp
 .if n \{\
 .RS 4
@@ -1205,15 +1205,15 @@ JavaCompiler javac = ToolProvider\&.getSystemJavaCompiler();
 .RE
 .\}
 .PP
-��Ǥϡ����Ǥ�ɸ����ϥ��ȥ꡼��˽񤭹��ߡ����ޥ�ɥ饤�󤫤�θƽФ�����\fIjavac\fR�����ꤹ�뽪λ�����ɤ��֤��ޤ���
+例では、診断を標準出力ストリームに書き込み、コマンドラインからの呼出し時に\fIjavac\fRが指定する終了コードを返します。
 .PP
-\fIjavax\&.tools\&.JavaCompiler\fR���󥿥ե�������¾�Υ᥽�åɤ���Ѥ���ȡ����Ǥν�����ե�������ɼ�긵/������������ʤɤ�Ԥ����Ȥ��Ǥ��ޤ���
-.SS "�켰�Υ��󥿥ե�����"
+\fIjavax\&.tools\&.JavaCompiler\fRインタフェースの他のメソッドを使用すると、診断の処理やファイルの読取り元/書込み先の制御などを行うことができます。
+.SS "旧式のインタフェース"
 .PP
-\fB����:\fR
-����API�ϡ����̸ߴ����Τ���ˤΤ��ݻ�����Ƥ��ޤ������٤Ƥο����������ɤϡ�������Java Compiler API����Ѥ���ɬ�פ�����ޤ���
+\fB注意:\fR
+このAPIは、下位互換性のためにのみ保持されています。すべての新しいコードは、新しいJava Compiler APIを使用する必要があります。
 .PP
-���Τ褦�ˡ�\fIcom\&.sun\&.tools\&.javac\&.Main\fR���饹�ˤϡ��ץ�����फ�饳��ѥ����ƤӽФ������static�᥽�åɤ�2���Ѱդ���Ƥ��ޤ���
+次のように、\fIcom\&.sun\&.tools\&.javac\&.Main\fRクラスには、プログラムからコンパイラを呼び出すためのstaticメソッドが2つ用意されています。
 .sp
 .if n \{\
 .RS 4
@@ -1226,21 +1226,21 @@ public static int compile(String[] args, PrintWriter out);
 .RE
 .\}
 .PP
-\fIargs\fR�ѥ�᡼���ϡ��̾拾��ѥ�����Ϥ����Ǥ�դΥ��ޥ�ɥ饤�������ɽ���Ƥ��ޤ���
+\fIargs\fRパラメータは、通常コンパイラに渡される任意のコマンドライン引数を表しています。
 .PP
-\fIout\fR�ѥ�᡼���ϡ�����ѥ���ο��ǽ��Ϥΰ���򼨤��ޤ���
+\fIout\fRパラメータは、コンパイラの診断出力の宛先を示します。
 .PP
-\fIreturn\fR�ͤϡ�\fIjavac\fR��\fIexit\fR�ͤ�Ʊ���Ǥ���
+\fIreturn\fR値は、\fIjavac\fRの\fIexit\fR値と同じです。
 .PP
-\fB����:\fR
-̾����\fIcom\&.sun\&.tools\&.javac\fR�ǻϤޤ�ѥå�����(\fIcom\&.sun\&.tools\&.javac\fR�Υ��֥ѥå�����)�Ǹ��Ф����¾�Τ��٤ƤΥ��饹����ӥ᥽�åɤϡ������������ѤǤ��ꡢ���ĤǤ��ѹ�������ǽ��������ޤ���
-.SH "��"
+\fB注意:\fR
+名前が\fIcom\&.sun\&.tools\&.javac\fRで始まるパッケージ(\fIcom\&.sun\&.tools\&.javac\fRのサブパッケージ)で検出される他のすべてのクラスおよびメソッドは、完全に内部用であり、いつでも変更される可能性があります。
+.SH "例"
 .PP
-\fBExample 1\fR, ��ñ�ʥץ������Υ���ѥ���
+\fBExample 1\fR, 簡単なプログラムのコンパイル
 .RS 4
-������Ǥϡ�greetings�ǥ��쥯�ȥ��\fIHello\&.java\fR���������ե�����򥳥�ѥ��뤹����ˡ�򼨤��Ƥ��ޤ���\fIHello\&.java\fR��������줿���饹�ϡ�\fIgreetings\&.Hello\fR�ȸƤФ�ޤ���greetings�ǥ��쥯�ȥ�ϡ����������ե�����ȥ��饹���ե������ξ��������ѥå��������ǥ��쥯�ȥ�ǡ����ߤΥǥ��쥯�ȥ�Τ������ˤ���ޤ�������ˤ�ꡢ�ǥե���ȤΥ桼���������饹���ѥ�����ѤǤ���褦�ˤʤ�ޤ����ޤ���\fI\-d\fR���ץ�������Ѥ����̤ν�����ǥ��쥯�ȥ����ꤹ��ɬ�פ⤢��ޤ���
+この例では、greetingsディレクトリで\fIHello\&.java\fRソース・ファイルをコンパイルする方法を示しています。\fIHello\&.java\fRで定義されたクラスは、\fIgreetings\&.Hello\fRと呼ばれます。greetingsディレクトリは、ソース・ファイルとクラス・ファイルの両方があるパッケージ・ディレクトリで、現在のディレクトリのすぐ下にあります。これにより、デフォルトのユーザー・クラス・パスを使用できるようになります。また、\fI\-d\fRオプションを使用して別の出力先ディレクトリを指定する必要もありません。
 .sp
-\fIHello\&.java\fR��Υ������������ɤϼ��ΤȤ���Ǥ���
+\fIHello\&.java\fR内のソース・コードは次のとおりです。
 .sp
 .if n \{\
 .RS 4
@@ -1259,7 +1259,7 @@ public class Hello {
 .if n \{\
 .RE
 .\}
-greetings\&.Hello�Υ���ѥ���:
+greetings\&.Helloのコンパイル:
 .sp
 .if n \{\
 .RS 4
@@ -1270,7 +1270,7 @@ javac greetings/Hello\&.java
 .if n \{\
 .RE
 .\}
-\fIgreetings\&.Hello\fR�μ¹�:
+\fIgreetings\&.Hello\fRの実行:
 .sp
 .if n \{\
 .RS 4
@@ -1286,9 +1286,9 @@ Hello Everyone
 .\}
 .RE
 .PP
-\fBExample 2\fR, ʣ���Υ��������ե�����Υ���ѥ���
+\fBExample 2\fR, 複数のソース・ファイルのコンパイル
 .RS 4
-������Ǥϡ�\fIgreetings\fR�ѥå������Υ��������ե�����\fIAloha\&.java\fR��\fIGutenTag\&.java\fR��\fIHello\&.java\fR�����\fIHi\&.java\fR�򥳥�ѥ��뤷�ޤ���
+この例では、\fIgreetings\fRパッケージのソース・ファイル\fIAloha\&.java\fR、\fIGutenTag\&.java\fR、\fIHello\&.java\fRおよび\fIHi\&.java\fRをコンパイルします。
 .sp
 .if n \{\
 .RS 4
@@ -1304,9 +1304,9 @@ Aloha\&.java          GutenTag\&.java       Hello\&.java          Hi\&.java
 .\}
 .RE
 .PP
-\fBExample 3\fR, �桼���������饹���ѥ��λ���
+\fBExample 3\fR, ユーザー・クラス・パスの指定
 .RS 4
-���Ҥ���Υ��������ե�����Τ���1�Ĥ��ѹ�������ˡ����Υե������ƥ���ѥ��뤷�ޤ���
+前述の例のソース・ファイルのうち1つを変更した後に、そのファイルを再コンパイルします。
 .sp
 .if n \{\
 .RS 4
@@ -1319,7 +1319,7 @@ javac greetings/Hi\&.java
 .if n \{\
 .RE
 .\}
-\fIgreetings\&.Hi\fR��\fIgreetings\fR�ѥå��������¾�Υ��饹�򻲾Ȥ��Ƥ��뤿�ᡢ����ѥ���Ϥ�����¾�Υ��饹��õ��ɬ�פ�����ޤ����ǥե���ȤΥ桼���������饹���ѥ��ϥѥå��������ǥ��쥯�ȥ��ޤ�ǥ��쥯�ȥ�Ǥ��뤿�ᡢ���Ҥ����ư��ޤ������ߤΥǥ��쥯�ȥ�򵤤ˤ����ˤ��Υե������ƥ���ѥ��뤹���硢\fICLASSPATH\fR�����ꤷ�ơ��桼���������饹���ѥ�����Υǥ��쥯�ȥ���ɲä��ޤ���������Ǥϡ�\fI\-classpath\fR���ץ�������Ѥ��Ƥ��ޤ���
+\fIgreetings\&.Hi\fRは\fIgreetings\fRパッケージ内の他のクラスを参照しているため、コンパイラはこれらの他のクラスを探す必要があります。デフォルトのユーザー・クラス・パスはパッケージ・ディレクトリを含むディレクトリであるため、前述の例は動作します。現在のディレクトリを気にせずにこのファイルを再コンパイルする場合、\fICLASSPATH\fRを設定して、ユーザー・クラス・パスに例のディレクトリを追加します。この例では、\fI\-classpath\fRオプションを使用しています。
 .sp
 .if n \{\
 .RS 4
@@ -1330,7 +1330,7 @@ javac \-classpath /examples /examples/greetings/Hi\&.java
 .if n \{\
 .RE
 .\}
-\fIgreetings\&.Hi\fR���ѹ����ƥХʡ����桼�ƥ���ƥ�����Ѥ���褦�ˤ�����硢 ���Υ桼�ƥ���ƥ���桼���������饹���ѥ����̤��ƥ��������Ǥ���褦�ˤʤäƤ���ɬ�פ�����ޤ���
+\fIgreetings\&.Hi\fRを変更してバナー・ユーティリティを使用するようにした場合、 そのユーティリティもユーザー・クラス・パスを通じてアクセスできるようになっている必要があります。
 .sp
 .if n \{\
 .RS 4
@@ -1342,7 +1342,7 @@ javac \-classpath /examples:/lib/Banners\&.jar \e
 .if n \{\
 .RE
 .\}
-\fIgreetings\fR�ѥå������ǥ��饹��¹Ԥ���ˤϡ��ץ�������\fIgreetings\fR�ѥå������������\fIgreetings\fR���饹�����Ѥ��륯�饹�˥�����������ɬ�פ�����ޤ���
+\fIgreetings\fRパッケージでクラスを実行するには、プログラムは\fIgreetings\fRパッケージ、および\fIgreetings\fRクラスが使用するクラスにアクセスする必要があります。
 .sp
 .if n \{\
 .RS 4
@@ -1355,9 +1355,9 @@ java \-classpath /examples:/lib/Banners\&.jar greetings\&.Hi
 .\}
 .RE
 .PP
-\fBExample 4\fR, ���������ե�����ȥ��饹���ե������ʬΥ
+\fBExample 4\fR, ソース・ファイルとクラス・ファイルの分離
 .RS 4
-������Ǥϡ�\fIjavac\fR����Ѥ��ơ�JVM 1\&.6��Ǽ¹Ԥ��륳���ɤ򥳥�ѥ��뤷�ޤ���
+次の例では、\fIjavac\fRを使用して、JVM 1\&.6上で実行するコードをコンパイルします。
 .sp
 .if n \{\
 .RS 4
@@ -1369,9 +1369,9 @@ javac \-source 1\&.6 \-target 1\&.6 \-bootclasspath jdk1\&.6\&.0/lib/rt\&.jar \e
 .if n \{\
 .RE
 .\}
-\fI\-source 1\&.6\fR���ץ����ˤ�ꡢ\fIOldCode\&.java\fR�Υ���ѥ���ˤϥ�꡼��1\&.6(�ޤ���6)��Java�ץ�����ߥ󥰸��줬���Ѥ���ޤ���\fI\-target 1\&.6\fR���ץ����ˤ�ꡢJVM 1\&.6�ȸߴ����Τ��륯�饹���ե����뤬��������ޤ����ۤȤ�ɤξ�硢\fI\-target\fR���ץ������ͤ�\fI\-source\fR���ץ������ͤˤʤ�ޤ���������Ǥϡ�\fI\-target\fR���ץ������ά�Ǥ��ޤ���
+\fI\-source 1\&.6\fRオプションにより、\fIOldCode\&.java\fRのコンパイルにはリリース1\&.6(または6)のJavaプログラミング言語が使用されます。\fI\-target 1\&.6\fRオプションにより、JVM 1\&.6と互換性のあるクラス・ファイルが生成されます。ほとんどの場合、\fI\-target\fRオプションの値は\fI\-source\fRオプションの値になります。この例では、\fI\-target\fRオプションを省略できます。
 .sp
-\fI\-bootclasspath\fR���ץ�������Ѥ��ơ�Ŭ�ڤʥС������Υ֡��ȥ��ȥ�åס����饹(\fIrt\&.jar\fR�饤�֥��)����ꤹ��ɬ�פ�����ޤ������ꤷ�ʤ����ϡ�����ѥ���ˤ�äƼ��ηٹ���������ޤ���
+\fI\-bootclasspath\fRオプションを使用して、適切なバージョンのブートストラップ・クラス(\fIrt\&.jar\fRライブラリ)を指定する必要があります。指定しない場合は、コンパイラによって次の警告が生成されます。
 .sp
 .if n \{\
 .RS 4
@@ -1384,12 +1384,12 @@ warning: [options] bootstrap class path not set in conjunction with
 .if n \{\
 .RE
 .\}
-Ŭ�ڤʥС������Υ֡��ȥ��ȥ�åס����饹����ꤷ�ʤ���硢����ѥ���ϸŤ��������(������Ǥϡ��С������1\&.6��Java�ץ�����ߥ󥰸���)�򿷤����֡��ȥ��ȥ�åס����饹���Ȥ߹礻�ƻ��Ѥ��ޤ������η�̡�¸�ߤ��ʤ��᥽�åɤؤλ��Ȥ��ޤޤ�Ƥ��뤳�Ȥ����뤿�ᡢ���饹���ե����뤬�Ť��ץ�åȥե�����(���ξ���Java SE 6)��ư��ʤ���ǽ��������ޤ���
+適切なバージョンのブートストラップ・クラスを指定しない場合、コンパイラは古い言語仕様(この例では、バージョン1\&.6のJavaプログラミング言語)を新しいブートストラップ・クラスと組み合せて使用します。その結果、存在しないメソッドへの参照が含まれていることがあるため、クラス・ファイルが古いプラットフォーム(この場合はJava SE 6)で動作しない可能性があります。
 .RE
 .PP
-\fBExample 5\fR, ������������ѥ���
+\fBExample 5\fR, クロス・コンパイル
 .RS 4
-������Ǥϡ�\fIjavac\fR����Ѥ��ơ�JVM 1\&.6��Ǽ¹Ԥ��륳���ɤ򥳥�ѥ��뤷�ޤ���
+この例では、\fIjavac\fRを使用して、JVM 1\&.6上で実行するコードをコンパイルします。
 .sp
 .if n \{\
 .RS 4
@@ -1401,9 +1401,9 @@ javac \-source 1\&.6 \-target 1\&.6 \-bootclasspath jdk1\&.6\&.0/lib/rt\&.jar \e
 .if n \{\
 .RE
 .\}
-The\fI \-source 1\&.6\fR���ץ����ˤ�ꡢOldCode\&.java�Υ���ѥ���ˤϥ�꡼��1\&.6(�ޤ���6)��Java�ץ�����ߥ󥰸��줬���Ѥ���ޤ���\fI\-target 1\&.6\fR���ץ����ˤ�ꡢJVM 1\&.6�ȸߴ����Τ��륯�饹���ե����뤬��������ޤ����ۤȤ�ɤξ�硢\fI\-target\fR���ͤ�\fI\-source\fR���ͤˤʤ�ޤ���������Ǥϡ�\fI\-target\fR���ץ����Ͼ�ά����ޤ���
+The\fI \-source 1\&.6\fRオプションにより、OldCode\&.javaのコンパイルにはリリース1\&.6(または6)のJavaプログラミング言語が使用されます。\fI\-target 1\&.6\fRオプションにより、JVM 1\&.6と互換性のあるクラス・ファイルが生成されます。ほとんどの場合、\fI\-target\fRの値は\fI\-source\fRの値になります。この例では、\fI\-target\fRオプションは省略されます。
 .sp
-\fI\-bootclasspath\fR���ץ�������Ѥ��ơ�Ŭ�ڤʥС������Υ֡��ȥ��ȥ�åס����饹(\fIrt\&.jar\fR�饤�֥��)����ꤹ��ɬ�פ�����ޤ������ꤷ�ʤ����ϡ�����ѥ���ˤ�äƼ��ηٹ���������ޤ���
+\fI\-bootclasspath\fRオプションを使用して、適切なバージョンのブートストラップ・クラス(\fIrt\&.jar\fRライブラリ)を指定する必要があります。指定しない場合は、コンパイラによって次の警告が生成されます。
 .sp
 .if n \{\
 .RS 4
@@ -1415,9 +1415,9 @@ warning: [options] bootstrap class path not set in conjunction with \-source 1\&
 .if n \{\
 .RE
 .\}
-Ŭ�ڤʥС������Υ֡��ȥ��ȥ�åס����饹����ꤷ�ʤ���硢����ѥ���ϸŤ�������ͤ򿷤����֡��ȥ��ȥ�åס����饹���Ȥ߹礻�ƻ��Ѥ��ޤ��������ȹ礻�ϡ�¸�ߤ��ʤ��᥽�åɤؤλ��Ȥ��ޤޤ�Ƥ��뤳�Ȥ����뤿�ᡢ���饹���ե����뤬�Ť��ץ�åȥե�����(���ξ���Java SE 6)��ư��ʤ���ǽ��������ޤ���������Ǥϡ�����ѥ����Java�ץ�����ߥ󥰸���Υ�꡼��1\&.6����Ѥ��ޤ���
+適切なバージョンのブートストラップ・クラスを指定しない場合、コンパイラは古い言語仕様を新しいブートストラップ・クラスと組み合せて使用します。この組合せは、存在しないメソッドへの参照が含まれていることがあるため、クラス・ファイルが古いプラットフォーム(この場合はJava SE 6)で動作しない可能性があります。この例では、コンパイラはJavaプログラミング言語のリリース1\&.6を使用します。
 .RE
-.SH "��Ϣ����"
+.SH "関連項目"
 .sp
 .RS 4
 .ie n \{\

@@ -55,7 +55,6 @@ import com.sun.corba.se.spi.ior.iiop.GIOPVersion ;
 import com.sun.corba.se.spi.orb.ORB ;
 
 /**
- * @author
  * If getMinorVersion==0, this does not contain any tagged components
  */
 public class IIOPProfileTemplateImpl extends TaggedProfileTemplateBase

@@ -96,7 +96,7 @@ public class MethodGen24 extends MethodGen
   }
 
   /**
-   * <d62023> Write the methodEntry for a valuetype factory method into
+   * d62023 - write the methodEntry for a valuetype factory method into
    *          the Value Helper class. Contents from email from Simon,
    *          4/25/99.
    **/
@@ -135,7 +135,7 @@ public class MethodGen24 extends MethodGen
   } // helperFactoryMethod
 
   /**
-   * <d62023> - write an abstract method definition
+   * d62023 - write an abstract method definition
    **/
   protected void abstractMethod (Hashtable symbolTable, MethodEntry m, PrintWriter stream)
   {
@@ -152,8 +152,8 @@ public class MethodGen24 extends MethodGen
   } // abstractMethod
 
   /**
-   * <d62023> - write a default factory method implementation for the
-   *            <value>DefaultFactory. m is a methodEntry for a factory
+   * d62023   - write a default factory method implementation for the
+   *            {@code <value>DefaultFactory}. m is a methodEntry for a factory
    *            method contained in a non-abstract ValueEntry.
    **/
   protected void defaultFactoryMethod (Hashtable symbolTable, MethodEntry m, PrintWriter stream)
@@ -176,7 +176,7 @@ public class MethodGen24 extends MethodGen
   } // defaultFactoryMethod
 
   /**
-   * <d62023> - remove all valueInitializer junk
+   * d62023 - remove all valueInitializer junk
    **/
   protected void writeMethodSignature ()
   {
@@ -242,7 +242,7 @@ public class MethodGen24 extends MethodGen
   } // writeMethodSignature
 
   /**
-   * <d62023> - delete method templates for valuetypes
+   * d62023 - delete method templates for valuetypes
    **/
   protected void interfaceMethod (Hashtable symbolTable, MethodEntry m, PrintWriter stream)
   {

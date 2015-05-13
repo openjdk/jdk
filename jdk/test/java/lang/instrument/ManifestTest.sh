@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 # @summary JLI JAR manifest processing should ignore leading and trailing white space.
 # @author Daniel D. Daugherty
 #
+# @modules java.instrument
 # @run build ManifestTestApp ExampleForBootClassPath
 # @run shell/timeout=900 ManifestTest.sh
 #

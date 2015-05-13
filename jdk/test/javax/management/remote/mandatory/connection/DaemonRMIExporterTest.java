@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  * @summary test the connector server option that causes it not to prevent the
  * VM from exiting
  * @author Shanliang JIANG, Eamonn McManus
+ * @modules java.management
  * @run main/othervm DaemonRMIExporterTest
  */
 import java.util.Arrays;

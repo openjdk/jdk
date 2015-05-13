@@ -49,42 +49,25 @@ PSYoungGen*  ParallelScavengeHeap::_young_gen = NULL;
 PSOldGen*    ParallelScavengeHeap::_old_gen = NULL;
 PSAdaptiveSizePolicy* ParallelScavengeHeap::_size_policy = NULL;
 PSGCAdaptivePolicyCounters* ParallelScavengeHeap::_gc_policy_counters = NULL;
-ParallelScavengeHeap* ParallelScavengeHeap::_psh = NULL;
 GCTaskManager* ParallelScavengeHeap::_gc_task_manager = NULL;
 
 jint ParallelScavengeHeap::initialize() {
   CollectedHeap::pre_initialize();
 
-  // Initialize collector policy
-  _collector_policy = new GenerationSizer();
-  _collector_policy->initialize_all();
-
   const size_t heap_size = _collector_policy->max_heap_byte_size();
 
   ReservedSpace heap_rs = Universe::reserve_heap(heap_size, _collector_policy->heap_alignment());
-  MemTracker::record_virtual_memory_type((address)heap_rs.base(), mtJavaHeap);
 
   os::trace_page_sizes("ps main", _collector_policy->min_heap_byte_size(),
                        heap_size, generation_alignment(),
                        heap_rs.base(),
                        heap_rs.size());
-  if (!heap_rs.is_reserved()) {
-    vm_shutdown_during_initialization(
-      "Could not reserve enough space for object heap");
-    return JNI_ENOMEM;
-  }
 
   initialize_reserved_region((HeapWord*)heap_rs.base(), (HeapWord*)(heap_rs.base() + heap_rs.size()));
 
   CardTableExtension* const barrier_set = new CardTableExtension(reserved_region());
   barrier_set->initialize();
-  _barrier_set = barrier_set;
-  oopDesc::set_bs(_barrier_set);
-  if (_barrier_set == NULL) {
-    vm_shutdown_during_initialization(
-      "Could not reserve enough space for barrier set");
-    return JNI_ENOMEM;
-  }
+  set_barrier_set(barrier_set);
 
   // Make up the generations
   // Calculate the maximum size that a generation can grow.  This
@@ -120,7 +103,6 @@ jint ParallelScavengeHeap::initialize() {
   // initialize the policy counters - 2 collectors, 3 generations
   _gc_policy_counters =
     new PSGCAdaptivePolicyCounters("ParScav:MSC", 2, 3, _size_policy);
-  _psh = this;
 
   // Set up the GCTaskManager
   _gc_task_manager = GCTaskManager::create(ParallelGCThreads);
@@ -176,27 +158,11 @@ size_t ParallelScavengeHeap::max_capacity() const {
 }
 
 bool ParallelScavengeHeap::is_in(const void* p) const {
-  if (young_gen()->is_in(p)) {
-    return true;
-  }
-
-  if (old_gen()->is_in(p)) {
-    return true;
-  }
-
-  return false;
+  return young_gen()->is_in(p) || old_gen()->is_in(p);
 }
 
 bool ParallelScavengeHeap::is_in_reserved(const void* p) const {
-  if (young_gen()->is_in_reserved(p)) {
-    return true;
-  }
-
-  if (old_gen()->is_in_reserved(p)) {
-    return true;
-  }
-
-  return false;
+  return young_gen()->is_in_reserved(p) || old_gen()->is_in_reserved(p);
 }
 
 bool ParallelScavengeHeap::is_scavengable(const void* addr) {
@@ -265,7 +231,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate(
     // total_collections() value!
     {
       MutexLocker ml(Heap_lock);
-      gc_count = Universe::heap()->total_collections();
+      gc_count = total_collections();
 
       result = young_gen()->allocate(size);
       if (result != NULL) {
@@ -315,8 +281,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate(
       // This prevents us from looping until time out on requests that can
       // not be satisfied.
       if (op.prologue_succeeded()) {
-        assert(Universe::heap()->is_in_or_null(op.result()),
-          "result not in heap");
+        assert(is_in_or_null(op.result()), "result not in heap");
 
         // If GC was locked out during VM operation then retry allocation
         // and/or stall as necessary.
@@ -426,7 +391,7 @@ void ParallelScavengeHeap::do_full_collection(bool clear_all_soft_refs) {
 HeapWord* ParallelScavengeHeap::failed_mem_allocate(size_t size) {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   assert(Thread::current() == (Thread*)VMThread::vm_thread(), "should be in vm thread");
-  assert(!Universe::heap()->is_gc_active(), "not reentrant");
+  assert(!is_gc_active(), "not reentrant");
   assert(!Heap_lock->owned_by_self(), "this thread should not own the Heap_lock");
 
   // We assume that allocation in eden will fail unless we collect.
@@ -514,16 +479,12 @@ void ParallelScavengeHeap::collect(GCCause::Cause cause) {
   {
     MutexLocker ml(Heap_lock);
     // This value is guarded by the Heap_lock
-    gc_count      = Universe::heap()->total_collections();
-    full_gc_count = Universe::heap()->total_full_collections();
+    gc_count      = total_collections();
+    full_gc_count = total_full_collections();
   }
 
   VM_ParallelGCSystemGC op(gc_count, full_gc_count, cause);
   VMThread::execute(&op);
-}
-
-void ParallelScavengeHeap::oop_iterate(ExtendedOopClosure* cl) {
-  Unimplemented();
 }
 
 void ParallelScavengeHeap::object_iterate(ObjectClosure* cl) {
@@ -661,9 +622,10 @@ void ParallelScavengeHeap::trace_heap(GCWhen::Type when, const GCTracer* gc_trac
 }
 
 ParallelScavengeHeap* ParallelScavengeHeap::heap() {
-  assert(_psh != NULL, "Uninitialized access to ParallelScavengeHeap::heap()");
-  assert(_psh->kind() == CollectedHeap::ParallelScavengeHeap, "not a parallel scavenge heap");
-  return _psh;
+  CollectedHeap* heap = Universe::heap();
+  assert(heap != NULL, "Uninitialized access to ParallelScavengeHeap::heap()");
+  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Not a ParallelScavengeHeap");
+  return (ParallelScavengeHeap*)heap;
 }
 
 // Before delegating the resize to the young generation,

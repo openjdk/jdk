@@ -373,20 +373,25 @@ public class CommonUI
         comp.setCursor(Cursor.getPredefinedCursor(0));
     }
 
-    public static final int BUTTON_WIDTH = 100;
-    public static final int BUTTON_HEIGHT = 26;
-    public static final int BUTTCON_WIDTH = 28;
-    public static final int BUTTCON_HEIGHT = 28;
-    public static final int SM_BUTTON_WIDTH = 72;
-    public static final int SM_BUTTON_HEIGHT = 26;
-    public static final int LABEL_WIDTH = 100;
-    public static final int LABEL_HEIGHT = 20;
-    public static final int TEXT_WIDTH = 150;
-    public static final int TEXT_HEIGHT = 20;
-    public static Dimension buttonPrefSize = new Dimension(100, 26);
-    public static Dimension buttconPrefSize = new Dimension(28, 28);
-    public static Dimension smbuttonPrefSize = new Dimension(72, 26);
-    public static Dimension labelPrefSize = new Dimension(100, 20);
-    public static Dimension textPrefSize = new Dimension(150, 20);
+    public static Dimension getButtconPrefSize()
+    {
+        return buttconPrefSize;
+    }
+
+    private static final int BUTTON_WIDTH = 100;
+    private static final int BUTTON_HEIGHT = 26;
+    private static final int BUTTCON_WIDTH = 28;
+    private static final int BUTTCON_HEIGHT = 28;
+    private static final int SM_BUTTON_WIDTH = 72;
+    private static final int SM_BUTTON_HEIGHT = 26;
+    private static final int LABEL_WIDTH = 100;
+    private static final int LABEL_HEIGHT = 20;
+    private static final int TEXT_WIDTH = 150;
+    private static final int TEXT_HEIGHT = 20;
+    private static final Dimension buttonPrefSize = new Dimension(100, 26);
+    private static final Dimension buttconPrefSize = new Dimension(28, 28);
+    private static final Dimension smbuttonPrefSize = new Dimension(72, 26);
+    private static final Dimension labelPrefSize = new Dimension(100, 20);
+    private static final Dimension textPrefSize = new Dimension(150, 20);
 
 }

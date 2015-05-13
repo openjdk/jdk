@@ -525,6 +525,12 @@ void Bytecodes::initialize() {
   def(_fast_aldc           , "fast_aldc"           , "bj"   , NULL    , T_OBJECT,   1, true,  _ldc   );
   def(_fast_aldc_w         , "fast_aldc_w"         , "bJJ"  , NULL    , T_OBJECT,   1, true,  _ldc_w );
 
+  def(_nofast_getfield     , "nofast_getfield"     , "bJJ"  , NULL    , T_ILLEGAL,  0, true,  _getfield       );
+  def(_nofast_putfield     , "nofast_putfield"     , "bJJ"  , NULL    , T_ILLEGAL, -2, true , _putfield       );
+
+  def(_nofast_aload_0      , "nofast_aload_0"      , "b"    , NULL    , T_ILLEGAL,  1, true , _aload_0        );
+  def(_nofast_iload        , "nofast_iload"        , "bi"   , NULL    , T_ILLEGAL,  1, false, _iload          );
+
   def(_shouldnotreachhere  , "_shouldnotreachhere" , "b"    , NULL    , T_VOID   ,  0, false);
 
   // compare can_trap information for each bytecode with the

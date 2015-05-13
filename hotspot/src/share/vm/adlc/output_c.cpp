@@ -138,26 +138,9 @@ void ArchDesc::declare_register_masks(FILE *fp_hpp) {
     fprintf(fp_hpp,"// Register masks, one for each register class.\n");
     _register->_rclasses.reset();
     for (rc_name = NULL; (rc_name = _register->_rclasses.iter()) != NULL;) {
-      const char *prefix = "";
       RegClass *reg_class = _register->getRegClass(rc_name);
       assert(reg_class, "Using an undefined register class");
-
-      const char* rc_name_to_upper = toUpper(rc_name);
-
-      if (reg_class->_user_defined == NULL) {
-        fprintf(fp_hpp, "extern const RegMask _%s%s_mask;\n", prefix,  rc_name_to_upper);
-        fprintf(fp_hpp, "inline const RegMask &%s%s_mask() { return _%s%s_mask; }\n", prefix, rc_name_to_upper, prefix, rc_name_to_upper);
-      } else {
-        fprintf(fp_hpp, "inline const RegMask &%s%s_mask() { %s }\n", prefix, rc_name_to_upper, reg_class->_user_defined);
-      }
-
-      if (reg_class->_stack_or_reg) {
-        assert(reg_class->_user_defined == NULL, "no user defined reg class here");
-        fprintf(fp_hpp, "extern const RegMask _%sSTACK_OR_%s_mask;\n", prefix, rc_name_to_upper);
-        fprintf(fp_hpp, "inline const RegMask &%sSTACK_OR_%s_mask() { return _%sSTACK_OR_%s_mask; }\n", prefix, rc_name_to_upper, prefix, rc_name_to_upper);
-      }
-      delete[] rc_name_to_upper;
-
+      reg_class->declare_register_masks(fp_hpp);
     }
   }
 }
@@ -173,35 +156,9 @@ void ArchDesc::build_register_masks(FILE *fp_cpp) {
     fprintf(fp_cpp,"// Register masks, one for each register class.\n");
     _register->_rclasses.reset();
     for (rc_name = NULL; (rc_name = _register->_rclasses.iter()) != NULL;) {
-      const char *prefix = "";
       RegClass *reg_class = _register->getRegClass(rc_name);
       assert(reg_class, "Using an undefined register class");
-
-      if (reg_class->_user_defined != NULL) {
-        continue;
-      }
-
-      int len = RegisterForm::RegMask_Size();
-      const char* rc_name_to_upper = toUpper(rc_name);
-      fprintf(fp_cpp, "const RegMask _%s%s_mask(", prefix, rc_name_to_upper);
-
-      {
-        int i;
-        for(i = 0; i < len - 1; i++) {
-          fprintf(fp_cpp," 0x%x,", reg_class->regs_in_word(i, false));
-        }
-        fprintf(fp_cpp," 0x%x );\n", reg_class->regs_in_word(i, false));
-      }
-
-      if (reg_class->_stack_or_reg) {
-        int i;
-        fprintf(fp_cpp, "const RegMask _%sSTACK_OR_%s_mask(", prefix, rc_name_to_upper);
-        for(i = 0; i < len - 1; i++) {
-          fprintf(fp_cpp," 0x%x,",reg_class->regs_in_word(i, true));
-        }
-        fprintf(fp_cpp," 0x%x );\n",reg_class->regs_in_word(i, true));
-      }
-      delete[] rc_name_to_upper;
+      reg_class->build_register_masks(fp_cpp);
     }
   }
 }
@@ -1548,8 +1505,8 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
     // Iterate over the instructions 'node' expands into
     ExpandRule  *expand       = node->_exprule;
     NameAndList *expand_instr = NULL;
-    for(expand->reset_instructions();
-        (expand_instr = expand->iter_instructions()) != NULL; cnt++) {
+    for (expand->reset_instructions();
+         (expand_instr = expand->iter_instructions()) != NULL; cnt++) {
       new_id = expand_instr->name();
 
       InstructForm* expand_instruction = (InstructForm*)globalAD->globalNames()[new_id];
@@ -1560,30 +1517,25 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
         continue;
       }
 
-      if (expand_instruction->has_temps()) {
-        globalAD->syntax_err(node->_linenum, "In %s: expand rules using instructs with TEMPs aren't supported: %s",
-                             node->_ident, new_id);
-      }
-
       // Build the node for the instruction
       fprintf(fp,"\n  %sNode *n%d = new %sNode();\n", new_id, cnt, new_id);
       // Add control edge for this node
       fprintf(fp,"  n%d->add_req(_in[0]);\n", cnt);
       // Build the operand for the value this node defines.
       Form *form = (Form*)_globalNames[new_id];
-      assert( form, "'new_id' must be a defined form name");
+      assert(form, "'new_id' must be a defined form name");
       // Grab the InstructForm for the new instruction
       new_inst = form->is_instruction();
-      assert( new_inst, "'new_id' must be an instruction name");
-      if( node->is_ideal_if() && new_inst->is_ideal_if() ) {
-        fprintf(fp, "  ((MachIfNode*)n%d)->_prob = _prob;\n",cnt);
-        fprintf(fp, "  ((MachIfNode*)n%d)->_fcnt = _fcnt;\n",cnt);
+      assert(new_inst, "'new_id' must be an instruction name");
+      if (node->is_ideal_if() && new_inst->is_ideal_if()) {
+        fprintf(fp, "  ((MachIfNode*)n%d)->_prob = _prob;\n", cnt);
+        fprintf(fp, "  ((MachIfNode*)n%d)->_fcnt = _fcnt;\n", cnt);
       }
 
-      if( node->is_ideal_fastlock() && new_inst->is_ideal_fastlock() ) {
-        fprintf(fp, "  ((MachFastLockNode*)n%d)->_counters = _counters;\n",cnt);
-        fprintf(fp, "  ((MachFastLockNode*)n%d)->_rtm_counters = _rtm_counters;\n",cnt);
-        fprintf(fp, "  ((MachFastLockNode*)n%d)->_stack_rtm_counters = _stack_rtm_counters;\n",cnt);
+      if (node->is_ideal_fastlock() && new_inst->is_ideal_fastlock()) {
+        fprintf(fp, "  ((MachFastLockNode*)n%d)->_counters = _counters;\n", cnt);
+        fprintf(fp, "  ((MachFastLockNode*)n%d)->_rtm_counters = _rtm_counters;\n", cnt);
+        fprintf(fp, "  ((MachFastLockNode*)n%d)->_stack_rtm_counters = _stack_rtm_counters;\n", cnt);
       }
 
       // Fill in the bottom_type where requested

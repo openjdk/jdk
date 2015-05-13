@@ -123,50 +123,94 @@ alloc_class chunk0( ECX,   EBX,   EBP,   EDI,   EAX,   EDX,   ESI, ESP,
 // 2) reg_class interpreter_method_oop_reg ( /* as def'd in frame section */ )
 // 3) reg_class stack_slots( /* one chunk of stack-based "registers" */ )
 //
+// Class for no registers (empty set).
+reg_class no_reg();
+
 // Class for all registers
-reg_class any_reg(EAX, EDX, EBP, EDI, ESI, ECX, EBX, ESP);
+reg_class any_reg_with_ebp(EAX, EDX, EBP, EDI, ESI, ECX, EBX, ESP);
+// Class for all registers (excluding EBP)
+reg_class any_reg_no_ebp(EAX, EDX, EDI, ESI, ECX, EBX, ESP);
+// Dynamic register class that selects at runtime between register classes
+// any_reg and any_no_ebp_reg (depending on the value of the flag PreserveFramePointer). 
+// Equivalent to: return PreserveFramePointer ? any_no_ebp_reg : any_reg;
+reg_class_dynamic any_reg(any_reg_no_ebp, any_reg_with_ebp, %{ PreserveFramePointer %});
+
 // Class for general registers
-reg_class int_reg(EAX, EDX, EBP, EDI, ESI, ECX, EBX);
-// Class for general registers which may be used for implicit null checks on win95
-// Also safe for use by tailjump. We don't want to allocate in rbp,
-reg_class int_reg_no_rbp(EAX, EDX, EDI, ESI, ECX, EBX);
+reg_class int_reg_with_ebp(EAX, EDX, EBP, EDI, ESI, ECX, EBX);
+// Class for general registers (excluding EBP).
+// This register class can be used for implicit null checks on win95.
+// It is also safe for use by tailjumps (we don't want to allocate in ebp).
+// Used also if the PreserveFramePointer flag is true.
+reg_class int_reg_no_ebp(EAX, EDX, EDI, ESI, ECX, EBX);
+// Dynamic register class that selects between int_reg and int_reg_no_ebp.
+reg_class_dynamic int_reg(int_reg_no_ebp, int_reg_with_ebp, %{ PreserveFramePointer %});
+
 // Class of "X" registers
 reg_class int_x_reg(EBX, ECX, EDX, EAX);
+
 // Class of registers that can appear in an address with no offset.
 // EBP and ESP require an extra instruction byte for zero offset.
 // Used in fast-unlock
 reg_class p_reg(EDX, EDI, ESI, EBX);
-// Class for general registers not including ECX
-reg_class ncx_reg(EAX, EDX, EBP, EDI, ESI, EBX);
-// Class for general registers not including EAX
+
+// Class for general registers excluding ECX
+reg_class ncx_reg_with_ebp(EAX, EDX, EBP, EDI, ESI, EBX);
+// Class for general registers excluding ECX (and EBP)
+reg_class ncx_reg_no_ebp(EAX, EDX, EDI, ESI, EBX);
+// Dynamic register class that selects between ncx_reg and ncx_reg_no_ebp.
+reg_class_dynamic ncx_reg(ncx_reg_no_ebp, ncx_reg_with_ebp, %{ PreserveFramePointer %});
+
+// Class for general registers excluding EAX
 reg_class nax_reg(EDX, EDI, ESI, ECX, EBX);
-// Class for general registers not including EAX or EBX.
-reg_class nabx_reg(EDX, EDI, ESI, ECX, EBP);
+
+// Class for general registers excluding EAX and EBX.
+reg_class nabx_reg_with_ebp(EDX, EDI, ESI, ECX, EBP);
+// Class for general registers excluding EAX and EBX (and EBP)
+reg_class nabx_reg_no_ebp(EDX, EDI, ESI, ECX);
+// Dynamic register class that selects between nabx_reg and nabx_reg_no_ebp.
+reg_class_dynamic nabx_reg(nabx_reg_no_ebp, nabx_reg_with_ebp, %{ PreserveFramePointer %});
+
 // Class of EAX (for multiply and divide operations)
 reg_class eax_reg(EAX);
+
 // Class of EBX (for atomic add)
 reg_class ebx_reg(EBX);
+
 // Class of ECX (for shift and JCXZ operations and cmpLTMask)
 reg_class ecx_reg(ECX);
+
 // Class of EDX (for multiply and divide operations)
 reg_class edx_reg(EDX);
+
 // Class of EDI (for synchronization)
 reg_class edi_reg(EDI);
+
 // Class of ESI (for synchronization)
 reg_class esi_reg(ESI);
-// Singleton class for interpreter's stack pointer
-reg_class ebp_reg(EBP);
+
 // Singleton class for stack pointer
 reg_class sp_reg(ESP);
+
 // Singleton class for instruction pointer
 // reg_class ip_reg(EIP);
+
 // Class of integer register pairs
-reg_class long_reg( EAX,EDX, ECX,EBX, EBP,EDI );
+reg_class long_reg_with_ebp( EAX,EDX, ECX,EBX, EBP,EDI );
+// Class of integer register pairs (excluding EBP and EDI);
+reg_class long_reg_no_ebp( EAX,EDX, ECX,EBX );
+// Dynamic register class that selects between long_reg and long_reg_no_ebp.
+reg_class_dynamic long_reg(long_reg_no_ebp, long_reg_with_ebp, %{ PreserveFramePointer %});
+
 // Class of integer register pairs that aligns with calling convention
 reg_class eadx_reg( EAX,EDX );
 reg_class ebcx_reg( ECX,EBX );
+
 // Not AX or DX, used in divides
-reg_class nadx_reg( EBX,ECX,ESI,EDI,EBP );
+reg_class nadx_reg_with_ebp(EBX, ECX, ESI, EDI, EBP);
+// Not AX or DX (and neither EBP), used in divides
+reg_class nadx_reg_no_ebp(EBX, ECX, ESI, EDI);
+// Dynamic register class that selects between nadx_reg and nadx_reg_no_ebp.
+reg_class_dynamic nadx_reg(nadx_reg_no_ebp, nadx_reg_with_ebp, %{ PreserveFramePointer %});
 
 // Floating point registers.  Notice FPR0 is not a choice.
 // FPR0 is not ever allocated; we use clever encodings to fake
@@ -240,18 +284,11 @@ static int pre_call_resets_size() {
   return size;
 }
 
-static int preserve_SP_size() {
-  return 2;  // op, rm(reg/reg)
-}
-
 // !!!!! Special hack to get all type of calls to specify the byte offset
 //       from the start of the call to the point where the return address
 //       will point.
 int MachCallStaticJavaNode::ret_addr_offset() {
-  int offset = 5 + pre_call_resets_size();  // 5 bytes from start of call to where return address points
-  if (_method_handle_invoke)
-    offset += preserve_SP_size();
-  return offset;
+  return 5 + pre_call_resets_size();  // 5 bytes from start of call to where return address points  
 }
 
 int MachCallDynamicJavaNode::ret_addr_offset() {
@@ -279,15 +316,6 @@ bool SafePointNode::needs_polling_address_input() {
 // ensure that it does not span a cache line so that it can be patched.
 int CallStaticJavaDirectNode::compute_padding(int current_offset) const {
   current_offset += pre_call_resets_size();  // skip fldcw, if any
-  current_offset += 1;      // skip call opcode byte
-  return round_to(current_offset, alignment_required()) - current_offset;
-}
-
-// The address of the call instruction needs to be 4-byte aligned to
-// ensure that it does not span a cache line so that it can be patched.
-int CallStaticJavaHandleNode::compute_padding(int current_offset) const {
-  current_offset += pre_call_resets_size();  // skip fldcw, if any
-  current_offset += preserve_SP_size();   // skip mov rbp, rsp
   current_offset += 1;      // skip call opcode byte
   return round_to(current_offset, alignment_required()) - current_offset;
 }
@@ -523,6 +551,10 @@ void MachPrologNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
     st->print("# stack bang (%d bytes)", bangsize);
     st->print("\n\t");
     st->print("PUSH   EBP\t# Save EBP");
+    if (PreserveFramePointer) {
+      st->print("\n\t");
+      st->print("MOV    EBP, ESP\t# Save the caller's SP into EBP");
+    }
     if (framesize) {
       st->print("\n\t");
       st->print("SUB    ESP, #%d\t# Create frame",framesize);
@@ -532,6 +564,10 @@ void MachPrologNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
     st->print("\n\t");
     framesize -= wordSize;
     st->print("MOV    [ESP + #%d], EBP\t# Save EBP",framesize);
+    if (PreserveFramePointer) {
+      st->print("\n\t");
+      st->print("MOV    EBP, [ESP + #%d]\t# Save the caller's SP into EBP", (framesize + wordSize));
+    }
   }
 
   if (VerifyStackAtCalls) {
@@ -1489,7 +1525,7 @@ RegMask Matcher::modL_proj_mask() {
 }
 
 const RegMask Matcher::method_handle_invoke_SP_save_mask() {
-  return EBP_REG_mask();
+  return NO_REG_mask();
 }
 
 // Returns true if the high 32 bits of the value is known to be zero.
@@ -3735,7 +3771,7 @@ operand eRegP() %{
 
 // On windows95, EBP is not safe to use for implicit null tests.
 operand eRegP_no_EBP() %{
-  constraint(ALLOC_IN_RC(int_reg_no_rbp));
+  constraint(ALLOC_IN_RC(int_reg_no_ebp));
   match(RegP);
   match(eAXRegP);
   match(eBXRegP);
@@ -3821,13 +3857,6 @@ operand eDIRegP(eRegP reg) %{
   constraint(ALLOC_IN_RC(edi_reg));
   match(reg);
   format %{ "EDI" %}
-  interface(REG_INTER);
-%}
-
-operand eBPRegP() %{
-  constraint(ALLOC_IN_RC(ebp_reg));
-  match(RegP);
-  format %{ "EBP" %}
   interface(REG_INTER);
 %}
 
@@ -12615,7 +12644,6 @@ instruct cmovFF_reg_LEGT(cmpOp_commute cmp, flagsReg_long_LEGT flags, regF dst, 
 //       compute_padding() functions will have to be adjusted.
 instruct CallStaticJavaDirect(method meth) %{
   match(CallStaticJava);
-  predicate(! ((CallStaticJavaNode*)n)->is_method_handle_invoke());
   effect(USE meth);
 
   ins_cost(300);
@@ -12623,29 +12651,6 @@ instruct CallStaticJavaDirect(method meth) %{
   opcode(0xE8); /* E8 cd */
   ins_encode( pre_call_resets,
               Java_Static_Call( meth ),
-              call_epilog,
-              post_call_FPU );
-  ins_pipe( pipe_slow );
-  ins_alignment(4);
-%}
-
-// Call Java Static Instruction (method handle version)
-// Note: If this code changes, the corresponding ret_addr_offset() and
-//       compute_padding() functions will have to be adjusted.
-instruct CallStaticJavaHandle(method meth, eBPRegP ebp_mh_SP_save) %{
-  match(CallStaticJava);
-  predicate(((CallStaticJavaNode*)n)->is_method_handle_invoke());
-  effect(USE meth);
-  // EBP is saved by all callees (for interpreter stack correction).
-  // We use it here for a similar purpose, in {preserve,restore}_SP.
-
-  ins_cost(300);
-  format %{ "CALL,static/MethodHandle " %}
-  opcode(0xE8); /* E8 cd */
-  ins_encode( pre_call_resets,
-              preserve_SP,
-              Java_Static_Call( meth ),
-              restore_SP,
               call_epilog,
               post_call_FPU );
   ins_pipe( pipe_slow );

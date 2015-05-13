@@ -65,12 +65,6 @@ AC_DEFUN_ONCE([FLAGS_SETUP_INIT_FLAGS],
   fi
   AC_SUBST(POST_STRIP_CMD)
 
-  if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-    # FIXME: break out into MCSFLAGS
-    POST_MCS_CMD="$MCS -d -a \"JDK $FULL_VERSION\""
-  fi
-  AC_SUBST(POST_MCS_CMD)
-
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     CC_OUT_OPTION=-Fo
     EXE_OUT_OPTION=-out:

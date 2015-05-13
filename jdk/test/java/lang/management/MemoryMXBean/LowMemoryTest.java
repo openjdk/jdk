@@ -31,6 +31,7 @@
  * @author  Mandy Chung
  *
  * @library /lib/testlibrary/
+ * @modules java.management
  * @build jdk.testlibrary.* LowMemoryTest MemoryUtil RunUtil
   * @run main/timeout=600 LowMemoryTest
  * @requires vm.opt.ExplicitGCInvokesConcurrent != "true"

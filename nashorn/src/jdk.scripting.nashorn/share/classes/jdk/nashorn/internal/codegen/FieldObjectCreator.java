@@ -127,6 +127,8 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator<T> {
             method.invoke(constructorNoLookup(className, PropertyMap.class));
         }
 
+        helpOptimisticRecognizeDuplicateIdentity(method);
+
         // Set values.
         final Iterator<MapTuple<T>> iter = tuples.iterator();
 
@@ -136,6 +138,7 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator<T> {
             //if we didn't load, we need an array property
             if (tuple.symbol != null && tuple.value != null) {
                 final int index = getArrayIndex(tuple.key);
+                method.dup();
                 if (!isValidArrayIndex(index)) {
                     putField(method, tuple.key, tuple.symbol.getFieldIndex(), tuple);
                 } else {
@@ -164,8 +167,6 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator<T> {
      * @param tuple       Tuple to store.
      */
     private void putField(final MethodEmitter method, final String key, final int fieldIndex, final MapTuple<T> tuple) {
-        method.dup();
-
         final Type    fieldType   = codegen.useDualFields() && tuple.isPrimitive() ? PRIMITIVE_FIELD_TYPE : Type.OBJECT;
         final String  fieldClass  = getClassName();
         final String  fieldName   = getFieldName(fieldIndex, fieldType);
@@ -187,7 +188,6 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator<T> {
      * @param tuple  Tuple to store.
      */
     private void putSlot(final MethodEmitter method, final long index, final MapTuple<T> tuple) {
-        method.dup();
         if (JSType.isRepresentableAsInt(index)) {
             method.load((int)index);
         } else {

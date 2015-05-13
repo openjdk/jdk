@@ -27,7 +27,7 @@
 
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepGeneration.hpp"
 #include "gc_implementation/shared/concurrentGCThread.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 
 class ConcurrentMarkSweepGeneration;
 class CMSCollector;

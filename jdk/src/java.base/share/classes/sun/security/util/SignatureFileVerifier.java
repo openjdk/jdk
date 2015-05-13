@@ -159,7 +159,7 @@ public class SignatureFileVerifier {
      * unknown signature related files (those starting with SIG- with
      * an optional [A-Z0-9]{1,3} extension right inside META-INF).
      *
-     * @param s file name
+     * @param name file name
      * @return true if the input file name is signature related
      */
     public static boolean isSigningRelated(String name) {

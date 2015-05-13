@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary confirms that added transformers all really run
  * @author Gabriel Adauto, Wily Technology
  *
+ * @modules java.instrument
  * @run build AddTransformerTest ATransformerManagementTestCase
  * @run shell MakeJAR.sh redefineAgent
  * @run main/othervm -javaagent:redefineAgent.jar AddTransformerTest AddTransformerTest

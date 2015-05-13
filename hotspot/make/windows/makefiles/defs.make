@@ -249,8 +249,8 @@ ifeq ($(BUILD_WIN_SA), 1)
   endif
 endif
 
-EXPORT_SERVER_DIR = $(EXPORT_JRE_BIN_DIR)/server
-EXPORT_CLIENT_DIR = $(EXPORT_JRE_BIN_DIR)/client
+EXPORT_SERVER_DIR = $(EXPORT_BIN_DIR)/server
+EXPORT_CLIENT_DIR = $(EXPORT_BIN_DIR)/client
 
 ifeq ($(JVM_VARIANT_SERVER),true)
   EXPORT_LIST += $(EXPORT_SERVER_DIR)/Xusage.txt
@@ -280,13 +280,13 @@ endif
 EXPORT_LIST += $(EXPORT_LIB_DIR)/jvm.lib
 
 ifeq ($(BUILD_WIN_SA), 1)
-  EXPORT_LIST += $(EXPORT_JRE_BIN_DIR)/sawindbg.$(LIBRARY_SUFFIX)
+  EXPORT_LIST += $(EXPORT_BIN_DIR)/sawindbg.$(LIBRARY_SUFFIX)
   ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
     ifeq ($(ZIP_DEBUGINFO_FILES),1)
-      EXPORT_LIST += $(EXPORT_JRE_BIN_DIR)/sawindbg.diz
+      EXPORT_LIST += $(EXPORT_BIN_DIR)/sawindbg.diz
     else
-      EXPORT_LIST += $(EXPORT_JRE_BIN_DIR)/sawindbg.pdb
-      EXPORT_LIST += $(EXPORT_JRE_BIN_DIR)/sawindbg.map
+      EXPORT_LIST += $(EXPORT_BIN_DIR)/sawindbg.pdb
+      EXPORT_LIST += $(EXPORT_BIN_DIR)/sawindbg.map
     endif
   endif
   EXPORT_LIST += $(EXPORT_LIB_DIR)/sa-jdi.jar

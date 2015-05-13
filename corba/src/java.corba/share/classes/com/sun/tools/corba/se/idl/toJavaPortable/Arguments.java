@@ -260,7 +260,7 @@ public class Arguments extends com.sun.tools.corba.se.idl.Arguments
   } // packageFromProps
 
   /**
-   * d57482 <klr> method added so default emitter check could be overriden.
+   * d57482 (klr) method added so default emitter check could be overriden.
    **/
   protected void setDefaultEmitter () {
       // If the flag -fclient was not found, assume it.

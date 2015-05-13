@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
  * @summary General MXBean test.
  * @author Eamonn McManus
  * @author Jaroslav Bachorik
+ * @modules java.desktop
+ *          java.management
  * @run clean MXBeanTest MerlinMXBean TigerMXBean
  * @run build MXBeanTest MerlinMXBean TigerMXBean
  * @run main MXBeanTest

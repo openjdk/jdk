@@ -249,6 +249,7 @@ class SuperWord : public ResourceObj {
   LoopNode*      _lp;              // Current LoopNode
   Node*          _bb;              // Current basic block
   PhiNode*       _iv;              // Induction var
+  bool           _race_possible;   // In cases where SDMU is true
 
   // Accessors
   Arena* arena()                   { return _arena; }
@@ -337,6 +338,8 @@ class SuperWord : public ResourceObj {
   bool isomorphic(Node* s1, Node* s2);
   // Is there no data path from s1 to s2 or s2 to s1?
   bool independent(Node* s1, Node* s2);
+  // Is there a data path between s1 and s2 and both are reductions?
+  bool reduction(Node* s1, Node* s2);
   // Helper for independent
   bool independent_path(Node* shallow, Node* deep, uint dp=0);
   void set_alignment(Node* s1, Node* s2, int align);
@@ -347,6 +350,8 @@ class SuperWord : public ResourceObj {
   bool follow_use_defs(Node_List* p);
   // Extend the packset by visiting uses of nodes in pack p
   bool follow_def_uses(Node_List* p);
+  // For extended packsets, ordinally arrange uses packset by major component
+  void order_def_uses(Node_List* p);
   // Estimate the savings from executing s1 and s2 as a pack
   int est_savings(Node* s1, Node* s2);
   int adjacent_profit(Node* s1, Node* s2);
@@ -419,7 +424,10 @@ class SuperWord : public ResourceObj {
   void print_bb();
   void print_stmt(Node* s);
   char* blank(uint depth);
+
+  void packset_sort(int n);
 };
+
 
 
 //------------------------------SWPointer---------------------------

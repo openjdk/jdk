@@ -33,14 +33,15 @@
  * @run main/othervm -XX:G1HeapRegionSize=64m -Xmx256m TestG1HeapRegionSize 33554432
  */
 
-import sun.management.ManagementFactoryHelper;
 import com.sun.management.HotSpotDiagnosticMXBean;
 import com.sun.management.VMOption;
+import java.lang.management.ManagementFactory;
 
 public class TestG1HeapRegionSize {
 
   public static void main(String[] args) {
-    HotSpotDiagnosticMXBean diagnostic = ManagementFactoryHelper.getDiagnosticMXBean();
+    HotSpotDiagnosticMXBean diagnostic =
+        ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
 
     String expectedValue = getExpectedValue(args);
     VMOption option = diagnostic.getVMOption("UseG1GC");

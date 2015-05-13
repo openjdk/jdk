@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -799,6 +799,18 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         writeObjectID(klass.getJavaMirror());
 
         ClassData cd = (ClassData) classDataCache.get(klass);
+        if (cd == null) {
+            // The class is not present in the system dictionary, probably Lambda.
+            // Add it to cache here
+            if (klass instanceof InstanceKlass) {
+                InstanceKlass ik = (InstanceKlass) klass;
+                List fields = getInstanceFields(ik);
+                int instSize = getSizeForFields(fields);
+                cd = new ClassData(instSize, fields);
+                classDataCache.put(ik, cd);
+            }
+        }
+
         if (Assert.ASSERTS_ENABLED) {
             Assert.that(cd != null, "can not get class data for " + klass.getName().asString() + klass.getAddress());
         }

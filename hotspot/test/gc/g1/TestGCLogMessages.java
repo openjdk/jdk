@@ -66,7 +66,6 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("SystemDictionary Roots", Level.FINEST),
         new LogMessageWithLevel("CLDG Roots", Level.FINEST),
         new LogMessageWithLevel("JVMTI Roots", Level.FINEST),
-        new LogMessageWithLevel("CodeCache Roots", Level.FINEST),
         new LogMessageWithLevel("SATB Filtering", Level.FINEST),
         new LogMessageWithLevel("CM RefProcessor Roots", Level.FINEST),
         new LogMessageWithLevel("Wait For Strong CLD", Level.FINEST),

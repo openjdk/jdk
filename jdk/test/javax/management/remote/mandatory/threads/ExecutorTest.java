@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 6190873
  * @summary Tests that thread creation can use a user-supplied Executor
  * @author Eamonn McManus
+ * @modules java.management
  * @run clean ExecutorTest
  * @run build ExecutorTest
  * @run main ExecutorTest
