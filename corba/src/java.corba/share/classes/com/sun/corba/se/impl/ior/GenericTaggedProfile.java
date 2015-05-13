@@ -39,9 +39,6 @@ import com.sun.corba.se.spi.ior.iiop.GIOPVersion ;
 
 import com.sun.corba.se.impl.encoding.EncapsOutputStream ;
 
-/**
- * @author
- */
 public class GenericTaggedProfile extends GenericIdentifiable implements TaggedProfile
 {
     private ORB orb ;

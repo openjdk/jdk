@@ -39,7 +39,6 @@ class EncodeNarrowPtrNode : public TypeNode {
   }
   public:
   virtual uint  ideal_reg() const { return Op_RegN; }
-  virtual Node *Ideal_DU_postCCP( PhaseCCP *ccp );
 };
 
 //------------------------------EncodeP--------------------------------

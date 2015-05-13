@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Tests the use of the "jmx.remote.x.password.file" and
  *          "jmx.remote.x.access.file" environment map properties.
  * @author Luis-Miguel Alventosa
+ * @modules java.management
  * @run clean PasswordAccessFileTest SimpleStandard SimpleStandardMBean
  * @run build PasswordAccessFileTest SimpleStandard SimpleStandardMBean
  * @run main PasswordAccessFileTest

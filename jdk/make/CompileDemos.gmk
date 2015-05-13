@@ -396,7 +396,7 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
   $(eval $(call SetupNativeCompilation,BUILD_LIBPOLLER, \
       SRC := $(DEMO_SOLARIS_SRC)/jni/Poller, \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKLIB) $(SHARED_LIBRARY_FLAGS) \
+      CFLAGS := $(CFLAGS_JDKLIB) \
           -I$(SUPPORT_OUTPUTDIR)/demo/classes/jni/Poller, \
       LDFLAGS := $(LDFLAGS_JDKLIB), \
       LDFLAGS_SUFFIX_solaris := -lc, \

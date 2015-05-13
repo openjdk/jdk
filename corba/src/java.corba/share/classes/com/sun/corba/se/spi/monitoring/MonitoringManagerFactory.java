@@ -25,14 +25,10 @@
 package com.sun.corba.se.spi.monitoring;
 
 /**
- * <p>
- *
  * @author Hemanth Puttaswamy
- * </p>
- * <p>
+ *
  * MonitoringObjectFactory is used internally by the ORB, It is not for
  * general public use.
- * </p>
  */
 public interface MonitoringManagerFactory {
     /**

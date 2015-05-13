@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 4984057
  * @summary Test that monitors can sample a large number of attributes
  * @author Eamonn McManus
+ * @modules java.management
  * @run clean MultiMonitorTest
  * @run build MultiMonitorTest
  * @run main MultiMonitorTest

@@ -1206,7 +1206,7 @@ ZIP_GetEntry2(jzfile *zip, char *name, jint ulen, jboolean addSlash)
         }
 
         /* Slash is already there? */
-        if (name[ulen-1] == '/') {
+        if (ulen > 0 && name[ulen - 1] == '/') {
             break;
         }
 

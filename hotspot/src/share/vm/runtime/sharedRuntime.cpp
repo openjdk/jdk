@@ -1179,7 +1179,7 @@ methodHandle SharedRuntime::resolve_sub_helper(JavaThread *thread,
 #endif
 
   // JSR 292 key invariant:
-  // If the resolved method is a MethodHandle invoke target the call
+  // If the resolved method is a MethodHandle invoke target, the call
   // site must be a MethodHandle call site, because the lambda form might tail-call
   // leaving the stack in a state unknown to either caller or callee
   // TODO detune for now but we might need it again
@@ -1793,7 +1793,9 @@ JRT_END
 
 // Handles the uncommon case in locking, i.e., contention or an inflated lock.
 JRT_BLOCK_ENTRY(void, SharedRuntime::complete_monitor_locking_C(oopDesc* _obj, BasicLock* lock, JavaThread* thread))
-  if (!SafepointSynchronize::is_synchronizing()) {
+  // Disable ObjectSynchronizer::quick_enter() in default config
+  // until JDK-8077392 is resolved.
+  if ((SyncFlags & 256) != 0 && !SafepointSynchronize::is_synchronizing()) {
     // Only try quick_enter() if we're not trying to reach a safepoint
     // so that the calling thread reaches the safepoint more quickly.
     if (ObjectSynchronizer::quick_enter(_obj, thread, lock)) return;
@@ -1819,9 +1821,9 @@ JRT_BLOCK_ENTRY(void, SharedRuntime::complete_monitor_locking_C(oopDesc* _obj, B
 JRT_END
 
 // Handles the uncommon cases of monitor unlocking in compiled code
-JRT_LEAF(void, SharedRuntime::complete_monitor_unlocking_C(oopDesc* _obj, BasicLock* lock))
+JRT_LEAF(void, SharedRuntime::complete_monitor_unlocking_C(oopDesc* _obj, BasicLock* lock, JavaThread * THREAD))
    oop obj(_obj);
-  Thread* THREAD = JavaThread::current();
+  assert(JavaThread::current() == THREAD, "invariant");
   // I'm not convinced we need the code contained by MIGHT_HAVE_PENDING anymore
   // testing was unable to ever fire the assert that guarded it so I have removed it.
   assert(!HAS_PENDING_EXCEPTION, "Do we need code below anymore?");

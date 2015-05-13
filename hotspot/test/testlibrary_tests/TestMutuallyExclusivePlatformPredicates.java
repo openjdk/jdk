@@ -48,7 +48,7 @@ public class TestMutuallyExclusivePlatformPredicates {
         ARCH("isARM", "isPPC", "isSparc", "isX86", "isX64"),
         BITNESS("is32bit", "is64bit"),
         OS("isAix", "isLinux", "isOSX", "isSolaris", "isWindows"),
-        VM_TYPE("isClient", "isServer", "isGraal", "isMinimal"),
+        VM_TYPE("isClient", "isServer", "isGraal", "isMinimal", "isZero"),
         IGNORED("isEmbedded", "isDebugBuild", "shouldSAAttach",
                 "canPtraceAttachLinux", "canAttachOSX", "isTieredSupported");
 

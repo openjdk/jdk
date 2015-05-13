@@ -87,8 +87,7 @@ protected:
 
 public:
   PSKeepAliveClosure(PSPromotionManager* pm) : _promotion_manager(pm) {
-    ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-    assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
+    ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
     _to_space = heap->young_gen()->to_space();
 
     assert(_promotion_manager != NULL, "Sanity");
@@ -218,11 +217,9 @@ void PSRefProcTaskExecutor::execute(EnqueueTask& task)
 bool PSScavenge::invoke() {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   assert(Thread::current() == (Thread*)VMThread::vm_thread(), "should be in vm thread");
-  assert(!Universe::heap()->is_gc_active(), "not reentrant");
+  assert(!ParallelScavengeHeap::heap()->is_gc_active(), "not reentrant");
 
-  ParallelScavengeHeap* const heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
-
+  ParallelScavengeHeap* const heap = ParallelScavengeHeap::heap();
   PSAdaptiveSizePolicy* policy = heap->size_policy();
   IsGCActiveMark mark;
 
@@ -273,9 +270,8 @@ bool PSScavenge::invoke_no_policy() {
     return false;
   }
 
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   GCCause::Cause gc_cause = heap->gc_cause();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
 
   // Check for potential problems.
   if (!should_attempt_scavenge()) {
@@ -713,9 +709,7 @@ bool PSScavenge::invoke_no_policy() {
 // unforwarding markOops. It then restores any preserved mark oops,
 // and clears the _preserved_mark_stack.
 void PSScavenge::clean_up_failed_promotion() {
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
-
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSYoungGen* young_gen = heap->young_gen();
 
   {
@@ -742,7 +736,7 @@ void PSScavenge::clean_up_failed_promotion() {
   }
 
   // Reset the PromotionFailureALot counters.
-  NOT_PRODUCT(Universe::heap()->reset_promotion_should_fail();)
+  NOT_PRODUCT(heap->reset_promotion_should_fail();)
 }
 
 // This method is called whenever an attempt to promote an object
@@ -761,8 +755,7 @@ void PSScavenge::oop_promotion_failed(oop obj, markOop obj_mark) {
 }
 
 bool PSScavenge::should_attempt_scavenge() {
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSGCAdaptivePolicyCounters* counters = heap->gc_policy_counters();
 
   if (UsePerfData) {
@@ -838,9 +831,7 @@ void PSScavenge::initialize() {
                                                     MaxTenuringThreshold;
   }
 
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
-
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSYoungGen* young_gen = heap->young_gen();
   PSOldGen* old_gen = heap->old_gen();
 

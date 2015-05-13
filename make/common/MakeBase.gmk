@@ -45,6 +45,11 @@ endif
 # Functions
 ##############################
 
+### Debug functions
+
+# Prints the name and value of a variable
+PrintVar = \
+    $(info $(strip $1) >$($(strip $1))<)
 
 ### Functions for timers
 
@@ -557,6 +562,13 @@ dups = \
 equals = \
     $(and $(findstring $(strip $1),$(strip $2)),\
         $(findstring $(strip $2),$(strip $1)))
+
+# Remove a whole list of prefixes
+# $1 - List of prefixes
+# $2 - List of elements to process
+remove-prefixes = \
+    $(strip $(if $1,$(patsubst $(firstword $1)%,%,\
+      $(call remove-prefixes,$(filter-out $(firstword $1),$1),$2)),$2))
 
 ################################################################################
 

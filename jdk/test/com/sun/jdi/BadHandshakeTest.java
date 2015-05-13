@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,8 @@ import jdk.testlibrary.ProcessTools;
  * @summary Check that a bad handshake doesn't cause a debuggee to abort
  * @library /lib/testlibrary
  *
+ * @modules java.management
+ *          jdk.jdi
  * @build jdk.testlibrary.* VMConnection BadHandshakeTest Exit0
  * @run driver BadHandshakeTest
  */

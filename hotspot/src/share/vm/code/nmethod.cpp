@@ -504,7 +504,7 @@ nmethod* nmethod::new_native_nmethod(methodHandle method,
                                             basic_lock_owner_sp_offset,
                                             basic_lock_sp_offset, oop_maps);
     NOT_PRODUCT(if (nm != NULL)  nmethod_stats.note_native_nmethod(nm));
-    if (PrintAssembly && nm != NULL) {
+    if ((PrintAssembly || CompilerOracle::should_print(method)) && nm != NULL) {
       Disassembler::decode(nm);
     }
   }
@@ -2325,6 +2325,7 @@ void nmethod::check_all_dependencies(DepChange& changes) {
             // Dependency checking failed. Print out information about the failed
             // dependency and finally fail with an assert. We can fail here, since
             // dependency checking is never done in a product build.
+            tty->print_cr("Failed dependency:");
             changes.print();
             nm->print();
             nm->print_dependencies();
@@ -2837,11 +2838,21 @@ const char* nmethod::reloc_string_for(u_char* begin, u_char* end) {
           st.print(")");
           return st.as_string();
         }
+        case relocInfo::runtime_call_type: {
+          stringStream st;
+          st.print("runtime_call");
+          runtime_call_Relocation* r = iter.runtime_call_reloc();
+          address dest = r->destination();
+          CodeBlob* cb = CodeCache::find_blob(dest);
+          if (cb != NULL) {
+            st.print(" %s", cb->name());
+          }
+          return st.as_string();
+        }
         case relocInfo::virtual_call_type:     return "virtual_call";
         case relocInfo::opt_virtual_call_type: return "optimized virtual_call";
         case relocInfo::static_call_type:      return "static_call";
         case relocInfo::static_stub_type:      return "static_stub";
-        case relocInfo::runtime_call_type:     return "runtime_call";
         case relocInfo::external_word_type:    return "external_word";
         case relocInfo::internal_word_type:    return "internal_word";
         case relocInfo::section_word_type:     return "section_word";

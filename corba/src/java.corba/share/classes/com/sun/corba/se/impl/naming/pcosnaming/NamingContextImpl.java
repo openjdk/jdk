@@ -116,8 +116,8 @@ public class NamingContextImpl
      * Runs the super constructor.
      * @param orb an ORB object.
      * @param objKey as String
-     * @param TheNameService as NameService
-     * @param TheServantManagerImpl as ServantManagerImpl
+     * @param theNameService as NameService
+     * @param theServantManagerImpl as ServantManagerImpl
      * @exception java.lang.Exception a Java exception.
      */
 
@@ -223,7 +223,7 @@ public class NamingContextImpl
    * exists. The NamingContext will participate in recursive resolving.
    * @param n a sequence of NameComponents which is the name under which
    * the object will be bound.
-   * @param obj the NamingContect object reference to be bound.
+   * @param nc the NamingContect object reference to be bound.
    * @exception org.omg.CosNaming.NamingContextPackage.NotFound A name with multiple
    * components was supplied, but the first component could not be
    * resolved.
@@ -301,7 +301,7 @@ public class NamingContextImpl
    * unbound first. The NamingContext will participate in recursive resolving.
    * @param n a sequence of NameComponents which is the name under which
    * the object will be bound.
-   * @param obj the object reference to be bound.
+   * @param nc the object reference to be bound.
    * @exception org.omg.CosNaming.NamingContextPackage.NotFound A name with multiple
    * components was supplied, but the first component could not be
    * resolved.
@@ -907,7 +907,7 @@ public class NamingContextImpl
     * The doResolve( ) method calls Resolve( ) recursively to resolve n level
     * Names.
     * @param n a sequence of NameComponents which is the name to be resolved.
-    * @param bt Type of binding (as object or as context).
+    * @param bth Type of binding (as object or as context).
     * @return the object reference bound under the supplied name.
     * @exception org.omg.CosNaming.NamingContextPackage.NotFound Neither a NamingContext
     * or a Corba Object reference not found under this Name
@@ -1140,10 +1140,9 @@ public class NamingContextImpl
     /**
     * This operation creates a stringified name from the array of Name
     * components.
-    * @param n Name of the object <p>
+    * @param n Name of the object
     * @exception org.omg.CosNaming.NamingContextExtPackage.InvalidName
-    * Indicates the name does not identify a binding.<p>
-    *
+    * Indicates the name does not identify a binding.
     */
     public String to_string(org.omg.CosNaming.NameComponent[] n)
          throws org.omg.CosNaming.NamingContextPackage.InvalidName
@@ -1167,10 +1166,9 @@ public class NamingContextImpl
     /**
     * This operation  converts a Stringified Name into an  equivalent array
     * of Name Components.
-    * @param sn Stringified Name of the object <p>
+    * @param sn Stringified Name of the object
     * @exception org.omg.CosNaming.NamingContextExtPackage.InvalidName
-    * Indicates the name does not identify a binding.<p>
-    *
+    * Indicates the name does not identify a binding.
     */
     public org.omg.CosNaming.NameComponent[] to_name(String sn)
          throws org.omg.CosNaming.NamingContextPackage.InvalidName
@@ -1204,14 +1202,13 @@ public class NamingContextImpl
     * This operation creates a URL based "iiopname://" format name
     * from the Stringified Name of the object.
     * @param addr internet based address of the host machine where
-    * Name Service is running <p>
-    * @param sn Stringified Name of the object <p>
+    *        Name Service is running
+    * @param sn Stringified Name of the object
     * @exception org.omg.CosNaming.NamingContextExtPackage.InvalidName
-    * Indicates the name does not identify a binding.<p>
+    * Indicates the name does not identify a binding.
     * @exception org.omg.CosNaming.NamingContextPackage.InvalidAddress
     * Indicates the internet based address of the host machine is
-    * incorrect <p>
-    *
+    * incorrect
     */
 
     public String to_url(String addr, String sn)
@@ -1247,14 +1244,13 @@ public class NamingContextImpl
     /**
      * This operation resolves the Stringified name into the object
      * reference.
-     * @param sn Stringified Name of the object <p>
+     * @param sn Stringified Name of the object
      * @exception org.omg.CosNaming.NamingContextPackage.NotFound
-     * Indicates there is no object reference for the given name. <p>
+     * Indicates there is no object reference for the given name.
      * @exception org.omg.CosNaming.NamingContextPackage.CannotProceed
-     * Indicates that the given compound name is incorrect <p>
+     * Indicates that the given compound name is incorrect
      * @exception org.omg.CosNaming.NamingContextExtPackage.InvalidName
-     * Indicates the name does not identify a binding.<p>
-     *
+     * Indicates the name does not identify a binding.
      */
     public org.omg.CORBA.Object resolve_str(String sn)
         throws org.omg.CosNaming.NamingContextPackage.NotFound,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Test that an MBeanInfo works even if it is deserialized from
  * an implementation where its array fields can be null.
  * @author Eamonn McManus
+ * @modules java.management
  * @run clean NullInfoArraysTest
  * @run build NullInfoArraysTest
  * @run main NullInfoArraysTest

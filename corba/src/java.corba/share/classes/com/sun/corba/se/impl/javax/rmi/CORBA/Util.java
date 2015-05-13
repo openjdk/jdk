@@ -593,7 +593,7 @@ public class Util implements javax.rmi.CORBA.UtilDelegate
      * @param className the name of the class.
      * @param remoteCodebase a space-separated list of URLs at which
      * the class might be found. May be null.
-     * @param loadingContext a class whose ClassLoader may be used to
+     * @param loader a class whose ClassLoader may be used to
      * load the class if all other methods fail.
      * @return the <code>Class</code> object representing the loaded class.
      * @exception ClassNotFoundException if class cannot be loaded.

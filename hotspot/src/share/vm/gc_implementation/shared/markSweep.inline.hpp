@@ -28,11 +28,15 @@
 #include "gc_implementation/shared/markSweep.hpp"
 #include "gc_interface/collectedHeap.hpp"
 #include "oops/markOop.inline.hpp"
+#include "oops/instanceKlass.inline.hpp"
+#include "oops/instanceClassLoaderKlass.inline.hpp"
+#include "oops/instanceMirrorKlass.inline.hpp"
+#include "oops/instanceRefKlass.inline.hpp"
+#include "oops/objArrayKlass.inline.hpp"
 #include "utilities/stack.inline.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/g1/g1StringDedup.hpp"
-#include "gc_implementation/parallelScavenge/psParallelCompact.hpp"
 #endif // INCLUDE_ALL_GCS
 
 inline void MarkSweep::mark_object(oop obj) {
@@ -59,7 +63,9 @@ inline void MarkSweep::follow_klass(Klass* klass) {
 }
 
 inline void MarkSweep::follow_object(oop obj) {
-  obj->follow_contents();
+  assert(obj->is_gc_marked(), "should be marked");
+
+  obj->ms_follow_contents();
 }
 
 template <class T> inline void MarkSweep::follow_root(T* p) {
@@ -95,13 +101,15 @@ void MarkSweep::push_objarray(oop obj, size_t index) {
 }
 
 inline int MarkSweep::adjust_pointers(oop obj) {
-  return obj->adjust_pointers();
+  return obj->ms_adjust_pointers();
 }
 
 template <class T> inline void MarkSweep::adjust_pointer(T* p) {
   T heap_oop = oopDesc::load_heap_oop(p);
   if (!oopDesc::is_null(heap_oop)) {
     oop obj     = oopDesc::decode_heap_oop_not_null(heap_oop);
+    assert(Universe::heap()->is_in(obj), "should be in heap");
+
     oop new_obj = oop(obj->mark()->decode_pointer());
     assert(new_obj != NULL ||                         // is forwarding ptr?
            obj->mark() == markOopDesc::prototype() || // not gc marked?

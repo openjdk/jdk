@@ -394,6 +394,7 @@ hotspot_compiler_closed = \
 hotspot_gc = \
   sanity/ExecuteInternalVMTests.java \
   gc/ \
+  -gc/g1/TestGreyReclaimedHumongousObjects.java \
   -gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java
 
 hotspot_gc_closed = \
@@ -416,9 +417,7 @@ hotspot_runtime = \
  -runtime/SharedArchiveFile/CdsSameObjectAlignment.java \
  -runtime/SharedArchiveFile/DefaultUseWithClient.java \
  -runtime/Thread/CancellableThreadTest.java \
- -runtime/7158988/FieldMonitor.java
-
-hotspot_runtime_closed = \
+ -runtime/7158988/FieldMonitor.java \
   sanity/ExecuteInternalVMTests.java \
   testlibrary_tests/TestMutuallyExclusivePlatformPredicates.java
 

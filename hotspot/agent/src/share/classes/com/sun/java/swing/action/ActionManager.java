@@ -46,6 +46,11 @@ public abstract class ActionManager
         return manager;
     }
 
+    protected static void setInstance(ActionManager m)
+    {
+        manager = m;
+    }
+
     protected abstract void addActions();
 
     protected void addAction(String cmdname, Action action)
@@ -90,6 +95,6 @@ public abstract class ActionManager
 
     private HashMap actions;
     private static ActionUtilities utilities = new ActionUtilities();
-    protected static ActionManager manager;
+    private static ActionManager manager;
 
 }

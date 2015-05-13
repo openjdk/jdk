@@ -88,9 +88,9 @@ implements CertAttrSet<String> {
      *
      * @param maps the List of CertificatePolicyMap.
      */
-    public PolicyMappingsExtension(List<CertificatePolicyMap> map)
+    public PolicyMappingsExtension(List<CertificatePolicyMap> maps)
             throws IOException {
-        this.maps = map;
+        this.maps = maps;
         this.extensionId = PKIXExtensions.PolicyMappings_Id;
         this.critical = true;
         encodeThis();
@@ -108,8 +108,8 @@ implements CertAttrSet<String> {
     /**
      * Create the extension from the passed DER encoded value.
      *
-     * @params critical true if the extension is to be treated as critical.
-     * @params value an array of DER encoded bytes of the actual value.
+     * @param critical true if the extension is to be treated as critical.
+     * @param value an array of DER encoded bytes of the actual value.
      * @exception ClassCastException if value is not an array of bytes
      * @exception IOException on error.
      */

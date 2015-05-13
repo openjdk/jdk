@@ -144,6 +144,7 @@ long     NMethodSweeper::_last_sweep                   = 0;    // Value of _time
 int      NMethodSweeper::_seen                         = 0;    // Nof. nmethod we have currently processed in current pass of CodeCache
 
 volatile bool NMethodSweeper::_should_sweep            = true; // Indicates if we should invoke the sweeper
+volatile bool NMethodSweeper::_force_sweep             = false;// Indicates if we should force a sweep
 volatile int  NMethodSweeper::_bytes_changed           = 0;    // Counts the total nmethod size if the nmethod changed from:
                                                                //   1) alive       -> not_entrant
                                                                //   2) not_entrant -> zombie
@@ -276,6 +277,23 @@ void NMethodSweeper::notify(int code_blob_type) {
 }
 
 /**
+  * Wakes up the sweeper thread and forces a sweep. Blocks until it finished.
+  */
+void NMethodSweeper::force_sweep() {
+  ThreadBlockInVM tbivm(JavaThread::current());
+  MutexLockerEx waiter(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+  // Request forced sweep
+  _force_sweep = true;
+  while (_force_sweep) {
+    // Notify sweeper that we want to force a sweep and wait for completion.
+    // In case a sweep currently takes place we timeout and try again because
+    // we want to enforce a full sweep.
+    CodeCache_lock->notify();
+    CodeCache_lock->wait(Mutex::_no_safepoint_check_flag, 1000);
+  }
+}
+
+/**
  * Handle a safepoint request
  */
 void NMethodSweeper::handle_safepoint_request() {
@@ -335,6 +353,9 @@ void NMethodSweeper::possibly_sweep() {
     }
   }
 
+  // Remember if this was a forced sweep
+  bool forced = _force_sweep;
+
   // Force stack scanning if there is only 10% free space in the code cache.
   // We force stack scanning only non-profiled code heap gets full, since critical
   // allocation go to the non-profiled heap and we must be make sure that there is
@@ -344,7 +365,7 @@ void NMethodSweeper::possibly_sweep() {
     do_stack_scanning();
   }
 
-  if (_should_sweep) {
+  if (_should_sweep || forced) {
     init_sweeper_log();
     sweep_code_cache();
   }
@@ -356,11 +377,19 @@ void NMethodSweeper::possibly_sweep() {
   _should_sweep = false;
   // If there was enough state change, 'possibly_enable_sweeper()'
   // sets '_should_sweep' to true
-   possibly_enable_sweeper();
+  possibly_enable_sweeper();
   // Reset _bytes_changed only if there was enough state change. _bytes_changed
   // can further increase by calls to 'report_state_change'.
   if (_should_sweep) {
     _bytes_changed = 0;
+  }
+
+  if (forced) {
+    // Notify requester that forced sweep finished
+    assert(_force_sweep, "Should be a forced sweep");
+    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    _force_sweep = false;
+    CodeCache_lock->notify();
   }
 }
 

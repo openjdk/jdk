@@ -85,7 +85,7 @@ public class TransientNameService
      * NamingContext, whose object
      * reference can be obtained by the initialNamingContext method.
      * @param orb The ORB object
-     * @param nameserviceName Stringified key used for INS Service registry
+     * @param serviceName Stringified key used for INS Service registry
      * @exception org.omg.CORBA.INITIALIZE Thrown if
      * the TransientNameService cannot initialize.
      */

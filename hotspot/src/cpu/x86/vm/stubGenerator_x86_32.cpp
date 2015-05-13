@@ -835,7 +835,8 @@ class StubGenerator: public StubCodeGenerator {
 
     if (UseUnalignedLoadStores && (UseAVX >= 2)) {
       // clean upper bits of YMM registers
-      __ vzeroupper();
+      __ vpxor(xmm0, xmm0);
+      __ vpxor(xmm1, xmm1);
     }
     __ addl(qword_count, 8);
     __ jccb(Assembler::zero, L_exit);
