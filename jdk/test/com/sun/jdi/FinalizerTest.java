@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  *  @summary Test debugger operations in finalize() methods
  *  @author Gordon Hirsch  (modified for HotSpot by tbell & rfield)
  *
+ *  @modules jdk.jdi
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g FinalizerTest.java
  *

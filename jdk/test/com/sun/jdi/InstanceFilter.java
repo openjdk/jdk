@@ -29,6 +29,7 @@
  *
  *  @author Robert Field/Jim Holmlund
  *
+ *  @modules jdk.jdi
  *  @run build TestScaffold VMConnection TargetAdapter TargetListener
  *  @run compile -g InstanceFilter.java
  *  @run driver InstanceFilter

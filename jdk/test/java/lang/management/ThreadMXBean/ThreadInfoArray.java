@@ -30,6 +30,7 @@
  * @author  Mandy Chung
  * @author  Jaroslav Bachorik
  *
+ * @modules java.management
  * @build ThreadInfoArray
  * @run main ThreadInfoArray
  */

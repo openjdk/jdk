@@ -32,8 +32,9 @@
 #include "gc_implementation/parallelScavenge/psYoungGen.hpp"
 #include "gc_implementation/shared/gcPolicyCounters.hpp"
 #include "gc_implementation/shared/gcWhen.hpp"
-#include "gc_interface/collectedHeap.inline.hpp"
+#include "gc_interface/collectedHeap.hpp"
 #include "memory/collectorPolicy.hpp"
+#include "memory/strongRootsScope.hpp"
 #include "utilities/ostream.hpp"
 
 class AdjoiningGenerations;
@@ -51,8 +52,6 @@ class ParallelScavengeHeap : public CollectedHeap {
   // Sizing policy for entire heap
   static PSAdaptiveSizePolicy*       _size_policy;
   static PSGCAdaptivePolicyCounters* _gc_policy_counters;
-
-  static ParallelScavengeHeap* _psh;
 
   GenerationSizer* _collector_policy;
 
@@ -75,7 +74,8 @@ class ParallelScavengeHeap : public CollectedHeap {
   HeapWord* mem_allocate_old_gen(size_t size);
 
  public:
-  ParallelScavengeHeap() : CollectedHeap(), _death_march_count(0) { }
+  ParallelScavengeHeap(GenerationSizer* policy) :
+    CollectedHeap(), _collector_policy(policy), _death_march_count(0) { }
 
   // For use by VM operations
   enum CollectionType {
@@ -130,9 +130,6 @@ class ParallelScavengeHeap : public CollectedHeap {
   // generational collectors that means during a collection of
   // the young gen.
   virtual bool is_scavengable(const void* addr);
-
-  // Does this heap support heap inspection? (+PrintClassHistogram)
-  bool supports_heap_inspection() const { return true; }
 
   size_t max_capacity() const;
 
@@ -201,7 +198,6 @@ class ParallelScavengeHeap : public CollectedHeap {
   // initializing stores to an object at this address.
   virtual bool can_elide_initializing_store_barrier(oop new_obj);
 
-  void oop_iterate(ExtendedOopClosure* cl);
   void object_iterate(ObjectClosure* cl);
   void safe_object_iterate(ObjectClosure* cl) { object_iterate(cl); }
 
@@ -238,7 +234,7 @@ class ParallelScavengeHeap : public CollectedHeap {
   void gen_mangle_unused_area() PRODUCT_RETURN;
 
   // Call these in sequential code around the processing of strong roots.
-  class ParStrongRootsScope : public MarkingCodeBlobClosure::MarkScope {
+  class ParStrongRootsScope : public MarkScope {
    public:
     ParStrongRootsScope();
     ~ParStrongRootsScope();

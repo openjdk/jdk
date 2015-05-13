@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -814,9 +814,9 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
   }
 #endif // INCLUDE_ALL_GCS
 
-  // If G1 is not enabled then attempt to go through the accessor entry point
-  // Reference.get is an accessor
-  return generate_accessor_entry();
+  // If G1 is not enabled then attempt to go through the normal entry point
+  // Reference.get could be instrumented by jvmti
+  return generate_normal_entry(false);
 }
 
 address InterpreterGenerator::generate_native_entry(bool synchronized) {

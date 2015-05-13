@@ -29,6 +29,7 @@ import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_
 
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Immutable;
+import jdk.nashorn.internal.parser.TokenType;
 
 /**
  * IR base for accessing/indexing nodes.
@@ -119,6 +120,14 @@ public abstract class BaseNode extends Expression implements FunctionCall, Optim
     @Override
     public boolean canBeOptimistic() {
         return true;
+    }
+
+    /**
+     * Return true if this node represents an index operation normally represented as {@link IndexNode}.
+     * @return true if an index access.
+     */
+    public boolean isIndex() {
+        return isTokenType(TokenType.LBRACKET);
     }
 
     /**

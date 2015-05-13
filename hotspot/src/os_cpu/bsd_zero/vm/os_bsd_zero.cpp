@@ -59,6 +59,10 @@
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
 
+// See stubGenerator_zero.cpp
+#include <setjmp.h>
+extern sigjmp_buf* get_jmp_buf_for_continuation();
+
 address os::current_stack_pointer() {
   address dummy = (address) &dummy;
   return dummy;
@@ -133,6 +137,14 @@ JVM_handle_bsd_signal(int sig,
   Thread* t = ThreadLocalStorage::get_thread_slow();
 
   SignalHandlerMark shm(t);
+
+  // handle SafeFetch faults
+  if (sig == SIGSEGV || sig == SIGBUS) {
+    sigjmp_buf* const pjb = get_jmp_buf_for_continuation();
+    if (pjb) {
+      siglongjmp(*pjb, 1);
+    }
+  }
 
   // Note: it's not uncommon that JNI code uses signal/sigset to
   // install then restore certain signal handler (e.g. to temporarily

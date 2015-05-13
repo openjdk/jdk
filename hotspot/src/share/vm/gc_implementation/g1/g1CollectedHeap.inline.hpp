@@ -352,20 +352,30 @@ inline bool G1CollectedHeap::is_obj_ill(const oop obj) const {
   return is_obj_ill(obj, heap_region_containing(obj));
 }
 
+inline void G1CollectedHeap::set_humongous_reclaim_candidate(uint region, bool value) {
+  assert(_hrm.at(region)->is_starts_humongous(), "Must start a humongous object");
+  _humongous_reclaim_candidates.set_candidate(region, value);
+}
+
+inline bool G1CollectedHeap::is_humongous_reclaim_candidate(uint region) {
+  assert(_hrm.at(region)->is_starts_humongous(), "Must start a humongous object");
+  return _humongous_reclaim_candidates.is_candidate(region);
+}
+
 inline void G1CollectedHeap::set_humongous_is_live(oop obj) {
   uint region = addr_to_region((HeapWord*)obj);
-  // We not only set the "live" flag in the humongous_is_live table, but also
+  // Clear the flag in the humongous_reclaim_candidates table.  Also
   // reset the entry in the _in_cset_fast_test table so that subsequent references
   // to the same humongous object do not go into the slow path again.
   // This is racy, as multiple threads may at the same time enter here, but this
   // is benign.
-  // During collection we only ever set the "live" flag, and only ever clear the
+  // During collection we only ever clear the "candidate" flag, and only ever clear the
   // entry in the in_cset_fast_table.
   // We only ever evaluate the contents of these tables (in the VM thread) after
   // having synchronized the worker threads with the VM thread, or in the same
   // thread (i.e. within the VM thread).
-  if (!_humongous_is_live.is_live(region)) {
-    _humongous_is_live.set_live(region);
+  if (is_humongous_reclaim_candidate(region)) {
+    set_humongous_reclaim_candidate(region, false);
     _in_cset_fast_test.clear_humongous(region);
   }
 }

@@ -98,7 +98,7 @@ COMMON_VM_DEBUG_TARGETS=debug debug1 docs export_debug
 COMMON_VM_OPTIMIZED_TARGETS=optimized optimized1 docs export_optimized
 
 # JDK directory list
-JDK_DIRS=bin include jre lib demo
+JDK_DIRS=bin include lib demo
 
 all:           all_product all_fastdebug
 
@@ -373,33 +373,33 @@ $(EXPORT_SERVER_DIR)/%.map:			$(C2_BUILD_DIR)/%.map
 	$(install-file)
 $(EXPORT_LIB_DIR)/%.lib:			$(C2_BUILD_DIR)/%.lib
 	$(install-file)
-$(EXPORT_JRE_BIN_DIR)/%.diz:			$(C2_BUILD_DIR)/%.diz
+$(EXPORT_BIN_DIR)/%.diz:			$(C2_BUILD_DIR)/%.diz
 	$(install-file)
-$(EXPORT_JRE_BIN_DIR)/%.dll:			$(C2_BUILD_DIR)/%.dll
+$(EXPORT_BIN_DIR)/%.dll:			$(C2_BUILD_DIR)/%.dll
 	$(install-file)
-$(EXPORT_JRE_BIN_DIR)/%.pdb:			$(C2_BUILD_DIR)/%.pdb
+$(EXPORT_BIN_DIR)/%.pdb:			$(C2_BUILD_DIR)/%.pdb
 	$(install-file)
-$(EXPORT_JRE_BIN_DIR)/%.map:			$(C2_BUILD_DIR)/%.map
+$(EXPORT_BIN_DIR)/%.map:			$(C2_BUILD_DIR)/%.map
 	$(install-file)
 # Unix
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX): $(C2_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
+$(EXPORT_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX): $(C2_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
 $(EXPORT_SERVER_DIR)/%.$(LIBRARY_SUFFIX):       $(C2_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
 $(EXPORT_SERVER_DIR)/64/%.$(LIBRARY_SUFFIX):    $(C2_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.debuginfo: 	$(C2_BUILD_DIR)/%.debuginfo
+$(EXPORT_LIB_ARCH_DIR)/%.debuginfo: 	$(C2_BUILD_DIR)/%.debuginfo
 	$(install-file)
 $(EXPORT_SERVER_DIR)/%.debuginfo:       	$(C2_BUILD_DIR)/%.debuginfo
 	$(install-file)
 $(EXPORT_SERVER_DIR)/64/%.debuginfo:    	$(C2_BUILD_DIR)/%.debuginfo
 	$(install-file)
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.diz: 		$(C2_BUILD_DIR)/%.diz
+$(EXPORT_LIB_ARCH_DIR)/%.diz: 		$(C2_BUILD_DIR)/%.diz
 	$(install-file)
 $(EXPORT_SERVER_DIR)/64/%.diz:    		$(C2_BUILD_DIR)/%.diz
 	$(install-file)
 # MacOS X
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.dSYM: 		$(C2_BUILD_DIR)/%.dSYM
+$(EXPORT_LIB_ARCH_DIR)/%.dSYM: 		$(C2_BUILD_DIR)/%.dSYM
 	$(install-dir)
 $(EXPORT_SERVER_DIR)/%.dSYM:       		$(C2_BUILD_DIR)/%.dSYM
 	$(install-dir)
@@ -423,33 +423,33 @@ $(EXPORT_CLIENT_DIR)/%.map:			$(C1_BUILD_DIR)/%.map
 	$(install-file)
 $(EXPORT_LIB_DIR)/%.lib:			$(C1_BUILD_DIR)/%.lib
 	$(install-file)
-$(EXPORT_JRE_BIN_DIR)/%.diz:			$(C1_BUILD_DIR)/%.diz
+$(EXPORT_BIN_DIR)/%.diz:			$(C1_BUILD_DIR)/%.diz
 	$(install-file)
-$(EXPORT_JRE_BIN_DIR)/%.dll:			$(C1_BUILD_DIR)/%.dll
+$(EXPORT_BIN_DIR)/%.dll:			$(C1_BUILD_DIR)/%.dll
 	$(install-file)
-$(EXPORT_JRE_BIN_DIR)/%.pdb:			$(C1_BUILD_DIR)/%.pdb
+$(EXPORT_BIN_DIR)/%.pdb:			$(C1_BUILD_DIR)/%.pdb
 	$(install-file)
-$(EXPORT_JRE_BIN_DIR)/%.map:			$(C1_BUILD_DIR)/%.map
+$(EXPORT_BIN_DIR)/%.map:			$(C1_BUILD_DIR)/%.map
 	$(install-file)
 # Unix
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX): $(C1_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
+$(EXPORT_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX): $(C1_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
 $(EXPORT_CLIENT_DIR)/%.$(LIBRARY_SUFFIX):       $(C1_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
 $(EXPORT_CLIENT_DIR)/64/%.$(LIBRARY_SUFFIX):    $(C1_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.debuginfo: 	$(C1_BUILD_DIR)/%.debuginfo
+$(EXPORT_LIB_ARCH_DIR)/%.debuginfo: 	$(C1_BUILD_DIR)/%.debuginfo
 	$(install-file)
 $(EXPORT_CLIENT_DIR)/%.debuginfo:       	$(C1_BUILD_DIR)/%.debuginfo
 	$(install-file)
 $(EXPORT_CLIENT_DIR)/64/%.debuginfo:    	$(C1_BUILD_DIR)/%.debuginfo
 	$(install-file)
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.diz: 		$(C1_BUILD_DIR)/%.diz
+$(EXPORT_LIB_ARCH_DIR)/%.diz: 		$(C1_BUILD_DIR)/%.diz
 	$(install-file)
 $(EXPORT_CLIENT_DIR)/64/%.diz:    		$(C1_BUILD_DIR)/%.diz
 	$(install-file)
 # MacOS X
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.dSYM: 		$(C1_BUILD_DIR)/%.dSYM
+$(EXPORT_LIB_ARCH_DIR)/%.dSYM: 		$(C1_BUILD_DIR)/%.dSYM
 	$(install-dir)
 $(EXPORT_CLIENT_DIR)/%.dSYM:       		$(C1_BUILD_DIR)/%.dSYM
 	$(install-dir)
@@ -473,28 +473,28 @@ $(EXPORT_MINIMAL_DIR)/%.map:			$(MINIMAL1_BUILD_DIR)/%.map
 	$(install-file)
 $(EXPORT_LIB_DIR)/%.lib:			$(MINIMAL1_BUILD_DIR)/%.lib
 	$(install-file)
-$(EXPORT_JRE_BIN_DIR)/%.diz:			$(MINIMAL1_BUILD_DIR)/%.diz
+$(EXPORT_BIN_DIR)/%.diz:			$(MINIMAL1_BUILD_DIR)/%.diz
 	$(install-file)
-$(EXPORT_JRE_BIN_DIR)/%.dll:			$(MINIMAL1_BUILD_DIR)/%.dll
+$(EXPORT_BIN_DIR)/%.dll:			$(MINIMAL1_BUILD_DIR)/%.dll
 	$(install-file)
-$(EXPORT_JRE_BIN_DIR)/%.pdb:			$(MINIMAL1_BUILD_DIR)/%.pdb
+$(EXPORT_BIN_DIR)/%.pdb:			$(MINIMAL1_BUILD_DIR)/%.pdb
 	$(install-file)
-$(EXPORT_JRE_BIN_DIR)/%.map:			$(MINIMAL1_BUILD_DIR)/%.map
+$(EXPORT_BIN_DIR)/%.map:			$(MINIMAL1_BUILD_DIR)/%.map
 	$(install-file)
 # Unix
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX):	$(MINIMAL1_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
+$(EXPORT_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX):	$(MINIMAL1_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
 $(EXPORT_MINIMAL_DIR)/%.$(LIBRARY_SUFFIX):	$(MINIMAL1_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
 $(EXPORT_MINIMAL_DIR)/64/%.$(LIBRARY_SUFFIX):	$(MINIMAL1_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.debuginfo:		$(MINIMAL1_BUILD_DIR)/%.debuginfo
+$(EXPORT_LIB_ARCH_DIR)/%.debuginfo:		$(MINIMAL1_BUILD_DIR)/%.debuginfo
 	$(install-file)
 $(EXPORT_MINIMAL_DIR)/%.debuginfo:		$(MINIMAL1_BUILD_DIR)/%.debuginfo
 	$(install-file)
 $(EXPORT_MINIMAL_DIR)/64/%.debuginfo:		$(MINIMAL1_BUILD_DIR)/%.debuginfo
 	$(install-file)
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.diz:		$(MINIMAL1_BUILD_DIR)/%.diz
+$(EXPORT_LIB_ARCH_DIR)/%.diz:		$(MINIMAL1_BUILD_DIR)/%.diz
 	$(install-file)
 $(EXPORT_MINIMAL_DIR)/64/%.diz:			$(MINIMAL1_BUILD_DIR)/%.diz
 	$(install-file)
@@ -509,11 +509,11 @@ $(EXPORT_LIB_DIR)/%.jar:			$(ZERO_BUILD_DIR)/../generated/%.jar
 $(EXPORT_INCLUDE_DIR)/%:			$(ZERO_BUILD_DIR)/../generated/jvmtifiles/%
 	$(install-file)
 # Unix
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX): $(ZERO_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
+$(EXPORT_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX): $(ZERO_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.debuginfo:		$(ZERO_BUILD_DIR)/%.debuginfo
+$(EXPORT_LIB_ARCH_DIR)/%.debuginfo:		$(ZERO_BUILD_DIR)/%.debuginfo
 	$(install-file)
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.diz:		$(ZERO_BUILD_DIR)/%.diz
+$(EXPORT_LIB_ARCH_DIR)/%.diz:		$(ZERO_BUILD_DIR)/%.diz
 	$(install-file)
 $(EXPORT_SERVER_DIR)/%.$(LIBRARY_SUFFIX):       $(ZERO_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
@@ -522,7 +522,7 @@ $(EXPORT_SERVER_DIR)/%.debuginfo:		$(ZERO_BUILD_DIR)/%.debuginfo
 $(EXPORT_SERVER_DIR)/%.diz:			$(ZERO_BUILD_DIR)/%.diz
 	$(install-file)
 # MacOS X
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.dSYM: 		$(ZERO_BUILD_DIR)/%.dSYM
+$(EXPORT_LIB_ARCH_DIR)/%.dSYM: 		$(ZERO_BUILD_DIR)/%.dSYM
 	$(install-dir)
 $(EXPORT_SERVER_DIR)/%.dSYM:			$(ZERO_BUILD_DIR)/%.dSYM
 	$(install-dir)
@@ -536,11 +536,11 @@ $(EXPORT_LIB_DIR)/%.jar:			$(CORE_BUILD_DIR)/../generated/%.jar
 $(EXPORT_INCLUDE_DIR)/%:			$(CORE_BUILD_DIR)/../generated/jvmtifiles/%
 	$(install-file)
 # Unix
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX):	$(CORE_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
+$(EXPORT_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX):	$(CORE_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.debuginfo:		$(CORE_BUILD_DIR)/%.debuginfo
+$(EXPORT_LIB_ARCH_DIR)/%.debuginfo:		$(CORE_BUILD_DIR)/%.debuginfo
 	$(install-file)
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.diz:		$(CORE_BUILD_DIR)/%.diz
+$(EXPORT_LIB_ARCH_DIR)/%.diz:		$(CORE_BUILD_DIR)/%.diz
 	$(install-file)
 $(EXPORT_SERVER_DIR)/%.$(LIBRARY_SUFFIX):	$(CORE_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
@@ -558,11 +558,11 @@ $(EXPORT_LIB_DIR)/%.jar:			$(SHARK_BUILD_DIR)/../generated/%.jar
 $(EXPORT_INCLUDE_DIR)/%:			$(SHARK_BUILD_DIR)/../generated/jvmtifiles/%
 	$(install-file)
 # Unix
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX): $(SHARK_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
+$(EXPORT_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX): $(SHARK_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.debuginfo):	$(SHARK_BUILD_DIR)/%.debuginfo
+$(EXPORT_LIB_ARCH_DIR)/%.debuginfo):	$(SHARK_BUILD_DIR)/%.debuginfo
 	$(install-file)
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.diz:		$(SHARK_BUILD_DIR)/%.diz
+$(EXPORT_LIB_ARCH_DIR)/%.diz:		$(SHARK_BUILD_DIR)/%.diz
 	$(install-file)
 $(EXPORT_SERVER_DIR)/%.$(LIBRARY_SUFFIX):       $(SHARK_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
@@ -571,7 +571,7 @@ $(EXPORT_SERVER_DIR)/%.debuginfo:		$(SHARK_BUILD_DIR)/%.debuginfo
 $(EXPORT_SERVER_DIR)/%.diz:			$(SHARK_BUILD_DIR)/%.diz
 	$(install-file)
 # MacOS X
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.dSYM: 		$(SHARK_BUILD_DIR)/%.dSYM
+$(EXPORT_LIB_ARCH_DIR)/%.dSYM: 		$(SHARK_BUILD_DIR)/%.dSYM
 	$(install-dir)
 $(EXPORT_SERVER_DIR)/%.dSYM:			$(SHARK_BUILD_DIR)/%.dSYM
 	$(install-dir)

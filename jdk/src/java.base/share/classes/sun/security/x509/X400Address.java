@@ -340,7 +340,7 @@ public class X400Address implements GeneralNameInterface {
     /**
      * Create the X400Address object from the specified byte array
      *
-     * @param nameValue value of the name as a byte array
+     * @param value value of the name as a byte array
      */
     public X400Address(byte[] value) {
         nameValue = value;
@@ -392,7 +392,7 @@ public class X400Address implements GeneralNameInterface {
      * certification path verification.
      *
      * @param inputName to be checked for being constrained
-     * @returns constraint type above
+     * @return constraint type above
      * @throws UnsupportedOperationException if name is same type, but comparison operations are
      *          not supported for this name type.
      */
@@ -413,7 +413,7 @@ public class X400Address implements GeneralNameInterface {
      * NameConstraints minimum and maximum bounds and for calculating
      * path lengths in name subtrees.
      *
-     * @returns distance of name from root
+     * @return distance of name from root
      * @throws UnsupportedOperationException if not supported for this name type
      */
     public int subtreeDepth() throws UnsupportedOperationException {

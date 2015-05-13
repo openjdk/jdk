@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -600,10 +600,11 @@ const TypeFunc *OptoRuntime::complete_monitor_enter_Type() {
 //-----------------------------------------------------------------------------
 const TypeFunc *OptoRuntime::complete_monitor_exit_Type() {
   // create input type (domain)
-  const Type **fields = TypeTuple::fields(2);
+  const Type **fields = TypeTuple::fields(3);
   fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL;  // Object to be Locked
-  fields[TypeFunc::Parms+1] = TypeRawPtr::BOTTOM;   // Address of stack location for lock
-  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+2,fields);
+  fields[TypeFunc::Parms+1] = TypeRawPtr::BOTTOM;    // Address of stack location for lock - BasicLock
+  fields[TypeFunc::Parms+2] = TypeRawPtr::BOTTOM;    // Thread pointer (Self)
+  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+3,fields);
 
   // create result type (range)
   fields = TypeTuple::fields(0);

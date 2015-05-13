@@ -100,6 +100,9 @@ void PhaseCFG::replace_block_proj_ctrl( Node *n ) {
   }
 }
 
+static bool is_dominator(Block* d, Block* n) {
+  return d->dom_lca(n) == d;
+}
 
 //------------------------------schedule_pinned_nodes--------------------------
 // Set the basic block for Nodes pinned into blocks
@@ -120,6 +123,42 @@ void PhaseCFG::schedule_pinned_nodes(VectorSet &visited) {
         }
         Block* block = get_block_for_node(input); // Basic block of controlling input
         schedule_node_into_block(node, block);
+      }
+
+      // If the node has precedence edges (added when CastPP nodes are
+      // removed in final_graph_reshaping), fix the control of the
+      // node to cover the precedence edges and remove the
+      // dependencies.
+      Node* n = NULL;
+      for (uint i = node->len()-1; i >= node->req(); i--) {
+        Node* m = node->in(i);
+        if (m == NULL) continue;
+        // Skip the precedence edge if the test that guarded a CastPP:
+        // - was optimized out during escape analysis
+        // (OptimizePtrCompare): the CastPP's control isn't an end of
+        // block.
+        // - is moved in the branch of a dominating If: the control of
+        // the CastPP is then a Region.
+        if (m->is_block_proj() || m->is_block_start()) {
+          node->rm_prec(i);
+          if (n == NULL) {
+            n = m;
+          } else {
+            Block* bn = get_block_for_node(n);
+            Block* bm = get_block_for_node(m);
+            assert(is_dominator(bn, bm) || is_dominator(bm, bn), "one must dominate the other");
+            n = is_dominator(bn, bm) ? m : n;
+          }
+        }
+      }
+      if (n != NULL) {
+        assert(node->in(0), "control should have been set");
+        Block* bn = get_block_for_node(n);
+        Block* bnode = get_block_for_node(node->in(0));
+        assert(is_dominator(bn, bnode) || is_dominator(bnode, bn), "one must dominate the other");
+        if (!is_dominator(bn, bnode)) {
+          node->set_req(0, n);
+        }
       }
 
       // process all inputs that are non NULL

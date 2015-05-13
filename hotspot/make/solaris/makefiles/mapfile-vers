@@ -19,7 +19,7 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 
 # Define public interface.
@@ -30,7 +30,7 @@ SUNWprivate_1.1 {
                 JNI_CreateJavaVM;
                 JNI_GetCreatedJavaVMs;
                 JNI_GetDefaultJavaVMInitArgs;
-        
+
                 # JVM
                 JVM_ActiveProcessorCount;
                 JVM_ArrayCopy;
@@ -107,6 +107,7 @@ SUNWprivate_1.1 {
                 JVM_GetClassTypeAnnotations;
                 JVM_GetDeclaredClasses;
                 JVM_GetDeclaringClass;
+                JVM_GetSimpleBinaryName;
                 JVM_GetEnclosingMethodInfo;
                 JVM_GetFieldIxModifiers;
                 JVM_GetFieldTypeAnnotations;

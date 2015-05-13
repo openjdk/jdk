@@ -328,7 +328,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
   }
 
   public Symbol getUnresolvedStringAt(int which) {
-    return getSymbolAt(which);
+    return getSlotAt(which).getSymbol();
   }
 
   // returns null, if not resolved.

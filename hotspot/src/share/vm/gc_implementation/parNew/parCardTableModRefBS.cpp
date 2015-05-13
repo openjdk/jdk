@@ -23,17 +23,17 @@
  */
 
 #include "precompiled.hpp"
+#include "gc_interface/collectedHeap.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/cardTableModRefBS.hpp"
 #include "memory/cardTableRS.hpp"
-#include "memory/sharedHeap.hpp"
+#include "memory/genCollectedHeap.hpp"
 #include "memory/space.inline.hpp"
-#include "memory/universe.hpp"
+#include "memory/virtualspace.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.inline.hpp"
-#include "runtime/virtualspace.hpp"
 #include "runtime/vmThread.hpp"
 
 void CardTableModRefBS::non_clean_card_iterate_parallel_work(Space* sp, MemRegion mr,
@@ -449,7 +449,7 @@ get_LNC_array_for_space(Space* sp,
   // Do a dirty read here. If we pass the conditional then take the rare
   // event lock and do the read again in case some other thread had already
   // succeeded and done the resize.
-  int cur_collection = Universe::heap()->total_collections();
+  int cur_collection = GenCollectedHeap::heap()->total_collections();
   if (_last_LNC_resizing_collection[i] != cur_collection) {
     MutexLocker x(ParGCRareEvent_lock);
     if (_last_LNC_resizing_collection[i] != cur_collection) {

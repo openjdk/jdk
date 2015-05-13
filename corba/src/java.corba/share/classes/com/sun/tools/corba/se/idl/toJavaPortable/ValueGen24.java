@@ -73,15 +73,17 @@ public class ValueGen24 extends ValueGen
   } // ctor
 
   /**
-   * <d62023> - delete constructor; helper is abstract
+   * d62023 - delete constructor; helper is abstract
    **/
   protected void writeConstructor ()
   {
   } // writeConstructor
 
   /**
-   * <d62023> - delete write_value from non-boxed helpers
-   *          - delete _write from non-boxed helpers
+   * <pre>
+   * d62023 - delete write_value from non-boxed helpers
+   *        - delete _write from non-boxed helpers
+   * </pre>
    **/
   public void helperWrite (SymtabEntry entry, PrintWriter stream)
   {
@@ -91,7 +93,7 @@ public class ValueGen24 extends ValueGen
   } // helperWrite
 
   /**
-   * <d62023>
+   * d62023
    **/
   public void helperRead (String entryName, SymtabEntry entry, PrintWriter stream)
   {
@@ -101,7 +103,7 @@ public class ValueGen24 extends ValueGen
   } // helperRead
 
   /**
-   * <d62023> - suppress initializers from mapped value; now generated in
+   * d62023 - suppress initializers from mapped value; now generated in
    *    the Helper class and Factory class
    **/
   protected void writeInitializers ()
@@ -110,7 +112,7 @@ public class ValueGen24 extends ValueGen
   } // writeInitializers
 
   /**
-   * <d62023> - Goes in mapped class, not Helper
+   * d62023 - goes in mapped class, not Helper
    **/
   protected void writeTruncatable () // <d60929>
   {
@@ -155,7 +157,7 @@ public class ValueGen24 extends ValueGen
   }
 
   /**
-   * <d62023> CustomMarshal -> CustomValue for custom valuetypes
+   * d62023 - CustomMarshal {@literal ->} CustomValue for custom valuetypes
    *          mapped class is abstract
    **/
   protected void writeHeading ()
@@ -217,7 +219,7 @@ public class ValueGen24 extends ValueGen
   } // writeHeading
 
   /**
-   * <d62023> - private state maps to protected, not default
+   * d62023 - private state maps to protected, not default
    **/
   protected void writeMembers ()
   {
@@ -245,8 +247,7 @@ public class ValueGen24 extends ValueGen
   } // writeMembers
 
   /**
-   * <d62023> Methods need to be abstract
-   *          writeStreamable
+   * d62023 - methods need to be abstract writeStreamable
    **/
   protected void writeMethods ()
   {
@@ -294,7 +295,7 @@ public class ValueGen24 extends ValueGen
   } // writeMethods
 
   /**
-   * <d62023> Call super._read()
+   * d62023 - call super._read()
    **/
   public int read (int index, String indent, String name, SymtabEntry entry, PrintWriter stream)
   {
@@ -335,7 +336,7 @@ public class ValueGen24 extends ValueGen
   } // read
 
   /**
-   * <d62023> Call super._write()
+   * d62023 - call super._write()
    **/
   public int write (int index, String indent, String name, SymtabEntry entry, PrintWriter stream)
   {
@@ -374,7 +375,7 @@ public class ValueGen24 extends ValueGen
   } // write
 
   /**
-   * <62023> - generate factory interface and default factory
+   * d62023 - generate factory interface and default factory
    **/
   public void generate (Hashtable symbolTable, ValueEntry v, PrintWriter str)
   {

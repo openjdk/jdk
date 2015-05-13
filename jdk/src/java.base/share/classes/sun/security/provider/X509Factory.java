@@ -41,7 +41,7 @@ import java.util.Base64;
 import sun.security.pkcs.ParsingException;
 
 /**
- * This class defines a certificate factory for X.509 v3 certificates &
+ * This class defines a certificate factory for X.509 v3 certificates {@literal &}
  * certification paths, and X.509 v2 certificate revocation lists (CRLs).
  *
  * @author Jan Luehe
@@ -536,7 +536,7 @@ public class X509Factory extends CertificateFactorySpi {
      * after the newline character after the -----END SOMETHING----- line.
      *
      * @param is the InputStream
-     * @returns byte block or null if end of stream
+     * @return byte block or null if end of stream
      * @throws IOException If any parsing error
      */
     private static byte[] readOneBlock(InputStream is) throws IOException {
@@ -664,7 +664,7 @@ public class X509Factory extends CertificateFactorySpi {
      * @param is    Read from this InputStream
      * @param bout  Write into this OutputStream
      * @param tag   Tag already read (-1 mean not read)
-     * @returns     The current tag, used to check EOC in indefinite-length BER
+     * @return     The current tag, used to check EOC in indefinite-length BER
      * @throws IOException Any parsing error
      */
     private static int readBERInternal(InputStream is,

@@ -26,11 +26,12 @@
 #define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSPARALLELCOMPACT_HPP
 
 #include "gc_implementation/parallelScavenge/objectStartArray.hpp"
+#include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
 #include "gc_implementation/parallelScavenge/parMarkBitMap.hpp"
 #include "gc_implementation/parallelScavenge/psCompactionManager.hpp"
 #include "gc_implementation/shared/collectorCounters.hpp"
 #include "gc_implementation/shared/mutableSpace.hpp"
-#include "memory/sharedHeap.hpp"
+#include "gc_interface/collectedHeap.hpp"
 #include "oops/oop.hpp"
 
 class ParallelScavengeHeap;
@@ -951,12 +952,14 @@ class PSParallelCompact : AllStatic {
     virtual void do_void();
   };
 
-  class AdjustPointerClosure: public OopClosure {
+  class AdjustPointerClosure: public ExtendedOopClosure {
    public:
+    template <typename T> void do_oop_nv(T* p);
     virtual void do_oop(oop* p);
     virtual void do_oop(narrowOop* p);
-    // do not walk from thread stacks to the code cache on this phase
-    virtual void do_code_blob(CodeBlob* cb) const { }
+
+    // This closure provides its own oop verification code.
+    debug_only(virtual bool should_verify_oops() { return false; })
   };
 
   class AdjustKlassClosure : public KlassClosure {
@@ -1139,13 +1142,18 @@ class PSParallelCompact : AllStatic {
   static void reset_millis_since_last_gc();
 
  public:
-  class MarkAndPushClosure: public OopClosure {
+  class MarkAndPushClosure: public ExtendedOopClosure {
    private:
     ParCompactionManager* _compaction_manager;
    public:
     MarkAndPushClosure(ParCompactionManager* cm) : _compaction_manager(cm) { }
+
+    template <typename T> void do_oop_nv(T* p);
     virtual void do_oop(oop* p);
     virtual void do_oop(narrowOop* p);
+
+    // This closure provides its own oop verification code.
+    debug_only(virtual bool should_verify_oops() { return false; })
   };
 
   // The one and only place to start following the classes.
@@ -1161,11 +1169,6 @@ class PSParallelCompact : AllStatic {
 
   PSParallelCompact();
 
-  // Convenient accessor for Universe::heap().
-  static ParallelScavengeHeap* gc_heap() {
-    return (ParallelScavengeHeap*)Universe::heap();
-  }
-
   static void invoke(bool maximum_heap_compaction);
   static bool invoke_no_policy(bool maximum_heap_compaction);
 
@@ -1177,7 +1180,9 @@ class PSParallelCompact : AllStatic {
   static bool initialize();
 
   // Closure accessors
-  static OopClosure* adjust_pointer_closure()      { return (OopClosure*)&_adjust_pointer_closure; }
+  static PSParallelCompact::AdjustPointerClosure* adjust_pointer_closure() {
+    return &_adjust_pointer_closure;
+  }
   static KlassClosure* adjust_klass_closure()      { return (KlassClosure*)&_adjust_klass_closure; }
   static BoolObjectClosure* is_alive_closure()     { return (BoolObjectClosure*)&_is_alive_closure; }
 
@@ -1330,39 +1335,6 @@ inline bool PSParallelCompact::mark_obj(oop obj) {
 
 inline bool PSParallelCompact::is_marked(oop obj) {
   return mark_bitmap()->is_marked(obj);
-}
-
-template <class T>
-inline void PSParallelCompact::mark_and_push(ParCompactionManager* cm, T* p) {
-  T heap_oop = oopDesc::load_heap_oop(p);
-  if (!oopDesc::is_null(heap_oop)) {
-    oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
-    if (mark_bitmap()->is_unmarked(obj) && mark_obj(obj)) {
-      cm->push(obj);
-    }
-  }
-}
-
-template <class T>
-inline void PSParallelCompact::adjust_pointer(T* p) {
-  T heap_oop = oopDesc::load_heap_oop(p);
-  if (!oopDesc::is_null(heap_oop)) {
-    oop obj     = oopDesc::decode_heap_oop_not_null(heap_oop);
-    oop new_obj = (oop)summary_data().calc_new_pointer(obj);
-    assert(new_obj != NULL,                    // is forwarding ptr?
-           "should be forwarded");
-    // Just always do the update unconditionally?
-    if (new_obj != NULL) {
-      assert(Universe::heap()->is_in_reserved(new_obj),
-             "should be in object space");
-      oopDesc::encode_store_heap_oop_not_null(p, new_obj);
-    }
-  }
-}
-
-inline void PSParallelCompact::follow_klass(ParCompactionManager* cm, Klass* klass) {
-  oop holder = klass->klass_holder();
-  PSParallelCompact::mark_and_push(cm, &holder);
 }
 
 template <class T>

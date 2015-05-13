@@ -89,7 +89,7 @@ import com.sun.corba.se.spi.ior.IORTemplate ;
 * <li>A local invocation, where the dispatch is handled in the client subcontract.</li>
 * <li>A cached local invocation, where the servant is cached when the IOR is established
 * for the client subcontract, and the dispatch is handled in the client subcontract
-* to the cached subcontract.<li>
+* to the cached subcontract.</li>
 * </ol>
 * <p>
 * Each of these 3 cases is handled a bit differently.  On each request, assume as known
@@ -111,11 +111,11 @@ import com.sun.corba.se.spi.ior.IORTemplate ;
 *   <li>oa.returnServant()</li>
 *   <li>oa.exit()</li>
 *   <li>pop info</li>
-*   <ol>
+*   </ol>
 * </li>
-* REVISIT: Is this the required order for exit/pop?  Cna they be nested instead?
+* <!-- REVISIT: Is this the required order for exit/pop?  Cna they be nested instead?
 * Note that getInvocationServant and returnServant may throw exceptions.  In such cases,
-* returnServant, exit, and pop must be called in the correct order.
+* returnServant, exit, and pop must be called in the correct order. -->
 * <li>The local pattern:
 *   <ol>
 *   <li>oa = oaf.find( oaid )</li>
@@ -128,10 +128,10 @@ import com.sun.corba.se.spi.ior.IORTemplate ;
 *   <li>oa.returnServant()</li>
 *   <li>oa.exit()</li>
 *   <li>pop info</li>
-*   <ol>
+*   </ol>
 * </li>
-* This is the same as the remote case, except that setExecuteReturnServantInResponseConstructor
-* is not needed (or possible, since there is no server request).
+* <!-- This is the same as the remote case, except that setExecuteReturnServantInResponseConstructor
+* is not needed (or possible, since there is no server request). -->
 * <li>The fast local pattern: When delegate is constructed,
 *    first extract ObjectKey from IOR in delegate,
 *    then get ObjectId, ObjectAdapterId, and ObjectAdapterFactory (oaf). Then:
@@ -143,14 +143,14 @@ import com.sun.corba.se.spi.ior.IORTemplate ;
 *    <li>pop info
 *    </ol>
 *    The info instance (which includes the Servant) is cached in the client subcontract.
-*    <p>Then, on each invocation:</p>
+*    <p>Then, on each invocation:
 *    <ol>
 *    <li>newinfo = copy of info (clone)</li>
 *    <li>info.setOperation( operation )</li>
 *    <li>push newinfo</li>
 *    <li>oa.enter()</li>
 *    <li>dispatch to servant</li>
-*    <li>oa.returnServant()</li>  // XXX This is probably wrong: remove it.
+*    <li>oa.returnServant()</li>  <!-- XXX This is probably wrong: remove it. -->
 *    <li>oa.exit()</li>
 *    <li>pop info</li>
 *    </ol>

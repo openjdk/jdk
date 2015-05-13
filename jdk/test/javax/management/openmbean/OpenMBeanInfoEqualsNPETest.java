@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import javax.management.openmbean.SimpleType;
  * @bug 8023529
  * @summary Test that OpenMBean*Info.equals do not throw NPE
  * @author Shanliang JIANG
+ * @modules java.management
  * @run clean OpenMBeanInfoEqualsNPETest
  * @run build OpenMBeanInfoEqualsNPETest
  * @run main OpenMBeanInfoEqualsNPETest

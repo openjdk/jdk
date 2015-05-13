@@ -29,10 +29,6 @@
 #include "oops/oop.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 
-inline volatile oop java_lang_invoke_CallSite::target_volatile(oop site) {
-  return oop((oopDesc *)(site->obj_field_volatile(_target_offset)));
-}
-
 inline void java_lang_invoke_CallSite::set_target_volatile(oop site, oop target) {
   site->obj_field_put_volatile(_target_offset, target);
 }

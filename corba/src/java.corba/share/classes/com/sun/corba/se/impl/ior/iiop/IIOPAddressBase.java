@@ -32,9 +32,6 @@ import org.omg.CORBA_2_3.portable.OutputStream ;
 
 import com.sun.corba.se.spi.ior.iiop.IIOPAddress ;
 
-/**
- * @author
- */
 abstract class IIOPAddressBase implements IIOPAddress
 {
     // Ports are marshalled as shorts on the wire.  The IDL

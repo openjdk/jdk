@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2014 SAP AG. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,6 +113,10 @@
 #define RUSAGE_THREAD   (1)               /* only the calling thread */
 #endif
 
+// PPC port
+static const uintx Use64KPagesThreshold       = 1*M;
+static const uintx MaxExpectedDataSegmentSize = SIZE_4G*2;
+
 // Add missing declarations (should be in procinfo.h but isn't until AIX 6.1).
 #if !defined(_AIXVERSION_610)
 extern "C" {
@@ -168,8 +172,8 @@ typedef stackslot_t* stackptr_t;
     return -1; \
 }
 
-// query dimensions of the stack of the calling thread
-static void query_stack_dimensions(address* p_stack_base, size_t* p_stack_size);
+// Query dimensions of the stack of the calling thread.
+static bool query_stack_dimensions(address* p_stack_base, size_t* p_stack_size);
 
 // function to check a given stack pointer against given stack limits
 inline bool is_valid_stackpointer(stackptr_t sp, stackptr_t stack_base, size_t stack_size) {
@@ -220,9 +224,6 @@ int       os::Aix::_page_size = -1;
 int       os::Aix::_on_pase = -1;
 int       os::Aix::_os_version = -1;
 int       os::Aix::_stack_page_size = -1;
-size_t    os::Aix::_shm_default_page_size = -1;
-int       os::Aix::_can_use_64K_pages = -1;
-int       os::Aix::_can_use_16M_pages = -1;
 int       os::Aix::_xpg_sus_mode = -1;
 int       os::Aix::_extshm = -1;
 int       os::Aix::_logical_cpus = -1;
@@ -238,7 +239,63 @@ static bool     check_signals      = true;
 static pid_t    _initial_pid       = 0;
 static int      SR_signum          = SIGUSR2; // Signal used to suspend/resume a thread (must be > SIGSEGV, see 4355769)
 static sigset_t SR_sigset;
-static pthread_mutex_t dl_mutex;              // Used to protect dlsym() calls.
+
+// This describes the state of multipage support of the underlying
+// OS. Note that this is of no interest to the outsize world and
+// therefore should not be defined in AIX class.
+//
+// AIX supports four different page sizes - 4K, 64K, 16MB, 16GB. The
+// latter two (16M "large" resp. 16G "huge" pages) require special
+// setup and are normally not available.
+//
+// AIX supports multiple page sizes per process, for:
+//  - Stack (of the primordial thread, so not relevant for us)
+//  - Data - data, bss, heap, for us also pthread stacks
+//  - Text - text code
+//  - shared memory
+//
+// Default page sizes can be set via linker options (-bdatapsize, -bstacksize, ...)
+// and via environment variable LDR_CNTRL (DATAPSIZE, STACKPSIZE, ...).
+//
+// For shared memory, page size can be set dynamically via
+// shmctl(). Different shared memory regions can have different page
+// sizes.
+//
+// More information can be found at AIBM info center:
+//   http://publib.boulder.ibm.com/infocenter/aix/v6r1/index.jsp?topic=/com.ibm.aix.prftungd/doc/prftungd/multiple_page_size_app_support.htm
+//
+static struct {
+  size_t pagesize;            // sysconf _SC_PAGESIZE (4K)
+  size_t datapsize;           // default data page size (LDR_CNTRL DATAPSIZE)
+  size_t shmpsize;            // default shared memory page size (LDR_CNTRL SHMPSIZE)
+  size_t pthr_stack_pagesize; // stack page size of pthread threads
+  size_t textpsize;           // default text page size (LDR_CNTRL STACKPSIZE)
+  bool can_use_64K_pages;     // True if we can alloc 64K pages dynamically with Sys V shm.
+  bool can_use_16M_pages;     // True if we can alloc 16M pages dynamically with Sys V shm.
+  int error;                  // Error describing if something went wrong at multipage init.
+} g_multipage_support = {
+  (size_t) -1,
+  (size_t) -1,
+  (size_t) -1,
+  (size_t) -1,
+  (size_t) -1,
+  false, false,
+  0
+};
+
+// We must not accidentally allocate memory close to the BRK - even if
+// that would work - because then we prevent the BRK segment from
+// growing which may result in a malloc OOM even though there is
+// enough memory. The problem only arises if we shmat() or mmap() at
+// a specific wish address, e.g. to place the heap in a
+// compressed-oops-friendly way.
+static bool is_close_to_brk(address a) {
+  address a1 = (address) sbrk(0);
+  if (a >= a1 && a < (a1 + MaxExpectedDataSegmentSize)) {
+    return true;
+  }
+  return false;
+}
 
 julong os::available_memory() {
   return Aix::available_memory();
@@ -255,19 +312,6 @@ julong os::Aix::available_memory() {
 
 julong os::physical_memory() {
   return Aix::physical_memory();
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// environment support
-
-bool os::getenv(const char* name, char* buf, int len) {
-  const char* val = ::getenv(name);
-  if (val != NULL && strlen(val) < (size_t)len) {
-    strcpy(buf, val);
-    return true;
-  }
-  if (len > 0) buf[0] = 0;  // return a null string
-  return false;
 }
 
 // Return true if user is running as root.
@@ -291,7 +335,7 @@ static bool my_disclaim64(char* addr, size_t size) {
   }
 
   // Maximum size 32bit disclaim() accepts. (Theoretically 4GB, but I just do not trust that.)
-  const unsigned int maxDisclaimSize = 0x80000000;
+  const unsigned int maxDisclaimSize = 0x40000000;
 
   const unsigned int numFullDisclaimsNeeded = (size / maxDisclaimSize);
   const unsigned int lastDisclaimSize = (size % maxDisclaimSize);
@@ -368,138 +412,131 @@ static const char* describe_pagesize(size_t pagesize) {
     case SIZE_64K: return "64K";
     case SIZE_16M: return "16M";
     case SIZE_16G: return "16G";
+    case -1:       return "not set";
     default:
       assert(false, "surprise");
       return "??";
   }
 }
 
-// Retrieve information about multipage size support. Will initialize
-// Aix::_page_size, Aix::_stack_page_size, Aix::_can_use_64K_pages,
-// Aix::_can_use_16M_pages.
+// Probe OS for multipage support.
+// Will fill the global g_multipage_support structure.
 // Must be called before calling os::large_page_init().
-void os::Aix::query_multipage_support() {
+static void query_multipage_support() {
 
-  guarantee(_page_size == -1 &&
-            _stack_page_size == -1 &&
-            _can_use_64K_pages == -1 &&
-            _can_use_16M_pages == -1 &&
-            g_multipage_error == -1,
+  guarantee(g_multipage_support.pagesize == -1,
             "do not call twice");
 
-  _page_size = ::sysconf(_SC_PAGESIZE);
+  g_multipage_support.pagesize = ::sysconf(_SC_PAGESIZE);
 
   // This really would surprise me.
-  assert(_page_size == SIZE_4K, "surprise!");
-
+  assert(g_multipage_support.pagesize == SIZE_4K, "surprise!");
 
   // Query default data page size (default page size for C-Heap, pthread stacks and .bss).
-  // Default data page size is influenced either by linker options (-bdatapsize)
+  // Default data page size is defined either by linker options (-bdatapsize)
   // or by environment variable LDR_CNTRL (suboption DATAPSIZE). If none is given,
   // default should be 4K.
-  size_t data_page_size = SIZE_4K;
   {
-    void* p = os::malloc(SIZE_16M, mtInternal);
-    guarantee(p != NULL, "malloc failed");
-    data_page_size = os::Aix::query_pagesize(p);
-    os::free(p);
+    void* p = ::malloc(SIZE_16M);
+    g_multipage_support.datapsize = os::Aix::query_pagesize(p);
+    ::free(p);
   }
 
-  // query default shm page size (LDR_CNTRL SHMPSIZE)
+  // Query default shm page size (LDR_CNTRL SHMPSIZE).
   {
     const int shmid = ::shmget(IPC_PRIVATE, 1, IPC_CREAT | S_IRUSR | S_IWUSR);
     guarantee(shmid != -1, "shmget failed");
     void* p = ::shmat(shmid, NULL, 0);
     ::shmctl(shmid, IPC_RMID, NULL);
     guarantee(p != (void*) -1, "shmat failed");
-    _shm_default_page_size = os::Aix::query_pagesize(p);
+    g_multipage_support.shmpsize = os::Aix::query_pagesize(p);
     ::shmdt(p);
   }
 
-  // before querying the stack page size, make sure we are not running as primordial
+  // Before querying the stack page size, make sure we are not running as primordial
   // thread (because primordial thread's stack may have different page size than
   // pthread thread stacks). Running a VM on the primordial thread won't work for a
-  // number of reasons so we may just as well guarantee it here
-  guarantee(!os::Aix::is_primordial_thread(), "Must not be called for primordial thread");
+  // number of reasons so we may just as well guarantee it here.
+  guarantee0(!os::Aix::is_primordial_thread());
 
-  // query stack page size
+  // Query pthread stack page size.
   {
     int dummy = 0;
-    _stack_page_size = os::Aix::query_pagesize(&dummy);
-    // everything else would surprise me and should be looked into
-    guarantee(_stack_page_size == SIZE_4K || _stack_page_size == SIZE_64K, "Wrong page size");
-    // also, just for completeness: pthread stacks are allocated from C heap, so
-    // stack page size should be the same as data page size
-    guarantee(_stack_page_size == data_page_size, "stack page size should be the same as data page size");
+    g_multipage_support.pthr_stack_pagesize = os::Aix::query_pagesize(&dummy);
   }
 
-  // EXTSHM is bad: among other things, it prevents setting pagesize dynamically
-  // for system V shm.
-  if (Aix::extshm()) {
-    if (Verbose) {
-      fprintf(stderr, "EXTSHM is active - will disable large page support.\n"
-                      "Please make sure EXTSHM is OFF for large page support.\n");
-    }
-    g_multipage_error = ERROR_MP_EXTSHM_ACTIVE;
-    _can_use_64K_pages = _can_use_16M_pages = 0;
+  // Query default text page size (LDR_CNTRL TEXTPSIZE).
+  /* PPC port: so far unused.
+  {
+    address any_function =
+      (address) resolve_function_descriptor_to_code_pointer((address)describe_pagesize);
+    g_multipage_support.textpsize = os::Aix::query_pagesize(any_function);
+  }
+  */
+
+  // Now probe for support of 64K pages and 16M pages.
+
+  // Before OS/400 V6R1, there is no support for pages other than 4K.
+  if (os::Aix::on_pase_V5R4_or_older()) {
+    Unimplemented();
     goto query_multipage_support_end;
   }
 
-  // now check which page sizes the OS claims it supports, and of those, which actually can be used.
+  // Now check which page sizes the OS claims it supports, and of those, which actually can be used.
   {
     const int MAX_PAGE_SIZES = 4;
     psize_t sizes[MAX_PAGE_SIZES];
     const int num_psizes = ::vmgetinfo(sizes, VMINFO_GETPSIZES, MAX_PAGE_SIZES);
     if (num_psizes == -1) {
-      if (Verbose) {
-        fprintf(stderr, "vmgetinfo(VMINFO_GETPSIZES) failed (errno: %d)\n", errno);
-        fprintf(stderr, "disabling multipage support.\n");
-      }
-      g_multipage_error = ERROR_MP_VMGETINFO_FAILED;
-      _can_use_64K_pages = _can_use_16M_pages = 0;
+      trc("vmgetinfo(VMINFO_GETPSIZES) failed (errno: %d)\n", errno);
+      trc("disabling multipage support.\n");
+      g_multipage_support.error = ERROR_MP_VMGETINFO_FAILED;
       goto query_multipage_support_end;
     }
     guarantee(num_psizes > 0, "vmgetinfo(.., VMINFO_GETPSIZES, ...) failed.");
     assert(num_psizes <= MAX_PAGE_SIZES, "Surprise! more than 4 page sizes?");
-    if (Verbose) {
-      fprintf(stderr, "vmgetinfo(.., VMINFO_GETPSIZES, ...) returns %d supported page sizes: ", num_psizes);
-      for (int i = 0; i < num_psizes; i ++) {
-        fprintf(stderr, " %s ", describe_pagesize(sizes[i]));
-      }
-      fprintf(stderr, " .\n");
+    trcVerbose("vmgetinfo(.., VMINFO_GETPSIZES, ...) returns %d supported page sizes: ", num_psizes);
+    for (int i = 0; i < num_psizes; i ++) {
+      trcVerbose(" %s ", describe_pagesize(sizes[i]));
     }
 
     // Can we use 64K, 16M pages?
-    _can_use_64K_pages = 0;
-    _can_use_16M_pages = 0;
     for (int i = 0; i < num_psizes; i ++) {
-      if (sizes[i] == SIZE_64K) {
-        _can_use_64K_pages = 1;
-      } else if (sizes[i] == SIZE_16M) {
-        _can_use_16M_pages = 1;
+      const size_t pagesize = sizes[i];
+      if (pagesize != SIZE_64K && pagesize != SIZE_16M) {
+        continue;
       }
-    }
-
-    if (!_can_use_64K_pages) {
-      g_multipage_error = ERROR_MP_VMGETINFO_CLAIMS_NO_SUPPORT_FOR_64K;
-    }
-
-    // Double-check for 16M pages: Even if AIX claims to be able to use 16M pages,
-    // there must be an actual 16M page pool, and we must run with enough rights.
-    if (_can_use_16M_pages) {
-      const int shmid = ::shmget(IPC_PRIVATE, SIZE_16M, IPC_CREAT | S_IRUSR | S_IWUSR);
-      guarantee(shmid != -1, "shmget failed");
+      bool can_use = false;
+      trcVerbose("Probing support for %s pages...", describe_pagesize(pagesize));
+      const int shmid = ::shmget(IPC_PRIVATE, pagesize,
+        IPC_CREAT | S_IRUSR | S_IWUSR);
+      guarantee0(shmid != -1); // Should always work.
+      // Try to set pagesize.
       struct shmid_ds shm_buf = { 0 };
-      shm_buf.shm_pagesize = SIZE_16M;
-      const bool can_set_pagesize = ::shmctl(shmid, SHM_PAGESIZE, &shm_buf) == 0 ? true : false;
-      const int en = errno;
-      ::shmctl(shmid, IPC_RMID, NULL);
-      if (!can_set_pagesize) {
-        if (Verbose) {
-          fprintf(stderr, "Failed to allocate even one misely 16M page. shmctl failed with %d (%s).\n"
-                          "Will deactivate 16M support.\n", en, strerror(en));
+      shm_buf.shm_pagesize = pagesize;
+      if (::shmctl(shmid, SHM_PAGESIZE, &shm_buf) != 0) {
+        const int en = errno;
+        ::shmctl(shmid, IPC_RMID, NULL); // As early as possible!
+        // PPC port trcVerbose("shmctl(SHM_PAGESIZE) failed with %s",
+        // PPC port  MiscUtils::describe_errno(en));
+      } else {
+        // Attach and double check pageisze.
+        void* p = ::shmat(shmid, NULL, 0);
+        ::shmctl(shmid, IPC_RMID, NULL); // As early as possible!
+        guarantee0(p != (void*) -1); // Should always work.
+        const size_t real_pagesize = os::Aix::query_pagesize(p);
+        if (real_pagesize != pagesize) {
+          trcVerbose("real page size (0x%llX) differs.", real_pagesize);
+        } else {
+          can_use = true;
         }
-        _can_use_16M_pages = 0;
+        ::shmdt(p);
+      }
+      trcVerbose("Can use: %s", (can_use ? "yes" : "no"));
+      if (pagesize == SIZE_64K) {
+        g_multipage_support.can_use_64K_pages = can_use;
+      } else if (pagesize == SIZE_16M) {
+        g_multipage_support.can_use_16M_pages = can_use;
       }
     }
 
@@ -507,23 +544,29 @@ void os::Aix::query_multipage_support() {
 
 query_multipage_support_end:
 
-  guarantee(_page_size != -1 &&
-            _stack_page_size != -1 &&
-            _can_use_64K_pages != -1 &&
-            _can_use_16M_pages != -1, "Page sizes not properly initialized");
+  trcVerbose("base page size (sysconf _SC_PAGESIZE): %s\n",
+      describe_pagesize(g_multipage_support.pagesize));
+  trcVerbose("Data page size (C-Heap, bss, etc): %s\n",
+      describe_pagesize(g_multipage_support.datapsize));
+  trcVerbose("Text page size: %s\n",
+      describe_pagesize(g_multipage_support.textpsize));
+  trcVerbose("Thread stack page size (pthread): %s\n",
+      describe_pagesize(g_multipage_support.pthr_stack_pagesize));
+  trcVerbose("Default shared memory page size: %s\n",
+      describe_pagesize(g_multipage_support.shmpsize));
+  trcVerbose("Can use 64K pages dynamically with shared meory: %s\n",
+      (g_multipage_support.can_use_64K_pages ? "yes" :"no"));
+  trcVerbose("Can use 16M pages dynamically with shared memory: %s\n",
+      (g_multipage_support.can_use_16M_pages ? "yes" :"no"));
+  trcVerbose("Multipage error details: %d\n",
+      g_multipage_support.error);
 
-  if (_can_use_64K_pages) {
-    g_multipage_error = 0;
-  }
-
-  if (Verbose) {
-    fprintf(stderr, "Data page size (C-Heap, bss, etc): %s\n", describe_pagesize(data_page_size));
-    fprintf(stderr, "Thread stack page size (pthread): %s\n", describe_pagesize(_stack_page_size));
-    fprintf(stderr, "Default shared memory page size: %s\n", describe_pagesize(_shm_default_page_size));
-    fprintf(stderr, "Can use 64K pages dynamically with shared meory: %s\n", (_can_use_64K_pages ? "yes" :"no"));
-    fprintf(stderr, "Can use 16M pages dynamically with shared memory: %s\n", (_can_use_16M_pages ? "yes" :"no"));
-    fprintf(stderr, "Multipage error details: %d\n", g_multipage_error);
-  }
+  // sanity checks
+  assert0(g_multipage_support.pagesize == SIZE_4K);
+  assert0(g_multipage_support.datapsize == SIZE_4K || g_multipage_support.datapsize == SIZE_64K);
+  // PPC port: so far unused.assert0(g_multipage_support.textpsize == SIZE_4K || g_multipage_support.textpsize == SIZE_64K);
+  assert0(g_multipage_support.pthr_stack_pagesize == g_multipage_support.datapsize);
+  assert0(g_multipage_support.shmpsize == SIZE_4K || g_multipage_support.shmpsize == SIZE_64K);
 
 } // end os::Aix::query_multipage_support()
 
@@ -1225,6 +1268,10 @@ void os::shutdown() {
 // called from signal handler. Before adding something to os::abort(), make
 // sure it is async-safe and can handle partially initialized VM.
 void os::abort(bool dump_core) {
+  abort(dump_core, NULL, NULL);
+}
+
+void os::abort(bool dump_core, void* siginfo, void* context) {
   os::shutdown();
   if (dump_core) {
 #ifndef PRODUCT
@@ -1492,13 +1539,8 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   return NULL;
 }
 
-// Glibc-2.0 libdl is not MT safe. If you are building with any glibc,
-// chances are you might want to run the generated bits against glibc-2.0
-// libdl.so, so always use locking for any version of glibc.
 void* os::dll_lookup(void* handle, const char* name) {
-  pthread_mutex_lock(&dl_mutex);
   void* res = dlsym(handle, name);
-  pthread_mutex_unlock(&dl_mutex);
   return res;
 }
 
@@ -1572,9 +1614,12 @@ void os::print_memory_info(outputStream* st) {
 
   st->print_cr("  default page size: %s", describe_pagesize(os::vm_page_size()));
   st->print_cr("  default stack page size: %s", describe_pagesize(os::vm_page_size()));
-  st->print_cr("  default shm page size: %s", describe_pagesize(os::Aix::shm_default_page_size()));
-  st->print_cr("  can use 64K pages dynamically: %s", (os::Aix::can_use_64K_pages() ? "yes" :"no"));
-  st->print_cr("  can use 16M pages dynamically: %s", (os::Aix::can_use_16M_pages() ? "yes" :"no"));
+  st->print_cr("  Default shared memory page size:        %s",
+    describe_pagesize(g_multipage_support.shmpsize));
+  st->print_cr("  Can use 64K pages dynamically with shared meory:  %s",
+    (g_multipage_support.can_use_64K_pages ? "yes" :"no"));
+  st->print_cr("  Can use 16M pages dynamically with shared memory: %s",
+    (g_multipage_support.can_use_16M_pages ? "yes" :"no"));
   if (g_multipage_error != 0) {
     st->print_cr("  multipage error: %d", g_multipage_error);
   }
@@ -1585,6 +1630,9 @@ void os::print_memory_info(outputStream* st) {
 
   const char* const extshm = ::getenv("EXTSHM");
   st->print_cr("  EXTSHM=%s.", extshm ? extshm : "<unset>");
+  if ( (strcmp(extshm, "on") == 0) || (strcmp(extshm, "ON") == 0) ) {
+    st->print_cr("  *** Unsupported! Please remove EXTSHM from your environment! ***");
+  }
 
   // Call os::Aix::get_meminfo() to retrieve memory statistics.
   os::Aix::meminfo_t mi;
@@ -1827,315 +1875,386 @@ int os::signal_wait() {
 ////////////////////////////////////////////////////////////////////////////////
 // Virtual Memory
 
-// AddrRange describes an immutable address range
-//
-// This is a helper class for the 'shared memory bookkeeping' below.
-class AddrRange {
-  friend class ShmBkBlock;
+// We need to keep small simple bookkeeping for os::reserve_memory and friends.
 
-  char* _start;
-  size_t _size;
+#define VMEM_MAPPED  1
+#define VMEM_SHMATED 2
 
-public:
+struct vmembk_t {
+  int type;         // 1 - mmap, 2 - shmat
+  char* addr;
+  size_t size;      // Real size, may be larger than usersize.
+  size_t pagesize;  // page size of area
+  vmembk_t* next;
 
-  AddrRange(char* start, size_t size)
-    : _start(start), _size(size)
-  {}
-
-  AddrRange(const AddrRange& r)
-    : _start(r.start()), _size(r.size())
-  {}
-
-  char* start() const { return _start; }
-  size_t size() const { return _size; }
-  char* end() const { return _start + _size; }
-  bool is_empty() const { return _size == 0 ? true : false; }
-
-  static AddrRange empty_range() { return AddrRange(NULL, 0); }
-
-  bool contains(const char* p) const {
-    return start() <= p && end() > p;
+  bool contains_addr(char* p) const {
+    return p >= addr && p < (addr + size);
   }
 
-  bool contains(const AddrRange& range) const {
-    return start() <= range.start() && end() >= range.end();
+  bool contains_range(char* p, size_t s) const {
+    return contains_addr(p) && contains_addr(p + s - 1);
   }
 
-  bool intersects(const AddrRange& range) const {
-    return (range.start() <= start() && range.end() > start()) ||
-           (range.start() < end() && range.end() >= end()) ||
-           contains(range);
+  void print_on(outputStream* os) const {
+    os->print("[" PTR_FORMAT " - " PTR_FORMAT "] (" UINTX_FORMAT
+      " bytes, %d %s pages), %s",
+      addr, addr + size - 1, size, size / pagesize, describe_pagesize(pagesize),
+      (type == VMEM_SHMATED ? "shmat" : "mmap")
+    );
   }
 
-  bool is_same_range(const AddrRange& range) const {
-    return start() == range.start() && size() == range.size();
-  }
-
-  // return the closest inside range consisting of whole pages
-  AddrRange find_closest_aligned_range(size_t pagesize) const {
-    if (pagesize == 0 || is_empty()) {
-      return empty_range();
+  // Check that range is a sub range of memory block (or equal to memory block);
+  // also check that range is fully page aligned to the page size if the block.
+  void assert_is_valid_subrange(char* p, size_t s) const {
+    if (!contains_range(p, s)) {
+      fprintf(stderr, "[" PTR_FORMAT " - " PTR_FORMAT "] is not a sub "
+              "range of [" PTR_FORMAT " - " PTR_FORMAT "].\n",
+              p, p + s - 1, addr, addr + size - 1);
+      guarantee0(false);
     }
-    char* const from = (char*)align_size_up((intptr_t)_start, pagesize);
-    char* const to = (char*)align_size_down((intptr_t)end(), pagesize);
-    if (from > to) {
-      return empty_range();
+    if (!is_aligned_to(p, pagesize) || !is_aligned_to(p + s, pagesize)) {
+      fprintf(stderr, "range [" PTR_FORMAT " - " PTR_FORMAT "] is not"
+              " aligned to pagesize (%s)\n", p, p + s);
+      guarantee0(false);
     }
-    return AddrRange(from, to - from);
   }
 };
 
-////////////////////////////////////////////////////////////////////////////
-// shared memory bookkeeping
-//
-// the os::reserve_memory() API and friends hand out different kind of memory, depending
-// on need and circumstances. Memory may be allocated with mmap() or with shmget/shmat.
-//
-// But these memory types have to be treated differently. For example, to uncommit
-// mmap-based memory, msync(MS_INVALIDATE) is needed, to uncommit shmat-based memory,
-// disclaim64() is needed.
-//
-// Therefore we need to keep track of the allocated memory segments and their
-// properties.
-
-// ShmBkBlock: base class for all blocks in the shared memory bookkeeping
-class ShmBkBlock : public CHeapObj<mtInternal> {
-
-  ShmBkBlock* _next;
-
-protected:
-
-  AddrRange _range;
-  const size_t _pagesize;
-  const bool _pinned;
-
-public:
-
-  ShmBkBlock(AddrRange range, size_t pagesize, bool pinned)
-    : _range(range), _pagesize(pagesize), _pinned(pinned) , _next(NULL) {
-
-    assert(_pagesize == SIZE_4K || _pagesize == SIZE_64K || _pagesize == SIZE_16M, "invalid page size");
-    assert(!_range.is_empty(), "invalid range");
-  }
-
-  virtual void print(outputStream* st) const {
-    st->print("0x%p ... 0x%p (%llu) - %d %s pages - %s",
-              _range.start(), _range.end(), _range.size(),
-              _range.size() / _pagesize, describe_pagesize(_pagesize),
-              _pinned ? "pinned" : "");
-  }
-
-  enum Type { MMAP, SHMAT };
-  virtual Type getType() = 0;
-
-  char* base() const { return _range.start(); }
-  size_t size() const { return _range.size(); }
-
-  void setAddrRange(AddrRange range) {
-    _range = range;
-  }
-
-  bool containsAddress(const char* p) const {
-    return _range.contains(p);
-  }
-
-  bool containsRange(const char* p, size_t size) const {
-    return _range.contains(AddrRange((char*)p, size));
-  }
-
-  bool isSameRange(const char* p, size_t size) const {
-    return _range.is_same_range(AddrRange((char*)p, size));
-  }
-
-  virtual bool disclaim(char* p, size_t size) = 0;
-  virtual bool release() = 0;
-
-  // blocks live in a list.
-  ShmBkBlock* next() const { return _next; }
-  void set_next(ShmBkBlock* blk) { _next = blk; }
-
-}; // end: ShmBkBlock
-
-
-// ShmBkMappedBlock: describes an block allocated with mmap()
-class ShmBkMappedBlock : public ShmBkBlock {
-public:
-
-  ShmBkMappedBlock(AddrRange range)
-    : ShmBkBlock(range, SIZE_4K, false) {} // mmap: always 4K, never pinned
-
-  void print(outputStream* st) const {
-    ShmBkBlock::print(st);
-    st->print_cr(" - mmap'ed");
-  }
-
-  Type getType() {
-    return MMAP;
-  }
-
-  bool disclaim(char* p, size_t size) {
-
-    AddrRange r(p, size);
-
-    guarantee(_range.contains(r), "invalid disclaim");
-
-    // only disclaim whole ranges.
-    const AddrRange r2 = r.find_closest_aligned_range(_pagesize);
-    if (r2.is_empty()) {
-      return true;
-    }
-
-    const int rc = ::msync(r2.start(), r2.size(), MS_INVALIDATE);
-
-    if (rc != 0) {
-      warning("msync(0x%p, %llu, MS_INVALIDATE) failed (%d)\n", r2.start(), r2.size(), errno);
-    }
-
-    return rc == 0 ? true : false;
-  }
-
-  bool release() {
-    // mmap'ed blocks are released using munmap
-    if (::munmap(_range.start(), _range.size()) != 0) {
-      warning("munmap(0x%p, %llu) failed (%d)\n", _range.start(), _range.size(), errno);
-      return false;
-    }
-    return true;
-  }
-}; // end: ShmBkMappedBlock
-
-// ShmBkShmatedBlock: describes an block allocated with shmget/shmat()
-class ShmBkShmatedBlock : public ShmBkBlock {
-public:
-
-  ShmBkShmatedBlock(AddrRange range, size_t pagesize, bool pinned)
-    : ShmBkBlock(range, pagesize, pinned) {}
-
-  void print(outputStream* st) const {
-    ShmBkBlock::print(st);
-    st->print_cr(" - shmat'ed");
-  }
-
-  Type getType() {
-    return SHMAT;
-  }
-
-  bool disclaim(char* p, size_t size) {
-
-    AddrRange r(p, size);
-
-    if (_pinned) {
-      return true;
-    }
-
-    // shmat'ed blocks are disclaimed using disclaim64
-    guarantee(_range.contains(r), "invalid disclaim");
-
-    // only disclaim whole ranges.
-    const AddrRange r2 = r.find_closest_aligned_range(_pagesize);
-    if (r2.is_empty()) {
-      return true;
-    }
-
-    const bool rc = my_disclaim64(r2.start(), r2.size());
-
-    if (Verbose && !rc) {
-      warning("failed to disclaim shm %p-%p\n", r2.start(), r2.end());
-    }
-
-    return rc;
-  }
-
-  bool release() {
-    bool rc = false;
-    if (::shmdt(_range.start()) != 0) {
-      warning("shmdt(0x%p) failed (%d)\n", _range.start(), errno);
-    } else {
-      rc = true;
-    }
-    return rc;
-  }
-
-}; // end: ShmBkShmatedBlock
-
-static ShmBkBlock* g_shmbk_list = NULL;
-static volatile jint g_shmbk_table_lock = 0;
-
-// keep some usage statistics
 static struct {
-  int nodes;    // number of nodes in list
-  size_t bytes; // reserved - not committed - bytes.
-  int reserves; // how often reserve was called
-  int lookups;  // how often a lookup was made
-} g_shmbk_stats = { 0, 0, 0, 0 };
+  vmembk_t* first;
+  MiscUtils::CritSect cs;
+} vmem;
 
-// add information about a shared memory segment to the bookkeeping
-static void shmbk_register(ShmBkBlock* p_block) {
-  guarantee(p_block, "logic error");
-  p_block->set_next(g_shmbk_list);
-  g_shmbk_list = p_block;
-  g_shmbk_stats.reserves ++;
-  g_shmbk_stats.bytes += p_block->size();
-  g_shmbk_stats.nodes ++;
-}
-
-// remove information about a shared memory segment by its starting address
-static void shmbk_unregister(ShmBkBlock* p_block) {
-  ShmBkBlock* p = g_shmbk_list;
-  ShmBkBlock* prev = NULL;
-  while (p) {
-    if (p == p_block) {
-      if (prev) {
-        prev->set_next(p->next());
-      } else {
-        g_shmbk_list = p->next();
-      }
-      g_shmbk_stats.nodes --;
-      g_shmbk_stats.bytes -= p->size();
-      return;
-    }
-    prev = p;
-    p = p->next();
+static void vmembk_add(char* addr, size_t size, size_t pagesize, int type) {
+  vmembk_t* p = (vmembk_t*) ::malloc(sizeof(vmembk_t));
+  assert0(p);
+  if (p) {
+    MiscUtils::AutoCritSect lck(&vmem.cs);
+    p->addr = addr; p->size = size;
+    p->pagesize = pagesize;
+    p->type = type;
+    p->next = vmem.first;
+    vmem.first = p;
   }
-  assert(false, "should not happen");
 }
 
-// given a pointer, return shared memory bookkeeping record for the segment it points into
-// using the returned block info must happen under lock protection
-static ShmBkBlock* shmbk_find_by_containing_address(const char* addr) {
-  g_shmbk_stats.lookups ++;
-  ShmBkBlock* p = g_shmbk_list;
-  while (p) {
-    if (p->containsAddress(addr)) {
+static vmembk_t* vmembk_find(char* addr) {
+  MiscUtils::AutoCritSect lck(&vmem.cs);
+  for (vmembk_t* p = vmem.first; p; p = p->next) {
+    if (p->addr <= addr && (p->addr + p->size) > addr) {
       return p;
     }
-    p = p->next();
   }
   return NULL;
 }
 
-// dump all information about all memory segments allocated with os::reserve_memory()
-void shmbk_dump_info() {
-  tty->print_cr("-- shared mem bookkeeping (alive: %d segments, %llu bytes, "
-    "total reserves: %d total lookups: %d)",
-    g_shmbk_stats.nodes, g_shmbk_stats.bytes, g_shmbk_stats.reserves, g_shmbk_stats.lookups);
-  const ShmBkBlock* p = g_shmbk_list;
-  int i = 0;
-  while (p) {
-    p->print(tty);
-    p = p->next();
-    i ++;
+static void vmembk_remove(vmembk_t* p0) {
+  MiscUtils::AutoCritSect lck(&vmem.cs);
+  assert0(p0);
+  assert0(vmem.first); // List should not be empty.
+  for (vmembk_t** pp = &(vmem.first); *pp; pp = &((*pp)->next)) {
+    if (*pp == p0) {
+      *pp = p0->next;
+      ::free(p0);
+      return;
+    }
+  }
+  assert0(false); // Not found?
+}
+
+static void vmembk_print_on(outputStream* os) {
+  MiscUtils::AutoCritSect lck(&vmem.cs);
+  for (vmembk_t* vmi = vmem.first; vmi; vmi = vmi->next) {
+    vmi->print_on(os);
+    os->cr();
   }
 }
 
-#define LOCK_SHMBK     { ThreadCritical _LOCK_SHMBK;
-#define UNLOCK_SHMBK   }
+// Reserve and attach a section of System V memory.
+// If <requested_addr> is not NULL, function will attempt to attach the memory at the given
+// address. Failing that, it will attach the memory anywhere.
+// If <requested_addr> is NULL, function will attach the memory anywhere.
+//
+// <alignment_hint> is being ignored by this function. It is very probable however that the
+// alignment requirements are met anyway, because shmat() attaches at 256M boundaries.
+// Should this be not enogh, we can put more work into it.
+static char* reserve_shmated_memory (
+  size_t bytes,
+  char* requested_addr,
+  size_t alignment_hint) {
+
+  trcVerbose("reserve_shmated_memory " UINTX_FORMAT " bytes, wishaddress "
+    PTR_FORMAT ", alignment_hint " UINTX_FORMAT "...",
+    bytes, requested_addr, alignment_hint);
+
+  // Either give me wish address or wish alignment but not both.
+  assert0(!(requested_addr != NULL && alignment_hint != 0));
+
+  // We must prevent anyone from attaching too close to the
+  // BRK because that may cause malloc OOM.
+  if (requested_addr != NULL && is_close_to_brk((address)requested_addr)) {
+    trcVerbose("Wish address " PTR_FORMAT " is too close to the BRK segment. "
+      "Will attach anywhere.", requested_addr);
+    // Act like the OS refused to attach there.
+    requested_addr = NULL;
+  }
+
+  // For old AS/400's (V5R4 and older) we should not even be here - System V shared memory is not
+  // really supported (max size 4GB), so reserve_mmapped_memory should have been used instead.
+  if (os::Aix::on_pase_V5R4_or_older()) {
+    ShouldNotReachHere();
+  }
+
+  // Align size of shm up to 64K to avoid errors if we later try to change the page size.
+  const size_t size = align_size_up(bytes, SIZE_64K);
+
+  // Reserve the shared segment.
+  int shmid = shmget(IPC_PRIVATE, size, IPC_CREAT | S_IRUSR | S_IWUSR);
+  if (shmid == -1) {
+    trc("shmget(.., " UINTX_FORMAT ", ..) failed (errno: %d).", size, errno);
+    return NULL;
+  }
+
+  // Important note:
+  // It is very important that we, upon leaving this function, do not leave a shm segment alive.
+  // We must right after attaching it remove it from the system. System V shm segments are global and
+  // survive the process.
+  // So, from here on: Do not assert, do not return, until we have called shmctl(IPC_RMID) (A).
+
+  struct shmid_ds shmbuf;
+  memset(&shmbuf, 0, sizeof(shmbuf));
+  shmbuf.shm_pagesize = SIZE_64K;
+  if (shmctl(shmid, SHM_PAGESIZE, &shmbuf) != 0) {
+    trcVerbose("Failed to set page size (need " UINTX_FORMAT " 64K pages) - shmctl failed with %d.",
+               size / SIZE_64K, errno);
+    // I want to know if this ever happens.
+    assert(false, "failed to set page size for shmat");
+  }
+
+  // Now attach the shared segment.
+  // Note that I attach with SHM_RND - which means that the requested address is rounded down, if
+  // needed, to the next lowest segment boundary. Otherwise the attach would fail if the address
+  // were not a segment boundary.
+  char* const addr = (char*) shmat(shmid, requested_addr, SHM_RND);
+  const int errno_shmat = errno;
+
+  // (A) Right after shmat and before handing shmat errors delete the shm segment.
+  if (::shmctl(shmid, IPC_RMID, NULL) == -1) {
+    trc("shmctl(%u, IPC_RMID) failed (%d)\n", shmid, errno);
+    assert(false, "failed to remove shared memory segment!");
+  }
+
+  // Handle shmat error. If we failed to attach, just return.
+  if (addr == (char*)-1) {
+    trcVerbose("Failed to attach segment at " PTR_FORMAT " (%d).", requested_addr, errno_shmat);
+    return NULL;
+  }
+
+  // Just for info: query the real page size. In case setting the page size did not
+  // work (see above), the system may have given us something other then 4K (LDR_CNTRL).
+  const size_t real_pagesize = os::Aix::query_pagesize(addr);
+  if (real_pagesize != shmbuf.shm_pagesize) {
+    trcVerbose("pagesize is, surprisingly, %h.", real_pagesize);
+  }
+
+  if (addr) {
+    trcVerbose("shm-allocated " PTR_FORMAT " .. " PTR_FORMAT " (" UINTX_FORMAT " bytes, " UINTX_FORMAT " %s pages)",
+      addr, addr + size - 1, size, size/real_pagesize, describe_pagesize(real_pagesize));
+  } else {
+    if (requested_addr != NULL) {
+      trcVerbose("failed to shm-allocate " UINTX_FORMAT " bytes at with address " PTR_FORMAT ".", size, requested_addr);
+    } else {
+      trcVerbose("failed to shm-allocate " UINTX_FORMAT " bytes at any address.", size);
+    }
+  }
+
+  // book-keeping
+  vmembk_add(addr, size, real_pagesize, VMEM_SHMATED);
+  assert0(is_aligned_to(addr, os::vm_page_size()));
+
+  return addr;
+}
+
+static bool release_shmated_memory(char* addr, size_t size) {
+
+  trcVerbose("release_shmated_memory [" PTR_FORMAT " - " PTR_FORMAT "].",
+    addr, addr + size - 1);
+
+  bool rc = false;
+
+  // TODO: is there a way to verify shm size without doing bookkeeping?
+  if (::shmdt(addr) != 0) {
+    trcVerbose("error (%d).", errno);
+  } else {
+    trcVerbose("ok.");
+    rc = true;
+  }
+  return rc;
+}
+
+static bool uncommit_shmated_memory(char* addr, size_t size) {
+  trcVerbose("uncommit_shmated_memory [" PTR_FORMAT " - " PTR_FORMAT "].",
+    addr, addr + size - 1);
+
+  const bool rc = my_disclaim64(addr, size);
+
+  if (!rc) {
+    trcVerbose("my_disclaim64(" PTR_FORMAT ", " UINTX_FORMAT ") failed.\n", addr, size);
+    return false;
+  }
+  return true;
+}
+
+// Reserve memory via mmap.
+// If <requested_addr> is given, an attempt is made to attach at the given address.
+// Failing that, memory is allocated at any address.
+// If <alignment_hint> is given and <requested_addr> is NULL, an attempt is made to
+// allocate at an address aligned with the given alignment. Failing that, memory
+// is aligned anywhere.
+static char* reserve_mmaped_memory(size_t bytes, char* requested_addr, size_t alignment_hint) {
+  trcVerbose("reserve_mmaped_memory " UINTX_FORMAT " bytes, wishaddress " PTR_FORMAT ", "
+    "alignment_hint " UINTX_FORMAT "...",
+    bytes, requested_addr, alignment_hint);
+
+  // If a wish address is given, but not aligned to 4K page boundary, mmap will fail.
+  if (requested_addr && !is_aligned_to(requested_addr, os::vm_page_size()) != 0) {
+    trcVerbose("Wish address " PTR_FORMAT " not aligned to page boundary.", requested_addr);
+    return NULL;
+  }
+
+  // We must prevent anyone from attaching too close to the
+  // BRK because that may cause malloc OOM.
+  if (requested_addr != NULL && is_close_to_brk((address)requested_addr)) {
+    trcVerbose("Wish address " PTR_FORMAT " is too close to the BRK segment. "
+      "Will attach anywhere.", requested_addr);
+    // Act like the OS refused to attach there.
+    requested_addr = NULL;
+  }
+
+  // Specify one or the other but not both.
+  assert0(!(requested_addr != NULL && alignment_hint > 0));
+
+  // In 64K mode, we claim the global page size (os::vm_page_size())
+  // is 64K. This is one of the few points where that illusion may
+  // break, because mmap() will always return memory aligned to 4K. So
+  // we must ensure we only ever return memory aligned to 64k.
+  if (alignment_hint) {
+    alignment_hint = lcm(alignment_hint, os::vm_page_size());
+  } else {
+    alignment_hint = os::vm_page_size();
+  }
+
+  // Size shall always be a multiple of os::vm_page_size (esp. in 64K mode).
+  const size_t size = align_size_up(bytes, os::vm_page_size());
+
+  // alignment: Allocate memory large enough to include an aligned range of the right size and
+  // cut off the leading and trailing waste pages.
+  assert0(alignment_hint != 0 && is_aligned_to(alignment_hint, os::vm_page_size())); // see above
+  const size_t extra_size = size + alignment_hint;
+
+  // Note: MAP_SHARED (instead of MAP_PRIVATE) needed to be able to
+  // later use msync(MS_INVALIDATE) (see os::uncommit_memory).
+  int flags = MAP_ANONYMOUS | MAP_SHARED;
+
+  // MAP_FIXED is needed to enforce requested_addr - manpage is vague about what
+  // it means if wishaddress is given but MAP_FIXED is not set.
+  //
+  // Important! Behaviour differs depending on whether SPEC1170 mode is active or not.
+  // SPEC1170 mode active: behaviour like POSIX, MAP_FIXED will clobber existing mappings.
+  // SPEC1170 mode not active: behaviour, unlike POSIX, is that no existing mappings will
+  // get clobbered.
+  if (requested_addr != NULL) {
+    if (!os::Aix::xpg_sus_mode()) {  // not SPEC1170 Behaviour
+      flags |= MAP_FIXED;
+    }
+  }
+
+  char* addr = (char*)::mmap(requested_addr, extra_size,
+      PROT_READ|PROT_WRITE|PROT_EXEC, flags, -1, 0);
+
+  if (addr == MAP_FAILED) {
+    trcVerbose("mmap(" PTR_FORMAT ", " UINTX_FORMAT ", ..) failed (%d)", requested_addr, size, errno);
+    return NULL;
+  }
+
+  // Handle alignment.
+  char* const addr_aligned = (char *)align_ptr_up(addr, alignment_hint);
+  const size_t waste_pre = addr_aligned - addr;
+  char* const addr_aligned_end = addr_aligned + size;
+  const size_t waste_post = extra_size - waste_pre - size;
+  if (waste_pre > 0) {
+    ::munmap(addr, waste_pre);
+  }
+  if (waste_post > 0) {
+    ::munmap(addr_aligned_end, waste_post);
+  }
+  addr = addr_aligned;
+
+  if (addr) {
+    trcVerbose("mmap-allocated " PTR_FORMAT " .. " PTR_FORMAT " (" UINTX_FORMAT " bytes)",
+      addr, addr + bytes, bytes);
+  } else {
+    if (requested_addr != NULL) {
+      trcVerbose("failed to mmap-allocate " UINTX_FORMAT " bytes at wish address " PTR_FORMAT ".", bytes, requested_addr);
+    } else {
+      trcVerbose("failed to mmap-allocate " UINTX_FORMAT " bytes at any address.", bytes);
+    }
+  }
+
+  // bookkeeping
+  vmembk_add(addr, size, SIZE_4K, VMEM_MAPPED);
+
+  // Test alignment, see above.
+  assert0(is_aligned_to(addr, os::vm_page_size()));
+
+  return addr;
+}
+
+static bool release_mmaped_memory(char* addr, size_t size) {
+  assert0(is_aligned_to(addr, os::vm_page_size()));
+  assert0(is_aligned_to(size, os::vm_page_size()));
+
+  trcVerbose("release_mmaped_memory [" PTR_FORMAT " - " PTR_FORMAT "].",
+    addr, addr + size - 1);
+  bool rc = false;
+
+  if (::munmap(addr, size) != 0) {
+    trcVerbose("failed (%d)\n", errno);
+    rc = false;
+  } else {
+    trcVerbose("ok.");
+    rc = true;
+  }
+
+  return rc;
+}
+
+static bool uncommit_mmaped_memory(char* addr, size_t size) {
+
+  assert0(is_aligned_to(addr, os::vm_page_size()));
+  assert0(is_aligned_to(size, os::vm_page_size()));
+
+  trcVerbose("uncommit_mmaped_memory [" PTR_FORMAT " - " PTR_FORMAT "].",
+    addr, addr + size - 1);
+  bool rc = false;
+
+  // Uncommit mmap memory with msync MS_INVALIDATE.
+  if (::msync(addr, size, MS_INVALIDATE) != 0) {
+    trcVerbose("failed (%d)\n", errno);
+    rc = false;
+  } else {
+    trcVerbose("ok.");
+    rc = true;
+  }
+
+  return rc;
+}
 
 // End: shared memory bookkeeping
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int os::vm_page_size() {
-  // Seems redundant as all get out
+  // Seems redundant as all get out.
   assert(os::Aix::page_size() != -1, "must call os::init");
   return os::Aix::page_size();
 }
@@ -2146,91 +2265,76 @@ int os::vm_allocation_granularity() {
   return os::Aix::page_size();
 }
 
-int os::Aix::commit_memory_impl(char* addr, size_t size, bool exec) {
-
-  // Commit is a noop. There is no explicit commit
-  // needed on AIX. Memory is committed when touched.
-  //
-  // Debug : check address range for validity
-#ifdef ASSERT
-  LOCK_SHMBK
-    ShmBkBlock* const block = shmbk_find_by_containing_address(addr);
-    if (!block) {
-      fprintf(stderr, "invalid pointer: " INTPTR_FORMAT "\n", addr);
-      shmbk_dump_info();
-      assert(false, "invalid pointer");
-      return false;
-    } else if (!block->containsRange(addr, size)) {
-      fprintf(stderr, "invalid range: " INTPTR_FORMAT " .. " INTPTR_FORMAT "\n", addr, addr + size);
-      shmbk_dump_info();
-      assert(false, "invalid range");
-      return false;
-    }
-  UNLOCK_SHMBK
-#endif // ASSERT
-
-  return 0;
+#ifdef PRODUCT
+static void warn_fail_commit_memory(char* addr, size_t size, bool exec,
+                                    int err) {
+  warning("INFO: os::commit_memory(" PTR_FORMAT ", " SIZE_FORMAT
+          ", %d) failed; error='%s' (errno=%d)", addr, size, exec,
+          strerror(err), err);
 }
-
-bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
-  return os::Aix::commit_memory_impl(addr, size, exec) == 0;
-}
+#endif
 
 void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
                                   const char* mesg) {
   assert(mesg != NULL, "mesg must be specified");
-  os::Aix::commit_memory_impl(addr, size, exec);
+  if (!pd_commit_memory(addr, size, exec)) {
+    // Add extra info in product mode for vm_exit_out_of_memory():
+    PRODUCT_ONLY(warn_fail_commit_memory(addr, size, exec, errno);)
+    vm_exit_out_of_memory(size, OOM_MMAP_ERROR, mesg);
+  }
 }
 
-int os::Aix::commit_memory_impl(char* addr, size_t size,
-                                size_t alignment_hint, bool exec) {
-  return os::Aix::commit_memory_impl(addr, size, exec);
+bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
+
+  assert0(is_aligned_to(addr, os::vm_page_size()));
+  assert0(is_aligned_to(size, os::vm_page_size()));
+
+  vmembk_t* const vmi = vmembk_find(addr);
+  assert0(vmi);
+  vmi->assert_is_valid_subrange(addr, size);
+
+  trcVerbose("commit_memory [" PTR_FORMAT " - " PTR_FORMAT "].", addr, addr + size - 1);
+
+  return true;
 }
 
-bool os::pd_commit_memory(char* addr, size_t size, size_t alignment_hint,
-                          bool exec) {
-  return os::Aix::commit_memory_impl(addr, size, alignment_hint, exec) == 0;
+bool os::pd_commit_memory(char* addr, size_t size, size_t alignment_hint, bool exec) {
+  return pd_commit_memory(addr, size, exec);
 }
 
 void os::pd_commit_memory_or_exit(char* addr, size_t size,
                                   size_t alignment_hint, bool exec,
                                   const char* mesg) {
-  os::Aix::commit_memory_impl(addr, size, alignment_hint, exec);
+  // Alignment_hint is ignored on this OS.
+  pd_commit_memory_or_exit(addr, size, exec, mesg);
 }
 
 bool os::pd_uncommit_memory(char* addr, size_t size) {
+  assert0(is_aligned_to(addr, os::vm_page_size()));
+  assert0(is_aligned_to(size, os::vm_page_size()));
 
-  // Delegate to ShmBkBlock class which knows how to uncommit its memory.
+  // Dynamically do different things for mmap/shmat.
+  const vmembk_t* const vmi = vmembk_find(addr);
+  assert0(vmi);
+  vmi->assert_is_valid_subrange(addr, size);
 
-  bool rc = false;
-  LOCK_SHMBK
-    ShmBkBlock* const block = shmbk_find_by_containing_address(addr);
-    if (!block) {
-      fprintf(stderr, "invalid pointer: 0x%p.\n", addr);
-      shmbk_dump_info();
-      assert(false, "invalid pointer");
-      return false;
-    } else if (!block->containsRange(addr, size)) {
-      fprintf(stderr, "invalid range: 0x%p .. 0x%p.\n", addr, addr + size);
-      shmbk_dump_info();
-      assert(false, "invalid range");
-      return false;
-    }
-    rc = block->disclaim(addr, size);
-  UNLOCK_SHMBK
-
-  if (Verbose && !rc) {
-    warning("failed to disclaim 0x%p .. 0x%p (0x%llX bytes).", addr, addr + size, size);
+  if (vmi->type == VMEM_SHMATED) {
+    return uncommit_shmated_memory(addr, size);
+  } else {
+    return uncommit_mmaped_memory(addr, size);
   }
-  return rc;
 }
 
 bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
-  return os::guard_memory(addr, size);
+  // Do not call this; no need to commit stack pages on AIX.
+  ShouldNotReachHere();
+  return true;
 }
 
 bool os::remove_stack_guard_pages(char* addr, size_t size) {
-  return os::unguard_memory(addr, size);
+  // Do not call this; no need to commit stack pages on AIX.
+  ShouldNotReachHere();
+  return true;
 }
 
 void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
@@ -2273,355 +2377,75 @@ char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info
   return end;
 }
 
-// Flags for reserve_shmatted_memory:
-#define RESSHM_WISHADDR_OR_FAIL                     1
-#define RESSHM_TRY_16M_PAGES                        2
-#define RESSHM_16M_PAGES_OR_FAIL                    4
-
-// Result of reserve_shmatted_memory:
-struct shmatted_memory_info_t {
-  char* addr;
-  size_t pagesize;
-  bool pinned;
-};
-
-// Reserve a section of shmatted memory.
-// params:
-// bytes [in]: size of memory, in bytes
-// requested_addr [in]: wish address.
-//                      NULL = no wish.
-//                      If RESSHM_WISHADDR_OR_FAIL is set in flags and wish address cannot
-//                      be obtained, function will fail. Otherwise wish address is treated as hint and
-//                      another pointer is returned.
-// flags [in]:          some flags. Valid flags are:
-//                      RESSHM_WISHADDR_OR_FAIL - fail if wish address is given and cannot be obtained.
-//                      RESSHM_TRY_16M_PAGES - try to allocate from 16M page pool
-//                          (requires UseLargePages and Use16MPages)
-//                      RESSHM_16M_PAGES_OR_FAIL - if you cannot allocate from 16M page pool, fail.
-//                          Otherwise any other page size will do.
-// p_info [out] :       holds information about the created shared memory segment.
-static bool reserve_shmatted_memory(size_t bytes, char* requested_addr, int flags, shmatted_memory_info_t* p_info) {
-
-  assert(p_info, "parameter error");
-
-  // init output struct.
-  p_info->addr = NULL;
-
-  // neither should we be here for EXTSHM=ON.
-  if (os::Aix::extshm()) {
-    ShouldNotReachHere();
-  }
-
-  // extract flags. sanity checks.
-  const bool wishaddr_or_fail =
-    flags & RESSHM_WISHADDR_OR_FAIL;
-  const bool try_16M_pages =
-    flags & RESSHM_TRY_16M_PAGES;
-  const bool f16M_pages_or_fail =
-    flags & RESSHM_16M_PAGES_OR_FAIL;
-
-  // first check: if a wish address is given and it is mandatory, but not aligned to segment boundary,
-  // shmat will fail anyway, so save some cycles by failing right away
-  if (requested_addr && ((uintptr_t)requested_addr % SIZE_256M == 0)) {
-    if (wishaddr_or_fail) {
-      return false;
-    } else {
-      requested_addr = NULL;
-    }
-  }
-
-  char* addr = NULL;
-
-  // Align size of shm up to the largest possible page size, to avoid errors later on when we try to change
-  // pagesize dynamically.
-  const size_t size = align_size_up(bytes, SIZE_16M);
-
-  // reserve the shared segment
-  int shmid = shmget(IPC_PRIVATE, size, IPC_CREAT | S_IRUSR | S_IWUSR);
-  if (shmid == -1) {
-    warning("shmget(.., %lld, ..) failed (errno: %d).", size, errno);
-    return false;
-  }
-
-  // Important note:
-  // It is very important that we, upon leaving this function, do not leave a shm segment alive.
-  // We must right after attaching it remove it from the system. System V shm segments are global and
-  // survive the process.
-  // So, from here on: Do not assert. Do not return. Always do a "goto cleanup_shm".
-
-  // try forcing the page size
-  size_t pagesize = -1; // unknown so far
-
-  if (UseLargePages) {
-
-    struct shmid_ds shmbuf;
-    memset(&shmbuf, 0, sizeof(shmbuf));
-
-    // First, try to take from 16M page pool if...
-    if (os::Aix::can_use_16M_pages()  // we can ...
-        && Use16MPages                // we are not explicitly forbidden to do so (-XX:-Use16MPages)..
-        && try_16M_pages) {           // caller wants us to.
-      shmbuf.shm_pagesize = SIZE_16M;
-      if (shmctl(shmid, SHM_PAGESIZE, &shmbuf) == 0) {
-        pagesize = SIZE_16M;
-      } else {
-        warning("Failed to allocate %d 16M pages. 16M page pool might be exhausted. (shmctl failed with %d)",
-                size / SIZE_16M, errno);
-        if (f16M_pages_or_fail) {
-          goto cleanup_shm;
-        }
-      }
-    }
-
-    // Nothing yet? Try setting 64K pages. Note that I never saw this fail, but in theory it might,
-    // because the 64K page pool may also be exhausted.
-    if (pagesize == -1) {
-      shmbuf.shm_pagesize = SIZE_64K;
-      if (shmctl(shmid, SHM_PAGESIZE, &shmbuf) == 0) {
-        pagesize = SIZE_64K;
-      } else {
-        warning("Failed to allocate %d 64K pages. (shmctl failed with %d)",
-                size / SIZE_64K, errno);
-        // here I give up. leave page_size -1 - later, after attaching, we will query the
-        // real page size of the attached memory. (in theory, it may be something different
-        // from 4K if LDR_CNTRL SHM_PSIZE is set)
-      }
-    }
-  }
-
-  // sanity point
-  assert(pagesize == -1 || pagesize == SIZE_16M || pagesize == SIZE_64K, "wrong page size");
-
-  // Now attach the shared segment.
-  addr = (char*) shmat(shmid, requested_addr, 0);
-  if (addr == (char*)-1) {
-    // How to handle attach failure:
-    // If it failed for a specific wish address, tolerate this: in that case, if wish address was
-    // mandatory, fail, if not, retry anywhere.
-    // If it failed for any other reason, treat that as fatal error.
-    addr = NULL;
-    if (requested_addr) {
-      if (wishaddr_or_fail) {
-        goto cleanup_shm;
-      } else {
-        addr = (char*) shmat(shmid, NULL, 0);
-        if (addr == (char*)-1) { // fatal
-          addr = NULL;
-          warning("shmat failed (errno: %d)", errno);
-          goto cleanup_shm;
-        }
-      }
-    } else { // fatal
-      addr = NULL;
-      warning("shmat failed (errno: %d)", errno);
-      goto cleanup_shm;
-    }
-  }
-
-  // sanity point
-  assert(addr && addr != (char*) -1, "wrong address");
-
-  // after successful Attach remove the segment - right away.
-  if (::shmctl(shmid, IPC_RMID, NULL) == -1) {
-    warning("shmctl(%u, IPC_RMID) failed (%d)\n", shmid, errno);
-    guarantee(false, "failed to remove shared memory segment!");
-  }
-  shmid = -1;
-
-  // query the real page size. In case setting the page size did not work (see above), the system
-  // may have given us something other then 4K (LDR_CNTRL)
-  {
-    const size_t real_pagesize = os::Aix::query_pagesize(addr);
-    if (pagesize != -1) {
-      assert(pagesize == real_pagesize, "unexpected pagesize after shmat");
-    } else {
-      pagesize = real_pagesize;
-    }
-  }
-
-  // Now register the reserved block with internal book keeping.
-  LOCK_SHMBK
-    const bool pinned = pagesize >= SIZE_16M ? true : false;
-    ShmBkShmatedBlock* const p_block = new ShmBkShmatedBlock(AddrRange(addr, size), pagesize, pinned);
-    assert(p_block, "");
-    shmbk_register(p_block);
-  UNLOCK_SHMBK
-
-cleanup_shm:
-
-  // if we have not done so yet, remove the shared memory segment. This is very important.
-  if (shmid != -1) {
-    if (::shmctl(shmid, IPC_RMID, NULL) == -1) {
-      warning("shmctl(%u, IPC_RMID) failed (%d)\n", shmid, errno);
-      guarantee(false, "failed to remove shared memory segment!");
-    }
-    shmid = -1;
-  }
-
-  // trace
-  if (Verbose && !addr) {
-    if (requested_addr != NULL) {
-      warning("failed to shm-allocate 0x%llX bytes at wish address 0x%p.", size, requested_addr);
-    } else {
-      warning("failed to shm-allocate 0x%llX bytes at any address.", size);
-    }
-  }
-
-  // hand info to caller
-  if (addr) {
-    p_info->addr = addr;
-    p_info->pagesize = pagesize;
-    p_info->pinned = pagesize == SIZE_16M ? true : false;
-  }
-
-  // sanity test:
-  if (requested_addr && addr && wishaddr_or_fail) {
-    guarantee(addr == requested_addr, "shmat error");
-  }
-
-  // just one more test to really make sure we have no dangling shm segments.
-  guarantee(shmid == -1, "dangling shm segments");
-
-  return addr ? true : false;
-
-} // end: reserve_shmatted_memory
-
-// Reserve memory using mmap. Behaves the same as reserve_shmatted_memory():
-// will return NULL in case of an error.
-static char* reserve_mmaped_memory(size_t bytes, char* requested_addr) {
-
-  // if a wish address is given, but not aligned to 4K page boundary, mmap will fail.
-  if (requested_addr && ((uintptr_t)requested_addr % os::vm_page_size() != 0)) {
-    warning("Wish address 0x%p not aligned to page boundary.", requested_addr);
-    return NULL;
-  }
-
-  const size_t size = align_size_up(bytes, SIZE_4K);
-
-  // Note: MAP_SHARED (instead of MAP_PRIVATE) needed to be able to
-  // msync(MS_INVALIDATE) (see os::uncommit_memory)
-  int flags = MAP_ANONYMOUS | MAP_SHARED;
-
-  // MAP_FIXED is needed to enforce requested_addr - manpage is vague about what
-  // it means if wishaddress is given but MAP_FIXED is not set.
-  //
-  // Note however that this changes semantics in SPEC1170 mode insofar as MAP_FIXED
-  // clobbers the address range, which is probably not what the caller wants. That's
-  // why I assert here (again) that the SPEC1170 compat mode is off.
-  // If we want to be able to run under SPEC1170, we have to do some porting and
-  // testing.
-  if (requested_addr != NULL) {
-    assert(!os::Aix::xpg_sus_mode(), "SPEC1170 mode not allowed.");
-    flags |= MAP_FIXED;
-  }
-
-  char* addr = (char*)::mmap(requested_addr, size, PROT_READ|PROT_WRITE|PROT_EXEC, flags, -1, 0);
-
-  if (addr == MAP_FAILED) {
-    // attach failed: tolerate for specific wish addresses. Not being able to attach
-    // anywhere is a fatal error.
-    if (requested_addr == NULL) {
-      // It's ok to fail here if the machine has not enough memory.
-      warning("mmap(NULL, 0x%llX, ..) failed (%d)", size, errno);
-    }
-    addr = NULL;
-    goto cleanup_mmap;
-  }
-
-  // If we did request a specific address and that address was not available, fail.
-  if (addr && requested_addr) {
-    guarantee(addr == requested_addr, "unexpected");
-  }
-
-  // register this mmap'ed segment with book keeping
-  LOCK_SHMBK
-    ShmBkMappedBlock* const p_block = new ShmBkMappedBlock(AddrRange(addr, size));
-    assert(p_block, "");
-    shmbk_register(p_block);
-  UNLOCK_SHMBK
-
-cleanup_mmap:
-
-  // trace
-  if (Verbose) {
-    if (addr) {
-      fprintf(stderr, "mmap-allocated 0x%p .. 0x%p (0x%llX bytes)\n", addr, addr + bytes, bytes);
-    }
-    else {
-      if (requested_addr != NULL) {
-        warning("failed to mmap-allocate 0x%llX bytes at wish address 0x%p.", bytes, requested_addr);
-      } else {
-        warning("failed to mmap-allocate 0x%llX bytes at any address.", bytes);
-      }
-    }
-  }
-
-  return addr;
-
-} // end: reserve_mmaped_memory
-
 // Reserves and attaches a shared memory segment.
 // Will assert if a wish address is given and could not be obtained.
 char* os::pd_reserve_memory(size_t bytes, char* requested_addr, size_t alignment_hint) {
-  return os::attempt_reserve_memory_at(bytes, requested_addr);
+
+  // All other Unices do a mmap(MAP_FIXED) if the addr is given,
+  // thereby clobbering old mappings at that place. That is probably
+  // not intended, never used and almost certainly an error were it
+  // ever be used this way (to try attaching at a specified address
+  // without clobbering old mappings an alternate API exists,
+  // os::attempt_reserve_memory_at()).
+  // Instead of mimicking the dangerous coding of the other platforms, here I
+  // just ignore the request address (release) or assert(debug).
+  assert0(requested_addr == NULL);
+
+  // Always round to os::vm_page_size(), which may be larger than 4K.
+  bytes = align_size_up(bytes, os::vm_page_size());
+  const size_t alignment_hint0 =
+    alignment_hint ? align_size_up(alignment_hint, os::vm_page_size()) : 0;
+
+  // In 4K mode always use mmap.
+  // In 64K mode allocate small sizes with mmap, large ones with 64K shmatted.
+  if (os::vm_page_size() == SIZE_4K) {
+    return reserve_mmaped_memory(bytes, requested_addr, alignment_hint);
+  } else {
+    if (bytes >= Use64KPagesThreshold) {
+      return reserve_shmated_memory(bytes, requested_addr, alignment_hint);
+    } else {
+      return reserve_mmaped_memory(bytes, requested_addr, alignment_hint);
+    }
+  }
 }
 
 bool os::pd_release_memory(char* addr, size_t size) {
 
-  // delegate to ShmBkBlock class which knows how to uncommit its memory.
+  // Dynamically do different things for mmap/shmat.
+  vmembk_t* const vmi = vmembk_find(addr);
+  assert0(vmi);
+
+  // Always round to os::vm_page_size(), which may be larger than 4K.
+  size = align_size_up(size, os::vm_page_size());
+  addr = (char *)align_ptr_up(addr, os::vm_page_size());
 
   bool rc = false;
-  LOCK_SHMBK
-    ShmBkBlock* const block = shmbk_find_by_containing_address(addr);
-    if (!block) {
-      fprintf(stderr, "invalid pointer: 0x%p.\n", addr);
-      shmbk_dump_info();
-      assert(false, "invalid pointer");
-      return false;
+  bool remove_bookkeeping = false;
+  if (vmi->type == VMEM_SHMATED) {
+    // For shmatted memory, we do:
+    // - If user wants to release the whole range, release the memory (shmdt).
+    // - If user only wants to release a partial range, uncommit (disclaim) that
+    //   range. That way, at least, we do not use memory anymore (bust still page
+    //   table space).
+    vmi->assert_is_valid_subrange(addr, size);
+    if (addr == vmi->addr && size == vmi->size) {
+      rc = release_shmated_memory(addr, size);
+      remove_bookkeeping = true;
+    } else {
+      rc = uncommit_shmated_memory(addr, size);
     }
-    else if (!block->isSameRange(addr, size)) {
-      if (block->getType() == ShmBkBlock::MMAP) {
-        // Release only the same range or a the beginning or the end of a range.
-        if (block->base() == addr && size < block->size()) {
-          ShmBkMappedBlock* const b = new ShmBkMappedBlock(AddrRange(block->base() + size, block->size() - size));
-          assert(b, "");
-          shmbk_register(b);
-          block->setAddrRange(AddrRange(addr, size));
-        }
-        else if (addr > block->base() && addr + size == block->base() + block->size()) {
-          ShmBkMappedBlock* const b = new ShmBkMappedBlock(AddrRange(block->base(), block->size() - size));
-          assert(b, "");
-          shmbk_register(b);
-          block->setAddrRange(AddrRange(addr, size));
-        }
-        else {
-          fprintf(stderr, "invalid mmap range: 0x%p .. 0x%p.\n", addr, addr + size);
-          shmbk_dump_info();
-          assert(false, "invalid mmap range");
-          return false;
-        }
-      }
-      else {
-        // Release only the same range. No partial release allowed.
-        // Soften the requirement a bit, because the user may think he owns a smaller size
-        // than the block is due to alignment etc.
-        if (block->base() != addr || block->size() < size) {
-          fprintf(stderr, "invalid shmget range: 0x%p .. 0x%p.\n", addr, addr + size);
-          shmbk_dump_info();
-          assert(false, "invalid shmget range");
-          return false;
-        }
-      }
-    }
-    rc = block->release();
-    assert(rc, "release failed");
-    // remove block from bookkeeping
-    shmbk_unregister(block);
-    delete block;
-  UNLOCK_SHMBK
+  } else {
+    // User may unmap partial regions but region has to be fully contained.
+#ifdef ASSERT
+    vmi->assert_is_valid_subrange(addr, size);
+#endif
+    rc = release_mmaped_memory(addr, size);
+    remove_bookkeeping = true;
+  }
 
-  if (!rc) {
-    warning("failed to released %lu bytes at 0x%p", size, addr);
+  // update bookkeeping
+  if (rc && remove_bookkeeping) {
+    vmembk_remove(vmi);
   }
 
   return rc;
@@ -2654,7 +2478,7 @@ static bool checked_mprotect(char* addr, size_t size, int prot) {
   //
   if (!os::Aix::xpg_sus_mode()) {
 
-    if (StubRoutines::SafeFetch32_stub()) {
+    if (CanUseSafeFetch32()) {
 
       const bool read_protected =
         (SafeFetch32((int*)addr, 0x12345678) == 0x12345678 &&
@@ -2702,46 +2526,8 @@ static size_t _large_page_size = 0;
 
 // Enable large page support if OS allows that.
 void os::large_page_init() {
-
-  // Note: os::Aix::query_multipage_support must run first.
-
-  if (!UseLargePages) {
-    return;
-  }
-
-  if (!Aix::can_use_64K_pages()) {
-    assert(!Aix::can_use_16M_pages(), "64K is a precondition for 16M.");
-    UseLargePages = false;
-    return;
-  }
-
-  if (!Aix::can_use_16M_pages() && Use16MPages) {
-    fprintf(stderr, "Cannot use 16M pages. Please ensure that there is a 16M page pool "
-            " and that the VM runs with CAP_BYPASS_RAC_VMM and CAP_PROPAGATE capabilities.\n");
-  }
-
-  // Do not report 16M page alignment as part of os::_page_sizes if we are
-  // explicitly forbidden from using 16M pages. Doing so would increase the
-  // alignment the garbage collector calculates with, slightly increasing
-  // heap usage. We should only pay for 16M alignment if we really want to
-  // use 16M pages.
-  if (Use16MPages && Aix::can_use_16M_pages()) {
-    _large_page_size = SIZE_16M;
-    _page_sizes[0] = SIZE_16M;
-    _page_sizes[1] = SIZE_64K;
-    _page_sizes[2] = SIZE_4K;
-    _page_sizes[3] = 0;
-  } else if (Aix::can_use_64K_pages()) {
-    _large_page_size = SIZE_64K;
-    _page_sizes[0] = SIZE_64K;
-    _page_sizes[1] = SIZE_4K;
-    _page_sizes[2] = 0;
-  }
-
-  if (Verbose) {
-    ("Default large page size is 0x%llX.", _large_page_size);
-  }
-} // end: os::large_page_init()
+  return; // Nothing to do. See query_multipage_support and friends.
+}
 
 char* os::reserve_memory_special(size_t bytes, size_t alignment, char* req_addr, bool exec) {
   // "exec" is passed in but not used. Creating the shared image for
@@ -2751,7 +2537,7 @@ char* os::reserve_memory_special(size_t bytes, size_t alignment, char* req_addr,
 }
 
 bool os::release_memory_special(char* base, size_t bytes) {
-  // detaching the SHM segment will also delete it, see reserve_memory_special()
+  // Detaching the SHM segment will also delete it, see reserve_memory_special().
   Unimplemented();
   return false;
 }
@@ -2761,40 +2547,32 @@ size_t os::large_page_size() {
 }
 
 bool os::can_commit_large_page_memory() {
-  // Well, sadly we cannot commit anything at all (see comment in
-  // os::commit_memory) but we claim to so we can make use of large pages
-  return true;
+  // Does not matter, we do not support huge pages.
+  return false;
 }
 
 bool os::can_execute_large_page_memory() {
-  // We can do that
-  return true;
+  // Does not matter, we do not support huge pages.
+  return false;
 }
 
 // Reserve memory at an arbitrary address, only if that area is
 // available (and not reserved for something else).
 char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
-
-  bool use_mmap = false;
-
-  // mmap: smaller graining, no large page support
-  // shm: large graining (256M), large page support, limited number of shm segments
-  //
-  // Prefer mmap wherever we either do not need large page support or have OS limits
-
-  if (!UseLargePages || bytes < SIZE_16M) {
-    use_mmap = true;
-  }
-
   char* addr = NULL;
-  if (use_mmap) {
-    addr = reserve_mmaped_memory(bytes, requested_addr);
+
+  // Always round to os::vm_page_size(), which may be larger than 4K.
+  bytes = align_size_up(bytes, os::vm_page_size());
+
+  // In 4K mode always use mmap.
+  // In 64K mode allocate small sizes with mmap, large ones with 64K shmatted.
+  if (os::vm_page_size() == SIZE_4K) {
+    return reserve_mmaped_memory(bytes, requested_addr, 0);
   } else {
-    // shmat: wish address is mandatory, and do not try 16M pages here.
-    shmatted_memory_info_t info;
-    const int flags = RESSHM_WISHADDR_OR_FAIL;
-    if (reserve_shmatted_memory(bytes, requested_addr, flags, &info)) {
-      addr = info.addr;
+    if (bytes >= Use64KPagesThreshold) {
+      return reserve_shmated_memory(bytes, requested_addr, 0);
+    } else {
+      return reserve_mmaped_memory(bytes, requested_addr, 0);
     }
   }
 
@@ -3629,18 +3407,89 @@ extern "C" {
 // This is called _before_ the most of global arguments have been parsed.
 void os::init(void) {
   // This is basic, we want to know if that ever changes.
-  // (shared memory boundary is supposed to be a 256M aligned)
+  // (Shared memory boundary is supposed to be a 256M aligned.)
   assert(SHMLBA == ((uint64_t)0x10000000ULL)/*256M*/, "unexpected");
 
   // First off, we need to know whether we run on AIX or PASE, and
   // the OS level we run on.
   os::Aix::initialize_os_info();
 
-  // Scan environment (SPEC1170 behaviour, etc)
+  // Scan environment (SPEC1170 behaviour, etc).
   os::Aix::scan_environment();
 
   // Check which pages are supported by AIX.
-  os::Aix::query_multipage_support();
+  query_multipage_support();
+
+  // Act like we only have one page size by eliminating corner cases which
+  // we did not support very well anyway.
+  // We have two input conditions:
+  // 1) Data segment page size. This is controlled by linker setting (datapsize) on the
+  //    launcher, and/or by LDR_CNTRL environment variable. The latter overrules the linker
+  //    setting.
+  //    Data segment page size is important for us because it defines the thread stack page
+  //    size, which is needed for guard page handling, stack banging etc.
+  // 2) The ability to allocate 64k pages dynamically. If this is a given, java heap can
+  //    and should be allocated with 64k pages.
+  //
+  // So, we do the following:
+  // LDR_CNTRL    can_use_64K_pages_dynamically       what we do                      remarks
+  // 4K           no                                  4K                              old systems (aix 5.2, as/400 v5r4) or new systems with AME activated
+  // 4k           yes                                 64k (treat 4k stacks as 64k)    different loader than java and standard settings
+  // 64k          no              --- AIX 5.2 ? ---
+  // 64k          yes                                 64k                             new systems and standard java loader (we set datapsize=64k when linking)
+
+  // We explicitly leave no option to change page size, because only upgrading would work,
+  // not downgrading (if stack page size is 64k you cannot pretend its 4k).
+
+  if (g_multipage_support.datapsize == SIZE_4K) {
+    // datapsize = 4K. Data segment, thread stacks are 4K paged.
+    if (g_multipage_support.can_use_64K_pages) {
+      // .. but we are able to use 64K pages dynamically.
+      // This would be typical for java launchers which are not linked
+      // with datapsize=64K (like, any other launcher but our own).
+      //
+      // In this case it would be smart to allocate the java heap with 64K
+      // to get the performance benefit, and to fake 64k pages for the
+      // data segment (when dealing with thread stacks).
+      //
+      // However, leave a possibility to downgrade to 4K, using
+      // -XX:-Use64KPages.
+      if (Use64KPages) {
+        trcVerbose("64K page mode (faked for data segment)");
+        Aix::_page_size = SIZE_64K;
+      } else {
+        trcVerbose("4K page mode (Use64KPages=off)");
+        Aix::_page_size = SIZE_4K;
+      }
+    } else {
+      // .. and not able to allocate 64k pages dynamically. Here, just
+      // fall back to 4K paged mode and use mmap for everything.
+      trcVerbose("4K page mode");
+      Aix::_page_size = SIZE_4K;
+      FLAG_SET_ERGO(bool, Use64KPages, false);
+    }
+  } else {
+    // datapsize = 64k. Data segment, thread stacks are 64k paged.
+    //   This normally means that we can allocate 64k pages dynamically.
+    //   (There is one special case where this may be false: EXTSHM=on.
+    //    but we decided to not support that mode).
+    assert0(g_multipage_support.can_use_64K_pages);
+    Aix::_page_size = SIZE_64K;
+    trcVerbose("64K page mode");
+    FLAG_SET_ERGO(bool, Use64KPages, true);
+  }
+
+  // Short-wire stack page size to base page size; if that works, we just remove
+  // that stack page size altogether.
+  Aix::_stack_page_size = Aix::_page_size;
+
+  // For now UseLargePages is just ignored.
+  FLAG_SET_ERGO(bool, UseLargePages, false);
+  _page_sizes[0] = 0;
+  _large_page_size = -1;
+
+  // debug trace
+  trcVerbose("os::vm_page_size %s\n", describe_pagesize(os::vm_page_size()));
 
   // Next, we need to initialize libo4 and libperfstat libraries.
   if (os::Aix::on_pase()) {
@@ -3658,34 +3507,6 @@ void os::init(void) {
   // need libperfstat etc.
   os::Aix::initialize_system_info();
 
-  // Initialize large page support.
-  if (UseLargePages) {
-    os::large_page_init();
-    if (!UseLargePages) {
-      // initialize os::_page_sizes
-      _page_sizes[0] = Aix::page_size();
-      _page_sizes[1] = 0;
-      if (Verbose) {
-        fprintf(stderr, "Large Page initialization failed: setting UseLargePages=0.\n");
-      }
-    }
-  } else {
-    // initialize os::_page_sizes
-    _page_sizes[0] = Aix::page_size();
-    _page_sizes[1] = 0;
-  }
-
-  // debug trace
-  if (Verbose) {
-    fprintf(stderr, "os::vm_page_size 0x%llX\n", os::vm_page_size());
-    fprintf(stderr, "os::large_page_size 0x%llX\n", os::large_page_size());
-    fprintf(stderr, "os::_page_sizes = ( ");
-    for (int i = 0; _page_sizes[i]; i ++) {
-      fprintf(stderr, " %s ", describe_pagesize(_page_sizes[i]));
-    }
-    fprintf(stderr, ")\n");
-  }
-
   _initial_pid = getpid();
 
   clock_tics_per_sec = sysconf(_SC_CLK_TCK);
@@ -3698,7 +3519,15 @@ void os::init(void) {
   Aix::_main_thread = pthread_self();
 
   initial_time_count = os::elapsed_counter();
-  pthread_mutex_init(&dl_mutex, NULL);
+
+  // If the pagesize of the VM is greater than 8K determine the appropriate
+  // number of initial guard pages. The user can change this with the
+  // command line arguments, if needed.
+  if (vm_page_size() > (int)Aix::vm_default_page_size()) {
+    StackYellowPages = 1;
+    StackRedPages = 1;
+    StackShadowPages = round_to((StackShadowPages*Aix::vm_default_page_size()), vm_page_size()) / vm_page_size();
+  }
 }
 
 // This is called _after_ the global arguments have been parsed.
@@ -3717,7 +3546,7 @@ jint os::init_2(void) {
   const int prot  = PROT_READ;
   const int flags = MAP_PRIVATE|MAP_ANONYMOUS;
 
-  // use optimized addresses for the polling page,
+  // Use optimized addresses for the polling page,
   // e.g. map it to a special 32-bit address.
   if (OptimizePollingPageLocation) {
     // architecture-specific list of address wishes:
@@ -3739,7 +3568,7 @@ jint os::init_2(void) {
 
     // iterate over the list of address wishes:
     for (int i=0; i<address_wishes_length; i++) {
-      // try to map with current address wish.
+      // Try to map with current address wish.
       // AIX: AIX needs MAP_FIXED if we provide an address and mmap will
       // fail if the address is already mapped.
       map_address = (address) ::mmap(address_wishes[i] - (ssize_t)page_size,
@@ -3752,7 +3581,7 @@ jint os::init_2(void) {
       }
 
       if (map_address + (ssize_t)page_size == address_wishes[i]) {
-        // map succeeded and map_address is at wished address, exit loop.
+        // Map succeeded and map_address is at wished address, exit loop.
         break;
       }
 
@@ -3761,7 +3590,7 @@ jint os::init_2(void) {
         ::munmap(map_address, map_size);
         map_address = (address) MAP_FAILED;
       }
-      // map failed, continue loop.
+      // Map failed, continue loop.
     }
   } // end OptimizePollingPageLocation
 
@@ -3777,8 +3606,9 @@ jint os::init_2(void) {
     os::set_memory_serialize_page(mem_serialize_page);
 
 #ifndef PRODUCT
-    if (Verbose && PrintMiscellaneous)
+    if (Verbose && PrintMiscellaneous) {
       tty->print("[Memory Serialize Page address: " INTPTR_FORMAT "]\n", (intptr_t)mem_serialize_page);
+    }
 #endif
   }
 
@@ -3797,16 +3627,18 @@ jint os::init_2(void) {
   // Add in 2*BytesPerWord times page size to account for VM stack during
   // class initialization depending on 32 or 64 bit VM.
   os::Aix::min_stack_allowed = MAX2(os::Aix::min_stack_allowed,
-            (size_t)(StackYellowPages+StackRedPages+StackShadowPages +
-                     2*BytesPerWord COMPILER2_PRESENT(+1)) * Aix::page_size());
+            (size_t)(StackYellowPages+StackRedPages+StackShadowPages) * Aix::page_size() +
+                     (2*BytesPerWord COMPILER2_PRESENT(+1)) * Aix::vm_default_page_size());
+
+  os::Aix::min_stack_allowed = align_size_up(os::Aix::min_stack_allowed, os::Aix::page_size());
 
   size_t threadStackSizeInBytes = ThreadStackSize * K;
   if (threadStackSizeInBytes != 0 &&
       threadStackSizeInBytes < os::Aix::min_stack_allowed) {
-        tty->print_cr("\nThe stack size specified is too small, "
-                      "Specify at least %dk",
-                      os::Aix::min_stack_allowed / K);
-        return JNI_ERR;
+    tty->print_cr("\nThe stack size specified is too small, "
+                  "Specify at least %dk",
+                  os::Aix::min_stack_allowed / K);
+    return JNI_ERR;
   }
 
   // Make the stack size a multiple of the page size so that
@@ -3817,7 +3649,7 @@ jint os::init_2(void) {
   Aix::libpthread_init();
 
   if (MaxFDLimit) {
-    // set the number of file descriptors to max. print out error
+    // Set the number of file descriptors to max. print out error
     // if getrlimit/setrlimit fails but continue regardless.
     struct rlimit nbr_files;
     int status = getrlimit(RLIMIT_NOFILE, &nbr_files);
@@ -3835,12 +3667,12 @@ jint os::init_2(void) {
   }
 
   if (PerfAllowAtExitRegistration) {
-    // only register atexit functions if PerfAllowAtExitRegistration is set.
-    // atexit functions can be delayed until process exit time, which
+    // Only register atexit functions if PerfAllowAtExitRegistration is set.
+    // Atexit functions can be delayed until process exit time, which
     // can be problematic for embedded VM situations. Embedded VMs should
     // call DestroyJavaVM() to assure that VM resources are released.
 
-    // note: perfMemory_exit_helper atexit function may be removed in
+    // Note: perfMemory_exit_helper atexit function may be removed in
     // the future if the appropriate cleanup code can be added to the
     // VM_Exit VMOperation's doit method.
     if (atexit(perfMemory_exit_helper) != 0) {
@@ -4162,8 +3994,10 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
 
   if (read_only) {
     prot = PROT_READ;
+    flags = MAP_SHARED;
   } else {
     prot = PROT_READ | PROT_WRITE;
+    flags = MAP_PRIVATE;
   }
 
   if (allow_exec) {
@@ -4174,7 +4008,12 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
     flags |= MAP_FIXED;
   }
 
-  char* mapped_address = (char*)mmap(addr, (size_t)bytes, prot, flags,
+  // Allow anonymous mappings if 'fd' is -1.
+  if (fd == -1) {
+    flags |= MAP_ANONYMOUS;
+  }
+
+  char* mapped_address = (char*)::mmap(addr, (size_t)bytes, prot, flags,
                                      fd, file_offset);
   if (mapped_address == MAP_FAILED) {
     return NULL;
@@ -4432,7 +4271,7 @@ void os::Aix::scan_environment() {
   if (Verbose) {
     fprintf(stderr, "EXTSHM=%s.\n", p ? p : "<unset>");
   }
-  if (p && strcmp(p, "ON") == 0) {
+  if (p && strcasecmp(p, "ON") == 0) {
     fprintf(stderr, "Unsupported setting: EXTSHM=ON. Large Page support will be disabled.\n");
     _extshm = 1;
   } else {
@@ -4493,16 +4332,13 @@ void os::Aix::initialize_libperfstat() {
 /////////////////////////////////////////////////////////////////////////////
 // thread stack
 
-// function to query the current stack size using pthread_getthrds_np
-//
-// ! do not change anything here unless you know what you are doing !
-static void query_stack_dimensions(address* p_stack_base, size_t* p_stack_size) {
-
+// Function to query the current stack size using pthread_getthrds_np.
+static bool query_stack_dimensions(address* p_stack_base, size_t* p_stack_size) {
   // This only works when invoked on a pthread. As we agreed not to use
-  // primordial threads anyway, I assert here
+  // primordial threads anyway, I assert here.
   guarantee(!os::Aix::is_primordial_thread(), "not allowed on the primordial thread");
 
-  // information about this api can be found (a) in the pthread.h header and
+  // Information about this api can be found (a) in the pthread.h header and
   // (b) in http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.basetechref/doc/basetrf1/pthread_getthrds_np.htm
   //
   // The use of this API to find out the current stack is kind of undefined.
@@ -4513,57 +4349,72 @@ static void query_stack_dimensions(address* p_stack_base, size_t* p_stack_size) 
 
   pthread_t tid = pthread_self();
   struct __pthrdsinfo pinfo;
-  char dummy[1]; // we only need this to satisfy the api and to not get E
+  char dummy[1]; // We only need this to satisfy the api and to not get E.
   int dummy_size = sizeof(dummy);
 
   memset(&pinfo, 0, sizeof(pinfo));
 
-  const int rc = pthread_getthrds_np (&tid, PTHRDSINFO_QUERY_ALL, &pinfo,
-                                      sizeof(pinfo), dummy, &dummy_size);
+  const int rc = pthread_getthrds_np(&tid, PTHRDSINFO_QUERY_ALL, &pinfo,
+                                     sizeof(pinfo), dummy, &dummy_size);
 
   if (rc != 0) {
-    fprintf(stderr, "pthread_getthrds_np failed (%d)\n", rc);
-    guarantee(0, "pthread_getthrds_np failed");
+    assert0(false);
+    trcVerbose("pthread_getthrds_np failed (%d)", rc);
+    return false;
   }
+  guarantee0(pinfo.__pi_stackend);
 
-  guarantee(pinfo.__pi_stackend, "returned stack base invalid");
-
-  // the following can happen when invoking pthread_getthrds_np on a pthread running on a user provided stack
-  // (when handing down a stack to pthread create, see pthread_attr_setstackaddr).
+  // The following can happen when invoking pthread_getthrds_np on a pthread running
+  // on a user provided stack (when handing down a stack to pthread create, see
+  // pthread_attr_setstackaddr).
   // Not sure what to do here - I feel inclined to forbid this use case completely.
-  guarantee(pinfo.__pi_stacksize, "returned stack size invalid");
+  guarantee0(pinfo.__pi_stacksize);
 
-  // On AIX, stacks are not necessarily page aligned so round the base and size accordingly
+  // Note: the pthread stack on AIX seems to look like this:
+  //
+  // ---------------------   real base ? at page border ?
+  //
+  //     pthread internal data, like ~2K, see also
+  //     http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.prftungd/doc/prftungd/thread_supp_tun_params.htm
+  //
+  // ---------------------   __pi_stackend - not page aligned, (xxxxF890)
+  //
+  //     stack
+  //      ....
+  //
+  //     stack
+  //
+  // ---------------------   __pi_stackend  - __pi_stacksize
+  //
+  //     padding due to AIX guard pages (?) see AIXTHREAD_GUARDPAGES
+  // ---------------------   __pi_stackaddr  (page aligned if AIXTHREAD_GUARDPAGES > 0)
+  //
+  //   AIX guard pages (?)
+  //
+
+  // So, the safe thing to do is to use the area from __pi_stackend to __pi_stackaddr;
+  // __pi_stackend however is almost never page aligned.
+  //
+
   if (p_stack_base) {
-    (*p_stack_base) = (address) align_size_up((intptr_t)pinfo.__pi_stackend, os::Aix::stack_page_size());
+    (*p_stack_base) = (address) (pinfo.__pi_stackend);
   }
 
   if (p_stack_size) {
-    (*p_stack_size) = pinfo.__pi_stacksize - os::Aix::stack_page_size();
+    (*p_stack_size) = pinfo.__pi_stackend - pinfo.__pi_stackaddr;
   }
 
-#ifndef PRODUCT
-  if (Verbose) {
-    fprintf(stderr,
-            "query_stack_dimensions() -> real stack_base=" INTPTR_FORMAT ", real stack_addr=" INTPTR_FORMAT
-            ", real stack_size=" INTPTR_FORMAT
-            ", stack_base=" INTPTR_FORMAT ", stack_size=" INTPTR_FORMAT "\n",
-            (intptr_t)pinfo.__pi_stackend, (intptr_t)pinfo.__pi_stackaddr, pinfo.__pi_stacksize,
-            (intptr_t)align_size_up((intptr_t)pinfo.__pi_stackend, os::Aix::stack_page_size()),
-            pinfo.__pi_stacksize - os::Aix::stack_page_size());
-  }
-#endif
+  return true;
+}
 
-} // end query_stack_dimensions
-
-// get the current stack base from the OS (actually, the pthread library)
+// Get the current stack base from the OS (actually, the pthread library).
 address os::current_stack_base() {
   address p;
   query_stack_dimensions(&p, 0);
   return p;
 }
 
-// get the current stack size from the OS (actually, the pthread library)
+// Get the current stack size from the OS (actually, the pthread library).
 size_t os::current_stack_size() {
   size_t s;
   query_stack_dimensions(0, &s);

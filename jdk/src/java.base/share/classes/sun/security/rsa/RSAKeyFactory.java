@@ -133,7 +133,7 @@ public final class RSAKeyFactory extends KeyFactorySpi {
      *
      * @param modulusLen the bit length of the RSA modulus.
      * @param exponent the RSA exponent
-     * @param minModulusLen if > 0, check to see if modulusLen is at
+     * @param minModulusLen if {@literal > 0}, check to see if modulusLen is at
      *        least this long, otherwise unused.
      * @param maxModulusLen caller will allow this max number of bits.
      *        Allow the smaller of the system-defined maximum and this param.

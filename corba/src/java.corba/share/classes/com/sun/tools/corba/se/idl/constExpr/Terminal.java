@@ -43,11 +43,11 @@ import java.math.BigInteger;
 /**
  * This class contains values.  Objects of this class are the terminal
  * nodes of an expression tree.
- * <b>
+ * <p>
  * Note that there is a constructor for Double values, but not Float.
  * CORBA defines that all floating point expressions are evaluated as
  * double, and that the result is coerced back to float if necessary.
- * <b>
+ * <p>
  * Note also that there is a constructor for long values, but not for
  * int or short.  CORBA defines that all integral expressions are evaluated
  * as unsigned long.  A CORBA long is a Java int.  There is no unsigned int

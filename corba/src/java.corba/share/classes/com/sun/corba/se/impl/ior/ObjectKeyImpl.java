@@ -37,9 +37,6 @@ import com.sun.corba.se.spi.ior.ObjectKeyTemplate ;
 
 import com.sun.corba.se.impl.encoding.EncapsOutputStream ;
 
-/**
- * @author
- */
 public class ObjectKeyImpl implements ObjectKey
 {
     private ObjectKeyTemplate oktemp;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,13 @@
  * questions.
  */
 
-import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import sun.hotspot.WhiteBox;
 import sun.management.*;
 import com.sun.management.*;
 import com.oracle.java.testlibrary.*;
+import java.lang.management.ManagementFactory;
 
 public final class VmFlagTest<T> {
     public static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
@@ -96,7 +96,7 @@ public final class VmFlagTest<T> {
           return asString(getValue());
         }
         HotSpotDiagnosticMXBean diagnostic
-                = ManagementFactoryHelper.getDiagnosticMXBean();
+                = ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
         VMOption tmp;
         try {
             tmp = diagnostic.getVMOption(flagName);

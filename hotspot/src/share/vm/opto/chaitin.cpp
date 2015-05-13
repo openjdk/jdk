@@ -2095,7 +2095,7 @@ static char *print_reg( OptoReg::Name reg, const PhaseChaitin *pc, char *buf ) {
 // Dump a register name into a buffer.  Be intelligent if we get called
 // before allocation is complete.
 char *PhaseChaitin::dump_register( const Node *n, char *buf  ) const {
-  if( !this ) {                 // Not got anything?
+  if( this == NULL ) {          // Not got anything?
     sprintf(buf,"N%d",n->_idx); // Then use Node index
   } else if( _node_regs ) {
     // Post allocation, use direct mappings, no LRG info available

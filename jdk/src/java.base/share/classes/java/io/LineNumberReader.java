@@ -159,6 +159,8 @@ public class LineNumberReader extends BufferedReader {
      *
      * @throws  IOException
      *          If an I/O error occurs
+     *
+     * @throws  IndexOutOfBoundsException {@inheritDoc}
      */
     @SuppressWarnings("fallthrough")
     public int read(char cbuf[], int off, int len) throws IOException {

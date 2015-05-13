@@ -447,8 +447,8 @@ reg_class bits32_reg_rw(
   R26,
   R27,
   R28,
-/*R29*/             // global TOC
-/*R30*/             // Narrow Oop Base
+/*R29,*/             // global TOC
+  R30,
   R31
 );
 
@@ -484,56 +484,9 @@ reg_class bits32_reg_ro(
   R26,
   R27,
   R28,
-/*R29*/
-/*R30*/             // Narrow Oop Base
+/*R29,*/
+  R30,
   R31
-);
-
-// Complement-required-in-pipeline operands for narrow oops.
-reg_class bits32_reg_ro_not_complement (
-/*R0*/     // R0
-  R1,      // SP
-  R2,      // TOC
-  R3,
-  R4,
-  R5,
-  R6,
-  R7,
-  R8,
-  R9,
-  R10,
-  R11,
-  R12,
-/*R13,*/   // system thread id
-  R14,
-  R15,
-  R16,    // R16_thread
-  R17,
-  R18,
-  R19,
-  R20,
-  R21,
-  R22,
-/*R23,
-  R24,
-  R25,
-  R26,
-  R27,
-  R28,*/
-/*R29,*/ // TODO: let allocator handle TOC!!
-/*R30,*/
-  R31
-);
-
-// Complement-required-in-pipeline operands for narrow oops.
-// See 64-bit declaration.
-reg_class bits32_reg_ro_complement (
-  R23,
-  R24,
-  R25,
-  R26,
-  R27,
-  R28
 );
 
 reg_class rscratch1_bits32_reg(R11);
@@ -591,8 +544,8 @@ reg_class bits64_reg_rw(
   R26_H, R26,
   R27_H, R27,
   R28_H, R28,
-/*R29_H, R29*/
-/*R30_H, R30*/
+/*R29_H, R29,*/
+  R30_H, R30,
   R31_H, R31
 );
 
@@ -629,8 +582,8 @@ reg_class bits64_reg_leaf_call(
   R26_H, R26,
   R27_H, R27,
   R28_H, R28,
-/*R29_H, R29*/
-/*R30_H, R30*/
+/*R29_H, R29,*/
+  R30_H, R30,
   R31_H, R31
 );
 
@@ -667,8 +620,8 @@ reg_class bits64_constant_table_base(
   R26_H, R26,
   R27_H, R27,
   R28_H, R28,
-/*R29_H, R29*/
-/*R30_H, R30*/
+/*R29_H, R29,*/
+  R30_H, R30,
   R31_H, R31
 );
 
@@ -704,62 +657,9 @@ reg_class bits64_reg_ro(
   R26_H, R26,
   R27_H, R27,
   R28_H, R28,
-/*R29_H, R29*/ // TODO: let allocator handle TOC!!
-/*R30_H, R30,*/
+/*R29_H, R29,*/ // TODO: let allocator handle TOC!!
+  R30_H, R30,
   R31_H, R31
-);
-
-// Complement-required-in-pipeline operands.
-reg_class bits64_reg_ro_not_complement (
-/*R0_H,  R0*/     // R0
-  R1_H,  R1,      // SP
-  R2_H,  R2,      // TOC
-  R3_H,  R3,
-  R4_H,  R4,
-  R5_H,  R5,
-  R6_H,  R6,
-  R7_H,  R7,
-  R8_H,  R8,
-  R9_H,  R9,
-  R10_H, R10,
-  R11_H, R11,
-  R12_H, R12,
-/*R13_H, R13*/   // system thread id
-  R14_H, R14,
-  R15_H, R15,
-  R16_H, R16,    // R16_thread
-  R17_H, R17,
-  R18_H, R18,
-  R19_H, R19,
-  R20_H, R20,
-  R21_H, R21,
-  R22_H, R22,
-/*R23_H, R23,
-  R24_H, R24,
-  R25_H, R25,
-  R26_H, R26,
-  R27_H, R27,
-  R28_H, R28,*/
-/*R29_H, R29*/ // TODO: let allocator handle TOC!!
-/*R30_H, R30,*/
-  R31_H, R31
-);
-
-// Complement-required-in-pipeline operands.
-// This register mask is used for the trap instructions that implement
-// the null checks on AIX. The trap instruction first computes the
-// complement of the value it shall trap on. Because of this, the
-// instruction can not be scheduled in the same cycle as an other
-// instruction reading the normal value of the same register. So we
-// force the value to check into 'bits64_reg_ro_not_complement'
-// and then copy it to 'bits64_reg_ro_complement' for the trap.
-reg_class bits64_reg_ro_complement (
-  R23_H, R23,
-  R24_H, R24,
-  R25_H, R25,
-  R26_H, R26,
-  R27_H, R27,
-  R28_H, R28
 );
 
 
@@ -772,6 +672,17 @@ reg_class int_flags(
 /*CCR2*/             // nv!
 /*CCR3*/             // nv!
 /*CCR4*/             // nv!
+  CCR5,
+  CCR6,
+  CCR7
+);
+
+reg_class int_flags_ro(
+  CCR0,
+  CCR1,
+  CCR2,
+  CCR3,
+  CCR4,
   CCR5,
   CCR6,
   CCR7
@@ -2876,7 +2787,7 @@ encode %{
 
   // Use release_store for card-marking to ensure that previous
   // oop-stores are visible before the card-mark change.
-  enc_class enc_cms_card_mark(memory mem, iRegLdst releaseFieldAddr) %{
+  enc_class enc_cms_card_mark(memory mem, iRegLdst releaseFieldAddr, flagsReg crx) %{
     // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // FIXME: Implement this as a cmove and use a fixed condition code
     // register which is written on every transition to compiled code,
@@ -2897,8 +2808,8 @@ encode %{
     // Check CMSCollectorCardTableModRefBSExt::_requires_release and do the
     // StoreStore barrier conditionally.
     __ lwz(R0, 0, $releaseFieldAddr$$Register);
-    __ cmpwi(CCR0, R0, 0);
-    __ beq_predict_taken(CCR0, skip_storestore);
+    __ cmpwi($crx$$CondRegister, R0, 0);
+    __ beq_predict_taken($crx$$CondRegister, skip_storestore);
 #endif
     __ li(R0, 0);
     __ membar(Assembler::StoreStore);
@@ -3108,7 +3019,7 @@ encode %{
     nodes->push(n2);
   %}
 
-  enc_class enc_cmove_reg(iRegIdst dst, flagsReg crx, iRegIsrc src, cmpOp cmp) %{
+  enc_class enc_cmove_reg(iRegIdst dst, flagsRegSrc crx, iRegIsrc src, cmpOp cmp) %{
     // TODO: PPC port $archOpcode(ppc64Opcode_cmove);
 
     MacroAssembler _masm(&cbuf);
@@ -3123,7 +3034,7 @@ encode %{
     __ bind(done);
   %}
 
-  enc_class enc_cmove_imm(iRegIdst dst, flagsReg crx, immI16 src, cmpOp cmp) %{
+  enc_class enc_cmove_imm(iRegIdst dst, flagsRegSrc crx, immI16 src, cmpOp cmp) %{
     // TODO: PPC port $archOpcode(ppc64Opcode_cmove);
 
     MacroAssembler _masm(&cbuf);
@@ -3269,7 +3180,7 @@ encode %{
     __ bind(done);
   %}
 
-  enc_class enc_cmove_bso_stackSlotL(iRegLdst dst, flagsReg crx, stackSlotL mem ) %{
+  enc_class enc_cmove_bso_stackSlotL(iRegLdst dst, flagsRegSrc crx, stackSlotL mem ) %{
     // TODO: PPC port $archOpcode(ppc64Opcode_cmove);
 
     MacroAssembler _masm(&cbuf);
@@ -3281,7 +3192,7 @@ encode %{
     __ bind(done);
   %}
 
-  enc_class enc_bc(flagsReg crx, cmpOp cmp, Label lbl) %{
+  enc_class enc_bc(flagsRegSrc crx, cmpOp cmp, Label lbl) %{
     // TODO: PPC port $archOpcode(ppc64Opcode_bc);
 
     MacroAssembler _masm(&cbuf);
@@ -3309,7 +3220,7 @@ encode %{
           l);
   %}
 
-  enc_class enc_bc_far(flagsReg crx, cmpOp cmp, Label lbl) %{
+  enc_class enc_bc_far(flagsRegSrc crx, cmpOp cmp, Label lbl) %{
     // The scheduler doesn't know about branch shortening, so we set the opcode
     // to ppc64Opcode_bc in order to hide this detail from the scheduler.
     // TODO: PPC port $archOpcode(ppc64Opcode_bc);
@@ -3341,7 +3252,7 @@ encode %{
   %}
 
   // Branch used with Power6 scheduling (can be shortened without changing the node).
-  enc_class enc_bc_short_far(flagsReg crx, cmpOp cmp, Label lbl) %{
+  enc_class enc_bc_short_far(flagsRegSrc crx, cmpOp cmp, Label lbl) %{
     // The scheduler doesn't know about branch shortening, so we set the opcode
     // to ppc64Opcode_bc in order to hide this detail from the scheduler.
     // TODO: PPC port $archOpcode(ppc64Opcode_bc);
@@ -4700,6 +4611,15 @@ operand flagsReg() %{
   interface(REG_INTER);
 %}
 
+operand flagsRegSrc() %{
+  constraint(ALLOC_IN_RC(int_flags_ro));
+  match(RegFlags);
+  match(flagsReg);
+  match(flagsRegCR0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
 // Condition Code Flag Register CR0
 operand flagsRegCR0() %{
   constraint(ALLOC_IN_RC(int_flags_CR0));
@@ -4783,6 +4703,13 @@ operand iRegN2P(iRegNsrc reg) %{
   predicate(false /* TODO: PPC port MatchDecodeNodes*/);
   constraint(ALLOC_IN_RC(bits32_reg_ro));
   match(DecodeN reg);
+  format %{ "$reg" %}
+  interface(REG_INTER)
+%}
+
+operand iRegN2P_klass(iRegNsrc reg) %{
+  predicate(Universe::narrow_klass_base() == NULL && Universe::narrow_klass_shift() == 0);
+  constraint(ALLOC_IN_RC(bits32_reg_ro));
   match(DecodeNKlass reg);
   format %{ "$reg" %}
   interface(REG_INTER)
@@ -4839,6 +4766,19 @@ operand indirectNarrow(iRegNsrc reg) %{
   predicate(false /* TODO: PPC port MatchDecodeNodes*/);
   constraint(ALLOC_IN_RC(bits64_reg_ro));
   match(DecodeN reg);
+  op_cost(100);
+  format %{ "[$reg]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0x0);
+    scale(0x0);
+    disp(0x0);
+  %}
+%}
+
+operand indirectNarrow_klass(iRegNsrc reg) %{
+  predicate(Universe::narrow_klass_base() == NULL && Universe::narrow_klass_shift() == 0);
+  constraint(ALLOC_IN_RC(bits64_reg_ro));
   match(DecodeNKlass reg);
   op_cost(100);
   format %{ "[$reg]" %}
@@ -4855,6 +4795,19 @@ operand indOffset16Narrow(iRegNsrc reg, immL16 offset) %{
   predicate(false /* TODO: PPC port MatchDecodeNodes*/);
   constraint(ALLOC_IN_RC(bits64_reg_ro));
   match(AddP (DecodeN reg) offset);
+  op_cost(100);
+  format %{ "[$reg + $offset]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0x0);
+    scale(0x0);
+    disp($offset);
+  %}
+%}
+
+operand indOffset16Narrow_klass(iRegNsrc reg, immL16 offset) %{
+  predicate(Universe::narrow_klass_base() == NULL && Universe::narrow_klass_shift() == 0);
+  constraint(ALLOC_IN_RC(bits64_reg_ro));
   match(AddP (DecodeNKlass reg) offset);
   op_cost(100);
   format %{ "[$reg + $offset]" %}
@@ -4871,6 +4824,19 @@ operand indOffset16NarrowAlg4(iRegNsrc reg, immL16Alg4 offset) %{
   predicate(false /* TODO: PPC port MatchDecodeNodes*/);
   constraint(ALLOC_IN_RC(bits64_reg_ro));
   match(AddP (DecodeN reg) offset);
+  op_cost(100);
+  format %{ "[$reg + $offset]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0x0);
+    scale(0x0);
+    disp($offset);
+  %}
+%}
+
+operand indOffset16NarrowAlg4_klass(iRegNsrc reg, immL16Alg4 offset) %{
+  predicate(Universe::narrow_klass_base() == NULL && Universe::narrow_klass_shift() == 0);
+  constraint(ALLOC_IN_RC(bits64_reg_ro));
   match(AddP (DecodeNKlass reg) offset);
   op_cost(100);
   format %{ "[$reg + $offset]" %}
@@ -4998,9 +4964,9 @@ operand cmpOp() %{
 // encoding and format. The classic case of this is memory operands.
 // Indirect is not included since its use is limited to Compare & Swap.
 
-opclass memory(indirect, indOffset16 /*, indIndex, tlsReference*/, indirectNarrow, indOffset16Narrow);
+opclass memory(indirect, indOffset16 /*, indIndex, tlsReference*/, indirectNarrow, indirectNarrow_klass, indOffset16Narrow, indOffset16Narrow_klass);
 // Memory operand where offsets are 4-aligned. Required for ld, std.
-opclass memoryAlg4(indirect, indOffset16Alg4, indirectNarrow, indOffset16NarrowAlg4);
+opclass memoryAlg4(indirect, indOffset16Alg4, indirectNarrow, indOffset16NarrowAlg4, indOffset16NarrowAlg4_klass);
 opclass indirectMemory(indirect, indirectNarrow);
 
 // Special opclass for I and ConvL2I.
@@ -5009,7 +4975,7 @@ opclass iRegIsrc_iRegL2Isrc(iRegIsrc, iRegL2Isrc);
 // Operand classes to match encode and decode. iRegN_P2N is only used
 // for storeN. I have never seen an encode node elsewhere.
 opclass iRegN_P2N(iRegNsrc, iRegP2N);
-opclass iRegP_N2P(iRegPsrc, iRegN2P);
+opclass iRegP_N2P(iRegPsrc, iRegN2P, iRegN2P_klass);
 
 //----------PIPELINE-----------------------------------------------------------
 
@@ -5593,6 +5559,19 @@ instruct loadN2P_unscaled(iRegPdst dst, memory mem) %{
   ins_pipe(pipe_class_memory);
 %}
 
+instruct loadN2P_klass_unscaled(iRegPdst dst, memory mem) %{
+  match(Set dst (DecodeNKlass (LoadNKlass mem)));
+  // SAPJVM GL 2014-05-21 Differs.
+  predicate(Universe::narrow_klass_base() == NULL && Universe::narrow_klass_shift() == 0 &&
+            _kids[0]->_leaf->as_Load()->is_unordered());
+  ins_cost(MEMORY_REF_COST);
+
+  format %{ "LWZ     $dst, $mem \t// DecodeN (unscaled)" %}
+  size(4);
+  ins_encode( enc_lwz(dst, mem) );
+  ins_pipe(pipe_class_memory);
+%}
+
 // Load Pointer
 instruct loadP(iRegPdst dst, memoryAlg4 mem) %{
   match(Set dst (LoadP mem));
@@ -5669,8 +5648,9 @@ instruct loadF(regF dst, memory mem) %{
 %}
 
 // Load Float acquire.
-instruct loadF_ac(regF dst, memory mem) %{
+instruct loadF_ac(regF dst, memory mem, flagsRegCR0 cr0) %{
   match(Set dst (LoadF mem));
+  effect(TEMP cr0);
   ins_cost(3*MEMORY_REF_COST);
 
   format %{ "LFS     $dst, $mem \t// acquire\n\t"
@@ -5705,8 +5685,9 @@ instruct loadD(regD dst, memory mem) %{
 %}
 
 // Load Double - aligned acquire.
-instruct loadD_ac(regD dst, memory mem) %{
+instruct loadD_ac(regD dst, memory mem, flagsRegCR0 cr0) %{
   match(Set dst (LoadD mem));
+  effect(TEMP cr0);
   ins_cost(3*MEMORY_REF_COST);
 
   format %{ "LFD     $dst, $mem \t// acquire\n\t"
@@ -6034,11 +6015,10 @@ instruct clearMs32b(iRegNdst dst, iRegNsrc src) %{
 instruct loadBase(iRegLdst dst) %{
   effect(DEF dst);
 
-  format %{ "MR      $dst, r30_heapbase" %}
-  size(4);
+  format %{ "LoadConst $dst, heapbase" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_or);
-    __ mr($dst$$Register, R30);
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    __ load_const_optimized($dst$$Register, Universe::narrow_oop_base(), R0);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -6114,7 +6094,7 @@ instruct loadConNKlass_lo(iRegNdst dst, immNKlass_NM src1, iRegNsrc src2) %{
   effect(TEMP src2);
   ins_cost(DEFAULT_COST);
 
-  format %{ "ORI    $dst, $src1, $src2 \t// narrow klass lo" %}
+  format %{ "ORI     $dst, $src1, $src2 \t// narrow klass lo" %}
   size(4);
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_ori);
@@ -6563,8 +6543,9 @@ instruct storeD(memory mem, regD src) %{
 // do a releasing store. For this, it gets the address of
 // CMSCollectorCardTableModRefBSExt::_requires_release as input.
 // (Using releaseFieldAddr in the match rule is a hack.)
-instruct storeCM_CMS(memory mem, iRegLdst releaseFieldAddr) %{
+instruct storeCM_CMS(memory mem, iRegLdst releaseFieldAddr, flagsReg crx) %{
   match(Set mem (StoreCM mem releaseFieldAddr));
+  effect(TEMP crx);
   predicate(false);
   ins_cost(MEMORY_REF_COST);
 
@@ -6572,7 +6553,7 @@ instruct storeCM_CMS(memory mem, iRegLdst releaseFieldAddr) %{
   ins_cannot_rematerialize(true);
 
   format %{ "STB     #0, $mem \t// CMS card-mark byte (must be 0!), checking requires_release in [$releaseFieldAddr]" %}
-  ins_encode( enc_cms_card_mark(mem, releaseFieldAddr) );
+  ins_encode( enc_cms_card_mark(mem, releaseFieldAddr, crx) );
   ins_pipe(pipe_class_memory);
 %}
 
@@ -6589,8 +6570,9 @@ instruct storeCM_CMS_ExEx(memory mem, immI_0 zero) %{
   expand %{
     immL baseImm %{ 0 /* TODO: PPC port (jlong)CMSCollectorCardTableModRefBSExt::requires_release_address() */ %}
     iRegLdst releaseFieldAddress;
+    flagsReg crx;
     loadConL_Ex(releaseFieldAddress, baseImm);
-    storeCM_CMS(mem, releaseFieldAddress);
+    storeCM_CMS(mem, releaseFieldAddress, crx);
   %}
 %}
 
@@ -6639,39 +6621,34 @@ instruct encodeP_sub(iRegPdst dst, iRegPdst src) %{
   predicate(false);
 
   format %{ "SUB     $dst, $src, oop_base \t// encode" %}
-  size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_subf);
-    __ subf($dst$$Register, R30, $src$$Register);
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    __ sub_const_optimized($dst$$Register, $src$$Register, Universe::narrow_oop_base(), R0);
   %}
   ins_pipe(pipe_class_default);
 %}
 
 // Conditional sub base.
-instruct cond_sub_base(iRegNdst dst, flagsReg crx, iRegPsrc src1) %{
+instruct cond_sub_base(iRegNdst dst, flagsRegSrc crx, iRegPsrc src1) %{
   // The match rule is needed to make it a 'MachTypeNode'!
   match(Set dst (EncodeP (Binary crx src1)));
   predicate(false);
 
-  ins_variable_size_depending_on_alignment(true);
-
   format %{ "BEQ     $crx, done\n\t"
-            "SUB     $dst, $src1, R30 \t// encode: subtract base if != NULL\n"
+            "SUB     $dst, $src1, heapbase \t// encode: subtract base if != NULL\n"
             "done:" %}
-  size(false /* TODO: PPC PORT (InsertEndGroupPPC64 && Compile::current()->do_hb_scheduling())*/ ? 12 : 8);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_cmove);
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     Label done;
     __ beq($crx$$CondRegister, done);
-    __ subf($dst$$Register, R30, $src1$$Register);
-    // TODO PPC port __ endgroup_if_needed(_size == 12);
+    __ sub_const_optimized($dst$$Register, $src1$$Register, Universe::narrow_oop_base(), R0);
     __ bind(done);
   %}
   ins_pipe(pipe_class_default);
 %}
 
 // Power 7 can use isel instruction
-instruct cond_set_0_oop(iRegNdst dst, flagsReg crx, iRegPsrc src1) %{
+instruct cond_set_0_oop(iRegNdst dst, flagsRegSrc crx, iRegPsrc src1) %{
   // The match rule is needed to make it a 'MachTypeNode'!
   match(Set dst (EncodeP (Binary crx src1)));
   predicate(false);
@@ -6777,42 +6754,37 @@ instruct decodeN_add(iRegPdst dst, iRegPdst src) %{
   match(Set dst (DecodeN src));
   predicate(false);
 
-  format %{ "ADD     $dst, $src, R30 \t// DecodeN, add oop base" %}
-  size(4);
+  format %{ "ADD     $dst, $src, heapbase \t// DecodeN, add oop base" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_add);
-    __ add($dst$$Register, $src$$Register, R30);
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    __ add_const_optimized($dst$$Register, $src$$Register, Universe::narrow_oop_base(), R0);
   %}
   ins_pipe(pipe_class_default);
 %}
 
 // conditianal add base for expand
-instruct cond_add_base(iRegPdst dst, flagsReg crx, iRegPsrc src1) %{
+instruct cond_add_base(iRegPdst dst, flagsRegSrc crx, iRegPsrc src) %{
   // The match rule is needed to make it a 'MachTypeNode'!
   // NOTICE that the rule is nonsense - we just have to make sure that:
   //  - _matrule->_rChild->_opType == "DecodeN" (see InstructForm::captures_bottom_type() in formssel.cpp)
   //  - we have to match 'crx' to avoid an "illegal USE of non-input: flagsReg crx" error in ADLC.
-  match(Set dst (DecodeN (Binary crx src1)));
+  match(Set dst (DecodeN (Binary crx src)));
   predicate(false);
 
-  ins_variable_size_depending_on_alignment(true);
-
   format %{ "BEQ     $crx, done\n\t"
-            "ADD     $dst, $src1, R30 \t// DecodeN: add oop base if $src1 != NULL\n"
+            "ADD     $dst, $src, heapbase \t// DecodeN: add oop base if $src != NULL\n"
             "done:" %}
-  size(false /* TODO: PPC PORT (InsertEndGroupPPC64 && Compile::current()->do_hb_scheduling()) */? 12 : 8);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_cmove);
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     Label done;
     __ beq($crx$$CondRegister, done);
-    __ add($dst$$Register, $src1$$Register, R30);
-    // TODO PPC port  __ endgroup_if_needed(_size == 12);
+    __ add_const_optimized($dst$$Register, $src$$Register, Universe::narrow_oop_base(), R0);
     __ bind(done);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-instruct cond_set_0_ptr(iRegPdst dst, flagsReg crx, iRegPsrc src1) %{
+instruct cond_set_0_ptr(iRegPdst dst, flagsRegSrc crx, iRegPsrc src1) %{
   // The match rule is needed to make it a 'MachTypeNode'!
   // NOTICE that the rule is nonsense - we just have to make sure that:
   //  - _matrule->_rChild->_opType == "DecodeN" (see InstructForm::captures_bottom_type() in formssel.cpp)
@@ -6888,7 +6860,7 @@ instruct decodeN_Disjoint_notNull_Ex(iRegPdst dst, iRegNsrc src) %{
             Universe::narrow_oop_base_disjoint());
   ins_cost(DEFAULT_COST);
 
-  format %{ "MOV     $dst, R30 \t\n"
+  format %{ "MOV     $dst, heapbase \t\n"
             "RLDIMI  $dst, $src, shift, 32-shift \t// decode with disjoint base" %}
   postalloc_expand %{
     loadBaseNode *n1 = new loadBaseNode();
@@ -6946,7 +6918,7 @@ instruct decodeN_Disjoint_isel_Ex(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
 
     assert(ra_->is_oop(this) == true, "A decodeN node must produce an oop!");
     ra_->set_oop(n_cond_set, true);
-    
+
     ra_->set_pair(n1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
     ra_->set_pair(n_compare->_idx, ra_->get_reg_second(n_crx), ra_->get_reg_first(n_crx));
     ra_->set_pair(n2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
@@ -7303,7 +7275,7 @@ instruct membar_CPUOrder() %{
 //----------Conditional Move---------------------------------------------------
 
 // Cmove using isel.
-instruct cmovI_reg_isel(cmpOp cmp, flagsReg crx, iRegIdst dst, iRegIsrc src) %{
+instruct cmovI_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegIdst dst, iRegIsrc src) %{
   match(Set dst (CMoveI (Binary cmp crx) (Binary dst src)));
   predicate(VM_Version::has_isel());
   ins_cost(DEFAULT_COST);
@@ -7321,7 +7293,7 @@ instruct cmovI_reg_isel(cmpOp cmp, flagsReg crx, iRegIdst dst, iRegIsrc src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovI_reg(cmpOp cmp, flagsReg crx, iRegIdst dst, iRegIsrc src) %{
+instruct cmovI_reg(cmpOp cmp, flagsRegSrc crx, iRegIdst dst, iRegIsrc src) %{
   match(Set dst (CMoveI (Binary cmp crx) (Binary dst src)));
   predicate(!VM_Version::has_isel());
   ins_cost(DEFAULT_COST+BRANCH_COST);
@@ -7335,7 +7307,7 @@ instruct cmovI_reg(cmpOp cmp, flagsReg crx, iRegIdst dst, iRegIsrc src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovI_imm(cmpOp cmp, flagsReg crx, iRegIdst dst, immI16 src) %{
+instruct cmovI_imm(cmpOp cmp, flagsRegSrc crx, iRegIdst dst, immI16 src) %{
   match(Set dst (CMoveI (Binary cmp crx) (Binary dst src)));
   ins_cost(DEFAULT_COST+BRANCH_COST);
 
@@ -7349,7 +7321,7 @@ instruct cmovI_imm(cmpOp cmp, flagsReg crx, iRegIdst dst, immI16 src) %{
 %}
 
 // Cmove using isel.
-instruct cmovL_reg_isel(cmpOp cmp, flagsReg crx, iRegLdst dst, iRegLsrc src) %{
+instruct cmovL_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegLdst dst, iRegLsrc src) %{
   match(Set dst (CMoveL (Binary cmp crx) (Binary dst src)));
   predicate(VM_Version::has_isel());
   ins_cost(DEFAULT_COST);
@@ -7367,7 +7339,7 @@ instruct cmovL_reg_isel(cmpOp cmp, flagsReg crx, iRegLdst dst, iRegLsrc src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovL_reg(cmpOp cmp, flagsReg crx, iRegLdst dst, iRegLsrc src) %{
+instruct cmovL_reg(cmpOp cmp, flagsRegSrc crx, iRegLdst dst, iRegLsrc src) %{
   match(Set dst (CMoveL (Binary cmp crx) (Binary dst src)));
   predicate(!VM_Version::has_isel());
   ins_cost(DEFAULT_COST+BRANCH_COST);
@@ -7381,7 +7353,7 @@ instruct cmovL_reg(cmpOp cmp, flagsReg crx, iRegLdst dst, iRegLsrc src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovL_imm(cmpOp cmp, flagsReg crx, iRegLdst dst, immL16 src) %{
+instruct cmovL_imm(cmpOp cmp, flagsRegSrc crx, iRegLdst dst, immL16 src) %{
   match(Set dst (CMoveL (Binary cmp crx) (Binary dst src)));
   ins_cost(DEFAULT_COST+BRANCH_COST);
 
@@ -7395,7 +7367,7 @@ instruct cmovL_imm(cmpOp cmp, flagsReg crx, iRegLdst dst, immL16 src) %{
 %}
 
 // Cmove using isel.
-instruct cmovN_reg_isel(cmpOp cmp, flagsReg crx, iRegNdst dst, iRegNsrc src) %{
+instruct cmovN_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegNdst dst, iRegNsrc src) %{
   match(Set dst (CMoveN (Binary cmp crx) (Binary dst src)));
   predicate(VM_Version::has_isel());
   ins_cost(DEFAULT_COST);
@@ -7414,7 +7386,7 @@ instruct cmovN_reg_isel(cmpOp cmp, flagsReg crx, iRegNdst dst, iRegNsrc src) %{
 %}
 
 // Conditional move for RegN. Only cmov(reg, reg).
-instruct cmovN_reg(cmpOp cmp, flagsReg crx, iRegNdst dst, iRegNsrc src) %{
+instruct cmovN_reg(cmpOp cmp, flagsRegSrc crx, iRegNdst dst, iRegNsrc src) %{
   match(Set dst (CMoveN (Binary cmp crx) (Binary dst src)));
   predicate(!VM_Version::has_isel());
   ins_cost(DEFAULT_COST+BRANCH_COST);
@@ -7428,7 +7400,7 @@ instruct cmovN_reg(cmpOp cmp, flagsReg crx, iRegNdst dst, iRegNsrc src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovN_imm(cmpOp cmp, flagsReg crx, iRegNdst dst, immN_0 src) %{
+instruct cmovN_imm(cmpOp cmp, flagsRegSrc crx, iRegNdst dst, immN_0 src) %{
   match(Set dst (CMoveN (Binary cmp crx) (Binary dst src)));
   ins_cost(DEFAULT_COST+BRANCH_COST);
 
@@ -7442,7 +7414,7 @@ instruct cmovN_imm(cmpOp cmp, flagsReg crx, iRegNdst dst, immN_0 src) %{
 %}
 
 // Cmove using isel.
-instruct cmovP_reg_isel(cmpOp cmp, flagsReg crx, iRegPdst dst, iRegPsrc src) %{
+instruct cmovP_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegPdst dst, iRegPsrc src) %{
   match(Set dst (CMoveP (Binary cmp crx) (Binary dst src)));
   predicate(VM_Version::has_isel());
   ins_cost(DEFAULT_COST);
@@ -7460,7 +7432,7 @@ instruct cmovP_reg_isel(cmpOp cmp, flagsReg crx, iRegPdst dst, iRegPsrc src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovP_reg(cmpOp cmp, flagsReg crx, iRegPdst dst, iRegP_N2P src) %{
+instruct cmovP_reg(cmpOp cmp, flagsRegSrc crx, iRegPdst dst, iRegP_N2P src) %{
   match(Set dst (CMoveP (Binary cmp crx) (Binary dst src)));
   predicate(!VM_Version::has_isel());
   ins_cost(DEFAULT_COST+BRANCH_COST);
@@ -7474,7 +7446,7 @@ instruct cmovP_reg(cmpOp cmp, flagsReg crx, iRegPdst dst, iRegP_N2P src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovP_imm(cmpOp cmp, flagsReg crx, iRegPdst dst, immP_0 src) %{
+instruct cmovP_imm(cmpOp cmp, flagsRegSrc crx, iRegPdst dst, immP_0 src) %{
   match(Set dst (CMoveP (Binary cmp crx) (Binary dst src)));
   ins_cost(DEFAULT_COST+BRANCH_COST);
 
@@ -7487,7 +7459,7 @@ instruct cmovP_imm(cmpOp cmp, flagsReg crx, iRegPdst dst, immP_0 src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovF_reg(cmpOp cmp, flagsReg crx, regF dst, regF src) %{
+instruct cmovF_reg(cmpOp cmp, flagsRegSrc crx, regF dst, regF src) %{
   match(Set dst (CMoveF (Binary cmp crx) (Binary dst src)));
   ins_cost(DEFAULT_COST+BRANCH_COST);
 
@@ -7509,7 +7481,7 @@ instruct cmovF_reg(cmpOp cmp, flagsReg crx, regF dst, regF src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovD_reg(cmpOp cmp, flagsReg crx, regD dst, regD src) %{
+instruct cmovD_reg(cmpOp cmp, flagsRegSrc crx, regD dst, regD src) %{
   match(Set dst (CMoveD (Binary cmp crx) (Binary dst src)));
   ins_cost(DEFAULT_COST+BRANCH_COST);
 
@@ -7542,8 +7514,9 @@ instruct cmovD_reg(cmpOp cmp, flagsReg crx, regD dst, regD src) %{
 // Mem_ptr must be a memory operand, else this node does not get
 // Flag_needs_anti_dependence_check set by adlc. If this is not set this node
 // can be rematerialized which leads to errors.
-instruct storeLConditional_regP_regL_regL(flagsReg crx, indirect mem_ptr, iRegLsrc oldVal, iRegLsrc newVal) %{
+instruct storeLConditional_regP_regL_regL(flagsReg crx, indirect mem_ptr, iRegLsrc oldVal, iRegLsrc newVal, flagsRegCR0 cr0) %{
   match(Set crx (StoreLConditional mem_ptr (Binary oldVal newVal)));
+  effect(TEMP cr0);
   format %{ "CMPXCHGD if ($crx = ($oldVal == *$mem_ptr)) *mem_ptr = $newVal; as bool" %}
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_compound);
@@ -7560,16 +7533,16 @@ instruct storeLConditional_regP_regL_regL(flagsReg crx, indirect mem_ptr, iRegLs
 // Mem_ptr must be a memory operand, else this node does not get
 // Flag_needs_anti_dependence_check set by adlc. If this is not set this node
 // can be rematerialized which leads to errors.
-instruct storePConditional_regP_regP_regP(flagsReg crx, indirect mem_ptr, iRegPsrc oldVal, iRegPsrc newVal) %{
-  match(Set crx (StorePConditional mem_ptr (Binary oldVal newVal)));
-  format %{ "CMPXCHGD if ($crx = ($oldVal == *$mem_ptr)) *mem_ptr = $newVal; as bool" %}
+instruct storePConditional_regP_regP_regP(flagsRegCR0 cr0, indirect mem_ptr, iRegPsrc oldVal, iRegPsrc newVal) %{
+  match(Set cr0 (StorePConditional mem_ptr (Binary oldVal newVal)));
+  ins_cost(2*MEMORY_REF_COST);
+
+  format %{ "STDCX_  if ($cr0 = ($oldVal == *$mem_ptr)) *mem_ptr = $newVal; as bool" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
-    __ cmpxchgd($crx$$CondRegister, R0, $oldVal$$Register, $newVal$$Register, $mem_ptr$$Register,
-                MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
-                noreg, NULL, true);
+    // TODO: PPC port $archOpcode(ppc64Opcode_stdcx_);
+    __ stdcx_($newVal$$Register, $mem_ptr$$Register);
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(pipe_class_memory);
 %}
 
 // Implement LoadPLocked. Must be ordered against changes of the memory location
@@ -7577,13 +7550,14 @@ instruct storePConditional_regP_regP_regP(flagsReg crx, indirect mem_ptr, iRegPs
 // Don't know whether this is ever used.
 instruct loadPLocked(iRegPdst dst, memory mem) %{
   match(Set dst (LoadPLocked mem));
-  ins_cost(MEMORY_REF_COST);
+  ins_cost(2*MEMORY_REF_COST);
 
-  format %{ "LD      $dst, $mem \t// loadPLocked\n\t"
-            "TWI     $dst\n\t"
-            "ISYNC" %}
-  size(12);
-  ins_encode( enc_ld_ac(dst, mem) );
+  format %{ "LDARX   $dst, $mem \t// loadPLocked\n\t" %}
+  size(4);
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_ldarx);
+    __ ldarx($dst$$Register, $mem$$Register, MacroAssembler::cmpxchgx_hint_atomic_update());
+  %}
   ins_pipe(pipe_class_memory);
 %}
 
@@ -7593,8 +7567,9 @@ instruct loadPLocked(iRegPdst dst, memory mem) %{
 // (CompareAndSwap ...)" or "If (CmpI (CompareAndSwap ..))"  cannot be
 // matched.
 
-instruct compareAndSwapI_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2) %{
+instruct compareAndSwapI_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndSwapI mem_ptr (Binary src1 src2)));
+  effect(TEMP cr0);
   format %{ "CMPXCHGW $res, $mem_ptr, $src1, $src2; as bool" %}
   // Variable size: instruction count smaller if regs are disjoint.
   ins_encode %{
@@ -7607,8 +7582,9 @@ instruct compareAndSwapI_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc
   ins_pipe(pipe_class_default);
 %}
 
-instruct compareAndSwapN_regP_regN_regN(iRegIdst res, iRegPdst mem_ptr, iRegNsrc src1, iRegNsrc src2) %{
+instruct compareAndSwapN_regP_regN_regN(iRegIdst res, iRegPdst mem_ptr, iRegNsrc src1, iRegNsrc src2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndSwapN mem_ptr (Binary src1 src2)));
+  effect(TEMP cr0);
   format %{ "CMPXCHGW $res, $mem_ptr, $src1, $src2; as bool" %}
   // Variable size: instruction count smaller if regs are disjoint.
   ins_encode %{
@@ -7621,8 +7597,9 @@ instruct compareAndSwapN_regP_regN_regN(iRegIdst res, iRegPdst mem_ptr, iRegNsrc
   ins_pipe(pipe_class_default);
 %}
 
-instruct compareAndSwapL_regP_regL_regL(iRegIdst res, iRegPdst mem_ptr, iRegLsrc src1, iRegLsrc src2) %{
+instruct compareAndSwapL_regP_regL_regL(iRegIdst res, iRegPdst mem_ptr, iRegLsrc src1, iRegLsrc src2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndSwapL mem_ptr (Binary src1 src2)));
+  effect(TEMP cr0);
   format %{ "CMPXCHGD $res, $mem_ptr, $src1, $src2; as bool" %}
   // Variable size: instruction count smaller if regs are disjoint.
   ins_encode %{
@@ -7635,8 +7612,9 @@ instruct compareAndSwapL_regP_regL_regL(iRegIdst res, iRegPdst mem_ptr, iRegLsrc
   ins_pipe(pipe_class_default);
 %}
 
-instruct compareAndSwapP_regP_regP_regP(iRegIdst res, iRegPdst mem_ptr, iRegPsrc src1, iRegPsrc src2) %{
+instruct compareAndSwapP_regP_regP_regP(iRegIdst res, iRegPdst mem_ptr, iRegPsrc src1, iRegPsrc src2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndSwapP mem_ptr (Binary src1 src2)));
+  effect(TEMP cr0);
   format %{ "CMPXCHGD $res, $mem_ptr, $src1, $src2; as bool; ptr" %}
   // Variable size: instruction count smaller if regs are disjoint.
   ins_encode %{
@@ -7649,48 +7627,54 @@ instruct compareAndSwapP_regP_regP_regP(iRegIdst res, iRegPdst mem_ptr, iRegPsrc
   ins_pipe(pipe_class_default);
 %}
 
-instruct getAndAddI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src) %{
+instruct getAndAddI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src, flagsRegCR0 cr0) %{
   match(Set res (GetAndAddI mem_ptr src));
+  effect(TEMP cr0);
   format %{ "GetAndAddI $res, $mem_ptr, $src" %}
   // Variable size: instruction count smaller if regs are disjoint.
   ins_encode( enc_GetAndAddI(res, mem_ptr, src) );
   ins_pipe(pipe_class_default);
 %}
 
-instruct getAndAddL(iRegLdst res, iRegPdst mem_ptr, iRegLsrc src) %{
+instruct getAndAddL(iRegLdst res, iRegPdst mem_ptr, iRegLsrc src, flagsRegCR0 cr0) %{
   match(Set res (GetAndAddL mem_ptr src));
+  effect(TEMP cr0);
   format %{ "GetAndAddL $res, $mem_ptr, $src" %}
   // Variable size: instruction count smaller if regs are disjoint.
   ins_encode( enc_GetAndAddL(res, mem_ptr, src) );
   ins_pipe(pipe_class_default);
 %}
 
-instruct getAndSetI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src) %{
+instruct getAndSetI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src, flagsRegCR0 cr0) %{
   match(Set res (GetAndSetI mem_ptr src));
+  effect(TEMP cr0);
   format %{ "GetAndSetI $res, $mem_ptr, $src" %}
   // Variable size: instruction count smaller if regs are disjoint.
   ins_encode( enc_GetAndSetI(res, mem_ptr, src) );
   ins_pipe(pipe_class_default);
 %}
 
-instruct getAndSetL(iRegLdst res, iRegPdst mem_ptr, iRegLsrc src) %{
+instruct getAndSetL(iRegLdst res, iRegPdst mem_ptr, iRegLsrc src, flagsRegCR0 cr0) %{
   match(Set res (GetAndSetL mem_ptr src));
+  effect(TEMP cr0);
   format %{ "GetAndSetL $res, $mem_ptr, $src" %}
   // Variable size: instruction count smaller if regs are disjoint.
   ins_encode( enc_GetAndSetL(res, mem_ptr, src) );
   ins_pipe(pipe_class_default);
 %}
 
-instruct getAndSetP(iRegPdst res, iRegPdst mem_ptr, iRegPsrc src) %{
+instruct getAndSetP(iRegPdst res, iRegPdst mem_ptr, iRegPsrc src, flagsRegCR0 cr0) %{
   match(Set res (GetAndSetP mem_ptr src));
+  effect(TEMP cr0);
   format %{ "GetAndSetP $res, $mem_ptr, $src" %}
   // Variable size: instruction count smaller if regs are disjoint.
   ins_encode( enc_GetAndSetL(res, mem_ptr, src) );
   ins_pipe(pipe_class_default);
 %}
 
-instruct getAndSetN(iRegNdst res, iRegPdst mem_ptr, iRegNsrc src) %{
+instruct getAndSetN(iRegNdst res, iRegPdst mem_ptr, iRegNsrc src, flagsRegCR0 cr0) %{
   match(Set res (GetAndSetN mem_ptr src));
+  effect(TEMP cr0);
   format %{ "GetAndSetN $res, $mem_ptr, $src" %}
   // Variable size: instruction count smaller if regs are disjoint.
   ins_encode( enc_GetAndSetI(res, mem_ptr, src) );
@@ -7898,18 +7882,8 @@ instruct subI_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
 %}
 
 // Immediate Subtraction
-// The compiler converts "x-c0" into "x+ -c0" (see SubINode::Ideal),
-// so this rule seems to be unused.
-instruct subI_reg_imm16(iRegIdst dst, iRegIsrc src1, immI16 src2) %{
-  match(Set dst (SubI src1 src2));
-  format %{ "SUBI    $dst, $src1, $src2" %}
-  size(4);
-  ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_addi);
-    __ addi($dst$$Register, $src1$$Register, ($src2$$constant) * (-1));
-  %}
-  ins_pipe(pipe_class_default);
-%}
+// Immediate Subtraction: The compiler converts "x-c0" into "x+ -c0" (see SubLNode::Ideal),
+// Don't try to use addi with - $src2$$constant since it can overflow when $src2$$constant == minI16.
 
 // SubI from constant (using subfic).
 instruct subI_imm16_reg(iRegIdst dst, immI16 src1, iRegIsrc src2) %{
@@ -7985,22 +7959,6 @@ instruct subI_regL_regL(iRegIdst dst, iRegLsrc src1, iRegLsrc src2) %{
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_subf);
     __ subf($dst$$Register, $src2$$Register, $src1$$Register);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// Immediate Subtraction
-// The compiler converts "x-c0" into "x+ -c0" (see SubLNode::Ideal),
-// so this rule seems to be unused.
-// No constant pool entries required.
-instruct subL_reg_imm16(iRegLdst dst, iRegLsrc src1, immL16 src2) %{
-  match(Set dst (SubL src1 src2));
-
-  format %{ "SUBI    $dst, $src1, $src2 \t// long" %}
-  size(4);
-  ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_addi);
-    __ addi($dst$$Register, $src1$$Register, ($src2$$constant) * (-1));
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -8165,7 +8123,7 @@ instruct divI_reg_regnotMinus1(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovI_bne_negI_reg(iRegIdst dst, flagsReg crx, iRegIsrc src1) %{
+instruct cmovI_bne_negI_reg(iRegIdst dst, flagsRegSrc crx, iRegIsrc src1) %{
   effect(USE_DEF dst, USE src1, USE crx);
   predicate(false);
 
@@ -8228,7 +8186,7 @@ instruct divL_reg_regnotMinus1(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovL_bne_negL_reg(iRegLdst dst, flagsReg crx, iRegLsrc src1) %{
+instruct cmovL_bne_negL_reg(iRegLdst dst, flagsRegSrc crx, iRegLsrc src1) %{
   effect(USE_DEF dst, USE src1, USE crx);
   predicate(false);
 
@@ -8281,7 +8239,7 @@ instruct modI_reg_reg_Ex(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
 %}
 
 // Long Remainder with registers
-instruct modL_reg_reg_Ex(iRegLdst dst, iRegLsrc src1, iRegLsrc src2, flagsRegCR0 cr0) %{
+instruct modL_reg_reg_Ex(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
   match(Set dst (ModL src1 src2));
   ins_cost(10*DEFAULT_COST);
 
@@ -9011,7 +8969,6 @@ instruct andL_reg_reg(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
 instruct andL_reg_uimm16(iRegLdst dst, iRegLsrc src1, uimmL16 src2, flagsRegCR0 cr0) %{
   match(Set dst (AndL src1 src2));
   effect(KILL cr0);
-  ins_cost(DEFAULT_COST);
 
   format %{ "ANDI    $dst, $src1, $src2 \t// long" %}
   size(4);
@@ -9803,7 +9760,7 @@ instruct convD2IRaw_regD(regD dst, regD src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovI_bso_stackSlotL(iRegIdst dst, flagsReg crx, stackSlotL src) %{
+instruct cmovI_bso_stackSlotL(iRegIdst dst, flagsRegSrc crx, stackSlotL src) %{
   // no match-rule, false predicate
   effect(DEF dst, USE crx, USE src);
   predicate(false);
@@ -9817,7 +9774,7 @@ instruct cmovI_bso_stackSlotL(iRegIdst dst, flagsReg crx, stackSlotL src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovI_bso_stackSlotL_conLvalue0_Ex(iRegIdst dst, flagsReg crx, stackSlotL mem) %{
+instruct cmovI_bso_stackSlotL_conLvalue0_Ex(iRegIdst dst, flagsRegSrc crx, stackSlotL mem) %{
   // no match-rule, false predicate
   effect(DEF dst, USE crx, USE mem);
   predicate(false);
@@ -9972,7 +9929,7 @@ instruct convF2LRaw_regF(regF dst, regF src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovL_bso_stackSlotL(iRegLdst dst, flagsReg crx, stackSlotL src) %{
+instruct cmovL_bso_stackSlotL(iRegLdst dst, flagsRegSrc crx, stackSlotL src) %{
   // no match-rule, false predicate
   effect(DEF dst, USE crx, USE src);
   predicate(false);
@@ -9986,7 +9943,7 @@ instruct cmovL_bso_stackSlotL(iRegLdst dst, flagsReg crx, stackSlotL src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovL_bso_stackSlotL_conLvalue0_Ex(iRegLdst dst, flagsReg crx, stackSlotL mem) %{
+instruct cmovL_bso_stackSlotL_conLvalue0_Ex(iRegLdst dst, flagsRegSrc crx, stackSlotL mem) %{
   // no match-rule, false predicate
   effect(DEF dst, USE crx, USE mem);
   predicate(false);
@@ -10255,7 +10212,6 @@ instruct testI_reg_imm(flagsRegCR0 cr0, iRegIsrc src1, uimmI16 src2, immI_0 zero
   size(4);
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_andi_);
-    // FIXME: avoid andi_ ?
     __ andi_(R0, $src1$$Register, $src2$$constant);
   %}
   ins_pipe(pipe_class_compare);
@@ -10302,13 +10258,12 @@ instruct testL_reg_imm(flagsRegCR0 cr0, iRegLsrc src1, uimmL16 src2, immL_0 zero
   size(4);
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_andi_);
-    // FIXME: avoid andi_ ?
     __ andi_(R0, $src1$$Register, $src2$$constant);
   %}
   ins_pipe(pipe_class_compare);
 %}
 
-instruct cmovI_conIvalueMinus1_conIvalue1(iRegIdst dst, flagsReg crx) %{
+instruct cmovI_conIvalueMinus1_conIvalue1(iRegIdst dst, flagsRegSrc crx) %{
   // no match-rule, false predicate
   effect(DEF dst, USE crx);
   predicate(false);
@@ -10332,7 +10287,7 @@ instruct cmovI_conIvalueMinus1_conIvalue1(iRegIdst dst, flagsReg crx) %{
   ins_pipe(pipe_class_compare);
 %}
 
-instruct cmovI_conIvalueMinus1_conIvalue0_conIvalue1_Ex(iRegIdst dst, flagsReg crx) %{
+instruct cmovI_conIvalueMinus1_conIvalue0_conIvalue1_Ex(iRegIdst dst, flagsRegSrc crx) %{
   // no match-rule, false predicate
   effect(DEF dst, USE crx);
   predicate(false);
@@ -10622,8 +10577,9 @@ instruct cmpP_reg_imm16(flagsReg crx, iRegPsrc src1, immL16 src2) %{
 //----------Float Compares----------------------------------------------------
 
 instruct cmpFUnordered_reg_reg(flagsReg crx, regF src1, regF src2) %{
+  // Needs matchrule, see cmpDUnordered.
+  match(Set crx (CmpF src1 src2)); 
   // no match-rule, false predicate
-  effect(DEF crx, USE src1, USE src2);
   predicate(false);
 
   format %{ "cmpFUrd $crx, $src1, $src2" %}
@@ -10731,8 +10687,14 @@ instruct cmpF3_reg_reg_ExEx(iRegIdst dst, regF src1, regF src2) %{
 %}
 
 instruct cmpDUnordered_reg_reg(flagsReg crx, regD src1, regD src2) %{
-  // no match-rule, false predicate
-  effect(DEF crx, USE src1, USE src2);
+  // Needs matchrule so that ideal opcode is Cmp. This causes that gcm places the 
+  // node right before the conditional move using it. 
+  // In jck test api/java_awt/geom/QuadCurve2DFloat/index.html#SetCurveTesttestCase7,
+  // compilation of java.awt.geom.RectangularShape::getBounds()Ljava/awt/Rectangle
+  // crashed in register allocation where the flags Reg between cmpDUnoredered and a
+  // conditional move was supposed to be spilled.
+  match(Set crx (CmpD src1 src2)); 
+  // False predicate, shall not be matched.
   predicate(false);
 
   format %{ "cmpFUrd $crx, $src1, $src2" %}
@@ -10830,7 +10792,7 @@ instruct branch(label labl) %{
 %}
 
 // Conditional Near Branch
-instruct branchCon(cmpOp cmp, flagsReg crx, label lbl) %{
+instruct branchCon(cmpOp cmp, flagsRegSrc crx, label lbl) %{
   // Same match rule as `branchConFar'.
   match(If cmp crx);
   effect(USE lbl);
@@ -10853,7 +10815,7 @@ instruct branchCon(cmpOp cmp, flagsReg crx, label lbl) %{
 // expensive.
 //
 // Conditional Far Branch
-instruct branchConFar(cmpOp cmp, flagsReg crx, label lbl) %{
+instruct branchConFar(cmpOp cmp, flagsRegSrc crx, label lbl) %{
   // Same match rule as `branchCon'.
   match(If cmp crx);
   effect(USE crx, USE lbl);
@@ -10871,7 +10833,7 @@ instruct branchConFar(cmpOp cmp, flagsReg crx, label lbl) %{
 %}
 
 // Conditional Branch used with Power6 scheduler (can be far or short).
-instruct branchConSched(cmpOp cmp, flagsReg crx, label lbl) %{
+instruct branchConSched(cmpOp cmp, flagsRegSrc crx, label lbl) %{
   // Same match rule as `branchCon'.
   match(If cmp crx);
   effect(USE crx, USE lbl);
@@ -10890,7 +10852,7 @@ instruct branchConSched(cmpOp cmp, flagsReg crx, label lbl) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct branchLoopEnd(cmpOp cmp, flagsReg crx, label labl) %{
+instruct branchLoopEnd(cmpOp cmp, flagsRegSrc crx, label labl) %{
   match(CountedLoopEnd cmp crx);
   effect(USE labl);
   ins_cost(BRANCH_COST);
@@ -10904,7 +10866,7 @@ instruct branchLoopEnd(cmpOp cmp, flagsReg crx, label labl) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct branchLoopEndFar(cmpOp cmp, flagsReg crx, label labl) %{
+instruct branchLoopEndFar(cmpOp cmp, flagsRegSrc crx, label labl) %{
   match(CountedLoopEnd cmp crx);
   effect(USE labl);
   predicate(!false /* TODO: PPC port HB_Schedule */);
@@ -10920,7 +10882,7 @@ instruct branchLoopEndFar(cmpOp cmp, flagsReg crx, label labl) %{
 %}
 
 // Conditional Branch used with Power6 scheduler (can be far or short).
-instruct branchLoopEndSched(cmpOp cmp, flagsReg crx, label labl) %{
+instruct branchLoopEndSched(cmpOp cmp, flagsRegSrc crx, label labl) %{
   match(CountedLoopEnd cmp crx);
   effect(USE labl);
   predicate(false /* TODO: PPC port HB_Schedule */);
@@ -10969,13 +10931,36 @@ instruct partialSubtypeCheck(iRegPdst result, iRegP_N2P subklass, iRegP_N2P supe
 instruct cmpFastLock(flagsReg crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2, iRegPdst tmp3) %{
   match(Set crx (FastLock oop box));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3);
-  // TODO PPC port predicate(!UseNewFastLockPPC64 || UseBiasedLocking);
+  predicate(/*(!UseNewFastLockPPC64 || UseBiasedLocking) &&*/ !Compile::current()->use_rtm());
 
   format %{ "FASTLOCK  $oop, $box, $tmp1, $tmp2, $tmp3" %}
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ compiler_fast_lock_object($crx$$CondRegister, $oop$$Register, $box$$Register,
-                                 $tmp3$$Register, $tmp1$$Register, $tmp2$$Register);
+                                 $tmp3$$Register, $tmp1$$Register, $tmp2$$Register,
+                                 UseBiasedLocking && !UseOptoBiasInlining); // SAPJVM MD 2014-11-06 UseOptoBiasInlining
+    // If locking was successfull, crx should indicate 'EQ'.
+    // The compiler generates a branch to the runtime call to
+    // _complete_monitor_locking_Java for the case where crx is 'NE'.
+  %}
+  ins_pipe(pipe_class_compare);
+%}
+
+// Separate version for TM. Use bound register for box to enable USE_KILL.
+instruct cmpFastLock_tm(flagsReg crx, iRegPdst oop, rarg2RegP box, iRegPdst tmp1, iRegPdst tmp2, iRegPdst tmp3) %{
+  match(Set crx (FastLock oop box));
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, USE_KILL box);
+  predicate(Compile::current()->use_rtm());
+
+  format %{ "FASTLOCK  $oop, $box, $tmp1, $tmp2, $tmp3 (TM)" %}
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    __ compiler_fast_lock_object($crx$$CondRegister, $oop$$Register, $box$$Register,
+                                 $tmp3$$Register, $tmp1$$Register, $tmp2$$Register,
+                                 /*Biased Locking*/ false,
+                                 _rtm_counters, _stack_rtm_counters,
+                                 ((Method*)(ra_->C->method()->constant_encoding()))->method_data(),
+                                 /*TM*/ true, ra_->C->profile_rtm());
     // If locking was successfull, crx should indicate 'EQ'.
     // The compiler generates a branch to the runtime call to
     // _complete_monitor_locking_Java for the case where crx is 'NE'.
@@ -10986,12 +10971,33 @@ instruct cmpFastLock(flagsReg crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iR
 instruct cmpFastUnlock(flagsReg crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2, iRegPdst tmp3) %{
   match(Set crx (FastUnlock oop box));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3);
+  predicate(!Compile::current()->use_rtm());
 
   format %{ "FASTUNLOCK  $oop, $box, $tmp1, $tmp2" %}
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ compiler_fast_unlock_object($crx$$CondRegister, $oop$$Register, $box$$Register,
-                                   $tmp3$$Register, $tmp1$$Register, $tmp2$$Register);
+                                   $tmp3$$Register, $tmp1$$Register, $tmp2$$Register,
+                                   UseBiasedLocking && !UseOptoBiasInlining,
+                                   false);
+    // If unlocking was successfull, crx should indicate 'EQ'.
+    // The compiler generates a branch to the runtime call to
+    // _complete_monitor_unlocking_Java for the case where crx is 'NE'.
+  %}
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmpFastUnlock_tm(flagsReg crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2, iRegPdst tmp3) %{
+  match(Set crx (FastUnlock oop box));
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3);
+  predicate(Compile::current()->use_rtm());
+
+  format %{ "FASTUNLOCK  $oop, $box, $tmp1, $tmp2 (TM)" %}
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    __ compiler_fast_unlock_object($crx$$CondRegister, $oop$$Register, $box$$Register,
+                                   $tmp3$$Register, $tmp1$$Register, $tmp2$$Register,
+                                   /*Biased Locking*/ false, /*TM*/ true);
     // If unlocking was successfull, crx should indicate 'EQ'.
     // The compiler generates a branch to the runtime call to
     // _complete_monitor_unlocking_Java for the case where crx is 'NE'.
@@ -11657,6 +11663,66 @@ instruct repl2F_immF0(iRegLdst dst, immF_0 zero) %{
   %}
   ins_pipe(pipe_class_default);
 %}
+
+
+//----------Overflow Math Instructions-----------------------------------------
+
+// Note that we have to make sure that XER.SO is reset before using overflow instructions.
+// Simple Overflow operations can be matched by very few instructions (e.g. addExact: xor, and_, bc).
+// Seems like only Long intrinsincs have an advantage. (The only expensive one is OverflowMulL.)
+
+instruct overflowAddL_reg_reg(flagsRegCR0 cr0, iRegLsrc op1, iRegLsrc op2) %{
+  match(Set cr0 (OverflowAddL op1 op2));
+
+  format %{ "add_    $op1, $op2\t# overflow check long" %}
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    __ li(R0, 0);
+    __ mtxer(R0); // clear XER.SO
+    __ addo_(R0, $op1$$Register, $op2$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct overflowSubL_reg_reg(flagsRegCR0 cr0, iRegLsrc op1, iRegLsrc op2) %{
+  match(Set cr0 (OverflowSubL op1 op2));
+
+  format %{ "subfo_  R0, $op2, $op1\t# overflow check long" %}
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    __ li(R0, 0);
+    __ mtxer(R0); // clear XER.SO
+    __ subfo_(R0, $op2$$Register, $op1$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct overflowNegL_reg(flagsRegCR0 cr0, immL_0 zero, iRegLsrc op2) %{
+  match(Set cr0 (OverflowSubL zero op2));
+
+  format %{ "nego_   R0, $op2\t# overflow check long" %}
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    __ li(R0, 0);
+    __ mtxer(R0); // clear XER.SO
+    __ nego_(R0, $op2$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct overflowMulL_reg_reg(flagsRegCR0 cr0, iRegLsrc op1, iRegLsrc op2) %{
+  match(Set cr0 (OverflowMulL op1 op2));
+
+  format %{ "mulldo_ R0, $op1, $op2\t# overflow check long" %}
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    __ li(R0, 0);
+    __ mtxer(R0); // clear XER.SO
+    __ mulldo_(R0, $op1$$Register, $op2$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 
 // ============================================================================
 // Safepoint Instruction

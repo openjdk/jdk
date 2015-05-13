@@ -93,7 +93,7 @@ public class BuildStep {
     /**
      * return vertex description for this build step
      *
-     * @returns Vertex
+     * @return Vertex
      */
     public Vertex getVertex() {
         return vertex;
@@ -102,7 +102,7 @@ public class BuildStep {
     /**
      * return the certificate associated with this build step
      *
-     * @returns X509Certificate
+     * @return X509Certificate
      */
     public X509Certificate getCertificate() {
         return cert;
@@ -112,7 +112,7 @@ public class BuildStep {
      * return string form of issuer name from certificate associated with this
      * build step
      *
-     * @returns String form of issuer name or null, if no certificate.
+     * @return String form of issuer name or null, if no certificate.
      */
     public String getIssuerName() {
         return getIssuerName(null);
@@ -125,7 +125,7 @@ public class BuildStep {
      *
      * @param defaultName name to use as default if unable to return an issuer
      * name from the certificate, or if no certificate.
-     * @returns String form of issuer name or defaultName, if no certificate or
+     * @return String form of issuer name or defaultName, if no certificate or
      * exception received while trying to extract issuer name from certificate.
      */
     public String getIssuerName(String defaultName) {
@@ -137,7 +137,7 @@ public class BuildStep {
      * return string form of subject name from certificate associated with this
      * build step.
      *
-     * @returns String form of subject name or null, if no certificate.
+     * @return String form of subject name or null, if no certificate.
      */
     public String getSubjectName() {
         return getSubjectName(null);
@@ -151,7 +151,7 @@ public class BuildStep {
      *
      * @param defaultName name to use as default if unable to return a subject
      * name from the certificate, or if no certificate.
-     * @returns String form of subject name or defaultName, if no certificate or
+     * @return String form of subject name or defaultName, if no certificate or
      * if an exception was received while attempting to extract the subject name
      * from the certificate.
      */
@@ -163,7 +163,7 @@ public class BuildStep {
     /**
      * return the exception associated with this build step.
      *
-     * @returns Throwable
+     * @return Throwable
      */
     public Throwable getThrowable() {
         return throwable;
@@ -173,7 +173,7 @@ public class BuildStep {
      * return the result code associated with this build step.  The result codes
      * are POSSIBLE, FOLLOW, BACK, FAIL, SUCCEED.
      *
-     * @returns int result code
+     * @return int result code
      */
     public int getResult() {
         return result;
@@ -184,7 +184,7 @@ public class BuildStep {
      * with this build step.
      *
      * @param   res    result code
-     * @returns String string representing meaning of the result code
+     * @return String string representing meaning of the result code
      */
     public String resultToString(int res) {
         String resultString = "";
@@ -216,7 +216,7 @@ public class BuildStep {
      * return a string representation of this build step, showing minimal
      * detail.
      *
-     * @returns String
+     * @return String
      */
     @Override
     public String toString() {
@@ -243,7 +243,7 @@ public class BuildStep {
      * the vertex state appropriate to the result of this build step, and the
      * certificate contents.
      *
-     * @returns String
+     * @return String
      */
     public String verboseToString() {
         String out = resultToString(getResult());
@@ -269,7 +269,7 @@ public class BuildStep {
      * return a string representation of this build step, including all possible
      * detail of the vertex state, but not including the certificate contents.
      *
-     * @returns String
+     * @return String
      */
     public String fullToString() {
         return resultToString(getResult()) + vertex.toString();

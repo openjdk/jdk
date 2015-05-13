@@ -101,7 +101,7 @@ public class SequenceEntry extends SymtabEntry
   } // generate
 
   /** Access the sequence generator.
-      @returns an object which implements the SequenceGen interface.
+      @return an object which implements the SequenceGen interface.
       @see SequenceGen */
   public Generator generator ()
   {
