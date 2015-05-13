@@ -33,7 +33,7 @@ final class InstanceOfTreeImpl extends BinaryTreeImpl implements InstanceOfTree 
             final ExpressionTree expr,
             final ExpressionTree type) {
         super(node, expr, type);
-        assert node.tokenType() == TokenType.INSTANCEOF : "instanceof expected";
+        assert node.isTokenType(TokenType.INSTANCEOF) : "instanceof expected";
     }
 
     @Override

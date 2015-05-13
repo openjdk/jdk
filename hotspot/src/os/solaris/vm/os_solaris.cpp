@@ -555,17 +555,6 @@ bool os::bind_to_processor(uint processor_id) {
   return (bind_result == 0);
 }
 
-bool os::getenv(const char* name, char* buffer, int len) {
-  char* val = ::getenv(name);
-  if (val == NULL || strlen(val) + 1 > len) {
-    if (len > 0) buffer[0] = 0; // return a null string
-    return false;
-  }
-  strcpy(buffer, val);
-  return true;
-}
-
-
 // Return true if user is running as root.
 
 bool os::have_special_privileges() {
@@ -1532,6 +1521,10 @@ void os::shutdown() {
 // called from signal handler. Before adding something to os::abort(), make
 // sure it is async-safe and can handle partially initialized VM.
 void os::abort(bool dump_core) {
+  abort(dump_core, NULL, NULL);
+}
+
+void os::abort(bool dump_core, void* siginfo, void* context) {
   os::shutdown();
   if (dump_core) {
 #ifndef PRODUCT

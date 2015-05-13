@@ -34,6 +34,7 @@
 #include "gc_implementation/g1/g1Log.hpp"
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
 #include "gc_implementation/g1/g1RemSet.hpp"
+#include "gc_implementation/g1/g1StringDedup.hpp"
 #include "gc_implementation/g1/heapRegion.inline.hpp"
 #include "gc_implementation/g1/heapRegionManager.inline.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
@@ -46,6 +47,7 @@
 #include "memory/genOopClosures.inline.hpp"
 #include "memory/referencePolicy.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/strongRootsScope.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
@@ -115,7 +117,7 @@ void CMBitMapRO::print_on_error(outputStream* st, const char* prefix) const {
 }
 
 size_t CMBitMap::compute_size(size_t heap_size) {
-  return heap_size / mark_distance();
+  return ReservedSpace::allocation_align_size_up(heap_size / mark_distance());
 }
 
 size_t CMBitMap::mark_distance() {
@@ -941,13 +943,6 @@ void ConcurrentMark::checkpointRootsInitialPre() {
 
   _has_aborted = false;
 
-#ifndef PRODUCT
-  if (G1PrintReachableAtInitialMark) {
-    print_reachable("at-cycle-start",
-                    VerifyOption_G1UsePrevMarking, true /* all */);
-  }
-#endif
-
   // Initialize marking structures. This has to be done in a STW phase.
   reset();
 
@@ -1325,7 +1320,7 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
 
   if (VerifyDuringGC) {
     HandleMark hm;  // handle scope
-    Universe::heap()->prepare_for_verify();
+    g1h->prepare_for_verify();
     Universe::verify(VerifyOption_G1UsePrevMarking,
                      " VerifyDuringGC:(before)");
   }
@@ -1352,7 +1347,7 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
     // Verify the heap w.r.t. the previous marking bitmap.
     if (VerifyDuringGC) {
       HandleMark hm;  // handle scope
-      Universe::heap()->prepare_for_verify();
+      g1h->prepare_for_verify();
       Universe::verify(VerifyOption_G1UsePrevMarking,
                        " VerifyDuringGC:(overflow)");
     }
@@ -1378,7 +1373,7 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
 
     if (VerifyDuringGC) {
       HandleMark hm;  // handle scope
-      Universe::heap()->prepare_for_verify();
+      g1h->prepare_for_verify();
       Universe::verify(VerifyOption_G1UseNextMarking,
                        " VerifyDuringGC:(after)");
     }
@@ -1986,13 +1981,13 @@ void ConcurrentMark::cleanup() {
 
   if (VerifyDuringGC) {
     HandleMark hm;  // handle scope
-    Universe::heap()->prepare_for_verify();
+    g1h->prepare_for_verify();
     Universe::verify(VerifyOption_G1UsePrevMarking,
                      " VerifyDuringGC:(before)");
   }
   g1h->check_bitmaps("Cleanup Start");
 
-  G1CollectorPolicy* g1p = G1CollectedHeap::heap()->g1_policy();
+  G1CollectorPolicy* g1p = g1h->g1_policy();
   g1p->record_concurrent_mark_cleanup_start();
 
   double start = os::elapsedTime();
@@ -2097,7 +2092,7 @@ void ConcurrentMark::cleanup() {
 
   if (VerifyDuringGC) {
     HandleMark hm;  // handle scope
-    Universe::heap()->prepare_for_verify();
+    g1h->prepare_for_verify();
     Universe::verify(VerifyOption_G1UsePrevMarking,
                      " VerifyDuringGC:(after)");
   }
@@ -2650,7 +2645,7 @@ void ConcurrentMark::checkpointRootsFinalWork() {
 
   g1h->ensure_parsability(false);
 
-  G1CollectedHeap::StrongRootsScope srs(g1h);
+  StrongRootsScope srs;
   // this is remark, so we'll use up all active threads
   uint active_workers = g1h->workers()->active_workers();
   if (active_workers == 0) {
@@ -2681,166 +2676,6 @@ void ConcurrentMark::checkpointRootsFinalWork() {
 
   print_stats();
 }
-
-#ifndef PRODUCT
-
-class PrintReachableOopClosure: public OopClosure {
-private:
-  G1CollectedHeap* _g1h;
-  outputStream*    _out;
-  VerifyOption     _vo;
-  bool             _all;
-
-public:
-  PrintReachableOopClosure(outputStream* out,
-                           VerifyOption  vo,
-                           bool          all) :
-    _g1h(G1CollectedHeap::heap()),
-    _out(out), _vo(vo), _all(all) { }
-
-  void do_oop(narrowOop* p) { do_oop_work(p); }
-  void do_oop(      oop* p) { do_oop_work(p); }
-
-  template <class T> void do_oop_work(T* p) {
-    oop         obj = oopDesc::load_decode_heap_oop(p);
-    const char* str = NULL;
-    const char* str2 = "";
-
-    if (obj == NULL) {
-      str = "";
-    } else if (!_g1h->is_in_g1_reserved(obj)) {
-      str = " O";
-    } else {
-      HeapRegion* hr  = _g1h->heap_region_containing(obj);
-      bool over_tams = _g1h->allocated_since_marking(obj, hr, _vo);
-      bool marked = _g1h->is_marked(obj, _vo);
-
-      if (over_tams) {
-        str = " >";
-        if (marked) {
-          str2 = " AND MARKED";
-        }
-      } else if (marked) {
-        str = " M";
-      } else {
-        str = " NOT";
-      }
-    }
-
-    _out->print_cr("  "PTR_FORMAT": "PTR_FORMAT"%s%s",
-                   p2i(p), p2i((void*) obj), str, str2);
-  }
-};
-
-class PrintReachableObjectClosure : public ObjectClosure {
-private:
-  G1CollectedHeap* _g1h;
-  outputStream*    _out;
-  VerifyOption     _vo;
-  bool             _all;
-  HeapRegion*      _hr;
-
-public:
-  PrintReachableObjectClosure(outputStream* out,
-                              VerifyOption  vo,
-                              bool          all,
-                              HeapRegion*   hr) :
-    _g1h(G1CollectedHeap::heap()),
-    _out(out), _vo(vo), _all(all), _hr(hr) { }
-
-  void do_object(oop o) {
-    bool over_tams = _g1h->allocated_since_marking(o, _hr, _vo);
-    bool marked = _g1h->is_marked(o, _vo);
-    bool print_it = _all || over_tams || marked;
-
-    if (print_it) {
-      _out->print_cr(" "PTR_FORMAT"%s",
-                     p2i((void *)o), (over_tams) ? " >" : (marked) ? " M" : "");
-      PrintReachableOopClosure oopCl(_out, _vo, _all);
-      o->oop_iterate_no_header(&oopCl);
-    }
-  }
-};
-
-class PrintReachableRegionClosure : public HeapRegionClosure {
-private:
-  G1CollectedHeap* _g1h;
-  outputStream*    _out;
-  VerifyOption     _vo;
-  bool             _all;
-
-public:
-  bool doHeapRegion(HeapRegion* hr) {
-    HeapWord* b = hr->bottom();
-    HeapWord* e = hr->end();
-    HeapWord* t = hr->top();
-    HeapWord* p = _g1h->top_at_mark_start(hr, _vo);
-    _out->print_cr("** ["PTR_FORMAT", "PTR_FORMAT"] top: "PTR_FORMAT" "
-                   "TAMS: " PTR_FORMAT, p2i(b), p2i(e), p2i(t), p2i(p));
-    _out->cr();
-
-    HeapWord* from = b;
-    HeapWord* to   = t;
-
-    if (to > from) {
-      _out->print_cr("Objects in [" PTR_FORMAT ", " PTR_FORMAT "]", p2i(from), p2i(to));
-      _out->cr();
-      PrintReachableObjectClosure ocl(_out, _vo, _all, hr);
-      hr->object_iterate_mem_careful(MemRegion(from, to), &ocl);
-      _out->cr();
-    }
-
-    return false;
-  }
-
-  PrintReachableRegionClosure(outputStream* out,
-                              VerifyOption  vo,
-                              bool          all) :
-    _g1h(G1CollectedHeap::heap()), _out(out), _vo(vo), _all(all) { }
-};
-
-void ConcurrentMark::print_reachable(const char* str,
-                                     VerifyOption vo,
-                                     bool all) {
-  gclog_or_tty->cr();
-  gclog_or_tty->print_cr("== Doing heap dump... ");
-
-  if (G1PrintReachableBaseFile == NULL) {
-    gclog_or_tty->print_cr("  #### error: no base file defined");
-    return;
-  }
-
-  if (strlen(G1PrintReachableBaseFile) + 1 + strlen(str) >
-      (JVM_MAXPATHLEN - 1)) {
-    gclog_or_tty->print_cr("  #### error: file name too long");
-    return;
-  }
-
-  char file_name[JVM_MAXPATHLEN];
-  sprintf(file_name, "%s.%s", G1PrintReachableBaseFile, str);
-  gclog_or_tty->print_cr("  dumping to file %s", file_name);
-
-  fileStream fout(file_name);
-  if (!fout.is_open()) {
-    gclog_or_tty->print_cr("  #### error: could not open file");
-    return;
-  }
-
-  outputStream* out = &fout;
-  out->print_cr("-- USING %s", _g1h->top_at_mark_start_str(vo));
-  out->cr();
-
-  out->print_cr("--- ITERATING OVER REGIONS");
-  out->cr();
-  PrintReachableRegionClosure rcl(out, vo, all);
-  _g1h->heap_region_iterate(&rcl);
-  out->cr();
-
-  gclog_or_tty->print_cr("  done");
-  gclog_or_tty->flush();
-}
-
-#endif // PRODUCT
 
 void ConcurrentMark::clearRangePrevBitmap(MemRegion mr) {
   // Note we are overriding the read-only view of the prev map here, via
@@ -2958,9 +2793,7 @@ ConcurrentMark::claim_region(uint worker_id) {
 #ifndef PRODUCT
 enum VerifyNoCSetOopsPhase {
   VerifyNoCSetOopsStack,
-  VerifyNoCSetOopsQueues,
-  VerifyNoCSetOopsSATBCompleted,
-  VerifyNoCSetOopsSATBThread
+  VerifyNoCSetOopsQueues
 };
 
 class VerifyNoCSetOopsClosure : public OopClosure, public ObjectClosure  {
@@ -2973,8 +2806,6 @@ private:
     switch (_phase) {
     case VerifyNoCSetOopsStack:         return "Stack";
     case VerifyNoCSetOopsQueues:        return "Queue";
-    case VerifyNoCSetOopsSATBCompleted: return "Completed SATB Buffers";
-    case VerifyNoCSetOopsSATBThread:    return "Thread SATB Buffers";
     default:                            ShouldNotReachHere();
     }
     return NULL;
@@ -3001,7 +2832,7 @@ public:
 
   virtual void do_oop(narrowOop* p) {
     // We should not come across narrow oops while scanning marking
-    // stacks and SATB buffers.
+    // stacks
     ShouldNotReachHere();
   }
 
@@ -3010,10 +2841,7 @@ public:
   }
 };
 
-void ConcurrentMark::verify_no_cset_oops(bool verify_stacks,
-                                         bool verify_enqueued_buffers,
-                                         bool verify_thread_buffers,
-                                         bool verify_fingers) {
+void ConcurrentMark::verify_no_cset_oops() {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at a safepoint");
   if (!G1CollectedHeap::heap()->mark_in_progress()) {
     return;
@@ -3021,65 +2849,47 @@ void ConcurrentMark::verify_no_cset_oops(bool verify_stacks,
 
   VerifyNoCSetOopsClosure cl;
 
-  if (verify_stacks) {
-    // Verify entries on the global mark stack
-    cl.set_phase(VerifyNoCSetOopsStack);
-    _markStack.oops_do(&cl);
+  // Verify entries on the global mark stack
+  cl.set_phase(VerifyNoCSetOopsStack);
+  _markStack.oops_do(&cl);
 
-    // Verify entries on the task queues
-    for (uint i = 0; i < _max_worker_id; i += 1) {
-      cl.set_phase(VerifyNoCSetOopsQueues, i);
-      CMTaskQueue* queue = _task_queues->queue(i);
-      queue->oops_do(&cl);
-    }
+  // Verify entries on the task queues
+  for (uint i = 0; i < _max_worker_id; i += 1) {
+    cl.set_phase(VerifyNoCSetOopsQueues, i);
+    CMTaskQueue* queue = _task_queues->queue(i);
+    queue->oops_do(&cl);
   }
 
-  SATBMarkQueueSet& satb_qs = JavaThread::satb_mark_queue_set();
-
-  // Verify entries on the enqueued SATB buffers
-  if (verify_enqueued_buffers) {
-    cl.set_phase(VerifyNoCSetOopsSATBCompleted);
-    satb_qs.iterate_completed_buffers_read_only(&cl);
+  // Verify the global finger
+  HeapWord* global_finger = finger();
+  if (global_finger != NULL && global_finger < _heap_end) {
+    // The global finger always points to a heap region boundary. We
+    // use heap_region_containing_raw() to get the containing region
+    // given that the global finger could be pointing to a free region
+    // which subsequently becomes continues humongous. If that
+    // happens, heap_region_containing() will return the bottom of the
+    // corresponding starts humongous region and the check below will
+    // not hold any more.
+    // Since we always iterate over all regions, we might get a NULL HeapRegion
+    // here.
+    HeapRegion* global_hr = _g1h->heap_region_containing_raw(global_finger);
+    guarantee(global_hr == NULL || global_finger == global_hr->bottom(),
+              err_msg("global finger: "PTR_FORMAT" region: "HR_FORMAT,
+                      p2i(global_finger), HR_FORMAT_PARAMS(global_hr)));
   }
 
-  // Verify entries on the per-thread SATB buffers
-  if (verify_thread_buffers) {
-    cl.set_phase(VerifyNoCSetOopsSATBThread);
-    satb_qs.iterate_thread_buffers_read_only(&cl);
-  }
-
-  if (verify_fingers) {
-    // Verify the global finger
-    HeapWord* global_finger = finger();
-    if (global_finger != NULL && global_finger < _heap_end) {
-      // The global finger always points to a heap region boundary. We
-      // use heap_region_containing_raw() to get the containing region
-      // given that the global finger could be pointing to a free region
-      // which subsequently becomes continues humongous. If that
-      // happens, heap_region_containing() will return the bottom of the
-      // corresponding starts humongous region and the check below will
-      // not hold any more.
-      // Since we always iterate over all regions, we might get a NULL HeapRegion
-      // here.
-      HeapRegion* global_hr = _g1h->heap_region_containing_raw(global_finger);
-      guarantee(global_hr == NULL || global_finger == global_hr->bottom(),
-                err_msg("global finger: "PTR_FORMAT" region: "HR_FORMAT,
-                        p2i(global_finger), HR_FORMAT_PARAMS(global_hr)));
-    }
-
-    // Verify the task fingers
-    assert(parallel_marking_threads() <= _max_worker_id, "sanity");
-    for (int i = 0; i < (int) parallel_marking_threads(); i += 1) {
-      CMTask* task = _tasks[i];
-      HeapWord* task_finger = task->finger();
-      if (task_finger != NULL && task_finger < _heap_end) {
-        // See above note on the global finger verification.
-        HeapRegion* task_hr = _g1h->heap_region_containing_raw(task_finger);
-        guarantee(task_hr == NULL || task_finger == task_hr->bottom() ||
-                  !task_hr->in_collection_set(),
-                  err_msg("task finger: "PTR_FORMAT" region: "HR_FORMAT,
-                          p2i(task_finger), HR_FORMAT_PARAMS(task_hr)));
-      }
+  // Verify the task fingers
+  assert(parallel_marking_threads() <= _max_worker_id, "sanity");
+  for (int i = 0; i < (int) parallel_marking_threads(); i += 1) {
+    CMTask* task = _tasks[i];
+    HeapWord* task_finger = task->finger();
+    if (task_finger != NULL && task_finger < _heap_end) {
+      // See above note on the global finger verification.
+      HeapRegion* task_hr = _g1h->heap_region_containing_raw(task_finger);
+      guarantee(task_hr == NULL || task_finger == task_hr->bottom() ||
+                !task_hr->in_collection_set(),
+                err_msg("task finger: "PTR_FORMAT" region: "HR_FORMAT,
+                        p2i(task_finger), HR_FORMAT_PARAMS(task_hr)));
     }
   }
 }
@@ -3392,21 +3202,28 @@ void ConcurrentMark::print_finger() {
 }
 #endif
 
-void CMTask::scan_object(oop obj) {
+template<bool scan>
+inline void CMTask::process_grey_object(oop obj) {
+  assert(scan || obj->is_typeArray(), "Skipping scan of grey non-typeArray");
   assert(_nextMarkBitMap->isMarked((HeapWord*) obj), "invariant");
 
   if (_cm->verbose_high()) {
-    gclog_or_tty->print_cr("[%u] we're scanning object "PTR_FORMAT,
+    gclog_or_tty->print_cr("[%u] processing grey object " PTR_FORMAT,
                            _worker_id, p2i((void*) obj));
   }
 
   size_t obj_size = obj->size();
   _words_scanned += obj_size;
 
-  obj->oop_iterate(_cm_oop_closure);
+  if (scan) {
+    obj->oop_iterate(_cm_oop_closure);
+  }
   statsOnly( ++_objs_scanned );
   check_limits();
 }
+
+template void CMTask::process_grey_object<true>(oop);
+template void CMTask::process_grey_object<false>(oop);
 
 // Closure for iteration over bitmaps
 class CMBitMapClosure : public BitMapClosure {
@@ -3878,12 +3695,11 @@ void CMTask::drain_satb_buffers() {
 
   CMObjectClosure oc(this);
   SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
-  satb_mq_set.set_closure(_worker_id, &oc);
 
   // This keeps claiming and applying the closure to completed buffers
   // until we run out of buffers or we need to abort.
   while (!has_aborted() &&
-         satb_mq_set.apply_closure_to_completed_buffer(_worker_id)) {
+         satb_mq_set.apply_closure_to_completed_buffer(&oc)) {
     if (_cm->verbose_medium()) {
       gclog_or_tty->print_cr("[%u] processed an SATB buffer", _worker_id);
     }
@@ -3896,8 +3712,6 @@ void CMTask::drain_satb_buffers() {
   assert(has_aborted() ||
          concurrent() ||
          satb_mq_set.completed_buffers_num() == 0, "invariant");
-
-  satb_mq_set.set_closure(_worker_id, NULL);
 
   // again, this was a potentially expensive operation, decrease the
   // limits to get the regular clock call early

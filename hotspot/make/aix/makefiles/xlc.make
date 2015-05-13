@@ -1,6 +1,6 @@
 #
-# Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
-# Copyright (c) 2012, 2013 SAP. All rights reserved.
+# Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2015 SAP. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -34,13 +34,17 @@ HOSTCC  = $(CC)
 
 AS  = $(CC) -c
 
-# get xlc version
-CXX_VERSION   := $(shell $(CXX) -qversion 2>&1 | sed -n 's/.*Version: \([0-9.]*\)/\1/p')
+# get xlc version which comes as VV.RR.MMMM.LLLL where 'VV' is the version,
+# 'RR' is the release, 'MMMM' is the modification and 'LLLL' is the level.
+# We only use 'VV.RR.LLLL' to avoid integer overflows in bash when comparing
+# the version numbers (some shells only support 32-bit integer compares!).
+CXX_VERSION := $(shell $(CXX) -qversion 2>&1 | \
+                   sed -n 's/.*Version: \([0-9]\{2\}\).\([0-9]\{2\}\).[0-9]\{4\}.\([0-9]\{4\}\)/\1\2\3/p')
 
 # xlc 08.00.0000.0023 and higher supports -qtune=balanced
-CXX_SUPPORTS_BALANCED_TUNING=$(shell if [ $(subst .,,$(CXX_VERSION)) -ge 080000000023 ] ; then echo "true" ; fi)
+CXX_SUPPORTS_BALANCED_TUNING := $(shell if [ $(CXX_VERSION) -ge 08000023 ] ; then echo "true" ; fi)
 # xlc 10.01 is used with aggressive optimizations to boost performance
-CXX_IS_V10=$(shell if [ $(subst .,,$(CXX_VERSION)) -ge 100100000000 ] ; then echo "true" ; fi)
+CXX_IS_V10 := $(shell if [ $(CXX_VERSION) -ge 10010000 ] ; then echo "true" ; fi)
 
 # check for precompiled headers support
 

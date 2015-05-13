@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import javax.security.auth.Subject;
  * @bug 6566891
  * @summary Check no memory leak on RMIConnector's rmbscMap
  * @author Shanliang JIANG
+ * @modules java.management
  * @run clean RMIConnectorInternalMapTest
  * @run build RMIConnectorInternalMapTest
  * @run main RMIConnectorInternalMapTest

@@ -2,10 +2,10 @@
 .\" Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
 .\" Title: native2ascii
 .\" Language: English
-.\" Date: 2013ǯ11��21��
-.\" SectDesc: ��ݲ��ġ���
+.\" Date: 2013年11月21日
+.\" SectDesc: 国際化ツール
 .\" Software: JDK 8
-.\" Arch: ����
+.\" Arch: 汎用
 .\"
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
@@ -28,7 +28,7 @@
 .\" questions.
 .\"
 .pl 99999
-.TH "native2ascii" "1" "2013ǯ11��21��" "JDK 8" "��ݲ��ġ���"
+.TH "native2ascii" "1" "2013年11月21日" "JDK 8" "国際化ツール"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -49,8 +49,8 @@
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
 .SH "NAME"
-native2ascii \- ���ݡ��Ȥ���Ƥ���Ǥ�դ�ʸ�����󥳡��ǥ��󥰤�ʸ����ޤ�ե������ASCII�����Unicode�ǥ��������פ��줿�ե�������Ѵ�����(�ޤ��Ϥ��ε�)���������饤����ǽ�ʥ��ץꥱ��������������ޤ���
-.SH "����"
+native2ascii \- サポートされている任意の文字エンコーディングの文字を含むファイルを、ASCIIおよびUnicodeでエスケープされたファイルに変換して(またはその逆)、ローカライズ可能なアプリケーションを作成します。
+.SH "概要"
 .sp
 .if n \{\
 .RS 4
@@ -64,34 +64,34 @@ native2ascii \- ���ݡ��Ȥ���Ƥ���Ǥ�դ�ʸ�����󥳡��ǥ��󥰤�ʸ����ޤ�ե�����
 .PP
 \fIinputfile\fR
 .RS 4
-ASCII���Ѵ����륨�󥳡��ɤ��줿�ե����롣
+ASCIIに変換するエンコードされたファイル。
 .RE
 .PP
 \fIoutputfile\fR
 .RS 4
-�Ѵ����줿ASCII�ե����롣
+変換されたASCIIファイル。
 .RE
-.SH "����"
+.SH "説明"
 .PP
-\fInative2ascii\fR���ޥ�ɤϡ�ASCII����饯�������åȤ˴ޤޤ�ʤ����٤Ƥ�ʸ����Unicode����������(\fI\eu\fR\fIxxxx\fR)ɽ��ˡ����Ѥ��ơ�Java Runtime Environment (JRE)�ǥ��ݡ��Ȥ���Ƥ��륨�󥳡��ɤ��줿�ե������ASCII�ǥ��󥳡��ɤ��줿�ե�������Ѵ����ޤ������Υץ������ϡ�ISO\-8859\-1ʸ�����åȤ˴ޤޤ�ʤ�ʸ�����ޤޤ�Ƥ���ץ��ѥƥ����ե������ɬ�פǤ������Υġ���ϡ����εդ��Ѵ���¹Ԥ��뤳�Ȥ�Ǥ��ޤ���
+\fInative2ascii\fRコマンドは、ASCIIキャラクタ・セットに含まれないすべての文字にUnicodeエスケープ(\fI\eu\fR\fIxxxx\fR)表記法を使用して、Java Runtime Environment (JRE)でサポートされているエンコードされたファイルを、ASCIIでエンコードされたファイルに変換します。このプロセスは、ISO\-8859\-1文字セットに含まれない文字が含まれているプロパティ・ファイルで必要です。このツールは、その逆の変換を実行することもできます。
 .PP
-\fIoutputfile\fR�ͤ��ά������硢ɸ����Ϥ˽��Ϥ���ޤ�������ˡ�\fIinputfile\fR�ͤ��ά������硢ɸ�����Ϥ������Ϥ���ޤ���
-.SH "���ץ����"
+\fIoutputfile\fR値を省略した場合、標準出力に出力されます。さらに、\fIinputfile\fR値を省略した場合、標準入力から入力されます。
+.SH "オプション"
 .PP
 \-reverse
 .RS 4
-�դν�����Ԥ��ޤ����ĤޤꡢISO\-8859\-1��Unicode���������פ���Ѥ��ƥ��󥳡��ɤ��줿�ե������JRE�ǥ��ݡ��Ȥ����ʸ�����󥳡��ǥ��󥰤Υե�������Ѵ����ޤ���
+逆の処理を行います。つまり、ISO\-8859\-1でUnicodeエスケープを使用してエンコードされたファイルを、JREでサポートされる文字エンコーディングのファイルに変換します。
 .RE
 .PP
 \-encoding \fIencoding_name\fR
 .RS 4
-�Ѵ������ǻ��Ѥ���ʸ�����󥳡��ǥ��󥰤�̾������ꤷ�ޤ������Υ��ץ����¸�ߤ��ʤ����ϡ��ǥե���Ȥ�ʸ�����󥳡��ǥ���(\fIjava\&.nio\&.charset\&.Charset\&.defaultCharset\fR�᥽�åɤ�������줿)�����Ѥ���ޤ���\fIencoding_name\fRʸ����ϡ�JRE�ǥ��ݡ��Ȥ���Ƥ���ʸ�����󥳡��ǥ��󥰤�̾���ˤ���ɬ�פ�����ޤ���http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/intl/encoding\&.doc\&.html�ˤ���
-�֥��ݡ��Ȥ���Ƥ��륨�󥳡��ǥ��󥰡פ򻲾Ȥ��Ƥ�������
+変換処理で使用する文字エンコーディングの名前を指定します。このオプションが存在しない場合は、デフォルトの文字エンコーディング(\fIjava\&.nio\&.charset\&.Charset\&.defaultCharset\fRメソッドで定義された)が使用されます。\fIencoding_name\fR文字列は、JREでサポートされている文字エンコーディングの名前にする必要があります。http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/intl/encoding\&.doc\&.htmlにある
+「サポートされているエンコーディング」を参照してください
 .RE
 .PP
 \-J\fIoption\fR
 .RS 4
-Java���ۥޥ���(JVM)��\fIoption\fR���Ϥ��ޤ���option�ˤϡ�Java���ץꥱ�������ư�ġ���Υ�ե���󥹡��ڡ����˵��ܤ���Ƥ��륪�ץ�����1�Ļ��ꤷ�ޤ������Ȥ��С�\fI\-J\-Xms48m\fR�Ȼ��ꤹ��ȡ��������ȥ��åס����꡼��48MB�����ꤵ��ޤ���java(1)�򻲾Ȥ��Ƥ���������
+Java仮想マシン(JVM)に\fIoption\fRを渡します。optionには、Javaアプリケーション起動ツールのリファレンス・ページに記載されているオプションを1つ指定します。たとえば、\fI\-J\-Xms48m\fRと指定すると、スタートアップ・メモリーは48MBに設定されます。java(1)を参照してください。
 .RE
 .br
 'pl 8.5i

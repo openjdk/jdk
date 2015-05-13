@@ -35,20 +35,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import javax.management.*;
 import javax.management.remote.*;
 import javax.net.ssl.SSLHandshakeException;
 
 import jdk.testlibrary.ProcessTools;
-import jdk.testlibrary.JDKToolLauncher;
 import sun.management.Agent;
 import sun.management.AgentConfigurationError;
 
@@ -56,46 +52,21 @@ import sun.management.AgentConfigurationError;
  * @test
  * @bug 7110104
  * @library /lib/testlibrary
- * @build jdk.testlibrary.* JMXStartStopTest JMXStartStopDoSomething
+ * @modules java.management/sun.management
+ * @build jdk.testlibrary.* JMXStartStopTest PortAllocator TestApp ManagementAgentJcmd
  * @run main/othervm/timeout=600 -XX:+UsePerfData JMXStartStopTest
  * @summary Makes sure that enabling/disabling the management agent through JCMD
  *          achieves the desired results
  * @key randomness
  */
 public class JMXStartStopTest {
+    private static final String TEST_APP_NAME = "TestApp";
 
     private static final String TEST_SRC = System.getProperty("test.src");
 
     private static final boolean verbose = false;
 
-    /**
-     * Dynamically allocates distinct ports from the ephemeral range 49152-65535
-     */
-    private static class PortAllocator {
-
-        private final static int LOWER_BOUND = 49152;
-        private final static int UPPER_BOUND = 65535;
-
-        private final static Random RND = new Random(System.currentTimeMillis());
-
-        private static int[] allocatePorts(final int numPorts) {
-            int[] ports = new int[numPorts];
-            for (int i = 0; i < numPorts; i++) {
-                int port = -1;
-                while (port == -1) {
-                    port = RND.nextInt(UPPER_BOUND - LOWER_BOUND + 1) + LOWER_BOUND;
-                    for (int j = 0; j < i; j++) {
-                        if (ports[j] == port) {
-                            port = -1;
-                            break;
-                        }
-                    }
-                }
-                ports[i] = port;
-            }
-            return ports;
-        }
-    }
+    private static ManagementAgentJcmd jcmd = new ManagementAgentJcmd(TEST_APP_NAME, verbose);
 
     private static void dbg_print(String msg) {
         if (verbose) {
@@ -318,14 +289,14 @@ public class JMXStartStopTest {
         }
     }
 
-    private static class Something {
+    private static class TestAppRun {
         private Process p;
         private final ProcessBuilder pb;
         private final String name;
         private final AtomicBoolean started = new AtomicBoolean(false);
         private volatile long pid = -1;
 
-        public Something(ProcessBuilder pb, String name) {
+        public TestAppRun(ProcessBuilder pb, String name) {
             this.pb = pb;
             this.name = name;
         }
@@ -335,16 +306,14 @@ public class JMXStartStopTest {
                 try {
                     AtomicBoolean error = new AtomicBoolean(false);
                     p = ProcessTools.startProcess(
-                            "JMXStartStopDoSomething{" + name + "}",
+                            TEST_APP_NAME + "{" + name + "}",
                             pb,
                             (line) -> {
                                 boolean ok = line.equals("main enter");
                                 error.set(line.contains("BindException"));
 
                                 return ok || error.get();
-                            },
-                            5,
-                            TimeUnit.SECONDS
+                            }
                     );
                     if (error.get()) {
                         throw new BindException("Starting process failed due to " +
@@ -352,8 +321,10 @@ public class JMXStartStopTest {
                     }
                     pid = p.getPid();
                 } catch (TimeoutException e) {
-                    p.destroy();
-                    p.waitFor();
+                    if (p != null) {
+                        p.destroy();
+                        p.waitFor();
+                    }
                     throw e;
                 }
             }
@@ -382,104 +353,31 @@ public class JMXStartStopTest {
     }
 
     /**
-     * Runs the test application "JMXStartStopDoSomething"
+     * Runs the test application "TestApp"
      * @param name Test run name
      * @param args Additional arguments
-     * @return Returns a {@linkplain Something} instance representing the run
+     * @return Returns a {@linkplain TestAppRun} instance representing the run
      * @throws IOException
      * @throws InterruptedException
      * @throws TimeoutException
      */
-    private static Something doSomething(String name, String ... args)
+    private static TestAppRun doTest(String name, String ... args)
             throws Exception {
         List<String> pbArgs = new ArrayList<>(Arrays.asList(
                 "-cp",
-                System.getProperty("test.class.path")
+                System.getProperty("test.class.path"),
+                "-XX:+UsePerfData"
         ));
         pbArgs.addAll(Arrays.asList(args));
-        pbArgs.add("JMXStartStopDoSomething");
+        pbArgs.add(TEST_APP_NAME);
 
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                 pbArgs.toArray(new String[pbArgs.size()])
         );
-        Something s = new Something(pb, name);
+        TestAppRun s = new TestAppRun(pb, name);
         s.start();
         return s;
     }
-
-    /**
-     * Run the "jcmd" command
-     *
-     * @param command Command with parameters; space separated string
-     * @throws IOException
-     * @throws InterruptedException
-     */
-    private static void jcmd(String ... command) throws IOException, InterruptedException {
-        if (command.length == 0) {
-            jcmd(null, c->{});
-        } else {
-            jcmd(null, command);
-        }
-    }
-
-    /**
-     * Run the "jcmd" command
-     *
-     * @param c {@linkplain Consumer} instance
-     * @param command Command with parameters; space separated string
-     * @throws IOException
-     * @throws InterruptedException
-     */
-    private static void jcmd(Consumer<String> c, String ... command) throws IOException, InterruptedException {
-        jcmd("JMXStartStopDoSomething", c, command);
-    }
-
-    /**
-     * Run the "jcmd" command
-     *
-     * @param target The target application name (or PID)
-     * @param c {@linkplain Consumer} instance
-     * @param command Command with parameters; space separated string
-     * @throws IOException
-     * @throws InterruptedException
-     */
-    private static void jcmd(String target, final Consumer<String> c, String ... command) throws IOException, InterruptedException {
-        dbg_print("[jcmd] " + (command.length > 0 ? command[0] : "list"));
-
-        JDKToolLauncher l = JDKToolLauncher.createUsingTestJDK("jcmd");
-        l.addToolArg(target);
-        for (String cmd : command) {
-            l.addToolArg(cmd);
-        }
-
-        AtomicBoolean portUnavailable = new AtomicBoolean(false);
-        Process p = ProcessTools.startProcess(
-            "jcmd",
-            new ProcessBuilder(l.getCommand()),
-            line -> {
-                if (line.contains("BindException") ||
-                    line.contains(Agent.getText(AgentConfigurationError.CONNECTOR_SERVER_IO_ERROR))) {
-                    portUnavailable.set(true);
-                } else {
-                    c.accept(line);
-                }
-            }
-        );
-
-        p.waitFor();
-        dbg_print("[jcmd] --------");
-        if (portUnavailable.get()) {
-            String cmd = Arrays.asList(l.getCommand()).stream()
-                    .collect(
-                            Collectors.joining(" ", "", ": Unable to bind address")
-                    );
-            throw new BindException(cmd);
-        }
-    }
-
-    private static final String CMD_STOP = "ManagementAgent.stop";
-    private static final String CMD_START = "ManagementAgent.start";
-    private static final String CMD_START_LOCAL = "ManagementAgent.start_local";
 
     static void test_01() throws Exception {
         // Run an app with JMX enabled stop it and
@@ -488,7 +386,7 @@ public class JMXStartStopTest {
         System.out.println("**** Test one ****");
         int ports[] = PortAllocator.allocatePorts(2);
 
-        Something s = doSomething(
+        TestAppRun s = doTest(
                 "test_01",
                 "-Dcom.sun.management.jmxremote.port=" + ports[0],
                 "-Dcom.sun.management.jmxremote.authenticate=false",
@@ -497,10 +395,10 @@ public class JMXStartStopTest {
         try {
             testConnect(ports[0]);
 
-            jcmd(CMD_STOP);
+            jcmd.stop();
             testNoConnect(ports[0]);
 
-            jcmd(CMD_START, "jmxremote.port=" + ports[1]);
+            jcmd.start("jmxremote.port=" + ports[1]);
             testConnect(ports[1]);
         } finally {
             s.stop();
@@ -514,12 +412,13 @@ public class JMXStartStopTest {
         System.out.println("**** Test two ****");
 
         int[] ports = PortAllocator.allocatePorts(1);
-        Something s = doSomething("test_02");
+        TestAppRun s = doTest("test_02");
         try {
-            jcmd(CMD_START,
-                    "jmxremote.port=" + ports[0],
-                    "jmxremote.authenticate=false",
-                    "jmxremote.ssl=false");
+            jcmd.start(
+                "jmxremote.port=" + ports[0],
+                "jmxremote.authenticate=false",
+                "jmxremote.ssl=false"
+            );
 
             testConnect(ports[0]);
         } finally {
@@ -535,18 +434,20 @@ public class JMXStartStopTest {
         System.out.println("**** Test three ****");
 
         int[] ports = PortAllocator.allocatePorts(2);
-        Something s = doSomething("test_03");
+        TestAppRun s = doTest("test_03");
         try {
-            jcmd(CMD_START,
-                    "jmxremote.port=" + ports[0],
-                    "jmxremote.authenticate=false",
-                    "jmxremote.ssl=false");
+            jcmd.start(
+                "jmxremote.port=" + ports[0],
+                "jmxremote.authenticate=false",
+                "jmxremote.ssl=false"
+            );
 
             // Second agent shouldn't start
-            jcmd(CMD_START,
-                    "jmxremote.port=" + ports[1],
-                    "jmxremote.authenticate=false",
-                    "jmxremote.ssl=false");
+            jcmd.start(
+                "jmxremote.port=" + ports[1],
+                "jmxremote.authenticate=false",
+                "jmxremote.ssl=false"
+            );
 
             // First agent should connect
             testConnect(ports[0]);
@@ -565,13 +466,14 @@ public class JMXStartStopTest {
         System.out.println("**** Test four ****");
 
         int[] ports = PortAllocator.allocatePorts(2);
-        Something s = doSomething("test_04");
+        TestAppRun s = doTest("test_04");
         try {
-            jcmd(CMD_START,
-                    "jmxremote.port=" + ports[0],
-                    "jmxremote.rmi.port=" + ports[1],
-                    "jmxremote.authenticate=false",
-                    "jmxremote.ssl=false");
+            jcmd.start(
+                "jmxremote.port=" + ports[0],
+                "jmxremote.rmi.port=" + ports[1],
+                "jmxremote.authenticate=false",
+                "jmxremote.ssl=false"
+            );
 
             testConnect(ports[0], ports[1]);
         } finally {
@@ -585,9 +487,9 @@ public class JMXStartStopTest {
 
         System.out.println("**** Test five ****");
         int[] ports = PortAllocator.allocatePorts(1);
-        Something s = doSomething("test_05");
+        TestAppRun s = doTest("test_05");
         try {
-            jcmd(CMD_START_LOCAL);
+            jcmd.startLocal();
 
             testNoConnect(ports[0]);
             testConnectLocal(s.getPid());
@@ -605,26 +507,27 @@ public class JMXStartStopTest {
         System.out.println("**** Test six ****");
 
         int[] ports = PortAllocator.allocatePorts(2);
-        Something s = doSomething("test_06");
+        TestAppRun s = doTest("test_06");
         try {
-            jcmd(CMD_START,
-                    "jmxremote.port=" + ports[0],
-                    "jmxremote.authenticate=false",
-                    "jmxremote.ssl=false");
+            jcmd.start(
+                "jmxremote.port=" + ports[0],
+                "jmxremote.authenticate=false",
+                "jmxremote.ssl=false"
+            );
 
             testConnect(ports[0], ports[1]);
 
             final AtomicBoolean checks = new AtomicBoolean(false);
-            jcmd(
-                    line -> {
-                        if (line.contains("java.lang.RuntimeException: Invalid agent state")) {
-                            checks.set(true);
-                        }
-                    },
-                    CMD_START,
-                    "jmxremote.port=" + ports[0],
-                    "jmxremote.authenticate=false",
-                    "jmxremote.ssl=false");
+            jcmd.start(
+                line -> {
+                    if (line.contains("java.lang.RuntimeException: Invalid agent state")) {
+                        checks.set(true);
+                    }
+                },
+                "jmxremote.port=" + ports[0],
+                "jmxremote.authenticate=false",
+                "jmxremote.ssl=false"
+            );
 
             if (!checks.get()) {
                 throw new Exception("Starting agent on port " + ports[0] + " should "
@@ -644,27 +547,28 @@ public class JMXStartStopTest {
         System.out.println("**** Test seven ****");
 
         int[] ports = PortAllocator.allocatePorts(2);
-        Something s = doSomething("test_07");
+        TestAppRun s = doTest("test_07");
         try {
-            jcmd(CMD_START,
-                    "jmxremote.port=" + ports[0],
-                    "jmxremote.authenticate=false",
-                    "jmxremote.ssl=false");
+            jcmd.start(
+                "jmxremote.port=" + ports[0],
+                "jmxremote.authenticate=false",
+                "jmxremote.ssl=false"
+            );
 
             testConnect(ports[0], ports[1]);
 
             final AtomicBoolean checks = new AtomicBoolean(false);
 
-            jcmd(
-                    line -> {
-                        if (line.contains("java.lang.RuntimeException: Invalid agent state")) {
-                            checks.set(true);
-                        }
-                    },
-                    CMD_START,
-                    "jmxremote.port=" + ports[1],
-                    "jmxremote.authenticate=false",
-                    "jmxremote.ssl=false");
+            jcmd.start(
+                line -> {
+                    if (line.contains("java.lang.RuntimeException: Invalid agent state")) {
+                        checks.set(true);
+                    }
+                },
+                "jmxremote.port=" + ports[1],
+                "jmxremote.authenticate=false",
+                "jmxremote.ssl=false"
+            );
 
             if (!checks.get()) {
                 throw new Exception("Starting agent on poprt " + ports[1] + " should "
@@ -684,17 +588,18 @@ public class JMXStartStopTest {
         System.out.println("**** Test eight ****");
 
         int[] ports = PortAllocator.allocatePorts(2);
-        Something s = doSomething("test_08");
+        TestAppRun s = doTest("test_08");
         try {
-            jcmd(CMD_START,
-                    "jmxremote.port=" + ports[0],
-                    "jmxremote.authenticate=false",
-                    "jmxremote.ssl=false");
+            jcmd.start(
+                "jmxremote.port=" + ports[0],
+                "jmxremote.authenticate=false",
+                "jmxremote.ssl=false"
+            );
 
             testConnect(ports[0], ports[1]);
 
-            jcmd(CMD_STOP);
-            jcmd(CMD_STOP);
+            jcmd.stop();
+            jcmd.stop();
         } finally {
             s.stop();
         }
@@ -707,7 +612,7 @@ public class JMXStartStopTest {
 
         System.out.println("**** Test nine ****");
 
-        Something s = doSomething("test_09");
+        TestAppRun s = doTest("test_09");
 
         try (ServerSocket ss = new ServerSocket(0)) {
             int localPort = ss.getLocalPort();
@@ -723,13 +628,12 @@ public class JMXStartStopTest {
                 final AtomicBoolean retry = new AtomicBoolean(false);
 
                 try {
-                    jcmd(
+                    jcmd.start(
                         line -> {
                             if (line.contains(Agent.getText(AgentConfigurationError.AGENT_EXCEPTION))) {
                                 retry.set(true);
                             }
                         },
-                        CMD_START,
                         "jmxremote.port=" + ports[0],
                         "jmxremote.rmi.port=" + localPort,
                         "jmxremote.authenticate=false",
@@ -764,18 +668,17 @@ public class JMXStartStopTest {
         System.out.println("**** Test ten ****");
 
         int[] ports = PortAllocator.allocatePorts(2);
-        Something s = doSomething(
+        TestAppRun s = doTest(
                 "test_10",
                 "-Dcom.sun.management.jmxremote.authenticate=false",
                 "-Dcom.sun.management.jmxremote.ssl=true");
 
         try {
             testNoConnect(ports[0]);
-            jcmd(
-                    CMD_START,
-                    "jmxremote.port=" + ports[1],
-                    "jmxremote.authenticate=false",
-                    "jmxremote.ssl=false"
+            jcmd.start(
+                "jmxremote.port=" + ports[1],
+                "jmxremote.authenticate=false",
+                "jmxremote.ssl=false"
             );
             testConnect(ports[1]);
         } finally {
@@ -791,7 +694,7 @@ public class JMXStartStopTest {
 
         System.out.println("**** Test eleven ****");
         int[] ports = PortAllocator.allocatePorts(2);
-        Something s = doSomething(
+        TestAppRun s = doTest(
                 "test_11",
                 "-Dcom.sun.management.jmxremote.port=" + ports[0],
                 "-Dcom.sun.management.jmxremote.authenticate=false",
@@ -800,15 +703,14 @@ public class JMXStartStopTest {
         try {
             testNoConnect(ports[0]);
 
-            jcmd(CMD_STOP);
+            jcmd.stop();
 
             testNoConnect(ports[0]);
 
-            jcmd(
-                    CMD_START,
-                    "jmxremote.port=" + ports[1],
-                    "jmxremote.authenticate=false",
-                    "jmxremote.ssl=false"
+            jcmd.start(
+                "jmxremote.port=" + ports[1],
+                "jmxremote.authenticate=false",
+                "jmxremote.ssl=false"
             );
 
             testConnect(ports[1]);
@@ -828,7 +730,7 @@ public class JMXStartStopTest {
         System.out.println("**** Test twelve ****");
 
         int[] ports = PortAllocator.allocatePorts(2);
-        Something s = doSomething("test_12",
+        TestAppRun s = doTest("test_12",
                 "-Dcom.sun.management.config.file="
                 + TEST_SRC + File.separator + "management_cl.properties",
                 "-Dcom.sun.management.jmxremote.authenticate=false"
@@ -837,15 +739,15 @@ public class JMXStartStopTest {
         try {
             testNoConnect(ports[0]);
 
-            jcmd(CMD_STOP);
+            jcmd.stop();
 
             testNoConnect(ports[0]);
 
-            jcmd(CMD_START,
-                    "config.file=" + TEST_SRC + File.separator
-                    + "management_jcmd.properties",
-                    "jmxremote.authenticate=false",
-                    "jmxremote.port=" + ports[1]
+            jcmd.start(
+                "config.file=" + TEST_SRC + File.separator
+                + "management_jcmd.properties",
+                "jmxremote.authenticate=false",
+                "jmxremote.port=" + ports[1]
             );
 
             testConnect(ports[1]);
@@ -863,7 +765,7 @@ public class JMXStartStopTest {
 
         System.out.println("**** Test thirteen ****");
         int[] ports = PortAllocator.allocatePorts(1);
-        Something s = doSomething(
+        TestAppRun s = doTest(
                 "test_13",
                 "-Dcom.sun.management.jmxremote.port=" + ports[0],
                 "-Dcom.sun.management.jmxremote.authenticate=false",
@@ -872,16 +774,16 @@ public class JMXStartStopTest {
         try {
             testNoConnect(ports[0]);
 
-            jcmd(CMD_STOP);
-            jcmd(CMD_START,
-                    "jmxremote.ssl=false",
-                    "jmxremote.port=" + ports[0]
+            jcmd.stop();
+            jcmd.start(
+                "jmxremote.ssl=false",
+                "jmxremote.port=" + ports[0]
             );
             testConnect(ports[0]);
 
-            jcmd(CMD_STOP);
-            jcmd(CMD_START,
-                    "jmxremote.port=" + ports[0]
+            jcmd.stop();
+            jcmd.start(
+                "jmxremote.port=" + ports[0]
             );
 
             testNoConnect(ports[0]);
@@ -897,14 +799,14 @@ public class JMXStartStopTest {
 
         System.out.println("**** Test fourteen ****");
         int[] ports = PortAllocator.allocatePorts(1);
-        Something s = doSomething(
+        TestAppRun s = doTest(
                 "test_14",
                 "-Dcom.sun.management.jmxremote.port=" + ports[0],
                 "-Dcom.sun.management.jmxremote.authenticate=false",
                 "-Dcom.sun.management.jmxremote.ssl=false");
         try {
             testConnect(ports[0]);
-            jcmd(CMD_STOP);
+            jcmd.stop();
             testConnectLocal(s.getPid());
         } finally {
             s.stop();
@@ -918,11 +820,11 @@ public class JMXStartStopTest {
         System.out.println("**** Test fifteen ****");
 
         int[] ports = PortAllocator.allocatePorts(1);
-        Something s = doSomething("test_15");
+        TestAppRun s = doTest("test_15");
 
         try {
             testNoConnect(ports[0]);
-            jcmd(CMD_START + "_local");
+            jcmd.startLocal();
 
             testConnectLocal(s.getPid());
 

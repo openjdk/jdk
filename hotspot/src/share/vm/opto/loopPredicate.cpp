@@ -89,7 +89,7 @@ void PhaseIdealLoop::register_control(Node* n, IdealLoopTree *loop, Node* pred) 
 //
 // We will create a region to guard the uct call if there is no one there.
 // The true projecttion (if_cont) of the new_iff is returned.
-// This code is also used to clone predicates to clonned loops.
+// This code is also used to clone predicates to cloned loops.
 ProjNode* PhaseIdealLoop::create_new_if_for_predicate(ProjNode* cont_proj, Node* new_entry,
                                                       Deoptimization::DeoptReason reason) {
   assert(cont_proj->is_uncommon_trap_if_pattern(reason), "must be a uct if pattern!");

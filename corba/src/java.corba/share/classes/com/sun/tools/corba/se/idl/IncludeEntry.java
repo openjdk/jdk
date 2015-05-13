@@ -81,7 +81,7 @@ public class IncludeEntry extends SymtabEntry
   } // generate
 
   /** Access the Include type generator.
-      @returns an object which implements the IncludeGen interface.
+      @return an object which implements the IncludeGen interface.
       @see IncludeGen */
   public Generator generator ()
   {
@@ -97,7 +97,7 @@ public class IncludeEntry extends SymtabEntry
 
   //d44810
   /** Access the fully-qualified file specification of this include.
-      @returns a string containing the path of the include file. */
+      @return a string containing the path of the include file. */
   public String absFilename ()
   {
     return _absFilename;

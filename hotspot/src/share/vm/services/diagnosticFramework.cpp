@@ -455,12 +455,12 @@ void DCmdFactory::send_notification_internal(TRAPS) {
   }
   if (notif) {
 
-    Klass* k = Management::sun_management_ManagementFactoryHelper_klass(CHECK);
-    instanceKlassHandle mgmt_factory_helper_klass(THREAD, k);
+    Klass* k = Management::com_sun_management_internal_DiagnosticCommandImpl_klass(CHECK);
+    instanceKlassHandle dcmd_mbean_klass(THREAD, k);
 
     JavaValue result(T_OBJECT);
     JavaCalls::call_static(&result,
-            mgmt_factory_helper_klass,
+            dcmd_mbean_klass,
             vmSymbols::getDiagnosticCommandMBean_name(),
             vmSymbols::getDiagnosticCommandMBean_signature(),
             CHECK);
@@ -468,12 +468,9 @@ void DCmdFactory::send_notification_internal(TRAPS) {
     instanceOop m = (instanceOop) result.get_jobject();
     instanceHandle dcmd_mbean_h(THREAD, m);
 
-    Klass* k2 = Management::sun_management_DiagnosticCommandImpl_klass(CHECK);
-    instanceKlassHandle dcmd_mbean_klass(THREAD, k2);
-
-    if (!dcmd_mbean_h->is_a(k2)) {
+    if (!dcmd_mbean_h->is_a(k)) {
       THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-              "ManagementFactory.getDiagnosticCommandMBean didn't return a DiagnosticCommandMBean instance");
+              "DiagnosticCommandImpl.getDiagnosticCommandMBean didn't return a DiagnosticCommandMBean instance");
     }
 
     JavaValue result2(T_VOID);

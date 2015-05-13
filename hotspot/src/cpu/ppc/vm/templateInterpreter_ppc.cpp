@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2013, 2014 SAP AG. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2013, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -264,11 +264,11 @@ void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow, Label*
       __ cmpdi(CCR0, Rmdo, 0);
       __ beq(CCR0, no_mdo);
 
-      // Increment invocation counter in the MDO.
-      const int mdo_ic_offs = in_bytes(MethodData::invocation_counter_offset()) + in_bytes(InvocationCounter::counter_offset());
-      __ lwz(Rscratch2, mdo_ic_offs, Rmdo);
+      // Increment backedge counter in the MDO.
+      const int mdo_bc_offs = in_bytes(MethodData::backedge_counter_offset()) + in_bytes(InvocationCounter::counter_offset());
+      __ lwz(Rscratch2, mdo_bc_offs, Rmdo);
       __ addi(Rscratch2, Rscratch2, increment);
-      __ stw(Rscratch2, mdo_ic_offs, Rmdo);
+      __ stw(Rscratch2, mdo_bc_offs, Rmdo);
       __ load_const_optimized(Rscratch1, mask, R0);
       __ and_(Rscratch1, Rscratch2, Rscratch1);
       __ bne(CCR0, done);
@@ -276,12 +276,12 @@ void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow, Label*
     }
 
     // Increment counter in MethodCounters*.
-    const int mo_ic_offs = in_bytes(MethodCounters::invocation_counter_offset()) + in_bytes(InvocationCounter::counter_offset());
+    const int mo_bc_offs = in_bytes(MethodCounters::backedge_counter_offset()) + in_bytes(InvocationCounter::counter_offset());
     __ bind(no_mdo);
     __ get_method_counters(R19_method, R3_counters, done);
-    __ lwz(Rscratch2, mo_ic_offs, R3_counters);
+    __ lwz(Rscratch2, mo_bc_offs, R3_counters);
     __ addi(Rscratch2, Rscratch2, increment);
-    __ stw(Rscratch2, mo_ic_offs, R3_counters);
+    __ stw(Rscratch2, mo_bc_offs, R3_counters);
     __ load_const_optimized(Rscratch1, mask, R0);
     __ and_(Rscratch1, Rscratch2, Rscratch1);
     __ beq(CCR0, *overflow);
@@ -611,12 +611,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
 // For others we can use a normal (native) entry.
 
 inline bool math_entry_available(AbstractInterpreter::MethodKind kind) {
-  // Provide math entry with debugging on demand.
-  // Note: Debugging changes which code will get executed:
-  // Debugging or disabled InlineIntrinsics: java method will get interpreted and performs a native call.
-  // Not debugging and enabled InlineIntrinics: processor instruction will get used.
-  // Result might differ slightly due to rounding etc.
-  if (!InlineIntrinsics && (!FLAG_IS_ERGO(InlineIntrinsics))) return false; // Generate a vanilla entry.
+  if (!InlineIntrinsics) return false;
 
   return ((kind==Interpreter::java_lang_math_sqrt && VM_Version::has_fsqrt()) ||
           (kind==Interpreter::java_lang_math_abs));
@@ -628,14 +623,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     return Interpreter::entry_for_kind(Interpreter::zerolocals);
   }
 
-  Label Lslow_path;
-  const Register Rjvmti_mode = R11_scratch1;
   address entry = __ pc();
-
-  // Provide math entry with debugging on demand.
-  __ lwz(Rjvmti_mode, thread_(interp_only_mode));
-  __ cmpwi(CCR0, Rjvmti_mode, 0);
-  __ bne(CCR0, Lslow_path); // jvmti_mode!=0
 
   __ lfd(F1_RET, Interpreter::stackElementSize, R15_esp);
 
@@ -659,9 +647,6 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
   // And we're done.
   __ blr();
 
-  // Provide slow path for JVMTI case.
-  __ bind(Lslow_path);
-  __ branch_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals), R12_scratch2);
   __ flush();
 
   return entry;

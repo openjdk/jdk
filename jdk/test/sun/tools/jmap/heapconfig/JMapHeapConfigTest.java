@@ -26,6 +26,7 @@
  * @bug 8042397
  * @summary Unit test for jmap utility test heap configuration reader
  * @library /lib/testlibrary
+ * @modules java.management
  * @build jdk.testlibrary.*
  * @build JMapHeapConfigTest LingeredApp TmtoolTestScenario
  * @run main JMapHeapConfigTest

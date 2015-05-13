@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Tests that the jvmstat counters published by the out-of-the-box
  *          management agent for the JMX connection details are correct.
  * @author Luis-Miguel Alventosa
+ * @modules java.management/sun.management
  * @run clean JvmstatCountersTest
  * @run build JvmstatCountersTest
  * @run main/othervm/timeout=600 -XX:+UsePerfData JvmstatCountersTest 1

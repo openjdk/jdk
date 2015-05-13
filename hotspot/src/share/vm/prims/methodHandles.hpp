@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,9 @@ class MethodHandles: AllStatic {
   // bit values for suppress argument to expand_MemberName:
   enum { _suppress_defc = 1, _suppress_name = 2, _suppress_type = 4 };
 
+  // CallSite support
+  static InstanceKlass* get_call_site_context(oop call_site);
+
   // Generate MethodHandles adapters.
   static bool generate_adapters();
 
@@ -125,11 +128,6 @@ class MethodHandles: AllStatic {
     return signature_polymorphic_name_id(klass, name) != vmIntrinsics::_none;
   }
 
-  enum {
-    // format of query to getConstant:
-    GC_COUNT_GWT = 4,
-    GC_LAMBDA_SUPPORT = 5
-  };
   static int get_named_constant(int which, Handle name_box, TRAPS);
 
 public:
@@ -243,10 +241,8 @@ class MemberNameTable : public GrowableArray<jweak> {
 
 #if INCLUDE_JVMTI
   // RedefineClasses() API support:
-  // If a MemberName refers to old_method then update it
-  // to refer to new_method.
-  void adjust_method_entries(Method** old_methods, Method** new_methods,
-                             int methods_length, bool *trace_name_printed);
+  // If a MemberName refers to old_method then update it to refer to new_method.
+  void adjust_method_entries(InstanceKlass* holder, bool * trace_name_printed);
 #endif // INCLUDE_JVMTI
 };
 

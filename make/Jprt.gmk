@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -91,8 +91,8 @@ $(JPRT_ARCHIVE_SYMBOLS_BUNDLE): bundles
 SRC_JDK_IMAGE_DIR := $(JDK_IMAGE_DIR)
 SRC_JRE_IMAGE_DIR := $(JRE_IMAGE_DIR)
 SRC_TEST_IMAGE_DIR := $(TEST_IMAGE_DIR)
-SRC_JDK_BUNDLE_DIR := $(JDK_BUNDLE_DIR)
-SRC_JRE_BUNDLE_DIR := $(JRE_BUNDLE_DIR)
+SRC_JDK_MACOSX_BUNDLE_DIR := $(JDK_MACOSX_BUNDLE_DIR)
+SRC_JRE_MACOSX_BUNDLE_DIR := $(JRE_MACOSX_BUNDLE_DIR)
 
 # Bundle up the images
 bundles: all
@@ -123,10 +123,10 @@ final-images: all
 	$(CP) -R -P $(SRC_JDK_IMAGE_DIR)/* $(BUILD_OUTPUT)/final-images/$(JDK_IMAGE_SUBDIR)/
 	$(CP) -R -P $(SRC_JRE_IMAGE_DIR)/* $(BUILD_OUTPUT)/final-images/$(JRE_IMAGE_SUBDIR)/
         ifeq ($(OPENJDK_TARGET_OS),macosx)
-	  $(MKDIR) -p $(BUILD_OUTPUT)/final-images/$(JDK_BUNDLE_SUBDIR)
-	  $(MKDIR) -p $(BUILD_OUTPUT)/final-images/$(JRE_BUNDLE_SUBDIR)
-	  $(CP) -R -P $(SRC_JDK_BUNDLE_DIR)/* $(BUILD_OUTPUT)/final-images/$(JDK_BUNDLE_SUBDIR)/
-	  $(CP) -R -P $(SRC_JRE_BUNDLE_DIR)/* $(BUILD_OUTPUT)/final-images/$(JRE_BUNDLE_SUBDIR)/
+	  $(MKDIR) -p $(BUILD_OUTPUT)/final-images/$(JDK_MACOSX_BUNDLE_SUBDIR)
+	  $(MKDIR) -p $(BUILD_OUTPUT)/final-images/$(JRE_MACOSX_BUNDLE_SUBDIR)
+	  $(CP) -R -P $(SRC_JDK_MACOSX_BUNDLE_DIR)/* $(BUILD_OUTPUT)/final-images/$(JDK_MACOSX_BUNDLE_SUBDIR)/
+	  $(CP) -R -P $(SRC_JRE_MACOSX_BUNDLE_DIR)/* $(BUILD_OUTPUT)/final-images/$(JRE_MACOSX_BUNDLE_SUBDIR)/
         endif
 	@$(call TargetExit)
 

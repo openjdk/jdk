@@ -75,10 +75,10 @@ import java.util.List;
  * values <code>SUCCEED</code> and <code>FAIL</code> mean that we've come to
  * the end of the build process, and there will not be any more entries in
  * the list.
- * <p>
+ *
  * @see sun.security.provider.certpath.BuildStep
  * @see sun.security.provider.certpath.Vertex
- * <p>
+ *
  * @author  seth proctor
  * @since   1.4
  */

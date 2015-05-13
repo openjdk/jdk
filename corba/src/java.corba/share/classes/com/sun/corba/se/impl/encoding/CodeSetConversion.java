@@ -54,8 +54,9 @@ import com.sun.corba.se.spi.logging.CORBALogDomains;
  *           use NIO ByteBuffer and NIO CharBuffer, the interaction
  *           and interface between this class and the CDR streams
  *           should be looked at more closely for optimizations to
- *           avoid unnecessary copying of data between char[] &
- *           CharBuffer and byte[] & ByteBuffer, especially
+ *           avoid unnecessary copying of data between
+ *           {@code char[] & CharBuffer} and
+ *           {@code byte[] & ByteBuffer}, especially
  *           DirectByteBuffers.
  *
  */

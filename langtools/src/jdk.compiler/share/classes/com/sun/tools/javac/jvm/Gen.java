@@ -69,7 +69,6 @@ public class Gen extends JCTree.Visitor {
     private final TreeMaker make;
     private final Names names;
     private final Target target;
-    private final Type stringBufferType;
     private final Map<Type,Symbol> stringBufferAppend;
     private Name accessDollar;
     private final Types types;
@@ -107,7 +106,6 @@ public class Gen extends JCTree.Visitor {
         target = Target.instance(context);
         types = Types.instance(context);
         methodType = new MethodType(null, null, null, syms.methodClass);
-        stringBufferType = syms.stringBuilderType;
         stringBufferAppend = new HashMap<>();
         accessDollar = names.
             fromString("access" + target.syntheticNameChar());
@@ -2070,10 +2068,10 @@ public class Gen extends JCTree.Visitor {
         /** Make a new string buffer.
          */
         void makeStringBuffer(DiagnosticPosition pos) {
-            code.emitop2(new_, makeRef(pos, stringBufferType));
+            code.emitop2(new_, makeRef(pos, syms.stringBuilderType));
             code.emitop0(dup);
             callMethod(
-                    pos, stringBufferType, names.init, List.<Type>nil(), false);
+                    pos, syms.stringBuilderType, names.init, List.<Type>nil(), false);
         }
 
         /** Append value (on tos) to string buffer (on tos - 1).
@@ -2091,7 +2089,7 @@ public class Gen extends JCTree.Visitor {
             if (method == null) {
                 method = rs.resolveInternalMethod(tree.pos(),
                                                   attrEnv,
-                                                  stringBufferType,
+                                                  syms.stringBuilderType,
                                                   names.append,
                                                   List.of(t),
                                                   null);
@@ -2122,7 +2120,7 @@ public class Gen extends JCTree.Visitor {
         void bufferToString(DiagnosticPosition pos) {
             callMethod(
                     pos,
-                    stringBufferType,
+                    syms.stringBuilderType,
                     names.toString,
                     List.<Type>nil(),
                     false);

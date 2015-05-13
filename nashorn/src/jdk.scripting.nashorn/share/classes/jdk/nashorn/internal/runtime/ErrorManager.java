@@ -113,7 +113,7 @@ public class ErrorManager {
 
         // Pointer to column.
         for (int i = 0; i < column; i++) {
-            if (sourceLine.charAt(i) == '\t') {
+            if (i < sourceLine.length() && sourceLine.charAt(i) == '\t') {
                 sb.append('\t');
             } else {
                 sb.append(' ');

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2014 SAP AG. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -427,7 +427,6 @@ address AbstractInterpreterGenerator::generate_result_handler_for(BasicType type
   return entry;
 }
 
-
 // Call an accessor method (assuming it is resolved, otherwise drop into
 // vanilla (slow path) entry.
 address InterpreterGenerator::generate_jump_to_normal_entry(void) {
@@ -473,7 +472,8 @@ address InterpreterGenerator::generate_abstract_entry(void) {
 
   // This is not a leaf but we have a JavaFrameAnchor now and we will
   // check (create) exceptions afterward so this is ok.
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodError));
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodError),
+                  R16_thread);
 
   // Pop the C frame and restore LR.
   __ pop_frame();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 6475157
  * @summary Tests deadlock in simultaneous connection and connector-server close
  * @author Eamonn McManus
+ * @modules java.management
  */
 
 /* This test is somewhat dependent on implementation details.  If it suddenly

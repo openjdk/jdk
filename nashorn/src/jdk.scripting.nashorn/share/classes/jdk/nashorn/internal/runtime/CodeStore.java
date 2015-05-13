@@ -189,7 +189,7 @@ public abstract class CodeStore implements Loggable {
      * @param paramTypes parameter types
      * @return a string representing the function
      */
-    public static String getCacheKey(final int functionId, final Type[] paramTypes) {
+    public static String getCacheKey(final Object functionId, final Type[] paramTypes) {
         final StringBuilder b = new StringBuilder().append(functionId);
         if(paramTypes != null && paramTypes.length > 0) {
             b.append('-');
@@ -275,7 +275,7 @@ public abstract class CodeStore implements Loggable {
 
         @Override
         public StoredScript load(final Source source, final String functionKey) {
-            if (source.getLength() < minSize) {
+            if (belowThreshold(source)) {
                 return null;
             }
 

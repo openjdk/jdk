@@ -20,5 +20,5 @@ exclusiveAccess.dirs=java/rmi/Naming java/util/prefs sun/management/jmxremote su
 # Group definitions
 groups=TEST.groups [closed/TEST.groups]
 
-# Tests using jtreg 4.1 b10 features
-requiredVersion=4.1 b10
+# Tests using jtreg 4.1 b11 features
+requiredVersion=4.1 b11
