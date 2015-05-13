@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -57,11 +57,11 @@ ALTSRC_REL=src/closed # Change this to pick up alt sources from somewhere else
 COMMONSRC=${WorkSpace}/${COMMONSRC_REL}
 ALTSRC=${WorkSpace}/${ALTSRC_REL}
 
-BASE_PATHS="`if [ -d ${ALTSRC}/share/vm ]; then $FIND ${ALTSRC}/share/vm ! -name vm -prune -type d \! \( -name adlc -o -name c1 -o -name gc_implementation -o -name opto -o -name shark -o -name libadt \); fi`"
-BASE_PATHS="${BASE_PATHS} ` $FIND ${COMMONSRC}/share/vm ! -name vm -prune -type d \! \( -name adlc -o -name c1 -o -name gc_implementation -o -name opto -o -name shark -o -name libadt \)`"
+BASE_PATHS="`if [ -d ${ALTSRC}/share/vm ]; then $FIND ${ALTSRC}/share/vm ! -name vm -prune -type d \! \( -name adlc -o -name c1 -o -name gc -o -name opto -o -name shark -o -name libadt \); fi`"
+BASE_PATHS="${BASE_PATHS} ` $FIND ${COMMONSRC}/share/vm ! -name vm -prune -type d \! \( -name adlc -o -name c1 -o -name gc -o -name opto -o -name shark -o -name libadt \)`"
 
 for sd in \
-    share/vm/gc_implementation/shared \
+    share/vm/gc/shared \
     os/${Platform_os_family}/vm \
     cpu/${Platform_arch}/vm \
     os_cpu/${Platform_os_arch}/vm; do 
@@ -80,10 +80,10 @@ fi
 BASE_PATHS="${BASE_PATHS} ${COMMONSRC}/share/vm/prims/wbtestmethods"
 
 # shared is already in BASE_PATHS. Should add vm/memory but that one is also in BASE_PATHS.
-if [ -d "${ALTSRC}/share/vm/gc_implementation" ]; then
-  BASE_PATHS="${BASE_PATHS} `$FIND ${ALTSRC}/share/vm/gc_implementation ! -name gc_implementation -prune -type d \! -name shared`"
+if [ -d "${ALTSRC}/share/vm/gc" ]; then
+  BASE_PATHS="${BASE_PATHS} `$FIND ${ALTSRC}/share/vm/gc ! -name gc -prune -type d \! -name shared`"
 fi
-BASE_PATHS="${BASE_PATHS} `$FIND ${COMMONSRC}/share/vm/gc_implementation ! -name gc_implementation -prune -type d \! -name shared`"
+BASE_PATHS="${BASE_PATHS} `$FIND ${COMMONSRC}/share/vm/gc ! -name gc -prune -type d \! -name shared`"
 
 if [ -d "${ALTSRC}/share/vm/c1" ]; then
   COMPILER1_PATHS="${ALTSRC}/share/vm/c1"

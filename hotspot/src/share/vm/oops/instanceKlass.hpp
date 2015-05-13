@@ -26,8 +26,8 @@
 #define SHARE_VM_OOPS_INSTANCEKLASS_HPP
 
 #include "classfile/classLoaderData.hpp"
+#include "gc/shared/specialized_oop_closures.hpp"
 #include "memory/referenceType.hpp"
-#include "memory/specialized_oop_closures.hpp"
 #include "oops/annotations.hpp"
 #include "oops/constMethod.hpp"
 #include "oops/fieldInfo.hpp"
@@ -35,10 +35,10 @@
 #include "oops/klassVtable.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/os.hpp"
+#include "trace/traceMacros.hpp"
 #include "utilities/accessFlags.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/macros.hpp"
-#include "trace/traceMacros.hpp"
 
 // An InstanceKlass is the VM level representation of a Java class.
 // It contains all information needed for at class at execution runtime.

@@ -25,8 +25,8 @@
 #ifndef SHARE_VM_RUNTIME_THREAD_HPP
 #define SHARE_VM_RUNTIME_THREAD_HPP
 
+#include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "memory/allocation.hpp"
-#include "memory/threadLocalAllocBuffer.hpp"
 #include "oops/oop.hpp"
 #include "prims/jni.h"
 #include "prims/jvmtiExport.hpp"
@@ -48,8 +48,8 @@
 #include "utilities/macros.hpp"
 #include "utilities/top.hpp"
 #if INCLUDE_ALL_GCS
-#include "gc_implementation/g1/dirtyCardQueue.hpp"
-#include "gc_implementation/g1/satbQueue.hpp"
+#include "gc/g1/dirtyCardQueue.hpp"
+#include "gc/g1/satbQueue.hpp"
 #endif // INCLUDE_ALL_GCS
 #ifdef TARGET_ARCH_zero
 # include "stack_zero.hpp"
