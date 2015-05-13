@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,42 +33,43 @@ import java.awt.Font;
 import java.awt.font.FontRenderContext;
 import java.awt.font.LineMetrics;
 
-public class StandardTextSource extends TextSource {
-  char[] chars;
-  int start;
-  int len;
-  int cstart;
-  int clen;
-  int level; // assumed all uniform
-  int flags; // see GlyphVector.java
-  Font font;
-  FontRenderContext frc;
-  CoreMetrics cm;
+final class StandardTextSource extends TextSource {
 
-  /**
-   * Create a simple implementation of a TextSource.
-   *
-   * Chars is an array containing clen chars in the context, in
-   * logical order, contiguously starting at cstart.  Start and len
-   * represent that portion of the context representing the true
-   * source; start, like cstart, is relative to the start of the
-   * character array.
-   *
-   * Level is the bidi level (0-63 for the entire context. Flags is
-   * the layout flags. Font is the font, frc is the render context,
-   * and lm is the line metrics for the entire source text, but not
-   * necessarily the context.
-   */
-  public StandardTextSource(char[] chars,
-                            int start,
-                            int len,
-                            int cstart,
-                            int clen,
-                            int level,
-                            int flags,
-                            Font font,
-                            FontRenderContext frc,
-                            CoreMetrics cm) {
+    private final char[] chars;
+    private final int start;
+    private final int len;
+    private final int cstart;
+    private final int clen;
+    private final int level; // assumed all uniform
+    private final int flags; // see GlyphVector.java
+    private final Font font;
+    private final FontRenderContext frc;
+    private final CoreMetrics cm;
+
+    /**
+     * Create a simple implementation of a TextSource.
+     *
+     * Chars is an array containing clen chars in the context, in
+     * logical order, contiguously starting at cstart.  Start and len
+     * represent that portion of the context representing the true
+     * source; start, like cstart, is relative to the start of the
+     * character array.
+     *
+     * Level is the bidi level (0-63 for the entire context. Flags is
+     * the layout flags. Font is the font, frc is the render context,
+     * and lm is the line metrics for the entire source text, but not
+     * necessarily the context.
+     */
+    StandardTextSource(char[] chars,
+                       int start,
+                       int len,
+                       int cstart,
+                       int clen,
+                       int level,
+                       int flags,
+                       Font font,
+                       FontRenderContext frc,
+                       CoreMetrics cm) {
     if (chars == null) {
       throw new IllegalArgumentException("bad chars: null");
     }
@@ -97,7 +98,7 @@ public class StandardTextSource extends TextSource {
       throw new IllegalArgumentException("bad frc: null");
     }
 
-    this.chars = chars.clone();
+    this.chars = chars;
     this.start = start;
     this.len = len;
     this.cstart = cstart;
@@ -115,40 +116,10 @@ public class StandardTextSource extends TextSource {
     }
   }
 
-  /** Create a StandardTextSource whose context is coextensive with the source. */
-  public StandardTextSource(char[] chars,
-                            int start,
-                            int len,
-                            int level,
-                            int flags,
-                            Font font,
-                            FontRenderContext frc,
-                            CoreMetrics cm) {
-    this(chars, start, len, start, len, level, flags, font, frc, cm);
-  }
-
-  /** Create a StandardTextSource whose context and source are coextensive with the entire char array. */
-  public StandardTextSource(char[] chars,
-                            int level,
-                            int flags,
-                            Font font,
-                            FontRenderContext frc) {
-    this(chars, 0, chars.length, 0, chars.length, level, flags, font, frc, null);
-  }
-
-  /** Create a StandardTextSource whose context and source are all the text in the String. */
-  public StandardTextSource(String str,
-                            int level,
-                            int flags,
-                            Font font,
-                            FontRenderContext frc) {
-    this(str.toCharArray(), 0, str.length(), 0, str.length(), level, flags, font, frc, null);
-  }
-
   // TextSource API
 
   public char[] getChars() {
-    return chars.clone();
+    return chars;
   }
 
   public int getStart() {
