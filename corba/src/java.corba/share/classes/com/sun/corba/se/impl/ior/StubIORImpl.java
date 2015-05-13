@@ -245,7 +245,7 @@ public class StubIORImpl
     /**
      * Returns a string representation of this stub. Returns the same string
      * for all stubs that represent the same remote object.
-     * "SimpleIORImpl[<typeName>,[<profileID>]data, ...]"
+     * {@code "SimpleIORImpl[<typeName>,[<profileID>]data, ...]"}
      * @return a string representation of this stub.
      */
     public String toString()

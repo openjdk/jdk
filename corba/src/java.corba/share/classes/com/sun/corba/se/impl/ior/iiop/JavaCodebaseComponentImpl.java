@@ -33,9 +33,6 @@ import com.sun.corba.se.spi.ior.TaggedComponentBase ;
 
 import com.sun.corba.se.spi.ior.iiop.JavaCodebaseComponent ;
 
-/**
- * @author
- */
 public class JavaCodebaseComponentImpl extends TaggedComponentBase
     implements JavaCodebaseComponent
 {

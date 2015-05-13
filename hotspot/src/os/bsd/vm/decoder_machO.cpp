@@ -97,6 +97,7 @@ bool MachODecoder::decode(address addr, char *buf,
   char * symname = mach_find_in_stringtable((char*) ((uintptr_t)mach_base + stroff), strsize, found_strx);
   if (symname) {
       strncpy(buf, symname, buflen);
+      buf[buflen - 1] = '\0';
       return true;
   }
   DEBUG_ONLY(tty->print_cr("no string or null string found."));

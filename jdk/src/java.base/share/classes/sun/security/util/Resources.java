@@ -26,7 +26,7 @@
 package sun.security.util;
 
 /**
- * <p> This class represents the <code>ResourceBundle</code>
+ * This class represents the <code>ResourceBundle</code>
  * for javax.security.auth and sun.security.
  *
  */
@@ -159,8 +159,6 @@ public class Resources extends java.util.ListResourceBundle {
 
     /**
      * Returns the contents of this <code>ResourceBundle</code>.
-     *
-     * <p>
      *
      * @return the contents of this <code>ResourceBundle</code>.
      */

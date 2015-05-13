@@ -89,6 +89,17 @@ $(shell uname -r -v \
 # when actually building on Nevada-B158 or earlier:
 #SOLARIS_11_B159_OR_LATER=-DSOLARIS_11_B159_OR_LATER
 
+$(SADISOBJ): $(SADISSRCFILES)
+	           $(QUIETLY) $(CC)                                     \
+	           $(SYMFLAG) $(ARCHFLAG) $(SHARED_FLAG) $(PICFLAG)     \
+	           -I$(SASRCDIR)                                        \
+	           -I$(GENERATED)                                       \
+	           -I$(BOOT_JAVA_HOME)/include                          \
+	           -I$(BOOT_JAVA_HOME)/include/$(Platform_os_family)    \
+	           $(SOLARIS_11_B159_OR_LATER)                          \
+	           $(EXTRA_CFLAGS)					\
+	           $(SADISSRCFILES)                                     \
+	           -c -o $(SADISOBJ)
 
 $(LIBSAPROC): $(SASRCFILES) $(SADISOBJ) $(SAMAPFILE)
 	$(QUIETLY) if [ "$(BOOT_JAVA_HOME)" = "" ]; then \
@@ -103,22 +114,12 @@ $(LIBSAPROC): $(SASRCFILES) $(SADISOBJ) $(SAMAPFILE)
 	           -I$(BOOT_JAVA_HOME)/include                          \
 	           -I$(BOOT_JAVA_HOME)/include/$(Platform_os_family)    \
 	           $(SOLARIS_11_B159_OR_LATER)                          \
-	           $(SASRCFILES)                                        \
+	           $(EXTRA_CXXFLAGS) $(EXTRA_LDFLAGS)			\
 	           $(SADISOBJ)                                          \
+	           $(SASRCFILES)                                        \
 	           $(SA_LFLAGS)                                         \
 	           -o $@                                                \
 	           -ldl -ldemangle -lthread -lc
-
-$(SADISOBJ): $(SADISSRCFILES)
-	           $(QUIETLY) $(CC)                                     \
-	           $(SYMFLAG) $(ARCHFLAG) $(SHARED_FLAG) $(PICFLAG)     \
-	           -I$(SASRCDIR)                                        \
-	           -I$(GENERATED)                                       \
-	           -I$(BOOT_JAVA_HOME)/include                          \
-	           -I$(BOOT_JAVA_HOME)/include/$(Platform_os_family)    \
-	           $(SOLARIS_11_B159_OR_LATER)                          \
-	           $(SADISSRCFILES)                                     \
-	           -c -o $(SADISOBJ)
 
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
 	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(LIBSAPROC_DEBUGINFO)

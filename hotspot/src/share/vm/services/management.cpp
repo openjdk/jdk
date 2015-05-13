@@ -64,18 +64,16 @@ PerfVariable* Management::_begin_vm_creation_time = NULL;
 PerfVariable* Management::_end_vm_creation_time = NULL;
 PerfVariable* Management::_vm_init_done_time = NULL;
 
+Klass* Management::_diagnosticCommandImpl_klass = NULL;
+Klass* Management::_garbageCollectorExtImpl_klass = NULL;
+Klass* Management::_garbageCollectorMXBean_klass = NULL;
+Klass* Management::_gcInfo_klass = NULL;
+Klass* Management::_managementFactoryHelper_klass = NULL;
+Klass* Management::_memoryManagerMXBean_klass = NULL;
+Klass* Management::_memoryPoolMXBean_klass = NULL;
+Klass* Management::_memoryUsage_klass = NULL;
 Klass* Management::_sensor_klass = NULL;
 Klass* Management::_threadInfo_klass = NULL;
-Klass* Management::_memoryUsage_klass = NULL;
-Klass* Management::_memoryPoolMXBean_klass = NULL;
-Klass* Management::_memoryManagerMXBean_klass = NULL;
-Klass* Management::_garbageCollectorMXBean_klass = NULL;
-Klass* Management::_managementFactory_klass = NULL;
-Klass* Management::_garbageCollectorImpl_klass = NULL;
-Klass* Management::_gcInfo_klass = NULL;
-Klass* Management::_diagnosticCommandImpl_klass = NULL;
-Klass* Management::_managementFactoryHelper_klass = NULL;
-
 
 jmmOptionalSupport Management::_optional_support = {0};
 TimeStamp Management::_stamp;
@@ -255,18 +253,18 @@ Klass* Management::sun_management_Sensor_klass(TRAPS) {
   return _sensor_klass;
 }
 
-Klass* Management::sun_management_ManagementFactory_klass(TRAPS) {
-  if (_managementFactory_klass == NULL) {
-    _managementFactory_klass = load_and_initialize_klass(vmSymbols::sun_management_ManagementFactory(), CHECK_NULL);
+Klass* Management::sun_management_ManagementFactoryHelper_klass(TRAPS) {
+  if (_managementFactoryHelper_klass == NULL) {
+    _managementFactoryHelper_klass = load_and_initialize_klass(vmSymbols::sun_management_ManagementFactoryHelper(), CHECK_NULL);
   }
-  return _managementFactory_klass;
+  return _managementFactoryHelper_klass;
 }
 
-Klass* Management::sun_management_GarbageCollectorImpl_klass(TRAPS) {
-  if (_garbageCollectorImpl_klass == NULL) {
-    _garbageCollectorImpl_klass = load_and_initialize_klass(vmSymbols::sun_management_GarbageCollectorImpl(), CHECK_NULL);
+Klass* Management::com_sun_management_internal_GarbageCollectorExtImpl_klass(TRAPS) {
+  if (_garbageCollectorExtImpl_klass == NULL) {
+    _garbageCollectorExtImpl_klass = load_and_initialize_klass(vmSymbols::com_sun_management_internal_GarbageCollectorExtImpl(), CHECK_NULL);
   }
-  return _garbageCollectorImpl_klass;
+  return _garbageCollectorExtImpl_klass;
 }
 
 Klass* Management::com_sun_management_GcInfo_klass(TRAPS) {
@@ -276,18 +274,11 @@ Klass* Management::com_sun_management_GcInfo_klass(TRAPS) {
   return _gcInfo_klass;
 }
 
-Klass* Management::sun_management_DiagnosticCommandImpl_klass(TRAPS) {
+Klass* Management::com_sun_management_internal_DiagnosticCommandImpl_klass(TRAPS) {
   if (_diagnosticCommandImpl_klass == NULL) {
-    _diagnosticCommandImpl_klass = load_and_initialize_klass(vmSymbols::sun_management_DiagnosticCommandImpl(), CHECK_NULL);
+    _diagnosticCommandImpl_klass = load_and_initialize_klass(vmSymbols::com_sun_management_internal_DiagnosticCommandImpl(), CHECK_NULL);
   }
   return _diagnosticCommandImpl_klass;
-}
-
-Klass* Management::sun_management_ManagementFactoryHelper_klass(TRAPS) {
-  if (_managementFactoryHelper_klass == NULL) {
-    _managementFactoryHelper_klass = load_and_initialize_klass(vmSymbols::sun_management_ManagementFactoryHelper(), CHECK_NULL);
-  }
-  return _managementFactoryHelper_klass;
 }
 
 static void initialize_ThreadInfo_constructor_arguments(JavaCallArguments* args, ThreadSnapshot* snapshot, TRAPS) {
@@ -1109,6 +1100,8 @@ static void do_thread_dump(ThreadDumpResult* dump_result,
                            bool with_locked_monitors,
                            bool with_locked_synchronizers,
                            TRAPS) {
+  // no need to actually perform thread dump if no TIDs are specified
+  if (num_threads == 0) return;
 
   // First get an array of threadObj handles.
   // A JavaThread may terminate before we get the stack trace.

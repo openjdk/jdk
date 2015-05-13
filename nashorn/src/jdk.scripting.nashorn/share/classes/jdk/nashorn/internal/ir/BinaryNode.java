@@ -312,7 +312,7 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
 
     @Override
     public boolean isSelfModifying() {
-        return isAssignment() && tokenType() != TokenType.ASSIGN;
+        return isAssignment() && !isTokenType(TokenType.ASSIGN);
     }
 
     @Override
@@ -529,7 +529,7 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
         final TokenType tokenType = tokenType();
         if(tokenType == TokenType.ADD || tokenType == TokenType.ASSIGN_ADD) {
             return OPTIMISTIC_UNDECIDED_TYPE;
-        } else if (CAN_OVERFLOW.contains(tokenType())) {
+        } else if (CAN_OVERFLOW.contains(tokenType)) {
             return Type.INT;
         }
         return getMostPessimisticType();

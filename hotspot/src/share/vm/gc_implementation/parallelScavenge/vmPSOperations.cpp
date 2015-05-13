@@ -26,7 +26,6 @@
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.inline.hpp"
 #include "gc_implementation/parallelScavenge/psMarkSweep.hpp"
 #include "gc_implementation/parallelScavenge/psScavenge.hpp"
-#include "gc_implementation/parallelScavenge/psScavenge.inline.hpp"
 #include "gc_implementation/parallelScavenge/vmPSOperations.hpp"
 #include "memory/gcLocker.inline.hpp"
 #include "utilities/dtrace.hpp"
@@ -41,8 +40,7 @@ VM_ParallelGCFailedAllocation::VM_ParallelGCFailedAllocation(size_t word_size,
 void VM_ParallelGCFailedAllocation::doit() {
   SvcGCMarker sgcm(SvcGCMarker::MINOR);
 
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "must be a ParallelScavengeHeap");
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
   GCCauseSetter gccs(heap, _gc_cause);
   _result = heap->failed_mem_allocate(_word_size);
@@ -63,9 +61,7 @@ VM_ParallelGCSystemGC::VM_ParallelGCSystemGC(uint gc_count,
 void VM_ParallelGCSystemGC::doit() {
   SvcGCMarker sgcm(SvcGCMarker::FULL);
 
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap,
-    "must be a ParallelScavengeHeap");
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
   GCCauseSetter gccs(heap, _gc_cause);
   if (_gc_cause == GCCause::_gc_locker || _gc_cause == GCCause::_wb_young_gc

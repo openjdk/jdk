@@ -181,11 +181,11 @@ package com.sun.corba.se.impl.orbutil.concurrent;
  *     }
  *   }
  * }
- *</pre>
+ * </pre>
  * <p>
  * Here is an even fancier version, that uses lock re-ordering
  * upon conflict:
- * <pre>
+ * <pre>{@code
  * class Cell {
  *   long value;
  *   Sync lock = ...;
@@ -214,8 +214,8 @@ package com.sun.corba.se.impl.orbutil.concurrent;
  *    }
  *    catch (InterruptedException ex) { return; }
  *  }
- *}
- *</pre>
+ * }
+ * }</pre>
  * <p>
  * Interruptions are in general handled as early as possible.
  * Normally, InterruptionExceptions are thrown
@@ -248,7 +248,7 @@ package com.sun.corba.se.impl.orbutil.concurrent;
  * it is normally best to just use acquire(), various forms
  * of busy waits can be implemented. For a simple example
  * (but one that would probably never be preferable to using acquire()):
- * <pre>
+ * <pre>{@code
  * class X {
  *   Sync lock = ...
  *   void spinUntilAcquired() throws InterruptedException {
@@ -269,17 +269,16 @@ package com.sun.corba.se.impl.orbutil.concurrent;
  *     }
  *   }
  * }
- * </pre>
+ * }</pre>
  * <p>
  * In addition pure synchronization control, Syncs
  * may be useful in any context requiring before/after methods.
  * For example, you can use an ObservableSync
  * (perhaps as part of a LayeredSync) in order to obtain callbacks
  * before and after each method invocation for a given class.
- * <p>
-
- * <p>[<a href="http://gee.cs.oswego.edu/dl/classes/EDU/oswego/cs/dl/util/concurrent/intro.html"> Introduction to this package. </a>]
-**/
+ *
+ * [<a href="http://gee.cs.oswego.edu/dl/classes/EDU/oswego/cs/dl/util/concurrent/intro.html"> Introduction to this package. </a>]
+ **/
 
 
 public interface Sync {

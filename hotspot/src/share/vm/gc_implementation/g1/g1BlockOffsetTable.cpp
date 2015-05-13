@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc_implementation/g1/g1CollectedHeap.hpp"
 #include "gc_implementation/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc_implementation/g1/heapRegion.hpp"
 #include "memory/space.hpp"
@@ -303,9 +304,9 @@ void G1BlockOffsetArray::alloc_block_work2(HeapWord** threshold_, size_t* index_
   assert(blk_start <= threshold, "blk_start should be at or before threshold");
   assert(pointer_delta(threshold, blk_start) <= N_words,
          "offset should be <= BlockOffsetSharedArray::N");
-  assert(Universe::heap()->is_in_reserved(blk_start),
+  assert(G1CollectedHeap::heap()->is_in_reserved(blk_start),
          "reference must be into the heap");
-  assert(Universe::heap()->is_in_reserved(blk_end-1),
+  assert(G1CollectedHeap::heap()->is_in_reserved(blk_end-1),
          "limit must be within the heap");
   assert(threshold == _array->_reserved.start() + index*N_words,
          "index must agree with threshold");
@@ -458,7 +459,7 @@ G1BlockOffsetArrayContigSpace(G1BlockOffsetSharedArray* array,
 }
 
 HeapWord* G1BlockOffsetArrayContigSpace::initialize_threshold_raw() {
-  assert(!Universe::heap()->is_in_reserved(_array->_offset_array),
+  assert(!G1CollectedHeap::heap()->is_in_reserved(_array->_offset_array),
          "just checking");
   _next_offset_index = _array->index_for_raw(_bottom);
   _next_offset_index++;
@@ -468,7 +469,7 @@ HeapWord* G1BlockOffsetArrayContigSpace::initialize_threshold_raw() {
 }
 
 void G1BlockOffsetArrayContigSpace::zero_bottom_entry_raw() {
-  assert(!Universe::heap()->is_in_reserved(_array->_offset_array),
+  assert(!G1CollectedHeap::heap()->is_in_reserved(_array->_offset_array),
          "just checking");
   size_t bottom_index = _array->index_for_raw(_bottom);
   assert(_array->address_for_index_raw(bottom_index) == _bottom,
@@ -477,7 +478,7 @@ void G1BlockOffsetArrayContigSpace::zero_bottom_entry_raw() {
 }
 
 HeapWord* G1BlockOffsetArrayContigSpace::initialize_threshold() {
-  assert(!Universe::heap()->is_in_reserved(_array->_offset_array),
+  assert(!G1CollectedHeap::heap()->is_in_reserved(_array->_offset_array),
          "just checking");
   _next_offset_index = _array->index_for(_bottom);
   _next_offset_index++;

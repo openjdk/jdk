@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 4897052
  * @summary Tests that opening and immediately closing a connector works
  * @author Eamonn McManus
+ * @modules java.management
  * @run clean CloseUnconnectedTest
  * @run build CloseUnconnectedTest
  * @run main CloseUnconnectedTest

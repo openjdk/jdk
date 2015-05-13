@@ -6,6 +6,7 @@
  *  @author Robert Field / Jim Holmlund
  *
  *  @library ..
+ *  @modules jdk.jdi
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter InstallSDE
  *  @run compile FilterMangleTest.java
  *  @run compile -g onion/pickle/Mangle.java

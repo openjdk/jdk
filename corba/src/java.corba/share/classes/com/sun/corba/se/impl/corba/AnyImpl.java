@@ -222,7 +222,7 @@ public class AnyImpl extends Any
     /**
      * returns the type of the element contained in the Any.
      *
-     * @result          the TypeCode for the element in the Any
+     * @return          the TypeCode for the element in the Any
      */
     public TypeCode type() {
         return typeCode;
@@ -267,7 +267,7 @@ public class AnyImpl extends Any
      * checks for equality between Anys.
      *
      * @param otherAny  the Any to be compared with.
-     * @result          true if the Anys are equal, false otherwise.
+     * @return          true if the Anys are equal, false otherwise.
      */
     public boolean equal(Any otherAny)
     {
@@ -508,7 +508,7 @@ public class AnyImpl extends Any
     /**
      * returns an output stream that an Any value can be marshaled into.
      *
-     * @result          the OutputStream to marshal value of Any into
+     * @return          the OutputStream to marshal value of Any into
      */
     public org.omg.CORBA.portable.OutputStream create_output_stream()
     {
@@ -525,7 +525,7 @@ public class AnyImpl extends Any
     /**
      * returns an input stream that an Any value can be marshaled out of.
      *
-     * @result          the InputStream to marshal value of Any out of.
+     * @return          the InputStream to marshal value of Any out of.
      */
     public org.omg.CORBA.portable.InputStream create_input_stream()
     {

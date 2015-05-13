@@ -2,10 +2,10 @@
 .\" Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
 .\" Title: idlj
 .\" Language: English
-.\" Date: 2013ǯ11��21��
-.\" SectDesc: Java IDL�����RMI-IIOP�ġ���
+.\" Date: 2013年11月21日
+.\" SectDesc: Java IDLおよびRMI-IIOPツール
 .\" Software: JDK 8
-.\" Arch: ����
+.\" Arch: 汎用
 .\"
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
@@ -28,7 +28,7 @@
 .\" questions.
 .\"
 .pl 99999
-.TH "idlj" "1" "2013ǯ11��21��" "JDK 8" "Java IDL�����RMI-IIOP�ġ���"
+.TH "idlj" "1" "2013年11月21日" "JDK 8" "Java IDLおよびRMI-IIOPツール"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -49,8 +49,8 @@
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
 .SH "NAME"
-idlj \- ���ꤵ�줿���󥿥ե������������(IDL)�ե�������Ф���Java�Х���ǥ��󥰤��������ޤ���
-.SH "����"
+idlj \- 指定されたインタフェース定義言語(IDL)ファイルに対してJavaバインディングを生成します。
+.SH "概要"
 .sp
 .if n \{\
 .RS 4
@@ -64,22 +64,22 @@ idlj \- ���ꤵ�줿���󥿥ե������������(IDL)�ե�������Ф���Java�Х���ǥ��󥰤
 .PP
 \fIoptions\fR
 .RS 4
-���ޥ�ɥ饤�󡦥��ץ���󡣥��ץ����򻲾Ȥ��Ƥ���������options�ν��֤�Ǥ�դǤ�����\fIidlfile\fR�������˻��ꤹ��ɬ�פ�����ޤ���
+コマンドライン・オプション。オプションを参照してください。optionsの順番は任意ですが、\fIidlfile\fRよりも前に指定する必要があります。
 .RE
 .PP
 \fIidlfile\fR
 .RS 4
-���󥿥ե������������(IDL)�ˤ��������ޤޤ��ե������̾����
+インタフェース定義言語(IDL)による定義が含まれるファイルの名前。
 .RE
-.SH "����"
+.SH "説明"
 .PP
-IDL\-to\-Java����ѥ���ϡ����ꤵ�줿IDL�ե�������Ф���Java�Х���ǥ��󥰤��������ޤ����Х���ǥ��󥰤ξܺ٤ϡ�http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/idl/mapping/jidlMapping\&.html�ˤ���
-Java IDL: Java����ޥåԥ󥰤ؤ�IDL�򻲾Ȥ��Ƥ���������
+IDL\-to\-Javaコンパイラは、指定されたIDLファイルに対してJavaバインディングを生成します。バインディングの詳細は、http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/idl/mapping/jidlMapping\&.htmlにある
+Java IDL: Java言語マッピングへのIDLを参照してください。
 .PP
-IDL\-to\-Java����ѥ���ΰ����Υ�꡼������ˤϡ�\fIidltojava\fR�Ȥ���̾�����ä���Τ�����ޤ���
-.SS "���饤����ȡ��Х���ǥ��󥰤���ӥ����С����Х���ǥ��󥰤�ȯ��"
+IDL\-to\-Javaコンパイラの以前のリリースの中には、\fIidltojava\fRという名前だったものがあります。
+.SS "クライアント・バインディングおよびサーバー・バインディングの発行"
 .PP
-����\fIidlj\fR���ޥ�ɤϡ����饤�����¦�Х���ǥ��󥰤�ޤ�\fIMy\&.idl\fR�Ȥ���̾����IDL�ե�������������ޤ���
+次の\fIidlj\fRコマンドは、クライアント側バインディングを含む\fIMy\&.idl\fRという名前のIDLファイルを生成します。
 .sp
 .if n \{\
 .RS 4
@@ -91,7 +91,7 @@ idlj My\&.idl
 .RE
 .\}
 .PP
-���ι�ʸ�ϼ���Ʊ���Ǥ���
+前の構文は次と同等です。
 .sp
 .if n \{\
 .RS 4
@@ -103,7 +103,7 @@ idlj \-fclient My\&.idl
 .RE
 .\}
 .PP
-������Ǥϡ������С�¦�Х���ǥ��󥰤������������饤�����¦�Х���ǥ��󥰤���ӥ�����ȥ��ޤ�Ƥ��ꡢ�����Ϥ��٤ơ�POA (�Ѿ���ǥ�)�Ǥ���
+次の例では、サーバー側バインディングを生成し、クライアント側バインディングおよびスケルトンを含めており、これらはすべて、POA (継承モデル)です。
 .sp
 .if n \{\
 .RS 4
@@ -115,7 +115,7 @@ idlg \-fserver My\&.idl
 .RE
 .\}
 .PP
-���饤�����¦�ȥ����С�¦��ξ���ΥХ���ǥ��󥰤�����������ϡ����Υ��ޥ��(�ɤ������)�Τ�����1�Ĥ���Ѥ��ޤ���
+クライアント側とサーバー側の両方のバインディングを生成する場合は、次のコマンド(どれも等価)のうちの1つを使用します。
 .sp
 .if n \{\
 .RS 4
@@ -128,7 +128,7 @@ idlj \-fall My\&.idl
 .RE
 .\}
 .PP
-�����С�¦�ǲ�ǽ�ʥ�ǥ��2�Ĥ���ޤ����ܿ���ǽ�����Х�ȷѾ���ǥ��Tie��ǥ�Ǥ���Tie�Ѿ���ǥ�򻲾Ȥ��Ƥ���������
+サーバー側で可能なモデルは2つあります。移殖可能サーバント継承モデルとTieモデルです。Tie委譲モデルを参照してください。
 .if n \{\
 .sp
 .\}
@@ -138,21 +138,21 @@ idlj \-fall My\&.idl
 .nr an-break-flag 1
 .br
 .ps +1
-\fB�ܿ���ǽ�����Х�ȷѾ���ǥ�\fR
+\fB移殖可能サーバント継承モデル\fR
 .ps -1
 .br
 .PP
-�ǥե���ȤΥ����С�¦�Υ�ǥ�ϡ��ܿ���ǽ�����Х�ȷѾ���ǥ�Ǥ���\fIMy\&.idl\fR���\fIMy\fR���󥿥ե��������������Ƥ�����ϡ�\fIMyPOA\&.java\fR�Ȥ����ե����뤬��������ޤ���\fIMy\fR���󥿥ե������μ������󶡤���ɬ�פ����ꡢ\fIMy\fR���󥿥ե�������\fIMyPOA\fR���饹����Ѿ�����ɬ�פ�����ޤ���\fIMyPOA\&.java\fR�ϡ�http://docs\&.oracle\&.com/javase/8/docs/api/org/omg/PortableServer/Servant\&.html�ˤ���
-\fIorg\&.omg\&.PortableServer\&.Servant\fR���饹���ĥ���륹�ȥ꡼��١����Υ�����ȥ�Ǥ���
+デフォルトのサーバー側のモデルは、移殖可能サーバント継承モデルです。\fIMy\&.idl\fR内で\fIMy\fRインタフェースが定義されている場合は、\fIMyPOA\&.java\fRというファイルが生成されます。\fIMy\fRインタフェースの実装を提供する必要があり、\fIMy\fRインタフェースは\fIMyPOA\fRクラスから継承する必要があります。\fIMyPOA\&.java\fRは、http://docs\&.oracle\&.com/javase/8/docs/api/org/omg/PortableServer/Servant\&.htmlにある
+\fIorg\&.omg\&.PortableServer\&.Servant\fRクラスを拡張するストリームベースのスケルトンです。
 .PP
-\fIMy\fR���󥿥ե������ϡ�������ȥ󤬼�������IDL���󥿥ե������˴�Ϣ�դ����Ƥ���\fIcallHandler\fR���󥿥ե����������󥿥ե�������������ޤ���
+\fIMy\fRインタフェースは、スケルトンが実装するIDLインタフェースに関連付けられている\fIcallHandler\fRインタフェースと操作インタフェースを実装します。
 .PP
-�ݡ����֥롦���֥������ȡ������ץ�(POA)��\fIPortableServer\fR�⥸�塼��ϡ��ͥ��ƥ��֤�\fIServant\fR����������ޤ���http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/idl/POA\&.html�ˤ���
-�ݡ����֥롦���֥������ȡ������ץ�(POA)�򻲾Ȥ��Ƥ���������
+ポータブル・オブジェクト・アダプタ(POA)の\fIPortableServer\fRモジュールは、ネイティブの\fIServant\fR型を定義します。http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/idl/POA\&.htmlにある
+ポータブル・オブジェクト・アダプタ(POA)を参照してください。
 .PP
-Java�ץ�����ߥ󥰸���Ǥϡ�\fIServant\fR����Java��\fIorg\&.omg\&.PortableServer\&.Servant\fR���饹�˥ޥåפ���ޤ�������ϡ����٤Ƥ�POA�����Х�ȼ����Υ١��������饹�Ȥ��Ƶ�ǽ�������ץꥱ������󡦥ץ�����ޤ��ƤӽФ����ȤΤǤ��뤤���Ĥ��Υ᥽�åɡ������POA�ˤ�äƸƤӽФ��졢�����Х�Ȥ�ư������椹�뤿��˥桼�����������С��饤�ɤǤ���᥽�åɤ��󶡤��ޤ���
+Javaプログラミング言語では、\fIServant\fR型はJavaの\fIorg\&.omg\&.PortableServer\&.Servant\fRクラスにマップされます。これは、すべてのPOAサーバント実装のベース・クラスとして機能し、アプリケーション・プログラマが呼び出すことのできるいくつかのメソッド、およびPOAによって呼び出され、サーバントの動作を制御するためにユーザーがオーバーライドできるメソッドを提供します。
 .PP
-�Ѿ���ǥ�Τ⤦1�ĤΥ��ץ����ϡ�\fI\-oldImplBase\fR�ե饰����Ѥ��ơ�Java SE 1\&.4������Υ�꡼����Java�ץ�����ߥ󥰸���ȸߴ����Τ��륵���С�¦�Х���ǥ��󥰤��������뤳�ȤǤ���\-\fIoldImplBase\fR�ե饰����ɸ��ǡ�������API����侩�Ǥ������Υե饰����Ѥ���Τϡ�Java SE 1\&.3�ǵ��Ҥ��줿��¸�Υ����С��Ȥθߴ�����ɬ�פʾ��ΤߤǤ������ξ�硢��¸��make�ե�������ѹ����ơ�\fI\-oldImplBase\fR�ե饰��\fIidlj\fR����ѥ�����ɲä���ɬ�פ�����ޤ�������ʳ��ξ�硢POA�١����Υ����С�¦�ޥåԥ󥰤���������ޤ������̸ߴ����Τ��륵���С�¦�Х���ǥ��󥰤���������ˤϡ�����¹Ԥ��ޤ���
+継承モデルのもう1つのオプションは、\fI\-oldImplBase\fRフラグを使用して、Java SE 1\&.4より前のリリースのJavaプログラミング言語と互換性のあるサーバー側バインディングを生成することです。\-\fIoldImplBase\fRフラグは非標準で、これらのAPIは非推奨です。このフラグを使用するのは、Java SE 1\&.3で記述された既存のサーバーとの互換性が必要な場合のみです。その場合、既存のmakeファイルを変更して、\fI\-oldImplBase\fRフラグを\fIidlj\fRコンパイラに追加する必要があります。それ以外の場合、POAベースのサーバー側マッピングが生成されます。下位互換性のあるサーバー側バインディングを生成するには、次を実行します。
 .sp .5v
 .RE
 .sp
@@ -167,7 +167,7 @@ idlj \-fall \-oldImplBase My\&.idl
 .RE
 .\}
 .PP
-\fIMy\&.idl\fR���\fIMy\fR���󥿥ե��������������Ƥ�����ϡ�\fI_MyImplBase\&.java\fR�Ȥ����ե����뤬��������ޤ���\fIMy\fR���󥿥ե������μ������󶡤���ɬ�פ����ꡢ\fIMy\fR���󥿥ե�������\fI_MyImplBase\fR���饹����Ѿ�����ɬ�פ�����ޤ���
+\fIMy\&.idl\fR内で\fIMy\fRインタフェースが定義されている場合は、\fI_MyImplBase\&.java\fRというファイルが生成されます。\fIMy\fRインタフェースの実装を提供する必要があり、\fIMy\fRインタフェースは\fI_MyImplBase\fRクラスから継承する必要があります。
 .if n \{\
 .sp
 .\}
@@ -177,11 +177,11 @@ idlj \-fall \-oldImplBase My\&.idl
 .nr an-break-flag 1
 .br
 .ps +1
-\fBTie�Ѿ���ǥ�\fR
+\fBTie委譲モデル\fR
 .ps -1
 .br
 .PP
-�⤦1�ĤΥ����С�¦��ǥ�ϡ�Tie��ǥ�ȸƤФ���ΤǤ������Υ����С�¦��ǥ�ϡ��Ѿ���ǥ�Ǥ���Tie�ȥ�����ȥ��Ʊ�����������뤳�ȤϤǤ��ʤ����ᡢ�������̡�����������ɬ�פ�����ޤ������Υ��ޥ�ɤˤ�äơ�Tie��ǥ��ѤΥХ���ǥ��󥰤���������ޤ���
+もう1つのサーバー側モデルは、Tieモデルと呼ばれるものです。このサーバー側モデルは、委譲モデルです。Tieとスケルトンを同時に生成することはできないため、それらは別々に生成する必要があります。次のコマンドによって、Tieモデル用のバインディングが生成されます。
 .sp .5v
 .RE
 .sp
@@ -196,7 +196,7 @@ idlj \-fallTIE My\&.idl
 .RE
 .\}
 .PP
-\fIMy\fR���󥿥ե������ξ�硢2���ܤΥ��ޥ�ɤˤ�ꡢ\fIMyPOATie\&.java\fR����������ޤ���\fIMyPOATie\fR���饹�ؤΥ��󥹥ȥ饯���ϡ�delegate����ޤ���������Ǥϡ��ǥե���Ȥ�POA��ǥ����Ѥ��Ƥ��뤿�ᡢ���󥹥ȥ饯���ˤ�POA��ɬ�פǤ���delegate���Ф��Ƽ������󶡤���ɬ�פ�����ޤ��������μ�����\fIMyOperations\fR���󥿥ե���������Ѿ�����ɬ�פ�����Τߤǡ�����¾�Υ��饹����Ѿ�����ɬ�פϤ���ޤ��󡣤����ORB�Ȱ��˻��Ѥ���ˤϡ����Ȥ��м��Τ褦��\fIMyPOATie\fR���饹��Ǽ������åפ���ɬ�פ�����ޤ���
+\fIMy\fRインタフェースの場合、2番目のコマンドにより、\fIMyPOATie\&.java\fRが生成されます。\fIMyPOATie\fRクラスへのコンストラクタは、delegateを取ります。この例では、デフォルトのPOAモデルを使用しているため、コンストラクタにもPOAが必要です。delegateに対して実装を提供する必要がありますが、この実装は\fIMyOperations\fRインタフェースから継承する必要があるのみで、その他のクラスから継承する必要はありません。これをORBと一緒に使用するには、たとえば次のように\fIMyPOATie\fRクラス内で実装をラップする必要があります。
 .sp
 .if n \{\
 .RS 4
@@ -222,9 +222,9 @@ My ref = tie\&._this(orb);
 .RE
 .\}
 .PP
-¾�μ�������Ѿ�����ɬ�פ������硢ɸ��ηѾ���ǥ�ǤϤʤ�Tie��ǥ����Ѥ��뤳�Ȥ�Ǥ��ޤ���Java�ξ��ϡ����󥿥ե������ηѾ��θĿ������¤Ϥ���ޤ��󤬡����饹�ηѾ��˻��ѤǤ��륹���åȤ�1�ĤΤߤǤ����Ѿ���ǥ����Ѥ������ϡ����Υ����åȤ���ͭ����ޤ���Tie��ǥ����Ѥ���ȡ����Υ����åȤ����Ѥ��줺���桼�������ȼ�����Ū�ǻ��ѤǤ��ޤ���������ˡ�ˤϡ��������Υ�٥뤬1��Ƴ�������Ȥ���û�꤬����ޤ����᥽�åɤ�ƤӽФ��Ȥ��ˡ�;ʬ�ʥ᥽�åɸƽФ���1��ȯ�����ޤ���
+他の実装から継承する必要がある場合、標準の継承モデルではなくTieモデルを使用することもできます。Javaの場合は、インタフェースの継承の個数に制限はありませんが、クラスの継承に使用できるスロットは1つのみです。継承モデルを使用した場合は、そのスロットが占有されます。Tieモデルを使用すると、そのスロットが使用されず、ユーザーが独自の目的で使用できます。この方法には、間接性のレベルが1つ導入されるという短所があります。メソッドを呼び出すときに、余分なメソッド呼出しが1回発生します。
 .PP
-�����С�¦�������ξ�硢Java SE 1\&.4������ΥС�������Java����˥ޥåԥ󥰤���IDL�ΥС������ȸߴ����Τ��롢Tie��ǥ�ΥХ���ǥ��󥰤Ǥ���
+サーバー側の生成の場合、Java SE 1\&.4より前のバージョンのJava言語にマッピングするIDLのバージョンと互換性のある、Tieモデルのバインディングです。
 .sp
 .if n \{\
 .RS 4
@@ -237,7 +237,7 @@ idlj \-oldImplBase \-fallTIE My\&.idl
 .RE
 .\}
 .PP
-\fIMy\fR���󥿥ե������ξ�硢����ˤ�ꡢ\fIMy_Tie\&.java\fR����������ޤ���\fIMy_Tie\fR���饹�ؤΥ��󥹥ȥ饯���ϡ�\fIimpl\fR���֥������Ȥ���ޤ���\fIimpl\fR���Ф��Ƽ������󶡤���ɬ�פ�����ޤ��������μ�����\fIHelloOperations\fR���󥿥ե���������Ѿ�����ɬ�פ�����Τߤǡ�����¾�Υ��饹����Ѿ�����ɬ�פϤ���ޤ��󡣤������������ORB�Ȱ��˻��Ѥ���ˤϡ����Ȥ��м��Τ褦��\fIMy_Tie\fR��Ǽ������åפ���ɬ�פ�����ޤ���
+\fIMy\fRインタフェースの場合、これにより、\fIMy_Tie\&.java\fRが生成されます。\fIMy_Tie\fRクラスへのコンストラクタは、\fIimpl\fRオブジェクトを取ります。\fIimpl\fRに対して実装を提供する必要がありますが、その実装は\fIHelloOperations\fRインタフェースから継承する必要があるのみで、その他のクラスから継承する必要はありません。しかし、これをORBと一緒に使用するには、たとえば次のように\fIMy_Tie\fR内で実装をラップする必要があります。
 .sp
 .if n \{\
 .RS 4
@@ -258,15 +258,15 @@ My ref = tie\&._this(orb);
 .if n \{\
 .RE
 .\}
-.SS "ȯ�Ԥ��줿�ե���������ذ��֤λ���"
+.SS "発行されたファイルの代替位置の指定"
 .PP
-ȯ�Ԥ��줿�ե�����򸽺ߤΥǥ��쥯�ȥ�ʳ��Υǥ��쥯�ȥ���֤��ˤϡ�\fIi\fR\fIdlj \-td /altdir My\&.idl\fR�Υ��ޥ�ɤǥ���ѥ����ƤӽФ��ޤ���
+発行されたファイルを現在のディレクトリ以外のディレクトリに置くには、\fIi\fR\fIdlj \-td /altdir My\&.idl\fRのコマンドでコンパイラを呼び出します。
 .PP
 
-\fIMy\fR���󥿥ե������ξ�硢�Х���ǥ��󥰤ϡ�\fI\&./My\&.java\fR�ǤϤʤ���\fI/altdir/My\&.java\fR�ʤɤ�ȯ�Ԥ���ޤ���
-.SS "���󥯥롼�ɡ��ե���������ذ��֤λ���"
+\fIMy\fRインタフェースの場合、バインディングは、\fI\&./My\&.java\fRではなく、\fI/altdir/My\&.java\fRなどに発行されます。
+.SS "インクルード・ファイルの代替位置の指定"
 .PP
-\fIMy\&.idl\fR�ե����뤬�̤�\fIidl\fR�ե�����Ǥ���\fIMyOther\&.idl\fR�򥤥󥯥롼�ɤ����硢����ѥ���Ǥϡ�\fIMyOther\&.idl\fR�ե����뤬�������롦�ǥ��쥯�ȥ��¸�ߤ��뤳�Ȥ�����Ȥ��Ƥ��ޤ������Ȥ��С����줬\fI/includes\fR�ˤ�����ϡ����Τ褦�ʥ��ޥ�ɤǥ���ѥ����ƤӽФ��ޤ���
+\fIMy\&.idl\fRファイルが別の\fIidl\fRファイルである\fIMyOther\&.idl\fRをインクルードする場合、コンパイラでは、\fIMyOther\&.idl\fRファイルがローカル・ディレクトリに存在することを前提としています。たとえば、それが\fI/includes\fRにある場合は、次のようなコマンドでコンパイラを呼び出します。
 .sp
 .if n \{\
 .RS 4
@@ -278,7 +278,7 @@ idlj \-i /includes My\&.idl
 .RE
 .\}
 .PP
-���Ȥ��С�\fI/moreIncludes\fR�ˤ���\fIAnother\&.idl\fR��\fIMy\&.idl\fR�˥��󥯥롼�ɤ���Ƥ���ΤǤ���С����Τ褦�ʥ��ޥ�ɤǥ���ѥ����ƤӽФ��ޤ���
+たとえば、\fI/moreIncludes\fRにある\fIAnother\&.idl\fRも\fIMy\&.idl\fRにインクルードされているのであれば、次のようなコマンドでコンパイラを呼び出します。
 .sp
 .if n \{\
 .RS 4
@@ -290,7 +290,7 @@ idlj \-i /includes \-i /moreIncludes My\&.idl
 .RE
 .\}
 .PP
-���Τ褦�ʷ�����\fIinclude\fR��Ĺ���ʤ뤿�ᡢ���󥯥롼�ɡ��ե�����򸡺�������򥳥�ѥ���˻ؼ����뤿����̤���ˡ���Ѱդ���Ƥ��ޤ���������ˡ�ϡ��Ķ��ѿ��ιͤ����Ȼ��Ƥ��ޤ���\fICLASSPATH\fR�ѿ��˰���ɽ������Ƥ���ǥ��쥯�ȥ����idl\&.config�Ȥ���̾���Υե������������ޤ�������\fIidl\&.config\fR����ˡ����Τ褦�ʷ����ιԤ�����ޤ���
+このような形式の\fIinclude\fRは長くなるため、インクルード・ファイルを検索する場所をコンパイラに指示するための別の方法が用意されています。この方法は、環境変数の考え方と似ています。\fICLASSPATH\fR変数に一覧表示されているディレクトリ内にidl\&.configという名前のファイルを作成します。その\fIidl\&.config\fRの中に、次のような形式の行を入れます。
 .sp
 .if n \{\
 .RS 4
@@ -302,10 +302,10 @@ includes=/includes;/moreIncludes
 .RE
 .\}
 .PP
-����ѥ���ϡ����Υե�����򸡺��������󥯥롼�ɡ��ꥹ�Ȥ��ɤ߹��ߤޤ���������Ǥϡ��ǥ��쥯�ȥ�δ֤ζ��ڤ�ʸ���ϥ��ߥ�����(;)�ˤʤäƤ��ޤ������ζ��ڤ�ʸ���ϡ��ץ�åȥե�����ˤ�äưۤʤ�ޤ���Windows�ץ�åȥե�����Ǥϥ��ߥ��������Ѥ���UNIX�ץ�åȥե�����Ǥϥ��������Ѥ���ʤɤǤ���
-.SS "���󥯥롼�ɡ��ե�������Ф���Х���ǥ��󥰤�ȯ��"
+コンパイラは、このファイルを検索し、インクルード・リストを読み込みます。この例では、ディレクトリの間の区切り文字はセミコロン(;)になっています。この区切り文字は、プラットフォームによって異なります。Windowsプラットフォームではセミコロンを使用し、UNIXプラットフォームではコロンを使用するなどです。
+.SS "インクルード・ファイルに対するバインディングの発行"
 .PP
-�ǥե���ȤǤϡ����ޥ�ɥ饤��˻��ꤷ��\fIidl\fR�ե�������������Ƥ��륤�󥿥ե������乽¤�ΤʤɤˤĤ��ƤΤߡ�Java�Х���ǥ��󥰤���������ޤ������󥯥롼�ɤ��줿�ե�������������Ƥ��뷿�ˤĤ��Ƥ���������ޤ��󡣤��Ȥ��С�����2�Ĥ�\fIidl\fR�ե�����ˤĤ��ƹͤ��Ƥߤޤ���
+デフォルトでは、コマンドラインに指定した\fIidl\fRファイルで定義されているインタフェースや構造体などについてのみ、Javaバインディングが生成されます。インクルードされたファイルで定義されている型については生成されません。たとえば、次の2つの\fIidl\fRファイルについて考えてみます。
 .sp
 .if n \{\
 .RS 4
@@ -328,7 +328,7 @@ interface MyOther
 .RE
 .\}
 .PP
-�ǥե���ȤΥ롼��˴ؤ��Ʒٹ𤬤���ޤ����������Х롦�������פ�ɽ�������\fI#include\fRʸ�ϡ����ҤΤȤ���˽�������ޤ���������\fI#include\fRʸ�ϡ�����ݡ���ʸ�ȸ��ʤ����Ȥ��Ǥ��ޤ����Ϥޤ줿�����������ɽ�������\fI#include\fRʸ�ϡ������ΰ�̣�Ǥ�\fI#include\fRʸ�Ȥ��ƽ�������ޤ����Ĥޤꡢ���󥯥롼�ɤ��줿�ե�����ˤ��륳���ɤ������Υե�����ˤ��Τޤ�ɽ������Ƥ��뤫�Τ褦�˽������졢������Ф���Java�Х���ǥ��󥰤�ȯ�Ԥ���ޤ������Ϥ�����Ǥ���
+デフォルトのルールに関して警告があります。グローバル・スコープに表示される\fI#include\fR文は、前述のとおりに処理されます。これらの\fI#include\fR文は、インポート文と見なすことができます。囲まれたスコープ内に表示される\fI#include\fR文は、本当の意味での\fI#include\fR文として処理されます。つまり、インクルードされたファイルにあるコードが、元のファイルにそのまま表示されているかのように処理され、それに対してJavaバインディングが発行されます。次はその例です。
 .sp
 .if n \{\
 .RS 4
@@ -356,7 +356,7 @@ enum E {one, two, three};
 .RE
 .\}
 .PP
-\fI idlj My\&.idl \fR��¹Ԥ��ơ�Java�ե�����μ��Υꥹ�Ȥ��������ޤ�������ݡ���ʸ�Ȥߤʤ����\fI#include\fR���������Ƥ������ᡢ\fIMyOther\&.java\fR����������ޤ���Ǥ������������������ΰ�̣�Ǥ�\fI#include\fR���������Ƥ������ᡢ\fIE\&.java\fR����������ޤ�����\fIEmbedded\&.idl\fR�ե����뤬\fIMy\fR���󥿥ե������Υ���������˥��󥯥롼�ɤ���Ƥ��뤿�ᡢ\fIMy\fR�Υ���������(�Ĥޤꡢ\fIMyPackage\fR��)����������Ƥ��ޤ���\fI\-emitAll\fR�ե饰����Ѥ�����硢���󥯥롼�ɤ��줿���٤ƤΥե�����ˤ��뤹�٤Ƥη���ȯ�Ԥ���ޤ���
+\fI idlj My\&.idl \fRを実行して、Javaファイルの次のリストを生成します。インポート文とみなされる\fI#include\fRに定義されていたため、\fIMyOther\&.java\fRは生成されませんでした。ただし、本当の意味での\fI#include\fRで定義されていたため、\fIE\&.java\fRは生成されました。\fIEmbedded\&.idl\fRファイルが\fIMy\fRインタフェースのスコープ内にインクルードされているため、\fIMy\fRのスコープ内(つまり、\fIMyPackage\fR内)に生成されています。\fI\-emitAll\fRフラグを使用した場合、インクルードされたすべてのファイルにあるすべての型が発行されます。
 .sp
 .if n \{\
 .RS 4
@@ -374,9 +374,9 @@ enum E {one, two, three};
 .if n \{\
 .RE
 .\}
-.SS "�ѥå���������Ƭ��������"
+.SS "パッケージの接頭辞の挿入"
 .PP
-ABC�Ȥ���̾���β�ҤΤ���˺�Ȥ��Ƥ��ơ����Τ褦��IDL�ե�������ۤ����Ȥ��ޤ��礦��
+ABCという名前の会社のために作業していて、次のようなIDLファイルを構築したとしましょう。
 .sp
 .if n \{\
 .RS 4
@@ -394,7 +394,7 @@ module Widgets
 .RE
 .\}
 .PP
-IDL\-to\-Java����ѥ����𤷤Ƥ��Υե������¹Ԥ�����硢W1�����W2���Ф���Java�Х���ǥ��󥰤ϡ�\fIWidgets\fR�ѥå�������˳�Ǽ����ޤ����ȳ��δ���ˤ��ȡ���ҤΥѥå������ϡ�\fIcom\&.<company name>\fR�Ȥ���̾���Υѥå���������֤����ȤˤʤäƤ��ޤ������δ���˽����ˤϡ��ѥå�����̾��\fIcom\&.abc\&.Widgets\fR�ˤ���ɬ�פ�����ޤ������Υѥå�������Ƭ����Widgets�⥸�塼����ղä���ˤϡ����Υ��ޥ�ɤ�¹Ԥ��ޤ���
+IDL\-to\-Javaコンパイラを介してこのファイルを実行した場合、W1およびW2に対するJavaバインディングは、\fIWidgets\fRパッケージ内に格納されます。業界の慣例によると、会社のパッケージは、\fIcom\&.<company name>\fRという名前のパッケージ内に置くことになっています。この慣例に従うには、パッケージ名を\fIcom\&.abc\&.Widgets\fRにする必要があります。このパッケージ接頭辞をWidgetsモジュールに付加するには、次のコマンドを実行します。
 .sp
 .if n \{\
 .RS 4
@@ -406,30 +406,30 @@ idlj \-pkgPrefix Widgets com\&.abc Widgets\&.idl
 .RE
 .\}
 .PP
-Widgets\&.idl�򥤥󥯥롼�ɤ��Ƥ���IDL�ե����뤬������ϡ����Υ��ޥ�ɤˤ�\fI\-pkgPrefix\fR�ե饰��ɬ�פǤ������Υե饰����ꤷ�ʤ��ȡ�����IDL�ե�����ϡ�\fIcom\&.abc\&.Widgets\fR�ѥå������ǤϤʤ���\fIWidgets\fR�ѥå������򸡺����뤳�Ȥˤʤ�ޤ���
+Widgets\&.idlをインクルードしているIDLファイルがある場合は、そのコマンドにも\fI\-pkgPrefix\fRフラグが必要です。このフラグを指定しないと、そのIDLファイルは、\fIcom\&.abc\&.Widgets\fRパッケージではなく、\fIWidgets\fRパッケージを検索することになります。
 .PP
-��Ƭ����ɬ�פʥѥå������������Ĥ⤢����ϡ����Ҥ�idl\&.config�ե��������Ƭ������ꤹ��Τ���ñ�Ǥ����ѥå�������Ƭ���γƹԤϡ�\fIPkgPrefix\&.<type>=<prefix>\fR�η����Ǥ���ɬ�פ�����ޤ������Ҥ���ιԤǤϡ�\fIPkgPrefix\&.Widgets=com\&.abc\fR�ˤʤ�ޤ������Υ��ץ����ϡ���ݥ��ȥ�ID�ˤϱƶ����ޤ���
-.SS "����ѥ������Υ���ܥ�����"
+接頭辞が必要なパッケージがいくつもある場合は、前述のidl\&.configファイルで接頭辞を指定するのが簡単です。パッケージ接頭辞の各行は、\fIPkgPrefix\&.<type>=<prefix>\fRの形式である必要があります。前述の例の行では、\fIPkgPrefix\&.Widgets=com\&.abc\fRになります。このオプションは、リポジトリIDには影響しません。
+.SS "コンパイル前のシンボルの定義"
 .PP
-����ѥ����ѤΥ���ܥ뤬IDL�ե���������������Ƥ��ʤ����ϡ����Υ���ܥ���������ɬ�פ�����ޤ�������ϡ����Ȥ��С��Х���ǥ�����˥ǥХå��������ɤ��Ȥ������Ȥ��˻��Ѥ��ޤ������ޥ��\fIidlj \-d MYDEF My\&.idl \fR�ϡ�My\&.idl��˹�\fI#define MYDEF\fR�����֤�������Ʊ���ˤʤ�ޤ���
-.SS "��¸�ΥХ���ǥ��󥰤��ݻ�"
+コンパイル用のシンボルがIDLファイル内で定義されていない場合は、そのシンボルを定義する必要があります。これは、たとえば、バインディング内にデバッグ・コードを組み入れるときに使用します。コマンド\fIidlj \-d MYDEF My\&.idl \fRは、My\&.idl内に行\fI#define MYDEF\fRを配置した場合と同等になります。
+.SS "既存のバインディングの保持"
 .PP
-Java�Х���ǥ��󥰡��ե����뤬���Ǥ�¸�ߤ�����ϡ�\fI\-keep\fR�ե饰����ꤹ��ȡ�����ѥ���ˤ���񤭤����Ǥ��ޤ����ǥե���ȤǤϡ����Ǥ�¸�ߤ��뤫�ɤ����ˤ�����餺�����٤ƤΥե����뤬��������ޤ��������Υե�����򥫥����ޥ����������(�����������������Ƥ����ΤǤ���Ȥ��ʳ��ϥ������ޥ������򤱤�)��\fI\-keep\fR���ץ�����ͭ�ѤǤ������ޥ��\fIidlj \-keep My\&.idl\fR�ϡ����Ǥ�¸�ߤ��ʤ����٤ƤΥ��饤�����¦�Х���ǥ��󥰤�ȯ�Ԥ��ޤ���
-.SS "����ѥ���ο�Ľ������ɽ��"
+Javaバインディング・ファイルがすでに存在する場合は、\fI\-keep\fRフラグを指定すると、コンパイラによる上書きを回避できます。デフォルトでは、すでに存在するかどうかにかかわらず、すべてのファイルが生成されます。これらのファイルをカスタマイズした場合(ただし、それらの内容が正確であるとき以外はカスタマイズは避ける)、\fI\-keep\fRオプションは有用です。コマンド\fIidlj \-keep My\&.idl\fRは、すでに存在しないすべてのクライアント側バインディングを発行します。
+.SS "コンパイルの進捗状況の表示"
 .PP
-IDL\-to\-Java����ѥ���ϡ��¹Ԥγ��ʳ��Ǿ��֥�å��������������ޤ���\fI\-v\fR���ץ�������Ѥ��ơ�\fIidlj \-v My\&.idl\fR�Τ褦�ʾ�Ĺ�⡼�ɤ򥢥��ƥ��ֲ����ޤ���
+IDL\-to\-Javaコンパイラは、実行の各段階で状態メッセージを生成します。\fI\-v\fRオプションを使用して、\fIidlj \-v My\&.idl\fRのような冗長モードをアクティブ化します。
 .PP
-�ǥե���ȤǤϡ�����ѥ���Ͼ�Ĺ�⡼�ɤǤϼ¹Ԥ���ޤ���
-.SS "�С����������ɽ��"
+デフォルトでは、コンパイラは冗長モードでは実行されません。
+.SS "バージョン情報の表示"
 .PP
-IDL\-to\-Java����ѥ���Υӥ�ɡ��С�������ɽ������ˤϡ����ޥ�ɥ饤��\fIidlj \-version\fR��\fI\-version\fR���ץ�������ꤷ�ޤ���
+IDL\-to\-Javaコンパイラのビルド・バージョンを表示するには、コマンドライン\fIidlj \-version\fRで\fI\-version\fRオプションを指定します。
 .PP
-�С���������ϡ�����ѥ���ˤ�ä��������줿�Х���ǥ�����ˤ�񤭹��ޤ�Ƥ��ޤ������Υ��ץ����򥳥ޥ�ɥ饤��˻��ꤹ��ȡ�����ʳ��Υ��ץ�������ꤷ�Ƥ⡢���٤�̵�뤵��ޤ���
-.SH "���ץ����"
+バージョン情報は、コンパイラによって生成されたバインディング内にも書き込まれています。このオプションをコマンドラインに指定すると、それ以外のオプションを指定しても、すべて無視されます。
+.SH "オプション"
 .PP
 \-d \fIsymbol\fR
 .RS 4
-���Υ��ץ����ϡ�IDL�ե�����˼��Τ褦�ʹԤ��ɲä������������Ǥ���
+このオプションは、IDLファイルに次のような行を追加した場合と等価です。
 .sp
 .if n \{\
 .RS 4
@@ -444,46 +444,46 @@ IDL\-to\-Java����ѥ���Υӥ�ɡ��С�������ɽ������ˤϡ����ޥ�ɥ饤��\fIidlj
 .PP
 \-demitAll
 .RS 4
-\fI#include\fR�ե���������������Ƥ����Τ�ޤ�ơ����٤Ƥη���ȯ�Ԥ��ޤ���
+\fI#include\fRファイル内で定義されているものも含めて、すべての型を発行します。
 .RE
 .PP
 \-fside
 .RS 4
-ȯ�Ԥ���Х���ǥ��󥰤�������ޤ���\fIside\fR�ѥ�᡼���ˤϡ�\fIclient\fR��\fIserver\fR��\fIserverTIE\fR��\fIall\fR�ޤ���\fIallTIE\fR�����Ǥ��ޤ���\fI\-fserverTIE\fR�ޤ���\fI\-fallTIE\fR���ץ�������ꤹ��ȡ��Ѿ���ǥ롦������ȥ�ȯ�Ԥ���ޤ����ե饰����ꤷ�ʤ���硢\fI\-fclient\fR�˥ǥե�������ꤵ��ޤ���
+発行するバインディングを定義します。\fIside\fRパラメータには、\fIclient\fR、\fIserver\fR、\fIserverTIE\fR、\fIall\fRまたは\fIallTIE\fRを指定できます。\fI\-fserverTIE\fRまたは\fI\-fallTIE\fRオプションを指定すると、委譲モデル・スケルトンが発行されます。フラグを指定しない場合、\fI\-fclient\fRにデフォルト設定されます。
 .RE
 .PP
 \-i \fIinclude\-path\fR
 .RS 4
-�ǥե���ȤǤϡ����󥯥롼�ɡ��ե�����ϸ��ߤΥǥ��쥯�ȥ꤫�鸡������ޤ������Υ��ץ�������ꤹ��ȡ�¾�Υǥ��쥯�ȥ���ɲäǤ��ޤ���
+デフォルトでは、インクルード・ファイルは現在のディレクトリから検索されます。このオプションを指定すると、他のディレクトリを追加できます。
 .RE
 .PP
 \-i \fIkeep\fR
 .RS 4
-���������ե����뤬���Ǥ�¸�ߤ��Ƥ�����ϡ����Υե����뤬��񤭤���ޤ��󡣥ǥե���ȤǤϡ���񤭤���ޤ���
+生成されるファイルがすでに存在している場合は、そのファイルが上書きされません。デフォルトでは、上書きされます。
 .RE
 .PP
 \-noWarn
 .RS 4
-�ٹ��å�������ɽ�����ʤ��褦�ˤ��ޤ���
+警告メッセージを表示しないようにします。
 .RE
 .PP
 \-oldImplBase
 .RS 4
-1\&.4�������JDK ORB�ȸߴ����Τ��륹����ȥ���������ޤ����ǥե���ȤǤϡ�POA�Ѿ���ǥ�Υ����С�¦�Х���ǥ��󥰤���������ޤ������Υ��ץ�������ꤹ��ȡ�\fIImplBase\fR�Ѿ���ǥ�Υ��饹�Ǥ��륵���С�¦�Х���ǥ��󥰤����������Τǡ������Υ�꡼����Java�ץ�����ߥ󥰸���Ȥβ��̸ߴ����������ޤ���
+1\&.4より前のJDK ORBと互換性のあるスケルトンを生成します。デフォルトでは、POA継承モデルのサーバー側バインディングが生成されます。このオプションを指定すると、\fIImplBase\fR継承モデルのクラスであるサーバー側バインディングが生成されるので、以前のリリースのJavaプログラミング言語との下位互換性が得られます。
 .RE
 .PP
 \-pkgPrefix \fItype\fR \fIprefix\fR
 .RS 4
-\fItype\fR���ե����롦�������פǸ��Ф��줿���ϡ����η����Ф�����������뤹�٤ƤΥե�����ˤĤ��ơ����������Java�ѥå�����̾��\fIprefix\fR�Ȥ�����Ƭ�����ղä���ޤ���type�ϡ��ȥåץ�٥롦�⥸�塼���ñ��̾�����ɤΥ⥸�塼����⳰¦��������줿IDL����ñ��̾�Τɤ��餫�Ǥ���
+\fItype\fRがファイル・スコープで検出された場合は、その型に対して生成されるすべてのファイルについて、生成されるJavaパッケージ名に\fIprefix\fRという接頭辞が付加されます。typeは、トップレベル・モジュールの単純名か、どのモジュールよりも外側で定義されたIDL型の単純名のどちらかです。
 .RE
 .PP
 \-pkgTranslate \fItype\fR \fIpackage\fR
 .RS 4
-���̻Ҥ���˥⥸�塼��̾type�����Ф����ȡ����������Java�ѥå�������Τ��٤ƤΥե�����ˤĤ��ơ����̻Ҥ���Τ���̾����package���֤��������ޤ����ǽ��\fIpkgPrefix\fR���ѹ����Ԥ��ޤ���type���ͤϡ��ȥåץ�٥�Υ⥸�塼���ñ��̾���ޤ��Ϥ��٤ƤΥ⥸�塼��γ�����������줿IDL����ñ��̾�ǡ������ʥѥå�����̾�����Τ˰��פ���ɬ�פ�����ޤ���
+識別子の中にモジュール名typeが検出されると、生成されるJavaパッケージ内のすべてのファイルについて、識別子の中のその名前がpackageで置き換えられます。最初に\fIpkgPrefix\fRの変更が行われます。typeの値は、トップレベルのモジュールの単純名、またはすべてのモジュールの外部で定義されたIDL型の単純名で、完全なパッケージ名に正確に一致する必要があります。
 .sp
-ʣ�����Ѵ������̻Ҥ˰��פ����硢������˼����褦�ˡ��Ǥ�Ĺ�����פ����򤵤�ޤ���
+複数の変換が識別子に一致する場合、次の例に示すように、最も長い一致が選択されます。
 .sp
-\fB���ޥ��\fR:
+\fBコマンド\fR:
 .sp
 .if n \{\
 .RS 4
@@ -494,7 +494,7 @@ pkgTranslate type pkg \-pkgTranslate type2\&.baz pkg2\&.fizz
 .if n \{\
 .RE
 .\}
-\fB��̤��Ѵ�\fR:
+\fB結果の変換\fR:
 .sp
 .if n \{\
 .RS 4
@@ -508,47 +508,47 @@ type2\&.baz\&.pkg => pkg2\&.fizz\&.pkg
 .if n \{\
 .RE
 .\}
-�ѥå�����̾\fIorg\fR��\fIorg\fR\&.o\fImg\fR���ޤ���\fIorg\&.omg\fR�Υ��֥ѥå������ϡ��Ѵ��Ǥ��ޤ��󡣤����Υѥå�����̾���Ѵ����褦�Ȥ���ȡ��ߴ����Τʤ������ɤ��������졢\fI\-pkgTranslate\fR�θ�κǽ�ΰ����Ȥ��Ƥ����Υѥå���������Ѥ���ȡ����顼�Ȥ��ư����ޤ���
+パッケージ名\fIorg\fR、\fIorg\fR\&.o\fImg\fR、または\fIorg\&.omg\fRのサブパッケージは、変換できません。これらのパッケージ名を変換しようとすると、互換性のないコードが生成され、\fI\-pkgTranslate\fRの後の最初の引数としてそれらのパッケージを使用すると、エラーとして扱われます。
 .RE
 .PP
 \-skeletonName \fIxxx%yyy\fR
 .RS 4
-\fIxxx%yyy\fR����������ȥ��̾�����դ���ѥ�����Ȥ��ƻ��Ѥ���ޤ����ǥե���Ȥϼ��ΤȤ���Ǥ���\fIPOA\fR�١��������饹�ξ���\fI%POA\fR
-(\fI\-fserver\fR�ޤ���\fI\-fall\fR)��\fIoldImplBase\fR���饹�ξ���\fI_%ImplBase\fR
-(\-\fIoldImplBase\fR)�����(\fI\-fserver\fR�ޤ���\fI\-fall\fR))��
+\fIxxx%yyy\fRが、スケルトンに名前を付けるパターンとして使用されます。デフォルトは次のとおりです。\fIPOA\fRベース・クラスの場合は\fI%POA\fR
+(\fI\-fserver\fRまたは\fI\-fall\fR)、\fIoldImplBase\fRクラスの場合は\fI_%ImplBase\fR
+(\-\fIoldImplBase\fR)および(\fI\-fserver\fRまたは\fI\-fall\fR))。
 .RE
 .PP
 \-td \fIdir\fR
 .RS 4
-���ϥǥ��쥯�ȥ�Ȥ��ơ����ߤΥǥ��쥯�ȥ�ǤϤʤ���\fIdir\fR�����Ѥ���ޤ���
+出力ディレクトリとして、現在のディレクトリではなく、\fIdir\fRが使用されます。
 .RE
 .PP
 \-tieName \fIxxx%yyy\fR
 .RS 4
-�ѥ�����˽��äơ�\fIxxx%yyy\fR����Ѥ��ޤ����ǥե���Ȥϼ��ΤȤ���Ǥ���\fIPOA\fR�١��������饹�ξ���\fI%POA\fR
-(\fI\-fserverTie�ޤ���\-fallTie\fR)��\fIoldImplBase\fR
-tie���饹�ξ���\fI_%Tie\fR
-(\-\fIoldImplBase\fR)�����(\fI\-fserverTie\fR�ޤ���\fI\-fallTie\fR))��
+パターンに従って、\fIxxx%yyy\fRを使用します。デフォルトは次のとおりです。\fIPOA\fRベース・クラスの場合は\fI%POA\fR
+(\fI\-fserverTieまたは\-fallTie\fR)、\fIoldImplBase\fR
+tieクラスの場合は\fI_%Tie\fR
+(\-\fIoldImplBase\fR)および(\fI\-fserverTie\fRまたは\fI\-fallTie\fR))。
 .RE
 .PP
-\-nowarn��\-verbose
+\-nowarn、\-verbose
 .RS 4
-��꡼�������ɽ�����ƽ�λ���ޤ���
+リリース情報を表示して終了します。
 .RE
 .PP
 \-version
 .RS 4
-��꡼�������ɽ�����ƽ�λ���ޤ���
+リリース情報を表示して終了します。
 .RE
-.SH "���»���"
+.SH "制限事項"
 .PP
-�������Х롦����������Υ��������פ��줿���̻Ҥϡ�IDL�ץ�ߥƥ��ַ���\fIObject\fR�ޤ���\fIValueBase\fR��Ʊ���֤�ˤ��ʤ��Ǥ�������������ϡ�����ܥ�ɽ�������μ��̻Ҥǥץ�����ɤ���Ƥ��뤿��Ǥ��������κ��������Ĥ���ȡ������������񤭤���ޤ�������ϡ������餯����Ū������Ǥ���
+グローバル・スコープ内のエスケープされた識別子は、IDLプリミティブ型の\fIObject\fRまたは\fIValueBase\fRと同じ綴りにしないでください。これは、シンボル表がこれらの識別子でプリロードされているためです。これらの再定義を許可すると、元の定義が上書きされます。これは、おそらく恒久的な制約です。
 .PP
-\fIfixed\fR�Ȥ���IDL���ϥ��ݡ��Ȥ���Ƥ��ޤ���
-.SH "���Τ�����"
+\fIfixed\fRというIDL型はサポートされていません。
+.SH "既知の問題"
 .PP
-�������Х뼱�̻ҤˤĤ��ƥ���ݡ��Ȥ���������ޤ���ͽ������ʤ���������\fIimpl\fR���֥������Ȥ�ƤӽФ��ȡ��㳰��������ޤ��������������θ����ϡ�\fIServerDelegate\fR
-DSI���������\fINullPointerException\fR�ˤ���褦�Ǥ���
+グローバル識別子についてインポートが生成されません。予期されないローカル\fIimpl\fRオブジェクトを呼び出すと、例外を受け取ります。しかし、その原因は、\fIServerDelegate\fR
+DSIコード内の\fINullPointerException\fRにあるようです。
 .br
 'pl 8.5i
 'bp

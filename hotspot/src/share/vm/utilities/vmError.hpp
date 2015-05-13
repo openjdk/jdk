@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,8 +117,8 @@ public:
   // return a string to describe the error
   char *error_string(char* buf, int buflen);
 
-  // Report status of core/minidump
-  static void report_coredump_status(const char* message, bool status);
+  // Record status of core/minidump
+  static void record_coredump_status(const char* message, bool status);
 
   // main error reporting function
   void report_and_die();

@@ -153,9 +153,6 @@ public final class TimeZoneNames_zh_CN extends TimeZoneNamesBundle {
         String GST[] = new String[] {"\u6ce2\u65af\u6e7e\u6807\u51c6\u65f6\u95f4", "GST",
                                      "\u6ce2\u65af\u6e7e\u590f\u4ee4\u65f6", "GDT",
                                      "\u6D77\u6E7E\u65F6\u95F4", "GT"};
-        String HAST[] = new String[] {"\u590f\u5a01\u5937-\u963f\u7559\u7533\u7fa4\u5c9b\u6807\u51c6\u65f6\u95f4", "HAST",
-                                      "\u590f\u5a01\u5937-\u963f\u7559\u7533\u7fa4\u5c9b\u590f\u4ee4\u65f6", "HADT",
-                                      "\u590F\u5A01\u5937-\u963F\u7559\u7533\u65F6\u95F4", "HAT"};
         String HKT[] =  new String[] {"\u9999\u6e2f\u65f6\u95f4", "HKT",
                                       "\u9999\u6e2f\u590f\u4ee4\u65f6", "HKST",
                                       "\u9999\u6E2F\u65F6\u95F4", "HKT"};
@@ -372,7 +369,7 @@ public final class TimeZoneNames_zh_CN extends TimeZoneNamesBundle {
             {"Africa/Tripoli", EET},
             {"Africa/Tunis", CET},
             {"Africa/Windhoek", WAT},
-            {"America/Adak", HAST},
+            {"America/Adak", HST},
             {"America/Anguilla", AST},
             {"America/Antigua", AST},
             {"America/Araguaina", BRT},
@@ -394,7 +391,7 @@ public final class TimeZoneNames_zh_CN extends TimeZoneNamesBundle {
                                                "\u5df4\u62c9\u572d\u590f\u4ee4\u65f6", "PYST",
                                                "\u5DF4\u62C9\u572D\u65F6\u95F4", "PYT"}},
             {"America/Atikokan", EST},
-            {"America/Atka", HAST},
+            {"America/Atka", HST},
             {"America/Bahia", BRT},
             {"America/Bahia_Banderas", CST},
             {"America/Barbados", AST},
@@ -1024,7 +1021,7 @@ public final class TimeZoneNames_zh_CN extends TimeZoneNamesBundle {
             {"UCT", UTC},
             {"Universal", UTC},
             {"US/Alaska", AKST},
-            {"US/Aleutian", HAST},
+            {"US/Aleutian", HST},
             {"US/Arizona", MST},
             {"US/Central", CST},
             {"US/Eastern", EST},
