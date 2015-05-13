@@ -834,10 +834,10 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
     swap(lo_type, hi_type);
     swap(lo_test, hi_test);
 
-    assert((this_bool->_test.is_less() && proj->_con) ||
-           (this_bool->_test.is_greater() && !proj->_con), "incorrect test");
+    assert((dom_bool->_test.is_less() && proj->_con) ||
+           (dom_bool->_test.is_greater() && !proj->_con), "incorrect test");
     // this test was canonicalized
-    assert(dom_bool->_test.is_less() && !fail->_con, "incorrect test");
+    assert(this_bool->_test.is_less() && !fail->_con, "incorrect test");
 
     cond = (hi_test == BoolTest::le || hi_test == BoolTest::gt) ? BoolTest::gt : BoolTest::ge;
 
