@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,21 +19,26 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-package rtm.predicate;
+/*
+ * @test
+ * @bug 8076318
+ * @summary split verifier needs to add TraceClassResolution
+ * @library /testlibrary
+ */
 
-import sun.hotspot.cpuinfo.CPUInfo;
+import jdk.test.lib.*;
 
-import java.util.function.BooleanSupplier;
+// Test that the verifier outputs the classes it loads if -XX:+TraceClassResolution is specified"
+public class TraceClassRes {
+  public static void main(String[] args) throws Exception {
 
-import jdk.test.lib.Platform;
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        "-XX:+TraceClassResolution", "-verify", "-Xshare:off", "-version");
 
-public class SupportedCPU implements BooleanSupplier {
-    @Override
-    public boolean getAsBoolean() {
-        if (Platform.isPPC()) { return CPUInfo.hasFeature("tcheck"); }
-        return CPUInfo.hasFeature("rtm");
-    }
+    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    output.shouldContain("RESOLVE java.lang.ClassLoader java.lang.Throwable ClassLoader.java (verification)");
+    output.shouldHaveExitValue(0);
+  }
 }
