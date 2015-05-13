@@ -970,7 +970,7 @@ public class JSpinner extends JComponent implements Accessible
          * and editing the value of a <code>SpinnerDateModel</code>
          * with a <code>JFormattedTextField</code>.  <code>This</code>
          * <code>DateEditor</code> becomes both a <code>ChangeListener</code>
-         * on the spinners model and a <code>PropertyChangeListener</code>
+         * on the spinner and a <code>PropertyChangeListener</code>
          * on the new <code>JFormattedTextField</code>.
          *
          * @param spinner the spinner whose model <code>this</code> editor will monitor
