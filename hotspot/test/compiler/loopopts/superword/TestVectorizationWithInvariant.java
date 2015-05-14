@@ -22,7 +22,7 @@
  *
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 import sun.misc.Unsafe;
 
 /**
