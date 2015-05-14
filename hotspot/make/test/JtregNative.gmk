@@ -42,6 +42,7 @@ include TestFilesCompilation.gmk
 # Add more directories here when needed.
 BUILD_HOTSPOT_JTREG_NATIVE_SRC := \
     $(HOTSPOT_TOPDIR)/test/native_sanity \
+    $(HOTSPOT_TOPDIR)/test/runtime/jni/8025979 \
     $(HOTSPOT_TOPDIR)/test/runtime/jni/8033445 \
     #
 
