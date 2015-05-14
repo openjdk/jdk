@@ -293,6 +293,13 @@ void SuperWord::find_adjacent_refs() {
           // if unaligned memory access is not allowed because number of
           // iterations in pre-loop will be not enough to align it.
           create_pack = false;
+        } else {
+          SWPointer p2(best_align_to_mem_ref, this);
+          if (align_to_ref_p.invar() != p2.invar()) {
+            // Do not vectorize memory accesses with different invariants
+            // if unaligned memory accesses are not allowed.
+            create_pack = false;
+          }
         }
       }
     } else {
@@ -516,24 +523,50 @@ bool SuperWord::ref_is_alignable(SWPointer& p) {
   if (ABS(span) == mem_size && (ABS(offset) % mem_size) == 0) {
     return true;
   }
-  // If initial offset from start of object is computable,
-  // compute alignment within the vector.
+  // If the initial offset from start of the object is computable,
+  // check if the pre-loop can align the final offset accordingly.
+  //
+  // In other words: Can we find an i such that the offset
+  // after i pre-loop iterations is aligned to vw?
+  //   (init_offset + pre_loop) % vw == 0              (1)
+  // where
+  //   pre_loop = i * span
+  // is the number of bytes added to the offset by i pre-loop iterations.
+  //
+  // For this to hold we need pre_loop to increase init_offset by
+  //   pre_loop = vw - (init_offset % vw)
+  //
+  // This is only possible if pre_loop is divisible by span because each
+  // pre-loop iteration increases the initial offset by 'span' bytes:
+  //   (vw - (init_offset % vw)) % span == 0
+  //
   int vw = vector_width_in_bytes(p.mem());
   assert(vw > 1, "sanity");
-  if (vw % span == 0) {
-    Node* init_nd = pre_end->init_trip();
-    if (init_nd->is_Con() && p.invar() == NULL) {
-      int init = init_nd->bottom_type()->is_int()->get_con();
-
-      int init_offset = init * p.scale_in_bytes() + offset;
-      assert(init_offset >= 0, "positive offset from object start");
-
+  Node* init_nd = pre_end->init_trip();
+  if (init_nd->is_Con() && p.invar() == NULL) {
+    int init = init_nd->bottom_type()->is_int()->get_con();
+    int init_offset = init * p.scale_in_bytes() + offset;
+    assert(init_offset >= 0, "positive offset from object start");
+    if (vw % span == 0) {
+      // If vm is a multiple of span, we use formula (1).
       if (span > 0) {
         return (vw - (init_offset % vw)) % span == 0;
       } else {
         assert(span < 0, "nonzero stride * scale");
         return (init_offset % vw) % -span == 0;
       }
+    } else if (span % vw == 0) {
+      // If span is a multiple of vw, we can simplify formula (1) to:
+      //   (init_offset + i * span) % vw == 0
+      //     =>
+      //   (init_offset % vw) + ((i * span) % vw) == 0
+      //     =>
+      //   init_offset % vw == 0
+      //
+      // Because we add a multiple of vw to the initial offset, the final
+      // offset is a multiple of vw if and only if init_offset is a multiple.
+      //
+      return (init_offset % vw) == 0;
     }
   }
   return false;
@@ -545,17 +578,23 @@ int SuperWord::get_iv_adjustment(MemNode* mem_ref) {
   SWPointer align_to_ref_p(mem_ref, this);
   int offset = align_to_ref_p.offset_in_bytes();
   int scale  = align_to_ref_p.scale_in_bytes();
+  int elt_size = align_to_ref_p.memory_size();
   int vw       = vector_width_in_bytes(mem_ref);
   assert(vw > 1, "sanity");
-  int stride_sign   = (scale * iv_stride()) > 0 ? 1 : -1;
-  // At least one iteration is executed in pre-loop by default. As result
-  // several iterations are needed to align memory operations in main-loop even
-  // if offset is 0.
-  int iv_adjustment_in_bytes = (stride_sign * vw - (offset % vw));
-  int elt_size = align_to_ref_p.memory_size();
-  assert(((ABS(iv_adjustment_in_bytes) % elt_size) == 0),
-         err_msg_res("(%d) should be divisible by (%d)", iv_adjustment_in_bytes, elt_size));
-  int iv_adjustment = iv_adjustment_in_bytes/elt_size;
+  int iv_adjustment;
+  if (scale != 0) {
+    int stride_sign = (scale * iv_stride()) > 0 ? 1 : -1;
+    // At least one iteration is executed in pre-loop by default. As result
+    // several iterations are needed to align memory operations in main-loop even
+    // if offset is 0.
+    int iv_adjustment_in_bytes = (stride_sign * vw - (offset % vw));
+    assert(((ABS(iv_adjustment_in_bytes) % elt_size) == 0),
+           err_msg_res("(%d) should be divisible by (%d)", iv_adjustment_in_bytes, elt_size));
+    iv_adjustment = iv_adjustment_in_bytes/elt_size;
+  } else {
+    // This memory op is not dependent on iv (scale == 0)
+    iv_adjustment = 0;
+  }
 
 #ifndef PRODUCT
   if (TraceSuperWord)
@@ -2518,6 +2557,11 @@ SWPointer::SWPointer(MemNode* mem, SuperWord* slp) :
   }
   // Match AddP(base, AddP(ptr, k*iv [+ invariant]), constant)
   Node* base = adr->in(AddPNode::Base);
+  // The base address should be loop invariant
+  if (!invariant(base)) {
+    assert(!valid(), "base address is loop variant");
+    return;
+  }
   //unsafe reference could not be aligned appropriately without runtime checking
   if (base == NULL || base->bottom_type() == Type::TOP) {
     assert(!valid(), "unsafe access");

@@ -2989,7 +2989,7 @@ void nmethod::print_code_comment_on(outputStream* st, int column, u_char* begin,
   address base = code_begin();
   ImmutableOopMapSet* oms = oop_maps();
   if (oms != NULL) {
-    for (int i = 0, imax = oms->size(); i < imax; i++) {
+    for (int i = 0, imax = oms->count(); i < imax; i++) {
       const ImmutableOopMapPair* pair = oms->pair_at(i);
       const ImmutableOopMap* om = pair->get_from(oms);
       address pc = base + pair->pc_offset();
