@@ -30,7 +30,7 @@
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
- * @build ClassFileInstaller com.oracle.java.testlibrary.* sun.hotspot.tools.ctw.CompileTheWorld sun.hotspot.WhiteBox Foo Bar
+ * @build ClassFileInstaller jdk.test.lib.* sun.hotspot.tools.ctw.CompileTheWorld sun.hotspot.WhiteBox Foo Bar
  * @run main ClassFileInstaller sun.hotspot.WhiteBox Foo Bar
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main JarDirTest prepare
@@ -44,7 +44,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-import com.oracle.java.testlibrary.OutputAnalyzer;
+import jdk.test.lib.OutputAnalyzer;
 
 public class JarDirTest extends CtwTest {
     private static final String[] SHOULD_CONTAIN

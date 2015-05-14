@@ -36,7 +36,7 @@ import java.io.FileOutputStream;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 public class UnsupportedClassFileVersion implements Opcodes {
     public static void main(String... args) throws Exception {

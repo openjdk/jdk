@@ -25,7 +25,7 @@
 import java.lang.reflect.Method;
 import java.util.stream.IntStream;
 
-import com.oracle.java.testlibrary.Platform;
+import jdk.test.lib.Platform;
 
 /*
  * @test OverloadCompileQueueTest

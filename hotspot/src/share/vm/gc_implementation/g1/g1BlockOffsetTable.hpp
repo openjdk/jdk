@@ -170,6 +170,8 @@ private:
 
   bool is_card_boundary(HeapWord* p) const;
 
+  void check_index(size_t index, const char* msg) const NOT_DEBUG_RETURN;
+
 public:
 
   // Return the number of slots needed for an offset array
@@ -177,6 +179,11 @@ public:
   static size_t compute_size(size_t mem_region_words) {
     size_t number_of_slots = (mem_region_words / N_words);
     return ReservedSpace::allocation_align_size_up(number_of_slots);
+  }
+
+  // Returns how many bytes of the heap a single byte of the BOT corresponds to.
+  static size_t heap_map_factor() {
+    return N_bytes;
   }
 
   enum SomePublicConstants {

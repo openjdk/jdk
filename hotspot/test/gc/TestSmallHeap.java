@@ -57,10 +57,10 @@
  * So, the expected heap size is page_size * 512.
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 import com.sun.management.HotSpotDiagnosticMXBean;
 import java.lang.management.ManagementFactory;
-import static com.oracle.java.testlibrary.Asserts.*;
+import static jdk.test.lib.Asserts.*;
 
 import sun.hotspot.WhiteBox;
 

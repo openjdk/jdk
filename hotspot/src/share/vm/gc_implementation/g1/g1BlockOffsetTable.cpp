@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "gc_implementation/g1/g1CollectedHeap.hpp"
 #include "gc_implementation/g1/g1BlockOffsetTable.inline.hpp"
+#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/heapRegion.hpp"
 #include "memory/space.hpp"
 #include "oops/oop.inline.hpp"
@@ -65,6 +65,20 @@ bool G1BlockOffsetSharedArray::is_card_boundary(HeapWord* p) const {
   size_t delta = pointer_delta(p, _reserved.start());
   return (delta & right_n_bits(LogN_words)) == (size_t)NoBits;
 }
+
+#ifdef ASSERT
+void G1BlockOffsetSharedArray::check_index(size_t index, const char* msg) const {
+  assert((index) < (_reserved.word_size() >> LogN_words),
+         err_msg("%s - index: "SIZE_FORMAT", _vs.committed_size: "SIZE_FORMAT,
+                 msg, (index), (_reserved.word_size() >> LogN_words)));
+  assert(G1CollectedHeap::heap()->is_in_exact(address_for_index_raw(index)),
+         err_msg("Index "SIZE_FORMAT" corresponding to "PTR_FORMAT
+                 " (%u) is not in committed area.",
+                 (index),
+                 p2i(address_for_index_raw(index)),
+                 G1CollectedHeap::heap()->addr_to_region(address_for_index_raw(index))));
+}
+#endif // ASSERT
 
 //////////////////////////////////////////////////////////////////////
 // G1BlockOffsetArray

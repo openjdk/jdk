@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,17 @@ void G1CardCountsMappingChangedListener::on_commit(uint start_idx, size_t num_re
   }
   MemRegion mr(G1CollectedHeap::heap()->bottom_addr_for_region(start_idx), num_regions * HeapRegion::GrainWords);
   _counts->clear_range(mr);
+}
+
+size_t G1CardCounts::compute_size(size_t mem_region_size_in_words) {
+  // We keep card counts for every card, so the size of the card counts table must
+  // be the same as the card table.
+  return G1SATBCardTableLoggingModRefBS::compute_size(mem_region_size_in_words);
+}
+
+size_t G1CardCounts::heap_map_factor() {
+  // See G1CardCounts::compute_size() why we reuse the card table value.
+  return G1SATBCardTableLoggingModRefBS::heap_map_factor();
 }
 
 void G1CardCounts::clear_range(size_t from_card_num, size_t to_card_num) {

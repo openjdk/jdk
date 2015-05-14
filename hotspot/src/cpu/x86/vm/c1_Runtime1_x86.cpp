@@ -323,7 +323,7 @@ static OopMap* generate_oop_map(StubAssembler* sasm, int num_rt_args,
   LP64_ONLY(num_rt_args = 0);
   LP64_ONLY(assert((reg_save_frame_size * VMRegImpl::stack_slot_size) % 16 == 0, "must be 16 byte aligned");)
   int frame_size_in_slots = reg_save_frame_size + num_rt_args; // args + thread
-  sasm->set_frame_size(frame_size_in_slots / VMRegImpl::slots_per_word );
+  sasm->set_frame_size(frame_size_in_slots / VMRegImpl::slots_per_word);
 
   // record saved value locations in an OopMap
   // locations are offsets from sp after runtime call; num_rt_args is number of arguments in call, including thread
@@ -362,6 +362,13 @@ static OopMap* generate_oop_map(StubAssembler* sasm, int num_rt_args,
   map->set_callee_saved(VMRegImpl::stack2reg(r15H_off + num_rt_args), r15->as_VMReg()->next());
 #endif // _LP64
 
+  int xmm_bypass_limit = FrameMap::nof_xmm_regs;
+#ifdef _LP64
+  if (UseAVX < 3) {
+    xmm_bypass_limit = xmm_bypass_limit / 2;
+  }
+#endif
+
   if (save_fpu_registers) {
     if (UseSSE < 2) {
       int fpu_off = float_regs_as_doubles_off;
@@ -380,11 +387,13 @@ static OopMap* generate_oop_map(StubAssembler* sasm, int num_rt_args,
     if (UseSSE >= 2) {
       int xmm_off = xmm_regs_as_doubles_off;
       for (int n = 0; n < FrameMap::nof_xmm_regs; n++) {
-        VMReg xmm_name_0 = as_XMMRegister(n)->as_VMReg();
-        map->set_callee_saved(VMRegImpl::stack2reg(xmm_off +     num_rt_args), xmm_name_0);
-        // %%% This is really a waste but we'll keep things as they were for now
-        if (true) {
-          map->set_callee_saved(VMRegImpl::stack2reg(xmm_off + 1 + num_rt_args), xmm_name_0->next());
+        if (n < xmm_bypass_limit) {
+          VMReg xmm_name_0 = as_XMMRegister(n)->as_VMReg();
+          map->set_callee_saved(VMRegImpl::stack2reg(xmm_off + num_rt_args), xmm_name_0);
+          // %%% This is really a waste but we'll keep things as they were for now
+          if (true) {
+            map->set_callee_saved(VMRegImpl::stack2reg(xmm_off + 1 + num_rt_args), xmm_name_0->next());
+          }
         }
         xmm_off += 2;
       }
@@ -393,8 +402,10 @@ static OopMap* generate_oop_map(StubAssembler* sasm, int num_rt_args,
     } else if (UseSSE == 1) {
       int xmm_off = xmm_regs_as_doubles_off;
       for (int n = 0; n < FrameMap::nof_xmm_regs; n++) {
-        VMReg xmm_name_0 = as_XMMRegister(n)->as_VMReg();
-        map->set_callee_saved(VMRegImpl::stack2reg(xmm_off +     num_rt_args), xmm_name_0);
+        if (n < xmm_bypass_limit) {
+          VMReg xmm_name_0 = as_XMMRegister(n)->as_VMReg();
+          map->set_callee_saved(VMRegImpl::stack2reg(xmm_off + num_rt_args), xmm_name_0);
+        }
         xmm_off += 2;
       }
       assert(xmm_off == float_regs_as_doubles_off, "incorrect number of xmm registers");
@@ -474,6 +485,24 @@ static OopMap* save_live_registers(StubAssembler* sasm, int num_rt_args,
       __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 104), xmm13);
       __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 112), xmm14);
       __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 120), xmm15);
+      if (UseAVX > 2) {
+        __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 128), xmm16);
+        __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 136), xmm17);
+        __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 144), xmm18);
+        __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 152), xmm19);
+        __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 160), xmm20);
+        __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 168), xmm21);
+        __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 176), xmm22);
+        __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 184), xmm23);
+        __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 192), xmm24);
+        __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 200), xmm25);
+        __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 208), xmm26);
+        __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 216), xmm27);
+        __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 224), xmm28);
+        __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 232), xmm29);
+        __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 240), xmm30);
+        __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 248), xmm31);
+      }
 #endif // _LP64
     } else if (UseSSE == 1) {
       // save XMM registers as float because double not supported without SSE2
@@ -516,6 +545,24 @@ static void restore_fpu(StubAssembler* sasm, bool restore_fpu_registers = true) 
       __ movdbl(xmm13, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 104));
       __ movdbl(xmm14, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 112));
       __ movdbl(xmm15, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 120));
+      if (UseAVX > 2) {
+        __ movdbl(xmm16, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 128));
+        __ movdbl(xmm17, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 136));
+        __ movdbl(xmm18, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 144));
+        __ movdbl(xmm19, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 152));
+        __ movdbl(xmm20, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 160));
+        __ movdbl(xmm21, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 168));
+        __ movdbl(xmm22, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 176));
+        __ movdbl(xmm23, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 184));
+        __ movdbl(xmm24, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 192));
+        __ movdbl(xmm25, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 200));
+        __ movdbl(xmm26, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 208));
+        __ movdbl(xmm27, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 216));
+        __ movdbl(xmm28, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 224));
+        __ movdbl(xmm29, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 232));
+        __ movdbl(xmm30, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 240));
+        __ movdbl(xmm31, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 248));
+      }
 #endif // _LP64
     } else if (UseSSE == 1) {
       // restore XMM registers
@@ -1631,36 +1678,22 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
         NOT_LP64(__ get_thread(thread);)
 
-        Address in_progress(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                             PtrQueue::byte_offset_of_active()));
-
         Address queue_index(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
                                              PtrQueue::byte_offset_of_index()));
         Address buffer(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
                                         PtrQueue::byte_offset_of_buf()));
-
 
         Label done;
         Label runtime;
 
         // Can we store original value in the thread's buffer?
 
-#ifdef _LP64
-        __ movslq(tmp, queue_index);
-        __ cmpq(tmp, 0);
-#else
-        __ cmpl(queue_index, 0);
-#endif
-        __ jcc(Assembler::equal, runtime);
-#ifdef _LP64
-        __ subq(tmp, wordSize);
-        __ movl(queue_index, tmp);
-        __ addq(tmp, buffer);
-#else
-        __ subl(queue_index, wordSize);
-        __ movl(tmp, buffer);
-        __ addl(tmp, queue_index);
-#endif
+        __ movptr(tmp, queue_index);
+        __ testptr(tmp, tmp);
+        __ jcc(Assembler::zero, runtime);
+        __ subptr(tmp, wordSize);
+        __ movptr(queue_index, tmp);
+        __ addptr(tmp, buffer);
 
         // prev_val (rax)
         f.load_argument(0, pre_val);
@@ -1713,6 +1746,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
 
         Label done;
+        Label enqueued;
         Label runtime;
 
         // At this point we know new_value is non-NULL and the new_value crosses regions.
@@ -1752,28 +1786,19 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
         __ movb(Address(card_addr, 0), (int)CardTableModRefBS::dirty_card_val());
 
-        __ cmpl(queue_index, 0);
-        __ jcc(Assembler::equal, runtime);
-        __ subl(queue_index, wordSize);
+        const Register tmp = rdx;
+        __ push(rdx);
 
-        const Register buffer_addr = rbx;
-        __ push(rbx);
-
-        __ movptr(buffer_addr, buffer);
-
-#ifdef _LP64
-        __ movslq(rscratch1, queue_index);
-        __ addptr(buffer_addr, rscratch1);
-#else
-        __ addptr(buffer_addr, queue_index);
-#endif
-        __ movptr(Address(buffer_addr, 0), card_addr);
-
-        __ pop(rbx);
-        __ jmp(done);
+        __ movptr(tmp, queue_index);
+        __ testptr(tmp, tmp);
+        __ jcc(Assembler::zero, runtime);
+        __ subptr(tmp, wordSize);
+        __ movptr(queue_index, tmp);
+        __ addptr(tmp, buffer);
+        __ movptr(Address(tmp, 0), card_addr);
+        __ jmp(enqueued);
 
         __ bind(runtime);
-        __ push(rdx);
 #ifdef _LP64
         __ push(r8);
         __ push(r9);
@@ -1795,12 +1820,12 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         __ pop(r9);
         __ pop(r8);
 #endif
+        __ bind(enqueued);
         __ pop(rdx);
-        __ bind(done);
 
+        __ bind(done);
         __ pop(rcx);
         __ pop(rax);
-
       }
       break;
 #endif // INCLUDE_ALL_GCS
