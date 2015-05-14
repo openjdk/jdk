@@ -361,10 +361,8 @@ class ReferenceProcessor : public CHeapObj<mtGC> {
   DiscoveredList* get_discovered_list(ReferenceType rt);
   inline void add_to_discovered_list_mt(DiscoveredList& refs_list, oop obj,
                                         HeapWord* discovered_addr);
-  void verify_ok_to_handle_reflists() PRODUCT_RETURN;
 
   void clear_discovered_references(DiscoveredList& refs_list);
-  void abandon_partial_discovered_list(DiscoveredList& refs_list);
 
   // Calculate the number of jni handles.
   unsigned int count_jni_refs();
@@ -457,9 +455,6 @@ class ReferenceProcessor : public CHeapObj<mtGC> {
   // debugging
   void verify_no_references_recorded() PRODUCT_RETURN;
   void verify_referent(oop obj)        PRODUCT_RETURN;
-
-  // clear the discovered lists (unlinking each entry).
-  void clear_discovered_references() PRODUCT_RETURN;
 };
 
 // A utility class to disable reference discovery in

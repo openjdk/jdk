@@ -189,7 +189,6 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(
   AbstractRefProcTaskExecutor* task_executor,
   GCTimer*                     gc_timer,
   GCId                         gc_id) {
-  NOT_PRODUCT(verify_ok_to_handle_reflists());
 
   assert(!enqueuing_is_done(), "If here enqueuing should not be complete");
   // Stop treating discovered references specially.
@@ -329,7 +328,6 @@ bool enqueue_discovered_ref_helper(ReferenceProcessor* ref,
 }
 
 bool ReferenceProcessor::enqueue_discovered_references(AbstractRefProcTaskExecutor* task_executor) {
-  NOT_PRODUCT(verify_ok_to_handle_reflists());
   if (UseCompressedOops) {
     return enqueue_discovered_ref_helper<narrowOop>(this, task_executor);
   } else {
@@ -651,18 +649,13 @@ ReferenceProcessor::clear_discovered_references(DiscoveredList& refs_list) {
   refs_list.set_length(0);
 }
 
-void
-ReferenceProcessor::abandon_partial_discovered_list(DiscoveredList& refs_list) {
-  clear_discovered_references(refs_list);
-}
-
 void ReferenceProcessor::abandon_partial_discovery() {
   // loop over the lists
   for (uint i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
     if (TraceReferenceGC && PrintGCDetails && ((i % _max_num_q) == 0)) {
       gclog_or_tty->print_cr("\nAbandoning %s discovered list", list_name(i));
     }
-    abandon_partial_discovered_list(_discovered_refs[i]);
+    clear_discovered_references(_discovered_refs[i]);
   }
 }
 
@@ -1160,8 +1153,6 @@ void ReferenceProcessor::preclean_discovered_references(
   GCTimer* gc_timer,
   GCId     gc_id) {
 
-  NOT_PRODUCT(verify_ok_to_handle_reflists());
-
   // Soft references
   {
     GCTraceTime tt("Preclean SoftReferences", PrintGCDetails && PrintReferenceGC,
@@ -1297,18 +1288,3 @@ const char* ReferenceProcessor::list_name(uint i) {
    return NULL;
 }
 
-#ifndef PRODUCT
-void ReferenceProcessor::verify_ok_to_handle_reflists() {
-  // empty for now
-}
-#endif
-
-#ifndef PRODUCT
-void ReferenceProcessor::clear_discovered_references() {
-  guarantee(!_discovering_refs, "Discovering refs?");
-  for (uint i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
-    clear_discovered_references(_discovered_refs[i]);
-  }
-}
-
-#endif // PRODUCT
