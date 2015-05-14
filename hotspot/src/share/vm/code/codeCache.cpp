@@ -1375,7 +1375,7 @@ void CodeCache::print() {
           ImmutableOopMapSet* set = cb->oop_maps();
           if (set != NULL) {
             number_of_oop_maps += set->count();
-            map_size           += set->size();
+            map_size           += set->nr_of_bytes();
           }
         }
       }

@@ -40,7 +40,7 @@
 // Exploiting SuperWord Level Parallelism with
 //   Multimedia Instruction Sets
 // by
-//   Samuel Larsen and Saman Amarasighe
+//   Samuel Larsen and Saman Amarasinghe
 //   MIT Laboratory for Computer Science
 // date
 //   May 2000
@@ -466,7 +466,7 @@ class SWPointer VALUE_OBJ_CLASS_SPEC {
 
   Node* _base;         // NULL if unsafe nonheap reference
   Node* _adr;          // address pointer
-  jint  _scale;        // multipler for iv (in bytes), 0 if no loop iv
+  jint  _scale;        // multiplier for iv (in bytes), 0 if no loop iv
   jint  _offset;       // constant offset (in bytes)
   Node* _invar;        // invariant offset (in bytes), NULL if none
   bool  _negate_invar; // if true then use: (0 - _invar)
