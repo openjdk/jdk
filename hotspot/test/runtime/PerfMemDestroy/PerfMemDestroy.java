@@ -33,7 +33,7 @@
 
 import java.io.File;
 import java.util.Map;
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 public class PerfMemDestroy {
     public static void main(String args[]) throws Throwable {

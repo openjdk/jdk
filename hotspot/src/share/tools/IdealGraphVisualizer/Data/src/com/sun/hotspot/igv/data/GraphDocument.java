@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,53 +24,36 @@
 package com.sun.hotspot.igv.data;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
  *
  * @author Thomas Wuerthinger
  */
-public class GraphDocument extends Properties.Entity implements ChangedEventProvider<GraphDocument> {
+public class GraphDocument extends Properties.Entity implements ChangedEventProvider<GraphDocument>, Folder {
 
-    private List<Group> groups;
+    private List<FolderElement> elements;
     private ChangedEvent<GraphDocument> changedEvent;
 
     public GraphDocument() {
-        groups = new ArrayList<Group>();
-        changedEvent = new ChangedEvent<GraphDocument>(this);
+        elements = new ArrayList<>();
+        changedEvent = new ChangedEvent<>(this);
     }
 
     public void clear() {
-        groups.clear();
+        elements.clear();
         getChangedEvent().fire();
     }
 
+    @Override
     public ChangedEvent<GraphDocument> getChangedEvent() {
         return changedEvent;
     }
 
-    public List<Group> getGroups() {
-        return Collections.unmodifiableList(groups);
-    }
-
-    public void addGroup(Group group) {
-        group.setDocument(this);
-        groups.add(group);
-        getChangedEvent().fire();
-    }
-
-    public void removeGroup(Group group) {
-        if (groups.contains(group)) {
-            group.setDocument(null);
-            groups.remove(group);
-            getChangedEvent().fire();
-        }
-    }
-
     public void addGraphDocument(GraphDocument document) {
-        for (Group g : document.groups) {
-            this.addGroup(g);
+        for (FolderElement e : document.elements) {
+            e.setParent(this);
+            this.addElement(e);
         }
         document.clear();
         getChangedEvent().fire();
@@ -80,12 +63,30 @@ public class GraphDocument extends Properties.Entity implements ChangedEventProv
     public String toString() {
         StringBuilder sb = new StringBuilder();
 
-        sb.append("GraphDocument: " + getProperties().toString() + " \n\n");
-        for (Group g : getGroups()) {
+        sb.append("GraphDocument: ").append(getProperties().toString()).append(" \n\n");
+        for (FolderElement g : getElements()) {
             sb.append(g.toString());
             sb.append("\n\n");
         }
 
         return sb.toString();
+    }
+
+    @Override
+    public List<? extends FolderElement> getElements() {
+        return elements;
+    }
+
+    @Override
+    public void removeElement(FolderElement element) {
+        if (elements.remove(element)) {
+            getChangedEvent().fire();
+        }
+    }
+
+    @Override
+    public void addElement(FolderElement element) {
+        elements.add(element);
+        getChangedEvent().fire();
     }
 }

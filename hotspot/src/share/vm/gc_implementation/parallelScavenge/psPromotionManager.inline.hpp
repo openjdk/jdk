@@ -31,11 +31,17 @@
 #include "gc_implementation/parallelScavenge/psPromotionLAB.inline.hpp"
 #include "gc_implementation/parallelScavenge/psScavenge.hpp"
 #include "oops/oop.inline.hpp"
+#include "utilities/taskqueue.inline.hpp"
 
 inline PSPromotionManager* PSPromotionManager::manager_array(int index) {
   assert(_manager_array != NULL, "access of NULL manager_array");
   assert(index >= 0 && index <= (int)ParallelGCThreads, "out of range manager_array access");
   return &_manager_array[index];
+}
+
+template <class T>
+inline void PSPromotionManager::push_depth(T* p) {
+  claimed_stack_depth()->push(p);
 }
 
 template <class T>
@@ -99,7 +105,7 @@ inline void PSPromotionManager::push_contents(oop obj) {
 // performance.
 //
 template<bool promote_immediately>
-oop PSPromotionManager::copy_to_survivor_space(oop o) {
+inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
   assert(should_scavenge(&o), "Sanity");
 
   oop new_obj = NULL;
@@ -315,6 +321,10 @@ inline void PSPromotionManager::process_popped_location_depth(StarTask p) {
       copy_and_push_safe_barrier<oop, /*promote_immediately=*/false>(p);
     }
   }
+}
+
+inline bool PSPromotionManager::steal_depth(int queue_num, int* seed, StarTask& t) {
+  return stack_array_depth()->steal(queue_num, seed, t);
 }
 
 #if TASKQUEUE_STATS

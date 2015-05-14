@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import org.openide.util.actions.NodeAction;
  */
 public final class RemoveAction extends NodeAction {
 
+    @Override
     protected void performAction(Node[] activatedNodes) {
         for (Node n : activatedNodes) {
             RemoveCookie removeCookie = n.getCookie(RemoveCookie.class);
@@ -46,18 +47,20 @@ public final class RemoveAction extends NodeAction {
     }
 
     public RemoveAction() {
-        putValue(Action.SHORT_DESCRIPTION, "Remove");
+        putValue(Action.SHORT_DESCRIPTION, "Remove selected graphs and groups");
     }
 
+    @Override
     public String getName() {
         return NbBundle.getMessage(RemoveAction.class, "CTL_RemoveAction");
     }
 
     @Override
     protected String iconResource() {
-        return "com/sun/hotspot/igv/coordinator/images/remove.gif";
+        return "com/sun/hotspot/igv/coordinator/images/remove.png";
     }
 
+    @Override
     public HelpCtx getHelpCtx() {
         return HelpCtx.DEFAULT_HELP;
     }
@@ -67,6 +70,7 @@ public final class RemoveAction extends NodeAction {
         return false;
     }
 
+    @Override
     protected boolean enable(Node[] nodes) {
         return nodes.length > 0;
     }

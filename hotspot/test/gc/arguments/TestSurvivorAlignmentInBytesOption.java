@@ -21,8 +21,8 @@
  * questions.
  */
 
-import com.oracle.java.testlibrary.ExitCode;
-import com.oracle.java.testlibrary.cli.CommandLineOptionTest;
+import jdk.test.lib.ExitCode;
+import jdk.test.lib.cli.CommandLineOptionTest;
 
 /**
  * @test

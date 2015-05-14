@@ -129,9 +129,7 @@ void CodeBlob::set_oop_maps(OopMapSet* p) {
   // Danger Will Robinson! This method allocates a big
   // chunk of memory, its your job to free it.
   if (p != NULL) {
-    // We need to allocate a chunk big enough to hold the OopMapSet and all of its OopMaps
-    _oop_maps = (OopMapSet* )NEW_C_HEAP_ARRAY(unsigned char, p->heap_size(), mtCode);
-    p->copy_to((address)_oop_maps);
+    _oop_maps = ImmutableOopMapSet::build_from(p);
   } else {
     _oop_maps = NULL;
   }
@@ -175,7 +173,7 @@ void CodeBlob::flush() {
 }
 
 
-OopMap* CodeBlob::oop_map_for_return_address(address return_address) {
+const ImmutableOopMap* CodeBlob::oop_map_for_return_address(address return_address) {
   assert(oop_maps() != NULL, "nope");
   return oop_maps()->find_map_at_offset((intptr_t) return_address - (intptr_t) code_begin());
 }

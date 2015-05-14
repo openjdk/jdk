@@ -35,7 +35,7 @@ import java.util.EnumSet;
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
- * @build TestPrintCodeCacheOption com.oracle.java.testlibrary.*
+ * @build TestPrintCodeCacheOption jdk.test.lib.*
  *        printcodecache.* common.*
  * @run main/timeout=240 printcodecache.TestPrintCodeCacheOption
  */

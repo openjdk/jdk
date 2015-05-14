@@ -797,11 +797,12 @@ Node *CallNode::result_cast() {
       }
       cast = use;
     } else if (!use->is_Initialize() &&
-               !use->is_AddP()) {
+               !use->is_AddP() &&
+               use->Opcode() != Op_MemBarStoreStore) {
       // Expected uses are restricted to a CheckCastPP, an Initialize
-      // node, and AddP nodes. If we encounter any other use (a Phi
-      // node can be seen in rare cases) return this to prevent
-      // incorrect optimizations.
+      // node, a MemBarStoreStore (clone) and AddP nodes. If we
+      // encounter any other use (a Phi node can be seen in rare
+      // cases) return this to prevent incorrect optimizations.
       return this;
     }
   }
@@ -1006,6 +1007,14 @@ void CallRuntimeNode::calling_convention( BasicType* sig_bt, VMRegPair *parm_reg
 
 
 //=============================================================================
+bool CallLeafNode::is_call_to_arraycopystub() const {
+  if (_name != NULL && strstr(_name, "arraycopy") != 0) {
+    return true;
+  }
+  return false;
+}
+
+
 #ifndef PRODUCT
 void CallLeafNode::dump_spec(outputStream *st) const {
   st->print("# ");
@@ -1874,4 +1883,73 @@ void AbstractLockNode::log_lock_optimization(Compile *C, const char * tag)  cons
     }
     log->tail(tag);
   }
+}
+
+bool CallNode::may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeOopPtr *t_oop, PhaseTransform *phase) {
+  if (dest_t->is_known_instance() && t_oop->is_known_instance()) {
+    return dest_t->instance_id() == t_oop->instance_id();
+  }
+
+  if (dest_t->isa_instptr() && !dest_t->klass()->equals(phase->C->env()->Object_klass())) {
+    // clone
+    if (t_oop->isa_aryptr()) {
+      return false;
+    }
+    if (!t_oop->isa_instptr()) {
+      return true;
+    }
+    if (dest_t->klass()->is_subtype_of(t_oop->klass()) || t_oop->klass()->is_subtype_of(dest_t->klass())) {
+      return true;
+    }
+    // unrelated
+    return false;
+  }
+
+  if (dest_t->isa_aryptr()) {
+    // arraycopy or array clone
+    if (t_oop->isa_instptr()) {
+      return false;
+    }
+    if (!t_oop->isa_aryptr()) {
+      return true;
+    }
+
+    const Type* elem = dest_t->is_aryptr()->elem();
+    if (elem == Type::BOTTOM) {
+      // An array but we don't know what elements are
+      return true;
+    }
+
+    dest_t = dest_t->add_offset(Type::OffsetBot)->is_oopptr();
+    uint dest_alias = phase->C->get_alias_index(dest_t);
+    uint t_oop_alias = phase->C->get_alias_index(t_oop);
+
+    return dest_alias == t_oop_alias;
+  }
+
+  return true;
+}
+
+bool CallLeafNode::may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase) {
+  if (is_call_to_arraycopystub()) {
+    const TypeTuple* args = _tf->domain();
+    Node* dest = NULL;
+    // Stubs that can be called once an ArrayCopyNode is expanded have
+    // different signatures. Look for the second pointer argument,
+    // that is the destination of the copy.
+    for (uint i = TypeFunc::Parms, j = 0; i < args->cnt(); i++) {
+      if (args->field_at(i)->isa_ptr()) {
+        j++;
+        if (j == 2) {
+          dest = in(i);
+          break;
+        }
+      }
+    }
+    if (may_modify_arraycopy_helper(phase->type(dest)->is_oopptr(), t_oop, phase)) {
+      return true;
+    }
+    return false;
+  }
+  return CallNode::may_modify(t_oop, phase);
 }

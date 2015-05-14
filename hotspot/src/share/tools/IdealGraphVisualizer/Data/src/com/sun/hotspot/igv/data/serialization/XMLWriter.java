@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ public class XMLWriter extends Writer {
 
     public XMLWriter(Writer inner) {
         this.inner = inner;
-        elementStack = new Stack<String>();
+        elementStack = new Stack<>();
     }
 
     @Override
@@ -49,6 +49,7 @@ public class XMLWriter extends Writer {
         write(arr, 0, arr.length);
     }
 
+    @Override
     public void write(char[] cbuf, int off, int len) throws IOException {
         for (int i = off; i < off + len; i++) {
             char c = cbuf[i];
@@ -64,10 +65,12 @@ public class XMLWriter extends Writer {
         }
     }
 
+    @Override
     public void flush() throws IOException {
         inner.flush();
     }
 
+    @Override
     public void close() throws IOException {
         inner.close();
     }
@@ -111,7 +114,7 @@ public class XMLWriter extends Writer {
     }
 
     public void writeProperties(Properties props) throws IOException {
-        if (props.getProperties().hasNext() == false) {
+        if (props.iterator().hasNext() == false) {
             return;
         }
 

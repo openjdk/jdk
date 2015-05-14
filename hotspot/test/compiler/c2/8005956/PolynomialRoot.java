@@ -19,7 +19,7 @@
 * @run main/timeout=300 PolynomialRoot
 */
 
-import com.oracle.java.testlibrary.Utils;
+import jdk.test.lib.Utils;
 import java.util.Arrays;
 import java.util.Random;
 

@@ -34,7 +34,7 @@
  * @run main AssertSafepointCheckConsistency4
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 import sun.hotspot.WhiteBox;
 

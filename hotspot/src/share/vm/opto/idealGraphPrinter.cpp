@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ const char *IdealGraphPrinter::PROPERTY_NAME_PROPERTY = "name";
 const char *IdealGraphPrinter::GRAPH_NAME_PROPERTY = "name";
 const char *IdealGraphPrinter::INDEX_PROPERTY = "index";
 const char *IdealGraphPrinter::METHOD_ELEMENT = "method";
-const char *IdealGraphPrinter::INLINE_ELEMENT = "inline";
+const char *IdealGraphPrinter::INLINE_ELEMENT = "inlined";
 const char *IdealGraphPrinter::BYTECODES_ELEMENT = "bytecodes";
 const char *IdealGraphPrinter::METHOD_BCI_PROPERTY = "bci";
 const char *IdealGraphPrinter::METHOD_SHORT_NAME_PROPERTY = "shortName";
@@ -236,7 +236,6 @@ void IdealGraphPrinter::text(const char *s) {
 }
 
 void IdealGraphPrinter::print_prop(const char *name, int val) {
-
   stringStream stream;
   stream.print("%d", val);
   print_prop(name, stream.as_string());
@@ -266,22 +265,22 @@ void IdealGraphPrinter::print_method(ciMethod *method, int bci, InlineTree *tree
   end_head();
 
   head(BYTECODES_ELEMENT);
-  output()->print_cr("<![CDATA[");
-  method->print_codes_on(output());
-  output()->print_cr("]]>");
+  _xml->print_cr("<![CDATA[");
+  method->print_codes_on(_xml);
+  _xml->print_cr("]]>");
   tail(BYTECODES_ELEMENT);
 
-  head(INLINE_ELEMENT);
-  if (tree != NULL) {
+  if (tree != NULL && tree->subtrees().length() > 0) {
+    head(INLINE_ELEMENT);
     GrowableArray<InlineTree *> subtrees = tree->subtrees();
     for (int i = 0; i < subtrees.length(); i++) {
       print_inline_tree(subtrees.at(i));
     }
+    tail(INLINE_ELEMENT);
   }
-  tail(INLINE_ELEMENT);
 
   tail(METHOD_ELEMENT);
-  output()->flush();
+  _xml->flush();
 }
 
 void IdealGraphPrinter::print_inline_tree(InlineTree *tree) {
@@ -334,13 +333,7 @@ void IdealGraphPrinter::begin_method(Compile* compile) {
 
   tail(PROPERTIES_ELEMENT);
 
-  if (_stream) {
-    char answer = 0;
-    _xml->flush();
-    int result = _stream->read(&answer, 1);
-    _should_send_method = (answer == 'y');
-  }
-
+  _should_send_method = true;
   this->_current_method = method;
 
   _xml->flush();
@@ -358,7 +351,7 @@ void IdealGraphPrinter::end_method() {
 
 // Print indent
 void IdealGraphPrinter::print_indent() {
-  tty->print_cr("printing ident %d", _depth);
+  tty->print_cr("printing indent %d", _depth);
   for (int i = 0; i < _depth; i++) {
     _xml->print("%s", INDENT);
   }
@@ -372,22 +365,17 @@ void IdealGraphPrinter::set_traverse_outs(bool b) {
   _traverse_outs = b;
 }
 
-intptr_t IdealGraphPrinter::get_node_id(Node *n) {
-  return (intptr_t)(n);
-}
-
 void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
 
   if (edges) {
 
     // Output edge
-    intptr_t dest_id = get_node_id(n);
+    node_idx_t dest_id = n->_idx;
     for ( uint i = 0; i < n->len(); i++ ) {
       if ( n->in(i) ) {
         Node *source = n->in(i);
         begin_elem(EDGE_ELEMENT);
-        intptr_t source_id = get_node_id(source);
-        print_attr(FROM_PROPERTY, source_id);
+        print_attr(FROM_PROPERTY, source->_idx);
         print_attr(TO_PROPERTY, dest_id);
         print_attr(INDEX_PROPERTY, i);
         end_elem();
@@ -398,7 +386,7 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
 
     // Output node
     begin_head(NODE_ELEMENT);
-    print_attr(NODE_ID_PROPERTY, get_node_id(n));
+    print_attr(NODE_ID_PROPERTY, n->_idx);
     end_head();
 
     head(PROPERTIES_ELEMENT);
@@ -720,7 +708,7 @@ void IdealGraphPrinter::print(Compile* compile, const char *name, Node *node, in
       head(NODES_ELEMENT);
       for (uint s = 0; s < block->number_of_nodes(); s++) {
         begin_elem(NODE_ELEMENT);
-        print_attr(NODE_ID_PROPERTY, get_node_id(block->get_node(s)));
+        print_attr(NODE_ID_PROPERTY, block->get_node(s)->_idx);
         end_elem();
       }
       tail(NODES_ELEMENT);
@@ -730,7 +718,7 @@ void IdealGraphPrinter::print(Compile* compile, const char *name, Node *node, in
     tail(CONTROL_FLOW_ELEMENT);
   }
   tail(GRAPH_ELEMENT);
-  output()->flush();
+  _xml->flush();
 }
 
 // Should method be printed?
@@ -741,9 +729,5 @@ bool IdealGraphPrinter::should_print(ciMethod* method, int level) {
 }
 
 extern const char *NodeClassNames[];
-
-outputStream *IdealGraphPrinter::output() {
-  return _xml;
-}
 
 #endif

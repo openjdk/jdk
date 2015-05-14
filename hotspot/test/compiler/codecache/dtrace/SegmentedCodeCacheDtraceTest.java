@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,12 @@
  * questions.
  */
 
-import com.oracle.java.testlibrary.Asserts;
-import com.oracle.java.testlibrary.JDKToolFinder;
-import com.oracle.java.testlibrary.OutputAnalyzer;
-import com.oracle.java.testlibrary.Utils;
-import com.oracle.java.testlibrary.dtrace.DtraceResultsAnalyzer;
-import com.oracle.java.testlibrary.dtrace.DtraceRunner;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.JDKToolFinder;
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.Utils;
+import jdk.test.lib.dtrace.DtraceResultsAnalyzer;
+import jdk.test.lib.dtrace.DtraceRunner;
 import java.io.IOException;
 import java.lang.reflect.Executable;
 import java.nio.file.Files;
@@ -115,7 +115,7 @@ public class SegmentedCodeCacheDtraceTest {
 
     public static void main(String args[]) {
         int iterations
-                = Integer.getInteger("com.oracle.java.testlibrary.iterations", 1);
+                = Integer.getInteger("jdk.test.lib.iterations", 1);
         if (!DtraceRunner.dtraceAvailable()) {
             System.out.println("INFO: There is no dtrace avaiable. Skipping.");
             return;

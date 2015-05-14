@@ -31,7 +31,7 @@
  * @run main SharedBaseAddress
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 public class SharedBaseAddress {
 

@@ -32,7 +32,7 @@
  * @run main Fibonacci 15
  */
 
-import com.oracle.java.testlibrary.Asserts;
+import jdk.test.lib.Asserts;
 
 public class Fibonacci extends Thread {
     private int index;

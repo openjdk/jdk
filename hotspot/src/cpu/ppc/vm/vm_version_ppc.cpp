@@ -629,7 +629,7 @@ void VM_Version::config_dscr() {
   // Print the detection code.
   if (PrintAssembly) {
     ttyLocker ttyl;
-    tty->print_cr("Decoding dscr configuration stub at " INTPTR_FORMAT " before execution:", code);
+    tty->print_cr("Decoding dscr configuration stub at " INTPTR_FORMAT " before execution:", p2i(code));
     Disassembler::decode((u_char*)code, (u_char*)code_end, tty);
   }
 

@@ -30,14 +30,14 @@
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
- * @build com.oracle.java.testlibrary.*
+ * @build jdk.test.lib.*
  * @run driver ProblematicFrameTest
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 import sun.misc.Unsafe;
-import com.oracle.java.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 public class ProblematicFrameTest {
     private static class Crasher {

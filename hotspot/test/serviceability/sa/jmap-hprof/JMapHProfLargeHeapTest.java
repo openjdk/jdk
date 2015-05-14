@@ -31,12 +31,12 @@ import java.nio.CharBuffer;
 import java.util.Arrays;
 import java.util.Scanner;
 
-import com.oracle.java.testlibrary.Asserts;
-import com.oracle.java.testlibrary.JDKToolFinder;
-import com.oracle.java.testlibrary.JDKToolLauncher;
-import com.oracle.java.testlibrary.OutputAnalyzer;
-import com.oracle.java.testlibrary.Platform;
-import com.oracle.java.testlibrary.ProcessTools;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.JDKToolFinder;
+import jdk.test.lib.JDKToolLauncher;
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.Platform;
+import jdk.test.lib.ProcessTools;
 
 /*
  * @test
@@ -48,7 +48,7 @@ import com.oracle.java.testlibrary.ProcessTools;
  *          java.compiler
  *          java.management/sun.management
  *          jdk.jvmstat/sun.jvmstat.monitor
- * @build com.oracle.java.testlibrary.* JMapHProfLargeHeapProc
+ * @build jdk.test.lib.* JMapHProfLargeHeapProc
  * @run main JMapHProfLargeHeapTest
  */
 
