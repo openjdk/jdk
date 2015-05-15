@@ -223,7 +223,8 @@ bool frame::safe_for_sender(JavaThread *thread) {
     if (sender_blob->is_nmethod()) {
         nmethod* nm = sender_blob->as_nmethod_or_null();
         if (nm != NULL) {
-            if (nm->is_deopt_mh_entry(sender_pc) || nm->is_deopt_entry(sender_pc)) {
+            if (nm->is_deopt_mh_entry(sender_pc) || nm->is_deopt_entry(sender_pc) ||
+                nm->method()->is_method_handle_intrinsic()) {
                 return false;
             }
         }
@@ -389,10 +390,9 @@ frame frame::sender_for_entry_frame(RegisterMap* map) const {
 // frame::verify_deopt_original_pc
 //
 // Verifies the calculated original PC of a deoptimization PC for the
-// given unextended SP.  The unextended SP might also be the saved SP
-// for MethodHandle call sites.
+// given unextended SP.
 #ifdef ASSERT
-void frame::verify_deopt_original_pc(nmethod* nm, intptr_t* unextended_sp, bool is_method_handle_return) {
+void frame::verify_deopt_original_pc(nmethod* nm, intptr_t* unextended_sp) {
   frame fr;
 
   // This is ugly but it's better than to change {get,set}_original_pc
@@ -402,32 +402,22 @@ void frame::verify_deopt_original_pc(nmethod* nm, intptr_t* unextended_sp, bool 
 
   address original_pc = nm->get_original_pc(&fr);
   assert(nm->insts_contains(original_pc), "original PC must be in nmethod");
-  assert(nm->is_method_handle_return(original_pc) == is_method_handle_return, "must be");
 }
 #endif
 
 //------------------------------------------------------------------------------
 // frame::adjust_unextended_sp
 void frame::adjust_unextended_sp() {
-  // If we are returning to a compiled MethodHandle call site, the
-  // saved_fp will in fact be a saved value of the unextended SP.  The
-  // simplest way to tell whether we are returning to such a call site
-  // is as follows:
+  // On aarch64, sites calling method handle intrinsics and lambda forms are treated
+  // as any other call site. Therefore, no special action is needed when we are
+  // returning to any of these call sites.
 
   nmethod* sender_nm = (_cb == NULL) ? NULL : _cb->as_nmethod_or_null();
   if (sender_nm != NULL) {
-    // If the sender PC is a deoptimization point, get the original
-    // PC.  For MethodHandle call site the unextended_sp is stored in
-    // saved_fp.
-    if (sender_nm->is_deopt_mh_entry(_pc)) {
-      DEBUG_ONLY(verify_deopt_mh_original_pc(sender_nm, _fp));
-      _unextended_sp = _fp;
-    }
-    else if (sender_nm->is_deopt_entry(_pc)) {
+    // If the sender PC is a deoptimization point, get the original PC.
+    if (sender_nm->is_deopt_entry(_pc) ||
+        sender_nm->is_deopt_mh_entry(_pc)) {
       DEBUG_ONLY(verify_deopt_original_pc(sender_nm, _unextended_sp));
-    }
-    else if (sender_nm->is_method_handle_return(_pc)) {
-      _unextended_sp = _fp;
     }
   }
 }
