@@ -487,6 +487,21 @@ define SetupNativeCompilationBody
     $1_EXTRA_CXXFLAGS += $$(addprefix $(DISABLE_WARNING_PREFIX), $$($1_DISABLED_WARNINGS_$(TOOLCHAIN_TYPE)))
   endif
 
+  # Check if warnings should be considered errors.
+  # Pick first binary and toolchain specific, then binary specific, then general setting.
+  ifeq ($$($1_WARNINGS_AS_ERRORS_$(TOOLCHAIN_TYPE)),)
+    ifeq ($$($1_WARNINGS_AS_ERRORS),)
+      $1_WARNINGS_AS_ERRORS_$(TOOLCHAIN_TYPE) := $$(WARNINGS_AS_ERRORS)
+    else
+      $1_WARNINGS_AS_ERRORS_$(TOOLCHAIN_TYPE) := $$($1_WARNINGS_AS_ERRORS)
+    endif
+  endif
+
+  ifeq ($$($1_WARNINGS_AS_ERRORS_$(TOOLCHAIN_TYPE)), true)
+    $1_EXTRA_CFLAGS += $(CFLAGS_WARNINGS_ARE_ERRORS)
+    $1_EXTRA_CXXFLAGS += $(CFLAGS_WARNINGS_ARE_ERRORS)
+  endif
+
   ifeq (NONE, $$($1_OPTIMIZATION))
     $1_EXTRA_CFLAGS += $(C_O_FLAG_NONE)
     $1_EXTRA_CXXFLAGS += $(CXX_O_FLAG_NONE)
