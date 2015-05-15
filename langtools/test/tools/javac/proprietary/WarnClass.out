@@ -1,0 +1,4 @@
+WarnClass.java:12:40: compiler.warn.sun.proprietary: sun.misc.Lock
+- compiler.err.warnings.and.werror
+1 error
+1 warning
