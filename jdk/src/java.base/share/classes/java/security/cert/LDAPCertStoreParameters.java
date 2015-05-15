@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,12 @@ package java.security.cert;
  * <p>
  * This class is used to provide necessary configuration parameters (server
  * name and port number) to implementations of the LDAP {@code CertStore}
- * algorithm.
+ * algorithm. However, if you are retrieving certificates or CRLs from
+ * an ldap URI as specified by RFC 5280, use the
+ * {@link java.security.cert.URICertStoreParameters URICertStoreParameters}
+ * instead as the URI may contain additional information such as the
+ * distinguished name that will help the LDAP CertStore find the specific
+ * certificates and CRLs.
  * <p>
  * <b>Concurrent Access</b>
  * <p>

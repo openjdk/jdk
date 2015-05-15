@@ -466,6 +466,34 @@ class RevocationChecker extends PKIXRevocationChecker {
                   stackedCerts, params.trustAnchors());
     }
 
+    static boolean isCausedByNetworkIssue(String type, CertStoreException cse) {
+        boolean result;
+        Throwable t = cse.getCause();
+
+        switch (type) {
+            case "LDAP":
+                if (t != null) {
+                    // These two exception classes are inside java.naming module
+                    String cn = t.getClass().getName();
+                    result = (cn.equals("javax.naming.ServiceUnavailableException") ||
+                        cn.equals("javax.naming.CommunicationException"));
+                } else {
+                    result = false;
+                }
+                break;
+            case "SSLServer":
+                result = (t != null && t instanceof IOException);
+                break;
+            case "URI":
+                result = (t != null && t instanceof IOException);
+                break;
+            default:
+                // we don't know about any other remote CertStore types
+                return false;
+        }
+        return result;
+    }
+
     private void checkCRLs(X509Certificate cert, PublicKey prevKey,
                            X509Certificate prevCert, boolean signFlag,
                            boolean allowSeparateKey,
@@ -510,7 +538,7 @@ class RevocationChecker extends PKIXRevocationChecker {
                                   "CertStoreException: " + e.getMessage());
                 }
                 if (networkFailureException == null &&
-                    CertStoreHelper.isCausedByNetworkIssue(store.getType(),e)) {
+                    isCausedByNetworkIssue(store.getType(),e)) {
                     // save this exception, we may need to throw it later
                     networkFailureException = new CertPathValidatorException(
                         "Unable to determine revocation status due to " +
@@ -557,8 +585,7 @@ class RevocationChecker extends PKIXRevocationChecker {
             } catch (CertStoreException e) {
                 if (e instanceof CertStoreTypeException) {
                     CertStoreTypeException cste = (CertStoreTypeException)e;
-                    if (CertStoreHelper.isCausedByNetworkIssue(cste.getType(),
-                                                               e)) {
+                    if (isCausedByNetworkIssue(cste.getType(), e)) {
                         throw new CertPathValidatorException(
                             "Unable to determine revocation status due to " +
                             "network error", e, null, -1,
