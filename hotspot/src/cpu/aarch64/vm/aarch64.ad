@@ -810,9 +810,6 @@ class HandlerImpl {
   bool unnecessary_volatile(const Node *barrier);
   bool needs_releasing_store(const Node *store);
 
-  // Use barrier instructions rather than load acquire / store
-  // release.
-  const bool UseBarriersForVolatile = false;
   // Use barrier instructions for unsafe volatile gets rather than
   // trying to identify an exact signature for them
   const bool UseBarriersForUnsafeVolatileGet = false;

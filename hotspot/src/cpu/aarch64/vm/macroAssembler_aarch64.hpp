@@ -405,6 +405,18 @@ class MacroAssembler: public Assembler {
     umaddl(Rd, Rn, Rm, zr);
   }
 
+#define WRAP(INSN)                                                            \
+  void INSN(Register Rd, Register Rn, Register Rm, Register Ra) {             \
+    if ((VM_Version::cpu_cpuFeatures() & VM_Version::CPU_A53MAC) && Ra != zr) \
+      nop();                                                                  \
+    Assembler::INSN(Rd, Rn, Rm, Ra);                                          \
+  }
+
+  WRAP(madd) WRAP(msub) WRAP(maddw) WRAP(msubw)
+  WRAP(smaddl) WRAP(smsubl) WRAP(umaddl) WRAP(umsubl)
+#undef WRAP
+
+
   // macro assembly operations needed for aarch64
 
   // first two private routines for loading 32 bit or 64 bit constants
@@ -1094,9 +1106,6 @@ public:
   address read_polling_page(Register r, address page, relocInfo::relocType rtype);
   address read_polling_page(Register r, relocInfo::relocType rtype);
 
-  // Used by aarch64.ad to control code generation
-  static bool use_acq_rel_for_volatile_fields();
-
   // CRC32 code for java.util.zip.CRC32::updateBytes() instrinsic.
   void update_byte_crc32(Register crc, Register val, Register table);
   void update_word_crc32(Register crc, Register v, Register tmp,
@@ -1149,10 +1158,6 @@ private:
   Address offsetted_address(Register r, Register r1, Address::extend ext,
                             int offset, int size);
 };
-
-// Used by aarch64.ad to control code generation
-#define treat_as_volatile(MEM_NODE)                                     \
-  (MacroAssembler::use_acq_rel_for_volatile_fields() ? (MEM_NODE)->is_volatile() : false)
 
 #ifdef ASSERT
 inline bool AbstractAssembler::pd_check_instruction_mark() { return false; }
