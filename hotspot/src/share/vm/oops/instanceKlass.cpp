@@ -1830,11 +1830,10 @@ int nmethodBucket::decrement() {
 // are dependent on the changes that were passed in and mark them for
 // deoptimization.  Returns the number of nmethods found.
 //
-int InstanceKlass::mark_dependent_nmethods(DepChange& changes) {
+int nmethodBucket::mark_dependent_nmethods(nmethodBucket* deps, DepChange& changes) {
   assert_locked_or_safepoint(CodeCache_lock);
   int found = 0;
-  nmethodBucket* b = _dependencies;
-  while (b != NULL) {
+  for (nmethodBucket* b = deps; b != NULL; b = b->next()) {
     nmethod* nm = b->get_nmethod();
     // since dependencies aren't removed until an nmethod becomes a zombie,
     // the dependency list may contain nmethods which aren't alive.
@@ -1842,7 +1841,6 @@ int InstanceKlass::mark_dependent_nmethods(DepChange& changes) {
       if (TraceDependencies) {
         ResourceMark rm;
         tty->print_cr("Marked for deoptimization");
-        tty->print_cr("  context = %s", this->external_name());
         changes.print();
         nm->print();
         nm->print_dependencies();
@@ -1850,36 +1848,119 @@ int InstanceKlass::mark_dependent_nmethods(DepChange& changes) {
       nm->mark_for_deoptimization();
       found++;
     }
-    b = b->next();
   }
   return found;
+}
+
+//
+// Add an nmethodBucket to the list of dependencies for this nmethod.
+// It's possible that an nmethod has multiple dependencies on this klass
+// so a count is kept for each bucket to guarantee that creation and
+// deletion of dependencies is consistent. Returns new head of the list.
+//
+nmethodBucket* nmethodBucket::add_dependent_nmethod(nmethodBucket* deps, nmethod* nm) {
+  assert_locked_or_safepoint(CodeCache_lock);
+  for (nmethodBucket* b = deps; b != NULL; b = b->next()) {
+    if (nm == b->get_nmethod()) {
+      b->increment();
+      return deps;
+    }
+  }
+  return new nmethodBucket(nm, deps);
+}
+
+//
+// Decrement count of the nmethod in the dependency list and remove
+// the bucket completely when the count goes to 0.  This method must
+// find a corresponding bucket otherwise there's a bug in the
+// recording of dependencies. Returns true if the bucket is ready for reclamation.
+//
+bool nmethodBucket::remove_dependent_nmethod(nmethodBucket* deps, nmethod* nm) {
+  assert_locked_or_safepoint(CodeCache_lock);
+
+  for (nmethodBucket* b = deps; b != NULL; b = b->next()) {
+    if (nm == b->get_nmethod()) {
+      int val = b->decrement();
+      guarantee(val >= 0, err_msg("Underflow: %d", val));
+      return (val == 0);
+    }
+  }
+#ifdef ASSERT
+  tty->print_raw_cr("### can't find dependent nmethod");
+  nm->print();
+#endif // ASSERT
+  ShouldNotReachHere();
+  return false;
+}
+
+//
+// Reclaim all unused buckets. Returns new head of the list.
+//
+nmethodBucket* nmethodBucket::clean_dependent_nmethods(nmethodBucket* deps) {
+  nmethodBucket* first = deps;
+  nmethodBucket* last = NULL;
+  nmethodBucket* b = first;
+
+  while (b != NULL) {
+    assert(b->count() >= 0, err_msg("bucket count: %d", b->count()));
+    nmethodBucket* next = b->next();
+    if (b->count() == 0) {
+      if (last == NULL) {
+        first = next;
+      } else {
+        last->set_next(next);
+      }
+      delete b;
+      // last stays the same.
+    } else {
+      last = b;
+    }
+    b = next;
+  }
+  return first;
+}
+
+#ifndef PRODUCT
+void nmethodBucket::print_dependent_nmethods(nmethodBucket* deps, bool verbose) {
+  int idx = 0;
+  for (nmethodBucket* b = deps; b != NULL; b = b->next()) {
+    nmethod* nm = b->get_nmethod();
+    tty->print("[%d] count=%d { ", idx++, b->count());
+    if (!verbose) {
+      nm->print_on(tty, "nmethod");
+      tty->print_cr(" } ");
+    } else {
+      nm->print();
+      nm->print_dependencies();
+      tty->print_cr("--- } ");
+    }
+  }
+}
+
+bool nmethodBucket::is_dependent_nmethod(nmethodBucket* deps, nmethod* nm) {
+  for (nmethodBucket* b = deps; b != NULL; b = b->next()) {
+    if (nm == b->get_nmethod()) {
+#ifdef ASSERT
+      int count = b->count();
+      assert(count >= 0, err_msg("count shouldn't be negative: %d", count));
+#endif
+      return true;
+    }
+  }
+  return false;
+}
+#endif //PRODUCT
+
+int InstanceKlass::mark_dependent_nmethods(DepChange& changes) {
+  assert_locked_or_safepoint(CodeCache_lock);
+  return nmethodBucket::mark_dependent_nmethods(_dependencies, changes);
 }
 
 void InstanceKlass::clean_dependent_nmethods() {
   assert_locked_or_safepoint(CodeCache_lock);
 
   if (has_unloaded_dependent()) {
-    nmethodBucket* b = _dependencies;
-    nmethodBucket* last = NULL;
-    while (b != NULL) {
-      assert(b->count() >= 0, err_msg("bucket count: %d", b->count()));
-
-      nmethodBucket* next = b->next();
-
-      if (b->count() == 0) {
-        if (last == NULL) {
-          _dependencies = next;
-        } else {
-          last->set_next(next);
-        }
-        delete b;
-        // last stays the same.
-      } else {
-        last = b;
-      }
-
-      b = next;
-    }
+    _dependencies = nmethodBucket::clean_dependent_nmethods(_dependencies);
     set_has_unloaded_dependent(false);
   }
 #ifdef ASSERT
@@ -1893,90 +1974,26 @@ void InstanceKlass::clean_dependent_nmethods() {
 #endif
 }
 
-//
-// Add an nmethodBucket to the list of dependencies for this nmethod.
-// It's possible that an nmethod has multiple dependencies on this klass
-// so a count is kept for each bucket to guarantee that creation and
-// deletion of dependencies is consistent.
-//
 void InstanceKlass::add_dependent_nmethod(nmethod* nm) {
   assert_locked_or_safepoint(CodeCache_lock);
-  nmethodBucket* b = _dependencies;
-  nmethodBucket* last = NULL;
-  while (b != NULL) {
-    if (nm == b->get_nmethod()) {
-      b->increment();
-      return;
-    }
-    b = b->next();
-  }
-  _dependencies = new nmethodBucket(nm, _dependencies);
+  _dependencies = nmethodBucket::add_dependent_nmethod(_dependencies, nm);
 }
 
-
-//
-// Decrement count of the nmethod in the dependency list and remove
-// the bucket competely when the count goes to 0.  This method must
-// find a corresponding bucket otherwise there's a bug in the
-// recording of dependecies.
-//
 void InstanceKlass::remove_dependent_nmethod(nmethod* nm) {
   assert_locked_or_safepoint(CodeCache_lock);
-  nmethodBucket* b = _dependencies;
-  nmethodBucket* last = NULL;
-  while (b != NULL) {
-    if (nm == b->get_nmethod()) {
-      int val = b->decrement();
-      guarantee(val >= 0, err_msg("Underflow: %d", val));
-      if (val == 0) {
-        set_has_unloaded_dependent(true);
-      }
-      return;
-    }
-    last = b;
-    b = b->next();
-  }
-#ifdef ASSERT
-  tty->print_cr("### %s can't find dependent nmethod:", this->external_name());
-  nm->print();
-#endif // ASSERT
-  ShouldNotReachHere();
-}
 
+  if (nmethodBucket::remove_dependent_nmethod(_dependencies, nm)) {
+    set_has_unloaded_dependent(true);
+  }
+}
 
 #ifndef PRODUCT
 void InstanceKlass::print_dependent_nmethods(bool verbose) {
-  nmethodBucket* b = _dependencies;
-  int idx = 0;
-  while (b != NULL) {
-    nmethod* nm = b->get_nmethod();
-    tty->print("[%d] count=%d { ", idx++, b->count());
-    if (!verbose) {
-      nm->print_on(tty, "nmethod");
-      tty->print_cr(" } ");
-    } else {
-      nm->print();
-      nm->print_dependencies();
-      tty->print_cr("--- } ");
-    }
-    b = b->next();
-  }
+  nmethodBucket::print_dependent_nmethods(_dependencies, verbose);
 }
 
-
 bool InstanceKlass::is_dependent_nmethod(nmethod* nm) {
-  nmethodBucket* b = _dependencies;
-  while (b != NULL) {
-    if (nm == b->get_nmethod()) {
-#ifdef ASSERT
-      int count = b->count();
-      assert(count >= 0, err_msg("count shouldn't be negative: %d", count));
-#endif
-      return true;
-    }
-    b = b->next();
-  }
-  return false;
+  return nmethodBucket::is_dependent_nmethod(_dependencies, nm);
 }
 #endif //PRODUCT
 

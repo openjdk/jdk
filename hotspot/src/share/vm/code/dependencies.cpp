@@ -117,9 +117,7 @@ void Dependencies::assert_has_no_finalizable_subclasses(ciKlass* ctxk) {
 }
 
 void Dependencies::assert_call_site_target_value(ciCallSite* call_site, ciMethodHandle* method_handle) {
-  ciKlass* ctxk = call_site->get_context();
-  check_ctxk(ctxk);
-  assert_common_3(call_site_target_value, ctxk, call_site, method_handle);
+  assert_common_2(call_site_target_value, call_site, method_handle);
 }
 
 // Helper function.  If we are adding a new dep. under ctxk2,
@@ -175,7 +173,6 @@ void Dependencies::assert_common_2(DepType dept,
       }
     }
   } else {
-    assert(dep_implicit_context_arg(dept) == 0, "sanity");
     if (note_dep_seen(dept, x0) && note_dep_seen(dept, x1)) {
       // look in this bucket for redundant assertions
       const int stride = 2;
@@ -389,7 +386,7 @@ int Dependencies::_dep_args[TYPE_LIMIT] = {
   3, // unique_concrete_subtypes_2 ctxk, k1, k2
   3, // unique_concrete_methods_2 ctxk, m1, m2
   1, // no_finalizable_subclasses ctxk
-  3  // call_site_target_value ctxk, call_site, method_handle
+  2  // call_site_target_value call_site, method_handle
 };
 
 const char* Dependencies::dep_name(Dependencies::DepType dept) {
@@ -1515,16 +1512,11 @@ Klass* Dependencies::check_has_no_finalizable_subclasses(Klass* ctxk, KlassDepCh
   return find_finalizable_subclass(search_at);
 }
 
-Klass* Dependencies::check_call_site_target_value(Klass* recorded_ctxk, oop call_site, oop method_handle, CallSiteDepChange* changes) {
-  assert(call_site->is_a(SystemDictionary::CallSite_klass()),     "sanity");
+Klass* Dependencies::check_call_site_target_value(oop call_site, oop method_handle, CallSiteDepChange* changes) {
+  assert(!oopDesc::is_null(call_site), "sanity");
   assert(!oopDesc::is_null(method_handle), "sanity");
+  assert(call_site->is_a(SystemDictionary::CallSite_klass()),     "sanity");
 
-  Klass* call_site_ctxk = MethodHandles::get_call_site_context(call_site);
-  assert(!Klass::is_null(call_site_ctxk), "call site context should be initialized already");
-  if (recorded_ctxk != call_site_ctxk) {
-    // Stale context
-    return recorded_ctxk;
-  }
   if (changes == NULL) {
     // Validate all CallSites
     if (java_lang_invoke_CallSite::target(call_site) != method_handle)
@@ -1599,7 +1591,7 @@ Klass* Dependencies::DepStream::check_call_site_dependency(CallSiteDepChange* ch
   Klass* witness = NULL;
   switch (type()) {
   case call_site_target_value:
-    witness = check_call_site_target_value(context_type(), argument_oop(1), argument_oop(2), changes);
+    witness = check_call_site_target_value(argument_oop(0), argument_oop(1), changes);
     break;
   default:
     witness = NULL;

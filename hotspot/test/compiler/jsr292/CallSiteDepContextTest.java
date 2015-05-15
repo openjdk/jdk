@@ -24,12 +24,15 @@
 /**
  * @test
  * @bug 8057967
- * @ignore 8079205
- * @run main/bootclasspath -Xbatch java.lang.invoke.CallSiteDepContextTest
+ * @run main/bootclasspath -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+TraceClassUnloading
+ *                         -XX:+PrintCompilation -XX:+TraceDependencies -XX:+TraceReferenceGC
+ *                         -verbose:gc java.lang.invoke.CallSiteDepContextTest
  */
 package java.lang.invoke;
 
 import java.lang.ref.*;
+import java.lang.reflect.Field;
+
 import jdk.internal.org.objectweb.asm.*;
 import sun.misc.Unsafe;
 
@@ -96,6 +99,13 @@ public class CallSiteDepContextTest {
         }
     }
 
+    public static void testHiddenDepField() throws Exception {
+        try {
+            Field f = MethodHandleNatives.CallSiteContext.class.getDeclaredField("vmdependencies");
+            throw new AssertionError("Context.dependencies field should be hidden");
+        } catch(NoSuchFieldException e) { /* expected */ }
+    }
+
     public static void testSharedCallSite() throws Throwable {
         Class<?> cls1 = UNSAFE.defineAnonymousClass(Object.class, getClassFile("CS_1"), null);
         Class<?> cls2 = UNSAFE.defineAnonymousClass(Object.class, getClassFile("CS_2"), null);
@@ -132,12 +142,14 @@ public class CallSiteDepContextTest {
     static ReferenceQueue rq = new ReferenceQueue();
     static PhantomReference ref;
 
-    public static void testGC() throws Throwable {
+    public static void testGC(boolean clear, boolean precompile) throws Throwable {
+        String id = "_" + clear + "_" + precompile;
+
         mcs = new MutableCallSite(LOOKUP.findStatic(T.class, "f1", TYPE));
 
         Class<?>[] cls = new Class[] {
-                UNSAFE.defineAnonymousClass(Object.class, getClassFile("GC_1"), null),
-                UNSAFE.defineAnonymousClass(Object.class, getClassFile("GC_2"), null),
+                UNSAFE.defineAnonymousClass(Object.class, getClassFile("GC_1" + id), null),
+                UNSAFE.defineAnonymousClass(Object.class, getClassFile("GC_2" + id), null),
         };
 
         MethodHandle[] mhs = new MethodHandle[] {
@@ -151,30 +163,38 @@ public class CallSiteDepContextTest {
         execute(1, mhs);
 
         ref = new PhantomReference<>(cls[0], rq);
-        cls[0] = UNSAFE.defineAnonymousClass(Object.class, getClassFile("GC_3"), null);
+        cls[0] = UNSAFE.defineAnonymousClass(Object.class, getClassFile("GC_3" + id), null);
         mhs[0] = LOOKUP.findStatic(cls[0], METHOD_NAME, TYPE);
 
         do {
             System.gc();
             try {
-                Reference ref1 = rq.remove(1000);
+                Reference ref1 = rq.remove(100);
                 if (ref1 == ref) {
-                    ref1.clear();
-                    System.gc(); // Ensure that the stale context is cleared
                     break;
                 }
             } catch(InterruptedException e) { /* ignore */ }
         } while (true);
 
-        execute(1, mhs);
+        if (clear) {
+            ref.clear();
+            System.gc(); // Ensure that the stale context is unloaded
+        }
+        if (precompile) {
+            execute(1, mhs);
+        }
         mcs.setTarget(LOOKUP.findStatic(T.class, "f2", TYPE));
         execute(2, mhs);
     }
 
     public static void main(String[] args) throws Throwable {
+        testHiddenDepField();
         testSharedCallSite();
         testNonBoundCallSite();
-        testGC();
+        testGC(false, false);
+        testGC(false,  true);
+        testGC( true, false);
+        testGC( true,  true);
         System.out.println("TEST PASSED");
     }
 }
