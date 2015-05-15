@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import javax.accessibility.*;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
+import sun.awt.AWTAccessor;
 import sun.awt.dnd.*;
 import sun.lwawt.LWComponentPeer;
 import sun.lwawt.LWWindowPeer;
@@ -88,7 +89,6 @@ public final class CDragSourceContextPeer extends SunDragSourceContextPeer {
         super.startDrag(dsc, cursor, dragImage, dragImageOffset);
     }
 
-    @SuppressWarnings("deprecation")
     protected void startDrag(Transferable transferable, long[] formats, Map<Long, DataFlavor> formatMap) {
         DragGestureEvent trigger = getTrigger();
         InputEvent         triggerEvent = trigger.getTriggerEvent();
@@ -135,7 +135,9 @@ public final class CDragSourceContextPeer extends SunDragSourceContextPeer {
 
         try {
             //It sure will be LWComponentPeer instance as rootComponent is a Window
-            PlatformWindow platformWindow = ((LWComponentPeer)rootComponent.getPeer()).getPlatformWindow();
+            LWComponentPeer<?, ?> peer = AWTAccessor.getComponentAccessor()
+                                                    .getPeer(rootComponent);
+            PlatformWindow platformWindow = peer.getPlatformWindow();
             long nativeViewPtr = CPlatformWindow.getNativeViewPtr(platformWindow);
             if (nativeViewPtr == 0L) throw new InvalidDnDOperationException("Unsupported platform window implementation");
 

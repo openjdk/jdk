@@ -353,7 +353,7 @@ static const char* PredefinedSampleID[] = {
         "XYZ_X",          // X component of tristimulus data
         "XYZ_Y",          // Y component of tristimulus data
         "XYZ_Z",          // Z component of tristimulus data
-        "XYY_X"           // x component of chromaticity data
+        "XYY_X",          // x component of chromaticity data
         "XYY_Y",          // y component of chromaticity data
         "XYY_CAPY",       // Y component of tristimulus data
         "LAB_L",          // L* component of Lab data
@@ -2334,7 +2334,6 @@ cmsHANDLE  CMSEXPORT cmsIT8LoadFromMem(cmsContext ContextID, void *Ptr, cmsUInt3
 
     it8 = (cmsIT8*) hIT8;
     it8 ->MemoryBlock = (char*) _cmsMalloc(ContextID, len + 1);
-    if (it8 ->MemoryBlock == NULL) return NULL;
 
     strncpy(it8 ->MemoryBlock, (const char*) Ptr, len);
     it8 ->MemoryBlock[len] = 0;

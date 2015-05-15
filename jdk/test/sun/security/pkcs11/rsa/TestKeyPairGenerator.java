@@ -40,6 +40,7 @@ import java.math.BigInteger;
 import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
+import jdk.testlibrary.RandomFactory;
 
 public class TestKeyPairGenerator extends PKCS11Test {
 

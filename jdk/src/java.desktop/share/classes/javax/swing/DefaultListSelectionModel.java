@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,8 +68,14 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
     private int lastChangedIndex = MIN;
 
     private BitSet value = new BitSet(32);
+    /**
+     * The list of listeners.
+     */
     protected EventListenerList listenerList = new EventListenerList();
 
+    /**
+     * Whether or not the lead anchor notification is enabled.
+     */
     protected boolean leadAnchorNotificationEnabled = true;
 
     /** {@inheritDoc} */
@@ -139,6 +145,8 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
 
     /**
      * Notifies listeners that we have ended a series of adjustments.
+     * @param isAdjusting true if this is the final change in a series of
+     *          adjustments
      */
     protected void fireValueChanged(boolean isAdjusting) {
         if (lastChangedIndex == MIN) {

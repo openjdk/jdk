@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -569,7 +569,6 @@ public abstract class WComponentPeer extends WObjectPeer
     final static Font defaultFont = new Font(Font.DIALOG, Font.PLAIN, 12);
 
     @Override
-    @SuppressWarnings("deprecation")
     public Graphics getGraphics() {
         if (isDisposed()) {
             return null;
@@ -578,8 +577,9 @@ public abstract class WComponentPeer extends WObjectPeer
         Component target = (Component)getTarget();
         Window window = SunToolkit.getContainingWindow(target);
         if (window != null) {
-            Graphics g =
-                ((WWindowPeer)window.getPeer()).getTranslucentGraphics();
+            final WWindowPeer wpeer = AWTAccessor.getComponentAccessor()
+                                                 .getPeer(window);
+            Graphics g = wpeer.getTranslucentGraphics();
             // getTranslucentGraphics() returns non-null value for non-opaque windows only
             if (g != null) {
                 // Non-opaque windows do not support heavyweight children.
@@ -685,7 +685,6 @@ public abstract class WComponentPeer extends WObjectPeer
 
     // TODO: consider moving it to KeyboardFocusManagerPeerImpl
     @Override
-    @SuppressWarnings("deprecation")
     public boolean requestFocus(Component lightweightChild, boolean temporary,
                                 boolean focusedWindowChangeAllowed, long time,
                                 CausedFocusEvent.Cause cause)
@@ -713,7 +712,8 @@ public abstract class WComponentPeer extends WObjectPeer
               if (parentWindow == null) {
                   return rejectFocusRequestHelper("WARNING: Parent window is null");
               }
-              WWindowPeer wpeer = (WWindowPeer)parentWindow.getPeer();
+              final WWindowPeer wpeer = AWTAccessor.getComponentAccessor()
+                                                   .getPeer(parentWindow);
               if (wpeer == null) {
                   return rejectFocusRequestHelper("WARNING: Parent window's peer is null");
               }
@@ -1104,7 +1104,6 @@ public abstract class WComponentPeer extends WObjectPeer
     // in the browser on Vista when DWM is enabled.
     // @return true if the toplevel container is not an EmbeddedFrame or
     // if this EmbeddedFrame is acceleration capable, false otherwise
-    @SuppressWarnings("deprecation")
     private static final boolean isContainingTopLevelAccelCapable(Component c) {
         while (c != null && !(c instanceof WEmbeddedFrame)) {
             c = c.getParent();
@@ -1112,7 +1111,9 @@ public abstract class WComponentPeer extends WObjectPeer
         if (c == null) {
             return true;
         }
-        return ((WEmbeddedFramePeer)c.getPeer()).isAccelCapable();
+        final WEmbeddedFramePeer peer = AWTAccessor.getComponentAccessor()
+                                                   .getPeer(c);
+        return peer.isAccelCapable();
     }
 
     /**
@@ -1120,7 +1121,6 @@ public abstract class WComponentPeer extends WObjectPeer
      * @since 1.7
      */
     @Override
-    @SuppressWarnings("deprecation")
     public void applyShape(Region shape) {
         if (shapeLog.isLoggable(PlatformLogger.Level.FINER)) {
             shapeLog.finer("*** INFO: Setting shape: PEER: " + this

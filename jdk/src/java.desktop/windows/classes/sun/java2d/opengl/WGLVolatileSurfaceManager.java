@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,9 @@ import java.awt.Component;
 import java.awt.GraphicsConfiguration;
 import java.awt.Transparency;
 import java.awt.image.ColorModel;
+
+import sun.awt.AWTAccessor;
+import sun.awt.AWTAccessor.ComponentAccessor;
 import sun.awt.image.SunVolatileImage;
 import sun.awt.image.VolatileSurfaceManager;
 import sun.awt.windows.WComponentPeer;
@@ -73,12 +76,11 @@ public class WGLVolatileSurfaceManager
      * Create a pbuffer-based SurfaceData object (or init the backbuffer
      * of an existing window if this is a double buffered GraphicsConfig).
      */
-    @SuppressWarnings("deprecation")
     protected SurfaceData initAcceleratedSurface() {
         SurfaceData sData;
         Component comp = vImg.getComponent();
-        WComponentPeer peer =
-            (comp != null) ? (WComponentPeer)comp.getPeer() : null;
+        final ComponentAccessor acc = AWTAccessor.getComponentAccessor();
+        WComponentPeer peer = (comp != null) ? acc.getPeer(comp) : null;
 
         try {
             boolean createVSynced = false;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,6 @@ public class HeadlessJSlider {
         s.setName("goober");
         s.getName();
         s.getParent();
-        s.getPeer();
         s.getGraphicsConfiguration();
         s.getTreeLock();
         s.getToolkit();

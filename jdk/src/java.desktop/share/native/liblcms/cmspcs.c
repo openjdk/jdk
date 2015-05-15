@@ -135,6 +135,15 @@ void CMSEXPORT cmsxyY2XYZ(cmsCIEXYZ* Dest, const cmsCIExyY* Source)
     Dest -> Z = ((1 - Source -> x - Source -> y) / Source -> y) * Source -> Y;
 }
 
+/*
+       The break point (24/116)^3 = (6/29)^3 is a very small amount of tristimulus
+       primary (0.008856).  Generally, this only happens for
+       nearly ideal blacks and for some orange / amber colors in transmission mode.
+       For example, the Z value of the orange turn indicator lamp lens on an
+       automobile will often be below this value.  But the Z does not
+       contribute to the perceived color directly.
+*/
+
 static
 cmsFloat64Number f(cmsFloat64Number t)
 {

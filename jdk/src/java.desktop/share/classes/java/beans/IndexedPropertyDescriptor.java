@@ -431,7 +431,7 @@ public class IndexedPropertyDescriptor extends PropertyDescriptor {
     /**
      * Package-private constructor.
      * Merge two property descriptors.  Where they conflict, give the
-     * second argument (y) priority over the first argumnnt (x).
+     * second argument (y) priority over the first argument (x).
      *
      * @param x  The first (lower priority) PropertyDescriptor
      * @param y  The second (higher priority) PropertyDescriptor
@@ -439,39 +439,37 @@ public class IndexedPropertyDescriptor extends PropertyDescriptor {
 
     IndexedPropertyDescriptor(PropertyDescriptor x, PropertyDescriptor y) {
         super(x,y);
-        if (x instanceof IndexedPropertyDescriptor) {
-            IndexedPropertyDescriptor ix = (IndexedPropertyDescriptor)x;
-            try {
-                Method xr = ix.getIndexedReadMethod();
-                if (xr != null) {
-                    setIndexedReadMethod(xr);
-                }
+        Method tr = null;
+        Method tw = null;
 
-                Method xw = ix.getIndexedWriteMethod();
-                if (xw != null) {
-                    setIndexedWriteMethod(xw);
-                }
-            } catch (IntrospectionException ex) {
-                // Should not happen
-                throw new AssertionError(ex);
-            }
+        if (x instanceof IndexedPropertyDescriptor) {
+            IndexedPropertyDescriptor ix = (IndexedPropertyDescriptor) x;
+            tr = ix.getIndexedReadMethod();
+            tw = ix.getIndexedWriteMethod();
         }
         if (y instanceof IndexedPropertyDescriptor) {
-            IndexedPropertyDescriptor iy = (IndexedPropertyDescriptor)y;
-            try {
-                Method yr = iy.getIndexedReadMethod();
-                if (yr != null && yr.getDeclaringClass() == getClass0()) {
-                    setIndexedReadMethod(yr);
-                }
-
-                Method yw = iy.getIndexedWriteMethod();
-                if (yw != null && yw.getDeclaringClass() == getClass0()) {
-                    setIndexedWriteMethod(yw);
-                }
-            } catch (IntrospectionException ex) {
-                // Should not happen
-                throw new AssertionError(ex);
+            IndexedPropertyDescriptor iy = (IndexedPropertyDescriptor) y;
+            Method yr = iy.getIndexedReadMethod();
+            if (isAssignable(tr, yr)) {
+                tr = yr;
             }
+
+            Method yw = iy.getIndexedWriteMethod();
+            if (isAssignable(tw, yw)) {
+                tw = yw;
+            }
+        }
+
+        try {
+            if(tr != null) {
+                setIndexedReadMethod(tr);
+            }
+            if(tw != null) {
+                setIndexedWriteMethod(tw);
+            }
+        } catch(IntrospectionException ex) {
+            // Should not happen
+            throw new AssertionError(ex);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,15 @@ public abstract class LayeredHighlighter implements Highlighter {
      * Layered highlight renderer.
      */
     static public abstract class LayerPainter implements Highlighter.HighlightPainter {
+        /**
+         * @return a shape
+         * @param g Graphics used to draw
+         * @param p0 starting offset of view
+         * @param p1 ending offset of view
+         * @param viewBounds Bounds of View
+         * @param editor JTextComponent
+         * @param view View instance being rendered
+         */
         public abstract Shape paintLayer(Graphics g, int p0, int p1,
                                         Shape viewBounds,JTextComponent editor,
                                         View view);

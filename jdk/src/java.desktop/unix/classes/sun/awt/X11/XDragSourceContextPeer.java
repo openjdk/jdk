@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,7 +110,6 @@ public final class XDragSourceContextPeer
         return theInstance;
     }
 
-    @SuppressWarnings("deprecation")
     protected void startDrag(Transferable transferable,
                              long[] formats, Map<Long, DataFlavor> formatMap) {
         Component component = getTrigger().getComponent();
@@ -121,7 +120,7 @@ public final class XDragSourceContextPeer
              c = AWTAccessor.getComponentAccessor().getParent(c));
 
         if (c instanceof Window) {
-            wpeer = (XWindowPeer)c.getPeer();
+            wpeer = AWTAccessor.getComponentAccessor().getPeer(c);
         }
 
         if (wpeer == null) {

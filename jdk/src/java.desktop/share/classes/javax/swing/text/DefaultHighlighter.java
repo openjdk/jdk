@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -336,11 +336,16 @@ public class DefaultHighlighter extends LayeredHighlighter {
      * (if the offsets are in a highlighted region that is). For this to
      * work the painter supplied must be an instance of
      * LayeredHighlightPainter.
+     * @param newValue the new value
      */
     public void setDrawsLayeredHighlights(boolean newValue) {
         drawsLayeredHighlights = newValue;
     }
 
+    /**
+     * Return the draw layered highlights.
+     * @return the draw layered highlights
+     */
     public boolean getDrawsLayeredHighlights() {
         return drawsLayeredHighlights;
     }

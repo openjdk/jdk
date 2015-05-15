@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,11 +70,29 @@ import javax.swing.plaf.basic.BasicHTML;
 @SuppressWarnings("serial")
 public class TitledBorder extends AbstractBorder
 {
+    /**
+     * The title the border should display.
+     */
     protected String title;
+    /**
+     * The border.
+     */
     protected Border border;
+    /**
+     * The position for the title.
+     */
     protected int titlePosition;
+    /**
+     * The justification for the title.
+     */
     protected int titleJustification;
+    /**
+     * The font for rendering the title.
+     */
     protected Font titleFont;
+    /**
+     * The color of the title.
+     */
     protected Color titleColor;
 
     private final JLabel label;
@@ -117,13 +135,19 @@ public class TitledBorder extends AbstractBorder
      */
     static public final int     TRAILING = 5;
 
-    // Space between the border and the component's edge
+    /**
+     * Space between the border and the component's edge
+     */
     static protected final int EDGE_SPACING = 2;
 
-    // Space between the border and text
+    /**
+     * Space between the border and text
+     */
     static protected final int TEXT_SPACING = 2;
 
-    // Horizontal inset of text that is left or right justified
+    /**
+     * Horizontal inset of text that is left or right justified
+     */
     static protected final int TEXT_INSET_H = 5;
 
     /**
@@ -676,6 +700,11 @@ public class TitledBorder extends AbstractBorder
         return justification;
     }
 
+    /**
+     * Returns default font of the titled border.
+     * @return default font of the titled border
+     * @param c the component
+     */
     protected Font getFont(Component c) {
         Font font = getTitleFont();
         if (font != null) {

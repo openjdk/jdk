@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
 package javax.swing.plaf.basic;
 
 
+import sun.awt.AWTAccessor;
+import sun.awt.AWTAccessor.ComponentAccessor;
 import sun.swing.DefaultLookup;
 import sun.swing.UIAction;
 import javax.swing.*;
@@ -1191,7 +1193,6 @@ public class BasicSplitPaneUI extends SplitPaneUI
      * Should be messaged before the dragging session starts, resets
      * lastDragLocation and dividerSize.
      */
-    @SuppressWarnings("deprecation")
     protected void startDragging() {
         Component       leftC = splitPane.getLeftComponent();
         Component       rightC = splitPane.getRightComponent();
@@ -1199,10 +1200,11 @@ public class BasicSplitPaneUI extends SplitPaneUI
 
         beginDragDividerLocation = getDividerLocation(splitPane);
         draggingHW = false;
-        if(leftC != null && (cPeer = leftC.getPeer()) != null &&
+        final ComponentAccessor acc = AWTAccessor.getComponentAccessor();
+        if(leftC != null && (cPeer = acc.getPeer(leftC)) != null &&
            !(cPeer instanceof LightweightPeer)) {
             draggingHW = true;
-        } else if(rightC != null && (cPeer = rightC.getPeer()) != null
+        } else if(rightC != null && (cPeer = acc.getPeer(rightC)) != null
                   && !(cPeer instanceof LightweightPeer)) {
             draggingHW = true;
         }

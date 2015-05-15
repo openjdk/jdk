@@ -27,14 +27,12 @@ package sun.awt;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.image.*;
 import java.awt.peer.*;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
 import java.util.Set;
 import java.awt.AWTKeyStroke;
 import java.applet.Applet;
-import sun.applet.AppletPanel;
 
 /**
  * A generic container used for embedding Java components, usually applets.
@@ -320,10 +318,9 @@ public abstract class EmbeddedFrame extends Frame
         return true;
     }
 
-    @SuppressWarnings("deprecation")
     public void addNotify() {
         synchronized (getTreeLock()) {
-            if (getPeer() == null) {
+            if (!isDisplayable()) {
                 setPeer(new NullEmbeddedFramePeer());
             }
             super.addNotify();
@@ -331,10 +328,10 @@ public abstract class EmbeddedFrame extends Frame
     }
 
     // These three functions consitute RFE 4100710. Do not remove.
-    @SuppressWarnings("deprecation")
     public void setCursorAllowed(boolean isCursorAllowed) {
         this.isCursorAllowed = isCursorAllowed;
-        getPeer().updateCursorImmediately();
+        final FramePeer peer = AWTAccessor.getComponentAccessor().getPeer(this);
+        peer.updateCursorImmediately();
     }
     public boolean isCursorAllowed() {
         return isCursorAllowed;
@@ -345,7 +342,6 @@ public abstract class EmbeddedFrame extends Frame
             : Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
     }
 
-    @SuppressWarnings("deprecation")
     protected void setPeer(final ComponentPeer p){
         AWTAccessor.getComponentAccessor().setPeer(EmbeddedFrame.this, p);
     };
@@ -458,9 +454,8 @@ public abstract class EmbeddedFrame extends Frame
      * @see #getBoundsPrivate
      * @since 1.5
      */
-    @SuppressWarnings("deprecation")
     protected void setBoundsPrivate(int x, int y, int width, int height) {
-        final FramePeer peer = (FramePeer)getPeer();
+        final FramePeer peer = AWTAccessor.getComponentAccessor().getPeer(this);
         if (peer != null) {
             peer.setBoundsPrivate(x, y, width, height);
         }
@@ -490,9 +485,8 @@ public abstract class EmbeddedFrame extends Frame
      * @see #setBoundsPrivate
      * @since 1.6
      */
-    @SuppressWarnings("deprecation")
     protected Rectangle getBoundsPrivate() {
-        final FramePeer peer = (FramePeer)getPeer();
+        final FramePeer peer = AWTAccessor.getComponentAccessor().getPeer(this);
         if (peer != null) {
             return peer.getBoundsPrivate();
         }
