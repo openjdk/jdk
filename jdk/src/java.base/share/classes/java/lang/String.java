@@ -1473,7 +1473,9 @@ public final class String
             for (char v : value) {
                 h = 31 * h + v;
             }
-            hash = h;
+            if (h != 0) {
+                hash = h;
+            }
         }
         return h;
     }
