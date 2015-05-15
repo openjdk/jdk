@@ -67,10 +67,6 @@ import java.security.*;
  *   in RFC 5280. The ValidationAlgorithm attribute notes the
  *   specification that this provider implements.
  *
- * - LDAP is the CertStore type for LDAP repositories. The
- *   LDAPSchema attribute notes the specification defining the
- *   schema that this provider uses to find certificates and CRLs.
- *
  * - JavaPolicy is the default file-based Policy type.
  *
  * - JavaLoginConfig is the default file-based LoginModule Configuration type.
@@ -275,9 +271,6 @@ final class SunEntries {
         /*
          * CertStores
          */
-        map.put("CertStore.LDAP",
-            "sun.security.provider.certpath.ldap.LDAPCertStore");
-        map.put("CertStore.LDAP LDAPSchema", "RFC2587");
         map.put("CertStore.Collection",
             "sun.security.provider.certpath.CollectionCertStore");
         map.put("CertStore.com.sun.security.IndexedCollection",
@@ -310,7 +303,6 @@ final class SunEntries {
         map.put("KeyStore.JKS ImplementedIn", "Software");
         map.put("CertPathValidator.PKIX ImplementedIn", "Software");
         map.put("CertPathBuilder.PKIX ImplementedIn", "Software");
-        map.put("CertStore.LDAP ImplementedIn", "Software");
         map.put("CertStore.Collection ImplementedIn", "Software");
         map.put("CertStore.com.sun.security.IndexedCollection ImplementedIn",
             "Software");
