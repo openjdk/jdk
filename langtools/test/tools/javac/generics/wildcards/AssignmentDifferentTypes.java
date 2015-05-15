@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@
  * @test
  * @summary Test subtyping for wildcards with related type bounds.
  *
- * @compile/fail  AssignmentDifferentTypes5.java
+ * @compile/fail/ref=AssignmentDifferentTypes.out -XDrawDiagnostics AssignmentDifferentTypes.java
  */
 
-public class AssignmentDifferentTypes5 {
+public class AssignmentDifferentTypes {
 
     public static void main(String[] args) {
         Ref<Der> derexact = null;
@@ -38,7 +38,19 @@ public class AssignmentDifferentTypes5 {
         Ref<? super Der> dersuper = null;
         Ref<? super Base> basesuper = null;
 
+        baseext = derext;       // <<pass>> <? extends Base> = <? extends Der>
+        baseext = derexact;     // <<pass>> <? extends Base> = <Der>
+        dersuper = basesuper;   // <<pass>> <? super Der> = <? super Base>
+        dersuper = baseexact;   // <<pass>> <? super Der> = <Base>
+
+        derexact = baseexact;   // <<fail>> <Der> = <Base>
+        baseexact = derexact;   // <<fail>> <Base> = <Der>
+        derext = baseext;       // <<fail>> <? extends Der> = <? extends Base>
         derext = baseexact;     // <<fail>> <? extends Der> = <Base>
+        derext = basesuper;     // <<fail>> <? extends Der> = <? super Base>
+        baseext = dersuper;     // <<fail>> <? extends Base> = <? super Der>
+        basesuper = dersuper;   // <<fail>> <? super Base> = <? super Der>
+        basesuper = derexact;   // <<fail>> <? super Base> = <Der>
     }
 }
 
