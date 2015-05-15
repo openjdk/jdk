@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.awt.AWTKeyStroke;
 import java.awt.Point;
 import java.awt.Toolkit;
 
+import sun.awt.AWTAccessor;
 import sun.awt.EmbeddedFrame;
 import sun.lwawt.LWWindowPeer;
 
@@ -46,9 +47,8 @@ public class CEmbeddedFrame extends EmbeddedFrame {
         show();
     }
 
-    @SuppressWarnings("deprecation")
     public void addNotify() {
-        if (getPeer() == null) {
+        if (!isDisplayable()) {
             LWCToolkit toolkit = (LWCToolkit)Toolkit.getDefaultToolkit();
             LWWindowPeer peer = toolkit.createEmbeddedFrame(this);
             setPeer(peer);
@@ -61,10 +61,9 @@ public class CEmbeddedFrame extends EmbeddedFrame {
 
     public void unregisterAccelerator(AWTKeyStroke stroke) {}
 
-    @SuppressWarnings("deprecation")
     protected long getLayerPtr() {
-        LWWindowPeer peer = (LWWindowPeer)getPeer();
-        return peer.getLayerPtr();
+        return AWTAccessor.getComponentAccessor().<LWWindowPeer>getPeer(this)
+                          .getLayerPtr();
     }
 
     // -----------------------------------------------------------------------

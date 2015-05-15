@@ -223,9 +223,15 @@ public class FontFamily {
     public void setFont(Font2D font, int style) {
 
         if (FontUtilities.isLogging()) {
-            FontUtilities.getLogger().info(
-            "Request to add " + font + " with style " + style +
-            " to family " + this);
+            String msg;
+            if (font instanceof CompositeFont) {
+                msg = "Request to add " + font.getFamilyName(null) +
+                      " with style " + style + " to family " + familyName;
+            } else {
+                msg = "Request to add " + font +
+                      " with style " + style + " to family " + this;
+            }
+            FontUtilities.getLogger().info(msg);
         }
         /* Allow a lower-rank font only if its a file font
          * from the exact same source as any previous font.

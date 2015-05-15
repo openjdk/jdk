@@ -22,7 +22,7 @@
 #
 
 # @test
-# @bug 4348369
+# @bug 4348369 8076069
 # @summary keytool not i18n compliant
 # @author charlie lai
 # @run shell/manual i18n.sh
@@ -44,7 +44,7 @@ fi
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
-  SunOS | Linux )
+  SunOS | Linux | Darwin )
     NULL=/dev/null
     PS=":"
     FS="/"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,34 +25,43 @@
 
 package sun.awt;
 
-import sun.awt.datatransfer.DataTransferer;
-
 import java.awt.*;
-import java.awt.dnd.*;
-import java.awt.dnd.peer.DragSourceContextPeer;
-import java.awt.event.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.dnd.DragGestureListener;
+import java.awt.dnd.DragGestureRecognizer;
+import java.awt.dnd.DragSource;
+import java.awt.event.AWTEventListener;
 import java.awt.font.TextAttribute;
 import java.awt.im.InputMethodHighlight;
-import java.awt.image.*;
-import java.awt.datatransfer.Clipboard;
-import java.awt.peer.*;
+import java.awt.image.ColorModel;
+import java.awt.image.ImageObserver;
+import java.awt.image.ImageProducer;
+import java.awt.peer.FontPeer;
+import java.awt.peer.KeyboardFocusManagerPeer;
+import java.awt.peer.SystemTrayPeer;
+import java.awt.peer.TrayIconPeer;
 import java.beans.PropertyChangeListener;
 import java.net.URL;
 import java.util.Map;
 import java.util.Properties;
 
-public class HeadlessToolkit extends Toolkit
+public final class HeadlessToolkit extends Toolkit
     implements ComponentFactory, KeyboardFocusManagerPeerProvider {
 
     private static final KeyboardFocusManagerPeer kfmPeer = new KeyboardFocusManagerPeer() {
+        @Override
         public void setCurrentFocusedWindow(Window win) {}
+        @Override
         public Window getCurrentFocusedWindow() { return null; }
+        @Override
         public void setCurrentFocusOwner(Component comp) {}
+        @Override
         public Component getCurrentFocusOwner() { return null; }
+        @Override
         public void clearGlobalFocusOwner(Window activeWindow) {}
     };
 
-    private Toolkit tk;
+    private final Toolkit tk;
     private ComponentFactory componentFactory;
 
     public HeadlessToolkit(Toolkit tk) {
@@ -66,125 +75,7 @@ public class HeadlessToolkit extends Toolkit
         return tk;
     }
 
-    /*
-     * Component peer objects.
-     */
-
-    /* Lightweight implementation of Canvas and Panel */
-
-    public CanvasPeer createCanvas(Canvas target) {
-        return (CanvasPeer)createComponent(target);
-    }
-
-    public PanelPeer createPanel(Panel target) {
-        return (PanelPeer)createComponent(target);
-    }
-
-    /*
-     * Component peer objects - unsupported.
-     */
-
-    public WindowPeer createWindow(Window target)
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    public FramePeer createFrame(Frame target)
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    public DialogPeer createDialog(Dialog target)
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    public ButtonPeer createButton(Button target)
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    public TextFieldPeer createTextField(TextField target)
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    public ChoicePeer createChoice(Choice target)
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    public LabelPeer createLabel(Label target)
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    public ListPeer createList(List target)
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    public CheckboxPeer createCheckbox(Checkbox target)
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    public ScrollbarPeer createScrollbar(Scrollbar target)
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    public ScrollPanePeer createScrollPane(ScrollPane target)
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    public TextAreaPeer createTextArea(TextArea target)
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    public FileDialogPeer createFileDialog(FileDialog target)
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    public MenuBarPeer createMenuBar(MenuBar target)
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    public MenuPeer createMenu(Menu target)
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    public PopupMenuPeer createPopupMenu(PopupMenu target)
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    public MenuItemPeer createMenuItem(MenuItem target)
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    public CheckboxMenuItemPeer createCheckboxMenuItem(CheckboxMenuItem target)
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    public DragSourceContextPeer createDragSourceContextPeer(
-        DragGestureEvent dge)
-        throws InvalidDnDOperationException {
-        throw new InvalidDnDOperationException("Headless environment");
-    }
-
-    public RobotPeer createRobot(Robot target, GraphicsDevice screen)
-        throws AWTException, HeadlessException {
-        throw new HeadlessException();
-    }
-
+    @Override
     public KeyboardFocusManagerPeer getKeyboardFocusManagerPeer() {
         // See 6833019.
         return kfmPeer;
@@ -212,56 +103,67 @@ public class HeadlessToolkit extends Toolkit
     /*
      * Headless toolkit - unsupported.
      */
+    @Override
     protected void loadSystemColors(int[] systemColors)
         throws HeadlessException {
         throw new HeadlessException();
     }
 
+    @Override
     public ColorModel getColorModel()
         throws HeadlessException {
         throw new HeadlessException();
     }
 
+    @Override
     public int getScreenResolution()
         throws HeadlessException {
         throw new HeadlessException();
     }
 
+    @Override
     public Map<TextAttribute, ?> mapInputMethodHighlight(InputMethodHighlight highlight)
         throws HeadlessException {
         throw new HeadlessException();
     }
 
+    @Override
     public int getMenuShortcutKeyMask()
         throws HeadlessException {
         throw new HeadlessException();
     }
 
+    @Override
     public boolean getLockingKeyState(int keyCode)
         throws UnsupportedOperationException {
         throw new HeadlessException();
     }
 
+    @Override
     public void setLockingKeyState(int keyCode, boolean on)
         throws UnsupportedOperationException {
         throw new HeadlessException();
     }
 
+    @Override
     public Cursor createCustomCursor(Image cursor, Point hotSpot, String name)
         throws IndexOutOfBoundsException, HeadlessException {
         throw new HeadlessException();
     }
 
+    @Override
     public Dimension getBestCursorSize(int preferredWidth, int preferredHeight)
         throws HeadlessException {
         throw new HeadlessException();
     }
 
+    @Override
     public int getMaximumCursorColors()
         throws HeadlessException {
         throw new HeadlessException();
     }
 
+    @Override
     public <T extends DragGestureRecognizer> T
         createDragGestureRecognizer(Class<T> abstractRecognizerClass,
                                     DragSource ds, Component c,
@@ -280,31 +182,37 @@ public class HeadlessToolkit extends Toolkit
         throw new HeadlessException();
     }
 
+    @Override
     public Dimension getScreenSize()
         throws HeadlessException {
         throw new HeadlessException();
     }
 
+    @Override
     public Insets getScreenInsets(GraphicsConfiguration gc)
         throws HeadlessException {
         throw new HeadlessException();
     }
 
+    @Override
     public void setDynamicLayout(boolean dynamic)
         throws HeadlessException {
         throw new HeadlessException();
     }
 
+    @Override
     protected boolean isDynamicLayoutSet()
         throws HeadlessException {
         throw new HeadlessException();
     }
 
+    @Override
     public boolean isDynamicLayoutActive()
         throws HeadlessException {
         throw new HeadlessException();
     }
 
+    @Override
     public Clipboard getSystemClipboard()
         throws HeadlessException {
         throw new HeadlessException();
@@ -313,6 +221,7 @@ public class HeadlessToolkit extends Toolkit
     /*
      * Printing
      */
+    @Override
     public PrintJob getPrintJob(Frame frame, String jobtitle,
         JobAttributes jobAttributes,
         PageAttributes pageAttributes) {
@@ -323,6 +232,7 @@ public class HeadlessToolkit extends Toolkit
         throw new NullPointerException("frame must not be null");
     }
 
+    @Override
     public PrintJob getPrintJob(Frame frame, String doctitle, Properties props)
     {
         if (frame != null) {
@@ -336,10 +246,12 @@ public class HeadlessToolkit extends Toolkit
      * Headless toolkit - supported.
      */
 
+    @Override
     public void sync() {
         // Do nothing
     }
 
+    @Override
     public void beep() {
         // Send alert character
         System.out.write(0x07);
@@ -348,6 +260,7 @@ public class HeadlessToolkit extends Toolkit
     /*
      * Event Queue
      */
+    @Override
     public EventQueue getSystemEventQueueImpl() {
         return SunToolkit.getSystemEventQueueImplPP();
     }
@@ -355,39 +268,48 @@ public class HeadlessToolkit extends Toolkit
     /*
      * Images.
      */
+    @Override
     public int checkImage(Image img, int w, int h, ImageObserver o) {
         return tk.checkImage(img, w, h, o);
     }
 
+    @Override
     public boolean prepareImage(
         Image img, int w, int h, ImageObserver o) {
         return tk.prepareImage(img, w, h, o);
     }
 
+    @Override
     public Image getImage(String filename) {
         return tk.getImage(filename);
     }
 
+    @Override
     public Image getImage(URL url) {
         return tk.getImage(url);
     }
 
+    @Override
     public Image createImage(String filename) {
         return tk.createImage(filename);
     }
 
+    @Override
     public Image createImage(URL url) {
         return tk.createImage(url);
     }
 
+    @Override
     public Image createImage(byte[] data, int offset, int length) {
         return tk.createImage(data, offset, length);
     }
 
+    @Override
     public Image createImage(ImageProducer producer) {
         return tk.createImage(producer);
     }
 
+    @Override
     public Image createImage(byte[] imagedata) {
         return tk.createImage(imagedata);
     }
@@ -396,7 +318,7 @@ public class HeadlessToolkit extends Toolkit
     /*
      * Fonts
      */
-    @SuppressWarnings("deprecation")
+    @Override
     public FontPeer getFontPeer(String name, int style) {
         if (componentFactory != null) {
             return componentFactory.getFontPeer(name, style);
@@ -405,15 +327,12 @@ public class HeadlessToolkit extends Toolkit
     }
 
     @Override
-    public DataTransferer getDataTransferer() {
-        return null;
-    }
-
     @SuppressWarnings("deprecation")
     public FontMetrics getFontMetrics(Font font) {
         return tk.getFontMetrics(font);
     }
 
+    @Override
     @SuppressWarnings("deprecation")
     public String[] getFontList() {
         return tk.getFontList();
@@ -423,11 +342,13 @@ public class HeadlessToolkit extends Toolkit
      * Desktop properties
      */
 
+    @Override
     public void addPropertyChangeListener(String name,
         PropertyChangeListener pcl) {
         tk.addPropertyChangeListener(name, pcl);
     }
 
+    @Override
     public void removePropertyChangeListener(String name,
         PropertyChangeListener pcl) {
         tk.removePropertyChangeListener(name, pcl);
@@ -436,10 +357,12 @@ public class HeadlessToolkit extends Toolkit
     /*
      * Modality
      */
+    @Override
     public boolean isModalityTypeSupported(Dialog.ModalityType modalityType) {
         return false;
     }
 
+    @Override
     public boolean isModalExclusionTypeSupported(Dialog.ModalExclusionType exclusionType) {
         return false;
     }
@@ -447,6 +370,7 @@ public class HeadlessToolkit extends Toolkit
     /*
      * Always on top
      */
+    @Override
     public boolean isAlwaysOnTopSupported() {
         return false;
     }
@@ -455,19 +379,23 @@ public class HeadlessToolkit extends Toolkit
      * AWT Event listeners
      */
 
+    @Override
     public void addAWTEventListener(AWTEventListener listener,
         long eventMask) {
         tk.addAWTEventListener(listener, eventMask);
     }
 
+    @Override
     public void removeAWTEventListener(AWTEventListener listener) {
         tk.removeAWTEventListener(listener);
     }
 
+    @Override
     public AWTEventListener[] getAWTEventListeners() {
         return tk.getAWTEventListeners();
     }
 
+    @Override
     public AWTEventListener[] getAWTEventListeners(long eventMask) {
         return tk.getAWTEventListeners(eventMask);
     }
@@ -476,11 +404,7 @@ public class HeadlessToolkit extends Toolkit
         return false;
     }
 
-    public DesktopPeer createDesktopPeer(Desktop target)
-    throws HeadlessException{
-        throw new HeadlessException();
-    }
-
+    @Override
     public boolean areExtraMouseButtonsEnabled() throws HeadlessException{
         throw new HeadlessException();
     }

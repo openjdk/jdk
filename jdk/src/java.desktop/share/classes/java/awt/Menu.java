@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,7 +174,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
     public void addNotify() {
         synchronized (getTreeLock()) {
             if (peer == null)
-                peer = Toolkit.getDefaultToolkit().createMenu(this);
+                peer = getComponentFactory().createMenu(this);
             int nitems = getItemCount();
             for (int i = 0 ; i < nitems ; i++) {
                 MenuItem mi = getItem(i);

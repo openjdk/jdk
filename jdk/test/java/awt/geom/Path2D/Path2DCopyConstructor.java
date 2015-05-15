@@ -37,7 +37,7 @@ import java.util.Arrays;
  * @bug 8076419
  * @summary Check Path2D copy constructor (trims arrays)
  *          and constructor with zero capacity
- * @run main Path2DTrimCopy
+ * @run main Path2DCopyConstructor
  */
 public class Path2DCopyConstructor {
 

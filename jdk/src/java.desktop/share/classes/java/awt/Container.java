@@ -820,7 +820,7 @@ public class Container extends Component {
                 }
             } else {
                 // Q: Need to update NativeInLightFixer?
-                comp.getPeer().reparent(parentPeer);
+                comp.peer.reparent(parentPeer);
             }
         }
     }
@@ -840,10 +840,10 @@ public class Container extends Component {
             // If component is lightweight container we need to reparent all its explicit  heavyweight children
             if (comp instanceof Container) {
                 // Traverse component's tree till depth-first until encountering heavyweight component
-                reparentTraverse((ContainerPeer)getPeer(), (Container)comp);
+                reparentTraverse((ContainerPeer)peer, (Container)comp);
             }
         } else {
-            comp.getPeer().reparent((ContainerPeer)getPeer());
+            comp.peer.reparent((ContainerPeer) peer);
         }
     }
 
@@ -4195,7 +4195,7 @@ public class Container extends Component {
                 }
             } else {
                 if (comp.isVisible()) {
-                    ComponentPeer peer = comp.getPeer();
+                    ComponentPeer peer = comp.peer;
                     if (peer != null) {
                         peer.setVisible(true);
                     }
@@ -4217,7 +4217,7 @@ public class Container extends Component {
                 }
             } else {
                 if (comp.isVisible()) {
-                    ComponentPeer peer = comp.getPeer();
+                    ComponentPeer peer = comp.peer;
                     if (peer != null) {
                         peer.setVisible(false);
                     }
@@ -4239,7 +4239,7 @@ public class Container extends Component {
                     ((Container)comp).recursiveRelocateHeavyweightChildren(newOrigin);
                 }
             } else {
-                ComponentPeer peer = comp.getPeer();
+                ComponentPeer peer = comp.peer;
                 if (peer != null) {
                     peer.setBounds(origin.x + comp.getX(), origin.y + comp.getY(),
                             comp.getWidth(), comp.getHeight(),

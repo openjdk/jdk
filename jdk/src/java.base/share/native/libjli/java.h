@@ -194,7 +194,7 @@ void InitLauncher(jboolean javaw);
  * For MacOSX and Windows/Unix compatibility we require these
  * entry points, some of them may be stubbed out on Windows/Unixes.
  */
-void     PostJVMInit(JNIEnv *env, jstring mainClass, JavaVM *vm);
+void     PostJVMInit(JNIEnv *env, jclass mainClass, JavaVM *vm);
 void     ShowSplashScreen();
 void     RegisterThread();
 /*

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ package sun.awt.X11;
 import java.awt.Component;
 import java.awt.Graphics;
 
+import sun.awt.AWTAccessor;
 import sun.awt.RepaintArea;
 
 /**
@@ -55,10 +56,10 @@ final class XRepaintArea extends RepaintArea {
     /**
      * Calls <code>Component.paint(Graphics)</code> with given Graphics.
      */
-    @SuppressWarnings("deprecation")
     protected void paintComponent(Component comp, Graphics g) {
         if (comp != null) {
-            final XComponentPeer peer = (XComponentPeer) comp.getPeer();
+            final XComponentPeer peer = AWTAccessor.getComponentAccessor()
+                                                   .getPeer(comp);
             if (peer != null) {
                 peer.paintPeer(g);
             }
