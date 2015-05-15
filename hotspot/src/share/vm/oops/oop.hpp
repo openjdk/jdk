@@ -149,7 +149,6 @@ class oopDesc {
 
   static bool is_null(oop obj);
   static bool is_null(narrowOop obj);
-  static bool is_null(Klass* obj);
 
   // Decode an oop pointer from a narrowOop if compressed.
   // These are overloaded for oop and narrowOop as are the other functions
