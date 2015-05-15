@@ -1,0 +1,4 @@
+WarnWildcard.java:13:44: compiler.warn.sun.proprietary: sun.misc.FloatConsts
+- compiler.err.warnings.and.werror
+1 error
+1 warning
