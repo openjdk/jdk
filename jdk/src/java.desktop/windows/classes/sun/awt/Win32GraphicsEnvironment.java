@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,19 +28,11 @@ package sun.awt;
 import java.awt.AWTError;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
-import java.awt.GraphicsEnvironment;
-import java.awt.Toolkit;
 import java.awt.peer.ComponentPeer;
-import java.io.File;
-import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.ListIterator;
-import java.util.NoSuchElementException;
-import java.util.StringTokenizer;
-import sun.awt.DisplayChangedListener;
-import sun.awt.SunDisplayChanger;
-import sun.awt.windows.WPrinterJob;
+
 import sun.awt.windows.WToolkit;
 import sun.java2d.SunGraphicsEnvironment;
 import sun.java2d.SurfaceManagerFactory;
@@ -57,9 +49,8 @@ import sun.java2d.windows.WindowsFlags;
  * @see GraphicsConfiguration
  */
 
-public class Win32GraphicsEnvironment
-    extends SunGraphicsEnvironment
-{
+public final class Win32GraphicsEnvironment extends SunGraphicsEnvironment {
+
     static {
         // Ensure awt is loaded already.  Also, this forces static init
         // of WToolkit and Toolkit, which we depend upon
@@ -91,7 +82,7 @@ public class Win32GraphicsEnvironment
     }
 
     protected native int getNumScreens();
-    protected native int getDefaultScreen();
+    private native int getDefaultScreen();
 
     public GraphicsDevice getDefaultScreenDevice() {
         GraphicsDevice[] screens = getScreenDevices();

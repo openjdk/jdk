@@ -45,8 +45,7 @@ import java.util.Properties;
  * with the HeadlessToolkit.  It is primarily used
  * in embedded JRE's that do not have sun/awt/X11 classes.
  */
-public class HToolkit extends SunToolkit
-    implements ComponentFactory {
+public final class HToolkit extends SunToolkit implements ComponentFactory {
 
     private static final KeyboardFocusManagerPeer kfmPeer = new KeyboardFocusManagerPeer() {
         @Override
