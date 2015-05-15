@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,24 +21,27 @@
  * questions.
  */
 
-package javax.xml.transform;
+/*
+ * @test
+ * @modules java.xml/com.sun.org.apache.xerces.internal.impl
+ *          java.xml/com.sun.org.apache.xalan.internal
+ *          java.xml/com.sun.org.apache.xalan.internal.xslt
+ * @bug 6979306
+ * @summary Test JAXP component version.
+ */
 
-import org.testng.Assert;
 import org.testng.annotations.Test;
 
-/*
- * @summary Test internal transform CLI.
- */
-public class CLITest {
+import com.sun.org.apache.xalan.internal.xslt.EnvironmentCheck;
+
+public class Bug6979306Test {
 
     @Test
-    public void testCLI() {
-        try {
-            String[] args = new String[] { "-XSLTC", "-XSL", getClass().getResource("tigertest.xsl").toString(), "-IN",
-                    getClass().getResource("tigertest-in.xml").toString(), };
-            com.sun.org.apache.xalan.internal.xslt.Process._main(args);
-        } catch (Exception e) {
-            Assert.fail(e.getMessage());
-        }
+    public void test() {
+        String[] input = {};
+        EnvironmentCheck.main(input);
+        com.sun.org.apache.xerces.internal.impl.Version.main(input);
+        com.sun.org.apache.xalan.internal.Version._main(input);
     }
+
 }

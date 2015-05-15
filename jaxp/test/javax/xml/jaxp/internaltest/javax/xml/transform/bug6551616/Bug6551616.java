@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,24 +21,23 @@
  * questions.
  */
 
-package javax.xml.transform;
+/*
+ * @test
+ * @modules java.xml/com.sun.org.apache.xalan.internal.xsltc.trax
+ * @bug 6551616
+ * @summary Test SAX2StAXEventWriter.
+ */
 
-import java.io.File;
 import java.io.InputStream;
 import java.io.StringBufferInputStream;
-import java.security.Policy;
 
 import javax.xml.stream.XMLEventWriter;
 import javax.xml.stream.XMLOutputFactory;
 
-import com.sun.org.apache.xalan.internal.xsltc.trax.SAX2StAXEventWriter;
-
 import org.testng.annotations.Test;
 
-/*
- * @bug 6551616
- * @summary Test SAX2StAXEventWriter.
- */
+import com.sun.org.apache.xalan.internal.xsltc.trax.SAX2StAXEventWriter;
+
 public class Bug6551616 {
     String _cache = "";
 
