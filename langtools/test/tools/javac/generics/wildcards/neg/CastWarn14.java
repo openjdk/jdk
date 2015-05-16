@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,43 +139,29 @@ class CastTest {
         o = (DA<? super Number>) (DA<Integer>) null; // <<fail 16>>
         o = (DA<?>) (DA<Integer>) null; // <<pass>>
 
-        o = (DA<? extends Runnable>) (DA<? extends Number>) null; // <<warn 2>>
         o = (DA<? extends Runnable>) (DA<? extends String>) null; // <<fail 17>>
 
-        o = (DA<? super Integer>) (DA<? extends Number>) null; // <<warn 3>>
         o = (DA<? super Number>) (DA<? extends Integer>) null; // <<fail 18>>
         o = (DA<?>) (DA<? extends Integer>) null; // <<pass>>
 
-        o = (DA<? super String>) (DA<? super Number>) null; // <<warn 4>>
         o = (DA<?>) (DA<? super String>) null; // <<pass>>
 
         o = (DA<?>) (DA<?>) null; // <<pass>>
 
         // Typevars
         o = (DA<? extends Number>) (DA<I>) null; // <<pass>>
-        o = (DA<? extends Integer>) (DA<N>) null; // <<warn 5>>
         o = (DA<? extends String>) (DA<I>) null; // <<fail 19>>
 
-        o = (DA<I>) (DA<? extends Number>) null; // <<warn 6>>
-        o = (DA<N>) (DA<? extends Integer>) null; // <<warn 7>>
-        o = (DA<N>) (DA<? extends Runnable>) null; // <<warn 8>>
-
-        o = (DA<N>) (DA<I>) null; // <<warn 9>>
-        o = (DA<N>) (DA<R>) null; // <<warn 10>>
         o = (DA<S>) (DA<R>) null; // <<fail 20>>
 
         // Raw (asymmetrical!)
         o = (DA) (DB<Number>) null; // <<pass>>
-        o = (DA<Number>) (DB) null; // <<warn 11>>
         o = (DA<?>) (DB) null; // <<pass>>
         o = (DA<? extends Object>) (DB) null; // <<pass>>
-        o = (DA<? extends Number>) (DB) null; // <<warn 12>>
 
         o = (DB) (DA<Number>) null; // <<pass>>
-        o = (DB<Number>) (DA) null; // <<warn 13>>
         o = (DB<?>) (DA) null; // <<pass>>
         o = (DB<? extends Object>) (DA) null; // <<pass>>
-        o = (DB<? extends Number>) (DA) null; // <<warn 14>>
 
         o = (DC<?>) (DA<?>) null; // <<pass>>
         o = (DC<?>) (DA<? super String>) null; // <<fail 21>>
