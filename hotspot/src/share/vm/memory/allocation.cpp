@@ -23,9 +23,9 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/genCollectedHeap.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/genCollectedHeap.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
