@@ -140,6 +140,7 @@ public class SimpleScriptContext  implements ScriptContext {
      * @throws IllegalArgumentException if the name is empty.
      */
     public Object getAttribute(String name) {
+        checkName(name);
         if (engineScope.containsKey(name)) {
             return getAttribute(name, ENGINE_SCOPE);
         } else if (globalScope != null && globalScope.containsKey(name)) {
@@ -162,7 +163,7 @@ public class SimpleScriptContext  implements ScriptContext {
      * @throws NullPointerException if the name is null.
      */
     public Object getAttribute(String name, int scope) {
-
+        checkName(name);
         switch (scope) {
 
             case ENGINE_SCOPE:
@@ -191,7 +192,7 @@ public class SimpleScriptContext  implements ScriptContext {
      * @throws NullPointerException if the name is null.
      */
     public Object removeAttribute(String name, int scope) {
-
+        checkName(name);
         switch (scope) {
 
             case ENGINE_SCOPE:
@@ -223,7 +224,7 @@ public class SimpleScriptContext  implements ScriptContext {
      * @throws NullPointerException if the name is null.
      */
     public void setAttribute(String name, Object value, int scope) {
-
+        checkName(name);
         switch (scope) {
 
             case ENGINE_SCOPE:
@@ -281,6 +282,7 @@ public class SimpleScriptContext  implements ScriptContext {
      * @throws IllegalArgumentException if name is empty.
      */
     public int getAttributesScope(String name) {
+        checkName(name);
         if (engineScope.containsKey(name)) {
             return ENGINE_SCOPE;
         } else if (globalScope != null && globalScope.containsKey(name)) {
@@ -312,6 +314,13 @@ public class SimpleScriptContext  implements ScriptContext {
     /** {@inheritDoc} */
     public List<Integer> getScopes() {
         return scopes;
+    }
+
+    private void checkName(String name) {
+        Objects.requireNonNull(name);
+        if (name.isEmpty()) {
+            throw new IllegalArgumentException("name cannot be empty");
+        }
     }
 
     private static List<Integer> scopes;
