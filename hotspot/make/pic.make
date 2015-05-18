@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ ifneq ($(OSNAME), windows)
     PARTIAL_NONPIC=0
   endif
   ifeq ($(PARTIAL_NONPIC),1)
-    NONPIC_DIRS  = memory oops gc_implementation gc_interface 
+    NONPIC_DIRS  = memory oops gc
     NONPIC_DIRS  := $(foreach dir,$(NONPIC_DIRS), $(GAMMADIR)/src/share/vm/$(dir))
     # Look for source files under NONPIC_DIRS
     NONPIC_FILES := $(foreach dir,$(NONPIC_DIRS),\

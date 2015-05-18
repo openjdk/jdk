@@ -25,16 +25,16 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderStats.hpp"
 #include "classfile/compactHashtable.hpp"
-#include "gc_implementation/shared/vmGCOperations.hpp"
+#include "gc/shared/vmGCOperations.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/os.hpp"
 #include "services/diagnosticArgument.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "services/diagnosticFramework.hpp"
-#include "services/writeableFlags.hpp"
 #include "services/heapDumper.hpp"
 #include "services/management.hpp"
+#include "services/writeableFlags.hpp"
 #include "utilities/macros.hpp"
 
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC

@@ -26,9 +26,9 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "gc_implementation/shared/vmGCOperations.hpp"
-#include "memory/gcLocker.inline.hpp"
-#include "memory/genCollectedHeap.hpp"
+#include "gc/shared/gcLocker.inline.hpp"
+#include "gc/shared/genCollectedHeap.hpp"
+#include "gc/shared/vmGCOperations.hpp"
 #include "memory/universe.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
@@ -42,10 +42,10 @@
 #include "runtime/vm_operations.hpp"
 #include "services/heapDumper.hpp"
 #include "services/threadService.hpp"
-#include "utilities/ostream.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ostream.hpp"
 #if INCLUDE_ALL_GCS
-#include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
+#include "gc/parallel/parallelScavengeHeap.hpp"
 #endif // INCLUDE_ALL_GCS
 
 /*
