@@ -258,9 +258,7 @@ public class PolicyInformation {
      * Return a printable representation of the PolicyInformation.
      */
     public String toString() {
-        StringBuilder s = new StringBuilder("  [" + policyIdentifier.toString());
-        s.append(policyQualifiers + "  ]\n");
-        return s.toString();
+        return "  [" + policyIdentifier + policyQualifiers + "  ]\n";
     }
 
     /**

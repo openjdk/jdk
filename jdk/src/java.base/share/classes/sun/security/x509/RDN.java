@@ -348,14 +348,11 @@ public class RDN {
             return assertion[0].toString();
         }
 
-        StringBuilder sb = new StringBuilder();
+        StringJoiner sj = new StringJoiner(" + ");
         for (int i = 0; i < assertion.length; i++) {
-            if (i != 0) {
-                sb.append(" + ");
-            }
-            sb.append(assertion[i].toString());
+            sj.add(assertion[i].toString());
         }
-        return sb.toString();
+        return sj.toString();
     }
 
     /*
@@ -376,14 +373,11 @@ public class RDN {
             return assertion[0].toRFC1779String(oidMap);
         }
 
-        StringBuilder sb = new StringBuilder();
+        StringJoiner sj = new StringJoiner(" + ");
         for (int i = 0; i < assertion.length; i++) {
-            if (i != 0) {
-                sb.append(" + ");
-            }
-            sb.append(assertion[i].toRFC1779String(oidMap));
+            sj.add(assertion[i].toRFC1779String(oidMap));
         }
-        return sb.toString();
+        return sj.toString();
     }
 
     /*
