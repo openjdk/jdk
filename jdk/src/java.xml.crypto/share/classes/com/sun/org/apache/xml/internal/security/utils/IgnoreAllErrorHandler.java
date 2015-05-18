@@ -35,19 +35,30 @@ import org.xml.sax.SAXParseException;
 public class IgnoreAllErrorHandler implements ErrorHandler {
 
     /** {@link org.apache.commons.logging} logging facility */
-    private static java.util.logging.Logger log =
+    private static final java.util.logging.Logger log =
         java.util.logging.Logger.getLogger(IgnoreAllErrorHandler.class.getName());
 
     /** Field throwExceptions */
-    private static final boolean warnOnExceptions =
-        System.getProperty("com.sun.org.apache.xml.internal.security.test.warn.on.exceptions", "false").equals("true");
+    private static final boolean warnOnExceptions = getProperty(
+            "com.sun.org.apache.xml.internal.security.test.warn.on.exceptions");
 
     /** Field throwExceptions           */
-    private static final boolean throwExceptions =
-        System.getProperty("com.sun.org.apache.xml.internal.security.test.throw.exceptions", "false").equals("true");
+    private static final boolean throwExceptions = getProperty(
+            "com.sun.org.apache.xml.internal.security.test.throw.exceptions");
 
+    private static boolean getProperty(String name) {
+        return java.security.AccessController.doPrivileged(
+                new java.security.PrivilegedAction<Boolean>() {
+
+                    @Override
+                    public Boolean run() {
+                        return Boolean.getBoolean(name);
+                    }
+                });
+    }
 
     /** @inheritDoc */
+    @Override
     public void warning(SAXParseException ex) throws SAXException {
         if (IgnoreAllErrorHandler.warnOnExceptions) {
             log.log(java.util.logging.Level.WARNING, "", ex);
@@ -59,6 +70,7 @@ public class IgnoreAllErrorHandler implements ErrorHandler {
 
 
     /** @inheritDoc */
+    @Override
     public void error(SAXParseException ex) throws SAXException {
         if (IgnoreAllErrorHandler.warnOnExceptions) {
             log.log(java.util.logging.Level.SEVERE, "", ex);
@@ -70,6 +82,7 @@ public class IgnoreAllErrorHandler implements ErrorHandler {
 
 
     /** @inheritDoc */
+    @Override
     public void fatalError(SAXParseException ex) throws SAXException {
         if (IgnoreAllErrorHandler.warnOnExceptions) {
             log.log(java.util.logging.Level.WARNING, "", ex);
