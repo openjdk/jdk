@@ -230,13 +230,13 @@ public class DistributionPointName {
      */
     public String toString() {
         StringBuilder sb = new StringBuilder();
+        sb.append("DistributionPointName:\n     ");
         if (fullName != null) {
-            sb.append("DistributionPointName:\n     " + fullName + "\n");
-
+            sb.append(fullName);
         } else {
-            sb.append("DistributionPointName:\n     " + relativeName + "\n");
+            sb.append(relativeName);
         }
-
+        sb.append('\n');
         return sb.toString();
     }
 }

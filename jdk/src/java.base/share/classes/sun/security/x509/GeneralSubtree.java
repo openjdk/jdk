@@ -127,15 +127,22 @@ public class GeneralSubtree {
      * Return a printable string of the GeneralSubtree.
      */
     public String toString() {
-        String s = "\n   GeneralSubtree: [\n" +
-            "    GeneralName: " + ((name == null) ? "" : name.toString()) +
-            "\n    Minimum: " + minimum;
-            if (maximum == -1) {
-                s += "\t    Maximum: undefined";
-            } else
-                s += "\t    Maximum: " + maximum;
-            s += "    ]\n";
-        return (s);
+        StringBuilder sb = new StringBuilder();
+        sb.append("\n   GeneralSubtree: [")
+            .append("\n    GeneralName: ");
+        if (name != null) {
+            sb.append(name);
+        }
+        sb.append("\n    Minimum: ")
+            .append(minimum)
+            .append("\n    Maximum: ");
+        if (maximum == -1) {
+            sb.append("undefined");
+        } else {
+            sb.append(maximum);
+        }
+        sb.append("    ]\n");
+        return sb.toString();
     }
 
     /**
