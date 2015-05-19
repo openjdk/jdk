@@ -22,7 +22,7 @@
  *
  */
 
-package sun.jvm.hotspot.gc.shared;
+package sun.jvm.hotspot.gc.parallel;
 
 import java.io.*;
 import java.util.*;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,18 @@
  *
  */
 
-package sun.jvm.hotspot.memory;
+package sun.jvm.hotspot.gc.shared;
 
 import java.io.*;
 import java.util.*;
+
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 
-public class ConcurrentMarkSweepGeneration extends CardGeneration {
-  private static AddressField cmsSpaceField;
-
-  public ConcurrentMarkSweepGeneration(Address addr) {
-    super(addr);
-  }
+public class ContiguousSpace extends CompactibleSpace {
+  private static AddressField topField;
 
   static {
     VM.registerVMInitializedObserver(new Observer() {
@@ -46,36 +44,55 @@ public class ConcurrentMarkSweepGeneration extends CardGeneration {
   }
 
   private static synchronized void initialize(TypeDataBase db) {
-    Type type = db.lookupType("ConcurrentMarkSweepGeneration");
-    cmsSpaceField = type.getAddressField("_cmsSpace");
+    Type type = db.lookupType("ContiguousSpace");
+
+    topField = type.getAddressField("_top");
   }
 
-  // Accessing space
-  public CompactibleFreeListSpace cmsSpace() {
-    return (CompactibleFreeListSpace) VMObjectFactory.newObject(
-                                 CompactibleFreeListSpace.class,
-                                 cmsSpaceField.getValue(addr));
+  public ContiguousSpace(Address addr) {
+    super(addr);
   }
 
-  public long capacity()                { return cmsSpace().capacity(); }
-  public long used()                    { return cmsSpace().used(); }
-  public long free()                    { return cmsSpace().free(); }
-  public long contiguousAvailable()     { throw new RuntimeException("not yet implemented"); }
-  public boolean contains(Address p)    { return cmsSpace().contains(p); }
-  public void spaceIterate(SpaceClosure blk, boolean usedOnly) {
-     blk.doSpace(cmsSpace());
+  public Address top() {
+    return topField.getValue(addr);
   }
 
-  public Generation.Name kind() {
-    return Generation.Name.CONCURRENT_MARK_SWEEP;
+  /** In bytes */
+  public long capacity() {
+    return end().minus(bottom());
   }
 
-  public String name() {
-    return "concurrent mark-sweep generation";
+  /** In bytes */
+  public long used() {
+    return top().minus(bottom());
+  }
+
+  /** In bytes */
+  public long free() {
+    return end().minus(top());
+  }
+
+  /** In a contiguous space we have a more obvious bound on what parts
+      contain objects. */
+  public MemRegion usedRegion() {
+    return new MemRegion(bottom(), top());
+  }
+
+  /** Returns regions of Space where live objects live */
+  public List/*<MemRegion>*/ getLiveRegions() {
+    List res = new ArrayList();
+    res.add(new MemRegion(bottom(), top()));
+    return res;
+  }
+
+  /** Testers */
+  public boolean contains(Address p) {
+    return (bottom().lessThanOrEqual(p) && top().greaterThan(p));
   }
 
   public void printOn(PrintStream tty) {
-    tty.println(name());
-    cmsSpace().printOn(tty);
+    tty.print(" [" + bottom() + "," +
+                top() + "," + end() + ")");
+    super.printOn(tty);
   }
 }

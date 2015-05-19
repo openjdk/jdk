@@ -32,6 +32,7 @@ package sun.jvm.hotspot.oops;
 import java.util.*;
 
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.gc.cms.*;
 import sun.jvm.hotspot.gc.shared.*;
 import sun.jvm.hotspot.gc.g1.*;
 import sun.jvm.hotspot.gc.parallel.*;

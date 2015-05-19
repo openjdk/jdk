@@ -1,6 +1,5 @@
 /*
- * @(#)BinaryTreeDictionary.java
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,37 +22,18 @@
  *
  */
 
-package sun.jvm.hotspot.memory;
+package sun.jvm.hotspot.gc.cms;
 
-import java.util.*;
 import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.types.*;
-import sun.jvm.hotspot.runtime.*;
+import sun.jvm.hotspot.gc.serial.*;
+import sun.jvm.hotspot.gc.shared.*;
 
-public class LinearAllocBlock extends VMObject {
-   static {
-      VM.registerVMInitializedObserver(new Observer() {
-         public void update(Observable o, Object data) {
-            initialize(VM.getVM().getTypeDataBase());
-         }
-      });
-   }
+public class ParNewGeneration extends DefNewGeneration {
+  public ParNewGeneration(Address addr) {
+    super(addr);
+  }
 
-   private static synchronized void initialize(TypeDataBase db) {
-      Type type = db.lookupType("LinearAllocBlock");
-      word_sizeField= type.getCIntegerField("_word_size");
-   }
-
-   // Fields
-   private static CIntegerField word_sizeField;
-
-   // Accessors
-   public long word_size() {
-      return word_sizeField.getValue(addr);
-   }
-
-   // Constructor
-   public LinearAllocBlock(Address addr) {
-      super(addr);
-   }
+  public Generation.Name kind() {
+    return Generation.Name.PAR_NEW;
+  }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,20 @@
  *
  */
 
-package sun.jvm.hotspot.memory;
+package sun.jvm.hotspot.gc.cms;
 
+import java.io.*;
 import java.util.*;
-
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 
-public class GenerationSpec extends VMObject {
-  private static CIntegerField nameField;
-  private static CIntegerField initSizeField;
-  private static CIntegerField maxSizeField;
+public class CMSCollector extends VMObject {
+  private static long markBitMapFieldOffset;
+
+  public CMSCollector(Address addr) {
+    super(addr);
+  }
 
   static {
     VM.registerVMInitializedObserver(new Observer() {
@@ -44,26 +46,29 @@ public class GenerationSpec extends VMObject {
   }
 
   private static synchronized void initialize(TypeDataBase db) {
-    Type type = db.lookupType("GenerationSpec");
-
-    nameField       = type.getCIntegerField("_name");
-    initSizeField = type.getCIntegerField("_init_size");
-    maxSizeField  = type.getCIntegerField("_max_size");
+    Type type = db.lookupType("CMSCollector");
+    markBitMapFieldOffset = type.getField("_markBitMap").getOffset();
   }
 
-  public GenerationSpec(Address addr) {
-    super(addr);
+  //Accessing mark bitmap
+  public CMSBitMap markBitMap() {
+   return (CMSBitMap) VMObjectFactory.newObject(
+                                CMSBitMap.class,
+                                addr.addOffsetTo(markBitMapFieldOffset));
   }
 
-  public Generation.Name name() {
-    return Generation.nameForEnum((int)nameField.getValue(addr));
-  }
+  public long blockSizeUsingPrintezisBits(Address addr) {
+    CMSBitMap markBitMap = markBitMap();
+    long addressSize = VM.getVM().getAddressSize();
+    if ( markBitMap.isMarked(addr) &&  markBitMap.isMarked(addr.addOffsetTo(1*addressSize)) ) {
+      Address nextOneAddr = markBitMap.getNextMarkedWordAddress(addr.addOffsetTo(2*addressSize));
+      //return size in bytes
+      long size =  (nextOneAddr.addOffsetTo(1*addressSize)).minus(addr);
+      return size;
+    } else {
+      //missing Printezis marks
+      return -1;
+    }
 
-  public long initSize() {
-    return initSizeField.getValue(addr);
-  }
-
-  public long maxSize() {
-    return maxSizeField.getValue(addr);
   }
 }
