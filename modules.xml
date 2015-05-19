@@ -2,7 +2,7 @@
 
 <!--
 
-   Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved.
+   Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
    DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
    This code is free software; you can redistribute it and/or modify it
@@ -216,19 +216,19 @@
     </export>
     <export>
       <name>jdk.internal.jimage</name>
-      <to>jdk.dev</to> 
+      <to>jdk.dev</to>
     </export>
     <export>
       <name>jdk.internal.org.objectweb.asm</name>
+      <to>java.instrument</to>
       <to>jdk.jfr</to>
       <to>jdk.scripting.nashorn</to>
-      <to>java.instrument</to>
     </export>
     <export>
       <name>jdk.internal.org.objectweb.asm.commons</name>
+      <to>java.instrument</to>
       <to>jdk.jfr</to>
       <to>jdk.scripting.nashorn</to>
-      <to>java.instrument</to>
     </export>
     <export>
       <name>jdk.internal.org.objectweb.asm.signature</name>
@@ -236,19 +236,20 @@
     </export>
     <export>
       <name>jdk.internal.org.objectweb.asm.tree</name>
-      <to>jdk.jfr</to>
       <to>java.instrument</to>
+      <to>jdk.jfr</to>
     </export>
     <export>
       <name>jdk.internal.org.objectweb.asm.util</name>
+      <to>java.instrument</to>
       <to>jdk.jfr</to>
       <to>jdk.scripting.nashorn</to>
-      <to>java.instrument</to>
     </export>
     <export>
       <name>sun.misc</name>
       <to>java.corba</to>
       <to>java.desktop</to>
+      <to>java.instrument</to>
       <to>java.logging</to>
       <to>java.management</to>
       <to>java.naming</to>
@@ -266,6 +267,7 @@
       <to>jdk.jartool</to>
       <to>jdk.jconsole</to>
       <to>jdk.jvmstat</to>
+      <to>jdk.management.resource</to>
       <to>jdk.pack200</to>
       <to>jdk.security.auth</to>
       <to>jdk.security.jgss</to>
@@ -301,6 +303,7 @@
       <to>java.management</to>
       <to>jdk.crypto.pkcs11</to>
       <to>jdk.crypto.ucrypto</to>
+      <to>jdk.management.resource</to>
       <to>jdk.sctp</to>
     </export>
     <export>
@@ -311,11 +314,11 @@
     <export>
       <name>sun.reflect</name>
       <to>java.corba</to>
+      <to>java.instrument</to>
       <to>java.logging</to>
       <to>java.sql</to>
       <to>java.sql.rowset</to>
       <to>jdk.scripting.nashorn</to>
-      <to>java.instrument</to>
     </export>
     <export>
       <name>sun.reflect.annotation</name>
@@ -774,6 +777,7 @@
     <export>
       <name>jdk.internal.instrumentation</name>
       <to>jdk.jfr</to>
+      <to>jdk.management.resource</to>
     </export>
   </module>
   <module>
