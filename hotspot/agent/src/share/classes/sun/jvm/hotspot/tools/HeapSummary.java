@@ -25,9 +25,9 @@
 package sun.jvm.hotspot.tools;
 
 import java.util.*;
-import sun.jvm.hotspot.gc.shared.*;
 import sun.jvm.hotspot.gc.g1.*;
 import sun.jvm.hotspot.gc.parallel.*;
+import sun.jvm.hotspot.gc.serial.*;
 import sun.jvm.hotspot.gc.shared.*;
 import sun.jvm.hotspot.debugger.JVMDebugger;
 import sun.jvm.hotspot.memory.*;
@@ -85,7 +85,7 @@ public class HeapSummary extends Tool {
          GenCollectedHeap genHeap = (GenCollectedHeap) heap;
          for (int n = 0; n < genHeap.nGens(); n++) {
             Generation gen = genHeap.getGen(n);
-            if (gen instanceof sun.jvm.hotspot.memory.DefNewGeneration) {
+            if (gen instanceof DefNewGeneration) {
                System.out.println("New Generation (Eden + 1 Survivor Space):");
                printGen(gen);
 

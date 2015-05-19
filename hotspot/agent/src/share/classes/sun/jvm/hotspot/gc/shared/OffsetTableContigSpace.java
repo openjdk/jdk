@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,14 @@
  *
  */
 
-package sun.jvm.hotspot.memory;
+package sun.jvm.hotspot.gc.shared;
 
 import sun.jvm.hotspot.debugger.*;
 
-public class ParNewGeneration extends DefNewGeneration {
-  public ParNewGeneration(Address addr) {
-    super(addr);
-  }
+/** No additional functionality for now */
 
-  public Generation.Name kind() {
-    return Generation.Name.PAR_NEW;
+public class OffsetTableContigSpace extends ContiguousSpace {
+  public OffsetTableContigSpace(Address addr) {
+    super(addr);
   }
 }

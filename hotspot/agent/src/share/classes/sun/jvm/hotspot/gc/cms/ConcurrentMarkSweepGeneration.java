@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,22 +22,21 @@
  *
  */
 
-package sun.jvm.hotspot.memory;
+package sun.jvm.hotspot.gc.cms;
 
 import java.io.*;
 import java.util.*;
-
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.gc.shared.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 
-/** <P> TenuredGeneration models a heap of old objects contained
-    in a single contiguous space. </P>
+public class ConcurrentMarkSweepGeneration extends CardGeneration {
+  private static AddressField cmsSpaceField;
 
-    <P> Garbage collection is performed using mark-compact. </P> */
-
-public class TenuredGeneration extends CardGeneration {
-  private static AddressField theSpaceField;
+  public ConcurrentMarkSweepGeneration(Address addr) {
+    super(addr);
+  }
 
   static {
     VM.registerVMInitializedObserver(new Observer() {
@@ -48,43 +47,36 @@ public class TenuredGeneration extends CardGeneration {
   }
 
   private static synchronized void initialize(TypeDataBase db) {
-    Type type = db.lookupType("TenuredGeneration");
-
-    theSpaceField = type.getAddressField("_the_space");
+    Type type = db.lookupType("ConcurrentMarkSweepGeneration");
+    cmsSpaceField = type.getAddressField("_cmsSpace");
   }
 
-  public TenuredGeneration(Address addr) {
-    super(addr);
+  // Accessing space
+  public CompactibleFreeListSpace cmsSpace() {
+    return (CompactibleFreeListSpace) VMObjectFactory.newObject(
+                                 CompactibleFreeListSpace.class,
+                                 cmsSpaceField.getValue(addr));
   }
 
-  public ContiguousSpace theSpace() {
-    return (ContiguousSpace) VMObjectFactory.newObject(ContiguousSpace.class, theSpaceField.getValue(addr));
-  }
-
-  public boolean isIn(Address p) {
-    return theSpace().contains(p);
-  }
-
-  /** Space queries */
-  public long capacity()            { return theSpace().capacity();                                }
-  public long used()                { return theSpace().used();                                    }
-  public long free()                { return theSpace().free();                                    }
-  public long contiguousAvailable() { return theSpace().free() + virtualSpace().uncommittedSize(); }
-
+  public long capacity()                { return cmsSpace().capacity(); }
+  public long used()                    { return cmsSpace().used(); }
+  public long free()                    { return cmsSpace().free(); }
+  public long contiguousAvailable()     { throw new RuntimeException("not yet implemented"); }
+  public boolean contains(Address p)    { return cmsSpace().contains(p); }
   public void spaceIterate(SpaceClosure blk, boolean usedOnly) {
-    blk.doSpace(theSpace());
-  }
-
-  public void printOn(PrintStream tty) {
-    tty.print("  old ");
-    theSpace().printOn(tty);
+     blk.doSpace(cmsSpace());
   }
 
   public Generation.Name kind() {
-    return Generation.Name.MARK_SWEEP_COMPACT;
+    return Generation.Name.CONCURRENT_MARK_SWEEP;
   }
 
   public String name() {
-    return "tenured generation";
+    return "concurrent mark-sweep generation";
+  }
+
+  public void printOn(PrintStream tty) {
+    tty.println(name());
+    cmsSpace().printOn(tty);
   }
 }

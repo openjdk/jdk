@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,18 @@
  *
  */
 
-package sun.jvm.hotspot.memory;
+package sun.jvm.hotspot.gc.cms;
 
-import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Observable;
-import java.util.Observer;
+import java.io.*;
+import java.util.*;
 
-import sun.jvm.hotspot.debugger.Address;
-import sun.jvm.hotspot.debugger.Debugger;
-import sun.jvm.hotspot.oops.ObjectHeap;
-import sun.jvm.hotspot.oops.Oop;
-import sun.jvm.hotspot.runtime.VM;
-import sun.jvm.hotspot.runtime.VMObjectFactory;
-import sun.jvm.hotspot.types.AddressField;
-import sun.jvm.hotspot.types.Type;
-import sun.jvm.hotspot.types.TypeDataBase;
-import sun.jvm.hotspot.utilities.Assert;
+import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.gc.shared.*;
+import sun.jvm.hotspot.memory.*;
+import sun.jvm.hotspot.oops.*;
+import sun.jvm.hotspot.runtime.*;
+import sun.jvm.hotspot.types.*;
+import sun.jvm.hotspot.utilities.*;
 
 public class CompactibleFreeListSpace extends CompactibleSpace {
    private static AddressField collectorField;

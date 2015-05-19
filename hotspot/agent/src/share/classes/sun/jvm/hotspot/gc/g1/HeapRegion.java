@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 import sun.jvm.hotspot.debugger.Address;
-import sun.jvm.hotspot.memory.CompactibleSpace;
+import sun.jvm.hotspot.gc.shared.CompactibleSpace;
 import sun.jvm.hotspot.memory.MemRegion;
 import sun.jvm.hotspot.runtime.VM;
 import sun.jvm.hotspot.types.AddressField;

@@ -22,13 +22,12 @@
  *
  */
 
-package sun.jvm.hotspot.memory;
+package sun.jvm.hotspot.gc.shared;
 
 import java.io.*;
 import java.util.*;
 
 import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.gc.shared.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.*;

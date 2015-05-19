@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,22 @@
  *
  */
 
-package sun.jvm.hotspot.memory;
+package sun.jvm.hotspot.gc.shared;
 
-import java.io.*;
 import java.util.*;
 
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 
-public class ContiguousSpace extends CompactibleSpace {
-  private static AddressField topField;
+/** A space that supports compaction operations.  This is usually, but
+    not necessarily, a space that is normally contiguous.  But, for
+    example, a free-list-based space whose normal collection is a
+    mark-sweep without compaction could still support compaction in
+    full GC's. */
+
+public abstract class CompactibleSpace extends Space {
+  private static AddressField compactionTopField;
 
   static {
     VM.registerVMInitializedObserver(new Observer() {
@@ -43,55 +48,17 @@ public class ContiguousSpace extends CompactibleSpace {
   }
 
   private static synchronized void initialize(TypeDataBase db) {
-    Type type = db.lookupType("ContiguousSpace");
+    Type type = db.lookupType("CompactibleSpace");
 
-    topField = type.getAddressField("_top");
+    compactionTopField = type.getAddressField("_compaction_top");
   }
 
-  public ContiguousSpace(Address addr) {
+  public CompactibleSpace(Address addr) {
     super(addr);
   }
 
-  public Address top() {
-    return topField.getValue(addr);
-  }
-
-  /** In bytes */
-  public long capacity() {
-    return end().minus(bottom());
-  }
-
-  /** In bytes */
-  public long used() {
-    return top().minus(bottom());
-  }
-
-  /** In bytes */
-  public long free() {
-    return end().minus(top());
-  }
-
-  /** In a contiguous space we have a more obvious bound on what parts
-      contain objects. */
-  public MemRegion usedRegion() {
-    return new MemRegion(bottom(), top());
-  }
-
-  /** Returns regions of Space where live objects live */
-  public List/*<MemRegion>*/ getLiveRegions() {
-    List res = new ArrayList();
-    res.add(new MemRegion(bottom(), top()));
-    return res;
-  }
-
-  /** Testers */
-  public boolean contains(Address p) {
-    return (bottom().lessThanOrEqual(p) && top().greaterThan(p));
-  }
-
-  public void printOn(PrintStream tty) {
-    tty.print(" [" + bottom() + "," +
-                top() + "," + end() + ")");
-    super.printOn(tty);
+  /** May be used temporarily during a compaction phase. */
+  public Address compactionTop() {
+    return compactionTopField.getValue(addr);
   }
 }
