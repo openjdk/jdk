@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_GC_SHARED_CONCURRENTGCTHREAD_HPP
 #define SHARE_VM_GC_SHARED_CONCURRENTGCTHREAD_HPP
 
-#include "gc/g1/suspendibleThreadSet.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/macros.hpp"
 
