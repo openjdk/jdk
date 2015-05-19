@@ -35,6 +35,12 @@ import sun.security.krb5.Config;
 public class ConfPlusProp {
     Config config;
     public static void main(String[] args) throws Exception {
+        if (System.getenv("USERDNSDOMAIN") != null ||
+                System.getenv("LOGONSERVER") != null) {
+            System.out.println(
+                    "Looks like a Windows machine in a domain. Skip test.");
+            return;
+        }
         new ConfPlusProp().run();
     }
 
@@ -90,23 +96,8 @@ public class ConfPlusProp {
         check("R2", "old");
         check("R3", null);
 
-        int version = System.getProperty("java.version").charAt(2) - '0';
-        System.out.println("JDK version is " + version);
-
-        // Zero-config is supported since 1.7
-        if (version >= 7) {
-            // Point to a non-existing file
-            System.setProperty("java.security.krb5.conf", "i-am-not-a file");
-            refresh();
-
-            // Default realm might come from DNS
-            //checkDefaultRealm(null);
-            check("R1", null);
-            check("R2", null);
-            check("R3", null);
-            if (config.get("libdefaults", "forwardable") != null) {
-                throw new Exception("Extra config error");
-            }
+        if (config.get("libdefaults", "forwardable") != null) {
+            throw new Exception("Extra config error");
         }
 
         // Add prop
@@ -136,14 +127,6 @@ public class ConfPlusProp {
         check("R2", "k2");
         check("R3", "k2");
 
-        // Point to a non-existing file
-        System.setProperty("java.security.krb5.conf", "i-am-not-a file");
-        refresh();
-
-        checkDefaultRealm("R2");
-        check("R1", "k2");
-        check("R2", "k2");
-        check("R3", "k2");
         if (config.get("libdefaults", "forwardable") != null) {
             throw new Exception("Extra config error");
         }
