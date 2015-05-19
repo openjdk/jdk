@@ -43,6 +43,7 @@
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/collectorPolicy.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
+#include "gc/shared/gcPolicyCounters.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.hpp"
