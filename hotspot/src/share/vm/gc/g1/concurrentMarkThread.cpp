@@ -28,6 +28,7 @@
 #include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/g1/g1Log.hpp"
 #include "gc/g1/g1MMUTracker.hpp"
+#include "gc/g1/suspendibleThreadSet.hpp"
 #include "gc/g1/vm_operations_g1.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "memory/resourceArea.hpp"
