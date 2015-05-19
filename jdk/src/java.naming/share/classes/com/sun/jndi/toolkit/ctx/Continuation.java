@@ -329,7 +329,7 @@ public class Continuation extends ResolveResult {
      *<p>
      * After this method is called, isContinuing() returns true.
      *
-     * @param resObj The possibly null resolved object.
+     * @param obj The possibly null resolved object.
      * @param relResName The non-null resolved name relative to currCtx.
      * @param currCtx The non-null context from which relResName is to be resolved.
      */
@@ -349,7 +349,7 @@ public class Continuation extends ResolveResult {
      *<p>
      * After this method is called, isContinuing() returns true.
      *
-     * @param resObj The possibly null resolved object.
+     * @param obj The possibly null resolved object.
      * @param relResName The non-null resolved name relative to currCtx.
      * @param currCtx The non-null context from which relResName is to be resolved.
      * @param remain The non-null remaining name.
@@ -366,7 +366,7 @@ public class Continuation extends ResolveResult {
     /**
      * String overload.
      *
-     * @param resObj The possibly null resolved object.
+     * @param obj The possibly null resolved object.
      * @param relResName The non-null resolved name relative to currCtx.
      * @param currCtx The non-null context from which relResName is to be resolved.
      * @param remain The non-null remaining name.

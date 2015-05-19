@@ -37,18 +37,17 @@ import sun.management.VMManagement;
 import sun.misc.ManagedLocalsThread;
 
 /**
- * JdpController is responsible to create and manage a broadcast loop
+ * JdpController is responsible to create and manage a broadcast loop.
  *
  * <p> Other part of code has no access to broadcast loop and have to use
  * provided static methods
  * {@link #startDiscoveryService(InetAddress,int,String,String) startDiscoveryService}
- * and {@link #stopDiscoveryService() stopDiscoveryService}</p>
+ * and {@link #stopDiscoveryService() stopDiscoveryService}
  * <p>{@link #startDiscoveryService(InetAddress,int,String,String) startDiscoveryService} could be called multiple
- * times as it stops the running service if it is necessary. Call to {@link #stopDiscoveryService() stopDiscoveryService}
- * ignored if service isn't run</p>
+ * times as it stops the running service if it is necessary.
+ * Call to {@link #stopDiscoveryService() stopDiscoveryService}
+ * ignored if service isn't run.
  *
- *
- * </p>
  *
  * <p> System properties below could be used to control broadcast loop behavior.
  * Property below have to be set explicitly in command line. It's not possible to
@@ -59,9 +58,9 @@ import sun.misc.ManagedLocalsThread;
  *     <li>com.sun.management.jdp.pause       - set broadcast interval in seconds</li>
  *     <li>com.sun.management.jdp.source_addr - an address of interface to use for broadcast</li>
  * </ul>
-  </p>
+ *
  * <p>null parameters values are filtered out on {@link JdpPacketWriter} level and
- * corresponding keys are not placed to packet.</p>
+ * corresponding keys are not placed to packet.
  */
 public final class JdpController {
 

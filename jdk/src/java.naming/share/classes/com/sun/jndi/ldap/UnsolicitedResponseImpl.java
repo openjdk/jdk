@@ -65,7 +65,7 @@ final class UnsolicitedResponseImpl implements UnsolicitedNotification {
       * Retrieves the object identifier of the response.
       *
       * @return A possibly null object identifier string representing the LDAP
-      *         <tt>ExtendedResponse.responseName</tt> component.
+      *         {@code ExtendedResponse.responseName} component.
       */
     public String getID() {
         return oid;
@@ -79,7 +79,7 @@ final class UnsolicitedResponseImpl implements UnsolicitedNotification {
       * the response value. It does not include the response OID.
       *
       * @return A possibly null byte array representing the ASN.1 BER encoded
-      *         contents of the LDAP <tt>ExtendedResponse.response</tt>
+      *         contents of the LDAP {@code ExtendedResponse.response}
       *         component.
       */
     public byte[] getEncodedValue() {
