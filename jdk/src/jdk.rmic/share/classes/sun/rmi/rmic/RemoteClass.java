@@ -111,7 +111,7 @@ public class RemoteClass implements sun.rmi.rmic.RMIConstants {
      * the remote methods implemented by this class, i.e. all of the
      * methods in the class's remote interfaces.
      *
-     * The methods in the array are ordered according to the comparision
+     * The methods in the array are ordered according to the comparison
      * of the strings consisting of their method name followed by their
      * type signature, so each method's index in the array corresponds
      * to its "operation number" in the JDK 1.1 version of the

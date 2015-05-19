@@ -40,14 +40,13 @@ import java.util.*;
  * all the files and directories contained in that directory. A pathname
  * that ends with "/-" indicates (recursively) all files
  * and subdirectories contained in that directory. A pathname consisting of
- * the special token "&lt;&lt;ALL FILES&gt;&gt;" matches <bold>any</bold> file.
+ * the special token "{@code <<ALL FILES>>}" matches <b>any</b> file.
  * <P>
  * Note: A pathname consisting of a single "*" indicates all the files
  * in the current directory, while a pathname consisting of a single "-"
  * indicates all the files in the current directory and
  * (recursively) all files and subdirectories contained in the current
  * directory.
- * <P>
  *
  *
  * @author Ann Wollrath
@@ -72,7 +71,7 @@ public final class ExecPermission extends Permission
      * a directory and all the files contained in that directory. A pathname
      * that ends with "/-" indicates a directory and (recursively) all files
      * and subdirectories contained in that directory. The special pathname
-     * "&lt;&lt;ALL FILES&gt;&gt;" matches all files.
+     * "{@code <<ALL FILES>>}" matches all files.
      *
      * <p>A pathname consisting of a single "*" indicates all the files
      * in the current directory, while a pathname consisting of a single "-"
@@ -96,7 +95,7 @@ public final class ExecPermission extends Permission
      * a directory and all the files contained in that directory. A pathname
      * that ends with "/-" indicates a directory and (recursively) all files
      * and subdirectories contained in that directory. The special pathname
-     * "&lt;&lt;ALL FILES&gt;&gt;" matches all files.
+     * "{@code <<ALL FILES>>}" matches all files.
      *
      * <p>A pathname consisting of a single "*" indicates all the files
      * in the current directory, while a pathname consisting of a single "-"
@@ -114,9 +113,9 @@ public final class ExecPermission extends Permission
     /**
      * Checks if this ExecPermission object "implies" the specified permission.
      * <P>
-     * More specifically, this method returns true if:<p>
+     * More specifically, this method returns true if:
      * <ul>
-     * <li> <i>p</i> is an instanceof ExecPermission,<p> and
+     * <li> <i>p</i> is an instanceof ExecPermission, and
      * <li> <i>p</i>'s pathname is implied by this object's
      *      pathname. For example, "/tmp/*" implies "/tmp/foo", since
      *      "/tmp/*" encompasses the "/tmp" directory and all files in that
@@ -140,7 +139,7 @@ public final class ExecPermission extends Permission
      * Checks two ExecPermission objects for equality.
      * Checks that <i>obj</i>'s class is the same as this object's class
      * and has the same name as this object.
-     * <P>
+     *
      * @param obj the object we are testing for equality with this object.
      * @return true if <i>obj</i> is an ExecPermission, and has the same
      * pathname as this ExecPermission object, false otherwise.

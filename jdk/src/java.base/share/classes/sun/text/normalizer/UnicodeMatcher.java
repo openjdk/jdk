@@ -45,7 +45,8 @@ package sun.text.normalizer;
 public interface UnicodeMatcher {
 
     /**
-     * The character at index i, where i < contextStart || i >= contextLimit,
+     * The character at index {@code i}, where
+     * {@code i < contextStart || i >= contextLimit},
      * is ETHER.  This allows explicit matching by rules and UnicodeSets
      * of text outside the context.  In traditional terms, this allows anchoring
      * at the start and/or end.
