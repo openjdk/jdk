@@ -66,6 +66,7 @@
 #include "services/memoryService.hpp"
 #include "services/runtimeService.hpp"
 #include "utilities/stack.inline.hpp"
+#include "utilities/taskqueue.inline.hpp"
 
 // statics
 CMSCollector* ConcurrentMarkSweepGeneration::_collector = NULL;
@@ -224,16 +225,12 @@ ConcurrentMarkSweepGeneration::ConcurrentMarkSweepGeneration(
            "Offset of FreeChunk::_prev within FreeChunk must match"
            "  that of OopDesc::_klass within OopDesc");
   )
-  if (CollectedHeap::use_parallel_gc_threads()) {
-    typedef CMSParGCThreadState* CMSParGCThreadStatePtr;
-    _par_gc_thread_states =
-      NEW_C_HEAP_ARRAY(CMSParGCThreadStatePtr, ParallelGCThreads, mtGC);
-    for (uint i = 0; i < ParallelGCThreads; i++) {
-      _par_gc_thread_states[i] = new CMSParGCThreadState(cmsSpace());
-    }
-  } else {
-    _par_gc_thread_states = NULL;
+
+  _par_gc_thread_states = NEW_C_HEAP_ARRAY(CMSParGCThreadState*, ParallelGCThreads, mtGC);
+  for (uint i = 0; i < ParallelGCThreads; i++) {
+    _par_gc_thread_states[i] = new CMSParGCThreadState(cmsSpace());
   }
+
   _incremental_collection_failed = false;
   // The "dilatation_factor" is the expansion that can occur on
   // account of the fact that the minimum object size in the CMS
@@ -459,7 +456,6 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
   _markBitMap(0, Mutex::leaf + 1, "CMS_markBitMap_lock"),
   _modUnionTable((CardTableModRefBS::card_shift - LogHeapWordSize),
                  -1 /* lock-free */, "No_lock" /* dummy */),
-  _modUnionClosure(&_modUnionTable),
   _modUnionClosurePar(&_modUnionTable),
   // Adjust my span to cover old (cms) gen
   _span(cmsGen->reserved()),
@@ -2129,10 +2125,7 @@ void CMSCollector::gc_prologue(bool full) {
 
   bool registerClosure = duringMarking;
 
-  ModUnionClosure* muc = CollectedHeap::use_parallel_gc_threads() ?
-                                               &_modUnionClosurePar
-                                               : &_modUnionClosure;
-  _cmsGen->gc_prologue_work(full, registerClosure, muc);
+  _cmsGen->gc_prologue_work(full, registerClosure, &_modUnionClosurePar);
 
   if (!full) {
     stats().record_gc0_begin();
@@ -2905,8 +2898,8 @@ CMSPhaseAccounting::~CMSPhaseAccounting() {
 class CMSParMarkTask : public AbstractGangTask {
  protected:
   CMSCollector*     _collector;
-  int               _n_workers;
-  CMSParMarkTask(const char* name, CMSCollector* collector, int n_workers) :
+  uint              _n_workers;
+  CMSParMarkTask(const char* name, CMSCollector* collector, uint n_workers) :
       AbstractGangTask(name),
       _collector(collector),
       _n_workers(n_workers) {}
@@ -2920,7 +2913,7 @@ class CMSParMarkTask : public AbstractGangTask {
 // Parallel initial mark task
 class CMSParInitialMarkTask: public CMSParMarkTask {
  public:
-  CMSParInitialMarkTask(CMSCollector* collector, int n_workers) :
+  CMSParInitialMarkTask(CMSCollector* collector, uint n_workers) :
       CMSParMarkTask("Scan roots and young gen for initial mark in parallel",
                      collector, n_workers) {}
   void work(uint worker_id);
@@ -3005,11 +2998,11 @@ void CMSCollector::checkpointRootsInitialWork() {
 
   {
     COMPILER2_PRESENT(DerivedPointerTableDeactivate dpt_deact;)
-    if (CMSParallelInitialMarkEnabled && CollectedHeap::use_parallel_gc_threads()) {
+    if (CMSParallelInitialMarkEnabled) {
       // The parallel version.
       FlexibleWorkGang* workers = gch->workers();
       assert(workers != NULL, "Need parallel worker threads.");
-      int n_workers = workers->active_workers();
+      uint n_workers = workers->active_workers();
       CMSParInitialMarkTask tsk(this, n_workers);
       gch->set_par_threads(n_workers);
       initialize_sequential_subtasks_for_young_gen_rescan(n_workers);
@@ -3150,7 +3143,7 @@ class CMSConcMarkingTerminatorTerminator: public TerminatorTerminator {
 // MT Concurrent Marking Task
 class CMSConcMarkingTask: public YieldingFlexibleGangTask {
   CMSCollector* _collector;
-  int           _n_workers;                  // requested/desired # workers
+  uint          _n_workers;       // requested/desired # workers
   bool          _result;
   CompactibleFreeListSpace*  _cms_space;
   char          _pad_front[64];   // padding to ...
@@ -3196,7 +3189,7 @@ class CMSConcMarkingTask: public YieldingFlexibleGangTask {
 
   CMSConcMarkingTerminator* terminator() { return &_term; }
 
-  virtual void set_for_termination(int active_workers) {
+  virtual void set_for_termination(uint active_workers) {
     terminator()->reset_for_reuse(active_workers);
   }
 
@@ -3642,10 +3635,9 @@ void CMSConcMarkingTask::coordinator_yield() {
 
 bool CMSCollector::do_marking_mt() {
   assert(ConcGCThreads > 0 && conc_workers() != NULL, "precondition");
-  int num_workers = AdaptiveSizePolicy::calc_active_conc_workers(
-                                       conc_workers()->total_workers(),
-                                       conc_workers()->active_workers(),
-                                       Threads::number_of_non_daemon_threads());
+  uint num_workers = AdaptiveSizePolicy::calc_active_conc_workers(conc_workers()->total_workers(),
+                                                                  conc_workers()->active_workers(),
+                                                                  Threads::number_of_non_daemon_threads());
   conc_workers()->set_active_workers(num_workers);
 
   CompactibleFreeListSpace* cms_space  = _cmsGen->cmsSpace();
@@ -4347,7 +4339,7 @@ void CMSCollector::checkpointRootsFinalWork() {
     // dirtied since the first checkpoint in this GC cycle and prior to
     // the most recent young generation GC, minus those cleaned up by the
     // concurrent precleaning.
-    if (CMSParallelRemarkEnabled && CollectedHeap::use_parallel_gc_threads()) {
+    if (CMSParallelRemarkEnabled) {
       GCTraceTime t("Rescan (parallel) ", PrintGCDetails, false, _gc_timer_cm, _gc_tracer_cm->gc_id());
       do_remark_parallel();
     } else {
@@ -4491,7 +4483,7 @@ class CMSParRemarkTask: public CMSParMarkTask {
   // workers to be taken from the active workers in the work gang.
   CMSParRemarkTask(CMSCollector* collector,
                    CompactibleFreeListSpace* cms_space,
-                   int n_workers, FlexibleWorkGang* workers,
+                   uint n_workers, FlexibleWorkGang* workers,
                    OopTaskQueueSet* task_queues):
     CMSParMarkTask("Rescan roots and grey objects in parallel",
                    collector, n_workers),
@@ -4504,7 +4496,7 @@ class CMSParRemarkTask: public CMSParMarkTask {
   OopTaskQueue* work_queue(int i) { return task_queues()->queue(i); }
 
   ParallelTaskTerminator* terminator() { return &_term; }
-  int n_workers() { return _n_workers; }
+  uint n_workers() { return _n_workers; }
 
   void work(uint worker_id);
 
@@ -5067,7 +5059,7 @@ void CMSCollector::do_remark_parallel() {
   // Choose to use the number of GC workers most recently set
   // into "active_workers".  If active_workers is not set, set it
   // to ParallelGCThreads.
-  int n_workers = workers->active_workers();
+  uint n_workers = workers->active_workers();
   if (n_workers == 0) {
     assert(n_workers > 0, "Should have been set during scavenge");
     n_workers = ParallelGCThreads;
@@ -5433,7 +5425,7 @@ void CMSCollector::refProcessingWork() {
       // That is OK as long as the Reference lists are balanced (see
       // balance_all_queues() and balance_queues()).
       GenCollectedHeap* gch = GenCollectedHeap::heap();
-      int active_workers = ParallelGCThreads;
+      uint active_workers = ParallelGCThreads;
       FlexibleWorkGang* workers = gch->workers();
       if (workers != NULL) {
         active_workers = workers->active_workers();

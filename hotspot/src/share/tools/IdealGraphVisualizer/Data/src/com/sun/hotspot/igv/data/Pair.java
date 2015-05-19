@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,15 +58,30 @@ public class Pair<L, R> {
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof Pair)) {
+        if (o == null || !(o instanceof Pair)) {
             return false;
         }
-        Pair obj = (Pair) o;
-        return l.equals(obj.l) && r.equals(obj.r);
+        Pair<?,?> obj = (Pair<?,?>) o;
+        boolean b1 = (l == obj.l);
+        if (l != null) {
+            b1 = l.equals(obj.l);
+        }
+
+        boolean b2 = (r == obj.r);
+        if (r != null) {
+            b2 = r.equals(obj.r);
+        }
+
+        return b1 && b2;
     }
 
     @Override
     public int hashCode() {
-        return l.hashCode() * 71 + r.hashCode();
+        return ((l == null) ? 0 : l.hashCode()) * 71 + ((r == null) ? 0 : r.hashCode());
+    }
+
+    @Override
+    public String toString() {
+        return "[" + l + "/" + r + "]";
     }
 }

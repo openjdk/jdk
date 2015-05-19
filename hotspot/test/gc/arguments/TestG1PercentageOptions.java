@@ -32,7 +32,7 @@
  * @run driver TestG1PercentageOptions
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 public class TestG1PercentageOptions {
 

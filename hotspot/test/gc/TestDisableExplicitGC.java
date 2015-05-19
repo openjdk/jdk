@@ -32,7 +32,7 @@
  */
 import java.lang.management.GarbageCollectorMXBean;
 import java.util.List;
-import static com.oracle.java.testlibrary.Asserts.*;
+import static jdk.test.lib.Asserts.*;
 
 public class TestDisableExplicitGC {
 

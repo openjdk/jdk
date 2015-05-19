@@ -34,7 +34,7 @@
  * @author jon.masamitsu@oracle.com
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 public class AdaptiveGCBoundary {
   public static void main(String args[]) throws Exception {

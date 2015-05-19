@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,9 +76,6 @@ double G1MMUTrackerQueue::calculate_gc_time(double current_time) {
 }
 
 void G1MMUTrackerQueue::add_pause(double start, double end, bool gc_thread) {
-  double longest_allowed = longest_pause_internal(start);
-  if (longest_allowed < 0.0)
-    longest_allowed = 0.0;
   double duration = end - start;
 
   remove_expired_entries(end);
@@ -105,41 +102,6 @@ void G1MMUTrackerQueue::add_pause(double start, double end, bool gc_thread) {
     ++_no_entries;
   }
   _array[_head_index] = G1MMUTrackerQueueElem(start, end);
-}
-
-// basically the _internal call does not remove expired entries
-// this is for trying things out in the future and a couple
-// of other places (debugging)
-
-double G1MMUTrackerQueue::longest_pause(double current_time) {
-  if (_DISABLE_MMU)
-    return _max_gc_time;
-
-  MutexLockerEx x(MMUTracker_lock, Mutex::_no_safepoint_check_flag);
-  remove_expired_entries(current_time);
-
-  return longest_pause_internal(current_time);
-}
-
-double G1MMUTrackerQueue::longest_pause_internal(double current_time) {
-  double target_time = _max_gc_time;
-
-  while( 1 ) {
-    double gc_time =
-      calculate_gc_time(current_time + target_time);
-    double diff = target_time + gc_time - _max_gc_time;
-    if (!is_double_leq_0(diff)) {
-      target_time -= diff;
-      if (is_double_leq_0(target_time)) {
-        target_time = -1.0;
-        break;
-      }
-    } else {
-      break;
-    }
-  }
-
-  return target_time;
 }
 
 // basically the _internal call does not remove expired entries

@@ -37,10 +37,10 @@
  *                   -XX:+WhiteBoxAPI TestUseRTMLockingOptionOnUnsupportedCPU
  */
 
-import com.oracle.java.testlibrary.*;
-import com.oracle.java.testlibrary.cli.*;
-import com.oracle.java.testlibrary.cli.predicate.AndPredicate;
-import com.oracle.java.testlibrary.cli.predicate.NotPredicate;
+import jdk.test.lib.*;
+import jdk.test.lib.cli.*;
+import jdk.test.lib.cli.predicate.AndPredicate;
+import jdk.test.lib.cli.predicate.NotPredicate;
 import rtm.predicate.SupportedCPU;
 import rtm.predicate.SupportedVM;
 
@@ -60,7 +60,7 @@ public class TestUseRTMLockingOptionOnUnsupportedCPU
                 "UseRTMLocking");
         String errorMessage = RTMGenericCommandLineOptionTest.RTM_INSTR_ERROR;
 
-        if (Platform.isX86() || Platform.isX64()) {
+        if (Platform.isX86() || Platform.isX64() || Platform.isPPC()) {
             String shouldFailMessage = "JVM startup should fail with option "
                     + "-XX:+UseRTMLocking on unsupported CPU";
             // verify that we get an error when use +UseRTMLocking

@@ -31,7 +31,7 @@
  *          java.management
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 public class Test6857159 {
     public static void main(String[] args) throws Exception {

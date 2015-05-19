@@ -29,7 +29,7 @@
  *          java.management
  */
 
-import com.oracle.java.testlibrary.OutputAnalyzer;
+import jdk.test.lib.OutputAnalyzer;
 
 public class OutputAnalyzerTest {
 

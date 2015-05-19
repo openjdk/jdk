@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,17 +35,26 @@ public class OutputSlot extends Slot {
         super(figure, wantedIndex);
     }
 
+    @Override
     public int getPosition() {
         return getFigure().getOutputSlots().indexOf(this);
     }
 
+    @Override
     public void setPosition(int position) {
         OutputSlot s = getFigure().outputSlots.remove(position);
         getFigure().outputSlots.add(position, s);
     }
 
+    @Override
     public Point getRelativePosition() {
-        return new Point(getFigure().getWidth() * (getPosition() + 1) / (getFigure().getOutputSlots().size() + 1), getFigure().getSize().height - Figure.SLOT_WIDTH + Figure.SLOT_START);
+        int gap = getFigure().getWidth() - Figure.getSlotsWidth(getFigure().getOutputSlots());
+        if(gap < 0) {
+            gap = 0;
+        }
+        double gapRatio = (double)gap / (double)(getFigure().getOutputSlots().size() + 1);
+        int gapAmount = (int)((getPosition() + 1)*gapRatio);
+        return new Point(gapAmount + Figure.getSlotsWidth(Figure.getAllBefore(getFigure().getOutputSlots(), this)) + getWidth()/2, Figure.SLOT_START);
     }
 
     @Override

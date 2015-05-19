@@ -32,7 +32,7 @@
  * @run main/othervm TestUnrecognizedVMOptionsHandling
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 public class TestUnrecognizedVMOptionsHandling {
 

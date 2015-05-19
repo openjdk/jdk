@@ -25,13 +25,14 @@
  * @test NullCheckDroppingsTest
  * @bug 8054492
  * @summary "Casting can result in redundant null checks in generated code"
- * @library /testlibrary /../../test/lib /testlibrary/com/oracle/java/testlibrary
+ * @library /testlibrary /../../test/lib
  * @modules java.base/sun.misc
  *          java.management
+ * @build ClassFileInstaller sun.hotspot.WhiteBox jdk.test.lib.*
  * @build NullCheckDroppingsTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main ClassFileInstaller com.oracle.java.testlibrary.Platform
+ * @run main ClassFileInstaller jdk.test.lib.Platform
  * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -Xmixed -XX:-BackgroundCompilation -XX:-TieredCompilation -XX:CompileThreshold=1000
  *                   -XX:CompileCommand=exclude,NullCheckDroppingsTest::runTest NullCheckDroppingsTest
@@ -39,7 +40,7 @@
 
 import sun.hotspot.WhiteBox;
 import sun.hotspot.code.NMethod;
-import com.oracle.java.testlibrary.Platform;
+import jdk.test.lib.Platform;
 
 import java.lang.reflect.Method;
 import java.lang.invoke.MethodHandle;

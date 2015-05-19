@@ -358,7 +358,7 @@ public class PPC64Frame extends Frame {
       map.setIncludeArgumentOops(cb.callerMustGCArguments());
 
       if (cb.getOopMaps() != null) {
-        OopMapSet.updateRegisterMap(this, cb, map, true);
+        ImmutableOopMapSet.updateRegisterMap(this, cb, map, true);
       }
     }
 
