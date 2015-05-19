@@ -647,7 +647,6 @@ class CMSCollector: public CHeapObj<mtGC> {
   // Keep this textually after _markBitMap and _span; c'tor dependency.
 
   ConcurrentMarkSweepThread*     _cmsThread;   // The thread doing the work
-  ModUnionClosure    _modUnionClosure;
   ModUnionClosurePar _modUnionClosurePar;
 
   // CMS abstract state machine

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OBJECT_COUNT_EVENT_SENDER_HPP
-#define SHARE_VM_OBJECT_COUNT_EVENT_SENDER_HPP
+#ifndef SHARE_VM_GC_IMPLEMENTATION_SHARED_OBJECTCOUNTEVENTSENDER_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_SHARED_OBJECTCOUNTEVENTSENDER_HPP
 
 #include "gc_implementation/shared/gcTrace.hpp"
 #include "memory/allocation.hpp"
@@ -42,4 +42,4 @@ class ObjectCountEventSender : public AllStatic {
 
 #endif // INCLUDE_SERVICES
 
-#endif // SHARE_VM_OBJECT_COUNT_EVENT_SENDER
+#endif // SHARE_VM_GC_IMPLEMENTATION_SHARED_OBJECTCOUNTEVENTSENDER_HPP

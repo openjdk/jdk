@@ -32,7 +32,7 @@
  * @run driver TestSelectDefaultGC
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 import java.util.regex.*;
 
 public class TestSelectDefaultGC {

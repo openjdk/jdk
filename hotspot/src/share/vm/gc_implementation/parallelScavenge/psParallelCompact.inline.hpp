@@ -26,37 +26,10 @@
 #define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSPARALLELCOMPACT_INLINE_HPP
 
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
-#include "gc_implementation/parallelScavenge/psCompactionManager.hpp"
 #include "gc_implementation/parallelScavenge/psParallelCompact.hpp"
 #include "gc_interface/collectedHeap.hpp"
 #include "oops/klass.hpp"
 #include "oops/oop.inline.hpp"
-
-template <typename T>
-inline void PSParallelCompact::mark_and_push(ParCompactionManager* cm, T* p) {
-  T heap_oop = oopDesc::load_heap_oop(p);
-  if (!oopDesc::is_null(heap_oop)) {
-    oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
-    assert(ParallelScavengeHeap::heap()->is_in(obj), "should be in heap");
-
-    if (mark_bitmap()->is_unmarked(obj) && mark_obj(obj)) {
-      cm->push(obj);
-    }
-  }
-}
-
-template <typename T>
-inline void PSParallelCompact::MarkAndPushClosure::do_oop_nv(T* p) {
-  mark_and_push(_compaction_manager, p);
-}
-
-inline void PSParallelCompact::MarkAndPushClosure::do_oop(oop* p)       { do_oop_nv(p); }
-inline void PSParallelCompact::MarkAndPushClosure::do_oop(narrowOop* p) { do_oop_nv(p); }
-
-inline void PSParallelCompact::follow_klass(ParCompactionManager* cm, Klass* klass) {
-  oop holder = klass->klass_holder();
-  mark_and_push(cm, &holder);
-}
 
 template <class T>
 inline void PSParallelCompact::adjust_pointer(T* p) {

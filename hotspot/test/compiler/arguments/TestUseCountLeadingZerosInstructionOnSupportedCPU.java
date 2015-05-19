@@ -39,7 +39,7 @@
  */
 
 import sun.hotspot.cpuinfo.CPUInfo;
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 public class TestUseCountLeadingZerosInstructionOnSupportedCPU
      extends BMISupportedCPUTest {

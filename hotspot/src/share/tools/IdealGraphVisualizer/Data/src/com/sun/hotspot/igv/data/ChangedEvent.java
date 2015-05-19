@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,20 +24,22 @@
 package com.sun.hotspot.igv.data;
 
 /**
- *
+ * Class representing a generic changed event.
  * @author Thomas Wuerthinger
+ * @param <T>
  */
 public class ChangedEvent<T> extends Event<ChangedListener<T>> {
 
     private T object;
 
-    public ChangedEvent() {
-    }
-
+    /**
+     * Creates a new event with the specific object as the one for which the event gets fired.
+     */
     public ChangedEvent(T object) {
         this.object = object;
     }
 
+    @Override
     protected void fire(ChangedListener<T> l) {
         l.changed(object);
     }

@@ -30,7 +30,7 @@
  *          java.management
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 public class PrintSharedArchiveAndExit {
   public static void main(String[] args) throws Exception {

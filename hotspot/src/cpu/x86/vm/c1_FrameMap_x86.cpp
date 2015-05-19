@@ -233,13 +233,30 @@ void FrameMap::initialize() {
   _xmm_regs[13]  = xmm13;
   _xmm_regs[14]  = xmm14;
   _xmm_regs[15]  = xmm15;
+  _xmm_regs[16]  = xmm16;
+  _xmm_regs[17]  = xmm17;
+  _xmm_regs[18]  = xmm18;
+  _xmm_regs[19]  = xmm19;
+  _xmm_regs[20]  = xmm20;
+  _xmm_regs[21]  = xmm21;
+  _xmm_regs[22]  = xmm22;
+  _xmm_regs[23]  = xmm23;
+  _xmm_regs[24]  = xmm24;
+  _xmm_regs[25]  = xmm25;
+  _xmm_regs[26]  = xmm26;
+  _xmm_regs[27]  = xmm27;
+  _xmm_regs[28]  = xmm28;
+  _xmm_regs[29]  = xmm29;
+  _xmm_regs[30]  = xmm30;
+  _xmm_regs[31]  = xmm31;
 #endif // _LP64
 
   for (int i = 0; i < 8; i++) {
     _caller_save_fpu_regs[i] = LIR_OprFact::single_fpu(i);
   }
 
-  for (int i = 0; i < nof_caller_save_xmm_regs ; i++) {
+  int num_caller_save_xmm_regs = get_num_caller_save_xmms();
+  for (int i = 0; i < num_caller_save_xmm_regs; i++) {
     _caller_save_xmm_regs[i] = LIR_OprFact::single_xmm(i);
   }
 

@@ -35,7 +35,7 @@
 int VM_Version::_cpu;
 int VM_Version::_model;
 int VM_Version::_stepping;
-int VM_Version::_cpuFeatures;
+uint64_t VM_Version::_cpuFeatures;
 const char*           VM_Version::_features_str = "";
 VM_Version::CpuidInfo VM_Version::_cpuid_info   = { 0, };
 
@@ -45,7 +45,7 @@ address VM_Version::_cpuinfo_segv_addr = 0;
 address VM_Version::_cpuinfo_cont_addr = 0;
 
 static BufferBlob* stub_blob;
-static const int stub_size = 600;
+static const int stub_size = 1000;
 
 extern "C" {
   typedef void (*get_cpu_info_stub_t)(void*);
@@ -60,15 +60,16 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 
   address generate_get_cpu_info() {
     // Flags to test CPU type.
-    const uint32_t HS_EFL_AC           = 0x40000;
-    const uint32_t HS_EFL_ID           = 0x200000;
+    const uint32_t HS_EFL_AC = 0x40000;
+    const uint32_t HS_EFL_ID = 0x200000;
     // Values for when we don't have a CPUID instruction.
     const int      CPU_FAMILY_SHIFT = 8;
-    const uint32_t CPU_FAMILY_386   = (3 << CPU_FAMILY_SHIFT);
-    const uint32_t CPU_FAMILY_486   = (4 << CPU_FAMILY_SHIFT);
+    const uint32_t CPU_FAMILY_386 = (3 << CPU_FAMILY_SHIFT);
+    const uint32_t CPU_FAMILY_486 = (4 << CPU_FAMILY_SHIFT);
 
     Label detect_486, cpu486, detect_586, std_cpuid1, std_cpuid4;
-    Label sef_cpuid, ext_cpuid, ext_cpuid1, ext_cpuid5, ext_cpuid7, done;
+    Label sef_cpuid, ext_cpuid, ext_cpuid1, ext_cpuid5, ext_cpuid7, done, wrapup;
+    Label legacy_setup, save_restore_except, legacy_save_restore, start_simd_check;
 
     StubCodeMark mark(this, "VM_Version", "get_cpu_info_stub");
 #   define __ _masm->
@@ -241,53 +242,6 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ movl(Address(rsi, 0), rax);
     __ movl(Address(rsi, 4), rdx);
 
-    __ andl(rax, 0x6); // xcr0 bits sse | ymm
-    __ cmpl(rax, 0x6);
-    __ jccb(Assembler::notEqual, sef_cpuid); // jump if AVX is not supported
-
-    //
-    // Some OSs have a bug when upper 128bits of YMM
-    // registers are not restored after a signal processing.
-    // Generate SEGV here (reference through NULL)
-    // and check upper YMM bits after it.
-    //
-    VM_Version::set_avx_cpuFeatures(); // Enable temporary to pass asserts
-    intx saved_useavx = UseAVX;
-    intx saved_usesse = UseSSE;
-    UseAVX = 1;
-    UseSSE = 2;
-
-    // load value into all 32 bytes of ymm7 register
-    __ movl(rcx, VM_Version::ymm_test_value());
-
-    __ movdl(xmm0, rcx);
-    __ pshufd(xmm0, xmm0, 0x00);
-    __ vinsertf128h(xmm0, xmm0, xmm0);
-    __ vmovdqu(xmm7, xmm0);
-#ifdef _LP64
-    __ vmovdqu(xmm8,  xmm0);
-    __ vmovdqu(xmm15, xmm0);
-#endif
-
-    __ xorl(rsi, rsi);
-    VM_Version::set_cpuinfo_segv_addr( __ pc() );
-    // Generate SEGV
-    __ movl(rax, Address(rsi, 0));
-
-    VM_Version::set_cpuinfo_cont_addr( __ pc() );
-    // Returns here after signal. Save xmm0 to check it later.
-    __ lea(rsi, Address(rbp, in_bytes(VM_Version::ymm_save_offset())));
-    __ vmovdqu(Address(rsi,  0), xmm0);
-    __ vmovdqu(Address(rsi, 32), xmm7);
-#ifdef _LP64
-    __ vmovdqu(Address(rsi, 64), xmm8);
-    __ vmovdqu(Address(rsi, 96), xmm15);
-#endif
-
-    VM_Version::clean_cpuFeatures();
-    UseAVX = saved_useavx;
-    UseSSE = saved_usesse;
-
     //
     // cpuid(0x7) Structured Extended Features
     //
@@ -364,9 +318,143 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ movl(Address(rsi,12), rdx);
 
     //
-    // return
+    // Check if OS has enabled XGETBV instruction to access XCR0
+    // (OSXSAVE feature flag) and CPU supports AVX
     //
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::std_cpuid1_offset())));
+    __ movl(rcx, 0x18000000); // cpuid1 bits osxsave | avx
+    __ andl(rcx, Address(rsi, 8)); // cpuid1 bits osxsave | avx
+    __ cmpl(rcx, 0x18000000);
+    __ jccb(Assembler::notEqual, done); // jump if AVX is not supported
+
+    __ movl(rax, 0x6);
+    __ andl(rax, Address(rbp, in_bytes(VM_Version::xem_xcr0_offset()))); // xcr0 bits sse | ymm
+    __ cmpl(rax, 0x6);
+    __ jccb(Assembler::equal, start_simd_check); // return if AVX is not supported
+
+    // we need to bridge farther than imm8, so we use this island as a thunk
     __ bind(done);
+    __ jmp(wrapup);
+
+    __ bind(start_simd_check);
+    //
+    // Some OSs have a bug when upper 128/256bits of YMM/ZMM
+    // registers are not restored after a signal processing.
+    // Generate SEGV here (reference through NULL)
+    // and check upper YMM/ZMM bits after it.
+    //
+    intx saved_useavx = UseAVX;
+    intx saved_usesse = UseSSE;
+    // check _cpuid_info.sef_cpuid7_ebx.bits.avx512f
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::sef_cpuid7_offset())));
+    __ movl(rax, 0x10000);
+    __ andl(rax, Address(rsi, 4)); // xcr0 bits sse | ymm
+    __ cmpl(rax, 0x10000);
+    __ jccb(Assembler::notEqual, legacy_setup); // jump if EVEX is not supported
+    // check _cpuid_info.xem_xcr0_eax.bits.opmask
+    // check _cpuid_info.xem_xcr0_eax.bits.zmm512
+    // check _cpuid_info.xem_xcr0_eax.bits.zmm32
+    __ movl(rax, 0xE0);
+    __ andl(rax, Address(rbp, in_bytes(VM_Version::xem_xcr0_offset()))); // xcr0 bits sse | ymm
+    __ cmpl(rax, 0xE0);
+    __ jccb(Assembler::notEqual, legacy_setup); // jump if EVEX is not supported
+
+    // EVEX setup: run in lowest evex mode
+    VM_Version::set_evex_cpuFeatures(); // Enable temporary to pass asserts
+    UseAVX = 3;
+    UseSSE = 2;
+    // load value into all 64 bytes of zmm7 register
+    __ movl(rcx, VM_Version::ymm_test_value());
+    __ movdl(xmm0, rcx);
+    __ movl(rcx, 0xffff);
+#ifdef _LP64
+    __ kmovql(k1, rcx);
+#else
+    __ kmovdl(k1, rcx);
+#endif
+    __ evpbroadcastd(xmm0, xmm0, Assembler::AVX_512bit);
+    __ evmovdqu(xmm7, xmm0, Assembler::AVX_512bit);
+#ifdef _LP64
+    __ evmovdqu(xmm8, xmm0, Assembler::AVX_512bit);
+    __ evmovdqu(xmm31, xmm0, Assembler::AVX_512bit);
+#endif
+    VM_Version::clean_cpuFeatures();
+    __ jmp(save_restore_except);
+
+    __ bind(legacy_setup);
+    // AVX setup
+    VM_Version::set_avx_cpuFeatures(); // Enable temporary to pass asserts
+    UseAVX = 1;
+    UseSSE = 2;
+    // load value into all 32 bytes of ymm7 register
+    __ movl(rcx, VM_Version::ymm_test_value());
+
+    __ movdl(xmm0, rcx);
+    __ pshufd(xmm0, xmm0, 0x00);
+    __ vinsertf128h(xmm0, xmm0, xmm0);
+    __ vmovdqu(xmm7, xmm0);
+#ifdef _LP64
+    __ vmovdqu(xmm8, xmm0);
+    __ vmovdqu(xmm15, xmm0);
+#endif
+    VM_Version::clean_cpuFeatures();
+
+    __ bind(save_restore_except);
+    __ xorl(rsi, rsi);
+    VM_Version::set_cpuinfo_segv_addr(__ pc());
+    // Generate SEGV
+    __ movl(rax, Address(rsi, 0));
+
+    VM_Version::set_cpuinfo_cont_addr(__ pc());
+    // Returns here after signal. Save xmm0 to check it later.
+
+    // check _cpuid_info.sef_cpuid7_ebx.bits.avx512f
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::sef_cpuid7_offset())));
+    __ movl(rax, 0x10000);
+    __ andl(rax, Address(rsi, 4));
+    __ cmpl(rax, 0x10000);
+    __ jccb(Assembler::notEqual, legacy_save_restore);
+    // check _cpuid_info.xem_xcr0_eax.bits.opmask
+    // check _cpuid_info.xem_xcr0_eax.bits.zmm512
+    // check _cpuid_info.xem_xcr0_eax.bits.zmm32
+    __ movl(rax, 0xE0);
+    __ andl(rax, Address(rbp, in_bytes(VM_Version::xem_xcr0_offset()))); // xcr0 bits sse | ymm
+    __ cmpl(rax, 0xE0);
+    __ jccb(Assembler::notEqual, legacy_save_restore);
+
+    // EVEX check: run in lowest evex mode
+    VM_Version::set_evex_cpuFeatures(); // Enable temporary to pass asserts
+    UseAVX = 3;
+    UseSSE = 2;
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::zmm_save_offset())));
+    __ evmovdqu(Address(rsi, 0), xmm0, Assembler::AVX_512bit);
+    __ evmovdqu(Address(rsi, 64), xmm7, Assembler::AVX_512bit);
+#ifdef _LP64
+    __ evmovdqu(Address(rsi, 128), xmm8, Assembler::AVX_512bit);
+    __ evmovdqu(Address(rsi, 192), xmm31, Assembler::AVX_512bit);
+#endif
+    VM_Version::clean_cpuFeatures();
+    UseAVX = saved_useavx;
+    UseSSE = saved_usesse;
+    __ jmp(wrapup);
+
+    __ bind(legacy_save_restore);
+    // AVX check
+    VM_Version::set_avx_cpuFeatures(); // Enable temporary to pass asserts
+    UseAVX = 1;
+    UseSSE = 2;
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::ymm_save_offset())));
+    __ vmovdqu(Address(rsi, 0), xmm0);
+    __ vmovdqu(Address(rsi, 32), xmm7);
+#ifdef _LP64
+    __ vmovdqu(Address(rsi, 64), xmm8);
+    __ vmovdqu(Address(rsi, 96), xmm15);
+#endif
+    VM_Version::clean_cpuFeatures();
+    UseAVX = saved_useavx;
+    UseSSE = saved_usesse;
+
+    __ bind(wrapup);
     __ popf();
     __ pop(rsi);
     __ pop(rbx);
@@ -459,6 +547,29 @@ void VM_Version::get_processor_features() {
   if (UseSSE < 1)
     _cpuFeatures &= ~CPU_SSE;
 
+  // first try initial setting and detect what we can support
+  if (UseAVX > 0) {
+    if (UseAVX > 2 && supports_evex()) {
+      UseAVX = 3;
+    } else if (UseAVX > 1 && supports_avx2()) {
+      UseAVX = 2;
+    } else if (UseAVX > 0 && supports_avx()) {
+      UseAVX = 1;
+    } else {
+      UseAVX = 0;
+    }
+  } else if (UseAVX < 0) {
+    UseAVX = 0;
+  }
+
+  if (UseAVX < 3) {
+    _cpuFeatures &= ~CPU_AVX512F;
+    _cpuFeatures &= ~CPU_AVX512DQ;
+    _cpuFeatures &= ~CPU_AVX512CD;
+    _cpuFeatures &= ~CPU_AVX512BW;
+    _cpuFeatures &= ~CPU_AVX512VL;
+  }
+
   if (UseAVX < 2)
     _cpuFeatures &= ~CPU_AVX2;
 
@@ -474,7 +585,7 @@ void VM_Version::get_processor_features() {
   }
 
   char buf[256];
-  jio_snprintf(buf, sizeof(buf), "(%u cores per cpu, %u threads per core) family %d model %d stepping %d%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+  jio_snprintf(buf, sizeof(buf), "(%u cores per cpu, %u threads per core) family %d model %d stepping %d%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
                cores_per_cpu(), threads_per_core(),
                cpu_family(), _model, _stepping,
                (supports_cmov() ? ", cmov" : ""),
@@ -504,7 +615,8 @@ void VM_Version::get_processor_features() {
                (supports_tscinv() ? ", tscinv": ""),
                (supports_bmi1() ? ", bmi1" : ""),
                (supports_bmi2() ? ", bmi2" : ""),
-               (supports_adx() ? ", adx" : ""));
+               (supports_adx() ? ", adx" : ""),
+               (supports_evex() ? ", evex" : ""));
   _features_str = os::strdup(buf);
 
   // UseSSE is set to the smaller of what hardware supports and what
@@ -520,13 +632,6 @@ void VM_Version::get_processor_features() {
     UseSSE = MIN2((intx)1,UseSSE);
   if (!supports_sse ()) // Drop to 0 if no SSE  support
     UseSSE = 0;
-
-  if (UseAVX > 2) UseAVX=2;
-  if (UseAVX < 0) UseAVX=0;
-  if (!supports_avx2()) // Drop to 1 if no AVX2 support
-    UseAVX = MIN2((intx)1,UseAVX);
-  if (!supports_avx ()) // Drop to 0 if no AVX  support
-    UseAVX = 0;
 
   // Use AES instructions if available.
   if (supports_aes()) {
@@ -598,7 +703,8 @@ void VM_Version::get_processor_features() {
       if ((_model == CPU_MODEL_HASWELL_E3) ||
           (_model == CPU_MODEL_HASWELL_E7 && _stepping < 3) ||
           (_model == CPU_MODEL_BROADWELL  && _stepping < 4)) {
-        if (!UnlockExperimentalVMOptions) {
+        // currently a collision between SKL and HSW_E3
+        if (!UnlockExperimentalVMOptions && UseAVX < 3) {
           vm_exit_during_initialization("UseRTMLocking is only available as experimental option on this platform. It must be enabled via -XX:+UnlockExperimentalVMOptions flag.");
         } else {
           warning("UseRTMLocking is only available as experimental option on this platform.");
@@ -651,10 +757,10 @@ void VM_Version::get_processor_features() {
   if (MaxVectorSize > 0) {
     if (!is_power_of_2(MaxVectorSize)) {
       warning("MaxVectorSize must be a power of 2");
-      FLAG_SET_DEFAULT(MaxVectorSize, 32);
+      FLAG_SET_DEFAULT(MaxVectorSize, 64);
     }
-    if (MaxVectorSize > 32) {
-      FLAG_SET_DEFAULT(MaxVectorSize, 32);
+    if (MaxVectorSize > 64) {
+      FLAG_SET_DEFAULT(MaxVectorSize, 64);
     }
     if (MaxVectorSize > 16 && (UseAVX == 0 || !os_supports_avx_vectors())) {
       // 32 bytes vectors (in YMM) are only supported with AVX+

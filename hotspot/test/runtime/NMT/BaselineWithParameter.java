@@ -32,7 +32,7 @@
  * @run main/othervm -XX:NativeMemoryTracking=detail BaselineWithParameter
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 public class BaselineWithParameter {
 

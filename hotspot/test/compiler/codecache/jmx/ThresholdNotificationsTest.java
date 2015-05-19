@@ -21,8 +21,8 @@
  * questions.
  */
 
-import com.oracle.java.testlibrary.Asserts;
-import com.oracle.java.testlibrary.Utils;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryNotificationInfo;
 import java.lang.management.MemoryPoolMXBean;
@@ -83,7 +83,7 @@ public class ThresholdNotificationsTest implements NotificationListener {
 
     protected void runTest() {
         int iterationsCount =
-            Integer.getInteger("com.oracle.java.testlibrary.iterations", 1);
+            Integer.getInteger("jdk.test.lib.iterations", 1);
         MemoryPoolMXBean bean = btype.getMemoryPool();
         ((NotificationEmitter) ManagementFactory.getMemoryMXBean()).
                 addNotificationListener(this, null, null);

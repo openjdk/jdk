@@ -28,7 +28,7 @@
  * @library /testlibrary
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 public class ObsoleteFlagErrorMessage {
   public static void main(String[] args) throws Exception {
