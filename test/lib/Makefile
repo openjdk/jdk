@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -41,25 +41,38 @@ OUTPUT_DIR = $(BUILD_DIR)/classes
 JAVAC = $(JDK_HOME)/bin/javac
 JAR = $(JDK_HOME)/bin/jar
 
-SRC_FILES = $(shell find $(SRC_DIR) -name '*.java')
+WB_SRC_FILES = $(shell find $(SRC_DIR)/sun/hotspot -name '*.java')
+SHARE_SRC_FILES = $(shell find $(SRC_DIR)/share/classes -name '*.java')
 
-.PHONY: filelist clean cleantmp
+.PHONY: wb.filelist share.filelist clean cleantmp
 
-all: wb.jar cleantmp
+all: wb.jar test-lib.jar cleantmp
 
-wb.jar: filelist
+wb.jar: wb.filelist
 	@mkdir -p $(OUTPUT_DIR)
-	$(JAVAC) -sourcepath $(SRC_DIR) -d $(OUTPUT_DIR) -cp $(OUTPUT_DIR) @filelist
+	$(JAVAC) -sourcepath $(SRC_DIR) -d $(OUTPUT_DIR) -cp $(OUTPUT_DIR) @wb.filelist
 	$(JAR) cf wb.jar -C $(OUTPUT_DIR) .
 	@rm -rf $(OUTPUT_DIR)
 
-filelist: $(SRC_FILES)
+wb.filelist: $(WB_SRC_FILES)
 	@rm -f $@
-	@echo $(SRC_FILES) > $@
+	@echo $(WB_SRC_FILES) > $@
+
+test-lib.jar: share.filelist
+	@mkdir -p $(OUTPUT_DIR)
+	$(JAVAC) -sourcepath $(SRC_DIR) -d $(OUTPUT_DIR) -cp $(OUTPUT_DIR) @share.filelist
+	$(JAR) cf test-lib.jar -C $(OUTPUT_DIR) .
+	@rm -rf $(OUTPUT_DIR)
+
+share.filelist: $(SHARE_SRC_FILES)
+	@rm -f $@
+	@echo $(SHARE_SRC_FILES) > $@
 
 clean: cleantmp
 	@rm -rf wb.jar
+	@rm -rf test-list.jar
 
 cleantmp:
-	@rm -rf filelist
+	@rm -rf wb.filelist
+	@rm -rf share.filelist
 	@rm -rf $(BUILD_DIR)
