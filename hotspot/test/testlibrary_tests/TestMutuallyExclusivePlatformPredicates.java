@@ -45,7 +45,7 @@ import java.util.Set;
  */
 public class TestMutuallyExclusivePlatformPredicates {
     private static enum MethodGroup {
-        ARCH("isARM", "isPPC", "isSparc", "isX86", "isX64"),
+        ARCH("isARM", "isPPC", "isSparc", "isX86", "isX64", "isAArch64"),
         BITNESS("is32bit", "is64bit"),
         OS("isAix", "isLinux", "isOSX", "isSolaris", "isWindows"),
         VM_TYPE("isClient", "isServer", "isGraal", "isMinimal", "isZero"),
