@@ -34,106 +34,42 @@
 
 #define SPARSE_PRT_VERBOSE 0
 
-#define UNROLL_CARD_LOOPS  1
-
 void SparsePRTEntry::init(RegionIdx_t region_ind) {
   _region_ind = region_ind;
   _next_index = NullEntry;
 
-#if UNROLL_CARD_LOOPS
-  assert((cards_num() & (UnrollFactor - 1)) == 0, "Invalid number of cards in the entry");
-  for (int i = 0; i < cards_num(); i += UnrollFactor) {
+  for (int i = 0; i < cards_num(); i++) {
     _cards[i] = NullEntry;
-    _cards[i + 1] = NullEntry;
-    _cards[i + 2] = NullEntry;
-    _cards[i + 3] = NullEntry;
   }
-#else
-  for (int i = 0; i < cards_num(); i++)
-    _cards[i] = NullEntry;
-#endif
 }
 
 bool SparsePRTEntry::contains_card(CardIdx_t card_index) const {
-#if UNROLL_CARD_LOOPS
-  assert((cards_num() & (UnrollFactor - 1)) == 0, "Invalid number of cards in the entry");
-  for (int i = 0; i < cards_num(); i += UnrollFactor) {
-    if (_cards[i] == card_index ||
-        _cards[i + 1] == card_index ||
-        _cards[i + 2] == card_index ||
-        _cards[i + 3] == card_index) return true;
-  }
-#else
   for (int i = 0; i < cards_num(); i++) {
     if (_cards[i] == card_index) return true;
   }
-#endif
-  // Otherwise, we're full.
   return false;
 }
 
 int SparsePRTEntry::num_valid_cards() const {
   int sum = 0;
-#if UNROLL_CARD_LOOPS
-  assert((cards_num() & (UnrollFactor - 1)) == 0, "Invalid number of cards in the entry");
-  for (int i = 0; i < cards_num(); i += UnrollFactor) {
-    sum += (_cards[i] != NullEntry);
-    sum += (_cards[i + 1] != NullEntry);
-    sum += (_cards[i + 2] != NullEntry);
-    sum += (_cards[i + 3] != NullEntry);
-  }
-#else
   for (int i = 0; i < cards_num(); i++) {
     sum += (_cards[i] != NullEntry);
   }
-#endif
-  // Otherwise, we're full.
   return sum;
 }
 
 SparsePRTEntry::AddCardResult SparsePRTEntry::add_card(CardIdx_t card_index) {
-#if UNROLL_CARD_LOOPS
-  assert((cards_num() & (UnrollFactor - 1)) == 0, "Invalid number of cards in the entry");
-  CardIdx_t c;
-  for (int i = 0; i < cards_num(); i += UnrollFactor) {
-    c = _cards[i];
-    if (c == card_index) return found;
-    if (c == NullEntry) { _cards[i] = card_index; return added; }
-    c = _cards[i + 1];
-    if (c == card_index) return found;
-    if (c == NullEntry) { _cards[i + 1] = card_index; return added; }
-    c = _cards[i + 2];
-    if (c == card_index) return found;
-    if (c == NullEntry) { _cards[i + 2] = card_index; return added; }
-    c = _cards[i + 3];
-    if (c == card_index) return found;
-    if (c == NullEntry) { _cards[i + 3] = card_index; return added; }
-  }
-#else
   for (int i = 0; i < cards_num(); i++) {
     CardIdx_t c = _cards[i];
     if (c == card_index) return found;
     if (c == NullEntry) { _cards[i] = card_index; return added; }
   }
-#endif
   // Otherwise, we're full.
   return overflow;
 }
 
 void SparsePRTEntry::copy_cards(CardIdx_t* cards) const {
-#if UNROLL_CARD_LOOPS
-  assert((cards_num() & (UnrollFactor - 1)) == 0, "Invalid number of cards in the entry");
-  for (int i = 0; i < cards_num(); i += UnrollFactor) {
-    cards[i] = _cards[i];
-    cards[i + 1] = _cards[i + 1];
-    cards[i + 2] = _cards[i + 2];
-    cards[i + 3] = _cards[i + 3];
-  }
-#else
-  for (int i = 0; i < cards_num(); i++) {
-    cards[i] = _cards[i];
-  }
-#endif
+  memcpy(cards, _cards, cards_num() * sizeof(CardIdx_t));
 }
 
 void SparsePRTEntry::copy_cards(SparsePRTEntry* e) const {
