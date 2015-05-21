@@ -455,7 +455,7 @@ void DefNewGeneration::compute_new_size() {
   }
 }
 
-void DefNewGeneration::younger_refs_iterate(OopsInGenClosure* cl) {
+void DefNewGeneration::younger_refs_iterate(OopsInGenClosure* cl, uint n_threads) {
   assert(false, "NYI -- are you sure you want to call this?");
 }
 

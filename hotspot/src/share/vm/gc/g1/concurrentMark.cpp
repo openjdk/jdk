@@ -1938,15 +1938,11 @@ void ConcurrentMark::cleanup() {
 
   HeapRegionRemSet::reset_for_cleanup_tasks();
 
-  uint n_workers;
-
   // Do counting once more with the world stopped for good measure.
   G1ParFinalCountTask g1_par_count_task(g1h, &_region_bm, &_card_bm);
 
   g1h->set_par_threads();
-  n_workers = g1h->n_par_threads();
-  assert(g1h->n_par_threads() == n_workers,
-         "Should not have been reset");
+  uint n_workers = _g1h->workers()->active_workers();
   g1h->workers()->run_task(&g1_par_count_task);
   // Done with the parallel phase so reset to 0.
   g1h->set_par_threads(0);

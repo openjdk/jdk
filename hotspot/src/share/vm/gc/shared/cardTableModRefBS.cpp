@@ -440,31 +440,11 @@ void CardTableModRefBS::write_ref_field_work(void* field, oop newVal, bool relea
 void CardTableModRefBS::non_clean_card_iterate_possibly_parallel(Space* sp,
                                                                  MemRegion mr,
                                                                  OopsInGenClosure* cl,
-                                                                 CardTableRS* ct) {
+                                                                 CardTableRS* ct,
+                                                                 uint n_threads) {
   if (!mr.is_empty()) {
-    // Caller (process_roots()) claims that all GC threads
-    // execute this call.  With UseDynamicNumberOfGCThreads now all
-    // active GC threads execute this call.  The number of active GC
-    // threads needs to be passed to par_non_clean_card_iterate_work()
-    // to get proper partitioning and termination.
-    //
-    // This is an example of where n_par_threads() is used instead
-    // of workers()->active_workers().  n_par_threads can be set to 0 to
-    // turn off parallelism.  For example when this code is called as
-    // part of verification during root processing then n_par_threads()
-    // may have been set to 0. active_workers is not overloaded with
-    // the meaning that it is a switch to disable parallelism and so keeps
-    // the meaning of the number of active gc workers. If parallelism has
-    // not been shut off by setting n_par_threads to 0, then n_par_threads
-    // should be equal to active_workers.  When a different mechanism for
-    // shutting off parallelism is used, then active_workers can be used in
-    // place of n_par_threads.
-    int n_threads =  GenCollectedHeap::heap()->n_par_threads();
-    bool is_par = n_threads > 0;
-    if (is_par) {
+    if (n_threads > 0) {
 #if INCLUDE_ALL_GCS
-      assert(GenCollectedHeap::heap()->n_par_threads() ==
-             GenCollectedHeap::heap()->workers()->active_workers(), "Mismatch");
       non_clean_card_iterate_parallel_work(sp, mr, cl, ct, n_threads);
 #else  // INCLUDE_ALL_GCS
       fatal("Parallel gc not supported here.");
@@ -472,8 +452,11 @@ void CardTableModRefBS::non_clean_card_iterate_possibly_parallel(Space* sp,
     } else {
       // clear_cl finds contiguous dirty ranges of cards to process and clear.
 
-      DirtyCardToOopClosure* dcto_cl = sp->new_dcto_cl(cl, precision(), cl->gen_boundary());
-      ClearNoncleanCardWrapper clear_cl(dcto_cl, ct);
+      // This is the single-threaded version.
+      const bool parallel = false;
+
+      DirtyCardToOopClosure* dcto_cl = sp->new_dcto_cl(cl, precision(), cl->gen_boundary(), parallel);
+      ClearNoncleanCardWrapper clear_cl(dcto_cl, ct, parallel);
 
       clear_cl.do_MemRegion(mr);
     }

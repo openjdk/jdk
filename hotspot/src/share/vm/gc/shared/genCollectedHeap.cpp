@@ -700,7 +700,7 @@ void GenCollectedHeap::gen_process_roots(StrongRootsScope* scope,
   // older-gen scanning.
   if (level == 0) {
     older_gens->set_generation(_old_gen);
-    rem_set()->younger_refs_iterate(_old_gen, older_gens);
+    rem_set()->younger_refs_iterate(_old_gen, older_gens, scope->n_threads());
     older_gens->reset_generation();
   }
 
