@@ -1062,7 +1062,9 @@ void VMError::report_and_die() {
       out.print_raw   (cmd);
       out.print_raw_cr("\" ...");
 
-      os::fork_and_exec(cmd);
+      if (os::fork_and_exec(cmd) < 0) {
+        out.print_cr("os::fork_and_exec failed: %s (%d)", strerror(errno), errno);
+      }
     }
 
     // done with OnError
@@ -1147,7 +1149,9 @@ void VM_ReportJavaOutOfMemory::doit() {
 #endif
     tty->print_cr("\"%s\"...", cmd);
 
-    os::fork_and_exec(cmd);
+    if (os::fork_and_exec(cmd) < 0) {
+      tty->print_cr("os::fork_and_exec failed: %s (%d)", strerror(errno), errno);
+    }
   }
 }
 
