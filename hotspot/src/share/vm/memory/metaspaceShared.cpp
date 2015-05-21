@@ -649,6 +649,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   mapinfo->close();
 
   memmove(vtbl_list, saved_vtbl, vtbl_list_size * sizeof(void*));
+  os::free(saved_vtbl);
 
   if (PrintSharedSpaces) {
     DumpAllocClosure dac;

@@ -1587,6 +1587,26 @@ void LinkResolver::resolve_handle_call(CallInfo& result, KlassHandle resolved_kl
   result.set_handle(resolved_method, resolved_appendix, resolved_method_type, CHECK);
 }
 
+static void wrap_invokedynamic_exception(TRAPS) {
+  if (HAS_PENDING_EXCEPTION) {
+    if (TraceMethodHandles) {
+      tty->print_cr("invokedynamic throws BSME for " INTPTR_FORMAT, p2i((void *)PENDING_EXCEPTION));
+      PENDING_EXCEPTION->print();
+    }
+    if (PENDING_EXCEPTION->is_a(SystemDictionary::BootstrapMethodError_klass())) {
+      // throw these guys, since they are already wrapped
+      return;
+    }
+    if (!PENDING_EXCEPTION->is_a(SystemDictionary::LinkageError_klass())) {
+      // intercept only LinkageErrors which might have failed to wrap
+      return;
+    }
+    // See the "Linking Exceptions" section for the invokedynamic instruction in the JVMS.
+    Handle nested_exception(THREAD, PENDING_EXCEPTION);
+    CLEAR_PENDING_EXCEPTION;
+    THROW_CAUSE(vmSymbols::java_lang_BootstrapMethodError(), nested_exception)
+  }
+}
 
 void LinkResolver::resolve_invokedynamic(CallInfo& result, constantPoolHandle pool, int index, TRAPS) {
   //resolve_pool(<resolved_klass>, method_name, method_signature, current_klass, pool, index, CHECK);
@@ -1600,7 +1620,8 @@ void LinkResolver::resolve_invokedynamic(CallInfo& result, constantPoolHandle po
   ConstantPoolCacheEntry* cpce = pool->invokedynamic_cp_cache_entry_at(index);
   if (cpce->is_f1_null()) {
     int pool_index = cpce->constant_pool_index();
-    oop bsm_info = pool->resolve_bootstrap_specifier_at(pool_index, CHECK);
+    oop bsm_info = pool->resolve_bootstrap_specifier_at(pool_index, THREAD);
+    wrap_invokedynamic_exception(CHECK);
     assert(bsm_info != NULL, "");
     // FIXME: Cache this once per BootstrapMethods entry, not once per CONSTANT_InvokeDynamic.
     bootstrap_specifier = Handle(THREAD, bsm_info);
@@ -1609,7 +1630,8 @@ void LinkResolver::resolve_invokedynamic(CallInfo& result, constantPoolHandle po
     methodHandle method(     THREAD, cpce->f1_as_method());
     Handle       appendix(   THREAD, cpce->appendix_if_resolved(pool));
     Handle       method_type(THREAD, cpce->method_type_if_resolved(pool));
-    result.set_handle(method, appendix, method_type, CHECK);
+    result.set_handle(method, appendix, method_type, THREAD);
+    wrap_invokedynamic_exception(CHECK);
     return;
   }
 
@@ -1640,25 +1662,9 @@ void LinkResolver::resolve_dynamic_call(CallInfo& result,
                                                      &resolved_appendix,
                                                      &resolved_method_type,
                                                      THREAD);
-  if (HAS_PENDING_EXCEPTION) {
-    if (TraceMethodHandles) {
-      tty->print_cr("invokedynamic throws BSME for " INTPTR_FORMAT, p2i((void *)PENDING_EXCEPTION));
-      PENDING_EXCEPTION->print();
-    }
-    if (PENDING_EXCEPTION->is_a(SystemDictionary::BootstrapMethodError_klass())) {
-      // throw these guys, since they are already wrapped
-      return;
-    }
-    if (!PENDING_EXCEPTION->is_a(SystemDictionary::LinkageError_klass())) {
-      // intercept only LinkageErrors which might have failed to wrap
-      return;
-    }
-    // See the "Linking Exceptions" section for the invokedynamic instruction in the JVMS.
-    Handle nested_exception(THREAD, PENDING_EXCEPTION);
-    CLEAR_PENDING_EXCEPTION;
-    THROW_CAUSE(vmSymbols::java_lang_BootstrapMethodError(), nested_exception)
-  }
-  result.set_handle(resolved_method, resolved_appendix, resolved_method_type, CHECK);
+  wrap_invokedynamic_exception(CHECK);
+  result.set_handle(resolved_method, resolved_appendix, resolved_method_type, THREAD);
+  wrap_invokedynamic_exception(CHECK);
 }
 
 //------------------------------------------------------------------------------------------------------------------------

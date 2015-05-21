@@ -3993,8 +3993,8 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
            the_class->get_cached_class_file_bytes()) {
     // The same class can be present twice in the scratch classes list or there
     // are multiple concurrent RetransformClasses calls on different threads.
-    // In such cases we have to deallocate scratch_class cached_class_file_bytes.
-    os::free(scratch_class->get_cached_class_file_bytes());
+    // In such cases we have to deallocate scratch_class cached_class_file.
+    os::free(scratch_class->get_cached_class_file());
   }
 
   // NULL out in scratch class to not delete twice.  The class to be redefined
