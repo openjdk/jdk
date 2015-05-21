@@ -27,6 +27,7 @@
  * @bug 8066843
  * @summary Annotation processors should be able to print multiple errors at the same location.
  * @library /tools/javac/lib
+ * @modules jdk.compiler
  * @build JavacTestingAbstractProcessor TestMultipleErrors
  * @compile/fail/ref=TestMultipleErrors.out -XDrawDiagnostics -processor TestMultipleErrors TestMultipleErrors.java
  */

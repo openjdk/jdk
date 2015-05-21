@@ -28,6 +28,8 @@
  * @bug 6851834
  * @summary This test verifies the HTML document generation for javadoc output.
  * @library ../lib
+ * @modules jdk.javadoc/com.sun.tools.doclets.formats.html.markup
+ *          jdk.javadoc/com.sun.tools.doclets.internal.toolkit
  * @build JavadocTester
  * @author Bhavesh Patel
  * @run main TestHtmlDocument

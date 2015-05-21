@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 8005085 8005877 8004829 8005681 8006734 8006775 8006507
  * @summary Combinations of Target ElementTypes on (repeated)type annotations.
+ * @modules jdk.compiler/com.sun.tools.classfile
  */
 
 import com.sun.tools.classfile.*;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Test that the correct kind of names (binary) are used when comparing
  *          Class and Symbol for repeatable Classes.
  * @library /tools/javac/lib
+ * @modules jdk.compiler/com.sun.tools.javac.util
  * @build   JavacTestingAbstractProcessor TestQualifiedNameUsed p.Q p.QQ p.R p.RR
  * @run compile -processor TestQualifiedNameUsed -proc:only TestQualifiedNameUsed.java
  */

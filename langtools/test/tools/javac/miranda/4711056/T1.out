@@ -1,0 +1,2 @@
+T4.java:3:10: compiler.err.types.incompatible.diff.ret: iclss01004_2, iclss01004_1, foo(int)
+1 error

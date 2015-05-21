@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import static com.sun.tools.classfile.TypeAnnotation.TargetType.*;
  * @bug 8028576 8042451
  * @summary Test population of reference info for exception parameters
  * @author Werner Dietl
+ * @modules jdk.compiler/com.sun.tools.classfile
  * @compile -g Driver.java ReferenceInfoUtil.java ExceptionParameters.java
  * @run main Driver ExceptionParameters
  */

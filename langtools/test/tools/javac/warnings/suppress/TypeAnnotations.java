@@ -2,6 +2,10 @@
  * @test /nodynamiccopyright/
  * @bug 8021112
  * @summary Verify that \\@SuppressWarnings("unchecked") works for type annotations
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.code
+ *          jdk.compiler/com.sun.tools.javac.file
+ *          jdk.compiler/com.sun.tools.javac.tree
  * @ignore  8057683 improve ordering of errors with type annotations
  * @build VerifySuppressWarnings
  * @compile/ref=TypeAnnotations.out -XDrawDiagnostics -Xlint:unchecked,deprecation,cast TypeAnnotations.java

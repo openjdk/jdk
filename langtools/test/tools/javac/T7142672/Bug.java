@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @bug 7142672
  * @summary Problems with the value passed to the 'classes' param of JavaCompiler.CompilationTask.getTask(...)
  * @author holmlund
+ * @modules java.compiler
+ *          jdk.compiler
  * @compile AnnoProcessor.java Bug.java Test3.java
  * @run main Bug Test2.java
  * @run main Bug Test2.foo

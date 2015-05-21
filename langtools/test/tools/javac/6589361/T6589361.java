@@ -2,6 +2,8 @@
  * @test
  * @bug     6589361
  * @summary 6589361:Failing building ct.sym file as part of the control build
+ * @modules jdk.compiler/com.sun.tools.javac.file
+ *          jdk.compiler/com.sun.tools.javac.util
  */
 
 import com.sun.tools.javac.file.JavacFileManager;

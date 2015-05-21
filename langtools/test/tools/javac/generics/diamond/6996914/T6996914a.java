@@ -25,6 +25,7 @@
  * @test
  * @bug 6996914 7020044 8062373
  * @summary  Diamond inference: problem when accessing protected constructor
+ * @modules jdk.compiler
  * @run main T6996914a
  */
 

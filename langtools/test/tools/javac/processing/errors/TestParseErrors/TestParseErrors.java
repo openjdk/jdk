@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @bug 6988407
  * @summary javac crashes running processor on errant code; it used to print error message
  * @library /tools/javac/lib
+ * @modules java.compiler
+ *          jdk.compiler
  * @build JavacTestingAbstractProcessor TestParseErrors
  * @compile/fail/ref=TestParseErrors.out -XDrawDiagnostics -proc:only -processor TestParseErrors ParseErrors.java
  */

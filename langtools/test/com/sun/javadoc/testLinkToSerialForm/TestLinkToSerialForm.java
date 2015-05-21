@@ -28,6 +28,7 @@
  * from a serializable class to serialized-form.html.
  * @author jamieh
  * @library ../lib
+ * @modules jdk.javadoc
  * @build JavadocTester
  * @run main TestLinkToSerialForm
  */

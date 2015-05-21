@@ -25,6 +25,7 @@
  * @test
  * @bug 7040592
  * @summary Test that the assertion in State.forceStackTop does not fail at compile time.
+ * @modules java.xml
  */
 
 import java.lang.reflect.Field;
