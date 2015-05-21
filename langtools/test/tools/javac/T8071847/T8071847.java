@@ -25,6 +25,7 @@
  * @test
  * bug 8071847
  * @summary Verify proper termination when instance initialization method uses invalid flags
+ * @modules jdk.compiler
  * @compile  T8071847.java
  * @run main T8071847
 */

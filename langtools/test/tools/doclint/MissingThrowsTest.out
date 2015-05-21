@@ -1,4 +1,4 @@
-MissingThrowsTest.java:13: warning: no @throws for java.lang.Exception
+MissingThrowsTest.java:14: warning: no @throws for java.lang.Exception
     void missingThrows() throws Exception { }
          ^
 1 warning

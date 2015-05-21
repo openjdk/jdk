@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 5053846 8011432
  * @summary javac: MethodRef entries are duplicated in the constant pool
  * @summary javac, compiler regression iterable + captured type
+ * @modules jdk.compiler
  */
 
 import java.io.PrintWriter;

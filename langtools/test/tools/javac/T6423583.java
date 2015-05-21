@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 6423583
  * @summary LiteralTree.getValue() should return Boolean for Kind.BOOLEAN_LITERAL literals
+ * @modules jdk.compiler
  * @build T6423583
  * @compile -proc:only -processor T6423583 T6423583.java
  */

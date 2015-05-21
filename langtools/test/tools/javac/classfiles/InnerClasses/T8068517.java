@@ -25,6 +25,10 @@
  *  @bug 8034854
  *  @summary Verify that nested enums have correct abstract flag in the InnerClasses attribute.
  *  @library /tools/lib
+ *  @modules jdk.compiler/com.sun.tools.javac.api
+ *           jdk.compiler/com.sun.tools.javac.file
+ *           jdk.compiler/com.sun.tools.javac.main
+ *           jdk.compiler/com.sun.tools.javac.util
  *  @build ToolBox T8068517
  *  @run main T8068517
  */

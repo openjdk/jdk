@@ -30,6 +30,7 @@
  *           types.
  * @author   jamieh
  * @library  ../lib
+ * @modules jdk.javadoc
  * @build    JavadocTester
  * @run main TestClassTree
  */

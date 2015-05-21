@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @bug     6198196 6278523
  * @summary package-info.java: Weird compiler error
  * @author  Peter von der Ah\u00e9
+ * @modules java.compiler
+ *          jdk.compiler
  */
 
 import java.io.IOException;

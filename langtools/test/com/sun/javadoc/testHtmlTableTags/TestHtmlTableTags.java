@@ -27,6 +27,7 @@
  * @summary  HTML tables should have table summary, caption and table headers.
  * @author   Bhavesh Patel
  * @library  ../lib
+ * @modules jdk.javadoc
  * @build    JavadocTester
  * @run main TestHtmlTableTags
  */
