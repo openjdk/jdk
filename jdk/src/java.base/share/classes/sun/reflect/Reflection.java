@@ -46,7 +46,7 @@ public class Reflection {
         map.put(Reflection.class,
             new String[] {"fieldFilterMap", "methodFilterMap"});
         map.put(System.class, new String[] {"security"});
-        map.put(Class.class, new String[] {"classLoader"});
+        map.put(Class.class, new String[] {"classLoader", "resolvedReferences"});
         fieldFilterMap = map;
 
         methodFilterMap = new HashMap<>();
