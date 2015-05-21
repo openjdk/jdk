@@ -1,4 +1,4 @@
-EmptySerialDataTest.java:15: warning: no description for @serialData
+EmptySerialDataTest.java:16: warning: no description for @serialData
     /** @serialData */
         ^
 1 warning

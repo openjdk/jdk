@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
  * @test
  * @bug 8003562 8005428 8015912 8027481 8048063 8068937
  * @summary Basic tests for jdeps tool
+ * @modules java.management
+ *          jdk.dev/com.sun.tools.jdeps
  * @build Test p.Foo p.Bar p.C p.SubClass q.Gee javax.activity.NotCompactProfile
  * @run main Basic
  */

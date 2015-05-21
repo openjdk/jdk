@@ -3,6 +3,8 @@
  * @bug     6362067
  * @summary Messager methods do not print out source position information
  * @library /tools/javac/lib
+ * @modules java.compiler
+ *          jdk.compiler
  * @build   JavacTestingAbstractProcessor T6362067
  * @compile -processor T6362067 -proc:only T6362067.java
  * @compile/ref=T6362067.out -XDrawDiagnostics -processor T6362067 -proc:only T6362067.java

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary make sure that all declaration annotations are discovered
  *          by the processing environment
  * @library /tools/javac/lib
+ * @modules jdk.compiler/com.sun.tools.javac.util
  * @build JavacTestingAbstractProcessor ProcessingEnvAnnoDiscovery
  * @compile/process -processor ProcessingEnvAnnoDiscovery ProcessingEnvAnnoDiscovery.java
  */

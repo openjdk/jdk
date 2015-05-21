@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug     4813736 8015073
  * @summary Provide a basic test of access to the Java Model from javac, and error messages
  * @author  Peter von der Ah\u00e9
+ * @modules jdk.compiler/com.sun.tools.javac.api
  * @run main TestJavacTask TestJavacTask.java
  */
 

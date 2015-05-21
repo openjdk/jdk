@@ -27,6 +27,7 @@
  * @summary Test for constructor name which should be a non-qualified name.
  * @author Bhavesh Patel
  * @library ../lib
+ * @modules jdk.javadoc
  * @build JavadocTester
  * @run main TestConstructors
  */

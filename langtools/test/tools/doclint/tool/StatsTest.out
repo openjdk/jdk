@@ -1,28 +1,28 @@
-StatsTest.java:11: warning: no comment
+StatsTest.java:12: warning: no comment
 public class StatsTest {
        ^
-StatsTest.java:13: error: invalid entity &#0;
+StatsTest.java:14: error: invalid entity &#0;
      * &#0; &#0; &#0; &#0;
        ^
-StatsTest.java:13: error: invalid entity &#0;
+StatsTest.java:14: error: invalid entity &#0;
      * &#0; &#0; &#0; &#0;
             ^
-StatsTest.java:13: error: invalid entity &#0;
+StatsTest.java:14: error: invalid entity &#0;
      * &#0; &#0; &#0; &#0;
                  ^
-StatsTest.java:13: error: invalid entity &#0;
+StatsTest.java:14: error: invalid entity &#0;
      * &#0; &#0; &#0; &#0;
                       ^
-StatsTest.java:18: warning: no @param for a1
+StatsTest.java:19: warning: no @param for a1
     public int warnings(int a1, int a2) throws Exception { return 0; }
                ^
-StatsTest.java:18: warning: no @param for a2
+StatsTest.java:19: warning: no @param for a2
     public int warnings(int a1, int a2) throws Exception { return 0; }
                ^
-StatsTest.java:18: warning: no @return
+StatsTest.java:19: warning: no @return
     public int warnings(int a1, int a2) throws Exception { return 0; }
                ^
-StatsTest.java:18: warning: no @throws for java.lang.Exception
+StatsTest.java:19: warning: no @throws for java.lang.Exception
     public int warnings(int a1, int a2) throws Exception { return 0; }
                ^
 By group...

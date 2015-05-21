@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import com.sun.tools.classfile.*;
  * @test NoTargetAnnotations
  * @summary test that annotations with no Target meta type is emitted
  *          only once as declaration annotation
+ * @modules jdk.compiler/com.sun.tools.classfile
  */
 public class NoTargetAnnotations {
 

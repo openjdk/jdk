@@ -26,6 +26,8 @@
  * @bug 8059977
  * @summary StandardJavaFileManager should support java.nio.file.Path.
  *          Test getFileObject methods.
+ * @modules java.compiler
+ *          jdk.compiler
  * @build SJFM_TestBase
  * @run main SJFM_GetFileObjects
  */
