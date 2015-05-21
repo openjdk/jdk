@@ -273,6 +273,9 @@ public:
 
   bool has_derived_pointer() const PRODUCT_RETURN0;
   int count() const { return _count; }
+#ifdef ASSERT
+  int nr_of_bytes() const; // this is an expensive operation, only used in debug builds
+#endif
 
   // Printing
   void print_on(outputStream* st) const;
@@ -346,6 +349,9 @@ class OopMapStream : public StackObj {
   bool is_done()                        { if(!_valid_omv) { find_next(); } return !_valid_omv; }
   void next()                           { find_next(); }
   OopMapValue current()                 { return _omv; }
+#ifdef ASSERT
+  int stream_position() const           { return _stream->position(); }
+#endif
 };
 
 

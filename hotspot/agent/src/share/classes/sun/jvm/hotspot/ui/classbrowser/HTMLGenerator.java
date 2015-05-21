@@ -1236,7 +1236,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
 
    protected String genOopMapInfo(NMethod nmethod, PCDesc pcDesc) {
       ImmutableOopMapSet mapSet = nmethod.getOopMaps();
-      if (mapSet == null || (mapSet.getSize() <= 0))
+      if (mapSet == null || (mapSet.getCount() <= 0))
         return "";
       int pcOffset = pcDesc.getPCOffset();
       ImmutableOopMap map = mapSet.findMapAtOffset(pcOffset, VM.getVM().isDebugging());
