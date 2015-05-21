@@ -78,7 +78,7 @@ public interface SymbolTable {
 
     /**
      * Lookup the characters associated with this string and return it.
-     * Return <tt>null</tt> if no such name exists.  The resultant
+     * Return {@code null} if no such name exists.  The resultant
      * array may have length zero.
      * @param s the symbolic name to lookup
      * @return a char array containing the name's value, or null if
@@ -91,7 +91,7 @@ public interface SymbolTable {
 
     /**
      * Lookup the UnicodeMatcher associated with the given character, and
-     * return it.  Return <tt>null</tt> if not found.
+     * return it.  Return {@code null} if not found.
      * @param ch a 32-bit code point from 0 to 0x10FFFF inclusive.
      * @return the UnicodeMatcher object represented by the given
      * character, or null if there is no mapping for ch.

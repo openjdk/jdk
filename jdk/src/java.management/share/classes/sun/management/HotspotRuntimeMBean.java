@@ -64,7 +64,7 @@ public interface HotspotRuntimeMBean {
      * Returns a list of internal counters maintained in the Java
      * virtual machine for the runtime system.
      *
-     * @return a <tt>List</tt> of internal counters maintained in the VM
+     * @return a {@code List} of internal counters maintained in the VM
      * for the runtime system.
      */
     public java.util.List<Counter> getInternalRuntimeCounters();

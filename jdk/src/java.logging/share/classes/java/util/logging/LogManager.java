@@ -33,6 +33,7 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.ReentrantLock;
 import sun.misc.JavaAWTAccess;
 import sun.misc.ManagedLocalsThread;
 import sun.misc.SharedSecrets;
@@ -180,10 +181,16 @@ public class LogManager {
     // initialization has been done)
     private volatile boolean readPrimordialConfiguration;
     // Have we initialized global (root) handlers yet?
-    // This gets set to false in readConfiguration
-    private boolean initializedGlobalHandlers = true;
-    // True if JVM death is imminent and the exit hook has been called.
-    private boolean deathImminent;
+    // This gets set to STATE_UNINITIALIZED in readConfiguration
+    private static final int
+            STATE_INITIALIZED = 0, // initial state
+            STATE_INITIALIZING = 1,
+            STATE_READING_CONFIG = 2,
+            STATE_UNINITIALIZED = 3,
+            STATE_SHUTDOWN = 4;    // terminal state
+    private volatile int globalHandlersState; // = STATE_INITIALIZED;
+    // A concurrency lock for reset(), readConfiguration() and Cleaner.
+    private final ReentrantLock configurationLock = new ReentrantLock();
 
     // This list contains the loggers for which some handlers have been
     // explicitly configured in the configuration file.
@@ -264,13 +271,12 @@ public class LogManager {
             // before synchronized block. Otherwise deadlocks are possible.
             LogManager mgr = manager;
 
-            // If the global handlers haven't been initialized yet, we
-            // don't want to initialize them just so we can close them!
-            synchronized (LogManager.this) {
-                // Note that death is imminent.
-                deathImminent = true;
-                initializedGlobalHandlers = true;
-            }
+            // set globalHandlersState to STATE_SHUTDOWN atomically so that
+            // no attempts are made to (re)initialize the handlers or (re)read
+            // the configuration again. This is terminal state.
+            configurationLock.lock();
+            globalHandlersState = STATE_SHUTDOWN;
+            configurationLock.unlock();
 
             // Do a reset to close all active handlers.
             reset();
@@ -1314,8 +1320,14 @@ public class LogManager {
 
     public void reset() throws SecurityException {
         checkPermission();
+
         List<CloseOnReset> persistent;
-        synchronized (this) {
+
+        // We don't want reset() and readConfiguration()
+        // to run in parallel
+        configurationLock.lock();
+        try {
+            // install new empty properties
             props = new Properties();
             // make sure we keep the loggers persistent until reset is done.
             // Those are the loggers for which we previously created a
@@ -1323,26 +1335,41 @@ public class LogManager {
             // from being gc'ed until those handlers are closed.
             persistent = new ArrayList<>(closeOnResetLoggers);
             closeOnResetLoggers.clear();
-            // Since we are doing a reset we no longer want to initialize
-            // the global handlers, if they haven't been initialized yet.
-            initializedGlobalHandlers = true;
-        }
-        for (LoggerContext cx : contexts()) {
-            Enumeration<String> enum_ = cx.getLoggerNames();
-            while (enum_.hasMoreElements()) {
-                String name = enum_.nextElement();
-                Logger logger = cx.findLogger(name);
-                if (logger != null) {
-                    resetLogger(logger);
-                }
+
+            // if reset has been called from shutdown-hook (Cleaner),
+            // or if reset has been called from readConfiguration() which
+            // already holds the lock and will change the state itself,
+            // then do not change state here...
+            if (globalHandlersState != STATE_SHUTDOWN &&
+                globalHandlersState != STATE_READING_CONFIG) {
+                // ...else user called reset()...
+                // Since we are doing a reset we no longer want to initialize
+                // the global handlers, if they haven't been initialized yet.
+                globalHandlersState = STATE_INITIALIZED;
             }
+
+            for (LoggerContext cx : contexts()) {
+                resetLoggerContext(cx);
+            }
+
+            persistent.clear();
+        } finally {
+            configurationLock.unlock();
         }
-        persistent.clear();
     }
 
-    // Private method to reset an individual target logger.
-    private void resetLogger(Logger logger) {
-        // Close all the Logger's handlers.
+    private void resetLoggerContext(LoggerContext cx) {
+        Enumeration<String> enum_ = cx.getLoggerNames();
+        while (enum_.hasMoreElements()) {
+            String name = enum_.nextElement();
+            Logger logger = cx.findLogger(name);
+            if (logger != null) {
+                resetLogger(logger);
+            }
+        }
+    }
+
+    private void closeHandlers(Logger logger) {
         Handler[] targets = logger.getHandlers();
         for (Handler h : targets) {
             logger.removeHandler(h);
@@ -1352,6 +1379,14 @@ public class LogManager {
                 // Problems closing a handler?  Keep going...
             }
         }
+    }
+
+    // Private method to reset an individual target logger.
+    private void resetLogger(Logger logger) {
+        // Close all the Logger handlers.
+        closeHandlers(logger);
+
+        // Reset Logger level
         String name = logger.getName();
         if (name != null && name.equals("")) {
             // This is the root logger.
@@ -1408,48 +1443,74 @@ public class LogManager {
      */
     public void readConfiguration(InputStream ins) throws IOException, SecurityException {
         checkPermission();
-        reset();
 
-        // Load the properties
+        // We don't want reset() and readConfiguration() to run
+        // in parallel.
+        configurationLock.lock();
         try {
-            props.load(ins);
-        } catch (IllegalArgumentException x) {
-            // props.load may throw an IllegalArgumentException if the stream
-            // contains malformed Unicode escape sequences.
-            // We wrap that in an IOException as readConfiguration is
-            // specified to throw IOException if there are problems reading
-            // from the stream.
-            // Note: new IOException(x.getMessage(), x) allow us to get a more
-            // concise error message than new IOException(x);
-            throw new IOException(x.getMessage(), x);
-        }
+            if (globalHandlersState == STATE_SHUTDOWN) {
+                // already in terminal state: don't even bother
+                // to read the configuration
+                return;
+            }
 
-        // Instantiate new configuration objects.
-        String names[] = parseClassNames("config");
-
-        for (String word : names) {
+            // change state to STATE_READING_CONFIG to signal reset() to not change it
+            globalHandlersState = STATE_READING_CONFIG;
             try {
-                Class<?> clz = ClassLoader.getSystemClassLoader().loadClass(word);
-                clz.newInstance();
-            } catch (Exception ex) {
-                System.err.println("Can't load config class \"" + word + "\"");
-                System.err.println("" + ex);
-                // ex.printStackTrace();
+                // reset configuration which leaves globalHandlersState at STATE_READING_CONFIG
+                // so that while reading configuration, any ongoing logging requests block and
+                // wait for the outcome (see the end of this try statement)
+                reset();
+
+                try {
+                    // Load the properties
+                    props.load(ins);
+                } catch (IllegalArgumentException x) {
+                    // props.load may throw an IllegalArgumentException if the stream
+                    // contains malformed Unicode escape sequences.
+                    // We wrap that in an IOException as readConfiguration is
+                    // specified to throw IOException if there are problems reading
+                    // from the stream.
+                    // Note: new IOException(x.getMessage(), x) allow us to get a more
+                    // concise error message than new IOException(x);
+                    throw new IOException(x.getMessage(), x);
+                }
+
+                // Instantiate new configuration objects.
+                String names[] = parseClassNames("config");
+
+                for (String word : names) {
+                    try {
+                        Class<?> clz = ClassLoader.getSystemClassLoader().loadClass(word);
+                        clz.newInstance();
+                    } catch (Exception ex) {
+                        System.err.println("Can't load config class \"" + word + "\"");
+                        System.err.println("" + ex);
+                        // ex.printStackTrace();
+                    }
+                }
+
+                // Set levels on any pre-existing loggers, based on the new properties.
+                setLevelsOnExistingLoggers();
+
+                // Note that we need to reinitialize global handles when
+                // they are first referenced.
+                globalHandlersState = STATE_UNINITIALIZED;
+            } catch (Throwable t) {
+                // If there were any trouble, then set state to STATE_INITIALIZED
+                // so that no global handlers reinitialization is performed on not fully
+                // initialized configuration.
+                globalHandlersState = STATE_INITIALIZED;
+                // re-throw
+                throw t;
             }
-        }
-
-        // Set levels on any pre-existing loggers, based on the new properties.
-        setLevelsOnExistingLoggers();
-
-        try {
-            invokeConfigurationListeners();
         } finally {
-            // Note that we need to reinitialize global handles when
-            // they are first referenced.
-            synchronized (this) {
-                initializedGlobalHandlers = false;
-            }
+            configurationLock.unlock();
         }
+
+        // should be called out of lock to avoid dead-lock situations
+        // when user code is involved
+        invokeConfigurationListeners();
     }
 
     /**
@@ -1576,20 +1637,41 @@ public class LogManager {
     // Private method to load the global handlers.
     // We do the real work lazily, when the global handlers
     // are first used.
-    private synchronized void initializeGlobalHandlers() {
-        if (initializedGlobalHandlers) {
+    private void initializeGlobalHandlers() {
+        int state = globalHandlersState;
+        if (state == STATE_INITIALIZED ||
+            state == STATE_SHUTDOWN) {
+            // Nothing to do: return.
             return;
         }
 
-        initializedGlobalHandlers = true;
-
-        if (deathImminent) {
-            // Aaargh...
-            // The VM is shutting down and our exit hook has been called.
-            // Avoid allocating global handlers.
-            return;
+        // If we have not initialized global handlers yet (or need to
+        // reinitialize them), lets do it now (this case is indicated by
+        // globalHandlersState == STATE_UNINITIALIZED).
+        // If we are in the process of initializing global handlers we
+        // also need to lock & wait (this case is indicated by
+        // globalHandlersState == STATE_INITIALIZING).
+        // If we are in the process of reading configuration we also need to
+        // wait to see what the outcome will be (this case
+        // is indicated by globalHandlersState == STATE_READING_CONFIG)
+        // So in either case we need to wait for the lock.
+        configurationLock.lock();
+        try {
+            if (globalHandlersState != STATE_UNINITIALIZED) {
+                return; // recursive call or nothing to do
+            }
+            // set globalHandlersState to STATE_INITIALIZING first to avoid
+            // getting an infinite recursion when loadLoggerHandlers(...)
+            // is going to call addHandler(...)
+            globalHandlersState = STATE_INITIALIZING;
+            try {
+                loadLoggerHandlers(rootLogger, null, "handlers");
+            } finally {
+                globalHandlersState = STATE_INITIALIZED;
+            }
+        } finally {
+            configurationLock.unlock();
         }
-        loadLoggerHandlers(rootLogger, null, "handlers");
     }
 
     static final Permission controlPermission = new LoggingPermission("control", null);
@@ -1684,7 +1766,7 @@ public class LogManager {
 
     // Private method to be called when the configuration has
     // changed to apply any level settings to any pre-existing loggers.
-    synchronized private void setLevelsOnExistingLoggers() {
+    private void setLevelsOnExistingLoggers() {
         Enumeration<?> enum_ = props.propertyNames();
         while (enum_.hasMoreElements()) {
             String key = (String)enum_.nextElement();

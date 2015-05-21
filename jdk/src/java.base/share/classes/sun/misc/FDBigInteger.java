@@ -384,8 +384,8 @@ public /*@ spec_bigint_math @*/ class FDBigInteger {
      * Retrieves the normalization bias of the <code>FDBigIntger</code>. The
      * normalization bias is a left shift such that after it the highest word
      * of the value will have the 4 highest bits equal to zero:
-     * <code>(highestWord & 0xf0000000) == 0</code>, but the next bit should be 1
-     * <code>(highestWord & 0x08000000) != 0</code>.
+     * {@code (highestWord & 0xf0000000) == 0}, but the next bit should be 1
+     * {@code (highestWord & 0x08000000) != 0}.
      *
      * @return The normalization bias.
      */
@@ -546,9 +546,9 @@ public /*@ spec_bigint_math @*/ class FDBigInteger {
      * We assume that S has been normalized, as above, and that
      * "this" has been left-shifted accordingly.
      * Also assumed, of course, is that the result, q, can be expressed
-     * as an integer, 0 <= q < 10.
+     * as an integer, {@code 0 <= q < 10}.
      *
-     * @param The divisor of this <code>FDBigInteger</code>.
+     * @param S The divisor of this <code>FDBigInteger</code>.
      * @return <code>q = (int)(this / S)</code>.
      */
     /*@
@@ -685,7 +685,7 @@ public /*@ spec_bigint_math @*/ class FDBigInteger {
      *
      * @param p5 The exponent of the power-of-five factor.
      * @param p2 The exponent of the power-of-two factor.
-     * @return
+     * @return The multiplication result.
      */
     /*@
      @ requires this.value() == 0 || p5 == 0 && p2 == 0;
@@ -931,11 +931,11 @@ public /*@ spec_bigint_math @*/ class FDBigInteger {
     /**
      * Compares the parameter with this <code>FDBigInteger</code>. Returns an
      * integer accordingly as:
-     * <pre>
-     * >0: this > other
-     *  0: this == other
-     * <0: this < other
-     * </pre>
+     * <pre>{@code
+     * > 0: this > other
+     *   0: this == other
+     * < 0: this < other
+     * }</pre>
      *
      * @param other The <code>FDBigInteger</code> to compare.
      * @return A negative value, zero, or a positive value according to the
@@ -974,11 +974,11 @@ public /*@ spec_bigint_math @*/ class FDBigInteger {
      * Compares this <code>FDBigInteger</code> with
      * <code>5<sup>p5</sup> * 2<sup>p2</sup></code>.
      * Returns an integer accordingly as:
-     * <pre>
-     * >0: this > other
-     *  0: this == other
-     * <0: this < other
-     * </pre>
+     * <pre>{@code
+     * > 0: this > other
+     *   0: this == other
+     * < 0: this < other
+     * }</pre>
      * @param p5 The exponent of the power-of-five factor.
      * @param p2 The exponent of the power-of-two factor.
      * @return A negative value, zero, or a positive value according to the
@@ -1011,11 +1011,11 @@ public /*@ spec_bigint_math @*/ class FDBigInteger {
     /**
      * Compares this <code>FDBigInteger</code> with <code>x + y</code>. Returns a
      * value according to the comparison as:
-     * <pre>
+     * <pre>{@code
      * -1: this <  x + y
      *  0: this == x + y
      *  1: this >  x + y
-     * </pre>
+     * }</pre>
      * @param x The first addend of the sum to compare.
      * @param y The second addend of the sum to compare.
      * @return -1, 0, or 1 according to the result of the comparison.
