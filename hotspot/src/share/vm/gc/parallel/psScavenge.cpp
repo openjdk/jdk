@@ -382,7 +382,6 @@ bool PSScavenge::invoke_no_policy() {
     // Get the active number of workers here and use that value
     // throughout the methods.
     uint active_workers = gc_task_manager()->active_workers();
-    heap->set_par_threads(active_workers);
 
     PSPromotionManager::pre_scavenge();
 

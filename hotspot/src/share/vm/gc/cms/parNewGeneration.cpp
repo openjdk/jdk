@@ -836,7 +836,6 @@ void ParNewRefProcTaskExecutor::set_single_threaded_mode()
 {
   _state_set.flush();
   GenCollectedHeap* gch = GenCollectedHeap::heap();
-  gch->set_par_threads(0);  // 0 ==> non-parallel.
   gch->save_marks();
 }
 
@@ -954,7 +953,6 @@ void ParNewGeneration::collect(bool   full,
     StrongRootsScope srs(n_workers);
 
     ParNewGenTask tsk(this, _old_gen, reserved().end(), &thread_state_set, &srs);
-    gch->set_par_threads(n_workers);
     gch->rem_set()->prepare_for_younger_refs_iterate(true);
     // It turns out that even when we're using 1 thread, doing the work in a
     // separate thread causes wide variance in run times.  We can't help this
@@ -996,7 +994,6 @@ void ParNewGeneration::collect(bool   full,
                                               _gc_timer, _gc_tracer.gc_id());
   } else {
     thread_state_set.flush();
-    gch->set_par_threads(0);  // 0 ==> non-parallel.
     gch->save_marks();
     stats = rp->process_discovered_references(&is_alive, &keep_alive,
                                               &evacuate_followers, NULL,

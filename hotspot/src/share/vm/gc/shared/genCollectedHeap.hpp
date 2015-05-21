@@ -364,8 +364,6 @@ public:
   // asserted to be this type.
   static GenCollectedHeap* heap();
 
-  void set_par_threads(uint t);
-
   // Invoke the "do_oop" method of one of the closures "not_older_gens"
   // or "older_gens" on root locations for the generation at
   // "level".  (The "older_gens" closure is used for scanning references
