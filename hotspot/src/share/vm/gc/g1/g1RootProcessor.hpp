@@ -114,9 +114,6 @@ public:
                             OopClosure* scan_non_heap_weak_roots,
                             uint worker_i);
 
-  // Inform SubTaskDone about the number of worker threads.
-  void set_num_workers(uint active_workers);
-
   // Number of worker threads used by the root processor.
   uint n_workers() const;
 };
