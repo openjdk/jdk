@@ -24,8 +24,8 @@
 import java.util.List;
 import java.lang.management.*;
 
-import com.oracle.java.testlibrary.*;
-import static com.oracle.java.testlibrary.Asserts.*;
+import jdk.test.lib.*;
+import static jdk.test.lib.Asserts.*;
 
 /* @test TestPerfCountersAndMemoryPools
  * @bug 8023476

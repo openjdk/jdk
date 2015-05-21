@@ -29,6 +29,7 @@
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/safepoint.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
 
@@ -160,10 +161,7 @@ bool ObjPtrQueue::should_enqueue_buffer() {
   assert(_lock == NULL || _lock->owned_by_self(),
          "we should have taken the lock before calling this");
 
-  // Even if G1SATBBufferEnqueueingThresholdPercent == 0 we have to
-  // filter the buffer given that this will remove any references into
-  // the CSet as we currently assume that no such refs will appear in
-  // enqueued buffers.
+  // If G1SATBBufferEnqueueingThresholdPercent == 0 we could skip filtering.
 
   // This method should only be called if there is a non-NULL buffer
   // that is full.
@@ -180,22 +178,16 @@ bool ObjPtrQueue::should_enqueue_buffer() {
   return should_enqueue;
 }
 
-void ObjPtrQueue::apply_closure_and_empty(ObjectClosure* cl) {
+void ObjPtrQueue::apply_closure_and_empty(SATBBufferClosure* cl) {
+  assert(SafepointSynchronize::is_at_safepoint(),
+         "SATB queues must only be processed at safepoints");
   if (_buf != NULL) {
-    apply_closure_to_buffer(cl, _buf, _index, _sz);
+    assert(_index % sizeof(void*) == 0, "invariant");
+    assert(_sz % sizeof(void*) == 0, "invariant");
+    assert(_index <= _sz, "invariant");
+    cl->do_buffer(_buf + byte_index_to_index((int)_index),
+                  byte_index_to_index((int)(_sz - _index)));
     _index = _sz;
-  }
-}
-
-void ObjPtrQueue::apply_closure_to_buffer(ObjectClosure* cl,
-                                          void** buf, size_t index, size_t sz) {
-  if (cl == NULL) return;
-  for (size_t i = index; i < sz; i += oopSize) {
-    oop obj = (oop)buf[byte_index_to_index((int)i)];
-    // There can be NULL entries because of destructors.
-    if (obj != NULL) {
-      cl->do_object(obj);
-    }
   }
 }
 
@@ -289,7 +281,7 @@ void SATBMarkQueueSet::filter_thread_buffers() {
   shared_satb_queue()->filter();
 }
 
-bool SATBMarkQueueSet::apply_closure_to_completed_buffer(ObjectClosure* cl) {
+bool SATBMarkQueueSet::apply_closure_to_completed_buffer(SATBBufferClosure* cl) {
   BufferNode* nd = NULL;
   {
     MutexLockerEx x(_cbl_mon, Mutex::_no_safepoint_check_flag);
@@ -303,7 +295,18 @@ bool SATBMarkQueueSet::apply_closure_to_completed_buffer(ObjectClosure* cl) {
   }
   if (nd != NULL) {
     void **buf = BufferNode::make_buffer_from_node(nd);
-    ObjPtrQueue::apply_closure_to_buffer(cl, buf, 0, _sz);
+    // Skip over NULL entries at beginning (e.g. push end) of buffer.
+    // Filtering can result in non-full completed buffers; see
+    // should_enqueue_buffer.
+    assert(_sz % sizeof(void*) == 0, "invariant");
+    size_t limit = ObjPtrQueue::byte_index_to_index((int)_sz);
+    for (size_t i = 0; i < limit; ++i) {
+      if (buf[i] != NULL) {
+        // Found the end of the block of NULLs; process the remainder.
+        cl->do_buffer(buf + i, limit - i);
+        break;
+      }
+    }
     deallocate_buffer(buf);
     return true;
   } else {

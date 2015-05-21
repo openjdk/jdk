@@ -31,7 +31,7 @@
  * @run main/othervm/timeout=600 Test6941923
  *
  */
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.ArrayList;

@@ -36,9 +36,9 @@
 import java.util.ArrayList;
 import java.util.Collections;
 
-import com.oracle.java.testlibrary.Utils;
-import com.oracle.java.testlibrary.OutputAnalyzer;
-import com.oracle.java.testlibrary.ProcessTools;
+import jdk.test.lib.Utils;
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.ProcessTools;
 
 public class TestVerifyBeforeAndAfterGCFlags {
 

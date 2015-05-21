@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,20 +40,22 @@ import org.openide.util.actions.CallableSystemAction;
 public final class RemoveAllAction extends CallableSystemAction {
 
 
+    @Override
     public String getName() {
-        return NbBundle.getMessage(RemoveAllAction.class, "CTL_ImportAction");
+        return NbBundle.getMessage(RemoveAllAction.class, "CTL_RemoveAllAction");
     }
 
     public RemoveAllAction() {
-        putValue(Action.SHORT_DESCRIPTION, "Remove all methods");
+        putValue(Action.SHORT_DESCRIPTION, "Remove all graphs and groups");
         putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_SHIFT, InputEvent.CTRL_MASK));
     }
 
     @Override
     protected String iconResource() {
-        return "com/sun/hotspot/igv/coordinator/images/removeall.gif";
+        return "com/sun/hotspot/igv/coordinator/images/removeall.png";
     }
 
+    @Override
     public HelpCtx getHelpCtx() {
         return HelpCtx.DEFAULT_HELP;
     }

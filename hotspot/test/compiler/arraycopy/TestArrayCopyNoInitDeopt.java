@@ -30,7 +30,7 @@
  *          java.management
  * @build TestArrayCopyNoInitDeopt
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run main ClassFileInstaller com.oracle.java.testlibrary.Platform
+ * @run main ClassFileInstaller jdk.test.lib.Platform
  * @run main/othervm -Xmixed -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:TypeProfileLevel=020
  *                   TestArrayCopyNoInitDeopt
@@ -40,7 +40,7 @@
 
 import sun.hotspot.WhiteBox;
 import sun.hotspot.code.NMethod;
-import com.oracle.java.testlibrary.Platform;
+import jdk.test.lib.Platform;
 import java.lang.reflect.*;
 
 public class TestArrayCopyNoInitDeopt {

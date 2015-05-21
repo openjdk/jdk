@@ -208,20 +208,33 @@ public:
                    bmi2 : 1,
                    erms : 1,
                         : 1,
-                   rtm  : 1,
-                        : 7,
-                   adx  : 1,
-                        : 12;
+                    rtm : 1,
+                        : 4,
+                avx512f : 1,
+               avx512dq : 1,
+                        : 1,
+                    adx : 1,
+                        : 6,
+               avx512pf : 1,
+               avx512er : 1,
+               avx512cd : 1,
+                        : 1,
+               avx512bw : 1,
+               avx512vl : 1;
     } bits;
   };
 
   union XemXcr0Eax {
     uint32_t value;
     struct {
-      uint32_t x87 : 1,
-               sse : 1,
-               ymm : 1,
-                   : 29;
+      uint32_t x87    : 1,
+               sse    : 1,
+               ymm    : 1,
+                      : 2,
+               opmask : 1,
+               zmm512 : 1,
+                zmm32 : 1,
+                      : 24;
     } bits;
   };
 
@@ -229,42 +242,50 @@ protected:
   static int _cpu;
   static int _model;
   static int _stepping;
-  static int _cpuFeatures;     // features returned by the "cpuid" instruction
-                               // 0 if this instruction is not available
+  static uint64_t _cpuFeatures; // features returned by the "cpuid" instruction
+                                // 0 if this instruction is not available
   static const char* _features_str;
 
   static address   _cpuinfo_segv_addr; // address of instruction which causes SEGV
   static address   _cpuinfo_cont_addr; // address of instruction after the one which causes SEGV
 
   enum {
-    CPU_CX8    = (1 << 0), // next bits are from cpuid 1 (EDX)
-    CPU_CMOV   = (1 << 1),
-    CPU_FXSR   = (1 << 2),
-    CPU_HT     = (1 << 3),
-    CPU_MMX    = (1 << 4),
-    CPU_3DNOW_PREFETCH  = (1 << 5), // Processor supports 3dnow prefetch and prefetchw instructions
-                                    // may not necessarily support other 3dnow instructions
-    CPU_SSE    = (1 << 6),
-    CPU_SSE2   = (1 << 7),
-    CPU_SSE3   = (1 << 8), // SSE3 comes from cpuid 1 (ECX)
-    CPU_SSSE3  = (1 << 9),
-    CPU_SSE4A  = (1 << 10),
-    CPU_SSE4_1 = (1 << 11),
-    CPU_SSE4_2 = (1 << 12),
-    CPU_POPCNT = (1 << 13),
-    CPU_LZCNT  = (1 << 14),
-    CPU_TSC    = (1 << 15),
-    CPU_TSCINV = (1 << 16),
-    CPU_AVX    = (1 << 17),
-    CPU_AVX2   = (1 << 18),
-    CPU_AES    = (1 << 19),
-    CPU_ERMS   = (1 << 20), // enhanced 'rep movsb/stosb' instructions
-    CPU_CLMUL  = (1 << 21), // carryless multiply for CRC
-    CPU_BMI1   = (1 << 22),
-    CPU_BMI2   = (1 << 23),
-    CPU_RTM    = (1 << 24),  // Restricted Transactional Memory instructions
-    CPU_ADX    = (1 << 25)
+    CPU_CX8      = (1 << 0), // next bits are from cpuid 1 (EDX)
+    CPU_CMOV     = (1 << 1),
+    CPU_FXSR     = (1 << 2),
+    CPU_HT       = (1 << 3),
+    CPU_MMX      = (1 << 4),
+    CPU_3DNOW_PREFETCH = (1 << 5), // Processor supports 3dnow prefetch and prefetchw instructions
+                                   // may not necessarily support other 3dnow instructions
+    CPU_SSE      = (1 << 6),
+    CPU_SSE2     = (1 << 7),
+    CPU_SSE3     = (1 << 8),  // SSE3 comes from cpuid 1 (ECX)
+    CPU_SSSE3    = (1 << 9),
+    CPU_SSE4A    = (1 << 10),
+    CPU_SSE4_1   = (1 << 11),
+    CPU_SSE4_2   = (1 << 12),
+    CPU_POPCNT   = (1 << 13),
+    CPU_LZCNT    = (1 << 14),
+    CPU_TSC      = (1 << 15),
+    CPU_TSCINV   = (1 << 16),
+    CPU_AVX      = (1 << 17),
+    CPU_AVX2     = (1 << 18),
+    CPU_AES      = (1 << 19),
+    CPU_ERMS     = (1 << 20), // enhanced 'rep movsb/stosb' instructions
+    CPU_CLMUL    = (1 << 21), // carryless multiply for CRC
+    CPU_BMI1     = (1 << 22),
+    CPU_BMI2     = (1 << 23),
+    CPU_RTM      = (1 << 24), // Restricted Transactional Memory instructions
+    CPU_ADX      = (1 << 25),
+    CPU_AVX512F  = (1 << 26), // AVX 512bit foundation instructions
+    CPU_AVX512DQ = (1 << 27),
+    CPU_AVX512PF = (1 << 28),
+    CPU_AVX512ER = (1 << 29),
+    CPU_AVX512CD = (1 << 30),
+    CPU_AVX512BW = (1 << 31)
   } cpuFeatureFlags;
+
+#define CPU_AVX512VL 0x100000000 // EVEX instructions with smaller vector length : enums are limited to 32bit
 
   enum {
     // AMD
@@ -282,7 +303,8 @@ protected:
     CPU_MODEL_IVYBRIDGE_EP   = 0x3a,
     CPU_MODEL_HASWELL_E3     = 0x3c,
     CPU_MODEL_HASWELL_E7     = 0x3f,
-    CPU_MODEL_BROADWELL      = 0x3d
+    CPU_MODEL_BROADWELL      = 0x3d,
+    CPU_MODEL_SKYLAKE        = CPU_MODEL_HASWELL_E3
   } cpuExtendedFamily;
 
   // cpuid information block.  All info derived from executing cpuid with
@@ -376,6 +398,9 @@ protected:
 
     // Space to save ymm registers after signal handle
     int          ymm_save[8*4]; // Save ymm0, ymm7, ymm8, ymm15
+
+    // Space to save zmm registers after signal handle
+    int          zmm_save[16*4]; // Save zmm0, zmm7, zmm8, zmm31
   };
 
   // The actual cpuid info block
@@ -404,8 +429,8 @@ protected:
     return result;
   }
 
-  static uint32_t feature_flags() {
-    uint32_t result = 0;
+  static uint64_t feature_flags() {
+    uint64_t result = 0;
     if (_cpuid_info.std_cpuid1_edx.bits.cmpxchg8 != 0)
       result |= CPU_CX8;
     if (_cpuid_info.std_cpuid1_edx.bits.cmov != 0)
@@ -440,6 +465,24 @@ protected:
       result |= CPU_AVX;
       if (_cpuid_info.sef_cpuid7_ebx.bits.avx2 != 0)
         result |= CPU_AVX2;
+      if (_cpuid_info.sef_cpuid7_ebx.bits.avx512f != 0 &&
+          _cpuid_info.xem_xcr0_eax.bits.opmask != 0 &&
+          _cpuid_info.xem_xcr0_eax.bits.zmm512 != 0 &&
+          _cpuid_info.xem_xcr0_eax.bits.zmm32 != 0) {
+        result |= CPU_AVX512F;
+        if (_cpuid_info.sef_cpuid7_ebx.bits.avx512cd != 0)
+          result |= CPU_AVX512CD;
+        if (_cpuid_info.sef_cpuid7_ebx.bits.avx512dq != 0)
+          result |= CPU_AVX512DQ;
+        if (_cpuid_info.sef_cpuid7_ebx.bits.avx512pf != 0)
+          result |= CPU_AVX512PF;
+        if (_cpuid_info.sef_cpuid7_ebx.bits.avx512er != 0)
+          result |= CPU_AVX512ER;
+        if (_cpuid_info.sef_cpuid7_ebx.bits.avx512bw != 0)
+          result |= CPU_AVX512BW;
+        if (_cpuid_info.sef_cpuid7_ebx.bits.avx512vl != 0)
+          result |= CPU_AVX512VL;
+      }
     }
     if(_cpuid_info.sef_cpuid7_ebx.bits.bmi1 != 0)
       result |= CPU_BMI1;
@@ -484,18 +527,31 @@ protected:
   }
 
   static bool os_supports_avx_vectors() {
-    if (!supports_avx()) {
-      return false;
-    }
-    // Verify that OS save/restore all bits of AVX registers
-    // during signal processing.
-    int nreg = 2 LP64_ONLY(+2);
-    for (int i = 0; i < 8 * nreg; i++) { // 32 bytes per ymm register
-      if (_cpuid_info.ymm_save[i] != ymm_test_value()) {
-        return false;
+    bool retVal = false;
+    if (supports_evex()) {
+      // Verify that OS save/restore all bits of EVEX registers
+      // during signal processing.
+      int nreg = 2 LP64_ONLY(+2);
+      retVal = true;
+      for (int i = 0; i < 16 * nreg; i++) { // 64 bytes per zmm register
+        if (_cpuid_info.zmm_save[i] != ymm_test_value()) {
+          retVal = false;
+          break;
+        }
+      }
+    } else if (supports_avx()) {
+      // Verify that OS save/restore all bits of AVX registers
+      // during signal processing.
+      int nreg = 2 LP64_ONLY(+2);
+      retVal = true;
+      for (int i = 0; i < 8 * nreg; i++) { // 32 bytes per ymm register
+        if (_cpuid_info.ymm_save[i] != ymm_test_value()) {
+          retVal = false;
+          break;
+        }
       }
     }
-    return true;
+    return retVal;
   }
 
   static void get_processor_features();
@@ -515,6 +571,7 @@ public:
   static ByteSize tpl_cpuidB2_offset() { return byte_offset_of(CpuidInfo, tpl_cpuidB2_eax); }
   static ByteSize xem_xcr0_offset() { return byte_offset_of(CpuidInfo, xem_xcr0_eax); }
   static ByteSize ymm_save_offset() { return byte_offset_of(CpuidInfo, ymm_save); }
+  static ByteSize zmm_save_offset() { return byte_offset_of(CpuidInfo, zmm_save); }
 
   // The value used to check ymm register after signal handle
   static int ymm_test_value()    { return 0xCAFEBABE; }
@@ -527,6 +584,7 @@ public:
 
   static void clean_cpuFeatures()   { _cpuFeatures = 0; }
   static void set_avx_cpuFeatures() { _cpuFeatures = (CPU_SSE | CPU_SSE2 | CPU_AVX); }
+  static void set_evex_cpuFeatures() { _cpuFeatures = (CPU_AVX512F | CPU_SSE | CPU_SSE2 ); }
 
 
   // Initialization
@@ -636,7 +694,14 @@ public:
   static bool supports_rtm()      { return (_cpuFeatures & CPU_RTM) != 0; }
   static bool supports_bmi1()     { return (_cpuFeatures & CPU_BMI1) != 0; }
   static bool supports_bmi2()     { return (_cpuFeatures & CPU_BMI2) != 0; }
-  static bool supports_adx()     { return (_cpuFeatures & CPU_ADX) != 0; }
+  static bool supports_adx()      { return (_cpuFeatures & CPU_ADX) != 0; }
+  static bool supports_evex()     { return (_cpuFeatures & CPU_AVX512F) != 0; }
+  static bool supports_avx512dq() { return (_cpuFeatures & CPU_AVX512DQ) != 0; }
+  static bool supports_avx512pf() { return (_cpuFeatures & CPU_AVX512PF) != 0; }
+  static bool supports_avx512er() { return (_cpuFeatures & CPU_AVX512ER) != 0; }
+  static bool supports_avx512cd() { return (_cpuFeatures & CPU_AVX512CD) != 0; }
+  static bool supports_avx512bw() { return (_cpuFeatures & CPU_AVX512BW) != 0; }
+  static bool supports_avx512vl() { return (_cpuFeatures & CPU_AVX512VL) != 0; }
   // Intel features
   static bool is_intel_family_core() { return is_intel() &&
                                        extended_cpu_family() == CPU_FAMILY_INTEL_CORE; }

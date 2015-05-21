@@ -21,10 +21,10 @@
  * questions.
  */
 
-import com.oracle.java.testlibrary.OutputAnalyzer;
-import com.oracle.java.testlibrary.dcmd.CommandExecutor;
-import com.oracle.java.testlibrary.dcmd.JMXExecutor;
-import com.oracle.java.testlibrary.dcmd.PidJcmdExecutor;
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.dcmd.CommandExecutor;
+import jdk.test.lib.dcmd.JMXExecutor;
+import jdk.test.lib.dcmd.PidJcmdExecutor;
 import org.testng.annotations.Test;
 
 /*
@@ -32,7 +32,7 @@ import org.testng.annotations.Test;
  * @bug 8054890
  * @summary Test of JVMTI.data_dump diagnostic command
  * @library /testlibrary
- * @build com.oracle.java.testlibrary.*
+ * @build jdk.test.lib.*
  * @run testng DataDumpDcmdTest
  */
 

@@ -21,7 +21,7 @@
  * questions.
  */
 
-import com.oracle.java.testlibrary.Asserts;
+import jdk.test.lib.Asserts;
 import java.lang.management.MemoryPoolMXBean;
 import sun.hotspot.code.BlobType;
 
@@ -52,7 +52,7 @@ public class UsageThresholdExceededTest {
 
     public static void main(String[] args) {
         int iterationsCount =
-            Integer.getInteger("com.oracle.java.testlibrary.iterations", 1);
+            Integer.getInteger("jdk.test.lib.iterations", 1);
         for (BlobType btype : BlobType.getAvailable()) {
             if (CodeCacheUtils.isCodeHeapPredictable(btype)) {
                 new UsageThresholdExceededTest(btype, iterationsCount)

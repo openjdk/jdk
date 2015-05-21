@@ -25,28 +25,29 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_G1_SATBQUEUE_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_G1_SATBQUEUE_HPP
 
+#include "memory/allocation.hpp"
 #include "gc_implementation/g1/ptrQueue.hpp"
 
-class ObjectClosure;
 class JavaThread;
 class SATBMarkQueueSet;
 
+// Base class for processing the contents of a SATB buffer.
+class SATBBufferClosure : public StackObj {
+protected:
+  ~SATBBufferClosure() { }
+
+public:
+  // Process the SATB entries in the designated buffer range.
+  virtual void do_buffer(void** buffer, size_t size) = 0;
+};
+
 // A ptrQueue whose elements are "oops", pointers to object heads.
 class ObjPtrQueue: public PtrQueue {
-  friend class Threads;
   friend class SATBMarkQueueSet;
-  friend class G1RemarkThreadsClosure;
 
 private:
   // Filter out unwanted entries from the buffer.
   void filter();
-
-  // Apply the closure to all elements and empty the buffer;
-  void apply_closure_and_empty(ObjectClosure* cl);
-
-  // Apply the closure to all elements of "buf", down to "index" (inclusive.)
-  static void apply_closure_to_buffer(ObjectClosure* cl,
-                                      void** buf, size_t index, size_t sz);
 
 public:
   ObjPtrQueue(PtrQueueSet* qset, bool perm = false) :
@@ -59,6 +60,10 @@ public:
 
   // Process queue entries and free resources.
   void flush();
+
+  // Apply cl to the active part of the buffer.
+  // Prerequisite: Must be at a safepoint.
+  void apply_closure_and_empty(SATBBufferClosure* cl);
 
   // Overrides PtrQueue::should_enqueue_buffer(). See the method's
   // definition for more information.
@@ -97,10 +102,12 @@ public:
   // Filter all the currently-active SATB buffers.
   void filter_thread_buffers();
 
-  // If there exists some completed buffer, pop it, then apply the
-  // closure to all its elements, and return true.  If no
-  // completed buffers exist, return false.
-  bool apply_closure_to_completed_buffer(ObjectClosure* closure);
+  // If there exists some completed buffer, pop and process it, and
+  // return true.  Otherwise return false.  Processing a buffer
+  // consists of applying the closure to the buffer range starting
+  // with the first non-NULL entry to the end of the buffer; the
+  // leading entries may be NULL due to filtering.
+  bool apply_closure_to_completed_buffer(SATBBufferClosure* cl);
 
 #ifndef PRODUCT
   // Helpful for debugging

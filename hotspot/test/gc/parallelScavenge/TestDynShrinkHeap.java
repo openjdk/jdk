@@ -29,11 +29,11 @@
  * @library /testlibrary
  * @run main/othervm -XX:+UseAdaptiveSizePolicyWithSystemGC -XX:+UseParallelGC -XX:MinHeapFreeRatio=0 -XX:MaxHeapFreeRatio=100 -Xmx1g -verbose:gc TestDynShrinkHeap
  */
-import com.oracle.java.testlibrary.DynamicVMOption;
+import jdk.test.lib.DynamicVMOption;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
 import java.util.ArrayList;
-import static com.oracle.java.testlibrary.Asserts.assertLessThan;
+import static jdk.test.lib.Asserts.assertLessThan;
 import com.sun.management.HotSpotDiagnosticMXBean;
 
 public class TestDynShrinkHeap {

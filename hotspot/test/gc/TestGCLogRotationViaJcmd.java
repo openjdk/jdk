@@ -31,7 +31,7 @@
  * @run main/othervm -Xloggc:test.log -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=3 TestGCLogRotationViaJcmd
  *
  */
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 import java.io.File;
 import java.io.FilenameFilter;
 

@@ -39,7 +39,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
 import java.util.ArrayList;
 import java.util.List;
-import static com.oracle.java.testlibrary.Asserts.*;
+import static jdk.test.lib.Asserts.*;
 
 public class TestHumongousShrinkHeap {
 

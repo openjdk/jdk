@@ -37,7 +37,6 @@
 
 ReferencePolicy* ReferenceProcessor::_always_clear_soft_ref_policy = NULL;
 ReferencePolicy* ReferenceProcessor::_default_soft_ref_policy      = NULL;
-bool             ReferenceProcessor::_pending_list_uses_discovered_field = false;
 jlong            ReferenceProcessor::_soft_ref_timestamp_clock = 0;
 
 void referenceProcessor_init() {
@@ -63,7 +62,6 @@ void ReferenceProcessor::init_statics() {
   guarantee(RefDiscoveryPolicy == ReferenceBasedDiscovery ||
             RefDiscoveryPolicy == ReferentBasedDiscovery,
             "Unrecognized RefDiscoveryPolicy");
-  _pending_list_uses_discovered_field = JDK_Version::current().pending_list_uses_discovered_field();
 }
 
 void ReferenceProcessor::enable_discovery(bool check_no_refs) {
@@ -353,10 +351,6 @@ void ReferenceProcessor::enqueue_discovered_reflist(DiscoveredList& refs_list,
   // all linked Reference objects. Note that it is important to not dirty any
   // cards during reference processing since this will cause card table
   // verification to fail for G1.
-  //
-  // BKWRD COMPATIBILITY NOTE: For older JDKs (prior to the fix for 4956777),
-  // the "next" field is used to chain the pending list, not the discovered
-  // field.
   if (TraceReferenceGC && PrintGCDetails) {
     gclog_or_tty->print_cr("ReferenceProcessor::enqueue_discovered_reflist list "
                            INTPTR_FORMAT, p2i(refs_list.head()));
@@ -364,64 +358,30 @@ void ReferenceProcessor::enqueue_discovered_reflist(DiscoveredList& refs_list,
 
   oop obj = NULL;
   oop next_d = refs_list.head();
-  if (pending_list_uses_discovered_field()) { // New behavior
-    // Walk down the list, self-looping the next field
-    // so that the References are not considered active.
-    while (obj != next_d) {
-      obj = next_d;
-      assert(obj->is_instanceRef(), "should be reference object");
-      next_d = java_lang_ref_Reference::discovered(obj);
-      if (TraceReferenceGC && PrintGCDetails) {
-        gclog_or_tty->print_cr("        obj " INTPTR_FORMAT "/next_d " INTPTR_FORMAT,
-                               p2i(obj), p2i(next_d));
-      }
-      assert(java_lang_ref_Reference::next(obj) == NULL,
-             "Reference not active; should not be discovered");
-      // Self-loop next, so as to make Ref not active.
-      java_lang_ref_Reference::set_next_raw(obj, obj);
-      if (next_d != obj) {
-        oopDesc::bs()->write_ref_field(java_lang_ref_Reference::discovered_addr(obj), next_d);
-      } else {
-        // This is the last object.
-        // Swap refs_list into pending_list_addr and
-        // set obj's discovered to what we read from pending_list_addr.
-        oop old = oopDesc::atomic_exchange_oop(refs_list.head(), pending_list_addr);
-        // Need post-barrier on pending_list_addr. See enqueue_discovered_ref_helper() above.
-        java_lang_ref_Reference::set_discovered_raw(obj, old); // old may be NULL
-        oopDesc::bs()->write_ref_field(java_lang_ref_Reference::discovered_addr(obj), old);
-      }
+  // Walk down the list, self-looping the next field
+  // so that the References are not considered active.
+  while (obj != next_d) {
+    obj = next_d;
+    assert(obj->is_instanceRef(), "should be reference object");
+    next_d = java_lang_ref_Reference::discovered(obj);
+    if (TraceReferenceGC && PrintGCDetails) {
+      gclog_or_tty->print_cr("        obj " INTPTR_FORMAT "/next_d " INTPTR_FORMAT,
+                             p2i(obj), p2i(next_d));
     }
-  } else { // Old behavior
-    // Walk down the list, copying the discovered field into
-    // the next field and clearing the discovered field.
-    while (obj != next_d) {
-      obj = next_d;
-      assert(obj->is_instanceRef(), "should be reference object");
-      next_d = java_lang_ref_Reference::discovered(obj);
-      if (TraceReferenceGC && PrintGCDetails) {
-        gclog_or_tty->print_cr("        obj " INTPTR_FORMAT "/next_d " INTPTR_FORMAT,
-                               p2i(obj), p2i(next_d));
-      }
-      assert(java_lang_ref_Reference::next(obj) == NULL,
-             "The reference should not be enqueued");
-      if (next_d == obj) {  // obj is last
-        // Swap refs_list into pending_list_addr and
-        // set obj's next to what we read from pending_list_addr.
-        oop old = oopDesc::atomic_exchange_oop(refs_list.head(), pending_list_addr);
-        // Need oop_check on pending_list_addr above;
-        // see special oop-check code at the end of
-        // enqueue_discovered_reflists() further below.
-        if (old == NULL) {
-          // obj should be made to point to itself, since
-          // pending list was empty.
-          java_lang_ref_Reference::set_next(obj, obj);
-        } else {
-          java_lang_ref_Reference::set_next(obj, old);
-        }
-      } else {
-        java_lang_ref_Reference::set_next(obj, next_d);
-      }
-      java_lang_ref_Reference::set_discovered(obj, (oop) NULL);
+    assert(java_lang_ref_Reference::next(obj) == NULL,
+           "Reference not active; should not be discovered");
+    // Self-loop next, so as to make Ref not active.
+    java_lang_ref_Reference::set_next_raw(obj, obj);
+    if (next_d != obj) {
+      oopDesc::bs()->write_ref_field(java_lang_ref_Reference::discovered_addr(obj), next_d);
+    } else {
+      // This is the last object.
+      // Swap refs_list into pending_list_addr and
+      // set obj's discovered to what we read from pending_list_addr.
+      oop old = oopDesc::atomic_exchange_oop(refs_list.head(), pending_list_addr);
+      // Need post-barrier on pending_list_addr. See enqueue_discovered_ref_helper() above.
+      java_lang_ref_Reference::set_discovered_raw(obj, old); // old may be NULL
+      oopDesc::bs()->write_ref_field(java_lang_ref_Reference::discovered_addr(obj), old);
     }
   }
 }
@@ -515,22 +475,6 @@ void DiscoveredListIterator::remove() {
   _refs_list.dec_length(1);
 }
 
-// Make the Reference object active again.
-void DiscoveredListIterator::make_active() {
-  // The pre barrier for G1 is probably just needed for the old
-  // reference processing behavior. Should we guard this with
-  // ReferenceProcessor::pending_list_uses_discovered_field() ?
-  if (UseG1GC) {
-    HeapWord* next_addr = java_lang_ref_Reference::next_addr(_ref);
-    if (UseCompressedOops) {
-      oopDesc::bs()->write_ref_field_pre((narrowOop*)next_addr, NULL);
-    } else {
-      oopDesc::bs()->write_ref_field_pre((oop*)next_addr, NULL);
-    }
-  }
-  java_lang_ref_Reference::set_next_raw(_ref, NULL);
-}
-
 void DiscoveredListIterator::clear_referent() {
   oop_store_raw(_referent_addr, NULL);
 }
@@ -567,8 +511,6 @@ ReferenceProcessor::process_phase1(DiscoveredList&    refs_list,
       }
       // Remove Reference object from list
       iter.remove();
-      // Make the Reference object active again
-      iter.make_active();
       // keep the referent around
       iter.make_referent_alive();
       iter.move_to_next();

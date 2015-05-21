@@ -1082,17 +1082,6 @@ size_t CompactibleFreeListSpace::block_size_nopar(const HeapWord* p) const {
 bool CompactibleFreeListSpace::block_is_obj(const HeapWord* p) const {
   FreeChunk* fc = (FreeChunk*)p;
   assert(is_in_reserved(p), "Should be in space");
-  // When doing a mark-sweep-compact of the CMS generation, this
-  // assertion may fail because prepare_for_compaction() uses
-  // space that is garbage to maintain information on ranges of
-  // live objects so that these live ranges can be moved as a whole.
-  // Comment out this assertion until that problem can be solved
-  // (i.e., that the block start calculation may look at objects
-  // at address below "p" in finding the object that contains "p"
-  // and those objects (if garbage) may have been modified to hold
-  // live range information.
-  // assert(CollectedHeap::use_parallel_gc_threads() || _bt.block_start(p) == p,
-  //        "Should be a block boundary");
   if (FreeChunk::indicatesFreeChunk(p)) return false;
   Klass* k = oop(p)->klass_or_null();
   if (k != NULL) {
