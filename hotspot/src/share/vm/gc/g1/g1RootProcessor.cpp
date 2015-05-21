@@ -253,7 +253,7 @@ void G1RootProcessor::process_java_roots(OopClosure* strong_roots,
 
   {
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::ThreadRoots, worker_i);
-    bool is_par = _g1h->n_par_threads() > 0;
+    bool is_par = _g1h->n_par_threads() > 1;
     Threads::possibly_parallel_oops_do(is_par, strong_roots, thread_stack_clds, strong_code);
   }
 }
