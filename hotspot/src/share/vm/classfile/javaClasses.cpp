@@ -567,6 +567,12 @@ void java_lang_Class::fixup_mirror(KlassHandle k, TRAPS) {
     }
   }
   create_mirror(k, Handle(NULL), Handle(NULL), CHECK);
+
+  if (UseSharedSpaces && k->oop_is_instance()) {
+    // Create resolved_references array in the fresh mirror.
+    instanceKlassHandle ik(k());
+    ik->constants()->restore_unshareable_info(CHECK);
+  }
 }
 
 void java_lang_Class::initialize_mirror_fields(KlassHandle k,
@@ -924,6 +930,17 @@ void java_lang_Class::set_classRedefinedCount(oop the_class_mirror, int value) {
   the_class_mirror->int_field_put(classRedefinedCount_offset, value);
 }
 
+objArrayOop java_lang_Class::resolved_references(oop java_class) {
+  assert(java_lang_Class::is_instance(java_class), "");
+  assert(resolvedReferences_offset > 0, "must be set");
+  return objArrayOop(java_class->obj_field(resolvedReferences_offset));
+}
+
+void java_lang_Class::set_resolved_references(oop java_class, objArrayOop a) {
+  assert(java_lang_Class::is_instance(java_class), "");
+  assert(resolvedReferences_offset > 0, "must be set");
+  java_class->obj_field_put(resolvedReferences_offset, a);
+}
 
 // Note: JDK1.1 and before had a privateInfo_offset field which was used for the
 //       platform thread structure, and a eetop offset which was used for thread
@@ -3181,6 +3198,7 @@ bool java_lang_System::has_security_manager() {
   }
 }
 
+int java_lang_Class::resolvedReferences_offset;
 int java_lang_Class::_klass_offset;
 int java_lang_Class::_array_klass_offset;
 int java_lang_Class::_oop_size_offset;
@@ -3335,6 +3353,9 @@ oop java_util_concurrent_locks_AbstractOwnableSynchronizer::get_owner_threadObj(
 void JavaClasses::compute_hard_coded_offsets() {
   const int x = heapOopSize;
   const int header = instanceOopDesc::base_offset_in_bytes();
+
+  // Class
+  java_lang_Class::resolvedReferences_offset = java_lang_Class::hc_resolvedReferences_offset * x + header;
 
   // Throwable Class
   java_lang_Throwable::backtrace_offset  = java_lang_Throwable::hc_backtrace_offset  * x + header;
@@ -3534,9 +3555,7 @@ void JavaClasses::check_offsets() {
 
   // java.lang.Class
 
-  // Fake fields
-  // CHECK_OFFSET("java/lang/Class", java_lang_Class, klass); // %%% this needs to be checked
-  // CHECK_OFFSET("java/lang/Class", java_lang_Class, array_klass); // %%% this needs to be checked
+  CHECK_OFFSET("java/lang/Class", java_lang_Class, resolvedReferences, "[Ljava/lang/Object;");
 
   // java.lang.Throwable
 

@@ -226,6 +226,10 @@ class java_lang_String : AllStatic {
 class java_lang_Class : AllStatic {
   friend class VMStructs;
 
+  enum {
+    hc_resolvedReferences_offset = 12
+  };
+
  private:
   // The fake offsets are added by the class loader when java.lang.Class is loaded
 
@@ -243,6 +247,7 @@ class java_lang_Class : AllStatic {
 
   static bool offsets_computed;
   static int classRedefinedCount_offset;
+  static int resolvedReferences_offset;
 
   static GrowableArray<Klass*>* _fixup_mirror_list;
 
@@ -300,6 +305,10 @@ class java_lang_Class : AllStatic {
   static void set_oop_size(oop java_class, int size);
   static int static_oop_field_count(oop java_class);
   static void set_static_oop_field_count(oop java_class, int size);
+
+  static objArrayOop     resolved_references(oop java_class);
+  static void        set_resolved_references(oop java_class, objArrayOop a);
+  static int             resolved_references_offset_in_bytes() { return resolvedReferences_offset; }
 
   static GrowableArray<Klass*>* fixup_mirror_list() {
     return _fixup_mirror_list;

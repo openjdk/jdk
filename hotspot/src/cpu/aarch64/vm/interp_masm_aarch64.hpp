@@ -121,6 +121,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
     ldr(tags, Address(cpool, ConstantPool::tags_offset_in_bytes()));
   }
 
+  void get_resolved_references(Register reg);
+
   void get_unsigned_2_byte_index_at_bcp(Register reg, int bcp_offset);
   void get_cache_and_index_at_bcp(Register cache, Register index, int bcp_offset, size_t index_size = sizeof(u2));
   void get_cache_and_index_and_bytecode_at_bcp(Register cache, Register index, Register bytecode, int byte_no, int bcp_offset, size_t index_size = sizeof(u2));

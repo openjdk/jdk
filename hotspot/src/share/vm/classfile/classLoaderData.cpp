@@ -60,7 +60,6 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.inline.hpp"
-#include "runtime/jniHandles.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/synchronizer.hpp"
@@ -81,7 +80,7 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool is_anonymous, Depen
   // The null-class-loader should always be kept alive.
   _keep_alive(is_anonymous || h_class_loader.is_null()),
   _metaspace(NULL), _unloading(false), _klasses(NULL),
-  _claimed(0), _jmethod_ids(NULL), _handles(NULL), _deallocate_list(NULL),
+  _claimed(0), _jmethod_ids(NULL), _deallocate_list(NULL),
   _next(NULL), _dependencies(dependencies),
   _metaspace_lock(new Mutex(Monitor::leaf+1, "Metaspace allocation lock", true,
                             Monitor::_safepoint_check_never)) {
@@ -115,7 +114,6 @@ void ClassLoaderData::oops_do(OopClosure* f, KlassClosure* klass_closure, bool m
 
   f->do_oop(&_class_loader);
   _dependencies.oops_do(f);
-  _handles->oops_do(f);
   if (klass_closure != NULL) {
     classes_do(klass_closure);
   }
@@ -356,11 +354,6 @@ ClassLoaderData::~ClassLoaderData() {
     _metaspace = NULL;
     // release the metaspace
     delete m;
-    // release the handles
-    if (_handles != NULL) {
-      JNIHandleBlock::release_block(_handles);
-      _handles = NULL;
-    }
   }
 
   // Clear all the JNI handles for methods
@@ -418,17 +411,6 @@ Metaspace* ClassLoaderData::metaspace_non_null() {
     }
   }
   return _metaspace;
-}
-
-JNIHandleBlock* ClassLoaderData::handles() const           { return _handles; }
-void ClassLoaderData::set_handles(JNIHandleBlock* handles) { _handles = handles; }
-
-jobject ClassLoaderData::add_handle(Handle h) {
-  MutexLockerEx ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
-  if (handles() == NULL) {
-    set_handles(JNIHandleBlock::allocate_block());
-  }
-  return handles()->allocate_handle(h());
 }
 
 // Add this metadata pointer to be freed when it's safe.  This is only during
@@ -499,7 +481,6 @@ void ClassLoaderData::dump(outputStream * const out) {
       p2i(class_loader() != NULL ? class_loader()->klass() : NULL), loader_name());
   if (claimed()) out->print(" claimed ");
   if (is_unloading()) out->print(" unloading ");
-  out->print(" handles " INTPTR_FORMAT, p2i(handles()));
   out->cr();
   if (metaspace_or_null() != NULL) {
     out->print_cr("metaspace: " INTPTR_FORMAT, p2i(metaspace_or_null()));

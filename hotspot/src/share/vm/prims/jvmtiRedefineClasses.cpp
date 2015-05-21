@@ -3885,7 +3885,10 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
 
   // Attach new constant pool to the original klass. The original
   // klass still refers to the old constant pool (for now).
+  // resolved_references array should be moved as well, since it is located
+  // in klass mirror.
   scratch_class->constants()->set_pool_holder(the_class());
+  the_class->set_resolved_references(scratch_class->resolved_references());
 
 #if 0
   // In theory, with constant pool merging in place we should be able

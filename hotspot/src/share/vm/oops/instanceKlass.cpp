@@ -2032,7 +2032,6 @@ static void remove_unshareable_in_class(Klass* k) {
 }
 
 void InstanceKlass::remove_unshareable_info() {
-  Klass::remove_unshareable_info();
   // Unlink the class
   if (is_linked()) {
     unlink_class();
@@ -2048,6 +2047,8 @@ void InstanceKlass::remove_unshareable_info() {
 
   // do array classes also.
   array_klasses_do(remove_unshareable_in_class);
+
+  Klass::remove_unshareable_info();
 }
 
 static void restore_unshareable_in_class(Klass* k, TRAPS) {
@@ -3511,4 +3512,12 @@ jint InstanceKlass::get_cached_class_file_len() {
 
 unsigned char * InstanceKlass::get_cached_class_file_bytes() {
   return VM_RedefineClasses::get_cached_class_file_bytes(_cached_class_file);
+}
+
+objArrayOop InstanceKlass::resolved_references() const {
+  return java_lang_Class::resolved_references(java_mirror());
+}
+
+void InstanceKlass::set_resolved_references(objArrayOop obj_arr) {
+  return java_lang_Class::set_resolved_references(java_mirror(), obj_arr);
 }
