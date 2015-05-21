@@ -561,11 +561,6 @@ HeapWord* GenCollectedHeap::satisfy_failed_allocation(size_t size, bool is_tlab)
   return collector_policy()->satisfy_failed_allocation(size, is_tlab);
 }
 
-void GenCollectedHeap::set_par_threads(uint t) {
-  assert(t == 0 || !UseSerialGC, "Cannot have parallel threads");
-  CollectedHeap::set_par_threads(t);
-}
-
 #ifdef ASSERT
 class AssertNonScavengableClosure: public OopClosure {
 public:

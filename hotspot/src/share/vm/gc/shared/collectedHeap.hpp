@@ -290,9 +290,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   }
   GCCause::Cause gc_cause() { return _gc_cause; }
 
-  // May be overridden to set additional parallelism.
-  virtual void set_par_threads(uint t) { (void)t; };
-
   // General obj/array allocation facilities.
   inline static oop obj_allocate(KlassHandle klass, int size, TRAPS);
   inline static oop array_allocate(KlassHandle klass, int size, int length, TRAPS);

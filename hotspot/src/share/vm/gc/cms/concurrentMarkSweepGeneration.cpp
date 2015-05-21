@@ -3017,14 +3017,12 @@ void CMSCollector::checkpointRootsInitialWork() {
       StrongRootsScope srs(n_workers);
 
       CMSParInitialMarkTask tsk(this, &srs, n_workers);
-      gch->set_par_threads(n_workers);
       initialize_sequential_subtasks_for_young_gen_rescan(n_workers);
       if (n_workers > 1) {
         workers->run_task(&tsk);
       } else {
         tsk.work(0);
       }
-      gch->set_par_threads(0);
     } else {
       // The serial version.
       CLDToOopClosure cld_closure(&notOlder, true);
@@ -5088,8 +5086,6 @@ void CMSCollector::do_remark_parallel() {
 
   CMSParRemarkTask tsk(this, cms_space, n_workers, workers, task_queues(), &srs);
 
-  // Set up for parallel process_roots work.
-  gch->set_par_threads(n_workers);
   // We won't be iterating over the cards in the card table updating
   // the younger_gen cards, so we shouldn't call the following else
   // the verification code as well as subsequent younger_refs_iterate
@@ -5127,7 +5123,6 @@ void CMSCollector::do_remark_parallel() {
     tsk.work(0);
   }
 
-  gch->set_par_threads(0);  // 0 ==> non-parallel.
   // restore, single-threaded for now, any preserved marks
   // as a result of work_q overflow
   restore_preserved_marks_if_any();

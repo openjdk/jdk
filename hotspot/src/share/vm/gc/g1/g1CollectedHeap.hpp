@@ -1012,11 +1012,6 @@ public:
   // Initialize weak reference processing.
   void ref_processing_init();
 
-  // Explicitly import set_par_threads into this scope
-  using CollectedHeap::set_par_threads;
-  // Set _n_par_threads according to a policy TBD.
-  void set_par_threads();
-
   virtual Name kind() const {
     return CollectedHeap::G1CollectedHeap;
   }

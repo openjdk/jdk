@@ -452,7 +452,7 @@ void CardTableModRefBS::non_clean_card_iterate_possibly_parallel(Space* sp,
     } else {
       // clear_cl finds contiguous dirty ranges of cards to process and clear.
 
-      // This is the single-threaded version.
+      // This is the single-threaded version used by DefNew.
       const bool parallel = false;
 
       DirtyCardToOopClosure* dcto_cl = sp->new_dcto_cl(cl, precision(), cl->gen_boundary(), parallel);
