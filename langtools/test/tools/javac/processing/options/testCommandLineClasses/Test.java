@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @bug 6930508
  * @summary Passing nested class names on javac command line interfere with subsequent name -> class lookup
  * @library /tools/javac/lib
+ * @modules java.compiler
+ *          jdk.compiler
  * @build JavacTestingAbstractProcessor p.NestedExamples Test
  * @run main Test
  */

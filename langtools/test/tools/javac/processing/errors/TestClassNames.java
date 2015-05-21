@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 7071377
  * @summary verify if erroneous class names are rejected
  * @library /tools/javac/lib
+ * @modules jdk.compiler/com.sun.tools.javac.main
  * @build TestClassNames JavacTestingAbstractProcessor CompileFail
  * @run main CompileFail ERROR  -processor TestClassNames TestClassNames.x.y
  * @run main CompileFail ERROR  -processor TestClassNames x.y.TestClassNames

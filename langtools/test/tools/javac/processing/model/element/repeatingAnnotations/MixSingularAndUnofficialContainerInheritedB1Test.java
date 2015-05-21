@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@
  * @summary Language model api test basics for repeating annotations
  * @library /tools/javac/lib
  * @library supportingAnnotations
+ * @modules java.compiler
+ *          jdk.compiler
  * @build   JavacTestingAbstractProcessor ElementRepAnnoTester
  * @compile -processor ElementRepAnnoTester -proc:only
  * MixSingularAndUnofficialContainerInheritedB1Test.java

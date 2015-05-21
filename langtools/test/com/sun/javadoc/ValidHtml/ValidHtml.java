@@ -30,6 +30,7 @@
  *           HTML table tags inserted in wrong place in pakcage use page
  * @author dkramer
  * @library ../lib
+ * @modules jdk.javadoc
  * @build JavadocTester
  * @run main ValidHtml
  */

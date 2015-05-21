@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Test that an empty container does not stop us from looking at
  *          supertypes for inherited repeated annotations.
  * @library /tools/javac/lib
+ * @modules jdk.compiler/com.sun.tools.javac.util
  * @build   JavacTestingAbstractProcessor TestEmptyContainer
  * @compile -processor TestEmptyContainer -proc:only TestEmptyContainer.java
  */

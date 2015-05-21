@@ -4,6 +4,8 @@
  * @summary Test -processor foo,bar,baz
  * @author  Joseph D. Darcy
  * @library /tools/javac/lib
+ * @modules java.compiler
+ *          jdk.compiler
  * @build   JavacTestingAbstractProcessor
  * @compile ProcFoo.java
  * @compile ProcBar.java

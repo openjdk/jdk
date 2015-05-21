@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
  * @summary JSR 199: Changes to JavaFileManager to support JSR 269 Filer API
  * @author  Peter von der Ah\u00e9
  * @library ../lib
+ * @modules java.compiler
+ *          jdk.compiler
  * @build ToolTester
  * @compile T6431257.java package-info.java
  * @run main T6431257 foo.bar.baz foo/bar/baz

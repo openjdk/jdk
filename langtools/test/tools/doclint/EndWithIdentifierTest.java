@@ -2,6 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8007096
  * @summary DocLint parsing problems with some comments
+ * @modules jdk.compiler/com.sun.tools.doclint
  * @build DocLintTester
  * @run main DocLintTester -Xmsgs:-html EndWithIdentifierTest.java
  * @run main DocLintTester -Xmsgs -ref EndWithIdentifierTest.out EndWithIdentifierTest.java

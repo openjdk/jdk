@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Element not returned from tree API for ARM resource variables.
  * @author A. Sundararajan
  * @library /tools/javac/lib
+ * @modules jdk.compiler
  * @build   JavacTestingAbstractProcessor TestResourceElement
  * @compile -processor TestResourceElement -proc:only TestResourceElement.java
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @bug 7031108
  * @summary NPE in javac.jvm.ClassReader.findMethod in PackageElement.enclosedElements from AP in incr build
  * @library /tools/javac/lib
+ * @modules java.compiler
+ *          jdk.compiler
  * @build JavacTestingAbstractProcessor T7031108
  * @run main T7031108
  */

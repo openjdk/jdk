@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 8038455
  * @summary Verify that Types caches (in particular MembersClosureCache) get cleared between rounds.
  * @library /tools/javac/lib
+ * @modules jdk.compiler
  * @build JavacTestingAbstractProcessor TypesCachesCleared
  * @compile/process -processor TypesCachesCleared TypesCachesCleared.java
  */

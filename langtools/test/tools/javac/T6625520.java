@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import com.sun.tools.javac.util.*;
  * @test
  * @bug 6625520
  * @summary javac handles missing entries on classpath badly
+ * @modules jdk.compiler/com.sun.tools.javac.file
+ *          jdk.compiler/com.sun.tools.javac.util
  */
 public class T6625520 {
     public static void main(String[] args) throws Exception {

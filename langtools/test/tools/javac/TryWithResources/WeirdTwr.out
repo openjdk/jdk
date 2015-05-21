@@ -1,0 +1,6 @@
+- compiler.warn.source.no.bootclasspath: 1.6
+- compiler.warn.option.obsolete.source: 1.6
+- compiler.warn.option.obsolete.suppression
+WeirdTwr.java:14:12: compiler.err.try.with.resources.not.supported.in.source: 1.6
+1 error
+3 warnings

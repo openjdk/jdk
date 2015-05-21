@@ -3,6 +3,7 @@
  * @bug 8006251 8013405 8022173
  * @summary test list tags
  * @library ..
+ * @modules jdk.compiler/com.sun.tools.doclint
  * @build DocLintTester
  * @run main DocLintTester -Xmsgs -ref ListTagsTest.out ListTagsTest.java
  */
