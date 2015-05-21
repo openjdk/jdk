@@ -596,6 +596,17 @@ ImmutableOopMap::ImmutableOopMap(const OopMap* oopmap) : _count(oopmap->count())
   oopmap->copy_data_to(addr);
 }
 
+#ifdef ASSERT
+int ImmutableOopMap::nr_of_bytes() const {
+  OopMapStream oms(this);
+
+  while (!oms.is_done()) {
+    oms.next();
+  }
+  return sizeof(ImmutableOopMap) + oms.stream_position();
+}
+#endif
+
 class ImmutableOopMapBuilder {
 private:
   class Mapping;
@@ -652,7 +663,7 @@ private:
   }
 
 #ifdef ASSERT
-  void verify(address buffer, int size);
+  void verify(address buffer, int size, const ImmutableOopMapSet* set);
 #endif
 
   bool has_empty() const {
@@ -660,8 +671,8 @@ private:
   }
 
   int size_for(const OopMap* map) const;
-  void fill_pair(ImmutableOopMapPair* pair, const OopMap* map, int offset);
-  int fill_map(ImmutableOopMapPair* pair, const OopMap* map, int offset);
+  void fill_pair(ImmutableOopMapPair* pair, const OopMap* map, int offset, const ImmutableOopMapSet* set);
+  int fill_map(ImmutableOopMapPair* pair, const OopMap* map, int offset, const ImmutableOopMapSet* set);
   void fill(ImmutableOopMapSet* set, int size);
 };
 
@@ -711,12 +722,13 @@ int ImmutableOopMapBuilder::heap_size() {
   return total;
 }
 
-void ImmutableOopMapBuilder::fill_pair(ImmutableOopMapPair* pair, const OopMap* map, int offset) {
+void ImmutableOopMapBuilder::fill_pair(ImmutableOopMapPair* pair, const OopMap* map, int offset, const ImmutableOopMapSet* set) {
+  assert(offset < set->nr_of_bytes(), "check");
   new ((address) pair) ImmutableOopMapPair(map->offset(), offset);
 }
 
-int ImmutableOopMapBuilder::fill_map(ImmutableOopMapPair* pair, const OopMap* map, int offset) {
-  fill_pair(pair, map, offset);
+int ImmutableOopMapBuilder::fill_map(ImmutableOopMapPair* pair, const OopMap* map, int offset, const ImmutableOopMapSet* set) {
+  fill_pair(pair, map, offset, set);
   address addr = (address) pair->get_from(_new_set); // location of the ImmutableOopMap
 
   new (addr) ImmutableOopMap(map);
@@ -732,9 +744,9 @@ void ImmutableOopMapBuilder::fill(ImmutableOopMapSet* set, int sz) {
     int size = 0;
 
     if (_mapping[i]._kind == Mapping::OOPMAP_NEW) {
-      size = fill_map(&pairs[i], map, _mapping[i]._offset);
+      size = fill_map(&pairs[i], map, _mapping[i]._offset, set);
     } else if (_mapping[i]._kind == Mapping::OOPMAP_DUPLICATE || _mapping[i]._kind == Mapping::OOPMAP_EMPTY) {
-      fill_pair(&pairs[i], map, _mapping[i]._offset);
+      fill_pair(&pairs[i], map, _mapping[i]._offset, set);
     }
 
     const ImmutableOopMap* nv = set->find_map_at_offset(map->offset());
@@ -743,9 +755,17 @@ void ImmutableOopMapBuilder::fill(ImmutableOopMapSet* set, int sz) {
 }
 
 #ifdef ASSERT
-void ImmutableOopMapBuilder::verify(address buffer, int size) {
+void ImmutableOopMapBuilder::verify(address buffer, int size, const ImmutableOopMapSet* set) {
   for (int i = 0; i < 8; ++i) {
     assert(buffer[size - 8 + i] == (unsigned char) 0xff, "overwritten memory check");
+  }
+
+  for (int i = 0; i < set->count(); ++i) {
+    const ImmutableOopMapPair* pair = set->pair_at(i);
+    assert(pair->oopmap_offset() < set->nr_of_bytes(), "check size");
+    const ImmutableOopMap* map = pair->get_from(set);
+    int nr_of_bytes = map->nr_of_bytes();
+    assert(pair->oopmap_offset() + nr_of_bytes <= set->nr_of_bytes(), "check size + size");
   }
 }
 #endif
@@ -760,7 +780,7 @@ ImmutableOopMapSet* ImmutableOopMapBuilder::build() {
   _new_set = new (buffer) ImmutableOopMapSet(_set, required);
   fill(_new_set, required);
 
-  DEBUG_ONLY(verify(buffer, required));
+  DEBUG_ONLY(verify(buffer, required, _new_set));
 
   return _new_set;
 }
