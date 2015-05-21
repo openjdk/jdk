@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,13 @@
  * questions.
  */
 
-package javax.xml.parsers;
+/*
+ * @test
+ * @modules java.xml/com.sun.org.apache.bcel.internal.classfile
+ *          java.xml/com.sun.org.apache.bcel.internal.generic
+ * @bug 8003147
+ * @summary Test port fix for BCEL bug 39695.
+ */
 
 import java.io.FileOutputStream;
 import java.util.ArrayList;
@@ -38,10 +44,6 @@ import com.sun.org.apache.bcel.internal.classfile.Method;
 import com.sun.org.apache.bcel.internal.generic.ClassGen;
 import com.sun.org.apache.bcel.internal.generic.MethodGen;
 
-/*
- * @bug 8003147
- * @summary Test port fix for BCEL bug 39695.
- */
 public class Bug8003147Test {
 
     @Test
@@ -51,7 +53,7 @@ public class Bug8003147Test {
         // rename class
         ConstantPool cp = jc.getConstantPool();
         int cpIndex = ((ConstantClass) cp.getConstant(jc.getClassNameIndex())).getNameIndex();
-        cp.setConstant(cpIndex, new ConstantUtf8("javax/xml/parsers/Bug8003147TestPrime"));
+        cp.setConstant(cpIndex, new ConstantUtf8("Bug8003147TestPrime"));
         ClassGen gen = new ClassGen(jc);
         Method[] methods = jc.getMethods();
         int index;
@@ -67,7 +69,7 @@ public class Bug8003147Test {
         gen.getJavaClass().dump(new FileOutputStream(path));
 
         try {
-            Class.forName("javax.xml.parsers.Bug8003147TestPrime");
+            Class.forName("Bug8003147TestPrime");
         } catch (ClassFormatError cfe) {
             cfe.printStackTrace();
             Assert.fail("modified version of class does not pass verification");
