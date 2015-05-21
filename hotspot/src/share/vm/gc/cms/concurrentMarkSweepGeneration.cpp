@@ -2428,14 +2428,18 @@ void CMSCollector::verify_after_remark_work_1() {
   MarkRefsIntoClosure notOlder(_span, verification_mark_bm());
   gch->rem_set()->prepare_for_younger_refs_iterate(false); // Not parallel.
 
-  gch->gen_process_roots(_cmsGen->level(),
-                         true,   // younger gens are roots
-                         true,   // activate StrongRootsScope
-                         GenCollectedHeap::ScanningOption(roots_scanning_options()),
-                         should_unload_classes(),
-                         &notOlder,
-                         NULL,
-                         NULL);  // SSS: Provide correct closure
+  {
+    StrongRootsScope srs(1);
+
+    gch->gen_process_roots(&srs,
+                           _cmsGen->level(),
+                           true,   // younger gens are roots
+                           GenCollectedHeap::ScanningOption(roots_scanning_options()),
+                           should_unload_classes(),
+                           &notOlder,
+                           NULL,
+                           NULL);
+  }
 
   // Now mark from the roots
   MarkFromRootsClosure markFromRootsClosure(this, _span,
@@ -2496,14 +2500,18 @@ void CMSCollector::verify_after_remark_work_2() {
 
   gch->rem_set()->prepare_for_younger_refs_iterate(false); // Not parallel.
 
-  gch->gen_process_roots(_cmsGen->level(),
-                         true,   // younger gens are roots
-                         true,   // activate StrongRootsScope
-                         GenCollectedHeap::ScanningOption(roots_scanning_options()),
-                         should_unload_classes(),
-                         &notOlder,
-                         NULL,
-                         &cld_closure);
+  {
+    StrongRootsScope srs(1);
+
+    gch->gen_process_roots(&srs,
+                           _cmsGen->level(),
+                           true,   // younger gens are roots
+                           GenCollectedHeap::ScanningOption(roots_scanning_options()),
+                           should_unload_classes(),
+                           &notOlder,
+                           NULL,
+                           &cld_closure);
+  }
 
   // Now mark from the roots
   MarkFromRootsVerifyClosure markFromRootsClosure(this, _span,
@@ -2913,10 +2921,11 @@ class CMSParMarkTask : public AbstractGangTask {
 
 // Parallel initial mark task
 class CMSParInitialMarkTask: public CMSParMarkTask {
+  StrongRootsScope* _strong_roots_scope;
  public:
-  CMSParInitialMarkTask(CMSCollector* collector, uint n_workers) :
-      CMSParMarkTask("Scan roots and young gen for initial mark in parallel",
-                     collector, n_workers) {}
+  CMSParInitialMarkTask(CMSCollector* collector, StrongRootsScope* strong_roots_scope, uint n_workers) :
+      CMSParMarkTask("Scan roots and young gen for initial mark in parallel", collector, n_workers),
+      _strong_roots_scope(strong_roots_scope) {}
   void work(uint worker_id);
 };
 
@@ -3004,14 +3013,15 @@ void CMSCollector::checkpointRootsInitialWork() {
       FlexibleWorkGang* workers = gch->workers();
       assert(workers != NULL, "Need parallel worker threads.");
       uint n_workers = workers->active_workers();
-      CMSParInitialMarkTask tsk(this, n_workers);
+
+      StrongRootsScope srs(n_workers);
+
+      CMSParInitialMarkTask tsk(this, &srs, n_workers);
       gch->set_par_threads(n_workers);
       initialize_sequential_subtasks_for_young_gen_rescan(n_workers);
       if (n_workers > 1) {
-        StrongRootsScope srs;
         workers->run_task(&tsk);
       } else {
-        StrongRootsScope srs;
         tsk.work(0);
       }
       gch->set_par_threads(0);
@@ -3019,9 +3029,12 @@ void CMSCollector::checkpointRootsInitialWork() {
       // The serial version.
       CLDToOopClosure cld_closure(&notOlder, true);
       gch->rem_set()->prepare_for_younger_refs_iterate(false); // Not parallel.
-      gch->gen_process_roots(_cmsGen->level(),
+
+      StrongRootsScope srs(1);
+
+      gch->gen_process_roots(&srs,
+                             _cmsGen->level(),
                              true,   // younger gens are roots
-                             true,   // activate StrongRootsScope
                              GenCollectedHeap::ScanningOption(roots_scanning_options()),
                              should_unload_classes(),
                              &notOlder,
@@ -4452,9 +4465,9 @@ void CMSParInitialMarkTask::work(uint worker_id) {
 
   CLDToOopClosure cld_closure(&par_mri_cl, true);
 
-  gch->gen_process_roots(_collector->_cmsGen->level(),
+  gch->gen_process_roots(_strong_roots_scope,
+                         _collector->_cmsGen->level(),
                          false,     // yg was scanned above
-                         false,     // this is parallel code
                          GenCollectedHeap::ScanningOption(_collector->CMSCollector::roots_scanning_options()),
                          _collector->should_unload_classes(),
                          &par_mri_cl,
@@ -4478,6 +4491,7 @@ class CMSParRemarkTask: public CMSParMarkTask {
   // The per-thread work queues, available here for stealing.
   OopTaskQueueSet*       _task_queues;
   ParallelTaskTerminator _term;
+  StrongRootsScope*      _strong_roots_scope;
 
  public:
   // A value of 0 passed to n_workers will cause the number of
@@ -4485,12 +4499,14 @@ class CMSParRemarkTask: public CMSParMarkTask {
   CMSParRemarkTask(CMSCollector* collector,
                    CompactibleFreeListSpace* cms_space,
                    uint n_workers, FlexibleWorkGang* workers,
-                   OopTaskQueueSet* task_queues):
+                   OopTaskQueueSet* task_queues,
+                   StrongRootsScope* strong_roots_scope):
     CMSParMarkTask("Rescan roots and grey objects in parallel",
                    collector, n_workers),
     _cms_space(cms_space),
     _task_queues(task_queues),
-    _term(n_workers, task_queues) { }
+    _term(n_workers, task_queues),
+    _strong_roots_scope(strong_roots_scope) { }
 
   OopTaskQueueSet* task_queues() { return _task_queues; }
 
@@ -4588,9 +4604,9 @@ void CMSParRemarkTask::work(uint worker_id) {
   // ---------- remaining roots --------------
   _timer.reset();
   _timer.start();
-  gch->gen_process_roots(_collector->_cmsGen->level(),
+  gch->gen_process_roots(_strong_roots_scope,
+                         _collector->_cmsGen->level(),
                          false,     // yg was scanned above
-                         false,     // this is parallel code
                          GenCollectedHeap::ScanningOption(_collector->CMSCollector::roots_scanning_options()),
                          _collector->should_unload_classes(),
                          &par_mrias_cl,
@@ -5068,9 +5084,9 @@ void CMSCollector::do_remark_parallel() {
   }
   CompactibleFreeListSpace* cms_space  = _cmsGen->cmsSpace();
 
-  CMSParRemarkTask tsk(this,
-    cms_space,
-    n_workers, workers, task_queues());
+  StrongRootsScope srs(n_workers);
+
+  CMSParRemarkTask tsk(this, cms_space, n_workers, workers, task_queues(), &srs);
 
   // Set up for parallel process_roots work.
   gch->set_par_threads(n_workers);
@@ -5105,11 +5121,9 @@ void CMSCollector::do_remark_parallel() {
     // necessarily be so, since it's possible that we are doing
     // ST marking.
     ReferenceProcessorMTDiscoveryMutator mt(ref_processor(), true);
-    StrongRootsScope srs;
     workers->run_task(&tsk);
   } else {
     ReferenceProcessorMTDiscoveryMutator mt(ref_processor(), false);
-    StrongRootsScope srs;
     tsk.work(0);
   }
 
@@ -5177,11 +5191,11 @@ void CMSCollector::do_remark_non_parallel() {
     verify_work_stacks_empty();
 
     gch->rem_set()->prepare_for_younger_refs_iterate(false); // Not parallel.
-    StrongRootsScope srs;
+    StrongRootsScope srs(1);
 
-    gch->gen_process_roots(_cmsGen->level(),
+    gch->gen_process_roots(&srs,
+                           _cmsGen->level(),
                            true,  // younger gens as roots
-                           false, // use the local StrongRootsScope
                            GenCollectedHeap::ScanningOption(roots_scanning_options()),
                            should_unload_classes(),
                            &mrias_cl,

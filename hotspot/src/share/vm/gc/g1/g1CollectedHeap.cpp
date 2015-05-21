@@ -3021,7 +3021,7 @@ void G1CollectedHeap::verify(bool silent, VerifyOption vo) {
     G1VerifyCodeRootBlobClosure blobsCl(&codeRootsCl);
 
     {
-      G1RootProcessor root_processor(this);
+      G1RootProcessor root_processor(this, 1);
       root_processor.process_all_roots(&rootsCl,
                                        &cldCl,
                                        &blobsCl);
@@ -5393,7 +5393,7 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
   double end_par_time_sec;
 
   {
-    G1RootProcessor root_processor(this);
+    G1RootProcessor root_processor(this, n_workers);
     G1ParTask g1_par_task(this, _task_queues, &root_processor);
     // InitialMark needs claim bits to keep track of the marked-through CLDs.
     if (g1_policy()->during_initial_mark_pause()) {

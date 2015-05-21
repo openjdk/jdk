@@ -30,8 +30,9 @@
 #include "gc/shared/collectorPolicy.hpp"
 #include "gc/shared/generation.hpp"
 
-class SubTasksDone;
 class FlexibleWorkGang;
+class StrongRootsScope;
+class SubTasksDone;
 
 // A "GenCollectedHeap" is a CollectedHeap that uses generational
 // collection.  It has two generations, young and old.
@@ -385,7 +386,7 @@ public:
   };
 
  private:
-  void process_roots(bool activate_scope,
+  void process_roots(StrongRootsScope* scope,
                      ScanningOption so,
                      OopClosure* strong_roots,
                      OopClosure* weak_roots,
@@ -393,24 +394,13 @@ public:
                      CLDClosure* weak_cld_closure,
                      CodeBlobClosure* code_roots);
 
-  void gen_process_roots(int level,
-                         bool younger_gens_as_roots,
-                         bool activate_scope,
-                         ScanningOption so,
-                         OopsInGenClosure* not_older_gens,
-                         OopsInGenClosure* weak_roots,
-                         OopsInGenClosure* older_gens,
-                         CLDClosure* cld_closure,
-                         CLDClosure* weak_cld_closure,
-                         CodeBlobClosure* code_closure);
-
  public:
   static const bool StrongAndWeakRoots = false;
   static const bool StrongRootsOnly    = true;
 
-  void gen_process_roots(int level,
+  void gen_process_roots(StrongRootsScope* scope,
+                         int level,
                          bool younger_gens_as_roots,
-                         bool activate_scope,
                          ScanningOption so,
                          bool only_strong_roots,
                          OopsInGenClosure* not_older_gens,

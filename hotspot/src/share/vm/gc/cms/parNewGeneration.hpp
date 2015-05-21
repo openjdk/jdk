@@ -39,6 +39,7 @@ class ParScanWithBarrierClosure;
 class ParRootScanWithoutBarrierClosure;
 class ParRootScanWithBarrierTwoGensClosure;
 class ParEvacuateFollowersClosure;
+class StrongRootsScope;
 
 // It would be better if these types could be kept local to the .cpp file,
 // but they must be here to allow ParScanClosure::do_oop_work to be defined
@@ -237,12 +238,14 @@ class ParNewGenTask: public AbstractGangTask {
   Generation*                  _old_gen;
   HeapWord*                    _young_old_boundary;
   class ParScanThreadStateSet* _state_set;
+  StrongRootsScope*            _strong_roots_scope;
 
 public:
   ParNewGenTask(ParNewGeneration*      gen,
                 Generation*            old_gen,
                 HeapWord*              young_old_boundary,
-                ParScanThreadStateSet* state_set);
+                ParScanThreadStateSet* state_set,
+                StrongRootsScope*      strong_roots_scope);
 
   HeapWord* young_old_boundary() { return _young_old_boundary; }
 
