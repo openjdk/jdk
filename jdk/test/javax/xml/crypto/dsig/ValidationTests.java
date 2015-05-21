@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4635230 6365103 6366054 6824440 7131084 8046724
+ * @bug 4635230 6365103 6366054 6824440 7131084 8046724 8079693
  * @summary Basic unit tests for validating XML Signatures with JSR 105
  * @compile -XDignore.symbol.file KeySelectors.java SignatureValidator.java
  *     X509KeySelector.java ValidationTests.java
@@ -100,6 +100,8 @@ public class ValidationTests {
         new Test("signature-enveloping-dsa.xml", KVKS),
         new Test("signature-enveloping-rsa.xml", KVKS),
         new Test("signature-enveloping-p256-sha1.xml", KVKS),
+        new Test("signature-enveloping-p384-sha1.xml", KVKS),
+        new Test("signature-enveloping-p521-sha1.xml", KVKS),
         new Test("signature-enveloping-hmac-sha1.xml", SKKS),
         new Test("signature-external-dsa.xml", KVKS),
         new Test("signature-external-b64-dsa.xml", KVKS),
