@@ -31,7 +31,7 @@
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions DumpSymbolAndStringTable
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 public class DumpSymbolAndStringTable {
     public static void main(String[] args) throws Exception {

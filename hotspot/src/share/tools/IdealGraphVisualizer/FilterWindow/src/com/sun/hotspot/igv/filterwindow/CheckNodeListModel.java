@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 package com.sun.hotspot.igv.filterwindow;
 
 import org.openide.explorer.view.NodeListModel;
-import org.openide.nodes.Node;
+import org.openide.explorer.view.Visualizer;
 
 /**
  *
@@ -32,15 +32,11 @@ import org.openide.nodes.Node;
  */
 public class CheckNodeListModel extends NodeListModel {
 
-    private Node rootNode;
-
-    @Override
-    public void setNode(Node rootNode) {
-        this.rootNode = rootNode;
-        super.setNode(rootNode);
-    }
-
     public CheckNode getCheckNodeAt(int index) {
-        return (CheckNode) rootNode.getChildren().getNodes()[index];
+        Object item = getElementAt(index);
+        if (item != null) {
+            return (CheckNode) Visualizer.findNode(item);
+        }
+        return null;
     }
 }

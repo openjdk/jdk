@@ -21,7 +21,7 @@
  * questions.
  */
 
-import com.oracle.java.testlibrary.Asserts;
+import jdk.test.lib.Asserts;
 import java.lang.management.MemoryType;
 import sun.hotspot.code.BlobType;
 

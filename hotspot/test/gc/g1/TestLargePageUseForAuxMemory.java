@@ -23,19 +23,20 @@
 
 /*
  * @test TestLargePageUseForAuxMemory.java
+ * @summary Test that auxiliary data structures are allocated using large pages if available.
  * @bug 8058354
- * @ignore 8079208
  * @key gc
  * @library /testlibrary /../../test/lib
  * @requires (vm.gc=="G1" | vm.gc=="null")
+ * @build jdk.test.lib.* sun.hotspot.WhiteBox
  * @build TestLargePageUseForAuxMemory
+ * @ignore 8079208
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @summary Test that auxiliary data structures are allocated using large pages if available.
  * @run main/othervm -Xbootclasspath/a:. -XX:+UseG1GC -XX:+WhiteBoxAPI -XX:+IgnoreUnrecognizedVMOptions -XX:+UseLargePages TestLargePageUseForAuxMemory
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 import sun.hotspot.WhiteBox;
 
 public class TestLargePageUseForAuxMemory {

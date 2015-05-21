@@ -21,8 +21,9 @@
  * questions.
  *
  */
-#ifndef SHARE_VM_MEMORY_METASPACE_SHARED_HPP
-#define SHARE_VM_MEMORY_METASPACE_SHARED_HPP
+
+#ifndef SHARE_VM_MEMORY_METASPACESHARED_HPP
+#define SHARE_VM_MEMORY_METASPACESHARED_HPP
 
 #include "classfile/compactHashtable.hpp"
 #include "memory/allocation.hpp"
@@ -153,4 +154,4 @@ class MetaspaceShared : AllStatic {
   static int count_class(const char* classlist_file);
   static void estimate_regions_size() NOT_CDS_RETURN;
 };
-#endif // SHARE_VM_MEMORY_METASPACE_SHARED_HPP
+#endif // SHARE_VM_MEMORY_METASPACESHARED_HPP

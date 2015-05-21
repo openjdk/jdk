@@ -27,9 +27,7 @@ package sun.jvm.hotspot;
 import java.io.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.math.*;
 import javax.swing.*;
-import javax.swing.tree.*;
 import java.util.*;
 
 import sun.jvm.hotspot.code.*;
@@ -928,7 +926,7 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
             boolean shouldSkipOopMaps = false;
             if (curVFrame.isCompiledFrame()) {
               CodeBlob cb = VM.getVM().getCodeCache().findBlob(curFrame.getPC());
-              OopMapSet maps = cb.getOopMaps();
+              ImmutableOopMapSet maps = cb.getOopMaps();
               if ((maps == null) || (maps.getSize() == 0)) {
                 shouldSkipOopMaps = true;
               }
@@ -977,7 +975,7 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
             } while (nextVFrame != null && nextFrame.equals(curFrame));
 
             if (shouldSkipOopMaps) {
-              anno = anno + "\nNOTE: null or empty OopMapSet found for this CodeBlob";
+              anno = anno + "\nNOTE: null or empty ImmutableOopMapSet found for this CodeBlob";
             }
 
             if (curFrame.getFP() != null) {

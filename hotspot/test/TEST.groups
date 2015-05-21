@@ -233,6 +233,7 @@ needs_g1gc = \
   gc/arguments/TestParallelGCThreads.java \
   gc/arguments/TestUseCompressedOopsErgo.java \
   gc/class_unloading/TestG1ClassUnloadingHWM.java \
+  gc/ergonomics/TestDynamicNumberOfGCThreads.java
   gc/g1/ \
   gc/metaspace/G1AddMetaspaceDependency.java \
   gc/metaspace/TestMetaspacePerfCounters.java \
@@ -262,6 +263,7 @@ needs_parallelgc = \
   gc/arguments/TestMinInitialErgonomics.java \
   gc/arguments/TestParallelGCThreads.java \
   gc/arguments/TestUseCompressedOopsErgo.java \
+  gc/ergonomics/TestDynamicNumberOfGCThreads.java
   gc/metaspace/TestMetaspacePerfCounters.java \
   gc/parallelScavenge/ \
   gc/startup_warnings/TestParallelGC.java \
@@ -279,6 +281,7 @@ needs_cmsgc = \
   gc/arguments/TestUseCompressedOopsErgo.java \
   gc/class_unloading/TestCMSClassUnloadingEnabledHWM.java \
   gc/concurrentMarkSweep/ \
+  gc/ergonomics/TestDynamicNumberOfGCThreads.java
   gc/startup_warnings/TestCMS.java \
   gc/startup_warnings/TestDefNewCMS.java \
   gc/startup_warnings/TestParNewCMS.java
@@ -328,11 +331,6 @@ applicable_cmsgc = \
  -:needs_g1gc \
  -:needs_serialgc \
  -:needs_parallelgc
-
-
-# When called from top level the test suites use the hotspot_ prefix
-hotspot_wbapitest = \
-  sanity/
 
 hotspot_native_sanity = \
   native_sanity
@@ -418,7 +416,7 @@ hotspot_runtime = \
  -runtime/SharedArchiveFile/DefaultUseWithClient.java \
  -runtime/Thread/CancellableThreadTest.java \
  -runtime/7158988/FieldMonitor.java \
-  sanity/ExecuteInternalVMTests.java \
+  sanity/ \
   testlibrary_tests/TestMutuallyExclusivePlatformPredicates.java
 
 hotspot_serviceability = \
@@ -426,7 +424,6 @@ hotspot_serviceability = \
   serviceability/dcmd/compiler
 
 hotspot_jprt = \
-  :hotspot_wbapitest \
   :hotspot_compiler_1 \
   :hotspot_compiler_2 \
   :hotspot_compiler_3 \
@@ -435,7 +432,6 @@ hotspot_jprt = \
   :hotspot_gc_closed \
   :hotspot_gc_gcold \
   :hotspot_runtime \
-  :hotspot_runtime_closed \
   :hotspot_serviceability
 
 #All tests that depends on nashorn extension.

@@ -31,7 +31,7 @@
  * @run main/othervm -Xbatch UnsafeRaw
  */
 
-import com.oracle.java.testlibrary.Utils;
+import jdk.test.lib.Utils;
 import java.util.Random;
 
 public class UnsafeRaw {
