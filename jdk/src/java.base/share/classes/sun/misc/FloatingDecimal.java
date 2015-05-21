@@ -154,7 +154,7 @@ public class FloatingDecimal{
 
         /**
          * Indicates the sign of the value.
-         * @return <code>value < 0.0</code>.
+         * @return {@code value < 0.0}.
          */
         public boolean isNegative();
 

@@ -38,26 +38,26 @@ package sun.text.normalizer;
 
 /**
  * <p>Standalone utility class providing UTF16 character conversions and
- * indexing conversions.</p>
+ * indexing conversions.
  * <p>Code that uses strings alone rarely need modification.
  * By design, UTF-16 does not allow overlap, so searching for strings is a safe
  * operation. Similarly, concatenation is always safe. Substringing is safe if
  * the start and end are both on UTF-32 boundaries. In normal code, the values
  * for start and end are on those boundaries, since they arose from operations
  * like searching. If not, the nearest UTF-32 boundaries can be determined
- * using <code>bounds()</code>.</p>
+ * using <code>bounds()</code>.
  * <strong>Examples:</strong>
  * <p>The following examples illustrate use of some of these methods.
- * <pre>
+ * <pre>{@code
  * // iteration forwards: Original
- * for (int i = 0; i &lt; s.length(); ++i) {
+ * for (int i = 0; i < s.length(); ++i) {
  *     char ch = s.charAt(i);
  *     doSomethingWith(ch);
  * }
  *
  * // iteration forwards: Changes for UTF-32
  * int ch;
- * for (int i = 0; i &lt; s.length(); i+=UTF16.getCharCount(ch)) {
+ * for (int i = 0; i < s.length(); i+=UTF16.getCharCount(ch)) {
  *     ch = UTF16.charAt(s,i);
  *     doSomethingWith(ch);
  * }
@@ -74,7 +74,7 @@ package sun.text.normalizer;
  *     ch = UTF16.charAt(s,i);
  *     doSomethingWith(ch);
  * }
- * </pre>
+ * }</pre>
  * <strong>Notes:</strong>
  * <ul>
  *   <li>
@@ -515,12 +515,12 @@ public final class UTF16
 
     /**
      * <p>Converts argument code point and returns a String object representing
-     * the code point's value in UTF16 format.</p>
+     * the code point's value in UTF16 format.
      * <p>This method does not check for the validity of the codepoint, the
      * results are not guaranteed if a invalid codepoint is passed as
-     * argument.</p>
+     * argument.
      * <p>The result is a string whose length is 1 for non-supplementary code
-     * points, 2 otherwise.</p>
+     * points, 2 otherwise.
      * @param ch code point
      * @return string representation of the code point
      */

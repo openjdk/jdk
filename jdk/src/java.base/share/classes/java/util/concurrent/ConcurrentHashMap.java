@@ -481,7 +481,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      *
      * Maintaining API and serialization compatibility with previous
      * versions of this class introduces several oddities. Mainly: We
-     * leave untouched but unused constructor arguments refering to
+     * leave untouched but unused constructor arguments referring to
      * concurrencyLevel. We accept a loadFactor constructor argument,
      * but apply it only to initial table capacity (which is the only
      * time that we can guarantee to honor it.) We also declare an

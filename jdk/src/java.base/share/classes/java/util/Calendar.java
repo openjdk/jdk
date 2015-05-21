@@ -1172,7 +1172,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
          * {@code fieldValuePairs} that are pairs of a field and its value.
          * For example,
          * <pre>
-         *   setFeilds(Calendar.YEAR, 2013,
+         *   setFields(Calendar.YEAR, 2013,
          *             Calendar.MONTH, Calendar.DECEMBER,
          *             Calendar.DAY_OF_MONTH, 23);</pre>
          * is equivalent to the sequence of the following
@@ -1298,7 +1298,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
 
         /**
          * Sets the time zone parameter to the given {@code zone}. If no time
-         * zone parameter is given to this {@code Caledar.Builder}, the
+         * zone parameter is given to this {@code Calendar.Builder}, the
          * {@linkplain TimeZone#getDefault() default
          * <code>TimeZone</code>} will be used in the {@link #build() build}
          * method.
@@ -3316,7 +3316,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @param field the calendar field
      * @return the calendar field name
      * @exception IndexOutOfBoundsException if <code>field</code> is negative,
-     * equal to or greater then <code>FIELD_COUNT</code>.
+     * equal to or greater than {@code FIELD_COUNT}.
      */
     static String getFieldName(int field) {
         return FIELD_NAME[field];

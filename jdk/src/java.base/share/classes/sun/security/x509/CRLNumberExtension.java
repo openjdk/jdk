@@ -146,8 +146,8 @@ implements CertAttrSet<String> {
             }
             crlNumber = (BigInteger)obj;
         } else {
-          throw new IOException("Attribute name not recognized by"
-                                + " CertAttrSet:" + extensionName + ".");
+            throw new IOException("Attribute name not recognized by" +
+                                  " CertAttrSet:" + extensionName + '.');
         }
         encodeThis();
     }
@@ -172,8 +172,8 @@ implements CertAttrSet<String> {
         if (name.equalsIgnoreCase(NUMBER)) {
             crlNumber = null;
         } else {
-          throw new IOException("Attribute name not recognized by"
-                                + " CertAttrSet:" + extensionName + ".");
+            throw new IOException("Attribute name not recognized by" +
+                                  " CertAttrSet:" + extensionName + '.');
         }
         encodeThis();
     }
@@ -182,10 +182,15 @@ implements CertAttrSet<String> {
      * Returns a printable representation of the CRLNumberExtension.
      */
     public String toString() {
-        String s = super.toString() + extensionLabel + ": " +
-                   ((crlNumber == null) ? "" : Debug.toHexString(crlNumber))
-                   + "\n";
-        return (s);
+        StringBuilder sb = new StringBuilder();
+        sb.append(super.toString())
+            .append(extensionLabel)
+            .append(": ");
+        if (crlNumber != null) {
+            sb.append(Debug.toHexString(crlNumber));
+        }
+        sb.append('\n');
+        return sb.toString();
     }
 
     /**
@@ -195,7 +200,7 @@ implements CertAttrSet<String> {
      * @exception IOException on encoding errors.
      */
     public void encode(OutputStream out) throws IOException {
-       DerOutputStream  tmp = new DerOutputStream();
+        DerOutputStream tmp = new DerOutputStream();
         encode(out, PKIXExtensions.CRLNumber_Id, true);
     }
 
