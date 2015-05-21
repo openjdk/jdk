@@ -56,7 +56,7 @@ class CardTableRS: public GenRemSet {
 
   CardTableModRefBSForCTRS* _ct_bs;
 
-  virtual void younger_refs_in_space_iterate(Space* sp, OopsInGenClosure* cl);
+  virtual void younger_refs_in_space_iterate(Space* sp, OopsInGenClosure* cl, uint n_threads);
 
   void verify_space(Space* s, HeapWord* gen_start);
 
@@ -116,7 +116,7 @@ public:
   // Card table entries are cleared before application; "blk" is
   // responsible for dirtying if the oop is still older-to-younger after
   // closure application.
-  void younger_refs_iterate(Generation* g, OopsInGenClosure* blk);
+  void younger_refs_iterate(Generation* g, OopsInGenClosure* blk, uint n_threads);
 
   void inline_write_ref_field_gc(void* field, oop new_val) {
     jbyte* byte = _ct_bs->byte_for(field);
@@ -183,7 +183,7 @@ private:
   bool is_word_aligned(jbyte* entry);
 
 public:
-  ClearNoncleanCardWrapper(DirtyCardToOopClosure* dirty_card_closure, CardTableRS* ct);
+  ClearNoncleanCardWrapper(DirtyCardToOopClosure* dirty_card_closure, CardTableRS* ct, bool is_par);
   void do_MemRegion(MemRegion mr);
 };
 
