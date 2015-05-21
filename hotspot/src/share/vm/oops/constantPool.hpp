@@ -84,7 +84,6 @@ class ConstantPool : public Metadata {
 
   // Array of resolved objects from the constant pool and map from resolved
   // object index to original constant pool index
-  jobject              _resolved_references;
   Array<u2>*           _reference_map;
 
   enum {
@@ -191,6 +190,7 @@ class ConstantPool : public Metadata {
 
   // resolved strings, methodHandles and callsite objects from the constant pool
   objArrayOop resolved_references()  const;
+
   // mapping resolved object array indexes to cp indexes and back.
   int object_to_cp_index(int index)         { return _reference_map->at(index); }
   int cp_to_object_index(int index);
@@ -222,7 +222,6 @@ class ConstantPool : public Metadata {
   static int tags_offset_in_bytes()         { return offset_of(ConstantPool, _tags); }
   static int cache_offset_in_bytes()        { return offset_of(ConstantPool, _cache); }
   static int pool_holder_offset_in_bytes()  { return offset_of(ConstantPool, _pool_holder); }
-  static int resolved_references_offset_in_bytes() { return offset_of(ConstantPool, _resolved_references); }
 
   // Storing constants
 
@@ -771,7 +770,6 @@ class ConstantPool : public Metadata {
 
  private:
 
-  void set_resolved_references(jobject s) { _resolved_references = s; }
   Array<u2>* reference_map() const        { return _reference_map; }
   void set_reference_map(Array<u2>* o)    { _reference_map = o; }
 

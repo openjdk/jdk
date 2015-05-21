@@ -477,10 +477,8 @@ int ciBytecodeStream::get_method_signature_index() {
 // ------------------------------------------------------------------
 // ciBytecodeStream::get_resolved_references
 ciObjArray* ciBytecodeStream::get_resolved_references() {
-    VM_ENTRY_MARK;
-    // Get the constant pool.
-  ConstantPool*        cpool   = _holder->get_instanceKlass()->constants();
-
+  VM_ENTRY_MARK;
+  objArrayOop resolved_references = _holder->get_instanceKlass()->resolved_references();
   // Create a resolved references array and return it.
-  return CURRENT_ENV->get_object(cpool->resolved_references())->as_obj_array();
-  }
+  return CURRENT_ENV->get_object(resolved_references)->as_obj_array();
+}
