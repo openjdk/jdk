@@ -204,7 +204,7 @@ void G1RootProcessor::evacuate_roots(OopClosure* scan_non_heap_roots,
     }
   }
 
-  _process_strong_tasks->all_tasks_completed();
+  _process_strong_tasks->all_tasks_completed(n_workers());
 }
 
 void G1RootProcessor::process_strong_roots(OopClosure* oops,
@@ -214,7 +214,7 @@ void G1RootProcessor::process_strong_roots(OopClosure* oops,
   process_java_roots(oops, clds, clds, NULL, blobs, NULL, 0);
   process_vm_roots(oops, NULL, NULL, 0);
 
-  _process_strong_tasks->all_tasks_completed();
+  _process_strong_tasks->all_tasks_completed(n_workers());
 }
 
 void G1RootProcessor::process_all_roots(OopClosure* oops,
@@ -228,7 +228,7 @@ void G1RootProcessor::process_all_roots(OopClosure* oops,
     CodeCache::blobs_do(blobs);
   }
 
-  _process_strong_tasks->all_tasks_completed();
+  _process_strong_tasks->all_tasks_completed(n_workers());
 }
 
 void G1RootProcessor::process_java_roots(OopClosure* strong_roots,
@@ -325,14 +325,6 @@ void G1RootProcessor::scan_remembered_sets(G1ParPushHeapRSClosure* scan_rs,
   G1CodeBlobClosure scavenge_cs_nmethods(scan_non_heap_weak_roots);
 
   _g1h->g1_rem_set()->oops_into_collection_set_do(scan_rs, &scavenge_cs_nmethods, worker_i);
-}
-
-void G1RootProcessor::set_num_workers(uint active_workers) {
-  assert(active_workers == _srs.n_threads(),
-      err_msg("Mismatch between number of worker threads. active_workers: %u and n_workers(): %u",
-              active_workers,
-              _srs.n_threads()));
-  _process_strong_tasks->set_n_threads(active_workers);
 }
 
 uint G1RootProcessor::n_workers() const {

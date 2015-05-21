@@ -580,10 +580,6 @@ ParNewGenTask::ParNewGenTask(ParNewGeneration* gen, Generation* old_gen,
 // active threads.
 void ParNewGenTask::set_for_termination(uint active_workers) {
   _state_set->reset(active_workers, _gen->promotion_failed());
-  // Should the heap be passed in?  There's only 1 for now so
-  // grab it instead.
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
-  gch->set_n_termination(active_workers);
 }
 
 void ParNewGenTask::work(uint worker_id) {

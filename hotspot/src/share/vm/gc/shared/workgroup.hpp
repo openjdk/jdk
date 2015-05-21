@@ -390,12 +390,6 @@ public:
 class SubTasksDone: public CHeapObj<mtInternal> {
   uint* _tasks;
   uint _n_tasks;
-  // _n_threads is used to determine when a sub task is done.
-  // It does not control how many threads will execute the subtask
-  // but must be initialized to the number that do execute the task
-  // in order to correctly decide when the subtask is done (all the
-  // threads working on the task have finished).
-  uint _n_threads;
   uint _threads_completed;
 #ifdef ASSERT
   volatile uint _claimed;
@@ -413,11 +407,6 @@ public:
   // True iff the object is in a valid state.
   bool valid();
 
-  // Get/set the number of parallel threads doing the tasks to "t".  Can only
-  // be called before tasks start or after they are complete.
-  uint n_threads() { return _n_threads; }
-  void set_n_threads(uint t);
-
   // Returns "false" if the task "t" is unclaimed, and ensures that task is
   // claimed.  The task "t" is required to be within the range of "this".
   bool is_task_claimed(uint t);
@@ -426,7 +415,9 @@ public:
   // tasks that it will try to claim.  Every thread in the parallel task
   // must execute this.  (When the last thread does so, the task array is
   // cleared.)
-  void all_tasks_completed();
+  //
+  // n_threads - Number of threads executing the sub-tasks.
+  void all_tasks_completed(uint n_threads);
 
   // Destructor.
   ~SubTasksDone();

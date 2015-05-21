@@ -4326,7 +4326,6 @@ public:
   ParallelTaskTerminator* terminator() { return &_terminator; }
 
   virtual void set_for_termination(uint active_workers) {
-    _root_processor->set_num_workers(active_workers);
     terminator()->reset_for_reuse(active_workers);
     _n_workers = active_workers;
   }
