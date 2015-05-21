@@ -927,7 +927,7 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
             if (curVFrame.isCompiledFrame()) {
               CodeBlob cb = VM.getVM().getCodeCache().findBlob(curFrame.getPC());
               ImmutableOopMapSet maps = cb.getOopMaps();
-              if ((maps == null) || (maps.getSize() == 0)) {
+              if ((maps == null) || (maps.getCount() == 0)) {
                 shouldSkipOopMaps = true;
               }
             }
