@@ -567,11 +567,13 @@ void ParEvacuateFollowersClosure::do_void() {
 }
 
 ParNewGenTask::ParNewGenTask(ParNewGeneration* gen, Generation* old_gen,
-                             HeapWord* young_old_boundary, ParScanThreadStateSet* state_set) :
+                             HeapWord* young_old_boundary, ParScanThreadStateSet* state_set,
+                             StrongRootsScope* strong_roots_scope) :
     AbstractGangTask("ParNewGeneration collection"),
     _gen(gen), _old_gen(old_gen),
     _young_old_boundary(young_old_boundary),
-    _state_set(state_set)
+    _state_set(state_set),
+    _strong_roots_scope(strong_roots_scope)
   {}
 
 // Reset the terminator for the given number of
@@ -603,10 +605,10 @@ void ParNewGenTask::work(uint worker_id) {
                                            false);
 
   par_scan_state.start_strong_roots();
-  gch->gen_process_roots(_gen->level(),
+  gch->gen_process_roots(_strong_roots_scope,
+                         _gen->level(),
                          true,  // Process younger gens, if any,
                                 // as strong roots.
-                         false, // no scope; this is parallel code
                          GenCollectedHeap::SO_ScavengeCodeCache,
                          GenCollectedHeap::StrongAndWeakRoots,
                          &par_scan_state.to_space_root_closure(),
@@ -952,20 +954,23 @@ void ParNewGeneration::collect(bool   full,
                                          *to(), *this, *_old_gen, *task_queues(),
                                          _overflow_stacks, desired_plab_sz(), _term);
 
-  ParNewGenTask tsk(this, _old_gen, reserved().end(), &thread_state_set);
-  gch->set_par_threads(n_workers);
-  gch->rem_set()->prepare_for_younger_refs_iterate(true);
-  // It turns out that even when we're using 1 thread, doing the work in a
-  // separate thread causes wide variance in run times.  We can't help this
-  // in the multi-threaded case, but we special-case n=1 here to get
-  // repeatable measurements of the 1-thread overhead of the parallel code.
-  if (n_workers > 1) {
-    StrongRootsScope srs;
-    workers->run_task(&tsk);
-  } else {
-    StrongRootsScope srs;
-    tsk.work(0);
+  {
+    StrongRootsScope srs(n_workers);
+
+    ParNewGenTask tsk(this, _old_gen, reserved().end(), &thread_state_set, &srs);
+    gch->set_par_threads(n_workers);
+    gch->rem_set()->prepare_for_younger_refs_iterate(true);
+    // It turns out that even when we're using 1 thread, doing the work in a
+    // separate thread causes wide variance in run times.  We can't help this
+    // in the multi-threaded case, but we special-case n=1 here to get
+    // repeatable measurements of the 1-thread overhead of the parallel code.
+    if (n_workers > 1) {
+      workers->run_task(&tsk);
+    } else {
+      tsk.work(0);
+    }
   }
+
   thread_state_set.reset(0 /* Bad value in debug if not reset */,
                          promotion_failed());
 

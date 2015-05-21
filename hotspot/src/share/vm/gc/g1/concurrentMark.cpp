@@ -2608,7 +2608,6 @@ void ConcurrentMark::checkpointRootsFinalWork() {
 
   g1h->ensure_parsability(false);
 
-  StrongRootsScope srs;
   // this is remark, so we'll use up all active threads
   uint active_workers = g1h->workers()->active_workers();
   if (active_workers == 0) {
@@ -2622,13 +2621,17 @@ void ConcurrentMark::checkpointRootsFinalWork() {
   // constructor and pass values of the active workers
   // through the gang in the task.
 
-  CMRemarkTask remarkTask(this, active_workers);
-  // We will start all available threads, even if we decide that the
-  // active_workers will be fewer. The extra ones will just bail out
-  // immediately.
-  g1h->set_par_threads(active_workers);
-  g1h->workers()->run_task(&remarkTask);
-  g1h->set_par_threads(0);
+  {
+    StrongRootsScope srs(active_workers);
+
+    CMRemarkTask remarkTask(this, active_workers);
+    // We will start all available threads, even if we decide that the
+    // active_workers will be fewer. The extra ones will just bail out
+    // immediately.
+    g1h->set_par_threads(active_workers);
+    g1h->workers()->run_task(&remarkTask);
+    g1h->set_par_threads(0);
+  }
 
   SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
   guarantee(has_overflown() ||

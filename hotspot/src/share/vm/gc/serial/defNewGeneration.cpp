@@ -38,6 +38,7 @@
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "gc/shared/spaceDecorator.hpp"
+#include "gc/shared/strongRootsScope.hpp"
 #include "memory/iterator.hpp"
 #include "oops/instanceRefKlass.hpp"
 #include "oops/oop.inline.hpp"
@@ -625,15 +626,20 @@ void DefNewGeneration::collect(bool   full,
   assert(gch->no_allocs_since_save_marks(0),
          "save marks have not been newly set.");
 
-  gch->gen_process_roots(_level,
-                         true,  // Process younger gens, if any,
-                                // as strong roots.
-                         true,  // activate StrongRootsScope
-                         GenCollectedHeap::SO_ScavengeCodeCache,
-                         GenCollectedHeap::StrongAndWeakRoots,
-                         &fsc_with_no_gc_barrier,
-                         &fsc_with_gc_barrier,
-                         &cld_scan_closure);
+  {
+    // SerialGC runs with n_workers == 0.
+    StrongRootsScope srs(0);
+
+    gch->gen_process_roots(&srs,
+                           _level,
+                           true,  // Process younger gens, if any,
+                                  // as strong roots.
+                           GenCollectedHeap::SO_ScavengeCodeCache,
+                           GenCollectedHeap::StrongAndWeakRoots,
+                           &fsc_with_no_gc_barrier,
+                           &fsc_with_gc_barrier,
+                           &cld_scan_closure);
+  }
 
   // "evacuate followers".
   evacuate_followers.do_void();

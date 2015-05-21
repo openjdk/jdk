@@ -85,7 +85,7 @@ class G1RootProcessor : public StackObj {
                         uint worker_i);
 
 public:
-  G1RootProcessor(G1CollectedHeap* g1h);
+  G1RootProcessor(G1CollectedHeap* g1h, uint n_workers);
 
   // Apply closures to the strongly and weakly reachable roots in the system
   // in a single pass.
@@ -114,8 +114,11 @@ public:
                             OopClosure* scan_non_heap_weak_roots,
                             uint worker_i);
 
-  // Inform the root processor about the number of worker threads
+  // Inform SubTaskDone about the number of worker threads.
   void set_num_workers(uint active_workers);
+
+  // Number of worker threads used by the root processor.
+  uint n_workers() const;
 };
 
 #endif // SHARE_VM_GC_G1_G1ROOTPROCESSOR_HPP
