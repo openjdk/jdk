@@ -124,7 +124,7 @@ public class ReliableLog {
      * stable storage directory.
      *
      * @param dirPath path to the stable storage directory
-     * @param logCl the closure object containing callbacks for logging and
+     * @param handler the closure object containing callbacks for logging and
      * recovery
      * @param pad ignored
      * @exception IOException If a directory creation error has
@@ -170,8 +170,8 @@ public class ReliableLog {
      * stable storage directory.
      *
      * @param dirPath path to the stable storage directory
-     * @param logCl the closure object containing callbacks for logging and
-     * recovery
+     * @param handler the closure object containing callbacks for logging and
+     *        recovery
      * @exception IOException If a directory creation error has
      * occurred or if initialSnapshot callback raises an exception
      */

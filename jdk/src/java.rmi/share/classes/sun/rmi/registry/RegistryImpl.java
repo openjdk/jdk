@@ -155,7 +155,7 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
     /**
      * Returns the remote object for specified name in the registry.
      * @exception RemoteException If remote operation failed.
-     * @exception NotBound If name is not currently bound.
+     * @exception NotBoundException If name is not currently bound.
      */
     public Remote lookup(String name)
         throws RemoteException, NotBoundException
@@ -188,7 +188,7 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
     /**
      * Unbind the name.
      * @exception RemoteException If remote operation failed.
-     * @exception NotBound If name is not currently bound.
+     * @exception NotBoundException If name is not currently bound.
      */
     public void unbind(String name)
         throws RemoteException, NotBoundException, AccessException
