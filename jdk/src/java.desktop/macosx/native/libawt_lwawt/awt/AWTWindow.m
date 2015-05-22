@@ -184,6 +184,7 @@ AWT_NS_WINDOW_IMPLEMENTATION
 @synthesize isEnabled;
 @synthesize ownerWindow;
 @synthesize preFullScreenLevel;
+@synthesize standardFrame;
 
 - (void) updateMinMaxSize:(BOOL)resizable {
     if (resizable) {
@@ -507,6 +508,12 @@ AWT_ASSERT_APPKIT_THREAD;
     [AWTToolkit eventCountPlusPlus];
     // TODO: don't see this callback invoked anytime so we track
     // window exposing in _setVisible:(BOOL)
+}
+
+- (NSRect)windowWillUseStandardFrame:(NSWindow *)window
+                        defaultFrame:(NSRect)newFrame {
+
+    return [self standardFrame];
 }
 
 - (void) _deliverIconify:(BOOL)iconify {
@@ -949,6 +956,30 @@ JNF_COCOA_ENTER(env);
     }];
 
 JNF_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     sun_lwawt_macosx_CPlatformWindow
+ * Method:    nativeSetNSWindowStandardFrame
+ * Signature: (JDDDD)V
+ */
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeSetNSWindowStandardFrame
+(JNIEnv *env, jclass clazz, jlong windowPtr, jdouble originX, jdouble originY,
+     jdouble width, jdouble height)
+{
+    JNF_COCOA_ENTER(env);
+    
+    NSRect jrect = NSMakeRect(originX, originY, width, height);
+    
+    NSWindow *nsWindow = OBJC(windowPtr);
+    [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
+        
+        NSRect rect = ConvertNSScreenRect(NULL, jrect);
+        AWTWindow *window = (AWTWindow*)[nsWindow delegate];
+        window.standardFrame = rect;
+    }];
+    
+    JNF_COCOA_EXIT(env);
 }
 
 /*
