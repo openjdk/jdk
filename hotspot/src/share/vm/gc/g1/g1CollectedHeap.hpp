@@ -981,6 +981,8 @@ public:
 
   RefToScanQueue *task_queue(uint i) const;
 
+  uint num_task_queues() const;
+
   // A set of cards where updates happened during the GC
   DirtyCardQueueSet& dirty_card_queue_set() { return _dirty_card_queue_set; }
 
