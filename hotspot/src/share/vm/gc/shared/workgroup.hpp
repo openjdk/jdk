@@ -322,7 +322,13 @@ class FlexibleWorkGang: public WorkGang {
     _active_workers(UseDynamicNumberOfGCThreads ? 1U : workers) {}
 
   // Accessors for fields.
-  virtual uint active_workers() const { return _active_workers; }
+  virtual uint active_workers() const {
+    assert(_active_workers <= _total_workers,
+           err_msg("_active_workers: %u > _total_workers: %u", _active_workers, _total_workers));
+    assert(UseDynamicNumberOfGCThreads || _active_workers == _total_workers,
+           "Unless dynamic should use total workers");
+    return _active_workers;
+  }
   void set_active_workers(uint v) {
     assert(v <= _total_workers,
            "Trying to set more workers active than there are");

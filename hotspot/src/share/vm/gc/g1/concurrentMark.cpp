@@ -1218,15 +1218,13 @@ void ConcurrentMark::markFromRoots() {
     "Maximum number of marking threads exceeded");
 
   uint active_workers = MAX2(1U, parallel_marking_threads());
+  assert(active_workers > 0, "Should have been set");
 
   // Parallel task terminator is set in "set_concurrency_and_phase()"
   set_concurrency_and_phase(active_workers, true /* concurrent */);
 
   CMConcurrentMarkingTask markingTask(this, cmThread());
   _parallel_workers->set_active_workers(active_workers);
-  // Don't set _n_par_threads because it affects MT in process_roots()
-  // and the decisions on that MT processing is made elsewhere.
-  assert(_parallel_workers->active_workers() > 0, "Should have been set");
   _parallel_workers->run_task(&markingTask);
   print_stats();
 }
@@ -2593,11 +2591,6 @@ void ConcurrentMark::checkpointRootsFinalWork() {
 
   // this is remark, so we'll use up all active threads
   uint active_workers = g1h->workers()->active_workers();
-  if (active_workers == 0) {
-    assert(active_workers > 0, "Should have been set earlier");
-    active_workers = (uint) ParallelGCThreads;
-    g1h->workers()->set_active_workers(active_workers);
-  }
   set_concurrency_and_phase(active_workers, false /* concurrent */);
   // Leave _parallel_marking_threads at it's
   // value originally calculated in the ConcurrentMark

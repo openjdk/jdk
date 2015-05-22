@@ -5072,14 +5072,9 @@ void CMSCollector::do_remark_parallel() {
   FlexibleWorkGang* workers = gch->workers();
   assert(workers != NULL, "Need parallel worker threads.");
   // Choose to use the number of GC workers most recently set
-  // into "active_workers".  If active_workers is not set, set it
-  // to ParallelGCThreads.
+  // into "active_workers".
   uint n_workers = workers->active_workers();
-  if (n_workers == 0) {
-    assert(n_workers > 0, "Should have been set during scavenge");
-    n_workers = ParallelGCThreads;
-    workers->set_active_workers(n_workers);
-  }
+
   CompactibleFreeListSpace* cms_space  = _cmsGen->cmsSpace();
 
   StrongRootsScope srs(n_workers);
