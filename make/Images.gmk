@@ -221,7 +221,6 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
       jstack.1 \
       jstat.1 \
       jstatd.1 \
-      native2ascii.1 \
       policytool.1 \
       rmic.1 \
       schemagen.1 \
