@@ -4420,6 +4420,18 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
 
     private static final PlatformLogger eventLog = PlatformLogger.getLogger("java.awt.event.LightweightDispatcher");
 
+    private static final int BUTTONS_DOWN_MASK;
+
+    static {
+        int[] buttonsDownMask = AWTAccessor.getInputEventAccessor().
+                getButtonDownMasks();
+        int mask = 0;
+        for (int buttonDownMask : buttonsDownMask) {
+            mask |= buttonDownMask;
+        }
+        BUTTONS_DOWN_MASK = mask;
+    }
+
     LightweightDispatcher(Container nativeContainer) {
         this.nativeContainer = nativeContainer;
         mouseEventTarget = new WeakReference<>(null);
@@ -4488,25 +4500,12 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
     private boolean isMouseGrab(MouseEvent e) {
         int modifiers = e.getModifiersEx();
 
-        if(e.getID() == MouseEvent.MOUSE_PRESSED
-            || e.getID() == MouseEvent.MOUSE_RELEASED)
-        {
-            switch (e.getButton()) {
-            case MouseEvent.BUTTON1:
-                modifiers ^= InputEvent.BUTTON1_DOWN_MASK;
-                break;
-            case MouseEvent.BUTTON2:
-                modifiers ^= InputEvent.BUTTON2_DOWN_MASK;
-                break;
-            case MouseEvent.BUTTON3:
-                modifiers ^= InputEvent.BUTTON3_DOWN_MASK;
-                break;
-            }
+        if (e.getID() == MouseEvent.MOUSE_PRESSED
+                || e.getID() == MouseEvent.MOUSE_RELEASED) {
+            modifiers ^= InputEvent.getMaskForButton(e.getButton());
         }
         /* modifiers now as just before event */
-        return ((modifiers & (InputEvent.BUTTON1_DOWN_MASK
-                              | InputEvent.BUTTON2_DOWN_MASK
-                              | InputEvent.BUTTON3_DOWN_MASK)) != 0);
+        return ((modifiers & BUTTONS_DOWN_MASK) != 0);
     }
 
     /**
