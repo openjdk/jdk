@@ -598,6 +598,10 @@ needs_compact3 = \
   sun/security/jgss \
   sun/security/krb5 \
   java/lang/annotation/AnnotationType/AnnotationTypeDeadlockTest.java \
+  java/lang/invoke/lambda/LambdaStackTrace.java \
+  java/lang/invoke/LFCaching/LFGarbageCollectedTest.java \
+  java/lang/invoke/LFCaching/LFMultiThreadCachingTest.java \
+  java/lang/invoke/LFCaching/LFSingleThreadCachingTest.java \
   java/lang/System/MacEncoding/TestFileEncoding.java \
   java/nio/channels/AsynchronousSocketChannel/Leaky.java \
   java/security/PermissionCollection/Concurrent.java \
