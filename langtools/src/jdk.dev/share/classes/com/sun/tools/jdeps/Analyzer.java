@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.sun.tools.classfile.Dependency.Location;
 
@@ -137,8 +138,16 @@ public class Analyzer {
     public void visitDependences(Archive source, Visitor v, Type level) {
         if (level == Type.SUMMARY) {
             final ArchiveDeps result = results.get(source);
-            result.requires().stream()
-                  .sorted(Comparator.comparing(Archive::getName))
+            final Set<Archive> reqs = result.requires();
+            Stream<Archive> stream = reqs.stream();
+            if (reqs.isEmpty()) {
+                if (hasDependences(source)) {
+                    // If reqs.isEmpty() and we have dependences, then it means
+                    // that the dependences are from 'source' onto itself.
+                    stream = Stream.of(source);
+                }
+            }
+            stream.sorted(Comparator.comparing(Archive::getName))
                   .forEach(archive -> {
                       Profile profile = result.getTargetProfile(archive);
                       v.visitDependence(source.getName(), source,
