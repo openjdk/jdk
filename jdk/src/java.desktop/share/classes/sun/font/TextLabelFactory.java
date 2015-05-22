@@ -41,11 +41,11 @@ import java.text.Bidi;
    *
    * @see Font
    * @see FontRenderContext
-   * @see GlyphVector
+   * @see java.awt.font.GlyphVector
    * @see TextLabel
    * @see ExtendedTextLabel
    * @see Bidi
-   * @see TextLayout
+   * @see java.awt.font.TextLayout
    */
 
 public final class TextLabelFactory {

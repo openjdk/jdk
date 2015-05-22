@@ -89,7 +89,7 @@ public abstract class CachedPainter {
      * @param y Y-coordinate to render to
      * @param w Width to render in
      * @param h Height to render in
-     * @param arg Variable arguments that will be passed to paintToImage
+     * @param args Variable arguments that will be passed to paintToImage
      */
     public void paint(Component c, Graphics g, int x,
                          int y, int w, int h, Object... args) {

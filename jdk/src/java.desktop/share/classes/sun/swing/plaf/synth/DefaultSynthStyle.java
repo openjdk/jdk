@@ -289,7 +289,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
     /**
      * Sets the insets.
      *
-     * @param Insets.
+     * @param insets the new insets.
      */
     public void setInsets(Insets insets) {
         this.insets = insets;
@@ -300,7 +300,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
      * insets will be placed in it, otherwise a new Insets object will be
      * created and returned.
      *
-     * @param context SynthContext identifying requestor
+     * @param state SynthContext identifying requestor
      * @param to Where to place Insets
      * @return Insets.
      */
@@ -435,7 +435,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
      * Returns the default value for a particular property.  This is only
      * invoked if this style doesn't define a property for <code>key</code>.
      *
-     * @param state SynthContext identifying requestor
+     * @param context SynthContext identifying requestor
      * @param key Property being requested.
      * @return Value of the named property
      */
@@ -724,8 +724,6 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
          *
          * @param state Component state(s) that this StateInfo should be used
          * for
-         * @param painter Painter responsible for rendering
-         * @param bgPainter Painter responsible for rendering the background
          * @param font Font for this state
          * @param colors Colors for this state
          */

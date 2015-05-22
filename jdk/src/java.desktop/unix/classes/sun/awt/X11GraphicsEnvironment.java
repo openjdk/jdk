@@ -48,7 +48,7 @@ import sun.java2d.xr.XRSurfaceData;
  * for X11 environments.
  *
  * @see GraphicsDevice
- * @see GraphicsConfiguration
+ * @see java.awt.GraphicsConfiguration
  */
 public final class X11GraphicsEnvironment extends SunGraphicsEnvironment {
 

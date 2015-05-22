@@ -74,8 +74,8 @@ class OpenBook implements Pageable {
 
     /**
      * Return the PageFormat of the page specified by 'pageIndex'.
-     * @param int The zero based index of the page whose
-     *            PageFormat is being requested.
+     * @param pageIndex The zero based index of the page whose
+     *                  PageFormat is being requested.
      * @return The PageFormat describing the size and orientation
      */
     public PageFormat getPageFormat(int pageIndex) {
@@ -85,8 +85,8 @@ class OpenBook implements Pageable {
     /**
      * Return the Printable instance responsible for rendering
      * the page specified by 'pageIndex'.
-     * @param int The zero based index of the page whose
-     *            Printable is being requested.
+     * @param pageIndex The zero based index of the page whose
+     *                  Printable is being requested.
      * @return The Printable that will draw the page.
      */
     public Printable getPrintable(int pageIndex)

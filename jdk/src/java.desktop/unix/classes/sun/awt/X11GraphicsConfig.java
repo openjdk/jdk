@@ -58,7 +58,7 @@ import sun.awt.image.SurfaceManager;
  * This is an implementation of a GraphicsConfiguration object for a
  * single X11 visual.
  *
- * @see GraphicsEnvironment
+ * @see java.awt.GraphicsEnvironment
  * @see GraphicsDevice
  */
 public class X11GraphicsConfig extends GraphicsConfiguration
