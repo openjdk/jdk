@@ -1752,7 +1752,7 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _allocator = G1Allocator::create_allocator(this);
   _humongous_object_threshold_in_words = HeapRegion::GrainWords / 2;
 
-  int n_queues = MAX2((int)ParallelGCThreads, 1);
+  int n_queues = (int)ParallelGCThreads;
   _task_queues = new RefToScanQueueSet(n_queues);
 
   uint n_rem_sets = HeapRegionRemSet::num_par_rem_sets();
@@ -2064,11 +2064,11 @@ void G1CollectedHeap::ref_processing_init() {
     new ReferenceProcessor(mr,    // span
                            ParallelRefProcEnabled && (ParallelGCThreads > 1),
                                 // mt processing
-                           (int) ParallelGCThreads,
+                           (uint) ParallelGCThreads,
                                 // degree of mt processing
                            (ParallelGCThreads > 1) || (ConcGCThreads > 1),
                                 // mt discovery
-                           (int) MAX2(ParallelGCThreads, ConcGCThreads),
+                           (uint) MAX2(ParallelGCThreads, ConcGCThreads),
                                 // degree of mt discovery
                            false,
                                 // Reference discovery is not atomic
@@ -2081,11 +2081,11 @@ void G1CollectedHeap::ref_processing_init() {
     new ReferenceProcessor(mr,    // span
                            ParallelRefProcEnabled && (ParallelGCThreads > 1),
                                 // mt processing
-                           MAX2((int)ParallelGCThreads, 1),
+                           (uint) ParallelGCThreads,
                                 // degree of mt processing
                            (ParallelGCThreads > 1),
                                 // mt discovery
-                           MAX2((int)ParallelGCThreads, 1),
+                           (uint) ParallelGCThreads,
                                 // degree of mt discovery
                            true,
                                 // Reference discovery is atomic
@@ -2485,8 +2485,7 @@ void G1CollectedHeap::clear_cset_start_regions() {
   assert(_worker_cset_start_region != NULL, "sanity");
   assert(_worker_cset_start_region_time_stamp != NULL, "sanity");
 
-  int n_queues = MAX2((int)ParallelGCThreads, 1);
-  for (int i = 0; i < n_queues; i++) {
+  for (uint i = 0; i < ParallelGCThreads; i++) {
     _worker_cset_start_region[i] = NULL;
     _worker_cset_start_region_time_stamp[i] = 0;
   }
@@ -3844,8 +3843,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
         if (evacuation_failed()) {
           _allocator->set_used(recalculate_used());
-          uint n_queues = MAX2((int)ParallelGCThreads, 1);
-          for (uint i = 0; i < n_queues; i++) {
+          for (uint i = 0; i < ParallelGCThreads; i++) {
             if (_evacuation_failed_info_array[i].has_failed()) {
               _gc_tracer_stw->report_evacuation_failed(_evacuation_failed_info_array[i]);
             }
