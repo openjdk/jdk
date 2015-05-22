@@ -315,16 +315,20 @@ class FlexibleWorkGang: public WorkGang {
   uint _active_workers;
  public:
   // Constructor and destructor.
-  // Initialize active_workers to a minimum value.  Setting it to
-  // the parameter "workers" will initialize it to a maximum
-  // value which is not desirable.
   FlexibleWorkGang(const char* name, uint workers,
                    bool are_GC_task_threads,
                    bool  are_ConcurrentGC_threads) :
     WorkGang(name, workers, are_GC_task_threads, are_ConcurrentGC_threads),
-    _active_workers(UseDynamicNumberOfGCThreads ? 1U : ParallelGCThreads) {}
-  // Accessors for fields
-  virtual uint active_workers() const { return _active_workers; }
+    _active_workers(UseDynamicNumberOfGCThreads ? 1U : workers) {}
+
+  // Accessors for fields.
+  virtual uint active_workers() const {
+    assert(_active_workers <= _total_workers,
+           err_msg("_active_workers: %u > _total_workers: %u", _active_workers, _total_workers));
+    assert(UseDynamicNumberOfGCThreads || _active_workers == _total_workers,
+           "Unless dynamic should use total workers");
+    return _active_workers;
+  }
   void set_active_workers(uint v) {
     assert(v <= _total_workers,
            "Trying to set more workers active than there are");

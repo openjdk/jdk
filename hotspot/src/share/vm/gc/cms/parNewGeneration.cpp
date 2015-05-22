@@ -1475,9 +1475,9 @@ void ParNewGeneration::ref_processor_init() {
     _ref_processor =
       new ReferenceProcessor(_reserved,                  // span
                              ParallelRefProcEnabled && (ParallelGCThreads > 1), // mt processing
-                             (int) ParallelGCThreads,    // mt processing degree
+                             (uint) ParallelGCThreads,   // mt processing degree
                              refs_discovery_is_mt(),     // mt discovery
-                             (int) ParallelGCThreads,    // mt discovery degree
+                             (uint) ParallelGCThreads,   // mt discovery degree
                              refs_discovery_is_atomic(), // atomic_discovery
                              NULL);                      // is_alive_non_header
   }
