@@ -606,11 +606,11 @@ protected:
 
   // Process any reference objects discovered during
   // an incremental evacuation pause.
-  void process_discovered_references(uint no_of_gc_workers);
+  void process_discovered_references();
 
   // Enqueue any remaining discovered references
   // after processing.
-  void enqueue_discovered_references(uint no_of_gc_workers);
+  void enqueue_discovered_references();
 
 public:
   FlexibleWorkGang* workers() const { return _workers; }

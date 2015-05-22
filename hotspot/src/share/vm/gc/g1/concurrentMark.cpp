@@ -518,7 +518,7 @@ ConcurrentMark::ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* prev
   _markStack(this),
   // _finger set in set_non_marking_state
 
-  _max_worker_id(MAX2((uint)ParallelGCThreads, 1U)),
+  _max_worker_id((uint)ParallelGCThreads),
   // _active_tasks set in set_non_marking_state
   // _tasks set inside the constructor
   _task_queues(new CMTaskQueueSet((int) _max_worker_id)),
@@ -1218,15 +1218,13 @@ void ConcurrentMark::markFromRoots() {
     "Maximum number of marking threads exceeded");
 
   uint active_workers = MAX2(1U, parallel_marking_threads());
+  assert(active_workers > 0, "Should have been set");
 
   // Parallel task terminator is set in "set_concurrency_and_phase()"
   set_concurrency_and_phase(active_workers, true /* concurrent */);
 
   CMConcurrentMarkingTask markingTask(this, cmThread());
   _parallel_workers->set_active_workers(active_workers);
-  // Don't set _n_par_threads because it affects MT in process_roots()
-  // and the decisions on that MT processing is made elsewhere.
-  assert(_parallel_workers->active_workers() > 0, "Should have been set");
   _parallel_workers->run_task(&markingTask);
   print_stats();
 }
@@ -2007,7 +2005,7 @@ void ConcurrentMark::cleanup() {
 
   // this will also free any regions totally full of garbage objects,
   // and sort the regions.
-  g1h->g1_policy()->record_concurrent_mark_cleanup_end((int)n_workers);
+  g1h->g1_policy()->record_concurrent_mark_cleanup_end();
 
   // Statistics.
   double end = os::elapsedTime();
@@ -2593,11 +2591,6 @@ void ConcurrentMark::checkpointRootsFinalWork() {
 
   // this is remark, so we'll use up all active threads
   uint active_workers = g1h->workers()->active_workers();
-  if (active_workers == 0) {
-    assert(active_workers > 0, "Should have been set earlier");
-    active_workers = (uint) ParallelGCThreads;
-    g1h->workers()->set_active_workers(active_workers);
-  }
   set_concurrency_and_phase(active_workers, false /* concurrent */);
   // Leave _parallel_marking_threads at it's
   // value originally calculated in the ConcurrentMark

@@ -1326,15 +1326,9 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
         AdaptiveSizePolicy::calc_active_workers(workers()->total_workers(),
                                                 workers()->active_workers(),
                                                 Threads::number_of_non_daemon_threads());
-      assert(UseDynamicNumberOfGCThreads ||
-             n_workers == workers()->total_workers(),
-             "If not dynamic should be using all the  workers");
       workers()->set_active_workers(n_workers);
 
       ParRebuildRSTask rebuild_rs_task(this);
-      assert(UseDynamicNumberOfGCThreads ||
-             workers()->active_workers() == workers()->total_workers(),
-             "Unless dynamic should use total workers");
       workers()->run_task(&rebuild_rs_task);
 
       // Rebuild the strong code root lists for each region
@@ -1758,7 +1752,7 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _allocator = G1Allocator::create_allocator(this);
   _humongous_object_threshold_in_words = HeapRegion::GrainWords / 2;
 
-  int n_queues = MAX2((int)ParallelGCThreads, 1);
+  int n_queues = (int)ParallelGCThreads;
   _task_queues = new RefToScanQueueSet(n_queues);
 
   uint n_rem_sets = HeapRegionRemSet::num_par_rem_sets();
@@ -2070,11 +2064,11 @@ void G1CollectedHeap::ref_processing_init() {
     new ReferenceProcessor(mr,    // span
                            ParallelRefProcEnabled && (ParallelGCThreads > 1),
                                 // mt processing
-                           (int) ParallelGCThreads,
+                           (uint) ParallelGCThreads,
                                 // degree of mt processing
                            (ParallelGCThreads > 1) || (ConcGCThreads > 1),
                                 // mt discovery
-                           (int) MAX2(ParallelGCThreads, ConcGCThreads),
+                           (uint) MAX2(ParallelGCThreads, ConcGCThreads),
                                 // degree of mt discovery
                            false,
                                 // Reference discovery is not atomic
@@ -2087,11 +2081,11 @@ void G1CollectedHeap::ref_processing_init() {
     new ReferenceProcessor(mr,    // span
                            ParallelRefProcEnabled && (ParallelGCThreads > 1),
                                 // mt processing
-                           MAX2((int)ParallelGCThreads, 1),
+                           (uint) ParallelGCThreads,
                                 // degree of mt processing
                            (ParallelGCThreads > 1),
                                 // mt discovery
-                           MAX2((int)ParallelGCThreads, 1),
+                           (uint) ParallelGCThreads,
                                 // degree of mt discovery
                            true,
                                 // Reference discovery is atomic
@@ -2491,8 +2485,7 @@ void G1CollectedHeap::clear_cset_start_regions() {
   assert(_worker_cset_start_region != NULL, "sanity");
   assert(_worker_cset_start_region_time_stamp != NULL, "sanity");
 
-  int n_queues = MAX2((int)ParallelGCThreads, 1);
-  for (int i = 0; i < n_queues; i++) {
+  for (uint i = 0; i < ParallelGCThreads; i++) {
     _worker_cset_start_region[i] = NULL;
     _worker_cset_start_region_time_stamp[i] = 0;
   }
@@ -2530,9 +2523,6 @@ HeapRegion* G1CollectedHeap::start_cset_region_for_worker(uint worker_i) {
   result = g1_policy()->collection_set();
   uint cs_size = g1_policy()->cset_region_length();
   uint active_workers = workers()->active_workers();
-  assert(UseDynamicNumberOfGCThreads ||
-           active_workers == workers()->total_workers(),
-           "Unless dynamic should use total workers");
 
   uint end_ind   = (cs_size * worker_i) / active_workers;
   uint start_ind = 0;
@@ -3031,9 +3021,6 @@ void G1CollectedHeap::verify(bool silent, VerifyOption vo) {
     if (GCParallelVerificationEnabled && ParallelGCThreads > 1) {
 
       G1ParVerifyTask task(this, vo);
-      assert(UseDynamicNumberOfGCThreads ||
-        workers()->active_workers() == workers()->total_workers(),
-        "If not dynamic should be using all the workers");
       workers()->run_task(&task);
       if (task.failures()) {
         failures = true;
@@ -3682,9 +3669,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     uint active_workers = AdaptiveSizePolicy::calc_active_workers(workers()->total_workers(),
                                                                   workers()->active_workers(),
                                                                   Threads::number_of_non_daemon_threads());
-    assert(UseDynamicNumberOfGCThreads ||
-           active_workers == workers()->total_workers(),
-           "If not dynamic should be using all the  workers");
     workers()->set_active_workers(active_workers);
 
     double pause_start_sec = os::elapsedTime();
@@ -3859,8 +3843,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
         if (evacuation_failed()) {
           _allocator->set_used(recalculate_used());
-          uint n_queues = MAX2((int)ParallelGCThreads, 1);
-          for (uint i = 0; i < n_queues; i++) {
+          for (uint i = 0; i < ParallelGCThreads; i++) {
             if (_evacuation_failed_info_array[i].has_failed()) {
               _gc_tracer_stw->report_evacuation_failed(_evacuation_failed_info_array[i]);
             }
@@ -5189,7 +5172,7 @@ public:
 };
 
 // Weak Reference processing during an evacuation pause (part 1).
-void G1CollectedHeap::process_discovered_references(uint no_of_gc_workers) {
+void G1CollectedHeap::process_discovered_references() {
   double ref_proc_start = os::elapsedTime();
 
   ReferenceProcessor* rp = _ref_processor_stw;
@@ -5216,7 +5199,7 @@ void G1CollectedHeap::process_discovered_references(uint no_of_gc_workers) {
   // referents points to another object which is also referenced by an
   // object discovered by the STW ref processor.
 
-  assert(no_of_gc_workers == workers()->active_workers(), "Need to reset active GC workers");
+  uint no_of_gc_workers = workers()->active_workers();
 
   G1ParPreserveCMReferentsTask keep_cm_referents(this,
                                                  no_of_gc_workers,
@@ -5297,7 +5280,7 @@ void G1CollectedHeap::process_discovered_references(uint no_of_gc_workers) {
 }
 
 // Weak Reference processing during an evacuation pause (part 2).
-void G1CollectedHeap::enqueue_discovered_references(uint no_of_gc_workers) {
+void G1CollectedHeap::enqueue_discovered_references() {
   double ref_enq_start = os::elapsedTime();
 
   ReferenceProcessor* rp = _ref_processor_stw;
@@ -5311,12 +5294,12 @@ void G1CollectedHeap::enqueue_discovered_references(uint no_of_gc_workers) {
   } else {
     // Parallel reference enqueueing
 
-    assert(no_of_gc_workers == workers()->active_workers(),
-           "Need to reset active workers");
-    assert(rp->num_q() == no_of_gc_workers, "sanity");
-    assert(no_of_gc_workers <= rp->max_num_q(), "sanity");
+    uint n_workers = workers()->active_workers();
 
-    G1STWRefProcTaskExecutor par_task_executor(this, workers(), _task_queues, no_of_gc_workers);
+    assert(rp->num_q() == n_workers, "sanity");
+    assert(n_workers <= rp->max_num_q(), "sanity");
+
+    G1STWRefProcTaskExecutor par_task_executor(this, workers(), _task_queues, n_workers);
     rp->enqueue_discovered_references(&par_task_executor);
   }
 
@@ -5347,9 +5330,6 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
   hot_card_cache->set_use_cache(false);
 
   const uint n_workers = workers()->active_workers();
-  assert(UseDynamicNumberOfGCThreads ||
-         n_workers == workers()->total_workers(),
-         "If not dynamic should be using all the  workers");
 
   init_for_evac_failure(NULL);
 
@@ -5365,12 +5345,9 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
       ClassLoaderDataGraph::clear_claimed_marks();
     }
 
-     // The individual threads will set their evac-failure closures.
-     if (PrintTerminationStats) G1ParScanThreadState::print_termination_stats_hdr();
-     // These tasks use ShareHeap::_process_strong_tasks
-     assert(UseDynamicNumberOfGCThreads ||
-            workers()->active_workers() == workers()->total_workers(),
-            "If not dynamic should be using all the  workers");
+    // The individual threads will set their evac-failure closures.
+    if (PrintTerminationStats) G1ParScanThreadState::print_termination_stats_hdr();
+
     workers()->run_task(&g1_par_task);
     end_par_time_sec = os::elapsedTime();
 
@@ -5395,7 +5372,7 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
   // as we may have to copy some 'reachable' referent
   // objects (and their reachable sub-graphs) that were
   // not copied during the pause.
-  process_discovered_references(n_workers);
+  process_discovered_references();
 
   if (G1StringDedup::is_enabled()) {
     double fixup_start = os::elapsedTime();
@@ -5437,7 +5414,7 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
   // will log these updates (and dirty their associated
   // cards). We need these updates logged to update any
   // RSets.
-  enqueue_discovered_references(n_workers);
+  enqueue_discovered_references();
 
   redirty_logged_cards();
   COMPILER2_PRESENT(DerivedPointerTable::update_pointers());
