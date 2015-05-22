@@ -51,6 +51,8 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     private static native void nativeSetNSWindowMenuBar(long nsWindowPtr, long menuBarPtr);
     private static native Insets nativeGetNSWindowInsets(long nsWindowPtr);
     private static native void nativeSetNSWindowBounds(long nsWindowPtr, double x, double y, double w, double h);
+    private static native void nativeSetNSWindowStandardFrame(long nsWindowPtr,
+            double x, double y, double w, double h);
     private static native void nativeSetNSWindowMinMax(long nsWindowPtr, double minW, double minH, double maxW, double maxH);
     private static native void nativePushNSWindowToBack(long nsWindowPtr);
     private static native void nativePushNSWindowToFront(long nsWindowPtr);
@@ -472,6 +474,10 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     @Override // PlatformWindow
     public void setBounds(int x, int y, int w, int h) {
         nativeSetNSWindowBounds(getNSWindowPtr(), x, y, w, h);
+    }
+
+    public void setMaximizedBounds(int x, int y, int w, int h) {
+        nativeSetNSWindowStandardFrame(getNSWindowPtr(), x, y, w, h);
     }
 
     private boolean isMaximized() {
@@ -979,13 +985,11 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     }
 
     private void checkZoom() {
-        if (target instanceof Frame && isVisible()) {
-            Frame targetFrame = (Frame)target;
-            if (targetFrame.getExtendedState() != Frame.MAXIMIZED_BOTH && isMaximized()) {
-                deliverZoom(true);
-            } else if (targetFrame.getExtendedState() == Frame.MAXIMIZED_BOTH && !isMaximized()) {
-                deliverZoom(false);
-            }
+        int state = peer.getState();
+        if (state != Frame.MAXIMIZED_BOTH && isMaximized()) {
+            deliverZoom(true);
+        } else if (state == Frame.MAXIMIZED_BOTH && !isMaximized()) {
+            deliverZoom(false);
         }
     }
 

@@ -67,6 +67,11 @@ public interface PlatformWindow {
     public void setBounds(int x, int y, int w, int h);
 
     /*
+     * Sets the maximized bounds.
+     */
+    public default void setMaximizedBounds(int x, int y, int w, int h){}
+
+    /*
      * Returns the graphics device where the window is.
      */
     public GraphicsDevice getGraphicsDevice();

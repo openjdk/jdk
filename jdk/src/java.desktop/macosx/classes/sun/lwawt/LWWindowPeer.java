@@ -61,6 +61,7 @@ public class LWWindowPeer
     private static final int MINIMUM_HEIGHT = 1;
 
     private Insets insets = new Insets(0, 0, 0, 0);
+    private Rectangle maximizedBounds;
 
     private GraphicsDevice graphicsDevice;
     private GraphicsConfiguration graphicsConfig;
@@ -176,8 +177,10 @@ public class LWWindowPeer
 
 
         if (getTarget() instanceof Frame) {
-            setTitle(((Frame) getTarget()).getTitle());
-            setState(((Frame) getTarget()).getExtendedState());
+            Frame frame = (Frame) getTarget();
+            setTitle(frame.getTitle());
+            setState(frame.getExtendedState());
+            setMaximizedBounds(frame.getMaximizedBounds());
         } else if (getTarget() instanceof Dialog) {
             setTitle(((Dialog) getTarget()).getTitle());
         }
@@ -543,9 +546,40 @@ public class LWWindowPeer
         return windowState;
     }
 
+    private boolean isMaximizedBoundsSet() {
+        synchronized (getStateLock()) {
+            return maximizedBounds != null;
+        }
+    }
+
+    private Rectangle getDefaultMaximizedBounds() {
+        GraphicsConfiguration config = getGraphicsConfiguration();
+        Insets screenInsets = ((CGraphicsDevice) config.getDevice())
+                .getScreenInsets();
+        Rectangle gcBounds = config.getBounds();
+        return new Rectangle(
+                gcBounds.x + screenInsets.left,
+                gcBounds.y + screenInsets.top,
+                gcBounds.width - screenInsets.left - screenInsets.right,
+                gcBounds.height - screenInsets.top - screenInsets.bottom);
+    }
+
     @Override
     public void setMaximizedBounds(Rectangle bounds) {
-        // TODO: not implemented
+        boolean isMaximizedBoundsSet;
+        synchronized (getStateLock()) {
+            this.maximizedBounds = (isMaximizedBoundsSet = (bounds != null))
+                    ? constrainBounds(bounds) : null;
+        }
+
+        setPlatformMaximizedBounds(isMaximizedBoundsSet ? maximizedBounds
+                : getDefaultMaximizedBounds());
+    }
+
+    private void setPlatformMaximizedBounds(Rectangle bounds) {
+        platformWindow.setMaximizedBounds(
+                bounds.x, bounds.y,
+                bounds.width, bounds.height);
     }
 
     @Override
@@ -635,6 +669,10 @@ public class LWWindowPeer
 
         // Second, update the graphics config and surface data
         final boolean isNewDevice = updateGraphicsDevice();
+        if (isNewDevice && !isMaximizedBoundsSet()) {
+            setPlatformMaximizedBounds(getDefaultMaximizedBounds());
+        }
+
         if (resized || isNewDevice) {
             replaceSurfaceData();
             updateMinimumSize();
@@ -1055,6 +1093,9 @@ public class LWWindowPeer
     public final void displayChanged() {
         if (updateGraphicsDevice()) {
             updateMinimumSize();
+            if (!isMaximizedBoundsSet()) {
+                setPlatformMaximizedBounds(getDefaultMaximizedBounds());
+            }
         }
         // Replace surface unconditionally, because internal state of the
         // GraphicsDevice could be changed.

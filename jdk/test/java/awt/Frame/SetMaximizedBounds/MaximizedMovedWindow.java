@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,24 +20,23 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 import java.awt.*;
+
 /*
  * @test
- * @summary When Frame.setExtendedState(Frame.MAXIMIZED_BOTH)
- *          is called for a Frame after been called setMaximizedBounds() with
- *          certain value, Frame bounds must equal to this value.
+ * @bug 8065739
+ * @summary Moved window is maximazed to new screen
+ * @author Alexandr Scherbatiy
  *
- * @run main SetMaximizedBounds
+ * @run main MaximizedMovedWindow
  */
-
-public class SetMaximizedBounds {
+public class MaximizedMovedWindow {
 
     public static void main(String[] args) throws Exception {
 
         //Supported platforms are Windows and OS X.
         String os = System.getProperty("os.name").toLowerCase();
-        if (!os.contains("windows") && !os.contains("os x")) {
+        if (!os.contains("os x")) {
             return;
         }
 
@@ -53,31 +52,24 @@ public class SetMaximizedBounds {
             return;
         }
 
-        for (GraphicsDevice gd : ge.getScreenDevices()) {
-            for (GraphicsConfiguration gc : gd.getConfigurations()) {
-                testMaximizedBounds(gc);
-            }
-        }
-    }
+        GraphicsDevice[] devices = ge.getScreenDevices();
 
-    static void testMaximizedBounds(GraphicsConfiguration gc) throws Exception {
+        if (devices.length < 2) {
+            return;
+        }
 
         Frame frame = null;
         try {
 
-            Rectangle maxArea = getMaximizedScreenArea(gc);
+            GraphicsConfiguration gc1 = devices[0].getDefaultConfiguration();
+            GraphicsConfiguration gc2 = devices[1].getDefaultConfiguration();
 
             Robot robot = new Robot();
             robot.setAutoDelay(50);
 
             frame = new Frame();
-            Rectangle maximizedBounds = new Rectangle(
-                    maxArea.x + maxArea.width / 6,
-                    maxArea.y + maxArea.height / 6,
-                    maxArea.width / 3,
-                    maxArea.height / 3);
-            frame.setMaximizedBounds(maximizedBounds);
-            frame.setSize(maxArea.width / 8, maxArea.height / 8);
+            Rectangle maxArea1 = getMaximizedScreenArea(gc1);
+            frame.setBounds(getSmallerRectangle(maxArea1));
             frame.setVisible(true);
             robot.waitForIdle();
 
@@ -86,29 +78,28 @@ public class SetMaximizedBounds {
             robot.delay(1000);
 
             Rectangle bounds = frame.getBounds();
-            if (!bounds.equals(maximizedBounds)) {
-                throw new RuntimeException("The bounds of the Frame do not equal to what"
-                        + " is specified when the frame is in Frame.MAXIMIZED_BOTH state");
+            if (!bounds.equals(maxArea1)) {
+                throw new RuntimeException("The bounds of the Frame do not equal"
+                        + " to screen 1 size");
             }
 
             frame.setExtendedState(Frame.NORMAL);
             robot.waitForIdle();
             robot.delay(1000);
 
-            maximizedBounds = new Rectangle(
-                    maxArea.x + maxArea.width / 10,
-                    maxArea.y + maxArea.height / 10,
-                    maxArea.width / 5,
-                    maxArea.height / 5);
-            frame.setMaximizedBounds(maximizedBounds);
+            Rectangle maxArea2 = getMaximizedScreenArea(gc2);
+            frame.setBounds(getSmallerRectangle(maxArea2));
+            robot.waitForIdle();
+            robot.delay(1000);
+
             frame.setExtendedState(Frame.MAXIMIZED_BOTH);
             robot.waitForIdle();
             robot.delay(1000);
 
             bounds = frame.getBounds();
-            if (!bounds.equals(maximizedBounds)) {
-                throw new RuntimeException("The bounds of the Frame do not equal to what"
-                        + " is specified when the frame is in Frame.MAXIMIZED_BOTH state");
+            if (!bounds.equals(maxArea2)) {
+                throw new RuntimeException("The bounds of the Frame do not equal"
+                        + " to screen 2 size");
             }
         } finally {
             if (frame != null) {
@@ -117,6 +108,13 @@ public class SetMaximizedBounds {
         }
     }
 
+    static Rectangle getSmallerRectangle(Rectangle rect) {
+        return new Rectangle(
+                rect.x + rect.width / 6,
+                rect.y + rect.height / 6,
+                rect.width / 3,
+                rect.height / 3);
+    }
     static Rectangle getMaximizedScreenArea(GraphicsConfiguration gc) {
         Rectangle bounds = gc.getBounds();
         Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(gc);
