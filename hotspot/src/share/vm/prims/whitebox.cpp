@@ -39,9 +39,9 @@
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/interfaceSupport.hpp"
+#include "runtime/javaCalls.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sweeper.hpp"
-#include "runtime/javaCalls.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/array.hpp"
@@ -49,11 +49,11 @@
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
-#include "gc_implementation/parallelScavenge/parallelScavengeHeap.inline.hpp"
-#include "gc_implementation/g1/concurrentMark.hpp"
-#include "gc_implementation/g1/concurrentMarkThread.hpp"
-#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
-#include "gc_implementation/g1/heapRegionRemSet.hpp"
+#include "gc/g1/concurrentMark.hpp"
+#include "gc/g1/concurrentMarkThread.hpp"
+#include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/parallel/parallelScavengeHeap.inline.hpp"
 #endif // INCLUDE_ALL_GCS
 #if INCLUDE_NMT
 #include "services/mallocSiteTable.hpp"

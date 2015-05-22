@@ -748,7 +748,7 @@ public class PropertyDescriptor extends FeatureDescriptor {
         appendTo(sb, "writeMethod", this.writeMethodRef.get());
     }
 
-    private boolean isAssignable(Method m1, Method m2) {
+    boolean isAssignable(Method m1, Method m2) {
         if (m1 == null) {
             return true; // choose second method
         }

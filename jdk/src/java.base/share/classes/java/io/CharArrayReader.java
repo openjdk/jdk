@@ -116,6 +116,7 @@ public class CharArrayReader extends Reader {
      *          the end of the stream has been reached
      *
      * @exception   IOException  If an I/O error occurs
+     * @exception   IndexOutOfBoundsException {@inheritDoc}
      */
     public int read(char b[], int off, int len) throws IOException {
         synchronized (lock) {

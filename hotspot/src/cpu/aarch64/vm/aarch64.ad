@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2014, Red Hat Inc. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -421,7 +421,40 @@ reg_class any_reg(
 );
 
 // Class for all non-special integer registers
-reg_class no_special_reg32(
+reg_class no_special_reg32_no_fp(
+    R0,
+    R1,
+    R2,
+    R3,
+    R4,
+    R5,
+    R6,
+    R7,
+    R10,
+    R11,
+    R12,                        // rmethod
+    R13,
+    R14,
+    R15,
+    R16,
+    R17,
+    R18,
+    R19,
+    R20,
+    R21,
+    R22,
+    R23,
+    R24,
+    R25,
+    R26
+ /* R27, */                     // heapbase
+ /* R28, */                     // thread
+ /* R29, */                     // fp
+ /* R30, */                     // lr
+ /* R31 */                      // sp
+);
+
+reg_class no_special_reg32_with_fp(
     R0,
     R1,
     R2,
@@ -454,8 +487,43 @@ reg_class no_special_reg32(
  /* R31 */                      // sp
 );
 
+reg_class_dynamic no_special_reg32(no_special_reg32_no_fp, no_special_reg32_with_fp, %{ PreserveFramePointer %});
+
 // Class for all non-special long integer registers
-reg_class no_special_reg(
+reg_class no_special_reg_no_fp(
+    R0, R0_H,
+    R1, R1_H,
+    R2, R2_H,
+    R3, R3_H,
+    R4, R4_H,
+    R5, R5_H,
+    R6, R6_H,
+    R7, R7_H,
+    R10, R10_H,
+    R11, R11_H,
+    R12, R12_H,                 // rmethod
+    R13, R13_H,
+    R14, R14_H,
+    R15, R15_H,
+    R16, R16_H,
+    R17, R17_H,
+    R18, R18_H,
+    R19, R19_H,
+    R20, R20_H,
+    R21, R21_H,
+    R22, R22_H,
+    R23, R23_H,
+    R24, R24_H,
+    R25, R25_H,
+    R26, R26_H,
+ /* R27, R27_H, */              // heapbase
+ /* R28, R28_H, */              // thread
+ /* R29, R29_H, */              // fp
+ /* R30, R30_H, */              // lr
+ /* R31, R31_H */               // sp
+);
+
+reg_class no_special_reg_with_fp(
     R0, R0_H,
     R1, R1_H,
     R2, R2_H,
@@ -487,6 +555,8 @@ reg_class no_special_reg(
  /* R30, R30_H, */              // lr
  /* R31, R31_H */               // sp
 );
+
+reg_class_dynamic no_special_reg(no_special_reg_no_fp, no_special_reg_with_fp, %{ PreserveFramePointer %});
 
 // Class for 64 bit register r0
 reg_class r0_reg(
@@ -758,7 +828,7 @@ definitions %{
 
 source_hpp %{
 
-#include "memory/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableModRefBS.hpp"
 
 class CallStubImpl {
 
@@ -1637,12 +1707,7 @@ bool needs_releasing_store(const Node *n)
 int MachCallStaticJavaNode::ret_addr_offset()
 {
   // call should be a simple bl
-  // unless this is a method handle invoke in which case it is
-  // mov(rfp, sp), bl, mov(sp, rfp)
   int off = 4;
-  if (_method_handle_invoke) {
-    off += 4;
-  }
   return off;
 }
 
@@ -1753,14 +1818,13 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   if (C->need_stack_bang(framesize))
     st->print("# stack bang size=%d\n\t", framesize);
 
-  if (framesize == 0) {
-    // Is this even possible?
-    st->print("stp  lr, rfp, [sp, #%d]!", -(2 * wordSize));
-  } else if (framesize < ((1 << 9) + 2 * wordSize)) {
+  if (framesize < ((1 << 9) + 2 * wordSize)) {
     st->print("sub  sp, sp, #%d\n\t", framesize);
     st->print("stp  rfp, lr, [sp, #%d]", framesize - 2 * wordSize);
+    if (PreserveFramePointer) st->print("\n\tadd  rfp, sp, #%d", framesize - 2 * wordSize);
   } else {
     st->print("stp  lr, rfp, [sp, #%d]!\n\t", -(2 * wordSize));
+    if (PreserveFramePointer) st->print("mov  rfp, sp\n\t");
     st->print("mov  rscratch1, #%d\n\t", framesize - 2 * wordSize);
     st->print("sub  sp, sp, rscratch1");
   }
@@ -3515,34 +3579,6 @@ encode %{
       // Emit stub for static call
       CompiledStaticCall::emit_to_interp_stub(cbuf);
     }
-  %}
-
-  enc_class aarch64_enc_java_handle_call(method meth) %{
-    MacroAssembler _masm(&cbuf);
-    relocInfo::relocType reloc;
-
-    // RFP is preserved across all calls, even compiled calls.
-    // Use it to preserve SP.
-    __ mov(rfp, sp);
-
-    const int start_offset = __ offset();
-    address addr = (address)$meth$$method;
-    if (!_method) {
-      // A call to a runtime wrapper, e.g. new, new_typeArray_Java, uncommon_trap.
-      __ trampoline_call(Address(addr, relocInfo::runtime_call_type), &cbuf);
-    } else if (_optimized_virtual) {
-      __ trampoline_call(Address(addr, relocInfo::opt_virtual_call_type), &cbuf);
-    } else {
-      __ trampoline_call(Address(addr, relocInfo::static_call_type), &cbuf);
-    }
-
-    if (_method) {
-      // Emit stub for static call
-      CompiledStaticCall::emit_to_interp_stub(cbuf);
-    }
-
-    // now restore sp
-    __ mov(sp, rfp);
   %}
 
   enc_class aarch64_enc_java_dynamic_call(method meth) %{
@@ -12561,8 +12597,6 @@ instruct CallStaticJavaDirect(method meth)
 
   effect(USE meth);
 
-  predicate(!((CallStaticJavaNode*)n)->is_method_handle_invoke());
-
   ins_cost(CALL_COST);
 
   format %{ "call,static $meth \t// ==> " %}
@@ -12574,26 +12608,6 @@ instruct CallStaticJavaDirect(method meth)
 %}
 
 // TO HERE
-
-// Call Java Static Instruction (method handle version)
-
-instruct CallStaticJavaDirectHandle(method meth, iRegP_FP reg_mh_save)
-%{
-  match(CallStaticJava);
-
-  effect(USE meth);
-
-  predicate(((CallStaticJavaNode*)n)->is_method_handle_invoke());
-
-  ins_cost(CALL_COST);
-
-  format %{ "call,static $meth \t// (methodhandle) ==> " %}
-
-  ins_encode( aarch64_enc_java_handle_call(meth),
-              aarch64_enc_call_epilog );
-
-  ins_pipe(pipe_class_call);
-%}
 
 // Call Java Dynamic Instruction
 instruct CallDynamicJavaDirect(method meth)

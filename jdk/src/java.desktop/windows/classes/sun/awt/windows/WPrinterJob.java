@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,11 @@ import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.HeadlessException;
-import java.awt.KeyboardFocusManager;
 import java.awt.Toolkit;
 import java.awt.BasicStroke;
 import java.awt.Button;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.Event;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.FileDialog;
@@ -62,6 +60,8 @@ import java.io.File;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
+import sun.awt.AWTAccessor;
+import sun.awt.AWTAccessor.ComponentAccessor;
 import sun.print.PeekGraphics;
 import sun.print.PeekMetrics;
 
@@ -2117,7 +2117,6 @@ public final class WPrinterJob extends RasterPrinterJob
                                              short xres_quality,
                                              short yres);
 
-    @SuppressWarnings("deprecation")
     public PrintRequestAttributeSet
         showDocumentProperties(Window owner,
                                PrintService service,
@@ -2127,7 +2126,8 @@ public final class WPrinterJob extends RasterPrinterJob
             setNativePrintServiceIfNeeded(service.getName());
         } catch (PrinterException e) {
         }
-        long hWnd = ((WWindowPeer)(owner.getPeer())).getHWnd();
+        final ComponentAccessor acc = AWTAccessor.getComponentAccessor();
+        long hWnd = acc.<WComponentPeer>getPeer(owner).getHWnd();
         DevModeValues info = new DevModeValues();
         getDevModeValues(aset, info);
         boolean ok =

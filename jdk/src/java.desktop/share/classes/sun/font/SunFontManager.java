@@ -568,36 +568,6 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         }
     }
 
-    /**
-     * This method is provided for internal and exclusive use by Swing.
-     *
-     * @param font representing a physical font.
-     * @return true if the underlying font is a TrueType or OpenType font
-     * that claims to support the Microsoft Windows encoding corresponding to
-     * the default file.encoding property of this JRE instance.
-     * This narrow value is useful for Swing to decide if the font is useful
-     * for the Windows Look and Feel, or, if a composite font should be
-     * used instead.
-     * The information used to make the decision is obtained from
-     * the ulCodePageRange fields in the font.
-     * A caller can use isLogicalFont(Font) in this class before calling
-     * this method and would not need to call this method if that
-     * returns true.
-     */
-//     static boolean fontSupportsDefaultEncoding(Font font) {
-//      String encoding =
-//          (String) java.security.AccessController.doPrivileged(
-//                new sun.security.action.GetPropertyAction("file.encoding"));
-
-//      if (encoding == null || font == null) {
-//          return false;
-//      }
-
-//      encoding = encoding.toLowerCase(Locale.ENGLISH);
-
-//      return FontManager.fontSupportsEncoding(font, encoding);
-//     }
-
     public Font2DHandle getNewComposite(String family, int style,
                                         Font2DHandle handle) {
 

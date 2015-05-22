@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ public class LayoutQueue {
 
     /**
      * Fetch the default layout queue.
+     * @return the default layout queue
      */
     public static LayoutQueue getDefaultQueue() {
         AppContext ac = AppContext.getAppContext();
@@ -78,6 +79,7 @@ public class LayoutQueue {
     /**
      * Add a task that is not needed immediately because
      * the results are not believed to be visible.
+     * @param task the task to add to the queue
      */
     public synchronized void addTask(Runnable task) {
         if (worker == null) {
@@ -104,7 +106,8 @@ public class LayoutQueue {
     }
 
     /**
-     * Used by the worker thread to get a new task to execute
+     * Used by the worker thread to get a new task to execute.
+     * @return a task from the queue
      */
     protected synchronized Runnable waitForWork() {
         while (tasks.size() == 0) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,9 @@ import javax.swing.Timer;
 import java.awt.peer.ComponentPeer;
 import java.awt.peer.LightweightPeer;
 import java.awt.dnd.peer.DropTargetPeer;
+
+import sun.awt.AWTAccessor;
+import sun.awt.AWTAccessor.ComponentAccessor;
 
 
 /**
@@ -204,19 +207,13 @@ public class DropTarget implements DropTargetListener, Serializable {
         if (component == c || component != null && component.equals(c))
             return;
 
-        Component     old;
-        ComponentPeer oldPeer = null;
+        final Component old = component;
 
-        if ((old = component) != null) {
+        if (old  != null) {
             clearAutoscroll();
 
             component = null;
-
-            if (componentPeer != null) {
-                oldPeer = componentPeer;
-                removeNotify(componentPeer);
-            }
-
+            removeNotify();
             old.setDropTarget(null);
 
         }
@@ -226,7 +223,7 @@ public class DropTarget implements DropTargetListener, Serializable {
         } catch (Exception e) { // undo the change
             if (old != null) {
                 old.setDropTarget(this);
-                addNotify(oldPeer);
+                addNotify();
             }
         }
     }
@@ -494,24 +491,24 @@ public class DropTarget implements DropTargetListener, Serializable {
      * association of the ComponentPeer with the Component may result in
      * a malfunction of the DnD system.
      **********************************************************************
-     *
-     * @param peer The Peer of the Component we are associated with!
-     *
      */
-
-    @SuppressWarnings("deprecation")
-    public void addNotify(ComponentPeer peer) {
-        if (peer == componentPeer) return;
+    public void addNotify() {
+        final ComponentAccessor acc = AWTAccessor.getComponentAccessor();
+        ComponentPeer peer = acc.getPeer(component);
+        if (peer == null || peer == componentPeer) {
+            return;
+        }
 
         componentPeer = peer;
 
+
         for (Component c = component;
              c != null && peer instanceof LightweightPeer; c = c.getParent()) {
-            peer = c.getPeer();
+            peer = acc.getPeer(c);
         }
 
         if (peer instanceof DropTargetPeer) {
-            nativePeer = peer;
+            nativePeer = (DropTargetPeer) peer;
             ((DropTargetPeer)peer).addDropTarget(this);
         } else {
             nativePeer = null;
@@ -530,15 +527,14 @@ public class DropTarget implements DropTargetListener, Serializable {
      * disassociation of the ComponentPeer from the Component may result in
      * a malfunction of the DnD system.
      **********************************************************************
-     *
-     * @param peer The Peer of the Component we are being disassociated from!
      */
 
-    public void removeNotify(ComponentPeer peer) {
-        if (nativePeer != null)
-            ((DropTargetPeer)nativePeer).removeDropTarget(this);
-
-        componentPeer = nativePeer = null;
+    public void removeNotify() {
+        if (nativePeer != null) {
+            nativePeer.removeDropTarget(this);
+        }
+        componentPeer = null;
+        nativePeer = null;
 
         synchronized (this) {
             if (isDraggingInside) {
@@ -834,7 +830,7 @@ public class DropTarget implements DropTargetListener, Serializable {
     /*
      * That Component's "native" Peer
      */
-    private transient ComponentPeer nativePeer;
+    private transient DropTargetPeer nativePeer;
 
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,11 @@ package com.apple.laf;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.peer.MenuComponentPeer;
 import java.util.Hashtable;
 
 import javax.swing.*;
 
+import sun.awt.AWTAccessor;
 import sun.awt.SunToolkit;
 import sun.lwawt.LWToolkit;
 import sun.lwawt.macosx.*;
@@ -212,24 +212,36 @@ final class ScreenMenu extends Menu
                 // Send a mouseExited to the previously hilited item, if it wasn't 0.
                 if (target != fLastMouseEventTarget) {
                     if (fLastMouseEventTarget != null) {
-                        LWToolkit.postEvent(new MouseEvent(fLastMouseEventTarget, MouseEvent.MOUSE_EXITED, when, modifiers, x - fLastTargetRect.x, y - fLastTargetRect.y, 0, false));
+                        LWToolkit.postEvent(
+                                new MouseEvent(fLastMouseEventTarget,
+                                               MouseEvent.MOUSE_EXITED, when,
+                                               modifiers, x - fLastTargetRect.x,
+                                               y - fLastTargetRect.y, 0,
+                                               false));
                     }
-                    // Send a mouseEntered to the current hilited item, if it wasn't 0.
+                    // Send a mouseEntered to the current hilited item, if it
+                    // wasn't 0.
                     if (target != null) {
-                        LWToolkit.postEvent(new MouseEvent(target, MouseEvent.MOUSE_ENTERED, when, modifiers, x - targetRect.x, y - targetRect.y, 0, false));
+                        LWToolkit.postEvent(
+                                new MouseEvent(target, MouseEvent.MOUSE_ENTERED,
+                                               when, modifiers,
+                                               x - targetRect.x,
+                                               y - targetRect.y, 0, false));
                     }
                     fLastMouseEventTarget = target;
                     fLastTargetRect = targetRect;
                 }
                 // Post a mouse event to the current item.
                 if (target == null) return;
-                LWToolkit.postEvent(new MouseEvent(target, kind, when, modifiers, x - targetRect.x, y - targetRect.y, 0, false));
+                LWToolkit.postEvent(
+                        new MouseEvent(target, kind, when, modifiers,
+                                       x - targetRect.x, y - targetRect.y, 0,
+                                       false));
             }
         });
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public void addNotify() {
         synchronized (getTreeLock()) {
             super.addNotify();
@@ -248,7 +260,8 @@ final class ScreenMenu extends Menu
                 if (tooltipText != null) {
                     setToolTipText(tooltipText);
                 }
-                final MenuComponentPeer peer = getPeer();
+                final Object peer = AWTAccessor.getMenuComponentAccessor()
+                                               .getPeer(this);
                 if (peer instanceof CMenu) {
                     final CMenu menu = (CMenu) peer;
                     final long nativeMenu = menu.getNativeMenu();
@@ -355,9 +368,8 @@ final class ScreenMenu extends Menu
     public void setIndeterminate(boolean indeterminate) { }
 
     @Override
-    @SuppressWarnings("deprecation")
     public void setToolTipText(final String text) {
-        final MenuComponentPeer peer = getPeer();
+        Object peer = AWTAccessor.getMenuComponentAccessor().getPeer(this);
         if (!(peer instanceof CMenuItem)) return;
 
         final CMenuItem cmi = (CMenuItem)peer;
@@ -365,9 +377,8 @@ final class ScreenMenu extends Menu
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public void setIcon(final Icon i) {
-        final MenuComponentPeer peer = getPeer();
+        Object peer = AWTAccessor.getMenuComponentAccessor().getPeer(this);
         if (!(peer instanceof CMenuItem)) return;
 
         final CMenuItem cmi = (CMenuItem)peer;
