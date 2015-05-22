@@ -34,6 +34,7 @@
  */
 
 import java.io.File;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -64,14 +65,11 @@ public class CheckEBCDICLocaleTest {
 
     public void test() throws Exception {
         ToolBox tb = new ToolBox();
-        Path native2asciiBinary = tb.getJDKTool("native2ascii");
-
         tb.writeFile("Test.java", TestSrc);
         tb.createDirectories("output");
 
-        tb.new ExecTask(native2asciiBinary)
-                .args("-reverse", "-encoding", "IBM1047", "Test.java", "output/Test.java")
-                .run();
+        Native2Ascii n2a = new Native2Ascii(Charset.forName("IBM1047"));
+        n2a.asciiToNative(Paths.get("Test.java"), Paths.get("output", "Test.java"));
 
         tb.new JavacTask(ToolBox.Mode.EXEC)
                 .redirect(ToolBox.OutputKind.STDERR, "Test.tmp")
@@ -81,14 +79,11 @@ public class CheckEBCDICLocaleTest {
                 .files("output/Test.java")
                 .run(ToolBox.Expect.FAIL);
 
-        tb.new ExecTask(native2asciiBinary)
-                .args("-encoding", "IBM1047", "Test.tmp", "Test.out")
-                .run();
+        n2a.nativeToAscii(Paths.get("Test.tmp"), Paths.get("Test.out"));
 
         List<String> expectLines = Arrays.asList(
                 String.format(TestOutTemplate, File.separator).split("\n"));
         List<String> actualLines = Files.readAllLines(Paths.get("Test.out"));
         tb.checkEqual(expectLines, actualLines);
     }
-
 }
