@@ -482,6 +482,14 @@ cmsBool CMSEXPORT cmsCloseIOhandler(cmsIOHANDLER* io)
 
 // -------------------------------------------------------------------------------------------------------
 
+cmsIOHANDLER* CMSEXPORT cmsGetProfileIOhandler(cmsHPROFILE hProfile)
+{
+        _cmsICCPROFILE* Icc = (_cmsICCPROFILE*)hProfile;
+
+        if (Icc == NULL) return NULL;
+        return Icc->IOhandler;
+}
+
 // Creates an empty structure holding all required parameters
 cmsHPROFILE CMSEXPORT cmsCreateProfilePlaceholder(cmsContext ContextID)
 {
@@ -651,25 +659,26 @@ cmsBool CMSEXPORT cmsIsTag(cmsHPROFILE hProfile, cmsTagSignature sig)
        return _cmsSearchTag(Icc, sig, FALSE) >= 0;
 }
 
-/*
- * Enforces that the profile version is per. spec.
- * Operates on the big endian bytes from the profile.
- * Called before converting to platform endianness.
- * Byte 0 is BCD major version, so max 9.
- * Byte 1 is 2 BCD digits, one per nibble.
- * Reserved bytes 2 & 3 must be 0.
- */
-static cmsUInt32Number _validatedVersion(cmsUInt32Number DWord)
+
+
+// Enforces that the profile version is per. spec.
+// Operates on the big endian bytes from the profile.
+// Called before converting to platform endianness.
+// Byte 0 is BCD major version, so max 9.
+// Byte 1 is 2 BCD digits, one per nibble.
+// Reserved bytes 2 & 3 must be 0.
+static
+cmsUInt32Number _validatedVersion(cmsUInt32Number DWord)
 {
-    cmsUInt8Number* pByte = (cmsUInt8Number*)&DWord;
+    cmsUInt8Number* pByte = (cmsUInt8Number*) &DWord;
     cmsUInt8Number temp1;
     cmsUInt8Number temp2;
 
-    if (*pByte > 0x09) *pByte = (cmsUInt8Number)9;
+    if (*pByte > 0x09) *pByte = (cmsUInt8Number) 0x09;
     temp1 = *(pByte+1) & 0xf0;
     temp2 = *(pByte+1) & 0x0f;
     if (temp1 > 0x90) temp1 = 0x90;
-    if (temp2 > 9) temp2 = 0x09;
+    if (temp2 > 0x09) temp2 = 0x09;
     *(pByte+1) = (cmsUInt8Number)(temp1 | temp2);
     *(pByte+2) = (cmsUInt8Number)0;
     *(pByte+3) = (cmsUInt8Number)0;
@@ -1167,6 +1176,8 @@ cmsHPROFILE CMSEXPORT cmsOpenProfileFromMem(const void* MemPtr, cmsUInt32Number 
     return cmsOpenProfileFromMemTHR(NULL, MemPtr, dwSize);
 }
 
+
+
 // Dump tag contents. If the profile is being modified, untouched tags are copied from FileOrig
 static
 cmsBool SaveTags(_cmsICCPROFILE* Icc, _cmsICCPROFILE* FileOrig)
@@ -1197,7 +1208,7 @@ cmsBool SaveTags(_cmsICCPROFILE* Icc, _cmsICCPROFILE* FileOrig)
 
             // Reach here if we are copying a tag from a disk-based ICC profile which has not been modified by user.
             // In this case a blind copy of the block data is performed
-            if (FileOrig != NULL && FileOrig->IOhandler != NULL && Icc -> TagOffsets[i]) {
+            if (FileOrig != NULL && Icc -> TagOffsets[i]) {
 
                 cmsUInt32Number TagSize   = FileOrig -> TagSizes[i];
                 cmsUInt32Number TagOffset = FileOrig -> TagOffsets[i];
@@ -1846,13 +1857,12 @@ Error:
 
 // Similar to the anterior. This function allows to write directly to the ICC profile any data, without
 // checking anything. As a rule, mixing Raw with cooked doesn't work, so writting a tag as raw and then reading
-// it as cooked without serializing does result into an error. If that is wha you want, you will need to dump
+// it as cooked without serializing does result into an error. If that is what you want, you will need to dump
 // the profile to memry or disk and then reopen it.
 cmsBool CMSEXPORT cmsWriteRawTag(cmsHPROFILE hProfile, cmsTagSignature sig, const void* data, cmsUInt32Number Size)
 {
     _cmsICCPROFILE* Icc = (_cmsICCPROFILE*) hProfile;
     int i;
-    cmsBool ret = TRUE;
 
     if (!_cmsLockMutex(Icc->ContextID, Icc ->UsrMutex)) return 0;
 
@@ -1868,11 +1878,15 @@ cmsBool CMSEXPORT cmsWriteRawTag(cmsHPROFILE hProfile, cmsTagSignature sig, cons
 
     // Keep a copy of the block
     Icc ->TagPtrs[i]  = _cmsDupMem(Icc ->ContextID, data, Size);
-    if (!Icc ->TagPtrs[i]) ret = FALSE;
     Icc ->TagSizes[i] = Size;
 
     _cmsUnlockMutex(Icc->ContextID, Icc ->UsrMutex);
-    return ret;
+
+    if (Icc->TagPtrs[i] == NULL) {
+           Icc->TagNames[i] = 0;
+           return FALSE;
+    }
+    return TRUE;
 }
 
 // Using this function you can collapse several tag entries to the same block in the profile

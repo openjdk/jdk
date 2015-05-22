@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -875,30 +875,38 @@ public class BasicMenuItemUI extends MenuItemUI
         if (dumpStack == true)
             Thread.dumpStack();
     }
+    /** Mouse input handler */
     protected class MouseInputHandler implements MouseInputListener {
         // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
 
+        /** {@inheritDoc} */
         public void mouseClicked(MouseEvent e) {
             getHandler().mouseClicked(e);
         }
+        /** {@inheritDoc} */
         public void mousePressed(MouseEvent e) {
             getHandler().mousePressed(e);
         }
+        /** {@inheritDoc} */
         public void mouseReleased(MouseEvent e) {
             getHandler().mouseReleased(e);
         }
+        /** {@inheritDoc} */
         public void mouseEntered(MouseEvent e) {
             getHandler().mouseEntered(e);
         }
+        /** {@inheritDoc} */
         public void mouseExited(MouseEvent e) {
             getHandler().mouseExited(e);
         }
+        /** {@inheritDoc} */
         public void mouseDragged(MouseEvent e) {
             getHandler().mouseDragged(e);
         }
+        /** {@inheritDoc} */
         public void mouseMoved(MouseEvent e) {
             getHandler().mouseMoved(e);
         }

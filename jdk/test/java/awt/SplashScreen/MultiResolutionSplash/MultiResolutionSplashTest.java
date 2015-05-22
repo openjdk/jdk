@@ -40,7 +40,7 @@ import sun.java2d.SunGraphics2D;
 
 /**
  * @test
- * @bug 8043869 8075244
+ * @bug 8043869 8075244 8078082
  * @author Alexander Scherbatiy
  * @summary [macosx] java -splash does not honor 2x hi dpi notation for retina
  * support
@@ -115,6 +115,7 @@ public class MultiResolutionSplashTest {
         frame.setSize(100, 100);
         String test = "123";
         TextField textField = new TextField(test);
+        textField.selectAll();
         frame.add(textField);
         frame.setVisible(true);
         robot.waitForIdle();

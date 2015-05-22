@@ -146,7 +146,7 @@ final class Dasher implements sun.awt.geom.PathConsumer2D {
         if (dashOn) {
             if (starting) {
                 firstSegmentsBuffer = Helpers.widenArray(firstSegmentsBuffer,
-                                      firstSegidx, type - 2);
+                                      firstSegidx, type - 2 + 1);
                 firstSegmentsBuffer[firstSegidx++] = type;
                 System.arraycopy(pts, off, firstSegmentsBuffer, firstSegidx, type - 2);
                 firstSegidx += type - 2;

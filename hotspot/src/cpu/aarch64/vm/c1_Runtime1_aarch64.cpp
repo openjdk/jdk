@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -42,7 +42,7 @@
 #include "runtime/vframeArray.hpp"
 #include "vmreg_aarch64.inline.hpp"
 #if INCLUDE_ALL_GCS
-#include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
+#include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #endif
 
 
@@ -443,18 +443,8 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
     restore_live_registers(sasm, id != handle_exception_nofpu_id);
     break;
   case handle_exception_from_callee_id:
-    // Pop the return address since we are possibly changing SP (restoring from BP).
+    // Pop the return address.
     __ leave();
-
-    // Restore SP from FP if the exception PC is a method handle call site.
-    {
-      Label nope;
-      __ ldrw(rscratch1, Address(rthread, JavaThread::is_method_handle_return_offset()));
-      __ cbzw(rscratch1, nope);
-      __ mov(sp, rfp);
-      __ bind(nope);
-    }
-
     __ ret(lr);  // jump to exception handler
     break;
   default:  ShouldNotReachHere();
@@ -513,14 +503,6 @@ void Runtime1::generate_unwind_exception(StubAssembler *sasm) {
   __ mov(r3, lr);
 
   __ verify_not_null_oop(exception_oop);
-
-  {
-    Label foo;
-    __ ldrw(rscratch1, Address(rthread, JavaThread::is_method_handle_return_offset()));
-    __ cbzw(rscratch1, foo);
-    __ mov(sp, rfp);
-    __ bind(foo);
-  }
 
   // continue at exception handler (return address removed)
   // note: do *not* remove arguments when unwinding the

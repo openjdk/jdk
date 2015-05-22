@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,22 +56,33 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
 
 // Instance variables initialized at installation
 
+    /** The tab pane */
     protected JTabbedPane tabPane;
 
+    /** Highlight color */
     protected Color highlight;
+    /** Light highlight color */
     protected Color lightHighlight;
+    /** Shadow color */
     protected Color shadow;
+    /** Dark shadow color */
     protected Color darkShadow;
+    /** Focus color */
     protected Color focus;
     private   Color selectedColor;
 
+    /** Text icon gap */
     protected int textIconGap;
-
+    /** Tab run overlay */
     protected int tabRunOverlay;
 
+    /** Tab insets */
     protected Insets tabInsets;
+    /** Selected tab insets */
     protected Insets selectedTabPadInsets;
+    /** Tab area insets */
     protected Insets tabAreaInsets;
+    /** Content border insets */
     protected Insets contentBorderInsets;
     private boolean tabsOverlapBorder;
     private boolean tabsOpaque = true;
@@ -120,19 +131,28 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
 
 
 // Transient variables (recalculated each time TabbedPane is layed out)
-
+    /** Tab runs */
     protected int tabRuns[] = new int[10];
+    /** Run count */
     protected int runCount = 0;
+    /** Selected run */
     protected int selectedRun = -1;
+    /** Tab rects */
     protected Rectangle rects[] = new Rectangle[0];
+    /** Maximum tab height */
     protected int maxTabHeight;
+    /** Maximum tab width */
     protected int maxTabWidth;
 
 // Listeners
 
+    /** Tab change listener */
     protected ChangeListener tabChangeListener;
+    /** Property change listener */
     protected PropertyChangeListener propertyChangeListener;
+    /** Mouse change listener */
     protected MouseListener mouseListener;
+    /** Focus change listener */
     protected FocusListener focusListener;
 
 // Private instance data
@@ -190,6 +210,11 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
 
 // UI creation
 
+    /**
+     * Create a UI.
+     * @param c a component
+     * @return a UI
+     */
     public static ComponentUI createUI(JComponent c) {
         return new BasicTabbedPaneUI();
     }
@@ -355,6 +380,9 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
          tabContainer = null;
     }
 
+    /**
+     * Install the defaults.
+     */
     protected void installDefaults() {
         LookAndFeel.installColorsAndFont(tabPane, "TabbedPane.background",
                                     "TabbedPane.foreground", "TabbedPane.font");
@@ -389,6 +417,9 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         if (contentBorderInsets == null) contentBorderInsets = new Insets(2,2,3,3);
     }
 
+    /**
+     * Uninstall the defaults.
+     */
     protected void uninstallDefaults() {
         highlight = null;
         lightHighlight = null;
@@ -401,6 +432,9 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         contentBorderInsets = null;
     }
 
+    /**
+     * Install the listeners.
+     */
     protected void installListeners() {
         if ((propertyChangeListener = createPropertyChangeListener()) != null) {
             tabPane.addPropertyChangeListener(propertyChangeListener);
@@ -421,6 +455,9 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         }
     }
 
+    /**
+     * Uninstall the listeners.
+     */
     protected void uninstallListeners() {
         if (mouseListener != null) {
             tabPane.removeMouseListener(mouseListener);
@@ -448,18 +485,34 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         handler = null;
     }
 
+    /**
+     * Creates a mouse listener.
+     * @return a mouse listener
+     */
     protected MouseListener createMouseListener() {
         return getHandler();
     }
 
+    /**
+     * Creates a focus listener.
+     * @return a focus listener
+     */
     protected FocusListener createFocusListener() {
         return getHandler();
     }
 
+    /**
+     * Creates a change listener.
+     * @return a change listener
+     */
     protected ChangeListener createChangeListener() {
         return getHandler();
     }
 
+    /**
+     * Creates a property change listener.
+     * @return a property change listener
+     */
     protected PropertyChangeListener createPropertyChangeListener() {
         return getHandler();
     }
@@ -471,6 +524,9 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         return handler;
     }
 
+    /**
+     * Installs the keyboard actions.
+     */
     protected void installKeyboardActions() {
         InputMap km = getInputMap(JComponent.
                                   WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
@@ -498,6 +554,9 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         return null;
     }
 
+    /**
+     * Uninstalls the keyboard actions.
+     */
     protected void uninstallKeyboardActions() {
         SwingUtilities.replaceUIActionMap(tabPane, null);
         SwingUtilities.replaceUIInputMap(tabPane, JComponent.
@@ -844,6 +903,15 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         }
     }
 
+    /**
+     * Paints a tab.
+     * @param g the graphics
+     * @param tabPlacement the tab placement
+     * @param rects rectangles
+     * @param tabIndex the tab index
+     * @param iconRect the icon rectangle
+     * @param textRect the text rectangle
+     */
     protected void paintTab(Graphics g, int tabPlacement,
                             Rectangle[] rects, int tabIndex,
                             Rectangle iconRect, Rectangle textRect) {
@@ -1012,6 +1080,18 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         }
     }
 
+    /**
+     * Laysout a label.
+     * @param tabPlacement the tab placement
+     * @param metrics the font metric
+     * @param tabIndex the tab index
+     * @param title the title
+     * @param icon the icon
+     * @param tabRect the tab rectangle
+     * @param iconRect the icon rectangle
+     * @param textRect the text rectangle
+     * @param isSelected selection status
+     */
     protected void layoutLabel(int tabPlacement,
                                FontMetrics metrics, int tabIndex,
                                String title, Icon icon,
@@ -1045,6 +1125,15 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         textRect.y += yNudge;
     }
 
+    /**
+     * Paints an icon.
+     * @param g the graphics
+     * @param tabPlacement the tab placement
+     * @param tabIndex the tab index
+     * @param icon the icon
+     * @param iconRect the icon rectangle
+     * @param isSelected selection status
+     */
     protected void paintIcon(Graphics g, int tabPlacement,
                              int tabIndex, Icon icon, Rectangle iconRect,
                              boolean isSelected ) {
@@ -1053,6 +1142,17 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         }
     }
 
+    /**
+     * Paints text.
+     * @param g the graphics
+     * @param tabPlacement the tab placement
+     * @param font the font
+     * @param metrics the font metrics
+     * @param tabIndex the tab index
+     * @param title the title
+     * @param textRect the text rectangle
+     * @param isSelected selection status
+     */
     protected void paintText(Graphics g, int tabPlacement,
                              Font font, FontMetrics metrics, int tabIndex,
                              String title, Rectangle textRect,
@@ -1096,7 +1196,13 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         }
     }
 
-
+    /**
+     * Returns the tab label shift x.
+     * @param tabPlacement the tab placement
+     * @param tabIndex the tab index
+     * @param isSelected selection status
+     * @return the tab label shift x
+     */
     protected int getTabLabelShiftX(int tabPlacement, int tabIndex, boolean isSelected) {
         Rectangle tabRect = rects[tabIndex];
         String propKey = (isSelected ? "selectedLabelShift" : "labelShift");
@@ -1115,6 +1221,13 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         }
     }
 
+    /**
+     * Returns the tab label shift y.
+     * @param tabPlacement the tab placement
+     * @param tabIndex the tab index
+     * @param isSelected selection status
+     * @return the tab label shift y
+     */
     protected int getTabLabelShiftY(int tabPlacement, int tabIndex, boolean isSelected) {
         Rectangle tabRect = rects[tabIndex];
         int nudge = (isSelected ? DefaultLookup.getInt(tabPane, this, "TabbedPane.selectedLabelShift", -1) :
@@ -1132,6 +1245,16 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         }
     }
 
+    /**
+     * Paints the focus indicator.
+     * @param g the graphics
+     * @param tabPlacement the tab placement
+     * @param rects rectangles
+     * @param tabIndex the tab index
+     * @param iconRect the icon rectangle
+     * @param textRect the text rectangle
+     * @param isSelected selection status
+     */
     protected void paintFocusIndicator(Graphics g, int tabPlacement,
                                        Rectangle[] rects, int tabIndex,
                                        Rectangle iconRect, Rectangle textRect,
@@ -1245,6 +1368,18 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         }
     }
 
+    /**
+     * Paints the tab background.
+     * @param g             the graphics context in which to paint
+     * @param tabPlacement  the placement (left, right, bottom, top) of the tab
+     * @param tabIndex      the index of the tab with respect to other tabs
+     * @param x             the x coordinate of tab
+     * @param y             the y coordinate of tab
+     * @param w             the width of the tab
+     * @param h             the height of the tab
+     * @param isSelected    a {@code boolean} which determines whether or not
+     * the tab is selected
+     */
     protected void paintTabBackground(Graphics g, int tabPlacement,
                                       int tabIndex,
                                       int x, int y, int w, int h,
@@ -1267,6 +1402,12 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         }
     }
 
+    /**
+     * Paints the content border.
+     * @param g             the graphics context in which to paint
+     * @param tabPlacement  the placement (left, right, bottom, top) of the tab
+     * @param selectedIndex the tab index of the selected component
+     */
     protected void paintContentBorder(Graphics g, int tabPlacement, int selectedIndex) {
         int width = tabPane.getWidth();
         int height = tabPane.getHeight();
@@ -1329,6 +1470,16 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
 
     }
 
+    /**
+     * Paints the content border top edge.
+     * @param g             the graphics context in which to paint
+     * @param tabPlacement  the placement (left, right, bottom, top) of the tab
+     * @param selectedIndex the tab index of the selected component
+     * @param x             the x coordinate of tab
+     * @param y             the y coordinate of tab
+     * @param w             the width of the tab
+     * @param h             the height of the tab
+     */
     protected void paintContentBorderTopEdge(Graphics g, int tabPlacement,
                                          int selectedIndex,
                                          int x, int y, int w, int h) {
@@ -1358,6 +1509,16 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         }
     }
 
+    /**
+     * Paints the content border left edge.
+     * @param g             the graphics context in which to paint
+     * @param tabPlacement  the placement (left, right, bottom, top) of the tab
+     * @param selectedIndex the tab index of the selected component
+     * @param x             the x coordinate of tab
+     * @param y             the y coordinate of tab
+     * @param w             the width of the tab
+     * @param h             the height of the tab
+     */
     protected void paintContentBorderLeftEdge(Graphics g, int tabPlacement,
                                                int selectedIndex,
                                                int x, int y, int w, int h) {
@@ -1384,6 +1545,16 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         }
     }
 
+    /**
+     * Paints the content border bottom edge.
+     * @param g             the graphics context in which to paint
+     * @param tabPlacement  the placement (left, right, bottom, top) of the tab
+     * @param selectedIndex the tab index of the selected component
+     * @param x             the x coordinate of tab
+     * @param y             the y coordinate of tab
+     * @param w             the width of the tab
+     * @param h             the height of the tab
+     */
     protected void paintContentBorderBottomEdge(Graphics g, int tabPlacement,
                                                int selectedIndex,
                                                int x, int y, int w, int h) {
@@ -1417,6 +1588,16 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
 
     }
 
+    /**
+     * Paints the content border right edge.
+     * @param g             the graphics context in which to paint
+     * @param tabPlacement  the placement (left, right, bottom, top) of the tab
+     * @param selectedIndex the tab index of the selected component
+     * @param x             the x coordinate of tab
+     * @param y             the y coordinate of tab
+     * @param w             the width of the tab
+     * @param h             the height of the tab
+     */
     protected void paintContentBorderRightEdge(Graphics g, int tabPlacement,
                                                int selectedIndex,
                                                int x, int y, int w, int h) {
@@ -1618,10 +1799,18 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
 
 // BasicTabbedPaneUI methods
 
+    /**
+     * Returns the visible component.
+     * @return the visible component
+     */
     protected Component getVisibleComponent() {
         return visibleComponent;
     }
 
+    /**
+     * Sets the visible component.
+     * @param component the component
+     */
     protected void setVisibleComponent(Component component) {
         if (visibleComponent != null
                 && visibleComponent != component
@@ -1636,6 +1825,10 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         visibleComponent = component;
     }
 
+    /**
+     * Assure the rectangles are created.
+     * @param tabCount the tab count
+     */
     protected void assureRectsCreated(int tabCount) {
         int rectArrayLen = rects.length;
         if (tabCount != rectArrayLen ) {
@@ -1650,6 +1843,9 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
 
     }
 
+    /**
+     * Expands the tab runs array.
+     */
     protected void expandTabRunsArray() {
         int rectLen = tabRuns.length;
         int[] newArray = new int[rectLen+10];
@@ -1657,6 +1853,12 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         tabRuns = newArray;
     }
 
+    /**
+     * Returns the run for a tab.
+     * @param tabCount the tab count
+     * @param tabIndex the tab index.
+     * @return the run for a tab
+     */
     protected int getRunForTab(int tabCount, int tabIndex) {
         for (int i = 0; i < runCount; i++) {
             int first = tabRuns[i];
@@ -1668,6 +1870,12 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         return 0;
     }
 
+    /**
+     * Returns the last tab in a run.
+     * @param tabCount the tab count
+     * @param run the run
+     * @return the last tab in a run
+     */
     protected int lastTabInRun(int tabCount, int run) {
         if (runCount == 1) {
             return tabCount - 1;
@@ -1679,22 +1887,49 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         return tabRuns[nextRun]-1;
     }
 
+    /**
+     * Returns the tab run overlay.
+     * @param tabPlacement the placement (left, right, bottom, top) of the tab
+     * @return the tab run overlay
+     */
     protected int getTabRunOverlay(int tabPlacement) {
         return tabRunOverlay;
     }
 
+    /**
+     * Returns the tab run indent.
+     * @param tabPlacement the placement (left, right, bottom, top) of the tab
+     * @param run the tab run
+     * @return the tab run indent
+     */
     protected int getTabRunIndent(int tabPlacement, int run) {
         return 0;
     }
 
+    /**
+     * Returns whether or not the tab run should be padded.
+     * @param tabPlacement the placement (left, right, bottom, top) of the tab
+     * @param run the tab run
+     * @return whether or not the tab run should be padded
+     */
     protected boolean shouldPadTabRun(int tabPlacement, int run) {
         return runCount > 1;
     }
 
+    /**
+     * Returns whether or not the tab run should be rotated.
+     * @param tabPlacement the placement (left, right, bottom, top) of the tab
+     * @return whether or not the tab run should be rotated
+     */
     protected boolean shouldRotateTabRuns(int tabPlacement) {
         return true;
     }
 
+    /**
+     * Returns the icon for a tab.
+     * @param tabIndex the index of the tab
+     * @return the icon for a tab
+     */
     protected Icon getIconForTab(int tabIndex) {
         return (!tabPane.isEnabled() || !tabPane.isEnabledAt(tabIndex))?
                           tabPane.getDisabledIconAt(tabIndex) : tabPane.getIconAt(tabIndex);
@@ -1718,6 +1953,13 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         return null;
     }
 
+    /**
+     * Calculates the tab height.
+     * @param tabPlacement  the placement (left, right, bottom, top) of the tab
+     * @param tabIndex      the index of the tab with respect to other tabs
+     * @param fontHeight    the font height
+     * @return the tab height
+     */
     protected int calculateTabHeight(int tabPlacement, int tabIndex, int fontHeight) {
         int height = 0;
         Component c = tabPane.getTabComponentAt(tabIndex);
@@ -1743,6 +1985,11 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         return height;
     }
 
+    /**
+     * Calculates the maximum tab height.
+     * @param tabPlacement  the placement (left, right, bottom, top) of the tab
+     * @return the maximum tab height
+     */
     protected int calculateMaxTabHeight(int tabPlacement) {
         FontMetrics metrics = getFontMetrics();
         int tabCount = tabPane.getTabCount();
@@ -1754,6 +2001,13 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         return result;
     }
 
+    /**
+     * Calculates the tab width.
+     * @param tabPlacement  the placement (left, right, bottom, top) of the tab
+     * @param tabIndex      the index of the tab with respect to other tabs
+     * @param metrics       the font metrics
+     * @return the tab width
+     */
     protected int calculateTabWidth(int tabPlacement, int tabIndex, FontMetrics metrics) {
         Insets tabInsets = getTabInsets(tabPlacement, tabIndex);
         int width = tabInsets.left + tabInsets.right + 3;
@@ -1778,6 +2032,11 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         return width;
     }
 
+    /**
+     * Calculates the maximum tab width.
+     * @param tabPlacement  the placement (left, right, bottom, top) of the tab
+     * @return the maximum tab width
+     */
     protected int calculateMaxTabWidth(int tabPlacement) {
         FontMetrics metrics = getFontMetrics();
         int tabCount = tabPane.getTabCount();
@@ -1788,6 +2047,13 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         return result;
     }
 
+    /**
+     * Calculates the tab area height.
+     * @param tabPlacement  the placement (left, right, bottom, top) of the tab
+     * @param horizRunCount horizontal run count
+     * @param maxTabHeight maximum tab height
+     * @return the tab area height
+     */
     protected int calculateTabAreaHeight(int tabPlacement, int horizRunCount, int maxTabHeight) {
         Insets tabAreaInsets = getTabAreaInsets(tabPlacement);
         int tabRunOverlay = getTabRunOverlay(tabPlacement);
@@ -1797,6 +2063,13 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
                 0);
     }
 
+    /**
+     * Calculates the tab area width.
+     * @param tabPlacement  the placement (left, right, bottom, top) of the tab
+     * @param vertRunCount vertical run count
+     * @param maxTabWidth maximum tab width
+     * @return the tab area width
+     */
     protected int calculateTabAreaWidth(int tabPlacement, int vertRunCount, int maxTabWidth) {
         Insets tabAreaInsets = getTabAreaInsets(tabPlacement);
         int tabRunOverlay = getTabRunOverlay(tabPlacement);
@@ -1806,24 +2079,49 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
                 0);
     }
 
+    /**
+     * Returns the tab insets.
+     * @param tabPlacement  the placement (left, right, bottom, top) of the tab
+     * @param tabIndex the tab index
+     * @return the tab insets
+     */
     protected Insets getTabInsets(int tabPlacement, int tabIndex) {
         return tabInsets;
     }
 
+    /**
+     * Returns the selected tab pad insets.
+     * @param tabPlacement  the placement (left, right, bottom, top) of the tab
+     * @return the selected tab pad insets
+     */
     protected Insets getSelectedTabPadInsets(int tabPlacement) {
         rotateInsets(selectedTabPadInsets, currentPadInsets, tabPlacement);
         return currentPadInsets;
     }
 
+    /**
+     * Returns the tab area insets.
+     * @param tabPlacement  the placement (left, right, bottom, top) of the tab
+     * @return the pad area insets
+     */
     protected Insets getTabAreaInsets(int tabPlacement) {
         rotateInsets(tabAreaInsets, currentTabAreaInsets, tabPlacement);
         return currentTabAreaInsets;
     }
 
+    /**
+     * Returns the content border insets.
+     * @param tabPlacement  the placement (left, right, bottom, top) of the tab
+     * @return the content border insets
+     */
     protected Insets getContentBorderInsets(int tabPlacement) {
         return contentBorderInsets;
     }
 
+    /**
+     * Returns the font metrics.
+     * @return the font metrics
+     */
     protected FontMetrics getFontMetrics() {
         Font font = tabPane.getFont();
         return tabPane.getFontMetrics(font);
@@ -1832,6 +2130,10 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
 
 // Tab Navigation methods
 
+    /**
+     * Navigate the selected tab.
+     * @param direction the direction
+     */
     protected void navigateSelectedTab(int direction) {
         int tabPlacement = tabPane.getTabPlacement();
         int current = DefaultLookup.getBoolean(tabPane, this,
@@ -1910,6 +2212,10 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         }
     }
 
+    /**
+     * Select the next tab in the run.
+     * @param current the current tab
+     */
     protected void selectNextTabInRun(int current) {
         int tabCount = tabPane.getTabCount();
         int tabIndex = getNextTabIndexInRun(tabCount, current);
@@ -1920,6 +2226,10 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         navigateTo(tabIndex);
     }
 
+    /**
+     * Select the previous tab in the run.
+     * @param current the current tab
+     */
     protected void selectPreviousTabInRun(int current) {
         int tabCount = tabPane.getTabCount();
         int tabIndex = getPreviousTabIndexInRun(tabCount, current);
@@ -1930,6 +2240,10 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         navigateTo(tabIndex);
     }
 
+    /**
+     * Select the next tab.
+     * @param current the current tab
+     */
     protected void selectNextTab(int current) {
         int tabIndex = getNextTabIndex(current);
 
@@ -1939,6 +2253,10 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         navigateTo(tabIndex);
     }
 
+    /**
+     * Select the previous tab.
+     * @param current the current tab
+     */
     protected void selectPreviousTab(int current) {
         int tabIndex = getPreviousTabIndex(current);
 
@@ -1948,6 +2266,12 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         navigateTo(tabIndex);
     }
 
+    /**
+     * Selects an adjacent run of tabs.
+     * @param tabPlacement  the placement (left, right, bottom, top) of the tab
+     * @param tabIndex      the index of the tab with respect to other tabs
+     * @param offset        selection offset
+     */
     protected void selectAdjacentRunTab(int tabPlacement,
                                         int tabIndex, int offset) {
         if ( runCount < 2 ) {
@@ -2026,6 +2350,14 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         return focusIndex;
     }
 
+    /**
+     * Returns the tab run offset.
+     * @param tabPlacement  the placement (left, right, bottom, top) of the tab
+     * @param tabCount the tab count
+     * @param tabIndex      the index of the tab with respect to other tabs
+     * @param forward forward or not
+     * @return the tab run offset
+     */
     protected int getTabRunOffset(int tabPlacement, int tabCount,
                                   int tabIndex, boolean forward) {
         int run = getRunForTab(tabCount, tabIndex);
@@ -2092,15 +2424,31 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         return offset;
     }
 
+    /**
+     * Returns the previous tab index.
+     * @param base the base
+     * @return the previous tab index
+     */
     protected int getPreviousTabIndex(int base) {
         int tabIndex = (base - 1 >= 0? base - 1 : tabPane.getTabCount() - 1);
         return (tabIndex >= 0? tabIndex : 0);
     }
 
+    /**
+     * Returns the next tab index.
+     * @param base the base
+     * @return the next tab index
+     */
     protected int getNextTabIndex(int base) {
         return (base+1)%tabPane.getTabCount();
     }
 
+    /**
+     * Returns the next tab index in the run.
+     * @param tabCount the tab count
+     * @param base the base
+     * @return the next tab index in the run
+     */
     protected int getNextTabIndexInRun(int tabCount, int base) {
         if (runCount < 2) {
             return getNextTabIndex(base);
@@ -2113,6 +2461,12 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         return next;
     }
 
+    /**
+     * Returns the previous tab index in the run.
+     * @param tabCount the tab count
+     * @param base the base
+     * @return the previous tab index in the run
+     */
     protected int getPreviousTabIndexInRun(int tabCount, int base) {
         if (runCount < 2) {
             return getPreviousTabIndex(base);
@@ -2125,15 +2479,31 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         return getPreviousTabIndex(base);
     }
 
+    /**
+     * Returns the previous tab run.
+     * @param baseRun the base run
+     * @return the previous tab run
+     */
     protected int getPreviousTabRun(int baseRun) {
         int runIndex = (baseRun - 1 >= 0? baseRun - 1 : runCount - 1);
         return (runIndex >= 0? runIndex : 0);
     }
 
+    /**
+     * Returns the next tab run.
+     * @param baseRun the base run
+     * @return the next tab run
+     */
     protected int getNextTabRun(int baseRun) {
         return (baseRun+1)%runCount;
     }
 
+    /**
+     * Rotates the insets.
+     * @param topInsets the top insets
+     * @param targetInsets the target insets
+     * @param targetPlacement the target placement
+     */
     protected static void rotateInsets(Insets topInsets, Insets targetInsets, int targetPlacement) {
 
         switch(targetPlacement) {
@@ -2292,6 +2662,11 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
             return calculateSize(true);
         }
 
+        /**
+         * Returns the calculated size.
+         * @param minimum use the minimum size or preferred size
+         * @return the calculated size
+         */
         protected Dimension calculateSize(boolean minimum) {
             int tabPlacement = tabPane.getTabPlacement();
             Insets insets = tabPane.getInsets();
@@ -2346,6 +2721,12 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
 
         }
 
+        /**
+         * Returns the preferred tab area height.
+         * @param tabPlacement the tab placement
+         * @param width the width
+         * @return the preferred tab area height
+         */
         protected int preferredTabAreaHeight(int tabPlacement, int width) {
             FontMetrics metrics = getFontMetrics();
             int tabCount = tabPane.getTabCount();
@@ -2370,6 +2751,12 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
             return total;
         }
 
+        /**
+         * Returns the preferred tab area width.
+         * @param tabPlacement the tab placement
+         * @param height the height
+         * @return the preferred tab area widty
+         */
         protected int preferredTabAreaWidth(int tabPlacement, int height) {
             FontMetrics metrics = getFontMetrics();
             int tabCount = tabPane.getTabCount();
@@ -2395,6 +2782,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
             return total;
         }
 
+        /** {@inheritDoc} */
         @SuppressWarnings("deprecation")
         public void layoutContainer(Container parent) {
             /* Some of the code in this method deals with changing the
@@ -2517,6 +2905,9 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
             }
         }
 
+        /**
+         * Calculates the layout info.
+         */
         public void calculateLayoutInfo() {
             int tabCount = tabPane.getTabCount();
             assureRectsCreated(tabCount);
@@ -2556,6 +2947,11 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
             }
         }
 
+        /**
+         * Calculate the tab rectangles.
+         * @param tabPlacement the tab placement
+         * @param tabCount the tab count
+         */
         protected void calculateTabRects(int tabPlacement, int tabCount) {
             FontMetrics metrics = getFontMetrics();
             Dimension size = tabPane.getSize();
@@ -2741,9 +3137,11 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         }
 
 
-       /*
-       * Rotates the run-index array so that the selected run is run[0]
-       */
+        /**
+         * Rotates the run-index array so that the selected run is run[0].
+         * @param tabPlacement the tab placement
+         * @param selectedRun the selected run
+         */
         protected void rotateTabRuns(int tabPlacement, int selectedRun) {
             for (int i = 0; i < selectedRun; i++) {
                 int save = tabRuns[0];
@@ -2754,6 +3152,13 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
             }
         }
 
+        /**
+         * Normalizes the tab runs.
+         * @param tabPlacement the tab placement
+         * @param tabCount the tab count
+         * @param start the start
+         * @param max the max
+         */
         protected void normalizeTabRuns(int tabPlacement, int tabCount,
                                      int start, int max) {
             boolean verticalTabRuns = (tabPlacement == LEFT || tabPlacement == RIGHT);
@@ -2822,6 +3227,13 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
             }
         }
 
+        /**
+         * Pads the tab run.
+         * @param tabPlacement the tab placement
+         * @param start the start
+         * @param end the end
+         * @param max the max
+         */
         protected void padTabRun(int tabPlacement, int start, int end, int max) {
             Rectangle lastRect = rects[end];
             if (tabPlacement == TOP || tabPlacement == BOTTOM) {
@@ -2853,6 +3265,11 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
             }
         }
 
+        /**
+         * Pads selected tab.
+         * @param tabPlacement the tab placement
+         * @param selectedIndex the selected index
+         */
         protected void padSelectedTab(int tabPlacement, int selectedIndex) {
 
             if (selectedIndex >= 0) {

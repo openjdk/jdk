@@ -24,7 +24,7 @@
 
 // no precompiled headers
 #include "classfile/vmSymbols.hpp"
-#include "gc_interface/collectedHeap.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/bytecodeInterpreter.hpp"
 #include "interpreter/bytecodeInterpreter.inline.hpp"

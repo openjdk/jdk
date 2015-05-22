@@ -253,7 +253,7 @@ needs_serialgc = \
   gc/arguments/TestMaxNewSize.java \
   gc/arguments/TestSerialHeapSizeFlags.java \
   gc/arguments/TestUseCompressedOopsErgo.java \
-  gc/defnew/HeapChangeLogging.java \
+  gc/serial/HeapChangeLogging.java \
   gc/metaspace/TestMetaspacePerfCounters.java \
   gc/metaspace/TestPerfCountersAndMemoryPools.java \
   gc/startup_warnings/TestSerialGC.java 
@@ -269,7 +269,7 @@ needs_parallelgc = \
   gc/arguments/TestUseCompressedOopsErgo.java \
   gc/ergonomics/TestDynamicNumberOfGCThreads.java
   gc/metaspace/TestMetaspacePerfCounters.java \
-  gc/parallelScavenge/ \
+  gc/parallel/ \
   gc/startup_warnings/TestParallelGC.java \
   gc/startup_warnings/TestParallelScavengeSerialOld.java
 
@@ -284,7 +284,7 @@ needs_cmsgc = \
   gc/arguments/TestParallelGCThreads.java \
   gc/arguments/TestUseCompressedOopsErgo.java \
   gc/class_unloading/TestCMSClassUnloadingEnabledHWM.java \
-  gc/concurrentMarkSweep/ \
+  gc/cms/ \
   gc/ergonomics/TestDynamicNumberOfGCThreads.java
   gc/startup_warnings/TestCMS.java \
   gc/startup_warnings/TestDefNewCMS.java \

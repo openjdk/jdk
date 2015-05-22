@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,25 @@ import javax.swing.JTabbedPane;
  * @author Amy Fowler
  */
 public abstract class TabbedPaneUI extends ComponentUI {
+    /**
+     * Returns the tab for the coordinate.
+     * @param pane the pane
+     * @param x the x coordinate
+     * @param y the y coordinate
+     * @return the tab for the coordinate
+     */
     public abstract int tabForCoordinate(JTabbedPane pane, int x, int y);
+    /**
+     * Returns the rectangle for the tab bounds.
+     * @param pane the pane
+     * @param index the index
+     * @return the rectangle for the tab bounds
+     */
     public abstract Rectangle getTabBounds(JTabbedPane pane, int index);
+    /**
+     * Returns the tab run count.
+     * @param pane the pane
+     * @return the tab run count
+     */
     public abstract int getTabRunCount(JTabbedPane pane);
 }

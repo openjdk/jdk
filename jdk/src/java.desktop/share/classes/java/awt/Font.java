@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,10 +41,11 @@ import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
 import java.text.AttributedCharacterIterator.Attribute;
 import java.text.CharacterIterator;
-import java.text.StringCharacterIterator;
 import java.util.Hashtable;
 import java.util.Locale;
 import java.util.Map;
+
+import sun.awt.ComponentFactory;
 import sun.font.StandardGlyphVector;
 
 import sun.font.AttributeMap;
@@ -238,6 +239,11 @@ public class Font implements java.io.Serializable
 
         public boolean isCreatedFont(Font font) {
             return font.createdFont;
+        }
+
+        @Override
+        public FontPeer getFontPeer(final Font font) {
+            return font.getFontPeer();
         }
     }
 
@@ -434,24 +440,16 @@ public class Font implements java.io.Serializable
     private static final long serialVersionUID = -4206021311591459213L;
 
     /**
-     * Gets the peer of this <code>Font</code>.
-     * @return  the peer of the <code>Font</code>.
-     * @since 1.1
-     * @deprecated Font rendering is now platform independent.
+     * Gets the peer of this {@code Font}.
+     *
+     * @return the peer of the {@code Font}.
      */
-    @Deprecated
-    public FontPeer getPeer(){
-        return getPeer_NoClientCode();
-    }
-    // NOTE: This method is called by privileged threads.
-    //       We implement this functionality in a package-private method
-    //       to insure that it cannot be overridden by client subclasses.
-    //       DO NOT INVOKE CLIENT CODE ON THIS THREAD!
-    @SuppressWarnings("deprecation")
-    final FontPeer getPeer_NoClientCode() {
+    private FontPeer getFontPeer() {
         if(peer == null) {
             Toolkit tk = Toolkit.getDefaultToolkit();
-            this.peer = tk.getFontPeer(name, style);
+            if (tk instanceof ComponentFactory) {
+                peer = ((ComponentFactory) tk).getFontPeer(name, style);
+            }
         }
         return peer;
     }

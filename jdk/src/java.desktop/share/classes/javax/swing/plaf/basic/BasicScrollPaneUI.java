@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -746,6 +746,9 @@ public class BasicScrollPaneUI
         }
     }
 
+    /**
+     * Property change handler.
+     */
     public class PropertyChangeHandler implements PropertyChangeListener
     {
 
@@ -754,6 +757,9 @@ public class BasicScrollPaneUI
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
 
+        /**
+         * {@inheritDoc}
+         */
         public void propertyChange(PropertyChangeEvent e)
         {
             getHandler().propertyChange(e);

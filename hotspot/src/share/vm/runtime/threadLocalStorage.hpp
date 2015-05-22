@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_RUNTIME_THREADLOCALSTORAGE_HPP
 #define SHARE_VM_RUNTIME_THREADLOCALSTORAGE_HPP
 
-#include "gc_implementation/shared/gcUtil.hpp"
+#include "gc/shared/gcUtil.hpp"
 #include "runtime/os.hpp"
 #include "utilities/top.hpp"
 

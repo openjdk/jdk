@@ -1716,9 +1716,9 @@ X11GD_InitXrandrFuncs(JNIEnv *env)
 
         /*
          * REMIND: Fullscreen mode doesn't work quite right with multi-monitor
-         * setups and RANDR 1.2. So for now we also require a single screen.
+         * setups and RANDR 1.2.
          */
-        if (awt_numScreens > 1 ) {
+        if ((rr_maj_ver == 1 && rr_min_ver <= 2) && awt_numScreens > 1) {
             J2dRlsTraceLn(J2D_TRACE_INFO, "X11GD_InitXrandrFuncs: Can't use Xrandr. "
                           "Multiple screens in use");
             dlclose(pLibRandR);
@@ -1806,39 +1806,13 @@ X11GD_SetFullscreenMode(Window win, jboolean enabled)
     Atom wmState = XInternAtom(awt_display, "_NET_WM_STATE", False);
     Atom wmStateFs = XInternAtom(awt_display,
                                  "_NET_WM_STATE_FULLSCREEN", False);
-    Window root, parent, *children = NULL;
-    unsigned int numchildren;
+    XWindowAttributes attr;
     XEvent event;
-    Status status;
 
-    if (wmState == None || wmStateFs == None) {
+    if (wmState == None || wmStateFs == None
+            || !XGetWindowAttributes(awt_display, win, &attr)) {
         return;
     }
-
-    /*
-     * Note: the Window passed to this method is typically the "content
-     * window" of the top-level, but we need the actual shell window for
-     * the purposes of constructing the XEvent.  Therefore, we walk up the
-     * window hierarchy here to find the true top-level.
-     */
-    do {
-        if (!XQueryTree(awt_display, win,
-                        &root, &parent,
-                        &children, &numchildren))
-        {
-            return;
-        }
-
-        if (children != NULL) {
-            XFree(children);
-        }
-
-        if (parent == root) {
-            break;
-        }
-
-        win = parent;
-    } while (root != parent);
 
     memset(&event, 0, sizeof(event));
     event.xclient.type = ClientMessage;
@@ -1849,7 +1823,7 @@ X11GD_SetFullscreenMode(Window win, jboolean enabled)
     event.xclient.data.l[0] = enabled ? 1 : 0; // 1==add, 0==remove
     event.xclient.data.l[1] = wmStateFs;
 
-    XSendEvent(awt_display, root, False,
+    XSendEvent(awt_display, attr.root, False,
                SubstructureRedirectMask | SubstructureNotifyMask,
                &event);
     XSync(awt_display, False);
