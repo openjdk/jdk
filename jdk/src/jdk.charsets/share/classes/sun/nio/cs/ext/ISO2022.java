@@ -395,7 +395,7 @@ abstract class ISO2022
 
         protected final byte maximumDesignatorLength = 4;
 
-        protected String SODesig,
+        protected byte[] SODesig,
                          SS2Desig = null,
                          SS3Desig = null;
 
@@ -426,21 +426,18 @@ abstract class ISO2022
             SS3DesDefined = false;
         }
 
-        private int unicodeToNative(char unicode, byte ebyte[])
-        {
+        private int unicodeToNative(char unicode, byte ebyte[]) {
             int index = 0;
-            byte        tmpByte[];
             char        convChar[] = {unicode};
             byte        convByte[] = new byte[4];
             int         converted;
 
             try{
                 CharBuffer cc = CharBuffer.wrap(convChar);
-                ByteBuffer bb = ByteBuffer.allocate(4);
+                ByteBuffer bb = ByteBuffer.wrap(convByte);
                 ISOEncoder.encode(cc, bb, true);
                 bb.flip();
                 converted = bb.remaining();
-                bb.get(convByte,0,converted);
             } catch(Exception e) {
                 return -1;
             }
@@ -449,9 +446,8 @@ abstract class ISO2022
                 if (!SODesDefined) {
                     newSODesDefined = true;
                     ebyte[0] = ISO_ESC;
-                    tmpByte = SODesig.getBytes();
-                    System.arraycopy(tmpByte,0,ebyte,1,tmpByte.length);
-                    index = tmpByte.length+1;
+                    System.arraycopy(SODesig, 0, ebyte, 1, SODesig.length);
+                    index = SODesig.length + 1;
                 }
                 if (!shiftout) {
                     newshiftout = true;
@@ -465,9 +461,8 @@ abstract class ISO2022
                         if (!SS2DesDefined) {
                             newSS2DesDefined = true;
                             ebyte[0] = ISO_ESC;
-                            tmpByte = SS2Desig.getBytes();
-                            System.arraycopy(tmpByte, 0, ebyte, 1, tmpByte.length);
-                            index = tmpByte.length+1;
+                            System.arraycopy(SS2Desig, 0, ebyte, 1, SS2Desig.length);
+                            index = SS2Desig.length + 1;
                         }
                         ebyte[index++] = ISO_ESC;
                         ebyte[index++] = ISO_SS2_7;
@@ -477,9 +472,8 @@ abstract class ISO2022
                         if(!SS3DesDefined){
                             newSS3DesDefined = true;
                             ebyte[0] = ISO_ESC;
-                            tmpByte = SS3Desig.getBytes();
-                            System.arraycopy(tmpByte, 0, ebyte, 1, tmpByte.length);
-                            index = tmpByte.length+1;
+                            System.arraycopy(SS3Desig, 0, ebyte, 1, SS3Desig.length);
+                            index = SS3Desig.length + 1;
                         }
                         ebyte[index++] = ISO_ESC;
                         ebyte[index++] = ISO_SS3_7;
@@ -559,7 +553,6 @@ abstract class ISO2022
                 dst.position(dp - dst.arrayOffset());
              }
         }
-
 
         private CoderResult encodeBufferLoop(CharBuffer src,
                                              ByteBuffer dst)
