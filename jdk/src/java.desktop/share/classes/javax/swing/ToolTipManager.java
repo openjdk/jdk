@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,8 +80,13 @@ public class ToolTipManager extends MouseAdapter implements MouseMotionListener 
     private KeyStroke postTip;
     private KeyStroke hideTip;
 
-    // PENDING(ges)
+    /**
+     * Lightweight popup enabled.
+     */
     protected boolean lightWeightPopupEnabled = true;
+    /**
+     * Heavyweight popup enabled.
+     */
     protected boolean heavyWeightPopupEnabled = false;
 
     ToolTipManager() {
@@ -657,7 +662,13 @@ public class ToolTipManager extends MouseAdapter implements MouseMotionListener 
         }
     }
 
+    /**
+     * Inside timer action.
+     */
     protected class insideTimerAction implements ActionListener {
+        /**
+         * {@inheritDoc}
+         */
         public void actionPerformed(ActionEvent e) {
             if(insideComponent != null && insideComponent.isShowing()) {
                 // Lazy lookup
@@ -681,13 +692,25 @@ public class ToolTipManager extends MouseAdapter implements MouseMotionListener 
         }
     }
 
+    /**
+     * Outside timer action.
+     */
     protected class outsideTimerAction implements ActionListener {
+        /**
+         * {@inheritDoc}
+         */
         public void actionPerformed(ActionEvent e) {
             showImmediately = false;
         }
     }
 
+    /**
+     * Still inside timer action.
+     */
     protected class stillInsideTimerAction implements ActionListener {
+        /**
+         * {@inheritDoc}
+         */
         public void actionPerformed(ActionEvent e) {
             hideTipWindow();
             enterTimer.stop();

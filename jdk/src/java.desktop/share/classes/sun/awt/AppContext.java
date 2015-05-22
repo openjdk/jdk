@@ -569,7 +569,7 @@ public final class AppContext {
     static final class PostShutdownEventRunnable implements Runnable {
         private final AppContext appContext;
 
-        public PostShutdownEventRunnable(AppContext ac) {
+        PostShutdownEventRunnable(AppContext ac) {
             appContext = ac;
         }
 
@@ -585,7 +585,7 @@ public final class AppContext {
         private final AppContext appContext;
         private final Runnable runnable;
 
-        public CreateThreadAction(AppContext ac, Runnable r) {
+        CreateThreadAction(AppContext ac, Runnable r) {
             appContext = ac;
             runnable = r;
         }
@@ -597,7 +597,7 @@ public final class AppContext {
             } else {
                 t = new InnocuousThread(appContext.getThreadGroup(), runnable, "AppContext Disposer");
             }
-            t.setContextClassLoader(appContext.getContextClassLoader());
+            t.setContextClassLoader(null);
             t.setPriority(Thread.NORM_PRIORITY + 1);
             t.setDaemon(true);
             return t;

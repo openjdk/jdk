@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,7 +199,7 @@ public class MaskFormatter extends DefaultFormatter {
      * Creates a <code>MaskFormatter</code> with the specified mask.
      * A <code>ParseException</code>
      * will be thrown if <code>mask</code> is an invalid mask.
-     *
+     * @param mask the mask
      * @throws ParseException if mask does not contain valid mask characters
      */
     public MaskFormatter(String mask) throws ParseException {
@@ -211,6 +211,7 @@ public class MaskFormatter extends DefaultFormatter {
      * Sets the mask dictating the legal characters.
      * This will throw a <code>ParseException</code> if <code>mask</code> is
      * not valid.
+     * @param mask the mask
      *
      * @throws ParseException if mask does not contain valid mask characters
      */

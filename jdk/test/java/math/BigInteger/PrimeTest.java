@@ -40,6 +40,7 @@ import java.util.NavigableSet;
 import java.util.Set;
 import java.util.SplittableRandom;
 import java.util.TreeSet;
+import jdk.testlibrary.RandomFactory;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 

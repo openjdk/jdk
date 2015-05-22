@@ -246,9 +246,10 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBAWT, \
     CFLAGS := $(CFLAGS_JDKLIB) $(LIBAWT_CFLAGS), \
     DISABLED_WARNINGS_gcc := sign-compare unused-result maybe-uninitialized \
         format-nonliteral parentheses, \
-    DISABLED_WARNINGS_clang := logical-op-parentheses, \
+    DISABLED_WARNINGS_clang := logical-op-parentheses extern-initializer, \
     DISABLED_WARNINGS_solstudio := E_DECLARATION_IN_CODE, \
-    DISABLED_WARNINGS_microsoft := 4297 4244 4267, \
+    DISABLED_WARNINGS_microsoft := 4297 4244 4267 4996, \
+    WARNINGS_AS_ERRORS_gcc := false, \
     ASFLAGS := $(LIBAWT_ASFLAGS), \
     MAPFILE := $(LIBAWT_MAPFILE), \
     LDFLAGS := $(LDFLAGS_JDKLIB) $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -357,6 +358,7 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS),windows macosx),)
             format-security int-to-pointer-cast parentheses, \
         DISABLED_WARNINGS_solstudio := E_DECLARATION_IN_CODE \
             E_ASSIGNMENT_TYPE_MISMATCH E_NON_CONST_INIT, \
+        WARNINGS_AS_ERRORS_gcc := false, \
         MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libawt_xawt/mapfile-vers, \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             $(X_LIBS) $(LIBAWT_XAWT_LDFLAGS) \
@@ -408,11 +410,11 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBLCMS, \
     INCLUDE_FILES := $(BUILD_LIBLCMS_INCLUDE_FILES), \
     OPTIMIZATION := HIGHEST, \
     CFLAGS := $(filter-out -xc99=%none, $(CFLAGS_JDKLIB)) \
-        $(SHARED_LIBRARY_FLAGS) $(LIBLCMS_CPPFLAGS) \
+        $(LIBLCMS_CPPFLAGS) \
         $(LCMS_CFLAGS), \
     CFLAGS_solaris := -xc99=no_lib, \
     CFLAGS_windows := -DCMS_IS_WINDOWS_, \
-    DISABLED_WARNINGS_gcc := format-nonliteral, \
+    DISABLED_WARNINGS_gcc := format-nonliteral type-limits, \
     DISABLED_WARNINGS_clang := tautological-compare, \
     DISABLED_WARNINGS_solstudio := E_STATEMENT_NOT_REACHED, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/liblcms/mapfile-vers, \
@@ -647,10 +649,13 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBFONTMANAGER, \
     OPTIMIZATION := $(LIBFONTMANAGER_OPTIMIZATION), \
     CFLAGS_windows = -DCC_NOEX, \
     DISABLED_WARNINGS_gcc := sign-compare int-to-pointer-cast reorder \
-        delete-non-virtual-dtor, \
-    DISABLED_WARNINGS_clang := unused-value incompatible-pointer-types, \
+        delete-non-virtual-dtor type-limits, \
+    DISABLED_WARNINGS_clang := unused-value incompatible-pointer-types \
+        tautological-constant-out-of-range-compare int-to-pointer-cast, \
     DISABLED_WARNINGS_solstudio := truncwarn, \
-    DISABLED_WARNINGS_microsoft := 4267 4244 4018 4090, \
+    DISABLED_WARNINGS_microsoft := 4267 4244 4018 4090 4996 4146, \
+    WARNINGS_AS_ERRORS_gcc := false, \
+    WARNINGS_AS_ERRORS_solstudio := false, \
     MAPFILE := $(BUILD_LIBFONTMANAGER_MAPFILE), \
     LDFLAGS := $(subst -Xlinker -z -Xlinker defs,,$(LDFLAGS_JDKLIB)) $(LDFLAGS_CXX_JDK) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -880,10 +885,10 @@ ifndef BUILD_HEADLESS_ONLY
       OPTIMIZATION := LOW, \
       CFLAGS := $(LIBSPLASHSCREEN_CFLAGS) $(CFLAGS_JDKLIB) \
                 $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS), \
-      DISABLED_WARNINGS_gcc := type-limits unused-result maybe-uninitialized, \
+      DISABLED_WARNINGS_gcc := sign-compare type-limits unused-result maybe-uninitialized, \
       DISABLED_WARNINGS_clang := incompatible-pointer-types, \
-      DISABLED_WARNINGS_solstudio := E_NEWLINE_NOT_LAST, \
-      DISABLED_WARNINGS_microsoft := 4244 4267, \
+      DISABLED_WARNINGS_solstudio := E_NEWLINE_NOT_LAST E_DECLARATION_IN_CODE, \
+      DISABLED_WARNINGS_microsoft := 4018 4244 4267, \
       MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libsplashscreen/mapfile-vers, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -956,6 +961,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
       DISABLED_WARNINGS_clang := incomplete-implementation \
           deprecated-declarations objc-method-access bitwise-op-parentheses \
           incompatible-pointer-types parentheses-equality extra-tokens, \
+      WARNINGS_AS_ERRORS_clang := false, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN) \
           -L$(INSTALL_LIBRARIES_HERE), \

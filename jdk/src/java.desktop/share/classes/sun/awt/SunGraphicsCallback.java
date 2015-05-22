@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,11 +47,10 @@ public abstract class SunGraphicsCallback {
         g.clipRect(0, 0, bounds.width, bounds.height);
     }
 
-    @SuppressWarnings("deprecation")
     public final void runOneComponent(Component comp, Rectangle bounds,
                                       Graphics g, Shape clip,
                                       int weightFlags) {
-        if (comp == null || comp.getPeer() == null || !comp.isVisible()) {
+        if (comp == null || !comp.isDisplayable() || !comp.isVisible()) {
             return;
         }
         boolean lightweight = comp.isLightweight();

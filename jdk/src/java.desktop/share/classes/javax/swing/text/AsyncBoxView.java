@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,7 @@ public class AsyncBoxView extends View {
      * Fetch the major axis (the axis the children
      * are tiled along).  This will have a value of
      * either X_AXIS or Y_AXIS.
+     * @return the major axis
      */
     public int getMajorAxis() {
         return axis;
@@ -80,6 +81,7 @@ public class AsyncBoxView extends View {
      * Fetch the minor axis (the axis orthogonal
      * to the tiled axis).  This will have a value of
      * either X_AXIS or Y_AXIS.
+     * @return the minor axis
      */
     public int getMinorAxis() {
         return (axis == X_AXIS) ? Y_AXIS : X_AXIS;
@@ -87,6 +89,7 @@ public class AsyncBoxView extends View {
 
     /**
      * Get the top part of the margin around the view.
+     * @return the top part of the margin around the view
      */
     public float getTopInset() {
         return topInset;
@@ -103,6 +106,7 @@ public class AsyncBoxView extends View {
 
     /**
      * Get the bottom part of the margin around the view.
+     * @return the bottom part of the margin around the view
      */
     public float getBottomInset() {
         return bottomInset;
@@ -119,6 +123,7 @@ public class AsyncBoxView extends View {
 
     /**
      * Get the left part of the margin around the view.
+     * @return the left part of the margin around the view
      */
     public float getLeftInset() {
         return leftInset;
@@ -135,6 +140,7 @@ public class AsyncBoxView extends View {
 
     /**
      * Get the right part of the margin around the view.
+     * @return the right part of the margin around the view
      */
     public float getRightInset() {
         return rightInset;
@@ -154,6 +160,7 @@ public class AsyncBoxView extends View {
      *
      * @param axis the axis to determine the total insets along,
      *  either X_AXIS or Y_AXIS.
+     * @return the span along an axis that is taken up by the insets
      * @since 1.4
      */
     protected float getInsetSpan(int axis) {
@@ -173,6 +180,7 @@ public class AsyncBoxView extends View {
      * considered to be accurate and incremental changes will be
      * added into the total as they are calculated.
      *
+     * @param isEstimated new value for the estimatedMajorSpan property
      * @since 1.4
      */
     protected void setEstimatedMajorSpan(boolean isEstimated) {
@@ -181,6 +189,7 @@ public class AsyncBoxView extends View {
 
     /**
      * Is the major span currently estimated?
+     * @return whether or not the major span currently estimated
      *
      * @since 1.4
      */
@@ -194,6 +203,8 @@ public class AsyncBoxView extends View {
      *
      * @param index the child index.  This should be a
      *   value &gt;= 0 and &lt; getViewCount().
+     * @return the object representing the layout state of
+     * of the child at the given index
      */
     protected ChildState getChildState(int index) {
         synchronized(stats) {
@@ -206,6 +217,7 @@ public class AsyncBoxView extends View {
 
     /**
      * Fetch the queue to use for layout.
+     * @return the queue to use for layout
      */
     protected LayoutQueue getLayoutQueue() {
         return LayoutQueue.getDefaultQueue();
@@ -214,7 +226,9 @@ public class AsyncBoxView extends View {
     /**
      * New ChildState records are created through
      * this method to allow subclasses the extend
-     * the ChildState records to do/hold more
+     * the ChildState records to do/hold more.
+     * @param v the view
+     * @return new child state
      */
     protected ChildState createChildState(View v) {
         return new ChildState(v);
@@ -237,6 +251,8 @@ public class AsyncBoxView extends View {
      * not estimated, it is updated by the given delta to reflect
      * the incremental change.  The delta is ignored if the
      * major span is estimated.
+     * @param cs the child state
+     * @param delta the delta
      */
     protected synchronized void majorRequirementChange(ChildState cs, float delta) {
         if (estimatedMajorSpan == false) {
@@ -254,6 +270,7 @@ public class AsyncBoxView extends View {
      * might be the GUI thread if it is trying to update
      * something immediately (such as to perform a
      * model/view translation).
+     * @param cs the child state
      */
     protected synchronized void minorRequirementChange(ChildState cs) {
         minorChanged = true;
@@ -418,6 +435,7 @@ public class AsyncBoxView extends View {
      * where there is a child view for each child element.
      *
      * @param pos the position &gt;= 0
+     * @param b the position bias
      * @return  index of the view representing the given position, or
      *   -1 if no view represents that position
      */
@@ -946,6 +964,7 @@ public class AsyncBoxView extends View {
          * This is called by a ChildState object that has
          * changed it's major span.  This can therefore be
          * called by multiple threads.
+         * @param cs the child state
          */
         public synchronized void childChanged(ChildState cs) {
             if (lastValidOffset == null) {
@@ -958,6 +977,7 @@ public class AsyncBoxView extends View {
 
         /**
          * Paint the children that intersect the clip area.
+         * @param g the rendering surface to use
          */
         public synchronized void paintChildren(Graphics g) {
             Rectangle clip = g.getClipBounds();
@@ -987,6 +1007,9 @@ public class AsyncBoxView extends View {
          * Fetch the allocation to use for a child view.
          * This will update the offsets for all children
          * not yet updated before the given index.
+         * @param index the child index
+         * @param a the allocation
+         * @return the allocation to use for a child view
          */
         public synchronized Shape getChildAllocation(int index, Shape a) {
             if (a == null) {
@@ -1031,6 +1054,8 @@ public class AsyncBoxView extends View {
          * Fetch the allocation to use for a child view.
          * <em>This does not update the offsets in the ChildState
          * records.</em>
+         * @param index the index
+         * @return the allocation to use for a child view
          */
         protected Shape getChildAllocation(int index) {
             ChildState cs = getChildState(index);
@@ -1057,6 +1082,7 @@ public class AsyncBoxView extends View {
          * Copy the currently allocated shape into the Rectangle
          * used to store the current allocation.  This would be
          * a floating point rectangle in a Java2D-specific implementation.
+         * @param a the allocation
          */
         protected void setAllocation(Shape a) {
             if (a instanceof Rectangle) {
@@ -1072,6 +1098,7 @@ public class AsyncBoxView extends View {
          * along the major axis.  Make sure that offsets are set
          * on the ChildState objects up to the given target span
          * past the desired offset.
+         * @param targetOffset the target offset
          *
          * @return   index of the view representing the given visual
          *   location (targetOffset), or -1 if no view represents
@@ -1201,6 +1228,7 @@ public class AsyncBoxView extends View {
          * Construct a child status.  This needs to start
          * out as fairly large so we don't falsely begin with
          * the idea that all of the children are visible.
+         * @param v the view
          * @since 1.4
          */
         public ChildState(View v) {
@@ -1212,7 +1240,8 @@ public class AsyncBoxView extends View {
         }
 
         /**
-         * Fetch the child view this record represents
+         * Fetch the child view this record represents.
+         * @return the child view this record represents
          */
         public View getChildView() {
             return child;
@@ -1322,6 +1351,7 @@ public class AsyncBoxView extends View {
 
         /**
          * What is the span along the minor axis.
+         * @return the span along the minor axis
          */
         public float getMinorSpan() {
             if (max < minorSpan) {
@@ -1333,6 +1363,7 @@ public class AsyncBoxView extends View {
 
         /**
          * What is the offset along the minor axis
+         * @return the offset along the minor axis
          */
         public float getMinorOffset() {
             if (max < minorSpan) {
@@ -1345,13 +1376,15 @@ public class AsyncBoxView extends View {
 
         /**
          * What is the span along the major axis.
+         * @return the span along the major axis
          */
         public float getMajorSpan() {
             return span;
         }
 
         /**
-         * Get the offset along the major axis
+         * Get the offset along the major axis.
+         * @return the offset along the major axis
          */
         public float getMajorOffset() {
             return offset;
@@ -1361,6 +1394,7 @@ public class AsyncBoxView extends View {
          * This method should only be called by the ChildLocator,
          * it is simply a convenient place to hold the cached
          * location.
+         * @param offs offsets
          */
         public void setMajorOffset(float offs) {
             offset = offs;
@@ -1394,6 +1428,7 @@ public class AsyncBoxView extends View {
 
         /**
          * Has the child view been laid out.
+         * @return whether or not the child view been laid out.
          */
         public boolean isLayoutValid() {
             return (minorValid && majorValid && childSizeValid);

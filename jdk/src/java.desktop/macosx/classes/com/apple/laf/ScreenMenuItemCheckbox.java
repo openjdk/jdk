@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,17 +27,20 @@ package com.apple.laf;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.peer.MenuComponentPeer;
 
 import javax.swing.*;
 import javax.swing.plaf.ButtonUI;
 
 import com.apple.laf.AquaMenuItemUI.IndeterminateListener;
 
+import sun.awt.AWTAccessor;
 import sun.lwawt.macosx.*;
 
 @SuppressWarnings("serial") // JDK implementation class
-final class ScreenMenuItemCheckbox extends CheckboxMenuItem implements ActionListener, ComponentListener, ScreenMenuPropertyHandler, ItemListener {
+final class ScreenMenuItemCheckbox extends CheckboxMenuItem
+        implements ActionListener, ComponentListener, ScreenMenuPropertyHandler,
+                   ItemListener {
+
     JMenuItem fMenuItem;
     MenuContainer fParent;
 
@@ -57,12 +60,12 @@ final class ScreenMenuItemCheckbox extends CheckboxMenuItem implements ActionLis
     }
 
     ScreenMenuPropertyListener fPropertyListener;
-    @SuppressWarnings("deprecation")
+
     public void addNotify() {
         super.addNotify();
 
         // Avoid the Auto toggle behavior of AWT CheckBoxMenuItem
-        CCheckboxMenuItem ccb = (CCheckboxMenuItem) getPeer();
+        CCheckboxMenuItem ccb = AWTAccessor.getMenuComponentAccessor().getPeer(this);
         ccb.setAutoToggle(false);
 
         fMenuItem.addComponentListener(this);
@@ -155,17 +158,15 @@ final class ScreenMenuItemCheckbox extends CheckboxMenuItem implements ActionLis
         setVisible(false);
     }
 
-    @SuppressWarnings("deprecation")
     public void setToolTipText(final String text) {
-        final MenuComponentPeer peer = getPeer();
+        Object peer = AWTAccessor.getMenuComponentAccessor().getPeer(this);
         if (!(peer instanceof CMenuItem)) return;
 
         ((CMenuItem)peer).setToolTipText(text);
     }
 
-    @SuppressWarnings("deprecation")
     public void setIcon(final Icon i) {
-        final MenuComponentPeer peer = getPeer();
+        Object peer = AWTAccessor.getMenuComponentAccessor().getPeer(this);
         if (!(peer instanceof CMenuItem)) return;
 
         final CMenuItem cmi = (CMenuItem)peer;
@@ -208,9 +209,8 @@ final class ScreenMenuItemCheckbox extends CheckboxMenuItem implements ActionLis
             }
         }
 
-    @SuppressWarnings("deprecation")
     public void setIndeterminate(final boolean indeterminate) {
-        final MenuComponentPeer peer = getPeer();
+        Object peer = AWTAccessor.getMenuComponentAccessor().getPeer(this);
         if (peer instanceof CCheckboxMenuItem) {
             ((CCheckboxMenuItem)peer).setIsIndeterminate(indeterminate);
         }

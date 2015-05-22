@@ -25,12 +25,12 @@
 #ifndef SHARE_VM_OOPS_OOP_INLINE_HPP
 #define SHARE_VM_OOPS_OOP_INLINE_HPP
 
-#include "gc_implementation/shared/ageTable.hpp"
-#include "gc_interface/collectedHeap.inline.hpp"
-#include "memory/barrierSet.inline.hpp"
-#include "memory/cardTableModRefBS.hpp"
-#include "memory/genCollectedHeap.hpp"
-#include "memory/generation.hpp"
+#include "gc/shared/ageTable.hpp"
+#include "gc/shared/barrierSet.inline.hpp"
+#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/collectedHeap.inline.hpp"
+#include "gc/shared/genCollectedHeap.hpp"
+#include "gc/shared/generation.hpp"
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/klass.inline.hpp"

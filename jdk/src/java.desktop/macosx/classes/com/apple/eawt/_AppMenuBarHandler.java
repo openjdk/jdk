@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import javax.swing.*;
 import javax.swing.plaf.MenuBarUI;
 
 import com.apple.laf.ScreenMenuBar;
+import sun.awt.AWTAccessor;
 import sun.lwawt.macosx.CMenuBar;
 
 import com.apple.laf.AquaMenuBarUI;
@@ -49,7 +50,10 @@ class _AppMenuBarHandler {
     }
 
     // callback from the native delegate -init function
-    private static void initMenuStates(final boolean aboutMenuItemVisible, final boolean aboutMenuItemEnabled, final boolean prefsMenuItemVisible, final boolean prefsMenuItemEnabled) {
+    private static void initMenuStates(final boolean aboutMenuItemVisible,
+                                       final boolean aboutMenuItemEnabled,
+                                       final boolean prefsMenuItemVisible,
+                                       final boolean prefsMenuItemEnabled) {
         synchronized (instance) {
             instance.aboutMenuItemVisible = aboutMenuItemVisible;
             instance.aboutMenuItemEnabled = aboutMenuItemEnabled;
@@ -92,7 +96,6 @@ class _AppMenuBarHandler {
         return (frame.getExtendedState() & Frame.ICONIFIED) != 0;
     }
 
-    @SuppressWarnings("deprecation")
     static void installDefaultMenuBar(final JMenuBar menuBar) {
         if (menuBar == null) {
             // intentionally clearing the default menu
@@ -114,7 +117,7 @@ class _AppMenuBarHandler {
         }
 
         screenMenuBar.addNotify();
-        final MenuComponentPeer peer = screenMenuBar.getPeer();
+        final Object peer = AWTAccessor.getMenuComponentAccessor().getPeer(screenMenuBar);
         if (!(peer instanceof CMenuBar)) {
             // such a thing should not be possible
             throw new IllegalStateException("Unable to determine native menu bar from provided JMenuBar");

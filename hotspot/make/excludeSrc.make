@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -81,36 +81,15 @@ ifeq ($(INCLUDE_ALL_GCS), false)
       CXXFLAGS += -DINCLUDE_ALL_GCS=0
       CFLAGS += -DINCLUDE_ALL_GCS=0
 
-      gc_impl := $(HS_COMMON_SRC)/share/vm/gc_implementation
-      gc_impl_alt := $(HS_ALT_SRC)/share/vm/gc_implementation
-      gc_subdirs := concurrentMarkSweep g1 parallelScavenge parNew
+      gc_dir := $(HS_COMMON_SRC)/share/vm/gc
+      gc_dir_alt := $(HS_ALT_SRC)/share/vm/gc
+      gc_subdirs := cms g1 parallel
       gc_exclude := $(foreach gc,$(gc_subdirs),				\
-		     $(notdir $(wildcard $(gc_impl)/$(gc)/*.cpp))	\
-		     $(notdir $(wildcard $(gc_impl_alt)/$(gc)/*.cpp)))
-      Src_Files_EXCLUDE += $(gc_exclude)
-
-      # Exclude everything in $(gc_impl)/shared except the files listed
-      # in $(gc_shared_keep).
-      gc_shared_all := $(notdir $(wildcard $(gc_impl)/shared/*.cpp))
-      gc_shared_keep :=							\
-	adaptiveSizePolicy.cpp						\
-	ageTable.cpp							\
-	collectorCounters.cpp						\
-	cSpaceCounters.cpp						\
-	gcId.cpp							\
-	gcPolicyCounters.cpp						\
-	gcStats.cpp							\
-	gcTimer.cpp							\
-	gcTrace.cpp							\
-	gcTraceSend.cpp							\
-	gcTraceTime.cpp							\
-	gcUtil.cpp							\
-	generationCounters.cpp						\
-	markSweep.cpp							\
-	objectCountEventSender.cpp					\
-	spaceDecorator.cpp						\
-	vmGCOperations.cpp
-      Src_Files_EXCLUDE += $(filter-out $(gc_shared_keep),$(gc_shared_all))
+		     $(notdir $(wildcard $(gc_dir)/$(gc)/*.cpp))	\
+		     $(notdir $(wildcard $(gc_dir_alt)/$(gc)/*.cpp)))
+      Src_Files_EXCLUDE += $(gc_exclude)				\
+	concurrentGCThread.cpp						\
+	plab.cpp
 
       # src/share/vm/services
       Src_Files_EXCLUDE +=						\

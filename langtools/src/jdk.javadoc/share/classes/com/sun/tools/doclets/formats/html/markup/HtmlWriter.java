@@ -465,10 +465,10 @@ public class HtmlWriter {
         for (Map.Entry<String,Integer> entry : typeMap.entrySet()) {
             vars.append(sep);
             sep = ",";
-            vars.append("\"");
-            vars.append(entry.getKey());
-            vars.append("\":");
-            vars.append(entry.getValue());
+            vars.append("\"")
+                    .append(entry.getKey())
+                    .append("\":")
+                    .append(entry.getValue());
         }
         vars.append("};").append(DocletConstants.NL);
         sep = "";
@@ -476,11 +476,19 @@ public class HtmlWriter {
         for (MethodTypes entry : methodTypes) {
             vars.append(sep);
             sep = ",";
-            vars.append(entry.value()).append(":");
-            vars.append("[").append("\"").append(entry.tabId());
-            vars.append("\"").append(sep).append("\"").append(entry.text()).append("\"]");
+            vars.append(entry.value())
+                    .append(":")
+                    .append("[")
+                    .append("\"")
+                    .append(entry.tabId())
+                    .append("\"")
+                    .append(sep)
+                    .append("\"")
+                    .append(configuration.getText(entry.resourceKey()))
+                    .append("\"]");
         }
-        vars.append("};").append(DocletConstants.NL);
+        vars.append("};")
+                .append(DocletConstants.NL);
         addStyles(HtmlStyle.altColor, vars);
         addStyles(HtmlStyle.rowColor, vars);
         addStyles(HtmlStyle.tableTab, vars);

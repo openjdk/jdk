@@ -42,13 +42,13 @@
 #include "ci/ciUtilities.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "gc_interface/collectedHeap.inline.hpp"
+#include "gc/shared/collectedHeap.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/fieldType.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
-# include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
+# include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #endif
 
 // ciObjectFactory

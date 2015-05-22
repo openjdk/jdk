@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,18 @@
 
 package com.apple.eawt;
 
-import java.awt.*;
-import java.awt.peer.*;
+import java.awt.Image;
+import java.awt.Point;
+import java.awt.PopupMenu;
+import java.awt.Toolkit;
+import java.awt.Window;
 import java.beans.Beans;
 
 import javax.swing.JMenuBar;
 
-import sun.lwawt.*;
-import sun.lwawt.macosx.*;
+import sun.awt.AWTAccessor;
+import sun.lwawt.LWWindowPeer;
+import sun.lwawt.macosx.CPlatformWindow;
 
 /**
  * The <code>Application</code> class allows you to integrate your Java application with the native Mac OS X environment.
@@ -385,10 +389,8 @@ public class Application {
      *
      * @since Java for Mac OS X 10.7 Update 1
      */
-    @SuppressWarnings("deprecation")
     public void requestToggleFullScreen(final Window window) {
-        final ComponentPeer peer = window.getPeer();
-
+        final Object peer = AWTAccessor.getComponentAccessor().getPeer(window);
         if (!(peer instanceof LWWindowPeer)) return;
         Object platformWindow = ((LWWindowPeer) peer).getPlatformWindow();
         if (!(platformWindow instanceof CPlatformWindow)) return;
