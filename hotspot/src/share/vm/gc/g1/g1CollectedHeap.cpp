@@ -3545,6 +3545,10 @@ public:
 };
 #endif // ASSERT
 
+uint G1CollectedHeap::num_task_queues() const {
+  return _task_queues->size();
+}
+
 #if TASKQUEUE_STATS
 void G1CollectedHeap::print_taskqueue_stats_hdr(outputStream* const st) {
   st->print_raw_cr("GC Task Stats");
@@ -3556,7 +3560,7 @@ void G1CollectedHeap::print_taskqueue_stats(outputStream* const st) const {
   print_taskqueue_stats_hdr(st);
 
   TaskQueueStats totals;
-  const uint n = workers()->total_workers();
+  const uint n = num_task_queues();
   for (uint i = 0; i < n; ++i) {
     st->print("%3u ", i); task_queue(i)->stats.print(st); st->cr();
     totals += task_queue(i)->stats;
@@ -3567,7 +3571,7 @@ void G1CollectedHeap::print_taskqueue_stats(outputStream* const st) const {
 }
 
 void G1CollectedHeap::reset_taskqueue_stats() {
-  const uint n = workers()->total_workers();
+  const uint n = num_task_queues();
   for (uint i = 0; i < n; ++i) {
     task_queue(i)->stats.reset();
   }
