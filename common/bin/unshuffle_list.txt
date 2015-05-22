@@ -1302,7 +1302,6 @@ jdk/src/jdk.deploy.osx/macosx/native/libosx/Dispatch.m : jdk/src/macosx/native/c
 jdk/src/jdk.deploy.osx/macosx/native/libosx/JavaAppLauncher.m : jdk/src/macosx/native/apple/launcher/JavaAppLauncher.m
 jdk/src/jdk.deploy.osx/macosx/native/libosx/KeystoreImpl.m : jdk/src/macosx/native/apple/security/KeystoreImpl.m
 jdk/src/jdk.dev/share/classes/com/sun/tools/hat : jdk/src/share/classes/com/sun/tools/hat
-jdk/src/jdk.dev/share/classes/sun/tools/native2ascii : jdk/src/share/classes/sun/tools/native2ascii
 jdk/src/jdk.hprof.agent/share/classes/com/sun/demo/jvmti/hprof : jdk/src/share/classes/com/sun/demo/jvmti/hprof
 jdk/src/jdk.httpserver/share/classes/com/sun/net/httpserver : jdk/src/share/classes/com/sun/net/httpserver
 jdk/src/jdk.httpserver/share/classes/sun/net/httpserver : jdk/src/share/classes/sun/net/httpserver
