@@ -345,6 +345,7 @@ public class Agent {
 
         if (jmxServer != null) {
             ConnectorBootstrap.unexportRegistry();
+            ConnectorAddressLink.unexportRemote();
 
             // Attempt to stop already stopped agent
             // Don't cause any errors.
