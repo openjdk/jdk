@@ -386,7 +386,7 @@ final class WPathGraphics extends PathGraphics {
      * such as Hebrew and Arabic, the glyphs can be rendered from right to
      * left, in which case the coordinate supplied is the location of the
      * leftmost character on the baseline.
-     * @param s the <code>String</code> to be rendered
+     * @param str the <code>String</code> to be rendered
      * @param x,&nbsp;y the coordinates where the <code>String</code>
      * should be rendered
      * @see #setPaint
@@ -877,7 +877,7 @@ final class WPathGraphics extends PathGraphics {
      * is transformed by the supplied AffineTransform and
      * drawn using GDI to the printer context.
      *
-     * @param   img     The image to be drawn.
+     * @param   image   The image to be drawn.
      * @param   xform   Used to transform the image before drawing.
      *                  This can be null.
      * @param   bgcolor This color is drawn where the image has transparent

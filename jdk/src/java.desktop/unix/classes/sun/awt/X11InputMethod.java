@@ -548,7 +548,7 @@ public abstract class X11InputMethod extends InputMethodAdapter {
      * method is invoked from the event handler in canvas.c in the
      * AWT Toolkit thread context and thus inside the AWT Lock.
      * @param   str     committed text
-     * @param   long    when
+     * @param   when    when
      */
     // NOTE: This method may be called by privileged threads.
     //       This functionality is implemented in a package-private method
