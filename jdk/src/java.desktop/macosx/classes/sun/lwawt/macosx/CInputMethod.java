@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,11 @@ import java.text.AttributedCharacterIterator.Attribute;
 import java.text.*;
 import javax.swing.text.JTextComponent;
 
+import sun.awt.AWTAccessor;
 import sun.awt.im.InputMethodAdapter;
 import sun.lwawt.*;
+
+import static sun.awt.AWTAccessor.ComponentAccessor;
 
 public class CInputMethod extends InputMethodAdapter {
     private InputMethodContext fIMContext;
@@ -385,12 +388,11 @@ public class CInputMethod extends InputMethodAdapter {
 
     // java.awt.Toolkit#getNativeContainer() is not available
     //    from this package
-    @SuppressWarnings("deprecation")
     private LWComponentPeer<?, ?> getNearestNativePeer(Component comp) {
         if (comp==null)
             return null;
-
-        ComponentPeer peer = comp.getPeer();
+        final ComponentAccessor acc = AWTAccessor.getComponentAccessor();
+        ComponentPeer peer = acc.getPeer(comp);
         if (peer==null)
             return null;
 
@@ -398,7 +400,7 @@ public class CInputMethod extends InputMethodAdapter {
             comp = comp.getParent();
             if (comp==null)
                 return null;
-            peer = comp.getPeer();
+            peer = acc.getPeer(comp);
             if (peer==null)
                 return null;
         }

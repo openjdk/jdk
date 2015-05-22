@@ -930,8 +930,8 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
                     return false;
                 }
                 final LWWindowPeer parentPeer =
-                        (LWWindowPeer) AWTAccessor.getComponentAccessor()
-                                                  .getPeer(parentWindow);
+                        AWTAccessor.getComponentAccessor()
+                                   .getPeer(parentWindow);
                 if (parentPeer == null) {
                     focusLog.fine("request rejected, parentPeer is null");
                     LWKeyboardFocusManagerPeer.removeLastFocusRequest(getTarget());

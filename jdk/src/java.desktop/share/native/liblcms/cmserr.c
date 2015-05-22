@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2012 Marti Maria Saguer
+//  Copyright (c) 1998-2015 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -53,6 +53,13 @@
 //---------------------------------------------------------------------------------
 
 #include "lcms2_internal.h"
+
+
+// This function is here to help applications to prevent mixing lcms versions on header and shared objects.
+int CMSEXPORT cmsGetEncodedCMMversion(void)
+{
+       return LCMS_VERSION;
+}
 
 // I am so tired about incompatibilities on those functions that here are some replacements
 // that hopefully would be fully portable.

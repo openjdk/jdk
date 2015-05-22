@@ -1718,10 +1718,7 @@ cmsBool Write8bitTables(cmsContext ContextID, cmsIOHANDLER* io, cmsUInt32Number 
                 else
                     for (j=0; j < 256; j++) {
 
-                        if (Tables != NULL)
-                            val = (cmsUInt8Number) FROM_16_TO_8(Tables->TheCurves[i]->Table16[j]);
-                        else
-                            val = (cmsUInt8Number) j;
+                        val = (cmsUInt8Number) FROM_16_TO_8(Tables->TheCurves[i]->Table16[j]);
 
                         if (!_cmsWriteUInt8Number(io, val)) return FALSE;
                     }
@@ -3548,7 +3545,6 @@ void *Type_UcrBg_Read(struct _cms_typehandler_struct* self, cmsIOHANDLER* io, cm
     if (n ->Desc == NULL) return NULL;
 
     ASCIIString = (char*) _cmsMalloc(self ->ContextID, SizeOfTag + 1);
-    if (ASCIIString == NULL) return NULL;
     if (io ->Read(io, ASCIIString, sizeof(char), SizeOfTag) != SizeOfTag) return NULL;
     ASCIIString[SizeOfTag] = 0;
     cmsMLUsetASCII(n ->Desc, cmsNoLanguage, cmsNoCountry, ASCIIString);
@@ -3576,7 +3572,6 @@ cmsBool  Type_UcrBg_Write(struct _cms_typehandler_struct* self, cmsIOHANDLER* io
     // Now comes the text. The length is specified by the tag size
     TextSize = cmsMLUgetASCII(Value ->Desc, cmsNoLanguage, cmsNoCountry, NULL, 0);
     Text     = (char*) _cmsMalloc(self ->ContextID, TextSize);
-    if (Text == NULL) return FALSE;
     if (cmsMLUgetASCII(Value ->Desc, cmsNoLanguage, cmsNoCountry, Text, TextSize) != TextSize) return FALSE;
 
     if (!io ->Write(io, TextSize, Text)) return FALSE;
@@ -3674,7 +3669,6 @@ cmsBool  WriteCountAndSting(struct _cms_typehandler_struct* self, cmsIOHANDLER* 
 
     TextSize = cmsMLUgetASCII(mlu, "PS", Section, NULL, 0);
     Text     = (char*) _cmsMalloc(self ->ContextID, TextSize);
-    if (Text == NULL) return FALSE;
 
     if (!_cmsWriteUInt32Number(io, TextSize)) return FALSE;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -311,6 +311,23 @@ public class Utilities {
                                    justificationData);
     }
 
+    /**
+     * Determines the relative offset into the given text that
+     * best represents the given span in the view coordinate
+     * system.
+     *
+     * @param s  the source of the text
+     * @param metrics the font metrics to use for the calculation
+     * @param x0 the starting view location representing the start
+     *   of the given text &gt;= 0.
+     * @param x  the target view location to translate to an
+     *   offset into the text &gt;= 0.
+     * @param e  how to expand the tabs.  If this value is null,
+     *   tabs will be expanded as a space character.
+     * @param startOffset starting offset of the text in the document &gt;= 0
+     * @param round whether or not to round
+     * @return  the offset into the text &gt;= 0
+     */
     public static final int getTabbedTextOffset(Segment s,
                                                 FontMetrics metrics,
                                                 int x0, int x, TabExpander e,

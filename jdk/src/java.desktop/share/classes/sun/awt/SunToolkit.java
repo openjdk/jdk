@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,37 +26,51 @@
 package sun.awt;
 
 import java.awt.*;
-import static java.awt.RenderingHints.*;
-import java.awt.dnd.*;
-import java.awt.dnd.peer.DragSourceContextPeer;
-import java.awt.peer.*;
-import java.awt.event.WindowEvent;
-import java.awt.event.KeyEvent;
-import java.awt.image.*;
-import java.awt.TrayIcon;
-import java.awt.SystemTray;
 import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.WindowEvent;
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBuffer;
+import java.awt.image.DataBufferInt;
+import java.awt.image.ImageObserver;
+import java.awt.image.ImageProducer;
+import java.awt.image.Raster;
+import java.awt.peer.FramePeer;
+import java.awt.peer.KeyboardFocusManagerPeer;
+import java.awt.peer.MouseInfoPeer;
+import java.awt.peer.SystemTrayPeer;
+import java.awt.peer.TrayIconPeer;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
-import java.security.PrivilegedAction;
-import java.util.*;
+import java.security.AccessController;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Vector;
+import java.util.WeakHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import sun.awt.datatransfer.DataTransferer;
-import sun.util.logging.PlatformLogger;
-import sun.misc.SoftCache;
-import sun.font.FontDesignMetrics;
 import sun.awt.im.InputContext;
-import sun.awt.image.*;
-import sun.security.action.GetPropertyAction;
+import sun.awt.image.ByteArrayImageSource;
+import sun.awt.image.FileImageSource;
+import sun.awt.image.ImageRepresentation;
+import sun.awt.image.MultiResolutionImage;
+import sun.awt.image.MultiResolutionToolkitImage;
+import sun.awt.image.ToolkitImage;
+import sun.awt.image.URLImageSource;
+import sun.font.FontDesignMetrics;
+import sun.misc.SoftCache;
 import sun.security.action.GetBooleanAction;
-import java.lang.reflect.InvocationTargetException;
-import java.security.AccessController;
+import sun.security.action.GetPropertyAction;
+import sun.util.logging.PlatformLogger;
+
+import static java.awt.RenderingHints.*;
 
 public abstract class SunToolkit extends Toolkit
     implements ComponentFactory, InputMethodSupport, KeyboardFocusManagerPeerProvider {
@@ -134,67 +148,8 @@ public abstract class SunToolkit extends Toolkit
         return false;
     }
 
-    public abstract WindowPeer createWindow(Window target)
-        throws HeadlessException;
-
-    public abstract FramePeer createFrame(Frame target)
-        throws HeadlessException;
-
     public abstract FramePeer createLightweightFrame(LightweightFrame target)
         throws HeadlessException;
-
-    public abstract DialogPeer createDialog(Dialog target)
-        throws HeadlessException;
-
-    public abstract ButtonPeer createButton(Button target)
-        throws HeadlessException;
-
-    public abstract TextFieldPeer createTextField(TextField target)
-        throws HeadlessException;
-
-    public abstract ChoicePeer createChoice(Choice target)
-        throws HeadlessException;
-
-    public abstract LabelPeer createLabel(Label target)
-        throws HeadlessException;
-
-    public abstract ListPeer createList(java.awt.List target)
-        throws HeadlessException;
-
-    public abstract CheckboxPeer createCheckbox(Checkbox target)
-        throws HeadlessException;
-
-    public abstract ScrollbarPeer createScrollbar(Scrollbar target)
-        throws HeadlessException;
-
-    public abstract ScrollPanePeer createScrollPane(ScrollPane target)
-        throws HeadlessException;
-
-    public abstract TextAreaPeer createTextArea(TextArea target)
-        throws HeadlessException;
-
-    public abstract FileDialogPeer createFileDialog(FileDialog target)
-        throws HeadlessException;
-
-    public abstract MenuBarPeer createMenuBar(MenuBar target)
-        throws HeadlessException;
-
-    public abstract MenuPeer createMenu(Menu target)
-        throws HeadlessException;
-
-    public abstract PopupMenuPeer createPopupMenu(PopupMenu target)
-        throws HeadlessException;
-
-    public abstract MenuItemPeer createMenuItem(MenuItem target)
-        throws HeadlessException;
-
-    public abstract CheckboxMenuItemPeer createCheckboxMenuItem(
-        CheckboxMenuItem target)
-        throws HeadlessException;
-
-    public abstract DragSourceContextPeer createDragSourceContextPeer(
-        DragGestureEvent dge)
-        throws InvalidDnDOperationException;
 
     public abstract TrayIconPeer createTrayIcon(TrayIcon target)
         throws HeadlessException, AWTException;
@@ -203,12 +158,7 @@ public abstract class SunToolkit extends Toolkit
 
     public abstract boolean isTraySupported();
 
-    @SuppressWarnings("deprecation")
-    public abstract FontPeer getFontPeer(String name, int style);
-
-    public abstract RobotPeer createRobot(Robot target, GraphicsDevice screen)
-        throws AWTException;
-
+    @Override
     public abstract KeyboardFocusManagerPeer getKeyboardFocusManagerPeer()
         throws HeadlessException;
 
@@ -511,6 +461,7 @@ public abstract class SunToolkit extends Toolkit
      */
     public static void postPriorityEvent(final AWTEvent e) {
         PeerEvent pe = new PeerEvent(Toolkit.getDefaultToolkit(), new Runnable() {
+                @Override
                 public void run() {
                     AWTAccessor.getAWTEventAccessor().setPosted(e);
                     ((Component)e.getSource()).dispatchEvent(e);
@@ -561,6 +512,7 @@ public abstract class SunToolkit extends Toolkit
                                                    final long when) {
         executeOnEventHandlerThread(
             new PeerEvent(target, runnable, PeerEvent.PRIORITY_EVENT) {
+                @Override
                 public long getWhen() {
                     return when;
                 }
@@ -636,17 +588,20 @@ public abstract class SunToolkit extends Toolkit
         return accessor.isDispatchThreadImpl(eq);
     }
 
+    @Override
     public Dimension getScreenSize() {
         return new Dimension(getScreenWidth(), getScreenHeight());
     }
     protected abstract int getScreenWidth();
     protected abstract int getScreenHeight();
 
+    @Override
     @SuppressWarnings("deprecation")
     public FontMetrics getFontMetrics(Font font) {
         return FontDesignMetrics.getMetrics(font);
     }
 
+    @Override
     @SuppressWarnings("deprecation")
     public String[] getFontList() {
         String[] hardwiredFontList = {
@@ -658,14 +613,6 @@ public abstract class SunToolkit extends Toolkit
             //    "Helvetica", "TimesRoman", "Courier", "ZapfDingbats"
         };
         return hardwiredFontList;
-    }
-
-    public PanelPeer createPanel(Panel target) {
-        return (PanelPeer)createComponent(target);
-    }
-
-    public CanvasPeer createCanvas(Canvas target) {
-        return (CanvasPeer)createComponent(target);
     }
 
     /**
@@ -747,10 +694,12 @@ public abstract class SunToolkit extends Toolkit
         }
     }
 
+    @Override
     public Image getImage(String filename) {
         return getImageFromHash(this, filename);
     }
 
+    @Override
     public Image getImage(URL url) {
         return getImageFromHash(this, url);
     }
@@ -784,20 +733,24 @@ public abstract class SunToolkit extends Toolkit
     }
 
 
+    @Override
     public Image createImage(String filename) {
         checkPermissions(filename);
         return createImage(new FileImageSource(filename));
     }
 
+    @Override
     public Image createImage(URL url) {
         checkPermissions(url);
         return createImage(new URLImageSource(url));
     }
 
+    @Override
     public Image createImage(byte[] data, int offset, int length) {
         return createImage(new ByteArrayImageSource(data, offset, length));
     }
 
+    @Override
     public Image createImage(ImageProducer producer) {
         return new ToolkitImage(producer);
     }
@@ -807,6 +760,7 @@ public abstract class SunToolkit extends Toolkit
         return new MultiResolutionToolkitImage(image, resolutionVariant);
     }
 
+    @Override
     public int checkImage(Image img, int w, int h, ImageObserver o) {
         if (!(img instanceof ToolkitImage)) {
             return ImageObserver.ALLBITS;
@@ -822,6 +776,7 @@ public abstract class SunToolkit extends Toolkit
         return (tkimg.check(o) | repbits) & checkResolutionVariant(img, w, h, o);
     }
 
+    @Override
     public boolean prepareImage(Image img, int w, int h, ImageObserver o) {
         if (w == 0 || h == 0) {
             return true;
@@ -888,14 +843,17 @@ public abstract class SunToolkit extends Toolkit
     }
 
     protected static boolean imageExists(String filename) {
-        checkPermissions(filename);
-        return filename != null && new File(filename).exists();
+        if (filename != null) {
+            checkPermissions(filename);
+            return new File(filename).exists();
+        }
+        return false;
     }
 
     @SuppressWarnings("try")
     protected static boolean imageExists(URL url) {
-        checkPermissions(url);
         if (url != null) {
+            checkPermissions(url);
             try (InputStream is = url.openStream()) {
                 return true;
             }catch(IOException e){
@@ -1063,6 +1021,7 @@ public abstract class SunToolkit extends Toolkit
         return (DataBufferInt)buffer;
     }
 
+    @Override
     protected EventQueue getSystemEventQueueImpl() {
         return getSystemEventQueueImplPP();
     }
@@ -1144,6 +1103,7 @@ public abstract class SunToolkit extends Toolkit
      * SunToolkit subclasses can override this method to return better input
      * method windows.
      */
+    @Override
     public Window createInputMethodWindow(String title, InputContext context) {
         return new sun.awt.im.SimpleInputMethodWindow(title, context);
     }
@@ -1152,6 +1112,7 @@ public abstract class SunToolkit extends Toolkit
      * Returns whether enableInputMethods should be set to true for peered
      * TextComponent instances on this platform. False by default.
      */
+    @Override
     public boolean enableInputMethodsForTextComponent() {
         return false;
     }
@@ -1193,13 +1154,15 @@ public abstract class SunToolkit extends Toolkit
     /**
      * Returns the default keyboard locale of the underlying operating system
      */
+    @Override
     public Locale getDefaultKeyboardLocale() {
         return getStartupLocale();
     }
 
     private static DefaultMouseInfoPeer mPeer = null;
 
-    protected synchronized MouseInfoPeer getMouseInfoPeer() {
+    @Override
+    public synchronized MouseInfoPeer getMouseInfoPeer() {
         if (mPeer == null) {
             mPeer = new DefaultMouseInfoPeer();
         }
@@ -1331,6 +1294,7 @@ public abstract class SunToolkit extends Toolkit
     /**
      * Overridden in XToolkit and WToolkit
      */
+    @Override
     public boolean isModalityTypeSupported(Dialog.ModalityType modalityType) {
         return (modalityType == Dialog.ModalityType.MODELESS) ||
                (modalityType == Dialog.ModalityType.APPLICATION_MODAL);
@@ -1339,6 +1303,7 @@ public abstract class SunToolkit extends Toolkit
     /**
      * Overridden in XToolkit and WToolkit
      */
+    @Override
     public boolean isModalExclusionTypeSupported(Dialog.ModalExclusionType exclusionType) {
         return (exclusionType == Dialog.ModalExclusionType.NO_EXCLUDE);
     }
@@ -1386,6 +1351,7 @@ public abstract class SunToolkit extends Toolkit
             listeners.removeElement(listener);
         }
 
+        @Override
         public void modalityPushed(ModalityEvent ev) {
             Iterator<ModalityListener> it = listeners.iterator();
             while (it.hasNext()) {
@@ -1393,6 +1359,7 @@ public abstract class SunToolkit extends Toolkit
             }
         }
 
+        @Override
         public void modalityPopped(ModalityEvent ev) {
             Iterator<ModalityListener> it = listeners.iterator();
             while (it.hasNext()) {
@@ -1592,6 +1559,7 @@ public abstract class SunToolkit extends Toolkit
         synchronized(waitLock) {
             postEvent(AppContext.getAppContext(),
                       new PeerEvent(getSystemEventQueueImpl(), null, PeerEvent.LOW_PRIORITY_EVENT) {
+                          @Override
                           public void dispatch() {
                               // Here we block EDT.  It could have some
                               // events, it should have dispatched them by

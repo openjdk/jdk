@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -222,12 +222,14 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
 
     /**
      * Obsolete - not used.
+     * @param e list data event
      */
     public void intervalAdded(ListDataEvent e) {
     }
 
     /**
      * Obsolete - not used.
+     * @param e list data event
      */
     public void intervalRemoved(ListDataEvent e) {
     }
@@ -241,7 +243,12 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
         ShellFolder.sort(v);
     }
 
-    // Obsolete - not used
+    /**
+     * Obsolete - not used
+     * @return a comparison of the file names
+     * @param a a file
+     * @param b another file
+     */
     protected boolean lt(File a, File b) {
         // First ignore case when comparing
         int diff = a.getName().toLowerCase().compareTo(b.getName().toLowerCase());

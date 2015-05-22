@@ -84,6 +84,7 @@ public class StringReader extends Reader {
      *             stream has been reached
      *
      * @exception  IOException  If an I/O error occurs
+     * @exception  IndexOutOfBoundsException {@inheritDoc}
      */
     public int read(char cbuf[], int off, int len) throws IOException {
         synchronized (lock) {

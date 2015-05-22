@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -6803,12 +6803,25 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         protected class AccessibleJTableModelChange
             implements AccessibleTableModelChange {
 
+            /** The type */
             protected int type;
+            /** The first row */
             protected int firstRow;
+            /** The last row */
             protected int lastRow;
+            /** The first column */
             protected int firstColumn;
+            /** The last column */
             protected int lastColumn;
 
+            /**
+             * Constructs an {@code AccessibleJTableModelChange}.
+             * @param type the type
+             * @param firstRow the first row
+             * @param lastRow the last row
+             * @param firstColumn the first column
+             * @param lastColumn the last column
+             */
             protected AccessibleJTableModelChange(int type, int firstRow,
                                                   int lastRow, int firstColumn,
                                                   int lastColumn) {
@@ -6819,22 +6832,42 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                 this.lastColumn = lastColumn;
             }
 
+            /**
+             * Returns the type.
+             * @return the type
+             */
             public int getType() {
                 return type;
             }
 
+            /**
+             * Returns the first row.
+             * @return the first row
+             */
             public int getFirstRow() {
                 return firstRow;
             }
 
+            /**
+             * Returns the last row.
+             * @return the last row
+             */
             public int getLastRow() {
                 return lastRow;
             }
 
+            /**
+             * Returns the first column.
+             * @return the first column
+             */
             public int getFirstColumn() {
                 return firstColumn;
             }
 
+            /**
+             * Returns the last column.
+             * @return the last column
+             */
             public int getLastColumn() {
                 return lastColumn;
             }

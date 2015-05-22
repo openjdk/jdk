@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package sun.awt.X11;
 import java.awt.*;
 import java.util.HashMap;
 import java.awt.event.KeyEvent;
-import java.lang.reflect.*;
 import sun.awt.AWTAccessor;
 
 public class XEmbeddingContainer extends XEmbedHelper implements XEventDispatcher {
@@ -46,13 +45,14 @@ public class XEmbeddingContainer extends XEmbedHelper implements XEventDispatche
         XToolkit.removeEventDispatcher(embedder.getWindow(), this);
     }
 
-    @SuppressWarnings("deprecation")
     void add(long child) {
         if (checkXEmbed(child)) {
             Component proxy = createChildProxy(child);
             ((Container)embedder.getTarget()).add("Center", proxy);
-            if (proxy.getPeer() != null) {
-                children.put(Long.valueOf(child), proxy.getPeer());
+            XEmbeddedFramePeer peer = AWTAccessor.getComponentAccessor()
+                                                 .getPeer(proxy);
+            if (peer != null) {
+                children.put(Long.valueOf(child), peer);
             }
         }
     }

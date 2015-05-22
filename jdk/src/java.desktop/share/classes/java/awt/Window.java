@@ -29,7 +29,6 @@ import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.awt.im.InputContext;
 import java.awt.image.BufferStrategy;
-import java.awt.image.BufferedImage;
 import java.awt.peer.ComponentPeer;
 import java.awt.peer.WindowPeer;
 import java.beans.PropertyChangeListener;
@@ -56,7 +55,6 @@ import sun.awt.AppContext;
 import sun.awt.CausedFocusEvent;
 import sun.awt.SunToolkit;
 import sun.awt.util.IdentityArrayList;
-import sun.java2d.Disposer;
 import sun.java2d.pipe.Region;
 import sun.security.action.GetPropertyAction;
 import sun.util.logging.PlatformLogger;
@@ -755,15 +753,14 @@ public class Window extends Container implements Accessible {
      * @see Container#removeNotify
      * @since 1.0
      */
-    @SuppressWarnings("deprecation")
     public void addNotify() {
         synchronized (getTreeLock()) {
             Container parent = this.parent;
-            if (parent != null && parent.getPeer() == null) {
+            if (parent != null && parent.peer == null) {
                 parent.addNotify();
             }
             if (peer == null) {
-                peer = getToolkit().createWindow(this);
+                peer = getComponentFactory().createWindow(this);
             }
             synchronized (allWindows) {
                 allWindows.add(this);
@@ -802,7 +799,7 @@ public class Window extends Container implements Accessible {
     @SuppressWarnings("deprecation")
     public void pack() {
         Container parent = this.parent;
-        if (parent != null && parent.getPeer() == null) {
+        if (parent != null && parent.peer == null) {
             parent.addNotify();
         }
         if (peer == null) {
@@ -1072,10 +1069,9 @@ public class Window extends Container implements Accessible {
         }
     }
 
-    @SuppressWarnings("deprecation")
     static void updateChildFocusableWindowState(Window w) {
-        if (w.getPeer() != null && w.isShowing()) {
-            ((WindowPeer)w.getPeer()).updateFocusableWindowState();
+        if (w.peer != null && w.isShowing()) {
+            ((WindowPeer)w.peer).updateFocusableWindowState();
         }
         for (int i = 0; i < w.ownedWindowList.size(); i++) {
             Window child = w.ownedWindowList.elementAt(i).get();
@@ -1160,10 +1156,9 @@ public class Window extends Container implements Accessible {
      * as reported in javadoc. So we need to implement this functionality even if a
      * child overrides dispose() in a wrong way without calling super.dispose().
      */
-    @SuppressWarnings("deprecation")
     void disposeImpl() {
         dispose();
-        if (getPeer() != null) {
+        if (peer != null) {
             doDispose();
         }
     }
@@ -3651,7 +3646,7 @@ public class Window extends Container implements Accessible {
                 }
             }
             this.opacity = opacity;
-            WindowPeer peer = (WindowPeer)getPeer();
+            WindowPeer peer = (WindowPeer) this.peer;
             if (peer != null) {
                 peer.setOpacity(opacity);
             }
@@ -3728,7 +3723,6 @@ public class Window extends Container implements Accessible {
      *
      * @since 1.7
      */
-    @SuppressWarnings("deprecation")
     public void setShape(Shape shape) {
         synchronized (getTreeLock()) {
             if (shape != null) {
@@ -3746,7 +3740,7 @@ public class Window extends Container implements Accessible {
                 }
             }
             this.shape = (shape == null) ? null : new Path2D.Float(shape);
-            WindowPeer peer = (WindowPeer)getPeer();
+            WindowPeer peer = (WindowPeer) this.peer;
             if (peer != null) {
                 peer.applyShape(shape == null ? null : Region.getInstance(shape, null));
             }
@@ -3846,7 +3840,6 @@ public class Window extends Container implements Accessible {
      * @see GraphicsConfiguration#isTranslucencyCapable()
      */
     @Override
-    @SuppressWarnings("deprecation")
     public void setBackground(Color bgColor) {
         Color oldBg = getBackground();
         super.setBackground(bgColor);
@@ -3874,7 +3867,7 @@ public class Window extends Container implements Accessible {
         } else if ((oldAlpha < 255) && (alpha == 255)) {
             setLayersOpaque(this, true);
         }
-        WindowPeer peer = (WindowPeer)getPeer();
+        WindowPeer peer = (WindowPeer) this.peer;
         if (peer != null) {
             peer.setOpaque(alpha == 255);
         }
@@ -3899,10 +3892,9 @@ public class Window extends Container implements Accessible {
         return bg != null ? bg.getAlpha() == 255 : true;
     }
 
-    @SuppressWarnings("deprecation")
     private void updateWindow() {
         synchronized (getTreeLock()) {
-            WindowPeer peer = (WindowPeer)getPeer();
+            WindowPeer peer = (WindowPeer) this.peer;
             if (peer != null) {
                 peer.updateWindow();
             }
@@ -4090,7 +4082,6 @@ public class Window extends Container implements Accessible {
                 window.securityWarningHeight = height;
             }
 
-            @SuppressWarnings("deprecation")
             public void setSecurityWarningPosition(Window window,
                     Point2D point, float alignmentX, float alignmentY)
             {
@@ -4100,7 +4091,7 @@ public class Window extends Container implements Accessible {
                 window.securityWarningAlignmentY = alignmentY;
 
                 synchronized (window.getTreeLock()) {
-                    WindowPeer peer = (WindowPeer)window.getPeer();
+                    WindowPeer peer = (WindowPeer) window.peer;
                     if (peer != null) {
                         peer.repositionSecurityWarning();
                     }

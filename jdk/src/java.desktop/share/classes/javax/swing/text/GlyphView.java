@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,6 +102,7 @@ public class GlyphView extends View implements TabableView, Cloneable {
      * Fetch the currently installed glyph painter.
      * If a painter has not yet been installed, and
      * a default was not yet needed, null is returned.
+     * @return the currently installed glyph painter
      */
     public GlyphPainter getGlyphPainter() {
         return painter;
@@ -109,6 +110,7 @@ public class GlyphView extends View implements TabableView, Cloneable {
 
     /**
      * Sets the painter to use for rendering glyphs.
+     * @param p the painter to use for rendering glyphs
      */
     public void setGlyphPainter(GlyphPainter p) {
         painter = p;
@@ -144,6 +146,7 @@ public class GlyphView extends View implements TabableView, Cloneable {
      * be returned.  This is implemented to call
      * <code>StyledDocument.getBackground</code> if the associated
      * document is a styled document, otherwise it returns null.
+     * @return the background color to use to render the glyphs
      */
     public Color getBackground() {
         Document doc = getDocument();
@@ -165,6 +168,7 @@ public class GlyphView extends View implements TabableView, Cloneable {
      * is not a StyledDocument, the associated components foreground
      * color is used.  If there is no associated component, null
      * is returned.
+     * @return the foreground color to use to render the glyphs
      */
     public Color getForeground() {
         Document doc = getDocument();
@@ -187,6 +191,7 @@ public class GlyphView extends View implements TabableView, Cloneable {
      * is not a StyledDocument, the associated components font
      * is used.  If there is no associated component, null
      * is returned.
+     * @return the font that the glyphs should be based upon
      */
     public Font getFont() {
         Document doc = getDocument();
@@ -204,6 +209,7 @@ public class GlyphView extends View implements TabableView, Cloneable {
     /**
      * Determine if the glyphs should be underlined.  If true,
      * an underline should be drawn through the baseline.
+     * @return if the glyphs should be underlined
      */
     public boolean isUnderline() {
         AttributeSet attr = getAttributes();
@@ -214,6 +220,7 @@ public class GlyphView extends View implements TabableView, Cloneable {
      * Determine if the glyphs should have a strikethrough
      * line.  If true, a line should be drawn through the center
      * of the glyphs.
+     * @return if the glyphs should have a strikethrough line
      */
     public boolean isStrikeThrough() {
         AttributeSet attr = getAttributes();
@@ -222,6 +229,7 @@ public class GlyphView extends View implements TabableView, Cloneable {
 
     /**
      * Determine if the glyphs should be rendered as superscript.
+     * @return if the glyphs should be rendered as superscript
      */
     public boolean isSubscript() {
         AttributeSet attr = getAttributes();
@@ -230,6 +238,7 @@ public class GlyphView extends View implements TabableView, Cloneable {
 
     /**
      * Determine if the glyphs should be rendered as subscript.
+     * @return if the glyphs should be rendered as subscript
      */
     public boolean isSuperscript() {
         AttributeSet attr = getAttributes();
@@ -238,6 +247,7 @@ public class GlyphView extends View implements TabableView, Cloneable {
 
     /**
      * Fetch the TabExpander to use if tabs are present in this view.
+     * @return the TabExpander to use if tabs are present in this view
      */
     public TabExpander getTabExpander() {
         return expander;
@@ -1148,17 +1158,43 @@ public class GlyphView extends View implements TabableView, Cloneable {
         /**
          * Determine the span the glyphs given a start location
          * (for tab expansion).
+         * @param v  the {@code GlyphView}
+         * @param p0 the beginning position
+         * @param p1 the ending position
+         * @param e  how to expand the tabs when encountered
+         * @param x the X coordinate
+         * @return the span the glyphs given a start location
          */
         public abstract float getSpan(GlyphView v, int p0, int p1, TabExpander e, float x);
 
+        /**
+         * Returns of the height.
+         * @param v  the {@code GlyphView}
+         * @return of the height
+         */
         public abstract float getHeight(GlyphView v);
 
+        /**
+         * Returns of the ascent.
+         * @param v  the {@code GlyphView}
+         * @return of the ascent
+         */
         public abstract float getAscent(GlyphView v);
 
+        /**
+         * Returns of the descent.
+         * @param v  the {@code GlyphView}
+         * @return of the descent
+         */
         public abstract float getDescent(GlyphView v);
 
         /**
          * Paint the glyphs representing the given range.
+         * @param v the {@code GlyphView}
+         * @param g the graphics context
+         * @param a the current allocation of the view
+         * @param p0 the beginning position
+         * @param p1 the ending position
          */
         public abstract void paint(GlyphView v, Graphics g, Shape a, int p0, int p1);
 
@@ -1231,6 +1267,7 @@ public class GlyphView extends View implements TabableView, Cloneable {
          * @param v  the <code>GlyphView</code> to provide a painter for
          * @param p0 the starting document offset &gt;= 0
          * @param p1 the ending document offset &gt;= p0
+         * @return a painter to use for the given GlyphView
          */
         public GlyphPainter getPainter(GlyphView v, int p0, int p1) {
             return this;

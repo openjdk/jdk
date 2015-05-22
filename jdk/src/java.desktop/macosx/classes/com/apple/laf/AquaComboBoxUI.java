@@ -152,20 +152,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         }
 
         @Override
-        public void focusGained(final FocusEvent e) {
-            if (arrowButton != null) {
-                arrowButton.repaint();
-            }
-        }
-
-        @Override
-        public void focusLost(final FocusEvent e) {
-            if (arrowButton != null) {
-                arrowButton.repaint();
-            }
-        }
-
-        @Override
         public void changedUpdate(final DocumentEvent e) {
             editorTextChanged();
         }
@@ -252,6 +238,16 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
      */
     protected FocusListener createFocusListener() {
         return new BasicComboBoxUI.FocusHandler() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                super.focusGained(e);
+
+                if (arrowButton != null) {
+                    arrowButton.repaint();
+                }
+            }
+
+            @Override
             public void focusLost(final FocusEvent e) {
                 hasFocus = false;
                 if (!e.isTemporary()) {
@@ -263,6 +259,10 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
                 final AccessibleContext ac = ((Accessible)comboBox).getAccessibleContext();
                 if (ac != null) {
                     ac.firePropertyChange(AccessibleContext.ACCESSIBLE_STATE_PROPERTY, AccessibleState.FOCUSED, null);
+                }
+
+                if (arrowButton != null) {
+                    arrowButton.repaint();
                 }
             }
         };
@@ -438,6 +438,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
             if (editor != null) {
                 final Rectangle editorRect = rectangleForCurrentValue();
                 editorRect.width += 4;
+                editorRect.height += 1;
                 editor.setBounds(editorRect);
             }
         }
