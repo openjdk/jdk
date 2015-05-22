@@ -290,19 +290,7 @@ md_get_prelude_path(char *path, int path_len, char *filename)
     Dl_info dlinfo;
 
     libdir[0] = 0;
-#if defined(LINUX) || defined(_ALLBSD_SOURCE) || defined(AIX)
-    addr = (void*)&Agent_OnLoad;
-#else
-    /* Just using &Agent_OnLoad will get the first external symbol with
-     *   this name in the first .so, which may not be libhprof.so.
-     *   On Solaris we can actually ask for the address of our Agent_OnLoad.
-     */
-    addr = dlsym(RTLD_SELF, "Agent_OnLoad");
-    /* Just in case the above didn't work (missing linker patch?). */
-    if ( addr == NULL ) {
-        addr = (void*)&Agent_OnLoad;
-    }
-#endif
+    addr = (void*)&md_get_prelude_path;
 
     /* Use dladdr() to get the full path to libhprof.so, which we use to find
      *  the prelude file.

@@ -219,13 +219,8 @@ public class Extension implements java.security.cert.Extension {
      * Returns the Extension in user readable form.
      */
     public String toString() {
-        String s = "ObjectId: " + extensionId.toString();
-        if (critical) {
-            s += " Criticality=true\n";
-        } else {
-            s += " Criticality=false\n";
-        }
-        return (s);
+        return "ObjectId: " + extensionId +
+                " Criticality=" + critical + '\n';
     }
 
     // Value to mix up the hash

@@ -37,17 +37,17 @@
 package sun.text.normalizer;
 
 /**
- * <p>Class enabling iteration of the values in a Trie.</p>
+ * Class enabling iteration of the values in a Trie.
  * <p>Result of each iteration contains the interval of codepoints that have
- * the same value type and the value type itself.</p>
+ * the same value type and the value type itself.
  * <p>The comparison of each codepoint value is done via extract(), which the
- * default implementation is to return the value as it is.</p>
+ * default implementation is to return the value as it is.
  * <p>Method extract() can be overwritten to perform manipulations on
- * codepoint values in order to perform specialized comparison.</p>
+ * codepoint values in order to perform specialized comparison.
  * <p>TrieIterator is designed to be a generic iterator for the CharTrie
  * and the IntTrie, hence to accommodate both types of data, the return
- * result will be in terms of int (32 bit) values.</p>
- * <p>See com.ibm.icu.text.UCharacterTypeIterator for examples of use.</p>
+ * result will be in terms of int (32 bit) values.
+ * <p>See com.ibm.icu.text.UCharacterTypeIterator for examples of use.
  * <p>Notes for porting utrie_enum from icu4c to icu4j:<br>
  * Internally, icu4c's utrie_enum performs all iterations in its body. In Java
  * sense, the caller will have to pass a object with a callback function
@@ -63,18 +63,17 @@ package sun.text.normalizer;
  * the method extract(int) (equivalent to UTrieEnumValue). Independent of icu4j,
  * the caller will have to code his own iteration and flesh out the task
  * (equivalent to UTrieEnumRange) to be performed in the iteration loop.
- * </p>
- * <p>There are basically 3 usage scenarios for porting:</p>
+ *
+ * <p>There are basically 3 usage scenarios for porting:
  * <p>1) UTrieEnumValue is the only implemented callback then just implement a
  * subclass of TrieIterator and override the extract(int) method. The
  * extract(int) method is analogus to UTrieEnumValue callback.
- * </p>
+ *
  * <p>2) UTrieEnumValue and UTrieEnumRange both are implemented then implement
- * a subclass of TrieIterator, override the extract method and iterate, e.g
- * </p>
- * <p>utrie_enum(&normTrie, _enumPropertyStartsValue, _enumPropertyStartsRange,
- *               set);<br>
- * In Java :<br>
+ * a subclass of TrieIterator, override the extract method and iterate, e.g.<br>
+ * {@code utrie_enum(&normTrie, _enumPropertyStartsValue, _enumPropertyStartsRange,
+ *               set);}<br>
+ * In Java:<br>
  * <pre>
  * class TrieIteratorImpl extends TrieIterator{
  *     public TrieIteratorImpl(Trie data){
@@ -90,17 +89,17 @@ package sun.text.normalizer;
  *     // port the implementation of _enumPropertyStartsRange
  * }
  * </pre>
- * </p>
+ *
  * <p>3) UTrieEnumRange is the only implemented callback then just implement
  * the while loop, when utrie_enum is called
- * <pre>
+ * <pre>{@code
  * // utrie_enum(&fcdTrie, NULL, _enumPropertyStartsRange, set);
  * TrieIterator fcdIter  = new TrieIterator(fcdTrieImpl.fcdTrie);
  * while(fcdIter.next(result)){
  *     set.add(result.start);
  * }
- * </pre>
- * </p>
+ * }</pre>
+ *
  * @author synwee
  * @see com.ibm.icu.impl.Trie
  * @see com.ibm.icu.lang.UCharacterTypeIterator

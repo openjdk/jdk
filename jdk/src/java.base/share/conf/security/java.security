@@ -78,6 +78,7 @@ security.provider.tbd=sun.security.jgss.SunProvider
 security.provider.tbd=com.sun.security.sasl.Provider
 security.provider.tbd=org.jcp.xml.dsig.internal.dom.XMLDSigRI
 security.provider.tbd=sun.security.smartcardio.SunPCSC
+security.provider.tbd=sun.security.provider.certpath.ldap.JdkLDAP
 #ifdef windows
 security.provider.tbd=sun.security.mscapi.SunMSCAPI
 #endif

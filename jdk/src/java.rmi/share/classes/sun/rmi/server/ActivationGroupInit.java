@@ -36,7 +36,7 @@ import java.rmi.activation.ActivationGroup;
  * The activator spawns (as a child process) an activation group as needed
  * and directs activation requests to the appropriate activation
  * group. After spawning the VM, the activator passes some
- * information to the bootstrap code via its stdin: <p>
+ * information to the bootstrap code via its stdin:
  * <ul>
  * <li> the activation group's id,
  * <li> the activation group's descriptor (an instance of the class
