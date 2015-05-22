@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -157,12 +157,11 @@ VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/code
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/interpreter
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/ci
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/classfile
-VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/gc_implementation/parallelScavenge
-VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/gc_implementation/shared
-VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/gc_implementation/parNew
-VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/gc_implementation/concurrentMarkSweep
-VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/gc_implementation/g1
-VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/gc_interface
+VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/gc/parallel
+VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/gc/shared
+VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/gc/serial
+VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/gc/cms
+VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/gc/g1
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/asm
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/memory
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/oops
@@ -233,22 +232,19 @@ bytecodeInterpreterWithChecks.obj: ..\generated\jvmtifiles\bytecodeInterpreterWi
 {$(COMMONSRC)\share\vm\classfile}.cpp.obj::
         $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
-{$(COMMONSRC)\share\vm\gc_implementation\parallelScavenge}.cpp.obj::
+{$(COMMONSRC)\share\vm\gc\parallel}.cpp.obj::
         $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
-{$(COMMONSRC)\share\vm\gc_implementation\shared}.cpp.obj::
+{$(COMMONSRC)\share\vm\gc\shared}.cpp.obj::
         $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
-{$(COMMONSRC)\share\vm\gc_implementation\parNew}.cpp.obj::
+{$(COMMONSRC)\share\vm\gc\serial}.cpp.obj::
         $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
-{$(COMMONSRC)\share\vm\gc_implementation\concurrentMarkSweep}.cpp.obj::
+{$(COMMONSRC)\share\vm\gc\cms}.cpp.obj::
         $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
-{$(COMMONSRC)\share\vm\gc_implementation\g1}.cpp.obj::
-        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
-
-{$(COMMONSRC)\share\vm\gc_interface}.cpp.obj::
+{$(COMMONSRC)\share\vm\gc\g1}.cpp.obj::
         $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(COMMONSRC)\share\vm\asm}.cpp.obj::
@@ -316,22 +312,19 @@ bytecodeInterpreterWithChecks.obj: ..\generated\jvmtifiles\bytecodeInterpreterWi
 {$(ALTSRC)\share\vm\classfile}.cpp.obj::
         $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
-{$(ALTSRC)\share\vm\gc_implementation\parallelScavenge}.cpp.obj::
+{$(ALTSRC)\share\vm\gc\parallel}.cpp.obj::
         $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
-{$(ALTSRC)\share\vm\gc_implementation\shared}.cpp.obj::
+{$(ALTSRC)\share\vm\gc\shared}.cpp.obj::
         $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
-{$(ALTSRC)\share\vm\gc_implementation\parNew}.cpp.obj::
+{$(ALTSRC)\share\vm\gc\serial}.cpp.obj::
         $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
-{$(ALTSRC)\share\vm\gc_implementation\concurrentMarkSweep}.cpp.obj::
+{$(ALTSRC)\share\vm\gc\cms}.cpp.obj::
         $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
-{$(ALTSRC)\share\vm\gc_implementation\g1}.cpp.obj::
-        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
-
-{$(ALTSRC)\share\vm\gc_interface}.cpp.obj::
+{$(ALTSRC)\share\vm\gc\g1}.cpp.obj::
         $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(ALTSRC)\share\vm\asm}.cpp.obj::

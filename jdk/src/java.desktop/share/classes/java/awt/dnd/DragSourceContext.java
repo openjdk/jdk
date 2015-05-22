@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,24 +25,25 @@
 
 package java.awt.dnd;
 
+import java.awt.AWTError;
 import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Image;
 import java.awt.Point;
-
+import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
-
 import java.awt.dnd.peer.DragSourceContextPeer;
-
 import java.io.IOException;
 import java.io.InvalidObjectException;
-import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
-
 import java.util.TooManyListenersException;
+
+import sun.awt.AWTAccessor;
+import sun.awt.ComponentFactory;
 
 /**
  * The <code>DragSourceContext</code> class is responsible for managing the
@@ -123,6 +124,10 @@ public class DragSourceContext
 
     protected static final int CHANGED = 3;
 
+    static {
+        AWTAccessor.setDragSourceContextAccessor(dsc -> dsc.peer);
+    }
+
     /**
      * Called from <code>DragSource</code>, this constructor creates a new
      * <code>DragSourceContext</code> given the
@@ -155,7 +160,6 @@ public class DragSourceContext
      * If <code>DragSourceListener</code> is <code>null</code> no exception
      * is thrown.
      *
-     * @param dscp       the <code>DragSourceContextPeer</code> for this drag
      * @param trigger    the triggering event
      * @param dragCursor     the initial {@code Cursor} for this drag operation
      *                       or {@code null} for the default cursor handling;
@@ -179,10 +183,16 @@ public class DragSourceContext
      * @throws NullPointerException if dscp, trigger, or t are null, or
      *         if dragImage is non-null and offset is null
      */
-    public DragSourceContext(DragSourceContextPeer dscp,
-                             DragGestureEvent trigger, Cursor dragCursor,
+    public DragSourceContext(DragGestureEvent trigger, Cursor dragCursor,
                              Image dragImage, Point offset, Transferable t,
                              DragSourceListener dsl) {
+        Toolkit toolkit = Toolkit.getDefaultToolkit();
+        if (!(toolkit instanceof ComponentFactory)) {
+            throw new AWTError("Unsupported toolkit: " + toolkit);
+        }
+        DragSourceContextPeer dscp = ((ComponentFactory) toolkit).
+                createDragSourceContextPeer(trigger);
+
         if (dscp == null) {
             throw new NullPointerException("DragSourceContextPeer");
         }
@@ -623,8 +633,7 @@ public class DragSourceContext
     /*
      * fields
      */
-
-    private transient DragSourceContextPeer peer;
+    private final transient DragSourceContextPeer peer;
 
     /**
      * The event which triggered the start of the drag.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,6 +94,7 @@ public class ZoneView extends BoxView {
 
     /**
      * Get the current maximum zone size.
+     * @return the current maximum zone size
      */
     public int getMaximumZoneSize() {
         return maxZoneSize;
@@ -117,6 +118,8 @@ public class ZoneView extends BoxView {
     /**
      * Get the current setting of the number of zones
      * allowed to be loaded at the same time.
+     * @return current setting of the number of zones
+     * allowed to be loaded at the same time
      */
     public int getMaxZonesLoaded() {
         return maxZonesLoaded;
@@ -184,6 +187,9 @@ public class ZoneView extends BoxView {
      * child elements of the element this view is responsible for.
      * Therefore, the default implementation is to return
      * true if the view has children.
+     * param zone the child view
+     * @param zone the zone
+     * @return whether or not the zone is in the loaded state.
      */
     protected boolean isZoneLoaded(View zone) {
         return (zone.getViewCount() > 0);
@@ -203,6 +209,8 @@ public class ZoneView extends BoxView {
      * @param p1 the end of the desired zone.  This should
      *  be &gt; getStartOffset() and &lt;= getEndOffset().  This
      *  value should also be &gt; p0.
+     * @return a view to represent a zone for the given range within
+     * the model
      */
     protected View createZone(int p0, int p1) {
         Document doc = getDocument();

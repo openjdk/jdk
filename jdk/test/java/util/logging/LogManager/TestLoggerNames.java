@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -107,7 +108,11 @@ public class TestLoggerNames {
                     System.out.println("OK: Iterator doesn't support remove.");
                 }
             }
+            // We're not supposed to come here, but if we do then we
+            // need to rewind names...
+            names = LogManager.getLogManager().getLoggerNames();
         }
+
         List<String> loggerNames = Collections.list(names);
         if (!loggerNames.contains("")) {
             throw new RuntimeException("\"\"" +
@@ -147,7 +152,13 @@ public class TestLoggerNames {
         Thread loggerNamesThread = new Thread(() -> {
             try {
                 while (!stop) {
-                    checkLoggerNames(loggers);
+                    // Make a defensive copy of the list of loggers that we pass
+                    // to checkLoggerNames - in order to make sure that
+                    // we won't see new loggers that might appear after
+                    // checkLoggerNames has called LogManager.getLoggerNames().
+                    // ('loggers' is a live list and the main thread adds and
+                    //  and removes loggers from it concurrently to this thread).
+                    checkLoggerNames(new ArrayList<>(loggers));
                     Thread.sleep(10);
                     if (!stop) {
                         phaser.arriveAndAwaitAdvance();
@@ -156,6 +167,10 @@ public class TestLoggerNames {
             } catch (Throwable t) {
                 t.printStackTrace(System.err);
                 checkLoggerNamesFailed = t;
+                // makes sure the main thread isn't going to wait
+                // forever waiting for this dead thread to arrive at the
+                // phaser.
+                phaser.arrive();
             }
         }, "loggerNames");
 
@@ -197,14 +212,29 @@ public class TestLoggerNames {
                     loggers.remove(l);
                     l = Logger.getLogger(name.replace("replaceMe", "meReplaced"));
                     loggers.add(l);
+                    // Give some chance to the loggerNames thread to arrive at the
+                    // phaser first. We don't really care if the logger is actually
+                    // replaced this turn - or the next.
+                    Thread.sleep(100);
                     System.gc();
                     if (LogManager.getLogManager().getLogger(name) == null) {
-                        System.out.println("*** "+ name + " successfully replaced with " + l.getName());
+                        // The original logger may not have been gc'ed yet, since
+                        // it could still be referenced by the list being processed
+                        // by the loggerNamesThread, if that thread hasn't arrived
+                        // to the phaser yet...
+                        System.out.println("*** "+ name
+                                + " successfully replaced with " + l.getName());
                     }
                     i++;
                 } else {
                     System.out.println("Nothing to do for logger: " + name);
                 }
+                if (checkLoggerNamesFailed != null) {
+                    // The checkLoggerNames thread failed. No need to
+                    // continue.
+                    break;
+                }
+                // Waits for the checkLoggerNamesThread to arrive
                 phaser.arriveAndAwaitAdvance();
                 if (i >= 3 && i++ == 3) {
                     System.out.println("Loggers are now: " +

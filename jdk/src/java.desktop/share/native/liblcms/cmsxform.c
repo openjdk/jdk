@@ -621,46 +621,48 @@ _cmsTRANSFORM* AllocEmptyTransform(cmsContext ContextID, cmsPipeline* lut,
      _cmsTransformPluginChunkType* ctx = ( _cmsTransformPluginChunkType*) _cmsContextGetClientChunk(ContextID, TransformPlugin);
      _cmsTransformCollection* Plugin;
 
-    // Allocate needed memory
-    _cmsTRANSFORM* p = (_cmsTRANSFORM*) _cmsMallocZero(ContextID, sizeof(_cmsTRANSFORM));
-    if (!p) return NULL;
+       // Allocate needed memory
+       _cmsTRANSFORM* p = (_cmsTRANSFORM*)_cmsMallocZero(ContextID, sizeof(_cmsTRANSFORM));
+       if (!p) return NULL;
 
-    // Store the proposed pipeline
-    p ->Lut = lut;
+       // Store the proposed pipeline
+       p->Lut = lut;
 
-    // Let's see if any plug-in want to do the transform by itself
-    for (Plugin = ctx ->TransformCollection;
-        Plugin != NULL;
-        Plugin = Plugin ->Next) {
+       // Let's see if any plug-in want to do the transform by itself
+       if (p->Lut != NULL) {
 
-            if (Plugin ->Factory(&p->xform, &p->UserData, &p ->FreeUserData, &p ->Lut, InputFormat, OutputFormat, dwFlags)) {
+              for (Plugin = ctx->TransformCollection;
+                     Plugin != NULL;
+                     Plugin = Plugin->Next) {
 
-                // Last plugin in the declaration order takes control. We just keep
-                // the original parameters as a logging.
-                // Note that cmsFLAGS_CAN_CHANGE_FORMATTER is not set, so by default
-                // an optimized transform is not reusable. The plug-in can, however, change
-                // the flags and make it suitable.
+                     if (Plugin->Factory(&p->xform, &p->UserData, &p->FreeUserData, &p->Lut, InputFormat, OutputFormat, dwFlags)) {
 
-                p ->ContextID       = ContextID;
-                p ->InputFormat     = *InputFormat;
-                p ->OutputFormat    = *OutputFormat;
-                p ->dwOriginalFlags = *dwFlags;
+                            // Last plugin in the declaration order takes control. We just keep
+                            // the original parameters as a logging.
+                            // Note that cmsFLAGS_CAN_CHANGE_FORMATTER is not set, so by default
+                            // an optimized transform is not reusable. The plug-in can, however, change
+                            // the flags and make it suitable.
 
-                // Fill the formatters just in case the optimized routine is interested.
-                // No error is thrown if the formatter doesn't exist. It is up to the optimization
-                // factory to decide what to do in those cases.
-                p ->FromInput      = _cmsGetFormatter(ContextID, *InputFormat,  cmsFormatterInput, CMS_PACK_FLAGS_16BITS).Fmt16;
-                p ->ToOutput       = _cmsGetFormatter(ContextID, *OutputFormat, cmsFormatterOutput, CMS_PACK_FLAGS_16BITS).Fmt16;
-                p ->FromInputFloat = _cmsGetFormatter(ContextID, *InputFormat,  cmsFormatterInput, CMS_PACK_FLAGS_FLOAT).FmtFloat;
-                p ->ToOutputFloat  = _cmsGetFormatter(ContextID, *OutputFormat, cmsFormatterOutput, CMS_PACK_FLAGS_FLOAT).FmtFloat;
+                            p->ContextID = ContextID;
+                            p->InputFormat = *InputFormat;
+                            p->OutputFormat = *OutputFormat;
+                            p->dwOriginalFlags = *dwFlags;
 
-                return p;
-            }
-    }
+                            // Fill the formatters just in case the optimized routine is interested.
+                            // No error is thrown if the formatter doesn't exist. It is up to the optimization
+                            // factory to decide what to do in those cases.
+                            p->FromInput = _cmsGetFormatter(ContextID, *InputFormat, cmsFormatterInput, CMS_PACK_FLAGS_16BITS).Fmt16;
+                            p->ToOutput = _cmsGetFormatter(ContextID, *OutputFormat, cmsFormatterOutput, CMS_PACK_FLAGS_16BITS).Fmt16;
+                            p->FromInputFloat = _cmsGetFormatter(ContextID, *InputFormat, cmsFormatterInput, CMS_PACK_FLAGS_FLOAT).FmtFloat;
+                            p->ToOutputFloat = _cmsGetFormatter(ContextID, *OutputFormat, cmsFormatterOutput, CMS_PACK_FLAGS_FLOAT).FmtFloat;
 
-    // Not suitable for the transform plug-in, let's check  the pipeline plug-in
-    if (p ->Lut != NULL)
-        _cmsOptimizePipeline(ContextID, &p->Lut, Intent, InputFormat, OutputFormat, dwFlags);
+                            return p;
+                     }
+              }
+
+              // Not suitable for the transform plug-in, let's check  the pipeline plug-in
+              _cmsOptimizePipeline(ContextID, &p->Lut, Intent, InputFormat, OutputFormat, dwFlags);
+       }
 
     // Check whatever this is a true floating point transform
     if (_cmsFormatterIsFloat(*InputFormat) && _cmsFormatterIsFloat(*OutputFormat)) {

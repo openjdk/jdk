@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,9 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.peer.WindowPeer;
 import java.util.ArrayList;
+
+import sun.awt.AWTAccessor;
+import sun.awt.AWTAccessor.ComponentAccessor;
 import sun.awt.Win32GraphicsDevice;
 import sun.awt.windows.WWindowPeer;
 import sun.java2d.pipe.hw.ContextCapabilities;
@@ -176,11 +179,10 @@ public class D3DGraphicsDevice extends Win32GraphicsDevice {
                                                                  long hwnd);
 
     @Override
-    @SuppressWarnings("deprecation")
     protected void enterFullScreenExclusive(final int screen, WindowPeer wp)
     {
-        final WWindowPeer wpeer = (WWindowPeer)realFSWindow.getPeer();
-
+        final WWindowPeer wpeer = AWTAccessor.getComponentAccessor()
+                                             .getPeer(realFSWindow);
         D3DRenderQueue rq = D3DRenderQueue.getInstance();
         rq.lock();
         try {
@@ -247,16 +249,15 @@ public class D3DGraphicsDevice extends Win32GraphicsDevice {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     protected void addFSWindowListener(Window w) {
         // if the window is not a toplevel (has an owner) we have to use the
         // real toplevel to enter the full-screen mode with (4933099).
+        final ComponentAccessor acc = AWTAccessor.getComponentAccessor();
         if (!(w instanceof Frame) && !(w instanceof Dialog) &&
             (realFSWindow = getToplevelOwner(w)) != null)
         {
             ownerOrigBounds = realFSWindow.getBounds();
-            WWindowPeer fp = (WWindowPeer)realFSWindow.getPeer();
-
+            WWindowPeer fp = acc.getPeer(realFSWindow);
             ownerWasVisible = realFSWindow.isVisible();
             Rectangle r = w.getBounds();
             // we use operations on peer instead of component because calling
@@ -268,14 +269,13 @@ public class D3DGraphicsDevice extends Win32GraphicsDevice {
         }
 
         fsWindowWasAlwaysOnTop = realFSWindow.isAlwaysOnTop();
-        ((WWindowPeer)realFSWindow.getPeer()).setAlwaysOnTop(true);
+        ((WWindowPeer) acc.getPeer(realFSWindow)).setAlwaysOnTop(true);
 
         fsWindowListener = new D3DFSWindowAdapter();
         realFSWindow.addWindowListener(fsWindowListener);
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     protected void removeFSWindowListener(Window w) {
         realFSWindow.removeWindowListener(fsWindowListener);
         fsWindowListener = null;
@@ -290,7 +290,8 @@ public class D3DGraphicsDevice extends Win32GraphicsDevice {
          * its original size (just like the Window is being resized
          * to its original size in GraphicsDevice).
          */
-        WWindowPeer wpeer = (WWindowPeer)realFSWindow.getPeer();
+        final WWindowPeer wpeer = AWTAccessor.getComponentAccessor()
+                                             .getPeer(realFSWindow);
         if (wpeer != null) {
             if (ownerOrigBounds != null) {
                 // if the window went into fs mode before it was realized it
@@ -340,7 +341,6 @@ public class D3DGraphicsDevice extends Win32GraphicsDevice {
                                                        int bitDepth,
                                                        int refreshRate);
     @Override
-    @SuppressWarnings("deprecation")
     protected void configDisplayMode(final int screen, final WindowPeer w,
                                      final int width, final int height,
                                      final int bitDepth, final int refreshRate)
@@ -351,8 +351,8 @@ public class D3DGraphicsDevice extends Win32GraphicsDevice {
                                     refreshRate);
             return;
         }
-
-        final WWindowPeer wpeer = (WWindowPeer)realFSWindow.getPeer();
+        final WWindowPeer wpeer = AWTAccessor.getComponentAccessor()
+                                             .getPeer(realFSWindow);
 
         // REMIND: we do this before we switch the display mode, so
         // the dimensions may be exceeding the dimensions of the screen,

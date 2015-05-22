@@ -106,6 +106,7 @@ public abstract class UNIXToolkit extends SunToolkit
     /**
      * Overridden to handle GTK icon loading
      */
+    @Override
     protected Object lazilyLoadDesktopProperty(String name) {
         if (name.startsWith("gtk.icon.")) {
             return lazilyLoadGTKIcon(name);

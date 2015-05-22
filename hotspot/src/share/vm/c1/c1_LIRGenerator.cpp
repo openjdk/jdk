@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "c1/c1_Defs.hpp"
 #include "c1/c1_Compilation.hpp"
+#include "c1/c1_Defs.hpp"
 #include "c1/c1_FrameMap.hpp"
 #include "c1/c1_Instruction.hpp"
 #include "c1/c1_LIRAssembler.hpp"
@@ -33,7 +33,7 @@
 #include "ci/ciArrayKlass.hpp"
 #include "ci/ciInstance.hpp"
 #include "ci/ciObjArray.hpp"
-#include "memory/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableModRefBS.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -41,7 +41,7 @@
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
-#include "gc_implementation/g1/heapRegion.hpp"
+#include "gc/g1/heapRegion.hpp"
 #endif // INCLUDE_ALL_GCS
 
 #ifdef ASSERT

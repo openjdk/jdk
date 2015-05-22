@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.lang.ref.WeakReference;
 
 import java.lang.reflect.Method;
 
+import sun.awt.AWTAccessor.ComponentAccessor;
 import sun.util.logging.PlatformLogger;
 
 import sun.awt.*;
@@ -282,15 +283,15 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
         return reparented;
     }
 
-    @SuppressWarnings("deprecation")
     static long getParentWindowID(Component target) {
 
-        ComponentPeer peer = target.getParent().getPeer();
         Component temp = target.getParent();
+        final ComponentAccessor acc = AWTAccessor.getComponentAccessor();
+        ComponentPeer peer = acc.getPeer(temp);
         while (!(peer instanceof XWindow))
         {
             temp = temp.getParent();
-            peer = temp.getPeer();
+            peer = acc.getPeer(temp);
         }
 
         if (peer != null && peer instanceof XWindow)
@@ -299,17 +300,17 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
     }
 
 
-    @SuppressWarnings("deprecation")
     static XWindow getParentXWindowObject(Component target) {
         if (target == null) return null;
         Component temp = target.getParent();
         if (temp == null) return null;
-        ComponentPeer peer = temp.getPeer();
+        final ComponentAccessor acc = AWTAccessor.getComponentAccessor();
+        ComponentPeer peer = acc.getPeer(temp);
         if (peer == null) return null;
         while ((peer != null) && !(peer instanceof XWindow))
         {
             temp = temp.getParent();
-            peer = temp.getPeer();
+            peer = acc.getPeer(temp);
         }
         if (peer != null && peer instanceof XWindow)
             return (XWindow) peer;
@@ -552,7 +553,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
         int h = xe.get_height();
 
         Component target = getEventSource();
-        AWTAccessor.ComponentAccessor compAccessor = AWTAccessor.getComponentAccessor();
+        ComponentAccessor compAccessor = AWTAccessor.getComponentAccessor();
 
         if (!compAccessor.getIgnoreRepaint(target)
             && compAccessor.getWidth(target) != 0

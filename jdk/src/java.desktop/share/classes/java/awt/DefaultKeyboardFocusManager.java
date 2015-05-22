@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -796,7 +796,6 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
      * @return <code>true</code>
      * @see Component#dispatchEvent
      */
-    @SuppressWarnings("deprecation")
     public boolean dispatchKeyEvent(KeyEvent e) {
         Component focusOwner = (((AWTEvent)e).isPosted) ? getFocusOwner() : e.getComponent();
 
@@ -824,14 +823,14 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
 
         // Allow the peer to process KeyEvent
         Component source = e.getComponent();
-        ComponentPeer peer = source.getPeer();
+        ComponentPeer peer = source.peer;
 
         if (peer == null || peer instanceof LightweightPeer) {
             // if focus owner is lightweight then its native container
             // processes event
             Container target = source.getNativeContainer();
             if (target != null) {
-                peer = target.getPeer();
+                peer = target.peer;
             }
         }
         if (peer != null) {
@@ -1049,7 +1048,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
             Component source = (Component)ke.getSource();
             Container target = source.getNativeContainer();
             if (target != null) {
-                ComponentPeer peer = target.getPeer();
+                ComponentPeer peer = target.peer;
                 if (peer != null) {
                     peer.handleEvent(ke);
                     /**

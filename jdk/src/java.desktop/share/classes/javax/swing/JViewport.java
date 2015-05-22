@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@ import javax.swing.border.*;
 import javax.accessibility.*;
 
 import java.io.Serializable;
+
+import sun.awt.AWTAccessor;
 
 /**
  * The "viewport" or "porthole" through which you see the underlying
@@ -380,7 +382,6 @@ public class JViewport extends JComponent implements Accessible
      * @param contentRect the <code>Rectangle</code> to display
      * @see JComponent#isValidateRoot
      * @see java.awt.Component#isValid
-     * @see java.awt.Component#getPeer
      */
     public void scrollRectToVisible(Rectangle contentRect) {
         Component view = getView();
@@ -1448,7 +1449,6 @@ public class JViewport extends JComponent implements Accessible
      * Returns true if the component needs to be completely repainted after
      * a blit and a paint is received.
      */
-    @SuppressWarnings("deprecation")
     private boolean needsRepaintAfterBlit() {
         // Find the first heavy weight ancestor. isObscured and
         // canDetermineObscurity are only appropriate for heavy weights.
@@ -1459,7 +1459,8 @@ public class JViewport extends JComponent implements Accessible
         }
 
         if (heavyParent != null) {
-            ComponentPeer peer = heavyParent.getPeer();
+            ComponentPeer peer = AWTAccessor.getComponentAccessor()
+                                            .getPeer(heavyParent);
 
             if (peer != null && peer.canDetermineObscurity() &&
                                 !peer.isObscured()) {
