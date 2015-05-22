@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.PaintEvent;
 import java.awt.event.WindowEvent;
-import java.awt.event.InvocationEvent;
 import java.awt.image.ImageObserver;
 import java.awt.image.ImageProducer;
 import java.awt.image.VolatileImage;
@@ -63,6 +62,8 @@ import java.security.*;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Set;
+
+import sun.awt.AWTAccessor.ComponentAccessor;
 import sun.util.logging.PlatformLogger;
 import sun.awt.*;
 import sun.awt.event.IgnorePaintEvent;
@@ -182,7 +183,8 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         }
 
         if (container instanceof Window) {
-            XWindowPeer wpeer = (XWindowPeer)(container.getPeer());
+            XWindowPeer wpeer = AWTAccessor.getComponentAccessor()
+                                           .getPeer(container);
             if (wpeer != null) {
                 return (wpeer.winAttr.visibilityState !=
                         XWindowAttributesData.AWT_UNOBSCURED);
@@ -319,7 +321,8 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
               if (parentWindow == null) {
                   return rejectFocusRequestHelper("WARNING: Parent window is null");
               }
-              XWindowPeer wpeer = (XWindowPeer)parentWindow.getPeer();
+              XWindowPeer wpeer = AWTAccessor.getComponentAccessor()
+                                             .getPeer(parentWindow);
               if (wpeer == null) {
                   return rejectFocusRequestHelper("WARNING: Parent window's peer is null");
               }
@@ -390,7 +393,6 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
     /**
      * @see java.awt.peer.ComponentPeer
      */
-    @SuppressWarnings("deprecation")
     public void setEnabled(final boolean value) {
         if (enableLog.isLoggable(PlatformLogger.Level.FINE)) {
             enableLog.fine("{0}ing {1}", (value ? "Enabl" : "Disabl"), this);
@@ -399,8 +401,9 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         // If any of our heavyweight ancestors are disable, we should be too
         // See 6176875 for more information
         final Container cp = SunToolkit.getNativeContainer(target);
+        final ComponentAccessor acc = AWTAccessor.getComponentAccessor();
         if (cp != null) {
-            status &= ((XComponentPeer) cp.getPeer()).isEnabled();
+            status &= acc.<XComponentPeer>getPeer(cp).isEnabled();
         }
         synchronized (getStateLock()) {
             if (enabled == status) {
@@ -412,7 +415,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         if (target instanceof Container) {
             final Component[] list = ((Container) target).getComponents();
             for (final Component child : list) {
-                final ComponentPeer p = child.getPeer();
+                final ComponentPeer p = acc.getPeer(child);
                 if (p != null) {
                     p.setEnabled(status && child.isEnabled());
                 }
@@ -489,7 +492,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
     }
 
     XWindowPeer getParentTopLevel() {
-        AWTAccessor.ComponentAccessor compAccessor = AWTAccessor.getComponentAccessor();
+        ComponentAccessor compAccessor = AWTAccessor.getComponentAccessor();
         Container parent = (target instanceof Container) ? ((Container)target) : (compAccessor.getParent(target));
         // Search for parent window
         while (parent != null && !(parent instanceof Window)) {
@@ -1327,11 +1330,10 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         }
     }
 
-    @SuppressWarnings("deprecation")
     private void addTree(Collection<Long> order, Set<Long> set, Container cont) {
         for (int i = 0; i < cont.getComponentCount(); i++) {
             Component comp = cont.getComponent(i);
-            ComponentPeer peer = comp.getPeer();
+            Object peer = AWTAccessor.getComponentAccessor().getPeer(comp);
             if (peer instanceof XComponentPeer) {
                 Long window = Long.valueOf(((XComponentPeer)peer).getWindow());
                 if (!set.contains(window)) {
@@ -1348,7 +1350,6 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
 
     /****** DropTargetPeer implementation ********************/
 
-    @SuppressWarnings("deprecation")
     public void addDropTarget(DropTarget dt) {
         Component comp = target;
         while(!(comp == null || comp instanceof Window)) {
@@ -1356,14 +1357,13 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         }
 
         if (comp instanceof Window) {
-            XWindowPeer wpeer = (XWindowPeer)(comp.getPeer());
+            XWindowPeer wpeer = AWTAccessor.getComponentAccessor().getPeer(comp);
             if (wpeer != null) {
                 wpeer.addDropTarget();
             }
         }
     }
 
-    @SuppressWarnings("deprecation")
     public void removeDropTarget(DropTarget dt) {
         Component comp = target;
         while(!(comp == null || comp instanceof Window)) {
@@ -1371,7 +1371,8 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         }
 
         if (comp instanceof Window) {
-            XWindowPeer wpeer = (XWindowPeer)(comp.getPeer());
+            XWindowPeer wpeer = AWTAccessor.getComponentAccessor()
+                                           .getPeer(comp);
             if (wpeer != null) {
                 wpeer.removeDropTarget();
             }

@@ -1,1 +1,1 @@
-TypeError: Cannot apply "with" to non script object
+TypeError: Cannot apply "with" to non script object. Consider using "with(Object.bindProperties({}, nonScriptObject))".

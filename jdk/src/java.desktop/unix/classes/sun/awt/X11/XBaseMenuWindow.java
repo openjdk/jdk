@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -326,9 +326,8 @@ abstract public class XBaseMenuWindow extends XWindow {
      * check for adding duplicate items
      * @param item item to add
      */
-    @SuppressWarnings("deprecation")
     public void addItem(MenuItem item) {
-        XMenuItemPeer mp = (XMenuItemPeer)item.getPeer();
+        XMenuItemPeer mp = AWTAccessor.getMenuComponentAccessor().getPeer(item);
         if (mp != null) {
             mp.setContainer(this);
             synchronized(getMenuTreeLock()) {

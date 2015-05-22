@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "gc_interface/collectedHeap.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "memory/universe.inline.hpp"
 #include "prims/jvmtiGetLoadedClasses.hpp"
 #include "runtime/thread.hpp"

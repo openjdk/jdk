@@ -26,6 +26,7 @@
 package sun.font;
 
 import java.awt.Font;
+import java.awt.peer.FontPeer;
 
 public abstract class FontAccess {
 
@@ -45,4 +46,5 @@ public abstract class FontAccess {
     public abstract void setFont2D(Font f, Font2DHandle h);
     public abstract void setCreatedFont(Font f);
     public abstract boolean isCreatedFont(Font f);
+    public abstract FontPeer getFontPeer(Font f);
 }

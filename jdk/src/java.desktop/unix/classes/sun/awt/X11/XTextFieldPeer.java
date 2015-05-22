@@ -547,62 +547,54 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
             implements ActionListener, DocumentListener {
 
         private boolean isFocused = false;
-        private final XComponentPeer peer;
+        private final XComponentPeer xwin;
 
-        XAWTTextField(String text, XComponentPeer peer, Container parent) {
+        XAWTTextField(String text, XComponentPeer xwin, Container parent) {
             super(text);
-            this.peer = peer;
+            this.xwin = xwin;
             setDoubleBuffered(true);
             setFocusable(false);
             AWTAccessor.getComponentAccessor().setParent(this,parent);
-            setBackground(peer.getPeerBackground());
-            setForeground(peer.getPeerForeground());
-            setFont(peer.getPeerFont());
+            setBackground(xwin.getPeerBackground());
+            setForeground(xwin.getPeerForeground());
+            setFont(xwin.getPeerFont());
             setCaretPosition(0);
             addActionListener(this);
             addNotify();
-
         }
 
         @Override
         @SuppressWarnings("deprecation")
         public void actionPerformed( ActionEvent actionEvent ) {
-            peer.postEvent(new ActionEvent(peer.target,
-                                           ActionEvent.ACTION_PERFORMED,
-                                           getText(),
-                                           actionEvent.getWhen(),
-                                           actionEvent.getModifiers()));
+            xwin.postEvent(
+                    new ActionEvent(xwin.target, ActionEvent.ACTION_PERFORMED,
+                                    getText(), actionEvent.getWhen(),
+                                    actionEvent.getModifiers()));
 
         }
 
         @Override
         public void insertUpdate(DocumentEvent e) {
-            if (peer != null) {
-                peer.postEvent(new TextEvent(peer.target,
+            if (xwin != null) {
+                xwin.postEvent(new TextEvent(xwin.target,
                                              TextEvent.TEXT_VALUE_CHANGED));
             }
         }
 
         @Override
         public void removeUpdate(DocumentEvent e) {
-            if (peer != null) {
-                peer.postEvent(new TextEvent(peer.target,
+            if (xwin != null) {
+                xwin.postEvent(new TextEvent(xwin.target,
                                              TextEvent.TEXT_VALUE_CHANGED));
             }
         }
 
         @Override
         public void changedUpdate(DocumentEvent e) {
-            if (peer != null) {
-                peer.postEvent(new TextEvent(peer.target,
+            if (xwin != null) {
+                xwin.postEvent(new TextEvent(xwin.target,
                                              TextEvent.TEXT_VALUE_CHANGED));
             }
-        }
-
-        @Override
-        @SuppressWarnings("deprecation")
-        public ComponentPeer getPeer() {
-            return (ComponentPeer) peer;
         }
 
         public void repaintNow() {
@@ -611,7 +603,7 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
 
         @Override
         public Graphics getGraphics() {
-            return peer.getGraphics();
+            return xwin.getGraphics();
         }
 
         @Override

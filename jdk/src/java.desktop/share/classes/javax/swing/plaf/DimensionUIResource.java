@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.awt.Dimension;
 import javax.swing.plaf.UIResource;
 
 
-/*
+/**
  * A subclass of <code>Dimension</code> that implements
  * <code>UIResource</code>.  UI classes that use
  * <code>Dimension</code> values for default properties
@@ -51,6 +51,11 @@ import javax.swing.plaf.UIResource;
 @SuppressWarnings("serial") // Same-version serialization only
 public class DimensionUIResource extends Dimension implements UIResource
 {
+    /**
+     * Constructs a {@code DimensionUIResource}.
+     * @param width the width
+     * @param height the height
+     */
     public DimensionUIResource(int width, int height) {
         super(width, height);
     }

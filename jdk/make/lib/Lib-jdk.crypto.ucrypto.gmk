@@ -38,6 +38,7 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) \
           $(addprefix -I, $(LIBJ2UCRYPTO_SRC)), \
+      DISABLED_WARNINGS_solstudio := E_MACRO_REDEFINED, \
       MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libj2ucrypto/mapfile-vers, \
       LDFLAGS := $(LDFLAGS_JDKLIB), \
       LDFLAGS_SUFFIX := $(LIBDL), \

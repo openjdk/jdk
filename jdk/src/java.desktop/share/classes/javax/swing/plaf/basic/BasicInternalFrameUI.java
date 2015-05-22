@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,22 +42,31 @@ import sun.swing.UIAction;
  */
 public class BasicInternalFrameUI extends InternalFrameUI
 {
-
+    /** frame */
     protected JInternalFrame frame;
 
     private Handler handler;
+    /** Border listener */
     protected MouseInputAdapter          borderListener;
+    /** Property change listener */
     protected PropertyChangeListener     propertyChangeListener;
+    /** Internal frame layout */
     protected LayoutManager              internalFrameLayout;
+    /** Component listener */
     protected ComponentListener          componentListener;
+    /** Glass pane dispatcher */
     protected MouseInputListener         glassPaneDispatcher;
     private InternalFrameListener        internalFrameListener;
 
+    /** North pane */
     protected JComponent northPane;
+    /** South pane */
     protected JComponent southPane;
+    /** West pane */
     protected JComponent westPane;
+    /** East pane */
     protected JComponent eastPane;
-
+    /** Title pane */
     protected BasicInternalFrameTitlePane titlePane; // access needs this
 
     private static DesktopManager sharedDesktopManager;
@@ -85,10 +94,19 @@ public class BasicInternalFrameUI extends InternalFrameUI
 /////////////////////////////////////////////////////////////////////////////
 // ComponentUI Interface Implementation methods
 /////////////////////////////////////////////////////////////////////////////
+    /**
+     * Returns a component UI.
+     * @param b a component
+     * @return a component UI
+     */
     public static ComponentUI createUI(JComponent b)    {
         return new BasicInternalFrameUI((JInternalFrame)b);
     }
 
+    /**
+     * Constructs a {@code BasicInternalFrameUI}.
+     * @param b the internal frame
+     */
     public BasicInternalFrameUI(JInternalFrame b)   {
         LookAndFeel laf = UIManager.getLookAndFeel();
         if (laf instanceof BasicLookAndFeel) {
@@ -96,6 +114,10 @@ public class BasicInternalFrameUI extends InternalFrameUI
         }
     }
 
+    /**
+     * Installs the UI.
+     * @param c the component
+     */
     public void installUI(JComponent c)   {
 
         frame = (JInternalFrame)c;
@@ -108,6 +130,10 @@ public class BasicInternalFrameUI extends InternalFrameUI
         LookAndFeel.installProperty(frame, "opaque", Boolean.TRUE);
     }
 
+    /**
+     * Uninstalls the UI.
+     * @param c the component
+     */
     public void uninstallUI(JComponent c) {
         if(c != frame)
             throw new IllegalComponentStateException(
@@ -124,6 +150,9 @@ public class BasicInternalFrameUI extends InternalFrameUI
         frame = null;
     }
 
+    /**
+     * Installs the defaults.
+     */
     protected void installDefaults(){
         Icon frameIcon = frame.getFrameIcon();
         if (frameIcon == null || frameIcon instanceof UIResource) {
@@ -144,6 +173,9 @@ public class BasicInternalFrameUI extends InternalFrameUI
         LookAndFeel.installBorder(frame, "InternalFrame.border");
 
     }
+    /**
+     * Installs the keyboard actions.
+     */
     protected void installKeyboardActions(){
         createInternalFrameListener();
         if (internalFrameListener != null) {
@@ -184,6 +216,9 @@ public class BasicInternalFrameUI extends InternalFrameUI
         BasicLookAndFeel.installAudioActionMap(map);
     }
 
+    /**
+     * Installs the components.
+     */
     protected void installComponents(){
         setNorthPane(createNorthPane(frame));
         setSouthPane(createSouthPane(frame));
@@ -192,6 +227,7 @@ public class BasicInternalFrameUI extends InternalFrameUI
     }
 
     /**
+     * Installs the listeners.
      * @since 1.3
      */
     protected void installListeners() {
@@ -257,6 +293,9 @@ public class BasicInternalFrameUI extends InternalFrameUI
         return null;
     }
 
+    /**
+     * Uninstalls the defaults.
+     */
     protected void uninstallDefaults() {
         Icon frameIcon = frame.getFrameIcon();
         if (frameIcon instanceof UIResource) {
@@ -267,6 +306,9 @@ public class BasicInternalFrameUI extends InternalFrameUI
         LookAndFeel.uninstallBorder(frame);
     }
 
+    /**
+     * Uninstalls the components.
+     */
     protected void uninstallComponents(){
         setNorthPane(null);
         setSouthPane(null);
@@ -279,6 +321,7 @@ public class BasicInternalFrameUI extends InternalFrameUI
     }
 
     /**
+     * Uninstalls the listeners.
      * @since 1.3
      */
     protected void uninstallListeners() {
@@ -298,6 +341,9 @@ public class BasicInternalFrameUI extends InternalFrameUI
       borderListener = null;
     }
 
+    /**
+     * Uninstalls the keyboard actions.
+     */
     protected void uninstallKeyboardActions(){
         if (internalFrameListener != null) {
             frame.removeInternalFrameListener(internalFrameListener);
@@ -321,22 +367,38 @@ public class BasicInternalFrameUI extends InternalFrameUI
         frame.setCursor(s);
     }
 
+    /**
+     * Creates the layout manager.
+     * @return the layout manager
+     */
     protected LayoutManager createLayoutManager(){
         return getHandler();
     }
 
+    /**
+     * Creates the property change listener.
+     * @return the property change listener
+     */
     protected PropertyChangeListener createPropertyChangeListener(){
         return getHandler();
     }
 
-
-
+    /**
+     * Returns the preferred size.
+     * @param x the component
+     * @return the preferred size
+     */
     public Dimension getPreferredSize(JComponent x)    {
         if(frame == x)
             return frame.getLayout().preferredLayoutSize(x);
         return new Dimension(100, 100);
     }
 
+    /**
+     * Returns the minimum size.
+     * @param x the component
+     * @return the minimum size
+     */
     public Dimension getMinimumSize(JComponent x)  {
         if(frame == x) {
             return frame.getLayout().minimumLayoutSize(x);
@@ -344,6 +406,11 @@ public class BasicInternalFrameUI extends InternalFrameUI
         return new Dimension(0, 0);
     }
 
+    /**
+     * Returns the maximum size.
+     * @param x the component
+     * @return the maximum size
+     */
     public Dimension getMaximumSize(JComponent x) {
         return new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE);
     }
@@ -371,60 +438,114 @@ public class BasicInternalFrameUI extends InternalFrameUI
         }
     }
 
+    /**
+     * Deinstalls the mouse handlers.
+     * @param c the component
+     */
     protected void deinstallMouseHandlers(JComponent c) {
       c.removeMouseListener(borderListener);
       c.removeMouseMotionListener(borderListener);
     }
 
+    /**
+     * Installs the mouse handlers.
+     * @param c the component
+     */
     protected void installMouseHandlers(JComponent c) {
       c.addMouseListener(borderListener);
       c.addMouseMotionListener(borderListener);
     }
 
+    /**
+     * Creates the north pane.
+     * @param w the internal frame
+     * @return the north pane
+     */
     protected JComponent createNorthPane(JInternalFrame w) {
       titlePane = new BasicInternalFrameTitlePane(w);
       return titlePane;
     }
 
 
+    /**
+     * Creates the north pane.
+     * @param w the internal frame
+     * @return the north pane
+     */
     protected JComponent createSouthPane(JInternalFrame w) {
         return null;
     }
 
+    /**
+     * Creates the west pane.
+     * @param w the internal frame
+     * @return the west pane
+     */
     protected JComponent createWestPane(JInternalFrame w) {
         return null;
     }
 
+    /**
+     * Creates the east pane.
+     * @param w the internal frame
+     * @return the east pane
+     */
     protected JComponent createEastPane(JInternalFrame w) {
         return null;
     }
 
-
+    /**
+     * Creates the border listener.
+     * @param w the internal frame
+     * @return the border listener
+     */
     protected MouseInputAdapter createBorderListener(JInternalFrame w) {
         return new BorderListener();
     }
 
+    /**
+     * Creates the internal frame listener.
+     */
     protected void createInternalFrameListener(){
         internalFrameListener = getHandler();
     }
 
+    /**
+     * Returns whether or no the key binding is registered.
+     * @return whether or no the key binding is registered
+     */
     protected final boolean isKeyBindingRegistered(){
       return keyBindingRegistered;
     }
 
+    /**
+     * Sets the key binding registration.
+     * @param b new value for key binding registration
+     */
     protected final void setKeyBindingRegistered(boolean b){
       keyBindingRegistered = b;
     }
 
+    /**
+     * Returns whether or no the key binding is active.
+     * @return whether or no the key binding is active
+     */
     public final boolean isKeyBindingActive(){
       return keyBindingActive;
     }
 
+    /**
+     * Sets the key binding activity.
+     * @param b new value for key binding activity
+     */
     protected final void setKeyBindingActive(boolean b){
       keyBindingActive = b;
     }
 
 
+    /**
+     * Setup the menu open key.
+     */
     protected void setupMenuOpenKey(){
         // PENDING(hania): Why are these WHEN_IN_FOCUSED_WINDOWs? Shouldn't
         // they be WHEN_ANCESTOR_OF_FOCUSED_COMPONENT?
@@ -437,13 +558,24 @@ public class BasicInternalFrameUI extends InternalFrameUI
         //SwingUtilities.replaceUIActionMap(frame, actionMap);
     }
 
+    /**
+     * Setup the menu close key.
+     */
     protected void setupMenuCloseKey(){
     }
 
+    /**
+     * Returns the north pane.
+     * @return the north pane
+     */
     public JComponent getNorthPane() {
         return northPane;
     }
 
+    /**
+     * Sets the north pane.
+     * @param c the new north pane
+     */
     public void setNorthPane(JComponent c) {
         if (northPane != null &&
                 northPane instanceof BasicInternalFrameTitlePane) {
@@ -456,30 +588,57 @@ public class BasicInternalFrameUI extends InternalFrameUI
         }
     }
 
+    /**
+     * Returns the south pane.
+     * @return the south pane
+     */
     public JComponent getSouthPane() {
         return southPane;
     }
 
+    /**
+     * Sets the south pane.
+     * @param c the new south pane
+     */
     public void setSouthPane(JComponent c) {
         southPane = c;
     }
 
+    /**
+     * Returns the west pane.
+     * @return the west pane
+     */
     public JComponent getWestPane() {
         return westPane;
     }
 
+    /**
+     * Sets the west pane.
+     * @param c the new west pane
+     */
     public void setWestPane(JComponent c) {
         westPane = c;
     }
 
+    /**
+     * Returns the east pane.
+     * @return the east pane
+     */
     public JComponent getEastPane() {
         return eastPane;
     }
 
+    /**
+     * Sets the east pane.
+     * @param c the new east pane
+     */
     public void setEastPane(JComponent c) {
         eastPane = c;
     }
 
+    /**
+     * Internal frame property change listener.
+     */
     public class InternalFramePropertyChangeListener implements
         PropertyChangeListener {
         // NOTE: This class exists only for backward compatibility. All
@@ -495,27 +654,45 @@ public class BasicInternalFrameUI extends InternalFrameUI
         }
     }
 
+    /**
+     * Internal frame layout.
+     */
   public class InternalFrameLayout implements LayoutManager {
     // NOTE: This class exists only for backward compatibility. All
     // its functionality has been moved into Handler. If you need to add
     // new functionality add it to the Handler, but make sure this
     // class calls into the Handler.
+      /**
+       * {@inheritDoc}
+       */
     public void addLayoutComponent(String name, Component c) {
         getHandler().addLayoutComponent(name, c);
     }
 
+      /**
+       * {@inheritDoc}
+       */
     public void removeLayoutComponent(Component c) {
         getHandler().removeLayoutComponent(c);
     }
 
+      /**
+       * {@inheritDoc}
+       */
     public Dimension preferredLayoutSize(Container c)  {
         return getHandler().preferredLayoutSize(c);
     }
 
+      /**
+       * {@inheritDoc}
+       */
     public Dimension minimumLayoutSize(Container c) {
         return getHandler().minimumLayoutSize(c);
     }
 
+      /**
+       * {@inheritDoc}
+       */
     public void layoutContainer(Container c) {
         getHandler().layoutContainer(c);
     }
@@ -527,6 +704,7 @@ public class BasicInternalFrameUI extends InternalFrameUI
      * find the JDesktop component and returns the desktopManager from
      * it. If this fails, it will return a default DesktopManager that
      * should work in arbitrary parents.
+     * @return the proper DesktopManager
      */
     protected DesktopManager getDesktopManager() {
         if(frame.getDesktopPane() != null
@@ -537,6 +715,10 @@ public class BasicInternalFrameUI extends InternalFrameUI
         return sharedDesktopManager;
     }
 
+    /**
+     * Creates the desktop manager.
+     * @return the desktop manager
+     */
     protected DesktopManager createDesktopManager(){
       return new DefaultDesktopManager();
     }
@@ -653,7 +835,7 @@ public class BasicInternalFrameUI extends InternalFrameUI
         Rectangle startingBounds;
         int resizeDir;
 
-
+        /** resize none */
         protected final int RESIZE_NONE  = 0;
         private boolean discardRelease = false;
 
@@ -1114,6 +1296,9 @@ public class BasicInternalFrameUI extends InternalFrameUI
 
     }    /// End BorderListener Class
 
+    /**
+     * Component handler.
+     */
     protected class ComponentHandler implements ComponentListener {
       // NOTE: This class exists only for backward compatibility. All
       // its functionality has been moved into Handler. If you need to add
@@ -1124,92 +1309,155 @@ public class BasicInternalFrameUI extends InternalFrameUI
           getHandler().componentResized(e);
       }
 
+        /**
+         * {@inheritDoc}
+         */
       public void componentMoved(ComponentEvent e) {
           getHandler().componentMoved(e);
       }
+        /**
+         * {@inheritDoc}
+         */
       public void componentShown(ComponentEvent e) {
           getHandler().componentShown(e);
       }
+        /**
+         * {@inheritDoc}
+         */
       public void componentHidden(ComponentEvent e) {
           getHandler().componentHidden(e);
       }
     }
 
+    /**
+     * Creates a component listener.
+     * @return a component listener
+     */
     protected ComponentListener createComponentListener() {
       return getHandler();
     }
 
 
+    /**
+     * Glass pane dispatcher.
+     */
     protected class GlassPaneDispatcher implements MouseInputListener {
         // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
+        /**
+         * {@inheritDoc}
+         */
         public void mousePressed(MouseEvent e) {
             getHandler().mousePressed(e);
         }
 
+        /**
+         * {@inheritDoc}
+         */
         public void mouseEntered(MouseEvent e) {
             getHandler().mouseEntered(e);
         }
 
+        /**
+         * {@inheritDoc}
+         */
         public void mouseMoved(MouseEvent e) {
             getHandler().mouseMoved(e);
         }
 
+        /**
+         * {@inheritDoc}
+         */
         public void mouseExited(MouseEvent e) {
             getHandler().mouseExited(e);
         }
 
+        /**
+         * {@inheritDoc}
+         */
         public void mouseClicked(MouseEvent e) {
             getHandler().mouseClicked(e);
         }
 
+        /**
+         * {@inheritDoc}
+         */
         public void mouseReleased(MouseEvent e) {
             getHandler().mouseReleased(e);
         }
 
+        /**
+         * {@inheritDoc}
+         */
         public void mouseDragged(MouseEvent e) {
             getHandler().mouseDragged(e);
         }
     }
 
+    /**
+     * Creates a {@code GlassPaneDispatcher}.
+     * @return a {@code GlassPaneDispatcher}
+     */
     protected MouseInputListener createGlassPaneDispatcher() {
         return null;
     }
 
-
+    /**
+     * Basic internal frame listener.
+     */
     protected class BasicInternalFrameListener implements InternalFrameListener
     {
       // NOTE: This class exists only for backward compatibility. All
       // its functionality has been moved into Handler. If you need to add
       // new functionality add it to the Handler, but make sure this
       // class calls into the Handler.
+        /**
+         * {@inheritDoc}
+         */
       public void internalFrameClosing(InternalFrameEvent e) {
           getHandler().internalFrameClosing(e);
       }
 
+        /**
+         * {@inheritDoc}
+         */
       public void internalFrameClosed(InternalFrameEvent e) {
           getHandler().internalFrameClosed(e);
       }
 
+        /**
+         * {@inheritDoc}
+         */
       public void internalFrameOpened(InternalFrameEvent e) {
           getHandler().internalFrameOpened(e);
       }
 
+        /**
+         * {@inheritDoc}
+         */
       public void internalFrameIconified(InternalFrameEvent e) {
           getHandler().internalFrameIconified(e);
       }
 
+        /**
+         * {@inheritDoc}
+         */
       public void internalFrameDeiconified(InternalFrameEvent e) {
           getHandler().internalFrameDeiconified(e);
       }
 
+        /**
+         * {@inheritDoc}
+         */
       public void internalFrameActivated(InternalFrameEvent e) {
           getHandler().internalFrameActivated(e);
       }
 
-
+        /**
+         * {@inheritDoc}
+         */
       public void internalFrameDeactivated(InternalFrameEvent e) {
           getHandler().internalFrameDeactivated(e);
       }

@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "ci/ciBaseObject.hpp"
 #include "ci/ciUtilities.hpp"
-#include "gc_interface/collectedHeap.inline.hpp"
+#include "gc/shared/collectedHeap.inline.hpp"
 
 // ------------------------------------------------------------------
 // ciBaseObject::set_ident

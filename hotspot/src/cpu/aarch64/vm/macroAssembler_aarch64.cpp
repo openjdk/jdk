@@ -41,9 +41,9 @@
 #include "runtime/sharedRuntime.hpp"
 
 #if INCLUDE_ALL_GCS
-#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
-#include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
-#include "gc_implementation/g1/heapRegion.hpp"
+#include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1SATBCardTableModRefBS.hpp"
+#include "gc/g1/heapRegion.hpp"
 #endif
 
 #ifdef PRODUCT
@@ -3788,14 +3788,14 @@ void MacroAssembler::adrp(Register reg1, const Address &dest, unsigned long &byt
 }
 
 void MacroAssembler::build_frame(int framesize) {
-  if (framesize == 0) {
-    // Is this even possible?
-    stp(rfp, lr, Address(pre(sp, -2 * wordSize)));
-  } else if (framesize < ((1 << 9) + 2 * wordSize)) {
+  assert(framesize > 0, "framesize must be > 0");
+  if (framesize < ((1 << 9) + 2 * wordSize)) {
     sub(sp, sp, framesize);
     stp(rfp, lr, Address(sp, framesize - 2 * wordSize));
+    if (PreserveFramePointer) add(rfp, sp, framesize - 2 * wordSize);
   } else {
     stp(rfp, lr, Address(pre(sp, -2 * wordSize)));
+    if (PreserveFramePointer) mov(rfp, sp);
     if (framesize < ((1 << 12) + 2 * wordSize))
       sub(sp, sp, framesize - 2 * wordSize);
     else {
@@ -3806,9 +3806,8 @@ void MacroAssembler::build_frame(int framesize) {
 }
 
 void MacroAssembler::remove_frame(int framesize) {
-  if (framesize == 0) {
-    ldp(rfp, lr, Address(post(sp, 2 * wordSize)));
-  } else if (framesize < ((1 << 9) + 2 * wordSize)) {
+  assert(framesize > 0, "framesize must be > 0");
+  if (framesize < ((1 << 9) + 2 * wordSize)) {
     ldp(rfp, lr, Address(sp, framesize - 2 * wordSize));
     add(sp, sp, framesize);
   } else {

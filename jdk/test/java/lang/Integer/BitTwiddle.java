@@ -33,6 +33,7 @@
  */
 
 import java.util.Random;
+import jdk.testlibrary.RandomFactory;
 import static java.lang.Integer.*;
 
 public class BitTwiddle {

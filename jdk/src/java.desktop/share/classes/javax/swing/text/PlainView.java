@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -520,6 +520,9 @@ public class PlainView extends View implements TabExpander {
      * view.  The longest line is checked to see if it has
      * changed.
      *
+     * @param changes the change information from the associated document
+     * @param a the current allocation of the view
+     * @param f the factory to use to rebuild if the view has children
      * @since 1.4
      */
     protected void updateDamage(DocumentEvent changes, Shape a, ViewFactory f) {
@@ -608,6 +611,7 @@ public class PlainView extends View implements TabExpander {
      * @param a  the region allocated for the view to render into
      * @param line the line number to find the region of.  This must
      *   be a valid line number in the model.
+     * @return the rectangle that represents the given line
      * @since 1.4
      */
     protected Rectangle lineToRect(Shape a, int line) {
