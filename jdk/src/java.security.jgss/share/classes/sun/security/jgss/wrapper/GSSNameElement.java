@@ -30,6 +30,7 @@ import java.security.Provider;
 import java.security.Security;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import sun.security.krb5.Realm;
 import sun.security.jgss.GSSUtil;
 import sun.security.util.ObjectIdentifier;
 import sun.security.util.DerInputStream;
@@ -37,6 +38,8 @@ import sun.security.util.DerOutputStream;
 import sun.security.jgss.GSSUtil;
 import sun.security.jgss.GSSExceptionImpl;
 import sun.security.jgss.spi.GSSNameSpi;
+
+import javax.security.auth.kerberos.ServicePermission;
 
 /**
  * This class is essentially a wrapper class for the gss_name_t
@@ -149,6 +152,26 @@ public class GSSNameElement implements GSSNameSpi {
         }
         pName = cStub.importName(name, nameType);
         setPrintables();
+
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null && !Realm.AUTODEDUCEREALM) {
+            String krbName = getKrbName();
+            int atPos = krbName.lastIndexOf('@');
+            if (atPos != -1) {
+                String atRealm = krbName.substring(atPos);
+                if (nameType.equals(GSSUtil.NT_GSS_KRB5_PRINCIPAL)
+                        && new String(nameBytes).endsWith(atRealm)) {
+                    // Created from Kerberos name with realm, no need to check
+                } else {
+                    try {
+                        sm.checkPermission(new ServicePermission(atRealm, "-"));
+                    } catch (SecurityException se) {
+                        // Do not chain the actual exception to hide info
+                        throw new GSSException(GSSException.FAILURE);
+                    }
+                }
+            }
+        }
 
         SunNativeProvider.debug("Imported " + printableName + " w/ type " +
                                 printableType);

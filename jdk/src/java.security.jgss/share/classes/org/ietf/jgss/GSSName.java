@@ -81,6 +81,18 @@ package org.ietf.jgss;
  *                      GSSName.NT_EXPORT_NAME);
  *
  * </pre>
+ * If a security manager is installed, in order to create a {@code GSSName}
+ * that contains a Kerberos name element without providing its realm,
+ * a {@link javax.security.auth.kerberos.ServicePermission ServicePermission}
+ * must be granted and the service principal of the permission must minimally
+ * be inside the Kerberos name element's realm. For example, if the result of
+ * {@link GSSManager#createName(String, Oid) createName("user", NT_USER_NAME)}
+ * contains a Kerberos name element {@code user@EXAMPLE.COM}, then
+ * a {@code ServicePermission} with service principal
+ * {@code host/www.example.com@EXAMPLE.COM} (and any action) must be granted.
+ * Otherwise, the creation will throw a {@link GSSException} containing the
+ * {@code GSSException.FAILURE} error code.
+ *
  * @see #export()
  * @see #equals(GSSName)
  * @see GSSManager#createName(String, Oid)
