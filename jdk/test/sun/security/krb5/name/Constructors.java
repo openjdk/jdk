@@ -41,22 +41,22 @@ public class Constructors {
 
         // Good ones
         type = PrincipalName.KRB_NT_UNKNOWN;
-        checkName("a", type, "R", "R", "a");
-        checkName("a@R2", type, "R", "R", "a");
-        checkName("a/b", type, "R", "R", "a", "b");
-        checkName("a/b@R2", type, "R", "R", "a", "b");
-        checkName("a/b/c", type, "R", "R", "a", "b", "c");
-        checkName("a/b/c@R2", type, "R", "R", "a", "b", "c");
+        checkName("a", type, "R", "R", false, "a");
+        checkName("a@R2", type, "R", "R", false, "a");
+        checkName("a/b", type, "R", "R", false, "a", "b");
+        checkName("a/b@R2", type, "R", "R", false, "a", "b");
+        checkName("a/b/c", type, "R", "R", false, "a", "b", "c");
+        checkName("a/b/c@R2", type, "R", "R", false, "a", "b", "c");
         // Weird ones
-        checkName("a\\/b", type, "R", "R", "a/b");
-        checkName("a\\/b\\/c", type, "R", "R", "a/b/c");
-        checkName("a\\/b\\@R2", type, "R", "R", "a/b@R2");
+        checkName("a\\/b", type, "R", "R", false, "a/b");
+        checkName("a\\/b\\/c", type, "R", "R", false, "a/b/c");
+        checkName("a\\/b\\@R2", type, "R", "R", false, "a/b@R2");
         // Bad ones
-        checkName("a", type, "", null);
-        checkName("a/", type, "R", null);
-        checkName("/a", type, "R", null);
-        checkName("a//b", type, "R", null);
-        checkName("a@", type, null, null);
+        checkName("a", type, "", null, false);
+        checkName("a/", type, "R", null, false);
+        checkName("/a", type, "R", null, false);
+        checkName("a//b", type, "R", null, false);
+        checkName("a@", type, null, null, false);
         type = PrincipalName.KRB_NT_SRV_HST;
 
         // Part 2: on realm choices
@@ -78,17 +78,17 @@ public class Constructors {
 
         if (testNoDefaultDomain) {
             type = PrincipalName.KRB_NT_UNKNOWN;
-            checkName("a", type, "R1", "R1", "a");      // arg
-            checkName("a@R1", type, null, "R1", "a");   // or r in name
-            checkName("a@R2", type, "R1", "R1", "a");   // arg over r
-            checkName("a", type, null, null);      // fail if none
-            checkName("a/b@R1", type, null, "R1", "a", "b");
+            checkName("a", type, "R1", "R1", false, "a");      // arg
+            checkName("a@R1", type, null, "R1", false, "a");   // or r in name
+            checkName("a@R2", type, "R1", "R1", false, "a");   // arg over r
+            checkName("a", type, null, null, false);      // fail if none
+            checkName("a/b@R1", type, null, "R1", false, "a", "b");
             type = PrincipalName.KRB_NT_SRV_HST;
             // Let's pray "b.h" won't be canonicalized
-            checkName("a/b.h", type, "R1", "R1", "a", "b.h");    // arg
-            checkName("a/b.h@R1", type, null, "R1", "a", "b.h"); // or r in name
-            checkName("a/b.h@R1", type, "R2", "R2", "a", "b.h"); // arg over r
-            checkName("a/b.h", type, null, null);    // fail if none
+            checkName("a/b.h", type, "R1", "R1", false, "a", "b.h");    // arg
+            checkName("a/b.h@R1", type, null, "R1", false, "a", "b.h"); // or r in name
+            checkName("a/b.h@R1", type, "R2", "R2", false, "a", "b.h"); // arg over r
+            checkName("a/b.h", type, null, null, false);    // fail if none
         }
 
         // When there is default realm
@@ -97,25 +97,25 @@ public class Constructors {
         Config.refresh();
 
         type = PrincipalName.KRB_NT_UNKNOWN;
-        checkName("a", type, "R1", "R1", "a");      // arg
-        checkName("a@R1", type, null, "R1", "a");   // or r in name
-        checkName("a@R2", type, "R1", "R1", "a");   // arg over r
-        checkName("a", type, null, "R", "a");       // default
-        checkName("a/b", type, null, "R", "a", "b");
+        checkName("a", type, "R1", "R1", false, "a");      // arg
+        checkName("a@R1", type, null, "R1", false, "a");   // or r in name
+        checkName("a@R2", type, "R1", "R1", false, "a");   // arg over r
+        checkName("a", type, null, "R", true, "a");       // default
+        checkName("a/b", type, null, "R", true, "a", "b");
         type = PrincipalName.KRB_NT_SRV_HST;
-        checkName("a/b.h3", type, "R1", "R1", "a", "b.h3");     // arg
-        checkName("a/b.h@R1", type, null, "R1", "a", "b.h");    // or r in name
-        checkName("a/b.h3@R2", type, "R1", "R1", "a", "b.h3");  // arg over r
-        checkName("a/b.h2", type, "R1", "R1", "a", "b.h2");     // arg over map
-        checkName("a/b.h2@R1", type, null, "R1", "a", "b.h2");  // r over map
-        checkName("a/b.h2", type, null, "R2", "a", "b.h2");     // map
-        checkName("a/b.h", type, null, "R", "a", "b.h");        // default
+        checkName("a/b.h3", type, "R1", "R1", false, "a", "b.h3");     // arg
+        checkName("a/b.h@R1", type, null, "R1", false, "a", "b.h");    // or r in name
+        checkName("a/b.h3@R2", type, "R1", "R1", false, "a", "b.h3");  // arg over r
+        checkName("a/b.h2", type, "R1", "R1", false, "a", "b.h2");     // arg over map
+        checkName("a/b.h2@R1", type, null, "R1", false, "a", "b.h2");  // r over map
+        checkName("a/b.h2", type, null, "R2", true, "a", "b.h2");     // map
+        checkName("a/b.h", type, null, "R", true, "a", "b.h");        // default
     }
 
     // Check if the creation matches the expected output.
     // Note: realm == null means creation failure
     static void checkName(String n, int t, String s,
-            String realm, String... parts)
+            String realm, boolean deduced, String... parts)
             throws Exception {
         PrincipalName pn = null;
         try {
@@ -131,6 +131,9 @@ public class Constructors {
                 || !Arrays.equals(pn.getNameStrings(), parts)) {
             throw new Exception(pn.toString() + " vs "
                     + Arrays.toString(parts) + "@" + realm);
+        }
+        if (deduced != pn.isRealmDeduced()) {
+            throw new Exception("pn.realmDeduced is " + pn.isRealmDeduced());
         }
     }
 }

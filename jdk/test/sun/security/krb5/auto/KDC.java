@@ -889,8 +889,9 @@ public class KDC {
 
         PrincipalName service = asReq.reqBody.sname;
         if (options.containsKey(KDC.Option.RESP_NT)) {
-            service = new PrincipalName(service.getNameStrings(),
-                    (int)options.get(KDC.Option.RESP_NT));
+            service = new PrincipalName((int)options.get(KDC.Option.RESP_NT),
+                    service.getNameStrings(),
+                    Realm.getDefault());
         }
         try {
             System.out.println(realm + "> " + asReq.reqBody.cname +
