@@ -133,8 +133,6 @@ void WorkGang::run_task(AbstractGangTask* task) {
 }
 
 void WorkGang::run_task(AbstractGangTask* task, uint no_of_parallel_workers) {
-  task->set_for_termination(no_of_parallel_workers);
-
   // This thread is executed by the VM thread which does not block
   // on ordinary MutexLocker's.
   MutexLockerEx ml(monitor(), Mutex::_no_safepoint_check_flag);

@@ -5258,18 +5258,14 @@ public:
                       CMSBitMap*       mark_bit_map,
                       AbstractWorkGang* workers,
                       OopTaskQueueSet* task_queues):
-    // XXX Should superclass AGTWOQ also know about AWG since it knows
-    // about the task_queues used by the AWG? Then it could initialize
-    // the terminator() object. See 6984287. The set_for_termination()
-    // below is a temporary band-aid for the regression in 6984287.
     AbstractGangTaskWOopQueues("Process referents by policy in parallel",
-      task_queues),
+      task_queues,
+      workers->active_workers()),
     _task(task),
     _collector(collector), _span(span), _mark_bit_map(mark_bit_map)
   {
     assert(_collector->_span.equals(_span) && !_span.is_empty(),
            "Inconsistency in _span");
-    set_for_termination(workers->active_workers());
   }
 
   OopTaskQueueSet* task_queues() { return queues(); }
