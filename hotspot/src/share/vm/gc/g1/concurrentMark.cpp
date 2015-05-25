@@ -518,7 +518,7 @@ ConcurrentMark::ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* prev
   _markStack(this),
   // _finger set in set_non_marking_state
 
-  _max_worker_id(MAX2((uint)ParallelGCThreads, 1U)),
+  _max_worker_id((uint)ParallelGCThreads),
   // _active_tasks set in set_non_marking_state
   // _tasks set inside the constructor
   _task_queues(new CMTaskQueueSet((int) _max_worker_id)),
@@ -1218,15 +1218,13 @@ void ConcurrentMark::markFromRoots() {
     "Maximum number of marking threads exceeded");
 
   uint active_workers = MAX2(1U, parallel_marking_threads());
+  assert(active_workers > 0, "Should have been set");
 
   // Parallel task terminator is set in "set_concurrency_and_phase()"
   set_concurrency_and_phase(active_workers, true /* concurrent */);
 
   CMConcurrentMarkingTask markingTask(this, cmThread());
   _parallel_workers->set_active_workers(active_workers);
-  // Don't set _n_par_threads because it affects MT in process_roots()
-  // and the decisions on that MT processing is made elsewhere.
-  assert(_parallel_workers->active_workers() > 0, "Should have been set");
   _parallel_workers->run_task(&markingTask);
   print_stats();
 }
@@ -1938,18 +1936,10 @@ void ConcurrentMark::cleanup() {
 
   HeapRegionRemSet::reset_for_cleanup_tasks();
 
-  uint n_workers;
-
   // Do counting once more with the world stopped for good measure.
   G1ParFinalCountTask g1_par_count_task(g1h, &_region_bm, &_card_bm);
 
-  g1h->set_par_threads();
-  n_workers = g1h->n_par_threads();
-  assert(g1h->n_par_threads() == n_workers,
-         "Should not have been reset");
   g1h->workers()->run_task(&g1_par_count_task);
-  // Done with the parallel phase so reset to 0.
-  g1h->set_par_threads(0);
 
   if (VerifyDuringGC) {
     // Verify that the counting data accumulated during marking matches
@@ -1965,10 +1955,7 @@ void ConcurrentMark::cleanup() {
                                                  &expected_region_bm,
                                                  &expected_card_bm);
 
-    g1h->set_par_threads((int)n_workers);
     g1h->workers()->run_task(&g1_par_verify_task);
-    // Done with the parallel phase so reset to 0.
-    g1h->set_par_threads(0);
 
     guarantee(g1_par_verify_task.failures() == 0, "Unexpected accounting failures");
   }
@@ -1990,11 +1977,11 @@ void ConcurrentMark::cleanup() {
 
   g1h->reset_gc_time_stamp();
 
+  uint n_workers = _g1h->workers()->active_workers();
+
   // Note end of marking in all heap regions.
   G1ParNoteEndTask g1_par_note_end_task(g1h, &_cleanup_list, n_workers);
-  g1h->set_par_threads((int)n_workers);
   g1h->workers()->run_task(&g1_par_note_end_task);
-  g1h->set_par_threads(0);
   g1h->check_gc_time_stamps();
 
   if (!cleanup_list_is_empty()) {
@@ -2009,9 +1996,7 @@ void ConcurrentMark::cleanup() {
   if (G1ScrubRemSets) {
     double rs_scrub_start = os::elapsedTime();
     G1ParScrubRemSetTask g1_par_scrub_rs_task(g1h, &_region_bm, &_card_bm, n_workers);
-    g1h->set_par_threads((int)n_workers);
     g1h->workers()->run_task(&g1_par_scrub_rs_task);
-    g1h->set_par_threads(0);
 
     double rs_scrub_end = os::elapsedTime();
     double this_rs_scrub_time = (rs_scrub_end - rs_scrub_start);
@@ -2020,7 +2005,7 @@ void ConcurrentMark::cleanup() {
 
   // this will also free any regions totally full of garbage objects,
   // and sort the regions.
-  g1h->g1_policy()->record_concurrent_mark_cleanup_end((int)n_workers);
+  g1h->g1_policy()->record_concurrent_mark_cleanup_end();
 
   // Statistics.
   double end = os::elapsedTime();
@@ -2312,9 +2297,7 @@ void G1CMRefProcTaskExecutor::execute(ProcessTask& proc_task) {
   // and overflow handling in CMTask::do_marking_step() knows
   // how many workers to wait for.
   _cm->set_concurrency(_active_workers);
-  _g1h->set_par_threads(_active_workers);
   _workers->run_task(&proc_task_proxy);
-  _g1h->set_par_threads(0);
 }
 
 class G1CMRefEnqueueTaskProxy: public AbstractGangTask {
@@ -2344,9 +2327,7 @@ void G1CMRefProcTaskExecutor::execute(EnqueueTask& enq_task) {
   // and overflow handling in CMTask::do_marking_step() knows
   // how many workers to wait for.
   _cm->set_concurrency(_active_workers);
-  _g1h->set_par_threads(_active_workers);
   _workers->run_task(&enq_task_proxy);
-  _g1h->set_par_threads(0);
 }
 
 void ConcurrentMark::weakRefsWorkParallelPart(BoolObjectClosure* is_alive, bool purged_classes) {
@@ -2608,27 +2589,23 @@ void ConcurrentMark::checkpointRootsFinalWork() {
 
   g1h->ensure_parsability(false);
 
-  StrongRootsScope srs;
   // this is remark, so we'll use up all active threads
   uint active_workers = g1h->workers()->active_workers();
-  if (active_workers == 0) {
-    assert(active_workers > 0, "Should have been set earlier");
-    active_workers = (uint) ParallelGCThreads;
-    g1h->workers()->set_active_workers(active_workers);
-  }
   set_concurrency_and_phase(active_workers, false /* concurrent */);
   // Leave _parallel_marking_threads at it's
   // value originally calculated in the ConcurrentMark
   // constructor and pass values of the active workers
   // through the gang in the task.
 
-  CMRemarkTask remarkTask(this, active_workers);
-  // We will start all available threads, even if we decide that the
-  // active_workers will be fewer. The extra ones will just bail out
-  // immediately.
-  g1h->set_par_threads(active_workers);
-  g1h->workers()->run_task(&remarkTask);
-  g1h->set_par_threads(0);
+  {
+    StrongRootsScope srs(active_workers);
+
+    CMRemarkTask remarkTask(this, active_workers);
+    // We will start all available threads, even if we decide that the
+    // active_workers will be fewer. The extra ones will just bail out
+    // immediately.
+    g1h->workers()->run_task(&remarkTask);
+  }
 
   SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
   guarantee(has_overflown() ||
@@ -3001,9 +2978,7 @@ void ConcurrentMark::aggregate_count_data() {
   G1AggregateCountDataTask g1_par_agg_task(_g1h, this, &_card_bm,
                                            _max_worker_id, n_workers);
 
-  _g1h->set_par_threads(n_workers);
   _g1h->workers()->run_task(&g1_par_agg_task);
-  _g1h->set_par_threads(0);
 }
 
 // Clear the per-worker arrays used to store the per-region counting data
