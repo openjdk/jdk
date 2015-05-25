@@ -4279,12 +4279,13 @@ protected:
   Mutex* stats_lock() { return &_stats_lock; }
 
 public:
-  G1ParTask(G1CollectedHeap* g1h, RefToScanQueueSet *task_queues, G1RootProcessor* root_processor)
+  G1ParTask(G1CollectedHeap* g1h, RefToScanQueueSet *task_queues, G1RootProcessor* root_processor, uint n_workers)
     : AbstractGangTask("G1 collection"),
       _g1h(g1h),
       _queues(task_queues),
       _root_processor(root_processor),
-      _terminator(0, _queues),
+      _terminator(n_workers, _queues),
+      _n_workers(n_workers),
       _stats_lock(Mutex::leaf, "parallel G1 stats lock", true)
   {}
 
@@ -4295,11 +4296,6 @@ public:
   }
 
   ParallelTaskTerminator* terminator() { return &_terminator; }
-
-  virtual void set_for_termination(uint active_workers) {
-    terminator()->reset_for_reuse(active_workers);
-    _n_workers = active_workers;
-  }
 
   // Helps out with CLD processing.
   //
@@ -5343,7 +5339,7 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
 
   {
     G1RootProcessor root_processor(this, n_workers);
-    G1ParTask g1_par_task(this, _task_queues, &root_processor);
+    G1ParTask g1_par_task(this, _task_queues, &root_processor, n_workers);
     // InitialMark needs claim bits to keep track of the marked-through CLDs.
     if (g1_policy()->during_initial_mark_pause()) {
       ClassLoaderDataGraph::clear_claimed_marks();

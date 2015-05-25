@@ -576,12 +576,6 @@ ParNewGenTask::ParNewGenTask(ParNewGeneration* gen, Generation* old_gen,
     _strong_roots_scope(strong_roots_scope)
   {}
 
-// Reset the terminator for the given number of
-// active threads.
-void ParNewGenTask::set_for_termination(uint active_workers) {
-  _state_set->reset(active_workers, _gen->promotion_failed());
-}
-
 void ParNewGenTask::work(uint worker_id) {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   // Since this is being done in a separate thread, need new resource
@@ -757,9 +751,6 @@ public:
 
 private:
   virtual void work(uint worker_id);
-  virtual void set_for_termination(uint active_workers) {
-    _state_set.terminator()->reset_for_reuse(active_workers);
-  }
 private:
   ParNewGeneration&      _gen;
   ProcessTask&           _task;
@@ -948,6 +939,8 @@ void ParNewGeneration::collect(bool   full,
   ParScanThreadStateSet thread_state_set(workers->active_workers(),
                                          *to(), *this, *_old_gen, *task_queues(),
                                          _overflow_stacks, desired_plab_sz(), _term);
+
+  thread_state_set.reset(n_workers, promotion_failed());
 
   {
     StrongRootsScope srs(n_workers);

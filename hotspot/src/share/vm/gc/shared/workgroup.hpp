@@ -59,13 +59,6 @@ public:
   // The argument tells you which member of the gang you are.
   virtual void work(uint worker_id) = 0;
 
-  // This method configures the task for proper termination.
-  // Some tasks do not have any requirements on termination
-  // and may inherit this method that does nothing.  Some
-  // tasks do some coordination on termination and override
-  // this method to implement that coordination.
-  virtual void set_for_termination(uint active_workers) {};
-
   // Debugging accessor for the name.
   const char* name() const PRODUCT_RETURN_(return NULL;);
   int counter() { return _counter; }
@@ -99,12 +92,9 @@ class AbstractGangTaskWOopQueues : public AbstractGangTask {
   OopTaskQueueSet*       _queues;
   ParallelTaskTerminator _terminator;
  public:
-  AbstractGangTaskWOopQueues(const char* name, OopTaskQueueSet* queues) :
-    AbstractGangTask(name), _queues(queues), _terminator(0, _queues) {}
+  AbstractGangTaskWOopQueues(const char* name, OopTaskQueueSet* queues, uint n_threads) :
+    AbstractGangTask(name), _queues(queues), _terminator(n_threads, _queues) {}
   ParallelTaskTerminator* terminator() { return &_terminator; }
-  virtual void set_for_termination(uint active_workers) {
-    terminator()->reset_for_reuse(active_workers);
-  }
   OopTaskQueueSet* queues() { return _queues; }
 };
 
