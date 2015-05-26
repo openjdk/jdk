@@ -811,9 +811,7 @@ public class Catalog {
       // tack on a basename because URLs point to files not dirs
       catalogCwd = FileURL.makeURL("basename");
     } catch (MalformedURLException e) {
-      String userdir = SecuritySupport.getSystemProperty("user.dir");
-      userdir = userdir.replace('\\', '/');
-      catalogManager.debug.message(1, "Malformed URL on cwd", userdir);
+      catalogManager.debug.message(1, "Malformed URL on cwd", "user.dir");
       catalogCwd = null;
     }
 

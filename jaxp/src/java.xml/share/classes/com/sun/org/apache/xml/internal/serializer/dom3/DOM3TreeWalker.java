@@ -17,9 +17,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * $Id:  $
- */
 
 package com.sun.org.apache.xml.internal.serializer.dom3;
 
@@ -29,14 +26,11 @@ import com.sun.org.apache.xml.internal.serializer.OutputPropertiesFactory;
 import com.sun.org.apache.xml.internal.serializer.SerializationHandler;
 import com.sun.org.apache.xml.internal.serializer.utils.MsgKey;
 import com.sun.org.apache.xml.internal.serializer.utils.Utils;
-import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import org.w3c.dom.Attr;
@@ -223,14 +217,6 @@ final class DOM3TreeWalker {
         fDOMConfigProperties = fSerializer.getOutputFormat();
         fSerializer.setDocumentLocator(fLocator);
         initProperties(fDOMConfigProperties);
-
-        try {
-            // Bug see Bugzilla  26741
-            fLocator.setSystemId(
-                System.getProperty("user.dir") + File.separator + "dummy.xsl");
-        } catch (SecurityException se) { // user.dir not accessible from applet
-
-        }
     }
 
     /**
