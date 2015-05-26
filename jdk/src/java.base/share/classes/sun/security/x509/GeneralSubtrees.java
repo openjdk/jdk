@@ -124,8 +124,7 @@ public class GeneralSubtrees implements Cloneable {
      * Return a printable string of the GeneralSubtree.
      */
     public String toString() {
-        String s = "   GeneralSubtrees:\n" + trees.toString() + "\n";
-        return s;
+        return "   GeneralSubtrees:\n" + trees + '\n';
     }
 
     /**

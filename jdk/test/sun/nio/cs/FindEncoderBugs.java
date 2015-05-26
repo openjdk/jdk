@@ -25,15 +25,18 @@
  * @test
  * @bug 6233345 6381699 6381702 6381705 6381706
  * @summary Encode many char sequences in many ways
+ * @library /lib/testlibrary/
+ * @build jdk.testlibrary.*
  * @run main/timeout=1200 FindEncoderBugs
  * @author Martin Buchholz
- * @key randomness
+ * @key randomness intermittent
  */
 
 import java.util.*;
 import java.util.regex.*;
 import java.nio.*;
 import java.nio.charset.*;
+import jdk.testlibrary.RandomFactory;
 
 public class FindEncoderBugs {
 
@@ -456,7 +459,7 @@ public class FindEncoderBugs {
         }
     }
 
-    private final static Random rnd = new Random();
+    private final static Random rnd = RandomFactory.getRandom();
     private static char randomChar() {
         return (char) rnd.nextInt(Character.MAX_VALUE);
     }

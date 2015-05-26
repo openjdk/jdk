@@ -154,7 +154,8 @@ public abstract class Resource {
 
     /**
      * Returns the Resource data as a ByteBuffer, but only if the input stream
-     * was implemented on top of a ByteBuffer. Return <tt>null</tt> otherwise.
+     * was implemented on top of a ByteBuffer. Return {@code null} otherwise.
+     * @return Resource data or null.
      */
     public ByteBuffer getByteBuffer() throws IOException {
         InputStream in = cachedInputStream();

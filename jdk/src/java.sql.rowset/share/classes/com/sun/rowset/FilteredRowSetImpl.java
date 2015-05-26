@@ -466,7 +466,7 @@ public class FilteredRowSetImpl extends WebRowSetImpl implements Serializable, C
      *                        passed to the evaluate function.
      * 2. updateXXXstream() - here it would suffice to pass the stream handle
      *                        to the evaluate function and the implementation
-     *                        of the evaluate function can do the comparision
+     *                        of the evaluate function can do the comparison
      *                        based on the stream and also type of data.
      */
 

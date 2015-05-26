@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 4635230 6283345 6303830 6824440 6867348 7094155 8038184 8038349 8046949
- *      8046724
+ *      8046724 8079693
  * @summary Basic unit tests for generating XML Signatures with JSR 105
  * @compile -XDignore.symbol.file KeySelectors.java SignatureValidator.java
  *     X509KeySelector.java GenerationTests.java
@@ -92,7 +92,8 @@ public class GenerationTests {
                                    rsaSha256, rsaSha384, rsaSha512,
                                    ecdsaSha1;
     private static DigestMethod sha1, sha256, sha384, sha512;
-    private static KeyInfo dsa1024, dsa2048, rsa, rsa1024, p256ki;
+    private static KeyInfo dsa1024, dsa2048, rsa, rsa1024,
+                           p256ki, p384ki, p521ki;
     private static KeySelector kvks = new KeySelectors.KeyValueKeySelector();
     private static KeySelector sks;
     private static Key signingKey;
@@ -131,6 +132,8 @@ public class GenerationTests {
         test_create_signature_enveloping_hmac_sha512();
         test_create_signature_enveloping_rsa();
         test_create_signature_enveloping_p256_sha1();
+        test_create_signature_enveloping_p384_sha1();
+        test_create_signature_enveloping_p521_sha1();
         test_create_signature_external_b64_dsa();
         test_create_signature_external_dsa();
         test_create_signature_keyname();
@@ -186,7 +189,11 @@ public class GenerationTests {
         rsa1024 = kifac.newKeyInfo(Collections.singletonList
             (kifac.newKeyValue(getPublicKey("RSA", 1024))));
         p256ki = kifac.newKeyInfo(Collections.singletonList
-            (kifac.newKeyValue(getECPublicKey())));
+            (kifac.newKeyValue(getECPublicKey("P256"))));
+        p384ki = kifac.newKeyInfo(Collections.singletonList
+            (kifac.newKeyValue(getECPublicKey("P384"))));
+        p521ki = kifac.newKeyInfo(Collections.singletonList
+            (kifac.newKeyValue(getECPublicKey("P521"))));
         rsaSha1 = fac.newSignatureMethod(SignatureMethod.RSA_SHA1, null);
         rsaSha256 = fac.newSignatureMethod
             ("http://www.w3.org/2001/04/xmldsig-more#rsa-sha256", null);
@@ -359,7 +366,21 @@ public class GenerationTests {
     static void test_create_signature_enveloping_p256_sha1() throws Exception {
         System.out.println("* Generating signature-enveloping-p256-sha1.xml");
         test_create_signature_enveloping(sha1, ecdsaSha1, p256ki,
-            getECPrivateKey(), kvks, false);
+            getECPrivateKey("P256"), kvks, false);
+        System.out.println();
+    }
+
+    static void test_create_signature_enveloping_p384_sha1() throws Exception {
+        System.out.println("* Generating signature-enveloping-p384-sha1.xml");
+        test_create_signature_enveloping(sha1, ecdsaSha1, p384ki,
+            getECPrivateKey("P384"), kvks, false);
+        System.out.println();
+    }
+
+    static void test_create_signature_enveloping_p521_sha1() throws Exception {
+        System.out.println("* Generating signature-enveloping-p521-sha1.xml");
+        test_create_signature_enveloping(sha1, ecdsaSha1, p521ki,
+            getECPrivateKey("P521"), kvks, false);
         System.out.println();
     }
 
@@ -1189,37 +1210,63 @@ public class GenerationTests {
         "237008997971129772408397621801631622129297063463868593083106979716" +
         "204903524890556839550490384015324575598723478554854070823335021842" +
         "210112348400928769";
-    private static final String EC_X =
+    private static final String EC_P256_X =
         "335863644451761614592446380116804721648611739647823420286081723541" +
         "6166183710";
-    private static final String EC_Y =
+    private static final String EC_P256_Y =
         "951559601159729477487064127150143688502130342917782252098602422796" +
         "95457910701";
-    private static final String EC_S =
+    private static final String EC_P256_S =
         "425976209773168452211813225517384419928639977904006759709292218082" +
         "7440083936";
-    private static final ECParameterSpec EC_PARAMS;
+    private static final ECParameterSpec EC_P256_PARAMS = initECParams(
+        "FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFC",
+        "5AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3C3E27D2604B",
+        "6B17D1F2E12C4247F8BCE6E563A440F277037D812DEB33A0F4A13945D898C296",
+        "4FE342E2FE1A7F9B8EE7EB4A7C0F9E162BCE33576B315ECECBB6406837BF51F5",
+        "FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551",
+        1
+    );
+    private static final String EC_P384_X =
+        "12144058647679082341340699736608428955270957565259459672517275506071643671835484144490620216582303669654008841724053";
+    private static final String EC_P384_Y =
+        "18287745972107701566600963632634101287058332546756092926848497481238534346489545826483592906634896557151987868614320";
+    private static final String EC_P384_S =
+        "10307785759830534742680442271492590599236624208247590184679565032330507874096079979152605984203102224450595283943382";
+    private static final ECParameterSpec EC_P384_PARAMS = initECParams(
+        "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFF0000000000000000FFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFF0000000000000000FFFFFFFC",
+        "B3312FA7E23EE7E4988E056BE3F82D19181D9C6EFE8141120314088F5013875AC656398D8A2ED19D2A85C8EDD3EC2AEF",
+        "AA87CA22BE8B05378EB1C71EF320AD746E1D3B628BA79B9859F741E082542A385502F25DBF55296C3A545E3872760AB7",
+        "3617DE4A96262C6F5D9E98BF9292DC29F8F41DBD289A147CE9DA3113B5F0B8C00A60B1CE1D7E819D7A431D7C90EA0E5F",
+        "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFC7634D81F4372DDF581A0DB248B0A77AECEC196ACCC52973",
+        1
+    );
+    private static final String EC_P521_X =
+        "4157918188927862838251799402582135611021257663417126086145819679867926857146776190737187582274664373117054717389603317411991660346043842712448912355335343997";
+    private static final String EC_P521_Y =
+        "4102838062751704796157456866854813794620023146924181568434486703918224542844053923233919899911519054998554969832861957437850996213216829205401947264294066288";
+    private static final String EC_P521_S =
+        "4857798533181496041050215963883119936300918353498701880968530610687256097257307590162398707429640390843595868713096292822034014722985178583665959048714417342";
+    private static final ECParameterSpec EC_P521_PARAMS = initECParams(
+        "01FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+        "01FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFC",
+        "0051953EB9618E1C9A1F929A21A0B68540EEA2DA725B99B315F3B8B489918EF109E156193951EC7E937B1652C0BD3BB1BF073573DF883D2C34F1EF451FD46B503F00",
+        "00C6858E06B70404E9CD9E3ECB662395B4429C648139053FB521F828AF606B4D3DBAA14B5E77EFE75928FE1DC127A2FFA8DE3348B3C1856A429BF97E7E31C2E5BD66",
+        "011839296A789A3BC0045C8A5FB42C7D1BD998F54449579B446817AFBD17273E662C97EE72995EF42640C550B9013FAD0761353C7086A272C24088BE94769FD16650",
+        "01FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFA51868783BF2F966B7FCC0148F709A5D03BB5C9B8899C47AEBB6FB71E91386409",
+        1
+    );
 
-    static {
-        final String ec_sfield, ec_a, ec_b, ec_gx, ec_gy, ec_n;
-        ec_sfield =
-            "FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF";
-        ec_a =
-            "FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFC";
-        ec_b =
-            "5AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3C3E27D2604B";
-        ec_gx =
-            "6B17D1F2E12C4247F8BCE6E563A440F277037D812DEB33A0F4A13945D898C296";
-        ec_gy =
-            "4FE342E2FE1A7F9B8EE7EB4A7C0F9E162BCE33576B315ECECBB6406837BF51F5";
-        ec_n =
-            "FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551";
-        final int ec_h = 1;
-        final ECField ec_field = new ECFieldFp(bigInt(ec_sfield));
-        final EllipticCurve ec_curve = new EllipticCurve(ec_field,
-                                                bigInt(ec_a), bigInt(ec_b));
-        final ECPoint ec_g = new ECPoint(bigInt(ec_gx), bigInt(ec_gy));
-        EC_PARAMS = new ECParameterSpec(ec_curve, ec_g, bigInt(ec_n), ec_h);
+    private static ECParameterSpec initECParams(
+            String sfield, String a, String b, String gx, String gy,
+            String n, int h) {
+        ECField field = new ECFieldFp(bigInt(sfield));
+        EllipticCurve curve = new EllipticCurve(field,
+                                                bigInt(a), bigInt(b));
+        ECPoint g = new ECPoint(bigInt(gx), bigInt(gy));
+        return new ECParameterSpec(curve, g, bigInt(n), h);
     }
 
     private static BigInteger bigInt(String s) {
@@ -1253,11 +1300,32 @@ public class GenerationTests {
         return kf.generatePublic(kspec);
     }
 
-    private static PublicKey getECPublicKey() throws Exception {
+    private static PublicKey getECPublicKey(String curve) throws Exception {
         KeyFactory kf = KeyFactory.getInstance("EC");
-        KeySpec kspec = new ECPublicKeySpec(new ECPoint(new BigInteger(EC_X),
-                                                        new BigInteger(EC_Y)),
-                                            EC_PARAMS);
+        String x, y;
+        ECParameterSpec params;
+        switch (curve) {
+            case "P256":
+                x = EC_P256_X;
+                y = EC_P256_Y;
+                params = EC_P256_PARAMS;
+                break;
+            case "P384":
+                x = EC_P384_X;
+                y = EC_P384_Y;
+                params = EC_P384_PARAMS;
+                break;
+            case "P521":
+                x = EC_P521_X;
+                y = EC_P521_Y;
+                params = EC_P521_PARAMS;
+                break;
+            default:
+                throw new Exception("Unsupported curve: " + curve);
+        }
+        KeySpec kspec = new ECPublicKeySpec(new ECPoint(new BigInteger(x),
+                                                        new BigInteger(y)),
+                                            params);
         return kf.generatePublic(kspec);
     }
 
@@ -1287,9 +1355,27 @@ public class GenerationTests {
         return kf.generatePrivate(kspec);
     }
 
-    private static PrivateKey getECPrivateKey() throws Exception {
+    private static PrivateKey getECPrivateKey(String curve) throws Exception {
+        String s;
+        ECParameterSpec params;
+        switch (curve) {
+            case "P256":
+                s = EC_P256_S;
+                params = EC_P256_PARAMS;
+                break;
+            case "P384":
+                s = EC_P384_S;
+                params = EC_P384_PARAMS;
+                break;
+            case "P521":
+                s = EC_P521_S;
+                params = EC_P521_PARAMS;
+                break;
+            default:
+                throw new Exception("Unsupported curve: " + curve);
+        }
         KeyFactory kf = KeyFactory.getInstance("EC");
-        KeySpec kspec = new ECPrivateKeySpec(new BigInteger(EC_S), EC_PARAMS);
+        KeySpec kspec = new ECPrivateKeySpec(new BigInteger(s), params);
         return kf.generatePrivate(kspec);
     }
 

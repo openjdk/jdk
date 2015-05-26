@@ -22,8 +22,8 @@
  */
 package test.auctionportal;
 
-import static com.sun.org.apache.xerces.internal.jaxp.JAXPConstants.JAXP_SCHEMA_LANGUAGE;
-import static com.sun.org.apache.xerces.internal.jaxp.JAXPConstants.JAXP_SCHEMA_SOURCE;
+import static test.auctionportal.HiBidConstants.JAXP_SCHEMA_LANGUAGE;
+import static test.auctionportal.HiBidConstants.JAXP_SCHEMA_SOURCE;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;

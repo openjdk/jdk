@@ -175,11 +175,22 @@ implements CertAttrSet<String> {
      * Return the printable string.
      */
     public String toString() {
-        return(super.toString() +
-                "PrivateKeyUsage: [\n" +
-                ((notBefore == null) ? "" : "From: " + notBefore.toString() + ", ")
-                + ((notAfter == null) ? "" : "To: " + notAfter.toString())
-                + "]\n");
+        StringBuilder sb = new StringBuilder();
+        sb.append(super.toString())
+            .append("PrivateKeyUsage: [\n");
+        if (notBefore != null) {
+            sb.append("From: ")
+                .append(notBefore);
+            if (notAfter != null) {
+                sb.append(", ");
+            }
+        }
+        if (notAfter != null) {
+            sb.append("To: ")
+                .append(notAfter);
+        }
+        sb.append("]\n");
+        return sb.toString();
     }
 
     /**

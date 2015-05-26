@@ -227,7 +227,7 @@ public final class Utility {
 
     /**
      * Convert a integer to size width hex uppercase digits.
-     * E.g., hex('a', 4, str) => "0041".
+     * E.g., {@code hex('a', 4, str) => "0041"}.
      * Append the output to the given StringBuffer.
      * If width is too small to fit, nothing will be appended to output.
      */
@@ -237,7 +237,7 @@ public final class Utility {
 
     /**
      * Convert a integer to size width (minimum) hex uppercase digits.
-     * E.g., hex('a', 4, str) => "0041".  If the integer requires more
+     * E.g., {@code hex('a', 4, str) => "0041"}.  If the integer requires more
      * than width digits, more will be used.
      */
     public static String hex(int ch, int width) {
@@ -334,8 +334,8 @@ public final class Utility {
     }
 
     /**
-     * Escape unprintable characters using <backslash>uxxxx notation
-     * for U+0000 to U+FFFF and <backslash>Uxxxxxxxx for U+10000 and
+     * Escape unprintable characters using {@code <backslash>uxxxx} notation
+     * for U+0000 to U+FFFF and {@code <backslash>Uxxxxxxxx} for U+10000 and
      * above.  If the character is printable ASCII, then do nothing
      * and return FALSE.  Otherwise, append the escaped notation and
      * return TRUE.

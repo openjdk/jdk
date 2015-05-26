@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@
  *     annotation processor.
  * @author Werner Dietl
  *
+ * @modules java.compiler
+ *          jdk.compiler
  * @compile DummyProcessor.java
  * @compile/fail/ref=TypeVariableMissingTA.out -XDrawDiagnostics TypeVariableMissingTA.java
  * @compile/fail/ref=TypeVariableMissingTA.out -XDrawDiagnostics -cp . -processor DummyProcessor TypeVariableMissingTA.java

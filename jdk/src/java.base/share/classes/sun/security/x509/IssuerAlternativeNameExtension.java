@@ -140,17 +140,20 @@ extends Extension implements CertAttrSet<String> {
      * Returns a printable representation of the IssuerAlternativeName.
      */
     public String toString() {
-
-        String result = super.toString() + "IssuerAlternativeName [\n";
-        if(names == null) {
-            result += "  null\n";
+        StringBuilder sb = new StringBuilder();
+        sb.append(super.toString())
+            .append("IssuerAlternativeName [\n");
+        if (names == null) {
+            sb.append("  null\n");
         } else {
-            for(GeneralName name: names.names()) {
-                result += "  "+name+"\n";
+            for (GeneralName name : names.names()) {
+                sb.append("  ")
+                    .append(name)
+                    .append('\n');
             }
         }
-        result += "]\n";
-        return result;
+        sb.append("]\n");
+        return sb.toString();
     }
 
     /**

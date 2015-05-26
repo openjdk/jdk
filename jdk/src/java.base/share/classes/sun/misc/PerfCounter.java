@@ -37,7 +37,7 @@ import java.security.AccessController;
  * The perf counters will be created in the jvmstat perf buffer
  * that the HotSpot VM creates. The default size is 32K and thus
  * the number of counters is bounded.  You can alter the size
- * with -XX:PerfDataMemorySize=<bytes> option. If there is
+ * with {@code -XX:PerfDataMemorySize=<bytes>} option. If there is
  * insufficient memory in the jvmstat perf buffer, the C heap memory
  * will be used and thus the application will continue to run if
  * the counters added exceeds the buffer size but the counters

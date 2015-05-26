@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 6981185
  * @summary  com.sun.tools.model.JavacTypes.contains() calls Type.contains instead of Types.containsType
+ * @modules jdk.compiler
  * @run main TestContainTypes
  */
 

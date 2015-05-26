@@ -128,7 +128,7 @@ import java.util.MissingResourceException;
  * Annex C: Compatibility Properties of UTS #18 Unicode Regular Expressions
  * (http://www.unicode.org/reports/tr18/#Compatibility_Properties).
  * </p>
- * <p>
+ * <pre>{@code
  * API access for C/POSIX character classes is as follows:
  * - alpha:     isUAlphabetic(c) or hasBinaryProperty(c, UProperty.ALPHABETIC)
  * - lower:     isULowercase(c) or hasBinaryProperty(c, UProperty.LOWERCASE)
@@ -142,7 +142,7 @@ import java.util.MissingResourceException;
  * - cntrl:     getType(c)==CONTROL
  * - graph:     hasBinaryProperty(c, UProperty.POSIX_GRAPH)
  * - print:     hasBinaryProperty(c, UProperty.POSIX_PRINT)
- * </p>
+ * }</pre>
  * <p>
  * The C/POSIX character classes are also available in UnicodeSet patterns,
  * using patterns like [:graph:] or \p{graph}.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,16 +24,19 @@
 /*
  * @test
  * @bug 6380723
- * @summary Decode many byte sequences in many ways
+ * @summary Decode many byte sequences in many ways (use -Dseed=X to set PRNG seed)
+ * @library /lib/testlibrary
+ * @build jdk.testlibrary.*
  * @run main/timeout=1800 FindDecoderBugs
  * @author Martin Buchholz
- * @key randomness
+ * @key intermittent randomness
  */
 
 import java.util.*;
 import java.util.regex.*;
 import java.nio.*;
 import java.nio.charset.*;
+import jdk.testlibrary.RandomFactory;
 
 public class FindDecoderBugs {
 
@@ -322,7 +325,7 @@ public class FindDecoderBugs {
         }
     }
 
-    private final static Random rnd = new Random();
+    private final static Random rnd = RandomFactory.getRandom();
     private static byte randomByte() {
         return (byte) rnd.nextInt(0x100);
     }

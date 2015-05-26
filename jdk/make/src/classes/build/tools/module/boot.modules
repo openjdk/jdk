@@ -24,6 +24,7 @@ jdk.httpserver
 jdk.jfr
 jdk.management
 jdk.management.cmm
+jdk.management.resource
 jdk.naming.rmi
 jdk.sctp
 jdk.security.auth

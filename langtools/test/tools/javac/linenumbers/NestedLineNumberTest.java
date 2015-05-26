@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @test
  * @bug 8061778
  * @summary  Wrong LineNumberTable for default constructors
+ * @modules jdk.compiler/com.sun.tools.classfile
  */
 
 import com.sun.tools.classfile.ClassFile;
@@ -49,8 +50,8 @@ public class NestedLineNumberTest {
         }
 
         int line = lines[0].line_number;
-        if (line != 78) {
-            error(String.format("LineNumberTable contains wrong line number - expected %d, found %d", 78, line));
+        if (line != 79) {
+            error(String.format("LineNumberTable contains wrong line number - expected %d, found %d", 79, line));
         }
     }
 

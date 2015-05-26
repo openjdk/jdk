@@ -175,19 +175,24 @@ implements CertAttrSet<String> {
      * Return the extension as user readable string.
      */
     public String toString() {
-        String s;
-        s = super.toString() + "PolicyConstraints: [" + "  Require: ";
-        if (require == -1)
-            s += "unspecified;";
-        else
-            s += require + ";";
-        s += "\tInhibit: ";
-        if (inhibit == -1)
-            s += "unspecified";
-        else
-            s += inhibit;
-        s += " ]\n";
-        return s;
+        StringBuilder sb = new StringBuilder();
+        sb.append(super.toString())
+            .append("PolicyConstraints: [")
+            .append("  Require: ");
+        if (require == -1) {
+            sb.append("unspecified;");
+        } else {
+            sb.append(require)
+                .append(';');
+        }
+        sb.append("\tInhibit: ");
+        if (inhibit == -1) {
+            sb.append("unspecified");
+        } else {
+            sb.append(inhibit);
+        }
+        sb.append(" ]\n");
+        return sb.toString();
     }
 
     /**

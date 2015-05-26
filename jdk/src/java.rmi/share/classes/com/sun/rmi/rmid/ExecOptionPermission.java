@@ -32,7 +32,6 @@ import java.util.*;
 /**
  * The ExecOptionPermission class represents permission for rmid to use
  * a specific command-line option when launching an activation group.
- * <P>
  *
  * @author Ann Wollrath
  *
@@ -68,9 +67,9 @@ public final class ExecOptionPermission extends Permission
      * Checks if the specified permission is "implied" by
      * this object.
      * <P>
-     * More specifically, this method returns true if:<p>
+     * More specifically, this method returns true if:
      * <ul>
-     * <li> <i>p</i>'s class is the same as this object's class, and<p>
+     * <li> <i>p</i>'s class is the same as this object's class, and
      * <li> <i>p</i>'s name equals or (in the case of wildcards)
      *      is implied by this object's
      *      name. For example, "a.b.*" implies "a.b.c", and
@@ -111,7 +110,7 @@ public final class ExecOptionPermission extends Permission
      * Checks two ExecOptionPermission objects for equality.
      * Checks that <i>obj</i>'s class is the same as this object's class
      * and has the same name as this object.
-     * <P>
+     *
      * @param obj the object we are testing for equality with this object.
      * @return true if <i>obj</i> is an ExecOptionPermission, and has the same
      * name as this ExecOptionPermission object, false otherwise.
@@ -154,7 +153,7 @@ public final class ExecOptionPermission extends Permission
      * Returns a new PermissionCollection object for storing
      * ExecOptionPermission objects.
      * <p>
-     * A ExecOptionPermissionCollection stores a collection of
+     * An ExecOptionPermissionCollection stores a collection of
      * ExecOptionPermission permissions.
      *
      * <p>ExecOptionPermission objects must be stored in a manner that allows

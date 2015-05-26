@@ -107,12 +107,14 @@ abstract public class GenericURLContext implements Context {
       * the subclass must override getURLSuffix() to get the correct behavior.
       * Remember, the behavior must match getRootURLContext().
       *
+      * <pre>{@code
       * URL                                     Suffix
       * foo://host:port                         <empty string>
       * foo://host:port/rest/of/name            rest/of/name
       * foo:///rest/of/name                     rest/of/name
       * foo:/rest/of/name                       rest/of/name
       * foo:rest/of/name                        rest/of/name
+      * }</pre>
       */
     protected Name getURLSuffix(String prefix, String url) throws NamingException {
         String suffix = url.substring(prefix.length());

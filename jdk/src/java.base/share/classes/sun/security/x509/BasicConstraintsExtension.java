@@ -171,15 +171,11 @@ implements CertAttrSet<String> {
       * Return user readable form of extension.
       */
      public String toString() {
-         String s = super.toString() + "BasicConstraints:[\n";
-
-         s += ((ca) ? ("  CA:true") : ("  CA:false")) + "\n";
-         if (pathLen >= 0) {
-             s += "  PathLen:" + pathLen + "\n";
-         } else {
-             s += "  PathLen: undefined\n";
-         }
-         return (s + "]\n");
+         return super.toString() +
+             "BasicConstraints:[\n  CA:" + ca +
+             "\n  PathLen:" +
+             ((pathLen >= 0) ? String.valueOf(pathLen) : " undefined") +
+             "\n]\n";
      }
 
      /**
