@@ -64,6 +64,9 @@ DEFINE_SHLGUID(IID_IExtractIconW,       0x000214FAL, 0, 0);
 
 //#include <sun_awt_shell_Win32ShellFolder2.h>
 
+#ifndef DASSERT
+#define DASSERT(x)
+#endif
 #define DEFINE_FIELD_ID(var, cls, field, type)                            \
     jfieldID var = env->GetFieldID(cls, field, type);                     \
     DASSERT(var != NULL);                                                 \
