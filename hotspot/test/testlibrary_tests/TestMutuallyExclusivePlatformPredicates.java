@@ -21,8 +21,8 @@
  * questions.
  */
 
-import com.oracle.java.testlibrary.Asserts;
-import com.oracle.java.testlibrary.Platform;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.Platform;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -36,7 +36,7 @@ import java.util.Set;
 /**
  * @test
  * @summary Verify that for each group of mutually exclusive predicates defined
- *          in com.oracle.java.testlibrary.Platform one and only one predicate
+ *          in jdk.test.lib.Platform one and only one predicate
  *          evaluates to true.
  * @library /testlibrary
  * @modules java.base/sun.misc
@@ -72,7 +72,7 @@ public class TestMutuallyExclusivePlatformPredicates {
 
     /**
      * Verifies that one and only one predicate method defined in
-     * {@link com.oracle.java.testlibrary.Platform}, whose name included into
+     * {@link jdk.test.lib.Platform}, whose name included into
      * methodGroup will return {@code true}.
      * @param methodGroup The group of methods that should be tested.
      */
@@ -91,7 +91,7 @@ public class TestMutuallyExclusivePlatformPredicates {
 
     /**
      * Verifies that all predicates defined in
-     * {@link com.oracle.java.testlibrary.Platform} were either tested or
+     * {@link jdk.test.lib.Platform} were either tested or
      * explicitly ignored.
      */
     private static void verifyCoverage() {
@@ -112,7 +112,7 @@ public class TestMutuallyExclusivePlatformPredicates {
 
     /**
      * Evaluates predicate method with name {@code name} defined in
-     * {@link com.oracle.java.testlibrary.Platform}.
+     * {@link jdk.test.lib.Platform}.
      *
      * @param name The name of a predicate to be evaluated.
      * @return evaluated predicate's value.

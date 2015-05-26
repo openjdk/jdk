@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @bug 6376083 6376084 6458819 7025784 7025786 7025789
  * @summary Test that warnings about source versions are output as expected.
  * @author  Joseph D. Darcy
+ * @modules java.compiler
+ *          jdk.compiler
  * @compile TestSourceVersionWarnings.java
  * @compile/ref=gold_0.out             -XDrawDiagnostics -processor TestSourceVersionWarnings -proc:only                           -source 1.6 -Xlint:-options HelloWorld.java
  * @compile/ref=gold_sv_warn_5_6.out   -XDrawDiagnostics -processor TestSourceVersionWarnings -proc:only -ASourceVersion=RELEASE_5 -source 1.6 -Xlint:-options HelloWorld.java

@@ -1,19 +1,19 @@
-EndWithIdentifierTest.java:14: error: syntax error in reference
+EndWithIdentifierTest.java:15: error: syntax error in reference
     /**{@link*/
        ^
-EndWithIdentifierTest.java:17: error: reference not found
+EndWithIdentifierTest.java:18: error: reference not found
     /**@see List*/
             ^
-EndWithIdentifierTest.java:20: error: semicolon missing
+EndWithIdentifierTest.java:21: error: semicolon missing
     /**&amp*/
        ^
-EndWithIdentifierTest.java:23: error: malformed HTML
+EndWithIdentifierTest.java:24: error: malformed HTML
     /**<a*/
        ^
-EndWithIdentifierTest.java:26: error: malformed HTML
+EndWithIdentifierTest.java:27: error: malformed HTML
     /**</a*/
        ^
-EndWithIdentifierTest.java:29: error: malformed HTML
+EndWithIdentifierTest.java:30: error: malformed HTML
     /**<a name*/
        ^
 6 errors

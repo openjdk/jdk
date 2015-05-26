@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,10 +39,12 @@ public final class NewFilterAction extends CallableSystemAction {
         putValue(Action.SHORT_DESCRIPTION, "Create new filter");
     }
 
+    @Override
     public void performAction() {
         FilterTopComponent.findInstance().newFilter();
     }
 
+    @Override
     public String getName() {
         return NbBundle.getMessage(SaveFilterSettingsAction.class, "CTL_NewFilterAction");
     }
@@ -52,6 +54,7 @@ public final class NewFilterAction extends CallableSystemAction {
         super.initialize();
     }
 
+    @Override
     public HelpCtx getHelpCtx() {
         return HelpCtx.DEFAULT_HELP;
     }
@@ -63,6 +66,6 @@ public final class NewFilterAction extends CallableSystemAction {
 
     @Override
     protected String iconResource() {
-        return "com/sun/hotspot/igv/filterwindow/images/plus.gif";
+        return "com/sun/hotspot/igv/filterwindow/images/plus.png";
     }
 }

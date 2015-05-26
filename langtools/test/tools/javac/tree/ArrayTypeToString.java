@@ -25,6 +25,7 @@
  * @test
  * @bug 8068737
  * @summary Tests ArrayType.toString with type annotations present
+ * @modules jdk.compiler/com.sun.tools.javac.code
  * @build ArrayTypeToString
  * @compile/ref=ArrayTypeToString.out -XDrawDiagnostics -processor ArrayTypeToString -proc:only ArrayTypeToString.java
  */

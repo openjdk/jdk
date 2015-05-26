@@ -2,6 +2,8 @@
  * @test /nodynamiccopyright/
  * @bug 6873845
  * @summary refine access to symbol file
+ * @modules java.base/sun.misc
+ *          jdk.compiler
  */
 
 import java.io.*;
@@ -19,8 +21,8 @@ public class T6873845 {
         if (out.contains("sunapi"))
             throw new Exception("unexpected output for -X");
 
-        String warn1 = "T6873845.java:73:9: compiler.warn.sun.proprietary: sun.misc.Unsafe" + newline;
-        String warn2 = "T6873845.java:78:9: compiler.warn.sun.proprietary: sun.misc.Unsafe" + newline;
+        String warn1 = "T6873845.java:75:9: compiler.warn.sun.proprietary: sun.misc.Unsafe" + newline;
+        String warn2 = "T6873845.java:80:9: compiler.warn.sun.proprietary: sun.misc.Unsafe" + newline;
         String note1 = "- compiler.note.sunapi.filename: T6873845.java" + newline;
         String note2 = "- compiler.note.sunapi.recompile" + newline;
 

@@ -5176,7 +5176,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     }
 
     /*
-     * returns true if 128 bit number <hi0,lo0> is less then <hi1,lo1>
+     * returns true if 128 bit number <hi0,lo0> is less than <hi1,lo1>
      * hi0 & hi1 should be non-negative
      */
     private static boolean longLongCompareMagnitude(long hi0, long lo0, long hi1, long lo1) {

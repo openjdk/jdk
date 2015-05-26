@@ -25,6 +25,7 @@
  * @test
  * @bug 8071851
  * @summary Test the -Xdoclint/package option
+ * @modules jdk.compiler/com.sun.tools.javac.main
  */
 
 import java.io.File;

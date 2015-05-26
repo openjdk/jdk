@@ -28,7 +28,7 @@
 import com.sun.management.HotSpotDiagnosticMXBean;
 import com.sun.management.VMOption;
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.Arrays;

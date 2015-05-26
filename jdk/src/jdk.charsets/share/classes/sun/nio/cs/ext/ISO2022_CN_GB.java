@@ -68,7 +68,7 @@ public class ISO2022_CN_GB extends ISO2022 implements HistoricallyNamedCharset
         public Encoder(Charset cs)
         {
             super(cs);
-            SODesig = "$)A";
+            SODesig = new byte[] { '$', ')', 'A'};
 
             try {
                 Charset cset = Charset.forName("EUC_CN"); // GB2312

@@ -27,11 +27,11 @@
  * @key regression
  * @summary Regression test for attach issue where stale pid files in /tmp lead to connection issues
  * @library /testlibrary
- * @build com.oracle.java.testlibrary.* AttachWithStalePidFileTarget
+ * @build jdk.test.lib.* AttachWithStalePidFileTarget
  * @run main AttachWithStalePidFile
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 import com.sun.tools.attach.VirtualMachine;
 import sun.tools.attach.HotSpotVirtualMachine;
 import java.lang.reflect.Field;

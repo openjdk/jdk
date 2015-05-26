@@ -2,6 +2,8 @@
  * @test /nodynamiccopyright/
  * @bug 8022765
  * @summary javac should not crash for incorrect attribute values
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.file
  * @build VerifyAnnotationsAttributed
  * @run main VerifyAnnotationsAttributed T8022765.java
  * @compile/fail/ref=T8022765.out -XDrawDiagnostics T8022765.java

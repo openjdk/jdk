@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,7 @@
  */
 package com.sun.hotspot.igv.filter;
 
-import com.sun.hotspot.igv.graph.Connection;
-import com.sun.hotspot.igv.graph.Diagram;
-import com.sun.hotspot.igv.graph.Figure;
-import com.sun.hotspot.igv.graph.InputSlot;
-import com.sun.hotspot.igv.graph.OutputSlot;
-import com.sun.hotspot.igv.graph.Selector;
+import com.sun.hotspot.igv.graph.*;
 import java.util.List;
 
 /**
@@ -39,25 +34,52 @@ public class SplitFilter extends AbstractFilter {
 
     private String name;
     private Selector selector;
+    private String propertyName;
 
-    public SplitFilter(String name, Selector selector) {
+    public SplitFilter(String name, Selector selector, String propertyName) {
         this.name = name;
         this.selector = selector;
+        this.propertyName = propertyName;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public void apply(Diagram d) {
         List<Figure> list = selector.selected(d);
 
         for (Figure f : list) {
+
+            for (InputSlot is : f.getInputSlots()) {
+                for (Connection c : is.getConnections()) {
+                    OutputSlot os = c.getOutputSlot();
+                    if (f.getSource().getSourceNodes().size() > 0) {
+                        os.getSource().addSourceNodes(f.getSource());
+                        os.setAssociatedNode(f.getSource().getSourceNodes().get(0));
+                        os.setColor(f.getColor());
+                    }
+
+
+                    String s = Figure.resolveString(propertyName, f.getProperties());
+                    if (s != null) {
+                        os.setShortName(s);
+                    }
+
+                }
+            }
             for (OutputSlot os : f.getOutputSlots()) {
                 for (Connection c : os.getConnections()) {
                     InputSlot is = c.getInputSlot();
-                    is.setName(f.getProperties().get("dump_spec"));
-                    String s = f.getProperties().get("short_name");
+                    if (f.getSource().getSourceNodes().size() > 0) {
+                        is.getSource().addSourceNodes(f.getSource());
+                        is.setAssociatedNode(f.getSource().getSourceNodes().get(0));
+                        is.setColor(f.getColor());
+                    }
+
+                    String s = Figure.resolveString(propertyName, f.getProperties());
                     if (s != null) {
                         is.setShortName(s);
                     }

@@ -2,6 +2,10 @@
  * @test /nodynamiccopyright/
  * @bug 6707032
  * @summary Verify that \\@SuppressWarnings("divzero") works for constant initializers
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.code
+ *          jdk.compiler/com.sun.tools.javac.file
+ *          jdk.compiler/com.sun.tools.javac.tree
  * @build VerifySuppressWarnings
  * @compile/ref=T6707032.out -XDrawDiagnostics -Xlint:divzero T6707032.java
  * @run main VerifySuppressWarnings T6707032.java

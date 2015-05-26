@@ -28,9 +28,12 @@
 #include "utilities/ostream.hpp"
 
 double TimeHelper::counter_to_seconds(jlong counter) {
-  double count = (double) counter;
   double freq  = (double) os::elapsed_frequency();
-  return counter/freq;
+  return counter / freq;
+}
+
+double TimeHelper::counter_to_millis(jlong counter) {
+  return counter_to_seconds(counter) * 1000.0;
 }
 
 void elapsedTimer::add(elapsedTimer t) {
@@ -56,8 +59,7 @@ double elapsedTimer::seconds() const {
 }
 
 jlong elapsedTimer::milliseconds() const {
-  jlong ticks_per_ms = os::elapsed_frequency() / 1000;
-  return _counter / ticks_per_ms;
+  return TimeHelper::counter_to_millis(_counter);
 }
 
 jlong elapsedTimer::active_ticks() const {
@@ -86,11 +88,8 @@ double TimeStamp::seconds() const {
 
 jlong TimeStamp::milliseconds() const {
   assert(is_updated(), "must not be clear");
-
   jlong new_count = os::elapsed_counter();
-  jlong count = new_count - _counter;
-  jlong ticks_per_ms = os::elapsed_frequency() / 1000;
-  return count / ticks_per_ms;
+  return TimeHelper::counter_to_millis(new_count - _counter);
 }
 
 jlong TimeStamp::ticks_since_update() const {

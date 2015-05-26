@@ -51,6 +51,11 @@ import static javax.tools.StandardLocation.CLASS_OUTPUT;
  * @test
  * @bug 8067384 8068488
  * @summary Verify that JavacParser can be extended
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.code
+ *          jdk.compiler/com.sun.tools.javac.parser
+ *          jdk.compiler/com.sun.tools.javac.tree
+ *          jdk.compiler/com.sun.tools.javac.util
  */
 public class JavacExtensionTest {
 

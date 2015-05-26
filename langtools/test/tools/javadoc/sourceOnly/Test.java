@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 4548768
  * @summary Javadoc in JDK 1.4 uses classpath and not just source dir
  * @author gafter
+ * @modules jdk.javadoc
  * @compile p/SourceOnly.java
  * @run main p.SourceOnly
  */

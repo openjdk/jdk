@@ -53,7 +53,7 @@ void PeriodicTask::real_time_tick(int delay_time) {
   if (ProfilerCheckIntervals) {
     _ticks++;
     _timer.stop();
-    int ms = (int)(_timer.seconds() * 1000.0);
+    int ms = (int)_timer.milliseconds();
     _timer.reset();
     _timer.start();
     if (ms >= PeriodicTask::max_interval) ms = PeriodicTask::max_interval - 1;

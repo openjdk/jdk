@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Verify the contents of a ClassDoc containing a varArgs method.
  *          Verify that see/link tags can use "..." notation.
  * @library ../lib
+ * @modules jdk.javadoc
  * @compile  ../lib/Tester.java Main.java
  * @run main Main
  */

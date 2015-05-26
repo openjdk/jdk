@@ -591,6 +591,9 @@
   template(classLoader_name,                           "classLoader")                                             \
   template(componentType_name,                         "componentType")                                           \
                                                                                                                   \
+  /* forEachRemaining support */                                                                                  \
+  template(java_util_stream_StreamsRangeIntSpliterator,          "java/util/stream/Streams$RangeIntSpliterator")  \
+                                                                                                                  \
   /* trace signatures */                                                                                          \
   TRACE_TEMPLATES(template)                                                                                       \
                                                                                                                   \
@@ -1121,6 +1124,11 @@
   do_intrinsic(_Double_valueOf,           java_lang_Double,       valueOf_name, Double_valueOf_signature, F_S)          \
    do_name(     Double_valueOf_signature,                        "(D)Ljava/lang/Double;")                               \
                                                                                                                         \
+  /* forEachRemaining */                                                                             \
+  do_intrinsic(_forEachRemaining, java_util_stream_StreamsRangeIntSpliterator, forEachRemaining_name, forEachRemaining_signature, F_R) \
+   do_name(     forEachRemaining_name,    "forEachRemaining")                                                           \
+   do_name(     forEachRemaining_signature,                      "(Ljava/util/function/IntConsumer;)V")                 \
+
     /*end*/
 
 

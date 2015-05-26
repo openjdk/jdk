@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 8027281
  * @summary As per JVMS 4.9.2, invokespecial can only refer to direct superinterfaces
+ * @modules jdk.compiler/com.sun.tools.classfile
  * @compile TestDirectSuperInterfaceInvoke.java
  * @run main TestDirectSuperInterfaceInvoke
  */

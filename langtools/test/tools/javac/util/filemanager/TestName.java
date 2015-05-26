@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary JSR 199: enforce the use of valid package and class names
  *                   in get{Java,}FileFor{Input,Output}
  * @author  Peter von der Ah\u00e9
+ * @modules jdk.compiler/com.sun.tools.javac.file
  */
 
 import com.sun.tools.javac.file.JavacFileManager;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,5 +26,5 @@
  * @bug     5044646
  * @summary package-private indirect noninherited generic overriders
  * @compile p1/A1.java p2/A2.java p1/B.java
- * @compile/fail p1/C.java
+ * @compile/fail/ref=T5044646.out -XDrawDiagnostics p1/C.java
  */

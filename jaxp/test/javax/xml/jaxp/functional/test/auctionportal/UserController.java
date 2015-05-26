@@ -22,7 +22,7 @@
  */
 package test.auctionportal;
 
-import static com.sun.org.apache.xerces.internal.jaxp.JAXPConstants.JAXP_SCHEMA_LANGUAGE;
+import static test.auctionportal.HiBidConstants.JAXP_SCHEMA_LANGUAGE;
 import static org.testng.Assert.assertFalse;
 import java.io.FileOutputStream;
 import java.nio.file.Files;
