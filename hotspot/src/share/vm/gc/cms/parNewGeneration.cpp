@@ -927,23 +927,21 @@ void ParNewGeneration::collect(bool   full,
   to()->clear(SpaceDecorator::Mangle);
 
   gch->save_marks();
-  assert(workers != NULL, "Need parallel worker threads.");
-  uint n_workers = active_workers;
 
   // Set the correct parallelism (number of queues) in the reference processor
-  ref_processor()->set_active_mt_degree(n_workers);
+  ref_processor()->set_active_mt_degree(active_workers);
 
   // Always set the terminator for the active number of workers
   // because only those workers go through the termination protocol.
-  ParallelTaskTerminator _term(n_workers, task_queues());
-  ParScanThreadStateSet thread_state_set(workers->active_workers(),
+  ParallelTaskTerminator _term(active_workers, task_queues());
+  ParScanThreadStateSet thread_state_set(active_workers,
                                          *to(), *this, *_old_gen, *task_queues(),
                                          _overflow_stacks, desired_plab_sz(), _term);
 
-  thread_state_set.reset(n_workers, promotion_failed());
+  thread_state_set.reset(active_workers, promotion_failed());
 
   {
-    StrongRootsScope srs(n_workers);
+    StrongRootsScope srs(active_workers);
 
     ParNewGenTask tsk(this, _old_gen, reserved().end(), &thread_state_set, &srs);
     gch->rem_set()->prepare_for_younger_refs_iterate(true);
@@ -951,7 +949,7 @@ void ParNewGeneration::collect(bool   full,
     // separate thread causes wide variance in run times.  We can't help this
     // in the multi-threaded case, but we special-case n=1 here to get
     // repeatable measurements of the 1-thread overhead of the parallel code.
-    if (n_workers > 1) {
+    if (active_workers > 1) {
       workers->run_task(&tsk);
     } else {
       tsk.work(0);
@@ -1024,7 +1022,7 @@ void ParNewGeneration::collect(bool   full,
   to()->set_concurrent_iteration_safe_limit(to()->top());
 
   if (ResizePLAB) {
-    plab_stats()->adjust_desired_plab_sz(n_workers);
+    plab_stats()->adjust_desired_plab_sz(active_workers);
   }
 
   if (PrintGC && !PrintGCDetails) {
