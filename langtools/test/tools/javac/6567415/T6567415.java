@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 6567415
  * @summary Test to ensure javac does not go into an infinite loop, while
  *               reading a classfile of a specific length.
+ * @modules jdk.compiler
  * @compile -XDignore.symbol.file T6567415.java
  * @run main T6567415
  * @author ksrini

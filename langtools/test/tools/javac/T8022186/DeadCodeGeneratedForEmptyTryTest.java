@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
  * @test
  * @bug 8022186
  * @summary javac generates dead code if a try with an empty body has a finalizer
+ * @modules jdk.compiler/com.sun.tools.classfile
+ *          jdk.compiler/com.sun.tools.javac.util
  */
 
 import com.sun.tools.classfile.Attribute;

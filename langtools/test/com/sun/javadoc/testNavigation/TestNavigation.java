@@ -28,6 +28,7 @@
  *           Make sure the navagation is 2 columns, not 3.
  * @author   jamieh
  * @library  ../lib
+ * @modules jdk.javadoc
  * @build    JavadocTester
  * @run main TestNavigation
  */

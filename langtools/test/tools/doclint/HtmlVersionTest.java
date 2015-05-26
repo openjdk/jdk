@@ -26,6 +26,7 @@
  * @bug 8072945
  * @summary test HTML version
  * @library ..
+ * @modules jdk.compiler/com.sun.tools.doclint
  * @build DocLintTester
  * @run main DocLintTester -XhtmlVersion:html5 HtmlVersionTest.java
  * @run main DocLintTester -XhtmlVersion:html4 HtmlVersionTest.java

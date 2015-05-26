@@ -1317,6 +1317,9 @@ public class DeferredAttr extends JCTree.Visitor {
                         return isSimpleReceiver(((JCAnnotatedType)rec).underlyingType);
                     case APPLY:
                         return true;
+                    case NEWCLASS:
+                        JCNewClass nc = (JCNewClass) rec;
+                        return nc.encl == null && nc.def == null && !TreeInfo.isDiamond(nc);
                     default:
                         return false;
                 }
@@ -1371,17 +1374,24 @@ public class DeferredAttr extends JCTree.Visitor {
             Type site;
 
             if (rec != null) {
-                if (rec.hasTag(APPLY)) {
-                    Symbol recSym = quicklyResolveMethod(env, (JCMethodInvocation) rec);
-                    if (recSym == null)
-                        return null;
-                    Symbol resolvedReturnType =
-                            analyzeCandidateMethods(recSym, syms.errSymbol, returnSymbolAnalyzer);
-                    if (resolvedReturnType == null)
-                        return null;
-                    site = resolvedReturnType.type;
-                } else {
-                    site = attribSpeculative(rec, env, attr.unknownTypeExprInfo).type;
+                switch (rec.getTag()) {
+                    case APPLY:
+                        Symbol recSym = quicklyResolveMethod(env, (JCMethodInvocation) rec);
+                        if (recSym == null)
+                            return null;
+                        Symbol resolvedReturnType =
+                                analyzeCandidateMethods(recSym, syms.errSymbol, returnSymbolAnalyzer);
+                        if (resolvedReturnType == null)
+                            return null;
+                        site = resolvedReturnType.type;
+                        break;
+                    case NEWCLASS:
+                        JCNewClass nc = (JCNewClass) rec;
+                        site = attribSpeculative(nc.clazz, env, attr.unknownTypeExprInfo).type;
+                        break;
+                    default:
+                        site = attribSpeculative(rec, env, attr.unknownTypeExprInfo).type;
+                        break;
                 }
             } else {
                 site = env.enclClass.sym.type;

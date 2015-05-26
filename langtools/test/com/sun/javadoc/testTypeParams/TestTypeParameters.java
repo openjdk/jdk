@@ -31,6 +31,7 @@
  *           parameter links in the class/annotation signature section when -linksource is set.
  * @author   jamieh
  * @library  ../lib
+ * @modules jdk.javadoc
  * @build    JavadocTester
  * @run main TestTypeParameters
  */

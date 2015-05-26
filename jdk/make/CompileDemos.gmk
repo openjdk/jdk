@@ -30,6 +30,7 @@ include MakeBase.gmk
 include JavaCompilation.gmk
 include NativeCompilation.gmk
 include SetupJavaCompilers.gmk
+include TextFileProcessing.gmk
 
 # Prepare the find cache.
 $(eval $(call FillCacheFind, $(JDK_TOPDIR)/src))
@@ -48,6 +49,15 @@ DEMO_OS_TYPE_SRC := $(JDK_TOPDIR)/src/demo/$(OPENJDK_TARGET_OS_TYPE)
 GLOBAL_VERSION_INFO_RESOURCE := $(JDK_TOPDIR)/src/java.base/windows/native/common/version.rc
 
 ##################################################################################################
+
+# This rule will be depended on due to the MANIFEST line
+$(eval $(call SetupTextFileProcessing, BUILD_JAVA_MANIFEST, \
+  SOURCE_FILES := $(JDK_TOPDIR)/make/data/mainmanifest/manifest.mf, \
+  OUTPUT_FILE := $(SUPPORT_OUTPUTDIR)/demo/java-main-manifest.mf, \
+  REPLACEMENTS := \
+      @@RELEASE@@ => $(RELEASE) ; \
+      @@COMPANY_NAME@@ => $(COMPANY_NAME) , \
+))
 
 define SetupAppletDemo
   $$(eval $$(call SetupJavaCompilation,BUILD_DEMO_APPLET_$1, \
@@ -122,7 +132,7 @@ define SetupDemo
         COPY := $(PATTERNS_TO_COPY) $(10), \
         JAR := $(SUPPORT_OUTPUTDIR)/demo/image/$2/$1/$$($1_JARFILE), \
         JARMAIN := $4, \
-        MANIFEST := $(JDK_TOPDIR)/make/data/mainmanifest/manifest.mf, \
+        MANIFEST := $(SUPPORT_OUTPUTDIR)/demo/java-main-manifest.mf, \
         EXTRA_MANIFEST_ATTR := $(11), \
         SRCZIP := $(SUPPORT_OUTPUTDIR)/demo/image/$2/$1/src.zip, \
         EXCLUDE_FILES := $9, \
@@ -290,7 +300,7 @@ define SetupJVMTIDemo
         COPY := $(PATTERNS_TO_COPY), \
         JAR := $(SUPPORT_OUTPUTDIR)/demo/image/jvmti/$1/$1.jar, \
         EXTRA_MANIFEST_ATTR := Main-Class: \n, \
-        MANIFEST := $(JDK_TOPDIR)/make/data/mainmanifest/manifest.mf))
+        MANIFEST := $(SUPPORT_OUTPUTDIR)/demo/java-main-manifest.mf))
 
     BUILD_DEMOS += $(SUPPORT_OUTPUTDIR)/demo/image/jvmti/$1/$1.jar
   endif
@@ -382,7 +392,7 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
       BIN := $(SUPPORT_OUTPUTDIR)/demo/classes/jni/Poller, \
       HEADERS := $(SUPPORT_OUTPUTDIR)/demo/classes/jni/Poller, \
       JAR := $(SUPPORT_OUTPUTDIR)/demo/image/jni/Poller/Poller.jar, \
-      MANIFEST := $(JDK_TOPDIR)/make/data/mainmanifest/manifest.mf, \
+      MANIFEST := $(SUPPORT_OUTPUTDIR)/demo/java-main-manifest.mf, \
       SRCZIP := $(SUPPORT_OUTPUTDIR)/demo/image/jni/Poller/src.zip, \
       COPY := README.txt Poller.c, \
       JARMAIN := Client))

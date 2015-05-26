@@ -3,6 +3,7 @@
  * @test /nodynamiccopyright/
  * @bug 7190862 7109747
  * @summary javap shows an incorrect type for operands if the 'wide' prefix is used
+ * @modules jdk.compiler
  */
 
 import com.sun.source.util.JavacTask;

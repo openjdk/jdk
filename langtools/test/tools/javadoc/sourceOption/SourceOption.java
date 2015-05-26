@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug     6507179
  * @summary Ensure that "-source" option isn't ignored.
  * @author  Scott Seligman
+ * @modules jdk.javadoc
  * @run main/fail SourceOption 7
  * @run main      SourceOption 9
  * @run main      SourceOption

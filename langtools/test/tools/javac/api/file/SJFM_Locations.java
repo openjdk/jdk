@@ -26,6 +26,8 @@
  * @bug 8059977
  * @summary StandardJavaFileManager should support java.nio.file.Path.
  *          Test get/setLocation methods.
+ * @modules java.compiler
+ *          jdk.compiler
  * @build SJFM_TestBase
  * @run main SJFM_Locations
  */

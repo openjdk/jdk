@@ -241,7 +241,7 @@ public abstract class AttachProvider {
      * (using the zero-arg constructor) at the first invocation of this method.
      * The list returned by the first invocation of this method is the list
      * of providers. Subsequent invocations of this method return a list of the same
-     * providers. The list is unmodifable.
+     * providers. The list is unmodifiable.
      *
      * @return  A list of the installed attach providers.
      */
@@ -264,8 +264,8 @@ public abstract class AttachProvider {
                             ThreadDeath td = (ThreadDeath)t;
                             throw td;
                         }
-                        // Ignore errors and exceptions
-                        System.err.println(t);
+                        // Log errors and exceptions since we cannot return them
+                        t.printStackTrace();
                     }
                 }
             }

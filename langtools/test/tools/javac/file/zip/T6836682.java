@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
  * @test
  * @bug 6836682 7025988
  * @summary JavacFileManager handling of zip64 archives (Scenario A and B)
+ * @modules jdk.compiler
+ *          jdk.jartool/sun.tools.jar
  * @compile  -XDignore.symbol.file T6836682.java Utils.java
  * @run main T6836682
  */

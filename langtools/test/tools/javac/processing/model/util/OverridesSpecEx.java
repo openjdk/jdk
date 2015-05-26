@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
  * @summary Verify that example code in Elements.overrides works as spec'ed.
  * @author  Scott Seligman
  * @library /tools/javac/lib
+ * @modules java.compiler
+ *          jdk.compiler
  * @build JavacTestingAbstractProcessor
  * @compile -g OverridesSpecEx.java
  * @compile -processor OverridesSpecEx -proc:only OverridesSpecEx.java

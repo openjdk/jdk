@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
  * @test
  * @bug 6964768 6964461 6964469 6964487 6964460 6964481 6980021
  * @summary need test program to validate javac resource bundles
+ * @modules jdk.compiler/com.sun.tools.classfile
+ *          jdk.compiler/com.sun.tools.javac.code
  */
 
 import java.io.*;

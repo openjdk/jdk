@@ -230,13 +230,12 @@ public final class Boolean implements java.io.Serializable,
     }
 
     /**
-     * Returns {@code true} if and only if the system property
-     * named by the argument exists and is equal to the string
-     * {@code "true"}. (Beginning with version 1.0.2 of the
-     * Java<small><sup>TM</sup></small> platform, the test of
-     * this string is case insensitive.) A system property is accessible
-     * through {@code getProperty}, a method defined by the
-     * {@code System} class.
+     * Returns {@code true} if and only if the system property named
+     * by the argument exists and is equal to the string {@code
+     * "true"}. (Beginning with version 1.0.2 of the Java&trade;
+     * platform, the test of this string is case insensitive.) A
+     * system property is accessible through {@code getProperty}, a
+     * method defined by the {@code System} class.
      * <p>
      * If there is no property with the specified name, or if the specified
      * name is empty or null, then {@code false} is returned.

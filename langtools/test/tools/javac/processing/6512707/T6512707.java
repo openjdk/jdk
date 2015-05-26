@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
  * @summary "incompatible types" after (unrelated) annotation processing
  * @author  Peter Runge
  * @library /tools/javac/lib
+ * @modules java.compiler
+ *          jdk.compiler
  * @build   JavacTestingAbstractProcessor
  * @compile T6512707.java
  * @compile -processor T6512707 TestAnnotation.java

@@ -765,7 +765,7 @@ public final class NativeObject {
                 continue;
             }
             properties.add(AccessorProperty.create(methodName, Property.NOT_WRITABLE, getBoundBeanMethodGetter(source,
-                    method), null));
+                    method), Lookup.EMPTY_SETTER));
         }
         for(final String propertyName: propertyNames) {
             MethodHandle getter;

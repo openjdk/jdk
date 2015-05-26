@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 8027789
  * @summary check that the direct superclass is used as the site when calling
  *          a superclass' method
+ * @modules jdk.compiler/com.sun.tools.classfile
  * @compile Base.java NonDirectSuper.java
  * @run main test.NonDirectSuper
  */

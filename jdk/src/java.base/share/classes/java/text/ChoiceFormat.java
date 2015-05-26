@@ -490,7 +490,7 @@ public class ChoiceFormat extends NumberFormat {
     }
 
     /**
-     * Equality comparision between two
+     * Equality comparison between two
      */
     public boolean equals(Object obj) {
         if (obj == null) return false;

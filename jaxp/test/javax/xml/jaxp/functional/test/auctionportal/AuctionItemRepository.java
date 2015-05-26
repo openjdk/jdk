@@ -22,10 +22,10 @@
  */
 package test.auctionportal;
 
-import static com.sun.org.apache.xerces.internal.impl.Constants.SP_ENTITY_EXPANSION_LIMIT;
-import static com.sun.org.apache.xerces.internal.impl.Constants.SP_MAX_OCCUR_LIMIT;
-import static com.sun.org.apache.xerces.internal.jaxp.JAXPConstants.JAXP_SCHEMA_LANGUAGE;
-import static com.sun.org.apache.xerces.internal.jaxp.JAXPConstants.JAXP_SCHEMA_SOURCE;
+import static test.auctionportal.HiBidConstants.SP_ENTITY_EXPANSION_LIMIT;
+import static test.auctionportal.HiBidConstants.SP_MAX_OCCUR_LIMIT;
+import static test.auctionportal.HiBidConstants.JAXP_SCHEMA_LANGUAGE;
+import static test.auctionportal.HiBidConstants.JAXP_SCHEMA_SOURCE;
 import static org.testng.Assert.assertTrue;
 import java.io.File;
 import java.io.FileInputStream;

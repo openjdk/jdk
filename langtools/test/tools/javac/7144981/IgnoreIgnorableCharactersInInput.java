@@ -3,6 +3,7 @@
  * @test  /nodynamiccopyright/
  * @bug 7144981
  * @summary javac should ignore ignorable characters in input
+ * @modules jdk.compiler
  * @run main IgnoreIgnorableCharactersInInput
  */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary com.sun.tools.javac.util.List.from(A[]) shouldn't be deprecated
  * @author  Peter von der Ah\u00e9
  * @library ../..
+ * @modules jdk.compiler/com.sun.tools.javac.util
  * @compile ../../util/list/FromArray.java
  * @run main util.list.FromArray
  */

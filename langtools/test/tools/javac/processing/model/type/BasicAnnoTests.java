@@ -26,6 +26,11 @@
  * @bug 8013852 8031744
  * @summary Annotations on types
  * @library /tools/javac/lib
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.code
+ *          jdk.compiler/com.sun.tools.javac.processing
+ *          jdk.compiler/com.sun.tools.javac.tree
+ *          jdk.compiler/com.sun.tools.javac.util
  * @build JavacTestingAbstractProcessor DPrinter BasicAnnoTests
  * @compile/process -processor BasicAnnoTests -proc:only BasicAnnoTests.java
  */

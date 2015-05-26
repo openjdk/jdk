@@ -26,6 +26,9 @@
  * @bug 8025505
  * @summary Constant folding deficiency
  * @library /tools/lib
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.file
+ *          jdk.compiler/com.sun.tools.javac.main
  * @build ToolBox
  * @run main ConstFoldTest
  */

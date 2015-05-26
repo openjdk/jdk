@@ -160,8 +160,10 @@ public abstract class Trie
 
     /**
     * Lead surrogate code points' index displacement in the index array.
+    * <pre>{@code
     * 0x10000-0xd800=0x2800
     * 0x2800 >> INDEX_STAGE_1_SHIFT_
+    * }</pre>
     */
     protected static final int LEAD_INDEX_OFFSET_ = 0x2800 >> 5;
     /**
@@ -191,7 +193,7 @@ public abstract class Trie
     /**
      * Number of index (stage 1) entries per lead surrogate.
      * Same as number of index entries for 1024 trail surrogates,
-     * ==0x400>>INDEX_STAGE_1_SHIFT_
+     * {@code ==0x400>>INDEX_STAGE_1_SHIFT_}
      */
     protected static final int SURROGATE_BLOCK_COUNT=(1<<SURROGATE_BLOCK_BITS);
     /** Length of the BMP portion of the index (stage 1) array. */
@@ -297,7 +299,7 @@ public abstract class Trie
     /**
     * Internal trie getter from a code point.
     * Could be faster(?) but longer with
-    *   if((c32)<=0xd7ff) { (result)=_TRIE_GET_RAW(trie, data, 0, c32); }
+    * {@code if((c32)<=0xd7ff) { (result)=_TRIE_GET_RAW(trie, data, 0, c32); }}
     * Gets the offset to data which the codepoint points to
     * @param ch codepoint
     * @return offset to data

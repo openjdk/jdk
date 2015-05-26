@@ -2,6 +2,9 @@
  * @test  /nodynamiccopyright/
  * @bug 6406771
  * @summary CompilationUnitTree needs access to a line map
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.file
+ *          jdk.compiler/com.sun.tools.javac.tree
  */
 
 // WARNING: White-space and layout is important in this file, especially tab characters.
@@ -21,9 +24,9 @@ import com.sun.tools.javac.tree.JCTree;
 @SupportedAnnotationTypes("*")
 public class T6406771 extends AbstractProcessor {
     String[] tests = {
-        "line:24",
-        "line:25",
-        "line:26", "line:26",
+        "line:27",
+        "line:28",
+        "line:29", "line:29",
 //       1         2         3         4         5         6
 //3456789012345678901234567890123456789012345678901234567890
       "col:7", "col:16", "col:26",                 // this line uses spaces

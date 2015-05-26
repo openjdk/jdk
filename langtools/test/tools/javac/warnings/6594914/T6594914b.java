@@ -2,6 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 6594914
  * @summary \\@SuppressWarnings("deprecation") does not not work for the type of a variable
+ * @modules java.base/sun.misc
  * @compile/ref=T6594914b.out -XDenableSunApiLintControl -XDrawDiagnostics -Xlint:sunapi T6594914b.java
  */
 
