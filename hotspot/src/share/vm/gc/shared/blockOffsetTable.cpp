@@ -447,14 +447,16 @@ void BlockOffsetArrayNonContigSpace::split_block(HeapWord* blk,
       } else {
         // Unilaterally fix the first (num_pref_cards - 1) following
         // the "offset card" in the suffix block.
+        const size_t right_most_fixed_index = suff_index + num_pref_cards - 1;
         set_remainder_to_point_to_start_incl(suff_index + 1,
-          suff_index + num_pref_cards - 1, true /* reducing */);
+          right_most_fixed_index, true /* reducing */);
         // Fix the appropriate cards in the remainder of the
         // suffix block -- these are the last num_pref_cards
         // cards in each power block of the "new" range plumbed
         // from suff_addr.
         bool more = true;
         uint i = 1;
+        // Fix the first power block with  back_by > num_pref_cards.
         while (more && (i < N_powers)) {
           size_t back_by = power_to_cards_back(i);
           size_t right_index = suff_index + back_by - 1;
@@ -462,6 +464,9 @@ void BlockOffsetArrayNonContigSpace::split_block(HeapWord* blk,
           if (right_index >= end_index - 1) { // last iteration
             right_index = end_index - 1;
             more = false;
+          }
+          if (left_index <= right_most_fixed_index) {
+                left_index = right_most_fixed_index + 1;
           }
           if (back_by > num_pref_cards) {
             // Fill in the remainder of this "power block", if it
@@ -471,12 +476,14 @@ void BlockOffsetArrayNonContigSpace::split_block(HeapWord* blk,
                                      N_words + i - 1, true /* reducing */);
             } else {
               more = false; // we are done
+              assert((end_index - 1) == right_index, "Must be at the end.");
             }
             i++;
             break;
           }
           i++;
         }
+        // Fix the rest of the power blocks.
         while (more && (i < N_powers)) {
           size_t back_by = power_to_cards_back(i);
           size_t right_index = suff_index + back_by - 1;
