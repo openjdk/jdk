@@ -4063,14 +4063,16 @@ public class JoinRowSetImpl extends WebRowSetImpl implements JoinRowSet {
     }
 
     /**
-     * Provide interface coverage for getURL(int) in ResultSet->RowSet
+     * Provide interface coverage for getURL(int) in
+     * ResultSet{@literal ->}RowSet
      */
     public java.net.URL getURL(int columnIndex) throws SQLException {
         return crsInternal.getURL(columnIndex);
     }
 
     /**
-     * Provide interface coverage for getURL(String) in ResultSet->RowSet
+     * Provide interface coverage for getURL(String) in
+     * ResultSet{@literal ->}RowSet
      */
     public java.net.URL getURL(String columnName) throws SQLException {
         return crsInternal.getURL(columnName);

@@ -1,19 +1,19 @@
-TextNotAllowed.java:13: error: text not allowed in <table> element
+TextNotAllowed.java:14: error: text not allowed in <table> element
  * <table summary=description> abc </table>
                               ^
-TextNotAllowed.java:14: error: text not allowed in <tbody> element
+TextNotAllowed.java:15: error: text not allowed in <tbody> element
  * <table summary=description> <tbody> abc </tbody> </table>
                                       ^
-TextNotAllowed.java:15: error: text not allowed in <tr> element
+TextNotAllowed.java:16: error: text not allowed in <tr> element
  * <table summary=description> <tr> abc </tr> </table>
                                    ^
-TextNotAllowed.java:17: error: text not allowed in <dl> element
+TextNotAllowed.java:18: error: text not allowed in <dl> element
  * <dl> abc </dl>
        ^
-TextNotAllowed.java:18: error: text not allowed in <ol> element
+TextNotAllowed.java:19: error: text not allowed in <ol> element
  * <ol> abc </ol>
        ^
-TextNotAllowed.java:19: error: text not allowed in <ul> element
+TextNotAllowed.java:20: error: text not allowed in <ul> element
  * <ul> abc </ul>
        ^
 6 errors

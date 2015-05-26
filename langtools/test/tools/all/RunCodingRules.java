@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,10 @@
  * @test
  * @bug 8043643
  * @summary Run the langtools coding rules over the langtools source code.
+ * @modules java.base/sun.reflect.annotation
+ *          java.logging
+ *          java.xml
+ *          jdk.compiler/com.sun.tools.javac.resources
  */
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import com.sun.source.util.JavacTask;
  * @test
  * @bug 6956638
  * @summary JavacTask.generate does not generate all required files
+ * @modules jdk.compiler
  */
 public class T6956638 {
     public static void main(String[] args) throws Exception {

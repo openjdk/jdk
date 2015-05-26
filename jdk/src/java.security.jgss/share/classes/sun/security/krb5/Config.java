@@ -110,8 +110,10 @@ public class Config {
      * java.security.krb5.kdc not specified, error reading configuration file.
      */
 
-    public static synchronized void refresh() throws KrbException {
-        singleton = new Config();
+    public static void refresh() throws KrbException {
+        synchronized (Config.class) {
+            singleton = new Config();
+        }
         KdcComm.initStatic();
         EType.initStatic();
         Checksum.initStatic();
@@ -1085,27 +1087,30 @@ public class Config {
      * Check if need to use DNS to locate Kerberos services for name. If not
      * defined, check dns_fallback, whose default value is true.
      */
-    private boolean useDNS(String name) {
+    private boolean useDNS(String name, boolean defaultValue) {
         Boolean value = getBooleanObject("libdefaults", name);
         if (value != null) {
             return value.booleanValue();
-        } else {
-            return getBooleanObject("libdefaults", "dns_fallback") != Boolean.FALSE;
         }
+        value = getBooleanObject("libdefaults", "dns_fallback");
+        if (value != null) {
+            return value.booleanValue();
+        }
+        return defaultValue;
     }
 
     /**
      * Check if need to use DNS to locate the KDC
      */
     private boolean useDNS_KDC() {
-        return useDNS("dns_lookup_kdc");
+        return useDNS("dns_lookup_kdc", true);
     }
 
     /*
      * Check if need to use DNS to locate the Realm
      */
     private boolean useDNS_Realm() {
-        return useDNS("dns_lookup_realm");
+        return useDNS("dns_lookup_realm", false);
     }
 
     /**

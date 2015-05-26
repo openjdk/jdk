@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @test
  * @bug 8003512
  * @summary javac doesn't work with jar files with >64k entries
+ * @modules jdk.compiler
+ *          jdk.jartool/sun.tools.jar
  * @compile -target 6 -source 6 -XDignore.symbol.file LoadClassFromJava6CreatedJarTest.java ../Utils.java
  * @run main/timeout=360 LoadClassFromJava6CreatedJarTest
  */

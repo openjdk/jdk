@@ -25,6 +25,8 @@
  * @test
  * @bug 8031744
  * @summary Checks the annotation types targeting array types
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.file
  */
 
 import com.sun.tools.javac.api.JavacTool;

@@ -25,6 +25,10 @@
  * @test
  * @bug 6304912
  * @summary unit test for Log
+ * @modules jdk.compiler/com.sun.tools.javac.file
+ *          jdk.compiler/com.sun.tools.javac.parser
+ *          jdk.compiler/com.sun.tools.javac.tree
+ *          jdk.compiler/com.sun.tools.javac.util
  */
 import java.lang.reflect.Field;
 import java.io.InputStream;

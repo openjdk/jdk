@@ -1625,7 +1625,7 @@ int MacroAssembler::corrected_idivl(Register result, Register ra, Register rb,
     sdivw(result, ra, rb);
   } else {
     sdivw(scratch, ra, rb);
-    msubw(result, scratch, rb, ra);
+    Assembler::msubw(result, scratch, rb, ra);
   }
 
   return idivl_offset;
@@ -1655,7 +1655,7 @@ int MacroAssembler::corrected_idivq(Register result, Register ra, Register rb,
     sdiv(result, ra, rb);
   } else {
     sdiv(scratch, ra, rb);
-    msub(result, scratch, rb, ra);
+    Assembler::msub(result, scratch, rb, ra);
   }
 
   return idivq_offset;
@@ -3787,23 +3787,15 @@ void MacroAssembler::adrp(Register reg1, const Address &dest, unsigned long &byt
   }
 }
 
-  bool MacroAssembler::use_acq_rel_for_volatile_fields() {
-#ifdef PRODUCT
-    return false;
-#else
-    return UseAcqRelForVolatileFields;
-#endif
-  }
-
 void MacroAssembler::build_frame(int framesize) {
-  if (framesize == 0) {
-    // Is this even possible?
-    stp(rfp, lr, Address(pre(sp, -2 * wordSize)));
-  } else if (framesize < ((1 << 9) + 2 * wordSize)) {
+  assert(framesize > 0, "framesize must be > 0");
+  if (framesize < ((1 << 9) + 2 * wordSize)) {
     sub(sp, sp, framesize);
     stp(rfp, lr, Address(sp, framesize - 2 * wordSize));
+    if (PreserveFramePointer) add(rfp, sp, framesize - 2 * wordSize);
   } else {
     stp(rfp, lr, Address(pre(sp, -2 * wordSize)));
+    if (PreserveFramePointer) mov(rfp, sp);
     if (framesize < ((1 << 12) + 2 * wordSize))
       sub(sp, sp, framesize - 2 * wordSize);
     else {
@@ -3814,9 +3806,8 @@ void MacroAssembler::build_frame(int framesize) {
 }
 
 void MacroAssembler::remove_frame(int framesize) {
-  if (framesize == 0) {
-    ldp(rfp, lr, Address(post(sp, 2 * wordSize)));
-  } else if (framesize < ((1 << 9) + 2 * wordSize)) {
+  assert(framesize > 0, "framesize must be > 0");
+  if (framesize < ((1 << 9) + 2 * wordSize)) {
     ldp(rfp, lr, Address(sp, framesize - 2 * wordSize));
     add(sp, sp, framesize);
   } else {

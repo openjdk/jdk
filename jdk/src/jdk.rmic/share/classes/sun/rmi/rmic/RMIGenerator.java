@@ -79,7 +79,7 @@ public class RMIGenerator implements RMIConstants, Generator {
      * Examine and consume command line arguments.
      * @param argv The command line arguments. Ignore null
      * and unknown arguments. Set each consumed argument to null.
-     * @param error Report any errors using the main.error() methods.
+     * @param main Report any errors using the main.error() methods.
      * @return true if no errors, false otherwise.
      */
     public boolean parseArgs(String argv[], Main main) {

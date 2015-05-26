@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import org.openide.util.actions.CallableSystemAction;
  */
 public final class ZoomOutAction extends CallableSystemAction {
 
+    @Override
     public void performAction() {
         EditorTopComponent editor = EditorTopComponent.getActive();
         if (editor != null) {
@@ -50,6 +51,7 @@ public final class ZoomOutAction extends CallableSystemAction {
         putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, Event.CTRL_MASK, false));
     }
 
+    @Override
     public String getName() {
         return "Zoom out";
     }
@@ -59,6 +61,7 @@ public final class ZoomOutAction extends CallableSystemAction {
         super.initialize();
     }
 
+    @Override
     public HelpCtx getHelpCtx() {
         return HelpCtx.DEFAULT_HELP;
     }
@@ -70,6 +73,6 @@ public final class ZoomOutAction extends CallableSystemAction {
 
     @Override
     protected String iconResource() {
-        return "com/sun/hotspot/igv/view/images/zoomout.gif";
+        return "com/sun/hotspot/igv/view/images/zoom_out.png";
     }
 }

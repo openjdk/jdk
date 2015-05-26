@@ -214,14 +214,12 @@ core_tools = \
     jdk/internal/jimage \
     jdk/internal/jrtfs \
     sun/tools/java \
-    sun/tools/native2ascii \
     sun/tools/jrunscript
 
 svc_tools = \
     com/sun/tools/attach \
     sun/tools \
     -sun/tools/java \
-    -sun/tools/native2ascii \
     -sun/tools/jrunscript \
     sun/jvmstat \
     demo/jvmti
@@ -534,7 +532,6 @@ needs_charsets = \
   sun/nio/cs/OLD/TestIBMDB.java \
   sun/nio/cs/SJISCanEncode.java \
   sun/nio/cs/Test6254467.java \
-  sun/nio/cs/TestCompoundTest.java \
   sun/nio/cs/TestCp834_SBCS.java \
   sun/nio/cs/TestEUC_TW.java \
   sun/nio/cs/TestISO2022CNDecoder.java \
@@ -599,6 +596,10 @@ needs_compact3 = \
   sun/security/jgss \
   sun/security/krb5 \
   java/lang/annotation/AnnotationType/AnnotationTypeDeadlockTest.java \
+  java/lang/invoke/lambda/LambdaStackTrace.java \
+  java/lang/invoke/LFCaching/LFGarbageCollectedTest.java \
+  java/lang/invoke/LFCaching/LFMultiThreadCachingTest.java \
+  java/lang/invoke/LFCaching/LFSingleThreadCachingTest.java \
   java/lang/System/MacEncoding/TestFileEncoding.java \
   java/nio/channels/AsynchronousSocketChannel/Leaky.java \
   java/security/PermissionCollection/Concurrent.java \

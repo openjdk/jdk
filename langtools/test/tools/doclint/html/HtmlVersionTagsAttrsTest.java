@@ -3,6 +3,7 @@
  * @bug 8072945
  * @summary test tags and attributes specific to the output HTML version
  * @library ..
+ * @modules jdk.compiler/com.sun.tools.doclint
  * @build DocLintTester
  * @run main DocLintTester -XhtmlVersion:html5 -ref HtmlVersionTagsAttrsTestHtml5.out HtmlVersionTagsAttrsTest.java
  * @run main DocLintTester -XhtmlVersion:html4 -ref HtmlVersionTagsAttrsTestHtml4.out HtmlVersionTagsAttrsTest.java

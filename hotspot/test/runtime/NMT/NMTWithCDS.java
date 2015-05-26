@@ -30,7 +30,7 @@
  *          java.management
  * @run main NMTWithCDS
  */
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 public class NMTWithCDS {
 

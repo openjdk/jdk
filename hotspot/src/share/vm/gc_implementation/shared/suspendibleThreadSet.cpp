@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,16 +33,20 @@ bool   SuspendibleThreadSet::_suspend_all       = false;
 double SuspendibleThreadSet::_suspend_all_start = 0.0;
 
 void SuspendibleThreadSet::join() {
+  assert(!Thread::current()->is_suspendible_thread(), "Thread already joined");
   MonitorLockerEx ml(STS_lock, Mutex::_no_safepoint_check_flag);
   while (_suspend_all) {
     ml.wait(Mutex::_no_safepoint_check_flag);
   }
   _nthreads++;
+  DEBUG_ONLY(Thread::current()->set_suspendible_thread();)
 }
 
 void SuspendibleThreadSet::leave() {
+  assert(Thread::current()->is_suspendible_thread(), "Thread not joined");
   MonitorLockerEx ml(STS_lock, Mutex::_no_safepoint_check_flag);
   assert(_nthreads > 0, "Invalid");
+  DEBUG_ONLY(Thread::current()->clear_suspendible_thread();)
   _nthreads--;
   if (_suspend_all) {
     ml.notify_all();
@@ -50,6 +54,7 @@ void SuspendibleThreadSet::leave() {
 }
 
 void SuspendibleThreadSet::yield() {
+  assert(Thread::current()->is_suspendible_thread(), "Must have joined");
   if (_suspend_all) {
     MonitorLockerEx ml(STS_lock, Mutex::_no_safepoint_check_flag);
     if (_suspend_all) {

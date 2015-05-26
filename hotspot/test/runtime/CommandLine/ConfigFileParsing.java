@@ -31,7 +31,7 @@
  */
 
 import java.io.PrintWriter;
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 public class ConfigFileParsing {
   public static void main(String[] args) throws Exception {

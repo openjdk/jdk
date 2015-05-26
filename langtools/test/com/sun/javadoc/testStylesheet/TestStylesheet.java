@@ -27,6 +27,7 @@
  * @summary  Run tests on doclet stylesheet.
  * @author   jamieh
  * @library  ../lib
+ * @modules jdk.javadoc
  * @build    JavadocTester
  * @run main TestStylesheet
  */

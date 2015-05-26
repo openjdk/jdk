@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Verify that in-method ClassSymbols from one round do not affect ClassSymbols in
  *          following rounds.
  * @library /tools/javac/lib
+ * @modules jdk.compiler
  * @build JavacTestingAbstractProcessor OnDemandAttribution
  * @compile/process -processor OnDemandAttribution OnDemandAttribution.java
  */

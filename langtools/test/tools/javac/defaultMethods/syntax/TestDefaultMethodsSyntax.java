@@ -25,6 +25,7 @@
  * @test
  * @bug 7192245 8005851 8005166 8071453
  * @summary Automatic test for checking set of allowed modifiers on interface methods
+ * @modules jdk.compiler
  */
 
 import com.sun.source.util.JavacTask;

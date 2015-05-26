@@ -94,6 +94,21 @@ bool Verifier::relax_verify_for(oop loader) {
   return !need_verify;
 }
 
+void Verifier::trace_class_resolution(Klass* resolve_class, InstanceKlass* verify_class) {
+  assert(verify_class != NULL, "Unexpected null verify_class");
+  ResourceMark rm;
+  Symbol* s = verify_class->source_file_name();
+  const char* source_file = (s != NULL ? s->as_C_string() : NULL);
+  const char* verify = verify_class->external_name();
+  const char* resolve = resolve_class->external_name();
+  // print in a single call to reduce interleaving between threads
+  if (source_file != NULL) {
+    tty->print("RESOLVE %s %s %s (verification)\n", verify, resolve, source_file);
+  } else {
+    tty->print("RESOLVE %s %s (verification)\n", verify, resolve);
+  }
+}
+
 bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool should_verify_class, TRAPS) {
   HandleMark hm;
   ResourceMark rm(THREAD);
@@ -172,6 +187,10 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
     ResourceMark rm(THREAD);
     instanceKlassHandle kls =
       SystemDictionary::resolve_or_fail(exception_name, true, CHECK_false);
+    if (TraceClassResolution) {
+      Verifier::trace_class_resolution(kls(), klass());
+    }
+
     while (!kls.is_null()) {
       if (kls == klass) {
         // If the class being verified is the exception we're creating
@@ -1947,9 +1966,15 @@ Klass* ClassVerifier::load_class(Symbol* name, TRAPS) {
   oop loader = current_class()->class_loader();
   oop protection_domain = current_class()->protection_domain();
 
-  return SystemDictionary::resolve_or_fail(
+  Klass* kls = SystemDictionary::resolve_or_fail(
     name, Handle(THREAD, loader), Handle(THREAD, protection_domain),
     true, THREAD);
+
+  if (TraceClassResolution) {
+    instanceKlassHandle cur_class = current_class();
+    Verifier::trace_class_resolution(kls, cur_class());
+  }
+  return kls;
 }
 
 bool ClassVerifier::is_protected_access(instanceKlassHandle this_class,

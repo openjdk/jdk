@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 6985205 6986246
  * @summary access to tree positions and doc comments may be lost across annotation processing rounds
+ * @modules jdk.compiler
  * @build TreePosRoundsTest
  * @compile -proc:only -processor TreePosRoundsTest TreePosRoundsTest.java
  * @run main TreePosRoundsTest

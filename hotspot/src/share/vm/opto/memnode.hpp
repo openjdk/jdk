@@ -72,6 +72,8 @@ protected:
     debug_only(_adr_type=at; adr_type();)
   }
 
+  virtual Node* find_previous_arraycopy(PhaseTransform* phase, Node* ld_alloc, Node*& mem, bool can_see_stored_value) const { return NULL; }
+
 public:
   // Helpers for the optimizer.  Documented in memnode.cpp.
   static bool detect_ptr_independence(Node* p1, AllocateNode* a1,
@@ -124,6 +126,7 @@ public:
   // Can this node (load or store) accurately see a stored value in
   // the given memory state?  (The state may or may not be in(Memory).)
   Node* can_see_stored_value(Node* st, PhaseTransform* phase) const;
+  Node* can_see_arraycopy_value(Node* st, PhaseTransform* phase) const;
 
 #ifndef PRODUCT
   static void dump_adr_type(const Node* mem, const TypePtr* adr_type, outputStream *st);
@@ -147,6 +150,8 @@ protected:
   // Should LoadNode::Ideal() attempt to remove control edges?
   virtual bool can_remove_control() const;
   const Type* const _type;      // What kind of value is loaded?
+
+  virtual Node* find_previous_arraycopy(PhaseTransform* phase, Node* ld_alloc, Node*& mem, bool can_see_stored_value) const;
 public:
 
   LoadNode(Node *c, Node *mem, Node *adr, const TypePtr* at, const Type *rt, MemOrd mo)

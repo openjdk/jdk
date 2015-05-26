@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,10 @@
 package com.sun.hotspot.igv.data;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
+import java.util.regex.PatternSyntaxException;
 
 /**
  *
@@ -58,13 +55,30 @@ public class Properties implements Serializable, Iterable<Property> {
                 return false;
             }
         }
+
+        for (Property prop : p) {
+            String value = this.get(prop.getName());
+            if (value == null || !value.equals(prop.getValue())) {
+                return false;
+            }
+        }
+
         return true;
     }
 
     @Override
     public int hashCode() {
         int hash = 5;
-        hash = 83 * hash + (this.map != null ? this.map.hashCode() : 0);
+
+        if (map != null) {
+            for (int i = 0; i < this.map.length; i++) {
+                if (map[i] == null) {
+                    i++;
+                } else {
+                    hash = hash * 83 + map[i].hashCode();
+                }
+            }
+        }
         return hash;
     }
 
@@ -85,7 +99,7 @@ public class Properties implements Serializable, Iterable<Property> {
 
     public Properties(Properties p) {
         map = new String[p.map.length];
-        System.arraycopy(map, 0, p.map, 0, p.map.length);
+        System.arraycopy(p.map, 0, map, 0, p.map.length);
     }
 
     public static class Entity implements Provider {
@@ -100,17 +114,10 @@ public class Properties implements Serializable, Iterable<Property> {
             properties = new Properties(object.getProperties());
         }
 
+        @Override
         public Properties getProperties() {
             return properties;
         }
-    }
-
-    private String getProperty(String key) {
-        for (int i = 0; i < map.length; i += 2)
-            if (map[i] != null && map[i].equals(key)) {
-                return map[i + 1];
-            }
-        return null;
     }
 
     public interface PropertyMatcher {
@@ -128,11 +135,16 @@ public class Properties implements Serializable, Iterable<Property> {
             this.matcher = matcher;
         }
 
+        @Override
         public String getName() {
             return matcher.getName();
         }
 
+        @Override
         public boolean match(String p) {
+            if (p == null) {
+                return false;
+            }
             return !matcher.match(p);
         }
     }
@@ -143,15 +155,26 @@ public class Properties implements Serializable, Iterable<Property> {
         private String value;
 
         public StringPropertyMatcher(String name, String value) {
+            if (name == null) {
+                throw new IllegalArgumentException("Property name must not be null!");
+            }
+            if (value == null) {
+                throw new IllegalArgumentException("Property value must not be null!");
+            }
             this.name = name;
             this.value = value;
         }
 
+        @Override
         public String getName() {
             return name;
         }
 
+        @Override
         public boolean match(String p) {
+            if (p == null) {
+                throw new IllegalArgumentException("Property value must not be null!");
+            }
             return p.equals(value);
         }
     }
@@ -162,30 +185,55 @@ public class Properties implements Serializable, Iterable<Property> {
         private Pattern valuePattern;
 
         public RegexpPropertyMatcher(String name, String value) {
-            this.name = name;
-            valuePattern = Pattern.compile(value);
+            this(name, value, 0);
         }
 
+        public RegexpPropertyMatcher(String name, String value, int flags) {
+
+            if (name == null) {
+                throw new IllegalArgumentException("Property name must not be null!");
+            }
+
+            if (value == null) {
+                throw new IllegalArgumentException("Property value pattern must not be null!");
+            }
+
+            this.name = name;
+
+            try {
+                valuePattern = Pattern.compile(value, flags);
+            } catch (PatternSyntaxException e) {
+                throw new IllegalArgumentException("Bad pattern: " + value);
+            }
+        }
+
+        @Override
         public String getName() {
             return name;
         }
 
+        @Override
         public boolean match(String p) {
+            if (p == null) {
+                throw new IllegalArgumentException("Property value must not be null!");
+            }
             Matcher m = valuePattern.matcher(p);
             return m.matches();
         }
     }
 
     public Property selectSingle(PropertyMatcher matcher) {
+
+        final String name = matcher.getName();
         String value = null;
         for (int i = 0; i < map.length; i += 2) {
-            if (map[i] != null && matcher.getName().equals(map[i]))  {
+            if (map[i] != null && name.equals(map[i])) {
                 value = map[i + 1];
                 break;
             }
         }
         if (value != null && matcher.match(value)) {
-            return new Property(matcher.getName(), value);
+            return new Property(name, value);
         } else {
             return null;
         }
@@ -198,13 +246,32 @@ public class Properties implements Serializable, Iterable<Property> {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("[");
+        List<String[]> pairs = new ArrayList<>();
         for (int i = 0; i < map.length; i += 2) {
             if (map[i + 1] != null) {
-                String p = map[i + 1];
-                sb.append(map[i] + " = " + map[i + 1] + "; ");
+                pairs.add(new String[]{map[i], map[i + 1]});
             }
+        }
+
+        Collections.sort(pairs, new Comparator<String[]>() {
+            @Override
+            public int compare(String[] o1, String[] o2) {
+                assert o1.length == 2;
+                assert o2.length == 2;
+                return o1[0].compareTo(o2[0]);
+            }
+        });
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
+        boolean first = true;
+        for (String[] p : pairs) {
+            if (first) {
+                first = false;
+            } else {
+                sb.append(", ");
+            }
+            sb.append(p[0]).append("=").append(p[1]);
         }
         return sb.append("]").toString();
     }
@@ -215,10 +282,6 @@ public class Properties implements Serializable, Iterable<Property> {
 
         public PropertySelector(Collection<T> objects) {
             this.objects = objects;
-        }
-
-        public T selectSingle(final String name, final String value) {
-            return selectSingle(new StringPropertyMatcher(name, value));
         }
 
         public T selectSingle(PropertyMatcher matcher) {
@@ -233,18 +296,16 @@ public class Properties implements Serializable, Iterable<Property> {
             return null;
         }
 
-        public List<T> selectMultiple(final String name, final String value) {
-            return selectMultiple(new StringPropertyMatcher(name, value));
-        }
-
         public List<T> selectMultiple(PropertyMatcher matcher) {
-            List<T> result = new ArrayList<T>();
+            List<T> result = new ArrayList<>();
+
             for (T t : objects) {
                 Property p = t.getProperties().selectSingle(matcher);
                 if (p != null) {
                     result.add(t);
                 }
             }
+
             return result;
         }
     }
@@ -259,6 +320,10 @@ public class Properties implements Serializable, Iterable<Property> {
     }
 
     public void setProperty(String name, String value) {
+        setPropertyInternal(name.intern(), value != null ? value.intern() : null);
+    }
+    private void setPropertyInternal(String name, String value) {
+
         for (int i = 0; i < map.length; i += 2) {
             if (map[i] != null && map[i].equals(name)) {
                 String p = map[i + 1];
@@ -289,34 +354,26 @@ public class Properties implements Serializable, Iterable<Property> {
         map = newMap;
     }
 
-    public  Iterator<Property> getProperties() {
-        return iterator();
-    }
-
     public void add(Properties properties) {
         for (Property p : properties) {
-            add(p);
+            // Already interned
+            setPropertyInternal(p.getName(), p.getValue());
         }
     }
 
-    public void add(Property property) {
-        assert property.getName() != null;
-        assert property.getValue() != null;
-        setProperty(property.getName(), property.getValue());
-    }
-    class PropertiesIterator implements Iterator<Property>, Iterable<Property> {
-        public Iterator<Property> iterator() {
-                return this;
-        }
+    private class PropertiesIterator implements Iterator<Property> {
 
         int index;
 
+        @Override
         public boolean hasNext() {
-            while (index < map.length && map[index + 1] == null)
+            while (index < map.length && map[index + 1] == null) {
                 index += 2;
+            }
             return index < map.length;
         }
 
+        @Override
         public Property next() {
             if (index < map.length) {
                 index += 2;
@@ -325,11 +382,13 @@ public class Properties implements Serializable, Iterable<Property> {
             return null;
         }
 
+        @Override
         public void remove() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
-
     }
+
+    @Override
     public Iterator<Property> iterator() {
         return new PropertiesIterator();
     }

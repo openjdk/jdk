@@ -4,6 +4,7 @@
  * @summary Ensure AnnotationTypeMismatchException is thrown when appropriate
  *          with reasonable foundType filled.
  * @library /tools/javac/lib
+ * @modules jdk.compiler/com.sun.tools.javac.util
  * @build JavacTestingAbstractProcessor Processor
  * @compile/fail/ref=Source.out -XDrawDiagnostics -processor Processor Source.java
  */

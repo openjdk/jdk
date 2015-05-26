@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,9 +58,9 @@ JDK_GetVersionInfo0(jdk_version_info* info, size_t info_size) {
     /* If the JDK_BUILD_NUMBER is of format bXX and XX is an integer
      * XX is the jdk_build_number.
      */
-    int len = strlen(jdk_build_string);
+    size_t len = strlen(jdk_build_string);
     if (jdk_build_string[0] == 'b' && len >= 2) {
-        int i = 0;
+        size_t i = 0;
         for (i = 1; i < len; i++) {
             if (isdigit(jdk_build_string[i])) {
                 build_number[i-1] = jdk_build_string[i];
@@ -76,7 +76,7 @@ JDK_GetVersionInfo0(jdk_version_info* info, size_t info_size) {
         }
     }
 
-    assert(jdk_build_number >= 0 && jdk_build_number <= 255);
+    assert(jdk_build_number <= 255);
 
     if (strlen(jdk_update_string) == 2 || strlen(jdk_update_string) == 3) {
         if (isdigit(jdk_update_string[0]) && isdigit(jdk_update_string[1])) {

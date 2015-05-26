@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ImageIcon;
+import org.openide.util.ImageUtilities;
 
 /**
  *
@@ -38,9 +39,9 @@ public class EnableBlockLayoutAction extends AbstractAction {
     public static final String STATE = "state";
 
     public EnableBlockLayoutAction() {
-        state = true;
-        putValue(AbstractAction.SMALL_ICON, new ImageIcon(org.openide.util.Utilities.loadImage(iconResource())));
-        putValue(STATE, true);
+        state = false;
+        putValue(AbstractAction.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage(iconResource())));
+        putValue(STATE, state);
         putValue(Action.SHORT_DESCRIPTION, "Cluster nodes into blocks");
     }
 

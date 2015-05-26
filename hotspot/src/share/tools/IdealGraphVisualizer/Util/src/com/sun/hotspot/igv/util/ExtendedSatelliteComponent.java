@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,10 @@
  */
 package com.sun.hotspot.igv.util;
 
-import org.netbeans.api.visual.widget.Scene;
-
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import javax.swing.JComponent;
+import org.netbeans.api.visual.widget.Scene;
 
 /**
  * @author David Kaspar
@@ -118,27 +117,34 @@ public class ExtendedSatelliteComponent extends JComponent implements MouseListe
         }
     }
 
+    @Override
     public void mouseClicked(MouseEvent e) {
     }
 
+    @Override
     public void mousePressed(MouseEvent e) {
         moveVisibleRect(e.getPoint());
     }
 
+    @Override
     public void mouseReleased(MouseEvent e) {
         moveVisibleRect(e.getPoint());
     }
 
+    @Override
     public void mouseEntered(MouseEvent e) {
     }
 
+    @Override
     public void mouseExited(MouseEvent e) {
     }
 
+    @Override
     public void mouseDragged(MouseEvent e) {
         moveVisibleRect(e.getPoint());
     }
 
+    @Override
     public void mouseMoved(MouseEvent e) {
     }
 
@@ -170,26 +176,33 @@ public class ExtendedSatelliteComponent extends JComponent implements MouseListe
 
     }
 
+    @Override
     public void sceneRepaint() {
     }
 
+    @Override
     public void sceneValidating() {
     }
 
+    @Override
     public void sceneValidated() {
     }
 
+    @Override
     public void componentResized(ComponentEvent e) {
         repaint();
     }
 
+    @Override
     public void componentMoved(ComponentEvent e) {
         repaint();
     }
 
+    @Override
     public void componentShown(ComponentEvent e) {
     }
 
+    @Override
     public void componentHidden(ComponentEvent e) {
     }
 }

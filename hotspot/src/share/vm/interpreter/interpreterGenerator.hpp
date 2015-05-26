@@ -27,6 +27,7 @@
 
 #include "interpreter/cppInterpreter.hpp"
 #include "interpreter/cppInterpreterGenerator.hpp"
+#include "interpreter/interp_masm.hpp"
 #include "interpreter/templateInterpreter.hpp"
 #include "interpreter/templateInterpreterGenerator.hpp"
 

@@ -188,7 +188,7 @@
     <mkdir dir="${fxshell.classes.dir}"/>
     <javac srcdir="${fxshell.dir}"
            destdir="${fxshell.classes.dir}"
-           classpath="${dist.jar}:${javac.classpath}"
+           classpath="${dist.jar}${path.separator}${javac.classpath}"
            debug="${javac.debug}"
            encoding="${javac.encoding}"
            includeantruntime="false">
@@ -469,7 +469,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
     </testng>
   </target>
 
-  <target name="test" depends="test-pessimistic, test-optimistic"/>
+  <target name="test" depends="javadoc, test-pessimistic, test-optimistic"/>
 
   <target name="test-optimistic" depends="jar, -test-classes-all,-test-classes-single, check-testng, check-external-tests, compile-test, generate-policy-file" if="testng.available">
     <echo message="Running test suite in OPTIMISTIC mode..."/>

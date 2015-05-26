@@ -315,7 +315,7 @@ public class VM {
     }
 
     /*
-     * Add <tt>n</tt> to the objects pending for finalization count.
+     * Add {@code n} to the objects pending for finalization count.
      *
      * @param n an integer value to be added to the objects pending
      * for finalization count
