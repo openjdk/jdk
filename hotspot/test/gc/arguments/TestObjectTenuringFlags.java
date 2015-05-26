@@ -34,7 +34,7 @@
  * @run main/othervm TestObjectTenuringFlags
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 import java.util.*;
 

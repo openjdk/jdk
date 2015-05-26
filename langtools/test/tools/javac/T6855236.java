@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 6855236
  * @summary Compiler Tree API TreePath class generates NullPointerException from Iterator
+ * @modules jdk.compiler
  * @compile T6855236.java
  * @compile -processor T6855236 -proc:only T6855236.java
  */

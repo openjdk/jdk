@@ -182,14 +182,13 @@ final class IntArrayData extends ContinuousArrayData implements IntElements {
 
     @Override
     public ArrayData convert(final Class<?> type) {
-        if (type == Integer.class) {
+        if (type == Integer.class || type == Byte.class || type == Short.class) {
             return this;
         } else if (type == Long.class) {
             return convertToLong();
-        } else if (type == Double.class) {
+        } else if (type == Double.class || type == Float.class) {
             return convertToDouble();
         } else {
-            assert type == null || (!Number.class.isAssignableFrom(type) && !type.isPrimitive());
             return convertToObject();
         }
     }

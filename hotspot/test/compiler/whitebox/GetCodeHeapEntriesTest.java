@@ -28,7 +28,7 @@ import java.util.EnumSet;
 import sun.hotspot.WhiteBox;
 import sun.hotspot.code.CodeBlob;
 import sun.hotspot.code.BlobType;
-import com.oracle.java.testlibrary.Asserts;
+import jdk.test.lib.Asserts;
 
 /*
  * @test GetCodeHeapEntriesTest

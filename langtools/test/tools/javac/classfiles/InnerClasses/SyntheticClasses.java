@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  *  @bug 8034854
  *  @summary Verify that the InnerClasses attribute has outer_class_info_index zero if it has
  *           inner_name_index zero (for synthetic classes)
+ *  @modules jdk.compiler/com.sun.tools.classfile
  *  @compile SyntheticClasses.java
  *  @run main SyntheticClasses
  */

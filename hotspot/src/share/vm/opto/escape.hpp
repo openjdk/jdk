@@ -536,7 +536,7 @@ private:
 
   // Propagate unique types created for unescaped allocated objects
   // through the graph
-  void split_unique_types(GrowableArray<Node *>  &alloc_worklist);
+  void split_unique_types(GrowableArray<Node *>  &alloc_worklist, GrowableArray<ArrayCopyNode*> &arraycopy_worklist);
 
   // Helper methods for unique types split.
   bool split_AddP(Node *addp, Node *base);

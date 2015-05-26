@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import com.sun.tools.classfile.*;
  * @bug 6843077 8006775
  * @summary test that typecasts annotation are emitted if only the cast
  *          expression is optimized away
+ * @modules jdk.compiler/com.sun.tools.classfile
  */
 
 public class TypeCasts extends ClassfileTestHelper{

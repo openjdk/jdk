@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Tree API: can't determine kind of operator
  * @author  Peter von der Ah\u00e9
  * @library ../lib
+ * @modules jdk.compiler
  * @build JavacTestingAbstractProcessor TestOperators
  * @compile -processor TestOperators -proc:only TestOperators.java
  */

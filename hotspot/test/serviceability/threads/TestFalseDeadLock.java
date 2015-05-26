@@ -21,7 +21,7 @@
  * questions.
  */
 
-import com.oracle.java.testlibrary.Utils;
+import jdk.test.lib.Utils;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.util.Random;

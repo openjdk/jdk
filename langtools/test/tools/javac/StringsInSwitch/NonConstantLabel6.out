@@ -1,0 +1,7 @@
+- compiler.warn.source.no.bootclasspath: 1.6
+- compiler.warn.option.obsolete.source: 1.6
+- compiler.warn.option.obsolete.suppression
+NonConstantLabel.java:11:15: compiler.err.string.switch.not.supported.in.source: 1.6
+NonConstantLabel.java:14:14: compiler.err.const.expr.req
+2 errors
+3 warnings

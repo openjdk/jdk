@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,6 +102,12 @@ import static com.sun.tools.javac.util.Position.NOPOS;
  * @bug 6919889
  * @summary assorted position errors in compiler syntax trees
  * OLD: -q -r -ef ./tools/javac/typeAnnotations -ef ./tools/javap/typeAnnotations -et ANNOTATED_TYPE .
+ * @modules java.desktop
+ *          jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.code
+ *          jdk.compiler/com.sun.tools.javac.file
+ *          jdk.compiler/com.sun.tools.javac.tree
+ *          jdk.compiler/com.sun.tools.javac.util
  * @run main TreePosTest -q -r .
  */
 public class TreePosTest {

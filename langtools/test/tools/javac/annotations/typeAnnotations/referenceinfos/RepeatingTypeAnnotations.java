@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ import static com.sun.tools.classfile.TypeAnnotation.TargetType.*;
 /*
  * @test
  * @summary Test population of reference info for repeating type annotations
+ * @modules jdk.compiler/com.sun.tools.classfile
  * @compile -g Driver.java ReferenceInfoUtil.java RepeatingTypeAnnotations.java
  * @run main Driver RepeatingTypeAnnotations
  * @author Werner Dietl

@@ -35,7 +35,7 @@
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 public class HeapChangeLogging {
   public static void main(String[] args) throws Exception {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@
 // Exploiting SuperWord Level Parallelism with
 //   Multimedia Instruction Sets
 // by
-//   Samuel Larsen and Saman Amarasighe
+//   Samuel Larsen and Saman Amarasinghe
 //   MIT Laboratory for Computer Science
 // date
 //   May 2000
@@ -218,8 +218,10 @@ class SuperWord : public ResourceObj {
   GrowableArray<Node*> _data_entry;      // Nodes with all inputs from outside
   GrowableArray<Node*> _mem_slice_head;  // Memory slice head nodes
   GrowableArray<Node*> _mem_slice_tail;  // Memory slice tail nodes
-
+  GrowableArray<Node*> _iteration_first; // nodes in the generation that has deps from phi
+  GrowableArray<Node*> _iteration_last;  // nodes in the generation that has deps to   phi
   GrowableArray<SWNodeInfo> _node_info;  // Info needed per node
+  CloneMap&                 _clone_map;  // map of nodes created in cloning
 
   MemNode* _align_to_ref;                // Memory reference that pre-loop will align to
 
@@ -250,6 +252,13 @@ class SuperWord : public ResourceObj {
   Node*          _bb;              // Current basic block
   PhiNode*       _iv;              // Induction var
   bool           _race_possible;   // In cases where SDMU is true
+  bool           _do_vector_loop;  // whether to do vectorization/simd style
+  bool           _vector_loop_debug; // provide more printing in debug mode
+  int            _num_work_vecs;   // Number of non memory vector operations
+  int            _num_reductions;  // Number of reduction expressions applied
+  int            _ii_first;        // generation with direct deps from mem phi
+  int            _ii_last;         // generation with direct deps to   mem phi
+  GrowableArray<int> _ii_order;
 
   // Accessors
   Arena* arena()                   { return _arena; }
@@ -324,6 +333,22 @@ class SuperWord : public ResourceObj {
   int get_iv_adjustment(MemNode* mem);
   // Can the preloop align the reference to position zero in the vector?
   bool ref_is_alignable(SWPointer& p);
+  // rebuild the graph so all loads in different iterations of cloned loop become dependant on phi node (in _do_vector_loop only)
+  bool hoist_loads_in_graph();
+  // Test whether MemNode::Memory dependency to the same load but in the first iteration of this loop is coming from memory phi
+  // Return false if failed.
+  Node* find_phi_for_mem_dep(LoadNode* ld);
+  // Return same node but from the first generation. Return 0, if not found
+  Node* first_node(Node* nd);
+  // Return same node as this but from the last generation. Return 0, if not found
+  Node* last_node(Node* n);
+  // Mark nodes belonging to first and last generation,
+  // returns first generation index or -1 if vectorization/simd is impossible
+  int mark_generations();
+  // swapping inputs of commutative instruction (Add or Mul)
+  bool fix_commutative_inputs(Node* gold, Node* fix);
+  // make packs forcefully (in _do_vector_loop only)
+  bool pack_parallel();
   // Construct dependency graph.
   void dependence_graph();
   // Return a memory slice (node list) in predecessor order starting at "start"
@@ -417,6 +442,8 @@ class SuperWord : public ResourceObj {
   // Is the use of d1 in u1 at the same operand position as d2 in u2?
   bool opnd_positions_match(Node* d1, Node* u1, Node* d2, Node* u2);
   void init();
+  // clean up some basic structures - used if the ideal graph was rebuilt
+  void restart();
 
   // print methods
   void print_packset();
@@ -439,7 +466,7 @@ class SWPointer VALUE_OBJ_CLASS_SPEC {
 
   Node* _base;         // NULL if unsafe nonheap reference
   Node* _adr;          // address pointer
-  jint  _scale;        // multipler for iv (in bytes), 0 if no loop iv
+  jint  _scale;        // multiplier for iv (in bytes), 0 if no loop iv
   jint  _offset;       // constant offset (in bytes)
   Node* _invar;        // invariant offset (in bytes), NULL if none
   bool  _negate_invar; // if true then use: (0 - _invar)

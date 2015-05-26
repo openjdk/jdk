@@ -39,9 +39,9 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
 import java.util.ArrayList;
 import java.util.List;
-import static com.oracle.java.testlibrary.Asserts.*;
-import com.oracle.java.testlibrary.ProcessTools;
-import com.oracle.java.testlibrary.OutputAnalyzer;
+import static jdk.test.lib.Asserts.*;
+import jdk.test.lib.ProcessTools;
+import jdk.test.lib.OutputAnalyzer;
 import com.sun.management.HotSpotDiagnosticMXBean;
 
 public class TestShrinkDefragmentedHeap {

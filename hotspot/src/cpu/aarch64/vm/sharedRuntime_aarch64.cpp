@@ -2995,21 +2995,6 @@ void OptoRuntime::generate_exception_blob() {
 
   // r0: exception handler
 
-  // Restore SP from BP if the exception PC is a MethodHandle call site.
-  __ ldrw(rscratch1, Address(rthread, JavaThread::is_method_handle_return_offset()));
-  // n.b. Intel uses special register rbp_mh_SP_save here but we will
-  // just hard wire rfp
-  __ cmpw(rscratch1, zr);
-  // the obvious way to conditionally copy rfp to sp if NE
-  // Label skip;
-  // __ br(Assembler::EQ, skip);
-  // __ mov(sp, rfp);
-  // __ bind(skip);
-  // same but branchless
-  __ mov(rscratch1, sp);
-  __ csel(rscratch1, rfp, rscratch1, Assembler::NE);
-  __ mov(sp, rscratch1);
-
   // We have a handler in r0 (could be deopt blob).
   __ mov(r8, r0);
 

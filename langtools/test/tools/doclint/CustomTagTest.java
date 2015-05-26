@@ -2,6 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8006248 8028318
  * @summary DocLint should report unknown tags
+ * @modules jdk.compiler/com.sun.tools.doclint
  * @build DocLintTester
  * @run main DocLintTester CustomTagTest.java
  * @run main DocLintTester -XcustomTags: -ref CustomTagTest.out CustomTagTest.java

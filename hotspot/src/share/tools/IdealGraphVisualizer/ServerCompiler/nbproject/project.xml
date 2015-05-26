@@ -14,6 +14,14 @@
                         <specification-version>1.0</specification-version>
                     </run-dependency>
                 </dependency>
+                <dependency>
+                    <code-name-base>com.sun.hotspot.igv.graph</code-name-base>
+                    <build-prerequisite/>
+                    <compile-dependency/>
+                    <run-dependency>
+                        <specification-version>1.0</specification-version>
+                    </run-dependency>
+                </dependency>
             </module-dependencies>
             <public-packages/>
         </data>

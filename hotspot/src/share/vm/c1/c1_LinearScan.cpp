@@ -1290,7 +1290,8 @@ void LinearScan::build_intervals() {
 #ifdef X86
     }
     if (UseSSE > 0) {
-      for (i = 0; i < FrameMap::nof_caller_save_xmm_regs; i++) {
+      int num_caller_save_xmm_regs = FrameMap::get_num_caller_save_xmms();
+      for (i = 0; i < num_caller_save_xmm_regs; i ++) {
         LIR_Opr opr = FrameMap::caller_save_xmm_reg_at(i);
         assert(opr->is_valid() && opr->is_register(), "FrameMap should not return invalid operands");
         assert(reg_numHi(opr) == -1, "missing addition of range for hi-register");
@@ -2098,7 +2099,13 @@ LIR_Opr LinearScan::calc_operand_for_interval(const Interval* interval) {
       case T_FLOAT: {
 #ifdef X86
         if (UseSSE >= 1) {
-          assert(assigned_reg >= pd_first_xmm_reg && assigned_reg <= pd_last_xmm_reg, "no xmm register");
+          int last_xmm_reg = pd_last_xmm_reg;
+#ifdef _LP64
+          if (UseAVX < 3) {
+            last_xmm_reg = pd_first_xmm_reg + (pd_nof_xmm_regs_frame_map / 2) - 1;
+          }
+#endif
+          assert(assigned_reg >= pd_first_xmm_reg && assigned_reg <= last_xmm_reg, "no xmm register");
           assert(interval->assigned_regHi() == any_reg, "must not have hi register");
           return LIR_OprFact::single_xmm(assigned_reg - pd_first_xmm_reg);
         }
@@ -2112,7 +2119,13 @@ LIR_Opr LinearScan::calc_operand_for_interval(const Interval* interval) {
       case T_DOUBLE: {
 #ifdef X86
         if (UseSSE >= 2) {
-          assert(assigned_reg >= pd_first_xmm_reg && assigned_reg <= pd_last_xmm_reg, "no xmm register");
+          int last_xmm_reg = pd_last_xmm_reg;
+#ifdef _LP64
+          if (UseAVX < 3) {
+            last_xmm_reg = pd_first_xmm_reg + (pd_nof_xmm_regs_frame_map / 2) - 1;
+          }
+#endif
+          assert(assigned_reg >= pd_first_xmm_reg && assigned_reg <= last_xmm_reg, "no xmm register");
           assert(interval->assigned_regHi() == any_reg, "must not have hi register (double xmm values are stored in one register)");
           return LIR_OprFact::double_xmm(assigned_reg - pd_first_xmm_reg);
         }
@@ -3600,7 +3613,8 @@ void RegisterVerifier::process_operations(LIR_List* ops, IntervalList* input_sta
       }
 
 #ifdef X86
-      for (j = 0; j < FrameMap::nof_caller_save_xmm_regs; j++) {
+      int num_caller_save_xmm_regs = FrameMap::get_num_caller_save_xmms();
+      for (j = 0; j < num_caller_save_xmm_regs; j++) {
         state_put(input_state, reg_num(FrameMap::caller_save_xmm_reg_at(j)), NULL);
       }
 #endif
@@ -4514,12 +4528,20 @@ void Interval::print(outputStream* out) const {
   if (reg_num() < LIR_OprDesc::vreg_base) {
     type_name = "fixed";
     // need a temporary operand for fixed intervals because type() cannot be called
+#ifdef X86
+    int last_xmm_reg = pd_last_xmm_reg;
+#ifdef _LP64
+    if (UseAVX < 3) {
+      last_xmm_reg = pd_first_xmm_reg + (pd_nof_xmm_regs_frame_map / 2) - 1;
+    }
+#endif
+#endif
     if (assigned_reg() >= pd_first_cpu_reg && assigned_reg() <= pd_last_cpu_reg) {
       opr = LIR_OprFact::single_cpu(assigned_reg());
     } else if (assigned_reg() >= pd_first_fpu_reg && assigned_reg() <= pd_last_fpu_reg) {
       opr = LIR_OprFact::single_fpu(assigned_reg() - pd_first_fpu_reg);
 #ifdef X86
-    } else if (assigned_reg() >= pd_first_xmm_reg && assigned_reg() <= pd_last_xmm_reg) {
+    } else if (assigned_reg() >= pd_first_xmm_reg && assigned_reg() <= last_xmm_reg) {
       opr = LIR_OprFact::single_xmm(assigned_reg() - pd_first_xmm_reg);
 #endif
     } else {

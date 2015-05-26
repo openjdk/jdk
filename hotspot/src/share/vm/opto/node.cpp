@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1658,6 +1658,9 @@ void Node::dump(const char* suffix, outputStream *st) const {
     return;                     // don't process dead nodes
   }
 
+  if (C->clone_map().value(_idx) != 0) {
+    C->clone_map().dump(_idx);
+  }
   // Dump node-specific info
   dump_spec(st);
 #ifdef ASSERT

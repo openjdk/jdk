@@ -27,6 +27,7 @@
  * @summary  Verify that spaces do not appear in hrefs and anchors.
  * @author   jamieh
  * @library  ../lib
+ * @modules jdk.javadoc
  * @build    JavadocTester
  * @run main TestHref
  */

@@ -38,8 +38,8 @@ import java.util.concurrent.CyclicBarrier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.oracle.java.testlibrary.*;
-import static com.oracle.java.testlibrary.Asserts.*;
+import jdk.test.lib.*;
+import static jdk.test.lib.Asserts.*;
 
 public class ThreadPriorities {
 

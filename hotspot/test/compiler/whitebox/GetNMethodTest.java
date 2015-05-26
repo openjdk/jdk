@@ -24,7 +24,7 @@
 
 import sun.hotspot.code.BlobType;
 import sun.hotspot.code.NMethod;
-import com.oracle.java.testlibrary.Asserts;
+import jdk.test.lib.Asserts;
 
 /*
  * @test GetNMethodTest

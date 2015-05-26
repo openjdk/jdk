@@ -29,6 +29,7 @@
  *           Test for unnamed package in index.
  * @author   jamieh
  * @library  ../lib
+ * @modules jdk.javadoc
  * @build    JavadocTester
  * @run main TestIndex
  */

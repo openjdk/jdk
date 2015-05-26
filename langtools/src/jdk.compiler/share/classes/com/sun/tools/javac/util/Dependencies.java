@@ -145,8 +145,8 @@ public abstract class Dependencies {
 
     /**
      * This class creates a graph of all dependencies as symbols are completed;
-     * when compilation finishes, the resulting dependecy graph is then dumped
-     * onto a dot file. Several options are provided to customise the output of the graph.
+     * when compilation finishes, the resulting dependency graph is then dumped
+     * onto a dot file. Several options are provided to customize the output of the graph.
      */
     public static class GraphDependencies extends Dependencies implements Closeable, Completer {
 
@@ -233,13 +233,13 @@ public abstract class Dependencies {
          * (either from source or classfile); (ii) attribution nodes, corresponding to
          * attribution actions triggered during (source) completion.
          */
-        static abstract class Node extends GraphUtils.AbstractNode<String, Node>
+        public static abstract class Node extends GraphUtils.AbstractNode<String, Node>
                 implements GraphUtils.DottableNode<String, Node> {
 
             /**
              * Model the dependencies between nodes.
              */
-            enum DependencyKind implements GraphUtils.DependencyKind {
+            public enum DependencyKind implements GraphUtils.DependencyKind {
                 /**
                  * standard dependency - i.e. completion of the source node depends
                  * on completion of the sink node.
@@ -326,7 +326,7 @@ public abstract class Dependencies {
          * This is a dependency node used to model symbol completion requests.
          * Completion requests can come from either source or class.
          */
-        static class CompletionNode extends Node {
+        public static class CompletionNode extends Node {
 
             /**
              * Completion kind (source vs. classfile)
@@ -349,9 +349,11 @@ public abstract class Dependencies {
             }
 
             final Kind ck;
+            final ClassSymbol sym;
 
             CompletionNode(ClassSymbol sym) {
                 super(sym.getQualifiedName().toString());
+                this.sym = sym;
                 //infer completion kind by looking at the symbol fields
                 boolean fromClass = (sym.classfile == null && sym.sourcefile == null) ||
                         (sym.classfile != null && sym.classfile.getKind() == JavaFileObject.Kind.CLASS);
@@ -366,6 +368,10 @@ public abstract class Dependencies {
                 p.put("style", ck.dotStyle);
                 p.put("shape", "ellipse");
                 return p;
+            }
+
+            public ClassSymbol getClassSymbol() {
+                return sym;
             }
         }
 
@@ -437,23 +443,23 @@ public abstract class Dependencies {
 
         @Override
         public void close() throws IOException {
+            if (!dependenciesModes.contains(DependenciesMode.REDUNDANT)) {
+                //prune spurious edges
+                new PruneVisitor().visit(dependencyNodeMap.values(), null);
+            }
+            if (!dependenciesModes.contains(DependenciesMode.CLASS)) {
+                //filter class completions
+                new FilterVisitor(CompletionNode.Kind.SOURCE).visit(dependencyNodeMap.values(), null);
+            }
+            if (!dependenciesModes.contains(DependenciesMode.SOURCE)) {
+                //filter source completions
+                new FilterVisitor(CompletionNode.Kind.CLASS).visit(dependencyNodeMap.values(), null);
+            }
+            if (dependenciesModes.contains(DependenciesMode.SIDE_EFFECTS)) {
+                //add side-effects edges
+                new SideEffectVisitor().visit(dependencyNodeMap.values(), null);
+            }
             if (dependenciesFile != null) {
-                if (!dependenciesModes.contains(DependenciesMode.REDUNDANT)) {
-                    //prune spurious edges
-                    new PruneVisitor().visit(dependencyNodeMap.values(), null);
-                }
-                if (!dependenciesModes.contains(DependenciesMode.CLASS)) {
-                    //filter class completions
-                    new FilterVisitor(CompletionNode.Kind.SOURCE).visit(dependencyNodeMap.values(), null);
-                }
-                if (!dependenciesModes.contains(DependenciesMode.SOURCE)) {
-                    //filter source completions
-                    new FilterVisitor(CompletionNode.Kind.CLASS).visit(dependencyNodeMap.values(), null);
-                }
-                if (dependenciesModes.contains(DependenciesMode.SIDE_EFFECTS)) {
-                    //add side-effects edges
-                    new SideEffectVisitor().visit(dependencyNodeMap.values(), null);
-                }
                 //write to file
                 try (FileWriter fw = new FileWriter(dependenciesFile)) {
                     fw.append(GraphUtils.toDot(dependencyNodeMap.values(), "CompletionDeps", ""));
@@ -471,6 +477,10 @@ public abstract class Dependencies {
         @Override
         public boolean isTerminal() {
             return true;
+        }
+
+        public Collection<Node> getNodes() {
+            return dependencyNodeMap.values();
         }
 
         /**

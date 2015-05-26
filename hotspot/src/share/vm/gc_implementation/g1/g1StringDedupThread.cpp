@@ -74,7 +74,7 @@ void G1StringDedupThread::run() {
 
     {
       // Include thread in safepoints
-      SuspendibleThreadSetJoiner sts;
+      SuspendibleThreadSetJoiner sts_join;
 
       stat.mark_exec();
 
@@ -88,9 +88,9 @@ void G1StringDedupThread::run() {
         G1StringDedupTable::deduplicate(java_string, stat);
 
         // Safepoint this thread if needed
-        if (sts.should_yield()) {
+        if (sts_join.should_yield()) {
           stat.mark_block();
-          sts.yield();
+          sts_join.yield();
           stat.mark_unblock();
         }
       }
