@@ -1040,7 +1040,7 @@ public class CNCtx implements javax.naming.Context {
 
     /**
       * Allow access to the name parser object.
-      * @param String JNDI name, is ignored since there is only one Name
+      * @param name JNDI name, is ignored since there is only one Name
       * Parser object.
       * @exception NamingException --
       * @return NameParser object
@@ -1051,7 +1051,7 @@ public class CNCtx implements javax.naming.Context {
 
     /**
       * Allow access to the name parser object.
-      * @param Name JNDI name, is ignored since there is only one Name
+      * @param name JNDI name, is ignored since there is only one Name
       * Parser object.
       * @exception NamingException --
       * @return NameParser object
@@ -1088,7 +1088,7 @@ public class CNCtx implements javax.naming.Context {
       * Record change but do not reinitialize ORB.
       *
       * @param propName The property name.
-      * @param propVal  The ORB.
+      * @param propValue The ORB.
       * @return the previous value of this property if any.
       */
     @SuppressWarnings("unchecked")
