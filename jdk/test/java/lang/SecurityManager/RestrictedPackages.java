@@ -66,6 +66,7 @@ final class RestrictedPackages {
         "com.sun.org.apache.xalan.internal.xsltc.util.",
         "com.sun.org.apache.xml.internal.res.",
         "com.sun.org.apache.xml.internal.security.",
+        "com.sun.org.apache.xml.internal.serializer.dom3.",
         "com.sun.org.apache.xml.internal.serializer.utils.",
         "com.sun.org.apache.xml.internal.utils.",
         "com.sun.org.glassfish.",
