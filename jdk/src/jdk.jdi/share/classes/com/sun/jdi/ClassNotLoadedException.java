@@ -45,7 +45,7 @@ package com.sun.jdi;
  * <li>There can be no guarantee that running the appropriate class
  * loader won't cause a deadlock in loading the
  * class. Class loaders can consist of arbitrary
- * Java<sup><font size=-2>TM</font></sup> programming language code and the
+ * Java&trade; programming language code and the
  * class loading methods are usually synchronized. Most of the work
  * done by a debugger happens when threads are suspended. If another
  * application thread is suspended within the same class loader,

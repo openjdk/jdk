@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.management;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -45,9 +46,26 @@ import sun.management.counter.perf.PerfInstrumentation;
  * @since 1.5
  */
 public class ConnectorAddressLink {
+    /**
+     * A simple wrapper for the perf-counter backing {@linkplain ByteBuffer}
+     */
+    private static final class PerfHandle {
+        private ByteBuffer bb;
+
+        private PerfHandle(ByteBuffer bb) {
+            this.bb = bb.order(ByteOrder.nativeOrder());
+        }
+
+        private void putLong(long l) {
+            this.bb = bb.clear();
+            this.bb.asLongBuffer().put(l);
+        }
+    }
 
     private static final String CONNECTOR_ADDRESS_COUNTER =
             "sun.management.JMXConnectorServer.address";
+    private static final String REMOTE_CONNECTOR_STATE_COUNTER =
+            "sun.management.JMXConnectorServer.remote.enabled";
 
     /*
      * The format of the jvmstat counters representing the properties of
@@ -78,7 +96,9 @@ public class ConnectorAddressLink {
      * JMX remote connector counter (it will be incremented every
      * time a new out-of-the-box JMX remote connector is created).
      */
-    private static AtomicInteger counter = new AtomicInteger();
+    private static final AtomicInteger counter = new AtomicInteger();
+
+    private static PerfHandle remotePerfHandle = null;
 
     /**
      * Exports the specified connector address to the instrumentation buffer
@@ -93,7 +113,17 @@ public class ConnectorAddressLink {
         }
         Perf perf = Perf.getPerf();
         perf.createString(
-                CONNECTOR_ADDRESS_COUNTER, 1, Units.STRING.intValue(), address);
+            CONNECTOR_ADDRESS_COUNTER, 1, Units.STRING.intValue(), address);
+    }
+
+    public static void unexportRemote() {
+        unexport(remotePerfHandle);
+    }
+
+    private static void unexport(PerfHandle ph) {
+        if (ph != null) {
+            ph.putLong(-1L);
+        }
     }
 
     /**
@@ -142,6 +172,13 @@ public class ConnectorAddressLink {
         for (Map.Entry<String, String> entry : properties.entrySet()) {
             perf.createString(REMOTE_CONNECTOR_COUNTER_PREFIX + index + "." +
                     entry.getKey(), 1, Units.STRING.intValue(), entry.getValue());
+        }
+        if (remotePerfHandle != null) {
+            remotePerfHandle.putLong(index);
+        } else {
+            remotePerfHandle = new PerfHandle(
+                perf.createLong(REMOTE_CONNECTOR_STATE_COUNTER, 1, Units.NONE.intValue(), (long)index)
+            );
         }
     }
 

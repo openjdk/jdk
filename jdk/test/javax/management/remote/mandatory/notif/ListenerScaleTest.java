@@ -21,12 +21,16 @@
  * questions.
  */
 
-/*
+/**
  * @test
  * @bug 6338874
  * @summary Check that notification dispatch is not linear in number of MBeans.
  * @author Eamonn McManus
  * @modules java.management
+ *
+ * @library /lib/testlibrary
+ * @run build jdk.testlibrary.* ListenerScaleTest
+ * @run main ListenerScaleTest
  */
 
 /*
@@ -66,6 +70,8 @@ import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXConnectorServer;
 import javax.management.remote.JMXConnectorServerFactory;
 import javax.management.remote.JMXServiceURL;
+
+import jdk.testlibrary.Platform;
 
 public class ListenerScaleTest {
     private static final int WARMUP_WITH_ONE_MBEAN = 1000;
@@ -126,6 +132,10 @@ public class ListenerScaleTest {
         };
 
     public static void main(String[] args) throws Exception {
+        if (Platform.isDebugBuild()) {
+            System.out.println("Running on a debug build. Performance test not applicable. Skipping.");
+            return;
+        }
         MBeanServer mbs = MBeanServerFactory.newMBeanServer();
         Sender sender = new Sender();
         mbs.registerMBean(sender, testObjectName);

@@ -21,8 +21,8 @@
  * questions.
  */
 
-import com.oracle.java.testlibrary.Asserts;
-import com.oracle.java.testlibrary.Platform;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.Platform;
 import sun.hotspot.WhiteBox;
 
 /**

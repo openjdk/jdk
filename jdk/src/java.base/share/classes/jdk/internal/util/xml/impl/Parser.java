@@ -145,12 +145,12 @@ public abstract class Parser {
     /**
      * ASCII character type array.
      *
-     * This array maps an ASCII (7 bit) character to the character type.<br />
-     * Possible character type values are:<br /> - ' ' for any kind of white
-     * space character;<br /> - 'a' for any lower case alphabetical character
-     * value;<br /> - 'A' for any upper case alphabetical character value;<br />
-     * - 'd' for any decimal digit character value;<br /> - 'z' for any
-     * character less then ' ' except '\t', '\n', '\r';<br /> An ASCII (7 bit)
+     * This array maps an ASCII (7 bit) character to the character type.<br>
+     * Possible character type values are:<br> - ' ' for any kind of white
+     * space character;<br> - 'a' for any lower case alphabetical character
+     * value;<br> - 'A' for any upper case alphabetical character value;<br>
+     * - 'd' for any decimal digit character value;<br> - 'z' for any
+     * character less than ' ' except '\t', '\n', '\r';<br> An ASCII (7 bit)
      * character which does not fall in any category listed above is mapped to
      * it self.
      */
@@ -158,12 +158,12 @@ public abstract class Parser {
     /**
      * NMTOKEN character type array.
      *
-     * This array maps an ASCII (7 bit) character to the character type.<br />
-     * Possible character type values are:<br /> - 0 for underscore ('_') or any
-     * lower and upper case alphabetical character value;<br /> - 1 for colon
-     * (':') character;<br /> - 2 for dash ('-') and dot ('.') or any decimal
-     * digit character value;<br /> - 3 for any kind of white space character<br
-     * /> An ASCII (7 bit) character which does not fall in any category listed
+     * This array maps an ASCII (7 bit) character to the character type.<br>
+     * Possible character type values are:<br> - 0 for underscore ('_') or any
+     * lower and upper case alphabetical character value;<br> - 1 for colon
+     * (':') character;<br> - 2 for dash ('-') and dot ('.') or any decimal
+     * digit character value;<br> - 3 for any kind of white space character<br>
+     * An ASCII (7 bit) character which does not fall in any category listed
      * above is mapped to 0xff.
      */
     private static final byte nmttyp[];
@@ -1841,10 +1841,12 @@ public abstract class Parser {
     /**
      * Reads an attribute value.
      *
-     * The grammar which this method can read is:<br />
-     * <code>eqstr := S &quot;=&quot; qstr</code><br />
-     * <code>qstr  := S (&quot;'&quot; string &quot;'&quot;) |
-     *  ('&quot;' string '&quot;')</code><br /> This method resolves entities
+     * The grammar this method can read is:
+     * <pre>{@code
+     * eqstr := S "=" qstr
+     * qstr  := S ("'" string "'") | ('"' string '"')
+     * }</pre>
+     * This method resolves entities
      * inside a string unless the parser parses DTD.
      *
      * @param flag The '=' character forces the method to accept the '='
@@ -2633,7 +2635,7 @@ public abstract class Parser {
      * Reports characters and empties the parser's buffer. This method is called
      * only if parser is going to return control to the main loop. This means
      * that this method may use parser buffer to report white space without
-     * copeing characters to temporary buffer.
+     * copying characters to temporary buffer.
      */
     protected abstract void bflash()
             throws Exception;
@@ -2642,7 +2644,7 @@ public abstract class Parser {
      * Reports white space characters and empties the parser's buffer. This
      * method is called only if parser is going to return control to the main
      * loop. This means that this method may use parser buffer to report white
-     * space without copeing characters to temporary buffer.
+     * space without copying characters to temporary buffer.
      */
     protected abstract void bflash_ws()
             throws Exception;
@@ -3290,16 +3292,20 @@ public abstract class Parser {
     }
 
     /**
-     * Maps a character to it's type.
+     * Maps a character to its type.
      *
-     * Possible character type values are:<br /> - ' ' for any kind of white
-     * space character;<br /> - 'a' for any lower case alphabetical character
-     * value;<br /> - 'A' for any upper case alphabetical character value;<br />
-     * - 'd' for any decimal digit character value;<br /> - 'z' for any
-     * character less then ' ' except '\t', '\n', '\r';<br /> - 'X' for any not
-     * ASCII character;<br /> - 'Z' for EOS character.<br /> An ASCII (7 bit)
-     * character which does not fall in any category listed above is mapped to
-     * it self.
+     * Possible character type values are:
+     * <ul>
+     * <li>' ' - for any kind of whitespace character;</li>
+     * <li>'a' - for any lower case alphabetical character value;</li>
+     * <li>'A' - for any upper case alphabetical character value;</li>
+     * <li>'d' - for any decimal digit character value;</li>
+     * <li>'z' - for any character less than ' ' except '\t', '\n', '\r';</li>
+     * <li>'X' - for any not ASCII character;</li>
+     * <li>'Z' - for EOS character.</li>
+     * </ul>
+     * An ASCII (7 bit) character which does not fall in any category
+     * listed above is mapped to itself.
      *
      * @param ch The character to map.
      * @return The type of character.

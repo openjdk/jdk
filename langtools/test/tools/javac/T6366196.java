@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug     6359661 6366196
  * @summary Unit test for corner cases of position encoding
  * @author  Wei Tao
+ * @modules jdk.compiler/com.sun.tools.javac.util
  * @run main T6366196
  */
 

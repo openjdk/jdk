@@ -33,8 +33,8 @@
  * @run main/othervm -javaagent:redefineagent.jar RedefineClassTest
  */
 
-import static com.oracle.java.testlibrary.Asserts.*;
-import com.oracle.java.testlibrary.*;
+import static jdk.test.lib.Asserts.*;
+import jdk.test.lib.*;
 
 /*
  * Proof of concept test for the test utility class RedefineClassHelper

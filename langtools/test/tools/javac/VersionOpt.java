@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary tools/javac/versionOpt.sh fails on OpenJDK builds
  * Test checks the version strings displayed by javac, using
  * strings that come out of the Java runtime.
+ * @modules jdk.compiler
  */
 
 import java.io.File;

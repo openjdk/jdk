@@ -23,7 +23,7 @@
 
 /*
  * @test
-   @bug 4179800
+   @bug 4179800 8042125
    @summary Make sure JIS0212.Decoder really works
  */
 
@@ -38,25 +38,26 @@ public class TestJIS0212Decoder {
                                             (byte)0x30, (byte)0x25, (byte)0x30, (byte)0x26,
                                             (byte)0x30, (byte)0x27};
 
-    public static void main(String args[])
-        throws Exception
-    {
+    public static void main(String args[]) throws Exception {
         test();
     }
 
-    private static void test()
-        throws Exception
-    {
+    private static void test() throws Exception {
         CharsetDecoder dec = Charset.forName("JIS0212").newDecoder();
         try {
             String ret = dec.decode(ByteBuffer.wrap(inputBytes)).toString();
             if (ret.length() != outputString.length()
                 || ! outputString.equals(ret)){
-                throw new Exception("ByteToCharJIS0212 does not work correctly");
+                throw new Exception("JIS0212 decoder does not work correctly");
             }
+        } catch (Exception e){
+            throw new Exception("JIS0212 encoder does not work correctly");
         }
-        catch (Exception e){
-            throw new Exception("ByteToCharJIS0212 does not work correctly");
+
+        // test 0x742c -> u2116 mapping
+        if (!"\u2116".equals(new String(new byte[] { (byte)0x8f, (byte)0xf4, (byte)0xac },
+                                        "x-eucJP-Open"))) {
+            throw new RuntimeException("JIS0212_Solaris nr mapping failed");
         }
     }
 }

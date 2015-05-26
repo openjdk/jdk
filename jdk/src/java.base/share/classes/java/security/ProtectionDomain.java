@@ -25,23 +25,24 @@
 
 package java.security;
 
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
+import sun.misc.JavaSecurityAccess;
 import sun.misc.JavaSecurityProtectionDomainAccess;
 import static sun.misc.JavaSecurityProtectionDomainAccess.ProtectionDomainCache;
+import sun.misc.SharedSecrets;
 import sun.security.util.Debug;
 import sun.security.util.SecurityConstants;
-import sun.misc.JavaSecurityAccess;
-import sun.misc.SharedSecrets;
 
 /**
- *
- *<p>
- * This ProtectionDomain class encapsulates the characteristics of a domain,
+ * The ProtectionDomain class encapsulates the characteristics of a domain,
  * which encloses a set of classes whose instances are granted a set
  * of permissions when being executed on behalf of a given set of Principals.
  * <p>
@@ -58,6 +59,7 @@ import sun.misc.SharedSecrets;
  */
 
 public class ProtectionDomain {
+
     private static class JavaSecurityAccessImpl implements JavaSecurityAccess {
 
         private JavaSecurityAccessImpl() {
@@ -86,17 +88,32 @@ public class ProtectionDomain {
                 AccessController.getContext(), context);
         }
 
-        private static AccessControlContext getCombinedACC(AccessControlContext context, AccessControlContext stack) {
-            AccessControlContext acc = new AccessControlContext(context, stack.getCombiner(), true);
+        private static AccessControlContext getCombinedACC(
+            AccessControlContext context, AccessControlContext stack) {
+            AccessControlContext acc =
+                new AccessControlContext(context, stack.getCombiner(), true);
 
             return new AccessControlContext(stack.getContext(), acc).optimize();
         }
     }
 
     static {
-        // Set up JavaSecurityAccess in SharedSecrets
+        // setup SharedSecrets to allow access to doIntersectionPrivilege
+        // methods and ProtectionDomain cache
         SharedSecrets.setJavaSecurityAccess(new JavaSecurityAccessImpl());
+        SharedSecrets.setJavaSecurityProtectionDomainAccess(
+            new JavaSecurityProtectionDomainAccess() {
+                @Override
+                public ProtectionDomainCache getProtectionDomainCache() {
+                    return new PDCache();
+                }
+            });
     }
+
+    /**
+     * Used for storing ProtectionDomains as keys in a Map.
+     */
+    static final class Key {}
 
     /* CodeSource */
     private CodeSource codesource ;
@@ -451,40 +468,104 @@ public class ProtectionDomain {
     }
 
     /**
-     * Used for storing ProtectionDomains as keys in a Map.
+     * A cache of ProtectionDomains and their Permissions.
+     *
+     * This class stores ProtectionDomains as weak keys in a ConcurrentHashMap
+     * with additional support for checking and removing weak keys that are no
+     * longer in use.
      */
-    final static class Key {}
-
-    // A cache of ProtectionDomains and their Permissions
     private static class PDCache implements ProtectionDomainCache {
-        // We must wrap the PermissionCollection in a WeakReference as there
-        // are some PermissionCollections which contain strong references
-        // back to a ProtectionDomain and otherwise would never be removed
-        // from the WeakHashMap
-        private final Map<Key, WeakReference<PermissionCollection>>
-            map = new WeakHashMap<>();
+        private final ConcurrentHashMap<WeakProtectionDomainKey,
+                                        PermissionCollection>
+                                        pdMap = new ConcurrentHashMap<>();
+        private final ReferenceQueue<Key> queue = new ReferenceQueue<>();
 
         @Override
-        public synchronized void put(ProtectionDomain pd,
-                                     PermissionCollection pc) {
-            map.put(pd == null ? null : pd.key, new WeakReference<>(pc));
+        public void put(ProtectionDomain pd, PermissionCollection pc) {
+            processQueue(queue, pdMap);
+            WeakProtectionDomainKey weakPd =
+                new WeakProtectionDomainKey(pd, queue);
+            pdMap.putIfAbsent(weakPd, pc);
         }
 
         @Override
-        public synchronized PermissionCollection get(ProtectionDomain pd) {
-            WeakReference<PermissionCollection> ref =
-                map.get(pd == null ? null : pd.key);
-            return ref == null ? null : ref.get();
+        public PermissionCollection get(ProtectionDomain pd) {
+            processQueue(queue, pdMap);
+            WeakProtectionDomainKey weakPd =
+                new WeakProtectionDomainKey(pd, queue);
+            return pdMap.get(weakPd);
+        }
+
+        /**
+         * Removes weak keys from the map that have been enqueued
+         * on the reference queue and are no longer in use.
+         */
+        private static void processQueue(ReferenceQueue<Key> queue,
+                                         ConcurrentHashMap<? extends
+                                         WeakReference<Key>, ?> pdMap) {
+            Reference<? extends Key> ref;
+            while ((ref = queue.poll()) != null) {
+                pdMap.remove(ref);
+            }
         }
     }
 
-    static {
-        SharedSecrets.setJavaSecurityProtectionDomainAccess(
-            new JavaSecurityProtectionDomainAccess() {
-                @Override
-                public ProtectionDomainCache getProtectionDomainCache() {
-                    return new PDCache();
-                }
-            });
+    /**
+     * A weak key for a ProtectionDomain.
+     */
+    private static class WeakProtectionDomainKey extends WeakReference<Key> {
+        /**
+         * Saved value of the referent's identity hash code, to maintain
+         * a consistent hash code after the referent has been cleared
+         */
+        private final int hash;
+
+        /**
+         * A key representing a null ProtectionDomain.
+         */
+        private static final Key NULL_KEY = new Key();
+
+        /**
+         * Create a new WeakProtectionDomain with the specified domain and
+         * registered with a queue.
+         */
+        WeakProtectionDomainKey(ProtectionDomain pd, ReferenceQueue<Key> rq) {
+            this((pd == null ? NULL_KEY : pd.key), rq);
+        }
+
+        private WeakProtectionDomainKey(Key key, ReferenceQueue<Key> rq) {
+            super(key, rq);
+            hash = key.hashCode();
+        }
+
+        /**
+         * Returns the identity hash code of the original referent.
+         */
+        @Override
+        public int hashCode() {
+            return hash;
+        }
+
+        /**
+         * Returns true if the given object is an identical
+         * WeakProtectionDomainKey instance, or, if this object's referent
+         * has not been cleared and the given object is another
+         * WeakProtectionDomainKey instance with an identical non-null
+         * referent as this one.
+         */
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == this) {
+                return true;
+            }
+
+            if (obj instanceof WeakProtectionDomainKey) {
+                Object referent = get();
+                return (referent != null) &&
+                       (referent == ((WeakProtectionDomainKey)obj).get());
+            } else {
+                return false;
+            }
+        }
     }
 }

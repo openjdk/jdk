@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @bug 6458823
  * @summary Messager messages on TypeParamterElements to not include position information.
  *
+ * @modules java.compiler
+ *          jdk.compiler
  * @compile MyProcessor.java T6458823.java
  * @run main T6458823
  */

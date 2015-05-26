@@ -47,7 +47,7 @@ import java.net.MalformedURLException;
  * still run on pre-1.4 platforms not containing that class.
  *
  * <p> The format of an absolute URI (see the RFCs mentioned above) is:
- * <p><blockquote><pre>
+ * <blockquote><pre>{@code
  *      absoluteURI   = scheme ":" ( hier_part | opaque_part )
  *
  *      scheme        = alpha *( alpha | digit | "+" | "-" | "." )
@@ -94,12 +94,12 @@ import java.net.MalformedURLException;
  *      mark          = "-" | "_" | "." | "!" | "~" | "*" | "'" | "(" | ")"
  *      escaped       = "%" hex hex
  *      unwise        = "{" | "}" | "|" | "\" | "^" | "`"
- * </pre></blockquote>
+ * }</pre></blockquote>
  *
- * <p> Currently URIs containing <tt>userinfo</tt> or <tt>reg_name</tt>
+ * <p> Currently URIs containing {@code userinfo} or {@code reg_name}
  * are not supported.
- * The <tt>opaque_part</tt> of a non-hierarchical URI is treated as if
- * if were a <tt>path</tt> without a leading slash.
+ * The {@code opaque_part} of a non-hierarchical URI is treated as if
+ * if were a {@code path} without a leading slash.
  */
 
 

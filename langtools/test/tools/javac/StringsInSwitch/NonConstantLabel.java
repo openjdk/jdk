@@ -2,7 +2,7 @@
  * @test  /nodynamiccopyright/
  * @bug 6827009
  * @summary Check for non-constant case labels.
- * @compile/fail -source 6 NonConstantLabel.java
+ * @compile/fail/ref=NonConstantLabel6.out -XDrawDiagnostics -source 6 NonConstantLabel.java
  * @compile/fail/ref=NonConstantLabel.out -XDrawDiagnostics NonConstantLabel.java
  */
 class NonConstantLabel {

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,20 @@ default: all
 include $(SPEC)
 include MakeBase.gmk
 include JavaCompilation.gmk
+include TextFileProcessing.gmk
+
+# This rule will be depended on due to the MANIFEST line
+$(eval $(call SetupTextFileProcessing, BUILD_JAVA_MANIFEST, \
+  SOURCE_FILES := $(JDK_TOPDIR)/make/data/mainmanifest/manifest.mf, \
+  OUTPUT_FILE := $(SUPPORT_OUTPUTDIR)/java-main-manifest.mf, \
+  REPLACEMENTS := \
+      @@RELEASE@@ => $(RELEASE) ; \
+      @@COMPANY_NAME@@ => $(COMPANY_NAME) , \
+))
 
 $(eval $(call SetupArchive,JRTFS_JAR, , \
     SRCS := $(BUILDTOOLS_OUTPUTDIR)/interim_jimage_classes, \
     JAR := $(SUPPORT_OUTPUTDIR)/jrt-fs.jar, \
-    MANIFEST := $(JDK_TOPDIR)/make/data/mainmanifest/manifest.mf))
+    MANIFEST := $(SUPPORT_OUTPUTDIR)/java-main-manifest.mf))
 
 all: $(JRTFS_JAR)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -645,8 +645,14 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * @since 1.2
      */
     public static final class UnicodeBlock extends Subset {
-
-        private static Map<String, UnicodeBlock> map = new HashMap<>(256);
+        /**
+         * 510  - the expected number of enteties
+         * 0.75 - the default load factor of HashMap
+         */
+        private static final int INITIAL_CAPACITY =
+                (int)(510 / 0.75f + 1.0f);
+        private static Map<String, UnicodeBlock> map =
+                new HashMap<>(INITIAL_CAPACITY);
 
         /**
          * Creates a UnicodeBlock with the given identifier name.

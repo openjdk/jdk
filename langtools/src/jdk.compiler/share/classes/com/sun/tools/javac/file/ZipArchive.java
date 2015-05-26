@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -278,12 +278,12 @@ public class ZipArchive implements Archive {
 
             ZipFileObject o = (ZipFileObject) other;
             return zarch.getAbsoluteFile().equals(o.zarch.getAbsoluteFile())
-                    && name.equals(o.name);
+                    && entry.getName().equals(o.entry.getName());
         }
 
         @Override
         public int hashCode() {
-            return zarch.getAbsoluteFile().hashCode() + name.hashCode();
+            return zarch.getAbsoluteFile().hashCode() + entry.getName().hashCode();
         }
     }
 

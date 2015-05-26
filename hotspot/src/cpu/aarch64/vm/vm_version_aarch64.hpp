@@ -34,6 +34,9 @@ public:
 protected:
   static int _cpu;
   static int _model;
+  static int _model2;
+  static int _variant;
+  static int _revision;
   static int _stepping;
   static int _cpuFeatures;     // features returned by the "cpuid" instruction
                                // 0 if this instruction is not available
@@ -49,7 +52,40 @@ public:
   static void assert_is_initialized() {
   }
 
+  enum {
+    CPU_ARM       = 'A',
+    CPU_BROADCOM  = 'B',
+    CPU_CAVIUM    = 'C',
+    CPU_DEC       = 'D',
+    CPU_INFINEON  = 'I',
+    CPU_MOTOROLA  = 'M',
+    CPU_NVIDIA    = 'N',
+    CPU_AMCC      = 'P',
+    CPU_QUALCOM   = 'Q',
+    CPU_MARVELL   = 'V',
+    CPU_INTEL     = 'i',
+  } cpuFamily;
+
+  enum {
+    CPU_FP           = (1<<0),
+    CPU_ASIMD        = (1<<1),
+    CPU_EVTSTRM      = (1<<2),
+    CPU_AES          = (1<<3),
+    CPU_PMULL        = (1<<4),
+    CPU_SHA1         = (1<<5),
+    CPU_SHA2         = (1<<6),
+    CPU_CRC32        = (1<<7),
+    CPU_A53MAC       = (1 << 30),
+    CPU_DMB_ATOMICS  = (1 << 31),
+  } cpuFeatureFlags;
+
   static const char* cpu_features()           { return _features_str; }
+  static int cpu_family()                     { return _cpu; }
+  static int cpu_model()                      { return _model; }
+  static int cpu_model2()                     { return _model2; }
+  static int cpu_variant()                    { return _variant; }
+  static int cpu_revision()                   { return _revision; }
+  static int cpu_cpuFeatures()                { return _cpuFeatures; }
 
 };
 

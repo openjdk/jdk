@@ -30,7 +30,7 @@
  *          java.management
  * @run main CompressedClassSpaceSize
  */
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 public class CompressedClassSpaceSize {
 

@@ -380,23 +380,29 @@ public class DistributionPoint {
      */
     public String toString() {
         StringBuilder sb = new StringBuilder();
+        sb.append("DistributionPoint:\n     ");
         if (fullName != null) {
-            sb.append("DistributionPoint:\n     " + fullName + "\n");
+            sb.append(fullName);
         }
         if (relativeName != null) {
-            sb.append("DistributionPoint:\n     " + relativeName + "\n");
+            sb.append(relativeName);
         }
+        sb.append('\n');
 
         if (reasonFlags != null) {
             sb.append("   ReasonFlags:\n");
             for (int i = 0; i < reasonFlags.length; i++) {
                 if (reasonFlags[i]) {
-                    sb.append("    " + reasonToString(i) + "\n");
+                    sb.append("    ")
+                        .append(reasonToString(i))
+                        .append('\n');
                 }
             }
         }
         if (crlIssuer != null) {
-            sb.append("   CRLIssuer:" + crlIssuer + "\n");
+            sb.append("   CRLIssuer:")
+                .append(crlIssuer)
+                .append('\n');
         }
         return sb.toString();
     }

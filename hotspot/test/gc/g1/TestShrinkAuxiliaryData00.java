@@ -30,7 +30,7 @@
  * @library /testlibrary /../../test/lib
  * @modules java.base/sun.misc
  *          java.management
- * @build com.oracle.java.testlibrary.* sun.hotspot.WhiteBox
+ * @build jdk.test.lib.* sun.hotspot.WhiteBox
  *        TestShrinkAuxiliaryData TestShrinkAuxiliaryData00
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

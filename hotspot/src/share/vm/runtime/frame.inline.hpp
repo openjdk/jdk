@@ -31,13 +31,11 @@
 #include "oops/method.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/signature.hpp"
-#ifdef ZERO
 #ifdef TARGET_ARCH_zero
 # include "entryFrame_zero.hpp"
 # include "fakeStubFrame_zero.hpp"
 # include "interpreterFrame_zero.hpp"
 # include "sharkFrame_zero.hpp"
-#endif
 #endif
 
 inline bool frame::is_entry_frame() const {

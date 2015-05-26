@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Add lambda tests
  *   This test is for identifying SAM types #5 and instantiating non-SAM types #7 through inner class,
              see Helper.java for SAM types
+ * @modules java.sql
  * @compile LambdaTest2_SAM3.java Helper.java
  * @run main LambdaTest2_SAM3
  */

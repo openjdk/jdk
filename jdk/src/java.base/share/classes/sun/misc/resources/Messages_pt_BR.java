@@ -26,7 +26,7 @@
 package sun.misc.resources;
 
 /**
- * <p> This class represents the <code>ResourceBundle</code>
+ * This class represents the {@code ResourceBundle}
  * for sun.misc.
  *
  * @author Michael Colburn
@@ -35,9 +35,9 @@ package sun.misc.resources;
 public class Messages_pt_BR extends java.util.ListResourceBundle {
 
     /**
-     * Returns the contents of this <code>ResourceBundle</code>.
-     * <p>
-     * @return the contents of this <code>ResourceBundle</code>.
+     * Returns the contents of this {@code ResourceBundle}.
+     *
+     * @return the contents of this {@code ResourceBundle}.
      */
     public Object[][] getContents() {
         return contents;

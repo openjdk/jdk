@@ -146,11 +146,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVA, \
     OPTIMIZATION := HIGH, \
     CFLAGS := $(CFLAGS_JDKLIB) \
         $(LIBJAVA_CFLAGS), \
-    DISABLED_WARNINGS_gcc := type-limits format-nonliteral, \
-    DISABLED_WARNINGS_clang := int-conversion, \
-    DISABLED_WARNINGS_solstudio := E_DECLARATION_IN_CODE, \
-    DISABLED_WARNINGS_microsoft := 4022 4267 4996, \
-    WARNINGS_AS_ERRORS_solstudio := false, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjava/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \

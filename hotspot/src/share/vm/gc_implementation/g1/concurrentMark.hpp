@@ -139,6 +139,11 @@ class CMBitMap : public CMBitMapRO {
   static size_t compute_size(size_t heap_size);
   // Returns the amount of bytes on the heap between two marks in the bitmap.
   static size_t mark_distance();
+  // Returns how many bytes (or bits) of the heap a single byte (or bit) of the
+  // mark bitmap corresponds to. This is the same as the mark distance above.
+  static size_t heap_map_factor() {
+    return mark_distance();
+  }
 
   CMBitMap() : CMBitMapRO(LogMinObjAlignment), _listener() { _listener.set_bitmap(this); }
 
@@ -175,24 +180,11 @@ class CMMarkStack VALUE_OBJ_CLASS_SPEC {
   jint _index;       // one more than last occupied index
   jint _capacity;    // max #elements
   jint _saved_index; // value of _index saved at start of GC
-  NOT_PRODUCT(jint _max_depth;)   // max depth plumbed during run
 
   bool  _overflow;
   bool  _should_expand;
   DEBUG_ONLY(bool _drain_in_progress;)
   DEBUG_ONLY(bool _drain_in_progress_yields;)
-
- public:
-  CMMarkStack(ConcurrentMark* cm);
-  ~CMMarkStack();
-
-#ifndef PRODUCT
-  jint max_depth() const {
-    return _max_depth;
-  }
-#endif
-
-  bool allocate(size_t capacity);
 
   oop pop() {
     if (!isEmpty()) {
@@ -201,27 +193,11 @@ class CMMarkStack VALUE_OBJ_CLASS_SPEC {
     return NULL;
   }
 
-  // If overflow happens, don't do the push, and record the overflow.
-  // *Requires* that "ptr" is already marked.
-  void push(oop ptr) {
-    if (isFull()) {
-      // Record overflow.
-      _overflow = true;
-      return;
-    } else {
-      _base[_index++] = ptr;
-      NOT_PRODUCT(_max_depth = MAX2(_max_depth, _index));
-    }
-  }
-  // Non-block impl.  Note: concurrency is allowed only with other
-  // "par_push" operations, not with "pop" or "drain".  We would need
-  // parallel versions of them if such concurrency was desired.
-  void par_push(oop ptr);
+ public:
+  CMMarkStack(ConcurrentMark* cm);
+  ~CMMarkStack();
 
-  // Pushes the first "n" elements of "ptr_arr" on the stack.
-  // Non-block impl.  Note: concurrency is allowed only with other
-  // "par_adjoin_arr" or "push" operations, not with "pop" or "drain".
-  void par_adjoin_arr(oop* ptr_arr, int n);
+  bool allocate(size_t capacity);
 
   // Pushes the first "n" elements of "ptr_arr" on the stack.
   // Locking impl: concurrency is allowed only with
@@ -249,7 +225,6 @@ class CMMarkStack VALUE_OBJ_CLASS_SPEC {
   bool drain(OopClosureClass* cl, CMBitMap* bm, bool yield_after = false);
 
   bool isEmpty()    { return _index == 0; }
-  bool isFull()     { return _index == _capacity; }
   int  maxElems()   { return _capacity; }
 
   bool overflow() { return _overflow; }
@@ -373,7 +348,6 @@ class ConcurrentMark: public CHeapObj<mtGC> {
   friend class ConcurrentMarkThread;
   friend class CMTask;
   friend class CMBitMapClosure;
-  friend class CMGlobalObjectClosure;
   friend class CMRemarkTask;
   friend class CMConcurrentMarkingTask;
   friend class G1ParNoteEndTask;
@@ -468,8 +442,8 @@ protected:
   // All of these times are in ms
   NumberSeq _init_times;
   NumberSeq _remark_times;
-  NumberSeq   _remark_mark_times;
-  NumberSeq   _remark_weak_ref_times;
+  NumberSeq _remark_mark_times;
+  NumberSeq _remark_weak_ref_times;
   NumberSeq _cleanup_times;
   double    _total_counting_time;
   double    _total_rs_scrub_time;
@@ -618,19 +592,9 @@ protected:
 
 public:
   // Manipulation of the global mark stack.
-  // Notice that the first mark_stack_push is CAS-based, whereas the
-  // two below are Mutex-based. This is OK since the first one is only
-  // called during evacuation pauses and doesn't compete with the
-  // other two (which are called by the marking tasks during
-  // concurrent marking or remark).
-  bool mark_stack_push(oop p) {
-    _markStack.par_push(p);
-    if (_markStack.overflow()) {
-      set_has_overflown();
-      return false;
-    }
-    return true;
-  }
+  // The push and pop operations are used by tasks for transfers
+  // between task-local queues and the global mark stack, and use
+  // locking for concurrency safety.
   bool mark_stack_push(oop* arr, int n) {
     _markStack.par_push_arr(arr, n);
     if (_markStack.overflow()) {
@@ -671,9 +635,7 @@ public:
   }
 
   // Attempts to steal an object from the task queues of other tasks
-  bool try_stealing(uint worker_id, int* hash_seed, oop& obj) {
-    return _task_queues->steal(worker_id, hash_seed, obj);
-  }
+  bool try_stealing(uint worker_id, int* hash_seed, oop& obj);
 
   ConcurrentMark(G1CollectedHeap* g1h,
                  G1RegionToSpaceMapper* prev_bitmap_storage,
@@ -1095,9 +1057,9 @@ private:
   void regular_clock_call();
   bool concurrent() { return _concurrent; }
 
-  // Test whether objAddr might have already been passed over by the
+  // Test whether obj might have already been passed over by the
   // mark bitmap scan, and so needs to be pushed onto the mark stack.
-  bool is_below_finger(HeapWord* objAddr, HeapWord* global_finger) const;
+  bool is_below_finger(oop obj, HeapWord* global_finger) const;
 
   template<bool scan> void process_grey_object(oop obj);
 
@@ -1148,8 +1110,18 @@ public:
 
   void set_cm_oop_closure(G1CMOopClosure* cm_oop_closure);
 
-  // It grays the object by marking it and, if necessary, pushing it
-  // on the local queue
+  // Increment the number of references this task has visited.
+  void increment_refs_reached() { ++_refs_reached; }
+
+  // Grey the object by marking it.  If not already marked, push it on
+  // the local queue if below the finger.
+  // Precondition: obj is in region.
+  // Precondition: obj is below region's NTAMS.
+  inline void make_reference_grey(oop obj, HeapRegion* region);
+
+  // Grey the object (by calling make_grey_reference) if required,
+  // e.g. obj is below its containing region's NTAMS.
+  // Precondition: obj is a valid heap object.
   inline void deal_with_reference(oop obj);
 
   // It scans an object and visits its children.

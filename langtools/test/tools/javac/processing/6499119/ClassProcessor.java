@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@ import javax.tools.Diagnostic.Kind;
  * @bug 6499119
  * @summary Created package-info class file modeled improperly
  * @library /tools/javac/lib
+ * @modules java.compiler
+ *          jdk.compiler
  * @build   JavacTestingAbstractProcessor
  * @compile ClassProcessor.java package-info.java
  * @compile/process -cp . -processor ClassProcessor -Akind=java  java.lang.Object

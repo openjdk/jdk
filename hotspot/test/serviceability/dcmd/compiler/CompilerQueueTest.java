@@ -30,17 +30,17 @@
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
  * @ignore 8069160
- * @build com.oracle.java.testlibrary.*
- * @build com.oracle.java.testlibrary.dcmd.*
+ * @build jdk.test.lib.*
+ * @build jdk.test.lib.dcmd.*
  * @run testng CompilerQueueTest
  * @run testng/othervm -XX:-TieredCompilation CompilerQueueTest
  * @run testng/othervm -Xint CompilerQueueTest
  * @summary Test of diagnostic command Compiler.queue
  */
 
-import com.oracle.java.testlibrary.OutputAnalyzer;
-import com.oracle.java.testlibrary.dcmd.CommandExecutor;
-import com.oracle.java.testlibrary.dcmd.JMXExecutor;
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.dcmd.CommandExecutor;
+import jdk.test.lib.dcmd.JMXExecutor;
 import org.testng.annotations.Test;
 
 import java.util.Iterator;
