@@ -1,24 +1,21 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 1999-2004 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
-/*
- * $Id: TreeWalker.java,v 1.2.4.1 2005/09/15 08:15:59 suresh_emailid Exp $
  */
 package com.sun.org.apache.xml.internal.utils;
 
@@ -81,7 +78,7 @@ public class TreeWalker
 
         /**
    * Constructor.
-   * @param   contentHandler The implemention of the
+   * @param   contentHandler The implementation of the
    * @param   systemId System identifier for the document.
    * contentHandler operation (toXMLString, digest, ...)
    */
@@ -89,53 +86,34 @@ public class TreeWalker
   {
     this.m_contentHandler = contentHandler;
     m_contentHandler.setDocumentLocator(m_locator);
-    if (systemId != null)
+    if (systemId != null) {
         m_locator.setSystemId(systemId);
-    else {
-        try {
-          // Bug see Bugzilla  26741
-          m_locator.setSystemId(SecuritySupport.getSystemProperty("user.dir") + File.separator + "dummy.xsl");
-         }
-         catch (SecurityException se) {// user.dir not accessible from applet
-         }
     }
     m_dh = dh;
   }
 
   /**
    * Constructor.
-   * @param   contentHandler The implemention of the
+   * @param   contentHandler The implementation of the
    * contentHandler operation (toXMLString, digest, ...)
    */
   public TreeWalker(ContentHandler contentHandler, DOMHelper dh)
   {
     this.m_contentHandler = contentHandler;
     m_contentHandler.setDocumentLocator(m_locator);
-    try {
-       // Bug see Bugzilla  26741
-      m_locator.setSystemId(SecuritySupport.getSystemProperty("user.dir") + File.separator + "dummy.xsl");
-    }
-    catch (SecurityException se){// user.dir not accessible from applet
-    }
     m_dh = dh;
   }
 
   /**
    * Constructor.
-   * @param   contentHandler The implemention of the
+   * @param   contentHandler The implementation of the
    * contentHandler operation (toXMLString, digest, ...)
    */
   public TreeWalker(ContentHandler contentHandler)
   {
     this.m_contentHandler = contentHandler;
-                if (m_contentHandler != null)
-                        m_contentHandler.setDocumentLocator(m_locator);
-                try {
-                   // Bug see Bugzilla  26741
-                  m_locator.setSystemId(SecuritySupport.getSystemProperty("user.dir") + File.separator + "dummy.xsl");
-                }
-                catch (SecurityException se){// user.dir not accessible from applet
-
+    if (m_contentHandler != null) {
+        m_contentHandler.setDocumentLocator(m_locator);
     }
     m_dh = new DOM2Helper();
   }
