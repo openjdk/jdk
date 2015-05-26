@@ -39,7 +39,6 @@ import javax.swing.event.SwingPropertyChangeSupport;
  * {@link ConnectionState#DISCONNECTED DISCONNECTED}.
  * The {@code JConsoleContext} instance will be the source for
  * any generated events.
- * <p>
  *
  * @since 1.6
  */

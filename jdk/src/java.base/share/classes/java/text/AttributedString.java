@@ -332,7 +332,7 @@ public class AttributedString {
      * @param beginIndex Index of the first character of the range.
      * @param endIndex Index of the character following the last character of the range.
      * @exception NullPointerException if <code>attribute</code> is null.
-     * @exception IllegalArgumentException if beginIndex is less then 0, endIndex is
+     * @exception IllegalArgumentException if beginIndex is less than 0, endIndex is
      * greater than the length of the string, or beginIndex and endIndex together don't
      * define a non-empty subrange of the string.
      */
@@ -357,7 +357,7 @@ public class AttributedString {
      * @param endIndex Index of the character following the last
      * character of the range.
      * @exception NullPointerException if <code>attributes</code> is null.
-     * @exception IllegalArgumentException if beginIndex is less then
+     * @exception IllegalArgumentException if beginIndex is less than
      * 0, endIndex is greater than the length of the string, or
      * beginIndex and endIndex together don't define a non-empty
      * subrange of the string and the attributes parameter is not an
@@ -580,7 +580,7 @@ public class AttributedString {
      * @param beginIndex the index of the first character
      * @param endIndex the index of the character following the last character
      * @return an iterator providing access to the text and its attributes
-     * @exception IllegalArgumentException if beginIndex is less then 0,
+     * @exception IllegalArgumentException if beginIndex is less than 0,
      * endIndex is greater than the length of the string, or beginIndex is
      * greater than endIndex.
      */
