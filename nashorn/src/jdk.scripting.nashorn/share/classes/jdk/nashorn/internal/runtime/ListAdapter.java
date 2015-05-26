@@ -25,17 +25,18 @@
 
 package jdk.nashorn.internal.runtime;
 
+import java.lang.invoke.MethodHandle;
 import java.util.AbstractList;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.RandomAccess;
 import java.util.concurrent.Callable;
 import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
-import jdk.nashorn.internal.runtime.linker.InvokeByName;
 
 /**
  * An adapter that can wrap any ECMAScript Array-like object (that adheres to the array rules for the property
@@ -50,81 +51,56 @@ import jdk.nashorn.internal.runtime.linker.InvokeByName;
  * operations respectively, while {@link #addLast(Object)} and {@link #removeLast()} will translate to {@code push} and
  * {@code pop}.
  */
-public abstract class ListAdapter extends AbstractList<Object> implements RandomAccess, Deque<Object> {
-    // These add to the back and front of the list
-    private static final Object PUSH    = new Object();
-    private static InvokeByName getPUSH() {
-        return Context.getGlobal().getInvokeByName(PUSH,
-                new Callable<InvokeByName>() {
-                    @Override
-                    public InvokeByName call() {
-                        return new InvokeByName("push", Object.class, void.class, Object.class);
-                    }
-                });
+public final class ListAdapter extends AbstractList<Object> implements RandomAccess, Deque<Object> {
+    // Invoker creator for methods that add to the start or end of the list: PUSH and UNSHIFT. Takes fn, this, and value, returns void.
+    private static final Callable<MethodHandle> ADD_INVOKER_CREATOR = invokerCreator(void.class, Object.class, JSObject.class, Object.class);
+
+    // PUSH adds to the end of the list
+    private static final Object PUSH = new Object();
+    private static MethodHandle getPushInvoker() {
+        return getDynamicInvoker(PUSH, ADD_INVOKER_CREATOR);
     }
 
+    // UNSHIFT adds to the start of the list
     private static final Object UNSHIFT = new Object();
-    private static InvokeByName getUNSHIFT() {
-        return Context.getGlobal().getInvokeByName(UNSHIFT,
-                new Callable<InvokeByName>() {
-                    @Override
-                    public InvokeByName call() {
-                        return new InvokeByName("unshift", Object.class, void.class, Object.class);
-                    }
-                });
+    private static MethodHandle getUnshiftInvoker() {
+        return getDynamicInvoker(UNSHIFT, ADD_INVOKER_CREATOR);
     }
 
-    // These remove from the back and front of the list
+    // Invoker creator for methods that remove from the tail or head of the list: POP and SHIFT. Takes fn, this, returns Object.
+    private static final Callable<MethodHandle> REMOVE_INVOKER_CREATOR = invokerCreator(Object.class, Object.class, JSObject.class);
+
+    // POP removes from the to the end of the list
     private static final Object POP = new Object();
-    private static InvokeByName getPOP() {
-        return Context.getGlobal().getInvokeByName(POP,
-                new Callable<InvokeByName>() {
-                    @Override
-                    public InvokeByName call() {
-                        return new InvokeByName("pop", Object.class, Object.class);
-                    }
-                });
+    private static MethodHandle getPopInvoker() {
+        return getDynamicInvoker(POP, REMOVE_INVOKER_CREATOR);
     }
 
+    // SHIFT removes from the to the start of the list
     private static final Object SHIFT = new Object();
-    private static InvokeByName getSHIFT() {
-        return Context.getGlobal().getInvokeByName(SHIFT,
-                new Callable<InvokeByName>() {
-                    @Override
-                    public InvokeByName call() {
-                        return new InvokeByName("shift", Object.class, Object.class);
-                    }
-                });
+    private static MethodHandle getShiftInvoker() {
+        return getDynamicInvoker(SHIFT, REMOVE_INVOKER_CREATOR);
     }
 
-    // These insert and remove in the middle of the list
+    // SPLICE can be used to add a value in the middle of the list.
     private static final Object SPLICE_ADD = new Object();
-    private static InvokeByName getSPLICE_ADD() {
-        return Context.getGlobal().getInvokeByName(SPLICE_ADD,
-                new Callable<InvokeByName>() {
-                    @Override
-                    public InvokeByName call() {
-                        return new InvokeByName("splice", Object.class, void.class, int.class, int.class, Object.class);
-                    }
-                });
+    private static final Callable<MethodHandle> SPLICE_ADD_INVOKER_CREATOR = invokerCreator(void.class, Object.class, JSObject.class, int.class, int.class, Object.class);
+    private static MethodHandle getSpliceAddInvoker() {
+        return getDynamicInvoker(SPLICE_ADD, SPLICE_ADD_INVOKER_CREATOR);
     }
 
+    // SPLICE can also be used to remove values from the middle of the list.
     private static final Object SPLICE_REMOVE = new Object();
-    private static InvokeByName getSPLICE_REMOVE() {
-        return  Context.getGlobal().getInvokeByName(SPLICE_REMOVE,
-                new Callable<InvokeByName>() {
-                    @Override
-                    public InvokeByName call() {
-                        return new InvokeByName("splice", Object.class, void.class, int.class, int.class);
-                    }
-                });
+    private static final Callable<MethodHandle> SPLICE_REMOVE_INVOKER_CREATOR = invokerCreator(void.class, Object.class, JSObject.class, int.class, int.class);
+    private static MethodHandle getSpliceRemoveInvoker() {
+        return getDynamicInvoker(SPLICE_REMOVE, SPLICE_REMOVE_INVOKER_CREATOR);
     }
 
     /** wrapped object */
-    protected final Object obj;
+    protected final JSObject obj;
 
     // allow subclasses only in this package
-    ListAdapter(final Object obj) {
+    ListAdapter(final JSObject obj) {
         this.obj = obj;
     }
 
@@ -135,14 +111,16 @@ public abstract class ListAdapter extends AbstractList<Object> implements Random
      * @return A ListAdapter wrapper object
      */
     public static ListAdapter create(final Object obj) {
+        return new ListAdapter(getJSObject(obj));
+    }
+
+    private static JSObject getJSObject(final Object obj) {
         if (obj instanceof ScriptObject) {
-            final Object mirror = ScriptObjectMirror.wrap(obj, Context.getGlobal());
-            return new JSObjectListAdapter((JSObject)mirror);
+            return (JSObject)ScriptObjectMirror.wrap(obj, Context.getGlobal());
         } else if (obj instanceof JSObject) {
-            return new JSObjectListAdapter((JSObject)obj);
-        } else {
-            throw new IllegalArgumentException("ScriptObject or JSObject expected");
+            return (JSObject)obj;
         }
+        throw new IllegalArgumentException("ScriptObject or JSObject expected");
     }
 
     @Override
@@ -151,32 +129,27 @@ public abstract class ListAdapter extends AbstractList<Object> implements Random
         return getAt(index);
     }
 
-    /**
-     * Get object at an index
-     * @param index index in list
-     * @return object
-     */
-    protected abstract Object getAt(final int index);
+    private Object getAt(final int index) {
+        return obj.getSlot(index);
+    }
 
     @Override
     public Object set(final int index, final Object element) {
         checkRange(index);
         final Object prevValue = getAt(index);
-        setAt(index, element);
+        obj.setSlot(index, element);
         return prevValue;
     }
-
-    /**
-     * Set object at an index
-     * @param index   index in list
-     * @param element element
-     */
-    protected abstract void setAt(final int index, final Object element);
 
     private void checkRange(final int index) {
         if(index < 0 || index >= size()) {
             throw invalidIndex(index);
         }
+    }
+
+    @Override
+    public int size() {
+        return JSType.toInt32(obj.getMember("length"));
     }
 
     @Override
@@ -193,10 +166,7 @@ public abstract class ListAdapter extends AbstractList<Object> implements Random
     @Override
     public final void addFirst(final Object e) {
         try {
-            final InvokeByName unshiftInvoker = getUNSHIFT();
-            final Object fn = unshiftInvoker.getGetter().invokeExact(obj);
-            checkFunction(fn, unshiftInvoker);
-            unshiftInvoker.getInvoker().invokeExact(fn, obj, e);
+            getUnshiftInvoker().invokeExact(getFunction("unshift"), obj, e);
         } catch(RuntimeException | Error ex) {
             throw ex;
         } catch(final Throwable t) {
@@ -207,10 +177,7 @@ public abstract class ListAdapter extends AbstractList<Object> implements Random
     @Override
     public final void addLast(final Object e) {
         try {
-            final InvokeByName pushInvoker = getPUSH();
-            final Object fn = pushInvoker.getGetter().invokeExact(obj);
-            checkFunction(fn, pushInvoker);
-            pushInvoker.getInvoker().invokeExact(fn, obj, e);
+            getPushInvoker().invokeExact(getFunction("push"), obj, e);
         } catch(RuntimeException | Error ex) {
             throw ex;
         } catch(final Throwable t) {
@@ -228,10 +195,7 @@ public abstract class ListAdapter extends AbstractList<Object> implements Random
             } else {
                 final int size = size();
                 if(index < size) {
-                    final InvokeByName spliceAddInvoker = getSPLICE_ADD();
-                    final Object fn = spliceAddInvoker.getGetter().invokeExact(obj);
-                    checkFunction(fn, spliceAddInvoker);
-                    spliceAddInvoker.getInvoker().invokeExact(fn, obj, index, 0, e);
+                    getSpliceAddInvoker().invokeExact(obj.getMember("splice"), obj, index, 0, e);
                 } else if(index == size) {
                     addLast(e);
                 } else {
@@ -244,10 +208,12 @@ public abstract class ListAdapter extends AbstractList<Object> implements Random
             throw new RuntimeException(t);
         }
     }
-    private static void checkFunction(final Object fn, final InvokeByName invoke) {
+    private Object getFunction(final String name) {
+        final Object fn = obj.getMember(name);
         if(!(Bootstrap.isCallable(fn))) {
-            throw new UnsupportedOperationException("The script object doesn't have a function named " + invoke.getName());
+            throw new UnsupportedOperationException("The script object doesn't have a function named " + name);
         }
+        return fn;
     }
 
     private static IndexOutOfBoundsException invalidIndex(final int index) {
@@ -321,10 +287,7 @@ public abstract class ListAdapter extends AbstractList<Object> implements Random
 
     private Object invokeShift() {
         try {
-            final InvokeByName shiftInvoker = getSHIFT();
-            final Object fn = shiftInvoker.getGetter().invokeExact(obj);
-            checkFunction(fn, shiftInvoker);
-            return shiftInvoker.getInvoker().invokeExact(fn, obj);
+            return getShiftInvoker().invokeExact(getFunction("shift"), obj);
         } catch(RuntimeException | Error ex) {
             throw ex;
         } catch(final Throwable t) {
@@ -334,10 +297,7 @@ public abstract class ListAdapter extends AbstractList<Object> implements Random
 
     private Object invokePop() {
         try {
-            final InvokeByName popInvoker = getPOP();
-            final Object fn = popInvoker.getGetter().invokeExact(obj);
-            checkFunction(fn, popInvoker);
-            return popInvoker.getInvoker().invokeExact(fn, obj);
+            return getPopInvoker().invokeExact(getFunction("pop"), obj);
         } catch(RuntimeException | Error ex) {
             throw ex;
         } catch(final Throwable t) {
@@ -352,10 +312,7 @@ public abstract class ListAdapter extends AbstractList<Object> implements Random
 
     private void invokeSpliceRemove(final int fromIndex, final int count) {
         try {
-            final InvokeByName spliceRemoveInvoker = getSPLICE_REMOVE();
-            final Object fn = spliceRemoveInvoker.getGetter().invokeExact(obj);
-            checkFunction(fn, spliceRemoveInvoker);
-            spliceRemoveInvoker.getInvoker().invokeExact(fn, obj, fromIndex, count);
+            getSpliceRemoveInvoker().invokeExact(getFunction("splice"), obj, fromIndex, count);
         } catch(RuntimeException | Error ex) {
             throw ex;
         } catch(final Throwable t) {
@@ -443,12 +400,24 @@ public abstract class ListAdapter extends AbstractList<Object> implements Random
 
     private static boolean removeOccurrence(final Object o, final Iterator<Object> it) {
         while(it.hasNext()) {
-            final Object e = it.next();
-            if(o == null ? e == null : o.equals(e)) {
+            if(Objects.equals(o, it.next())) {
                 it.remove();
                 return true;
             }
         }
         return false;
+    }
+
+    private static Callable<MethodHandle> invokerCreator(final Class<?> rtype, final Class<?>... ptypes) {
+        return new Callable<MethodHandle>() {
+            @Override
+            public MethodHandle call() {
+                return Bootstrap.createDynamicInvoker("dyn:call", rtype, ptypes);
+            }
+        };
+    }
+
+    private static MethodHandle getDynamicInvoker(final Object key, final Callable<MethodHandle> creator) {
+        return Context.getGlobal().getDynamicInvoker(key, creator);
     }
 }

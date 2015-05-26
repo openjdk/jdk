@@ -28,19 +28,19 @@ package jdk.nashorn.internal.runtime.test;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
 
-import jdk.nashorn.test.models.JDK_8081015_TestModel;
-
 import java.util.Collection;
 import java.util.Queue;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
+import jdk.nashorn.test.models.JDK_8081015_TestModel;
 import org.testng.annotations.Test;
 
 /**
  * @bug 8081015
  * @summary Test that native arrays get converted to {@link Queue} and {@link Collection}.
  */
+@SuppressWarnings("javadoc")
 public class JDK_8081015_Test {
     @Test
     public void testConvertToCollection() throws ScriptException {
@@ -62,7 +62,7 @@ public class JDK_8081015_Test {
         test("receiveQueue");
     }
 
-    private void test(final String methodName) throws ScriptException {
+    private static void test(final String methodName) throws ScriptException {
         final ScriptEngine engine = new NashornScriptEngineFactory().getScriptEngine();
         final JDK_8081015_TestModel model = new JDK_8081015_TestModel();
         engine.put("test", model);
