@@ -1759,28 +1759,20 @@ public:
   }
 };
 
-class G1ParNoteEndTask;
-
 class G1NoteEndOfConcMarkClosure : public HeapRegionClosure {
   G1CollectedHeap* _g1;
-  size_t _max_live_bytes;
-  uint _regions_claimed;
   size_t _freed_bytes;
   FreeRegionList* _local_cleanup_list;
   HeapRegionSetCount _old_regions_removed;
   HeapRegionSetCount _humongous_regions_removed;
   HRRSCleanupTask* _hrrs_cleanup_task;
-  double _claimed_region_time;
-  double _max_region_time;
 
 public:
   G1NoteEndOfConcMarkClosure(G1CollectedHeap* g1,
                              FreeRegionList* local_cleanup_list,
                              HRRSCleanupTask* hrrs_cleanup_task) :
     _g1(g1),
-    _max_live_bytes(0), _regions_claimed(0),
     _freed_bytes(0),
-    _claimed_region_time(0.0), _max_region_time(0.0),
     _local_cleanup_list(local_cleanup_list),
     _old_regions_removed(),
     _humongous_regions_removed(),
@@ -1797,10 +1789,7 @@ public:
     // We use a claim value of zero here because all regions
     // were claimed with value 1 in the FinalCount task.
     _g1->reset_gc_time_stamps(hr);
-    double start = os::elapsedTime();
-    _regions_claimed++;
     hr->note_end_of_marking();
-    _max_live_bytes += hr->max_live_bytes();
 
     if (hr->used() > 0 && hr->max_live_bytes() == 0 && !hr->is_young()) {
       _freed_bytes += hr->used();
@@ -1817,18 +1806,8 @@ public:
       hr->rem_set()->do_cleanup_work(_hrrs_cleanup_task);
     }
 
-    double region_time = (os::elapsedTime() - start);
-    _claimed_region_time += region_time;
-    if (region_time > _max_region_time) {
-      _max_region_time = region_time;
-    }
     return false;
   }
-
-  size_t max_live_bytes() { return _max_live_bytes; }
-  uint regions_claimed() { return _regions_claimed; }
-  double claimed_region_time_sec() { return _claimed_region_time; }
-  double max_region_time_sec() { return _max_region_time; }
 };
 
 class G1ParNoteEndTask: public AbstractGangTask {
@@ -1836,14 +1815,12 @@ class G1ParNoteEndTask: public AbstractGangTask {
 
 protected:
   G1CollectedHeap* _g1h;
-  size_t _max_live_bytes;
-  size_t _freed_bytes;
   FreeRegionList* _cleanup_list;
   HeapRegionClaimer _hrclaimer;
 
 public:
   G1ParNoteEndTask(G1CollectedHeap* g1h, FreeRegionList* cleanup_list, uint n_workers) :
-      AbstractGangTask("G1 note end"), _g1h(g1h), _max_live_bytes(0), _freed_bytes(0), _cleanup_list(cleanup_list), _hrclaimer(n_workers) {
+      AbstractGangTask("G1 note end"), _g1h(g1h), _cleanup_list(cleanup_list), _hrclaimer(n_workers) {
   }
 
   void work(uint worker_id) {
@@ -1859,8 +1836,6 @@ public:
     {
       MutexLockerEx x(ParGCRareEvent_lock, Mutex::_no_safepoint_check_flag);
       _g1h->decrement_summary_bytes(g1_note_end.freed_bytes());
-      _max_live_bytes += g1_note_end.max_live_bytes();
-      _freed_bytes += g1_note_end.freed_bytes();
 
       // If we iterate over the global cleanup list at the end of
       // cleanup to do this printing we will not guarantee to only
@@ -1885,8 +1860,6 @@ public:
       HeapRegionRemSet::finish_cleanup_task(&hrrs_cleanup_task);
     }
   }
-  size_t max_live_bytes() { return _max_live_bytes; }
-  size_t freed_bytes() { return _freed_bytes; }
 };
 
 class G1ParScrubRemSetTask: public AbstractGangTask {
