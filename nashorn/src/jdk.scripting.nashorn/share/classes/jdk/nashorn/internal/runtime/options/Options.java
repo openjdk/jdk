@@ -424,9 +424,17 @@ public final class Options {
     public void process(final String[] args) {
         final LinkedList<String> argList = new LinkedList<>();
         addSystemProperties(NASHORN_ARGS_PREPEND_PROPERTY, argList);
+        processArgList(argList);
+        assert argList.isEmpty();
         Collections.addAll(argList, args);
+        processArgList(argList);
+        assert argList.isEmpty();
         addSystemProperties(NASHORN_ARGS_PROPERTY, argList);
+        processArgList(argList);
+        assert argList.isEmpty();
+    }
 
+    private void processArgList(final LinkedList<String> argList) {
         while (!argList.isEmpty()) {
             final String arg = argList.remove(0);
             Objects.requireNonNull(arg);
