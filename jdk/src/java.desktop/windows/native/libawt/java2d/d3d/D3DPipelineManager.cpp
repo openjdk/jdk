@@ -828,7 +828,7 @@ HWND D3DPipelineManager::CreateDefaultFocusWindow()
         return 0;
     }
 
-    HWND hWnd = CreateWindow(L"D3DFocusWindow", L"D3DFocusWindow", 0,
+    HWND hWnd = CreateWindow(L"D3DFocusWindow", L"D3DFocusWindow", WS_POPUP,
         mi.rcMonitor.left, mi.rcMonitor.top, 1, 1,
         NULL, NULL, GetModuleHandle(NULL), NULL);
     if (hWnd == 0) {
