@@ -1523,10 +1523,6 @@
       <name>com.sun.tools.javac</name>
     </export>
     <export>
-      <name>com.sun.tools.classfile</name>
-      <to>jdk.dev</to>
-    </export>
-    <export>
       <name>com.sun.tools.doclint</name>
       <to>jdk.javadoc</to>
     </export>
@@ -1545,6 +1541,7 @@
     <export>
       <name>com.sun.tools.javac.file</name>
       <to>jdk.javadoc</to>
+      <to>jdk.jdeps</to>
     </export>
     <export>
       <name>com.sun.tools.javac.jvm</name>
@@ -1569,6 +1566,7 @@
     <export>
       <name>com.sun.tools.javac.util</name>
       <to>jdk.javadoc</to>
+      <to>jdk.jdeps</to>
     </export>
   </module>
   <module>
@@ -1601,8 +1599,6 @@
   <module>
     <name>jdk.dev</name>
     <depend>java.base</depend>
-    <depend>java.xml</depend>
-    <depend>jdk.compiler</depend>
   </module>
   <module>
     <name>jdk.hotspot.agent</name>
@@ -1670,6 +1666,13 @@
     <export>
       <name>com.sun.tools.jconsole</name>
     </export>
+  </module>
+  <module>
+    <name>jdk.jdeps</name>
+    <depend>java.base</depend>
+    <depend>java.compiler</depend>
+    <depend>java.xml</depend>
+    <depend>jdk.compiler</depend>
   </module>
   <module>
     <name>jdk.jdi</name>
