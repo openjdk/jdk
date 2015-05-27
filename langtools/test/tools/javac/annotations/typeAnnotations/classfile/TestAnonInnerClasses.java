@@ -33,7 +33,7 @@
  *  results in 2). Elements with no annotations expect 0.
  *  Source template is read in from testanoninner.template
  *
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  */
 import java.lang.annotation.*;
 import java.io.*;

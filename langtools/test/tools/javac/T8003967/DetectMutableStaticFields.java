@@ -27,7 +27,7 @@
  * @test
  * @bug 8003967
  * @summary detect and remove all mutable implicit static enum fields in langtools
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  *          jdk.compiler/com.sun.tools.javac.util
  * @run main DetectMutableStaticFields
  */

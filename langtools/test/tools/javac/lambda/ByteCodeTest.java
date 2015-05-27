@@ -26,7 +26,7 @@
  * @bug     8011738
  * @author  sogoel
  * @summary Code translation test for Lambda expressions, method references
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  * @run main ByteCodeTest
  */
 

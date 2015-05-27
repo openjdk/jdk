@@ -25,7 +25,7 @@
  * @test
  * @bug 8003537
  * @summary javap should not use / in Bounds Type Variables
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 
 import java.io.File;

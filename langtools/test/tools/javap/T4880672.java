@@ -26,7 +26,7 @@
  * @test
  * @bug 4880672 7031005
  * @summary javap does not output inner interfaces of an interface
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 
 import java.io.*;

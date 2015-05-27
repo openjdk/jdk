@@ -26,7 +26,7 @@
  * @bug 8007907
  * @summary javap, method com.sun.tools.javap.Main.run returns 0 even in case
  * of class not found error
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 
 import java.io.IOException;

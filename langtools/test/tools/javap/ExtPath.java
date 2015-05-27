@@ -27,7 +27,7 @@
  * @bug     6428896
  * @summary javap cannot read multiple entries on the extension classpath
  * @author  Wei Tao
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  * @run main/othervm ExtPath com.sun.crypto.provider.SunJCE
  */
 

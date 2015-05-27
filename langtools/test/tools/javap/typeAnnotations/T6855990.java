@@ -27,7 +27,7 @@ import java.io.*;
  * @test
  * @bug 6855990
  * @summary InstructionDetailWriter should support new 308 annotations attribute
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 
 public class T6855990 {

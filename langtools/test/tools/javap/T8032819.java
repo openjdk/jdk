@@ -25,7 +25,7 @@
  * @test
  * @bug 8032819
  * @summary Extra empty line between field declarations for the "-v -c" and "-v -l" combination of options
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  * @compile -g T8032819.java
  * @run main T8032819
  */

@@ -43,7 +43,7 @@ import java.util.stream.Stream;
  * @summary Test that jdeps verbose output has a summary line when dependencies
  *          are found within the same archive. For each testcase, compare the
  *          result obtained from jdeps with the expected result.
- * @modules jdk.dev/com.sun.tools.jdeps
+ * @modules jdk.jdeps/com.sun.tools.jdeps
  * @build use.indirect.DontUseUnsafe2
  * @build use.indirect.UseUnsafeIndirectly
  * @build use.indirect2.DontUseUnsafe3

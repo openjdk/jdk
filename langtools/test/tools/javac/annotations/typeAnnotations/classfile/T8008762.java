@@ -26,7 +26,7 @@
  * @bug 8008762
  * @summary Type annotation on inner class in anonymous class
  *          shows up as regular annotation
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  */
 import java.lang.annotation.*;
 import static java.lang.annotation.RetentionPolicy.*;

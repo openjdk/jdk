@@ -25,7 +25,7 @@
  * @test
  * @bug 8042451
  * @summary Test population of reference info for method invocation type arguments
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  * @compile -g Driver.java ReferenceInfoUtil.java MethodInvocationTypeArgument.java
  * @run main Driver MethodInvocationTypeArgument
  */

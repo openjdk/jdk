@@ -26,7 +26,7 @@
  * @bug 4880663 6715757 7031005
  * @summary javap could output whitespace between class name and opening brace
  *          javap prints "extends java.lang.Object"
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 
 

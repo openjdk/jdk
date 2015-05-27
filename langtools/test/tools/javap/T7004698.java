@@ -25,7 +25,7 @@
  * @test
  * @bug 7004698
  * @summary javap does not output CharacterRangeTable attributes correctly
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 
 import java.io.*;

@@ -26,7 +26,7 @@
  * @bug 8000518
  * @summary Javac generates duplicate name_and_type constant pool entry for
  * class BinaryOpValueExp.java
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  * @run main DuplicateConstantPoolEntry
  */
 

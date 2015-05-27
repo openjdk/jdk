@@ -25,7 +25,7 @@
  * @test
  * @bug 4876942 6715251
  * @summary javap invoked without args does not print help screen
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 
 import java.io.*;
