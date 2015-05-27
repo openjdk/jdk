@@ -28,7 +28,7 @@
  * @bug 8019486 8026861 8027142
  * @summary javac, generates erroneous LVT for a test case with lambda code
  * @library /tools/lib
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main

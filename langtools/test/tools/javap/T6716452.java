@@ -24,7 +24,7 @@
 /*
  * @test 6716452
  * @summary need a method to get an index of an attribute
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  */
 
 import java.io.*;

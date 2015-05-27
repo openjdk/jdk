@@ -27,8 +27,8 @@
  * @summary Test -apionly and -jdkinternals options
  * @modules java.base/sun.misc
  *          java.management
- *          jdk.compiler/com.sun.tools.classfile
- *          jdk.dev/com.sun.tools.jdeps
+ *          jdk.jdeps/com.sun.tools.classfile
+ *          jdk.jdeps/com.sun.tools.jdeps
  * @build m.Bar m.Foo m.Gee b.B c.C c.I d.D e.E f.F g.G
  * @run main APIDeps
  */

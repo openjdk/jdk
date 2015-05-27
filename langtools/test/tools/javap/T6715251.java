@@ -28,7 +28,7 @@ import java.util.*;
  * @test
  * @bug 6715251
  * @summary javap should be consistent with javac and return 2 if given no arguments
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 
 public class T6715251 {

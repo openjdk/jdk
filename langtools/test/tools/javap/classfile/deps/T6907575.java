@@ -26,7 +26,7 @@
 /*
  * @test
  * @bug 6907575
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.util
  * @build GetDeps p.C1

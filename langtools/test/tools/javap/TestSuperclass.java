@@ -25,7 +25,7 @@
  * @test
  * @bug 7031005
  * @summary javap prints "extends java.lang.Object"
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 
 import java.io.File;

@@ -25,7 +25,7 @@
  * @test
  * @bug 8047072
  * @summary javap OOM on fuzzed classfile
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  * @run main BadAttributeLength
  */
 

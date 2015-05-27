@@ -25,7 +25,7 @@
  * @test
  * @bug 7186925
  * @summary JavapTask passes null to java.io.Writer
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  */
 
 import java.io.*;

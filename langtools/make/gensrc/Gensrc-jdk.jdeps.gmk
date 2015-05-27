@@ -25,9 +25,13 @@
 
 include GensrcCommon.gmk
 
+$(eval $(call SetupVersionProperties,JAVAP_VERSION, \
+    com/sun/tools/javap/resources/version.properties))
+
 $(eval $(call SetupVersionProperties,JDEPS_VERSION,\
     com/sun/tools/jdeps/resources/version.properties))
 
-$(eval $(call SetupCompileProperties,COMPILE_PROPERTIES, $(JDEPS_VERSION)))
+$(eval $(call SetupCompileProperties,COMPILE_PROPERTIES,\
+    $(JDEPS_VERSION) $(JAVAP_VERSION)))
 
 all: $(COMPILE_PROPERTIES)

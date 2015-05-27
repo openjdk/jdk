@@ -25,7 +25,7 @@
  * @test
  * @bug 8046060
  * @summary Different results of floating point multiplication for lambda code block
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  */
 
 import java.io.*;

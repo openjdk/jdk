@@ -28,7 +28,7 @@
  * @bug 8024039
  * @summary javac, previous solution for JDK-8022186 was incorrect
  * @library /tools/lib
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
