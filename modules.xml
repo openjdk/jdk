@@ -1523,12 +1523,6 @@
       <name>com.sun.tools.javac</name>
     </export>
     <export>
-      <name>com.sun.tools.javah</name>
-    </export>
-    <export>
-      <name>com.sun.tools.javap</name>
-    </export>
-    <export>
       <name>com.sun.tools.classfile</name>
       <to>jdk.dev</to>
     </export>
