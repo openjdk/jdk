@@ -25,9 +25,9 @@
 
 include GendataCommon.gmk
 
-$(eval $(call IncludeCustomExtension, jdk, gendata/Gendata-jdk.dev.gmk))
+$(eval $(call IncludeCustomExtension, jdk, gendata/Gendata-jdk.jdeps.gmk))
 
-JDEPS_MODULES_XML := $(JDK_OUTPUTDIR)/modules/jdk.dev/com/sun/tools/jdeps/resources/jdeps-modules.xml
+JDEPS_MODULES_XML := $(JDK_OUTPUTDIR)/modules/jdk.jdeps/com/sun/tools/jdeps/resources/jdeps-modules.xml
 MODULES_XML += $(TOPDIR)/modules.xml
 
 #
