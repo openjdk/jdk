@@ -61,6 +61,8 @@ define_pd_global(size_t, CMSYoungGenPerWorker, 16*M);  // default max size of CM
 
 define_pd_global(uintx, TypeProfileLevel, 0);
 
+define_pd_global(bool, PreserveFramePointer, false);
+
 #define ARCH_FLAGS(develop, product, diagnostic, experimental, notproduct)  \
   product(bool, UseFastEmptyMethods, true,                                  \
           "Use fast method entry code for empty methods")                   \

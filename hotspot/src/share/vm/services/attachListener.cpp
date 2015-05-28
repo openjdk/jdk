@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "gc_implementation/shared/vmGCOperations.hpp"
+#include "gc/shared/vmGCOperations.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -36,8 +36,8 @@
 #include "runtime/os.hpp"
 #include "services/attachListener.hpp"
 #include "services/diagnosticCommand.hpp"
-#include "services/writeableFlags.hpp"
 #include "services/heapDumper.hpp"
+#include "services/writeableFlags.hpp"
 
 volatile bool AttachListener::_initialized;
 
