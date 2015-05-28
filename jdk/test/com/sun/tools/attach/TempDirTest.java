@@ -37,6 +37,7 @@ import jdk.testlibrary.ProcessThread;
  * @test
  * @bug 8033104
  * @summary Test to make sure attach and jvmstat works correctly when java.io.tmpdir is set
+ * @modules jdk.jartool/sun.tools.jar
  * @library /lib/testlibrary
  * @modules java.management
  *          jdk.jartool/sun.tools.jar

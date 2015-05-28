@@ -25,6 +25,7 @@
  * @test
  * @bug 7148584
  * @summary Jar tools fails to generate manifest correctly when boundary condition hit
+ * @modules jdk.jartool/sun.tools.jar
  * @compile -XDignore.symbol.file=true CreateManifest.java
  * @run main CreateManifest
  */

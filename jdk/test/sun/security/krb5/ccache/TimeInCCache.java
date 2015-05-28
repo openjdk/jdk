@@ -23,6 +23,8 @@
 /*
  * @test
  * @bug 6590930
+ * @modules java.security.jgss/sun.security.krb5
+ *          java.security.jgss/sun.security.krb5.internal.ccache
  * @run main/othervm TimeInCCache
  * @summary read/write does not match for ccache
  */

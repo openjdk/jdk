@@ -26,6 +26,7 @@
  * @author Gary Ellison
  * @bug 4233900
  * @summary Catch anomalies in Policy parsing
+ * @modules java.base/sun.security.provider
  * @run main BogusGrants p001.policy p002.policy p003.policy p004.policy
  */
 

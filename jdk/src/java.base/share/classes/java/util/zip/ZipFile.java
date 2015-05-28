@@ -538,7 +538,7 @@ class ZipFile implements ZipConstants, Closeable {
     }
 
     /**
-     * Return an ordered {@code Stream} over the ZIP file entries.
+     * Returns an ordered {@code Stream} over the ZIP file entries.
      * Entries appear in the {@code Stream} in the order they appear in
      * the central directory of the ZIP file.
      *

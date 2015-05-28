@@ -46,6 +46,11 @@ public class TestInterfaces {
         while (nifs.hasMoreElements()) {
             NetworkInterface ni = (NetworkInterface)nifs.nextElement();
 
+            // JDK-8022963, Skip (Windows) Teredo Tunneling Pseudo-Interface
+            String dName = ni.getDisplayName();
+            if (isWindows && dName != null && dName.contains("Teredo"))
+                continue;
+
             /*
              * Test MulticastSocket.getInterface
              */
@@ -92,10 +97,6 @@ public class TestInterfaces {
                 continue;
             }
 
-            // JDK-8022963, Skip (Windows) Teredo Tunneling Pseudo-Interface
-            String dName = ni.getDisplayName();
-            if (isWindows && dName != null && dName.contains("Teredo"))
-                continue;
 
             NetworkInterface curr = soc.getNetworkInterface();
             if (!curr.equals(ni)) {

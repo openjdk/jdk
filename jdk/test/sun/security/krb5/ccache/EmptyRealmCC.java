@@ -25,6 +25,8 @@
  * @test
  * @bug 8048073
  * @summary Cannot read ccache entry with a realm-less service name
+ * @modules java.security.jgss/sun.security.krb5
+ *          java.security.jgss/sun.security.krb5.internal.ccache
  * @compile -XDignore.symbol.file EmptyRealmCC.java
  * @run main EmptyRealmCC
  */

@@ -25,6 +25,7 @@
  * @test
  * @bug 6370908
  * @summary Add support for HTTP_CONNECT proxy in Socket class
+ * @modules java.base/sun.net.www
  */
 
 import java.io.IOException;

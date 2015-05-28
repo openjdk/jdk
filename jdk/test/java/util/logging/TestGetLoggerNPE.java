@@ -35,6 +35,7 @@ import sun.misc.SharedSecrets;
  *
  * @summary NPE with logging while launching webstart
  *
+ * @modules java.base/sun.misc
  * @build TestGetLoggerNPE
  * @run main/othervm TestGetLoggerNPE getLogger
  * @run main/othervm TestGetLoggerNPE getLogManager

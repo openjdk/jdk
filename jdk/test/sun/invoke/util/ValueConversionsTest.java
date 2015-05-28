@@ -35,6 +35,7 @@ import static org.junit.Assert.*;
 
 /* @test
  * @summary unit tests for value-type conversion utilities
+ * @modules java.base/sun.invoke.util
  * @compile -XDignore.symbol.file ValueConversionsTest.java
  * @run junit/othervm test.sun.invoke.util.ValueConversionsTest
  */

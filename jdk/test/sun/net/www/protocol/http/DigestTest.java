@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4432213
+ * @modules java.base/sun.net.www
  * @run main/othervm -Dhttp.auth.digest.validateServer=true DigestTest
  * @summary  Need to support Digest Authentication for Proxies
  */

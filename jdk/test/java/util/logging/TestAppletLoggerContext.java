@@ -42,6 +42,7 @@ import sun.misc.SharedSecrets;
  * @summary  NPE when using Logger.getAnonymousLogger or
  *           LogManager.getLogManager().getLogger
  *
+ * @modules java.base/sun.misc
  * @run main/othervm -Dtest.security=off TestAppletLoggerContext LoadingApplet
  * @run main/othervm -Dtest.security=on TestAppletLoggerContext  LoadingApplet
  * @run main/othervm -Dtest.security=off TestAppletLoggerContext LoadingMain

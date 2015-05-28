@@ -28,6 +28,7 @@
  * example data in "Suite B Implementer's Guide to FIPS 186-3".
  * @library ..
  * @library ../../../../java/security/testlibrary
+ * @modules java.base/sun.security.util
  * @compile -XDignore.symbol.file TestECDSA2.java
  * @run main TestECDSA2
  */

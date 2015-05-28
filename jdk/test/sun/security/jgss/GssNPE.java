@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6345338
+ * @modules java.security.jgss/sun.security.jgss
  * @run main/othervm GssNPE
  * @summary GSS throws NPE when the JAAS config file does not exist
  */

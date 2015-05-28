@@ -73,8 +73,7 @@ import jdk.internal.util.xml.PropertiesDefaultHandler;
  * Unicode escapes as defined in section 3.3 of
  * <cite>The Java&trade; Language Specification</cite>;
  * only a single 'u' character is allowed in an escape
- * sequence. The native2ascii tool can be used to convert property files to and
- * from other character encodings.
+ * sequence.
  *
  * <p> The {@link #loadFromXML(InputStream)} and {@link
  * #storeToXML(OutputStream, String, String)} methods load and store properties
@@ -107,9 +106,6 @@ import jdk.internal.util.xml.PropertiesDefaultHandler;
  *
  * <p>This class is thread-safe: multiple threads can share a single
  * <tt>Properties</tt> object without the need for external synchronization.
- *
- * @see <a href="../../../technotes/tools/solaris/native2ascii.html">native2ascii tool for Solaris</a>
- * @see <a href="../../../technotes/tools/windows/native2ascii.html">native2ascii tool for Windows</a>
  *
  * @author  Arthur van Hoff
  * @author  Michael McCloskey

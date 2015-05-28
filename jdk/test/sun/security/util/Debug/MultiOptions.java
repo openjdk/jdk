@@ -27,6 +27,7 @@
  * @bug 6466247
  * @summary java.security.debug permission=<classname> and codebase=<URL>
  *          options do not work
+ * @modules java.base/sun.security.util
  * @run main/othervm -Djava.security.debug="stacknothing--=-30logincontextacCess:stack-domain,combiner;access:fAilure-jarpermission=sun.dummy.DummyPermission;peRmiSsion=sun.Dummy.DummyPermission2=permission=sun.dummy.DummyPermission3:codEbAse=/dir1/DIR2/Dir3/File.java,codebase=http://www.sun.com/search?q=SunMicro,codEbAse=/dir1/DIR2/Dir3/File.java;coDebase=www.sun.com;codebase=file:///C:/temp/foo%20more/a.txt" MultiOptions
  */
 import sun.security.util.Debug;

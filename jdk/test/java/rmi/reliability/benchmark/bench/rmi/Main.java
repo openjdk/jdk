@@ -26,6 +26,11 @@
  * @summary The RMI benchmark test. This java class is used to run the test
  *          under JTREG.
  * @library ../../../../testlibrary ../../
+ * @modules java.desktop
+ *          java.rmi/sun.rmi.registry
+ *          java.rmi/sun.rmi.server
+ *          java.rmi/sun.rmi.transport
+ *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary bench.BenchInfo bench.HtmlReporter bench.Util
  * bench.Benchmark bench.Reporter bench.XmlReporter bench.ConfigFormatException
  * bench.Harness bench.TextReporter bench.rmi.BenchServer

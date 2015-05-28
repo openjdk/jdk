@@ -26,6 +26,7 @@
  * @bug 4423074
  * @summary Need to rebase all the duplicated classes from Merlin.
  *          This test will check out http POST
+ * @modules java.base/sun.net.www.protocol.https java.base/com.sun.net.ssl.internal.www.protocol.https
  */
 import java.net.*;
 import java.util.*;

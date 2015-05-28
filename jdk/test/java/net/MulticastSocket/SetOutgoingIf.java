@@ -156,12 +156,13 @@ public class SetOutgoingIf {
                 // now check which network interface this packet comes from
                 NetworkInterface from = NetworkInterface.getByInetAddress(packet.getAddress());
                 NetworkInterface shouldbe = nic;
-                if (!from.equals(shouldbe)) {
-                    System.out.println("Packets on group "
+                if (from != null) {
+                    if (!from.equals(shouldbe)) {
+                        System.out.println("Packets on group "
                                         + group + " should come from "
                                         + shouldbe.getName() + ", but came from "
                                         + from.getName());
-                    //throw new RuntimeException("Test failed.");
+                    }
                 }
 
                 mcastsock.leaveGroup(new InetSocketAddress(group, PORT), nic);
