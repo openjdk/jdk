@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1333,8 +1333,8 @@ public final class DateTimeFormatter {
      * If the time '23:59:60' is received, then a simple conversion is applied,
      * replacing the second-of-minute of 60 with 59. This query can be used
      * on the parse result to determine if the leap-second adjustment was made.
-     * The query will return one second of excess if it did adjust to remove
-     * the leap-second, and zero if not. Note that applying a leap-second
+     * The query will return {@code true} if it did adjust to remove the
+     * leap-second, and {@code false} if not. Note that applying a leap-second
      * smoothing mechanism, such as UTC-SLS, is the responsibility of the
      * application, as follows:
      * <pre>
