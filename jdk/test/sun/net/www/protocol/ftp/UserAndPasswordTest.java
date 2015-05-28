@@ -39,7 +39,6 @@ import java.net.*;
 import java.util.*;
 import java.util.jar.*;
 import java.util.zip.*;
-import sun.net.ftp.FtpLoginException;
 
 public class UserAndPasswordTest {
 

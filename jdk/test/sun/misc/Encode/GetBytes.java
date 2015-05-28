@@ -26,6 +26,7 @@
  * @bug 5031097
  * @summary sun.misc.CharacterEncoder(ByteBuffer) is dumping too
  *      much information
+ * @modules java.base/sun.misc
  * @author Brad Wetmore
  */
 

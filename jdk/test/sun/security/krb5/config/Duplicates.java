@@ -23,6 +23,7 @@
 /*
  * @test
  * @bug 7184246
+ * @modules java.security.jgss/sun.security.krb5
  * @compile -XDignore.symbol.file Duplicates.java
  * @run main/othervm Duplicates
  * @summary Simplify Config.get() of krb5

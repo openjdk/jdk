@@ -32,6 +32,7 @@ import com.sun.tools.attach.spi.AttachProvider;
  * @test
  * @bug 6173612 6273707 6277253 6335921 6348630 6342019 6381757
  * @summary Basic unit tests for the VM attach mechanism.
+ * @modules jdk.jartool/sun.tools.jar
  * @library /lib/testlibrary
  * @modules java.management
  *          jdk.attach

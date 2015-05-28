@@ -23,6 +23,7 @@
 /*
  * @test
  * @bug 8005447
+ * @modules java.security.jgss/sun.security.jgss
  * @compile -XDignore.symbol.file ServiceCredsCombination.java
  * @run main ServiceCredsCombination
  * @summary default principal can act as anyone

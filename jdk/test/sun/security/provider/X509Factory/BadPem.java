@@ -25,6 +25,7 @@
  * @test
  * @bug 8074935
  * @summary jdk8 keytool doesn't validate pem files for RFC 1421 correctness, as jdk7 did
+ * @modules java.base/sun.security.provider
  */
 
 import java.io.ByteArrayOutputStream;

@@ -24,9 +24,10 @@
 /*
  * @test
  * @bug 5008159 5008156
- * @run main XMLEncKAT
  * @summary Verify that the two key wrap ciphers, i.e. "DESedeWrap"
  * and "AESWrap", work as expected.
+ * @modules java.base/sun.misc
+ * @run main XMLEncKAT
  * @author Valerie Peng
  */
 import java.security.Key;

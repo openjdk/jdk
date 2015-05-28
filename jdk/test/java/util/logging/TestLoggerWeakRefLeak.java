@@ -38,7 +38,8 @@ import sun.tools.attach.HotSpotVirtualMachine;
  * @bug 6942989
  * @summary Check for WeakReference leak in Logger and anonymous Logger objects
  * @library /lib/testlibrary
- * @build jdk.testlibrary.*
+ * @modules jdk.attach/sun.tools.attach
+ * @build jdk.testlibrary.ProcessTools
  * @run main/othervm TestLoggerWeakRefLeak Logger
  * @run main/othervm TestLoggerWeakRefLeak AnonymousLogger
  */

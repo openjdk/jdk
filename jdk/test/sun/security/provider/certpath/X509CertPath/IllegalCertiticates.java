@@ -25,6 +25,7 @@
  * @test
  * @bug 6492692
  * @summary Some JCK test failed because of the compiler warnings changes
+ * @modules java.base/sun.security.provider.certpath
  */
 
 import java.security.cert.CertificateException;

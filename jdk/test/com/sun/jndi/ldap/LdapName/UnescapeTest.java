@@ -26,6 +26,7 @@
  * @bug 4892070
  * @summary java gets hung in
  *      com.sun.jndi.ldap.LdapName$TypeAndValue.unescapeValue()
+ * @modules java.naming/com.sun.jndi.ldap
  */
 
 import com.sun.jndi.ldap.LdapName;
