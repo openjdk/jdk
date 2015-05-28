@@ -84,6 +84,20 @@ public class CheckEBCDICLocaleTest {
         List<String> expectLines = Arrays.asList(
                 String.format(TestOutTemplate, File.separator).split("\n"));
         List<String> actualLines = Files.readAllLines(Paths.get("Test.out"));
-        tb.checkEqual(expectLines, actualLines);
+        try {
+            tb.checkEqual(expectLines, actualLines);
+        } catch (Throwable tt) {
+            System.err.println("current ouput don't have the expected number of lines. See output below");
+
+            System.err.println("Expected output:");
+            System.err.println(TestOutTemplate);
+            System.err.println();
+            System.err.println("Actual output:");
+            for (String s : actualLines) {
+                System.err.println(s);
+            }
+            System.err.println();
+            throw tt;
+        }
     }
 }
