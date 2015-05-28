@@ -32,7 +32,7 @@ import com.sun.tools.classfile.*;
  * @test
  * @bug 6843077 8006775
  * @summary Qualified inner type annotation accessible to the class.
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  */
 
 @Scopes.UniqueInner

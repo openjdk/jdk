@@ -27,7 +27,7 @@
  * @test
  * @bug 8011181
  * @summary javac, empty UTF8 entry generated for inner class
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  *          jdk.compiler/com.sun.tools.javac.util
  */
 

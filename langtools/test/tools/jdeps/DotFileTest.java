@@ -26,7 +26,7 @@
  * @bug 8003562
  * @summary Basic tests for jdeps -dotoutput option
  * @modules java.management
- *          jdk.dev/com.sun.tools.jdeps
+ *          jdk.jdeps/com.sun.tools.jdeps
  * @build Test p.Foo p.Bar javax.activity.NotCompactProfile
  * @run main DotFileTest
  */

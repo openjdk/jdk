@@ -26,7 +26,7 @@
  * @bug 8025087
  * @summary Verify that pre-JDK8 classfiles with default and/or static methods
  *          are refused correctly.
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.jvm

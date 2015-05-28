@@ -25,7 +25,7 @@
  * @test
  * @bug 8015927
  * @summary Class reference duplicates in constant pool
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  * @clean ClassRefDupInConstantPoolTest$Duplicates.class
  * @run main ClassRefDupInConstantPoolTest
  */

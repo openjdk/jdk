@@ -26,7 +26,7 @@
  * @bug 4501660
  * @summary change diagnostic of -help as 'print this help message and exit'
  *            (actually, verify -help does not cause premature exit)
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 
 import java.io.*;

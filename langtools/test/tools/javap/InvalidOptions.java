@@ -25,7 +25,7 @@
  * @test
  * @bug 8027411 8032869
  * @summary test an invalid option
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 
 import java.io.*;

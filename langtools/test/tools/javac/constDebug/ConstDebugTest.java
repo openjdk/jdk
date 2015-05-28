@@ -25,7 +25,7 @@
  * @test
  * @bug 4645152 4785453
  * @summary javac compiler incorrectly inserts <clinit> when -g is specified
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  * @run compile -g ConstDebugTest.java
  * @run main ConstDebugTest
  */

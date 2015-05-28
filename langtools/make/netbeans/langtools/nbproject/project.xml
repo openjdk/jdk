@@ -67,9 +67,9 @@
                     <location>${root}/src/jdk.compiler/share/classes</location>
                 </source-folder>
                 <source-folder>
-                    <label>Source files - jdk.dev</label>
+                    <label>Source files - jdk.jdeps</label>
                     <type>java</type>
-                    <location>${root}/src/jdk.dev/share/classes</location>
+                    <location>${root}/src/jdk.jdeps/share/classes</location>
                 </source-folder>
                 <source-folder>
                     <label>Source files - jdk.javadoc</label>
@@ -128,10 +128,10 @@
                 </action>
                 <action name="compile.single">
                     <target>compile-single</target>
-                    <property name="module.name">jdk.dev</property>
+                    <property name="module.name">jdk.jdeps</property>
                     <context>
                         <property>includes</property>
-                        <folder>${root}/src/jdk.dev/share/classes</folder>
+                        <folder>${root}/src/jdk.jdeps/share/classes</folder>
                         <pattern>\.java$</pattern>
                         <format>relative-path</format>
                         <arity>
@@ -195,7 +195,7 @@
                     <target>run-single</target>
                     <context>
                         <property>run.classname</property>
-                        <folder>${root}/src/jdk.dev/share/classes</folder>
+                        <folder>${root}/src/jdk.jdeps/share/classes</folder>
                         <pattern>\.java$</pattern>
                         <format>java-name</format>
                         <arity>
@@ -265,7 +265,7 @@
                     <target>debug-single</target>
                     <context>
                         <property>debug.classname</property>
-                        <folder>${root}/src/jdk.dev/share/classes</folder>
+                        <folder>${root}/src/jdk.jdeps/share/classes</folder>
                         <pattern>\.java$</pattern>
                         <format>java-name</format>
                         <arity>
@@ -329,10 +329,10 @@
                 </action>
                 <action name="debug.fix">
                     <target>debug-fix</target>
-                    <property name="module.name">jdk.dev</property>
+                    <property name="module.name">jdk.jdeps</property>
                     <context>
                         <property>class</property>
-                        <folder>${root}/src/jdk.dev/share/classes</folder>
+                        <folder>${root}/src/jdk.jdeps/share/classes</folder>
                         <pattern>\.java$</pattern>
                         <format>relative-path-noext</format>
                         <arity>
@@ -382,8 +382,8 @@
                         <location>${root}/src/jdk.compiler/share/classes</location>
                     </source-folder>
                     <source-folder style="tree">
-                        <label>Source files - jdk.dev</label>
-                        <location>${root}/src/jdk.dev/share/classes</location>
+                        <label>Source files - jdk.jdeps</label>
+                        <location>${root}/src/jdk.jdeps/share/classes</location>
                     </source-folder>
                     <source-folder style="tree">
                         <label>Source files - jdk.javadoc</label>
@@ -443,10 +443,10 @@
                 <source-level>1.8</source-level>
             </compilation-unit>
             <compilation-unit>
-                <package-root>${root}/src/jdk.dev/share/classes</package-root>
-                <package-root>${root}/build/bootstrap/jdk.dev/gensrc</package-root>
+                <package-root>${root}/src/jdk.jdeps/share/classes</package-root>
+                <package-root>${root}/build/bootstrap/jdk.jdeps/gensrc</package-root>
                 <classpath mode="compile">${root}/build/java.compiler/classes:${root}/build/jdk.compiler/classes</classpath>
-                <built-to>${root}/build/jdk.dev/classes</built-to>
+                <built-to>${root}/build/jdk.jdeps/classes</built-to>
                 <source-level>1.8</source-level>
             </compilation-unit>
             <compilation-unit>

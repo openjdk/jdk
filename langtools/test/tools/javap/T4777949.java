@@ -30,7 +30,7 @@ import com.sun.tools.javap.*;
  * @test
  * @bug 4777949
  * @summary Warn javap usage on package with simple name
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 public class T4777949 {
     public static void main(String... args) throws Exception {

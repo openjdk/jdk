@@ -26,7 +26,7 @@
  * @bug 8006334
  * @summary javap: JavapTask constructor breaks with null pointer exception if
  * parameter options is null
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 
 import java.io.File;

@@ -32,7 +32,7 @@ import com.sun.tools.classfile.*;
  * @test
  * @bug 6917130 8006775
  * @summary test that optimized away annotations are not emited to classfile
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  */
 
 public class DeadCode extends ClassfileTestHelper {

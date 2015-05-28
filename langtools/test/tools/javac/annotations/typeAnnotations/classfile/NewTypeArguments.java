@@ -31,7 +31,7 @@ import com.sun.tools.classfile.*;
 /*
  * @test ClassLiterals
  * @summary test that new type arguments are emitted to classfile
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  */
 
 public class NewTypeArguments extends ClassfileTestHelper{
