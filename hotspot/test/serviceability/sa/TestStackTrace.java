@@ -19,31 +19,37 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_VM_GC_SHARED_STRONGROOTSSCOPE_HPP
-#define SHARE_VM_GC_SHARED_STRONGROOTSSCOPE_HPP
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.Platform;
+import jdk.test.lib.ProcessTools;
 
-#include "memory/allocation.hpp"
+/*
+ * @test
+ * @library /testlibrary
+ * @build jdk.test.lib.*
+ * @run main TestStackTrace
+ */
+public class TestStackTrace {
 
-class MarkScope : public StackObj {
- protected:
-  MarkScope();
-  ~MarkScope();
-};
+    public static void main(String[] args) throws Exception {
+        if (!Platform.shouldSAAttach()) {
+            System.out.println("SA attach not expected to work - test skipped.");
+            return;
+        }
 
-// Sets up and tears down the required state for parallel root processing.
+        ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
+                "-XX:+UsePerfData",
+                "sun.jvm.hotspot.tools.StackTrace",
+                Integer.toString(ProcessTools.getProcessId()));
+        OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);
+        System.out.println(output.getOutput());
 
-class StrongRootsScope : public MarkScope {
-  // Number of threads participating in the roots processing.
-  const uint _n_threads;
+        output.shouldHaveExitValue(0);
+        output.shouldContain("Debugger attached successfully.");
+        output.stderrShouldNotMatch("[E|e]xception");
+        output.stderrShouldNotMatch("[E|e]rror");
+     }
 
- public:
-  StrongRootsScope(uint n_threads);
-  ~StrongRootsScope();
-
-  uint n_threads() const { return _n_threads; }
-};
-
-#endif // SHARE_VM_GC_SHARED_STRONGROOTSSCOPE_HPP
+}
