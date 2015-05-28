@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 7175845
+ * @modules jdk.jartool/sun.tools.jar
  * @summary jar -uf should not change file permission
  */
 

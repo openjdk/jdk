@@ -25,6 +25,7 @@
  * @test
  * @bug 4946388
  * @summary Unit test for CertificateRevokedException
+ * @modules java.base/sun.security.x509
  */
 
 import java.io.ByteArrayInputStream;

@@ -26,6 +26,7 @@
  * @bug 4160200
  * @summary Make sure URLConnection.getContnentHandler
  *     can handle MIME types with attributes
+ * @modules java.base/sun.net.www java.base/sun.net.www.content.text
  */
 import java.net.*;
 import java.io.*;

@@ -24,6 +24,9 @@
  * @test
  * @bug 6917791
  * @summary KeyTabEntry, when the byte value smaller then 16, the string drop '0'
+ * @modules java.security.jgss/sun.security.krb5
+ *          java.security.jgss/sun.security.krb5.internal
+ *          java.security.jgss/sun.security.krb5.internal.ktab
  */
 
 import sun.security.krb5.internal.ktab.KeyTabEntry;

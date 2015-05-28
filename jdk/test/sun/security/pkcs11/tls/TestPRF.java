@@ -27,6 +27,7 @@
  * @summary Basic known-answer-test for TlsPrf
  * @author Andreas Sterbenz
  * @library ..
+ * @modules java.base/sun.security.internal.spec
  */
 
 import java.io.*;

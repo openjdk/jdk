@@ -25,7 +25,9 @@
  * @test
  * @bug 4278121
  * @summary Ensure that calling unbind() on an unbound name returns
- *      successfully.
+ *     successfully.
+ * @modules java.rmi/sun.rmi.registry java.rmi/sun.rmi.server
+ *     java.rmi/sun.rmi.transport java.rmi/sun.rmi.transport.tcp
  * @library ../../../../../../java/rmi/testlibrary
  * @build TestLibrary
  * @run main UnbindIdempotent

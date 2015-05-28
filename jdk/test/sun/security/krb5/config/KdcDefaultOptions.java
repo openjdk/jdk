@@ -24,6 +24,8 @@
  * @test
  * @bug 7195426
  * @summary kdc_default_options not supported correctly
+ * @modules java.security.jgss/sun.security.krb5
+ *          java.security.jgss/sun.security.krb5.internal
  * @compile -XDignore.symbol.file KdcDefaultOptions.java
  * @run main/othervm KdcDefaultOptions
  */

@@ -25,6 +25,7 @@
  * @test
  * @bug 4432868
  * @summary A client-hello message may not always be read correctly
+ * @modules java.base/sun.net.www
  * @run main/othervm ClientHelloRead
  *
  *     SunJSSE does not support dynamic system properties, no way to re-use

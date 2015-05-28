@@ -26,6 +26,7 @@
  * @summary Verify that ReliableLog.snapshotSize() returns correct snapshot
  *          file size even if LogHandler doesn't flush.
  *
+ * @modules java.rmi/sun.rmi.log
  * @run main/othervm SnapshotSize
  */
 

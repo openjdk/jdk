@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4806786 8023113
+ * @modules jdk.jartool/sun.tools.jar
  * @summary jar -C doesn't ignore multiple // in path
  */
 

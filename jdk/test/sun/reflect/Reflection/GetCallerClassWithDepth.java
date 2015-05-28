@@ -25,6 +25,7 @@
  * @test
  * @bug 8025799
  * @summary sun.reflect.Reflection.getCallerClass(int)
+ * @modules java.base/sun.reflect
  * @run main GetCallerClassWithDepth
  */
 
