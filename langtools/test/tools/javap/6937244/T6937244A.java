@@ -25,7 +25,7 @@
  * @test
  * @bug 6937244
  * @summary fields display with JVMS names, not Java names
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 
 import java.io.*;

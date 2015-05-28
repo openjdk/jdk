@@ -27,7 +27,7 @@ import java.io.*;
  * @test
  * @bug 6715753
  * @summary Use javap to inquire about a specific inner class
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 
 public class T6715753 {

@@ -25,7 +25,7 @@
  * @test SyntheticParameters
  * @summary Test generation of annotations on inner class parameters.
  * @library /lib/annotations/
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  * @run main SyntheticParameters
  */
 

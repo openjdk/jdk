@@ -26,7 +26,7 @@
  * @bug 8009649
  * @summary Lambda back-end should generate invokespecial for method handles referring to private instance methods
  * @library ../../lib
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  *          jdk.compiler/com.sun.tools.javac.api
  * @build JavacTestingAbstractThreadedTest
  * @run main/othervm TestLambdaBytecode

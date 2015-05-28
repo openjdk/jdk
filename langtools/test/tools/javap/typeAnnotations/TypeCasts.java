@@ -29,7 +29,7 @@ import com.sun.tools.classfile.*;
  * @bug 6843077
  * @summary test that typecasts annotation are emitted if only the cast
  *          expression is optimized away
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  */
 
 public class TypeCasts {

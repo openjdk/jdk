@@ -28,7 +28,7 @@ import static java.lang.System.lineSeparator;
  * @test
  * @bug 8042451
  * @summary Test population of reference info for method type parameters
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  * @compile -g Driver.java ReferenceInfoUtil.java MethodTypeParam.java
  * @run main Driver MethodTypeParam
  */
