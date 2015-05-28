@@ -27,6 +27,7 @@
  * @summary unspecified exceptions in X509TrustManager.checkClient[Server]Truste
 d
  * @author Xuelei Fan
+ * @modules java.base/com.sun.net.ssl.internal.ssl
  */
 
 import java.io.*;

@@ -25,6 +25,7 @@
  * @test
  * @bug 4505980 5109882 7049963 7090565
  * @summary X500Principal input name parsing issues and wrong exception thrown
+ * @modules java.base/sun.security.x509
  * @run main/othervm -Djava.security.debug=x509,ava NameFormat
  *
  * The debug=ava above must be set in order to check for escaped hex chars.

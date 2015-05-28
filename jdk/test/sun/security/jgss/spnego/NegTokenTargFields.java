@@ -25,6 +25,7 @@
  * @test
  * @bug 7040151
  * @summary SPNEGO GSS code does not parse tokens in accordance to RFC 2478
+ * @modules java.security.jgss/sun.security.jgss.spnego
  * @compile -XDignore.symbol.file NegTokenTargFields.java
  * @run main NegTokenTargFields nomech
  * @run main/fail NegTokenTargFields badorder

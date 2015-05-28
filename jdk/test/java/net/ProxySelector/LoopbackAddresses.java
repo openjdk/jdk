@@ -24,6 +24,7 @@
 /* @test
  * @bug 4924226
  * @summary PIT: Can no launch jnlp application via 127.0.0.1 address on the web server
+ * @modules java.base/sun.net.www
  * @library ../../../sun/net/www/httptest/
  * @build ClosedChannelList TestHttpServer HttpTransaction HttpCallback
  * @compile LoopbackAddresses.java

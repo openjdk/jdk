@@ -27,6 +27,7 @@
  * @summary Verify that all ciphersuites work in FIPS mode
  * @library ..
  * @author Andreas Sterbenz
+ * @modules java.base/com.sun.net.ssl.internal.ssl
  * @run main/manual ClientJSSEServerJSSE
  */
 

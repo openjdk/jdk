@@ -24,6 +24,7 @@
 /* @test
  * @bug 8046903
  * @summary VM anonymous class members can't be statically invocable
+ * @modules java.base/sun.misc java.base/jdk.internal.org.objectweb.asm
  * @run junit test.java.lang.invoke.VMAnonymousClass
  */
 package test.java.lang.invoke;

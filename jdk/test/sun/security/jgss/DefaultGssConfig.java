@@ -25,6 +25,7 @@
  * @test
  * @bug 6483218
  * @summary Provide a default login configuration
+ * @modules java.security.jgss/sun.security.jgss
  */
 
 import java.io.FileNotFoundException;

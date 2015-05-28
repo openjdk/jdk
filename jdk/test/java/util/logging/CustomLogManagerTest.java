@@ -32,6 +32,7 @@ import sun.util.logging.PlatformLogger;
  * @bug 8005615 8006104
  * @summary Add loggers to custom log manager
  *
+ * @modules java.base/sun.util.logging
  * @compile -XDignore.symbol.file CustomLogManagerTest.java CustomLogManager.java
  * @run main/othervm -Djava.util.logging.manager=CustomLogManager CustomLogManagerTest
  */

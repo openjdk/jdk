@@ -24,6 +24,8 @@
 /*
  * @test
  * @bug 4811968 6908628 8006564
+ * @modules java.base/sun.misc
+ *          java.base/sun.security.util
  * @run main S11N check
  * @summary Serialization compatibility with old versions (and fixes)
  */

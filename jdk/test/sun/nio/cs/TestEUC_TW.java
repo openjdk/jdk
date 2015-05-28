@@ -25,6 +25,7 @@
  * @test
  * @bug 6831794 6229811
  * @summary Test EUC_TW charset
+ * @modules java.base/sun.nio.cs
  */
 
 import java.nio.charset.*;

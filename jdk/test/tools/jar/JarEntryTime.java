@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4225317 6969651
+ * @modules jdk.jartool/sun.tools.jar
  * @summary Check extracted files have date as per those in the .jar file
  */
 

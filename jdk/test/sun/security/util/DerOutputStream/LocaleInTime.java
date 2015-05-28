@@ -25,6 +25,7 @@
  * @test
  * @bug 6670889
  * @summary Keystore created under Hindi Locale causing ArrayIndexOutOfBoundsException
+ * @modules java.base/sun.security.util
  * @run main/othervm -Duser.language=hi -Duser.region=IN LocaleInTime
  */
 

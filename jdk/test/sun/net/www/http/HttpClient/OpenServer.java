@@ -26,6 +26,7 @@
  * @bug 4154481
  * @summary Make sure HttpClient has
  *    doPrivileged() calls at appropriate places.
+ * @modules java.base/sun.net.www.http
  * @run main/othervm/policy=OpenServer.policy OpenServer
  */
 

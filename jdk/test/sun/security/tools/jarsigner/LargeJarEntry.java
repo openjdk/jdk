@@ -26,6 +26,7 @@
  * @bug 6405538 6474350
  * @summary Make sure jar files with large entries (more than max heap size)
  *    can be signed
+ * @modules jdk.jartool/sun.security.tools.jarsigner
  * @run main/othervm -Xmx8M LargeJarEntry
  * @author Sean Mullan
  */

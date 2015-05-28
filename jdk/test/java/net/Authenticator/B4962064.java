@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4962064
+ * @modules java.base/sun.net.www
  * @library ../../../sun/net/www/httptest/
  * @build HttpCallback TestHttpServer ClosedChannelList HttpTransaction
  * @run main/othervm B4962064

@@ -25,6 +25,7 @@
  * @test
  * @bug 4762344
  * @summary 2nd nameservice provider is non functional
+ * @modules java.base/sun.net.spi.nameservice
  * @compile -XDignore.symbol.file=true SimpleNameService.java
  *                                     Simple1NameServiceDescriptor.java
  *                                     Simple2NameServiceDescriptor.java
