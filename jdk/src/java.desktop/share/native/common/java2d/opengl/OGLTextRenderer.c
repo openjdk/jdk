@@ -275,12 +275,9 @@ OGLTR_AddToGlyphCache(GlyphInfo *glyph, jboolean rgbOrder)
  * changes, we will modify the "src_adj" value in OGLTR_UpdateLCDTextColor()).
  *
  * The "main" function is executed for each "fragment" (or pixel) in the
- * glyph image.  We have determined that the pow() function can be quite
- * slow and it only operates on scalar values, not vectors as we require.
- * So instead we build two 3D textures containing gamma (and inverse gamma)
- * lookup tables that allow us to approximate a component-wise pow() function
- * with a single 3D texture lookup.  This approach is at least 2x faster
- * than the equivalent pow() calls.
+ * glyph image. The pow() routine operates on vectors, gives precise results,
+ * and provides acceptable level of performance, so we use it to perform
+ * the gamma adjustment.
  *
  * The variables involved in the equation can be expressed as follows:
  *
@@ -299,8 +296,8 @@ static const char *lcdTextShaderSource =
     "uniform vec3 src_adj;"
     "uniform sampler2D glyph_tex;"
     "uniform sampler2D dst_tex;"
-    "uniform sampler3D invgamma_tex;"
-    "uniform sampler3D gamma_tex;"
+    "uniform vec3 gamma;"
+    "uniform vec3 invgamma;"
     ""
     "void main(void)"
     "{"
@@ -312,12 +309,12 @@ static const char *lcdTextShaderSource =
     "    }"
          // load the RGB value from the corresponding destination pixel
     "    vec3 dst_clr = vec3(texture2D(dst_tex, gl_TexCoord[1].st));"
-         // gamma adjust the dest color using the invgamma LUT
-    "    vec3 dst_adj = vec3(texture3D(invgamma_tex, dst_clr.stp));"
+         // gamma adjust the dest color
+    "    vec3 dst_adj = pow(dst_clr.rgb, gamma);"
          // linearly interpolate the three color values
     "    vec3 result = mix(dst_adj, src_adj, glyph_clr);"
          // gamma re-adjust the resulting color (alpha is always set to 1.0)
-    "    gl_FragColor = vec4(vec3(texture3D(gamma_tex, result.stp)), 1.0);"
+    "    gl_FragColor = vec4(pow(result.rgb, invgamma), 1.0);"
     "}";
 
 /**
@@ -348,10 +345,6 @@ OGLTR_CreateLCDTextProgram()
     j2d_glUniform1iARB(loc, 0); // texture unit 0
     loc = j2d_glGetUniformLocationARB(lcdTextProgram, "dst_tex");
     j2d_glUniform1iARB(loc, 1); // texture unit 1
-    loc = j2d_glGetUniformLocationARB(lcdTextProgram, "invgamma_tex");
-    j2d_glUniform1iARB(loc, 2); // texture unit 2
-    loc = j2d_glGetUniformLocationARB(lcdTextProgram, "gamma_tex");
-    j2d_glUniform1iARB(loc, 3); // texture unit 3
 
     // "unuse" the program object; it will be re-bound later as needed
     j2d_glUseProgramObjectARB(0);
@@ -360,108 +353,26 @@ OGLTR_CreateLCDTextProgram()
 }
 
 /**
- * Initializes a 3D texture object for use as a three-dimensional gamma
- * lookup table.  Note that the wrap mode is initialized to GL_LINEAR so
- * that the table will interpolate adjacent values when the index falls
- * somewhere in between.
- */
-static GLuint
-OGLTR_InitGammaLutTexture()
-{
-    GLuint lutTextureID;
-
-    j2d_glGenTextures(1, &lutTextureID);
-    j2d_glBindTexture(GL_TEXTURE_3D, lutTextureID);
-    j2d_glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    j2d_glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    j2d_glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    j2d_glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    j2d_glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-    return lutTextureID;
-}
-
-/**
- * Updates the lookup table in the given texture object with the float
- * values in the given system memory buffer.  Note that we could use
- * glTexSubImage3D() when updating the texture after its first
- * initialization, but since we're updating the entire table (with
- * power-of-two dimensions) and this is a relatively rare event, we'll
- * just stick with glTexImage3D().
- */
-static void
-OGLTR_UpdateGammaLutTexture(GLuint texID, GLfloat *lut, jint size)
-{
-    j2d_glBindTexture(GL_TEXTURE_3D, texID);
-    j2d_glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB8,
-                     size, size, size, 0, GL_RGB, GL_FLOAT, lut);
-}
-
-/**
- * (Re)Initializes the gamma lookup table textures.
+ * (Re)Initializes the gamma related uniforms.
  *
  * The given contrast value is an int in the range [100, 250] which we will
- * then scale to fit in the range [1.0, 2.5].  We create two LUTs, one
- * that essentially calculates pow(x, gamma) and the other calculates
- * pow(x, 1/gamma).  These values are replicated in all three dimensions, so
- * given a single 3D texture coordinate (typically this will be a triplet
- * in the form (r,g,b)), the 3D texture lookup will return an RGB triplet:
- *
- *     (pow(r,g), pow(y,g), pow(z,g)
- *
- * where g is either gamma or 1/gamma, depending on the table.
+ * then scale to fit in the range [1.0, 2.5].
  */
 static jboolean
 OGLTR_UpdateLCDTextContrast(jint contrast)
 {
-    double gamma = ((double)contrast) / 100.0;
-    double ig = gamma;
-    double g = 1.0 / ig;
-    GLfloat lut[LUT_EDGE][LUT_EDGE][LUT_EDGE][3];
-    GLfloat invlut[LUT_EDGE][LUT_EDGE][LUT_EDGE][3];
-    int min = 0;
-    int max = LUT_EDGE - 1;
-    int x, y, z;
+    double g = ((double)contrast) / 100.0;
+    double ig = 1.0 / g;
+    GLint loc;
 
     J2dTraceLn1(J2D_TRACE_INFO,
                 "OGLTR_UpdateLCDTextContrast: contrast=%d", contrast);
 
-    for (z = min; z <= max; z++) {
-        double zval = ((double)z) / max;
-        GLfloat gz = (GLfloat)pow(zval, g);
-        GLfloat igz = (GLfloat)pow(zval, ig);
+    loc = j2d_glGetUniformLocationARB(lcdTextProgram, "gamma");
+    j2d_glUniform3fARB(loc, g, g, g);
 
-        for (y = min; y <= max; y++) {
-            double yval = ((double)y) / max;
-            GLfloat gy = (GLfloat)pow(yval, g);
-            GLfloat igy = (GLfloat)pow(yval, ig);
-
-            for (x = min; x <= max; x++) {
-                double xval = ((double)x) / max;
-                GLfloat gx = (GLfloat)pow(xval, g);
-                GLfloat igx = (GLfloat)pow(xval, ig);
-
-                lut[z][y][x][0] = gx;
-                lut[z][y][x][1] = gy;
-                lut[z][y][x][2] = gz;
-
-                invlut[z][y][x][0] = igx;
-                invlut[z][y][x][1] = igy;
-                invlut[z][y][x][2] = igz;
-            }
-        }
-    }
-
-    if (gammaLutTextureID == 0) {
-        gammaLutTextureID = OGLTR_InitGammaLutTexture();
-    }
-    OGLTR_UpdateGammaLutTexture(gammaLutTextureID, (GLfloat *)lut, LUT_EDGE);
-
-    if (invGammaLutTextureID == 0) {
-        invGammaLutTextureID = OGLTR_InitGammaLutTexture();
-    }
-    OGLTR_UpdateGammaLutTexture(invGammaLutTextureID,
-                                (GLfloat *)invlut, LUT_EDGE);
+    loc = j2d_glGetUniformLocationARB(lcdTextProgram, "invgamma");
+    j2d_glUniform3fARB(loc, ig, ig, ig);
 
     return JNI_TRUE;
 }

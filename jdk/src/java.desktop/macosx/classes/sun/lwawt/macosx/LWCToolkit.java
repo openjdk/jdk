@@ -370,8 +370,7 @@ public final class LWCToolkit extends LWToolkit {
     protected void initializeDesktopProperties() {
         super.initializeDesktopProperties();
         Map <Object, Object> fontHints = new HashMap<>();
-        fontHints.put(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        fontHints.put(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        fontHints.put(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
         desktopProperties.put(SunToolkit.DESKTOPFONTHINTS, fontHints);
         desktopProperties.put("awt.mouse.numButtons", BUTTONS);
 
