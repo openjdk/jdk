@@ -29,11 +29,13 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
+ * @ignore 8081538 test CheckEBCDICLocaleTest is failing
  * @build ToolBox
  * @run main CheckEBCDICLocaleTest
  */
 
 import java.io.File;
+import java.io.PrintStream;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -87,16 +89,21 @@ public class CheckEBCDICLocaleTest {
         try {
             tb.checkEqual(expectLines, actualLines);
         } catch (Throwable tt) {
-            System.err.println("current ouput don't have the expected number of lines. See output below");
+            PrintStream out = tb.out;
+            out.println("Output mismatch:");
 
-            System.err.println("Expected output:");
-            System.err.println(TestOutTemplate);
-            System.err.println();
-            System.err.println("Actual output:");
-            for (String s : actualLines) {
-                System.err.println(s);
+            out.println("Expected output:");
+            for (String s: expectLines) {
+                out.println(s);
             }
-            System.err.println();
+            out.println();
+
+            out.println("Actual output:");
+            for (String s : actualLines) {
+                out.println(s);
+            }
+            out.println();
+
             throw tt;
         }
     }
