@@ -1175,13 +1175,13 @@ public class Basic {
         equal(actualPid, expectedPid);
 
         // Test the default implementation of Process.getPid
-        try {
-            DelegatingProcess p = new DelegatingProcess(null);
-            p.getPid();
-            fail("non-overridden Process.getPid method should throw UOE");
-        } catch (UnsupportedOperationException uoe) {
-            // correct
-        }
+        DelegatingProcess p = new DelegatingProcess(null);
+        THROWS(UnsupportedOperationException.class,
+                () -> p.getPid(),
+                () -> p.toHandle(),
+                () -> p.supportsNormalTermination(),
+                () -> p.children(),
+                () -> p.allChildren());
 
     }
 
@@ -2604,7 +2604,7 @@ public class Basic {
     static volatile int passed = 0, failed = 0;
     static void pass() {passed++;}
     static void fail() {failed++; Thread.dumpStack();}
-    static void fail(String msg) {System.out.println(msg); fail();}
+    static void fail(String msg) {System.err.println(msg); fail();}
     static void unexpected(Throwable t) {failed++; t.printStackTrace();}
     static void check(boolean cond) {if (cond) pass(); else fail();}
     static void check(boolean cond, String m) {if (cond) pass(); else fail(m);}
