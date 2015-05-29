@@ -622,14 +622,6 @@ bool InstanceKlass::link_class_impl(
     if (!this_k->is_linked()) {
       if (!this_k->is_rewritten()) {
         {
-          // Timer includes any side effects of class verification (resolution,
-          // etc), but not recursive entry into verify_code().
-          PerfClassTraceTime timer(ClassLoader::perf_class_verify_time(),
-                                   ClassLoader::perf_class_verify_selftime(),
-                                   ClassLoader::perf_classes_verified(),
-                                   jt->get_thread_stat()->perf_recursion_counts_addr(),
-                                   jt->get_thread_stat()->perf_timers_addr(),
-                                   PerfClassTraceTime::CLASS_VERIFY);
           bool verify_ok = verify_code(this_k, throw_verifyerror, THREAD);
           if (!verify_ok) {
             return false;
