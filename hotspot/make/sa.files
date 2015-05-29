@@ -79,8 +79,10 @@ $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/windbg/x86/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/windows/x86/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/windows/amd64/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/x86/*.java \
+$(AGENT_SRC_DIR)/sun/jvm/hotspot/gc/cms/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/gc/g1/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/gc/parallel/*.java \
+$(AGENT_SRC_DIR)/sun/jvm/hotspot/gc/serial/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/gc/shared/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/interpreter/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/jdi/*.java \

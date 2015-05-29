@@ -29,6 +29,10 @@
  * @bug 8071629
  * @author sogoel
  * @library /tools/lib
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.file
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.sjavac
  * @build Wrapper ToolBox
  * @run main Wrapper ParallelCompilations
  */

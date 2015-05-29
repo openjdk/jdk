@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,12 +42,12 @@ import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import com.sun.org.apache.xerces.internal.impl.Constants;
 
 /*
  * @summary Test LSSerializer.
  */
 public class LSSerializerTest {
+    private static final String DOM_FORMAT_PRETTY_PRINT = "format-pretty-print";
 
     class DOMErrorHandlerImpl implements DOMErrorHandler {
 
@@ -192,47 +192,47 @@ public class LSSerializerTest {
         DOMConfiguration domConfiguration = lsSerializer.getDomConfig();
 
         // query current configuration
-        Boolean defaultFormatPrettyPrint = (Boolean) domConfiguration.getParameter(Constants.DOM_FORMAT_PRETTY_PRINT);
-        Boolean canSetFormatPrettyPrintFalse = (Boolean) domConfiguration.canSetParameter(Constants.DOM_FORMAT_PRETTY_PRINT, Boolean.FALSE);
-        Boolean canSetFormatPrettyPrintTrue = (Boolean) domConfiguration.canSetParameter(Constants.DOM_FORMAT_PRETTY_PRINT, Boolean.TRUE);
+        Boolean defaultFormatPrettyPrint = (Boolean) domConfiguration.getParameter(DOM_FORMAT_PRETTY_PRINT);
+        Boolean canSetFormatPrettyPrintFalse = (Boolean) domConfiguration.canSetParameter(DOM_FORMAT_PRETTY_PRINT, Boolean.FALSE);
+        Boolean canSetFormatPrettyPrintTrue = (Boolean) domConfiguration.canSetParameter(DOM_FORMAT_PRETTY_PRINT, Boolean.TRUE);
 
-        System.out.println(Constants.DOM_FORMAT_PRETTY_PRINT + " default/can set false/can set true = " + defaultFormatPrettyPrint + "/"
+        System.out.println(DOM_FORMAT_PRETTY_PRINT + " default/can set false/can set true = " + defaultFormatPrettyPrint + "/"
                 + canSetFormatPrettyPrintFalse + "/" + canSetFormatPrettyPrintTrue);
 
         // test values
-        Assert.assertEquals(defaultFormatPrettyPrint, Boolean.FALSE, "Default value of " + Constants.DOM_FORMAT_PRETTY_PRINT + " should be " + Boolean.FALSE);
+        Assert.assertEquals(defaultFormatPrettyPrint, Boolean.FALSE, "Default value of " + DOM_FORMAT_PRETTY_PRINT + " should be " + Boolean.FALSE);
 
-        Assert.assertEquals(canSetFormatPrettyPrintFalse, Boolean.TRUE, "Can set " + Constants.DOM_FORMAT_PRETTY_PRINT + " to " + Boolean.FALSE + " should be "
+        Assert.assertEquals(canSetFormatPrettyPrintFalse, Boolean.TRUE, "Can set " + DOM_FORMAT_PRETTY_PRINT + " to " + Boolean.FALSE + " should be "
                 + Boolean.TRUE);
 
-        Assert.assertEquals(canSetFormatPrettyPrintTrue, Boolean.TRUE, "Can set " + Constants.DOM_FORMAT_PRETTY_PRINT + " to " + Boolean.TRUE + " should be "
+        Assert.assertEquals(canSetFormatPrettyPrintTrue, Boolean.TRUE, "Can set " + DOM_FORMAT_PRETTY_PRINT + " to " + Boolean.TRUE + " should be "
                 + Boolean.TRUE);
 
         // get default serialization
         String prettyPrintDefault = lsSerializer.writeToString(document);
-        System.out.println("(default) " + Constants.DOM_FORMAT_PRETTY_PRINT + "==" + (Boolean) domConfiguration.getParameter(Constants.DOM_FORMAT_PRETTY_PRINT)
+        System.out.println("(default) " + DOM_FORMAT_PRETTY_PRINT + "==" + (Boolean) domConfiguration.getParameter(DOM_FORMAT_PRETTY_PRINT)
                 + ": \n\"" + prettyPrintDefault + "\"");
 
-        Assert.assertEquals(XML_DOCUMENT_DEFAULT_PRINT, prettyPrintDefault, "Invalid serialization with default value, " + Constants.DOM_FORMAT_PRETTY_PRINT + "=="
-                + (Boolean) domConfiguration.getParameter(Constants.DOM_FORMAT_PRETTY_PRINT));
+        Assert.assertEquals(XML_DOCUMENT_DEFAULT_PRINT, prettyPrintDefault, "Invalid serialization with default value, " + DOM_FORMAT_PRETTY_PRINT + "=="
+                + (Boolean) domConfiguration.getParameter(DOM_FORMAT_PRETTY_PRINT));
 
         // configure LSSerializer to not format-pretty-print
-        domConfiguration.setParameter(Constants.DOM_FORMAT_PRETTY_PRINT, Boolean.FALSE);
+        domConfiguration.setParameter(DOM_FORMAT_PRETTY_PRINT, Boolean.FALSE);
         String prettyPrintFalse = lsSerializer.writeToString(document);
-        System.out.println("(FALSE) " + Constants.DOM_FORMAT_PRETTY_PRINT + "==" + (Boolean) domConfiguration.getParameter(Constants.DOM_FORMAT_PRETTY_PRINT)
+        System.out.println("(FALSE) " + DOM_FORMAT_PRETTY_PRINT + "==" + (Boolean) domConfiguration.getParameter(DOM_FORMAT_PRETTY_PRINT)
                 + ": \n\"" + prettyPrintFalse + "\"");
 
-        Assert.assertEquals(XML_DOCUMENT_DEFAULT_PRINT, prettyPrintFalse, "Invalid serialization with FALSE value, " + Constants.DOM_FORMAT_PRETTY_PRINT + "=="
-                + (Boolean) domConfiguration.getParameter(Constants.DOM_FORMAT_PRETTY_PRINT));
+        Assert.assertEquals(XML_DOCUMENT_DEFAULT_PRINT, prettyPrintFalse, "Invalid serialization with FALSE value, " + DOM_FORMAT_PRETTY_PRINT + "=="
+                + (Boolean) domConfiguration.getParameter(DOM_FORMAT_PRETTY_PRINT));
 
         // configure LSSerializer to format-pretty-print
-        domConfiguration.setParameter(Constants.DOM_FORMAT_PRETTY_PRINT, Boolean.TRUE);
+        domConfiguration.setParameter(DOM_FORMAT_PRETTY_PRINT, Boolean.TRUE);
         String prettyPrintTrue = lsSerializer.writeToString(document);
-        System.out.println("(TRUE) " + Constants.DOM_FORMAT_PRETTY_PRINT + "==" + (Boolean) domConfiguration.getParameter(Constants.DOM_FORMAT_PRETTY_PRINT)
+        System.out.println("(TRUE) " + DOM_FORMAT_PRETTY_PRINT + "==" + (Boolean) domConfiguration.getParameter(DOM_FORMAT_PRETTY_PRINT)
                 + ": \n\"" + prettyPrintTrue + "\"");
 
-        Assert.assertEquals(XML_DOCUMENT_PRETTY_PRINT, prettyPrintTrue, "Invalid serialization with TRUE value, " + Constants.DOM_FORMAT_PRETTY_PRINT + "=="
-                + (Boolean) domConfiguration.getParameter(Constants.DOM_FORMAT_PRETTY_PRINT));
+        Assert.assertEquals(XML_DOCUMENT_PRETTY_PRINT, prettyPrintTrue, "Invalid serialization with TRUE value, " + DOM_FORMAT_PRETTY_PRINT + "=="
+                + (Boolean) domConfiguration.getParameter(DOM_FORMAT_PRETTY_PRINT));
     }
 
     @Test

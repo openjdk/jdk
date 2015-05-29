@@ -26,6 +26,10 @@
  * @bug 8049238
  * @summary Checks Signature attribute for constructors.
  * @library /tools/lib /tools/javac/lib ../lib
+ * @modules jdk.compiler/com.sun.tools.classfile
+ *          jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.file
+ *          jdk.compiler/com.sun.tools.javac.main
  * @build TestBase TestResult InMemoryFileManager ToolBox
  * @build ConstructorTest Driver ExpectedSignature ExpectedSignatureContainer
  * @run main Driver ConstructorTest

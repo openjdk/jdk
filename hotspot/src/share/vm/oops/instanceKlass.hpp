@@ -1087,19 +1087,12 @@ class InstanceKlass: public Klass {
 
  public:
 
-#define InstanceKlass_OOP_OOP_ITERATE_DECL(OopClosureType, nv_suffix)                   \
-  int  oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure);                    \
-  int  oop_oop_iterate##nv_suffix##_m(oop obj, OopClosureType* closure, MemRegion mr);
-
-  ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceKlass_OOP_OOP_ITERATE_DECL)
-  ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceKlass_OOP_OOP_ITERATE_DECL)
+  ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_OOP_ITERATE_DECL)
+  ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_OOP_ITERATE_DECL)
 
 #if INCLUDE_ALL_GCS
-#define InstanceKlass_OOP_OOP_ITERATE_BACKWARDS_DECL(OopClosureType, nv_suffix)  \
-  int  oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* closure);
-
-  ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceKlass_OOP_OOP_ITERATE_BACKWARDS_DECL)
-  ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceKlass_OOP_OOP_ITERATE_BACKWARDS_DECL)
+  ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_OOP_ITERATE_DECL_BACKWARDS)
+  ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_OOP_ITERATE_DECL_BACKWARDS)
 #endif // INCLUDE_ALL_GCS
 
   u2 idnum_allocated_count() const      { return _idnum_allocated_count; }

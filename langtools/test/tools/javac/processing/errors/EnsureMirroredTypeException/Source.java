@@ -3,6 +3,8 @@
  * @bug 8019243
  * @summary AnnotationTypeMismatchException instead of MirroredTypeException
  * @library /tools/javac/lib
+ * @modules jdk.compiler/com.sun.tools.javac.code
+ *          jdk.compiler/com.sun.tools.javac.util
  * @build JavacTestingAbstractProcessor Processor
  * @compile/fail/ref=Source.out -XDrawDiagnostics -processor Processor Source.java
  */

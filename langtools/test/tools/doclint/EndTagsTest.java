@@ -2,6 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8006236
  * @summary doclint: structural issue hidden
+ * @modules jdk.compiler/com.sun.tools.doclint
  * @build DocLintTester
  * @run main DocLintTester -Xmsgs:-html EndTagsTest.java
  * @run main DocLintTester -ref EndTagsTest.out EndTagsTest.java

@@ -38,12 +38,13 @@
 package sun.text.normalizer;
 
 /**
- * <p>Interface for enabling iteration over sets of <int index, int value>,
+ * <p>Interface for enabling iteration over sets of
+ * {@code <int index, int value>},
  * where index is the sorted integer index in ascending order and value, its
- * associated integer value.</p>
+ * associated integer value.
  * <p>The result for each iteration is the consecutive range of
- * <int index, int value> with the same value. Result is represented by
- * <start, limit, value> where</p>
+ * {@code <int index, int value>} with the same value. Result is represented by
+ * {@code <start, limit, value>} where
  * <ul>
  * <li> start is the starting integer of the result range
  * <li> limit is 1 after the maximum integer that follows start, such that
@@ -56,10 +57,10 @@ package sun.text.normalizer;
  * Hence value(start) = value(start + 1) = .... = value(start + n) = .... =
  * value(limit - 1). However value(start -1) != value(start) and
  * value(limit) != value(start).
- * </p>
+ *
  * <p>Most implementations will be created by factory methods, such as the
  * character type iterator in UCharacter.getTypeIterator. See example below.
- * </p>
+ *
  * Example of use:<br>
  * <pre>
  * RangeValueIterator iterator = UCharacter.getTypeIterator();

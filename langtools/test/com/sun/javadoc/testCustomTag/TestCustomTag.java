@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,9 @@
  * @summary  Test custom tag. Verify that an unknown tag generates appropriate warnings.
  * @author   Bhavesh Patel
  * @library  ../lib
+ * @modules jdk.javadoc/com.sun.tools.doclets.internal.toolkit
+ *          jdk.javadoc/com.sun.tools.doclets.internal.toolkit.taglets
+ *          jdk.javadoc/com.sun.tools.doclets.internal.toolkit.util
  * @build    JavadocTester taglets.CustomTag
  * @run main TestCustomTag
  */

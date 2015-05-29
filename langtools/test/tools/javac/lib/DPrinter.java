@@ -24,6 +24,10 @@
 /* @test
  * @bug 8043484 8007307
  * @summary Make sure DPrinter.java compiles
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.code
+ *          jdk.compiler/com.sun.tools.javac.tree
+ *          jdk.compiler/com.sun.tools.javac.util
  * @compile DPrinter.java
  */
 

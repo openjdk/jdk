@@ -26,6 +26,10 @@
  * @bug 8042251 8062373
  * @summary Testing InnerClasses_attribute of inner classes in anonymous class.
  * @library /tools/lib /tools/javac/lib ../lib
+ * @modules jdk.compiler/com.sun.tools.classfile
+ *          jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.file
+ *          jdk.compiler/com.sun.tools.javac.main
  * @build InnerClassesTestBase TestResult TestBase InMemoryFileManager ToolBox
  * @run main InnerClassesInAnonymousClassTest
  */

@@ -1,298 +1,298 @@
-HtmlVersionTagsAttrsTest.java:18: error: attribute not supported in HTML5: rev
+HtmlVersionTagsAttrsTest.java:19: error: attribute not supported in HTML5: rev
      * <a rev="help" href="rev_test.html">Help Page</a>
           ^
-HtmlVersionTagsAttrsTest.java:19: error: attribute not supported in HTML5: charset
+HtmlVersionTagsAttrsTest.java:20: error: attribute not supported in HTML5: charset
      * <a charset="UTF-8" href="charset_test.html">Test page</a>
           ^
-HtmlVersionTagsAttrsTest.java:20: error: attribute not supported in HTML5: shape
+HtmlVersionTagsAttrsTest.java:21: error: attribute not supported in HTML5: shape
      * <a href="shape_test.html" shape="poly" coords="10,30,56,142">Location</a>
                                  ^
-HtmlVersionTagsAttrsTest.java:20: error: attribute not supported in HTML5: coords
+HtmlVersionTagsAttrsTest.java:21: error: attribute not supported in HTML5: coords
      * <a href="shape_test.html" shape="poly" coords="10,30,56,142">Location</a>
                                               ^
-HtmlVersionTagsAttrsTest.java:21: error: attribute not supported in HTML5: name
+HtmlVersionTagsAttrsTest.java:22: error: attribute not supported in HTML5: name
      * <img name="name_test" alt="alt">
             ^
-HtmlVersionTagsAttrsTest.java:23: error: attribute not supported in HTML5: axis
+HtmlVersionTagsAttrsTest.java:24: error: attribute not supported in HTML5: axis
      * <tr><th axis="desc">Description</th></tr>
                ^
-HtmlVersionTagsAttrsTest.java:24: error: attribute not supported in HTML5: axis
+HtmlVersionTagsAttrsTest.java:25: error: attribute not supported in HTML5: axis
      * <tr><td axis="desc" abbr="abbr_test" scope="row">Axis_Test</td></tr>
                ^
-HtmlVersionTagsAttrsTest.java:24: error: attribute not supported in HTML5: abbr
+HtmlVersionTagsAttrsTest.java:25: error: attribute not supported in HTML5: abbr
      * <tr><td axis="desc" abbr="abbr_test" scope="row">Axis_Test</td></tr>
                            ^
-HtmlVersionTagsAttrsTest.java:24: error: attribute not supported in HTML5: scope
+HtmlVersionTagsAttrsTest.java:25: error: attribute not supported in HTML5: scope
      * <tr><td axis="desc" abbr="abbr_test" scope="row">Axis_Test</td></tr>
                                             ^
-HtmlVersionTagsAttrsTest.java:25: error: no summary or caption for table
+HtmlVersionTagsAttrsTest.java:26: error: no summary or caption for table
      * </table>
        ^
-HtmlVersionTagsAttrsTest.java:26: error: attribute not supported in HTML5: summary
+HtmlVersionTagsAttrsTest.java:27: error: attribute not supported in HTML5: summary
      * <table summary="summary_test"><tr><td>Test Row</td></tr></table>
               ^
-HtmlVersionTagsAttrsTest.java:28: error: attribute not supported in HTML5: align
+HtmlVersionTagsAttrsTest.java:29: error: attribute not supported in HTML5: align
      * <table align="left" bgcolor="#EAEAEA" cellpadding="10" cellspacing="2" frame="box" rules="rows" width="200">
               ^
-HtmlVersionTagsAttrsTest.java:28: error: attribute not supported in HTML5: bgcolor
+HtmlVersionTagsAttrsTest.java:29: error: attribute not supported in HTML5: bgcolor
      * <table align="left" bgcolor="#EAEAEA" cellpadding="10" cellspacing="2" frame="box" rules="rows" width="200">
                            ^
-HtmlVersionTagsAttrsTest.java:28: error: attribute not supported in HTML5: cellpadding
+HtmlVersionTagsAttrsTest.java:29: error: attribute not supported in HTML5: cellpadding
      * <table align="left" bgcolor="#EAEAEA" cellpadding="10" cellspacing="2" frame="box" rules="rows" width="200">
                                              ^
-HtmlVersionTagsAttrsTest.java:28: error: attribute not supported in HTML5: cellspacing
+HtmlVersionTagsAttrsTest.java:29: error: attribute not supported in HTML5: cellspacing
      * <table align="left" bgcolor="#EAEAEA" cellpadding="10" cellspacing="2" frame="box" rules="rows" width="200">
                                                               ^
-HtmlVersionTagsAttrsTest.java:28: error: attribute not supported in HTML5: frame
+HtmlVersionTagsAttrsTest.java:29: error: attribute not supported in HTML5: frame
      * <table align="left" bgcolor="#EAEAEA" cellpadding="10" cellspacing="2" frame="box" rules="rows" width="200">
                                                                               ^
-HtmlVersionTagsAttrsTest.java:28: error: attribute not supported in HTML5: rules
+HtmlVersionTagsAttrsTest.java:29: error: attribute not supported in HTML5: rules
      * <table align="left" bgcolor="#EAEAEA" cellpadding="10" cellspacing="2" frame="box" rules="rows" width="200">
                                                                                           ^
-HtmlVersionTagsAttrsTest.java:28: error: attribute not supported in HTML5: width
+HtmlVersionTagsAttrsTest.java:29: error: attribute not supported in HTML5: width
      * <table align="left" bgcolor="#EAEAEA" cellpadding="10" cellspacing="2" frame="box" rules="rows" width="200">
                                                                                                        ^
-HtmlVersionTagsAttrsTest.java:29: error: attribute not supported in HTML5: align
+HtmlVersionTagsAttrsTest.java:30: error: attribute not supported in HTML5: align
      * <caption align="center">Test table, caption, col, colgroup, tbody,
                 ^
-HtmlVersionTagsAttrsTest.java:31: error: attribute not supported in HTML5: align
+HtmlVersionTagsAttrsTest.java:32: error: attribute not supported in HTML5: align
      * <colgroup align="char" char="." charoff="2" valign="top" width="200">
                  ^
-HtmlVersionTagsAttrsTest.java:31: error: attribute not supported in HTML5: char
+HtmlVersionTagsAttrsTest.java:32: error: attribute not supported in HTML5: char
      * <colgroup align="char" char="." charoff="2" valign="top" width="200">
                               ^
-HtmlVersionTagsAttrsTest.java:31: error: attribute not supported in HTML5: charoff
+HtmlVersionTagsAttrsTest.java:32: error: attribute not supported in HTML5: charoff
      * <colgroup align="char" char="." charoff="2" valign="top" width="200">
                                        ^
-HtmlVersionTagsAttrsTest.java:31: error: attribute not supported in HTML5: valign
+HtmlVersionTagsAttrsTest.java:32: error: attribute not supported in HTML5: valign
      * <colgroup align="char" char="." charoff="2" valign="top" width="200">
                                                    ^
-HtmlVersionTagsAttrsTest.java:31: error: attribute not supported in HTML5: width
+HtmlVersionTagsAttrsTest.java:32: error: attribute not supported in HTML5: width
      * <colgroup align="char" char="." charoff="2" valign="top" width="200">
                                                                 ^
-HtmlVersionTagsAttrsTest.java:32: error: attribute not supported in HTML5: align
+HtmlVersionTagsAttrsTest.java:33: error: attribute not supported in HTML5: align
      * <col align="center" valign="top" width="200">
             ^
-HtmlVersionTagsAttrsTest.java:32: error: attribute not supported in HTML5: valign
+HtmlVersionTagsAttrsTest.java:33: error: attribute not supported in HTML5: valign
      * <col align="center" valign="top" width="200">
                            ^
-HtmlVersionTagsAttrsTest.java:32: error: attribute not supported in HTML5: width
+HtmlVersionTagsAttrsTest.java:33: error: attribute not supported in HTML5: width
      * <col align="center" valign="top" width="200">
                                         ^
-HtmlVersionTagsAttrsTest.java:33: error: attribute not supported in HTML5: align
+HtmlVersionTagsAttrsTest.java:34: error: attribute not supported in HTML5: align
      * <col align="char" char="." charoff="2">
             ^
-HtmlVersionTagsAttrsTest.java:33: error: attribute not supported in HTML5: char
+HtmlVersionTagsAttrsTest.java:34: error: attribute not supported in HTML5: char
      * <col align="char" char="." charoff="2">
                          ^
-HtmlVersionTagsAttrsTest.java:33: error: attribute not supported in HTML5: charoff
+HtmlVersionTagsAttrsTest.java:34: error: attribute not supported in HTML5: charoff
      * <col align="char" char="." charoff="2">
                                   ^
-HtmlVersionTagsAttrsTest.java:35: error: attribute not supported in HTML5: align
+HtmlVersionTagsAttrsTest.java:36: error: attribute not supported in HTML5: align
      * <thead align="char" char="." charoff="2" valign="top">
               ^
-HtmlVersionTagsAttrsTest.java:35: error: attribute not supported in HTML5: char
+HtmlVersionTagsAttrsTest.java:36: error: attribute not supported in HTML5: char
      * <thead align="char" char="." charoff="2" valign="top">
                            ^
-HtmlVersionTagsAttrsTest.java:35: error: attribute not supported in HTML5: charoff
+HtmlVersionTagsAttrsTest.java:36: error: attribute not supported in HTML5: charoff
      * <thead align="char" char="." charoff="2" valign="top">
                                     ^
-HtmlVersionTagsAttrsTest.java:36: error: attribute not supported in HTML5: align
-     * <tr align="char" char="." charoff="2" bgcolor="#EAEAEA" valign="top">
-           ^
-HtmlVersionTagsAttrsTest.java:36: error: attribute not supported in HTML5: char
-     * <tr align="char" char="." charoff="2" bgcolor="#EAEAEA" valign="top">
-                        ^
-HtmlVersionTagsAttrsTest.java:36: error: attribute not supported in HTML5: charoff
-     * <tr align="char" char="." charoff="2" bgcolor="#EAEAEA" valign="top">
-                                 ^
-HtmlVersionTagsAttrsTest.java:36: error: attribute not supported in HTML5: bgcolor
-     * <tr align="char" char="." charoff="2" bgcolor="#EAEAEA" valign="top">
-                                             ^
 HtmlVersionTagsAttrsTest.java:37: error: attribute not supported in HTML5: align
-     * <th align="char" char="." charoff="2" bgcolor="#EAEAEA" height="200" valign="top" width="200" nowrap>HeadCol1</th>
+     * <tr align="char" char="." charoff="2" bgcolor="#EAEAEA" valign="top">
            ^
 HtmlVersionTagsAttrsTest.java:37: error: attribute not supported in HTML5: char
-     * <th align="char" char="." charoff="2" bgcolor="#EAEAEA" height="200" valign="top" width="200" nowrap>HeadCol1</th>
+     * <tr align="char" char="." charoff="2" bgcolor="#EAEAEA" valign="top">
                         ^
 HtmlVersionTagsAttrsTest.java:37: error: attribute not supported in HTML5: charoff
-     * <th align="char" char="." charoff="2" bgcolor="#EAEAEA" height="200" valign="top" width="200" nowrap>HeadCol1</th>
+     * <tr align="char" char="." charoff="2" bgcolor="#EAEAEA" valign="top">
                                  ^
 HtmlVersionTagsAttrsTest.java:37: error: attribute not supported in HTML5: bgcolor
+     * <tr align="char" char="." charoff="2" bgcolor="#EAEAEA" valign="top">
+                                             ^
+HtmlVersionTagsAttrsTest.java:38: error: attribute not supported in HTML5: align
+     * <th align="char" char="." charoff="2" bgcolor="#EAEAEA" height="200" valign="top" width="200" nowrap>HeadCol1</th>
+           ^
+HtmlVersionTagsAttrsTest.java:38: error: attribute not supported in HTML5: char
+     * <th align="char" char="." charoff="2" bgcolor="#EAEAEA" height="200" valign="top" width="200" nowrap>HeadCol1</th>
+                        ^
+HtmlVersionTagsAttrsTest.java:38: error: attribute not supported in HTML5: charoff
+     * <th align="char" char="." charoff="2" bgcolor="#EAEAEA" height="200" valign="top" width="200" nowrap>HeadCol1</th>
+                                 ^
+HtmlVersionTagsAttrsTest.java:38: error: attribute not supported in HTML5: bgcolor
      * <th align="char" char="." charoff="2" bgcolor="#EAEAEA" height="200" valign="top" width="200" nowrap>HeadCol1</th>
                                              ^
-HtmlVersionTagsAttrsTest.java:37: error: attribute not supported in HTML5: height
+HtmlVersionTagsAttrsTest.java:38: error: attribute not supported in HTML5: height
      * <th align="char" char="." charoff="2" bgcolor="#EAEAEA" height="200" valign="top" width="200" nowrap>HeadCol1</th>
                                                                ^
-HtmlVersionTagsAttrsTest.java:37: error: attribute not supported in HTML5: width
+HtmlVersionTagsAttrsTest.java:38: error: attribute not supported in HTML5: width
      * <th align="char" char="." charoff="2" bgcolor="#EAEAEA" height="200" valign="top" width="200" nowrap>HeadCol1</th>
                                                                                          ^
-HtmlVersionTagsAttrsTest.java:37: error: attribute not supported in HTML5: nowrap
+HtmlVersionTagsAttrsTest.java:38: error: attribute not supported in HTML5: nowrap
      * <th align="char" char="." charoff="2" bgcolor="#EAEAEA" height="200" valign="top" width="200" nowrap>HeadCol1</th>
                                                                                                      ^
-HtmlVersionTagsAttrsTest.java:41: error: attribute not supported in HTML5: align
+HtmlVersionTagsAttrsTest.java:42: error: attribute not supported in HTML5: align
      * <tfoot align="char" char="." charoff="2" valign="top">
               ^
-HtmlVersionTagsAttrsTest.java:41: error: attribute not supported in HTML5: char
+HtmlVersionTagsAttrsTest.java:42: error: attribute not supported in HTML5: char
      * <tfoot align="char" char="." charoff="2" valign="top">
                            ^
-HtmlVersionTagsAttrsTest.java:41: error: attribute not supported in HTML5: charoff
+HtmlVersionTagsAttrsTest.java:42: error: attribute not supported in HTML5: charoff
      * <tfoot align="char" char="." charoff="2" valign="top">
                                     ^
-HtmlVersionTagsAttrsTest.java:47: error: attribute not supported in HTML5: align
+HtmlVersionTagsAttrsTest.java:48: error: attribute not supported in HTML5: align
      * <tbody align="char" char="." charoff="2" valign="top">
               ^
-HtmlVersionTagsAttrsTest.java:47: error: attribute not supported in HTML5: char
+HtmlVersionTagsAttrsTest.java:48: error: attribute not supported in HTML5: char
      * <tbody align="char" char="." charoff="2" valign="top">
                            ^
-HtmlVersionTagsAttrsTest.java:47: error: attribute not supported in HTML5: charoff
+HtmlVersionTagsAttrsTest.java:48: error: attribute not supported in HTML5: charoff
      * <tbody align="char" char="." charoff="2" valign="top">
                                     ^
-HtmlVersionTagsAttrsTest.java:49: error: attribute not supported in HTML5: align
+HtmlVersionTagsAttrsTest.java:50: error: attribute not supported in HTML5: align
      * <td align="char" char="." charoff="2" bgcolor="#EAEAEA" height="200" valign="top" width="200" nowrap>BodyCol1</td>
            ^
-HtmlVersionTagsAttrsTest.java:49: error: attribute not supported in HTML5: char
+HtmlVersionTagsAttrsTest.java:50: error: attribute not supported in HTML5: char
      * <td align="char" char="." charoff="2" bgcolor="#EAEAEA" height="200" valign="top" width="200" nowrap>BodyCol1</td>
                         ^
-HtmlVersionTagsAttrsTest.java:49: error: attribute not supported in HTML5: charoff
+HtmlVersionTagsAttrsTest.java:50: error: attribute not supported in HTML5: charoff
      * <td align="char" char="." charoff="2" bgcolor="#EAEAEA" height="200" valign="top" width="200" nowrap>BodyCol1</td>
                                  ^
-HtmlVersionTagsAttrsTest.java:49: error: attribute not supported in HTML5: bgcolor
+HtmlVersionTagsAttrsTest.java:50: error: attribute not supported in HTML5: bgcolor
      * <td align="char" char="." charoff="2" bgcolor="#EAEAEA" height="200" valign="top" width="200" nowrap>BodyCol1</td>
                                              ^
-HtmlVersionTagsAttrsTest.java:49: error: attribute not supported in HTML5: height
+HtmlVersionTagsAttrsTest.java:50: error: attribute not supported in HTML5: height
      * <td align="char" char="." charoff="2" bgcolor="#EAEAEA" height="200" valign="top" width="200" nowrap>BodyCol1</td>
                                                                ^
-HtmlVersionTagsAttrsTest.java:49: error: attribute not supported in HTML5: width
+HtmlVersionTagsAttrsTest.java:50: error: attribute not supported in HTML5: width
      * <td align="char" char="." charoff="2" bgcolor="#EAEAEA" height="200" valign="top" width="200" nowrap>BodyCol1</td>
                                                                                          ^
-HtmlVersionTagsAttrsTest.java:49: error: attribute not supported in HTML5: nowrap
+HtmlVersionTagsAttrsTest.java:50: error: attribute not supported in HTML5: nowrap
      * <td align="char" char="." charoff="2" bgcolor="#EAEAEA" height="200" valign="top" width="200" nowrap>BodyCol1</td>
                                                                                                      ^
-HtmlVersionTagsAttrsTest.java:54: error: attribute not supported in HTML5: clear
+HtmlVersionTagsAttrsTest.java:55: error: attribute not supported in HTML5: clear
      * <br clear="left">
            ^
-HtmlVersionTagsAttrsTest.java:55: error: attribute not supported in HTML5: compact
+HtmlVersionTagsAttrsTest.java:56: error: attribute not supported in HTML5: compact
      * <ol compact>
            ^
-HtmlVersionTagsAttrsTest.java:59: error: attribute not supported in HTML5: type
+HtmlVersionTagsAttrsTest.java:60: error: attribute not supported in HTML5: type
      * <ul type="circle" compact>
            ^
-HtmlVersionTagsAttrsTest.java:59: error: attribute not supported in HTML5: compact
+HtmlVersionTagsAttrsTest.java:60: error: attribute not supported in HTML5: compact
      * <ul type="circle" compact>
                          ^
-HtmlVersionTagsAttrsTest.java:60: error: attribute not supported in HTML5: type
+HtmlVersionTagsAttrsTest.java:61: error: attribute not supported in HTML5: type
      * <li type="square">Test list</li>
            ^
-HtmlVersionTagsAttrsTest.java:63: error: attribute not supported in HTML5: compact
+HtmlVersionTagsAttrsTest.java:64: error: attribute not supported in HTML5: compact
      * <dl compact>
            ^
-HtmlVersionTagsAttrsTest.java:67: error: attribute not supported in HTML5: hspace
+HtmlVersionTagsAttrsTest.java:68: error: attribute not supported in HTML5: hspace
      * <img src="testImg.jpg" alt="imgTest" hspace="10" vspace="10" border="0">
                                             ^
-HtmlVersionTagsAttrsTest.java:67: error: attribute not supported in HTML5: vspace
+HtmlVersionTagsAttrsTest.java:68: error: attribute not supported in HTML5: vspace
      * <img src="testImg.jpg" alt="imgTest" hspace="10" vspace="10" border="0">
                                                         ^
-HtmlVersionTagsAttrsTest.java:67: error: attribute not supported in HTML5: border
+HtmlVersionTagsAttrsTest.java:68: error: attribute not supported in HTML5: border
      * <img src="testImg.jpg" alt="imgTest" hspace="10" vspace="10" border="0">
                                                                     ^
-HtmlVersionTagsAttrsTest.java:68: error: attribute not supported in HTML5: size
+HtmlVersionTagsAttrsTest.java:69: error: attribute not supported in HTML5: size
      * <hr size="20" noshade>
            ^
-HtmlVersionTagsAttrsTest.java:68: error: attribute not supported in HTML5: noshade
+HtmlVersionTagsAttrsTest.java:69: error: attribute not supported in HTML5: noshade
      * <hr size="20" noshade>
                      ^
-HtmlVersionTagsAttrsTest.java:69: error: attribute not supported in HTML5: width
+HtmlVersionTagsAttrsTest.java:70: error: attribute not supported in HTML5: width
      * <pre width="25">Test Pre</pre>
             ^
-HtmlVersionTagsAttrsTest.java:70: error: attribute not supported in HTML5: name
+HtmlVersionTagsAttrsTest.java:71: error: attribute not supported in HTML5: name
      * <a name="AnchorTest">Anchor Test</a>
           ^
-HtmlVersionTagsAttrsTest.java:71: error: attribute border for table only accepts "" or "1", use CSS instead: BORDER
+HtmlVersionTagsAttrsTest.java:72: error: attribute border for table only accepts "" or "1", use CSS instead: BORDER
      * <table border="0">
               ^
-HtmlVersionTagsAttrsTest.java:73: error: no summary or caption for table
+HtmlVersionTagsAttrsTest.java:74: error: no summary or caption for table
      * </table>
        ^
-HtmlVersionTagsAttrsTest.java:93: error: tag not supported in the generated HTML version: big
+HtmlVersionTagsAttrsTest.java:94: error: tag not supported in the generated HTML version: big
      * <p><big>Bigger text test</big></p>
           ^
-HtmlVersionTagsAttrsTest.java:93: warning: empty <p> tag
+HtmlVersionTagsAttrsTest.java:94: warning: empty <p> tag
      * <p><big>Bigger text test</big></p>
                                      ^
-HtmlVersionTagsAttrsTest.java:94: error: tag not supported in the generated HTML version: center
+HtmlVersionTagsAttrsTest.java:95: error: tag not supported in the generated HTML version: center
      * <center>Center text test</center>
        ^
-HtmlVersionTagsAttrsTest.java:95: error: tag not supported in the generated HTML version: font
+HtmlVersionTagsAttrsTest.java:96: error: tag not supported in the generated HTML version: font
      * <font size="3">Font test</font>
        ^
-HtmlVersionTagsAttrsTest.java:95: error: attribute not supported in HTML5: size
+HtmlVersionTagsAttrsTest.java:96: error: attribute not supported in HTML5: size
      * <font size="3">Font test</font>
              ^
-HtmlVersionTagsAttrsTest.java:96: error: tag not supported in the generated HTML version: strike
+HtmlVersionTagsAttrsTest.java:97: error: tag not supported in the generated HTML version: strike
      * <p>Text <strike>strike</strike></p>
                ^
-HtmlVersionTagsAttrsTest.java:97: error: tag not supported in the generated HTML version: tt
+HtmlVersionTagsAttrsTest.java:98: error: tag not supported in the generated HTML version: tt
      * <p><tt>Teletype text</tt></p>
           ^
-HtmlVersionTagsAttrsTest.java:97: warning: empty <p> tag
+HtmlVersionTagsAttrsTest.java:98: warning: empty <p> tag
      * <p><tt>Teletype text</tt></p>
                                 ^
-HtmlVersionTagsAttrsTest.java:99: error: unknown tag: hgroup
+HtmlVersionTagsAttrsTest.java:100: error: unknown tag: hgroup
      * <hgroup>
        ^
-HtmlVersionTagsAttrsTest.java:102: error: unknown tag: hgroup
+HtmlVersionTagsAttrsTest.java:103: error: unknown tag: hgroup
      * </hgroup>
        ^
-HtmlVersionTagsAttrsTest.java:105: error: unknown tag: details
+HtmlVersionTagsAttrsTest.java:106: error: unknown tag: details
      * <details>
        ^
-HtmlVersionTagsAttrsTest.java:106: error: unknown tag: summary
+HtmlVersionTagsAttrsTest.java:107: error: unknown tag: summary
      * <summary>Summary</summary>
        ^
-HtmlVersionTagsAttrsTest.java:106: error: unknown tag: summary
+HtmlVersionTagsAttrsTest.java:107: error: unknown tag: summary
      * <summary>Summary</summary>
                        ^
-HtmlVersionTagsAttrsTest.java:108: error: unknown tag: details
+HtmlVersionTagsAttrsTest.java:109: error: unknown tag: details
      * </details>
        ^
-HtmlVersionTagsAttrsTest.java:131: error: element not allowed in documentation comments: <main>
+HtmlVersionTagsAttrsTest.java:132: error: element not allowed in documentation comments: <main>
      * <main>
        ^
-HtmlVersionTagsAttrsTest.java:163: error: heading not found for </section>
+HtmlVersionTagsAttrsTest.java:164: error: heading not found for </section>
      * </section>
        ^
-HtmlVersionTagsAttrsTest.java:166: error: heading not found for </article>
+HtmlVersionTagsAttrsTest.java:167: error: heading not found for </article>
      * </article>
        ^
-HtmlVersionTagsAttrsTest.java:168: error: tag not allowed here: <header>
+HtmlVersionTagsAttrsTest.java:169: error: tag not allowed here: <header>
      * <header>
        ^
-HtmlVersionTagsAttrsTest.java:171: error: tag not allowed here: <footer>
+HtmlVersionTagsAttrsTest.java:172: error: tag not allowed here: <footer>
      * <footer>
        ^
-HtmlVersionTagsAttrsTest.java:174: error: element not allowed in documentation comments: <main>
+HtmlVersionTagsAttrsTest.java:175: error: element not allowed in documentation comments: <main>
      * <main>
        ^
-HtmlVersionTagsAttrsTest.java:180: error: tag not allowed here: <header>
+HtmlVersionTagsAttrsTest.java:181: error: tag not allowed here: <header>
      * <header>
        ^
-HtmlVersionTagsAttrsTest.java:183: error: tag not allowed here: <footer>
+HtmlVersionTagsAttrsTest.java:184: error: tag not allowed here: <footer>
      * <footer>
        ^
-HtmlVersionTagsAttrsTest.java:186: error: element not allowed in documentation comments: <main>
+HtmlVersionTagsAttrsTest.java:187: error: element not allowed in documentation comments: <main>
      * <main>
        ^
-HtmlVersionTagsAttrsTest.java:191: error: attribute border for table only accepts "" or "1", use CSS instead: BORDER
+HtmlVersionTagsAttrsTest.java:192: error: attribute border for table only accepts "" or "1", use CSS instead: BORDER
      * <table border="2">
               ^
-HtmlVersionTagsAttrsTest.java:193: error: no summary or caption for table
+HtmlVersionTagsAttrsTest.java:194: error: no summary or caption for table
      * </table>
        ^
-HtmlVersionTagsAttrsTest.java:204: error: no summary or caption for table
+HtmlVersionTagsAttrsTest.java:205: error: no summary or caption for table
      * </table>
        ^
-HtmlVersionTagsAttrsTest.java:207: error: no summary or caption for table
+HtmlVersionTagsAttrsTest.java:208: error: no summary or caption for table
      * </table>
        ^
 97 errors

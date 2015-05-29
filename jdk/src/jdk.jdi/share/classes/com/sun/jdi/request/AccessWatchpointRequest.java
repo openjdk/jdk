@@ -31,8 +31,7 @@ import com.sun.jdi.*;
  * Request for notification when the contents of a field are accessed
  * in the target VM.
  * This event will be triggered when the specified field is accessed
- * by Java<SUP><FONT SIZE="-2">TM</FONT></SUP> programming
- * language code or by a
+ * by Java&trade; programming language code or by a
  * Java Native Interface (JNI) get function (<code>Get&lt;Type&gt;Field,
  * GetStatic&lt;Type&gt;Field</code>).
  * Access by JDI does not trigger this event.
