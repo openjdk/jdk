@@ -3653,7 +3653,4 @@ public final class Class<T> implements java.io.Serializable,
     public AnnotatedType[] getAnnotatedInterfaces() {
          return TypeAnnotationParser.buildAnnotatedInterfaces(getRawTypeAnnotations(), getConstantPool(), this);
     }
-
-    /** An array of resolved objects from constant pool. Used by JVM. */
-    private transient Object[] resolvedReferences;
 }
