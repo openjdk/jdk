@@ -35,7 +35,6 @@ import java.nio.charset.spi.CharsetProvider;
 import sun.nio.cs.AbstractCharsetProvider;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import sun.nio.cs.AbstractCharsetProvider;
 
 /**
  * Provider for extended charsets.
