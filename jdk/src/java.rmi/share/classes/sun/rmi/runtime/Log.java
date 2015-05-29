@@ -96,7 +96,7 @@ public abstract class Log {
      * care to interpret a range of values between BRIEF, VERBOSE and
      * SILENT.
      *
-     * An override < 0 is interpreted to mean that the logging
+     * An override {@literal <} 0 is interpreted to mean that the logging
      * configuration should not be overridden. The level passed to the
      * factories createLog method will be null in this case.
      *

@@ -45,9 +45,7 @@ import java.lang.Character.*;
 public class ExtensionInfo {
 
     /**
-     * <p>
      * public static values returned by the isCompatible method
-     * </p>
      */
     public static final int COMPATIBLE = 0;
     public static final int REQUIRE_SPECIFICATION_UPGRADE = 1;
@@ -56,10 +54,8 @@ public class ExtensionInfo {
     public static final int INCOMPATIBLE = 4;
 
     /**
-     * <p>
      * attributes fully describer an extension. The underlying described
      * extension may be installed and requested.
-     * <p>
      */
     public String title;
     public String name;
@@ -76,15 +72,12 @@ public class ExtensionInfo {
 
 
     /**
-     * <p>
      * Create a new uninitialized extension information object
-     * </p>
      */
     public ExtensionInfo() {
     }
 
     /**
-     * <p>
      * Create and initialize an extension information object.
      * The initialization uses the attributes passed as being
      * the content of a manifest file to load the extension
@@ -93,7 +86,7 @@ public class ExtensionInfo {
      * extension they may depend on, the extension key parameter
      * is prepanded to the attribute name to make the key used
      * to retrieve the attribute from the manifest file
-     * <p>
+     *
      * @param extensionKey unique extension key in the manifest
      * @param attr Attributes of a manifest file
      */
@@ -149,13 +142,11 @@ public class ExtensionInfo {
     }
 
     /**
-     * <p>
      * @return true if the extension described by this extension information
      * is compatible with the extension described by the extension
      * information passed as a parameter
-     * </p>
      *
-     * @param the requested extension information to compare to
+     * @param ei the requested extension information to compare to
      */
     public int isCompatibleWith(ExtensionInfo ei) {
 
@@ -204,10 +195,8 @@ public class ExtensionInfo {
     }
 
     /**
-     * <p>
      * helper method to print sensible information on the undelying described
      * extension
-     * </p>
      */
     public String toString() {
         return "Extension : title(" + title + "), name(" + name + "), spec vendor(" +
@@ -217,15 +206,15 @@ public class ExtensionInfo {
     }
 
     /*
-     * <p>
      * helper method to compare two versions.
      * version are in the x.y.z.t pattern.
-     * </p>
+     *
      * @param source version to compare to
      * @param target version used to compare against
-     * @return < 0 if source < version
-     *         > 0 if source > version
-     *         = 0 if source = version
+     * @return <pre>{@code
+     *   < 0 if source < version
+     *   > 0 if source > version
+     *   = 0 if source = version}</pre>
      */
     private int compareExtensionVersion(String source, String target)
         throws NumberFormatException
@@ -238,15 +227,15 @@ public class ExtensionInfo {
 
 
     /*
-     * <p>
      * helper method to compare two versions.
      * version are in the x.y.z.t pattern.
-     * </p>
+     *
      * @param source version to compare to
      * @param target version used to compare against
-     * @return < 0 if source < version
-     *         > 0 if source > version
-     *         = 0 if source = version
+     * @return <pre>{@code
+     *   < 0 if source < version
+     *   > 0 if source > version
+     *   = 0 if source = version}</pre>
      */
     private int strictCompareExtensionVersion(String source, String target)
         throws NumberFormatException

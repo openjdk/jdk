@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 8003280
  * @summary Add lambda tests
  *  check that all diagnostics are dumped to output when compiler exits abruptly
+ * @modules jdk.compiler
  */
 
 import com.sun.source.util.JavacTask;

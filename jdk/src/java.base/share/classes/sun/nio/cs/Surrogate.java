@@ -175,10 +175,10 @@ public class Surrogate {
          * @param  in   The source buffer, from which one more character
          *              will be consumed if c is a high surrogate
          *
-         * @returns  Either a parsed UCS-4 character, in which case the isPair()
-         *           and increment() methods will return meaningful values, or
-         *           -1, in which case error() will return a descriptive result
-         *           object
+         * @return  Either a parsed UCS-4 character, in which case the isPair()
+         *          and increment() methods will return meaningful values, or
+         *          -1, in which case error() will return a descriptive result
+         *          object
          */
         public int parse(char c, CharBuffer in) {
             if (Character.isHighSurrogate(c)) {
@@ -216,10 +216,10 @@ public class Surrogate {
          * @param  ip   The input index
          * @param  il   The input limit
          *
-         * @returns  Either a parsed UCS-4 character, in which case the isPair()
-         *           and increment() methods will return meaningful values, or
-         *           -1, in which case error() will return a descriptive result
-         *           object
+         * @return  Either a parsed UCS-4 character, in which case the isPair()
+         *          and increment() methods will return meaningful values, or
+         *          -1, in which case error() will return a descriptive result
+         *          object
          */
         public int parse(char c, char[] ia, int ip, int il) {
             assert (ia[ip] == c);
@@ -280,9 +280,9 @@ public class Surrogate {
          * @param  dst  The destination buffer, to which one or two UTF-16
          *              characters will be written
          *
-         * @returns  Either a positive count of the number of UTF-16 characters
-         *           written to the destination buffer, or -1, in which case
-         *           error() will return a descriptive result object
+         * @return  Either a positive count of the number of UTF-16 characters
+         *          written to the destination buffer, or -1, in which case
+         *          error() will return a descriptive result object
          */
         public int generate(int uc, int len, CharBuffer dst) {
             if (Character.isBmpCodePoint(uc)) {
@@ -325,9 +325,9 @@ public class Surrogate {
          * @param  dp   The destination position
          * @param  dl   The destination limit
          *
-         * @returns  Either a positive count of the number of UTF-16 characters
-         *           written to the destination buffer, or -1, in which case
-         *           error() will return a descriptive result object
+         * @return  Either a positive count of the number of UTF-16 characters
+         *          written to the destination buffer, or -1, in which case
+         *          error() will return a descriptive result object
          */
         public int generate(int uc, int len, char[] da, int dp, int dl) {
             if (Character.isBmpCodePoint(uc)) {

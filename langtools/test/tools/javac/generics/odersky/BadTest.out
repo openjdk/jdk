@@ -1,0 +1,5 @@
+BadTest.java:18:50: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: List<java.lang.Object>, List<Cell<java.lang.String>>)
+BadTest.java:22:48: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: List<java.lang.Object>, List<java.lang.String>)
+BadTest.java:23:54: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: List<java.lang.Object>, List<Cell<java.lang.String>>)
+BadTest.java:25:53: compiler.err.illegal.generic.type.for.instof
+4 errors

@@ -25,6 +25,7 @@
  * @test
  * @bug 7040592
  * @summary Verify that null can be assigned freely to array types without a checkcast
+ * @modules jdk.compiler
  */
 
 import java.io.PrintWriter;

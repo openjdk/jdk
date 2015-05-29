@@ -379,4 +379,10 @@ sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java    generic-all
 # 8064572 8060736 8062938
 sun/jvmstat/monitor/MonitoredVm/CR6672135.java			generic-all
 
+# 8079273
+demo/jvmti/hprof/CpuOldTest.java            generic-all
+demo/jvmti/hprof/CpuTimesTest.java          generic-all
+demo/jvmti/hprof/OptionsTest.java           generic-all
+demo/jvmti/hprof/StackMapTableTest.java     generic-all
+
 ############################################################################

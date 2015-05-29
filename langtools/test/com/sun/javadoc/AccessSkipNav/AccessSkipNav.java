@@ -27,6 +27,7 @@
  * @summary  Add ability to skip over nav bar for accessibility
  * @author dkramer
  * @library ../lib
+ * @modules jdk.javadoc
  * @build JavadocTester
  * @run main AccessSkipNav
  */

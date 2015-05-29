@@ -534,7 +534,6 @@ needs_charsets = \
   sun/nio/cs/OLD/TestIBMDB.java \
   sun/nio/cs/SJISCanEncode.java \
   sun/nio/cs/Test6254467.java \
-  sun/nio/cs/TestCompoundTest.java \
   sun/nio/cs/TestCp834_SBCS.java \
   sun/nio/cs/TestEUC_TW.java \
   sun/nio/cs/TestISO2022CNDecoder.java \

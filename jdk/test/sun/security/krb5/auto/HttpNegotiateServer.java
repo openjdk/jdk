@@ -40,21 +40,34 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
 import java.net.Proxy;
 import java.net.URL;
-import java.security.PrivilegedExceptionAction;
+import java.net.URLConnection;
+import java.security.*;
 import java.util.HashMap;
 import java.util.Map;
 import javax.security.auth.Subject;
+import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.callback.NameCallback;
+import javax.security.auth.callback.PasswordCallback;
+import javax.security.auth.callback.UnsupportedCallbackException;
+import javax.security.auth.login.AppConfigurationEntry;
+import javax.security.auth.login.Configuration;
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
+import javax.security.auth.login.AppConfigurationEntry.LoginModuleControlFlag;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSManager;
 import sun.security.jgss.GSSUtil;
 import sun.security.krb5.Config;
+import java.util.Base64;
 import sun.util.logging.PlatformLogger;
 
 import java.util.Base64;
@@ -197,7 +210,7 @@ public class HttpNegotiateServer {
         proxyUrl = new URL("http://nosuchplace/a/b/c");
 
         try {
-            Exception e1 = null, e2 = null;
+            Exception e1 = null, e2 = null, e3 = null;
             try {
                 test6578647();
             } catch (Exception e) {
@@ -210,7 +223,14 @@ public class HttpNegotiateServer {
                 e2 = e;
                 e.printStackTrace();
             }
-            if (e1 != null || e2 != null) {
+            try {
+                test8077155();
+            } catch (Exception e) {
+                e3 = e;
+                e.printStackTrace();
+            }
+
+            if (e1 != null || e2 != null || e3 != null) {
                 throw new RuntimeException("Test error");
             }
         } finally {
@@ -251,6 +271,121 @@ public class HttpNegotiateServer {
         }
         if (count > 1) {
             throw new RuntimeException("Authenticator called twice");
+        }
+    }
+
+    static void testConnect() {
+        InputStream inputStream = null;
+        try {
+            URL url = webUrl;
+
+            URLConnection conn = url.openConnection();
+            conn.connect();
+            inputStream = conn.getInputStream();
+            byte[] b = new byte[inputStream.available()];
+            for (int j = 0; j < b.length; j++) {
+                b[j] = (byte) inputStream.read();
+            }
+            String s = new String(b);
+            System.out.println("Length: " + s.length());
+            System.out.println(s);
+        } catch (Exception ex) {
+              throw new RuntimeException(ex);
+        } finally {
+            if (inputStream != null) {
+                try {
+                    inputStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    static void test8077155() throws Exception {
+        final String username = WEB_USER;
+        final char[] password = WEB_PASS;
+
+        SecurityManager security = new SecurityManager();
+        Policy.setPolicy(new SecurityPolicy());
+        System.setSecurityManager(security);
+
+        CallbackHandler callback = new CallbackHandler() {
+            @Override
+            public void handle(Callback[] pCallbacks) throws IOException, UnsupportedCallbackException {
+                for (Callback cb : pCallbacks) {
+                    if (cb instanceof NameCallback) {
+                        NameCallback ncb = (NameCallback)cb;
+                        ncb.setName(username);
+
+                    } else  if (cb instanceof PasswordCallback) {
+                        PasswordCallback pwdcb = (PasswordCallback) cb;
+                        pwdcb.setPassword(password);
+                    }
+                }
+            }
+
+        };
+
+        final String jaasConfigName = "oracle.test.kerberos.login";
+        final String krb5LoginModule = "com.sun.security.auth.module.Krb5LoginModule";
+
+        Configuration loginConfig = new Configuration() {
+            @Override
+            public AppConfigurationEntry[] getAppConfigurationEntry(String name) {
+                if (! jaasConfigName.equals(name)) {
+                    return new AppConfigurationEntry[0];
+                }
+
+                Map<String, String> options = new HashMap<String, String>();
+                options.put("useTicketCache", Boolean.FALSE.toString());
+                options.put("useKeyTab", Boolean.FALSE.toString());
+
+                return new AppConfigurationEntry[] {
+                        new AppConfigurationEntry(krb5LoginModule,
+                                LoginModuleControlFlag.REQUIRED,
+                                options)
+                        };
+            }
+        };
+
+        // oracle context/subject/login
+        LoginContext context = null;
+        try {
+            context = new LoginContext("oracle.test.kerberos.login", null, callback, loginConfig);
+            context.login();
+
+        } catch (LoginException ex) {
+            ex.printStackTrace();
+            throw new RuntimeException(ex);
+        }
+
+
+        Subject subject = context.getSubject();
+
+        final PrivilegedExceptionAction<Object> test_action = new PrivilegedExceptionAction<Object>() {
+            public Object run() throws Exception {
+                testConnect();
+                return null;
+            }
+        };
+
+        System.err.println("\n\nExpecting to succeed when executing with the the logged in subject.");
+
+        try {
+            Subject.doAs(subject, test_action);
+            System.err.println("\n\nConnection succeed when executing with the the logged in subject.");
+        } catch (PrivilegedActionException e) {
+            System.err.println("\n\nFailure unexpected when executing with the the logged in subject.");
+            e.printStackTrace();
+            throw new RuntimeException("Failed to login as subject");
+        }
+
+        try {
+            System.err.println("\n\nExpecting to fail when running with the current user's login.");
+            testConnect();
+        } catch (Exception ex) {
+            System.err.println("\nConnect failed when running with the current user's login:\n" + ex.getMessage());
         }
     }
 
@@ -365,4 +500,23 @@ public class HttpNegotiateServer {
             }
         }
     }
+}
+
+class SecurityPolicy extends Policy {
+
+    private static Permissions perms;
+
+    public SecurityPolicy() {
+        super();
+        if (perms == null) {
+            perms = new Permissions();
+            perms.add(new AllPermission());
+        }
+    }
+
+    @Override
+    public PermissionCollection getPermissions(CodeSource codesource) {
+        return perms;
+    }
+
 }

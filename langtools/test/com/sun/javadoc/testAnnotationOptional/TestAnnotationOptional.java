@@ -28,6 +28,7 @@
  *           element headers
  * @author   Mahmood Ali
  * @library  ../lib
+ * @modules jdk.javadoc
  * @build    JavadocTester
  * @run main TestAnnotationOptional
  */

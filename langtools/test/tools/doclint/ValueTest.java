@@ -2,6 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8025272
  * @summary doclint needs to check for valid usage of at-value tag
+ * @modules jdk.compiler/com.sun.tools.doclint
  * @build DocLintTester
  * @run main DocLintTester -ref ValueTest.out ValueTest.java
  */

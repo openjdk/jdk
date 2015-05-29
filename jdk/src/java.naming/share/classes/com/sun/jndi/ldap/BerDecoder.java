@@ -295,7 +295,7 @@ public final class BerDecoder extends Ber {
      *          the relative parsed position is not returned.
      * @return A non-null array containing the octet string.
      * @throws DecodeException If the next byte in the BER buffer is not
-     * <tt>tag</tt>, or if length specified in the BER buffer exceeds the
+     * {@code tag}, or if length specified in the BER buffer exceeds the
      * number of bytes left in the buffer.
      */
     public byte[] parseOctetString(int tag, int rlen[]) throws DecodeException {

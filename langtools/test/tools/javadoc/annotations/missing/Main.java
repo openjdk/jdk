@@ -26,6 +26,7 @@
  * @bug 6709246
  * @summary Class-cast exception when annotation type is missing.
  * @library ../../lib
+ * @modules jdk.javadoc
  */
 
 import java.io.IOException;

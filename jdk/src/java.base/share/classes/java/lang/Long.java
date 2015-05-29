@@ -1708,7 +1708,7 @@ public final class Long extends Number implements Comparable<Long> {
      * @since 1.5
      */
      public static int bitCount(long i) {
-        // HD, Figure 5-14
+        // HD, Figure 5-2
         i = i - ((i >>> 1) & 0x5555555555555555L);
         i = (i & 0x3333333333333333L) + ((i >>> 2) & 0x3333333333333333L);
         i = (i + (i >>> 4)) & 0x0f0f0f0f0f0f0f0fL;

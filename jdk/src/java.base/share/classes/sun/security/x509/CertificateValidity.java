@@ -134,8 +134,8 @@ public class CertificateValidity implements CertAttrSet<String> {
     public String toString() {
         if (notBefore == null || notAfter == null)
             return "";
-        return ("Validity: [From: " + notBefore.toString() +
-             ",\n               To: " + notAfter.toString() + "]");
+        return "Validity: [From: " + notBefore +
+               ",\n               To: " + notAfter + ']';
     }
 
     /**

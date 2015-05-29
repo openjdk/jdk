@@ -81,14 +81,13 @@ import sun.text.normalizer.UTF16;
  *
  * <h3>General remarks about the API:</h3>
  *
- * The &quot;limit&quot; of a sequence of characters is the position just after
+ * The "limit" of a sequence of characters is the position just after
  * their last character, i.e., one more than that position.
  * <p>
  *
- * Some of the API methods provide access to &quot;runs&quot;. Such a
- * &quot;run&quot; is defined as a sequence of characters that are at the same
+ * Some of the API methods provide access to "runs". Such a
+ * "run" is defined as a sequence of characters that are at the same
  * embedding level after performing the Bidi algorithm.
- * <p>
  *
  * <h3>Basic concept: paragraph</h3>
  * A piece of text can be divided into several paragraphs by characters
@@ -141,7 +140,8 @@ import sun.text.normalizer.UTF16;
  * these special values are designed that way. Also, the implementation
  * assumes that MAX_EXPLICIT_LEVEL is odd.
  *
- * <ul><b>See Also:</b>
+ * <p><b>See Also:</b>
+ * <ul>
  * <li>{@link #LEVEL_DEFAULT_LTR}
  * <li>{@link #LEVEL_DEFAULT_RTL}
  * <li>{@link #LEVEL_OVERRIDE}
@@ -153,7 +153,8 @@ import sun.text.normalizer.UTF16;
  * Reordering mode values indicate which variant of the Bidi algorithm to
  * use.
  *
- * <ul><b>See Also:</b>
+ * <p><b>See Also:</b>
+ * <ul>
  * <li>{@link #setReorderingMode}
  * <li>{@link #REORDER_DEFAULT}
  * <li>{@link #REORDER_NUMBERS_SPECIAL}
@@ -166,7 +167,8 @@ import sun.text.normalizer.UTF16;
  *
  * <h3>Basic concept: Reordering Options</h3>
  * Reordering options can be applied during Bidi text transformations.
- * <ul><b>See Also:</b>
+ * <p><b>See Also:</b>
+ * <ul>
  * <li>{@link #setReorderingOptions}
  * <li>{@link #OPTION_DEFAULT}
  * <li>{@link #OPTION_INSERT_MARKS}
@@ -202,7 +204,7 @@ import sun.text.normalizer.UTF16;
  * and therefore its implementation omitted from this sample code.</li>
  * </ul>
  *
- * <pre>
+ * <pre>{@code
  *
  *  package com.ibm.icu.dev.test.bidi;
  *
@@ -451,7 +453,7 @@ import sun.text.normalizer.UTF16;
  *      }
  *  }
  *
- * </pre>
+ * }</pre>
  */
 
 public class BidiBase {
@@ -2419,9 +2421,9 @@ public class BidiBase {
      *        (same index) character if the level has the
      *        <code>LEVEL_OVERRIDE</code> bit set.<br><br>
      *        Except for that bit, it must be
-     *        <code>paraLevel<=embeddingLevels[]<=MAX_EXPLICIT_LEVEL</code>,
+     *        {@code paraLevel<=embeddingLevels[]<=MAX_EXPLICIT_LEVEL},
      *        with one exception: a level of zero may be specified for a
-     *        paragraph separator even if <code>paraLevel&gt;0</code> when multiple
+     *        paragraph separator even if {@code paraLevel > 0} when multiple
      *        paragraphs are submitted in the same call to <code>setPara()</code>.<br><br>
      *        <strong>Caution: </strong>A reference to this array, not a copy
      *        of the levels, will be stored in the <code>Bidi</code> object;
@@ -2680,7 +2682,7 @@ public class BidiBase {
      * For example, in pure LTR text with numbers the numbers would get
      * a resolved level of 2 higher than the surrounding text according to
      * the algorithm. This implementation may set all resolved levels to
-     * the same value in such a case.<p>
+     * the same value in such a case.
      *
      * @param paragraph a paragraph of text with optional character and
      *        paragraph attribute information
@@ -2817,7 +2819,7 @@ public class BidiBase {
     }
 
     /**
-     * Get the index of a paragraph, given a position within the text.<p>
+     * Get the index of a paragraph, given a position within the text.
      *
      * @param charIndex is the index of a character within the text, in the
      *        range <code>[0..getProcessedLength()-1]</code>.

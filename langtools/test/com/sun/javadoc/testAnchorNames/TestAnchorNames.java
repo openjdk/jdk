@@ -27,6 +27,7 @@
  * @summary Test for valid name attribute in HTML anchors.
  * @author Bhavesh Patel
  * @library ../lib
+ * @modules jdk.javadoc
  * @build JavadocTester
  * @run main TestAnchorNames
  */

@@ -79,44 +79,46 @@ import sun.reflect.misc.ReflectUtil;
 
 /**
  *   <p>A converter between Java types and the limited set of classes
- *   defined by Open MBeans.</p>
+ *   defined by Open MBeans.
  *
- *   <p>A Java type is an instance of java.lang.reflect.Type.  For our
+ *   <p>A Java type is an instance of java.lang.reflect.Type. For our
  *   purposes, it is either a Class, such as String.class or int.class;
- *   or a ParameterizedType, such as List<String> or Map<Integer,
- *   String[]>.  On J2SE 1.4 and earlier, it can only be a Class.</p>
+ *   or a ParameterizedType, such as {@code List<String>} or
+ *   {@code Map<Integer, String[]>}.
+ *   On J2SE 1.4 and earlier, it can only be a Class.
  *
- *   <p>Each Type is associated with an DefaultMXBeanMappingFactory.  The
- *   DefaultMXBeanMappingFactory defines an OpenType corresponding to the Type, plus a
- *   Java class corresponding to the OpenType.  For example:</p>
+ *   <p>Each Type is associated with an DefaultMXBeanMappingFactory. The
+ *   DefaultMXBeanMappingFactory defines an
+ *   OpenType corresponding to the Type, plus a
+ *   Java class corresponding to the OpenType. For example:
  *
- *   <pre>
+ *   <pre>{@code
  *   Type                     Open class     OpenType
  *   ----                     ----------     --------
- *   Integer                Integer        SimpleType.INTEGER
- *   int                            int            SimpleType.INTEGER
- *   Integer[]              Integer[]      ArrayType(1, SimpleType.INTEGER)
- *   int[]                  Integer[]      ArrayType(SimpleType.INTEGER, true)
- *   String[][]             String[][]     ArrayType(2, SimpleType.STRING)
- *   List<String>                   String[]       ArrayType(1, SimpleType.STRING)
+ *   Integer                  Integer        SimpleType.INTEGER
+ *   int                      int            SimpleType.INTEGER
+ *   Integer[]                Integer[]      ArrayType(1, SimpleType.INTEGER)
+ *   int[]                    Integer[]      ArrayType(SimpleType.INTEGER, true)
+ *   String[][]               String[][]     ArrayType(2, SimpleType.STRING)
+ *   List<String>             String[]       ArrayType(1, SimpleType.STRING)
  *   ThreadState (an Enum)    String         SimpleType.STRING
- *   Map<Integer, String[]>   TabularData          TabularType(
+ *   Map<Integer, String[]>   TabularData    TabularType(
  *                                           CompositeType(
  *                                             {"key", SimpleType.INTEGER},
  *                                             {"value",
  *                                               ArrayType(1,
  *                                                SimpleType.STRING)}),
  *                                           indexNames={"key"})
- *   </pre>
+ *   }</pre>
  *
  *   <p>Apart from simple types, arrays, and collections, Java types are
  *   converted through introspection into CompositeType.  The Java type
  *   must have at least one getter (method such as "int getSize()" or
  *   "boolean isBig()"), and we must be able to deduce how to
  *   reconstruct an instance of the Java class from the values of the
- *   getters using one of various heuristics.</p>
+ *   getters using one of various heuristics.
  *
- * @since 1.6
+ *  @since 1.6
  */
 public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
     static abstract class NonNullMXBeanMapping extends MXBeanMapping {
@@ -148,8 +150,8 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
         throws OpenDataException;
 
         /**
-         * <p>True if and only if this MXBeanMapping's toOpenValue and
-         * fromOpenValue methods are the identity function.</p>
+         * True if and only if this MXBeanMapping's toOpenValue and
+         * fromOpenValue methods are the identity function.
          */
         boolean isIdentity() {
             return false;

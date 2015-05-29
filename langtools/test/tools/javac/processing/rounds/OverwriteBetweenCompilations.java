@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,11 @@
  * @summary Verify that annotation processor can overwrite source and class files it generated
  *          during previous compilations, and that the Symbols are updated appropriatelly.
  * @library /tools/lib /tools/javac/lib/
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.file
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.javac.processing
+ *          jdk.compiler/com.sun.tools.javac.util
  * @clean *
  * @build OverwriteBetweenCompilations ToolBox JavacTestingAbstractProcessor
  * @compile/ref=OverwriteBetweenCompilations_1.out -processor OverwriteBetweenCompilations -Apass=1 -parameters -XDrawDiagnostics OverwriteBetweenCompilationsSource.java
