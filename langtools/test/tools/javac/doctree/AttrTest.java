@@ -25,6 +25,10 @@
  * @test
  * @bug 7021614 8076026
  * @summary extend com.sun.source API to support parsing javadoc comments
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.file
+ *          jdk.compiler/com.sun.tools.javac.tree
+ *          jdk.compiler/com.sun.tools.javac.util
  * @build DocCommentTester
  * @run main DocCommentTester AttrTest.java
  */

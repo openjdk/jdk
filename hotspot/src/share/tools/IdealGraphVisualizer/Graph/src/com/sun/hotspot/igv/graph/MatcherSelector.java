@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,9 @@ public class MatcherSelector implements Selector {
         this.matcher = matcher;
     }
 
+    @Override
     public List<Figure> selected(Diagram d) {
-        Properties.PropertySelector<Figure> selector = new Properties.PropertySelector<Figure>(d.getFigures());
+        Properties.PropertySelector<Figure> selector = new Properties.PropertySelector<>(d.getFigures());
         List<Figure> list = selector.selectMultiple(matcher);
         return list;
     }

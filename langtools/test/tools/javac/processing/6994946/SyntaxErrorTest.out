@@ -1,2 +1,2 @@
-SyntaxErrorTest.java:12:10: compiler.err.expected: ';'
+SyntaxErrorTest.java:14:10: compiler.err.expected: ';'
 1 error

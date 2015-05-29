@@ -32,7 +32,7 @@
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver TestWBGC
  */
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 import sun.hotspot.WhiteBox;
 
 public class TestWBGC {

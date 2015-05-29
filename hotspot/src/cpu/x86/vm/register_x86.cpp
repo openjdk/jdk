@@ -31,11 +31,13 @@ const int ConcreteRegisterImpl::max_gpr = RegisterImpl::number_of_registers;
 const int ConcreteRegisterImpl::max_gpr = RegisterImpl::number_of_registers << 1;
 #endif // AMD64
 
-
 const int ConcreteRegisterImpl::max_fpr = ConcreteRegisterImpl::max_gpr +
-                                                                 2 * FloatRegisterImpl::number_of_registers;
+    2 * FloatRegisterImpl::number_of_registers;
 const int ConcreteRegisterImpl::max_xmm = ConcreteRegisterImpl::max_fpr +
-                                                                 8 * XMMRegisterImpl::number_of_registers;
+    XMMRegisterImpl::max_slots_per_register * XMMRegisterImpl::number_of_registers;
+const int ConcreteRegisterImpl::max_kpr = ConcreteRegisterImpl::max_xmm +
+    KRegisterImpl::max_slots_per_register * KRegisterImpl::number_of_registers;
+
 const char* RegisterImpl::name() const {
   const char* names[number_of_registers] = {
 #ifndef AMD64
@@ -59,8 +61,17 @@ const char* XMMRegisterImpl::name() const {
   const char* names[number_of_registers] = {
     "xmm0","xmm1","xmm2","xmm3","xmm4","xmm5","xmm6","xmm7"
 #ifdef AMD64
-    ,"xmm8",  "xmm9", "xmm10", "xmm11", "xmm12", "xmm13", "xmm14", "xmm15"
+    ,"xmm8",   "xmm9",  "xmm10", "xmm11", "xmm12", "xmm13", "xmm14", "xmm15"
+    ,"xmm16",  "xmm17", "xmm18", "xmm19", "xmm20", "xmm21", "xmm22", "xmm23"
+    ,"xmm24",  "xmm25", "xmm26", "xmm27", "xmm28", "xmm29", "xmm30", "xmm31"
 #endif // AMD64
   };
   return is_valid() ? names[encoding()] : "xnoreg";
+}
+
+const char* KRegisterImpl::name() const {
+  const char* names[number_of_registers] = {
+    "k0", "k1", "k2", "k3", "k4", "k5", "k6", "k7"
+  };
+  return is_valid() ? names[encoding()] : "knoreg";
 }

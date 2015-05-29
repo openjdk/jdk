@@ -37,9 +37,9 @@
  * @run main/timeout=1200 OffTest
  */
 
-import com.oracle.java.testlibrary.OutputAnalyzer;
-import com.oracle.java.testlibrary.ProcessTools;
-import com.oracle.java.testlibrary.Utils;
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.ProcessTools;
+import jdk.test.lib.Utils;
 import java.util.Random;
 import scenarios.ProfilingType;
 

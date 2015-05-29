@@ -25,6 +25,7 @@
             </module-dependencies>
             <public-packages>
                 <package>com.sun.hotspot.igv.graph</package>
+                <package>com.sun.hotspot.igv.graph.services</package>
             </public-packages>
         </data>
     </configuration>

@@ -54,8 +54,8 @@
  * @summary Tests correctness of type usage with type profiling and speculations
  */
 
-import com.oracle.java.testlibrary.Asserts;
-import com.oracle.java.testlibrary.Platform;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.Platform;
 import execution.Execution;
 import execution.MethodHandleDelegate;
 import execution.TypeConflict;

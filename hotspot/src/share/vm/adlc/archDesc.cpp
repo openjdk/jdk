@@ -929,6 +929,7 @@ const char *ArchDesc::getIdealType(const char *idealOp) {
     case 'D':  return "TypeVect::VECTD";
     case 'X':  return "TypeVect::VECTX";
     case 'Y':  return "TypeVect::VECTY";
+    case 'Z':  return "TypeVect::VECTZ";
     default:
       internal_err("Vector type %s with unrecognized type\n",idealOp);
     }

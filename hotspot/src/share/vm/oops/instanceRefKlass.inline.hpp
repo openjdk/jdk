@@ -55,30 +55,17 @@ void InstanceRefKlass::oop_oop_iterate_ref_processing_specialized(oop obj, OopCl
     }
   }
   T* next_addr = (T*)java_lang_ref_Reference::next_addr(obj);
-  if (ReferenceProcessor::pending_list_uses_discovered_field()) {
-    T next_oop  = oopDesc::load_heap_oop(next_addr);
-    // Treat discovered as normal oop, if ref is not "active" (next non-NULL)
-    if (!oopDesc::is_null(next_oop) && contains(disc_addr)) {
-      // i.e. ref is not "active"
-      debug_only(
-        if(TraceReferenceGC && PrintGCDetails) {
-          gclog_or_tty->print_cr("   Process discovered as normal "
-                                 PTR_FORMAT, p2i(disc_addr));
-        }
-      )
-      Devirtualizer<nv>::do_oop(closure, disc_addr);
-    }
-  } else {
-    // In the case of older JDKs which do not use the discovered field for
-    // the pending list, an inactive ref (next != NULL) must always have a
-    // NULL discovered field.
+  T next_oop  = oopDesc::load_heap_oop(next_addr);
+  // Treat discovered as normal oop, if ref is not "active" (next non-NULL)
+  if (!oopDesc::is_null(next_oop) && contains(disc_addr)) {
+    // i.e. ref is not "active"
     debug_only(
-      T next_oop = oopDesc::load_heap_oop(next_addr);
-      T disc_oop = oopDesc::load_heap_oop(disc_addr);
-      assert(oopDesc::is_null(next_oop) || oopDesc::is_null(disc_oop),
-           err_msg("Found an inactive reference " PTR_FORMAT " with a non-NULL"
-                   "discovered field", p2i(obj)));
+      if(TraceReferenceGC && PrintGCDetails) {
+        gclog_or_tty->print_cr("   Process discovered as normal "
+                               PTR_FORMAT, p2i(disc_addr));
+      }
     )
+    Devirtualizer<nv>::do_oop(closure, disc_addr);
   }
   // treat next as normal oop
   if (contains(next_addr)) {

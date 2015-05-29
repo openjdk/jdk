@@ -20,5 +20,5 @@ f.addRule(
     ), false
   )
 );
-f.addRule( new RemoveFilter.RemoveRule(new MatcherSelector(new Properties.RegexpPropertyMatcher("name", "Phi|Store.")), false));
+f.addRule(new RemoveFilter.RemoveRule(new MatcherSelector(new Properties.RegexpPropertyMatcher("name", "Phi|Store."))));
 f.apply(graph);

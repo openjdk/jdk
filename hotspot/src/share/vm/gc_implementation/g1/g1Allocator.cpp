@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc_implementation/g1/g1Allocator.hpp"
-#include "gc_implementation/g1/g1CollectedHeap.hpp"
+#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1CollectorPolicy.hpp"
 #include "gc_implementation/g1/heapRegion.inline.hpp"
 #include "gc_implementation/g1/heapRegionSet.inline.hpp"
@@ -119,7 +119,6 @@ HeapWord* G1ParGCAllocator::allocate_direct_or_new_plab(InCSetState dest,
   size_t gclab_word_size = _g1h->desired_plab_sz(dest);
   if (word_sz * 100 < gclab_word_size * ParallelGCBufferWastePct) {
     G1PLAB* alloc_buf = alloc_buffer(dest, context);
-    add_to_alloc_buffer_waste(alloc_buf->words_remaining());
     alloc_buf->retire();
 
     HeapWord* buf = _g1h->par_allocate_during_gc(dest, gclab_word_size, context);
@@ -153,8 +152,19 @@ void G1DefaultParGCAllocator::retire_alloc_buffers() {
   for (uint state = 0; state < InCSetState::Num; state++) {
     G1PLAB* const buf = _alloc_buffers[state];
     if (buf != NULL) {
-      add_to_alloc_buffer_waste(buf->words_remaining());
       buf->flush_and_retire_stats(_g1h->alloc_buffer_stats(state));
+    }
+  }
+}
+
+void G1DefaultParGCAllocator::waste(size_t& wasted, size_t& undo_wasted) {
+  wasted = 0;
+  undo_wasted = 0;
+  for (uint state = 0; state < InCSetState::Num; state++) {
+    G1PLAB * const buf = _alloc_buffers[state];
+    if (buf != NULL) {
+      wasted += buf->waste();
+      undo_wasted += buf->undo_waste();
     }
   }
 }

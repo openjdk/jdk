@@ -30,7 +30,7 @@
  *          java.management
  * @run main/othervm ConcurrentClassLoadingTest
  */
-import com.oracle.java.testlibrary.Utils;
+import jdk.test.lib.Utils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;

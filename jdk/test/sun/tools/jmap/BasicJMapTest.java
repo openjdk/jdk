@@ -44,7 +44,7 @@ import jdk.testlibrary.ProcessTools;
  * @build jdk.test.lib.hprof.module.*
  * @build jdk.test.lib.hprof.parser.*
  * @build jdk.test.lib.hprof.utils.*
- * @run main BasicJMapTest
+ * @run main/timeout=240 BasicJMapTest
  */
 public class BasicJMapTest {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
  */
 package com.sun.hotspot.igv.util;
 
-import com.sun.hotspot.igv.data.ChangedEventProvider;
 import com.sun.hotspot.igv.data.ChangedEvent;
+import com.sun.hotspot.igv.data.ChangedEventProvider;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -65,17 +65,19 @@ public class RangeSliderModel implements ChangedEventProvider<RangeSliderModel> 
 
     public RangeSliderModel(List<String> positions) {
         assert positions.size() > 0;
-        this.changedEvent = new ChangedEvent<RangeSliderModel>(this);
-        this.colorChangedEvent = new ChangedEvent<RangeSliderModel>(this);
+        this.changedEvent = new ChangedEvent<>(this);
+        this.colorChangedEvent = new ChangedEvent<>(this);
         setPositions(positions);
     }
 
     protected void setPositions(List<String> positions) {
         this.positions = positions;
-        colors = new ArrayList<Color>();
+        colors = new ArrayList<>();
         for (int i = 0; i < positions.size(); i++) {
             colors.add(Color.black);
         }
+        firstPosition = Math.min(firstPosition, positions.size() - 1);
+        secondPosition = Math.min(secondPosition, positions.size() - 1);
         changedEvent.fire();
         colorChangedEvent.fire();
     }
@@ -91,9 +93,7 @@ public class RangeSliderModel implements ChangedEventProvider<RangeSliderModel> 
 
     public RangeSliderModel copy() {
         RangeSliderModel newModel = new RangeSliderModel(positions);
-        newModel.firstPosition = firstPosition;
-        newModel.secondPosition = secondPosition;
-        newModel.colors = colors;
+        newModel.setData(this);
         return newModel;
     }
 
@@ -130,6 +130,7 @@ public class RangeSliderModel implements ChangedEventProvider<RangeSliderModel> 
         return colorChangedEvent;
     }
 
+    @Override
     public ChangedEvent<RangeSliderModel> getChangedEvent() {
         return changedEvent;
     }

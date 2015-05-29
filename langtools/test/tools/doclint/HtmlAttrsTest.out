@@ -1,10 +1,10 @@
-HtmlAttrsTest.java:13: error: unknown attribute: xyz
+HtmlAttrsTest.java:14: error: unknown attribute: xyz
      * <p xyz> text </p>
           ^
-HtmlAttrsTest.java:18: warning: attribute obsolete: name
+HtmlAttrsTest.java:19: warning: attribute obsolete: name
      * <img name="x" alt="alt">
             ^
-HtmlAttrsTest.java:23: warning: attribute obsolete, use CSS instead: size
+HtmlAttrsTest.java:24: warning: attribute obsolete, use CSS instead: size
      * <font size="3"> text </font>
              ^
 1 error

@@ -3,6 +3,10 @@
  * @bug 6470588
  * @summary Verify that \\@SuppressWarnings("deprecation") works OK for all parts
  *          of class/method/field "header", including (declaration) annotations
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.code
+ *          jdk.compiler/com.sun.tools.javac.file
+ *          jdk.compiler/com.sun.tools.javac.tree
  * @build VerifySuppressWarnings
  * @compile/ref=T6480588.out -XDrawDiagnostics -Xlint:unchecked,deprecation,cast T6480588.java
  * @run main VerifySuppressWarnings T6480588.java

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,13 @@
 package com.sun.hotspot.igv.coordinator;
 
 import com.sun.hotspot.igv.coordinator.actions.RemoveCookie;
-import com.sun.hotspot.igv.data.ChangedListener;
-import com.sun.hotspot.igv.data.Group;
-import com.sun.hotspot.igv.data.services.GroupOrganizer;
-import com.sun.hotspot.igv.data.InputGraph;
-import com.sun.hotspot.igv.data.Pair;
+import com.sun.hotspot.igv.data.*;
 import java.awt.Image;
-import java.util.ArrayList;
 import java.util.List;
 import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
 import org.openide.nodes.Node;
-import org.openide.util.Utilities;
+import org.openide.util.ImageUtilities;
 import org.openide.util.lookup.AbstractLookup;
 import org.openide.util.lookup.InstanceContent;
 
@@ -45,107 +40,72 @@ import org.openide.util.lookup.InstanceContent;
  */
 public class FolderNode extends AbstractNode {
 
-    private GroupOrganizer organizer;
     private InstanceContent content;
-    private List<Pair<String, List<Group>>> structure;
-    private List<String> subFolders;
     private FolderChildren children;
 
-    private static class FolderChildren extends Children.Keys implements ChangedListener<Group> {
+    private static class FolderChildren extends Children.Keys<FolderElement> implements ChangedListener {
 
-        private FolderNode parent;
-        private List<Group> registeredGroups;
+        private final Folder folder;
 
-        public void setParent(FolderNode parent) {
-            this.parent = parent;
-            this.registeredGroups = new ArrayList<Group>();
+        public FolderChildren(Folder folder) {
+            this.folder = folder;
+            folder.getChangedEvent().addListener(this);
         }
 
         @Override
-        protected Node[] createNodes(Object arg0) {
-
-            for(Group g : registeredGroups) {
-                g.getChangedEvent().removeListener(this);
-            }
-            registeredGroups.clear();
-
-            Pair<String, List<Group>> p = (Pair<String, List<Group>>) arg0;
-            if (p.getLeft().length() == 0) {
-
-                List<Node> curNodes = new ArrayList<Node>();
-                for (Group g : p.getRight()) {
-                    for (InputGraph graph : g.getGraphs()) {
-                        curNodes.add(new GraphNode(graph));
-                    }
-                    g.getChangedEvent().addListener(this);
-                    registeredGroups.add(g);
-                }
-
-                Node[] result = new Node[curNodes.size()];
-                for (int i = 0; i < curNodes.size(); i++) {
-                    result[i] = curNodes.get(i);
-                }
-                return result;
-
-            } else {
-                return new Node[]{new FolderNode(p.getLeft(), parent.organizer, parent.subFolders, p.getRight())};
+        protected Node[] createNodes(FolderElement e) {
+             if (e instanceof InputGraph) {
+                return new Node[]{new GraphNode((InputGraph) e)};
+            } else if (e instanceof Folder) {
+                 return new Node[]{new FolderNode((Folder) e)};
+             } else {
+                return null;
             }
         }
 
         @Override
         public void addNotify() {
-            this.setKeys(parent.structure);
+            this.setKeys(folder.getElements());
         }
 
-        public void changed(Group source) {
-            List<Pair<String, List<Group>>> newStructure = new ArrayList<Pair<String, List<Group>>>();
-            for(Pair<String, List<Group>> p : parent.structure) {
-                refreshKey(p);
-            }
-        }
-    }
-
-    protected InstanceContent getContent() {
-        return content;
+        @Override
+        public void changed(Object source) {
+            addNotify();
+         }
     }
 
     @Override
     public Image getIcon(int i) {
-        return Utilities.loadImage("com/sun/hotspot/igv/coordinator/images/folder.gif");
+        return ImageUtilities.loadImage("com/sun/hotspot/igv/coordinator/images/folder.png");
     }
 
-    protected FolderNode(String name, GroupOrganizer organizer, List<String> subFolders, List<Group> groups) {
-        this(name, organizer, subFolders, groups, new FolderChildren(), new InstanceContent());
+    protected FolderNode(Folder folder) {
+        this(folder, new FolderChildren(folder), new InstanceContent());
     }
 
-    private FolderNode(String name, GroupOrganizer organizer, List<String> oldSubFolders, final List<Group> groups, FolderChildren children, InstanceContent content) {
+    private FolderNode(final Folder folder, FolderChildren children, InstanceContent content) {
         super(children, new AbstractLookup(content));
-        children.setParent(this);
         this.content = content;
         this.children = children;
-        content.add(new RemoveCookie() {
-
-            public void remove() {
-                for (Group g : groups) {
-                    if (g.getDocument() != null) {
-                        g.getDocument().removeGroup(g);
-                    }
+        if (folder instanceof FolderElement) {
+            final FolderElement folderElement = (FolderElement) folder;
+            this.setDisplayName(folderElement.getName());
+            content.add(new RemoveCookie() {
+                @Override
+                public void remove() {
+                    folderElement.getParent().removeElement(folderElement);
                 }
-            }
-        });
-        init(name, organizer, oldSubFolders, groups);
+            });
+        }
     }
 
-    public void init(String name, GroupOrganizer organizer, List<String> oldSubFolders, List<Group> groups) {
+    public void init(String name, List<Group> groups) {
         this.setDisplayName(name);
-        this.organizer = organizer;
-        this.subFolders = new ArrayList<String>(oldSubFolders);
-        if (name.length() > 0) {
-            this.subFolders.add(name);
-        }
-        structure = organizer.organize(subFolders, groups);
-        assert structure != null;
         children.addNotify();
+
+        for (Group g : groups) {
+            content.add(g);
+        }
     }
 
     @Override

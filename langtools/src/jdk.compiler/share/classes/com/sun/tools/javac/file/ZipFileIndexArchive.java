@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -228,12 +228,12 @@ public class ZipFileIndexArchive implements Archive {
 
             ZipFileIndexFileObject o = (ZipFileIndexFileObject) other;
             return zfIndex.getAbsoluteFile().equals(o.zfIndex.getAbsoluteFile())
-                    && name.equals(o.name);
+                    && entry.equals(o.entry);
         }
 
         @Override
         public int hashCode() {
-            return zfIndex.getAbsoluteFile().hashCode() + name.hashCode();
+            return zfIndex.getAbsoluteFile().hashCode() + entry.hashCode();
         }
 
         private String getPrefixedEntryName() {

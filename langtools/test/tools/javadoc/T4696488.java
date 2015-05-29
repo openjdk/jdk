@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import com.sun.tools.doclets.internal.toolkit.Configuration;
  * @bug     4696488
  * @summary javadoc doesn't handle UNC paths for destination directory
  * @author  Jesse Glick
+ * @modules jdk.javadoc/com.sun.tools.doclets.internal.toolkit
  * @run main T4696488 T4696488.java
  */
 public class T4696488 {

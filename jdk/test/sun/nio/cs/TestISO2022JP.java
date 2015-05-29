@@ -22,7 +22,7 @@
  */
 
 /* @test
-   @bug 4626545 4879522 4913711 4119445
+   @bug 4626545 4879522 4913711 4119445 8042125
    @summary Check full coverage encode/decode for ISO-2022-JP
  */
 
@@ -33,6 +33,8 @@
  */
 
 import java.io.*;
+import java.util.Arrays;
+
 public class TestISO2022JP {
 
     private final static String US_ASCII =
@@ -607,6 +609,42 @@ public class TestISO2022JP {
         for (int i = 0; i < expected.length; i++) {
             if (encoded[i] != expected[i])
                throw new Exception("ISO-2022-JP Decoder error");
+        }
+
+        // Test for 7 c2b codepoints in ms932 iso2022jp
+        String testStr4 = "\u00b8\u00b7\u00af\u00ab\u00bb\u3094\u00b5";
+        expected = new byte[] {
+                     (byte)0x1b, (byte)0x24, (byte)0x42,
+                     (byte)0x21, (byte)0x24,
+                     (byte)0x21, (byte)0x26,
+                     (byte)0x21, (byte)0x31,
+                     (byte)0x22, (byte)0x63,
+                     (byte)0x22, (byte)0x64,
+                     (byte)0x25, (byte)0x74,
+                     (byte)0x26, (byte)0x4c,
+                     (byte)0x1b, (byte)0x28, (byte)0x42 };
+        encoded = testStr4.getBytes("x-windows-iso2022jp");
+        if (!Arrays.equals(encoded, expected)) {
+               throw new Exception("MSISO2022JP Encoder error");
+        }
+        // Test for 10 non-roundtrip characters in ms932 iso2022jp
+        encoded = new byte[] {
+            (byte)0x1B, (byte)0x24, (byte)0x42,
+            (byte)0x22, (byte)0x4C,
+            (byte)0x22, (byte)0x5D,
+            (byte)0x22, (byte)0x65,
+            (byte)0x22, (byte)0x69,
+            (byte)0x2D, (byte)0x70,
+            (byte)0x2D, (byte)0x71,
+            (byte)0x2D, (byte)0x77,
+            (byte)0x2D, (byte)0x7A,
+            (byte)0x2D, (byte)0x7B,
+            (byte)0x2D, (byte)0x7C,
+            (byte)0x1B, (byte)0x28, (byte)0x42,
+        };
+        String expectedStr = "\uffe2\u22a5\u221a\u222b\u2252\u2261\u2220\u2235\u2229\u222a";
+        if (!new String(encoded, "x-windows-iso2022jp").equals(expectedStr)) {
+               throw new Exception("MSISO2022JP Decoder error");
         }
     }
 }

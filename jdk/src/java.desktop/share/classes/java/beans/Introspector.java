@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,16 +35,19 @@ import java.awt.Component;
 
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 
 import java.util.Map;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.EventObject;
 import java.util.List;
 import java.util.TreeMap;
+import sun.misc.JavaBeansAccess;
 
 import sun.misc.SharedSecrets;
 import sun.reflect.misc.ReflectUtil;
@@ -146,15 +149,25 @@ public class Introspector {
 
     // register with SharedSecrets for JMX usage
     static {
-        SharedSecrets.setJavaBeansIntrospectorAccess((clazz, property) -> {
-            BeanInfo bi = Introspector.getBeanInfo(clazz);
-            PropertyDescriptor[] pds = bi.getPropertyDescriptors();
-            for (PropertyDescriptor pd: pds) {
-                if (pd.getName().equals(property)) {
-                    return pd.getReadMethod();
+        SharedSecrets.setJavaBeansAccess(new JavaBeansAccess() {
+            @Override
+            public Method getReadMethod(Class<?> clazz, String property) throws Exception {
+                BeanInfo bi = Introspector.getBeanInfo(clazz);
+                PropertyDescriptor[] pds = bi.getPropertyDescriptors();
+                for (PropertyDescriptor pd: pds) {
+                    if (pd.getName().equals(property)) {
+                        return pd.getReadMethod();
+                    }
                 }
+                return null;
             }
-            return null;
+
+            @Override
+            public String[] getConstructorPropertiesValue(Constructor<?> ctr) {
+                ConstructorProperties cp = ctr.getAnnotation(ConstructorProperties.class);
+                String [] ret = cp != null ? cp.value() : null;
+                return ret;
+            }
         });
     }
 

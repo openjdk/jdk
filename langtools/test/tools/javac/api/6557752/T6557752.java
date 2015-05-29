@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @bug     6557752
  * @summary Test for wrapping the original type in ErrorType.
  * @library ../lib
+ * @modules jdk.compiler/com.sun.tools.javac.util
  * @compile T6557752.java
  * @run main T6557752
  */

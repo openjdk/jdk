@@ -27,6 +27,7 @@
  * @summary  Test javadoc support for profiles.
  * @author   Bhavesh Patel, Evgeniya Stepanova
  * @library ../lib
+ * @modules jdk.javadoc
  * @build    JavadocTester
  * @run main TestProfiles
  */

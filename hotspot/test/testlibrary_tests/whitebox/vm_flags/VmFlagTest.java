@@ -26,7 +26,7 @@ import java.util.function.Function;
 import sun.hotspot.WhiteBox;
 import sun.management.*;
 import com.sun.management.*;
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 import java.lang.management.ManagementFactory;
 
 public final class VmFlagTest<T> {

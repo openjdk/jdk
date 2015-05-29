@@ -28,7 +28,6 @@
  *
  *  @author Robert Field/Jim Holmlund
  *
- *  @library scaffold
  *  @modules jdk.jdi
  *  @run build JDIScaffold VMConnection
  *  @run compile -g HelloWorld.java
