@@ -212,7 +212,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void get_constant_pool(Register Rdst);
   void get_constant_pool_cache(Register Rdst);
   void get_cpool_and_tags(Register Rcpool, Register Rtags);
-  void get_resolved_references(Register Rdst);
   void is_a(Label& L);
 
   // Load compiled (i2c) or interpreter entry and call from interpreted

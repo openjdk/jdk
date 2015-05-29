@@ -798,8 +798,11 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
   // word index to byte offset. Since this is a java object, it can be compressed
   Register tmp = index;  // reuse
   sll(index, LogBytesPerHeapOop, tmp);
+  get_constant_pool(result);
   // load pointer for resolved_references[] objArray
-  get_resolved_references(result);
+  ld_ptr(result, ConstantPool::resolved_references_offset_in_bytes(), result);
+  // JNIHandles::resolve(result)
+  ld_ptr(result, 0, result);
   // Add in the index
   add(result, tmp, result);
   load_heap_oop(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT), result);
@@ -970,13 +973,6 @@ void InterpreterMacroAssembler::get_cpool_and_tags(Register Rcpool, Register Rta
   ld_ptr(Rcpool, ConstantPool::tags_offset_in_bytes(), Rtags);
 }
 
-void InterpreterMacroAssembler::get_resolved_references(Register Rdst) {
-  get_constant_pool(Rdst);
-  ld_ptr(Rdst, ConstantPool::pool_holder_offset_in_bytes(), Rdst);
-  ld_ptr(Rdst, Klass::java_mirror_offset(), Rdst);
-  assert(java_lang_Class::resolved_references_offset_in_bytes() > 0, "");
-  load_heap_oop(Rdst, java_lang_Class::resolved_references_offset_in_bytes(), Rdst);
-}
 
 // unlock if synchronized method
 //

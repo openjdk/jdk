@@ -288,6 +288,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(ConstantPool,         _pool_holder,                                  InstanceKlass*)                        \
   nonstatic_field(ConstantPool,         _operands,                                     Array<u2>*)                            \
   nonstatic_field(ConstantPool,         _length,                                       int)                                   \
+  nonstatic_field(ConstantPool,         _resolved_references,                          jobject)                               \
   nonstatic_field(ConstantPool,         _reference_map,                                Array<u2>*)                            \
   nonstatic_field(ConstantPoolCache,    _length,                                       int)                                   \
   nonstatic_field(ConstantPoolCache,    _constant_pool,                                ConstantPool*)                         \
