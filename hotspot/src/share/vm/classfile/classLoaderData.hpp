@@ -51,6 +51,7 @@
 
 class ClassLoaderData;
 class JNIMethodBlock;
+class JNIHandleBlock;
 class Metadebug;
 
 // GC root for walking class loader data created
@@ -172,6 +173,8 @@ class ClassLoaderData : public CHeapObj<mtClass> {
                            // Has to be an int because we cas it.
   Klass* _klasses;         // The classes defined by the class loader.
 
+  JNIHandleBlock* _handles; // Handles to constant pool arrays
+
   // These method IDs are created for the class loader and set to NULL when the
   // class loader is unloaded.  They are rarely freed, only for redefine classes
   // and if they lose a data race in InstanceKlass.
@@ -196,6 +199,9 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   ~ClassLoaderData();
 
   void set_metaspace(Metaspace* m) { _metaspace = m; }
+
+  JNIHandleBlock* handles() const;
+  void set_handles(JNIHandleBlock* handles);
 
   // GC interface.
   void clear_claimed()          { _claimed = 0; }
@@ -284,6 +290,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   void verify();
   const char* loader_name();
 
+  jobject add_handle(Handle h);
   void add_class(Klass* k);
   void remove_class(Klass* k);
   bool contains_klass(Klass* k);

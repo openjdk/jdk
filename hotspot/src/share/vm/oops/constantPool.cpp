@@ -67,6 +67,7 @@ ConstantPool::ConstantPool(Array<u1>* tags) {
   set_tags(NULL);
   set_cache(NULL);
   set_reference_map(NULL);
+  set_resolved_references(NULL);
   set_operands(NULL);
   set_pool_holder(NULL);
   set_flags(0);
@@ -103,6 +104,10 @@ void ConstantPool::release_C_heap_structures() {
   unreference_symbols();
 }
 
+objArrayOop ConstantPool::resolved_references() const {
+  return (objArrayOop)JNIHandles::resolve(_resolved_references);
+}
+
 // Create resolved_references array and mapping array for original cp indexes
 // The ldc bytecode was rewritten to have the resolved reference array index so need a way
 // to map it back for resolving and some unlikely miscellaneous uses.
@@ -131,31 +136,30 @@ void ConstantPool::initialize_resolved_references(ClassLoaderData* loader_data,
 
     // Create Java array for holding resolved strings, methodHandles,
     // methodTypes, invokedynamic and invokehandle appendix objects, etc.
-    objArrayOop obj_arr = oopFactory::new_objArray(SystemDictionary::Object_klass(), map_length, CHECK);
-    pool_holder()->set_resolved_references(obj_arr);
+    objArrayOop stom = oopFactory::new_objArray(SystemDictionary::Object_klass(), map_length, CHECK);
+    Handle refs_handle (THREAD, (oop)stom);  // must handleize.
+    set_resolved_references(loader_data->add_handle(refs_handle));
   }
-}
-
-objArrayOop ConstantPool::resolved_references() const {
-  return pool_holder()->resolved_references();
 }
 
 // CDS support. Create a new resolved_references array.
 void ConstantPool::restore_unshareable_info(TRAPS) {
-  // restore the C++ vtable from the shared archive
-  restore_vtable();
-
-  if (pool_holder()->java_mirror() == NULL)  return;
 
   // Only create the new resolved references array if it hasn't been attempted before
-  if (pool_holder()->resolved_references() != NULL) return;
+  if (resolved_references() != NULL) return;
+
+  // restore the C++ vtable from the shared archive
+  restore_vtable();
 
   if (SystemDictionary::Object_klass_loaded()) {
     // Recreate the object array and add to ClassLoaderData.
     int map_length = resolved_reference_length();
     if (map_length > 0) {
-      objArrayOop resolved_references = oopFactory::new_objArray(SystemDictionary::Object_klass(), map_length, CHECK);
-      pool_holder()->set_resolved_references(resolved_references);
+      objArrayOop stom = oopFactory::new_objArray(SystemDictionary::Object_klass(), map_length, CHECK);
+      Handle refs_handle (THREAD, (oop)stom);  // must handleize.
+
+      ClassLoaderData* loader_data = pool_holder()->class_loader_data();
+      set_resolved_references(loader_data->add_handle(refs_handle));
     }
   }
 }
@@ -164,8 +168,9 @@ void ConstantPool::remove_unshareable_info() {
   // Resolved references are not in the shared archive.
   // Save the length for restoration.  It is not necessarily the same length
   // as reference_map.length() if invokedynamic is saved.
-  objArrayOop resolved_references = pool_holder()->resolved_references();
-  set_resolved_reference_length(resolved_references != NULL ? resolved_references->length() : 0);
+  set_resolved_reference_length(
+    resolved_references() != NULL ? resolved_references()->length() : 0);
+  set_resolved_references(NULL);
 }
 
 int ConstantPool::cp_to_object_index(int cp_index) {
@@ -1866,6 +1871,7 @@ void ConstantPool::print_on(outputStream* st) const {
     st->print_cr(" - holder: " INTPTR_FORMAT, pool_holder());
   }
   st->print_cr(" - cache: " INTPTR_FORMAT, cache());
+  st->print_cr(" - resolved_references: " INTPTR_FORMAT, (void *)resolved_references());
   st->print_cr(" - reference_map: " INTPTR_FORMAT, reference_map());
 
   for (int index = 1; index < length(); index++) {      // Index 0 is unused

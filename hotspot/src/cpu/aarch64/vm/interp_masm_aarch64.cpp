@@ -229,19 +229,14 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
   Register tmp = index;  // reuse
   lslw(tmp, tmp, LogBytesPerHeapOop);
 
+  get_constant_pool(result);
   // load pointer for resolved_references[] objArray
-  get_resolved_references(result);
+  ldr(result, Address(result, ConstantPool::resolved_references_offset_in_bytes()));
+  // JNIHandles::resolve(obj);
+  ldr(result, Address(result, 0));
   // Add in the index
   add(result, result, tmp);
   load_heap_oop(result, Address(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
-}
-
-void InterpreterMacroAssembler::get_resolved_references(Register reg) {
-  get_constant_pool(reg);
-  ldr(reg, Address(reg, ConstantPool::pool_holder_offset_in_bytes()));
-  ldr(reg, Address(reg, Klass::java_mirror_offset()));
-  assert(java_lang_Class::resolved_references_offset_in_bytes() > 0, "");
-  load_heap_oop(reg, Address(reg, java_lang_Class::resolved_references_offset_in_bytes()));
 }
 
 // Generate a subtype check: branch to ok_is_subtype if sub_klass is a

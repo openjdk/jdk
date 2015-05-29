@@ -532,9 +532,6 @@ class InstanceKlass: public Klass {
   ConstantPool* constants() const        { return _constants; }
   void set_constants(ConstantPool* c)    { _constants = c; }
 
-  objArrayOop     resolved_references() const;
-  void        set_resolved_references(objArrayOop obj_arr);
-
   // protection domain
   oop protection_domain() const;
 

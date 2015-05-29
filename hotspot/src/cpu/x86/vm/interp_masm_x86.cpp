@@ -482,14 +482,6 @@ void InterpreterMacroAssembler::get_cache_and_index_and_bytecode_at_bcp(Register
   andl(bytecode, ConstantPoolCacheEntry::bytecode_1_mask);
 }
 
-void InterpreterMacroAssembler::get_resolved_references(Register reg) {
-  get_constant_pool(reg);
-  movptr(reg, Address(reg, ConstantPool::pool_holder_offset_in_bytes()));
-  movptr(reg, Address(reg, Klass::java_mirror_offset()));
-  assert(java_lang_Class::resolved_references_offset_in_bytes() > 0, "");
-  load_heap_oop(reg, Address(reg, java_lang_Class::resolved_references_offset_in_bytes()));
-}
-
 void InterpreterMacroAssembler::get_cache_entry_pointer_at_bcp(Register cache,
                                                                Register tmp,
                                                                int bcp_offset,
@@ -507,16 +499,20 @@ void InterpreterMacroAssembler::get_cache_entry_pointer_at_bcp(Register cache,
   addptr(cache, tmp);  // construct pointer to cache entry
 }
 
-// Load object from cpool->pool_holder->mirror->resolved_references(index)
-void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result, Register index) {
+// Load object from cpool->resolved_references(index)
+void InterpreterMacroAssembler::load_resolved_reference_at_index(
+                                           Register result, Register index) {
   assert_different_registers(result, index);
   // convert from field index to resolved_references() index and from
   // word index to byte offset. Since this is a java object, it can be compressed
   Register tmp = index;  // reuse
   shll(tmp, LogBytesPerHeapOop);
 
+  get_constant_pool(result);
   // load pointer for resolved_references[] objArray
-  get_resolved_references(result);
+  movptr(result, Address(result, ConstantPool::resolved_references_offset_in_bytes()));
+  // JNIHandles::resolve(obj);
+  movptr(result, Address(result, 0));
   // Add in the index
   addptr(result, tmp);
   load_heap_oop(result, Address(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
