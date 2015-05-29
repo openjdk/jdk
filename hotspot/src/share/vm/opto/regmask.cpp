@@ -114,11 +114,14 @@ const RegMask RegMask::Empty(
 
 //=============================================================================
 bool RegMask::is_vector(uint ireg) {
-  return (ireg == Op_VecS || ireg == Op_VecD || ireg == Op_VecX || ireg == Op_VecY);
+  return (ireg == Op_VecS || ireg == Op_VecD ||
+          ireg == Op_VecX || ireg == Op_VecY || ireg == Op_VecZ );
 }
 
 int RegMask::num_registers(uint ireg) {
     switch(ireg) {
+      case Op_VecZ:
+        return 16;
       case Op_VecY:
         return 8;
       case Op_VecX:
@@ -233,7 +236,8 @@ int RegMask::is_bound_pair() const {
   return true;
 }
 
-static int low_bits[3] = { 0x55555555, 0x11111111, 0x01010101 };
+// only indicies of power 2 are accessed, so index 3 is only filled in for storage.
+static int low_bits[5] = { 0x55555555, 0x11111111, 0x01010101, 0x00000000, 0x00010001 };
 //------------------------------find_first_set---------------------------------
 // Find the lowest-numbered register set in the mask.  Return the
 // HIGHEST register number in the set, or BAD if no sets.
@@ -254,7 +258,7 @@ OptoReg::Name RegMask::find_first_set(const int size) const {
 // Clear out partial bits; leave only aligned adjacent bit pairs
 void RegMask::clear_to_sets(const int size) {
   if (size == 1) return;
-  assert(2 <= size && size <= 8, "update low bits table");
+  assert(2 <= size && size <= 16, "update low bits table");
   assert(is_power_of_2(size), "sanity");
   int low_bits_mask = low_bits[size>>2];
   for (int i = 0; i < RM_SIZE; i++) {
@@ -268,6 +272,9 @@ void RegMask::clear_to_sets(const int size) {
       sets |= (sets>>2);         // Smear 2 hi-bits into a set
       if (size > 4) {
         sets |= (sets>>4);       // Smear 4 hi-bits into a set
+        if (size > 8) {
+          sets |= (sets>>8);     // Smear 8 hi-bits into a set
+        }
       }
     }
     _A[i] = sets;
@@ -279,7 +286,7 @@ void RegMask::clear_to_sets(const int size) {
 // Smear out partial bits to aligned adjacent bit sets
 void RegMask::smear_to_sets(const int size) {
   if (size == 1) return;
-  assert(2 <= size && size <= 8, "update low bits table");
+  assert(2 <= size && size <= 16, "update low bits table");
   assert(is_power_of_2(size), "sanity");
   int low_bits_mask = low_bits[size>>2];
   for (int i = 0; i < RM_SIZE; i++) {
@@ -294,6 +301,9 @@ void RegMask::smear_to_sets(const int size) {
       sets |= (sets<<2);         // Smear 2 lo-bits into a set
       if (size > 4) {
         sets |= (sets<<4);       // Smear 4 lo-bits into a set
+        if (size > 8) {
+          sets |= (sets<<8);     // Smear 8 lo-bits into a set
+        }
       }
     }
     _A[i] = sets;
@@ -304,7 +314,7 @@ void RegMask::smear_to_sets(const int size) {
 //------------------------------is_aligned_set--------------------------------
 bool RegMask::is_aligned_sets(const int size) const {
   if (size == 1) return true;
-  assert(2 <= size && size <= 8, "update low bits table");
+  assert(2 <= size && size <= 16, "update low bits table");
   assert(is_power_of_2(size), "sanity");
   int low_bits_mask = low_bits[size>>2];
   // Assert that the register mask contains only bit sets.
@@ -330,7 +340,7 @@ bool RegMask::is_aligned_sets(const int size) const {
 // Works also for size 1.
 int RegMask::is_bound_set(const int size) const {
   if( is_AllStack() ) return false;
-  assert(1 <= size && size <= 8, "update low bits table");
+  assert(1 <= size && size <= 16, "update low bits table");
   int bit = -1;                 // Set to hold the one bit allowed
   for (int i = 0; i < RM_SIZE; i++) {
     if (_A[i] ) {               // Found some bits
@@ -346,10 +356,12 @@ int RegMask::is_bound_set(const int size) const {
         if (((-1) & ~(bit-1)) != _A[i])
           return false;         // Found many bits, so fail
         i++;                    // Skip iteration forward and check high part
-        // The lower 24 bits should be 0 since it is split case and size <= 8.
-        int set = bit>>24;
+        // The lower (32-size) bits should be 0 since it is split case.
+        int clear_bit_size = 32-size;
+        int shift_back_size = 32-clear_bit_size;
+        int set = bit>>clear_bit_size;
         set = set & -set; // Remove sign extension.
-        set = (((set << size) - 1) >> 8);
+        set = (((set << size) - 1) >> shift_back_size);
         if (i >= RM_SIZE || _A[i] != set)
           return false; // Require expected low bits in next word
       }
@@ -375,7 +387,7 @@ bool RegMask::is_UP() const {
 //------------------------------Size-------------------------------------------
 // Compute size of register mask in bits
 uint RegMask::Size() const {
-  extern uint8_t bitsInByte[256];
+  extern uint8_t bitsInByte[512];
   uint sum = 0;
   for( int i = 0; i < RM_SIZE; i++ )
     sum +=

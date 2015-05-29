@@ -31,8 +31,8 @@
  * @modules java.base/sun.misc
  *          java.management
  */
-import com.oracle.java.testlibrary.*;
-import static com.oracle.java.testlibrary.Asserts.assertTrue;
+import jdk.test.lib.*;
+import static jdk.test.lib.Asserts.assertTrue;
 
 public class SmallCodeCacheStartup {
     public static void main(String[] args) throws Exception {

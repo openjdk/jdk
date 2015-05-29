@@ -21,7 +21,7 @@
  * questions.
  */
 import java.io.PrintWriter;
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 /*
  * @test

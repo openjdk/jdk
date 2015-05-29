@@ -24,8 +24,8 @@
 import java.util.List;
 import java.util.ArrayList;
 
-import com.oracle.java.testlibrary.*;
-import static com.oracle.java.testlibrary.Asserts.*;
+import jdk.test.lib.*;
+import static jdk.test.lib.Asserts.*;
 
 /* @test TestMetaspacePerfCounters
  * @bug 8014659

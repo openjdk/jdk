@@ -57,7 +57,7 @@ public final class TryNode extends LexicalContextStatement implements JoinPredec
      * block was not terminal; the original jump/return is simply ignored if the finally block itself
      * terminates). The reason for this somewhat strange arrangement is that we didn't want to create a
      * separate class for the (label, BlockStatement pair) but rather reused the already available LabelNode.
-     * However, if we simply used List<LabelNode> without wrapping the label nodes in an additional Block,
+     * However, if we simply used List&lt;LabelNode&gt; without wrapping the label nodes in an additional Block,
      * that would've thrown off visitors relying on BlockLexicalContext -- same reason why we never use
      * Statement as the type of bodies of e.g. IfNode, WhileNode etc. but rather blockify them even when they're
      * single statements.

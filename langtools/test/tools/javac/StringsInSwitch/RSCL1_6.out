@@ -1,0 +1,7 @@
+- compiler.warn.source.no.bootclasspath: 1.6
+- compiler.warn.option.obsolete.source: 1.6
+- compiler.warn.option.obsolete.suppression
+RepeatedStringCaseLabels1.java:10:15: compiler.err.string.switch.not.supported.in.source: 1.6
+RepeatedStringCaseLabels1.java:13:9: compiler.err.duplicate.case.label
+2 errors
+3 warnings

@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_IMPLEMENTATION_G1_ROOTPROCESSOR_HPP
-#define SHARE_VM_GC_IMPLEMENTATION_G1_ROOTPROCESSOR_HPP
+#ifndef SHARE_VM_GC_IMPLEMENTATION_G1_G1ROOTPROCESSOR_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_G1_G1ROOTPROCESSOR_HPP
 
 #include "memory/allocation.hpp"
 #include "memory/strongRootsScope.hpp"
@@ -115,7 +115,7 @@ public:
                             uint worker_i);
 
   // Inform the root processor about the number of worker threads
-  void set_num_workers(int active_workers);
+  void set_num_workers(uint active_workers);
 };
 
-#endif // SHARE_VM_GC_IMPLEMENTATION_G1_ROOTPROCESSOR_HPP
+#endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1ROOTPROCESSOR_HPP

@@ -469,7 +469,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
     </testng>
   </target>
 
-  <target name="test" depends="test-pessimistic, test-optimistic"/>
+  <target name="test" depends="javadoc, test-pessimistic, test-optimistic"/>
 
   <target name="test-optimistic" depends="jar, -test-classes-all,-test-classes-single, check-testng, check-external-tests, compile-test, generate-policy-file" if="testng.available">
     <echo message="Running test suite in OPTIMISTIC mode..."/>

@@ -36,7 +36,7 @@
  * @run main TestHumongousCodeCacheRoots
 */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 import sun.hotspot.WhiteBox;
 
 import java.util.ArrayList;

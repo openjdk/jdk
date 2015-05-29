@@ -27,6 +27,10 @@
  * @summary assorted position errors in compiler syntax trees
  *  temporarily workaround combo tests are causing time out in several platforms
  * @library ../lib
+ * @modules java.desktop
+ *          jdk.compiler/com.sun.tools.javac.code
+ *          jdk.compiler/com.sun.tools.javac.tree
+ *          jdk.compiler/com.sun.tools.javac.util
  * @build JavacTestingAbstractThreadedTest
  * @run main/othervm CheckAttributedTree -q -r -et ERRONEOUS .
  */

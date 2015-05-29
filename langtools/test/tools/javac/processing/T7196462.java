@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 7196462
  * @summary JavacProcessingEnvironment should tolerate BasicJavacTask
  * @library /tools/javac/lib
+ * @modules jdk.compiler
  * @build JavacTestingAbstractProcessor T7196462
  * @compile/process -processor T7196462 T7196462.java
  */

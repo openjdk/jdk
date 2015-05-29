@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 7156873 8040059
+ * @bug 7156873 8040059 8028480 8034773
  * @summary ZipFileSystem regression tests
  *
  * @run main ZFSTests
@@ -30,15 +30,19 @@
  */
 
 
+import java.io.OutputStream;
 import java.net.URI;
+import java.nio.ByteBuffer;
+import java.nio.channels.*;
 import java.nio.file.*;
-import java.util.Map;
-import java.util.HashMap;
+import java.nio.file.spi.*;
+import java.util.*;
 
 public class ZFSTests {
 
     public static void main(String[] args) throws Throwable {
         test7156873();
+        testOpenOptions();
     }
 
     static void test7156873() throws Throwable {
@@ -54,6 +58,46 @@ public class ZFSTests {
         } finally {
             Files.deleteIfExists(path);
             Files.deleteIfExists(dir);
+        }
+    }
+
+    static void testOpenOptions() throws Throwable {
+        Path path = Paths.get("file.zip");
+        try {
+            URI uri = URI.create("jar:" + path.toUri());
+            Map<String, Object> env = new HashMap<String, Object>();
+            env.put("create", "true");
+            try (FileSystem fs = FileSystems.newFileSystem(uri, env)) {
+                FileSystemProvider fsp = fs.provider();
+                Set<? extends OpenOption> options;
+                Path p = fs.getPath("test.txt");
+                // 8028480
+                options = EnumSet.of(StandardOpenOption.CREATE,
+                                     StandardOpenOption.WRITE,
+                                     StandardOpenOption.APPEND);
+                try (FileChannel ch = fsp.newFileChannel(p, options)) {
+                    ch.write(ByteBuffer.wrap("Hello!".getBytes("ASCII")));
+                }
+                // 8034773
+                try (OutputStream os = fsp.newOutputStream(p, new OpenOption[0])) {
+                    os.write("Hello2!".getBytes("ASCII"));
+                }
+                if (!"Hello2!".equals(new String(
+                        Files.readAllBytes(fs.getPath("test.txt"))))) {
+                    throw new RuntimeException("failed to open as truncate_existing");
+                }
+
+                options = EnumSet.of(StandardOpenOption.CREATE,
+                                     StandardOpenOption.APPEND,
+                                     StandardOpenOption.TRUNCATE_EXISTING);
+                try (FileChannel ch = fsp.newFileChannel(p, options)) {
+                    throw new RuntimeException("expected IAE not thrown!");
+                } catch (IllegalArgumentException x) {
+                    // expected x.printStackTrace();
+                }
+            }
+        } finally {
+            Files.deleteIfExists(path);
         }
     }
 }

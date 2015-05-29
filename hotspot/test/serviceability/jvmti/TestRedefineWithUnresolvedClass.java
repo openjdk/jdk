@@ -32,15 +32,15 @@
  *          java.management
  *          jdk.jartool/sun.tools.jar
  *          jdk.jvmstat/sun.jvmstat.monitor
- * @build com.oracle.java.testlibrary.* UnresolvedClassAgent
+ * @build jdk.test.lib.* UnresolvedClassAgent
  * @run main TestRedefineWithUnresolvedClass
  */
 
 import java.io.File;
 import java.util.Arrays;
 
-import com.oracle.java.testlibrary.OutputAnalyzer;
-import com.oracle.java.testlibrary.ProcessTools;
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.ProcessTools;
 
 public class TestRedefineWithUnresolvedClass {
 

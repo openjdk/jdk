@@ -1,0 +1,4 @@
+BadTest3.java:31:34: compiler.err.prob.found.req: (compiler.misc.incompatible.eq.upper.bounds: B, java.lang.String, BadTest3.Ord)
+BadTest3.java:33:13: compiler.err.cant.apply.symbol: kindname.method, f, B, List<BadTest3.Ord>, kindname.class, BadTest3.Main, (compiler.misc.incompatible.upper.lower.bounds: B, BadTest3.I,BadTest3.J, List<B>)
+BadTest3.java:35:19: compiler.err.cant.apply.symbol: kindname.method, f, B, List<BadTest3.Ord>, kindname.class, BadTest3.Main, (compiler.misc.incompatible.upper.lower.bounds: B, BadTest3.I,BadTest3.J, List<B>)
+3 errors

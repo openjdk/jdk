@@ -30,10 +30,10 @@
  * @run main GetField
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 import sun.misc.Unsafe;
 import java.lang.reflect.*;
-import static com.oracle.java.testlibrary.Asserts.*;
+import static jdk.test.lib.Asserts.*;
 
 public class GetField {
     public static void main(String args[]) throws Exception {

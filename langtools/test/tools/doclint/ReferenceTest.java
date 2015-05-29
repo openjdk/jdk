@@ -2,6 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8004832 8020556 8002154
  * @summary Add new doclint package
+ * @modules jdk.compiler/com.sun.tools.doclint
  * @build DocLintTester
  * @run main DocLintTester -Xmsgs:-reference ReferenceTest.java
  * @run main DocLintTester -ref ReferenceTest.out ReferenceTest.java

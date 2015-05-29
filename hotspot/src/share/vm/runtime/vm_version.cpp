@@ -78,7 +78,7 @@ int Abstract_VM_Version::_vm_minor_version = 0;
 int Abstract_VM_Version::_vm_micro_version = 0;
 int Abstract_VM_Version::_vm_build_number = 0;
 bool Abstract_VM_Version::_initialized = false;
-int Abstract_VM_Version::_parallel_worker_threads = 0;
+unsigned int Abstract_VM_Version::_parallel_worker_threads = 0;
 bool Abstract_VM_Version::_parallel_worker_threads_initialized = false;
 
 #ifdef ASSERT

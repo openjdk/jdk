@@ -29,7 +29,7 @@
  *          java.compiler
  *          java.management/sun.management
  *          jdk.jvmstat/sun.jvmstat.monitor
- * @build BooleanTest ClassFileInstaller sun.hotspot.WhiteBox com.oracle.java.testlibrary.*
+ * @build BooleanTest ClassFileInstaller sun.hotspot.WhiteBox jdk.test.lib.*
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm/timeout=600 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI BooleanTest
@@ -38,7 +38,7 @@
  */
 
 import sun.hotspot.WhiteBox;
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 import sun.management.*;
 import com.sun.management.*;
 

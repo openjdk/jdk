@@ -1,3 +1,0 @@
-colorize("name", "Con.*", orange);
-colorize("name", "Parm|Proj", lightGray);
-colorize("bci", "..*", magenta);

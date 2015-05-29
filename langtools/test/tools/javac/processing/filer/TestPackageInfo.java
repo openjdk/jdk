@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
  * @summary Test the ability to create and process package-info.java files
  * @author  Joseph D. Darcy
  * @library /tools/javac/lib
+ * @modules java.compiler
+ *          jdk.compiler
  * @build   JavacTestingAbstractProcessor
  * @compile TestPackageInfo.java
  * @compile -processor TestPackageInfo -proc:only foo/bar/package-info.java TestPackageInfo.java

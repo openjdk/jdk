@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @bug     6410653 6401277
  * @summary REGRESSION: javac crashes if -d or -s argument is a file
  * @author  Peter von der Ah\u00e9
+ * @modules java.compiler
+ *          jdk.compiler
  */
 
 import java.lang.reflect.Field;

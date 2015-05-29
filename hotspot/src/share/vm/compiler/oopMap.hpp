@@ -143,19 +143,13 @@ class OopMap: public ResourceObj {
   friend class OopMapStream;
   friend class VMStructs;
  private:
-  int  _pc_offset;
-  int  _omv_count;
-  int  _omv_data_size;
-  unsigned char* _omv_data;
+  int  _pc_offset; // offset in the code that this OopMap corresponds to
+  int  _omv_count; // number of OopMapValues in the stream
   CompressedWriteStream* _write_stream;
 
   debug_only( OopMapValue::oop_types* _locs_used; int _locs_length;)
 
   // Accessors
-  unsigned char* omv_data() const             { return _omv_data; }
-  void set_omv_data(unsigned char* value)     { _omv_data = value; }
-  int omv_data_size() const                   { return _omv_data_size; }
-  void set_omv_data_size(int value)           { _omv_data_size = value; }
   int omv_count() const                       { return _omv_count; }
   void set_omv_count(int value)               { _omv_count = value; }
   void increment_count()                      { _omv_count++; }
@@ -172,6 +166,9 @@ class OopMap: public ResourceObj {
   // pc-offset handling
   int offset() const     { return _pc_offset; }
   void set_offset(int o) { _pc_offset = o; }
+  int count() const { return _omv_count; }
+  int data_size() const  { return write_stream()->position(); }
+  address data() const { return write_stream()->buffer(); }
 
   // Check to avoid double insertion
   debug_only(OopMapValue::oop_types locs_used( int indx ) { return _locs_used[indx]; })
@@ -188,10 +185,8 @@ class OopMap: public ResourceObj {
   void set_xxx(VMReg reg, OopMapValue::oop_types x, VMReg optional);
 
   int heap_size() const;
-  void copy_to(address addr);
+  void copy_data_to(address addr) const;
   OopMap* deep_copy();
-
-  bool has_derived_pointer() const PRODUCT_RETURN0;
 
   bool legal_vm_reg_name(VMReg local) {
      return OopMapValue::legal_vm_reg_name(local);
@@ -200,6 +195,7 @@ class OopMap: public ResourceObj {
   // Printing
   void print_on(outputStream* st) const;
   void print() const { print_on(tty); }
+  bool equals(const OopMap* other) const;
 };
 
 
@@ -239,7 +235,6 @@ class OopMapSet : public ResourceObj {
   OopMap* find_map_at_offset(int pc_offset) const;
 
   int heap_size() const;
-  void copy_to(address addr);
 
   // Methods oops_do() and all_do() filter out NULL oops and
   // oop == Universe::narrow_oop_base() before passing oops
@@ -261,6 +256,79 @@ class OopMapSet : public ResourceObj {
   void print() const { print_on(tty); }
 };
 
+class ImmutableOopMapBuilder;
+
+class ImmutableOopMap {
+  friend class OopMapStream;
+  friend class VMStructs;
+#ifdef ASSERT
+  friend class ImmutableOopMapBuilder;
+#endif
+private:
+  int _count; // contains the number of entries in this OopMap
+
+  address data_addr() const { return (address) this + sizeof(ImmutableOopMap); }
+public:
+  ImmutableOopMap(const OopMap* oopmap);
+
+  bool has_derived_pointer() const PRODUCT_RETURN0;
+  int count() const { return _count; }
+
+  // Printing
+  void print_on(outputStream* st) const;
+  void print() const { print_on(tty); }
+};
+
+class ImmutableOopMapSet;
+class ImmutableOopMap;
+class OopMapSet;
+
+class ImmutableOopMapPair {
+  friend class VMStructs;
+private:
+  int _pc_offset; // program counter offset from the beginning of the method
+  int _oopmap_offset; // offset in the data in the ImmutableOopMapSet where the ImmutableOopMap is located
+public:
+  ImmutableOopMapPair(int pc_offset, int oopmap_offset) : _pc_offset(pc_offset), _oopmap_offset(oopmap_offset) {
+    assert(pc_offset >= 0 && oopmap_offset >= 0, "check");
+  }
+  const ImmutableOopMap* get_from(const ImmutableOopMapSet* set) const;
+
+  int pc_offset() const { return _pc_offset; }
+  int oopmap_offset() const { return _oopmap_offset; }
+};
+
+class ImmutableOopMapSet {
+  friend class VMStructs;
+private:
+  int _count; // nr of ImmutableOopMapPairs in the Set
+  int _size; // nr of bytes including ImmutableOopMapSet itself
+
+  address data() const { return (address) this + sizeof(*this) + sizeof(ImmutableOopMapPair) * _count; }
+
+public:
+  ImmutableOopMapSet(const OopMapSet* oopmap_set, int size) : _count(oopmap_set->size()), _size(size) {}
+
+  ImmutableOopMap* oopmap_at_offset(int offset) const {
+    assert(offset >= 0 && offset < _size, "must be within boundaries");
+    address addr = data() + offset;
+    return (ImmutableOopMap*) addr;
+  }
+
+  ImmutableOopMapPair* get_pairs() const { return (ImmutableOopMapPair*) ((address) this + sizeof(*this)); }
+
+  static ImmutableOopMapSet* build_from(const OopMapSet* oopmap_set);
+
+  const ImmutableOopMap* find_map_at_offset(int pc_offset) const;
+
+  const ImmutableOopMapPair* pair_at(int index) const { assert(index >= 0 && index < _count, "check"); return &get_pairs()[index]; }
+
+  int count() const { return _count; }
+  int nr_of_bytes() const { return _size; }
+
+  void print_on(outputStream* st) const;
+  void print() const { print_on(tty); }
+};
 
 class OopMapStream : public StackObj {
  private:
@@ -273,8 +341,8 @@ class OopMapStream : public StackObj {
   void find_next();
 
  public:
-  OopMapStream(OopMap* oop_map);
-  OopMapStream(OopMap* oop_map, int oop_types_mask);
+  OopMapStream(OopMap* oop_map, int oop_types_mask = OopMapValue::type_mask_in_place);
+  OopMapStream(const ImmutableOopMap* oop_map, int oop_types_mask = OopMapValue::type_mask_in_place);
   bool is_done()                        { if(!_valid_omv) { find_next(); } return !_valid_omv; }
   void next()                           { find_next(); }
   OopMapValue current()                 { return _omv; }

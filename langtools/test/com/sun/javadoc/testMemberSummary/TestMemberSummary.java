@@ -29,6 +29,7 @@
  *           documentation is inherited but the return type isn't.
  * @author   jamieh
  * @library  ../lib
+ * @modules jdk.javadoc
  * @build    JavadocTester
  * @run main TestMemberSummary
  */

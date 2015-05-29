@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,10 @@
  * @bug 6988836
  * @summary A new JavacElements is created for each round of annotation processing
  * @library /tools/javac/lib
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.model
+ *          jdk.compiler/com.sun.tools.javac.processing
+ *          jdk.compiler/com.sun.tools.javac.util
  * @build JavacTestingAbstractProcessor TestContext
  * @compile/process -processor TestContext -XprintRounds TestContext
  */
