@@ -23,7 +23,7 @@
  * questions.
  */
 
-package sun.nio.cs;
+package sun.nio.cs.ext;
 
 import java.lang.ref.SoftReference;
 import java.nio.charset.Charset;
