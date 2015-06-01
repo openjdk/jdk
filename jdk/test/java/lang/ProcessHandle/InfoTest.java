@@ -25,6 +25,9 @@ import java.io.File;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.lang.ProcessBuilder;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -148,8 +151,10 @@ public class InfoTest {
                         String javaExe = System.getProperty("test.jdk") +
                                 File.separator + "bin" + File.separator + "java";
                         String expected = Platform.isWindows() ? javaExe + ".exe" : javaExe;
-                        Assert.assertEquals(command.get(), expected,
-                                "Command: expected: 'java'" + ", actual: " + command);
+                        Path expectedPath = Paths.get(expected);
+                        Path actualPath = Paths.get(command.get());
+                        Assert.assertTrue(Files.isSameFile(expectedPath, actualPath),
+                                "Command: expected: " + javaExe + ", actual: " + command.get());
                     }
 
                     if (info.arguments().isPresent()) {
