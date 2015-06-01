@@ -561,16 +561,6 @@ HeapWord* GenCollectedHeap::satisfy_failed_allocation(size_t size, bool is_tlab)
   return collector_policy()->satisfy_failed_allocation(size, is_tlab);
 }
 
-void GenCollectedHeap::set_par_threads(uint t) {
-  assert(t == 0 || !UseSerialGC, "Cannot have parallel threads");
-  CollectedHeap::set_par_threads(t);
-  set_n_termination(t);
-}
-
-void GenCollectedHeap::set_n_termination(uint t) {
-  _process_strong_tasks->set_n_threads(t);
-}
-
 #ifdef ASSERT
 class AssertNonScavengableClosure: public OopClosure {
 public:
@@ -582,15 +572,13 @@ public:
 static AssertNonScavengableClosure assert_is_non_scavengable_closure;
 #endif
 
-void GenCollectedHeap::process_roots(bool activate_scope,
+void GenCollectedHeap::process_roots(StrongRootsScope* scope,
                                      ScanningOption so,
                                      OopClosure* strong_roots,
                                      OopClosure* weak_roots,
                                      CLDClosure* strong_cld_closure,
                                      CLDClosure* weak_cld_closure,
                                      CodeBlobClosure* code_roots) {
-  StrongRootsScope srs(activate_scope);
-
   // General roots.
   assert(Threads::thread_claim_parity() != 0, "must have called prologue code");
   assert(code_roots != NULL, "code root closure should always be set");
@@ -609,7 +597,7 @@ void GenCollectedHeap::process_roots(bool activate_scope,
   // Only process code roots from thread stacks if we aren't visiting the entire CodeCache anyway
   CodeBlobClosure* roots_from_code_p = (so & SO_AllCodeCache) ? NULL : code_roots;
 
-  bool is_par = n_par_threads() > 0;
+  bool is_par = scope->n_threads() > 1;
   Threads::possibly_parallel_oops_do(is_par, strong_roots, roots_from_clds_p, roots_from_code_p);
 
   if (!_process_strong_tasks->is_task_claimed(GCH_PS_Universe_oops_do)) {
@@ -669,9 +657,9 @@ void GenCollectedHeap::process_roots(bool activate_scope,
 
 }
 
-void GenCollectedHeap::gen_process_roots(int level,
+void GenCollectedHeap::gen_process_roots(StrongRootsScope* scope,
+                                         int level,
                                          bool younger_gens_as_roots,
-                                         bool activate_scope,
                                          ScanningOption so,
                                          bool only_strong_roots,
                                          OopsInGenClosure* not_older_gens,
@@ -689,7 +677,7 @@ void GenCollectedHeap::gen_process_roots(int level,
   OopsInGenClosure* weak_roots = only_strong_roots ? NULL : not_older_gens;
   CLDClosure* weak_cld_closure = only_strong_roots ? NULL : cld_closure;
 
-  process_roots(activate_scope, so,
+  process_roots(scope, so,
                 not_older_gens, weak_roots,
                 cld_closure, weak_cld_closure,
                 &mark_code_closure);
@@ -707,11 +695,11 @@ void GenCollectedHeap::gen_process_roots(int level,
   // older-gen scanning.
   if (level == 0) {
     older_gens->set_generation(_old_gen);
-    rem_set()->younger_refs_iterate(_old_gen, older_gens);
+    rem_set()->younger_refs_iterate(_old_gen, older_gens, scope->n_threads());
     older_gens->reset_generation();
   }
 
-  _process_strong_tasks->all_tasks_completed();
+  _process_strong_tasks->all_tasks_completed(scope->n_threads());
 }
 
 
