@@ -1095,10 +1095,6 @@ void os::abort(bool dump_core, void* siginfo, void* context) {
   win32::exit_process_or_thread(win32::EPT_PROCESS, 1);
 }
 
-void os::abort(bool dump_core) {
-  abort(dump_core, NULL, NULL);
-}
-
 // Die immediately, no exit hook, no abort hook, no cleanup.
 void os::die() {
   win32::exit_process_or_thread(win32::EPT_PROCESS_DIE, -1);
