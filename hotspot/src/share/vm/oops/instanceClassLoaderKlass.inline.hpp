@@ -78,33 +78,9 @@ inline int InstanceClassLoaderKlass::oop_oop_iterate_bounded(oop obj, OopClosure
   return size;
 }
 
-
-#define InstanceClassLoaderKlass_OOP_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)              \
-                                                                                              \
-int InstanceClassLoaderKlass::oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure) {  \
-  return oop_oop_iterate<nvs_to_bool(nv_suffix)>(obj, closure);                               \
-}
-
-#if INCLUDE_ALL_GCS
-#define InstanceClassLoaderKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)              \
-                                                                                                        \
-int InstanceClassLoaderKlass::oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* closure) {  \
-  return oop_oop_iterate_reverse<nvs_to_bool(nv_suffix)>(obj, closure);                                 \
-}
-#else
-#define InstanceClassLoaderKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)
-#endif
-
-
-#define InstanceClassLoaderKlass_OOP_OOP_ITERATE_DEFN_m(OopClosureType, nv_suffix)                              \
-                                                                                                                \
-int InstanceClassLoaderKlass::oop_oop_iterate##nv_suffix##_m(oop obj, OopClosureType* closure, MemRegion mr) {  \
-  return oop_oop_iterate_bounded<nvs_to_bool(nv_suffix)>(obj, closure, mr);                                     \
-}
-
 #define ALL_INSTANCE_CLASS_LOADER_KLASS_OOP_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)  \
-  InstanceClassLoaderKlass_OOP_OOP_ITERATE_DEFN(          OopClosureType, nv_suffix)     \
-  InstanceClassLoaderKlass_OOP_OOP_ITERATE_DEFN_m(        OopClosureType, nv_suffix)     \
-  InstanceClassLoaderKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)
+  OOP_OOP_ITERATE_DEFN(          InstanceClassLoaderKlass, OopClosureType, nv_suffix)    \
+  OOP_OOP_ITERATE_DEFN_BOUNDED(  InstanceClassLoaderKlass, OopClosureType, nv_suffix)    \
+  OOP_OOP_ITERATE_DEFN_BACKWARDS(InstanceClassLoaderKlass, OopClosureType, nv_suffix)
 
 #endif // SHARE_VM_OOPS_INSTANCECLASSLOADERKLASS_INLINE_HPP

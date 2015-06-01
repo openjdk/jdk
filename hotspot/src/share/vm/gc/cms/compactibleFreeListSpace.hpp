@@ -438,7 +438,8 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   // Override: provides a DCTO_CL specific to this kind of space.
   DirtyCardToOopClosure* new_dcto_cl(ExtendedOopClosure* cl,
                                      CardTableModRefBS::PrecisionStyle precision,
-                                     HeapWord* boundary);
+                                     HeapWord* boundary,
+                                     bool parallel);
 
   void blk_iterate(BlkClosure* cl);
   void blk_iterate_careful(BlkClosureCareful* cl);
