@@ -997,7 +997,16 @@ void os::check_dump_limit(char* buffer, size_t buffsz) {
   if (!FLAG_IS_DEFAULT(CreateCoredumpOnCrash) && !CreateCoredumpOnCrash) {
     jio_snprintf(buffer, buffsz, "CreateCoredumpOnCrash is disabled from command line");
     status = false;
-  } else {
+  }
+
+#ifndef ASSERT
+  if (!os::win32::is_windows_server() && FLAG_IS_DEFAULT(CreateCoredumpOnCrash)) {
+    jio_snprintf(buffer, buffsz, "Minidumps are not enabled by default on client versions of Windows");
+    status = false;
+  }
+#endif
+
+  if (status) {
     const char* cwd = get_current_directory(NULL, 0);
     int pid = current_process_id();
     if (cwd != NULL) {
