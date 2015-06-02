@@ -469,7 +469,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
     </testng>
   </target>
 
-  <target name="test" depends="javadoc, test-pessimistic, test-optimistic"/>
+  <target name="test" depends="javadoc, test-pessimistic, test-optimistic, testmarkdown"/>
 
   <target name="test-optimistic" depends="jar, -test-classes-all,-test-classes-single, check-testng, check-external-tests, compile-test, generate-policy-file" if="testng.available">
     <echo message="Running test suite in OPTIMISTIC mode..."/>
@@ -719,8 +719,8 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
 
     <!-- showdown -->
     <mkdir dir="${test.external.dir}/showdown"/>
-    <get src="https://raw.github.com/coreyti/showdown/master/src/showdown.js" dest="${test.external.dir}/showdown" skipexisting="true" ignoreerrors="true"/>
-    <get src="https://raw.github.com/coreyti/showdown/master/src/extensions/table.js" dest="${test.external.dir}/showdown" skipexisting="true" ignoreerrors="true"/>
+    <get src="https://raw.githubusercontent.com/showdownjs/showdown/0.5.4/src/showdown.js" dest="${test.external.dir}/showdown" skipexisting="true" ignoreerrors="true"/>
+    <get src="https://raw.githubusercontent.com/showdownjs/showdown/0.5.4/src/extensions/table.js" dest="${test.external.dir}/showdown" skipexisting="true" ignoreerrors="true"/>
 
   </target>
 
