@@ -23,15 +23,16 @@
  * questions.
  */
 
+//
+// SunJSSE does not support dynamic system properties, no way to re-use
+// system properties in samevm/agentvm mode.
+//
+
 /*
  * @test
  * @bug 4873188
  * @summary Support TLS 1.1
  * @run main/othervm ExportableStreamCipher
- *
- *     SunJSSE does not support dynamic system properties, no way to re-use
- *     system properties in samevm/agentvm mode.
- *
  * @author Xuelei Fan
  */
 
@@ -109,7 +110,7 @@ public class ExportableStreamCipher {
             sslIS.read();
             sslOS.write('A');
             sslOS.flush();
-        } catch (SSLException ssle) {
+        } catch (IOException ioe) {
             // get the expected exception
             interrupted = true;
         } finally {
