@@ -44,8 +44,6 @@ import javax.crypto.spec.SecretKeySpec;
 
 import javax.net.ssl.*;
 
-import javax.security.auth.Subject;
-
 import sun.security.ssl.HandshakeMessage.*;
 import static sun.security.ssl.CipherSuite.KeyExchange.*;
 
@@ -234,7 +232,8 @@ final class ClientHandshaker extends Handshaker {
 
         case HandshakeMessage.ht_certificate:
             if (keyExchange == K_DH_ANON || keyExchange == K_ECDH_ANON
-                    || keyExchange == K_KRB5 || keyExchange == K_KRB5_EXPORT) {
+                    || ClientKeyExchangeService.find(keyExchange.name) != null) {
+                // No external key exchange provider needs a cert now.
                 fatalSE(Alerts.alert_unexpected_message,
                     "unexpected server cert chain");
                 // NOTREACHED
@@ -333,13 +332,9 @@ final class ClientHandshaker extends Handshaker {
                 throw new SSLProtocolException(
                     "Protocol violation: server sent a server key exchange"
                     + " message for key exchange " + keyExchange);
-            case K_KRB5:
-            case K_KRB5_EXPORT:
-                throw new SSLProtocolException(
-                    "unexpected receipt of server key exchange algorithm");
             default:
                 throw new SSLProtocolException(
-                    "unsupported key exchange algorithm = "
+                    "unsupported or unexpected key exchange algorithm = "
                     + keyExchange);
             }
             break;
@@ -350,10 +345,11 @@ final class ClientHandshaker extends Handshaker {
                 throw new SSLHandshakeException(
                     "Client authentication requested for "+
                     "anonymous cipher suite.");
-            } else if (keyExchange == K_KRB5 || keyExchange == K_KRB5_EXPORT) {
+            } else if (ClientKeyExchangeService.find(keyExchange.name) != null) {
+                // No external key exchange provider needs a cert now.
                 throw new SSLHandshakeException(
                     "Client certificate requested for "+
-                    "kerberos cipher suite.");
+                    "external cipher suite: " + keyExchange);
             }
             certRequest = new CertificateRequest(input, protocolVersion);
             if (debug != null && Debug.isOn("handshake")) {
@@ -626,45 +622,17 @@ final class ClientHandshaker extends Handshaker {
                 }
 
                 // validate subject identity
-                if (sessionSuite.keyExchange == K_KRB5 ||
-                    sessionSuite.keyExchange == K_KRB5_EXPORT) {
+                ClientKeyExchangeService p =
+                        ClientKeyExchangeService.find(sessionSuite.keyExchange.name);
+                if (p != null) {
                     Principal localPrincipal = session.getLocalPrincipal();
 
-                    Subject subject = null;
-                    try {
-                        subject = AccessController.doPrivileged(
-                            new PrivilegedExceptionAction<Subject>() {
-                            @Override
-                            public Subject run() throws Exception {
-                                return Krb5Helper.getClientSubject(getAccSE());
-                            }});
-                    } catch (PrivilegedActionException e) {
-                        subject = null;
-                        if (debug != null && Debug.isOn("session")) {
-                            System.out.println("Attempt to obtain" +
-                                        " subject failed!");
-                        }
-                    }
-
-                    if (subject != null) {
-                        // Eliminate dependency on KerberosPrincipal
-                        Set<Principal> principals =
-                            subject.getPrincipals(Principal.class);
-                        if (!principals.contains(localPrincipal)) {
-                            throw new SSLProtocolException("Server resumed" +
-                                " session with wrong subject identity");
-                        } else {
-                            if (debug != null && Debug.isOn("session"))
-                                System.out.println("Subject identity is same");
-                        }
-                    } else {
+                    if (p.isRelated(true, getAccSE(), localPrincipal)) {
                         if (debug != null && Debug.isOn("session"))
-                            System.out.println("Kerberos credentials are not" +
-                                " present in the current Subject; check if " +
-                                " javax.security.auth.useSubjectAsCreds" +
-                                " system property has been set to false");
-                        throw new SSLProtocolException
-                            ("Server resumed session with no subject");
+                            System.out.println("Subject identity is same");
+                    } else {
+                        throw new SSLProtocolException("Server resumed" +
+                                " session with wrong subject identity or no subject");
                     }
                 }
 
@@ -1012,8 +980,14 @@ final class ClientHandshaker extends Handshaker {
             ecdh = new ECDHCrypt(params, sslContext.getSecureRandom());
             m2 = new ECDHClientKeyExchange(ecdh.getPublicKey());
             break;
-        case K_KRB5:
-        case K_KRB5_EXPORT:
+        default:
+            ClientKeyExchangeService p =
+                    ClientKeyExchangeService.find(keyExchange.name);
+            if (p == null) {
+                // somethings very wrong
+                throw new RuntimeException
+                        ("Unsupported key exchange: " + keyExchange);
+            }
             String sniHostname = null;
             for (SNIServerName serverName : requestedServerNames) {
                 if (serverName instanceof SNIHostName) {
@@ -1022,13 +996,13 @@ final class ClientHandshaker extends Handshaker {
                 }
             }
 
-            KerberosClientKeyExchange kerberosMsg = null;
+            ClientKeyExchange exMsg = null;
             if (sniHostname != null) {
                 // use first requested SNI hostname
                 try {
-                    kerberosMsg = new KerberosClientKeyExchange(
-                        sniHostname, getAccSE(), protocolVersion,
-                        sslContext.getSecureRandom());
+                    exMsg = p.createClientExchange(
+                            sniHostname, getAccSE(), protocolVersion,
+                            sslContext.getSecureRandom());
                 } catch(IOException e) {
                     if (serverNamesAccepted) {
                         // server accepted requested SNI hostname,
@@ -1044,26 +1018,22 @@ final class ClientHandshaker extends Handshaker {
                 }
             }
 
-            if (kerberosMsg == null) {
+            if (exMsg == null) {
                 String hostname = getHostSE();
                 if (hostname == null) {
                     throw new IOException("Hostname is required" +
-                        " to use Kerberos cipher suites");
+                        " to use " + keyExchange + " key exchange");
                 }
-                kerberosMsg = new KerberosClientKeyExchange(
-                     hostname, getAccSE(), protocolVersion,
-                     sslContext.getSecureRandom());
+                exMsg = p.createClientExchange(
+                        hostname, getAccSE(), protocolVersion,
+                        sslContext.getSecureRandom());
             }
 
             // Record the principals involved in exchange
-            session.setPeerPrincipal(kerberosMsg.getPeerPrincipal());
-            session.setLocalPrincipal(kerberosMsg.getLocalPrincipal());
-            m2 = kerberosMsg;
+            session.setPeerPrincipal(exMsg.getPeerPrincipal());
+            session.setLocalPrincipal(exMsg.getLocalPrincipal());
+            m2 = exMsg;
             break;
-        default:
-            // somethings very wrong
-            throw new RuntimeException
-                                ("Unsupported key exchange: " + keyExchange);
         }
         if (debug != null && Debug.isOn("handshake")) {
             m2.print(System.out);
@@ -1094,13 +1064,6 @@ final class ClientHandshaker extends Handshaker {
         case K_RSA_EXPORT:
             preMasterSecret = ((RSAClientKeyExchange)m2).preMaster;
             break;
-        case K_KRB5:
-        case K_KRB5_EXPORT:
-            byte[] secretBytes =
-                ((KerberosClientKeyExchange)m2).getUnencryptedPreMasterSecret();
-            preMasterSecret = new SecretKeySpec(secretBytes,
-                "TlsPremasterSecret");
-            break;
         case K_DHE_RSA:
         case K_DHE_DSS:
         case K_DH_ANON:
@@ -1116,8 +1079,13 @@ final class ClientHandshaker extends Handshaker {
             preMasterSecret = ecdh.getAgreedSecret(serverKey);
             break;
         default:
-            throw new IOException("Internal error: unknown key exchange "
-                + keyExchange);
+            if (ClientKeyExchangeService.find(keyExchange.name) != null) {
+                preMasterSecret =
+                        ((ClientKeyExchange) m2).clientKeyExchange();
+            } else {
+                throw new IOException("Internal error: unknown key exchange "
+                        + keyExchange);
+            }
         }
 
         calculateKeys(preMasterSecret, null);
