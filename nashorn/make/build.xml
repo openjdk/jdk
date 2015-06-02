@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!--
- Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -396,7 +396,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
   </target>
 
   <target name="check-testng" unless="testng.available">
-    <echo message="WARNING: TestNG not available, will not run tests. Please copy testng.jar under test/lib directory."/>
+    <echo message="WARNING: TestNG not available, will not run tests. Please copy testng.jar under ${test.lib} directory."/>
   </target>
 
   <!-- only to be invoked as dependency of "test" target -->
@@ -694,7 +694,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
   </target>
 
   <!-- get all external test scripts -->
-  <target name="externals" depends="init, check-external-tests, get-test262, get-octane, get-sunspider">
+  <target name="externals" depends="init, check-external-tests, get-test262, get-octane, get-sunspider, get-testng">
     <!-- make external test dir -->
     <mkdir dir="${test.external.dir}"/>
 
@@ -733,6 +733,18 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
   <!-- run all tests -->
   <target name="exit-if-no-testng" depends="init, check-testng" unless="${testng.available}">
      <fail message="Exiting.."/>
+  </target>
+
+  <!-- download and install testng.jar -->
+  <target name="get-testng" unless="testng.available">
+    <get src="http://testng.org/testng-6.8.zip" dest="${test.lib}" skipexisting="true" ignoreerrors="true"/>
+    <unzip src="${test.lib}${file.separator}testng-6.8.zip" dest="${test.lib}">
+      <patternset>
+        <include name="testng-6.8/testng-6.8.jar"/>
+      </patternset>
+    </unzip>
+    <move file="${test.lib}${file.separator}testng-6.8${file.separator}testng-6.8.jar" tofile="${test.lib}${file.separator}testng.jar"/>
+    <delete dir="${test.lib}${file.separator}testng-6.8"/>
   </target>
 
   <target name="alltests" depends="exit-if-no-testng, externals, update-externals, test, test262parallel, perf"/>
