@@ -425,10 +425,9 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         // change record of peer identity even by accident, much
         // less do it intentionally.
         //
-        if ((cipherSuite.keyExchange == K_KRB5) ||
-            (cipherSuite.keyExchange == K_KRB5_EXPORT)) {
+        if (ClientKeyExchangeService.find(cipherSuite.keyExchange.name) != null) {
             throw new SSLPeerUnverifiedException("no certificates expected"
-                        + " for Kerberos cipher suites");
+                        + " for " + cipherSuite.keyExchange + " cipher suites");
         }
         if (peerCerts == null) {
             throw new SSLPeerUnverifiedException("peer not authenticated");
@@ -481,10 +480,9 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         // change record of peer identity even by accident, much
         // less do it intentionally.
         //
-        if ((cipherSuite.keyExchange == K_KRB5) ||
-            (cipherSuite.keyExchange == K_KRB5_EXPORT)) {
+        if (ClientKeyExchangeService.find(cipherSuite.keyExchange.name) != null) {
             throw new SSLPeerUnverifiedException("no certificates expected"
-                        + " for Kerberos cipher suites");
+                        + " for " + cipherSuite.keyExchange + " cipher suites");
         }
         if (peerCerts == null) {
             throw new SSLPeerUnverifiedException("peer not authenticated");
@@ -522,10 +520,9 @@ final class SSLSessionImpl extends ExtendedSSLSession {
          * change record of peer identity even by accident, much
          * less do it intentionally.
          */
-        if ((cipherSuite.keyExchange == K_KRB5) ||
-            (cipherSuite.keyExchange == K_KRB5_EXPORT)) {
+        if (ClientKeyExchangeService.find(cipherSuite.keyExchange.name) != null) {
             throw new SSLPeerUnverifiedException("no certificates expected"
-                        + " for Kerberos cipher suites");
+                        + " for " + cipherSuite.keyExchange + " cipher suites");
         }
         if (peerCerts != null) {
             return peerCerts.clone();
@@ -540,7 +537,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      *
      * @return the peer's principal. Returns an X500Principal of the
      * end-entity certificate for X509-based cipher suites, and
-     * Principal for Kerberos cipher suites.
+     * Principal for Kerberos cipher suites, etc.
      *
      * @throws SSLPeerUnverifiedException if the peer's identity has not
      *          been verified
@@ -549,12 +546,10 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     public Principal getPeerPrincipal()
                 throws SSLPeerUnverifiedException
     {
-        if ((cipherSuite.keyExchange == K_KRB5) ||
-            (cipherSuite.keyExchange == K_KRB5_EXPORT)) {
+        if (ClientKeyExchangeService.find(cipherSuite.keyExchange.name) != null) {
             if (peerPrincipal == null) {
                 throw new SSLPeerUnverifiedException("peer not authenticated");
             } else {
-                // Eliminate dependency on KerberosPrincipal
                 return peerPrincipal;
             }
         }
@@ -569,15 +564,13 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      *
      * @return the principal sent to the peer. Returns an X500Principal
      * of the end-entity certificate for X509-based cipher suites, and
-     * Principal for Kerberos cipher suites. If no principal was
+     * Principal for Kerberos cipher suites, etc. If no principal was
      * sent, then null is returned.
      */
     @Override
     public Principal getLocalPrincipal() {
 
-        if ((cipherSuite.keyExchange == K_KRB5) ||
-            (cipherSuite.keyExchange == K_KRB5_EXPORT)) {
-                // Eliminate dependency on KerberosPrincipal
+        if (ClientKeyExchangeService.find(cipherSuite.keyExchange.name) != null) {
                 return (localPrincipal == null ? null : localPrincipal);
         }
         return (localCerts == null ? null :

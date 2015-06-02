@@ -38,8 +38,6 @@ import javax.crypto.spec.SecretKeySpec;
 
 import javax.net.ssl.*;
 
-import javax.security.auth.Subject;
-
 import sun.security.util.KeyUtil;
 import sun.security.action.GetPropertyAction;
 import sun.security.ssl.HandshakeMessage.*;
@@ -237,18 +235,6 @@ final class ServerHandshaker extends Handshaker {
                     handshakeState.update(pms, resumingSession);
                     preMasterSecret = this.clientKeyExchange(pms);
                     break;
-                case K_KRB5:
-                case K_KRB5_EXPORT:
-                    KerberosClientKeyExchange kke =
-                        new KerberosClientKeyExchange(protocolVersion,
-                            clientRequestedVersion,
-                            sslContext.getSecureRandom(),
-                            input,
-                            this.getAccSE(),
-                            serviceCreds);
-                    handshakeState.update(kke, resumingSession);
-                    preMasterSecret = this.clientKeyExchange(kke);
-                    break;
                 case K_DHE_RSA:
                 case K_DHE_DSS:
                 case K_DH_ANON:
@@ -273,8 +259,24 @@ final class ServerHandshaker extends Handshaker {
                     preMasterSecret = this.clientKeyExchange(ecdhcke);
                     break;
                 default:
-                    throw new SSLProtocolException
-                        ("Unrecognized key exchange: " + keyExchange);
+                    ClientKeyExchangeService p =
+                            ClientKeyExchangeService.find(keyExchange.name);
+                    if (p == null) {
+                        throw new SSLProtocolException
+                                ("Unrecognized key exchange: " + keyExchange);
+                    }
+                    byte[] encodedTicket = input.getBytes16();
+                    input.getBytes16();
+                    byte[] secret = input.getBytes16();
+                    ClientKeyExchange cke = p.createServerExchange(protocolVersion,
+                            clientRequestedVersion,
+                            sslContext.getSecureRandom(),
+                            encodedTicket,
+                            secret,
+                            this.getAccSE(), serviceCreds);
+                    handshakeState.update(cke, resumingSession);
+                    preMasterSecret = this.clientKeyExchange(cke);
+                    break;
                 }
 
                 //
@@ -624,47 +626,21 @@ final class ServerHandshaker extends Handshaker {
                 // validate subject identity
                 if (resumingSession) {
                     CipherSuite suite = previous.getSuite();
-                    if (suite.keyExchange == K_KRB5 ||
-                        suite.keyExchange == K_KRB5_EXPORT) {
+                    ClientKeyExchangeService p =
+                            ClientKeyExchangeService.find(suite.keyExchange.name);
+                    if (p != null) {
                         Principal localPrincipal = previous.getLocalPrincipal();
 
-                        Subject subject = null;
-                        try {
-                            subject = AccessController.doPrivileged(
-                                new PrivilegedExceptionAction<Subject>() {
-                                @Override
-                                public Subject run() throws Exception {
-                                    return
-                                        Krb5Helper.getServerSubject(getAccSE());
-                            }});
-                        } catch (PrivilegedActionException e) {
-                            subject = null;
-                            if (debug != null && Debug.isOn("session")) {
-                                System.out.println("Attempt to obtain" +
-                                                " subject failed!");
-                            }
-                        }
-
-                        if (subject != null) {
-                            // Eliminate dependency on KerberosPrincipal
-                            if (Krb5Helper.isRelated(subject, localPrincipal)) {
-                                if (debug != null && Debug.isOn("session"))
-                                    System.out.println("Subject can" +
-                                            " provide creds for princ");
-                            } else {
-                                resumingSession = false;
-                                if (debug != null && Debug.isOn("session"))
-                                    System.out.println("Subject cannot" +
-                                            " provide creds for princ");
-                            }
+                        if (p.isRelated(
+                                false, getAccSE(), localPrincipal)) {
+                            if (debug != null && Debug.isOn("session"))
+                                System.out.println("Subject can" +
+                                        " provide creds for princ");
                         } else {
                             resumingSession = false;
                             if (debug != null && Debug.isOn("session"))
-                                System.out.println("Kerberos credentials are" +
-                                    " not present in the current Subject;" +
-                                    " check if " +
-                                    " javax.security.auth.useSubjectAsCreds" +
-                                    " system property has been set to false");
+                                System.out.println("Subject cannot" +
+                                        " provide creds for princ");
                         }
                     }
                 }
@@ -871,9 +847,8 @@ final class ServerHandshaker extends Handshaker {
          * defined in the protocol spec are explicitly stated to require
          * using RSA certificates.
          */
-        if (keyExchange == K_KRB5 || keyExchange == K_KRB5_EXPORT) {
-            // Server certificates are omitted for Kerberos ciphers
-
+        if (ClientKeyExchangeService.find(cipherSuite.keyExchange.name) != null) {
+            // No external key exchange provider needs a cert now.
         } else if ((keyExchange != K_DH_ANON) && (keyExchange != K_ECDH_ANON)) {
             if (certs == null) {
                 throw new RuntimeException("no certificates");
@@ -915,9 +890,7 @@ final class ServerHandshaker extends Handshaker {
         ServerKeyExchange m3;
         switch (keyExchange) {
         case K_RSA:
-        case K_KRB5:
-        case K_KRB5_EXPORT:
-            // no server key exchange for RSA or KRB5 ciphersuites
+            // no server key exchange for RSA ciphersuites
             m3 = null;
             break;
         case K_RSA_EXPORT:
@@ -980,6 +953,13 @@ final class ServerHandshaker extends Handshaker {
             m3 = null;
             break;
         default:
+            ClientKeyExchangeService p =
+                    ClientKeyExchangeService.find(keyExchange.name);
+            if (p != null) {
+                // No external key exchange provider needs a cert now.
+                m3 = null;
+                break;
+            }
             throw new RuntimeException("internal error: " + keyExchange);
         }
         if (m3 != null) {
@@ -1000,10 +980,10 @@ final class ServerHandshaker extends Handshaker {
         // Needed only if server requires client to authenticate self.
         // Illegal for anonymous flavors, so we need to check that.
         //
-        // CertificateRequest is omitted for Kerberos ciphers
+        // No external key exchange provider needs a cert now.
         if (doClientAuth != ClientAuthType.CLIENT_AUTH_NONE &&
                 keyExchange != K_DH_ANON && keyExchange != K_ECDH_ANON &&
-                keyExchange != K_KRB5 && keyExchange != K_KRB5_EXPORT) {
+                ClientKeyExchangeService.find(keyExchange.name) == null) {
 
             CertificateRequest m4;
             X509Certificate caCerts[];
@@ -1313,13 +1293,6 @@ final class ServerHandshaker extends Handshaker {
             }
             setupStaticECDHKeys();
             break;
-        case K_KRB5:
-        case K_KRB5_EXPORT:
-            // need Kerberos Key
-            if (!setupKerberosKeys()) {
-                return false;
-            }
-            break;
         case K_DH_ANON:
             // no certs needed for anonymous
             setupEphemeralDHKeys(suite.exportable, null);
@@ -1331,8 +1304,26 @@ final class ServerHandshaker extends Handshaker {
             }
             break;
         default:
-            // internal error, unknown key exchange
-            throw new RuntimeException("Unrecognized cipherSuite: " + suite);
+            ClientKeyExchangeService p =
+                    ClientKeyExchangeService.find(keyExchange.name);
+            if (p == null) {
+                // internal error, unknown key exchange
+                throw new RuntimeException("Unrecognized cipherSuite: " + suite);
+            }
+            // need service creds
+            if (serviceCreds == null) {
+                AccessControlContext acc = getAccSE();
+                serviceCreds = p.getServiceCreds(acc);
+                if (serviceCreds != null) {
+                    if (debug != null && Debug.isOn("handshake")) {
+                        System.out.println("Using serviceCreds");
+                    }
+                }
+                if (serviceCreds == null) {
+                    return false;
+                }
+            }
+            break;
         }
         setCipherSuite(suite);
 
@@ -1522,73 +1513,10 @@ final class ServerHandshaker extends Handshaker {
         return true;
     }
 
-    /**
-     * Retrieve the Kerberos key for the specified server principal
-     * from the JAAS configuration file.
-     *
-     * @return true if successful, false if not available or invalid
-     */
-    private boolean setupKerberosKeys() {
-        if (serviceCreds != null) {
-            return true;
-        }
-        try {
-            final AccessControlContext acc = getAccSE();
-            serviceCreds = AccessController.doPrivileged(
-                // Eliminate dependency on KerberosKey
-                new PrivilegedExceptionAction<Object>() {
-                @Override
-                public Object run() throws Exception {
-                    // get kerberos key for the default principal
-                    return Krb5Helper.getServiceCreds(acc);
-                        }});
-
-            // check permission to access and use the secret key of the
-            // Kerberized "host" service
-            if (serviceCreds != null) {
-                if (debug != null && Debug.isOn("handshake")) {
-                    System.out.println("Using Kerberos creds");
-                }
-                String serverPrincipal =
-                        Krb5Helper.getServerPrincipalName(serviceCreds);
-                if (serverPrincipal != null) {
-                    // When service is bound, we check ASAP. Otherwise,
-                    // will check after client request is received
-                    // in Kerberos ClientKeyExchange
-                    SecurityManager sm = System.getSecurityManager();
-                    try {
-                        if (sm != null) {
-                            // Eliminate dependency on ServicePermission
-                            sm.checkPermission(Krb5Helper.getServicePermission(
-                                    serverPrincipal, "accept"), acc);
-                        }
-                    } catch (SecurityException se) {
-                        serviceCreds = null;
-                        // Do not destroy keys. Will affect Subject
-                        if (debug != null && Debug.isOn("handshake")) {
-                            System.out.println("Permission to access Kerberos"
-                                    + " secret key denied");
-                        }
-                        return false;
-                    }
-                }
-            }
-            return serviceCreds != null;
-        } catch (PrivilegedActionException e) {
-            // Likely exception here is LoginExceptin
-            if (debug != null && Debug.isOn("handshake")) {
-                System.out.println("Attempt to obtain Kerberos key failed: "
-                                + e.toString());
-            }
-            return false;
-        }
-    }
-
     /*
-     * For Kerberos ciphers, the premaster secret is encrypted using
-     * the session key. See RFC 2712.
+     * Returns premaster secret for external key exchange services.
      */
-    private SecretKey clientKeyExchange(KerberosClientKeyExchange mesg)
+    private SecretKey clientKeyExchange(ClientKeyExchange mesg)
         throws IOException {
 
         if (debug != null && Debug.isOn("handshake")) {
@@ -1599,8 +1527,7 @@ final class ServerHandshaker extends Handshaker {
         session.setPeerPrincipal(mesg.getPeerPrincipal());
         session.setLocalPrincipal(mesg.getLocalPrincipal());
 
-        byte[] b = mesg.getUnencryptedPreMasterSecret();
-        return new SecretKeySpec(b, "TlsPremasterSecret");
+        return mesg.clientKeyExchange();
     }
 
     /*
@@ -1705,7 +1632,7 @@ final class ServerHandshaker extends Handshaker {
          */
         if (doClientAuth == ClientAuthType.CLIENT_AUTH_REQUIRED) {
            // get X500Principal of the end-entity certificate for X509-based
-           // ciphersuites, or Kerberos principal for Kerberos ciphersuites
+           // ciphersuites, or Kerberos principal for Kerberos ciphersuites, etc
            session.getPeerPrincipal();
         }
 
