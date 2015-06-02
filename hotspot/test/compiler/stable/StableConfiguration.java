@@ -41,10 +41,32 @@ public class StableConfiguration {
         System.out.println("Server Compiler: " + get());
     }
 
+    // The method 'get' below returns true if the method is server compiled
+    // and is used by the Stable tests to determine whether methods in
+    // general are being server compiled or not as the -XX:+FoldStableValues
+    // option is only applicable to -server.
+    //
+    // On aarch64 we DeOptimize when patching. This means that when the
+    // method is compiled as a result of -Xcomp it DeOptimizes immediately.
+    // The result is that getMethodCompilationLevel returns 0. This means
+    // the method returns true based on java.vm.name.
+    //
+    // However when the tests are run with -XX:+TieredCompilation and
+    // -XX:TieredStopAtLevel=1 this fails because methods will always
+    // be client compiled.
+    //
+    // Solution is to add a simple method 'get1' which should never be
+    // DeOpted and use that to determine the compilation level instead.
+    static void get1() {
+    }
+
+
+
     // ::get() is among immediately compiled methods.
     static boolean get() {
         try {
-            Method m = StableConfiguration.class.getDeclaredMethod("get");
+            get1();
+            Method m = StableConfiguration.class.getDeclaredMethod("get1");
             int level = WB.getMethodCompilationLevel(m);
             if (level > 0) {
               return (level == 4);
