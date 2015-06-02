@@ -23,7 +23,7 @@
  * questions.
  */
 
-package sun.security.ssl.krb5;
+package sun.security.krb5.internal.ssl;
 
 import java.io.*;
 import java.security.*;
@@ -68,13 +68,13 @@ final class KerberosPreMasterSecret {
      * @param sessionKey Kerberos session key for encrypting premaster secret
      */
     KerberosPreMasterSecret(ProtocolVersion protocolVersion,
-        SecureRandom generator, EncryptionKey sessionKey) throws IOException {
+            SecureRandom generator, EncryptionKey sessionKey) throws IOException {
 
         if (sessionKey.getEType() ==
-            EncryptedData.ETYPE_DES3_CBC_HMAC_SHA1_KD) {
+                EncryptedData.ETYPE_DES3_CBC_HMAC_SHA1_KD) {
             throw new IOException(
-               "session keys with des3-cbc-hmac-sha1-kd encryption type " +
-               "are not supported for TLS Kerberos cipher suites");
+                    "session keys with des3-cbc-hmac-sha1-kd encryption type " +
+                            "are not supported for TLS Kerberos cipher suites");
         }
 
         this.protocolVersion = protocolVersion;
@@ -83,12 +83,12 @@ final class KerberosPreMasterSecret {
         // Encrypt premaster secret
         try {
             EncryptedData eData = new EncryptedData(sessionKey, preMaster,
-                KeyUsage.KU_UNKNOWN);
+                    KeyUsage.KU_UNKNOWN);
             encrypted = eData.getBytes();  // not ASN.1 encoded.
 
         } catch (KrbException e) {
             throw (SSLKeyException)new SSLKeyException
-                ("Kerberos premaster secret error").initCause(e);
+                    ("Kerberos premaster secret error").initCause(e);
         }
     }
 
@@ -107,38 +107,35 @@ final class KerberosPreMasterSecret {
      * @param sessionKey Kerberos session key to be used for decryption
      */
     KerberosPreMasterSecret(ProtocolVersion currentVersion,
-        ProtocolVersion clientVersion,
-        SecureRandom generator, HandshakeInStream input,
-        EncryptionKey sessionKey) throws IOException {
+            ProtocolVersion clientVersion,
+            SecureRandom generator, byte[] encrypted,
+            EncryptionKey sessionKey) throws IOException {
 
-         // Extract encrypted premaster secret from message
-         encrypted = input.getBytes16();
-
-         if (HandshakeMessage.debug != null && Debug.isOn("handshake")) {
+        if (HandshakeMessage.debug != null && Debug.isOn("handshake")) {
             if (encrypted != null) {
                 Debug.println(System.out,
-                     "encrypted premaster secret", encrypted);
+                        "encrypted premaster secret", encrypted);
             }
-         }
+        }
 
         if (sessionKey.getEType() ==
-            EncryptedData.ETYPE_DES3_CBC_HMAC_SHA1_KD) {
+                EncryptedData.ETYPE_DES3_CBC_HMAC_SHA1_KD) {
             throw new IOException(
-               "session keys with des3-cbc-hmac-sha1-kd encryption type " +
-               "are not supported for TLS Kerberos cipher suites");
+                    "session keys with des3-cbc-hmac-sha1-kd encryption type " +
+                            "are not supported for TLS Kerberos cipher suites");
         }
 
         // Decrypt premaster secret
         try {
             EncryptedData data = new EncryptedData(sessionKey.getEType(),
-                        null /* optional kvno */, encrypted);
+                    null /* optional kvno */, encrypted);
 
             byte[] temp = data.decrypt(sessionKey, KeyUsage.KU_UNKNOWN);
             if (HandshakeMessage.debug != null && Debug.isOn("handshake")) {
-                 if (encrypted != null) {
-                     Debug.println(System.out,
-                         "decrypted premaster secret", temp);
-                 }
+                if (encrypted != null) {
+                    Debug.println(System.out,
+                            "decrypted premaster secret", temp);
+                }
             }
 
             // Remove padding bytes after decryption. Only DES and DES3 have
@@ -162,9 +159,9 @@ final class KerberosPreMasterSecret {
             preMaster = temp;
 
             protocolVersion = ProtocolVersion.valueOf(preMaster[0],
-                 preMaster[1]);
+                    preMaster[1]);
             if (HandshakeMessage.debug != null && Debug.isOn("handshake")) {
-                 System.out.println("Kerberos PreMasterSecret version: "
+                System.out.println("Kerberos PreMasterSecret version: "
                         + protocolVersion);
             }
         } catch (Exception e) {
@@ -202,11 +199,11 @@ final class KerberosPreMasterSecret {
          * that will prevent an attacking client from differentiating
          * different kinds of decrypted ClientKeyExchange bogosities.
          */
-         if ((preMaster == null) || (preMaster.length != 48)
+        if ((preMaster == null) || (preMaster.length != 48)
                 || versionMismatch) {
             if (HandshakeMessage.debug != null && Debug.isOn("handshake")) {
                 System.out.println("Kerberos PreMasterSecret error, "
-                                   + "generating random secret");
+                        + "generating random secret");
                 if (preMaster != null) {
                     Debug.println(System.out, "Invalid secret", preMaster);
                 }
@@ -243,14 +240,14 @@ final class KerberosPreMasterSecret {
      * @param generator random number generator to use for generating secret.
      */
     KerberosPreMasterSecret(ProtocolVersion protocolVersion,
-        SecureRandom generator) {
+            SecureRandom generator) {
 
         this.protocolVersion = protocolVersion;
         preMaster = generatePreMaster(generator, protocolVersion);
     }
 
     private static byte[] generatePreMaster(SecureRandom rand,
-        ProtocolVersion ver) {
+            ProtocolVersion ver) {
 
         byte[] pm = new byte[48];
         rand.nextBytes(pm);
