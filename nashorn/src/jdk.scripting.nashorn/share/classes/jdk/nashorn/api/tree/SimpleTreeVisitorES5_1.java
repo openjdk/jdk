@@ -48,28 +48,28 @@ package jdk.nashorn.api.tree;
  */
 public class SimpleTreeVisitorES5_1<R, P> implements TreeVisitor<R, P> {
     @Override
-    public R visitAssignment(AssignmentTree node, P r) {
+    public R visitAssignment(final AssignmentTree node, final P r) {
         node.getVariable().accept(this, r);
         node.getExpression().accept(this, r);
         return null;
     }
 
     @Override
-    public R visitCompoundAssignment(CompoundAssignmentTree node, P r) {
+    public R visitCompoundAssignment(final CompoundAssignmentTree node, final P r) {
         node.getVariable().accept(this, r);
         node.getExpression().accept(this, r);
         return null;
     }
 
     @Override
-    public R visitBinary(BinaryTree node, P r) {
+    public R visitBinary(final BinaryTree node, final P r) {
         node.getLeftOperand().accept(this, r);
         node.getRightOperand().accept(this, r);
         return null;
     }
 
     @Override
-    public R visitBlock(BlockTree node, P r) {
+    public R visitBlock(final BlockTree node, final P r) {
         node.getStatements().forEach((tree) -> {
             tree.accept(this, r);
         });
@@ -77,12 +77,12 @@ public class SimpleTreeVisitorES5_1<R, P> implements TreeVisitor<R, P> {
     }
 
     @Override
-    public R visitBreak(BreakTree node, P r) {
+    public R visitBreak(final BreakTree node, final P r) {
         return null;
     }
 
     @Override
-    public R visitCase(CaseTree node, P r) {
+    public R visitCase(final CaseTree node, final P r) {
         final Tree caseVal = node.getExpression();
         if (caseVal != null) {
             caseVal.accept(this, r);
@@ -95,7 +95,7 @@ public class SimpleTreeVisitorES5_1<R, P> implements TreeVisitor<R, P> {
     }
 
     @Override
-    public R visitCatch(CatchTree node, P r) {
+    public R visitCatch(final CatchTree node, final P r) {
         final Tree cond = node.getCondition();
         if (cond != null) {
             cond.accept(this, r);
@@ -106,7 +106,7 @@ public class SimpleTreeVisitorES5_1<R, P> implements TreeVisitor<R, P> {
     }
 
     @Override
-    public R visitConditionalExpression(ConditionalExpressionTree node, P r) {
+    public R visitConditionalExpression(final ConditionalExpressionTree node, final P r) {
         node.getCondition().accept(this, r);
         node.getTrueExpression().accept(this, r);
         node.getFalseExpression().accept(this, r);
@@ -114,35 +114,35 @@ public class SimpleTreeVisitorES5_1<R, P> implements TreeVisitor<R, P> {
     }
 
     @Override
-    public R visitContinue(ContinueTree node, P r) {
+    public R visitContinue(final ContinueTree node, final P r) {
         return null;
     }
 
     @Override
-    public R visitDebugger(DebuggerTree node, P r) {
+    public R visitDebugger(final DebuggerTree node, final P r) {
         return null;
     }
 
     @Override
-    public R visitDoWhileLoop(DoWhileLoopTree node, P r) {
+    public R visitDoWhileLoop(final DoWhileLoopTree node, final P r) {
         node.getStatement().accept(this, r);
         node.getCondition().accept(this, r);
         return null;
     }
 
     @Override
-    public R visitErroneous(ErroneousTree node, P r) {
+    public R visitErroneous(final ErroneousTree node, final P r) {
         return null;
     }
 
     @Override
-    public R visitExpressionStatement(ExpressionStatementTree node, P r) {
+    public R visitExpressionStatement(final ExpressionStatementTree node, final P r) {
         node.getExpression().accept(this, r);
         return null;
     }
 
     @Override
-    public R visitForLoop(ForLoopTree node, P r) {
+    public R visitForLoop(final ForLoopTree node, final P r) {
         final Tree init = node.getInitializer();
         if (init != null) {
             init.accept(this, r);
@@ -163,7 +163,7 @@ public class SimpleTreeVisitorES5_1<R, P> implements TreeVisitor<R, P> {
     }
 
     @Override
-    public R visitForInLoop(ForInLoopTree node, P r) {
+    public R visitForInLoop(final ForInLoopTree node, final P r) {
         node.getVariable().accept(this, r);
         node.getExpression().accept(this, r);
         final StatementTree stat = node.getStatement();
@@ -174,7 +174,7 @@ public class SimpleTreeVisitorES5_1<R, P> implements TreeVisitor<R, P> {
     }
 
     @Override
-    public R visitFunctionCall(FunctionCallTree node, P r) {
+    public R visitFunctionCall(final FunctionCallTree node, final P r) {
         node.getFunctionSelect().accept(this, r);
         node.getArguments().forEach((tree) -> {
             tree.accept(this, r);
@@ -183,7 +183,7 @@ public class SimpleTreeVisitorES5_1<R, P> implements TreeVisitor<R, P> {
     }
 
     @Override
-    public R visitFunctionDeclaration(FunctionDeclarationTree node, P r) {
+    public R visitFunctionDeclaration(final FunctionDeclarationTree node, final P r) {
         node.getParameters().forEach((tree) -> {
             tree.accept(this, r);
         });
@@ -192,7 +192,7 @@ public class SimpleTreeVisitorES5_1<R, P> implements TreeVisitor<R, P> {
     }
 
     @Override
-    public R visitFunctionExpression(FunctionExpressionTree node, P r) {
+    public R visitFunctionExpression(final FunctionExpressionTree node, final P r) {
         node.getParameters().forEach((tree) -> {
             tree.accept(this, r);
         });
@@ -201,12 +201,12 @@ public class SimpleTreeVisitorES5_1<R, P> implements TreeVisitor<R, P> {
     }
 
     @Override
-    public R visitIdentifier(IdentifierTree node, P r) {
+    public R visitIdentifier(final IdentifierTree node, final P r) {
         return null;
     }
 
     @Override
-    public R visitIf(IfTree node, P r) {
+    public R visitIf(final IfTree node, final P r) {
         node.getCondition().accept(this, r);
         node.getThenStatement().accept(this, r);
         final Tree elseStat = node.getElseStatement();
@@ -217,14 +217,14 @@ public class SimpleTreeVisitorES5_1<R, P> implements TreeVisitor<R, P> {
     }
 
     @Override
-    public R visitArrayAccess(ArrayAccessTree node, P r) {
+    public R visitArrayAccess(final ArrayAccessTree node, final P r) {
         node.getExpression().accept(this, r);
         node.getIndex().accept(this, r);
         return null;
     }
 
     @Override
-    public R visitArrayLiteral(ArrayLiteralTree node, P r) {
+    public R visitArrayLiteral(final ArrayLiteralTree node, final P r) {
         node.getElements().stream().filter((tree) -> (tree != null)).forEach((tree) -> {
             tree.accept(this, r);
         });
@@ -232,24 +232,24 @@ public class SimpleTreeVisitorES5_1<R, P> implements TreeVisitor<R, P> {
     }
 
     @Override
-    public R visitLabeledStatement(LabeledStatementTree node, P r) {
+    public R visitLabeledStatement(final LabeledStatementTree node, final P r) {
         node.getStatement().accept(this, r);
         return null;
     }
 
     @Override
-    public R visitLiteral(LiteralTree node, P r) {
+    public R visitLiteral(final LiteralTree node, final P r) {
         return null;
     }
 
     @Override
-    public R visitParenthesized(ParenthesizedTree node, P r) {
+    public R visitParenthesized(final ParenthesizedTree node, final P r) {
         node.getExpression().accept(this, r);
         return null;
     }
 
     @Override
-    public R visitReturn(ReturnTree node, P r) {
+    public R visitReturn(final ReturnTree node, final P r) {
         final Tree retExpr = node.getExpression();
         if (retExpr != null) {
             retExpr.accept(this, r);
@@ -258,19 +258,19 @@ public class SimpleTreeVisitorES5_1<R, P> implements TreeVisitor<R, P> {
     }
 
     @Override
-    public R visitMemberSelect(MemberSelectTree node, P r) {
+    public R visitMemberSelect(final MemberSelectTree node, final P r) {
         node.getExpression().accept(this, r);
         return null;
     }
 
     @Override
-    public R visitNew(NewTree node, P r) {
+    public R visitNew(final NewTree node, final P r) {
         node.getConstructorExpression().accept(this, r);
         return null;
     }
 
     @Override
-    public R visitObjectLiteral(ObjectLiteralTree node, P r) {
+    public R visitObjectLiteral(final ObjectLiteralTree node, final P r) {
         node.getProperties().forEach((tree) -> {
             tree.accept(this, r);
         });
@@ -278,7 +278,7 @@ public class SimpleTreeVisitorES5_1<R, P> implements TreeVisitor<R, P> {
     }
 
     @Override
-    public R visitProperty(PropertyTree node, P r) {
+    public R visitProperty(final PropertyTree node, final P r) {
         FunctionExpressionTree getter = node.getGetter();
         if (getter != null) {
             getter.accept(this, r);
@@ -301,17 +301,17 @@ public class SimpleTreeVisitorES5_1<R, P> implements TreeVisitor<R, P> {
     }
 
     @Override
-    public R visitRegExpLiteral(RegExpLiteralTree node, P r) {
+    public R visitRegExpLiteral(final RegExpLiteralTree node, final P r) {
         return null;
     }
 
     @Override
-    public R visitEmptyStatement(EmptyStatementTree node, P r) {
+    public R visitEmptyStatement(final EmptyStatementTree node, final P r) {
         return null;
     }
 
     @Override
-    public R visitSwitch(SwitchTree node, P r) {
+    public R visitSwitch(final SwitchTree node, final P r) {
         node.getExpression().accept(this, r);
         node.getCases().forEach((tree) -> {
             tree.accept(this, r);
@@ -320,13 +320,13 @@ public class SimpleTreeVisitorES5_1<R, P> implements TreeVisitor<R, P> {
     }
 
     @Override
-    public R visitThrow(ThrowTree node, P r) {
+    public R visitThrow(final ThrowTree node, final P r) {
         node.getExpression().accept(this, r);
         return null;
     }
 
     @Override
-    public R visitCompilationUnit(CompilationUnitTree node, P r) {
+    public R visitCompilationUnit(final CompilationUnitTree node, final P r) {
         node.getSourceElements().forEach((tree) -> {
             tree.accept(this, r);
         });
@@ -334,7 +334,7 @@ public class SimpleTreeVisitorES5_1<R, P> implements TreeVisitor<R, P> {
     }
 
     @Override
-    public R visitTry(TryTree node, P r) {
+    public R visitTry(final TryTree node, final P r) {
         node.getBlock().accept(this, r);
         node.getCatches().forEach((tree) -> {
             tree.accept(this, r);
@@ -348,20 +348,20 @@ public class SimpleTreeVisitorES5_1<R, P> implements TreeVisitor<R, P> {
     }
 
     @Override
-    public R visitInstanceOf(InstanceOfTree node, P r) {
+    public R visitInstanceOf(final InstanceOfTree node, final P r) {
         node.getType().accept(this, r);
         node.getExpression().accept(this, r);
         return null;
     }
 
     @Override
-    public R visitUnary(UnaryTree node, P r) {
+    public R visitUnary(final UnaryTree node, final P r) {
         node.getExpression().accept(this, r);
         return null;
     }
 
     @Override
-    public R visitVariable(VariableTree node, P r) {
+    public R visitVariable(final VariableTree node, final P r) {
         if (node.getInitializer() != null) {
             node.getInitializer().accept(this, r);
         }
@@ -369,21 +369,21 @@ public class SimpleTreeVisitorES5_1<R, P> implements TreeVisitor<R, P> {
     }
 
     @Override
-    public R visitWhileLoop(WhileLoopTree node, P r) {
+    public R visitWhileLoop(final WhileLoopTree node, final P r) {
         node.getCondition().accept(this, r);
         node.getStatement().accept(this, r);
         return null;
     }
 
     @Override
-    public R visitWith(WithTree node, P r) {
+    public R visitWith(final WithTree node, final P r) {
         node.getScope().accept(this, r);
         node.getStatement().accept(this, r);
         return null;
     }
 
     @Override
-    public R visitUnknown(Tree node, P r) {
+    public R visitUnknown(final Tree node, final P r) {
         // unknown in ECMAScript 5.1 edition
         throw new UnknownTreeException(node, r);
     }
