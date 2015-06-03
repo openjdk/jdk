@@ -148,4 +148,14 @@ public final class JSONListAdapter extends ListAdapter implements JSObject {
     public boolean isArray() {
         return obj.isArray();
     }
+
+    @Override @Deprecated
+    public double toNumber() {
+        return obj.toNumber();
+    }
+
+    @Override
+    public Object getDefaultValue(Class<?> hint) throws UnsupportedOperationException {
+        return obj.getDefaultValue(hint);
+    }
 }
