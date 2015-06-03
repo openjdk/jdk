@@ -35,7 +35,8 @@ import java.beans.*;
 
 /**
  * ComboBox motif look and feel
- * <p> * <strong>Warning:</strong>
+ * <p>
+ * <strong>Warning:</strong>
  * Serialized objects of this class will not be compatible with
  * future Swing releases.  The current serialization support is appropriate
  * for short term storage or RMI between applications running the same
@@ -261,9 +262,9 @@ public class MotifComboBoxUI extends BasicComboBoxUI implements Serializable {
     }
 
     /**
-     * This inner class is marked &quot;public&quot; due to a compiler bug.
-     * This class should be treated as a &quot;protected&quot; inner class.
-     * Instantiate it only within subclasses of <FooUI>.
+     * This inner class is marked "public" due to a compiler bug.
+     * This class should be treated as a "protected" inner class.
+     * Instantiate it only within subclasses of {@code <FooUI>}.
      */
     public class ComboBoxLayoutManager extends BasicComboBoxUI.ComboBoxLayoutManager {
         public ComboBoxLayoutManager() {
@@ -344,7 +345,7 @@ public class MotifComboBoxUI extends BasicComboBoxUI implements Serializable {
     }
 
     /**
-     * This class should be made &quot;protected&quot; in future releases.
+     * This class should be made "protected" in future releases.
      */
     private class MotifPropertyChangeListener
             extends BasicComboBoxUI.PropertyChangeHandler {

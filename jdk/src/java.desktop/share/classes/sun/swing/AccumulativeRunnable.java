@@ -49,10 +49,10 @@ import javax.swing.SwingUtilities;
  * <p>
  * Here is how one can do this using {@code AccumulativeRunnable}:
  * <pre>
- * AccumulativeRunnable<String> doSetTextImpl =
- * new  AccumulativeRunnable<String>() {
- *     @Override
- *     protected void run(List&lt;String&gt; args) {
+ * {@code AccumulativeRunnable<String> doSetTextImpl =
+ *  new  AccumulativeRunnable<String>()} {
+ *    {@literal @Override}
+ *    {@code protected void run(List<String> args)} {
  *         //set to the last string being passed
  *         setTextImpl(args.get(args.size() - 1));
  *     }
@@ -66,16 +66,16 @@ import javax.swing.SwingUtilities;
  * <p>
  * Say we want to implement addDirtyRegion(Rectangle rect)
  * which sends this region to the
- * handleDirtyRegions(List<Rect> regiouns) on the EDT.
+ * {@code handleDirtyRegions(List<Rect> regiouns)} on the EDT.
  * addDirtyRegions better be accumulated before handling on the EDT.
  *
  * <p>
  * Here is how it can be implemented using AccumulativeRunnable:
  * <pre>
- * AccumulativeRunnable<Rectangle> doHandleDirtyRegions =
- *     new AccumulativeRunnable<Rectangle>() {
- *         @Override
- *         protected void run(List&lt;Rectangle&gt; args) {
+ * {@code AccumulativeRunnable<Rectangle> doHandleDirtyRegions =}
+ *    {@code new AccumulativeRunnable<Rectangle>()} {
+ *        {@literal @Override}
+ *        {@code protected void run(List<Rectangle> args)} {
  *             handleDirtyRegions(args);
  *         }
  *     };
@@ -113,7 +113,7 @@ public abstract class AccumulativeRunnable<T> implements Runnable {
     }
 
     /**
-     * appends arguments and sends this {@cod Runnable} for the
+     * appends arguments and sends this {@code Runnable} for the
      * execution if needed.
      * <p>
      * This implementation uses {@see #submit} to send this

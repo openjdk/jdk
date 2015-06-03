@@ -37,7 +37,6 @@ import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
 
 /**
  * Draws Windows toolbar separators.
- * <p>
  *
  * @author Mark Davidson
  */

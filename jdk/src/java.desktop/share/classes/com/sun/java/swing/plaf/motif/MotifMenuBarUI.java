@@ -45,7 +45,7 @@ import javax.swing.plaf.basic.BasicMenuBarUI;
 import javax.swing.plaf.basic.*;
 
 /**
- * A Windows L&F implementation of MenuBarUI.  This implementation
+ * A Windows {@literal L&F} implementation of MenuBarUI.  This implementation
  * is a "combined" view/controller.
  * <p>
  * <strong>Warning:</strong>
