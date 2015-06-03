@@ -137,6 +137,8 @@ address StubRoutines::_updateBytesCRC32 = NULL;
 address StubRoutines::_crc_table_adr = NULL;
 
 address StubRoutines::_multiplyToLen = NULL;
+address StubRoutines::_squareToLen = NULL;
+address StubRoutines::_mulAdd = NULL;
 
 double (* StubRoutines::_intrinsic_log   )(double) = NULL;
 double (* StubRoutines::_intrinsic_log10 )(double) = NULL;
