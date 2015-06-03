@@ -34,7 +34,6 @@ import javax.swing.event.*;
 
 /**
  * Button Listener
- * <p>
  *
  * @author Rich Schiavi
  */
