@@ -24,38 +24,39 @@
 import jdk.test.lib.ExitCode;
 import jdk.test.lib.Platform;
 import jdk.test.lib.cli.CommandLineOptionTest;
+import jdk.test.lib.cli.predicate.AndPredicate;
 import jdk.test.lib.cli.predicate.NotPredicate;
-import jdk.test.lib.cli.predicate.OrPredicate;
 
 /**
- * Generic test case for SHA-related options targeted to non-x86 and
- * non-SPARC CPUs.
+ * Generic test case for SHA-related options targeted to AArch64 CPUs
+ * which don't support instruction required by the tested option.
  */
-public class GenericTestCaseForOtherCPU extends
+public class GenericTestCaseForUnsupportedAArch64CPU extends
         SHAOptionsBase.TestCase {
-    public GenericTestCaseForOtherCPU(String optionName) {
-        // Execute the test case on any CPU except SPARC and X86
-        super(optionName, new NotPredicate(
-                new OrPredicate(
-                    new OrPredicate(Platform::isSparc, Platform::isAArch64),
-                    new OrPredicate(Platform::isX64, Platform::isX86))));
+    public GenericTestCaseForUnsupportedAArch64CPU(String optionName) {
+        super(optionName, new AndPredicate(Platform::isAArch64,
+                new NotPredicate(SHAOptionsBase.getPredicateForOption(
+                        optionName))));
     }
 
     @Override
     protected void verifyWarnings() throws Throwable {
-        String shouldPassMessage = String.format("JVM should start with "
-                + "option '%s' without any warnings", optionName);
-        // Verify that on non-x86, non-SPARC and non-AArch64 CPU usage of
-        //  SHA-related options will not cause any warnings.
-        CommandLineOptionTest.verifySameJVMStartup(null,
-                new String[] { ".*" + optionName + ".*" }, shouldPassMessage,
-                shouldPassMessage, ExitCode.OK,
-                CommandLineOptionTest.prepareBooleanFlag(optionName, true));
-
-        CommandLineOptionTest.verifySameJVMStartup(null,
-                new String[] { ".*" + optionName + ".*" }, shouldPassMessage,
-                shouldPassMessage, ExitCode.OK,
+        String shouldPassMessage = String.format("JVM startup should pass with"
+                + "option '-XX:-%s' without any warnings", optionName);
+        //Verify that option could be disabled without any warnings.
+        CommandLineOptionTest.verifySameJVMStartup(null, new String[] {
+                        SHAOptionsBase.getWarningForUnsupportedCPU(optionName)
+                }, shouldPassMessage, shouldPassMessage, ExitCode.OK,
                 CommandLineOptionTest.prepareBooleanFlag(optionName, false));
+
+        shouldPassMessage = String.format("JVM should start with '-XX:+"
+                + "%s' flag, but output should contain warning.", optionName);
+        // Verify that when the tested option is explicitly enabled, then
+        // a warning will occur in VM output.
+        CommandLineOptionTest.verifySameJVMStartup(new String[] {
+                        SHAOptionsBase.getWarningForUnsupportedCPU(optionName)
+                }, null, shouldPassMessage, shouldPassMessage, ExitCode.OK,
+                CommandLineOptionTest.prepareBooleanFlag(optionName, true));
     }
 
     @Override
@@ -69,16 +70,16 @@ public class GenericTestCaseForOtherCPU extends
         // using CLI options.
         CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "false",
                 String.format("Option '%s' should be off on unsupported "
-                        + "CPU even if set to true directly", optionName),
+                        + "AArch64CPU even if set to true directly", optionName),
                 CommandLineOptionTest.prepareBooleanFlag(optionName, true));
 
-        // Verify that option is disabled when it explicitly disabled
-        // using CLI options.
+        // Verify that option is disabled when +UseSHA was passed to JVM.
         CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "false",
-                String.format("Option '%s' should be off on unsupported CPU"
-                        + " even if '%s' flag set to JVM", optionName,
-                        CommandLineOptionTest.prepareBooleanFlag(
-                        SHAOptionsBase.USE_SHA_OPTION, true)),
-                CommandLineOptionTest.prepareBooleanFlag(optionName, false));
+                String.format("Option '%s' should be off on unsupported "
+                        + "AArch64CPU even if %s flag set to JVM",
+                        optionName, CommandLineOptionTest.prepareBooleanFlag(
+                            SHAOptionsBase.USE_SHA_OPTION, true)),
+                CommandLineOptionTest.prepareBooleanFlag(
+                        SHAOptionsBase.USE_SHA_OPTION, true));
     }
 }
