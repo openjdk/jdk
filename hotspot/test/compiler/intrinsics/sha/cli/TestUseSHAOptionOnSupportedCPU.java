@@ -37,9 +37,9 @@
 public class TestUseSHAOptionOnSupportedCPU {
     public static void main(String args[]) throws Throwable {
         new SHAOptionsBase(
-                new GenericTestCaseForSupportedSparcCPU(
+                new GenericTestCaseForSupportedCPU(
                         SHAOptionsBase.USE_SHA_OPTION),
-                new UseSHASpecificTestCaseForSupportedSparcCPU(
+                new UseSHASpecificTestCaseForSupportedCPU(
                         SHAOptionsBase.USE_SHA_OPTION)).test();
     }
 }

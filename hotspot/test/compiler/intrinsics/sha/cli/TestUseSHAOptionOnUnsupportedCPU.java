@@ -39,9 +39,11 @@ public class TestUseSHAOptionOnUnsupportedCPU {
         new SHAOptionsBase(
                 new GenericTestCaseForUnsupportedSparcCPU(
                         SHAOptionsBase.USE_SHA_OPTION),
-                new UseSHASpecificTestCaseForUnsupportedSparcCPU(
-                        SHAOptionsBase.USE_SHA_OPTION),
                 new GenericTestCaseForUnsupportedX86CPU(
+                        SHAOptionsBase.USE_SHA_OPTION),
+                new GenericTestCaseForUnsupportedAArch64CPU(
+                        SHAOptionsBase.USE_SHA_OPTION),
+                new UseSHASpecificTestCaseForUnsupportedCPU(
                         SHAOptionsBase.USE_SHA_OPTION),
                 new GenericTestCaseForOtherCPU(
                         SHAOptionsBase.USE_SHA_OPTION)).test();
