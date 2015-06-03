@@ -47,7 +47,6 @@ AbstractWorkGang::AbstractWorkGang(const char* name,
                          /* allow_vm_block */ are_GC_task_threads,
                                               Monitor::_safepoint_check_sometimes);
   assert(monitor() != NULL, "Failed to allocate monitor");
-  _terminate = false;
   _task = NULL;
   _sequence_number = 0;
   _started_workers = 0;
@@ -104,18 +103,6 @@ bool WorkGang::initialize_workers() {
     }
   }
   return true;
-}
-
-AbstractWorkGang::~AbstractWorkGang() {
-  if (TraceWorkGang) {
-    tty->print_cr("Destructing work gang %s", name());
-  }
-  stop();   // stop all the workers
-  for (uint worker = 0; worker < total_workers(); worker += 1) {
-    delete gang_worker(worker);
-  }
-  delete gang_workers();
-  delete monitor();
 }
 
 GangWorker* AbstractWorkGang::gang_worker(uint i) const {
@@ -175,28 +162,9 @@ void FlexibleWorkGang::run_task(AbstractGangTask* task) {
   WorkGang::run_task(task, (uint) active_workers());
 }
 
-void AbstractWorkGang::stop() {
-  // Tell all workers to terminate, then wait for them to become inactive.
-  MutexLockerEx ml(monitor(), Mutex::_no_safepoint_check_flag);
-  if (TraceWorkGang) {
-    tty->print_cr("Stopping work gang %s task %s", name(), task()->name());
-  }
-  _task = NULL;
-  _terminate = true;
-  monitor()->notify_all();
-  while (finished_workers() < active_workers()) {
-    if (TraceWorkGang) {
-      tty->print_cr("Waiting in work gang %s: %u/%u finished",
-                    name(), finished_workers(), active_workers());
-    }
-    monitor()->wait(/* no_safepoint_check */ true);
-  }
-}
-
 void AbstractWorkGang::internal_worker_poll(WorkData* data) const {
   assert(monitor()->owned_by_self(), "worker_poll is an internal method");
   assert(data != NULL, "worker data is null");
-  data->set_terminate(terminate());
   data->set_task(task());
   data->set_sequence_number(sequence_number());
 }
@@ -259,7 +227,7 @@ void GangWorker::initialize() {
 void GangWorker::loop() {
   int previous_sequence_number = 0;
   Monitor* gang_monitor = gang()->monitor();
-  for ( ; /* !terminate() */; ) {
+  for ( ; ; ) {
     WorkData data;
     int part;  // Initialized below.
     {
@@ -272,8 +240,6 @@ void GangWorker::loop() {
       if (TraceWorkGang) {
         tty->print("Polled outside for work in gang %s worker %u",
                    gang()->name(), id());
-        tty->print("  terminate: %s",
-                   data.terminate() ? "true" : "false");
         tty->print("  sequence: %d (prev: %d)",
                    data.sequence_number(), previous_sequence_number);
         if (data.task() != NULL) {
@@ -283,13 +249,7 @@ void GangWorker::loop() {
         }
         tty->cr();
       }
-      for ( ; /* break or return */; ) {
-        // Terminate if requested.
-        if (data.terminate()) {
-          gang()->internal_note_finish();
-          gang_monitor->notify_all();
-          return;
-        }
+      for ( ; /* break */; ) {
         // Check for new work.
         if ((data.task() != NULL) &&
             (data.sequence_number() != previous_sequence_number)) {
@@ -306,8 +266,6 @@ void GangWorker::loop() {
         if (TraceWorkGang) {
           tty->print("Polled inside for work in gang %s worker %u",
                      gang()->name(), id());
-          tty->print("  terminate: %s",
-                     data.terminate() ? "true" : "false");
           tty->print("  sequence: %d (prev: %d)",
                      data.sequence_number(), previous_sequence_number);
           if (data.task() != NULL) {
