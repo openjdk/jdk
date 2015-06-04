@@ -614,8 +614,7 @@ class SpaceManager : public CHeapObj<mtClass> {
   Metachunk* _chunks_in_use[NumberOfInUseLists];
   Metachunk* _current_chunk;
 
-  // Number of small chunks to allocate to a manager
-  // If class space manager, small chunks are unlimited
+  // Maximum number of small chunks to allocate to a SpaceManager
   static uint const _small_chunk_limit;
 
   // Sum of all space in allocated chunks
@@ -730,6 +729,8 @@ class SpaceManager : public CHeapObj<mtClass> {
   // Block allocation and deallocation.
   // Allocates a block from the current chunk
   MetaWord* allocate(size_t word_size);
+  // Allocates a block from a small chunk
+  MetaWord* get_small_chunk_and_allocate(size_t word_size);
 
   // Helper for allocations
   MetaWord* allocate_work(size_t word_size);
@@ -2011,9 +2012,8 @@ void SpaceManager::locked_print_chunks_in_use_on(outputStream* st) const {
 size_t SpaceManager::calc_chunk_size(size_t word_size) {
 
   // Decide between a small chunk and a medium chunk.  Up to
-  // _small_chunk_limit small chunks can be allocated but
-  // once a medium chunk has been allocated, no more small
-  // chunks will be allocated.
+  // _small_chunk_limit small chunks can be allocated.
+  // After that a medium chunk is preferred.
   size_t chunk_word_size;
   if (chunks_in_use(MediumIndex) == NULL &&
       sum_count_in_chunks_in_use(SmallIndex) < _small_chunk_limit) {
@@ -2081,7 +2081,7 @@ MetaWord* SpaceManager::grow_and_allocate(size_t word_size) {
                             word_size, words_used, words_left);
   }
 
-  // Get another chunk out of the virtual space
+  // Get another chunk
   size_t grow_chunks_by_words = calc_chunk_size(word_size);
   Metachunk* next = get_new_chunk(word_size, grow_chunks_by_words);
 
@@ -2410,6 +2410,43 @@ Metachunk* SpaceManager::get_new_chunk(size_t word_size,
   }
 
   return next;
+}
+
+/*
+ * The policy is to allocate up to _small_chunk_limit small chunks
+ * after which only medium chunks are allocated.  This is done to
+ * reduce fragmentation.  In some cases, this can result in a lot
+ * of small chunks being allocated to the point where it's not
+ * possible to expand.  If this happens, there may be no medium chunks
+ * available and OOME would be thrown.  Instead of doing that,
+ * if the allocation request size fits in a small chunk, an attempt
+ * will be made to allocate a small chunk.
+ */
+MetaWord* SpaceManager::get_small_chunk_and_allocate(size_t word_size) {
+  if (word_size + Metachunk::overhead() > small_chunk_size()) {
+    return NULL;
+  }
+
+  MutexLockerEx cl(lock(), Mutex::_no_safepoint_check_flag);
+  MutexLockerEx cl1(expand_lock(), Mutex::_no_safepoint_check_flag);
+
+  Metachunk* chunk = chunk_manager()->chunk_freelist_allocate(small_chunk_size());
+
+  MetaWord* mem = NULL;
+
+  if (chunk != NULL) {
+    // Add chunk to the in-use chunk list and do an allocation from it.
+    // Add to this manager's list of chunks in use.
+    add_chunk(chunk, false);
+    mem = chunk->allocate(word_size);
+
+    inc_used_metrics(word_size);
+
+    // Track metaspace memory usage statistic.
+    track_metaspace_memory_usage();
+  }
+
+  return mem;
 }
 
 MetaWord* SpaceManager::allocate(size_t word_size) {
@@ -3560,7 +3597,18 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
   }
 
   if (result == NULL) {
-    report_metadata_oome(loader_data, word_size, type, mdtype, CHECK_NULL);
+    SpaceManager* sm;
+    if (is_class_space_allocation(mdtype)) {
+      sm = loader_data->metaspace_non_null()->class_vsm();
+    } else {
+      sm = loader_data->metaspace_non_null()->vsm();
+    }
+
+    result = sm->get_small_chunk_and_allocate(word_size);
+
+    if (result == NULL) {
+      report_metadata_oome(loader_data, word_size, type, mdtype, CHECK_NULL);
+    }
   }
 
   // Zero initialize.
