@@ -312,11 +312,16 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
             ret = socketGetOption(opt, null);
             return ret;
         case IP_TOS:
-            ret = socketGetOption(opt, null);
-            if (ret == -1) { // ipv6 tos
-                return trafficClass;
-            } else {
-                return ret;
+            try {
+                ret = socketGetOption(opt, null);
+                if (ret == -1) { // ipv6 tos
+                    return trafficClass;
+                } else {
+                    return ret;
+                }
+            } catch (SocketException se) {
+                    // TODO - should make better effort to read TOS or TCLASS
+                    return trafficClass; // ipv6 tos
             }
         case SO_KEEPALIVE:
             ret = socketGetOption(opt, null);
