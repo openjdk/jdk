@@ -28,7 +28,6 @@
  *  won't be returned by classesByName.
  *  @author Robert Field
  *
- *  @library scaffold
  *  @modules jdk.jdi
  *  @run build JDIScaffold VMConnection
  *  @run compile -g InnerTarg.java
