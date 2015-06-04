@@ -831,9 +831,9 @@ methodHandle Reflection::resolve_interface_call(instanceKlassHandle klass, metho
   CallInfo info;
   Symbol*  signature  = method->signature();
   Symbol*  name       = method->name();
-  LinkResolver::resolve_interface_call(info, receiver, recv_klass, klass,
-                                       name, signature,
-                                       KlassHandle(), false, true,
+  LinkResolver::resolve_interface_call(info, receiver, recv_klass,
+                                       LinkInfo(klass, name, signature, KlassHandle(), false),
+                                       true,
                                        CHECK_(methodHandle()));
   return info.selected_method();
 }
