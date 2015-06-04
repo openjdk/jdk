@@ -32,10 +32,11 @@
 
 #include <windows.h>
 #include <tlhelp32.h>
+#include <sddl.h>
 
 static void getStatInfo(JNIEnv *env, HANDLE handle, jobject jinfo);
 static void getCmdlineInfo(JNIEnv *env, HANDLE handle, jobject jinfo);
-static void procToUser( JNIEnv *env, HANDLE handle, jobject jinfo);
+static void procToUser(JNIEnv *env, HANDLE handle, jobject jinfo);
 
 /**************************************************************
  * Implementation of ProcessHandleImpl_Info native methods.
@@ -387,15 +388,15 @@ static void getCmdlineInfo(JNIEnv *env, HANDLE handle, jobject jinfo) {
     }
 }
 
-static void procToUser( JNIEnv *env, HANDLE handle, jobject jinfo) {
+static void procToUser(JNIEnv *env, HANDLE handle, jobject jinfo) {
 #define TOKEN_LEN 256
     DWORD token_len = TOKEN_LEN;
     char token_buf[TOKEN_LEN];
     TOKEN_USER *token_user = (TOKEN_USER*)token_buf;
     HANDLE tokenHandle;
-    WCHAR domain[255];
-    WCHAR name[255];
-    DWORD domainLen = sizeof(domain);
+    WCHAR domain[255 + 1 + 255 + 1];    // large enough to concat with '/' and name
+    WCHAR name[255 + 1];
+    DWORD domainLen = sizeof(domain) - sizeof(name);
     DWORD nameLen = sizeof(name);
     SID_NAME_USE use;
     jstring s;
@@ -416,11 +417,18 @@ static void procToUser( JNIEnv *env, HANDLE handle, jobject jinfo) {
 
     if (LookupAccountSidW(NULL, token_user->User.Sid, &name[0], &nameLen,
                           &domain[0], &domainLen, &use) == 0) {
-        // Name not available
-        return;
+        // Name not available, convert to a String
+        LPWSTR str;
+        if (ConvertSidToStringSidW(token_user->User.Sid, &str) == 0) {
+            return;
+        }
+        s = (*env)->NewString(env, (const jchar *)str, (jsize)wcslen(str));
+        LocalFree(str);
+    } else {
+        wcscat(domain, L"\\");
+        wcscat(domain, name);
+        s = (*env)->NewString(env, (const jchar *)domain, (jsize)wcslen(domain));
     }
-
-    s = (*env)->NewString(env, (const jchar *)name, (jsize)wcslen(name));
     CHECK_NULL(s);
     (*env)->SetObjectField(env, jinfo, ProcessHandleImpl_Info_userID, s);
 }
