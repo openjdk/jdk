@@ -27,7 +27,7 @@ import java.io.*;
  * @test
  * @bug 6863746
  * @summary javap should not scan ct.sym by default
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 
 public class T6863746 {

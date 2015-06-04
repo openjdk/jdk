@@ -26,6 +26,7 @@
  * @summary Change default criticality of policy mappings and policy constraints
             certificate extensions
  * @bug 8059916
+ * @modules java.base/sun.security.x509
  */
 
 import sun.security.x509.PolicyConstraintsExtension;

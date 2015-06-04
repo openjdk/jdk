@@ -29,13 +29,15 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodHandles.Lookup;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Collection;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import javax.script.Bindings;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.ConversionComparator;
@@ -47,11 +49,13 @@ import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
 import jdk.internal.dynalink.support.Guards;
 import jdk.internal.dynalink.support.LinkerServicesImpl;
+import jdk.internal.dynalink.support.Lookup;
 import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.api.scripting.ScriptUtils;
 import jdk.nashorn.internal.objects.NativeArray;
 import jdk.nashorn.internal.runtime.JSType;
+import jdk.nashorn.internal.runtime.ListAdapter;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.Undefined;
@@ -167,7 +171,7 @@ final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTyp
         return null;
     }
 
-    private static Lookup getCurrentLookup() {
+    private static java.lang.invoke.MethodHandles.Lookup getCurrentLookup() {
         final LinkRequest currentRequest = AccessController.doPrivileged(new PrivilegedAction<LinkRequest>() {
             @Override
             public LinkRequest run() {
@@ -179,12 +183,12 @@ final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTyp
 
     /**
      * Returns a guarded invocation that converts from a source type that is NativeArray to a Java array or List or
-     * Deque type.
+     * Queue or Deque or Collection type.
      * @param sourceType the source type (presumably NativeArray a superclass of it)
-     * @param targetType the target type (presumably an array type, or List or Deque)
+     * @param targetType the target type (presumably an array type, or List or Queue, or Deque, or Collection)
      * @return a guarded invocation that converts from the source type to the target type. null is returned if
      * either the source type is neither NativeArray, nor a superclass of it, or if the target type is not an array
-     * type, List, or Deque.
+     * type, List, Queue, Deque, or Collection.
      */
     private static GuardedInvocation getArrayConverter(final Class<?> sourceType, final Class<?> targetType) {
         final boolean isSourceTypeNativeArray = sourceType == NativeArray.class;
@@ -195,12 +199,14 @@ final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTyp
             final MethodHandle guard = isSourceTypeGeneric ? IS_NATIVE_ARRAY : null;
             if(targetType.isArray()) {
                 return new GuardedInvocation(ARRAY_CONVERTERS.get(targetType), guard);
-            }
-            if(targetType == List.class) {
-                return new GuardedInvocation(JSType.TO_JAVA_LIST.methodHandle(), guard);
-            }
-            if(targetType == Deque.class) {
-                return new GuardedInvocation(JSType.TO_JAVA_DEQUE.methodHandle(), guard);
+            } else if(targetType == List.class) {
+                return new GuardedInvocation(TO_LIST, guard);
+            } else if(targetType == Deque.class) {
+                return new GuardedInvocation(TO_DEQUE, guard);
+            } else if(targetType == Queue.class) {
+                return new GuardedInvocation(TO_QUEUE, guard);
+            } else if(targetType == Collection.class) {
+                return new GuardedInvocation(TO_COLLECTION, guard);
             }
         }
         return null;
@@ -285,6 +291,23 @@ final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTyp
 
     private static final MethodHandle IS_NASHORN_OR_UNDEFINED_TYPE = findOwnMH("isNashornTypeOrUndefined", Boolean.TYPE, Object.class);
     private static final MethodHandle CREATE_MIRROR = findOwnMH("createMirror", Object.class, Object.class);
+
+    private static final MethodHandle TO_COLLECTION;
+    private static final MethodHandle TO_DEQUE;
+    private static final MethodHandle TO_LIST;
+    private static final MethodHandle TO_QUEUE;
+    static {
+        final MethodHandle listAdapterCreate = new Lookup(MethodHandles.lookup()).findStatic(
+                ListAdapter.class, "create", MethodType.methodType(ListAdapter.class, Object.class));
+        TO_COLLECTION = asReturning(listAdapterCreate, Collection.class);
+        TO_DEQUE = asReturning(listAdapterCreate, Deque.class);
+        TO_LIST = asReturning(listAdapterCreate, List.class);
+        TO_QUEUE = asReturning(listAdapterCreate, Queue.class);
+    }
+
+    private static MethodHandle asReturning(final MethodHandle mh, final Class<?> nrtype) {
+        return mh.asType(mh.type().changeReturnType(nrtype));
+    }
 
     @SuppressWarnings("unused")
     private static boolean isNashornTypeOrUndefined(final Object obj) {

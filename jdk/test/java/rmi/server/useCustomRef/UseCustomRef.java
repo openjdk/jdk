@@ -31,6 +31,10 @@
  * 4180392
  *
  * @library ../../testlibrary
+ * @modules java.rmi/sun.rmi.registry
+ *          java.rmi/sun.rmi.server
+ *          java.rmi/sun.rmi.transport
+ *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary Ping UseCustomRef_Stub UseCustomRef_Skel
  * @run main/othervm/policy=security.policy/secure=java.rmi.RMISecurityManager/timeout=120 UseCustomRef
  *

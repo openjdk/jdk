@@ -25,7 +25,7 @@
  * @test
  * @bug 8033711
  * @summary An exception is thrown if using the "-classpath" option with no arguments
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 
 

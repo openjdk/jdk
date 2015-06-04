@@ -41,11 +41,11 @@ $(eval $(call SetupJavaCompilation,BUILD_INTERIM_LANGTOOLS, \
     DISABLE_SJAVAC := true, \
     SRC := $(LANGTOOLS_TOPDIR)/src/java.compiler/share/classes \
       $(LANGTOOLS_TOPDIR)/src/jdk.compiler/share/classes \
-      $(LANGTOOLS_TOPDIR)/src/jdk.dev/share/classes \
       $(LANGTOOLS_TOPDIR)/src/jdk.javadoc/share/classes \
+      $(LANGTOOLS_TOPDIR)/src/jdk.jdeps/share/classes \
       $(SUPPORT_OUTPUTDIR)/gensrc/jdk.compiler \
-      $(SUPPORT_OUTPUTDIR)/gensrc/jdk.dev \
-      $(SUPPORT_OUTPUTDIR)/gensrc/jdk.javadoc, \
+      $(SUPPORT_OUTPUTDIR)/gensrc/jdk.javadoc \
+      $(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdeps, \
     EXCLUDES := sun jdk, \
     COPY := .gif .xml .css .js javax.tools.JavaCompilerTool, \
     BIN := $(BUILDTOOLS_OUTPUTDIR)/langtools_interim_classes, \

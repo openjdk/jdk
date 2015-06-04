@@ -28,6 +28,7 @@ import sun.net.*;
  * @test
  * @bug 4145748
  * @summary test stickyCRLF in TelnetOutputStream
+ * @modules java.base/sun.net
  */
 public class TelnetTest {
 

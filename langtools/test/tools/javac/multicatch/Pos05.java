@@ -25,7 +25,7 @@
  * @test
  * @bug 6943289
  * @summary  Project Coin: Improved Exception Handling for Java (aka 'multicatch')
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  * @run main Pos05
  */
 

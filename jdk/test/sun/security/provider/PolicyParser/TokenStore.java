@@ -25,6 +25,7 @@
  * @test
  * @bug 4919147
  * @summary Support for token-based KeyStores
+ * @modules java.base/sun.security.provider
  */
 
 import java.io.*;

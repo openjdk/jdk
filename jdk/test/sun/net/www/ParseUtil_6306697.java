@@ -24,6 +24,7 @@
 /* @test
  * @summary PIT: CookieManager/TestCookieManager/TestCookieManager3 failed in Mustang PIT b47
  * @bug 6306697
+ * @modules java.base/sun.net.www
  */
 
 import sun.net.www.ParseUtil;

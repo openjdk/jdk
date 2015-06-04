@@ -27,6 +27,10 @@
  * @author Laird Dornin
  *
  * @library ../../../testlibrary
+ * @modules java.rmi/sun.rmi.registry
+ *          java.rmi/sun.rmi.server
+ *          java.rmi/sun.rmi.transport
+ *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary RMID ActivateMe
  * @run main/othervm/policy=security.policy/timeout=240 CreatePrivateActivatable
  */

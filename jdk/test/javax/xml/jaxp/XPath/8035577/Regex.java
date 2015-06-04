@@ -25,6 +25,7 @@
  * @test
  * @bug 8035577
  * @summary Tests for xpath regular expression methods.
+ * @modules java.xml/com.sun.org.apache.xerces.internal.impl.xpath.regex
  * @run main Regex
  * @author david.x.li@oracle.com
  */

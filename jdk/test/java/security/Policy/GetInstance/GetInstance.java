@@ -26,6 +26,7 @@
  * @bug 5100561
  * @bug 6273812
  * @summary Can not explicitly create a java.security.Policy object from a file
+ * @modules java.base/sun.security.provider
  * @build GetInstancePolicySpi GetInstanceProvider
  * @run main/othervm/policy=GetInstance.policy GetInstance
  */
@@ -34,7 +35,6 @@ import java.security.*;
 
 import java.io.File;
 import java.net.URI;
-import sun.net.www.ParseUtil;
 
 public class GetInstance {
 

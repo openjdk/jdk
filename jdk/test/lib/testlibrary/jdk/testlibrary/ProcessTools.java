@@ -44,8 +44,6 @@ import java.util.function.Predicate;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import sun.management.VMManagement;
-
 public final class ProcessTools {
     private static final class LineForwarder extends StreamPumper.LinePump {
         private final PrintStream ps;
@@ -74,7 +72,7 @@ public final class ProcessTools {
     public static Process startProcess(String name,
                                        ProcessBuilder processBuilder)
     throws IOException {
-        return startProcess(name, processBuilder, (Consumer)null);
+        return startProcess(name, processBuilder, (Consumer<String>)null);
     }
 
     /**
@@ -87,6 +85,7 @@ public final class ProcessTools {
      * @return Returns the initialized process
      * @throws IOException
      */
+    @SuppressWarnings("overloads")
     public static Process startProcess(String name,
                                        ProcessBuilder processBuilder,
                                        Consumer<String> consumer)
@@ -241,6 +240,7 @@ public final class ProcessTools {
      * @throws InterruptedException
      * @throws TimeoutException
      */
+    @SuppressWarnings("overloads")
     public static Process startProcess(String name,
                                        ProcessBuilder processBuilder,
                                        final Predicate<String> linePredicate)

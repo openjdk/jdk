@@ -26,6 +26,7 @@
  * @bug 6867345
  * @summary Turkish regional options cause NPE in
  *     sun.security.x509.AlgorithmId.algOID
+ * @modules java.base/sun.security.x509
  * @run main/othervm -Duser.language=tr -Duser.region=TR TurkishRegion
  * @author Xuelei Fan
  */

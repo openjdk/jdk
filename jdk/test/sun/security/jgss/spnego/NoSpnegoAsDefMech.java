@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6770883
+ * @modules java.security.jgss/sun.security.jgss
  * @run main/othervm NoSpnegoAsDefMech
  * @summary Infinite loop if SPNEGO specified as sun.security.jgss.mechanism
  */

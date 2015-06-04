@@ -25,7 +25,7 @@
  * @test
  * @bug 7005371
  * @summary  Multicatch: assertion error while generating LocalVariableTypeTable attribute
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  * @compile -g SubTest.java
  * @run main T7005371
  */

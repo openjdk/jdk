@@ -28,7 +28,7 @@ import com.sun.tools.classfile.*;
  * @test Visibility
  * @bug 6843077
  * @summary test that type annotations are recorded in the classfile
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  */
 
 public class Visibility {

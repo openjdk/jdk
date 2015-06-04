@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4667976
+ * @modules java.base/com.sun.net.ssl
  * @compile JavaxSSLContextImpl.java ComSSLContextImpl.java
  *      JavaxTrustManagerFactoryImpl.java ComTrustManagerFactoryImpl.java
  *      JavaxKeyManagerFactoryImpl.java ComKeyManagerFactoryImpl.java

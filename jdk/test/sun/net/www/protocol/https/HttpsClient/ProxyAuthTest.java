@@ -26,6 +26,7 @@
  * @bug 4323990 4413069
  * @summary HttpsURLConnection doesn't send Proxy-Authorization on CONNECT
  *     Incorrect checking of proxy server response
+ * @modules java.base/sun.net.www
  * @run main/othervm ProxyAuthTest
  *
  *     No way to reserve and restore java.lang.Authenticator, need to run this

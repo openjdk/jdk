@@ -26,7 +26,7 @@
  * @bug 8013789
  * @summary Compiler should emit bridges in interfaces
  * @library /tools/javac/lib
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  *          jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.util
  * @build JavacTestingAbstractProcessor BridgeHarness

@@ -25,6 +25,7 @@
  * @test
  * @bug 4514108
  * @summary Verify host name matching behaves as defined in RFC2818.
+ * @modules java.base/sun.security.util
  */
 
 import java.io.*;

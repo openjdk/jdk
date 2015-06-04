@@ -31,6 +31,7 @@ import java.util.List;
  * @test
  * @bug     8042901
  * @summary Check permission for PlatformMBeanProvider Constructor
+ * @modules java.management/sun.management.spi
  * @author  Shanliang Jiang
  */
 public class PlatformMBeanProviderConstructorCheck {

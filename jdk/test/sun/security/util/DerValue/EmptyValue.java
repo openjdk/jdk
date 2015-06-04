@@ -25,6 +25,7 @@
  * @test
  * @bug 6804045
  * @summary DerValue does not accept empty OCTET STRING
+ * @modules java.base/sun.security.util
  */
 
 import sun.security.util.DerValue;

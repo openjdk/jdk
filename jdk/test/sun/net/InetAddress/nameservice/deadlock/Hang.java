@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 7012768
+ * @modules java.base/sun.net.spi.nameservice
  * @compile -XDignore.symbol.file=true ThrowingNameService.java
  *          ThrowingNameServiceDescriptor.java
  * @run main/othervm/timeout=30 -Dsun.net.spi.nameservice.provider.1=throwing,sun Hang

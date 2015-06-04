@@ -27,6 +27,11 @@
  * @author Ann Wollrath
  *
  * @library ../../testlibrary
+ * @modules java.base/sun.nio.ch
+ *          java.rmi/sun.rmi.registry
+ *          java.rmi/sun.rmi.server
+ *          java.rmi/sun.rmi.transport
+ *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary RMID ActivationLibrary
  * @run main/othervm/timeout=240 RmidViaInheritedChannel
  */

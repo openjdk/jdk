@@ -25,6 +25,7 @@
  * @test
  * @bug 8011402
  * @summary Move blacklisting certificate logic from hard code to data
+ * @modules java.base/sun.security.util
  */
 
 import sun.security.util.UntrustedCertificates;
@@ -44,7 +45,7 @@ public class CheckBlacklistedCerts {
         File file = new File(home, "lib/security/cacerts");
         KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
         try (FileInputStream fis = new FileInputStream(file)) {
-            ks.load(new FileInputStream(file), null);
+            ks.load(fis, null);
         }
         System.out.println("Check for cacerts: " + ks.size());
         for (String alias: Collections.list(ks.aliases())) {

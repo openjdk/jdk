@@ -27,6 +27,7 @@
  * @summary Verify that the SunJSSE trustmanager works correctly in FIPS mode
  * @author Andreas Sterbenz
  * @library ..
+ * @modules java.base/com.sun.net.ssl.internal.ssl
  * @run main/othervm TrustManagerTest
  */
 

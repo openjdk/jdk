@@ -23,6 +23,7 @@
 /*
  * @test
  * @bug 6319046 8055045
+ * @modules java.security.jgss/sun.security.krb5
  * @compile -XDignore.symbol.file ParseConfig.java
  * @run main/othervm ParseConfig
  * @summary Problem with parsing krb5.conf

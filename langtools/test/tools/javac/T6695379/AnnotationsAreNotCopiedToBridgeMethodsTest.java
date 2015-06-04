@@ -26,7 +26,7 @@
  * @bug 6695379
  * @summary Copy method annotations and parameter annotations to synthetic
  * bridge methods
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  *          jdk.compiler/com.sun.tools.javac.util
  * @run main AnnotationsAreNotCopiedToBridgeMethodsTest
  */

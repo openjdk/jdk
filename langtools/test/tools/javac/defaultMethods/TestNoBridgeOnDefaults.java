@@ -25,7 +25,7 @@
  * @test
  * @bug 7192246
  * @summary  check that javac does not generate bridge methods for defaults
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  */
 
 import com.sun.tools.classfile.ClassFile;

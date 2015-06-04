@@ -25,7 +25,7 @@
  * @test
  * @bug     8007052
  * @summary javap should include the descriptor for a method in verbose mode
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 
 import java.io.File;

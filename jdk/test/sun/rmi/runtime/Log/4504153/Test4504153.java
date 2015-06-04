@@ -28,6 +28,10 @@
  * @author Peter Jones
  *
  * @library ../../../../../java/rmi/testlibrary
+ * @modules java.rmi/sun.rmi.registry
+ *          java.rmi/sun.rmi.server
+ *          java.rmi/sun.rmi.transport
+ *          java.rmi/sun.rmi.transport.tcp
  * @build JavaVM
  * @run main/othervm Test4504153
  */

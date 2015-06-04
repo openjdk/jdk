@@ -25,7 +25,7 @@
  * @test
  * @bug 6622232
  * @summary javap gets whitespace confused
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 
 import java.io.*;

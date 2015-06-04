@@ -26,6 +26,7 @@
  * @bug 4278094
  * @summary Ensure that setValuesCaseSensitive() does not leave name
  *      in an invalid state.
+ * @modules java.naming/com.sun.jndi.ldap
  */
 
 import com.sun.jndi.ldap.LdapName;
