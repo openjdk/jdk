@@ -28,6 +28,9 @@ default: all
 include $(SPEC)
 include MakeBase.gmk
 
+# Hook to include the corresponding custom file, if present.
+$(eval $(call IncludeCustomExtension, , StripBinaries.gmk))
+
 ################################################################################
 # Copy native libraries and executables to a secondary location to strip them
 # and filter out files that shouldn't go into the image.
@@ -51,11 +54,13 @@ else
   endef
 endif
 
+NO_STRIP_CMDS_FILTER += %.cgi
+
 # Don't include debug info for executables.
 ALL_CMDS_SRC := $(filter-out %.bc %.debuginfo %.diz %.map %.pdb, \
     $(shell $(FIND) $(SUPPORT_OUTPUTDIR)/modules_cmds -type f -o -type l))
-COPY_CMDS_SRC := $(filter %.cgi, $(ALL_CMDS_SRC))
-STRIP_CMDS_SRC := $(filter-out $(COPY_CMDS_SRC), $(ALL_CMDS_SRC))
+COPY_CMDS_SRC := $(filter $(NO_STRIP_CMDS_FILTER), $(ALL_CMDS_SRC))
+STRIP_CMDS_SRC := $(filter-out $(NO_STRIP_CMDS_FILTER), $(ALL_CMDS_SRC))
 
 # Make sure symbolic links are copied and not stripped
 COPY_LIBS_SRC := \

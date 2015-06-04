@@ -517,7 +517,8 @@ define SetupModuleCompilation
   # Find the module dependencies by parsing modules.list file
   $1_DEPS := $$(call FindDepsForModule, $1)
 
-  $1_CLASSPATH := $$(addprefix $(JDK_OUTPUTDIR)/modules/,$$($1_DEPS))
+  $1_CLASSPATH := $$(foreach d,$$($1_DEPS), $$(if $$($$d_BIN), $$($$d_BIN), \
+      $(JDK_OUTPUTDIR)/modules/$$d))
   # When crypto classes are prebuilt, need to look for classes already in
   # output dir.
   ifneq ($(BUILD_CRYPTO), true)
@@ -534,10 +535,10 @@ define SetupModuleCompilation
   $$(eval $$(call SetupJavaCompilation,$1, \
       SETUP := $$(if $$($1_SETUP), $$($1_SETUP), GENERATE_JDKBYTECODE), \
       SRC := $$(wildcard $$(call ALL_SRC_DIRS,$1)), \
-      INCLUDES:=$(JDK_USER_DEFINED_FILTER),\
-      BIN := $(JDK_OUTPUTDIR)/modules/$1, \
+      INCLUDES := $(JDK_USER_DEFINED_FILTER),\
+      BIN := $$(if $$($1_BIN), $$($1_BIN), $(JDK_OUTPUTDIR)/modules/$1), \
       HEADERS := $(SUPPORT_OUTPUTDIR)/headers/$1, \
-      ADD_JAVAC_FLAGS := $$($1_JAVAC_FLAGS)))
+      ADD_JAVAC_FLAGS := $$($1_ADD_JAVAC_FLAGS) $$($1_JAVAC_FLAGS)))
 
   $1: $$($1) $$($1_COPY_EXTRA)
 
@@ -548,7 +549,8 @@ define SetupModuleCompilation
   # Only the javac compilation actually depends on other modules so limit
   # dependency declaration to that by using the *_COMPILE_TARGET variable.
   $$($1_COMPILE_TARGETS): $$(foreach d,$$($1_DEPS), \
-      $$(call SetupJavaCompilationCompileTarget, $$d, $(JDK_OUTPUTDIR)/modules/$$d))
+      $$(call SetupJavaCompilationCompileTarget, $$d, \
+          $$(if $$($$d_BIN), $$($$d_BIN), $(JDK_OUTPUTDIR)/modules/$$d)))
 endef
 
 # Setup compilation for each module
