@@ -122,6 +122,22 @@ Declares a structure type that can be used in other events.
       <value type="CLASS" field="definingClassLoader" label="Defining Class Loader"/>
     </event>
 
+    <event id="IntFlagChanged" path="vm/flag/int_changed" label="Int Flag Changed"
+          is_instant="true">
+      <value type="UTF8" field="name" label="Name" />
+      <value type="INTEGER" field="old_value" label="Old Value" />
+      <value type="INTEGER" field="new_value" label="New Value" />
+      <value type="FLAGVALUEORIGIN" field="origin" label="Origin" />
+    </event>
+
+    <event id="UnsignedIntFlagChanged" path="vm/flag/uint_changed" label="Unsigned Int Flag Changed"
+          is_instant="true">
+      <value type="UTF8" field="name" label="Name" />
+      <value type="UINT" field="old_value" label="Old Value" />
+      <value type="UINT" field="new_value" label="New Value" />
+      <value type="FLAGVALUEORIGIN" field="origin" label="Origin" />
+    </event>
+
     <event id="LongFlagChanged" path="vm/flag/long_changed" label="Long Flag Changed"
           is_instant="true">
       <value type="UTF8" field="name" label="Name" />
