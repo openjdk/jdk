@@ -228,7 +228,8 @@ public class ModuleArchive implements Archive {
         private static String nativeDir(String filename) {
             if (System.getProperty("os.name").startsWith("Windows")) {
                 if (filename.endsWith(".dll") || filename.endsWith(".diz")
-                    || filename.endsWith(".pdb") || filename.endsWith(".map")) {
+                    || filename.endsWith(".pdb") || filename.endsWith(".map")
+                    || filename.endsWith(".cpl")) {
                     return "bin";
                 } else {
                     return "lib";
