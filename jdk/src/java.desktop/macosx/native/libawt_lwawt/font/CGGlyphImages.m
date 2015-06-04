@@ -203,6 +203,7 @@ static inline UInt8* getReverseGammaLut() {
     if (reverseGamma == 0) {
         // initialize gamma lut
         double gamma;
+        int i;
         const char* pGammaEnv = getenv("J2D_LCD_REVERSE_GAMMA");
         if (pGammaEnv != NULL) {
             reverseGamma = atol(pGammaEnv);
@@ -213,7 +214,7 @@ static inline UInt8* getReverseGammaLut() {
         }
         
         gamma = 100.0 / reverseGamma;
-        for (int i = 0; i < 256; i++) {
+        for (i = 0; i < 256; i++) {
             double x = ((double)i) / 255.0;
             reverseGammaLut[i] = (UInt8)(255 * pow(x, gamma));
         }
