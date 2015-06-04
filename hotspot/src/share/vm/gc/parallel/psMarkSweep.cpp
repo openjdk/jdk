@@ -272,7 +272,7 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
       // Don't check if the size_policy is ready here.  Let
       // the size_policy check that internally.
       if (UseAdaptiveGenerationSizePolicyAtMajorCollection &&
-          ((gc_cause != GCCause::_java_lang_system_gc) ||
+          (!GCCause::is_user_requested_gc(gc_cause) ||
             UseAdaptiveSizePolicyWithSystemGC)) {
         // Swap the survivor spaces if from_space is empty. The
         // resize_young_gen() called below is normally used after
