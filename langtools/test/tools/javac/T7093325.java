@@ -27,7 +27,7 @@
  * @summary Redundant entry in bytecode exception table
  *  temporarily workaround combo tests are causing time out in several platforms
  * @library lib
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  * @build JavacTestingAbstractThreadedTest
  * @run main/othervm T7093325
  */

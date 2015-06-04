@@ -27,6 +27,7 @@
  * @summary Basic tests for TlsRsaPremasterSecret generator
  * @author Andreas Sterbenz
  * @library ..
+ * @modules java.base/sun.security.internal.spec
  */
 
 import java.security.Security;

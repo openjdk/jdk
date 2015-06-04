@@ -25,6 +25,7 @@
  * @test
  * @bug 4772077
  * @summary  using defaultReadTimeout appear to retry request upon timeout
+ * @modules java.base/sun.net.www
  */
 
 import java.net.*;

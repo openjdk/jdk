@@ -25,6 +25,7 @@
  * @test
  * @bug 6372500
  * @summary Test that KeyInfo.marshal works correctly
+ * @modules java.xml.crypto/org.jcp.xml.dsig.internal.dom
  * @compile -XDignore.symbol.file Marshal.java
  * @run main Marshal
  * @author Sean Mullan

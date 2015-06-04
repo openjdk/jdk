@@ -132,6 +132,10 @@ public class Platform {
         return isArch("(amd64)|(x86_64)");
     }
 
+    public static boolean isAArch64() {
+        return isArch("aarch64");
+    }
+
     private static boolean isArch(String archnameRE) {
         return Pattern.compile(archnameRE, Pattern.CASE_INSENSITIVE)
                 .matcher(osArch)

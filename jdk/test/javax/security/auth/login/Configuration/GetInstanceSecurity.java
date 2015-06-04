@@ -34,8 +34,6 @@ import java.net.URI;
 import java.security.*;
 import javax.security.auth.login.*;
 
-import sun.net.www.ParseUtil;
-
 public class GetInstanceSecurity {
 
     private static final String JAVA_CONFIG = "JavaLoginConfig";

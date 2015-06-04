@@ -985,7 +985,7 @@ public class Attr extends JCTree.Visitor {
                 if (isDefaultMethod || (tree.sym.flags() & (ABSTRACT | NATIVE)) == 0 &&
                     !relax)
                     log.error(tree.pos(), "missing.meth.body.or.decl.abstract");
-            } else if ((tree.sym.flags() & ABSTRACT) != 0 && !isDefaultMethod) {
+            } else if ((tree.sym.flags() & (ABSTRACT|DEFAULT|PRIVATE)) == ABSTRACT) {
                 if ((owner.flags() & INTERFACE) != 0) {
                     log.error(tree.body.pos(), "intf.meth.cant.have.body");
                 } else {

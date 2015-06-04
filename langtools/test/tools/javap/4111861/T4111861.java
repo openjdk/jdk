@@ -27,7 +27,7 @@ import java.io.*;
  * @test
  * @bug 4111861
  * @summary static final field contents are not displayed
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 public class T4111861 {
     public static void main(String... args) throws Exception {

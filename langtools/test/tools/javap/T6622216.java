@@ -25,7 +25,7 @@
  * @test
  * @bug 6622216
  * @summary javap names some attributes incorrectly
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 
 import java.io.*;

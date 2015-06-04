@@ -30,7 +30,7 @@ import com.sun.tools.classfile.*;
  * @test Presence
  * @bug 6843077
  * @summary test that all type annotations are present in the classfile
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  */
 
 public class Presence {

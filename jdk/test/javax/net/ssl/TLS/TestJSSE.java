@@ -28,6 +28,8 @@ import java.security.Security;
  * @test
  * @bug 8049429
  * @library ../../../../lib/testlibrary/
+ * @modules java.management
+ *          jdk.crypto.ec/sun.security.ec
  * @build jdk.testlibrary.Utils
  * @compile CipherTestUtils.java JSSEClient.java JSSEServer.java
  * @summary Test that all cipher suites work in all versions and all client

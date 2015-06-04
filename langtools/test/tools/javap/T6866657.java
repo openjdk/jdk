@@ -26,7 +26,7 @@
  * @test
  * @bug 6866657
  * @summary add byteLength() method to primary classfile types
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  */
 
 import java.io.*;

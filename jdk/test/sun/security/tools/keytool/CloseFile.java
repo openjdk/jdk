@@ -26,6 +26,7 @@
  * @bug 6489721
  * @summary keytool has not closed several file streams
  * @author weijun.wang
+ * @modules java.base/sun.security.tools.keytool
  * @compile -XDignore.symbol.file CloseFile.java
  * @run main CloseFile
  *

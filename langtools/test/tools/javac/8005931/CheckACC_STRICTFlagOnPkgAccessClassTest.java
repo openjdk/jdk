@@ -27,7 +27,7 @@
  * @test
  * @bug 8005931
  * @summary javac doesn't set ACC_STRICT for classes with package access
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  * @run main CheckACC_STRICTFlagOnPkgAccessClassTest
  */
 

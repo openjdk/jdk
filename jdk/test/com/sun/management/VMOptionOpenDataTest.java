@@ -31,6 +31,8 @@ import sun.management.MappedMXBeanType;
  * @test
  * @bug     8042901
  * @summary Check that MappedMXBeanType.toOpenTypeData supports VMOption
+ * @modules java.management/sun.management
+ *          jdk.management/com.sun.management
  * @author  Shanliang Jiang
  */
 public class VMOptionOpenDataTest {

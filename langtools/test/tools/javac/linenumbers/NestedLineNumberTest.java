@@ -27,7 +27,7 @@
  * @test
  * @bug 8061778
  * @summary  Wrong LineNumberTable for default constructors
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  */
 
 import com.sun.tools.classfile.ClassFile;

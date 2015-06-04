@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4722333
+ * @modules java.base/sun.net.www
  * @library ../../../sun/net/www/httptest/
  * @build HttpCallback TestHttpServer ClosedChannelList HttpTransaction
  * @run main B4722333

@@ -23,6 +23,7 @@
 /*
  * @test
  * @bug 8036971
+ * @modules java.security.jgss/sun.security.krb5
  * @compile -XDignore.symbol.file ExtraLines.java
  * @run main/othervm ExtraLines
  * @summary krb5.conf does not accept directive lines before the first section

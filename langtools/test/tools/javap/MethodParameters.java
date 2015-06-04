@@ -25,7 +25,7 @@
  * @test
  * @bug 8004727 8005647
  * @summary javac should generate method parameters correctly.
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 
 import java.io.*;

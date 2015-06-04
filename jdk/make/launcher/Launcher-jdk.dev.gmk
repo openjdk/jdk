@@ -25,10 +25,5 @@
 
 include LauncherCommon.gmk
 
-$(eval $(call SetupLauncher,jdeps, \
-    -DEXPAND_CLASSPATH_WILDCARDS \
-    -DNEVER_ACT_AS_SERVER_CLASS_MACHINE \
-    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "com.sun.tools.jdeps.Main"$(COMMA) }'))
-
 $(eval $(call SetupLauncher,jimage,\
     -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "jdk.tools.jimage.Main"$(COMMA) }'))

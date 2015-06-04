@@ -25,6 +25,7 @@
  * @test
  * @bug 6961765
  * @summary Double byte characters corrupted in DN for LDAP referrals
+ * @modules java.naming/com.sun.jndi.ldap
  */
 
 import com.sun.jndi.ldap.LdapURL;

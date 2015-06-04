@@ -25,7 +25,7 @@
  * @test
  * @bug 6887895
  * @summary CONSTANT_Class_info getBaseName does not handle arrays of primitives correctly
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  */
 
 import java.io.*;

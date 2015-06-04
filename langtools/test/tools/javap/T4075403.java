@@ -25,7 +25,7 @@
  * @test
  * @bug 4075403
  * @summary Use javap to inquire about a specific inner class
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 
 

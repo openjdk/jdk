@@ -25,6 +25,7 @@
  * @bug 4313887 6838333
  * @summary Sanity test for Sun-specific FILE_TREE watch event modifier
  * @library ..
+ * @modules java.base/com.sun.nio.file
  */
 
 import java.nio.file.*;

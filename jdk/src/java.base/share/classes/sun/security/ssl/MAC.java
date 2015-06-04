@@ -23,7 +23,6 @@
  * questions.
  */
 
-
 package sun.security.ssl;
 
 import java.security.InvalidKeyException;
@@ -50,24 +49,26 @@ import static sun.security.ssl.CipherSuite.MacAlg.*;
  */
 final class MAC extends Authenticator {
 
-    final static MAC NULL = new MAC();
+    final static MAC TLS_NULL = new MAC(false);
 
     // Value of the null MAC is fixed
     private static final byte nullMAC[] = new byte[0];
 
     // internal identifier for the MAC algorithm
-    private final MacAlg        macAlg;
+    private final MacAlg macAlg;
 
     // JCE Mac object
     private final Mac mac;
 
-    private MAC() {
+    MAC(boolean isDTLS) {
+        super(isDTLS);
+
         macAlg = M_NULL;
         mac = null;
     }
 
     /**
-     * Set up, configured for the given SSL/TLS MAC type and version.
+     * Set up, configured for the given MAC type and version.
      */
     MAC(MacAlg macAlg, ProtocolVersion protocolVersion, SecretKey key)
             throws NoSuchAlgorithmException, InvalidKeyException {
@@ -75,12 +76,14 @@ final class MAC extends Authenticator {
         this.macAlg = macAlg;
 
         String algorithm;
-        boolean tls = (protocolVersion.v >= ProtocolVersion.TLS10.v);
+
+        // using SSL MAC computation?
+        boolean useSSLMac = (protocolVersion.v < ProtocolVersion.TLS10.v);
 
         if (macAlg == M_MD5) {
-            algorithm = tls ? "HmacMD5" : "SslMacMD5";
+            algorithm = useSSLMac ? "SslMacMD5" : "HmacMD5";
         } else if (macAlg == M_SHA) {
-            algorithm = tls ? "HmacSHA1" : "SslMacSHA1";
+            algorithm = useSSLMac ? "SslMacSHA1" : "HmacSHA1";
         } else if (macAlg == M_SHA256) {
             algorithm = "HmacSHA256";    // TLS 1.2+
         } else if (macAlg == M_SHA384) {
@@ -122,6 +125,8 @@ final class MAC extends Authenticator {
      * @param offset start of compressed record data
      * @param len the size of the compressed record
      * @param isSimulated if true, simulate the MAC computation
+     *
+     * @return the MAC result
      */
     final byte[] compute(byte type, byte buf[],
             int offset, int len, boolean isSimulated) {
@@ -130,7 +135,8 @@ final class MAC extends Authenticator {
         }
 
         if (!isSimulated) {
-            byte[] additional = acquireAuthenticationBytes(type, len);
+            // Uses the implicit sequence number for the computation.
+            byte[] additional = acquireAuthenticationBytes(type, len, null);
             mac.update(additional);
         }
         mac.update(buf, offset, len);
@@ -149,15 +155,22 @@ final class MAC extends Authenticator {
      * @param bb a ByteBuffer in which the position and limit
      *          demarcate the data to be MAC'd.
      * @param isSimulated if true, simulate the MAC computation
+     * @param sequence the explicit sequence number, or null if using
+     *        the implicit sequence number for the computation
+     *
+     * @return the MAC result
      */
-    final byte[] compute(byte type, ByteBuffer bb, boolean isSimulated) {
+    final byte[] compute(byte type, ByteBuffer bb,
+            byte[] sequence, boolean isSimulated) {
+
         if (macAlg.size == 0) {
             return nullMAC;
         }
 
         if (!isSimulated) {
+            // Uses the explicit sequence number for the computation.
             byte[] additional =
-                    acquireAuthenticationBytes(type, bb.remaining());
+                    acquireAuthenticationBytes(type, bb.remaining(), sequence);
             mac.update(additional);
         }
         mac.update(bb);
@@ -165,5 +178,22 @@ final class MAC extends Authenticator {
         return mac.doFinal();
     }
 
+    /**
+     * Compute and returns the MAC for the remaining data
+     * in this ByteBuffer.
+     *
+     * On return, the bb position == limit, and limit will
+     * have not changed.
+     *
+     * @param type record type
+     * @param bb a ByteBuffer in which the position and limit
+     *        demarcate the data to be MAC'd.
+     * @param isSimulated if true, simulate the the MAC computation
+     *
+     * @return the MAC result
+     */
+    final byte[] compute(byte type, ByteBuffer bb, boolean isSimulated) {
+        // Uses the implicit sequence number for the computation.
+        return compute(type, bb, null, isSimulated);
+    }
 }
-

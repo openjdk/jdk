@@ -28,6 +28,10 @@
  * @author Laird Dornin; code borrowed from Ann Wollrath
  *
  * @library ../../../testlibrary
+ * @modules java.rmi/sun.rmi.registry
+ *          java.rmi/sun.rmi.server
+ *          java.rmi/sun.rmi.transport
+ *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary RMID
  *     TestSecurityManager RegisteringActivatable ShutdownGracefully_Stub
  * @run main/othervm/policy=security.policy/timeout=700 ShutdownGracefully

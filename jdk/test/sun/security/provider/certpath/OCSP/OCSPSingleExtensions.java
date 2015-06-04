@@ -25,6 +25,7 @@
  * @test
  * @bug 8074064
  * @summary OCSPResponse.SingleResponse objects do not parse singleExtensions
+ * @modules java.base/sun.security.x509
  * @run main/othervm sun.security.provider.certpath.OCSPSingleExtensions
  */
 

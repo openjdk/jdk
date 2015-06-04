@@ -25,7 +25,7 @@
  * @test
  * @bug 6879371
  * @summary javap does not close internal default file manager
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 
 import java.io.*;

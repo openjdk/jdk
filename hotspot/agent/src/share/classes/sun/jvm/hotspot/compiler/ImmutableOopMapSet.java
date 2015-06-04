@@ -106,19 +106,19 @@ public class ImmutableOopMapSet extends VMObject {
   /**
    * Returns the number of OopMaps in this ImmutableOopMapSet
    */
-  public long getSize() {
-    return countField.getValue(addr);
-  }
-
   public int getCount() { return (int) countField.getValue(addr); }
 
   private Address dataStart() {
-    return (addr.addOffsetTo(ImmutableOopMapSet.classSize * getCount()));
+    return (pairStart().addOffsetTo(ImmutableOopMapPair.classSize() * getCount()));
+  }
+
+  private Address pairStart() {
+    return addr.addOffsetTo(ImmutableOopMapSet.classSize);
   }
 
   public ImmutableOopMapPair pairAt(int index) {
     Assert.that((index >= 0) && (index < getCount()), "bad index");
-    return new ImmutableOopMapPair(addr.addOffsetTo(index * ImmutableOopMapPair.classSize()));
+    return new ImmutableOopMapPair(pairStart().addOffsetTo(index * ImmutableOopMapPair.classSize()));
   }
 
   /**
@@ -126,7 +126,7 @@ public class ImmutableOopMapSet extends VMObject {
    */
   public ImmutableOopMap getMapAt(int index) {
     if (Assert.ASSERTS_ENABLED) {
-      Assert.that((index >= 0) && (index <= getSize()), "bad index");
+      Assert.that((index >= 0) && (index <= getCount()), "bad index");
     }
 
     ImmutableOopMapPair immutableOopMapPair = pairAt(index);
@@ -135,7 +135,7 @@ public class ImmutableOopMapSet extends VMObject {
 
   public ImmutableOopMap findMapAtOffset(long pcOffset, boolean debugging) {
     int i;
-    int len = (int) getSize();
+    int len = getCount();
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(len > 0, "must have pointer maps");
     }
@@ -253,14 +253,14 @@ public class ImmutableOopMapSet extends VMObject {
     if (!VM.getVM().isDebugging()) {
       if (Assert.ASSERTS_ENABLED) {
         ImmutableOopMapSet maps = cb.getOopMaps();
-        Assert.that((maps != null) && (maps.getSize() > 0), "found null or empty ImmutableOopMapSet for CodeBlob");
+        Assert.that((maps != null) && (maps.getCount() > 0), "found null or empty ImmutableOopMapSet for CodeBlob");
       }
     } else {
       // Hack for some topmost frames that have been found with empty
       // OopMapSets. (Actually have not seen the null case, but don't
       // want to take any chances.) See HSDB.showThreadStackMemory().
       ImmutableOopMapSet maps = cb.getOopMaps();
-      if ((maps == null) || (maps.getSize() == 0)) {
+      if ((maps == null) || (maps.getCount() == 0)) {
         return;
       }
     }
@@ -311,8 +311,28 @@ public class ImmutableOopMapSet extends VMObject {
     return pairAt(index);
   }
 
+  private int getSize() {
+    return (int) sizeField.getValue(addr);
+  }
+
   public ImmutableOopMap getMap(ImmutableOopMapPair pair) {
-    Assert.that(pair.getOffset() < (int) sizeField.getValue(), "boundary check");
+    Assert.that(pair.getOffset() < getSize(), "boundary check: this: " + this + " offset: " + pair);
     return new ImmutableOopMap(dataStart().addOffsetTo(pair.getOffset()));
+  }
+
+  public String toString() {
+    StringBuilder builder = new StringBuilder();
+    builder.append("Set{ ")
+      .append("addr = ").append(addr)
+      .append(", count = ").append(getCount())
+      .append(", size = ").append(getSize())
+      .append(", pairs = [");
+
+    for (int i = 0; i < getCount(); ++i) {
+      builder.append(getPairAt(i));
+    }
+
+    builder.append("]");
+    return builder.toString();
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,10 @@
  * @author Laird Dornin
  *
  * @library ../../testlibrary
+ * @modules java.rmi/sun.rmi.registry
+ *          java.rmi/sun.rmi.server
+ *          java.rmi/sun.rmi.transport
+ *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary CheckFQDNClient CheckFQDN_Stub TellServerName
  * @run main/othervm/timeout=120 CheckFQDN
  */

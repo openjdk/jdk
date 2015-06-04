@@ -26,6 +26,7 @@
  * @bug 6989440
  * @summary Verify ConcurrentModificationException is not thrown with multiple
  *     thread accesses.
+ * @modules java.base/sun.util.locale.provider
  * @compile -XDignore.symbol.file=true Bug6989440.java
  * @run main Bug6989440
  */

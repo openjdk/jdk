@@ -25,6 +25,7 @@
  * @test
  * @bug 8029994
  * @summary Support "include" and "includedir" in krb5.conf
+ * @modules java.security.jgss/sun.security.krb5
  * @compile -XDignore.symbol.file Include.java
  * @run main/othervm Include
  */

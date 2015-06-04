@@ -28,7 +28,7 @@
  *          javac crash while creating LVT entry for a local variable defined in
  *          an inner block
  * @library /tools/javac/lib
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  * @build JavacTestingAbstractProcessor LVTHarness
  * @run main LVTHarness
  */

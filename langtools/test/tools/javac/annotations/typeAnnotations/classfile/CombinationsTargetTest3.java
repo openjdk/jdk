@@ -25,7 +25,7 @@
  * @test
  * @bug 8005085 8005681 8008769 8010015
  * @summary Check (repeating)type annotations on lambda usage.
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  * @run main CombinationsTargetTest3
  */
 

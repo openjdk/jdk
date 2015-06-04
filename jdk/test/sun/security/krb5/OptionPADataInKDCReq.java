@@ -24,6 +24,8 @@
  * @test
  * @bug 6648972
  * @summary KDCReq.init always read padata
+ * @modules java.base/sun.security.util
+ *          java.security.jgss/sun.security.krb5.internal
  */
 import sun.security.krb5.internal.ETypeInfo2;
 import sun.security.krb5.internal.KDCReq;

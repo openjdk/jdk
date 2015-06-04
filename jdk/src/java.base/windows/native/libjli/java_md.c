@@ -44,7 +44,6 @@
 /*
  * Prototypes.
  */
-static jboolean GetPublicJREHome(char *path, jint pathsize);
 static jboolean GetJVMPath(const char *jrepath, const char *jvmtype,
                            char *jvmpath, jint jvmpathsize);
 static jboolean GetJREPath(char *path, jint pathsize);
@@ -334,12 +333,6 @@ GetJREPath(char *path, jint pathsize)
         }
     }
 
-    /* Look for a public JRE on this machine. */
-    if (GetPublicJREHome(path, pathsize)) {
-        JLI_TraceLauncher("JRE path is %s\n", path);
-        return JNI_TRUE;
-    }
-
     JLI_ReportErrorMessage(JRE_ERROR8 JAVA_DLL);
     return JNI_FALSE;
 
@@ -422,89 +415,6 @@ GetApplicationHome(char *buf, jint bufsize)
         return JNI_FALSE;
     }
     *cp = '\0';  /* remove the bin\ part */
-    return JNI_TRUE;
-}
-
-/*
- * Helpers to look in the registry for a public JRE.
- */
-                    /* Same for 1.5.0, 1.5.1, 1.5.2 etc. */
-#define JRE_KEY     "Software\\JavaSoft\\Java Runtime Environment"
-
-static jboolean
-GetStringFromRegistry(HKEY key, const char *name, char *buf, jint bufsize)
-{
-    DWORD type, size;
-
-    if (RegQueryValueEx(key, name, 0, &type, 0, &size) == 0
-        && type == REG_SZ
-        && (size < (unsigned int)bufsize)) {
-        if (RegQueryValueEx(key, name, 0, 0, buf, &size) == 0) {
-            return JNI_TRUE;
-        }
-    }
-    return JNI_FALSE;
-}
-
-static jboolean
-GetPublicJREHome(char *buf, jint bufsize)
-{
-    HKEY key, subkey;
-    char version[MAXPATHLEN];
-
-    /*
-     * Note: There is a very similar implementation of the following
-     * registry reading code in the Windows java control panel (javacp.cpl).
-     * If there are bugs here, a similar bug probably exists there.  Hence,
-     * changes here require inspection there.
-     */
-
-    /* Find the current version of the JRE */
-    if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, JRE_KEY, 0, KEY_READ, &key) != 0) {
-        JLI_ReportErrorMessage(REG_ERROR1, JRE_KEY);
-        return JNI_FALSE;
-    }
-
-    if (!GetStringFromRegistry(key, "CurrentVersion",
-                               version, sizeof(version))) {
-        JLI_ReportErrorMessage(REG_ERROR2, JRE_KEY);
-        RegCloseKey(key);
-        return JNI_FALSE;
-    }
-
-    if (JLI_StrCmp(version, GetDotVersion()) != 0) {
-        JLI_ReportErrorMessage(REG_ERROR3, JRE_KEY, version, GetDotVersion()
-        );
-        RegCloseKey(key);
-        return JNI_FALSE;
-    }
-
-    /* Find directory where the current version is installed. */
-    if (RegOpenKeyEx(key, version, 0, KEY_READ, &subkey) != 0) {
-        JLI_ReportErrorMessage(REG_ERROR1, JRE_KEY, version);
-        RegCloseKey(key);
-        return JNI_FALSE;
-    }
-
-    if (!GetStringFromRegistry(subkey, "JavaHome", buf, bufsize)) {
-        JLI_ReportErrorMessage(REG_ERROR4, JRE_KEY, version);
-        RegCloseKey(key);
-        RegCloseKey(subkey);
-        return JNI_FALSE;
-    }
-
-    if (JLI_IsTraceLauncher()) {
-        char micro[MAXPATHLEN];
-        if (!GetStringFromRegistry(subkey, "MicroVersion", micro,
-                                   sizeof(micro))) {
-            printf("Warning: Can't read MicroVersion\n");
-            micro[0] = '\0';
-        }
-        printf("Version major.minor.micro = %s.%s\n", version, micro);
-    }
-
-    RegCloseKey(key);
-    RegCloseKey(subkey);
     return JNI_TRUE;
 }
 

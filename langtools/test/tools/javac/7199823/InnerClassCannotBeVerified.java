@@ -25,7 +25,7 @@
  * @test
  * @bug 7199823
  * @summary javac generates inner class that can't be verified
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  * @run main InnerClassCannotBeVerified
  */
 

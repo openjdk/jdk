@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@
 
 
 #ifdef JAVA_ARGS
+#define HAS_JAVA_ARGS JNI_TRUE
 static const char* const_progname = "java";
 static const char* const_jargs[] = JAVA_ARGS;
 /*
@@ -58,6 +59,7 @@ static const char* const_jargs[] = JAVA_ARGS;
 #endif /* APP_CLASSPATH */
 static const char* const_appclasspath[] = APP_CLASSPATH;
 #else  /* !JAVA_ARGS */
+#define HAS_JAVA_ARGS JNI_FALSE
 #ifdef PROGNAME
 static const char* const_progname = PROGNAME;
 #else
