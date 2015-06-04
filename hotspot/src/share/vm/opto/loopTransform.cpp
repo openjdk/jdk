@@ -1914,7 +1914,10 @@ void PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
   // Find the pre-loop limit; we will expand it's iterations to
   // not ever trip low tests.
   Node *p_f = iffm->in(0);
-  assert(p_f->Opcode() == Op_IfFalse, "");
+  // pre loop may have been optimized out
+  if (p_f->Opcode() != Op_IfFalse) {
+    return;
+  }
   CountedLoopEndNode *pre_end = p_f->in(0)->as_CountedLoopEnd();
   assert(pre_end->loopnode()->is_pre_loop(), "");
   Node *pre_opaq1 = pre_end->limit();
