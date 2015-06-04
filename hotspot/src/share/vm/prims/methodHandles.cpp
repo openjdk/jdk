@@ -677,24 +677,24 @@ Handle MethodHandles::resolve_MemberName(Handle mname, KlassHandle caller, TRAPS
   case IS_METHOD:
     {
       CallInfo result;
+      LinkInfo link_info(defc, name, type, caller, caller.not_null());
       {
         assert(!HAS_PENDING_EXCEPTION, "");
         if (ref_kind == JVM_REF_invokeStatic) {
           LinkResolver::resolve_static_call(result,
-                        defc, name, type, caller, caller.not_null(), false, THREAD);
+                        link_info, false, THREAD);
         } else if (ref_kind == JVM_REF_invokeInterface) {
           LinkResolver::resolve_interface_call(result, Handle(), defc,
-                        defc, name, type, caller, caller.not_null(), false, THREAD);
+                        link_info, false, THREAD);
         } else if (mh_invoke_id != vmIntrinsics::_none) {
           assert(!is_signature_polymorphic_static(mh_invoke_id), "");
-          LinkResolver::resolve_handle_call(result,
-                        defc, name, type, caller, THREAD);
+          LinkResolver::resolve_handle_call(result, link_info, THREAD);
         } else if (ref_kind == JVM_REF_invokeSpecial) {
           LinkResolver::resolve_special_call(result,
-                        defc, name, type, caller, caller.not_null(), THREAD);
+                        link_info, THREAD);
         } else if (ref_kind == JVM_REF_invokeVirtual) {
           LinkResolver::resolve_virtual_call(result, Handle(), defc,
-                        defc, name, type, caller, caller.not_null(), false, THREAD);
+                        link_info, false, THREAD);
         } else {
           assert(false, err_msg("ref_kind=%d", ref_kind));
         }
@@ -714,11 +714,11 @@ Handle MethodHandles::resolve_MemberName(Handle mname, KlassHandle caller, TRAPS
   case IS_CONSTRUCTOR:
     {
       CallInfo result;
+      LinkInfo link_info(defc, name, type, caller, caller.not_null());
       {
         assert(!HAS_PENDING_EXCEPTION, "");
         if (name == vmSymbols::object_initializer_name()) {
-          LinkResolver::resolve_special_call(result,
-                        defc, name, type, caller, caller.not_null(), THREAD);
+          LinkResolver::resolve_special_call(result, link_info, THREAD);
         } else {
           break;                // will throw after end of switch
         }
@@ -735,7 +735,8 @@ Handle MethodHandles::resolve_MemberName(Handle mname, KlassHandle caller, TRAPS
       fieldDescriptor result; // find_field initializes fd if found
       {
         assert(!HAS_PENDING_EXCEPTION, "");
-        LinkResolver::resolve_field(result, defc, name, type, caller, Bytecodes::_nop, false, false, THREAD);
+        LinkInfo link_info(defc, name, type, caller, /*check_access*/false);
+        LinkResolver::resolve_field(result, link_info, Bytecodes::_nop, false, THREAD);
         if (HAS_PENDING_EXCEPTION) {
           return empty;
         }
