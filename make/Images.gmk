@@ -104,6 +104,7 @@ JIMAGE_TOOL := $(JAVA_SMALL) \
 MODULES_XML += $(SRC_ROOT)/modules.xml
 DEPENDENCIES := $(call CacheFind, \
     $(SUPPORT_OUTPUTDIR)/modules_cmds \
+    $(SUPPORT_OUTPUTDIR)/modules_conf \
     $(SUPPORT_OUTPUTDIR)/modules_libs) \
     $(wildcard $(JDK_OUTPUTDIR)/modules/*/_*) \
     $(MODULES_XML)
@@ -452,10 +453,10 @@ endif
 # /sample dir
 
 $(eval $(call SetupCopyFiles,COPY_SAMPLES, \
-    SRC := $(SUPPORT_OUTPUTDIR)/sample, \
+    SRC := $(SUPPORT_OUTPUTDIR)/sample/image, \
     DEST := $(JDK_IMAGE_DIR)/sample, \
-    FILES := $(if $(wildcard $(SUPPORT_OUTPUTDIR)/sample), \
-        $(call CacheFind,$(SUPPORT_OUTPUTDIR)/sample))))
+    FILES := $(if $(wildcard $(SUPPORT_OUTPUTDIR)/sample/image), \
+        $(call CacheFind,$(SUPPORT_OUTPUTDIR)/sample/image))))
 
 JDK_TARGETS += $(COPY_SAMPLES)
 
