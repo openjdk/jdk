@@ -1481,7 +1481,7 @@ class CommandLineFlags {
           "The standard deviation used by the parallel compact dead wood "  \
           "limiter (a number between 0-100)")                               \
                                                                             \
-  product(uintx, ParallelGCThreads, 0,                                      \
+  product(uint, ParallelGCThreads, 0,                                       \
           "Number of parallel threads parallel gc will use")                \
                                                                             \
   product(bool, UseDynamicNumberOfGCThreads, false,                         \
@@ -1506,7 +1506,7 @@ class CommandLineFlags {
   develop(uintx, ParallelOldGCSplitInterval, 3,                             \
           "How often to provoke splitting a young gen space")               \
                                                                             \
-  product(uintx, ConcGCThreads, 0,                                          \
+  product(uint, ConcGCThreads, 0,                                           \
           "Number of threads concurrent gc will use")                       \
                                                                             \
   product(size_t, YoungPLABSize, 4096,                                      \

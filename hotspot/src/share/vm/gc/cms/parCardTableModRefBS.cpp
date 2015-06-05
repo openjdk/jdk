@@ -42,7 +42,7 @@ void CardTableModRefBS::non_clean_card_iterate_parallel_work(Space* sp, MemRegio
                                                              uint n_threads) {
   assert(n_threads > 0, "expected n_threads > 0");
   assert(n_threads <= ParallelGCThreads,
-         err_msg("n_threads: %u > ParallelGCThreads: " UINTX_FORMAT, n_threads, ParallelGCThreads));
+         err_msg("n_threads: %u > ParallelGCThreads: %u", n_threads, ParallelGCThreads));
 
   // Make sure the LNC array is valid for the space.
   jbyte**   lowest_non_clean;

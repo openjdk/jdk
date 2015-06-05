@@ -33,9 +33,9 @@
 #include "gc/shared/taskqueue.inline.hpp"
 #include "oops/oop.inline.hpp"
 
-inline PSPromotionManager* PSPromotionManager::manager_array(int index) {
+inline PSPromotionManager* PSPromotionManager::manager_array(uint index) {
   assert(_manager_array != NULL, "access of NULL manager_array");
-  assert(index >= 0 && index <= (int)ParallelGCThreads, "out of range manager_array access");
+  assert(index <= ParallelGCThreads, "out of range manager_array access");
   return &_manager_array[index];
 }
 

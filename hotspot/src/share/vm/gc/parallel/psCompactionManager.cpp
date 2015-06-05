@@ -170,8 +170,8 @@ void ParCompactionManager::verify_region_list_empty(uint list_index) {
 }
 
 ParCompactionManager*
-ParCompactionManager::gc_thread_compaction_manager(int index) {
-  assert(index >= 0 && index < (int)ParallelGCThreads, "index out of range");
+ParCompactionManager::gc_thread_compaction_manager(uint index) {
+  assert(index < ParallelGCThreads, "index out of range");
   assert(_manager_array != NULL, "Sanity");
   return _manager_array[index];
 }

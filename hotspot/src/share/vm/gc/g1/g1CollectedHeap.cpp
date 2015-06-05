@@ -1752,7 +1752,7 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _allocator = G1Allocator::create_allocator(this);
   _humongous_object_threshold_in_words = HeapRegion::GrainWords / 2;
 
-  int n_queues = (int)ParallelGCThreads;
+  uint n_queues = ParallelGCThreads;
   _task_queues = new RefToScanQueueSet(n_queues);
 
   uint n_rem_sets = HeapRegionRemSet::num_par_rem_sets();
@@ -1762,7 +1762,7 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _worker_cset_start_region_time_stamp = NEW_C_HEAP_ARRAY(uint, n_queues, mtGC);
   _evacuation_failed_info_array = NEW_C_HEAP_ARRAY(EvacuationFailedInfo, n_queues, mtGC);
 
-  for (int i = 0; i < n_queues; i++) {
+  for (uint i = 0; i < n_queues; i++) {
     RefToScanQueue* q = new RefToScanQueue();
     q->initialize();
     _task_queues->register_queue(i, q);
@@ -2064,11 +2064,11 @@ void G1CollectedHeap::ref_processing_init() {
     new ReferenceProcessor(mr,    // span
                            ParallelRefProcEnabled && (ParallelGCThreads > 1),
                                 // mt processing
-                           (uint) ParallelGCThreads,
+                           ParallelGCThreads,
                                 // degree of mt processing
                            (ParallelGCThreads > 1) || (ConcGCThreads > 1),
                                 // mt discovery
-                           (uint) MAX2(ParallelGCThreads, ConcGCThreads),
+                           MAX2(ParallelGCThreads, ConcGCThreads),
                                 // degree of mt discovery
                            false,
                                 // Reference discovery is not atomic
@@ -2081,11 +2081,11 @@ void G1CollectedHeap::ref_processing_init() {
     new ReferenceProcessor(mr,    // span
                            ParallelRefProcEnabled && (ParallelGCThreads > 1),
                                 // mt processing
-                           (uint) ParallelGCThreads,
+                           ParallelGCThreads,
                                 // degree of mt processing
                            (ParallelGCThreads > 1),
                                 // mt discovery
-                           (uint) ParallelGCThreads,
+                           ParallelGCThreads,
                                 // degree of mt discovery
                            true,
                                 // Reference discovery is atomic

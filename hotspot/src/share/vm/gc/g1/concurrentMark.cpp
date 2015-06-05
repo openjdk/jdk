@@ -518,7 +518,7 @@ ConcurrentMark::ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* prev
   _markStack(this),
   // _finger set in set_non_marking_state
 
-  _max_worker_id((uint)ParallelGCThreads),
+  _max_worker_id(ParallelGCThreads),
   // _active_tasks set in set_non_marking_state
   // _tasks set inside the constructor
   _task_queues(new CMTaskQueueSet((int) _max_worker_id)),
@@ -579,8 +579,8 @@ ConcurrentMark::ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* prev
   _root_regions.init(_g1h, this);
 
   if (ConcGCThreads > ParallelGCThreads) {
-    warning("Can't have more ConcGCThreads (" UINTX_FORMAT ") "
-            "than ParallelGCThreads (" UINTX_FORMAT ").",
+    warning("Can't have more ConcGCThreads (%u) "
+            "than ParallelGCThreads (%u).",
             ConcGCThreads, ParallelGCThreads);
     return;
   }
@@ -604,20 +604,20 @@ ConcurrentMark::ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* prev
     double sleep_factor =
                        (1.0 - marking_task_overhead) / marking_task_overhead;
 
-    FLAG_SET_ERGO(uintx, ConcGCThreads, (uint) marking_thread_num);
+    FLAG_SET_ERGO(uint, ConcGCThreads, (uint) marking_thread_num);
     _sleep_factor             = sleep_factor;
     _marking_task_overhead    = marking_task_overhead;
   } else {
     // Calculate the number of parallel marking threads by scaling
     // the number of parallel GC threads.
-    uint marking_thread_num = scale_parallel_threads((uint) ParallelGCThreads);
-    FLAG_SET_ERGO(uintx, ConcGCThreads, marking_thread_num);
+    uint marking_thread_num = scale_parallel_threads(ParallelGCThreads);
+    FLAG_SET_ERGO(uint, ConcGCThreads, marking_thread_num);
     _sleep_factor             = 0.0;
     _marking_task_overhead    = 1.0;
   }
 
   assert(ConcGCThreads > 0, "Should have been set");
-  _parallel_marking_threads = (uint) ConcGCThreads;
+  _parallel_marking_threads = ConcGCThreads;
   _max_parallel_marking_threads = _parallel_marking_threads;
 
   if (parallel_marking_threads() > 1) {
