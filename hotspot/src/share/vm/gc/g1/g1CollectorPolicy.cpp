@@ -107,21 +107,10 @@ G1CollectorPolicy::G1CollectorPolicy() :
 
   _pause_time_target_ms((double) MaxGCPauseMillis),
 
-  _gcs_are_young(true),
-
-  _during_marking(false),
-  _in_marking_window(false),
-  _in_marking_window_im(false),
-
   _recent_prev_end_times_for_all_gcs_sec(
                                 new TruncatedSeq(NumPrevPausesForHeuristics)),
 
   _recent_avg_pause_time_ratio(0.0),
-
-  _initiate_conc_mark_if_possible(false),
-  _during_initial_mark_pause(false),
-  _last_young_gc(false),
-  _last_gc_was_young(false),
 
   _eden_used_bytes_before_gc(0),
   _survivor_used_bytes_before_gc(0),
@@ -333,6 +322,8 @@ void G1CollectorPolicy::post_heap_initialize() {
     FLAG_SET_ERGO(size_t, MaxNewSize, max_young_size);
   }
 }
+
+G1CollectorState* G1CollectorPolicy::collector_state() { return _g1->collector_state(); }
 
 G1YoungGenSizer::G1YoungGenSizer() : _sizer_kind(SizerDefaults), _adaptive_size(true),
         _min_desired_young_length(0), _max_desired_young_length(0) {
@@ -552,7 +543,7 @@ void G1CollectorPolicy::update_young_list_target_length(size_t rs_lengths) {
 
   uint young_list_target_length = 0;
   if (adaptive_young_list_length()) {
-    if (gcs_are_young()) {
+    if (collector_state()->gcs_are_young()) {
       young_list_target_length =
                         calculate_young_list_target_length(rs_lengths,
                                                            base_min_length,
@@ -594,7 +585,7 @@ G1CollectorPolicy::calculate_young_list_target_length(size_t rs_lengths,
                                                      uint desired_min_length,
                                                      uint desired_max_length) {
   assert(adaptive_young_list_length(), "pre-condition");
-  assert(gcs_are_young(), "only call this for young GCs");
+  assert(collector_state()->gcs_are_young(), "only call this for young GCs");
 
   // In case some edge-condition makes the desired max length too small...
   if (desired_max_length <= desired_min_length) {
@@ -697,7 +688,7 @@ double G1CollectorPolicy::predict_survivor_regions_evac_time() {
   for (HeapRegion * r = _recorded_survivor_head;
        r != NULL && r != _recorded_survivor_tail->get_next_young_region();
        r = r->get_next_young_region()) {
-    survivor_regions_evac_time += predict_region_elapsed_time_ms(r, gcs_are_young());
+    survivor_regions_evac_time += predict_region_elapsed_time_ms(r, collector_state()->gcs_are_young());
   }
   return survivor_regions_evac_time;
 }
@@ -782,7 +773,7 @@ void G1CollectorPolicy::record_full_collection_start() {
   _full_collection_start_sec = os::elapsedTime();
   record_heap_size_info_at_start(true /* full */);
   // Release the future to-space so that it is available for compaction into.
-  _g1->set_full_collection();
+  collector_state()->set_full_collection(true);
 }
 
 void G1CollectorPolicy::record_full_collection_end() {
@@ -796,16 +787,16 @@ void G1CollectorPolicy::record_full_collection_end() {
 
   update_recent_gc_times(end_sec, full_gc_time_ms);
 
-  _g1->clear_full_collection();
+  collector_state()->set_full_collection(false);
 
   // "Nuke" the heuristics that control the young/mixed GC
   // transitions and make sure we start with young GCs after the Full GC.
-  set_gcs_are_young(true);
-  _last_young_gc = false;
-  clear_initiate_conc_mark_if_possible();
-  clear_during_initial_mark_pause();
-  _in_marking_window = false;
-  _in_marking_window_im = false;
+  collector_state()->set_gcs_are_young(true);
+  collector_state()->set_last_young_gc(false);
+  collector_state()->set_initiate_conc_mark_if_possible(false);
+  collector_state()->set_during_initial_mark_pause(false);
+  collector_state()->set_in_marking_window(false);
+  collector_state()->set_in_marking_window_im(false);
 
   _short_lived_surv_rate_group->start_adding_regions();
   // also call this on any additional surv rate groups
@@ -845,7 +836,7 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec) {
   _collection_set_bytes_used_before = 0;
   _bytes_copied_during_gc = 0;
 
-  _last_gc_was_young = false;
+  collector_state()->set_last_gc_was_young(false);
 
   // do that for any other surv rate groups
   _short_lived_surv_rate_group->stop_adding_regions();
@@ -856,15 +847,15 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec) {
 
 void G1CollectorPolicy::record_concurrent_mark_init_end(double
                                                    mark_init_elapsed_time_ms) {
-  _during_marking = true;
-  assert(!initiate_conc_mark_if_possible(), "we should have cleared it by now");
-  clear_during_initial_mark_pause();
+  collector_state()->set_during_marking(true);
+  assert(!collector_state()->initiate_conc_mark_if_possible(), "we should have cleared it by now");
+  collector_state()->set_during_initial_mark_pause(false);
   _cur_mark_stop_world_time_ms = mark_init_elapsed_time_ms;
 }
 
 void G1CollectorPolicy::record_concurrent_mark_remark_start() {
   _mark_remark_start_sec = os::elapsedTime();
-  _during_marking = false;
+  collector_state()->set_during_marking(false);
 }
 
 void G1CollectorPolicy::record_concurrent_mark_remark_end() {
@@ -882,8 +873,8 @@ void G1CollectorPolicy::record_concurrent_mark_cleanup_start() {
 }
 
 void G1CollectorPolicy::record_concurrent_mark_cleanup_completed() {
-  _last_young_gc = true;
-  _in_marking_window = false;
+  collector_state()->set_last_young_gc(true);
+  collector_state()->set_in_marking_window(false);
 }
 
 void G1CollectorPolicy::record_concurrent_pause() {
@@ -904,7 +895,7 @@ bool G1CollectorPolicy::need_to_start_conc_mark(const char* source, size_t alloc
   size_t alloc_byte_size = alloc_word_size * HeapWordSize;
 
   if ((cur_used_bytes + alloc_byte_size) > marking_initiating_used_threshold) {
-    if (gcs_are_young() && !_last_young_gc) {
+    if (collector_state()->gcs_are_young() && !collector_state()->last_young_gc()) {
       ergo_verbose5(ErgoConcCycles,
         "request concurrent cycle initiation",
         ergo_format_reason("occupancy higher than threshold")
@@ -959,14 +950,14 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, Evacua
   }
 #endif // PRODUCT
 
-  last_pause_included_initial_mark = during_initial_mark_pause();
+  last_pause_included_initial_mark = collector_state()->during_initial_mark_pause();
   if (last_pause_included_initial_mark) {
     record_concurrent_mark_init_end(0.0);
   } else if (need_to_start_conc_mark("end of GC")) {
     // Note: this might have already been set, if during the last
     // pause we decided to start a cycle but at the beginning of
     // this pause we decided to postpone it. That's OK.
-    set_initiate_conc_mark_if_possible();
+    collector_state()->set_initiate_conc_mark_if_possible(true);
   }
 
   _mmu_tracker->add_pause(end_time_sec - pause_time_ms/1000.0,
@@ -1028,37 +1019,37 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, Evacua
     }
   }
 
-  bool new_in_marking_window = _in_marking_window;
+  bool new_in_marking_window = collector_state()->in_marking_window();
   bool new_in_marking_window_im = false;
   if (last_pause_included_initial_mark) {
     new_in_marking_window = true;
     new_in_marking_window_im = true;
   }
 
-  if (_last_young_gc) {
+  if (collector_state()->last_young_gc()) {
     // This is supposed to to be the "last young GC" before we start
     // doing mixed GCs. Here we decide whether to start mixed GCs or not.
 
     if (!last_pause_included_initial_mark) {
       if (next_gc_should_be_mixed("start mixed GCs",
                                   "do not start mixed GCs")) {
-        set_gcs_are_young(false);
+        collector_state()->set_gcs_are_young(false);
       }
     } else {
       ergo_verbose0(ErgoMixedGCs,
                     "do not start mixed GCs",
                     ergo_format_reason("concurrent cycle is about to start"));
     }
-    _last_young_gc = false;
+    collector_state()->set_last_young_gc(false);
   }
 
-  if (!_last_gc_was_young) {
+  if (!collector_state()->last_gc_was_young()) {
     // This is a mixed GC. Here we decide whether to continue doing
     // mixed GCs or not.
 
     if (!next_gc_should_be_mixed("continue mixed GCs",
                                  "do not continue mixed GCs")) {
-      set_gcs_are_young(true);
+      collector_state()->set_gcs_are_young(true);
     }
   }
 
@@ -1077,7 +1068,7 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, Evacua
     double cost_per_entry_ms = 0.0;
     if (cards_scanned > 10) {
       cost_per_entry_ms = phase_times()->average_time_ms(G1GCPhaseTimes::ScanRS) / (double) cards_scanned;
-      if (_last_gc_was_young) {
+      if (collector_state()->last_gc_was_young()) {
         _cost_per_entry_ms_seq->add(cost_per_entry_ms);
       } else {
         _mixed_cost_per_entry_ms_seq->add(cost_per_entry_ms);
@@ -1087,7 +1078,7 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, Evacua
     if (_max_rs_lengths > 0) {
       double cards_per_entry_ratio =
         (double) cards_scanned / (double) _max_rs_lengths;
-      if (_last_gc_was_young) {
+      if (collector_state()->last_gc_was_young()) {
         _young_cards_per_entry_ratio_seq->add(cards_per_entry_ratio);
       } else {
         _mixed_cards_per_entry_ratio_seq->add(cards_per_entry_ratio);
@@ -1119,7 +1110,7 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, Evacua
 
     if (copied_bytes > 0) {
       cost_per_byte_ms = phase_times()->average_time_ms(G1GCPhaseTimes::ObjCopy) / (double) copied_bytes;
-      if (_in_marking_window) {
+      if (collector_state()->in_marking_window()) {
         _cost_per_byte_ms_during_cm_seq->add(cost_per_byte_ms);
       } else {
         _cost_per_byte_ms_seq->add(cost_per_byte_ms);
@@ -1162,8 +1153,8 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, Evacua
     _rs_lengths_seq->add((double) _max_rs_lengths);
   }
 
-  _in_marking_window = new_in_marking_window;
-  _in_marking_window_im = new_in_marking_window_im;
+  collector_state()->set_in_marking_window(new_in_marking_window);
+  collector_state()->set_in_marking_window_im(new_in_marking_window_im);
   _free_regions_at_end_of_collection = _g1->num_free_regions();
   update_young_list_target_length();
 
@@ -1301,7 +1292,7 @@ double
 G1CollectorPolicy::predict_base_elapsed_time_ms(size_t pending_cards) {
   size_t rs_length = predict_rs_length_diff();
   size_t card_num;
-  if (gcs_are_young()) {
+  if (collector_state()->gcs_are_young()) {
     card_num = predict_young_card_num(rs_length);
   } else {
     card_num = predict_non_young_card_num(rs_length);
@@ -1467,7 +1458,7 @@ bool G1CollectorPolicy::force_initial_mark_if_outside_cycle(
                   ergo_format_reason("requested by GC cause")
                   ergo_format_str("GC cause"),
                   GCCause::to_string(gc_cause));
-    set_initiate_conc_mark_if_possible();
+    collector_state()->set_initiate_conc_mark_if_possible(true);
     return true;
   } else {
     ergo_verbose1(ErgoConcCycles,
@@ -1484,13 +1475,13 @@ G1CollectorPolicy::decide_on_conc_mark_initiation() {
   // We are about to decide on whether this pause will be an
   // initial-mark pause.
 
-  // First, during_initial_mark_pause() should not be already set. We
+  // First, collector_state()->during_initial_mark_pause() should not be already set. We
   // will set it here if we have to. However, it should be cleared by
   // the end of the pause (it's only set for the duration of an
   // initial-mark pause).
-  assert(!during_initial_mark_pause(), "pre-condition");
+  assert(!collector_state()->during_initial_mark_pause(), "pre-condition");
 
-  if (initiate_conc_mark_if_possible()) {
+  if (collector_state()->initiate_conc_mark_if_possible()) {
     // We had noticed on a previous pause that the heap occupancy has
     // gone over the initiating threshold and we should start a
     // concurrent marking cycle. So we might initiate one.
@@ -1501,10 +1492,10 @@ G1CollectorPolicy::decide_on_conc_mark_initiation() {
       // it has completed the last one. So we can go ahead and
       // initiate a new cycle.
 
-      set_during_initial_mark_pause();
+      collector_state()->set_during_initial_mark_pause(true);
       // We do not allow mixed GCs during marking.
-      if (!gcs_are_young()) {
-        set_gcs_are_young(true);
+      if (!collector_state()->gcs_are_young()) {
+        collector_state()->set_gcs_are_young(true);
         ergo_verbose0(ErgoMixedGCs,
                       "end mixed GCs",
                       ergo_format_reason("concurrent cycle is about to start"));
@@ -1512,7 +1503,7 @@ G1CollectorPolicy::decide_on_conc_mark_initiation() {
 
       // And we can now clear initiate_conc_mark_if_possible() as
       // we've already acted on it.
-      clear_initiate_conc_mark_if_possible();
+      collector_state()->set_initiate_conc_mark_if_possible(false);
 
       ergo_verbose0(ErgoConcCycles,
                   "initiate concurrent cycle",
@@ -1686,7 +1677,7 @@ void G1CollectorPolicy::add_to_incremental_cset_info(HeapRegion* hr, size_t rs_l
   // retiring the current allocation region) or a concurrent
   // refine thread (RSet sampling).
 
-  double region_elapsed_time_ms = predict_region_elapsed_time_ms(hr, gcs_are_young());
+  double region_elapsed_time_ms = predict_region_elapsed_time_ms(hr, collector_state()->gcs_are_young());
   size_t used_bytes = hr->used();
   _inc_cset_recorded_rs_lengths += rs_length;
   _inc_cset_predicted_elapsed_time_ms += region_elapsed_time_ms;
@@ -1721,7 +1712,7 @@ void G1CollectorPolicy::update_incremental_cset_info(HeapRegion* hr,
   _inc_cset_recorded_rs_lengths_diffs += rs_lengths_diff;
 
   double old_elapsed_time_ms = hr->predicted_elapsed_time_ms();
-  double new_region_elapsed_time_ms = predict_region_elapsed_time_ms(hr, gcs_are_young());
+  double new_region_elapsed_time_ms = predict_region_elapsed_time_ms(hr, collector_state()->gcs_are_young());
   double elapsed_ms_diff = new_region_elapsed_time_ms - old_elapsed_time_ms;
   _inc_cset_predicted_elapsed_time_ms_diffs += elapsed_ms_diff;
 
@@ -1914,9 +1905,9 @@ void G1CollectorPolicy::finalize_cset(double target_pause_time_ms, EvacuationInf
                 ergo_format_ms("target pause time"),
                 _pending_cards, base_time_ms, time_remaining_ms, target_pause_time_ms);
 
-  _last_gc_was_young = gcs_are_young() ? true : false;
+  collector_state()->set_last_gc_was_young(collector_state()->gcs_are_young());
 
-  if (_last_gc_was_young) {
+  if (collector_state()->last_gc_was_young()) {
     _trace_young_gen_time_data.increment_young_collection_count();
   } else {
     _trace_young_gen_time_data.increment_mixed_collection_count();
@@ -1967,7 +1958,7 @@ void G1CollectorPolicy::finalize_cset(double target_pause_time_ms, EvacuationInf
   // Set the start of the non-young choice time.
   double non_young_start_time_sec = young_end_time_sec;
 
-  if (!gcs_are_young()) {
+  if (!collector_state()->gcs_are_young()) {
     CollectionSetChooser* cset_chooser = _collectionSetChooser;
     cset_chooser->verify();
     const uint min_old_cset_length = calc_min_old_cset_length();
@@ -2013,7 +2004,7 @@ void G1CollectorPolicy::finalize_cset(double target_pause_time_ms, EvacuationInf
         break;
       }
 
-      double predicted_time_ms = predict_region_elapsed_time_ms(hr, gcs_are_young());
+      double predicted_time_ms = predict_region_elapsed_time_ms(hr, collector_state()->gcs_are_young());
       if (check_time_remaining) {
         if (predicted_time_ms > time_remaining_ms) {
           // Too expensive for the current CSet.
