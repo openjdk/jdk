@@ -95,22 +95,9 @@ static GlyphCacheInfo *glyphCache = NULL;
 static GLhandleARB lcdTextProgram = 0;
 
 /**
- * The size of one of the gamma LUT textures in any one dimension along
- * the edge, in texels.
- */
-#define LUT_EDGE 16
-
-/**
- * These are the texture object handles for the gamma and inverse gamma
- * lookup tables.
- */
-static GLuint gammaLutTextureID = 0;
-static GLuint invGammaLutTextureID = 0;
-
-/**
  * This value tracks the previous LCD contrast setting, so if the contrast
- * value hasn't changed since the last time the lookup tables were
- * generated (not very common), then we can skip updating the tables.
+ * value hasn't changed since the last time the gamma uniforms were
+ * updated (not very common), then we can skip updating the unforms.
  */
 static jint lastLCDContrast = -1;
 
@@ -473,14 +460,6 @@ OGLTR_EnableLCDGlyphModeState(GLuint glyphTextureID, jint contrast)
         return JNI_FALSE;
     }
 
-    // bind the gamma LUT textures
-    j2d_glActiveTextureARB(GL_TEXTURE2_ARB);
-    j2d_glBindTexture(GL_TEXTURE_3D, invGammaLutTextureID);
-    j2d_glEnable(GL_TEXTURE_3D);
-    j2d_glActiveTextureARB(GL_TEXTURE3_ARB);
-    j2d_glBindTexture(GL_TEXTURE_3D, gammaLutTextureID);
-    j2d_glEnable(GL_TEXTURE_3D);
-
     return JNI_TRUE;
 }
 
@@ -540,10 +519,6 @@ OGLTR_DisableGlyphModeState()
         j2d_glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
         j2d_glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
         j2d_glUseProgramObjectARB(0);
-        j2d_glActiveTextureARB(GL_TEXTURE3_ARB);
-        j2d_glDisable(GL_TEXTURE_3D);
-        j2d_glActiveTextureARB(GL_TEXTURE2_ARB);
-        j2d_glDisable(GL_TEXTURE_3D);
         j2d_glActiveTextureARB(GL_TEXTURE1_ARB);
         j2d_glDisable(GL_TEXTURE_2D);
         j2d_glActiveTextureARB(GL_TEXTURE0_ARB);
