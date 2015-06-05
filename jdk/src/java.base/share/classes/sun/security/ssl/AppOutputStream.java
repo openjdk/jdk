@@ -23,41 +23,33 @@
  * questions.
  */
 
-
 package sun.security.ssl;
 
 import java.io.OutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 /*
- * Output stream for application data. This is the kind of stream
- * that's handed out via SSLSocket.getOutputStream(). It's all the application
- * ever sees.
- *
- * Once the initial handshake has completed, application data may be
- * interleaved with handshake data. That is handled internally and remains
- * transparent to the application.
+ * OutputStream for application data as returned by SSLSocket.getOutputStream().
  *
  * @author  David Brownell
  */
 class AppOutputStream extends OutputStream {
 
-    private SSLSocketImpl c;
-    OutputRecord r;
+    private SSLSocketImpl socket;
 
     // One element array used to implement the write(byte) method
     private final byte[] oneByte = new byte[1];
 
     AppOutputStream(SSLSocketImpl conn) {
-        r = new OutputRecord(Record.ct_application_data);
-        c = conn;
+        this.socket = conn;
     }
 
     /**
      * Write the data out, NOW.
      */
     @Override
-    synchronized public void write(byte b[], int off, int len)
+    synchronized public void write(byte[] b, int off, int len)
             throws IOException {
         if (b == null) {
             throw new NullPointerException();
@@ -68,64 +60,15 @@ class AppOutputStream extends OutputStream {
         }
 
         // check if the Socket is invalid (error or closed)
-        c.checkWrite();
+        socket.checkWrite();
 
-        /*
-         * By default, we counter chosen plaintext issues on CBC mode
-         * ciphersuites in SSLv3/TLS1.0 by sending one byte of application
-         * data in the first record of every payload, and the rest in
-         * subsequent record(s). Note that the issues have been solved in
-         * TLS 1.1 or later.
-         *
-         * It is not necessary to split the very first application record of
-         * a freshly negotiated TLS session, as there is no previous
-         * application data to guess.  To improve compatibility, we will not
-         * split such records.
-         *
-         * This avoids issues in the outbound direction.  For a full fix,
-         * the peer must have similar protections.
-         */
-        boolean isFirstRecordOfThePayload = true;
-
-        // Always flush at the end of each application level record.
-        // This lets application synchronize read and write streams
-        // however they like; if we buffered here, they couldn't.
+        // Delegate the writing to the underlying socket.
         try {
-            do {
-                boolean holdRecord = false;
-                int howmuch;
-                if (isFirstRecordOfThePayload && c.needToSplitPayload()) {
-                    howmuch = Math.min(0x01, r.availableDataBytes());
-                     /*
-                      * Nagle's algorithm (TCP_NODELAY) was coming into
-                      * play here when writing short (split) packets.
-                      * Signal to the OutputRecord code to internally
-                      * buffer this small packet until the next outbound
-                      * packet (of any type) is written.
-                      */
-                     if ((len != 1) && (howmuch == 1)) {
-                         holdRecord = true;
-                     }
-                } else {
-                    howmuch = Math.min(len, r.availableDataBytes());
-                }
-
-                if (isFirstRecordOfThePayload && howmuch != 0) {
-                    isFirstRecordOfThePayload = false;
-                }
-
-                // NOTE: *must* call c.writeRecord() even for howmuch == 0
-                if (howmuch > 0) {
-                    r.write(b, off, howmuch);
-                    off += howmuch;
-                    len -= howmuch;
-                }
-                c.writeRecord(r, holdRecord);
-                c.checkWrite();
-            } while (len > 0);
+            socket.writeRecord(b, off, len);
+            socket.checkWrite();
         } catch (Exception e) {
             // shutdown and rethrow (wrapped) exception as appropriate
-            c.handleException(e);
+            socket.handleException(e);
         }
     }
 
@@ -143,7 +86,7 @@ class AppOutputStream extends OutputStream {
      */
     @Override
     public void close() throws IOException {
-        c.close();
+        socket.close();
     }
 
     // inherit no-op flush()

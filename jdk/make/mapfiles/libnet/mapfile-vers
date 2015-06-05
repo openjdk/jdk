@@ -42,7 +42,7 @@ SUNWprivate_1.1 {
 		Java_java_net_Inet4Address_init;
 		Java_java_net_Inet6Address_init;
 		Java_java_net_PlainDatagramSocketImpl_setTTL;
-		Java_java_net_PlainDatagramSocketImpl_socketSetOption;
+		Java_java_net_PlainDatagramSocketImpl_socketSetOption0;
 		Java_java_net_PlainDatagramSocketImpl_bind0;
 		Java_java_net_PlainSocketImpl_socketAccept;
 		Java_java_net_DatagramPacket_init;
@@ -73,7 +73,7 @@ SUNWprivate_1.1 {
 		Java_java_net_SocketOutputStream_init;
 		Java_java_net_PlainDatagramSocketImpl_peek;
 		Java_java_net_PlainDatagramSocketImpl_peekData;
-		Java_java_net_PlainSocketImpl_socketSetOption;
+		Java_java_net_PlainSocketImpl_socketSetOption0;
 		Java_java_net_PlainSocketImpl_socketSendUrgentData;
 		Java_java_net_PlainDatagramSocketImpl_datagramSocketCreate;
 		Java_java_net_PlainSocketImpl_socketGetOption;
