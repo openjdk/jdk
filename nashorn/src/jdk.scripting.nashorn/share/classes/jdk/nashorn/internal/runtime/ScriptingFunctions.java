@@ -71,7 +71,8 @@ public final class ScriptingFunctions {
     /** Names of special properties used by $ENV API. */
     public  static final String ENV_NAME  = "$ENV";
 
-    private static final String PWD_NAME  = "PWD";
+    /** Name of the environment variable for the current working directory. */
+    public static final String PWD_NAME  = "PWD";
 
     private ScriptingFunctions() {
     }
