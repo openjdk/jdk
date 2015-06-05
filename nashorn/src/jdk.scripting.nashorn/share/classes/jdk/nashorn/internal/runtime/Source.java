@@ -934,14 +934,16 @@ public final class Source implements Loggable {
             start = 2;
             cs = StandardCharsets.UTF_16BE;
         } else if (bytes.length > 1 && bytes[0] == (byte) 0xFF && bytes[1] == (byte) 0xFE) {
-            start = 2;
-            cs = StandardCharsets.UTF_16LE;
+            if (bytes.length > 3 && bytes[2] == 0 && bytes[3] == 0) {
+                start = 4;
+                cs = Charset.forName("UTF-32LE");
+            } else {
+                start = 2;
+                cs = StandardCharsets.UTF_16LE;
+            }
         } else if (bytes.length > 2 && bytes[0] == (byte) 0xEF && bytes[1] == (byte) 0xBB && bytes[2] == (byte) 0xBF) {
             start = 3;
             cs = StandardCharsets.UTF_8;
-        } else if (bytes.length > 3 && bytes[0] == (byte) 0xFF && bytes[1] == (byte) 0xFE && bytes[2] == 0 && bytes[3] == 0) {
-            start = 4;
-            cs = Charset.forName("UTF-32LE");
         } else if (bytes.length > 3 && bytes[0] == 0 && bytes[1] == 0 && bytes[2] == (byte) 0xFE && bytes[3] == (byte) 0xFF) {
             start = 4;
             cs = Charset.forName("UTF-32BE");
