@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,8 +20,28 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package pkg;
 
-public class ClassToBeStaticallyImported {
-    public static final int staticField = 1;
+/*
+ * @test
+ * @bug 8077667
+ * @summary Eliminate bogus error about lambda parameter not being initialized.
+ * @compile LambdaParameterNeedsNoInitTest.java
+ */
+import java.util.function.Predicate;
+
+public class LambdaParameterNeedsNoInitTest {
+
+    public static void main(String[] args) {
+        new Inner();
+    }
+
+    private static class Inner {
+        Predicate<String> synonymComparator = a -> a.isEmpty();
+        Inner() {
+            if (true) {
+                return;
+            }
+            synonymComparator.test("");
+        }
+    }
 }
