@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,67 +22,108 @@
  */
 
 import java.awt.*;
-
 /*
  * @test
  * @summary When Frame.setExtendedState(Frame.MAXIMIZED_BOTH)
  *          is called for a Frame after been called setMaximizedBounds() with
  *          certain value, Frame bounds must equal to this value.
  *
- * @library ../../../../lib/testlibrary
- * @build ExtendedRobot
  * @run main SetMaximizedBounds
  */
 
 public class SetMaximizedBounds {
 
-    Frame frame;
-    Rectangle bound;
-    boolean supported;
-    ExtendedRobot robot;
-    static Rectangle max = new Rectangle(100,100,400,400);
+    public static void main(String[] args) throws Exception {
 
-    public void doTest() throws Exception {
-        robot = new ExtendedRobot();
-
-        EventQueue.invokeAndWait( () -> {
-            frame = new Frame( "TestFrame ");
-            frame.setLayout(new FlowLayout());
-
-            if (Toolkit.getDefaultToolkit().isFrameStateSupported(Frame.MAXIMIZED_BOTH)) {
-                supported = true;
-                frame.setMaximizedBounds(max);
-            } else {
-                supported = false;
-            }
-
-            frame.setSize(200, 200);
-            frame.setVisible(true);
-        });
-
-        robot.waitForIdle(2000);
-        if (supported) {
-            EventQueue.invokeAndWait( () -> {
-                frame.setExtendedState(Frame.MAXIMIZED_BOTH);
-            });
-            robot.waitForIdle(2000);
-            bound = frame.getBounds();
-            if(!bound.equals(max))
-                throw new RuntimeException("The bounds of the Frame do not equal to what"
-                    + " is specified when the frame is in Frame.MAXIMIZED_BOTH state");
-        } else {
-            System.out.println("Frame.MAXIMIZED_BOTH not supported");
+        //Supported platforms are Windows and OS X.
+        String os = System.getProperty("os.name").toLowerCase();
+        if (!os.contains("windows") && !os.contains("os x")) {
+            return;
         }
 
-        frame.dispose();
+        if (!Toolkit.getDefaultToolkit().
+                isFrameStateSupported(Frame.MAXIMIZED_BOTH)) {
+            return;
+        }
+
+        GraphicsEnvironment ge = GraphicsEnvironment.
+                getLocalGraphicsEnvironment();
+
+        if (ge.isHeadlessInstance()) {
+            return;
+        }
+
+        for (GraphicsDevice gd : ge.getScreenDevices()) {
+            for (GraphicsConfiguration gc : gd.getConfigurations()) {
+                testMaximizedBounds(gc);
+            }
+        }
     }
 
-    public static void main(String[] args) throws Exception {
-        String os = System.getProperty("os.name").toLowerCase();
-        System.out.println(os);
-        if (os.contains("windows") || os.contains("os x"))
-            new SetMaximizedBounds().doTest();
-        else
-            System.out.println("Platform "+os+" is not supported. Supported platforms are Windows and OS X.");
+    static void testMaximizedBounds(GraphicsConfiguration gc) throws Exception {
+
+        Frame frame = null;
+        try {
+
+            Rectangle maxArea = getMaximizedScreenArea(gc);
+
+            Robot robot = new Robot();
+            robot.setAutoDelay(50);
+
+            frame = new Frame();
+            Rectangle maximizedBounds = new Rectangle(
+                    maxArea.x + maxArea.width / 6,
+                    maxArea.y + maxArea.height / 6,
+                    maxArea.width / 3,
+                    maxArea.height / 3);
+            frame.setMaximizedBounds(maximizedBounds);
+            frame.setSize(maxArea.width / 8, maxArea.height / 8);
+            frame.setVisible(true);
+            robot.waitForIdle();
+
+            frame.setExtendedState(Frame.MAXIMIZED_BOTH);
+            robot.waitForIdle();
+            robot.delay(1000);
+
+            Rectangle bounds = frame.getBounds();
+            if (!bounds.equals(maximizedBounds)) {
+                throw new RuntimeException("The bounds of the Frame do not equal to what"
+                        + " is specified when the frame is in Frame.MAXIMIZED_BOTH state");
+            }
+
+            frame.setExtendedState(Frame.NORMAL);
+            robot.waitForIdle();
+            robot.delay(1000);
+
+            maximizedBounds = new Rectangle(
+                    maxArea.x + maxArea.width / 10,
+                    maxArea.y + maxArea.height / 10,
+                    maxArea.width / 5,
+                    maxArea.height / 5);
+            frame.setMaximizedBounds(maximizedBounds);
+            frame.setExtendedState(Frame.MAXIMIZED_BOTH);
+            robot.waitForIdle();
+            robot.delay(1000);
+
+            bounds = frame.getBounds();
+            if (!bounds.equals(maximizedBounds)) {
+                throw new RuntimeException("The bounds of the Frame do not equal to what"
+                        + " is specified when the frame is in Frame.MAXIMIZED_BOTH state");
+            }
+        } finally {
+            if (frame != null) {
+                frame.dispose();
+            }
+        }
+    }
+
+    static Rectangle getMaximizedScreenArea(GraphicsConfiguration gc) {
+        Rectangle bounds = gc.getBounds();
+        Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(gc);
+        return new Rectangle(
+                bounds.x + insets.left,
+                bounds.y + insets.top,
+                bounds.width - insets.left - insets.right,
+                bounds.height - insets.top - insets.bottom);
     }
 }

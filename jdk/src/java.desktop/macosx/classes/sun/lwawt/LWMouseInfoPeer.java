@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,8 +51,12 @@ public class LWMouseInfoPeer implements MouseInfoPeer {
             return false;
         }
 
-        final Object windowPeer = AWTAccessor.getComponentAccessor().getPeer(w);
-        return LWWindowPeer.getWindowUnderCursor() == windowPeer;
+        LWWindowPeer windowPeer = AWTAccessor.getComponentAccessor().getPeer(w);
+        if (windowPeer == null) {
+            return false;
+        }
+
+        return LWToolkit.getLWToolkit().getPlatformWindowUnderMouse() == windowPeer.getPlatformWindow();
     }
 
 }
