@@ -1005,9 +1005,7 @@ public final class Global extends ScriptObject implements Scope {
      * @return the global singleton
      */
     public static Global instance() {
-        final Global global = Context.getGlobal();
-        Objects.requireNonNull(global);
-        return global;
+        return Objects.requireNonNull(Context.getGlobal());
     }
 
     private static Global instanceFrom(final Object self) {
