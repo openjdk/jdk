@@ -34,6 +34,7 @@
 #include "gc/g1/g1AllocRegion.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorPolicy.hpp"
+#include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ErgoVerbose.hpp"
 #include "gc/g1/g1EvacFailure.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
@@ -1039,7 +1040,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_at_safepoint(size_t word_size,
   } else {
     HeapWord* result = humongous_obj_allocate(word_size, context);
     if (result != NULL && g1_policy()->need_to_start_conc_mark("STW humongous allocation")) {
-      g1_policy()->set_initiate_conc_mark_if_possible();
+      collector_state()->set_initiate_conc_mark_if_possible(true);
     }
     return result;
   }
@@ -1250,7 +1251,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
       g1_policy()->stop_incremental_cset_building();
 
       tear_down_region_sets(false /* free_list_only */);
-      g1_policy()->set_gcs_are_young(true);
+      collector_state()->set_gcs_are_young(true);
 
       // See the comments in g1CollectedHeap.hpp and
       // G1CollectedHeap::ref_processing_init() about
@@ -1714,11 +1715,9 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _ref_processor_stw(NULL),
   _bot_shared(NULL),
   _evac_failure_scan_stack(NULL),
-  _mark_in_progress(false),
   _cg1r(NULL),
   _g1mm(NULL),
   _refine_cte_cl(NULL),
-  _full_collection(false),
   _secondary_free_list("Secondary Free List", new SecondaryFreeRegionListMtSafeChecker()),
   _old_set("Old Set", false /* humongous */, new OldRegionSetMtSafeChecker()),
   _humongous_set("Master Humongous Set", true /* humongous */, new HumongousRegionSetMtSafeChecker()),
@@ -1733,7 +1732,6 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _surviving_young_words(NULL),
   _old_marking_cycles_started(0),
   _old_marking_cycles_completed(0),
-  _concurrent_cycle_started(false),
   _heap_summary_sent(false),
   _in_cset_fast_test(),
   _dirty_cards_region_list(NULL),
@@ -2288,7 +2286,7 @@ void G1CollectedHeap::increment_old_marking_cycles_completed(bool concurrent) {
 }
 
 void G1CollectedHeap::register_concurrent_cycle_start(const Ticks& start_time) {
-  _concurrent_cycle_started = true;
+  collector_state()->set_concurrent_cycle_started(true);
   _gc_timer_cm->register_gc_start(start_time);
 
   _gc_tracer_cm->report_gc_start(gc_cause(), _gc_timer_cm->gc_start());
@@ -2296,7 +2294,7 @@ void G1CollectedHeap::register_concurrent_cycle_start(const Ticks& start_time) {
 }
 
 void G1CollectedHeap::register_concurrent_cycle_end() {
-  if (_concurrent_cycle_started) {
+  if (collector_state()->concurrent_cycle_started()) {
     if (_cm->has_aborted()) {
       _gc_tracer_cm->report_concurrent_mode_failure();
     }
@@ -2305,13 +2303,13 @@ void G1CollectedHeap::register_concurrent_cycle_end() {
     _gc_tracer_cm->report_gc_end(_gc_timer_cm->gc_end(), _gc_timer_cm->time_partitions());
 
     // Clear state variables to prepare for the next concurrent cycle.
-    _concurrent_cycle_started = false;
+     collector_state()->set_concurrent_cycle_started(false);
     _heap_summary_sent = false;
   }
 }
 
 void G1CollectedHeap::trace_heap_after_concurrent_cycle() {
-  if (_concurrent_cycle_started) {
+  if (collector_state()->concurrent_cycle_started()) {
     // This function can be called when:
     //  the cleanup pause is run
     //  the concurrent cycle is aborted before the cleanup pause.
@@ -2322,22 +2320,6 @@ void G1CollectedHeap::trace_heap_after_concurrent_cycle() {
       trace_heap_after_gc(_gc_tracer_cm);
       _heap_summary_sent = true;
     }
-  }
-}
-
-G1YCType G1CollectedHeap::yc_type() {
-  bool is_young = g1_policy()->gcs_are_young();
-  bool is_initial_mark = g1_policy()->during_initial_mark_pause();
-  bool is_during_mark = mark_in_progress();
-
-  if (is_initial_mark) {
-    return InitialMark;
-  } else if (is_during_mark) {
-    return DuringMark;
-  } else if (is_young) {
-    return Normal;
-  } else {
-    return Mixed;
   }
 }
 
@@ -3587,8 +3569,8 @@ void G1CollectedHeap::log_gc_header() {
   gclog_or_tty->gclog_stamp(_gc_tracer_stw->gc_id());
 
   GCCauseString gc_cause_str = GCCauseString("GC pause", gc_cause())
-    .append(g1_policy()->gcs_are_young() ? "(young)" : "(mixed)")
-    .append(g1_policy()->during_initial_mark_pause() ? " (initial-mark)" : "");
+    .append(collector_state()->gcs_are_young() ? "(young)" : "(mixed)")
+    .append(collector_state()->during_initial_mark_pause() ? " (initial-mark)" : "");
 
   gclog_or_tty->print("[%s", (const char*)gc_cause_str);
 }
@@ -3645,29 +3627,29 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
   g1_policy()->decide_on_conc_mark_initiation();
 
   // We do not allow initial-mark to be piggy-backed on a mixed GC.
-  assert(!g1_policy()->during_initial_mark_pause() ||
-          g1_policy()->gcs_are_young(), "sanity");
+  assert(!collector_state()->during_initial_mark_pause() ||
+          collector_state()->gcs_are_young(), "sanity");
 
   // We also do not allow mixed GCs during marking.
-  assert(!mark_in_progress() || g1_policy()->gcs_are_young(), "sanity");
+  assert(!collector_state()->mark_in_progress() || collector_state()->gcs_are_young(), "sanity");
 
   // Record whether this pause is an initial mark. When the current
   // thread has completed its logging output and it's safe to signal
   // the CM thread, the flag's value in the policy has been reset.
-  bool should_start_conc_mark = g1_policy()->during_initial_mark_pause();
+  bool should_start_conc_mark = collector_state()->during_initial_mark_pause();
 
   // Inner scope for scope based logging, timers, and stats collection
   {
     EvacuationInfo evacuation_info;
 
-    if (g1_policy()->during_initial_mark_pause()) {
+    if (collector_state()->during_initial_mark_pause()) {
       // We are about to start a marking cycle, so we increment the
       // full collection counter.
       increment_old_marking_cycles_started();
       register_concurrent_cycle_start(_gc_timer_stw->gc_start());
     }
 
-    _gc_tracer_stw->report_yc_type(yc_type());
+    _gc_tracer_stw->report_yc_type(collector_state()->yc_type());
 
     TraceCPUTime tcpu(G1Log::finer(), true, gclog_or_tty);
 
@@ -3677,7 +3659,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     workers()->set_active_workers(active_workers);
 
     double pause_start_sec = os::elapsedTime();
-    g1_policy()->phase_times()->note_gc_start(active_workers, mark_in_progress());
+    g1_policy()->phase_times()->note_gc_start(active_workers, collector_state()->mark_in_progress());
     log_gc_header();
 
     TraceCollectorStats tcs(g1mm()->incremental_collection_counters());
@@ -3771,7 +3753,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         _young_list->print();
 #endif // YOUNG_LIST_VERBOSE
 
-        if (g1_policy()->during_initial_mark_pause()) {
+        if (collector_state()->during_initial_mark_pause()) {
           concurrent_mark()->checkpointRootsInitialPre();
         }
 
@@ -3859,12 +3841,12 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
           _allocator->increase_used(g1_policy()->bytes_copied_during_gc());
         }
 
-        if (g1_policy()->during_initial_mark_pause()) {
+        if (collector_state()->during_initial_mark_pause()) {
           // We have to do this before we notify the CM threads that
           // they can start working to make sure that all the
           // appropriate initialization is done on the CM object.
           concurrent_mark()->checkpointRootsInitialPost();
-          set_marking_started();
+          collector_state()->set_mark_in_progress(true);
           // Note that we don't actually trigger the CM thread at
           // this point. We do that later when we're sure that
           // the current thread has completed its logging output.
@@ -4343,7 +4325,7 @@ public:
 
       pss.set_evac_failure_closure(&evac_failure_cl);
 
-      bool only_young = _g1h->g1_policy()->gcs_are_young();
+      bool only_young = _g1h->collector_state()->gcs_are_young();
 
       // Non-IM young GC.
       G1ParCopyClosure<G1BarrierNone, G1MarkNone>             scan_only_root_cl(_g1h, &pss, rp);
@@ -4369,7 +4351,7 @@ public:
 
       bool trace_metadata = false;
 
-      if (_g1h->g1_policy()->during_initial_mark_pause()) {
+      if (_g1h->collector_state()->during_initial_mark_pause()) {
         // We also need to mark copied objects.
         strong_root_cl = &scan_mark_root_cl;
         strong_cld_cl  = &scan_mark_cld_cl;
@@ -5021,7 +5003,7 @@ public:
 
     OopClosure*                    copy_non_heap_cl = &only_copy_non_heap_cl;
 
-    if (_g1h->g1_policy()->during_initial_mark_pause()) {
+    if (_g1h->collector_state()->during_initial_mark_pause()) {
       // We also need to mark copied objects.
       copy_non_heap_cl = &copy_mark_non_heap_cl;
     }
@@ -5122,7 +5104,7 @@ public:
 
     OopClosure*                    copy_non_heap_cl = &only_copy_non_heap_cl;
 
-    if (_g1h->g1_policy()->during_initial_mark_pause()) {
+    if (_g1h->collector_state()->during_initial_mark_pause()) {
       // We also need to mark copied objects.
       copy_non_heap_cl = &copy_mark_non_heap_cl;
     }
@@ -5234,7 +5216,7 @@ void G1CollectedHeap::process_discovered_references() {
 
   OopClosure*                    copy_non_heap_cl = &only_copy_non_heap_cl;
 
-  if (g1_policy()->during_initial_mark_pause()) {
+  if (collector_state()->during_initial_mark_pause()) {
     // We also need to mark copied objects.
     copy_non_heap_cl = &copy_mark_non_heap_cl;
   }
@@ -5342,7 +5324,7 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
     G1RootProcessor root_processor(this, n_workers);
     G1ParTask g1_par_task(this, _task_queues, &root_processor, n_workers);
     // InitialMark needs claim bits to keep track of the marked-through CLDs.
-    if (g1_policy()->during_initial_mark_pause()) {
+    if (collector_state()->during_initial_mark_pause()) {
       ClassLoaderDataGraph::clear_claimed_marks();
     }
 
@@ -5598,7 +5580,7 @@ bool G1CollectedHeap::verify_bitmaps(const char* caller, HeapRegion* hr) {
   // We reset mark_in_progress() before we reset _cmThread->in_progress() and in this window
   // we do the clearing of the next bitmap concurrently. Thus, we can not verify the bitmap
   // if we happen to be in that state.
-  if (mark_in_progress() || !_cmThread->in_progress()) {
+  if (collector_state()->mark_in_progress() || !_cmThread->in_progress()) {
     res_n = verify_no_bits_over_tams("next", next_bitmap, ntams, end);
   }
   if (!res_p || !res_n) {
@@ -6279,7 +6261,7 @@ HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size,
         _hr_printer.alloc(new_alloc_region, G1HRPrinter::Old);
         check_bitmaps("Old Region Allocation", new_alloc_region);
       }
-      bool during_im = g1_policy()->during_initial_mark_pause();
+      bool during_im = collector_state()->during_initial_mark_pause();
       new_alloc_region->note_start_of_copying(during_im);
       return new_alloc_region;
     }
@@ -6290,7 +6272,7 @@ HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size,
 void G1CollectedHeap::retire_gc_alloc_region(HeapRegion* alloc_region,
                                              size_t allocated_bytes,
                                              InCSetState dest) {
-  bool during_im = g1_policy()->during_initial_mark_pause();
+  bool during_im = collector_state()->during_initial_mark_pause();
   alloc_region->note_end_of_copying(during_im);
   g1_policy()->record_bytes_copied_during_gc(allocated_bytes);
   if (dest.is_young()) {

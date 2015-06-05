@@ -197,7 +197,7 @@ bool VM_CollectForMetadataAllocation::initiate_concurrent_GC() {
 
   if (UseG1GC && ClassUnloadingWithConcurrentMark) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    g1h->g1_policy()->set_initiate_conc_mark_if_possible();
+    g1h->g1_policy()->collector_state()->set_initiate_conc_mark_if_possible(true);
 
     GCCauseSetter x(g1h, _gc_cause);
 
