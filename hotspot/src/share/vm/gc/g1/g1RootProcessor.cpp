@@ -90,11 +90,10 @@ public:
 
 
 void G1RootProcessor::worker_has_discovered_all_strong_classes() {
-  uint n_workers = _g1h->n_par_threads();
   assert(ClassUnloadingWithConcurrentMark, "Currently only needed when doing G1 Class Unloading");
 
   uint new_value = (uint)Atomic::add(1, &_n_workers_discovered_strong_classes);
-  if (new_value == n_workers) {
+  if (new_value == n_workers()) {
     // This thread is last. Notify the others.
     MonitorLockerEx ml(&_lock, Mutex::_no_safepoint_check_flag);
     _lock.notify_all();
@@ -102,21 +101,20 @@ void G1RootProcessor::worker_has_discovered_all_strong_classes() {
 }
 
 void G1RootProcessor::wait_until_all_strong_classes_discovered() {
-  uint n_workers = _g1h->n_par_threads();
   assert(ClassUnloadingWithConcurrentMark, "Currently only needed when doing G1 Class Unloading");
 
-  if ((uint)_n_workers_discovered_strong_classes != n_workers) {
+  if ((uint)_n_workers_discovered_strong_classes != n_workers()) {
     MonitorLockerEx ml(&_lock, Mutex::_no_safepoint_check_flag);
-    while ((uint)_n_workers_discovered_strong_classes != n_workers) {
+    while ((uint)_n_workers_discovered_strong_classes != n_workers()) {
       _lock.wait(Mutex::_no_safepoint_check_flag, 0, false);
     }
   }
 }
 
-G1RootProcessor::G1RootProcessor(G1CollectedHeap* g1h) :
+G1RootProcessor::G1RootProcessor(G1CollectedHeap* g1h, uint n_workers) :
     _g1h(g1h),
     _process_strong_tasks(new SubTasksDone(G1RP_PS_NumElements)),
-    _srs(),
+    _srs(n_workers),
     _lock(Mutex::leaf, "G1 Root Scanning barrier lock", false, Monitor::_safepoint_check_never),
     _n_workers_discovered_strong_classes(0) {}
 
@@ -206,7 +204,7 @@ void G1RootProcessor::evacuate_roots(OopClosure* scan_non_heap_roots,
     }
   }
 
-  _process_strong_tasks->all_tasks_completed();
+  _process_strong_tasks->all_tasks_completed(n_workers());
 }
 
 void G1RootProcessor::process_strong_roots(OopClosure* oops,
@@ -216,7 +214,7 @@ void G1RootProcessor::process_strong_roots(OopClosure* oops,
   process_java_roots(oops, clds, clds, NULL, blobs, NULL, 0);
   process_vm_roots(oops, NULL, NULL, 0);
 
-  _process_strong_tasks->all_tasks_completed();
+  _process_strong_tasks->all_tasks_completed(n_workers());
 }
 
 void G1RootProcessor::process_all_roots(OopClosure* oops,
@@ -230,7 +228,7 @@ void G1RootProcessor::process_all_roots(OopClosure* oops,
     CodeCache::blobs_do(blobs);
   }
 
-  _process_strong_tasks->all_tasks_completed();
+  _process_strong_tasks->all_tasks_completed(n_workers());
 }
 
 void G1RootProcessor::process_java_roots(OopClosure* strong_roots,
@@ -253,7 +251,7 @@ void G1RootProcessor::process_java_roots(OopClosure* strong_roots,
 
   {
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::ThreadRoots, worker_i);
-    bool is_par = _g1h->n_par_threads() > 0;
+    bool is_par = n_workers() > 1;
     Threads::possibly_parallel_oops_do(is_par, strong_roots, thread_stack_clds, strong_code);
   }
 }
@@ -329,6 +327,6 @@ void G1RootProcessor::scan_remembered_sets(G1ParPushHeapRSClosure* scan_rs,
   _g1h->g1_rem_set()->oops_into_collection_set_do(scan_rs, &scavenge_cs_nmethods, worker_i);
 }
 
-void G1RootProcessor::set_num_workers(uint active_workers) {
-  _process_strong_tasks->set_n_threads(active_workers);
+uint G1RootProcessor::n_workers() const {
+  return _srs.n_threads();
 }
