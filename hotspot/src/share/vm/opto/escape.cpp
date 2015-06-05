@@ -972,7 +972,9 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
                   strcmp(call->as_CallLeaf()->_name, "sha256_implCompressMB") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "sha512_implCompress") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "sha512_implCompressMB") == 0 ||
-                  strcmp(call->as_CallLeaf()->_name, "multiplyToLen") == 0)
+                  strcmp(call->as_CallLeaf()->_name, "multiplyToLen") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "squareToLen") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "mulAdd") == 0)
                   ))) {
             call->dump();
             fatal(err_msg_res("EA unexpected CallLeaf %s", call->as_CallLeaf()->_name));

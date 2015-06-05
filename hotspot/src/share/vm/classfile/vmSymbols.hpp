@@ -799,6 +799,14 @@
    do_name(     multiplyToLen_name,                             "multiplyToLen")                                        \
    do_signature(multiplyToLen_signature,                        "([II[II[I)[I")                                         \
                                                                                                                         \
+  do_intrinsic(_squareToLen, java_math_BigInteger, squareToLen_name, squareToLen_signature, F_S)                        \
+   do_name(     squareToLen_name,                             "implSquareToLen")                                        \
+   do_signature(squareToLen_signature,                        "([II[II)[I")                                             \
+                                                                                                                        \
+  do_intrinsic(_mulAdd, java_math_BigInteger, mulAdd_name, mulAdd_signature, F_S)                                       \
+   do_name(     mulAdd_name,                                  "implMulAdd")                                             \
+   do_signature(mulAdd_signature,                             "([I[IIII)I")                                             \
+                                                                                                                        \
   /* java/lang/ref/Reference */                                                                                         \
   do_intrinsic(_Reference_get,            java_lang_ref_Reference, get_name,    void_object_signature, F_R)             \
                                                                                                                         \
