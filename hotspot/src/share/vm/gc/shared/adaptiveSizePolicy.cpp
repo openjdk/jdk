@@ -244,7 +244,7 @@ void AdaptiveSizePolicy::minor_collection_end(GCCause::Cause gc_cause) {
   // Update the pause time.
   _minor_timer.stop();
 
-  if (gc_cause != GCCause::_java_lang_system_gc ||
+  if (!GCCause::is_user_requested_gc(gc_cause) ||
       UseAdaptiveSizePolicyWithSystemGC) {
     double minor_pause_in_seconds = _minor_timer.seconds();
     double minor_pause_in_ms = minor_pause_in_seconds * MILLIUNITS;

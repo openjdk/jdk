@@ -254,9 +254,9 @@ void VM_GenCollectFullConcurrent::doit_epilogue() {
   if (_gc_cause != GCCause::_gc_locker &&
       gch->total_full_collections_completed() <= _full_gc_count_before) {
     // maybe we should change the condition to test _gc_cause ==
-    // GCCause::_java_lang_system_gc, instead of
-    // _gc_cause != GCCause::_gc_locker
-    assert(_gc_cause == GCCause::_java_lang_system_gc,
+    // GCCause::_java_lang_system_gc or GCCause::_dcmd_gc_run,
+    // instead of _gc_cause != GCCause::_gc_locker
+    assert(GCCause::is_user_requested_gc(_gc_cause),
            "the only way to get here if this was a System.gc()-induced GC");
     assert(ExplicitGCInvokesConcurrent, "Error");
     // Now, wait for witnessing concurrent gc cycle to complete,
