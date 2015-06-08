@@ -61,7 +61,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBINSTRUMENT, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBINSTRUMENT_SRC), \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(LIBINSTRUMENT_CFLAGS) $(CFLAGS_WARNINGS_ARE_ERRORS), \
+    CFLAGS := $(LIBINSTRUMENT_CFLAGS), \
     CFLAGS_debug := -DJPLIS_LOGGING, \
     CFLAGS_release := -DNO_JPLIS_LOGGING, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libinstrument/mapfile-vers, \
