@@ -68,13 +68,14 @@ import sun.security.action.GetPropertyAction;
  * <LI>Disconnect</LI>
  * </UL>
  * You should not have to use it directly in most cases because all will be handled
- * in a abstract layer. Here is an example of how to use the class :
- * <P>
- * <code>URL url = new URL("ftp://ftp.sun.com/pub/test.txt");<p>
- * UrlConnection con = url.openConnection();<p>
- * InputStream is = con.getInputStream();<p>
- * ...<p>
- * is.close();</code>
+ * in a abstract layer. Here is an example of how to use the class:
+ * <pre>{@code
+ * URL url = new URL("ftp://ftp.sun.com/pub/test.txt");
+ * UrlConnection con = url.openConnection();
+ * InputStream is = con.getInputStream();
+ * ...
+ * is.close();
+ * }</pre>
  *
  * @see sun.net.ftp.FtpClient
  */
@@ -158,7 +159,7 @@ public class FtpURLConnection extends URLConnection {
     /**
      * Creates an FtpURLConnection from a URL.
      *
-     * @param   url     The <code>URL</code> to retrieve or store.
+     * @param   url     The {@code URL} to retrieve or store.
      */
     public FtpURLConnection(URL url) {
         this(url, null);
@@ -382,7 +383,7 @@ public class FtpURLConnection extends URLConnection {
      * Get the InputStream to retreive the remote file. It will issue the
      * "get" (or "dir") command to the ftp server.
      *
-     * @return  the <code>InputStream</code> to the connection.
+     * @return  the {@code InputStream} to the connection.
      *
      * @throws  IOException if already opened for output
      * @throws  FtpProtocolException if errors occur during the transfert.
@@ -495,7 +496,7 @@ public class FtpURLConnection extends URLConnection {
      * Get the OutputStream to store the remote file. It will issue the
      * "put" command to the ftp server.
      *
-     * @return  the <code>OutputStream</code> to the connection.
+     * @return  the {@code OutputStream} to the connection.
      *
      * @throws  IOException if already opened for input or the URL
      *          points to a directory
@@ -548,9 +549,9 @@ public class FtpURLConnection extends URLConnection {
     }
 
     /**
-     * Gets the <code>Permission</code> associated with the host & port.
+     * Gets the {@code Permission} associated with the host and port.
      *
-     * @return  The <code>Permission</code> object.
+     * @return  The {@code Permission} object.
      */
     @Override
     public Permission getPermission() {
@@ -568,7 +569,7 @@ public class FtpURLConnection extends URLConnection {
      * exists, overwrite its value with the new value.
      *
      * @param   key     the keyword by which the request is known
-     *                  (e.g., "<code>accept</code>").
+     *                  (e.g., "{@code accept}").
      * @param   value   the value associated with it.
      * @throws IllegalStateException if already connected
      * @see #getRequestProperty(java.lang.String)

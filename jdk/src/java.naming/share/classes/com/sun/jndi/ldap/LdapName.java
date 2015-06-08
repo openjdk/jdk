@@ -358,7 +358,7 @@ public final class LdapName implements Name {
      * Serializes only the unparsed DN, for compactness and to avoid
      * any implementation dependency.
      *
-     * @serialdata      The DN string and a boolean indicating whether
+     * @serialData      The DN string and a boolean indicating whether
      * the values are case sensitive.
      */
     private void writeObject(java.io.ObjectOutputStream s)

@@ -31,7 +31,7 @@ import java.io.*;
  * This class provides input and output streams for telnet clients.
  * This class overrides read to do CRLF processing as specified in
  * RFC 854. The class assumes it is running on a system where lines
- * are terminated with a single newline <LF> character.
+ * are terminated with a single newline {@literal <LF>} character.
  *
  * This is the relevant section of RFC 824 regarding CRLF processing:
  *
