@@ -59,7 +59,7 @@ public class RunGCTest {
         }
 
         OutputAnalyzer output = new OutputAnalyzer(gcLog, "");
-        output.shouldMatch(".*\\[Full GC \\(System(\\.gc\\(\\))?.*");
+        output.shouldContain("[Full GC (Diagnostic Command)");
     }
 
     @Test

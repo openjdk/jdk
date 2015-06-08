@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -786,6 +786,7 @@ ciMethod* ciMethod::resolve_invoke(ciKlass* caller, ciKlass* exact_receiver, boo
    Symbol* h_name      = name()->get_symbol();
    Symbol* h_signature = signature()->get_symbol();
 
+   LinkInfo link_info(h_resolved, h_name, h_signature, caller_klass, check_access);
    methodHandle m;
    // Only do exact lookup if receiver klass has been linked.  Otherwise,
    // the vtable has not been setup, and the LinkResolver will fail.
@@ -793,9 +794,9 @@ ciMethod* ciMethod::resolve_invoke(ciKlass* caller, ciKlass* exact_receiver, boo
         ||
        InstanceKlass::cast(h_recv())->is_linked() && !exact_receiver->is_interface()) {
      if (holder()->is_interface()) {
-       m = LinkResolver::resolve_interface_call_or_null(h_recv, h_resolved, h_name, h_signature, caller_klass, check_access);
+       m = LinkResolver::resolve_interface_call_or_null(h_recv, link_info);
      } else {
-       m = LinkResolver::resolve_virtual_call_or_null(h_recv, h_resolved, h_name, h_signature, caller_klass, check_access);
+       m = LinkResolver::resolve_virtual_call_or_null(h_recv, link_info);
      }
    }
 
@@ -839,7 +840,8 @@ int ciMethod::resolve_vtable_index(ciKlass* caller, ciKlass* receiver) {
      Symbol* h_name = name()->get_symbol();
      Symbol* h_signature = signature()->get_symbol();
 
-     vtable_index = LinkResolver::resolve_virtual_vtable_index(h_recv, h_recv, h_name, h_signature, caller_klass);
+     LinkInfo link_info(h_recv, h_name, h_signature, caller_klass);
+     vtable_index = LinkResolver::resolve_virtual_vtable_index(h_recv, link_info);
      if (vtable_index == Method::nonvirtual_vtable_index) {
        // A statically bound method.  Return "no such index".
        vtable_index = Method::invalid_vtable_index;
@@ -1285,10 +1287,8 @@ bool ciMethod::check_call(int refinfo_index, bool is_static) const {
     EXCEPTION_MARK;
     HandleMark hm(THREAD);
     constantPoolHandle pool (THREAD, get_Method()->constants());
-    methodHandle spec_method;
-    KlassHandle  spec_klass;
     Bytecodes::Code code = (is_static ? Bytecodes::_invokestatic : Bytecodes::_invokevirtual);
-    LinkResolver::resolve_method_statically(spec_method, spec_klass, code, pool, refinfo_index, THREAD);
+    methodHandle spec_method = LinkResolver::resolve_method_statically(code, pool, refinfo_index, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       CLEAR_PENDING_EXCEPTION;
       return false;
