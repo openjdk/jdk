@@ -28,7 +28,6 @@
  *
  *  @author Keith McGuigan
  *
- *  @library scaffold
  *  @modules jdk.jdi
  *  @run build JDIScaffold VMConnection
  *  @compile -XDignore.symbol.file NativeInstanceFilterTarg.java

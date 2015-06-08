@@ -43,22 +43,22 @@ import javax.sql.rowset.spi.*;
 
 
 /**
- * The facility called on internally by the <code>RIOptimisticProvider</code> implementation to
+ * The facility called on internally by the {@code RIOptimisticProvider} implementation to
  * propagate changes back to the data source from which the rowset got its data.
  * <P>
- * A <code>CachedRowSetWriter</code> object, called a writer, has the public
- * method <code>writeData</code> for writing modified data to the underlying data source.
+ * A {@code CachedRowSetWriter} object, called a writer, has the public
+ * method {@code writeData} for writing modified data to the underlying data source.
  * This method is invoked by the rowset internally and is never invoked directly by an application.
  * A writer also has public methods for setting and getting
- * the <code>CachedRowSetReader</code> object, called a reader, that is associated
+ * the {@code CachedRowSetReader} object, called a reader, that is associated
  * with the writer. The remainder of the methods in this class are private and
  * are invoked internally, either directly or indirectly, by the method
- * <code>writeData</code>.
+ * {@code writeData}.
  * <P>
- * Typically the <code>SyncFactory</code> manages the <code>RowSetReader</code> and
- * the <code>RowSetWriter</code> implementations using <code>SyncProvider</code> objects.
+ * Typically the {@code SyncFactory} manages the {@code RowSetReader} and
+ * the {@code RowSetWriter} implementations using {@code SyncProvider} objects.
  * Standard JDBC RowSet implementations provide an object instance of this
- * writer by invoking the <code>SyncProvider.getRowSetWriter()</code> method.
+ * writer by invoking the {@code SyncProvider.getRowSetWriter()} method.
  *
  * @version 0.2
  * @author Jonathan Bruce
@@ -69,15 +69,15 @@ import javax.sql.rowset.spi.*;
 public class CachedRowSetWriter implements TransactionalWriter, Serializable {
 
 /**
- * The <code>Connection</code> object that this writer will use to make a
+ * The {@code Connection} object that this writer will use to make a
  * connection to the data source to which it will write data.
  *
  */
     private transient Connection con;
 
 /**
- * The SQL <code>SELECT</code> command that this writer will call
- * internally. The method <code>initSQLStatements</code> builds this
+ * The SQL {@code SELECT} command that this writer will call
+ * internally. The method {@code initSQLStatements} builds this
  * command by supplying the words "SELECT" and "FROM," and using
  * metadata to get the table name and column names .
  *
@@ -86,9 +86,9 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
     private String selectCmd;
 
 /**
- * The SQL <code>UPDATE</code> command that this writer will call
+ * The SQL {@code UPDATE} command that this writer will call
  * internally to write data to the rowset's underlying data source.
- * The method <code>initSQLStatements</code> builds this <code>String</code>
+ * The method {@code initSQLStatements} builds this {@code String}
  * object.
  *
  * @serial
@@ -96,8 +96,8 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
     private String updateCmd;
 
 /**
- * The SQL <code>WHERE</code> clause the writer will use for update
- * statements in the <code>PreparedStatement</code> object
+ * The SQL {@code WHERE} clause the writer will use for update
+ * statements in the {@code PreparedStatement} object
  * it sends to the underlying data source.
  *
  * @serial
@@ -105,7 +105,7 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
     private String updateWhere;
 
 /**
- * The SQL <code>DELETE</code> command that this writer will call
+ * The SQL {@code DELETE} command that this writer will call
  * internally to delete a row in the rowset's underlying data source.
  *
  * @serial
@@ -113,8 +113,8 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
     private String deleteCmd;
 
 /**
- * The SQL <code>WHERE</code> clause the writer will use for delete
- * statements in the <code>PreparedStatement</code> object
+ * The SQL {@code WHERE} clause the writer will use for delete
+ * statements in the {@code PreparedStatement} object
  * it sends to the underlying data source.
  *
  * @serial
@@ -122,9 +122,9 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
     private String deleteWhere;
 
 /**
- * The SQL <code>INSERT INTO</code> command that this writer will internally use
+ * The SQL {@code INSERT INTO} command that this writer will internally use
  * to insert data into the rowset's underlying data source.  The method
- * <code>initSQLStatements</code> builds this command with a question
+ * {@code initSQLStatements} builds this command with a question
  * mark parameter placeholder for each column in the rowset.
  *
  * @serial
@@ -133,8 +133,8 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
 
 /**
  * An array containing the column numbers of the columns that are
- * needed to uniquely identify a row in the <code>CachedRowSet</code> object
- * for which this <code>CachedRowSetWriter</code> object is the writer.
+ * needed to uniquely identify a row in the {@code CachedRowSet} object
+ * for which this {@code CachedRowSetWriter} object is the writer.
  *
  * @serial
  */
@@ -142,7 +142,7 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
 
 /**
  * An array of the parameters that should be used to set the parameter
- * placeholders in a <code>PreparedStatement</code> object that this
+ * placeholders in a {@code PreparedStatement} object that this
  * writer will execute.
  *
  * @serial
@@ -150,33 +150,33 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
     private Object[] params;
 
 /**
- * The <code>CachedRowSetReader</code> object that has been
- * set as the reader for the <code>CachedRowSet</code> object
- * for which this <code>CachedRowSetWriter</code> object is the writer.
+ * The {@code CachedRowSetReader} object that has been
+ * set as the reader for the {@code CachedRowSet} object
+ * for which this {@code CachedRowSetWriter} object is the writer.
  *
  * @serial
  */
     private CachedRowSetReader reader;
 
 /**
- * The <code>ResultSetMetaData</code> object that contains information
- * about the columns in the <code>CachedRowSet</code> object
- * for which this <code>CachedRowSetWriter</code> object is the writer.
+ * The {@code ResultSetMetaData} object that contains information
+ * about the columns in the {@code CachedRowSet} object
+ * for which this {@code CachedRowSetWriter} object is the writer.
  *
  * @serial
  */
     private ResultSetMetaData callerMd;
 
 /**
- * The number of columns in the <code>CachedRowSet</code> object
- * for which this <code>CachedRowSetWriter</code> object is the writer.
+ * The number of columns in the {@code CachedRowSet} object
+ * for which this {@code CachedRowSetWriter} object is the writer.
  *
  * @serial
  */
     private int callerColumnCount;
 
 /**
- * This <code>CachedRowSet<code> will hold the conflicting values
+ * This {@code CachedRowSet} will hold the conflicting values
  *  retrieved from the db and hold it.
  */
     private CachedRowSetImpl crsResolve;
@@ -209,8 +209,8 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
     }
 
 /**
- * Propagates changes in the given <code>RowSet</code> object
- * back to its underlying data source and returns <code>true</code>
+ * Propagates changes in the given {@code RowSet} object
+ * back to its underlying data source and returns {@code true}
  * if successful. The writer will check to see if
  * the data in the pre-modified rowset (the original values) differ
  * from the data in the underlying data source.  If data in the data
@@ -221,15 +221,15 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
  * access for concurrent users.
  * <P>
  * This method is called by the rowset internally when
- * the application invokes the method <code>acceptChanges</code>.
- * The <code>writeData</code> method in turn calls private methods that
+ * the application invokes the method {@code acceptChanges}.
+ * The {@code writeData} method in turn calls private methods that
  * it defines internally.
  * The following is a general summary of what the method
- * <code>writeData</code> does, much of which is accomplished
+ * {@code writeData} does, much of which is accomplished
  * through calls to its own internal methods.
  * <OL>
- * <LI>Creates a <code>CachedRowSet</code> object from the given
- *     <code>RowSet</code> object
+ * <LI>Creates a {@code CachedRowSet} object from the given
+ *     {@code RowSet} object
  * <LI>Makes a connection with the data source
  *   <UL>
  *      <LI>Disables autocommit mode if it is not already disabled
@@ -237,32 +237,32 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
  *   </UL>
  * <LI>Checks to see if the reader has read new data since the writer
  *     was last called and, if so, calls the method
- *    <code>initSQLStatements</code> to initialize new SQL statements
+ *    {@code initSQLStatements} to initialize new SQL statements
  *   <UL>
- *       <LI>Builds new <code>SELECT</code>, <code>UPDATE</code>,
- *           <code>INSERT</code>, and <code>DELETE</code> statements
- *       <LI>Uses the <code>CachedRowSet</code> object's metadata to
+ *       <LI>Builds new {@code SELECT}, {@code UPDATE},
+ *           {@code INSERT}, and {@code DELETE} statements
+ *       <LI>Uses the {@code CachedRowSet} object's metadata to
  *           determine the table name, column names, and the columns
  *           that make up the primary key
  *   </UL>
  * <LI>When there is no conflict, propagates changes made to the
- *     <code>CachedRowSet</code> object back to its underlying data source
+ *     {@code CachedRowSet} object back to its underlying data source
  *   <UL>
- *      <LI>Iterates through each row of the <code>CachedRowSet</code> object
+ *      <LI>Iterates through each row of the {@code CachedRowSet} object
  *          to determine whether it has been updated, inserted, or deleted
  *      <LI>If the corresponding row in the data source has not been changed
  *          since the rowset last read its
  *          values, the writer will use the appropriate command to update,
  *          insert, or delete the row
  *      <LI>If any data in the data source does not match the original values
- *          for the <code>CachedRowSet</code> object, the writer will roll
+ *          for the {@code CachedRowSet} object, the writer will roll
  *          back any changes it has made to the row in the data source.
  *   </UL>
  * </OL>
  *
- * @return <code>true</code> if changes to the rowset were successfully
+ * @return {@code true} if changes to the rowset were successfully
  *         written to the rowset's underlying data source;
- *         <code>false</code> otherwise
+ *         {@code false} otherwise
  */
     public boolean writeData(RowSetInternal caller) throws SQLException {
         long conflicts = 0;
@@ -434,25 +434,25 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
 
   } //end writeData
 
-/**
- * Updates the given <code>CachedRowSet</code> object's underlying data
- * source so that updates to the rowset are reflected in the original
- * data source, and returns <code>false</code> if the update was successful.
- * A return value of <code>true</code> indicates that there is a conflict,
- * meaning that a value updated in the rowset has already been changed by
- * someone else in the underlying data source.  A conflict can also exist
- * if, for example, more than one row in the data source would be affected
- * by the update or if no rows would be affected.  In any case, if there is
- * a conflict, this method does not update the underlying data source.
- * <P>
- * This method is called internally by the method <code>writeData</code>
- * if a row in the <code>CachedRowSet</code> object for which this
- * <code>CachedRowSetWriter</code> object is the writer has been updated.
- *
- * @return <code>false</code> if the update to the underlying data source is
- *         successful; <code>true</code> otherwise
- * @throws SQLException if a database access error occurs
- */
+    /**
+     * Updates the given {@code CachedRowSet} object's underlying data
+     * source so that updates to the rowset are reflected in the original
+     * data source, and returns {@code false} if the update was successful.
+     * A return value of {@code true} indicates that there is a conflict,
+     * meaning that a value updated in the rowset has already been changed by
+     * someone else in the underlying data source.  A conflict can also exist
+     * if, for example, more than one row in the data source would be affected
+     * by the update or if no rows would be affected.  In any case, if there is
+     * a conflict, this method does not update the underlying data source.
+     * <P>
+     * This method is called internally by the method {@code writeData}
+     * if a row in the {@code CachedRowSet} object for which this
+     * {@code CachedRowSetWriter} object is the writer has been updated.
+     *
+     * @return {@code false} if the update to the underlying data source is
+     *         successful; {@code true} otherwise
+     * @throws SQLException if a database access error occurs
+     */
     private boolean updateOriginalRow(CachedRowSet crs)
         throws SQLException {
         PreparedStatement pstmt;
@@ -805,16 +805,16 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
 
    /**
     * Inserts a row that has been inserted into the given
-    * <code>CachedRowSet</code> object into the data source from which
-    * the rowset is derived, returning <code>false</code> if the insertion
+    * {@code CachedRowSet} object into the data source from which
+    * the rowset is derived, returning {@code false} if the insertion
     * was successful.
     *
-    * @param crs the <code>CachedRowSet</code> object that has had a row inserted
+    * @param crs the {@code CachedRowSet} object that has had a row inserted
     *            and to whose underlying data source the row will be inserted
-    * @param pstmt the <code>PreparedStatement</code> object that will be used
+    * @param pstmt the {@code PreparedStatement} object that will be used
     *              to execute the insertion
-    * @return <code>false</code> to indicate that the insertion was successful;
-    *         <code>true</code> otherwise
+    * @return {@code false} to indicate that the insertion was successful;
+    *         {@code true} otherwise
     * @throws SQLException if a database access error occurs
     */
    private boolean insertNewRow(CachedRowSet crs,
@@ -917,24 +917,24 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
        }
    }
 
-/**
- * Deletes the row in the underlying data source that corresponds to
- * a row that has been deleted in the given <code> CachedRowSet</code> object
- * and returns <code>false</code> if the deletion was successful.
- * <P>
- * This method is called internally by this writer's <code>writeData</code>
- * method when a row in the rowset has been deleted. The values in the
- * deleted row are the same as those that are stored in the original row
- * of the given <code>CachedRowSet</code> object.  If the values in the
- * original row differ from the row in the underlying data source, the row
- * in the data source is not deleted, and <code>deleteOriginalRow</code>
- * returns <code>true</code> to indicate that there was a conflict.
- *
- *
- * @return <code>false</code> if the deletion was successful, which means that
- *         there was no conflict; <code>true</code> otherwise
- * @throws SQLException if there was a database access error
- */
+   /**
+    * Deletes the row in the underlying data source that corresponds to
+    * a row that has been deleted in the given {@code  CachedRowSet} object
+    * and returns {@code false} if the deletion was successful.
+    * <P>
+    * This method is called internally by this writer's {@code writeData}
+    * method when a row in the rowset has been deleted. The values in the
+    * deleted row are the same as those that are stored in the original row
+    * of the given {@code CachedRowSet} object.  If the values in the
+    * original row differ from the row in the underlying data source, the row
+    * in the data source is not deleted, and {@code deleteOriginalRow}
+    * returns {@code true} to indicate that there was a conflict.
+    *
+    *
+    * @return {@code false} if the deletion was successful, which means that
+    *         there was no conflict; {@code true} otherwise
+    * @throws SQLException if there was a database access error
+    */
     private boolean deleteOriginalRow(CachedRowSet crs, CachedRowSetImpl crsRes) throws SQLException {
         PreparedStatement pstmt;
         int i;
@@ -1056,13 +1056,13 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
     }
 
     /**
-     * Composes a <code>SELECT</code>, <code>UPDATE</code>, <code>INSERT</code>,
-     * and <code>DELETE</code> statement that can be used by this writer to
-     * write data to the data source backing the given <code>CachedRowSet</code>
+     * Composes a {@code SELECT}, {@code UPDATE}, {@code INSERT},
+     * and {@code DELETE} statement that can be used by this writer to
+     * write data to the data source backing the given {@code CachedRowSet}
      * object.
      *
-     * @ param caller a <code>CachedRowSet</code> object for which this
-     *                <code>CachedRowSetWriter</code> object is the writer
+     * @param caller a {@code CachedRowSet} object for which this
+     *        {@code CachedRowSetWriter} object is the writer
      * @throws SQLException if a database access error occurs
      */
     private void initSQLStatements(CachedRowSet caller) throws SQLException {
@@ -1177,13 +1177,13 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
      * table names. The given metadata object is used to get the proper order
      * and separator.
      *
-     * @param dbmd a <code>DatabaseMetaData</code> object that contains metadata
-     *          about this writer's <code>CachedRowSet</code> object
-     * @param catalog a <code>String</code> object with the rowset's catalog
+     * @param dbmd a {@code DatabaseMetaData} object that contains metadata
+     *          about this writer's {@code CachedRowSet} object
+     * @param catalog a {@code String} object with the rowset's catalog
      *          name
-     * @param table a <code>String</code> object with the name of the table from
+     * @param table a {@code String} object with the name of the table from
      *          which this writer's rowset was derived
-     * @return a <code>String</code> object with the fully qualified name of the
+     * @return a {@code String} object with the fully qualified name of the
      *          table from which this writer's rowset was derived
      * @throws SQLException if a database access error occurs
      */
@@ -1221,21 +1221,21 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
     }
 
     /**
-     * Assigns to the given <code>CachedRowSet</code> object's
-     * <code>params</code>
+     * Assigns to the given {@code CachedRowSet} object's
+     * {@code params}
      * field an array whose length equals the number of columns needed
      * to uniquely identify a row in the rowset. The array is given
-     * values by the method <code>buildWhereClause</code>.
+     * values by the method {@code buildWhereClause}.
      * <P>
-     * If the <code>CachedRowSet</code> object's <code>keyCols</code>
-     * field has length <code>0</code> or is <code>null</code>, the array
+     * If the {@code CachedRowSet} object's {@code keyCols}
+     * field has length {@code 0} or is {@code null}, the array
      * is set with the column number of every column in the rowset.
-     * Otherwise, the array in the field <code>keyCols</code> is set with only
+     * Otherwise, the array in the field {@code keyCols} is set with only
      * the column numbers of the columns that are required to form a unique
      * identifier for a row.
      *
-     * @param crs the <code>CachedRowSet</code> object for which this
-     *     <code>CachedRowSetWriter</code> object is the writer
+     * @param crs the {@code CachedRowSet} object for which this
+     *     {@code CachedRowSetWriter} object is the writer
      *
      * @throws SQLException if a database access error occurs
      */
@@ -1263,29 +1263,29 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
     }
 
     /**
-         * Constructs an SQL <code>WHERE</code> clause using the given
-         * string as a starting point. The resulting clause will contain
-         * a column name and " = ?" for each key column, that is, each column
-         * that is needed to form a unique identifier for a row in the rowset.
-         * This <code>WHERE</code> clause can be added to
-         * a <code>PreparedStatement</code> object that updates, inserts, or
-         * deletes a row.
-         * <P>
-         * This method uses the given result set to access values in the
-         * <code>CachedRowSet</code> object that called this writer.  These
-         * values are used to build the array of parameters that will serve as
-         * replacements for the "?" parameter placeholders in the
-         * <code>PreparedStatement</code> object that is sent to the
-         * <code>CachedRowSet</code> object's underlying data source.
-         *
-         * @param whereClause a <code>String</code> object that is an empty
-         *                    string ("")
-         * @param rs a <code>ResultSet</code> object that can be used
-         *           to access the <code>CachedRowSet</code> object's data
-         * @return a <code>WHERE</code> clause of the form "<code>WHERE</code>
-         *         columnName = ? AND columnName = ? AND columnName = ? ..."
-         * @throws SQLException if a database access error occurs
-         */
+     * Constructs an SQL {@code WHERE} clause using the given
+     * string as a starting point. The resulting clause will contain
+     * a column name and " = ?" for each key column, that is, each column
+     * that is needed to form a unique identifier for a row in the rowset.
+     * This {@code WHERE} clause can be added to
+     * a {@code PreparedStatement} object that updates, inserts, or
+     * deletes a row.
+     * <P>
+     * This method uses the given result set to access values in the
+     * {@code CachedRowSet} object that called this writer.  These
+     * values are used to build the array of parameters that will serve as
+     * replacements for the "?" parameter placeholders in the
+     * {@code PreparedStatement} object that is sent to the
+     * {@code CachedRowSet} object's underlying data source.
+     *
+     * @param whereClause a {@code String} object that is an empty
+     *                    string ("")
+     * @param rs a {@code ResultSet} object that can be used
+     *           to access the {@code CachedRowSet} object's data
+     * @return a {@code WHERE} clause of the form "{@code WHERE}
+     *         columnName = ? AND columnName = ? AND columnName = ? ..."
+     * @throws SQLException if a database access error occurs
+     */
     private String buildWhereClause(String whereClause,
                                     ResultSet rs) throws SQLException {
         whereClause = "WHERE ";

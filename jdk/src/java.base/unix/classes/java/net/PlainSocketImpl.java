@@ -94,6 +94,15 @@ class PlainSocketImpl extends AbstractPlainSocketImpl
         return options;
     }
 
+    protected void socketSetOption(int opt, boolean b, Object val) throws SocketException {
+        try {
+            socketSetOption0(opt, b, val);
+        } catch (SocketException se) {
+            if (socket == null || !socket.isConnected())
+                throw se;
+        }
+    }
+
     native void socketCreate(boolean isServer) throws IOException;
 
     native void socketConnect(InetAddress address, int port, int timeout)
@@ -114,7 +123,7 @@ class PlainSocketImpl extends AbstractPlainSocketImpl
 
     static native void initProto();
 
-    native void socketSetOption(int cmd, boolean on, Object value)
+    native void socketSetOption0(int cmd, boolean on, Object value)
         throws SocketException;
 
     native int socketGetOption(int opt, Object iaContainerObj) throws SocketException;

@@ -353,8 +353,8 @@ void CardGeneration::space_iterate(SpaceClosure* blk,
   blk->do_space(space());
 }
 
-void CardGeneration::younger_refs_iterate(OopsInGenClosure* blk) {
+void CardGeneration::younger_refs_iterate(OopsInGenClosure* blk, uint n_threads) {
   blk->set_generation(this);
-  younger_refs_in_space_iterate(space(), blk);
+  younger_refs_in_space_iterate(space(), blk, n_threads);
   blk->reset_generation();
 }

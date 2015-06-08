@@ -73,17 +73,17 @@ public class ParameterizedTypeImpl implements ParameterizedType {
      * <p> This method throws a MalformedParameterizedTypeException
      * under the following circumstances:
      * If the number of actual type arguments (i.e., the size of the
-     * array <tt>typeArgs</tt>) does not correspond to the number of
+     * array {@code typeArgs}) does not correspond to the number of
      * formal type arguments.
      * If any of the actual type arguments is not an instance of the
      * bounds on the corresponding formal.
      * @param rawType the Class representing the generic type declaration being
      * instantiated
-     * @param actualTypeArguments - a (possibly empty) array of types
+     * @param actualTypeArguments a (possibly empty) array of types
      * representing the actual type arguments to the parameterized type
-     * @param ownerType - the enclosing type, if known.
-     * @return An instance of <tt>ParameterizedType</tt>
-     * @throws MalformedParameterizedTypeException - if the instantiation
+     * @param ownerType the enclosing type, if known.
+     * @return An instance of {@code ParameterizedType}
+     * @throws MalformedParameterizedTypeException if the instantiation
      * is invalid
      */
     public static ParameterizedTypeImpl make(Class<?> rawType,
@@ -95,18 +95,18 @@ public class ParameterizedTypeImpl implements ParameterizedType {
 
 
     /**
-     * Returns an array of <tt>Type</tt> objects representing the actual type
+     * Returns an array of {@code Type} objects representing the actual type
      * arguments to this type.
      *
      * <p>Note that in some cases, the returned array be empty. This can occur
      * if this type represents a non-parameterized type nested within
      * a parameterized type.
      *
-     * @return an array of <tt>Type</tt> objects representing the actual type
+     * @return an array of {@code Type} objects representing the actual type
      *     arguments to this type
-     * @throws <tt>TypeNotPresentException</tt> if any of the
+     * @throws TypeNotPresentException if any of the
      *     actual type arguments refers to a non-existent type declaration
-     * @throws <tt>MalformedParameterizedTypeException</tt> if any of the
+     * @throws MalformedParameterizedTypeException if any of the
      *     actual type parameters refer to a parameterized type that cannot
      *     be instantiated for any reason
      * @since 1.5
@@ -116,10 +116,10 @@ public class ParameterizedTypeImpl implements ParameterizedType {
     }
 
     /**
-     * Returns the <tt>Type</tt> object representing the class or interface
+     * Returns the {@code Type} object representing the class or interface
      * that declared this type.
      *
-     * @return the <tt>Type</tt> object representing the class or interface
+     * @return the {@code Type} object representing the class or interface
      *     that declared this type
      */
     public Class<?> getRawType() {
@@ -128,18 +128,18 @@ public class ParameterizedTypeImpl implements ParameterizedType {
 
 
     /**
-     * Returns a <tt>Type</tt> object representing the type that this type
-     * is a member of.  For example, if this type is <tt>O<T>.I<S></tt>,
-     * return a representation of <tt>O<T></tt>.
+     * Returns a {@code Type} object representing the type that this type
+     * is a member of.  For example, if this type is {@code O<T>.I<S>},
+     * return a representation of {@code O<T>}.
      *
-     * <p>If this type is a top-level type, <tt>null</tt> is returned.
+     * <p>If this type is a top-level type, {@code null} is returned.
      *
-     * @return a <tt>Type</tt> object representing the type that
+     * @return a {@code Type} object representing the type that
      *     this type is a member of. If this type is a top-level type,
-     *     <tt>null</tt> is returned
-     * @throws <tt>TypeNotPresentException</tt> if the owner type
+     *     {@code null} is returned
+     * @throws TypeNotPresentException if the owner type
      *     refers to a non-existent type declaration
-     * @throws <tt>MalformedParameterizedTypeException</tt> if the owner type
+     * @throws MalformedParameterizedTypeException if the owner type
      *     refers to a parameterized type that cannot be instantiated
      *     for any reason
      *

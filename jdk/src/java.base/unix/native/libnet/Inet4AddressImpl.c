@@ -121,7 +121,7 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
     jobjectArray ret = 0;
     int retLen = 0;
 
-    int error=0;
+    int getaddrinfo_error=0;
     struct addrinfo hints, *res, *resNew = NULL;
 
     initInetAddressIDs(env);
@@ -149,22 +149,24 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
         return NULL;
     }
 
+
+    getaddrinfo_error = getaddrinfo(hostname, NULL, &hints, &res);
+
 #ifdef MACOSX
-    /* If we're looking up the local machine, bypass DNS lookups and get
-     * address from getifaddrs.
-     */
-    ret = lookupIfLocalhost(env, hostname, JNI_FALSE);
-    if (ret != NULL || (*env)->ExceptionCheck(env)) {
-        JNU_ReleaseStringPlatformChars(env, host, hostname);
-        return ret;
+    if (getaddrinfo_error) {
+        // If getaddrinfo fails try getifaddrs.
+        ret = lookupIfLocalhost(env, hostname, JNI_FALSE);
+        if (ret != NULL || (*env)->ExceptionCheck(env)) {
+            JNU_ReleaseStringPlatformChars(env, host, hostname);
+            return ret;
+        }
     }
 #endif
 
-    error = getaddrinfo(hostname, NULL, &hints, &res);
-
-    if (error) {
+    if (getaddrinfo_error) {
         /* report error */
-        NET_ThrowUnknownHostExceptionWithGaiError(env, hostname, error);
+        NET_ThrowUnknownHostExceptionWithGaiError(
+            env, hostname, getaddrinfo_error);
         JNU_ReleaseStringPlatformChars(env, host, hostname);
         return NULL;
     } else {

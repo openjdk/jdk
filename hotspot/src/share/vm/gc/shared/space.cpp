@@ -181,7 +181,8 @@ void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
 
 DirtyCardToOopClosure* Space::new_dcto_cl(ExtendedOopClosure* cl,
                                           CardTableModRefBS::PrecisionStyle precision,
-                                          HeapWord* boundary) {
+                                          HeapWord* boundary,
+                                          bool parallel) {
   return new DirtyCardToOopClosure(this, cl, precision, boundary);
 }
 
@@ -260,7 +261,8 @@ ContiguousSpaceDCTOC__walk_mem_region_with_cl_DEFN(FilteringClosure)
 DirtyCardToOopClosure*
 ContiguousSpace::new_dcto_cl(ExtendedOopClosure* cl,
                              CardTableModRefBS::PrecisionStyle precision,
-                             HeapWord* boundary) {
+                             HeapWord* boundary,
+                             bool parallel) {
   return new ContiguousSpaceDCTOC(this, cl, precision, boundary);
 }
 

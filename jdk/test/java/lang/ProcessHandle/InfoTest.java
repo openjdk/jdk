@@ -24,10 +24,12 @@
 import java.io.File;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.ProcessBuilder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.UserPrincipal;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -58,17 +60,16 @@ public class InfoTest {
     static String whoami;
 
     static {
-        ProcessBuilder pb = new ProcessBuilder("whoami");
-        String fullName;
         try {
-            fullName = new Scanner(pb.start().getInputStream()).nextLine();
-            StringTokenizer st = new StringTokenizer(fullName, "\\");
-            while (st.hasMoreTokens()) {
-                whoami = st.nextToken();
-            }
-            System.out.printf("whoami: %s, user.name: %s%n", whoami, System.getProperty("user.name"));
+            // Create a file and take the username from the file
+            Path p = Paths.get("OwnerName.tmp");
+            Files.createFile(p);
+            UserPrincipal owner = Files.getOwner(p);
+            whoami = owner.getName();
+            Files.delete(p);
         } catch (IOException ex) {
-            throw new RuntimeException(ex);
+            ex.printStackTrace();
+            throw new UncheckedIOException("tmp file", ex);
         }
     }
 
