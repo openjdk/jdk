@@ -52,7 +52,6 @@ import java.lang.SecurityManager;
  * The following table lists all the possible SSLPermission target names,
  * and for each provides a description of what the permission allows
  * and a discussion of the risks of granting code the permission.
- * <P>
  *
  * <table border=1 cellpadding=5>
  * <tr>

@@ -280,7 +280,7 @@ public class SSLEngineResult {
      * @apiNote  Note that sequence number is an unsigned long and cannot
      *           exceed {@code -1L}.  It is desired to use the unsigned
      *           long comparing mode for comparison of unsigned long values
-     *           (see also {@link java.lang.Long#compareUnsigned()
+     *           (see also {@link java.lang.Long#compareUnsigned(long, long)
      *           Long.compareUnsigned()}).
      *           <P>
      *           For DTLS protocols, the first 16 bits of the sequence
@@ -300,7 +300,7 @@ public class SSLEngineResult {
      *          record; or ${@code -1L} if no record is produced or consumed,
      *          or this operation is not supported by the underlying provider
      *
-     * @see     java.lang.Long#compareUnsigned(boolean, boolean)
+     * @see     java.lang.Long#compareUnsigned(long, long)
      *
      * @since   1.9
      */

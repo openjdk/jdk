@@ -246,7 +246,7 @@ public class NashornBeansLinker implements GuardingDynamicLinker {
         }
 
         @Override
-        public MethodHandle filterInternalObjects(MethodHandle target) {
+        public MethodHandle filterInternalObjects(final MethodHandle target) {
             return linkerServices.filterInternalObjects(target);
         }
     }

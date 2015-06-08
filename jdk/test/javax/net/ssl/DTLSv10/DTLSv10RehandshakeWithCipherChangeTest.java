@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,8 +20,24 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package pkg;
 
-public class ClassToBeStaticallyImported {
-    public static final int staticField = 1;
+/*
+ * @test
+ * @bug 8043758
+ * @summary Testing DTLS engines re-handshaking with cipher change. New cipher
+ *          is taken randomly from the supporetd ciphers list.
+ * @key randomness
+ * @library /sun/security/krb5/auto /lib/testlibrary /javax/net/ssl/TLSCommon
+ * @run main/othervm -Dtest.security.protocol=DTLSv1.0
+ *      DTLSv10RehandshakeWithCipherChangeTest
+ */
+
+/**
+ * Testing DTLS engines re-handshaking with cipher change. New cipher is taken
+ * randomly from the supported ciphers list.
+ */
+public class DTLSv10RehandshakeWithCipherChangeTest {
+    public static void main(String[] args) {
+        RehandshakeWithCipherChangeTest.main(args);
+    }
 }
