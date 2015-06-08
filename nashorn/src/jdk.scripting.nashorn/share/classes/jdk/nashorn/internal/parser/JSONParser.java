@@ -47,7 +47,8 @@ import jdk.nashorn.internal.scripts.JO;
 import static jdk.nashorn.internal.parser.TokenType.STRING;
 
 /**
- * Parses JSON text and returns the corresponding IR node. This is derived from the objectLiteral production of the main parser.
+ * Parses JSON text and returns the corresponding IR node. This is derived from
+ * the objectLiteral production of the main parser.
  *
  * See: 15.12.1.2 The JSON Syntactic Grammar
  */
@@ -70,9 +71,11 @@ public class JSONParser {
     private static final int STATE_COMMA_PARSED   = 2;
 
     /**
-     * Constructor
-     * @param source  the source
-     * @param global the global object
+     * Constructor.
+     *
+     * @param source     the source
+     * @param global     the global object
+     * @param dualFields whether the parser should regard dual field representation
      */
     public JSONParser(final String source, final Global global, final boolean dualFields) {
         this.source = source;
@@ -82,8 +85,9 @@ public class JSONParser {
     }
 
     /**
-     * Implementation of the Quote(value) operation as defined in the ECMA script spec
-     * It wraps a String value in double quotes and escapes characters within in
+     * Implementation of the Quote(value) operation as defined in the ECMAscript
+     * spec. It wraps a String value in double quotes and escapes characters
+     * within.
      *
      * @param value string to quote
      *
