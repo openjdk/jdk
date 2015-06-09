@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
         while (pIDL != 0) {
             long curPIDL = Win32ShellFolder2.copyFirstPIDLEntry(pIDL);
             if (curPIDL != 0) {
-                parent = new Win32ShellFolder2(parent, curPIDL);
+                parent = Win32ShellFolder2.createShellFolder(parent, curPIDL);
                 pIDL = Win32ShellFolder2.getNextPIDLEntry(pIDL);
             } else {
                 // The list is empty if the parent is Desktop and pIDL is a shortcut to Desktop
