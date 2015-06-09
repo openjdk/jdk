@@ -484,12 +484,12 @@ void GCTaskManager::set_active_gang() {
 
   assert(!all_workers_active() || active_workers() == ParallelGCThreads,
          err_msg("all_workers_active() is  incorrect: "
-                 "active %d  ParallelGCThreads " UINTX_FORMAT, active_workers(),
+                 "active %d  ParallelGCThreads %u", active_workers(),
                  ParallelGCThreads));
   if (TraceDynamicGCThreads) {
     gclog_or_tty->print_cr("GCTaskManager::set_active_gang(): "
                            "all_workers_active()  %d  workers %d  "
-                           "active  %d  ParallelGCThreads " UINTX_FORMAT,
+                           "active  %d  ParallelGCThreads %u",
                            all_workers_active(), workers(),  active_workers(),
                            ParallelGCThreads);
   }

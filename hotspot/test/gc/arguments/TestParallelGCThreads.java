@@ -24,7 +24,7 @@
 /*
  * @test TestParallelGCThreads
  * @key gc
- * @bug 8059527
+ * @bug 8059527 8081382
  * @summary Tests argument processing for ParallelGCThreads
  * @library /testlibrary
  * @modules java.base/sun.misc
@@ -37,7 +37,38 @@ import jdk.test.lib.*;
 public class TestParallelGCThreads {
 
   public static void main(String args[]) throws Exception {
+    testFlags();
+    testDefaultValue();
+  }
 
+  private static final String flagName = "ParallelGCThreads";
+
+  // uint ParallelGCThreads = 23 {product}
+  private static final String printFlagsFinalPattern = " *uint *" + flagName + " *:?= *(\\d+) *\\{product\\} *";
+
+  public static void testDefaultValue()  throws Exception {
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+      "-XX:+UnlockExperimentalVMOptions", "-XX:+PrintFlagsFinal", "-version");
+
+    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    String value = output.firstMatch(printFlagsFinalPattern, 1);
+
+    try {
+      Asserts.assertNotNull(value, "Couldn't find uint flag " + flagName);
+
+      Long longValue = new Long(value);
+
+      // Sanity check that we got a non-zero value.
+      Asserts.assertNotEquals(longValue, "0");
+
+      output.shouldHaveExitValue(0);
+    } catch (Exception e) {
+      System.err.println(output.getOutput());
+      throw e;
+    }
+  }
+
+  public static void testFlags() throws Exception {
     // For each parallel collector (G1, Parallel, ParNew/CMS)
     for (String gc : new String[] {"G1", "Parallel", "ConcMarkSweep"}) {
 
@@ -53,6 +84,15 @@ public class TestParallelGCThreads {
         long count = getParallelGCThreadCount(flags);
         Asserts.assertEQ(count, i, "Specifying ParallelGCThreads=" + i + " for " + gc + "GC does not set the thread count properly!");
       }
+    }
+
+    // 4294967295 == (unsigned int) -1
+    // So setting ParallelGCThreads=4294967295 should give back 4294967295
+    // and setting ParallelGCThreads=4294967296 should give back 0. (SerialGC is ok with ParallelGCThreads=0)
+    for (long i = 4294967295L; i <= 4294967296L; i++) {
+      String[] flags = new String[] {"-XX:+UseSerialGC", "-XX:ParallelGCThreads=" + i, "-XX:+PrintFlagsFinal", "-version"};
+      long count = getParallelGCThreadCount(flags);
+      Asserts.assertEQ(count, i % 4294967296L, "Specifying ParallelGCThreads=" + i + " does not set the thread count properly!");
     }
   }
 

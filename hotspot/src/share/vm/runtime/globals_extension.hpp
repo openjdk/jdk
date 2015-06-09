@@ -197,6 +197,8 @@ typedef enum {
 class CommandLineFlagsEx : CommandLineFlags {
  public:
   static void boolAtPut(CommandLineFlagWithType flag, bool value, Flag::Flags origin);
+  static void intAtPut(CommandLineFlagWithType flag, int value, Flag::Flags origin);
+  static void uintAtPut(CommandLineFlagWithType flag, uint value, Flag::Flags origin);
   static void intxAtPut(CommandLineFlagWithType flag, intx value, Flag::Flags origin);
   static void uintxAtPut(CommandLineFlagWithType flag, uintx value, Flag::Flags origin);
   static void uint64_tAtPut(CommandLineFlagWithType flag, uint64_t value, Flag::Flags origin);

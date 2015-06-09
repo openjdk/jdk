@@ -30,6 +30,7 @@
 #include "gc/g1/concurrentMarkThread.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorPolicy.hpp"
+#include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ErgoVerbose.hpp"
 #include "gc/g1/g1Log.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
@@ -177,7 +178,7 @@ class ClearBitmapHRClosure : public HeapRegionClosure {
       // will have them as guarantees at the beginning / end of the bitmap
       // clearing to get some checking in the product.
       assert(!_may_yield || _cm->cmThread()->during_cycle(), "invariant");
-      assert(!_may_yield || !G1CollectedHeap::heap()->mark_in_progress(), "invariant");
+      assert(!_may_yield || !G1CollectedHeap::heap()->collector_state()->mark_in_progress(), "invariant");
     }
 
     return false;
@@ -518,7 +519,7 @@ ConcurrentMark::ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* prev
   _markStack(this),
   // _finger set in set_non_marking_state
 
-  _max_worker_id((uint)ParallelGCThreads),
+  _max_worker_id(ParallelGCThreads),
   // _active_tasks set in set_non_marking_state
   // _tasks set inside the constructor
   _task_queues(new CMTaskQueueSet((int) _max_worker_id)),
@@ -579,8 +580,8 @@ ConcurrentMark::ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* prev
   _root_regions.init(_g1h, this);
 
   if (ConcGCThreads > ParallelGCThreads) {
-    warning("Can't have more ConcGCThreads (" UINTX_FORMAT ") "
-            "than ParallelGCThreads (" UINTX_FORMAT ").",
+    warning("Can't have more ConcGCThreads (%u) "
+            "than ParallelGCThreads (%u).",
             ConcGCThreads, ParallelGCThreads);
     return;
   }
@@ -604,20 +605,20 @@ ConcurrentMark::ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* prev
     double sleep_factor =
                        (1.0 - marking_task_overhead) / marking_task_overhead;
 
-    FLAG_SET_ERGO(uintx, ConcGCThreads, (uint) marking_thread_num);
+    FLAG_SET_ERGO(uint, ConcGCThreads, (uint) marking_thread_num);
     _sleep_factor             = sleep_factor;
     _marking_task_overhead    = marking_task_overhead;
   } else {
     // Calculate the number of parallel marking threads by scaling
     // the number of parallel GC threads.
-    uint marking_thread_num = scale_parallel_threads((uint) ParallelGCThreads);
-    FLAG_SET_ERGO(uintx, ConcGCThreads, marking_thread_num);
+    uint marking_thread_num = scale_parallel_threads(ParallelGCThreads);
+    FLAG_SET_ERGO(uint, ConcGCThreads, marking_thread_num);
     _sleep_factor             = 0.0;
     _marking_task_overhead    = 1.0;
   }
 
   assert(ConcGCThreads > 0, "Should have been set");
-  _parallel_marking_threads = (uint) ConcGCThreads;
+  _parallel_marking_threads = ConcGCThreads;
   _max_parallel_marking_threads = _parallel_marking_threads;
 
   if (parallel_marking_threads() > 1) {
@@ -830,7 +831,7 @@ void ConcurrentMark::clearNextBitmap() {
   // marking bitmap and getting it ready for the next cycle. During
   // this time no other cycle can start. So, let's make sure that this
   // is the case.
-  guarantee(!g1h->mark_in_progress(), "invariant");
+  guarantee(!g1h->collector_state()->mark_in_progress(), "invariant");
 
   ClearBitmapHRClosure cl(this, _nextMarkBitMap, true /* may_yield */);
   ParClearNextMarkBitmapTask task(&cl, parallel_marking_threads(), true);
@@ -844,7 +845,7 @@ void ConcurrentMark::clearNextBitmap() {
 
   // Repeat the asserts from above.
   guarantee(cmThread()->during_cycle(), "invariant");
-  guarantee(!g1h->mark_in_progress(), "invariant");
+  guarantee(!g1h->collector_state()->mark_in_progress(), "invariant");
 }
 
 class CheckBitmapClearHRClosure : public HeapRegionClosure {
@@ -1254,7 +1255,7 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
 
   // If a full collection has happened, we shouldn't do this.
   if (has_aborted()) {
-    g1h->set_marking_complete(); // So bitmap clearing isn't confused
+    g1h->collector_state()->set_mark_in_progress(false); // So bitmap clearing isn't confused
     return;
   }
 
@@ -1888,7 +1889,7 @@ void ConcurrentMark::cleanup() {
 
   // If a full collection has happened, we shouldn't do this.
   if (has_aborted()) {
-    g1h->set_marking_complete(); // So bitmap clearing isn't confused
+    g1h->collector_state()->set_mark_in_progress(false); // So bitmap clearing isn't confused
     return;
   }
 
@@ -1934,7 +1935,7 @@ void ConcurrentMark::cleanup() {
   }
 
   size_t start_used_bytes = g1h->used();
-  g1h->set_marking_complete();
+  g1h->collector_state()->set_mark_in_progress(false);
 
   double count_end = os::elapsedTime();
   double this_final_counting_time = (count_end - start);
@@ -2756,7 +2757,7 @@ public:
 
 void ConcurrentMark::verify_no_cset_oops() {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at a safepoint");
-  if (!G1CollectedHeap::heap()->mark_in_progress()) {
+  if (!G1CollectedHeap::heap()->collector_state()->mark_in_progress()) {
     return;
   }
 

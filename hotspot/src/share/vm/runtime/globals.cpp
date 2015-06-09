@@ -93,6 +93,32 @@ void Flag::set_bool(bool value) {
   *((bool*) _addr) = value;
 }
 
+bool Flag::is_int() const {
+  return strcmp(_type, "int")  == 0;
+}
+
+int Flag::get_int() const {
+  return *((int*) _addr);
+}
+
+void Flag::set_int(int value) {
+  check_writable();
+  *((int*) _addr) = value;
+}
+
+bool Flag::is_uint() const {
+  return strcmp(_type, "uint")  == 0;
+}
+
+uint Flag::get_uint() const {
+  return *((uint*) _addr);
+}
+
+void Flag::set_uint(uint value) {
+  check_writable();
+  *((uint*) _addr) = value;
+}
+
 bool Flag::is_intx() const {
   return strcmp(_type, "intx")  == 0;
 }
@@ -316,6 +342,12 @@ void Flag::print_on(outputStream* st, bool withComments) {
   if (is_bool()) {
     st->print("%-16s", get_bool() ? "true" : "false");
   }
+  if (is_int()) {
+    st->print("%-16d", get_int());
+  }
+  if (is_uint()) {
+    st->print("%-16u", get_uint());
+  }
   if (is_intx()) {
     st->print("%-16ld", get_intx());
   }
@@ -411,6 +443,10 @@ void Flag::print_kind(outputStream* st) {
 void Flag::print_as_flag(outputStream* st) {
   if (is_bool()) {
     st->print("-XX:%s%s", get_bool() ? "+" : "-", _name);
+  } else if (is_int()) {
+    st->print("-XX:%s=%d", _name, get_int());
+  } else if (is_uint()) {
+    st->print("-XX:%s=%u", _name, get_uint());
   } else if (is_intx()) {
     st->print("-XX:%s=" INTX_FORMAT, _name, get_intx());
   } else if (is_uintx()) {
@@ -660,6 +696,62 @@ void CommandLineFlagsEx::boolAtPut(CommandLineFlagWithType flag, bool value, Fla
   guarantee(faddr != NULL && faddr->is_bool(), "wrong flag type");
   trace_flag_changed<EventBooleanFlagChanged, bool>(faddr->_name, faddr->get_bool(), value, origin);
   faddr->set_bool(value);
+  faddr->set_origin(origin);
+}
+
+bool CommandLineFlags::intAt(const char* name, size_t len, int* value, bool allow_locked, bool return_flag) {
+  Flag* result = Flag::find_flag(name, len, allow_locked, return_flag);
+  if (result == NULL) return false;
+  if (!result->is_int()) return false;
+  *value = result->get_int();
+  return true;
+}
+
+bool CommandLineFlags::intAtPut(const char* name, size_t len, int* value, Flag::Flags origin) {
+  Flag* result = Flag::find_flag(name, len);
+  if (result == NULL) return false;
+  if (!result->is_int()) return false;
+  int old_value = result->get_int();
+  trace_flag_changed<EventIntFlagChanged, s4>(name, old_value, *value, origin);
+  result->set_int(*value);
+  *value = old_value;
+  result->set_origin(origin);
+  return true;
+}
+
+void CommandLineFlagsEx::intAtPut(CommandLineFlagWithType flag, int value, Flag::Flags origin) {
+  Flag* faddr = address_of_flag(flag);
+  guarantee(faddr != NULL && faddr->is_int(), "wrong flag type");
+  trace_flag_changed<EventIntFlagChanged, s4>(faddr->_name, faddr->get_int(), value, origin);
+  faddr->set_int(value);
+  faddr->set_origin(origin);
+}
+
+bool CommandLineFlags::uintAt(const char* name, size_t len, uint* value, bool allow_locked, bool return_flag) {
+  Flag* result = Flag::find_flag(name, len, allow_locked, return_flag);
+  if (result == NULL) return false;
+  if (!result->is_uint()) return false;
+  *value = result->get_uint();
+  return true;
+}
+
+bool CommandLineFlags::uintAtPut(const char* name, size_t len, uint* value, Flag::Flags origin) {
+  Flag* result = Flag::find_flag(name, len);
+  if (result == NULL) return false;
+  if (!result->is_uint()) return false;
+  uint old_value = result->get_uint();
+  trace_flag_changed<EventUnsignedIntFlagChanged, u4>(name, old_value, *value, origin);
+  result->set_uint(*value);
+  *value = old_value;
+  result->set_origin(origin);
+  return true;
+}
+
+void CommandLineFlagsEx::uintAtPut(CommandLineFlagWithType flag, uint value, Flag::Flags origin) {
+  Flag* faddr = address_of_flag(flag);
+  guarantee(faddr != NULL && faddr->is_uint(), "wrong flag type");
+  trace_flag_changed<EventUnsignedIntFlagChanged, u4>(faddr->_name, faddr->get_uint(), value, origin);
+  faddr->set_uint(value);
   faddr->set_origin(origin);
 }
 

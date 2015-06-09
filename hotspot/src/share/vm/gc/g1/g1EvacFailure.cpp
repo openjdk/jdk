@@ -26,6 +26,7 @@
 #include "gc/g1/concurrentMark.inline.hpp"
 #include "gc/g1/dirtyCardQueue.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1EvacFailure.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1_globals.hpp"
@@ -186,8 +187,8 @@ public:
   }
 
   bool doHeapRegion(HeapRegion *hr) {
-    bool during_initial_mark = _g1h->g1_policy()->during_initial_mark_pause();
-    bool during_conc_mark = _g1h->mark_in_progress();
+    bool during_initial_mark = _g1h->collector_state()->during_initial_mark_pause();
+    bool during_conc_mark = _g1h->collector_state()->mark_in_progress();
 
     assert(!hr->is_humongous(), "sanity");
     assert(hr->in_collection_set(), "bad CS");
