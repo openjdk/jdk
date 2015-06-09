@@ -1,0 +1,6 @@
+test/script/error/conditional_catch_nse.js:33:11 Expected ) but found if
+} catch (e if e instanceof ReferenceError) {
+           ^
+test/script/error/conditional_catch_nse.js:34:0 Expected eof but found }
+}
+^
