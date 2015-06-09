@@ -843,7 +843,7 @@ void os::print_cpu_info(outputStream* st) {
   pd_print_cpu_info(st);
 }
 
-void os::print_date_and_time(outputStream *st) {
+void os::print_date_and_time(outputStream *st, char* buf, size_t buflen) {
   const int secs_per_day  = 86400;
   const int secs_per_hour = 3600;
   const int secs_per_min  = 60;
@@ -851,6 +851,12 @@ void os::print_date_and_time(outputStream *st) {
   time_t tloc;
   (void)time(&tloc);
   st->print("time: %s", ctime(&tloc));  // ctime adds newline.
+
+  struct tm tz;
+  if (localtime_pd(&tloc, &tz) != NULL) {
+    ::strftime(buf, buflen, "%Z", &tz);
+    st->print_cr("timezone: %s", buf);
+  }
 
   double t = os::elapsedTime();
   // NOTE: It tends to crash after a SEGV if we want to printf("%f",...) in

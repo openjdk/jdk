@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,6 +102,11 @@ class ThreadShadow: public CHeapObj<mtThread> {
 class Exceptions {
   static bool special_exception(Thread *thread, const char* file, int line, Handle exception);
   static bool special_exception(Thread* thread, const char* file, int line, Symbol* name, const char* message);
+
+  // Count out of memory errors that are interesting in error diagnosis
+  static volatile int _out_of_memory_error_java_heap_errors;
+  static volatile int _out_of_memory_error_metaspace_errors;
+  static volatile int _out_of_memory_error_class_metaspace_errors;
  public:
   // this enum is defined to indicate whether it is safe to
   // ignore the encoding scheme of the original message string.
@@ -159,6 +164,14 @@ class Exceptions {
                               ExceptionMsgToUtf8Mode to_utf8_safe = safe_to_utf8);
 
   static void throw_stack_overflow_exception(Thread* thread, const char* file, int line, methodHandle method);
+
+  // Exception counting for error files of interesting exceptions that may have
+  // caused a problem for the jvm
+  static volatile int _stack_overflow_errors;
+
+  static bool has_exception_counts();
+  static void count_out_of_memory_exceptions(Handle exception);
+  static void print_exception_counts_on_error(outputStream* st);
 
   // for AbortVMOnException flag
   NOT_PRODUCT(static void debug_check_abort(Handle exception, const char* message = NULL);)
