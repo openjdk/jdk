@@ -770,3 +770,31 @@ extern "C" void pns(void* sp, void* fp, void* pc) { // print native stack
 }
 
 #endif // !PRODUCT
+
+//////////////////////////////////////////////////////////////////////////////
+// Test multiple STATIC_ASSERT forms in various scopes.
+
+#ifndef PRODUCT
+
+// namespace scope
+STATIC_ASSERT(true);
+STATIC_ASSERT(true);
+STATIC_ASSERT(1 == 1);
+STATIC_ASSERT(0 == 0);
+
+void test_multiple_static_assert_forms_in_function_scope() {
+  STATIC_ASSERT(true);
+  STATIC_ASSERT(true);
+  STATIC_ASSERT(0 == 0);
+  STATIC_ASSERT(1 == 1);
+}
+
+// class scope
+struct TestMultipleStaticAssertFormsInClassScope {
+  STATIC_ASSERT(true);
+  STATIC_ASSERT(true);
+  STATIC_ASSERT(0 == 0);
+  STATIC_ASSERT(1 == 1);
+};
+
+#endif // !PRODUCT
