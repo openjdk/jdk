@@ -2580,15 +2580,18 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
 
         final int parameterCount = methodType.parameterCount();
         final int callCount      = callType.parameterCount();
+        final int pdiff          = callCount - parameterCount + 1;
 
         final boolean isCalleeVarArg = parameterCount > 0 && methodType.parameterType(parameterCount - 1).isArray();
-        final boolean isCallerVarArg = callerVarArg != null ? callerVarArg.booleanValue() : callCount > 0 &&
+        final boolean isCallerVarArg = callerVarArg != null ? callerVarArg : callCount > 0 &&
                 callType.parameterType(callCount - 1).isArray();
 
-        if (isCalleeVarArg) {
+        // A value of pdiff < 0 means that there are additional normal arguments in the callee that must not be consumed
+        // by the vararg collector. No vararg collector is required in that case, and no varargs are passed.
+        if (isCalleeVarArg && pdiff >= 0) {
             return isCallerVarArg ?
                 methodHandle :
-                MH.asCollector(methodHandle, Object[].class, callCount - parameterCount + 1);
+                MH.asCollector(methodHandle, Object[].class, pdiff);
         }
 
         if (isCallerVarArg) {
