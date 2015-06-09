@@ -41,6 +41,7 @@ import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import jdk.nashorn.internal.objects.NativeArray;
 
 /**
  * Global functions supported only in scripting mode.
@@ -54,7 +55,7 @@ public final class ScriptingFunctions {
     public static final MethodHandle READFULLY = findOwnMH("readFully",     Object.class, Object.class, Object.class);
 
     /** Handle to implementation of {@link ScriptingFunctions#exec} - Nashorn extension */
-    public static final MethodHandle EXEC = findOwnMH("exec",     Object.class, Object.class, Object.class, Object.class);
+    public static final MethodHandle EXEC = findOwnMH("exec",     Object.class, Object.class, Object.class, Object.class, Object[].class);
 
     /** EXEC name - special property used by $EXEC API. */
     public static final String EXEC_NAME = "$EXEC";
@@ -128,17 +129,30 @@ public final class ScriptingFunctions {
      * @param self   self reference
      * @param string string to execute
      * @param input  input
+     * @param argv   additional arguments, to be appended to {@code string}. Additional arguments can be passed as
+     *               either one JavaScript array, whose elements will be converted to strings; or as a sequence of
+     *               varargs, each of which will be converted to a string.
      *
      * @return output string from the request
+     *
      * @throws IOException           if any stream access fails
      * @throws InterruptedException  if execution is interrupted
      */
-    public static Object exec(final Object self, final Object string, final Object input) throws IOException, InterruptedException {
+    public static Object exec(final Object self, final Object string, final Object input, final Object... argv) throws IOException, InterruptedException {
         // Current global is need to fetch additional inputs and for additional results.
         final ScriptObject global = Context.getGlobal();
 
+        // Assemble command line, process additional arguments.
+        final List<String> cmdLine = tokenizeString(JSType.toString(string));
+        final Object[] additionalArgs = argv.length == 1 && argv[0] instanceof NativeArray ?
+                ((NativeArray) argv[0]).asObjectArray() :
+                argv;
+        for (Object arg : additionalArgs) {
+            cmdLine.add(JSType.toString(arg));
+        }
+
         // Set up initial process.
-        final ProcessBuilder processBuilder = new ProcessBuilder(tokenizeString(JSType.toString(string)));
+        final ProcessBuilder processBuilder = new ProcessBuilder(cmdLine);
 
         // Current ENV property state.
         final Object env = global.get(ENV_NAME);
