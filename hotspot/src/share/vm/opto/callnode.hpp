@@ -628,7 +628,7 @@ public:
   // Collect all the interesting edges from a call for use in
   // replacing the call by something else.  Used by macro expansion
   // and the late inlining support.
-  void extract_projections(CallProjections* projs, bool separate_io_proj);
+  void extract_projections(CallProjections* projs, bool separate_io_proj, bool do_asserts = true);
 
   virtual uint match_edge(uint idx) const;
 
