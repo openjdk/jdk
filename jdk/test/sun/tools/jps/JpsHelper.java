@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,9 +94,10 @@ public final class JpsHelper {
     }
 
     /**
-     * VM arguments to start test application with
+     * VM arguments to start test application with.
+     * -XX:+UsePerfData is required for running the tests on embedded platforms.
      */
-    public static final String[] VM_ARGS = {"-Xmx512m", "-XX:+PrintGCDetails"};
+    public static final String[] VM_ARGS = {"-XX:+UsePerfData", "-Xmx512m", "-XX:+PrintGCDetails"};
     /**
      * VM flag to start test application with
      */
