@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,8 +136,9 @@ abstract class PipelineHelper<P_OUT> {
      *
      * @param wrappedSink the destination {@code Sink}
      * @param spliterator the source {@code Spliterator}
+     * @return true if the cancellation was requested
      */
-    abstract <P_IN> void copyIntoWithCancel(Sink<P_IN> wrappedSink, Spliterator<P_IN> spliterator);
+    abstract <P_IN> boolean copyIntoWithCancel(Sink<P_IN> wrappedSink, Spliterator<P_IN> spliterator);
 
     /**
      * Takes a {@code Sink} that accepts elements of the output type of the

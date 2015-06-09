@@ -40,6 +40,7 @@ import java.util.function.DoubleToIntFunction;
 import java.util.function.DoubleToLongFunction;
 import java.util.function.DoubleUnaryOperator;
 import java.util.function.IntFunction;
+import java.util.function.LongPredicate;
 import java.util.function.ObjDoubleConsumer;
 import java.util.function.Supplier;
 
@@ -153,10 +154,12 @@ abstract class DoublePipeline<E_IN>
     }
 
     @Override
-    final void forEachWithCancel(Spliterator<Double> spliterator, Sink<Double> sink) {
+    final boolean forEachWithCancel(Spliterator<Double> spliterator, Sink<Double> sink) {
         Spliterator.OfDouble spl = adapt(spliterator);
         DoubleConsumer adaptedSink = adapt(sink);
-        do { } while (!sink.cancellationRequested() && spl.tryAdvance(adaptedSink));
+        boolean cancelled;
+        do { } while (!(cancelled = sink.cancellationRequested()) && spl.tryAdvance(adaptedSink));
+        return cancelled;
     }
 
     @Override
@@ -350,6 +353,16 @@ abstract class DoublePipeline<E_IN>
             long limit = -1;
             return SliceOps.makeDouble(this, n, limit);
         }
+    }
+
+    @Override
+    public final DoubleStream takeWhile(DoublePredicate predicate) {
+        return WhileOps.makeTakeWhileDouble(this, predicate);
+    }
+
+    @Override
+    public final DoubleStream dropWhile(DoublePredicate predicate) {
+        return WhileOps.makeDropWhileDouble(this, predicate);
     }
 
     @Override

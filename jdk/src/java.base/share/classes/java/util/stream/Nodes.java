@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,14 @@ final class Nodes {
     private static final Node.OfInt EMPTY_INT_NODE = new EmptyNode.OfInt();
     private static final Node.OfLong EMPTY_LONG_NODE = new EmptyNode.OfLong();
     private static final Node.OfDouble EMPTY_DOUBLE_NODE = new EmptyNode.OfDouble();
+
+    /**
+     * @return an array generator for an array whose elements are of type T.
+     */
+    @SuppressWarnings("unchecked")
+    static <T> IntFunction<T[]> castingArray() {
+        return size -> (T[]) new Object[size];
+    }
 
     // General shape-based node creation methods
 

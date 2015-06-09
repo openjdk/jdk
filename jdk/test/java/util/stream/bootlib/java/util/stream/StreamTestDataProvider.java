@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,7 +119,7 @@ public class StreamTestDataProvider {
 
         // Simple combination of numbers and null values, probably excessive but may catch
         // errors for initialization/termination/sequence
-        // @@@ This is separate from the other data for now until nulls are consitently supported by
+        // @@@ This is separate from the other data for now until nulls are consistently supported by
         // all operations
         {
             List<Object[]> list = new ArrayList<>();
