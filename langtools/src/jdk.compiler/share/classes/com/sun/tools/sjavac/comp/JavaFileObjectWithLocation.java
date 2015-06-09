@@ -22,39 +22,46 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package com.sun.tools.sjavac.comp;
 
-package com.sun.tools.sjavac.server;
+import javax.tools.ForwardingJavaFileObject;
+import javax.tools.JavaFileManager.Location;
+import javax.tools.JavaFileObject;
 
-import java.io.IOException;
+import com.sun.tools.javac.api.ClientCodeWrapper.Trusted;
 
-import com.sun.tools.sjavac.Log;
+@Trusted
+public class JavaFileObjectWithLocation<F extends JavaFileObject> extends ForwardingJavaFileObject<F> {
 
-/**
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
- */
-public class ServerMain {
-    public static int run(String[] args) {
+    private final Location loc;
 
-        Log.initializeLog(System.out, System.err);
+    public JavaFileObjectWithLocation(F delegate, Location loc) {
+        super(delegate);
+        this.loc = loc;
+    }
 
-        // Any options other than --startserver?
-        if (args.length > 1) {
-            System.err.println("When spawning a background server, only a single --startserver argument is allowed.");
-            return 1;
-        }
+    public Location getLocation() {
+        return loc;
+    }
 
-        int exitCode;
-        try {
-            SjavacServer server = new SjavacServer(args[0], System.err);
-            exitCode = server.startServer();
-        } catch (IOException | InterruptedException ex) {
-            ex.printStackTrace();
-            exitCode = -1;
-        }
+    public F getDelegate() {
+        return fileObject;
+    }
 
-        return exitCode;
+    public String toString() {
+        return "JavaFileObjectWithLocation[loc: " + loc + ", " + fileObject + "]";
+    }
+
+    @Override
+    public int hashCode() {
+        return loc.hashCode() ^ fileObject.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof JavaFileObjectWithLocation))
+            return false;
+        JavaFileObjectWithLocation<?> other = (JavaFileObjectWithLocation<?>) obj;
+        return loc.equals(other.loc) && fileObject.equals(other.fileObject);
     }
 }

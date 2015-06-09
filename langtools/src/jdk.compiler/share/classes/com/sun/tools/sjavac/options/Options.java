@@ -316,8 +316,18 @@ public class Options {
             args.add(concatenateSourceLocations(classSearchPaths));
         }
 
+        // Enable dependency generation
+        args.add("-XDcompletionDeps=source,class");
+
         // This can't be anything but 'none'. Enforced by sjavac main method.
         args.add("-implicit:" + implicitPolicy);
+
+        // If this option is not used, Object for instance is erroneously
+        // picked up from PLATFORM_CLASS_PATH instead of CLASS_PATH.
+        //
+        // Discussing this further led to the decision of letting bootclasspath
+        // be a dummy (empty) directory when building the JDK.
+        //args.add("-XXuserPathsFirst");
 
         // Append javac-options (i.e. pass through options not recognized by
         // sjavac to javac.)
