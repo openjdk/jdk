@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -896,11 +896,12 @@ public class MetalTabbedPaneUI extends BasicTabbedPaneUI {
 
         // Paint the background for the tab area
         if ( tabPane.isOpaque() ) {
-            if (!c.isBackgroundSet() && (tabAreaBackground != null)) {
+            Color background = c.getBackground();
+            if (background instanceof UIResource && tabAreaBackground != null) {
                 g.setColor(tabAreaBackground);
             }
             else {
-                g.setColor( c.getBackground() );
+                g.setColor(background);
             }
             switch ( tabPlacement ) {
             case LEFT:
