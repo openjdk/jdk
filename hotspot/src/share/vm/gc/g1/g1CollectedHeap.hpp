@@ -31,6 +31,7 @@
 #include "gc/g1/g1AllocationContext.hpp"
 #include "gc/g1/g1Allocator.hpp"
 #include "gc/g1/g1BiasedArray.hpp"
+#include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1HRPrinter.hpp"
 #include "gc/g1/g1InCSetState.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
@@ -328,6 +329,9 @@ private:
   // (d) cause == _g1_humongous_allocation
   bool should_do_concurrent_full_gc(GCCause::Cause cause);
 
+  // indicates whether we are in young or mixed GC mode
+  G1CollectorState _collector_state;
+
   // Keeps track of how many "old marking cycles" (i.e., Full GCs or
   // concurrent cycles) we have started.
   volatile uint _old_marking_cycles_started;
@@ -336,7 +340,6 @@ private:
   // concurrent cycles) we have completed.
   volatile uint _old_marking_cycles_completed;
 
-  bool _concurrent_cycle_started;
   bool _heap_summary_sent;
 
   // This is a non-product method that is helpful for testing. It is
@@ -701,8 +704,6 @@ public:
   void register_concurrent_cycle_end();
   void trace_heap_after_concurrent_cycle();
 
-  G1YCType yc_type();
-
   G1HRPrinter* hr_printer() { return &_hr_printer; }
 
   // Frees a non-humongous region by initializing its contents and
@@ -791,7 +792,6 @@ protected:
   // The concurrent marker (and the thread it runs in.)
   ConcurrentMark* _cm;
   ConcurrentMarkThread* _cmThread;
-  bool _mark_in_progress;
 
   // The concurrent refiner.
   ConcurrentG1Refine* _cg1r;
@@ -1018,6 +1018,8 @@ public:
   virtual Name kind() const {
     return CollectedHeap::G1CollectedHeap;
   }
+
+  G1CollectorState* collector_state() { return &_collector_state; }
 
   // The current policy object for the collector.
   G1CollectorPolicy* g1_policy() const { return _g1_policy; }
@@ -1399,17 +1401,6 @@ public:
   // bits.
   void markModUnionRange(MemRegion mr);
 
-  // Records the fact that a marking phase is no longer in progress.
-  void set_marking_complete() {
-    _mark_in_progress = false;
-  }
-  void set_marking_started() {
-    _mark_in_progress = true;
-  }
-  bool mark_in_progress() {
-    return _mark_in_progress;
-  }
-
   // Print the maximum heap capacity.
   virtual size_t max_capacity() const;
 
@@ -1521,14 +1512,6 @@ public:
   // Redirty logged cards in the refinement queue.
   void redirty_logged_cards();
   // Verification
-
-  // The following is just to alert the verification code
-  // that a full collection has occurred and that the
-  // remembered sets are no longer up to date.
-  bool _full_collection;
-  void set_full_collection() { _full_collection = true;}
-  void clear_full_collection() {_full_collection = false;}
-  bool full_collection() {return _full_collection;}
 
   // Perform any cleanup actions necessary before allowing a verification.
   virtual void prepare_for_verify();

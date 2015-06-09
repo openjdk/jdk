@@ -711,7 +711,7 @@ public:
         _n_failures++;
       }
 
-      if (!_g1h->full_collection() || G1VerifyRSetsDuringFullGC) {
+      if (!_g1h->collector_state()->full_collection() || G1VerifyRSetsDuringFullGC) {
         HeapRegion* from = _g1h->heap_region_containing((HeapWord*)p);
         HeapRegion* to   = _g1h->heap_region_containing(obj);
         if (from != NULL && to != NULL &&

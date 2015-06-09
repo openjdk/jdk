@@ -1558,6 +1558,12 @@ bool add_global_entry(JNIEnv* env, Handle name, jmmVMGlobal *global, Flag *flag,
   if (flag->is_bool()) {
     global->value.z = flag->get_bool() ? JNI_TRUE : JNI_FALSE;
     global->type = JMM_VMGLOBAL_TYPE_JBOOLEAN;
+  } else if (flag->is_int()) {
+    global->value.j = (jlong)flag->get_int();
+    global->type = JMM_VMGLOBAL_TYPE_JLONG;
+  } else if (flag->is_uint()) {
+    global->value.j = (jlong)flag->get_uint();
+    global->type = JMM_VMGLOBAL_TYPE_JLONG;
   } else if (flag->is_intx()) {
     global->value.j = (jlong)flag->get_intx();
     global->type = JMM_VMGLOBAL_TYPE_JLONG;
