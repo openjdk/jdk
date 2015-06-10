@@ -35,7 +35,7 @@ import java.security.cert.*;
 
 import javax.security.auth.x500.X500Principal;
 
-import sun.security.ssl.Krb5Helper;
+import sun.security.ssl.ClientKeyExchangeService;
 import sun.security.x509.X500Name;
 
 import sun.net.util.IPAddressUtil;
@@ -108,7 +108,12 @@ public class HostnameChecker {
      * Return the Server name from Kerberos principal.
      */
     public static String getServerName(Principal principal) {
-        return Krb5Helper.getPrincipalHostName(principal);
+        ClientKeyExchangeService p =
+                ClientKeyExchangeService.find("KRB5");
+        if (p == null) {
+            throw new AssertionError("Kerberos should have been available");
+        }
+        return p.getServiceHostName(principal);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,8 @@ final class ExtensionType {
         return name;
     }
 
-    static List<ExtensionType> knownExtensions = new ArrayList<ExtensionType>(9);
+    static List<ExtensionType> knownExtensions =
+            new ArrayList<ExtensionType>(13);
 
     static ExtensionType get(int id) {
         for (ExtensionType ext : knownExtensions) {

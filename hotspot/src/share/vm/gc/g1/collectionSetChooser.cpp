@@ -158,20 +158,10 @@ void CollectionSetChooser::add_region(HeapRegion* hr) {
   hr->calc_gc_efficiency();
 }
 
-void CollectionSetChooser::prepare_for_par_region_addition(uint n_regions,
+void CollectionSetChooser::prepare_for_par_region_addition(uint n_threads,
+                                                           uint n_regions,
                                                            uint chunk_size) {
   _first_par_unreserved_idx = 0;
-  uint n_threads = (uint) ParallelGCThreads;
-  if (UseDynamicNumberOfGCThreads) {
-    assert(G1CollectedHeap::heap()->workers()->active_workers() > 0,
-      "Should have been set earlier");
-    // This is defensive code. As the assertion above says, the number
-    // of active threads should be > 0, but in case there is some path
-    // or some improperly initialized variable with leads to no
-    // active threads, protect against that in a product build.
-    n_threads = MAX2(G1CollectedHeap::heap()->workers()->active_workers(),
-                     1U);
-  }
   uint max_waste = n_threads * chunk_size;
   // it should be aligned with respect to chunk_size
   uint aligned_n_regions = (n_regions + chunk_size - 1) / chunk_size * chunk_size;

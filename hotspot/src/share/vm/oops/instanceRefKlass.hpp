@@ -119,19 +119,12 @@ private:
 
  public:
 
-#define InstanceRefKlass_OOP_OOP_ITERATE_DECL(OopClosureType, nv_suffix)               \
-  int oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure);                    \
-  int oop_oop_iterate##nv_suffix##_m(oop obj, OopClosureType* closure, MemRegion mr);
-
-  ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceRefKlass_OOP_OOP_ITERATE_DECL)
-  ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceRefKlass_OOP_OOP_ITERATE_DECL)
+  ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_OOP_ITERATE_DECL)
+  ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_OOP_ITERATE_DECL)
 
 #if INCLUDE_ALL_GCS
-#define InstanceRefKlass_OOP_OOP_ITERATE_BACKWARDS_DECL(OopClosureType, nv_suffix)     \
-  int oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* closure);
-
-  ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceRefKlass_OOP_OOP_ITERATE_BACKWARDS_DECL)
-  ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceRefKlass_OOP_OOP_ITERATE_BACKWARDS_DECL)
+  ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_OOP_ITERATE_DECL_BACKWARDS)
+  ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_OOP_ITERATE_DECL_BACKWARDS)
 #endif // INCLUDE_ALL_GCS
 
   static void release_and_notify_pending_list_lock(BasicLock *pending_list_basic_lock);

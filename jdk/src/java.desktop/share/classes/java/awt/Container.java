@@ -44,6 +44,7 @@ import java.io.PrintWriter;
 import java.lang.ref.WeakReference;
 import java.security.AccessController;
 
+import java.util.ArrayList;
 import java.util.EventListener;
 import java.util.HashSet;
 import java.util.Set;
@@ -100,7 +101,7 @@ public class Container extends Component {
      * @see #add
      * @see #getComponents
      */
-    private java.util.List<Component> component = new java.util.ArrayList<Component>();
+    private java.util.List<Component> component = new ArrayList<>();
 
     /**
      * Layout manager for this container.
@@ -2568,28 +2569,24 @@ public class Container extends Component {
         if (!contains(x, y)) {
             return null;
         }
+        Component lightweight = null;
         synchronized (getTreeLock()) {
-            // Two passes: see comment in sun.awt.SunGraphicsCallback
-            for (int i = 0; i < component.size(); i++) {
-                Component comp = component.get(i);
-                if (comp != null &&
-                    !(comp.peer instanceof LightweightPeer)) {
-                    if (comp.contains(x - comp.x, y - comp.y)) {
+            // Optimized version of two passes:
+            // see comment in sun.awt.SunGraphicsCallback
+            for (final Component comp : component) {
+                if (comp.contains(x - comp.x, y - comp.y)) {
+                    if (!comp.isLightweight()) {
+                        // return heavyweight component as soon as possible
                         return comp;
                     }
-                }
-            }
-            for (int i = 0; i < component.size(); i++) {
-                Component comp = component.get(i);
-                if (comp != null &&
-                    comp.peer instanceof LightweightPeer) {
-                    if (comp.contains(x - comp.x, y - comp.y)) {
-                        return comp;
+                    if (lightweight == null) {
+                        // save and return later the first lightweight component
+                        lightweight = comp;
                     }
                 }
             }
         }
-        return this;
+        return lightweight != null ? lightweight : this;
     }
 
     /**
@@ -2693,52 +2690,54 @@ public class Container extends Component {
         return null;
     }
 
-    final Component findComponentAtImpl(int x, int y, boolean ignoreEnabled){
-        checkTreeLock();
+    final Component findComponentAtImpl(int x, int y, boolean ignoreEnabled) {
+        // checkTreeLock(); commented for a performance reason
 
         if (!(contains(x, y) && visible && (ignoreEnabled || enabled))) {
             return null;
         }
-
-        // Two passes: see comment in sun.awt.SunGraphicsCallback
-        for (int i = 0; i < component.size(); i++) {
-            Component comp = component.get(i);
-            if (comp != null &&
-                !(comp.peer instanceof LightweightPeer)) {
-                if (comp instanceof Container) {
-                    comp = ((Container)comp).findComponentAtImpl(x - comp.x,
-                                                                 y - comp.y,
-                                                                 ignoreEnabled);
-                } else {
-                    comp = comp.getComponentAt(x - comp.x, y - comp.y);
+        Component lightweight = null;
+        // Optimized version of two passes:
+        // see comment in sun.awt.SunGraphicsCallback
+        for (final Component comp : component) {
+            final int x1 = x - comp.x;
+            final int y1 = y - comp.y;
+            if (!comp.contains(x1, y1)) {
+                continue; // fast path
+            }
+            if (!comp.isLightweight()) {
+                final Component child = getChildAt(comp, x1, y1, ignoreEnabled);
+                if (child != null) {
+                    // return heavyweight component as soon as possible
+                    return child;
                 }
-                if (comp != null && comp.visible &&
-                    (ignoreEnabled || comp.enabled))
-                {
-                    return comp;
+            } else {
+                if (lightweight == null) {
+                    // save and return later the first lightweight component
+                    lightweight = getChildAt(comp, x1, y1, ignoreEnabled);
                 }
             }
         }
-        for (int i = 0; i < component.size(); i++) {
-            Component comp = component.get(i);
-            if (comp != null &&
-                comp.peer instanceof LightweightPeer) {
-                if (comp instanceof Container) {
-                    comp = ((Container)comp).findComponentAtImpl(x - comp.x,
-                                                                 y - comp.y,
-                                                                 ignoreEnabled);
-                } else {
-                    comp = comp.getComponentAt(x - comp.x, y - comp.y);
-                }
-                if (comp != null && comp.visible &&
-                    (ignoreEnabled || comp.enabled))
-                {
-                    return comp;
-                }
-            }
-        }
+        return lightweight != null ? lightweight : this;
+    }
 
-        return this;
+    /**
+     * Helper method for findComponentAtImpl. Finds a child component using
+     * findComponentAtImpl for Container and getComponentAt for Component.
+     */
+    private static Component getChildAt(Component comp, int x, int y,
+                                        boolean ignoreEnabled) {
+        if (comp instanceof Container) {
+            comp = ((Container) comp).findComponentAtImpl(x, y,
+                                                          ignoreEnabled);
+        } else {
+            comp = comp.getComponentAt(x, y);
+        }
+        if (comp != null && comp.visible &&
+                (ignoreEnabled || comp.enabled)) {
+            return comp;
+        }
+        return null;
     }
 
     /**
@@ -4420,6 +4419,18 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
 
     private static final PlatformLogger eventLog = PlatformLogger.getLogger("java.awt.event.LightweightDispatcher");
 
+    private static final int BUTTONS_DOWN_MASK;
+
+    static {
+        int[] buttonsDownMask = AWTAccessor.getInputEventAccessor().
+                getButtonDownMasks();
+        int mask = 0;
+        for (int buttonDownMask : buttonsDownMask) {
+            mask |= buttonDownMask;
+        }
+        BUTTONS_DOWN_MASK = mask;
+    }
+
     LightweightDispatcher(Container nativeContainer) {
         this.nativeContainer = nativeContainer;
         mouseEventTarget = new WeakReference<>(null);
@@ -4488,25 +4499,12 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
     private boolean isMouseGrab(MouseEvent e) {
         int modifiers = e.getModifiersEx();
 
-        if(e.getID() == MouseEvent.MOUSE_PRESSED
-            || e.getID() == MouseEvent.MOUSE_RELEASED)
-        {
-            switch (e.getButton()) {
-            case MouseEvent.BUTTON1:
-                modifiers ^= InputEvent.BUTTON1_DOWN_MASK;
-                break;
-            case MouseEvent.BUTTON2:
-                modifiers ^= InputEvent.BUTTON2_DOWN_MASK;
-                break;
-            case MouseEvent.BUTTON3:
-                modifiers ^= InputEvent.BUTTON3_DOWN_MASK;
-                break;
-            }
+        if (e.getID() == MouseEvent.MOUSE_PRESSED
+                || e.getID() == MouseEvent.MOUSE_RELEASED) {
+            modifiers ^= InputEvent.getMaskForButton(e.getButton());
         }
         /* modifiers now as just before event */
-        return ((modifiers & (InputEvent.BUTTON1_DOWN_MASK
-                              | InputEvent.BUTTON2_DOWN_MASK
-                              | InputEvent.BUTTON3_DOWN_MASK)) != 0);
+        return ((modifiers & BUTTONS_DOWN_MASK) != 0);
     }
 
     /**

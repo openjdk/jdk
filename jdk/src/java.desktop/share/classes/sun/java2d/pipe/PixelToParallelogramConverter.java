@@ -56,7 +56,7 @@ public class PixelToParallelogramConverter extends PixelToShapeConverter
      * @param minPenSize minimum pen size for dropout control
      * @param normPosition sub-pixel location to normalize endpoints
      *                     for STROKE_NORMALIZE cases
-     * @param adjustFill boolean to control whethere normalization
+     * @param adjustfill boolean to control whethere normalization
      *                   constants are also applied to fill operations
      *                   (normally true for non-AA, false for AA)
      */

@@ -34,6 +34,7 @@
  *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary RMID ActivationLibrary
  * @run main/othervm/timeout=240 RmidViaInheritedChannel
+ * @key intermittent
  */
 
 import java.io.IOException;
