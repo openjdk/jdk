@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,7 +204,8 @@ class AquaComboBoxPopup extends BasicComboPopup {
             if ((p.x + comboBoxBounds.width < 0) || (p.y + comboBoxBounds.height < 0) || (p.x > scrSize.width) || (p.y > scrSize.height)) {
                 return null;
             }
-            return new Rectangle(0, 22, scrSize.width, scrSize.height - 22);
+            Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(comboBox.getGraphicsConfiguration());
+            return new Rectangle(0, insets.top, scrSize.width, scrSize.height - insets.top - insets.bottom);
         }
 
         for (final GraphicsDevice gd : gs) {
@@ -314,10 +315,17 @@ class AquaComboBoxPopup extends BasicComboPopup {
         }
 
         final Rectangle r = new Rectangle(px, py, pw, ph);
-        // Check whether it goes below the bottom of the screen, if so flip it
-        if (r.y + r.height < top.y + scrBounds.y + scrBounds.height) return r;
-
-        return new Rectangle(px, -r.height + comboBoxInsets.top, r.width, r.height);
+        if (py + ph > scrBounds.y + scrBounds.height) {
+            if (ph <= -scrBounds.y ) {
+                // popup goes above
+                r.y = -ph ;
+            } else {
+                // a full screen height popup
+                r.y = scrBounds.y + Math.max(0, (scrBounds.height - ph) / 2 );
+                r.height = Math.min(scrBounds.height, ph);
+            }
+        }
+        return r;
     }
 
     // The one to use when itemCount <= maxRowCount.  Size never adjusts for arrows

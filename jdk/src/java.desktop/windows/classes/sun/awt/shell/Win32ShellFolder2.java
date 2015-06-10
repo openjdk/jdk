@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,6 +161,27 @@ final class Win32ShellFolder2 extends ShellFolder {
         public int getIconID() {
             return iconID;
         }
+    }
+
+    // Known Folder data
+    static class KnownFolderDefinition {
+        String guid;
+        int category;
+        String name;
+        String description;
+        String parent;
+        String relativePath;
+        String parsingName;
+        String tooltip;
+        String localizedName;
+        String icon;
+        String security;
+        long attributes;
+        int defenitionFlags;
+        String ftidType;
+        String path;
+        String saveLocation;
+        static final List<KnownFolderDefinition> libraries = getLibraries();
     }
 
     static class FolderDisposer implements sun.java2d.DisposerRecord {
@@ -578,7 +599,22 @@ final class Win32ShellFolder2 extends ShellFolder {
                 return s;
             }
         }
-        return getDisplayNameOf(parentIShellFolder, relativePIDL, SHGDN_FORPARSING);
+        String path = getDisplayNameOf(parentIShellFolder, relativePIDL,
+                        SHGDN_FORPARSING);
+        // if this is a library its default save location is taken as a path
+        // this is a temp fix until java.io starts support Libraries
+        if( path != null && path.startsWith("::{") &&
+                path.toLowerCase().endsWith(".library-ms")) {
+            for (KnownFolderDefinition kf : KnownFolderDefinition.libraries) {
+                if( path.toLowerCase().endsWith(
+                            kf.relativePath.toLowerCase()) &&
+                            path.toUpperCase().startsWith(
+                            kf.parsingName.substring(0, 40).toUpperCase()) ) {
+                    return kf.saveLocation;
+                }
+            }
+        }
+        return path;
     }
 
     // Needs to be accessible to Win32ShellFolderManager2
@@ -847,6 +883,9 @@ final class Win32ShellFolder2 extends ShellFolder {
     private static native String getDisplayNameOf(long parentIShellFolder,
                                                   long relativePIDL,
                                                   int attrs);
+
+    // Returns data of all Known Folders registered in the system
+    private static native KnownFolderDefinition[] loadKnownFolders();
 
     /**
      * @return The name used to display this shell folder
@@ -1178,4 +1217,26 @@ final class Win32ShellFolder2 extends ShellFolder {
             return result == null ? 0 : result;
         }
     }
+
+    // Extracts libraries and their default save locations from Known Folders list
+    private static List<KnownFolderDefinition> getLibraries() {
+        return invoke(new Callable<List<KnownFolderDefinition>>() {
+            @Override
+            public List<KnownFolderDefinition> call() throws Exception {
+                KnownFolderDefinition[] all = loadKnownFolders();
+                List<KnownFolderDefinition> folders = new ArrayList<>();
+                if (all != null) {
+                    for (KnownFolderDefinition kf : all) {
+                        if (kf.relativePath == null || kf.parsingName == null ||
+                                kf.saveLocation == null) {
+                            continue;
+                        }
+                        folders.add(kf);
+                    }
+                }
+                return folders;
+            }
+        });
+    }
+
 }

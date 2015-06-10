@@ -34,9 +34,12 @@
  */
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
@@ -68,16 +71,19 @@ public class CheckEBCDICLocaleTest {
         tb.writeFile("Test.java", TestSrc);
         tb.createDirectories("output");
 
-        Native2Ascii n2a = new Native2Ascii(Charset.forName("IBM1047"));
+        Charset ebcdic = Charset.forName("IBM1047");
+        Native2Ascii n2a = new Native2Ascii(ebcdic);
         n2a.asciiToNative(Paths.get("Test.java"), Paths.get("output", "Test.java"));
 
-        tb.new JavacTask(ToolBox.Mode.EXEC)
-                .redirect(ToolBox.OutputKind.STDERR, "Test.tmp")
-                .options("-J-Duser.language=en",
-                        "-J-Duser.region=US",
-                        "-J-Dfile.encoding=IBM1047")
-                .files("output/Test.java")
-                .run(ToolBox.Expect.FAIL);
+        // Use -encoding to specify the encoding with which to read source files
+        // Use a suitable configured output stream for javac diagnostics
+        int rc;
+        try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream("Test.tmp"), ebcdic))) {
+            String[] args = { "-encoding", ebcdic.name(), "output/Test.java" };
+            rc = com.sun.tools.javac.Main.compile(args, out);
+            if (rc != 1)
+                throw new Exception("unexpected exit from javac: " + rc);
+        }
 
         n2a.nativeToAscii(Paths.get("Test.tmp"), Paths.get("Test.out"));
 
@@ -87,16 +93,21 @@ public class CheckEBCDICLocaleTest {
         try {
             tb.checkEqual(expectLines, actualLines);
         } catch (Throwable tt) {
-            System.err.println("current ouput don't have the expected number of lines. See output below");
+            PrintStream out = tb.out;
+            out.println("Output mismatch:");
 
-            System.err.println("Expected output:");
-            System.err.println(TestOutTemplate);
-            System.err.println();
-            System.err.println("Actual output:");
-            for (String s : actualLines) {
-                System.err.println(s);
+            out.println("Expected output:");
+            for (String s: expectLines) {
+                out.println(s);
             }
-            System.err.println();
+            out.println();
+
+            out.println("Actual output:");
+            for (String s : actualLines) {
+                out.println(s);
+            }
+            out.println();
+
             throw tt;
         }
     }

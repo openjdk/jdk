@@ -189,7 +189,7 @@ public abstract class UNIXToolkit extends SunToolkit
      * @param stockId String which defines the stock id of the gtk item.
      * For a complete list reference the API at www.gtk.org for StockItems.
      * @param iconSize One of the GtkIconSize values defined in GTKConstants
-     * @param textDirection One of the TextDirection values defined in
+     * @param direction One of the TextDirection values defined in
      * GTKConstants
      * @param detail Render detail that is passed to the native engine (feel
      * free to pass null)

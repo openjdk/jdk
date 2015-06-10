@@ -127,7 +127,7 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
 
   MarkingCodeBlobClosure follow_code_closure(&GenMarkSweep::follow_root_closure, !CodeBlobToOopClosure::FixRelocations);
   {
-    G1RootProcessor root_processor(g1h);
+    G1RootProcessor root_processor(g1h, 1);
     root_processor.process_strong_roots(&GenMarkSweep::follow_root_closure,
                                         &GenMarkSweep::follow_cld_closure,
                                         &follow_code_closure);
@@ -237,7 +237,7 @@ void G1MarkSweep::mark_sweep_phase3() {
 
   CodeBlobToOopClosure adjust_code_closure(&GenMarkSweep::adjust_pointer_closure, CodeBlobToOopClosure::FixRelocations);
   {
-    G1RootProcessor root_processor(g1h);
+    G1RootProcessor root_processor(g1h, 1);
     root_processor.process_all_roots(&GenMarkSweep::adjust_pointer_closure,
                                      &GenMarkSweep::adjust_cld_closure,
                                      &adjust_code_closure);

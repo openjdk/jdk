@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,15 +37,15 @@ import java.nio.ReadOnlyBufferException;
  * <P>
  * The secure communications modes include: <UL>
  *
- *      <LI> <em>Integrity Protection</em>.  SSL/TLS protects against
+ *      <LI> <em>Integrity Protection</em>.  SSL/TLS/DTLS protects against
  *      modification of messages by an active wiretapper.
  *
- *      <LI> <em>Authentication</em>.  In most modes, SSL/TLS provides
+ *      <LI> <em>Authentication</em>.  In most modes, SSL/TLS/DTLS provides
  *      peer authentication.  Servers are usually authenticated, and
  *      clients may be authenticated as requested by servers.
  *
  *      <LI> <em>Confidentiality (Privacy Protection)</em>.  In most
- *      modes, SSL/TLS encrypts data being sent between client and
+ *      modes, SSL/TLS/DTLS encrypts data being sent between client and
  *      server.  This protects the confidentiality of data, so that
  *      passive wiretappers won't see sensitive data such as financial
  *      information or personal information of many kinds.
@@ -65,19 +65,19 @@ import java.nio.ReadOnlyBufferException;
  * handshaking has completed, you can access session attributes by
  * using the {@link #getSession()} method.
  * <P>
- * The <code>SSLSocket</code> class provides much of the same security
+ * The {@code SSLSocket} class provides much of the same security
  * functionality, but all of the inbound and outbound data is
  * automatically transported using the underlying {@link
  * java.net.Socket Socket}, which by design uses a blocking model.
  * While this is appropriate for many applications, this model does not
  * provide the scalability required by large servers.
  * <P>
- * The primary distinction of an <code>SSLEngine</code> is that it
+ * The primary distinction of an {@code SSLEngine} is that it
  * operates on inbound and outbound byte streams, independent of the
  * transport mechanism.  It is the responsibility of the
- * <code>SSLEngine</code> user to arrange for reliable I/O transport to
- * the peer.  By separating the SSL/TLS abstraction from the I/O
- * transport mechanism, the <code>SSLEngine</code> can be used for a
+ * {@code SSLEngine} user to arrange for reliable I/O transport to
+ * the peer.  By separating the SSL/TLS/DTLS abstraction from the I/O
+ * transport mechanism, the {@code SSLEngine} can be used for a
  * wide variety of I/O types, such as {@link
  * java.nio.channels.spi.AbstractSelectableChannel#configureBlocking(boolean)
  * non-blocking I/O (polling)}, {@link java.nio.channels.Selector
@@ -87,7 +87,7 @@ import java.nio.ReadOnlyBufferException;
  * HREF="http://www.jcp.org/en/jsr/detail?id=203"> future asynchronous
  * I/O models </A>, and so on.
  * <P>
- * At a high level, the <code>SSLEngine</code> appears thus:
+ * At a high level, the {@code SSLEngine} appears thus:
  *
  * <pre>
  *                   app data
@@ -115,18 +115,18 @@ import java.nio.ReadOnlyBufferException;
  * mechanism.  Inbound data is data which has been received from the
  * peer, and outbound data is destined for the peer.
  * <P>
- * (In the context of an <code>SSLEngine</code>, the term "handshake
+ * (In the context of an {@code SSLEngine}, the term "handshake
  * data" is taken to mean any data exchanged to establish and control a
- * secure connection.  Handshake data includes the SSL/TLS messages
+ * secure connection.  Handshake data includes the SSL/TLS/DTLS messages
  * "alert", "change_cipher_spec," and "handshake.")
  * <P>
- * There are five distinct phases to an <code>SSLEngine</code>.
+ * There are five distinct phases to an {@code SSLEngine}.
  *
  * <OL>
- *     <li> Creation - The <code>SSLEngine</code> has been created and
+ *     <li> Creation - The {@code SSLEngine} has been created and
  *     initialized, but has not yet been used.  During this phase, an
- *     application may set any <code>SSLEngine</code>-specific settings
- *     (enabled cipher suites, whether the <code>SSLEngine</code> should
+ *     application may set any {@code SSLEngine}-specific settings
+ *     (enabled cipher suites, whether the {@code SSLEngine} should
  *     handshake in client or server mode, and so on).  Once
  *     handshaking has begun, though, any new settings (except
  *     client/server mode, see below) will be used for
@@ -139,7 +139,7 @@ import java.nio.ReadOnlyBufferException;
  *
  *     <li> Application Data - Once the communication parameters have
  *     been established and the handshake is complete, application data
- *     may flow through the <code>SSLEngine</code>.  Outbound
+ *     may flow through the {@code SSLEngine}.  Outbound
  *     application messages are encrypted and integrity protected,
  *     and inbound messages reverse the process.
  *
@@ -147,50 +147,50 @@ import java.nio.ReadOnlyBufferException;
  *     the session at any time during the Application Data phase.  New
  *     handshaking data can be intermixed among the application data.
  *     Before starting the rehandshake phase, the application may
- *     reset the SSL/TLS communication parameters such as the list of
+ *     reset the SSL/TLS/DTLS communication parameters such as the list of
  *     enabled ciphersuites and whether to use client authentication,
  *     but can not change between client/server modes.  As before, once
- *     handshaking has begun, any new <code>SSLEngine</code>
+ *     handshaking has begun, any new {@code SSLEngine}
  *     configuration settings will not be used until the next
  *     handshake.
  *
  *     <li>  Closure - When the connection is no longer needed, the
- *     application should close the <code>SSLEngine</code> and should
+ *     application should close the {@code SSLEngine} and should
  *     send/receive any remaining messages to the peer before
  *     closing the underlying transport mechanism.  Once an engine is
- *     closed, it is not reusable:  a new <code>SSLEngine</code> must
+ *     closed, it is not reusable:  a new {@code SSLEngine} must
  *     be created.
  * </OL>
- * An <code>SSLEngine</code> is created by calling {@link
+ * An {@code SSLEngine} is created by calling {@link
  * SSLContext#createSSLEngine()} from an initialized
- * <code>SSLContext</code>.  Any configuration
+ * {@code SSLContext}.  Any configuration
  * parameters should be set before making the first call to
- * <code>wrap()</code>, <code>unwrap()</code>, or
- * <code>beginHandshake()</code>.  These methods all trigger the
+ * {@code wrap()}, {@code unwrap()}, or
+ * {@code beginHandshake()}.  These methods all trigger the
  * initial handshake.
  * <P>
  * Data moves through the engine by calling {@link #wrap(ByteBuffer,
  * ByteBuffer) wrap()} or {@link #unwrap(ByteBuffer, ByteBuffer)
  * unwrap()} on outbound or inbound data, respectively.  Depending on
- * the state of the <code>SSLEngine</code>, a <code>wrap()</code> call
+ * the state of the {@code SSLEngine}, a {@code wrap()} call
  * may consume application data from the source buffer and may produce
  * network data in the destination buffer.  The outbound data
  * may contain application and/or handshake data.  A call to
- * <code>unwrap()</code> will examine the source buffer and may
+ * {@code unwrap()} will examine the source buffer and may
  * advance the handshake if the data is handshaking information, or
  * may place application data in the destination buffer if the data
- * is application.  The state of the underlying SSL/TLS algorithm
+ * is application.  The state of the underlying SSL/TLS/DTLS algorithm
  * will determine when data is consumed and produced.
  * <P>
- * Calls to <code>wrap()</code> and <code>unwrap()</code> return an
- * <code>SSLEngineResult</code> which indicates the status of the
+ * Calls to {@code wrap()} and {@code unwrap()} return an
+ * {@code SSLEngineResult} which indicates the status of the
  * operation, and (optionally) how to interact with the engine to make
  * progress.
  * <P>
- * The <code>SSLEngine</code> produces/consumes complete SSL/TLS
+ * The {@code SSLEngine} produces/consumes complete SSL/TLS/DTLS
  * packets only, and does not store application data internally between
- * calls to <code>wrap()/unwrap()</code>.  Thus input and output
- * <code>ByteBuffer</code>s must be sized appropriately to hold the
+ * calls to {@code wrap()/unwrap()}.  Thus input and output
+ * {@code ByteBuffer}s must be sized appropriately to hold the
  * maximum record that can be produced.  Calls to {@link
  * SSLSession#getPacketBufferSize()} and {@link
  * SSLSession#getApplicationBufferSize()} should be used to determine
@@ -200,12 +200,12 @@ import java.nio.ReadOnlyBufferException;
  * must determine (via {@link SSLEngineResult}) and correct the
  * problem, and then try the call again.
  * <P>
- * For example, <code>unwrap()</code> will return a {@link
+ * For example, {@code unwrap()} will return a {@link
  * SSLEngineResult.Status#BUFFER_OVERFLOW} result if the engine
  * determines that there is not enough destination buffer space available.
  * Applications should call {@link SSLSession#getApplicationBufferSize()}
  * and compare that value with the space available in the destination buffer,
- * enlarging the buffer if necessary.  Similarly, if <code>unwrap()</code>
+ * enlarging the buffer if necessary.  Similarly, if {@code unwrap()}
  * were to return a {@link SSLEngineResult.Status#BUFFER_UNDERFLOW}, the
  * application should call {@link SSLSession#getPacketBufferSize()} to ensure
  * that the source buffer has enough room to hold a record (enlarging if
@@ -241,8 +241,8 @@ import java.nio.ReadOnlyBufferException;
  * }</pre>
  *
  * <P>
- * Unlike <code>SSLSocket</code>, all methods of SSLEngine are
- * non-blocking.  <code>SSLEngine</code> implementations may
+ * Unlike {@code SSLSocket}, all methods of SSLEngine are
+ * non-blocking.  {@code SSLEngine} implementations may
  * require the results of tasks that may take an extended period of
  * time to complete, or may even block.  For example, a TrustManager
  * may need to connect to a remote certificate validation service,
@@ -252,8 +252,8 @@ import java.nio.ReadOnlyBufferException;
  * seemingly blocking.
  * <P>
  * For any operation which may potentially block, the
- * <code>SSLEngine</code> will create a {@link java.lang.Runnable}
- * delegated task.  When <code>SSLEngineResult</code> indicates that a
+ * {@code SSLEngine} will create a {@link java.lang.Runnable}
+ * delegated task.  When {@code SSLEngineResult} indicates that a
  * delegated task result is needed, the application must call {@link
  * #getDelegatedTask()} to obtain an outstanding delegated task and
  * call its {@link java.lang.Runnable#run() run()} method (possibly using
@@ -262,16 +262,16 @@ import java.nio.ReadOnlyBufferException;
  * exist, and try the original operation again.
  * <P>
  * At the end of a communication session, applications should properly
- * close the SSL/TLS link.  The SSL/TLS protocols have closure handshake
- * messages, and these messages should be communicated to the peer
- * before releasing the <code>SSLEngine</code> and closing the
+ * close the SSL/TLS/DTLS link.  The SSL/TLS/DTLS protocols have closure
+ * handshake messages, and these messages should be communicated to the
+ * peer before releasing the {@code SSLEngine} and closing the
  * underlying transport mechanism.  A close can be initiated by one of:
  * an SSLException, an inbound closure handshake message, or one of the
  * close methods.  In all cases, closure handshake messages are
- * generated by the engine, and <code>wrap()</code> should be repeatedly
- * called until the resulting <code>SSLEngineResult</code>'s status
+ * generated by the engine, and {@code wrap()} should be repeatedly
+ * called until the resulting {@code SSLEngineResult}'s status
  * returns "CLOSED", or {@link #isOutboundDone()} returns true.  All
- * data obtained from the <code>wrap()</code> method should be sent to the
+ * data obtained from the {@code wrap()} method should be sent to the
  * peer.
  * <P>
  * {@link #closeOutbound()} is used to signal the engine that the
@@ -279,12 +279,12 @@ import java.nio.ReadOnlyBufferException;
  * <P>
  * A peer will signal its intent to close by sending its own closure
  * handshake message.  After this message has been received and
- * processed by the local <code>SSLEngine</code>'s <code>unwrap()</code>
+ * processed by the local {@code SSLEngine}'s {@code unwrap()}
  * call, the application can detect the close by calling
- * <code>unwrap()</code> and looking for a <code>SSLEngineResult</code>
+ * {@code unwrap()} and looking for a {@code SSLEngineResult}
  * with status "CLOSED", or if {@link #isInboundDone()} returns true.
  * If for some reason the peer closes the communication link without
- * sending the proper SSL/TLS closure message, the application can
+ * sending the proper SSL/TLS/DTLS closure message, the application can
  * detect the end-of-stream and can signal the engine via {@link
  * #closeInbound()} that there will no more inbound messages to
  * process.  Some applications might choose to require orderly shutdown
@@ -315,16 +315,16 @@ import java.nio.ReadOnlyBufferException;
  * and/or non-private (unencrypted) communications will such a
  * cipher suite be selected.
  * <P>
- * Each SSL/TLS connection must have one client and one server, thus
+ * Each SSL/TLS/DTLS connection must have one client and one server, thus
  * each endpoint must decide which role to assume.  This choice determines
  * who begins the handshaking process as well as which type of messages
  * should be sent by each party.  The method {@link
  * #setUseClientMode(boolean)} configures the mode.  Once the initial
- * handshaking has started, an <code>SSLEngine</code> can not switch
+ * handshaking has started, an {@code SSLEngine} can not switch
  * between client and server modes, even when performing renegotiations.
  * <P>
  * Applications might choose to process delegated tasks in different
- * threads.  When an <code>SSLEngine</code>
+ * threads.  When an {@code SSLEngine}
  * is created, the current {@link java.security.AccessControlContext}
  * is saved.  All future delegated tasks will be processed using this
  * context:  that is, all access control decisions will be made using the
@@ -336,10 +336,10 @@ import java.nio.ReadOnlyBufferException;
  * There are two concurrency issues to be aware of:
  *
  * <OL>
- *      <li>The <code>wrap()</code> and <code>unwrap()</code> methods
+ *      <li>The {@code wrap()} and {@code unwrap()} methods
  *      may execute concurrently of each other.
  *
- *      <li> The SSL/TLS protocols employ ordered packets.
+ *      <li> The SSL/TLS/DTLS protocols employ ordered packets.
  *      Applications must take care to ensure that generated packets
  *      are delivered in sequence.  If packets arrive
  *      out-of-order, unexpected or fatal results may occur.
@@ -354,7 +354,7 @@ import java.nio.ReadOnlyBufferException;
  *      </pre>
  *
  *      As a corollary, two threads must not attempt to call the same method
- *      (either <code>wrap()</code> or <code>unwrap()</code>) concurrently,
+ *      (either {@code wrap()} or {@code unwrap()}) concurrently,
  *      because there is no way to guarantee the eventual packet ordering.
  * </OL>
  *
@@ -374,7 +374,7 @@ public abstract class SSLEngine {
     private int peerPort = -1;
 
     /**
-     * Constructor for an <code>SSLEngine</code> providing no hints
+     * Constructor for an {@code SSLEngine} providing no hints
      * for an internal session reuse strategy.
      *
      * @see     SSLContext#createSSLEngine()
@@ -384,10 +384,10 @@ public abstract class SSLEngine {
     }
 
     /**
-     * Constructor for an <code>SSLEngine</code>.
+     * Constructor for an {@code SSLEngine}.
      * <P>
-     * <code>SSLEngine</code> implementations may use the
-     * <code>peerHost</code> and <code>peerPort</code> parameters as hints
+     * {@code SSLEngine} implementations may use the
+     * {@code peerHost} and {@code peerPort} parameters as hints
      * for their internal session reuse strategy.
      * <P>
      * Some cipher suites (such as Kerberos) require remote hostname
@@ -395,7 +395,7 @@ public abstract class SSLEngine {
      * constructor to use Kerberos.
      * <P>
      * The parameters are not authenticated by the
-     * <code>SSLEngine</code>.
+     * {@code SSLEngine}.
      *
      * @param   peerHost the name of the peer host
      * @param   peerPort the port number of the peer
@@ -435,7 +435,7 @@ public abstract class SSLEngine {
 
     /**
      * Attempts to encode a buffer of plaintext application data into
-     * SSL/TLS network data.
+     * SSL/TLS/DTLS network data.
      * <P>
      * An invocation of this method behaves in exactly the same manner
      * as the invocation:
@@ -445,20 +445,20 @@ public abstract class SSLEngine {
      * </pre></blockquote>
      *
      * @param   src
-     *          a <code>ByteBuffer</code> containing outbound application data
+     *          a {@code ByteBuffer} containing outbound application data
      * @param   dst
-     *          a <code>ByteBuffer</code> to hold outbound network data
-     * @return  an <code>SSLEngineResult</code> describing the result
+     *          a {@code ByteBuffer} to hold outbound network data
+     * @return  an {@code SSLEngineResult} describing the result
      *          of this operation.
      * @throws  SSLException
      *          A problem was encountered while processing the
-     *          data that caused the <code>SSLEngine</code> to abort.
+     *          data that caused the {@code SSLEngine} to abort.
      *          See the class description for more information on
      *          engine closure.
      * @throws  ReadOnlyBufferException
-     *          if the <code>dst</code> buffer is read-only.
+     *          if the {@code dst} buffer is read-only.
      * @throws  IllegalArgumentException
-     *          if either <code>src</code> or <code>dst</code>
+     *          if either {@code src} or {@code dst}
      *          is null.
      * @throws  IllegalStateException if the client/server mode
      *          has not yet been set.
@@ -471,7 +471,7 @@ public abstract class SSLEngine {
 
     /**
      * Attempts to encode plaintext bytes from a sequence of data
-     * buffers into SSL/TLS network data.
+     * buffers into SSL/TLS/DTLS network data.
      * <P>
      * An invocation of this method behaves in exactly the same manner
      * as the invocation:
@@ -481,22 +481,22 @@ public abstract class SSLEngine {
      * </pre></blockquote>
      *
      * @param   srcs
-     *          an array of <code>ByteBuffers</code> containing the
+     *          an array of {@code ByteBuffers} containing the
      *          outbound application data
      * @param   dst
-     *          a <code>ByteBuffer</code> to hold outbound network data
-     * @return  an <code>SSLEngineResult</code> describing the result
+     *          a {@code ByteBuffer} to hold outbound network data
+     * @return  an {@code SSLEngineResult} describing the result
      *          of this operation.
      * @throws  SSLException
      *          A problem was encountered while processing the
-     *          data that caused the <code>SSLEngine</code> to abort.
+     *          data that caused the {@code SSLEngine} to abort.
      *          See the class description for more information on
      *          engine closure.
      * @throws  ReadOnlyBufferException
-     *          if the <code>dst</code> buffer is read-only.
+     *          if the {@code dst} buffer is read-only.
      * @throws  IllegalArgumentException
-     *          if either <code>srcs</code> or <code>dst</code>
-     *          is null, or if any element in <code>srcs</code> is null.
+     *          if either {@code srcs} or {@code dst}
+     *          is null, or if any element in {@code srcs} is null.
      * @throws  IllegalStateException if the client/server mode
      *          has not yet been set.
      * @see     #wrap(ByteBuffer [], int, int, ByteBuffer)
@@ -512,7 +512,7 @@ public abstract class SSLEngine {
 
     /**
      * Attempts to encode plaintext bytes from a subsequence of data
-     * buffers into SSL/TLS network data.  This <i>"gathering"</i>
+     * buffers into SSL/TLS/DTLS network data.  This <i>"gathering"</i>
      * operation encodes, in a single invocation, a sequence of bytes
      * from one or more of a given sequence of buffers.  Gathering
      * wraps are often useful when implementing network protocols or
@@ -535,49 +535,49 @@ public abstract class SSLEngine {
      * it was generated.  The application must properly synchronize
      * multiple calls to this method.
      * <P>
-     * If this <code>SSLEngine</code> has not yet started its initial
+     * If this {@code SSLEngine} has not yet started its initial
      * handshake, this method will automatically start the handshake.
      * <P>
-     * This method will attempt to produce SSL/TLS records, and will
+     * This method will attempt to produce SSL/TLS/DTLS records, and will
      * consume as much source data as possible, but will never consume
      * more than the sum of the bytes remaining in each buffer.  Each
-     * <code>ByteBuffer</code>'s position is updated to reflect the
+     * {@code ByteBuffer}'s position is updated to reflect the
      * amount of data consumed or produced.  The limits remain the
      * same.
      * <P>
-     * The underlying memory used by the <code>srcs</code> and
-     * <code>dst ByteBuffer</code>s must not be the same.
+     * The underlying memory used by the {@code srcs} and
+     * {@code dst ByteBuffer}s must not be the same.
      * <P>
      * See the class description for more information on engine closure.
      *
      * @param   srcs
-     *          an array of <code>ByteBuffers</code> containing the
+     *          an array of {@code ByteBuffers} containing the
      *          outbound application data
      * @param   offset
      *          The offset within the buffer array of the first buffer from
      *          which bytes are to be retrieved; it must be non-negative
-     *          and no larger than <code>srcs.length</code>
+     *          and no larger than {@code srcs.length}
      * @param   length
      *          The maximum number of buffers to be accessed; it must be
      *          non-negative and no larger than
-     *          <code>srcs.length</code>&nbsp;-&nbsp;<code>offset</code>
+     *          {@code srcs.length}&nbsp;-&nbsp;{@code offset}
      * @param   dst
-     *          a <code>ByteBuffer</code> to hold outbound network data
-     * @return  an <code>SSLEngineResult</code> describing the result
+     *          a {@code ByteBuffer} to hold outbound network data
+     * @return  an {@code SSLEngineResult} describing the result
      *          of this operation.
      * @throws  SSLException
      *          A problem was encountered while processing the
-     *          data that caused the <code>SSLEngine</code> to abort.
+     *          data that caused the {@code SSLEngine} to abort.
      *          See the class description for more information on
      *          engine closure.
      * @throws  IndexOutOfBoundsException
-     *          if the preconditions on the <code>offset</code> and
-     *          <code>length</code> parameters do not hold.
+     *          if the preconditions on the {@code offset} and
+     *          {@code length} parameters do not hold.
      * @throws  ReadOnlyBufferException
-     *          if the <code>dst</code> buffer is read-only.
+     *          if the {@code dst} buffer is read-only.
      * @throws  IllegalArgumentException
-     *          if either <code>srcs</code> or <code>dst</code>
-     *          is null, or if any element in the <code>srcs</code>
+     *          if either {@code srcs} or {@code dst}
+     *          is null, or if any element in the {@code srcs}
      *          subsequence specified is null.
      * @throws  IllegalStateException if the client/server mode
      *          has not yet been set.
@@ -589,7 +589,7 @@ public abstract class SSLEngine {
             int length, ByteBuffer dst) throws SSLException;
 
     /**
-     * Attempts to decode SSL/TLS network data into a plaintext
+     * Attempts to decode SSL/TLS/DTLS network data into a plaintext
      * application data buffer.
      * <P>
      * An invocation of this method behaves in exactly the same manner
@@ -600,20 +600,20 @@ public abstract class SSLEngine {
      * </pre></blockquote>
      *
      * @param   src
-     *          a <code>ByteBuffer</code> containing inbound network data.
+     *          a {@code ByteBuffer} containing inbound network data.
      * @param   dst
-     *          a <code>ByteBuffer</code> to hold inbound application data.
-     * @return  an <code>SSLEngineResult</code> describing the result
+     *          a {@code ByteBuffer} to hold inbound application data.
+     * @return  an {@code SSLEngineResult} describing the result
      *          of this operation.
      * @throws  SSLException
      *          A problem was encountered while processing the
-     *          data that caused the <code>SSLEngine</code> to abort.
+     *          data that caused the {@code SSLEngine} to abort.
      *          See the class description for more information on
      *          engine closure.
      * @throws  ReadOnlyBufferException
-     *          if the <code>dst</code> buffer is read-only.
+     *          if the {@code dst} buffer is read-only.
      * @throws  IllegalArgumentException
-     *          if either <code>src</code> or <code>dst</code>
+     *          if either {@code src} or {@code dst}
      *          is null.
      * @throws  IllegalStateException if the client/server mode
      *          has not yet been set.
@@ -625,7 +625,7 @@ public abstract class SSLEngine {
     }
 
     /**
-     * Attempts to decode SSL/TLS network data into a sequence of plaintext
+     * Attempts to decode SSL/TLS/DTLS network data into a sequence of plaintext
      * application data buffers.
      * <P>
      * An invocation of this method behaves in exactly the same manner
@@ -636,22 +636,22 @@ public abstract class SSLEngine {
      * </pre></blockquote>
      *
      * @param   src
-     *          a <code>ByteBuffer</code> containing inbound network data.
+     *          a {@code ByteBuffer} containing inbound network data.
      * @param   dsts
-     *          an array of <code>ByteBuffer</code>s to hold inbound
+     *          an array of {@code ByteBuffer}s to hold inbound
      *          application data.
-     * @return  an <code>SSLEngineResult</code> describing the result
+     * @return  an {@code SSLEngineResult} describing the result
      *          of this operation.
      * @throws  SSLException
      *          A problem was encountered while processing the
-     *          data that caused the <code>SSLEngine</code> to abort.
+     *          data that caused the {@code SSLEngine} to abort.
      *          See the class description for more information on
      *          engine closure.
      * @throws  ReadOnlyBufferException
-     *          if any of the <code>dst</code> buffers are read-only.
+     *          if any of the {@code dst} buffers are read-only.
      * @throws  IllegalArgumentException
-     *          if either <code>src</code> or <code>dsts</code>
-     *          is null, or if any element in <code>dsts</code> is null.
+     *          if either {@code src} or {@code dsts}
+     *          is null, or if any element in {@code dsts} is null.
      * @throws  IllegalStateException if the client/server mode
      *          has not yet been set.
      * @see     #unwrap(ByteBuffer, ByteBuffer [], int, int)
@@ -665,7 +665,7 @@ public abstract class SSLEngine {
     }
 
     /**
-     * Attempts to decode SSL/TLS network data into a subsequence of
+     * Attempts to decode SSL/TLS/DTLS network data into a subsequence of
      * plaintext application data buffers.  This <i>"scattering"</i>
      * operation decodes, in a single invocation, a sequence of bytes
      * into one or more of a given sequence of buffers.  Scattering
@@ -688,55 +688,55 @@ public abstract class SSLEngine {
      * order it was received.  The application must properly synchronize
      * multiple calls to this method.
      * <P>
-     * If this <code>SSLEngine</code> has not yet started its initial
+     * If this {@code SSLEngine} has not yet started its initial
      * handshake, this method will automatically start the handshake.
      * <P>
-     * This method will attempt to consume one complete SSL/TLS network
+     * This method will attempt to consume one complete SSL/TLS/DTLS network
      * packet, but will never consume more than the sum of the bytes
-     * remaining in the buffers.  Each <code>ByteBuffer</code>'s
+     * remaining in the buffers.  Each {@code ByteBuffer}'s
      * position is updated to reflect the amount of data consumed or
      * produced.  The limits remain the same.
      * <P>
-     * The underlying memory used by the <code>src</code> and
-     * <code>dsts ByteBuffer</code>s must not be the same.
+     * The underlying memory used by the {@code src} and
+     * {@code dsts ByteBuffer}s must not be the same.
      * <P>
      * The inbound network buffer may be modified as a result of this
      * call:  therefore if the network data packet is required for some
      * secondary purpose, the data should be duplicated before calling this
      * method.  Note:  the network data will not be useful to a second
      * SSLEngine, as each SSLEngine contains unique random state which
-     * influences the SSL/TLS messages.
+     * influences the SSL/TLS/DTLS messages.
      * <P>
      * See the class description for more information on engine closure.
      *
      * @param   src
-     *          a <code>ByteBuffer</code> containing inbound network data.
+     *          a {@code ByteBuffer} containing inbound network data.
      * @param   dsts
-     *          an array of <code>ByteBuffer</code>s to hold inbound
+     *          an array of {@code ByteBuffer}s to hold inbound
      *          application data.
      * @param   offset
      *          The offset within the buffer array of the first buffer from
      *          which bytes are to be transferred; it must be non-negative
-     *          and no larger than <code>dsts.length</code>.
+     *          and no larger than {@code dsts.length}.
      * @param   length
      *          The maximum number of buffers to be accessed; it must be
      *          non-negative and no larger than
-     *          <code>dsts.length</code>&nbsp;-&nbsp;<code>offset</code>.
-     * @return  an <code>SSLEngineResult</code> describing the result
+     *          {@code dsts.length}&nbsp;-&nbsp;{@code offset}.
+     * @return  an {@code SSLEngineResult} describing the result
      *          of this operation.
      * @throws  SSLException
      *          A problem was encountered while processing the
-     *          data that caused the <code>SSLEngine</code> to abort.
+     *          data that caused the {@code SSLEngine} to abort.
      *          See the class description for more information on
      *          engine closure.
      * @throws  IndexOutOfBoundsException
-     *          If the preconditions on the <code>offset</code> and
-     *          <code>length</code> parameters do not hold.
+     *          If the preconditions on the {@code offset} and
+     *          {@code length} parameters do not hold.
      * @throws  ReadOnlyBufferException
-     *          if any of the <code>dst</code> buffers are read-only.
+     *          if any of the {@code dst} buffers are read-only.
      * @throws  IllegalArgumentException
-     *          if either <code>src</code> or <code>dsts</code>
-     *          is null, or if any element in the <code>dsts</code>
+     *          if either {@code src} or {@code dsts}
+     *          is null, or if any element in the {@code dsts}
      *          subsequence specified is null.
      * @throws  IllegalStateException if the client/server mode
      *          has not yet been set.
@@ -749,19 +749,19 @@ public abstract class SSLEngine {
 
 
     /**
-     * Returns a delegated <code>Runnable</code> task for
-     * this <code>SSLEngine</code>.
+     * Returns a delegated {@code Runnable} task for
+     * this {@code SSLEngine}.
      * <P>
-     * <code>SSLEngine</code> operations may require the results of
+     * {@code SSLEngine} operations may require the results of
      * operations that block, or may take an extended period of time to
      * complete.  This method is used to obtain an outstanding {@link
      * java.lang.Runnable} operation (task).  Each task must be assigned
      * a thread (possibly the current) to perform the {@link
      * java.lang.Runnable#run() run} operation.  Once the
-     * <code>run</code> method returns, the <code>Runnable</code> object
+     * {@code run} method returns, the {@code Runnable} object
      * is no longer needed and may be discarded.
      * <P>
-     * Delegated tasks run in the <code>AccessControlContext</code>
+     * Delegated tasks run in the {@code AccessControlContext}
      * in place when this object was created.
      * <P>
      * A call to this method will return each outstanding task
@@ -769,7 +769,7 @@ public abstract class SSLEngine {
      * <P>
      * Multiple delegated tasks can be run in parallel.
      *
-     * @return  a delegated <code>Runnable</code> task, or null
+     * @return  a delegated {@code Runnable} task, or null
      *          if none are available.
      */
     public abstract Runnable getDelegatedTask();
@@ -777,7 +777,7 @@ public abstract class SSLEngine {
 
     /**
      * Signals that no more inbound network data will be sent
-     * to this <code>SSLEngine</code>.
+     * to this {@code SSLEngine}.
      * <P>
      * If the application initiated the closing process by calling
      * {@link #closeOutbound()}, under some circumstances it is not
@@ -789,9 +789,9 @@ public abstract class SSLEngine {
      * <P>
      * But if the application did not initiate the closure process, or
      * if the circumstances above do not apply, this method should be
-     * called whenever the end of the SSL/TLS data stream is reached.
+     * called whenever the end of the SSL/TLS/DTLS data stream is reached.
      * This ensures closure of the inbound side, and checks that the
-     * peer followed the SSL/TLS close procedure properly, thus
+     * peer followed the SSL/TLS/DTLS close procedure properly, thus
      * detecting possible truncation attacks.
      * <P>
      * This method is idempotent:  if the inbound side has already
@@ -801,7 +801,7 @@ public abstract class SSLEngine {
      * called to flush any remaining handshake data.
      *
      * @throws  SSLException
-     *          if this engine has not received the proper SSL/TLS close
+     *          if this engine has not received the proper SSL/TLS/DTLS close
      *          notification message from the peer.
      *
      * @see     #isInboundDone()
@@ -814,7 +814,7 @@ public abstract class SSLEngine {
      * Returns whether {@link #unwrap(ByteBuffer, ByteBuffer)} will
      * accept any more inbound data messages.
      *
-     * @return  true if the <code>SSLEngine</code> will not
+     * @return  true if the {@code SSLEngine} will not
      *          consume anymore network data (and by implication,
      *          will not produce any more application data.)
      * @see     #closeInbound()
@@ -824,7 +824,7 @@ public abstract class SSLEngine {
 
     /**
      * Signals that no more outbound application data will be sent
-     * on this <code>SSLEngine</code>.
+     * on this {@code SSLEngine}.
      * <P>
      * This method is idempotent:  if the outbound side has already
      * been closed, this method does not do anything.
@@ -841,12 +841,12 @@ public abstract class SSLEngine {
      * Returns whether {@link #wrap(ByteBuffer, ByteBuffer)} will
      * produce any more outbound data messages.
      * <P>
-     * Note that during the closure phase, a <code>SSLEngine</code> may
+     * Note that during the closure phase, a {@code SSLEngine} may
      * generate handshake closure data that must be sent to the peer.
-     * <code>wrap()</code> must be called to generate this data.  When
+     * {@code wrap()} must be called to generate this data.  When
      * this method returns true, no more outbound data will be created.
      *
-     * @return  true if the <code>SSLEngine</code> will not produce
+     * @return  true if the {@code SSLEngine} will not produce
      *          any more network data
      *
      * @see     #closeOutbound()
@@ -890,10 +890,10 @@ public abstract class SSLEngine {
     /**
      * Sets the cipher suites enabled for use on this engine.
      * <P>
-     * Each cipher suite in the <code>suites</code> parameter must have
+     * Each cipher suite in the {@code suites} parameter must have
      * been listed by getSupportedCipherSuites(), or the method will
      * fail.  Following a successful call to this method, only suites
-     * listed in the <code>suites</code> parameter are enabled for use.
+     * listed in the {@code suites} parameter are enabled for use.
      * <P>
      * See {@link #getEnabledCipherSuites()} for more information
      * on why a specific cipher suite may never be used on a engine.
@@ -910,7 +910,7 @@ public abstract class SSLEngine {
 
     /**
      * Returns the names of the protocols which could be enabled for use
-     * with this <code>SSLEngine</code>.
+     * with this {@code SSLEngine}.
      *
      * @return  an array of protocols supported
      */
@@ -919,7 +919,7 @@ public abstract class SSLEngine {
 
     /**
      * Returns the names of the protocol versions which are currently
-     * enabled for use with this <code>SSLEngine</code>.
+     * enabled for use with this {@code SSLEngine}.
      *
      * @return  an array of protocols
      * @see     #setEnabledProtocols(String [])
@@ -932,7 +932,7 @@ public abstract class SSLEngine {
      * <P>
      * The protocols must have been listed by getSupportedProtocols()
      * as being supported.  Following a successful call to this method,
-     * only protocols listed in the <code>protocols</code> parameter
+     * only protocols listed in the {@code protocols} parameter
      * are enabled for use.
      *
      * @param   protocols Names of all the protocols to enable.
@@ -945,8 +945,8 @@ public abstract class SSLEngine {
 
 
     /**
-     * Returns the <code>SSLSession</code> in use in this
-     * <code>SSLEngine</code>.
+     * Returns the {@code SSLSession} in use in this
+     * {@code SSLEngine}.
      * <P>
      * These can be long lived, and frequently correspond to an entire
      * login session for some user.  The session specifies a particular
@@ -961,22 +961,22 @@ public abstract class SSLEngine {
      * a session object which reports an invalid cipher suite of
      * "SSL_NULL_WITH_NULL_NULL".
      *
-     * @return  the <code>SSLSession</code> for this <code>SSLEngine</code>
+     * @return  the {@code SSLSession} for this {@code SSLEngine}
      * @see     SSLSession
      */
     public abstract SSLSession getSession();
 
 
     /**
-     * Returns the {@code SSLSession} being constructed during a SSL/TLS
+     * Returns the {@code SSLSession} being constructed during a SSL/TLS/DTLS
      * handshake.
      * <p>
-     * TLS protocols may negotiate parameters that are needed when using
+     * TLS/DTLS protocols may negotiate parameters that are needed when using
      * an instance of this class, but before the {@code SSLSession} has
      * been completely initialized and made available via {@code getSession}.
      * For example, the list of valid signature algorithms may restrict
      * the type of certificates that can used during TrustManager
-     * decisions, or the maximum TLS fragment packet sizes can be
+     * decisions, or the maximum TLS/DTLS fragment packet sizes can be
      * resized to better support the network environment.
      * <p>
      * This method provides early access to the {@code SSLSession} being
@@ -1012,26 +1012,26 @@ public abstract class SSLEngine {
      * Initiates handshaking (initial or renegotiation) on this SSLEngine.
      * <P>
      * This method is not needed for the initial handshake, as the
-     * <code>wrap()</code> and <code>unwrap()</code> methods will
+     * {@code wrap()} and {@code unwrap()} methods will
      * implicitly call this method if handshaking has not already begun.
      * <P>
      * Note that the peer may also request a session renegotiation with
-     * this <code>SSLEngine</code> by sending the appropriate
+     * this {@code SSLEngine} by sending the appropriate
      * session renegotiate handshake message.
      * <P>
      * Unlike the {@link SSLSocket#startHandshake()
      * SSLSocket#startHandshake()} method, this method does not block
      * until handshaking is completed.
      * <P>
-     * To force a complete SSL/TLS session renegotiation, the current
+     * To force a complete SSL/TLS/DTLS session renegotiation, the current
      * session should be invalidated prior to calling this method.
      * <P>
      * Some protocols may not support multiple handshakes on an existing
-     * engine and may throw an <code>SSLException</code>.
+     * engine and may throw an {@code SSLException}.
      *
      * @throws  SSLException
      *          if a problem was encountered while signaling the
-     *          <code>SSLEngine</code> to begin a new handshake.
+     *          {@code SSLEngine} to begin a new handshake.
      *          See the class description for more information on
      *          engine closure.
      * @throws  IllegalStateException if the client/server mode
@@ -1042,9 +1042,9 @@ public abstract class SSLEngine {
 
 
     /**
-     * Returns the current handshake status for this <code>SSLEngine</code>.
+     * Returns the current handshake status for this {@code SSLEngine}.
      *
-     * @return  the current <code>SSLEngineResult.HandshakeStatus</code>.
+     * @return  the current {@code SSLEngineResult.HandshakeStatus}.
      */
     public abstract SSLEngineResult.HandshakeStatus getHandshakeStatus();
 
