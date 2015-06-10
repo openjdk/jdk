@@ -46,6 +46,7 @@ m4_include([build-performance.m4])
 m4_include([flags.m4])
 m4_include([help.m4])
 m4_include([jdk-options.m4])
+m4_include([jdk-version.m4])
 m4_include([libraries.m4])
 m4_include([platform.m4])
 m4_include([source-dirs.m4])
@@ -135,7 +136,7 @@ BDEPS_SCAN_FOR_BUILDDEPS
 
 # We need build & target for this.
 JDKOPT_SETUP_JDK_OPTIONS
-JDKOPT_SETUP_JDK_VERSION_NUMBERS
+JDKVER_SETUP_JDK_VERSION_NUMBERS
 
 ###############################################################################
 #
