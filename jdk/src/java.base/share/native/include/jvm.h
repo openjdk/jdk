@@ -49,7 +49,7 @@ extern "C" {
  * These functions allow the verifier and format checker to be written
  * in a VM-independent way.
  *
- * Third, this file contains various I/O and nerwork operations needed
+ * Third, this file contains various I/O and network operations needed
  * by the standard Java I/O and network APIs.
  */
 
@@ -1127,9 +1127,7 @@ JVM_GetEnclosingMethodInfo(JNIEnv* env, jclass ofClass);
  * ==========================================================================
  */
 typedef struct {
-    /* Naming convention of RE build version string: n.n.n[_uu[c]][-<identifier>]-bxx */
-    unsigned int jvm_version;   /* Consists of major, minor, micro (n.n.n) */
-                                /* and build number (xx) */
+    unsigned int jvm_version;  /* Follows JDK version string as specified by JEP-223 */
     unsigned int update_version : 8;         /* Update release version (uu) */
     unsigned int special_update_version : 8; /* Special update release version (c)*/
     unsigned int reserved1 : 16;
@@ -1150,7 +1148,7 @@ typedef struct {
 
 #define JVM_VERSION_MAJOR(version) ((version & 0xFF000000) >> 24)
 #define JVM_VERSION_MINOR(version) ((version & 0x00FF0000) >> 16)
-#define JVM_VERSION_MICRO(version) ((version & 0x0000FF00) >> 8)
+#define JVM_VERSION_SECURITY(version) ((version & 0x0000FF00) >> 8)
 
 /* Build number is available only for RE builds.
  * It will be zero for internal builds.
@@ -1161,9 +1159,7 @@ JNIEXPORT void JNICALL
 JVM_GetVersionInfo(JNIEnv* env, jvm_version_info* info, size_t info_size);
 
 typedef struct {
-    // Naming convention of RE build version string: n.n.n[_uu[c]][-<identifier>]-bxx
-    unsigned int jdk_version;   /* Consists of major, minor, micro (n.n.n) */
-                                /* and build number (xx) */
+    unsigned int jdk_version; /* JDK version string as specified by JEP-223 */
     unsigned int update_version : 8;         /* Update release version (uu) */
     unsigned int special_update_version : 8; /* Special update release version (c)*/
     unsigned int reserved1 : 16;
@@ -1186,9 +1182,9 @@ typedef struct {
 
 #define JDK_VERSION_MAJOR(version) ((version & 0xFF000000) >> 24)
 #define JDK_VERSION_MINOR(version) ((version & 0x00FF0000) >> 16)
-#define JDK_VERSION_MICRO(version) ((version & 0x0000FF00) >> 8)
+#define JDK_VERSION_SECURITY(version) ((version & 0x0000FF00) >> 8)
 
-/* Build number is available only for RE build (i.e. JDK_BUILD_NUMBER is set to bNN)
+/* Build number is available only for RE build (i.e. JDK_BUILD_NUMBER is set to NN)
  * It will be zero for internal builds.
  */
 #define JDK_VERSION_BUILD(version) ((version & 0x000000FF))
