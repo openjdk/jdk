@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8003280 8075184
+ * @bug 8003280 8075184 8081271
  * @summary Add lambda tests
  *  check that pair of bound/non-bound constructor references is flagged as ambiguous
  * @author  Maurizio Cimadamore
@@ -49,8 +49,8 @@ class MethodReference23 {
     static void call3(SAM22 s) {   }
 
     static void test11() {
-        SAM11 s = MethodReference23.Inner1::new; //ok
-        call11(MethodReference23.Inner1::new); //ok
+        SAM11 s = MethodReference23.Inner1::new; // fail.
+        call11(MethodReference23.Inner1::new); // fail.
     }
 
     static void test12() {

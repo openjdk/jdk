@@ -567,7 +567,7 @@ public final class OptimisticTypesPersistence {
         final MessageDigest digest = MessageDigest.getInstance("SHA-1");
         Files.walk(nashorn).forEach(new Consumer<Path>() {
             @Override
-            public void accept(Path p) {
+            public void accept(final Path p) {
                 // take only the .class resources.
                 if (Files.isRegularFile(p) && p.toString().endsWith(".class")) {
                     try {

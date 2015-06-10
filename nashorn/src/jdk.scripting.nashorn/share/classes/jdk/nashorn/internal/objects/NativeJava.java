@@ -33,10 +33,12 @@ import java.lang.reflect.Array;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import jdk.internal.dynalink.beans.StaticClass;
 import jdk.internal.dynalink.support.TypeUtilities;
 import jdk.nashorn.api.scripting.JSObject;
+import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
@@ -655,5 +657,21 @@ public final class NativeJava {
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR, name="super")
     public static Object _super(final Object self, final Object adapter) {
         return Bootstrap.createSuperAdapter(adapter);
+    }
+
+    /**
+     * Returns an object that is compatible with Java JSON libraries expectations; namely, that if it itself, or any
+     * object transitively reachable through it is a JavaScript array, then such objects will be exposed as
+     * {@link JSObject} that also implements the {@link List} interface for exposing the array elements. An explicit
+     * API is required as otherwise Nashorn exposes all objects externally as {@link JSObject}s that also implement the
+     * {@link Map} interface instead. By using this method, arrays will be exposed as {@link List}s and all other
+     * objects as {@link Map}s.
+     * @param self not used
+     * @param obj the object to be exposed in a Java JSON library compatible manner.
+     * @return a wrapper around the object that will enforce Java JSON library compatible exposure.
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    public static Object asJSONCompatible(final Object self, final Object obj) {
+        return ScriptObjectMirror.wrapAsJSONCompatible(obj, Context.getGlobal());
     }
 }
