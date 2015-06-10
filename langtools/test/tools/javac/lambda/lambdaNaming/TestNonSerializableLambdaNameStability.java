@@ -26,7 +26,7 @@
  * @bug 8067422
  * @summary Check that the lambda names are not unnecessarily unstable
  * @library /tools/lib
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main

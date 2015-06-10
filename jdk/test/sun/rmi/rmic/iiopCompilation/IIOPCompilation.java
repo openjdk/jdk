@@ -24,6 +24,11 @@
 /* @test
  * @bug 8065957
  * @library ../../../../java/rmi/testlibrary
+ * @modules java.corba
+ *          java.rmi/sun.rmi.registry
+ *          java.rmi/sun.rmi.server
+ *          java.rmi/sun.rmi.transport
+ *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary
  * @summary Compiles a PortableRemoteObject with rmic -iiop and ensures that stub and tie classes are generated.
  * @run main IIOPCompilation

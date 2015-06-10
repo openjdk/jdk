@@ -124,9 +124,9 @@ getLastErrorString(char *utf8_jvmErrorMsg, size_t cbErrorMsg)
                         CP_UTF8,
                         0,
                         utf16_osErrorMsg,
-                        n,
+                        (int)n,
                         utf8_jvmErrorMsg,
-                        cbErrorMsg,
+                        (int)cbErrorMsg,
                         NULL,
                         NULL);
 

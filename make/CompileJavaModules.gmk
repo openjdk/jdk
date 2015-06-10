@@ -412,6 +412,12 @@ jdk.jconsole_CLEAN_FILES := $(wildcard \
 
 ################################################################################
 
+jdk.jdeps_CLEAN_FILES := $(wildcard \
+    $(JDK_TOPDIR)/src/jdk.jdeps/share/classes/com/sun/tools/jdeps/resources/*.properties \
+    $(JDK_TOPDIR)/src/jdk.jdeps/share/classes/com/sun/tools/javap/resources/*.properties)
+
+################################################################################
+
 jdk.jdi_EXCLUDES += \
     com/sun/tools/example/debug/bdi \
     com/sun/tools/example/debug/event \

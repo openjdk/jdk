@@ -34,6 +34,7 @@
  * @library ../pkcs11/ec
  * @library ../pkcs11/sslecc
  * @library ../../../java/security/testlibrary
+ * @modules jdk.crypto.pkcs11/sun.security.pkcs11.wrapper
  * @compile -XDignore.symbol.file TestEC.java
  * @run main/othervm TestEC
  */

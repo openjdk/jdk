@@ -28,7 +28,7 @@ import java.util.*;
  * @test
  * @bug 6824493
  * @summary experimental support for additional info for instructions
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  * @compile -g T6824493.java
  * @run main T6824493
  */

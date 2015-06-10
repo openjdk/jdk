@@ -25,7 +25,7 @@
  * @test
  * @bug 6622260
  * @summary javap prints negative bytes incorrectly in hex
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 
 import java.io.*;

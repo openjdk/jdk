@@ -24,6 +24,7 @@
  * @test
  * @bug 6882687 8011124
  * @summary KerberosTime too imprecise
+ * @modules java.security.jgss/sun.security.krb5.internal
  */
 
 import sun.security.krb5.internal.KerberosTime;

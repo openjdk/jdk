@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -278,7 +278,6 @@ public class PolicyFile extends java.security.Policy {
     private boolean constructed = false;
 
     private boolean expandProperties = true;
-    private boolean ignoreIdentityScope = true;
     private boolean allowSystemProperties = true;
     private boolean notUtf8 = false;
     private URL url;
@@ -415,8 +414,6 @@ public class PolicyFile extends java.security.Policy {
             public String run() {
                 expandProperties = "true".equalsIgnoreCase
                     (Security.getProperty("policy.expandProperties"));
-                ignoreIdentityScope = "true".equalsIgnoreCase
-                    (Security.getProperty("policy.ignoreIdentityScope"));
                 allowSystemProperties = "true".equalsIgnoreCase
                     (Security.getProperty("policy.allowSystemProperty"));
                 notUtf8 = "false".equalsIgnoreCase
@@ -1206,31 +1203,6 @@ public class PolicyFile extends java.security.Policy {
             addPermissions(perms, cs, principals, entry);
         }
 
-        // Go through policyEntries gotten from identity db; sync required
-        // because checkForTrustedIdentity (below) might update list
-        synchronized (pi.identityPolicyEntries) {
-            for (PolicyEntry entry : pi.identityPolicyEntries) {
-                addPermissions(perms, cs, principals, entry);
-            }
-        }
-
-        // now see if any of the keys are trusted ids.
-        if (!ignoreIdentityScope) {
-            Certificate certs[] = cs.getCertificates();
-            if (certs != null) {
-                for (int k=0; k < certs.length; k++) {
-                    Object idMap = pi.aliasMapping.get(certs[k]);
-                    if (idMap == null &&
-                        checkForTrustedIdentity(certs[k], pi)) {
-                        // checkForTrustedIdentity added it
-                        // to the policy for us. next time
-                        // around we'll find it. This time
-                        // around we need to add it.
-                        perms.add(SecurityConstants.ALL_PERMISSION);
-                    }
-                }
-            }
-        }
         return perms;
     }
 
@@ -1620,7 +1592,7 @@ public class PolicyFile extends java.security.Policy {
      * associated with the given code source.
      *
      * The signer certificates are those certificates that were used
-     * to verifysigned code originating from the codesource location.
+     * to verify signed code originating from the codesource location.
      *
      * This method assumes that in the given code source, each signer
      * certificate is followed by its supporting certificate chain
@@ -1914,17 +1886,6 @@ public class PolicyFile extends java.security.Policy {
                 (x509Cert.getSubjectX500Principal().toString());
             return p.getName();
         }
-    }
-
-    /**
-     * Checks public key. If it is marked as trusted in
-     * the identity database, add it to the policy
-     * with the AllPermission.
-     */
-    private boolean checkForTrustedIdentity(final Certificate cert,
-        PolicyInfo myInfo)
-    {
-        return false;
     }
 
     /**
@@ -2282,10 +2243,6 @@ public class PolicyFile extends java.security.Policy {
         // Stores grant entries in the policy
         final List<PolicyEntry> policyEntries;
 
-        // Stores grant entries gotten from identity database
-        // Use separate lists to avoid sync on policyEntries
-        final List<PolicyEntry> identityPolicyEntries;
-
         // Maps aliases to certs
         final Map<Object, Object> aliasMapping;
 
@@ -2295,8 +2252,6 @@ public class PolicyFile extends java.security.Policy {
 
         PolicyInfo(int numCaches) {
             policyEntries = new ArrayList<>();
-            identityPolicyEntries =
-                Collections.synchronizedList(new ArrayList<PolicyEntry>(2));
             aliasMapping = Collections.synchronizedMap(new HashMap<>(11));
 
             pdMapping = new ProtectionDomainCache[numCaches];

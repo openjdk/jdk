@@ -103,6 +103,8 @@ public class DisabledAlgorithms {
             default:
                 throw new RuntimeException("Wrong parameter: " + args[0]);
         }
+
+        System.out.println("Test passed");
     }
 
     /*
@@ -127,7 +129,6 @@ public class DisabledAlgorithms {
                 }
             }
 
-            server.stop();
             while (server.isRunning()) {
                 sleep();
             }
@@ -223,11 +224,19 @@ public class DisabledAlgorithms {
                 } catch (SSLHandshakeException e) {
                     System.out.println("Server: run: " + e);
                     sslError = true;
+                    stopped = true;
                 } catch (IOException e) {
                     if (!stopped) {
-                        System.out.println("Server: run: " + e);
+                        System.out.println("Server: run: unexpected exception: "
+                                + e);
                         e.printStackTrace();
                         otherError = true;
+                        stopped = true;
+                    } else {
+                        System.out.println("Server: run: " + e);
+                        System.out.println("The exception above occurred "
+                                    + "because socket was closed, "
+                                    + "please ignore it");
                     }
                 }
             }
@@ -260,6 +269,7 @@ public class DisabledAlgorithms {
             stopped = true;
             if (!ssocket.isClosed()) {
                 try {
+                    System.out.println("Server: close socket");
                     ssocket.close();
                 } catch (IOException e) {
                     System.out.println("Server: close: " + e);

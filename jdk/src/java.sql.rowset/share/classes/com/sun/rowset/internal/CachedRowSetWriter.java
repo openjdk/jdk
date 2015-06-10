@@ -182,7 +182,7 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
     private CachedRowSetImpl crsResolve;
 
 /**
- * This <code>ArrayList<code> will hold the values of SyncResolver.*
+ * This {@code ArrayList} will hold the values of SyncResolver.*
  */
     private ArrayList<Integer> status;
 

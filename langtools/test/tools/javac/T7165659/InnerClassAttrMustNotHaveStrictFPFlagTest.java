@@ -27,7 +27,7 @@
  * @test
  * @bug 7165659
  * @summary javac incorrectly sets strictfp access flag on inner-classes
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  *          jdk.compiler/com.sun.tools.javac.util
  */
 

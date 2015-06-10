@@ -26,6 +26,7 @@
  * @bug     6977677 8004928
  * @summary Deadlock between LogManager.<clinit> and Logger.getLogger()
  * @author  Daniel D. Daugherty
+ * @modules java.base/sun.util.logging
  * @compile -XDignore.symbol.file LoggingDeadlock4.java
  * @run main/othervm/timeout=15 LoggingDeadlock4
  */

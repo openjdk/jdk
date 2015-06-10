@@ -22,7 +22,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package jdk.nashorn.internal.test.framework;
 
 import static jdk.nashorn.internal.test.framework.TestConfig.OPTIONS_CHECK_COMPILE_MSG;
@@ -61,14 +60,15 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.Set;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
+import jdk.nashorn.internal.runtime.ScriptingFunctions;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
@@ -78,28 +78,33 @@ import org.xml.sax.InputSource;
  */
 @SuppressWarnings("javadoc")
 public final class TestFinder {
-    private TestFinder() {}
 
-    interface TestFactory<T> {
-        // 'test' instance type is decided by the client.
-        T createTest(final String framework, final File testFile, final List<String> engineOptions, final Map<String, String> testOptions, final List<String> arguments);
-        // place to log messages from TestFinder
-        void log(String mg);
+    private TestFinder() {
     }
 
+    interface TestFactory<T> {
+
+        // 'test' instance type is decided by the client.
+
+        T createTest(final String framework, final File testFile, final List<String> engineOptions, final Map<String, String> testOptions, final List<String> arguments);
+
+        // place to log messages from TestFinder
+
+        void log(String mg);
+    }
 
     // finds all tests from configuration and calls TestFactory to create 'test' instance for each script test found
     static <T> void findAllTests(final List<T> tests, final Set<String> orphans, final TestFactory<T> testFactory) throws Exception {
         final String framework = System.getProperty(TEST_JS_FRAMEWORK);
         final String testList = System.getProperty(TEST_JS_LIST);
         final String failedTestFileName = System.getProperty(TEST_FAILED_LIST_FILE);
-        if(failedTestFileName != null) {
+        if (failedTestFileName != null) {
             final File failedTestFile = new File(failedTestFileName);
-            if(failedTestFile.exists() && failedTestFile.length() > 0L) {
-                try(final BufferedReader r = new BufferedReader(new FileReader(failedTestFile))) {
-                    for(;;) {
+            if (failedTestFile.exists() && failedTestFile.length() > 0L) {
+                try (final BufferedReader r = new BufferedReader(new FileReader(failedTestFile))) {
+                    for (;;) {
                         final String testFileName = r.readLine();
-                        if(testFileName == null) {
+                        if (testFileName == null) {
                             break;
                         }
                         handleOneTest(framework, new File(testFileName).toPath(), tests, orphans, testFactory);
@@ -151,7 +156,7 @@ public final class TestFinder {
         final Exception[] exceptions = new Exception[1];
         final List<String> excludedActualTests = new ArrayList<>();
 
-        if (! dir.toFile().isDirectory()) {
+        if (!dir.toFile().isDirectory()) {
             factory.log("WARNING: " + dir + " not found or not a directory");
         }
 
@@ -219,27 +224,28 @@ public final class TestFinder {
 
         boolean explicitOptimistic = false;
 
-        try (Scanner scanner = new Scanner(testFile)) {
-            while (scanner.hasNext()) {
-                // TODO: Scan for /ref=file qualifiers, etc, to determine run
-                // behavior
-                String token = scanner.next();
-                if (token.startsWith("/*")) {
-                    inComment = true;
-                } else if (token.endsWith(("*/"))) {
-                    inComment = false;
-                } else if (!inComment) {
-                    continue;
-                }
+        String allContent = new String(Files.readAllBytes(testFile));
+        Iterator<String> scanner = ScriptingFunctions.tokenizeCommandLine(allContent).iterator();
+        while (scanner.hasNext()) {
+            // TODO: Scan for /ref=file qualifiers, etc, to determine run
+            // behavior
+            String token = scanner.next();
+            if (token.startsWith("/*")) {
+                inComment = true;
+            } else if (token.endsWith(("*/"))) {
+                inComment = false;
+            } else if (!inComment) {
+                continue;
+            }
 
-                // remove whitespace and trailing semicolons, if any
-                // (trailing semicolons are found in some sputnik tests)
-                token = token.trim();
-                final int semicolon = token.indexOf(';');
-                if (semicolon > 0) {
-                    token = token.substring(0, semicolon);
-                }
-                switch (token) {
+            // remove whitespace and trailing semicolons, if any
+            // (trailing semicolons are found in some sputnik tests)
+            token = token.trim();
+            final int semicolon = token.indexOf(';');
+            if (semicolon > 0) {
+                token = token.substring(0, semicolon);
+            }
+            switch (token) {
                 case "@test":
                     isTest = true;
                     break;
@@ -308,24 +314,21 @@ public final class TestFinder {
                     break;
                 default:
                     break;
-                }
+            }
 
-                // negative tests are expected to fail at runtime only
-                // for those tests that are expected to fail at compile time,
-                // add @test/compile-error
-                if (token.equals("@negative") || token.equals("@strict_mode_negative")) {
-                    shouldRun = true;
-                    runFailure = true;
-                }
+            // negative tests are expected to fail at runtime only
+            // for those tests that are expected to fail at compile time,
+            // add @test/compile-error
+            if (token.equals("@negative") || token.equals("@strict_mode_negative")) {
+                shouldRun = true;
+                runFailure = true;
+            }
 
-                if (token.equals("@strict_mode") || token.equals("@strict_mode_negative") || token.equals("@onlyStrict") || token.equals("@noStrict")) {
-                    if (!strictModeEnabled()) {
-                        return;
-                    }
+            if (token.equals("@strict_mode") || token.equals("@strict_mode_negative") || token.equals("@onlyStrict") || token.equals("@noStrict")) {
+                if (!strictModeEnabled()) {
+                    return;
                 }
             }
-        } catch (final Exception ignored) {
-            return;
         }
 
         if (isTest) {
@@ -369,8 +372,8 @@ public final class TestFinder {
     private static final boolean OPTIMISTIC_OVERRIDE = false;
 
     /**
-     * Check if there is an optimistic override, that disables the default
-     * false optimistic types and sets them to true, for testing purposes
+     * Check if there is an optimistic override, that disables the default false
+     * optimistic types and sets them to true, for testing purposes
      *
      * @return true if optimistic type override has been set by test suite
      */
@@ -379,10 +382,9 @@ public final class TestFinder {
     }
 
     /**
-     * Add an optimistic-types=true option to an argument list if this
-     * is set to override the default false. Add an optimistic-types=true
-     * options to an argument list if this is set to override the default
-     * true
+     * Add an optimistic-types=true option to an argument list if this is set to
+     * override the default false. Add an optimistic-types=true options to an
+     * argument list if this is set to override the default true
      *
      * @args new argument list array
      */
@@ -396,8 +398,8 @@ public final class TestFinder {
     }
 
     /**
-     * Add an optimistic-types=true option to an argument list if this
-     * is set to override the default false
+     * Add an optimistic-types=true option to an argument list if this is set to
+     * override the default false
      *
      * @args argument list
      */
@@ -438,7 +440,7 @@ public final class TestFinder {
 
     private static void loadExcludesFile(final String testExcludesFile, final Set<String> testExcludeSet) throws XPathExpressionException {
         final XPath xpath = XPathFactory.newInstance().newXPath();
-        final NodeList testIds = (NodeList)xpath.evaluate("/excludeList/test/@id", new InputSource(testExcludesFile), XPathConstants.NODESET);
+        final NodeList testIds = (NodeList) xpath.evaluate("/excludeList/test/@id", new InputSource(testExcludesFile), XPathConstants.NODESET);
         for (int i = testIds.getLength() - 1; i >= 0; i--) {
             testExcludeSet.add(testIds.item(i).getNodeValue());
         }

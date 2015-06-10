@@ -24,6 +24,7 @@
 /* @test
  * @bug 4313887 6993267
  * @summary Unit test for Sun-specific ExtendedCopyOption.INTERRUPTIBLE option
+ * @modules java.base/com.sun.nio.file
  * @library ..
  */
 

@@ -25,7 +25,7 @@
  * @test
  * @bug 8033581 8033798 8033726
  * @summary Check whitespace in generated output
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 
 import java.io.*;

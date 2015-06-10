@@ -25,7 +25,7 @@
  * @test
  * @bug 8035104
  * @summary reorder class file attributes in javap listing
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 
 import java.io.*;

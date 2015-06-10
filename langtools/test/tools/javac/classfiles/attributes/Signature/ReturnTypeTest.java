@@ -27,7 +27,7 @@
  * @summary Checks Signature attribute for array return type of method.
  * @library /tools/lib /tools/javac/lib ../lib
  * @modules java.desktop
- *          jdk.compiler/com.sun.tools.classfile
+ *          jdk.jdeps/com.sun.tools.classfile
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main

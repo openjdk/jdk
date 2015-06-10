@@ -26,6 +26,7 @@
  * @bug 8007038
  * @summary Verify ArrayIndexOutOfBoundsException is not thrown on
  *     on calling localizedDateTime().print() with JapaneseChrono
+ * @modules java.base/sun.util.locale.provider
  * @compile -XDignore.symbol.file Bug8007038.java
  * @run main Bug8007038
  */

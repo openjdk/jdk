@@ -53,7 +53,6 @@ import java.net.SocketException;
 import java.util.*;
 import java.security.Security;
 import java.security.cert.*;
-import sun.security.util.DerInputStream;
 
 public class CPBuilder {
 

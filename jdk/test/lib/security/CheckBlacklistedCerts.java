@@ -25,6 +25,7 @@
  * @test
  * @bug 8011402
  * @summary Move blacklisting certificate logic from hard code to data
+ * @modules java.base/sun.security.util
  */
 
 import sun.security.util.UntrustedCertificates;

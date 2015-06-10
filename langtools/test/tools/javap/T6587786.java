@@ -25,7 +25,7 @@
  * @test
  * @bug 6587786
  * @summary Javap throws error : "ERROR:Could not find <classname>" for JRE classes
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 
 import java.io.*;

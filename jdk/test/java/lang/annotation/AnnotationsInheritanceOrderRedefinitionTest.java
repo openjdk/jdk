@@ -27,6 +27,7 @@
  * @summary Test inheritance, order and class redefinition behaviour of RUNTIME
  *          class annotations
  * @author plevart
+ * @modules java.base/sun.reflect.annotation
  */
 
 import sun.reflect.annotation.AnnotationParser;

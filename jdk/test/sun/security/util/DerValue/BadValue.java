@@ -25,6 +25,8 @@
  * @test
  * @bug 6864911
  * @summary ASN.1/DER input stream parser needs more work
+ * @modules java.base/sun.misc
+ *          java.base/sun.security.util
  */
 
 import java.io.*;

@@ -25,7 +25,7 @@
  * @test
  * @bug 6271787
  * @summary javap dumps LocalVariableTypeTable attribute in hex, needs to print a table
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 
 import java.io.*;

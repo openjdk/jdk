@@ -25,7 +25,7 @@
  * @test
  * @bug 4241573
  * @summary SourceFile attribute includes full path
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  */
 
 import com.sun.tools.classfile.Attribute;

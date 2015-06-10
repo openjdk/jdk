@@ -26,7 +26,7 @@
  * @bug 8027789
  * @summary check that the direct superclass is used as the site when calling
  *          a superclass' method
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  * @compile Base.java NonDirectSuper.java
  * @run main test.NonDirectSuper
  */

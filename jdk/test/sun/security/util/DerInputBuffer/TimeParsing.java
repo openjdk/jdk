@@ -25,6 +25,7 @@
  * @test
  * @bug 4558835 4915146
  * @summary Verify timezone offset and fractional seconds are correctly parsed
+ * @modules java.base/sun.security.util
  */
 
 import java.io.*;
