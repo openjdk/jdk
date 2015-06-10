@@ -66,6 +66,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
+import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
@@ -1095,16 +1096,17 @@ public final class Context {
      *
      * @param global the global
      * @param engine the associated ScriptEngine instance, can be null
+     * @param ctxt the initial ScriptContext, can be null
      * @return the initialized global scope object.
      */
-    public Global initGlobal(final Global global, final ScriptEngine engine) {
+    public Global initGlobal(final Global global, final ScriptEngine engine, final ScriptContext ctxt) {
         // Need only minimal global object, if we are just compiling.
         if (!env._compile_only) {
             final Global oldGlobal = Context.getGlobal();
             try {
                 Context.setGlobal(global);
                 // initialize global scope with builtin global objects
-                global.initBuiltinObjects(engine);
+                global.initBuiltinObjects(engine, ctxt);
             } finally {
                 Context.setGlobal(oldGlobal);
             }
@@ -1120,7 +1122,7 @@ public final class Context {
      * @return the initialized global scope object.
      */
     public Global initGlobal(final Global global) {
-        return initGlobal(global, null);
+        return initGlobal(global, null, null);
     }
 
     /**

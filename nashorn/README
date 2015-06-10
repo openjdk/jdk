@@ -72,14 +72,11 @@ after which you can view the generated documentation at dist/javadoc/index.html.
 - Running tests
 
 Nashorn tests are TestNG based. Running tests requires downloading the
-TestNG library and placing its jar file into the lib subdirectory:
+TestNG library and placing its jar file into the test/lib subdirectory. This is
+done automatically when executing the "ant externals" command to get external
+test suites (see below).
 
-    # download and install TestNG
-    wget http://testng.org/testng-x.y.z.zip
-    unzip testng-x.y.z.zip
-    cp testng-x.y.z/testng-x.y.z.jar test/lib/testng.jar
-    
-After that, you can run the tests using:
+Once TestNG is properly installed, you can run the tests using:
     cd make
     ant clean test
     
