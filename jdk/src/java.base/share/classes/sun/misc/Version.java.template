@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,16 +30,16 @@ public class Version {
 
 
     private static final String launcher_name =
-        "@@launcher_name@@";
+        "@@LAUNCHER_NAME@@";
 
     private static final String java_version =
-        "@@java_version@@";
+        "@@VERSION_SHORT@@";
 
     private static final String java_runtime_name =
-        "@@java_runtime_name@@";
+        "@@RUNTIME_NAME@@";
 
     private static final String java_runtime_version =
-        "@@java_runtime_version@@";
+        "@@VERSION_STRING@@";
 
     static {
         init();
@@ -54,13 +54,13 @@ public class Version {
     private static boolean versionsInitialized = false;
     private static int jvm_major_version = 0;
     private static int jvm_minor_version = 0;
-    private static int jvm_micro_version = 0;
+    private static int jvm_security_version = 0;
     private static int jvm_update_version = 0;
     private static int jvm_build_number = 0;
     private static String jvm_special_version = null;
     private static int jdk_major_version = 0;
     private static int jdk_minor_version = 0;
-    private static int jdk_micro_version = 0;
+    private static int jdk_security_version = 0;
     private static int jdk_update_version = 0;
     private static int jdk_build_number = 0;
     private static String jdk_special_version = null;
@@ -146,16 +146,16 @@ public class Version {
 
 
     /**
-     * Returns the micro version of the running JVM if it's 1.6 or newer
+     * Returns the security version of the running JVM if it's 1.6 or newer
      * or any RE VM build. It will return 0 if it's an internal 1.5 or
      * 1.4.x build.
      * @since 1.6
      */
-    public static synchronized int jvmMicroVersion() {
+    public static synchronized int jvmSecurityVersion() {
         if (!versionsInitialized) {
             initVersions();
         }
-        return jvm_micro_version;
+        return jvm_security_version;
     }
 
     /**
@@ -217,14 +217,14 @@ public class Version {
     }
 
     /**
-     * Returns the micro version of the running JDK.
+     * Returns the security version of the running JDK.
      * @since 1.6
      */
-    public static synchronized int jdkMicroVersion() {
+    public static synchronized int jdkSecurityVersion() {
         if (!versionsInitialized) {
             initVersions();
         }
-        return jdk_micro_version;
+        return jdk_security_version;
     }
 
     /**
@@ -281,7 +281,7 @@ public class Version {
                 Character.isDigit(cs.charAt(4))) {
                 jvm_major_version = Character.digit(cs.charAt(0), 10);
                 jvm_minor_version = Character.digit(cs.charAt(2), 10);
-                jvm_micro_version = Character.digit(cs.charAt(4), 10);
+                jvm_security_version = Character.digit(cs.charAt(4), 10);
                 cs = cs.subSequence(5, cs.length());
                 if (cs.charAt(0) == '_' && cs.length() >= 3 &&
                     Character.isDigit(cs.charAt(1)) &&

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ public class Version {
         VersionInfo jdk = newVersionInfo(System.getProperty("java.runtime.version"));
         VersionInfo v1 = new VersionInfo(jdkMajorVersion(),
                                          jdkMinorVersion(),
-                                         jdkMicroVersion(),
+                                         jdkSecurityVersion(),
                                          jdkUpdateVersion(),
                                          jdkSpecialVersion(),
                                          jdkBuildNumber());
@@ -48,7 +48,7 @@ public class Version {
         VersionInfo jvm = newVersionInfo(System.getProperty("java.vm.version"));
         VersionInfo v2 = new VersionInfo(jvmMajorVersion(),
                                          jvmMinorVersion(),
-                                         jvmMicroVersion(),
+                                         jvmSecurityVersion(),
                                          jvmUpdateVersion(),
                                          jvmSpecialVersion(),
                                          jvmBuildNumber());

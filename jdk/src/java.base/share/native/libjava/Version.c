@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ Java_sun_misc_Version_getJvmVersionInfo(JNIEnv *env, jclass cls)
     JNU_CHECK_EXCEPTION_RETURN(env, JNI_FALSE);
     setStaticIntField(env, cls, "jvm_minor_version", JVM_VERSION_MINOR(info.jvm_version));
     JNU_CHECK_EXCEPTION_RETURN(env, JNI_FALSE);
-    setStaticIntField(env, cls, "jvm_micro_version", JVM_VERSION_MICRO(info.jvm_version));
+    setStaticIntField(env, cls, "jvm_security_version", JVM_VERSION_SECURITY(info.jvm_version));
     JNU_CHECK_EXCEPTION_RETURN(env, JNI_FALSE);
     setStaticIntField(env, cls, "jvm_build_number", JVM_VERSION_BUILD(info.jvm_version));
     JNU_CHECK_EXCEPTION_RETURN(env, JNI_FALSE);
@@ -94,7 +94,7 @@ Java_sun_misc_Version_getJdkVersionInfo(JNIEnv *env, jclass cls)
     JNU_CHECK_EXCEPTION(env);
     setStaticIntField(env, cls, "jdk_minor_version", JDK_VERSION_MINOR(info.jdk_version));
     JNU_CHECK_EXCEPTION(env);
-    setStaticIntField(env, cls, "jdk_micro_version", JDK_VERSION_MICRO(info.jdk_version));
+    setStaticIntField(env, cls, "jdk_security_version", JDK_VERSION_SECURITY(info.jdk_version));
     JNU_CHECK_EXCEPTION(env);
     setStaticIntField(env, cls, "jdk_build_number", JDK_VERSION_BUILD(info.jdk_version));
     JNU_CHECK_EXCEPTION(env);

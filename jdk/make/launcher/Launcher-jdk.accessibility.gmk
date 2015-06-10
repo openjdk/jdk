@@ -52,7 +52,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
           -D "JDK_INTERNAL_NAME=jabswitch" \
           -D "JDK_FTYPE=0x01L", \
       MANIFEST := $(JABSWITCH_SRC)/jabswitch.manifest, \
-      MANIFEST_VERSION := $(JDK_VERSION_FOR_MANIFEST), \
+      MANIFEST_VERSION := $(VERSION_NUMBER_FOUR_POSITIONS), \
   ))
 
   TARGETS += $(BUILD_JABSWITCH)

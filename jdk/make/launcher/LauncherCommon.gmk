@@ -164,9 +164,7 @@ define SetupLauncher
       OPTIMIZATION := $$($1_OPTIMIZATION_ARG), \
       CFLAGS := $$($1_CFLAGS) \
           $(LAUNCHER_CFLAGS) \
-          -DFULL_VERSION='"$(FULL_VERSION)"' \
-          -DJDK_MAJOR_VERSION='"$(JDK_MAJOR_VERSION)"' \
-          -DJDK_MINOR_VERSION='"$(JDK_MINOR_VERSION)"' \
+          $(VERSION_CFLAGS) \
           -DLAUNCHER_NAME='"$(LAUNCHER_NAME)"' \
           -DPROGNAME='"$1"' $(DPACKAGEPATH) \
           $2, \
@@ -198,7 +196,7 @@ define SetupLauncher
           -D "JDK_FTYPE=0x1L" \
           $7, \
       MANIFEST := $(JAVA_MANIFEST), \
-      MANIFEST_VERSION := $(JDK_VERSION_FOR_MANIFEST), \
+      MANIFEST_VERSION := $(VERSION_NUMBER_FOUR_POSITIONS), \
       CODESIGN := $$($1_CODESIGN), \
   )
 
