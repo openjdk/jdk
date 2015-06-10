@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,18 @@
  */
 package javax.swing;
 
-import java.awt.*;
-import java.awt.event.*;
 import java.applet.Applet;
-import java.beans.PropertyChangeListener;
-import java.util.Locale;
-import java.util.Vector;
-import java.io.Serializable;
-import javax.accessibility.*;
+import java.awt.AWTEvent;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Graphics;
+import java.awt.HeadlessException;
+import java.awt.LayoutManager;
+
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleContext;
 
 /**
  * An extended version of <code>java.applet.Applet</code> that adds support for
@@ -243,9 +247,8 @@ public class JApplet extends Applet implements Accessible,
     *      hidden: true
     * description: The menubar for accessing pulldown menus from this applet.
     */
-    @SuppressWarnings("deprecation")
-    public void setJMenuBar(JMenuBar menuBar) {
-        getRootPane().setMenuBar(menuBar);
+    public void setJMenuBar(final JMenuBar menuBar) {
+        getRootPane().setJMenuBar(menuBar);
     }
 
    /**
@@ -254,9 +257,8 @@ public class JApplet extends Applet implements Accessible,
     * @return the menubar set on this applet
     * @see #setJMenuBar
     */
-    @SuppressWarnings("deprecation")
     public JMenuBar getJMenuBar() {
-        return getRootPane().getMenuBar();
+        return getRootPane().getJMenuBar();
     }
 
 

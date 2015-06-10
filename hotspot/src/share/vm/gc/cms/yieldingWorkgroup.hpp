@@ -147,6 +147,13 @@ public:
   bool completed() const { return _status == COMPLETED; }
   bool aborted()   const { return _status == ABORTED; }
   bool active()    const { return _status == ACTIVE; }
+
+  // This method configures the task for proper termination.
+  // Some tasks do not have any requirements on termination
+  // and may inherit this method that does nothing.  Some
+  // tasks do some coordination on termination and override
+  // this method to implement that coordination.
+  virtual void set_for_termination(uint active_workers) {}
 };
 // Class YieldingWorkGang: A subclass of WorkGang.
 // In particular, a YieldingWorkGang is made up of

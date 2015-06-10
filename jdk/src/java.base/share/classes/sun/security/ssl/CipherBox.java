@@ -154,9 +154,9 @@ final class CipherBox {
      * NULL cipherbox. Identity operation, no encryption.
      */
     private CipherBox() {
-        this.protocolVersion = ProtocolVersion.DEFAULT;
+        this.protocolVersion = ProtocolVersion.DEFAULT_TLS;
         this.cipher = null;
-        this.cipherType = STREAM_CIPHER;
+        this.cipherType = NULL_CIPHER;
         this.fixedIv = new byte[0];
         this.key = null;
         this.mode = Cipher.ENCRYPT_MODE;    // choose at random
@@ -197,7 +197,7 @@ final class CipherBox {
              */
             if (iv == null && bulkCipher.ivSize != 0 &&
                     mode == Cipher.DECRYPT_MODE &&
-                    protocolVersion.v >= ProtocolVersion.TLS11.v) {
+                    protocolVersion.useTLS11PlusSpec()) {
                 iv = getFixedMask(bulkCipher.ivSize);
             }
 
@@ -491,7 +491,7 @@ final class CipherBox {
                 newLen = removePadding(
                     buf, offset, newLen, tagLen, blockSize, protocolVersion);
 
-                if (protocolVersion.v >= ProtocolVersion.TLS11.v) {
+                if (protocolVersion.useTLS11PlusSpec()) {
                     if (newLen < blockSize) {
                         throw new BadPaddingException("invalid explicit IV");
                     }
@@ -573,7 +573,7 @@ final class CipherBox {
                 newLen = removePadding(bb, tagLen, blockSize, protocolVersion);
 
                 // check the explicit IV of TLS v1.1 or later
-                if (protocolVersion.v >= ProtocolVersion.TLS11.v) {
+                if (protocolVersion.useTLS11PlusSpec()) {
                     if (newLen < blockSize) {
                         throw new BadPaddingException("invalid explicit IV");
                     }
@@ -746,7 +746,7 @@ final class CipherBox {
         // The padding data should be filled with the padding length value.
         int[] results = checkPadding(buf, offset + newLen,
                         padLen + 1, (byte)(padLen & 0xFF));
-        if (protocolVersion.v >= ProtocolVersion.TLS10.v) {
+        if (protocolVersion.useTLS10PlusSpec()) {
             if (results[0] != 0) {          // padding data has invalid bytes
                 throw new BadPaddingException("Invalid TLS padding data");
             }
@@ -792,7 +792,7 @@ final class CipherBox {
         int[] results = checkPadding(
                 bb.duplicate().position(offset + newLen),
                 (byte)(padLen & 0xFF));
-        if (protocolVersion.v >= ProtocolVersion.TLS10.v) {
+        if (protocolVersion.useTLS10PlusSpec()) {
             if (results[0] != 0) {          // padding data has invalid bytes
                 throw new BadPaddingException("Invalid TLS padding data");
             }
@@ -873,7 +873,7 @@ final class CipherBox {
                 // For block ciphers, the explicit IV length is of length
                 // SecurityParameters.record_iv_length, which is equal to
                 // the SecurityParameters.block_size.
-                if (protocolVersion.v >= ProtocolVersion.TLS11.v) {
+                if (protocolVersion.useTLS11PlusSpec()) {
                     return cipher.getBlockSize();
                 }
                 break;
@@ -902,7 +902,7 @@ final class CipherBox {
      * @return the explicit nonce size of the cipher.
      */
     int applyExplicitNonce(Authenticator authenticator, byte contentType,
-            ByteBuffer bb) throws BadPaddingException {
+            ByteBuffer bb, byte[] sequence) throws BadPaddingException {
         switch (cipherType) {
             case BLOCK_CIPHER:
                 // sanity check length of the ciphertext
@@ -918,7 +918,7 @@ final class CipherBox {
                 // For block ciphers, the explicit IV length is of length
                 // SecurityParameters.record_iv_length, which is equal to
                 // the SecurityParameters.block_size.
-                if (protocolVersion.v >= ProtocolVersion.TLS11.v) {
+                if (protocolVersion.useTLS11PlusSpec()) {
                     return cipher.getBlockSize();
                 }
                 break;
@@ -945,7 +945,8 @@ final class CipherBox {
 
                 // update the additional authentication data
                 byte[] aad = authenticator.acquireAuthenticationBytes(
-                        contentType, bb.remaining() - recordIvSize - tagSize);
+                        contentType, bb.remaining() - recordIvSize - tagSize,
+                        sequence);
                 cipher.updateAAD(aad);
 
                 return recordIvSize;
@@ -954,33 +955,6 @@ final class CipherBox {
         }
 
        return 0;
-    }
-
-    /*
-     * Applies the explicit nonce/IV to this cipher. This method is used to
-     * decrypt an SSL/TLS input record.
-     *
-     * The returned value is the SecurityParameters.record_iv_length in
-     * RFC 4346/5246.  It is the size of explicit IV for CBC mode, and the
-     * size of explicit nonce for AEAD mode.
-     *
-     * @param  authenticator the authenticator to get the additional
-     *         authentication data
-     * @param  contentType the content type of the input record
-     * @param  buf the byte array to get the explicit nonce from
-     * @param  offset the offset of the byte buffer
-     * @param  cipheredLength the ciphered fragment length of the output
-     *         record, it is the TLSCiphertext.length in RFC 4346/5246.
-     *
-     * @return the explicit nonce size of the cipher.
-     */
-    int applyExplicitNonce(Authenticator authenticator,
-            byte contentType, byte[] buf, int offset,
-            int cipheredLength) throws BadPaddingException {
-
-        ByteBuffer bb = ByteBuffer.wrap(buf, offset, cipheredLength);
-
-        return applyExplicitNonce(authenticator, contentType, bb);
     }
 
     /*
@@ -1005,7 +979,7 @@ final class CipherBox {
         byte[] nonce = new byte[0];
         switch (cipherType) {
             case BLOCK_CIPHER:
-                if (protocolVersion.v >= ProtocolVersion.TLS11.v) {
+                if (protocolVersion.useTLS11PlusSpec()) {
                     // For block ciphers, the explicit IV length is of length
                     // SecurityParameters.record_iv_length, which is equal to
                     // the SecurityParameters.block_size.
@@ -1034,15 +1008,103 @@ final class CipherBox {
                                 "invalid key or spec in GCM mode", ikae);
                 }
 
-                // update the additional authentication data
+                // Update the additional authentication data, using the
+                // implicit sequence number of the authenticator.
                 byte[] aad = authenticator.acquireAuthenticationBytes(
-                                                contentType, fragmentLength);
+                                        contentType, fragmentLength, null);
                 cipher.updateAAD(aad);
                 break;
         }
 
         return nonce;
     }
+
+    // See also CipherSuite.calculatePacketSize().
+    int calculatePacketSize(int fragmentSize, int macLen, int headerSize) {
+        int packetSize = fragmentSize;
+        if (cipher != null) {
+            int blockSize = cipher.getBlockSize();
+            switch (cipherType) {
+                case BLOCK_CIPHER:
+                    packetSize += macLen;
+                    packetSize += 1;        // 1 byte padding length field
+                    packetSize +=           // use the minimal padding
+                            (blockSize - (packetSize % blockSize)) % blockSize;
+                    if (protocolVersion.useTLS11PlusSpec()) {
+                        packetSize += blockSize;        // explicit IV
+                    }
+
+                    break;
+                case AEAD_CIPHER:
+                    packetSize += recordIvSize;
+                    packetSize += tagSize;
+
+                    break;
+                default:    // NULL_CIPHER or STREAM_CIPHER
+                    packetSize += macLen;
+            }
+        }
+
+        return packetSize + headerSize;
+    }
+
+    // See also CipherSuite.calculateFragSize().
+    int calculateFragmentSize(int packetLimit, int macLen, int headerSize) {
+        int fragLen = packetLimit - headerSize;
+        if (cipher != null) {
+            int blockSize = cipher.getBlockSize();
+            switch (cipherType) {
+                case BLOCK_CIPHER:
+                    if (protocolVersion.useTLS11PlusSpec()) {
+                        fragLen -= blockSize;           // explicit IV
+                    }
+                    fragLen -= (fragLen % blockSize);   // cannot hold a block
+                    // No padding for a maximum fragment.
+                    fragLen -= 1;       // 1 byte padding length field: 0x00
+                    fragLen -= macLen;
+
+                    break;
+                case AEAD_CIPHER:
+                    fragLen -= recordIvSize;
+                    fragLen -= tagSize;
+
+                    break;
+                default:    // NULL_CIPHER or STREAM_CIPHER
+                    fragLen -= macLen;
+            }
+        }
+
+        return fragLen;
+    }
+
+    // Estimate the maximum fragment size of a received packet.
+    int estimateFragmentSize(int packetSize, int macLen, int headerSize) {
+        int fragLen = packetSize - headerSize;
+        if (cipher != null) {
+            int blockSize = cipher.getBlockSize();
+            switch (cipherType) {
+                case BLOCK_CIPHER:
+                    if (protocolVersion.useTLS11PlusSpec()) {
+                        fragLen -= blockSize;       // explicit IV
+                    }
+                    // No padding for a maximum fragment.
+                    fragLen -= 1;       // 1 byte padding length field: 0x00
+                    fragLen -= macLen;
+
+                    break;
+                case AEAD_CIPHER:
+                    fragLen -= recordIvSize;
+                    fragLen -= tagSize;
+
+                    break;
+                default:    // NULL_CIPHER or STREAM_CIPHER
+                    fragLen -= macLen;
+            }
+        }
+
+        return fragLen;
+    }
+
 
     /*
      * Is this cipher available?
@@ -1100,7 +1162,7 @@ final class CipherBox {
         if ((fragmentLen % blockSize) == 0) {
             int minimal = tagLen + 1;
             minimal = (minimal >= blockSize) ? minimal : blockSize;
-            if (protocolVersion.v >= ProtocolVersion.TLS11.v) {
+            if (protocolVersion.useTLS11PlusSpec()) {
                 minimal += blockSize;   // plus the size of the explicit IV
             }
 
