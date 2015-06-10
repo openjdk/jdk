@@ -26,6 +26,8 @@
  * @author Weijun Wang
  * @bug 4654195
  * @summary BIT STRING types with named bits must remove trailing 0 bits
+ * @modules java.base/sun.security.util
+ *          java.base/sun.security.x509
  */
 
 import sun.security.util.BitArray;

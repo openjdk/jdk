@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6262486
+ * @modules java.base/sun.net.www
  * @library ../../httptest/
  * @build HttpCallback TestHttpServer ClosedChannelList HttpTransaction
  * @run main/othervm -Dhttp.keepAlive=false ResponseCacheStream

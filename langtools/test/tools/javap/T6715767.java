@@ -25,7 +25,7 @@
  * @test
  * @bug 6715767
  * @summary javap on java.lang.ClassLoader crashes
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 
 import java.io.*;

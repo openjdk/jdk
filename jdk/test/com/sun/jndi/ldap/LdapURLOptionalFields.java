@@ -25,6 +25,7 @@
  * @test
  * @bug 8074761
  * @summary RFC-2255 allows attribute, scope and filter to be empty.
+ * @modules java.naming/com.sun.jndi.ldap
  */
 
 import com.sun.jndi.ldap.LdapURL;

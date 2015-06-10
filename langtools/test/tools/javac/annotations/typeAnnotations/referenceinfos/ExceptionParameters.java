@@ -28,7 +28,7 @@ import static com.sun.tools.classfile.TypeAnnotation.TargetType.*;
  * @bug 8028576 8042451
  * @summary Test population of reference info for exception parameters
  * @author Werner Dietl
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  * @compile -g Driver.java ReferenceInfoUtil.java ExceptionParameters.java
  * @run main Driver ExceptionParameters
  */

@@ -24,8 +24,9 @@
 /*
  * @test
  * @bug 6469663
- * @run main/othervm RequestURI
  * @summary HTTP Request-URI contains fragment when connecting through proxy
+ * @modules java.base/sun.net.www
+ * @run main/othervm RequestURI
  */
 
 import java.net.*;

@@ -25,7 +25,7 @@
  * @test
  * @bug 8028504
  * @summary javac generates LocalVariableTable even with -g:none
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  * @compile -g:none DontGenerateLVTForGNoneOpTest.java
  * @run main DontGenerateLVTForGNoneOpTest
  */

@@ -26,7 +26,7 @@
  * @test
  * @bug 8022718
  * @summary Runtime accessibility checking: protected class, if extended, should be accessible from another package
- *
+ * @modules java.base/jdk.internal.org.objectweb.asm
  * @compile -XDignore.symbol.file BogoLoader.java MethodInvoker.java Test.java anotherpkg/MethodSupplierOuter.java
  * @run main/othervm Test
  */

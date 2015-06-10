@@ -25,6 +25,7 @@
  * @test
  * @bug 8004240
  * @summary Verify that getAdapterPreference returns an unmodifiable list.
+ * @modules java.base/sun.util.locale.provider
  * @compile -XDignore.symbol.file Bug8004240.java
  * @run main Bug8004240
  */

@@ -25,6 +25,8 @@
  * @test
  * @bug 8038436
  * @summary Test for changes in 8038436
+ * @modules java.base/sun.util.locale.provider
+ *          java.base/sun.util.spi
  * @compile -XDignore.symbol.file Bug8038436.java
  * @run main/othervm Bug8038436 -Djava.ext.dirs=foo security
  * @run main/othervm Bug8038436 -Djava.locale.providers=JRE availlocs

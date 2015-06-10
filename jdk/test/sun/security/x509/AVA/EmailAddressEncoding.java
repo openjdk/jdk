@@ -25,6 +25,8 @@
  * @test
  * @bug 4702543
  * @summary  incorrect ASN1 DER encoding of EmailAddress Attribute
+ * @modules java.base/sun.security.pkcs
+ *          java.base/sun.security.util
  */
 
 import java.io.*;

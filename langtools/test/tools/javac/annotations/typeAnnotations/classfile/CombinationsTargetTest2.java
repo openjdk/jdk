@@ -25,7 +25,7 @@
  * @test
  * @bug 8005085 8005877 8004829 8005681 8006734 8006775 8006507
  * @summary Combinations of Target ElementTypes on (repeated)type annotations.
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  */
 
 import com.sun.tools.classfile.*;

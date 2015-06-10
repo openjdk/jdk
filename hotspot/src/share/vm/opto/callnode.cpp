@@ -1946,7 +1946,7 @@ bool CallLeafNode::may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase) {
         }
       }
     }
-    if (may_modify_arraycopy_helper(phase->type(dest)->is_oopptr(), t_oop, phase)) {
+    if (!dest->is_top() && may_modify_arraycopy_helper(phase->type(dest)->is_oopptr(), t_oop, phase)) {
       return true;
     }
     return false;

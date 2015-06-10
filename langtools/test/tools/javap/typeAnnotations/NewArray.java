@@ -28,7 +28,7 @@ import com.sun.tools.classfile.*;
  * @test NewArray
  * @bug 6843077
  * @summary Test type annotations on local array are in method's code attribute.
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  */
 
 public class NewArray {

@@ -24,6 +24,7 @@
 /* @test
  * @summary StringIndexOutOfBoundsException in HttpURLConnection.getResponseCode
  * @bug 6478588
+ * @modules java.base/sun.net.www
  */
 
 import sun.net.www.ParseUtil;

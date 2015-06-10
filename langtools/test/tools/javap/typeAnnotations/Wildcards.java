@@ -28,7 +28,7 @@ import com.sun.tools.classfile.*;
  * @test Wildcards
  * @bug 6843077
  * @summary test that annotations target wildcards get emitted to classfile
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  */
 public class Wildcards {
     public static void main(String[] args) throws Exception {

@@ -25,6 +25,7 @@
  * @test
  * @bug 6855671
  * @summary DerOutputStream encodes negative integer incorrectly
+ * @modules java.base/sun.security.util
  */
 import sun.security.util.DerOutputStream;
 

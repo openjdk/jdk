@@ -24,6 +24,7 @@
 /* @test
  * @summary REGRESSION: URLConnection.connect() throws Exception with non UTF-8 char
  * @bug 6274990
+ * @modules java.base/sun.net.www
  */
 
 import sun.net.www.*;

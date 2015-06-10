@@ -28,7 +28,7 @@ import com.sun.tools.classfile.*;
  * @test PresenceInner
  * @bug 6843077
  * @summary test that annotations in inner types count only once
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  */
 
 public class PresenceInner {

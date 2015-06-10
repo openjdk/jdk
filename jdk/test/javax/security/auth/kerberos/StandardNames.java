@@ -25,6 +25,7 @@
  * @test
  * @bug 8035986
  * @summary KerberosKey algorithm names are not specified
+ * @modules java.security.jgss/sun.security.krb5
  */
 
 import sun.security.krb5.EncryptedData;

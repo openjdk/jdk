@@ -25,6 +25,10 @@
  * @bug 4094891
  * @summary unable to retry call if cached connection to server is used
  * @library ../../../../java/rmi/testlibrary
+ * @modules java.rmi/sun.rmi.registry
+ *          java.rmi/sun.rmi.server
+ *          java.rmi/sun.rmi.transport
+ *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary JavaVM
  * @run main/othervm DeadCachedConnection
  */

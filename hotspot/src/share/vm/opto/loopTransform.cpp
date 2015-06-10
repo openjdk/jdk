@@ -1582,12 +1582,35 @@ void PhaseIdealLoop::mark_reductions(IdealLoopTree *loop) {
           if (opc != ReductionNode::opcode(opc, def_node->bottom_type()->basic_type())) {
             if (!def_node->is_reduction()) { // Not marked yet
               // To be a reduction, the arithmetic node must have the phi as input and provide a def to it
+              bool ok = false;
               for (unsigned j = 1; j < def_node->req(); j++) {
                 Node* in = def_node->in(j);
                 if (in == phi) {
-                  def_node->add_flag(Node::Flag_is_reduction);
+                  ok = true;
                   break;
                 }
+              }
+
+              // do nothing if we did not match the initial criteria
+              if (ok == false) {
+                continue;
+              }
+
+              // The result of the reduction must not be used in the loop
+              for (DUIterator_Fast imax, i = def_node->fast_outs(imax); i < imax && ok; i++) {
+                Node* u = def_node->fast_out(i);
+                if (has_ctrl(u) && !loop->is_member(get_loop(get_ctrl(u)))) {
+                  continue;
+                }
+                if (u == phi) {
+                  continue;
+                }
+                ok = false;
+              }
+
+              // iff the uses conform
+              if (ok) {
+                def_node->add_flag(Node::Flag_is_reduction);
               }
             }
           }

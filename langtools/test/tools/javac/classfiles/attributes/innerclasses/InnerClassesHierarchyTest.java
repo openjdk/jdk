@@ -26,7 +26,7 @@
  * @bug 8042251
  * @summary Test that inner classes have in its inner classes attribute enclosing classes and its immediate members.
  * @library /tools/lib /tools/javac/lib ../lib
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main

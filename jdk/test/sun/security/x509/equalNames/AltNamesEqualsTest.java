@@ -26,6 +26,8 @@
  * @summary Make sure names that are equal are treated as such.
  * @bug 4273559
  * @author Yassir Elley
+ * @modules java.base/sun.security.util
+ *          java.base/sun.security.x509
  */
 
 import sun.security.x509.*;

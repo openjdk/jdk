@@ -23,6 +23,7 @@
 /*
  * @test
  * @bug 6844907
+ * @modules java.security.jgss/sun.security.krb5.internal.crypto
  * @run main/othervm ETypeOrder
  * @summary krb5 etype order should be from strong to weak
  */

@@ -24,6 +24,7 @@
 /* @test
  * @bug 4197911
  * @summary Make sure RDN with multiple AVAs can be parsed.
+ * @modules java.base/sun.security.x509
  */
 
 import java.io.*;

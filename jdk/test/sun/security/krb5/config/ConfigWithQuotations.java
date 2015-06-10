@@ -23,6 +23,7 @@
 /*
  * @test
  * @bug 6714845
+ * @modules java.security.jgss/sun.security.krb5
  * @run main/othervm ConfigWithQuotations
  * @summary Quotes in Kerberos configuration file are included in the values
  */

@@ -24,8 +24,9 @@
 /**
  * @test
  * @bug 5049976
+ * @modules java.base/sun.net.www
  * @library ../../httptest/
-  @build HttpCallback TestHttpServer ClosedChannelList HttpTransaction
+ * @build HttpCallback TestHttpServer ClosedChannelList HttpTransaction
  * @run main SetChunkedStreamingMode
  * @summary Unspecified NPE is thrown when streaming output mode is enabled
  */
