@@ -77,7 +77,7 @@ public abstract class MenuComponent implements java.io.Serializable {
      * @see #setFont(Font)
      * @see #getFont()
      */
-    Font font;
+    volatile Font font;
 
     /**
      * The menu component's name, which defaults to <code>null</code>.
@@ -302,11 +302,13 @@ public abstract class MenuComponent implements java.io.Serializable {
      * @see       java.awt.font.TextAttribute
      */
     public void setFont(Font f) {
-        font = f;
-        //Fixed 6312943: NullPointerException in method MenuComponent.setFont(Font)
-        MenuComponentPeer peer = this.peer;
-        if (peer != null) {
-            peer.setFont(f);
+        synchronized (getTreeLock()) {
+            font = f;
+            //Fixed 6312943: NullPointerException in method MenuComponent.setFont(Font)
+            MenuComponentPeer peer = this.peer;
+            if (peer != null) {
+                peer.setFont(f);
+            }
         }
     }
 

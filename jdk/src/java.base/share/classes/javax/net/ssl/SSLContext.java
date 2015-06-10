@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,12 @@ import sun.security.jca.GetInstance;
 /**
  * Instances of this class represent a secure socket protocol
  * implementation which acts as a factory for secure socket
- * factories or <code>SSLEngine</code>s. This class is initialized
+ * factories or {@code SSLEngine}s. This class is initialized
  * with an optional set of key and trust managers and source of
  * secure random bytes.
  *
  * <p> Every implementation of the Java platform is required to support the
- * following standard <code>SSLContext</code> protocol:
+ * following standard {@code SSLContext} protocol:
  * <ul>
  * <li><tt>TLSv1</tt></li>
  * </ul>
@@ -79,7 +79,7 @@ public class SSLContext {
      * <p>If a default context was set using the {@link #setDefault
      * SSLContext.setDefault()} method, it is returned. Otherwise, the first
      * call of this method triggers the call
-     * <code>SSLContext.getInstance("Default")</code>.
+     * {@code SSLContext.getInstance("Default")}.
      * If successful, that object is made the default SSL context and returned.
      *
      * <p>The default context is immediately
@@ -106,8 +106,8 @@ public class SSLContext {
      * @param context the SSLContext
      * @throws  NullPointerException if context is null
      * @throws  SecurityException if a security manager exists and its
-     *          <code>checkPermission</code> method does not allow
-     *          <code>SSLPermission("setDefaultSSLContext")</code>
+     *          {@code checkPermission} method does not allow
+     *          {@code SSLPermission("setDefaultSSLContext")}
      * @since 1.6
      */
     public static synchronized void setDefault(SSLContext context) {
@@ -122,7 +122,7 @@ public class SSLContext {
     }
 
     /**
-     * Returns a <code>SSLContext</code> object that implements the
+     * Returns a {@code SSLContext} object that implements the
      * specified secure socket protocol.
      *
      * <p> This method traverses the list of registered security Providers,
@@ -141,7 +141,7 @@ public class SSLContext {
      *          Documentation</a>
      *          for information about standard protocol names.
      *
-     * @return the new <code>SSLContext</code> object.
+     * @return the new {@code SSLContext} object.
      *
      * @exception NoSuchAlgorithmException if no Provider supports a
      *          SSLContextSpi implementation for the
@@ -159,7 +159,7 @@ public class SSLContext {
     }
 
     /**
-     * Returns a <code>SSLContext</code> object that implements the
+     * Returns a {@code SSLContext} object that implements the
      * specified secure socket protocol.
      *
      * <p> A new SSLContext object encapsulating the
@@ -179,7 +179,7 @@ public class SSLContext {
      *
      * @param provider the name of the provider.
      *
-     * @return the new <code>SSLContext</code> object.
+     * @return the new {@code SSLContext} object.
      *
      * @throws NoSuchAlgorithmException if a SSLContextSpi
      *          implementation for the specified protocol is not
@@ -202,7 +202,7 @@ public class SSLContext {
     }
 
     /**
-     * Returns a <code>SSLContext</code> object that implements the
+     * Returns a {@code SSLContext} object that implements the
      * specified secure socket protocol.
      *
      * <p> A new SSLContext object encapsulating the
@@ -219,7 +219,7 @@ public class SSLContext {
      *
      * @param provider an instance of the provider.
      *
-     * @return the new <code>SSLContext</code> object.
+     * @return the new {@code SSLContext} object.
      *
      * @throws NoSuchAlgorithmException if a SSLContextSpi
      *          implementation for the specified protocol is not available
@@ -239,22 +239,22 @@ public class SSLContext {
     }
 
     /**
-     * Returns the protocol name of this <code>SSLContext</code> object.
+     * Returns the protocol name of this {@code SSLContext} object.
      *
      * <p>This is the same name that was specified in one of the
-     * <code>getInstance</code> calls that created this
-     * <code>SSLContext</code> object.
+     * {@code getInstance} calls that created this
+     * {@code SSLContext} object.
      *
-     * @return the protocol name of this <code>SSLContext</code> object.
+     * @return the protocol name of this {@code SSLContext} object.
      */
     public final String getProtocol() {
         return this.protocol;
     }
 
     /**
-     * Returns the provider of this <code>SSLContext</code> object.
+     * Returns the provider of this {@code SSLContext} object.
      *
-     * @return the provider of this <code>SSLContext</code> object
+     * @return the provider of this {@code SSLContext} object
      */
     public final Provider getProvider() {
         return this.provider;
@@ -283,31 +283,35 @@ public class SSLContext {
     }
 
     /**
-     * Returns a <code>SocketFactory</code> object for this
+     * Returns a {@code SocketFactory} object for this
      * context.
      *
-     * @return the <code>SocketFactory</code> object
+     * @return the {@code SocketFactory} object
+     * @throws UnsupportedOperationException if the underlying provider
+     *         does not implement the operation.
      * @throws IllegalStateException if the SSLContextImpl requires
-     *          initialization and the <code>init()</code> has not been called
+     *         initialization and the {@code init()} has not been called
      */
     public final SSLSocketFactory getSocketFactory() {
         return contextSpi.engineGetSocketFactory();
     }
 
     /**
-     * Returns a <code>ServerSocketFactory</code> object for
+     * Returns a {@code ServerSocketFactory} object for
      * this context.
      *
-     * @return the <code>ServerSocketFactory</code> object
+     * @return the {@code ServerSocketFactory} object
+     * @throws UnsupportedOperationException if the underlying provider
+     *         does not implement the operation.
      * @throws IllegalStateException if the SSLContextImpl requires
-     *          initialization and the <code>init()</code> has not been called
+     *         initialization and the {@code init()} has not been called
      */
     public final SSLServerSocketFactory getServerSocketFactory() {
         return contextSpi.engineGetServerSocketFactory();
     }
 
     /**
-     * Creates a new <code>SSLEngine</code> using this context.
+     * Creates a new {@code SSLEngine} using this context.
      * <P>
      * Applications using this factory method are providing no hints
      * for an internal session reuse strategy. If hints are desired,
@@ -317,11 +321,11 @@ public class SSLContext {
      * Some cipher suites (such as Kerberos) require remote hostname
      * information, in which case this factory method should not be used.
      *
-     * @return  the <code>SSLEngine</code> object
+     * @return  the {@code SSLEngine} object
      * @throws  UnsupportedOperationException if the underlying provider
      *          does not implement the operation.
      * @throws  IllegalStateException if the SSLContextImpl requires
-     *          initialization and the <code>init()</code> has not been called
+     *          initialization and the {@code init()} has not been called
      * @since   1.5
      */
     public final SSLEngine createSSLEngine() {
@@ -338,7 +342,7 @@ public class SSLContext {
     }
 
     /**
-     * Creates a new <code>SSLEngine</code> using this context using
+     * Creates a new {@code SSLEngine} using this context using
      * advisory peer information.
      * <P>
      * Applications using this factory method are providing hints
@@ -349,11 +353,11 @@ public class SSLContext {
      *
      * @param   peerHost the non-authoritative name of the host
      * @param   peerPort the non-authoritative port
-     * @return  the new <code>SSLEngine</code> object
+     * @return  the new {@code SSLEngine} object
      * @throws  UnsupportedOperationException if the underlying provider
      *          does not implement the operation.
      * @throws  IllegalStateException if the SSLContextImpl requires
-     *          initialization and the <code>init()</code> has not been called
+     *          initialization and the {@code init()} has not been called
      * @since   1.5
      */
     public final SSLEngine createSSLEngine(String peerHost, int peerPort) {

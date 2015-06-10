@@ -552,16 +552,10 @@ public abstract class EmbeddedFrame extends Frame
         }
         public void setModalBlocked(Dialog blocker, boolean blocked) {}
 
-        /**
-         * @see java.awt.peer.ContainerPeer#restack
-         */
         public void restack() {
             throw new UnsupportedOperationException();
         }
 
-        /**
-         * @see java.awt.peer.ContainerPeer#isRestackSupported
-         */
         public boolean isRestackSupported() {
             return false;
         }

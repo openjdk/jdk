@@ -28,6 +28,7 @@
  * @modules jdk.javadoc
  * @build APITest
  * @run main GetTask_DocletClassTest
+ * @key randomness
  */
 
 import com.sun.javadoc.DocErrorReporter;

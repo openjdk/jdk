@@ -519,7 +519,7 @@ class ExecutableInputMethodManager extends InputMethodManager
      * Writes the preferred input method descriptor class name into
      * the user's Preferences tree in accordance with the given locale.
      *
-     * @param inputMethodLocator input method locator to remember.
+     * @param locator input method locator to remember.
      */
     private synchronized void putPreferredInputMethod(InputMethodLocator locator) {
         InputMethodDescriptor descriptor = locator.getDescriptor();

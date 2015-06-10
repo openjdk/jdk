@@ -61,9 +61,12 @@ STRIP_CMDS_SRC := $(filter-out $(COPY_CMDS_SRC), $(ALL_CMDS_SRC))
 COPY_LIBS_SRC := \
     $(shell $(FIND) $(SUPPORT_OUTPUTDIR)/modules_libs \
         \( ! -name '*$(SHARED_LIBRARY_SUFFIX)' -type f \) -o -type l)
+# OS X stores symbol information in a .dylib file inside a .dSYM directory -
+# that file should not be stripped, so we prune the tree at the .dSYM directory.
+# Example: support/modules_libs/java.base/libjsig.dylib.dSYM/Contents/Resources/DWARF/libjsig.dylib
 STRIP_LIBS_SRC := \
     $(shell $(FIND) $(SUPPORT_OUTPUTDIR)/modules_libs \
-        -name '*$(SHARED_LIBRARY_SUFFIX)' -type f)
+        -name '*$(SHARED_LIBRARY_SUFFIX)' -type f -print -o -name "*.dSYM" -prune)
 
 $(eval $(call SetupCopyFiles,STRIP_MODULES_CMDS, \
     SRC := $(SUPPORT_OUTPUTDIR)/modules_cmds, \

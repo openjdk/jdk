@@ -35,7 +35,7 @@ import java.security.Principal;
  * also be replaced by a different session.  Sessions are created, or
  * rejoined, as part of the SSL handshaking protocol. Sessions may be
  * invalidated due to policies affecting security or resource usage,
- * or by an application explicitly calling <code>invalidate</code>.
+ * or by an application explicitly calling {@code invalidate}.
  * Session management policies are typically used to tune performance.
  *
  * <P> In addition to the standard session attributes, SSL sessions expose
@@ -82,8 +82,8 @@ public interface SSLSession {
      * security manager installed, the caller may require
      * permission to access it or a security exception may be thrown.
      * In a Java environment, the security manager's
-     * <code>checkPermission</code> method is called with a
-     * <code>SSLPermission("getSSLSessionContext")</code> permission.
+     * {@code checkPermission} method is called with a
+     * {@code SSLPermission("getSSLSessionContext")} permission.
      *
      * @throws SecurityException if the calling thread does not have
      *         permission to get SSL session context.
@@ -148,14 +148,14 @@ public interface SSLSession {
 
     /**
      *
-     * Binds the specified <code>value</code> object into the
+     * Binds the specified {@code value} object into the
      * session's application layer data
-     * with the given <code>name</code>.
+     * with the given {@code name}.
      * <P>
-     * Any existing binding using the same <code>name</code> is
-     * replaced.  If the new (or existing) <code>value</code> implements the
-     * <code>SSLSessionBindingListener</code> interface, the object
-     * represented by <code>value</code> is notified appropriately.
+     * Any existing binding using the same {@code name} is
+     * replaced.  If the new (or existing) {@code value} implements the
+     * {@code SSLSessionBindingListener} interface, the object
+     * represented by {@code value} is notified appropriately.
      * <p>
      * For security reasons, the same named values may not be
      * visible across different access control contexts.
@@ -187,7 +187,7 @@ public interface SSLSession {
      * Removes the object bound to the given name in the session's
      * application layer data.  Does nothing if there is no object
      * bound to the given name.  If the bound existing object
-     * implements the <code>SessionBindingListener</code> interface,
+     * implements the {@code SessionBindingListener} interface,
      * it is notified appropriately.
      * <p>
      * For security reasons, the same named values may not be
@@ -349,7 +349,7 @@ public interface SSLSession {
      * by this method.
      * <P>
      * This value is not authenticated and should not be relied upon.
-     * It is mainly used as a hint for <code>SSLSession</code> caching
+     * It is mainly used as a hint for {@code SSLSession} caching
      * strategies.
      *
      * @return  the host name of the peer host, or null if no information
@@ -364,7 +364,7 @@ public interface SSLSession {
      * the client, it is the server's port number.
      * <P>
      * This value is not authenticated and should not be relied upon.
-     * It is mainly used as a hint for <code>SSLSession</code> caching
+     * It is mainly used as a hint for {@code SSLSession} caching
      * strategies.
      *
      * @return  the port number of the peer host, or -1 if no information
@@ -375,14 +375,14 @@ public interface SSLSession {
     public int getPeerPort();
 
     /**
-     * Gets the current size of the largest SSL/TLS packet that is expected
-     * when using this session.
+     * Gets the current size of the largest SSL/TLS/DTLS packet that is
+     * expected when using this session.
      * <P>
-     * A <code>SSLEngine</code> using this session may generate SSL/TLS
+     * An {@code SSLEngine} using this session may generate SSL/TLS/DTLS
      * packets of any size up to and including the value returned by this
-     * method. All <code>SSLEngine</code> network buffers should be sized
+     * method. All {@code SSLEngine} network buffers should be sized
      * at least this large to avoid insufficient space problems when
-     * performing <code>wrap</code> and <code>unwrap</code> calls.
+     * performing {@code wrap} and {@code unwrap} calls.
      *
      * @return  the current maximum expected network packet size
      *
@@ -398,7 +398,7 @@ public interface SSLSession {
      * Gets the current size of the largest application data that is
      * expected when using this session.
      * <P>
-     * <code>SSLEngine</code> application data buffers must be large
+     * {@code SSLEngine} application data buffers must be large
      * enough to hold the application data from any inbound network
      * application data packet received.  Typically, outbound
      * application data buffers can be of any size.
