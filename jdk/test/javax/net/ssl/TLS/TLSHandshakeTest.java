@@ -21,35 +21,22 @@
  * questions.
  */
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
+/*
+ * @test
+ * @bug 8085979
+ * @summary Testing TLS engines handshake using each of the supported
+ *          cipher suites.
+ * @library /sun/security/krb5/auto /javax/net/ssl/TLSCommon
+ * @run main/othervm -Dtest.security.protocol=TLS -Dtest.mode=norm TLSHandshakeTest
+ * @run main/othervm -Dtest.security.protocol=TLS -Dtest.mode=norm_sni TLSHandshakeTest
+ * @run main/othervm -Dtest.security.protocol=TLS -Dtest.mode=krb TLSHandshakeTest
+ */
 
 /**
- * Testing that try to enable unsupported ciphers causes IllegalArgumentException.
+ * Testing TLS engines handshake using each of the supported cipher suites.
  */
-public class UnSupportedCiphersTest extends SSLEngineTestCase {
-
-    public static void main(String[] s) {
-        UnSupportedCiphersTest test = new UnSupportedCiphersTest();
-        test.runTests(Ciphers.UNSUPPORTED_CIPHERS);
-    }
-
-    @Override
-    protected void testOneCipher(String cipher) {
-        unsupTest(cipher, true);
-        unsupTest(cipher, false);
-    }
-
-    private void unsupTest(String cipher, boolean clientTest) {
-        SSLContext context = getContext();
-        SSLEngine clientEngine = context.createSSLEngine();
-        clientEngine.setUseClientMode(true);
-        SSLEngine serverEngine = context.createSSLEngine();
-        serverEngine.setUseClientMode(false);
-        if (clientTest) {
-            clientEngine.setEnabledCipherSuites(new String[]{cipher});
-        } else {
-            serverEngine.setEnabledCipherSuites(new String[]{cipher});
-        }
+public class TLSHandshakeTest {
+    public static void main(String[] args) {
+        HandshakeTest.main(args);
     }
 }
