@@ -48,7 +48,7 @@ public class InfoOptsTest extends Tester {
 
         String specVersion = System.getProperty("java.specification.version");
         testInfoOpt("-version", "javac", specVersion);
-        testInfoOpt("-fullversion", "javac", specVersion, "-b");
+        testInfoOpt("-fullversion", "javac", specVersion, "+");
     }
 
     void testInfoOpt(String opt, String... expect) {
