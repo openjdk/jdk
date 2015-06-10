@@ -73,8 +73,8 @@ final class RSAClientKeyExchange extends HandshakeMessage {
         this.protocolVersion = protocolVersion;
 
         try {
-            String s = ((protocolVersion.v >= ProtocolVersion.TLS12.v) ?
-                "SunTls12RsaPremasterSecret" : "SunTlsRsaPremasterSecret");
+            String s = protocolVersion.useTLS12PlusSpec() ?
+                "SunTls12RsaPremasterSecret" : "SunTlsRsaPremasterSecret";
             KeyGenerator kg = JsseJce.getKeyGenerator(s);
             kg.init(new TlsRsaPremasterSecretParameterSpec(
                     maxVersion.v, protocolVersion.v), generator);
@@ -103,7 +103,7 @@ final class RSAClientKeyExchange extends HandshakeMessage {
             throw new SSLKeyException("Private key not of type RSA");
         }
 
-        if (currentVersion.v >= ProtocolVersion.TLS10.v) {
+        if (currentVersion.useTLS10PlusSpec()) {
             encrypted = input.getBytes16();
         } else {
             encrypted = new byte [messageSize];
@@ -142,7 +142,7 @@ final class RSAClientKeyExchange extends HandshakeMessage {
 
     @Override
     int messageLength() {
-        if (protocolVersion.v >= ProtocolVersion.TLS10.v) {
+        if (protocolVersion.useTLS10PlusSpec()) {
             return encrypted.length + 2;
         } else {
             return encrypted.length;
@@ -151,7 +151,7 @@ final class RSAClientKeyExchange extends HandshakeMessage {
 
     @Override
     void send(HandshakeOutStream s) throws IOException {
-        if (protocolVersion.v >= ProtocolVersion.TLS10.v) {
+        if (protocolVersion.useTLS10PlusSpec()) {
             s.putBytes16(encrypted);
         } else {
             s.write(encrypted);

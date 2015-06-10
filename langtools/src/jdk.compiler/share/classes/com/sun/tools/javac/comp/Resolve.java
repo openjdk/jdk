@@ -3185,10 +3185,8 @@ public class Resolve {
                 findDiamond(env, site, argtypes, typeargtypes, phase.isBoxingRequired(), phase.isVarargsRequired()) :
                 findMethod(env, site, name, argtypes, typeargtypes,
                         phase.isBoxingRequired(), phase.isVarargsRequired());
-            return (sym.kind != MTH ||
-                    site.getEnclosingType().hasTag(NONE) ||
-                    hasEnclosingInstance(env, site)) ?
-                    sym : new BadConstructorReferenceError(sym);
+            return site.getEnclosingType().hasTag(CLASS) && !hasEnclosingInstance(env, site) ?
+                        new BadConstructorReferenceError(sym) : sym;
         }
 
         @Override

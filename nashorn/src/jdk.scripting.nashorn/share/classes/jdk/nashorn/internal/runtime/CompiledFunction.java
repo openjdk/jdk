@@ -528,8 +528,9 @@ final class CompiledFunction {
 
         final int fnParamCountNoCallee = fnParamCount - thisThisIndex;
         final int minParams = Math.min(csParamCount - 1, fnParamCountNoCallee); // callSiteType always has callee, so subtract 1
-        // We must match all incoming parameters, except "this". Starting from 1 to skip "this".
-        for(int i = 1; i < minParams; ++i) {
+        // We must match all incoming parameters, including "this". "this" will usually be Object, but there
+        // are exceptions, e.g. when calling functions with primitive "this" in strict mode or through call/apply.
+        for(int i = 0; i < minParams; ++i) {
             final Type fnType = Type.typeFor(type.parameterType(i + thisThisIndex));
             final Type csType = csIsVarArg ? Type.OBJECT : Type.typeFor(other.parameterType(i + 1));
             if(!fnType.isEquivalentTo(csType)) {
