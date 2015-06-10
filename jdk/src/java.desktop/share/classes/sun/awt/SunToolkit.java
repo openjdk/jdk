@@ -366,8 +366,8 @@ public abstract class SunToolkit extends Toolkit
       * status to synchronous for any of its windows, then further focus
       * behaviour is unspecified.
       * <p>
-      * @param    w window for which the lightweight focus request status
-      *             should be set
+      * @param    changed the window for which the lightweight focus request
+      *           status should be set
       * @param    status the value of lightweight focus request status
       */
 
@@ -1459,9 +1459,9 @@ public abstract class SunToolkit extends Toolkit
      * <p> Notice that realSync isn't guaranteed to work if recurring
      * actions occur, such as if during processing of some event
      * another request which may generate some events occurs.  By
-     * default, sync tries to perform as much as {@value MAX_ITERS}
+     * default, sync tries to perform as much as {@value #MAX_ITERS}
      * cycles of event processing, allowing for roughly {@value
-     * MAX_ITERS} additional requests.
+     * #MAX_ITERS} additional requests.
      *
      * <p> For example, requestFocus() generates native request, which
      * generates one or two Java focus events, which then generate a

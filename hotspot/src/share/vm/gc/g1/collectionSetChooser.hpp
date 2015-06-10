@@ -121,7 +121,7 @@ public:
 
   // Must be called before calls to claim_array_chunk().
   // n_regions is the number of regions, chunk_size the chunk size.
-  void prepare_for_par_region_addition(uint n_regions, uint chunk_size);
+  void prepare_for_par_region_addition(uint n_threads, uint n_regions, uint chunk_size);
   // Returns the first index in a contiguous chunk of chunk_size indexes
   // that the calling thread has reserved.  These must be set by the
   // calling thread using set_region() (to NULL if necessary).

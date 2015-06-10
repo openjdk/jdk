@@ -616,14 +616,19 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                         }
                     }
                 }
-                if( keyEventLog.isLoggable(PlatformLogger.Level.FINE) && (ev.get_type() == XConstants.KeyPress || ev.get_type() == XConstants.KeyRelease) ) {
-                    keyEventLog.fine("before XFilterEvent:"+ev);
+                if (keyEventLog.isLoggable(PlatformLogger.Level.FINE) && (
+                        ev.get_type() == XConstants.KeyPress
+                                || ev.get_type() == XConstants.KeyRelease)) {
+                    keyEventLog.fine("before XFilterEvent:" + ev);
                 }
                 if (XlibWrapper.XFilterEvent(ev.getPData(), w)) {
                     continue;
                 }
-                if( keyEventLog.isLoggable(PlatformLogger.Level.FINE) && (ev.get_type() == XConstants.KeyPress || ev.get_type() == XConstants.KeyRelease) ) {
-                    keyEventLog.fine("after XFilterEvent:"+ev); // IS THIS CORRECT?
+                if (keyEventLog.isLoggable(PlatformLogger.Level.FINE) && (
+                        ev.get_type() == XConstants.KeyPress
+                                || ev.get_type() == XConstants.KeyRelease)) {
+                    keyEventLog.fine(
+                            "after XFilterEvent:" + ev); // IS THIS CORRECT?
                 }
 
                 dispatchEvent(ev);
@@ -639,21 +644,28 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         }
     }
 
+    /**
+     * Listener installed to detect display changes.
+     */
+    private static final DisplayChangedListener displayChangedHandler =
+            new DisplayChangedListener() {
+                @Override
+                public void displayChanged() {
+                    // 7045370: Reset the cached values
+                    XToolkit.screenWidth = -1;
+                    XToolkit.screenHeight = -1;
+                }
+
+                @Override
+                public void paletteChanged() {
+                }
+            };
+
     static {
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         if (ge instanceof SunGraphicsEnvironment) {
-            ((SunGraphicsEnvironment)ge).addDisplayChangedListener(
-                new DisplayChangedListener() {
-                    @Override
-                    public void displayChanged() {
-                        // 7045370: Reset the cached values
-                        XToolkit.screenWidth = -1;
-                        XToolkit.screenHeight = -1;
-                    }
-
-                    @Override
-                    public void paletteChanged() {}
-            });
+            ((SunGraphicsEnvironment) ge).addDisplayChangedListener(
+                    displayChangedHandler);
         }
     }
 
@@ -663,7 +675,9 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             try {
                 XWindowAttributes pattr = new XWindowAttributes();
                 try {
-                    XlibWrapper.XGetWindowAttributes(XToolkit.getDisplay(), XToolkit.getDefaultRootWindow(), pattr.pData);
+                    XlibWrapper.XGetWindowAttributes(XToolkit.getDisplay(),
+                                                     XToolkit.getDefaultRootWindow(),
+                                                     pattr.pData);
                     screenWidth  = pattr.get_width();
                     screenHeight = pattr.get_height();
                 } finally {

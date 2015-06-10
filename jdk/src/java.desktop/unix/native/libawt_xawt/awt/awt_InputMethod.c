@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -904,7 +904,6 @@ static void adjustStatusWindow(Window shell){
 static Bool
 createXIC(JNIEnv * env, X11InputMethodData *pX11IMData, Window w)
 {
-    XIC active_ic, passive_ic;
     XVaNestedList preedit = NULL;
     XVaNestedList status = NULL;
     XIMStyle on_the_spot_styles = XIMPreeditCallbacks,
@@ -974,6 +973,12 @@ createXIC(JNIEnv * env, X11InputMethodData *pX11IMData, Window w)
     }
 
     if (active_styles == on_the_spot_styles) {
+        pX11IMData->ic_passive = XCreateIC(X11im,
+                                   XNClientWindow, w,
+                                   XNFocusWindow, w,
+                                   XNInputStyle, passive_styles,
+                                   NULL);
+
         callbacks = (XIMCallback *)malloc(sizeof(XIMCallback) * NCALLBACKS);
         if (callbacks == (XIMCallback *)NULL)
             return False;
@@ -1024,12 +1029,6 @@ createXIC(JNIEnv * env, X11InputMethodData *pX11IMData, Window w)
                                               NULL);
         XFree((void *)preedit);
 #endif /* __linux__ || MACOSX */
-        pX11IMData->ic_passive = XCreateIC(X11im,
-                                           XNClientWindow, w,
-                                           XNFocusWindow, w,
-                                           XNInputStyle, passive_styles,
-                                           NULL);
-
     } else {
         pX11IMData->ic_active = XCreateIC(X11im,
                                           XNClientWindow, w,

@@ -52,7 +52,7 @@ import jdk.nashorn.internal.runtime.linker.Bootstrap;
  * operations respectively, while {@link #addLast(Object)} and {@link #removeLast()} will translate to {@code push} and
  * {@code pop}.
  */
-public final class ListAdapter extends AbstractList<Object> implements RandomAccess, Deque<Object> {
+public class ListAdapter extends AbstractList<Object> implements RandomAccess, Deque<Object> {
     // Invoker creator for methods that add to the start or end of the list: PUSH and UNSHIFT. Takes fn, this, and value, returns void.
     private static final Callable<MethodHandle> ADD_INVOKER_CREATOR = invokerCreator(void.class, Object.class, JSObject.class, Object.class);
 
@@ -78,21 +78,17 @@ public final class ListAdapter extends AbstractList<Object> implements RandomAcc
     private static final Callable<MethodHandle> SPLICE_REMOVE_INVOKER_CREATOR = invokerCreator(void.class, Object.class, JSObject.class, int.class, int.class);
 
     /** wrapped object */
-    private final JSObject obj;
+    final JSObject obj;
     private final Global global;
 
     // allow subclasses only in this package
-    ListAdapter(final JSObject obj) {
-        this.obj = obj;
-        this.global = getGlobalNonNull();
-    }
-
-    private static Global getGlobalNonNull() {
-        final Global global = Context.getGlobal();
-        if (global != null) {
-            return global;
+    ListAdapter(final JSObject obj, final Global global) {
+        if (global == null) {
+            throw new IllegalStateException(ECMAErrors.getMessage("list.adapter.null.global"));
         }
-        throw new IllegalStateException(ECMAErrors.getMessage("list.adapter.null.global"));
+
+        this.obj = obj;
+        this.global = global;
     }
 
     /**
@@ -102,12 +98,13 @@ public final class ListAdapter extends AbstractList<Object> implements RandomAcc
      * @return A ListAdapter wrapper object
      */
     public static ListAdapter create(final Object obj) {
-        return new ListAdapter(getJSObject(obj));
+        final Global global = Context.getGlobal();
+        return new ListAdapter(getJSObject(obj, global), global);
     }
 
-    private static JSObject getJSObject(final Object obj) {
+    private static JSObject getJSObject(final Object obj, final Global global) {
         if (obj instanceof ScriptObject) {
-            return (JSObject)ScriptObjectMirror.wrap(obj, Context.getGlobal());
+            return (JSObject)ScriptObjectMirror.wrap(obj, global);
         } else if (obj instanceof JSObject) {
             return (JSObject)obj;
         }

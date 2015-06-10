@@ -79,7 +79,7 @@ import sun.print.SunMinMaxPage;
  * A class which initiates and executes a print job using
  * the underlying PrinterJob graphics conversions.
  *
- * @see Toolkit#getPrintJob
+ * @see java.awt.Toolkit#getPrintJob
  *
  */
 public class PrintJob2D extends PrintJob implements Printable, Runnable {
@@ -750,7 +750,7 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
      * The page is sent to the printer when the graphics
      * object is disposed.  This graphics object will also implement
      * the PrintGraphics interface.
-     * @see PrintGraphics
+     * @see java.awt.PrintGraphics
      */
     public Graphics getGraphics() {
 
@@ -937,7 +937,7 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
      * If the requested page does not exist then this method returns
      * NO_SUCH_PAGE; otherwise PAGE_EXISTS is returned.
      * The <code>Graphics</code> class or subclass implements the
-     * {@link PrinterGraphics} interface to provide additional
+     * {@link java.awt.PrintGraphics} interface to provide additional
      * information.  If the <code>Printable</code> object
      * aborts the print job then it throws a {@link PrinterException}.
      * @param graphics the context into which the page is drawn
