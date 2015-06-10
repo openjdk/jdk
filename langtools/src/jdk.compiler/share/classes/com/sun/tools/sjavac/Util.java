@@ -228,6 +228,6 @@ public class Util {
 
     public static <I, T> Map<I, T> indexBy(Collection<? extends T> c,
                                            Function<? super T, ? extends I> indexFunction) {
-        return c.stream().collect(Collectors.toMap(indexFunction, o -> o));
+        return c.stream().collect(Collectors.<T, I, T>toMap(indexFunction, o -> o));
     }
 }
