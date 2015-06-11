@@ -39,6 +39,7 @@ import java.io.StringReader;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import jdk.nashorn.internal.objects.NativeArray;
@@ -55,7 +56,7 @@ public final class ScriptingFunctions {
     public static final MethodHandle READFULLY = findOwnMH("readFully",     Object.class, Object.class, Object.class);
 
     /** Handle to implementation of {@link ScriptingFunctions#exec} - Nashorn extension */
-    public static final MethodHandle EXEC = findOwnMH("exec",     Object.class, Object.class, Object.class, Object.class, Object[].class);
+    public static final MethodHandle EXEC = findOwnMH("exec",     Object.class, Object.class, Object[].class);
 
     /** EXEC name - special property used by $EXEC API. */
     public static final String EXEC_NAME = "$EXEC";
@@ -127,9 +128,7 @@ public final class ScriptingFunctions {
      * Nashorn extension: exec a string in a separate process.
      *
      * @param self   self reference
-     * @param string string to execute
-     * @param input  input
-     * @param argv   additional arguments, to be appended to {@code string}. Additional arguments can be passed as
+     * @param args   string to execute, input and additional arguments, to be appended to {@code string}. Additional arguments can be passed as
      *               either one JavaScript array, whose elements will be converted to strings; or as a sequence of
      *               varargs, each of which will be converted to a string.
      *
@@ -138,10 +137,12 @@ public final class ScriptingFunctions {
      * @throws IOException           if any stream access fails
      * @throws InterruptedException  if execution is interrupted
      */
-    public static Object exec(final Object self, final Object string, final Object input, final Object... argv) throws IOException, InterruptedException {
+    public static Object exec(final Object self, final Object... args) throws IOException, InterruptedException {
         // Current global is need to fetch additional inputs and for additional results.
         final ScriptObject global = Context.getGlobal();
-
+        final Object string = args.length > 0? args[0] : UNDEFINED;
+        final Object input = args.length > 1? args[1] : UNDEFINED;
+        final Object[] argv = (args.length > 2)? Arrays.copyOfRange(args, 2, args.length) : ScriptRuntime.EMPTY_ARRAY;
         // Assemble command line, process additional arguments.
         final List<String> cmdLine = tokenizeString(JSType.toString(string));
         final Object[] additionalArgs = argv.length == 1 && argv[0] instanceof NativeArray ?
