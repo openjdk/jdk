@@ -46,3 +46,5 @@ $EXEC("ls", "" /* no stdin */, ["-l", "-a"])
 // Output of running external commands is returned from $EXEC:
 print($EXEC("ls"))
 
+// apply on $EXEC
+print($EXEC.apply(this, ["ls"]));
