@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "code/debugInfo.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/nmethod.hpp"
+#include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
@@ -45,6 +46,12 @@ void DebugInfoWriteStream::write_handle(jobject h) {
 
 void DebugInfoWriteStream::write_metadata(Metadata* h) {
   write_int(recorder()->oop_recorder()->find_index(h));
+}
+
+oop DebugInfoReadStream::read_oop() {
+  oop o = code()->oop_at(read_int());
+  assert(o->is_oop_or_null(), "oop only");
+  return o;
 }
 
 ScopeValue* DebugInfoReadStream::read_object_value() {
