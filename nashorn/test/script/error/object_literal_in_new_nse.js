@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,22 +21,13 @@
  * questions.
  */
 
-package jdk.nashorn.internal.objects.annotations;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
 /**
- * Annotation to specify that the annotated Java class is a JavaScript "class".
+ * Object literal outside 'new' should result in error in -nse
+ *
+ * @option -nse
+ * @test/compile-error
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-public @interface ScriptClass {
-    /**
-     * @return the name of the script class. By default, the name is derived
-     *         from the Java class name.
-     */
-    public String value() default "";
+
+var r = new java.lang.Runnable() {
+  run: function() { print("hello"); }
 }
