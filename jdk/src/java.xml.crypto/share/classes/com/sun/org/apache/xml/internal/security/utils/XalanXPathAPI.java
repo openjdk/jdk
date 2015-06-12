@@ -167,6 +167,13 @@ public class XalanXPathAPI implements XPathAPI {
 
     private synchronized static void fixupFunctionTable() {
         installed = false;
+        if (new FunctionTable().functionAvailable("here")) {
+            if (log.isLoggable(java.util.logging.Level.FINE)) {
+                log.log(java.util.logging.Level.FINE, "Here function already registered");
+            }
+            installed = true;
+            return;
+        }
         if (log.isLoggable(java.util.logging.Level.FINE)) {
             log.log(java.util.logging.Level.FINE, "Registering Here function");
         }
