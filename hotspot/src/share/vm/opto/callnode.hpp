@@ -565,13 +565,15 @@ public:
   address      _entry_point;  // Address of method being called
   float        _cnt;          // Estimate of number of times called
   CallGenerator* _generator;  // corresponding CallGenerator for some late inline calls
+  const char *_name;           // Printable name, if _method is NULL
 
   CallNode(const TypeFunc* tf, address addr, const TypePtr* adr_type)
     : SafePointNode(tf->domain()->cnt(), NULL, adr_type),
       _tf(tf),
       _entry_point(addr),
       _cnt(COUNT_UNKNOWN),
-      _generator(NULL)
+      _generator(NULL),
+      _name(NULL)
   {
     init_class_id(Class_Call);
   }
@@ -630,6 +632,8 @@ public:
 
   virtual uint match_edge(uint idx) const;
 
+  bool is_call_to_arraycopystub() const;
+
 #ifndef PRODUCT
   virtual void        dump_req(outputStream *st = tty) const;
   virtual void        dump_spec(outputStream *st) const;
@@ -683,7 +687,7 @@ class CallStaticJavaNode : public CallJavaNode {
   virtual uint size_of() const; // Size is bigger
 public:
   CallStaticJavaNode(Compile* C, const TypeFunc* tf, address addr, ciMethod* method, int bci)
-    : CallJavaNode(tf, addr, method, bci), _name(NULL) {
+    : CallJavaNode(tf, addr, method, bci) {
     init_class_id(Class_CallStaticJava);
     if (C->eliminate_boxing() && (method != NULL) && method->is_boxing_method()) {
       init_flags(Flag_is_macro);
@@ -694,14 +698,14 @@ public:
   }
   CallStaticJavaNode(const TypeFunc* tf, address addr, const char* name, int bci,
                      const TypePtr* adr_type)
-    : CallJavaNode(tf, addr, NULL, bci), _name(name) {
+    : CallJavaNode(tf, addr, NULL, bci) {
     init_class_id(Class_CallStaticJava);
     // This node calls a runtime stub, which often has narrow memory effects.
     _adr_type = adr_type;
     _is_scalar_replaceable = false;
     _is_non_escaping = false;
+    _name = name;
   }
-  const char *_name;      // Runtime wrapper name
 
   // Result of Escape Analysis
   bool _is_scalar_replaceable;
@@ -754,13 +758,12 @@ class CallRuntimeNode : public CallNode {
 public:
   CallRuntimeNode(const TypeFunc* tf, address addr, const char* name,
                   const TypePtr* adr_type)
-    : CallNode(tf, addr, adr_type),
-      _name(name)
+    : CallNode(tf, addr, adr_type)
   {
     init_class_id(Class_CallRuntime);
+    _name = name;
   }
 
-  const char *_name;            // Printable name, if _method is NULL
   virtual int   Opcode() const;
   virtual void  calling_convention( BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt ) const;
 
@@ -785,8 +788,6 @@ public:
 #ifndef PRODUCT
   virtual void  dump_spec(outputStream *st) const;
 #endif
-  bool is_call_to_arraycopystub() const;
-  virtual bool may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase);
 };
 
 //------------------------------CallLeafNoFPNode-------------------------------
