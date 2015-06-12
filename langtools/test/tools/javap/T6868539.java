@@ -26,7 +26,7 @@
  * @bug 6868539 6868548 8035364
  * @summary javap should use current names for constant pool entries,
  *              remove spurious ';' from constant pool entries
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 
 import java.io.*;

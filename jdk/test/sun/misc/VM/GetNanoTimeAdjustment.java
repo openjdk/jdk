@@ -27,6 +27,7 @@ import sun.misc.VM;
  * @test
  * @bug 8068730
  * @summary tests that VM.getgetNanoTimeAdjustment() works as expected.
+ * @modules java.base/sun.misc
  * @run main GetNanoTimeAdjustment
  * @author danielfuchs
  */

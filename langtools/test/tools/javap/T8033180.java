@@ -25,7 +25,7 @@
  * @test
  * @bug 8033180
  * @summary Bad newline characters
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 
 import java.io.*;

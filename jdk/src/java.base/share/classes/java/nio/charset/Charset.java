@@ -30,6 +30,7 @@ import java.nio.CharBuffer;
 import java.nio.charset.spi.CharsetProvider;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -336,12 +337,10 @@ public abstract class Charset
     //
     private static Iterator<CharsetProvider> providers() {
         return new Iterator<>() {
-
                 ClassLoader cl = ClassLoader.getSystemClassLoader();
                 ServiceLoader<CharsetProvider> sl =
                     ServiceLoader.load(CharsetProvider.class, cl);
                 Iterator<CharsetProvider> i = sl.iterator();
-
                 CharsetProvider next = null;
 
                 private boolean getNext() {
@@ -424,32 +423,36 @@ public abstract class Charset
 
     /* The extended set of charsets */
     private static class ExtendedProviderHolder {
-        static final CharsetProvider extendedProvider = extendedProvider();
+        static final CharsetProvider[] extendedProviders = extendedProviders();
         // returns ExtendedProvider, if installed
-        private static CharsetProvider extendedProvider() {
-            return AccessController.doPrivileged(
-                       new PrivilegedAction<>() {
-                           public CharsetProvider run() {
-                                try {
-                                    Class<?> epc
-                                        = Class.forName("sun.nio.cs.ext.ExtendedCharsets");
-                                    return (CharsetProvider)epc.newInstance();
-                                } catch (ClassNotFoundException x) {
-                                    // Extended charsets not available
-                                    // (charsets.jar not present)
-                                } catch (InstantiationException |
-                                         IllegalAccessException x) {
-                                  throw new Error(x);
-                                }
-                                return null;
+        private static CharsetProvider[] extendedProviders() {
+            return AccessController.doPrivileged(new PrivilegedAction<>() {
+                    public CharsetProvider[] run() {
+                        CharsetProvider[] cps = new CharsetProvider[1];
+                        int n = 0;
+                        ServiceLoader<CharsetProvider> sl =
+                            ServiceLoader.loadInstalled(CharsetProvider.class);
+                        for (CharsetProvider cp : sl) {
+                            if (n + 1 > cps.length) {
+                                cps = Arrays.copyOf(cps, cps.length << 1);
                             }
-                        });
+                            cps[n++] = cp;
+                        }
+                        return n == cps.length ? cps : Arrays.copyOf(cps, n);
+                    }});
         }
     }
 
     private static Charset lookupExtendedCharset(String charsetName) {
-        CharsetProvider ecp = ExtendedProviderHolder.extendedProvider;
-        return (ecp != null) ? ecp.charsetForName(charsetName) : null;
+        if (!sun.misc.VM.isBooted())  // see lookupViaProviders()
+            return null;
+        CharsetProvider[] ecps = ExtendedProviderHolder.extendedProviders;
+        for (CharsetProvider cp : ecps) {
+            Charset cs = cp.charsetForName(charsetName);
+            if (cs != null)
+                return cs;
+        }
+        return null;
     }
 
     private static Charset lookup(String charsetName) {
@@ -576,9 +579,10 @@ public abstract class Charset
                         new TreeMap<>(
                             ASCIICaseInsensitiveComparator.CASE_INSENSITIVE_ORDER);
                     put(standardProvider.charsets(), m);
-                    CharsetProvider ecp = ExtendedProviderHolder.extendedProvider;
-                    if (ecp != null)
+                    CharsetProvider[] ecps = ExtendedProviderHolder.extendedProviders;
+                    for (CharsetProvider ecp :ecps) {
                         put(ecp.charsets(), m);
+                    }
                     for (Iterator<CharsetProvider> i = providers(); i.hasNext();) {
                         CharsetProvider cp = i.next();
                         put(cp.charsets(), m);

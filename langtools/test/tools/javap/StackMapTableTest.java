@@ -25,7 +25,7 @@
  * @test
  * @bug 8033930 8033913
  * @summary bad formatting of StackMapTable entries
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 
 import java.io.*;

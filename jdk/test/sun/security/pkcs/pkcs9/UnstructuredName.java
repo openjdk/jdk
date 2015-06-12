@@ -25,6 +25,7 @@
  * @test
  * @bug 8016916
  * @summary UnstructuredName should support DirectoryString
+ * @modules java.base/sun.security.pkcs10
  */
 
 import java.util.Base64;

@@ -28,6 +28,7 @@
 /*
  * @test
  * @bug 7201156
+ * @modules jdk.jartool/sun.tools.jar
  * @summary jar tool fails to convert file separation characters for list and extract
  * @author Sean Chou
  */

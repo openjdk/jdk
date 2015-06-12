@@ -25,7 +25,7 @@
  * @test
  * @bug 4459541
  * @summary "javap -l" shows line numbers as signed short; they should be unsigned.
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 
 import java.io.*;

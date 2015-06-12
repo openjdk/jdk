@@ -25,7 +25,7 @@
  * @test
  * @bug 6898851
  * @summary Compiling against this corrupt class file causes a stacktrace from javac
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  */
 
 import java.io.File;

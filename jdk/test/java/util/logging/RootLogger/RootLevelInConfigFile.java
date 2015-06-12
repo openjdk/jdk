@@ -42,6 +42,7 @@ import sun.misc.SharedSecrets;
  * @bug 8030850
  * @summary Tests that setting .level=FINEST for the root logger in logging
  *      configuration file does work.
+ * @modules java.base/sun.misc
  * @run main/othervm RootLevelInConfigFile
  *
  * @author danielfuchs

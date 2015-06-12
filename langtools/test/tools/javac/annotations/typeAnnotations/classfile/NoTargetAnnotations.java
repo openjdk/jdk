@@ -33,7 +33,7 @@ import com.sun.tools.classfile.*;
  * @test NoTargetAnnotations
  * @summary test that annotations with no Target meta type is emitted
  *          only once as declaration annotation
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  */
 public class NoTargetAnnotations {
 

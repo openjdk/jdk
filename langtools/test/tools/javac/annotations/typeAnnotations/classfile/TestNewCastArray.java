@@ -25,7 +25,7 @@
  * @test
  * @bug 8005681
  * @summary Repeated annotations on new,array,cast.
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  */
 import java.lang.annotation.*;
 import java.io.*;

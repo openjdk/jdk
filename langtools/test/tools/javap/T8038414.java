@@ -32,7 +32,7 @@ import java.util.regex.Pattern;
  * @test
  * @bug 8038414
  * @summary Constant pool's strings are not escaped properly
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 public class T8038414 {
     private static final String NEW_LINE = System.getProperty("line.separator");

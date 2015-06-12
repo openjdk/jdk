@@ -25,6 +25,7 @@
  * @bug 4094889
  * @summary rmid can have a corrupted log
  *
+ * @modules java.rmi/sun.rmi.log
  * @run main/othervm LogAlignmentTest
  */
 

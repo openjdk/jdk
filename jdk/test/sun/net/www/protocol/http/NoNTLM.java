@@ -25,6 +25,7 @@
  * @bug 8004502
  * @summary Sanity check that NTLM will not be selected by the http protocol
  *    handler when running on a profile that does not support NTLM
+ * @modules java.base/sun.net.www
  * @run main/othervm NoNTLM
  */
 

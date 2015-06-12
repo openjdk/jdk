@@ -28,6 +28,8 @@
  * @bug 4484246
  * @summary When an application enables anonymous SSL cipher suite,
  *        Hostname verification is not required
+ * @modules java.base/com.sun.net.ssl
+ *          java.base/com.sun.net.ssl.internal.www.protocol.https
  * @run main/othervm ComHostnameVerifier
  *
  *     SunJSSE does not support dynamic system properties, no way to re-use

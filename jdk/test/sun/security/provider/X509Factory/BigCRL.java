@@ -25,6 +25,7 @@
  * @test
  * @bug 7099399
  * @summary cannot deal with CRL file larger than 16MB
+ * @modules java.base/sun.security.x509
  * @run main/othervm -Xshare:off -Xmx1024m BigCRL
  */
 

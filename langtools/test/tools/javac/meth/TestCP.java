@@ -25,7 +25,7 @@
  * @test
  * @bug 6991980
  * @summary  polymorphic signature calls don't share the same CP entries
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  * @run main TestCP
  */
 

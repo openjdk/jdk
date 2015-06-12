@@ -28,7 +28,7 @@ import com.sun.tools.classfile.*;
  * @test JSR175Annotations
  * @bug 6843077
  * @summary test that only type annotations are recorded as such in classfile
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  */
 
 public class JSR175Annotations {

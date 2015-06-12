@@ -26,6 +26,8 @@
  * @bug 4277155
  * @summary Make sure HttpClient.getHttpKeepAliveSet() has
  *    doPrivileged() call at appropriate places.
+ * @modules java.base/sun.net
+ *          java.base/sun.net.www.http
  * @run main/othervm/policy=IsKeepingAlive.policy IsKeepingAlive
  */
 

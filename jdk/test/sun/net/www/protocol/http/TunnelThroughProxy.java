@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4620362
+ * @modules java.base/sun.net.www
  * @run main/othervm TunnelThroughProxy
  * @summary JSSE not returning proper exception on unknown host
  */

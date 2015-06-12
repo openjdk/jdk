@@ -25,7 +25,7 @@
  * @test
  * @bug 6474890
  * @summary javap does not open .zip files in -classpath
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 
 import java.io.*;

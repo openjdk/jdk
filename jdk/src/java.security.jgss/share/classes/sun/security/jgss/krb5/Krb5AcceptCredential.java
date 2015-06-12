@@ -85,7 +85,7 @@ public class Krb5AcceptCredential
 
         if (creds == null)
             throw new GSSException(GSSException.NO_CRED, -1,
-                                   "Failed to find any Kerberos credentails");
+                                   "Failed to find any Kerberos credentials");
 
         if (name == null) {
             String fullName = creds.getName();

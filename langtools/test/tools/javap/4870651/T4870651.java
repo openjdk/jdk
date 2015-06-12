@@ -26,7 +26,7 @@
  * @bug 4870651 6715757
  * @summary javap should recognize generics, varargs, enum;
  *          javap prints "extends java.lang.Object"
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  * @build T4870651 Test
  * @run main T4870651
  */

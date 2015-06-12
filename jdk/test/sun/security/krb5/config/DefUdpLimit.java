@@ -25,6 +25,7 @@
  * @test
  * @bug 8009875
  * @summary Provide a default udp_preference_limit for krb5.conf
+ * @modules java.security.jgss/sun.security.krb5
  * @compile -XDignore.symbol.file DefUdpLimit.java
  * @run main/othervm DefUdpLimit -1 1465
  * @run main/othervm DefUdpLimit 0 0

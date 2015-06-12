@@ -25,7 +25,7 @@
  * @test
  * @bug 8034091
  * @summary Add LineNumberTable attributes for conditional operator (?:) split across several lines.
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  */
 
 import com.sun.tools.classfile.ClassFile;

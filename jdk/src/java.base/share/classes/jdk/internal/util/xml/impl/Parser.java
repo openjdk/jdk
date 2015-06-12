@@ -162,8 +162,8 @@ public abstract class Parser {
      * Possible character type values are:<br> - 0 for underscore ('_') or any
      * lower and upper case alphabetical character value;<br> - 1 for colon
      * (':') character;<br> - 2 for dash ('-') and dot ('.') or any decimal
-     * digit character value;<br> - 3 for any kind of white space character<br
-     * /> An ASCII (7 bit) character which does not fall in any category listed
+     * digit character value;<br> - 3 for any kind of white space character<br>
+     * An ASCII (7 bit) character which does not fall in any category listed
      * above is mapped to 0xff.
      */
     private static final byte nmttyp[];

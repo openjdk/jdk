@@ -25,6 +25,8 @@
  * @test
  * @bug 6676075
  * @summary RegistryContext (com.sun.jndi.url.rmi.rmiURLContext) coding problem
+ * @modules jdk.naming.rmi/com.sun.jndi.rmi.registry java.rmi/sun.rmi.registry
+ *     java.rmi/sun.rmi.server java.rmi/sun.rmi.transport java.rmi/sun.rmi.transport.tcp
  * @library ../../../../../../java/rmi/testlibrary
  * @build TestLibrary
  * @run main ContextWithNullProperties

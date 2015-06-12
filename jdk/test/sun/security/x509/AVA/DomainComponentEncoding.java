@@ -25,6 +25,8 @@
  * @test
  * @bug 6391482
  * @summary incorrect ASN1 DER encoding of DomainComponent AttributeValue
+ * @modules java.base/sun.security.util
+ *          java.base/sun.security.x509
  */
 
 import javax.security.auth.x500.X500Principal;

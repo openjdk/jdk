@@ -27,7 +27,7 @@ import static com.sun.tools.classfile.TypeAnnotation.TargetType.*;
  * @test
  * @bug 8042451 8044009 8044010
  * @summary Test population of reference info for nested types
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  * @ignore 8057687 emit correct byte code an attributes for type annotations
  * @compile -g Driver.java ReferenceInfoUtil.java NestedTypes.java
  * @run main Driver NestedTypes

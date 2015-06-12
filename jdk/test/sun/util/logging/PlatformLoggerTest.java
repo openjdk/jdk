@@ -29,6 +29,7 @@
  *          operations.  othervm mode to make sure java.util.logging
  *          is not initialized.
  *
+ * @modules java.base/sun.util.logging
  * @compile -XDignore.symbol.file PlatformLoggerTest.java
  * @run main/othervm PlatformLoggerTest
  */
