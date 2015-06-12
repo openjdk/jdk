@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,28 @@
 
 package com.sun.tools.sjavac.comp;
 
-import java.util.Iterator;
+import static javax.lang.model.element.Modifier.PRIVATE;
+
 import java.util.List;
-import javax.lang.model.element.Modifier;
+import java.util.stream.Collectors;
+
+import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementScanner9;
 
+import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
+import com.sun.tools.sjavac.pubapi.PubApi;
+import com.sun.tools.sjavac.pubapi.PubApiTypeParam;
+import com.sun.tools.sjavac.pubapi.PubMethod;
+import com.sun.tools.sjavac.pubapi.PubType;
+import com.sun.tools.sjavac.pubapi.PubVar;
+import com.sun.tools.sjavac.pubapi.TypeDesc;
 
 /** Utility class that constructs a textual representation
  * of the public api of a class.
@@ -47,40 +58,67 @@ import com.sun.tools.javac.util.DefinedBy.Api;
  */
 public class PubapiVisitor extends ElementScanner9<Void, Void> {
 
-    StringBuffer sb;
-    // Important that it is 1! Part of protocol over wire, silly yes.
-    // Fix please.
-    int indent = 1;
+    private PubApi collectedApi = new PubApi();
 
-    public PubapiVisitor(StringBuffer sb) {
-        this.sb = sb;
-    }
-
-    String depth(int l) {
-        return "                                              ".substring(0, l);
+    private boolean isNonPrivate(Element e) {
+        return !e.getModifiers().contains(PRIVATE);
     }
 
     @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public Void visitType(TypeElement e, Void p) {
-        if (e.getModifiers().contains(Modifier.PUBLIC)
-            || e.getModifiers().contains(Modifier.PROTECTED))
-        {
-            sb.append(depth(indent) + "TYPE " + e.getQualifiedName() + "\n");
-            indent += 2;
-            Void v = super.visitType(e, p);
-            indent -= 2;
-            return v;
+        if (isNonPrivate(e)) {
+            PubApi prevApi = collectedApi;
+            collectedApi = new PubApi();
+            super.visitType(e, p);
+            if (!isAnonymous(e)) {
+                String name = ((ClassSymbol) e).flatname.toString();
+                PubType t = new PubType(e.getModifiers(),
+                                        name,
+                                        //e.getQualifiedName().toString(),
+                                        collectedApi);
+                prevApi.types.put(t.fqName, t);
+            }
+            collectedApi = prevApi;
         }
         return null;
     }
 
+    private boolean isAnonymous(TypeElement e) {
+        return e.getQualifiedName().length() == 0;
+    }
+
+    private static String encodeChar(int c) {
+        return String.format("\\u%04x", c);
+    }
+
     @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public Void visitVariable(VariableElement e, Void p) {
-        if (e.getModifiers().contains(Modifier.PUBLIC)
-            || e.getModifiers().contains(Modifier.PROTECTED)) {
-            sb.append(depth(indent)).append("VAR ")
-                    .append(makeVariableString(e)).append("\n");
+        if (isNonPrivate(e)) {
+            Object constVal = e.getConstantValue();
+            String constValStr = null;
+            // TODO: This doesn't seem to be entirely accurate. What if I change
+            // from, say, 0 to 0L? (And the field is public final static so that
+            // it could get inlined.)
+            if (constVal != null) {
+                if (e.asType().toString().equals("char")) {
+                    // What type is 'value'? Is it already a char?
+                    char c = constVal.toString().charAt(0);
+                    constValStr = "'" + encodeChar(c) + "'";
+                } else {
+                    constValStr = constVal.toString()
+                                          .chars()
+                                          .mapToObj(PubapiVisitor::encodeChar)
+                                          .collect(Collectors.joining("", "\"", "\""));
+                }
+            }
+
+            PubVar v = new PubVar(e.getModifiers(),
+                                  TypeDesc.fromType(e.asType()),
+                                  e.toString(),
+                                  constValStr);
+            collectedApi.variables.put(v.identifier, v);
         }
+
         // Safe to not recurse here, because the only thing
         // to visit here is the constructor of a variable declaration.
         // If it happens to contain an anonymous inner class (which it might)
@@ -91,70 +129,38 @@ public class PubapiVisitor extends ElementScanner9<Void, Void> {
 
     @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public Void visitExecutable(ExecutableElement e, Void p) {
-        if (e.getModifiers().contains(Modifier.PUBLIC)
-            || e.getModifiers().contains(Modifier.PROTECTED)) {
-            sb.append(depth(indent)).append("METHOD ")
-                    .append(makeMethodString(e)).append("\n");
+        if (isNonPrivate(e)) {
+            PubMethod m = new PubMethod(e.getModifiers(),
+                                        getTypeParameters(e.getTypeParameters()),
+                                        TypeDesc.fromType(e.getReturnType()),
+                                        e.getSimpleName().toString(),
+                                        getTypeDescs(getParamTypes(e)),
+                                        getTypeDescs(e.getThrownTypes()));
+            collectedApi.methods.put(m.asSignatureString(), m);
         }
         return null;
     }
 
-    /**
-     * Creates a String representation of a method element with everything
-     * necessary to track all public aspects of it in an API.
-     * @param e Element to create String for.
-     * @return String representation of element.
-     */
-    protected String makeMethodString(ExecutableElement e) {
-        StringBuilder result = new StringBuilder();
-        for (Modifier modifier : e.getModifiers()) {
-            result.append(modifier.toString());
-            result.append(" ");
-        }
-        result.append(e.getReturnType().toString());
-        result.append(" ");
-        result.append(e.toString());
-
-        List<? extends TypeMirror> thrownTypes = e.getThrownTypes();
-        if (!thrownTypes.isEmpty()) {
-            result.append(" throws ");
-            for (Iterator<? extends TypeMirror> iterator = thrownTypes
-                    .iterator(); iterator.hasNext();) {
-                TypeMirror typeMirror = iterator.next();
-                result.append(typeMirror.toString());
-                if (iterator.hasNext()) {
-                    result.append(", ");
-                }
-            }
-        }
-        return result.toString();
+    private List<PubApiTypeParam> getTypeParameters(List<? extends TypeParameterElement> elements) {
+        return elements.stream()
+                       .map(e -> new PubApiTypeParam(e.getSimpleName().toString(), getTypeDescs(e.getBounds())))
+                       .collect(Collectors.toList());
     }
 
-    /**
-     * Creates a String representation of a variable element with everything
-     * necessary to track all public aspects of it in an API.
-     * @param e Element to create String for.
-     * @return String representation of element.
-     */
-    protected String makeVariableString(VariableElement e) {
-        StringBuilder result = new StringBuilder();
-        for (Modifier modifier : e.getModifiers()) {
-            result.append(modifier.toString());
-            result.append(" ");
-        }
-        result.append(e.asType().toString());
-        result.append(" ");
-        result.append(e.toString());
-        Object value = e.getConstantValue();
-        if (value != null) {
-            result.append(" = ");
-            if (e.asType().toString().equals("char")) {
-                int v = (int)value.toString().charAt(0);
-                result.append("'\\u"+Integer.toString(v,16)+"'");
-            } else {
-                result.append(value.toString());
-            }
-        }
-        return result.toString();
+    private List<TypeMirror> getParamTypes(ExecutableElement e) {
+        return e.getParameters()
+                .stream()
+                .map(VariableElement::asType)
+                .collect(Collectors.toList());
+    }
+
+    private List<TypeDesc> getTypeDescs(List<? extends TypeMirror> list) {
+        return list.stream()
+                   .map(TypeDesc::fromType)
+                   .collect(Collectors.toList());
+    }
+
+    public PubApi getCollectedPubApi() {
+        return collectedApi;
     }
 }
