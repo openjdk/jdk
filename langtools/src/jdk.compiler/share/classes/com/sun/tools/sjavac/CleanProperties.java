@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,25 @@
 
 package com.sun.tools.sjavac;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.PrintStream;
+import java.io.Writer;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
-import java.util.Set;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import com.sun.tools.sjavac.options.Options;
+import com.sun.tools.sjavac.pubapi.PubApi;
 import com.sun.tools.sjavac.server.Sjavac;
 
 /**
@@ -63,8 +71,10 @@ public class CleanProperties implements Transformer {
                              Map<String,Set<String>> oldPackageDependencies,
                              URI destRoot,
                              Map<String,Set<URI>>    packageArtifacts,
-                             Map<String,Set<String>> packageDependencies,
-                             Map<String,String>      packagePublicApis,
+                             Map<String, Map<String, Set<String>>> packageDependencies,
+                             Map<String, Map<String, Set<String>>> packageCpDependencies,
+                             Map<String, PubApi> packagePublicApis,
+                             Map<String, PubApi> dependencyPublicApis,
                              int debugLevel,
                              boolean incremental,
                              int numCores,

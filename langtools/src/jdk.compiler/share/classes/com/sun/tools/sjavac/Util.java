@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,13 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Utilities.
@@ -104,6 +108,20 @@ public class Util {
             v = Integer.parseInt(s.substring(p, pe));
         } catch (Exception e) {}
         return v;
+    }
+
+    /**
+     * Extract the package name from a fully qualified class name.
+     *
+     * Example: Given "pkg.subpkg.A" this method returns ":pkg.subpkg".
+     * Given "C" this method returns ":".
+     *
+     * @returns package name of the given class name
+     */
+    public static String pkgNameOfClassName(String fqClassName) {
+        int i = fqClassName.lastIndexOf('.');
+        String pkg = i == -1 ? "" : fqClassName.substring(0, i);
+        return ":" + pkg;
     }
 
     /**
@@ -183,6 +201,13 @@ public class Util {
         return union;
     }
 
+    public static <E> Set<E> subtract(Set<? extends E> orig,
+                                      Set<? extends E> toSubtract) {
+        Set<E> difference = new HashSet<>(orig);
+        difference.removeAll(toSubtract);
+        return difference;
+    }
+
     public static String getStackTrace(Throwable t) {
         StringWriter sw = new StringWriter();
         t.printStackTrace(new PrintWriter(sw));
@@ -192,5 +217,17 @@ public class Util {
     // TODO: Remove when refactoring from java.io.File to java.nio.file.Path.
     public static File pathToFile(Path path) {
         return path == null ? null : path.toFile();
+    }
+
+    public static <E> Set<E> intersection(Collection<? extends E> c1,
+                                          Collection<? extends E> c2) {
+        Set<E> intersection = new HashSet<E>(c1);
+        intersection.retainAll(c2);
+        return intersection;
+    }
+
+    public static <I, T> Map<I, T> indexBy(Collection<? extends T> c,
+                                           Function<? super T, ? extends I> indexFunction) {
+        return c.stream().collect(Collectors.<T, I, T>toMap(indexFunction, o -> o));
     }
 }
