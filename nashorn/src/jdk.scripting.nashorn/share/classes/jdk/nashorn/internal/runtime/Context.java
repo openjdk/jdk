@@ -668,12 +668,11 @@ public final class Context {
      * @param string       Evaluated code as a String
      * @param callThis     "this" to be passed to the evaluated code
      * @param location     location of the eval call
-     * @param strict       is this {@code eval} call from a strict mode code?
      * @return the return value of the {@code eval}
      */
     public Object eval(final ScriptObject initialScope, final String string,
-            final Object callThis, final Object location, final boolean strict) {
-        return eval(initialScope, string, callThis, location, strict, false);
+            final Object callThis, final Object location) {
+        return eval(initialScope, string, callThis, location, false, false);
     }
 
     /**
@@ -692,14 +691,16 @@ public final class Context {
             final Object callThis, final Object location, final boolean strict, final boolean evalCall) {
         final String  file       = location == UNDEFINED || location == null ? "<eval>" : location.toString();
         final Source  source     = sourceFor(file, string, evalCall);
-        final boolean directEval = location != UNDEFINED; // is this direct 'eval' call or indirectly invoked eval?
+        // is this direct 'eval' builtin call?
+        final boolean directEval = evalCall && (location != UNDEFINED);
         final Global  global = Context.getGlobal();
         ScriptObject scope = initialScope;
 
         // ECMA section 10.1.1 point 2 says eval code is strict if it begins
         // with "use strict" directive or eval direct call itself is made
         // from from strict mode code. We are passed with caller's strict mode.
-        boolean strictFlag = directEval && strict;
+        // Nashorn extension: any 'eval' is unconditionally strict when -strict is specified.
+        boolean strictFlag = strict || this._strict;
 
         Class<?> clazz = null;
         try {
@@ -740,7 +741,8 @@ public final class Context {
         if (directEval) {
             evalThis = (callThis != UNDEFINED && callThis != null) || strictFlag ? callThis : global;
         } else {
-            evalThis = global;
+            // either indirect evalCall or non-eval (Function, engine.eval, ScriptObjectMirror.eval..)
+            evalThis = callThis;
         }
 
         return ScriptRuntime.apply(func, evalThis);
