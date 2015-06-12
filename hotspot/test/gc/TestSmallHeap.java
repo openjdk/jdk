@@ -27,6 +27,7 @@
  * @requires vm.gc=="null"
  * @requires (vm.opt.AggressiveOpts=="null") | (vm.opt.AggressiveOpts=="false")
  * @requires vm.compMode != "Xcomp"
+ * @requires vm.opt.UseCompressedOops != false
  * @summary Verify that starting the VM with a small heap works
  * @library /testlibrary /../../test/lib
  * @modules java.management/sun.management

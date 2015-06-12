@@ -255,14 +255,12 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
 
     @Override
     public void removeMember(final String name) {
-        Objects.requireNonNull(name);
-        remove(name);
+        remove(Objects.requireNonNull(name));
     }
 
     @Override
     public void setMember(final String name, final Object value) {
-        Objects.requireNonNull(name);
-        put(name, value);
+        put(Objects.requireNonNull(name), value);
     }
 
     @Override
@@ -429,7 +427,7 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
 
     @Override
     public void putAll(final Map<? extends String, ? extends Object> map) {
-        Objects.requireNonNull(map, "map is null");
+        Objects.requireNonNull(map);
         final ScriptObject oldGlobal = Context.getGlobal();
         final boolean globalChanged = (oldGlobal != global);
         inGlobal(new Callable<Object>() {
