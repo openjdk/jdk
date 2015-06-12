@@ -26,6 +26,7 @@
 #define SHARE_VM_GC_CMS_CMSOOPCLOSURES_HPP
 
 #include "gc/shared/genOopClosures.hpp"
+#include "gc/shared/taskqueue.hpp"
 #include "memory/iterator.hpp"
 
 /////////////////////////////////////////////////////////////////

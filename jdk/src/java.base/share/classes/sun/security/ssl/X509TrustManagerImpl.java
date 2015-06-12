@@ -204,7 +204,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
             // create the algorithm constraints
             ProtocolVersion protocolVersion =
                 ProtocolVersion.valueOf(session.getProtocol());
-            if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+            if (protocolVersion.useTLS12PlusSpec()) {
                 if (session instanceof ExtendedSSLSession) {
                     ExtendedSSLSession extSession =
                                     (ExtendedSSLSession)session;
@@ -256,7 +256,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
             // create the algorithm constraints
             ProtocolVersion protocolVersion =
                 ProtocolVersion.valueOf(session.getProtocol());
-            if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+            if (protocolVersion.useTLS12PlusSpec()) {
                 if (session instanceof ExtendedSSLSession) {
                     ExtendedSSLSession extSession =
                                     (ExtendedSSLSession)session;

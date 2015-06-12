@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,46 +146,9 @@ Java_sun_lwawt_macosx_CRobot_mouseEvent
 
     // This is the native method called when Robot mouse events occur.
     // The CRobot tracks the mouse position, and which button was
-    // pressed. If the mouse position is unknown it is obtained from
-    // CGEvents. The peer also tracks the mouse button desired state,
+    // pressed. The peer also tracks the mouse button desired state,
     // the appropriate key modifier state, and whether the mouse action
     // is simply a mouse move with no mouse button state changes.
-
-    CGError err = kCGErrorSuccess;
-
-    CGRect globalDeviceBounds = CGDisplayBounds(displayID);
-
-    // Set unknown mouse location, if needed.
-    if ((mouseLastX == sun_lwawt_macosx_CRobot_MOUSE_LOCATION_UNKNOWN) ||
-        (mouseLastY == sun_lwawt_macosx_CRobot_MOUSE_LOCATION_UNKNOWN))
-    {
-        CGEventRef event = CGEventCreate(NULL);
-        if (event == NULL) {
-            return;
-        }
-
-        CGPoint globalPos = CGEventGetLocation(event);
-        CFRelease(event);
-
-        // Normalize the coords within this display device, as
-        // per Robot rules.
-        if (globalPos.x < CGRectGetMinX(globalDeviceBounds)) {
-            globalPos.x = CGRectGetMinX(globalDeviceBounds);
-        }
-        else if (globalPos.x > CGRectGetMaxX(globalDeviceBounds)) {
-            globalPos.x = CGRectGetMaxX(globalDeviceBounds);
-        }
-
-        if (globalPos.y < CGRectGetMinY(globalDeviceBounds)) {
-            globalPos.y = CGRectGetMinY(globalDeviceBounds);
-        }
-        else if (globalPos.y > CGRectGetMaxY(globalDeviceBounds)) {
-            globalPos.y = CGRectGetMaxY(globalDeviceBounds);
-        }
-
-        mouseLastX = (jint)globalPos.x;
-        mouseLastY = (jint)globalPos.y;
-    }
 
     // volatile, otherwise it warns that it might be clobbered by 'longjmp'
     volatile CGPoint point;

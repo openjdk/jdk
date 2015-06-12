@@ -338,7 +338,6 @@ public final class XAtom {
 
     /**  Gets the window property for the specified window
      * @param window window id to use
-     * @param str value to set to.
      * @return string with the property.
      * @since 1.5
      */

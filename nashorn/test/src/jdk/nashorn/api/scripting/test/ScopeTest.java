@@ -31,10 +31,12 @@ import static org.testng.Assert.fail;
 import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
+import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 import javax.script.SimpleScriptContext;
+import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.api.scripting.URLReader;
 import org.testng.Assert;
@@ -777,5 +779,45 @@ public class ScopeTest {
             c.getAttributesScope(null);
             throw new AssertionError("should have thrown NPE");
         } catch (NullPointerException npe5) {}
+    }
+
+    public static class RecursiveEval {
+        private final ScriptEngineFactory factory = new NashornScriptEngineFactory();
+        private final ScriptEngine engine = factory.getScriptEngine();
+        private final Bindings engineBindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
+
+        public void program() throws ScriptException {
+            ScriptContext sc = new SimpleScriptContext();
+            Bindings global = new SimpleBindings();
+            sc.setBindings(global, ScriptContext.GLOBAL_SCOPE);
+            sc.setBindings(engineBindings, ScriptContext.ENGINE_SCOPE);
+            global.put("text", "programText");
+            String value = engine.eval("text", sc).toString();
+            Assert.assertEquals(value, "programText");
+            engine.put("program", this);
+            engine.eval("program.method()");
+            // eval again from here!
+            value = engine.eval("text", sc).toString();
+            Assert.assertEquals(value, "programText");
+        }
+
+        public void method() throws ScriptException {
+            // a context with a new global bindings, same engine bindings
+            final ScriptContext sc = new SimpleScriptContext();
+            final Bindings global = new SimpleBindings();
+            sc.setBindings(global, ScriptContext.GLOBAL_SCOPE);
+            sc.setBindings(engineBindings, ScriptContext.ENGINE_SCOPE);
+            global.put("text", "methodText");
+            String value = engine.eval("text", sc).toString();
+            Assert.assertEquals(value, "methodText");
+        }
+    }
+
+    // @bug 8081609: engine.eval call from a java method which
+    // was called from a previous engine.eval results in wrong
+    // ScriptContext being used.
+    @Test
+    public void recursiveEvalCallScriptContextTest() throws ScriptException {
+        new RecursiveEval().program();
     }
 }
