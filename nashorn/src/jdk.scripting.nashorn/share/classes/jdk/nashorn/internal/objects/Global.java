@@ -1451,7 +1451,7 @@ public final class Global extends ScriptObject implements Scope {
      * @return the result of eval
      */
     public static Object eval(final Object self, final Object str) {
-        return directEval(self, str, UNDEFINED, UNDEFINED, false);
+        return directEval(self, str, Global.instanceFrom(self), UNDEFINED, false);
     }
 
     /**
@@ -1461,7 +1461,7 @@ public final class Global extends ScriptObject implements Scope {
      * @param str      Evaluated code
      * @param callThis "this" to be passed to the evaluated code
      * @param location location of the eval call
-     * @param strict   is eval called a strict mode code?
+     * @param strict   is eval called from a strict mode code?
      *
      * @return the return value of the eval
      *
