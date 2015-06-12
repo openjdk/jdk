@@ -3372,9 +3372,47 @@ operand immI() %{
   interface(CONST_INTER);
 %}
 
+// Integer Immediate: 0-bit
+operand immI0() %{
+  predicate(n->get_int() == 0);
+  match(ConI);
+  op_cost(0);
+
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Integer Immediate: 5-bit
+operand immI5() %{
+  predicate(Assembler::is_simm5(n->get_int()));
+  match(ConI);
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // Integer Immediate: 8-bit
 operand immI8() %{
   predicate(Assembler::is_simm8(n->get_int()));
+  match(ConI);
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Integer Immediate: the value 10
+operand immI10() %{
+  predicate(n->get_int() == 10);
+  match(ConI);
+  op_cost(0);
+
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Integer Immediate: 11-bit
+operand immI11() %{
+  predicate(Assembler::is_simm11(n->get_int()));
   match(ConI);
   op_cost(0);
   format %{ %}
@@ -3406,84 +3444,6 @@ operand immI16() %{
   predicate(Assembler::is_simm16(n->get_int()));
   match(ConI);
   op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Unsigned Integer Immediate: 12-bit (non-negative that fits in simm13)
-operand immU12() %{
-  predicate((0 <= n->get_int()) && Assembler::is_simm13(n->get_int()));
-  match(ConI);
-  op_cost(0);
-
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Integer Immediate: 6-bit
-operand immU6() %{
-  predicate(n->get_int() >= 0 && n->get_int() <= 63);
-  match(ConI);
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Integer Immediate: 11-bit
-operand immI11() %{
-  predicate(Assembler::is_simm11(n->get_int()));
-  match(ConI);
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Integer Immediate: 5-bit
-operand immI5() %{
-  predicate(Assembler::is_simm5(n->get_int()));
-  match(ConI);
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Int Immediate non-negative
-operand immU31()
-%{
-  predicate(n->get_int() >= 0);
-  match(ConI);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Integer Immediate: 0-bit
-operand immI0() %{
-  predicate(n->get_int() == 0);
-  match(ConI);
-  op_cost(0);
-
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Integer Immediate: the value 10
-operand immI10() %{
-  predicate(n->get_int() == 10);
-  match(ConI);
-  op_cost(0);
-
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Integer Immediate: the values 0-31
-operand immU5() %{
-  predicate(n->get_int() >= 0 && n->get_int() <= 31);
-  match(ConI);
-  op_cost(0);
-
   format %{ %}
   interface(CONST_INTER);
 %}
@@ -3529,7 +3489,6 @@ operand immI_24() %{
   format %{ %}
   interface(CONST_INTER);
 %}
-
 // Integer Immediate: the value 255
 operand immI_255() %{
   predicate( n->get_int() == 255 );
@@ -3546,6 +3505,46 @@ operand immI_65535() %{
   match(ConI);
   op_cost(0);
 
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Integer Immediate: the values 0-31
+operand immU5() %{
+  predicate(n->get_int() >= 0 && n->get_int() <= 31);
+  match(ConI);
+  op_cost(0);
+
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Integer Immediate: 6-bit
+operand immU6() %{
+  predicate(n->get_int() >= 0 && n->get_int() <= 63);
+  match(ConI);
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Unsigned Integer Immediate: 12-bit (non-negative that fits in simm13)
+operand immU12() %{
+  predicate((0 <= n->get_int()) && Assembler::is_simm13(n->get_int()));
+  match(ConI);
+  op_cost(0);
+
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Integer Immediate non-negative
+operand immU31()
+%{
+  predicate(n->get_int() >= 0);
+  match(ConI);
+
+  op_cost(0);
   format %{ %}
   interface(CONST_INTER);
 %}
@@ -5653,17 +5652,17 @@ instruct loadUB2L(iRegL dst, memory mem) %{
   ins_pipe(iload_mem);
 %}
 
-// Load Unsigned Byte (8 bit UNsigned) with 8-bit mask into Long Register
-instruct loadUB2L_immI8(iRegL dst, memory mem, immI8 mask) %{
+// Load Unsigned Byte (8 bit UNsigned) with 32-bit mask into Long Register
+instruct loadUB2L_immI(iRegL dst, memory mem, immI mask) %{
   match(Set dst (ConvI2L (AndI (LoadUB mem) mask)));
   ins_cost(MEMORY_REF_COST + DEFAULT_COST);
 
   size(2*4);
-  format %{ "LDUB   $mem,$dst\t# ubyte & 8-bit mask -> long\n\t"
-            "AND    $dst,$mask,$dst" %}
+  format %{ "LDUB   $mem,$dst\t# ubyte & 32-bit mask -> long\n\t"
+            "AND    $dst,right_n_bits($mask, 8),$dst" %}
   ins_encode %{
     __ ldub($mem$$Address, $dst$$Register);
-    __ and3($dst$$Register, $mask$$constant, $dst$$Register);
+    __ and3($dst$$Register, $mask$$constant & right_n_bits(8), $dst$$Register);
   %}
   ins_pipe(iload_mem);
 %}
@@ -5776,20 +5775,20 @@ instruct loadUS2L_immI13(iRegL dst, memory mem, immI13 mask) %{
   ins_pipe(iload_mem);
 %}
 
-// Load Unsigned Short/Char (16bit UNsigned) with a 16-bit mask into a Long Register
-instruct loadUS2L_immI16(iRegL dst, memory mem, immI16 mask, iRegL tmp) %{
+// Load Unsigned Short/Char (16bit UNsigned) with a 32-bit mask into a Long Register
+instruct loadUS2L_immI(iRegL dst, memory mem, immI mask, iRegL tmp) %{
   match(Set dst (ConvI2L (AndI (LoadUS mem) mask)));
   effect(TEMP dst, TEMP tmp);
   ins_cost(MEMORY_REF_COST + 2*DEFAULT_COST);
 
-  format %{ "LDUH   $mem,$dst\t! ushort/char & 16-bit mask -> long\n\t"
-            "SET    $mask,$tmp\n\t"
+  format %{ "LDUH   $mem,$dst\t! ushort/char & 32-bit mask -> long\n\t"
+            "SET    right_n_bits($mask, 16),$tmp\n\t"
             "AND    $dst,$tmp,$dst" %}
   ins_encode %{
     Register Rdst = $dst$$Register;
     Register Rtmp = $tmp$$Register;
     __ lduh($mem$$Address, Rdst);
-    __ set($mask$$constant, Rtmp);
+    __ set($mask$$constant & right_n_bits(16), Rtmp);
     __ and3(Rdst, Rtmp, Rdst);
   %}
   ins_pipe(iload_mem);

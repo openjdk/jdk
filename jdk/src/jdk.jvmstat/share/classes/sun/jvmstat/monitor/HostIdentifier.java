@@ -81,16 +81,15 @@ import java.net.*;
  * valid HostIdentifier strings:
  *
  * <ul>
- *   <li><p>&lt null &gt - transformed into "//localhost"</p></li>
- *   <li><p>localhost - transformed into "//localhost"</p></li>
- *   <li><p>hostname - transformed into "//hostname"</p></li>
- *   <li><p>hostname:port - transformed into "//hostname:port"</p></li>
- *   <li><p>proto:hostname - transformed into "proto://hostname"</p></li>
- *   <li><p>proto:hostname:port - transformed into
- *          "proto://hostname:port"</p></li>
- *   <li><p>proto://hostname:port</p></li>
+ *   <li>{@code <null>} - transformed into "//localhost"</li>
+ *   <li>localhost - transformed into "//localhost"</li>
+ *   <li>hostname - transformed into "//hostname"</li>
+ *   <li>hostname:port - transformed into "//hostname:port"</li>
+ *   <li>proto:hostname - transformed into "proto://hostname"</li>
+ *   <li>proto:hostname:port - transformed into
+ *          "proto://hostname:port"</li>
+ *   <li>proto://hostname:port</li>
  * </ul>
- * </p>
  *
  * @see URI
  * @see VmIdentifier

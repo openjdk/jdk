@@ -30,6 +30,7 @@ import java.lang.reflect.Field;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
+import sun.misc.Cleaner;
 
 /**
  * The JVM interface for the method handles package is all here.
@@ -61,8 +62,27 @@ class MethodHandleNatives {
     static native void setCallSiteTargetNormal(CallSite site, MethodHandle target);
     static native void setCallSiteTargetVolatile(CallSite site, MethodHandle target);
 
-    /** Invalidate CallSite context: clean up dependent nmethods and reset call site context to initial state (null). */
-    static native void invalidateDependentNMethods(CallSite site);
+    /** Represents a context to track nmethod dependencies on CallSite instance target. */
+    static class CallSiteContext implements Runnable {
+        //@Injected JVM_nmethodBucket* vmdependencies;
+
+        static CallSiteContext make(CallSite cs) {
+            final CallSiteContext newContext = new CallSiteContext();
+            // Cleaner is attached to CallSite instance and it clears native structures allocated for CallSite context.
+            // Though the CallSite can become unreachable, its Context is retained by the Cleaner instance (which is
+            // referenced from Cleaner class) until cleanup is performed.
+            Cleaner.create(cs, newContext);
+            return newContext;
+        }
+
+        @Override
+        public void run() {
+            MethodHandleNatives.clearCallSiteContext(this);
+        }
+    }
+
+    /** Invalidate all recorded nmethods. */
+    private static native void clearCallSiteContext(CallSiteContext context);
 
     private static native void registerNatives();
     static {
@@ -235,7 +255,6 @@ class MethodHandleNatives {
             return Invokers.linkToTargetMethod(type);
         } else {
             appendixResult[0] = callSite;
-            callSite.initContext(caller);
             return Invokers.linkToCallSiteMethod(type);
         }
     }
