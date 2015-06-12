@@ -22,45 +22,33 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-package com.sun.tools.sjavac.server;
+package com.sun.tools.sjavac.pubapi;
 
 import java.io.Serializable;
-import java.net.URI;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 
-import com.sun.tools.sjavac.pubapi.PubApi;
+import javax.lang.model.type.TypeKind;
 
-/**
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
- */
-public class CompilationResult implements Serializable {
+public class ArrayTypeDesc extends TypeDesc implements Serializable {
 
-    static final long serialVersionUID = 46739181113L;
+    private static final long serialVersionUID = -1177329549163314996L;
 
-    // Return code constants
-    public final static int ERROR_FATAL = -1;
+    TypeDesc compTypeDesc;
 
-    public int returnCode;
-    public Map<String, Set<URI>> packageArtifacts = new HashMap<>();
-    public Map<String, Map<String, Set<String>>> packageDependencies = new HashMap<>();
-    public Map<String, Map<String, Set<String>>> packageCpDependencies = new HashMap<>();
-    public Map<String, PubApi> packagePubapis = new HashMap<>();
-    public Map<String, PubApi> dependencyPubapis = new HashMap<>();
-    public String stdout = "";
-    public String stderr = "";
-
-    public CompilationResult(int returnCode) {
-        this.returnCode = returnCode;
+    public ArrayTypeDesc(TypeDesc compTypeDesc) {
+        super(TypeKind.ARRAY);
+        this.compTypeDesc = compTypeDesc;
     }
 
-    public void setReturnCode(int returnCode) {
-        this.returnCode = returnCode;
+    @Override
+    public boolean equals(Object obj) {
+        if (!super.equals(obj))
+            return false;
+        return compTypeDesc.equals(((ArrayTypeDesc) obj).compTypeDesc);
     }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode() ^ compTypeDesc.hashCode();
+    }
+
 }
