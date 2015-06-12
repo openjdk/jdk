@@ -802,7 +802,7 @@ public     void grab() {
     /**
      * Determine if applet is targeted for JDK 1.1.
      *
-     * @param applet Applet class.
+     * @param  clazz Applet class.
      * @return TRUE if applet is targeted for JDK 1.1;
      *         FALSE if applet is not;
      *         null if applet is unknown.
@@ -815,7 +815,7 @@ public     void grab() {
     /**
      * Determine if applet is targeted for JDK 1.2.
      *
-     * @param applet Applet class.
+     * @param  clazz Applet class.
      * @return TRUE if applet is targeted for JDK 1.2;
      *         FALSE if applet is not;
      *         null if applet is unknown.

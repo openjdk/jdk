@@ -1253,6 +1253,15 @@ public class ObjectStreamClass implements Serializable {
     }
 
     /**
+     * Checks that the given values, from array vals starting at offset 0,
+     * are assignable to the given serializable object fields.
+     * @throws ClassCastException if any value is not assignable
+     */
+    void checkObjFieldValueTypes(Object obj, Object[] vals) {
+        fieldRefl.checkObjectFieldValueTypes(obj, vals);
+    }
+
+    /**
      * Sets the serializable object fields of object obj using values from
      * array vals starting at offset 0.  It is the responsibility of the caller
      * to ensure that obj is of the proper type if non-null.
@@ -2070,6 +2079,15 @@ public class ObjectStreamClass implements Serializable {
         }
 
         /**
+         * Checks that the given values, from array vals starting at offset 0,
+         * are assignable to the given serializable object fields.
+         * @throws ClassCastException if any value is not assignable
+         */
+        void checkObjectFieldValueTypes(Object obj, Object[] vals) {
+            setObjFieldValues(obj, vals, true);
+        }
+
+        /**
          * Sets the serializable object fields of object obj using values from
          * array vals starting at offset 0.  The caller is responsible for
          * ensuring that obj is of the proper type; however, attempts to set a
@@ -2077,6 +2095,10 @@ public class ObjectStreamClass implements Serializable {
          * ClassCastException.
          */
         void setObjFieldValues(Object obj, Object[] vals) {
+            setObjFieldValues(obj, vals, false);
+        }
+
+        private void setObjFieldValues(Object obj, Object[] vals, boolean dryRun) {
             if (obj == null) {
                 throw new NullPointerException();
             }
@@ -2101,7 +2123,8 @@ public class ObjectStreamClass implements Serializable {
                                 f.getType().getName() + " in instance of " +
                                 obj.getClass().getName());
                         }
-                        unsafe.putObject(obj, key, val);
+                        if (!dryRun)
+                            unsafe.putObject(obj, key, val);
                         break;
 
                     default:

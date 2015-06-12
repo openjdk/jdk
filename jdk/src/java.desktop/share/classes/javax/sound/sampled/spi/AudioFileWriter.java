@@ -121,7 +121,7 @@ public abstract class AudioFileWriter {
      * @throws IOException if an I/O exception occurs
      * @throws IllegalArgumentException if the file type is not supported by the
      *         system
-     * @see #isFileTypeSupported(Type, AudioInputStream)
+     * @see #isFileTypeSupported(AudioFileFormat.Type, AudioInputStream)
      * @see #getAudioFileTypes
      */
     public abstract int write(AudioInputStream stream, Type fileType,

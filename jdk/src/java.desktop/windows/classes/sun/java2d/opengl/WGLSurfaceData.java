@@ -244,7 +244,7 @@ public abstract class WGLSurfaceData extends OGLSurfaceData {
      * Updates the layered window with the contents of the surface.
      *
      * @param psdops pointer to the native ogl sd structure
-     * @param pData pointer to the AwtWindow peer data
+     * @param peer pointer to the AwtWindow peer data
      * @param w width of the window
      * @param h height of the window
      * @see sun.awt.windows.TranslucentWindowPainter

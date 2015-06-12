@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,41 +26,54 @@
 
 package sun.security.ssl;
 
-import java.io.*;
+import java.io.InputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+
+import javax.net.ssl.SSLProtocolException;
 
 /**
  * InputStream for application data as returned by SSLSocket.getInputStream().
- * It uses an InputRecord as internal buffer that is refilled on demand
- * whenever it runs out of data.
  *
  * @author David Brownell
  */
-class AppInputStream extends InputStream {
+final class AppInputStream extends InputStream {
+    // the buffer size for each read of network data
+    private static final int READ_BUFFER_SIZE = 4096;
 
     // static dummy array we use to implement skip()
-    private final static byte[] SKIP_ARRAY = new byte[1024];
+    private static final byte[] SKIP_ARRAY = new byte[256];
 
-    private SSLSocketImpl c;
-    InputRecord r;
+    // the related socket of the input stream
+    private final SSLSocketImpl socket;
+
+    // the temporary buffer used to read network
+    private ByteBuffer buffer;
+
+    // Is application data available in the stream?
+    private boolean appDataIsAvailable;
 
     // One element array used to implement the single byte read() method
     private final byte[] oneByte = new byte[1];
 
     AppInputStream(SSLSocketImpl conn) {
-        r = new InputRecord();
-        c = conn;
+        this.buffer = ByteBuffer.allocate(READ_BUFFER_SIZE);
+        this.socket = conn;
+        this.appDataIsAvailable = false;
     }
 
     /**
      * Return the minimum number of bytes that can be read without blocking.
+     *
      * Currently not synchronized.
      */
     @Override
     public int available() throws IOException {
-        if (c.checkEOF() || (r.isAppDataValid() == false)) {
+        if ((!appDataIsAvailable) || socket.checkEOF()) {
             return 0;
         }
-        return r.available();
+
+        return buffer.remaining();
     }
 
     /**
@@ -72,17 +85,21 @@ class AppInputStream extends InputStream {
         if (n <= 0) { // EOF
             return -1;
         }
-        return oneByte[0] & 0xff;
+        return oneByte[0] & 0xFF;
     }
 
     /**
-     * Read up to "len" bytes into this buffer, starting at "off".
+     * Reads up to {@code len} bytes of data from the input stream into an
+     * array of bytes. An attempt is made to read as many as {@code len} bytes,
+     * but a smaller number may be read. The number of bytes actually read
+     * is returned as an integer.
+     *
      * If the layer above needs more data, it asks for more, so we
      * are responsible only for blocking to fill at most one buffer,
      * and returning "-1" on non-fault EOF status.
      */
     @Override
-    public synchronized int read(byte b[], int off, int len)
+    public synchronized int read(byte[] b, int off, int len)
             throws IOException {
         if (b == null) {
             throw new NullPointerException();
@@ -92,28 +109,69 @@ class AppInputStream extends InputStream {
             return 0;
         }
 
-        if (c.checkEOF()) {
+        if (socket.checkEOF()) {
             return -1;
         }
+
+        // Read the available bytes at first.
+        int remains = available();
+        if (remains > 0) {
+            int howmany = Math.min(remains, len);
+            buffer.get(b, off, howmany);
+
+            return howmany;
+        }
+
+        appDataIsAvailable = false;
+        int volume = 0;
+
         try {
             /*
              * Read data if needed ... notice that the connection guarantees
              * that handshake, alert, and change cipher spec data streams are
              * handled as they arrive, so we never see them here.
              */
-            while (r.available() == 0) {
-                c.readDataRecord(r);
-                if (c.checkEOF()) {
+            while(volume == 0) {
+                // Clear the buffer for a new record reading.
+                buffer.clear();
+
+                //
+                // grow the buffer if needed
+                //
+
+                // Read the header of a record into the buffer, and return
+                // the packet size.
+                int packetLen = socket.bytesInCompletePacket();
+                if (packetLen < 0) {    // EOF
                     return -1;
+                }
+
+                // Is this packet bigger than SSL/TLS normally allows?
+                if (packetLen > SSLRecord.maxLargeRecordSize) {
+                    throw new SSLProtocolException(
+                        "Illegal packet size: " + packetLen);
+                }
+
+                if (packetLen > buffer.remaining()) {
+                    buffer = ByteBuffer.allocate(packetLen);
+                }
+
+                volume = socket.readRecord(buffer);
+                if (volume < 0) {    // EOF
+                    return -1;
+                } else if (volume > 0) {
+                    appDataIsAvailable = true;
+                    break;
                 }
             }
 
-            int howmany = Math.min(len, r.available());
-            howmany = r.read(b, off, howmany);
+            int howmany = Math.min(len, volume);
+            buffer.get(b, off, howmany);
             return howmany;
         } catch (Exception e) {
             // shutdown and rethrow (wrapped) exception as appropriate
-            c.handleException(e);
+            socket.handleException(e);
+
             // dummy for compiler
             return -1;
         }
@@ -147,9 +205,8 @@ class AppInputStream extends InputStream {
      */
     @Override
     public void close() throws IOException {
-        c.close();
+        socket.close();
     }
 
     // inherit default mark/reset behavior (throw Exceptions) from InputStream
-
 }

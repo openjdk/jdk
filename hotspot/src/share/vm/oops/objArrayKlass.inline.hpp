@@ -27,6 +27,8 @@
 
 #include "memory/memRegion.hpp"
 #include "memory/iterator.inline.hpp"
+#include "oops/arrayKlass.hpp"
+#include "oops/klass.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -149,41 +151,10 @@ int ObjArrayKlass::oop_oop_iterate_range(oop obj, OopClosureType* closure, int s
   return size;
 }
 
-
-#define ObjArrayKlass_OOP_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)              \
-                                                                                   \
-int ObjArrayKlass::oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure) {  \
-  return oop_oop_iterate<nvs_to_bool(nv_suffix)>(obj, closure);                    \
-}
-
-#if INCLUDE_ALL_GCS
-#define ObjArrayKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)              \
-int ObjArrayKlass::oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* closure) {  \
-  /* No reverse implementation ATM. */                                                       \
-  return oop_oop_iterate<nvs_to_bool(nv_suffix)>(obj, closure);                              \
-}
-#else
-#define ObjArrayKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)
-#endif
-
-#define ObjArrayKlass_OOP_OOP_ITERATE_DEFN_m(OopClosureType, nv_suffix)                              \
-                                                                                                     \
-int ObjArrayKlass::oop_oop_iterate##nv_suffix##_m(oop obj, OopClosureType* closure, MemRegion mr) {  \
-  return oop_oop_iterate_bounded<nvs_to_bool(nv_suffix)>(obj, closure, mr);                          \
-}
-
-#define ObjArrayKlass_OOP_OOP_ITERATE_DEFN_r(OopClosureType, nv_suffix)                                      \
-                                                                                                             \
-int ObjArrayKlass::oop_oop_iterate_range##nv_suffix(oop obj, OopClosureType* closure, int start, int end) {  \
-  return oop_oop_iterate_range<nvs_to_bool(nv_suffix)>(obj, closure, start, end);                            \
-}
-
-
-#define ALL_OBJ_ARRAY_KLASS_OOP_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)  \
-  ObjArrayKlass_OOP_OOP_ITERATE_DEFN(          OopClosureType, nv_suffix)    \
-  ObjArrayKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)    \
-  ObjArrayKlass_OOP_OOP_ITERATE_DEFN_m(        OopClosureType, nv_suffix)    \
-  ObjArrayKlass_OOP_OOP_ITERATE_DEFN_r(        OopClosureType, nv_suffix)
-
+#define ALL_OBJ_ARRAY_KLASS_OOP_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)    \
+  OOP_OOP_ITERATE_DEFN(             ObjArrayKlass, OopClosureType, nv_suffix)  \
+  OOP_OOP_ITERATE_DEFN_BOUNDED(     ObjArrayKlass, OopClosureType, nv_suffix)  \
+  OOP_OOP_ITERATE_DEFN_RANGE(       ObjArrayKlass, OopClosureType, nv_suffix)  \
+  OOP_OOP_ITERATE_DEFN_NO_BACKWARDS(ObjArrayKlass, OopClosureType, nv_suffix)
 
 #endif // SHARE_VM_OOPS_OBJARRAYKLASS_INLINE_HPP

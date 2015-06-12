@@ -413,9 +413,9 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
             items.removeElementAt(index);
             MenuPeer peer = (MenuPeer)this.peer;
             if (peer != null) {
+                peer.delItem(index);
                 mi.removeNotify();
                 mi.parent = null;
-                peer.delItem(index);
             }
         }
     }
