@@ -26,7 +26,7 @@
  * @bug 8032814
  * @summary LineNumberTable/LocalVariableTable tables duplication for the
  *          "-v -l" combination of options
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  * @compile -g T8032814.java
  * @run main T8032814
  */

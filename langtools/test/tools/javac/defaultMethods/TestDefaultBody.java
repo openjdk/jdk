@@ -25,7 +25,7 @@
  * @test
  * @bug 7192246
  * @summary  check that code attributed for default methods is correctly generated
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  */
 
 import com.sun.tools.classfile.AccessFlags;

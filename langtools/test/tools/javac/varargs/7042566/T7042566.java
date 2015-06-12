@@ -27,7 +27,7 @@
  * @summary Unambiguous varargs method calls flagged as ambiguous
  *  temporarily workaround combo tests are causing time out in several platforms
  * @library ../../lib
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  *          jdk.compiler/com.sun.tools.javac.util
  * @build JavacTestingAbstractThreadedTest
  * @run main/othervm T7042566

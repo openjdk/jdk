@@ -25,6 +25,7 @@
  * @bug 8023862
  * @summary Verify that the default value of the java.rmi.server.disableHttp
  *          has been changed from false to true.
+ * @modules java.rmi/sun.rmi.transport.proxy
  * @compile -XDignore.symbol.file DisableHttpDefaultValue.java
  *
  * @run main/othervm                                     DisableHttpDefaultValue true

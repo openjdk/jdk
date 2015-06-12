@@ -26,6 +26,7 @@
  * @bug 8076117
  * @summary EndEntityChecker should not process custom extensions
  *          after PKIX validation
+ * @modules java.base/sun.security.validator
  */
 
 import java.io.ByteArrayInputStream;

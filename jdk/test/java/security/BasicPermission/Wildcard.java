@@ -33,6 +33,8 @@ import javax.net.ssl.SSLPermission;
  * @summary Check that BasicPermission subclasses don't throw exception if name
  *          contains wildcard character ("*") but does not signify a
  *          wildcard match
+ * @modules java.base/com.sun.net.ssl
+ *          java.sql
  */
 
 public class Wildcard {

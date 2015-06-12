@@ -25,7 +25,7 @@
  * @test
  * @bug 4159554
  * @summary Problem with UUDecoder
- *
+ * @modules java.base/sun.misc
  */
 
 import sun.misc.*;

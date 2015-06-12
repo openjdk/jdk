@@ -25,6 +25,7 @@
  * @bug 4238914
  * @summary Tests that JNDI/COS naming parser supports the syntax
  * defined in the new INS standard.
+ * @modules java.corba/com.sun.jndi.cosnaming
  */
 
 import javax.naming.*;

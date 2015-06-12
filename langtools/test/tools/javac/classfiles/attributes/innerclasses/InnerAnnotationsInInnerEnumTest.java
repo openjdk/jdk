@@ -26,7 +26,7 @@
  * @bug 8042251
  * @summary Testing InnerClasses_attribute of inner annotations in inner enum.
  * @library /tools/lib /tools/javac/lib ../lib
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main

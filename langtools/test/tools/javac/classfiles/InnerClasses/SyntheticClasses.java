@@ -25,7 +25,7 @@
  *  @bug 8034854
  *  @summary Verify that the InnerClasses attribute has outer_class_info_index zero if it has
  *           inner_name_index zero (for synthetic classes)
- *  @modules jdk.compiler/com.sun.tools.classfile
+ *  @modules jdk.jdeps/com.sun.tools.classfile
  *  @compile SyntheticClasses.java
  *  @run main SyntheticClasses
  */

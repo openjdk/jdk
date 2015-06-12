@@ -30,6 +30,8 @@ import sun.security.util.*;
  * @bug 4716972
  * @summary Check that GeneralName.encode() encodes an X500Name with
  *      an explicit tag
+ * @modules java.base/sun.security.util
+ *          java.base/sun.security.x509
  */
 public class Encode {
 

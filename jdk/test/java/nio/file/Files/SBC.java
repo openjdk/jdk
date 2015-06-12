@@ -25,6 +25,7 @@
  * @bug 4313887
  * @summary Unit test for java.nio.file.Files.newByteChannel
  * @library ..
+ * @modules java.base/com.sun.nio.file
  */
 
 import java.nio.ByteBuffer;

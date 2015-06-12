@@ -38,6 +38,7 @@ import com.sun.jndi.toolkit.url.UrlUtil;
  *
  * The format of an iiopname URL is defined in INS 98-10-11 as follows:
  *
+ * <pre>
  * iiopname url = "iiopname://" [addr_list]["/" string_name]
  * addr_list    = [address ","]* address
  * address      = [version host [":" port]]
@@ -46,19 +47,23 @@ import com.sun.jndi.toolkit.url.UrlUtil;
  * port         = number
  * major        = number
  * minor        = number
- * string_name = stringified name | empty_string
+ * string_name  = stringified name | empty_string
+ * </pre>
  *
  * The default port is 9999. The default version is "1.0"
  * US-ASCII alphanumeric characters are not escaped. Any characters outside
  * of this range are escaped except for the following:
+ * <pre>{@code
  * ; / : ? : @ & = + $ , - _ . ! ~ *  ' ( )
+ * }</pre>
  * Escaped characters is escaped by using a % followed by its 2 hexadecimal
  * numbers representing the octet.
  *
  * For backward compatibility,  the "iiop" URL as defined in INS 97-6-6
  * is also supported:
- *
+ * <pre>{@code
  * iiop url     = "iiop://" [host [":" port]] ["/" string_name]
+ * }</pre>
  * The default port is 900.
  *
  * @author Rosanna Lee

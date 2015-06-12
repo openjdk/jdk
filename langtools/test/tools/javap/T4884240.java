@@ -27,7 +27,7 @@
  * @test
  * @bug 4884240
  * @summary additional option required for javap
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 
 import java.io.*;

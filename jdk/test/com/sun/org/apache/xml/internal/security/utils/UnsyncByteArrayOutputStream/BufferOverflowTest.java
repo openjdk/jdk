@@ -26,6 +26,7 @@
  * @bug 6954275
  * @summary Check that UnsyncByteArrayOutputStream does not
  *          throw ArrayIndexOutOfBoundsException
+ * @modules java.xml.crypto/com.sun.org.apache.xml.internal.security.utils
  * @compile -XDignore.symbol.file BufferOverflowTest.java
  * @run main BufferOverflowTest
  */

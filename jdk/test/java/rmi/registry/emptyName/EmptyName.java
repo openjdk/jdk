@@ -25,6 +25,10 @@
  * @bug 4399304
  * @summary check that registry allows empty names
  * @library ../../testlibrary
+ * @modules java.rmi/sun.rmi.registry
+ *          java.rmi/sun.rmi.server
+ *          java.rmi/sun.rmi.transport
+ *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary
  * @run main/othervm EmptyName
  */

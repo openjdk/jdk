@@ -26,6 +26,7 @@
  * @bug 6313661
  * @summary Known-answer-test for TlsKeyMaterial generator
  * @author Andreas Sterbenz
+ * @modules java.base/sun.security.internal.spec
  */
 
 import java.io.*;

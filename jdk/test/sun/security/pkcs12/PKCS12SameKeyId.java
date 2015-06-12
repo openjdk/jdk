@@ -25,6 +25,10 @@
  * @test
  * @bug 6958026
  * @summary Problem with PKCS12 keystore
+ * @modules java.base/sun.security.pkcs
+ *          java.base/sun.security.tools.keytool
+ *          java.base/sun.security.util
+ *          java.base/sun.security.x509
  * @compile -XDignore.symbol.file PKCS12SameKeyId.java
  * @run main PKCS12SameKeyId
  */

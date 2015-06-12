@@ -25,6 +25,10 @@
  * @bug 4120329
  * @summary RMI registry creation is impossible if first attempt fails.
  * @library ../../testlibrary
+ * @modules java.rmi/sun.rmi.registry
+ *          java.rmi/sun.rmi.server
+ *          java.rmi/sun.rmi.transport
+ *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary JavaVM RegistryRunner RegistryRunner_Stub
  * @run main/othervm Reexport
  */

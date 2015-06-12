@@ -245,7 +245,7 @@ public final class ScriptingFunctions {
      * constitute the command line.
      * @throws IOException in case {@link StreamTokenizer#nextToken()} raises it.
      */
-    private static List<String> tokenizeCommandLine(final String execString) throws IOException {
+    public static List<String> tokenizeCommandLine(final String execString) throws IOException {
         final StreamTokenizer tokenizer = new StreamTokenizer(new StringReader(execString));
         tokenizer.resetSyntax();
         tokenizer.wordChars(0, 255);

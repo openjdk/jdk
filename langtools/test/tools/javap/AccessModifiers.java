@@ -25,7 +25,7 @@
  * @test
  * @bug 8027530
  * @summary test -public, -protected, -package, -private options
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 
 import java.io.*;

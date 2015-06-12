@@ -26,6 +26,10 @@
  * @test
  * @bug 8010117
  * @summary Test CallerSensitiveFinder to find missing annotation
+ * @modules java.base/sun.reflect
+ *          jdk.jdeps/com.sun.tools.classfile
+ *          jdk.jdeps/com.sun.tools.jdeps
+ * @modules java.base/sun.reflect
  * @compile -XDignore.symbol.file MissingCallerSensitive.java
  * @build CallerSensitiveFinder
  * @run main MissingCallerSensitive

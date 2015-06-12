@@ -27,7 +27,7 @@
  * @test
  * @bug 7166455
  * @summary javac doesn't set ACC_STRICT bit on <clinit> for strictfp class
- * @modules jdk.compiler/com.sun.tools.classfile
+ * @modules jdk.jdeps/com.sun.tools.classfile
  * @run main CheckACC_STRICTFlagOnclinitTest
  */
 

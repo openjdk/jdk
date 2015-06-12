@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4921848
+ * @modules java.base/sun.net.www
  * @library ../../../sun/net/www/httptest/
  * @build HttpCallback TestHttpServer ClosedChannelList HttpTransaction
  * @run main/othervm -Dhttp.auth.preference=basic B4921848

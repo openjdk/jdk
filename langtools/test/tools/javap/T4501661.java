@@ -28,7 +28,7 @@ import java.util.*;
  * @test
  * @bug 4501661
  * @summary disallow mixing -public, -private, and -protected
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 public class T4501661 {
     public static void main(String... args) throws Exception {

@@ -26,9 +26,9 @@
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "compiler/disassembler.hpp"
-#include "gc_interface/collectedHeap.inline.hpp"
+#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/interpreter.hpp"
-#include "memory/cardTableModRefBS.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "prims/methodHandles.hpp"
@@ -40,9 +40,9 @@
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
-#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
-#include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
-#include "gc_implementation/g1/heapRegion.hpp"
+#include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1SATBCardTableModRefBS.hpp"
+#include "gc/g1/heapRegion.hpp"
 #endif // INCLUDE_ALL_GCS
 
 #ifdef PRODUCT
@@ -1069,15 +1069,8 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
                                          BiasedLockingCounters* counters) {
   assert(UseBiasedLocking, "why call this otherwise?");
   assert(swap_reg == rax, "swap_reg must be rax for cmpxchgq");
-  LP64_ONLY( assert(tmp_reg != noreg, "tmp_reg must be supplied"); )
-  bool need_tmp_reg = false;
-  if (tmp_reg == noreg) {
-    need_tmp_reg = true;
-    tmp_reg = lock_reg;
-    assert_different_registers(lock_reg, obj_reg, swap_reg);
-  } else {
-    assert_different_registers(lock_reg, obj_reg, swap_reg, tmp_reg);
-  }
+  assert(tmp_reg != noreg, "tmp_reg must be supplied");
+  assert_different_registers(lock_reg, obj_reg, swap_reg, tmp_reg);
   assert(markOopDesc::age_shift == markOopDesc::lock_bits + markOopDesc::biased_lock_bits, "biased locking makes assumptions about bit layout");
   Address mark_addr      (obj_reg, oopDesc::mark_offset_in_bytes());
   Address saved_mark_addr(lock_reg, 0);
@@ -1097,15 +1090,9 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
     null_check_offset = offset();
     movptr(swap_reg, mark_addr);
   }
-  if (need_tmp_reg) {
-    push(tmp_reg);
-  }
   movptr(tmp_reg, swap_reg);
   andptr(tmp_reg, markOopDesc::biased_lock_mask_in_place);
   cmpptr(tmp_reg, markOopDesc::biased_lock_pattern);
-  if (need_tmp_reg) {
-    pop(tmp_reg);
-  }
   jcc(Assembler::notEqual, cas_label);
   // The bias pattern is present in the object's header. Need to check
   // whether the bias owner and the epoch are both still current.
@@ -1117,9 +1104,6 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
   // simpler.
   movptr(saved_mark_addr, swap_reg);
 #endif
-  if (need_tmp_reg) {
-    push(tmp_reg);
-  }
   if (swap_reg_contains_mark) {
     null_check_offset = offset();
   }
@@ -1135,9 +1119,6 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
   Register header_reg = swap_reg;
 #endif
   andptr(header_reg, ~((int) markOopDesc::age_mask_in_place));
-  if (need_tmp_reg) {
-    pop(tmp_reg);
-  }
   if (counters != NULL) {
     cond_inc32(Assembler::zero,
                ExternalAddress((address) counters->biased_lock_entry_count_addr()));
@@ -1180,9 +1161,6 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
   NOT_LP64( movptr(swap_reg, saved_mark_addr); )
   andptr(swap_reg,
          markOopDesc::biased_lock_mask_in_place | markOopDesc::age_mask_in_place | markOopDesc::epoch_mask_in_place);
-  if (need_tmp_reg) {
-    push(tmp_reg);
-  }
 #ifdef _LP64
   movptr(tmp_reg, swap_reg);
   orptr(tmp_reg, r15_thread);
@@ -1194,9 +1172,6 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
     lock();
   }
   cmpxchgptr(tmp_reg, mark_addr); // compare tmp_reg and swap_reg
-  if (need_tmp_reg) {
-    pop(tmp_reg);
-  }
   // If the biasing toward our thread failed, this means that
   // another thread succeeded in biasing it toward itself and we
   // need to revoke that bias. The revocation will occur in the
@@ -1220,9 +1195,6 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
   //
   // FIXME: due to a lack of registers we currently blow away the age
   // bits in this situation. Should attempt to preserve them.
-  if (need_tmp_reg) {
-    push(tmp_reg);
-  }
   load_prototype_header(tmp_reg, obj_reg);
 #ifdef _LP64
   orptr(tmp_reg, r15_thread);
@@ -1235,9 +1207,6 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
     lock();
   }
   cmpxchgptr(tmp_reg, mark_addr); // compare tmp_reg and swap_reg
-  if (need_tmp_reg) {
-    pop(tmp_reg);
-  }
   // If the biasing toward our thread failed, then another thread
   // succeeded in biasing it toward itself and we need to revoke that
   // bias. The revocation will occur in the runtime in the slow case.
@@ -1263,17 +1232,11 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
   // FIXME: due to a lack of registers we currently blow away the age
   // bits in this situation. Should attempt to preserve them.
   NOT_LP64( movptr(swap_reg, saved_mark_addr); )
-  if (need_tmp_reg) {
-    push(tmp_reg);
-  }
   load_prototype_header(tmp_reg, obj_reg);
   if (os::is_MP()) {
     lock();
   }
   cmpxchgptr(tmp_reg, mark_addr); // compare tmp_reg and swap_reg
-  if (need_tmp_reg) {
-    pop(tmp_reg);
-  }
   // Fall through to the normal CAS-based lock, because no matter what
   // the result of the above CAS, some thread must have succeeded in
   // removing the bias bit from the object's header.

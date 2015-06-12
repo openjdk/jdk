@@ -25,6 +25,7 @@
  * @test
  * @summary Unit test for sun.net.idn.Punycode
  * @bug 4737170
+ * @modules java.base/sun.net.idn
  * @compile -XDignore.symbol.file PunycodeTest.java
  * @run main/othervm -ea PunycodeTest
  * @author Edward Wang

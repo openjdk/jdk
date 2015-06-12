@@ -25,8 +25,10 @@
  * @test
  * @bug 7194897
  * @summary JSR 292: Cannot create more than 16 instances of an anonymous class
- * @author  Robert Field
+ * @modules java.base/sun.misc
+ * @modules java.management
  * @library /lib/testlibrary
+ * @author  Robert Field
  * @compile -XDignore.symbol.file ManyNewInstanceAnonTest.java
  * @build jdk.testlibrary.*
  * @run main ClassFileInstaller ManyNewInstanceAnonTest

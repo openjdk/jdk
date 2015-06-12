@@ -34,6 +34,7 @@ import sun.misc.SharedSecrets;
  * @summary Make sure that JavaSecurityAccess.doIntersectionPrivilege()
  *          is not dropping the information about the domain combiner of
  *          the stack ACC
+ * @modules java.base/sun.misc
  */
 
 public class PreserveCombinerTest {

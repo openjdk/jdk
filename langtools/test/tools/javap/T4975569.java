@@ -25,7 +25,7 @@
  * @test
  * @bug 4975569 6622215 8034861
  * @summary javap doesn't print new flag bits
- * @modules jdk.compiler
+ * @modules jdk.jdeps
  */
 
 import java.io.*;

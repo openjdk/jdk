@@ -25,6 +25,7 @@
  * @test
  * @bug 6996377
  * @summary shrink duplicate code in the constructor of PKIXValidator
+ * @modules java.base/sun.security.validator
  */
 
 import java.io.ByteArrayInputStream;
