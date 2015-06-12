@@ -190,7 +190,7 @@ public:
     bool during_initial_mark = _g1h->collector_state()->during_initial_mark_pause();
     bool during_conc_mark = _g1h->collector_state()->mark_in_progress();
 
-    assert(!hr->is_humongous(), "sanity");
+    assert(!hr->is_pinned(), err_msg("Unexpected pinned region at index %u", hr->hrm_index()));
     assert(hr->in_collection_set(), "bad CS");
 
     if (_hrclaimer->claim_region(hr->hrm_index())) {

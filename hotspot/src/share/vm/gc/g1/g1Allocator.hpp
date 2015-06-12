@@ -269,4 +269,72 @@ public:
   virtual void waste(size_t& wasted, size_t& undo_wasted);
 };
 
+// G1ArchiveAllocator is used to allocate memory in archive
+// regions. Such regions are not modifiable by GC, being neither
+// scavenged nor compacted, or even marked in the object header.
+// They can contain no pointers to non-archive heap regions,
+class G1ArchiveAllocator : public CHeapObj<mtGC> {
+
+protected:
+  G1CollectedHeap* _g1h;
+
+  // The current allocation region
+  HeapRegion* _allocation_region;
+
+  // Regions allocated for the current archive range.
+  GrowableArray<HeapRegion*> _allocated_regions;
+
+  // The number of bytes used in the current range.
+  size_t _summary_bytes_used;
+
+  // Current allocation window within the current region.
+  HeapWord* _bottom;
+  HeapWord* _top;
+  HeapWord* _max;
+
+  // Allocate a new region for this archive allocator.
+  // Allocation is from the top of the reserved heap downward.
+  bool alloc_new_region();
+
+public:
+  G1ArchiveAllocator(G1CollectedHeap* g1h) :
+    _g1h(g1h),
+    _allocation_region(NULL),
+    _allocated_regions((ResourceObj::set_allocation_type((address) &_allocated_regions,
+                                                         ResourceObj::C_HEAP),
+                        2), true /* C_Heap */),
+    _summary_bytes_used(0),
+    _bottom(NULL),
+    _top(NULL),
+    _max(NULL) { }
+
+  virtual ~G1ArchiveAllocator() {
+    assert(_allocation_region == NULL, "_allocation_region not NULL");
+  }
+
+  static G1ArchiveAllocator* create_allocator(G1CollectedHeap* g1h);
+
+  // Allocate memory for an individual object.
+  HeapWord* archive_mem_allocate(size_t word_size);
+
+  // Return the memory ranges used in the current archive, after
+  // aligning to the requested alignment.
+  void complete_archive(GrowableArray<MemRegion>* ranges,
+                        size_t end_alignment_in_bytes);
+
+  // The number of bytes allocated by this allocator.
+  size_t used() {
+    return _summary_bytes_used;
+  }
+
+  // Clear the count of bytes allocated in prior G1 regions. This
+  // must be done when recalculate_use is used to reset the counter
+  // for the generic allocator, since it counts bytes in all G1
+  // regions, including those still associated with this allocator.
+  void clear_used() {
+    _summary_bytes_used = 0;
+  }
+
+};
+
 #endif // SHARE_VM_GC_G1_G1ALLOCATOR_HPP

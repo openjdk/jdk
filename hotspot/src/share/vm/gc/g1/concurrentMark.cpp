@@ -1784,7 +1784,7 @@ public:
   const HeapRegionSetCount& humongous_regions_removed() { return _humongous_regions_removed; }
 
   bool doHeapRegion(HeapRegion *hr) {
-    if (hr->is_continues_humongous()) {
+    if (hr->is_continues_humongous() || hr->is_archive()) {
       return false;
     }
     // We use a claim value of zero here because all regions

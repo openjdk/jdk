@@ -405,7 +405,7 @@ HeapRegion* G1CollectedHeap::pop_dirty_cards_region()
 // can move in an incremental collection.
 bool G1CollectedHeap::is_scavengable(const void* p) {
   HeapRegion* hr = heap_region_containing(p);
-  return !hr->is_humongous();
+  return !hr->is_pinned();
 }
 
 // Private methods.
@@ -908,6 +908,207 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size,
   return NULL;
 }
 
+void G1CollectedHeap::begin_archive_alloc_range() {
+  assert_at_safepoint(true /* should_be_vm_thread */);
+  if (_archive_allocator == NULL) {
+    _archive_allocator = G1ArchiveAllocator::create_allocator(this);
+  }
+}
+
+bool G1CollectedHeap::is_archive_alloc_too_large(size_t word_size) {
+  // Allocations in archive regions cannot be of a size that would be considered
+  // humongous even for a minimum-sized region, because G1 region sizes/boundaries
+  // may be different at archive-restore time.
+  return word_size >= humongous_threshold_for(HeapRegion::min_region_size_in_words());
+}
+
+HeapWord* G1CollectedHeap::archive_mem_allocate(size_t word_size) {
+  assert_at_safepoint(true /* should_be_vm_thread */);
+  assert(_archive_allocator != NULL, "_archive_allocator not initialized");
+  if (is_archive_alloc_too_large(word_size)) {
+    return NULL;
+  }
+  return _archive_allocator->archive_mem_allocate(word_size);
+}
+
+void G1CollectedHeap::end_archive_alloc_range(GrowableArray<MemRegion>* ranges,
+                                              size_t end_alignment_in_bytes) {
+  assert_at_safepoint(true /* should_be_vm_thread */);
+  assert(_archive_allocator != NULL, "_archive_allocator not initialized");
+
+  // Call complete_archive to do the real work, filling in the MemRegion
+  // array with the archive regions.
+  _archive_allocator->complete_archive(ranges, end_alignment_in_bytes);
+  delete _archive_allocator;
+  _archive_allocator = NULL;
+}
+
+bool G1CollectedHeap::check_archive_addresses(MemRegion* ranges, size_t count) {
+  assert(ranges != NULL, "MemRegion array NULL");
+  assert(count != 0, "No MemRegions provided");
+  MemRegion reserved = _hrm.reserved();
+  for (size_t i = 0; i < count; i++) {
+    if (!reserved.contains(ranges[i].start()) || !reserved.contains(ranges[i].last())) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool G1CollectedHeap::alloc_archive_regions(MemRegion* ranges, size_t count) {
+  assert(ranges != NULL, "MemRegion array NULL");
+  assert(count != 0, "No MemRegions provided");
+  MutexLockerEx x(Heap_lock);
+
+  MemRegion reserved = _hrm.reserved();
+  HeapWord* prev_last_addr = NULL;
+  HeapRegion* prev_last_region = NULL;
+
+  // Temporarily disable pretouching of heap pages. This interface is used
+  // when mmap'ing archived heap data in, so pre-touching is wasted.
+  FlagSetting fs(AlwaysPreTouch, false);
+
+  // Enable archive object checking in G1MarkSweep. We have to let it know
+  // about each archive range, so that objects in those ranges aren't marked.
+  G1MarkSweep::enable_archive_object_check();
+
+  // For each specified MemRegion range, allocate the corresponding G1
+  // regions and mark them as archive regions. We expect the ranges in
+  // ascending starting address order, without overlap.
+  for (size_t i = 0; i < count; i++) {
+    MemRegion curr_range = ranges[i];
+    HeapWord* start_address = curr_range.start();
+    size_t word_size = curr_range.word_size();
+    HeapWord* last_address = curr_range.last();
+    size_t commits = 0;
+
+    guarantee(reserved.contains(start_address) && reserved.contains(last_address),
+              err_msg("MemRegion outside of heap [" PTR_FORMAT ", " PTR_FORMAT "]",
+              p2i(start_address), p2i(last_address)));
+    guarantee(start_address > prev_last_addr,
+              err_msg("Ranges not in ascending order: " PTR_FORMAT " <= " PTR_FORMAT ,
+              p2i(start_address), p2i(prev_last_addr)));
+    prev_last_addr = last_address;
+
+    // Check for ranges that start in the same G1 region in which the previous
+    // range ended, and adjust the start address so we don't try to allocate
+    // the same region again. If the current range is entirely within that
+    // region, skip it, just adjusting the recorded top.
+    HeapRegion* start_region = _hrm.addr_to_region(start_address);
+    if ((prev_last_region != NULL) && (start_region == prev_last_region)) {
+      start_address = start_region->end();
+      if (start_address > last_address) {
+        _allocator->increase_used(word_size * HeapWordSize);
+        start_region->set_top(last_address + 1);
+        continue;
+      }
+      start_region->set_top(start_address);
+      curr_range = MemRegion(start_address, last_address + 1);
+      start_region = _hrm.addr_to_region(start_address);
+    }
+
+    // Perform the actual region allocation, exiting if it fails.
+    // Then note how much new space we have allocated.
+    if (!_hrm.allocate_containing_regions(curr_range, &commits)) {
+      return false;
+    }
+    _allocator->increase_used(word_size * HeapWordSize);
+    if (commits != 0) {
+      ergo_verbose1(ErgoHeapSizing,
+                    "attempt heap expansion",
+                    ergo_format_reason("allocate archive regions")
+                    ergo_format_byte("total size"),
+                    HeapRegion::GrainWords * HeapWordSize * commits);
+    }
+
+    // Mark each G1 region touched by the range as archive, add it to the old set,
+    // and set the allocation context and top.
+    HeapRegion* curr_region = _hrm.addr_to_region(start_address);
+    HeapRegion* last_region = _hrm.addr_to_region(last_address);
+    prev_last_region = last_region;
+
+    while (curr_region != NULL) {
+      assert(curr_region->is_empty() && !curr_region->is_pinned(),
+             err_msg("Region already in use (index %u)", curr_region->hrm_index()));
+      _hr_printer.alloc(curr_region, G1HRPrinter::Archive);
+      curr_region->set_allocation_context(AllocationContext::system());
+      curr_region->set_archive();
+      _old_set.add(curr_region);
+      if (curr_region != last_region) {
+        curr_region->set_top(curr_region->end());
+        curr_region = _hrm.next_region_in_heap(curr_region);
+      } else {
+        curr_region->set_top(last_address + 1);
+        curr_region = NULL;
+      }
+    }
+
+    // Notify mark-sweep of the archive range.
+    G1MarkSweep::mark_range_archive(curr_range);
+  }
+  return true;
+}
+
+void G1CollectedHeap::fill_archive_regions(MemRegion* ranges, size_t count) {
+  assert(ranges != NULL, "MemRegion array NULL");
+  assert(count != 0, "No MemRegions provided");
+  MemRegion reserved = _hrm.reserved();
+  HeapWord *prev_last_addr = NULL;
+  HeapRegion* prev_last_region = NULL;
+
+  // For each MemRegion, create filler objects, if needed, in the G1 regions
+  // that contain the address range. The address range actually within the
+  // MemRegion will not be modified. That is assumed to have been initialized
+  // elsewhere, probably via an mmap of archived heap data.
+  MutexLockerEx x(Heap_lock);
+  for (size_t i = 0; i < count; i++) {
+    HeapWord* start_address = ranges[i].start();
+    HeapWord* last_address = ranges[i].last();
+
+    assert(reserved.contains(start_address) && reserved.contains(last_address),
+           err_msg("MemRegion outside of heap [" PTR_FORMAT ", " PTR_FORMAT "]",
+                   p2i(start_address), p2i(last_address)));
+    assert(start_address > prev_last_addr,
+           err_msg("Ranges not in ascending order: " PTR_FORMAT " <= " PTR_FORMAT ,
+                   p2i(start_address), p2i(prev_last_addr)));
+
+    HeapRegion* start_region = _hrm.addr_to_region(start_address);
+    HeapRegion* last_region = _hrm.addr_to_region(last_address);
+    HeapWord* bottom_address = start_region->bottom();
+
+    // Check for a range beginning in the same region in which the
+    // previous one ended.
+    if (start_region == prev_last_region) {
+      bottom_address = prev_last_addr + 1;
+    }
+
+    // Verify that the regions were all marked as archive regions by
+    // alloc_archive_regions.
+    HeapRegion* curr_region = start_region;
+    while (curr_region != NULL) {
+      guarantee(curr_region->is_archive(),
+                err_msg("Expected archive region at index %u", curr_region->hrm_index()));
+      if (curr_region != last_region) {
+        curr_region = _hrm.next_region_in_heap(curr_region);
+      } else {
+        curr_region = NULL;
+      }
+    }
+
+    prev_last_addr = last_address;
+    prev_last_region = last_region;
+
+    // Fill the memory below the allocated range with dummy object(s),
+    // if the region bottom does not match the range start, or if the previous
+    // range ended within the same G1 region, and there is a gap.
+    if (start_address != bottom_address) {
+      size_t fill_size = pointer_delta(start_address, bottom_address);
+      G1CollectedHeap::fill_with_objects(bottom_address, fill_size);
+      _allocator->increase_used(fill_size * HeapWordSize);
+    }
+  }
+}
+
 HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size,
                                                         uint* gc_count_before_ret,
                                                         uint* gclocker_retry_count_ret) {
@@ -1132,6 +1333,8 @@ public:
       }
     } else if (hr->is_continues_humongous()) {
       _hr_printer->post_compaction(hr, G1HRPrinter::ContinuesHumongous);
+    } else if (hr->is_archive()) {
+      _hr_printer->post_compaction(hr, G1HRPrinter::Archive);
     } else if (hr->is_old()) {
       _hr_printer->post_compaction(hr, G1HRPrinter::Old);
     } else {
@@ -1723,6 +1926,7 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _humongous_set("Master Humongous Set", true /* humongous */, new HumongousRegionSetMtSafeChecker()),
   _humongous_reclaim_candidates(),
   _has_humongous_reclaim_candidates(false),
+  _archive_allocator(NULL),
   _free_regions_coming(false),
   _young_list(new YoungList(this)),
   _gc_time_stamp(0),
@@ -1748,7 +1952,11 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _workers->initialize_workers();
 
   _allocator = G1Allocator::create_allocator(this);
-  _humongous_object_threshold_in_words = HeapRegion::GrainWords / 2;
+  _humongous_object_threshold_in_words = humongous_threshold_for(HeapRegion::GrainWords);
+
+  // Override the default _filler_array_max_size so that no humongous filler
+  // objects are created.
+  _filler_array_max_size = _humongous_object_threshold_in_words;
 
   uint n_queues = ParallelGCThreads;
   _task_queues = new RefToScanQueueSet(n_queues);
@@ -2163,7 +2371,11 @@ void G1CollectedHeap::iterate_dirty_card_closure(CardTableEntryClosure* cl,
 
 // Computes the sum of the storage used by the various regions.
 size_t G1CollectedHeap::used() const {
-  return _allocator->used();
+  size_t result = _allocator->used();
+  if (_archive_allocator != NULL) {
+    result += _archive_allocator->used();
+  }
+  return result;
 }
 
 size_t G1CollectedHeap::used_unlocked() const {
@@ -2576,7 +2788,7 @@ void G1CollectedHeap::collection_set_iterate_from(HeapRegion* r,
 
 HeapRegion* G1CollectedHeap::next_compaction_region(const HeapRegion* from) const {
   HeapRegion* result = _hrm.next_region_in_heap(from);
-  while (result != NULL && result->is_humongous()) {
+  while (result != NULL && result->is_pinned()) {
     result = _hrm.next_region_in_heap(result);
   }
   return result;
@@ -2884,6 +3096,31 @@ public:
   size_t live_bytes() { return _live_bytes; }
 };
 
+class VerifyArchiveOopClosure: public OopClosure {
+public:
+  VerifyArchiveOopClosure(HeapRegion *hr) { }
+  void do_oop(narrowOop *p) { do_oop_work(p); }
+  void do_oop(      oop *p) { do_oop_work(p); }
+
+  template <class T> void do_oop_work(T *p) {
+    oop obj = oopDesc::load_decode_heap_oop(p);
+    guarantee(obj == NULL || G1MarkSweep::in_archive_range(obj),
+              err_msg("Archive object at " PTR_FORMAT " references a non-archive object at " PTR_FORMAT,
+                      p2i(p), p2i(obj)));
+  }
+};
+
+class VerifyArchiveRegionClosure: public ObjectClosure {
+public:
+  VerifyArchiveRegionClosure(HeapRegion *hr) { }
+  // Verify that all object pointers are to archive regions.
+  void do_object(oop o) {
+    VerifyArchiveOopClosure checkOop(NULL);
+    assert(o != NULL, "Should not be here for NULL oops");
+    o->oop_iterate_no_header(&checkOop);
+  }
+};
+
 class VerifyRegionClosure: public HeapRegionClosure {
 private:
   bool             _par;
@@ -2903,6 +3140,13 @@ public:
   }
 
   bool doHeapRegion(HeapRegion* r) {
+    // For archive regions, verify there are no heap pointers to
+    // non-pinned regions. For all others, verify liveness info.
+    if (r->is_archive()) {
+      VerifyArchiveRegionClosure verify_oop_pointers(r);
+      r->object_iterate(&verify_oop_pointers);
+      return true;
+    }
     if (!r->is_continues_humongous()) {
       bool failures = false;
       r->verify(_vo, &failures);
@@ -3087,7 +3331,7 @@ bool G1CollectedHeap::is_obj_dead_cond(const oop obj,
   switch (vo) {
   case VerifyOption_G1UsePrevMarking: return is_obj_dead(obj, hr);
   case VerifyOption_G1UseNextMarking: return is_obj_ill(obj, hr);
-  case VerifyOption_G1UseMarkWord:    return !obj->is_gc_marked();
+  case VerifyOption_G1UseMarkWord:    return !obj->is_gc_marked() && !hr->is_archive();
   default:                            ShouldNotReachHere();
   }
   return false; // keep some compilers happy
@@ -3098,7 +3342,10 @@ bool G1CollectedHeap::is_obj_dead_cond(const oop obj,
   switch (vo) {
   case VerifyOption_G1UsePrevMarking: return is_obj_dead(obj);
   case VerifyOption_G1UseNextMarking: return is_obj_ill(obj);
-  case VerifyOption_G1UseMarkWord:    return !obj->is_gc_marked();
+  case VerifyOption_G1UseMarkWord: {
+    HeapRegion* hr = _hrm.addr_to_region((HeapWord*)obj);
+    return !obj->is_gc_marked() && !hr->is_archive();
+  }
   default:                            ShouldNotReachHere();
   }
   return false; // keep some compilers happy
@@ -3131,7 +3378,7 @@ void G1CollectedHeap::print_extended_on(outputStream* st) const {
   st->cr();
   st->print_cr("Heap Regions: (Y=young(eden), SU=young(survivor), "
                "HS=humongous(starts), HC=humongous(continues), "
-               "CS=collection set, F=free, TS=gc time stamp, "
+               "CS=collection set, F=free, A=archive, TS=gc time stamp, "
                "PTAMS=previous top-at-mark-start, "
                "NTAMS=next top-at-mark-start)");
   PrintRegionClosure blk(st);
@@ -3852,6 +4099,9 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
         if (evacuation_failed()) {
           _allocator->set_used(recalculate_used());
+          if (_archive_allocator != NULL) {
+            _archive_allocator->clear_used();
+          }
           for (uint i = 0; i < ParallelGCThreads; i++) {
             if (_evacuation_failed_info_array[i].has_failed()) {
               _gc_tracer_stw->report_evacuation_failed(_evacuation_failed_info_array[i]);
@@ -6173,13 +6423,18 @@ public:
       assert(!r->is_young(), "we should not come across young regions");
 
       if (r->is_humongous()) {
-        // We ignore humongous regions, we left the humongous set unchanged
+        // We ignore humongous regions. We left the humongous set unchanged.
       } else {
         // Objects that were compacted would have ended up on regions
-        // that were previously old or free.
+        // that were previously old or free.  Archive regions (which are
+        // old) will not have been touched.
         assert(r->is_free() || r->is_old(), "invariant");
-        // We now consider them old, so register as such.
-        r->set_old();
+        // We now consider them old, so register as such. Leave
+        // archive regions set that way, however, while still adding
+        // them to the old set.
+        if (!r->is_archive()) {
+          r->set_old();
+        }
         _old_set->add(r);
       }
       _total_used += r->used();
@@ -6205,6 +6460,9 @@ void G1CollectedHeap::rebuild_region_sets(bool free_list_only) {
 
   if (!free_list_only) {
     _allocator->set_used(cl.total_used());
+    if (_archive_allocator != NULL) {
+      _archive_allocator->clear_used();
+    }
   }
   assert(_allocator->used_unlocked() == recalculate_used(),
          err_msg("inconsistent _allocator->used_unlocked(), "
@@ -6305,6 +6563,25 @@ void G1CollectedHeap::retire_gc_alloc_region(HeapRegion* alloc_region,
   _hr_printer.retire(alloc_region);
 }
 
+HeapRegion* G1CollectedHeap::alloc_highest_free_region() {
+  bool expanded = false;
+  uint index = _hrm.find_highest_free(&expanded);
+
+  if (index != G1_NO_HRM_INDEX) {
+    if (expanded) {
+      ergo_verbose1(ErgoHeapSizing,
+                    "attempt heap expansion",
+                    ergo_format_reason("requested address range outside heap bounds")
+                    ergo_format_byte("region size"),
+                    HeapRegion::GrainWords * HeapWordSize);
+    }
+    _hrm.allocate_free_regions_starting_at(index, 1);
+    return region_at(index);
+  }
+  return NULL;
+}
+
+
 // Heap region set verification
 
 class VerifyRegionListsClosure : public HeapRegionClosure {
@@ -6341,6 +6618,9 @@ public:
       assert(hr->containing_set() == _old_set, err_msg("Heap region %u is old but not in the old set.", hr->hrm_index()));
       _old_count.increment(1u, hr->capacity());
     } else {
+      // There are no other valid region types. Check for one invalid
+      // one we can identify: pinned without old or humongous set.
+      assert(!hr->is_pinned(), err_msg("Heap region %u is pinned but not old (archive) or humongous.", hr->hrm_index()));
       ShouldNotReachHere();
     }
     return false;
