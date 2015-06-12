@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,13 +104,11 @@ public class Concurrent {
                     System.out.println(perm[perm.length-1] + " implies " + result);
                 }
 
-                synchronized (pc) {
-                    Enumeration en = pc.elements();
-                    while (en.hasMoreElements()) {
-                        Object obj = en.nextElement();
-                        if (debug) {
-                            System.out.println(obj);
-                        }
+                Enumeration en = pc.elements();
+                while (en.hasMoreElements()) {
+                    Object obj = en.nextElement();
+                    if (debug) {
+                        System.out.println(obj);
                     }
                 }
             }
@@ -151,13 +149,11 @@ public class Concurrent {
                     }
                 }
 
-                synchronized (pc) {
-                    Enumeration en = pc.elements();
-                    while (en.hasMoreElements()) {
-                        Object obj = en.nextElement();
-                        if (debug) {
-                            System.out.println(obj);
-                        }
+                Enumeration en = pc.elements();
+                while (en.hasMoreElements()) {
+                    Object obj = en.nextElement();
+                    if (debug) {
+                        System.out.println(obj);
                     }
                 }
             }

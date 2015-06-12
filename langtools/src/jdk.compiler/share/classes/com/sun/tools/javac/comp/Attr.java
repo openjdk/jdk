@@ -2175,11 +2175,19 @@ public class Attr extends JCTree.Visitor {
             if (isDiamond
                     && ((tree.constructorType != null && inferenceContext.free(tree.constructorType))
                     || (tree.clazz.type != null && inferenceContext.free(tree.clazz.type)))) {
+                final ResultInfo resultInfoForClassDefinition = this.resultInfo;
                 inferenceContext.addFreeTypeListener(List.of(tree.constructorType, tree.clazz.type),
                         instantiatedContext -> {
                             tree.constructorType = instantiatedContext.asInstType(tree.constructorType);
                             clazz.type = instantiatedContext.asInstType(clazz.type);
-                            visitAnonymousClassDefinition(tree, clazz, clazz.type, cdef, localEnv, argtypes, typeargtypes, pkind);
+                            ResultInfo prevResult = this.resultInfo;
+                            try {
+                                this.resultInfo = resultInfoForClassDefinition;
+                                visitAnonymousClassDefinition(tree, clazz, clazz.type, cdef,
+                                                            localEnv, argtypes, typeargtypes, pkind);
+                            } finally {
+                                this.resultInfo = prevResult;
+                            }
                         });
             } else {
                 if (isDiamond && clazztype.hasTag(CLASS)) {

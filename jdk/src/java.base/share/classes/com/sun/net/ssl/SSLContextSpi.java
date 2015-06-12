@@ -49,9 +49,9 @@ public abstract class SSLContextSpi {
     /**
      * Initializes this context.
      *
-     * @param km the sources of authentication keys
-     * @param tm the sources of peer authentication trust decisions
-     * @param random the source of randomness for this generator
+     * @param ah the sources of authentication keys
+     * @param th the sources of peer authentication trust decisions
+     * @param sr the source of randomness for this generator
      */
     protected abstract void engineInit(KeyManager[] ah, TrustManager[] th,
         SecureRandom sr) throws KeyManagementException;
