@@ -669,6 +669,11 @@ class InvokerBytecodeGenerator {
             switch (intr) {
                 case SELECT_ALTERNATIVE:
                     assert isSelectAlternative(i);
+                    if (PROFILE_GWT) {
+                        assert(name.arguments[0] instanceof Name &&
+                               nameRefersTo((Name)name.arguments[0], MethodHandleImpl.class, "profileBoolean"));
+                        mv.visitAnnotation("Ljava/lang/invoke/InjectedProfile;", true);
+                    }
                     onStack = emitSelectAlternative(name, lambdaForm.names[i+1]);
                     i++;  // skip MH.invokeBasic of the selectAlternative result
                     continue;
