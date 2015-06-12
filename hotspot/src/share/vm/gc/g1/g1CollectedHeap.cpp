@@ -1183,7 +1183,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     IsGCActiveMark x;
 
     // Timing
-    assert(gc_cause() != GCCause::_java_lang_system_gc || explicit_gc, "invariant");
+    assert(!GCCause::is_user_requested_gc(gc_cause()) || explicit_gc, "invariant");
     TraceCPUTime tcpu(G1Log::finer(), true, gclog_or_tty);
 
     {
@@ -2199,6 +2199,7 @@ bool G1CollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
   switch (cause) {
     case GCCause::_gc_locker:               return GCLockerInvokesConcurrent;
     case GCCause::_java_lang_system_gc:     return ExplicitGCInvokesConcurrent;
+    case GCCause::_dcmd_gc_run:             return ExplicitGCInvokesConcurrent;
     case GCCause::_g1_humongous_allocation: return true;
     case GCCause::_update_allocation_context_stats_inc: return true;
     case GCCause::_wb_conc_mark:            return true;
