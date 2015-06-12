@@ -188,6 +188,7 @@ class G1CollectedHeap : public CollectedHeap {
   friend class SurvivorGCAllocRegion;
   friend class OldGCAllocRegion;
   friend class G1Allocator;
+  friend class G1ArchiveAllocator;
 
   // Closures used in implementation.
   friend class G1ParScanThreadState;
@@ -249,6 +250,9 @@ private:
 
   // Class that handles the different kinds of allocations.
   G1Allocator* _allocator;
+
+  // Class that handles archive allocation ranges.
+  G1ArchiveAllocator* _archive_allocator;
 
   // Statistics for each allocation context
   AllocationContextStats _allocation_context_stats;
@@ -576,6 +580,10 @@ protected:
   void retire_gc_alloc_region(HeapRegion* alloc_region,
                               size_t allocated_bytes, InCSetState dest);
 
+  // Allocate the highest free region in the reserved heap. This will commit
+  // regions as necessary.
+  HeapRegion* alloc_highest_free_region();
+
   // - if explicit_gc is true, the GC is for a System.gc() or a heap
   //   inspection request and should collect the entire heap
   // - if clear_all_soft_refs is true, all soft references should be
@@ -731,6 +739,44 @@ public:
   void free_humongous_region(HeapRegion* hr,
                              FreeRegionList* free_list,
                              bool par);
+
+  // Facility for allocating in 'archive' regions in high heap memory and
+  // recording the allocated ranges. These should all be called from the
+  // VM thread at safepoints, without the heap lock held. They can be used
+  // to create and archive a set of heap regions which can be mapped at the
+  // same fixed addresses in a subsequent JVM invocation.
+  void begin_archive_alloc_range();
+
+  // Check if the requested size would be too large for an archive allocation.
+  bool is_archive_alloc_too_large(size_t word_size);
+
+  // Allocate memory of the requested size from the archive region. This will
+  // return NULL if the size is too large or if no memory is available. It
+  // does not trigger a garbage collection.
+  HeapWord* archive_mem_allocate(size_t word_size);
+
+  // Optionally aligns the end address and returns the allocated ranges in
+  // an array of MemRegions in order of ascending addresses.
+  void end_archive_alloc_range(GrowableArray<MemRegion>* ranges,
+                               size_t end_alignment_in_bytes = 0);
+
+  // Facility for allocating a fixed range within the heap and marking
+  // the containing regions as 'archive'. For use at JVM init time, when the
+  // caller may mmap archived heap data at the specified range(s).
+  // Verify that the MemRegions specified in the argument array are within the
+  // reserved heap.
+  bool check_archive_addresses(MemRegion* range, size_t count);
+
+  // Commit the appropriate G1 regions containing the specified MemRegions
+  // and mark them as 'archive' regions. The regions in the array must be
+  // non-overlapping and in order of ascending address.
+  bool alloc_archive_regions(MemRegion* range, size_t count);
+
+  // Insert any required filler objects in the G1 regions around the specified
+  // ranges to make the regions parseable. This must be called after
+  // alloc_archive_regions, and after class loading has occurred.
+  void fill_archive_regions(MemRegion* range, size_t count);
+
 protected:
 
   // Shrink the garbage-first heap by at most the given size (in bytes!).
@@ -1395,6 +1441,11 @@ public:
     return word_size > _humongous_object_threshold_in_words;
   }
 
+  // Returns the humongous threshold for a specific region size
+  static size_t humongous_threshold_for(size_t region_size) {
+    return (region_size / 2);
+  }
+
   // Update mod union table with the set of dirty cards.
   void updateModUnion();
 
@@ -1441,21 +1492,23 @@ public:
 
   // Determine if an object is dead, given the object and also
   // the region to which the object belongs. An object is dead
-  // iff a) it was not allocated since the last mark and b) it
-  // is not marked.
+  // iff a) it was not allocated since the last mark, b) it
+  // is not marked, and c) it is not in an archive region.
   bool is_obj_dead(const oop obj, const HeapRegion* hr) const {
     return
       !hr->obj_allocated_since_prev_marking(obj) &&
-      !isMarkedPrev(obj);
+      !isMarkedPrev(obj) &&
+      !hr->is_archive();
   }
 
   // This function returns true when an object has been
   // around since the previous marking and hasn't yet
-  // been marked during this marking.
+  // been marked during this marking, and is not in an archive region.
   bool is_obj_ill(const oop obj, const HeapRegion* hr) const {
     return
       !hr->obj_allocated_since_next_marking(obj) &&
-      !isMarkedNext(obj);
+      !isMarkedNext(obj) &&
+      !hr->is_archive();
   }
 
   // Determine if an object is dead, given only the object itself.
