@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -19,7 +19,7 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 
 # Generic compiler settings
@@ -166,7 +166,7 @@ LD_FLAGS= $(LD_FLAGS) /map /debug
 !endif
 
 
-!if $(MSC_VER) >= 1600 
+!if $(MSC_VER) >= 1600
 LD_FLAGS= $(LD_FLAGS) psapi.lib
 !endif
 
@@ -190,4 +190,3 @@ RC_FLAGS=/D "HS_VER=$(HS_VER)" \
 !if "$(MFC_DEBUG)" == "true"
 RC_FLAGS = $(RC_FLAGS) /D "_DEBUG"
 !endif
-

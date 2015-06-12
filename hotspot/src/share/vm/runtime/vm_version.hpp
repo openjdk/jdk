@@ -45,7 +45,7 @@ class Abstract_VM_Version: AllStatic {
   static unsigned int _L1_data_cache_line_size;
   static int          _vm_major_version;
   static int          _vm_minor_version;
-  static int          _vm_micro_version;
+  static int          _vm_security_version;
   static int          _vm_build_number;
   static bool         _initialized;
   static unsigned int _parallel_worker_threads;
@@ -70,7 +70,7 @@ class Abstract_VM_Version: AllStatic {
 
   static int vm_major_version()               { assert(_initialized, "not initialized"); return _vm_major_version; }
   static int vm_minor_version()               { assert(_initialized, "not initialized"); return _vm_minor_version; }
-  static int vm_micro_version()               { assert(_initialized, "not initialized"); return _vm_micro_version; }
+  static int vm_security_version()            { assert(_initialized, "not initialized"); return _vm_security_version; }
   static int vm_build_number()                { assert(_initialized, "not initialized"); return _vm_build_number; }
 
   // Gets the jvm_version_info.jvm_version defined in jvm.h

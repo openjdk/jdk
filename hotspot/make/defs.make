@@ -122,58 +122,49 @@ endif
 # hotspot version definitions
 include $(GAMMADIR)/make/jdk_version
 
+# JDK_PREVIOUS_VERSION is only needed to facilitate standalone builds
+ifeq ($(JDK_PREVIOUS_VERSION),)
+  JDK_PREVIOUS_VERSION=$(STANDALONE_JDK_PREVIOUS_VERSION)
+endif
 # Java versions needed
-ifeq ($(PREVIOUS_JDK_VERSION),)
-  PREVIOUS_JDK_VERSION=$(JDK_PREVIOUS_VERSION)
+ifeq ($(VERSION_MAJOR),)
+  VERSION_MAJOR=$(STANDALONE_JDK_MAJOR_VER)
 endif
-ifeq ($(JDK_MAJOR_VERSION),)
-  JDK_MAJOR_VERSION=$(JDK_MAJOR_VER)
+ifeq ($(VERSION_MINOR),)
+  VERSION_MINOR=$(STANDALONE_JDK_MINOR_VER)
 endif
-ifeq ($(JDK_MINOR_VERSION),)
-  JDK_MINOR_VERSION=$(JDK_MINOR_VER)
+ifeq ($(VERSION_SECURITY),)
+  VERSION_SECURITY=$(STANDALONE_JDK_SECURITY_VER)
 endif
-ifeq ($(JDK_MICRO_VERSION),)
-  JDK_MICRO_VERSION=$(JDK_MICRO_VER)
+ifeq ($(VERSION_PATCH),)
+  VERSION_PATCH=$(STANDALONE_JDK_PATCH_VER)
 endif
-ifeq ($(JDK_BUILD_NUMBER),)
-  JDK_BUILD_NUMBER=0
+ifeq ($(VERSION_BUILD),)
+  VERSION_BUILD=0
 endif
-ifeq ($(JDK_MKTG_VERSION),)
-  JDK_MKTG_VERSION=$(JDK_MINOR_VERSION).$(JDK_MICRO_VERSION)
+ifeq ($(VERSION_SHORT),)
+  VERSION_SHORT=$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_SECURITY)
 endif
-ifeq ($(JDK_VERSION),)  
-  ifeq ($(BUILD_FLAVOR), product)
-    JDK_VERSION=$(JDK_MAJOR_VERSION).$(JDK_MINOR_VERSION).$(JDK_MICRO_VERSION)
-  else
-    JDK_VERSION=$(JDK_MAJOR_VERSION).$(JDK_MINOR_VERSION).$(JDK_MICRO_VERSION)-$(BUILD_FLAVOR)
-  endif
-endif
-ifeq ($(FULL_VERSION),)
-  FULL_VERSION="$(JDK_VERSION)"
+ifeq ($(VERSION_STRING),)
+  # Note that this is an extremely rough and incorrect approximation of a correct version string.
+  VERSION_STRING=$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_SECURITY)-internal
 endif
 
-# FULL_VERSION is only used to define JRE_RELEASE_VERSION which is used
-# as JRE version in VM -Xinternalversion output.
-ifndef JRE_RELEASE_VERSION
-  JRE_RELEASE_VERSION=$(FULL_VERSION)
-endif
-
-ifndef HOTSPOT_RELEASE_VERSION
-  HOTSPOT_RELEASE_VERSION=$(FULL_VERSION)
-endif
-
-ifdef HOTSPOT_BUILD_VERSION
-# specified in command line
+ifneq ($(HOTSPOT_RELEASE_VERSION),)
+  # Allow old command-line overrides
+  HOTSPOT_VERSION_STRING := $(HOTSPOT_RELEASE_VERSION)
 else
-  ifdef COOKED_BUILD_NUMBER
-# JRE build
-    HOTSPOT_BUILD_VERSION=
-  else
-    ifdef USER_RELEASE_SUFFIX
-      HOTSPOT_BUILD_VERSION=internal-$(USER_RELEASE_SUFFIX)
-    else
-      HOTSPOT_BUILD_VERSION=internal
-    endif
+  # Normally get from surrounding JDK build
+  HOTSPOT_VERSION_STRING := $(VERSION_STRING)
+endif
+
+ifneq ($(HOTSPOT_BUILD_VERSION),)
+  # If old command-lines variable exists, append to version string
+  HOTSPOT_VERSION_STRING := $(HOTSPOT_VERSION_STRING)-$(HOTSPOT_BUILD_VERSION)
+else
+  ifeq ($(SPEC),)
+    # If building standalone, add -internal.
+    HOTSPOT_VERSION_STRING := $(HOTSPOT_VERSION_STRING)-internal
   endif
 endif
 
@@ -233,7 +224,7 @@ ifneq ($(ALT_OUTPUTDIR),)
 endif
 
 # Find latest promoted JDK area
-JDK_IMPORT_PATH=$(SLASH_JAVA)/re/j2se/$(JDK_VERSION)/promoted/latest/binaries/$(PLATFORM)
+JDK_IMPORT_PATH=$(SLASH_JAVA)/re/j2se/$(VERSION_STRING)/promoted/latest/binaries/$(PLATFORM)
 ifneq ($(ALT_JDK_IMPORT_PATH),)
   JDK_IMPORT_PATH=$(ALT_JDK_IMPORT_PATH)
 endif
@@ -246,7 +237,7 @@ ifneq ($(ALT_JDK_TARGET_IMPORT_PATH),)
 endif
 
 # Find JDK used for javac compiles
-BOOTDIR=$(SLASH_JAVA)/re/j2se/$(PREVIOUS_JDK_VERSION)/latest/binaries/$(PLATFORM)
+BOOTDIR=$(SLASH_JAVA)/re/j2se/$(JDK_PREVIOUS_VERSION)/latest/binaries/$(PLATFORM)
 ifneq ($(ALT_BOOTDIR),)
   BOOTDIR=$(ALT_BOOTDIR)
 endif
@@ -337,12 +328,7 @@ MAKE_ARGS += BOOTDIR=$(ABS_BOOTDIR)
 MAKE_ARGS += OUTPUTDIR=$(ABS_OUTPUTDIR)
 MAKE_ARGS += GAMMADIR=$(ABS_GAMMADIR)
 MAKE_ARGS += MAKE_VERBOSE=$(MAKE_VERBOSE)
-MAKE_ARGS += JRE_RELEASE_VERSION=$(JRE_RELEASE_VERSION)
-
-# Pass HOTSPOT_BUILD_VERSION as argument to OS specific Makefile
-# to overwrite the default definition since OS specific Makefile also
-# includes this make/defs.make file.
-MAKE_ARGS += HOTSPOT_BUILD_VERSION=$(HOTSPOT_BUILD_VERSION)
+MAKE_ARGS += VERSION_STRING=$(VERSION_STRING)
 
 MAKE_ARGS += BOOT_JDK_SOURCETARGET="$(BOOT_JDK_SOURCETARGET)"
 
