@@ -28,6 +28,9 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/altHashing.hpp"
+#if INCLUDE_ALL_GCS
+#include "gc/g1/g1CollectedHeap.hpp"
+#endif
 #include "memory/filemap.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/oopFactory.hpp"
@@ -166,6 +169,9 @@ void FileMapInfo::FileMapHeader::populate(FileMapInfo* mapinfo, size_t alignment
   _version = _current_version;
   _alignment = alignment;
   _obj_alignment = ObjectAlignmentInBytes;
+  _narrow_oop_mode = Universe::narrow_oop_mode();
+  _narrow_oop_shift = Universe::narrow_oop_shift();
+  _max_heap_size = MaxHeapSize;
   _classpath_entry_table_size = mapinfo->_classpath_entry_table_size;
   _classpath_entry_table = mapinfo->_classpath_entry_table;
   _classpath_entry_size = mapinfo->_classpath_entry_size;
@@ -441,13 +447,54 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
   } else {
     si->_file_offset = _file_offset;
   }
-  si->_base = base;
+  if (MetaspaceShared::is_string_region(region)) {
+    assert((base - (char*)Universe::narrow_oop_base()) % HeapWordSize == 0, "Sanity");
+    if (base != NULL) {
+      si->_addr._offset = (intx)oopDesc::encode_heap_oop_not_null((oop)base);
+    } else {
+      si->_addr._offset = 0;
+    }
+  } else {
+    si->_addr._base = base;
+  }
   si->_used = size;
   si->_capacity = capacity;
   si->_read_only = read_only;
   si->_allow_exec = allow_exec;
   si->_crc = ClassLoader::crc32(0, base, (jint)size);
   write_bytes_aligned(base, (int)size);
+}
+
+// Write the string space. The string space contains one or multiple GC(G1) regions.
+// When the total string space size is smaller than one GC region of the dump time,
+// only one string region is used for shared strings.
+//
+// If the total string space size is bigger than one GC region, there would be more
+// than one GC regions allocated for shared strings. The first/bottom GC region might
+// be a partial GC region with the empty portion at the higher address within that region.
+// The non-empty portion of the first region is written into the archive as one string
+// region. The rest are consecutive full GC regions if they exist, which can be written
+// out in one chunk as another string region.
+void FileMapInfo::write_string_regions(GrowableArray<MemRegion> *regions) {
+  for (int i = MetaspaceShared::first_string;
+           i < MetaspaceShared::first_string + MetaspaceShared::max_strings; i++) {
+    char* start = NULL;
+    size_t size = 0;
+    if (regions->is_nonempty()) {
+      if (i == MetaspaceShared::first_string) {
+        MemRegion first = regions->first();
+        start = (char*)first.start();
+        size = first.byte_size();
+      } else {
+        int len = regions->length();
+        if (len > 1) {
+          start = (char*)regions->at(1).start();
+          size = (char*)regions->at(len - 1).end() - start;
+        }
+      }
+    }
+    write_region(i, start, size, size, false, false);
+  }
 }
 
 
@@ -514,7 +561,8 @@ void FileMapInfo::close() {
 // JVM/TI RedefineClasses() support:
 // Remap the shared readonly space to shared readwrite, private.
 bool FileMapInfo::remap_shared_readonly_as_readwrite() {
-  struct FileMapInfo::FileMapHeader::space_info* si = &_header->_space[0];
+  int idx = 0;
+  struct FileMapInfo::FileMapHeader::space_info* si = &_header->_space[idx];
   if (!si->_read_only) {
     // the space is already readwrite so we are done
     return true;
@@ -524,15 +572,16 @@ bool FileMapInfo::remap_shared_readonly_as_readwrite() {
   if (!open_for_read()) {
     return false;
   }
+  char *addr = _header->region_addr(idx);
   char *base = os::remap_memory(_fd, _full_path, si->_file_offset,
-                                si->_base, size, false /* !read_only */,
+                                addr, size, false /* !read_only */,
                                 si->_allow_exec);
   close();
   if (base == NULL) {
     fail_continue("Unable to remap shared readonly space (errno=%d).", errno);
     return false;
   }
-  if (base != si->_base) {
+  if (base != addr) {
     fail_continue("Unable to remap shared readonly space at required address.");
     return false;
   }
@@ -543,7 +592,7 @@ bool FileMapInfo::remap_shared_readonly_as_readwrite() {
 // Map the whole region at once, assumed to be allocated contiguously.
 ReservedSpace FileMapInfo::reserve_shared_memory() {
   struct FileMapInfo::FileMapHeader::space_info* si = &_header->_space[0];
-  char* requested_addr = si->_base;
+  char* requested_addr = _header->region_addr(0);
 
   size_t size = FileMapInfo::shared_spaces_size();
 
@@ -561,14 +610,16 @@ ReservedSpace FileMapInfo::reserve_shared_memory() {
 }
 
 // Memory map a region in the address space.
-static const char* shared_region_name[] = { "ReadOnly", "ReadWrite", "MiscData", "MiscCode"};
+static const char* shared_region_name[] = { "ReadOnly", "ReadWrite", "MiscData", "MiscCode",
+                                            "String1", "String2" };
 
 char* FileMapInfo::map_region(int i) {
+  assert(!MetaspaceShared::is_string_region(i), "sanity");
   struct FileMapInfo::FileMapHeader::space_info* si = &_header->_space[i];
   size_t used = si->_used;
   size_t alignment = os::vm_allocation_granularity();
   size_t size = align_size_up(used, alignment);
-  char *requested_addr = si->_base;
+  char *requested_addr = _header->region_addr(i);
   bool read_only;
 
   // If a tool agent is in use (debugging enabled), we must map the address space RW
@@ -583,7 +634,7 @@ char* FileMapInfo::map_region(int i) {
   char *base = os::map_memory(_fd, _full_path, si->_file_offset,
                               requested_addr, size, read_only,
                               si->_allow_exec);
-  if (base == NULL || base != si->_base) {
+  if (base == NULL || base != requested_addr) {
     fail_continue("Unable to map %s shared space at required address.", shared_region_name[i]);
     return NULL;
   }
@@ -592,15 +643,119 @@ char* FileMapInfo::map_region(int i) {
   // in method FileMapInfo::reserve_shared_memory(), which is not called on Windows.
   MemTracker::record_virtual_memory_type((address)base, mtClassShared);
 #endif
+
   return base;
+}
+
+MemRegion *string_ranges = NULL;
+int num_ranges = 0;
+bool FileMapInfo::map_string_regions() {
+#if INCLUDE_ALL_GCS
+  if (UseG1GC && UseCompressedOops && UseCompressedClassPointers) {
+    if (narrow_oop_mode() == Universe::narrow_oop_mode() &&
+        narrow_oop_shift() == Universe::narrow_oop_shift()) {
+      string_ranges = new MemRegion[MetaspaceShared::max_strings];
+      struct FileMapInfo::FileMapHeader::space_info* si;
+
+      for (int i = MetaspaceShared::first_string;
+               i < MetaspaceShared::first_string + MetaspaceShared::max_strings; i++) {
+        si = &_header->_space[i];
+        size_t used = si->_used;
+        if (used > 0) {
+          size_t size = used;
+          char* requested_addr = (char*)((void*)oopDesc::decode_heap_oop_not_null(
+                                                 (narrowOop)si->_addr._offset));
+          string_ranges[num_ranges] = MemRegion((HeapWord*)requested_addr, size / HeapWordSize);
+          num_ranges ++;
+        }
+      }
+
+      if (num_ranges == 0) {
+        return true; // no shared string data
+      }
+
+      // Check that ranges are within the java heap
+      if (!G1CollectedHeap::heap()->check_archive_addresses(string_ranges, num_ranges)) {
+        fail_continue("Unable to allocate shared string space: range is not "
+                      "within java heap.");
+        return false;
+      }
+
+      // allocate from java heap
+      if (!G1CollectedHeap::heap()->alloc_archive_regions(string_ranges, num_ranges)) {
+        fail_continue("Unable to allocate shared string space: range is "
+                      "already in use.");
+        return false;
+      }
+
+      // Map the string data. No need to call MemTracker::record_virtual_memory_type()
+      // for mapped string regions as they are part of the reserved java heap, which
+      // is already recorded.
+      for (int i = 0; i < num_ranges; i++) {
+        si = &_header->_space[MetaspaceShared::first_string + i];
+        char* addr = (char*)string_ranges[i].start();
+        char* base = os::map_memory(_fd, _full_path, si->_file_offset,
+                                    addr, string_ranges[i].byte_size(), si->_read_only,
+                                    si->_allow_exec);
+        if (base == NULL || base != addr) {
+          fail_continue("Unable to map shared string space at required address.");
+          return false;
+        }
+      }
+      return true; // the shared string data is mapped successfuly
+    } else {
+      //  narrow oop encoding differ, the shared string data are not used
+      if (PrintSharedSpaces && _header->_space[MetaspaceShared::first_string]._used > 0) {
+        tty->print_cr("Shared string data from the CDS archive is being ignored. "
+                     "The current CompressedOops encoding differs from that archived "
+                     "due to heap size change. The archive was dumped using max heap "
+                     "size %dM.", max_heap_size() >> 20);
+      }
+    }
+  } else {
+    if (PrintSharedSpaces && _header->_space[MetaspaceShared::first_string]._used > 0) {
+      tty->print_cr("Shared string data from the CDS archive is being ignored. UseG1GC, "
+                    "UseCompressedOops and UseCompressedClassPointers are required.");
+    }
+  }
+
+  // if we get here, the shared string data is not mapped
+  assert(string_ranges == NULL && num_ranges == 0, "sanity");
+  StringTable::ignore_shared_strings(true);
+#endif
+  return true;
+}
+
+bool FileMapInfo::verify_string_regions() {
+  for (int i = MetaspaceShared::first_string;
+           i < MetaspaceShared::first_string + MetaspaceShared::max_strings; i++) {
+    if (!verify_region_checksum(i)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+void FileMapInfo::fixup_string_regions() {
+  if (string_ranges != NULL) {
+    G1CollectedHeap::heap()->fill_archive_regions(string_ranges, num_ranges);
+  }
 }
 
 bool FileMapInfo::verify_region_checksum(int i) {
   if (!VerifySharedSpaces) {
     return true;
   }
-  const char* buf = _header->_space[i]._base;
+
   size_t sz = _header->_space[i]._used;
+
+  if (sz == 0) {
+    return true; // no data
+  }
+  if (MetaspaceShared::is_string_region(i) && StringTable::shared_string_ignored()) {
+    return true; // shared string data are not mapped
+  }
+  const char* buf = _header->region_addr(i);
   int crc = ClassLoader::crc32(0, buf, (jint)sz);
   if (crc != _header->_space[i]._crc) {
     fail_continue("Checksum verification failed.");
@@ -612,14 +767,36 @@ bool FileMapInfo::verify_region_checksum(int i) {
 // Unmap a memory region in the address space.
 
 void FileMapInfo::unmap_region(int i) {
+  assert(!MetaspaceShared::is_string_region(i), "sanity");
   struct FileMapInfo::FileMapHeader::space_info* si = &_header->_space[i];
   size_t used = si->_used;
   size_t size = align_size_up(used, os::vm_allocation_granularity());
-  if (!os::unmap_memory(si->_base, size)) {
+
+  if (used == 0) {
+    return;
+  }
+
+  char* addr = _header->region_addr(i);
+  if (!os::unmap_memory(addr, size)) {
     fail_stop("Unable to unmap shared space.");
   }
 }
 
+void FileMapInfo::unmap_string_regions() {
+  for (int i = MetaspaceShared::first_string;
+           i < MetaspaceShared::first_string + MetaspaceShared::max_strings; i++) {
+    struct FileMapInfo::FileMapHeader::space_info* si = &_header->_space[i];
+    size_t used = si->_used;
+    if (used > 0) {
+      size_t size = align_size_up(used, os::vm_allocation_granularity());
+      char* addr = (char*)((void*)oopDesc::decode_heap_oop_not_null(
+                                             (narrowOop)si->_addr._offset));
+      if (!os::unmap_memory(addr, size)) {
+        fail_stop("Unable to unmap shared space.");
+      }
+    }
+  }
+}
 
 void FileMapInfo::assert_mark(bool check) {
   if (!check) {
@@ -661,6 +838,15 @@ bool FileMapInfo::initialize() {
   SharedMiscDataSize =  _header->_space[2]._capacity;
   SharedMiscCodeSize =  _header->_space[3]._capacity;
   return true;
+}
+
+char* FileMapInfo::FileMapHeader::region_addr(int idx) {
+  if (MetaspaceShared::is_string_region(idx)) {
+    return (char*)((void*)oopDesc::decode_heap_oop_not_null(
+              (narrowOop)_space[idx]._addr._offset));
+  } else {
+    return _space[idx]._addr._base;
+  }
 }
 
 int FileMapInfo::FileMapHeader::compute_crc() {
@@ -734,8 +920,12 @@ bool FileMapInfo::validate_header() {
 // True if the p is within the mapped shared space, otherwise, false.
 bool FileMapInfo::is_in_shared_space(const void* p) {
   for (int i = 0; i < MetaspaceShared::n_regions; i++) {
-    if (p >= _header->_space[i]._base &&
-        p < _header->_space[i]._base + _header->_space[i]._used) {
+    char *base;
+    if (MetaspaceShared::is_string_region(i) && _header->_space[i]._used == 0) {
+      continue;
+    }
+    base = _header->region_addr(i);
+    if (p >= base && p < base + _header->_space[i]._used) {
       return true;
     }
   }
@@ -747,9 +937,10 @@ void FileMapInfo::print_shared_spaces() {
   gclog_or_tty->print_cr("Shared Spaces:");
   for (int i = 0; i < MetaspaceShared::n_regions; i++) {
     struct FileMapInfo::FileMapHeader::space_info* si = &_header->_space[i];
+    char *base = _header->region_addr(i);
     gclog_or_tty->print("  %s " INTPTR_FORMAT "-" INTPTR_FORMAT,
                         shared_region_name[i],
-                        si->_base, si->_base + si->_used);
+                        base, base + si->_used);
   }
 }
 
@@ -758,12 +949,14 @@ void FileMapInfo::stop_sharing_and_unmap(const char* msg) {
   FileMapInfo *map_info = FileMapInfo::current_info();
   if (map_info) {
     map_info->fail_continue("%s", msg);
-    for (int i = 0; i < MetaspaceShared::n_regions; i++) {
-      if (map_info->_header->_space[i]._base != NULL) {
+    for (int i = 0; i < MetaspaceShared::num_non_strings; i++) {
+      char *addr = map_info->_header->region_addr(i);
+      if (addr != NULL && !MetaspaceShared::is_string_region(i)) {
         map_info->unmap_region(i);
-        map_info->_header->_space[i]._base = NULL;
+        map_info->_header->_space[i]._addr._base = NULL;
       }
     }
+    map_info->unmap_string_regions();
   } else if (DumpSharedSpaces) {
     fail_stop("%s", msg);
   }

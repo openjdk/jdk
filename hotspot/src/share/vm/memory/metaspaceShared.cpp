@@ -422,6 +422,8 @@ private:
   GrowableArray<Klass*> *_class_promote_order;
   VirtualSpace _md_vs;
   VirtualSpace _mc_vs;
+  CompactHashtableWriter* _string_cht;
+  GrowableArray<MemRegion> *_string_regions;
 
 public:
   VM_PopulateDumpSharedSpace(ClassLoaderData* loader_data,
@@ -540,13 +542,22 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   NOT_PRODUCT(SystemDictionary::verify();)
 
-  // Copy the the symbol table, and the system dictionary to the shared
+  // Copy the the symbol table, string table, and the system dictionary to the shared
   // space in usable form.  Copy the hashtable
   // buckets first [read-write], then copy the linked lists of entries
   // [read-only].
 
   NOT_PRODUCT(SymbolTable::verify());
   handle_misc_data_space_failure(SymbolTable::copy_compact_table(&md_top, md_end));
+
+  size_t ss_bytes = 0;
+  char* ss_low;
+  // The string space has maximum two regions. See FileMapInfo::write_string_regions() for details.
+  _string_regions = new GrowableArray<MemRegion>(2);
+  NOT_PRODUCT(StringTable::verify());
+  handle_misc_data_space_failure(StringTable::copy_compact_table(&md_top, md_end, _string_regions,
+                                                                 &ss_bytes));
+  ss_low = _string_regions->is_empty() ? NULL : (char*)_string_regions->first().start();
 
   SystemDictionary::reverse();
   SystemDictionary::copy_buckets(&md_top, md_end);
@@ -576,7 +587,8 @@ void VM_PopulateDumpSharedSpace::doit() {
   const size_t rw_alloced = rw_space->capacity_bytes_slow(Metaspace::NonClassType);
   const size_t md_alloced = md_end-md_low;
   const size_t mc_alloced = mc_end-mc_low;
-  const size_t total_alloced = ro_alloced + rw_alloced + md_alloced + mc_alloced;
+  const size_t total_alloced = ro_alloced + rw_alloced + md_alloced + mc_alloced
+                             + ss_bytes;
 
   // Occupied size of each space.
   const size_t ro_bytes = ro_space->used_bytes_slow(Metaspace::NonClassType);
@@ -585,11 +597,12 @@ void VM_PopulateDumpSharedSpace::doit() {
   const size_t mc_bytes = size_t(mc_top - mc_low);
 
   // Percent of total size
-  const size_t total_bytes = ro_bytes + rw_bytes + md_bytes + mc_bytes;
+  const size_t total_bytes = ro_bytes + rw_bytes + md_bytes + mc_bytes + ss_bytes;
   const double ro_t_perc = ro_bytes / double(total_bytes) * 100.0;
   const double rw_t_perc = rw_bytes / double(total_bytes) * 100.0;
   const double md_t_perc = md_bytes / double(total_bytes) * 100.0;
   const double mc_t_perc = mc_bytes / double(total_bytes) * 100.0;
+  const double ss_t_perc = ss_bytes / double(total_bytes) * 100.0;
 
   // Percent of fullness of each space
   const double ro_u_perc = ro_bytes / double(ro_alloced) * 100.0;
@@ -602,6 +615,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   tty->print_cr(fmt_space, "rw", rw_bytes, rw_t_perc, rw_alloced, rw_u_perc, rw_space->bottom());
   tty->print_cr(fmt_space, "md", md_bytes, md_t_perc, md_alloced, md_u_perc, md_low);
   tty->print_cr(fmt_space, "mc", mc_bytes, mc_t_perc, mc_alloced, mc_u_perc, mc_low);
+  tty->print_cr(fmt_space, "st", ss_bytes, ss_t_perc, ss_bytes, 100.0, ss_low);
   tty->print_cr("total   : %9d [100.0%% of total] out of %9d bytes [%4.1f%% used]",
                  total_bytes, total_alloced, total_u_perc);
 
@@ -631,6 +645,7 @@ void VM_PopulateDumpSharedSpace::doit() {
                         pointer_delta(mc_top, _mc_vs.low(), sizeof(char)),
                         SharedMiscCodeSize,
                         true, true);
+  mapinfo->write_string_regions(_string_regions);
 
   // Pass 2 - write data.
   mapinfo->open_for_write();
@@ -646,6 +661,8 @@ void VM_PopulateDumpSharedSpace::doit() {
                         pointer_delta(mc_top, _mc_vs.low(), sizeof(char)),
                         SharedMiscCodeSize,
                         true, true);
+  mapinfo->write_string_regions(_string_regions);
+
   mapinfo->close();
 
   memmove(vtbl_list, saved_vtbl, vtbl_list_size * sizeof(void*));
@@ -942,6 +959,11 @@ bool MetaspaceShared::is_in_shared_space(const void* p) {
   return UseSharedSpaces && FileMapInfo::current_info()->is_in_shared_space(p);
 }
 
+bool MetaspaceShared::is_string_region(int idx) {
+  return (idx >= MetaspaceShared::first_string &&
+          idx < MetaspaceShared::first_string + MetaspaceShared::max_strings);
+}
+
 void MetaspaceShared::print_shared_spaces() {
   if (UseSharedSpaces) {
     FileMapInfo::current_info()->print_shared_spaces();
@@ -972,13 +994,15 @@ bool MetaspaceShared::map_shared_spaces(FileMapInfo* mapinfo) {
 
   // Map each shared region
   if ((_ro_base = mapinfo->map_region(ro)) != NULL &&
-       mapinfo->verify_region_checksum(ro) &&
+      mapinfo->verify_region_checksum(ro) &&
       (_rw_base = mapinfo->map_region(rw)) != NULL &&
-       mapinfo->verify_region_checksum(rw) &&
+      mapinfo->verify_region_checksum(rw) &&
       (_md_base = mapinfo->map_region(md)) != NULL &&
-       mapinfo->verify_region_checksum(md) &&
+      mapinfo->verify_region_checksum(md) &&
       (_mc_base = mapinfo->map_region(mc)) != NULL &&
-       mapinfo->verify_region_checksum(mc) &&
+      mapinfo->verify_region_checksum(mc) &&
+      mapinfo->map_string_regions() &&
+      mapinfo->verify_string_regions() &&
       (image_alignment == (size_t)max_alignment()) &&
       mapinfo->validate_classpath_entry_table()) {
     // Success (no need to do anything)
@@ -990,6 +1014,7 @@ bool MetaspaceShared::map_shared_spaces(FileMapInfo* mapinfo) {
     if (_rw_base != NULL) mapinfo->unmap_region(rw);
     if (_md_base != NULL) mapinfo->unmap_region(md);
     if (_mc_base != NULL) mapinfo->unmap_region(mc);
+    mapinfo->unmap_string_regions();
 #ifndef _WINDOWS
     // Release the entire mapped region
     shared_rs.release();
@@ -1011,7 +1036,7 @@ bool MetaspaceShared::map_shared_spaces(FileMapInfo* mapinfo) {
 void MetaspaceShared::initialize_shared_spaces() {
   FileMapInfo *mapinfo = FileMapInfo::current_info();
 
-  char* buffer = mapinfo->region_base(md);
+  char* buffer = mapinfo->header()->region_addr(md);
 
   // Skip over (reserve space for) a list of addresses of C++ vtables
   // for Klass objects.  They get filled in later.
@@ -1027,12 +1052,15 @@ void MetaspaceShared::initialize_shared_spaces() {
   buffer += sizeof(intptr_t);
   buffer += vtable_size;
 
-  // Create the shared symbol table using the bucket array at this spot in the
+  // Create the shared symbol table using the compact table at this spot in the
   // misc data space. (Todo: move this to read-only space. Currently
   // this is mapped copy-on-write but will never be written into).
 
   buffer = (char*)SymbolTable::init_shared_table(buffer);
   SymbolTable::create_table();
+
+  // Create the shared string table using the compact table
+  buffer = (char*)StringTable::init_shared_table(mapinfo, buffer);
 
   // Create the shared dictionary using the bucket array at this spot in
   // the misc data space.  Since the shared dictionary table is never
@@ -1098,6 +1126,11 @@ void MetaspaceShared::initialize_shared_spaces() {
       vm_exit(0);
     }
   }
+}
+
+void MetaspaceShared::fixup_shared_string_regions() {
+  FileMapInfo *mapinfo = FileMapInfo::current_info();
+  mapinfo->fixup_string_regions();
 }
 
 // JVM/TI RedefineClasses() support:
