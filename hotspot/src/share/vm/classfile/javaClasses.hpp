@@ -118,6 +118,10 @@ class java_lang_String : AllStatic {
     return hash_offset;
   }
 
+  static void set_value_raw(oop string, typeArrayOop buffer) {
+    assert(initialized, "Must be initialized");
+    string->obj_field_put_raw(value_offset, buffer);
+  }
   static void set_value(oop string, typeArrayOop buffer) {
     assert(initialized && (value_offset > 0), "Must be initialized");
     string->obj_field_put(value_offset, (oop)buffer);
@@ -210,6 +214,7 @@ class java_lang_String : AllStatic {
   // Debugging
   static void print(oop java_string, outputStream* st);
   friend class JavaClasses;
+  friend class StringTable;
 };
 
 

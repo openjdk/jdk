@@ -3307,7 +3307,7 @@ void Metaspace::global_initialize() {
       // Map in spaces now also
       if (mapinfo->initialize() && MetaspaceShared::map_shared_spaces(mapinfo)) {
         cds_total = FileMapInfo::shared_spaces_size();
-        cds_address = (address)mapinfo->region_base(0);
+        cds_address = (address)mapinfo->header()->region_addr(0);
       } else {
         assert(!mapinfo->is_open() && !UseSharedSpaces,
                "archive file not closed or shared spaces not disabled.");
