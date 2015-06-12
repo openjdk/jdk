@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,15 @@
 
 package java.util;
 
-import java.io.Serializable;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamField;
+import java.io.Serializable;
 import java.security.*;
-import java.util.Map;
-import java.util.HashMap;
 import java.util.Enumeration;
 import java.util.Hashtable;
-import java.util.Collections;
-import java.io.ObjectStreamField;
-import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
-import java.io.IOException;
+import java.util.concurrent.ConcurrentHashMap;
 import sun.security.util.SecurityConstants;
 
 /**
@@ -162,6 +159,16 @@ public final class PropertyPermission extends BasicPermission {
     }
 
     /**
+     * Creates a PropertyPermission object with the specified name and
+     * a pre-calculated mask. Avoids the overhead of re-computing the mask.
+     * Called by PropertyPermissionCollection.
+     */
+    PropertyPermission(String name, int mask) {
+        super(name, getActions(mask));
+        this.mask = mask;
+    }
+
+    /**
      * Checks if this PropertyPermission object "implies" the specified
      * permission.
      * <P>
@@ -178,6 +185,7 @@ public final class PropertyPermission extends BasicPermission {
      * @return true if the specified permission is implied by this object,
      * false if not.
      */
+    @Override
     public boolean implies(Permission p) {
         if (!(p instanceof PropertyPermission))
             return false;
@@ -198,6 +206,7 @@ public final class PropertyPermission extends BasicPermission {
      * @return true if obj is a PropertyPermission, and has the same name and
      * actions as this PropertyPermission object.
      */
+    @Override
     public boolean equals(Object obj) {
         if (obj == this)
             return true;
@@ -219,6 +228,7 @@ public final class PropertyPermission extends BasicPermission {
      *
      * @return a hash code value for this object.
      */
+    @Override
     public int hashCode() {
         return this.getName().hashCode();
     }
@@ -345,6 +355,7 @@ public final class PropertyPermission extends BasicPermission {
      *
      * @return the canonical string representation of the actions.
      */
+    @Override
     public String getActions() {
         if (actions == null)
             actions = getActions(this.mask);
@@ -369,6 +380,7 @@ public final class PropertyPermission extends BasicPermission {
      * @return a new PermissionCollection object suitable for storing
      * PropertyPermissions.
      */
+    @Override
     public PermissionCollection newPermissionCollection() {
         return new PropertyPermissionCollection();
     }
@@ -425,7 +437,7 @@ final class PropertyPermissionCollection extends PermissionCollection
      * Key is property name; value is PropertyPermission.
      * Not serialized; see serialization section at end of class.
      */
-    private transient Map<String, PropertyPermission> perms;
+    private transient ConcurrentHashMap<String, PropertyPermission> perms;
 
     /**
      * Boolean saying if "*" is in the collection.
@@ -439,7 +451,7 @@ final class PropertyPermissionCollection extends PermissionCollection
      * Create an empty PropertyPermissionCollection object.
      */
     public PropertyPermissionCollection() {
-        perms = new HashMap<>(32);     // Capacity for default policy
+        perms = new ConcurrentHashMap<>(32);     // Capacity for default policy
         all_allowed = false;
     }
 
@@ -455,6 +467,7 @@ final class PropertyPermissionCollection extends PermissionCollection
      * @exception SecurityException - if this PropertyPermissionCollection
      *                                object has been marked readonly
      */
+    @Override
     public void add(Permission permission) {
         if (! (permission instanceof PropertyPermission))
             throw new IllegalArgumentException("invalid permission: "+
@@ -466,21 +479,30 @@ final class PropertyPermissionCollection extends PermissionCollection
         PropertyPermission pp = (PropertyPermission) permission;
         String propName = pp.getName();
 
-        synchronized (this) {
-            PropertyPermission existing = perms.get(propName);
+        // Add permission to map if it is absent, or replace with new
+        // permission if applicable. NOTE: cannot use lambda for
+        // remappingFunction parameter until JDK-8076596 is fixed.
+        perms.merge(propName, pp,
+            new java.util.function.BiFunction<>() {
+                @Override
+                public PropertyPermission apply(PropertyPermission existingVal,
+                                                PropertyPermission newVal) {
 
-            if (existing != null) {
-                int oldMask = existing.getMask();
-                int newMask = pp.getMask();
-                if (oldMask != newMask) {
-                    int effective = oldMask | newMask;
-                    String actions = PropertyPermission.getActions(effective);
-                    perms.put(propName, new PropertyPermission(propName, actions));
+                    int oldMask = existingVal.getMask();
+                    int newMask = newVal.getMask();
+                    if (oldMask != newMask) {
+                        int effective = oldMask | newMask;
+                        if (effective == newMask) {
+                            return newVal;
+                        }
+                        if (effective != oldMask) {
+                            return new PropertyPermission(propName, effective);
+                        }
+                    }
+                    return existingVal;
                 }
-            } else {
-                perms.put(propName, pp);
             }
-        }
+        );
 
         if (!all_allowed) {
             if (propName.equals("*"))
@@ -497,9 +519,10 @@ final class PropertyPermissionCollection extends PermissionCollection
      * @return true if "permission" is a proper subset of a permission in
      * the set, false if not.
      */
+    @Override
     public boolean implies(Permission permission) {
         if (! (permission instanceof PropertyPermission))
-                return false;
+            return false;
 
         PropertyPermission pp = (PropertyPermission) permission;
         PropertyPermission x;
@@ -509,9 +532,7 @@ final class PropertyPermissionCollection extends PermissionCollection
 
         // short circuit if the "*" Permission was added
         if (all_allowed) {
-            synchronized (this) {
-                x = perms.get("*");
-            }
+            x = perms.get("*");
             if (x != null) {
                 effective |= x.getMask();
                 if ((effective & desired) == desired)
@@ -526,9 +547,7 @@ final class PropertyPermissionCollection extends PermissionCollection
         String name = pp.getName();
         //System.out.println("check "+name);
 
-        synchronized (this) {
-            x = perms.get(name);
-        }
+        x = perms.get(name);
 
         if (x != null) {
             // we have a direct hit!
@@ -546,9 +565,7 @@ final class PropertyPermissionCollection extends PermissionCollection
 
             name = name.substring(0, last+1) + "*";
             //System.out.println("check "+name);
-            synchronized (this) {
-                x = perms.get(name);
-            }
+            x = perms.get(name);
 
             if (x != null) {
                 effective |= x.getMask();
@@ -569,16 +586,14 @@ final class PropertyPermissionCollection extends PermissionCollection
      *
      * @return an enumeration of all the PropertyPermission objects.
      */
+    @Override
     @SuppressWarnings("unchecked")
     public Enumeration<Permission> elements() {
-        // Convert Iterator of Map values into an Enumeration
-        synchronized (this) {
-            /**
-             * Casting to rawtype since Enumeration<PropertyPermission>
-             * cannot be directly cast to Enumeration<Permission>
-             */
-            return (Enumeration)Collections.enumeration(perms.values());
-        }
+        /**
+         * Casting to rawtype since Enumeration<PropertyPermission>
+         * cannot be directly cast to Enumeration<Permission>
+         */
+        return (Enumeration)perms.elements();
     }
 
     private static final long serialVersionUID = 7015263904581634791L;
@@ -616,9 +631,7 @@ final class PropertyPermissionCollection extends PermissionCollection
         // Copy perms into a Hashtable
         Hashtable<String, Permission> permissions =
             new Hashtable<>(perms.size()*2);
-        synchronized (this) {
-            permissions.putAll(perms);
-        }
+        permissions.putAll(perms);
 
         // Write out serializable fields
         ObjectOutputStream.PutField pfields = out.putFields();
@@ -646,7 +659,7 @@ final class PropertyPermissionCollection extends PermissionCollection
         @SuppressWarnings("unchecked")
         Hashtable<String, PropertyPermission> permissions =
             (Hashtable<String, PropertyPermission>)gfields.get("permissions", null);
-        perms = new HashMap<>(permissions.size()*2);
+        perms = new ConcurrentHashMap<>(permissions.size()*2);
         perms.putAll(permissions);
     }
 }
