@@ -79,7 +79,7 @@ public class TimeZoneNameProviderImpl extends TimeZoneNameProvider {
      * appropriate for daylight saving time even if the specified time zone
      * has not observed daylight saving time in the past.
      *
-     * @param ID a time zone ID string
+     * @param id a time zone ID string
      * @param daylight if true, return the daylight saving name.
      * @param style either {@link java.util.TimeZone#LONG TimeZone.LONG} or
      *    {@link java.util.TimeZone#SHORT TimeZone.SHORT}

@@ -55,7 +55,7 @@ import java.util.function.Supplier;
 /**
  * Utility class with different datatransfer helper functions
  *
- * @see 1.9
+ * @since 1.9
  */
 public class DataFlavorUtil {
 
