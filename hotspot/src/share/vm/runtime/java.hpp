@@ -81,7 +81,7 @@ class JDK_Version VALUE_OBJ_CLASS_SPEC {
 
   uint8_t _major;
   uint8_t _minor;
-  uint8_t _micro;
+  uint8_t _security;
   uint8_t _update;
   uint8_t _special;
   uint8_t _build;
@@ -102,7 +102,7 @@ class JDK_Version VALUE_OBJ_CLASS_SPEC {
 
   // Completes initialization for a pre-JDK6 version.
   static void fully_initialize(uint8_t major, uint8_t minor = 0,
-                               uint8_t micro = 0, uint8_t update = 0);
+                               uint8_t security = 0, uint8_t update = 0);
 
  public:
 
@@ -111,15 +111,15 @@ class JDK_Version VALUE_OBJ_CLASS_SPEC {
     return _current._partially_initialized;
   }
 
-  JDK_Version() : _major(0), _minor(0), _micro(0), _update(0),
+  JDK_Version() : _major(0), _minor(0), _security(0), _update(0),
                   _special(0), _build(0), _partially_initialized(false),
                   _thread_park_blocker(false), _post_vm_init_hook_enabled(false)
                   {}
 
-  JDK_Version(uint8_t major, uint8_t minor = 0, uint8_t micro = 0,
+  JDK_Version(uint8_t major, uint8_t minor = 0, uint8_t security = 0,
               uint8_t update = 0, uint8_t special = 0, uint8_t build = 0,
               bool thread_park_blocker = false, bool post_vm_init_hook_enabled = false) :
-      _major(major), _minor(minor), _micro(micro), _update(update),
+      _major(major), _minor(minor), _security(security), _update(update),
       _special(special), _build(build), _partially_initialized(false),
       _thread_park_blocker(thread_park_blocker),
       _post_vm_init_hook_enabled(post_vm_init_hook_enabled)
@@ -139,7 +139,7 @@ class JDK_Version VALUE_OBJ_CLASS_SPEC {
 
   uint8_t major_version() const          { return _major; }
   uint8_t minor_version() const          { return _minor; }
-  uint8_t micro_version() const          { return _micro; }
+  uint8_t security_version() const          { return _security; }
   uint8_t update_version() const         { return _update; }
   uint8_t special_update_version() const { return _special; }
   uint8_t build_number() const           { return _build; }

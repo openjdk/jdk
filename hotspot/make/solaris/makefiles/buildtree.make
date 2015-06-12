@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -36,9 +36,8 @@
 # GAMMADIR	- top of workspace
 # OS_FAMILY	- operating system
 # VARIANT	- core, compiler1, compiler2, or tiered
-# HOTSPOT_RELEASE_VERSION - <major_ver>.<minor_ver>.<micro_ver>[-<identifier>][-<debug_target>][-b<nn>]
-# HOTSPOT_BUILD_VERSION   - internal, internal-$(USER_RELEASE_SUFFIX) or empty
-# JRE_RELEASE_VERSION     - <major>.<minor>.<micro> (1.7.0)
+# VERSION_STRING - the JDK version string as specified by JEP-223
+# HOTSPOT_VERSION_STRING - the same as VERSION_STRING, unless overridden by a standalone build
 #
 # Builds the directory trees with makefiles plus some convenience files in
 # each directory:
@@ -124,11 +123,7 @@ BUILDTREE_VARS	= GAMMADIR=$(GAMMADIR) OS_FAMILY=$(OS_FAMILY) \
 
 # Define variables to be set in flags.make.
 # Default values are set in make/defs.make.
-ifeq ($(HOTSPOT_BUILD_VERSION),)
-  HS_BUILD_VER=$(HOTSPOT_RELEASE_VERSION)
-else
-  HS_BUILD_VER=$(HOTSPOT_RELEASE_VERSION)-$(HOTSPOT_BUILD_VERSION)
-endif
+
 # Set BUILD_USER from system-dependent hints:  $LOGNAME, $(whoami)
 ifndef HOTSPOT_BUILD_USER
   HOTSPOT_BUILD_USER := $(shell echo $$LOGNAME)
@@ -153,7 +148,7 @@ ifndef OPENJDK
   endif
 endif
 
-BUILDTREE_VARS += HOTSPOT_RELEASE_VERSION=$(HS_BUILD_VER) HOTSPOT_BUILD_VERSION= JRE_RELEASE_VERSION=$(JRE_RELEASE_VERSION)
+BUILDTREE_VARS += HOTSPOT_VERSION_STRING=$(HOTSPOT_VERSION_STRING) VERSION_STRING=$(VERSION_STRING)
 
 BUILDTREE	= \
 	$(MAKE) -f $(BUILDTREE_MAKE) $(BUILDTREE_TARGETS) $(BUILDTREE_VARS)
@@ -203,9 +198,9 @@ flags.make: $(BUILDTREE_MAKE) ../shared_dirs.lst
 	echo "BUILDARCH = $(BUILDARCH)"; \
 	echo "LIBARCH = $(LIBARCH)"; \
 	echo "TARGET = $(TARGET)"; \
-	echo "HS_BUILD_VER = $(HS_BUILD_VER)"; \
-	echo "JRE_RELEASE_VER = $(JRE_RELEASE_VERSION)"; \
-	echo "SA_BUILD_VERSION = $(HS_BUILD_VER)"; \
+	echo "HOTSPOT_VERSION_STRING = $(HOTSPOT_VERSION_STRING)"; \
+	echo "VERSION_STRING = $(VERSION_STRING)"; \
+	echo "SA_BUILD_VERSION = $(HOTSPOT_VERSION_STRING)"; \
 	echo "HOTSPOT_BUILD_USER = $(HOTSPOT_BUILD_USER)"; \
 	echo "HOTSPOT_VM_DISTRO = $(HOTSPOT_VM_DISTRO)"; \
 	echo "OPENJDK = $(OPENJDK)"; \

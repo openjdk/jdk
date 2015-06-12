@@ -643,20 +643,15 @@ void JDK_Version::initialize() {
 
     int major = JDK_VERSION_MAJOR(info.jdk_version);
     int minor = JDK_VERSION_MINOR(info.jdk_version);
-    int micro = JDK_VERSION_MICRO(info.jdk_version);
+    int security = JDK_VERSION_SECURITY(info.jdk_version);
     int build = JDK_VERSION_BUILD(info.jdk_version);
-    if (major == 1 && minor > 4) {
-      // We represent "1.5.0" as "5.0", but 1.4.2 as itself.
-      major = minor;
-      minor = micro;
-      micro = 0;
-    }
+
     // Incompatible with pre-4243978 JDK.
     if (info.pending_list_uses_discovered_field == 0) {
       vm_exit_during_initialization(
         "Incompatible JDK is not using Reference.discovered field for pending list");
     }
-    _current = JDK_Version(major, minor, micro, info.update_version,
+    _current = JDK_Version(major, minor, security, info.update_version,
                            info.special_update_version, build,
                            info.thread_park_blocker == 1,
                            info.post_vm_init_hook_enabled == 1);
@@ -664,18 +659,18 @@ void JDK_Version::initialize() {
 }
 
 void JDK_Version::fully_initialize(
-    uint8_t major, uint8_t minor, uint8_t micro, uint8_t update) {
+    uint8_t major, uint8_t minor, uint8_t security, uint8_t update) {
   // This is only called when current is less than 1.6 and we've gotten
   // far enough in the initialization to determine the exact version.
   assert(major < 6, "not needed for JDK version >= 6");
   assert(is_partially_initialized(), "must not initialize");
   if (major < 5) {
     // JDK verison sequence: 1.2.x, 1.3.x, 1.4.x, 5.0.x, 6.0.x, etc.
-    micro = minor;
+    security = minor;
     minor = major;
     major = 1;
   }
-  _current = JDK_Version(major, minor, micro, update);
+  _current = JDK_Version(major, minor, security, update);
 }
 
 void JDK_Version_init() {
@@ -686,7 +681,7 @@ static int64_t encode_jdk_version(const JDK_Version& v) {
   return
     ((int64_t)v.major_version()          << (BitsPerByte * 5)) |
     ((int64_t)v.minor_version()          << (BitsPerByte * 4)) |
-    ((int64_t)v.micro_version()          << (BitsPerByte * 3)) |
+    ((int64_t)v.security_version()       << (BitsPerByte * 3)) |
     ((int64_t)v.update_version()         << (BitsPerByte * 2)) |
     ((int64_t)v.special_update_version() << (BitsPerByte * 1)) |
     ((int64_t)v.build_number()           << (BitsPerByte * 0));
@@ -722,8 +717,8 @@ void JDK_Version::to_string(char* buffer, size_t buflen) const {
         &buffer[index], buflen - index, "%d.%d", _major, _minor);
     if (rc == -1) return;
     index += rc;
-    if (_micro > 0) {
-      rc = jio_snprintf(&buffer[index], buflen - index, ".%d", _micro);
+    if (_security > 0) {
+      rc = jio_snprintf(&buffer[index], buflen - index, ".%d", _security);
     }
     if (_update > 0) {
       rc = jio_snprintf(&buffer[index], buflen - index, "_%02d", _update);
