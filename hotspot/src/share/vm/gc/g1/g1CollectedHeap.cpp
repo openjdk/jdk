@@ -3233,6 +3233,28 @@ void G1CollectedHeap::print_all_rsets() {
 }
 #endif // PRODUCT
 
+G1HeapSummary G1CollectedHeap::create_g1_heap_summary() {
+  YoungList* young_list = heap()->young_list();
+
+  size_t eden_used_bytes = young_list->eden_used_bytes();
+  size_t survivor_used_bytes = young_list->survivor_used_bytes();
+
+  size_t eden_capacity_bytes =
+    (g1_policy()->young_list_target_length() * HeapRegion::GrainBytes) - survivor_used_bytes;
+
+  VirtualSpaceSummary heap_summary = create_heap_space_summary();
+  return G1HeapSummary(heap_summary, used(), eden_used_bytes, eden_capacity_bytes, survivor_used_bytes);
+}
+
+void G1CollectedHeap::trace_heap(GCWhen::Type when, const GCTracer* gc_tracer) {
+  const G1HeapSummary& heap_summary = create_g1_heap_summary();
+  gc_tracer->report_gc_heap_summary(when, heap_summary);
+
+  const MetaspaceSummary& metaspace_summary = create_metaspace_summary();
+  gc_tracer->report_metaspace_summary(when, metaspace_summary);
+}
+
+
 G1CollectedHeap* G1CollectedHeap::heap() {
   CollectedHeap* heap = Universe::heap();
   assert(heap != NULL, "Uninitialized access to G1CollectedHeap::heap()");

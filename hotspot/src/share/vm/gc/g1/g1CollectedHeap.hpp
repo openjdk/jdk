@@ -370,6 +370,8 @@ private:
   void log_gc_header();
   void log_gc_footer(double pause_time_sec);
 
+  void trace_heap(GCWhen::Type when, const GCTracer* tracer);
+
   // These are macros so that, if the assert fires, we get the correct
   // line number, file, etc.
 
@@ -1547,6 +1549,8 @@ public:
 
   bool is_obj_dead_cond(const oop obj,
                         const VerifyOption vo) const;
+
+  G1HeapSummary create_g1_heap_summary();
 
   // Printing
 
