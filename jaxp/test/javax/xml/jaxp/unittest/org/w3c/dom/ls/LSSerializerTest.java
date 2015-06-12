@@ -44,6 +44,7 @@ import org.xml.sax.SAXException;
 
 
 /*
+ * @bug 6439439 8080906
  * @summary Test LSSerializer.
  */
 public class LSSerializerTest {
@@ -96,6 +97,17 @@ public class LSSerializerTest {
 
         public void setEncoding(final String encoding) {
         }
+    }
+
+    /*
+     * @bug 8080906
+     * It will fail in a Jigsaw build until JDK-8080266 is fixed.
+     */
+    @Test
+    public void testDefaultLSSerializer() throws Exception {
+        DOMImplementationLS domImpl = (DOMImplementationLS) DocumentBuilderFactory.newInstance().newDocumentBuilder().getDOMImplementation();
+        LSSerializer lsSerializer = domImpl.createLSSerializer();
+        Assert.assertTrue(lsSerializer.getClass().getName().endsWith("dom3.LSSerializerImpl"));
     }
 
     @Test
