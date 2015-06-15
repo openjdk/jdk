@@ -2466,7 +2466,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
     private static XEventDispatcher oops_waiter;
     private static boolean oops_updated;
-    private static boolean oops_move;
+    private static int oops_position = 0;
 
     /**
      * @inheritDoc
@@ -2495,9 +2495,12 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             oops_updated = false;
             long event_number = getEventNumber();
             // Generate OOPS ConfigureNotify event
-            XlibWrapper.XMoveWindow(getDisplay(), win.getWindow(), oops_move ? 0 : 1, 0);
+            XlibWrapper.XMoveWindow(getDisplay(), win.getWindow(), ++oops_position, 0);
             // Change win position each time to avoid system optimization
-            oops_move = !oops_move;
+            if (oops_position > 50) {
+                oops_position = 0;
+            }
+
             XSync();
 
             eventLog.finer("Generated OOPS ConfigureNotify event");
