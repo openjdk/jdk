@@ -761,11 +761,15 @@ public class OpenMBeanAttributeInfoSupport
         Class<?> stringArrayClass;
         Class<?> targetArrayClass;
         try {
+            String baseClassName = baseType.safeGetClassName();
+
+            // check access to the provided base type class name and bail out early
+            ReflectUtil.checkPackageAccess(baseClassName);
+
             stringArrayClass =
                 Class.forName(squareBrackets + "Ljava.lang.String;");
             targetArrayClass =
-                Class.forName(squareBrackets + "L" + baseType.safeGetClassName() +
-                              ";");
+                Class.forName(squareBrackets + "L" + baseClassName + ";");
         } catch (ClassNotFoundException e) {
             throw new NoClassDefFoundError(e.toString());  // can't happen
         }
