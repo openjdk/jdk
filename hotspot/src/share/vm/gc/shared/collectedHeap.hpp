@@ -88,9 +88,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   static int       _fire_out_of_memory_count;
 #endif
 
-  // Used for filler objects (static, but initialized in ctor).
-  static size_t _filler_array_max_size;
-
   GCHeapLog* _gc_heap_log;
 
   // Used in support of ReduceInitialCardMarks; only consulted if COMPILER2 is being used
@@ -101,6 +98,9 @@ class CollectedHeap : public CHeapObj<mtInternal> {
  protected:
   BarrierSet* _barrier_set;
   bool _is_gc_active;
+
+  // Used for filler objects (static, but initialized in ctor).
+  static size_t _filler_array_max_size;
 
   unsigned int _total_collections;          // ... started
   unsigned int _total_full_collections;     // ... started

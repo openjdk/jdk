@@ -3132,10 +3132,21 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
   initialize_class_space(metaspace_rs);
 
   if (PrintCompressedOopsMode || (PrintMiscellaneous && Verbose)) {
-    gclog_or_tty->print_cr("Narrow klass base: " PTR_FORMAT ", Narrow klass shift: %d",
-                            p2i(Universe::narrow_klass_base()), Universe::narrow_klass_shift());
-    gclog_or_tty->print_cr("Compressed class space size: " SIZE_FORMAT " Address: " PTR_FORMAT " Req Addr: " PTR_FORMAT,
-                           compressed_class_space_size(), p2i(metaspace_rs.base()), p2i(requested_addr));
+    print_compressed_class_space(gclog_or_tty, requested_addr);
+  }
+}
+
+void Metaspace::print_compressed_class_space(outputStream* st, const char* requested_addr) {
+  st->print_cr("Narrow klass base: " PTR_FORMAT ", Narrow klass shift: %d",
+               p2i(Universe::narrow_klass_base()), Universe::narrow_klass_shift());
+  if (_class_space_list != NULL) {
+    address base = (address)_class_space_list->current_virtual_space()->bottom();
+    st->print("Compressed class space size: " SIZE_FORMAT " Address: " PTR_FORMAT,
+                 compressed_class_space_size(), p2i(base));
+    if (requested_addr != 0) {
+      st->print(" Req Addr: " PTR_FORMAT, p2i(requested_addr));
+    }
+    st->cr();
   }
 }
 
@@ -3296,7 +3307,7 @@ void Metaspace::global_initialize() {
       // Map in spaces now also
       if (mapinfo->initialize() && MetaspaceShared::map_shared_spaces(mapinfo)) {
         cds_total = FileMapInfo::shared_spaces_size();
-        cds_address = (address)mapinfo->region_base(0);
+        cds_address = (address)mapinfo->header()->region_addr(0);
       } else {
         assert(!mapinfo->is_open() && !UseSharedSpaces,
                "archive file not closed or shared spaces not disabled.");

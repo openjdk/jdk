@@ -285,9 +285,9 @@ void CMSCollector::ref_processor_init() {
     _ref_processor =
       new ReferenceProcessor(_span,                               // span
                              (ParallelGCThreads > 1) && ParallelRefProcEnabled, // mt processing
-                             (int) ParallelGCThreads,             // mt processing degree
+                             ParallelGCThreads,                   // mt processing degree
                              _cmsGen->refs_discovery_is_mt(),     // mt discovery
-                             (int) MAX2(ConcGCThreads, ParallelGCThreads), // mt discovery degree
+                             MAX2(ConcGCThreads, ParallelGCThreads), // mt discovery degree
                              _cmsGen->refs_discovery_is_atomic(), // discovery is not atomic
                              &_is_alive_closure);                 // closure for liveness info
     // Initialize the _ref_processor field of CMSGen
@@ -562,7 +562,7 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
   // are not shared with parallel scavenge (ParNew).
   {
     uint i;
-    uint num_queues = (uint) MAX2(ParallelGCThreads, ConcGCThreads);
+    uint num_queues = MAX2(ParallelGCThreads, ConcGCThreads);
 
     if ((CMSParallelRemarkEnabled || CMSConcurrentMTEnabled
          || ParallelRefProcEnabled)
@@ -5322,8 +5322,8 @@ CMSParKeepAliveClosure::CMSParKeepAliveClosure(CMSCollector* collector,
    _bit_map(bit_map),
    _work_queue(work_queue),
    _mark_and_push(collector, span, bit_map, work_queue),
-   _low_water_mark(MIN2((uint)(work_queue->max_elems()/4),
-                        (uint)(CMSWorkQueueDrainThreshold * ParallelGCThreads)))
+   _low_water_mark(MIN2((work_queue->max_elems()/4),
+                        ((uint)CMSWorkQueueDrainThreshold * ParallelGCThreads)))
 { }
 
 // . see if we can share work_queues with ParNew? XXX
@@ -6251,8 +6251,8 @@ Par_MarkRefsIntoAndScanClosure::Par_MarkRefsIntoAndScanClosure(
   _span(span),
   _bit_map(bit_map),
   _work_queue(work_queue),
-  _low_water_mark(MIN2((uint)(work_queue->max_elems()/4),
-                       (uint)(CMSWorkQueueDrainThreshold * ParallelGCThreads))),
+  _low_water_mark(MIN2((work_queue->max_elems()/4),
+                       ((uint)CMSWorkQueueDrainThreshold * ParallelGCThreads))),
   _par_pushAndMarkClosure(collector, span, rp, bit_map, work_queue)
 {
   _ref_processor = rp;

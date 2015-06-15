@@ -194,7 +194,7 @@ void ConcurrentMarkThread::run() {
         // We don't want to update the marking status if a GC pause
         // is already underway.
         SuspendibleThreadSetJoiner sts_join;
-        g1h->set_marking_complete();
+        g1h->collector_state()->set_mark_in_progress(false);
       }
 
       // Check if cleanup set the free_regions_coming flag. If it

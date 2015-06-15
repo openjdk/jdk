@@ -714,6 +714,24 @@ void VMError::report(outputStream* st) {
        st->cr();
      }
 
+  STEP(182, "(printing number of OutOfMemoryError and StackOverflow exceptions)")
+
+     if (_verbose && Exceptions::has_exception_counts()) {
+       st->print_cr("OutOfMemory and StackOverflow Exception counts:");
+       Exceptions::print_exception_counts_on_error(st);
+       st->cr();
+     }
+
+  STEP(185, "(printing compressed oops mode")
+
+     if (_verbose && UseCompressedOops) {
+       Universe::print_compressed_oops_mode(st);
+       if (UseCompressedClassPointers) {
+         Metaspace::print_compressed_class_space(st);
+       }
+       st->cr();
+     }
+
   STEP(190, "(printing heap information)" )
 
      if (_verbose && Universe::is_fully_initialized()) {
@@ -819,7 +837,7 @@ void VMError::report(outputStream* st) {
   STEP(280, "(printing date and time)" )
 
      if (_verbose) {
-       os::print_date_and_time(st);
+       os::print_date_and_time(st, buf, sizeof(buf));
        st->cr();
      }
 

@@ -586,11 +586,12 @@ static bool set_fp_numeric_flag(char* name, char* value, Flag::Flags origin) {
 
 static bool set_numeric_flag(char* name, char* value, Flag::Flags origin) {
   julong v;
+  int int_v;
   intx intx_v;
   bool is_neg = false;
   // Check the sign first since atomull() parses only unsigned values.
   if (*value == '-') {
-    if (!CommandLineFlags::intxAt(name, &intx_v)) {
+    if (!CommandLineFlags::intxAt(name, &intx_v) && !CommandLineFlags::intAt(name, &int_v)) {
       return false;
     }
     value++;
@@ -598,6 +599,17 @@ static bool set_numeric_flag(char* name, char* value, Flag::Flags origin) {
   }
   if (!atomull(value, &v)) {
     return false;
+  }
+  int_v = (int) v;
+  if (is_neg) {
+    int_v = -int_v;
+  }
+  if (CommandLineFlags::intAtPut(name, &int_v, origin)) {
+    return true;
+  }
+  uint uint_v = (uint) v;
+  if (!is_neg && CommandLineFlags::uintAtPut(name, &uint_v, origin)) {
+    return true;
   }
   intx_v = (intx) v;
   if (is_neg) {
@@ -1375,7 +1387,7 @@ void Arguments::set_cms_and_parnew_gc_flags() {
   if (PrintGCDetails && Verbose) {
     tty->print_cr("MarkStackSize: %uk  MarkStackSizeMax: %uk",
       (unsigned int) (MarkStackSize / K), (uint) (MarkStackSizeMax / K));
-    tty->print_cr("ConcGCThreads: %u", (uint) ConcGCThreads);
+    tty->print_cr("ConcGCThreads: %u", ConcGCThreads);
   }
 }
 #endif // INCLUDE_ALL_GCS
@@ -1693,7 +1705,7 @@ void Arguments::set_g1_gc_flags() {
   if (PrintGCDetails && Verbose) {
     tty->print_cr("MarkStackSize: %uk  MarkStackSizeMax: %uk",
       (unsigned int) (MarkStackSize / K), (uint) (MarkStackSizeMax / K));
-    tty->print_cr("ConcGCThreads: %u", (uint) ConcGCThreads);
+    tty->print_cr("ConcGCThreads: %u", ConcGCThreads);
   }
 }
 
@@ -3231,7 +3243,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       jio_fprintf(defaultStream::error_stream(),
         "Please use -XX:ConcGCThreads in place of "
         "-XX:ParallelMarkingThreads or -XX:ParallelCMSThreads in the future\n");
-      FLAG_SET_CMDLINE(uintx, ConcGCThreads, conc_threads);
+      FLAG_SET_CMDLINE(uint, ConcGCThreads, conc_threads);
     } else if (match_option(option, "-XX:MaxDirectMemorySize=", &tail)) {
       julong max_direct_memory_size = 0;
       ArgsRange errcode = parse_memory_size(tail, &max_direct_memory_size, 0);

@@ -1349,7 +1349,7 @@ bool ParNewGeneration::take_from_overflow_list_work(ParScanThreadState* par_scan
   oop prefix = cast_to_oop(Atomic::xchg_ptr(BUSY, &_overflow_list));
   // Trim off a prefix of at most objsFromOverflow items
   Thread* tid = Thread::current();
-  size_t spin_count = (size_t)ParallelGCThreads;
+  size_t spin_count = ParallelGCThreads;
   size_t sleep_time_millis = MAX2((size_t)1, objsFromOverflow/100);
   for (size_t spin = 0; prefix == BUSY && spin < spin_count; spin++) {
     // someone grabbed it before we did ...
@@ -1466,9 +1466,9 @@ void ParNewGeneration::ref_processor_init() {
     _ref_processor =
       new ReferenceProcessor(_reserved,                  // span
                              ParallelRefProcEnabled && (ParallelGCThreads > 1), // mt processing
-                             (uint) ParallelGCThreads,   // mt processing degree
+                             ParallelGCThreads,          // mt processing degree
                              refs_discovery_is_mt(),     // mt discovery
-                             (uint) ParallelGCThreads,   // mt discovery degree
+                             ParallelGCThreads,          // mt discovery degree
                              refs_discovery_is_atomic(), // atomic_discovery
                              NULL);                      // is_alive_non_header
   }

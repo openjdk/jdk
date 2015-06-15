@@ -192,7 +192,7 @@ class VM_Operation: public CHeapObj<mtInternal> {
   static const char* mode_to_string(Mode mode);
 
   // Debugging
-  void print_on_error(outputStream* st) const;
+  virtual void print_on_error(outputStream* st) const;
   const char* name() const { return _names[type()]; }
   static const char* name(int type) {
     assert(type >= 0 && type < VMOp_Terminating, "invalid VM operation type");
