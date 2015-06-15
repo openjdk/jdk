@@ -278,16 +278,46 @@ public final class ProcessTools {
     }
 
     /**
-     * Create ProcessBuilder using the java launcher from the jdk to be tested
-     * and with any platform specific arguments prepended
+     * Create ProcessBuilder using the java launcher from the jdk to be tested,
+     * and with any platform specific arguments prepended.
+     *
+     * @param command Arguments to pass to the java command.
+     * @return The ProcessBuilder instance representing the java command.
      */
     public static ProcessBuilder createJavaProcessBuilder(String... command)
             throws Exception {
+        return createJavaProcessBuilder(false, command);
+    }
+
+    /**
+     * Create ProcessBuilder using the java launcher from the jdk to be tested,
+     * and with any platform specific arguments prepended.
+     *
+     * @param addTestVmAndJavaOptions If true, adds test.vm.opts and test.java.opts
+     *        to the java arguments.
+     * @param command Arguments to pass to the java command.
+     * @return The ProcessBuilder instance representing the java command.
+     */
+    public static ProcessBuilder createJavaProcessBuilder(boolean addTestVmAndJavaOptions, String... command) throws Exception {
         String javapath = JDKToolFinder.getJDKTool("java");
 
         ArrayList<String> args = new ArrayList<>();
         args.add(javapath);
         Collections.addAll(args, getPlatformSpecificVMArgs());
+
+        if (addTestVmAndJavaOptions) {
+            // -cp is needed to make sure the same classpath is used whether the test is
+            // run in AgentVM mode or OtherVM mode. It was added to the hotspot version
+            // of this API as part of 8077608. However, for the jdk version it is only
+            // added when addTestVmAndJavaOptions is true in order to minimize
+            // disruption to existing JDK tests, which have yet to be tested with -cp
+            // being added. At some point -cp should always be added to be consistent
+            // with what the hotspot version does.
+            args.add("-cp");
+            args.add(System.getProperty("java.class.path"));
+            Collections.addAll(args, Utils.getTestJavaOpts());
+        }
+
         Collections.addAll(args, command);
 
         // Reporting
