@@ -21,13 +21,14 @@
  * questions.
  */
 
-import java.io.File;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+
+import jdk.testlibrary.ProcessTools;
+import jdk.testlibrary.Utils;
 
 /**
  * @test
@@ -39,14 +40,10 @@ import java.util.concurrent.atomic.AtomicReference;
  *          both agent properties and jvmstat buffer.
  * @modules java.management/sun.management
  * @build jdk.testlibrary.* TestManager TestApplication
- * @run main/othervm/timeout=300 -XX:+UsePerfData LocalManagementTest
+ * @run main/othervm/timeout=300 LocalManagementTest
  */
-
-import jdk.testlibrary.ProcessTools;
-
 public class LocalManagementTest {
     private static final String TEST_CLASSPATH = System.getProperty("test.class.path");
-    private static final String TEST_JDK = System.getProperty("test.jdk");
 
     public static void main(String[] args) throws Exception {
         int failures = 0;
@@ -96,6 +93,8 @@ public class LocalManagementTest {
 
     private static boolean doTest(String testId, String arg) throws Exception {
         List<String> args = new ArrayList<>();
+        args.add("-XX:+UsePerfData");
+        args.addAll(Utils.getVmOptions());
         args.add("-cp");
         args.add(TEST_CLASSPATH);
 
