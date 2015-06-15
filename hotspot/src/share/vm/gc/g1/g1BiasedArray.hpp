@@ -26,6 +26,7 @@
 #define SHARE_VM_GC_G1_G1BIASEDARRAY_HPP
 
 #include "memory/allocation.hpp"
+#include "memory/memRegion.hpp"
 #include "utilities/debug.hpp"
 
 // Implements the common base functionality for arrays that contain provisions
