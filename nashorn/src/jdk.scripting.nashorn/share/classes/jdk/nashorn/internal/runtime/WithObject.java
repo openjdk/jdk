@@ -224,28 +224,32 @@ public final class WithObject extends ScriptObject implements Scope {
 
     @Override
     public void setSplitState(final int state) {
-        getNonWithParent().setSplitState(state);
+        ((Scope) getNonWithParent()).setSplitState(state);
     }
 
     @Override
     public int getSplitState() {
-        return getNonWithParent().getSplitState();
+        return ((Scope) getNonWithParent()).getSplitState();
+    }
+
+    @Override
+    public void addBoundProperties(final ScriptObject source, final Property[] properties) {
+        // Declared variables in nested eval go to first normal (non-with) parent scope.
+        getNonWithParent().addBoundProperties(source, properties);
     }
 
     /**
      * Get first parent scope that is not an instance of WithObject.
      */
-    private Scope getNonWithParent() {
-        ScriptObject proto = getParentScope();
+    private ScriptObject getNonWithParent() {
+        ScriptObject proto = getProto();
 
         while (proto != null && proto instanceof WithObject) {
-            proto = ((WithObject)proto).getParentScope();
+            proto = proto.getProto();
         }
 
-        assert proto instanceof Scope : "with scope without parent scope";
-        return (Scope) proto;
+        return proto;
     }
-
 
     private static GuardedInvocation fixReceiverType(final GuardedInvocation link, final MethodHandle filter) {
         // The receiver may be an Object or a ScriptObject.
@@ -378,14 +382,6 @@ public final class WithObject extends ScriptObject implements Scope {
      */
     public ScriptObject getExpression() {
         return expression;
-    }
-
-    /**
-     * Get the parent scope for this {@code WithObject}
-     * @return the parent scope
-     */
-    public ScriptObject getParentScope() {
-        return getProto();
     }
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
