@@ -197,6 +197,8 @@ class StubRoutines: AllStatic {
   static address _crc_table_adr;
 
   static address _multiplyToLen;
+  static address _squareToLen;
+  static address _mulAdd;
 
   // These are versions of the java.lang.Math methods which perform
   // the same operations as the intrinsic version.  They are used for
@@ -356,6 +358,8 @@ class StubRoutines: AllStatic {
   static address crc_table_addr()      { return _crc_table_adr; }
 
   static address multiplyToLen()       {return _multiplyToLen; }
+  static address squareToLen()         {return _squareToLen; }
+  static address mulAdd()              {return _mulAdd; }
 
   static address select_fill_function(BasicType t, bool aligned, const char* &name);
 

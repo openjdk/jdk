@@ -312,6 +312,10 @@ private:
 
   static const TypeFunc* multiplyToLen_Type();
 
+  static const TypeFunc* squareToLen_Type();
+
+  static const TypeFunc* mulAdd_Type();
+
   static const TypeFunc* updateBytesCRC32_Type();
 
   // leaf on stack replacement interpreter accessor types
