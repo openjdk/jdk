@@ -96,7 +96,7 @@ void PSMarkSweep::invoke(bool maximum_heap_compaction) {
     heap->collector_policy()->should_clear_all_soft_refs();
 
   uint count = maximum_heap_compaction ? 1 : MarkSweepAlwaysCompactCount;
-  UIntFlagSetting flag_setting(MarkSweepAlwaysCompactCount, count);
+  UIntXFlagSetting flag_setting(MarkSweepAlwaysCompactCount, count);
   PSMarkSweep::invoke_no_policy(clear_all_soft_refs || maximum_heap_compaction);
 }
 

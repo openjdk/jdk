@@ -309,6 +309,8 @@ IRT_ENTRY(void, InterpreterRuntime::throw_StackOverflowError(JavaThread* thread)
   Handle exception = get_preinitialized_exception(
                                  SystemDictionary::StackOverflowError_klass(),
                                  CHECK);
+  // Increment counter for hs_err file reporting
+  Atomic::inc(&Exceptions::_stack_overflow_errors);
   THROW_HANDLE(exception);
 IRT_END
 

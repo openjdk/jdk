@@ -53,6 +53,7 @@ public:
     memset(this, 0, sizeof(*this));
   }
   CompactHashtableStats symbol;
+  CompactHashtableStats string;
 };
 
 // Class Data Sharing Support
@@ -90,7 +91,10 @@ class MetaspaceShared : AllStatic {
     rw = 1,  // read-write shared space in the heap
     md = 2,  // miscellaneous data for initializing tables, etc.
     mc = 3,  // miscellaneous code - vtable replacement.
-    n_regions = 4
+    max_strings = 2, // max number of string regions in string space
+    num_non_strings = 4, // number of non-string regions
+    first_string = num_non_strings, // index of first string region
+    n_regions = max_strings + num_non_strings // total number of regions
   };
 
   // Accessor functions to save shared space created for metadata, which has
@@ -124,9 +128,12 @@ class MetaspaceShared : AllStatic {
   }
   static bool map_shared_spaces(FileMapInfo* mapinfo) NOT_CDS_RETURN_(false);
   static void initialize_shared_spaces() NOT_CDS_RETURN;
+  static void fixup_shared_string_regions() NOT_CDS_RETURN;
 
   // Return true if given address is in the mapped shared space.
   static bool is_in_shared_space(const void* p) NOT_CDS_RETURN_(false);
+
+  static bool is_string_region(int idx) NOT_CDS_RETURN_(false);
 
   static void generate_vtable_methods(void** vtbl_list,
                                       void** vtable,

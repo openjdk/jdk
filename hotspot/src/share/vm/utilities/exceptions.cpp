@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,15 +154,21 @@ void Exceptions::_throw(Thread* thread, const char* file, int line, Handle h_exc
     return;
   }
 
+  if (h_exception->is_a(SystemDictionary::OutOfMemoryError_klass())) {
+    count_out_of_memory_exceptions(h_exception);
+  }
+
   assert(h_exception->is_a(SystemDictionary::Throwable_klass()), "exception is not a subclass of java/lang/Throwable");
 
   // set the pending exception
   thread->set_pending_exception(h_exception(), file, line);
 
   // vm log
-  Events::log_exception(thread, "Exception <%s%s%s> (" INTPTR_FORMAT ") thrown at [%s, line %d]",
-                        h_exception->print_value_string(), message ? ": " : "", message ? message : "",
-                        (address)h_exception(), file, line);
+  if (LogEvents){
+    Events::log_exception(thread, "Exception <%s%s%s> (" INTPTR_FORMAT ") thrown at [%s, line %d]",
+                          h_exception->print_value_string(), message ? ": " : "", message ? message : "",
+                          (address)h_exception(), file, line);
+  }
 }
 
 
@@ -228,6 +234,8 @@ void Exceptions::throw_stack_overflow_exception(Thread* THREAD, const char* file
     if (StackTraceInThrowable) {
       java_lang_Throwable::fill_in_stack_trace(exception, method());
     }
+    // Increment counter for hs_err file reporting
+    Atomic::inc(&Exceptions::_stack_overflow_errors);
   } else {
     // if prior exception, throw that one instead
     exception = Handle(THREAD, THREAD->pending_exception());
@@ -402,6 +410,44 @@ Handle Exceptions::new_exception(Thread* thread, Symbol* name,
   Handle       h_cause(thread, NULL);
   return Exceptions::new_exception(thread, name, message, h_cause, h_loader,
                                    h_prot, to_utf8_safe);
+}
+
+
+// Exception counting for hs_err file
+volatile int Exceptions::_stack_overflow_errors = 0;
+volatile int Exceptions::_out_of_memory_error_java_heap_errors = 0;
+volatile int Exceptions::_out_of_memory_error_metaspace_errors = 0;
+volatile int Exceptions::_out_of_memory_error_class_metaspace_errors = 0;
+
+void Exceptions::count_out_of_memory_exceptions(Handle exception) {
+  if (exception() == Universe::out_of_memory_error_metaspace()) {
+     Atomic::inc(&_out_of_memory_error_metaspace_errors);
+  } else if (exception() == Universe::out_of_memory_error_class_metaspace()) {
+     Atomic::inc(&_out_of_memory_error_class_metaspace_errors);
+  } else {
+     // everything else reported as java heap OOM
+     Atomic::inc(&_out_of_memory_error_java_heap_errors);
+  }
+}
+
+void print_oom_count(outputStream* st, const char *err, int count) {
+  if (count > 0) {
+    st->print_cr("OutOfMemoryError %s=%d", err, count);
+  }
+}
+
+bool Exceptions::has_exception_counts() {
+  return (_stack_overflow_errors + _out_of_memory_error_java_heap_errors +
+         _out_of_memory_error_metaspace_errors + _out_of_memory_error_class_metaspace_errors) > 0;
+}
+
+void Exceptions::print_exception_counts_on_error(outputStream* st) {
+  print_oom_count(st, "java_heap_errors", _out_of_memory_error_java_heap_errors);
+  print_oom_count(st, "metaspace_errors", _out_of_memory_error_metaspace_errors);
+  print_oom_count(st, "class_metaspace_errors", _out_of_memory_error_class_metaspace_errors);
+  if (_stack_overflow_errors > 0) {
+    st->print_cr("StackOverflowErrors=%d", _stack_overflow_errors);
+  }
 }
 
 // Implementation of ExceptionMark

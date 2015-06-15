@@ -223,7 +223,8 @@ template<bool x> struct STATIC_ASSERT_FAILURE;
 template<> struct STATIC_ASSERT_FAILURE<true> { enum { value = 1 }; };
 
 #define STATIC_ASSERT(Cond) \
-  typedef char STATIC_ASSERT_DUMMY_TYPE[ STATIC_ASSERT_FAILURE< (Cond) >::value ]
+  typedef char PASTE_TOKENS(STATIC_ASSERT_DUMMY_TYPE_, __LINE__)[ \
+    STATIC_ASSERT_FAILURE< (Cond) >::value ]
 
 // out of shared space reporting
 enum SharedSpaceType {

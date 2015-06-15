@@ -31,6 +31,7 @@
 #include "code/codeCache.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/metadataFactory.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/wbtestmethods/parserTests.hpp"
@@ -710,6 +711,24 @@ WB_ENTRY(jobject, WB_GetBooleanVMFlag(JNIEnv* env, jobject o, jstring name))
   return NULL;
 WB_END
 
+WB_ENTRY(jobject, WB_GetIntVMFlag(JNIEnv* env, jobject o, jstring name))
+  int result;
+  if (GetVMFlag <int> (thread, env, name, &result, &CommandLineFlags::intAt)) {
+    ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+    return longBox(thread, env, result);
+  }
+  return NULL;
+WB_END
+
+WB_ENTRY(jobject, WB_GetUintVMFlag(JNIEnv* env, jobject o, jstring name))
+  uint result;
+  if (GetVMFlag <uint> (thread, env, name, &result, &CommandLineFlags::uintAt)) {
+    ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+    return longBox(thread, env, result);
+  }
+  return NULL;
+WB_END
+
 WB_ENTRY(jobject, WB_GetIntxVMFlag(JNIEnv* env, jobject o, jstring name))
   intx result;
   if (GetVMFlag <intx> (thread, env, name, &result, &CommandLineFlags::intxAt)) {
@@ -769,6 +788,16 @@ WB_END
 WB_ENTRY(void, WB_SetBooleanVMFlag(JNIEnv* env, jobject o, jstring name, jboolean value))
   bool result = value == JNI_TRUE ? true : false;
   SetVMFlag <bool> (thread, env, name, &result, &CommandLineFlags::boolAtPut);
+WB_END
+
+WB_ENTRY(void, WB_SetIntVMFlag(JNIEnv* env, jobject o, jstring name, jlong value))
+  int result = value;
+  SetVMFlag <int> (thread, env, name, &result, &CommandLineFlags::intAtPut);
+WB_END
+
+WB_ENTRY(void, WB_SetUintVMFlag(JNIEnv* env, jobject o, jstring name, jlong value))
+  uint result = value;
+  SetVMFlag <uint> (thread, env, name, &result, &CommandLineFlags::uintAtPut);
 WB_END
 
 WB_ENTRY(void, WB_SetIntxVMFlag(JNIEnv* env, jobject o, jstring name, jlong value))
@@ -1179,6 +1208,11 @@ WB_ENTRY(jobject, WB_GetMethodStringOption(JNIEnv* env, jobject wb, jobject meth
   return NULL;
 WB_END
 
+WB_ENTRY(jboolean, WB_IsShared(JNIEnv* env, jobject wb, jobject obj))
+  oop obj_oop = JNIHandles::resolve(obj);
+  return MetaspaceShared::is_in_shared_space((void*)obj_oop);
+WB_END
+
 //Some convenience methods to deal with objects from java
 int WhiteBox::offset_for_field(const char* field_name, oop object,
     Symbol* signature_symbol) {
@@ -1336,6 +1370,8 @@ static JNINativeMethod methods[] = {
   {CC"isConstantVMFlag",   CC"(Ljava/lang/String;)Z", (void*)&WB_IsConstantVMFlag},
   {CC"isLockedVMFlag",     CC"(Ljava/lang/String;)Z", (void*)&WB_IsLockedVMFlag},
   {CC"setBooleanVMFlag",   CC"(Ljava/lang/String;Z)V",(void*)&WB_SetBooleanVMFlag},
+  {CC"setIntVMFlag",       CC"(Ljava/lang/String;J)V",(void*)&WB_SetIntVMFlag},
+  {CC"setUintVMFlag",      CC"(Ljava/lang/String;J)V",(void*)&WB_SetUintVMFlag},
   {CC"setIntxVMFlag",      CC"(Ljava/lang/String;J)V",(void*)&WB_SetIntxVMFlag},
   {CC"setUintxVMFlag",     CC"(Ljava/lang/String;J)V",(void*)&WB_SetUintxVMFlag},
   {CC"setUint64VMFlag",    CC"(Ljava/lang/String;J)V",(void*)&WB_SetUint64VMFlag},
@@ -1345,6 +1381,10 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_SetStringVMFlag},
   {CC"getBooleanVMFlag",   CC"(Ljava/lang/String;)Ljava/lang/Boolean;",
                                                       (void*)&WB_GetBooleanVMFlag},
+  {CC"getIntVMFlag",       CC"(Ljava/lang/String;)Ljava/lang/Long;",
+                                                      (void*)&WB_GetIntVMFlag},
+  {CC"getUintVMFlag",      CC"(Ljava/lang/String;)Ljava/lang/Long;",
+                                                      (void*)&WB_GetUintVMFlag},
   {CC"getIntxVMFlag",      CC"(Ljava/lang/String;)Ljava/lang/Long;",
                                                       (void*)&WB_GetIntxVMFlag},
   {CC"getUintxVMFlag",     CC"(Ljava/lang/String;)Ljava/lang/Long;",
@@ -1397,6 +1437,7 @@ static JNINativeMethod methods[] = {
   {CC"getMethodStringOption",
       CC"(Ljava/lang/reflect/Executable;Ljava/lang/String;)Ljava/lang/String;",
                                                       (void*)&WB_GetMethodStringOption},
+  {CC"isShared",           CC"(Ljava/lang/Object;)Z", (void*)&WB_IsShared },
 };
 
 #undef CC

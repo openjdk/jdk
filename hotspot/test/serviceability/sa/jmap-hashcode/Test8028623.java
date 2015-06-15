@@ -21,6 +21,13 @@
  * questions.
  */
 
+import jdk.test.lib.JDKToolLauncher;
+import jdk.test.lib.OutputBuffer;
+import jdk.test.lib.Platform;
+import jdk.test.lib.ProcessTools;
+
+import java.io.File;
+
 /*
  * @test
  * @bug 8028623
@@ -32,16 +39,8 @@
  *          jdk.jvmstat/sun.jvmstat.monitor
  * @build jdk.test.lib.*
  * @compile -encoding utf8 Test8028623.java
- * @run main Test8028623
+ * @run main/othervm -XX:+UsePerfData Test8028623
  */
-
-import jdk.test.lib.JDKToolLauncher;
-import jdk.test.lib.OutputBuffer;
-import jdk.test.lib.Platform;
-import jdk.test.lib.ProcessTools;
-
-import java.io.File;
-
 public class Test8028623 {
 
   public static int \u00CB = 1;
