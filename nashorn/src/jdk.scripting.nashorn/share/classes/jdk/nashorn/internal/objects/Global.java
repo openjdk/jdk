@@ -1502,26 +1502,53 @@ public final class Global extends ScriptObject implements Scope {
     }
 
     /**
-     * Global load implementation - Nashorn extension
+     * Global load implementation - Nashorn extension.
      *
-     * @param self    scope
-     * @param source  source to load
+     * <p>
+     * load builtin loads the given script. Script source can be a URL or a File
+     * or a script object with name and script properties. Evaluated code gets
+     * global object "this" and uses global object as scope for evaluation.
+     * </p>
+     * <p>
+     * If self is undefined or null or global, then global object is used
+     * as scope as well as "this" for the evaluated code. If self is any other
+     * object, then it is indirect load call. With indirect load call, the
+     * properties of scope are available to evaluated script as variables. Also,
+     * global scope properties are accessible. Any var, function definition in
+     * evaluated script goes into an object that is not accessible to user scripts.
+     * </p>
+     * Thus the indirect load call is equivalent to the following:
+     * <pre>
+     * <code>
+     * (function (scope, source) {
+     *    with(scope) {
+     *        eval(&lt;script_from_source&gt;);
+     *    }
+     * })(self, source);
+     * </code>
+     * </pre>
      *
-     * @return result of load (undefined)
+     * @param self    scope to use for the script evaluation
+     * @param source  script source
+     *
+     * @return result of load (may be undefined)
      *
      * @throws IOException if source could not be read
      */
     public static Object load(final Object self, final Object source) throws IOException {
         final Global global = Global.instanceFrom(self);
-        final ScriptObject scope = self instanceof ScriptObject ? (ScriptObject)self : global;
-        return global.getContext().load(scope, source);
+        return global.getContext().load(self, source);
     }
 
     /**
-     * Global loadWithNewGlobal implementation - Nashorn extension
+     * Global loadWithNewGlobal implementation - Nashorn extension.
      *
-     * @param self scope
-     * @param args from plus (optional) arguments to be passed to the loaded script
+     * loadWithNewGlobal builtin loads the given script from a URL or a File
+     * or a script object with name and script properties. Evaluated code gets
+     * new global object "this" and uses that new global object as scope for evaluation.
+     *
+     * @param self self This value is ignored by this function
+     * @param args optional arguments to be passed to the loaded script
      *
      * @return result of load (may be undefined)
      *
