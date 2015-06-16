@@ -311,6 +311,8 @@ private:
   static const TypeFunc* digestBase_implCompressMB_Type();
 
   static const TypeFunc* multiplyToLen_Type();
+  static const TypeFunc* montgomeryMultiply_Type();
+  static const TypeFunc* montgomerySquare_Type();
 
   static const TypeFunc* squareToLen_Type();
 

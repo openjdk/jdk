@@ -23,6 +23,9 @@
  */
 
 #include "precompiled.hpp"
+#ifndef _WINDOWS
+#include "alloca.h"
+#endif
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/debugInfoRec.hpp"
@@ -3510,6 +3513,250 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   return RuntimeStub::new_runtime_stub(name, &buffer, frame_complete, frame_size_in_words, oop_maps, true);
 }
 
+
+//------------------------------Montgomery multiplication------------------------
+//
+
+#ifndef _WINDOWS
+
+#define ASM_SUBTRACT
+
+#ifdef ASM_SUBTRACT
+// Subtract 0:b from carry:a.  Return carry.
+static unsigned long
+sub(unsigned long a[], unsigned long b[], unsigned long carry, long len) {
+  long i = 0, cnt = len;
+  unsigned long tmp;
+  asm volatile("clc; "
+               "0: ; "
+               "mov (%[b], %[i], 8), %[tmp]; "
+               "sbb %[tmp], (%[a], %[i], 8); "
+               "inc %[i]; dec %[cnt]; "
+               "jne 0b; "
+               "mov %[carry], %[tmp]; sbb $0, %[tmp]; "
+               : [i]"+r"(i), [cnt]"+r"(cnt), [tmp]"=&r"(tmp)
+               : [a]"r"(a), [b]"r"(b), [carry]"r"(carry)
+               : "memory");
+  return tmp;
+}
+#else // ASM_SUBTRACT
+typedef int __attribute__((mode(TI))) int128;
+
+// Subtract 0:b from carry:a.  Return carry.
+static unsigned long
+sub(unsigned long a[], unsigned long b[], unsigned long carry, int len) {
+  int128 tmp = 0;
+  int i;
+  for (i = 0; i < len; i++) {
+    tmp += a[i];
+    tmp -= b[i];
+    a[i] = tmp;
+    tmp >>= 64;
+    assert(-1 <= tmp && tmp <= 0, "invariant");
+  }
+  return tmp + carry;
+}
+#endif // ! ASM_SUBTRACT
+
+// Multiply (unsigned) Long A by Long B, accumulating the double-
+// length result into the accumulator formed of T0, T1, and T2.
+#define MACC(A, B, T0, T1, T2)                                  \
+do {                                                            \
+  unsigned long hi, lo;                                         \
+  __asm__ ("mul %5; add %%rax, %2; adc %%rdx, %3; adc $0, %4"   \
+           : "=&d"(hi), "=a"(lo), "+r"(T0), "+r"(T1), "+g"(T2)  \
+           : "r"(A), "a"(B) : "cc");                            \
+ } while(0)
+
+// As above, but add twice the double-length result into the
+// accumulator.
+#define MACC2(A, B, T0, T1, T2)                                 \
+do {                                                            \
+  unsigned long hi, lo;                                         \
+  __asm__ ("mul %5; add %%rax, %2; adc %%rdx, %3; adc $0, %4; " \
+           "add %%rax, %2; adc %%rdx, %3; adc $0, %4"           \
+           : "=&d"(hi), "=a"(lo), "+r"(T0), "+r"(T1), "+g"(T2)  \
+           : "r"(A), "a"(B) : "cc");                            \
+ } while(0)
+
+// Fast Montgomery multiplication.  The derivation of the algorithm is
+// in  A Cryptographic Library for the Motorola DSP56000,
+// Dusse and Kaliski, Proc. EUROCRYPT 90, pp. 230-237.
+
+static void __attribute__((noinline))
+montgomery_multiply(unsigned long a[], unsigned long b[], unsigned long n[],
+                    unsigned long m[], unsigned long inv, int len) {
+  unsigned long t0 = 0, t1 = 0, t2 = 0; // Triple-precision accumulator
+  int i;
+
+  assert(inv * n[0] == -1UL, "broken inverse in Montgomery multiply");
+
+  for (i = 0; i < len; i++) {
+    int j;
+    for (j = 0; j < i; j++) {
+      MACC(a[j], b[i-j], t0, t1, t2);
+      MACC(m[j], n[i-j], t0, t1, t2);
+    }
+    MACC(a[i], b[0], t0, t1, t2);
+    m[i] = t0 * inv;
+    MACC(m[i], n[0], t0, t1, t2);
+
+    assert(t0 == 0, "broken Montgomery multiply");
+
+    t0 = t1; t1 = t2; t2 = 0;
+  }
+
+  for (i = len; i < 2*len; i++) {
+    int j;
+    for (j = i-len+1; j < len; j++) {
+      MACC(a[j], b[i-j], t0, t1, t2);
+      MACC(m[j], n[i-j], t0, t1, t2);
+    }
+    m[i-len] = t0;
+    t0 = t1; t1 = t2; t2 = 0;
+  }
+
+  while (t0)
+    t0 = sub(m, n, t0, len);
+}
+
+// Fast Montgomery squaring.  This uses asymptotically 25% fewer
+// multiplies so it should be up to 25% faster than Montgomery
+// multiplication.  However, its loop control is more complex and it
+// may actually run slower on some machines.
+
+static void __attribute__((noinline))
+montgomery_square(unsigned long a[], unsigned long n[],
+                  unsigned long m[], unsigned long inv, int len) {
+  unsigned long t0 = 0, t1 = 0, t2 = 0; // Triple-precision accumulator
+  int i;
+
+  assert(inv * n[0] == -1UL, "broken inverse in Montgomery multiply");
+
+  for (i = 0; i < len; i++) {
+    int j;
+    int end = (i+1)/2;
+    for (j = 0; j < end; j++) {
+      MACC2(a[j], a[i-j], t0, t1, t2);
+      MACC(m[j], n[i-j], t0, t1, t2);
+    }
+    if ((i & 1) == 0) {
+      MACC(a[j], a[j], t0, t1, t2);
+    }
+    for (; j < i; j++) {
+      MACC(m[j], n[i-j], t0, t1, t2);
+    }
+    m[i] = t0 * inv;
+    MACC(m[i], n[0], t0, t1, t2);
+
+    assert(t0 == 0, "broken Montgomery square");
+
+    t0 = t1; t1 = t2; t2 = 0;
+  }
+
+  for (i = len; i < 2*len; i++) {
+    int start = i-len+1;
+    int end = start + (len - start)/2;
+    int j;
+    for (j = start; j < end; j++) {
+      MACC2(a[j], a[i-j], t0, t1, t2);
+      MACC(m[j], n[i-j], t0, t1, t2);
+    }
+    if ((i & 1) == 0) {
+      MACC(a[j], a[j], t0, t1, t2);
+    }
+    for (; j < len; j++) {
+      MACC(m[j], n[i-j], t0, t1, t2);
+    }
+    m[i-len] = t0;
+    t0 = t1; t1 = t2; t2 = 0;
+  }
+
+  while (t0)
+    t0 = sub(m, n, t0, len);
+}
+
+// Swap words in a longword.
+static unsigned long swap(unsigned long x) {
+  return (x << 32) | (x >> 32);
+}
+
+// Copy len longwords from s to d, word-swapping as we go.  The
+// destination array is reversed.
+static void reverse_words(unsigned long *s, unsigned long *d, int len) {
+  d += len;
+  while(len-- > 0) {
+    d--;
+    *d = swap(*s);
+    s++;
+  }
+}
+
+// The threshold at which squaring is advantageous was determined
+// experimentally on an i7-3930K (Ivy Bridge) CPU @ 3.5GHz.
+#define MONTGOMERY_SQUARING_THRESHOLD 64
+
+void SharedRuntime::montgomery_multiply(jint *a_ints, jint *b_ints, jint *n_ints,
+                                        jint len, jlong inv,
+                                        jint *m_ints) {
+  assert(len % 2 == 0, "array length in montgomery_multiply must be even");
+  int longwords = len/2;
+
+  // Make very sure we don't use so much space that the stack might
+  // overflow.  512 jints corresponds to an 16384-bit integer and
+  // will use here a total of 8k bytes of stack space.
+  int total_allocation = longwords * sizeof (unsigned long) * 4;
+  guarantee(total_allocation <= 8192, "must be");
+  unsigned long *scratch = (unsigned long *)alloca(total_allocation);
+
+  // Local scratch arrays
+  unsigned long
+    *a = scratch + 0 * longwords,
+    *b = scratch + 1 * longwords,
+    *n = scratch + 2 * longwords,
+    *m = scratch + 3 * longwords;
+
+  reverse_words((unsigned long *)a_ints, a, longwords);
+  reverse_words((unsigned long *)b_ints, b, longwords);
+  reverse_words((unsigned long *)n_ints, n, longwords);
+
+  ::montgomery_multiply(a, b, n, m, (unsigned long)inv, longwords);
+
+  reverse_words(m, (unsigned long *)m_ints, longwords);
+}
+
+void SharedRuntime::montgomery_square(jint *a_ints, jint *n_ints,
+                                      jint len, jlong inv,
+                                      jint *m_ints) {
+  assert(len % 2 == 0, "array length in montgomery_square must be even");
+  int longwords = len/2;
+
+  // Make very sure we don't use so much space that the stack might
+  // overflow.  512 jints corresponds to an 16384-bit integer and
+  // will use here a total of 6k bytes of stack space.
+  int total_allocation = longwords * sizeof (unsigned long) * 3;
+  guarantee(total_allocation <= 8192, "must be");
+  unsigned long *scratch = (unsigned long *)alloca(total_allocation);
+
+  // Local scratch arrays
+  unsigned long
+    *a = scratch + 0 * longwords,
+    *n = scratch + 1 * longwords,
+    *m = scratch + 2 * longwords;
+
+  reverse_words((unsigned long *)a_ints, a, longwords);
+  reverse_words((unsigned long *)n_ints, n, longwords);
+
+  if (len >= MONTGOMERY_SQUARING_THRESHOLD) {
+    ::montgomery_square(a, n, m, (unsigned long)inv, longwords);
+  } else {
+    ::montgomery_multiply(a, a, n, m, (unsigned long)inv, longwords);
+  }
+
+  reverse_words(m, (unsigned long *)m_ints, longwords);
+}
+
+#endif // WINDOWS
 
 #ifdef COMPILER2
 // This is here instead of runtime_x86_64.cpp because it uses SimpleRuntimeFrame

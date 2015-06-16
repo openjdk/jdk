@@ -199,6 +199,8 @@ class StubRoutines: AllStatic {
   static address _multiplyToLen;
   static address _squareToLen;
   static address _mulAdd;
+  static address _montgomeryMultiply;
+  static address _montgomerySquare;
 
   // These are versions of the java.lang.Math methods which perform
   // the same operations as the intrinsic version.  They are used for
@@ -360,6 +362,8 @@ class StubRoutines: AllStatic {
   static address multiplyToLen()       {return _multiplyToLen; }
   static address squareToLen()         {return _squareToLen; }
   static address mulAdd()              {return _mulAdd; }
+  static address montgomeryMultiply()  { return _montgomeryMultiply; }
+  static address montgomerySquare()    { return _montgomerySquare; }
 
   static address select_fill_function(BasicType t, bool aligned, const char* &name);
 
