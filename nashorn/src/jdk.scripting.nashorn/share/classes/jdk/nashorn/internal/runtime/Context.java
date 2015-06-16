@@ -777,7 +777,7 @@ public final class Context {
      *
      * @throws IOException if source cannot be found or loaded
      */
-    public Object load(final ScriptObject scope, final Object from) throws IOException {
+    public Object load(final Object scope, final Object from) throws IOException {
         final Object src = from instanceof ConsString ? from.toString() : from;
         Source source = null;
 
@@ -829,7 +829,42 @@ public final class Context {
         }
 
         if (source != null) {
-            return evaluateSource(source, scope, scope);
+            if (scope instanceof ScriptObject && ((ScriptObject)scope).isScope()) {
+                final ScriptObject sobj = (ScriptObject)scope;
+                // passed object is a script object
+                // Global is the only user accessible scope ScriptObject
+                assert sobj.isGlobal() : "non-Global scope object!!";
+                return evaluateSource(source, sobj, sobj);
+            } else if (scope == null || scope == UNDEFINED) {
+                // undefined or null scope. Use current global instance.
+                final Global global = getGlobal();
+                return evaluateSource(source, global, global);
+            } else {
+                /*
+                 * Arbitrary object passed for scope.
+                 * Indirect load that is equivalent to:
+                 *
+                 *    (function(scope, source) {
+                 *        with (scope) {
+                 *            eval(<script_from_source>);
+                 *        }
+                 *    })(scope, source);
+                 */
+                final Global global = getGlobal();
+                // Create a new object. This is where all declarations
+                // (var, function) from the evaluated code go.
+                // make global to be its __proto__ so that global
+                // definitions are accessible to the evaluated code.
+                final ScriptObject evalScope = newScope(global);
+
+                // finally, make a WithObject around user supplied scope object
+                // so that it's properties are accessible as variables.
+                final ScriptObject withObj = ScriptRuntime.openWith(evalScope, scope);
+
+                // evaluate given source with 'withObj' as scope
+                // but use global object as "this".
+                return evaluateSource(source, withObj, global);
+            }
         }
 
         throw typeError("cant.load.script", ScriptRuntime.safeToString(from));
