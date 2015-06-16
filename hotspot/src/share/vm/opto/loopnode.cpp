@@ -2408,7 +2408,7 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool skip_loop_opts) 
     for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
       IdealLoopTree* lpt = iter.current();
       if (lpt->is_counted()) {
-        sw.transform_loop(lpt);
+        sw.transform_loop(lpt, true);
       }
     }
   }

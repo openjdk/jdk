@@ -191,6 +191,13 @@
   product(intx,  LoopMaxUnroll, 16,                                         \
           "Maximum number of unrolls for main loop")                        \
                                                                             \
+  product(bool,  SuperWordLoopUnrollAnalysis, false,                        \
+          "Map number of unrolls for main loop via "                        \
+          "Superword Level Parallelism analysis")                           \
+                                                                            \
+  notproduct(bool, TraceSuperWordLoopUnrollAnalysis, false,                 \
+          "Trace what Superword Level Parallelism analysis applies")        \
+                                                                            \
   product(intx,  LoopUnrollMin, 4,                                          \
           "Minimum number of unroll loop bodies before checking progress"   \
           "of rounds of unroll,optimize,..")                                \

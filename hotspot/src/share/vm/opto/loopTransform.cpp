@@ -38,6 +38,7 @@
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
+#include "opto/superword.hpp"
 #include "opto/vectornode.hpp"
 
 //------------------------------is_loop_exit-----------------------------------
@@ -640,7 +641,7 @@ bool IdealLoopTree::policy_maximally_unroll( PhaseIdealLoop *phase ) const {
 //------------------------------policy_unroll----------------------------------
 // Return TRUE or FALSE if the loop should be unrolled or not.  Unroll if
 // the loop is a CountedLoop and the body is small enough.
-bool IdealLoopTree::policy_unroll( PhaseIdealLoop *phase ) const {
+bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
 
   CountedLoopNode *cl = _head->as_CountedLoop();
   assert(cl->is_normal_loop() || cl->is_main_loop(), "");
@@ -652,6 +653,8 @@ bool IdealLoopTree::policy_unroll( PhaseIdealLoop *phase ) const {
   // After split at least one iteration will be executed in pre-loop.
   if (cl->trip_count() <= (uint)(cl->is_normal_loop() ? 2 : 1)) return false;
 
+  _local_loop_unroll_limit = LoopUnrollLimit;
+  _local_loop_unroll_factor = 4;
   int future_unroll_ct = cl->unrolled_count() * 2;
   if (future_unroll_ct > LoopMaxUnroll) return false;
 
@@ -747,8 +750,24 @@ bool IdealLoopTree::policy_unroll( PhaseIdealLoop *phase ) const {
     } // switch
   }
 
+  if (UseSuperWord) {
+    if (!cl->is_reduction_loop()) {
+      phase->mark_reductions(this);
+    }
+
+    // Only attempt slp analysis when user controls do not prohibit it
+    if (LoopMaxUnroll > _local_loop_unroll_factor) {
+      // Once policy_slp_analysis succeeds, mark the loop with the
+      // maximal unroll factor so that we minimize analysis passes
+      if ((future_unroll_ct > _local_loop_unroll_factor) ||
+          (body_size > (uint)_local_loop_unroll_limit)) {
+        policy_unroll_slp_analysis(cl, phase, future_unroll_ct);
+      }
+    }
+  }
+
   // Check for being too big
-  if (body_size > (uint)LoopUnrollLimit) {
+  if (body_size > (uint)_local_loop_unroll_limit) {
     if (xors_in_loop >= 4 && body_size < (uint)LoopUnrollLimit*4) return true;
     // Normal case: loop too big
     return false;
@@ -756,6 +775,36 @@ bool IdealLoopTree::policy_unroll( PhaseIdealLoop *phase ) const {
 
   // Unroll once!  (Each trip will soon do double iterations)
   return true;
+}
+
+void IdealLoopTree::policy_unroll_slp_analysis(CountedLoopNode *cl, PhaseIdealLoop *phase, int future_unroll_ct) {
+  // Enable this functionality target by target as needed
+  if (SuperWordLoopUnrollAnalysis) {
+    if (!cl->has_passed_slp()) {
+      SuperWord sw(phase);
+      sw.transform_loop(this, false);
+
+      // If the loop is slp canonical analyze it
+      if (sw.early_return() == false) {
+        sw.unrolling_analysis(cl, _local_loop_unroll_factor);
+      }
+    }
+
+    int slp_max_unroll_factor = cl->slp_max_unroll();
+    if ((slp_max_unroll_factor > 4) &&
+        (slp_max_unroll_factor >= future_unroll_ct)) {
+      int new_limit = cl->node_count_before_unroll() * slp_max_unroll_factor;
+      if (new_limit > LoopUnrollLimit) {
+#ifndef PRODUCT
+        if (TraceSuperWordLoopUnrollAnalysis) {
+          tty->print_cr("slp analysis is applying unroll limit  %d, the original limit was %d\n",
+            new_limit, _local_loop_unroll_limit);
+        }
+#endif
+        _local_loop_unroll_limit = new_limit;
+      }
+    }
+  }
 }
 
 //------------------------------policy_align-----------------------------------
@@ -1611,6 +1660,7 @@ void PhaseIdealLoop::mark_reductions(IdealLoopTree *loop) {
               // iff the uses conform
               if (ok) {
                 def_node->add_flag(Node::Flag_is_reduction);
+                loop_head->mark_has_reductions();
               }
             }
           }
@@ -2517,7 +2567,6 @@ bool IdealLoopTree::iteration_split_impl( PhaseIdealLoop *phase, Node_List &old_
     // and we'd rather unroll the post-RCE'd loop SO... do not unroll if
     // peeling.
     if (should_unroll && !should_peel) {
-      phase->mark_reductions(this);
       phase->do_unroll(this, old_new, true);
     }
 
