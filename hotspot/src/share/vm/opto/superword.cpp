@@ -68,6 +68,7 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
   _bb(NULL),                              // basic block
   _iv(NULL),                              // induction var
   _race_possible(false),                  // cases where SDMU is true
+  _early_return(true),                    // analysis evaluations routine
   _num_work_vecs(0),                      // amount of vector work we have
   _num_reductions(0),                     // amount of reduction work we have
   _do_vector_loop(phase->C->do_vector_loop()),  // whether to do vectorization/simd style
@@ -78,7 +79,7 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
 {}
 
 //------------------------------transform_loop---------------------------
-void SuperWord::transform_loop(IdealLoopTree* lpt) {
+void SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
   assert(UseSuperWord, "should be");
   // Do vectors exist on this architecture?
   if (Matcher::vector_width_in_bytes(T_BYTE) < 2) return;
@@ -113,8 +114,158 @@ void SuperWord::transform_loop(IdealLoopTree* lpt) {
   // For now, define one block which is the entire loop body
   set_bb(cl);
 
-  assert(_packset.length() == 0, "packset must be empty");
-  SLP_extract();
+  if (do_optimization) {
+    assert(_packset.length() == 0, "packset must be empty");
+    SLP_extract();
+  }
+}
+
+//------------------------------early unrolling analysis------------------------------
+void SuperWord::unrolling_analysis(CountedLoopNode *cl, int &local_loop_unroll_factor) {
+  bool is_slp = true;
+  ResourceMark rm;
+  size_t ignored_size = lpt()->_body.size();
+  int *ignored_loop_nodes = NEW_RESOURCE_ARRAY(int, ignored_size);
+  Node_Stack nstack((int)ignored_size);
+  Node *cl_exit = cl->loopexit();
+
+  // First clear the entries
+  for (uint i = 0; i < lpt()->_body.size(); i++) {
+    ignored_loop_nodes[i] = -1;
+  }
+
+  int max_vector = Matcher::max_vector_size(T_INT);
+
+  // Process the loop, some/all of the stack entries will not be in order, ergo
+  // need to preprocess the ignored initial state before we process the loop
+  for (uint i = 0; i < lpt()->_body.size(); i++) {
+    Node* n = lpt()->_body.at(i);
+    if (n == cl->incr() ||
+      n->is_reduction() ||
+      n->is_AddP() ||
+      n->is_Cmp() ||
+      n->is_IfTrue() ||
+      n->is_CountedLoop() ||
+      (n == cl_exit)) {
+      ignored_loop_nodes[i] = n->_idx;
+      continue;
+    }
+
+    if (n->is_If()) {
+      IfNode *iff = n->as_If();
+      if (iff->_fcnt != COUNT_UNKNOWN && iff->_prob != PROB_UNKNOWN) {
+        if (lpt()->is_loop_exit(iff)) {
+          ignored_loop_nodes[i] = n->_idx;
+          continue;
+        }
+      }
+    }
+
+    if (n->is_Phi() && (n->bottom_type() == Type::MEMORY)) {
+      Node* n_tail = n->in(LoopNode::LoopBackControl);
+      if (n_tail != n->in(LoopNode::EntryControl)) {
+        if (!n_tail->is_Mem()) {
+          is_slp = false;
+          break;
+        }
+      }
+    }
+
+    // This must happen after check of phi/if
+    if (n->is_Phi() || n->is_If()) {
+      ignored_loop_nodes[i] = n->_idx;
+      continue;
+    }
+
+    if (n->is_LoadStore() || n->is_MergeMem() ||
+      (n->is_Proj() && !n->as_Proj()->is_CFG())) {
+      is_slp = false;
+      break;
+    }
+
+    if (n->is_Mem()) {
+      Node* adr = n->in(MemNode::Address);
+      Node* n_ctrl = _phase->get_ctrl(adr);
+
+      // save a queue of post process nodes
+      if (n_ctrl != NULL && lpt()->is_member(_phase->get_loop(n_ctrl))) {
+        MemNode* current = n->as_Mem();
+        BasicType bt = current->memory_type();
+        if (is_java_primitive(bt) == false) {
+          ignored_loop_nodes[i] = n->_idx;
+          continue;
+        }
+
+        // Process the memory expression
+        int stack_idx = 0;
+        bool have_side_effects = true;
+        if (adr->is_AddP() == false) {
+          nstack.push(adr, stack_idx++);
+        } else {
+          // Mark the components of the memory operation in nstack
+          SWPointer p1(current, this, &nstack, true);
+          have_side_effects = p1.node_stack()->is_nonempty();
+        }
+
+        // Process the pointer stack
+        while (have_side_effects) {
+          Node* pointer_node = nstack.node();
+          for (uint j = 0; j < lpt()->_body.size(); j++) {
+            Node* cur_node = lpt()->_body.at(j);
+            if (cur_node == pointer_node) {
+              ignored_loop_nodes[j] = cur_node->_idx;
+              break;
+            }
+          }
+          nstack.pop();
+          have_side_effects = nstack.is_nonempty();
+        }
+      }
+    }
+  }
+
+  if (is_slp) {
+    // Now we try to find the maximum supported consistent vector which the machine
+    // description can use
+    for (uint i = 0; i < lpt()->_body.size(); i++) {
+      if (ignored_loop_nodes[i] != -1) continue;
+
+      BasicType bt;
+      Node* n = lpt()->_body.at(i);
+      if (n->is_Store()) {
+        bt = n->as_Mem()->memory_type();
+      }
+      else {
+        bt = n->bottom_type()->basic_type();
+      }
+
+      int cur_max_vector = Matcher::max_vector_size(bt);
+
+      // If a max vector exists which is not larger than _local_loop_unroll_factor
+      // stop looking, we already have the max vector to map to.
+      if (cur_max_vector <= local_loop_unroll_factor) {
+        is_slp = false;
+#ifndef PRODUCT
+        if (TraceSuperWordLoopUnrollAnalysis) {
+          tty->print_cr("slp analysis fails: unroll limit equals max vector\n");
+        }
+#endif
+        break;
+      }
+
+      // Map the maximal common vector
+      if (VectorNode::implemented(n->Opcode(), cur_max_vector, bt)) {
+        if (cur_max_vector < max_vector) {
+          max_vector = cur_max_vector;
+        }
+      }
+    }
+    if (is_slp) {
+      local_loop_unroll_factor = max_vector;
+    }
+    cl->mark_passed_slp();
+    cl->set_slp_max_unroll(local_loop_unroll_factor);
+  }
 }
 
 //------------------------------SLP_extract---------------------------
@@ -268,12 +419,12 @@ void SuperWord::find_adjacent_refs() {
       best_iv_adjustment = iv_adjustment;
     }
 
-    SWPointer align_to_ref_p(mem_ref, this);
+    SWPointer align_to_ref_p(mem_ref, this, NULL, false);
     // Set alignment relative to "align_to_ref" for all related memory operations.
     for (int i = memops.size() - 1; i >= 0; i--) {
       MemNode* s = memops.at(i)->as_Mem();
       if (isomorphic(s, mem_ref)) {
-        SWPointer p2(s, this);
+        SWPointer p2(s, this, NULL, false);
         if (p2.comparable(align_to_ref_p)) {
           int align = memory_alignment(s, iv_adjustment);
           set_alignment(s, align);
@@ -294,7 +445,7 @@ void SuperWord::find_adjacent_refs() {
           // iterations in pre-loop will be not enough to align it.
           create_pack = false;
         } else {
-          SWPointer p2(best_align_to_mem_ref, this);
+          SWPointer p2(best_align_to_mem_ref, this, NULL, false);
           if (align_to_ref_p.invar() != p2.invar()) {
             // Do not vectorize memory accesses with different invariants
             // if unaligned memory accesses are not allowed.
@@ -411,7 +562,7 @@ MemNode* SuperWord::find_align_to_ref(Node_List &memops) {
   // Count number of comparable memory ops
   for (uint i = 0; i < memops.size(); i++) {
     MemNode* s1 = memops.at(i)->as_Mem();
-    SWPointer p1(s1, this);
+    SWPointer p1(s1, this, NULL, false);
     // Discard if pre loop can't align this reference
     if (!ref_is_alignable(p1)) {
       *cmp_ct.adr_at(i) = 0;
@@ -420,7 +571,7 @@ MemNode* SuperWord::find_align_to_ref(Node_List &memops) {
     for (uint j = i+1; j < memops.size(); j++) {
       MemNode* s2 = memops.at(j)->as_Mem();
       if (isomorphic(s1, s2)) {
-        SWPointer p2(s2, this);
+        SWPointer p2(s2, this, NULL, false);
         if (p1.comparable(p2)) {
           (*cmp_ct.adr_at(i))++;
           (*cmp_ct.adr_at(j))++;
@@ -441,7 +592,7 @@ MemNode* SuperWord::find_align_to_ref(Node_List &memops) {
     if (s->is_Store()) {
       int vw = vector_width_in_bytes(s);
       assert(vw > 1, "sanity");
-      SWPointer p(s, this);
+      SWPointer p(s, this, NULL, false);
       if (cmp_ct.at(j) >  max_ct ||
           cmp_ct.at(j) == max_ct &&
             (vw >  max_vw ||
@@ -464,7 +615,7 @@ MemNode* SuperWord::find_align_to_ref(Node_List &memops) {
       if (s->is_Load()) {
         int vw = vector_width_in_bytes(s);
         assert(vw > 1, "sanity");
-        SWPointer p(s, this);
+        SWPointer p(s, this, NULL, false);
         if (cmp_ct.at(j) >  max_ct ||
             cmp_ct.at(j) == max_ct &&
               (vw >  max_vw ||
@@ -575,7 +726,7 @@ bool SuperWord::ref_is_alignable(SWPointer& p) {
 //---------------------------get_iv_adjustment---------------------------
 // Calculate loop's iv adjustment for this memory ops.
 int SuperWord::get_iv_adjustment(MemNode* mem_ref) {
-  SWPointer align_to_ref_p(mem_ref, this);
+  SWPointer align_to_ref_p(mem_ref, this, NULL, false);
   int offset = align_to_ref_p.offset_in_bytes();
   int scale  = align_to_ref_p.scale_in_bytes();
   int elt_size = align_to_ref_p.memory_size();
@@ -649,13 +800,13 @@ void SuperWord::dependence_graph() {
       if (_dg.dep(s1)->in_cnt() == 0) {
         _dg.make_edge(slice, s1);
       }
-      SWPointer p1(s1->as_Mem(), this);
+      SWPointer p1(s1->as_Mem(), this, NULL, false);
       bool sink_dependent = true;
       for (int k = j - 1; k >= 0; k--) {
         Node* s2 = _nlist.at(k);
         if (s1->is_Load() && s2->is_Load())
           continue;
-        SWPointer p2(s2->as_Mem(), this);
+        SWPointer p2(s2->as_Mem(), this, NULL, false);
 
         int cmp = p1.cmp(p2);
         if (SuperWordRTDepCheck &&
@@ -795,8 +946,8 @@ bool SuperWord::are_adjacent_refs(Node* s1, Node* s2) {
   if (_phase->C->get_alias_index(s1->as_Mem()->adr_type()) !=
       _phase->C->get_alias_index(s2->as_Mem()->adr_type()))
     return false;
-  SWPointer p1(s1->as_Mem(), this);
-  SWPointer p2(s2->as_Mem(), this);
+  SWPointer p1(s1->as_Mem(), this, NULL, false);
+  SWPointer p2(s2->as_Mem(), this, NULL, false);
   if (p1.base() != p2.base() || !p1.comparable(p2)) return false;
   int diff = p2.offset_in_bytes() - p1.offset_in_bytes();
   return diff == data_size(s1);
@@ -1615,13 +1766,13 @@ void SuperWord::output() {
       if (n->is_Load()) {
         Node* ctl = n->in(MemNode::Control);
         Node* mem = first->in(MemNode::Memory);
-        SWPointer p1(n->as_Mem(), this);
+        SWPointer p1(n->as_Mem(), this, NULL, false);
         // Identify the memory dependency for the new loadVector node by
         // walking up through memory chain.
         // This is done to give flexibility to the new loadVector node so that
         // it can move above independent storeVector nodes.
         while (mem->is_StoreVector()) {
-          SWPointer p2(mem->as_Mem(), this);
+          SWPointer p2(mem->as_Mem(), this, NULL, false);
           int cmp = p1.cmp(p2);
           if (SWPointer::not_equal(cmp) || !SWPointer::comparable(cmp)) {
             mem = mem->in(MemNode::Memory);
@@ -2138,7 +2289,7 @@ void SuperWord::compute_vector_element_type() {
 //------------------------------memory_alignment---------------------------
 // Alignment within a vector memory reference
 int SuperWord::memory_alignment(MemNode* s, int iv_adjust) {
-  SWPointer p(s, this);
+  SWPointer p(s, this, NULL, false);
   if (!p.valid()) {
     return bottom_align;
   }
@@ -2315,7 +2466,7 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
   Node *orig_limit = pre_opaq->original_loop_limit();
   assert(orig_limit != NULL && _igvn.type(orig_limit) != Type::TOP, "");
 
-  SWPointer align_to_ref_p(align_to_ref, this);
+  SWPointer align_to_ref_p(align_to_ref, this, NULL, false);
   assert(align_to_ref_p.valid(), "sanity");
 
   // Given:
@@ -2489,6 +2640,7 @@ void SuperWord::init() {
   _bb = NULL;
   _iv = NULL;
   _race_possible = 0;
+  _early_return = false;
   _num_work_vecs = 0;
   _num_reductions = 0;
 }
@@ -2559,9 +2711,11 @@ char* SuperWord::blank(uint depth) {
 //==============================SWPointer===========================
 
 //----------------------------SWPointer------------------------
-SWPointer::SWPointer(MemNode* mem, SuperWord* slp) :
+SWPointer::SWPointer(MemNode* mem, SuperWord* slp, Node_Stack *nstack, bool analyze_only) :
   _mem(mem), _slp(slp),  _base(NULL),  _adr(NULL),
-  _scale(0), _offset(0), _invar(NULL), _negate_invar(false) {
+  _scale(0), _offset(0), _invar(NULL), _negate_invar(false),
+  _nstack(nstack), _analyze_only(analyze_only),
+  _stack_idx(0) {
 
   Node* adr = mem->in(MemNode::Address);
   if (!adr->is_AddP()) {
@@ -2599,7 +2753,9 @@ SWPointer::SWPointer(MemNode* mem, SuperWord* slp) :
 // the pattern match of an address expression.
 SWPointer::SWPointer(SWPointer* p) :
   _mem(p->_mem), _slp(p->_slp),  _base(NULL),  _adr(NULL),
-  _scale(0), _offset(0), _invar(NULL), _negate_invar(false) {}
+  _scale(0), _offset(0), _invar(NULL), _negate_invar(false),
+  _nstack(p->_nstack), _analyze_only(p->_analyze_only),
+  _stack_idx(p->_stack_idx) {}
 
 //------------------------scaled_iv_plus_offset--------------------
 // Match: k*iv + offset
@@ -2641,6 +2797,9 @@ bool SWPointer::scaled_iv(Node* n) {
   if (n == iv()) {
     _scale = 1;
     return true;
+  }
+  if (_analyze_only && (invariant(n) == false)) {
+    _nstack->push(n, _stack_idx++);
   }
   int opc = n->Opcode();
   if (opc == Op_MulI) {
@@ -2699,6 +2858,9 @@ bool SWPointer::offset_plus_k(Node* n, bool negate) {
     return false;
   }
   if (_invar != NULL) return false; // already have an invariant
+  if (_analyze_only && (invariant(n) == false)) {
+    _nstack->push(n, _stack_idx++);
+  }
   if (opc == Op_AddI) {
     if (n->in(2)->is_Con() && invariant(n->in(1))) {
       _negate_invar = negate;
