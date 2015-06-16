@@ -2065,6 +2065,21 @@ class MutableBigInteger {
     }
 
     /**
+     * Returns the multiplicative inverse of val mod 2^64.  Assumes val is odd.
+     */
+    static long inverseMod64(long val) {
+        // Newton's iteration!
+        long t = val;
+        t *= 2 - val*t;
+        t *= 2 - val*t;
+        t *= 2 - val*t;
+        t *= 2 - val*t;
+        t *= 2 - val*t;
+        assert(t * val == 1);
+        return t;
+    }
+
+    /**
      * Calculate the multiplicative inverse of 2^k mod mod, where mod is odd.
      */
     static MutableBigInteger modInverseBP2(MutableBigInteger mod, int k) {
