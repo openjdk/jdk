@@ -36,8 +36,7 @@ class JavaSuperAdapter {
     private final Object adapter;
 
     JavaSuperAdapter(final Object adapter) {
-        Objects.requireNonNull(adapter);
-        this.adapter = adapter;
+        this.adapter = Objects.requireNonNull(adapter);
     }
 
     public Object getAdapter() {

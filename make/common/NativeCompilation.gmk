@@ -449,6 +449,16 @@ define SetupNativeCompilationBody
     $1_EXTRA_CXXFLAGS+=$$($1_CXXFLAGS_$(OPENJDK_TARGET_OS)_release)
   endif
 
+  # If no C++ flags are explicitly set, default to using the C flags.
+  # After that, we can set additional C++ flags that should not interfere
+  # with the mechanism for copying the C flags by default.
+  ifeq ($$($1_CXXFLAGS),)
+    $1_CXXFLAGS:=$$($1_CFLAGS)
+  endif
+  ifeq ($$(strip $$($1_EXTRA_CXXFLAGS)),)
+    $1_EXTRA_CXXFLAGS:=$$($1_EXTRA_CFLAGS)
+  endif
+
   ifeq ($$($1_DEBUG_SYMBOLS), true)
     ifeq ($(ENABLE_DEBUG_SYMBOLS), true)
       ifdef OPENJDK
@@ -464,16 +474,6 @@ define SetupNativeCompilationBody
         endif
       endif
     endif
-  endif
-
-  # If no C++ flags are explicitly set, default to using the C flags.
-  # After that, we can set additional C++ flags that should not interfere
-  # with the mechanism for copying the C flags by default.
-  ifeq ($$($1_CXXFLAGS),)
-    $1_CXXFLAGS:=$$($1_CFLAGS)
-  endif
-  ifeq ($$(strip $$($1_EXTRA_CXXFLAGS)),)
-    $1_EXTRA_CXXFLAGS:=$$($1_EXTRA_CFLAGS)
   endif
 
   ifneq (,$$($1_REORDER))

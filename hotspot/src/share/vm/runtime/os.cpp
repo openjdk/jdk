@@ -775,6 +775,10 @@ void os::start_thread(Thread* thread) {
   pd_start_thread(thread);
 }
 
+void os::abort(bool dump_core) {
+  abort(dump_core && CreateCoredumpOnCrash, NULL, NULL);
+}
+
 //---------------------------------------------------------------------------
 // Helper functions for fatal error handler
 
