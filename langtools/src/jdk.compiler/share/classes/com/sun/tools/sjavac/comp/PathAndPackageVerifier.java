@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import com.sun.tools.javac.tree.JCTree.JCIdent;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.Name;
+import com.sun.tools.sjavac.Log;
 
 public class PathAndPackageVerifier implements TaskListener {
 
@@ -50,30 +51,37 @@ public class PathAndPackageVerifier implements TaskListener {
 
     @Override
     @DefinedBy(Api.COMPILER_TREE)
-    public void started(TaskEvent e) {
+    public void finished(TaskEvent e) {
+        if (e.getKind() == TaskEvent.Kind.ANALYZE) {
+
+            CompilationUnitTree cu = e.getCompilationUnit();
+            if (cu == null)
+                return;
+
+            JavaFileObject jfo = cu.getSourceFile();
+            if (jfo == null)
+                return; // No source file -> package doesn't matter
+
+            JCTree pkg = (JCTree) cu.getPackageName();
+            if (pkg == null)
+                return; // Default package. See JDK-8048144.
+
+            Path dir = Paths.get(jfo.toUri()).normalize().getParent();
+            if (!checkPathAndPackage(dir, pkg))
+                misplacedCompilationUnits.add(cu);
+        }
+
+        if (e.getKind() == TaskEvent.Kind.COMPILATION) {
+            for (CompilationUnitTree cu : misplacedCompilationUnits) {
+                Log.error("Misplaced compilation unit.");
+                Log.error("    Directory: " + Paths.get(cu.getSourceFile().toUri()).getParent());
+                Log.error("    Package:   " + cu.getPackageName());
+            }
+        }
     }
 
-    @Override
-    @DefinedBy(Api.COMPILER_TREE)
-    public void finished(TaskEvent e) {
-        if (e.getKind() != TaskEvent.Kind.ANALYZE)
-            return;
-
-        CompilationUnitTree cu = e.getCompilationUnit();
-        if (cu == null)
-            return;
-
-        JavaFileObject jfo = cu.getSourceFile();
-        if (jfo == null)
-            return; // No source file -> package doesn't matter
-
-        JCTree pkg = (JCTree) cu.getPackageName();
-        if (pkg == null)
-            return; // Default package. See JDK-8048144.
-
-        Path dir = Paths.get(jfo.toUri()).normalize().getParent();
-        if (!checkPathAndPackage(dir, pkg))
-            misplacedCompilationUnits.add(cu);
+    public boolean errorsDiscovered() {
+        return misplacedCompilationUnits.size() > 0;
     }
 
     /* Returns true if dir matches pkgName.
@@ -92,10 +100,6 @@ public class PathAndPackageVerifier implements TaskListener {
                 return false;
         }
         return !pkgIter.hasNext(); /*&& !pathIter.hasNext() See JDK-8059598 */
-    }
-
-    public Set<CompilationUnitTree> getMisplacedCompilationUnits() {
-        return misplacedCompilationUnits;
     }
 
     /* Iterates over the names of the parents of the given path:

@@ -2582,7 +2582,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         final int callCount      = callType.parameterCount();
 
         final boolean isCalleeVarArg = parameterCount > 0 && methodType.parameterType(parameterCount - 1).isArray();
-        final boolean isCallerVarArg = callerVarArg != null ? callerVarArg.booleanValue() : callCount > 0 &&
+        final boolean isCallerVarArg = callerVarArg != null ? callerVarArg : callCount > 0 &&
                 callType.parameterType(callCount - 1).isArray();
 
         if (isCalleeVarArg) {

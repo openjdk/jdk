@@ -35,7 +35,7 @@ import java.util.*;
 import javax.sql.rowset.*;
 
 /**
- * The standard implementation of the <code>JdbcRowSet</code> interface. See the interface
+ * The standard implementation of the {@code JdbcRowSet} interface. See the interface
  * definition for full behavior and implementation requirements.
  *
  * @author Jonathan Bruce, Amit Handa
@@ -44,40 +44,40 @@ import javax.sql.rowset.*;
 public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
-     * The <code>Connection</code> object that is this rowset's
+     * The {@code Connection} object that is this rowset's
      * current connection to the database.  This field is set
      * internally when the connection is established.
      */
     private Connection conn;
 
     /**
-     * The <code>PreparedStatement</code> object that is this rowset's
+     * The {@code PreparedStatement} object that is this rowset's
      * current command.  This field is set internally when the method
-     * <code>execute</code> creates the <code>PreparedStatement</code>
+     * {@code execute} creates the {@code PreparedStatement}
      * object.
      */
     private PreparedStatement ps;
 
     /**
-     * The <code>ResultSet</code> object that is this rowset's
+     * The {@code ResultSet} object that is this rowset's
      * current result set.  This field is set internally when the method
-     * <code>execute</code> executes the rowset's command and thereby
-     * creates the rowset's <code>ResultSet</code> object.
+     * {@code execute} executes the rowset's command and thereby
+     * creates the rowset's {@code ResultSet} object.
      */
     private ResultSet rs;
 
     /**
-     * The <code>RowSetMetaDataImpl</code> object that is constructed when
-     * a <code>ResultSet</code> object is passed to the <code>JdbcRowSet</code>
+     * The {@code RowSetMetaDataImpl} object that is constructed when
+     * a {@code ResultSet} object is passed to the {@code JdbcRowSet}
      * constructor. This helps in constructing all metadata associated
-     * with the <code>ResultSet</code> object using the setter methods of
-     * <code>RowSetMetaDataImpl</code>.
+     * with the {@code ResultSet} object using the setter methods of
+     * {@code RowSetMetaDataImpl}.
      */
     private RowSetMetaDataImpl rowsMD;
 
     /**
-     * The <code>ResultSetMetaData</code> object from which this
-     * <code>RowSetMetaDataImpl</code> is formed and which  helps in getting
+     * The {@code ResultSetMetaData} object from which this
+     * {@code RowSetMetaDataImpl} is formed and which  helps in getting
      * the metadata information.
      */
     private ResultSetMetaData resMD;
@@ -97,13 +97,13 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     protected transient JdbcRowSetResourceBundle resBundle;
 
     /**
-     * Constructs a default <code>JdbcRowSet</code> object.
-     * The new instance of <code>JdbcRowSet</code> will serve as a proxy
-     * for the <code>ResultSet</code> object it creates, and by so doing,
+     * Constructs a default {@code JdbcRowSet} object.
+     * The new instance of {@code JdbcRowSet} will serve as a proxy
+     * for the {@code ResultSet} object it creates, and by so doing,
      * it will make it possible to use the result set as a JavaBeans
      * component.
      * <P>
-     * The following is true of a default <code>JdbcRowSet</code> instance:
+     * The following is true of a default {@code JdbcRowSet} instance:
      * <UL>
      *   <LI>Does not show deleted rows
      *   <LI>Has no time limit for how long a driver may take to
@@ -114,17 +114,17 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      *       made by others
      *   <LI>Will not see uncommitted data (make "dirty" reads)
      *   <LI>Has escape processing turned on
-     *   <LI>Has its connection's type map set to <code>null</code>
-     *   <LI>Has an empty <code>Hashtable</code> object for storing any
+     *   <LI>Has its connection's type map set to {@code null}
+     *   <LI>Has an empty {@code Hashtable} object for storing any
      *       parameters that are set
      * </UL>
-     * A newly created <code>JdbcRowSet</code> object must have its
-     * <code>execute</code> method invoked before other public methods
+     * A newly created {@code JdbcRowSet} object must have its
+     * {@code execute} method invoked before other public methods
      * are called on it; otherwise, such method calls will cause an
      * exception to be thrown.
      *
      * @throws SQLException [1] if any of its public methods are called prior
-     * to calling the <code>execute</code> method; [2] if invalid JDBC driver
+     * to calling the {@code execute} method; [2] if invalid JDBC driver
      * properties are set or [3] if no connection to a data source exists.
      */
     public JdbcRowSetImpl() {
@@ -217,14 +217,14 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Constructs a default <code>JdbcRowSet</code> object given a
-     * valid <code>Connection</code> object. The new
-     * instance of <code>JdbcRowSet</code> will serve as a proxy for
-     * the <code>ResultSet</code> object it creates, and by so doing,
+     * Constructs a default {@code JdbcRowSet} object given a
+     * valid {@code Connection} object. The new
+     * instance of {@code JdbcRowSet} will serve as a proxy for
+     * the {@code ResultSet} object it creates, and by so doing,
      * it will make it possible to use the result set as a JavaBeans
      * component.
      * <P>
-     * The following is true of a default <code>JdbcRowSet</code> instance:
+     * The following is true of a default {@code JdbcRowSet} instance:
      * <UL>
      *   <LI>Does not show deleted rows
      *   <LI>Has no time limit for how long a driver may take to
@@ -235,17 +235,17 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      *       made by others
      *   <LI>Will not see uncommitted data (make "dirty" reads)
      *   <LI>Has escape processing turned on
-     *   <LI>Has its connection's type map set to <code>null</code>
-     *   <LI>Has an empty <code>Hashtable</code> object for storing any
+     *   <LI>Has its connection's type map set to {@code null}
+     *   <LI>Has an empty {@code Hashtable} object for storing any
      *       parameters that are set
      * </UL>
-     * A newly created <code>JdbcRowSet</code> object must have its
-     * <code>execute</code> method invoked before other public methods
+     * A newly created {@code JdbcRowSet} object must have its
+     * {@code execute} method invoked before other public methods
      * are called on it; otherwise, such method calls will cause an
      * exception to be thrown.
      *
      * @throws SQLException [1] if any of its public methods are called prior
-     * to calling the <code>execute</code> method, [2] if invalid JDBC driver
+     * to calling the {@code execute} method, [2] if invalid JDBC driver
      * properties are set, or [3] if no connection to a data source exists.
      */
     public JdbcRowSetImpl(Connection con) throws SQLException {
@@ -289,15 +289,15 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Constructs a default <code>JdbcRowSet</code> object using the
+     * Constructs a default {@code JdbcRowSet} object using the
      * URL, username, and password arguments supplied. The new
-     * instance of <code>JdbcRowSet</code> will serve as a proxy for
-     * the <code>ResultSet</code> object it creates, and by so doing,
+     * instance of {@code JdbcRowSet} will serve as a proxy for
+     * the {@code ResultSet} object it creates, and by so doing,
      * it will make it possible to use the result set as a JavaBeans
      * component.
      *
      * <P>
-     * The following is true of a default <code>JdbcRowSet</code> instance:
+     * The following is true of a default {@code JdbcRowSet} instance:
      * <UL>
      *   <LI>Does not show deleted rows
      *   <LI>Has no time limit for how long a driver may take to
@@ -308,17 +308,17 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      *       made by others
      *   <LI>Will not see uncommitted data (make "dirty" reads)
      *   <LI>Has escape processing turned on
-     *   <LI>Has its connection's type map set to <code>null</code>
-     *   <LI>Has an empty <code>Hashtable</code> object for storing any
+     *   <LI>Has its connection's type map set to {@code null}
+     *   <LI>Has an empty {@code Hashtable} object for storing any
      *       parameters that are set
      * </UL>
      *
-     * @param url - a JDBC URL for the database to which this <code>JdbcRowSet</code>
+     * @param url a JDBC URL for the database to which this {@code JdbcRowSet}
      *        object will be connected. The form for a JDBC URL is
-     *        <code>jdbc:subprotocol:subname</code>.
-     * @param user - the database user on whose behalf the connection
+     *        {@code jdbc:subprotocol:subname}.
+     * @param user the database user on whose behalf the connection
      *        is being made
-     * @param password - the user's password
+     * @param password the user's password
      *
      * @throws SQLException if a database access error occurs
      *
@@ -372,15 +372,15 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
 
     /**
-     * Constructs a <code>JdbcRowSet</code> object using the given valid
-     * <code>ResultSet</code> object. The new
-     * instance of <code>JdbcRowSet</code> will serve as a proxy for
-     * the <code>ResultSet</code> object, and by so doing,
+     * Constructs a {@code JdbcRowSet} object using the given valid
+     * {@code ResultSet} object. The new
+     * instance of {@code JdbcRowSet} will serve as a proxy for
+     * the {@code ResultSet} object, and by so doing,
      * it will make it possible to use the result set as a JavaBeans
      * component.
      *
      * <P>
-     * The following is true of a default <code>JdbcRowSet</code> instance:
+     * The following is true of a default {@code JdbcRowSet} instance:
      * <UL>
      *   <LI>Does not show deleted rows
      *   <LI>Has no time limit for how long a driver may take to
@@ -391,12 +391,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      *       made by others
      *   <LI>Will not see uncommitted data (make "dirty" reads)
      *   <LI>Has escape processing turned on
-     *   <LI>Has its connection's type map set to <code>null</code>
-     *   <LI>Has an empty <code>Hashtable</code> object for storing any
+     *   <LI>Has its connection's type map set to {@code null}
+     *   <LI>Has an empty {@code Hashtable} object for storing any
      *       parameters that are set
      * </UL>
      *
-     * @param res a valid <code>ResultSet</code> object
+     * @param res a valid {@code ResultSet} object
      *
      * @throws SQLException if a database access occurs due to a non
      * valid ResultSet handle.
@@ -460,13 +460,13 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Initializes the given <code>RowSetMetaData</code> object with the values
-     * in the given <code>ResultSetMetaData</code> object.
+     * Initializes the given {@code RowSetMetaData} object with the values
+     * in the given {@code ResultSetMetaData} object.
      *
-     * @param md the <code>RowSetMetaData</code> object for this
-     *           <code>JdbcRowSetImpl</code> object, which will be set with
+     * @param md the {@code RowSetMetaData} object for this
+     *           {@code JdbcRowSetImpl} object, which will be set with
      *           values from rsmd
-     * @param rsmd the <code>ResultSetMetaData</code> object from which new
+     * @param rsmd the {@code ResultSetMetaData} object from which new
      *             values for md will be read
      * @throws SQLException if an error occurs
      */
@@ -511,24 +511,24 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     //---------------------------------------------------------------------
 
     /**
-     * Creates the internal <code>ResultSet</code> object for which this
-     * <code>JdbcRowSet</code> object is a wrapper, effectively
+     * Creates the internal {@code ResultSet} object for which this
+     * {@code JdbcRowSet} object is a wrapper, effectively
      * making the result set a JavaBeans component.
      * <P>
      * Certain properties must have been set before this method is called
      * so that it can establish a connection to a database and execute the
-     * query that will create the result set.  If a <code>DataSource</code>
+     * query that will create the result set.  If a {@code DataSource}
      * object will be used to create the connection, properties for the
      * data source name, user name, and password must be set.  If the
-     * <code>DriverManager</code> will be used, the properties for the
+     * {@code DriverManager} will be used, the properties for the
      * URL, user name, and password must be set.  In either case, the
      * property for the command must be set.  If the command has placeholder
      * parameters, those must also be set. This method throws
      * an exception if the required properties are not set.
      * <P>
      * Other properties have default values that may optionally be set
-     * to new values. The <code>execute</code> method will use the value
-     * for the command property to create a <code>PreparedStatement</code>
+     * to new values. The {@code execute} method will use the value
+     * for the command property to create a {@code PreparedStatement}
      * object and set its properties (escape processing, maximum field
      * size, maximum number of rows, and query timeout limit) to be those
      * of this rowset.
@@ -784,20 +784,20 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Moves the cursor for this rowset's <code>ResultSet</code>
+     * Moves the cursor for this rowset's {@code ResultSet}
      * object down one row from its current position.
-     * A <code>ResultSet</code> cursor is initially positioned
+     * A {@code ResultSet} cursor is initially positioned
      * before the first row; the first call to the method
-     * <code>next</code> makes the first row the current row; the
+     * {@code next} makes the first row the current row; the
      * second call makes the second row the current row, and so on.
      *
      * <P>If an input stream is open for the current row, a call
-     * to the method <code>next</code> will
-     * implicitly close it. A <code>ResultSet</code> object's
+     * to the method {@code next} will
+     * implicitly close it. A {@code ResultSet} object's
      * warning chain is cleared when a new row is read.
      *
-     * @return <code>true</code> if the new current row is valid;
-     *         <code>false</code> if there are no more rows
+     * @return {@code true} if the new current row is valid;
+     *         {@code false} if there are no more rows
      * @throws SQLException if a database access error occurs
      *            or this rowset does not currently have a valid connection,
      *            prepared statement, and result set
@@ -811,16 +811,16 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Releases this rowset's <code>ResultSet</code> object's database and
+     * Releases this rowset's {@code ResultSet} object's database and
      * JDBC resources immediately instead of waiting for
      * this to happen when it is automatically closed.
      *
-     * <P><B>Note:</B> A <code>ResultSet</code> object
+     * <P><B>Note:</B> A {@code ResultSet} object
      * is automatically closed by the
-     * <code>Statement</code> object that generated it when
-     * that <code>Statement</code> object is closed,
+     * {@code Statement} object that generated it when
+     * that {@code Statement} object is closed,
      * re-executed, or is used to retrieve the next result from a
-     * sequence of multiple results. A <code>ResultSet</code> object
+     * sequence of multiple results. A {@code ResultSet} object
      * is also automatically closed when it is garbage collected.
      *
      * @throws SQLException if a database access error occurs
@@ -836,14 +836,14 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Reports whether the last column read from this rowset's
-     * <code>ResultSet</code> object had a value of SQL <code>NULL</code>.
-     * Note that you must first call one of the <code>getXXX</code> methods
+     * {@code ResultSet} object had a value of SQL {@code NULL}.
+     * Note that you must first call one of the {@code getXXX} methods
      * on a column to try to read its value and then call
-     * the method <code>wasNull</code> to see if the value read was
-     * SQL <code>NULL</code>.
+     * the method {@code wasNull} to see if the value read was
+     * SQL {@code NULL}.
      *
-     * @return <code>true</code> if the last column value read was SQL
-     *         <code>NULL</code> and <code>false</code> otherwise
+     * @return {@code true} if the last column value read was SQL
+     *         {@code NULL} and {@code false} otherwise
      * @throws SQLException if a database access error occurs
      *            or this rowset does not have a currently valid connection,
      *            prepared statement, and result set
@@ -860,12 +860,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as
-     * a <code>String</code>.
+     * of this rowset's {@code ResultSet} object as
+     * a {@code String}.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
-     * @return the column value; if the value is SQL <code>NULL</code>, the
-     * value returned is <code>null</code>
+     * @return the column value; if the value is SQL {@code NULL}, the
+     *         value returned is {@code null}
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not currently have a valid connection,
      *            prepared statement, and result set
@@ -878,12 +878,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as
-     * a <code>boolean</code>.
+     * of this rowset's {@code ResultSet} object as
+     * a {@code boolean}.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
-     * @return the column value; if the value is SQL <code>NULL</code>, the
-     * value returned is <code>false</code>
+     * @return the column value; if the value is SQL {@code NULL}, the
+     *         value returned is {@code false}
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not have a currently valid connection,
      *            prepared statement, and result set
@@ -896,12 +896,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as
-     * a <code>byte</code>.
+     * of this rowset's {@code ResultSet} object as
+     * a {@code byte}.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
-     * @return the column value; if the value is SQL <code>NULL</code>, the
-     * value returned is <code>0</code>
+     * @return the column value; if the value is SQL {@code NULL}, the
+     *         value returned is {@code 0}
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not have a currently valid connection,
      *            prepared statement, and result set
@@ -914,12 +914,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as
-     * a <code>short</code>.
+     * of this rowset's {@code ResultSet} object as
+     * a {@code short}.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
-     * @return the column value; if the value is SQL <code>NULL</code>, the
-     * value returned is <code>0</code>
+     * @return the column value; if the value is SQL {@code NULL}, the
+     *         value returned is {@code 0}
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not have a currently valid connection,
      *            prepared statement, and result set
@@ -932,12 +932,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as
-     * an <code>int</code>.
+     * of this rowset's {@code ResultSet} object as
+     * an {@code int}.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
-     * @return the column value; if the value is SQL <code>NULL</code>, the
-     * value returned is <code>0</code>
+     * @return the column value; if the value is SQL {@code NULL}, the
+     *         value returned is {@code 0}
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not have a currently valid connection,
      *            prepared statement, and result set
@@ -950,12 +950,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as
-     * a <code>long</code>.
+     * of this rowset's {@code ResultSet} object as
+     * a {@code long}.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
-     * @return the column value; if the value is SQL <code>NULL</code>, the
-     * value returned is <code>0</code>
+     * @return the column value; if the value is SQL {@code NULL}, the
+     *         value returned is {@code 0}
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not have a currently valid connection,
      *            prepared statement, and result set
@@ -968,12 +968,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as
-     * a <code>float</code>.
+     * of this rowset's {@code ResultSet} object as
+     * a {@code float}.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
-     * @return the column value; if the value is SQL <code>NULL</code>, the
-     * value returned is <code>0</code>
+     * @return the column value; if the value is SQL {@code NULL}, the
+     *         value returned is {@code 0}
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not have a currently valid connection,
      *            prepared statement, and result set
@@ -986,12 +986,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as
-     * a <code>double</code>.
+     * of this rowset's {@code ResultSet} object as
+     * a {@code double}.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
-     * @return the column value; if the value is SQL <code>NULL</code>, the
-     * value returned is <code>0</code>
+     * @return the column value; if the value is SQL {@code NULL}, the
+     *         value returned is {@code 0}
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not have a currently valid connection,
      *            prepared statement, and result set
@@ -1004,13 +1004,13 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as
-     * a <code>java.sql.BigDecimal</code>.
+     * of this rowset's {@code ResultSet} object as
+     * a {@code java.sql.BigDecimal}.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
      * @param scale the number of digits to the right of the decimal point
-     * @return the column value; if the value is SQL <code>NULL</code>, the
-     * value returned is <code>null</code>
+     * @return the column value; if the value is SQL {@code NULL}, the
+     *         value returned is {@code null}
      * @throws SQLException if (1) database access error occurs
      *            or (2) this rowset does not have a currently valid connection,
      *            prepared statement, and result set
@@ -1025,13 +1025,13 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as
-     * a <code>byte</code> array in the Java programming language.
+     * of this rowset's {@code ResultSet} object as
+     * a {@code byte} array in the Java programming language.
      * The bytes represent the raw values returned by the driver.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
-     * @return the column value; if the value is SQL <code>NULL</code>, the
-     * value returned is <code>null</code>
+     * @return the column value; if the value is SQL {@code NULL}, the
+     *         value returned is {@code null}
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not have a currently valid connection,
      *            prepared statement, and result set
@@ -1044,12 +1044,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as
-     * a <code>java.sql.Date</code> object in the Java programming language.
+     * of this rowset's {@code ResultSet} object as
+     * a {@code java.sql.Date} object in the Java programming language.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
-     * @return the column value; if the value is SQL <code>NULL</code>, the
-     * value returned is <code>null</code>
+     * @return the column value; if the value is SQL {@code NULL}, the
+     *         value returned is {@code null}
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not have a currently valid connection,
      *            prepared statement, and result set
@@ -1062,12 +1062,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as
-     * a <code>java.sql.Time</code> object in the Java programming language.
+     * of this rowset's {@code ResultSet} object as
+     * a {@code java.sql.Time} object in the Java programming language.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
-     * @return the column value; if the value is SQL <code>NULL</code>, the
-     * value returned is <code>null</code>
+     * @return the column value; if the value is SQL {@code NULL}, the
+     *         value returned is {@code null}
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not have a currently valid connection,
      *            prepared statement, and result set
@@ -1080,12 +1080,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as
-     * a <code>java.sql.Timestamp</code> object in the Java programming language.
+     * of this rowset's {@code ResultSet} object as
+     * a {@code java.sql.Timestamp} object in the Java programming language.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
-     * @return the column value; if the value is SQL <code>NULL</code>, the
-     * value returned is <code>null</code>
+     * @return the column value; if the value is SQL {@code NULL}, the
+     *         value returned is {@code null}
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not have a currently valid connection,
      *            prepared statement, and result set
@@ -1098,25 +1098,25 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as
+     * of this rowset's {@code ResultSet} object as
      * a stream of ASCII characters. The value can then be read in chunks from the
      * stream. This method is particularly
-     * suitable for retrieving large <code>LONGVARCHAR</code> values.
+     * suitable for retrieving large {@code LONGVARCHAR} values.
      * The JDBC driver will
      * do any necessary conversion from the database format into ASCII.
      *
      * <P><B>Note:</B> All the data in the returned stream must be
      * read prior to getting the value of any other column. The next
-     * call to a <code>getXXX</code> method implicitly closes the stream.  Also, a
-     * stream may return <code>0</code> when the method
-     * <code>InputStream.available</code>
+     * call to a {@code getXXX} method implicitly closes the stream.  Also, a
+     * stream may return {@code 0} when the method
+     * {@code InputStream.available}
      * is called whether there is data available or not.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
      * @return a Java input stream that delivers the database column value
-     * as a stream of one-byte ASCII characters;
-     * if the value is SQL <code>NULL</code>, the
-     * value returned is <code>null</code>
+     *         as a stream of one-byte ASCII characters;
+     *         if the value is SQL {@code NULL}, the
+     *         value returned is {@code null}
      * @throws SQLException if (1) database access error occurs
      *            (2) this rowset does not have a currently valid connection,
      *            prepared statement, and result set
@@ -1129,31 +1129,31 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as
+     * of this rowset's {@code ResultSet} object as
      * as a stream of Unicode characters.
      * The value can then be read in chunks from the
      * stream. This method is particularly
-     * suitable for retrieving large<code>LONGVARCHAR</code>values.  The JDBC driver will
+     * suitable for retrieving large{@code LONGVARCHAR}values.  The JDBC driver will
      * do any necessary conversion from the database format into Unicode.
      * The byte format of the Unicode stream must be Java UTF-8,
      * as specified in the Java virtual machine specification.
      *
      * <P><B>Note:</B> All the data in the returned stream must be
      * read prior to getting the value of any other column. The next
-     * call to a <code>getXXX</code> method implicitly closes the stream.  Also, a
-     * stream may return <code>0</code> when the method
-     * <code>InputStream.available</code>
+     * call to a {@code getXXX} method implicitly closes the stream.  Also, a
+     * stream may return {@code 0} when the method
+     * {@code InputStream.available}
      * is called whether there is data available or not.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
      * @return a Java input stream that delivers the database column value
-     * as a stream in Java UTF-8 byte format;
-     * if the value is SQL <code>NULL</code>, the value returned is <code>null</code>
+     *         as a stream in Java UTF-8 byte format;
+     *         if the value is SQL {@code NULL}, the value returned is {@code null}
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not have a currently valid connection,
      *            prepared statement, and result set
-     * @deprecated use <code>getCharacterStream</code> in place of
-     *              <code>getUnicodeStream</code>
+     * @deprecated use {@code getCharacterStream} in place of
+     *              {@code getUnicodeStream}
      */
     @Deprecated
     public java.io.InputStream getUnicodeStream(int columnIndex) throws SQLException {
@@ -1165,22 +1165,22 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     /**
      * Gets the value of a column in the current row as a stream of
      * the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as a binary stream of
+     * of this rowset's {@code ResultSet} object as a binary stream of
      * uninterpreted bytes. The value can then be read in chunks from the
      * stream. This method is particularly
-     * suitable for retrieving large <code>LONGVARBINARY</code> values.
+     * suitable for retrieving large {@code LONGVARBINARY} values.
      *
      * <P><B>Note:</B> All the data in the returned stream must be
      * read prior to getting the value of any other column. The next
-     * call to a <code>getXXX</code> method implicitly closes the stream.  Also, a
-     * stream may return <code>0</code> when the method
-     * <code>InputStream.available</code>
+     * call to a {@code getXXX} method implicitly closes the stream.  Also, a
+     * stream may return {@code 0} when the method
+     * {@code InputStream.available}
      * is called whether there is data available or not.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
      * @return a Java input stream that delivers the database column value
-     * as a stream of uninterpreted bytes;
-     * if the value is SQL <code>NULL</code>, the value returned is <code>null</code>
+     *         as a stream of uninterpreted bytes;
+     *         if the value is SQL {@code NULL}, the value returned is {@code null}
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not have a currently valid connection,
      *            prepared statement, and result set
@@ -1198,12 +1198,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as
-     * a <code>String</code>.
+     * of this rowset's {@code ResultSet} object as
+     * a {@code String}.
      *
      * @param columnName the SQL name of the column
-     * @return the column value; if the value is SQL <code>NULL</code>, the
-     * value returned is <code>null</code>
+     * @return the column value; if the value is SQL {@code NULL}, the
+     *         value returned is {@code null}
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not have a currently valid connection,
      *            prepared statement, and result set
@@ -1214,12 +1214,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as
-     * a <code>boolean</code>.
+     * of this rowset's {@code ResultSet} object as
+     * a {@code boolean}.
      *
      * @param columnName the SQL name of the column
-     * @return the column value; if the value is SQL <code>NULL</code>, the
-     * value returned is <code>false</code>
+     * @return the column value; if the value is SQL {@code NULL}, the
+     *         value returned is {@code false}
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not have a currently valid connection,
      *            prepared statement, and result set
@@ -1230,12 +1230,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as
-     * a <code>byte</code>.
+     * of this rowset's {@code ResultSet} object as
+     * a {@code byte}.
      *
      * @param columnName the SQL name of the column
-     * @return the column value; if the value is SQL <code>NULL</code>, the
-     * value returned is <code>0</code>
+     * @return the column value; if the value is SQL {@code NULL}, the
+     *         value returned is {@code 0}
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not have a currently valid connection,
      *            prepared statement, and result set
@@ -1246,12 +1246,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as
-     * a <code>short</code>.
+     * of this rowset's {@code ResultSet} object as
+     * a {@code short}.
      *
      * @param columnName the SQL name of the column
-     * @return the column value; if the value is SQL <code>NULL</code>, the
-     * value returned is <code>0</code>
+     * @return the column value; if the value is SQL {@code NULL}, the
+     *         value returned is {@code 0}
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not have a currently valid connection,
      *            prepared statement, and result set
@@ -1262,12 +1262,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as
-     * an <code>int</code>.
+     * of this rowset's {@code ResultSet} object as
+     * an {@code int}.
      *
      * @param columnName the SQL name of the column
-     * @return the column value; if the value is SQL <code>NULL</code>, the
-     * value returned is <code>0</code>
+     * @return the column value; if the value is SQL {@code NULL}, the
+     *         value returned is {@code 0}
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not have a currently valid connection,
      *            prepared statement, and result set
@@ -1278,12 +1278,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as
-     * a <code>long</code>.
+     * of this rowset's {@code ResultSet} object as
+     * a {@code long}.
      *
      * @param columnName the SQL name of the column
-     * @return the column value; if the value is SQL <code>NULL</code>, the
-     * value returned is <code>0</code>
+     * @return the column value; if the value is SQL {@code NULL}, the
+     *         value returned is {@code 0}
      * @throws SQLException if a database access error occurs
      *            or this rowset does not have a currently valid connection,
      *            prepared statement, and result set
@@ -1294,12 +1294,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as
-     * a <code>float</code>.
+     * of this rowset's {@code ResultSet} object as
+     * a {@code float}.
      *
      * @param columnName the SQL name of the column
-     * @return the column value; if the value is SQL <code>NULL</code>, the
-     * value returned is <code>0</code>
+     * @return the column value; if the value is SQL {@code NULL}, the
+     *         value returned is {@code 0}
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not have a currently valid connection,
      *            prepared statement, and result set
@@ -1310,12 +1310,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as
-     * a <code>double</code>.
+     * of this rowset's {@code ResultSet} object as
+     * a {@code double}.
      *
      * @param columnName the SQL name of the column
-     * @return the column value; if the value is SQL <code>NULL</code>, the
-     * value returned is <code>0</code>
+     * @return the column value; if the value is SQL {@code NULL}, the
+     *         value returned is {@code 0}
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not have a currently valid connection,
      *            prepared statement, and result set
@@ -1326,13 +1326,13 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as
-     * a <code>java.math.BigDecimal</code>.
+     * of this rowset's {@code ResultSet} object as
+     * a {@code java.math.BigDecimal}.
      *
      * @param columnName the SQL name of the column
      * @param scale the number of digits to the right of the decimal point
-     * @return the column value; if the value is SQL <code>NULL</code>, the
-     * value returned is <code>null</code>
+     * @return the column value; if the value is SQL {@code NULL}, the
+     * value returned is {@code null}
      * @throws SQLException if (1) adatabase access error occurs
      *            or (2) this rowset does not have a currently valid connection,
      *            prepared statement, and result set
@@ -1345,13 +1345,13 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as
-     * a <code>byte</code> array in the Java programming language.
+     * of this rowset's {@code ResultSet} object as
+     * a {@code byte} array in the Java programming language.
      * The bytes represent the raw values returned by the driver.
      *
      * @param columnName the SQL name of the column
-     * @return the column value; if the value is SQL <code>NULL</code>, the
-     * value returned is <code>null</code>
+     * @return the column value; if the value is SQL {@code NULL}, the
+     *         value returned is {@code null}
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not have a currently valid connection,
      *            prepared statement, and result set
@@ -1362,12 +1362,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as
-     * a <code>java.sql.Date</code> object in the Java programming language.
+     * of this rowset's {@code ResultSet} object as
+     * a {@code java.sql.Date} object in the Java programming language.
      *
      * @param columnName the SQL name of the column
-     * @return the column value; if the value is SQL <code>NULL</code>, the
-     * value returned is <code>null</code>
+     * @return the column value; if the value is SQL {@code NULL}, the
+     *         value returned is {@code null}
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not have a currently valid connection,
      *            prepared statement, and result set
@@ -1378,13 +1378,13 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as
-     * a <code>java.sql.Time</code> object in the Java programming language.
+     * of this rowset's {@code ResultSet} object as
+     * a {@code java.sql.Time} object in the Java programming language.
      *
      * @param columnName the SQL name of the column
      * @return the column value;
-     * if the value is SQL <code>NULL</code>,
-     * the value returned is <code>null</code>
+     * if the value is SQL {@code NULL},
+     * the value returned is {@code null}
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not have a currently valid connection,
      *            prepared statement, and result set
@@ -1395,12 +1395,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as
-     * a <code>java.sql.Timestamp</code> object.
+     * of this rowset's {@code ResultSet} object as
+     * a {@code java.sql.Timestamp} object.
      *
      * @param columnName the SQL name of the column
-     * @return the column value; if the value is SQL <code>NULL</code>, the
-     * value returned is <code>null</code>
+     * @return the column value; if the value is SQL {@code NULL}, the
+     * value returned is {@code null}
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not have a currently valid connection,
      *            prepared statement, and result set
@@ -1411,24 +1411,24 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as a stream of
+     * of this rowset's {@code ResultSet} object as a stream of
      * ASCII characters. The value can then be read in chunks from the
      * stream. This method is particularly
-     * suitable for retrieving large <code>LONGVARCHAR</code> values.
+     * suitable for retrieving large {@code LONGVARCHAR} values.
      * The JDBC driver will
      * do any necessary conversion from the database format into ASCII.
      *
      * <P><B>Note:</B> All the data in the returned stream must be
      * read prior to getting the value of any other column. The next
-     * call to a <code>getXXX</code> method implicitly closes the stream. Also, a
-     * stream may return <code>0</code> when the method <code>available</code>
+     * call to a {@code getXXX} method implicitly closes the stream. Also, a
+     * stream may return {@code 0} when the method {@code available}
      * is called whether there is data available or not.
      *
      * @param columnName the SQL name of the column
      * @return a Java input stream that delivers the database column value
-     * as a stream of one-byte ASCII characters.
-     * If the value is SQL <code>NULL</code>,
-     * the value returned is <code>null</code>.
+     *         as a stream of one-byte ASCII characters.
+     *         If the value is SQL {@code NULL},
+     *         the value returned is {@code null}.
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not have a currently valid connection,
      *            prepared statement, and result set
@@ -1439,10 +1439,10 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as a stream of
+     * of this rowset's {@code ResultSet} object as a stream of
      * Unicode characters. The value can then be read in chunks from the
      * stream. This method is particularly
-     * suitable for retrieving large <code>LONGVARCHAR</code> values.
+     * suitable for retrieving large {@code LONGVARCHAR} values.
      * The JDBC driver will
      * do any necessary conversion from the database format into Unicode.
      * The byte format of the Unicode stream must be Java UTF-8,
@@ -1450,15 +1450,15 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      *
      * <P><B>Note:</B> All the data in the returned stream must be
      * read prior to getting the value of any other column. The next
-     * call to a <code>getXXX</code> method implicitly closes the stream. Also, a
-     * stream may return <code>0</code> when the method <code>available</code>
+     * call to a {@code getXXX} method implicitly closes the stream. Also, a
+     * stream may return {@code 0} when the method {@code available}
      * is called whether there is data available or not.
      *
      * @param columnName the SQL name of the column
      * @return a Java input stream that delivers the database column value
-     * as a stream of two-byte Unicode characters.
-     * If the value is SQL <code>NULL</code>,
-     * the value returned is <code>null</code>.
+     *         as a stream of two-byte Unicode characters.
+     *         If the value is SQL {@code NULL},
+     *         the value returned is {@code null}.
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not have a currently valid connection,
      *            prepared statement, and result set
@@ -1471,23 +1471,23 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as a stream of uninterpreted
-     * <code>byte</code>s.
+     * of this rowset's {@code ResultSet} object as a stream of uninterpreted
+     * {@code byte}s.
      * The value can then be read in chunks from the
      * stream. This method is particularly
-     * suitable for retrieving large <code>LONGVARBINARY</code>
+     * suitable for retrieving large {@code LONGVARBINARY}
      * values.
      *
      * <P><B>Note:</B> All the data in the returned stream must be
      * read prior to getting the value of any other column. The next
-     * call to a <code>getXXX</code> method implicitly closes the stream. Also, a
-     * stream may return <code>0</code> when the method <code>available</code>
+     * call to a {@code getXXX} method implicitly closes the stream. Also, a
+     * stream may return {@code 0} when the method {@code available}
      * is called whether there is data available or not.
      *
      * @param columnName the SQL name of the column
      * @return a Java input stream that delivers the database column value
-     * as a stream of uninterpreted bytes;
-     * if the value is SQL <code>NULL</code>, the result is <code>null</code>
+     *         as a stream of uninterpreted bytes;
+     *         if the value is SQL {@code NULL}, the result is {@code null}
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not have a currently valid connection,
      *            prepared statement, and result set
@@ -1503,21 +1503,21 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Returns the first warning reported by calls on this rowset's
-     * <code>ResultSet</code> object.
-     * Subsequent warnings on this rowset's <code>ResultSet</code> object
-     * will be chained to the <code>SQLWarning</code> object that
+     * {@code ResultSet} object.
+     * Subsequent warnings on this rowset's {@code ResultSet} object
+     * will be chained to the {@code SQLWarning} object that
      * this method returns.
      *
      * <P>The warning chain is automatically cleared each time a new
      * row is read.
      *
      * <P><B>Note:</B> This warning chain only covers warnings caused
-     * by <code>ResultSet</code> methods.  Any warning caused by
-     * <code>Statement</code> methods
+     * by {@code ResultSet} methods.  Any warning caused by
+     * {@code Statement} methods
      * (such as reading OUT parameters) will be chained on the
-     * <code>Statement</code> object.
+     * {@code Statement} object.
      *
-     * @return the first <code>SQLWarning</code> object reported or <code>null</code>
+     * @return the first {@code SQLWarning} object reported or {@code null}
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not have a currently valid connection,
      *            prepared statement, and result set
@@ -1529,10 +1529,10 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Clears all warnings reported on this rowset's <code>ResultSet</code> object.
-     * After this method is called, the method <code>getWarnings</code>
-     * returns <code>null</code> until a new warning is
-     * reported for this rowset's <code>ResultSet</code> object.
+     * Clears all warnings reported on this rowset's {@code ResultSet} object.
+     * After this method is called, the method {@code getWarnings}
+     * returns {@code null} until a new warning is
+     * reported for this rowset's {@code ResultSet} object.
      *
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not have a currently valid connection,
@@ -1545,26 +1545,26 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Gets the name of the SQL cursor used by this rowset's <code>ResultSet</code>
+     * Gets the name of the SQL cursor used by this rowset's {@code ResultSet}
      * object.
      *
      * <P>In SQL, a result table is retrieved through a cursor that is
      * named. The current row of a result set can be updated or deleted
      * using a positioned update/delete statement that references the
      * cursor name. To insure that the cursor has the proper isolation
-     * level to support update, the cursor's <code>select</code> statement should be
+     * level to support update, the cursor's {@code select} statement should be
      * of the form 'select for update'. If the 'for update' clause is
      * omitted, the positioned updates may fail.
      *
      * <P>The JDBC API supports this SQL feature by providing the name of the
-     * SQL cursor used by a <code>ResultSet</code> object.
-     * The current row of a <code>ResultSet</code> object
+     * SQL cursor used by a {@code ResultSet} object.
+     * The current row of a {@code ResultSet} object
      * is also the current row of this SQL cursor.
      *
      * <P><B>Note:</B> If positioned update is not supported, a
-     * <code>SQLException</code> is thrown.
+     * {@code SQLException} is thrown.
      *
-     * @return the SQL name for this rowset's <code>ResultSet</code> object's cursor
+     * @return the SQL name for this rowset's {@code ResultSet} object's cursor
      * @throws SQLException if (1) a database access error occurs
      *            or (2) xthis rowset does not have a currently valid connection,
      *            prepared statement, and result set
@@ -1577,9 +1577,9 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Retrieves the  number, types and properties of
-     * this rowset's <code>ResultSet</code> object's columns.
+     * this rowset's {@code ResultSet} object's columns.
      *
-     * @return the description of this rowset's <code>ResultSet</code>
+     * @return the description of this rowset's {@code ResultSet}
      *     object's columns
      * @throws SQLException if (1) a database access error occurs
      *     or (2) this rowset does not have a currently valid connection,
@@ -1607,8 +1607,8 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * <p>Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as
-     * an <code>Object</code>.
+     * of this rowset's {@code ResultSet} object as
+     * an {@code Object}.
      *
      * <p>This method will return the value of the given column as a
      * Java object.  The type of the Java object will be the default
@@ -1620,14 +1620,14 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * abstract data types.
      *
      * In the JDBC 3.0 API, the behavior of method
-     * <code>getObject</code> is extended to materialize
+     * {@code getObject} is extended to materialize
      * data of SQL user-defined types.  When a column contains
      * a structured or distinct value, the behavior of this method is as
-     * if it were a call to: <code>getObject(columnIndex,
-     * this.getStatement().getConnection().getTypeMap())</code>.
+     * if it were a call to: {@code getObject(columnIndex,
+     * this.getStatement().getConnection().getTypeMap())}.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
-     * @return a <code>java.lang.Object</code> holding the column value
+     * @return a {@code java.lang.Object} holding the column value
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not currently have a valid connection,
      *            prepared statement, and result set
@@ -1640,8 +1640,8 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * <p>Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as
-     * an <code>Object</code>.
+     * of this rowset's {@code ResultSet} object as
+     * an {@code Object}.
      *
      * <p>This method will return the value of the given column as a
      * Java object.  The type of the Java object will be the default
@@ -1653,14 +1653,14 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * abstract data types.
      *
      * In the JDBC 3.0 API, the behavior of the method
-     * <code>getObject</code> is extended to materialize
+     * {@code getObject} is extended to materialize
      * data of SQL user-defined types.  When a column contains
      * a structured or distinct value, the behavior of this method is as
-     * if it were a call to: <code>getObject(columnIndex,
-     * this.getStatement().getConnection().getTypeMap())</code>.
+     * if it were a call to: {@code getObject(columnIndex,
+     * this.getStatement().getConnection().getTypeMap())}.
      *
      * @param columnName the SQL name of the column
-     * @return a <code>java.lang.Object</code> holding the column value
+     * @return a {@code java.lang.Object} holding the column value
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not currently have a valid connection,
      *            prepared statement, and result set
@@ -1672,9 +1672,9 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     //----------------------------------------------------------------
 
     /**
-     * Maps the given <code>JdbcRowSetImpl</code> column name to its
-     * <code>JdbcRowSetImpl</code> column index and reflects this on
-     * the internal <code>ResultSet</code> object.
+     * Maps the given {@code JdbcRowSetImpl} column name to its
+     * {@code JdbcRowSetImpl} column index and reflects this on
+     * the internal {@code ResultSet} object.
      *
      * @param columnName the name of the column
      * @return the column index of the given column name
@@ -1697,11 +1697,11 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as a
-     * <code>java.io.Reader</code> object.
-     * @return a <code>java.io.Reader</code> object that contains the column
-     * value; if the value is SQL <code>NULL</code>, the value returned is
-     * <code>null</code>.
+     * of this rowset's {@code ResultSet} object as a
+     * {@code java.io.Reader} object.
+     * @return a {@code java.io.Reader} object that contains the column
+     * value; if the value is SQL {@code NULL}, the value returned is
+     * {@code null}.
      * @param columnIndex the first column is 1, the second is 2, and so on
      *
      */
@@ -1713,14 +1713,14 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as a
-     * <code>java.io.Reader</code> object.
+     * of this rowset's {@code ResultSet} object as a
+     * {@code java.io.Reader} object.
      *
-     * @return a <code>java.io.Reader</code> object that contains the column
-     * value; if the value is SQL <code>NULL</code>, the value returned is
-     * <code>null</code>.
+     * @return a {@code java.io.Reader} object that contains the column
+     * value; if the value is SQL {@code NULL}, the value returned is
+     * {@code null}.
      * @param columnName the name of the column
-     * @return the value in the specified column as a <code>java.io.Reader</code>
+     * @return the value in the specified column as a {@code java.io.Reader}
      *
      */
     public java.io.Reader getCharacterStream(String columnName) throws SQLException {
@@ -1729,13 +1729,13 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as a
-     * <code>java.math.BigDecimal</code> with full precision.
+     * of this rowset's {@code ResultSet} object as a
+     * {@code java.math.BigDecimal} with full precision.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
      * @return the column value (full precision);
-     * if the value is SQL <code>NULL</code>, the value returned is
-     * <code>null</code>.
+     *         if the value is SQL {@code NULL}, the value returned is
+     *         {@code null}.
      * @throws SQLException if a database access error occurs
      *            or this rowset does not currently have a valid
      *            connection, prepared statement, and result set
@@ -1748,13 +1748,13 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Gets the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as a
-     * <code>java.math.BigDecimal</code> with full precision.
+     * of this rowset's {@code ResultSet} object as a
+     * {@code java.math.BigDecimal} with full precision.
      *
      * @param columnName the column name
      * @return the column value (full precision);
-     * if the value is SQL <code>NULL</code>, the value returned is
-     * <code>null</code>.
+     *         if the value is SQL {@code NULL}, the value returned is
+     *         {@code null}.
      * @throws SQLException if a database access error occurs
      *            or this rowset does not currently have a valid
      *            connection, prepared statement, and result set
@@ -1769,11 +1769,11 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Indicates whether the cursor is before the first row in
-     * this rowset's <code>ResultSet</code> object.
+     * this rowset's {@code ResultSet} object.
      *
-     * @return <code>true</code> if the cursor is before the first row;
-     * <code>false</code> if the cursor is at any other position or the
-     * result set contains no rows
+     * @return {@code true} if the cursor is before the first row;
+     *         {@code false} if the cursor is at any other position or the
+     *         result set contains no rows
      * @throws SQLException if a database access error occurs
      *            or this rowset does not currently have a valid
      *            connection, prepared statement, and result set
@@ -1786,11 +1786,11 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Indicates whether the cursor is after the last row in
-     * this rowset's <code>ResultSet</code> object.
+     * this rowset's {@code ResultSet} object.
      *
-     * @return <code>true</code> if the cursor is after the last row;
-     * <code>false</code> if the cursor is at any other position or the
-     * result set contains no rows
+     * @return {@code true} if the cursor is after the last row;
+     *         {@code false} if the cursor is at any other position or the
+     *         result set contains no rows
      * @throws SQLException if a database access error occurs
      *            or this rowset does not currently have a valid
      *            connection, prepared statement, and result set
@@ -1803,10 +1803,10 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Indicates whether the cursor is on the first row of
-     * this rowset's <code>ResultSet</code> object.
+     * this rowset's {@code ResultSet} object.
      *
-     * @return <code>true</code> if the cursor is on the first row;
-     * <code>false</code> otherwise
+     * @return {@code true} if the cursor is on the first row;
+     *         {@code false} otherwise
      * @throws SQLException if a database access error occurs
      *            or this rowset does not currently have a valid
      *            connection, prepared statement, and result set
@@ -1819,14 +1819,14 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Indicates whether the cursor is on the last row of
-     * this rowset's <code>ResultSet</code> object.
-     * Note: Calling the method <code>isLast</code> may be expensive
+     * this rowset's {@code ResultSet} object.
+     * Note: Calling the method {@code isLast} may be expensive
      * because the JDBC driver
      * might need to fetch ahead one row in order to determine
      * whether the current row is the last row in the result set.
      *
-     * @return <code>true</code> if the cursor is on the last row;
-     * <code>false</code> otherwise
+     * @return {@code true} if the cursor is on the last row;
+     *         {@code false} otherwise
      * @throws SQLException if a database access error occurs
      *            or this rowset does not currently have a valid
      *            connection, prepared statement, and result set
@@ -1840,11 +1840,11 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Moves the cursor to the front of
-     * this rowset's <code>ResultSet</code> object, just before the
+     * this rowset's {@code ResultSet} object, just before the
      * first row. This method has no effect if the result set contains no rows.
      *
      * @throws SQLException if (1) a database access error occurs,
-     *            (2) the result set type is <code>TYPE_FORWARD_ONLY</code>,
+     *            (2) the result set type is {@code TYPE_FORWARD_ONLY},
      *            or (3) this rowset does not currently have a valid
      *            connection, prepared statement, and result set
      */
@@ -1857,10 +1857,10 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Moves the cursor to the end of
-     * this rowset's <code>ResultSet</code> object, just after the
+     * this rowset's {@code ResultSet} object, just after the
      * last row. This method has no effect if the result set contains no rows.
      * @throws SQLException if (1) a database access error occurs,
-     *            (2) the result set type is <code>TYPE_FORWARD_ONLY</code>,
+     *            (2) the result set type is {@code TYPE_FORWARD_ONLY},
      *            or (3) this rowset does not currently have a valid
      *            connection, prepared statement, and result set
      */
@@ -1873,12 +1873,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Moves the cursor to the first row in
-     * this rowset's <code>ResultSet</code> object.
+     * this rowset's {@code ResultSet} object.
      *
-     * @return <code>true</code> if the cursor is on a valid row;
-     * <code>false</code> if there are no rows in the result set
+     * @return {@code true} if the cursor is on a valid row;
+     * {@code false} if there are no rows in the result set
      * @throws SQLException if (1) a database access error occurs,
-     *            (2) the result set type is <code>TYPE_FORWARD_ONLY</code>,
+     *            (2) the result set type is {@code TYPE_FORWARD_ONLY},
      *            or (3) this rowset does not currently have a valid
      *            connection, prepared statement, and result set
      */
@@ -1893,12 +1893,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Moves the cursor to the last row in
-     * this rowset's <code>ResultSet</code> object.
+     * this rowset's {@code ResultSet} object.
      *
-     * @return <code>true</code> if the cursor is on a valid row;
-     * <code>false</code> if there are no rows in the result set
+     * @return {@code true} if the cursor is on a valid row;
+     * {@code false} if there are no rows in the result set
      * @throws SQLException if (1) a database access error occurs,
-     *            (2) the result set type is <code>TYPE_FORWARD_ONLY</code>,
+     *            (2) the result set type is {@code TYPE_FORWARD_ONLY},
      *            or (3) this rowset does not currently have a valid
      *            connection, prepared statement, and result set
      */
@@ -1914,7 +1914,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * Retrieves the current row number.  The first row is number 1, the
      * second is number 2, and so on.
      *
-     * @return the current row number; <code>0</code> if there is no current row
+     * @return the current row number; {@code 0} if there is no current row
      * @throws SQLException if a database access error occurs
      *            or this rowset does not currently have a valid connection,
      *            prepared statement, and result set
@@ -1927,7 +1927,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Moves the cursor to the given row number in
-     * this rowset's internal <code>ResultSet</code> object.
+     * this rowset's internal {@code ResultSet} object.
      *
      * <p>If the row number is positive, the cursor moves to
      * the given row number with respect to the
@@ -1937,23 +1937,23 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * <p>If the given row number is negative, the cursor moves to
      * an absolute row position with respect to
      * the end of the result set.  For example, calling the method
-     * <code>absolute(-1)</code> positions the
-     * cursor on the last row, calling the method <code>absolute(-2)</code>
+     * {@code absolute(-1)} positions the
+     * cursor on the last row, calling the method {@code absolute(-2)}
      * moves the cursor to the next-to-last row, and so on.
      *
      * <p>An attempt to position the cursor beyond the first/last row in
      * the result set leaves the cursor before the first row or after
      * the last row.
      *
-     * <p><B>Note:</B> Calling <code>absolute(1)</code> is the same
-     * as calling <code>first()</code>. Calling <code>absolute(-1)</code>
-     * is the same as calling <code>last()</code>.
+     * <p><B>Note:</B> Calling {@code absolute(1)} is the same
+     * as calling {@code first()}. Calling {@code absolute(-1)}
+     * is the same as calling {@code last()}.
      *
-     * @return <code>true</code> if the cursor is on the result set;
-     * <code>false</code> otherwise
+     * @return {@code true} if the cursor is on the result set;
+     * {@code false} otherwise
      * @throws SQLException if (1) a database access error occurs,
-     *            (2) the row is <code>0</code>, (3) the result set
-     *            type is <code>TYPE_FORWARD_ONLY</code>, or (4) this
+     *            (2) the row is {@code 0}, (3) the result set
+     *            type is {@code TYPE_FORWARD_ONLY}, or (4) this
      *            rowset does not currently have a valid connection,
      *            prepared statement, and result set
      */
@@ -1969,21 +1969,21 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * Moves the cursor a relative number of rows, either positive or negative.
      * Attempting to move beyond the first/last row in the
      * result set positions the cursor before/after the
-     * the first/last row. Calling <code>relative(0)</code> is valid, but does
+     * the first/last row. Calling {@code relative(0)} is valid, but does
      * not change the cursor position.
      *
-     * <p>Note: Calling the method <code>relative(1)</code>
-     * is different from calling the method <code>next()</code>
-     * because is makes sense to call <code>next()</code> when there
+     * <p>Note: Calling the method {@code relative(1)}
+     * is different from calling the method {@code next()}
+     * because is makes sense to call {@code next()} when there
      * is no current row,
      * for example, when the cursor is positioned before the first row
      * or after the last row of the result set.
      *
-     * @return <code>true</code> if the cursor is on a row;
-     * <code>false</code> otherwise
+     * @return {@code true} if the cursor is on a row;
+     *         {@code false} otherwise
      * @throws SQLException if (1) a database access error occurs,
      *            (2) there is no current row, (3) the result set
-     *            type is <code>TYPE_FORWARD_ONLY</code>, or (4) this
+     *            type is {@code TYPE_FORWARD_ONLY}, or (4) this
      *            rowset does not currently have a valid connection,
      *            prepared statement, and result set
      */
@@ -1997,16 +1997,16 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Moves the cursor to the previous row in this
-     * <code>ResultSet</code> object.
+     * {@code ResultSet} object.
      *
-     * <p><B>Note:</B> Calling the method <code>previous()</code> is not the same as
-     * calling the method <code>relative(-1)</code> because it
-     * makes sense to call <code>previous()</code> when there is no current row.
+     * <p><B>Note:</B> Calling the method {@code previous()} is not the same as
+     * calling the method {@code relative(-1)} because it
+     * makes sense to call {@code previous()} when there is no current row.
      *
-     * @return <code>true</code> if the cursor is on a valid row;
-     * <code>false</code> if it is off the result set
+     * @return {@code true} if the cursor is on a valid row;
+     *         {@code false} if it is off the result set
      * @throws SQLException if (1) a database access error occurs,
-     *            (2) the result set type is <code>TYPE_FORWARD_ONLY</code>,
+     *            (2) the result set type is {@code TYPE_FORWARD_ONLY},
      *            or (3) this rowset does not currently have a valid
      *            connection, prepared statement, and result set
      */
@@ -2020,15 +2020,15 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Gives a hint as to the direction in which the rows in this
-     * <code>ResultSet</code> object will be processed.
+     * {@code ResultSet} object will be processed.
      * The initial value is determined by the
-     * <code>Statement</code> object
-     * that produced this rowset's <code>ResultSet</code> object.
+     * {@code Statement} object
+     * that produced this rowset's {@code ResultSet} object.
      * The fetch direction may be changed at any time.
      *
      * @throws SQLException if (1) a database access error occurs,
-     *            (2) the result set type is <code>TYPE_FORWARD_ONLY</code>
-     *            and the fetch direction is not <code>FETCH_FORWARD</code>,
+     *            (2) the result set type is {@code TYPE_FORWARD_ONLY}
+     *            and the fetch direction is not {@code FETCH_FORWARD},
      *            or (3) this rowset does not currently have a valid
      *            connection, prepared statement, and result set
      * @see java.sql.Statement#setFetchDirection
@@ -2041,10 +2041,10 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Returns the fetch direction for this
-     * <code>ResultSet</code> object.
+     * {@code ResultSet} object.
      *
      * @return the current fetch direction for this rowset's
-     *         <code>ResultSet</code> object
+     *         {@code ResultSet} object
      * @throws SQLException if a database access error occurs
      *            or this rowset does not currently have a valid connection,
      *            prepared statement, and result set
@@ -2061,16 +2061,16 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     /**
      * Gives the JDBC driver a hint as to the number of rows that should
      * be fetched from the database when more rows are needed for this
-     * <code>ResultSet</code> object.
+     * {@code ResultSet} object.
      * If the fetch size specified is zero, the JDBC driver
      * ignores the value and is free to make its own best guess as to what
      * the fetch size should be.  The default value is set by the
-     * <code>Statement</code> object
+     * {@code Statement} object
      * that created the result set.  The fetch size may be changed at any time.
      *
      * @param rows the number of rows to fetch
      * @throws SQLException if (1) a database access error occurs, (2) the
-     *            condition <code>0 <= rows <= this.getMaxRows()</code> is not
+     *            condition {@code 0 <= rows <= this.getMaxRows()} is not
      *            satisfied, or (3) this rowset does not currently have a valid
      *            connection, prepared statement, and result set
      *
@@ -2084,9 +2084,9 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     /**
      *
      * Returns the fetch size for this
-     * <code>ResultSet</code> object.
+     * {@code ResultSet} object.
      *
-     * @return the current fetch size for this rowset's <code>ResultSet</code> object
+     * @return the current fetch size for this rowset's {@code ResultSet} object
      * @throws SQLException if a database access error occurs
      *            or this rowset does not currently have a valid connection,
      *            prepared statement, and result set
@@ -2111,12 +2111,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Returns the concurrency mode of this rowset's <code>ResultSet</code> object.
+     * Returns the concurrency mode of this rowset's {@code ResultSet} object.
      * The concurrency used is determined by the
-     * <code>Statement</code> object that created the result set.
+     * {@code Statement} object that created the result set.
      *
-     * @return the concurrency type, either <code>CONCUR_READ_ONLY</code>
-     * or <code>CONCUR_UPDATABLE</code>
+     * @return the concurrency type, either {@code CONCUR_READ_ONLY}
+     * or {@code CONCUR_UPDATABLE}
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not currently have a valid connection,
      *            prepared statement, and result set
@@ -2138,7 +2138,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * Indicates whether the current row has been updated.  The value returned
      * depends on whether or not the result set can detect updates.
      *
-     * @return <code>true</code> if the row has been visibly updated
+     * @return {@code true} if the row has been visibly updated
      * by the owner or another, and updates are detected
      * @throws SQLException if a database access error occurs
      *            or this rowset does not currently have a valid connection,
@@ -2154,10 +2154,10 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     /**
      * Indicates whether the current row has had an insertion.
      * The value returned depends on whether or not this
-     * <code>ResultSet</code> object can detect visible inserts.
+     * {@code ResultSet} object can detect visible inserts.
      *
-     * @return <code>true</code> if a row has had an insertion
-     * and insertions are detected; <code>false</code> otherwise
+     * @return {@code true} if a row has had an insertion
+     *         and insertions are detected; {@code false} otherwise
      * @throws SQLException if a database access error occurs
      *            or this rowset does not currently have a valid connection,
      *            prepared statement, and result set
@@ -2174,10 +2174,10 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * Indicates whether a row has been deleted.  A deleted row may leave
      * a visible "hole" in a result set.  This method can be used to
      * detect holes in a result set.  The value returned depends on whether
-     * or not this rowset's <code>ResultSet</code> object can detect deletions.
+     * or not this rowset's {@code ResultSet} object can detect deletions.
      *
-     * @return <code>true</code> if a row was deleted and deletions are detected;
-     * <code>false</code> otherwise
+     * @return {@code true} if a row was deleted and deletions are detected;
+     *         {@code false} otherwise
      * @throws SQLException if a database access error occurs
      *            or this rowset does not currently have a valid connection,
      *            prepared statement, and result set
@@ -2192,10 +2192,10 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     /**
      * Gives a nullable column a null value.
      *
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code>
-     * or <code>insertRow</code> methods are called to update the database.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow}
+     * or {@code insertRow} methods are called to update the database.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
      * @throws SQLException if a database access error occurs
@@ -2213,11 +2213,11 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Updates the designated column with a <code>boolean</code> value.
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * Updates the designated column with a {@code boolean} value.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
      * @param x the new column value
@@ -2237,11 +2237,11 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Updates the designated column with a <code>byte</code> value.
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * Updates the designated column with a {@code byte} value.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
@@ -2262,11 +2262,11 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Updates the designated column with a <code>short</code> value.
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * Updates the designated column with a {@code short} value.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
      * @param x the new column value
@@ -2286,11 +2286,11 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Updates the designated column with an <code>int</code> value.
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * Updates the designated column with an {@code int} value.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
      * @param x the new column value
@@ -2309,11 +2309,11 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Updates the designated column with a <code>long</code> value.
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * Updates the designated column with a {@code long} value.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
      * @param x the new column value
@@ -2333,11 +2333,11 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Updates the designated column with a <code>float</code> value.
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * Updates the designated column with a {@code float} value.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
      * @param x the new column value
@@ -2357,11 +2357,11 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Updates the designated column with a <code>double</code> value.
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * Updates the designated column with a {@code double} value.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
      * @param x the new column value
@@ -2381,12 +2381,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Updates the designated column with a <code>java.math.BigDecimal</code>
+     * Updates the designated column with a {@code java.math.BigDecimal}
      * value.
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
      * @param x the new column value
@@ -2406,11 +2406,11 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Updates the designated column with a <code>String</code> value.
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * Updates the designated column with a {@code String} value.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
      * @param x the new column value
@@ -2430,11 +2430,11 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Updates the designated column with a <code>byte</code> array value.
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * Updates the designated column with a {@code byte} array value.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
      * @param x the new column value
@@ -2454,11 +2454,11 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Updates the designated column with a <code>java.sql.Date</code> value.
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * Updates the designated column with a {@code java.sql.Date} value.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
      * @param x the new column value
@@ -2479,11 +2479,11 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
 
     /**
-     * Updates the designated column with a <code>java.sql.Time</code> value.
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * Updates the designated column with a {@code java.sql.Time} value.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
      * @param x the new column value
@@ -2503,12 +2503,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Updates the designated column with a <code>java.sql.Timestamp</code>
+     * Updates the designated column with a {@code java.sql.Timestamp}
      * value.
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
      * @param x the new column value
@@ -2529,10 +2529,10 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Updates the designated column with an ascii stream value.
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
      * @param x the new column value
@@ -2554,10 +2554,10 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Updates the designated column with a binary stream value.
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
      * @param x the new column value
@@ -2579,10 +2579,10 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Updates the designated column with a character stream value.
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
      * @param x the new column value
@@ -2603,18 +2603,18 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Updates the designated column with an <code>Object</code> value.
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * Updates the designated column with an {@code Object} value.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
      * @param x the new column value
-     * @param scale for <code>java.sql.Types.DECIMAl</code>
-     *  or <code>java.sql.Types.NUMERIC</code> types,
-     *  this is the number of digits after the decimal point.  For all other
-     *  types this value will be ignored.
+     * @param scale for {@code java.sql.Types.DECIMAl}
+     *        or {@code java.sql.Types.NUMERIC} types,
+     *        this is the number of digits after the decimal point.  For all other
+     *        types this value will be ignored.
      * @throws SQLException if a database access error occurs
      *            or this rowset does not currently have a valid connection,
      *            prepared statement, and result set
@@ -2631,11 +2631,11 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Updates the designated column with an <code>Object</code> value.
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * Updates the designated column with an {@code Object} value.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
      * @param x the new column value
@@ -2655,11 +2655,11 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Updates the designated column with a <code>null</code> value.
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * Updates the designated column with a {@code null} value.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnName the name of the column
      * @throws SQLException if a database access error occurs
@@ -2672,11 +2672,11 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Updates the designated column with a <code>boolean</code> value.
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * Updates the designated column with a {@code boolean} value.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnName the name of the column
      * @param x the new column value
@@ -2688,11 +2688,11 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Updates the designated column with a <code>byte</code> value.
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * Updates the designated column with a {@code byte} value.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnName the name of the column
      * @param x the new column value
@@ -2704,11 +2704,11 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Updates the designated column with a <code>short</code> value.
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * Updates the designated column with a {@code short} value.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnName the name of the column
      * @param x the new column value
@@ -2720,11 +2720,11 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Updates the designated column with an <code>int</code> value.
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * Updates the designated column with an {@code int} value.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnName the name of the column
      * @param x the new column value
@@ -2736,11 +2736,11 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Updates the designated column with a <code>long</code> value.
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * Updates the designated column with a {@code long} value.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnName the name of the column
      * @param x the new column value
@@ -2752,11 +2752,11 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Updates the designated column with a <code>float </code> value.
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * Updates the designated column with a {@code float } value.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnName the name of the column
      * @param x the new column value
@@ -2768,11 +2768,11 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Updates the designated column with a <code>double</code> value.
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * Updates the designated column with a {@code double} value.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnName the name of the column
      * @param x the new column value
@@ -2784,12 +2784,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Updates the designated column with a <code>java.sql.BigDecimal</code>
+     * Updates the designated column with a {@code java.sql.BigDecimal}
      * value.
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnName the name of the column
      * @param x the new column value
@@ -2801,11 +2801,11 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Updates the designated column with a <code>String</code> value.
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * Updates the designated column with a {@code String} value.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnName the name of the column
      * @param x the new column value
@@ -2817,19 +2817,19 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Updates the designated column with a <code>boolean</code> value.
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * Updates the designated column with a {@code boolean} value.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * JDBC 2.0
      *
      * Updates a column with a byte array value.
      *
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row, or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or <code>insertRow</code>
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row, or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or {@code insertRow}
      * methods are called to update the database.
      *
      * @param columnName the name of the column
@@ -2842,11 +2842,11 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Updates the designated column with a <code>java.sql.Date</code> value.
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * Updates the designated column with a {@code java.sql.Date} value.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnName the name of the column
      * @param x the new column value
@@ -2858,11 +2858,11 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Updates the designated column with a <code>java.sql.Time</code> value.
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * Updates the designated column with a {@code java.sql.Time} value.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnName the name of the column
      * @param x the new column value
@@ -2874,12 +2874,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Updates the designated column with a <code>java.sql.Timestamp</code>
+     * Updates the designated column with a {@code java.sql.Timestamp}
      * value.
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnName the name of the column
      * @param x the new column value
@@ -2892,10 +2892,10 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Updates the designated column with an ascii stream value.
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnName the name of the column
      * @param x the new column value
@@ -2909,10 +2909,10 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Updates the designated column with a binary stream value.
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnName the name of the column
      * @param x the new column value
@@ -2926,14 +2926,14 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Updates the designated column with a character stream value.
-     * The <code>updateXXX</code> methods are used to update column values
-     * in the current row or the insert row.  The <code>updateXXX</code>
+     * The {@code updateXXX} methods are used to update column values
+     * in the current row or the insert row.  The {@code updateXXX}
      * methods do not update the underlying database; instead the
-     * <code>updateRow</code> or <code>insertRow</code> methods are called
+     * {@code updateRow} or {@code insertRow} methods are called
      * to update the database.
      *
      * @param columnName the name of the column
-     * @param reader the new column <code>Reader</code> stream value
+     * @param reader the new column {@code Reader} stream value
      * @param length the length of the stream
      * @throws SQLException if a database access error occurs
      *
@@ -2943,16 +2943,16 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Updates the designated column with an <code>Object</code> value.
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * Updates the designated column with an {@code Object} value.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnName the name of the column
      * @param x the new column value
-     * @param scale for <code>java.sql.Types.DECIMAL</code>
-     *  or <code>java.sql.Types.NUMERIC</code> types,
+     * @param scale for {@code java.sql.Types.DECIMAL}
+     *  or {@code java.sql.Types.NUMERIC} types,
      *  this is the number of digits after the decimal point.  For all other
      *  types this value will be ignored.
      * @throws SQLException if a database access error occurs
@@ -2963,11 +2963,11 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Updates the designated column with an <code>Object</code> value.
-     * The <code>updateXXX</code> methods are used to update column values in the
-     * current row or the insert row.  The <code>updateXXX</code> methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * Updates the designated column with an {@code Object} value.
+     * The {@code updateXXX} methods are used to update column values in the
+     * current row or the insert row.  The {@code updateXXX} methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnName the name of the column
      * @param x the new column value
@@ -2980,7 +2980,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Inserts the contents of the insert row into this
-     * <code>ResultSet</code> object and into the database
+     * {@code ResultSet} object and into the database
      * and also notifies listeners that a row has changed.
      * The cursor must be on the insert row when this method is called.
      *
@@ -3000,14 +3000,14 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Updates the underlying database with the new contents of the
-     * current row of this rowset's <code>ResultSet</code> object
+     * current row of this rowset's {@code ResultSet} object
      * and notifies listeners that a row has changed.
      * This method cannot be called when the cursor is on the insert row.
      *
      * @throws SQLException if (1) a database access error occurs,
      *            (2) this method is called when the cursor is
      *             on the insert row, (3) the concurrency of the result
-     *             set is <code>ResultSet.CONCUR_READ_ONLY</code>, or
+     *             set is {@code ResultSet.CONCUR_READ_ONLY}, or
      *             (4) this rowset does not currently have a valid connection,
      *             prepared statement, and result set
      */
@@ -3019,18 +3019,18 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Deletes the current row from this rowset's <code>ResultSet</code> object
+     * Deletes the current row from this rowset's {@code ResultSet} object
      * and from the underlying database and also notifies listeners that a row
      * has changed.  This method cannot be called when the cursor is on the insert
      * row.
      *
      * @throws SQLException if a database access error occurs
-     * or if this method is called when the cursor is on the insert row
+     *         or if this method is called when the cursor is on the insert row
      * @throws SQLException if (1) a database access error occurs,
      *            (2) this method is called when the cursor is before the
      *            first row, after the last row, or on the insert row,
      *            (3) the concurrency of this rowset's result
-     *            set is <code>ResultSet.CONCUR_READ_ONLY</code>, or
+     *            set is {@code ResultSet.CONCUR_READ_ONLY}, or
      *            (4) this rowset does not currently have a valid connection,
      *            prepared statement, and result set
      */
@@ -3042,24 +3042,24 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Refreshes the current row of this rowset's <code>ResultSet</code>
+     * Refreshes the current row of this rowset's {@code ResultSet}
      * object with its most recent value in the database.  This method
      * cannot be called when the cursor is on the insert row.
      *
-     * <P>The <code>refreshRow</code> method provides a way for an
+     * <P>The {@code refreshRow} method provides a way for an
      * application to explicitly tell the JDBC driver to refetch
      * a row(s) from the database.  An application may want to call
-     * <code>refreshRow</code> when caching or prefetching is being
+     * {@code refreshRow} when caching or prefetching is being
      * done by the JDBC driver to fetch the latest value of a row
      * from the database.  The JDBC driver may actually refresh multiple
      * rows at once if the fetch size is greater than one.
      *
      * <P> All values are refetched subject to the transaction isolation
-     * level and cursor sensitivity.  If <code>refreshRow</code> is called after
-     * calling an <code>updateXXX</code> method, but before calling
-     * the method <code>updateRow</code>, then the
+     * level and cursor sensitivity.  If {@code refreshRow} is called after
+     * calling an {@code updateXXX} method, but before calling
+     * the method {@code updateRow}, then the
      * updates made to the row are lost.  Calling the method
-     * <code>refreshRow</code> frequently will likely slow performance.
+     * {@code refreshRow} frequently will likely slow performance.
      *
      * @throws SQLException if (1) a database access error occurs,
      *            (2) this method is called when the cursor is
@@ -3076,12 +3076,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Cancels the updates made to the current row in this
-     * <code>ResultSet</code> object and notifies listeners that a row
+     * {@code ResultSet} object and notifies listeners that a row
      * has changed. This method may be called after calling an
-     * <code>updateXXX</code> method(s) and before calling
-     * the method <code>updateRow</code> to roll back
+     * {@code updateXXX} method(s) and before calling
+     * the method {@code updateRow} to roll back
      * the updates made to a row.  If no updates have been made or
-     * <code>updateRow</code> has already been called, this method has no
+     * {@code updateRow} has already been called, this method has no
      * effect.
      *
      * @throws SQLException if (1) a database access error occurs,
@@ -3104,19 +3104,19 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      *
      * The insert row is a special row associated with an updatable
      * result set.  It is essentially a buffer where a new row may
-     * be constructed by calling the <code>updateXXX</code> methods prior to
+     * be constructed by calling the {@code updateXXX} methods prior to
      * inserting the row into the result set.
      *
-     * Only the <code>updateXXX</code>, <code>getXXX</code>,
-     * and <code>insertRow</code> methods may be
+     * Only the {@code updateXXX}, {@code getXXX},
+     * and {@code insertRow} methods may be
      * called when the cursor is on the insert row.  All of the columns in
      * a result set must be given a value each time this method is
-     * called before calling <code>insertRow</code>.
-     * An <code>updateXXX</code> method must be called before a
-     * <code>getXXX</code> method can be called on a column value.
+     * called before calling {@code insertRow}.
+     * An {@code updateXXX} method must be called before a
+     * {@code getXXX} method can be called on a column value.
      *
      * @throws SQLException if (1) a database access error occurs,
-     *            (2) this rowset's <code>ResultSet</code> object is
+     *            (2) this rowset's {@code ResultSet} object is
      *             not updatable, or (3) this rowset does not
      *             currently have a valid connection, prepared statement,
      *             and result set
@@ -3134,7 +3134,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * the insert row.
      *
      * @throws SQLException if (1) a database access error occurs,
-     *            (2) this rowset's <code>ResultSet</code> object is
+     *            (2) this rowset's {@code ResultSet} object is
      *             not updatable, or (3) this rowset does not
      *             currently have a valid connection, prepared statement,
      *             and result set
@@ -3146,14 +3146,14 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Returns the <code>Statement</code> object that produced this
-     * <code>ResultSet</code> object.
+     * Returns the {@code Statement} object that produced this
+     * {@code ResultSet} object.
      * If the result set was generated some other way, such as by a
-     * <code>DatabaseMetaData</code> method, this method returns
-     * <code>null</code>.
+     * {@code DatabaseMetaData} method, this method returns
+     * {@code null}.
      *
-     * @return the <code>Statement</code> object that produced
-     * this rowset's <code>ResultSet</code> object or <code>null</code>
+     * @return the {@code Statement} object that produced
+     * this rowset's {@code ResultSet} object or {@code null}
      * if the result set was produced some other way
      * @throws SQLException if a database access error occurs
      */
@@ -3169,16 +3169,16 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Returns the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as an <code>Object</code>.
-     * This method uses the given <code>Map</code> object
+     * of this rowset's {@code ResultSet} object as an {@code Object}.
+     * This method uses the given {@code Map} object
      * for the custom mapping of the
      * SQL structured or distinct type that is being retrieved.
      *
      * @param i the first column is 1, the second is 2, and so on
-     * @param map a <code>java.util.Map</code> object that contains the mapping
-     * from SQL type names to classes in the Java programming language
-     * @return an <code>Object</code> in the Java programming language
-     * representing the SQL value
+     * @param map a {@code java.util.Map} object that contains the mapping
+     *        from SQL type names to classes in the Java programming language
+     * @return an {@code Object} in the Java programming language
+     *         representing the SQL value
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not currently have a valid connection,
      *            prepared statement, and result set
@@ -3193,10 +3193,10 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Returns the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as a <code>Ref</code> object.
+     * of this rowset's {@code ResultSet} object as a {@code Ref} object.
      *
      * @param i the first column is 1, the second is 2, and so on
-     * @return a <code>Ref</code> object representing an SQL <code>REF</code> value
+     * @return a {@code Ref} object representing an SQL {@code REF} value
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not currently have a valid connection,
      *            prepared statement, and result set
@@ -3210,10 +3210,10 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Returns the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as a <code>Blob</code> object.
+     * of this rowset's {@code ResultSet} object as a {@code Blob} object.
      *
      * @param i the first column is 1, the second is 2, and so on
-     * @return a <code>Blob</code> object representing the SQL <code>BLOB</code>
+     * @return a {@code Blob} object representing the SQL {@code BLOB}
      *         value in the specified column
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not currently have a valid connection,
@@ -3227,10 +3227,10 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Returns the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as a <code>Clob</code> object.
+     * of this rowset's {@code ResultSet} object as a {@code Clob} object.
      *
      * @param i the first column is 1, the second is 2, and so on
-     * @return a <code>Clob</code> object representing the SQL <code>CLOB</code>
+     * @return a {@code Clob} object representing the SQL {@code CLOB}
      *         value in the specified column
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not currently have a valid connection,
@@ -3244,10 +3244,10 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Returns the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as an <code>Array</code> object.
+     * of this rowset's {@code ResultSet} object as an {@code Array} object.
      *
      * @param i the first column is 1, the second is 2, and so on.
-     * @return an <code>Array</code> object representing the SQL <code>ARRAY</code>
+     * @return an {@code Array} object representing the SQL {@code ARRAY}
      *         value in the specified column
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not currently have a valid connection,
@@ -3261,14 +3261,14 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Returns the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as an <code>Object</code>.
-     * This method uses the specified <code>Map</code> object for
+     * of this rowset's {@code ResultSet} object as an {@code Object}.
+     * This method uses the specified {@code Map} object for
      * custom mapping if appropriate.
      *
      * @param colName the name of the column from which to retrieve the value
-     * @param map a <code>java.util.Map</code> object that contains the mapping
+     * @param map a {@code java.util.Map} object that contains the mapping
      * from SQL type names to classes in the Java programming language
-     * @return an <code>Object</code> representing the SQL
+     * @return an {@code Object} representing the SQL
      *         value in the specified column
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not currently have a valid connection,
@@ -3282,10 +3282,10 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Returns the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as a <code>Ref</code> object.
+     * of this rowset's {@code ResultSet} object as a {@code Ref} object.
      *
      * @param colName the column name
-     * @return a <code>Ref</code> object representing the SQL <code>REF</code> value in
+     * @return a {@code Ref} object representing the SQL {@code REF} value in
      *         the specified column
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not currently have a valid connection,
@@ -3297,10 +3297,10 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Returns the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as a <code>Blob</code> object.
+     * of this rowset's {@code ResultSet} object as a {@code Blob} object.
      *
      * @param colName the name of the column from which to retrieve the value
-     * @return a <code>Blob</code> object representing the SQL <code>BLOB</code>
+     * @return a {@code Blob} object representing the SQL {@code BLOB}
      *         value in the specified column
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not currently have a valid connection,
@@ -3312,10 +3312,10 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Returns the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as a <code>Clob</code> object.
+     * of this rowset's {@code ResultSet} object as a {@code Clob} object.
      *
      * @param colName the name of the column from which to retrieve the value
-     * @return a <code>Clob</code> object representing the SQL <code>CLOB</code>
+     * @return a {@code Clob} object representing the SQL {@code CLOB}
      *         value in the specified column
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not currently have a valid connection,
@@ -3327,10 +3327,10 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Returns the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as an <code>Array</code> object.
+     * of this rowset's {@code ResultSet} object as an {@code Array} object.
      *
      * @param colName the name of the column from which to retrieve the value
-     * @return an <code>Array</code> object representing the SQL <code>ARRAY</code>
+     * @return an {@code Array} object representing the SQL {@code ARRAY}
      *         value in the specified column
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not currently have a valid connection,
@@ -3342,17 +3342,17 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Returns the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as a <code>java.sql.Date</code>
+     * of this rowset's {@code ResultSet} object as a {@code java.sql.Date}
      * object. This method uses the given calendar to construct an appropriate
      * millisecond value for the date if the underlying database does not store
      * timezone information.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
-     * @param cal the <code>java.util.Calendar</code> object
+     * @param cal the {@code java.util.Calendar} object
      *        to use in constructing the date
-     * @return the column value as a <code>java.sql.Date</code> object;
-     *         if the value is SQL <code>NULL</code>,
-     *         the value returned is <code>null</code>
+     * @return the column value as a {@code java.sql.Date} object;
+     *         if the value is SQL {@code NULL},
+     *         the value returned is {@code null}
      * @throws SQLException if (1) a database access error occurs
      *            or (2) this rowset does not currently have a valid connection,
      *            prepared statement, and result set
@@ -3365,17 +3365,17 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Returns the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as a <code>java.sql.Date</code>
+     * of this rowset's {@code ResultSet} object as a {@code java.sql.Date}
      * object. This method uses the given calendar to construct an appropriate
      * millisecond value for the date if the underlying database does not store
      * timezone information.
      *
      * @param columnName the SQL name of the column from which to retrieve the value
-     * @param cal the <code>java.util.Calendar</code> object
+     * @param cal the {@code java.util.Calendar} object
      *        to use in constructing the date
-     * @return the column value as a <code>java.sql.Date</code> object;
-     *         if the value is SQL <code>NULL</code>,
-     *         the value returned is <code>null</code>
+     * @return the column value as a {@code java.sql.Date} object;
+     *         if the value is SQL {@code NULL},
+     *         the value returned is {@code null}
      * @throws SQLException if a database access error occurs
      *            or this rowset does not currently have a valid connection,
      *            prepared statement, and result set
@@ -3387,17 +3387,17 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Returns the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as a <code>java.sql.Time</code>
+     * of this rowset's {@code ResultSet} object as a {@code java.sql.Time}
      * object. This method uses the given calendar to construct an appropriate
      * millisecond value for the date if the underlying database does not store
      * timezone information.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
-     * @param cal the <code>java.util.Calendar</code> object
+     * @param cal the {@code java.util.Calendar} object
      *        to use in constructing the time
-     * @return the column value as a <code>java.sql.Time</code> object;
-     *         if the value is SQL <code>NULL</code>,
-     *         the value returned is <code>null</code> in the Java programming language
+     * @return the column value as a {@code java.sql.Time} object;
+     *         if the value is SQL {@code NULL},
+     *         the value returned is {@code null} in the Java programming language
      * @throws SQLException if a database access error occurs
      *            or this rowset does not currently have a valid connection,
      *            prepared statement, and result set
@@ -3410,17 +3410,17 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Returns the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as a <code>java.sql.Time</code>
+     * of this rowset's {@code ResultSet} object as a {@code java.sql.Time}
      * object. This method uses the given calendar to construct an appropriate
      * millisecond value for the date if the underlying database does not store
      * timezone information.
      *
      * @param columnName the SQL name of the column
-     * @param cal the <code>java.util.Calendar</code> object
+     * @param cal the {@code java.util.Calendar} object
      *        to use in constructing the time
-     * @return the column value as a <code>java.sql.Time</code> object;
-     *         if the value is SQL <code>NULL</code>,
-     *         the value returned is <code>null</code> in the Java programming language
+     * @return the column value as a {@code java.sql.Time} object;
+     *         if the value is SQL {@code NULL},
+     *         the value returned is {@code null} in the Java programming language
      * @throws SQLException if a database access error occurs
      *            or this rowset does not currently have a valid connection,
      *            prepared statement, and result set
@@ -3431,18 +3431,18 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Returns the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as a
-     * <code>java.sql.Timestamp</code> object.
+     * of this rowset's {@code ResultSet} object as a
+     * {@code java.sql.Timestamp} object.
      * This method uses the given calendar to construct an appropriate millisecond
      * value for the timestamp if the underlying database does not store
      * timezone information.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on
-     * @param cal the <code>java.util.Calendar</code> object
+     * @param cal the {@code java.util.Calendar} object
      *        to use in constructing the timestamp
-     * @return the column value as a <code>java.sql.Timestamp</code> object;
-     *         if the value is SQL <code>NULL</code>,
-     *         the value returned is <code>null</code>
+     * @return the column value as a {@code java.sql.Timestamp} object;
+     *         if the value is SQL {@code NULL},
+     *         the value returned is {@code null}
      * @throws SQLException if a database access error occurs
      *            or this rowset does not currently have a valid connection,
      *            prepared statement, and result set
@@ -3455,18 +3455,18 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Returns the value of the designated column in the current row
-     * of this rowset's <code>ResultSet</code> object as a
-     * <code>java.sql.Timestamp</code> object.
+     * of this rowset's {@code ResultSet} object as a
+     * {@code java.sql.Timestamp} object.
      * This method uses the given calendar to construct an appropriate millisecond
      * value for the timestamp if the underlying database does not store
      * timezone information.
      *
      * @param columnName the SQL name of the column
-     * @param cal the <code>java.util.Calendar</code> object
+     * @param cal the {@code java.util.Calendar} object
      *        to use in constructing the timestamp
-     * @return the column value as a <code>java.sql.Timestamp</code> object;
-     *         if the value is SQL <code>NULL</code>,
-     *         the value returned is <code>null</code>
+     * @return the column value as a {@code java.sql.Timestamp} object;
+     *         if the value is SQL {@code NULL},
+     *         the value returned is {@code null}
      * @throws SQLException if a database access error occurs
      *            or this rowset does not currently have a valid connection,
      *            prepared statement, and result set
@@ -3478,8 +3478,8 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Sets the designated column in either the current row or the insert
-     * row of this <code>JdbcRowSetImpl</code> object with the given
-     * <code>double</code> value.
+     * row of this {@code JdbcRowSetImpl} object with the given
+     * {@code double} value.
      *
      * This method updates a column value in either the current row or
      * the insert row of this rowset, but it does not update the
@@ -3490,14 +3490,14 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * and the database. Both of these methods must be called before the
      * cursor moves to another row.
      *
-     * @param columnIndex the first column is <code>1</code>, the second
-     *        is <code>2</code>, and so on; must be <code>1</code> or larger
+     * @param columnIndex the first column is {@code 1}, the second
+     *        is {@code 2}, and so on; must be {@code 1} or larger
      *        and equal to or less than the number of columns in this rowset
-     * @param ref the new <code>Ref</code> column value
+     * @param ref the new {@code Ref} column value
      * @throws SQLException if (1) the given column index is out of bounds,
      *            (2) the cursor is not on one of this rowset's rows or its
      *            insert row, or (3) this rowset is
-     *            <code>ResultSet.CONCUR_READ_ONLY</code>
+     *            {@code ResultSet.CONCUR_READ_ONLY}
      */
     public void updateRef(int columnIndex, java.sql.Ref ref)
         throws SQLException {
@@ -3507,8 +3507,8 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Sets the designated column in either the current row or the insert
-     * row of this <code>JdbcRowSetImpl</code> object with the given
-     * <code>double</code> value.
+     * row of this {@code JdbcRowSetImpl} object with the given
+     * {@code double} value.
      *
      * This method updates a column value in either the current row or
      * the insert row of this rowset, but it does not update the
@@ -3519,13 +3519,13 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * and the database. Both of these methods must be called before the
      * cursor moves to another row.
      *
-     * @param columnName a <code>String</code> object that must match the
+     * @param columnName a {@code String} object that must match the
      *        SQL name of a column in this rowset, ignoring case
      * @param ref the new column value
      * @throws SQLException if (1) the given column name does not match the
      *            name of a column in this rowset, (2) the cursor is not on
      *            one of this rowset's rows or its insert row, or (3) this
-     *            rowset is <code>ResultSet.CONCUR_READ_ONLY</code>
+     *            rowset is {@code ResultSet.CONCUR_READ_ONLY}
      */
     public void updateRef(String columnName, java.sql.Ref ref)
         throws SQLException {
@@ -3534,8 +3534,8 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Sets the designated column in either the current row or the insert
-     * row of this <code>JdbcRowSetImpl</code> object with the given
-     * <code>double</code> value.
+     * row of this {@code JdbcRowSetImpl} object with the given
+     * {@code double} value.
      *
      * This method updates a column value in either the current row or
      * the insert row of this rowset, but it does not update the
@@ -3546,14 +3546,14 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * and the database. Both of these methods must be called before the
      * cursor moves to another row.
      *
-     * @param columnIndex the first column is <code>1</code>, the second
-     *        is <code>2</code>, and so on; must be <code>1</code> or larger
+     * @param columnIndex the first column is {@code 1}, the second
+     *        is {@code 2}, and so on; must be {@code 1} or larger
      *        and equal to or less than the number of columns in this rowset
-     * @param c the new column <code>Clob</code> value
+     * @param c the new column {@code Clob} value
      * @throws SQLException if (1) the given column index is out of bounds,
      *            (2) the cursor is not on one of this rowset's rows or its
      *            insert row, or (3) this rowset is
-     *            <code>ResultSet.CONCUR_READ_ONLY</code>
+     *            {@code ResultSet.CONCUR_READ_ONLY}
      */
     public void updateClob(int columnIndex, Clob c) throws SQLException {
         checkState();
@@ -3563,8 +3563,8 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Sets the designated column in either the current row or the insert
-     * row of this <code>JdbcRowSetImpl</code> object with the given
-     * <code>double</code> value.
+     * row of this {@code JdbcRowSetImpl} object with the given
+     * {@code double} value.
      *
      * This method updates a column value in either the current row or
      * the insert row of this rowset, but it does not update the
@@ -3575,13 +3575,13 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * and the database. Both of these methods must be called before the
      * cursor moves to another row.
      *
-     * @param columnName a <code>String</code> object that must match the
+     * @param columnName a {@code String} object that must match the
      *        SQL name of a column in this rowset, ignoring case
-     * @param c the new column <code>Clob</code> value
+     * @param c the new column {@code Clob} value
      * @throws SQLException if (1) the given column name does not match the
      *            name of a column in this rowset, (2) the cursor is not on
      *            one of this rowset's rows or its insert row, or (3) this
-     *            rowset is <code>ResultSet.CONCUR_READ_ONLY</code>
+     *            rowset is {@code ResultSet.CONCUR_READ_ONLY}
      */
     public void updateClob(String columnName, Clob c) throws SQLException {
         updateClob(findColumn(columnName), c);
@@ -3589,8 +3589,8 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Sets the designated column in either the current row or the insert
-     * row of this <code>JdbcRowSetImpl</code> object with the given
-     * <code>java.sql.Blob</code> value.
+     * row of this {@code JdbcRowSetImpl} object with the given
+     * {@code java.sql.Blob} value.
      *
      * This method updates a column value in either the current row or
      * the insert row of this rowset, but it does not update the
@@ -3601,14 +3601,14 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * and the database. Both of these methods must be called before the
      * cursor moves to another row.
      *
-     * @param columnIndex the first column is <code>1</code>, the second
-     *        is <code>2</code>, and so on; must be <code>1</code> or larger
+     * @param columnIndex the first column is {@code 1}, the second
+     *        is {@code 2}, and so on; must be {@code 1} or larger
      *        and equal to or less than the number of columns in this rowset
-     * @param b the new column <code>Blob</code> value
+     * @param b the new column {@code Blob} value
      * @throws SQLException if (1) the given column index is out of bounds,
      *            (2) the cursor is not on one of this rowset's rows or its
      *            insert row, or (3) this rowset is
-     *            <code>ResultSet.CONCUR_READ_ONLY</code>
+     *            {@code ResultSet.CONCUR_READ_ONLY}
      */
     public void updateBlob(int columnIndex, Blob b) throws SQLException {
         checkState();
@@ -3617,8 +3617,8 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Sets the designated column in either the current row or the insert
-     * row of this <code>JdbcRowSetImpl</code> object with the given
-     * <code>java.sql.Blob </code> value.
+     * row of this {@code JdbcRowSetImpl} object with the given
+     * {@code java.sql.Blob } value.
      *
      * This method updates a column value in either the current row or
      * the insert row of this rowset, but it does not update the
@@ -3629,13 +3629,13 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * and the database. Both of these methods must be called before the
      * cursor moves to another row.
      *
-     * @param columnName a <code>String</code> object that must match the
+     * @param columnName a {@code String} object that must match the
      *        SQL name of a column in this rowset, ignoring case
-     * @param b the new column <code>Blob</code> value
+     * @param b the new column {@code Blob} value
      * @throws SQLException if (1) the given column name does not match the
      *            name of a column in this rowset, (2) the cursor is not on
      *            one of this rowset's rows or its insert row, or (3) this
-     *            rowset is <code>ResultSet.CONCUR_READ_ONLY</code>
+     *            rowset is {@code ResultSet.CONCUR_READ_ONLY}
      */
     public void updateBlob(String columnName, Blob b) throws SQLException {
         updateBlob(findColumn(columnName), b);
@@ -3643,8 +3643,8 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Sets the designated column in either the current row or the insert
-     * row of this <code>JdbcRowSetImpl</code> object with the given
-     * <code>java.sql.Array</code> values.
+     * row of this {@code JdbcRowSetImpl} object with the given
+     * {@code java.sql.Array} values.
      *
      * This method updates a column value in either the current row or
      * the insert row of this rowset, but it does not update the
@@ -3655,14 +3655,14 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * and the database. Both of these methods must be called before the
      * cursor moves to another row.
      *
-     * @param columnIndex the first column is <code>1</code>, the second
-     *        is <code>2</code>, and so on; must be <code>1</code> or larger
+     * @param columnIndex the first column is {@code 1}, the second
+     *        is {@code 2}, and so on; must be {@code 1} or larger
      *        and equal to or less than the number of columns in this rowset
-     * @param a the new column <code>Array</code> value
+     * @param a the new column {@code Array} value
      * @throws SQLException if (1) the given column index is out of bounds,
      *            (2) the cursor is not on one of this rowset's rows or its
      *            insert row, or (3) this rowset is
-     *            <code>ResultSet.CONCUR_READ_ONLY</code>
+     *            {@code ResultSet.CONCUR_READ_ONLY}
      */
     public void updateArray(int columnIndex, Array a) throws SQLException {
         checkState();
@@ -3671,8 +3671,8 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Sets the designated column in either the current row or the insert
-     * row of this <code>JdbcRowSetImpl</code> object with the given
-     * <code>java.sql.Array</code> value.
+     * row of this {@code JdbcRowSetImpl} object with the given
+     * {@code java.sql.Array} value.
      *
      * This method updates a column value in either the current row or
      * the insert row of this rowset, but it does not update the
@@ -3683,20 +3683,20 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * and the database. Both of these methods must be called before the
      * cursor moves to another row.
      *
-     * @param columnName a <code>String</code> object that must match the
+     * @param columnName a {@code String} object that must match the
      *        SQL name of a column in this rowset, ignoring case
-     * @param a the new column <code>Array</code> value
+     * @param a the new column {@code Array} value
      * @throws SQLException if (1) the given column name does not match the
      *            name of a column in this rowset, (2) the cursor is not on
      *            one of this rowset's rows or its insert row, or (3) this
-     *            rowset is <code>ResultSet.CONCUR_READ_ONLY</code>
+     *            rowset is {@code ResultSet.CONCUR_READ_ONLY}
      */
     public void updateArray(String columnName, Array a) throws SQLException {
         updateArray(findColumn(columnName), a);
     }
 
     /**
-     * Provide interface coverage for getURL(int) in ResultSet->RowSet
+     * Provide interface coverage for getURL(int) in {@code ResultSet->RowSet}
      */
     public java.net.URL getURL(int columnIndex) throws SQLException {
         checkState();
@@ -3704,7 +3704,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Provide interface coverage for getURL(String) in ResultSet->RowSet
+     * Provide interface coverage for getURL(String) in {@code ResultSet->RowSet}
      */
     public java.net.URL getURL(String columnName) throws SQLException {
         return getURL(findColumn(columnName));
@@ -3712,14 +3712,14 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Return the RowSetWarning object for the current row of a
-     * <code>JdbcRowSetImpl</code>
+     * {@code JdbcRowSetImpl}
      */
     public RowSetWarning getRowSetWarnings() throws SQLException {
        return null;
     }
     /**
      * Unsets the designated parameter to the given int array.
-     * This was set using <code>setMatchColumn</code>
+     * This was set using {@code setMatchColumn}
      * as the column which will form the basis of the join.
      * <P>
      * The parameter value unset by this method should be same
@@ -3728,8 +3728,8 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * @param columnIdxes the index into this rowset
      *        object's internal representation of parameter values
      * @throws SQLException if an error occurs or the
-     *  parameter index is out of bounds or if the columnIdx is
-     *  not the same as set using <code>setMatchColumn(int [])</code>
+     *         parameter index is out of bounds or if the columnIdx is
+     *         not the same as set using {@code setMatchColumn(int [])}
      */
     public void unsetMatchColumn(int[] columnIdxes) throws SQLException {
 
@@ -3748,7 +3748,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
    /**
      * Unsets the designated parameter to the given String array.
-     * This was set using <code>setMatchColumn</code>
+     * This was set using {@code setMatchColumn}
      * as the column which will form the basis of the join.
      * <P>
      * The parameter value unset by this method should be same
@@ -3757,8 +3757,8 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * @param columnIdxes the index into this rowset
      *        object's internal representation of parameter values
      * @throws SQLException if an error occurs or the
-     *  parameter index is out of bounds or if the columnName is
-     *  not the same as set using <code>setMatchColumn(String [])</code>
+     *         parameter index is out of bounds or if the columnName is
+     *         not the same as set using {@code setMatchColumn(String [])}
      */
     public void unsetMatchColumn(String[] columnIdxes) throws SQLException {
 
@@ -3774,11 +3774,11 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Retrieves the column name as <code>String</code> array
-     * that was set using <code>setMatchColumn(String [])</code>
+     * Retrieves the column name as {@code String} array
+     * that was set using {@code setMatchColumn(String [])}
      * for this rowset.
      *
-     * @return a <code>String</code> array object that contains the column names
+     * @return a {@code String} array object that contains the column names
      *         for the rowset which has this the match columns
      *
      * @throws SQLException if an error occurs or column name is not set
@@ -3796,10 +3796,10 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Retrieves the column id as <code>int</code> array that was set using
-     * <code>setMatchColumn(int [])</code> for this rowset.
+     * Retrieves the column id as {@code int} array that was set using
+     * {@code setMatchColumn(int [])} for this rowset.
      *
-     * @return a <code>int</code> array object that contains the column ids
+     * @return a {@code int} array object that contains the column ids
      *         for the rowset which has this as the match columns.
      *
      * @throws SQLException if an error occurs or column index is not set
@@ -3829,19 +3829,19 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     /**
      * Sets the designated parameter to the given int array.
      * This forms the basis of the join for the
-     * <code>JoinRowSet</code> as the column which will form the basis of the
+     * {@code JoinRowSet} as the column which will form the basis of the
      * join.
      * <P>
      * The parameter value set by this method is stored internally and
      * will be supplied as the appropriate parameter in this rowset's
-     * command when the method <code>getMatchColumnIndexes</code> is called.
+     * command when the method {@code getMatchColumnIndexes} is called.
      *
      * @param columnIdxes the indexes into this rowset
      *        object's internal representation of parameter values; the
      *        first parameter is 0, the second is 1, and so on; must be
-     *        <code>0</code> or greater
+     *        {@code 0} or greater
      * @throws SQLException if an error occurs or the
-     *                         parameter index is out of bounds
+     *         parameter index is out of bounds
      */
     public void setMatchColumn(int[] columnIdxes) throws SQLException {
 
@@ -3858,17 +3858,17 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     /**
      * Sets the designated parameter to the given String array.
      *  This forms the basis of the join for the
-     * <code>JoinRowSet</code> as the column which will form the basis of the
+     * {@code JoinRowSet} as the column which will form the basis of the
      * join.
      * <P>
      * The parameter value set by this method is stored internally and
      * will be supplied as the appropriate parameter in this rowset's
-     * command when the method <code>getMatchColumn</code> is called.
+     * command when the method {@code getMatchColumn} is called.
      *
      * @param columnNames the name of the column into this rowset
      *        object's internal representation of parameter values
      * @throws SQLException if an error occurs or the
-     *  parameter index is out of bounds
+     *         parameter index is out of bounds
      */
     public void setMatchColumn(String[] columnNames) throws SQLException {
 
@@ -3883,22 +3883,22 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
 
-        /**
-     * Sets the designated parameter to the given <code>int</code>
+    /**
+     * Sets the designated parameter to the given {@code int}
      * object.  This forms the basis of the join for the
-     * <code>JoinRowSet</code> as the column which will form the basis of the
+     * {@code JoinRowSet} as the column which will form the basis of the
      * join.
      * <P>
      * The parameter value set by this method is stored internally and
      * will be supplied as the appropriate parameter in this rowset's
-     * command when the method <code>getMatchColumn</code> is called.
+     * command when the method {@code getMatchColumn} is called.
      *
      * @param columnIdx the index into this rowset
      *        object's internal representation of parameter values; the
      *        first parameter is 0, the second is 1, and so on; must be
-     *        <code>0</code> or greater
+     *        {@code 0} or greater
      * @throws SQLException if an error occurs or the
-     *                         parameter index is out of bounds
+     *         parameter index is out of bounds
      */
     public void setMatchColumn(int columnIdx) throws SQLException {
         // validate, if col is ok to be set
@@ -3912,19 +3912,19 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Sets the designated parameter to the given <code>String</code>
+     * Sets the designated parameter to the given {@code String}
      * object.  This forms the basis of the join for the
-     * <code>JoinRowSet</code> as the column which will form the basis of the
+     * {@code JoinRowSet} as the column which will form the basis of the
      * join.
      * <P>
      * The parameter value set by this method is stored internally and
      * will be supplied as the appropriate parameter in this rowset's
-     * command when the method <code>getMatchColumn</code> is called.
+     * command when the method {@code getMatchColumn} is called.
      *
      * @param columnName the name of the column into this rowset
      *        object's internal representation of parameter values
      * @throws SQLException if an error occurs or the
-     *  parameter index is out of bounds
+     *         parameter index is out of bounds
      */
     public void setMatchColumn(String columnName) throws SQLException {
         // validate, if col is ok to be set
@@ -3938,8 +3938,8 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Unsets the designated parameter to the given <code>int</code>
-     * object.  This was set using <code>setMatchColumn</code>
+     * Unsets the designated parameter to the given {@code int}
+     * object.  This was set using {@code setMatchColumn}
      * as the column which will form the basis of the join.
      * <P>
      * The parameter value unset by this method should be same
@@ -3948,8 +3948,8 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * @param columnIdx the index into this rowset
      *        object's internal representation of parameter values
      * @throws SQLException if an error occurs or the
-     *  parameter index is out of bounds or if the columnIdx is
-     *  not the same as set using <code>setMatchColumn(int)</code>
+     *         parameter index is out of bounds or if the columnIdx is
+     *         not the same as set using {@code setMatchColumn(int)}
      */
     public void unsetMatchColumn(int columnIdx) throws SQLException {
         // check if we are unsetting the SAME column
@@ -3964,8 +3964,8 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Unsets the designated parameter to the given <code>String</code>
-     * object.  This was set using <code>setMatchColumn</code>
+     * Unsets the designated parameter to the given {@code String}
+     * object.  This was set using {@code setMatchColumn}
      * as the column which will form the basis of the join.
      * <P>
      * The parameter value unset by this method should be same
@@ -3974,8 +3974,8 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * @param columnName the index into this rowset
      *        object's internal representation of parameter values
      * @throws SQLException if an error occurs or the
-     *  parameter index is out of bounds or if the columnName is
-     *  not the same as set using <code>setMatchColumn(String)</code>
+     *         parameter index is out of bounds or if the columnName is
+     *         not the same as set using {@code setMatchColumn(String)}
      *
      */
     public void unsetMatchColumn(String columnName) throws SQLException {
@@ -3992,12 +3992,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Retrieves the <code>DatabaseMetaData</code> associated with
+     * Retrieves the {@code DatabaseMetaData} associated with
      * the connection handle associated with this
-     * <code>JdbcRowSet</code> object.
+     * {@code JdbcRowSet} object.
      *
-     * @return the <code>DatabaseMetadata</code> associated
-     *  with the rowset's connection.
+     * @return the {@code DatabaseMetadata} associated
+     *         with the rowset's connection.
      * @throws SQLException if a database access error occurs
      */
     public DatabaseMetaData getDatabaseMetaData() throws SQLException {
@@ -4006,12 +4006,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Retrieves the <code>ParameterMetaData</code> associated with
+     * Retrieves the {@code ParameterMetaData} associated with
      * the connection handle associated with this
-     * <code>JdbcRowSet</code> object.
+     * {@code JdbcRowSet} object.
      *
-     * @return the <code>ParameterMetadata</code> associated
-     *  with the rowset's connection.
+     * @return the {@code ParameterMetadata} associated
+     *         with the rowset's connection.
      * @throws SQLException if a database access error occurs
      */
     public ParameterMetaData getParameterMetaData() throws SQLException {
@@ -4020,18 +4020,18 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Commits all updates in this <code>JdbcRowSet</code> object by
-     * wrapping the internal <code>Connection</code> object and calling
-     * its <code>commit</code> method.
-     * This method sets this <code>JdbcRowSet</code> object's private field
-     * <code>rs</code> to <code>null</code> after saving its value to another
-     * object, but only if the <code>ResultSet</code>
-     * constant <code>HOLD_CURSORS_OVER_COMMIT</code> has not been set.
-     * (The field <code>rs</code> is this <code>JdbcRowSet</code> object's
-     * <code>ResultSet</code> object.)
+     * Commits all updates in this {@code JdbcRowSet} object by
+     * wrapping the internal {@code Connection} object and calling
+     * its {@code commit} method.
+     * This method sets this {@code JdbcRowSet} object's private field
+     * {@code rs} to {@code null} after saving its value to another
+     * object, but only if the {@code ResultSet}
+     * constant {@code HOLD_CURSORS_OVER_COMMIT} has not been set.
+     * (The field {@code rs} is this {@code JdbcRowSet} object's
+     * {@code ResultSet} object.)
      *
      * @throws SQLException if autoCommit is set to true or if a database
-     * access error occurs
+     *         access error occurs
      */
     public void commit() throws SQLException {
       conn.commit();
@@ -4045,8 +4045,8 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Sets auto-commit on the internal <code>Connection</code> object with this
-     * <code>JdbcRowSet</code>
+     * Sets auto-commit on the internal {@code Connection} object with this
+     * {@code JdbcRowSet}
      *
      * @throws SQLException if a database access error occurs
      */
@@ -4074,7 +4074,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Returns the auto-commit status with this <code>JdbcRowSet</code>.
+     * Returns the auto-commit status with this {@code JdbcRowSet}.
      *
      * @return true if auto commit is true; false otherwise
      * @throws SQLException if a database access error occurs
@@ -4084,16 +4084,16 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Rolls back all the updates in this <code>JdbcRowSet</code> object by
-     * wrapping the internal <code>Connection</code> object and calling its
-     * <code>rollback</code> method.
-     * This method sets this <code>JdbcRowSet</code> object's private field
-     * <code>rs</code> to <code>null</code> after saving its value to another object.
-     * (The field <code>rs</code> is this <code>JdbcRowSet</code> object's
-     * internal <code>ResultSet</code> object.)
+     * Rolls back all the updates in this {@code JdbcRowSet} object by
+     * wrapping the internal {@code Connection} object and calling its
+     * {@code rollback} method.
+     * This method sets this {@code JdbcRowSet} object's private field
+     * {@code rs} to {@code null} after saving its value to another object.
+     * (The field {@code rs} is this {@code JdbcRowSet} object's
+     * internal {@code ResultSet} object.)
      *
      * @throws SQLException if autoCommit is set to true or a database
-     * access error occurs
+     *         access error occurs
      */
     public void rollback() throws SQLException {
         conn.rollback();
@@ -4106,14 +4106,14 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
 
     /**
-     * Rollbacks all the updates in the <code>JdbcRowSet</code> back to the
-     * last <code>Savepoint</code> transaction marker. Wraps the internal
-     * <code>Connection</code> object and call it's rollback method
+     * Rollbacks all the updates in the {@code JdbcRowSet} back to the
+     * last {@code Savepoint} transaction marker. Wraps the internal
+     * {@code Connection} object and call it's rollback method
      *
-     * @param s the <code>Savepoint</code> transaction marker to roll the
-     * transaction to.
+     * @param s the {@code Savepoint} transaction marker to roll the
+     *        transaction to.
      * @throws SQLException if autoCommit is set to true; or ia a database
-     * access error occurs
+     *         access error occurs
      */
     public void rollback(Savepoint s) throws SQLException {
         conn.rollback(s);
@@ -4144,10 +4144,10 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     //  Added as per Rave requirements
 
     /**
-     * Gets this <code>JdbcRowSet</code> object's Connection property
+     * Gets this {@code JdbcRowSet} object's Connection property
      *
      *
-     * @return the <code>Connection</code> object associated with this rowset;
+     * @return the {@code Connection} object associated with this rowset;
      */
 
     protected Connection getConnection() {
@@ -4158,10 +4158,10 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     // Added as per rave requirements
 
     /**
-     * Sets this <code>JdbcRowSet</code> object's connection property
-     * to the given <code>Connection</code> object.
+     * Sets this {@code JdbcRowSet} object's connection property
+     * to the given {@code Connection} object.
      *
-     * @param connection the <code>Connection</code> object.
+     * @param connection the {@code Connection} object.
      */
 
     protected void setConnection(Connection connection) {
@@ -4172,10 +4172,10 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     // Added as per Rave requirements
 
     /**
-     * Gets this <code>JdbcRowSet</code> object's PreparedStatement property
+     * Gets this {@code JdbcRowSet} object's PreparedStatement property
      *
      *
-     * @return the <code>PreparedStatement</code> object associated with this rowset;
+     * @return the {@code PreparedStatement} object associated with this rowset;
      */
 
     protected PreparedStatement getPreparedStatement() {
@@ -4186,10 +4186,10 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     // Added as per Rave requirements
 
     /**
-     * Sets this <code>JdbcRowSet</code> object's preparedtsatement property
-     * to the given <code>PreparedStatemennt</code> object.
+     * Sets this {@code JdbcRowSet} object's preparedtsatement property
+     * to the given {@code PreparedStatemennt} object.
      *
-     * @param preparedStatement the <code>PreparedStatement</code> object
+     * @param preparedStatement the {@code PreparedStatement} object
      *
      */
     protected void setPreparedStatement(PreparedStatement preparedStatement) {
@@ -4200,10 +4200,10 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     // Added as per Rave requirements
 
     /**
-     * Gets this <code>JdbcRowSet</code> object's ResultSet property
+     * Gets this {@code JdbcRowSet} object's ResultSet property
      *
      *
-     * @return the <code>ResultSet</code> object associated with this rowset;
+     * @return the {@code ResultSet} object associated with this rowset;
      */
 
     protected ResultSet getResultSet() throws SQLException {
@@ -4217,10 +4217,10 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     // Added as per Rave requirements
 
     /**
-     * Sets this <code>JdbcRowSet</code> object's resultset property
-     * to the given <code>ResultSet</code> object.
+     * Sets this {@code JdbcRowSet} object's resultset property
+     * to the given {@code ResultSet} object.
      *
-     * @param resultSet the <code>ResultSet</code> object
+     * @param resultSet the {@code ResultSet} object
      *
      */
     protected void setResultSet(ResultSet resultSet) {
@@ -4228,25 +4228,25 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Sets this <code>JdbcRowSet</code> object's <code>command</code> property to
-     * the given <code>String</code> object and clears the parameters, if any,
+     * Sets this {@code JdbcRowSet} object's {@code command} property to
+     * the given {@code String} object and clears the parameters, if any,
      * that were set for the previous command. In addition,
-     * if the <code>command</code> property has previously been set to a
+     * if the {@code command} property has previously been set to a
      * non-null value and it is
-     * different from the <code>String</code> object supplied,
-     * this method sets this <code>JdbcRowSet</code> object's private fields
-     * <code>ps</code> and <code>rs</code> to <code>null</code>.
-     * (The field <code>ps</code> is its <code>PreparedStatement</code> object, and
-     * the field <code>rs</code> is its <code>ResultSet</code> object.)
+     * different from the {@code String} object supplied,
+     * this method sets this {@code JdbcRowSet} object's private fields
+     * {@code ps} and {@code rs} to {@code null}.
+     * (The field {@code ps} is its {@code PreparedStatement} object, and
+     * the field {@code rs} is its {@code ResultSet} object.)
      * <P>
-     * The <code>command</code> property may not be needed if the <code>RowSet</code>
+     * The {@code command} property may not be needed if the {@code RowSet}
      * object gets its data from a source that does not support commands,
      * such as a spreadsheet or other tabular file.
-     * Thus, this property is optional and may be <code>null</code>.
+     * Thus, this property is optional and may be {@code null}.
      *
-     * @param command a <code>String</code> object containing an SQL query
-     *            that will be set as this <code>RowSet</code> object's command
-     *            property; may be <code>null</code> but may not be an empty string
+     * @param command a {@code String} object containing an SQL query
+     *            that will be set as this {@code RowSet} object's command
+     *            property; may be {@code null} but may not be an empty string
      * @throws SQLException if an empty string is provided as the command value
      * @see #getCommand
      */
@@ -4265,32 +4265,32 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Sets the <code>dataSourceName</code> property for this <code>JdbcRowSet</code>
-     * object to the given logical name and sets this <code>JdbcRowSet</code> object's
-     * Url property to <code>null</code>. In addition, if the <code>dataSourceName</code>
+     * Sets the {@code dataSourceName} property for this {@code JdbcRowSet}
+     * object to the given logical name and sets this {@code JdbcRowSet} object's
+     * Url property to {@code null}. In addition, if the {@code dataSourceName}
      * property has previously been set and is different from the one supplied,
-     * this method sets this <code>JdbcRowSet</code> object's private fields
-     * <code>ps</code>, <code>rs</code>, and <code>conn</code> to <code>null</code>.
-     * (The field <code>ps</code> is its <code>PreparedStatement</code> object,
-     * the field <code>rs</code> is its <code>ResultSet</code> object, and
-     * the field <code>conn</code> is its <code>Connection</code> object.)
+     * this method sets this {@code JdbcRowSet} object's private fields
+     * {@code ps}, {@code rs}, and {@code conn} to {@code null}.
+     * (The field {@code ps} is its {@code PreparedStatement} object,
+     * the field {@code rs} is its {@code ResultSet} object, and
+     * the field {@code conn} is its {@code Connection} object.)
      * <P>
      * The name supplied to this method must have been bound to a
-     * <code>DataSource</code> object in a JNDI naming service so that an
+     * {@code DataSource} object in a JNDI naming service so that an
      * application can do a lookup using that name to retrieve the
-     * <code>DataSource</code> object bound to it. The <code>DataSource</code>
+     * {@code DataSource} object bound to it. The {@code DataSource}
      * object can then be used to establish a connection to the data source it
      * represents.
      * <P>
      * Users should set either the Url property or the dataSourceName property.
      * If both properties are set, the driver will use the property set most recently.
      *
-     * @param dsName a <code>String</code> object with the name that can be supplied
+     * @param dsName a {@code String} object with the name that can be supplied
      *        to a naming service based on JNDI technology to retrieve the
-     *        <code>DataSource</code> object that can be used to get a connection;
-     *        may be <code>null</code>
+     *        {@code DataSource} object that can be used to get a connection;
+     *        may be {@code null}
      * @throws SQLException if there is a problem setting the
-     *          <code>dataSourceName</code> property
+     *          {@code dataSourceName} property
      * @see #getDataSourceName
      */
     public void setDataSourceName(String dsName) throws SQLException{
@@ -4310,42 +4310,42 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
 
     /**
-     * Sets the Url property for this <code>JdbcRowSet</code> object
-     * to the given <code>String</code> object and sets the dataSource name
-     * property to <code>null</code>. In addition, if the Url property has
-     * previously been set to a non <code>null</code> value and its value
+     * Sets the Url property for this {@code JdbcRowSet} object
+     * to the given {@code String} object and sets the dataSource name
+     * property to {@code null}. In addition, if the Url property has
+     * previously been set to a non {@code null} value and its value
      * is different from the value to be set,
-     * this method sets this <code>JdbcRowSet</code> object's private fields
-     * <code>ps</code>, <code>rs</code>, and <code>conn</code> to <code>null</code>.
-     * (The field <code>ps</code> is its <code>PreparedStatement</code> object,
-     * the field <code>rs</code> is its <code>ResultSet</code> object, and
-     * the field <code>conn</code> is its <code>Connection</code> object.)
+     * this method sets this {@code JdbcRowSet} object's private fields
+     * {@code ps}, {@code rs}, and {@code conn} to {@code null}.
+     * (The field {@code ps} is its {@code PreparedStatement} object,
+     * the field {@code rs} is its {@code ResultSet} object, and
+     * the field {@code conn} is its {@code Connection} object.)
      * <P>
      * The Url property is a JDBC URL that is used when
      * the connection is created using a JDBC technology-enabled driver
-     * ("JDBC driver") and the <code>DriverManager</code>.
+     * ("JDBC driver") and the {@code DriverManager}.
      * The correct JDBC URL for the specific driver to be used can be found
      * in the driver documentation.  Although there are guidelines for how
      * a JDBC URL is formed,
-     * a driver vendor can specify any <code>String</code> object except
-     * one with a length of <code>0</code> (an empty string).
+     * a driver vendor can specify any {@code String} object except
+     * one with a length of {@code 0} (an empty string).
      * <P>
      * Setting the Url property is optional if connections are established using
-     * a <code>DataSource</code> object instead of the <code>DriverManager</code>.
+     * a {@code DataSource} object instead of the {@code DriverManager}.
      * The driver will use either the URL property or the
      * dataSourceName property to create a connection, whichever was
      * specified most recently. If an application uses a JDBC URL, it
      * must load a JDBC driver that accepts the JDBC URL before it uses the
-     * <code>RowSet</code> object to connect to a database.  The <code>RowSet</code>
+     * {@code RowSet} object to connect to a database.  The {@code RowSet}
      * object will use the URL internally to create a database connection in order
      * to read or write data.
      *
-     * @param url a <code>String</code> object that contains the JDBC URL
+     * @param url a {@code String} object that contains the JDBC URL
      *            that will be used to establish the connection to a database for this
-     *            <code>RowSet</code> object; may be <code>null</code> but must not
+     *            {@code RowSet} object; may be {@code null} but must not
      *            be an empty string
      * @throws SQLException if an error occurs setting the Url property or the
-     *         parameter supplied is a string with a length of <code>0</code> (an
+     *         parameter supplied is a string with a length of {@code 0} (an
      *         empty string)
      * @see #getUrl
      */
@@ -4365,24 +4365,24 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
        }
     }
 
-     /**
-     * Sets the username property for this <code>JdbcRowSet</code> object
+    /**
+     * Sets the username property for this {@code JdbcRowSet} object
      * to the given user name. Because it
      * is not serialized, the username property is set at run time before
-     * calling the method <code>execute</code>. In addition,
-     * if the <code>username</code> property is already set with a
-     * non-null value and that value is different from the <code>String</code>
+     * calling the method {@code execute}. In addition,
+     * if the {@code username} property is already set with a
+     * non-null value and that value is different from the {@code String}
      * object to be set,
-     * this method sets this <code>JdbcRowSet</code> object's private fields
-     * <code>ps</code>, <code>rs</code>, and <code>conn</code> to <code>null</code>.
-     * (The field <code>ps</code> is its <code>PreparedStatement</code> object,
-     * <code>rs</code> is its <code>ResultSet</code> object, and
-     * <code>conn</code> is its <code>Connection</code> object.)
-     * Setting these fields to <code>null</code> ensures that only current
+     * this method sets this {@code JdbcRowSet} object's private fields
+     * {@code ps}, {@code rs}, and {@code conn} to {@code null}.
+     * (The field {@code ps} is its {@code PreparedStatement} object,
+     * {@code rs} is its {@code ResultSet} object, and
+     * {@code conn} is its {@code Connection} object.)
+     * Setting these fields to {@code null} ensures that only current
      * values will be used.
      *
-     * @param uname the <code>String</code> object containing the user name that
-     *     is supplied to the data source to create a connection. It may be null.
+     * @param uname the {@code String} object containing the user name that
+     *        is supplied to the data source to create a connection. It may be null.
      * @see #getUsername
      */
     public void setUsername(String uname) {
@@ -4401,23 +4401,23 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
      /**
-     * Sets the password property for this <code>JdbcRowSet</code> object
-     * to the given <code>String</code> object. Because it
+     * Sets the password property for this {@code JdbcRowSet} object
+     * to the given {@code String} object. Because it
      * is not serialized, the password property is set at run time before
-     * calling the method <code>execute</code>. Its default valus is
-     * <code>null</code>. In addition,
-     * if the <code>password</code> property is already set with a
+     * calling the method {@code execute}. Its default valus is
+     * {@code null}. In addition,
+     * if the {@code password} property is already set with a
      * non-null value and that value is different from the one being set,
-     * this method sets this <code>JdbcRowSet</code> object's private fields
-     * <code>ps</code>, <code>rs</code>, and <code>conn</code> to <code>null</code>.
-     * (The field <code>ps</code> is its <code>PreparedStatement</code> object,
-     * <code>rs</code> is its <code>ResultSet</code> object, and
-     * <code>conn</code> is its <code>Connection</code> object.)
-     * Setting these fields to <code>null</code> ensures that only current
+     * this method sets this {@code JdbcRowSet} object's private fields
+     * {@code ps}, {@code rs}, and {@code conn} to {@code null}.
+     * (The field {@code ps} is its {@code PreparedStatement} object,
+     * {@code rs} is its {@code ResultSet} object, and
+     * {@code conn} is its {@code Connection} object.)
+     * Setting these fields to {@code null} ensures that only current
      * values will be used.
      *
-     * @param password the <code>String</code> object that represents the password
-     *     that must be supplied to the database to create a connection
+     * @param password the {@code String} object that represents the password
+     *        that must be supplied to the database to create a connection
      */
     public void setPassword(String password) {
 
@@ -4435,18 +4435,18 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Sets the type for this <code>RowSet</code> object to the specified type.
-     * The default type is <code>ResultSet.TYPE_SCROLL_INSENSITIVE</code>.
+     * Sets the type for this {@code RowSet} object to the specified type.
+     * The default type is {@code ResultSet.TYPE_SCROLL_INSENSITIVE}.
      *
      * @param type one of the following constants:
-     *             <code>ResultSet.TYPE_FORWARD_ONLY</code>,
-     *             <code>ResultSet.TYPE_SCROLL_INSENSITIVE</code>, or
-     *             <code>ResultSet.TYPE_SCROLL_SENSITIVE</code>
+     *             {@code ResultSet.TYPE_FORWARD_ONLY},
+     *             {@code ResultSet.TYPE_SCROLL_INSENSITIVE}, or
+     *             {@code ResultSet.TYPE_SCROLL_SENSITIVE}
      * @throws SQLException if the parameter supplied is not one of the
      *         following constants:
-     *          <code>ResultSet.TYPE_FORWARD_ONLY</code> or
-     *          <code>ResultSet.TYPE_SCROLL_INSENSITIVE</code>
-     *          <code>ResultSet.TYPE_SCROLL_SENSITIVE</code>
+     *          {@code ResultSet.TYPE_FORWARD_ONLY} or
+     *          {@code ResultSet.TYPE_SCROLL_INSENSITIVE}
+     *          {@code ResultSet.TYPE_SCROLL_SENSITIVE}
      * @see #getConcurrency
      * @see #getType
      */
@@ -4468,18 +4468,18 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Sets the concurrency for this <code>RowSet</code> object to
-     * the specified concurrency. The default concurrency for any <code>RowSet</code>
-     * object (connected or disconnected) is <code>ResultSet.CONCUR_UPDATABLE</code>,
+     * Sets the concurrency for this {@code RowSet} object to
+     * the specified concurrency. The default concurrency for any {@code RowSet}
+     * object (connected or disconnected) is {@code ResultSet.CONCUR_UPDATABLE},
      * but this method may be called at any time to change the concurrency.
      *
      * @param concur one of the following constants:
-     *                    <code>ResultSet.CONCUR_READ_ONLY</code> or
-     *                    <code>ResultSet.CONCUR_UPDATABLE</code>
+     *                    {@code ResultSet.CONCUR_READ_ONLY} or
+     *                    {@code ResultSet.CONCUR_UPDATABLE}
      * @throws SQLException if the parameter supplied is not one of the
      *         following constants:
-     *          <code>ResultSet.CONCUR_UPDATABLE</code> or
-     *          <code>ResultSet.CONCUR_READ_ONLY</code>
+     *          {@code ResultSet.CONCUR_UPDATABLE} or
+     *          {@code ResultSet.CONCUR_READ_ONLY}
      * @see #getConcurrency
      * @see #isReadOnly
      */
@@ -4500,8 +4500,8 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Retrieves the value of the designated <code>SQL XML</code> parameter as a
-     * <code>SQLXML</code> object in the Java programming language.
+     * Retrieves the value of the designated {@code SQL XML} parameter as a
+     * {@code SQLXML} object in the Java programming language.
      * @param columnIndex the first column is 1, the second is 2, ...
      * @return a SQLXML object that maps an SQL XML value
      * @throws SQLException if a database access error occurs
@@ -4512,8 +4512,8 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Retrieves the value of the designated <code>SQL XML</code> parameter as a
-     * <code>SQLXML</code> object in the Java programming language.
+     * Retrieves the value of the designated {@code SQL XML} parameter as a
+     * {@code SQLXML} object in the Java programming language.
      * @param colName the name of the column from which to retrieve the value
      * @return a SQLXML object that maps an SQL XML value
      * @throws SQLException if a database access error occurs
@@ -4524,12 +4524,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Retrieves the value of the designated column in the current row of this
-     * <code>ResultSet</code> object as a java.sql.RowId object in the Java
+     * {@code ResultSet} object as a java.sql.RowId object in the Java
      * programming language.
      *
      * @param columnIndex the first column is 1, the second 2, ...
-     * @return the column value if the value is a SQL <code>NULL</code> the
-     *     value returned is <code>null</code>
+     * @return the column value if the value is a SQL {@code NULL} the
+     *     value returned is {@code null}
      * @throws SQLException if a database access error occurs
      * @since 1.6
      */
@@ -4539,12 +4539,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Retrieves the value of the designated column in the current row of this
-     * <code>ResultSet</code> object as a java.sql.RowId object in the Java
+     * {@code ResultSet} object as a java.sql.RowId object in the Java
      * programming language.
      *
      * @param columnName the name of the column
-     * @return the column value if the value is a SQL <code>NULL</code> the
-     *     value returned is <code>null</code>
+     * @return the column value if the value is a SQL {@code NULL} the
+     *     value returned is {@code null}
      * @throws SQLException if a database access error occurs
      * @since 1.6
      */
@@ -4553,10 +4553,10 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Updates the designated column with a <code>RowId</code> value. The updater
+     * Updates the designated column with a {@code RowId} value. The updater
      * methods are used to update column values in the current row or the insert
      * row. The updater methods do not update the underlying database; instead
-     * the <code>updateRow<code> or <code>insertRow</code> methods are called
+     * the {@code updateRow} or {@code insertRow} methods are called
      * to update the database.
      *
      * @param columnIndex the first column is 1, the second 2, ...
@@ -4569,10 +4569,10 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Updates the designated column with a <code>RowId</code> value. The updater
+     * Updates the designated column with a {@code RowId} value. The updater
      * methods are used to update column values in the current row or the insert
      * row. The updater methods do not update the underlying database; instead
-     * the <code>updateRow<code> or <code>insertRow</code> methods are called
+     * the {@code updateRow} or {@code insertRow} methods are called
      * to update the database.
      *
      * @param columnName the name of the column
@@ -4631,8 +4631,8 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
 
     /*o
-     * This method is used for updating SQL <code>NCLOB</code>  type that maps
-     * to <code>java.sql.Types.NCLOB</code>
+     * This method is used for updating SQL {@code NCLOB}  type that maps
+     * to {@code java.sql.Types.NCLOB}
      * @param columnIndex the first column is 1, the second 2, ...
      * @param nClob the value for the column to be updated
      * @throws SQLException if a database access error occurs
@@ -4643,8 +4643,8 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * This method is used for updating SQL <code>NCLOB</code>  type that maps
-     * to <code>java.sql.Types.NCLOB</code>
+     * This method is used for updating SQL {@code NCLOB}  type that maps
+     * to {@code java.sql.Types.NCLOB}
      * @param columnName name of the column
      * @param nClob the value for the column to be updated
      * @throws SQLException if a database access error occurs
@@ -4656,12 +4656,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Retrieves the value of the designated column in the current row
-     * of this <code>ResultSet</code> object as a <code>NClob</code> object
+     * of this {@code ResultSet} object as a {@code NClob} object
      * in the Java programming language.
      *
      * @param i the first column is 1, the second is 2, ...
-     * @return a <code>NClob</code> object representing the SQL
-     *         <code>NCLOB</code> value in the specified column
+     * @return a {@code NClob} object representing the SQL
+     *         {@code NCLOB} value in the specified column
      * @exception SQLException if a database access error occurs
      * @since 1.6
      */
@@ -4672,11 +4672,11 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
   /**
      * Retrieves the value of the designated column in the current row
-     * of this <code>ResultSet</code> object as a <code>NClob</code> object
+     * of this {@code ResultSet} object as a {@code NClob} object
      * in the Java programming language.
      *
      * @param colName the name of the column from which to retrieve the value
-     * @return a <code>NClob</code> object representing the SQL <code>NCLOB</code>
+     * @return a {@code NClob} object representing the SQL {@code NCLOB}
      * value in the specified column
      * @exception SQLException if a database access error occurs
      * @since 1.6
@@ -4694,10 +4694,10 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-      * Sets the designated parameter to the given <code>java.sql.SQLXML</code> object. The driver converts this to an
-      * SQL <code>XML</code> value when it sends it to the database.
+      * Sets the designated parameter to the given {@code java.sql.SQLXML} object. The driver converts this to an
+      * SQL {@code XML} value when it sends it to the database.
       * @param parameterIndex index of the first parameter is 1, the second is 2, ...
-      * @param xmlObject a <code>SQLXML</code> object that maps an SQL <code>XML</code> value
+      * @param xmlObject a {@code SQLXML} object that maps an SQL {@code XML} value
       * @throws SQLException if a database access error occurs
       * @since 1.6
       */
@@ -4706,10 +4706,10 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      }
 
     /**
-     * Sets the designated parameter to the given <code>java.sql.SQLXML</code> object. The driver converts this to an
-     * <code>SQL XML</code> value when it sends it to the database.
+     * Sets the designated parameter to the given {@code java.sql.SQLXML} object. The driver converts this to an
+     * {@code SQL XML} value when it sends it to the database.
      * @param parameterName the name of the parameter
-     * @param xmlObject a <code>SQLXML</code> object that maps an <code>SQL XML</code> value
+     * @param xmlObject a {@code SQLXML} object that maps an {@code SQL XML} value
      * @throws SQLException if a database access error occurs
      * @since 1.6
      */
@@ -4718,8 +4718,8 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      }
 
     /**
-     * Sets the designated parameter to the given <code>java.sql.RowId</code> object. The
-     * driver converts this to a SQL <code>ROWID</code> value when it sends it
+     * Sets the designated parameter to the given {@code java.sql.RowId} object. The
+     * driver converts this to a SQL {@code ROWID} value when it sends it
      * to the database
      *
      * @param parameterIndex the first parameter is 1, the second is 2, ...
@@ -4732,9 +4732,9 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
          throw new SQLFeatureNotSupportedException(resBundle.handleGetObject("jdbcrowsetimpl.featnotsupp").toString());
      }
 
-    /**
-    * Sets the designated parameter to the given <code>java.sql.RowId</code> object. The
-    * driver converts this to a SQL <code>ROWID</code> when it sends it to the
+   /**
+    * Sets the designated parameter to the given {@code java.sql.RowId} object. The
+    * driver converts this to a SQL {@code ROWID} when it sends it to the
     * database.
     *
     * @param parameterName the name of the parameter
@@ -4748,18 +4748,18 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
 
    /**
-     * Sets the designated parameter to the given <code>String</code> object.
-     * The driver converts this to a SQL <code>NCHAR</code> or
-     * <code>NVARCHAR</code> or <code>LONGNVARCHAR</code> value
+     * Sets the designated parameter to the given {@code String} object.
+     * The driver converts this to a SQL {@code NCHAR} or
+     * {@code NVARCHAR} or {@code LONGNVARCHAR} value
      * (depending on the argument's
-     * size relative to the driver's limits on <code>NVARCHAR</code> values)
+     * size relative to the driver's limits on {@code NVARCHAR} values)
      * when it sends it to the database.
      *
      * @param parameterIndex of the first parameter is 1, the second is 2, ...
      * @param value the parameter value
      * @throws SQLException if the driver does not support national
      *         character sets;  if the driver can detect that a data conversion
-     *  error could occur ; or if a database access error occurs
+     *         error could occur ; or if a database access error occurs
      * @since 1.6
      */
      public void setNString(int parameterIndex, String value) throws SQLException {
@@ -4768,9 +4768,9 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
 
    /**
-    * Sets the designated parameter in this <code>RowSet</code> object's command
-    * to a <code>Reader</code> object. The
-    * <code>Reader</code> reads the data till end-of-file is reached. The
+    * Sets the designated parameter in this {@code RowSet} object's command
+    * to a {@code Reader} object. The
+    * {@code Reader} reads the data till end-of-file is reached. The
     * driver does the necessary conversion from Java character format to
     * the national character set in the database.
 
@@ -4779,14 +4779,14 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     * standard interface.
     * <P><B>Note:</B> Consult your JDBC driver documentation to determine if
     * it might be more efficient to use a version of
-    * <code>setNCharacterStream</code> which takes a length parameter.
+    * {@code setNCharacterStream} which takes a length parameter.
     *
     * @param parameterIndex of the first parameter is 1, the second is 2, ...
     * @param value the parameter value
     * @throws SQLException if the driver does not support national
     *         character sets;  if the driver can detect that a data conversion
-    *  error could occur ; if a database access error occurs; or
-    * this method is called on a closed <code>PreparedStatement</code>
+    *         error could occur ; if a database access error occurs; or
+    *         this method is called on a closed {@code PreparedStatement}
     * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
     * @since 1.6
     */
@@ -4795,14 +4795,14 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
   /**
-    * Sets the designated parameter to a <code>java.sql.NClob</code> object. The object
-    * implements the <code>java.sql.NClob</code> interface. This <code>NClob</code>
-    * object maps to a SQL <code>NCLOB</code>.
+    * Sets the designated parameter to a {@code java.sql.NClob} object. The object
+    * implements the {@code java.sql.NClob} interface. This {@code NClob}
+    * object maps to a SQL {@code NCLOB}.
     * @param parameterName the name of the column to be set
     * @param value the parameter value
     * @throws SQLException if the driver does not support national
     *         character sets;  if the driver can detect that a data conversion
-    *  error could occur; or if a database access error occurs
+    *         error could occur; or if a database access error occurs
     * @since 1.6
     */
     public void setNClob(String parameterName, NClob value) throws SQLException {
@@ -4810,17 +4810,17 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      }
 
 
-  /**
+    /**
      * Retrieves the value of the designated column in the current row
-     * of this <code>ResultSet</code> object as a
-     * <code>java.io.Reader</code> object.
+     * of this {@code ResultSet} object as a
+     * {@code java.io.Reader} object.
      * It is intended for use when
-     * accessing  <code>NCHAR</code>,<code>NVARCHAR</code>
-     * and <code>LONGNVARCHAR</code> columns.
+     * accessing  {@code NCHAR},{@code NVARCHAR}
+     * and {@code LONGNVARCHAR} columns.
      *
-     * @return a <code>java.io.Reader</code> object that contains the column
-     * value; if the value is SQL <code>NULL</code>, the value returned is
-     * <code>null</code> in the Java programming language.
+     * @return a {@code java.io.Reader} object that contains the column
+     * value; if the value is SQL {@code NULL}, the value returned is
+     * {@code null} in the Java programming language.
      * @param columnIndex the first column is 1, the second is 2, ...
      * @exception SQLException if a database access error occurs
      * @since 1.6
@@ -4832,16 +4832,16 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Retrieves the value of the designated column in the current row
-     * of this <code>ResultSet</code> object as a
-     * <code>java.io.Reader</code> object.
+     * of this {@code ResultSet} object as a
+     * {@code java.io.Reader} object.
      * It is intended for use when
-     * accessing  <code>NCHAR</code>,<code>NVARCHAR</code>
-     * and <code>LONGNVARCHAR</code> columns.
+     * accessing  {@code NCHAR},{@code NVARCHAR}
+     * and {@code LONGNVARCHAR} columns.
      *
      * @param columnName the name of the column
-     * @return a <code>java.io.Reader</code> object that contains the column
-     * value; if the value is SQL <code>NULL</code>, the value returned is
-     * <code>null</code> in the Java programming language
+     * @return a {@code java.io.Reader} object that contains the column
+     * value; if the value is SQL {@code NULL}, the value returned is
+     * {@code null} in the Java programming language
      * @exception SQLException if a database access error occurs
      * @since 1.6
      */
@@ -4850,11 +4850,11 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      }
 
     /**
-     * Updates the designated column with a <code>java.sql.SQLXML</code> value.
+     * Updates the designated column with a {@code java.sql.SQLXML} value.
      * The updater
      * methods are used to update column values in the current row or the insert
      * row. The updater methods do not update the underlying database; instead
-     * the <code>updateRow</code> or <code>insertRow</code> methods are called
+     * the {@code updateRow} or {@code insertRow} methods are called
      * to update the database.
      * @param columnIndex the first column is 1, the second 2, ...
      * @param xmlObject the value for the column to be updated
@@ -4866,11 +4866,11 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     }
 
     /**
-     * Updates the designated column with a <code>java.sql.SQLXML</code> value.
+     * Updates the designated column with a {@code java.sql.SQLXML} value.
      * The updater
      * methods are used to update column values in the current row or the insert
      * row. The updater methods do not update the underlying database; instead
-     * the <code>updateRow</code> or <code>insertRow</code> methods are called
+     * the {@code updateRow} or {@code insertRow} methods are called
      * to update the database.
      *
      * @param columnName the name of the column
@@ -4884,15 +4884,15 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
      /**
      * Retrieves the value of the designated column in the current row
-     * of this <code>ResultSet</code> object as
-     * a <code>String</code> in the Java programming language.
+     * of this {@code ResultSet} object as
+     * a {@code String} in the Java programming language.
      * It is intended for use when
-     * accessing  <code>NCHAR</code>,<code>NVARCHAR</code>
-     * and <code>LONGNVARCHAR</code> columns.
+     * accessing  {@code NCHAR},{@code NVARCHAR}
+     * and {@code LONGNVARCHAR} columns.
      *
      * @param columnIndex the first column is 1, the second is 2, ...
-     * @return the column value; if the value is SQL <code>NULL</code>, the
-     * value returned is <code>null</code>
+     * @return the column value; if the value is SQL {@code NULL}, the
+     * value returned is {@code null}
      * @exception SQLException if a database access error occurs
      * @since 1.6
      */
@@ -4902,15 +4902,15 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
     /**
      * Retrieves the value of the designated column in the current row
-     * of this <code>ResultSet</code> object as
-     * a <code>String</code> in the Java programming language.
+     * of this {@code ResultSet} object as
+     * a {@code String} in the Java programming language.
      * It is intended for use when
-     * accessing  <code>NCHAR</code>,<code>NVARCHAR</code>
-     * and <code>LONGNVARCHAR</code> columns.
+     * accessing  {@code NCHAR},{@code NVARCHAR}
+     * and {@code LONGNVARCHAR} columns.
      *
      * @param columnName the SQL name of the column
-     * @return the column value; if the value is SQL <code>NULL</code>, the
-     * value returned is <code>null</code>
+     * @return the column value; if the value is SQL {@code NULL}, the
+     * value returned is {@code null}
      * @exception SQLException if a database access error occurs
      * @since 1.6
      */
@@ -4927,9 +4927,9 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
        * the insert row. The updater methods do not update the underlying database;
        * instead the updateRow or insertRow methods are called to update the database.
        *
-       * @param columnIndex - the first column is 1, the second is 2, ...
-       * @param x - the new column value
-       * @param length - the length of the stream
+       * @param columnIndex the first column is 1, the second is 2, ...
+       * @param x the new column value
+       * @param length the length of the stream
        * @exception SQLException if a database access error occurs
        * @since 1.6
        */
@@ -4949,9 +4949,9 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
        * the insert row. The updater methods do not update the underlying database;
        * instead the updateRow or insertRow methods are called to update the database.
        *
-       * @param columnName - name of the Column
-       * @param x - the new column value
-       * @param length - the length of the stream
+       * @param columnName name of the Column
+       * @param x the new column value
+       * @param length the length of the stream
        * @exception SQLException if a database access error occurs
        * @since 1.6
        */
@@ -4963,26 +4963,27 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
        }
 
     /**
-     * Updates the designated column with a character stream value.   The
+     * Updates the designated column with a character stream value. The
      * driver does the necessary conversion from Java character format to
      * the national character set in the database.
      * It is intended for use when
-     * updating  <code>NCHAR</code>,<code>NVARCHAR</code>
-     * and <code>LONGNVARCHAR</code> columns.
+     * updating  {@code NCHAR},{@code NVARCHAR}
+     * and {@code LONGNVARCHAR} columns.
      *
      * The updater methods are used to update column values in the
      * current row or the insert row.  The updater methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * <P><B>Note:</B> Consult your JDBC driver documentation to determine if
      * it might be more efficient to use a version of
-     * <code>updateNCharacterStream</code> which takes a length parameter.
+     * {@code updateNCharacterStream} which takes a length parameter.
      *
      * @param columnIndex the first column is 1, the second is 2, ...
      * @param x the new column value
      * @exception SQLException if a database access error occurs,
-     * the result set concurrency is <code>CONCUR_READ_ONLY</code> or this method is called on a closed result set
+     * the result set concurrency is {@code CONCUR_READ_ONLY} or this
+     * method is called on a closed result set
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.6
@@ -4997,26 +4998,27 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * driver does the necessary conversion from Java character format to
      * the national character set in the database.
      * It is intended for use when
-     * updating  <code>NCHAR</code>,<code>NVARCHAR</code>
-     * and <code>LONGNVARCHAR</code> columns.
+     * updating  {@code NCHAR},{@code NVARCHAR}
+     * and {@code LONGNVARCHAR} columns.
      *
      * The updater methods are used to update column values in the
      * current row or the insert row.  The updater methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * <P><B>Note:</B> Consult your JDBC driver documentation to determine if
      * it might be more efficient to use a version of
-     * <code>updateNCharacterStream</code> which takes a length parameter.
+     * {@code updateNCharacterStream} which takes a length parameter.
      *
-     * @param columnLabel the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the la
-bel is the name of the column
-     * @param reader the <code>java.io.Reader</code> object containing
+     * @param columnLabel the label for the column specified with the SQL AS clause.
+     *        If the SQL AS clause was not specified, then the label is the name of the column
+     * @param reader the {@code java.io.Reader} object containing
      *        the new column value
      * @exception SQLException if a database access error occurs,
-     * the result set concurrency is <code>CONCUR_READ_ONLY</code> or this method is called on a closed result set
-      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-     * this method
+     *        the result set concurrency is {@code CONCUR_READ_ONLY} or
+     *        this method is called on a closed result set
+     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     *        this method
      * @since 1.6
      */
     public void updateNCharacterStream(String columnLabel,
@@ -5027,9 +5029,9 @@ bel is the name of the column
     /**
      * Updates the designated column using the given input stream, which
      * will have the specified number of bytes.
-     * When a very large ASCII value is input to a <code>LONGVARCHAR</code>
+     * When a very large ASCII value is input to a {@code LONGVARCHAR}
      * parameter, it may be more practical to send it via a
-     * <code>java.io.InputStream</code>. Data will be read from the stream
+     * {@code java.io.InputStream}. Data will be read from the stream
      * as needed until end-of-file is reached.  The JDBC driver will
      * do any necessary conversion from ASCII to the database char format.
      *
@@ -5039,16 +5041,16 @@ bel is the name of the column
      * <p>
      * The updater methods are used to update column values in the
      * current row or the insert row.  The updater methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnIndex the first column is 1, the second is 2, ...
      * @param inputStream An object that contains the data to set the parameter
-     * value to.
+     *        value to.
      * @param length the number of bytes in the parameter data.
      * @exception SQLException if a database access error occurs,
-     * the result set concurrency is <code>CONCUR_READ_ONLY</code>
-     * or this method is called on a closed result set
+     *            the result set concurrency is {@code CONCUR_READ_ONLY}
+     *            or this method is called on a closed result set
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.6
@@ -5060,9 +5062,9 @@ bel is the name of the column
     /**
      * Updates the designated column using the given input stream, which
      * will have the specified number of bytes.
-     * When a very large ASCII value is input to a <code>LONGVARCHAR</code>
+     * When a very large ASCII value is input to a {@code LONGVARCHAR}
      * parameter, it may be more practical to send it via a
-     * <code>java.io.InputStream</code>. Data will be read from the stream
+     * {@code java.io.InputStream}. Data will be read from the stream
      * as needed until end-of-file is reached.  The JDBC driver will
      * do any necessary conversion from ASCII to the database char format.
      *
@@ -5072,18 +5074,20 @@ bel is the name of the column
      * <p>
      * The updater methods are used to update column values in the
      * current row or the insert row.  The updater methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
-     * @param columnLabel the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+     * @param columnLabel the label for the column specified with the SQL AS clause.
+     *        If the SQL AS clause was not specified,
+     *        then the label is the name of the column.
      * @param inputStream An object that contains the data to set the parameter
-     * value to.
+     *        value to.
      * @param length the number of bytes in the parameter data.
      * @exception SQLException if a database access error occurs,
-     * the result set concurrency is <code>CONCUR_READ_ONLY</code>
-     * or this method is called on a closed result set
+     *            the result set concurrency is {@code CONCUR_READ_ONLY}
+     *            or this method is called on a closed result set
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-     * this method
+     *            this method
      * @since 1.6
      */
     public void updateBlob(String columnLabel, InputStream inputStream, long length) throws SQLException {
@@ -5092,9 +5096,9 @@ bel is the name of the column
 
     /**
      * Updates the designated column using the given input stream.
-     * When a very large ASCII value is input to a <code>LONGVARCHAR</code>
+     * When a very large ASCII value is input to a {@code LONGVARCHAR}
      * parameter, it may be more practical to send it via a
-     * <code>java.io.InputStream</code>. Data will be read from the stream
+     * {@code java.io.InputStream}. Data will be read from the stream
      * as needed until end-of-file is reached.  The JDBC driver will
      * do any necessary conversion from ASCII to the database char format.
      *
@@ -5102,23 +5106,23 @@ bel is the name of the column
      * Java stream object or your own subclass that implements the
      * standard interface.
      *
-     *  <P><B>Note:</B> Consult your JDBC driver documentation to determine if
+     * <P><B>Note:</B> Consult your JDBC driver documentation to determine if
      * it might be more efficient to use a version of
-     * <code>updateBlob</code> which takes a length parameter.
+     * {@code updateBlob} which takes a length parameter.
      * <p>
      * The updater methods are used to update column values in the
      * current row or the insert row.  The updater methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnIndex the first column is 1, the second is 2, ...
      * @param inputStream An object that contains the data to set the parameter
-     * value to.
+     *        value to.
      * @exception SQLException if a database access error occurs,
-     * the result set concurrency is <code>CONCUR_READ_ONLY</code>
-     * or this method is called on a closed result set
+     *            the result set concurrency is {@code CONCUR_READ_ONLY}
+     *            or this method is called on a closed result set
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-     * this method
+     *            this method
      * @since 1.6
      */
     public void updateBlob(int columnIndex, InputStream inputStream) throws SQLException {
@@ -5127,9 +5131,9 @@ bel is the name of the column
 
     /**
      * Updates the designated column using the given input stream.
-     * When a very large ASCII value is input to a <code>LONGVARCHAR</code>
+     * When a very large ASCII value is input to a {@code LONGVARCHAR}
      * parameter, it may be more practical to send it via a
-     * <code>java.io.InputStream</code>. Data will be read from the stream
+     * {@code java.io.InputStream}. Data will be read from the stream
      * as needed until end-of-file is reached.  The JDBC driver will
      * do any necessary conversion from ASCII to the database char format.
      *
@@ -5138,22 +5142,23 @@ bel is the name of the column
      * standard interface.
      *   <P><B>Note:</B> Consult your JDBC driver documentation to determine if
      * it might be more efficient to use a version of
-     * <code>updateBlob</code> which takes a length parameter.
+     * {@code updateBlob} which takes a length parameter.
      * <p>
      * The updater methods are used to update column values in the
      * current row or the insert row.  The updater methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
-     * @param columnLabel the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the la
-bel is the name of the column
+     * @param columnLabel the label for the column specified with the SQL AS clause.
+     *        If the SQL AS clause was not specified, then the label
+     *        is the name of the column
      * @param inputStream An object that contains the data to set the parameter
-     * value to.
+     *        value to.
      * @exception SQLException if a database access error occurs,
-     * the result set concurrency is <code>CONCUR_READ_ONLY</code>
-     * or this method is called on a closed result set
+     *        the result set concurrency is {@code CONCUR_READ_ONLY}
+     *        or this method is called on a closed result set
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-     * this method
+     *        this method
      * @since 1.6
      */
     public void updateBlob(String columnLabel, InputStream inputStream) throws SQLException {
@@ -5161,11 +5166,11 @@ bel is the name of the column
     }
 
     /**
-     * Updates the designated column using the given <code>Reader</code>
+     * Updates the designated column using the given {@code Reader}
      * object, which is the given number of characters long.
-     * When a very large UNICODE value is input to a <code>LONGVARCHAR</code>
+     * When a very large UNICODE value is input to a {@code LONGVARCHAR}
      * parameter, it may be more practical to send it via a
-     * <code>java.io.Reader</code> object. The data will be read from the stream
+     * {@code java.io.Reader} object. The data will be read from the stream
      * as needed until end-of-file is reached.  The JDBC driver will
      * do any necessary conversion from UNICODE to the database char format.
      *
@@ -5175,17 +5180,17 @@ bel is the name of the column
      * <p>
      * The updater methods are used to update column values in the
      * current row or the insert row.  The updater methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnIndex the first column is 1, the second is 2, ...
      * @param reader An object that contains the data to set the parameter value to.
      * @param length the number of characters in the parameter data.
      * @exception SQLException if a database access error occurs,
-     * the result set concurrency is <code>CONCUR_READ_ONLY</code>
-     * or this method is called on a closed result set
+     *            the result set concurrency is {@code CONCUR_READ_ONLY}
+     *            or this method is called on a closed result set
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-     * this method
+     *            this method
      * @since 1.6
      */
     public void updateClob(int columnIndex,  Reader reader, long length) throws SQLException {
@@ -5193,11 +5198,11 @@ bel is the name of the column
     }
 
     /**
-     * Updates the designated column using the given <code>Reader</code>
+     * Updates the designated column using the given {@code Reader}
      * object, which is the given number of characters long.
-     * When a very large UNICODE value is input to a <code>LONGVARCHAR</code>
+     * When a very large UNICODE value is input to a {@code LONGVARCHAR}
      * parameter, it may be more practical to send it via a
-     * <code>java.io.Reader</code> object. The data will be read from the stream
+     * {@code java.io.Reader} object. The data will be read from the stream
      * as needed until end-of-file is reached.  The JDBC driver will
      * do any necessary conversion from UNICODE to the database char format.
      *
@@ -5207,17 +5212,18 @@ bel is the name of the column
      * <p>
      * The updater methods are used to update column values in the
      * current row or the insert row.  The updater methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
-     * @param columnLabel the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+     * @param columnLabel the label for the column specified with the SQL AS clause.
+     *        If the SQL AS clause was not specified, then the label is the name of the column
      * @param reader An object that contains the data to set the parameter value to.
      * @param length the number of characters in the parameter data.
      * @exception SQLException if a database access error occurs,
-     * the result set concurrency is <code>CONCUR_READ_ONLY</code>
-     * or this method is called on a closed result set
+     *            the result set concurrency is {@code CONCUR_READ_ONLY}
+     *            or this method is called on a closed result set
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-     * this method
+     *            this method
      * @since 1.6
      */
     public void updateClob(String columnLabel,  Reader reader, long length) throws SQLException {
@@ -5225,33 +5231,33 @@ bel is the name of the column
     }
 
     /**
-     * Updates the designated column using the given <code>Reader</code>
+     * Updates the designated column using the given {@code Reader}
      * object.
-     * When a very large UNICODE value is input to a <code>LONGVARCHAR</code>
+     * When a very large UNICODE value is input to a {@code LONGVARCHAR}
      * parameter, it may be more practical to send it via a
-     * <code>java.io.Reader</code> object. The data will be read from the stream
+     * {@code java.io.Reader} object. The data will be read from the stream
      * as needed until end-of-file is reached.  The JDBC driver will
      * do any necessary conversion from UNICODE to the database char format.
      *
      * <P><B>Note:</B> This stream object can either be a standard
      * Java stream object or your own subclass that implements the
      * standard interface.
-     *   <P><B>Note:</B> Consult your JDBC driver documentation to determine if
+     * <P><B>Note:</B> Consult your JDBC driver documentation to determine if
      * it might be more efficient to use a version of
-     * <code>updateClob</code> which takes a length parameter.
+     * {@code updateClob} which takes a length parameter.
      * <p>
      * The updater methods are used to update column values in the
      * current row or the insert row.  The updater methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnIndex the first column is 1, the second is 2, ...
      * @param reader An object that contains the data to set the parameter value to.
      * @exception SQLException if a database access error occurs,
-     * the result set concurrency is <code>CONCUR_READ_ONLY</code>
-     * or this method is called on a closed result set
+     *            the result set concurrency is {@code CONCUR_READ_ONLY}
+     *            or this method is called on a closed result set
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-     * this method
+     *            this method
      * @since 1.6
      */
     public void updateClob(int columnIndex,  Reader reader) throws SQLException {
@@ -5259,34 +5265,35 @@ bel is the name of the column
     }
 
     /**
-     * Updates the designated column using the given <code>Reader</code>
+     * Updates the designated column using the given {@code Reader}
      * object.
-     * When a very large UNICODE value is input to a <code>LONGVARCHAR</code>
+     * When a very large UNICODE value is input to a {@code LONGVARCHAR}
      * parameter, it may be more practical to send it via a
-     * <code>java.io.Reader</code> object. The data will be read from the stream
+     * {@code java.io.Reader} object. The data will be read from the stream
      * as needed until end-of-file is reached.  The JDBC driver will
      * do any necessary conversion from UNICODE to the database char format.
      *
      * <P><B>Note:</B> This stream object can either be a standard
      * Java stream object or your own subclass that implements the
      * standard interface.
-     *  <P><B>Note:</B> Consult your JDBC driver documentation to determine if
+     * <P><B>Note:</B> Consult your JDBC driver documentation to determine if
      * it might be more efficient to use a version of
-     * <code>updateClob</code> which takes a length parameter.
+     * {@code updateClob} which takes a length parameter.
      * <p>
      * The updater methods are used to update column values in the
      * current row or the insert row.  The updater methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
-     * @param columnLabel the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the la
-bel is the name of the column
+     * @param columnLabel the label for the column specified with the SQL AS clause.
+     *        If the SQL AS clause was not specified, then the label
+     *        is the name of the column
      * @param reader An object that contains the data to set the parameter value to.
      * @exception SQLException if a database access error occurs,
-     * the result set concurrency is <code>CONCUR_READ_ONLY</code>
-     * or this method is called on a closed result set
+     *            the result set concurrency is {@code CONCUR_READ_ONLY}
+     *            or this method is called on a closed result set
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-     * this method
+     *            this method
      * @since 1.6
      */
     public void updateClob(String columnLabel,  Reader reader) throws SQLException {
@@ -5294,11 +5301,11 @@ bel is the name of the column
     }
 
    /**
-     * Updates the designated column using the given <code>Reader</code>
+     * Updates the designated column using the given {@code Reader}
      * object, which is the given number of characters long.
-     * When a very large UNICODE value is input to a <code>LONGVARCHAR</code>
+     * When a very large UNICODE value is input to a {@code LONGVARCHAR}
      * parameter, it may be more practical to send it via a
-     * <code>java.io.Reader</code> object. The data will be read from the stream
+     * {@code java.io.Reader} object. The data will be read from the stream
      * as needed until end-of-file is reached.  The JDBC driver will
      * do any necessary conversion from UNICODE to the database char format.
      *
@@ -5308,19 +5315,19 @@ bel is the name of the column
      * <p>
      * The updater methods are used to update column values in the
      * current row or the insert row.  The updater methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnIndex the first column is 1, the second 2, ...
      * @param reader An object that contains the data to set the parameter value to.
      * @param length the number of characters in the parameter data.
      * @throws SQLException if the driver does not support national
      *         character sets;  if the driver can detect that a data conversion
-     *  error could occur; this method is called on a closed result set,
-     * if a database access error occurs or
-     * the result set concurrency is <code>CONCUR_READ_ONLY</code>
+     *         error could occur; this method is called on a closed result set,
+     *         if a database access error occurs or
+     *         the result set concurrency is {@code CONCUR_READ_ONLY}
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-     * this method
+     *            this method
      * @since 1.6
      */
     public void updateNClob(int columnIndex,  Reader reader, long length) throws SQLException {
@@ -5328,11 +5335,11 @@ bel is the name of the column
     }
 
     /**
-     * Updates the designated column using the given <code>Reader</code>
+     * Updates the designated column using the given {@code Reader}
      * object, which is the given number of characters long.
-     * When a very large UNICODE value is input to a <code>LONGVARCHAR</code>
+     * When a very large UNICODE value is input to a {@code LONGVARCHAR}
      * parameter, it may be more practical to send it via a
-     * <code>java.io.Reader</code> object. The data will be read from the stream
+     * {@code java.io.Reader} object. The data will be read from the stream
      * as needed until end-of-file is reached.  The JDBC driver will
      * do any necessary conversion from UNICODE to the database char format.
      *
@@ -5342,19 +5349,20 @@ bel is the name of the column
      * <p>
      * The updater methods are used to update column values in the
      * current row or the insert row.  The updater methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
-     * @param columnLabel the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+     * @param columnLabel the label for the column specified with the SQL AS clause.
+     *        If the SQL AS clause was not specified, then the label is the name of the column
      * @param reader An object that contains the data to set the parameter value to.
      * @param length the number of characters in the parameter data.
      * @throws SQLException if the driver does not support national
      *         character sets;  if the driver can detect that a data conversion
-     *  error could occur; this method is called on a closed result set;
-     *  if a database access error occurs or
-     * the result set concurrency is <code>CONCUR_READ_ONLY</code>
+     *         error could occur; this method is called on a closed result set;
+     *         if a database access error occurs or
+     *         the result set concurrency is {@code CONCUR_READ_ONLY}
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-     * this method
+     *            this method
      * @since 1.6
      */
     public void updateNClob(String columnLabel,  Reader reader, long length) throws SQLException {
@@ -5362,11 +5370,11 @@ bel is the name of the column
     }
 
     /**
-     * Updates the designated column using the given <code>Reader</code>
+     * Updates the designated column using the given {@code Reader}
      * object.
-     * When a very large UNICODE value is input to a <code>LONGVARCHAR</code>
+     * When a very large UNICODE value is input to a {@code LONGVARCHAR}
      * parameter, it may be more practical to send it via a
-     * <code>java.io.Reader</code> object. The data will be read from the stream
+     * {@code java.io.Reader} object. The data will be read from the stream
      * as needed until end-of-file is reached.  The JDBC driver will
      * do any necessary conversion from UNICODE to the database char format.
      *
@@ -5375,22 +5383,22 @@ bel is the name of the column
      * standard interface.
      * <P><B>Note:</B> Consult your JDBC driver documentation to determine if
      * it might be more efficient to use a version of
-     * <code>updateNClob</code> which takes a length parameter.
+     * {@code updateNClob} which takes a length parameter.
      * <p>
      * The updater methods are used to update column values in the
      * current row or the insert row.  The updater methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnIndex the first column is 1, the second 2, ...
      * @param reader An object that contains the data to set the parameter value to.
      * @throws SQLException if the driver does not support national
      *         character sets;  if the driver can detect that a data conversion
-     *  error could occur; this method is called on a closed result set,
-     * if a database access error occurs or
-     * the result set concurrency is <code>CONCUR_READ_ONLY</code>
+     *         error could occur; this method is called on a closed result set,
+     *         if a database access error occurs or
+     *         the result set concurrency is {@code CONCUR_READ_ONLY}
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-     * this method
+     *            this method
      * @since 1.6
      */
     public void updateNClob(int columnIndex,  Reader reader) throws SQLException {
@@ -5398,11 +5406,11 @@ bel is the name of the column
     }
 
     /**
-     * Updates the designated column using the given <code>Reader</code>
+     * Updates the designated column using the given {@code Reader}
      * object.
-     * When a very large UNICODE value is input to a <code>LONGVARCHAR</code>
+     * When a very large UNICODE value is input to a {@code LONGVARCHAR}
      * parameter, it may be more practical to send it via a
-     * <code>java.io.Reader</code> object. The data will be read from the stream
+     * {@code java.io.Reader} object. The data will be read from the stream
      * as needed until end-of-file is reached.  The JDBC driver will
      * do any necessary conversion from UNICODE to the database char format.
      *
@@ -5411,23 +5419,24 @@ bel is the name of the column
      * standard interface.
      * <P><B>Note:</B> Consult your JDBC driver documentation to determine if
      * it might be more efficient to use a version of
-     * <code>updateNClob</code> which takes a length parameter.
+     * {@code updateNClob} which takes a length parameter.
      * <p>
      * The updater methods are used to update column values in the
      * current row or the insert row.  The updater methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
-     * @param columnLabel the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the la
-bel is the name of the column
+     * @param columnLabel the label for the column specified with the SQL AS clause.
+     *        If the SQL AS clause was not specified, then
+     *        the label is the name of the column
      * @param reader An object that contains the data to set the parameter value to.
      * @throws SQLException if the driver does not support national
      *         character sets;  if the driver can detect that a data conversion
-     *  error could occur; this method is called on a closed result set;
-     *  if a database access error occurs or
-     * the result set concurrency is <code>CONCUR_READ_ONLY</code>
+     *         error could occur; this method is called on a closed result set;
+     *         if a database access error occurs or
+     *         the result set concurrency is {@code CONCUR_READ_ONLY}
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-     * this method
+     *         this method
      * @since 1.6
      */
     public void updateNClob(String columnLabel,  Reader reader) throws SQLException {
@@ -5435,22 +5444,22 @@ bel is the name of the column
     }
 
 
-        /**
+    /**
      * Updates the designated column with an ascii stream value, which will have
      * the specified number of bytes.
      * The updater methods are used to update column values in the
      * current row or the insert row.  The updater methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnIndex the first column is 1, the second is 2, ...
      * @param x the new column value
      * @param length the length of the stream
      * @exception SQLException if a database access error occurs,
-     * the result set concurrency is <code>CONCUR_READ_ONLY</code>
-     * or this method is called on a closed result set
+     *            the result set concurrency is {@code CONCUR_READ_ONLY}
+     *            or this method is called on a closed result set
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-     * this method
+     *            this method
      * @since 1.6
      */
     public void updateAsciiStream(int columnIndex,
@@ -5464,17 +5473,17 @@ bel is the name of the column
      * the specified number of bytes.
      * The updater methods are used to update column values in the
      * current row or the insert row.  The updater methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnIndex the first column is 1, the second is 2, ...
      * @param x the new column value
      * @param length the length of the stream
      * @exception SQLException if a database access error occurs,
-     * the result set concurrency is <code>CONCUR_READ_ONLY</code>
-     * or this method is called on a closed result set
+     *            the result set concurrency is {@code CONCUR_READ_ONLY}
+     *            or this method is called on a closed result set
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-     * this method
+     *            this method
      * @since 1.6
      */
     public void updateBinaryStream(int columnIndex,
@@ -5488,17 +5497,17 @@ bel is the name of the column
      * the specified number of bytes.
      * The updater methods are used to update column values in the
      * current row or the insert row.  The updater methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * @param columnIndex the first column is 1, the second is 2, ...
      * @param x the new column value
      * @param length the length of the stream
      * @exception SQLException if a database access error occurs,
-     * the result set concurrency is <code>CONCUR_READ_ONLY</code>
-     * or this method is called on a closed result set
+     *            the result set concurrency is {@code CONCUR_READ_ONLY}
+     *            or this method is called on a closed result set
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-     * this method
+     *            this method
      * @since 1.6
      */
     public void updateCharacterStream(int columnIndex,
@@ -5512,17 +5521,19 @@ bel is the name of the column
      * the specified number of bytes..
      * The updater methods are used to update column values in the
      * current row or the insert row.  The updater methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
-     * @param columnLabel the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+     * @param columnLabel the label for the column specified with the SQL AS clause.
+     *        If the SQL AS clause was not specified, then
+     *        the label is the name of the column
      * @param x the new column value
      * @param length the length of the stream
      * @exception SQLException if a database access error occurs,
-     * the result set concurrency is <code>CONCUR_READ_ONLY</code>
-     * or this method is called on a closed result set
+     *            the result set concurrency is {@code CONCUR_READ_ONLY}
+     *            or this method is called on a closed result set
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-     * this method
+     *            this method
      * @since 1.6
      */
     public void updateAsciiStream(String columnLabel,
@@ -5535,20 +5546,20 @@ bel is the name of the column
      * Updates the designated column with an ascii stream value.
      * The updater methods are used to update column values in the
      * current row or the insert row.  The updater methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * <P><B>Note:</B> Consult your JDBC driver documentation to determine if
      * it might be more efficient to use a version of
-     * <code>updateAsciiStream</code> which takes a length parameter.
+     * {@code updateAsciiStream} which takes a length parameter.
      *
      * @param columnIndex the first column is 1, the second is 2, ...
      * @param x the new column value
      * @exception SQLException if a database access error occurs,
-     * the result set concurrency is <code>CONCUR_READ_ONLY</code>
-     * or this method is called on a closed result set
+     *            the result set concurrency is {@code CONCUR_READ_ONLY}
+     *            or this method is called on a closed result set
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-     * this method
+     *            this method
      * @since 1.6
      */
     public void updateAsciiStream(int columnIndex,
@@ -5560,21 +5571,22 @@ bel is the name of the column
      * Updates the designated column with an ascii stream value.
      * The updater methods are used to update column values in the
      * current row or the insert row.  The updater methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * <P><B>Note:</B> Consult your JDBC driver documentation to determine if
      * it might be more efficient to use a version of
-     * <code>updateAsciiStream</code> which takes a length parameter.
+     * {@code updateAsciiStream} which takes a length parameter.
      *
-     * @param columnLabel the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the la
-bel is the name of the column
+     * @param columnLabel the label for the column specified with the SQL AS clause.
+     *        If the SQL AS clause was not specified, then the label
+     *        is the name of the column
      * @param x the new column value
      * @exception SQLException if a database access error occurs,
-     * the result set concurrency is <code>CONCUR_READ_ONLY</code>
-     * or this method is called on a closed result set
+     *            the result set concurrency is {@code CONCUR_READ_ONLY}
+     *            or this method is called on a closed result set
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-     * this method
+     *            this method
      * @since 1.6
      */
     public void updateAsciiStream(String columnLabel,
@@ -5588,15 +5600,17 @@ bel is the name of the column
      * the specified number of bytes.
      * The updater methods are used to update column values in the
      * current row or the insert row.  The updater methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
-     * @param columnLabel the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+     * @param columnLabel the label for the column specified with the SQL AS clause.
+     *        If the SQL AS clause was not specified, then
+     *        the label is the name of the column
      * @param x the new column value
      * @param length the length of the stream
      * @exception SQLException if a database access error occurs,
-     * the result set concurrency is <code>CONCUR_READ_ONLY</code>
-     * or this method is called on a closed result set
+     *            the result set concurrency is {@code CONCUR_READ_ONLY}
+     *            or this method is called on a closed result set
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.6
@@ -5611,18 +5625,18 @@ bel is the name of the column
      * Updates the designated column with a binary stream value.
      * The updater methods are used to update column values in the
      * current row or the insert row.  The updater methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * <P><B>Note:</B> Consult your JDBC driver documentation to determine if
      * it might be more efficient to use a version of
-     * <code>updateBinaryStream</code> which takes a length parameter.
+     * {@code updateBinaryStream} which takes a length parameter.
      *
      * @param columnIndex the first column is 1, the second is 2, ...
      * @param x the new column value
      * @exception SQLException if a database access error occurs,
-     * the result set concurrency is <code>CONCUR_READ_ONLY</code>
-     * or this method is called on a closed result set
+     *            the result set concurrency is {@code CONCUR_READ_ONLY}
+     *            or this method is called on a closed result set
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.6
@@ -5637,19 +5651,20 @@ bel is the name of the column
      * Updates the designated column with a binary stream value.
      * The updater methods are used to update column values in the
      * current row or the insert row.  The updater methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * <P><B>Note:</B> Consult your JDBC driver documentation to determine if
      * it might be more efficient to use a version of
-     * <code>updateBinaryStream</code> which takes a length parameter.
+     * {@code updateBinaryStream} which takes a length parameter.
      *
-     * @param columnLabel the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the la
-bel is the name of the column
+     * @param columnLabel the label for the column specified with the SQL AS clause.
+     *        If the SQL AS clause was not specified, then
+     *        the label is the name of the column
      * @param x the new column value
      * @exception SQLException if a database access error occurs,
-     * the result set concurrency is <code>CONCUR_READ_ONLY</code>
-     * or this method is called on a closed result set
+     *            the result set concurrency is {@code CONCUR_READ_ONLY}
+     *            or this method is called on a closed result set
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.6
@@ -5665,18 +5680,20 @@ bel is the name of the column
      * the specified number of bytes.
      * The updater methods are used to update column values in the
      * current row or the insert row.  The updater methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
-     * @param columnLabel the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
-     * @param reader the <code>java.io.Reader</code> object containing
+     * @param columnLabel the label for the column specified with the SQL AS clause.
+     *        If the SQL AS clause was not specified, then
+     *        the label is the name of the column
+     * @param reader the {@code java.io.Reader} object containing
      *        the new column value
      * @param length the length of the stream
      * @exception SQLException if a database access error occurs,
-     * the result set concurrency is <code>CONCUR_READ_ONLY</code>
-     * or this method is called on a closed result set
+     *            the result set concurrency is {@code CONCUR_READ_ONLY}
+     *            or this method is called on a closed result set
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-     * this method
+     *            this method
      * @since 1.6
      */
     public void updateCharacterStream(String columnLabel,
@@ -5689,20 +5706,20 @@ bel is the name of the column
      * Updates the designated column with a character stream value.
      * The updater methods are used to update column values in the
      * current row or the insert row.  The updater methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * <P><B>Note:</B> Consult your JDBC driver documentation to determine if
      * it might be more efficient to use a version of
-     * <code>updateCharacterStream</code> which takes a length parameter.
+     * {@code updateCharacterStream} which takes a length parameter.
      *
      * @param columnIndex the first column is 1, the second is 2, ...
      * @param x the new column value
      * @exception SQLException if a database access error occurs,
-     * the result set concurrency is <code>CONCUR_READ_ONLY</code>
-     * or this method is called on a closed result set
+     *            the result set concurrency is {@code CONCUR_READ_ONLY}
+     *            or this method is called on a closed result set
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-     * this method
+     *            this method
      * @since 1.6
      */
     public void updateCharacterStream(int columnIndex,
@@ -5714,22 +5731,23 @@ bel is the name of the column
      * Updates the designated column with a character stream value.
      * The updater methods are used to update column values in the
      * current row or the insert row.  The updater methods do not
-     * update the underlying database; instead the <code>updateRow</code> or
-     * <code>insertRow</code> methods are called to update the database.
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
      *
      * <P><B>Note:</B> Consult your JDBC driver documentation to determine if
      * it might be more efficient to use a version of
-     * <code>updateCharacterStream</code> which takes a length parameter.
+     * {@code updateCharacterStream} which takes a length parameter.
      *
-     * @param columnLabel the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the la
-bel is the name of the column
-     * @param reader the <code>java.io.Reader</code> object containing
+     * @param columnLabel the label for the column specified with the SQL AS clause.
+     *        If the SQL AS clause was not specified, then the label
+     *        is the name of the column
+     * @param reader the {@code java.io.Reader} object containing
      *        the new column value
      * @exception SQLException if a database access error occurs,
-     * the result set concurrency is <code>CONCUR_READ_ONLY</code>
-     * or this method is called on a closed result set
+     *            the result set concurrency is {@code CONCUR_READ_ONLY}
+     *            or this method is called on a closed result set
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-     * this method
+     *            this method
      * @since 1.6
      */
     public void updateCharacterStream(String columnLabel,
@@ -5738,97 +5756,98 @@ bel is the name of the column
     }
 
 
-     /**
-  * Sets the designated parameter to the given <code>java.net.URL</code> value.
-  * The driver converts this to an SQL <code>DATALINK</code> value
-  * when it sends it to the database.
-  *
-  * @param parameterIndex the first parameter is 1, the second is 2, ...
-  * @param x the <code>java.net.URL</code> object to be set
-  * @exception SQLException if a database access error occurs or
-  * this method is called on a closed <code>PreparedStatement</code>
-  * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
-  * @since 1.4
-  */
+  /**
+   * Sets the designated parameter to the given {@code java.net.URL} value.
+   * The driver converts this to an SQL {@code DATALINK} value
+   * when it sends it to the database.
+   *
+   * @param parameterIndex the first parameter is 1, the second is 2, ...
+   * @param x the {@code java.net.URL} object to be set
+   * @exception SQLException if a database access error occurs or
+   *            this method is called on a closed {@code PreparedStatement}
+   * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
+   * @since 1.4
+   */
   public void setURL(int parameterIndex, java.net.URL x) throws SQLException{
         throw new SQLFeatureNotSupportedException(resBundle.handleGetObject("jdbcrowsetimpl.featnotsupp").toString());
    }
 
 
-   /**
-  * Sets the designated parameter to a <code>Reader</code> object.
-  * This method differs from the <code>setCharacterStream (int, Reader)</code> method
-  * because it informs the driver that the parameter value should be sent to
-  * the server as a <code>NCLOB</code>.  When the <code>setCharacterStream</code> method is used, the
-  * driver may have to do extra work to determine whether the parameter
-  * data should be sent to the server as a <code>LONGNVARCHAR</code> or a <code>NCLOB</code>
-  * <P><B>Note:</B> Consult your JDBC driver documentation to determine if
-  * it might be more efficient to use a version of
-  * <code>setNClob</code> which takes a length parameter.
-  *
-  * @param parameterIndex index of the first parameter is 1, the second is 2, ...
-  * @param reader An object that contains the data to set the parameter value to.
-  * @throws SQLException if parameterIndex does not correspond to a parameter
-  * marker in the SQL statement;
-  * if the driver does not support national character sets;
-  * if the driver can detect that a data conversion
-  *  error could occur;  if a database access error occurs or
-  * this method is called on a closed <code>PreparedStatement</code>
-  * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
-  *
-  * @since 1.6
-  */
+  /**
+   * Sets the designated parameter to a {@code Reader} object.
+   * This method differs from the {@code setCharacterStream (int, Reader)} method
+   * because it informs the driver that the parameter value should be sent to
+   * the server as a {@code NCLOB}.  When the {@code setCharacterStream} method is used, the
+   * driver may have to do extra work to determine whether the parameter
+   * data should be sent to the server as a {@code LONGNVARCHAR} or a {@code NCLOB}
+   * <P><B>Note:</B> Consult your JDBC driver documentation to determine if
+   * it might be more efficient to use a version of
+   * {@code setNClob} which takes a length parameter.
+   *
+   * @param parameterIndex index of the first parameter is 1, the second is 2, ...
+   * @param reader An object that contains the data to set the parameter value to.
+   * @throws SQLException if parameterIndex does not correspond to a parameter
+   *         marker in the SQL statement;
+   *         if the driver does not support national character sets;
+   *         if the driver can detect that a data conversion
+   *         error could occur;  if a database access error occurs or
+   *         this method is called on a closed {@code PreparedStatement}
+   * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
+   *
+   * @since 1.6
+   */
   public void setNClob(int parameterIndex, Reader reader)
     throws SQLException{
         throw new SQLFeatureNotSupportedException(resBundle.handleGetObject("jdbcrowsetimpl.featnotsupp").toString());
    }
 
-   /**
-  * Sets the designated parameter to a <code>Reader</code> object.  The <code>reader</code> must contain the number
-             * of characters specified by length otherwise a <code>SQLException</code> will be
-            * generated when the <code>CallableStatement</code> is executed.
-            * This method differs from the <code>setCharacterStream (int, Reader, int)</code> method
-            * because it informs the driver that the parameter value should be sent to
-            * the server as a <code>NCLOB</code>.  When the <code>setCharacterStream</code> method is used, the
-            * driver may have to do extra work to determine whether the parameter
-            * data should be send to the server as a <code>LONGNVARCHAR</code> or a <code>NCLOB</code>
-            *
-            * @param parameterName the name of the parameter to be set
-            * @param reader An object that contains the data to set the parameter value to.
-            * @param length the number of characters in the parameter data.
-            * @throws SQLException if parameterIndex does not correspond to a parameter
-            * marker in the SQL statement; if the length specified is less than zero;
-            * if the driver does not support national
-            *         character sets;  if the driver can detect that a data conversion
-            *  error could occur; if a database access error occurs or
-            * this method is called on a closed <code>CallableStatement</code>
-            * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-            * this method
-            * @since 1.6
-            */
-            public void setNClob(String parameterName, Reader reader, long length)
+  /**
+   * Sets the designated parameter to a {@code Reader} object.
+   * The {@code reader} must contain the number
+   * of characters specified by length otherwise a {@code SQLException} will be
+   * generated when the {@code CallableStatement} is executed.
+   * This method differs from the {@code setCharacterStream (int, Reader, int)} method
+   * because it informs the driver that the parameter value should be sent to
+   * the server as a {@code NCLOB}.  When the {@code setCharacterStream} method is used, the
+   * driver may have to do extra work to determine whether the parameter
+   * data should be send to the server as a {@code LONGNVARCHAR} or a {@code NCLOB}
+   *
+   * @param parameterName the name of the parameter to be set
+   * @param reader An object that contains the data to set the parameter value to.
+   * @param length the number of characters in the parameter data.
+   * @throws SQLException if parameterIndex does not correspond to a parameter
+   * marker in the SQL statement; if the length specified is less than zero;
+   * if the driver does not support national
+   *         character sets;  if the driver can detect that a data conversion
+   *  error could occur; if a database access error occurs or
+   * this method is called on a closed {@code CallableStatement}
+   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * this method
+   * @since 1.6
+   */
+  public void setNClob(String parameterName, Reader reader, long length)
     throws SQLException{
         throw new SQLFeatureNotSupportedException(resBundle.handleGetObject("jdbcrowsetimpl.featnotsupp").toString());
-   }
+  }
 
 
  /**
-  * Sets the designated parameter to a <code>Reader</code> object.
-  * This method differs from the <code>setCharacterStream (int, Reader)</code> method
+  * Sets the designated parameter to a {@code Reader} object.
+  * This method differs from the {@code setCharacterStream (int, Reader)} method
   * because it informs the driver that the parameter value should be sent to
-  * the server as a <code>NCLOB</code>.  When the <code>setCharacterStream</code> method is used, the
+  * the server as a {@code NCLOB}.  When the {@code setCharacterStream} method is used, the
   * driver may have to do extra work to determine whether the parameter
-  * data should be send to the server as a <code>LONGNVARCHAR</code> or a <code>NCLOB</code>
+  * data should be send to the server as a {@code LONGNVARCHAR} or a {@code NCLOB}
   * <P><B>Note:</B> Consult your JDBC driver documentation to determine if
   * it might be more efficient to use a version of
-  * <code>setNClob</code> which takes a length parameter.
+  * {@code setNClob} which takes a length parameter.
   *
   * @param parameterName the name of the parameter
   * @param reader An object that contains the data to set the parameter value to.
   * @throws SQLException if the driver does not support national character sets;
-  * if the driver can detect that a data conversion
-  *  error could occur;  if a database access error occurs or
-  * this method is called on a closed <code>CallableStatement</code>
+  *         if the driver can detect that a data conversion
+  *         error could occur;  if a database access error occurs or
+  *         this method is called on a closed {@code CallableStatement}
   * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
   *
   * @since 1.6
@@ -5839,23 +5858,25 @@ bel is the name of the column
    }
 
 
-   /**
-     ** of characters specified by length otherwise a <code>SQLException</code> will becontain  the number
-     * generated when the <code>PreparedStatement</code> is executed.
-     * This method differs from the <code>setCharacterStream (int, Reader, int)</code> method
+    /**
+     * Sets the designated parameter to a {@code Reader} object. The reader must contain the number
+     * of characters specified by length otherwise a {@code SQLException} will be
+     * generated when the {@code PreparedStatement} is executed.
+     * This method differs from the {@code setCharacterStream (int, Reader, int)} method
      * because it informs the driver that the parameter value should be sent to
-     * the server as a <code>NCLOB</code>.  When the <code>setCharacterStream</code> method is used, the
+     * the server as a {@code NCLOB}.  When the {@code setCharacterStream} method is used, the
      * driver may have to do extra work to determine whether the parameter
-     * data should be sent to the server as a <code>LONGNVARCHAR</code> or a <code>NCLOB</code>
+     * data should be sent to the server as a {@code LONGNVARCHAR} or a {@code NCLOB}
+     *
      * @param parameterIndex index of the first parameter is 1, the second is 2, ...
      * @param reader An object that contains the data to set the parameter value to.
      * @param length the number of characters in the parameter data.
      * @throws SQLException if parameterIndex does not correspond to a parameter
-     * marker in the SQL statement; if the length specified is less than zero;
-     * if the driver does not support national character sets;
-     * if the driver can detect that a data conversion
-     *  error could occur;  if a database access error occurs or
-     * this method is called on a closed <code>PreparedStatement</code>
+     *         marker in the SQL statement; if the length specified is less than zero;
+     *         if the driver does not support national character sets;
+     *         if the driver can detect that a data conversion
+     *         error could occur;  if a database access error occurs or
+     *         this method is called on a closed {@code PreparedStatement}
      * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
      *
      * @since 1.6
@@ -5867,14 +5888,14 @@ bel is the name of the column
 
 
     /**
-     * Sets the designated parameter to a <code>java.sql.NClob</code> object. The driver converts this to
-a
-     * SQL <code>NCLOB</code> value when it sends it to the database.
+     * Sets the designated parameter to a {@code java.sql.NClob} object.
+     * The driver converts this to an
+     * SQL {@code NCLOB} value when it sends it to the database.
      * @param parameterIndex of the first parameter is 1, the second is 2, ...
      * @param value the parameter value
      * @throws SQLException if the driver does not support national
      *         character sets;  if the driver can detect that a data conversion
-     *  error could occur ; or if a database access error occurs
+     *         error could occur; or if a database access error occurs
      * @since 1.6
      */
      public void setNClob(int parameterIndex, NClob value) throws SQLException{
@@ -5883,14 +5904,14 @@ a
 
 
  /**
-  * Sets the designated parameter to the given <code>String</code> object.
-  * The driver converts this to a SQL <code>NCHAR</code> or
-  * <code>NVARCHAR</code> or <code>LONGNVARCHAR</code>
+  * Sets the designated parameter to the given {@code String} object.
+  * The driver converts this to a SQL {@code NCHAR} or
+  * {@code NVARCHAR} or {@code LONGNVARCHAR}
   * @param parameterName the name of the column to be set
   * @param value the parameter value
   * @throws SQLException if the driver does not support national
   *         character sets;  if the driver can detect that a data conversion
-  *  error could occur; or if a database access error occurs
+  *         error could occur; or if a database access error occurs
   * @since 1.6
   */
  public void setNString(String parameterName, String value)
@@ -5899,8 +5920,8 @@ a
    }
 
  /**
-  * Sets the designated parameter to a <code>Reader</code> object. The
-  * <code>Reader</code> reads the data till end-of-file is reached. The
+  * Sets the designated parameter to a {@code Reader} object. The
+  * {@code Reader} reads the data till end-of-file is reached. The
   * driver does the necessary conversion from Java character format to
   * the national character set in the database.
   * @param parameterIndex of the first parameter is 1, the second is 2, ...
@@ -5908,7 +5929,7 @@ a
   * @param length the number of characters in the parameter data.
   * @throws SQLException if the driver does not support national
   *         character sets;  if the driver can detect that a data conversion
-  *  error could occur ; or if a database access error occurs
+  *         error could occur ; or if a database access error occurs
   * @since 1.6
   */
   public void setNCharacterStream(int parameterIndex, Reader value, long length) throws SQLException{
@@ -5918,8 +5939,8 @@ a
 
 
  /**
-  * Sets the designated parameter to a <code>Reader</code> object. The
-  * <code>Reader</code> reads the data till end-of-file is reached. The
+  * Sets the designated parameter to a {@code Reader} object. The
+  * {@code Reader} reads the data till end-of-file is reached. The
   * driver does the necessary conversion from Java character format to
   * the national character set in the database.
   * @param parameterName the name of the column to be set
@@ -5935,9 +5956,9 @@ a
         throw new SQLFeatureNotSupportedException(resBundle.handleGetObject("jdbcrowsetimpl.featnotsupp").toString());
    }
 
-  /**
-  * Sets the designated parameter to a <code>Reader</code> object. The
-  * <code>Reader</code> reads the data till end-of-file is reached. The
+ /**
+  * Sets the designated parameter to a {@code Reader} object. The
+  * {@code Reader} reads the data till end-of-file is reached. The
   * driver does the necessary conversion from Java character format to
   * the national character set in the database.
 
@@ -5946,14 +5967,14 @@ a
   * standard interface.
   * <P><B>Note:</B> Consult your JDBC driver documentation to determine if
   * it might be more efficient to use a version of
-  * <code>setNCharacterStream</code> which takes a length parameter.
+  * {@code setNCharacterStream} which takes a length parameter.
   *
   * @param parameterName the name of the parameter
   * @param value the parameter value
   * @throws SQLException if the driver does not support national
   *         character sets;  if the driver can detect that a data conversion
-  *  error could occur ; if a database access error occurs; or
-  * this method is called on a closed <code>CallableStatement</code>
+  *         error could occur ; if a database access error occurs; or
+  *         this method is called on a closed {@code CallableStatement}
   * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
   * @since 1.6
   */
@@ -5962,23 +5983,23 @@ a
    }
 
   /**
-    * Sets the designated parameter to the given <code>java.sql.Timestamp</code> value,
-    * using the given <code>Calendar</code> object.  The driver uses
-    * the <code>Calendar</code> object to construct an SQL <code>TIMESTAMP</code> value,
+    * Sets the designated parameter to the given {@code java.sql.Timestamp} value,
+    * using the given {@code Calendar} object.  The driver uses
+    * the {@code Calendar} object to construct an SQL {@code TIMESTAMP} value,
     * which the driver then sends to the database.  With a
-    * a <code>Calendar</code> object, the driver can calculate the timestamp
+    * a {@code Calendar} object, the driver can calculate the timestamp
     * taking into account a custom timezone.  If no
-    * <code>Calendar</code> object is specified, the driver uses the default
+    * {@code Calendar} object is specified, the driver uses the default
     * timezone, which is that of the virtual machine running the application.
     *
     * @param parameterName the name of the parameter
     * @param x the parameter value
-    * @param cal the <code>Calendar</code> object the driver will use
-    *            to construct the timestamp
+    * @param cal the {@code Calendar} object the driver will use
+    *         to construct the timestamp
     * @exception SQLException if a database access error occurs or
-    * this method is called on a closed <code>CallableStatement</code>
+    *            this method is called on a closed {@code CallableStatement}
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-    * this method
+    *            this method
     * @see #getTimestamp
     * @since 1.4
     */
@@ -5987,28 +6008,29 @@ a
         throw new SQLFeatureNotSupportedException(resBundle.handleGetObject("jdbcrowsetimpl.featnotsupp").toString());
    }
 
-    /**
-    * Sets the designated parameter to a <code>Reader</code> object.  The <code>reader</code> must contain  the number
-               * of characters specified by length otherwise a <code>SQLException</code> will be
-               * generated when the <code>CallableStatement</code> is executed.
-              * This method differs from the <code>setCharacterStream (int, Reader, int)</code> method
-              * because it informs the driver that the parameter value should be sent to
-              * the server as a <code>CLOB</code>.  When the <code>setCharacterStream</code> method is used, the
-               * driver may have to do extra work to determine whether the parameter
-               * data should be send to the server as a <code>LONGVARCHAR</code> or a <code>CLOB</code>
-               * @param parameterName the name of the parameter to be set
-              * @param reader An object that contains the data to set the parameter value to.
-              * @param length the number of characters in the parameter data.
-              * @throws SQLException if parameterIndex does not correspond to a parameter
-              * marker in the SQL statement; if the length specified is less than zero;
-              * a database access error occurs or
-              * this method is called on a closed <code>CallableStatement</code>
-              * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-              * this method
-              *
-              * @since 1.6
-              */
-      public  void setClob(String parameterName, Reader reader, long length)
+  /**
+   * Sets the designated parameter to a {@code Reader} object.  The {@code reader} must contain  the number
+   * of characters specified by length otherwise a {@code SQLException} will be
+   * generated when the {@code CallableStatement} is executed.
+   * This method differs from the {@code setCharacterStream (int, Reader, int)} method
+   * because it informs the driver that the parameter value should be sent to
+   * the server as a {@code CLOB}.  When the {@code setCharacterStream} method is used, the
+   * driver may have to do extra work to determine whether the parameter
+   * data should be send to the server as a {@code LONGVARCHAR} or a {@code CLOB}
+   *
+   * @param parameterName the name of the parameter to be set
+   * @param reader An object that contains the data to set the parameter value to.
+   * @param length the number of characters in the parameter data.
+   * @throws SQLException if parameterIndex does not correspond to a parameter
+   *         marker in the SQL statement; if the length specified is less than zero;
+   *         a database access error occurs or
+   *         this method is called on a closed {@code CallableStatement}
+   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   *         this method
+   *
+   * @since 1.6
+   */
+   public  void setClob(String parameterName, Reader reader, long length)
       throws SQLException{
         throw new SQLFeatureNotSupportedException(resBundle.handleGetObject("jdbcrowsetimpl.featnotsupp").toString());
    }
@@ -6016,16 +6038,16 @@ a
 
 
   /**
-    * Sets the designated parameter to the given <code>java.sql.Clob</code> object.
-    * The driver converts this to an SQL <code>CLOB</code> value when it
+    * Sets the designated parameter to the given {@code java.sql.Clob} object.
+    * The driver converts this to an SQL {@code CLOB} value when it
     * sends it to the database.
     *
     * @param parameterName the name of the parameter
-    * @param x a <code>Clob</code> object that maps an SQL <code>CLOB</code> value
+    * @param x a {@code Clob} object that maps an SQL {@code CLOB} value
     * @exception SQLException if a database access error occurs or
-    * this method is called on a closed <code>CallableStatement</code>
+    *            this method is called on a closed {@code CallableStatement}
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-    * this method
+    *            this method
     * @since 1.6
     */
     public void setClob (String parameterName, Clob x) throws SQLException{
@@ -6033,21 +6055,21 @@ a
    }
 
  /**
-    * Sets the designated parameter to a <code>Reader</code> object.
-    * This method differs from the <code>setCharacterStream (int, Reader)</code> method
+    * Sets the designated parameter to a {@code Reader} object.
+    * This method differs from the {@code setCharacterStream (int, Reader)} method
     * because it informs the driver that the parameter value should be sent to
-    * the server as a <code>CLOB</code>.  When the <code>setCharacterStream</code> method is used, the
+    * the server as a {@code CLOB}.  When the {@code setCharacterStream} method is used, the
     * driver may have to do extra work to determine whether the parameter
-    * data should be send to the server as a <code>LONGVARCHAR</code> or a <code>CLOB</code>
+    * data should be send to the server as a {@code LONGVARCHAR} or a {@code CLOB}
     *
     * <P><B>Note:</B> Consult your JDBC driver documentation to determine if
     * it might be more efficient to use a version of
-    * <code>setClob</code> which takes a length parameter.
+    * {@code setClob} which takes a length parameter.
     *
     * @param parameterName the name of the parameter
     * @param reader An object that contains the data to set the parameter value to.
     * @throws SQLException if a database access error occurs or this method is called on
-    * a closed <code>CallableStatement</code>
+    *         a closed {@code CallableStatement}
     *
     * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
     * @since 1.6
@@ -6058,19 +6080,19 @@ a
    }
 
 
- /**
-    * Sets the designated parameter to the given <code>java.sql.Date</code> value
+   /**
+    * Sets the designated parameter to the given {@code java.sql.Date} value
     * using the default time zone of the virtual machine that is running
     * the application.
     * The driver converts this
-    * to an SQL <code>DATE</code> value when it sends it to the database.
+    * to an SQL {@code DATE} value when it sends it to the database.
     *
     * @param parameterName the name of the parameter
     * @param x the parameter value
     * @exception SQLException if a database access error occurs or
-    * this method is called on a closed <code>CallableStatement</code>
+    *            this method is called on a closed {@code CallableStatement}
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-    * this method
+    *            this method
     * @see #getDate
     * @since 1.4
     */
@@ -6080,23 +6102,23 @@ a
    }
 
    /**
-    * Sets the designated parameter to the given <code>java.sql.Date</code> value,
-    * using the given <code>Calendar</code> object.  The driver uses
-    * the <code>Calendar</code> object to construct an SQL <code>DATE</code> value,
+    * Sets the designated parameter to the given {@code java.sql.Date} value,
+    * using the given {@code Calendar} object.  The driver uses
+    * the {@code Calendar} object to construct an SQL {@code DATE} value,
     * which the driver then sends to the database.  With a
-    * a <code>Calendar</code> object, the driver can calculate the date
+    * a {@code Calendar} object, the driver can calculate the date
     * taking into account a custom timezone.  If no
-    * <code>Calendar</code> object is specified, the driver uses the default
+    * {@code Calendar} object is specified, the driver uses the default
     * timezone, which is that of the virtual machine running the application.
     *
     * @param parameterName the name of the parameter
     * @param x the parameter value
-    * @param cal the <code>Calendar</code> object the driver will use
+    * @param cal the {@code Calendar} object the driver will use
     *            to construct the date
     * @exception SQLException if a database access error occurs or
-    * this method is called on a closed <code>CallableStatement</code>
+    *            this method is called on a closed {@code CallableStatement}
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-    * this method
+    *            this method
     * @see #getDate
     * @since 1.4
     */
@@ -6107,16 +6129,16 @@ a
 
 
  /**
-    * Sets the designated parameter to the given <code>java.sql.Time</code> value.
+    * Sets the designated parameter to the given {@code java.sql.Time} value.
     * The driver converts this
-    * to an SQL <code>TIME</code> value when it sends it to the database.
+    * to an SQL {@code TIME} value when it sends it to the database.
     *
     * @param parameterName the name of the parameter
     * @param x the parameter value
     * @exception SQLException if a database access error occurs or
-    * this method is called on a closed <code>CallableStatement</code>
+    *            this method is called on a closed {@code CallableStatement}
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-    * this method
+    *            this method
     * @see #getTime
     * @since 1.4
     */
@@ -6126,23 +6148,23 @@ a
    }
 
  /**
-    * Sets the designated parameter to the given <code>java.sql.Time</code> value,
-    * using the given <code>Calendar</code> object.  The driver uses
-    * the <code>Calendar</code> object to construct an SQL <code>TIME</code> value,
+    * Sets the designated parameter to the given {@code java.sql.Time} value,
+    * using the given {@code Calendar} object.  The driver uses
+    * the {@code Calendar} object to construct an SQL {@code TIME} value,
     * which the driver then sends to the database.  With a
-    * a <code>Calendar</code> object, the driver can calculate the time
+    * a {@code Calendar} object, the driver can calculate the time
     * taking into account a custom timezone.  If no
-    * <code>Calendar</code> object is specified, the driver uses the default
+    * {@code Calendar} object is specified, the driver uses the default
     * timezone, which is that of the virtual machine running the application.
     *
     * @param parameterName the name of the parameter
     * @param x the parameter value
-    * @param cal the <code>Calendar</code> object the driver will use
+    * @param cal the {@code Calendar} object the driver will use
     *            to construct the time
     * @exception SQLException if a database access error occurs or
-    * this method is called on a closed <code>CallableStatement</code>
+    *            this method is called on a closed {@code CallableStatement}
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-    * this method
+    *            this method
     * @see #getTime
     * @since 1.4
     */
@@ -6152,22 +6174,22 @@ a
    }
 
    /**
-   * Sets the designated parameter to a <code>Reader</code> object.
-   * This method differs from the <code>setCharacterStream (int, Reader)</code> method
+   * Sets the designated parameter to a {@code Reader} object.
+   * This method differs from the {@code setCharacterStream (int, Reader)} method
    * because it informs the driver that the parameter value should be sent to
-   * the server as a <code>CLOB</code>.  When the <code>setCharacterStream</code> method is used, the
+   * the server as a {@code CLOB}.  When the {@code setCharacterStream} method is used, the
    * driver may have to do extra work to determine whether the parameter
-   * data should be sent to the server as a <code>LONGVARCHAR</code> or a <code>CLOB</code>
+   * data should be sent to the server as a {@code LONGVARCHAR} or a {@code CLOB}
    *
    * <P><B>Note:</B> Consult your JDBC driver documentation to determine if
    * it might be more efficient to use a version of
-   * <code>setClob</code> which takes a length parameter.
+   * {@code setClob} which takes a length parameter.
    *
    * @param parameterIndex index of the first parameter is 1, the second is 2, ...
    * @param reader An object that contains the data to set the parameter value to.
    * @throws SQLException if a database access error occurs, this method is called on
-   * a closed <code>PreparedStatement</code>or if parameterIndex does not correspond to a parameter
-   * marker in the SQL statement
+   *         a closed {@code PreparedStatement}or if parameterIndex does not correspond to a parameter
+   *         marker in the SQL statement
    *
    * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
    * @since 1.6
@@ -6178,20 +6200,20 @@ a
    }
 
 
-   /**
-   * Sets the designated parameter to a <code>Reader</code> object.  The reader must contain  the number
-   * of characters specified by length otherwise a <code>SQLException</code> will be
-   * generated when the <code>PreparedStatement</code> is executed.
-   *This method differs from the <code>setCharacterStream (int, Reader, int)</code> method
+  /**
+   * Sets the designated parameter to a {@code Reader} object.  The reader must contain  the number
+   * of characters specified by length otherwise a {@code SQLException} will be
+   * generated when the {@code PreparedStatement} is executed.
+   * This method differs from the {@code setCharacterStream (int, Reader, int)} method
    * because it informs the driver that the parameter value should be sent to
-   * the server as a <code>CLOB</code>.  When the <code>setCharacterStream</code> method is used, the
+   * the server as a {@code CLOB}.  When the {@code setCharacterStream} method is used, the
    * driver may have to do extra work to determine whether the parameter
-   * data should be sent to the server as a <code>LONGVARCHAR</code> or a <code>CLOB</code>
+   * data should be sent to the server as a {@code LONGVARCHAR} or a {@code CLOB}
    * @param parameterIndex index of the first parameter is 1, the second is 2, ...
    * @param reader An object that contains the data to set the parameter value to.
    * @param length the number of characters in the parameter data.
    * @throws SQLException if a database access error occurs, this method is called on
-   * a closed <code>PreparedStatement</code>, if parameterIndex does not correspond to a parameter
+   * a closed {@code PreparedStatement}, if parameterIndex does not correspond to a parameter
    * marker in the SQL statement, or if the length specified is less than zero.
    *
    * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
@@ -6203,26 +6225,27 @@ a
    }
 
 
- /**
-    * Sets the designated parameter to a <code>InputStream</code> object.  The inputstream must contain  the number
-    * of characters specified by length otherwise a <code>SQLException</code> will be
-    * generated when the <code>PreparedStatement</code> is executed.
-    * This method differs from the <code>setBinaryStream (int, InputStream, int)</code>
+   /**
+    * Sets the designated parameter to a {@code InputStream} object.  The inputstream must contain  the number
+    * of characters specified by length otherwise a {@code SQLException} will be
+    * generated when the {@code PreparedStatement} is executed.
+    * This method differs from the {@code setBinaryStream (int, InputStream, int)}
     * method because it informs the driver that the parameter value should be
-    * sent to the server as a <code>BLOB</code>.  When the <code>setBinaryStream</code> method is used,
+    * sent to the server as a {@code BLOB}.  When the {@code setBinaryStream} method is used,
     * the driver may have to do extra work to determine whether the parameter
-    * data should be sent to the server as a <code>LONGVARBINARY</code> or a <code>BLOB</code>
+    * data should be sent to the server as a {@code LONGVARBINARY} or a {@code BLOB}
+    *
     * @param parameterIndex index of the first parameter is 1,
-    * the second is 2, ...
+    *        the second is 2, ...
     * @param inputStream An object that contains the data to set the parameter
-    * value to.
+    *        value to.
     * @param length the number of bytes in the parameter data.
     * @throws SQLException if a database access error occurs,
-    * this method is called on a closed <code>PreparedStatement</code>,
-    * if parameterIndex does not correspond
-    * to a parameter marker in the SQL statement,  if the length specified
-    * is less than zero or if the number of bytes in the inputstream does not match
-    * the specified length.
+    *         this method is called on a closed {@code PreparedStatement},
+    *         if parameterIndex does not correspond
+    *         to a parameter marker in the SQL statement,  if the length specified
+    *         is less than zero or if the number of bytes in the inputstream does not match
+    *         the specified length.
     * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
     *
     * @since 1.6
@@ -6233,28 +6256,27 @@ a
    }
 
  /**
-    * Sets the designated parameter to a <code>InputStream</code> object.
-    * This method differs from the <code>setBinaryStream (int, InputStream)</code>
-    * This method differs from the <code>setBinaryStream (int, InputStream)</code>
+    * Sets the designated parameter to a {@code InputStream} object.
+    * This method differs from the {@code setBinaryStream (int, InputStream)}
+    * This method differs from the {@code setBinaryStream (int, InputStream)}
     * method because it informs the driver that the parameter value should be
-    * sent to the server as a <code>BLOB</code>.  When the <code>setBinaryStream</code> method is used,
+    * sent to the server as a {@code BLOB}.  When the {@code setBinaryStream} method is used,
     * the driver may have to do extra work to determine whether the parameter
-    * data should be sent to the server as a <code>LONGVARBINARY</code> or a <code>BLOB</code>
+    * data should be sent to the server as a {@code LONGVARBINARY} or a {@code BLOB}
     *
     * <P><B>Note:</B> Consult your JDBC driver documentation to determine if
     * it might be more efficient to use a version of
-    * <code>setBlob</code> which takes a length parameter.
+    * {@code setBlob} which takes a length parameter.
     *
     * @param parameterIndex index of the first parameter is 1,
-    * the second is 2, ...
-
-
+    *        the second is 2, ...
+    *
     * @param inputStream An object that contains the data to set the parameter
-    * value to.
+    *        value to.
     * @throws SQLException if a database access error occurs,
-    * this method is called on a closed <code>PreparedStatement</code> or
-    * if parameterIndex does not correspond
-    * to a parameter marker in the SQL statement,
+    *         this method is called on a closed {@code PreparedStatement} or
+    *         if parameterIndex does not correspond
+    *         to a parameter marker in the SQL statement,
     * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
     *
     * @since 1.6
@@ -6264,72 +6286,72 @@ a
         throw new SQLFeatureNotSupportedException(resBundle.handleGetObject("jdbcrowsetimpl.featnotsupp").toString());
    }
 
- /**
-    * Sets the designated parameter to a <code>InputStream</code> object.  The <code>inputstream</code> must contain  the number
-      * of characters specified by length, otherwise a <code>SQLException</code> will be
-      * generated when the <code>CallableStatement</code> is executed.
-      * This method differs from the <code>setBinaryStream (int, InputStream, int)</code>
-      * method because it informs the driver that the parameter value should be
-      * sent to the server as a <code>BLOB</code>.  When the <code>setBinaryStream</code> method is used,
-      * the driver may have to do extra work to determine whether the parameter
-      * data should be sent to the server as a <code>LONGVARBINARY</code> or a <code>BLOB</code>
-      *
-      * @param parameterName the name of the parameter to be set
-      * the second is 2, ...
-      *
-      * @param inputStream An object that contains the data to set the parameter
-      * value to.
-      * @param length the number of bytes in the parameter data.
-      * @throws SQLException  if parameterIndex does not correspond
-      * to a parameter marker in the SQL statement,  or if the length specified
-      * is less than zero; if the number of bytes in the inputstream does not match
-      * the specified length; if a database access error occurs or
-      * this method is called on a closed <code>CallableStatement</code>
-      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-      * this method
-      *
-      * @since 1.6
-      */
-      public void setBlob(String parameterName, InputStream inputStream, long length)
+   /**
+    * Sets the designated parameter to a {@code InputStream} object.  The {@code inputstream} must contain  the number
+    * of characters specified by length, otherwise a {@code SQLException} will be
+    * generated when the {@code CallableStatement} is executed.
+    * This method differs from the {@code setBinaryStream (int, InputStream, int)}
+    * method because it informs the driver that the parameter value should be
+    * sent to the server as a {@code BLOB}.  When the {@code setBinaryStream} method is used,
+    * the driver may have to do extra work to determine whether the parameter
+    * data should be sent to the server as a {@code LONGVARBINARY} or a {@code BLOB}
+    *
+    * @param parameterName the name of the parameter to be set
+    * the second is 2, ...
+    *
+    * @param inputStream An object that contains the data to set the parameter
+    *        value to.
+    * @param length the number of bytes in the parameter data.
+    * @throws SQLException  if parameterIndex does not correspond
+    *         to a parameter marker in the SQL statement,  or if the length specified
+    *         is less than zero; if the number of bytes in the inputstream does not match
+    *         the specified length; if a database access error occurs or
+    *         this method is called on a closed {@code CallableStatement}
+    * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+    *         this method
+    *
+    * @since 1.6
+    */
+   public void setBlob(String parameterName, InputStream inputStream, long length)
          throws SQLException{
          throw new SQLFeatureNotSupportedException(resBundle.handleGetObject("jdbcrowsetimpl.featnotsupp").toString());
     }
 
 
- /**
-    * Sets the designated parameter to the given <code>java.sql.Blob</code> object.
-    * The driver converts this to an SQL <code>BLOB</code> value when it
+   /**
+    * Sets the designated parameter to the given {@code java.sql.Blob} object.
+    * The driver converts this to an SQL {@code BLOB} value when it
     * sends it to the database.
     *
     * @param parameterName the name of the parameter
-    * @param x a <code>Blob</code> object that maps an SQL <code>BLOB</code> value
+    * @param x a {@code Blob} object that maps an SQL {@code BLOB} value
     * @exception SQLException if a database access error occurs or
-    * this method is called on a closed <code>CallableStatement</code>
+    *            this method is called on a closed {@code CallableStatement}
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-    * this method
+    *            this method
     * @since 1.6
     */
    public void setBlob (String parameterName, Blob x) throws SQLException{
         throw new SQLFeatureNotSupportedException(resBundle.handleGetObject("jdbcrowsetimpl.featnotsupp").toString());
    }
 
- /**
-    * Sets the designated parameter to a <code>InputStream</code> object.
-    * This method differs from the <code>setBinaryStream (int, InputStream)</code>
+   /**
+    * Sets the designated parameter to a {@code InputStream} object.
+    * This method differs from the {@code setBinaryStream (int, InputStream)}
     * method because it informs the driver that the parameter value should be
-    * sent to the server as a <code>BLOB</code>.  When the <code>setBinaryStream</code> method is used,
+    * sent to the server as a {@code BLOB}.  When the {@code setBinaryStream} method is used,
     * the driver may have to do extra work to determine whether the parameter
-    * data should be send to the server as a <code>LONGVARBINARY</code> or a <code>BLOB</code>
+    * data should be send to the server as a {@code LONGVARBINARY} or a {@code BLOB}
     *
     * <P><B>Note:</B> Consult your JDBC driver documentation to determine if
     * it might be more efficient to use a version of
-    * <code>setBlob</code> which takes a length parameter.
+    * {@code setBlob} which takes a length parameter.
     *
     * @param parameterName the name of the parameter
     * @param inputStream An object that contains the data to set the parameter
-    * value to.
+    *        value to.
     * @throws SQLException if a database access error occurs or
-    * this method is called on a closed <code>CallableStatement</code>
+    *         this method is called on a closed {@code CallableStatement}
     * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
     *
     * @since 1.6
@@ -6339,22 +6361,22 @@ a
         throw new SQLFeatureNotSupportedException(resBundle.handleGetObject("jdbcrowsetimpl.featnotsupp").toString());
    }
 
-  /**
+ /**
   * Sets the value of the designated parameter with the given object. The second
   * argument must be an object type; for integral values, the
-  * <code>java.lang</code> equivalent objects should be used.
+  * {@code java.lang} equivalent objects should be used.
   *
   * <p>The given Java object will be converted to the given targetSqlType
   * before being sent to the database.
   *
   * If the object has a custom mapping (is of a class implementing the
-  * interface <code>SQLData</code>),
-  * the JDBC driver should call the method <code>SQLData.writeSQL</code> to write it
+  * interface {@code SQLData}),
+  * the JDBC driver should call the method {@code SQLData.writeSQL} to write it
   * to the SQL data stream.
   * If, on the other hand, the object is of a class implementing
-  * <code>Ref</code>, <code>Blob</code>, <code>Clob</code>,  <code>NClob</code>,
-  *  <code>Struct</code>, <code>java.net.URL</code>,
-  * or <code>Array</code>, the driver should pass it to the database as a
+  * {@code Ref}, {@code Blob}, {@code Clob},  {@code NClob},
+  *  {@code Struct}, {@code java.net.URL},
+  * or {@code Array}, the driver should pass it to the database as a
   * value of the corresponding SQL type.
   * <P>
   * Note that this method may be used to pass datatabase-
@@ -6365,17 +6387,17 @@ a
   * @param targetSqlType the SQL type (as defined in java.sql.Types) to be
   * sent to the database. The scale argument may further qualify this type.
   * @param scale for java.sql.Types.DECIMAL or java.sql.Types.NUMERIC types,
-  *          this is the number of digits after the decimal point.  For all other
-  *          types, this value will be ignored.
+  *        this is the number of digits after the decimal point.  For all other
+  *        types, this value will be ignored.
   * @exception SQLException if a database access error occurs or
-  * this method is called on a closed <code>CallableStatement</code>
-  * @exception SQLFeatureNotSupportedException if <code>targetSqlType</code> is
-  * a <code>ARRAY</code>, <code>BLOB</code>, <code>CLOB</code>,
-  * <code>DATALINK</code>, <code>JAVA_OBJECT</code>, <code>NCHAR</code>,
-  * <code>NCLOB</code>, <code>NVARCHAR</code>, <code>LONGNVARCHAR</code>,
-  *  <code>REF</code>, <code>ROWID</code>, <code>SQLXML</code>
-  * or  <code>STRUCT</code> data type and the JDBC driver does not support
-  * this data type
+  *        this method is called on a closed {@code CallableStatement}
+  * @exception SQLFeatureNotSupportedException if {@code targetSqlType} is
+  *            an {@code ARRAY, BLOB, CLOB,
+  *            DATALINK, JAVA_OBJECT, NCHAR,
+  *            NCLOB, NVARCHAR, LONGNVARCHAR,
+  *            REF, ROWID, SQLXML}
+  *            or {@code STRUCT} data type and the JDBC driver does not support
+  *            this data type
   * @see Types
   * @see #getObject
   * @since 1.4
@@ -6387,7 +6409,7 @@ a
 
   /**
     * Sets the value of the designated parameter with the given object.
-    * This method is like the method <code>setObject</code>
+    * This method is like the method {@code setObject}
     * above, except that it assumes a scale of zero.
     *
     * @param parameterName the name of the parameter
@@ -6395,14 +6417,14 @@ a
     * @param targetSqlType the SQL type (as defined in java.sql.Types) to be
     *                      sent to the database
     * @exception SQLException if a database access error occurs or
-    * this method is called on a closed <code>CallableStatement</code>
-    * @exception SQLFeatureNotSupportedException if <code>targetSqlType</code> is
-    * a <code>ARRAY</code>, <code>BLOB</code>, <code>CLOB</code>,
-    * <code>DATALINK</code>, <code>JAVA_OBJECT</code>, <code>NCHAR</code>,
-    * <code>NCLOB</code>, <code>NVARCHAR</code>, <code>LONGNVARCHAR</code>,
-    *  <code>REF</code>, <code>ROWID</code>, <code>SQLXML</code>
-    * or  <code>STRUCT</code> data type and the JDBC driver does not support
-    * this data type
+    * this method is called on a closed {@code CallableStatement}
+    * @exception SQLFeatureNotSupportedException if {@code targetSqlType} is
+    *            an {@code ARRAY, BLOB, CLOB,
+    *            DATALINK, JAVA_OBJECT, NCHAR,
+    *            NCLOB, NVARCHAR, LONGNVARCHAR,
+    *            REF, ROWID, SQLXML}
+    *            or {@code STRUCT} data type and the JDBC driver does not support
+    *            this data type
     * @see #getObject
     * @since 1.4
     */
@@ -6411,13 +6433,13 @@ a
         throw new SQLFeatureNotSupportedException(resBundle.handleGetObject("jdbcrowsetimpl.featnotsupp").toString());
    }
 
- /**
+  /**
    * Sets the value of the designated parameter with the given object.
-   * The second parameter must be of type <code>Object</code>; therefore, the
-   * <code>java.lang</code> equivalent objects should be used for built-in types.
+   * The second parameter must be of type {@code Object}; therefore, the
+   * {@code java.lang} equivalent objects should be used for built-in types.
    *
    * <p>The JDBC specification specifies a standard mapping from
-   * Java <code>Object</code> types to SQL types.  The given argument
+   * Java {@code Object} types to SQL types.  The given argument
    * will be converted to the corresponding SQL type before being
    * sent to the database.
    *
@@ -6425,13 +6447,13 @@ a
    * specific abstract data types, by using a driver-specific Java
    * type.
    *
-   * If the object is of a class implementing the interface <code>SQLData</code>,
-   * the JDBC driver should call the method <code>SQLData.writeSQL</code>
+   * If the object is of a class implementing the interface {@code SQLData},
+   * the JDBC driver should call the method {@code SQLData.writeSQL}
    * to write it to the SQL data stream.
    * If, on the other hand, the object is of a class implementing
-   * <code>Ref</code>, <code>Blob</code>, <code>Clob</code>,  <code>NClob</code>,
-   *  <code>Struct</code>, <code>java.net.URL</code>,
-   * or <code>Array</code>, the driver should pass it to the database as a
+   * {@code Ref}, {@code Blob}, {@code Clob},  {@code NClob},
+   *  {@code Struct}, {@code java.net.URL},
+   * or {@code Array}, the driver should pass it to the database as a
    * value of the corresponding SQL type.
    * <P>
    * This method throws an exception if there is an ambiguity, for example, if the
@@ -6440,10 +6462,10 @@ a
    * @param parameterName the name of the parameter
    * @param x the object containing the input parameter value
    * @exception SQLException if a database access error occurs,
-   * this method is called on a closed <code>CallableStatement</code> or if the given
-   *            <code>Object</code> parameter is ambiguous
+   *            this method is called on a closed {@code CallableStatement} or if the given
+   *            {@code Object} parameter is ambiguous
    * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-   * this method
+   *            this method
    * @see #getObject
    * @since 1.4
    */
@@ -6454,9 +6476,9 @@ a
   /**
   * Sets the designated parameter to the given input stream, which will have
   * the specified number of bytes.
-  * When a very large ASCII value is input to a <code>LONGVARCHAR</code>
+  * When a very large ASCII value is input to a {@code LONGVARCHAR}
   * parameter, it may be more practical to send it via a
-  * <code>java.io.InputStream</code>. Data will be read from the stream
+  * {@code java.io.InputStream}. Data will be read from the stream
   * as needed until end-of-file is reached.  The JDBC driver will
   * do any necessary conversion from ASCII to the database char format.
   *
@@ -6468,9 +6490,9 @@ a
   * @param x the Java input stream that contains the ASCII parameter value
   * @param length the number of bytes in the stream
   * @exception SQLException if a database access error occurs or
-  * this method is called on a closed <code>CallableStatement</code>
+  *            this method is called on a closed {@code CallableStatement}
   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-  * this method
+  *            this method
   * @since 1.4
   */
  public void setAsciiStream(String parameterName, java.io.InputStream x, int length)
@@ -6482,9 +6504,9 @@ a
 /**
   * Sets the designated parameter to the given input stream, which will have
   * the specified number of bytes.
-  * When a very large binary value is input to a <code>LONGVARBINARY</code>
+  * When a very large binary value is input to a {@code LONGVARBINARY}
   * parameter, it may be more practical to send it via a
-  * <code>java.io.InputStream</code> object. The data will be read from the stream
+  * {@code java.io.InputStream} object. The data will be read from the stream
   * as needed until end-of-file is reached.
   *
   * <P><B>Note:</B> This stream object can either be a standard
@@ -6495,9 +6517,9 @@ a
   * @param x the java input stream which contains the binary parameter value
   * @param length the number of bytes in the stream
   * @exception SQLException if a database access error occurs or
-  * this method is called on a closed <code>CallableStatement</code>
+  *            this method is called on a closed {@code CallableStatement}
   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-  * this method
+  *            this method
   * @since 1.4
   */
  public void setBinaryStream(String parameterName, java.io.InputStream x,
@@ -6506,11 +6528,11 @@ a
  }
 
  /**
-   * Sets the designated parameter to the given <code>Reader</code>
+   * Sets the designated parameter to the given {@code Reader}
    * object, which is the given number of characters long.
-   * When a very large UNICODE value is input to a <code>LONGVARCHAR</code>
+   * When a very large UNICODE value is input to a {@code LONGVARCHAR}
    * parameter, it may be more practical to send it via a
-   * <code>java.io.Reader</code> object. The data will be read from the stream
+   * {@code java.io.Reader} object. The data will be read from the stream
    * as needed until end-of-file is reached.  The JDBC driver will
    * do any necessary conversion from UNICODE to the database char format.
    *
@@ -6519,13 +6541,13 @@ a
    * standard interface.
    *
    * @param parameterName the name of the parameter
-   * @param reader the <code>java.io.Reader</code> object that
+   * @param reader the {@code java.io.Reader} object that
    *        contains the UNICODE data used as the designated parameter
    * @param length the number of characters in the stream
    * @exception SQLException if a database access error occurs or
-   * this method is called on a closed <code>CallableStatement</code>
+   *            this method is called on a closed {@code CallableStatement}
    * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-   * this method
+   *            this method
    * @since 1.4
    */
   public void setCharacterStream(String parameterName,
@@ -6536,9 +6558,9 @@ a
 
   /**
    * Sets the designated parameter to the given input stream.
-   * When a very large ASCII value is input to a <code>LONGVARCHAR</code>
+   * When a very large ASCII value is input to a {@code LONGVARCHAR}
    * parameter, it may be more practical to send it via a
-   * <code>java.io.InputStream</code>. Data will be read from the stream
+   * {@code java.io.InputStream}. Data will be read from the stream
    * as needed until end-of-file is reached.  The JDBC driver will
    * do any necessary conversion from ASCII to the database char format.
    *
@@ -6547,15 +6569,15 @@ a
    * standard interface.
    * <P><B>Note:</B> Consult your JDBC driver documentation to determine if
    * it might be more efficient to use a version of
-   * <code>setAsciiStream</code> which takes a length parameter.
+   * {@code setAsciiStream} which takes a length parameter.
    *
    * @param parameterName the name of the parameter
    * @param x the Java input stream that contains the ASCII parameter value
    * @exception SQLException if a database access error occurs or
-   * this method is called on a closed <code>CallableStatement</code>
+   *            this method is called on a closed {@code CallableStatement}
    * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
-     * @since 1.6
-  */
+   * @since 1.6
+   */
   public void setAsciiStream(String parameterName, java.io.InputStream x)
           throws SQLException{
         throw new SQLFeatureNotSupportedException(resBundle.handleGetObject("jdbcrowsetimpl.featnotsupp").toString());
@@ -6564,9 +6586,9 @@ a
 
  /**
     * Sets the designated parameter to the given input stream.
-    * When a very large binary value is input to a <code>LONGVARBINARY</code>
+    * When a very large binary value is input to a {@code LONGVARBINARY}
     * parameter, it may be more practical to send it via a
-    * <code>java.io.InputStream</code> object. The data will be read from the
+    * {@code java.io.InputStream} object. The data will be read from the
     * stream as needed until end-of-file is reached.
     *
     * <P><B>Note:</B> This stream object can either be a standard
@@ -6574,12 +6596,12 @@ a
     * standard interface.
     * <P><B>Note:</B> Consult your JDBC driver documentation to determine if
     * it might be more efficient to use a version of
-    * <code>setBinaryStream</code> which takes a length parameter.
+    * {@code setBinaryStream} which takes a length parameter.
     *
     * @param parameterName the name of the parameter
     * @param x the java input stream which contains the binary parameter value
     * @exception SQLException if a database access error occurs or
-    * this method is called on a closed <code>CallableStatement</code>
+    *            this method is called on a closed {@code CallableStatement}
     * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
     * @since 1.6
     */
@@ -6589,11 +6611,11 @@ a
    }
 
  /**
-    * Sets the designated parameter to the given <code>Reader</code>
+    * Sets the designated parameter to the given {@code Reader}
     * object.
-    * When a very large UNICODE value is input to a <code>LONGVARCHAR</code>
+    * When a very large UNICODE value is input to a {@code LONGVARCHAR}
     * parameter, it may be more practical to send it via a
-    * <code>java.io.Reader</code> object. The data will be read from the stream
+    * {@code java.io.Reader} object. The data will be read from the stream
     * as needed until end-of-file is reached.  The JDBC driver will
     * do any necessary conversion from UNICODE to the database char format.
     *
@@ -6602,13 +6624,13 @@ a
     * standard interface.
     * <P><B>Note:</B> Consult your JDBC driver documentation to determine if
     * it might be more efficient to use a version of
-    * <code>setCharacterStream</code> which takes a length parameter.
+    * {@code setCharacterStream} which takes a length parameter.
     *
     * @param parameterName the name of the parameter
-    * @param reader the <code>java.io.Reader</code> object that contains the
+    * @param reader the {@code java.io.Reader} object that contains the
     *        Unicode data
     * @exception SQLException if a database access error occurs or
-    * this method is called on a closed <code>CallableStatement</code>
+    *            this method is called on a closed {@code CallableStatement}
     * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
     * @since 1.6
     */
@@ -6619,16 +6641,16 @@ a
 
    /**
     * Sets the designated parameter to the given
-    * <code>java.math.BigDecimal</code> value.
-    * The driver converts this to an SQL <code>NUMERIC</code> value when
+    * {@code java.math.BigDecimal} value.
+    * The driver converts this to an SQL {@code NUMERIC} value when
     * it sends it to the database.
     *
     * @param parameterName the name of the parameter
     * @param x the parameter value
     * @exception SQLException if a database access error occurs or
-    * this method is called on a closed <code>CallableStatement</code>
+    *            this method is called on a closed {@code CallableStatement}
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-    * this method
+    *            this method
     * @see #getBigDecimal
     * @since 1.4
     */
@@ -6636,20 +6658,20 @@ a
         throw new SQLFeatureNotSupportedException(resBundle.handleGetObject("jdbcrowsetimpl.featnotsupp").toString());
    }
 
- /**
-    * Sets the designated parameter to the given Java <code>String</code> value.
+   /**
+    * Sets the designated parameter to the given Java {@code String} value.
     * The driver converts this
-    * to an SQL <code>VARCHAR</code> or <code>LONGVARCHAR</code> value
+    * to an SQL {@code VARCHAR} or {@code LONGVARCHAR} value
     * (depending on the argument's
-    * size relative to the driver's limits on <code>VARCHAR</code> values)
+    * size relative to the driver's limits on {@code VARCHAR} values)
     * when it sends it to the database.
     *
     * @param parameterName the name of the parameter
     * @param x the parameter value
     * @exception SQLException if a database access error occurs or
-    * this method is called on a closed <code>CallableStatement</code>
+    *            this method is called on a closed {@code CallableStatement}
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-    * this method
+    *            this method
     * @see #getString
     * @since 1.4
     */
@@ -6659,19 +6681,19 @@ a
 
 
 
- /**
+   /**
     * Sets the designated parameter to the given Java array of bytes.
-    * The driver converts this to an SQL <code>VARBINARY</code> or
-    * <code>LONGVARBINARY</code> (depending on the argument's size relative
-    * to the driver's limits on <code>VARBINARY</code> values) when it sends
+    * The driver converts this to an SQL {@code VARBINARY} or
+    * {@code LONGVARBINARY} (depending on the argument's size relative
+    * to the driver's limits on {@code VARBINARY} values) when it sends
     * it to the database.
     *
     * @param parameterName the name of the parameter
     * @param x the parameter value
     * @exception SQLException if a database access error occurs or
-    * this method is called on a closed <code>CallableStatement</code>
+    *            this method is called on a closed {@code CallableStatement}
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-    * this method
+    *            this method
     * @see #getBytes
     * @since 1.4
     */
@@ -6680,17 +6702,17 @@ a
    }
 
  /**
-    * Sets the designated parameter to the given <code>java.sql.Timestamp</code> value.
+    * Sets the designated parameter to the given {@code java.sql.Timestamp} value.
     * The driver
-    * converts this to an SQL <code>TIMESTAMP</code> value when it sends it to the
+    * converts this to an SQL {@code TIMESTAMP} value when it sends it to the
     * database.
     *
     * @param parameterName the name of the parameter
     * @param x the parameter value
     * @exception SQLException if a database access error occurs or
-    * this method is called on a closed <code>CallableStatement</code>
+    *            this method is called on a closed {@code CallableStatement}
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-    * this method
+    *            this method
     * @see #getTimestamp
     * @since 1.4
     */
@@ -6700,16 +6722,16 @@ a
    }
 
     /**
-    * Sets the designated parameter to SQL <code>NULL</code>.
+    * Sets the designated parameter to SQL {@code NULL}.
     *
     * <P><B>Note:</B> You must specify the parameter's SQL type.
     *
     * @param parameterName the name of the parameter
-    * @param sqlType the SQL type code defined in <code>java.sql.Types</code>
+    * @param sqlType the SQL type code defined in {@code java.sql.Types}
     * @exception SQLException if a database access error occurs or
-    * this method is called on a closed <code>CallableStatement</code>
+    *            this method is called on a closed {@code CallableStatement}
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-    * this method
+    *            this method
     * @since 1.4
     */
    public void setNull(String parameterName, int sqlType) throws SQLException {
@@ -6717,8 +6739,8 @@ a
    }
 
  /**
-    * Sets the designated parameter to SQL <code>NULL</code>.
-    * This version of the method <code>setNull</code> should
+    * Sets the designated parameter to SQL {@code NULL}.
+    * This version of the method {@code setNull} should
     * be used for user-defined types and REF type parameters.  Examples
     * of user-defined types include: STRUCT, DISTINCT, JAVA_OBJECT, and
     * named array types.
@@ -6738,14 +6760,14 @@ a
     *
     *
     * @param parameterName the name of the parameter
-    * @param sqlType a value from <code>java.sql.Types</code>
+    * @param sqlType a value from {@code java.sql.Types}
     * @param typeName the fully-qualified name of an SQL user-defined type;
     *        ignored if the parameter is not a user-defined type or
-    *        SQL <code>REF</code> value
+    *        SQL {@code REF} value
     * @exception SQLException if a database access error occurs or
-    * this method is called on a closed <code>CallableStatement</code>
+    *        this method is called on a closed {@code CallableStatement}
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-    * this method
+    *        this method
     * @since 1.4
     */
    public void setNull (String parameterName, int sqlType, String typeName)
@@ -6754,17 +6776,17 @@ a
    }
 
  /**
-    * Sets the designated parameter to the given Java <code>boolean</code> value.
+    * Sets the designated parameter to the given Java {@code boolean} value.
     * The driver converts this
-    * to an SQL <code>BIT</code> or <code>BOOLEAN</code> value when it sends it to the database.
+    * to an SQL {@code BIT} or {@code BOOLEAN} value when it sends it to the database.
     *
     * @param parameterName the name of the parameter
     * @param x the parameter value
     * @exception SQLException if a database access error occurs or
-    * this method is called on a closed <code>CallableStatement</code>
+    *            this method is called on a closed {@code CallableStatement}
     * @see #getBoolean
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-    * this method
+    *            this method
     * @since 1.4
     */
    public void setBoolean(String parameterName, boolean x) throws SQLException{
@@ -6774,16 +6796,16 @@ a
 
 
  /**
-    * Sets the designated parameter to the given Java <code>byte</code> value.
+    * Sets the designated parameter to the given Java {@code byte} value.
     * The driver converts this
-    * to an SQL <code>TINYINT</code> value when it sends it to the database.
+    * to an SQL {@code TINYINT} value when it sends it to the database.
     *
     * @param parameterName the name of the parameter
     * @param x the parameter value
     * @exception SQLException if a database access error occurs or
-    * this method is called on a closed <code>CallableStatement</code>
+    *            this method is called on a closed {@code CallableStatement}
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-    * this method
+    *            this method
     * @see #getByte
     * @since 1.4
     */
@@ -6793,16 +6815,16 @@ a
 
 
  /**
-    * Sets the designated parameter to the given Java <code>short</code> value.
+    * Sets the designated parameter to the given Java {@code short} value.
     * The driver converts this
-    * to an SQL <code>SMALLINT</code> value when it sends it to the database.
+    * to an SQL {@code SMALLINT} value when it sends it to the database.
     *
     * @param parameterName the name of the parameter
     * @param x the parameter value
     * @exception SQLException if a database access error occurs or
-    * this method is called on a closed <code>CallableStatement</code>
+    *            this method is called on a closed {@code CallableStatement}
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-    * this method
+    *            this method
     * @see #getShort
     * @since 1.4
     */
@@ -6812,16 +6834,16 @@ a
 
 
    /**
-    * Sets the designated parameter to the given Java <code>int</code> value.
+    * Sets the designated parameter to the given Java {@code int} value.
     * The driver converts this
-    * to an SQL <code>INTEGER</code> value when it sends it to the database.
+    * to an SQL {@code INTEGER} value when it sends it to the database.
     *
     * @param parameterName the name of the parameter
     * @param x the parameter value
     * @exception SQLException if a database access error occurs or
-    * this method is called on a closed <code>CallableStatement</code>
+    *            this method is called on a closed {@code CallableStatement}
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-    * this method
+    *            this method
     * @see #getInt
     * @since 1.4
     */
@@ -6829,17 +6851,17 @@ a
         throw new SQLFeatureNotSupportedException(resBundle.handleGetObject("jdbcrowsetimpl.featnotsupp").toString());
    }
 
- /**
-    * Sets the designated parameter to the given Java <code>long</code> value.
+   /**
+    * Sets the designated parameter to the given Java {@code long} value.
     * The driver converts this
-    * to an SQL <code>BIGINT</code> value when it sends it to the database.
+    * to an SQL {@code BIGINT} value when it sends it to the database.
     *
     * @param parameterName the name of the parameter
     * @param x the parameter value
     * @exception SQLException if a database access error occurs or
-    * this method is called on a closed <code>CallableStatement</code>
+    *            this method is called on a closed {@code CallableStatement}
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-    * this method
+    *            this method
     * @see #getLong
     * @since 1.4
     */
@@ -6848,17 +6870,17 @@ a
    }
 
 
- /**
-    * Sets the designated parameter to the given Java <code>float</code> value.
+   /**
+    * Sets the designated parameter to the given Java {@code float} value.
     * The driver converts this
-    * to an SQL <code>FLOAT</code> value when it sends it to the database.
+    * to an SQL {@code FLOAT} value when it sends it to the database.
     *
     * @param parameterName the name of the parameter
     * @param x the parameter value
     * @exception SQLException if a database access error occurs or
-    * this method is called on a closed <code>CallableStatement</code>
+    *            this method is called on a closed {@code CallableStatement}
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-    * this method
+    *            this method
     * @see #getFloat
     * @since 1.4
     */
@@ -6866,17 +6888,17 @@ a
         throw new SQLFeatureNotSupportedException(resBundle.handleGetObject("jdbcrowsetimpl.featnotsupp").toString());
    }
 
- /**
-    * Sets the designated parameter to the given Java <code>double</code> value.
+   /**
+    * Sets the designated parameter to the given Java {@code double} value.
     * The driver converts this
-    * to an SQL <code>DOUBLE</code> value when it sends it to the database.
+    * to an SQL {@code DOUBLE} value when it sends it to the database.
     *
     * @param parameterName the name of the parameter
     * @param x the parameter value
     * @exception SQLException if a database access error occurs or
-    * this method is called on a closed <code>CallableStatement</code>
+    *            this method is called on a closed {@code CallableStatement}
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-    * this method
+    *            this method
     * @see #getDouble
     * @since 1.4
     */
@@ -6887,7 +6909,6 @@ a
     /**
      * This method re populates the resBundle
      * during the deserialization process
-     *
      */
     private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
         // Default state initialization happens here
