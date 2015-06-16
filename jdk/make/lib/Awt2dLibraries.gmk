@@ -391,6 +391,8 @@ LIBLCMS_CPPFLAGS += -I$(SUPPORT_OUTPUTDIR)/headers/java.desktop \
     -I$(JDK_TOPDIR)/src/java.desktop/share/native/common/awt/debug \
     $(LIBJAVA_HEADER_FLAGS) \
     #
+# The fast floor code loses precision.
+LCMS_CFLAGS=-DCMS_DONT_USE_FAST_FLOOR
 
 ifeq ($(USE_EXTERNAL_LCMS), true)
   # If we're using an external library, we'll just need the wrapper part.
