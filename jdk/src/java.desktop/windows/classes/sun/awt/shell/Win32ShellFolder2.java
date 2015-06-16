@@ -851,14 +851,14 @@ final class Win32ShellFolder2 extends ShellFolder {
         return getLinkLocation(true);
     }
 
-    private ShellFolder getLinkLocation(final boolean resolve) {
-        return invoke(new Callable<ShellFolder>() {
-            public ShellFolder call() {
+    private Win32ShellFolder2 getLinkLocation(final boolean resolve) {
+        return invoke(new Callable<Win32ShellFolder2>() {
+            public Win32ShellFolder2 call() {
                 if (!isLink()) {
                     return null;
                 }
 
-                ShellFolder location = null;
+                Win32ShellFolder2 location = null;
                 long linkLocationPIDL = getLinkLocation(getParentIShellFolder(),
                         getRelativePIDL(), resolve);
                 if (linkLocationPIDL != 0) {
@@ -968,7 +968,7 @@ final class Win32ShellFolder2 extends ShellFolder {
 
     // NOTE: this method uses COM and must be called on the 'COM thread'. See ComInvoker for the details
     private static native long extractIcon(long parentIShellFolder, long relativePIDL,
-                                           boolean getLargeIcon);
+                                           boolean getLargeIcon, boolean getDefaultIcon);
 
     // Returns an icon from the Windows system icon list in the form of an HICON
     private static native long getSystemIcon(int iconID);
@@ -1019,7 +1019,13 @@ final class Win32ShellFolder2 extends ShellFolder {
                 invoke(new Callable<Image>() {
                     public Image call() {
                         Image newIcon = null;
-                        if (isFileSystem()) {
+                        if (isLink()) {
+                            Win32ShellFolder2 folder = getLinkLocation(false);
+                            if (folder != null && folder.isLibrary()) {
+                                return folder.getIcon(getLargeIcon);
+                            }
+                        }
+                        if (isFileSystem() || isLibrary()) {
                             long parentIShellIcon = (parent != null)
                                 ? ((Win32ShellFolder2) parent).getIShellIcon()
                                 : 0L;
@@ -1049,7 +1055,19 @@ final class Win32ShellFolder2 extends ShellFolder {
                         if (newIcon == null) {
                             // These are only cached per object
                             long hIcon = extractIcon(getParentIShellFolder(),
-                                getRelativePIDL(), getLargeIcon);
+                                    getRelativePIDL(), getLargeIcon, false);
+                            // E_PENDING: loading can take time so get the default
+                            if(hIcon <= 0) {
+                                hIcon = extractIcon(getParentIShellFolder(),
+                                         getRelativePIDL(), getLargeIcon, true);
+                                if(hIcon <= 0) {
+                                    if (isDirectory()) {
+                                        return getShell32Icon(4, getLargeIcon);
+                                    } else {
+                                        return getShell32Icon(1, getLargeIcon);
+                                    }
+                                }
+                            }
                             newIcon = makeIcon(hIcon, getLargeIcon);
                             disposeIcon(hIcon);
                         }
