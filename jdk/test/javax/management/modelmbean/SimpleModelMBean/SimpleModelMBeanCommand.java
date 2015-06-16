@@ -31,7 +31,7 @@
  * @modules java.management
  * @run clean SimpleModelMBeanCommand
  * @run build SimpleModelMBeanCommand
- * @run main/othervm/policy=policy  SimpleModelMBeanCommand
+ * @run main/othervm/java.security.policy=policy  SimpleModelMBeanCommand
  */
 
 import java.lang.reflect.*;
