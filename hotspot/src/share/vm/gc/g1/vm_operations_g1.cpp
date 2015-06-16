@@ -168,7 +168,7 @@ void VM_G1IncCollectionPause::doit_epilogue() {
   // +ExplicitGCInvokesConcurrent, we have to wait here for the cycle
   // that just started (or maybe one that was already in progress) to
   // finish.
-  if (_gc_cause == GCCause::_java_lang_system_gc &&
+  if (GCCause::is_user_requested_gc(_gc_cause) &&
       _should_initiate_conc_mark) {
     assert(ExplicitGCInvokesConcurrent,
            "the only way to be here is if ExplicitGCInvokesConcurrent is set");

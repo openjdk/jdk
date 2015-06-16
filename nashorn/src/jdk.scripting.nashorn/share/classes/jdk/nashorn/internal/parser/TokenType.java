@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -222,9 +222,11 @@ public enum TokenType {
 
     /**
      * Determines if the token has greater precedence than other.
+     *
      * @param other  Compare token.
      * @param isLeft Is to the left of the other.
-     * @return True if greater precedence.
+     *
+     * @return {@code true} if greater precedence.
      */
     public boolean needsParens(final TokenType other, final boolean isLeft) {
         return other.precedence != 0 &&
@@ -234,16 +236,16 @@ public enum TokenType {
 
     /**
      * Determines if the type is a valid operator.
-     * @param noIn TRUE if IN operator should be ignored.
-     * @return TRUE if valid operator.
+     *
+     * @param noIn {@code true} if IN operator should be ignored.
+     *
+     * @return {@code true} if valid operator.
      */
     public boolean isOperator(final boolean noIn) {
         return kind == BINARY && (!noIn || this != IN) && precedence != 0;
     }
 
-    /**
-     * Accessors.
-     */
+
     public int getLength() {
         assert name != null : "Token name not set";
         return name.length();

@@ -1,0 +1,11 @@
+grant {
+    permission java.lang.RuntimePermission "createClassLoader";
+    permission java.lang.RuntimePermission "getProtectionDomain";
+    permission java.security.SecurityPermission "getPolicy";
+};
+grant codebase "http://localhost/" {
+    permission java.util.PropertyPermission "user.home", "read";
+};
+grant codebase "http://127.0.0.1/" {
+    permission java.util.PropertyPermission "user.name", "read";
+};

@@ -45,6 +45,8 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/os.hpp"
+#include "runtime/thread.hpp"
+#include "services/threadService.hpp"
 #include "utilities/bytes.hpp"
 
 #define NOFAILOVER_MAJOR_VERSION                       51
@@ -129,6 +131,16 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
   if (!is_eligible_for_verification(klass, should_verify_class)) {
     return true;
   }
+
+  // Timer includes any side effects of class verification (resolution,
+  // etc), but not recursive calls to Verifier::verify().
+  JavaThread* jt = (JavaThread*)THREAD;
+  PerfClassTraceTime timer(ClassLoader::perf_class_verify_time(),
+                           ClassLoader::perf_class_verify_selftime(),
+                           ClassLoader::perf_classes_verified(),
+                           jt->get_thread_stat()->perf_recursion_counts_addr(),
+                           jt->get_thread_stat()->perf_timers_addr(),
+                           PerfClassTraceTime::CLASS_VERIFY);
 
   // If the class should be verified, first see if we can use the split
   // verifier.  If not, or if verification fails and FailOverToOldVerifier

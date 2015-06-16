@@ -43,7 +43,7 @@ GangWorker* YieldingFlexibleWorkGang::allocate_worker(uint which) {
 }
 
 // Run a task; returns when the task is done, or the workers yield,
-// or the task is aborted, or the work gang is terminated via stop().
+// or the task is aborted.
 // A task that has been yielded can be continued via this interface
 // by using the same task repeatedly as the argument to the call.
 // It is expected that the YieldingFlexibleGangTask carries the appropriate
@@ -297,16 +297,9 @@ void YieldingFlexibleGangWorker::loop() {
   WorkData data;
   int id;
   while (true) {
-    // Check if there is work to do or if we have been asked
-    // to terminate
+    // Check if there is work to do.
     gang()->internal_worker_poll(&data);
-    if (data.terminate()) {
-      // We have been asked to terminate.
-      assert(gang()->task() == NULL, "No task binding");
-      // set_status(TERMINATED);
-      return;
-    } else if (data.task() != NULL &&
-               data.sequence_number() != previous_sequence_number) {
+    if (data.task() != NULL && data.sequence_number() != previous_sequence_number) {
       // There is work to be done.
       // First check if we need to become active or if there
       // are already the requisite number of workers
