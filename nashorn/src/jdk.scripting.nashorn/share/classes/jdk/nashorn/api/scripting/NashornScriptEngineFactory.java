@@ -178,8 +178,7 @@ public final class NashornScriptEngineFactory implements ScriptEngineFactory {
      *         denies {@code RuntimePermission("nashorn.setConfig")}
      */
     public ScriptEngine getScriptEngine(final ClassFilter classFilter) {
-        Objects.requireNonNull(classFilter);
-        return newEngine(DEFAULT_OPTIONS, getAppClassLoader(), classFilter);
+        return newEngine(DEFAULT_OPTIONS, getAppClassLoader(), Objects.requireNonNull(classFilter));
     }
 
     /**
@@ -193,8 +192,7 @@ public final class NashornScriptEngineFactory implements ScriptEngineFactory {
      *         denies {@code RuntimePermission("nashorn.setConfig")}
      */
     public ScriptEngine getScriptEngine(final String... args) {
-        Objects.requireNonNull(args);
-        return newEngine(args, getAppClassLoader(), null);
+        return newEngine(Objects.requireNonNull(args), getAppClassLoader(), null);
     }
 
     /**
@@ -209,8 +207,7 @@ public final class NashornScriptEngineFactory implements ScriptEngineFactory {
      *         denies {@code RuntimePermission("nashorn.setConfig")}
      */
     public ScriptEngine getScriptEngine(final String[] args, final ClassLoader appLoader) {
-        Objects.requireNonNull(args);
-        return newEngine(args, appLoader, null);
+        return newEngine(Objects.requireNonNull(args), appLoader, null);
     }
 
     /**
@@ -226,9 +223,7 @@ public final class NashornScriptEngineFactory implements ScriptEngineFactory {
      *         denies {@code RuntimePermission("nashorn.setConfig")}
      */
     public ScriptEngine getScriptEngine(final String[] args, final ClassLoader appLoader, final ClassFilter classFilter) {
-        Objects.requireNonNull(args);
-        Objects.requireNonNull(classFilter);
-        return newEngine(args, appLoader, classFilter);
+        return newEngine(Objects.requireNonNull(args), appLoader, Objects.requireNonNull(classFilter));
     }
 
     private ScriptEngine newEngine(final String[] args, final ClassLoader appLoader, final ClassFilter classFilter) {

@@ -31,8 +31,8 @@ ifndef OPENJDK
 REASON = "This JDK does not support SDT probes"
 else
 
-# We need a recent GCC for the default
-ifeq "$(shell expr \( $(CC_VER_MAJOR) \>= 4 \) \& \( $(CC_VER_MINOR) \>= 4 \) )" "0"
+# We need a recent GCC for the default (4.4 or later)
+ifeq "$(shell expr \( \( $(CC_VER_MAJOR) = 4 \) \& \( $(CC_VER_MINOR) \>= 4 \) \) \| \( $(CC_VER_MAJOR) \>= 5 \) )" "0"
 REASON = "gcc version is too old"
 else
 

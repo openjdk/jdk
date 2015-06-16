@@ -2374,7 +2374,7 @@ public class SimpleDateFormat extends DateFormat {
     /**
      * After reading an object from the input stream, the format
      * pattern in the object is verified.
-     * <p>
+     *
      * @exception InvalidObjectException if the pattern is invalid
      */
     private void readObject(ObjectInputStream stream)

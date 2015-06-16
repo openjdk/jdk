@@ -88,6 +88,14 @@ public class FormatData_en_SG extends ParallelListResourceBundle {
                     "NaN",
                 }
             },
+            { "DatePatterns",
+                new String[] {
+                    "EEEE, d MMMM, yyyy", // full date pattern
+                    "d MMMM, yyyy",       // long date pattern
+                    "d MMM, yyyy",        // medium date pattern
+                    "d/M/yy",             // short date pattern
+                }
+            },
         };
     }
 }

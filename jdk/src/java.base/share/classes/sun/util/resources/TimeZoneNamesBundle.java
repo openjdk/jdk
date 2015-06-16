@@ -55,7 +55,7 @@ import java.util.Set;
  *     array for the enumeration returned by <code>getKeys</code>.
  * <li>Inserts the time zone ID (the key of the bundle entries) into
  *     the string arrays returned by <code>handleGetObject</code>.
- * <ul>
+ * </ul>
  * All <code>TimeZoneNames</code> resource bundles must extend this
  * class and implement the <code>getContents</code> method.
  */
