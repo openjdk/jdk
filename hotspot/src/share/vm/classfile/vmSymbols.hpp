@@ -796,7 +796,7 @@
    do_signature(encodeISOArray_signature,                        "([CI[BII)I")                                          \
                                                                                                                         \
   do_class(java_math_BigInteger,                      "java/math/BigInteger")                                           \
-  do_intrinsic(_multiplyToLen,      java_math_BigInteger, multiplyToLen_name, multiplyToLen_signature, F_R)             \
+  do_intrinsic(_multiplyToLen,      java_math_BigInteger, multiplyToLen_name, multiplyToLen_signature, F_S)             \
    do_name(     multiplyToLen_name,                             "multiplyToLen")                                        \
    do_signature(multiplyToLen_signature,                        "([II[II[I)[I")                                         \
                                                                                                                         \
@@ -807,6 +807,14 @@
   do_intrinsic(_mulAdd, java_math_BigInteger, mulAdd_name, mulAdd_signature, F_S)                                       \
    do_name(     mulAdd_name,                                  "implMulAdd")                                             \
    do_signature(mulAdd_signature,                             "([I[IIII)I")                                             \
+                                                                                                                        \
+  do_intrinsic(_montgomeryMultiply,      java_math_BigInteger, montgomeryMultiply_name, montgomeryMultiply_signature, F_S) \
+   do_name(     montgomeryMultiply_name,                             "implMontgomeryMultiply")                          \
+   do_signature(montgomeryMultiply_signature,                        "([I[I[IIJ[I)[I")                                  \
+                                                                                                                        \
+  do_intrinsic(_montgomerySquare,      java_math_BigInteger, montgomerySquare_name, montgomerySquare_signature, F_S)    \
+   do_name(     montgomerySquare_name,                             "implMontgomerySquare")                              \
+   do_signature(montgomerySquare_signature,                        "([I[IIJ[I)[I")                                      \
                                                                                                                         \
   /* java/lang/ref/Reference */                                                                                         \
   do_intrinsic(_Reference_get,            java_lang_ref_Reference, get_name,    void_object_signature, F_R)             \

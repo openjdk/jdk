@@ -145,6 +145,12 @@ class SharedRuntime: AllStatic {
   static double dsqrt(double f);
 #endif
 
+  // Montgomery multiplication
+  static void montgomery_multiply(jint *a_ints, jint *b_ints, jint *n_ints,
+                                  jint len, jlong inv, jint *m_ints);
+  static void montgomery_square(jint *a_ints, jint *n_ints,
+                                jint len, jlong inv, jint *m_ints);
+
 #ifdef __SOFTFP__
   // C++ compiler generates soft float instructions as well as passing
   // float and double in registers.
