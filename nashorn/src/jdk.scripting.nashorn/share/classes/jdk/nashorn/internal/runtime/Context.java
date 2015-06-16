@@ -724,16 +724,8 @@ public final class Context {
         // In strict mode, eval does not instantiate variables and functions
         // in the caller's environment. A new environment is created!
         if (strictFlag) {
-            // Create a new scope object
-            final ScriptObject strictEvalScope = global.newObject();
-
-            // bless it as a "scope"
-            strictEvalScope.setIsScope();
-
-            // set given scope to be it's proto so that eval can still
-            // access caller environment vars in the new environment.
-            strictEvalScope.setProto(scope);
-            scope = strictEvalScope;
+            // Create a new scope object with given scope as its prototype
+            scope = newScope(scope);
         }
 
         final ScriptFunction func = getProgramFunction(clazz, scope);
@@ -746,6 +738,10 @@ public final class Context {
         }
 
         return ScriptRuntime.apply(func, evalThis);
+    }
+
+    private static ScriptObject newScope(final ScriptObject callerScope) {
+        return new FunctionScope(PropertyMap.newMap(FunctionScope.class), callerScope);
     }
 
     private static Source loadInternal(final String srcStr, final String prefix, final String resourcePath) {

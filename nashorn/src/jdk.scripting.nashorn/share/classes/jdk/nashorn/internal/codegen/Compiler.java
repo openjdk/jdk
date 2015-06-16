@@ -103,7 +103,7 @@ public final class Compiler implements Loggable {
 
     private final CodeInstaller<ScriptEnvironment> installer;
 
-    /** logger for compiler, trampolines, splits and related code generation events
+    /** logger for compiler, trampolines and related code generation events
      *  that affect classes */
     private final DebugLogger log;
 
