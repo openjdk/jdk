@@ -99,10 +99,12 @@ import jdk.internal.dynalink.support.Lookup;
 import jdk.internal.dynalink.support.RuntimeContextLinkRequestImpl;
 
 /**
- * The linker for {@link RelinkableCallSite} objects. Users of it (scripting frameworks and language runtimes) have to
- * create a linker using the {@link DynamicLinkerFactory} and invoke its link method from the invokedynamic bootstrap
- * methods to set the target of all the call sites in the code they generate. Usual usage would be to create one class
- * per language runtime to contain one linker instance as:
+ * The linker for {@link RelinkableCallSite} objects. Users of it (scripting
+ * frameworks and language runtimes) have to create a linker using the
+ * {@link DynamicLinkerFactory} and invoke its link method from the invokedynamic
+ * bootstrap methods to set the target of all the call sites in the code they
+ * generate. Usual usage would be to create one class per language runtime to
+ * contain one linker instance as:
  *
  * <pre>
  * class MyLanguageRuntime {
@@ -123,19 +125,27 @@ import jdk.internal.dynalink.support.RuntimeContextLinkRequestImpl;
  *
  * Note how there are three components you will need to provide here:
  * <ul>
- * <li>You're expected to provide a {@link GuardingDynamicLinker} for your own language. If your runtime doesn't
- * have its own language and/or object model (i.e. it's a generic scripting shell), you don't need to implement a
- * dynamic linker; you would simply not invoke the {@code setPrioritizedLinker} method on the factory, or even better,
- * simply use {@link DefaultBootstrapper}.</li>
- * <li>The performance of the programs can depend on your choice of the class to represent call sites. The above
- * example used {@link MonomorphicCallSite}, but you might want to use {@link ChainedCallSite} instead. You'll need to
- * experiment and decide what fits your language runtime the best. You can subclass either of these or roll your own if
- * you need to.</li>
- * <li>You also need to provide {@link CallSiteDescriptor}s to your call sites. They are immutable objects that contain
- * all the information about the call site: the class performing the lookups, the name of the method being invoked, and
- * the method signature. The library has a default {@link CallSiteDescriptorFactory} for descriptors that you can use,
- * or you can create your own descriptor classes, especially if you need to add further information (values passed in
+ *
+ * <li>You're expected to provide a {@link GuardingDynamicLinker} for your own
+ * language. If your runtime doesn't have its own language and/or object model
+ * (i.e., it's a generic scripting shell), you don't need to implement a dynamic
+ * linker; you would simply not invoke the {@code setPrioritizedLinker} method
+ * on the factory, or even better, simply use {@link DefaultBootstrapper}.</li>
+ *
+ * <li>The performance of the programs can depend on your choice of the class to
+ * represent call sites. The above example used {@link MonomorphicCallSite}, but
+ * you might want to use {@link ChainedCallSite} instead. You'll need to
+ * experiment and decide what fits your language runtime the best. You can
+ * subclass either of these or roll your own if you need to.</li>
+ *
+ * <li>You also need to provide {@link CallSiteDescriptor}s to your call sites.
+ * They are immutable objects that contain all the information about the call
+ * site: the class performing the lookups, the name of the method being invoked,
+ * and the method signature. The library has a default {@link CallSiteDescriptorFactory}
+ * for descriptors that you can use, or you can create your own descriptor
+ * classes, especially if you need to add further information (values passed in
  * additional parameters to the bootstrap method) to them.</li>
+ *
  * </ul>
  *
  * @author Attila Szegedi
@@ -176,11 +186,15 @@ public class DynamicLinker {
     }
 
     /**
-     * Links an invokedynamic call site. It will install a method handle into the call site that invokes the relinking
-     * mechanism of this linker. Next time the call site is invoked, it will be linked for the actual arguments it was
-     * invoked with.
+     * Links an invokedynamic call site. It will install a method handle into
+     * the call site that invokes the relinking mechanism of this linker. Next
+     * time the call site is invoked, it will be linked for the actual arguments
+     * it was invoked with.
      *
+     * @param <T> the particular subclass of {@link RelinkableCallSite} for
+     *        which to create a link.
      * @param callSite the call site to link.
+     *
      * @return the callSite, for easy call chaining.
      */
     public <T extends RelinkableCallSite> T link(final T callSite) {
@@ -189,10 +203,13 @@ public class DynamicLinker {
     }
 
     /**
-     * Returns the object representing the lower level linker services of this class that are normally exposed to
-     * individual language-specific linkers. While as a user of this class you normally only care about the
-     * {@link #link(RelinkableCallSite)} method, in certain circumstances you might want to use the lower level services
-     * directly; either to lookup specific method handles, to access the type converters, and so on.
+     * Returns the object representing the lower level linker services of this
+     * class that are normally exposed to individual language-specific linkers.
+     * While as a user of this class you normally only care about the
+     * {@link #link(RelinkableCallSite)} method, in certain circumstances you
+     * might want to use the lower level services directly; either to lookup
+     * specific method handles, to access the type converters, and so on.
+     *
      * @return the object representing the linker services of this class.
      */
     public LinkerServices getLinkerServices() {
@@ -218,7 +235,9 @@ public class DynamicLinker {
      *
      * @param callSite the call site itself
      * @param arguments arguments to the invocation
+     *
      * @return return the method handle for the invocation
+     *
      * @throws Exception rethrows any exception thrown by the linkers
      */
     @SuppressWarnings("unused")
@@ -272,11 +291,15 @@ public class DynamicLinker {
     }
 
     /**
-     * Returns a stack trace element describing the location of the call site currently being linked on the current
-     * thread. The operation internally creates a Throwable object and inspects its stack trace, so it's potentially
-     * expensive. The recommended usage for it is in writing diagnostics code.
-     * @return a stack trace element describing the location of the call site currently being linked, or null if it is
-     * not invoked while a call site is being linked.
+     * Returns a stack trace element describing the location of the call site
+     * currently being linked on the current thread. The operation internally
+     * creates a Throwable object and inspects its stack trace, so it's
+     * potentially expensive. The recommended usage for it is in writing
+     * diagnostics code.
+     *
+     * @return a stack trace element describing the location of the call site
+     *         currently being linked, or null if it is not invoked while a call
+     *         site is being linked.
      */
     public static StackTraceElement getLinkedCallSiteLocation() {
         final StackTraceElement[] trace = new Throwable().getStackTrace();
@@ -290,8 +313,10 @@ public class DynamicLinker {
     }
 
     /**
-     * Deprecated because of not precise name.
+     * Deprecated because of imprecise name.
+     *
      * @deprecated Use {@link #getLinkedCallSiteLocation()} instead.
+     *
      * @return see non-deprecated method
      */
     @Deprecated
@@ -300,20 +325,26 @@ public class DynamicLinker {
     }
 
     /**
-     * Returns true if the frame represents {@code MethodHandleNatives.linkCallSite()}, the frame immediately on top of
-     * the call site frame when the call site is being linked for the first time.
+     * Returns {@code true} if the frame represents {@code MethodHandleNatives.linkCallSite()},
+     * the frame immediately on top of the call site frame when the call site is
+     * being linked for the first time.
+     *
      * @param frame the frame
-     * @return true if this frame represents {@code MethodHandleNatives.linkCallSite()}
+     *
+     * @return {@code true} if this frame represents {@code MethodHandleNatives.linkCallSite()}.
      */
     private static boolean isInitialLinkFrame(final StackTraceElement frame) {
         return testFrame(frame, INITIAL_LINK_METHOD_NAME, INITIAL_LINK_CLASS_NAME);
     }
 
     /**
-     * Returns true if the frame represents {@code DynamicLinker.relink()}, the frame immediately on top of the call
-     * site frame when the call site is being relinked (linked for second and subsequent times).
+     * Returns {@code true} if the frame represents {@code DynamicLinker.relink()},
+     * the frame immediately on top of the call site frame when the call site is
+     * being relinked (linked for second and subsequent times).
+     *
      * @param frame the frame
-     * @return true if this frame represents {@code DynamicLinker.relink()}
+     *
+     * @return {@code true} if this frame represents {@code DynamicLinker.relink()}.
      */
     private static boolean isRelinkFrame(final StackTraceElement frame) {
         return testFrame(frame, RELINK_METHOD_NAME, CLASS_NAME);

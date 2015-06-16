@@ -38,12 +38,8 @@
  * @run main Wrapper PermittedArtifact
  */
 
-import java.lang.reflect.Method;
-import java.util.*;
-import java.io.*;
-import java.nio.file.*;
-import java.nio.file.attribute.*;
-import java.nio.charset.*;
+import java.nio.file.Files;
+import java.util.Map;
 
 public class PermittedArtifact extends SJavacTester {
     public static void main(String... args) throws Exception {
@@ -53,26 +49,31 @@ public class PermittedArtifact extends SJavacTester {
 
     //Verify that --permit-artifact=bin works
     void test() throws Exception {
-        Files.createDirectory(BIN);
+        clean(TEST_ROOT);
+        Files.createDirectories(BIN);
         clean(GENSRC, BIN);
 
         Map<String,Long> previous_bin_state = collectState(BIN);
 
-        new ToolBox().writeFile(GENSRC+"/alfa/omega/A.java",
-                "package alfa.omega; public class A { }");
+        ToolBox tb = new ToolBox();
+        tb.writeFile(GENSRC + "/alfa/omega/A.java",
+                     "package alfa.omega; public class A { }");
 
-        new ToolBox().writeFile(BIN+"/alfa/omega/AA.class",
-                 "Ugh, a messy build system (tobefixed) wrote this class file, "
-                         + "sjavac must not delete it.");
+        tb.writeFile(BIN + "/alfa/omega/AA.class",
+                     "Ugh, a messy build system (tobefixed) wrote this class file, " +
+                     "sjavac must not delete it.");
 
-        compile("--log=debug", "--permit-artifact=bin/alfa/omega/AA.class",
-                "-src", "gensrc", "-d", "bin", SERVER_ARG);
+        compile("--log=debug",
+                "--permit-artifact=" + BIN + "/alfa/omega/AA.class",
+                "-src", GENSRC.toString(),
+                "-d", BIN.toString(),
+                SERVER_ARG);
 
         Map<String,Long> new_bin_state = collectState(BIN);
         verifyThatFilesHaveBeenAdded(previous_bin_state, new_bin_state,
-                                     "bin/alfa/omega/A.class",
-                                     "bin/alfa/omega/AA.class",
-                                     "bin/javac_state");
+                                     BIN + "/alfa/omega/A.class",
+                                     BIN + "/alfa/omega/AA.class",
+                                     BIN + "/javac_state");
         clean(GENSRC, BIN);
     }
 }

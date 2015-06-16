@@ -274,12 +274,14 @@
   /* internal classes known only to the JVM: */                                                   \
   template(java_lang_invoke_MemberName,               "java/lang/invoke/MemberName")              \
   template(java_lang_invoke_MethodHandleNatives,      "java/lang/invoke/MethodHandleNatives")     \
+  template(java_lang_invoke_MethodHandleNatives_CallSiteContext, "java/lang/invoke/MethodHandleNatives$CallSiteContext") \
   template(java_lang_invoke_LambdaForm,               "java/lang/invoke/LambdaForm")              \
   template(java_lang_invoke_ForceInline_signature,    "Ljava/lang/invoke/ForceInline;")           \
   template(java_lang_invoke_DontInline_signature,     "Ljava/lang/invoke/DontInline;")            \
   template(java_lang_invoke_Stable_signature,         "Ljava/lang/invoke/Stable;")                \
   template(java_lang_invoke_LambdaForm_Compiled_signature, "Ljava/lang/invoke/LambdaForm$Compiled;") \
   template(java_lang_invoke_LambdaForm_Hidden_signature, "Ljava/lang/invoke/LambdaForm$Hidden;")  \
+  template(java_lang_invoke_MethodHandleNatives_CallSiteContext_signature, "Ljava/lang/invoke/MethodHandleNatives$CallSiteContext;") \
   /* internal up-calls made only by the JVM, via class sun.invoke.MethodHandleNatives: */         \
   template(findMethodHandleType_name,                 "findMethodHandleType")                     \
   template(findMethodHandleType_signature,       "(Ljava/lang/Class;[Ljava/lang/Class;)Ljava/lang/invoke/MethodType;") \
@@ -401,7 +403,7 @@
   template(protection_domain_name,                    "protection_domain")                        \
   template(signers_name,                              "signers_name")                             \
   template(loader_data_name,                          "loader_data")                              \
-  template(dependencies_name,                         "dependencies")                             \
+  template(vmdependencies_name,                       "vmdependencies")                           \
   template(input_stream_void_signature,               "(Ljava/io/InputStream;)V")                 \
   template(getFileURL_name,                           "getFileURL")                               \
   template(getFileURL_signature,                      "(Ljava/io/File;)Ljava/net/URL;")           \

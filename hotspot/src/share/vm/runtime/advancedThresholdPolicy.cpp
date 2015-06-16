@@ -64,7 +64,7 @@ void AdvancedThresholdPolicy::initialize() {
   }
 #endif
 
-#ifdef SPARC
+#if defined SPARC || defined AARCH64
   if (FLAG_IS_DEFAULT(InlineSmallCode)) {
     FLAG_SET_DEFAULT(InlineSmallCode, 2500);
   }

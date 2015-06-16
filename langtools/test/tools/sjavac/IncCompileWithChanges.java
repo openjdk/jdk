@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Verify incremental changes in gensrc are handled as expected
+ * @ignore Requires dependency code to deal with in-method dependencies.
  * @bug 8054689
  * @author Fredrik O
  * @author sogoel (rewrite)
@@ -51,14 +52,13 @@ public class IncCompileWithChanges extends SJavacTester {
     ToolBox tb = new ToolBox();
 
     void test() throws Exception {
-        Files.createDirectory(GENSRC);
-        Files.createDirectory(BIN);
-        Files.createDirectory(HEADERS);
+        clean(TEST_ROOT);
+        Files.createDirectories(GENSRC);
+        Files.createDirectories(BIN);
+        Files.createDirectories(HEADERS);
 
         initialCompile();
         incrementalCompileWithChange();
-
-        clean(GENSRC, BIN, HEADERS);
     }
 
     /* Update A.java with a new timestamp and new final static definition.
@@ -72,24 +72,29 @@ public class IncCompileWithChanges extends SJavacTester {
         System.out.println("A.java updated to trigger a recompile");
         System.out.println("Generated native header should not be updated since native api of B was not modified");
         tb.writeFile(GENSRC.resolve("alfa/omega/A.java"),
-                       "package alfa.omega; public class A implements AINT { "+
-                 "public final static int DEFINITION = 18; public void aint() { } private void foo() { } }");
+                     "package alfa.omega; public class A implements AINT { " +
+                     "public final static int DEFINITION = 18;" +
+                     "public void aint() { } private void foo() { } }");
 
-        compile("gensrc", "-d", "bin", "-h", "headers", "-j", "1",
-                SERVER_ARG, "--log=debug");
+        compile(GENSRC.toString(),
+                "-d", BIN.toString(),
+                "-h", HEADERS.toString(),
+                "-j", "1",
+                SERVER_ARG,
+                "--log=debug");
         Map<String,Long> new_bin_state = collectState(BIN);
 
         verifyNewerFiles(previous_bin_state, new_bin_state,
-                         "bin/alfa/omega/A.class",
-                         "bin/alfa/omega/AINT.class",
-                         "bin/alfa/omega/AA$AAAA.class",
-                         "bin/alfa/omega/AAAAA.class",
-                         "bin/alfa/omega/AA$AAA.class",
-                         "bin/alfa/omega/AA.class",
-                         "bin/alfa/omega/AA$1.class",
-                         "bin/beta/B.class",
-                         "bin/beta/BINT.class",
-                         "bin/javac_state");
+                         BIN + "/alfa/omega/A.class",
+                         BIN + "/alfa/omega/AINT.class",
+                         BIN + "/alfa/omega/AA$AAAA.class",
+                         BIN + "/alfa/omega/AAAAA.class",
+                         BIN + "/alfa/omega/AA$AAA.class",
+                         BIN + "/alfa/omega/AA.class",
+                         BIN + "/alfa/omega/AA$1.class",
+                         BIN + "/beta/B.class",
+                         BIN + "/beta/BINT.class",
+                         BIN + "/javac_state");
         previous_bin_state = new_bin_state;
 
         Map<String,Long> new_headers_state = collectState(HEADERS);

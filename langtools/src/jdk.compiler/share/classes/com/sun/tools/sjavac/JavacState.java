@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,17 @@
 
 package com.sun.tools.sjavac;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.net.URI;
 import java.nio.file.NoSuchFileException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -37,8 +43,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.sun.tools.sjavac.options.Options;
+import com.sun.tools.sjavac.pubapi.PubApi;
 import com.sun.tools.sjavac.server.Sjavac;
 
 /**
@@ -268,24 +276,25 @@ public class JavacState {
      * Save the javac_state file.
      */
     public void save() throws IOException {
-        if (!needsSaving) return;
+        if (!needsSaving)
+            return;
         try (FileWriter out = new FileWriter(javacState)) {
             StringBuilder b = new StringBuilder();
             long millisNow = System.currentTimeMillis();
             Date d = new Date(millisNow);
-            SimpleDateFormat df =
-                new SimpleDateFormat("yyyy-MM-dd HH:mm:ss SSS");
-            b.append("# javac_state ver 0.3 generated "+millisNow+" "+df.format(d)+"\n");
+            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss SSS");
+            b.append("# javac_state ver 0.4 generated "+millisNow+" "+df.format(d)+"\n");
             b.append("# This format might change at any time. Please do not depend on it.\n");
+            b.append("# R arguments\n");
             b.append("# M module\n");
             b.append("# P package\n");
             b.append("# S C source_tobe_compiled timestamp\n");
             b.append("# S L link_only_source timestamp\n");
             b.append("# G C generated_source timestamp\n");
             b.append("# A artifact timestamp\n");
-            b.append("# D dependency\n");
+            b.append("# D S dependant -> source dependency\n");
+            b.append("# D C dependant -> classpath dependency\n");
             b.append("# I pubapi\n");
-            b.append("# R arguments\n");
             b.append("R ").append(theArgs).append("\n");
 
             // Copy over the javac_state for the packages that did not need recompilation.
@@ -312,6 +321,8 @@ public class JavacState {
         boolean newCommandLine = false;
         boolean syntaxError = false;
 
+        Log.debug("Loading javac state file: " + db.javacState);
+
         try (BufferedReader in = new BufferedReader(new FileReader(db.javacState))) {
             for (;;) {
                 String l = in.readLine();
@@ -327,11 +338,14 @@ public class JavacState {
                     } else
                     if (c == 'D') {
                         if (lastModule == null || lastPackage == null) { syntaxError = true; break; }
-                        lastPackage.loadDependency(l);
+                        char depType = l.charAt(2);
+                        if (depType != 'S' && depType != 'C')
+                            throw new RuntimeException("Bad dependency string: " + l);
+                        lastPackage.parseAndAddDependency(l.substring(4), depType == 'C');
                     } else
                     if (c == 'I') {
                         if (lastModule == null || lastPackage == null) { syntaxError = true; break; }
-                        lastPackage.loadPubapi(l);
+                        lastPackage.getPubApi().appendItem(l.substring(2)); // Strip "I "
                     } else
                     if (c == 'A') {
                         if (lastModule == null || lastPackage == null) { syntaxError = true; break; }
@@ -356,7 +370,7 @@ public class JavacState {
                             int sp = l.indexOf(" ", 18);
                             if (sp != -1) {
                                 String ver = l.substring(18,sp);
-                                if (!ver.equals("0.3")) {
+                                if (!ver.equals("0.4")) {
                     break;
                                  }
                 foundCorrectVerNr = true;
@@ -488,11 +502,92 @@ public class JavacState {
      * Propagate recompilation through the dependency chains.
      * Avoid re-tainting packages that have already been compiled.
      */
-    public void taintPackagesDependingOnChangedPackages(Set<String> pkgs, Set<String> recentlyCompiled) {
+    public void taintPackagesDependingOnChangedPackages(Set<String> pkgsWithChangedPubApi, Set<String> recentlyCompiled) {
+        // For each to-be-recompiled-candidates...
+        for (Package pkg : new HashSet<>(prev.packages().values())) {
+            // Find out what it depends upon...
+            Set<String> deps = pkg.typeDependencies()
+                                  .values()
+                                  .stream()
+                                  .flatMap(s -> s.stream())
+                                  .collect(Collectors.toSet());
+            for (String dep : deps) {
+                String depPkg = ":" + dep.substring(0, dep.lastIndexOf('.'));
+                if (depPkg.equals(pkg.name()))
+                    continue;
+                // Checking if that dependency has changed
+                if (pkgsWithChangedPubApi.contains(depPkg) && !recentlyCompiled.contains(pkg.name())) {
+                    taintPackage(pkg.name(), "its depending on " + depPkg);
+                }
+            }
+        }
+    }
+
+    /**
+     * Compare the javac_state recorded public apis of packages on the classpath
+     * with the actual public apis on the classpath.
+     */
+    public void taintPackagesDependingOnChangedClasspathPackages() {
+
+        // 1. Collect fully qualified names of all interesting classpath dependencies
+        Set<String> fqDependencies = new HashSet<>();
         for (Package pkg : prev.packages().values()) {
-            for (String dep : pkg.dependencies()) {
-                if (pkgs.contains(dep) && !recentlyCompiled.contains(pkg.name())) {
-                    taintPackage(pkg.name(), " its depending on "+dep);
+            // Check if this package was compiled. If it's presence is recorded
+            // because it was on the class path and we needed to save it's
+            // public api, it's not a candidate for tainting.
+            if (pkg.sources().isEmpty())
+                continue;
+
+            pkg.typeClasspathDependencies().values().forEach(fqDependencies::addAll);
+        }
+
+        // 2. Extract the public APIs from the on disk .class files
+        // (Reason for doing step 1 in a separate phase is to avoid extracting
+        // public APIs of the same class twice.)
+        PubApiExtractor pubApiExtractor = new PubApiExtractor(options);
+        Map<String, PubApi> onDiskPubApi = new HashMap<>();
+        for (String cpDep : fqDependencies) {
+            onDiskPubApi.put(cpDep, pubApiExtractor.getPubApi(cpDep));
+        }
+
+        // 3. Compare them with the public APIs as of last compilation (loaded from javac_state)
+        nextPkg:
+        for (Package pkg : prev.packages().values()) {
+            // Check if this package was compiled. If it's presence is recorded
+            // because it was on the class path and we needed to save it's
+            // public api, it's not a candidate for tainting.
+            if (pkg.sources().isEmpty())
+                continue;
+
+            Set<String> cpDepsOfThisPkg = new HashSet<>();
+            for (Set<String> cpDeps : pkg.typeClasspathDependencies().values())
+                cpDepsOfThisPkg.addAll(cpDeps);
+
+            for (String fqDep : cpDepsOfThisPkg) {
+
+                String depPkg = ":" + fqDep.substring(0, fqDep.lastIndexOf('.'));
+                PubApi prevPkgApi = prev.packages().get(depPkg).getPubApi();
+
+                // This PubApi directly lists the members of the class,
+                // i.e. [ MEMBER1, MEMBER2, ... ]
+                PubApi prevDepApi = prevPkgApi.types.get(fqDep).pubApi;
+
+                // In order to dive *into* the class, we need to add
+                // .types.get(fqDep).pubApi below.
+                PubApi currentDepApi = onDiskPubApi.get(fqDep).types.get(fqDep).pubApi;
+
+                if (!currentDepApi.isBackwardCompatibleWith(prevDepApi)) {
+                    List<String> apiDiff = currentDepApi.diff(prevDepApi);
+                    taintPackage(pkg.name(), "depends on classpath "
+                                + "package which has an updated package api: "
+                                + String.join("\n", apiDiff));
+                    //Log.debug("========================================");
+                    //Log.debug("------ PREV API ------------------------");
+                    //prevDepApi.asListOfStrings().forEach(Log::debug);
+                    //Log.debug("------ CURRENT API ---------------------");
+                    //currentDepApi.asListOfStrings().forEach(Log::debug);
+                    //Log.debug("========================================");
+                    continue nextPkg;
                 }
             }
         }
@@ -660,7 +755,6 @@ public class JavacState {
         Map<String,Transformer> suffixRules = new HashMap<>();
         suffixRules.put(".java", compileJavaPackages);
         compileJavaPackages.setExtra(args);
-
         rcValue[0] = perform(sjavac, binDir, suffixRules);
         recentlyCompiled.addAll(taintedPackages());
         clearTaintedPackages();
@@ -668,6 +762,11 @@ public class JavacState {
         taintPackagesDependingOnChangedPackages(packagesWithChangedPublicApis, recentlyCompiled);
         packagesWithChangedPublicApis = new HashSet<>();
         return again && rcValue[0];
+
+        // TODO: Figure out why 'again' checks packagesWithChangedPublicAPis.
+        // (It shouldn't matter if packages had changed pub apis as long as no
+        // one depends on them. Wouldn't it make more sense to let 'again'
+        // depend on taintedPackages?)
     }
 
     /**
@@ -699,68 +798,101 @@ public class JavacState {
         Map<Transformer,Map<String,Set<URI>>> groupedSources = new HashMap<>();
         for (Source src : now.sources().values()) {
             Transformer t = suffixRules.get(src.suffix());
-               if (t != null) {
+            if (t != null) {
                 if (taintedPackages.contains(src.pkg().name()) && !src.isLinkedOnly()) {
                     addFileToTransform(groupedSources, t, src);
                 }
             }
         }
         // Go through the transforms and transform them.
-        for (Map.Entry<Transformer,Map<String,Set<URI>>> e : groupedSources.entrySet()) {
+        for (Map.Entry<Transformer, Map<String, Set<URI>>> e : groupedSources.entrySet()) {
             Transformer t = e.getKey();
-            Map<String,Set<URI>> srcs = e.getValue();
-            // These maps need to be synchronized since multiple threads will be writing results into them.
-            Map<String,Set<URI>> packageArtifacts =
-                    Collections.synchronizedMap(new HashMap<String,Set<URI>>());
-            Map<String,Set<String>> packageDependencies =
-                    Collections.synchronizedMap(new HashMap<String,Set<String>>());
-            Map<String,String> packagePublicApis =
-                    Collections.synchronizedMap(new HashMap<String, String>());
+            Map<String, Set<URI>> srcs = e.getValue();
+            // These maps need to be synchronized since multiple threads will be
+            // writing results into them.
+            Map<String, Set<URI>> packageArtifacts = Collections.synchronizedMap(new HashMap<>());
+            Map<String, Map<String, Set<String>>> packageDependencies = Collections.synchronizedMap(new HashMap<>());
+            Map<String, Map<String, Set<String>>> packageCpDependencies = Collections.synchronizedMap(new HashMap<>());
+            Map<String, PubApi> packagePublicApis = Collections.synchronizedMap(new HashMap<>());
+            Map<String, PubApi> dependencyPublicApis = Collections.synchronizedMap(new HashMap<>());
 
-            boolean  r = t.transform(sjavac,
-                                     srcs,
-                                     visibleSrcs,
-                                     visibleClasses,
-                                     prev.dependents(),
-                                     outputDir.toURI(),
-                                     packageArtifacts,
-                                     packageDependencies,
-                                     packagePublicApis,
-                                     0,
-                                     isIncremental(),
-                                     numCores,
-                                     out,
-                                     err);
-            if (!r) rc = false;
+            boolean r = t.transform(sjavac,
+                                    srcs,
+                                    visibleSrcs,
+                                    visibleClasses,
+                                    prev.dependents(),
+                                    outputDir.toURI(),
+                                    packageArtifacts,
+                                    packageDependencies,
+                                    packageCpDependencies,
+                                    packagePublicApis,
+                                    dependencyPublicApis,
+                                    0,
+                                    isIncremental(),
+                                    numCores,
+                                    out,
+                                    err);
+            if (!r)
+                rc = false;
 
             for (String p : srcs.keySet()) {
                 recompiledPackages.add(p);
             }
             // The transform is done! Extract all the artifacts and store the info into the Package objects.
-            for (Map.Entry<String,Set<URI>> a : packageArtifacts.entrySet()) {
+            for (Map.Entry<String, Set<URI>> a : packageArtifacts.entrySet()) {
                 Module mnow = now.findModuleFromPackageName(a.getKey());
                 mnow.addArtifacts(a.getKey(), a.getValue());
             }
             // Extract all the dependencies and store the info into the Package objects.
-            for (Map.Entry<String,Set<String>> a : packageDependencies.entrySet()) {
-                Set<String> deps = a.getValue();
+            for (Map.Entry<String, Map<String, Set<String>>> a : packageDependencies.entrySet()) {
+                Map<String, Set<String>> deps = a.getValue();
                 Module mnow = now.findModuleFromPackageName(a.getKey());
-                mnow.setDependencies(a.getKey(), deps);
+                mnow.setDependencies(a.getKey(), deps, false);
             }
-            // Extract all the pubapis and store the info into the Package objects.
-            for (Map.Entry<String,String> a : packagePublicApis.entrySet()) {
-                Module mprev = prev.findModuleFromPackageName(a.getKey());
-                List<String> pubapi = Package.pubapiToList(a.getValue());
+            for (Map.Entry<String, Map<String, Set<String>>> a : packageCpDependencies.entrySet()) {
+                Map<String, Set<String>> deps = a.getValue();
                 Module mnow = now.findModuleFromPackageName(a.getKey());
-                mnow.setPubapi(a.getKey(), pubapi);
-                if (mprev.hasPubapiChanged(a.getKey(), pubapi)) {
+                mnow.setDependencies(a.getKey(), deps, true);
+            }
+
+            // This map contains the public api of the types that this
+            // compilation depended upon. This means that it may not contain
+            // full packages. In other words, we shouldn't remove knowledge of
+            // public apis but merge these with what we already have.
+            for (Map.Entry<String, PubApi> a : dependencyPublicApis.entrySet()) {
+                String pkg = a.getKey();
+                PubApi packagePartialPubApi = a.getValue();
+                Package pkgNow = now.findModuleFromPackageName(pkg).lookupPackage(pkg);
+                PubApi currentPubApi = pkgNow.getPubApi();
+                PubApi newPubApi = PubApi.mergeTypes(currentPubApi, packagePartialPubApi);
+                pkgNow.setPubapi(newPubApi);
+
+                // See JDK-8071904
+                if (now.packages().containsKey(pkg))
+                    now.packages().get(pkg).setPubapi(newPubApi);
+                else
+                    now.packages().put(pkg, pkgNow);
+            }
+
+            // The packagePublicApis cover entire packages (since sjavac compiles
+            // stuff on package level). This means that if a type is missing
+            // in the public api of a given package, it means that it has been
+            // removed. In other words, we should *set* the pubapi to whatever
+            // this map contains, and not merge it with what we already have.
+            for (Map.Entry<String, PubApi> a : packagePublicApis.entrySet()) {
+                String pkg = a.getKey();
+                PubApi newPubApi = a.getValue();
+                Module mprev = prev.findModuleFromPackageName(pkg);
+                Module mnow = now.findModuleFromPackageName(pkg);
+                mnow.setPubapi(pkg, newPubApi);
+                if (mprev.hasPubapiChanged(pkg, newPubApi)) {
                     // Aha! The pubapi of this package has changed!
                     // It can also be a new compile from scratch.
-                    if (mprev.lookupPackage(a.getKey()).existsInJavacState()) {
+                    if (mprev.lookupPackage(pkg).existsInJavacState()) {
                         // This is an incremental compile! The pubapi
                         // did change. Trigger recompilation of dependents.
-                        packagesWithChangedPublicApis.add(a.getKey());
-                        Log.info("The pubapi of "+Util.justPackageName(a.getKey())+" has changed!");
+                        packagesWithChangedPublicApis.add(pkg);
+                        Log.info("The API of " + Util.justPackageName(pkg) + " has changed!");
                     }
                 }
             }
@@ -791,17 +923,21 @@ public class JavacState {
     }
 
     /**
-     * Compare the calculate source list, with an explicit list, usually supplied from the makefile.
-     * Used to detect bugs where the makefile and sjavac have different opinions on which files
-     * should be compiled.
+     * Compare the calculate source list, with an explicit list, usually
+     * supplied from the makefile. Used to detect bugs where the makefile and
+     * sjavac have different opinions on which files should be compiled.
      */
-    public void compareWithMakefileList(File makefileSourceList) throws ProblemException {
-        // If we are building on win32 using for example cygwin the paths in the makefile source list
+    public void compareWithMakefileList(File makefileSourceList)
+            throws ProblemException {
+        // If we are building on win32 using for example cygwin the paths in the
+        // makefile source list
         // might be /cygdrive/c/.... which does not match c:\....
-        // We need to adjust our calculated sources to be identical, if necessary.
+        // We need to adjust our calculated sources to be identical, if
+        // necessary.
         boolean mightNeedRewriting = File.pathSeparatorChar == ';';
 
-        if (makefileSourceList == null) return;
+        if (makefileSourceList == null)
+            return;
 
         Set<String> calculatedSources = new HashSet<>();
         Set<String> listedSources = new HashSet<>();
