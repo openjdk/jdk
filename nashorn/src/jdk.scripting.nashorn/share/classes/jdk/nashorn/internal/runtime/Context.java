@@ -741,7 +741,7 @@ public final class Context {
     }
 
     private static ScriptObject newScope(final ScriptObject callerScope) {
-        return new FunctionScope(PropertyMap.newMap(FunctionScope.class), callerScope);
+        return new Scope(callerScope, PropertyMap.newMap(Scope.class));
     }
 
     private static Source loadInternal(final String srcStr, final String prefix, final String resourcePath) {

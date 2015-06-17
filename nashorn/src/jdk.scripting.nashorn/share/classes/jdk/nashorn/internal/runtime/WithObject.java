@@ -44,7 +44,7 @@ import jdk.nashorn.internal.runtime.linker.NashornGuards;
  * This class supports the handling of scope in a with body.
  *
  */
-public final class WithObject extends ScriptObject implements Scope {
+public final class WithObject extends Scope {
     private static final MethodHandle WITHEXPRESSIONGUARD    = findOwnMH("withExpressionGuard",  boolean.class, Object.class, PropertyMap.class, SwitchPoint.class);
     private static final MethodHandle WITHEXPRESSIONFILTER   = findOwnMH("withFilterExpression", Object.class, Object.class);
     private static final MethodHandle WITHSCOPEFILTER        = findOwnMH("withFilterScope",      Object.class, Object.class);
@@ -62,7 +62,6 @@ public final class WithObject extends ScriptObject implements Scope {
      */
     WithObject(final ScriptObject scope, final ScriptObject expression) {
         super(scope, null);
-        setIsScope();
         this.expression = expression;
     }
 
