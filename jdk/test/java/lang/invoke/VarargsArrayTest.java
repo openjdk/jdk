@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,14 @@
 package java.lang.invoke;
 
 import sun.invoke.util.Wrapper;
-
 import java.util.Arrays;
 import java.util.Collections;
+import com.oracle.testlibrary.jsr292.CodeCacheOverflowProcessor;
 
 /* @test
  * @summary unit tests for varargs array methods: MethodHandleInfo.varargsArray(int),
  *          MethodHandleInfo.varargsArray(Class,int) & MethodHandleInfo.varargsList(int)
- *
+ * @library /lib/testlibrary /lib/testlibrary/jsr292
  * @run main/bootclasspath java.lang.invoke.VarargsArrayTest
  * @run main/bootclasspath -DVarargsArrayTest.MAX_ARITY=255 -DVarargsArrayTest.START_ARITY=250
  *                         java.lang.invoke.VarargsArrayTest
@@ -47,6 +47,10 @@ public class VarargsArrayTest {
     private static final boolean EXHAUSTIVE = Boolean.getBoolean(CLASS.getSimpleName()+".EXHAUSTIVE");
 
     public static void main(String[] args) throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(VarargsArrayTest::test);
+    }
+
+    public static void test() throws Throwable {
         testVarargsArray();
         testVarargsReferenceArray();
         testVarargsPrimitiveArray();
