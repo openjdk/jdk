@@ -97,6 +97,8 @@ public:
     int    _narrow_oop_shift;         // compressed oop encoding shift
     uintx  _max_heap_size;            // java max heap size during dumping
     Universe::NARROW_OOP_MODE _narrow_oop_mode; // compressed oop encoding mode
+    int     _narrow_klass_shift;      // save narrow klass base and shift
+    address _narrow_klass_base;
 
     struct space_info {
       int    _crc;           // crc checksum of the current space
@@ -178,6 +180,8 @@ public:
   Universe::NARROW_OOP_MODE narrow_oop_mode() { return _header->_narrow_oop_mode; }
   int    narrow_oop_shift()           { return _header->_narrow_oop_shift; }
   uintx  max_heap_size()              { return _header->_max_heap_size; }
+  address narrow_klass_base() const   { return _header->_narrow_klass_base; }
+  int     narrow_klass_shift() const  { return _header->_narrow_klass_shift; }
   size_t space_capacity(int i)        { return _header->_space[i]._capacity; }
   struct FileMapHeader* header()      { return _header; }
 
