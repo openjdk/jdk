@@ -36,6 +36,7 @@
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
+#include "gc/shared/generation.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/modRefBarrierSet.hpp"
 #include "gc/shared/referencePolicy.hpp"
@@ -53,8 +54,7 @@
 #include "utilities/events.hpp"
 #include "utilities/stack.inline.hpp"
 
-void GenMarkSweep::invoke_at_safepoint(int level, ReferenceProcessor* rp, bool clear_all_softrefs) {
-  guarantee(level == 1, "We always collect both old and young.");
+void GenMarkSweep::invoke_at_safepoint(ReferenceProcessor* rp, bool clear_all_softrefs) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
 
   GenCollectedHeap* gch = GenCollectedHeap::heap();
@@ -87,11 +87,11 @@ void GenMarkSweep::invoke_at_safepoint(int level, ReferenceProcessor* rp, bool c
   // Capture used regions for each generation that will be
   // subject to collection, so that card table adjustments can
   // be made intelligently (see clear / invalidate further below).
-  gch->save_used_regions(level);
+  gch->save_used_regions();
 
   allocate_stacks();
 
-  mark_sweep_phase1(level, clear_all_softrefs);
+  mark_sweep_phase1(clear_all_softrefs);
 
   mark_sweep_phase2();
 
@@ -99,7 +99,7 @@ void GenMarkSweep::invoke_at_safepoint(int level, ReferenceProcessor* rp, bool c
   COMPILER2_PRESENT(assert(DerivedPointerTable::is_active(), "Sanity"));
   COMPILER2_PRESENT(DerivedPointerTable::set_active(false));
 
-  mark_sweep_phase3(level);
+  mark_sweep_phase3();
 
   mark_sweep_phase4();
 
@@ -184,8 +184,7 @@ void GenMarkSweep::deallocate_stacks() {
   _objarray_stack.clear(true);
 }
 
-void GenMarkSweep::mark_sweep_phase1(int level,
-                                     bool clear_all_softrefs) {
+void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
   // Recursively traverse all live objects and mark them
   GCTraceTime tm("phase 1", PrintGC && Verbose, true, _gc_timer, _gc_tracer->gc_id());
 
@@ -195,7 +194,6 @@ void GenMarkSweep::mark_sweep_phase1(int level,
   // use OopsInGenClosure constructor which takes a generation,
   // as the Universe has not been created when the static constructors
   // are run.
-  assert(level == 1, "We don't use mark-sweep on young generations");
   follow_root_closure.set_orig_generation(gch->old_gen());
 
   // Need new claim bits before marking starts.
@@ -205,7 +203,7 @@ void GenMarkSweep::mark_sweep_phase1(int level,
     StrongRootsScope srs(1);
 
     gch->gen_process_roots(&srs,
-                           level,
+                           GenCollectedHeap::OldGen,
                            false, // Younger gens are not roots.
                            GenCollectedHeap::SO_None,
                            ClassUnloading,
@@ -273,7 +271,7 @@ public:
   }
 };
 
-void GenMarkSweep::mark_sweep_phase3(int level) {
+void GenMarkSweep::mark_sweep_phase3() {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
 
   // Adjust the pointers to reflect the new locations
@@ -286,14 +284,13 @@ void GenMarkSweep::mark_sweep_phase3(int level) {
   // use OopsInGenClosure constructor which takes a generation,
   // as the Universe has not been created when the static constructors
   // are run.
-  assert(level == 1, "We don't use mark-sweep on young generations.");
   adjust_pointer_closure.set_orig_generation(gch->old_gen());
 
   {
     StrongRootsScope srs(1);
 
     gch->gen_process_roots(&srs,
-                           level,
+                           GenCollectedHeap::OldGen,
                            false, // Younger gens are not roots.
                            GenCollectedHeap::SO_AllCodeCache,
                            GenCollectedHeap::StrongAndWeakRoots,

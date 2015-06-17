@@ -31,17 +31,16 @@ class GenMarkSweep : public MarkSweep {
   friend class VM_MarkSweep;
   friend class G1MarkSweep;
  public:
-  static void invoke_at_safepoint(int level, ReferenceProcessor* rp,
-                                  bool clear_all_softrefs);
+  static void invoke_at_safepoint(ReferenceProcessor* rp, bool clear_all_softrefs);
 
  private:
 
   // Mark live objects
-  static void mark_sweep_phase1(int level, bool clear_all_softrefs);
+  static void mark_sweep_phase1(bool clear_all_softrefs);
   // Calculate new addresses
   static void mark_sweep_phase2();
   // Update pointers
-  static void mark_sweep_phase3(int level);
+  static void mark_sweep_phase3();
   // Move objects to new positions
   static void mark_sweep_phase4();
 
