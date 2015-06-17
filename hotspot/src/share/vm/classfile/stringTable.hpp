@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,10 @@
 #include "memory/allocation.inline.hpp"
 #include "utilities/hashtable.hpp"
 
+template <class T, class N> class CompactHashtable;
+class CompactHashtableWriter;
+class FileMapInfo;
+
 class StringTable : public RehashableHashtable<oop, mtSymbol> {
   friend class VMStructs;
   friend class Symbol;
@@ -35,6 +39,10 @@ class StringTable : public RehashableHashtable<oop, mtSymbol> {
 private:
   // The string table
   static StringTable* _the_table;
+
+  // Shared string table
+  static CompactHashtable<oop, char> _shared_table;
+  static bool _ignore_shared_strings;
 
   // Set if one bucket is out of balance due to hash algorithm deficiency
   static bool _needs_rehashing;
@@ -46,7 +54,8 @@ private:
   oop basic_add(int index, Handle string_or_null, jchar* name, int len,
                 unsigned int hashValue, TRAPS);
 
-  oop lookup(int index, jchar* chars, int length, unsigned int hashValue);
+  oop lookup_in_main_table(int index, jchar* chars, int length, unsigned int hashValue);
+  static oop lookup_shared(jchar* name, int len);
 
   // Apply the give oop closure to the entries to the buckets
   // in the range [start_idx, end_idx).
@@ -141,12 +150,14 @@ public:
   static int verify_and_compare_entries();
 
   // Sharing
-  static void copy_buckets(char** top, char*end) {
-    the_table()->Hashtable<oop, mtSymbol>::copy_buckets(top, end);
-  }
-  static void copy_table(char** top, char*end) {
-    the_table()->Hashtable<oop, mtSymbol>::copy_table(top, end);
-  }
+  static void ignore_shared_strings(bool v) { _ignore_shared_strings = v; }
+  static bool shared_string_ignored()       { return _ignore_shared_strings; }
+  static void shared_oops_do(OopClosure* f);
+  static bool copy_shared_string(GrowableArray<MemRegion> *string_space,
+                                 CompactHashtableWriter* ch_table);
+  static bool copy_compact_table(char** top, char* end, GrowableArray<MemRegion> *string_space,
+                                 size_t* space_size);
+  static const char* init_shared_table(FileMapInfo *mapinfo, char* buffer);
   static void reverse() {
     the_table()->Hashtable<oop, mtSymbol>::reverse();
   }

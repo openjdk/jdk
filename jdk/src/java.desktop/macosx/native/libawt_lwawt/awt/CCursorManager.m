@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,13 +118,11 @@ Java_sun_lwawt_macosx_CCursorManager_nativeGetCursorPosition
 
 JNF_COCOA_ENTER(env);
 
-    __block NSPoint pt = NSZeroPoint;
-    
-    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
-            pt = ConvertNSScreenPoint(env, [NSEvent mouseLocation]);
-    }];
-    
-    jpt = NSToJavaPoint(env, pt);
+    CGEventRef event = CGEventCreate(NULL);
+    CGPoint globalPos = CGEventGetLocation(event);
+    CFRelease(event);
+
+    jpt = NSToJavaPoint(env, globalPos);
 
 JNF_COCOA_EXIT(env);
 

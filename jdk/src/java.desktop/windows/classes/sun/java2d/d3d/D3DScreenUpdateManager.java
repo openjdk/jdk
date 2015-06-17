@@ -59,7 +59,7 @@ import sun.misc.InnocuousThread;
  * GDIWindowSurfaceData. A background thread handles the swap chain flips.
  *
  * There are some restrictions to which windows we would use this for.
- * @see #createScreenSurface()
+ * @see #createScreenSurface
  */
 public class D3DScreenUpdateManager extends ScreenUpdateManager
     implements Runnable
@@ -290,7 +290,7 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
     /**
      * Adds a surface to the list of tracked surfaces.
      *
-     * @param d3dw the surface to be added
+     * @param sd the surface to be added
      */
     private void trackScreenSurface(SurfaceData sd) {
         if (!done && sd instanceof D3DWindowSurfaceData) {
