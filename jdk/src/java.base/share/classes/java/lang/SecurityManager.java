@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1447,7 +1447,7 @@ class SecurityManager {
             throw new NullPointerException("package name can't be null");
         }
 
-        String[] pkgs;
+        String[] restrictedPkgs;
         synchronized (packageAccessLock) {
             /*
              * Do we need to update our property array?
@@ -1457,8 +1457,7 @@ class SecurityManager {
                     AccessController.doPrivileged(
                         new PrivilegedAction<>() {
                             public String run() {
-                                return java.security.Security.getProperty(
-                                    "package.access");
+                                return Security.getProperty("package.access");
                             }
                         }
                     );
@@ -1468,14 +1467,33 @@ class SecurityManager {
 
             // Using a snapshot of packageAccess -- don't care if static field
             // changes afterwards; array contents won't change.
-            pkgs = packageAccess;
+            restrictedPkgs = packageAccess;
         }
 
         /*
          * Traverse the list of packages, check for any matches.
          */
-        for (String restrictedPkg : pkgs) {
-            if (pkg.startsWith(restrictedPkg) || restrictedPkg.equals(pkg + ".")) {
+        final int plen = pkg.length();
+        for (String restrictedPkg : restrictedPkgs) {
+            final int rlast = restrictedPkg.length() - 1;
+
+            // Optimizations:
+            //
+            // If rlast >= plen then restrictedPkg is longer than pkg by at
+            // least one char. This means pkg cannot start with restrictedPkg,
+            // since restrictedPkg will be longer than pkg.
+            //
+            // Similarly if rlast != plen, then pkg + "." cannot be the same
+            // as restrictedPkg, since pkg + "." will have a different length
+            // than restrictedPkg.
+            //
+            if (rlast < plen && pkg.startsWith(restrictedPkg) ||
+                // The following test is equivalent to
+                // restrictedPkg.equals(pkg + ".") but is noticeably more
+                // efficient:
+                rlast == plen && restrictedPkg.startsWith(pkg) &&
+                restrictedPkg.charAt(rlast) == '.')
+            {
                 checkPermission(
                     new RuntimePermission("accessClassInPackage." + pkg));
                 break;  // No need to continue; only need to check this once
