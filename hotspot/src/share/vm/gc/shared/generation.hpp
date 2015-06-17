@@ -98,9 +98,6 @@ class Generation: public CHeapObj<mtGC> {
   // Memory area reserved for generation
   VirtualSpace _virtual_space;
 
-  // Level in the generation hierarchy.
-  int _level;
-
   // ("Weak") Reference processing support
   ReferenceProcessor* _ref_processor;
 
@@ -110,12 +107,8 @@ class Generation: public CHeapObj<mtGC> {
   // Statistics for garbage collection
   GCStats* _gc_stats;
 
-  // Returns the next generation in the configuration, or else NULL if this
-  // is the highest generation.
-  Generation* next_gen() const;
-
   // Initialize the generation.
-  Generation(ReservedSpace rs, size_t initial_byte_size, int level);
+  Generation(ReservedSpace rs, size_t initial_byte_size);
 
   // Apply "cl->do_oop" to (the address of) (exactly) all the ref fields in
   // "sp" that point into younger generations.
@@ -409,15 +402,14 @@ class Generation: public CHeapObj<mtGC> {
     _time_of_last_gc = now;
   }
 
-  // Generations may keep statistics about collection.  This
-  // method updates those statistics.  current_level is
-  // the level of the collection that has most recently
-  // occurred.  This allows the generation to decide what
-  // statistics are valid to collect.  For example, the
-  // generation can decide to gather the amount of promoted data
-  // if the collection of the younger generations has completed.
+  // Generations may keep statistics about collection. This method
+  // updates those statistics. current_generation is the generation
+  // that was most recently collected. This allows the generation to
+  // decide what statistics are valid to collect. For example, the
+  // generation can decide to gather the amount of promoted data if
+  // the collection of the younger generations has completed.
   GCStats* gc_stats() const { return _gc_stats; }
-  virtual void update_gc_stats(int current_level, bool full) {}
+  virtual void update_gc_stats(Generation* current_generation, bool full) {}
 
   // Mark sweep support phase2
   virtual void prepare_for_compaction(CompactPoint* cp);
@@ -501,8 +493,6 @@ class Generation: public CHeapObj<mtGC> {
   // Printing
   virtual const char* name() const = 0;
   virtual const char* short_name() const = 0;
-
-  int level() const { return _level; }
 
   // Reference Processing accessor
   ReferenceProcessor* const ref_processor() { return _ref_processor; }
