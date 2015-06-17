@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,7 +162,7 @@ void WindowsDecoder::initialize() {
      // current function and comparing the result
      address addr = (address)Decoder::demangle;
      char buf[MAX_PATH];
-     if (decode(addr, buf, sizeof(buf), NULL)) {
+     if (decode(addr, buf, sizeof(buf), NULL, NULL, true /* demangle */)) {
        _can_decode_in_vm = !strcmp(buf, "Decoder::demangle");
      }
   }
@@ -187,7 +187,7 @@ bool WindowsDecoder::can_decode_C_frame_in_vm() const {
 }
 
 
-bool WindowsDecoder::decode(address addr, char *buf, int buflen, int* offset, const char* modulepath)  {
+bool WindowsDecoder::decode(address addr, char *buf, int buflen, int* offset, const char* modulepath, bool demangle_name)  {
   if (_pfnSymGetSymFromAddr64 != NULL) {
     PIMAGEHLP_SYMBOL64 pSymbol;
     char symbolInfo[MAX_PATH + sizeof(IMAGEHLP_SYMBOL64)];
@@ -197,7 +197,7 @@ bool WindowsDecoder::decode(address addr, char *buf, int buflen, int* offset, co
     DWORD64 displacement;
     if (_pfnSymGetSymFromAddr64(::GetCurrentProcess(), (DWORD64)addr, &displacement, pSymbol)) {
       if (buf != NULL) {
-        if (demangle(pSymbol->Name, buf, buflen)) {
+        if (!(demangle_name && demangle(pSymbol->Name, buf, buflen))) {
           jio_snprintf(buf, buflen, "%s", pSymbol->Name);
         }
       }

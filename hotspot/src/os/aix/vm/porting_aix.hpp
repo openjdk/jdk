@@ -87,7 +87,8 @@ int getFuncName(
       char* p_name, size_t namelen,    // [out] optional: user provided buffer for the function name
       int* p_displacement,             // [out] optional: displacement
       const struct tbtable** p_tb,     // [out] optional: ptr to traceback table to get further information
-      char* p_errmsg, size_t errmsglen // [out] optional: user provided buffer for error messages
+      char* p_errmsg, size_t errmsglen,// [out] optional: user provided buffer for error messages
+      bool demangle = true             // [in] whether to demangle the name
     );
 
 // -------------------------------------------------------------------------

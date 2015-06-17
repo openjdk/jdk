@@ -539,7 +539,8 @@ class os: AllStatic {
   // If function name is not found, buf[0] is set to '\0' and offset is
   // set to -1 (if offset is non-NULL).
   static bool dll_address_to_function_name(address addr, char* buf,
-                                           int buflen, int* offset);
+                                           int buflen, int* offset,
+                                           bool demangle = true);
 
   // Locate DLL/DSO. On success, full path of the library is copied to
   // buf, and offset is optionally set to be the distance between addr
