@@ -147,12 +147,16 @@ needs_compact3 = \
   gc/survivorAlignment \
   gc/TestGCLogRotationViaJcmd.java \
   runtime/InternalApi/ThreadCpuTimesDeadlock.java \
+  runtime/NMT/JcmdSummaryDiff.java \
+  runtime/RedefineTests/RedefineAnnotations.java
   serviceability/sa/jmap-hashcode/Test8028623.java \
   serviceability/threads/TestFalseDeadLock.java \
   compiler/codecache/jmx \
   compiler/jsr292/RedefineMethodUsedByMultipleMethodHandles.java \
   compiler/rangechecks/TestRangeCheckSmearing.java \
-  serviceability/dcmd
+  compiler/whitebox/DeoptimizeMultipleOSRTest.java \
+  serviceability/dcmd \
+  testlibrary_tests/whitebox/vm_flags
 
 # Compact 2 adds full VM tests
 compact2 = \
