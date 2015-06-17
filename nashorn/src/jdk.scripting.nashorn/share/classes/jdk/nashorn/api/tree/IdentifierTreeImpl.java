@@ -47,7 +47,7 @@ final class IdentifierTreeImpl extends ExpressionTreeImpl implements IdentifierT
     }
 
     @Override
-    public <R,D> R accept(TreeVisitor<R,D> visitor, D data) {
+    public <R,D> R accept(final TreeVisitor<R,D> visitor, final D data) {
         return visitor.visitIdentifier(this, data);
     }
 }

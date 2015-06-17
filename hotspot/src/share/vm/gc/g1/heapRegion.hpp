@@ -331,6 +331,7 @@ class HeapRegion: public G1OffsetTableContigSpace {
   }
 
   static size_t max_region_size();
+  static size_t min_region_size_in_words();
 
   // It sets up the heap region size (GrainBytes / GrainWords), as
   // well as other related fields that are based on the heap region
@@ -416,6 +417,15 @@ class HeapRegion: public G1OffsetTableContigSpace {
   bool is_continues_humongous() const { return _type.is_continues_humongous();   }
 
   bool is_old() const { return _type.is_old(); }
+
+  // A pinned region contains objects which are not moved by garbage collections.
+  // Humongous regions and archive regions are pinned.
+  bool is_pinned() const { return _type.is_pinned(); }
+
+  // An archive region is a pinned region, also tagged as old, which
+  // should not be marked during mark/sweep. This allows the address
+  // space to be shared by JVM instances.
+  bool is_archive() const { return _type.is_archive(); }
 
   // For a humongous region, region in which it starts.
   HeapRegion* humongous_start_region() const {
@@ -669,6 +679,8 @@ class HeapRegion: public G1OffsetTableContigSpace {
   void set_survivor()    { _type.set_survivor();    }
 
   void set_old() { _type.set_old(); }
+
+  void set_archive() { _type.set_archive(); }
 
   // Determine if an object has been allocated since the last
   // mark performed by the collector. This returns true iff the object

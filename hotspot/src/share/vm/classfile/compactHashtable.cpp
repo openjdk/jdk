@@ -32,11 +32,11 @@
 //
 // The compact hash table writer implementations
 //
-CompactHashtableWriter::CompactHashtableWriter(const char* table_name,
+CompactHashtableWriter::CompactHashtableWriter(int table_type,
                                                int num_entries,
                                                CompactHashtableStats* stats) {
   assert(DumpSharedSpaces, "dump-time only");
-  _table_name = table_name;
+  _type = table_type;
   _num_entries = num_entries;
   _num_buckets = number_of_buckets(_num_entries);
   _buckets = NEW_C_HEAP_ARRAY(Entry*, _num_buckets, mtSymbol);
@@ -99,7 +99,7 @@ juint* CompactHashtableWriter::dump_table(juint* p, juint** first_bucket,
                                           NumberSeq* summary) {
   int index;
   juint* compact_table = p;
-  // Find the start of the buckets, skip the compact_bucket_infos table
+  // Compute the start of the buckets, include the compact_bucket_infos table
   // and the table end offset.
   juint offset = _num_buckets + 1;
   *first_bucket = compact_table + offset;
@@ -130,10 +130,17 @@ juint* CompactHashtableWriter::dump_table(juint* p, juint** first_bucket,
 // Write the compact table's entries
 juint* CompactHashtableWriter::dump_buckets(juint* compact_table, juint* p,
                                             NumberSeq* summary) {
-  uintx base_address = uintx(MetaspaceShared::shared_rs()->base());
-  uintx max_delta    = uintx(MetaspaceShared::shared_rs()->size());
-  assert(max_delta <= 0x7fffffff, "range check");
+  uintx base_address = 0;
+  uintx max_delta = 0;
   int num_compact_buckets = 0;
+  if (_type == CompactHashtable<Symbol*, char>::_symbol_table) {
+    base_address = uintx(MetaspaceShared::shared_rs()->base());
+    max_delta    = uintx(MetaspaceShared::shared_rs()->size());
+    assert(max_delta <= 0x7fffffff, "range check");
+  } else {
+    assert((_type == CompactHashtable<oop, char>::_string_table), "unknown table");
+    assert(UseCompressedOops, "UseCompressedOops is required");
+  }
 
   assert(p != NULL, "sanity");
   for (int index = 0; index < _num_buckets; index++) {
@@ -148,12 +155,16 @@ juint* CompactHashtableWriter::dump_buckets(juint* compact_table, juint* p,
     for (Entry* tent = _buckets[index]; tent;
          tent = tent->next()) {
       if (bucket_type == REGULAR_BUCKET_TYPE) {
-        *p++ = juint(tent->hash()); // write symbol hash
+        *p++ = juint(tent->hash()); // write entry hash
       }
-      uintx deltax = uintx(tent->value()) - base_address;
-      assert(deltax < max_delta, "range check");
-      juint delta = juint(deltax);
-      *p++ = delta; // write symbol offset
+      if (_type == CompactHashtable<Symbol*, char>::_symbol_table) {
+        uintx deltax = uintx(tent->value()) - base_address;
+        assert(deltax < max_delta, "range check");
+        juint delta = juint(deltax);
+        *p++ = delta; // write entry offset
+      } else {
+        *p++ = oopDesc::encode_heap_oop(tent->string());
+      }
       count ++;
     }
     assert(count == _bucket_sizes[index], "sanity");
@@ -174,6 +185,10 @@ void CompactHashtableWriter::dump(char** top, char* end) {
 
   uintx base_address = uintx(MetaspaceShared::shared_rs()->base());
 
+  // Now write the following at the beginning of the table:
+  //      base_address (uintx)
+  //      num_entries  (juint)
+  //      num_buckets  (juint)
   *p++ = high(base_address);
   *p++ = low (base_address); // base address
   *p++ = _num_entries;  // number of entries in the table
@@ -191,7 +206,8 @@ void CompactHashtableWriter::dump(char** top, char* end) {
     if (_num_entries > 0) {
       avg_cost = double(_required_bytes)/double(_num_entries);
     }
-    tty->print_cr("Shared %s table stats -------- base: " PTR_FORMAT, _table_name, (intptr_t)base_address);
+    tty->print_cr("Shared %s table stats -------- base: " PTR_FORMAT,
+                  table_name(), (intptr_t)base_address);
     tty->print_cr("Number of entries       : %9d", _num_entries);
     tty->print_cr("Total bytes used        : %9d", (int)((*top) - old_top));
     tty->print_cr("Average bytes per entry : %9.3f", avg_cost);
@@ -202,12 +218,24 @@ void CompactHashtableWriter::dump(char** top, char* end) {
   }
 }
 
+const char* CompactHashtableWriter::table_name() {
+  switch (_type) {
+  case CompactHashtable<Symbol*, char>::_symbol_table: return "symbol";
+  case CompactHashtable<oop, char>::_string_table: return "string";
+  default:
+    ;
+  }
+  return "unknown";
+}
+
 /////////////////////////////////////////////////////////////
 //
 // The CompactHashtable implementation
 //
-template <class T, class N> const char* CompactHashtable<T, N>::init(const char* buffer) {
+template <class T, class N> const char* CompactHashtable<T, N>::init(
+                           CompactHashtableType type, const char* buffer) {
   assert(!DumpSharedSpaces, "run-time only");
+  _type = type;
   juint*p = (juint*)buffer;
   juint upper = *p++;
   juint lower = *p++;
@@ -245,8 +273,34 @@ template <class T, class N> void CompactHashtable<T, N>::symbols_do(SymbolClosur
   }
 }
 
+template <class T, class N> void CompactHashtable<T, N>::oops_do(OopClosure* f) {
+  assert(!DumpSharedSpaces, "run-time only");
+  assert(_type == _string_table || _bucket_count == 0, "sanity");
+  for (juint i = 0; i < _bucket_count; i ++) {
+    juint bucket_info = _buckets[i];
+    juint bucket_offset = BUCKET_OFFSET(bucket_info);
+    int   bucket_type = BUCKET_TYPE(bucket_info);
+    juint* bucket = _buckets + bucket_offset;
+    juint* bucket_end = _buckets;
+
+    narrowOop o;
+    if (bucket_type == COMPACT_BUCKET_TYPE) {
+      o = (narrowOop)bucket[0];
+      f->do_oop(&o);
+    } else {
+      bucket_end += BUCKET_OFFSET(_buckets[i + 1]);
+      while (bucket < bucket_end) {
+        o = (narrowOop)bucket[1];
+        f->do_oop(&o);
+        bucket += 2;
+      }
+    }
+  }
+}
+
 // Explicitly instantiate these types
 template class CompactHashtable<Symbol*, char>;
+template class CompactHashtable<oop, char>;
 
 #ifndef O_BINARY       // if defined (Win32) use binary files.
 #define O_BINARY 0     // otherwise do nothing.
@@ -273,6 +327,8 @@ HashtableTextDump::HashtableTextDump(const char* filename) : _fd(-1) {
   _p = _base;
   _end = _base + st.st_size;
   _filename = filename;
+  _prefix_type = Unknown;
+  _line_no = 1;
 }
 
 HashtableTextDump::~HashtableTextDump() {
@@ -286,9 +342,9 @@ void HashtableTextDump::quit(const char* err, const char* msg) {
   vm_exit_during_initialization(err, msg);
 }
 
-void HashtableTextDump::corrupted(const char *p) {
+void HashtableTextDump::corrupted(const char *p, const char* msg) {
   char info[60];
-  sprintf(info, "corrupted at pos %d", (int)(p - _base));
+  sprintf(info, "%s. Corrupted at line %d (file pos %d)", msg, _line_no, (int)(p - _base));
   quit(info, _filename);
 }
 
@@ -298,8 +354,9 @@ bool HashtableTextDump::skip_newline() {
   } else if (_p[0] == '\n') {
     _p += 1;
   } else {
-    corrupted(_p);
+    corrupted(_p, "Unexpected character");
   }
+  _line_no ++;
   return true;
 }
 
@@ -328,26 +385,60 @@ void HashtableTextDump::check_version(const char* ver) {
   skip_newline();
 }
 
+void HashtableTextDump::scan_prefix_type() {
+  _p ++;
+  if (strncmp(_p, "SECTION: String", 15) == 0) {
+    _p += 15;
+    _prefix_type = StringPrefix;
+  } else if (strncmp(_p, "SECTION: Symbol", 15) == 0) {
+    _p += 15;
+    _prefix_type = SymbolPrefix;
+  } else {
+    _prefix_type = Unknown;
+  }
+  skip_newline();
+}
 
-int HashtableTextDump::scan_prefix() {
+int HashtableTextDump::scan_prefix(int* utf8_length) {
+  if (*_p == '@') {
+    scan_prefix_type();
+  }
+
+  switch (_prefix_type) {
+  case SymbolPrefix:
+    *utf8_length = scan_symbol_prefix(); break;
+  case StringPrefix:
+    *utf8_length = scan_string_prefix(); break;
+  default:
+    tty->print_cr("Shared input data type: Unknown.");
+    corrupted(_p, "Unknown data type");
+  }
+
+  return _prefix_type;
+}
+
+int HashtableTextDump::scan_string_prefix() {
   // Expect /[0-9]+: /
-  int utf8_length = get_num(':');
+  int utf8_length;
+  get_num(':', &utf8_length);
   if (*_p != ' ') {
-    corrupted(_p);
+    corrupted(_p, "Wrong prefix format for string");
   }
   _p++;
   return utf8_length;
 }
 
-int HashtableTextDump::scan_prefix2() {
+int HashtableTextDump::scan_symbol_prefix() {
   // Expect /[0-9]+ (-|)[0-9]+: /
-  int utf8_length = get_num(' ');
-  if (*_p == '-') {
-    _p++;
+  int utf8_length;
+  get_num(' ', &utf8_length);
+    if (*_p == '-') {
+     _p++;
   }
-  (void)get_num(':');
+  int ref_num;
+  (void)get_num(':', &ref_num);
   if (*_p != ' ') {
-    corrupted(_p);
+    corrupted(_p, "Wrong prefix format for symbol");
   }
   _p++;
   return utf8_length;
@@ -408,7 +499,7 @@ void HashtableTextDump::get_utf8(char* utf8_buffer, int utf8_length) {
       case 'r':  *to++ = '\r'; break;
       case '\\': *to++ = '\\'; break;
       default:
-        ShouldNotReachHere();
+        corrupted(_p, "Unsupported character");
       }
     }
   }

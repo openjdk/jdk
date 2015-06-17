@@ -54,7 +54,7 @@ public final class SplitReturn extends Statement {
     }
 
     @Override
-    public void toString(StringBuilder sb, boolean printType) {
+    public void toString(final StringBuilder sb, final boolean printType) {
         sb.append(":splitreturn;");
     }
 

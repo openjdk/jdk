@@ -85,6 +85,8 @@ final class HelloExtensions {
                         new SupportedEllipticPointFormatsExtension(s, extlen);
             } else if (extType == ExtensionType.EXT_RENEGOTIATION_INFO) {
                 extension = new RenegotiationInfoExtension(s, extlen);
+            } else if (extType == ExtensionType.EXT_MAX_FRAGMENT_LENGTH) {
+                extension = new MaxFragmentLengthExtension(s, extlen);
             } else {
                 extension = new UnknownExtension(s, extlen, extType);
             }

@@ -311,6 +311,7 @@ void Universe::genesis(TRAPS) {
              SystemDictionary::Cloneable_klass(), "u3");
       assert(_the_array_interfaces_array->at(1) ==
              SystemDictionary::Serializable_klass(), "u3");
+      MetaspaceShared::fixup_shared_string_regions();
     } else {
       // Set up shared interfaces array.  (Do this before supers are set up.)
       _the_array_interfaces_array->at_put(0, SystemDictionary::Cloneable_klass());

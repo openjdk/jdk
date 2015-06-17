@@ -31,6 +31,7 @@
 #include "code/codeCache.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/metadataFactory.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/wbtestmethods/parserTests.hpp"
@@ -1207,6 +1208,11 @@ WB_ENTRY(jobject, WB_GetMethodStringOption(JNIEnv* env, jobject wb, jobject meth
   return NULL;
 WB_END
 
+WB_ENTRY(jboolean, WB_IsShared(JNIEnv* env, jobject wb, jobject obj))
+  oop obj_oop = JNIHandles::resolve(obj);
+  return MetaspaceShared::is_in_shared_space((void*)obj_oop);
+WB_END
+
 //Some convenience methods to deal with objects from java
 int WhiteBox::offset_for_field(const char* field_name, oop object,
     Symbol* signature_symbol) {
@@ -1431,6 +1437,7 @@ static JNINativeMethod methods[] = {
   {CC"getMethodStringOption",
       CC"(Ljava/lang/reflect/Executable;Ljava/lang/String;)Ljava/lang/String;",
                                                       (void*)&WB_GetMethodStringOption},
+  {CC"isShared",           CC"(Ljava/lang/Object;)Z", (void*)&WB_IsShared },
 };
 
 #undef CC

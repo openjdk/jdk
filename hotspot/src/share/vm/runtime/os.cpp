@@ -670,8 +670,8 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
   }
   // always move the block
   void* ptr = os::malloc(size, memflags, stack);
-  if (PrintMalloc) {
-    tty->print_cr("os::remalloc " SIZE_FORMAT " bytes, " PTR_FORMAT " --> " PTR_FORMAT, size, memblock, ptr);
+  if (PrintMalloc && tty != NULL) {
+    tty->print_cr("os::realloc " SIZE_FORMAT " bytes, " PTR_FORMAT " --> " PTR_FORMAT, size, memblock, ptr);
   }
   // Copy to new memory if malloc didn't fail
   if ( ptr != NULL ) {

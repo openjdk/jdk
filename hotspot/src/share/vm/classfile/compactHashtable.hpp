@@ -28,6 +28,7 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "memory/allocation.inline.hpp"
+#include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "utilities/hashtable.hpp"
@@ -49,7 +50,7 @@ public:
 // the compact table to the shared archive.
 //
 // At dump time, the CompactHashtableWriter obtains all entries from the
-// symbol table and adds them to a new temporary hash table. The hash
+// symbol/string table and adds them to a new temporary hash table. The hash
 // table size (number of buckets) is calculated using
 // '(num_entries + bucket_size - 1) / bucket_size'. The default bucket
 // size is 4 and can be changed by -XX:SharedSymbolTableBucketSize option.
@@ -57,14 +58,14 @@ public:
 // faster lookup. It also has relatively small number of empty buckets and
 // good distribution of the entries.
 //
-// We use a simple hash function (symbol_hash % num_bucket) for the table.
+// We use a simple hash function (hash % num_bucket) for the table.
 // The new table is compacted when written out. Please see comments
 // above the CompactHashtable class for the table layout detail. The bucket
 // offsets are written to the archive as part of the compact table. The
 // bucket offset is encoded in the low 30-bit (0-29) and the bucket type
 // (regular or compact) are encoded in bit[31, 30]. For buckets with more
-// than one entry, both symbol hash and symbol offset are written to the
-// table. For buckets with only one entry, only the symbol offset is written
+// than one entry, both hash and entry offset are written to the
+// table. For buckets with only one entry, only the entry offset is written
 // to the table and the buckets are tagged as compact in their type bits.
 // Buckets without entry are skipped from the table. Their offsets are
 // still written out for faster lookup.
@@ -78,12 +79,16 @@ public:
 
   public:
     Entry(unsigned int hash, Symbol *symbol) : _next(NULL), _hash(hash), _literal(symbol) {}
+    Entry(unsigned int hash, oop string)     : _next(NULL), _hash(hash), _literal(string) {}
 
     void *value() {
       return _literal;
     }
     Symbol *symbol() {
       return (Symbol*)_literal;
+    }
+    oop string() {
+      return (oop)_literal;
     }
     unsigned int hash() {
       return _hash;
@@ -95,7 +100,7 @@ public:
 private:
   static int number_of_buckets(int num_entries);
 
-  const char* _table_name;
+  int _type;
   int _num_entries;
   int _num_buckets;
   juint* _bucket_sizes;
@@ -105,7 +110,7 @@ private:
 
 public:
   // This is called at dump-time only
-  CompactHashtableWriter(const char* table_name, int num_entries, CompactHashtableStats* stats);
+  CompactHashtableWriter(int table_type, int num_entries, CompactHashtableStats* stats);
   ~CompactHashtableWriter();
 
   int get_required_bytes() {
@@ -116,6 +121,10 @@ public:
     add(hash, new Entry(hash, symbol));
   }
 
+  void add(unsigned int hash, oop string) {
+    add(hash, new Entry(hash, string));
+  }
+
 private:
   void add(unsigned int hash, Entry* entry);
   juint* dump_table(juint* p, juint** first_bucket, NumberSeq* summary);
@@ -123,6 +132,7 @@ private:
 
 public:
   void dump(char** top, char* end);
+  const char* table_name();
 };
 
 #define REGULAR_BUCKET_TYPE       0
@@ -136,23 +146,23 @@ public:
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// CompactHashtable is used to stored the CDS archive's symbol table. Used
+// CompactHashtable is used to stored the CDS archive's symbol/string table. Used
 // at runtime only to access the compact table from the archive.
 //
 // Because these tables are read-only (no entries can be added/deleted) at run-time
 // and tend to have large number of entries, we try to minimize the footprint
 // cost per entry.
 //
-// Layout of compact symbol table in the shared archive:
+// Layout of compact table in the shared archive:
 //
 //   uintx base_address;
-//   juint num_symbols;
+//   juint num_entries;
 //   juint num_buckets;
 //   juint bucket_infos[num_buckets+1]; // bit[31,30]: type; bit[29-0]: offset
 //   juint table[]
 //
 // -----------------------------------
-// | base_address  | num_symbols     |
+// | base_address  | num_entries     |
 // |---------------------------------|
 // | num_buckets   | bucket_info0    |
 // |---------------------------------|
@@ -177,9 +187,13 @@ public:
 // compact buckets have '01' in their highest 2-bit, and regular buckets have
 // '00' in their highest 2-bit.
 //
-// For normal buckets, each symbol's entry is 8 bytes in the table[]:
-//   juint hash;    /* symbol hash */
-//   juint offset;  /* Symbol* sym = (Symbol*)(base_address + offset) */
+// For normal buckets, each entry is 8 bytes in the table[]:
+//   juint hash;    /* symbol/string hash */
+//   union {
+//     juint offset;  /* Symbol* sym = (Symbol*)(base_address + offset) */
+//     narrowOop str; /* String narrowOop encoding */
+//   }
+//
 //
 // For compact buckets, each entry has only the 4-byte 'offset' in the table[].
 //
@@ -189,19 +203,41 @@ public:
 //
 template <class T, class N> class CompactHashtable VALUE_OBJ_CLASS_SPEC {
   friend class VMStructs;
+
+ public:
+  enum CompactHashtableType {
+    _symbol_table = 0,
+    _string_table = 1
+  };
+
+private:
+  CompactHashtableType _type;
   uintx  _base_address;
   juint  _entry_count;
   juint  _bucket_count;
   juint  _table_end_offset;
   juint* _buckets;
 
-  inline bool equals(T entry, const char* name, int len) {
-    if (entry->equals(name, len)) {
-      assert(entry->refcount() == -1, "must be shared");
-      return true;
-    } else {
-      return false;
+  inline Symbol* lookup_entry(CompactHashtable<Symbol*, char>* const t,
+                              juint* addr, const char* name, int len) {
+    Symbol* sym = (Symbol*)((void*)(_base_address + *addr));
+    if (sym->equals(name, len)) {
+      assert(sym->refcount() == -1, "must be shared");
+      return sym;
     }
+
+    return NULL;
+  }
+
+  inline oop lookup_entry(CompactHashtable<oop, char>* const t,
+                        juint* addr, const char* name, int len) {
+    narrowOop obj = (narrowOop)(*addr);
+    oop string = oopDesc::decode_heap_oop(obj);
+    if (java_lang_String::equals(string, (jchar*)name, len)) {
+      return string;
+    }
+
+    return NULL;
   }
 
 public:
@@ -211,7 +247,14 @@ public:
     _table_end_offset = 0;
     _buckets = 0;
   }
-  const char* init(const char *buffer);
+  const char* init(CompactHashtableType type, const char *buffer);
+
+  void reset() {
+    _entry_count = 0;
+    _bucket_count = 0;
+    _table_end_offset = 0;
+    _buckets = 0;
+  }
 
   // Lookup an entry from the compact table
   inline T lookup(const N* name, unsigned int hash, int len) {
@@ -225,23 +268,22 @@ public:
       juint* bucket_end = _buckets;
 
       if (bucket_type == COMPACT_BUCKET_TYPE) {
-        // the compact bucket has one entry with symbol offset only
-        T entry = (T)((void*)(_base_address + bucket[0]));
-        if (equals(entry, name, len)) {
-          return entry;
+        // the compact bucket has one entry with entry offset only
+        T res = lookup_entry(this, &bucket[0], name, len);
+        if (res != NULL) {
+          return res;
         }
       } else {
         // This is a regular bucket, which has more than one
-        // entries. Each entry is a pair of symbol (hash, offset).
+        // entries. Each entry is a pair of entry (hash, offset).
         // Seek until the end of the bucket.
         bucket_end += BUCKET_OFFSET(_buckets[index + 1]);
         while (bucket < bucket_end) {
           unsigned int h = (unsigned int)(bucket[0]);
           if (h == hash) {
-            juint offset = bucket[1];
-            T entry = (T)((void*)(_base_address + offset));
-            if (equals(entry, name, len)) {
-              return entry;
+            T res = lookup_entry(this, &bucket[1], name, len);
+            if (res != NULL) {
+              return res;
             }
           }
           bucket += 2;
@@ -253,12 +295,15 @@ public:
 
   // iterate over symbols
   void symbols_do(SymbolClosure *cl);
+
+  // iterate over strings
+  void oops_do(OopClosure* f);
 };
 
 ////////////////////////////////////////////////////////////////////////
 //
 // Read/Write the contents of a hashtable textual dump (created by
-// SymbolTable::dump).
+// SymbolTable::dump and StringTable::dump).
 // Because the dump file may be big (hundred of MB in extreme cases),
 // we use mmap for fast access when reading it.
 //
@@ -269,9 +314,17 @@ class HashtableTextDump VALUE_OBJ_CLASS_SPEC {
   const char* _end;
   const char* _filename;
   size_t      _size;
+  int         _prefix_type;
+  int         _line_no;
 public:
   HashtableTextDump(const char* filename);
   ~HashtableTextDump();
+
+  enum {
+    SymbolPrefix = 1 << 0,
+    StringPrefix = 1 << 1,
+    Unknown = 1 << 2
+  };
 
   void quit(const char* err, const char* msg);
 
@@ -279,11 +332,11 @@ public:
     return (int)(_end - _p);
   }
 
-  void corrupted(const char *p);
+  void corrupted(const char *p, const char *msg);
 
   inline void corrupted_if(bool cond) {
     if (cond) {
-      corrupted(_p);
+      corrupted(_p, NULL);
     }
   }
 
@@ -292,7 +345,7 @@ public:
   void skip_past(char c);
   void check_version(const char* ver);
 
-  inline int get_num(char delim) {
+  inline bool get_num(char delim, int *utf8_length) {
     const char* p   = _p;
     const char* end = _end;
     int num = 0;
@@ -303,18 +356,22 @@ public:
         num = num * 10 + (c - '0');
       } else if (c == delim) {
         _p = p;
-        return num;
+        *utf8_length = num;
+        return true;
       } else {
-        corrupted(p-1);
+        // Not [0-9], not 'delim'
+        return false;
       }
     }
-    corrupted(_end);
+    corrupted(_end, "Incorrect format");
     ShouldNotReachHere();
-    return 0;
+    return false;
   }
 
-  int scan_prefix();
-  int scan_prefix2();
+  void scan_prefix_type();
+  int scan_prefix(int* utf8_length);
+  int scan_string_prefix();
+  int scan_symbol_prefix();
 
   jchar unescape(const char* from, const char* end, int count);
   void get_utf8(char* utf8_buffer, int utf8_length);

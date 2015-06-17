@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -344,6 +344,13 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
       // NMT reports CDS as a whole.
       if (reserved_rgn->flag() == mtClassShared) {
         assert(reserved_rgn->contain_region(base_addr, size), "Reserved CDS region should contain this mapping region");
+        return true;
+      }
+
+      // Mapped CDS string region.
+      // The string region(s) is part of the java heap.
+      if (reserved_rgn->flag() == mtJavaHeap) {
+        assert(reserved_rgn->contain_region(base_addr, size), "Reserved heap region should contain this mapping region");
         return true;
       }
 

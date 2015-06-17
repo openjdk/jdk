@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,10 +70,10 @@ final class RandomCookie {
     void print(PrintStream s) {
         int i, gmt_unix_time;
 
-        gmt_unix_time = random_bytes[0] << 24;
-        gmt_unix_time += random_bytes[1] << 16;
-        gmt_unix_time += random_bytes[2] << 8;
-        gmt_unix_time += random_bytes[3];
+        gmt_unix_time = ((random_bytes[0] & 0xFF) << 24) |
+                        ((random_bytes[1] & 0xFF) << 16) |
+                        ((random_bytes[2] & 0xFF) << 8) |
+                         (random_bytes[3] & 0xFF);
 
         s.print("GMT: " + gmt_unix_time + " ");
         s.print("bytes = { ");

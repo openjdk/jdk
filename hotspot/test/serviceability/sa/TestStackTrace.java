@@ -21,9 +21,13 @@
  * questions.
  */
 
+import java.util.ArrayList;
+import java.util.List;
+
 import jdk.test.lib.OutputAnalyzer;
 import jdk.test.lib.Platform;
 import jdk.test.lib.ProcessTools;
+import jdk.test.lib.Utils;
 import jdk.test.lib.apps.LingeredApp;
 
 /*
@@ -44,7 +48,10 @@ public class TestStackTrace {
 
         LingeredApp app = null;
         try {
-            app = LingeredApp.startApp();
+            List<String> vmArgs = new ArrayList<String>();
+            vmArgs.add("-XX:+UsePerfData");
+            vmArgs.addAll(Utils.getVmOptions());
+            app = LingeredApp.startApp(vmArgs);
 
             System.out.println("Attaching sun.jvm.hotspot.tools.StackTrace to " + app.getPid());
             ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(

@@ -1439,7 +1439,8 @@ static address resolve_function_descriptor_to_code_pointer(address p) {
 }
 
 bool os::dll_address_to_function_name(address addr, char *buf,
-                                      int buflen, int *offset) {
+                                      int buflen, int *offset,
+                                      bool demangle) {
   if (offset) {
     *offset = -1;
   }
@@ -1454,7 +1455,7 @@ bool os::dll_address_to_function_name(address addr, char *buf,
   }
 
   // Go through Decoder::decode to call getFuncName which reads the name from the traceback table.
-  return Decoder::decode(addr, buf, buflen, offset);
+  return Decoder::decode(addr, buf, buflen, offset, demangle);
 }
 
 static int getModuleName(codeptr_t pc,                    // [in] program counter
