@@ -647,8 +647,8 @@ char* FileMapInfo::map_region(int i) {
   return base;
 }
 
-MemRegion *string_ranges = NULL;
-int num_ranges = 0;
+static MemRegion *string_ranges = NULL;
+static int num_ranges = 0;
 bool FileMapInfo::map_string_regions() {
 #if INCLUDE_ALL_GCS
   if (UseG1GC && UseCompressedOops && UseCompressedClassPointers) {
@@ -737,7 +737,10 @@ bool FileMapInfo::verify_string_regions() {
 }
 
 void FileMapInfo::fixup_string_regions() {
-  if (string_ranges != NULL) {
+  // If any string regions were found, call the fill routine to make them parseable.
+  // Note that string_ranges may be non-NULL even if no ranges were found.
+  if (num_ranges != 0) {
+    assert(string_ranges != NULL, "Null string_ranges array with non-zero count");
     G1CollectedHeap::heap()->fill_archive_regions(string_ranges, num_ranges);
   }
 }
