@@ -1339,7 +1339,8 @@ bool os::address_is_in_vm(address addr) {
 #define MACH_MAXSYMLEN 256
 
 bool os::dll_address_to_function_name(address addr, char *buf,
-                                      int buflen, int *offset) {
+                                      int buflen, int *offset,
+                                      bool demangle) {
   // buf is not optional, but offset is optional
   assert(buf != NULL, "sanity check");
 
@@ -1349,7 +1350,7 @@ bool os::dll_address_to_function_name(address addr, char *buf,
   if (dladdr((void*)addr, &dlinfo) != 0) {
     // see if we have a matching symbol
     if (dlinfo.dli_saddr != NULL && dlinfo.dli_sname != NULL) {
-      if (!Decoder::demangle(dlinfo.dli_sname, buf, buflen)) {
+      if (!(demangle && Decoder::demangle(dlinfo.dli_sname, buf, buflen))) {
         jio_snprintf(buf, buflen, "%s", dlinfo.dli_sname);
       }
       if (offset != NULL) *offset = addr - (address)dlinfo.dli_saddr;
@@ -1358,15 +1359,16 @@ bool os::dll_address_to_function_name(address addr, char *buf,
     // no matching symbol so try for just file info
     if (dlinfo.dli_fname != NULL && dlinfo.dli_fbase != NULL) {
       if (Decoder::decode((address)(addr - (address)dlinfo.dli_fbase),
-                          buf, buflen, offset, dlinfo.dli_fname)) {
+                          buf, buflen, offset, dlinfo.dli_fname, demangle)) {
         return true;
       }
     }
 
     // Handle non-dynamic manually:
     if (dlinfo.dli_fbase != NULL &&
-        Decoder::decode(addr, localbuf, MACH_MAXSYMLEN, offset, dlinfo.dli_fbase)) {
-      if (!Decoder::demangle(localbuf, buf, buflen)) {
+        Decoder::decode(addr, localbuf, MACH_MAXSYMLEN, offset,
+                        dlinfo.dli_fbase)) {
+      if (!(demangle && Decoder::demangle(localbuf, buf, buflen))) {
         jio_snprintf(buf, buflen, "%s", localbuf);
       }
       return true;

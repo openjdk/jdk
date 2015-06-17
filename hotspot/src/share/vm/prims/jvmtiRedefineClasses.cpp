@@ -4089,9 +4089,6 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
     mnt->adjust_method_entries(the_class(), &trace_name_printed);
   }
 
-  // Fix Resolution Error table also to remove old constant pools
-  SystemDictionary::delete_resolution_error(old_constants);
-
   if (the_class->oop_map_cache() != NULL) {
     // Flush references to any obsolete methods from the oop map cache
     // so that obsolete methods are not pinned.
