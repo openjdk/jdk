@@ -587,8 +587,8 @@ class os: AllStatic {
   // Output format may be different on different platforms.
   static void print_os_info(outputStream* st);
   static void print_os_info_brief(outputStream* st);
-  static void print_cpu_info(outputStream* st);
-  static void pd_print_cpu_info(outputStream* st);
+  static void print_cpu_info(outputStream* st, char* buf, size_t buflen);
+  static void pd_print_cpu_info(outputStream* st, char* buf, size_t buflen);
   static void print_memory_info(outputStream* st);
   static void print_dll_info(outputStream* st);
   static void print_environment_variables(outputStream* st, const char** env_list);

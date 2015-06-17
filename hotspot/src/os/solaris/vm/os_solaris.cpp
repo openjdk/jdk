@@ -1996,7 +1996,7 @@ static bool check_addr0(outputStream* st) {
   return status;
 }
 
-void os::pd_print_cpu_info(outputStream* st) {
+void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   // Nothing to do for now.
 }
 
