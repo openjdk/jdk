@@ -184,7 +184,7 @@ void VM_GenCollectFull::doit() {
 
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   GCCauseSetter gccs(gch, _gc_cause);
-  gch->do_full_collection(gch->must_clear_all_soft_refs(), _max_level);
+  gch->do_full_collection(gch->must_clear_all_soft_refs(), _max_generation);
 }
 
 // Returns true iff concurrent GCs unloads metadata.

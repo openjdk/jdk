@@ -1304,7 +1304,7 @@ void PSAdaptiveSizePolicy::update_averages(bool is_survivor_overflow,
     size_t survived_guess = survived + promoted;
     _avg_survived->sample(survived_guess);
   }
-  avg_promoted()->sample(promoted + _avg_pretenured->padded_average());
+  avg_promoted()->sample(promoted);
 
   if (PrintAdaptiveSizePolicy) {
     gclog_or_tty->print_cr(

@@ -1708,7 +1708,7 @@ void os::print_os_info(outputStream* st) {
   os::Posix::print_load_average(st);
 }
 
-void os::pd_print_cpu_info(outputStream* st) {
+void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   // Nothing to do for now.
 }
 

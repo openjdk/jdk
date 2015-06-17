@@ -832,7 +832,7 @@ void os::print_environment_variables(outputStream* st, const char** env_list) {
   }
 }
 
-void os::print_cpu_info(outputStream* st) {
+void os::print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   // cpu
   st->print("CPU:");
   st->print("total %d", os::processor_count());
@@ -840,7 +840,7 @@ void os::print_cpu_info(outputStream* st) {
   // st->print("(active %d)", os::active_processor_count());
   st->print(" %s", VM_Version::cpu_features());
   st->cr();
-  pd_print_cpu_info(st);
+  pd_print_cpu_info(st, buf, buflen);
 }
 
 void os::print_date_and_time(outputStream *st, char* buf, size_t buflen) {
