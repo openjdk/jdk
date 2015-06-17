@@ -1001,8 +1001,6 @@ bool MetaspaceShared::map_shared_spaces(FileMapInfo* mapinfo) {
       mapinfo->verify_region_checksum(md) &&
       (_mc_base = mapinfo->map_region(mc)) != NULL &&
       mapinfo->verify_region_checksum(mc) &&
-      mapinfo->map_string_regions() &&
-      mapinfo->verify_string_regions() &&
       (image_alignment == (size_t)max_alignment()) &&
       mapinfo->validate_classpath_entry_table()) {
     // Success (no need to do anything)
@@ -1014,7 +1012,6 @@ bool MetaspaceShared::map_shared_spaces(FileMapInfo* mapinfo) {
     if (_rw_base != NULL) mapinfo->unmap_region(rw);
     if (_md_base != NULL) mapinfo->unmap_region(md);
     if (_mc_base != NULL) mapinfo->unmap_region(mc);
-    mapinfo->unmap_string_regions();
 #ifndef _WINDOWS
     // Release the entire mapped region
     shared_rs.release();
