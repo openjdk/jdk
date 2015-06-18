@@ -184,18 +184,17 @@ void SuperWord::unrolling_analysis(CountedLoopNode *cl, int &local_loop_unroll_f
     }
 
     if (n->is_Mem()) {
+      MemNode* current = n->as_Mem();
+      BasicType bt = current->memory_type();
+      if (is_java_primitive(bt) == false) {
+        ignored_loop_nodes[i] = n->_idx;
+        continue;
+      }
       Node* adr = n->in(MemNode::Address);
       Node* n_ctrl = _phase->get_ctrl(adr);
 
       // save a queue of post process nodes
       if (n_ctrl != NULL && lpt()->is_member(_phase->get_loop(n_ctrl))) {
-        MemNode* current = n->as_Mem();
-        BasicType bt = current->memory_type();
-        if (is_java_primitive(bt) == false) {
-          ignored_loop_nodes[i] = n->_idx;
-          continue;
-        }
-
         // Process the memory expression
         int stack_idx = 0;
         bool have_side_effects = true;
@@ -234,8 +233,7 @@ void SuperWord::unrolling_analysis(CountedLoopNode *cl, int &local_loop_unroll_f
       Node* n = lpt()->_body.at(i);
       if (n->is_Store()) {
         bt = n->as_Mem()->memory_type();
-      }
-      else {
+      } else {
         bt = n->bottom_type()->basic_type();
       }
 
