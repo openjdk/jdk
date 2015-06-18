@@ -109,20 +109,17 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     /** Search fall back routine name for "no such property" */
     public static final String NO_SUCH_PROPERTY_NAME = "__noSuchProperty__";
 
-    /** Per ScriptObject flag - is this a scope object? */
-    public static final int IS_SCOPE       = 1 << 0;
-
     /** Per ScriptObject flag - is this an array object? */
-    public static final int IS_ARRAY       = 1 << 1;
+    public static final int IS_ARRAY               = 1 << 0;
 
     /** Per ScriptObject flag - is this an arguments object? */
-    public static final int IS_ARGUMENTS   = 1 << 2;
+    public static final int IS_ARGUMENTS           = 1 << 1;
 
     /** Is length property not-writable? */
-    public static final int IS_LENGTH_NOT_WRITABLE = 1 << 3;
+    public static final int IS_LENGTH_NOT_WRITABLE = 1 << 2;
 
     /** Is this a builtin object? */
-    public static final int IS_BUILTIN = 1 << 4;
+    public static final int IS_BUILTIN             = 1 << 3;
 
     /**
      * Spill growth rate - by how many elements does {@link ScriptObject#primitiveSpill} and
@@ -393,14 +390,6 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
      */
     public final boolean isDataDescriptor() {
         return has(VALUE) || has(WRITABLE);
-    }
-
-    /**
-     * ECMA 8.10.3 IsGenericDescriptor ( Desc )
-     * @return true if this has a descriptor describing an {@link AccessorPropertyDescriptor} or {@link DataPropertyDescriptor}
-     */
-    public final boolean isGenericDescriptor() {
-        return isAccessorDescriptor() || isDataDescriptor();
     }
 
     /**
@@ -1630,23 +1619,12 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         return getMap().isFrozen();
     }
 
-
-    /**
-     * Flag this ScriptObject as scope
-     */
-    public final void setIsScope() {
-        if (Context.DEBUG) {
-            scopeCount++;
-        }
-        flags |= IS_SCOPE;
-    }
-
     /**
      * Check whether this ScriptObject is scope
      * @return true if scope
      */
-    public final boolean isScope() {
-        return (flags & IS_SCOPE) != 0;
+    public boolean isScope() {
+        return false;
     }
 
     /**
@@ -1921,14 +1899,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
      * Test whether this object contains in its prototype chain or is itself a with-object.
      * @return true if a with-object was found
      */
-    final boolean hasWithScope() {
-        if (isScope()) {
-            for (ScriptObject obj = this; obj != null; obj = obj.getProto()) {
-                if (obj instanceof WithObject) {
-                    return true;
-                }
-            }
-        }
+    boolean hasWithScope() {
         return false;
     }
 
@@ -3817,9 +3788,6 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     /** This is updated only in debug mode - counts number of {@code ScriptObject} instances created */
     private static int count;
 
-    /** This is updated only in debug mode - counts number of {@code ScriptObject} instances created that are scope */
-    private static int scopeCount;
-
     /**
      * Get number of {@code ScriptObject} instances created. If not running in debug
      * mode this is always 0
@@ -3829,15 +3797,4 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     public static int getCount() {
         return count;
     }
-
-    /**
-     * Get number of scope {@code ScriptObject} instances created. If not running in debug
-     * mode this is always 0
-     *
-     * @return number of scope ScriptObjects created
-     */
-    public static int getScopeCount() {
-        return scopeCount;
-    }
-
 }

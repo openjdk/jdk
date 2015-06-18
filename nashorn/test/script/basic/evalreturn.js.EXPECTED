@@ -5,7 +5,8 @@ undefined
 undefined
 hello
 Scoping OK
-function cake() { print('moist and delicious!'); }
+undefined
+function() { print('moist and delicious!'); }
 moist and delicious!
-function cookie() { print('sweet and crunchy!'); }
+function() { print('sweet and crunchy!'); }
 sweet and crunchy!

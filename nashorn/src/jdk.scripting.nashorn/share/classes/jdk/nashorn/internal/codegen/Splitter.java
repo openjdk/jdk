@@ -42,13 +42,17 @@ import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.SplitNode;
 import jdk.nashorn.internal.ir.Statement;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
+import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
+import jdk.nashorn.internal.runtime.logging.Loggable;
+import jdk.nashorn.internal.runtime.logging.Logger;
 import jdk.nashorn.internal.runtime.options.Options;
 
 /**
  * Split the IR into smaller compile units.
  */
-final class Splitter extends NodeVisitor<LexicalContext> {
+@Logger(name="splitter")
+final class Splitter extends NodeVisitor<LexicalContext> implements Loggable {
     /** Current compiler. */
     private final Compiler compiler;
 
@@ -78,7 +82,17 @@ final class Splitter extends NodeVisitor<LexicalContext> {
         this.compiler             = compiler;
         this.outermost            = functionNode;
         this.outermostCompileUnit = outermostCompileUnit;
-        this.log                  = compiler.getLogger();
+        this.log                  = initLogger(compiler.getContext());
+    }
+
+    @Override
+    public DebugLogger initLogger(final Context context) {
+        return context.getLogger(this.getClass());
+    }
+
+    @Override
+    public DebugLogger getLogger() {
+        return log;
     }
 
     /**
@@ -89,7 +103,7 @@ final class Splitter extends NodeVisitor<LexicalContext> {
     FunctionNode split(final FunctionNode fn, final boolean top) {
         FunctionNode functionNode = fn;
 
-        log.finest("Initiating split of '", functionNode.getName(), "'");
+        log.fine("Initiating split of '", functionNode.getName(), "'");
 
         long weight = WeighNodes.weigh(functionNode);
 
@@ -98,7 +112,7 @@ final class Splitter extends NodeVisitor<LexicalContext> {
         assert lc.isEmpty() : "LexicalContext not empty";
 
         if (weight >= SPLIT_THRESHOLD) {
-            log.finest("Splitting '", functionNode.getName(), "' as its weight ", weight, " exceeds split threshold ", SPLIT_THRESHOLD);
+            log.info("Splitting '", functionNode.getName(), "' as its weight ", weight, " exceeds split threshold ", SPLIT_THRESHOLD);
             functionNode = (FunctionNode)functionNode.accept(this);
 
             if (functionNode.isSplit()) {
