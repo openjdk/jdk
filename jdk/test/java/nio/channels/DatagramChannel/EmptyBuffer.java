@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,39 +27,50 @@
  * @author Mike McCloskey
  */
 
-import java.io.*;
-import java.net.*;
-import java.nio.*;
-import java.nio.channels.*;
-import java.nio.charset.*;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.channels.ClosedByInterruptException;
+import java.nio.channels.DatagramChannel;
 
 public class EmptyBuffer {
 
-    static PrintStream log = System.err;
+    private static final PrintStream log = System.err;
 
     public static void main(String[] args) throws Exception {
         test();
     }
 
-    static void test() throws Exception {
-        Server server = new Server();
+    private static void test() throws Exception {
+        DatagramChannel dc = DatagramChannel.open();
+        InetAddress localHost = InetAddress.getLocalHost();
+        dc.bind(new InetSocketAddress(localHost, 0));
+
+        Server server = new Server(dc.getLocalAddress());
         Thread serverThread = new Thread(server);
         serverThread.start();
-        DatagramChannel dc = DatagramChannel.open();
+
         try {
+            InetSocketAddress isa = new InetSocketAddress(localHost, server.port());
+            dc.connect(isa);
+
             ByteBuffer bb = ByteBuffer.allocateDirect(12);
             bb.order(ByteOrder.BIG_ENDIAN);
             bb.putInt(1).putLong(1);
             bb.flip();
-            InetAddress address = InetAddress.getLocalHost();
-            InetSocketAddress isa = new InetSocketAddress(address, server.port());
-            dc.connect(isa);
+
             dc.write(bb);
             bb.rewind();
             dc.write(bb);
             bb.rewind();
             dc.write(bb);
+
             Thread.sleep(2000);
+
             serverThread.interrupt();
             server.throwException();
         } finally {
@@ -67,12 +78,14 @@ public class EmptyBuffer {
         }
     }
 
-    public static class Server implements Runnable {
-        final DatagramChannel dc;
-        Exception e = null;
+    private static class Server implements Runnable {
+        private final DatagramChannel dc;
+        private final SocketAddress clientAddress;
+        private Exception e = null;
 
-        Server() throws IOException {
+        Server(SocketAddress clientAddress) throws IOException {
             this.dc = DatagramChannel.open().bind(new InetSocketAddress(0));
+            this.clientAddress = clientAddress;
         }
 
         int port() {
@@ -94,30 +107,37 @@ public class EmptyBuffer {
             log.println();
         }
 
+        @Override
         public void run() {
-            SocketAddress sa = null;
-            int numberReceived = 0;
             try {
                 ByteBuffer bb = ByteBuffer.allocateDirect(12);
                 bb.clear();
                 // Only one clear. The buffer will be full after
                 // the first receive, but it should still block
                 // and receive and discard the next two
+                int numberReceived = 0;
                 while (!Thread.interrupted()) {
+                    SocketAddress sa;
                     try {
                         sa = dc.receive(bb);
                     } catch (ClosedByInterruptException cbie) {
                         // Expected
                         log.println("Took expected exit");
+                        // Verify that enough packets were received
+                        if (numberReceived != 3)
+                            throw new RuntimeException("Failed: Too few datagrams");
                         break;
                     }
                     if (sa != null) {
                         log.println("Client: " + sa);
-                        showBuffer("RECV", bb);
-                        sa = null;
-                        numberReceived++;
+                        // Check client address so as not to count stray packets
+                        if (sa.equals(clientAddress)) {
+                            showBuffer("RECV", bb);
+                            numberReceived++;
+                        }
                         if (numberReceived > 3)
-                            throw new RuntimeException("Test failed");
+                            throw new RuntimeException("Failed: Too many datagrams");
+                        sa = null;
                     }
                 }
             } catch (Exception ex) {
@@ -127,5 +147,4 @@ public class EmptyBuffer {
             }
         }
     }
-
 }

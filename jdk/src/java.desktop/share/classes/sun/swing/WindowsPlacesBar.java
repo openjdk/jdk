@@ -43,7 +43,6 @@ import sun.awt.OSInfo;
  * <b>WARNING:</b> This class is an implementation detail and is only
  * public so that it can be used by two packages. You should NOT consider
  * this public API.
- * <p>
  *
  * @author Leif Samuelsson
  */

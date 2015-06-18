@@ -985,11 +985,13 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     }
 
     private void checkZoom() {
-        int state = peer.getState();
-        if (state != Frame.MAXIMIZED_BOTH && isMaximized()) {
-            deliverZoom(true);
-        } else if (state == Frame.MAXIMIZED_BOTH && !isMaximized()) {
-            deliverZoom(false);
+        if (peer != null) {
+            int state = peer.getState();
+            if (state != Frame.MAXIMIZED_BOTH && isMaximized()) {
+                deliverZoom(true);
+            } else if (state == Frame.MAXIMIZED_BOTH && !isMaximized()) {
+                deliverZoom(false);
+            }
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,9 @@
  *  @run main/othervm CheckPackageAccess
  */
 
-import java.security.Security;
 import java.util.Collections;
-import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.StringTokenizer;
 
 /*
  * The main benefit of this test is to catch merge errors or other types
@@ -44,60 +41,12 @@ import java.util.StringTokenizer;
  */
 public class CheckPackageAccess {
 
-    /*
-     * This array should be updated whenever new packages are added to the
-     * package.access property in the java.security file
-     * NOTE: it should be in the same order as the java.security file
-     */
-    private static final String[] packages = {
-        "sun.",
-        "com.sun.xml.internal.",
-        "com.sun.imageio.",
-        "com.sun.istack.internal.",
-        "com.sun.jmx.",
-        "com.sun.media.sound.",
-        "com.sun.naming.internal.",
-        "com.sun.proxy.",
-        "com.sun.corba.se.",
-        "com.sun.org.apache.bcel.internal.",
-        "com.sun.org.apache.regexp.internal.",
-        "com.sun.org.apache.xerces.internal.",
-        "com.sun.org.apache.xpath.internal.",
-        "com.sun.org.apache.xalan.internal.extensions.",
-        "com.sun.org.apache.xalan.internal.lib.",
-        "com.sun.org.apache.xalan.internal.res.",
-        "com.sun.org.apache.xalan.internal.templates.",
-        "com.sun.org.apache.xalan.internal.utils.",
-        "com.sun.org.apache.xalan.internal.xslt.",
-        "com.sun.org.apache.xalan.internal.xsltc.cmdline.",
-        "com.sun.org.apache.xalan.internal.xsltc.compiler.",
-        "com.sun.org.apache.xalan.internal.xsltc.trax.",
-        "com.sun.org.apache.xalan.internal.xsltc.util.",
-        "com.sun.org.apache.xml.internal.res.",
-        "com.sun.org.apache.xml.internal.security.",
-        "com.sun.org.apache.xml.internal.serializer.utils.",
-        "com.sun.org.apache.xml.internal.utils.",
-        "com.sun.org.glassfish.",
-        "com.sun.tools.script.",
-        "com.oracle.xmlns.internal.",
-        "com.oracle.webservices.internal.",
-        "org.jcp.xml.dsig.internal.",
-        "jdk.internal.",
-        "jdk.nashorn.internal.",
-        "jdk.nashorn.tools.",
-        "jdk.tools.jimage.",
-        "com.sun.activation.registries."
-    };
-
     public static void main(String[] args) throws Exception {
-        List<String> pkgs = new ArrayList<>(Arrays.asList(packages));
-        String osName = System.getProperty("os.name");
-        if (osName.contains("OS X")) {
-            pkgs.add("apple.");  // add apple package for OS X
-        }
+        // get expected list of restricted packages
+        List<String> pkgs = RestrictedPackages.expected();
 
-        List<String> jspkgs =
-            getPackages(Security.getProperty("package.access"));
+        // get actual list of restricted packages
+        List<String> jspkgs = RestrictedPackages.actual();
 
         if (!isOpenJDKOnly()) {
             String lastPkg = pkgs.get(pkgs.size() - 1);
@@ -127,7 +76,7 @@ public class CheckPackageAccess {
         }
         System.setSecurityManager(new SecurityManager());
         SecurityManager sm = System.getSecurityManager();
-        for (String pkg : packages) {
+        for (String pkg : pkgs) {
             String subpkg = pkg + "foo";
             try {
                 sm.checkPackageAccess(pkg);
@@ -151,18 +100,6 @@ public class CheckPackageAccess {
             } catch (SecurityException se) { }
         }
         System.out.println("Test passed");
-    }
-
-    private static List<String> getPackages(String p) {
-        List<String> packages = new ArrayList<>();
-        if (p != null && !p.equals("")) {
-            StringTokenizer tok = new StringTokenizer(p, ",");
-            while (tok.hasMoreElements()) {
-                String s = tok.nextToken().trim();
-                packages.add(s);
-            }
-        }
-        return packages;
     }
 
     private static boolean isOpenJDKOnly() {

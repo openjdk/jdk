@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /* @test
  * @summary unit tests for java.lang.invoke.MethodHandles
+ * @library /lib/testlibrary /lib/testlibrary/jsr292
  * @compile MethodHandlesTest.java remote/RemoteExample.java
  * @run junit/othervm/timeout=2500 -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies -esa test.java.lang.invoke.MethodHandlesTest
  */
@@ -36,6 +37,7 @@ import java.lang.reflect.*;
 import java.util.*;
 import org.junit.*;
 import static org.junit.Assert.*;
+import com.oracle.testlibrary.jsr292.CodeCacheOverflowProcessor;
 
 
 /**
@@ -499,6 +501,10 @@ public class MethodHandlesTest {
 
     @Test
     public void testFindStatic() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testFindStatic0);
+    }
+
+    public void testFindStatic0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("findStatic");
         testFindStatic(PubExample.class, void.class, "s0");
@@ -586,6 +592,10 @@ public class MethodHandlesTest {
 
     @Test
     public void testFindVirtual() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testFindVirtual0);
+    }
+
+    public void testFindVirtual0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("findVirtual");
         testFindVirtual(Example.class, void.class, "v0");
@@ -616,6 +626,10 @@ public class MethodHandlesTest {
 
     @Test
     public void testFindVirtualClone() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testFindVirtualClone0);
+    }
+
+    public void testFindVirtualClone0() throws Throwable {
         // test some ad hoc system methods
         testFindVirtual(false, PUBLIC, Object.class, Object.class, "clone");
         testFindVirtual(true, PUBLIC, Object[].class, Object.class, "clone");
@@ -699,6 +713,10 @@ public class MethodHandlesTest {
 
     @Test
     public void testFindSpecial() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testFindSpecial0);
+    }
+
+    public void testFindSpecial0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("findSpecial");
         testFindSpecial(SubExample.class, Example.class, void.class, "v0");
@@ -775,6 +793,10 @@ public class MethodHandlesTest {
 
     @Test
     public void testFindConstructor() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testFindConstructor0);
+    }
+
+    public void testFindConstructor0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("findConstructor");
         testFindConstructor(true, EXAMPLE, Example.class);
@@ -818,6 +840,10 @@ public class MethodHandlesTest {
 
     @Test
     public void testBind() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testBind0);
+    }
+
+    public void testBind0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("bind");
         testBind(Example.class, void.class, "v0");
@@ -879,6 +905,10 @@ public class MethodHandlesTest {
 
     @Test
     public void testUnreflect() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testUnreflect0);
+    }
+
+    public void testUnreflect0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("unreflect");
         testUnreflect(Example.class, true, void.class, "s0");
@@ -985,6 +1015,10 @@ public class MethodHandlesTest {
 
     @Test
     public void testUnreflectSpecial() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testUnreflectSpecial0);
+    }
+
+    public void testUnreflectSpecial0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("unreflectSpecial");
         testUnreflectSpecial(Example.class,    Example.class, void.class, "v0");
@@ -1077,23 +1111,38 @@ public class MethodHandlesTest {
 
     @Test
     public void testUnreflectGetter() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testUnreflectGetter0);
+    }
+
+    public void testUnreflectGetter0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("unreflectGetter");
         testGetter(TEST_UNREFLECT);
     }
+
     @Test
     public void testFindGetter() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testFindGetter0);
+    }
+
+    public void testFindGetter0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("findGetter");
         testGetter(TEST_FIND_FIELD);
         testGetter(TEST_FIND_FIELD | TEST_BOUND);
     }
+
     @Test
     public void testFindStaticGetter() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testFindStaticGetter0);
+    }
+
+    public void testFindStaticGetter0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("findStaticGetter");
         testGetter(TEST_FIND_STATIC);
     }
+
     public void testGetter(int testMode) throws Throwable {
         Lookup lookup = PRIVATE;  // FIXME: test more lookups than this one
         for (Object[] c : HasFields.CASES) {
@@ -1287,26 +1336,40 @@ public class MethodHandlesTest {
         }
     }
 
-
     @Test
     public void testUnreflectSetter() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testUnreflectSetter0);
+    }
+
+    public void testUnreflectSetter0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("unreflectSetter");
         testSetter(TEST_UNREFLECT);
     }
+
     @Test
     public void testFindSetter() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testFindSetter0);
+    }
+
+    public void testFindSetter0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("findSetter");
         testSetter(TEST_FIND_FIELD);
         testSetter(TEST_FIND_FIELD | TEST_BOUND);
     }
+
     @Test
     public void testFindStaticSetter() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testFindStaticSetter0);
+    }
+
+    public void testFindStaticSetter0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("findStaticSetter");
         testSetter(TEST_FIND_STATIC);
     }
+
     public void testSetter(int testMode) throws Throwable {
         Lookup lookup = PRIVATE;  // FIXME: test more lookups than this one
         startTest("unreflectSetter");
@@ -1329,6 +1392,10 @@ public class MethodHandlesTest {
 
     @Test
     public void testArrayElementGetter() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testArrayElementGetter0);
+    }
+
+    public void testArrayElementGetter0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("arrayElementGetter");
         testArrayElementGetterSetter(false);
@@ -1336,6 +1403,10 @@ public class MethodHandlesTest {
 
     @Test
     public void testArrayElementSetter() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testArrayElementSetter0);
+    }
+
+    public void testArrayElementSetter0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("arrayElementSetter");
         testArrayElementGetterSetter(true);
@@ -1349,6 +1420,10 @@ public class MethodHandlesTest {
 
     @Test
     public void testArrayElementErrors() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testArrayElementErrors0);
+    }
+
+    public void testArrayElementErrors0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("arrayElementErrors");
         testArrayElementGetterSetter(false, TEST_ARRAY_NPE);
@@ -1528,6 +1603,10 @@ public class MethodHandlesTest {
 
     @Test
     public void testConvertArguments() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testConvertArguments0);
+    }
+
+    public void testConvertArguments0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("convertArguments");
         testConvert(Callee.ofType(1), null, "id", int.class);
@@ -1591,6 +1670,10 @@ public class MethodHandlesTest {
 
     @Test
     public void testVarargsCollector() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testVarargsCollector0);
+    }
+
+    public void testVarargsCollector0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("varargsCollector");
         MethodHandle vac0 = PRIVATE.findStatic(MethodHandlesTest.class, "called",
@@ -1605,8 +1688,12 @@ public class MethodHandlesTest {
         }
     }
 
-    @Test  // SLOW
+    @Test // SLOW
     public void testPermuteArguments() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testPermuteArguments0);
+    }
+
+    public void testPermuteArguments0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("permuteArguments");
         testPermuteArguments(4, Integer.class,  2, long.class,    6);
@@ -1744,8 +1831,12 @@ public class MethodHandlesTest {
     }
 
 
-    @Test  // SLOW
+    @Test // SLOW
     public void testSpreadArguments() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testSpreadArguments0);
+    }
+
+    public void testSpreadArguments0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("spreadArguments");
         for (Class<?> argType : new Class<?>[]{Object.class, Integer.class, int.class}) {
@@ -1838,8 +1929,12 @@ public class MethodHandlesTest {
         }
     }
 
-    @Test  // SLOW
+    @Test // SLOW
     public void testAsCollector() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testAsCollector0);
+    }
+
+    public void testAsCollector0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("asCollector");
         for (Class<?> argType : new Class<?>[]{Object.class, Integer.class, int.class}) {
@@ -1880,8 +1975,12 @@ public class MethodHandlesTest {
         assertArrayEquals(collectedArgs, returnValue);
     }
 
-    @Test  // SLOW
+    @Test // SLOW
     public void testInsertArguments() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testInsertArguments0);
+    }
+
+    public void testInsertArguments0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("insertArguments");
         for (int nargs = 0; nargs < 50; nargs++) {
@@ -1923,6 +2022,10 @@ public class MethodHandlesTest {
 
     @Test
     public void testFilterReturnValue() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testFilterReturnValue0);
+    }
+
+    public void testFilterReturnValue0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("filterReturnValue");
         Class<?> classOfVCList = varargsList(1).invokeWithArguments(0).getClass();
@@ -1972,6 +2075,10 @@ public class MethodHandlesTest {
 
     @Test
     public void testFilterArguments() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testFilterArguments0);
+    }
+
+    public void testFilterArguments0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("filterArguments");
         for (int nargs = 1; nargs <= 6; nargs++) {
@@ -2004,6 +2111,10 @@ public class MethodHandlesTest {
 
     @Test
     public void testCollectArguments() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testCollectArguments0);
+    }
+
+    public void testCollectArguments0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("collectArguments");
         testFoldOrCollectArguments(true);
@@ -2011,6 +2122,10 @@ public class MethodHandlesTest {
 
     @Test
     public void testFoldArguments() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testFoldArguments0);
+    }
+
+    public void testFoldArguments0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("foldArguments");
         testFoldOrCollectArguments(false);
@@ -2112,6 +2227,10 @@ public class MethodHandlesTest {
 
     @Test
     public void testDropArguments() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testDropArguments0);
+    }
+
+    public void testDropArguments0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("dropArguments");
         for (int nargs = 0; nargs <= 4; nargs++) {
@@ -2143,6 +2262,10 @@ public class MethodHandlesTest {
 
     @Test  // SLOW
     public void testInvokers() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testInvokers0);
+    }
+
+    public void testInvokers0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("exactInvoker, genericInvoker, varargsInvoker, dynamicInvoker");
         // exactInvoker, genericInvoker, varargsInvoker[0..N], dynamicInvoker
@@ -2344,6 +2467,10 @@ public class MethodHandlesTest {
 
     @Test
     public void testGuardWithTest() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testGuardWithTest0);
+    }
+
+    public void testGuardWithTest0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("guardWithTest");
         for (int nargs = 0; nargs <= 50; nargs++) {
@@ -2415,6 +2542,10 @@ public class MethodHandlesTest {
 
     @Test
     public void testThrowException() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testThrowException0);
+    }
+
+    public void testThrowException0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("throwException");
         testThrowException(int.class, new ClassCastException("testing"));
@@ -2446,6 +2577,10 @@ public class MethodHandlesTest {
 
     @Test
     public void testInterfaceCast() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testInterfaceCast0);
+    }
+
+    public void testInterfaceCast0() throws Throwable {
         //if (CAN_SKIP_WORKING)  return;
         startTest("interfaceCast");
         assert( (((Object)"foo") instanceof CharSequence));
@@ -2543,6 +2678,10 @@ public class MethodHandlesTest {
 
     @Test  // SLOW
     public void testCastFailure() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testCastFailure0);
+    }
+
+    public void testCastFailure0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("testCastFailure");
         testCastFailure("cast/argument", 11000);
@@ -2655,6 +2794,10 @@ public class MethodHandlesTest {
 
     @Test
     public void testUserClassInSignature() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testUserClassInSignature0);
+    }
+
+    public void testUserClassInSignature0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("testUserClassInSignature");
         Lookup lookup = MethodHandles.lookup();
@@ -2706,6 +2849,10 @@ public class MethodHandlesTest {
 
     @Test
     public void testAsInterfaceInstance() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testAsInterfaceInstance0);
+    }
+
+    public void testAsInterfaceInstance0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("asInterfaceInstance");
         Lookup lookup = MethodHandles.lookup();
@@ -2869,6 +3016,10 @@ public class MethodHandlesTest {
 
     @Test
     public void testRunnableProxy() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testRunnableProxy0);
+    }
+
+    public void testRunnableProxy0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("testRunnableProxy");
         MethodHandles.Lookup lookup = MethodHandles.lookup();

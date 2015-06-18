@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,15 +36,22 @@ public interface AnnotatedWildcardType extends AnnotatedType {
 
     /**
      * Returns the potentially annotated lower bounds of this wildcard type.
+     * If no lower bound is explicitly declared, the lower bound is the
+     * type of null. In this case, a zero length array is returned.
      *
-     * @return the potentially annotated lower bounds of this wildcard type
+     * @return the potentially annotated lower bounds of this wildcard type or
+     * an empty array if no lower bound is explicitly declared.
+     * @see WildcardType#getLowerBounds()
      */
     AnnotatedType[] getAnnotatedLowerBounds();
 
     /**
      * Returns the potentially annotated upper bounds of this wildcard type.
+     * If no upper bound is explicitly declared, the upper bound is
+     * unannotated {@code Object}
      *
      * @return the potentially annotated upper bounds of this wildcard type
+     * @see WildcardType#getUpperBounds()
      */
     AnnotatedType[] getAnnotatedUpperBounds();
 }

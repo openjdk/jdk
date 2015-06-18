@@ -40,7 +40,7 @@ import java.lang.reflect.InvocationTargetException;
 /**
  * The {@code PrintingStatus} provides a dialog that displays progress
  * of the printing job and provides a way to abort it
- * <p/>
+ * <p>
  * Methods of these class are thread safe, although most Swing methods
  * are not. Please see
  * <A HREF="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency

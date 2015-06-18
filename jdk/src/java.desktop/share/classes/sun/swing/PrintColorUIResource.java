@@ -72,7 +72,7 @@ public class PrintColorUIResource extends ColorUIResource {
      * manager. When access is disallowed, deserialization of any object
      * with reference to a {@code PrintColorUIResource} fails.
      * <p>
-     * Since {@code PrintColorUIResource) is used only by Swing's look
+     * Since {@code PrintColorUIResource} is used only by Swing's look
      * and feels, and we know that UI supplied colors are replaced after
      * deserialization when the UI is re-installed, the only important
      * aspect of the {@code PrintColorUIResource} that needs to be

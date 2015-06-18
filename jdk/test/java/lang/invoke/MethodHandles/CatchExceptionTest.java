@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 package test.java.lang.invoke.MethodHandles;
 
 import com.oracle.testlibrary.jsr292.Helper;
+import com.oracle.testlibrary.jsr292.CodeCacheOverflowProcessor;
 import jdk.testlibrary.Asserts;
 import jdk.testlibrary.TimeLimitedRunner;
 import jdk.testlibrary.Utils;
@@ -35,7 +36,6 @@ import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.concurrent.TimeUnit;
 
 /* @test
  * @library /lib/testlibrary/jsr292 /lib/testlibrary/
@@ -91,6 +91,10 @@ public class CatchExceptionTest {
     }
 
     public static void main(String[] args) throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(CatchExceptionTest::test);
+    }
+
+    public static void test() throws Throwable {
         System.out.println("classes = " + ARGS_CLASSES);
 
         TestFactory factory = new TestFactory();
@@ -115,7 +119,6 @@ public class CatchExceptionTest {
     private List<Class<?>> getThrowerParams(boolean isVararg, int argsCount) {
         return Helper.getParams(ARGS_CLASSES, isVararg, argsCount);
     }
-
 
     private List<Class<?>> getCatcherParams() {
         int catchArgc = 1 + this.argsCount - dropped;

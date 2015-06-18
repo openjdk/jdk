@@ -26,21 +26,17 @@ import java.lang.InterruptedException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
-import jdk.testlibrary.Platform;
 import org.testng.annotations.Test;
 import org.testng.Assert;
 import org.testng.TestNG;
 
 /*
  * @test
- * @library /lib/testlibrary
  * @summary Functions of Process.onExit and ProcessHandle.onExit
  * @author Roger Riggs
  */

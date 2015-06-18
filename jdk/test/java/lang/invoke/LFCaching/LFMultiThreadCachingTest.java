@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test LFMultiThreadCachingTest
  * @bug 8046703
+ * @key randomness
  * @summary Test verifies that lambda forms are cached when run with multiple threads
  * @author kshefov
  * @library /lib/testlibrary/jsr292 /lib/testlibrary
@@ -35,18 +36,23 @@
  */
 
 import java.lang.invoke.MethodHandle;
+import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
+import com.oracle.testlibrary.jsr292.CodeCacheOverflowProcessor;
 
 /**
  * Multiple threaded lambda forms caching test class.
  */
 public final class LFMultiThreadCachingTest extends LFCachingTestCase {
+
     private static final TestMethods.Kind[] KINDS;
+
     static {
         EnumSet<TestMethods.Kind> set = EnumSet.complementOf(EnumSet.of(TestMethods.Kind.EXCEPT));
         KINDS = set.toArray(new TestMethods.Kind[set.size()]);
@@ -72,21 +78,55 @@ public final class LFMultiThreadCachingTest extends LFCachingTestCase {
         ConcurrentLinkedQueue<MethodHandle> adapters = new ConcurrentLinkedQueue<>();
         CyclicBarrier begin = new CyclicBarrier(CORES);
         CountDownLatch end = new CountDownLatch(CORES);
+        final Map<Thread, Throwable> threadUncaughtExceptions
+                = Collections.synchronizedMap(new HashMap<Thread, Throwable>(CORES));
+        Thread.UncaughtExceptionHandler exHandler = (t, e) -> {
+            threadUncaughtExceptions.put(t, e);
+        };
         for (int i = 0; i < CORES; ++i) {
             TestMethods.Kind kind = KINDS[i % KINDS.length];
-            new Thread(() -> {
+            Thread t = new Thread(() -> {
                 try {
                     begin.await();
                     adapters.add(getTestMethod().getTestCaseMH(data, kind));
-                } catch (InterruptedException | BrokenBarrierException | IllegalAccessException | NoSuchMethodException ex) {
-                    throw new Error("Unexpected exception: ", ex);
+                } catch (InterruptedException | BrokenBarrierException
+                        | IllegalAccessException | NoSuchMethodException ex) {
+                    throw new Error("Unexpected exception", ex);
                 } finally {
                     end.countDown();
                 }
-            }).start();
+            });
+            t.setUncaughtExceptionHandler(exHandler);
+            t.start();
         }
         try {
             end.await();
+            boolean vmeThrown = false;
+            boolean nonVmeThrown = false;
+            Throwable vme = null;
+            for (Map.Entry<Thread,
+                    Throwable> entry : threadUncaughtExceptions.entrySet()) {
+                Thread t =  entry.getKey();
+                Throwable e = entry.getValue();
+                System.err.printf("%nA thread with name \"%s\" of %d threads"
+                        + " has thrown exception:%n", t.getName(), CORES);
+                e.printStackTrace();
+                if (CodeCacheOverflowProcessor.isThrowableCausedByVME(e)) {
+                    vmeThrown = true;
+                    vme = e;
+                } else {
+                    nonVmeThrown = true;
+                }
+                if (nonVmeThrown) {
+                    throw new Error("One ore more threads have"
+                            + " thrown unexpected exceptions. See log.");
+                }
+                if (vmeThrown) {
+                    throw new Error("One ore more threads have"
+                            + " thrown VirtualMachineError caused by"
+                            + " code cache overflow. See log.", vme);
+                }
+            }
         } catch (InterruptedException ex) {
             throw new Error("Unexpected exception: ", ex);
         }

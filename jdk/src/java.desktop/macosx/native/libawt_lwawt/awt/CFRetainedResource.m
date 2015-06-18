@@ -23,6 +23,7 @@
  * questions.
  */
 
+#import <Cocoa/Cocoa.h>
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 #import "sun_lwawt_macosx_CFRetainedResource.h"
@@ -37,7 +38,10 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CFRetainedResource_nativeCFRelease
 (JNIEnv *env, jclass clazz, jlong ptr, jboolean releaseOnAppKitThread)
 {
     if (releaseOnAppKitThread) {
-        [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
+        // Releasing resources on the main AppKit message loop only
+        // Releasing resources on the nested loops may cause dangling 
+        // pointers after the nested loop is exited 
+        [NSApp postRunnableEvent:^(){
             CFRelease(jlong_to_ptr(ptr));
         }];
     } else {

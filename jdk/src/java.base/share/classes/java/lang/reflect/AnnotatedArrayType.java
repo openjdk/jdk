@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ public interface AnnotatedArrayType extends AnnotatedType {
      * Returns the potentially annotated generic component type of this array type.
      *
      * @return the potentially annotated generic component type of this array type
+     * @see GenericArrayType#getGenericComponentType()
      */
     AnnotatedType  getAnnotatedGenericComponentType();
 }

@@ -38,7 +38,7 @@ import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
 import sun.swing.MenuItemCheckIconFactory;
 
 /**
- * Factory object that can vend Icons appropriate for the Windows L & F.
+ * Factory object that can vend Icons appropriate for the Windows {@literal L & F}.
  * <p>
  * <strong>Warning:</strong>
  * Serialized objects of this class will not be compatible with

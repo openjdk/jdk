@@ -47,7 +47,7 @@ import javax.swing.plaf.basic.BasicPopupMenuUI;
 
 
 /**
- * A Motif L&F implementation of PopupMenuUI.
+ * A Motif {@literal L&F} implementation of PopupMenuUI.
  * <p>
  * <strong>Warning:</strong>
  * Serialized objects of this class will not be compatible with

@@ -54,7 +54,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBMLIB_IMAGE, \
     OPTIMIZATION := HIGHEST, \
     CFLAGS := $(CFLAGS_JDKLIB) \
         $(BUILD_LIBMLIB_CFLAGS), \
-    DISABLED_WARNINGS_gcc := parentheses, \
+    DISABLED_WARNINGS_gcc := parentheses array-bounds, \
     DISABLED_WARNINGS_clang := parentheses, \
     DISABLED_WARNINGS_solstudio := E_STATEMENT_NOT_REACHED, \
     MAPFILE := $(BUILD_LIBMLIB_IMAGE_MAPFILE), \
@@ -491,10 +491,10 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVAJPEG, \
     SRC := $(LIBJAVAJPEG_SRC), \
     INCLUDE_FILES := $(BUILD_LIBJAVAJPEG_INCLUDE_FILES), \
     OPTIMIZATION := HIGHEST, \
-    CFLAGS := $(CFLAGS_JDKLIB) $(addprefix -I, $(LIBJAVAJPEG_SRC)) \
+    CFLAGS := $(CFLAGS_JDKLIB) $(BUILD_LIBJAVAJPEG_HEADERS) \
         $(LIBJAVA_HEADER_FLAGS) \
         -I$(SUPPORT_OUTPUTDIR)/headers/java.desktop, \
-    DISABLED_WARNINGS_gcc := clobbered parentheses, \
+    DISABLED_WARNINGS_gcc := clobbered parentheses array-bounds, \
     DISABLED_WARNINGS_clang := logical-op-parentheses, \
     DISABLED_WARNINGS_microsoft := 4267, \
     MAPFILE := $(BUILD_LIBJAVAJPEG_MAPFILE), \

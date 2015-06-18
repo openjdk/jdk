@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test LFSingleThreadCachingTest
  * @bug 8046703
+ * @key randomness
  * @summary Test verifies that lambda forms are cached when run with single thread
  * @author kshefov
  * @library /lib/testlibrary/jsr292 /lib/testlibrary
@@ -62,7 +63,7 @@ public final class LFSingleThreadCachingTest extends LFCachingTestCase {
             adapter1 = getTestMethod().getTestCaseMH(data, TestMethods.Kind.ONE);
             adapter2 = getTestMethod().getTestCaseMH(data, TestMethods.Kind.TWO);
         } catch (NoSuchMethodException | IllegalAccessException ex) {
-            throw new Error("Unexpected exception: ", ex);
+            throw new Error("Unexpected exception", ex);
         }
         checkLFCaching(adapter1, adapter2);
     }
