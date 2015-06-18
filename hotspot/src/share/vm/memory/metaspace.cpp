@@ -3293,12 +3293,12 @@ void Metaspace::global_initialize() {
 #endif // _LP64
 #endif // INCLUDE_CDS
   } else {
-#if INCLUDE_CDS
     // If using shared space, open the file that contains the shared space
     // and map in the memory before initializing the rest of metaspace (so
     // the addresses don't conflict)
     address cds_address = NULL;
     if (UseSharedSpaces) {
+#if INCLUDE_CDS
       FileMapInfo* mapinfo = new FileMapInfo();
 
       // Open the shared archive file, read and validate the header. If
@@ -3308,26 +3308,29 @@ void Metaspace::global_initialize() {
       if (mapinfo->initialize() && MetaspaceShared::map_shared_spaces(mapinfo)) {
         cds_total = FileMapInfo::shared_spaces_size();
         cds_address = (address)mapinfo->header()->region_addr(0);
+#ifdef _LP64
+        if (using_class_space()) {
+          char* cds_end = (char*)(cds_address + cds_total);
+          cds_end = (char *)align_ptr_up(cds_end, _reserve_alignment);
+          // If UseCompressedClassPointers is set then allocate the metaspace area
+          // above the heap and above the CDS area (if it exists).
+          allocate_metaspace_compressed_klass_ptrs(cds_end, cds_address);
+          // Map the shared string space after compressed pointers
+          // because it relies on compressed class pointers setting to work
+          mapinfo->map_string_regions();
+        }
+#endif // _LP64
       } else {
         assert(!mapinfo->is_open() && !UseSharedSpaces,
                "archive file not closed or shared spaces not disabled.");
       }
-    }
 #endif // INCLUDE_CDS
+    }
+
 #ifdef _LP64
-    // If UseCompressedClassPointers is set then allocate the metaspace area
-    // above the heap and above the CDS area (if it exists).
-    if (using_class_space()) {
-      if (UseSharedSpaces) {
-#if INCLUDE_CDS
-        char* cds_end = (char*)(cds_address + cds_total);
-        cds_end = (char *)align_ptr_up(cds_end, _reserve_alignment);
-        allocate_metaspace_compressed_klass_ptrs(cds_end, cds_address);
-#endif
-      } else {
-        char* base = (char*)align_ptr_up(Universe::heap()->reserved_region().end(), _reserve_alignment);
-        allocate_metaspace_compressed_klass_ptrs(base, 0);
-      }
+    if (!UseSharedSpaces && using_class_space()) {
+      char* base = (char*)align_ptr_up(Universe::heap()->reserved_region().end(), _reserve_alignment);
+      allocate_metaspace_compressed_klass_ptrs(base, 0);
     }
 #endif // _LP64
 
