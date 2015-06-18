@@ -172,6 +172,8 @@ void FileMapInfo::FileMapHeader::populate(FileMapInfo* mapinfo, size_t alignment
   _narrow_oop_mode = Universe::narrow_oop_mode();
   _narrow_oop_shift = Universe::narrow_oop_shift();
   _max_heap_size = MaxHeapSize;
+  _narrow_klass_base = Universe::narrow_klass_base();
+  _narrow_klass_shift = Universe::narrow_klass_shift();
   _classpath_entry_table_size = mapinfo->_classpath_entry_table_size;
   _classpath_entry_table = mapinfo->_classpath_entry_table;
   _classpath_entry_size = mapinfo->_classpath_entry_size;
@@ -652,8 +654,18 @@ static int num_ranges = 0;
 bool FileMapInfo::map_string_regions() {
 #if INCLUDE_ALL_GCS
   if (UseG1GC && UseCompressedOops && UseCompressedClassPointers) {
-    if (narrow_oop_mode() == Universe::narrow_oop_mode() &&
-        narrow_oop_shift() == Universe::narrow_oop_shift()) {
+    // Check that all the narrow oop and klass encodings match the archive
+    if (narrow_oop_mode() != Universe::narrow_oop_mode() ||
+        narrow_oop_shift() != Universe::narrow_oop_shift() ||
+        narrow_klass_base() != Universe::narrow_klass_base() ||
+        narrow_klass_shift() != Universe::narrow_klass_shift()) {
+      if (PrintSharedSpaces && _header->_space[MetaspaceShared::first_string]._used > 0) {
+        tty->print_cr("Shared string data from the CDS archive is being ignored. "
+                     "The current CompressedOops/CompressedClassPointers encoding differs from "
+                     "that archived due to heap size change. The archive was dumped using max heap "
+                     "size %dM.", max_heap_size()/M);
+      }
+    } else {
       string_ranges = new MemRegion[MetaspaceShared::max_strings];
       struct FileMapInfo::FileMapHeader::space_info* si;
 
@@ -671,6 +683,7 @@ bool FileMapInfo::map_string_regions() {
       }
 
       if (num_ranges == 0) {
+        StringTable::ignore_shared_strings(true);
         return true; // no shared string data
       }
 
@@ -702,15 +715,14 @@ bool FileMapInfo::map_string_regions() {
           return false;
         }
       }
-      return true; // the shared string data is mapped successfuly
-    } else {
-      //  narrow oop encoding differ, the shared string data are not used
-      if (PrintSharedSpaces && _header->_space[MetaspaceShared::first_string]._used > 0) {
-        tty->print_cr("Shared string data from the CDS archive is being ignored. "
-                     "The current CompressedOops encoding differs from that archived "
-                     "due to heap size change. The archive was dumped using max heap "
-                     "size %dM.", max_heap_size() >> 20);
+
+      if (!verify_string_regions()) {
+        fail_continue("Shared string regions are corrupt");
+        return false;
       }
+
+      // the shared string data is mapped successfully
+      return true;
     }
   } else {
     if (PrintSharedSpaces && _header->_space[MetaspaceShared::first_string]._used > 0) {
