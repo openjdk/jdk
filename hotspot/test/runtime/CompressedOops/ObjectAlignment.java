@@ -39,21 +39,22 @@ public class ObjectAlignment {
         if (Platform.is64bit()) {
             // Minimum alignment should be 8
             testObjectAlignment(4)
-                .shouldContain("error: ObjectAlignmentInBytes=4 must be greater or equal 8")
+                .shouldContain("outside the allowed range")
                 .shouldHaveExitValue(1);
 
             // Alignment has to be a power of 2
             testObjectAlignment(9)
-                .shouldContain("error: ObjectAlignmentInBytes=9 must be power of 2")
+                .shouldContain("must be power of 2")
                 .shouldHaveExitValue(1);
 
             testObjectAlignment(-1)
-                .shouldContain("error: ObjectAlignmentInBytes=-1 must be power of 2")
+                .shouldContain("must be power of 2")
+                .shouldContain("outside the allowed range")
                 .shouldHaveExitValue(1);
 
             // Maximum alignment allowed is 256
             testObjectAlignment(512)
-                .shouldContain("error: ObjectAlignmentInBytes=512 must not be greater than 256")
+                .shouldContain("outside the allowed range")
                 .shouldHaveExitValue(1);
 
             // Valid alignments should work

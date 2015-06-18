@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@
 // Defines all globals flags used by the server compiler.
 //
 
-#define C2_FLAGS(develop, develop_pd, product, product_pd, diagnostic, experimental, notproduct) \
+#define C2_FLAGS(develop, develop_pd, product, product_pd, diagnostic, experimental, notproduct, range, constraint) \
                                                                             \
   develop(bool, StressLCM, false,                                           \
           "Randomize instruction scheduling in LCM")                        \
@@ -94,7 +94,8 @@
           "in generated code (in bytes)")                                   \
                                                                             \
   product(intx, MaxLoopPad, (OptoLoopAlignment-1),                          \
-          "Align a loop if padding size in bytes is less or equal to this value") \
+          "Align a loop if padding size in bytes is less or equal to this " \
+          "value")                                                          \
                                                                             \
   product(intx, MaxVectorSize, 64,                                          \
           "Max vector size in bytes, "                                      \
@@ -108,6 +109,7 @@
                                                                             \
   notproduct(intx, IndexSetWatch, 0,                                        \
           "Trace all operations on this IndexSet (-1 means all, 0 none)")   \
+          range(-1, 0)                                                      \
                                                                             \
   develop(intx, OptoNodeListSize, 4,                                        \
           "Starting allocation size of Node_List data structures")          \
@@ -361,6 +363,7 @@
           "System-wide value, 0=nothing is printed, 3=all details printed. "\
           "Level of detail of printouts can be set on a per-method level "  \
           "as well by using CompileCommand=option.")                        \
+          range(0, 3)                                                       \
                                                                             \
   develop(intx, PrintIdealGraphPort, 4444,                                  \
           "Ideal graph printer to network port")                            \
@@ -382,13 +385,16 @@
           "Insert memory barrier after arraycopy call")                     \
                                                                             \
   develop(bool, SubsumeLoads, true,                                         \
-          "Attempt to compile while subsuming loads into machine instructions.") \
+          "Attempt to compile while subsuming loads into machine "          \
+          "instructions.")                                                  \
                                                                             \
   develop(bool, StressRecompilation, false,                                 \
-          "Recompile each compiled method without subsuming loads or escape analysis.") \
+          "Recompile each compiled method without subsuming loads "         \
+          "or escape analysis.")                                            \
                                                                             \
   develop(intx, ImplicitNullCheckThreshold, 3,                              \
-          "Don't do implicit null checks if NPE's in a method exceeds limit") \
+          "Don't do implicit null checks if NPE's in a method exceeds "     \
+          "limit")                                                          \
                                                                             \
   product(intx, LoopOptsCount, 43,                                          \
           "Set level of loop optimization for tier 1 compiles")             \
@@ -534,15 +540,16 @@
           "Use edge frequencies to drive block ordering")                   \
                                                                             \
   product(intx, BlockLayoutMinDiamondPercentage, 20,                        \
-          "Miniumum %% of a successor (predecessor) for which block layout "\
-          "a will allow a fork (join) in a single chain")                   \
+          "Miniumum %% of a successor (predecessor) for which block "       \
+          "layout a will allow a fork (join) in a single chain")            \
+          range(0, 100)                                                     \
                                                                             \
   product(bool, BlockLayoutRotateLoops, true,                               \
           "Allow back branches to be fall throughs in the block layour")    \
                                                                             \
   develop(bool, InlineReflectionGetCallerClass, true,                       \
-          "inline sun.reflect.Reflection.getCallerClass(), known to be part "\
-          "of base library DLL")                                            \
+          "inline sun.reflect.Reflection.getCallerClass(), known to be "    \
+          "part of base library DLL")                                       \
                                                                             \
   develop(bool, InlineObjectCopy, true,                                     \
           "inline Object.clone and Arrays.copyOf[Range] intrinsics")        \
@@ -604,6 +611,7 @@
                                                                             \
   product(intx, TypeProfileMajorReceiverPercent, 90,                        \
           "% of major receiver type to all profiled receivers")             \
+          range(0, 100)                                                     \
                                                                             \
   diagnostic(bool, PrintIntrinsics, false,                                  \
           "prints attempted and successful inlining of intrinsics")         \
@@ -643,6 +651,8 @@
   product(intx, AliasLevel,     3,                                          \
           "0 for no aliasing, 1 for oop/field/static/array split, "         \
           "2 for class split, 3 for unique instances")                      \
+          range(0, 3)                                                       \
+          constraint(AliasLevelConstraintFunc)                              \
                                                                             \
   develop(bool, VerifyAliases, false,                                       \
           "perform extra checks on the results of alias analysis")          \
@@ -689,6 +699,14 @@
   develop(bool, StressArrayCopyMacroNode, false,                            \
           "Perform ArrayCopy load/store replacement during IGVN only")
 
-C2_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_EXPERIMENTAL_FLAG, DECLARE_NOTPRODUCT_FLAG)
+C2_FLAGS(DECLARE_DEVELOPER_FLAG, \
+         DECLARE_PD_DEVELOPER_FLAG, \
+         DECLARE_PRODUCT_FLAG, \
+         DECLARE_PD_PRODUCT_FLAG, \
+         DECLARE_DIAGNOSTIC_FLAG, \
+         DECLARE_EXPERIMENTAL_FLAG, \
+         DECLARE_NOTPRODUCT_FLAG, \
+         IGNORE_RANGE, \
+         IGNORE_CONSTRAINT)
 
 #endif // SHARE_VM_OPTO_C2_GLOBALS_HPP

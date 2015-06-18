@@ -29,7 +29,7 @@
 //
 // Defines Aix specific flags. They are not available on other platforms.
 //
-#define RUNTIME_OS_FLAGS(develop, develop_pd, product, product_pd, diagnostic, notproduct) \
+#define RUNTIME_OS_FLAGS(develop, develop_pd, product, product_pd, diagnostic, notproduct, range, constraint) \
                                                                                     \
   /* Use 64K pages for virtual memory (shmat). */                                   \
   product(bool, Use64KPages, true,                                                  \

@@ -518,8 +518,8 @@ void MemoryService::oops_do(OopClosure* f) {
 bool MemoryService::set_verbose(bool verbose) {
   MutexLocker m(Management_lock);
   // verbose will be set to the previous value
-  bool succeed = CommandLineFlags::boolAtPut((char*)"PrintGC", &verbose, Flag::MANAGEMENT);
-  assert(succeed, "Setting PrintGC flag fails");
+  Flag::Error error = CommandLineFlags::boolAtPut("PrintGC", &verbose, Flag::MANAGEMENT);
+  assert(error==Flag::SUCCESS, err_msg("Setting PrintGC flag failed with error %s", Flag::flag_error_str(error)));
   ClassLoadingService::reset_trace_class_unloading();
 
   return verbose;
