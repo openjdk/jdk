@@ -37,7 +37,6 @@ import java.awt.event.*;
 
 /**
  * MotifCheckboxMenuItem implementation
- * <p>
  *
  * @author Georges Saab
  * @author Rich Schiavi
