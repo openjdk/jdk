@@ -27,6 +27,7 @@
 #include "classfile/compactHashtable.hpp"
 #include "gc/shared/vmGCOperations.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/os.hpp"
 #include "services/diagnosticArgument.hpp"
@@ -221,7 +222,7 @@ void SetVMFlagDCmd::execute(DCmdSource source, TRAPS) {
   FormatBuffer<80> err_msg("%s", "");
   int ret = WriteableFlags::set_flag(_flag.value(), val, Flag::MANAGEMENT, err_msg);
 
-  if (ret != WriteableFlags::SUCCESS) {
+  if (ret != Flag::SUCCESS) {
     output()->print_cr("%s", err_msg.buffer());
   }
 }

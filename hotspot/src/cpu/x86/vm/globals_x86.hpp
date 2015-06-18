@@ -84,7 +84,7 @@ define_pd_global(uintx, TypeProfileLevel, 111);
 
 define_pd_global(bool, PreserveFramePointer, false);
 
-#define ARCH_FLAGS(develop, product, diagnostic, experimental, notproduct) \
+#define ARCH_FLAGS(develop, product, diagnostic, experimental, notproduct, range, constraint) \
                                                                             \
   develop(bool, IEEEPrecision, true,                                        \
           "Enables IEEE precision (for INTEL only)")                        \

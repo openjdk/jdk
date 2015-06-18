@@ -631,27 +631,27 @@ WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
 WB_END
 
 template <typename T>
-static bool GetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value, bool (*TAt)(const char*, T*, bool, bool)) {
+static bool GetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value, Flag::Error (*TAt)(const char*, T*, bool, bool)) {
   if (name == NULL) {
     return false;
   }
   ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
   const char* flag_name = env->GetStringUTFChars(name, NULL);
-  bool result = (*TAt)(flag_name, value, true, true);
+  Flag::Error result = (*TAt)(flag_name, value, true, true);
   env->ReleaseStringUTFChars(name, flag_name);
-  return result;
+  return (result == Flag::SUCCESS);
 }
 
 template <typename T>
-static bool SetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value, bool (*TAtPut)(const char*, T*, Flag::Flags)) {
+static bool SetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value, Flag::Error (*TAtPut)(const char*, T*, Flag::Flags)) {
   if (name == NULL) {
     return false;
   }
   ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
   const char* flag_name = env->GetStringUTFChars(name, NULL);
-  bool result = (*TAtPut)(flag_name, value, Flag::INTERNAL);
+  Flag::Error result = (*TAtPut)(flag_name, value, Flag::INTERNAL);
   env->ReleaseStringUTFChars(name, flag_name);
-  return result;
+  return (result == Flag::SUCCESS);
 }
 
 template <typename T>

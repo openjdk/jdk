@@ -42,7 +42,7 @@ public class CompressedClassSpaceSize {
             pb = ProcessTools.createJavaProcessBuilder("-XX:CompressedClassSpaceSize=0",
                                                        "-version");
             output = new OutputAnalyzer(pb.start());
-            output.shouldContain("CompressedClassSpaceSize of 0 is invalid")
+            output.shouldContain("outside the allowed range")
                   .shouldHaveExitValue(1);
 
             // Invalid size of -1 should be handled correctly
@@ -57,7 +57,7 @@ public class CompressedClassSpaceSize {
             pb = ProcessTools.createJavaProcessBuilder("-XX:CompressedClassSpaceSize=4g",
                                                        "-version");
             output = new OutputAnalyzer(pb.start());
-            output.shouldContain("CompressedClassSpaceSize of 4294967296 is invalid")
+            output.shouldContain("outside the allowed range")
                   .shouldHaveExitValue(1);
 
 

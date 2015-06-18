@@ -1703,8 +1703,8 @@ JVM_ENTRY(void, jmm_SetVMGlobal(JNIEnv *env, jstring flag_name, jvalue new_value
   FormatBuffer<80> err_msg("%s", "");
   int succeed = WriteableFlags::set_flag(name, new_value, Flag::MANAGEMENT, err_msg);
 
-  if (succeed != WriteableFlags::SUCCESS) {
-    if (succeed == WriteableFlags::MISSING_VALUE) {
+  if (succeed != Flag::SUCCESS) {
+    if (succeed == Flag::MISSING_VALUE) {
       // missing value causes NPE to be thrown
       THROW(vmSymbols::java_lang_NullPointerException());
     } else {
@@ -1713,7 +1713,7 @@ JVM_ENTRY(void, jmm_SetVMGlobal(JNIEnv *env, jstring flag_name, jvalue new_value
                 err_msg.buffer());
     }
   }
-  assert(succeed == WriteableFlags::SUCCESS, "Setting flag should succeed");
+  assert(succeed == Flag::SUCCESS, "Setting flag should succeed");
 JVM_END
 
 class ThreadTimesClosure: public ThreadClosure {

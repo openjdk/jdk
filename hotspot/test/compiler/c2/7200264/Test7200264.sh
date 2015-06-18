@@ -1,6 +1,6 @@
 #!/bin/sh
 # 
-# Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 # 
 # This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,8 @@ fi
 cp ${TESTSRC}${FS}TestIntVect.java .
 ${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} -d . TestIntVect.java
 
-${TESTJAVA}${FS}bin${FS}java ${TESTOPTS} -Xbatch -XX:-TieredCompilation -XX:CICompilerCount=1 -XX:+PrintCompilation -XX:+TraceNewVectors TestIntVect > test.out 2>&1
+# CICompilerCount must be at least 2 with -TieredCompilation
+${TESTJAVA}${FS}bin${FS}java ${TESTOPTS} -Xbatch -XX:-TieredCompilation -XX:CICompilerCount=2 -XX:+PrintCompilation -XX:+TraceNewVectors TestIntVect > test.out 2>&1
 
 COUNT=`grep AddVI test.out | wc -l | awk '{print $1}'`
 if [ $COUNT -lt 4 ]

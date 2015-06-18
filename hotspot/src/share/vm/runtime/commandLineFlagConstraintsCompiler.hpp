@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,18 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "opto/c2_globals.hpp"
+#ifndef SHARE_VM_RUNTIME_COMMANDLINEFLAGCONSTRAINTSCOMPILER_HPP
+#define SHARE_VM_RUNTIME_COMMANDLINEFLAGCONSTRAINTSCOMPILER_HPP
 
-C2_FLAGS(MATERIALIZE_DEVELOPER_FLAG, \
-         MATERIALIZE_PD_DEVELOPER_FLAG, \
-         MATERIALIZE_PRODUCT_FLAG, \
-         MATERIALIZE_PD_PRODUCT_FLAG, \
-         MATERIALIZE_DIAGNOSTIC_FLAG, \
-         MATERIALIZE_EXPERIMENTAL_FLAG, \
-         MATERIALIZE_NOTPRODUCT_FLAG, \
-         IGNORE_RANGE, \
-         IGNORE_CONSTRAINT)
+#include "runtime/globals.hpp"
+#include "utilities/globalDefinitions.hpp"
+
+/*
+ * Here we have compiler arguments constraints functions, which are called automatically
+ * whenever flag's value changes. If the constraint fails the function should return
+ * an appropriate error value.
+ */
+
+Flag::Error AliasLevelConstraintFunc(bool verbose, intx* value);
+
+#endif /* SHARE_VM_RUNTIME_COMMANDLINEFLAGCONSTRAINTSCOMPILER_HPP */

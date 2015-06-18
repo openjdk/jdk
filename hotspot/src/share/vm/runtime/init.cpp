@@ -29,6 +29,7 @@
 #include "interpreter/bytecodes.hpp"
 #include "memory/universe.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/init.hpp"
@@ -141,8 +142,8 @@ jint init_globals() {
 
   // All the flags that get adjusted by VM_Version_init and os::init_2
   // have been set so dump the flags now.
-  if (PrintFlagsFinal) {
-    CommandLineFlags::printFlags(tty, false);
+  if (PrintFlagsFinal || PrintFlagsRanges) {
+    CommandLineFlags::printFlags(tty, false, PrintFlagsRanges);
   }
 
   return JNI_OK;
