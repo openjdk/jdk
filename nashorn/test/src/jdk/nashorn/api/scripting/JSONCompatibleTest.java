@@ -97,12 +97,14 @@ public class JSONCompatibleTest {
         assertEquals(x2.get("1"), 5);
     }
 
+    @SuppressWarnings("unchecked")
     private static List<Object> asList(final Object obj) {
         assertJSObject(obj);
         Assert.assertTrue(obj instanceof List);
         return (List)obj;
     }
 
+    @SuppressWarnings("unchecked")
     private static Map<String, Object> asMap(final Object obj) {
         assertJSObject(obj);
         Assert.assertTrue(obj instanceof Map);

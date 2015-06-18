@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,30 +25,105 @@
 
 package jdk.nashorn.internal.runtime;
 
-import static jdk.nashorn.internal.codegen.CompilerConstants.interfaceCallNoLookup;
+import static jdk.nashorn.internal.codegen.CompilerConstants.virtualCallNoLookup;
 
 import jdk.nashorn.internal.codegen.CompilerConstants;
 
 /**
- * Interface implemented by {@link ScriptObject}s that act as scope.
+ * A {@link ScriptObject} subclass for objects that act as scope.
  */
-public interface Scope {
+public class Scope extends ScriptObject {
+
+    /* This is used to store return state of split functions. */
+    private int splitState = -1;
+
+    /** This is updated only in debug mode - counts number of {@code ScriptObject} instances created that are scope */
+    private static int count;
 
     /** Method handle that points to {@link Scope#getSplitState}. */
-    public static final CompilerConstants.Call GET_SPLIT_STATE = interfaceCallNoLookup(Scope.class, "getSplitState", int.class);
-
+    public static final CompilerConstants.Call GET_SPLIT_STATE = virtualCallNoLookup(Scope.class, "getSplitState", int.class);
     /** Method handle that points to {@link Scope#setSplitState(int)}. */
-    public static final CompilerConstants.Call SET_SPLIT_STATE = interfaceCallNoLookup(Scope.class, "setSplitState", void.class, int.class);
+    public static final CompilerConstants.Call SET_SPLIT_STATE = virtualCallNoLookup(Scope.class, "setSplitState", void.class, int.class);
+
+    /**
+     * Constructor
+     *
+     * @param map initial property map
+     */
+    public Scope(final PropertyMap map) {
+        super(map);
+        if (Context.DEBUG) {
+            count++;
+        }
+    }
+
+    /**
+     * Constructor
+     *
+     * @param proto parent scope
+     * @param map   initial property map
+     */
+    public Scope(final ScriptObject proto, final PropertyMap map) {
+        super(proto, map);
+        if (Context.DEBUG) {
+            count++;
+        }
+    }
+
+    /**
+     * Constructor
+     *
+     * @param map            property map
+     * @param primitiveSpill primitive spill array
+     * @param objectSpill    reference spill array
+     */
+    public Scope(final PropertyMap map, final long[] primitiveSpill, final Object[] objectSpill) {
+        super(map, primitiveSpill, objectSpill);
+        if (Context.DEBUG) {
+            count++;
+        }
+    }
+
+    @Override
+    public boolean isScope() {
+        return true;
+    }
+
+    @Override
+    boolean hasWithScope() {
+        for (ScriptObject obj = this; obj != null; obj = obj.getProto()) {
+            if (obj instanceof WithObject) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     /**
      * Get the scope's split method state.
-     * @return the current state
+     *
+     * @return current split state
      */
-    public int getSplitState();
+    public int getSplitState() {
+        return splitState;
+    }
 
     /**
      * Set the scope's split method state.
-     * @param state the new state.
+     *
+     * @param state current split state
      */
-    public void setSplitState(int state);
+    public void setSplitState(final int state) {
+        splitState = state;
+    }
+
+    /**
+     * Get number of {@code Scope} instances created. If not running in debug
+     * mode this is always 0.
+     *
+     * @return number of scope ScriptObjects created
+     */
+    public static int getScopeCount() {
+        return count;
+    }
 }
