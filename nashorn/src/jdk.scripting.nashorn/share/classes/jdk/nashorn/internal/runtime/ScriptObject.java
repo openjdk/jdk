@@ -393,14 +393,6 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     }
 
     /**
-     * ECMA 8.10.3 IsGenericDescriptor ( Desc )
-     * @return true if this has a descriptor describing an {@link AccessorPropertyDescriptor} or {@link DataPropertyDescriptor}
-     */
-    public final boolean isGenericDescriptor() {
-        return isAccessorDescriptor() || isDataDescriptor();
-    }
-
-    /**
       * ECMA 8.10.5 ToPropertyDescriptor ( Obj )
       *
       * @return property descriptor
