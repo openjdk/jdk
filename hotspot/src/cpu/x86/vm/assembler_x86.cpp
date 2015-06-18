@@ -3095,8 +3095,16 @@ void Assembler::pshuflw(XMMRegister dst, Address src, int mode) {
 void Assembler::psrldq(XMMRegister dst, int shift) {
   // Shift 128 bit value in xmm register by number of bytes.
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  int encode = simd_prefix_and_encode(xmm3, dst, dst, VEX_SIMD_66, true, VEX_OPCODE_0F,
-                                      false, AVX_128bit, (VM_Version::supports_avx512bw() == false));
+  int encode = simd_prefix_and_encode(xmm3, dst, dst, VEX_SIMD_66, true, VEX_OPCODE_0F, false, AVX_128bit, (VM_Version::supports_avx512bw() == false));
+  emit_int8(0x73);
+  emit_int8((unsigned char)(0xC0 | encode));
+  emit_int8(shift);
+}
+
+void Assembler::pslldq(XMMRegister dst, int shift) {
+  // Shift left 128 bit value in xmm register by number of bytes.
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  int encode = simd_prefix_and_encode(xmm7, dst, dst, VEX_SIMD_66, true, VEX_OPCODE_0F, false, AVX_128bit, (VM_Version::supports_avx512bw() == false));
   emit_int8(0x73);
   emit_int8((unsigned char)(0xC0 | encode));
   emit_int8(shift);
