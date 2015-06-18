@@ -36,7 +36,6 @@ import java.awt.event.*;
 import java.applet.Applet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.lang.reflect.InvocationTargetException;
-import sun.awt.SunToolkit;
 import test.java.awt.regtesthelpers.Util;
 
 public class ActualFocusedWindowBlockingTest extends Applet {
