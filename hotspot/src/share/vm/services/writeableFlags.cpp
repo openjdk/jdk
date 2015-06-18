@@ -44,6 +44,36 @@ int WriteableFlags::set_bool_flag(const char* name, bool value, Flag::Flags orig
   return CommandLineFlags::boolAtPut((char*)name, &value, origin) ? SUCCESS : ERR_OTHER;
 }
 
+// set a int global flag
+int WriteableFlags::set_int_flag(const char* name, const char* arg, Flag::Flags origin, FormatBuffer<80>& err_msg) {
+  int value;
+
+  if (sscanf(arg, "%d", &value)) {
+    return set_int_flag(name, value, origin, err_msg);
+  }
+  err_msg.print("flag value must be an integer");
+  return WRONG_FORMAT;
+}
+
+int WriteableFlags::set_int_flag(const char* name, int value, Flag::Flags origin, FormatBuffer<80>& err_msg) {
+  return CommandLineFlags::intAtPut((char*)name, &value, origin) ? SUCCESS : ERR_OTHER;
+}
+
+// set a uint global flag
+int WriteableFlags::set_uint_flag(const char* name, const char* arg, Flag::Flags origin, FormatBuffer<80>& err_msg) {
+  uint value;
+
+  if (sscanf(arg, "%u", &value)) {
+    return set_uint_flag(name, value, origin, err_msg);
+  }
+  err_msg.print("flag value must be an unsigned integer");
+  return WRONG_FORMAT;
+}
+
+int WriteableFlags::set_uint_flag(const char* name, uint value, Flag::Flags origin, FormatBuffer<80>& err_msg) {
+  return CommandLineFlags::uintAtPut((char*)name, &value, origin) ? SUCCESS : ERR_OTHER;
+}
+
 // set a intx global flag
 int WriteableFlags::set_intx_flag(const char* name, const char* arg, Flag::Flags origin, FormatBuffer<80>& err_msg) {
   intx value;
@@ -173,6 +203,10 @@ int WriteableFlags::set_flag_from_char(Flag* f, const void* value, Flag::Flags o
   }
   if (f->is_bool()) {
     return set_bool_flag(f->_name, flag_value, origin, err_msg);
+  } else if (f->is_int()) {
+    return set_int_flag(f->_name, flag_value, origin, err_msg);
+  } else if (f->is_uint()) {
+    return set_uint_flag(f->_name, flag_value, origin, err_msg);
   } else if (f->is_intx()) {
     return set_intx_flag(f->_name, flag_value, origin, err_msg);
   } else if (f->is_uintx()) {
@@ -195,6 +229,12 @@ int WriteableFlags::set_flag_from_jvalue(Flag* f, const void* value, Flag::Flags
   if (f->is_bool()) {
     bool bvalue = (new_value.z == JNI_TRUE ? true : false);
     return set_bool_flag(f->_name, bvalue, origin, err_msg);
+  } else if (f->is_int()) {
+    int ivalue = (int)new_value.j;
+    return set_int_flag(f->_name, ivalue, origin, err_msg);
+  } else if (f->is_uint()) {
+    uint uvalue = (uint)new_value.j;
+    return set_uint_flag(f->_name, uvalue, origin, err_msg);
   } else if (f->is_intx()) {
     intx ivalue = (intx)new_value.j;
     return set_intx_flag(f->_name, ivalue, origin, err_msg);
