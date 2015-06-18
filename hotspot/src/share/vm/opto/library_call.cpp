@@ -278,6 +278,7 @@ class LibraryCallKit : public GraphKit {
   Node* inline_cipherBlockChaining_AESCrypt_predicate(bool decrypting);
   Node* get_key_start_from_aescrypt_object(Node* aescrypt_object);
   Node* get_original_key_start_from_aescrypt_object(Node* aescrypt_object);
+  bool inline_ghash_processBlocks();
   bool inline_sha_implCompress(vmIntrinsics::ID id);
   bool inline_digestBase_implCompressMB(int predicate);
   bool inline_sha_implCompressMB(Node* digestBaseObj, ciInstanceKlass* instklass_SHA,
@@ -526,6 +527,10 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
   case vmIntrinsics::_digestBase_implCompressMB:
     if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) return NULL;
     predicates = 3;
+    break;
+
+  case vmIntrinsics::_ghash_processBlocks:
+    if (!UseGHASHIntrinsics) return NULL;
     break;
 
   case vmIntrinsics::_updateCRC32:
@@ -928,6 +933,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_mulAdd:
     return inline_mulAdd();
+
+  case vmIntrinsics::_ghash_processBlocks:
+    return inline_ghash_processBlocks();
 
   case vmIntrinsics::_encodeISOArray:
     return inline_encodeISOArray();
@@ -5856,6 +5864,35 @@ Node* LibraryCallKit::inline_cipherBlockChaining_AESCrypt_predicate(bool decrypt
 
   record_for_igvn(region);
   return _gvn.transform(region);
+}
+
+//------------------------------inline_ghash_processBlocks
+bool LibraryCallKit::inline_ghash_processBlocks() {
+  address stubAddr;
+  const char *stubName;
+  assert(UseGHASHIntrinsics, "need GHASH intrinsics support");
+
+  stubAddr = StubRoutines::ghash_processBlocks();
+  stubName = "ghash_processBlocks";
+
+  Node* data           = argument(0);
+  Node* offset         = argument(1);
+  Node* len            = argument(2);
+  Node* state          = argument(3);
+  Node* subkeyH        = argument(4);
+
+  Node* state_start  = array_element_address(state, intcon(0), T_LONG);
+  assert(state_start, "state is NULL");
+  Node* subkeyH_start  = array_element_address(subkeyH, intcon(0), T_LONG);
+  assert(subkeyH_start, "subkeyH is NULL");
+  Node* data_start  = array_element_address(data, offset, T_BYTE);
+  assert(data_start, "data is NULL");
+
+  Node* ghash = make_runtime_call(RC_LEAF|RC_NO_FP,
+                                  OptoRuntime::ghash_processBlocks_Type(),
+                                  stubAddr, stubName, TypePtr::BOTTOM,
+                                  state_start, subkeyH_start, data_start, len);
+  return true;
 }
 
 //------------------------------inline_sha_implCompress-----------------------

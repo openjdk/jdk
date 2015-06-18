@@ -31,6 +31,7 @@ import java.security.AlgorithmParameters;
 import java.util.Random;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -62,6 +63,10 @@ abstract public class TestAESBase {
   Cipher dCipher;
   AlgorithmParameters algParams;
   SecretKey key;
+  GCMParameterSpec gcm_spec;
+  byte[] aad;
+  int tlen = 12;
+  byte[] iv;
 
   static int numThreads = 0;
   int  threadId;
@@ -100,6 +105,12 @@ abstract public class TestAESBase {
         int ivLen = (algorithm.equals("AES") ? 16 : algorithm.equals("DES") ? 8 : 0);
         IvParameterSpec initVector = new IvParameterSpec(new byte[ivLen]);
         cipher.init(Cipher.ENCRYPT_MODE, key, initVector);
+      } else if (mode.equals("GCM")) {
+          iv = new byte[64];
+          random.nextBytes(iv);
+          aad = new byte[5];
+          random.nextBytes(aad);
+          gcm_init();
       } else {
         algParams = cipher.getParameters();
         cipher.init(Cipher.ENCRYPT_MODE, key, algParams);
@@ -186,4 +197,12 @@ abstract public class TestAESBase {
   }
 
   abstract void childShowCipher();
+
+  void gcm_init() throws Exception {
+    tlen = 12;
+    gcm_spec = new GCMParameterSpec(tlen * 8, iv);
+    cipher = Cipher.getInstance(algorithm + "/" + mode + "/" + paddingStr, "SunJCE");
+    cipher.init(Cipher.ENCRYPT_MODE, key, gcm_spec);
+    cipher.update(aad);
+  }
 }

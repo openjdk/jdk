@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -188,6 +188,11 @@ void VM_Version::get_processor_features() {
     if (UseAESIntrinsics) {
       warning("UseAESIntrinsics specified, but not supported on this CPU");
     }
+  }
+
+  if (UseGHASHIntrinsics) {
+    warning("GHASH intrinsics are not available on this CPU");
+    FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
   }
 
   if (FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {

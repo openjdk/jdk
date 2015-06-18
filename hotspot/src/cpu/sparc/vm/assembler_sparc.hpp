@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,6 +129,7 @@ class Assembler : public AbstractAssembler  {
     flog3_op3    = 0x36,
     edge_op3     = 0x36,
     fsrc_op3     = 0x36,
+    xmulx_op3    = 0x36,
     impdep2_op3  = 0x37,
     stpartialf_op3 = 0x37,
     jmpl_op3     = 0x38,
@@ -220,6 +221,8 @@ class Assembler : public AbstractAssembler  {
     mdtox_opf          = 0x110,
     mstouw_opf         = 0x111,
     mstosw_opf         = 0x113,
+    xmulx_opf          = 0x115,
+    xmulxhi_opf        = 0x116,
     mxtod_opf          = 0x118,
     mwtos_opf          = 0x119,
 
@@ -1211,6 +1214,9 @@ public:
 
   void movwtos( Register s, FloatRegister d ) { vis3_only();  emit_int32( op(arith_op) | fd(d, FloatRegisterImpl::S) | op3(mftoi_op3) | opf(mwtos_opf) | rs2(s)); }
   void movxtod( Register s, FloatRegister d ) { vis3_only();  emit_int32( op(arith_op) | fd(d, FloatRegisterImpl::D) | op3(mftoi_op3) | opf(mxtod_opf) | rs2(s)); }
+
+  void xmulx(Register s1, Register s2, Register d) { vis3_only(); emit_int32( op(arith_op) | rd(d) | op3(xmulx_op3) | rs1(s1) | opf(xmulx_opf) | rs2(s2)); }
+  void xmulxhi(Register s1, Register s2, Register d) { vis3_only(); emit_int32( op(arith_op) | rd(d) | op3(xmulx_op3) | rs1(s1) | opf(xmulxhi_opf) | rs2(s2)); }
 
   // Crypto SHA instructions
 
