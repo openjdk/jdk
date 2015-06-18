@@ -2423,7 +2423,9 @@ Metachunk* SpaceManager::get_new_chunk(size_t word_size,
  * will be made to allocate a small chunk.
  */
 MetaWord* SpaceManager::get_small_chunk_and_allocate(size_t word_size) {
-  if (word_size + Metachunk::overhead() > small_chunk_size()) {
+  size_t raw_word_size = get_raw_word_size(word_size);
+
+  if (raw_word_size + Metachunk::overhead() > small_chunk_size()) {
     return NULL;
   }
 
@@ -2438,9 +2440,9 @@ MetaWord* SpaceManager::get_small_chunk_and_allocate(size_t word_size) {
     // Add chunk to the in-use chunk list and do an allocation from it.
     // Add to this manager's list of chunks in use.
     add_chunk(chunk, false);
-    mem = chunk->allocate(word_size);
+    mem = chunk->allocate(raw_word_size);
 
-    inc_used_metrics(word_size);
+    inc_used_metrics(raw_word_size);
 
     // Track metaspace memory usage statistic.
     track_metaspace_memory_usage();
