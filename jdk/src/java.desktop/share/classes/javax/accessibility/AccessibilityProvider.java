@@ -52,7 +52,7 @@ public abstract class AccessibilityProvider {
      *
      * @throws  SecurityException
      *          If a security manager has been installed and it denies
-     *          {@link RuntimePermission}{@code("accessibilityProvider")}
+     *          {@link RuntimePermission} {@code "accessibilityProvider"}
      */
     protected AccessibilityProvider() {
         // Use a permission check when calling a private constructor to check that
