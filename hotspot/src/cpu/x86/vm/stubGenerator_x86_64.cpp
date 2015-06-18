@@ -3785,6 +3785,107 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+/**
+   *  Arguments:
+   *
+  //  Input:
+  //    c_rarg0   - x address
+  //    c_rarg1   - x length
+  //    c_rarg2   - z address
+  //    c_rarg3   - z lenth
+   *
+   */
+  address generate_squareToLen() {
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "squareToLen");
+
+    address start = __ pc();
+    // Win64: rcx, rdx, r8, r9 (c_rarg0, c_rarg1, ...)
+    // Unix:  rdi, rsi, rdx, rcx (c_rarg0, c_rarg1, ...)
+    const Register x      = rdi;
+    const Register len    = rsi;
+    const Register z      = r8;
+    const Register zlen   = rcx;
+
+   const Register tmp1      = r12;
+   const Register tmp2      = r13;
+   const Register tmp3      = r14;
+   const Register tmp4      = r15;
+   const Register tmp5      = rbx;
+
+    BLOCK_COMMENT("Entry:");
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+       setup_arg_regs(4); // x => rdi, len => rsi, z => rdx
+                          // zlen => rcx
+                          // r9 and r10 may be used to save non-volatile registers
+    __ movptr(r8, rdx);
+    __ square_to_len(x, len, z, zlen, tmp1, tmp2, tmp3, tmp4, tmp5, rdx, rax);
+
+    restore_arg_regs();
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ ret(0);
+
+    return start;
+  }
+
+   /**
+   *  Arguments:
+   *
+   *  Input:
+   *    c_rarg0   - out address
+   *    c_rarg1   - in address
+   *    c_rarg2   - offset
+   *    c_rarg3   - len
+   * not Win64
+   *    c_rarg4   - k
+   * Win64
+   *    rsp+40    - k
+   */
+  address generate_mulAdd() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "mulAdd");
+
+    address start = __ pc();
+    // Win64: rcx, rdx, r8, r9 (c_rarg0, c_rarg1, ...)
+    // Unix:  rdi, rsi, rdx, rcx, r8, r9 (c_rarg0, c_rarg1, ...)
+    const Register out     = rdi;
+    const Register in      = rsi;
+    const Register offset  = r11;
+    const Register len     = rcx;
+    const Register k       = r8;
+
+    // Next registers will be saved on stack in mul_add().
+    const Register tmp1  = r12;
+    const Register tmp2  = r13;
+    const Register tmp3  = r14;
+    const Register tmp4  = r15;
+    const Register tmp5  = rbx;
+
+    BLOCK_COMMENT("Entry:");
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+    setup_arg_regs(4); // out => rdi, in => rsi, offset => rdx
+                       // len => rcx, k => r8
+                       // r9 and r10 may be used to save non-volatile registers
+#ifdef _WIN64
+    // last argument is on stack on Win64
+    __ movl(k, Address(rsp, 6 * wordSize));
+#endif
+    __ movptr(r11, rdx);  // move offset in rdx to offset(r11)
+    __ mul_add(out, in, offset, len, k, tmp1, tmp2, tmp3, tmp4, tmp5, rdx, rax);
+
+    restore_arg_regs();
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ ret(0);
+
+    return start;
+  }
+
+
 #undef __
 #define __ masm->
 
@@ -4029,6 +4130,12 @@ class StubGenerator: public StubCodeGenerator {
 #ifdef COMPILER2
     if (UseMultiplyToLenIntrinsic) {
       StubRoutines::_multiplyToLen = generate_multiplyToLen();
+    }
+    if (UseSquareToLenIntrinsic) {
+      StubRoutines::_squareToLen = generate_squareToLen();
+    }
+    if (UseMulAddIntrinsic) {
+      StubRoutines::_mulAdd = generate_mulAdd();
     }
 #endif
   }
