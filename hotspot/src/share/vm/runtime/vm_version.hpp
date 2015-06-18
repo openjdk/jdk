@@ -58,6 +58,13 @@ class Abstract_VM_Version: AllStatic {
  public:
   static void initialize();
 
+  // This allows for early initialization of VM_Version information
+  // that may be needed later in the initialization sequence but before
+  // full VM_Version initialization is possible. It can not depend on any
+  // other part of the VM being initialized when called. Platforms that
+  // need to specialize this define VM_Version::early_initialize().
+  static void early_initialize() { }
+
   // Name
   static const char* vm_name();
   // Vendor
