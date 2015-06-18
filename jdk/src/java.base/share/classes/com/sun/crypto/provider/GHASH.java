@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -62,14 +62,16 @@ final class GHASH {
 
     private static final int AES_BLOCK_SIZE = 16;
 
-    // Multiplies state0, state1 by V0, V1.
-    private void blockMult(long V0, long V1) {
+    // Multiplies state[0], state[1] by subkeyH[0], subkeyH[1].
+    private static void blockMult(long[] st, long[] subH) {
         long Z0 = 0;
         long Z1 = 0;
+        long V0 = subH[0];
+        long V1 = subH[1];
         long X;
 
-        // Separate loops for processing state0 and state1.
-        X = state0;
+        // Separate loops for processing state[0] and state[1].
+        X = st[0];
         for (int i = 0; i < 64; i++) {
             // Zi+1 = Zi if bit i of x is 0
             long mask = X >> 63;
@@ -89,7 +91,7 @@ final class GHASH {
             X <<= 1;
         }
 
-        X = state1;
+        X = st[1];
         for (int i = 64; i < 127; i++) {
             // Zi+1 = Zi if bit i of x is 0
             long mask = X >> 63;
@@ -115,15 +117,18 @@ final class GHASH {
         Z1 ^= V1 & mask;
 
         // Save result.
-        state0 = Z0;
-        state1 = Z1;
+        st[0] = Z0;
+        st[1] = Z1;
+
     }
 
+    /* subkeyH and state are stored in long[] for GHASH intrinsic use */
+
     // hash subkey H; should not change after the object has been constructed
-    private final long subkeyH0, subkeyH1;
+    private final long[] subkeyH;
 
     // buffer for storing hash
-    private long state0, state1;
+    private final long[] state;
 
     // variables for save/restore calls
     private long stateSave0, stateSave1;
@@ -141,8 +146,10 @@ final class GHASH {
         if ((subkeyH == null) || subkeyH.length != AES_BLOCK_SIZE) {
             throw new ProviderException("Internal error");
         }
-        this.subkeyH0 = getLong(subkeyH, 0);
-        this.subkeyH1 = getLong(subkeyH, 8);
+        state = new long[2];
+        this.subkeyH = new long[2];
+        this.subkeyH[0] = getLong(subkeyH, 0);
+        this.subkeyH[1] = getLong(subkeyH, 8);
     }
 
     /**
@@ -151,33 +158,30 @@ final class GHASH {
      * this object for different data w/ the same H.
      */
     void reset() {
-        state0 = 0;
-        state1 = 0;
+        state[0] = 0;
+        state[1] = 0;
     }
 
     /**
      * Save the current snapshot of this GHASH object.
      */
     void save() {
-        stateSave0 = state0;
-        stateSave1 = state1;
+        stateSave0 = state[0];
+        stateSave1 = state[1];
     }
 
     /**
      * Restores this object using the saved snapshot.
      */
     void restore() {
-        state0 = stateSave0;
-        state1 = stateSave1;
+        state[0] = stateSave0;
+        state[1] = stateSave1;
     }
 
-    private void processBlock(byte[] data, int ofs) {
-        if (data.length - ofs < AES_BLOCK_SIZE) {
-            throw new RuntimeException("need complete block");
-        }
-        state0 ^= getLong(data, ofs);
-        state1 ^= getLong(data, ofs + 8);
-        blockMult(subkeyH0, subkeyH1);
+    private static void processBlock(byte[] data, int ofs, long[] st, long[] subH) {
+        st[0] ^= getLong(data, ofs);
+        st[1] ^= getLong(data, ofs + 8);
+        blockMult(st, subH);
     }
 
     void update(byte[] in) {
@@ -185,22 +189,57 @@ final class GHASH {
     }
 
     void update(byte[] in, int inOfs, int inLen) {
-        if (inLen - inOfs > in.length) {
-            throw new RuntimeException("input length out of bound");
+        if (inLen == 0) {
+            return;
+        }
+        ghashRangeCheck(in, inOfs, inLen, state, subkeyH);
+        processBlocks(in, inOfs, inLen/AES_BLOCK_SIZE, state, subkeyH);
+    }
+
+    private static void ghashRangeCheck(byte[] in, int inOfs, int inLen, long[] st, long[] subH) {
+        if (inLen < 0) {
+            throw new RuntimeException("invalid input length: " + inLen);
+        }
+        if (inOfs < 0) {
+            throw new RuntimeException("invalid offset: " + inOfs);
+        }
+        if (inLen > in.length - inOfs) {
+            throw new RuntimeException("input length out of bound: " +
+                                       inLen + " > " + (in.length - inOfs));
         }
         if (inLen % AES_BLOCK_SIZE != 0) {
-            throw new RuntimeException("input length unsupported");
+            throw new RuntimeException("input length/block size mismatch: " +
+                                       inLen);
         }
 
-        for (int i = inOfs; i < (inOfs + inLen); i += AES_BLOCK_SIZE) {
-            processBlock(in, i);
+        // These two checks are for C2 checking
+        if (st.length != 2) {
+            throw new RuntimeException("internal state has invalid length: " +
+                                       st.length);
+        }
+        if (subH.length != 2) {
+            throw new RuntimeException("internal subkeyH has invalid length: " +
+                                       subH.length);
+        }
+    }
+    /*
+     * This is an intrinsified method.  The method's argument list must match
+     * the hotspot signature.  This method and methods called by it, cannot
+     * throw exceptions or allocate arrays as it will breaking intrinsics
+     */
+    private static void processBlocks(byte[] data, int inOfs, int blocks, long[] st, long[] subH) {
+        int offset = inOfs;
+        while (blocks > 0) {
+            processBlock(data, offset, st, subH);
+            blocks--;
+            offset += AES_BLOCK_SIZE;
         }
     }
 
     byte[] digest() {
         byte[] result = new byte[AES_BLOCK_SIZE];
-        putLong(result, 0, state0);
-        putLong(result, 8, state1);
+        putLong(result, 0, state[0]);
+        putLong(result, 8, state[1]);
         reset();
         return result;
     }
