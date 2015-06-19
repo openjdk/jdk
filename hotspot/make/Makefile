@@ -55,6 +55,7 @@
 #  VERSION_MAJOR Major number for version (e.g. 9)
 #  VERSION_MINOR Minor number for version (e.g. 0)
 #  VERSION_SECURITY Security number for version (e.g. 0)
+#  VERSION_PATCH Patch number for version (e.g. 0)
 #
 
 # Default is build both product fastdebug and create export area

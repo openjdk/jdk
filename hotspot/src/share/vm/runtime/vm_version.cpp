@@ -52,6 +52,9 @@ int Abstract_VM_Version::_reserve_for_allocation_prefetch = 0;
 #ifndef VERSION_SECURITY
   #error VERSION_SECURITY must be defined
 #endif
+#ifndef VERSION_PATCH
+  #error VERSION_PATCH must be defined
+#endif
 #ifndef VERSION_BUILD
   #error VERSION_BUILD must be defined
 #endif
@@ -76,19 +79,10 @@ int Abstract_VM_Version::_reserve_for_allocation_prefetch = 0;
 int Abstract_VM_Version::_vm_major_version = VERSION_MAJOR;
 int Abstract_VM_Version::_vm_minor_version = VERSION_MINOR;
 int Abstract_VM_Version::_vm_security_version = VERSION_SECURITY;
+int Abstract_VM_Version::_vm_patch_version = VERSION_PATCH;
 int Abstract_VM_Version::_vm_build_number = VERSION_BUILD;
-bool Abstract_VM_Version::_initialized = false;
 unsigned int Abstract_VM_Version::_parallel_worker_threads = 0;
 bool Abstract_VM_Version::_parallel_worker_threads_initialized = false;
-
-void Abstract_VM_Version::initialize() {
-  // FIXME: Initialization can probably be removed now.
-  if (_initialized) {
-    return;
-  }
-
-  _initialized = true;
-}
 
 #if defined(_LP64)
   #define VMLP "64-Bit "
