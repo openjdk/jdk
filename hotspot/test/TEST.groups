@@ -420,6 +420,7 @@ hotspot_runtime = \
  -runtime/SharedArchiveFile/DefaultUseWithClient.java \
  -runtime/Thread/CancellableThreadTest.java \
  -runtime/7158988/FieldMonitor.java \
+ -runtime/CommandLine/OptionsValidation/TestOptionsWithRanges.java \
   sanity/ \
   testlibrary_tests/TestMutuallyExclusivePlatformPredicates.java
 
