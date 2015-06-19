@@ -622,19 +622,15 @@ char* FileMapInfo::map_region(int i) {
   size_t alignment = os::vm_allocation_granularity();
   size_t size = align_size_up(used, alignment);
   char *requested_addr = _header->region_addr(i);
-  bool read_only;
 
   // If a tool agent is in use (debugging enabled), we must map the address space RW
   if (JvmtiExport::can_modify_any_class() || JvmtiExport::can_walk_any_space()) {
-    read_only = false;
-  } else {
-    read_only = si->_read_only;
+    si->_read_only = false;
   }
-
 
   // map the contents of the CDS archive in this memory
   char *base = os::map_memory(_fd, _full_path, si->_file_offset,
-                              requested_addr, size, read_only,
+                              requested_addr, size, si->_read_only,
                               si->_allow_exec);
   if (base == NULL || base != requested_addr) {
     fail_continue("Unable to map %s shared space at required address.", shared_region_name[i]);
