@@ -677,6 +677,17 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseAESIntrinsics, false);
   }
 
+  // GHASH/GCM intrinsics
+  if (UseCLMUL && (UseSSE > 2)) {
+    if (FLAG_IS_DEFAULT(UseGHASHIntrinsics)) {
+      UseGHASHIntrinsics = true;
+    }
+  } else if (UseGHASHIntrinsics) {
+    if (!FLAG_IS_DEFAULT(UseGHASHIntrinsics))
+      warning("GHASH intrinsic requires CLMUL and SSE2 instructions on this CPU");
+    FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
+  }
+
   if (UseSHA) {
     warning("SHA instructions are not available on this CPU");
     FLAG_SET_DEFAULT(UseSHA, false);

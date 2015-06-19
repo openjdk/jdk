@@ -185,6 +185,7 @@ class StubRoutines: AllStatic {
   static address _aescrypt_decryptBlock;
   static address _cipherBlockChaining_encryptAESCrypt;
   static address _cipherBlockChaining_decryptAESCrypt;
+  static address _ghash_processBlocks;
 
   static address _sha1_implCompress;
   static address _sha1_implCompressMB;
@@ -346,6 +347,7 @@ class StubRoutines: AllStatic {
   static address aescrypt_decryptBlock()                { return _aescrypt_decryptBlock; }
   static address cipherBlockChaining_encryptAESCrypt()  { return _cipherBlockChaining_encryptAESCrypt; }
   static address cipherBlockChaining_decryptAESCrypt()  { return _cipherBlockChaining_decryptAESCrypt; }
+  static address ghash_processBlocks() { return _ghash_processBlocks; }
 
   static address sha1_implCompress()     { return _sha1_implCompress; }
   static address sha1_implCompressMB()   { return _sha1_implCompressMB; }
