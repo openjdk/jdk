@@ -4299,6 +4299,9 @@ void MacroAssembler::store_check(Register obj) {
   int dirty = CardTableModRefBS::dirty_card_val();
   if (UseCondCardMark) {
     Label L_already_dirty;
+    if (UseConcMarkSweepGC) {
+      membar(Assembler::StoreLoad);
+    }
     cmpb(card_addr, dirty);
     jcc(Assembler::equal, L_already_dirty);
     movb(card_addr, dirty);

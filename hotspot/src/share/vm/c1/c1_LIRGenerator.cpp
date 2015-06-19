@@ -1619,6 +1619,9 @@ void LIRGenerator::CardTableModRef_post_barrier(LIR_OprDesc* addr, LIR_OprDesc* 
   LIR_Opr dirty = LIR_OprFact::intConst(CardTableModRefBS::dirty_card_val());
   if (UseCondCardMark) {
     LIR_Opr cur_value = new_register(T_INT);
+    if (UseConcMarkSweepGC) {
+      __ membar_storeload();
+    }
     __ move(card_addr, cur_value);
 
     LabelObj* L_already_dirty = new LabelObj();
