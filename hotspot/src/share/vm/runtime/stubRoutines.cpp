@@ -125,6 +125,7 @@ address StubRoutines::_aescrypt_encryptBlock               = NULL;
 address StubRoutines::_aescrypt_decryptBlock               = NULL;
 address StubRoutines::_cipherBlockChaining_encryptAESCrypt = NULL;
 address StubRoutines::_cipherBlockChaining_decryptAESCrypt = NULL;
+address StubRoutines::_ghash_processBlocks                 = NULL;
 
 address StubRoutines::_sha1_implCompress     = NULL;
 address StubRoutines::_sha1_implCompressMB   = NULL;

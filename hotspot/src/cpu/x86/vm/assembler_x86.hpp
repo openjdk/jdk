@@ -1666,6 +1666,8 @@ private:
 
   // Shift Right by bytes Logical DoubleQuadword Immediate
   void psrldq(XMMRegister dst, int shift);
+  // Shift Left by bytes Logical DoubleQuadword Immediate
+  void pslldq(XMMRegister dst, int shift);
 
   // Logical Compare 128bit
   void ptest(XMMRegister dst, XMMRegister src);
