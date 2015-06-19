@@ -37,6 +37,7 @@ JDK_GetVersionInfo0(jdk_version_info* info, size_t info_size) {
     const unsigned int version_major = VERSION_MAJOR;
     const unsigned int version_minor = VERSION_MINOR;
     const unsigned int version_security = VERSION_SECURITY;
+    const unsigned int version_patch = VERSION_PATCH;
     const unsigned int version_build = VERSION_BUILD;
 
     memset(info, 0, info_size);
@@ -44,9 +45,7 @@ JDK_GetVersionInfo0(jdk_version_info* info, size_t info_size) {
                         ((version_minor & 0xFF) << 16) |
                         ((version_security & 0xFF) << 8)  |
                         (version_build & 0xFF);
-    // FIXME: update_version and special_update_version does not make sense anymore.
-    info->update_version = 0;
-    info->special_update_version = 0;
+    info->patch_version = version_patch;
     info->thread_park_blocker = 1;
     // Advertise presence of sun.misc.PostVMInitHook:
     // future optimization: detect if this is enabled.

@@ -30,8 +30,6 @@
 
 #include "sun_misc_Version.h"
 
-char jvm_special_version = '\0';
-char jdk_special_version = '\0';
 static void setStaticIntField(JNIEnv* env, jclass cls, const char* name, jint value)
 {
     jfieldID fid;
@@ -67,21 +65,10 @@ Java_sun_misc_Version_getJvmVersionInfo(JNIEnv *env, jclass cls)
     JNU_CHECK_EXCEPTION_RETURN(env, JNI_FALSE);
     setStaticIntField(env, cls, "jvm_build_number", JVM_VERSION_BUILD(info.jvm_version));
     JNU_CHECK_EXCEPTION_RETURN(env, JNI_FALSE);
-    setStaticIntField(env, cls, "jvm_update_version", info.update_version);
+    setStaticIntField(env, cls, "jvm_patch_version", info.patch_version);
     JNU_CHECK_EXCEPTION_RETURN(env, JNI_FALSE);
-    jvm_special_version = info.special_update_version;
 
     return JNI_TRUE;
-}
-
-JNIEXPORT jstring JNICALL
-Java_sun_misc_Version_getJvmSpecialVersion(JNIEnv *env, jclass cls) {
-    char s[2];
-    jstring special;
-    s[0] = jvm_special_version;
-    s[1] = '\0';
-    special = (*env)->NewStringUTF(env, s);
-    return special;
 }
 
 JNIEXPORT void JNICALL
@@ -98,17 +85,6 @@ Java_sun_misc_Version_getJdkVersionInfo(JNIEnv *env, jclass cls)
     JNU_CHECK_EXCEPTION(env);
     setStaticIntField(env, cls, "jdk_build_number", JDK_VERSION_BUILD(info.jdk_version));
     JNU_CHECK_EXCEPTION(env);
-    setStaticIntField(env, cls, "jdk_update_version", info.update_version);
+    setStaticIntField(env, cls, "jdk_patch_version", info.patch_version);
     JNU_CHECK_EXCEPTION(env);
-    jdk_special_version = info.special_update_version;
-}
-
-JNIEXPORT jstring JNICALL
-Java_sun_misc_Version_getJdkSpecialVersion(JNIEnv *env, jclass cls) {
-    char s[2];
-    jstring special;
-    s[0] = jdk_special_version;
-    s[1] = '\0';
-    special = (*env)->NewStringUTF(env, s);
-    return special;
 }
