@@ -26,16 +26,18 @@ import jdk.test.lib.ExitCode;
 import jdk.test.lib.Platform;
 import jdk.test.lib.cli.CommandLineOptionTest;
 import jdk.test.lib.cli.predicate.AndPredicate;
+import jdk.test.lib.cli.predicate.OrPredicate;
 import sha.predicate.IntrinsicPredicates;
 
 /**
- * UseSHA specific test case targeted to SPARC CPUs which support any sha*
- * instruction.
+ * UseSHA specific test case targeted to SPARC and AArch64 CPUs which
+ * support any sha* instruction.
  */
-public class UseSHASpecificTestCaseForSupportedSparcCPU
+public class UseSHASpecificTestCaseForSupportedCPU
         extends SHAOptionsBase.TestCase {
-    public UseSHASpecificTestCaseForSupportedSparcCPU(String optionName) {
-        super(SHAOptionsBase.USE_SHA_OPTION, new AndPredicate(Platform::isSparc,
+    public UseSHASpecificTestCaseForSupportedCPU(String optionName) {
+        super(SHAOptionsBase.USE_SHA_OPTION, new AndPredicate(
+                new OrPredicate(Platform::isSparc, Platform::isAArch64),
                 IntrinsicPredicates.ANY_SHA_INSTRUCTION_AVAILABLE));
 
         Asserts.assertEQ(optionName, SHAOptionsBase.USE_SHA_OPTION,
