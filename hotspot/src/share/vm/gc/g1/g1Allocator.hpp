@@ -227,7 +227,7 @@ public:
                           size_t word_sz,
                           AllocationContext_t context) {
     G1PLAB* buffer = alloc_buffer(dest, context);
-    if (_survivor_alignment_bytes == 0) {
+    if (_survivor_alignment_bytes == 0 || !dest.is_young()) {
       return buffer->allocate(word_sz);
     } else {
       return buffer->allocate_aligned(word_sz, _survivor_alignment_bytes);

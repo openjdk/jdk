@@ -55,6 +55,11 @@ class GenCollectedHeap : public CollectedHeap {
 public:
   friend class VM_PopulateDumpSharedSpace;
 
+  enum GenerationType {
+    YoungGen,
+    OldGen
+  };
+
 private:
   Generation* _young_gen;
   Generation* _old_gen;
@@ -95,11 +100,11 @@ protected:
 
   // Helper function for two callbacks below.
   // Considers collection of the first max_level+1 generations.
-  void do_collection(bool   full,
-                     bool   clear_all_soft_refs,
-                     size_t size,
-                     bool   is_tlab,
-                     int    max_level);
+  void do_collection(bool           full,
+                     bool           clear_all_soft_refs,
+                     size_t         size,
+                     bool           is_tlab,
+                     GenerationType max_generation);
 
   // Callback from VM_GenCollectForAllocation operation.
   // This function does everything necessary/possible to satisfy an
@@ -110,7 +115,7 @@ protected:
   // Callback from VM_GenCollectFull operation.
   // Perform a full collection of the first max_level+1 generations.
   virtual void do_full_collection(bool clear_all_soft_refs);
-  void do_full_collection(bool clear_all_soft_refs, int max_level);
+  void do_full_collection(bool clear_all_soft_refs, GenerationType max_generation);
 
   // Does the "cause" of GC indicate that
   // we absolutely __must__ clear soft refs?
@@ -121,7 +126,7 @@ public:
 
   FlexibleWorkGang* workers() const { return _workers; }
 
-  GCStats* gc_stats(int level) const;
+  GCStats* gc_stats(Generation* generation) const;
 
   // Returns JNI_OK on success
   virtual jint initialize();
@@ -142,6 +147,9 @@ public:
   Generation* young_gen() const { return _young_gen; }
   Generation* old_gen()   const { return _old_gen; }
 
+  bool is_young_gen(const Generation* gen) const { return gen == _young_gen; }
+  bool is_old_gen(const Generation* gen) const { return gen == _old_gen; }
+
   // The generational collector policy.
   GenCollectorPolicy* gen_policy() const { return _gen_policy; }
 
@@ -160,8 +168,8 @@ public:
   size_t capacity() const;
   size_t used() const;
 
-  // Save the "used_region" for generations level and lower.
-  void save_used_regions(int level);
+  // Save the "used_region" for both generations.
+  void save_used_regions();
 
   size_t max_capacity() const;
 
@@ -182,9 +190,9 @@ public:
   // The same as above but assume that the caller holds the Heap_lock.
   void collect_locked(GCCause::Cause cause);
 
-  // Perform a full collection of the first max_level+1 generations.
+  // Perform a full collection of generations up to and including max_generation.
   // Mostly used for testing purposes. Caller does not hold the Heap_lock on entry.
-  void collect(GCCause::Cause cause, int max_level);
+  void collect(GCCause::Cause cause, GenerationType max_generation);
 
   // Returns "TRUE" iff "p" points into the committed areas of the heap.
   // The methods is_in(), is_in_closed_subset() and is_in_youngest() may
@@ -314,10 +322,8 @@ public:
   }
 
   // Update the gc statistics for each generation.
-  // "level" is the level of the latest collection.
-  void update_gc_stats(int current_level, bool full) {
-    _young_gen->update_gc_stats(current_level, full);
-    _old_gen->update_gc_stats(current_level, full);
+  void update_gc_stats(Generation* current_generation, bool full) {
+    _old_gen->update_gc_stats(current_generation, full);
   }
 
   bool no_gc_in_progress() { return !is_gc_active(); }
@@ -365,8 +371,8 @@ public:
   static GenCollectedHeap* heap();
 
   // Invoke the "do_oop" method of one of the closures "not_older_gens"
-  // or "older_gens" on root locations for the generation at
-  // "level".  (The "older_gens" closure is used for scanning references
+  // or "older_gens" on root locations for the generations depending on
+  // the type.  (The "older_gens" closure is used for scanning references
   // from older generations; "not_older_gens" is used everywhere else.)
   // If "younger_gens_as_roots" is false, younger generations are
   // not scanned as roots; in this case, the caller must be arranging to
@@ -396,7 +402,7 @@ public:
   static const bool StrongRootsOnly    = true;
 
   void gen_process_roots(StrongRootsScope* scope,
-                         int level,
+                         GenerationType type,
                          bool younger_gens_as_roots,
                          ScanningOption so,
                          bool only_strong_roots,
@@ -420,7 +426,7 @@ public:
   // applied to references in the generation at "level", and the "older"
   // closure to older generations.
 #define GCH_SINCE_SAVE_MARKS_ITERATE_DECL(OopClosureType, nv_suffix)    \
-  void oop_since_save_marks_iterate(int level,                          \
+  void oop_since_save_marks_iterate(GenerationType start_gen,           \
                                     OopClosureType* cur,                \
                                     OopClosureType* older);
 
@@ -428,21 +434,17 @@ public:
 
 #undef GCH_SINCE_SAVE_MARKS_ITERATE_DECL
 
-  // Returns "true" iff no allocations have occurred in any generation at
-  // "level" or above since the last
+  // Returns "true" iff no allocations have occurred since the last
   // call to "save_marks".
-  bool no_allocs_since_save_marks(int level);
+  bool no_allocs_since_save_marks(bool include_young);
 
   // Returns true if an incremental collection is likely to fail.
   // We optionally consult the young gen, if asked to do so;
   // otherwise we base our answer on whether the previous incremental
   // collection attempt failed with no corrective action as of yet.
   bool incremental_collection_will_fail(bool consult_young) {
-    // Assumes a 2-generation system; the first disjunct remembers if an
-    // incremental collection failed, even when we thought (second disjunct)
-    // that it would not.
-    assert(heap()->collector_policy()->is_generation_policy(),
-           "the following definition may not be suitable for an n(>2)-generation system");
+    // The first disjunct remembers if an incremental collection failed, even
+    // when we thought (second disjunct) that it would not.
     return incremental_collection_failed() ||
            (consult_young && !_young_gen->collection_attempt_is_safe());
   }
@@ -482,10 +484,10 @@ private:
   // iterating over spaces.
   void prepare_for_compaction();
 
-  // Perform a full collection of the first max_level+1 generations.
+  // Perform a full collection of the generations up to and including max_generation.
   // This is the low level interface used by the public versions of
   // collect() and collect_locked(). Caller holds the Heap_lock on entry.
-  void collect_locked(GCCause::Cause cause, int max_level);
+  void collect_locked(GCCause::Cause cause, GenerationType max_generation);
 
   // Returns success or failure.
   bool create_cms_collector();

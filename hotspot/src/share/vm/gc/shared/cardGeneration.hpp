@@ -52,8 +52,7 @@ class CardGeneration: public Generation {
   size_t _capacity_at_prologue;
   size_t _used_at_prologue;
 
-  CardGeneration(ReservedSpace rs, size_t initial_byte_size, int level,
-                 GenRemSet* remset);
+  CardGeneration(ReservedSpace rs, size_t initial_byte_size, GenRemSet* remset);
 
   virtual void assert_correct_size_change_locking() = 0;
 

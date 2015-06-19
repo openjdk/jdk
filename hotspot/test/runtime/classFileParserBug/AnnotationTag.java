@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,31 +22,25 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SERIAL_GENMARKSWEEP_HPP
-#define SHARE_VM_GC_SERIAL_GENMARKSWEEP_HPP
+/*
+ * @test
+ * @bug 8042041
+ * @summary Fuzzy-ed RuntimeVisibleAnnotations causes assertion
+ * @compile badAnnotTag.jcod
+ * @run main AnnotationTag
+ */
 
-#include "gc/serial/markSweep.hpp"
+// Test that a bad element_tag in an element_value of a RuntimeVisibileAnnotation
+// attribute is ignored.
+public class AnnotationTag {
+    public static void main(String args[]) throws Throwable {
 
-class GenMarkSweep : public MarkSweep {
-  friend class VM_MarkSweep;
-  friend class G1MarkSweep;
- public:
-  static void invoke_at_safepoint(ReferenceProcessor* rp, bool clear_all_softrefs);
-
- private:
-
-  // Mark live objects
-  static void mark_sweep_phase1(bool clear_all_softrefs);
-  // Calculate new addresses
-  static void mark_sweep_phase2();
-  // Update pointers
-  static void mark_sweep_phase3();
-  // Move objects to new positions
-  static void mark_sweep_phase4();
-
-  // Temporary data structures for traversal and storing/restoring marks
-  static void allocate_stacks();
-  static void deallocate_stacks();
-};
-
-#endif // SHARE_VM_GC_SERIAL_GENMARKSWEEP_HPP
+        System.out.println("Regression test for bug 8042041");
+        try {
+            Class newClass = Class.forName("badAnnotTag");
+        } catch (java.lang.Throwable e) {
+            throw new RuntimeException(
+                "Unexpected exception: " + e.getMessage());
+        }
+    }
+}

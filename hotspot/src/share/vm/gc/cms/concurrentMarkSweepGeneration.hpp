@@ -1063,7 +1063,7 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   void shrink_free_list_by(size_t bytes);
 
   // Update statistics for GC
-  virtual void update_gc_stats(int level, bool full);
+  virtual void update_gc_stats(Generation* current_generation, bool full);
 
   // Maximum available space in the generation (including uncommitted)
   // space.
@@ -1079,7 +1079,7 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
 
  public:
   ConcurrentMarkSweepGeneration(ReservedSpace rs, size_t initial_byte_size,
-                                int level, CardTableRS* ct,
+                                CardTableRS* ct,
                                 bool use_adaptive_freelists,
                                 FreeBlockDictionary<FreeChunk>::DictionaryChoice);
 

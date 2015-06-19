@@ -198,8 +198,7 @@ void VM_GenCollectFullConcurrent::doit() {
     assert(SafepointSynchronize::is_at_safepoint(),
       "We can only be executing this arm of if at a safepoint");
     GCCauseSetter gccs(gch, _gc_cause);
-    gch->do_full_collection(gch->must_clear_all_soft_refs(),
-                            0 /* collect only youngest gen */);
+    gch->do_full_collection(gch->must_clear_all_soft_refs(), GenCollectedHeap::YoungGen);
   } // Else no need for a foreground young gc
   assert((_gc_count_before < gch->total_collections()) ||
          (GC_locker::is_active() /* gc may have been skipped */

@@ -56,13 +56,14 @@ all_debug_universal:
 universalize: $(UNIVERSAL_LIPO_LIST) $(UNIVERSAL_COPY_LIST)
 	$(RM) -r $(EXPORT_PATH)/lib/{i386,amd64}
 
+LIPO ?= lipo
 
 # Package built libraries in a universal binary
 $(UNIVERSAL_LIPO_LIST):
 	BUILT_LIPO_FILES="`find $(EXPORT_LIB_DIR)/{i386,amd64}/$(subst $(EXPORT_LIB_DIR)/,,$@) 2>/dev/null`" || test $$? = "1"; \
 	if [ -n "$${BUILT_LIPO_FILES}" ]; then \
 	  $(MKDIR) -p $(shell dirname $@); \
-	  lipo -create -output $@ $${BUILT_LIPO_FILES}; \
+	  $(LIPO) -create -output $@ $${BUILT_LIPO_FILES}; \
 	fi
 
 
