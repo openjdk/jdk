@@ -1733,7 +1733,7 @@ void os::win32::print_windows_version(outputStream* st) {
   st->cr();
 }
 
-void os::pd_print_cpu_info(outputStream* st) {
+void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   // Nothing to do for now.
 }
 

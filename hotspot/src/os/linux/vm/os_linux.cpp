@@ -2216,12 +2216,52 @@ void os::print_memory_info(outputStream* st) {
   st->cr();
 }
 
-void os::pd_print_cpu_info(outputStream* st) {
-  st->print("\n/proc/cpuinfo:\n");
-  if (!_print_ascii_file("/proc/cpuinfo", st)) {
-    st->print("  <Not Available>");
+// Print the first "model name" line and the first "flags" line
+// that we find and nothing more. We assume "model name" comes
+// before "flags" so if we find a second "model name", then the
+// "flags" field is considered missing.
+static bool print_model_name_and_flags(outputStream* st, char* buf, size_t buflen) {
+#if defined(IA32) || defined(AMD64)
+  // Other platforms have less repetitive cpuinfo files
+  FILE *fp = fopen("/proc/cpuinfo", "r");
+  if (fp) {
+    while (!feof(fp)) {
+      if (fgets(buf, buflen, fp)) {
+        // Assume model name comes before flags
+        bool model_name_printed = false;
+        if (strstr(buf, "model name") != NULL) {
+          if (!model_name_printed) {
+            st->print_raw("\nCPU Model and flags from /proc/cpuinfo:\n");
+            st->print_raw(buf);
+            model_name_printed = true;
+          } else {
+            // model name printed but not flags?  Odd, just return
+            fclose(fp);
+            return true;
+          }
+        }
+        // print the flags line too
+        if (strstr(buf, "flags") != NULL) {
+          st->print_raw(buf);
+          fclose(fp);
+          return true;
+        }
+      }
+    }
+    fclose(fp);
   }
-  st->cr();
+#endif // x86 platforms
+  return false;
+}
+
+void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
+  // Only print the model name if the platform provides this as a summary
+  if (!print_model_name_and_flags(st, buf, buflen)) {
+    st->print("\n/proc/cpuinfo:\n");
+    if (!_print_ascii_file("/proc/cpuinfo", st)) {
+      st->print_cr("  <Not Available>");
+    }
+  }
 }
 
 void os::print_siginfo(outputStream* st, void* siginfo) {

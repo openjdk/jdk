@@ -35,10 +35,10 @@
 #include "memory/memRegion.hpp"
 #include "runtime/java.hpp"
 
-CardGeneration::CardGeneration(ReservedSpace rs, size_t initial_byte_size,
-                               int level,
+CardGeneration::CardGeneration(ReservedSpace rs,
+                               size_t initial_byte_size,
                                GenRemSet* remset) :
-  Generation(rs, initial_byte_size, level), _rs(remset),
+  Generation(rs, initial_byte_size), _rs(remset),
   _shrink_factor(0), _min_heap_delta_bytes(), _capacity_at_prologue(),
   _used_at_prologue()
 {

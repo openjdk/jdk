@@ -816,7 +816,7 @@ void VMError::report(outputStream* st) {
 
   STEP(250, "(printing CPU info)" )
      if (_verbose) {
-       os::print_cpu_info(st);
+       os::print_cpu_info(st, buf, sizeof(buf));
        st->cr();
      }
 

@@ -1389,6 +1389,12 @@ void Arguments::set_cms_and_parnew_gc_flags() {
   if (!FLAG_IS_DEFAULT(OldPLABSize) || !FLAG_IS_DEFAULT(OldPLABWeight)) {
     CFLS_LAB::modify_initialization(OldPLABSize, OldPLABWeight);
   }
+
+  if (!ClassUnloading) {
+    FLAG_SET_CMDLINE(bool, CMSClassUnloadingEnabled, false);
+    FLAG_SET_CMDLINE(bool, ExplicitGCInvokesConcurrentAndUnloadsClasses, false);
+  }
+
   if (PrintGCDetails && Verbose) {
     tty->print_cr("MarkStackSize: %uk  MarkStackSizeMax: %uk",
       (unsigned int) (MarkStackSize / K), (uint) (MarkStackSizeMax / K));
