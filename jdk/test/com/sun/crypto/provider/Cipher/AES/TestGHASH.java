@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, Red Hat, Inc.
+ * Copyright (c) 2015, Oracle, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +25,14 @@
 /*
  * @test
  * @bug 8069072
- * @summary Test vectors for com.sun.crypto.provider.GHASH
+ * @summary Test vectors for com.sun.crypto.provider.GHASH.
+ *
+ * Single iteration to verify software-only GHASH algorithm.
+ * @run main TestGHASH
+ *
+ * Multi-iteration to verify test intrinsics GHASH, if available.
+ * Many iterations are needed so we are sure hotspot will use intrinsic
+ * @run main TestGHASH -n 10000
  */
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -124,43 +132,55 @@ public class TestGHASH {
 
     public static void main(String[] args) throws Exception {
         TestGHASH test;
-        if (args.length == 0) {
-            test = new TestGHASH("com.sun.crypto.provider.GHASH");
-        } else {
-            test = new TestGHASH(args[0]);
+        String test_class = "com.sun.crypto.provider.GHASH";
+        int i = 0;
+        int num_of_loops = 1;
+        while (args.length > i) {
+            if (args[i].compareTo("-c") == 0) {
+                test_class = args[++i];
+            } else if (args[i].compareTo("-n") == 0) {
+                num_of_loops = Integer.parseInt(args[++i]);
+            }
+            i++;
         }
 
-        // Test vectors from David A. McGrew, John Viega,
-        // "The Galois/Counter Mode of Operation (GCM)", 2005.
-        // <http://csrc.nist.gov/groups/ST/toolkit/BCM/documents/proposedmodes/gcm/gcm-revised-spec.pdf>
+        System.out.println("Running " + num_of_loops + " iterations.");
+        test = new TestGHASH(test_class);
+        i = 0;
 
-        test.check(1, "66e94bd4ef8a2c3b884cfa59ca342b2e", "", "",
-                "00000000000000000000000000000000");
-        test.check(2,
-                "66e94bd4ef8a2c3b884cfa59ca342b2e", "",
-                "0388dace60b6a392f328c2b971b2fe78",
-                "f38cbb1ad69223dcc3457ae5b6b0f885");
-        test.check(3,
-                "b83b533708bf535d0aa6e52980d53b78", "",
-                "42831ec2217774244b7221b784d0d49c" +
-                "e3aa212f2c02a4e035c17e2329aca12e" +
-                "21d514b25466931c7d8f6a5aac84aa05" +
-                "1ba30b396a0aac973d58e091473f5985",
-                "7f1b32b81b820d02614f8895ac1d4eac");
-        test.check(4,
-                "b83b533708bf535d0aa6e52980d53b78",
-                "feedfacedeadbeeffeedfacedeadbeef" + "abaddad2",
-                "42831ec2217774244b7221b784d0d49c" +
-                "e3aa212f2c02a4e035c17e2329aca12e" +
-                "21d514b25466931c7d8f6a5aac84aa05" +
-                "1ba30b396a0aac973d58e091",
-                "698e57f70e6ecc7fd9463b7260a9ae5f");
-        test.check(5, "b83b533708bf535d0aa6e52980d53b78",
-                "feedfacedeadbeeffeedfacedeadbeef" + "abaddad2",
-                "61353b4c2806934a777ff51fa22a4755" +
-                "699b2a714fcdc6f83766e5f97b6c7423" +
-                "73806900e49f24b22b097544d4896b42" +
-                "4989b5e1ebac0f07c23f4598",
-                "df586bb4c249b92cb6922877e444d37b");
+        while (num_of_loops > i) {
+            // Test vectors from David A. McGrew, John Viega,
+            // "The Galois/Counter Mode of Operation (GCM)", 2005.
+            // <http://csrc.nist.gov/groups/ST/toolkit/BCM/documents/proposedmodes/gcm/gcm-revised-spec.pdf>
+            test.check(1, "66e94bd4ef8a2c3b884cfa59ca342b2e", "", "",
+                       "00000000000000000000000000000000");
+            test.check(2,
+                       "66e94bd4ef8a2c3b884cfa59ca342b2e", "",
+                       "0388dace60b6a392f328c2b971b2fe78",
+                       "f38cbb1ad69223dcc3457ae5b6b0f885");
+            test.check(3,
+                       "b83b533708bf535d0aa6e52980d53b78", "",
+                       "42831ec2217774244b7221b784d0d49c" +
+                       "e3aa212f2c02a4e035c17e2329aca12e" +
+                       "21d514b25466931c7d8f6a5aac84aa05" +
+                       "1ba30b396a0aac973d58e091473f5985",
+                       "7f1b32b81b820d02614f8895ac1d4eac");
+            test.check(4,
+                       "b83b533708bf535d0aa6e52980d53b78",
+                       "feedfacedeadbeeffeedfacedeadbeef" + "abaddad2",
+                       "42831ec2217774244b7221b784d0d49c" +
+                       "e3aa212f2c02a4e035c17e2329aca12e" +
+                       "21d514b25466931c7d8f6a5aac84aa05" +
+                       "1ba30b396a0aac973d58e091",
+                       "698e57f70e6ecc7fd9463b7260a9ae5f");
+            test.check(5, "b83b533708bf535d0aa6e52980d53b78",
+                       "feedfacedeadbeeffeedfacedeadbeef" + "abaddad2",
+                       "61353b4c2806934a777ff51fa22a4755" +
+                       "699b2a714fcdc6f83766e5f97b6c7423" +
+                       "73806900e49f24b22b097544d4896b42" +
+                       "4989b5e1ebac0f07c23f4598",
+                       "df586bb4c249b92cb6922877e444d37b");
+            i++;
+        }
     }
 }
