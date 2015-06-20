@@ -174,6 +174,9 @@ void StubRoutines::initialize1() {
     }
     CodeBuffer buffer(_code1);
     StubGenerator_generate(&buffer, false);
+    // When new stubs added we need to make sure there is some space left
+    // to catch situation when we should increase size again.
+    assert(buffer.insts_remaining() > 200, "increase code_size1");
   }
 }
 
@@ -258,6 +261,9 @@ void StubRoutines::initialize2() {
     }
     CodeBuffer buffer(_code2);
     StubGenerator_generate(&buffer, true);
+    // When new stubs added we need to make sure there is some space left
+    // to catch situation when we should increase size again.
+    assert(buffer.insts_remaining() > 200, "increase code_size2");
   }
 
 #ifdef ASSERT
