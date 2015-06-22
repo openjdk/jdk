@@ -87,7 +87,7 @@ import jdk.nashorn.tools.ShellFunctions;
  * Representation of global scope.
  */
 @ScriptClass("Global")
-public final class Global extends ScriptObject implements Scope {
+public final class Global extends Scope {
     // Placeholder value used in place of a location property (__FILE__, __DIR__, __LINE__)
     private static final Object LOCATION_PROPERTY_PLACEHOLDER = new Object();
     private final InvokeByName TO_STRING = new InvokeByName("toString", ScriptObject.class);
@@ -906,9 +906,6 @@ public final class Global extends ScriptObject implements Scope {
      */
     private ScriptFunction typeErrorThrower;
 
-    // Flag to indicate that a split method issued a return statement
-    private int splitState = -1;
-
     // Used to store the last RegExp result to support deprecated RegExp constructor properties
     private RegExpResult lastRegExpResult;
 
@@ -995,7 +992,6 @@ public final class Global extends ScriptObject implements Scope {
     public Global(final Context context) {
         super(checkAndGetMap(context));
         this.context = context;
-        this.setIsScope();
         this.lexicalScope = context.getEnv()._es6 ? new LexicalScope(this) : null;
     }
 
@@ -2352,26 +2348,6 @@ public final class Global extends ScriptObject implements Scope {
         if (obj == null || obj == UNDEFINED) {
             throw typeError("not.an.object", ScriptRuntime.safeToString(obj));
         }
-    }
-
-    /**
-     * Get the current split state.
-     *
-     * @return current split state
-     */
-    @Override
-    public int getSplitState() {
-        return splitState;
-    }
-
-    /**
-     * Set the current split state.
-     *
-     * @param state current split state
-     */
-    @Override
-    public void setSplitState(final int state) {
-        splitState = state;
     }
 
     /**
