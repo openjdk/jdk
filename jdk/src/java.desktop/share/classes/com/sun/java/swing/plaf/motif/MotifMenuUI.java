@@ -36,8 +36,7 @@ import javax.swing.plaf.basic.*;
 import javax.swing.plaf.basic.BasicMenuUI;
 
 /**
- * A Motif L&F implementation of MenuUI.
- * <p>
+ * A Motif {@literal L&F} implementation of MenuUI.
  *
  * @author Georges Saab
  * @author Rich Schiavi

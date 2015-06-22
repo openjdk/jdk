@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,13 @@
  * questions.
  */
 
-public class T6182630f {
-    static class Foo<X> {
-        public X x;
-        public void m(X x) { }
-    }
-    interface Bar {}
-    <T extends Foo, S extends Foo & Bar> void test1(T t, S s) {
-        s.m(s.x);
-    }
-}
+/**
+ * JDK-8098847: obj."prop" and obj.'prop' should result in SyntaxError
+ *
+ * @test/compile-error
+ */
+
+var obj = { "prop": 45 };
+
+obj."prop" = "hello";
+obj.'prop' = "hello";
