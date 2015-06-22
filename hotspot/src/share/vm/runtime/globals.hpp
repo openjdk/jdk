@@ -3477,11 +3477,6 @@ public:
   develop_pd(size_t, JVMInvokeMethodSlack,                                  \
           "Stack space (bytes) required for JVM_InvokeMethod to complete")  \
                                                                             \
-  product(size_t, ThreadSafetyMargin, 50*M,                                 \
-          "Thread safety margin is used on fixed-stack LinuxThreads (on "   \
-          "Linux/x86 only) to prevent heap-stack collision. Set to 0 to "   \
-          "disable this feature")                                           \
-                                                                            \
   /* code cache parameters                                    */            \
   /* ppc64/tiered compilation has large code-entry alignment. */            \
   develop(uintx, CodeCacheSegmentSize, 64 PPC64_ONLY(+64) NOT_PPC64(TIERED_ONLY(+64)),\

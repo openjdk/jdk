@@ -3762,10 +3762,6 @@ ExtendedPC os::get_thread_pc(Thread* thread) {
   return fetcher.result();
 }
 
-// Not neede on Aix.
-// int os::Aix::safe_cond_timedwait(pthread_cond_t *_cond, pthread_mutex_t *_mutex, const struct timespec *_abstime) {
-// }
-
 ////////////////////////////////////////////////////////////////////////////////
 // debug support
 

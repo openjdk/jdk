@@ -135,8 +135,6 @@ Mutex* os::Linux::_createThread_lock = NULL;
 pthread_t os::Linux::_main_thread;
 int os::Linux::_page_size = -1;
 const int os::Linux::_vm_default_page_size = (8 * K);
-bool os::Linux::_is_floating_stack = false;
-bool os::Linux::_is_NPTL = false;
 bool os::Linux::_supports_fast_thread_cpu_time = false;
 const char * os::Linux::_glibc_version = NULL;
 const char * os::Linux::_libpthread_version = NULL;
@@ -149,8 +147,6 @@ static int clock_tics_per_sec = 100;
 // For diagnostics to print a message once. see run_periodic_checks
 static sigset_t check_signal_done;
 static bool check_signals = true;
-
-static pid_t _initial_pid = 0;
 
 // Signal number used to suspend/resume a thread
 
@@ -223,18 +219,10 @@ static char cpu_arch[] = HOTSPOT_LIB_ARCH;
 //
 // Returns the kernel thread id of the currently running thread. Kernel
 // thread id is used to access /proc.
-//
-// (Note that getpid() on LinuxThreads returns kernel thread id too; but
-// on NPTL, it returns the same pid for all threads, as required by POSIX.)
-//
 pid_t os::Linux::gettid() {
   int rslt = syscall(SYS_gettid);
-  if (rslt == -1) {
-    // old kernel, no NPTL support
-    return getpid();
-  } else {
-    return (pid_t)rslt;
-  }
+  assert(rslt != -1, "must be."); // old linuxthreads implementation?
+  return (pid_t)rslt;
 }
 
 // Most versions of linux have a bug where the number of processors are
@@ -508,68 +496,48 @@ void os::Linux::hotspot_sigmask(Thread* thread) {
 // detecting pthread library
 
 void os::Linux::libpthread_init() {
-  // Save glibc and pthread version strings. Note that _CS_GNU_LIBC_VERSION
-  // and _CS_GNU_LIBPTHREAD_VERSION are supported in glibc >= 2.3.2. Use a
-  // generic name for earlier versions.
-  // Define macros here so we can build HotSpot on old systems.
-#ifndef _CS_GNU_LIBC_VERSION
-  #define _CS_GNU_LIBC_VERSION 2
-#endif
-#ifndef _CS_GNU_LIBPTHREAD_VERSION
-  #define _CS_GNU_LIBPTHREAD_VERSION 3
+  // Save glibc and pthread version strings.
+#if !defined(_CS_GNU_LIBC_VERSION) || \
+    !defined(_CS_GNU_LIBPTHREAD_VERSION)
+  #error "glibc too old (< 2.3.2)"
 #endif
 
   size_t n = confstr(_CS_GNU_LIBC_VERSION, NULL, 0);
-  if (n > 0) {
-    char *str = (char *)malloc(n, mtInternal);
-    confstr(_CS_GNU_LIBC_VERSION, str, n);
-    os::Linux::set_glibc_version(str);
-  } else {
-    // _CS_GNU_LIBC_VERSION is not supported, try gnu_get_libc_version()
-    static char _gnu_libc_version[32];
-    jio_snprintf(_gnu_libc_version, sizeof(_gnu_libc_version),
-                 "glibc %s %s", gnu_get_libc_version(), gnu_get_libc_release());
-    os::Linux::set_glibc_version(_gnu_libc_version);
-  }
+  assert(n > 0, "cannot retrieve glibc version");
+  char *str = (char *)malloc(n, mtInternal);
+  confstr(_CS_GNU_LIBC_VERSION, str, n);
+  os::Linux::set_glibc_version(str);
 
   n = confstr(_CS_GNU_LIBPTHREAD_VERSION, NULL, 0);
-  if (n > 0) {
-    char *str = (char *)malloc(n, mtInternal);
-    confstr(_CS_GNU_LIBPTHREAD_VERSION, str, n);
-    // Vanilla RH-9 (glibc 2.3.2) has a bug that confstr() always tells
-    // us "NPTL-0.29" even we are running with LinuxThreads. Check if this
-    // is the case. LinuxThreads has a hard limit on max number of threads.
-    // So sysconf(_SC_THREAD_THREADS_MAX) will return a positive value.
-    // On the other hand, NPTL does not have such a limit, sysconf()
-    // will return -1 and errno is not changed. Check if it is really NPTL.
-    if (strcmp(os::Linux::glibc_version(), "glibc 2.3.2") == 0 &&
-        strstr(str, "NPTL") &&
-        sysconf(_SC_THREAD_THREADS_MAX) > 0) {
-      free(str);
-      os::Linux::set_libpthread_version("linuxthreads");
-    } else {
-      os::Linux::set_libpthread_version(str);
-    }
-  } else {
-    // glibc before 2.3.2 only has LinuxThreads.
-    os::Linux::set_libpthread_version("linuxthreads");
-  }
-
-  if (strstr(libpthread_version(), "NPTL")) {
-    os::Linux::set_is_NPTL();
-  } else {
-    os::Linux::set_is_LinuxThreads();
-  }
-
-  // LinuxThreads have two flavors: floating-stack mode, which allows variable
-  // stack size; and fixed-stack mode. NPTL is always floating-stack.
-  if (os::Linux::is_NPTL() || os::Linux::supports_variable_stack_size()) {
-    os::Linux::set_is_floating_stack();
-  }
+  assert(n > 0, "cannot retrieve pthread version");
+  str = (char *)malloc(n, mtInternal);
+  confstr(_CS_GNU_LIBPTHREAD_VERSION, str, n);
+  os::Linux::set_libpthread_version(str);
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// thread stack
+// thread stack expansion
+
+// os::Linux::manually_expand_stack() takes care of expanding the thread
+// stack. Note that this is normally not needed: pthread stacks allocate
+// thread stack using mmap() without MAP_NORESERVE, so the stack is already
+// committed. Therefore it is not necessary to expand the stack manually.
+//
+// Manually expanding the stack was historically needed on LinuxThreads
+// thread stacks, which were allocated with mmap(MAP_GROWSDOWN). Nowadays
+// it is kept to deal with very rare corner cases:
+//
+// For one, user may run the VM on an own implementation of threads
+// whose stacks are - like the old LinuxThreads - implemented using
+// mmap(MAP_GROWSDOWN).
+//
+// Also, this coding may be needed if the VM is running on the primordial
+// thread. Normally we avoid running on the primordial thread; however,
+// user may still invoke the VM on the primordial thread.
+//
+// The following historical comment describes the details about running
+// on a thread stack allocated with mmap(MAP_GROWSDOWN):
+
 
 // Force Linux kernel to expand current thread stack. If "bottom" is close
 // to the stack guard, caller should block all signals.
@@ -593,10 +561,7 @@ void os::Linux::libpthread_init() {
 //   stack overflow detection.
 //
 //   Newer version of LinuxThreads (since glibc-2.2, or, RH-7.x) and NPTL do
-//   not use this flag. However, the stack of initial thread is not created
-//   by pthread, it is still MAP_GROWSDOWN. Also it's possible (though
-//   unlikely) that user code can create a thread with MAP_GROWSDOWN stack
-//   and then attach the thread to JVM.
+//   not use MAP_GROWSDOWN.
 //
 // To get around the problem and allow stack banging on Linux, we need to
 // manually expand thread stack after receiving the SIGSEGV.
@@ -671,45 +636,6 @@ bool os::Linux::manually_expand_stack(JavaThread * t, address addr) {
 //////////////////////////////////////////////////////////////////////////////
 // create new thread
 
-static address highest_vm_reserved_address();
-
-// check if it's safe to start a new thread
-static bool _thread_safety_check(Thread* thread) {
-  if (os::Linux::is_LinuxThreads() && !os::Linux::is_floating_stack()) {
-    // Fixed stack LinuxThreads (SuSE Linux/x86, and some versions of Redhat)
-    //   Heap is mmap'ed at lower end of memory space. Thread stacks are
-    //   allocated (MAP_FIXED) from high address space. Every thread stack
-    //   occupies a fixed size slot (usually 2Mbytes, but user can change
-    //   it to other values if they rebuild LinuxThreads).
-    //
-    // Problem with MAP_FIXED is that mmap() can still succeed even part of
-    // the memory region has already been mmap'ed. That means if we have too
-    // many threads and/or very large heap, eventually thread stack will
-    // collide with heap.
-    //
-    // Here we try to prevent heap/stack collision by comparing current
-    // stack bottom with the highest address that has been mmap'ed by JVM
-    // plus a safety margin for memory maps created by native code.
-    //
-    // This feature can be disabled by setting ThreadSafetyMargin to 0
-    //
-    if (ThreadSafetyMargin > 0) {
-      address stack_bottom = os::current_stack_base() - os::current_stack_size();
-
-      // not safe if our stack extends below the safety margin
-      return stack_bottom - ThreadSafetyMargin >= highest_vm_reserved_address();
-    } else {
-      return true;
-    }
-  } else {
-    // Floating stack LinuxThreads or NPTL:
-    //   Unlike fixed stack LinuxThreads, thread stacks are not MAP_FIXED. When
-    //   there's not enough space left, pthread_create() will fail. If we come
-    //   here, that means enough space has been reserved for stack.
-    return true;
-  }
-}
-
 // Thread start routine for all newly created threads
 static void *java_start(Thread *thread) {
   // Try to randomize the cache line index of hot stack frames.
@@ -725,15 +651,6 @@ static void *java_start(Thread *thread) {
 
   OSThread* osthread = thread->osthread();
   Monitor* sync = osthread->startThread_lock();
-
-  // non floating stack LinuxThreads needs extra check, see above
-  if (!_thread_safety_check(thread)) {
-    // notify parent thread
-    MutexLockerEx ml(sync, Mutex::_no_safepoint_check_flag);
-    osthread->set_state(ZOMBIE);
-    sync->notify_all();
-    return NULL;
-  }
 
   // thread_id is kernel thread id (similar to Solaris LWP id)
   osthread->set_thread_id(os::Linux::gettid());
@@ -833,12 +750,6 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   ThreadState state;
 
   {
-    // Serialize thread creation if we are running with fixed stack LinuxThreads
-    bool lock = os::Linux::is_LinuxThreads() && !os::Linux::is_floating_stack();
-    if (lock) {
-      os::Linux::createThread_lock()->lock_without_safepoint_check();
-    }
-
     pthread_t tid;
     int ret = pthread_create(&tid, &attr, (void* (*)(void*)) java_start, thread);
 
@@ -851,7 +762,6 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
       // Need to clean up stuff we've allocated so far
       thread->set_osthread(NULL);
       delete osthread;
-      if (lock) os::Linux::createThread_lock()->unlock();
       return false;
     }
 
@@ -865,10 +775,6 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
       while ((state = osthread->get_state()) == ALLOCATED) {
         sync_with_child->wait(Mutex::_no_safepoint_check_flag);
       }
-    }
-
-    if (lock) {
-      os::Linux::createThread_lock()->unlock();
     }
   }
 
@@ -1497,7 +1403,6 @@ void os::abort(bool dump_core, void* siginfo, void* context) {
 
 // Die immediately, no exit hook, no abort hook, no cleanup.
 void os::die() {
-  // _exit() on LinuxThreads only kills current thread
   ::abort();
 }
 
@@ -1520,24 +1425,7 @@ size_t os::lasterror(char *buf, size_t len) {
 
 intx os::current_thread_id() { return (intx)pthread_self(); }
 int os::current_process_id() {
-
-  // Under the old linux thread library, linux gives each thread
-  // its own process id. Because of this each thread will return
-  // a different pid if this method were to return the result
-  // of getpid(2). Linux provides no api that returns the pid
-  // of the launcher thread for the vm. This implementation
-  // returns a unique pid, the pid of the launcher thread
-  // that starts the vm 'process'.
-
-  // Under the NPTL, getpid() returns the same pid as the
-  // launcher thread rather than a unique pid per thread.
-  // Use gettid() if you want the old pre NPTL behaviour.
-
-  // if you are looking for the result of a call to getpid() that
-  // returns a unique pid for the calling thread, then look at the
-  // OSThread::thread_id() method in osThread_linux.hpp file
-
-  return (int)(_initial_pid ? _initial_pid : getpid());
+  return ::getpid();
 }
 
 // DLL functions
@@ -2184,9 +2072,6 @@ void os::Linux::print_libversion_info(outputStream* st) {
   st->print("libc:");
   st->print("%s ", os::Linux::glibc_version());
   st->print("%s ", os::Linux::libpthread_version());
-  if (os::Linux::is_LinuxThreads()) {
-    st->print("(%s stack)", os::Linux::is_floating_stack() ? "floating" : "fixed");
-  }
   st->cr();
 }
 
@@ -3085,8 +2970,6 @@ bool os::remove_stack_guard_pages(char* addr, size_t size) {
   return os::uncommit_memory(addr, size);
 }
 
-static address _highest_vm_reserved_address = NULL;
-
 // If 'fixed' is true, anon_mmap() will attempt to reserve anonymous memory
 // at 'requested_addr'. If there are existing memory mappings at the same
 // location, however, they will be overwritten. If 'fixed' is false,
@@ -3109,23 +2992,9 @@ static char* anon_mmap(char* requested_addr, size_t bytes, bool fixed) {
   addr = (char*)::mmap(requested_addr, bytes, PROT_NONE,
                        flags, -1, 0);
 
-  if (addr != MAP_FAILED) {
-    // anon_mmap() should only get called during VM initialization,
-    // don't need lock (actually we can skip locking even it can be called
-    // from multiple threads, because _highest_vm_reserved_address is just a
-    // hint about the upper limit of non-stack memory regions.)
-    if ((address)addr + bytes > _highest_vm_reserved_address) {
-      _highest_vm_reserved_address = (address)addr + bytes;
-    }
-  }
-
   return addr == MAP_FAILED ? NULL : addr;
 }
 
-// Don't update _highest_vm_reserved_address, because there might be memory
-// regions above addr + size. If so, releasing a memory region only creates
-// a hole in the address space, it doesn't help prevent heap-stack collision.
-//
 static int anon_munmap(char * addr, size_t size) {
   return ::munmap(addr, size) == 0;
 }
@@ -3137,10 +3006,6 @@ char* os::pd_reserve_memory(size_t bytes, char* requested_addr,
 
 bool os::pd_release_memory(char* addr, size_t size) {
   return anon_munmap(addr, size);
-}
-
-static address highest_vm_reserved_address() {
-  return _highest_vm_reserved_address;
 }
 
 static bool linux_mprotect(char* addr, size_t size, int prot) {
@@ -3759,15 +3624,7 @@ char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
   assert(bytes % os::vm_page_size() == 0, "reserving unexpected size block");
 
   // Repeatedly allocate blocks until the block is allocated at the
-  // right spot. Give up after max_tries. Note that reserve_memory() will
-  // automatically update _highest_vm_reserved_address if the call is
-  // successful. The variable tracks the highest memory address every reserved
-  // by JVM. It is used to detect heap-stack collision if running with
-  // fixed-stack LinuxThreads. Because here we may attempt to reserve more
-  // space than needed, it could confuse the collision detecting code. To
-  // solve the problem, save current _highest_vm_reserved_address and
-  // calculate the correct value before return.
-  address old_highest = _highest_vm_reserved_address;
+  // right spot.
 
   // Linux mmap allows caller to pass an address as hint; give it a try first,
   // if kernel honors the hint then we can return immediately.
@@ -3821,10 +3678,8 @@ char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
   }
 
   if (i < max_tries) {
-    _highest_vm_reserved_address = MAX2(old_highest, (address)requested_addr + bytes);
     return requested_addr;
   } else {
-    _highest_vm_reserved_address = old_highest;
     return NULL;
   }
 }
@@ -4668,16 +4523,6 @@ void os::init(void) {
   char dummy;   // used to get a guess on initial stack address
 //  first_hrtime = gethrtime();
 
-  // With LinuxThreads the JavaMain thread pid (primordial thread)
-  // is different than the pid of the java launcher thread.
-  // So, on Linux, the launcher thread pid is passed to the VM
-  // via the sun.java.launcher.pid property.
-  // Use this property instead of getpid() if it was correctly passed.
-  // See bug 6351349.
-  pid_t java_launcher_pid = (pid_t) Arguments::sun_java_launcher_pid();
-
-  _initial_pid = (java_launcher_pid > 0) ? java_launcher_pid : getpid();
-
   clock_tics_per_sec = sysconf(_SC_CLK_TCK);
 
   init_random(1234567);
@@ -4810,9 +4655,8 @@ jint os::init_2(void) {
 
   Linux::libpthread_init();
   if (PrintMiscellaneous && (Verbose || WizardMode)) {
-    tty->print_cr("[HotSpot is running with %s, %s(%s)]\n",
-                  Linux::glibc_version(), Linux::libpthread_version(),
-                  Linux::is_floating_stack() ? "floating stack" : "fixed stack");
+    tty->print_cr("[HotSpot is running with %s, %s]\n",
+                  Linux::glibc_version(), Linux::libpthread_version());
   }
 
   if (UseNUMA) {
@@ -4985,22 +4829,6 @@ ExtendedPC os::get_thread_pc(Thread* thread) {
   PcFetcher fetcher(thread);
   fetcher.run();
   return fetcher.result();
-}
-
-int os::Linux::safe_cond_timedwait(pthread_cond_t *_cond,
-                                   pthread_mutex_t *_mutex,
-                                   const struct timespec *_abstime) {
-  if (is_NPTL()) {
-    return pthread_cond_timedwait(_cond, _mutex, _abstime);
-  } else {
-    // 6292965: LinuxThreads pthread_cond_timedwait() resets FPU control
-    // word back to default 64bit precision if condvar is signaled. Java
-    // wants 53bit precision.  Save and restore current value.
-    int fpu = get_fpu_control_word();
-    int status = pthread_cond_timedwait(_cond, _mutex, _abstime);
-    set_fpu_control_word(fpu);
-    return status;
-  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -5626,7 +5454,7 @@ int os::PlatformEvent::park(jlong millis) {
   // In that case, we should propagate the notify to another waiter.
 
   while (_Event < 0) {
-    status = os::Linux::safe_cond_timedwait(_cond, _mutex, &abst);
+    status = pthread_cond_timedwait(_cond, _mutex, &abst);
     if (status != 0 && WorkAroundNPTLTimedWaitHang) {
       pthread_cond_destroy(_cond);
       pthread_cond_init(_cond, os::Linux::condAttr());
@@ -5854,7 +5682,7 @@ void Parker::park(bool isAbsolute, jlong time) {
     status = pthread_cond_wait(&_cond[_cur_index], _mutex);
   } else {
     _cur_index = isAbsolute ? ABS_INDEX : REL_INDEX;
-    status = os::Linux::safe_cond_timedwait(&_cond[_cur_index], _mutex, &absTime);
+    status = pthread_cond_timedwait(&_cond[_cur_index], _mutex, &absTime);
     if (status != 0 && WorkAroundNPTLTimedWaitHang) {
       pthread_cond_destroy(&_cond[_cur_index]);
       pthread_cond_init(&_cond[_cur_index], isAbsolute ? NULL : os::Linux::condAttr());
