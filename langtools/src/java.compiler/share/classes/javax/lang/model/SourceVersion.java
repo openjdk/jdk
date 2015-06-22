@@ -169,6 +169,7 @@ public enum SourceVersion {
 
             switch (specVersion) {
                 case "9":
+                case "1.9":
                     return RELEASE_9;
                 case "1.8":
                     return RELEASE_8;
