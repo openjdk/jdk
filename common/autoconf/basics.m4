@@ -436,7 +436,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
   BASIC_PATH_PROGS(CYGPATH, cygpath)
   BASIC_PATH_PROGS(READLINK, [greadlink readlink])
   BASIC_PATH_PROGS(DF, df)
-  BASIC_PATH_PROGS(SETFILE, SetFile)
   BASIC_PATH_PROGS(CPIO, [cpio bsdcpio])
 ])
 
@@ -574,10 +573,11 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
   )
 
   if test "x$OPENJDK_BUILD_OS" = "xmacosx"; then
-    # detect if Xcode is installed by running xcodebuild -version
+    # If a devkit has been supplied, find xcodebuild in the toolchain_path.
+    # If not, detect if Xcode is installed by running xcodebuild -version
     # if no Xcode installed, xcodebuild exits with 1
     # if Xcode is installed, even if xcode-select is misconfigured, then it exits with 0
-    if /usr/bin/xcodebuild -version >/dev/null 2>&1; then
+    if test "x$DEVKIT_ROOT" != x || /usr/bin/xcodebuild -version >/dev/null 2>&1; then
       # We need to use xcodebuild in the toolchain dir provided by the user, this will
       # fall back on the stub binary in /usr/bin/xcodebuild
       AC_PATH_PROG([XCODEBUILD], [xcodebuild], [/usr/bin/xcodebuild], [$TOOLCHAIN_PATH])
@@ -961,6 +961,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
         AC_MSG_RESULT([yes])
       fi
     fi
+    BASIC_REQUIRE_PROGS(SETFILE, SetFile)
   fi
 ])
 

@@ -28,6 +28,7 @@ import java.util.prefs.PreferencesFactory;
  * @test
  * @bug 8068373 8075110 8075156
  * @summary Ensure a code point U+0000 null control character is detected.
+ * @run main/othervm -Djava.util.prefs.userRoot=. CodePointZeroPrefsTest
  */
 public class CodePointZeroPrefsTest
 {

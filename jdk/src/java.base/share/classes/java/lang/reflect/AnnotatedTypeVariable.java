@@ -36,10 +36,11 @@ public interface AnnotatedTypeVariable extends AnnotatedType {
 
     /**
      * Returns the potentially annotated bounds of this type variable.
-     * Note that if no bound is explicitly declared, the bound is unannotated
+     * If no bound is explicitly declared, the bound is unannotated
      * {@code Object}.
      *
      * @return the potentially annotated bounds of this type variable
+     * @see TypeVariable#getBounds()
      */
     AnnotatedType[] getAnnotatedBounds();
 }
