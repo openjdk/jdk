@@ -542,7 +542,22 @@ final class ProcessImpl extends Process {
     @Override
     public CompletableFuture<Process> onExit() {
         return ProcessHandleImpl.completion(pid, false)
-                .handleAsync((exitStatus, unusedThrowable) -> this);
+                .handleAsync((exitStatus, unusedThrowable) -> {
+                    boolean interrupted = false;
+                    while (true) {
+                        // Ensure that the concurrent task setting the exit status has completed
+                        try {
+                            waitFor();
+                            break;
+                        } catch (InterruptedException ie) {
+                            interrupted = true;
+                        }
+                    }
+                    if (interrupted) {
+                        Thread.currentThread().interrupt();
+                    }
+                    return this;
+                });
     }
 
     @Override
