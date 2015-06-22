@@ -51,7 +51,7 @@ package java.lang.reflect;
 public interface TypeVariable<D extends GenericDeclaration> extends Type, AnnotatedElement {
     /**
      * Returns an array of {@code Type} objects representing the
-     * upper bound(s) of this type variable.  Note that if no upper bound is
+     * upper bound(s) of this type variable.  If no upper bound is
      * explicitly declared, the upper bound is {@code Object}.
      *
      * <p>For each upper bound B: <ul> <li>if B is a parameterized
@@ -67,7 +67,7 @@ public interface TypeVariable<D extends GenericDeclaration> extends Type, Annota
      *     for any reason
      * @return an array of {@code Type}s representing the upper
      *     bound(s) of this type variable
-    */
+     */
     Type[] getBounds();
 
     /**

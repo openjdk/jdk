@@ -24,6 +24,7 @@
 /*
  * @test LFGarbageCollectedTest
  * @bug 8046703
+ * @key randomness
  * @ignore 8078602
  * @summary Test verifies that lambda forms are garbage collected
  * @author kshefov
@@ -73,7 +74,7 @@ public final class LFGarbageCollectedTest extends LambdaFormTestCase {
             try {
                 adapter = testCase.getTestCaseMH(data, TestMethods.Kind.ONE);
             } catch (NoSuchMethodException ex) {
-                throw new Error("Unexpected exception: ", ex);
+                throw new Error("Unexpected exception", ex);
             }
             mtype = adapter.type();
             Object lambdaForm = INTERNAL_FORM.invoke(adapter);
@@ -94,7 +95,7 @@ public final class LFGarbageCollectedTest extends LambdaFormTestCase {
             collectLambdaForm();
         } catch (IllegalAccessException | IllegalArgumentException |
                 InvocationTargetException ex) {
-            throw new Error("Unexpected exception: ", ex);
+            throw new Error("Unexpected exception", ex);
         }
     }
 
