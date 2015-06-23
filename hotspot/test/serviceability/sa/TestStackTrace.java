@@ -66,7 +66,7 @@ public class TestStackTrace {
             output.stderrShouldNotMatch("[E|e]xception");
             output.stderrShouldNotMatch("[E|e]rror");
         } finally {
-            app.stopApp();
+            LingeredApp.stopApp(app);
         }
      }
 
