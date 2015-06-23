@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.nio.charset.Charset;
  *          that all entries are present, and order is maintained.
  * @author Rick Reynaga (rick.reynaga@eng.sun.com) area=Clipboard
  * @author dmitriy.ermashov@oracle.com
+ * @modules java.datatransfer
  * @run main AddFlavorTest
  */
 
