@@ -123,7 +123,7 @@ public class TmtoolTestScenario {
 
                 return toolProcess.exitValue();
             } finally {
-                theApp.stopApp();
+                LingeredApp.stopApp(theApp);
             }
         } catch (IOException | InterruptedException ex) {
             throw new RuntimeException("Test ERROR " + ex, ex);
