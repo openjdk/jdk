@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -91,11 +92,13 @@ public abstract class OpTestCase extends LoggingTestCase {
 
         boolean isParallel();
 
-        abstract <T, U, S_IN extends BaseStream<T, S_IN>, S_OUT extends BaseStream<U, S_OUT>>
+        boolean isOrdered();
+
+        <T, U, S_IN extends BaseStream<T, S_IN>, S_OUT extends BaseStream<U, S_OUT>>
         void run(TestData<T, S_IN> data, Consumer<U> b, Function<S_IN, S_OUT> m);
     }
 
-    public <T, U, S_IN extends BaseStream<T, S_IN>, S_OUT extends BaseStream<U, S_OUT>>
+    protected <T, U, S_IN extends BaseStream<T, S_IN>, S_OUT extends BaseStream<U, S_OUT>>
     Collection<U> exerciseOps(TestData<T, S_IN> data, Function<S_IN, S_OUT> m) {
         return withData(data).stream(m).exercise();
     }
@@ -103,7 +106,7 @@ public abstract class OpTestCase extends LoggingTestCase {
     // Run multiple versions of exercise(), returning the result of the first, and asserting that others return the same result
     // If the first version is s -> s.foo(), can be used with s -> s.mapToInt(i -> i).foo().mapToObj(i -> i) to test all shape variants
     @SafeVarargs
-    public final<T, U, S_IN extends BaseStream<T, S_IN>, S_OUT extends BaseStream<U, S_OUT>>
+    protected final<T, U, S_IN extends BaseStream<T, S_IN>, S_OUT extends BaseStream<U, S_OUT>>
     Collection<U> exerciseOpsMulti(TestData<T, S_IN> data,
                                    Function<S_IN, S_OUT>... ms) {
         Collection<U> result = null;
@@ -121,7 +124,7 @@ public abstract class OpTestCase extends LoggingTestCase {
     // Run multiple versions of exercise() for an Integer stream, returning the result of the first, and asserting that others return the same result
     // Automates the conversion between Stream<Integer> and {Int,Long,Double}Stream and back, so client sites look like you are passing the same
     // lambda four times, but in fact they are four different lambdas since they are transforming four different kinds of streams
-    public final
+    protected final
     Collection<Integer> exerciseOpsInt(TestData.OfRef<Integer> data,
                                        Function<Stream<Integer>, Stream<Integer>> mRef,
                                        Function<IntStream, IntStream> mInt,
@@ -136,30 +139,73 @@ public abstract class OpTestCase extends LoggingTestCase {
         return exerciseOpsMulti(data, ms);
     }
 
-    public <T, U, S_OUT extends BaseStream<U, S_OUT>>
+    // Run multiple versions of exercise() with multiple terminal operations for all kinds of stream, , and asserting against the expected result
+    // If the first version is s -> s.foo(), can be used with s -> s.mapToInt(i -> i).foo().mapToObj(i -> i) to test all shape variants
+    protected final<T, U, R, S_IN extends BaseStream<T, S_IN>, S_OUT extends BaseStream<U, S_OUT>>
+    void exerciseTerminalOpsMulti(TestData<T, S_IN> data,
+                                  R expected,
+                                  Map<String, Function<S_IN, S_OUT>> streams,
+                                  Map<String, Function<S_OUT, R>> terminals) {
+        for (Map.Entry<String, Function<S_IN, S_OUT>> se : streams.entrySet()) {
+            setContext("Intermediate stream", se.getKey());
+            for (Map.Entry<String, Function<S_OUT, R>> te : terminals.entrySet()) {
+                setContext("Terminal stream", te.getKey());
+                withData(data)
+                        .terminal(se.getValue(), te.getValue())
+                        .expectedResult(expected)
+                        .exercise();
+
+            }
+        }
+    }
+
+    // Run multiple versions of exercise() with multiple terminal operation for all kinds of stream, and asserting against the expected result
+    // Automates the conversion between Stream<Integer> and {Int,Long,Double}Stream and back, so client sites look like you are passing the same
+    // lambda four times, but in fact they are four different lambdas since they are transforming four different kinds of streams
+    protected final
+    void exerciseTerminalOpsInt(TestData<Integer, Stream<Integer>> data,
+                                Collection<Integer> expected,
+                                String desc,
+                                Function<Stream<Integer>, Stream<Integer>> mRef,
+                                Function<IntStream, IntStream> mInt,
+                                Function<LongStream, LongStream> mLong,
+                                Function<DoubleStream, DoubleStream> mDouble,
+                                Map<String, Function<Stream<Integer>, Collection<Integer>>> terminals) {
+
+        Map<String, Function<Stream<Integer>, Stream<Integer>>> m = new HashMap<>();
+        m.put("Ref " + desc, mRef);
+        m.put("Int " + desc, s -> mInt.apply(s.mapToInt(e -> e)).mapToObj(e -> e));
+        m.put("Long " + desc, s -> mLong.apply(s.mapToLong(e -> e)).mapToObj(e -> (int) e));
+        m.put("Double " + desc, s -> mDouble.apply(s.mapToDouble(e -> e)).mapToObj(e -> (int) e));
+
+        exerciseTerminalOpsMulti(data, expected, m, terminals);
+    }
+
+
+    protected <T, U, S_OUT extends BaseStream<U, S_OUT>>
     Collection<U> exerciseOps(Collection<T> data, Function<Stream<T>, S_OUT> m) {
         TestData.OfRef<T> data1 = TestData.Factory.ofCollection("Collection of type " + data.getClass().getName(), data);
         return withData(data1).stream(m).exercise();
     }
 
-    public <T, U, S_OUT extends BaseStream<U, S_OUT>, I extends Iterable<U>>
+    protected <T, U, S_OUT extends BaseStream<U, S_OUT>, I extends Iterable<U>>
     Collection<U> exerciseOps(Collection<T> data, Function<Stream<T>, S_OUT> m, I expected) {
         TestData.OfRef<T> data1 = TestData.Factory.ofCollection("Collection of type " + data.getClass().getName(), data);
         return withData(data1).stream(m).expectedResult(expected).exercise();
     }
 
     @SuppressWarnings("unchecked")
-    public <U, S_OUT extends BaseStream<U, S_OUT>>
+    protected <U, S_OUT extends BaseStream<U, S_OUT>>
     Collection<U> exerciseOps(int[] data, Function<IntStream, S_OUT> m) {
         return withData(TestData.Factory.ofArray("int array", data)).stream(m).exercise();
     }
 
-    public Collection<Integer> exerciseOps(int[] data, Function<IntStream, IntStream> m, int[] expected) {
+    protected Collection<Integer> exerciseOps(int[] data, Function<IntStream, IntStream> m, int[] expected) {
         TestData.OfInt data1 = TestData.Factory.ofArray("int array", data);
         return withData(data1).stream(m).expectedResult(expected).exercise();
     }
 
-    public <T, S_IN extends BaseStream<T, S_IN>> DataStreamBuilder<T, S_IN> withData(TestData<T, S_IN> data) {
+    protected <T, S_IN extends BaseStream<T, S_IN>> DataStreamBuilder<T, S_IN> withData(TestData<T, S_IN> data) {
         Objects.requireNonNull(data);
         return new DataStreamBuilder<>(data);
     }
@@ -325,19 +371,19 @@ public abstract class OpTestCase extends LoggingTestCase {
         // Build method
 
         public Collection<U> exercise() {
-            final boolean isOrdered;
+            final boolean isStreamOrdered;
             if (refResult == null) {
                 // Induce the reference result
                 before.accept(data);
                 S_OUT sOut = m.apply(data.stream());
-                isOrdered = StreamOpFlag.ORDERED.isKnown(((AbstractPipeline) sOut).getStreamFlags());
+                isStreamOrdered = StreamOpFlag.ORDERED.isKnown(((AbstractPipeline) sOut).getStreamFlags());
                 Node<U> refNodeResult = ((AbstractPipeline<?, U, ?>) sOut).evaluateToArrayNode(size -> (U[]) new Object[size]);
                 refResult = LambdaTestHelpers.toBoxedList(refNodeResult.spliterator());
                 after.accept(data);
             }
             else {
                 S_OUT sOut = m.apply(data.stream());
-                isOrdered = StreamOpFlag.ORDERED.isKnown(((AbstractPipeline) sOut).getStreamFlags());
+                isStreamOrdered = StreamOpFlag.ORDERED.isKnown(((AbstractPipeline) sOut).getStreamFlags());
             }
 
             List<Error> errors = new ArrayList<>();
@@ -348,7 +394,7 @@ public abstract class OpTestCase extends LoggingTestCase {
                     List<U> result = new ArrayList<>();
                     test.run(data, LambdaTestHelpers.<U>toBoxingConsumer(result::add), m);
 
-                    Runnable asserter = () -> resultAsserter.assertResult(result, refResult, isOrdered, test.isParallel());
+                    Runnable asserter = () -> resultAsserter.assertResult(result, refResult, isStreamOrdered && test.isOrdered(), test.isParallel());
 
                     if (refResult.size() > 1000) {
                         LambdaTestHelpers.launderAssertion(
@@ -406,7 +452,7 @@ public abstract class OpTestCase extends LoggingTestCase {
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    static enum TerminalTestScenario implements BaseTerminalTestScenario {
+    enum TerminalTestScenario implements BaseTerminalTestScenario {
         SINGLE_SEQUENTIAL(true, false),
 
         SINGLE_SEQUENTIAL_SHORT_CIRCUIT(true, false) {
@@ -546,19 +592,19 @@ public abstract class OpTestCase extends LoggingTestCase {
         }
     }
 
-    public <T, R> R exerciseTerminalOps(Collection<T> data, Function<Stream<T>, R> m, R expected) {
+    protected <T, R> R exerciseTerminalOps(Collection<T> data, Function<Stream<T>, R> m, R expected) {
         TestData.OfRef<T> data1
                 = TestData.Factory.ofCollection("Collection of type " + data.getClass().getName(), data);
         return withData(data1).terminal(m).expectedResult(expected).exercise();
     }
 
-    public <T, R, S_IN extends BaseStream<T, S_IN>> R
+    protected <T, R, S_IN extends BaseStream<T, S_IN>> R
     exerciseTerminalOps(TestData<T, S_IN> data,
                         Function<S_IN, R> terminalF) {
         return withData(data).terminal(terminalF).exercise();
     }
 
-    public <T, U, R, S_IN extends BaseStream<T, S_IN>, S_OUT extends BaseStream<U, S_OUT>> R
+    protected <T, U, R, S_IN extends BaseStream<T, S_IN>, S_OUT extends BaseStream<U, S_OUT>> R
     exerciseTerminalOps(TestData<T, S_IN> data,
                         Function<S_IN, S_OUT> streamF,
                         Function<S_OUT, R> terminalF) {

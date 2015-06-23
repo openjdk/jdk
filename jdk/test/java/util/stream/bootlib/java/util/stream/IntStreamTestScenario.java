@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,10 @@
  */
 package java.util.stream;
 
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.PrimitiveIterator;
+import java.util.Set;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -160,12 +163,50 @@ public enum IntStreamTestScenario implements OpTestCase.BaseStreamTestScenario {
             for (int t : pipe2.toArray())
                 b.accept(t);
         }
-    },;
+    },
 
-    private boolean isParallel;
+    // Wrap as parallel stream + forEach synchronizing
+    PAR_STREAM_FOR_EACH(true, false) {
+        <T, S_IN extends BaseStream<T, S_IN>>
+        void _run(TestData<T, S_IN> data, IntConsumer b, Function<S_IN, IntStream> m) {
+            m.apply(data.parallelStream()).forEach(e -> {
+                synchronized (data) {
+                    b.accept(e);
+                }
+            });
+        }
+    },
+
+    // Wrap as parallel stream + forEach synchronizing and clear SIZED flag
+    PAR_STREAM_FOR_EACH_CLEAR_SIZED(true, false) {
+        <T, S_IN extends BaseStream<T, S_IN>>
+        void _run(TestData<T, S_IN> data, IntConsumer b, Function<S_IN, IntStream> m) {
+            S_IN pipe1 = (S_IN) OpTestCase.chain(data.parallelStream(),
+                                                 new FlagDeclaringOp(StreamOpFlag.NOT_SIZED, data.getShape()));
+            m.apply(pipe1).forEach(e -> {
+                synchronized (data) {
+                    b.accept(e);
+                }
+            });
+        }
+    },
+    ;
+
+    // The set of scenarios that clean the SIZED flag
+    public static final Set<IntStreamTestScenario> CLEAR_SIZED_SCENARIOS = Collections.unmodifiableSet(
+            EnumSet.of(PAR_STREAM_TO_ARRAY_CLEAR_SIZED, PAR_STREAM_FOR_EACH_CLEAR_SIZED));
+
+    private final boolean isParallel;
+
+    private final boolean isOrdered;
 
     IntStreamTestScenario(boolean isParallel) {
+        this(isParallel, true);
+    }
+
+    IntStreamTestScenario(boolean isParallel, boolean isOrdered) {
         this.isParallel = isParallel;
+        this.isOrdered = isOrdered;
     }
 
     public StreamShape getShape() {
@@ -174,6 +215,10 @@ public enum IntStreamTestScenario implements OpTestCase.BaseStreamTestScenario {
 
     public boolean isParallel() {
         return isParallel;
+    }
+
+    public boolean isOrdered() {
+        return isOrdered;
     }
 
     public <T, U, S_IN extends BaseStream<T, S_IN>, S_OUT extends BaseStream<U, S_OUT>>
