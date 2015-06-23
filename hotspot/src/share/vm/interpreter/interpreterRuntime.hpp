@@ -183,6 +183,8 @@ class InterpreterRuntime: AllStatic {
 # include "interpreterRT_aarch64.hpp"
 #endif
 
+  // optional normalization of fingerprints to reduce the number of adapters
+  static uint64_t normalize_fast_native_fingerprint(uint64_t fingerprint);
 
   // Interpreter's frequency counter overflow
   static nmethod* frequency_counter_overflow(JavaThread* thread, address branch_bcp);
