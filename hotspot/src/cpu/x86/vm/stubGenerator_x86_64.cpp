@@ -382,7 +382,12 @@ class StubGenerator: public StubCodeGenerator {
 
     // restore regs belonging to calling function
 #ifdef _WIN64
-    for (int i = 15; i >= 6; i--) {
+    int xmm_ub = 15;
+    if (UseAVX > 2) {
+      xmm_ub = 31;
+    }
+    // emit the restores for xmm regs
+    for (int i = 6; i <= xmm_ub; i++) {
       __ movdqu(as_XMMRegister(i), xmm_save(i));
     }
 #endif
