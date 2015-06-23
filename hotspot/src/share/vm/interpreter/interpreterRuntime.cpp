@@ -26,6 +26,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -1129,6 +1130,14 @@ IRT_END
 
 // Implementation of SignatureHandlerLibrary
 
+#ifndef SHARING_FAST_NATIVE_FINGERPRINTS
+// Dummy definition (else normalization method is defined in CPU
+// dependant code)
+uint64_t InterpreterRuntime::normalize_fast_native_fingerprint(uint64_t fingerprint) {
+  return fingerprint;
+}
+#endif
+
 address SignatureHandlerLibrary::set_handler_blob() {
   BufferBlob* handler_blob = BufferBlob::create("native signature handlers", blob_size);
   if (handler_blob == NULL) {
@@ -1184,6 +1193,8 @@ void SignatureHandlerLibrary::add(methodHandle method) {
       initialize();
       // lookup method signature's fingerprint
       uint64_t fingerprint = Fingerprinter(method).fingerprint();
+      // allow CPU dependant code to optimize the fingerprints for the fast handler
+      fingerprint = InterpreterRuntime::normalize_fast_native_fingerprint(fingerprint);
       handler_index = _fingerprints->find(fingerprint);
       // create handler if necessary
       if (handler_index < 0) {
@@ -1209,13 +1220,18 @@ void SignatureHandlerLibrary::add(methodHandle method) {
                           buffer.insts_size());
             Disassembler::decode(handler, handler + buffer.insts_size());
 #ifndef PRODUCT
-            tty->print_cr(" --- associated result handler ---");
             address rh_begin = Interpreter::result_handler(method()->result_type());
-            address rh_end = rh_begin;
-            while (*(int*)rh_end != 0) {
-              rh_end += sizeof(int);
+            if (CodeCache::contains(rh_begin)) {
+              // else it might be special platform dependent values
+              tty->print_cr(" --- associated result handler ---");
+              address rh_end = rh_begin;
+              while (*(int*)rh_end != 0) {
+                rh_end += sizeof(int);
+              }
+              Disassembler::decode(rh_begin, rh_end);
+            } else {
+              tty->print_cr(" associated result handler: " PTR_FORMAT, p2i(rh_begin));
             }
-            Disassembler::decode(rh_begin, rh_end);
 #endif
           }
           // add handler to library
@@ -1227,13 +1243,13 @@ void SignatureHandlerLibrary::add(methodHandle method) {
         }
       }
       // Set handler under SignatureHandlerLibrary_lock
-    if (handler_index < 0) {
-      // use generic signature handler
-      method->set_signature_handler(Interpreter::slow_signature_handler());
-    } else {
-      // set handler
-      method->set_signature_handler(_handlers->at(handler_index));
-    }
+      if (handler_index < 0) {
+        // use generic signature handler
+        method->set_signature_handler(Interpreter::slow_signature_handler());
+      } else {
+        // set handler
+        method->set_signature_handler(_handlers->at(handler_index));
+      }
     } else {
       CHECK_UNHANDLED_OOPS_ONLY(Thread::current()->clear_unhandled_oops());
       // use generic signature handler
@@ -1250,9 +1266,11 @@ void SignatureHandlerLibrary::add(methodHandle method) {
     // have to protect this read access here with the same mutex as well!
     MutexLocker mu(SignatureHandlerLibrary_lock);
     if (_handlers != NULL) {
-    handler_index = _handlers->find(method->signature_handler());
-    fingerprint_index = _fingerprints->find(Fingerprinter(method).fingerprint());
-  }
+      handler_index = _handlers->find(method->signature_handler());
+      uint64_t fingerprint = Fingerprinter(method).fingerprint();
+      fingerprint = InterpreterRuntime::normalize_fast_native_fingerprint(fingerprint);
+      fingerprint_index = _fingerprints->find(fingerprint);
+    }
   }
   assert(method->signature_handler() == Interpreter::slow_signature_handler() ||
          handler_index == fingerprint_index, "sanity check");
