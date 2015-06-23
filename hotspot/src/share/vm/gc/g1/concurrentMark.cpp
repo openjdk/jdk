@@ -1179,6 +1179,8 @@ public:
 };
 
 void ConcurrentMark::scanRootRegions() {
+  double scan_start = os::elapsedTime();
+
   // Start of concurrent marking.
   ClassLoaderDataGraph::clear_claimed_marks();
 
@@ -1186,6 +1188,11 @@ void ConcurrentMark::scanRootRegions() {
   // at least one root region to scan. So, if it's false, we
   // should not attempt to do any further work.
   if (root_regions()->scan_in_progress()) {
+    if (G1Log::fine()) {
+      gclog_or_tty->gclog_stamp(concurrent_gc_id());
+      gclog_or_tty->print_cr("[GC concurrent-root-region-scan-start]");
+    }
+
     _parallel_marking_threads = calc_parallel_marking_threads();
     assert(parallel_marking_threads() <= max_parallel_marking_threads(),
            "Maximum number of marking threads exceeded");
@@ -1194,6 +1201,11 @@ void ConcurrentMark::scanRootRegions() {
     CMRootRegionScanTask task(this);
     _parallel_workers->set_active_workers(active_workers);
     _parallel_workers->run_task(&task);
+
+    if (G1Log::fine()) {
+      gclog_or_tty->gclog_stamp(concurrent_gc_id());
+      gclog_or_tty->print_cr("[GC concurrent-root-region-scan-end, %1.7lf secs]", os::elapsedTime() - scan_start);
+    }
 
     // It's possible that has_aborted() is true here without actually
     // aborting the survivor scan earlier. This is OK as it's
@@ -2993,6 +3005,11 @@ void ConcurrentMark::print_stats() {
 
 // abandon current marking iteration due to a Full GC
 void ConcurrentMark::abort() {
+  if (!cmThread()->during_cycle() || _has_aborted) {
+    // We haven't started a concurrent cycle or we have already aborted it. No need to do anything.
+    return;
+  }
+
   // Clear all marks in the next bitmap for the next marking cycle. This will allow us to skip the next
   // concurrent bitmap clearing.
   _nextMarkBitMap->clearAll();
@@ -3010,12 +3027,8 @@ void ConcurrentMark::abort() {
   }
   _first_overflow_barrier_sync.abort();
   _second_overflow_barrier_sync.abort();
-  const GCId& gc_id = _g1h->gc_tracer_cm()->gc_id();
-  if (!gc_id.is_undefined()) {
-    // We can do multiple full GCs before ConcurrentMarkThread::run() gets a chance
-    // to detect that it was aborted. Only keep track of the first GC id that we aborted.
-    _aborted_gc_id = gc_id;
-   }
+  _aborted_gc_id = _g1h->gc_tracer_cm()->gc_id();
+  assert(!_aborted_gc_id.is_undefined(), "ConcurrentMark::abort() executed more than once?");
   _has_aborted = true;
 
   SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();

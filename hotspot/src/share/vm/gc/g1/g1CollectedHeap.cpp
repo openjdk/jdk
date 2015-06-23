@@ -3867,6 +3867,21 @@ void G1CollectedHeap::log_gc_footer(double pause_time_sec) {
   gclog_or_tty->flush();
 }
 
+void G1CollectedHeap::wait_for_root_region_scanning() {
+  double scan_wait_start = os::elapsedTime();
+  // We have to wait until the CM threads finish scanning the
+  // root regions as it's the only way to ensure that all the
+  // objects on them have been correctly scanned before we start
+  // moving them during the GC.
+  bool waited = _cm->root_regions()->wait_until_scan_finished();
+  double wait_time_ms = 0.0;
+  if (waited) {
+    double scan_wait_end = os::elapsedTime();
+    wait_time_ms = (scan_wait_end - scan_wait_start) * 1000.0;
+  }
+  g1_policy()->phase_times()->record_root_region_scan_wait_time(wait_time_ms);
+}
+
 bool
 G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
   assert_at_safepoint(true /* should_be_vm_thread */);
@@ -3882,6 +3897,8 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
   SvcGCMarker sgcm(SvcGCMarker::MINOR);
   ResourceMark rm;
+
+  wait_for_root_region_scanning();
 
   G1Log::update_level();
   print_heap_before_gc();
@@ -4003,19 +4020,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 #endif // YOUNG_LIST_VERBOSE
 
         g1_policy()->record_collection_pause_start(sample_start_time_sec);
-
-        double scan_wait_start = os::elapsedTime();
-        // We have to wait until the CM threads finish scanning the
-        // root regions as it's the only way to ensure that all the
-        // objects on them have been correctly scanned before we start
-        // moving them during the GC.
-        bool waited = _cm->root_regions()->wait_until_scan_finished();
-        double wait_time_ms = 0.0;
-        if (waited) {
-          double scan_wait_end = os::elapsedTime();
-          wait_time_ms = (scan_wait_end - scan_wait_start) * 1000.0;
-        }
-        g1_policy()->phase_times()->record_root_region_scan_wait_time(wait_time_ms);
 
 #if YOUNG_LIST_VERBOSE
         gclog_or_tty->print_cr("\nAfter recording pause start.\nYoung_list:");
