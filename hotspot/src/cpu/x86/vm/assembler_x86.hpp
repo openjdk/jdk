@@ -661,6 +661,14 @@ private:
                vector_len, no_mask_reg);
   }
 
+  void vex_prefix_0F38_legacy(Register dst, Register nds, Address src, bool no_mask_reg = false) {
+    bool vex_w = false;
+    int vector_len = AVX_128bit;
+    vex_prefix(src, nds->encoding(), dst->encoding(),
+               VEX_SIMD_NONE, VEX_OPCODE_0F_38, vex_w,
+               vector_len, true, no_mask_reg);
+  }
+
   void vex_prefix_0F38_q(Register dst, Register nds, Address src, bool no_mask_reg = false) {
     bool vex_w = true;
     int vector_len = AVX_128bit;
@@ -668,6 +676,15 @@ private:
                VEX_SIMD_NONE, VEX_OPCODE_0F_38, vex_w,
                vector_len, no_mask_reg);
   }
+
+  void vex_prefix_0F38_q_legacy(Register dst, Register nds, Address src, bool no_mask_reg = false) {
+    bool vex_w = true;
+    int vector_len = AVX_128bit;
+    vex_prefix(src, nds->encoding(), dst->encoding(),
+               VEX_SIMD_NONE, VEX_OPCODE_0F_38, vex_w,
+               vector_len, true, no_mask_reg);
+  }
+
   int  vex_prefix_and_encode(int dst_enc, int nds_enc, int src_enc,
                              VexSimdPrefix pre, VexOpcode opc,
                              bool vex_w, int vector_len,
@@ -680,6 +697,15 @@ private:
                                  VEX_SIMD_NONE, VEX_OPCODE_0F_38, vex_w, vector_len,
                                  false, no_mask_reg);
   }
+
+  int  vex_prefix_0F38_and_encode_legacy(Register dst, Register nds, Register src, bool no_mask_reg = false) {
+    bool vex_w = false;
+    int vector_len = AVX_128bit;
+    return vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(),
+      VEX_SIMD_NONE, VEX_OPCODE_0F_38, vex_w, vector_len,
+      true, no_mask_reg);
+  }
+
   int  vex_prefix_0F38_and_encode_q(Register dst, Register nds, Register src, bool no_mask_reg = false) {
     bool vex_w = true;
     int vector_len = AVX_128bit;
@@ -687,6 +713,15 @@ private:
                                  VEX_SIMD_NONE, VEX_OPCODE_0F_38, vex_w, vector_len,
                                  false, no_mask_reg);
   }
+
+  int  vex_prefix_0F38_and_encode_q_legacy(Register dst, Register nds, Register src, bool no_mask_reg = false) {
+    bool vex_w = true;
+    int vector_len = AVX_128bit;
+    return vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(),
+                                 VEX_SIMD_NONE, VEX_OPCODE_0F_38, vex_w, vector_len,
+                                 true, no_mask_reg);
+  }
+
   int  vex_prefix_and_encode(XMMRegister dst, XMMRegister nds, XMMRegister src,
                              VexSimdPrefix pre, int vector_len = AVX_128bit,
                              VexOpcode opc = VEX_OPCODE_0F, bool legacy_mode = false,
@@ -2026,8 +2061,25 @@ private:
   // duplicate 4-bytes integer data from src into 8 locations in dest
   void vpbroadcastd(XMMRegister dst, XMMRegister src);
 
-  // duplicate 4-bytes integer data from src into vector_len locations in dest
+  // duplicate n-bytes integer data from src into vector_len locations in dest
+  void evpbroadcastb(XMMRegister dst, XMMRegister src, int vector_len);
+  void evpbroadcastb(XMMRegister dst, Address src, int vector_len);
+  void evpbroadcastw(XMMRegister dst, XMMRegister src, int vector_len);
+  void evpbroadcastw(XMMRegister dst, Address src, int vector_len);
   void evpbroadcastd(XMMRegister dst, XMMRegister src, int vector_len);
+  void evpbroadcastd(XMMRegister dst, Address src, int vector_len);
+  void evpbroadcastq(XMMRegister dst, XMMRegister src, int vector_len);
+  void evpbroadcastq(XMMRegister dst, Address src, int vector_len);
+
+  void evpbroadcastss(XMMRegister dst, XMMRegister src, int vector_len);
+  void evpbroadcastss(XMMRegister dst, Address src, int vector_len);
+  void evpbroadcastsd(XMMRegister dst, XMMRegister src, int vector_len);
+  void evpbroadcastsd(XMMRegister dst, Address src, int vector_len);
+
+  void evpbroadcastb(XMMRegister dst, Register src, int vector_len);
+  void evpbroadcastw(XMMRegister dst, Register src, int vector_len);
+  void evpbroadcastd(XMMRegister dst, Register src, int vector_len);
+  void evpbroadcastq(XMMRegister dst, Register src, int vector_len);
 
   // Carry-Less Multiplication Quadword
   void pclmulqdq(XMMRegister dst, XMMRegister src, int mask);
