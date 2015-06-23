@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "memory/metaspaceShared.hpp"
+#include "prims/jvm.h"
 #include "utilities/numberSeq.hpp"
 #include <sys/stat.h>
 
@@ -343,8 +344,10 @@ void HashtableTextDump::quit(const char* err, const char* msg) {
 }
 
 void HashtableTextDump::corrupted(const char *p, const char* msg) {
-  char info[60];
-  sprintf(info, "%s. Corrupted at line %d (file pos %d)", msg, _line_no, (int)(p - _base));
+  char info[100];
+  jio_snprintf(info, sizeof(info),
+               "%s. Corrupted at line %d (file pos %d)",
+               msg, _line_no, (int)(p - _base));
   quit(info, _filename);
 }
 
