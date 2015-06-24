@@ -1397,7 +1397,7 @@ void CodeCache::print_codelist(outputStream* st) {
     nmethod* nm = iter.method();
     ResourceMark rm;
     char *method_name = nm->method()->name_and_sig_as_C_string();
-    st->print_cr("%d %d %s ["INTPTR_FORMAT", "INTPTR_FORMAT" - "INTPTR_FORMAT"]",
+    st->print_cr("%d %d %s [" INTPTR_FORMAT ", " INTPTR_FORMAT " - " INTPTR_FORMAT "]",
                  nm->compile_id(), nm->comp_level(), method_name, (intptr_t)nm->header_begin(),
                  (intptr_t)nm->code_begin(), (intptr_t)nm->code_end());
   }

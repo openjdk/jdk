@@ -688,18 +688,18 @@ void ConcurrentMarkSweepGeneration::printOccupancy(const char *s) {
            "The CMS generation should be the old generation");
     uint level = 1;
     if (Verbose) {
-      gclog_or_tty->print("[%u %s-%s: "SIZE_FORMAT"("SIZE_FORMAT")]",
+      gclog_or_tty->print("[%u %s-%s: " SIZE_FORMAT "(" SIZE_FORMAT ")]",
         level, short_name(), s, used(), capacity());
     } else {
-      gclog_or_tty->print("[%u %s-%s: "SIZE_FORMAT"K("SIZE_FORMAT"K)]",
+      gclog_or_tty->print("[%u %s-%s: " SIZE_FORMAT "K(" SIZE_FORMAT "K)]",
         level, short_name(), s, used() / K, capacity() / K);
     }
   }
   if (Verbose) {
-    gclog_or_tty->print(" "SIZE_FORMAT"("SIZE_FORMAT")",
+    gclog_or_tty->print(" " SIZE_FORMAT "(" SIZE_FORMAT ")",
               gch->used(), gch->capacity());
   } else {
-    gclog_or_tty->print(" "SIZE_FORMAT"K("SIZE_FORMAT"K)",
+    gclog_or_tty->print(" " SIZE_FORMAT "K(" SIZE_FORMAT "K)",
               gch->used() / K, gch->capacity() / K);
   }
 }
@@ -729,8 +729,8 @@ bool ConcurrentMarkSweepGeneration::promotion_attempt_is_safe(size_t max_promoti
   bool   res = (available >= av_promo) || (available >= max_promotion_in_bytes);
   if (Verbose && PrintGCDetails) {
     gclog_or_tty->print_cr(
-      "CMS: promo attempt is%s safe: available("SIZE_FORMAT") %s av_promo("SIZE_FORMAT"),"
-      "max_promo("SIZE_FORMAT")",
+      "CMS: promo attempt is%s safe: available(" SIZE_FORMAT ") %s av_promo(" SIZE_FORMAT "),"
+      "max_promo(" SIZE_FORMAT ")",
       res? "":" not", available, res? ">=":"<",
       av_promo, max_promotion_in_bytes);
   }
@@ -805,18 +805,18 @@ void ConcurrentMarkSweepGeneration::compute_new_size_free_list() {
               desired_free_percentage);
       gclog_or_tty->print_cr("  Maximum free fraction %f",
               maximum_free_percentage);
-      gclog_or_tty->print_cr("  Capacity "SIZE_FORMAT, capacity()/1000);
-      gclog_or_tty->print_cr("  Desired capacity "SIZE_FORMAT,
+      gclog_or_tty->print_cr("  Capacity " SIZE_FORMAT, capacity()/1000);
+      gclog_or_tty->print_cr("  Desired capacity " SIZE_FORMAT,
               desired_capacity/1000);
       GenCollectedHeap* gch = GenCollectedHeap::heap();
       assert(gch->is_old_gen(this), "The CMS generation should always be the old generation");
       size_t young_size = gch->young_gen()->capacity();
       gclog_or_tty->print_cr("  Young gen size " SIZE_FORMAT, young_size / 1000);
-      gclog_or_tty->print_cr("  unsafe_max_alloc_nogc "SIZE_FORMAT,
+      gclog_or_tty->print_cr("  unsafe_max_alloc_nogc " SIZE_FORMAT,
               unsafe_max_alloc_nogc()/1000);
-      gclog_or_tty->print_cr("  contiguous available "SIZE_FORMAT,
+      gclog_or_tty->print_cr("  contiguous available " SIZE_FORMAT,
               contiguous_available()/1000);
-      gclog_or_tty->print_cr("  Expand by "SIZE_FORMAT" (bytes)",
+      gclog_or_tty->print_cr("  Expand by " SIZE_FORMAT " (bytes)",
               expand_bytes);
     }
     // safe if expansion fails
@@ -1182,8 +1182,8 @@ bool CMSCollector::shouldConcurrentCollect() {
     stats().print_on(gclog_or_tty);
     gclog_or_tty->print_cr("time_until_cms_gen_full %3.7f",
       stats().time_until_cms_gen_full());
-    gclog_or_tty->print_cr("free="SIZE_FORMAT, _cmsGen->free());
-    gclog_or_tty->print_cr("contiguous_available="SIZE_FORMAT,
+    gclog_or_tty->print_cr("free=" SIZE_FORMAT, _cmsGen->free());
+    gclog_or_tty->print_cr("contiguous_available=" SIZE_FORMAT,
                            _cmsGen->contiguous_available());
     gclog_or_tty->print_cr("promotion_rate=%g", stats().promotion_rate());
     gclog_or_tty->print_cr("cms_allocation_rate=%g", stats().cms_allocation_rate());
@@ -2160,8 +2160,8 @@ void ConcurrentMarkSweepGeneration::gc_prologue_work(bool full,
     assert(_numObjectsPromoted == 0, "check");
     assert(_numWordsPromoted   == 0, "check");
     if (Verbose && PrintGC) {
-      gclog_or_tty->print("Allocated "SIZE_FORMAT" objects, "
-                          SIZE_FORMAT" bytes concurrently",
+      gclog_or_tty->print("Allocated " SIZE_FORMAT " objects, "
+                          SIZE_FORMAT " bytes concurrently",
       _numObjectsAllocated, _numWordsAllocated*sizeof(HeapWord));
     }
     _numObjectsAllocated = 0;
@@ -2241,8 +2241,8 @@ void ConcurrentMarkSweepGeneration::gc_epilogue_work(bool full) {
     assert(_numObjectsAllocated == 0, "check");
     assert(_numWordsAllocated == 0, "check");
     if (Verbose && PrintGC) {
-      gclog_or_tty->print("Promoted "SIZE_FORMAT" objects, "
-                          SIZE_FORMAT" bytes",
+      gclog_or_tty->print("Promoted " SIZE_FORMAT " objects, "
+                          SIZE_FORMAT " bytes",
                  _numObjectsPromoted, _numWordsPromoted*sizeof(HeapWord));
     }
     _numObjectsPromoted = 0;
@@ -2252,7 +2252,7 @@ void ConcurrentMarkSweepGeneration::gc_epilogue_work(bool full) {
   if (PrintGC && Verbose) {
     // Call down the chain in contiguous_available needs the freelistLock
     // so print this out before releasing the freeListLock.
-    gclog_or_tty->print(" Contiguous available "SIZE_FORMAT" bytes ",
+    gclog_or_tty->print(" Contiguous available " SIZE_FORMAT " bytes ",
                         contiguous_available());
   }
 }
@@ -2340,7 +2340,7 @@ class VerifyMarkedClosure: public BitMapClosure {
     HeapWord* addr = _marks->offsetToHeapWord(offset);
     if (!_marks->isMarked(addr)) {
       oop(addr)->print_on(gclog_or_tty);
-      gclog_or_tty->print_cr(" ("INTPTR_FORMAT" should have been marked)", p2i(addr));
+      gclog_or_tty->print_cr(" (" INTPTR_FORMAT " should have been marked)", p2i(addr));
       _failed = true;
     }
     return true;
@@ -4269,7 +4269,7 @@ void CMSCollector::checkpointRootsFinal() {
   verify_overflow_empty();
 
   if (PrintGCDetails) {
-    gclog_or_tty->print("[YG occupancy: "SIZE_FORMAT" K ("SIZE_FORMAT" K)]",
+    gclog_or_tty->print("[YG occupancy: " SIZE_FORMAT " K (" SIZE_FORMAT " K)]",
                         _young_gen->used() / K,
                         _young_gen->capacity() / K);
   }
@@ -4381,8 +4381,8 @@ void CMSCollector::checkpointRootsFinalWork() {
   if (ser_ovflw > 0) {
     if (PrintCMSStatistics != 0) {
       gclog_or_tty->print_cr("Marking stack overflow (benign) "
-        "(pmc_pc="SIZE_FORMAT", pmc_rm="SIZE_FORMAT", kac="SIZE_FORMAT
-        ", kac_preclean="SIZE_FORMAT")",
+        "(pmc_pc=" SIZE_FORMAT ", pmc_rm=" SIZE_FORMAT ", kac=" SIZE_FORMAT
+        ", kac_preclean=" SIZE_FORMAT ")",
         _ser_pmc_preclean_ovflw, _ser_pmc_remark_ovflw,
         _ser_kac_ovflw, _ser_kac_preclean_ovflw);
     }
@@ -4395,7 +4395,7 @@ void CMSCollector::checkpointRootsFinalWork() {
   if (_par_pmc_remark_ovflw > 0 || _par_kac_ovflw > 0) {
     if (PrintCMSStatistics != 0) {
       gclog_or_tty->print_cr("Work queue overflow (benign) "
-        "(pmc_rm="SIZE_FORMAT", kac="SIZE_FORMAT")",
+        "(pmc_rm=" SIZE_FORMAT ", kac=" SIZE_FORMAT ")",
         _par_pmc_remark_ovflw, _par_kac_ovflw);
     }
     _par_pmc_remark_ovflw = 0;
@@ -4403,12 +4403,12 @@ void CMSCollector::checkpointRootsFinalWork() {
   }
   if (PrintCMSStatistics != 0) {
      if (_markStack._hit_limit > 0) {
-       gclog_or_tty->print_cr(" (benign) Hit max stack size limit ("SIZE_FORMAT")",
+       gclog_or_tty->print_cr(" (benign) Hit max stack size limit (" SIZE_FORMAT ")",
                               _markStack._hit_limit);
      }
      if (_markStack._failed_double > 0) {
-       gclog_or_tty->print_cr(" (benign) Failed stack doubling ("SIZE_FORMAT"),"
-                              " current capacity "SIZE_FORMAT,
+       gclog_or_tty->print_cr(" (benign) Failed stack doubling (" SIZE_FORMAT "),"
+                              " current capacity " SIZE_FORMAT,
                               _markStack._failed_double,
                               _markStack.capacity());
      }
@@ -5161,7 +5161,7 @@ void CMSCollector::do_remark_non_parallel() {
                                                &markFromDirtyCardsClosure);
       verify_work_stacks_empty();
       if (PrintCMSStatistics != 0) {
-        gclog_or_tty->print(" (re-scanned "SIZE_FORMAT" dirty cards in cms gen) ",
+        gclog_or_tty->print(" (re-scanned " SIZE_FORMAT " dirty cards in cms gen) ",
           markFromDirtyCardsClosure.num_dirty_cards());
       }
     }
@@ -6035,8 +6035,8 @@ void CMSMarkStack::expand() {
   } else if (_failed_double++ == 0 && !CMSConcurrentMTEnabled && PrintGCDetails) {
     // Failed to double capacity, continue;
     // we print a detail message only once per CMS cycle.
-    gclog_or_tty->print(" (benign) Failed to expand marking stack from "SIZE_FORMAT"K to "
-            SIZE_FORMAT"K",
+    gclog_or_tty->print(" (benign) Failed to expand marking stack from " SIZE_FORMAT "K to "
+            SIZE_FORMAT "K",
             _capacity / K, new_capacity / K);
   }
 }
@@ -7335,25 +7335,25 @@ SweepClosure::~SweepClosure() {
     ShouldNotReachHere();
   }
   if (Verbose && PrintGC) {
-    gclog_or_tty->print("Collected "SIZE_FORMAT" objects, " SIZE_FORMAT " bytes",
+    gclog_or_tty->print("Collected " SIZE_FORMAT " objects, " SIZE_FORMAT " bytes",
                         _numObjectsFreed, _numWordsFreed*sizeof(HeapWord));
-    gclog_or_tty->print_cr("\nLive "SIZE_FORMAT" objects,  "
-                           SIZE_FORMAT" bytes  "
-      "Already free "SIZE_FORMAT" objects, "SIZE_FORMAT" bytes",
+    gclog_or_tty->print_cr("\nLive " SIZE_FORMAT " objects,  "
+                           SIZE_FORMAT " bytes  "
+      "Already free " SIZE_FORMAT " objects, " SIZE_FORMAT " bytes",
       _numObjectsLive, _numWordsLive*sizeof(HeapWord),
       _numObjectsAlreadyFree, _numWordsAlreadyFree*sizeof(HeapWord));
     size_t totalBytes = (_numWordsFreed + _numWordsLive + _numWordsAlreadyFree)
                         * sizeof(HeapWord);
-    gclog_or_tty->print_cr("Total sweep: "SIZE_FORMAT" bytes", totalBytes);
+    gclog_or_tty->print_cr("Total sweep: " SIZE_FORMAT " bytes", totalBytes);
 
     if (PrintCMSStatistics && CMSVerifyReturnedBytes) {
       size_t indexListReturnedBytes = _sp->sumIndexedFreeListArrayReturnedBytes();
       size_t dict_returned_bytes = _sp->dictionary()->sum_dict_returned_bytes();
       size_t returned_bytes = indexListReturnedBytes + dict_returned_bytes;
-      gclog_or_tty->print("Returned "SIZE_FORMAT" bytes", returned_bytes);
-      gclog_or_tty->print("   Indexed List Returned "SIZE_FORMAT" bytes",
+      gclog_or_tty->print("Returned " SIZE_FORMAT " bytes", returned_bytes);
+      gclog_or_tty->print("   Indexed List Returned " SIZE_FORMAT " bytes",
         indexListReturnedBytes);
-      gclog_or_tty->print_cr("        Dictionary Returned "SIZE_FORMAT" bytes",
+      gclog_or_tty->print_cr("        Dictionary Returned " SIZE_FORMAT " bytes",
         dict_returned_bytes);
     }
   }
@@ -7432,12 +7432,12 @@ size_t SweepClosure::do_blk_careful(HeapWord* addr) {
     // coalesced chunk to the appropriate free list.
     if (inFreeRange()) {
       assert(freeFinger() >= _sp->bottom() && freeFinger() < _limit,
-             err_msg("freeFinger() " PTR_FORMAT" is out-of-bounds", p2i(freeFinger())));
+             err_msg("freeFinger() " PTR_FORMAT " is out-of-bounds", p2i(freeFinger())));
       flush_cur_free_chunk(freeFinger(),
                            pointer_delta(addr, freeFinger()));
       if (CMSTraceSweeper) {
         gclog_or_tty->print("Sweep: last chunk: ");
-        gclog_or_tty->print("put_free_blk " PTR_FORMAT " ("SIZE_FORMAT") "
+        gclog_or_tty->print("put_free_blk " PTR_FORMAT " (" SIZE_FORMAT ") "
                    "[coalesced:%d]\n",
                    p2i(freeFinger()), pointer_delta(addr, freeFinger()),
                    lastFreeRangeCoalesced() ? 1 : 0);

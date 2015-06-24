@@ -47,7 +47,7 @@ void oopDesc::print_on(outputStream* st) const {
 
 void oopDesc::print_address_on(outputStream* st) const {
   if (PrintOopAddress) {
-    st->print("{"INTPTR_FORMAT"}", this);
+    st->print("{" INTPTR_FORMAT "}", this);
   }
 }
 

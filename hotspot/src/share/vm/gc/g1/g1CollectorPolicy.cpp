@@ -184,7 +184,7 @@ G1CollectorPolicy::G1CollectorPolicy() :
   const size_t region_size = HeapRegion::GrainWords;
   if (YoungPLABSize > region_size || OldPLABSize > region_size) {
     char buffer[128];
-    jio_snprintf(buffer, sizeof(buffer), "%sPLABSize should be at most "SIZE_FORMAT,
+    jio_snprintf(buffer, sizeof(buffer), "%sPLABSize should be at most " SIZE_FORMAT,
                  OldPLABSize > region_size ? "Old" : "Young", region_size);
     vm_exit_during_initialization(buffer);
   }
@@ -821,7 +821,7 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec) {
   update_survivors_policy();
 
   assert(_g1->used() == _g1->recalculate_used(),
-         err_msg("sanity, used: "SIZE_FORMAT" recalculate_used: "SIZE_FORMAT,
+         err_msg("sanity, used: " SIZE_FORMAT " recalculate_used: " SIZE_FORMAT,
                  _g1->used(), _g1->recalculate_used()));
 
   double s_w_t_ms = (start_time_sec - _stop_world_start) * 1000.0;
@@ -1216,10 +1216,10 @@ void G1CollectorPolicy::print_detailed_heap_transition(bool full) {
     (_young_list_target_length * HeapRegion::GrainBytes) - survivor_used_bytes_after_gc;
 
   gclog_or_tty->print(
-    "   [Eden: "EXT_SIZE_FORMAT"("EXT_SIZE_FORMAT")->"EXT_SIZE_FORMAT"("EXT_SIZE_FORMAT") "
-    "Survivors: "EXT_SIZE_FORMAT"->"EXT_SIZE_FORMAT" "
-    "Heap: "EXT_SIZE_FORMAT"("EXT_SIZE_FORMAT")->"
-    EXT_SIZE_FORMAT"("EXT_SIZE_FORMAT")]",
+    "   [Eden: " EXT_SIZE_FORMAT "(" EXT_SIZE_FORMAT ")->" EXT_SIZE_FORMAT "(" EXT_SIZE_FORMAT ") "
+    "Survivors: " EXT_SIZE_FORMAT "->" EXT_SIZE_FORMAT " "
+    "Heap: " EXT_SIZE_FORMAT "(" EXT_SIZE_FORMAT ")->"
+    EXT_SIZE_FORMAT "(" EXT_SIZE_FORMAT ")]",
     EXT_SIZE_PARAMS(_eden_used_bytes_before_gc),
     EXT_SIZE_PARAMS(_eden_capacity_bytes_before_gc),
     EXT_SIZE_PARAMS(eden_used_bytes_after_gc),
@@ -1787,7 +1787,7 @@ void G1CollectorPolicy::print_collection_set(HeapRegion* list_head, outputStream
   while (csr != NULL) {
     HeapRegion* next = csr->next_in_collection_set();
     assert(csr->in_collection_set(), "bad CS");
-    st->print_cr("  "HR_FORMAT", P: "PTR_FORMAT "N: "PTR_FORMAT", age: %4d",
+    st->print_cr("  " HR_FORMAT ", P: " PTR_FORMAT "N: " PTR_FORMAT ", age: %4d",
                  HR_FORMAT_PARAMS(csr),
                  p2i(csr->prev_top_at_mark_start()), p2i(csr->next_top_at_mark_start()),
                  csr->age_in_surv_rate_group_cond());

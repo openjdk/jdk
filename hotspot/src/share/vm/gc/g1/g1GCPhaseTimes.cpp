@@ -331,7 +331,7 @@ void G1GCPhaseTimes::print_stats(int level, const char* str, double value) {
 }
 
 void G1GCPhaseTimes::print_stats(int level, const char* str, size_t value) {
-  LineBuffer(level).append_and_print_cr("[%s: "SIZE_FORMAT"]", str, value);
+  LineBuffer(level).append_and_print_cr("[%s: " SIZE_FORMAT "]", str, value);
 }
 
 void G1GCPhaseTimes::print_stats(int level, const char* str, double value, uint workers) {
@@ -451,7 +451,7 @@ class G1GCParPhasePrinter : public StackObj {
 
     if (phase->_thread_work_items != NULL) {
       LineBuffer buf2(phase->_thread_work_items->_indent_level);
-      buf2.append_and_print_cr("[%s:  "SIZE_FORMAT"]", phase->_thread_work_items->_title, _phase_times->sum_thread_work_items(phase_id));
+      buf2.append_and_print_cr("[%s:  " SIZE_FORMAT "]", phase->_thread_work_items->_title, _phase_times->sum_thread_work_items(phase_id));
     }
   }
 

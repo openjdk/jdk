@@ -186,7 +186,7 @@ uint ImplicitExceptionTable::at( uint exec_off ) const {
 void ImplicitExceptionTable::print(address base) const {
   tty->print("{");
   for( uint i=0; i<len(); i++ )
-    tty->print("< "INTPTR_FORMAT", "INTPTR_FORMAT" > ",base + *adr(i), base + *(adr(i)+1));
+    tty->print("< " INTPTR_FORMAT ", " INTPTR_FORMAT " > ",base + *adr(i), base + *(adr(i)+1));
   tty->print_cr("}");
 }
 
