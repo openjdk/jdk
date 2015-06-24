@@ -94,6 +94,13 @@ public abstract class OpTestCase extends LoggingTestCase {
 
         boolean isOrdered();
 
+        default <T, S_IN extends BaseStream<T, S_IN>>
+        S_IN getStream(TestData<T, S_IN> data) {
+            return isParallel()
+                   ? data.parallelStream()
+                   : data.stream();
+        }
+
         <T, U, S_IN extends BaseStream<T, S_IN>, S_OUT extends BaseStream<U, S_OUT>>
         void run(TestData<T, S_IN> data, Consumer<U> b, Function<S_IN, S_OUT> m);
     }
@@ -375,15 +382,17 @@ public abstract class OpTestCase extends LoggingTestCase {
             if (refResult == null) {
                 // Induce the reference result
                 before.accept(data);
-                S_OUT sOut = m.apply(data.stream());
-                isStreamOrdered = StreamOpFlag.ORDERED.isKnown(((AbstractPipeline) sOut).getStreamFlags());
-                Node<U> refNodeResult = ((AbstractPipeline<?, U, ?>) sOut).evaluateToArrayNode(size -> (U[]) new Object[size]);
-                refResult = LambdaTestHelpers.toBoxedList(refNodeResult.spliterator());
+                try (S_OUT sOut = m.apply(data.stream())) {
+                    isStreamOrdered = StreamOpFlag.ORDERED.isKnown(((AbstractPipeline) sOut).getStreamFlags());
+                    Node<U> refNodeResult = ((AbstractPipeline<?, U, ?>) sOut).evaluateToArrayNode(size -> (U[]) new Object[size]);
+                    refResult = LambdaTestHelpers.toBoxedList(refNodeResult.spliterator());
+                }
                 after.accept(data);
             }
             else {
-                S_OUT sOut = m.apply(data.stream());
-                isStreamOrdered = StreamOpFlag.ORDERED.isKnown(((AbstractPipeline) sOut).getStreamFlags());
+                try (S_OUT sOut = m.apply(data.stream())) {
+                    isStreamOrdered = StreamOpFlag.ORDERED.isKnown(((AbstractPipeline) sOut).getStreamFlags());
+                }
             }
 
             List<Error> errors = new ArrayList<>();
@@ -541,14 +550,18 @@ public abstract class OpTestCase extends LoggingTestCase {
         // Build method
 
         public R exercise() {
-            S_OUT out = streamF.apply(data.stream()).sequential();
-            AbstractPipeline ap = (AbstractPipeline) out;
-            boolean isOrdered = StreamOpFlag.ORDERED.isKnown(ap.getStreamFlags());
-            StreamShape shape = ap.getOutputShape();
+            boolean isOrdered;
+            StreamShape shape;
+            Node<U> node;
+            try (S_OUT out = streamF.apply(data.stream()).sequential()) {
+                AbstractPipeline ap = (AbstractPipeline) out;
+                isOrdered = StreamOpFlag.ORDERED.isKnown(ap.getStreamFlags());
+                shape = ap.getOutputShape();
+                // Sequentially collect the output that will be input to the terminal op
+                node = ap.evaluateToArrayNode(size -> (U[]) new Object[size]);
+            }
 
             EnumSet<TerminalTestScenario> tests = EnumSet.allOf(TerminalTestScenario.class);
-            // Sequentially collect the output that will be input to the terminal op
-            Node<U> node = ap.evaluateToArrayNode(size -> (U[]) new Object[size]);
             if (refResult == null) {
                 // Induce the reference result
                 S_OUT source = (S_OUT) createPipeline(shape, node.spliterator(),
@@ -571,8 +584,10 @@ public abstract class OpTestCase extends LoggingTestCase {
                                            ? data.parallelStream() : data.stream());
                 }
 
-                R result = (R) test.run(terminalF, source, shape);
-
+                R result;
+                try (source) {
+                    result = (R) test.run(terminalF, source, shape);
+                }
                 LambdaTestHelpers.launderAssertion(
                         () -> resultAsserter.assertResult(result, refResult, isOrdered, test.requiresParallelSource()),
                         () -> String.format("%s: %s != %s", test, refResult, result));
