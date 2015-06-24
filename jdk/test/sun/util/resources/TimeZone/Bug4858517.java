@@ -23,8 +23,9 @@
 
 /*
  *@test
- *@bug 4858517 6300580
+ *@bug 4858517 6300580 8008577
  *@summary Test case for tzdata2003a support for 9 locales
+ *@run main/othervm -Djava.locale.providers=JRE,SPI Bug4858517
  */
 
 import java.util.Locale;
