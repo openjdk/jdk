@@ -78,7 +78,19 @@ public:
   }
 };
 
-
+// We want to avoid that the logging from the concurrent thread is mixed
+// with the logging from a STW GC. So, if necessary join the STS to ensure
+// that the logging is done either before or after the STW logging.
+void ConcurrentMarkThread::cm_log(bool doit, bool join_sts, const char* fmt, ...) {
+  if (doit) {
+    SuspendibleThreadSetJoiner sts_joiner(join_sts);
+    va_list args;
+    va_start(args, fmt);
+    gclog_or_tty->gclog_stamp(cm()->concurrent_gc_id());
+    gclog_or_tty->vprint_cr(fmt, args);
+    va_end(args);
+  }
+}
 
 void ConcurrentMarkThread::run() {
   initialize_in_thread();
@@ -110,28 +122,12 @@ void ConcurrentMarkThread::run() {
       // without the root regions have been scanned which would be a
       // correctness issue.
 
-      double scan_start = os::elapsedTime();
       if (!cm()->has_aborted()) {
-        if (G1Log::fine()) {
-          gclog_or_tty->gclog_stamp(cm()->concurrent_gc_id());
-          gclog_or_tty->print_cr("[GC concurrent-root-region-scan-start]");
-        }
-
         _cm->scanRootRegions();
-
-        double scan_end = os::elapsedTime();
-        if (G1Log::fine()) {
-          gclog_or_tty->gclog_stamp(cm()->concurrent_gc_id());
-          gclog_or_tty->print_cr("[GC concurrent-root-region-scan-end, %1.7lf secs]",
-                                 scan_end - scan_start);
-        }
       }
 
       double mark_start_sec = os::elapsedTime();
-      if (G1Log::fine()) {
-        gclog_or_tty->gclog_stamp(cm()->concurrent_gc_id());
-        gclog_or_tty->print_cr("[GC concurrent-mark-start]");
-      }
+      cm_log(G1Log::fine(), true, "[GC concurrent-mark-start]");
 
       int iter = 0;
       do {
@@ -151,25 +147,15 @@ void ConcurrentMarkThread::run() {
             os::sleep(current_thread, sleep_time_ms, false);
           }
 
-          if (G1Log::fine()) {
-            gclog_or_tty->gclog_stamp(cm()->concurrent_gc_id());
-            gclog_or_tty->print_cr("[GC concurrent-mark-end, %1.7lf secs]",
-                                      mark_end_sec - mark_start_sec);
-          }
+          cm_log(G1Log::fine(), true, "[GC concurrent-mark-end, %1.7lf secs]", mark_end_sec - mark_start_sec);
 
           CMCheckpointRootsFinalClosure final_cl(_cm);
           VM_CGC_Operation op(&final_cl, "GC remark", true /* needs_pll */);
           VMThread::execute(&op);
         }
         if (cm()->restart_for_overflow()) {
-          if (G1TraceMarkStackOverflow) {
-            gclog_or_tty->print_cr("Restarting conc marking because of MS overflow "
-                                   "in remark (restart #%d).", iter);
-          }
-          if (G1Log::fine()) {
-            gclog_or_tty->gclog_stamp(cm()->concurrent_gc_id());
-            gclog_or_tty->print_cr("[GC concurrent-mark-restart-for-overflow]");
-          }
+          cm_log(G1TraceMarkStackOverflow, true, "Restarting conc marking because of MS overflow in remark (restart #%d).", iter);
+          cm_log(G1Log::fine(), true, "[GC concurrent-mark-restart-for-overflow]");
         }
       } while (cm()->restart_for_overflow());
 
@@ -209,10 +195,7 @@ void ConcurrentMarkThread::run() {
         // reclaimed by cleanup.
 
         double cleanup_start_sec = os::elapsedTime();
-        if (G1Log::fine()) {
-          gclog_or_tty->gclog_stamp(cm()->concurrent_gc_id());
-          gclog_or_tty->print_cr("[GC concurrent-cleanup-start]");
-        }
+        cm_log(G1Log::fine(), true, "[GC concurrent-cleanup-start]");
 
         // Now do the concurrent cleanup operation.
         _cm->completeCleanup();
@@ -229,11 +212,7 @@ void ConcurrentMarkThread::run() {
         g1h->reset_free_regions_coming();
 
         double cleanup_end_sec = os::elapsedTime();
-        if (G1Log::fine()) {
-          gclog_or_tty->gclog_stamp(cm()->concurrent_gc_id());
-          gclog_or_tty->print_cr("[GC concurrent-cleanup-end, %1.7lf secs]",
-                                 cleanup_end_sec - cleanup_start_sec);
-        }
+        cm_log(G1Log::fine(), true, "[GC concurrent-cleanup-end, %1.7lf secs]", cleanup_end_sec - cleanup_start_sec);
       }
       guarantee(cm()->cleanup_list_is_empty(),
                 "at this point there should be no regions on the cleanup list");
@@ -266,13 +245,8 @@ void ConcurrentMarkThread::run() {
         SuspendibleThreadSetJoiner sts_join;
         if (!cm()->has_aborted()) {
           g1_policy->record_concurrent_mark_cleanup_completed();
-        }
-      }
-
-      if (cm()->has_aborted()) {
-        if (G1Log::fine()) {
-          gclog_or_tty->gclog_stamp(cm()->concurrent_gc_id());
-          gclog_or_tty->print_cr("[GC concurrent-mark-abort]");
+        } else {
+          cm_log(G1Log::fine(), false, "[GC concurrent-mark-abort]");
         }
       }
 
