@@ -805,6 +805,8 @@ protected:
                                 bool*          succeeded,
                                 GCCause::Cause gc_cause);
 
+  void wait_for_root_region_scanning();
+
   // The guts of the incremental collection pause, executed by the vm
   // thread. It returns false if it is unable to do the collection due
   // to the GC locker being active, true otherwise
