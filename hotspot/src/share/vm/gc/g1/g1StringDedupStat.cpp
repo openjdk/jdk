@@ -80,8 +80,8 @@ void G1StringDedupStat::print_summary(outputStream* st, const G1StringDedupStat&
   st->stamp(PrintGCTimeStamps);
   st->print_cr(
     "[GC concurrent-string-deduplication, "
-    G1_STRDEDUP_BYTES_FORMAT_NS"->"G1_STRDEDUP_BYTES_FORMAT_NS"("G1_STRDEDUP_BYTES_FORMAT_NS"), avg "
-    G1_STRDEDUP_PERCENT_FORMAT_NS", "G1_STRDEDUP_TIME_FORMAT"]",
+    G1_STRDEDUP_BYTES_FORMAT_NS "->" G1_STRDEDUP_BYTES_FORMAT_NS "(" G1_STRDEDUP_BYTES_FORMAT_NS "), avg "
+    G1_STRDEDUP_PERCENT_FORMAT_NS ", " G1_STRDEDUP_TIME_FORMAT "]",
     G1_STRDEDUP_BYTES_PARAM(last_stat._new_bytes),
     G1_STRDEDUP_BYTES_PARAM(last_stat._new_bytes - last_stat._deduped_bytes),
     G1_STRDEDUP_BYTES_PARAM(last_stat._deduped_bytes),
@@ -135,22 +135,22 @@ void G1StringDedupStat::print_statistics(outputStream* st, const G1StringDedupSt
 
   if (total) {
     st->print_cr(
-      "   [Total Exec: "UINTX_FORMAT"/"G1_STRDEDUP_TIME_FORMAT", Idle: "UINTX_FORMAT"/"G1_STRDEDUP_TIME_FORMAT", Blocked: "UINTX_FORMAT"/"G1_STRDEDUP_TIME_FORMAT"]",
+      "   [Total Exec: " UINTX_FORMAT "/" G1_STRDEDUP_TIME_FORMAT ", Idle: " UINTX_FORMAT "/" G1_STRDEDUP_TIME_FORMAT ", Blocked: " UINTX_FORMAT "/" G1_STRDEDUP_TIME_FORMAT "]",
       stat._exec, stat._exec_elapsed, stat._idle, stat._idle_elapsed, stat._block, stat._block_elapsed);
   } else {
     st->print_cr(
-      "   [Last Exec: "G1_STRDEDUP_TIME_FORMAT", Idle: "G1_STRDEDUP_TIME_FORMAT", Blocked: "UINTX_FORMAT"/"G1_STRDEDUP_TIME_FORMAT"]",
+      "   [Last Exec: " G1_STRDEDUP_TIME_FORMAT ", Idle: " G1_STRDEDUP_TIME_FORMAT ", Blocked: " UINTX_FORMAT "/" G1_STRDEDUP_TIME_FORMAT "]",
       stat._exec_elapsed, stat._idle_elapsed, stat._block, stat._block_elapsed);
   }
   st->print_cr(
-    "      [Inspected:    "G1_STRDEDUP_OBJECTS_FORMAT"]\n"
-    "         [Skipped:   "G1_STRDEDUP_OBJECTS_FORMAT"("G1_STRDEDUP_PERCENT_FORMAT")]\n"
-    "         [Hashed:    "G1_STRDEDUP_OBJECTS_FORMAT"("G1_STRDEDUP_PERCENT_FORMAT")]\n"
-    "         [Known:     "G1_STRDEDUP_OBJECTS_FORMAT"("G1_STRDEDUP_PERCENT_FORMAT")]\n"
-    "         [New:       "G1_STRDEDUP_OBJECTS_FORMAT"("G1_STRDEDUP_PERCENT_FORMAT") "G1_STRDEDUP_BYTES_FORMAT"]\n"
-    "      [Deduplicated: "G1_STRDEDUP_OBJECTS_FORMAT"("G1_STRDEDUP_PERCENT_FORMAT") "G1_STRDEDUP_BYTES_FORMAT"("G1_STRDEDUP_PERCENT_FORMAT")]\n"
-    "         [Young:     "G1_STRDEDUP_OBJECTS_FORMAT"("G1_STRDEDUP_PERCENT_FORMAT") "G1_STRDEDUP_BYTES_FORMAT"("G1_STRDEDUP_PERCENT_FORMAT")]\n"
-    "         [Old:       "G1_STRDEDUP_OBJECTS_FORMAT"("G1_STRDEDUP_PERCENT_FORMAT") "G1_STRDEDUP_BYTES_FORMAT"("G1_STRDEDUP_PERCENT_FORMAT")]",
+    "      [Inspected:    " G1_STRDEDUP_OBJECTS_FORMAT "]\n"
+    "         [Skipped:   " G1_STRDEDUP_OBJECTS_FORMAT "(" G1_STRDEDUP_PERCENT_FORMAT ")]\n"
+    "         [Hashed:    " G1_STRDEDUP_OBJECTS_FORMAT "(" G1_STRDEDUP_PERCENT_FORMAT ")]\n"
+    "         [Known:     " G1_STRDEDUP_OBJECTS_FORMAT "(" G1_STRDEDUP_PERCENT_FORMAT ")]\n"
+    "         [New:       " G1_STRDEDUP_OBJECTS_FORMAT "(" G1_STRDEDUP_PERCENT_FORMAT ") " G1_STRDEDUP_BYTES_FORMAT "]\n"
+    "      [Deduplicated: " G1_STRDEDUP_OBJECTS_FORMAT "(" G1_STRDEDUP_PERCENT_FORMAT ") " G1_STRDEDUP_BYTES_FORMAT "(" G1_STRDEDUP_PERCENT_FORMAT ")]\n"
+    "         [Young:     " G1_STRDEDUP_OBJECTS_FORMAT "(" G1_STRDEDUP_PERCENT_FORMAT ") " G1_STRDEDUP_BYTES_FORMAT "(" G1_STRDEDUP_PERCENT_FORMAT ")]\n"
+    "         [Old:       " G1_STRDEDUP_OBJECTS_FORMAT "(" G1_STRDEDUP_PERCENT_FORMAT ") " G1_STRDEDUP_BYTES_FORMAT "(" G1_STRDEDUP_PERCENT_FORMAT ")]",
     stat._inspected,
     stat._skipped, skipped_percent,
     stat._hashed, hashed_percent,

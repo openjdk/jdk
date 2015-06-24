@@ -85,7 +85,7 @@ void MutableNUMASpace::ensure_parsability() {
         while (words_left_to_fill > 0) {
           size_t words_to_fill = MIN2(words_left_to_fill, CollectedHeap::filler_array_max_size());
           assert(words_to_fill >= CollectedHeap::min_fill_size(),
-            err_msg("Remaining size ("SIZE_FORMAT ") is too small to fill (based on " SIZE_FORMAT " and " SIZE_FORMAT ")",
+            err_msg("Remaining size (" SIZE_FORMAT ") is too small to fill (based on " SIZE_FORMAT " and " SIZE_FORMAT ")",
             words_to_fill, words_left_to_fill, CollectedHeap::filler_array_max_size()));
           CollectedHeap::fill_with_object((HeapWord*)cur_top, words_to_fill);
           if (!os::numa_has_static_binding()) {

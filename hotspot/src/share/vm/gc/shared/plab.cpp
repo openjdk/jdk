@@ -45,7 +45,7 @@ PLAB::PLAB(size_t desired_plab_sz_) :
   // ArrayOopDesc::header_size depends on command line initialization.
   AlignmentReserve = oopDesc::header_size() > MinObjAlignment ? align_object_size(arrayOopDesc::header_size(T_INT)) : 0;
   assert(min_size() > AlignmentReserve,
-         err_msg("Minimum PLAB size " SIZE_FORMAT" must be larger than alignment reserve " SIZE_FORMAT" "
+         err_msg("Minimum PLAB size " SIZE_FORMAT " must be larger than alignment reserve " SIZE_FORMAT " "
                  "to be able to contain objects", min_size(), AlignmentReserve));
 }
 
@@ -121,10 +121,10 @@ void PLABStats::adjust_desired_plab_sz(uint no_of_gc_workers) {
   if (_allocated == 0) {
     assert(_unused == 0,
            err_msg("Inconsistency in PLAB stats: "
-                   "_allocated: "SIZE_FORMAT", "
-                   "_wasted: "SIZE_FORMAT", "
-                   "_unused: "SIZE_FORMAT", "
-                   "_undo_wasted: "SIZE_FORMAT,
+                   "_allocated: " SIZE_FORMAT ", "
+                   "_wasted: " SIZE_FORMAT ", "
+                   "_unused: " SIZE_FORMAT ", "
+                   "_undo_wasted: " SIZE_FORMAT,
                    _allocated, _wasted, _unused, _undo_wasted));
 
     _allocated = 1;
@@ -144,7 +144,7 @@ void PLABStats::adjust_desired_plab_sz(uint no_of_gc_workers) {
   new_plab_sz = align_object_size(new_plab_sz);
   // Latch the result
   if (PrintPLAB) {
-    gclog_or_tty->print(" (plab_sz = " SIZE_FORMAT" desired_plab_sz = " SIZE_FORMAT") ", recent_plab_sz, new_plab_sz);
+    gclog_or_tty->print(" (plab_sz = " SIZE_FORMAT " desired_plab_sz = " SIZE_FORMAT ") ", recent_plab_sz, new_plab_sz);
   }
   _desired_plab_sz = new_plab_sz;
 

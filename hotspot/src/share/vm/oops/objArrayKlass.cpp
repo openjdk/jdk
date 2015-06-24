@@ -466,7 +466,7 @@ void ObjArrayKlass::oop_print_value_on(oop obj, outputStream* st) {
       if (i > max_objArray_print_length) {
         st->print("..."); break;
       }
-      st->print(" "INTPTR_FORMAT, (intptr_t)(void*)objArrayOop(obj)->obj_at(i));
+      st->print(" " INTPTR_FORMAT, (intptr_t)(void*)objArrayOop(obj)->obj_at(i));
     }
     st->print(" }");
   }

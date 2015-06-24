@@ -1389,41 +1389,41 @@ JVM_END
 #define LANG "Ljava/lang/"
 #define JLINV "Ljava/lang/invoke/"
 
-#define OBJ   LANG"Object;"
-#define CLS   LANG"Class;"
-#define STRG  LANG"String;"
-#define CS    JLINV"CallSite;"
-#define MT    JLINV"MethodType;"
-#define MH    JLINV"MethodHandle;"
-#define MEM   JLINV"MemberName;"
-#define CTX   JLINV"MethodHandleNatives$CallSiteContext;"
+#define OBJ   LANG "Object;"
+#define CLS   LANG "Class;"
+#define STRG  LANG "String;"
+#define CS    JLINV "CallSite;"
+#define MT    JLINV "MethodType;"
+#define MH    JLINV "MethodHandle;"
+#define MEM   JLINV "MemberName;"
+#define CTX   JLINV "MethodHandleNatives$CallSiteContext;"
 
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)
 
 // These are the native methods on java.lang.invoke.MethodHandleNatives.
 static JNINativeMethod MHN_methods[] = {
-  {CC"init",                      CC"("MEM""OBJ")V",                     FN_PTR(MHN_init_Mem)},
-  {CC"expand",                    CC"("MEM")V",                          FN_PTR(MHN_expand_Mem)},
-  {CC"resolve",                   CC"("MEM""CLS")"MEM,                   FN_PTR(MHN_resolve_Mem)},
+  {CC "init",                      CC "(" MEM "" OBJ ")V",                   FN_PTR(MHN_init_Mem)},
+  {CC "expand",                    CC "(" MEM ")V",                          FN_PTR(MHN_expand_Mem)},
+  {CC "resolve",                   CC "(" MEM "" CLS ")" MEM,                FN_PTR(MHN_resolve_Mem)},
   //  static native int getNamedCon(int which, Object[] name)
-  {CC"getNamedCon",               CC"(I["OBJ")I",                        FN_PTR(MHN_getNamedCon)},
+  {CC "getNamedCon",               CC "(I[" OBJ ")I",                        FN_PTR(MHN_getNamedCon)},
   //  static native int getMembers(Class<?> defc, String matchName, String matchSig,
   //          int matchFlags, Class<?> caller, int skip, MemberName[] results);
-  {CC"getMembers",                CC"("CLS""STRG""STRG"I"CLS"I["MEM")I", FN_PTR(MHN_getMembers)},
-  {CC"objectFieldOffset",         CC"("MEM")J",                          FN_PTR(MHN_objectFieldOffset)},
-  {CC"setCallSiteTargetNormal",   CC"("CS""MH")V",                       FN_PTR(MHN_setCallSiteTargetNormal)},
-  {CC"setCallSiteTargetVolatile", CC"("CS""MH")V",                       FN_PTR(MHN_setCallSiteTargetVolatile)},
-  {CC"clearCallSiteContext",      CC"("CTX")V",                          FN_PTR(MHN_clearCallSiteContext)},
-  {CC"staticFieldOffset",         CC"("MEM")J",                          FN_PTR(MHN_staticFieldOffset)},
-  {CC"staticFieldBase",           CC"("MEM")"OBJ,                        FN_PTR(MHN_staticFieldBase)},
-  {CC"getMemberVMInfo",           CC"("MEM")"OBJ,                        FN_PTR(MHN_getMemberVMInfo)}
+  {CC "getMembers",                CC "(" CLS "" STRG "" STRG "I" CLS "I[" MEM ")I", FN_PTR(MHN_getMembers)},
+  {CC "objectFieldOffset",         CC "(" MEM ")J",                          FN_PTR(MHN_objectFieldOffset)},
+  {CC "setCallSiteTargetNormal",   CC "(" CS "" MH ")V",                     FN_PTR(MHN_setCallSiteTargetNormal)},
+  {CC "setCallSiteTargetVolatile", CC "(" CS "" MH ")V",                     FN_PTR(MHN_setCallSiteTargetVolatile)},
+  {CC "clearCallSiteContext",      CC "(" CTX ")V",                          FN_PTR(MHN_clearCallSiteContext)},
+  {CC "staticFieldOffset",         CC "(" MEM ")J",                          FN_PTR(MHN_staticFieldOffset)},
+  {CC "staticFieldBase",           CC "(" MEM ")" OBJ,                        FN_PTR(MHN_staticFieldBase)},
+  {CC "getMemberVMInfo",           CC "(" MEM ")" OBJ,                        FN_PTR(MHN_getMemberVMInfo)}
 };
 
 static JNINativeMethod MH_methods[] = {
   // UnsupportedOperationException throwers
-  {CC"invoke",                    CC"(["OBJ")"OBJ,                       FN_PTR(MH_invoke_UOE)},
-  {CC"invokeExact",               CC"(["OBJ")"OBJ,                       FN_PTR(MH_invokeExact_UOE)}
+  {CC "invoke",                    CC "([" OBJ ")" OBJ,                       FN_PTR(MH_invoke_UOE)},
+  {CC "invokeExact",               CC "([" OBJ ")" OBJ,                       FN_PTR(MH_invokeExact_UOE)}
 };
 
 /**
