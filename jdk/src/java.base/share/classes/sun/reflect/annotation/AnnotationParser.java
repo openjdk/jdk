@@ -295,7 +295,7 @@ public class AnnotationParser {
 
     /**
      * Returns an annotation of the given type backed by the given
-     * member -> value map.
+     * member {@literal ->} value map.
      */
     public static Annotation annotationForMap(final Class<? extends Annotation> type,
                                               final Map<String, Object> memberValues)

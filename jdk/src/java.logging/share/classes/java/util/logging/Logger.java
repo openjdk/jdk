@@ -450,7 +450,7 @@ public class Logger {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null && !SystemLoggerHelper.disableCallerCheck) {
             if (caller.getClassLoader() == null) {
-                return manager.demandSystemLogger(name, resourceBundleName);
+                return manager.demandSystemLogger(name, resourceBundleName, caller);
             }
         }
         return manager.demandLogger(name, resourceBundleName, caller);
@@ -500,7 +500,23 @@ public class Logger {
         // would throw an IllegalArgumentException in the second call
         // because the wrapper would result in an attempt to replace
         // the existing "resourceBundleForFoo" with null.
-        return demandLogger(name, null, Reflection.getCallerClass());
+        return Logger.getLogger(name, Reflection.getCallerClass());
+    }
+
+    /**
+     * Find or create a logger for a named subsystem on behalf
+     * of the given caller.
+     *
+     * This method is called by {@link #getLogger(java.lang.String)} after
+     * it has obtained a reference to its caller's class.
+     *
+     * @param   name            A name for the logger.
+     * @param   callerClass     The class that called {@link
+     *                          #getLogger(java.lang.String)}.
+     * @return a suitable Logger for {@code callerClass}.
+     */
+    private static Logger getLogger(String name, Class<?> callerClass) {
+        return demandLogger(name, null, callerClass);
     }
 
     /**
@@ -550,7 +566,30 @@ public class Logger {
     // adding a new Logger object is handled by LogManager.addLogger().
     @CallerSensitive
     public static Logger getLogger(String name, String resourceBundleName) {
-        Class<?> callerClass = Reflection.getCallerClass();
+        return Logger.getLogger(name, resourceBundleName, Reflection.getCallerClass());
+    }
+
+    /**
+     * Find or create a logger for a named subsystem on behalf
+     * of the given caller.
+     *
+     * This method is called by {@link
+     * #getLogger(java.lang.String, java.lang.String)} after
+     * it has obtained a reference to its caller's class.
+     *
+     * @param   name            A name for the logger.
+     * @param   resourceBundleName  name of ResourceBundle to be used for localizing
+     *                          messages for this logger. May be {@code null}
+     *                          if none of the messages require localization.
+     * @param   callerClass     The class that called {@link
+     *                          #getLogger(java.lang.String, java.lang.String)}.
+     *                          This class will also be used for locating the
+     *                          resource bundle if {@code resourceBundleName} is
+     *                          not {@code null}.
+     * @return a suitable Logger for {@code callerClass}.
+     */
+    private static Logger getLogger(String name, String resourceBundleName,
+                                    Class<?> callerClass) {
         Logger result = demandLogger(name, resourceBundleName, callerClass);
 
         // MissingResourceException or IllegalArgumentException can be
@@ -573,8 +612,9 @@ public class Logger {
         LogManager manager = LogManager.getLogManager();
 
         // all loggers in the system context will default to
-        // the system logger's resource bundle
-        Logger result = manager.demandSystemLogger(name, SYSTEM_LOGGER_RB_NAME);
+        // the system logger's resource bundle - therefore the caller won't
+        // be needed and can be null.
+        Logger result = manager.demandSystemLogger(name, SYSTEM_LOGGER_RB_NAME, null);
         return result;
     }
 

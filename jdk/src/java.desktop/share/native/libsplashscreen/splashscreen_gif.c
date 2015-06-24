@@ -82,8 +82,8 @@ SplashDecodeGif(Splash * splash, GifFileType * gif)
     int i, j;
     int imageIndex;
     int cx, cy, cw, ch; /* clamped coordinates */
-    int numLines;
-    int numPassLines;
+    const int interlacedOffset[] = { 0, 4, 2, 1, 0 };   /* The way Interlaced image should. */
+    const int interlacedJumps[] = { 8, 8, 4, 2, 1 };    /* be read - offsets and jumps... */
 
     if (DGifSlurp(gif) == GIF_ERROR) {
         return 0;
@@ -213,6 +213,16 @@ SplashDecodeGif(Splash * splash, GifFileType * gif)
             byte_t *pSrc = image->RasterBits;
             ImageFormat srcFormat;
             ImageRect srcRect, dstRect;
+            int pass = 4, npass = 5;
+
+#if GIFLIB_MAJOR < 5
+            /* Interlaced gif support is broken in giflib < 5
+               so we need to work around this */
+            if (desc->Interlace) {
+                pass = 0;
+                npass = 4;
+            }
+#endif
 
             srcFormat.colorMap = colorMapBuf;
             srcFormat.depthBytes = 1;
@@ -221,22 +231,26 @@ SplashDecodeGif(Splash * splash, GifFileType * gif)
             srcFormat.fixedBits = QUAD_ALPHA_MASK;      // fixed 100% alpha
             srcFormat.premultiplied = 0;
 
-            /* Number of source lines for current pass */
-            numPassLines = desc->Height;
-            /* Number of lines that fits to dest buffer */
-            numLines = ch;
+            for (; pass < npass; ++pass) {
+                int jump = interlacedJumps[pass];
+                int ofs = interlacedOffset[pass];
+                /* Number of source lines for current pass */
+                int numPassLines = (desc->Height + jump - ofs - 1) / jump;
+                /* Number of lines that fits to dest buffer */
+                int numLines = (ch + jump - ofs - 1) / jump;
 
-            initRect(&srcRect, 0, 0, desc->Width, numLines, 1,
-                desc->Width, pSrc, &srcFormat);
+                initRect(&srcRect, 0, 0, desc->Width, numLines, 1,
+                    desc->Width, pSrc, &srcFormat);
 
-            if (numLines > 0) {
-                initRect(&dstRect, cx, cy, cw,
-                         numLines , 1, stride, pBitmapBits, &splash->imageFormat);
+                if (numLines > 0) {
+                    initRect(&dstRect, cx, cy + ofs, cw,
+                             numLines , jump, stride, pBitmapBits, &splash->imageFormat);
 
-                pSrc += convertRect(&srcRect, &dstRect, CVT_ALPHATEST);
+                    pSrc += convertRect(&srcRect, &dstRect, CVT_ALPHATEST);
+                }
+                // skip extra source data
+                pSrc += (numPassLines - numLines) * srcRect.stride;
             }
-            // skip extra source data
-            pSrc += (numPassLines - numLines) * srcRect.stride;
         }
 
         // now dispose of the previous frame correctly
@@ -296,7 +310,13 @@ SplashDecodeGif(Splash * splash, GifFileType * gif)
     free(pBitmapBits);
     free(pOldBitmapBits);
 
-    DGifCloseFile(gif, NULL);
+#if GIFLIB_MAJOR > 5 || (GIFLIB_MAJOR == 5 && GIFLIB_MINOR >= 1)
+    if (DGifCloseFile(gif, NULL) == GIF_ERROR) {
+        return 0;
+    }
+#else
+    DGifCloseFile(gif);
+#endif
 
     return 1;
 }
@@ -304,7 +324,11 @@ SplashDecodeGif(Splash * splash, GifFileType * gif)
 int
 SplashDecodeGifStream(Splash * splash, SplashStream * stream)
 {
+#if GIFLIB_MAJOR >= 5
     GifFileType *gif = DGifOpen((void *) stream, SplashStreamGifInputFunc, NULL);
+#else
+    GifFileType *gif = DGifOpen((void *) stream, SplashStreamGifInputFunc);
+#endif
 
     if (!gif)
         return 0;

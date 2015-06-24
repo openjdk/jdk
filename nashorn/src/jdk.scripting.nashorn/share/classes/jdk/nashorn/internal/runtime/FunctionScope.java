@@ -35,16 +35,11 @@ package jdk.nashorn.internal.runtime;
  *
  * The constructor of this class is responsible for any function prologue
  * involving the scope.
- *
- * TODO see NASHORN-715.
  */
-public class FunctionScope extends ScriptObject implements Scope {
+public class FunctionScope extends Scope {
 
     /** Area to store scope arguments. (public for access from scripts.) */
     public final ScriptObject arguments;
-
-    /** Flag to indicate that a split method issued a return statement */
-    private int splitState = -1;
 
     /**
      * Constructor
@@ -56,7 +51,6 @@ public class FunctionScope extends ScriptObject implements Scope {
     public FunctionScope(final PropertyMap map, final ScriptObject callerScope, final ScriptObject arguments) {
         super(callerScope, map);
         this.arguments = arguments;
-        setIsScope();
     }
 
     /**
@@ -68,7 +62,6 @@ public class FunctionScope extends ScriptObject implements Scope {
     public FunctionScope(final PropertyMap map, final ScriptObject callerScope) {
         super(callerScope, map);
         this.arguments = null;
-        setIsScope();
     }
 
     /**
@@ -81,24 +74,5 @@ public class FunctionScope extends ScriptObject implements Scope {
     public FunctionScope(final PropertyMap map, final long[] primitiveSpill, final Object[] objectSpill) {
         super(map, primitiveSpill, objectSpill);
         this.arguments = null;
-    }
-
-
-    /**
-     * Get the current split state.
-     * @return current split state
-     */
-    @Override
-    public int getSplitState() {
-        return splitState;
-    }
-
-    /**
-     * Set the current split state.
-     * @param state current split state
-     */
-    @Override
-    public void setSplitState(final int state) {
-        splitState = state;
     }
 }

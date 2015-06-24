@@ -37,7 +37,6 @@ public interface VirtualMachineManagerService extends VirtualMachineManager {
     /**
      * Replaces the default connector.
      *
-     * @return the default {@link LaunchingConnector}
      * @throws java.lang.IllegalArgumentException if the given
      * connector is not a member of the list returned by
      * {@link #launchingConnectors}

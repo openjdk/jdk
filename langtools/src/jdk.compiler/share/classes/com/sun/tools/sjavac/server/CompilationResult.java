@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import com.sun.tools.sjavac.pubapi.PubApi;
+
 /**
  *
  *  <p><b>This is NOT part of any supported API.
@@ -47,8 +49,10 @@ public class CompilationResult implements Serializable {
 
     public int returnCode;
     public Map<String, Set<URI>> packageArtifacts = new HashMap<>();
-    public Map<String, Set<String>> packageDependencies = new HashMap<>();
-    public Map<String, String> packagePubapis = new HashMap<>();
+    public Map<String, Map<String, Set<String>>> packageDependencies = new HashMap<>();
+    public Map<String, Map<String, Set<String>>> packageCpDependencies = new HashMap<>();
+    public Map<String, PubApi> packagePubapis = new HashMap<>();
+    public Map<String, PubApi> dependencyPubapis = new HashMap<>();
     public String stdout = "";
     public String stderr = "";
 
