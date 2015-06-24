@@ -307,11 +307,6 @@ class frame VALUE_OBJ_CLASS_SPEC {
 
   void interpreter_frame_verify_monitor(BasicObjectLock* value) const;
 
-  // Tells whether the current interpreter_frame frame pointer
-  // corresponds to the old compiled/deoptimized fp
-  // The receiver used to be a top level frame
-  bool interpreter_frame_equals_unpacked_fp(intptr_t* fp);
-
   // Return/result value from this interpreter frame
   // If the method return type is T_OBJECT or T_ARRAY populates oop_result
   // For other (non-T_VOID) the appropriate field in the jvalue is populated
