@@ -42,6 +42,9 @@ tier2 = \
     :jdk_other \
     :jdk_svc
 
+# Tier 3 is initially empty.
+tier3 =
+
 ###############################################################################
 #
 # Other test definitions; generally smaller granularity than tiers
