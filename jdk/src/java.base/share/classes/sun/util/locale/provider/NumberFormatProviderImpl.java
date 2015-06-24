@@ -86,7 +86,7 @@ public class NumberFormatProviderImpl extends NumberFormatProvider implements Av
 
     @Override
     public boolean isSupportedLocale(Locale locale) {
-        return LocaleProviderAdapter.isSupportedLocale(locale, type, langtags);
+        return LocaleProviderAdapter.forType(type).isSupportedProviderLocale(locale, langtags);
     }
 
     /**

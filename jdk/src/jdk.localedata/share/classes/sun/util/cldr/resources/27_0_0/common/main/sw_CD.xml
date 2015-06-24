@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2014 Unicode, Inc.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+For terms of use, see http://www.unicode.org/copyright.html
+-->
+<ldml>
+	<identity>
+		<version number="$Revision: 11152 $"/>
+		<generation date="$Date: 2015-01-26 15:28:00 -0600 (Mon, 26 Jan 2015) $"/>
+		<language type="sw"/>
+		<territory type="CD"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="ak">Kiakan</language>
+			<language type="bn">Kibangla</language>
+			<language type="cs">Kichecki</language>
+			<language type="en">Kingereza</language>
+			<language type="swc">Kiswahili ya Kongo</language>
+		</languages>
+		<territories>
+			<territory type="AF">Afuganistani</territory>
+			<territory type="BJ">Benini</territory>
+			<territory type="CG">Kongo</territory>
+			<territory type="CI">Kodivaa</territory>
+			<territory type="CY">Kuprosi</territory>
+			<territory type="IR">Uajemi</territory>
+			<territory type="LI">Lishenteni</territory>
+			<territory type="MG">Bukini</territory>
+			<territory type="MM">Myama</territory>
+			<territory type="NF">Kisiwa cha Norfok</territory>
+			<territory type="NG">Nijeria</territory>
+			<territory type="TL">Timori ya Mashariki</territory>
+		</territories>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a b c d e f g h i j k l m n o p r s t u v w y z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[q x]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="generic">
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE d MMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>d/M/y GGGGG</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Md">d/M</dateFormatItem>
+						<dateFormatItem id="MEd">E d/M</dateFormatItem>
+						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
+						<dateFormatItem id="ms">m:ss</dateFormatItem>
+						<dateFormatItem id="y">y</dateFormatItem>
+						<dateFormatItem id="yM">M/y</dateFormatItem>
+						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
+						<dateFormatItem id="yMEd">E d/M/y</dateFormatItem>
+						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMEd">E d MMM y</dateFormatItem>
+						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
+						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">mkw</month>
+							<month type="2">mpi</month>
+							<month type="3">mtu</month>
+							<month type="4">min</month>
+							<month type="5">mtn</month>
+							<month type="6">mst</month>
+							<month type="7">msb</month>
+							<month type="8">mun</month>
+							<month type="9">mts</month>
+							<month type="10">mku</month>
+							<month type="11">mkm</month>
+							<month type="12">mkb</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">mwezi ya kwanja</month>
+							<month type="2">mwezi ya pili</month>
+							<month type="3">mwezi ya tatu</month>
+							<month type="4">mwezi ya ine</month>
+							<month type="5">mwezi ya tanu</month>
+							<month type="6">mwezi ya sita</month>
+							<month type="7">mwezi ya saba</month>
+							<month type="8">mwezi ya munane</month>
+							<month type="9">mwezi ya tisa</month>
+							<month type="10">mwezi ya kumi</month>
+							<month type="11">mwezi ya kumi na moya</month>
+							<month type="12">mwezi ya kumi ya mbili</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="narrow">
+							<month type="1">k</month>
+							<month type="2">p</month>
+							<month type="3">t</month>
+							<month type="4">i</month>
+							<month type="5">t</month>
+							<month type="6">s</month>
+							<month type="7">s</month>
+							<month type="8">m</month>
+							<month type="9">t</month>
+							<month type="10">k</month>
+							<month type="11">m</month>
+							<month type="12">m</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun">yen</day>
+							<day type="mon">kwa</day>
+							<day type="tue">pil</day>
+							<day type="wed">tat</day>
+							<day type="thu">ine</day>
+							<day type="fri">tan</day>
+							<day type="sat">sit</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">siku ya yenga</day>
+							<day type="mon">siku ya kwanza</day>
+							<day type="tue">siku ya pili</day>
+							<day type="wed">siku ya tatu</day>
+							<day type="thu">siku ya ine</day>
+							<day type="fri">siku ya tanu</day>
+							<day type="sat">siku ya sita</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="narrow">
+							<day type="sun">y</day>
+							<day type="mon">k</day>
+							<day type="tue">p</day>
+							<day type="wed">t</day>
+							<day type="thu">i</day>
+							<day type="fri">t</day>
+							<day type="sat">s</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">ya asubuyi</dayPeriod>
+							<dayPeriod type="pm">ya muchana</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE d MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>d/M/y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern>HH:mm:ss zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern>HH:mm:ss z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern>HH:mm:ss</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern>HH:mm</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="MEd">E d/M</dateFormatItem>
+						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
+						<dateFormatItem id="ms">m:ss</dateFormatItem>
+						<dateFormatItem id="yMEd">E d/M/y</dateFormatItem>
+						<dateFormatItem id="yMMMEd">E d MMM y</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+		<fields>
+			<field type="era">
+				<displayName>Wakati</displayName>
+			</field>
+			<field type="week">
+				<displayName>Juma</displayName>
+			</field>
+			<field type="weekday">
+				<displayName>Siku ya juma</displayName>
+			</field>
+			<field type="dayperiod">
+				<displayName>Muda wa siku</displayName>
+			</field>
+			<field type="zone">
+				<displayName>Majira ya saa</displayName>
+			</field>
+		</fields>
+	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<decimal>,</decimal>
+			<group>.</group>
+		</symbols>
+		<currencies>
+			<currency type="CDF">
+				<symbol>FC</symbol>
+			</currency>
+			<currency type="CNY">
+				<displayName>Yuan Renminbi ya China</displayName>
+			</currency>
+			<currency type="ETB">
+				<displayName>Bir ya Uhabeshi</displayName>
+			</currency>
+			<currency type="JPY">
+				<displayName>Sarafu ya Kijapani</displayName>
+			</currency>
+			<currency type="MGA">
+				<displayName>Ariary ya Bukini</displayName>
+			</currency>
+			<currency type="MRO">
+				<displayName>Ugwiya ya Moritania</displayName>
+			</currency>
+			<currency type="SCR">
+				<displayName>Rupia ya Shelisheli</displayName>
+			</currency>
+			<currency type="XAF">
+				<displayName>Faranga CFA BEAC</displayName>
+			</currency>
+			<currency type="XOF">
+				<displayName>Faranga CFA BCEAO</displayName>
+			</currency>
+		</currencies>
+	</numbers>
+</ldml>
+

@@ -23,8 +23,9 @@
 
 /*
  *@test
- *@bug 4938846
+ *@bug 4938846 8008577
  *@summary Test case for en_IE TimeZone info
+ *@run main/othervm -Djava.locale.providers=JRE,SPI Bug4938846
  */
 
 import java.util.Locale;
