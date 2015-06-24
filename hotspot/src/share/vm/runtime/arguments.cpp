@@ -1535,7 +1535,11 @@ void Arguments::select_gc_ergonomically() {
     if (should_auto_select_low_pause_collector()) {
       FLAG_SET_ERGO(bool, UseConcMarkSweepGC, true);
     } else {
+#if defined(JAVASE_EMBEDDED)
       FLAG_SET_ERGO(bool, UseParallelGC, true);
+#else
+      FLAG_SET_ERGO(bool, UseG1GC, true);
+#endif
     }
   } else {
     FLAG_SET_ERGO(bool, UseSerialGC, true);
