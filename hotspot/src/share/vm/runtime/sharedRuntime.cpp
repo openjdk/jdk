@@ -2335,15 +2335,6 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(methodHandle method) {
   // and a single writer: this could be fixed if it becomes a
   // problem).
 
-  // Get the address of the ic_miss handlers before we grab the
-  // AdapterHandlerLibrary_lock. This fixes bug 6236259 which
-  // was caused by the initialization of the stubs happening
-  // while we held the lock and then notifying jvmti while
-  // holding it. This just forces the initialization to be a little
-  // earlier.
-  address ic_miss = SharedRuntime::get_ic_miss_stub();
-  assert(ic_miss != NULL, "must have handler");
-
   ResourceMark rm;
 
   NOT_PRODUCT(int insts_size);
