@@ -199,7 +199,7 @@ public final class TypeAnnotationParser {
      * Regular Annotations on TypeVariables are stored in the type
      * annotation byte[] in the class file.
      *
-     * @param genericsDecl the declaration declaring the type variable
+     * @param genericDecl the declaration declaring the type variable
      * @param typeVarIndex the 0-based index of this type variable in the declaration
      */
     public static <D extends GenericDeclaration> Annotation[] parseTypeVariableAnnotations(D genericDecl,

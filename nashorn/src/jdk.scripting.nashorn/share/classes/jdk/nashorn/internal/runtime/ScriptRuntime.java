@@ -373,9 +373,9 @@ public final class ScriptRuntime {
      * @return prototype object after merge
      */
     public static ScriptObject mergeScope(final ScriptObject scope) {
-        final ScriptObject global = scope.getProto();
-        global.addBoundProperties(scope);
-        return global;
+        final ScriptObject parentScope = scope.getProto();
+        parentScope.addBoundProperties(scope);
+        return parentScope;
     }
 
     /**

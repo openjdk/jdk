@@ -50,7 +50,7 @@ public class FileURLMapper {
     }
 
     /**
-     * @returns the platform specific path corresponding to the URL
+     * @return the platform specific path corresponding to the URL
      *  so long as the URL does not contain a hostname in the authority field.
      */
 

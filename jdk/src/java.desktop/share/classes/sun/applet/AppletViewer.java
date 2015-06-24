@@ -1093,7 +1093,7 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
     }
 
     /**
-     * Scan an html file for <applet> tags
+     * Scan an html file for {@code <applet>} tags
      */
     public static void parse(URL url, String enc) throws IOException {
         encoding = enc;

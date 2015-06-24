@@ -83,7 +83,8 @@ public class NTLMAuthentication extends AuthenticationInfo {
 
     /**
      * Create a NTLMAuthentication:
-     * Username may be specified as domain<BACKSLASH>username in the application Authenticator.
+     * Username may be specified as {@literal domain<BACKSLASH>username}
+     * in the application Authenticator.
      * If this notation is not used, then the domain will be taken
      * from a system property: "http.auth.ntlm.domain".
      */

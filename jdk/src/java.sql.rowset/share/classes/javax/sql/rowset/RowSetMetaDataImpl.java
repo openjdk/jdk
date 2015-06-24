@@ -76,7 +76,7 @@ public class RowSetMetaDataImpl implements RowSetMetaData,  Serializable {
      * the <code>RowSet</code> object for which this <code>RowSetMetaDataImpl</code>
      * was created. To be valid, a column number must be greater than
      * <code>0</code> and less than or equal to the number of columns in a row.
-     * @throws <code>SQLException</code> with the message "Invalid column index"
+     * @throws SQLException with the message "Invalid column index"
      *        if the given column number is out of the range of valid column
      *        numbers for the <code>RowSet</code> object
      */

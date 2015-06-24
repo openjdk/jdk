@@ -485,6 +485,8 @@ public:
   bool is_inner()   { return is_loop() && _child == NULL; }
   bool is_counted() { return is_loop() && _head != NULL && _head->is_CountedLoop(); }
 
+  void remove_main_post_loops(CountedLoopNode *cl, PhaseIdealLoop *phase);
+
 #ifndef PRODUCT
   void dump_head( ) const;      // Dump loop head only
   void dump() const;            // Dump this loop recursively

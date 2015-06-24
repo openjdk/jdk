@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,10 @@
  * Clients may override the default signing mechanism of the <tt>jarsigner</tt>
  * tool by supplying an alternative implementation of
  * {@link com.sun.jarsigner.ContentSigner}.
+ *
+ * This package has been deprecated.
  */
 
 @jdk.Exported
+@Deprecated
 package com.sun.jarsigner;
