@@ -127,6 +127,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
       _method_CallerSensitive,
       _method_ForceInline,
       _method_DontInline,
+      _method_InjectedProfile,
       _method_LambdaForm_Compiled,
       _method_LambdaForm_Hidden,
       _sun_misc_Contended,

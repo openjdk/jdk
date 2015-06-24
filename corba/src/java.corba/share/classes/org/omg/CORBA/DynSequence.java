@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,8 @@ public interface DynSequence extends org.omg.CORBA.Object, org.omg.CORBA.DynAny
          * array.
      *
      * @param value the array of <code>Any</code> objects to be set
-     * @exception InvalidSeq if the array of values is bad
+     * @exception org.omg.CORBA.DynAnyPackage.InvalidSeq if the array
+     * of values is bad
          * @see #get_elements
      */
     public void set_elements(org.omg.CORBA.Any[] value)

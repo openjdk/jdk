@@ -48,28 +48,29 @@ public class StateDir extends SJavacTester {
     }
 
     void test() throws Exception {
-        Path bar = Paths.get("bar");
-        Files.createDirectory(bar);
-        Files.createDirectory(BIN);
-
-        clean(GENSRC, BIN, bar);
+        clean(TEST_ROOT);
+        Path BAR = TEST_ROOT.resolve("bar");
+        Files.createDirectories(BAR);
+        Files.createDirectories(BIN);
 
         Map<String,Long> previous_bin_state = collectState(BIN);
-        Map<String,Long> previous_bar_state = collectState(bar);
+        Map<String,Long> previous_bar_state = collectState(BAR);
 
         ToolBox tb = new ToolBox();
         tb.writeFile(GENSRC.resolve("alfa/omega/A.java"),
-                "package alfa.omega; public class A { }");
+                     "package alfa.omega; public class A { }");
 
-        compile("--state-dir=bar", "-src", "gensrc", "-d", "bin",
+        compile("--state-dir=" + BAR,
+                "-src", GENSRC.toString(),
+                "-d", BIN.toString(),
                 SJavacTester.SERVER_ARG);
 
         Map<String,Long> new_bin_state = collectState(BIN);
         verifyThatFilesHaveBeenAdded(previous_bin_state, new_bin_state,
-                                     "bin/alfa/omega/A.class");
-        Map<String,Long> new_bar_state = collectState(bar);
+                                     BIN + "/alfa/omega/A.class");
+        Map<String,Long> new_bar_state = collectState(BAR);
         verifyThatFilesHaveBeenAdded(previous_bar_state, new_bar_state,
-                                     "bar/javac_state");
-        clean(GENSRC, BIN, bar);
+                                     BAR + "/javac_state");
+        clean(GENSRC, BIN, BAR);
     }
 }
