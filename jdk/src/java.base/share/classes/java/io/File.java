@@ -2148,7 +2148,7 @@ public class File
      * WriteObject is called to save this filename.
      * The separator character is saved also so it can be replaced
      * in case the path is reconstituted on a different host type.
-     * <p>
+     *
      * @serialData  Default fields followed by separator character.
      */
     private synchronized void writeObject(java.io.ObjectOutputStream s)

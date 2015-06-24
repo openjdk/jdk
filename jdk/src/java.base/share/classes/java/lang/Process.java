@@ -368,7 +368,7 @@ public abstract class Process {
      * Processes returned from {@link ProcessBuilder#start} override the
      * default implementation to provide an efficient mechanism to wait
      * for process exit.
-     * <p>
+     *
      * @apiNote
      * Using {@link #onExit() onExit} is an alternative to
      * {@link #waitFor() waitFor} that enables both additional concurrency

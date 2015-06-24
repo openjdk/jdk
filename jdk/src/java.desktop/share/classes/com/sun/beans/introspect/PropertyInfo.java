@@ -125,38 +125,36 @@ public final class PropertyInfo {
                 put(Name.visualUpdate, annotation.visualUpdate());
                 put(Name.description, annotation.description());
                 String[] values = annotation.enumerationValues();
-                if (0 < values.length) {
-                    try {
-                        Object[] array = new Object[3 * values.length];
-                        int index = 0;
-                        for (String value : values) {
-                            Class<?> type = info.method.getDeclaringClass();
-                            String name = value;
-                            int pos = value.lastIndexOf('.');
-                            if (pos > 0) {
-                                name = value.substring(0, pos);
-                                if (name.indexOf('.') < 0) {
-                                    String pkg = type.getName();
-                                    name = pkg.substring(0, 1 + Math.max(
-                                            pkg.lastIndexOf('.'),
-                                            pkg.lastIndexOf('$'))) + name;
-                                }
-                                type = findClass(name);
-                                name = value.substring(pos + 1);
+                try {
+                    Object[] array = new Object[3 * values.length];
+                    int index = 0;
+                    for (String value : values) {
+                        Class<?> type = info.method.getDeclaringClass();
+                        String name = value;
+                        int pos = value.lastIndexOf('.');
+                        if (pos > 0) {
+                            name = value.substring(0, pos);
+                            if (name.indexOf('.') < 0) {
+                                String pkg = type.getName();
+                                name = pkg.substring(0, 1 + Math.max(
+                                        pkg.lastIndexOf('.'),
+                                        pkg.lastIndexOf('$'))) + name;
                             }
-                            Field field = type.getField(name);
-                            if (Modifier.isStatic(field.getModifiers()) && info.type.isAssignableFrom(field.getType())) {
-                                array[index++] = name;
-                                array[index++] = field.get(null);
-                                array[index++] = value;
-                            }
+                            type = findClass(name);
+                            name = value.substring(pos + 1);
                         }
-                        if (index == array.length) {
-                            put(Name.enumerationValues, array);
+                        Field field = type.getField(name);
+                        if (Modifier.isStatic(field.getModifiers()) && info.type.isAssignableFrom(field.getType())) {
+                            array[index++] = name;
+                            array[index++] = field.get(null);
+                            array[index++] = value;
                         }
-                    } catch (Exception ignored) {
-                        ignored.printStackTrace();
                     }
+                    if (index == array.length) {
+                        put(Name.enumerationValues, array);
+                    }
+                } catch (Exception ignored) {
+                    ignored.printStackTrace();
                 }
             }
         }

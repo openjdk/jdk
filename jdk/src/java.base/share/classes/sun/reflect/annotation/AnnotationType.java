@@ -73,8 +73,8 @@ public class AnnotationType {
     /**
      * Returns an AnnotationType instance for the specified annotation type.
      *
-     * @throw IllegalArgumentException if the specified class object for
-     *     does not represent a valid annotation type
+     * @throws IllegalArgumentException if the specified class object
+     *         does not represent a valid annotation type
      */
     public static AnnotationType getInstance(
         Class<? extends Annotation> annotationClass)
@@ -183,7 +183,7 @@ public class AnnotationType {
 
     /**
      * Returns member types for this annotation type
-     * (member name -> type mapping).
+     * (member name {@literal ->} type mapping).
      */
     public Map<String, Class<?>> memberTypes() {
         return memberTypes;
@@ -191,7 +191,7 @@ public class AnnotationType {
 
     /**
      * Returns members of this annotation type
-     * (member name -> associated Method object mapping).
+     * (member name {@literal ->} associated Method object mapping).
      */
     public Map<String, Method> members() {
         return members;
@@ -199,7 +199,7 @@ public class AnnotationType {
 
     /**
      * Returns the default values for this annotation type
-     * (Member name -> default value mapping).
+     * (Member name {@literal ->} default value mapping).
      */
     public Map<String, Object> memberDefaults() {
         return memberDefaults;

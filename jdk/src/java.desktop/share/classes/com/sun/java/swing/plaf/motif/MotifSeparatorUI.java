@@ -35,8 +35,8 @@ import javax.swing.plaf.*;
 import javax.swing.plaf.basic.BasicSeparatorUI;
 
 /**
- * A Motif L&F implementation of SeparatorUI.  This implementation
- * is a "combined" view/controller.
+ * A Motif {@literal L&F} implementation of SeparatorUI.
+ * This implementation is a "combined" view/controller.
  * <p>
  * <strong>Warning:</strong>
  * Serialized objects of this class will not be compatible with

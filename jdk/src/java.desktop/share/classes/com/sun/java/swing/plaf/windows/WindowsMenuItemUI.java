@@ -70,7 +70,7 @@ public class WindowsMenuItemUI extends BasicMenuItemUI {
 
     /**
      * Method which renders the text of the current menu item.
-     * <p>
+     *
      * @param g Graphics context
      * @param menuItem Current menu item to render
      * @param textRect Bounding rectangle to render the text.
