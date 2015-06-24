@@ -90,6 +90,10 @@ WB_ENTRY(jint, WB_GetVMPageSize(JNIEnv* env, jobject o))
   return os::vm_page_size();
 WB_END
 
+WB_ENTRY(jlong, WB_GetVMAllocationGranularity(JNIEnv* env, jobject o))
+  return os::vm_allocation_granularity();
+WB_END
+
 WB_ENTRY(jlong, WB_GetVMLargePageSize(JNIEnv* env, jobject o))
   return os::large_page_size();
 WB_END
@@ -1301,13 +1305,14 @@ void WhiteBox::register_methods(JNIEnv* env, jclass wbclass, JavaThread* thread,
 #define CC (char*)
 
 static JNINativeMethod methods[] = {
-  {CC"getObjectAddress0",   CC"(Ljava/lang/Object;)J", (void*)&WB_GetObjectAddress  },
-  {CC"getObjectSize0",      CC"(Ljava/lang/Object;)J", (void*)&WB_GetObjectSize     },
-  {CC"isObjectInOldGen0",   CC"(Ljava/lang/Object;)Z", (void*)&WB_isObjectInOldGen  },
-  {CC"getHeapOopSize",     CC"()I",                   (void*)&WB_GetHeapOopSize    },
-  {CC"getVMPageSize",      CC"()I",                   (void*)&WB_GetVMPageSize     },
-  {CC"getVMLargePageSize", CC"()J",                   (void*)&WB_GetVMLargePageSize},
-  {CC"isClassAlive0",      CC"(Ljava/lang/String;)Z", (void*)&WB_IsClassAlive      },
+  {CC"getObjectAddress0",                CC"(Ljava/lang/Object;)J", (void*)&WB_GetObjectAddress  },
+  {CC"getObjectSize0",                   CC"(Ljava/lang/Object;)J", (void*)&WB_GetObjectSize     },
+  {CC"isObjectInOldGen0",                CC"(Ljava/lang/Object;)Z", (void*)&WB_isObjectInOldGen  },
+  {CC"getHeapOopSize",                   CC"()I",                   (void*)&WB_GetHeapOopSize    },
+  {CC"getVMPageSize",                    CC"()I",                   (void*)&WB_GetVMPageSize     },
+  {CC"getVMAllocationGranularity",       CC"()J",                   (void*)&WB_GetVMAllocationGranularity },
+  {CC"getVMLargePageSize",               CC"()J",                   (void*)&WB_GetVMLargePageSize},
+  {CC"isClassAlive0",                    CC"(Ljava/lang/String;)Z", (void*)&WB_IsClassAlive      },
   {CC"parseCommandLine0",
       CC"(Ljava/lang/String;C[Lsun/hotspot/parser/DiagnosticCommand;)[Ljava/lang/Object;",
       (void*) &WB_ParseCommandLine
