@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,11 @@ public class ClientMain {
         if (hdrdir != null && !createIfMissing(hdrdir))
             return -1;
 
+        Log.debug("==========================================================");
+        Log.debug("Launching sjavac client with the following parameters:");
+        Log.debug("    " + options.getStateArgsString());
+        Log.debug("==========================================================");
+
         // Load the prev build state database.
         JavacState javac_state = JavacState.load(options, out, err);
 
@@ -167,6 +172,9 @@ public class ClientMain {
         javac_state.now().checkInternalState("checking linked sources", true, sources_to_link_to);
         javac_state.setVisibleSources(sources_to_link_to);
 
+        int round = 0;
+        printRound(round);
+
         // If there is any change in the source files, taint packages
         // and mark the database in need of saving.
         javac_state.checkSourceStatus(false);
@@ -187,6 +195,10 @@ public class ClientMain {
         }
         // Go through all sources and taint all packages that miss artifacts.
         javac_state.taintPackagesThatMissArtifacts();
+
+        // Check recorded classpath public apis. Taint packages that depend on
+        // classpath classes whose public apis have changed.
+        javac_state.taintPackagesDependingOnChangedClasspathPackages();
 
         // Now clean out all known artifacts belonging to tainted packages.
         javac_state.deleteClassArtifactsInTaintedPackages();
@@ -231,11 +243,22 @@ public class ClientMain {
             }
 
             do {
+                if (round > 0)
+                    printRound(round);
                 // Clean out artifacts in tainted packages.
                 javac_state.deleteClassArtifactsInTaintedPackages();
                 again = javac_state.performJavaCompilations(sjavac, options, recently_compiled, rc);
-                if (!rc[0]) break;
+                if (!rc[0]) {
+                    Log.debug("Compilation failed.");
+                    break;
+                }
+                if (!again) {
+                    Log.debug("Nothing left to do.");
+                }
+                round++;
             } while (again);
+            Log.debug("No need to do another round.");
+
             // Only update the state if the compile went well.
             if (rc[0]) {
                 javac_state.save();
@@ -321,6 +344,12 @@ public class ClientMain {
                                    permitSourcesInDefaultPackage,
                                    inLinksrc);
         }
+    }
+
+    private static void printRound(int round) {
+        Log.debug("****************************************");
+        Log.debug("* Round " + round + "                              *");
+        Log.debug("****************************************");
     }
 
 }

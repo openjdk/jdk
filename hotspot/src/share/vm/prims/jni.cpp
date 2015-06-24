@@ -1126,39 +1126,32 @@ static void jni_invoke_nonstatic(JNIEnv *env, JavaValue* result, jobject receive
     Method* m = Method::resolve_jmethod_id(method_id);
     number_of_parameters = m->size_of_parameters();
     Klass* holder = m->method_holder();
-    if (!(holder)->is_interface()) {
+    if (call_type != JNI_VIRTUAL) {
+        selected_method = m;
+    } else if (!m->has_itable_index()) {
       // non-interface call -- for that little speed boost, don't handlize
       debug_only(No_Safepoint_Verifier nosafepoint;)
-      if (call_type == JNI_VIRTUAL) {
-        // jni_GetMethodID makes sure class is linked and initialized
-        // so m should have a valid vtable index.
-        assert(!m->has_itable_index(), "");
-        int vtbl_index = m->vtable_index();
-        if (vtbl_index != Method::nonvirtual_vtable_index) {
-          Klass* k = h_recv->klass();
-          // k might be an arrayKlassOop but all vtables start at
-          // the same place. The cast is to avoid virtual call and assertion.
-          InstanceKlass *ik = (InstanceKlass*)k;
-          selected_method = ik->method_at_vtable(vtbl_index);
-        } else {
-          // final method
-          selected_method = m;
-        }
+      // jni_GetMethodID makes sure class is linked and initialized
+      // so m should have a valid vtable index.
+      assert(m->valid_vtable_index(), "no valid vtable index");
+      int vtbl_index = m->vtable_index();
+      if (vtbl_index != Method::nonvirtual_vtable_index) {
+        Klass* k = h_recv->klass();
+        // k might be an arrayKlassOop but all vtables start at
+        // the same place. The cast is to avoid virtual call and assertion.
+        InstanceKlass *ik = (InstanceKlass*)k;
+        selected_method = ik->method_at_vtable(vtbl_index);
       } else {
-        // JNI_NONVIRTUAL call
+        // final method
         selected_method = m;
       }
     } else {
       // interface call
       KlassHandle h_holder(THREAD, holder);
 
-      if (call_type == JNI_VIRTUAL) {
-        int itbl_index = m->itable_index();
-        Klass* k = h_recv->klass();
-        selected_method = InstanceKlass::cast(k)->method_at_itable(h_holder(), itbl_index, CHECK);
-      } else {
-        selected_method = m;
-      }
+      int itbl_index = m->itable_index();
+      Klass* k = h_recv->klass();
+      selected_method = InstanceKlass::cast(k)->method_at_itable(h_holder(), itbl_index, CHECK);
     }
   }
 

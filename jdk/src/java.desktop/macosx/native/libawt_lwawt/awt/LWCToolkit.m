@@ -516,8 +516,10 @@ JNF_COCOA_ENTER(env);
                                              beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.010]];
         if (processEvents) {
             //We do not spin a runloop here as date is nil, so does not matter which mode to use
+            // Processing all events excluding NSApplicationDefined which need to be processed 
+            // on the main loop only (those events are intended for disposing resources)
             NSEvent *event;
-            if ((event = [NSApp nextEventMatchingMask:NSAnyEventMask
+            if ((event = [NSApp nextEventMatchingMask:(NSAnyEventMask & ~NSApplicationDefined)
                                            untilDate:nil
                                               inMode:NSDefaultRunLoopMode
                                              dequeue:YES]) != nil) {

@@ -159,6 +159,7 @@ class Ticks;
   do_klass(MethodType_klass,                            java_lang_invoke_MethodType,               Pre                 ) \
   do_klass(BootstrapMethodError_klass,                  java_lang_BootstrapMethodError,            Pre                 ) \
   do_klass(CallSite_klass,                              java_lang_invoke_CallSite,                 Pre                 ) \
+  do_klass(Context_klass,                               java_lang_invoke_MethodHandleNatives_CallSiteContext, Pre      ) \
   do_klass(ConstantCallSite_klass,                      java_lang_invoke_ConstantCallSite,         Pre                 ) \
   do_klass(MutableCallSite_klass,                       java_lang_invoke_MutableCallSite,          Pre                 ) \
   do_klass(VolatileCallSite_klass,                      java_lang_invoke_VolatileCallSite,         Pre                 ) \
