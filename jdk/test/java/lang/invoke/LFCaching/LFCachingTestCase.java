@@ -77,7 +77,7 @@ public abstract class LFCachingTestCase extends LambdaFormTestCase {
             }
         } catch (IllegalAccessException | IllegalArgumentException |
                 SecurityException | InvocationTargetException ex) {
-            throw new Error("Unexpected exception: ", ex);
+            throw new Error("Unexpected exception", ex);
         }
     }
 }

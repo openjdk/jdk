@@ -5431,18 +5431,18 @@ instruct loadUB2L(eRegL dst, memory mem, eFlagsReg cr) %{
 %}
 
 // Load Unsigned Byte (8 bit UNsigned) with mask into Long Register
-instruct loadUB2L_immI8(eRegL dst, memory mem, immI8 mask, eFlagsReg cr) %{
+instruct loadUB2L_immI(eRegL dst, memory mem, immI mask, eFlagsReg cr) %{
   match(Set dst (ConvI2L (AndI (LoadUB mem) mask)));
   effect(KILL cr);
 
-  format %{ "MOVZX8 $dst.lo,$mem\t# ubyte & 8-bit mask -> long\n\t"
+  format %{ "MOVZX8 $dst.lo,$mem\t# ubyte & 32-bit mask -> long\n\t"
             "XOR    $dst.hi,$dst.hi\n\t"
-            "AND    $dst.lo,$mask" %}
+            "AND    $dst.lo,right_n_bits($mask, 8)" %}
   ins_encode %{
     Register Rdst = $dst$$Register;
     __ movzbl(Rdst, $mem$$Address);
     __ xorl(HIGH_FROM_LOW(Rdst), HIGH_FROM_LOW(Rdst));
-    __ andl(Rdst, $mask$$constant);
+    __ andl(Rdst, $mask$$constant & right_n_bits(8));
   %}
   ins_pipe(ialu_reg_mem);
 %}
@@ -5550,19 +5550,19 @@ instruct loadUS2L_immI_255(eRegL dst, memory mem, immI_255 mask, eFlagsReg cr) %
   ins_pipe(ialu_reg_mem);
 %}
 
-// Load Unsigned Short/Char (16 bit UNsigned) with a 16-bit mask into Long Register
-instruct loadUS2L_immI16(eRegL dst, memory mem, immI16 mask, eFlagsReg cr) %{
+// Load Unsigned Short/Char (16 bit UNsigned) with a 32-bit mask into Long Register
+instruct loadUS2L_immI(eRegL dst, memory mem, immI mask, eFlagsReg cr) %{
   match(Set dst (ConvI2L (AndI (LoadUS mem) mask)));
   effect(KILL cr);
 
-  format %{ "MOVZX  $dst.lo, $mem\t# ushort/char & 16-bit mask -> long\n\t"
+  format %{ "MOVZX  $dst.lo, $mem\t# ushort/char & 32-bit mask -> long\n\t"
             "XOR    $dst.hi,$dst.hi\n\t"
-            "AND    $dst.lo,$mask" %}
+            "AND    $dst.lo,right_n_bits($mask, 16)" %}
   ins_encode %{
     Register Rdst = $dst$$Register;
     __ movzwl(Rdst, $mem$$Address);
     __ xorl(HIGH_FROM_LOW(Rdst), HIGH_FROM_LOW(Rdst));
-    __ andl(Rdst, $mask$$constant);
+    __ andl(Rdst, $mask$$constant & right_n_bits(16));
   %}
   ins_pipe(ialu_reg_mem);
 %}

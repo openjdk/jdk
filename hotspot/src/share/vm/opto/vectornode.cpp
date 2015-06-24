@@ -406,9 +406,11 @@ PackNode* PackNode::binary_tree_pack(int lo, int hi) {
 
 // Return the vector version of a scalar load node.
 LoadVectorNode* LoadVectorNode::make(int opc, Node* ctl, Node* mem,
-                                     Node* adr, const TypePtr* atyp, uint vlen, BasicType bt) {
+                                     Node* adr, const TypePtr* atyp,
+                                     uint vlen, BasicType bt,
+                                     ControlDependency control_dependency) {
   const TypeVect* vt = TypeVect::make(bt, vlen);
-  return new LoadVectorNode(ctl, mem, adr, atyp, vt);
+  return new LoadVectorNode(ctl, mem, adr, atyp, vt, control_dependency);
 }
 
 // Return the vector version of a scalar store node.

@@ -74,12 +74,15 @@ class GCCause : public AllStatic {
     _g1_humongous_allocation,
 
     _last_ditch_collection,
+
+    _dcmd_gc_run,
+
     _last_gc_cause
   };
 
   inline static bool is_user_requested_gc(GCCause::Cause cause) {
     return (cause == GCCause::_java_lang_system_gc ||
-            cause == GCCause::_jvmti_force_gc);
+            cause == GCCause::_dcmd_gc_run);
   }
 
   inline static bool is_serviceability_requested_gc(GCCause::Cause

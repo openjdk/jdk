@@ -103,16 +103,15 @@ class AbstractGangTaskWOopQueues : public AbstractGangTask {
 // An abstract class representing a gang of workers.
 // You subclass this to supply an implementation of run_task().
 class AbstractWorkGang: public CHeapObj<mtInternal> {
-  // Here's the public interface to this class.
+protected:
+  // Work gangs are never deleted, so no need to cleanup.
+  ~AbstractWorkGang() { ShouldNotReachHere(); }
 public:
-  // Constructor and destructor.
+  // Constructor.
   AbstractWorkGang(const char* name, bool are_GC_task_threads,
                    bool are_ConcurrentGC_threads);
-  ~AbstractWorkGang();
   // Run a task, returns when the task is done (or terminated).
   virtual void run_task(AbstractGangTask* task) = 0;
-  // Stop and terminate all workers.
-  virtual void stop();
   // Return true if more workers should be applied to the task.
   virtual bool needs_more_workers() const { return true; }
 public:
@@ -129,8 +128,6 @@ protected:
   Monitor*  _monitor;
   // The count of the number of workers in the gang.
   uint _total_workers;
-  // Whether the workers should terminate.
-  bool _terminate;
   // The array of worker threads for this gang.
   // This is only needed for cleaning up.
   GangWorker** _gang_workers;
@@ -152,9 +149,6 @@ public:
   }
   virtual uint active_workers() const {
     return _total_workers;
-  }
-  bool terminate() const {
-    return _terminate;
   }
   GangWorker** gang_workers() const {
     return _gang_workers;
@@ -205,21 +199,16 @@ protected:
 class WorkData: public StackObj {
   // This would be a struct, but I want accessor methods.
 private:
-  bool              _terminate;
   AbstractGangTask* _task;
   int               _sequence_number;
 public:
   // Constructor and destructor
   WorkData() {
-    _terminate       = false;
     _task            = NULL;
     _sequence_number = 0;
   }
   ~WorkData() {
   }
-  // Accessors and modifiers
-  bool terminate()                       const { return _terminate;  }
-  void set_terminate(bool value)               { _terminate = value; }
   AbstractGangTask* task()               const { return _task; }
   void set_task(AbstractGangTask* value)       { _task = value; }
   int sequence_number()                  const { return _sequence_number; }

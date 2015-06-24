@@ -565,13 +565,18 @@ nmethod* nmethod::new_nmethod(methodHandle method,
       // the number of methods compiled.  For applications with a lot
       // classes the slow way is too slow.
       for (Dependencies::DepStream deps(nm); deps.next(); ) {
-        Klass* klass = deps.context_type();
-        if (klass == NULL) {
-          continue;  // ignore things like evol_method
+        if (deps.type() == Dependencies::call_site_target_value) {
+          // CallSite dependencies are managed on per-CallSite instance basis.
+          oop call_site = deps.argument_oop(0);
+          MethodHandles::add_dependent_nmethod(call_site, nm);
+        } else {
+          Klass* klass = deps.context_type();
+          if (klass == NULL) {
+            continue;  // ignore things like evol_method
+          }
+          // record this nmethod as dependent on this klass
+          InstanceKlass::cast(klass)->add_dependent_nmethod(nm);
         }
-
-        // record this nmethod as dependent on this klass
-        InstanceKlass::cast(klass)->add_dependent_nmethod(nm);
       }
       NOT_PRODUCT(nmethod_stats.note_nmethod(nm));
       if (PrintAssembly || CompilerOracle::has_option_string(method, "PrintAssembly")) {
@@ -1464,13 +1469,20 @@ void nmethod::flush_dependencies(BoolObjectClosure* is_alive) {
   if (!has_flushed_dependencies()) {
     set_has_flushed_dependencies();
     for (Dependencies::DepStream deps(this); deps.next(); ) {
-      Klass* klass = deps.context_type();
-      if (klass == NULL)  continue;  // ignore things like evol_method
-
-      // During GC the is_alive closure is non-NULL, and is used to
-      // determine liveness of dependees that need to be updated.
-      if (is_alive == NULL || klass->is_loader_alive(is_alive)) {
-        InstanceKlass::cast(klass)->remove_dependent_nmethod(this);
+      if (deps.type() == Dependencies::call_site_target_value) {
+        // CallSite dependencies are managed on per-CallSite instance basis.
+        oop call_site = deps.argument_oop(0);
+        MethodHandles::remove_dependent_nmethod(call_site, this);
+      } else {
+        Klass* klass = deps.context_type();
+        if (klass == NULL) {
+          continue;  // ignore things like evol_method
+        }
+        // During GC the is_alive closure is non-NULL, and is used to
+        // determine liveness of dependees that need to be updated.
+        if (is_alive == NULL || klass->is_loader_alive(is_alive)) {
+          InstanceKlass::cast(klass)->remove_dependent_nmethod(this);
+        }
       }
     }
   }

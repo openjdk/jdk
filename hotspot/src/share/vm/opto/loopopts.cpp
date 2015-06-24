@@ -718,7 +718,7 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
   }
 
   // Use same limit as split_if_with_blocks_post
-  if( C->unique() > 35000 ) return n; // Method too big
+  if( C->live_nodes() > 35000 ) return n; // Method too big
 
   // Split 'n' through the merge point if it is profitable
   Node *phi = split_thru_phi( n, n_blk, policy );
@@ -802,7 +802,7 @@ void PhaseIdealLoop::split_if_with_blocks_post( Node *n ) {
   // Cloning Cmp through Phi's involves the split-if transform.
   // FastLock is not used by an If
   if( n->is_Cmp() && !n->is_FastLock() ) {
-    if( C->unique() > 35000 ) return; // Method too big
+    if( C->live_nodes() > 35000 ) return; // Method too big
 
     // Do not do 'split-if' if irreducible loops are present.
     if( _has_irreducible_loops )
