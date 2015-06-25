@@ -2558,9 +2558,15 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
                        round_to((int)long_ThreadStackSize, K) / K) != Flag::SUCCESS) {
         return JNI_EINVAL;
       }
-    // -Xoss
-    } else if (match_option(option, "-Xoss", &tail)) {
-          // HotSpot does not have separate native and Java stacks, ignore silently for compatibility
+    // -Xoss, -Xsqnopause, -Xoptimize, -Xboundthreads
+    } else if (match_option(option, "-Xoss", &tail) ||
+               match_option(option, "-Xsqnopause") ||
+               match_option(option, "-Xoptimize") ||
+               match_option(option, "-Xboundthreads")) {
+      // All these options are deprecated in JDK 9 and will be removed in a future release
+      char version[256];
+      JDK_Version::jdk(9).to_string(version, sizeof(version));
+      warning("ignoring option %s; support was removed in %s", option->optionString, version);
     } else if (match_option(option, "-XX:CodeCacheExpansionSize=", &tail)) {
       julong long_CodeCacheExpansionSize = 0;
       ArgsRange errcode = parse_memory_size(tail, &long_CodeCacheExpansionSize, os::vm_page_size());
@@ -2633,9 +2639,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     // -native
     } else if (match_option(option, "-native")) {
           // HotSpot always uses native threads, ignore silently for compatibility
-    // -Xsqnopause
-    } else if (match_option(option, "-Xsqnopause")) {
-          // EVM option, ignore silently for compatibility
     // -Xrs
     } else if (match_option(option, "-Xrs")) {
           // Classic/EVM option, new functionality
@@ -2647,9 +2650,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       if (FLAG_SET_CMDLINE(bool, UseAltSigs, true) != Flag::SUCCESS) {
         return JNI_EINVAL;
       }
-    // -Xoptimize
-    } else if (match_option(option, "-Xoptimize")) {
-          // EVM option, ignore silently for compatibility
     // -Xprof
     } else if (match_option(option, "-Xprof")) {
 #if INCLUDE_FPROF
@@ -2795,8 +2795,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     // -Xnoagent
     } else if (match_option(option, "-Xnoagent")) {
       // For compatibility with classic. HotSpot refuses to load the old style agent.dll.
-    } else if (match_option(option, "-Xboundthreads")) {
-      // Ignore silently for compatibility
     } else if (match_option(option, "-Xloggc:", &tail)) {
       // Redirect GC output to the file. -Xloggc:<filename>
       // ostream_init_log(), when called will use this filename
