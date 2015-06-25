@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ BUILD_LIBHPROF_SRC := $(call FindSrcDirsForLib, jdk.hprof.agent, hprof)
 
 BUILD_LIBHPROF_CFLAGS := $(addprefix -I, $(BUILD_LIBHPROF_SRC)) \
     -I$(JDK_TOPDIR)/src/demo/share/jvmti/java_crw_demo
-    
+
 BUILD_LIBHPROF_LDFLAGS :=
 
 LIBHPROF_OPTIMIZATION := HIGHEST
@@ -46,7 +46,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBHPROF, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(BUILD_LIBHPROF_SRC), \
     OPTIMIZATION := $(LIBHPROF_OPTIMIZATION), \
-    CFLAGS := $(CFLAGS_JDKLIB) $(CFLAGS_WARNINGS_ARE_ERRORS) \
+    CFLAGS := $(CFLAGS_JDKLIB) \
         $(BUILD_LIBHPROF_CFLAGS), \
     CFLAGS_debug := -DHPROF_LOGGING, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libhprof/mapfile-vers, \
@@ -75,7 +75,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVA_CRW_DEMO, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBJAVA_CRW_DEMO_SRC), \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(CFLAGS_JDKLIB) $(CFLAGS_WARNINGS_ARE_ERRORS) \
+    CFLAGS := $(CFLAGS_JDKLIB) \
         $(addprefix -I, $(LIBJAVA_CRW_DEMO_SRC)), \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjava_crw_demo/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \

@@ -50,9 +50,10 @@ public class IncCompileNoChanges  extends SJavacTester {
     Map<String,Long> previous_headers_state;
 
     void test() throws Exception {
-        Files.createDirectory(GENSRC);
-        Files.createDirectory(BIN);
-        Files.createDirectory(HEADERS);
+        clean(Paths.get(getClass().getSimpleName()));
+        Files.createDirectories(GENSRC);
+        Files.createDirectories(BIN);
+        Files.createDirectories(HEADERS);
 
         initialCompile();
         incrementalCompileNoChanges();
@@ -66,8 +67,12 @@ public class IncCompileNoChanges  extends SJavacTester {
         previous_headers_state = collectState(HEADERS);
         System.out.println("\nIn incrementalCompileNoChanges() ");
         System.out.println("Testing that no change in sources implies no change in binaries");
-        compile("gensrc", "-d", "bin", "-h", "headers", "-j", "1",
-                SERVER_ARG, "--log=debug");
+        compile(GENSRC.toString(),
+                "-d", BIN.toString(),
+                "-h", HEADERS.toString(),
+                "-j", "1",
+                SERVER_ARG,
+                "--log=debug");
         Map<String,Long> new_bin_state = collectState(BIN);
         verifyEqual(new_bin_state, previous_bin_state);
         Map<String,Long> new_headers_state = collectState(HEADERS);

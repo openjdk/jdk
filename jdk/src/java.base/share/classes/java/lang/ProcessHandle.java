@@ -71,7 +71,7 @@ import java.util.stream.Stream;
  * The ability to control processes is also restricted by the native system,
  * ProcessHandle provides no more access to, or control over, the native process
  * than would be allowed by a native application.
- * <p>
+ *
  * @implSpec
  * In the case where ProcessHandles cannot be supported then the factory
  * methods must consistently throw {@link java.lang.UnsupportedOperationException}.

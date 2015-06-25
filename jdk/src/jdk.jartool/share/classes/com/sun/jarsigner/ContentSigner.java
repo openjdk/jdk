@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,11 @@ import java.security.cert.CertificateException;
  *
  * @since 1.5
  * @author Vincent Ryan
+ * @deprecated This package has been deprecated.
  */
 
 @jdk.Exported
+@Deprecated
 public abstract class ContentSigner {
 
     /**

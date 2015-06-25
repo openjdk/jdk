@@ -561,10 +561,6 @@ define SetupJavaCompilationBody
 
     $$($1_BIN)/_the.$1_batch: $$($1_SRCS) $$($1_DEPENDS) $$($1_VARDEPS_FILE)
 	$(MKDIR) -p $$(@D) $$(dir $$($1_SJAVAC_PORTFILE))
-        # As a workaround for sjavac not tracking api changed from the classpath, force full
-        # recompile if an external dependency, which is something other than a source
-        # change, triggered this compilation.
-	$$(if $$(filter-out $$($1_SRCS), $$?), $(FIND) $$(@D) -name "*.class" $(FIND_DELETE))
 	$$(call ListPathsSafely,$1_SRCS,\n, >> $$($1_BIN)/_the.$1_batch.tmp)
 	$(ECHO) Compiling $1
 	($$($1_JVM) $$($1_SJAVAC) \

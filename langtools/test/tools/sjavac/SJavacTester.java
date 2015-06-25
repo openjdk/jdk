@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@ import java.util.*;
 import java.io.*;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
-import java.nio.charset.*;
 
 import com.sun.tools.sjavac.Main;
 
@@ -35,16 +34,18 @@ public class SJavacTester {
             + "portfile=testportfile,"
             + "background=false";
 
+    final Path TEST_ROOT = Paths.get(getClass().getSimpleName());
+
     // Generated sources that will test aspects of sjavac
-    static final Path GENSRC = Paths.get("gensrc");
+    final Path GENSRC = TEST_ROOT.resolve("gensrc");
     // Gensrc dirs used to test merging of serveral source roots.
-    static final Path GENSRC2 = Paths.get("gensrc2");
-    static final Path GENSRC3= Paths.get("gensrc3");
+    final Path GENSRC2 = TEST_ROOT.resolve("gensrc2");
+    final Path GENSRC3 = TEST_ROOT.resolve("gensrc3");
 
     // Dir for compiled classes.
-    static final Path BIN = Paths.get("bin");
+    final Path BIN = TEST_ROOT.resolve("bin");
     // Dir for c-header files.
-    Path HEADERS = Paths.get("headers");
+    final Path HEADERS = TEST_ROOT.resolve("headers");
 
     // Remember the previous bin and headers state here.
     Map<String,Long> previous_bin_state;
@@ -54,10 +55,10 @@ public class SJavacTester {
         System.out.println("\nInitial compile of gensrc.");
         ToolBox tb = new ToolBox();
         tb.writeFile(GENSRC.resolve("alfa/omega/AINT.java"),
-            "package alfa.omega; public interface AINT { void aint(); }");
+                     "package alfa.omega; public interface AINT { void aint(); }");
         tb.writeFile(GENSRC.resolve("alfa/omega/A.java"),
-            "package alfa.omega; public class A implements AINT { "+
-                 "public final static int DEFINITION = 17; public void aint() { } }");
+                     "package alfa.omega; public class A implements AINT { "+
+                     "public final static int DEFINITION = 17; public void aint() { } }");
         tb.writeFile(GENSRC.resolve("alfa/omega/AA.java"),
             "package alfa.omega;"+
             "// A package private class, not contributing to the public api.\n"+
@@ -79,13 +80,17 @@ public class SJavacTester {
             "    // from outside of this source file, therefore it is ok.\n"+
             "}\n");
         tb.writeFile(GENSRC.resolve("beta/BINT.java"),
-            "package beta;public interface BINT { void foo(); }");
+                     "package beta;public interface BINT { void foo(); }");
         tb.writeFile(GENSRC.resolve("beta/B.java"),
-            "package beta; import alfa.omega.A; public class B {"+
-            "private int b() { return A.DEFINITION; } native void foo(); }");
+                     "package beta; import alfa.omega.A; public class B {"+
+                     "private int b() { return A.DEFINITION; } native void foo(); }");
 
-        compile("gensrc", "-d", "bin", "-h", "headers", "-j", "1",
-                SERVER_ARG, "--log=debug");
+        compile(GENSRC.toString(),
+                "-d", BIN.toString(),
+                "-h", HEADERS.toString(),
+                "-j", "1",
+                SERVER_ARG,
+                "--log=debug");
     }
 
     void removeFrom(Path dir, String... args) throws IOException {

@@ -41,7 +41,7 @@ import java.awt.Point;
 import java.awt.Rectangle;
 
 /**
- * Factory object that can vend Icons appropriate for the basic L & F.
+ * Factory object that can vend Icons appropriate for the basic {@literal L & F}.
  * <p>
  * <strong>Warning:</strong>
  * Serialized objects of this class will not be compatible with

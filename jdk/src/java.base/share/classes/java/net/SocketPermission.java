@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,24 +25,24 @@
 
 package java.net;
 
-import java.util.Enumeration;
-import java.util.Vector;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.StringJoiner;
-import java.util.StringTokenizer;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamField;
+import java.io.Serializable;
 import java.net.InetAddress;
+import java.security.AccessController;
 import java.security.Permission;
 import java.security.PermissionCollection;
 import java.security.PrivilegedAction;
-import java.security.AccessController;
 import java.security.Security;
-import java.io.Serializable;
-import java.io.ObjectStreamField;
-import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
-import java.io.IOException;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Enumeration;
+import java.util.Vector;
+import java.util.StringJoiner;
+import java.util.StringTokenizer;
+import java.util.concurrent.ConcurrentSkipListMap;
 import sun.net.util.IPAddressUtil;
 import sun.net.RegisteredDomain;
 import sun.net.PortConfig;
@@ -832,6 +832,7 @@ public final class SocketPermission extends Permission
      * @return true if the specified permission is implied by this object,
      * false if not.
      */
+    @Override
     public boolean implies(Permission p) {
         int i,j;
 
@@ -1010,6 +1011,7 @@ public final class SocketPermission extends Permission
      *  SocketPermission object. However, port range will be ignored
      *  in the comparison if <i>obj</i> only contains the action, 'resolve'.
      */
+    @Override
     public boolean equals(Object obj) {
         if (obj == this)
             return true;
@@ -1069,7 +1071,7 @@ public final class SocketPermission extends Permission
      *
      * @return a hash code value for this object.
      */
-
+    @Override
     public int hashCode() {
         /*
          * If this SocketPermission was initialized with an IP address
@@ -1137,6 +1139,7 @@ public final class SocketPermission extends Permission
      *
      * @return the canonical string representation of the actions.
      */
+    @Override
     public String getActions()
     {
         if (actions == null)
@@ -1156,7 +1159,7 @@ public final class SocketPermission extends Permission
      *
      * @return a new PermissionCollection object suitable for storing SocketPermissions.
      */
-
+    @Override
     public PermissionCollection newPermissionCollection() {
         return new SocketPermissionCollection();
     }
@@ -1320,15 +1323,16 @@ final class SocketPermissionCollection extends PermissionCollection
     implements Serializable
 {
     // Not serialized; see serialization section at end of class
-    private transient List<SocketPermission> perms;
+    // A ConcurrentSkipListMap is used to preserve order, so that most
+    // recently added permissions are checked first (see JDK-4301064).
+    private transient ConcurrentSkipListMap<String, SocketPermission> perms;
 
     /**
      * Create an empty SocketPermissions object.
      *
      */
-
     public SocketPermissionCollection() {
-        perms = new ArrayList<>();
+        perms = new ConcurrentSkipListMap<>(new SPCComparator());
     }
 
     /**
@@ -1343,6 +1347,7 @@ final class SocketPermissionCollection extends PermissionCollection
      * @exception SecurityException - if this SocketPermissionCollection object
      *                                has been marked readonly
      */
+    @Override
     public void add(Permission permission) {
         if (! (permission instanceof SocketPermission))
             throw new IllegalArgumentException("invalid permission: "+
@@ -1351,11 +1356,32 @@ final class SocketPermissionCollection extends PermissionCollection
             throw new SecurityException(
                 "attempt to add a Permission to a readonly PermissionCollection");
 
-        // optimization to ensure perms most likely to be tested
-        // show up early (4301064)
-        synchronized (this) {
-            perms.add(0, (SocketPermission)permission);
-        }
+        SocketPermission sp = (SocketPermission)permission;
+
+        // Add permission to map if it is absent, or replace with new
+        // permission if applicable. NOTE: cannot use lambda for
+        // remappingFunction parameter until JDK-8076596 is fixed.
+        perms.merge(sp.getName(), sp,
+            new java.util.function.BiFunction<>() {
+                @Override
+                public SocketPermission apply(SocketPermission existingVal,
+                                              SocketPermission newVal) {
+                    int oldMask = existingVal.getMask();
+                    int newMask = newVal.getMask();
+                    if (oldMask != newMask) {
+                        int effective = oldMask | newMask;
+                        if (effective == newMask) {
+                            return newVal;
+                        }
+                        if (effective != oldMask) {
+                            return new SocketPermission(sp.getName(),
+                                                        effective);
+                        }
+                    }
+                    return existingVal;
+                }
+            }
+        );
     }
 
     /**
@@ -1367,7 +1393,7 @@ final class SocketPermissionCollection extends PermissionCollection
      * @return true if "permission" is a proper subset of a permission in
      * the collection, false if not.
      */
-
+    @Override
     public boolean implies(Permission permission)
     {
         if (! (permission instanceof SocketPermission))
@@ -1379,18 +1405,15 @@ final class SocketPermissionCollection extends PermissionCollection
         int effective = 0;
         int needed = desired;
 
-        synchronized (this) {
-            int len = perms.size();
-            //System.out.println("implies "+np);
-            for (int i = 0; i < len; i++) {
-                SocketPermission x = perms.get(i);
-                //System.out.println("  trying "+x);
-                if (((needed & x.getMask()) != 0) && x.impliesIgnoreMask(np)) {
-                    effective |=  x.getMask();
-                    if ((effective & desired) == desired)
-                        return true;
-                    needed = (desired ^ effective);
+        //System.out.println("implies "+np);
+        for (SocketPermission x : perms.values()) {
+            //System.out.println("  trying "+x);
+            if (((needed & x.getMask()) != 0) && x.impliesIgnoreMask(np)) {
+                effective |=  x.getMask();
+                if ((effective & desired) == desired) {
+                    return true;
                 }
+                needed = (desired ^ effective);
             }
         }
         return false;
@@ -1402,13 +1425,10 @@ final class SocketPermissionCollection extends PermissionCollection
      *
      * @return an enumeration of all the SocketPermission objects.
      */
-
+    @Override
     @SuppressWarnings("unchecked")
     public Enumeration<Permission> elements() {
-        // Convert Iterator into Enumeration
-        synchronized (this) {
-            return Collections.enumeration((List<Permission>)(List)perms);
-        }
+        return (Enumeration)Collections.enumeration(perms.values());
     }
 
     private static final long serialVersionUID = 2787186408602843674L;
@@ -1441,11 +1461,7 @@ final class SocketPermissionCollection extends PermissionCollection
         // Don't call out.defaultWriteObject()
 
         // Write out Vector
-        Vector<SocketPermission> permissions = new Vector<>(perms.size());
-
-        synchronized (this) {
-            permissions.addAll(perms);
-        }
+        Vector<SocketPermission> permissions = new Vector<>(perms.values());
 
         ObjectOutputStream.PutField pfields = out.putFields();
         pfields.put("permissions", permissions);
@@ -1466,7 +1482,22 @@ final class SocketPermissionCollection extends PermissionCollection
         // Get the one we want
         @SuppressWarnings("unchecked")
         Vector<SocketPermission> permissions = (Vector<SocketPermission>)gfields.get("permissions", null);
-        perms = new ArrayList<>(permissions.size());
-        perms.addAll(permissions);
+        perms = new ConcurrentSkipListMap<>(new SPCComparator());
+        for (SocketPermission sp : permissions) {
+            perms.put(sp.getName(), sp);
+        }
+    }
+
+    /**
+     * A simple comparator that orders new non-equal entries at the beginning.
+     */
+    private static class SPCComparator implements Comparator<String> {
+        @Override
+        public int compare(String s1, String s2) {
+            if (s1.equals(s2)) {
+                return 0;
+            }
+            return -1;
+        }
     }
 }

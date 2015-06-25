@@ -204,7 +204,7 @@ public class ScriptObjectMirrorTest {
         }
 
         try {
-            final Object obj = e.eval("function func() { print('hello'); }");
+            final Object obj = e.eval("(function func() { print('hello'); })");
             assertEquals(obj.toString(), "function func() { print('hello'); }", "toString returns wrong value");
         } catch (final Throwable t) {
             t.printStackTrace();

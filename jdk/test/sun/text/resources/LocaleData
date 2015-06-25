@@ -5414,11 +5414,13 @@ FormatData/en_SG/TimePatterns/0=h:mm:ss a z
 FormatData/en_SG/TimePatterns/1=h:mm:ss a z
 FormatData/en_SG/TimePatterns/2=h:mm:ss a
 FormatData/en_SG/TimePatterns/3=h:mm a
-FormatData/en_SG/DatePatterns/0=EEEE, MMMM d, yyyy
-FormatData/en_SG/DatePatterns/1=MMMM d, yyyy
-FormatData/en_SG/DatePatterns/2=MMM d, yyyy
-FormatData/en_SG/DatePatterns/3=M/d/yy
 FormatData/en_SG/DateTimePatterns/0={1} {0}
+# bug# 8080774
+# Day should precede month for all date formats in en_SG - CLDR 27.0.0
+FormatData/en_SG/DatePatterns/0=EEEE, d MMMM, yyyy
+FormatData/en_SG/DatePatterns/1=d MMMM, yyyy
+FormatData/en_SG/DatePatterns/2=d MMM, yyyy
+FormatData/en_SG/DatePatterns/3=d/M/yy
 # Use approved data
 FormatData/ms/Eras/0=BCE
 FormatData/ms/Eras/1=CE

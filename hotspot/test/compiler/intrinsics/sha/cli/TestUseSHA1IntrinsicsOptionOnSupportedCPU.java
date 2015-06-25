@@ -36,7 +36,7 @@
  */
 public class TestUseSHA1IntrinsicsOptionOnSupportedCPU {
     public static void main(String args[]) throws Throwable {
-        new SHAOptionsBase(new GenericTestCaseForSupportedSparcCPU(
+        new SHAOptionsBase(new GenericTestCaseForSupportedCPU(
                 SHAOptionsBase.USE_SHA1_INTRINSICS_OPTION)).test();
     }
 }

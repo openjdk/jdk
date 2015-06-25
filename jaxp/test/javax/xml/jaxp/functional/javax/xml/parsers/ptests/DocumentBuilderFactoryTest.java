@@ -23,17 +23,25 @@
 
 package javax.xml.parsers.ptests;
 
+import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
+import static javax.xml.parsers.ptests.ParserTestConst.GOLDEN_DIR;
+import static javax.xml.parsers.ptests.ParserTestConst.XML_DIR;
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
+import static jaxp.library.JAXPTestUtilities.compareWithGold;
+import static jaxp.library.JAXPTestUtilities.filenameToURL;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
 
 import java.io.BufferedReader;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FilePermission;
 import java.io.FileReader;
-
-import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -41,10 +49,6 @@ import javax.xml.parsers.FactoryConfigurationError;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-
-import static javax.xml.parsers.ptests.ParserTestConst.GOLDEN_DIR;
-import static javax.xml.parsers.ptests.ParserTestConst.XML_DIR;
-
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -52,10 +56,6 @@ import javax.xml.transform.sax.SAXResult;
 
 import jaxp.library.JAXPDataProvider;
 import jaxp.library.JAXPFileBaseTest;
-import static jaxp.library.JAXPTestUtilities.USER_DIR;
-import static jaxp.library.JAXPTestUtilities.compareWithGold;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -67,6 +67,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
+ * @bug 8080907
  * This checks the methods of DocumentBuilderFactoryImpl.
  */
 public class DocumentBuilderFactoryTest extends JAXPFileBaseTest {
@@ -134,28 +135,11 @@ public class DocumentBuilderFactoryTest extends JAXPFileBaseTest {
         assertFalse(eh.isErrorOccured());
     }
 
-    /**
-     * Test the default functionality of schema support method. In
-     * this case the schema source property is set.
-     * @throws Exception If any errors occur.
-     */
-    @Test
-    public void testCheckSchemaSupport2() throws Exception {
-        try (FileInputStream fis = new FileInputStream(new File(
-                XML_DIR, "test.xsd"))) {
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            dbf.setValidating(true);
-            dbf.setNamespaceAware(true);
-            dbf.setAttribute("http://java.sun.com/xml/jaxp/properties/schemaLanguage",
-                    W3C_XML_SCHEMA_NS_URI);
-            dbf.setAttribute("http://java.sun.com/xml/jaxp/properties/schemaSource",
-                    new InputSource(fis));
-            MyErrorHandler eh = MyErrorHandler.newInstance();
-            DocumentBuilder db = dbf.newDocumentBuilder();
-            db.setErrorHandler(eh);
-            db.parse(new File(XML_DIR, "test1.xml"));
-            assertFalse(eh.isErrorOccured());
-        }
+    @DataProvider(name = "schema-source")
+    public Object[][] getSchemaSource() throws FileNotFoundException {
+        return new Object[][] {
+                { new FileInputStream(new File(XML_DIR, "test.xsd")) },
+                { new InputSource(filenameToURL(XML_DIR + "test.xsd")) } };
     }
 
     /**
@@ -163,22 +147,50 @@ public class DocumentBuilderFactoryTest extends JAXPFileBaseTest {
      * this case the schema source property is set.
      * @throws Exception If any errors occur.
      */
-    @Test
-    public void testCheckSchemaSupport3() throws Exception {
-        try (FileInputStream fis = new FileInputStream(new File(
-                XML_DIR, "test.xsd"))) {
+    @Test(dataProvider = "schema-source")
+    public void testCheckSchemaSupport2(Object schemaSource) throws Exception {
+        try {
+            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+            dbf.setValidating(true);
+            dbf.setNamespaceAware(true);
+            dbf.setAttribute("http://java.sun.com/xml/jaxp/properties/schemaLanguage",
+                    W3C_XML_SCHEMA_NS_URI);
+            dbf.setAttribute("http://java.sun.com/xml/jaxp/properties/schemaSource", schemaSource);
+            MyErrorHandler eh = MyErrorHandler.newInstance();
+            DocumentBuilder db = dbf.newDocumentBuilder();
+            db.setErrorHandler(eh);
+            db.parse(new File(XML_DIR, "test1.xml"));
+            assertFalse(eh.isErrorOccured());
+        } finally {
+            if (schemaSource instanceof Closeable) {
+                ((Closeable) schemaSource).close();
+            }
+        }
+
+    }
+
+    /**
+     * Test the default functionality of schema support method. In
+     * this case the schema source property is set.
+     * @throws Exception If any errors occur.
+     */
+    @Test(dataProvider = "schema-source")
+    public void testCheckSchemaSupport3(Object schemaSource) throws Exception {
+        try {
             SAXParserFactory spf = SAXParserFactory.newInstance();
-            spf.setNamespaceAware(true);
             spf.setValidating(true);
             spf.setNamespaceAware(true);
             SAXParser sp = spf.newSAXParser();
             sp.setProperty("http://java.sun.com/xml/jaxp/properties/schemaLanguage",
                     W3C_XML_SCHEMA_NS_URI);
-            sp.setProperty("http://java.sun.com/xml/jaxp/properties/schemaSource",
-                    new InputSource(fis));
+            sp.setProperty("http://java.sun.com/xml/jaxp/properties/schemaSource", schemaSource);
             DefaultHandler dh = new DefaultHandler();
             // Not expect any unrecoverable error here.
             sp.parse(new File(XML_DIR, "test1.xml"), dh);
+        } finally {
+            if (schemaSource instanceof Closeable) {
+                ((Closeable) schemaSource).close();
+            }
         }
     }
 
