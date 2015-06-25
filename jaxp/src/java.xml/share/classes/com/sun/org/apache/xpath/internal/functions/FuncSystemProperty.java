@@ -157,7 +157,7 @@ public class FuncSystemProperty extends FunctionOneArg
   }
 
   /**
-   * Retrieve a property bundle from a XSLT_PROPERTIES
+   * Retrieve a property bundle from XSLT_PROPERTIES
    *
    * @param target The target property bag the file will be placed into.
    */

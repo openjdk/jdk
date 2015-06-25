@@ -95,46 +95,22 @@ class SecuritySupport  {
         }
     }
 
-    URL getResourceAsURL(final ClassLoader cl,
-                                           final String name)
-    {
-        return (URL)
-            AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
-                    URL url;
-                    if (cl == null) {
-                        url = Object.class.getResource(name);
-                    } else {
-                        url = cl.getResource(name);
-                    }
-                    return url;
-                }
-            });
-    }
-
-    Enumeration getResources(final ClassLoader cl,
-                                           final String name) throws IOException
-    {
-        try{
-        return (Enumeration)
-            AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                public Object run() throws IOException{
-                    Enumeration enumeration;
-                    if (cl == null) {
-                        enumeration = ClassLoader.getSystemResources(name);
-                    } else {
-                        enumeration = cl.getResources(name);
-                    }
-                    return enumeration;
-                }
-            });
-        }catch(PrivilegedActionException e){
-            throw (IOException)e.getException();
-        }
+    // Used for debugging purposes
+    String getClassSource(Class<?> cls) {
+        return AccessController.doPrivileged(new PrivilegedAction<String>() {
+            public String run() {
+               CodeSource cs = cls.getProtectionDomain().getCodeSource();
+               if (cs != null) {
+                    return cs.getLocation().toString();
+               } else {
+                   return "(no code source)";
+               }
+            }
+        });
     }
 
     boolean doesFileExist(final File f) {
-    return ((Boolean)
+        return ((Boolean)
             AccessController.doPrivileged(new PrivilegedAction() {
                 public Object run() {
                     return new Boolean(f.exists());
