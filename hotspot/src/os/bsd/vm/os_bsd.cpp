@@ -637,11 +637,6 @@ void os::Bsd::hotspot_sigmask(Thread* thread) {
 //////////////////////////////////////////////////////////////////////////////
 // create new thread
 
-// check if it's safe to start a new thread
-static bool _thread_safety_check(Thread* thread) {
-  return true;
-}
-
 #ifdef __APPLE__
 // library handle for calling objc_registerThreadWithCollector()
 // without static linking to the libobjc library
@@ -680,15 +675,6 @@ static void *java_start(Thread *thread) {
 
   OSThread* osthread = thread->osthread();
   Monitor* sync = osthread->startThread_lock();
-
-  // non floating stack BsdThreads needs extra check, see above
-  if (!_thread_safety_check(thread)) {
-    // notify parent thread
-    MutexLockerEx ml(sync, Mutex::_no_safepoint_check_flag);
-    osthread->set_state(ZOMBIE);
-    sync->notify_all();
-    return NULL;
-  }
 
   osthread->set_thread_id(os::Bsd::gettid());
 
@@ -1339,7 +1325,8 @@ bool os::address_is_in_vm(address addr) {
 #define MACH_MAXSYMLEN 256
 
 bool os::dll_address_to_function_name(address addr, char *buf,
-                                      int buflen, int *offset) {
+                                      int buflen, int *offset,
+                                      bool demangle) {
   // buf is not optional, but offset is optional
   assert(buf != NULL, "sanity check");
 
@@ -1349,7 +1336,7 @@ bool os::dll_address_to_function_name(address addr, char *buf,
   if (dladdr((void*)addr, &dlinfo) != 0) {
     // see if we have a matching symbol
     if (dlinfo.dli_saddr != NULL && dlinfo.dli_sname != NULL) {
-      if (!Decoder::demangle(dlinfo.dli_sname, buf, buflen)) {
+      if (!(demangle && Decoder::demangle(dlinfo.dli_sname, buf, buflen))) {
         jio_snprintf(buf, buflen, "%s", dlinfo.dli_sname);
       }
       if (offset != NULL) *offset = addr - (address)dlinfo.dli_saddr;
@@ -1358,15 +1345,16 @@ bool os::dll_address_to_function_name(address addr, char *buf,
     // no matching symbol so try for just file info
     if (dlinfo.dli_fname != NULL && dlinfo.dli_fbase != NULL) {
       if (Decoder::decode((address)(addr - (address)dlinfo.dli_fbase),
-                          buf, buflen, offset, dlinfo.dli_fname)) {
+                          buf, buflen, offset, dlinfo.dli_fname, demangle)) {
         return true;
       }
     }
 
     // Handle non-dynamic manually:
     if (dlinfo.dli_fbase != NULL &&
-        Decoder::decode(addr, localbuf, MACH_MAXSYMLEN, offset, dlinfo.dli_fbase)) {
-      if (!Decoder::demangle(localbuf, buf, buflen)) {
+        Decoder::decode(addr, localbuf, MACH_MAXSYMLEN, offset,
+                        dlinfo.dli_fbase)) {
+      if (!(demangle && Decoder::demangle(localbuf, buf, buflen))) {
         jio_snprintf(buf, buflen, "%s", localbuf);
       }
       return true;
@@ -1706,7 +1694,7 @@ void os::print_os_info(outputStream* st) {
   os::Posix::print_load_average(st);
 }
 
-void os::pd_print_cpu_info(outputStream* st) {
+void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   // Nothing to do for now.
 }
 
@@ -2276,8 +2264,6 @@ bool os::remove_stack_guard_pages(char* addr, size_t size) {
   return os::uncommit_memory(addr, size);
 }
 
-static address _highest_vm_reserved_address = NULL;
-
 // If 'fixed' is true, anon_mmap() will attempt to reserve anonymous memory
 // at 'requested_addr'. If there are existing memory mappings at the same
 // location, however, they will be overwritten. If 'fixed' is false,
@@ -2300,23 +2286,9 @@ static char* anon_mmap(char* requested_addr, size_t bytes, bool fixed) {
   addr = (char*)::mmap(requested_addr, bytes, PROT_NONE,
                        flags, -1, 0);
 
-  if (addr != MAP_FAILED) {
-    // anon_mmap() should only get called during VM initialization,
-    // don't need lock (actually we can skip locking even it can be called
-    // from multiple threads, because _highest_vm_reserved_address is just a
-    // hint about the upper limit of non-stack memory regions.)
-    if ((address)addr + bytes > _highest_vm_reserved_address) {
-      _highest_vm_reserved_address = (address)addr + bytes;
-    }
-  }
-
   return addr == MAP_FAILED ? NULL : addr;
 }
 
-// Don't update _highest_vm_reserved_address, because there might be memory
-// regions above addr + size. If so, releasing a memory region only creates
-// a hole in the address space, it doesn't help prevent heap-stack collision.
-//
 static int anon_munmap(char * addr, size_t size) {
   return ::munmap(addr, size) == 0;
 }
@@ -2490,15 +2462,7 @@ char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
   assert(bytes % os::vm_page_size() == 0, "reserving unexpected size block");
 
   // Repeatedly allocate blocks until the block is allocated at the
-  // right spot. Give up after max_tries. Note that reserve_memory() will
-  // automatically update _highest_vm_reserved_address if the call is
-  // successful. The variable tracks the highest memory address every reserved
-  // by JVM. It is used to detect heap-stack collision if running with
-  // fixed-stack BsdThreads. Because here we may attempt to reserve more
-  // space than needed, it could confuse the collision detecting code. To
-  // solve the problem, save current _highest_vm_reserved_address and
-  // calculate the correct value before return.
-  address old_highest = _highest_vm_reserved_address;
+  // right spot.
 
   // Bsd mmap allows caller to pass an address as hint; give it a try first,
   // if kernel honors the hint then we can return immediately.
@@ -2552,10 +2516,8 @@ char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
   }
 
   if (i < max_tries) {
-    _highest_vm_reserved_address = MAX2(old_highest, (address)requested_addr + bytes);
     return requested_addr;
   } else {
-    _highest_vm_reserved_address = old_highest;
     return NULL;
   }
 }
@@ -3715,12 +3677,6 @@ ExtendedPC os::get_thread_pc(Thread* thread) {
   return fetcher.result();
 }
 
-int os::Bsd::safe_cond_timedwait(pthread_cond_t *_cond,
-                                 pthread_mutex_t *_mutex,
-                                 const struct timespec *_abstime) {
-  return pthread_cond_timedwait(_cond, _mutex, _abstime);
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // debug support
 
@@ -4286,7 +4242,7 @@ int os::PlatformEvent::park(jlong millis) {
   // In that case, we should propagate the notify to another waiter.
 
   while (_Event < 0) {
-    status = os::Bsd::safe_cond_timedwait(_cond, _mutex, &abst);
+    status = pthread_cond_timedwait(_cond, _mutex, &abst);
     if (status != 0 && WorkAroundNPTLTimedWaitHang) {
       pthread_cond_destroy(_cond);
       pthread_cond_init(_cond, NULL);
@@ -4492,7 +4448,7 @@ void Parker::park(bool isAbsolute, jlong time) {
   if (time == 0) {
     status = pthread_cond_wait(_cond, _mutex);
   } else {
-    status = os::Bsd::safe_cond_timedwait(_cond, _mutex, &absTime);
+    status = pthread_cond_timedwait(_cond, _mutex, &absTime);
     if (status != 0 && WorkAroundNPTLTimedWaitHang) {
       pthread_cond_destroy(_cond);
       pthread_cond_init(_cond, NULL);

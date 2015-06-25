@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ double elapsedTimer::seconds() const {
 }
 
 jlong elapsedTimer::milliseconds() const {
-  return TimeHelper::counter_to_millis(_counter);
+  return (jlong)TimeHelper::counter_to_millis(_counter);
 }
 
 jlong elapsedTimer::active_ticks() const {
@@ -89,7 +89,7 @@ double TimeStamp::seconds() const {
 jlong TimeStamp::milliseconds() const {
   assert(is_updated(), "must not be clear");
   jlong new_count = os::elapsed_counter();
-  return TimeHelper::counter_to_millis(new_count - _counter);
+  return (jlong)TimeHelper::counter_to_millis(new_count - _counter);
 }
 
 jlong TimeStamp::ticks_since_update() const {

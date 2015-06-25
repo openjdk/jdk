@@ -52,7 +52,8 @@ public:
     Old,
     SingleHumongous,
     StartsHumongous,
-    ContinuesHumongous
+    ContinuesHumongous,
+    Archive
   } RegionType;
 
   typedef enum {
