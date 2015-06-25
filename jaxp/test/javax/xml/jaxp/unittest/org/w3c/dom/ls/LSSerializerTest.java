@@ -101,7 +101,6 @@ public class LSSerializerTest {
 
     /*
      * @bug 8080906
-     * It will fail in a Jigsaw build until JDK-8080266 is fixed.
      */
     @Test
     public void testDefaultLSSerializer() throws Exception {
