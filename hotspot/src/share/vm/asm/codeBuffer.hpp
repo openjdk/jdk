@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -249,6 +249,7 @@ private:
   // Becomes true after copy-out, forbids further use.
   bool _defunct; // Zero bit pattern is "valid", see memset call in decode_env::decode_env
 #endif
+  static const char* _prefix; // defaults to " ;; "
 #endif
 
   CodeString* find(intptr_t offset) const;
@@ -289,11 +290,18 @@ public:
   void assign(CodeStrings& other)  PRODUCT_RETURN;
   // COPY strings from other to this; leave other valid.
   void copy(CodeStrings& other)  PRODUCT_RETURN;
+  // FREE strings; invalidate this.
   void free() PRODUCT_RETURN;
-  // Guarantee that _strings are used at most once; assign invalidates a buffer.
+  // Guarantee that _strings are used at most once; assign and free invalidate a buffer.
   inline void check_valid() const {
 #ifdef ASSERT
     assert(!_defunct, "Use of invalid CodeStrings");
+#endif
+  }
+
+  static void set_prefix(const char *prefix) {
+#ifndef PRODUCT
+    _prefix = prefix;
 #endif
   }
 };
@@ -379,6 +387,7 @@ class CodeBuffer: public StackObj {
     _oop_recorder    = NULL;
     _decode_begin    = NULL;
     _overflow_arena  = NULL;
+    _code_strings    = CodeStrings();
   }
 
   void initialize(address code_start, csize_t code_size) {

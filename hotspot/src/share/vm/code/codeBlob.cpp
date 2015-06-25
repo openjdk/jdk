@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,7 @@ CodeBlob::CodeBlob(const char* name, int header_size, int size, int frame_comple
   _data_offset           = size;
   _frame_size            =  0;
   set_oop_maps(NULL);
+  _strings               = CodeStrings();
 }
 
 
@@ -114,6 +115,7 @@ CodeBlob::CodeBlob(
   _code_offset           = _content_offset + cb->total_offset_of(cb->insts());
   _data_offset           = _content_offset + round_to(cb->total_content_size(), oopSize);
   assert(_data_offset <= size, "codeBlob is too small");
+  _strings               = CodeStrings();
 
   cb->copy_code_and_locs_to(this);
   set_oop_maps(oop_maps);
