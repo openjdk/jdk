@@ -7464,6 +7464,96 @@ instruct countTrailingZerosL(iRegINoSp dst, iRegL src) %{
   ins_pipe(ialu_reg);
 %}
 
+//---------- Population Count Instructions -------------------------------------
+//
+
+instruct popCountI(iRegINoSp dst, iRegIorL2I src, vRegF tmp) %{
+  predicate(UsePopCountInstruction);
+  match(Set dst (PopCountI src));
+  effect(TEMP tmp);
+  ins_cost(INSN_COST * 13);
+
+  format %{ "movw   $src, $src\n\t"
+            "mov    $tmp, $src\t# vector (1D)\n\t"
+            "cnt    $tmp, $tmp\t# vector (8B)\n\t"
+            "addv   $tmp, $tmp\t# vector (8B)\n\t"
+            "mov    $dst, $tmp\t# vector (1D)" %}
+  ins_encode %{
+    __ movw($src$$Register, $src$$Register); // ensure top 32 bits 0
+    __ mov($tmp$$FloatRegister, __ T1D, 0, $src$$Register);
+    __ cnt($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
+    __ addv($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
+    __ mov($dst$$Register, $tmp$$FloatRegister, __ T1D, 0);
+  %}
+
+  ins_pipe(pipe_class_default);
+%}
+
+instruct popCountI_mem(iRegINoSp dst, memory mem, vRegF tmp) %{
+  predicate(UsePopCountInstruction);
+  match(Set dst (PopCountI (LoadI mem)));
+  effect(TEMP tmp);
+  ins_cost(INSN_COST * 13);
+
+  format %{ "ldrs   $tmp, $mem\n\t"
+            "cnt    $tmp, $tmp\t# vector (8B)\n\t"
+            "addv   $tmp, $tmp\t# vector (8B)\n\t"
+            "mov    $dst, $tmp\t# vector (1D)" %}
+  ins_encode %{
+    FloatRegister tmp_reg = as_FloatRegister($tmp$$reg);
+    loadStore(MacroAssembler(&cbuf), &MacroAssembler::ldrs, tmp_reg, $mem->opcode(),
+               as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
+    __ cnt($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
+    __ addv($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
+    __ mov($dst$$Register, $tmp$$FloatRegister, __ T1D, 0);
+  %}
+
+  ins_pipe(pipe_class_default);
+%}
+
+// Note: Long.bitCount(long) returns an int.
+instruct popCountL(iRegINoSp dst, iRegL src, vRegD tmp) %{
+  predicate(UsePopCountInstruction);
+  match(Set dst (PopCountL src));
+  effect(TEMP tmp);
+  ins_cost(INSN_COST * 13);
+
+  format %{ "mov    $tmp, $src\t# vector (1D)\n\t"
+            "cnt    $tmp, $tmp\t# vector (8B)\n\t"
+            "addv   $tmp, $tmp\t# vector (8B)\n\t"
+            "mov    $dst, $tmp\t# vector (1D)" %}
+  ins_encode %{
+    __ mov($tmp$$FloatRegister, __ T1D, 0, $src$$Register);
+    __ cnt($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
+    __ addv($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
+    __ mov($dst$$Register, $tmp$$FloatRegister, __ T1D, 0);
+  %}
+
+  ins_pipe(pipe_class_default);
+%}
+
+instruct popCountL_mem(iRegINoSp dst, memory mem, vRegD tmp) %{
+  predicate(UsePopCountInstruction);
+  match(Set dst (PopCountL (LoadL mem)));
+  effect(TEMP tmp);
+  ins_cost(INSN_COST * 13);
+
+  format %{ "ldrd   $tmp, $mem\n\t"
+            "cnt    $tmp, $tmp\t# vector (8B)\n\t"
+            "addv   $tmp, $tmp\t# vector (8B)\n\t"
+            "mov    $dst, $tmp\t# vector (1D)" %}
+  ins_encode %{
+    FloatRegister tmp_reg = as_FloatRegister($tmp$$reg);
+    loadStore(MacroAssembler(&cbuf), &MacroAssembler::ldrd, tmp_reg, $mem->opcode(),
+               as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
+    __ cnt($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
+    __ addv($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
+    __ mov($dst$$Register, $tmp$$FloatRegister, __ T1D, 0);
+  %}
+
+  ins_pipe(pipe_class_default);
+%}
+
 // ============================================================================
 // MemBar Instruction
 

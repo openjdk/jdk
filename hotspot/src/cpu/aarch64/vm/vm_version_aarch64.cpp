@@ -257,6 +257,10 @@ void VM_Version::get_processor_features() {
     UseBarriersForVolatile = (_cpuFeatures & CPU_DMB_ATOMICS) != 0;
   }
 
+  if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
+    UsePopCountInstruction = true;
+  }
+
 #ifdef COMPILER2
   if (FLAG_IS_DEFAULT(OptoScheduling)) {
     OptoScheduling = true;
