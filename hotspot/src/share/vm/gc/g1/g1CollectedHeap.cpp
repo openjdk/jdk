@@ -2487,7 +2487,7 @@ void G1CollectedHeap::increment_old_marking_cycles_completed(bool concurrent) {
   // is set) so that if a waiter requests another System.gc() it doesn't
   // incorrectly see that a marking cycle is still in progress.
   if (concurrent) {
-    _cmThread->clear_in_progress();
+    _cmThread->set_idle();
   }
 
   // This notify_all() will ensure that a thread that called
