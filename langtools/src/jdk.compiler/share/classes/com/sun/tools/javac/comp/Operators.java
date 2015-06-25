@@ -479,22 +479,6 @@ public class Operators {
     }
 
     /**
-     * Class representing bitwise operator helpers that operate on all primitive types (either boxed or unboxed).
-     * Operator lookup is performed after applying binary numeric promotion of the input types.
-     */
-    class BinaryBitwiseOperator extends BinaryNumericOperator {
-
-        BinaryBitwiseOperator(Tag tag) {
-            super(tag);
-        }
-
-        @Override
-        public boolean test(Type arg1, Type arg2) {
-            return unaryPromotion(arg1).isPrimitive() && unaryPromotion(arg2).isPrimitive();
-        }
-    }
-
-    /**
      * Class representing bitwise operator helpers that operate on boolean types (either boxed or unboxed).
      * Operator lookup is performed assuming both input types are boolean types.
      */
@@ -727,16 +711,19 @@ public class Operators {
                     .addBinaryOperator(FLOAT, FLOAT, FLOAT, fmod)
                     .addBinaryOperator(LONG, LONG, LONG, lmod)
                     .addBinaryOperator(INT, INT, INT, imod),
-            new BinaryBitwiseOperator(Tag.BITAND)
-                    .addBinaryOperator(BOOLEAN, BOOLEAN, BOOLEAN, iand)
+            new BinaryBooleanOperator(Tag.BITAND)
+                    .addBinaryOperator(BOOLEAN, BOOLEAN, BOOLEAN, iand),
+            new BinaryNumericOperator(Tag.BITAND)
                     .addBinaryOperator(LONG, LONG, LONG, land)
                     .addBinaryOperator(INT, INT, INT, iand),
-            new BinaryBitwiseOperator(Tag.BITOR)
-                    .addBinaryOperator(BOOLEAN, BOOLEAN, BOOLEAN, ior)
+            new BinaryBooleanOperator(Tag.BITOR)
+                    .addBinaryOperator(BOOLEAN, BOOLEAN, BOOLEAN, ior),
+            new BinaryNumericOperator(Tag.BITOR)
                     .addBinaryOperator(LONG, LONG, LONG, lor)
                     .addBinaryOperator(INT, INT, INT, ior),
-            new BinaryBitwiseOperator(Tag.BITXOR)
-                    .addBinaryOperator(BOOLEAN, BOOLEAN, BOOLEAN, ixor)
+            new BinaryBooleanOperator(Tag.BITXOR)
+                    .addBinaryOperator(BOOLEAN, BOOLEAN, BOOLEAN, ixor),
+            new BinaryNumericOperator(Tag.BITXOR)
                     .addBinaryOperator(LONG, LONG, LONG, lxor)
                     .addBinaryOperator(INT, INT, INT, ixor),
             new BinaryShiftOperator(Tag.SL)

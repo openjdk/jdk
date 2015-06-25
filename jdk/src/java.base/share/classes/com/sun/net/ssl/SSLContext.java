@@ -58,7 +58,7 @@ public class SSLContext {
      *
      * @param contextSpi the delegate
      * @param provider the provider
-     * @param algorithm the algorithm
+     * @param protocol the protocol
      */
     protected SSLContext(SSLContextSpi contextSpi, Provider provider,
         String protocol) {

@@ -58,15 +58,13 @@ final class ParserImpl implements Parser {
 
     @Override
     public CompilationUnitTree parse(final File file, final DiagnosticListener listener) throws IOException, NashornException {
-        Objects.requireNonNull(file);
-        final Source src = Source.sourceFor(file.getName(), file);
+        final Source src = Source.sourceFor(Objects.requireNonNull(file).getName(), file);
         return translate(makeParser(src, listener).parse());
     }
 
     @Override
     public CompilationUnitTree parse(final Path path, final DiagnosticListener listener) throws IOException, NashornException {
-        Objects.requireNonNull(path);
-        final Source src = Source.sourceFor(path.toString(), path);
+        final Source src = Source.sourceFor(Objects.requireNonNull(path).toString(), path);
         return translate(makeParser(src, listener).parse());
     }
 
@@ -78,9 +76,7 @@ final class ParserImpl implements Parser {
 
     @Override
     public CompilationUnitTree parse(final String name, final Reader reader, final DiagnosticListener listener) throws IOException, NashornException {
-        Objects.requireNonNull(name);
-        Objects.requireNonNull(reader);
-        final Source src = Source.sourceFor(name, reader);
+        final Source src = Source.sourceFor(Objects.requireNonNull(name), Objects.requireNonNull(reader));
         return translate(makeParser(src, listener).parse());
     }
 
@@ -92,8 +88,7 @@ final class ParserImpl implements Parser {
 
     @Override
     public CompilationUnitTree parse(final ScriptObjectMirror scriptObj, final DiagnosticListener listener) throws NashornException {
-        Objects.requireNonNull(scriptObj);
-        final Map<?,?> map = scriptObj;
+        final Map<?,?> map = Objects.requireNonNull(scriptObj);
         if (map.containsKey("script") && map.containsKey("name")) {
             final String script = JSType.toString(map.get("script"));
             final String name   = JSType.toString(map.get("name"));

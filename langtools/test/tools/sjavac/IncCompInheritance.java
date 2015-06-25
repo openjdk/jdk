@@ -60,6 +60,7 @@ public class IncCompInheritance extends SjavacBase {
             throw new AssertionError("Compilation failed unexpectedly");
 
         // Remove method A.m
+        Thread.sleep(2500); // Make sure we get a new timestamp
         String aModified = "package pkga; public class A { }";
         toolbox.writeFile(src.resolve("pkga/A.java"), aModified);
 

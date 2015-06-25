@@ -136,6 +136,12 @@ public final class Options {
         return options.toString();
     }
 
+    private static void checkPropertyName(final String name) {
+        if (! Objects.requireNonNull(name).startsWith("nashorn.")) {
+            throw new IllegalArgumentException(name);
+        }
+    }
+
     /**
      * Convenience function for getting system properties in a safe way
 
@@ -144,11 +150,7 @@ public final class Options {
      * @return true if set to true, default value if unset or set to false
      */
     public static boolean getBooleanProperty(final String name, final Boolean defValue) {
-        Objects.requireNonNull(name);
-        if (!name.startsWith("nashorn.")) {
-            throw new IllegalArgumentException(name);
-        }
-
+        checkPropertyName(name);
         return AccessController.doPrivileged(
                 new PrivilegedAction<Boolean>() {
                     @Override
@@ -185,11 +187,7 @@ public final class Options {
      * @return string property if set or default value
      */
     public static String getStringProperty(final String name, final String defValue) {
-        Objects.requireNonNull(name);
-        if (! name.startsWith("nashorn.")) {
-            throw new IllegalArgumentException(name);
-        }
-
+        checkPropertyName(name);
         return AccessController.doPrivileged(
                 new PrivilegedAction<String>() {
                     @Override
@@ -212,11 +210,7 @@ public final class Options {
      * @return integer property if set or default value
      */
     public static int getIntProperty(final String name, final int defValue) {
-        Objects.requireNonNull(name);
-        if (! name.startsWith("nashorn.")) {
-            throw new IllegalArgumentException(name);
-        }
-
+        checkPropertyName(name);
         return AccessController.doPrivileged(
                 new PrivilegedAction<Integer>() {
                     @Override

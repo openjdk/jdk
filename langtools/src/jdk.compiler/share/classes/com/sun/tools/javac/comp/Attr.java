@@ -2175,11 +2175,19 @@ public class Attr extends JCTree.Visitor {
             if (isDiamond
                     && ((tree.constructorType != null && inferenceContext.free(tree.constructorType))
                     || (tree.clazz.type != null && inferenceContext.free(tree.clazz.type)))) {
+                final ResultInfo resultInfoForClassDefinition = this.resultInfo;
                 inferenceContext.addFreeTypeListener(List.of(tree.constructorType, tree.clazz.type),
                         instantiatedContext -> {
                             tree.constructorType = instantiatedContext.asInstType(tree.constructorType);
                             clazz.type = instantiatedContext.asInstType(clazz.type);
-                            visitAnonymousClassDefinition(tree, clazz, clazz.type, cdef, localEnv, argtypes, typeargtypes, pkind);
+                            ResultInfo prevResult = this.resultInfo;
+                            try {
+                                this.resultInfo = resultInfoForClassDefinition;
+                                visitAnonymousClassDefinition(tree, clazz, clazz.type, cdef,
+                                                            localEnv, argtypes, typeargtypes, pkind);
+                            } finally {
+                                this.resultInfo = prevResult;
+                            }
                         });
             } else {
                 if (isDiamond && clazztype.hasTag(CLASS)) {
@@ -4132,7 +4140,12 @@ public class Attr extends JCTree.Visitor {
 
     public void visitAnnotatedType(JCAnnotatedType tree) {
         attribAnnotationTypes(tree.annotations, env);
-        Type underlyingType = attribType(tree.underlyingType, env);
+        JCExpression underlyingTypeTree = tree.getUnderlyingType();
+        Type underlyingType = attribTree(underlyingTypeTree, env,
+                                               new ResultInfo(KindSelector.TYP_PCK, Type.noType));
+        if (!chk.checkAnnotableType(underlyingType, tree.annotations, underlyingTypeTree.pos())) {
+            underlyingType = underlyingTypeTree.type = syms.errType;
+        }
         Type annotatedType = underlyingType.annotatedType(Annotations.TO_BE_SET);
 
         if (!env.info.isNewClass)
@@ -4623,16 +4636,7 @@ public class Attr extends JCTree.Visitor {
                     }
                 } else if (enclTr.hasTag(ANNOTATED_TYPE)) {
                     JCAnnotatedType at = (JCTree.JCAnnotatedType) enclTr;
-                    if (enclTy == null || enclTy.hasTag(NONE)) {
-                        if (at.getAnnotations().size() == 1) {
-                            log.error(at.underlyingType.pos(), "cant.type.annotate.scoping.1", at.getAnnotations().head.attribute);
-                        } else {
-                            ListBuffer<Attribute.Compound> comps = new ListBuffer<>();
-                            for (JCAnnotation an : at.getAnnotations()) {
-                                comps.add(an.attribute);
-                            }
-                            log.error(at.underlyingType.pos(), "cant.type.annotate.scoping", comps.toList());
-                        }
+                    if (!chk.checkAnnotableType(enclTy, at.getAnnotations(), at.underlyingType.pos())) {
                         repeat = false;
                     }
                     enclTr = at.underlyingType;

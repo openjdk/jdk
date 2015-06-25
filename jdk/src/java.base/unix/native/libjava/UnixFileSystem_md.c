@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,12 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/stat.h>
+#ifdef MACOSX
+#include <sys/param.h>
+#include <sys/mount.h>
+#else
 #include <sys/statvfs.h>
+#endif
 #include <string.h>
 #include <stdlib.h>
 #include <dlfcn.h>
@@ -46,7 +51,9 @@
 #define dirent64 dirent
 #define readdir64_r readdir_r
 #define stat64 stat
+#ifndef MACOSX
 #define statvfs64 statvfs
+#endif
 #endif
 
 /* -- Field IDs -- */
@@ -432,8 +439,32 @@ Java_java_io_UnixFileSystem_getSpace(JNIEnv *env, jobject this,
     jlong rv = 0L;
 
     WITH_FIELD_PLATFORM_STRING(env, file, ids.path, path) {
+#ifdef MACOSX
+        struct statfs fsstat;
+#else
         struct statvfs64 fsstat;
+#endif
         memset(&fsstat, 0, sizeof(fsstat));
+#ifdef MACOSX
+        if (statfs(path, &fsstat) == 0) {
+            switch(t) {
+                case java_io_FileSystem_SPACE_TOTAL:
+                    rv = jlong_mul(long_to_jlong(fsstat.f_bsize),
+                                   long_to_jlong(fsstat.f_blocks));
+                    break;
+                case java_io_FileSystem_SPACE_FREE:
+                    rv = jlong_mul(long_to_jlong(fsstat.f_bsize),
+                                   long_to_jlong(fsstat.f_bfree));
+                    break;
+                case java_io_FileSystem_SPACE_USABLE:
+                    rv = jlong_mul(long_to_jlong(fsstat.f_bsize),
+                                   long_to_jlong(fsstat.f_bavail));
+                    break;
+                default:
+                    assert(0);
+            }
+        }
+#else
         if (statvfs64(path, &fsstat) == 0) {
             switch(t) {
             case java_io_FileSystem_SPACE_TOTAL:
@@ -452,6 +483,7 @@ Java_java_io_UnixFileSystem_getSpace(JNIEnv *env, jobject this,
                 assert(0);
             }
         }
+#endif
     } END_PLATFORM_STRING(env, path);
     return rv;
 }

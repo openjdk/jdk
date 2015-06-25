@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,12 @@ import java.io.PrintStream;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Set;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import com.sun.tools.sjavac.options.Options;
+import com.sun.tools.sjavac.pubapi.PubApi;
 import com.sun.tools.sjavac.server.CompilationResult;
 import com.sun.tools.sjavac.server.Sjavac;
 import com.sun.tools.sjavac.server.SysInfo;
@@ -73,21 +75,25 @@ public class CompileJavaPackages implements Transformer {
                              Map<String,Set<String>> oldPackageDependents,
                              URI destRoot,
                              final Map<String,Set<URI>>    packageArtifacts,
-                             final Map<String,Set<String>> packageDependencies,
-                             final Map<String,String>      packagePubapis,
+                             final Map<String,Map<String, Set<String>>> packageDependencies,
+                             final Map<String,Map<String, Set<String>>> packageCpDependencies,
+                             final Map<String, PubApi> packagePubapis,
+                             final Map<String, PubApi> dependencyPubapis,
                              int debugLevel,
                              boolean incremental,
                              int numCores,
                              final PrintStream out,
-                             final PrintStream err)
-    {
+                             final PrintStream err) {
+
+        Log.debug("Performing CompileJavaPackages transform...");
+
         boolean rc = true;
         boolean concurrentCompiles = true;
 
         // Fetch the id.
         final String id = Util.extractStringOption("id", sjavac.serverSettings());
         // Only keep portfile and sjavac settings..
-        String psServerSettings = Util.cleanSubOptions(Util.set("portfile","sjavac","background","keepalive"), sjavac.serverSettings());
+        //String psServerSettings = Util.cleanSubOptions(Util.set("portfile","sjavac","background","keepalive"), sjavac.serverSettings());
 
         // Get maximum heap size from the server!
         SysInfo sysinfo = sjavac.getSysInfo();
@@ -210,20 +216,44 @@ public class CompileJavaPackages implements Transformer {
             final CompileChunk cc = compileChunks[i];
 
             // Pass the num_cores and the id (appended with the chunk number) to the server.
-            final String cleanedServerSettings = psServerSettings+",poolsize="+numCores+",id="+id+"-"+i;
-
+            Object lock = new Object();
             requests[i] = new Thread() {
                 @Override
                 public void run() {
                     rn[ii] = sjavac.compile("n/a",
-                                                  id + "-" + ii,
-                                                  args.prepJavacArgs(),
-                                                  Collections.<File>emptyList(),
-                                                  cc.srcs,
-                                                  visibleSources);
-                    packageArtifacts.putAll(rn[ii].packageArtifacts);
-                    packageDependencies.putAll(rn[ii].packageDependencies);
-                    packagePubapis.putAll(rn[ii].packagePubapis);
+                                            id + "-" + ii,
+                                            args.prepJavacArgs(),
+                                            Collections.<File>emptyList(),
+                                            cc.srcs,
+                                            visibleSources);
+                    // In the code below we have to keep in mind that two
+                    // different compilation results may include results for
+                    // the same package.
+                    synchronized (lock) {
+
+                        for (String pkg : rn[ii].packageArtifacts.keySet()) {
+                            Set<URI> pkgArtifacts = rn[ii].packageArtifacts.get(pkg);
+                            packageArtifacts.merge(pkg, pkgArtifacts, Util::union);
+                        }
+
+                        for (String pkg : rn[ii].packageDependencies.keySet()) {
+                            packageDependencies.putIfAbsent(pkg, new HashMap<>());
+                            packageDependencies.get(pkg).putAll(rn[ii].packageDependencies.get(pkg));
+                        }
+
+                        for (String pkg : rn[ii].packageCpDependencies.keySet()) {
+                            packageCpDependencies.putIfAbsent(pkg, new HashMap<>());
+                            packageCpDependencies.get(pkg).putAll(rn[ii].packageCpDependencies.get(pkg));
+                        }
+
+                        for (String pkg : rn[ii].packagePubapis.keySet()) {
+                            packagePubapis.merge(pkg, rn[ii].packagePubapis.get(pkg), PubApi::mergeTypes);
+                        }
+
+                        for (String pkg : rn[ii].dependencyPubapis.keySet()) {
+                            dependencyPubapis.merge(pkg, rn[ii].dependencyPubapis.get(pkg), PubApi::mergeTypes);
+                        }
+                    }
                 }
             };
 
@@ -278,7 +308,6 @@ public class CompileJavaPackages implements Transformer {
         return rc;
     }
 
-
     /**
      * Split up the sources into compile chunks. If old package dependents information
      * is available, sort the order of the chunks into the most dependent first!
@@ -294,9 +323,9 @@ public class CompileJavaPackages implements Transformer {
      * @return
      */
     CompileChunk[] createCompileChunks(Map<String,Set<URI>> pkgSrcs,
-                                 Map<String,Set<String>> oldPackageDependents,
-                                 int numCompiles,
-                                 int sourcesPerCompile) {
+                                       Map<String,Set<String>> oldPackageDependents,
+                                       int numCompiles,
+                                       int sourcesPerCompile) {
 
         CompileChunk[] compileChunks = new CompileChunk[numCompiles];
         for (int i=0; i<compileChunks.length; ++i) {

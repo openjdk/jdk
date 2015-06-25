@@ -59,10 +59,14 @@ if (!(str1 === str2)){
 
 print("Scoping OK");
 
-var f = eval("function cookie() { print('sweet and crunchy!'); } function cake() { print('moist and delicious!'); }");
+// According to the spec, evaluation of function declarations should not return a value,
+// but we return values of anonymous function declarations (Nashorn extension).
+var e = eval("function cookie() { print('sweet and crunchy!'); } function cake() { print('moist and delicious!'); }");
+print(e);
+var f = eval("function cookie() { print('sweet and crunchy!'); } function() { print('moist and delicious!'); }");
 print(f);
 f();
-var g = eval("function cake() { print('moist and delicious!'); } function cookie() { print('sweet and crunchy!'); }");
+var g = eval("function cake() { print('moist and delicious!'); } function() { print('sweet and crunchy!'); }");
 print(g);
 g();
 

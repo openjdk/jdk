@@ -121,8 +121,7 @@ public abstract class PreHashedMap<V>
      * <p> This method must construct the map's hash chains and store them into
      * the appropriate elements of the given hash-table row array.
      *
-     * @param rows
-     *        The row array to be initialized
+     * @param ht The row array to be initialized
      */
     protected abstract void init(Object[] ht);
 

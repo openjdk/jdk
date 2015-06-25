@@ -364,7 +364,7 @@ public class ZoneInfo extends TimeZone {
      *                  0 for January.
      * @param day       The day-in-month of the given date.
      * @param dayOfWeek The day-of-week of the given date.
-     * @param millis    The milliseconds in day in <em>standard</em> local time.
+     * @param milliseconds The milliseconds in day in <em>standard</em> local time.
      * @return The milliseconds to add to UTC to get local time.
      */
     public int getOffset(int era, int year, int month, int day,
