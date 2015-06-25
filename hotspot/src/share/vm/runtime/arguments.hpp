@@ -347,6 +347,8 @@ class Arguments : AllStatic {
   static julong limit_by_allocatable_memory(julong size);
   // Setup heap size
   static void set_heap_size();
+  // Set up runtime image flags
+  static void set_runtime_image_flags();
   // Based on automatic selection criteria, should the
   // low pause collector be used.
   static bool should_auto_select_low_pause_collector();
