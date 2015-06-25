@@ -55,6 +55,10 @@ final class JrtPath implements Path {
             this.path = normalize(path);
     }
 
+    byte[] getName() {
+        return path;
+    }
+
     @Override
     public JrtPath getRoot() {
         if (this.isAbsolute())
@@ -140,8 +144,17 @@ final class JrtPath implements Path {
     @Override
     public JrtPath toRealPath(LinkOption... options) throws IOException {
         JrtPath realPath = new JrtPath(jrtfs, getResolvedPath()).toAbsolutePath();
+        realPath = JrtFileSystem.followLinks(options)? jrtfs.resolveLink(this) : realPath;
         realPath.checkAccess();
         return realPath;
+    }
+
+    JrtPath readSymbolicLink() throws IOException {
+        if (! jrtfs.isLink(this)) {
+           throw new IOException("not a symbolic link");
+        }
+
+        return jrtfs.resolveLink(this);
     }
 
     boolean isHidden() {
@@ -638,9 +651,9 @@ final class JrtPath implements Path {
         jrtfs.deleteFile(getResolvedPath(), false);
     }
 
-    JrtFileAttributes getAttributes() throws IOException
+    JrtFileAttributes getAttributes(LinkOption... options) throws IOException
     {
-        JrtFileAttributes zfas = jrtfs.getFileAttributes(getResolvedPath());
+        JrtFileAttributes zfas = jrtfs.getFileAttributes(getResolvedPath(), options);
         if (zfas == null)
             throw new NoSuchFileException(toString());
         return zfas;
@@ -659,7 +672,7 @@ final class JrtPath implements Path {
             type = attribute.substring(0, colonPos++);
             attr = attribute.substring(colonPos);
         }
-        JrtFileAttributeView view = JrtFileAttributeView.get(this, type);
+        JrtFileAttributeView view = JrtFileAttributeView.get(this, type, options);
         if (view == null)
             throw new UnsupportedOperationException("view <" + view + "> is not supported");
         view.setAttribute(attr, value);
@@ -685,7 +698,7 @@ final class JrtPath implements Path {
             view = attributes.substring(0, colonPos++);
             attrs = attributes.substring(colonPos);
         }
-        JrtFileAttributeView jrtfv = JrtFileAttributeView.get(this, view);
+        JrtFileAttributeView jrtfv = JrtFileAttributeView.get(this, view, options);
         if (jrtfv == null) {
             throw new UnsupportedOperationException("view not supported");
         }
@@ -706,9 +719,10 @@ final class JrtPath implements Path {
             this.getFileSystem() != other.getFileSystem())
             return false;
         this.checkAccess();
-        ((JrtPath)other).checkAccess();
-        return Arrays.equals(this.getResolvedPath(),
-                             ((JrtPath)other).getResolvedPath());
+        JrtPath path = (JrtPath)other;
+        path.checkAccess();
+        return Arrays.equals(this.getResolvedPath(), path.getResolvedPath()) ||
+            jrtfs.isSameFile(this, (JrtPath)other);
     }
 
     SeekableByteChannel newByteChannel(Set<? extends OpenOption> options,
