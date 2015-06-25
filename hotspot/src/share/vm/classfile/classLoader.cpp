@@ -68,7 +68,6 @@
 #include "classfile/sharedPathsMiscInfo.hpp"
 #endif
 
-
 // Entry points in zip.dll for loading zip/jar file entries and image file entries
 
 typedef void * * (JNICALL *ZipOpen_t)(const char *name, char **pmsg);
@@ -166,7 +165,6 @@ ClassPathDirEntry::ClassPathDirEntry(const char* dir) : ClassPathEntry() {
   strcpy(copy, dir);
   _dir = copy;
 }
-
 
 ClassFileStream* ClassPathDirEntry::open_stream(const char* name, TRAPS) {
   // construct full path name
@@ -352,16 +350,25 @@ u1* LazyClassPathEntry::open_entry(const char* name, jint* filesize, bool nul_te
   }
 }
 
-ClassPathImageEntry::ClassPathImageEntry(char* name) : ClassPathEntry(), _image(new ImageFile(name)) {
-  bool opened = _image->open();
-  if (!opened) {
-    _image = NULL;
-  }
+ClassPathImageEntry::ClassPathImageEntry(ImageFileReader* image) :
+  ClassPathEntry(),
+  _image(image),
+  _module_data(NULL) {
+  guarantee(image != NULL, "image file is null");
+
+  char module_data_name[JVM_MAXPATHLEN];
+  ImageModuleData::module_data_name(module_data_name, _image->name());
+  _module_data = new ImageModuleData(_image, module_data_name);
 }
 
 ClassPathImageEntry::~ClassPathImageEntry() {
-  if (_image) {
-    _image->close();
+  if (_module_data != NULL) {
+    delete _module_data;
+    _module_data = NULL;
+  }
+
+  if (_image != NULL) {
+    ImageFileReader::close(_image);
     _image = NULL;
   }
 }
@@ -371,15 +378,39 @@ const char* ClassPathImageEntry::name() {
 }
 
 ClassFileStream* ClassPathImageEntry::open_stream(const char* name, TRAPS) {
-  u1* buffer;
-  u8 size;
-  _image->get_resource(name, buffer, size);
+  ImageLocation location;
+  bool found = _image->find_location(name, location);
 
-  if (buffer) {
+  if (!found) {
+    const char *pslash = strrchr(name, '/');
+    int len = pslash - name;
+
+    // NOTE: IMAGE_MAX_PATH is used here since this path is internal to the jimage
+    // (effectively unlimited.)  There are several JCK tests that use paths over
+    // 1024 characters long, the limit on Windows systems.
+    if (pslash && 0 < len && len < IMAGE_MAX_PATH) {
+
+      char path[IMAGE_MAX_PATH];
+      strncpy(path, name, len);
+      path[len] = '\0';
+      const char* moduleName = _module_data->package_to_module(path);
+
+      if (moduleName != NULL && (len + strlen(moduleName) + 2) < IMAGE_MAX_PATH) {
+        jio_snprintf(path, IMAGE_MAX_PATH - 1, "/%s/%s", moduleName, name);
+        location.clear_data();
+        found = _image->find_location(path, location);
+      }
+    }
+  }
+
+  if (found) {
+    u8 size = location.get_attribute(ImageLocation::ATTRIBUTE_UNCOMPRESSED);
     if (UsePerfData) {
       ClassLoader::perf_sys_classfile_bytes_read()->inc(size);
     }
-    return new ClassFileStream(buffer, (int)size, (char*)name);  // Resource allocated
+    u1* data = NEW_RESOURCE_ARRAY(u1, size);
+    _image->get_resource(location, data);
+    return new ClassFileStream(data, (int)size, _image->name());  // Resource allocated
   }
 
   return NULL;
@@ -391,20 +422,14 @@ void ClassPathImageEntry::compile_the_world(Handle loader, TRAPS) {
   tty->cr();
   const ImageStrings strings = _image->get_strings();
   // Retrieve each path component string.
-  u4 count = _image->get_location_count();
-  for (u4 i = 0; i < count; i++) {
+  u4 length = _image->table_length();
+  for (u4 i = 0; i < length; i++) {
     u1* location_data = _image->get_location_data(i);
 
-    if (location_data) {
+    if (location_data != NULL) {
        ImageLocation location(location_data);
-       const char* parent = location.get_attribute(ImageLocation::ATTRIBUTE_PARENT, strings);
-       const char* base = location.get_attribute(ImageLocation::ATTRIBUTE_BASE, strings);
-       const char* extension = location.get_attribute(ImageLocation::ATTRIBUTE_EXTENSION, strings);
-       assert((strlen(parent) + strlen(base) + strlen(extension)) < JVM_MAXPATHLEN, "path exceeds buffer");
-       char path[JVM_MAXPATHLEN];
-       strcpy(path, parent);
-       strcat(path, base);
-       strcat(path, extension);
+       char path[IMAGE_MAX_PATH];
+       _image->location_path(location, path, IMAGE_MAX_PATH);
        ClassLoader::compile_the_world_in(path, loader, CHECK);
     }
   }
@@ -420,7 +445,7 @@ void ClassPathImageEntry::compile_the_world(Handle loader, TRAPS) {
 }
 
 bool ClassPathImageEntry::is_jrt() {
-  return string_ends_with(name(), "bootmodules.jimage");
+  return string_ends_with(name(), BOOT_IMAGE_NAME);
 }
 #endif
 
@@ -557,10 +582,9 @@ ClassPathEntry* ClassLoader::create_class_path_entry(const char *path, const str
         return NULL;
       }
     }
-    // TODO - add proper criteria for selecting image file
-    ClassPathImageEntry* entry = new ClassPathImageEntry(canonical_path);
-    if (entry->is_open()) {
-      new_entry = entry;
+    ImageFileReader* image = ImageFileReader::open(canonical_path);
+    if (image != NULL) {
+      new_entry = new ClassPathImageEntry(image);
     } else {
     char* error_msg = NULL;
     jzfile* zip;
