@@ -344,12 +344,14 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
      * Execute applet events.
      * Here is the state transition diagram
      *
+     * <pre>{@literal
      *   Note: (XXX) is the action
      *         APPLET_XXX is the state
-     *  (applet code loaded) --> APPLET_LOAD -- (applet init called)--> APPLET_INIT -- (
-     *   applet start called) --> APPLET_START -- (applet stop called) -->APPLET_STOP --(applet
-     *   destroyed called) --> APPLET_DESTROY -->(applet gets disposed) -->
-     *   APPLET_DISPOSE -->....
+     *  (applet code loaded) --> APPLET_LOAD -- (applet init called)--> APPLET_INIT --
+     *  (applet start called) --> APPLET_START -- (applet stop called) --> APPLET_STOP --
+     *  (applet destroyed called) --> APPLET_DESTROY --> (applet gets disposed) -->
+     *   APPLET_DISPOSE --> ...
+     * }</pre>
      *
      * In the legacy lifecycle model. The applet gets loaded, inited and started. So it stays
      * in the APPLET_START state unless the applet goes away(refresh page or leave the page).
@@ -364,9 +366,8 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
      * APPLET_STOP to APPLET_DESTROY and to APPLET_INIT .
      *
      * Also, the applet can jump from APPLET_INIT state to APPLET_DESTROY (in Netscape/Mozilla case).
-         * Same as APPLET_LOAD to
+     * Same as APPLET_LOAD to
      * APPLET_DISPOSE since all of this are triggered by browser.
-     *
      *
      */
     @Override

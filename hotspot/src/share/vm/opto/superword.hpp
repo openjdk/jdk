@@ -428,6 +428,7 @@ class SuperWord : public ResourceObj {
   Node* executed_first(Node_List* p);
   // Return the node executed last in pack p.
   Node* executed_last(Node_List* p);
+  static LoadNode::ControlDependency control_dependency(Node_List* p);
   // Alignment within a vector memory reference
   int memory_alignment(MemNode* s, int iv_adjust);
   // (Start, end] half-open range defining which operands are vector

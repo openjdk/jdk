@@ -78,8 +78,7 @@ public final class URLReader extends Reader {
      * @throws NullPointerException if url is null
      */
     public URLReader(final URL url, final Charset cs) {
-        Objects.requireNonNull(url);
-        this.url = url;
+        this.url = Objects.requireNonNull(url);
         this.cs  = cs;
     }
 

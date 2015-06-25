@@ -1,0 +1,6 @@
+test/script/error/for_each_nse.js:31:4 Expected ( but found each
+for each (var x in [3, 454, 4]) {
+    ^
+test/script/error/for_each_nse.js:33:0 Expected eof but found }
+}
+^

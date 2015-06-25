@@ -453,8 +453,12 @@ int ciInstanceKlass::compute_nonstatic_fields() {
 
   if (fields == NULL) {
     // This can happen if this class (java.lang.Class) has invisible fields.
-    _nonstatic_fields = super_fields;
-    return super_fields->length();
+    if (super_fields != NULL) {
+      _nonstatic_fields = super_fields;
+      return super_fields->length();
+    } else {
+      return 0;
+    }
   }
 
   int flen = fields->length();
