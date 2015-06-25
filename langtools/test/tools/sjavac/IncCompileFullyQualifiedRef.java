@@ -27,6 +27,7 @@
  * @test
  * @summary Verify that "alfa.omega.A a" does create a proper dependency
  * @bug 8054689
+ * @ignore Requires dependency code to deal with in-method dependencies.
  * @author Fredrik O
  * @author sogoel (rewrite)
  * @library /tools/lib
@@ -38,8 +39,7 @@
  * @run main Wrapper IncCompileFullyQualifiedRef
  */
 
-import java.util.*;
-import java.nio.file.*;
+import java.util.Map;
 
 public class IncCompileFullyQualifiedRef extends SJavacTester {
     public static void main(String... args) throws Exception {
@@ -48,36 +48,43 @@ public class IncCompileFullyQualifiedRef extends SJavacTester {
     }
 
     void test() throws Exception {
+        clean(TEST_ROOT);
         ToolBox tb = new ToolBox();
         tb.writeFile(GENSRC.resolve("alfa/omega/A.java"),
-                 "package alfa.omega; public class A { "+
-                 "  public final static int DEFINITION = 18; "+
-                 "  public void hello() { }"+
-                 "}");
+                     "package alfa.omega; public class A { "+
+                     "  public final static int DEFINITION = 18; "+
+                     "  public void hello() { }"+
+                     "}");
         tb.writeFile(GENSRC.resolve("beta/B.java"),
-                 "package beta; public class B { "+
-                 "  public void world() { alfa.omega.A a; }"+
-                 "}");
+                     "package beta; public class B { "+
+                     "  public void world() { alfa.omega.A a; }"+
+                     "}");
 
-        compile("gensrc", "-d", "bin", "-j", "1",
-                SERVER_ARG, "--log=debug");
+        compile(GENSRC.toString(),
+                "-d", BIN.toString(),
+                "-j", "1",
+                SERVER_ARG,
+                "--log=debug");
         Map<String,Long> previous_bin_state = collectState(BIN);
 
         // Change pubapi of A, this should trigger a recompile of B.
         tb.writeFile(GENSRC.resolve("alfa/omega/A.java"),
-                 "package alfa.omega; public class A { "+
-                 "  public final static int DEFINITION = 19; "+
-                 "  public void hello() { }"+
-                 "}");
+                     "package alfa.omega; public class A { "+
+                     "  public final static int DEFINITION = 19; "+
+                     "  public void hello() { }"+
+                     "}");
 
-        compile("gensrc", "-d", "bin", "-j", "1",
-                SERVER_ARG, "--log=debug");
+        compile(GENSRC.toString(),
+                "-d", BIN.toString(),
+                "-j", "1",
+                SERVER_ARG,
+                "--log=debug");
         Map<String,Long> new_bin_state = collectState(BIN);
 
         verifyNewerFiles(previous_bin_state, new_bin_state,
-                         "bin/alfa/omega/A.class",
-                         "bin/beta/B.class",
-                         "bin/javac_state");
+                         BIN + "/alfa/omega/A.class",
+                         BIN + "/beta/B.class",
+                         BIN + "/javac_state");
         clean(GENSRC,BIN);
     }
 }

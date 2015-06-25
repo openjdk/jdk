@@ -1954,7 +1954,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     /**
      * Set the tunneling status.
      *
-     * @param  the state
+     * @param tunnelState the state
      */
     public void setTunnelState(TunnelState tunnelState) {
         this.tunnelState = tunnelState;

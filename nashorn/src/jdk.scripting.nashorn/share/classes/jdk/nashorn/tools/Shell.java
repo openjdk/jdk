@@ -439,7 +439,7 @@ public class Shell {
                 }
 
                 try {
-                    final Object res = context.eval(global, source, global, "<shell>", env._strict);
+                    final Object res = context.eval(global, source, global, "<shell>");
                     if (res != ScriptRuntime.UNDEFINED) {
                         err.println(JSType.toString(res));
                     }

@@ -39,7 +39,7 @@ import static com.sun.java.swing.plaf.windows.TMSchema.*;
 import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
 
 /**
- * Factory object that can vend Borders appropriate for the Windows 95 L & F.
+ * Factory object that can vend Borders appropriate for the Windows 95 {@literal L & F}.
  * @author Rich Schiavi
  */
 
@@ -142,7 +142,7 @@ public class WindowsBorders {
 
     /**
      * A border for the ToolBar. If the ToolBar is floatable then the handle grip is drawn
-     * <p>
+     *
      * @since 1.4
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions

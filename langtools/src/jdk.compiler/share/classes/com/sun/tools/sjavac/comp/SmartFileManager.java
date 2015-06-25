@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,6 +91,12 @@ public class SmartFileManager extends ForwardingJavaFileManager<JavaFileManager>
         ((JavacFileManager) fileManager).setSymbolFileEnabled(b);
     }
 
+    @DefinedBy(Api.COMPILER)
+    public String inferBinaryName(Location location, JavaFileObject file) {
+        return super.inferBinaryName(location, locUnwrap(file));
+    }
+
+
     public Map<String,Set<URI>> getPackageArtifacts() {
         return packageArtifacts;
     }
@@ -100,10 +106,11 @@ public class SmartFileManager extends ForwardingJavaFileManager<JavaFileManager>
                                          String packageName,
                                          Set<Kind> kinds,
                                          boolean recurse) throws IOException {
+        // TODO: Do this lazily by returning an iterable with a filtering Iterator
         // Acquire the list of files.
         Iterable<JavaFileObject> files = super.list(location, packageName, kinds, recurse);
         if (visibleSources.isEmpty()) {
-            return files;
+            return locWrapMany(files, location);
         }
         // Now filter!
         ListBuffer<JavaFileObject> filteredFiles = new ListBuffer<>();
@@ -116,12 +123,8 @@ public class SmartFileManager extends ForwardingJavaFileManager<JavaFileManager>
                 filteredFiles.add(f);
             }
         }
-        return filteredFiles;
-    }
 
-    @Override @DefinedBy(Api.COMPILER)
-    public boolean hasLocation(Location location) {
-        return super.hasLocation(location);
+        return locWrapMany(filteredFiles, location);
     }
 
     @Override @DefinedBy(Api.COMPILER)
@@ -129,6 +132,7 @@ public class SmartFileManager extends ForwardingJavaFileManager<JavaFileManager>
                                               String className,
                                               Kind kind) throws IOException {
         JavaFileObject file = super.getJavaFileForInput(location, className, kind);
+        file = locWrap(file, location);
         if (file == null || visibleSources.isEmpty()) {
             return file;
         }
@@ -145,6 +149,7 @@ public class SmartFileManager extends ForwardingJavaFileManager<JavaFileManager>
                                                Kind kind,
                                                FileObject sibling) throws IOException {
         JavaFileObject file = super.getJavaFileForOutput(location, className, kind, sibling);
+        file = locWrap(file, location);
         if (file == null) return file;
         int dp = className.lastIndexOf('.');
         String pkg_name = "";
@@ -162,6 +167,7 @@ public class SmartFileManager extends ForwardingJavaFileManager<JavaFileManager>
                                       String packageName,
                                       String relativeName) throws IOException {
         FileObject file =  super.getFileForInput(location, packageName, relativeName);
+        file = locWrap(file, location);
         if (file == null || visibleSources.isEmpty()) {
             return file;
         }
@@ -177,11 +183,12 @@ public class SmartFileManager extends ForwardingJavaFileManager<JavaFileManager>
                                        String packageName,
                                        String relativeName,
                                        FileObject sibling) throws IOException {
-        FileObject file = super.getFileForOutput(location, packageName, relativeName, sibling);
+        FileObject superFile = super.getFileForOutput(location, packageName, relativeName, sibling);
+        FileObject file = locWrap(superFile, location);
         if (file == null) return file;
-        if (location.equals(StandardLocation.NATIVE_HEADER_OUTPUT) &&
-                file instanceof JavaFileObject) {
-           file = new SmartFileObject((JavaFileObject)file, stdout);
+
+        if (location.equals(StandardLocation.NATIVE_HEADER_OUTPUT) && superFile instanceof JavaFileObject) {
+           file = new SmartFileObject((JavaFileObject) file, stdout);
            packageName = ":" + packageNameFromFileName(relativeName);
         }
         if (packageName.equals("")) {
@@ -191,7 +198,7 @@ public class SmartFileManager extends ForwardingJavaFileManager<JavaFileManager>
         return file;
     }
 
-    private String packageNameFromFileName(String fn) {
+    private static String packageNameFromFileName(String fn) {
         StringBuilder sb = new StringBuilder();
         int p = fn.indexOf('_'), pp = 0;
         while (p != -1) {
@@ -204,16 +211,6 @@ public class SmartFileManager extends ForwardingJavaFileManager<JavaFileManager>
         return sb.toString();
     }
 
-    @Override @DefinedBy(Api.COMPILER)
-    public void flush() throws IOException {
-        super.flush();
-    }
-
-    @Override @DefinedBy(Api.COMPILER)
-    public void close() throws IOException {
-        super.close();
-    }
-
     void addArtifact(String pkgName, URI art) {
         Set<URI> s = packageArtifacts.get(pkgName);
         if (s == null) {
@@ -221,5 +218,51 @@ public class SmartFileManager extends ForwardingJavaFileManager<JavaFileManager>
             packageArtifacts.put(pkgName, s);
         }
         s.add(art);
+    }
+
+    public static JavaFileObject locWrap(JavaFileObject jfo, Location loc) {
+
+        // From sjavac's perspective platform classes are not interesting and
+        // there is no need to track the location for these file objects.
+        // Also, there exists some jfo instanceof checks which breaks if
+        // the jfos for platform classes are wrapped.
+        if (loc == StandardLocation.PLATFORM_CLASS_PATH)
+            return jfo;
+
+        return jfo == null ? null : new JavaFileObjectWithLocation<>(jfo, loc);
+    }
+
+    private static FileObject locWrap(FileObject fo, Location loc) {
+        if (fo instanceof JavaFileObject)
+            return locWrap((JavaFileObject) fo, loc);
+        return fo == null ? null : new FileObjectWithLocation<>(fo, loc);
+    }
+
+    @DefinedBy(Api.COMPILER)
+    @Override
+    public boolean isSameFile(FileObject a, FileObject b) {
+        return super.isSameFile(locUnwrap(a), locUnwrap(b));
+    }
+
+    private static ListBuffer<JavaFileObject> locWrapMany(Iterable<JavaFileObject> jfos,
+                                                          Location loc) {
+        ListBuffer<JavaFileObject> locWrapped = new ListBuffer<>();
+        for (JavaFileObject f : jfos)
+            locWrapped.add(locWrap(f, loc));
+        return locWrapped;
+    }
+
+    private static FileObject locUnwrap(FileObject fo) {
+        if (fo instanceof FileObjectWithLocation<?>)
+            return ((FileObjectWithLocation<?>) fo).getDelegate();
+        if (fo instanceof JavaFileObjectWithLocation<?>)
+            return ((JavaFileObjectWithLocation<?>) fo).getDelegate();
+        return fo;
+    }
+
+    private static JavaFileObject locUnwrap(JavaFileObject fo) {
+        if (fo instanceof JavaFileObjectWithLocation<?>)
+            return ((JavaFileObjectWithLocation<?>) fo).getDelegate();
+        return fo;
     }
 }

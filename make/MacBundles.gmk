@@ -25,6 +25,7 @@
 
 include $(SPEC)
 include MakeBase.gmk
+include TextFileProcessing.gmk
 
 default: bundles
 

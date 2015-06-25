@@ -71,7 +71,7 @@ public class SHAOptionsBase extends CommandLineOptionTest {
      *         instructions required by the option are not supported.
      */
     protected static String getWarningForUnsupportedCPU(String optionName) {
-        if (Platform.isSparc()) {
+        if (Platform.isSparc() || Platform.isAArch64()) {
             switch (optionName) {
                 case SHAOptionsBase.USE_SHA_OPTION:
                     return SHAOptionsBase.SHA_INSTRUCTIONS_ARE_NOT_AVAILABLE;

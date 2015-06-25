@@ -503,7 +503,7 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
         private Icon[] icons;
 
         /**
-         * @params objects an array of Icon or UIDefaults.LazyValue
+         * @param objects an array of Icon or UIDefaults.LazyValue
          * <p>
          * The constructor is public so it can be called by UIDefaults.ProxyLazyValue.
          */

@@ -39,86 +39,85 @@ import java.net.*;
  *      [<I>protocol</I>:][<I>//</I>]<I><B>lvmid</B></I>[<I>@hostname</I>][<I>:port</I>][<I>/servername</I>]
  * </pre>
  * The only required component of this string is the Local Virtual Machine
- * Identifier, or <tt>lvmid</tt>, which uniquely identifies the target
+ * Identifier, or {@code lvmid}, which uniquely identifies the target
  * Java Virtual Machine on a host. The optional components of the VmIdentifier
  * include:
  * <ul>
- *   <li><p><tt>protocol</tt> - The communications protocol. A VmIdentifier
- *          omitting the protocol must be resolved against a HostIdentifier
- *          using {@link HostIdentifier#resolve}.
- *       </p></li>
- *   <li><p><tt>hostname</tt> - A hostname or IP address indicating the target
- *          host. A VmIdentifier omitting the protocol must be resolved
- *          against a HostIdentifier using {@link HostIdentifier#resolve}.
- *       </p></li>
- *   <li><p><tt>port</tt> - The port for the communications protocol.
- *          Treatment of the <tt>port</tt> parameter is implementation
- *          (protocol) specific. A VmIdentifier omitting the protocol should
- *          be resolved against a HostIdentifier using
- *          {@link HostIdentifier#resolve}.
- *       </p></li>
- *   <li><p><tt>servername</tt> - The treatment of the Path, Query, and
- *          Fragment components of the VmIdentifier are implementation
- *          (protocol) dependent. A VmIdentifier omitting the protocol should
- *          be resolved against a HostIdentifier using
- *          {@link HostIdentifier#resolve}.
- *       </p></li>
+ *   <li>{@code protocol} - The communications protocol. A VmIdentifier
+ *       omitting the protocol must be resolved against a HostIdentifier
+ *       using {@link HostIdentifier#resolve}.
+ *       </li>
+ *   <li>{@code hostname} - A hostname or IP address indicating the target
+ *       host. A VmIdentifier omitting the protocol must be resolved
+ *       against a HostIdentifier using {@link HostIdentifier#resolve}.
+ *       </li>
+ *   <li>{@code port} - The port for the communications protocol.
+ *       Treatment of the {@code port} parameter is implementation
+ *       (protocol) specific. A VmIdentifier omitting the protocol should
+ *       be resolved against a HostIdentifier using
+ *       {@link HostIdentifier#resolve}.
+ *       </li>
+ *   <li>{@code servername} - The treatment of the Path, Query, and
+ *       Fragment components of the VmIdentifier are implementation
+ *       (protocol) dependent. A VmIdentifier omitting the protocol should
+ *       be resolved against a HostIdentifier using
+ *       {@link HostIdentifier#resolve}.
+ *       </li>
  * </ul>
  * <p>
  * All VmIdentifier instances are constructed as absolute, hierarchical URIs.
  * The constructors will accept relative (and even some malformed,
  * though convenient) URI strings. Such strings are transformed into
  * legitimate, absolute URI strings.
- * </p>
  * <p>
  * With the exception of <em>file:</em> based VmIdentifier strings, all
- * VmIdentifier strings must include a <tt>lvmid</tt>. Attempting to construct
- * a non-file based VmIdentifier that doesn't include a <tt>lvmid</tt>
- * component will result in a <tt>MonitorException</tt>.
- * </p>
+ * VmIdentifier strings must include a {@code lvmid}. Attempting to construct
+ * a non-file based VmIdentifier that doesn't include a {@code lvmid}
+ * component will result in a {@code MonitorException}.
  * <p>
  * Here are some examples of VmIdentifier strings.
  * <ul>
- *    <li><p>Relative URIs</p></li>
+ *    <li>Relative URIs
  *      <ul>
- *         <li><p><em>1234</em> - Specifies the Java Virtual Machine
- *                identified by lvmid <em>1234</em> on an unnamed host.
- *                This string is transformed into the absolute form
- *                <em>//1234</em>, which must be resolved against a
- *                HostIdentifier.
- *         </p></li>
- *         <li><p><em>1234@hostname</em> - Specifies the Java Virtual
- *                Machine identified by lvmid <em>1234</em> on host
- *                <em>hostname</em> with an unnamed protocol.
- *                This string is transformed into the absolute form
- *                <em>//1234@hostname</em>, which must be resolved against
- *                a HostIdentifier.
- *         </p></li>
- *         <li><p><em>1234@hostname:2099</em> - Specifies the Java Virtual
- *                Machine identified by lvmid <em>1234</em> on host
- *                <em>hostname</em> with an unnamed protocol, but with
- *                port <em>2099</em>. This string is transformed into
- *                the absolute form <em>//1234@hostname:2099</em>, which
- *                must be resolved against a HostIdentifier.
- *         </p></li>
+ *         <li><em>1234</em> - Specifies the Java Virtual Machine
+ *             identified by lvmid <em>1234</em> on an unnamed host.
+ *             This string is transformed into the absolute form
+ *             <em>//1234</em>, which must be resolved against a
+ *             HostIdentifier.
+ *         </li>
+ *         <li><em>1234@hostname</em> - Specifies the Java Virtual
+ *             Machine identified by lvmid <em>1234</em> on host
+ *             <em>hostname</em> with an unnamed protocol.
+ *             This string is transformed into the absolute form
+ *             <em>//1234@hostname</em>, which must be resolved against
+ *             a HostIdentifier.
+ *         </li>
+ *         <li><em>1234@hostname:2099</em> - Specifies the Java Virtual
+ *             Machine identified by lvmid <em>1234</em> on host
+ *             <em>hostname</em> with an unnamed protocol, but with
+ *             port <em>2099</em>. This string is transformed into
+ *             the absolute form <em>//1234@hostname:2099</em>, which
+ *             must be resolved against a HostIdentifier.
+ *         </li>
  *      </ul>
- *    <li><p>Absolute URIs</p></li>
+ *    </li>
+ *    <li>Absolute URIs
  *      <ul>
- *         <li><p><em>rmi://1234@hostname:2099/remoteobjectname</em> -
- *                Specifies the Java Virtual Machine identified by lvmid
- *                <em>1234</em> on host <em>hostname</em> accessed
- *                using the <em>rmi:</em> protocol through the rmi remote
- *                object named <em>remoteobjectname</em> as registered with
- *                the <em>rmiserver</em> on port <em>2099</em> on host
- *                <em>hostname</em>.
- *         </p></li>
- *         <li><p><em>file:/path/file</em> - Identifies a Java Virtual Machine
- *                through accessing a special file based protocol to use as
- *                the communications mechanism.
- *         </p></li>
+ *         <li><em>rmi://1234@hostname:2099/remoteobjectname</em> -
+ *             Specifies the Java Virtual Machine identified by lvmid
+ *             <em>1234</em> on host <em>hostname</em> accessed
+ *             using the <em>rmi:</em> protocol through the rmi remote
+ *             object named <em>remoteobjectname</em> as registered with
+ *             the <em>rmiserver</em> on port <em>2099</em> on host
+ *             <em>hostname</em>.
+ *         </li>
+ *         <li><em>file:/path/file</em> - Identifies a Java Virtual Machine
+ *             through accessing a special file based protocol to use as
+ *             the communications mechanism.
+ *         </li>
  *      </ul>
+ *    </li>
  * </ul>
- * </p>
  *
  * @see URI
  * @see HostIdentifier
@@ -236,16 +235,14 @@ public class VmIdentifier {
      * missing components will have result in the HostIdentifier assigning
      * assumed defaults that allow the VmIdentifier to be resolved according
      * to those defaults.
-     * </p>
      * <p>
-     * For example, a VmIdentifier that specifies only a <tt>lvmid</tt>
+     * For example, a VmIdentifier that specifies only a {@code lvmid}
      * will result in a HostIdentifier for <em>localhost</em> utilizing
      * the default local protocol, <em>local:</em>. A VmIdentifier that
-     * specifies both a <tt>vmid</tt> and a <tt>hostname</tt> will result
+     * specifies both a {@code vmid} and a {@code hostname} will result
      * in a HostIdentifier for the specified host with the default remote
      * protocol, <em>rmi:</em>, using the protocol defaults for the
-     * <tt>port</tt> and <tt>servername</tt> components.
-     * </p>
+     * {@code port} and {@code servername} components.
      *
      * @return HostIdentifier - the host identifier for the host containing
      *                          the Java Virtual Machine represented by this

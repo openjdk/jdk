@@ -254,7 +254,7 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
     jobjectArray ret = 0;
     int retLen = 0;
 
-    int error=0;
+    int getaddrinfo_error=0;
 #ifdef AF_INET6
     struct addrinfo hints, *res, *resNew = NULL;
 #endif /* AF_INET6 */
@@ -268,19 +268,6 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
     }
     hostname = JNU_GetStringPlatformChars(env, host, JNI_FALSE);
     CHECK_NULL_RETURN(hostname, NULL);
-
-#ifdef MACOSX
-    /*
-     * If we're looking up the local machine, attempt to get the address
-     * from getifaddrs. This ensures we get an IPv6 address for the local
-     * machine.
-     */
-    ret = lookupIfLocalhost(env, hostname, JNI_TRUE);
-    if (ret != NULL || (*env)->ExceptionCheck(env)) {
-        JNU_ReleaseStringPlatformChars(env, host, hostname);
-        return ret;
-    }
-#endif
 
 #ifdef AF_INET6
     /* Try once, with our static buffer. */
@@ -301,11 +288,27 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
     }
 #endif
 
-    error = getaddrinfo(hostname, NULL, &hints, &res);
+    getaddrinfo_error = getaddrinfo(hostname, NULL, &hints, &res);
 
-    if (error) {
+#ifdef MACOSX
+    if (getaddrinfo_error) {
+        /*
+         * If getaddrinfo fails looking up the local machine, attempt to get the
+         * address from getifaddrs. This ensures we get an IPv6 address for the
+         * local machine.
+         */
+        ret = lookupIfLocalhost(env, hostname, JNI_TRUE);
+        if (ret != NULL || (*env)->ExceptionCheck(env)) {
+            JNU_ReleaseStringPlatformChars(env, host, hostname);
+            return ret;
+        }
+    }
+#endif
+
+    if (getaddrinfo_error) {
         /* report error */
-        NET_ThrowUnknownHostExceptionWithGaiError(env, hostname, error);
+        NET_ThrowUnknownHostExceptionWithGaiError(
+            env, hostname, getaddrinfo_error);
         JNU_ReleaseStringPlatformChars(env, host, hostname);
         return NULL;
     } else {

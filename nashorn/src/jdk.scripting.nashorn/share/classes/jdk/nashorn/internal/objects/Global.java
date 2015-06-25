@@ -87,7 +87,7 @@ import jdk.nashorn.tools.ShellFunctions;
  * Representation of global scope.
  */
 @ScriptClass("Global")
-public final class Global extends ScriptObject implements Scope {
+public final class Global extends Scope {
     // Placeholder value used in place of a location property (__FILE__, __DIR__, __LINE__)
     private static final Object LOCATION_PROPERTY_PLACEHOLDER = new Object();
     private final InvokeByName TO_STRING = new InvokeByName("toString", ScriptObject.class);
@@ -906,9 +906,6 @@ public final class Global extends ScriptObject implements Scope {
      */
     private ScriptFunction typeErrorThrower;
 
-    // Flag to indicate that a split method issued a return statement
-    private int splitState = -1;
-
     // Used to store the last RegExp result to support deprecated RegExp constructor properties
     private RegExpResult lastRegExpResult;
 
@@ -995,7 +992,6 @@ public final class Global extends ScriptObject implements Scope {
     public Global(final Context context) {
         super(checkAndGetMap(context));
         this.context = context;
-        this.setIsScope();
         this.lexicalScope = context.getEnv()._es6 ? new LexicalScope(this) : null;
     }
 
@@ -1005,9 +1001,7 @@ public final class Global extends ScriptObject implements Scope {
      * @return the global singleton
      */
     public static Global instance() {
-        final Global global = Context.getGlobal();
-        Objects.requireNonNull(global);
-        return global;
+        return Objects.requireNonNull(Context.getGlobal());
     }
 
     private static Global instanceFrom(final Object self) {
@@ -1453,7 +1447,7 @@ public final class Global extends ScriptObject implements Scope {
      * @return the result of eval
      */
     public static Object eval(final Object self, final Object str) {
-        return directEval(self, str, UNDEFINED, UNDEFINED, false);
+        return directEval(self, str, Global.instanceFrom(self), UNDEFINED, false);
     }
 
     /**
@@ -1463,7 +1457,7 @@ public final class Global extends ScriptObject implements Scope {
      * @param str      Evaluated code
      * @param callThis "this" to be passed to the evaluated code
      * @param location location of the eval call
-     * @param strict   is eval called a strict mode code?
+     * @param strict   is eval called from a strict mode code?
      *
      * @return the return value of the eval
      *
@@ -1504,26 +1498,53 @@ public final class Global extends ScriptObject implements Scope {
     }
 
     /**
-     * Global load implementation - Nashorn extension
+     * Global load implementation - Nashorn extension.
      *
-     * @param self    scope
-     * @param source  source to load
+     * <p>
+     * load builtin loads the given script. Script source can be a URL or a File
+     * or a script object with name and script properties. Evaluated code gets
+     * global object "this" and uses global object as scope for evaluation.
+     * </p>
+     * <p>
+     * If self is undefined or null or global, then global object is used
+     * as scope as well as "this" for the evaluated code. If self is any other
+     * object, then it is indirect load call. With indirect load call, the
+     * properties of scope are available to evaluated script as variables. Also,
+     * global scope properties are accessible. Any var, function definition in
+     * evaluated script goes into an object that is not accessible to user scripts.
+     * </p>
+     * Thus the indirect load call is equivalent to the following:
+     * <pre>
+     * <code>
+     * (function (scope, source) {
+     *    with(scope) {
+     *        eval(&lt;script_from_source&gt;);
+     *    }
+     * })(self, source);
+     * </code>
+     * </pre>
      *
-     * @return result of load (undefined)
+     * @param self    scope to use for the script evaluation
+     * @param source  script source
+     *
+     * @return result of load (may be undefined)
      *
      * @throws IOException if source could not be read
      */
     public static Object load(final Object self, final Object source) throws IOException {
         final Global global = Global.instanceFrom(self);
-        final ScriptObject scope = self instanceof ScriptObject ? (ScriptObject)self : global;
-        return global.getContext().load(scope, source);
+        return global.getContext().load(self, source);
     }
 
     /**
-     * Global loadWithNewGlobal implementation - Nashorn extension
+     * Global loadWithNewGlobal implementation - Nashorn extension.
      *
-     * @param self scope
-     * @param args from plus (optional) arguments to be passed to the loaded script
+     * loadWithNewGlobal builtin loads the given script from a URL or a File
+     * or a script object with name and script properties. Evaluated code gets
+     * new global object "this" and uses that new global object as scope for evaluation.
+     *
+     * @param self self This value is ignored by this function
+     * @param args optional arguments to be passed to the loaded script
      *
      * @return result of load (may be undefined)
      *
@@ -2330,26 +2351,6 @@ public final class Global extends ScriptObject implements Scope {
     }
 
     /**
-     * Get the current split state.
-     *
-     * @return current split state
-     */
-    @Override
-    public int getSplitState() {
-        return splitState;
-    }
-
-    /**
-     * Set the current split state.
-     *
-     * @param state current split state
-     */
-    @Override
-    public void setSplitState(final int state) {
-        splitState = state;
-    }
-
-    /**
      * Return the ES6 global scope for lexically declared bindings.
      * @return the ES6 lexical global scope.
      */
@@ -2712,6 +2713,14 @@ public final class Global extends ScriptObject implements Scope {
             // Retrieve current state of ENV variables.
             final ScriptObject env = newObject();
             env.putAll(System.getenv(), scriptEnv._strict);
+
+            // Some platforms, e.g., Windows, do not define the PWD environment
+            // variable, so that the $ENV.PWD property needs to be explicitly
+            // set.
+            if (!env.containsKey(ScriptingFunctions.PWD_NAME)) {
+                env.put(ScriptingFunctions.PWD_NAME, System.getProperty("user.dir"), scriptEnv._strict);
+            }
+
             addOwnProperty(ScriptingFunctions.ENV_NAME, Attribute.NOT_ENUMERABLE, env);
         } else {
             addOwnProperty(ScriptingFunctions.ENV_NAME, Attribute.NOT_ENUMERABLE, UNDEFINED);

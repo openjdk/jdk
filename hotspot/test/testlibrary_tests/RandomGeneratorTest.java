@@ -32,11 +32,15 @@
  * @run driver RandomGeneratorTest DIFFERENT_SEED
  */
 
-import jdk.test.lib.ProcessTools;
-import jdk.test.lib.Utils;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.ProcessTools;
+import jdk.test.lib.Utils;
 
 /**
  * The test verifies correctness of work {@link jdk.test.lib.Utils#getRandomInstance()}.
@@ -59,8 +63,13 @@ public class RandomGeneratorTest {
             jvmArgs.add(optStr);
         }
         jvmArgs.add(RandomRunner.class.getName());
+        String origFileName = seedOpt.name() + "_orig";
+        jvmArgs.add(origFileName);
+        int fileNameIndex = jvmArgs.size() - 1;
         String[] cmdLineArgs = jvmArgs.toArray(new String[jvmArgs.size()]);
-        String etalon = ProcessTools.executeTestJvm(cmdLineArgs).getStdout().trim();
+        ProcessTools.executeTestJvm(cmdLineArgs).shouldHaveExitValue(0);
+        String etalon = Utils.fileAsString(origFileName).trim();
+        cmdLineArgs[fileNameIndex] = seedOpt.name();
         seedOpt.verify(etalon, cmdLineArgs);
     }
 
@@ -121,26 +130,31 @@ public class RandomGeneratorTest {
          * @throws Throwable - Throws an exception in case test failure.
          */
         public void verify(String orig, String[] cmdLine) {
-            String lastLineOrig = getLastLine(orig);
-            String lastLine;
+            String output;
+            OutputAnalyzer oa;
             try {
-                lastLine = getLastLine(ProcessTools.executeTestJvm(cmdLine).getStdout().trim());
+                oa = ProcessTools.executeTestJvm(cmdLine);
             } catch (Throwable t) {
                 throw new Error("TESTBUG: Unexpedted exception during jvm execution.", t);
             }
-            if (!isOutputExpected(lastLineOrig, lastLine)) {
-                    throw new AssertionError("Unexpected random number sequence for mode: " + this.name());
+            oa.shouldHaveExitValue(0);
+            try {
+                output = Utils.fileAsString(name()).trim();
+            } catch (IOException ioe) {
+                throw new Error("TESTBUG: Problem during IO operation with file: " + name(), ioe);
             }
-        }
-
-        private static String getLastLine(String output) {
-            return output.substring(output.lastIndexOf(Utils.NEW_LINE)).trim();
+            if (!isOutputExpected(orig, output)) {
+                System.err.println("Initial output: " + orig);
+                System.err.println("Second run output: " + output);
+                throw new AssertionError("Unexpected random number sequence for mode: " + this.name());
+            }
         }
     }
 
     /**
      * The helper class generates several random numbers
-     * and prints them out.
+     * and put results to a file. The file name came as first
+     * command line argument.
      */
     public static class RandomRunner {
         private static final int COUNT = 10;
@@ -150,7 +164,11 @@ public class RandomGeneratorTest {
             for (int i = 0; i < COUNT; i++) {
                 sb.append(rng.nextLong()).append(' ');
             }
-            System.out.println(sb.toString());
+            try (PrintWriter pw = new PrintWriter(new FileWriter(args[0]))) {
+                pw.write(sb.toString());
+            } catch (IOException ioe) {
+                throw new Error("TESTBUG: Problem during IO operation with file: " + args[0], ioe);
+            }
         }
     }
 }

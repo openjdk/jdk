@@ -30,6 +30,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+
 import jdk.nashorn.internal.runtime.PropertyMap;
 
 /**
@@ -120,7 +122,7 @@ final class ConstantData {
         private final int hashCode;
 
         public PropertyMapWrapper(final PropertyMap map) {
-            this.hashCode = Arrays.hashCode(map.getProperties());
+            this.hashCode = Arrays.hashCode(map.getProperties()) + 31 * Objects.hashCode(map.getClassName());
             this.propertyMap = map;
         }
 
@@ -131,8 +133,13 @@ final class ConstantData {
 
         @Override
         public boolean equals(final Object other) {
-            return other instanceof PropertyMapWrapper &&
-                    Arrays.equals(propertyMap.getProperties(), ((PropertyMapWrapper) other).propertyMap.getProperties());
+            if (!(other instanceof PropertyMapWrapper)) {
+                return false;
+            }
+            final PropertyMap otherMap = ((PropertyMapWrapper) other).propertyMap;
+            return propertyMap == otherMap
+                    || (Arrays.equals(propertyMap.getProperties(), otherMap.getProperties())
+                        && Objects.equals(propertyMap.getClassName(), otherMap.getClassName()));
         }
     }
 

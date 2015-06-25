@@ -37,7 +37,6 @@ import javax.swing.plaf.basic.BasicMenuItemUI;
 
 /**
  * MotifMenuItem implementation
- * <p>
  *
  * @author Rich Schiavi
  * @author Georges Saab
