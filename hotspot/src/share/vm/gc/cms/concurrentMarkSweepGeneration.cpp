@@ -2702,9 +2702,11 @@ void CMSCollector::setup_cms_unloading_and_verification_state() {
   // Not unloading classes this cycle
   assert(!should_unload_classes(), "Inconsistency!");
 
+  // If we are not unloading classes then add SO_AllCodeCache to root
+  // scanning options.
+  add_root_scanning_option(rso);
+
   if ((!verifying() || unloaded_classes_last_cycle()) && should_verify) {
-    // Include symbols, strings and code cache elements to prevent their resurrection.
-    add_root_scanning_option(rso);
     set_verifying(true);
   } else if (verifying() && !should_verify) {
     // We were verifying, but some verification flags got disabled.
