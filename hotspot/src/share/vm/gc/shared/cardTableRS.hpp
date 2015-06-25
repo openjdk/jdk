@@ -76,9 +76,8 @@ class CardTableRS: public GenRemSet {
 
   // An array that contains, for each generation, the card table value last
   // used as the current value for a younger_refs_do iteration of that
-  // portion of the table.  (The perm gen is index 0; other gens are at
-  // their level plus 1.  They youngest gen is in the table, but will
-  // always have the value "clean_card".)
+  // portion of the table. The perm gen is index 0. The young gen is index 1,
+  // but will always have the value "clean_card". The old gen is index 2.
   jbyte* _last_cur_val_in_gen;
 
   jbyte _cur_youngergen_card_val;

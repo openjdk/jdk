@@ -58,11 +58,13 @@
 
 // Methods of protected closure types.
 
-DefNewGeneration::IsAliveClosure::IsAliveClosure(Generation* g) : _g(g) {
-  assert(g->level() == 0, "Optimized for youngest gen.");
+DefNewGeneration::IsAliveClosure::IsAliveClosure(Generation* young_gen) : _young_gen(young_gen) {
+  assert(_young_gen->kind() == Generation::ParNew ||
+         _young_gen->kind() == Generation::DefNew, "Expected the young generation here");
 }
+
 bool DefNewGeneration::IsAliveClosure::do_object_b(oop p) {
-  return (HeapWord*)p >= _g->reserved().end() || p->is_forwarded();
+  return (HeapWord*)p >= _young_gen->reserved().end() || p->is_forwarded();
 }
 
 DefNewGeneration::KeepAliveClosure::
@@ -85,39 +87,38 @@ void DefNewGeneration::FastKeepAliveClosure::do_oop(oop* p)       { DefNewGenera
 void DefNewGeneration::FastKeepAliveClosure::do_oop(narrowOop* p) { DefNewGeneration::FastKeepAliveClosure::do_oop_work(p); }
 
 DefNewGeneration::EvacuateFollowersClosure::
-EvacuateFollowersClosure(GenCollectedHeap* gch, int level,
-                         ScanClosure* cur, ScanClosure* older) :
-  _gch(gch), _level(level),
-  _scan_cur_or_nonheap(cur), _scan_older(older)
+EvacuateFollowersClosure(GenCollectedHeap* gch,
+                         ScanClosure* cur,
+                         ScanClosure* older) :
+  _gch(gch), _scan_cur_or_nonheap(cur), _scan_older(older)
 {}
 
 void DefNewGeneration::EvacuateFollowersClosure::do_void() {
   do {
-    _gch->oop_since_save_marks_iterate(_level, _scan_cur_or_nonheap,
-                                       _scan_older);
-  } while (!_gch->no_allocs_since_save_marks(_level));
+    _gch->oop_since_save_marks_iterate(GenCollectedHeap::YoungGen, _scan_cur_or_nonheap, _scan_older);
+  } while (!_gch->no_allocs_since_save_marks(GenCollectedHeap::YoungGen));
 }
 
 DefNewGeneration::FastEvacuateFollowersClosure::
-FastEvacuateFollowersClosure(GenCollectedHeap* gch, int level,
-                             DefNewGeneration* gen,
-                             FastScanClosure* cur, FastScanClosure* older) :
-  _gch(gch), _level(level), _gen(gen),
-  _scan_cur_or_nonheap(cur), _scan_older(older)
-{}
+FastEvacuateFollowersClosure(GenCollectedHeap* gch,
+                             FastScanClosure* cur,
+                             FastScanClosure* older) :
+  _gch(gch), _scan_cur_or_nonheap(cur), _scan_older(older)
+{
+  assert(_gch->young_gen()->kind() == Generation::DefNew, "Generation should be DefNew");
+  _gen = (DefNewGeneration*)_gch->young_gen();
+}
 
 void DefNewGeneration::FastEvacuateFollowersClosure::do_void() {
   do {
-    _gch->oop_since_save_marks_iterate(_level, _scan_cur_or_nonheap,
-                                       _scan_older);
-  } while (!_gch->no_allocs_since_save_marks(_level));
+    _gch->oop_since_save_marks_iterate(GenCollectedHeap::YoungGen, _scan_cur_or_nonheap, _scan_older);
+  } while (!_gch->no_allocs_since_save_marks(GenCollectedHeap::YoungGen));
   guarantee(_gen->promo_failure_scan_is_complete(), "Failed to finish scan");
 }
 
 ScanClosure::ScanClosure(DefNewGeneration* g, bool gc_barrier) :
     OopsInKlassOrGenClosure(g), _g(g), _gc_barrier(gc_barrier)
 {
-  assert(_g->level() == 0, "Optimized for youngest generation");
   _boundary = _g->reserved().end();
 }
 
@@ -127,7 +128,6 @@ void ScanClosure::do_oop(narrowOop* p) { ScanClosure::do_oop_work(p); }
 FastScanClosure::FastScanClosure(DefNewGeneration* g, bool gc_barrier) :
     OopsInKlassOrGenClosure(g), _g(g), _gc_barrier(gc_barrier)
 {
-  assert(_g->level() == 0, "Optimized for youngest generation");
   _boundary = _g->reserved().end();
 }
 
@@ -168,7 +168,6 @@ void KlassScanClosure::do_klass(Klass* klass) {
 ScanWeakRefClosure::ScanWeakRefClosure(DefNewGeneration* g) :
   _g(g)
 {
-  assert(_g->level() == 0, "Optimized for youngest generation");
   _boundary = _g->reserved().end();
 }
 
@@ -186,9 +185,8 @@ KlassScanClosure::KlassScanClosure(OopsInKlassOrGenClosure* scavenge_closure,
 
 DefNewGeneration::DefNewGeneration(ReservedSpace rs,
                                    size_t initial_size,
-                                   int level,
                                    const char* policy)
-  : Generation(rs, initial_size, level),
+  : Generation(rs, initial_size),
     _promo_failure_drain_in_progress(false),
     _should_allocate_from_space(false)
 {
@@ -372,22 +370,18 @@ bool DefNewGeneration::expand(size_t bytes) {
   return success;
 }
 
-
 void DefNewGeneration::compute_new_size() {
-  // This is called after a gc that includes the following generation
-  // (which is required to exist.)  So from-space will normally be empty.
+  // This is called after a GC that includes the old generation, so from-space
+  // will normally be empty.
   // Note that we check both spaces, since if scavenge failed they revert roles.
-  // If not we bail out (otherwise we would have to relocate the objects)
+  // If not we bail out (otherwise we would have to relocate the objects).
   if (!from()->is_empty() || !to()->is_empty()) {
     return;
   }
 
-  int next_level = level() + 1;
   GenCollectedHeap* gch = GenCollectedHeap::heap();
-  assert(next_level == 1, "DefNewGeneration must be a young gen");
 
-  Generation* old_gen = gch->old_gen();
-  size_t old_size = old_gen->capacity();
+  size_t old_size = gch->old_gen()->capacity();
   size_t new_size_before = _virtual_space.committed_size();
   size_t min_new_size = spec()->init_size();
   size_t max_new_size = reserved().byte_size();
@@ -603,7 +597,7 @@ void DefNewGeneration::collect(bool   full,
 
   gch->rem_set()->prepare_for_younger_refs_iterate(false);
 
-  assert(gch->no_allocs_since_save_marks(0),
+  assert(gch->no_allocs_since_save_marks(GenCollectedHeap::YoungGen),
          "save marks have not been newly set.");
 
   // Not very pretty.
@@ -619,11 +613,11 @@ void DefNewGeneration::collect(bool   full,
                                            false);
 
   set_promo_failure_scan_stack_closure(&fsc_with_no_gc_barrier);
-  FastEvacuateFollowersClosure evacuate_followers(gch, _level, this,
+  FastEvacuateFollowersClosure evacuate_followers(gch,
                                                   &fsc_with_no_gc_barrier,
                                                   &fsc_with_gc_barrier);
 
-  assert(gch->no_allocs_since_save_marks(0),
+  assert(gch->no_allocs_since_save_marks(GenCollectedHeap::YoungGen),
          "save marks have not been newly set.");
 
   {
@@ -633,7 +627,7 @@ void DefNewGeneration::collect(bool   full,
     StrongRootsScope srs(0);
 
     gch->gen_process_roots(&srs,
-                           _level,
+                           GenCollectedHeap::YoungGen,
                            true,  // Process younger gens, if any,
                                   // as strong roots.
                            GenCollectedHeap::SO_ScavengeCodeCache,
@@ -870,8 +864,10 @@ ALL_SINCE_SAVE_MARKS_CLOSURES(DefNew_SINCE_SAVE_MARKS_DEFN)
 
 void DefNewGeneration::contribute_scratch(ScratchBlock*& list, Generation* requestor,
                                          size_t max_alloc_words) {
-  if (requestor == this || _promotion_failed) return;
-  assert(requestor->level() > level(), "DefNewGeneration must be youngest");
+  if (requestor == this || _promotion_failed) {
+    return;
+  }
+  assert(GenCollectedHeap::heap()->is_old_gen(requestor), "We should not call our own generation");
 
   /* $$$ Assert this?  "trace" is a "MarkSweep" function so that's not appropriate.
   if (to_space->top() > to_space->bottom()) {

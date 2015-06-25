@@ -545,7 +545,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
                                                                                                                                      \
   nonstatic_field(Generation,                  _reserved,                                     MemRegion)                             \
   nonstatic_field(Generation,                  _virtual_space,                                VirtualSpace)                          \
-  nonstatic_field(Generation,                  _level,                                        int)                                   \
   nonstatic_field(Generation,                  _stat_record,                                  Generation::StatRecord)                \
                                                                                                                                      \
   nonstatic_field(Generation::StatRecord,      invocations,                                   int)                                   \

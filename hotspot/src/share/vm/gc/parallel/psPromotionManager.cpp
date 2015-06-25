@@ -75,8 +75,8 @@ bool PSPromotionManager::should_scavenge(narrowOop* p, bool check_to_space) {
   return PSScavenge::should_scavenge(p, check_to_space);
 }
 
-PSPromotionManager* PSPromotionManager::gc_thread_promotion_manager(int index) {
-  assert(index >= 0 && index < (int)ParallelGCThreads, "index out of range");
+PSPromotionManager* PSPromotionManager::gc_thread_promotion_manager(uint index) {
+  assert(index < ParallelGCThreads, "index out of range");
   assert(_manager_array != NULL, "Sanity");
   return &_manager_array[index];
 }

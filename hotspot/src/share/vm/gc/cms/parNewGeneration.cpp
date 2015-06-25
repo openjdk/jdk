@@ -62,25 +62,25 @@
 #pragma warning( disable:4355 ) // 'this' : used in base member initializer list
 #endif
 ParScanThreadState::ParScanThreadState(Space* to_space_,
-                                       ParNewGeneration* gen_,
+                                       ParNewGeneration* young_gen_,
                                        Generation* old_gen_,
                                        int thread_num_,
                                        ObjToScanQueueSet* work_queue_set_,
                                        Stack<oop, mtGC>* overflow_stacks_,
                                        size_t desired_plab_sz_,
                                        ParallelTaskTerminator& term_) :
-  _to_space(to_space_), _old_gen(old_gen_), _young_gen(gen_), _thread_num(thread_num_),
+  _to_space(to_space_), _old_gen(old_gen_), _young_gen(young_gen_), _thread_num(thread_num_),
   _work_queue(work_queue_set_->queue(thread_num_)), _to_space_full(false),
   _overflow_stack(overflow_stacks_ ? overflow_stacks_ + thread_num_ : NULL),
   _ageTable(false), // false ==> not the global age table, no perf data.
   _to_space_alloc_buffer(desired_plab_sz_),
-  _to_space_closure(gen_, this), _old_gen_closure(gen_, this),
-  _to_space_root_closure(gen_, this), _old_gen_root_closure(gen_, this),
-  _older_gen_closure(gen_, this),
+  _to_space_closure(young_gen_, this), _old_gen_closure(young_gen_, this),
+  _to_space_root_closure(young_gen_, this), _old_gen_root_closure(young_gen_, this),
+  _older_gen_closure(young_gen_, this),
   _evacuate_followers(this, &_to_space_closure, &_old_gen_closure,
-                      &_to_space_root_closure, gen_, &_old_gen_root_closure,
+                      &_to_space_root_closure, young_gen_, &_old_gen_root_closure,
                       work_queue_set_, &term_),
-  _is_alive_closure(gen_), _scan_weak_ref_closure(gen_, this),
+  _is_alive_closure(young_gen_), _scan_weak_ref_closure(young_gen_, this),
   _keep_alive_closure(&_scan_weak_ref_closure),
   _strong_roots_time(0.0), _term_time(0.0)
 {
@@ -481,7 +481,6 @@ ParScanClosure::ParScanClosure(ParNewGeneration* g,
                                ParScanThreadState* par_scan_state) :
   OopsInKlassOrGenClosure(g), _par_scan_state(par_scan_state), _g(g)
 {
-  assert(_g->level() == 0, "Optimized for youngest generation");
   _boundary = _g->reserved().end();
 }
 
@@ -566,11 +565,11 @@ void ParEvacuateFollowersClosure::do_void() {
   par_scan_state()->end_term_time();
 }
 
-ParNewGenTask::ParNewGenTask(ParNewGeneration* gen, Generation* old_gen,
+ParNewGenTask::ParNewGenTask(ParNewGeneration* young_gen, Generation* old_gen,
                              HeapWord* young_old_boundary, ParScanThreadStateSet* state_set,
                              StrongRootsScope* strong_roots_scope) :
     AbstractGangTask("ParNewGeneration collection"),
-    _gen(gen), _old_gen(old_gen),
+    _young_gen(young_gen), _old_gen(old_gen),
     _young_old_boundary(young_old_boundary),
     _state_set(state_set),
     _strong_roots_scope(strong_roots_scope)
@@ -596,7 +595,7 @@ void ParNewGenTask::work(uint worker_id) {
 
   par_scan_state.start_strong_roots();
   gch->gen_process_roots(_strong_roots_scope,
-                         _gen->level(),
+                         GenCollectedHeap::YoungGen,
                          true,  // Process younger gens, if any,
                                 // as strong roots.
                          GenCollectedHeap::SO_ScavengeCodeCache,
@@ -616,8 +615,8 @@ void ParNewGenTask::work(uint worker_id) {
 #pragma warning( disable:4355 ) // 'this' : used in base member initializer list
 #endif
 ParNewGeneration::
-ParNewGeneration(ReservedSpace rs, size_t initial_byte_size, int level)
-  : DefNewGeneration(rs, initial_byte_size, level, "PCopy"),
+ParNewGeneration(ReservedSpace rs, size_t initial_byte_size)
+  : DefNewGeneration(rs, initial_byte_size, "PCopy"),
   _overflow_list(NULL),
   _is_alive_closure(this),
   _plab_stats(YoungPLABSize, PLABWeight)
@@ -752,7 +751,7 @@ public:
 private:
   virtual void work(uint worker_id);
 private:
-  ParNewGeneration&      _gen;
+  ParNewGeneration&      _young_gen;
   ProcessTask&           _task;
   Generation&            _old_gen;
   HeapWord*              _young_old_boundary;
@@ -760,12 +759,12 @@ private:
 };
 
 ParNewRefProcTaskProxy::ParNewRefProcTaskProxy(ProcessTask& task,
-                                               ParNewGeneration& gen,
+                                               ParNewGeneration& young_gen,
                                                Generation& old_gen,
                                                HeapWord* young_old_boundary,
                                                ParScanThreadStateSet& state_set)
   : AbstractGangTask("ParNewGeneration parallel reference processing"),
-    _gen(gen),
+    _young_gen(young_gen),
     _task(task),
     _old_gen(old_gen),
     _young_old_boundary(young_old_boundary),
@@ -806,12 +805,12 @@ void ParNewRefProcTaskExecutor::execute(ProcessTask& task)
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   FlexibleWorkGang* workers = gch->workers();
   assert(workers != NULL, "Need parallel worker threads.");
-  _state_set.reset(workers->active_workers(), _generation.promotion_failed());
-  ParNewRefProcTaskProxy rp_task(task, _generation, *_generation.next_gen(),
-                                 _generation.reserved().end(), _state_set);
+  _state_set.reset(workers->active_workers(), _young_gen.promotion_failed());
+  ParNewRefProcTaskProxy rp_task(task, _young_gen, _old_gen,
+                                 _young_gen.reserved().end(), _state_set);
   workers->run_task(&rp_task);
   _state_set.reset(0 /* bad value in debug if not reset */,
-                   _generation.promotion_failed());
+                   _young_gen.promotion_failed());
 }
 
 void ParNewRefProcTaskExecutor::execute(EnqueueTask& task)
@@ -835,10 +834,10 @@ ScanClosureWithParBarrier(ParNewGeneration* g, bool gc_barrier) :
   ScanClosure(g, gc_barrier) {}
 
 EvacuateFollowersClosureGeneral::
-EvacuateFollowersClosureGeneral(GenCollectedHeap* gch, int level,
+EvacuateFollowersClosureGeneral(GenCollectedHeap* gch,
                                 OopsInGenClosure* cur,
                                 OopsInGenClosure* older) :
-  _gch(gch), _level(level),
+  _gch(gch),
   _scan_cur_or_nonheap(cur), _scan_older(older)
 {}
 
@@ -846,10 +845,10 @@ void EvacuateFollowersClosureGeneral::do_void() {
   do {
     // Beware: this call will lead to closure applications via virtual
     // calls.
-    _gch->oop_since_save_marks_iterate(_level,
+    _gch->oop_since_save_marks_iterate(GenCollectedHeap::YoungGen,
                                        _scan_cur_or_nonheap,
                                        _scan_older);
-  } while (!_gch->no_allocs_since_save_marks(_level));
+  } while (!_gch->no_allocs_since_save_marks(true /* include_young */));
 }
 
 
@@ -972,14 +971,14 @@ void ParNewGeneration::collect(bool   full,
   ScanClosure               scan_without_gc_barrier(this, false);
   ScanClosureWithParBarrier scan_with_gc_barrier(this, true);
   set_promo_failure_scan_stack_closure(&scan_without_gc_barrier);
-  EvacuateFollowersClosureGeneral evacuate_followers(gch, _level,
+  EvacuateFollowersClosureGeneral evacuate_followers(gch,
     &scan_without_gc_barrier, &scan_with_gc_barrier);
   rp->setup_policy(clear_all_soft_refs);
   // Can  the mt_degree be set later (at run_task() time would be best)?
   rp->set_active_mt_degree(active_workers);
   ReferenceProcessorStats stats;
   if (rp->processing_is_mt()) {
-    ParNewRefProcTaskExecutor task_executor(*this, thread_state_set);
+    ParNewRefProcTaskExecutor task_executor(*this, *_old_gen, thread_state_set);
     stats = rp->process_discovered_references(&is_alive, &keep_alive,
                                               &evacuate_followers, &task_executor,
                                               _gc_timer, _gc_tracer.gc_id());
@@ -1045,7 +1044,7 @@ void ParNewGeneration::collect(bool   full,
 
   rp->set_enqueuing_is_done(true);
   if (rp->processing_is_mt()) {
-    ParNewRefProcTaskExecutor task_executor(*this, thread_state_set);
+    ParNewRefProcTaskExecutor task_executor(*this, *_old_gen, thread_state_set);
     rp->enqueue_discovered_references(&task_executor);
   } else {
     rp->enqueue_discovered_references(NULL);
@@ -1349,7 +1348,7 @@ bool ParNewGeneration::take_from_overflow_list_work(ParScanThreadState* par_scan
   oop prefix = cast_to_oop(Atomic::xchg_ptr(BUSY, &_overflow_list));
   // Trim off a prefix of at most objsFromOverflow items
   Thread* tid = Thread::current();
-  size_t spin_count = (size_t)ParallelGCThreads;
+  size_t spin_count = ParallelGCThreads;
   size_t sleep_time_millis = MAX2((size_t)1, objsFromOverflow/100);
   for (size_t spin = 0; prefix == BUSY && spin < spin_count; spin++) {
     // someone grabbed it before we did ...
@@ -1466,9 +1465,9 @@ void ParNewGeneration::ref_processor_init() {
     _ref_processor =
       new ReferenceProcessor(_reserved,                  // span
                              ParallelRefProcEnabled && (ParallelGCThreads > 1), // mt processing
-                             (uint) ParallelGCThreads,   // mt processing degree
+                             ParallelGCThreads,          // mt processing degree
                              refs_discovery_is_mt(),     // mt discovery
-                             (uint) ParallelGCThreads,   // mt discovery degree
+                             ParallelGCThreads,          // mt discovery degree
                              refs_discovery_is_atomic(), // atomic_discovery
                              NULL);                      // is_alive_non_header
   }

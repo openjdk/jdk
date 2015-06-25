@@ -33,6 +33,7 @@ bool HeapRegionType::is_valid(Tag tag) {
     case StartsHumongousTag:
     case ContinuesHumongousTag:
     case OldTag:
+    case ArchiveTag:
       return true;
   }
   return false;
@@ -47,6 +48,7 @@ const char* HeapRegionType::get_str() const {
     case StartsHumongousTag:    return "HUMS";
     case ContinuesHumongousTag: return "HUMC";
     case OldTag:                return "OLD";
+    case ArchiveTag:            return "ARC";
   }
   ShouldNotReachHere();
   // keep some compilers happy
@@ -62,6 +64,7 @@ const char* HeapRegionType::get_short_str() const {
     case StartsHumongousTag:    return "HS";
     case ContinuesHumongousTag: return "HC";
     case OldTag:                return "O";
+    case ArchiveTag:            return "A";
   }
   ShouldNotReachHere();
   // keep some compilers happy
