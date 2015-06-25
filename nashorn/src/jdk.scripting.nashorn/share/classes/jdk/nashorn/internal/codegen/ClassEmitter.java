@@ -100,7 +100,6 @@ import jdk.nashorn.internal.runtime.Source;
  * There is also a very nice debug interface that can emit formatted
  * bytecodes that have been written. This is enabled by setting the
  * environment "nashorn.codegen.debug" to true, or --log=codegen:{@literal <level>}
- * <p>
  *
  * @see Compiler
  */
@@ -144,7 +143,7 @@ public class ClassEmitter {
 
     /**
      * Constructor - only used internally in this class as it breaks
-     * abstraction towards ASM or other code generator below
+     * abstraction towards ASM or other code generator below.
      *
      * @param env script environment
      * @param cw  ASM classwriter
@@ -157,7 +156,8 @@ public class ClassEmitter {
     }
 
     /**
-     * Return the method names encountered
+     * Return the method names encountered.
+     *
      * @return method names
      */
     public Set<String> getMethodNames() {
@@ -165,12 +165,13 @@ public class ClassEmitter {
     }
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param env             script environment
      * @param className       name of class to weave
      * @param superClassName  super class name for class
-     * @param interfaceNames  names of interfaces implemented by this class, or null if none
+     * @param interfaceNames  names of interfaces implemented by this class, or
+     *        {@code null} if none
      */
     ClassEmitter(final Context context, final String className, final String superClassName, final String... interfaceNames) {
         this(context, new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS));
@@ -178,7 +179,7 @@ public class ClassEmitter {
     }
 
     /**
-     * Constructor from the compiler
+     * Constructor from the compiler.
      *
      * @param env           Script environment
      * @param sourceName    Source name
@@ -217,7 +218,6 @@ public class ClassEmitter {
     }
 
     /**
-     * Returns the name of the compile unit class name.
      * @return the name of the compile unit class name.
      */
     String getUnitClassName() {
@@ -225,7 +225,8 @@ public class ClassEmitter {
     }
 
     /**
-     * Get the method count, including init and clinit methods
+     * Get the method count, including init and clinit methods.
+     *
      * @return method count
      */
     public int getMethodCount() {
@@ -233,7 +234,8 @@ public class ClassEmitter {
     }
 
     /**
-     * Get the clinit count
+     * Get the clinit count.
+     *
      * @return clinit count
      */
     public int getClinitCount() {
@@ -241,7 +243,8 @@ public class ClassEmitter {
     }
 
     /**
-     * Get the init count
+     * Get the init count.
+     *
      * @return init count
      */
     public int getInitCount() {
@@ -249,7 +252,8 @@ public class ClassEmitter {
     }
 
     /**
-     * Get the field count
+     * Get the field count.
+     *
      * @return field count
      */
     public int getFieldCount() {
@@ -260,6 +264,7 @@ public class ClassEmitter {
      * Convert a binary name to a package/class name.
      *
      * @param name Binary name.
+     *
      * @return Package/class name.
      */
     private static String pathName(final String name) {
@@ -268,6 +273,7 @@ public class ClassEmitter {
 
     /**
      * Define the static fields common in all scripts.
+     *
      * @param strictMode Should we generate this method in strict mode
      */
     private void defineCommonStatics(final boolean strictMode) {
@@ -284,8 +290,8 @@ public class ClassEmitter {
     }
 
     /**
-     * Define static utilities common needed in scripts.  These are per compile unit
-     * and therefore have to be defined here and not in code gen.
+     * Define static utilities common needed in scripts. These are per compile
+     * unit and therefore have to be defined here and not in code gen.
      */
     private void defineCommonUtilities() {
         assert unitClassName != null;
@@ -333,7 +339,9 @@ public class ClassEmitter {
     }
 
     /**
-     * Constructs a primitive specific method for getting the ith entry from the constants table as an array.
+     * Constructs a primitive specific method for getting the ith entry from the
+     * constants table as an array.
+     *
      * @param clazz Array class.
      */
     private void defineGetArrayMethod(final Class<?> clazz) {
@@ -356,7 +364,9 @@ public class ClassEmitter {
 
     /**
      * Generate the name of a get array from constant pool method.
+     *
      * @param clazz Name of array class.
+     *
      * @return Method name.
      */
     static String getArrayMethodName(final Class<?> clazz) {
@@ -366,6 +376,7 @@ public class ClassEmitter {
 
     /**
      * Ensure a get constant method is issued for the class.
+     *
      * @param clazz Class of constant.
      */
     void needGetConstantMethod(final Class<?> clazz) {
@@ -373,12 +384,12 @@ public class ClassEmitter {
     }
 
     /**
-     * Inspect class name and decide whether we are generating a ScriptObject class
+     * Inspect class name and decide whether we are generating a ScriptObject class.
      *
      * @param scriptPrefix the script class prefix for the current script
      * @param type         the type to check
      *
-     * @return true if type is ScriptObject
+     * @return {@code true} if type is ScriptObject
      */
     private static boolean isScriptObject(final String scriptPrefix, final String type) {
         if (type.startsWith(scriptPrefix)) {
@@ -393,14 +404,14 @@ public class ClassEmitter {
     }
 
     /**
-     * Call at beginning of class emission
+     * Call at beginning of class emission.
      */
     public void begin() {
         classStarted = true;
     }
 
     /**
-     * Call at end of class emission
+     * Call at end of class emission.
      */
     public void end() {
         assert classStarted : "class not started for " + unitClassName;
@@ -424,7 +435,9 @@ public class ClassEmitter {
 
     /**
      * Disassemble an array of byte code.
+     *
      * @param bytecode  byte array representing bytecode
+     *
      * @return disassembly as human readable string
      */
     static String disassemble(final byte[] bytecode) {
@@ -446,7 +459,7 @@ public class ClassEmitter {
     }
 
     /**
-     * Call back from MethodEmitter for method start
+     * Call back from MethodEmitter for method start.
      *
      * @see MethodEmitter
      *
@@ -458,7 +471,7 @@ public class ClassEmitter {
     }
 
     /**
-     * Call back from MethodEmitter for method end
+     * Call back from MethodEmitter for method end.
      *
      * @see MethodEmitter
      *
@@ -470,7 +483,7 @@ public class ClassEmitter {
     }
 
     /**
-     * Add a new method to the class - defaults to public method
+     * Add a new method to the class - defaults to public method.
      *
      * @param methodName name of method
      * @param rtype      return type of the method
@@ -483,7 +496,7 @@ public class ClassEmitter {
     }
 
     /**
-     * Add a new method to the class - defaults to public method
+     * Add a new method to the class - defaults to public method.
      *
      * @param methodFlags access flags for the method
      * @param methodName  name of method
@@ -499,7 +512,7 @@ public class ClassEmitter {
     }
 
     /**
-     * Add a new method to the class - defaults to public method
+     * Add a new method to the class - defaults to public method.
      *
      * @param methodName name of method
      * @param descriptor descriptor of method
@@ -511,7 +524,7 @@ public class ClassEmitter {
     }
 
     /**
-     * Add a new method to the class - defaults to public method
+     * Add a new method to the class - defaults to public method.
      *
      * @param methodFlags access flags for the method
      * @param methodName  name of method
@@ -526,9 +539,10 @@ public class ClassEmitter {
     }
 
     /**
-     * Add a new method to the class, representing a function node
+     * Add a new method to the class, representing a function node.
      *
      * @param functionNode the function node to generate a method for
+     *
      * @return method emitter to use for weaving this method
      */
     MethodEmitter method(final FunctionNode functionNode) {
@@ -546,9 +560,11 @@ public class ClassEmitter {
     }
 
     /**
-     * Add a new method to the class, representing a rest-of version of the function node
+     * Add a new method to the class, representing a rest-of version of the
+     * function node.
      *
      * @param functionNode the function node to generate a method for
+     *
      * @return method emitter to use for weaving this method
      */
     MethodEmitter restOfMethod(final FunctionNode functionNode) {
@@ -566,7 +582,7 @@ public class ClassEmitter {
 
 
     /**
-     * Start generating the <clinit> method in the class
+     * Start generating the <clinit> method in the class.
      *
      * @return method emitter to use for weaving <clinit>
      */
@@ -576,7 +592,7 @@ public class ClassEmitter {
     }
 
     /**
-     * Start generating an <init>()V method in the class
+     * Start generating an <init>()V method in the class.
      *
      * @return method emitter to use for weaving <init>()V
      */
@@ -586,7 +602,7 @@ public class ClassEmitter {
     }
 
     /**
-     * Start generating an <init>()V method in the class
+     * Start generating an <init>()V method in the class.
      *
      * @param ptypes parameter types for constructor
      * @return method emitter to use for weaving <init>()V
@@ -597,7 +613,7 @@ public class ClassEmitter {
     }
 
     /**
-     * Start generating an <init>(...)V method in the class
+     * Start generating an <init>(...)V method in the class.
      *
      * @param flags  access flags for the constructor
      * @param ptypes parameter types for the constructor
@@ -610,7 +626,7 @@ public class ClassEmitter {
     }
 
     /**
-     * Add a field to the class, initialized to a value
+     * Add a field to the class, initialized to a value.
      *
      * @param fieldFlags flags, e.g. should it be static or public etc
      * @param fieldName  name of field
@@ -625,7 +641,7 @@ public class ClassEmitter {
     }
 
     /**
-     * Add a field to the class
+     * Add a field to the class.
      *
      * @param fieldFlags access flags for the field
      * @param fieldName  name of field
@@ -638,7 +654,7 @@ public class ClassEmitter {
     }
 
     /**
-     * Add a field to the class - defaults to public
+     * Add a field to the class - defaults to public.
      *
      * @param fieldName  name of field
      * @param fieldType  type of field
@@ -651,7 +667,8 @@ public class ClassEmitter {
      * Return a bytecode array from this ClassEmitter. The ClassEmitter must
      * have been ended (having its end function called) for this to work.
      *
-     * @return byte code array for generated class, null if class generation hasn't been ended with {@link ClassEmitter#end()}
+     * @return byte code array for generated class, {@code null} if class
+     *         generation hasn't been ended with {@link ClassEmitter#end()}.
      */
     byte[] toByteArray() {
         assert classEnded;
@@ -663,13 +680,9 @@ public class ClassEmitter {
     }
 
     /**
-     * Abstraction for flags used in class emission
-     *
-     * We provide abstraction separating these from the underlying bytecode
-     * emitter.
-     *
-     * Flags are provided for method handles, protection levels, static/virtual
-     * fields/methods.
+     * Abstraction for flags used in class emission. We provide abstraction
+     * separating these from the underlying bytecode emitter. Flags are provided
+     * for method handles, protection levels, static/virtual fields/methods.
      */
     static enum Flag {
         /** method handle with static access */
@@ -707,10 +720,12 @@ public class ClassEmitter {
         }
 
         /**
-         * Return the corresponding ASM flag value for an enum set of flags
+         * Return the corresponding ASM flag value for an enum set of flags.
          *
          * @param flags enum set of flags
-         * @return an integer value representing the flags intrinsic values or:ed together
+         *
+         * @return an integer value representing the flags intrinsic values
+         *         or:ed together
          */
         static int getValue(final EnumSet<Flag> flags) {
             int v = 0;

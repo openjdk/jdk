@@ -48,20 +48,21 @@ public class LotsOfOutput {
         UnixCommands.ensureCommandsAvailable("cat");
 
         Process p = runtime.exec(UnixCommands.cat() + " /dev/zero");
-        long initMemory = usedMemory();
-        boolean growing = false;
+        long prev = usedMemory();
+        int growing = 0;
         for (int i = 1; i < 10; i++) {
             Thread.sleep(100);
             long used = usedMemory();
-            if (used != initMemory) {
-                System.out.printf("consuming memory: i: %d, initial: %d, used: %d, delta: %d%n",
-                        i, initMemory, used, used - initMemory);
+            if (used != prev) {
+                System.out.printf("consuming memory: i: %d, prev: %d, used: %d, delta: %d%n",
+                        i, prev, used, used - prev);
             }
-            if (used > initMemory + THRESHOLD)
-                growing = true;
+            if (used > prev + THRESHOLD)
+                growing += 1;
+            prev = used;
         }
-        if (growing)
-            throw new Exception("Process consumes memory.");
+        if (growing > 2)
+            throw new Exception("Process consumes memory: growing " + growing);
 
     }
 }

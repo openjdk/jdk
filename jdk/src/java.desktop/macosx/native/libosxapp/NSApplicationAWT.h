@@ -37,6 +37,7 @@
 - (void) registerWithProcessManager;
 - (void) setDockIconWithEnv:(JNIEnv *)env;
 - (void) postDummyEvent;
+- (void) postRunnableEvent:(void (^)())block;
 - (void) waitForDummyEvent;
 
 + (void) runAWTLoopWithApp:(NSApplication*)app;

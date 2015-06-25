@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,37 +23,47 @@
 
 package javax.xml.parsers.xinclude;
 
+import static java.lang.System.lineSeparator;
+import static org.testng.Assert.assertEquals;
+
 import java.io.File;
-import java.io.IOException;
 import java.io.StringWriter;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import org.testng.Assert;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
+import org.w3c.dom.NodeList;
 
 /*
- * @bug 6794483
- * @summary Test JAXP parser can parse xml file using <xi:include> to include another xml, which has an empty element.
+ * @bug 6794483 8080908
+ * @summary Test JAXP parser can resolve the included content properly if the
+ * included xml contains an empty tag that ends with "/>", refer to XERCESJ-1134.
  */
 public class Bug6794483Test {
 
     @Test
-    public final void test() {
-        String xml = getClass().getResource("test1.xml").getPath();
-        Document doc = parseXmlFile(xml);
+    public final void test() throws Exception {
+        Document doc = parseXmlFile(getClass().getResource("test1.xml").getPath());
 
+        // check node4
+        NodeList nodeList = doc.getElementsByTagName("node4");
+        assertEquals(nodeList.getLength(), 1);
+        assertEquals(nodeList.item(0).getTextContent(), "Node4 Value", "The data of node4 is missed in parsing: " + lineSeparator() + printXmlDoc(doc));
+
+        // check node6
+        nodeList = doc.getElementsByTagName("node6");
+        assertEquals(nodeList.getLength(), 1);
+        assertEquals(nodeList.item(0).getTextContent(), "Node6 Value", "The data of node6 is missed in parsing: " + lineSeparator() + printXmlDoc(doc));
+    }
+
+    public String printXmlDoc(Document doc) throws Exception {
         StringWriter sw = new StringWriter();
         StreamResult result = new StreamResult(sw);
 
@@ -61,27 +71,16 @@ public class Bug6794483Test {
         transformerFact.setAttribute("indent-number", new Integer(4));
         Transformer transformer;
 
-        try {
-            transformer = transformerFact.newTransformer();
-            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-            transformer.setOutputProperty(OutputKeys.METHOD, "xml");
-            transformer.setOutputProperty(OutputKeys.MEDIA_TYPE, "text/xml");
+        transformer = transformerFact.newTransformer();
+        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+        transformer.setOutputProperty(OutputKeys.METHOD, "xml");
+        transformer.setOutputProperty(OutputKeys.MEDIA_TYPE, "text/xml");
 
-            // "true" indicate Append content If file exist in system
-            transformer.transform(new DOMSource(doc), result);
-            System.out.println("test" + sw);
-
-        } catch (TransformerConfigurationException ex) {
-            ex.printStackTrace();
-            Assert.fail("unexpected TransformerConfigurationException");
-        } catch (TransformerException ex) {
-            ex.printStackTrace();
-            Assert.fail("unexpected TransformerException");
-        }
-
+        transformer.transform(new DOMSource(doc), result);
+        return sw.toString();
     }
 
-    public Document parseXmlFile(String fileName) {
+    public Document parseXmlFile(String fileName) throws Exception {
         System.out.println("Parsing XML file... " + fileName);
         DocumentBuilder docBuilder = null;
         Document doc = null;
@@ -92,20 +91,10 @@ public class Bug6794483Test {
         docBuilderFactory.setNamespaceAware(true);
         docBuilderFactory.setExpandEntityReferences(true);
 
-        try {
-            docBuilder = docBuilderFactory.newDocumentBuilder();
-        } catch (ParserConfigurationException e) {
-            e.printStackTrace();
-        }
+        docBuilder = docBuilderFactory.newDocumentBuilder();
 
         File sourceFile = new File(fileName);
-        try {
-            doc = docBuilder.parse(sourceFile);
-        } catch (SAXException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        doc = docBuilder.parse(sourceFile);
 
         System.out.println("XML file parsed");
         return doc;

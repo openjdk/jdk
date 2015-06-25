@@ -43,7 +43,6 @@ public:
 
   // Return the target MethodHandle of this CallSite.
   ciMethodHandle* get_target() const;
-  ciKlass* get_context();
 
   void print();
 };

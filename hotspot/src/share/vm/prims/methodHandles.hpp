@@ -69,7 +69,10 @@ class MethodHandles: AllStatic {
   enum { _suppress_defc = 1, _suppress_name = 2, _suppress_type = 4 };
 
   // CallSite support
-  static InstanceKlass* get_call_site_context(oop call_site);
+  static void add_dependent_nmethod(oop call_site, nmethod* nm);
+  static void remove_dependent_nmethod(oop call_site, nmethod* nm);
+
+  static void flush_dependent_nmethods(Handle call_site, Handle target);
 
   // Generate MethodHandles adapters.
   static bool generate_adapters();

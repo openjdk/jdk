@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,13 @@
 package com.sun.tools.sjavac;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 import com.sun.tools.javac.util.Assert;
+import com.sun.tools.sjavac.pubapi.PubApi;
 
 /**
  * The build state class captures the source code and generated artifacts
@@ -77,7 +78,7 @@ public class BuildState {
      */
     Module findModuleFromPackageName(String pkg) {
         int cp = pkg.indexOf(':');
-        Assert.check(cp != -1);
+        Assert.check(cp != -1, "Could not find package name");
         String mod = pkg.substring(0, cp);
         return lookupModule(mod);
     }
@@ -154,21 +155,28 @@ public class BuildState {
      */
     public void calculateDependents() {
         dependents = new HashMap<>();
+
         for (String s : packages.keySet()) {
             Package p = packages.get(s);
-            for (String d : p.dependencies()) {
-                Set<String> ss = dependents.get(d);
-                if (ss == null) {
-                    ss = new HashSet<>();
-                    dependents.put(d, ss);
-                }
+
+            // Collect all dependencies of the classes in this package
+            Set<String> deps = p.typeDependencies()  // maps fqName -> set of dependencies
+                                .values()
+                                .stream()
+                                .reduce(Collections.emptySet(), Util::union);
+
+            // Now reverse the direction
+
+            for (String dep : deps) {
                 // Add the dependent information to the global dependent map.
-                ss.add(s);
-                Package dp = packages.get(d);
+                String depPkgStr = ":" + dep.substring(0, dep.lastIndexOf('.'));
+                dependents.merge(depPkgStr, Collections.singleton(s), Util::union);
+
                 // Also add the dependent information to the package specific map.
                 // Normally, you do not compile java.lang et al. Therefore
                 // there are several packages that p depends upon that you
                 // do not have in your state database. This is perfectly fine.
+                Package dp = packages.get(depPkgStr);
                 if (dp != null) {
                     // But this package did exist in the state database.
                     dp.addDependent(p.name());
@@ -270,11 +278,21 @@ public class BuildState {
     public void copyPackagesExcept(BuildState prev, Set<String> recompiled, Set<String> removed) {
         for (String pkg : prev.packages().keySet()) {
             // Do not copy recompiled or removed packages.
-            if (recompiled.contains(pkg) || removed.contains(pkg)) continue;
+            if (recompiled.contains(pkg) || removed.contains(pkg))
+                continue;
+
             Module mnew = findModuleFromPackageName(pkg);
             Package pprev = prev.packages().get(pkg);
+
+            // Even though we haven't recompiled this package, we may have
+            // information about its public API: It may be a classpath dependency
+            if (packages.containsKey(pkg)) {
+                pprev.setPubapi(PubApi.mergeTypes(pprev.getPubApi(),
+                                                  packages.get(pkg).getPubApi()));
+            }
+
             mnew.addPackage(pprev);
-            // Do not forget to update the flattened data.
+            // Do not forget to update the flattened data. (See JDK-8071904)
             packages.put(pkg, pprev);
         }
     }

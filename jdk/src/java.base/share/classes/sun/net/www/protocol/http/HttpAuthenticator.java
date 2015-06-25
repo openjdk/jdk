@@ -59,6 +59,7 @@ public interface HttpAuthenticator {
      * supplied or could be found.
      * <P>
      * Example:
+     * <pre>{@code
      * --> GET http://www.authorization-required.com/ HTTP/1.0
      * <-- HTTP/1.0 403 Unauthorized
      * <-- WWW-Authenticate: Basic realm="WallyWorld"
@@ -67,8 +68,9 @@ public interface HttpAuthenticator {
      *   return "QWadhgWERghghWERfdfQ=="
      * --> GET http://www.authorization-required.com/ HTTP/1.0
      * --> Authorization: Basic QWadhgWERghghWERfdfQ==
-     * <-- HTTP/1.0 200 OK
+     * <-- HTTP/1.0 200 OK}
      * <B> YAY!!!</B>
+     * </pre>
      */
 
     public String authString (URL u, String scheme, String realm);
