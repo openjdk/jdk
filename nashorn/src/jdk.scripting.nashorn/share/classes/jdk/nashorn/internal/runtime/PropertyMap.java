@@ -597,6 +597,15 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
     }
 
     /**
+     * Return the name of the class of objects using this property map.
+     *
+     * @return class name of owner objects.
+     */
+    public String getClassName() {
+        return className;
+    }
+
+    /**
      * Prevents the map from having additional properties.
      *
      * @return New map with {@link #NOT_EXTENSIBLE} flag set.

@@ -625,7 +625,7 @@ public class HttpClient extends NetworkClient {
     }
 
     /** Parse the first line of the HTTP request.  It usually looks
-        something like: "HTTP/1.0 <number> comment\r\n". */
+        something like: {@literal "HTTP/1.0 <number> comment\r\n"}. */
 
     public boolean parseHTTP(MessageHeader responses, ProgressSource pi, HttpURLConnection httpuc)
     throws IOException {

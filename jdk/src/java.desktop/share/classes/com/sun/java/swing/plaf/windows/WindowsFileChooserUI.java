@@ -48,7 +48,7 @@ import sun.swing.*;
 import javax.accessibility.*;
 
 /**
- * Windows L&F implementation of a FileChooser.
+ * Windows {@literal L&F} implementation of a FileChooser.
  *
  * @author Jeff Dinkins
  */

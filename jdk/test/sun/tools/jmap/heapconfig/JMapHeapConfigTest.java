@@ -21,25 +21,29 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8042397
- * @summary Unit test for jmap utility test heap configuration reader
- * @library /lib/testlibrary
- * @modules java.management
- * @build jdk.testlibrary.*
- * @build JMapHeapConfigTest LingeredApp TmtoolTestScenario
- * @run main JMapHeapConfigTest
- */
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import jdk.test.lib.apps.LingeredApp;
 import jdk.testlibrary.Utils;
 import jdk.testlibrary.Platform;
 
+/*
+ * @test
+ * @bug 8042397
+ * @summary Unit test for jmap utility test heap configuration reader
+ * @library /../../test/lib/share/classes
+ * @library /lib/testlibrary
+ * @modules java.management
+ * @build jdk.testlibrary.*
+ * @build jdk.test.lib.apps.*
+ * @build JMapHeapConfigTest TmtoolTestScenario
+ * @run main JMapHeapConfigTest
+ */
 public class JMapHeapConfigTest {
 
     static final String expectedJMapValues[] = {

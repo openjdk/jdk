@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
+
 import com.sun.tools.javac.util.Assert;
+import com.sun.tools.sjavac.pubapi.PubApi;
 
 /**
  * The Package class maintains meta information about a package.
@@ -71,12 +76,16 @@ public class Package implements Comparable<Package> {
     // The directory path to the package. If the package belongs to a module,
     // then that module's file system name is part of the path.
     private String dirname;
-    // This package depends on these packages.
-    private Set<String> dependencies = new HashSet<>();
     // This package has the following dependents, that depend on this package.
     private Set<String> dependents = new HashSet<>();
+
+    // Fully qualified name of class in this package -> fully qualified name of dependency
+    private Map<String, Set<String>> dependencies = new TreeMap<>();
+    // Fully qualified name of class in this package -> fully qualified name of dependency on class path
+    private Map<String, Set<String>> cpDependencies = new TreeMap<>();
+
     // This is the public api of this package.
-    private List<String> pubapi = new ArrayList<>();
+    private PubApi pubApi = new PubApi();
     // Map from source file name to Source info object.
     private Map<String,Source> sources = new HashMap<>();
     // This package generated these artifacts.
@@ -85,7 +94,6 @@ public class Package implements Comparable<Package> {
     public Package(Module m, String n) {
         int c = n.indexOf(":");
         Assert.check(c != -1);
-        String mn = n.substring(0,c);
         Assert.check(m.name().equals(m.name()));
         name = n;
         dirname = n.replace('.', File.separatorChar);
@@ -100,9 +108,11 @@ public class Package implements Comparable<Package> {
     public String dirname() { return dirname; }
     public Map<String,Source> sources() { return sources; }
     public Map<String,File> artifacts() { return artifacts; }
-    public List<String> pubapi() { return pubapi; }
+    public PubApi getPubApi() { return pubApi; }
 
-    public Set<String> dependencies() { return dependencies; }
+    public Map<String,Set<String>> typeDependencies() { return dependencies; }
+    public Map<String,Set<String>> typeClasspathDependencies() { return cpDependencies; }
+
     public Set<String> dependents() { return dependents; }
 
     @Override
@@ -124,16 +134,25 @@ public class Package implements Comparable<Package> {
         sources.put(s.file().getPath(), s);
     }
 
-    public void addDependency(String d) {
-        dependencies.add(d);
+    private static Pattern DEP_PATTERN = Pattern.compile("(.*) -> (.*)");
+    public void parseAndAddDependency(String d, boolean cp) {
+        Matcher m = DEP_PATTERN.matcher(d);
+        if (!m.matches())
+            throw new IllegalArgumentException("Bad dependency string: " + d);
+        addDependency(m.group(1), m.group(2), cp);
+    }
+
+    public void addDependency(String fullyQualifiedFrom,
+                              String fullyQualifiedTo,
+                              boolean cp) {
+        Map<String, Set<String>> map = cp ? cpDependencies : dependencies;
+        if (!map.containsKey(fullyQualifiedFrom))
+            map.put(fullyQualifiedFrom, new HashSet<>());
+        map.get(fullyQualifiedFrom).add(fullyQualifiedTo);
     }
 
     public void addDependent(String d) {
         dependents.add(d);
-    }
-
-    public void addPubapi(String p) {
-        pubapi.add(p);
     }
 
     /**
@@ -141,53 +160,22 @@ public class Package implements Comparable<Package> {
      * describe the results of compiling this package before.
      */
     public boolean existsInJavacState() {
-        return artifacts.size() > 0 || pubapi.size() > 0;
+        return artifacts.size() > 0 || !pubApi.isEmpty();
     }
 
-    public static List<String> pubapiToList(String ps)
-    {
-        String[] lines = ps.split("\n");
-        List<String> r = new ArrayList<>();
-        for (String l : lines) {
-            r.add(l);
-        }
-        return r;
+    public boolean hasPubApiChanged(PubApi newPubApi) {
+        return !newPubApi.isBackwardCompatibleWith(pubApi);
     }
 
-    public boolean hasPubapiChanged(List<String> ps) {
-        Iterator<String> i = ps.iterator();
-        Iterator<String> j = pubapi.iterator();
-        int line = 0;
-        while (i.hasNext() && j.hasNext()) {
-            String is = i.next();
-            String js = j.next();
-            if (!is.equals(js)) {
-                Log.debug("Change in pubapi for package "+name+" line "+line);
-                Log.debug("Old: "+js);
-                Log.debug("New: "+is);
-                return true;
-            }
-            line++;
-        }
-        if ((i.hasNext() && !j.hasNext() ) ||
-            (!i.hasNext() && j.hasNext())) {
-            Log.debug("Change in pubapi for package "+name);
-            if (i.hasNext()) {
-                Log.debug("New has more lines!");
-            } else {
-                Log.debug("Old has more lines!");
-            }
-            return true;
-        }
-        return false;
+    public void setPubapi(PubApi newPubApi) {
+        pubApi = newPubApi;
     }
 
-    public void setPubapi(List<String> ps) {
-        pubapi = ps;
-    }
-
-    public void setDependencies(Set<String> ds) {
-        dependencies = ds;
+    public void setDependencies(Map<String, Set<String>> ds, boolean cp) {
+        (cp ? cpDependencies : dependencies).clear();
+        for (String fullyQualifiedFrom : ds.keySet())
+            for (String fullyQualifiedTo : ds.get(fullyQualifiedFrom))
+                addDependency(fullyQualifiedFrom, fullyQualifiedTo, cp);
     }
 
     public void save(StringBuilder b) {
@@ -203,31 +191,28 @@ public class Package implements Comparable<Package> {
         return new Package(module, name);
     }
 
-    public void loadDependency(String l) {
-        String n = l.substring(2);
-        addDependency(n);
-    }
-
-    public void loadPubapi(String l) {
-        String pi = l.substring(2);
-        addPubapi(pi);
-    }
-
     public void saveDependencies(StringBuilder b) {
-        List<String> sorted_dependencies = new ArrayList<>();
-        for (String key : dependencies) {
-            sorted_dependencies.add(key);
+
+        // Dependencies where *to* is among sources
+        for (String fullyQualifiedFrom : dependencies.keySet()) {
+            for (String fullyQualifiedTo : dependencies.get(fullyQualifiedFrom)) {
+                b.append(String.format("D S %s -> %s%n", fullyQualifiedFrom, fullyQualifiedTo));
+            }
         }
-        Collections.sort(sorted_dependencies);
-        for (String a : sorted_dependencies) {
-            b.append("D "+a+"\n");
+
+        // Dependencies where *to* is on class path
+        for (String fullyQualifiedFrom : cpDependencies.keySet()) {
+            for (String fullyQualifiedTo : cpDependencies.get(fullyQualifiedFrom)) {
+                b.append(String.format("D C %s -> %s%n", fullyQualifiedFrom, fullyQualifiedTo));
+            }
         }
     }
 
     public void savePubapi(StringBuilder b) {
-        for (String l : pubapi) {
-            b.append("I "+l+"\n");
-        }
+        pubApi.asListOfStrings()
+              .stream()
+              .flatMap(l -> Stream.of("I ", l, "\n"))
+              .forEach(b::append);
     }
 
     public static void savePackages(Map<String,Package> packages, StringBuilder b) {

@@ -34,7 +34,7 @@ import javax.swing.plaf.basic.BasicTabbedPaneUI;
 import java.io.Serializable;
 
 /**
- * A Motif L&F implementation of TabbedPaneUI.
+ * A Motif {@literal L&F} implementation of TabbedPaneUI.
  * <p>
  * <strong>Warning:</strong>
  * Serialized objects of this class will not be compatible with

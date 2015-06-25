@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,8 @@ public interface DynAny extends org.omg.CORBA.Object
      *
      * @param dyn_any the <code>DynAny</code> object whose contents
      *                are assigned to this <code>DynAny</code>.
-     * @throws Invalid if the source <code>DynAny</code> is
-     *            invalid
+     * @throws org.omg.CORBA.DynAnyPackage.Invalid if the source
+     * <code>DynAny</code> is invalid
      */
     public void assign(org.omg.CORBA.DynAny dyn_any)
         throws org.omg.CORBA.DynAnyPackage.Invalid;
@@ -63,8 +63,8 @@ public interface DynAny extends org.omg.CORBA.Object
      * object.
      *
      * @param value the <code>Any</code> object.
-     * @throws Invalid if the source <code>Any</code> object is
-     *                    empty or bad
+     * @throws org.omg.CORBA.DynAnyPackage.Invalid if the source
+     * <code>Any</code> object is empty or bad
      */
     public void from_any(org.omg.CORBA.Any value)
         throws org.omg.CORBA.DynAnyPackage.Invalid;
@@ -74,8 +74,8 @@ public interface DynAny extends org.omg.CORBA.Object
      * object.
      *
      * @return the <code>Any</code> object.
-     * @throws Invalid if this <code>DynAny</code> is empty or
-     *                    bad.
+     * @throws org.omg.CORBA.DynAnyPackage.Invalid if this
+     * <code>DynAny</code> is empty or bad.
      *            created or does not contain a meaningful value
      */
     public org.omg.CORBA.Any to_any()

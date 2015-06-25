@@ -83,6 +83,7 @@ public class JavacOptionPrep {
 
         // Check the result
         boolean destDirFound = false;
+        boolean userPathsFirst = false;
         boolean headerDirFound = false;
         boolean gensrcDirFound = false;
         boolean classPathFound = false;
@@ -94,6 +95,11 @@ public class JavacOptionPrep {
         while (javacArgIter.hasNext()) {
 
             String option = javacArgIter.next();
+
+            // Ignore this option for now. When the file=... requirement goes
+            // away, this will be easier to handle.
+            if (option.startsWith("-XDcompletionDeps"))
+                continue;
 
             switch (option) {
             case "-classpath":
@@ -166,7 +172,6 @@ public class JavacOptionPrep {
 
         if (!implicitNoneFound)
             throw new AssertionError("\"-implicit:none\" not found.");
-
     }
 
     static void assertEquals(Object expected, Object actual) {

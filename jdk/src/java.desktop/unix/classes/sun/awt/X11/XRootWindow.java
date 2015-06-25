@@ -31,18 +31,22 @@ package sun.awt.X11;
  * common logical ancestor
  */
 class XRootWindow extends XBaseWindow {
-    private static XRootWindow xawtRootWindow = null;
-    static XRootWindow getInstance() {
-        XToolkit.awtLock();
-        try {
-            if (xawtRootWindow == null) {
+    private static class LazyHolder {
+        private static final XRootWindow xawtRootWindow;
+
+        static {
+            XToolkit.awtLock();
+            try {
                 xawtRootWindow = new XRootWindow();
                 xawtRootWindow.init(xawtRootWindow.getDelayedParams().delete(DELAYED));
+            } finally {
+                XToolkit.awtUnlock();
             }
-            return xawtRootWindow;
-        } finally {
-            XToolkit.awtUnlock();
         }
+
+    }
+    static XRootWindow getInstance() {
+        return LazyHolder.xawtRootWindow;
     }
 
     private XRootWindow() {

@@ -459,6 +459,19 @@ public abstract class AbstractParser {
         if (kind == TokenKind.KEYWORD || kind == TokenKind.FUTURE || kind == TokenKind.FUTURESTRICT) {
             return true;
         }
+
+        // only literals allowed are null, false and true
+        if (kind == TokenKind.LITERAL) {
+            switch (type) {
+                case FALSE:
+                case NULL:
+                case TRUE:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
         // Fake out identifier.
         final long identToken = Token.recast(token, IDENT);
         // Get IDENT.

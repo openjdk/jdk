@@ -42,7 +42,8 @@ JAVAC = $(JDK_HOME)/bin/javac
 JAR = $(JDK_HOME)/bin/jar
 
 WB_SRC_FILES = $(shell find $(SRC_DIR)/sun/hotspot -name '*.java')
-SHARE_SRC_FILES = $(shell find $(SRC_DIR)/share/classes -name '*.java')
+# test-lib.jar will contain only hprof classes until JDK-8081381 is resolved
+SHARE_SRC_FILES = $(shell find $(SRC_DIR)/share/classes/jdk/test/lib/hprof -name '*.java')
 
 .PHONY: wb.filelist share.filelist clean cleantmp
 

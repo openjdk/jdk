@@ -2668,8 +2668,12 @@ loop:
             name = getIdent();
             verifyStrictIdent(name, "function name");
         } else if (isStatement) {
-            // Nashorn extension: anonymous function statements
-            if (env._no_syntax_extensions) {
+            // Nashorn extension: anonymous function statements.
+            // Do not allow anonymous function statement if extensions
+            // are now allowed. But if we are reparsing then anon function
+            // statement is possible - because it was used as function
+            // expression in surrounding code.
+            if (env._no_syntax_extensions && reparsedFunction == null) {
                 expect(IDENT);
             }
         }

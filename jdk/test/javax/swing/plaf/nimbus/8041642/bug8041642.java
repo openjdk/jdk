@@ -22,7 +22,7 @@
  */
 
 /* @test
-   @bug 8041642
+   @bug 8041642 8079450
    @summary Incorrect paint of JProgressBar in Nimbus LF
    @author Semyon Sadetsky
 */
@@ -63,6 +63,7 @@ public class bug8041642 {
                 }
             });
             final Robot robot = new Robot();
+            robot.delay(100);
             Color color = robot.getPixelColor(point.x + 1, point.y + 7);
             System.out.println(color);
             if (color.getGreen() < 150 || color.getBlue() > 30 ||

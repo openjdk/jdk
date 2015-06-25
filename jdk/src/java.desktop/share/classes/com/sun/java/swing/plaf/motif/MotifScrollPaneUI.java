@@ -34,7 +34,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
 /**
- * A CDE/Motif L&F implementation of ScrollPaneUI.
+ * A CDE/Motif {@code L&F} implementation of ScrollPaneUI.
  * <p>
  * <strong>Warning:</strong>
  * Serialized objects of this class will not be compatible with

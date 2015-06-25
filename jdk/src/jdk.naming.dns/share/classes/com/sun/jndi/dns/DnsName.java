@@ -580,7 +580,7 @@ public final class DnsName implements Name {
      * Serializes only the domain name string, for compactness and to avoid
      * any implementation dependency.
      *
-     * @serialdata      The domain name string.
+     * @serialData      The domain name string.
      */
     private void writeObject(java.io.ObjectOutputStream s)
             throws java.io.IOException {

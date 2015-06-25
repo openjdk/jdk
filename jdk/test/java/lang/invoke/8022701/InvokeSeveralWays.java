@@ -38,12 +38,19 @@ public class InvokeSeveralWays {
             failures++;
         } catch (InvocationTargetException e) {
             Throwable c = e.getCause();
-            if (expected.isInstance(c))
-               System.out.println("EXPECTED: " + expected.getName() + ", "+ c);
-            else {
-               failures++;
-               System.out.println("FAIL: Unexpected wrapped exception " + c);
-               e.printStackTrace(System.out);
+            if (BootstrapMethodError.class.isInstance(c)) {
+                c = c.getCause();
+                if (expected.isInstance(c))
+                    System.out.println("EXPECTED: " + expected.getName() + ", "+ c);
+                else {
+                    failures++;
+                    System.out.println("FAIL: Unexpected wrapped exception " + c);
+                    e.printStackTrace(System.out);
+                }
+            } else {
+                failures++;
+                System.out.println("FAIL: Exception from MethodHandle invocation not wrapped in BootstrapMethodError " + c);
+                e.printStackTrace(System.out);
             }
         } catch (Throwable e) {
             failures++;
@@ -74,14 +81,19 @@ public class InvokeSeveralWays {
             Invoker.invoke();
             System.out.println("FAIL: No exception throw, probably failed to load modified bytecodes for MethodSupplier");
             failures++;
-        } catch (Throwable e) {
-            if (expected.isInstance(e))
-               System.out.println("EXPECTED: " + expected.getName() + ", "+ e);
+        } catch (BootstrapMethodError e) {
+            Throwable c = e.getCause();
+            if (expected.isInstance(c))
+                System.out.println("EXPECTED: " + expected.getName() + ", "+ c);
             else {
-            failures++;
-            System.out.println("FAIL: Unexpected exception has been caught " + e);
-            e.printStackTrace(System.out);
+                failures++;
+                System.out.println("FAIL: Unexpected exception has been caught " + c);
+                e.printStackTrace(System.out);
             }
+        } catch (Throwable e) {
+            failures++;
+            System.out.println("FAIL: Exception from MethodHandle invocation not wrapped in BootstrapMethodError " + e);
+            e.printStackTrace(System.out);
         }
         System.out.println();
         try {

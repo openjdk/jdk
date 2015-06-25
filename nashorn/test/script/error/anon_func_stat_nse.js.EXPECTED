@@ -1,0 +1,3 @@
+test/script/error/anon_func_stat_nse.js:31:8 Expected ident but found (
+function() {}
+        ^

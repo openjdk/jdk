@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -479,12 +479,12 @@ Java_java_lang_ClassLoader_00024NativeLibrary_find
     return res;
 }
 /*
- * Class:     java_lang_ClassLoader_NativeLibrary
+ * Class:     java_lang_ClassLoader
  * Method:    findBuiltinLib
  * Signature: (Ljava/lang/String;)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL
-Java_java_lang_ClassLoader_00024NativeLibrary_findBuiltinLib
+Java_java_lang_ClassLoader_findBuiltinLib
   (JNIEnv *env, jclass cls, jstring name)
 {
     const char *cname;
@@ -500,8 +500,6 @@ Java_java_lang_ClassLoader_00024NativeLibrary_findBuiltinLib
         JNU_ThrowInternalError(env, "NULL filename for native library");
         return NULL;
     }
-    // Can't call initIDs because it will recurse into NativeLibrary via
-    // FindClass to check context so set prochandle here as well.
     procHandle = getProcessHandle();
     cname = JNU_GetStringPlatformChars(env, name, 0);
     if (cname == NULL) {
