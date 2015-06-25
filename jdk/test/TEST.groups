@@ -34,7 +34,6 @@ tier2 = \
     :jdk_io \
     :jdk_nio \
     :jdk_net \
-    :jdk_rmi \
     :jdk_time \
     :jdk_security \
     :jdk_text \
@@ -42,8 +41,8 @@ tier2 = \
     :jdk_other \
     :jdk_svc
 
-# Tier 3 is initially empty.
-tier3 =
+tier3 = \
+    :jdk_rmi
 
 ###############################################################################
 #
