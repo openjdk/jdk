@@ -40,13 +40,8 @@
 #error "VERSION_STRING must be defined"
 #endif
 
-#if defined(VERSION_MAJOR) && defined(VERSION_MINOR)
-#define DOT_VERSION STR(VERSION_MAJOR) "." STR(VERSION_MINOR)
-#else
-/* make sure the compilation fails */
-#error "JDK_MAJOR_VERSION and JDK_MINOR_VERSION must be defined"
-#endif
-
+/* Unused, but retained for JLI_Launch compatibility*/
+#define DOT_VERSION "0.0"
 
 #ifdef JAVA_ARGS
 #define HAS_JAVA_ARGS JNI_TRUE
