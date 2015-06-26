@@ -278,7 +278,7 @@ public final class MethodHandleFactory {
 
         //if there is no logger, or if it's set to log only coarser events
         //than the trace level, skip and return
-        if (logger == null || logger.levelCoarserThan(level)) {
+        if (logger == null || !logger.isLoggable(level)) {
             return mh;
         }
 
