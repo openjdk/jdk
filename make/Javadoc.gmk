@@ -308,8 +308,8 @@ endef
 
 
 
-# Assume we need a draft format whenever the pre-release identifier is non-empty
-ifneq ($(VERSION_PRE),)
+# Assume we need a draft format when the version string is not a GA version.
+ifeq ($(VERSION_IS_GA), false)
   DRAFT_HEADER := <br><strong>DRAFT&nbsp;$(VERSION_STRING)</strong>
   DRAFT_BOTTOM := <br><strong>DRAFT&nbsp;$(VERSION_STRING)</strong>
   DRAFT_WINTITLE := $(VERSION_BUILD)
