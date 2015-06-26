@@ -193,23 +193,19 @@ public class Main {
                         provClass = Class.forName(provName);
                     }
 
-                    String provArg = providerArgs.get(provName);
-                    Object obj;
-                    if (provArg == null) {
-                        obj = provClass.newInstance();
-                    } else {
-                        Constructor<?> c =
-                                provClass.getConstructor(PARAM_STRING);
-                        obj = c.newInstance(provArg);
-                    }
-
+                    Object obj = provClass.newInstance();
                     if (!(obj instanceof Provider)) {
                         MessageFormat form = new MessageFormat(rb.getString
                             ("provName.not.a.provider"));
                         Object[] source = {provName};
                         throw new Exception(form.format(source));
                     }
-                    Security.addProvider((Provider)obj);
+                    Provider p = (Provider) obj;
+                    String provArg = providerArgs.get(provName);
+                    if (provArg != null) {
+                        p = p.configure(provArg);
+                    }
+                    Security.addProvider(p);
                 }
             }
 
