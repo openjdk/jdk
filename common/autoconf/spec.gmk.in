@@ -175,6 +175,9 @@ VERSION_STRING := @VERSION_STRING@
 VERSION_SHORT := @VERSION_SHORT@
 # The Java specification version. It should be equal to version number.
 VERSION_SPECIFICATION := @VERSION_NUMBER@
+# A GA version is defined by the PRE string being empty. Rather than testing for
+# that, this variable defines it with true/false.
+VERSION_IS_GA := @VERSION_IS_GA@
 
 # Convenience CFLAGS settings for passing version information into native programs.
 VERSION_CFLAGS := \
