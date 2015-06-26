@@ -63,13 +63,8 @@ public final class SunPKCS11 extends AuthProvider {
 
     static final Debug debug = Debug.getInstance("sunpkcs11");
 
-    private static int dummyConfigId;
-
     // the PKCS11 object through which we make the native calls
     final PKCS11 p11;
-
-    // name of the configuration file
-    private final String configName;
 
     // configuration information
     final Config config;
@@ -95,17 +90,33 @@ public final class SunPKCS11 extends AuthProvider {
     }
 
     public SunPKCS11() {
-        super("SunPKCS11-Dummy", 1.9d, "SunPKCS11-Dummy");
-        throw new ProviderException
-            ("SunPKCS11 requires configuration file argument");
+        super("SunPKCS11", 1.9d, "Unconfigured and unusable PKCS11 provider");
+        p11 = null;
+        config = null;
+        slotID = 0;
+        pHandler = null;
+        removable = false;
+        nssModule = null;
+        nssUseSecmodTrust = false;
+        token = null;
+        poller = null;
     }
 
-    public SunPKCS11(String configName) {
-        this(checkNull(configName), null);
-    }
-
-    public SunPKCS11(InputStream configStream) {
-        this(getDummyConfigName(), checkNull(configStream));
+    @Override
+    public Provider configure(String configArg) throws InvalidParameterException {
+        final String newConfigName = checkNull(configArg);
+        try {
+            return AccessController.doPrivileged(new PrivilegedExceptionAction<Provider>() {
+                @Override
+                public Provider run() throws Exception {
+                    return new SunPKCS11(new Config(newConfigName));
+                }
+            });
+        } catch (PrivilegedActionException pae) {
+            InvalidParameterException ipe =
+                new InvalidParameterException("Error configuring SunPKCS11 provider");
+            throw (InvalidParameterException) ipe.initCause(pae.getException());
+        }
     }
 
     private static <T> T checkNull(T obj) {
@@ -115,25 +126,13 @@ public final class SunPKCS11 extends AuthProvider {
         return obj;
     }
 
-    private static synchronized String getDummyConfigName() {
-        int id = ++dummyConfigId;
-        return "---DummyConfig-" + id + "---";
-    }
-
-    /**
-     * @deprecated use new SunPKCS11(String) or new SunPKCS11(InputStream)
-     *         instead
-     */
-    @Deprecated
-    public SunPKCS11(String configName, InputStream configStream) {
-        super("SunPKCS11-" +
-            Config.getConfig(configName, configStream).getName(),
-            1.9d, Config.getConfig(configName, configStream).getDescription());
-        this.configName = configName;
-        this.config = Config.removeConfig(configName);
+    // Used by Secmod
+    SunPKCS11(Config c) {
+        super("SunPKCS11-" + c.getName(), 1.9d, c.getDescription());
+        this.config = c;
 
         if (debug != null) {
-            System.out.println("SunPKCS11 loading " + configName);
+            System.out.println("SunPKCS11 loading " + config.getFileName());
         }
 
         String library = config.getLibrary();
@@ -811,7 +810,7 @@ public final class SunPKCS11 extends AuthProvider {
         if (poller != null) {
             return;
         }
-        TokenPoller poller = new TokenPoller(this);
+        final TokenPoller poller = new TokenPoller(this);
         Thread t = new ManagedLocalsThread(poller, "Poller " + getName());
         t.setDaemon(true);
         t.setPriority(Thread.MIN_PRIORITY);
@@ -1456,7 +1455,7 @@ public final class SunPKCS11 extends AuthProvider {
 
         SunPKCS11Rep(SunPKCS11 provider) throws NotSerializableException {
             providerName = provider.getName();
-            configName = provider.configName;
+            configName = provider.config.getFileName();
             if (Security.getProvider(providerName) != provider) {
                 throw new NotSerializableException("Only SunPKCS11 providers "
                     + "installed in java.security.Security can be serialized");
@@ -1465,7 +1464,7 @@ public final class SunPKCS11 extends AuthProvider {
 
         private Object readResolve() throws ObjectStreamException {
             SunPKCS11 p = (SunPKCS11)Security.getProvider(providerName);
-            if ((p == null) || (p.configName.equals(configName) == false)) {
+            if ((p == null) || (p.config.getFileName().equals(configName) == false)) {
                 throw new NotSerializableException("Could not find "
                         + providerName + " in installed providers");
             }
