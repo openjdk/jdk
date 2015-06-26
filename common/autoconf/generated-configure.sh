@@ -1069,9 +1069,9 @@ with_update_version
 with_user_release_suffix
 with_build_number
 with_version_string
-with_version_pre_base
-with_version_pre_debuglevel
-with_version_opt
+with_version_pre
+with_version_opt_base
+with_version_opt_debuglevel
 with_version_build
 with_version_major
 with_version_minor
@@ -1929,12 +1929,13 @@ Optional Packages:
   --with-build-number     Deprecated. Option is kept for backwards
                           compatibility and is ignored
   --with-version-string   Set version string [calculated]
-  --with-version-pre-base Set the base part of the version 'PRE' field
+  --with-version-pre      Set the base part of the version 'PRE' field
                           (pre-release identifier) ['internal']
-  --with-version-pre-debuglevel
-                          Set the debug level part of the version 'PRE' field
-                          (pre-release identifier) [current debug level]
-  --with-version-opt      Set version 'OPT' field (build metadata)
+  --with-version-opt-base Set version 'OPT' base field. Debug level will be
+                          appended. (build metadata)
+                          [<timestamp>.<user>.<dirname>]
+  --with-version-opt-debuglevel
+                          Set version 'OPT' field (build metadata)
                           [<timestamp>.<user>.<dirname>]
   --with-version-build    Set version 'BUILD' field (build number) [not
                           specified]
@@ -4436,7 +4437,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1433975399
+DATE_WHEN_GENERATED=1435305702
 
 ###############################################################################
 #
@@ -20261,16 +20262,16 @@ fi
     as_fn_error $? "--with-version-string must have a value" "$LINENO" 5
   elif test "x$with_version_string" != x; then
     # Additional [] needed to keep m4 from mangling shell constructs.
-    if  [[ $with_version_string =~ ^([0-9]+)(\.([0-9]+))?(\.([0-9]+))?(\.([0-9]+))?(-([a-zA-Z]+))?(\.([a-zA-Z]+))?((\+)([0-9]+)?(-([-a-zA-Z0-9.]+))?)?$ ]] ; then
+    if  [[ $with_version_string =~ ^([0-9]+)(\.([0-9]+))?(\.([0-9]+))?(\.([0-9]+))?(-([a-zA-Z]+))?((\+)([0-9]+)?(-([-a-zA-Z0-9.]+))?(_([a-zA-Z]+))?)?$ ]] ; then
       VERSION_MAJOR=${BASH_REMATCH[1]}
       VERSION_MINOR=${BASH_REMATCH[3]}
       VERSION_SECURITY=${BASH_REMATCH[5]}
       VERSION_PATCH=${BASH_REMATCH[7]}
-      VERSION_PRE_BASE=${BASH_REMATCH[9]}
-      VERSION_PRE_DEBUGLEVEL=${BASH_REMATCH[11]}
-      version_plus_separator=${BASH_REMATCH[13]}
-      VERSION_BUILD=${BASH_REMATCH[14]}
-      VERSION_OPT=${BASH_REMATCH[16]}
+      VERSION_PRE=${BASH_REMATCH[9]}
+      version_plus_separator=${BASH_REMATCH[11]}
+      VERSION_BUILD=${BASH_REMATCH[12]}
+      VERSION_OPT_BASE=${BASH_REMATCH[14]}
+      VERSION_OPT_DEBUGLEVEL=${BASH_REMATCH[16]}
       # Unspecified numerical fields are interpreted as 0.
       if test "x$VERSION_MINOR" = x; then
         VERSION_MINOR=0
@@ -20281,7 +20282,8 @@ fi
       if test "x$VERSION_PATCH" = x; then
         VERSION_PATCH=0
       fi
-      if test "x$version_plus_separator" != x && test "x$VERSION_BUILD$VERSION_OPT" = x; then
+      if test "x$version_plus_separator" != x \
+          && test "x$VERSION_BUILD$VERSION_OPT_BASE$VERSION_OPT_DEBUGLEVEL" = x; then
         as_fn_error $? "Version string contains + but both 'BUILD' and 'OPT' are missing" "$LINENO" 5
       fi
       # Stop the version part process from setting default values.
@@ -20293,90 +20295,56 @@ fi
   fi
 
 
-# Check whether --with-version-pre-base was given.
-if test "${with_version_pre_base+set}" = set; then :
-  withval=$with_version_pre_base; with_version_pre_base_present=true
+# Check whether --with-version-pre was given.
+if test "${with_version_pre+set}" = set; then :
+  withval=$with_version_pre; with_version_pre_present=true
 else
-  with_version_pre_base_present=false
+  with_version_pre_present=false
 fi
 
 
-  if test "x$with_version_pre_base_present" = xtrue; then
-    if test "x$with_version_pre_base" = xyes; then
-      as_fn_error $? "--with-version-pre-base must have a value" "$LINENO" 5
-    elif test "x$with_version_pre_base" = xno; then
+  if test "x$with_version_pre_present" = xtrue; then
+    if test "x$with_version_pre" = xyes; then
+      as_fn_error $? "--with-version-pre must have a value" "$LINENO" 5
+    elif test "x$with_version_pre" = xno; then
       # Interpret --without-* as empty string instead of the literal "no"
-      VERSION_PRE_BASE=
+      VERSION_PRE=
     else
       # Only [a-zA-Z] is allowed in the VERSION_PRE. Outer [ ] to quote m4.
-       VERSION_PRE_BASE=`$ECHO "$with_version_pre_base" | $TR -c -d '[a-z][A-Z]'`
-      if test "x$VERSION_PRE_BASE" != "x$with_version_pre_base"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: --with-version-pre-base value has been sanitized from '$with_version_pre_base' to '$VERSION_PRE_BASE'" >&5
-$as_echo "$as_me: WARNING: --with-version-pre-base value has been sanitized from '$with_version_pre_base' to '$VERSION_PRE_BASE'" >&2;}
+       VERSION_PRE=`$ECHO "$with_version_pre" | $TR -c -d '[a-z][A-Z]'`
+      if test "x$VERSION_PRE" != "x$with_version_pre"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: --with-version-pre value has been sanitized from '$with_version_pre' to '$VERSION_PRE'" >&5
+$as_echo "$as_me: WARNING: --with-version-pre value has been sanitized from '$with_version_pre' to '$VERSION_PRE'" >&2;}
       fi
     fi
   else
     if test "x$NO_DEFAULT_VERSION_PARTS" != xtrue; then
       # Default is to use "internal" as pre
-      VERSION_PRE_BASE="internal"
+      VERSION_PRE="internal"
     fi
   fi
 
 
-# Check whether --with-version-pre-debuglevel was given.
-if test "${with_version_pre_debuglevel+set}" = set; then :
-  withval=$with_version_pre_debuglevel; with_version_pre_debuglevel_present=true
+# Check whether --with-version-opt-base was given.
+if test "${with_version_opt_base+set}" = set; then :
+  withval=$with_version_opt_base; with_version_opt_base_present=true
 else
-  with_version_pre_debuglevel_present=false
+  with_version_opt_base_present=false
 fi
 
 
-  if test "x$with_version_pre_debuglevel_present" = xtrue; then
-    if test "x$with_version_pre_debuglevel" = xyes; then
-      as_fn_error $? "--with-version-pre-debuglevel must have a value" "$LINENO" 5
-    elif test "x$with_version_pre_debuglevel" = xno; then
+  if test "x$with_version_opt_base_present" = xtrue; then
+    if test "x$with_version_opt_base" = xyes; then
+      as_fn_error $? "--with-version-opt-base must have a value" "$LINENO" 5
+    elif test "x$with_version_opt_base" = xno; then
       # Interpret --without-* as empty string instead of the literal "no"
-      VERSION_PRE_DEBUGLEVEL=
+      VERSION_OPT_BASE=
     else
-      # Only [a-zA-Z] is allowed in the VERSION_PRE. Outer [ ] to quote m4.
-       VERSION_PRE_DEBUGLEVEL=`$ECHO "$with_version_pre_debuglevel" | $TR -c -d '[a-z][A-Z]'`
-      if test "x$VERSION_PRE_DEBUGLEVEL" != "x$with_version_pre_debuglevel"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: --with-version-pre-debuglevel value has been sanitized from '$with_version_pre_debuglevel' to '$VERSION_PRE_DEBUGLEVEL'" >&5
-$as_echo "$as_me: WARNING: --with-version-pre-debuglevel value has been sanitized from '$with_version_pre_debuglevel' to '$VERSION_PRE_DEBUGLEVEL'" >&2;}
-      fi
-    fi
-  else
-    if test "x$NO_DEFAULT_VERSION_PARTS" != xtrue; then
-      # Default is to use the debug level name, except for release which is empty.
-      if test "x$DEBUG_LEVEL" != "xrelease"; then
-        VERSION_PRE_DEBUGLEVEL="$DEBUG_LEVEL"
-      else
-        VERSION_PRE_DEBUGLEVEL=""
-      fi
-    fi
-  fi
-
-
-# Check whether --with-version-opt was given.
-if test "${with_version_opt+set}" = set; then :
-  withval=$with_version_opt; with_version_opt_present=true
-else
-  with_version_opt_present=false
-fi
-
-
-  if test "x$with_version_opt_present" = xtrue; then
-    if test "x$with_version_opt" = xyes; then
-      as_fn_error $? "--with-version-opt must have a value" "$LINENO" 5
-    elif test "x$with_version_opt" = xno; then
-      # Interpret --without-* as empty string instead of the literal "no"
-      VERSION_OPT=
-    else
-      # Only [-.a-zA-Z0-9] is allowed in the VERSION_OPT. Outer [ ] to quote m4.
-       VERSION_OPT=`$ECHO "$with_version_opt" | $TR -c -d '[a-z][A-Z][0-9].-'`
-      if test "x$VERSION_OPT" != "x$with_version_opt"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: --with-version-opt value has been sanitized from '$with_version_opt' to '$VERSION_OPT'" >&5
-$as_echo "$as_me: WARNING: --with-version-opt value has been sanitized from '$with_version_opt' to '$VERSION_OPT'" >&2;}
+      # Only [-.a-zA-Z0-9] is allowed in the VERSION_OPT_BASE. Outer [ ] to quote m4.
+       VERSION_OPT_BASE=`$ECHO "$with_version_opt_base" | $TR -c -d '[a-z][A-Z][0-9].-'`
+      if test "x$VERSION_OPT_BASE" != "x$with_version_opt_base"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: --with-version-opt-base value has been sanitized from '$with_version_opt_base' to '$VERSION_OPT_BASE'" >&5
+$as_echo "$as_me: WARNING: --with-version-opt-base value has been sanitized from '$with_version_opt_base' to '$VERSION_OPT_BASE'" >&2;}
       fi
     fi
   else
@@ -20386,10 +20354,43 @@ $as_echo "$as_me: WARNING: --with-version-opt value has been sanitized from '$wi
       # Outer [ ] to quote m4.
        username=`$ECHO "$USER" | $TR -d -c '[a-z][A-Z][0-9]'`
        basedirname=`$BASENAME "$TOPDIR" | $TR -d -c '[a-z][A-Z][0-9].-'`
-      VERSION_OPT="$timestamp.$username.$basedirname"
+      VERSION_OPT_BASE="$timestamp.$username.$basedirname"
     fi
   fi
 
+
+# Check whether --with-version-opt-debuglevel was given.
+if test "${with_version_opt_debuglevel+set}" = set; then :
+  withval=$with_version_opt_debuglevel; with_version_opt_debuglevel_present=true
+else
+  with_version_opt_debuglevel_present=false
+fi
+
+
+  if test "x$with_version_opt_debuglevel_present" = xtrue; then
+    if test "x$with_version_opt_debuglevel" = xyes; then
+      as_fn_error $? "--with-version-opt-debuglevel must have a value" "$LINENO" 5
+    elif test "x$with_version_opt_debuglevel" = xno; then
+      # Interpret --without-* as empty string instead of the literal "no"
+      VERSION_OPT_DEBUGLEVEL=
+    else
+      # Only [-.a-zA-Z0-9] is allowed in the VERSION_OPT_DEBUGLEVEL. Outer [ ] to quote m4.
+       VERSION_OPT_DEBUGLEVEL=`$ECHO "$with_version_opt_debuglevel" | $TR -c -d '[a-z][A-Z][0-9].-'`
+      if test "x$VERSION_OPT_DEBUGLEVEL" != "x$with_version_opt_debuglevel"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: --with-version-opt-debuglevel value has been sanitized from '$with_version_opt_debuglevel' to '$VERSION_OPT_DEBUGLEVEL'" >&5
+$as_echo "$as_me: WARNING: --with-version-opt-debuglevel value has been sanitized from '$with_version_opt_debuglevel' to '$VERSION_OPT_DEBUGLEVEL'" >&2;}
+      fi
+    fi
+  else
+    if test "x$NO_DEFAULT_VERSION_PARTS" != xtrue; then
+      # Default is to use the debug level name, except for release which is empty.
+      if test "x$DEBUG_LEVEL" != "xrelease"; then
+        VERSION_OPT_DEBUGLEVEL="$DEBUG_LEVEL"
+      else
+        VERSION_OPT_DEBUGLEVEL=""
+      fi
+    fi
+  fi
 
 # Check whether --with-version-build was given.
 if test "${with_version_build+set}" = set; then :
@@ -20624,12 +20625,9 @@ $as_echo "$as_me: WARNING: Value for VERSION_PATCH has been sanitized from '$wit
 
   # Calculate derived version properties
 
-  # Set pre to "pre-base" if debug level is empty (i.e. release), or
-  # "pre-base.debug-level" otherwise.
-  if test "x$VERSION_PRE_BASE" = x && test "x$VERSION_PRE_DEBUGLEVEL" != x; then
-    as_fn_error $? "Cannot set version-pre-debuglevel when version-pre-base is empty" "$LINENO" 5
-  fi
-  VERSION_PRE=$VERSION_PRE_BASE${VERSION_PRE_DEBUGLEVEL:+.$VERSION_PRE_DEBUGLEVEL}
+  # Set opt to "opt-base" if debug level is empty (i.e. release), or
+  # "opt-base_debug-level" otherwise.
+  VERSION_OPT=$VERSION_OPT_BASE${VERSION_OPT_DEBUGLEVEL:+_$VERSION_OPT_DEBUGLEVEL}
 
   # VERSION_NUMBER but always with exactly 4 positions, with 0 for empty positions.
   VERSION_NUMBER_FOUR_POSITIONS=$VERSION_MAJOR.$VERSION_MINOR.$VERSION_SECURITY.$VERSION_PATCH
