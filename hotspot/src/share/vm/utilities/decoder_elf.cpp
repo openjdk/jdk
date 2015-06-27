@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ ElfDecoder::~ElfDecoder() {
   }
 }
 
-bool ElfDecoder::decode(address addr, char *buf, int buflen, int* offset, const char* filepath) {
+bool ElfDecoder::decode(address addr, char *buf, int buflen, int* offset, const char* filepath, bool demangle_name) {
   assert(filepath, "null file path");
   assert(buf != NULL && buflen > 0, "Invalid buffer");
   if (has_error()) return false;
@@ -46,7 +46,7 @@ bool ElfDecoder::decode(address addr, char *buf, int buflen, int* offset, const 
   if (!file->decode(addr, buf, buflen, offset)) {
     return false;
   }
-  if (buf[0] != '\0') {
+  if (demangle_name && (buf[0] != '\0')) {
     demangle(buf, buf, buflen);
   }
   return true;

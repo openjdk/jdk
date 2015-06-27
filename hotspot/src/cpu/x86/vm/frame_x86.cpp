@@ -524,17 +524,6 @@ frame frame::sender(RegisterMap* map) const {
   return frame(sender_sp(), link(), sender_pc());
 }
 
-
-bool frame::interpreter_frame_equals_unpacked_fp(intptr_t* fp) {
-  assert(is_interpreted_frame(), "must be interpreter frame");
-  Method* method = interpreter_frame_method();
-  // When unpacking an optimized frame the frame pointer is
-  // adjusted with:
-  int diff = (method->max_locals() - method->size_of_parameters()) *
-             Interpreter::stackElementWords;
-  return _fp == (fp - diff);
-}
-
 bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
 // QQQ
 #ifdef CC_INTERP

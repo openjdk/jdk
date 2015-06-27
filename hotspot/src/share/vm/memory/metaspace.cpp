@@ -2423,7 +2423,9 @@ Metachunk* SpaceManager::get_new_chunk(size_t word_size,
  * will be made to allocate a small chunk.
  */
 MetaWord* SpaceManager::get_small_chunk_and_allocate(size_t word_size) {
-  if (word_size + Metachunk::overhead() > small_chunk_size()) {
+  size_t raw_word_size = get_raw_word_size(word_size);
+
+  if (raw_word_size + Metachunk::overhead() > small_chunk_size()) {
     return NULL;
   }
 
@@ -2438,9 +2440,9 @@ MetaWord* SpaceManager::get_small_chunk_and_allocate(size_t word_size) {
     // Add chunk to the in-use chunk list and do an allocation from it.
     // Add to this manager's list of chunks in use.
     add_chunk(chunk, false);
-    mem = chunk->allocate(word_size);
+    mem = chunk->allocate(raw_word_size);
 
-    inc_used_metrics(word_size);
+    inc_used_metrics(raw_word_size);
 
     // Track metaspace memory usage statistic.
     track_metaspace_memory_usage();
@@ -3132,10 +3134,21 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
   initialize_class_space(metaspace_rs);
 
   if (PrintCompressedOopsMode || (PrintMiscellaneous && Verbose)) {
-    gclog_or_tty->print_cr("Narrow klass base: " PTR_FORMAT ", Narrow klass shift: %d",
-                            p2i(Universe::narrow_klass_base()), Universe::narrow_klass_shift());
-    gclog_or_tty->print_cr("Compressed class space size: " SIZE_FORMAT " Address: " PTR_FORMAT " Req Addr: " PTR_FORMAT,
-                           compressed_class_space_size(), p2i(metaspace_rs.base()), p2i(requested_addr));
+    print_compressed_class_space(gclog_or_tty, requested_addr);
+  }
+}
+
+void Metaspace::print_compressed_class_space(outputStream* st, const char* requested_addr) {
+  st->print_cr("Narrow klass base: " PTR_FORMAT ", Narrow klass shift: %d",
+               p2i(Universe::narrow_klass_base()), Universe::narrow_klass_shift());
+  if (_class_space_list != NULL) {
+    address base = (address)_class_space_list->current_virtual_space()->bottom();
+    st->print("Compressed class space size: " SIZE_FORMAT " Address: " PTR_FORMAT,
+                 compressed_class_space_size(), p2i(base));
+    if (requested_addr != 0) {
+      st->print(" Req Addr: " PTR_FORMAT, p2i(requested_addr));
+    }
+    st->cr();
   }
 }
 
@@ -3282,12 +3295,12 @@ void Metaspace::global_initialize() {
 #endif // _LP64
 #endif // INCLUDE_CDS
   } else {
-#if INCLUDE_CDS
     // If using shared space, open the file that contains the shared space
     // and map in the memory before initializing the rest of metaspace (so
     // the addresses don't conflict)
     address cds_address = NULL;
     if (UseSharedSpaces) {
+#if INCLUDE_CDS
       FileMapInfo* mapinfo = new FileMapInfo();
 
       // Open the shared archive file, read and validate the header. If
@@ -3296,27 +3309,30 @@ void Metaspace::global_initialize() {
       // Map in spaces now also
       if (mapinfo->initialize() && MetaspaceShared::map_shared_spaces(mapinfo)) {
         cds_total = FileMapInfo::shared_spaces_size();
-        cds_address = (address)mapinfo->region_base(0);
+        cds_address = (address)mapinfo->header()->region_addr(0);
+#ifdef _LP64
+        if (using_class_space()) {
+          char* cds_end = (char*)(cds_address + cds_total);
+          cds_end = (char *)align_ptr_up(cds_end, _reserve_alignment);
+          // If UseCompressedClassPointers is set then allocate the metaspace area
+          // above the heap and above the CDS area (if it exists).
+          allocate_metaspace_compressed_klass_ptrs(cds_end, cds_address);
+          // Map the shared string space after compressed pointers
+          // because it relies on compressed class pointers setting to work
+          mapinfo->map_string_regions();
+        }
+#endif // _LP64
       } else {
         assert(!mapinfo->is_open() && !UseSharedSpaces,
                "archive file not closed or shared spaces not disabled.");
       }
-    }
 #endif // INCLUDE_CDS
+    }
+
 #ifdef _LP64
-    // If UseCompressedClassPointers is set then allocate the metaspace area
-    // above the heap and above the CDS area (if it exists).
-    if (using_class_space()) {
-      if (UseSharedSpaces) {
-#if INCLUDE_CDS
-        char* cds_end = (char*)(cds_address + cds_total);
-        cds_end = (char *)align_ptr_up(cds_end, _reserve_alignment);
-        allocate_metaspace_compressed_klass_ptrs(cds_end, cds_address);
-#endif
-      } else {
-        char* base = (char*)align_ptr_up(Universe::heap()->reserved_region().end(), _reserve_alignment);
-        allocate_metaspace_compressed_klass_ptrs(base, 0);
-      }
+    if (!UseSharedSpaces && using_class_space()) {
+      char* base = (char*)align_ptr_up(Universe::heap()->reserved_region().end(), _reserve_alignment);
+      allocate_metaspace_compressed_klass_ptrs(base, 0);
     }
 #endif // _LP64
 

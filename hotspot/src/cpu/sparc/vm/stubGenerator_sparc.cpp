@@ -4786,6 +4786,130 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  /* Single and multi-block ghash operations */
+  address generate_ghash_processBlocks() {
+      __ align(CodeEntryAlignment);
+      Label L_ghash_loop, L_aligned, L_main;
+      StubCodeMark mark(this, "StubRoutines", "ghash_processBlocks");
+      address start = __ pc();
+
+      Register state = I0;
+      Register subkeyH = I1;
+      Register data = I2;
+      Register len = I3;
+
+      __ save_frame(0);
+
+      __ ldx(state, 0, O0);
+      __ ldx(state, 8, O1);
+
+      // Loop label for multiblock operations
+      __ BIND(L_ghash_loop);
+
+      // Check if 'data' is unaligned
+      __ andcc(data, 7, G1);
+      __ br(Assembler::zero, false, Assembler::pt, L_aligned);
+      __ delayed()->nop();
+
+      Register left_shift = L1;
+      Register right_shift = L2;
+      Register data_ptr = L3;
+
+      // Get left and right shift values in bits
+      __ sll(G1, LogBitsPerByte, left_shift);
+      __ mov(64, right_shift);
+      __ sub(right_shift, left_shift, right_shift);
+
+      // Align to read 'data'
+      __ sub(data, G1, data_ptr);
+
+      // Load first 8 bytes of 'data'
+      __ ldx(data_ptr, 0, O4);
+      __ sllx(O4, left_shift, O4);
+      __ ldx(data_ptr, 8, O5);
+      __ srlx(O5, right_shift, G4);
+      __ bset(G4, O4);
+
+      // Load second 8 bytes of 'data'
+      __ sllx(O5, left_shift, O5);
+      __ ldx(data_ptr, 16, G4);
+      __ srlx(G4, right_shift, G4);
+      __ ba(L_main);
+      __ delayed()->bset(G4, O5);
+
+      // If 'data' is aligned, load normally
+      __ BIND(L_aligned);
+      __ ldx(data, 0, O4);
+      __ ldx(data, 8, O5);
+
+      __ BIND(L_main);
+      __ ldx(subkeyH, 0, O2);
+      __ ldx(subkeyH, 8, O3);
+
+      __ xor3(O0, O4, O0);
+      __ xor3(O1, O5, O1);
+
+      __ xmulxhi(O0, O3, G3);
+      __ xmulx(O0, O2, O5);
+      __ xmulxhi(O1, O2, G4);
+      __ xmulxhi(O1, O3, G5);
+      __ xmulx(O0, O3, G1);
+      __ xmulx(O1, O3, G2);
+      __ xmulx(O1, O2, O3);
+      __ xmulxhi(O0, O2, O4);
+
+      __ mov(0xE1, O0);
+      __ sllx(O0, 56, O0);
+
+      __ xor3(O5, G3, O5);
+      __ xor3(O5, G4, O5);
+      __ xor3(G5, G1, G1);
+      __ xor3(G1, O3, G1);
+      __ srlx(G2, 63, O1);
+      __ srlx(G1, 63, G3);
+      __ sllx(G2, 63, O3);
+      __ sllx(G2, 58, O2);
+      __ xor3(O3, O2, O2);
+
+      __ sllx(G1, 1, G1);
+      __ or3(G1, O1, G1);
+
+      __ xor3(G1, O2, G1);
+
+      __ sllx(G2, 1, G2);
+
+      __ xmulxhi(G1, O0, O1);
+      __ xmulx(G1, O0, O2);
+      __ xmulxhi(G2, O0, O3);
+      __ xmulx(G2, O0, G1);
+
+      __ xor3(O4, O1, O4);
+      __ xor3(O5, O2, O5);
+      __ xor3(O5, O3, O5);
+
+      __ sllx(O4, 1, O2);
+      __ srlx(O5, 63, O3);
+
+      __ or3(O2, O3, O0);
+
+      __ sllx(O5, 1, O1);
+      __ srlx(G1, 63, O2);
+      __ or3(O1, O2, O1);
+      __ xor3(O1, G3, O1);
+
+      __ deccc(len);
+      __ br(Assembler::notZero, true, Assembler::pt, L_ghash_loop);
+      __ delayed()->add(data, 16, data);
+
+      __ stx(O0, I0, 0);
+      __ stx(O1, I0, 8);
+
+      __ ret();
+      __ delayed()->restore();
+
+      return start;
+  }
+
   void generate_initial() {
     // Generates all stubs and initializes the entry points
 
@@ -4858,6 +4982,10 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_aescrypt_decryptBlock = generate_aescrypt_decryptBlock();
       StubRoutines::_cipherBlockChaining_encryptAESCrypt = generate_cipherBlockChaining_encryptAESCrypt();
       StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_decryptAESCrypt_Parallel();
+    }
+    // generate GHASH intrinsics code
+    if (UseGHASHIntrinsics) {
+      StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks();
     }
 
     // generate SHA1/SHA256/SHA512 intrinsics code

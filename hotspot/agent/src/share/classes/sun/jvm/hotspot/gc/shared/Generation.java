@@ -49,7 +49,6 @@ import sun.jvm.hotspot.types.*;
 public abstract class Generation extends VMObject {
   private static long          reservedFieldOffset;
   private static long          virtualSpaceFieldOffset;
-  private static CIntegerField levelField;
   protected static final int  K = 1024;
   // Fields for class StatRecord
   private static Field         statRecordField;
@@ -75,7 +74,6 @@ public abstract class Generation extends VMObject {
 
     reservedFieldOffset     = type.getField("_reserved").getOffset();
     virtualSpaceFieldOffset = type.getField("_virtual_space").getOffset();
-    levelField              = type.getCIntegerField("_level");
     // StatRecord
     statRecordField         = type.getField("_stat_record");
     type                    = db.lookupType("Generation::StatRecord");
@@ -128,14 +126,6 @@ public abstract class Generation extends VMObject {
      } else {
         throw new RuntimeException("should not reach here");
      }
-  }
-
-  public GenerationSpec spec() {
-    return ((GenCollectedHeap) VM.getVM().getUniverse().heap()).spec(level());
-  }
-
-  public int level() {
-    return (int) levelField.getValue(addr);
   }
 
   public int invocations() {

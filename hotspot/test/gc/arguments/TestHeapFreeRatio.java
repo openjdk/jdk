@@ -40,6 +40,7 @@ public class TestHeapFreeRatio {
     VALID,
     MIN_INVALID,
     MAX_INVALID,
+    OUT_OF_RANGE,
     COMBINATION_INVALID
   }
 
@@ -65,8 +66,13 @@ public class TestHeapFreeRatio {
       output.shouldContain("Error");
       output.shouldHaveExitValue(1);
       break;
+    case OUT_OF_RANGE:
+      output.shouldContain("outside the allowed range");
+      output.shouldContain("Error");
+      output.shouldHaveExitValue(1);
+      break;
     case COMBINATION_INVALID:
-      output.shouldContain("must be less than or equal to MaxHeapFreeRatio");
+      output.shouldContain("must be greater than or equal to MinHeapFreeRatio");
       output.shouldContain("Error");
       output.shouldHaveExitValue(1);
       break;
@@ -82,23 +88,24 @@ public class TestHeapFreeRatio {
     testMinMaxFreeRatio(  ".1",  ".5", Validation.VALID);
     testMinMaxFreeRatio( "0.5", "0.5", Validation.VALID);
 
-    testMinMaxFreeRatio("-0.1", "0.5", Validation.MIN_INVALID);
-    testMinMaxFreeRatio( "1.1", "0.5", Validation.MIN_INVALID);
     testMinMaxFreeRatio("=0.1", "0.5", Validation.MIN_INVALID);
     testMinMaxFreeRatio("0.1f", "0.5", Validation.MIN_INVALID);
     testMinMaxFreeRatio(
                      "INVALID", "0.5", Validation.MIN_INVALID);
-    testMinMaxFreeRatio(
-                  "2147483647", "0.5", Validation.MIN_INVALID);
 
-    testMinMaxFreeRatio( "0.1", "-0.5", Validation.MAX_INVALID);
-    testMinMaxFreeRatio( "0.1",  "1.5", Validation.MAX_INVALID);
     testMinMaxFreeRatio( "0.1", "0.5f", Validation.MAX_INVALID);
     testMinMaxFreeRatio( "0.1", "=0.5", Validation.MAX_INVALID);
     testMinMaxFreeRatio(
                      "0.1",  "INVALID", Validation.MAX_INVALID);
+
+    testMinMaxFreeRatio("-0.1", "0.5", Validation.OUT_OF_RANGE);
+    testMinMaxFreeRatio( "1.1", "0.5", Validation.OUT_OF_RANGE);
     testMinMaxFreeRatio(
-                   "0.1", "2147483647", Validation.MAX_INVALID);
+                  "2147483647", "0.5", Validation.OUT_OF_RANGE);
+    testMinMaxFreeRatio( "0.1", "-0.5", Validation.OUT_OF_RANGE);
+    testMinMaxFreeRatio( "0.1",  "1.5", Validation.OUT_OF_RANGE);
+    testMinMaxFreeRatio(
+                   "0.1", "2147483647", Validation.OUT_OF_RANGE);
 
     testMinMaxFreeRatio( "0.5",  "0.1", Validation.COMBINATION_INVALID);
     testMinMaxFreeRatio(  ".5",  ".10", Validation.COMBINATION_INVALID);
