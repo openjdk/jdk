@@ -58,4 +58,6 @@ void Compile::pd_compiler2_init() {
       OptoReg::invalidate(i);
     }
   }
+
+  SuperWordLoopUnrollAnalysis = true;
 }

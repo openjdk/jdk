@@ -365,22 +365,22 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
     map->set_callee_saved(STACK_OFFSET(xmm14H_off), xmm14->as_VMReg()->next());
     map->set_callee_saved(STACK_OFFSET(xmm15H_off), xmm15->as_VMReg()->next());
     if (UseAVX > 2) {
-      map->set_callee_saved(STACK_OFFSET(xmm16H_off), xmm16->as_VMReg());
-      map->set_callee_saved(STACK_OFFSET(xmm17H_off), xmm17->as_VMReg());
-      map->set_callee_saved(STACK_OFFSET(xmm18H_off), xmm18->as_VMReg());
-      map->set_callee_saved(STACK_OFFSET(xmm19H_off), xmm19->as_VMReg());
-      map->set_callee_saved(STACK_OFFSET(xmm20H_off), xmm20->as_VMReg());
-      map->set_callee_saved(STACK_OFFSET(xmm21H_off), xmm21->as_VMReg());
-      map->set_callee_saved(STACK_OFFSET(xmm22H_off), xmm22->as_VMReg());
-      map->set_callee_saved(STACK_OFFSET(xmm23H_off), xmm23->as_VMReg());
-      map->set_callee_saved(STACK_OFFSET(xmm24H_off), xmm24->as_VMReg());
-      map->set_callee_saved(STACK_OFFSET(xmm25H_off), xmm25->as_VMReg());
-      map->set_callee_saved(STACK_OFFSET(xmm26H_off), xmm26->as_VMReg());
-      map->set_callee_saved(STACK_OFFSET(xmm27H_off), xmm27->as_VMReg());
-      map->set_callee_saved(STACK_OFFSET(xmm28H_off), xmm28->as_VMReg());
-      map->set_callee_saved(STACK_OFFSET(xmm29H_off), xmm29->as_VMReg());
-      map->set_callee_saved(STACK_OFFSET(xmm30H_off), xmm30->as_VMReg());
-      map->set_callee_saved(STACK_OFFSET(xmm31H_off), xmm31->as_VMReg());
+      map->set_callee_saved(STACK_OFFSET(xmm16H_off), xmm16->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET(xmm17H_off), xmm17->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET(xmm18H_off), xmm18->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET(xmm19H_off), xmm19->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET(xmm20H_off), xmm20->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET(xmm21H_off), xmm21->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET(xmm22H_off), xmm22->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET(xmm23H_off), xmm23->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET(xmm24H_off), xmm24->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET(xmm25H_off), xmm25->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET(xmm26H_off), xmm26->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET(xmm27H_off), xmm27->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET(xmm28H_off), xmm28->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET(xmm29H_off), xmm29->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET(xmm30H_off), xmm30->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET(xmm31H_off), xmm31->as_VMReg()->next());
     }
   }
 
@@ -466,7 +466,7 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
       __ vinsertf64x4h(xmm29, Address(rsp, 928));
       __ vinsertf64x4h(xmm30, Address(rsp, 960));
       __ vinsertf64x4h(xmm31, Address(rsp, 992));
-      __ subptr(rsp, 1024);
+      __ addptr(rsp, 1024);
     }
   }
 #else

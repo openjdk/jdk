@@ -57,6 +57,9 @@
 
 class HeapRegion;
 
+bool G1MarkSweep::_archive_check_enabled = false;
+G1ArchiveRegionMap G1MarkSweep::_archive_region_map;
+
 void G1MarkSweep::invoke_at_safepoint(ReferenceProcessor* rp,
                                       bool clear_all_softrefs) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
@@ -212,7 +215,7 @@ class G1AdjustPointersClosure: public HeapRegionClosure {
         // point all the oops to the new location
         MarkSweep::adjust_pointers(obj);
       }
-    } else {
+    } else if (!r->is_pinned()) {
       // This really ought to be "as_CompactibleSpace"...
       r->adjust_pointers();
     }
@@ -275,7 +278,7 @@ public:
         }
         hr->reset_during_compaction();
       }
-    } else {
+    } else if (!hr->is_pinned()) {
       hr->compact();
     }
     return false;
@@ -296,6 +299,26 @@ void G1MarkSweep::mark_sweep_phase4() {
   G1SpaceCompactClosure blk;
   g1h->heap_region_iterate(&blk);
 
+}
+
+void G1MarkSweep::enable_archive_object_check() {
+  assert(!_archive_check_enabled, "archive range check already enabled");
+  _archive_check_enabled = true;
+  size_t length = Universe::heap()->max_capacity();
+  _archive_region_map.initialize((HeapWord*)Universe::heap()->base(),
+                                 (HeapWord*)Universe::heap()->base() + length,
+                                 HeapRegion::GrainBytes);
+}
+
+void G1MarkSweep::mark_range_archive(MemRegion range) {
+  assert(_archive_check_enabled, "archive range check not enabled");
+  _archive_region_map.set_by_address(range, true);
+}
+
+bool G1MarkSweep::in_archive_range(oop object) {
+  // This is the out-of-line part of is_archive_object test, done separately
+  // to avoid additional performance impact when the check is not enabled.
+  return _archive_region_map.get_by_address((HeapWord*)object);
 }
 
 void G1MarkSweep::prepare_compaction_work(G1PrepareCompactClosure* blk) {
@@ -357,7 +380,7 @@ bool G1PrepareCompactClosure::doHeapRegion(HeapRegion* hr) {
     } else {
       assert(hr->is_continues_humongous(), "Invalid humongous.");
     }
-  } else {
+  } else if (!hr->is_pinned()) {
     prepare_for_compaction(hr, hr->end());
   }
   return false;

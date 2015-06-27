@@ -2475,7 +2475,8 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
     // Slow case of monitor enter.
     // Inline a special case of call_VM that disallows any pending_exception.
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_unlocking_C), r_oop, r_box);
+    // Arguments are (oop obj, BasicLock* lock, JavaThread* thread).
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_unlocking_C), r_oop, r_box, R16_thread);
 
     __ asm_assert_mem8_is_zero(thread_(pending_exception),
        "no pending exception allowed on exit from SharedRuntime::complete_monitor_unlocking_C", 0);

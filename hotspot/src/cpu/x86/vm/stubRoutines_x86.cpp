@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@
 
 address StubRoutines::x86::_verify_mxcsr_entry = NULL;
 address StubRoutines::x86::_key_shuffle_mask_addr = NULL;
+address StubRoutines::x86::_ghash_long_swap_mask_addr = NULL;
+address StubRoutines::x86::_ghash_byte_swap_mask_addr = NULL;
 
 uint64_t StubRoutines::x86::_crc_by128_masks[] =
 {

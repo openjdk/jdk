@@ -25,129 +25,200 @@
 #include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/commandLineFlagRangeList.hpp"
 #include "runtime/java.hpp"
 #include "runtime/jniHandles.hpp"
 #include "services/writeableFlags.hpp"
 
+#define TEMP_BUF_SIZE 80
+
+static void buffer_concat(char* buffer, const char* src) {
+  strncat(buffer, src, TEMP_BUF_SIZE - 1 - strlen(buffer));
+}
+
+static void print_flag_error_message_bounds(const char* name, char* buffer) {
+  CommandLineFlagRange* range = CommandLineFlagRangeList::find(name);
+  if (range != NULL) {
+    buffer_concat(buffer, "must have value in range ");
+
+    stringStream stream;
+    range->print(&stream);
+    const char* range_string = stream.as_string();
+    size_t j = strlen(buffer);
+    for (size_t i=0; j<TEMP_BUF_SIZE-1; i++) {
+      if (range_string[i] == '\0') {
+        break;
+      } else if (range_string[i] != ' ') {
+        buffer[j] = range_string[i];
+        j++;
+      }
+    }
+    buffer[j] = '\0';
+  }
+}
+
+PRAGMA_FORMAT_NONLITERAL_IGNORED_EXTERNAL
+static void print_flag_error_message_if_needed(Flag::Error error, const char* name, FormatBuffer<80>& err_msg) {
+  if (error == Flag::SUCCESS) {
+    return;
+  }
+
+  char buffer[TEMP_BUF_SIZE] = {'\0'};
+  if ((error != Flag::MISSING_NAME) && (name != NULL)) {
+    buffer_concat(buffer, name);
+    buffer_concat(buffer, " error: ");
+  } else {
+    buffer_concat(buffer, "Error: ");
+  }
+  switch (error) {
+    case Flag::MISSING_NAME:
+      buffer_concat(buffer, "flag name is missing."); break;
+    case Flag::MISSING_VALUE:
+      buffer_concat(buffer, "parsing the textual form of the value."); break;
+    case Flag::NON_WRITABLE:
+      buffer_concat(buffer, "flag is not writeable."); break;
+    case Flag::OUT_OF_BOUNDS:
+      print_flag_error_message_bounds(name, buffer); break;
+    case Flag::VIOLATES_CONSTRAINT:
+      buffer_concat(buffer, "value violates its flag's constraint."); break;
+    case Flag::INVALID_FLAG:
+      buffer_concat(buffer, "there is no flag with the given name."); break;
+    case Flag::ERR_OTHER:
+      buffer_concat(buffer, "other, unspecified error related to setting the flag."); break;
+    case Flag::SUCCESS:
+      break;
+  }
+
+  PRAGMA_DIAG_PUSH
+  PRAGMA_FORMAT_NONLITERAL_IGNORED_INTERNAL
+  err_msg.print(buffer);
+  PRAGMA_DIAG_POP
+}
+
 // set a boolean global flag
-int WriteableFlags::set_bool_flag(const char* name, const char* arg, Flag::Flags origin, FormatBuffer<80>& err_msg) {
+Flag::Error WriteableFlags::set_bool_flag(const char* name, const char* arg, Flag::Flags origin, FormatBuffer<80>& err_msg) {
   int value = true;
 
   if (sscanf(arg, "%d", &value)) {
     return set_bool_flag(name, value != 0, origin, err_msg);
   }
   err_msg.print("flag value must be a boolean (1 or 0)");
-  return WRONG_FORMAT;
+  return Flag::WRONG_FORMAT;
 }
 
-int WriteableFlags::set_bool_flag(const char* name, bool value, Flag::Flags origin, FormatBuffer<80>& err_msg) {
-  return CommandLineFlags::boolAtPut((char*)name, &value, origin) ? SUCCESS : ERR_OTHER;
+Flag::Error WriteableFlags::set_bool_flag(const char* name, bool value, Flag::Flags origin, FormatBuffer<80>& err_msg) {
+  Flag::Error err = CommandLineFlags::boolAtPut(name, &value, origin);
+  print_flag_error_message_if_needed(err, name, err_msg);
+  return err;
 }
 
 // set a int global flag
-int WriteableFlags::set_int_flag(const char* name, const char* arg, Flag::Flags origin, FormatBuffer<80>& err_msg) {
+Flag::Error WriteableFlags::set_int_flag(const char* name, const char* arg, Flag::Flags origin, FormatBuffer<80>& err_msg) {
   int value;
 
   if (sscanf(arg, "%d", &value)) {
     return set_int_flag(name, value, origin, err_msg);
   }
   err_msg.print("flag value must be an integer");
-  return WRONG_FORMAT;
+  return Flag::WRONG_FORMAT;
 }
 
-int WriteableFlags::set_int_flag(const char* name, int value, Flag::Flags origin, FormatBuffer<80>& err_msg) {
-  return CommandLineFlags::intAtPut((char*)name, &value, origin) ? SUCCESS : ERR_OTHER;
+Flag::Error WriteableFlags::set_int_flag(const char* name, int value, Flag::Flags origin, FormatBuffer<80>& err_msg) {
+  Flag::Error err = CommandLineFlags::intAtPut(name, &value, origin);
+  print_flag_error_message_if_needed(err, name, err_msg);
+  return err;
 }
 
 // set a uint global flag
-int WriteableFlags::set_uint_flag(const char* name, const char* arg, Flag::Flags origin, FormatBuffer<80>& err_msg) {
+Flag::Error WriteableFlags::set_uint_flag(const char* name, const char* arg, Flag::Flags origin, FormatBuffer<80>& err_msg) {
   uint value;
 
   if (sscanf(arg, "%u", &value)) {
     return set_uint_flag(name, value, origin, err_msg);
   }
   err_msg.print("flag value must be an unsigned integer");
-  return WRONG_FORMAT;
+  return Flag::WRONG_FORMAT;
 }
 
-int WriteableFlags::set_uint_flag(const char* name, uint value, Flag::Flags origin, FormatBuffer<80>& err_msg) {
-  return CommandLineFlags::uintAtPut((char*)name, &value, origin) ? SUCCESS : ERR_OTHER;
+Flag::Error WriteableFlags::set_uint_flag(const char* name, uint value, Flag::Flags origin, FormatBuffer<80>& err_msg) {
+  Flag::Error err = CommandLineFlags::uintAtPut(name, &value, origin);
+  print_flag_error_message_if_needed(err, name, err_msg);
+  return err;
 }
 
 // set a intx global flag
-int WriteableFlags::set_intx_flag(const char* name, const char* arg, Flag::Flags origin, FormatBuffer<80>& err_msg) {
+Flag::Error WriteableFlags::set_intx_flag(const char* name, const char* arg, Flag::Flags origin, FormatBuffer<80>& err_msg) {
   intx value;
 
   if (sscanf(arg, INTX_FORMAT, &value)) {
     return set_intx_flag(name, value, origin, err_msg);
   }
   err_msg.print("flag value must be an integer");
-  return WRONG_FORMAT;
+  return Flag::WRONG_FORMAT;
 }
 
-int WriteableFlags::set_intx_flag(const char* name, intx value, Flag::Flags origin, FormatBuffer<80>& err_msg) {
-  return CommandLineFlags::intxAtPut((char*)name, &value, origin) ? SUCCESS : ERR_OTHER;
+Flag::Error WriteableFlags::set_intx_flag(const char* name, intx value, Flag::Flags origin, FormatBuffer<80>& err_msg) {
+  Flag::Error err = CommandLineFlags::intxAtPut(name, &value, origin);
+  print_flag_error_message_if_needed(err, name, err_msg);
+  return err;
 }
 
 // set a uintx global flag
-int WriteableFlags::set_uintx_flag(const char* name, const char* arg, Flag::Flags origin, FormatBuffer<80>& err_msg) {
+Flag::Error WriteableFlags::set_uintx_flag(const char* name, const char* arg, Flag::Flags origin, FormatBuffer<80>& err_msg) {
   uintx value;
 
   if (sscanf(arg, UINTX_FORMAT, &value)) {
     return set_uintx_flag(name, value, origin, err_msg);
   }
   err_msg.print("flag value must be an unsigned integer");
-  return WRONG_FORMAT;
+  return Flag::WRONG_FORMAT;
 }
 
-int WriteableFlags::set_uintx_flag(const char* name, uintx value, Flag::Flags origin, FormatBuffer<80>& err_msg) {
-  if (strncmp(name, "MaxHeapFreeRatio", 17) == 0) {
-      if (!Arguments::verify_MaxHeapFreeRatio(err_msg, value)) {
-        return OUT_OF_BOUNDS;
-      }
-    } else if (strncmp(name, "MinHeapFreeRatio", 17) == 0) {
-      if (!Arguments::verify_MinHeapFreeRatio(err_msg, value)) {
-        return OUT_OF_BOUNDS;
-      }
-    }
-    return CommandLineFlags::uintxAtPut((char*)name, &value, origin) ? SUCCESS : ERR_OTHER;
+Flag::Error WriteableFlags::set_uintx_flag(const char* name, uintx value, Flag::Flags origin, FormatBuffer<80>& err_msg) {
+  Flag::Error err = CommandLineFlags::uintxAtPut(name, &value, origin);
+  print_flag_error_message_if_needed(err, name, err_msg);
+  return err;
 }
 
 // set a uint64_t global flag
-int WriteableFlags::set_uint64_t_flag(const char* name, const char* arg, Flag::Flags origin, FormatBuffer<80>& err_msg) {
+Flag::Error WriteableFlags::set_uint64_t_flag(const char* name, const char* arg, Flag::Flags origin, FormatBuffer<80>& err_msg) {
   uint64_t value;
 
   if (sscanf(arg, UINT64_FORMAT, &value)) {
     return set_uint64_t_flag(name, value, origin, err_msg);
   }
   err_msg.print("flag value must be an unsigned 64-bit integer");
-  return WRONG_FORMAT;
+  return Flag::WRONG_FORMAT;
 }
 
-int WriteableFlags::set_uint64_t_flag(const char* name, uint64_t value, Flag::Flags origin, FormatBuffer<80>& err_msg) {
-  return CommandLineFlags::uint64_tAtPut((char*)name, &value, origin) ? SUCCESS : ERR_OTHER;
+Flag::Error WriteableFlags::set_uint64_t_flag(const char* name, uint64_t value, Flag::Flags origin, FormatBuffer<80>& err_msg) {
+  Flag::Error err = CommandLineFlags::uint64_tAtPut(name, &value, origin);
+  print_flag_error_message_if_needed(err, name, err_msg);
+  return err;
 }
 
 // set a size_t global flag
-int WriteableFlags::set_size_t_flag(const char* name, const char* arg, Flag::Flags origin, FormatBuffer<80>& err_msg) {
+Flag::Error WriteableFlags::set_size_t_flag(const char* name, const char* arg, Flag::Flags origin, FormatBuffer<80>& err_msg) {
   size_t value;
 
   if (sscanf(arg, SIZE_FORMAT, &value)) {
     return set_size_t_flag(name, value, origin, err_msg);
   }
   err_msg.print("flag value must be an unsigned integer");
-  return WRONG_FORMAT;
+  return Flag::WRONG_FORMAT;
 }
 
-int WriteableFlags::set_size_t_flag(const char* name, size_t value, Flag::Flags origin, FormatBuffer<80>& err_msg) {
-  return CommandLineFlags::size_tAtPut((char*)name, &value, origin) ? SUCCESS : ERR_OTHER;
+Flag::Error WriteableFlags::set_size_t_flag(const char* name, size_t value, Flag::Flags origin, FormatBuffer<80>& err_msg) {
+  Flag::Error err = CommandLineFlags::size_tAtPut(name, &value, origin);
+  print_flag_error_message_if_needed(err, name, err_msg);
+  return err;
 }
 
 // set a string global flag using value from AttachOperation
-int WriteableFlags::set_ccstr_flag(const char* name, const char* arg, Flag::Flags origin, FormatBuffer<80>& err_msg) {
-  bool res = CommandLineFlags::ccstrAtPut((char*)name, &arg, origin);
-
-  return res? SUCCESS : ERR_OTHER;
+Flag::Error WriteableFlags::set_ccstr_flag(const char* name, const char* value, Flag::Flags origin, FormatBuffer<80>& err_msg) {
+  Flag::Error err = CommandLineFlags::ccstrAtPut((char*)name, &value, origin);
+  print_flag_error_message_if_needed(err, name, err_msg);
+  return err;
 }
 
 /* sets a writeable flag to the provided value
@@ -155,7 +226,7 @@ int WriteableFlags::set_ccstr_flag(const char* name, const char* arg, Flag::Flag
  * - return status is one of the WriteableFlags::err enum values
  * - an eventual error message will be generated to the provided err_msg buffer
  */
-int WriteableFlags::set_flag(const char* flag_name, const char* flag_value, Flag::Flags origin, FormatBuffer<80>& err_msg) {
+Flag::Error WriteableFlags::set_flag(const char* flag_name, const char* flag_value, Flag::Flags origin, FormatBuffer<80>& err_msg) {
   return set_flag(flag_name, &flag_value, set_flag_from_char, origin, err_msg);
 }
 
@@ -164,19 +235,19 @@ int WriteableFlags::set_flag(const char* flag_name, const char* flag_value, Flag
  * - return status is one of the WriteableFlags::err enum values
  * - an eventual error message will be generated to the provided err_msg buffer
  */
-int WriteableFlags::set_flag(const char* flag_name, jvalue flag_value, Flag::Flags origin, FormatBuffer<80>& err_msg) {
+Flag::Error WriteableFlags::set_flag(const char* flag_name, jvalue flag_value, Flag::Flags origin, FormatBuffer<80>& err_msg) {
   return set_flag(flag_name, &flag_value, set_flag_from_jvalue, origin, err_msg);
 }
 
 // a writeable flag setter accepting either 'jvalue' or 'char *' values
-int WriteableFlags::set_flag(const char* name, const void* value, int(*setter)(Flag*,const void*,Flag::Flags,FormatBuffer<80>&), Flag::Flags origin, FormatBuffer<80>& err_msg) {
+Flag::Error WriteableFlags::set_flag(const char* name, const void* value, Flag::Error(*setter)(Flag*,const void*,Flag::Flags,FormatBuffer<80>&), Flag::Flags origin, FormatBuffer<80>& err_msg) {
   if (name == NULL) {
     err_msg.print("flag name is missing");
-    return MISSING_NAME;
+    return Flag::MISSING_NAME;
   }
   if (value == NULL) {
     err_msg.print("flag value is missing");
-    return MISSING_VALUE;
+    return Flag::MISSING_VALUE;
   }
 
   Flag* f = Flag::find_flag((char*)name, strlen(name));
@@ -186,20 +257,20 @@ int WriteableFlags::set_flag(const char* name, const void* value, int(*setter)(F
       return setter(f, value, origin, err_msg);
     } else {
       err_msg.print("only 'writeable' flags can be set");
-      return NON_WRITABLE;
+      return Flag::NON_WRITABLE;
     }
   }
 
   err_msg.print("flag %s does not exist", name);
-  return INVALID_FLAG;
+  return Flag::INVALID_FLAG;
 }
 
 // a writeable flag setter accepting 'char *' values
-int WriteableFlags::set_flag_from_char(Flag* f, const void* value, Flag::Flags origin, FormatBuffer<80>& err_msg) {
+Flag::Error WriteableFlags::set_flag_from_char(Flag* f, const void* value, Flag::Flags origin, FormatBuffer<80>& err_msg) {
   char* flag_value = *(char**)value;
   if (flag_value == NULL) {
     err_msg.print("flag value is missing");
-    return MISSING_VALUE;
+    return Flag::MISSING_VALUE;
   }
   if (f->is_bool()) {
     return set_bool_flag(f->_name, flag_value, origin, err_msg);
@@ -220,11 +291,11 @@ int WriteableFlags::set_flag_from_char(Flag* f, const void* value, Flag::Flags o
   } else {
     ShouldNotReachHere();
   }
-  return ERR_OTHER;
+  return Flag::ERR_OTHER;
 }
 
 // a writeable flag setter accepting 'jvalue' values
-int WriteableFlags::set_flag_from_jvalue(Flag* f, const void* value, Flag::Flags origin, FormatBuffer<80>& err_msg) {
+Flag::Error WriteableFlags::set_flag_from_jvalue(Flag* f, const void* value, Flag::Flags origin, FormatBuffer<80>& err_msg) {
   jvalue new_value = *(jvalue*)value;
   if (f->is_bool()) {
     bool bvalue = (new_value.z == JNI_TRUE ? true : false);
@@ -251,17 +322,16 @@ int WriteableFlags::set_flag_from_jvalue(Flag* f, const void* value, Flag::Flags
     oop str = JNIHandles::resolve_external_guard(new_value.l);
     if (str == NULL) {
       err_msg.print("flag value is missing");
-      return MISSING_VALUE;
+      return Flag::MISSING_VALUE;
     }
     ccstr svalue = java_lang_String::as_utf8_string(str);
-    int ret = WriteableFlags::set_ccstr_flag(f->_name, svalue, origin, err_msg);
-    if (ret != SUCCESS) {
+    Flag::Error ret = WriteableFlags::set_ccstr_flag(f->_name, svalue, origin, err_msg);
+    if (ret != Flag::SUCCESS) {
       FREE_C_HEAP_ARRAY(char, svalue);
     }
     return ret;
   } else {
     ShouldNotReachHere();
   }
-  return ERR_OTHER;
+  return Flag::ERR_OTHER;
 }
-

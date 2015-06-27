@@ -264,6 +264,15 @@ Declares a structure type that can be used in other events.
       <structvalue type="ObjectSpace" field="toSpace" label="To Space"/>
     </event>
 
+    <event id="G1HeapSummary" path="vm/gc/heap/g1_summary" label="G1 Heap Summary" is_instant="true">
+      <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
+      <value type="GCWHEN" field="when" label="When" />
+
+      <value type="BYTES64" field="edenUsedSize" label="Eden Used Size" />
+      <value type="BYTES64" field="edenTotalSize" label="Eden Total Size" />
+      <value type="BYTES64" field="survivorUsedSize" label="Survivor Used Size" />
+    </event>
+
     <event id="GCGarbageCollection" path="vm/gc/collector/garbage_collection" label="Garbage Collection"
            description="Garbage collection performed by the JVM">
       <value type="UINT" field="gcId"  label="GC ID" relation="GC_ID" />
