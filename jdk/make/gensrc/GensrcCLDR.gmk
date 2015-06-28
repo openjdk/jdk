@@ -23,19 +23,30 @@
 # questions.
 #
 
-CLDRVERSION := 21.0.1
+CLDRVERSION := 27.0.0
 CLDRSRCDIR := $(JDK_TOPDIR)/src/jdk.localedata/share/classes/sun/util/cldr/resources/$(subst .,_,$(CLDRVERSION))
 
+GENSRC_BASEDIR := $(SUPPORT_OUTPUTDIR)/gensrc/java.base
 GENSRC_DIR := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.localedata
 
-CLDR_METAINFO_FILE := $(GENSRC_DIR)/sun/util/resources/cldr/provider/CLDRLocaleDataMetaInfo.java
+CLDR_BASEMETAINFO_FILE := $(GENSRC_DIR)/sun/util/cldr/CLDRBaseLocaleDataMetaInfo.java
+CLDR_METAINFO_FILE := $(GENSRC_DIR)/sun/util/resources/cldr/provider/CLDRLocaleDataMetaInfo_jdk_localedata.java
+
+CLDR_BASE_LOCALES := "en-US"
+
+$(CLDR_BASEMETAINFO_FILE): $(wildcard $(CLDRSRCDIR)/common/dtd/*.dtd) \
+    $(wildcard $(CLDRSRCDIR)/common/main/en*.xml) \
+    $(wildcard $(CLDRSRCDIR)/common/supplemental/*.xml) \
+    $(BUILD_TOOLS_JDK)
+	$(MKDIR) -p $(GENSRC_BASEDIR)
+	$(TOOL_CLDRCONVERTER) -base $(CLDRSRCDIR) -baselocales $(CLDR_BASE_LOCALES) -basemodule -o $(GENSRC_BASEDIR)
 
 $(CLDR_METAINFO_FILE): $(wildcard $(CLDRSRCDIR)/common/dtd/*.dtd) \
     $(wildcard $(CLDRSRCDIR)/common/main/*.xml) \
     $(wildcard $(CLDRSRCDIR)/common/supplemental/*.xml) \
     $(BUILD_TOOLS_JDK)
 	$(MKDIR) -p $(GENSRC_DIR)
-	$(TOOL_CLDRCONVERTER) -base $(CLDRSRCDIR) -o $(GENSRC_DIR)
+	$(TOOL_CLDRCONVERTER) -base $(CLDRSRCDIR) -baselocales $(CLDR_BASE_LOCALES) -o $(GENSRC_DIR)
 
-GENSRC_CLDR := $(CLDR_METAINFO_FILE)
-GENSRC_JDK_LOCALEDATA += $(GENSRC_CLDR)
+GENSRC_JAVA_BASE += $(CLDR_BASEMETAINFO_FILE)
+GENSRC_JDK_LOCALEDATA += $(CLDR_METAINFO_FILE)

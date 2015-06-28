@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,19 +29,21 @@ import java.util.Locale;
 
 /**
  * Constants for the Calendars supported by JRE.
+ * Note that "GENERIC" calendar data will NOT be extracted to JDK's ResourceBundles.
  */
 enum CalendarType {
-    GREGORIAN("gregory"), BUDDHIST, JAPANESE, ROC,
-    ISLAMIC, ISLAMIC_CIVIL("islamicc"), ISLAMIC_UMALQURA("islamic-umalqura");
+    GENERIC, GREGORIAN("gregory"), BUDDHIST, JAPANESE, ROC,
+    ISLAMIC, ISLAMIC_CIVIL("islamic-civil"), ISLAMIC_UMALQURA("islamic-umalqura");
 
     private static final int[][] ERA_DATA = {
         // start index, array length
+        {0,   2},   // generic
         {0,   2},   // gregorian
         {0,   1},   // buddhist
         {232, 4},   // japanese (eras from Meiji)
         {0,   2},   // roc (Minguo)
         {0,   1},   // islamic (Hijrah)
-        {0,   1},   // islamicc (same as islamic)
+        {0,   1},   // islamic-civil (same as islamic)
         {0,   1},   // islamic-umalqura
     };
 
@@ -87,7 +89,7 @@ enum CalendarType {
 
     static CalendarType forName(String name) {
         for (CalendarType type : values()) {
-            if (type.lname.equals(name)) {
+            if (type.lname.equals(name) || type.uname.equals(name)) {
                 return type;
             }
         }

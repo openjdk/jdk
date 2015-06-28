@@ -23,8 +23,9 @@
 
 /**
  * @test
- * @bug 6683975
+ * @bug 6683975 8008577
  * @summary Make sure that date is formatted correctlyin th locale.
+ * @run main/othervm -Djava.locale.providers=JRE,SPI Bug6683975
  */
 import java.text.*;
 import java.util.*;

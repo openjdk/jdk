@@ -1,0 +1,515 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2014 Unicode, Inc.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+For terms of use, see http://www.unicode.org/copyright.html
+-->
+<ldml>
+	<identity>
+		<version number="$Revision: 10671 $"/>
+		<generation date="$Date: 2014-07-23 17:52:33 -0500 (Wed, 23 Jul 2014) $"/>
+		<language type="qu"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="af">Afrikaans Simi</language>
+			<language type="am">Amarico Simi</language>
+			<language type="ar">Arabe Simi</language>
+			<language type="arn">Mapuche Simi</language>
+			<language type="as">Asames Simi</language>
+			<language type="az">Azerbaiyano Simi</language>
+			<language type="ba">Baskir Simi</language>
+			<language type="be">Bielorruso Simi</language>
+			<language type="bg">Bulgaro Simi</language>
+			<language type="bn">Bangla Simi</language>
+			<language type="bo">Tibetano Simi</language>
+			<language type="br">Breton Simi</language>
+			<language type="bs">Bosnio Simi</language>
+			<language type="ca">Catalan Simi</language>
+			<language type="chr">Cheroqui Simi</language>
+			<language type="ckb">Chawpi Kurdo Simi</language>
+			<language type="co">Corso Simi</language>
+			<language type="cs">Checo Simi</language>
+			<language type="cy">Gales Simi</language>
+			<language type="da">Danes Simi</language>
+			<language type="de">Aleman Simi</language>
+			<language type="dsb">Bajo Sorbio Simi</language>
+			<language type="dv">Divehi Simi</language>
+			<language type="el">Griego Simi</language>
+			<language type="en">Ingles Simi</language>
+			<language type="es">Español Simi</language>
+			<language type="et">Estonio Simi</language>
+			<language type="eu">Euskera Simi</language>
+			<language type="fa">Persa Simi</language>
+			<language type="ff">Fulah Simi</language>
+			<language type="fi">Fines Simi</language>
+			<language type="fil">Filipino Simi</language>
+			<language type="fo">Feroes Simi</language>
+			<language type="fr">Frances Simi</language>
+			<language type="fy">Frison Simi</language>
+			<language type="ga">Irlandes Simi</language>
+			<language type="gd">Gaelico Escoces Simi</language>
+			<language type="gl">Gallego Simi</language>
+			<language type="gsw">Alsaciano Simi</language>
+			<language type="gu">Gujarati Simi</language>
+			<language type="ha">Hausa Simi</language>
+			<language type="he">Hebreo Simi</language>
+			<language type="hi">Hindi Simi</language>
+			<language type="hmn">Hmong Daw Simi</language>
+			<language type="hr">Croata Simi</language>
+			<language type="hsb">Alto Sorbio Simi</language>
+			<language type="ht">Haitiano Criollo Simi</language>
+			<language type="hu">Hungaro Simi</language>
+			<language type="hy">Armenio Simi</language>
+			<language type="id">Indonesio Simi</language>
+			<language type="ig">Igbo Simi</language>
+			<language type="ii">Yi Simi</language>
+			<language type="is">Islandes Simi</language>
+			<language type="it">Italiano Simi</language>
+			<language type="iu">Inuktitut Simi</language>
+			<language type="ja">Japones Simi</language>
+			<language type="ka">Georgiano Simi</language>
+			<language type="kk">Kazajo Simi</language>
+			<language type="kl">Groenlandes Simi</language>
+			<language type="km">Khmer Simi</language>
+			<language type="kn">Kannada Simi</language>
+			<language type="ko">Coreano Simi</language>
+			<language type="kok">Konkani Simi</language>
+			<language type="ky">Kirghiz Simi</language>
+			<language type="lb">Luxemburgues Simi</language>
+			<language type="lo">Lao Simi</language>
+			<language type="lt">Lituano Simi</language>
+			<language type="lv">Leton Simi</language>
+			<language type="mi">Maori Simi</language>
+			<language type="mk">Macedonio Simi</language>
+			<language type="ml">Malayalam Simi</language>
+			<language type="mn">Mongol Simi</language>
+			<language type="moh">Mohawk Simi</language>
+			<language type="mr">Marathi Simi</language>
+			<language type="ms">Malayo Simi</language>
+			<language type="mt">Maltes Simi</language>
+			<language type="ne">Nepali Simi</language>
+			<language type="nl">Neerlandes Simi</language>
+			<language type="no">Noruego Simi</language>
+			<language type="nso">Sesotho Sa Leboa Simi</language>
+			<language type="oc">Occitano Simi</language>
+			<language type="or">Odia Simi</language>
+			<language type="pa">Punyabi Simi</language>
+			<language type="pap">Papiamento Simi</language>
+			<language type="pl">Polaco Simi</language>
+			<language type="ps">Pashto Simi</language>
+			<language type="pt">Portugues Simi</language>
+			<language type="qu">Runasimi</language>
+			<language type="quc">Kʼicheʼ Simi</language>
+			<language type="rm">Romanche Simi</language>
+			<language type="ro">Rumano Simi</language>
+			<language type="ru">Ruso Simi</language>
+			<language type="rw">Kinyarwanda Simi</language>
+			<language type="sa">Sanscrito Simi</language>
+			<language type="sah">Sakha Simi</language>
+			<language type="sd">Sindhi Simi</language>
+			<language type="se">Chincha Sami Simi</language>
+			<language type="si">Cingales Simi</language>
+			<language type="sk">Eslovaco Simi</language>
+			<language type="sl">Esloveno Simi</language>
+			<language type="sma">Qulla Sami Simi</language>
+			<language type="smj">Sami Lule Simi</language>
+			<language type="smn">Sami Inari Simi</language>
+			<language type="sms">Sami Skolt Simi</language>
+			<language type="sq">Albanes Simi</language>
+			<language type="sr">Serbio Simi</language>
+			<language type="sv">Sueco Simi</language>
+			<language type="sw">Suajili Simi</language>
+			<language type="syr">Siriaco Simi</language>
+			<language type="ta">Tamil Simi</language>
+			<language type="te">Telugu Simi</language>
+			<language type="tg">Tayiko Simi</language>
+			<language type="th">Tailandes Simi</language>
+			<language type="ti">Tigriña Simi</language>
+			<language type="tk">Turcomano Simi</language>
+			<language type="tn">Setsuana Simi</language>
+			<language type="tr">Turco Simi</language>
+			<language type="tt">Tartaro Simi</language>
+			<language type="ug">Uigur Simi</language>
+			<language type="uk">Ucraniano Simi</language>
+			<language type="ur">Urdu Simi</language>
+			<language type="uz">Uzbeko Simi</language>
+			<language type="vi">Vietnamita Simi</language>
+			<language type="wo">Wolof Simi</language>
+			<language type="xh">Isixhosa Simi</language>
+			<language type="yo">Yoruba Simi</language>
+			<language type="zh">Chino Simi</language>
+			<language type="zu">Isizulu Simi</language>
+		</languages>
+		<territories>
+			<territory type="AD">Andorra</territory>
+			<territory type="AF">Afganistán</territory>
+			<territory type="AL">Albania</territory>
+			<territory type="AM">Armenia</territory>
+			<territory type="AO">Angola</territory>
+			<territory type="AR">Argentina</territory>
+			<territory type="AS">Samoa Americana</territory>
+			<territory type="AT">Austria</territory>
+			<territory type="AU">Australia</territory>
+			<territory type="AZ">Azerbaiyán</territory>
+			<territory type="BD">Bangladesh</territory>
+			<territory type="BE">Bélgica</territory>
+			<territory type="BG">Bulgaria</territory>
+			<territory type="BH">Bahréin</territory>
+			<territory type="BI">Burundi</territory>
+			<territory type="BJ">Benín</territory>
+			<territory type="BN">Brunéi</territory>
+			<territory type="BO">Bolivia</territory>
+			<territory type="BQ">Bonaire</territory>
+			<territory type="BR">Brasil</territory>
+			<territory type="BS">Bahamas</territory>
+			<territory type="BT">Bután</territory>
+			<territory type="BW">Botsuana</territory>
+			<territory type="BY">Belarús</territory>
+			<territory type="CC">Islas Cocos</territory>
+			<territory type="CD">Congo (RDC)</territory>
+			<territory type="CG">Congo</territory>
+			<territory type="CH">Suiza</territory>
+			<territory type="CI">Côte dʼIvoire</territory>
+			<territory type="CL">Chile</territory>
+			<territory type="CM">Camerún</territory>
+			<territory type="CN">China</territory>
+			<territory type="CO">Colombia</territory>
+			<territory type="CR">Costa Rica</territory>
+			<territory type="CU">Cuba</territory>
+			<territory type="CW">Curazao</territory>
+			<territory type="CX">Isla Christmas</territory>
+			<territory type="CY">Chipre</territory>
+			<territory type="DE">Alemania</territory>
+			<territory type="DJ">Yibuti</territory>
+			<territory type="DK">Dinamarca</territory>
+			<territory type="DM">Dominica</territory>
+			<territory type="DZ">Argelia</territory>
+			<territory type="EC">Ecuador</territory>
+			<territory type="EE">Estonia</territory>
+			<territory type="EG">Egipto</territory>
+			<territory type="ER">Eritrea</territory>
+			<territory type="ES">España</territory>
+			<territory type="ET">Etiopía</territory>
+			<territory type="FI">Finlandia</territory>
+			<territory type="FJ">Fiyi</territory>
+			<territory type="FM">Micronesia</territory>
+			<territory type="FR">Francia</territory>
+			<territory type="GA">Gabón</territory>
+			<territory type="GB">Reino Unido</territory>
+			<territory type="GG">Guernsey</territory>
+			<territory type="GH">Ghana</territory>
+			<territory type="GM">Gambia</territory>
+			<territory type="GN">Guinea</territory>
+			<territory type="GQ">Guinea Ecuatorial</territory>
+			<territory type="GR">Grecia</territory>
+			<territory type="GT">Guatemala</territory>
+			<territory type="GU">Guam</territory>
+			<territory type="GW">Guinea-Bissau</territory>
+			<territory type="GY">Guyana</territory>
+			<territory type="HK">Hong Kong (RAE)</territory>
+			<territory type="HM">Islas Heard y McDonald</territory>
+			<territory type="HN">Honduras</territory>
+			<territory type="HR">Croacia</territory>
+			<territory type="HT">Haití</territory>
+			<territory type="ID">Indonesia</territory>
+			<territory type="IL">Israel</territory>
+			<territory type="IN">India</territory>
+			<territory type="IQ">Iraq</territory>
+			<territory type="IR">Irán</territory>
+			<territory type="IS">Islandia</territory>
+			<territory type="IT">Italia</territory>
+			<territory type="JE">Jersey</territory>
+			<territory type="JO">Jordania</territory>
+			<territory type="KE">Kenia</territory>
+			<territory type="KG">Kirguistán</territory>
+			<territory type="KH">Camboya</territory>
+			<territory type="KI">Kiribati</territory>
+			<territory type="KM">Comoras</territory>
+			<territory type="KN">San Cristóbal y Nieves</territory>
+			<territory type="KP">Corea del Norte</territory>
+			<territory type="KR">Corea del Sur</territory>
+			<territory type="KW">Kuwait</territory>
+			<territory type="KZ">Kazajistan</territory>
+			<territory type="LA">Laos</territory>
+			<territory type="LB">Líbano</territory>
+			<territory type="LI">Liechtenstein</territory>
+			<territory type="LK">Sri Lanka</territory>
+			<territory type="LR">Liberia</territory>
+			<territory type="LS">Lesoto</territory>
+			<territory type="LT">Lituania</territory>
+			<territory type="LU">Luxemburgo</territory>
+			<territory type="LV">Letonia</territory>
+			<territory type="MA">Marruecos</territory>
+			<territory type="MC">Mónaco</territory>
+			<territory type="MD">Moldova</territory>
+			<territory type="MF">San Martín</territory>
+			<territory type="MG">Madagascar</territory>
+			<territory type="MH">Islas Marshall</territory>
+			<territory type="MK">ERY Macedonia</territory>
+			<territory type="ML">Malí</territory>
+			<territory type="MM">Myanmar</territory>
+			<territory type="MO">Macao RAE</territory>
+			<territory type="MP">Islas Marianas del Norte</territory>
+			<territory type="MR">Mauritania</territory>
+			<territory type="MT">Malta</territory>
+			<territory type="MU">Mauricio</territory>
+			<territory type="MV">Maldivas</territory>
+			<territory type="MW">Malawi</territory>
+			<territory type="MX">México</territory>
+			<territory type="MZ">Mozambique</territory>
+			<territory type="NA">Namibia</territory>
+			<territory type="NC">Nueva Caledonia</territory>
+			<territory type="NE">Níger</territory>
+			<territory type="NF">Isla Norfolk</territory>
+			<territory type="NG">Nigeria</territory>
+			<territory type="NI">Nicaragua</territory>
+			<territory type="NL">Países Bajos</territory>
+			<territory type="NO">Noruega</territory>
+			<territory type="NP">Nepal</territory>
+			<territory type="NR">Nauru</territory>
+			<territory type="OM">Omán</territory>
+			<territory type="PA">Panamá</territory>
+			<territory type="PE">Perú</territory>
+			<territory type="PF">Polinesia Francesa</territory>
+			<territory type="PG">Papúa Nueva Guinea</territory>
+			<territory type="PH">Filipinas</territory>
+			<territory type="PK">Pakistán</territory>
+			<territory type="PL">Polonia</territory>
+			<territory type="PM">San Pedro y Miquelón</territory>
+			<territory type="PN">Islas Pitcairn</territory>
+			<territory type="PR">Puerto Rico</territory>
+			<territory type="PS">Palestina Kamachikuq</territory>
+			<territory type="PT">Portugal</territory>
+			<territory type="PW">Palaos</territory>
+			<territory type="PY">Paraguay</territory>
+			<territory type="QA">Qatar</territory>
+			<territory type="RS">Serbia</territory>
+			<territory type="RU">Rusia</territory>
+			<territory type="RW">Ruanda</territory>
+			<territory type="SA">Arabia Saudí</territory>
+			<territory type="SC">Seychelles</territory>
+			<territory type="SD">Sudán</territory>
+			<territory type="SE">Suecia</territory>
+			<territory type="SG">Singapur</territory>
+			<territory type="SI">Eslovenia</territory>
+			<territory type="SK">Eslovaquia</territory>
+			<territory type="SL">Sierra Leona</territory>
+			<territory type="SM">San Marino</territory>
+			<territory type="SN">Senegal</territory>
+			<territory type="SO">Somalia</territory>
+			<territory type="SR">Surinam</territory>
+			<territory type="SS">Sudán del Sur</territory>
+			<territory type="ST">Santo Tomé y Príncipe</territory>
+			<territory type="SV">El Salvador</territory>
+			<territory type="SX">Sint Maarten</territory>
+			<territory type="SY">Siria</territory>
+			<territory type="SZ">Suazilandia</territory>
+			<territory type="TD">Chad</territory>
+			<territory type="TF">Tierras Australes y Antárticas Francesas</territory>
+			<territory type="TG">Togo</territory>
+			<territory type="TH">Tailandia</territory>
+			<territory type="TJ">Tayikistán</territory>
+			<territory type="TL">Timor-Leste</territory>
+			<territory type="TN">Túnez</territory>
+			<territory type="TO">Tonga</territory>
+			<territory type="TR">Turquía</territory>
+			<territory type="TT">Trinidad y Tobago</territory>
+			<territory type="TZ">Tanzania</territory>
+			<territory type="UG">Uganda</territory>
+			<territory type="UM">Islas menores alejadas de los EE.UU.</territory>
+			<territory type="US">Estados Unidos</territory>
+			<territory type="UY">Uruguay</territory>
+			<territory type="UZ">Uzbekistán</territory>
+			<territory type="VA">Santa Sede (Ciudad del Vaticano)</territory>
+			<territory type="VE">Venezuela</territory>
+			<territory type="VI">EE.UU. Islas Vírgenes</territory>
+			<territory type="VN">Vietnam</territory>
+			<territory type="VU">Vanuatu</territory>
+			<territory type="WF">Wallis, Futuna</territory>
+			<territory type="WS">Samoa</territory>
+			<territory type="YE">Yemen</territory>
+			<territory type="ZA">Sudáfrica</territory>
+			<territory type="ZM">Zambia</territory>
+			<territory type="ZW">Zimbabue</territory>
+		</territories>
+		<variants>
+			<variant type="VALENCIA">Valenciano Simi</variant>
+		</variants>
+	</localeDisplayNames>
+	<layout>
+		<orientation>
+			<characterOrder>left-to-right</characterOrder>
+			<lineOrder>top-to-bottom</lineOrder>
+		</orientation>
+	</layout>
+	<characters>
+		<exemplarCharacters>[a {ch} {chʼ} h i k {kʼ} l {ll} m n ñ p {pʼ} q {qʼ} s t {tʼ} u w y]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[á à ă â å ä ã ā æ b c ç d e é è ĕ ê ë ē f g í ì ĭ î ï ī j o ó ò ŏ ô ö ø ō œ r ú ù ŭ û ü ū v x ÿ z]</exemplarCharacters>
+		<exemplarCharacters type="index">[A {Ch} H I K L {Ll} M N Ñ P Q S T U W Y]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">Qul</month>
+							<month type="2">Hat</month>
+							<month type="3">Pau</month>
+							<month type="4">Ayr</month>
+							<month type="5">Aym</month>
+							<month type="6">Int</month>
+							<month type="7">Ant</month>
+							<month type="8">Qha</month>
+							<month type="9">Uma</month>
+							<month type="10">Kan</month>
+							<month type="11">Aya</month>
+							<month type="12">Kap</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">Qulla puquy</month>
+							<month type="2">Hatun puquy</month>
+							<month type="3">Pauqar waray</month>
+							<month type="4">Ayriwa</month>
+							<month type="5">Aymuray</month>
+							<month type="6">Inti raymi</month>
+							<month type="7">Anta Sitwa</month>
+							<month type="8">Qhapaq Sitwa</month>
+							<month type="9">Uma raymi</month>
+							<month type="10">Kantaray</month>
+							<month type="11">Ayamarqʼa</month>
+							<month type="12">Kapaq Raymi</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun">Dom</day>
+							<day type="mon">Lun</day>
+							<day type="tue">Mar</day>
+							<day type="wed">Mié</day>
+							<day type="thu">Jue</day>
+							<day type="fri">Vie</day>
+							<day type="sat">Sab</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">Domingo</day>
+							<day type="mon">Lunes</day>
+							<day type="tue">Martes</day>
+							<day type="wed">Miércoles</day>
+							<day type="thu">Jueves</day>
+							<day type="fri">Viernes</day>
+							<day type="sat">Sábado</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="narrow">
+							<day type="sun">D</day>
+							<day type="mon">L</day>
+							<day type="tue">M</day>
+							<day type="wed">X</day>
+							<day type="thu">J</day>
+							<day type="fri">V</day>
+							<day type="sat">S</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">a.m.</dayPeriod>
+							<dayPeriod type="pm">p.m.</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<eras>
+					<eraAbbr>
+						<era type="1">d.C.</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="1">dC</era>
+					</eraNarrow>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, d MMMM, y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd/MM/y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern>hh:mm:ss a</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern>hh:mm a</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="yMd">dd-MM-y</dateFormatItem>
+						<dateFormatItem id="yMMMEd">E, d MMM, y</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<decimal>.</decimal>
+			<group>,</group>
+			<percentSign>%</percentSign>
+			<plusSign>+</plusSign>
+			<minusSign>-</minusSign>
+			<exponential>E</exponential>
+			<superscriptingExponent>×</superscriptingExponent>
+			<perMille>‰</perMille>
+			<infinity>∞</infinity>
+			<nan>NaN</nan>
+		</symbols>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern>#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<scientificFormats numberSystem="latn">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<percentFormats numberSystem="latn">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencies>
+			<currency type="PEN">
+				<symbol>S/.</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+</ldml>

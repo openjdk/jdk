@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,8 @@ import java.util.List;
 public class Inet6AddressSerializationTest {
 
     static boolean failed;
+
+    static boolean isWindows = System.getProperty("os.name").startsWith("Windows");
 
     public static final int LOOPBACK_SCOPE_ID = 0;
 
@@ -175,6 +177,13 @@ public class Inet6AddressSerializationTest {
         for (Enumeration<NetworkInterface> e = NetworkInterface
                 .getNetworkInterfaces(); e.hasMoreElements();) {
             NetworkInterface netIF = e.nextElement();
+            // Skip (Windows)Teredo Tunneling Pseudo-Interface
+            if (isWindows) {
+                String dName = netIF.getDisplayName();
+                if (dName != null && dName.contains("Teredo")) {
+                    continue;
+                }
+            }
             for (Enumeration<InetAddress> iadrs = netIF.getInetAddresses(); iadrs
                     .hasMoreElements();) {
                 InetAddress iadr = iadrs.nextElement();
