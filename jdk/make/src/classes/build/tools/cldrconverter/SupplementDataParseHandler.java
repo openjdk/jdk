@@ -51,12 +51,21 @@ class SupplementDataParseHandler extends AbstractLDMLHandler<Object> {
     // When parsing the locale neutral file (supplementalData.xml),
     // we need to rely on the country code because
     // the weekData is listed using country code.
+    //
+    // weekData are generated per each country
     private final Map<String, Object> firstDayMap;
     private final Map<String, Object> minDaysMap;
+
+    // Parent locales. These information will only be
+    // generated towards the base meta info, with the format of
+    //
+    // parentLocale.<parent_locale_id>=<child_locale_id>(" "<child_locale_id>)+
+    private final Map<String, String> parentLocalesMap;
 
     SupplementDataParseHandler() {
         firstDayMap = new HashMap<>();
         minDaysMap = new HashMap<>();
+        parentLocalesMap = new HashMap<>();
     }
 
     /**
@@ -68,15 +77,22 @@ class SupplementDataParseHandler extends AbstractLDMLHandler<Object> {
      * although this should not happen because supplementalData.xml includes
      * default value for the world ("001") for firstDay and minDays.
      */
-    Map<String, Object> getData(String country) {
+    Map<String, Object> getData(String id) {
         Map<String, Object> values = new HashMap<>();
-        String countryData = getWeekData(country, JAVA_FIRSTDAY, firstDayMap);
+        if ("root".equals(id)) {
+            parentLocalesMap.keySet().forEach(key -> {
+            values.put(CLDRConverter.PARENT_LOCALE_PREFIX+key,
+                parentLocalesMap.get(key));
+            });
+        } else {
+            String countryData = getWeekData(id, JAVA_FIRSTDAY, firstDayMap);
         if (countryData != null) {
             values.put(JAVA_FIRSTDAY, countryData);
         }
-        String minDaysData = getWeekData(country, JAVA_MINDAY, minDaysMap);
+            String minDaysData = getWeekData(id, JAVA_MINDAY, minDaysMap);
         if (minDaysData != null) {
             values.put(JAVA_MINDAY, minDaysData);
+        }
         }
         return values.isEmpty() ? null : values;
     }
@@ -142,6 +158,13 @@ class SupplementDataParseHandler extends AbstractLDMLHandler<Object> {
         case "minDays":
             if (!isIgnored(attributes)) {
                 minDaysMap.put(attributes.getValue("territories"), attributes.getValue("count"));
+            }
+            break;
+        case "parentLocale":
+            if (!isIgnored(attributes)) {
+                parentLocalesMap.put(
+                    attributes.getValue("parent").replaceAll("_", "-"),
+                    attributes.getValue("locales").replaceAll("_", "-"));
             }
             break;
         default:

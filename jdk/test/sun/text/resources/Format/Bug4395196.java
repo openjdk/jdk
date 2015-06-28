@@ -23,8 +23,9 @@
 
 /*
  *@test
- *@bug 4395196 4930708 4900884 4890240
+ *@bug 4395196 4930708 4900884 4890240 8008577
  *@summary verify the ko DateFormat
+ *@run main/othervm -Djava.locale.providers=JRE,SPI Bug4395196
 */
 
 import java.io.*;

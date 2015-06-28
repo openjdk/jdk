@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2014 Unicode, Inc.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+For terms of use, see http://www.unicode.org/copyright.html
+-->
+<ldml>
+	<identity>
+		<version number="$Revision: 10669 $"/>
+		<generation date="$Date: 2014-07-23 16:10:33 -0500 (Wed, 23 Jul 2014) $"/>
+		<language type="ar"/>
+		<territory type="MR"/>
+	</identity>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">يناير</month>
+							<month type="2">فبراير</month>
+							<month type="3">مارس</month>
+							<month type="4">إبريل</month>
+							<month type="5">مايو</month>
+							<month type="6">يونيو</month>
+							<month type="7">يوليو</month>
+							<month type="8">أغشت</month>
+							<month type="9">شتمبر</month>
+							<month type="10">أكتوبر</month>
+							<month type="11">نوفمبر</month>
+							<month type="12">دجمبر</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="4">إ</month>
+							<month type="9">ش</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">يناير</month>
+							<month type="2">فبراير</month>
+							<month type="3">مارس</month>
+							<month type="4">إبريل</month>
+							<month type="5">مايو</month>
+							<month type="6">يونيو</month>
+							<month type="7">يوليو</month>
+							<month type="8">أغشت</month>
+							<month type="9">شتمبر</month>
+							<month type="10">أكتوبر</month>
+							<month type="11">نوفمبر</month>
+							<month type="12">دجمبر</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1">يناير</month>
+							<month type="2">فبراير</month>
+							<month type="3">مارس</month>
+							<month type="4">إبريل</month>
+							<month type="5">مايو</month>
+							<month type="6">يونيو</month>
+							<month type="7">يوليو</month>
+							<month type="8">أغشت</month>
+							<month type="9">شتمبر</month>
+							<month type="10">أكتوبر</month>
+							<month type="11">نوفمبر</month>
+							<month type="12">دجمبر</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="4">إ</month>
+							<month type="9">ش</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">يناير</month>
+							<month type="2">فبراير</month>
+							<month type="3">مارس</month>
+							<month type="4">إبريل</month>
+							<month type="5">مايو</month>
+							<month type="6">يونيو</month>
+							<month type="7">يوليو</month>
+							<month type="8">أغشت</month>
+							<month type="9">شتمبر</month>
+							<month type="10">أكتوبر</month>
+							<month type="11">نوفمبر</month>
+							<month type="12">دجمبر</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+			</calendar>
+		</calendars>
+	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<decimal>,</decimal>
+			<group>.</group>
+		</symbols>
+	</numbers>
+</ldml>
