@@ -25,16 +25,19 @@ import jdk.test.lib.ExitCode;
 import jdk.test.lib.Platform;
 import jdk.test.lib.cli.CommandLineOptionTest;
 import jdk.test.lib.cli.predicate.AndPredicate;
+import jdk.test.lib.cli.predicate.OrPredicate;
 
 /**
- * Generic test case for SHA-related options targeted to SPARC CPUs which
+ * Generic test case for SHA-related options targeted to CPUs which
  * support instructions required by the tested option.
  */
-public class GenericTestCaseForSupportedSparcCPU extends
+public class GenericTestCaseForSupportedCPU extends
         SHAOptionsBase.TestCase {
-    public GenericTestCaseForSupportedSparcCPU(String optionName) {
-        super(optionName, new AndPredicate(Platform::isSparc,
-                SHAOptionsBase.getPredicateForOption(optionName)));
+    public GenericTestCaseForSupportedCPU(String optionName) {
+        super(optionName,
+                new AndPredicate(
+                    new OrPredicate(Platform::isSparc, Platform::isAArch64),
+                    SHAOptionsBase.getPredicateForOption(optionName)));
     }
 
     @Override

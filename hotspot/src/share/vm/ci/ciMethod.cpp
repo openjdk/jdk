@@ -71,8 +71,7 @@
 // Loaded method.
 ciMethod::ciMethod(methodHandle h_m, ciInstanceKlass* holder) :
   ciMetadata(h_m()),
-  _holder(holder),
-  _has_injected_profile(false)
+  _holder(holder)
 {
   assert(h_m() != NULL, "no null method");
 
@@ -170,8 +169,7 @@ ciMethod::ciMethod(ciInstanceKlass* holder,
   _liveness(               NULL),
   _can_be_statically_bound(false),
   _method_blocks(          NULL),
-  _method_data(            NULL),
-  _has_injected_profile(   false)
+  _method_data(            NULL)
 #if defined(COMPILER2) || defined(SHARK)
   ,
   _flow(                   NULL),
