@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ class ImageFetcher extends ManagedLocalsThread {
       * Constructor for ImageFetcher -- only called by add() below.
       */
     private ImageFetcher(ThreadGroup threadGroup, int index) {
-        super(threadGroup, null, "Image Fetcher " + index);
+        super(threadGroup, "Image Fetcher " + index);
         setDaemon(true);
     }
 

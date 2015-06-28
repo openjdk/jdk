@@ -281,12 +281,8 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                 }
             };
             String name = "XToolkt-Shutdown-Thread";
-            Thread shutdownThread;
-            if (System.getSecurityManager() == null) {
-                shutdownThread = new Thread(ThreadGroupUtils.getRootThreadGroup(), r, name);
-            } else {
-                shutdownThread = new InnocuousThread(r, name);
-            }
+            Thread shutdownThread = new ManagedLocalsThread(
+                    ThreadGroupUtils.getRootThreadGroup(), r, name);
             shutdownThread.setContextClassLoader(null);
             Runtime.getRuntime().addShutdownHook(shutdownThread);
             return null;
@@ -333,12 +329,8 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
             toolkitThread = AccessController.doPrivileged((PrivilegedAction<Thread>) () -> {
                 String name = "AWT-XAWT";
-                Thread thread;
-                if (System.getSecurityManager() == null) {
-                    thread = new Thread(ThreadGroupUtils.getRootThreadGroup(), XToolkit.this, name);
-                } else {
-                    thread = new InnocuousThread(XToolkit.this, name);
-                }
+                Thread thread = new ManagedLocalsThread(
+                        ThreadGroupUtils.getRootThreadGroup(), this, name);
                 thread.setContextClassLoader(null);
                 thread.setPriority(Thread.NORM_PRIORITY + 1);
                 thread.setDaemon(true);
