@@ -343,10 +343,7 @@ public class CoreDOMImplementationImpl
          */
         public LSSerializer createLSSerializer() {
             try {
-                Class serializerClass = ObjectFactory.findProviderClass(
-                    "com.sun.org.apache.xml.internal.serializer.dom3.LSSerializerImpl",
-                    ObjectFactory.findClassLoader(), true);
-                return (LSSerializer) serializerClass.newInstance();
+                return new com.sun.org.apache.xml.internal.serializer.dom3.LSSerializerImpl();
             }
             catch (Exception e) {}
             // Fall back to Xerces' deprecated serializer if
