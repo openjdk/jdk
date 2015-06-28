@@ -2365,11 +2365,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
             runnablePrinting.run();
         } else {
             if (isEventDispatchThread) {
-                if (System.getSecurityManager() == null) {
-                    new Thread(runnablePrinting).start();
-                } else {
-                    new ManagedLocalsThread(runnablePrinting).start();
-                }
+                new ManagedLocalsThread(runnablePrinting).start();
                 printingStatus.showModal(true);
             } else {
                 printingStatus.showModal(false);

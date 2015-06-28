@@ -43,7 +43,7 @@ import sun.java2d.xr.XRGraphicsConfig;
 import sun.java2d.loops.SurfaceType;
 
 import sun.awt.util.ThreadGroupUtils;
-import sun.misc.InnocuousThread;
+import sun.misc.ManagedLocalsThread;
 
 /**
  * This is an implementation of a GraphicsDevice object for a single
@@ -437,12 +437,8 @@ public final class X11GraphicsDevice extends GraphicsDevice
                     }
                 };
                 String name = "Display-Change-Shutdown-Thread-" + screen;
-                Thread t;
-                if (System.getSecurityManager() == null) {
-                    t = new Thread(ThreadGroupUtils.getRootThreadGroup(), r, name);
-                } else {
-                    t = new InnocuousThread(r, name);
-                }
+                Thread t = new ManagedLocalsThread(
+                        ThreadGroupUtils.getRootThreadGroup(), r, name);
                 t.setContextClassLoader(null);
                 Runtime.getRuntime().addShutdownHook(t);
                 return null;
