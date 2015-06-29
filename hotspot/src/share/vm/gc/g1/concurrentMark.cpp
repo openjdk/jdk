@@ -629,7 +629,7 @@ ConcurrentMark::ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* prev
   gclog_or_tty->print_cr("CL Sleep Factor          %1.4lf", cleanup_sleep_factor());
 #endif
 
-  _parallel_workers = new FlexibleWorkGang("G1 Marker",
+  _parallel_workers = new WorkGang("G1 Marker",
        _max_parallel_marking_threads, false, true);
   if (_parallel_workers == NULL) {
     vm_exit_during_initialization("Failed necessary allocation.");
