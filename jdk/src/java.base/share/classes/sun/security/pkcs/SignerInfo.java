@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -307,7 +307,7 @@ public class SignerInfo implements DerEncoder {
                        authenticatedAttributes.getAttributeValue(
                          PKCS9Attribute.CONTENT_TYPE_OID);
                 if (contentType == null ||
-                    !contentType.equals((Object)content.contentType))
+                    !contentType.equals(content.contentType))
                     return null;  // contentType does not match, bad SignerInfo
 
                 // now, check message digest
