@@ -30,9 +30,9 @@
 #include "gc/shared/collectorPolicy.hpp"
 #include "gc/shared/generation.hpp"
 
-class WorkGang;
 class StrongRootsScope;
 class SubTasksDone;
+class WorkGang;
 
 // A "GenCollectedHeap" is a CollectedHeap that uses generational
 // collection.  It has two generations, young and old.

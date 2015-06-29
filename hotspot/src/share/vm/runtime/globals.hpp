@@ -1552,6 +1552,10 @@ public:
   product(uint, ParallelGCThreads, 0,                                       \
           "Number of parallel threads parallel gc will use")                \
                                                                             \
+  diagnostic(bool, UseSemaphoreGCThreadsSynchronization, true,              \
+            "Use semaphore synchronization for the GC Threads, "            \
+            "instead of synchronization based on mutexes")                  \
+                                                                            \
   product(bool, UseDynamicNumberOfGCThreads, false,                         \
           "Dynamically choose the number of parallel threads "              \
           "parallel gc will use")                                           \
