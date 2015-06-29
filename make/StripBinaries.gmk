@@ -57,16 +57,16 @@ ALL_CMDS_SRC := $(filter-out %.bc %.debuginfo %.diz %.map %.pdb, \
 COPY_CMDS_SRC := $(filter %.cgi, $(ALL_CMDS_SRC))
 STRIP_CMDS_SRC := $(filter-out $(COPY_CMDS_SRC), $(ALL_CMDS_SRC))
 
-# Make sure symbolic links are copied and not stripped
-COPY_LIBS_SRC := \
-    $(shell $(FIND) $(SUPPORT_OUTPUTDIR)/modules_libs \
-        \( ! -name '*$(SHARED_LIBRARY_SUFFIX)' -type f \) -o -type l)
 # OS X stores symbol information in a .dylib file inside a .dSYM directory -
 # that file should not be stripped, so we prune the tree at the .dSYM directory.
 # Example: support/modules_libs/java.base/libjsig.dylib.dSYM/Contents/Resources/DWARF/libjsig.dylib
 STRIP_LIBS_SRC := \
     $(shell $(FIND) $(SUPPORT_OUTPUTDIR)/modules_libs \
         -name '*$(SHARED_LIBRARY_SUFFIX)' -type f -print -o -name "*.dSYM" -prune)
+# Make sure symbolic links are copied and not stripped.
+COPY_LIBS_SRC := \
+    $(filter-out $(STRIP_LIBS_SRC), \
+    $(shell $(FIND) $(SUPPORT_OUTPUTDIR)/modules_libs -type f -o -type l))
 
 $(eval $(call SetupCopyFiles,STRIP_MODULES_CMDS, \
     SRC := $(SUPPORT_OUTPUTDIR)/modules_cmds, \
