@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,8 @@ protected:
     aes_instructions     = 19,
     sha1_instruction     = 20,
     sha256_instruction   = 21,
-    sha512_instruction   = 22
+    sha512_instruction   = 22,
+    crc32c_instruction   = 23
   };
 
   enum Feature_Flag_Set {
@@ -83,6 +84,7 @@ protected:
     sha1_instruction_m      = 1 << sha1_instruction,
     sha256_instruction_m    = 1 << sha256_instruction,
     sha512_instruction_m    = 1 << sha512_instruction,
+    crc32c_instruction_m    = 1 << crc32c_instruction,
 
     generic_v8_m        = v8_instructions_m | hardware_mul32_m | hardware_div32_m | hardware_fsmuld_m,
     generic_v9_m        = generic_v8_m | v9_instructions_m,
@@ -141,6 +143,7 @@ public:
   static bool has_sha1()                { return (_features & sha1_instruction_m) != 0; }
   static bool has_sha256()              { return (_features & sha256_instruction_m) != 0; }
   static bool has_sha512()              { return (_features & sha512_instruction_m) != 0; }
+  static bool has_crc32c()              { return (_features & crc32c_instruction_m) != 0; }
 
   static bool supports_compare_and_exchange()
                                         { return has_v9(); }
