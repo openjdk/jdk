@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1339,7 +1339,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
                     return ex;
                 }
                 for (Extension ex2: extensions.getAllExtensions()) {
-                    if (ex2.getExtensionId().equals((Object)oid)) {
+                    if (ex2.getExtensionId().equals(oid)) {
                         //XXXX May want to consider cloning this
                         return ex2;
                     }
@@ -1395,7 +1395,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
 
                 for (Extension ex : exts.getAllExtensions()) {
                     ObjectIdentifier inCertOID = ex.getExtensionId();
-                    if (inCertOID.equals((Object)findOID)) {
+                    if (inCertOID.equals(findOID)) {
                         certExt = ex;
                         break;
                     }
