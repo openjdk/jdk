@@ -1358,9 +1358,6 @@ public:
   develop(uintx, PreallocatedOutOfMemoryErrorCount, 4,                      \
           "Number of OutOfMemoryErrors preallocated with backtrace")        \
                                                                             \
-  product(bool, LazyBootClassLoader, true,                                  \
-          "Enable/disable lazy opening of boot class path entries")         \
-                                                                            \
   product(bool, UseXMMForArrayCopy, false,                                  \
           "Use SSE2 MOVQ instruction for Arraycopy")                        \
                                                                             \
