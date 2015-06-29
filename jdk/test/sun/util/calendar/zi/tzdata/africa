@@ -361,9 +361,10 @@ Rule	Egypt	2007	only	-	Sep	Thu>=1	24:00	0	-
 # time this summer, and carry out studies on the possibility of canceling the
 # practice altogether in future years."
 #
-# From Paul Eggert (2015-04-20):
-# For now, assume DST will be canceled.  Any resumption would likely
-# use different rules anyway.
+# From Paul Eggert (2015-04-24):
+# Yesterday the office of Egyptian President El-Sisi announced his
+# decision to abandon DST permanently.  See Ahram Online 2015-04-24.
+# http://english.ahram.org.eg/NewsContent/1/64/128509/Egypt/Politics-/Sisi-cancels-daylight-saving-time-in-Egypt.aspx
 
 Rule	Egypt	2008	only	-	Aug	lastThu	24:00	0	-
 Rule	Egypt	2009	only	-	Aug	20	24:00	0	-
@@ -810,20 +811,41 @@ Zone Indian/Mauritius	3:50:00 -	LMT	1907 # Port Louis
 # will resume again at 02:00 on Saturday, August 2, 2014....
 # http://www.mmsp.gov.ma/fr/actualites.aspx?id=586
 
-# From Paul Eggert (2014-06-05):
-# For now, guess that later spring and fall transitions will use 2014's rules,
+# From Milamber (2015-06-08):
+# (Google Translation) The hour will thus be delayed 60 minutes
+# Sunday, June 14 at 3:00, the ministry said in a statement, adding
+# that the time will be advanced again 60 minutes Sunday, July 19,
+# 2015 at 2:00.  The move comes under 2.12.126 Decree of 26 Jumada I
+# 1433 (18 April 2012) and the decision of the Head of Government of
+# 16 N. 3-29-15 Chaaban 1435 (4 June 2015).
+# Source (french):
+# http://lnt.ma/le-maroc-reculera-dune-heure-le-dimanche-14-juin/
+#
+# From Milamber (2015-06-09):
+# http://www.mmsp.gov.ma/fr/actualites.aspx?id=863
+#
+# From Michael Deckers (2015-06-09):
+# [The gov.ma announcement] would (probably) make the switch on 2015-07-19 go
+# from 03:00 to 04:00 rather than from 02:00 to 03:00, as in the patch....
+# I think the patch is correct and the quoted text is wrong; the text in
+# <http://lnt.ma/le-maroc-reculera-dune-heure-le-dimanche-14-juin/> agrees
+# with the patch.
+
+# From Paul Eggert (2015-06-08):
+# For now, guess that later spring and fall transitions will use 2015's rules,
 # and guess that Morocco will switch to standard time at 03:00 the last
-# Saturday before Ramadan, and back to DST at 02:00 the first Saturday after
-# Ramadan.  To implement this, transition dates for 2015 through 2037 were
+# Sunday before Ramadan, and back to DST at 02:00 the first Sunday after
+# Ramadan.  To implement this, transition dates for 2016 through 2037 were
 # determined by running the following program under GNU Emacs 24.3, with the
 # results integrated by hand into the table below.
-# (let ((islamic-year 1436))
+# (let ((islamic-year 1437))
+#   (require 'cal-islam)
 #   (while (< islamic-year 1460)
 #     (let ((a (calendar-islamic-to-absolute (list 9 1 islamic-year)))
 #           (b (calendar-islamic-to-absolute (list 10 1 islamic-year)))
-#           (saturday 6))
-#       (while (/= saturday (mod (setq a (1- a)) 7)))
-#       (while (/= saturday (mod b 7))
+#           (sunday 0))
+#       (while (/= sunday (mod (setq a (1- a)) 7)))
+#       (while (/= sunday (mod b 7))
 #         (setq b (1+ b)))
 #       (setq a (calendar-gregorian-from-absolute a))
 #       (setq b (calendar-gregorian-from-absolute b))
@@ -867,32 +889,30 @@ Rule	Morocco	2012	only	-	Aug	20	 2:00	1:00	S
 Rule	Morocco	2013	only	-	Jul	 7	 3:00	0	-
 Rule	Morocco	2013	only	-	Aug	10	 2:00	1:00	S
 Rule	Morocco	2013	max	-	Oct	lastSun	 3:00	0	-
-Rule	Morocco	2014	2022	-	Mar	lastSun	 2:00	1:00	S
+Rule	Morocco	2014	2021	-	Mar	lastSun	 2:00	1:00	S
 Rule	Morocco	2014	only	-	Jun	28	 3:00	0	-
 Rule	Morocco	2014	only	-	Aug	 2	 2:00	1:00	S
-Rule	Morocco	2015	only	-	Jun	13	 3:00	0	-
-Rule	Morocco	2015	only	-	Jul	18	 2:00	1:00	S
-Rule	Morocco	2016	only	-	Jun	 4	 3:00	0	-
-Rule	Morocco	2016	only	-	Jul	 9	 2:00	1:00	S
-Rule	Morocco	2017	only	-	May	20	 3:00	0	-
-Rule	Morocco	2017	only	-	Jul	 1	 2:00	1:00	S
-Rule	Morocco	2018	only	-	May	12	 3:00	0	-
-Rule	Morocco	2018	only	-	Jun	16	 2:00	1:00	S
-Rule	Morocco	2019	only	-	May	 4	 3:00	0	-
-Rule	Morocco	2019	only	-	Jun	 8	 2:00	1:00	S
-Rule	Morocco	2020	only	-	Apr	18	 3:00	0	-
-Rule	Morocco	2020	only	-	May	30	 2:00	1:00	S
-Rule	Morocco	2021	only	-	Apr	10	 3:00	0	-
-Rule	Morocco	2021	only	-	May	15	 2:00	1:00	S
-Rule	Morocco	2022	only	-	Apr	 2	 3:00	0	-
-Rule	Morocco	2022	only	-	May	 7	 2:00	1:00	S
-Rule	Morocco	2023	only	-	Apr	22	 2:00	1:00	S
-Rule	Morocco	2024	only	-	Apr	13	 2:00	1:00	S
-Rule	Morocco	2025	only	-	Apr	 5	 2:00	1:00	S
+Rule	Morocco	2015	only	-	Jun	14	 3:00	0	-
+Rule	Morocco	2015	only	-	Jul	19	 2:00	1:00	S
+Rule	Morocco	2016	only	-	Jun	 5	 3:00	0	-
+Rule	Morocco	2016	only	-	Jul	10	 2:00	1:00	S
+Rule	Morocco	2017	only	-	May	21	 3:00	0	-
+Rule	Morocco	2017	only	-	Jul	 2	 2:00	1:00	S
+Rule	Morocco	2018	only	-	May	13	 3:00	0	-
+Rule	Morocco	2018	only	-	Jun	17	 2:00	1:00	S
+Rule	Morocco	2019	only	-	May	 5	 3:00	0	-
+Rule	Morocco	2019	only	-	Jun	 9	 2:00	1:00	S
+Rule	Morocco	2020	only	-	Apr	19	 3:00	0	-
+Rule	Morocco	2020	only	-	May	24	 2:00	1:00	S
+Rule	Morocco	2021	only	-	Apr	11	 3:00	0	-
+Rule	Morocco	2021	only	-	May	16	 2:00	1:00	S
+Rule	Morocco	2022	only	-	May	 8	 2:00	1:00	S
+Rule	Morocco	2023	only	-	Apr	23	 2:00	1:00	S
+Rule	Morocco	2024	only	-	Apr	14	 2:00	1:00	S
+Rule	Morocco	2025	only	-	Apr	 6	 2:00	1:00	S
 Rule	Morocco	2026	max	-	Mar	lastSun	 2:00	1:00	S
-Rule	Morocco	2035	only	-	Oct	27	 3:00	0	-
-Rule	Morocco	2036	only	-	Oct	18	 3:00	0	-
-Rule	Morocco	2037	only	-	Oct	10	 3:00	0	-
+Rule	Morocco	2036	only	-	Oct	19	 3:00	0	-
+Rule	Morocco	2037	only	-	Oct	 4	 3:00	0	-
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Africa/Casablanca	-0:30:20 -	LMT	1913 Oct 26
