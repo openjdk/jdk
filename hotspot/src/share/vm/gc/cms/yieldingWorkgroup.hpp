@@ -29,6 +29,7 @@
 #include "utilities/macros.hpp"
 
 // Forward declarations
+class YieldingFlexibleGangTask;
 class YieldingFlexibleWorkGang;
 
 // Status of tasks
@@ -43,13 +44,32 @@ enum Status {
     COMPLETED
 };
 
+class YieldingWorkData: public StackObj {
+  // This would be a struct, but I want accessor methods.
+private:
+  AbstractGangTask* _task;
+  int               _sequence_number;
+public:
+  // Constructor and destructor
+  YieldingWorkData() : _task(NULL), _sequence_number(0) {}
+  ~YieldingWorkData() {}
+
+  // Accessors and modifiers
+  AbstractGangTask* task()               const { return _task; }
+  void set_task(AbstractGangTask* value)       { _task = value; }
+  int sequence_number()                  const { return _sequence_number; }
+  void set_sequence_number(int value)          { _sequence_number = value; }
+
+  YieldingFlexibleGangTask* yf_task()    const {
+    return (YieldingFlexibleGangTask*)_task;
+  }
+};
+
 // Class YieldingFlexibleGangWorker:
 //   Several instances of this class run in parallel as workers for a gang.
-class YieldingFlexibleGangWorker: public GangWorker {
+class YieldingFlexibleGangWorker: public AbstractGangWorker {
 public:
-  // Ctor
-  YieldingFlexibleGangWorker(AbstractWorkGang* gang, int id) :
-    GangWorker(gang, id) { }
+  YieldingFlexibleGangWorker(YieldingFlexibleWorkGang* gang, int id);
 
 public:
   YieldingFlexibleWorkGang* yf_gang() const
@@ -108,9 +128,6 @@ protected:
 
   friend class YieldingFlexibleWorkGang;
   friend class YieldingFlexibleGangWorker;
-  NOT_PRODUCT(virtual bool is_YieldingFlexibleGang_task() const {
-    return true;
-  })
 
   void set_status(Status s) {
     _status = s;
@@ -160,7 +177,7 @@ public:
 // YieldingGangWorkers, and provides infrastructure
 // supporting yielding to the "GangOverseer",
 // being the thread that orchestrates the WorkGang via run_task().
-class YieldingFlexibleWorkGang: public FlexibleWorkGang {
+class YieldingFlexibleWorkGang: public AbstractWorkGang {
   // Here's the public interface to this class.
 public:
   // Constructor and destructor.
@@ -168,12 +185,10 @@ public:
                            bool are_GC_task_threads);
 
   YieldingFlexibleGangTask* yielding_task() const {
-    assert(task() == NULL || task()->is_YieldingFlexibleGang_task(),
-           "Incorrect cast");
-    return (YieldingFlexibleGangTask*)task();
+    return task();
   }
   // Allocate a worker and return a pointer to it.
-  GangWorker* allocate_worker(uint which);
+  AbstractGangWorker* allocate_worker(uint which);
 
   // Run a task; returns when the task is done, or the workers yield,
   // or the task is aborted.
@@ -216,6 +231,42 @@ public:
 private:
   friend class YieldingFlexibleGangWorker;
   void reset(); // NYI
+
+
+  // The monitor which protects these data,
+  // and notifies of changes in it.
+  Monitor*   _monitor;
+  // Accessors for fields
+  Monitor* monitor() const {
+    return _monitor;
+  }
+
+  // The number of started workers.
+  uint _started_workers;
+  // The number of finished workers.
+  uint _finished_workers;
+
+  uint started_workers() const {
+    return _started_workers;
+  }
+  uint finished_workers() const {
+    return _finished_workers;
+  }
+
+  // A sequence number for the current task.
+  int _sequence_number;
+  int sequence_number() const {
+    return _sequence_number;
+  }
+
+  YieldingFlexibleGangTask* _task;
+  YieldingFlexibleGangTask* task() const {
+    return _task;
+  }
+
+  void internal_worker_poll(YieldingWorkData* data) const;
+  void internal_note_start();
+  void internal_note_finish();
 };
 
 #endif // SHARE_VM_GC_CMS_YIELDINGWORKGROUP_HPP

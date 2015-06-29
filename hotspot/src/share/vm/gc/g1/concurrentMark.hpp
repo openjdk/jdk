@@ -451,7 +451,7 @@ protected:
 
   double*   _accum_task_vtime;   // Accumulated task vtime
 
-  FlexibleWorkGang* _parallel_workers;
+  WorkGang* _parallel_workers;
 
   ForceOverflowSettings _force_overflow_conc;
   ForceOverflowSettings _force_overflow_stw;
