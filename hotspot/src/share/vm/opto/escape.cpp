@@ -962,6 +962,7 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
                  (strcmp(call->as_CallLeaf()->_name, "g1_wb_pre")  == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "g1_wb_post") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "updateBytesCRC32") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "updateBytesCRC32C") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "aescrypt_encryptBlock") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "aescrypt_decryptBlock") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "cipherBlockChaining_encryptAESCrypt") == 0 ||

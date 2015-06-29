@@ -199,6 +199,12 @@ void VM_Version::get_processor_features() {
     UseCRC32Intrinsics = true;
   }
 
+  if (UseCRC32CIntrinsics) {
+    if (!FLAG_IS_DEFAULT(UseCRC32CIntrinsics))
+      warning("CRC32C intrinsics are not available on this CPU");
+    FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
+  }
+
   if (auxv & (HWCAP_SHA1 | HWCAP_SHA2)) {
     if (FLAG_IS_DEFAULT(UseSHA)) {
       FLAG_SET_DEFAULT(UseSHA, true);
