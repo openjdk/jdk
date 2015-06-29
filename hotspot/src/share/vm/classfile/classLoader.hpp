@@ -53,7 +53,6 @@ class ClassPathEntry: public CHeapObj<mtClass> {
   virtual bool is_jar_file() = 0;
   virtual const char* name() = 0;
   virtual ImageFileReader* image() = 0;
-  virtual bool is_lazy();
   // Constructor
   ClassPathEntry();
   // Attempt to locate file_name through this class path entry.
@@ -113,30 +112,6 @@ class ClassPathZipEntry: public ClassPathEntry {
 };
 
 
-// For lazier loading of boot class path entries
-class LazyClassPathEntry: public ClassPathEntry {
- private:
-  const char* _path; // dir or file
-  struct stat _st;
-  bool _has_error;
-  bool _throw_exception;
-  volatile ClassPathEntry* _resolved_entry;
-  ClassPathEntry* resolve_entry(TRAPS);
- public:
-  bool is_jar_file();
-  const char* name()       { return _path; }
-  ImageFileReader* image() { return NULL; }
-  LazyClassPathEntry(const char* path, const struct stat* st, bool throw_exception);
-  virtual ~LazyClassPathEntry();
-  u1* open_entry(const char* name, jint* filesize, bool nul_terminate, TRAPS);
-
-  ClassFileStream* open_stream(const char* name, TRAPS);
-  virtual bool is_lazy();
-  // Debugging
-  NOT_PRODUCT(void compile_the_world(Handle loader, TRAPS);)
-  NOT_PRODUCT(bool is_jrt();)
-};
-
 // For java image files
 class ClassPathImageEntry: public ClassPathEntry {
 private:
@@ -168,7 +143,6 @@ class ClassLoader: AllStatic {
     package_hash_table_size = 31  // Number of buckets
   };
  protected:
-  friend class LazyClassPathEntry;
 
   // Performance counters
   static PerfCounter* _perf_accumulated_time;
@@ -233,7 +207,7 @@ class ClassLoader: AllStatic {
 
   static void load_zip_library();
   static ClassPathEntry* create_class_path_entry(const char *path, const struct stat* st,
-                                                 bool lazy, bool throw_exception, TRAPS);
+                                                 bool throw_exception, TRAPS);
 
   // Canonicalizes path names, so strcmp will work properly. This is mainly
   // to avoid confusing the zip library
