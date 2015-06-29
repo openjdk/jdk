@@ -275,6 +275,7 @@ static ObsoleteFlag obsolete_jvm_flags[] = {
   { "AdaptiveSizePausePolicy",       JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "ParallelGCRetainPLAB",          JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "ThreadSafetyMargin",            JDK_Version::jdk(9), JDK_Version::jdk(10) },
+  { "LazyBootClassLoader",           JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { NULL, JDK_Version(0), JDK_Version(0) }
 };
 

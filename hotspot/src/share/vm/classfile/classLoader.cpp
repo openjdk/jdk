@@ -156,10 +156,6 @@ ClassPathEntry::ClassPathEntry() {
 }
 
 
-bool ClassPathEntry::is_lazy() {
-  return false;
-}
-
 ClassPathDirEntry::ClassPathDirEntry(const char* dir) : ClassPathEntry() {
   char* copy = NEW_C_HEAP_ARRAY(char, strlen(dir)+1, mtClass);
   strcpy(copy, dir);
@@ -273,80 +269,6 @@ void ClassPathZipEntry::contents_do(void f(const char* name, void* context), voi
     jzentry * ze = ((*GetNextEntry)(_zip, n));
     if (ze == NULL) break;
     (*f)(ze->name, context);
-  }
-}
-
-LazyClassPathEntry::LazyClassPathEntry(const char* path, const struct stat* st, bool throw_exception) : ClassPathEntry() {
-  _path = os::strdup_check_oom(path);
-  _st = *st;
-  _resolved_entry = NULL;
-  _has_error = false;
-  _throw_exception = throw_exception;
-}
-
-LazyClassPathEntry::~LazyClassPathEntry() {
-  os::free((void*)_path);
-}
-
-bool LazyClassPathEntry::is_jar_file() {
-  size_t len = strlen(_path);
-  if (len < 4 || strcmp(_path + len - 4, ".jar") != 0) return false;
-  return ((_st.st_mode & S_IFREG) == S_IFREG);
-}
-
-ClassPathEntry* LazyClassPathEntry::resolve_entry(TRAPS) {
-  if (_resolved_entry != NULL) {
-    return (ClassPathEntry*) _resolved_entry;
-  }
-  ClassPathEntry* new_entry = NULL;
-  new_entry = ClassLoader::create_class_path_entry(_path, &_st, false, _throw_exception, CHECK_NULL);
-  if (!_throw_exception && new_entry == NULL) {
-    assert(!HAS_PENDING_EXCEPTION, "must be");
-    return NULL;
-  }
-  {
-    ThreadCritical tc;
-    if (_resolved_entry == NULL) {
-      _resolved_entry = new_entry;
-      return new_entry;
-    }
-  }
-  assert(_resolved_entry != NULL, "bug in MT-safe resolution logic");
-  delete new_entry;
-  return (ClassPathEntry*) _resolved_entry;
-}
-
-ClassFileStream* LazyClassPathEntry::open_stream(const char* name, TRAPS) {
-  if (_has_error) {
-    return NULL;
-  }
-  ClassPathEntry* cpe = resolve_entry(THREAD);
-  if (cpe == NULL) {
-    _has_error = true;
-    return NULL;
-  } else {
-    return cpe->open_stream(name, THREAD);
-  }
-}
-
-bool LazyClassPathEntry::is_lazy() {
-  return true;
-}
-
-u1* LazyClassPathEntry::open_entry(const char* name, jint* filesize, bool nul_terminate, TRAPS) {
-  if (_has_error) {
-    return NULL;
-  }
-  ClassPathEntry* cpe = resolve_entry(THREAD);
-  if (cpe == NULL) {
-    _has_error = true;
-    return NULL;
-  } else if (cpe->is_jar_file()) {
-    return ((ClassPathZipEntry*)cpe)->open_entry(name, filesize, nul_terminate,THREAD);
-  } else {
-    ShouldNotReachHere();
-    *filesize = 0;
-    return NULL;
   }
 }
 
@@ -564,11 +486,8 @@ void ClassLoader::setup_search_path(const char *class_path) {
 }
 
 ClassPathEntry* ClassLoader::create_class_path_entry(const char *path, const struct stat* st,
-                                                     bool lazy, bool throw_exception, TRAPS) {
+                                                     bool throw_exception, TRAPS) {
   JavaThread* thread = JavaThread::current();
-  if (lazy) {
-    return new LazyClassPathEntry(path, st, throw_exception);
-  }
   ClassPathEntry* new_entry = NULL;
   if ((st->st_mode & S_IFREG) == S_IFREG) {
     // Regular file, should be a zip or image file
@@ -586,33 +505,34 @@ ClassPathEntry* ClassLoader::create_class_path_entry(const char *path, const str
     if (image != NULL) {
       new_entry = new ClassPathImageEntry(image);
     } else {
-    char* error_msg = NULL;
-    jzfile* zip;
-    {
-      // enable call to C land
-      ThreadToNativeFromVM ttn(thread);
-      HandleMark hm(thread);
-      zip = (*ZipOpen)(canonical_path, &error_msg);
-    }
-    if (zip != NULL && error_msg == NULL) {
-      new_entry = new ClassPathZipEntry(zip, path);
-    } else {
-      ResourceMark rm(thread);
-      char *msg;
-      if (error_msg == NULL) {
-        msg = NEW_RESOURCE_ARRAY(char, strlen(path) + 128); ;
-        jio_snprintf(msg, strlen(path) + 127, "error in opening JAR file %s", path);
-      } else {
-        int len = (int)(strlen(path) + strlen(error_msg) + 128);
-        msg = NEW_RESOURCE_ARRAY(char, len); ;
-        jio_snprintf(msg, len - 1, "error in opening JAR file <%s> %s", error_msg, path);
+      char* error_msg = NULL;
+      jzfile* zip;
+      {
+        // enable call to C land
+        ThreadToNativeFromVM ttn(thread);
+        HandleMark hm(thread);
+        zip = (*ZipOpen)(canonical_path, &error_msg);
       }
-      if (throw_exception) {
-        THROW_MSG_(vmSymbols::java_lang_ClassNotFoundException(), msg, NULL);
+      if (zip != NULL && error_msg == NULL) {
+        new_entry = new ClassPathZipEntry(zip, path);
       } else {
-        return NULL;
+        ResourceMark rm(thread);
+        char *msg;
+        if (error_msg == NULL) {
+          msg = NEW_RESOURCE_ARRAY(char, strlen(path) + 128); ;
+          jio_snprintf(msg, strlen(path) + 127, "error in opening JAR file %s", path);
+        } else {
+          int len = (int)(strlen(path) + strlen(error_msg) + 128);
+          msg = NEW_RESOURCE_ARRAY(char, len); ;
+          jio_snprintf(msg, len - 1, "error in opening JAR file <%s> %s", error_msg, path);
+        }
+        // Don't complain about bad jar files added via -Xbootclasspath/a:.
+        if (throw_exception && is_init_completed()) {
+          THROW_MSG_(vmSymbols::java_lang_ClassNotFoundException(), msg, NULL);
+        } else {
+          return NULL;
+        }
       }
-    }
     }
     if (TraceClassLoading || TraceClassPaths) {
       tty->print_cr("[Opened %s]", path);
@@ -690,7 +610,7 @@ bool ClassLoader::update_class_path_entry_list(const char *path,
     // File or directory found
     ClassPathEntry* new_entry = NULL;
     Thread* THREAD = Thread::current();
-    new_entry = create_class_path_entry(path, &st, LazyBootClassLoader, throw_exception, CHECK_(false));
+    new_entry = create_class_path_entry(path, &st, throw_exception, CHECK_(false));
     if (new_entry == NULL) {
       return false;
     }
@@ -1341,19 +1261,6 @@ void ClassPathZipEntry::compile_the_world(Handle loader, TRAPS) {
 
 bool ClassPathZipEntry::is_jrt() {
   return false;
-}
-
-void LazyClassPathEntry::compile_the_world(Handle loader, TRAPS) {
-  ClassPathEntry* cpe = resolve_entry(THREAD);
-  if (cpe != NULL) {
-    cpe->compile_the_world(loader, CHECK);
-  }
-}
-
-bool LazyClassPathEntry::is_jrt() {
-  Thread* THREAD = Thread::current();
-  ClassPathEntry* cpe = resolve_entry(THREAD);
-  return (cpe != NULL) ? cpe->is_jar_file() : false;
 }
 
 void ClassLoader::compile_the_world() {
