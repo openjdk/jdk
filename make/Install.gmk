@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ default: install
 include $(SPEC)
 
 BINARIES := $(notdir $(wildcard $(JDK_IMAGE_DIR)/bin/*))
-INSTALLDIR := openjdk-$(RELEASE)
+INSTALLDIR := openjdk-$(VERSION_SHORT)
 
 # Install the jdk image, in a very crude way. Not taking into
 # account, how to install properly on macosx or windows etc.
