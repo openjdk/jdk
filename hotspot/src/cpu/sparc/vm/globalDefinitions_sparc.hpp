@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,6 @@
 const int BytesPerInstWord = 4;
 
 const int StackAlignmentInBytes = (2*wordSize);
-
-// Indicates whether the C calling conventions require that
-// 32-bit integer argument values are properly extended to 64 bits.
-// If set, SharedRuntime::c_calling_convention() must adapt
-// signatures accordingly.
-const bool CCallingConventionRequiresIntsAsLongs = false;
 
 #define SUPPORTS_NATIVE_CX8
 
