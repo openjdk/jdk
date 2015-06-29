@@ -47,7 +47,7 @@ public class Symbol extends VMObject {
     Type type  = db.lookupType("Symbol");
     length     = type.getCIntegerField("_length");
     baseOffset = type.getField("_body").getOffset();
-    idHash = type.getCIntegerField("_identity_hash");
+    idHash = type.getJShortField("_identity_hash");
   }
 
   // Format:
@@ -81,9 +81,9 @@ public class Symbol extends VMObject {
     return addr.getJByteAt(baseOffset + index);
   }
 
-  private static CIntegerField idHash;
+  private static JShortField idHash;
 
-  public int identityHash() { return     (int)idHash.getValue(this.addr); }
+  public short identityHash() { return     (short)idHash.getValue(this.addr); }
 
   public boolean equals(byte[] modUTF8Chars) {
     int l = (int) getLength();
