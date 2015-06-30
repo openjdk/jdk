@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,12 @@ package sun.security.jgss;
 
 import java.security.Provider;
 import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.security.NoSuchAlgorithmException;
+import java.security.InvalidParameterException;
+import java.security.ProviderException;
+import sun.security.jgss.krb5.Krb5MechFactory;
+import sun.security.jgss.spnego.SpNegoMechFactory;
 
 /**
  * Defines the Sun JGSS provider.
@@ -58,23 +64,54 @@ public final class SunProvider extends Provider {
         "(Kerberos v5, SPNEGO)";
     //  "(Kerberos v5, Dummy GSS-API Mechanism)";
 
+    private static final class ProviderService extends Provider.Service {
+        ProviderService(Provider p, String type, String algo, String cn) {
+            super(p, type, algo, cn, null, null);
+        }
+
+        @Override
+        public Object newInstance(Object ctrParamObj)
+            throws NoSuchAlgorithmException {
+            String type = getType();
+            if (ctrParamObj != null) {
+                throw new InvalidParameterException
+                    ("constructorParameter not used with " + type +
+                     " engines");
+            }
+            String algo = getAlgorithm();
+            try {
+                if (type.equals("GssApiMechanism")) {
+                    if (algo.equals("1.2.840.113554.1.2.2")) {
+                        return new Krb5MechFactory();
+                    } else if (algo.equals("1.3.6.1.5.5.2")) {
+                        return new SpNegoMechFactory();
+                    }
+                }
+            } catch (Exception ex) {
+                throw new NoSuchAlgorithmException
+                    ("Error constructing " + type + " for " +
+                    algo + " using SunJGSS", ex);
+            }
+            throw new ProviderException("No impl for " + algo +
+                " " + type);
+        }
+    }
+
     public static final SunProvider INSTANCE = new SunProvider();
 
     public SunProvider() {
         /* We are the Sun JGSS provider */
         super("SunJGSS", 1.9d, INFO);
 
-        AccessController.doPrivileged(
-                        new java.security.PrivilegedAction<Void>() {
+        final Provider p = this;
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
-                put("GssApiMechanism.1.2.840.113554.1.2.2",
-                    "sun.security.jgss.krb5.Krb5MechFactory");
-                put("GssApiMechanism.1.3.6.1.5.5.2",
-                    "sun.security.jgss.spnego.SpNegoMechFactory");
-                /*
-                  put("GssApiMechanism.1.3.6.1.4.1.42.2.26.1.2",
-                  "sun.security.jgss.dummy.DummyMechFactory");
-                */
+                putService(new ProviderService(p, "GssApiMechanism",
+                           "1.2.840.113554.1.2.2",
+                           "sun.security.jgss.krb5.Krb5MechFactory"));
+                putService(new ProviderService(p, "GssApiMechanism",
+                           "1.3.6.1.5.5.2",
+                           "sun.security.jgss.spnego.SpNegoMechFactory"));
                 return null;
             }
         });

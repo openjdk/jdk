@@ -1659,29 +1659,36 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_RSAPublicKey_getModulus
 int convertToLittleEndian(JNIEnv *env, jbyteArray source, jbyte* destination,
     int destinationLength) {
 
-    int count = 0;
     int sourceLength = env->GetArrayLength(source);
-
-    if (sourceLength < destinationLength) {
-        return -1;
-    }
 
     jbyte* sourceBytes = env->GetByteArrayElements(source, 0);
     if (sourceBytes == NULL) {
         return -1;
     }
 
+    int copyLen = sourceLength;
+    if (sourceLength > destinationLength) {
+        // source might include an extra sign byte
+        if (sourceLength == destinationLength + 1 && sourceBytes[0] == 0) {
+            copyLen--;
+        } else {
+            return -1;
+        }
+    }
+
     // Copy bytes from the end of the source array to the beginning of the
     // destination array (until the destination array is full).
     // This ensures that the sign byte from the source array will be excluded.
-    for (int i = 0; i < destinationLength; i++) {
-        destination[i] = sourceBytes[sourceLength - i - 1];
-        count++;
+    for (int i = 0; i < copyLen; i++) {
+        destination[i] = sourceBytes[sourceLength - 1 - i];
     }
-    if (sourceBytes)
-        env->ReleaseByteArrayElements(source, sourceBytes, JNI_ABORT);
+    if (copyLen < destinationLength) {
+        memset(destination + copyLen, 0, destinationLength - copyLen);
+    }
 
-    return count;
+    env->ReleaseByteArrayElements(source, sourceBytes, JNI_ABORT);
+
+    return destinationLength;
 }
 
 /*
