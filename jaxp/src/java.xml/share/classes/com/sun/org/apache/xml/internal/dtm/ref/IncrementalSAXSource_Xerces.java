@@ -87,6 +87,9 @@ public class IncrementalSAXSource_Xerces
         {
                 try
                 {
+                        // This should be cleaned up and the use of reflection
+                        // removed - see JDK-8129880
+
                         // Xerces-2 incremental parsing support (as of Beta 3)
                         // ContentHandlers still get set on fIncrementalParser (to get
                         // conversion from XNI events to SAX events), but
