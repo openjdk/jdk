@@ -102,18 +102,23 @@
 // type without virtual functions.
 class ClassLoaderData;
 
-class Symbol : public MetaspaceObj {
-  friend class VMStructs;
-  friend class SymbolTable;
-  friend class MoveSymbols;
-
- private:
+// We separate the fields in SymbolBase from Symbol::_body so that
+// Symbol::size(int) can correctly calculate the space needed.
+class SymbolBase : public MetaspaceObj {
+ public:
   ATOMIC_SHORT_PAIR(
     volatile short _refcount,  // needs atomic operation
     unsigned short _length     // number of UTF8 characters in the symbol (does not need atomic op)
   );
-  short _identity_hash;
-  jbyte _body[2];
+  int            _identity_hash;
+};
+
+class Symbol : private SymbolBase {
+  friend class VMStructs;
+  friend class SymbolTable;
+  friend class MoveSymbols;
+ private:
+  jbyte _body[1];
 
   enum {
     // max_symbol_length is constrained by type of _length
@@ -121,7 +126,7 @@ class Symbol : public MetaspaceObj {
   };
 
   static int size(int length) {
-    size_t sz = heap_word_size(sizeof(Symbol) + (length > 2 ? length - 2 : 0));
+    size_t sz = heap_word_size(sizeof(SymbolBase) + (length > 0 ? length : 0));
     return align_object_size(sz);
   }
 
@@ -145,11 +150,8 @@ class Symbol : public MetaspaceObj {
 
   // Returns the largest size symbol we can safely hold.
   static int max_length()   { return max_symbol_length; }
-  unsigned identity_hash() {
-    unsigned addr_bits = (unsigned)((uintptr_t)this >> (LogMinObjAlignmentInBytes + 3));
-    return (unsigned)_identity_hash |
-           ((addr_bits ^ (_length << 8) ^ (( _body[0] << 8) | _body[1])) << 16);
-  }
+
+  int identity_hash()       { return _identity_hash; }
 
   // For symbol table alternate hashing
   unsigned int new_hash(juint seed);
