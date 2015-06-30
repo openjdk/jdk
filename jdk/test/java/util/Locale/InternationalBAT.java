@@ -22,10 +22,11 @@
  */
 /*
  * @test
- * @bug 4449637
+ * @bug 4449637 8008577
  * @summary Basic acceptance test for international J2RE. Verifies that the
  * most important locale data and character converters exist and are
  * minimally functional.
+ * @run main/othervm -Djava.locale.providers=JRE,SPI InternationalBAT
  */
 
 import java.io.UnsupportedEncodingException;

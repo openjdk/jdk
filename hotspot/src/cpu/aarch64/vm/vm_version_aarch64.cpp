@@ -228,6 +228,9 @@ void VM_Version::get_processor_features() {
       warning("SHA512 instruction (for SHA-384 and SHA-512) is not available on this CPU.");
       FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
     }
+    if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) {
+      FLAG_SET_DEFAULT(UseSHA, false);
+    }
   }
 
   // This machine allows unaligned memory accesses

@@ -26,9 +26,7 @@
 package javax.xml.parsers;
 
 import java.security.*;
-import java.net.*;
 import java.io.*;
-import java.util.*;
 
 /**
  * This class is duplicated for each JAXP subpackage so keep it in sync.
@@ -79,23 +77,6 @@ class SecuritySupport  {
         } catch (PrivilegedActionException e) {
             throw (FileNotFoundException)e.getException();
         }
-    }
-
-    InputStream getResourceAsStream(final ClassLoader cl,
-                                           final String name)
-    {
-        return (InputStream)
-            AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
-                    InputStream ris;
-                    if (cl == null) {
-                        ris = Object.class.getResourceAsStream(name);
-                    } else {
-                        ris = cl.getResourceAsStream(name);
-                    }
-                    return ris;
-                }
-            });
     }
 
     boolean doesFileExist(final File f) {
