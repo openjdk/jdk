@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2014 Unicode, Inc.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+For terms of use, see http://www.unicode.org/copyright.html
+-->
+<ldml>
+	<identity>
+		<version number="$Revision: 10819 $"/>
+		<generation date="$Date: 2014-08-14 22:53:08 -0500 (Thu, 14 Aug 2014) $"/>
+		<language type="en"/>
+		<territory type="GI"/>
+	</identity>
+	<numbers>
+		<currencies>
+			<currency type="GBP">
+				<symbol>GB£</symbol>
+			</currency>
+			<currency type="GIP">
+				<symbol>£</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+</ldml>
+

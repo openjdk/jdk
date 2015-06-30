@@ -1,0 +1,565 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE supplementalData SYSTEM "../../common/dtd/ldmlSupplemental.dtd">
+<!--
+Copyright © 1991-2014 Unicode, Inc.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+For terms of use, see http://www.unicode.org/copyright.html
+-->
+
+<supplementalData>
+	<version number="$Revision: 11253 $"/>
+	<generation date="$Date: 2015-02-18 21:52:56 -0600 (Wed, 18 Feb 2015) $"/>
+	<coverageLevels>
+		<approvalRequirements>
+			<!--  "high bar" items -->
+			<approvalRequirement votes="20" locales="Cldr:modern" paths="//ldml/numbers/symbols[^/]++/(decimal|group|(plus|minus)Sign)"/>
+			<approvalRequirement votes="20" locales="Cldr:modern" paths="//ldml/numbers/decimalFormats[^/]++/decimalFormatLength/decimalFormat\[@type=.standard.\]/pattern\[@type=.standard.\]"/>
+			<approvalRequirement votes="20" locales="*" paths="//ldml/numbers/(defaultNumberingSystem|otherNumberingSystems.*)"/>
+			<approvalRequirement votes="20" locales="*" paths="//ldml/characters/exemplarCharacters(\[@type=.(auxiliary|index).\])?"/>
+			<approvalRequirement votes="20" locales="*" paths="//ldml/numbers/minimumGroupingDigits"/>
+			<approvalRequirement votes="20" locales="*" paths="//ldml/numbers/symbols[^/]++/timeSeparator"/>
+			<approvalRequirement votes="20" locales="*" paths="//ldml/numbers/currencies/currency\[@type=.([A-Z]{3}).\]/symbol(\[@alt=.narrow.\])?"/>
+			<approvalRequirement votes="20" locales="ar ca cs da de el es fi fr he hi hr hu it ja ko nb nl pl pt pt_PT ro ru sk sl sr sv th tr uk vi zh zh_Hant" 
+			   paths="//ldml/dates/calendars/calendar\[@type=.gregorian.\]/(days|months).*"/>
+			<approvalRequirement votes="20" locales="ar ca cs da de el es fi fr he hi hr hu it ja ko nb nl pl pt pt_PT ro ru sk sl sr sv th tr uk vi zh zh_Hant" 
+			   paths="//ldml/dates/calendars/calendar\[@type=.gregorian.\]/(date|time)Formats/.*"/>
+			<!--  established locales - http://cldr.unicode.org/index/process#TOC-Draft-Status-of-Optimal-Field-Value -->
+			<approvalRequirement votes="8" locales="ar ca cs da de el es fi fr he hi hr hu it ja ko nb nl pl pt pt_PT ro ru sk sl sr sv th tr uk vi zh zh_Hant" paths=""/>
+			<!--  all other items -->
+			<approvalRequirement votes="4" locales="*" paths=""/>
+		</approvalRequirements>
+		
+		<coverageVariable key="%acctPattern" value="[@type='accounting']/pattern[@type='standard']"/>
+		<coverageVariable key="%allPlurals" value="(zero|one|two|few|many|other)"/>
+		<coverageVariable key="%allWidths" value="(wide|abbreviated|narrow)"/>
+		<coverageVariable key="%ampmTypes" value="(am|pm|noon)"/>
+		<coverageVariable key="%arabextLanguages" value="(fa|pa|ps|uz)"/>
+		<coverageVariable key="%calendarType80" value="(buddhist|chinese|dangi|ethiopic|hebrew|islamic|japanese|persian|roc)"/>
+		<coverageVariable key="%calendarType100" value="(buddhist|chinese|coptic|dangi|ethiopic(-amete-alem)?|hebrew|indian|islamic(-(civil|rgsa|tbla|umalqura))?|japanese|persian|roc)"/>
+		<coverageVariable key="%calendarType100ForDateFormats" value="(buddhist|chinese|coptic|dangi|ethiopic|hebrew|indian|islamic|japanese|persian|roc)"/>
+		<coverageVariable key="%calendarTypeUniqueNonGregoMonths" value="(chinese|coptic|dangi|ethiopic|hebrew|indian|islamic|persian)"/>
+		<coverageVariable key="%CJK_Languages" value="(ja|ko|zh)"/>
+		<coverageVariable key="%chineseCalendarTerritories" value="(CN|CX|HK|MO|SG|TW)"/>
+		<coverageVariable key="%collationType80" value="(ducet|search)"/>
+		<coverageVariable key="%collationType80ForTopLangs" value="(buddhist|chinese|hebrew|islamic|islamic-civil|japanese)"/>
+		<coverageVariable key="%collationType80TopLangs" value="(ar|de|en|es|fr|it|ja|ko|nl|pl|pt|ru|th|tr|zh)"/>
+		<coverageVariable key="%collationType100" value="(big5han|dictionary|eor|gb2312han|phonebook|phonetic|pinyin|reformed|searchjl|stroke|traditional|unihan|zhuyin)"/>
+		<coverageVariable key="%collationAlternateValues" value="(non-ignorable|shifted)"/>
+		<coverageVariable key="%collationCases" value="(upper|lower)"/>
+		<coverageVariable key="%collationStrengths" value="(primary|secondary|tertiary|quaternary|identical)"/>
+		<coverageVariable key="%collationYesNoOptions" value="(colBackwards|colCaseFirst|colCaseLevel|colHiraganaQuaternary|colNormalization|colNumeric)"/>
+		<coverageVariable key="%compactDecimalTypes" value="(10{3,14})"/>
+		<coverageVariable key="%contextTypes" value="(format|stand-alone)"/>
+		<coverageVariable key="%currency30" value="(XXX)"/>
+		<coverageVariable key="%currency40" value="(BRL|CNY|EUR|GBP|INR|JPY|RUB|USD)"/>
+		<coverageVariable key="%currency60" value="(AUD|CAD|CHF|DKK|HKD|IDR|KRW|MXN|NOK|PLN|SAR|SEK|THB|TRY|TWD|ZAR)"/>
+		<coverageVariable key="%currency60_EU" value="(CZK|HUF)"/>
+		<coverageVariable key="%currency80" value="(AED|AFN|ALL|AMD|ANG|AOA|ARS|AWG|AZN|BAM|BBD|BDT|BGN|BHD|BIF|BMD|BND|BOB|BSD|BTN|BWP|BYR|BZD|CDF|CLP|COP|CRC|CUC|CUP|CVE|CZK|DJF|DOP|DZD|EGP|ERN|ETB|FJD|FKP|GEL|GHS|GIP|GMD|GNF|GTQ|GYD|HNL|HRK|HTG|HUF|ILS|IQD|IRR|ISK|JMD|JOD|KES|KGS|KHR|KMF|KPW|KWD|KYD|KZT|LAK|LBP|LKR|LRD|LYD|MAD|MDL|MGA|MKD|MMK|MNT|MOP|MRO|MUR|MVR|MWK|MYR|MZN|NAD|NGN|NIO|NPR|NZD|OMR|PAB|PEN|PGK|PHP|PKR|PYG|QAR|RON|RSD|RWF|SBD|SCR|SDG|SGD|SHP|SLL|SOS|SRD|SSP|STD|SYP|SZL|TJS|TMT|TND|TOP|TTD|TZS|UAH|UGX|UYU|UZS|VEF|VND|VUV|WST|XCD|XAF|XOF|XPF|YER|ZMW)"/>
+		<coverageVariable key="%currency100" value="(AFA|ADP|ALK|AO[KNR]|AR[ALMP]|ATS|AZM|BA[DN]|BE[CFL]|BG[LM]|BGO|BO[LPV]|BR[BCENRZ]|BUK|BYB|CH[EW]|CL[EF]|CNX|COU|CS[DK]|CYP|DDM|DEM|EC[SV]|EEK|ES[ABP]|FIM|FRF|GEK|GHC|GNS|GQE|GRD|GW[EP]|HRD|IEP|IL[PR]|ISJ|ITL|KR[HO]|LSL|LT[LT]|LU[CFL]|LV[LR]|MAF|MCF|MDC|MGF|MKN|MLF|MT[LP]|MVP|MX[PV]|MZ[EM]|NIC|NLG|PE[IS]|PLZ|PTE|RHD|ROL|RUR|SD[DP]|SIT|SKK|SRG|SUR|SVC|TJR|TMM|TPE|TRL|UAK|UGS|US[NS]|UY[IP]|VEB|VNN|XA[GU]|XB[ABCD]|XDR|XEU|XF[OU]|XP[DT]|XRE|XSU|XTS|XUA|YDD|YU[DMNR]|ZAL|ZMK|ZR[NZ]|ZW[DLR])"/>
+		<coverageVariable key="%cyclicNameTypes" value="([1-9]?[0-9])"/>
+		<coverageVariable key="%dateFormatItems" value="((d|Ed|EEEEd)|((Gy|y|yyyy)?(M|Md|MEd|MEEEEd|MMM|MMMd|MMMEd|MMMEEEEd|MMMM|MMMMd|MMMMEd|MMMMEEEEd))|((Gy|y|yyyy)(QQQ|QQQQ)?))"/>
+		<coverageVariable key="%dateFormatItemsAll" value="(G{0,5}y{0,4}Q{0,4}(M|L){0,5}(E|c){0,5}d{0,2}(H|h){0,2}m{0,2}s{0,2}(v|z|Z){0,4})"/>
+		<coverageVariable key="%dateTimeFormatLengths" value="(full|long|medium|short)"/>
+		<coverageVariable key="%fullMedium" value="(full|medium)"/>
+		<coverageVariable key="%fullShort" value="(full|short)"/>
+		<coverageVariable key="%futurePast" value="(future|past)"/>
+		<coverageVariable key="%timeFormatItems" value="(E?(H|h)(ms?)?|ms)"/>
+		<coverageVariable key="%dayFieldTypes" value="(era|year|year-short|year-narrow|quarter|quarter-short|quarter-narrow|month|month-short|month-narrow|week|week-short|week-narrow|day|day-short|day-narrow|weekday|hour|hour-short|hour-narrow|minute|minute-short|minute-narrow|second|second-short|second-narrow|dayperiod|zone)"/>
+		<coverageVariable key="%dayTypes" value="(sun|mon|tue|wed|thu|fri|sat)"/>
+		<coverageVariable key="%relativeDayTypes" value="(sun|sun-short|sun-narrow|mon|mon-short|mon-narrow|tue|tue-short|tue-narrow|wed|wed-short|wed-narrow|thu|thu-short|thu-narrow|fri|fri-short|fri-narrow|sat|sat-short|sat-narrow)"/>
+		<coverageVariable key="%devaLanguages" value="(mr|ne)"/>
+		<coverageVariable key="%ellipsisTypes" value="(word-)?(initial|medial|final)"/>
+		<coverageVariable key="%exemplarTypes" value="(auxiliary|index|punctuation)"/>
+		<coverageVariable key="%intervalFormatDateItems" value="(d|y|y?(M(MM)?)(E?d)?|y?MMMM)"/>
+		<coverageVariable key="%intervalFormatTimeItems" value="((h|H)m?v?)"/>
+		<coverageVariable key="%intervalFormatGDiff" value="([yMdaHhm])"/>
+		<coverageVariable key="%islamicCalendarTerritories" value="(AE|AF|BH|DJ|DZ|EG|EH|ER|IL|IQ|IR|JO|KM|KW|LB|LY|MA|MR|OM|PS|QA|SA|SD|SY|TN|YE)"/>
+		<coverageVariable key="%japaneseEras" value="([0-9]{1,3})"/>
+		<coverageVariable key="%keys80" value="(calendar|collation|currency|numbers)"/>
+		<coverageVariable key="%keys100" value="(col(Alternate|Backwards|CaseFirst|CaseLevel|HiraganaQuaternary|Normalization|Numeric|Reorder|Strength)|timezone|va|variableTop|x)"/>
+		<coverageVariable key="%language30" value="und"/>
+		<coverageVariable key="%language40" value="(de(_(AT|CH))?|en(_(AU|CA|GB|US))?|es(_(ES|419|MX))?|fr(_(CA|CH))?|it|ja|pt(_(BR|PT))?|ru|zh(_(Hans|Hant))?)"/>
+		<coverageVariable key="%language60" value="(ar(_001)?|bn|hi|id|ko|nl(_BE)?|pl|th|tr)"/>
+		<coverageVariable key="%language60_CM" value="(bas|bax|bbj|bfd|bkm|bss|bum|byv|ewo|ff|kkj|maf|nnh|yav|ybb)"/>
+		<coverageVariable key="%language60_EU" value="(cs|da|e[lt]|fi|hu|lv|mt|s[klv])"/>
+		<coverageVariable key="%language60_GA" value="(fan|mye)"/>
+		<coverageVariable key="%language60_NG" value="(ff|ha|ibb|ig|kr|yo)"/>
+		<coverageVariable key="%language60_TD" value="(shu|dzg|kbl|mde|mua|sba)"/>
+		<coverageVariable key="%language80" value="(a[bfkmsz]|a(gq|rn|sa)|b[aegmors]|b(em|ez|rx)|c[aeosy]|c(gg|hr|kb)|d[az]|d(av|je|sb|ua|yo)|e[elotu]|ebu|f[aijoy]|fil|g[alnuv]|g(ag|sw|uz)|haw?|h[ertuy]|hsb|i[gisu]|jv|j(go|mc)|k[aiklmnsuwy]|k(ab|am|de|ea|hq|ln|oi|ok|pv|s[bf])|l[abgnotuv]|l(ag|be|kt|u[oy])|m[gkilnrsty]|m(as|dh|er|fe|g[ho]|oh|ua)|n[bden]|n(aq|mg|qo|us|yn)|o[mr]|p[as]|quc?|r[mnw]|ro(_MD)?|r(of|wk)|s[adegiklnoqruvw]|s(aq|bp|e[hs]|hi|m[ajns]|wc)|t[aegikot]|t(eo|sg|wq|zm)|u[gkrz]|uli|vi|v(ai|un)|wo|xh|xog|yo|zu|z(dj|gh|xx))"/>
+		<coverageVariable key="%language100_a_m" value="(aa|ac[eh]|ad[ay]|aeb?|af[ah]|ain|ak[kz]|al[egnt]|an[gp]?|apa|ar[copqtwyz]|as[et]|ath|aus|avk?|awa|ay|ba[dilnstx]|azb|bar|bb[cj]|be[jrw]|bf[dq]|bho?|bkm|bi[kn]?|bjn|bla|bnt|bpy|bqi|br[ah]|bss|btk|bu[amg]|bxr|by[nv]|ca[diruy]|cch|ce[bl]|ch[bgkmnopy]?|cmc|cop|cp[efps]|cr[hp]?|csb|cus?|cv|da[kry]|de[ln]|dgr|din|doi|dra|dtp|dum|dv|dyu|dzg|efi|eg[ly]|eka|elx|enm|esu|ewo|ext|fa[nt]|ff|fi[tu]|fon|fr[cmoprs]|fur|ga[agny]|gb[az]|gd|ge[mz]|gil|glk|gmh|go[hmnrt]|gr[bc]|gu[cr]|gwi|ha[ik]|hi[flmt]|hmn|ho|hsn|hup|hz|ia|ib[ab]|ie|ijo|ik|ilo|in[ceh]|io|ir[ao]|izh|jam|jbo|jpr|jrb|jut|ka[acjrw]|kb[dl]|kc[bg]|ken|kfo|kgp?|kh[aiow]|kiu|kkj|kj|kmb|ko[is]|kpe|kr[cijlou]?|ksh|ku[mt]|kv|la[dhm]|lez|lfn|li[jv]?|lmo|lo[lz]|ltg|lu[ains]|lz[hz]|ma[dfgiknp]|md[efr]|men|mga|mh|mi[cns]|mkh|mn[cio]|mos|mrj|mu[lns]|mw[lrv]|my[env]|mzn)"/>
+		<coverageVariable key="%language100_n_z" value="(na[hinp]?|nds|new|ng|ni[acu]|njo|nnh|no[gnv]?|nr|nso|nub|nv|nwc|ny[mo]?|nzi|o[cj]|osa?|ot[ao]|pa[aglmpu]|pcd|pd[ct]|peo|pfl|ph[in]|pi|pms|pnt|pon|pr[ago]|qug|ra[jpr]|rgn|rif|ro[am]|root|rtm|ru[egp]|sa[dhilmstz]|sba|sc[no]?|sdc|se[eilm]|sg[ans]|sh[nu]?|si[dot]|sl[aiy]|sm|snk|so[gn]|sr[nr]|ss[ay]?|stq?|su[ksx]|swb|sy[cr]|szl|tai|tcy|te[mrt]|ti[gv]|tk[lr]|tl[hiy]?|tmh|tn|tog|tpi|tr[uv]|ts[di]?|ttt|tu[mpt]|tvl|tw|tyv?|udm|uga|umb|ve[cp]?|vls|vmf||vot?|vro|wa[eklrs]?|wen|wuu|xal|xmf|ya[opv]|ybb|yi|ypk|yrl|yue|zap?|zbl|ze[an]|znd|zun|zza)"/>
+		<coverageVariable key="%medLong" value="(medium|long)"/>
+		<coverageVariable key="%metazone30_AR" value="Argentina(_Western)?"/>
+		<coverageVariable key="%metazone30_AU" value="(Australia_(Central(Western)?|(East|West)ern)|Lord_Howe)"/>
+		<coverageVariable key="%metazone30_AU_stdonly" value="Macquarie"/> 
+		<coverageVariable key="%metazone30_BR" value="(Amazon|Brasilia|Noronha)"/>
+		<coverageVariable key="%metazone30_CA" value="(America_(Eastern|Central|Mountain|Pacific)|Newfoundland)"/>
+		<coverageVariable key="%metazone30_EU" value="Europe_(Central|(East|West)ern)"/>
+		<coverageVariable key="%metazone30_ID" value="Indonesia_(Central|(East|West)ern)"/>
+		<coverageVariable key="%metazone30_KZ" value="Kazakhstan_(East|West)ern"/>
+		<coverageVariable key="%metazone30_MX" value="Mexico_(Northwest|Pacific)"/>
+		<coverageVariable key="%metazone30_RU" value="(Europe_Eastern|Moscow|Yekaterinburg|Omsk|Novosibirsk|Krasnoyarsk|Irkutsk|Yakutsk|Vladivostok|Magadan)"/>
+		<coverageVariable key="%metazone30_RU_stdonly" value="Europe_Further_Eastern"/>
+		<coverageVariable key="%metazone30_US" value="(America_(Eastern|Central|Mountain|Pacific)|Alaska|Hawaii_Aleutian)"/>
+		<coverageVariable key="%metazone40" value="(America_(Eastern|Central|Mountain|Pacific)|Europe_(Central|(East|West)ern)|Atlantic)"/>
+		<coverageVariable key="%metazone60" value="(Africa_Western|Arabian|Australia_(Central(Western)?|(East|West)ern)|China|Israel|Japan|Korea|Moscow)"/> 
+		<coverageVariable key="%metazone60_stdonly" value="(Africa_(Central|(East|South)ern)|India|Indochina|Indonesia_(Central|(East|West)ern))"/> 
+		<coverageVariable key="%metazone80" value="(Alaska|Amazon|Apia|Argentina(_Western)?|Armenia|Azerbaijan|Azores|Bangladesh|Brasilia|Cape_Verde|Chatham|Chile|Choibalsan|Colombia|Cook|Cuba|Easter|Falkland|Fiji|Georgia|Greenland_(East|West)ern|Hawaii_Aleutian|Hong_Kong|Hovd|Iran|Irkutsk|Krasnoyarsk|Lord_Howe|Magadan|Mauritius|Mexico_(Northwest|Pacific)|Mongolia|New_(Caledonia|Zealand)|Newfoundland|Noronha|Novosibirsk|Omsk|Pakistan|Paraguay|Peru|Philippines|Pierre_Miquelon|Sakhalin|Samoa|Taipei|Tonga|Turkmenistan|Uruguay|Uzbekistan|Vanuatu|Vladivostok|Volgograd|Yakutsk|Yekaterinburg)"/>
+		<coverageVariable key="%metazone80_stdonly" value="(Afghanistan|Bhutan|Bolivia|Brunei|Chamorro|Christmas|Cocos|Davis|DumontDUrville|East_Timor|Ecuador|Europe_Further_Eastern|French_(Guiana|Southern)|Gambier|Galapagos|Gilbert_Islands|Gulf|Guyana|Indian_Ocean|Kazakhstan_(East|West)ern|Kosrae|Kyrgystan|Line_Islands|Macquarie|Malaysia|Maldives|Marquesas|Marshall_Islands|Mawson|Myanmar|Nauru|Nepal|Niue|Norfolk|Palau|Papua_New_Guinea|Phoenix_Islands|Pitcairn|Ponape|Reunion|Rothera|Seychelles|Singapore|Solomon|South_Georgia|Suriname|Syowa|Tahiti|Tajikistan|Tokelau|Truk|Tuvalu|Venezuela|Vostok|Wake|Wallis)"/>
+		<coverageVariable key="%metazone100" value="(Acre|Almaty|Anadyr|Aqtau|Aqtobe|Kamchatka|Macau|Qyzylorda|Samara)"/>
+		<coverageVariable key="%metazone100_stdonly" value="(Casey|Guam|Lanka|North_Mariana)"/>
+		<coverageVariable key="%miscPatternTypes" value="(atLeast|range)"/>
+		<coverageVariable key="%monthTypes" value="(1[0-3]?|[2-9])"/>
+		<coverageVariable key="%numberingSystem80" value="(arab(ext)?|armn(low)?|beng|deva|ethi|fullwide|geor|grek(low)?|gujr|guru|hanidec|han[st](fin)?|hebr|jpan(fin)?|khmr|knda|laoo|mlym|mymr|orya|roman(low)?|taml(dec)?|telu|thai|tibt)"/>
+		<coverageVariable key="%numberingSystem100" value="(finance|native|traditional|bali|brah|cakm|cham|hanidays|java|kali|lana(tham)?|lepc|limb|mong|mtei|mymrshan|nkoo|olck|osma|saur|shrd|sora|sund|takr|talu|vaii)"/>
+		<coverageVariable key="%persianCalendarTerritories" value="(AF|IR)"/>
+		<coverageVariable key="%phonebookCollationLanguages" value="(de|fi)"/>
+		<coverageVariable key="%quarterTypes" value="([1-4])"/>
+		<coverageVariable key="%regionFormatTypes" value="(daylight|standard)"/>
+		<coverageVariable key="%relativeTimeTypes" value="(year|year-short|year-narrow|quarter|quarter-short|quarter-narrow|month|month-short|month-narrow|week|week-short|week-narrow|day|day-short|day-narrow|hour|hour-short|hour-narrow|minute|minute-short|minute-narrow|second|second-short|second-narrow)"/>
+		<coverageVariable key="%script30" value="(Zxxx|Zzzz)"/>
+		<coverageVariable key="%script40" value="(Latn|Hans|Hant|Cyrl|Arab)"/>
+		<coverageVariable key="%script60" value="(Jpan|Kore)"/>
+		<coverageVariable key="%script80" value="(Zyyy|Armn|Beng|Bopo|Brai|Deva|Ethi|Geor|Grek|Gujr|Guru|Hani|Hang|Hebr|Hira|Knda|Kana|Khmr|Laoo|Mlym|Mong|Mymr|Orya|Sinh|Taml|Telu|Thaa|Thai|Tibt|Zsym)"/>
+		<coverageVariable key="%script100" value="(Afak|Aghb|Armi|Avst|Bali|Bamu|Bass|Batk|Blis|Brah|Bugi|Buhd|Cakm|Cans|Cari|Cham|Cher|Cirt|Copt|Cprt|Cyrs|Dsrt|Dupl|Egy[dhp]|Elba|Geok|Glag|Goth|Gran|Hano|Hluw|Hmng|Hrkt|Hung|Inds|Ital|Java|Jurc|Kali|Khar|Khoj|Kpel|Kthi|Lana|Lat[fg]|Lepc|Limb|Lin[ab]|Lisu|Loma|Ly[cd]i|Mahj|Man[di]|Maya|Mend|Mer[co]|Modi|Moon|Mroo|Mtei|Narb|Nbat|Nkgb|Nkoo|Nshu|Ogam|Olck|Orkh|Osma|Palm|Pauc|Perm|Phag|Phl[ipv]|Phnx|Plrd|Prti|Rjng|Roro|Runr|Samr|Sar[ab]|Saur|Sgnw|Shaw|Shrd|Sidd|Sind|Sora|Sund|Sylo|Syr[cejn]|Tagb|Takr|Tal[eu]|Tang|Tavt|Teng|Tfng|Tglg|Tirh|Ugar|Vaii|Visp|Wara|Wole|Xpeo|Xsux|Yiii|Zinh|Zmth)"/>
+		<coverageVariable key="%shortLong" value="(short|long)"/>
+		<coverageVariable key="%shortVariant" value="(short|variant)"/>
+		<coverageVariable key="%standaloneVariant" value="(stand-alone|variant)"/>
+		<coverageVariable key="%stdPattern" value="[@type='standard']/pattern[@type='standard']"/>
+		<coverageVariable key="%territory30" value="ZZ"/>
+		<coverageVariable key="%territory40" value="(BR|CN|DE|GB|FR|IN|IT|JP|RU|US)"/>
+		<coverageVariable key="%territory60" value="(AT|AU|BE|CA|CH|DK|ES|FI|GR|HK|ID|IE|KR|MX|NL|NO|PL|PT|SA|SE|TH|TR|TW|ZA)"/>
+		<coverageVariable key="%territory60_EU" value="(CZ|EE|HU|LT|LU|LV|MT|SI|SK)"/>
+		<coverageVariable key="%territory80" value="(0(0[12359]|1[1345789]|2[19]|3[0459]|5[347]|61)|1(4[235]|5[01459])|419|A[CDEFGILMOQRSWXZ]|B[ABDFGHIJLMNOQSTUVWYZ]|C[CDFGIKLMOPRUVWXYZ]|D[GJMOZ]|E[ACEGHRTU]|F[JKMO]|G[ADEFGHILMNPQSTUWY]|H[MNRTU]|I[CLMOQRS]|J[EMO]|K[EGHIMNPWYZ]|L[ABCIKRSTUVY]|M[ACDEFGHKLMNOPQRSTUVWYZ]|N[ACEFGIPRUZ]|OM|P[AEFGHKMNRSWY]|Q[AO]|R[EOSW]|S[BCDGHIJKLMNORSTVXYZ]|T[ACDFGJKLMNOPTVZ]|U[AGMYZ]|V[ACEGINU]|W[FS]|XK|Y[ET]|Z[MW])"/>
+		<coverageVariable key="%territory80short" value="(GB|HK|MO|PS|SA|US)"/>
+		<coverageVariable key="%territory100" value="AN"/>
+		<coverageVariable key="%timeZones" value="(Africa|America|Antarctica|Arctic|Asia|Australia|Atlantic|Europe|Indian|Pacific)(/[A-Za-z_\-]++){1,2}"/>
+		<coverageVariable key="%traditionalCollationLanguages" value="(bn|es|kn|sa)"/>
+		<coverageVariable key="%transformNameTypes" value="(BGN|Numeric|Tone|UNGEGN|x-(Accents|Fullwidth|Halfwidth|Jamo|Pinyin|Publishing))"/>
+		<coverageVariable key="%unitDurationTypes" value="duration-(year|month|week|day|hour|minute|second|millisecond)"/>
+		<coverageVariable key="%unitLengths" value="(long|short|narrow)"/>
+		<coverageVariable key="%unitNonNarrowLengths" value="(long|short)"/>
+		<coverageVariable key="%unitsCommonMetric" value="(length-(centi|milli|kilo)?meter|mass-(kilo)?gram|temperature-celsius|speed-kilometer-per-hour|volume-liter)"/>
+		<coverageVariable key="%unitsCommonUS" value="(length-(inch|foot|yard|mile)|mass-(ounce|pound)|temperature-fahrenheit|speed-mile-per-hour)"/>
+		<coverageVariable key="%unitsEnglish" value="(length-fathom|length-furlong|mass-stone|volume-bushel)"/>
+		<coverageVariable key="%unitsNonEnglish" value="[a-z]++-(?!(furlong|fathom|stone|bushel))([a-z]++([-a-z]++)?)"/>
+		<coverageVariable key="%unitsOther" value="(length-(picometer|light-year)|pressure-(hectopascal|inch-hg|millibar)|acceleration-g-force|angle-(degree|minute|second)|area-(acre|hectare|square-(foot|kilometer|meter|mile))|power-(horsepower|kilowatt|watt)|speed-meter-per-second|volume-cubic-(mile|kilometer))"/>
+		<coverageVariable key="%variantTypes" value="([A-Z0-9]++)"/>
+		<coverageVariable key="%wideAbbr" value="(wide|abbreviated)"/>
+		<coverageVariable key="%wideNarrow" value="(wide|narrow)"/>
+		<coverageVariable key="%yesNo" value="(yes|no)"/>		
+		<!-- -->
+		<!-- Coverage levels begin here -->
+		<!-- -->
+		<coverageLevel value="core" match="characters/exemplarCharacters"/>
+		<coverageLevel value="core" match="characters/exemplarCharacters[@type='%exemplarTypes']"/>
+		<coverageLevel value="posix" match="dates/calendars/calendar[@type='gregorian']/days/dayContext[@type='format']/dayWidth[@type='%wideAbbr']/day[@type='%dayTypes']"/>
+		<coverageLevel value="posix" match="dates/calendars/calendar[@type='gregorian']/months/monthContext[@type='format']/monthWidth[@type='%wideAbbr']/month[@type='%monthTypes']"/>
+		<coverageLevel value="posix" match="dates/calendars/calendar[@type='gregorian']/dateFormats/dateFormatLength[@type='%shortLong']/dateFormat%stdPattern"/>
+		<coverageLevel value="posix" match="dates/calendars/calendar[@type='generic']/dateFormats/dateFormatLength[@type='%shortLong']/dateFormat%stdPattern"/>
+		<coverageLevel value="posix" match="dates/calendars/calendar[@type='gregorian']/timeFormats/timeFormatLength[@type='%medLong']/timeFormat%stdPattern"/>
+		<coverageLevel value="posix" match="numbers/symbols[@numberSystem='latn']/decimal"/>
+		<coverageLevel value="posix" match="numbers/symbols[@numberSystem='latn']/group"/>
+		<coverageLevel value="posix" match="posix/messages/yesstr"/>
+		<coverageLevel value="posix" match="posix/messages/nostr"/>
+		<coverageLevel value="posix" match="numbers/defaultNumberingSystem"/>
+		<coverageLevel value="posix" match="numbers/otherNumberingSystems/native"/>
+		<coverageLevel value="posix" match="numbers/otherNumberingSystems/traditional"/>
+		<coverageLevel value="posix" match="numbers/otherNumberingSystems/finance"/>
+		<coverageLevel value="posix" match="numbers/decimalFormats[@numberSystem='latn']/decimalFormatLength/decimalFormat%stdPattern"/>
+		<coverageLevel value="minimal" match="localeDisplayNames/languages/language[@type='%language30']"/>
+		<coverageLevel value="minimal" match="localeDisplayNames/languages/language[@type='${Target-Language}']"/>
+		<coverageLevel value="minimal" match="localeDisplayNames/languages/language[@type='${Target-Language}'][@alt='%shortVariant']"/>
+		<coverageLevel value="minimal" match="localeDisplayNames/scripts/script[@type='%script30']"/>
+		<coverageLevel value="minimal" match="localeDisplayNames/scripts/script[@type='${Target-Scripts}']"/>
+		<coverageLevel value="minimal" match="localeDisplayNames/territories/territory[@type='${Target-Territories}']"/>
+		<coverageLevel value="minimal" match="localeDisplayNames/territories/territory[@type='${Target-Territories}'][@alt='(%shortVariant)']"/>
+		<coverageLevel value="minimal" match="localeDisplayNames/territories/territory[@type='%territory30']"/>
+		<coverageLevel value="minimal" match="localeDisplayNames/types/type[@type='${Calendar-List}'][@key='calendar']"/>
+		<coverageLevel value="minimal" match="localeDisplayNames/types/type[@type='gregorian'][@key='calendar']"/>
+		<coverageLevel value="minimal" match="localeDisplayNames/types/type[@type='standard'][@key='collation']"/>
+		<coverageLevel inLanguage="%phonebookCollationLanguages" value="minimal" match="localeDisplayNames/types/type[@type='phonebook'][@key='collation']"/>
+		<coverageLevel inLanguage="%traditionalCollationLanguages" value="minimal" match="localeDisplayNames/types/type[@type='traditional'][@key='collation']"/>
+		<coverageLevel inLanguage="%CJK_Languages" value="minimal" match="localeDisplayNames/types/type[@type='unihan'][@key='collation']"/>
+		<coverageLevel inLanguage="si" value="minimal" match="localeDisplayNames/types/type[@type='dictionary'][@key='collation']"/>
+		<coverageLevel inLanguage="sv" value="minimal" match="localeDisplayNames/types/type[@type='reformed'][@key='collation']"/>
+		<coverageLevel inLanguage="zh" value="minimal" match="localeDisplayNames/types/type[@type='(big5han|gb2312han|pinyin|stroke|zhuyin)'][@key='collation']"/>
+		<coverageLevel inScript="Arab" value="minimal" match="localeDisplayNames/types/type[@type='arab'][@key='numbers']"/>
+		<coverageLevel inScript="Armn" value="minimal" match="localeDisplayNames/types/type[@type='armn(low)?'][@key='numbers']"/>
+		<coverageLevel inLanguage="%arabextLanguages" value="minimal" match="localeDisplayNames/types/type[@type='arabext'][@key='numbers']"/>
+		<coverageLevel inScript="Beng" value="minimal" match="localeDisplayNames/types/type[@type='beng'][@key='numbers']"/>
+		<coverageLevel inScript="Deva" value="minimal" match="localeDisplayNames/types/type[@type='deva'][@key='numbers']"/>
+		<coverageLevel inScript="Ethi" value="minimal" match="localeDisplayNames/types/type[@type='ethi'][@key='numbers']"/>
+		<coverageLevel inLanguage="%CJK_Languages" value="minimal" match="localeDisplayNames/types/type[@type='fullwide'][@key='numbers']"/>
+		<coverageLevel inScript="Geor" value="minimal" match="localeDisplayNames/types/type[@type='geor'][@key='numbers']"/>
+		<coverageLevel inScript="Grek" value="minimal" match="localeDisplayNames/types/type[@type='grek(low)?'][@key='numbers']"/>
+		<coverageLevel inScript="Gujr" value="minimal" match="localeDisplayNames/types/type[@type='gujr'][@key='numbers']"/>
+		<coverageLevel inScript="Guru" value="minimal" match="localeDisplayNames/types/type[@type='guru'][@key='numbers']"/>
+		<coverageLevel inLanguage="zh" value="minimal" match="localeDisplayNames/types/type[@type='(han(s|t)(fin)?|hanidec)'][@key='numbers']"/>
+		<coverageLevel inScript="Hebr" value="minimal" match="localeDisplayNames/types/type[@type='hebr'][@key='numbers']"/>
+		<coverageLevel inScript="Guru" value="minimal" match="localeDisplayNames/types/type[@type='guru'][@key='numbers']"/>
+		<coverageLevel inLanguage="ja" value="minimal" match="localeDisplayNames/types/type[@type='jpan(fin)?'][@key='numbers']"/>
+		<coverageLevel inScript="Khmr" value="minimal" match="localeDisplayNames/types/type[@type='khmr'][@key='numbers']"/>
+		<coverageLevel inScript="Knda" value="minimal" match="localeDisplayNames/types/type[@type='knda'][@key='numbers']"/>
+		<coverageLevel inScript="Laoo" value="minimal" match="localeDisplayNames/types/type[@type='laoo'][@key='numbers']"/>
+		<coverageLevel value="minimal" match="localeDisplayNames/types/type[@type='latn'][@key='numbers']"/>
+		<coverageLevel inScript="Mong" value="minimal" match="localeDisplayNames/types/type[@type='mong'][@key='numbers']"/>
+		<coverageLevel inScript="Mlym" value="minimal" match="localeDisplayNames/types/type[@type='mlym'][@key='numbers']"/>
+		<coverageLevel inScript="Mymr" value="minimal" match="localeDisplayNames/types/type[@type='mymr(shan)?'][@key='numbers']"/>
+		<coverageLevel inScript="Orya" value="minimal" match="localeDisplayNames/types/type[@type='orya'][@key='numbers']"/>
+		<coverageLevel inScript="Taml" value="minimal" match="localeDisplayNames/types/type[@type='taml'][@key='numbers']"/>
+		<coverageLevel inScript="Telu" value="minimal" match="localeDisplayNames/types/type[@type='telu'][@key='numbers']"/>
+		<coverageLevel inScript="Thai" value="minimal" match="localeDisplayNames/types/type[@type='thai'][@key='numbers']"/>
+		<coverageLevel inScript="Tibt" value="minimal" match="localeDisplayNames/types/type[@type='tibt'][@key='numbers']"/>
+		<coverageLevel inLanguage="vai" value="minimal" match="localeDisplayNames/types/type[@type='vaii'][@key='numbers']"/>
+		<coverageLevel value="minimal" match="numbers/currencies/currency[@type='%currency30']/symbol[@alt='(narrow|variant)']"/>
+		<coverageLevel value="minimal" match="numbers/currencies/currency[@type='%currency30']/displayName"/>
+		<coverageLevel value="minimal" match="numbers/currencies/currency[@type='%currency30']/displayName[@count='${Target-Plurals}']"/>
+		<coverageLevel value="minimal" match="numbers/currencies/currency[@type='${Target-Currencies}']/symbol"/>
+		<coverageLevel value="minimal" match="numbers/currencies/currency[@type='${Target-Currencies}']/displayName"/>
+		<coverageLevel value="minimal" match="numbers/currencies/currency[@type='${Target-Currencies}']/displayName[@count='%allPlurals']"/>
+		<coverageLevel value="minimal" match="numbers/currencyFormats[@numberSystem='latn']/currencyFormatLength/currencyFormat%stdPattern"/>
+		<coverageLevel value="minimal" match="numbers/percentFormats[@numberSystem='latn']/percentFormatLength/percentFormat%stdPattern"/>
+		<coverageLevel value="minimal" match="numbers/scientificFormats[@numberSystem='latn']/scientificFormatLength/scientificFormat%stdPattern"/>
+		<coverageLevel value="minimal" match="numbers/symbols[@numberSystem='latn']/plusSign"/>
+		<coverageLevel value="minimal" match="numbers/symbols[@numberSystem='latn']/minusSign"/>
+		<coverageLevel value="minimal" match="numbers/symbols[@numberSystem='latn']/percentSign"/>
+		<coverageLevel inLanguage="ar" value="minimal" match="numbers/symbols[@numberSystem='arab']/decimal"/>
+		<coverageLevel inLanguage="ar" value="minimal" match="numbers/symbols[@numberSystem='arab']/group"/>
+		<coverageLevel inLanguage="ar" value="minimal" match="numbers/symbols[@numberSystem='arab']/plusSign"/>
+		<coverageLevel inLanguage="ar" value="minimal" match="numbers/symbols[@numberSystem='arab']/minusSign"/>
+		<coverageLevel inLanguage="ar" value="minimal" match="numbers/symbols[@numberSystem='arab']/percentSign"/>
+		<coverageLevel inLanguage="ar" value="minimal" match="numbers/decimalFormats[@numberSystem='arab']/decimalFormatLength/decimalFormat%stdPattern"/>
+		<coverageLevel inLanguage="ar" value="minimal" match="numbers/currencyFormats[@numberSystem='arab']/currencyFormatLength/currencyFormat%stdPattern"/>
+		<coverageLevel inLanguage="ar" value="minimal" match="numbers/scientificFormats[@numberSystem='arab']/scientificFormatLength/scientificFormat%stdPattern"/>
+		<coverageLevel inLanguage="ar" value="minimal" match="numbers/percentFormats[@numberSystem='arab']/percentFormatLength/percentFormat%stdPattern"/>
+		<coverageLevel inLanguage="%arabextLanguages" value="minimal" match="numbers/symbols[@numberSystem='arabext']/decimal"/>
+		<coverageLevel inLanguage="%arabextLanguages" value="minimal" match="numbers/symbols[@numberSystem='arabext']/group"/>
+		<coverageLevel inLanguage="%arabextLanguages" value="minimal" match="numbers/symbols[@numberSystem='arabext']/plusSign"/>
+		<coverageLevel inLanguage="%arabextLanguages" value="minimal" match="numbers/symbols[@numberSystem='arabext']/minusSign"/>
+		<coverageLevel inLanguage="%arabextLanguages" value="minimal" match="numbers/symbols[@numberSystem='arabext']/percentSign"/>
+		<coverageLevel inLanguage="%arabextLanguages" value="minimal" match="numbers/decimalFormats[@numberSystem='arabext']/decimalFormatLength/decimalFormat%stdPattern"/>
+		<coverageLevel inLanguage="%arabextLanguages" value="minimal" match="numbers/currencyFormats[@numberSystem='arabext']/currencyFormatLength/currencyFormat%stdPattern"/>
+		<coverageLevel inLanguage="%arabextLanguages" value="minimal" match="numbers/scientificFormats[@numberSystem='arabext']/scientificFormatLength/scientificFormat%stdPattern"/>
+		<coverageLevel inLanguage="%arabextLanguages" value="minimal" match="numbers/percentFormats[@numberSystem='arabext']/percentFormatLength/percentFormat%stdPattern"/>
+		<coverageLevel inLanguage="%devaLanguages" value="minimal" match="numbers/symbols[@numberSystem='deva']/decimal"/>
+		<coverageLevel inLanguage="%devaLanguages" value="minimal" match="numbers/symbols[@numberSystem='deva']/group"/>
+		<coverageLevel inLanguage="%devaLanguages" value="minimal" match="numbers/symbols[@numberSystem='deva']/plusSign"/>
+		<coverageLevel inLanguage="%devaLanguages" value="minimal" match="numbers/symbols[@numberSystem='deva']/minusSign"/>
+		<coverageLevel inLanguage="%devaLanguages" value="minimal" match="numbers/symbols[@numberSystem='deva']/percentSign"/>
+		<coverageLevel inLanguage="%devaLanguages" value="minimal" match="numbers/decimalFormats[@numberSystem='deva']/decimalFormatLength/decimalFormat%stdPattern"/>
+		<coverageLevel inLanguage="%devaLanguages" value="minimal" match="numbers/currencyFormats[@numberSystem='deva']/currencyFormatLength/currencyFormat%stdPattern"/>
+		<coverageLevel inLanguage="%devaLanguages" value="minimal" match="numbers/scientificFormats[@numberSystem='deva']/scientificFormatLength/scientificFormat%stdPattern"/>
+		<coverageLevel inLanguage="%devaLanguages" value="minimal" match="numbers/percentFormats[@numberSystem='deva']/percentFormatLength/percentFormat%stdPattern"/>
+		<coverageLevel inLanguage="dz" value="minimal" match="numbers/symbols[@numberSystem='tibt']/decimal"/>
+		<coverageLevel inLanguage="dz" value="minimal" match="numbers/symbols[@numberSystem='tibt']/group"/>
+		<coverageLevel inLanguage="dz" value="minimal" match="numbers/symbols[@numberSystem='tibt']/plusSign"/>
+		<coverageLevel inLanguage="dz" value="minimal" match="numbers/symbols[@numberSystem='tibt']/minusSign"/>
+		<coverageLevel inLanguage="dz" value="minimal" match="numbers/symbols[@numberSystem='tibt']/percentSign"/>
+		<coverageLevel inLanguage="dz" value="minimal" match="numbers/decimalFormats[@numberSystem='tibt']/decimalFormatLength/decimalFormat%stdPattern"/>
+		<coverageLevel inLanguage="dz" value="minimal" match="numbers/currencyFormats[@numberSystem='tibt']/currencyFormatLength/currencyFormat%stdPattern"/>
+		<coverageLevel inLanguage="dz" value="minimal" match="numbers/scientificFormats[@numberSystem='tibt']/scientificFormatLength/scientificFormat%stdPattern"/>
+		<coverageLevel inLanguage="dz" value="minimal" match="numbers/percentFormats[@numberSystem='tibt']/percentFormatLength/percentFormat%stdPattern"/>
+		<coverageLevel value="minimal" match="dates/calendars/calendar[@type='gregorian']/dateFormats/dateFormatLength[@type='%fullMedium']/dateFormat%stdPattern"/>
+		<coverageLevel value="minimal" match="dates/calendars/calendar[@type='gregorian']/dateTimeFormats/dateTimeFormatLength[@type='%dateTimeFormatLengths']/dateTimeFormat%stdPattern"/>
+		<coverageLevel value="minimal" match="dates/calendars/calendar[@type='gregorian']/dateTimeFormats/intervalFormats/intervalFormatFallback"/>
+		<coverageLevel value="minimal" match="dates/calendars/calendar[@type='generic']/dateFormats/dateFormatLength[@type='%fullMedium']/dateFormat%stdPattern"/>
+		<coverageLevel value="minimal" match="dates/calendars/calendar[@type='generic']/dateTimeFormats/dateTimeFormatLength[@type='%dateTimeFormatLengths']/dateTimeFormat%stdPattern"/>
+		<coverageLevel value="minimal" match="dates/calendars/calendar[@type='generic']/dateTimeFormats/intervalFormats/intervalFormatFallback"/>
+		<coverageLevel value="minimal" match="dates/timeZoneNames/zone[@type='${Target-TimeZones}']/exemplarCity"/>
+		<coverageLevel value="minimal" match="dates/timeZoneNames/zone[@type='Etc/Unknown']/exemplarCity"/>
+		<coverageLevel value="minimal" match="dates/timeZoneNames/fallbackFormat"/>
+		<coverageLevel value="minimal" match="dates/timeZoneNames/gmtFormat"/>
+		<coverageLevel value="minimal" match="dates/timeZoneNames/gmtZeroFormat"/>
+		<coverageLevel value="minimal" match="dates/timeZoneNames/regionFormat"/>
+		<coverageLevel value="minimal" match="dates/timeZoneNames/regionFormat[@type='%regionFormatTypes']"/>
+		<coverageLevel value="minimal" match="dates/timeZoneNames/hourFormat"/>
+		<coverageLevel value="minimal" match="dates/calendars/calendar[@type='gregorian']/dayPeriods/dayPeriodContext[@type='format']/dayPeriodWidth[@type='wide']/dayPeriod[@type='(am|pm)']"/>
+		<coverageLevel value="minimal" match="dates/calendars/calendar[@type='gregorian']/days/dayContext[@type='format']/dayWidth[@type='narrow']/day[@type='%dayTypes']"/>
+		<coverageLevel value="minimal" match="dates/calendars/calendar[@type='gregorian']/days/dayContext[@type='stand-alone']/dayWidth[@type='%allWidths']/day[@type='%dayTypes']"/>
+		<coverageLevel value="minimal" match="dates/calendars/calendar[@type='gregorian']/eras/eraAbbr/era[@type='(0|1)']"/>
+		<coverageLevel value="minimal" match="dates/calendars/calendar[@type='gregorian']/eras/eraAbbr/era[@type='(0|1)'][@alt='variant']"/>
+		<coverageLevel value="minimal" match="dates/calendars/calendar[@type='gregorian']/months/monthContext[@type='format']/monthWidth[@type='narrow']/month[@type='%monthTypes']"/>
+		<coverageLevel value="minimal" match="dates/calendars/calendar[@type='gregorian']/months/monthContext[@type='stand-alone']/monthWidth[@type='%allWidths']/month[@type='%monthTypes']"/>
+		<coverageLevel value="minimal" match="dates/calendars/calendar[@type='gregorian']/timeFormats/timeFormatLength[@type='%fullShort']/timeFormat%stdPattern"/>
+		<coverageLevel inTerritory="TH" value="minimal" match="dates/calendars/calendar[@type='buddhist']/eras/eraAbbr/era[@type='0']"/>
+		<coverageLevel inTerritory="TH" value="moderate" match="dates/calendars/calendar[@type='buddhist']/dateFormats/dateFormatLength[@type='%dateTimeFormatLengths']/dateFormat%stdPattern"/>
+		<coverageLevel inTerritory="AR" value="minimal" match="dates/timeZoneNames/metazone[@type='%metazone30_AR']/long/generic"/>
+		<coverageLevel inTerritory="AR" value="minimal" match="dates/timeZoneNames/metazone[@type='%metazone30_AR']/long/standard"/>
+		<coverageLevel inTerritory="AR" value="minimal" match="dates/timeZoneNames/metazone[@type='%metazone30_AR']/long/daylight"/>
+		<coverageLevel inTerritory="AU" value="minimal" match="dates/timeZoneNames/metazone[@type='%metazone30_AU']/long/generic"/>
+		<coverageLevel inTerritory="AU" value="minimal" match="dates/timeZoneNames/metazone[@type='%metazone30_AU']/long/standard"/>
+		<coverageLevel inTerritory="AU" value="minimal" match="dates/timeZoneNames/metazone[@type='%metazone30_AU']/long/daylight"/>
+		<coverageLevel inTerritory="AU" value="minimal" match="dates/timeZoneNames/metazone[@type='%metazone30_AU_stdonly']/long/standard"/>
+		<coverageLevel inTerritory="BR" value="minimal" match="dates/timeZoneNames/metazone[@type='%metazone30_BR']/long/generic"/>
+		<coverageLevel inTerritory="BR" value="minimal" match="dates/timeZoneNames/metazone[@type='%metazone30_BR']/long/standard"/>
+		<coverageLevel inTerritory="BR" value="minimal" match="dates/timeZoneNames/metazone[@type='%metazone30_BR']/long/daylight"/>
+		<coverageLevel inTerritory="CA" value="minimal" match="dates/timeZoneNames/metazone[@type='%metazone30_CA']/long/generic"/>
+		<coverageLevel inTerritory="CA" value="minimal" match="dates/timeZoneNames/metazone[@type='%metazone30_CA']/long/standard"/>
+		<coverageLevel inTerritory="CA" value="minimal" match="dates/timeZoneNames/metazone[@type='%metazone30_CA']/long/daylight"/>
+		<coverageLevel inTerritory="EU" value="minimal" match="dates/timeZoneNames/metazone[@type='%metazone30_EU']/long/generic"/>
+		<coverageLevel inTerritory="EU" value="minimal" match="dates/timeZoneNames/metazone[@type='%metazone30_EU']/long/standard"/>
+		<coverageLevel inTerritory="EU" value="minimal" match="dates/timeZoneNames/metazone[@type='%metazone30_EU']/long/daylight"/>
+		<coverageLevel inTerritory="ID" value="minimal" match="dates/timeZoneNames/metazone[@type='%metazone30_ID']/long/standard"/>
+		<coverageLevel inTerritory="KZ" value="minimal" match="dates/timeZoneNames/metazone[@type='%metazone30_KZ']/long/standard"/>
+		<coverageLevel inTerritory="MX" value="minimal" match="dates/timeZoneNames/metazone[@type='%metazone30_MX']/long/generic"/>
+		<coverageLevel inTerritory="MX" value="minimal" match="dates/timeZoneNames/metazone[@type='%metazone30_MX']/long/standard"/>
+		<coverageLevel inTerritory="MX" value="minimal" match="dates/timeZoneNames/metazone[@type='%metazone30_MX']/long/daylight"/>
+		<coverageLevel inTerritory="RU" value="minimal" match="dates/timeZoneNames/metazone[@type='%metazone30_RU']/long/generic"/>
+		<coverageLevel inTerritory="RU" value="minimal" match="dates/timeZoneNames/metazone[@type='%metazone30_RU']/long/standard"/>
+		<coverageLevel inTerritory="RU" value="minimal" match="dates/timeZoneNames/metazone[@type='%metazone30_RU']/long/daylight"/>
+		<coverageLevel inTerritory="RU" value="minimal" match="dates/timeZoneNames/metazone[@type='%metazone30_RU_stdonly']/long/standard"/>
+		<coverageLevel inTerritory="US" value="minimal" match="dates/timeZoneNames/metazone[@type='%metazone30_US']/long/generic"/>
+		<coverageLevel inTerritory="US" value="minimal" match="dates/timeZoneNames/metazone[@type='%metazone30_US']/long/standard"/>
+		<coverageLevel inTerritory="US" value="minimal" match="dates/timeZoneNames/metazone[@type='%metazone30_US']/long/daylight"/>
+		<coverageLevel inTerritory="GB" value="minimal" match="dates/timeZoneNames/zone[@type='Europe/London']/long/daylight"/>
+		<coverageLevel inTerritory="GB" value="minimal" match="dates/timeZoneNames/zone[@type='Europe/London']/short/daylight"/>
+		<coverageLevel inTerritory="IE" value="minimal" match="dates/timeZoneNames/zone[@type='Europe/Dublin']/long/daylight"/>
+		<coverageLevel inTerritory="IE" value="minimal" match="dates/timeZoneNames/zone[@type='Europe/Dublin']/short/daylight"/>
+		<coverageLevel value="basic" match="localeDisplayNames/languages/language[@type='%language40']"/>
+		<coverageLevel value="basic" match="localeDisplayNames/languages/language[@type='%language40'][@alt='%shortVariant']"/>
+		<coverageLevel value="basic" match="localeDisplayNames/scripts/script[@type='%script40']"/>
+		<coverageLevel value="basic" match="localeDisplayNames/scripts/script[@type='%script40'][@alt='(variant|stand-alone)']"/>
+		<coverageLevel value="basic" match="localeDisplayNames/territories/territory[@type='%territory40']"/>
+		<coverageLevel value="basic" match="localeDisplayNames/codePatterns/codePattern[@type='(language|script|territory)']"/>
+		<coverageLevel value="basic" match="localeDisplayNames/measurementSystemNames/measurementSystemName[@type='(metric|UK|US)']"/>
+		<coverageLevel value="basic" match="localeDisplayNames/localeDisplayPattern/localePattern"/>
+		<coverageLevel value="basic" match="localeDisplayNames/localeDisplayPattern/localeSeparator"/>
+		<coverageLevel value="basic" match="localeDisplayNames/localeDisplayPattern/localeKeyTypePattern"/>
+		<coverageLevel value="basic" match="numbers/currencyFormats[@numberSystem='latn']/unitPattern[@count='${Target-Plurals}']"/>
+		<coverageLevel value="basic" match="numbers/currencies/currency[@type='%currency40']/symbol"/>
+		<coverageLevel value="basic" match="numbers/currencies/currency[@type='%currency40']/symbol[@alt='(narrow|variant)']"/>
+		<coverageLevel value="basic" match="numbers/currencies/currency[@type='%currency40']/displayName"/>
+		<coverageLevel value="basic" match="numbers/currencies/currency[@type='%currency40']/displayName[@count='${Target-Plurals}']"/>
+		<coverageLevel value="basic" match="dates/calendars/calendar[@type='gregorian']/quarters/quarterContext[@type='%contextTypes']/quarterWidth[@type='%allWidths']/quarter[@type='%quarterTypes']"/>
+		<coverageLevel value="basic" match="dates/fields/field[@type='%dayFieldTypes']/displayName"/>
+		<coverageLevel value="basic" match="dates/fields/field[@type='day']/relative[@type='(-1|0|1)']"/>
+		<coverageLevel inTerritory="%chineseCalendarTerritories" value="basic" match="dates/calendars/calendar[@type='chinese']/months/monthContext[@type='%contextTypes']/monthWidth[@type='%allWidths']/month[@type='%monthTypes']"/>
+		<coverageLevel inTerritory="%chineseCalendarTerritories" value="basic" match="dates/calendars/calendar[@type='chinese']/dateFormats/dateFormatLength[@type='%dateTimeFormatLengths']/dateFormat%stdPattern"/>
+		<coverageLevel inTerritory="EG" value="basic" match="dates/calendars/calendar[@type='coptic']/months/monthContext[@type='%contextTypes']/monthWidth[@type='%allWidths']/month[@type='%monthTypes']"/>
+		<coverageLevel inTerritory="ET" value="basic" match="dates/calendars/calendar[@type='ethiopic']/months/monthContext[@type='%contextTypes']/monthWidth[@type='%allWidths']/month[@type='%monthTypes']"/>
+		<coverageLevel inLanguage="yi" inTerritory="IL" value="basic" match="dates/calendars/calendar[@type='hebrew']/eras/eraAbbr/era[@type='0']"/>
+		<coverageLevel inLanguage="yi" inTerritory="IL" value="basic" match="dates/calendars/calendar[@type='hebrew']/months/monthContext[@type='%contextTypes']/monthWidth[@type='%wideAbbr']/month[@type='%monthTypes']"/>
+		<coverageLevel inLanguage="yi" inTerritory="IL" value="basic" match="dates/calendars/calendar[@type='hebrew']/months/monthContext[@type='%contextTypes']/monthWidth[@type='%wideAbbr']/month[@type='7'][@yeartype='leap']"/>
+		<coverageLevel inLanguage="yi" inTerritory="IL" value="basic" match="dates/calendars/calendar[@type='hebrew']/dateFormats/dateFormatLength[@type='%dateTimeFormatLengths']/dateFormat%stdPattern"/>
+		<coverageLevel inTerritory="IN" value="basic" match="dates/calendars/calendar[@type='indian']/eras/eraAbbr/era[@type='0']"/>
+		<coverageLevel inTerritory="IN" value="basic" match="dates/calendars/calendar[@type='indian']/months/monthContext[@type='%contextTypes']/monthWidth[@type='%allWidths']/month[@type='%monthTypes']"/>
+		<coverageLevel inTerritory="%islamicCalendarTerritories" value="basic" match="dates/calendars/calendar[@type='islamic']/months/monthContext[@type='%contextTypes']/monthWidth[@type='%allWidths']/month[@type='%monthTypes']"/>
+		<coverageLevel inTerritory="%islamicCalendarTerritories" value="basic" match="dates/calendars/calendar[@type='islamic']/eras/eraAbbr/era[@type='0']"/>
+		<coverageLevel inTerritory="%islamicCalendarTerritories" value="moderate" match="dates/calendars/calendar[@type='islamic']/dateFormats/dateFormatLength[@type='%dateTimeFormatLengths']/dateFormat%stdPattern"/>
+		<coverageLevel inTerritory="JP" value="basic" match="dates/calendars/calendar[@type='japanese']/eras/eraAbbr/era[@type='%japaneseEras']"/>
+		<coverageLevel inTerritory="JP" value="basic" match="dates/calendars/calendar[@type='japanese']/eras/eraNarrow/era[@type='%japaneseEras']"/>
+		<coverageLevel inTerritory="JP" value="moderate" match="dates/calendars/calendar[@type='japanese']/dateFormats/dateFormatLength[@type='%dateTimeFormatLengths']/dateFormat%stdPattern"/>
+		<coverageLevel inTerritory="JP" value="moderate" match="dates/calendars/calendar[@type='japanese']/dateTimeFormats/dateTimeFormatLength[@type='%dateTimeFormatLengths']/dateTimeFormat%stdPattern"/>
+		<coverageLevel inTerritory="KR" value="basic" match="dates/calendars/calendar[@type='dangi']/months/monthContext[@type='%contextTypes']/monthWidth[@type='%allWidths']/month[@type='%monthTypes']"/>
+		<coverageLevel inTerritory="KR" value="basic" match="dates/calendars/calendar[@type='dangi']/dateFormats/dateFormatLength[@type='%dateTimeFormatLengths']/dateFormat%stdPattern"/>
+		<coverageLevel inTerritory="%persianCalendarTerritories" value="basic" match="dates/calendars/calendar[@type='persian']/eras/eraAbbr/era[@type='0']"/>
+		<coverageLevel inTerritory="%persianCalendarTerritories" value="basic" match="dates/calendars/calendar[@type='persian']/months/monthContext[@type='%contextTypes']/monthWidth[@type='%allWidths']/month[@type='%monthTypes']"/>
+		<coverageLevel inTerritory="TW" value="basic" match="dates/calendars/calendar[@type='roc']/eras/eraAbbr/era[@type='(0|1)']"/>
+		<coverageLevel inTerritory="TW" value="moderate" match="dates/calendars/calendar[@type='roc']/dateFormats/dateFormatLength[@type='%dateTimeFormatLengths']/dateFormat%stdPattern"/>
+		<coverageLevel value="basic" match="dates/timeZoneNames/metazone[@type='%metazone40']/long/generic"/>
+		<coverageLevel value="basic" match="dates/timeZoneNames/metazone[@type='%metazone40']/long/standard"/>
+		<coverageLevel value="basic" match="dates/timeZoneNames/metazone[@type='%metazone40']/long/daylight"/>
+		<coverageLevel value="basic" match="dates/timeZoneNames/metazone[@type='GMT']/long/standard"/>
+		<coverageLevel value="basic" match="delimiters/quotationStart"/>
+		<coverageLevel value="basic" match="delimiters/quotationEnd"/>
+		<coverageLevel value="basic" match="delimiters/alternateQuotationStart"/>
+		<coverageLevel value="basic" match="delimiters/alternateQuotationEnd"/>
+		<coverageLevel inLanguage="ar" value="basic" match="numbers/decimalFormats[@numberSystem='arab']/decimalFormatLength[@type='%shortLong']/decimalFormat[@type='standard']/pattern[@type='%compactDecimalTypes']"/>
+		<coverageLevel inLanguage="%arabextLanguages" value="basic" match="numbers/decimalFormats[@numberSystem='arabext']/decimalFormatLength[@type='%shortLong']/decimalFormat[@type='standard']/pattern[@type='%compactDecimalTypes']"/>
+		<coverageLevel inLanguage="%devaLanguages" value="basic" match="numbers/decimalFormats[@numberSystem='deva']/decimalFormatLength[@type='%shortLong']/decimalFormat[@type='standard']/pattern[@type='%compactDecimalTypes']"/>
+		<coverageLevel inLanguage="dz" value="basic" match="numbers/decimalFormats[@numberSystem='tibt']/decimalFormatLength[@type='%shortLong']/decimalFormat[@type='standard']/pattern[@type='%compactDecimalTypes']"/>
+		<coverageLevel value="basic" match="listPatterns/listPattern/listPatternPart[@type='(2|start|middle|end)']"/>
+		<coverageLevel value="basic" match="units/durationUnit[@type='(hm|ms|hms)']/durationUnitPattern"/>
+		<coverageLevel value="moderate" match="localeDisplayNames/languages/language[@type='%language60']"/>
+		<coverageLevel value="moderate" match="localeDisplayNames/languages/language[@type='%language60'][@alt='%shortVariant']"/>
+		<coverageLevel inTerritory="CF" value="moderate" match="localeDisplayNames/languages/language[@type='sg']"/>
+		<coverageLevel inTerritory="CF" value="moderate" match="localeDisplayNames/languages/language[@type='sg'][@alt='%shortVariant']"/>
+		<coverageLevel inTerritory="CG" value="moderate" match="localeDisplayNames/languages/language[@type='(kg|ln)']"/>
+		<coverageLevel inTerritory="CG" value="moderate" match="localeDisplayNames/languages/language[@type='(kg|ln)'][@alt='%shortVariant']"/>
+		<coverageLevel inTerritory="CM" value="moderate" match="localeDisplayNames/languages/language[@type='%language60_CM']"/>
+		<coverageLevel inTerritory="CM" value="moderate" match="localeDisplayNames/languages/language[@type='%language60_CM'][@alt='%shortVariant']"/>
+		<coverageLevel inTerritory="EU" value="moderate" match="localeDisplayNames/languages/language[@type='%language60_EU']"/>
+		<coverageLevel inTerritory="EU" value="moderate" match="localeDisplayNames/languages/language[@type='%language60_EU'][@alt='%shortVariant']"/>
+		<coverageLevel inTerritory="GA" value="moderate" match="localeDisplayNames/languages/language[@type='%language60_GA']"/>
+		<coverageLevel inTerritory="GA" value="moderate" match="localeDisplayNames/languages/language[@type='%language60_GA'][@alt='%shortVariant']"/>
+		<coverageLevel inTerritory="NG" value="moderate" match="localeDisplayNames/languages/language[@type='%language60_NG']"/>
+		<coverageLevel inTerritory="NG" value="moderate" match="localeDisplayNames/languages/language[@type='%language60_NG'][@alt='%shortVariant']"/>
+		<coverageLevel inTerritory="TD" value="moderate" match="localeDisplayNames/languages/language[@type='%language60_TD']"/>
+		<coverageLevel inTerritory="TD" value="moderate" match="localeDisplayNames/languages/language[@type='%language60_TD'][@alt='%shortVariant']"/>
+		<coverageLevel value="moderate" match="localeDisplayNames/scripts/script[@type='%script60']"/>
+		<coverageLevel value="moderate" match="localeDisplayNames/territories/territory[@type='%territory60']"/>
+		<coverageLevel inTerritory="EU" value="moderate" match="localeDisplayNames/territories/territory[@type='%territory60_EU']"/>
+		<coverageLevel value="moderate" match="localeDisplayNames/types/type[@type='iso8601'][@key='calendar']"/>
+		<coverageLevel value="moderate" match="numbers/currencies/currency[@type='%currency60']/symbol"/>
+		<coverageLevel value="moderate" match="numbers/currencies/currency[@type='%currency60']/symbol[@alt='(narrow|variant)']"/>
+		<coverageLevel value="moderate" match="numbers/currencies/currency[@type='%currency60']/displayName"/>
+		<coverageLevel value="moderate" match="numbers/currencies/currency[@type='%currency60']/displayName[@count='${Target-Plurals}']"/>
+		<coverageLevel inTerritory="EU" value="moderate" match="numbers/currencies/currency[@type='%currency60_EU']/symbol"/>
+		<coverageLevel inTerritory="EU" value="moderate" match="numbers/currencies/currency[@type='%currency60_EU']/symbol[@alt='(narrow|variant)']"/>
+		<coverageLevel inTerritory="EU" value="moderate" match="numbers/currencies/currency[@type='%currency60_EU']/displayName"/>
+		<coverageLevel inTerritory="EU" value="moderate" match="numbers/currencies/currency[@type='%currency60_EU']/displayName[@count='${Target-Plurals}']"/>
+		<coverageLevel value="moderate" match="dates/calendars/calendar[@type='gregorian']/dateTimeFormats/appendItems/appendItem[@request='Timezone']"/>
+		<coverageLevel value="moderate" match="dates/calendars/calendar[@type='gregorian']/dateTimeFormats/availableFormats/dateFormatItem[@id='%dateFormatItems']"/>
+		<coverageLevel value="moderate" match="dates/calendars/calendar[@type='gregorian']/dateTimeFormats/availableFormats/dateFormatItem[@id='%timeFormatItems']"/>
+		<coverageLevel value="moderate" match="dates/calendars/calendar[@type='generic']/dateTimeFormats/availableFormats/dateFormatItem[@id='%dateFormatItems']"/>
+		<coverageLevel inTerritory="TH" value="modern" match="dates/calendars/calendar[@type='buddhist']/dateTimeFormats/availableFormats/dateFormatItem[@id='%dateFormatItems']"/>
+		<coverageLevel inTerritory="%islamicCalendarTerritories" value="modern" match="dates/calendars/calendar[@type='islamic']/dateTimeFormats/availableFormats/dateFormatItem[@id='%dateFormatItems']"/>
+		<coverageLevel inTerritory="JP" value="modern" match="dates/calendars/calendar[@type='japanese']/dateTimeFormats/availableFormats/dateFormatItem[@id='%dateFormatItems']"/>
+		<coverageLevel inTerritory="TW" value="modern" match="dates/calendars/calendar[@type='roc']/dateTimeFormats/availableFormats/dateFormatItem[@id='%dateFormatItems']"/>
+		<coverageLevel value="moderate" match="dates/calendars/calendar[@type='gregorian']/dateTimeFormats/intervalFormats/intervalFormatItem[@id='%intervalFormatDateItems']/greatestDifference[@id='%intervalFormatGDiff']"/>
+		<coverageLevel value="moderate" match="dates/calendars/calendar[@type='gregorian']/dateTimeFormats/intervalFormats/intervalFormatItem[@id='%intervalFormatTimeItems']/greatestDifference[@id='%intervalFormatGDiff']"/>
+		<coverageLevel value="moderate" match="dates/calendars/calendar[@type='generic']/dateTimeFormats/intervalFormats/intervalFormatItem[@id='%intervalFormatDateItems']/greatestDifference[@id='%intervalFormatGDiff']"/>
+		<coverageLevel value="moderate" match="dates/fields/field[@type='(year|month|week)']/relative[@type='(-1|0|1)']"/>
+		<coverageLevel value="moderate" match="dates/timeZoneNames/metazone[@type='%metazone60']/long/generic"/>
+		<coverageLevel value="moderate" match="dates/timeZoneNames/metazone[@type='%metazone60']/long/standard"/>
+		<coverageLevel value="moderate" match="dates/timeZoneNames/metazone[@type='%metazone60']/long/daylight"/>
+		<coverageLevel value="moderate" match="dates/timeZoneNames/metazone[@type='%metazone60_stdonly']/long/standard"/>
+		<coverageLevel value="moderate" match="units/unitLength[@type='%unitLengths']/unit[@type='%unitDurationTypes']/unitPattern[@count='${Target-Plurals}']"/>
+		<coverageLevel value="moderate" match="units/unitLength[@type='%unitLengths']/unit[@type='%unitDurationTypes']/displayName"/>
+		<coverageLevel value="moderate" match="units/unitLength[@type='%unitLengths']/unit[@type='%unitsCommonMetric']/unitPattern[@count='${Target-Plurals}']"/>
+		<coverageLevel value="moderate" match="units/unitLength[@type='%unitLengths']/unit[@type='%unitsCommonMetric']/displayName"/>
+		<coverageLevel inTerritory="US" value="moderate" match="units/unitLength[@type='%unitLengths']/unit[@type='%unitsCommonUS']/unitPattern[@count='${Target-Plurals}']"/>
+		<coverageLevel inTerritory="US" value="moderate" match="units/unitLength[@type='%unitLengths']/unit[@type='%unitsCommonUS']/displayName"/>
+		<coverageLevel value="modern" match="localeDisplayNames/languages/language[@type='%language80']"/> 
+		<coverageLevel value="modern" match="localeDisplayNames/languages/language[@type='%language80'][@alt='%shortVariant']"/> 
+		<coverageLevel value="modern" match="localeDisplayNames/scripts/script[@type='%script80']"/>
+		<coverageLevel value="modern" match="localeDisplayNames/territories/territory[@type='%territory80']"/>
+		<coverageLevel value="modern" match="localeDisplayNames/territories/territory[@type='%territory40'][@alt='%shortVariant']"/>
+		<coverageLevel value="modern" match="localeDisplayNames/territories/territory[@type='%territory60'][@alt='%shortVariant']"/>
+		<coverageLevel value="modern" match="localeDisplayNames/territories/territory[@type='%territory80'][@alt='%shortVariant']"/>
+		<coverageLevel value="modern" match="localeDisplayNames/keys/key[@type='%keys80']"/>
+		<coverageLevel value="modern" match="localeDisplayNames/types/type[@type='%collationType80'][@key='collation']"/>
+		<coverageLevel inLanguage="%collationType80TopLangs" value="modern" match="localeDisplayNames/types/type[@type='%collationType80ForTopLangs'][@key='collation']"/>
+		<coverageLevel value="modern" match="localeDisplayNames/types/type[@type='%numberingSystem80'][@key='numbers']"/>
+		<coverageLevel value="modern" match="dates/calendars/calendar[@type='gregorian']/days/dayContext[@type='%contextTypes']/dayWidth[@type='short']/day[@type='%dayTypes']"/>
+		<coverageLevel value="modern" match="dates/calendars/calendar[@type='gregorian']/dateTimeFormats/availableFormats/dateFormatItem[@id='%dateFormatItemsAll']"/>
+		<coverageLevel inLanguage="(ja|ko|vi|zh)" value="modern" match="dates/calendars/calendar[@type='chinese']/monthPatterns/monthPatternContext[@type='format']/monthPatternWidth[@type='wide']/monthPattern[@type='leap']"/>
+		<coverageLevel inLanguage="(ja|ko|vi|zh)" value="modern" match="dates/calendars/calendar[@type='chinese']/monthPatterns/monthPatternContext[@type='numeric']/monthPatternWidth[@type='all']/monthPattern[@type='leap']"/>
+		<coverageLevel inLanguage="(ja|ko|vi|zh)" value="modern" match="dates/calendars/calendar[@type='chinese']/monthPatterns/monthPatternContext[@type='stand-alone']/monthPatternWidth[@type='narrow']/monthPattern[@type='leap']"/>
+		<coverageLevel inLanguage="(ja|vi|zh)" value="modern" match="dates/calendars/calendar[@type='chinese']/cyclicNameSets/cyclicNameSet[@type='(dayParts|years|zodiacs|solarTerms)']/cyclicNameContext[@type='format']/cyclicNameWidth[@type='abbreviated']/cyclicName[@type='%cyclicNameTypes']"/>
+		<coverageLevel inLanguage="ko" value="modern" match="dates/calendars/calendar[@type='chinese']/cyclicNameSets/cyclicNameSet[@type='(years|solarTerms)']/cyclicNameContext[@type='format']/cyclicNameWidth[@type='abbreviated']/cyclicName[@type='%cyclicNameTypes']"/>
+		<coverageLevel inLanguage="ko" value="modern" match="dates/calendars/calendar[@type='dangi']/monthPatterns/monthPatternContext[@type='format']/monthPatternWidth[@type='wide']/monthPattern[@type='leap']"/>
+		<coverageLevel inLanguage="ko" value="modern" match="dates/calendars/calendar[@type='dangi']/monthPatterns/monthPatternContext[@type='numeric']/monthPatternWidth[@type='all']/monthPattern[@type='leap']"/>
+		<coverageLevel inLanguage="ko" value="modern" match="dates/calendars/calendar[@type='dangi']/monthPatterns/monthPatternContext[@type='stand-alone']/monthPatternWidth[@type='narrow']/monthPattern[@type='leap']"/>
+		<coverageLevel inLanguage="ko" value="modern" match="dates/calendars/calendar[@type='dangi']/cyclicNameSets/cyclicNameSet[@type='(dayParts|years|zodiacs|solarTerms)']/cyclicNameContext[@type='format']/cyclicNameWidth[@type='abbreviated']/cyclicName[@type='%cyclicNameTypes']"/>
+		<coverageLevel value="modern" match="dates/fields/field[@type='day']/relative[@type='(-3|-2|2|3)']"/>
+		<coverageLevel value="modern" match="dates/fields/field[@type='year']/relative[@type='(-3|-2|2|3)']"/>
+		<coverageLevel value="modern" match="dates/fields/field[@type='%relativeDayTypes']/relative[@type='(-1|0|1)']"/>
+		<coverageLevel value="modern" match="dates/fields/field[@type='%relativeTimeTypes']/relativeTime[@type='%futurePast']/relativeTimePattern[@count='${Target-Plurals}']"/>		
+		<coverageLevel value="modern" match="dates/timeZoneNames/metazone[@type='%metazone80']/long/generic"/>
+		<coverageLevel value="modern" match="dates/timeZoneNames/metazone[@type='%metazone80']/long/standard"/>
+		<coverageLevel value="modern" match="dates/timeZoneNames/metazone[@type='%metazone80']/long/daylight"/>
+		<coverageLevel value="modern" match="dates/timeZoneNames/metazone[@type='%metazone80_stdonly']/long/standard"/>
+		<coverageLevel value="modern" match="dates/timeZoneNames/zone[@type='%timeZones']/exemplarCity"/>
+		<coverageLevel value="modern" match="dates/timeZoneNames/zone[@type='Europe/(Dublin|London)']/long/daylight"/>
+		<coverageLevel value="modern" match="dates/timeZoneNames/zone[@type='Europe/(Dublin|London)']/short/daylight"/>
+		<coverageLevel value="modern" match="numbers/symbols[@numberSystem='latn']/exponential"/>
+		<coverageLevel value="modern" match="numbers/symbols[@numberSystem='latn']/superscriptingExponent"/>
+		<coverageLevel value="modern" match="numbers/symbols[@numberSystem='latn']/perMille"/>
+		<coverageLevel value="modern" match="numbers/symbols[@numberSystem='latn']/infinity"/>
+		<coverageLevel value="modern" match="numbers/symbols[@numberSystem='latn']/nan"/>
+		<coverageLevel value="modern" match="numbers/symbols[@numberSystem='latn']/timeSeparator"/>
+		<coverageLevel value="modern" match="numbers/minimumGroupingDigits"/>	 
+		<coverageLevel inLanguage="ar" value="modern" match="numbers/symbols[@numberSystem='arab']/exponential"/>
+		<coverageLevel inLanguage="ar" value="modern" match="numbers/symbols[@numberSystem='arab']/superscriptingExponent"/>
+		<coverageLevel inLanguage="ar" value="modern" match="numbers/symbols[@numberSystem='arab']/perMille"/>
+		<coverageLevel inLanguage="ar" value="modern" match="numbers/symbols[@numberSystem='arab']/infinity"/>
+		<coverageLevel inLanguage="ar" value="modern" match="numbers/symbols[@numberSystem='arab']/nan"/>
+		<coverageLevel inLanguage="ar" value="modern" match="numbers/symbols[@numberSystem='arab']/timeSeparator"/>
+		<coverageLevel inLanguage="%arabextLanguages" value="modern" match="numbers/symbols[@numberSystem='arabext']/exponential"/>
+		<coverageLevel inLanguage="%arabextLanguages" value="modern" match="numbers/symbols[@numberSystem='arabext']/superscriptingExponent"/>
+		<coverageLevel inLanguage="%arabextLanguages" value="modern" match="numbers/symbols[@numberSystem='arabext']/perMille"/>
+		<coverageLevel inLanguage="%arabextLanguages" value="modern" match="numbers/symbols[@numberSystem='arabext']/infinity"/>
+		<coverageLevel inLanguage="%arabextLanguages" value="modern" match="numbers/symbols[@numberSystem='arabext']/nan"/>
+		<coverageLevel inLanguage="%arabextLanguages" value="modern" match="numbers/symbols[@numberSystem='arabext']/timeSeparator"/>
+		<coverageLevel inLanguage="%devaLanguages" value="modern" match="numbers/symbols[@numberSystem='deva']/exponential"/>
+		<coverageLevel inLanguage="%devaLanguages" value="modern" match="numbers/symbols[@numberSystem='deva']/superscriptingExponent"/>
+		<coverageLevel inLanguage="%devaLanguages" value="modern" match="numbers/symbols[@numberSystem='deva']/perMille"/>
+		<coverageLevel inLanguage="%devaLanguages" value="modern" match="numbers/symbols[@numberSystem='deva']/infinity"/>
+		<coverageLevel inLanguage="%devaLanguages" value="modern" match="numbers/symbols[@numberSystem='deva']/nan"/>
+		<coverageLevel inLanguage="%devaLanguages" value="modern" match="numbers/symbols[@numberSystem='deva']/timeSeparator"/>
+		<coverageLevel inLanguage="dz" value="modern" match="numbers/symbols[@numberSystem='tibt']/exponential"/>
+		<coverageLevel inLanguage="dz" value="modern" match="numbers/symbols[@numberSystem='tibt']/superscriptingExponent"/>
+		<coverageLevel inLanguage="dz" value="modern" match="numbers/symbols[@numberSystem='tibt']/perMille"/>
+		<coverageLevel inLanguage="dz" value="modern" match="numbers/symbols[@numberSystem='tibt']/infinity"/>
+		<coverageLevel inLanguage="dz" value="modern" match="numbers/symbols[@numberSystem='tibt']/nan"/>
+		<coverageLevel inLanguage="dz" value="modern" match="numbers/symbols[@numberSystem='tibt']/timeSeparator"/>
+		<coverageLevel value="modern" match="numbers/currencyFormats[@numberSystem='latn']/currencyFormatLength/currencyFormat%acctPattern"/>
+		<coverageLevel value="modern" match="numbers/currencies/currency[@type='%currency80']/symbol"/>
+		<coverageLevel value="modern" match="numbers/currencies/currency[@type='%currency80']/symbol[@alt='(narrow|variant)']"/>
+		<coverageLevel value="modern" match="numbers/currencies/currency[@type='%currency80']/displayName"/>
+		<coverageLevel value="modern" match="numbers/currencies/currency[@type='%currency80']/displayName[@count='${Target-Plurals}']"/>
+		<coverageLevel value="modern" match="numbers/miscPatterns[@numberSystem='latn']/pattern[@type='%miscPatternTypes']"/>
+		<coverageLevel value="modern" match="characters/ellipsis[@type='%ellipsisTypes']"/>
+		<coverageLevel value="modern" match="characters/moreInformation"/>
+		<coverageLevel value="modern" match="numbers/decimalFormats[@numberSystem='latn']/decimalFormatLength[@type='%shortLong']/decimalFormat[@type='standard']/pattern[@type='%compactDecimalTypes'][@count='${Target-Plurals}']"/>
+		<coverageLevel value="modern" match="units/unitLength[@type='%unitNonNarrowLengths']/unit[@type='%unitsNonEnglish']/unitPattern[@count='${Target-Plurals}']"/>
+		<coverageLevel value="modern" match="units/unitLength[@type='%unitNonNarrowLengths']/unit[@type='%unitsNonEnglish']/displayName"/>
+		<coverageLevel value="modern" match="units/unitLength[@type='%unitNonNarrowLengths']/unit[@type='%unitsNonEnglish']/perUnitPattern"/>
+		<coverageLevel inLanguage="en" value="modern" match="units/unitLength[@type='%unitLengths']/unit[@type='%unitsEnglish']/unitPattern[@count='${Target-Plurals}']"/>
+		<coverageLevel inLanguage="en" value="modern" match="units/unitLength[@type='%unitLengths']/unit[@type='%unitsEnglish']/displayName"/>
+		<coverageLevel inLanguage="en" value="modern" match="units/unitLength[@type='%unitLengths']/unit[@type='%unitsEnglish']/perUnitPattern"/>
+				
+		<coverageLevel value="modern" match="listPatterns/listPattern[@type='(duration|unit)(-(short|narrow))?']/listPatternPart[@type='(2|start|middle|end)']"/>
+		<coverageLevel value="modern" match="dates/calendars/calendar[@type='gregorian']/dayPeriods/dayPeriodContext[@type='format']/dayPeriodWidth[@type='%wideNarrow']/dayPeriod[@type='%ampmTypes']"/>
+		<coverageLevel value="modern" match="localeDisplayNames/types/type[@type='%calendarType80'][@key='calendar']"/>
+		<coverageLevel value="modern" match="dates/calendars/calendar[@type='gregorian']/eras/eraNames/era[@type='(0|1)']"/>
+		<coverageLevel value="modern" match="dates/calendars/calendar[@type='gregorian']/eras/eraNames/era[@type='(0|1)'][@alt='variant']"/>
+
+		<coverageLevel value="comprehensive" match="units/unitLength[@type='narrow']/unit[@type='%unitsNonEnglish']/unitPattern[@count='${Target-Plurals}']"/>
+		<coverageLevel value="comprehensive" match="dates/calendars/calendar[@type='gregorian']/eras/eraNarrow/era[@type='(0|1)']"/>
+		<coverageLevel value="comprehensive" match="dates/calendars/calendar[@type='gregorian']/eras/eraNarrow/era[@type='(0|1)'][@alt='variant']"/>
+		<coverageLevel value="comprehensive" match="dates/calendars/calendar[@type='(buddhist|ethiopic-amete-alem|hebrew|indian|islamic|persian)']/eras/eraAbbr/era[@type='0']"/>
+		<coverageLevel value="comprehensive" match="dates/calendars/calendar[@type='(buddhist|ethiopic-amete-alem|hebrew|indian|islamic|persian)']/eras/eraNames/era[@type='0']"/>
+		<coverageLevel value="comprehensive" match="dates/calendars/calendar[@type='(coptic|ethiopic|roc)']/eras/eraAbbr/era[@type='(0|1)']"/>
+		<coverageLevel value="comprehensive" match="dates/calendars/calendar[@type='(coptic|ethiopic|roc)']/eras/eraNames/era[@type='(0|1)']"/>
+		<coverageLevel value="comprehensive" match="dates/calendars/calendar[@type='japanese']/eras/eraAbbr/era[@type='%japaneseEras']"/>
+		<coverageLevel value="comprehensive" match="dates/calendars/calendar[@type='(buddhist|chinese|dangi|hebrew|islamic|japanese|roc)']/dateFormats/dateFormatLength[@type='%dateTimeFormatLengths']/dateFormat%stdPattern"/>
+		<coverageLevel value="comprehensive" match="dates/calendars/calendar[@type='japanese']/dateTimeFormats/dateTimeFormatLength[@type='%dateTimeFormatLengths']/dateTimeFormat%stdPattern"/>
+		<coverageLevel value="comprehensive" match="dates/calendars/calendar[@type='(buddhist|islamic|japanese|roc)']/dateTimeFormats/availableFormats/dateFormatItem[@id='%dateFormatItems']"/>
+		<coverageLevel value="comprehensive" match="dates/calendars/calendar[@type='%calendarType100ForDateFormats']/dateFormats/dateFormatLength[@type='%dateTimeFormatLengths']/dateFormat%stdPattern"/>
+		<coverageLevel value="comprehensive" match="dates/calendars/calendar[@type='%calendarType100ForDateFormats']/dateTimeFormats/dateTimeFormatLength[@type='%dateTimeFormatLengths']/dateTimeFormat%stdPattern"/>
+		<coverageLevel value="comprehensive" match="dates/calendars/calendar[@type='%calendarType100ForDateFormats']/dateTimeFormats/availableFormats/dateFormatItem[@id='%dateFormatItems']"/>
+		<coverageLevel value="comprehensive" match="dates/calendars/calendar[@type='%calendarType100ForDateFormats']/dateTimeFormats/intervalFormats/intervalFormatItem[@id='%intervalFormatDateItems']/greatestDifference[@id='%intervalFormatGDiff']"/>
+		<coverageLevel value="comprehensive" match="dates/calendars/calendar[@type='%calendarTypeUniqueNonGregoMonths']/months/monthContext[@type='%contextTypes']/monthWidth[@type='%allWidths']/month[@type='%monthTypes']"/>
+		<coverageLevel value="comprehensive" match="dates/calendars/calendar[@type='hebrew']/months/monthContext[@type='%contextTypes']/monthWidth[@type='%allWidths']/month[@type='7'][@yeartype='leap']"/>
+		<coverageLevel value="comprehensive" match="dates/calendars/calendar[@type='(chinese|dangi)']/monthPatterns/monthPatternContext[@type='format']/monthPatternWidth[@type='wide']/monthPattern[@type='leap']"/>
+		<coverageLevel value="comprehensive" match="dates/calendars/calendar[@type='(chinese|dangi)']/monthPatterns/monthPatternContext[@type='numeric']/monthPatternWidth[@type='all']/monthPattern[@type='leap']"/>
+		<coverageLevel value="comprehensive" match="dates/calendars/calendar[@type='(chinese|dangi)']/monthPatterns/monthPatternContext[@type='stand-alone']/monthPatternWidth[@type='narrow']/monthPattern[@type='leap']"/>
+		<coverageLevel value="comprehensive" match="dates/calendars/calendar[@type='(chinese|dangi)']/cyclicNameSets/cyclicNameSet[@type='(dayParts|years|zodiacs|solarTerms)']/cyclicNameContext[@type='format']/cyclicNameWidth[@type='abbreviated']/cyclicName[@type='%cyclicNameTypes']"/>
+		<coverageLevel value="comprehensive" match="localeDisplayNames/languages/language[@type='%language100_a_m']"/>
+		<coverageLevel value="comprehensive" match="localeDisplayNames/languages/language[@type='%language100_n_z']"/>
+		<coverageLevel value="comprehensive" match="localeDisplayNames/languages/language[@type='%language100_a_m'][@alt='%shortVariant']"/>
+		<coverageLevel value="comprehensive" match="localeDisplayNames/languages/language[@type='%language100_n_z'][@alt='%shortVariant']"/>
+		<coverageLevel value="comprehensive" match="localeDisplayNames/scripts/script[@type='%script100']"/>
+		<coverageLevel value="comprehensive" match="localeDisplayNames/territories/territory[@type='%territory100']"/>
+		<coverageLevel value="comprehensive" match="localeDisplayNames/territories/territory[@type='%territory100'][@alt='%shortVariant']"/>
+		<coverageLevel value="comprehensive" match="localeDisplayNames/variants/variant[@type='%variantTypes']"/>
+		<coverageLevel value="comprehensive" match="localeDisplayNames/keys/key[@type='%keys100']"/>
+		<coverageLevel value="comprehensive" match="localeDisplayNames/types/type[@type='%numberingSystem100'][@key='numbers']"/>
+		<coverageLevel value="comprehensive" match="localeDisplayNames/types/type[@type='%calendarType100'][@key='calendar']"/>
+		<coverageLevel value="comprehensive" match="localeDisplayNames/types/type[@type='%collationType100'][@key='collation']"/>
+		<coverageLevel value="comprehensive" match="localeDisplayNames/types/type[@type='%collationAlternateValues'][@key='colAlternate']"/>
+		<coverageLevel value="comprehensive" match="localeDisplayNames/types/type[@type='%collationCases'][@key='colCaseFirst']"/>
+		<coverageLevel value="comprehensive" match="localeDisplayNames/types/type[@type='%collationStrengths'][@key='colStrength']"/>
+		<coverageLevel value="comprehensive" match="localeDisplayNames/types/type[@type='%yesNo'][@key='%collationYesNoOptions']"/>
+		<coverageLevel value="comprehensive" match="localeDisplayNames/types/type[@type='posix'][@key='va']"/>
+		<coverageLevel value="comprehensive" match="localeDisplayNames/transformNames/transformName[@type='%transformNameTypes']"/>
+		<coverageLevel value="comprehensive" match="numbers/currencies/currency[@type='%currency30']/symbol"/>
+		<coverageLevel value="comprehensive" match="numbers/currencies/currency[@type='%currency100']/symbol"/>
+		<coverageLevel value="comprehensive" match="numbers/currencies/currency[@type='%currency100']/symbol[@alt='(narrow|variant)']"/>
+		<coverageLevel value="comprehensive" match="numbers/currencies/currency[@type='%currency100']/displayName"/>
+		<coverageLevel value="comprehensive" match="numbers/currencies/currency[@type='%currency100']/displayName[@count='${Target-Plurals}']"/>
+		<coverageLevel value="comprehensive" match="dates/timeZoneNames/metazone[@type='%metazone100']/long/generic"/>
+		<coverageLevel value="comprehensive" match="dates/timeZoneNames/metazone[@type='%metazone100']/long/standard"/>
+		<coverageLevel value="comprehensive" match="dates/timeZoneNames/metazone[@type='%metazone100']/long/daylight"/>
+		<coverageLevel value="comprehensive" match="dates/timeZoneNames/metazone[@type='%metazone100_stdonly']/long/standard"/>
+		<coverageLevel value="comprehensive" match="units/unitLength[@type='narrow']/unit[@type='%unitsNonEnglish']/unitPattern[@count='${Target-Plurals}']"/>
+		<coverageLevel value="comprehensive" match="units/unitLength[@type='narrow']/unit[@type='%unitsNonEnglish']/displayName"/>
+		<coverageLevel value="comprehensive" match="units/unitLength[@type='narrow']/unit[@type='%unitsNonEnglish']/perUnitPattern"/>
+		<coverageLevel value="comprehensive" match="units/unitLength[@type='%unitLengths']/unit[@type='%unitsEnglish']/unitPattern[@count='${Target-Plurals}']"/>
+		<coverageLevel value="comprehensive" match="units/unitLength[@type='%unitLengths']/unit[@type='%unitsEnglish']/displayName"/>
+		<coverageLevel value="comprehensive" match="units/unitLength[@type='%unitLengths']/unit[@type='%unitsEnglish']/perUnitPattern"/>
+	</coverageLevels>
+</supplementalData>

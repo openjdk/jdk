@@ -367,7 +367,7 @@ public class Basic extends PKCS11Test {
     private static void module() throws Exception {
 
         // perform Security.addProvider of P11 provider
-        ProviderLoader.go(System.getProperty("CUSTOM_P11_CONFIG"));
+        Security.addProvider(getSunPKCS11(System.getProperty("CUSTOM_P11_CONFIG")));
 
         String KS_PROVIDER = "SunPKCS11-" + System.getProperty("TOKEN");
 

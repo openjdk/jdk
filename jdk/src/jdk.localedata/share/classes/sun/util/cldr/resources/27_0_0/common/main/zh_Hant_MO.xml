@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2014 Unicode, Inc.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+For terms of use, see http://www.unicode.org/copyright.html
+-->
+<ldml>
+	<identity>
+		<version number="$Revision: 11135 $"/>
+		<generation date="$Date: 2015-01-19 14:58:31 -0600 (Mon, 19 Jan 2015) $"/>
+		<language type="zh"/>
+		<script type="Hant"/>
+		<territory type="MO"/>
+	</identity>
+	<numbers>
+		<currencies>
+			<currency type="MOP">
+				<symbol>MOP$</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+</ldml>
+

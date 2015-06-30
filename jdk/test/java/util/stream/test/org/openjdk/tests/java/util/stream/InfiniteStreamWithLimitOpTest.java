@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,7 +181,7 @@ public class InfiniteStreamWithLimitOpTest extends OpTestCase {
         // slice implementations
         withData(refLongs()).
                 stream(s -> fs.apply(s)).
-                without(StreamTestScenario.PAR_STREAM_TO_ARRAY_CLEAR_SIZED).
+                without(StreamTestScenario.CLEAR_SIZED_SCENARIOS).
                 exercise();
     }
 
@@ -192,7 +192,7 @@ public class InfiniteStreamWithLimitOpTest extends OpTestCase {
         // slice implementations
         withData(ints()).
                 stream(s -> fs.apply(s)).
-                without(IntStreamTestScenario.PAR_STREAM_TO_ARRAY_CLEAR_SIZED).
+                without(IntStreamTestScenario.CLEAR_SIZED_SCENARIOS).
                 exercise();
     }
 
@@ -203,7 +203,7 @@ public class InfiniteStreamWithLimitOpTest extends OpTestCase {
         // slice implementations
         withData(longs()).
                 stream(s -> fs.apply(s)).
-                without(LongStreamTestScenario.PAR_STREAM_TO_ARRAY_CLEAR_SIZED).
+                without(LongStreamTestScenario.CLEAR_SIZED_SCENARIOS).
                 exercise();
     }
 
@@ -214,7 +214,7 @@ public class InfiniteStreamWithLimitOpTest extends OpTestCase {
         // slice implementations
         withData(doubles()).
                 stream(s -> fs.apply(s)).
-                without(DoubleStreamTestScenario.PAR_STREAM_TO_ARRAY_CLEAR_SIZED).
+                without(DoubleStreamTestScenario.CLEAR_SIZED_SCENARIOS).
                 exercise();
     }
 

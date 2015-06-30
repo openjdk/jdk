@@ -87,7 +87,7 @@ class SecuritySupport  {
                 public Object run() {
                     InputStream ris;
                     if (cl == null) {
-                        ris = Object.class.getResourceAsStream(name);
+                        ris = SecuritySupport.class.getResourceAsStream(name);
                     } else {
                         ris = cl.getResourceAsStream(name);
                     }

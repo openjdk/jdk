@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2014 Unicode, Inc.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+For terms of use, see http://www.unicode.org/copyright.html
+-->
+<ldml>
+	<identity>
+		<version number="$Revision: 11159 $"/>
+		<generation date="$Date: 2015-01-30 13:45:39 -0600 (Fri, 30 Jan 2015) $"/>
+		<language type="en"/>
+		<territory type="AU"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="bax">Bamum</language>
+			<language type="en_US">United States English</language>
+		</languages>
+	</localeDisplayNames>
+	<dates>
+		<calendars>
+			<calendar type="chinese">
+				<dateFormats>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>d/MM/yy</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+			</calendar>
+			<calendar type="generic">
+				<dateFormats>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>d/MM/y GGGGG</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
+						<dateFormatItem id="yMEd">E, d/M/y</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d">E, d/MM – E, d/MM</greatestDifference>
+							<greatestDifference id="M">E, d/MM – E, d/MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d">E, d – E, d MMM</greatestDifference>
+							<greatestDifference id="M">E, d MMM – E, d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d">d/MM/y – d/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="M">d/MM/y – d/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="y">d/MM/y – d/MM/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d">E, d/MM/y – E, d/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="M">E, d/MM/y – E, d/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="y">E, d/MM/y – E, d/MM/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="gregorian">
+				<dateFormats>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>d/MM/y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="Ed">E d</dateFormatItem>
+						<dateFormatItem id="M">LL</dateFormatItem>
+						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
+						<dateFormatItem id="yMEd">E, d/M/y</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d">d/MM – d/MM</greatestDifference>
+							<greatestDifference id="M">d/MM – d/MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d">E, d/MM – E, d/MM</greatestDifference>
+							<greatestDifference id="M">E, d/MM – E, d/MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d">E, d – E, d MMM</greatestDifference>
+							<greatestDifference id="M">E, d MMM – E, d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d">d/MM/y – d/MM/y</greatestDifference>
+							<greatestDifference id="M">d/MM/y – d/MM/y</greatestDifference>
+							<greatestDifference id="y">d/MM/y – d/MM/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d">E, d/MM/y – E, d/MM/y</greatestDifference>
+							<greatestDifference id="M">E, d/MM/y – E, d/MM/y</greatestDifference>
+							<greatestDifference id="y">E, d/MM/y – E, d/MM/y</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="islamic">
+				<dateFormats>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>d/MM/y GGGGG</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
+						<dateFormatItem id="yMEd">E, d/M/y</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="japanese">
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
+						<dateFormatItem id="yMEd">E, d/M/y</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+		<timeZoneNames>
+			<metazone type="Arabian">
+				<long>
+					<generic>Arabian Time</generic>
+					<standard>Arabian Standard Time</standard>
+					<daylight>Arabian Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Central">
+				<short>
+					<generic>ACT</generic>
+					<standard>ACST</standard>
+					<daylight>ACDT</daylight>
+				</short>
+			</metazone>
+			<metazone type="Australia_CentralWestern">
+				<short>
+					<generic>ACWT</generic>
+					<standard>ACWST</standard>
+					<daylight>ACWDT</daylight>
+				</short>
+			</metazone>
+			<metazone type="Australia_Eastern">
+				<short>
+					<generic>AET</generic>
+					<standard>AEST</standard>
+					<daylight>AEDT</daylight>
+				</short>
+			</metazone>
+			<metazone type="Australia_Western">
+				<short>
+					<generic>AWT</generic>
+					<standard>AWST</standard>
+					<daylight>AWDT</daylight>
+				</short>
+			</metazone>
+			<metazone type="China">
+				<long>
+					<generic>China Time</generic>
+					<standard>China Standard Time</standard>
+					<daylight>China Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Iran">
+				<long>
+					<generic>Iran Time</generic>
+					<standard>Iran Standard Time</standard>
+					<daylight>Iran Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Israel">
+				<long>
+					<generic>Israel Time</generic>
+					<standard>Israel Standard Time</standard>
+					<daylight>Israel Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Japan">
+				<long>
+					<generic>Japan Time</generic>
+					<standard>Japan Standard Time</standard>
+					<daylight>Japan Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Korea">
+				<long>
+					<generic>Korean Time</generic>
+					<standard>Korean Standard Time</standard>
+					<daylight>Korean Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Lord_Howe">
+				<short>
+					<generic>LHT</generic>
+					<standard>LHST</standard>
+					<daylight>LHDT</daylight>
+				</short>
+			</metazone>
+			<metazone type="New_Zealand">
+				<short>
+					<generic>NZT</generic>
+					<standard>NZST</standard>
+					<daylight>NZDT</daylight>
+				</short>
+			</metazone>
+			<metazone type="Taipei">
+				<long>
+					<generic>Taipei Time</generic>
+					<standard>Taipei Standard Time</standard>
+					<daylight>Taipei Summer Time</daylight>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<currencies>
+			<currency type="AUD">
+				<symbol>$</symbol>
+			</currency>
+			<currency type="EUR">
+				<displayName count="one">euro</displayName>
+				<displayName count="other">euro</displayName>
+			</currency>
+			<currency type="MGA">
+				<displayName count="one">Malagasy ariary</displayName>
+				<displayName count="other">Malagasy ariarys</displayName>
+			</currency>
+			<currency type="SCR">
+				<displayName>Seychelles Rupee</displayName>
+			</currency>
+		</currencies>
+	</numbers>
+	<units>
+		<unitLength type="long">
+			<unit type="mass-metric-ton">
+				<displayName>tonnes</displayName>
+				<unitPattern count="one">tonne</unitPattern>
+				<unitPattern count="other">{0} tonnes</unitPattern>
+			</unit>
+		</unitLength>
+		<unitLength type="short">
+			<unit type="length-micrometer">
+				<displayName>µmetres</displayName>
+			</unit>
+		</unitLength>
+		<unitLength type="narrow">
+			<unit type="duration-millisecond">
+				<unitPattern count="one">{0} ms</unitPattern>
+				<unitPattern count="other">{0} ms</unitPattern>
+			</unit>
+		</unitLength>
+	</units>
+</ldml>
+

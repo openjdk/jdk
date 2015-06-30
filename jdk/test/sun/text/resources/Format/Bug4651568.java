@@ -23,8 +23,9 @@
 
 /*
  *@test
- *@bug 4651568
+ *@bug 4651568 8008577
  *@summary Verifies the currency pattern for pt_BR locale
+ *@run main/othervm -Djava.locale.providers=JRE,SPI Bug4651568
  */
 
 import java.text.DecimalFormat;
