@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4663254 8016328 8025633 8026567
+ * @bug      4663254 8016328 8025633 8026567 8081854
  * @summary  Verify that spaces do not appear in hrefs and anchors.
  * @author   jamieh
  * @library  ../lib
@@ -54,11 +54,11 @@ public class TestHref extends JavadocTester {
                 //Member summary table link.
                 "href=\"../pkg/C1.html#method-int-int-java.util.ArrayList-\"",
                 //Anchor test.
-                "<a id=\"method-int-int-java.util.ArrayList-\">\n"
+                "<a name=\"method-int-int-java.util.ArrayList-\">\n"
                 + "<!--   -->\n"
                 + "</a>",
                 //Backward compatibility anchor test."pkg/C1.html",
-                "<a id=\"method-int-int-java.util.ArrayList-\">\n"
+                "<a name=\"method-int-int-java.util.ArrayList-\">\n"
                 + "<!--   -->\n"
                 + "</a>");
 

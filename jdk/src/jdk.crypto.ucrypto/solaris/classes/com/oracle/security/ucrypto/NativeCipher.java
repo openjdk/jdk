@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,10 +55,16 @@ class NativeCipher extends CipherSpi {
         public AesEcbNoPadding() throws NoSuchAlgorithmException {
             super(UcryptoMech.CRYPTO_AES_ECB);
         }
+        public AesEcbNoPadding(int keySize) throws NoSuchAlgorithmException {
+            super(UcryptoMech.CRYPTO_AES_ECB, keySize);
+        }
     }
     public static final class AesCbcNoPadding extends NativeCipher {
         public AesCbcNoPadding() throws NoSuchAlgorithmException {
             super(UcryptoMech.CRYPTO_AES_CBC);
+        }
+        public AesCbcNoPadding(int keySize) throws NoSuchAlgorithmException {
+            super(UcryptoMech.CRYPTO_AES_CBC, keySize);
         }
     }
     public static final class AesCtrNoPadding extends NativeCipher {
@@ -69,38 +75,6 @@ class NativeCipher extends CipherSpi {
     public static final class AesCfb128NoPadding extends NativeCipher {
         public AesCfb128NoPadding() throws NoSuchAlgorithmException {
             super(UcryptoMech.CRYPTO_AES_CFB128);
-        }
-    }
-
-    // public implementation classes with fixed key sizes
-    public static final class Aes128EcbNoPadding extends NativeCipher {
-        public Aes128EcbNoPadding() throws NoSuchAlgorithmException {
-            super(UcryptoMech.CRYPTO_AES_ECB, 16);
-        }
-    }
-    public static final class Aes128CbcNoPadding extends NativeCipher {
-        public Aes128CbcNoPadding() throws NoSuchAlgorithmException {
-            super(UcryptoMech.CRYPTO_AES_CBC, 16);
-        }
-    }
-    public static final class Aes192EcbNoPadding extends NativeCipher {
-        public Aes192EcbNoPadding() throws NoSuchAlgorithmException {
-            super(UcryptoMech.CRYPTO_AES_ECB, 24);
-        }
-    }
-    public static final class Aes192CbcNoPadding extends NativeCipher {
-        public Aes192CbcNoPadding() throws NoSuchAlgorithmException {
-            super(UcryptoMech.CRYPTO_AES_CBC, 24);
-        }
-    }
-    public static final class Aes256EcbNoPadding extends NativeCipher {
-        public Aes256EcbNoPadding() throws NoSuchAlgorithmException {
-            super(UcryptoMech.CRYPTO_AES_ECB, 32);
-        }
-    }
-    public static final class Aes256CbcNoPadding extends NativeCipher {
-        public Aes256CbcNoPadding() throws NoSuchAlgorithmException {
-            super(UcryptoMech.CRYPTO_AES_CBC, 32);
         }
     }
 

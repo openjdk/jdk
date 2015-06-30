@@ -140,17 +140,8 @@ public final class DelegationPermission extends BasicPermission
      */
     @Override
     public boolean implies(Permission p) {
-        if (!(p instanceof DelegationPermission))
-            return false;
-
-        DelegationPermission that = (DelegationPermission) p;
-        if (this.subordinate.equals(that.subordinate) &&
-            this.service.equals(that.service))
-            return true;
-
-        return false;
+        return equals(p);
     }
-
 
     /**
      * Checks two DelegationPermission objects for equality.
@@ -158,19 +149,23 @@ public final class DelegationPermission extends BasicPermission
      * @param obj the object to test for equality with this object.
      *
      * @return true if {@code obj} is a DelegationPermission, and
-     *  has the same subordinate and service principal as this.
+     *  has the same subordinate and service principal as this
      *  DelegationPermission object.
      */
     @Override
     public boolean equals(Object obj) {
-        if (obj == this)
+        if (obj == this) {
             return true;
+        }
 
-        if (! (obj instanceof DelegationPermission))
+        if (!(obj instanceof DelegationPermission)) {
             return false;
+        }
 
         DelegationPermission that = (DelegationPermission) obj;
-        return implies(that);
+
+        return this.subordinate.equals(that.subordinate) &&
+                this.service.equals(that.service);
     }
 
     /**
@@ -180,7 +175,7 @@ public final class DelegationPermission extends BasicPermission
      */
     @Override
     public int hashCode() {
-        return getName().hashCode();
+        return 17 * subordinate.hashCode() + 31 * service.hashCode();
     }
 
     /**
@@ -223,42 +218,6 @@ public final class DelegationPermission extends BasicPermission
         init(getName());
     }
 
-    /*
-      public static void main(String args[]) throws Exception {
-      DelegationPermission this_ =
-      new DelegationPermission(args[0]);
-      DelegationPermission that_ =
-      new DelegationPermission(args[1]);
-      System.out.println("-----\n");
-      System.out.println("this.implies(that) = " + this_.implies(that_));
-      System.out.println("-----\n");
-      System.out.println("this = "+this_);
-      System.out.println("-----\n");
-      System.out.println("that = "+that_);
-      System.out.println("-----\n");
-
-      KrbDelegationPermissionCollection nps =
-      new KrbDelegationPermissionCollection();
-      nps.add(this_);
-      nps.add(new DelegationPermission("\"host/foo.example.com@EXAMPLE.COM\" \"CN=Gary Ellison/OU=JSN/O=SUNW/L=Palo Alto/ST=CA/C=US\""));
-      try {
-      nps.add(new DelegationPermission("host/foo.example.com@EXAMPLE.COM \"CN=Gary Ellison/OU=JSN/O=SUNW/L=Palo Alto/ST=CA/C=US\""));
-      } catch (Exception e) {
-      System.err.println(e);
-      }
-
-      System.out.println("nps.implies(that) = " + nps.implies(that_));
-      System.out.println("-----\n");
-
-      Enumeration e = nps.elements();
-
-      while (e.hasMoreElements()) {
-      DelegationPermission x =
-      (DelegationPermission) e.nextElement();
-      System.out.println("nps.e = " + x);
-      }
-      }
-    */
 }
 
 

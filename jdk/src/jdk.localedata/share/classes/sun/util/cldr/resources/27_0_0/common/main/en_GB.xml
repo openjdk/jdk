@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2014 Unicode, Inc.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+For terms of use, see http://www.unicode.org/copyright.html
+-->
+<ldml>
+	<identity>
+		<version number="$Revision: 11159 $"/>
+		<generation date="$Date: 2015-01-30 13:45:39 -0600 (Fri, 30 Jan 2015) $"/>
+		<language type="en"/>
+		<territory type="GB"/>
+	</identity>
+	<localeDisplayNames>
+		<keys>
+			<key type="colNormalization">Normalised Sorting</key>
+		</keys>
+		<types>
+			<type type="no" key="colNormalization">Sort Without Normalisation</type>
+			<type type="yes" key="colNormalization">Sort Unicode Normalised</type>
+		</types>
+	</localeDisplayNames>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">a.m.</dayPeriod>
+							<dayPeriod type="pm">p.m.</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern>HH:mm:ss zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern>HH:mm:ss z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern>HH:mm:ss</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern>HH:mm</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+			</calendar>
+		</calendars>
+		<fields>
+			<field type="dayperiod">
+				<displayName>a.m./p.m.</displayName>
+			</field>
+		</fields>
+		<timeZoneNames>
+			<zone type="Europe/London">
+				<short>
+					<daylight>BST</daylight>
+				</short>
+			</zone>
+			<metazone type="Europe_Central">
+				<short>
+					<generic>CET</generic>
+					<standard>CET</standard>
+					<daylight>CEST</daylight>
+				</short>
+			</metazone>
+			<metazone type="Europe_Eastern">
+				<short>
+					<generic>EET</generic>
+					<standard>EET</standard>
+					<daylight>EEST</daylight>
+				</short>
+			</metazone>
+			<metazone type="Europe_Western">
+				<short>
+					<generic>WET</generic>
+					<standard>WET</standard>
+					<daylight>WEST</daylight>
+				</short>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<currencies>
+			<currency type="ILR">
+				<displayName>Israeli Shekel (1980–1985)</displayName>
+				<displayName count="one">Israeli shekel (1980–1985)</displayName>
+				<displayName count="other">Israeli shekels (1980–1985)</displayName>
+			</currency>
+			<currency type="ILS">
+				<displayName>Israeli New Shekel</displayName>
+				<displayName count="one">Israeli new shekel</displayName>
+				<displayName count="other">Israeli new shekels</displayName>
+			</currency>
+		</currencies>
+	</numbers>
+	<units>
+		<unitLength type="short">
+			<unit type="volume-liter">
+				<unitPattern count="one">{0} l</unitPattern>
+				<unitPattern count="other">{0} l</unitPattern>
+			</unit>
+		</unitLength>
+	</units>
+</ldml>
+
