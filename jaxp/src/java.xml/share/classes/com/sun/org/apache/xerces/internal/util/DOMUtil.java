@@ -845,13 +845,7 @@ public class DOMUtil {
      */
     public static DOMException createDOMException(short code, Throwable cause) {
         DOMException de = new DOMException(code, cause != null ? cause.getMessage() : null);
-        if (cause != null && ThrowableMethods.fgThrowableMethodsAvailable) {
-            try {
-                ThrowableMethods.fgThrowableInitCauseMethod.invoke(de, new Object [] {cause});
-            }
-            // Something went wrong. There's not much we can do about it.
-            catch (Exception e) {}
-        }
+        if (cause != null) de.initCause(cause);
         return de;
     }
 
@@ -860,42 +854,8 @@ public class DOMUtil {
      */
     public static LSException createLSException(short code, Throwable cause) {
         LSException lse = new LSException(code, cause != null ? cause.getMessage() : null);
-        if (cause != null && ThrowableMethods.fgThrowableMethodsAvailable) {
-            try {
-                ThrowableMethods.fgThrowableInitCauseMethod.invoke(lse, new Object [] {cause});
-            }
-            // Something went wrong. There's not much we can do about it.
-            catch (Exception e) {}
-        }
+        if (cause != null) lse.initCause(cause);
         return lse;
-    }
-
-    /**
-     * Holder of methods from java.lang.Throwable.
-     */
-    static class ThrowableMethods {
-
-        // Method: java.lang.Throwable.initCause(java.lang.Throwable)
-        private static java.lang.reflect.Method fgThrowableInitCauseMethod = null;
-
-        // Flag indicating whether or not Throwable methods available.
-        private static boolean fgThrowableMethodsAvailable = false;
-
-        private ThrowableMethods() {}
-
-        // Attempt to get methods for java.lang.Throwable on class initialization.
-        static {
-            try {
-                fgThrowableInitCauseMethod = Throwable.class.getMethod("initCause", new Class [] {Throwable.class});
-                fgThrowableMethodsAvailable = true;
-            }
-            // ClassNotFoundException, NoSuchMethodException or SecurityException
-            // Whatever the case, we cannot use java.lang.Throwable.initCause(java.lang.Throwable).
-            catch (Exception exc) {
-                fgThrowableInitCauseMethod = null;
-                fgThrowableMethodsAvailable = false;
-            }
-        }
     }
 
 } // class DOMUtil
