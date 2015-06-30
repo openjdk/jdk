@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,32 +25,42 @@
 
 package sun.nio.fs;
 
+import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.spi.FileTypeDetector;
 import java.security.AccessController;
-import sun.security.action.GetPropertyAction;
+import java.security.PrivilegedAction;
 
 /**
- * MacOSX implementation of FileSystemProvider
+ * File type detector that uses a file extension to look up its MIME type
+ * via the Apple Uniform Type Identifier interfaces.
  */
-
-public class MacOSXFileSystemProvider extends BsdFileSystemProvider {
-    public MacOSXFileSystemProvider() {
+class UTIFileTypeDetector extends AbstractFileTypeDetector {
+    UTIFileTypeDetector() {
         super();
     }
 
+    private native String probe0(String fileExtension) throws IOException;
+
     @Override
-    MacOSXFileSystem newFileSystem(String dir) {
-        return new MacOSXFileSystem(this, dir);
+    protected String implProbeContentType(Path path) throws IOException {
+        Path fn = path.getFileName();
+        if (fn == null)
+            return null;  // no file name
+
+        String ext = getExtension(fn.toString());
+        if (ext.isEmpty())
+            return null;  // no extension
+
+        return probe0(ext);
     }
 
-    @Override
-    FileTypeDetector getFileTypeDetector() {
-        Path userMimeTypes = Paths.get(AccessController.doPrivileged(
-            new GetPropertyAction("user.home")), ".mime.types");
-
-        return chain(new MimeTypesFileTypeDetector(userMimeTypes),
-                     new UTIFileTypeDetector());
+    static {
+        AccessController.doPrivileged(new PrivilegedAction<>() {
+            @Override
+            public Void run() {
+                System.loadLibrary("nio");
+                return null;
+            }
+        });
     }
 }

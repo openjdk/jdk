@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887
+ * @bug 4313887 8129632
  * @summary Unit test for probeContentType method
  * @library ../..
  * @build Basic SimpleFileTypeDetector
@@ -33,9 +33,9 @@ import java.nio.file.*;
 import java.io.*;
 
 /**
- * Uses Files.probeContentType to probe html file and custom file type.
+ * Uses Files.probeContentType to probe html file, custom file type, and minimal
+ * set of file extension to content type mappings.
  */
-
 public class Basic {
 
     static Path createHtmlFile() throws IOException {
@@ -49,6 +49,39 @@ public class Basic {
 
     static Path createGrapeFile() throws IOException {
         return Files.createTempFile("red", ".grape");
+    }
+
+    static void checkContentTypes(String[] extensions, String[] expectedTypes)
+        throws IOException {
+        if (extensions.length != expectedTypes.length) {
+            throw new IllegalArgumentException("Parameter array lengths differ");
+        }
+
+        int failures = 0;
+        for (int i = 0; i < extensions.length; i++) {
+            String extension = extensions[i];
+            Path file = Files.createTempFile("foo", "." + extension);
+            try {
+                String type = Files.probeContentType(file);
+                if (type == null) {
+                    System.err.println("Content type of " + extension
+                            + " cannot be determined");
+                    failures++;
+                } else {
+                    if (!type.equals(expectedTypes[i])) {
+                        System.err.println("Content type: " + type
+                                + "; expected: " + expectedTypes[i]);
+                        failures++;
+                    }
+                }
+            } finally {
+                Files.delete(file);
+            }
+        }
+
+        if (failures > 0) {
+            throw new RuntimeException("Test failed!");
+        }
     }
 
     public static void main(String[] args) throws IOException {
@@ -79,5 +112,17 @@ public class Basic {
             Files.delete(file);
         }
 
+        // Verify that common file extensions are mapped to the correct content
+        // types on Mac OS X only which has consistent Uniform Type Identifiers.
+        if (System.getProperty("os.name").contains("OS X")) {
+            String[] extensions = new String[]{
+                "jpg", "mp3", "mp4", "pdf", "png"
+            };
+            String[] expectedTypes = new String[]{
+                "image/jpeg", "audio/mpeg", "video/mp4", "application/pdf",
+                "image/png"
+            };
+            checkContentTypes(extensions, expectedTypes);
+        }
     }
 }
