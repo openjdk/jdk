@@ -858,9 +858,6 @@ public class FormatData extends ParallelListResourceBundle {
                 }
             },
             { "DateTimePatternChars", "GyMdkHmsSEDFwWahKzZ" },
-
-            // Workaround for islamic-umalqura name support (JDK-8015986)
-            { "calendarname.islamic-umalqura", "Islamic Umm al-Qura Calendar" },
         };
     }
 }
