@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,8 +60,6 @@ public class Test4626070 {
     }
 
     public static void main (String[] args) throws Exception {
-        Security.addProvider(new com.sun.crypto.provider.SunJCE());
-
         Test4626070 test = new Test4626070();
         test.execute("CBC", "PKCS5Padding");
         test.execute("GCM", "NoPadding");

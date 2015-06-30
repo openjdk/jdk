@@ -789,7 +789,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                 }
             }
             if (params != null) {
-                if (algorithm.equals((Object)pbes2_OID)) {
+                if (algorithm.equals(pbes2_OID)) {
                     algParams = AlgorithmParameters.getInstance("PBES2");
                 } else {
                     algParams = AlgorithmParameters.getInstance("PBE");
@@ -926,7 +926,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     private static String mapPBEParamsToAlgorithm(ObjectIdentifier algorithm,
         AlgorithmParameters algParams) throws NoSuchAlgorithmException {
         // Check for PBES2 algorithms
-        if (algorithm.equals((Object)pbes2_OID) && algParams != null) {
+        if (algorithm.equals(pbes2_OID) && algParams != null) {
             return algParams.toString();
         }
         return algorithm.toString();
@@ -1937,7 +1937,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         ContentInfo authSafe = new ContentInfo(s);
         ObjectIdentifier contentType = authSafe.getContentType();
 
-        if (contentType.equals((Object)ContentInfo.DATA_OID)) {
+        if (contentType.equals(ContentInfo.DATA_OID)) {
            authSafeData = authSafe.getData();
         } else /* signed data */ {
            throw new IOException("public key protected PKCS12 not supported");
@@ -1965,14 +1965,14 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             safeContents = new ContentInfo(sci);
             contentType = safeContents.getContentType();
             safeContentsData = null;
-            if (contentType.equals((Object)ContentInfo.DATA_OID)) {
+            if (contentType.equals(ContentInfo.DATA_OID)) {
 
                 if (debug != null) {
                     debug.println("Loading PKCS#7 data content-type");
                 }
 
                 safeContentsData = safeContents.getData();
-            } else if (contentType.equals((Object)ContentInfo.ENCRYPTED_DATA_OID)) {
+            } else if (contentType.equals(ContentInfo.ENCRYPTED_DATA_OID)) {
                 if (password == null) {
 
                     if (debug != null) {
@@ -2178,12 +2178,12 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                                         + bagValue.tag);
             }
             bagValue = bagValue.data.getDerValue();
-            if (bagId.equals((Object)PKCS8ShroudedKeyBag_OID)) {
+            if (bagId.equals(PKCS8ShroudedKeyBag_OID)) {
                 PrivateKeyEntry kEntry = new PrivateKeyEntry();
                 kEntry.protectedPrivKey = bagValue.toByteArray();
                 bagItem = kEntry;
                 privateKeyCount++;
-            } else if (bagId.equals((Object)CertBag_OID)) {
+            } else if (bagId.equals(CertBag_OID)) {
                 DerInputStream cs = new DerInputStream(bagValue.toByteArray());
                 DerValue[] certValues = cs.getSequence(2);
                 ObjectIdentifier certId = certValues[0].getOID();
@@ -2198,7 +2198,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                         (new ByteArrayInputStream(certValue.getOctetString()));
                 bagItem = cert;
                 certificateCount++;
-            } else if (bagId.equals((Object)SecretBag_OID)) {
+            } else if (bagId.equals(SecretBag_OID)) {
                 DerInputStream ss = new DerInputStream(bagValue.toByteArray());
                 DerValue[] secretValues = ss.getSequence(2);
                 ObjectIdentifier secretId = secretValues[0].getOID();
@@ -2249,12 +2249,12 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                         throw new IOException("Attribute " + attrId +
                                 " should have a value " + e.getMessage());
                     }
-                    if (attrId.equals((Object)PKCS9FriendlyName_OID)) {
+                    if (attrId.equals(PKCS9FriendlyName_OID)) {
                         alias = valSet[0].getBMPString();
-                    } else if (attrId.equals((Object)PKCS9LocalKeyId_OID)) {
+                    } else if (attrId.equals(PKCS9LocalKeyId_OID)) {
                         keyId = valSet[0].getOctetString();
                     } else if
-                        (attrId.equals((Object)TrustedKeyUsage_OID)) {
+                        (attrId.equals(TrustedKeyUsage_OID)) {
                         trustedKeyUsage = new ObjectIdentifier[valSet.length];
                         for (int k = 0; k < valSet.length; k++) {
                             trustedKeyUsage[k] = valSet[k].getOID();

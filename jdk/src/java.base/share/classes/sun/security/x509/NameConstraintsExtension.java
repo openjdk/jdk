@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -579,7 +579,7 @@ implements CertAttrSet<String>, Cloneable {
     public boolean verifyRFC822SpecialCase(X500Name subject) throws IOException {
         for (AVA ava : subject.allAvas()) {
             ObjectIdentifier attrOID = ava.getObjectIdentifier();
-            if (attrOID.equals((Object)PKCS9Attribute.EMAIL_ADDRESS_OID)) {
+            if (attrOID.equals(PKCS9Attribute.EMAIL_ADDRESS_OID)) {
                 String attrValue = ava.getValueString();
                 if (attrValue != null) {
                     RFC822Name emailName;

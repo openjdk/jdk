@@ -26,6 +26,7 @@
   @bug 4632143
   @summary Unit test for the RFE window/frame/dialog always on top
   @author dom@sparc.spb.su: area=awt.toplevel
+  @modules java.desktop/sun.awt
   @run main AutoTestOnTop
 */
 

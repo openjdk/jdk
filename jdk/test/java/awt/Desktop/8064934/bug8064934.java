@@ -26,6 +26,7 @@
  * @summary Incorrect Exception message from java.awt.Desktop.open()
  * @author Dmitry Markov
  * @library ../../../../lib/testlibrary
+ * @modules java.desktop/sun.awt
  * @build jdk.testlibrary.OSInfo
  * @run main bug8064934
  */

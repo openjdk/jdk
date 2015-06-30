@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -414,7 +414,7 @@ public class X509CRLEntryImpl extends X509CRLEntry
                                                  e.hasMoreElements();) {
                     ex = e.nextElement();
                     inCertOID = ex.getExtensionId();
-                    if (inCertOID.equals((Object)findOID)) {
+                    if (inCertOID.equals(findOID)) {
                         crlExt = ex;
                         break;
                     }

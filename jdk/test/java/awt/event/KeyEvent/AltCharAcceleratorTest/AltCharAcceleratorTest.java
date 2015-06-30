@@ -26,6 +26,7 @@
 @bug 8068283
 @summary Checks that <Alt>+Char accelerators work when pressed in a text component
 @author Anton Nashatyrev
+@modules java.desktop/sun.awt
 @run main AltCharAcceleratorTest
 */
 

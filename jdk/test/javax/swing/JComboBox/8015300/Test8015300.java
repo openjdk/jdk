@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JTextField;
 import javax.swing.UIManager;
-import sun.awt.SunToolkit;
 
 import static javax.swing.SwingUtilities.invokeAndWait;
 import static javax.swing.SwingUtilities.windowForComponent;
@@ -42,6 +41,7 @@ import static javax.swing.WindowConstants.DISPOSE_ON_CLOSE;
  * @summary Tests that editable combobox select all text
  * @author Sergey Malenkov
  * @library ../../../../lib/testlibrary/
+ * @modules java.desktop/com.sun.java.swing.plaf.windows
  * @build ExtendedRobot
  * @run main Test8015300
  */

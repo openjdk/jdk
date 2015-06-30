@@ -414,30 +414,9 @@ class XPathFactoryFinder  {
 
     private static final Class<XPathFactory> SERVICE_CLASS = XPathFactory.class;
 
-    private static String which( Class clazz ) {
-        return which( clazz.getName(), clazz.getClassLoader() );
+    // Used for debugging purposes
+    private static String which( Class<?> clazz ) {
+        return ss.getClassSource(clazz);
     }
 
-    /**
-     * <p>Search the specified classloader for the given classname.</p>
-     *
-     * @param classname the fully qualified name of the class to search for
-     * @param loader the classloader to search
-     *
-     * @return the source location of the resource, or null if it wasn't found
-     */
-    private static String which(String classname, ClassLoader loader) {
-
-        String classnameAsResource = classname.replace('.', '/') + ".class";
-
-        if( loader==null )  loader = ClassLoader.getSystemClassLoader();
-
-        //URL it = loader.getResource(classnameAsResource);
-        URL it = ss.getResourceAsURL(loader, classnameAsResource);
-        if (it != null) {
-            return it.toString();
-        } else {
-            return null;
-        }
-    }
 }

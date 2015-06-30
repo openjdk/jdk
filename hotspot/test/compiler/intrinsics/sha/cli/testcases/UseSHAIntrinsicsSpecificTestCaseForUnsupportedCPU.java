@@ -25,24 +25,26 @@ import jdk.test.lib.ExitCode;
 import jdk.test.lib.Platform;
 import jdk.test.lib.cli.CommandLineOptionTest;
 import jdk.test.lib.cli.predicate.AndPredicate;
+import jdk.test.lib.cli.predicate.OrPredicate;
 import jdk.test.lib.cli.predicate.NotPredicate;
 import sha.predicate.IntrinsicPredicates;
 
 /**
- * Test case specific to UseSHA*Intrinsics options targeted to SPARC CPUs which
- * don't support required instruction, but support other SHA-related
+ * Test case specific to UseSHA*Intrinsics options targeted to SPARC and AArch64
+ * CPUs which don't support required instruction, but support other SHA-related
  * instructions.
  *
  * For example, CPU support sha1 instruction, but don't support sha256 or
  * sha512.
  */
-public class UseSHAIntrinsicsSpecificTestCaseForUnsupportedSparcCPU
+public class UseSHAIntrinsicsSpecificTestCaseForUnsupportedCPU
         extends SHAOptionsBase.TestCase {
-    public UseSHAIntrinsicsSpecificTestCaseForUnsupportedSparcCPU(
+    public UseSHAIntrinsicsSpecificTestCaseForUnsupportedCPU(
             String optionName) {
         // execute test case on SPARC CPU that support any sha* instructions,
         // but does not support sha* instruction required by the tested option.
-        super(optionName, new AndPredicate(Platform::isSparc,
+        super(optionName, new AndPredicate(
+                new OrPredicate(Platform::isSparc, Platform::isAArch64),
                 new AndPredicate(
                         IntrinsicPredicates.ANY_SHA_INSTRUCTION_AVAILABLE,
                         new NotPredicate(SHAOptionsBase.getPredicateForOption(

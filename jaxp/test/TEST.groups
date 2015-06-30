@@ -29,5 +29,8 @@ tier1 =
 tier2 = \
     :jaxp_all
 
+# No tier 3 tests.
+tier3 = 
+
 jaxp_all = \
     javax/xml/jaxp

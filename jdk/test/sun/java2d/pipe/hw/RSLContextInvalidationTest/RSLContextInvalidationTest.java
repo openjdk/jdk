@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,9 @@
  * @bug 6764257
  * @summary Tests that the color is reset properly after save/restore context
  * @author Dmitri.Trembovetski@sun.com: area=Graphics
+ * @modules java.desktop/sun.java2d
+ *          java.desktop/sun.java2d.pipe
+ *          java.desktop/sun.java2d.pipe.hw
  * @compile -XDignore.symbol.file=true RSLContextInvalidationTest.java
  * @run main/othervm RSLContextInvalidationTest
  * @run main/othervm -Dsun.java2d.noddraw=true RSLContextInvalidationTest

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -348,96 +348,140 @@ public class EntryMethods
 
     public static class Pre15 extends KeyStoreSpi {
 
-        private static KeyStoreSpi jks = getJKS();
+        private static KeyStore jks = getJKS();
 
-        // javac does not allow direct access to class (javac bug?)
-        // use reflection instead
-        private static KeyStoreSpi getJKS() {
+        private static KeyStore getJKS() {
             try {
-                Class clazz = Class.forName("sun.security.provider.JavaKeyStore$JKS");
-                return (KeyStoreSpi)clazz.newInstance();
+                return (KeyStore) KeyStore.getInstance("JKS");
             } catch (Exception e) {
                 e.printStackTrace();
                 throw new RuntimeException(e);
             }
         }
+        public Pre15() {
+        }
 
         public Key engineGetKey(String alias, char[] password)
             throws NoSuchAlgorithmException, UnrecoverableKeyException {
-            return jks.engineGetKey(alias, password);
+            try {
+                return jks.getKey(alias, password);
+            } catch (KeyStoreException ke) {
+                throw new RuntimeException("Unexpected exception", ke);
+            }
         }
 
         public java.security.cert.Certificate[] engineGetCertificateChain
                 (String alias) {
-            return jks.engineGetCertificateChain(alias);
+            try {
+                return jks.getCertificateChain(alias);
+            } catch (KeyStoreException ke) {
+                throw new RuntimeException("Unexpected exception", ke);
+            }
         }
 
         public java.security.cert.Certificate engineGetCertificate
                 (String alias) {
-            return jks.engineGetCertificate(alias);
+            try {
+                return jks.getCertificate(alias);
+            } catch (KeyStoreException ke) {
+                throw new RuntimeException("Unexpected exception", ke);
+            }
         }
 
         public Date engineGetCreationDate(String alias) {
-            return jks.engineGetCreationDate(alias);
+            try {
+                return jks.getCreationDate(alias);
+            } catch (KeyStoreException ke) {
+                throw new RuntimeException("Unexpected exception", ke);
+            }
         }
 
         public void engineSetKeyEntry(String alias, Key key,
                                    char[] password,
                                    java.security.cert.Certificate[] chain)
             throws KeyStoreException {
-            jks.engineSetKeyEntry(alias, key, password, chain);
+            jks.setKeyEntry(alias, key, password, chain);
         }
 
         public void engineSetKeyEntry(String alias, byte[] key,
                                    java.security.cert.Certificate[] chain)
             throws KeyStoreException {
-            jks.engineSetKeyEntry(alias, key, chain);
+            jks.setKeyEntry(alias, key, chain);
         }
 
         public void engineSetCertificateEntry(String alias,
                                            java.security.cert.Certificate cert)
             throws KeyStoreException {
-            jks.engineSetCertificateEntry(alias, cert);
+            jks.setCertificateEntry(alias, cert);
         }
 
         public void engineDeleteEntry(String alias)
             throws KeyStoreException {
-            jks.engineDeleteEntry(alias);
+            jks.deleteEntry(alias);
         }
 
         public Enumeration engineAliases() {
-            return jks.engineAliases();
+            try {
+                return jks.aliases();
+            } catch (KeyStoreException ke) {
+                throw new RuntimeException("Unexpected exception", ke);
+            }
+
         }
 
         public boolean engineContainsAlias(String alias) {
-            return jks.engineContainsAlias(alias);
+            try {
+                return jks.containsAlias(alias);
+            } catch (KeyStoreException ke) {
+                throw new RuntimeException("Unexpected exception", ke);
+            }
         }
 
         public int engineSize() {
-            return jks.engineSize();
+            try {
+                return jks.size();
+            } catch (KeyStoreException ke) {
+                throw new RuntimeException("Unexpected exception", ke);
+            }
         }
 
         public boolean engineIsKeyEntry(String alias) {
-            return jks.engineIsKeyEntry(alias);
+            try {
+                return jks.isKeyEntry(alias);
+            } catch (KeyStoreException ke) {
+                throw new RuntimeException("Unexpected exception", ke);
+            }
         }
 
         public boolean engineIsCertificateEntry(String alias) {
-            return jks.engineIsCertificateEntry(alias);
+            try {
+                return jks.isCertificateEntry(alias);
+            } catch (KeyStoreException ke) {
+                throw new RuntimeException("Unexpected exception", ke);
+            }
         }
 
         public String engineGetCertificateAlias
                 (java.security.cert.Certificate cert) {
-            return jks.engineGetCertificateAlias(cert);
+            try {
+                return jks.getCertificateAlias(cert);
+            } catch (KeyStoreException ke) {
+                throw new RuntimeException("Unexpected exception", ke);
+            }
         }
 
         public void engineStore(OutputStream stream, char[] password)
             throws IOException, NoSuchAlgorithmException, CertificateException {
-            jks.engineStore(stream, password);
+            try {
+                jks.store(stream, password);
+            } catch (KeyStoreException ke) {
+                throw new RuntimeException("Unexpected exception", ke);
+            }
         }
 
         public void engineLoad(InputStream stream, char[] password)
             throws IOException, NoSuchAlgorithmException, CertificateException {
-            jks.engineLoad(stream, password);
+            jks.load(stream, password);
         }
     }
 

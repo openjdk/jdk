@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
   @bug 6541903
   @summary Tests if the realSync() throws the IllegalThreadException while invoked on the EDT
   @author anthony.petrov: area=awt.toolkit
+  @modules java.desktop/sun.awt
   @run main/timeout=10 RealSyncOnEDT
 */
 

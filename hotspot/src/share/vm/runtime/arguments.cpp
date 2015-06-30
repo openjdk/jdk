@@ -586,11 +586,12 @@ static bool set_fp_numeric_flag(char* name, char* value, Flag::Flags origin) {
 
 static bool set_numeric_flag(char* name, char* value, Flag::Flags origin) {
   julong v;
+  int int_v;
   intx intx_v;
   bool is_neg = false;
   // Check the sign first since atomull() parses only unsigned values.
   if (*value == '-') {
-    if (!CommandLineFlags::intxAt(name, &intx_v)) {
+    if (!CommandLineFlags::intxAt(name, &intx_v) && !CommandLineFlags::intAt(name, &int_v)) {
       return false;
     }
     value++;
@@ -598,6 +599,17 @@ static bool set_numeric_flag(char* name, char* value, Flag::Flags origin) {
   }
   if (!atomull(value, &v)) {
     return false;
+  }
+  int_v = (int) v;
+  if (is_neg) {
+    int_v = -int_v;
+  }
+  if (CommandLineFlags::intAtPut(name, &int_v, origin)) {
+    return true;
+  }
+  uint uint_v = (uint) v;
+  if (!is_neg && CommandLineFlags::uintAtPut(name, &uint_v, origin)) {
+    return true;
   }
   intx_v = (intx) v;
   if (is_neg) {

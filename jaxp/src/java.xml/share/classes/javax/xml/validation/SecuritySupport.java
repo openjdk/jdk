@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,9 @@
 
 package javax.xml.validation;
 
-import java.io.IOException;
 import java.net.URL;
 import java.security.*;
-import java.net.*;
 import java.io.*;
-import java.util.*;
 
 /**
  * This class is duplicated for each JAXP subpackage so keep it in sync.
@@ -43,9 +40,10 @@ class SecuritySupport  {
 
 
     ClassLoader getContextClassLoader() {
-        return (ClassLoader)
-        AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
+        return
+        AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+            @Override
+            public ClassLoader run() {
                 ClassLoader cl = null;
                 //try {
                 cl = Thread.currentThread().getContextClassLoader();
@@ -58,9 +56,9 @@ class SecuritySupport  {
     }
 
     String getSystemProperty(final String propName) {
-        return (String)
-            AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
+        return AccessController.doPrivileged(new PrivilegedAction<String>() {
+                @Override
+                public String run() {
                     return System.getProperty(propName);
                 }
             });
@@ -70,9 +68,10 @@ class SecuritySupport  {
         throws FileNotFoundException
     {
         try {
-            return (FileInputStream)
-                AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                    public Object run() throws FileNotFoundException {
+            return AccessController.doPrivileged(
+                new PrivilegedExceptionAction<FileInputStream>() {
+                    @Override
+                    public FileInputStream run() throws FileNotFoundException {
                         return new FileInputStream(file);
                     }
                 });
@@ -81,83 +80,29 @@ class SecuritySupport  {
         }
     }
 
-    InputStream getURLInputStream(final URL url)
-        throws IOException
-    {
-        try {
-            return (InputStream)
-                AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                    public Object run() throws IOException {
-                        return url.openStream();
-                    }
-                });
-        } catch (PrivilegedActionException e) {
-            throw (IOException)e.getException();
-        }
-    }
-
-    URL getResourceAsURL(final ClassLoader cl,
-                                           final String name)
-    {
-        return (URL)
-            AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
-                    URL url;
-                    if (cl == null) {
-                        url = Object.class.getResource(name);
-                    } else {
-                        url = cl.getResource(name);
-                    }
-                    return url;
+    // Used for debugging purposes
+    String getClassSource(Class<?> cls) {
+        return AccessController.doPrivileged(new PrivilegedAction<String>() {
+            @Override
+            public String run() {
+                CodeSource cs = cls.getProtectionDomain().getCodeSource();
+                if (cs != null) {
+                   URL loc = cs.getLocation();
+                   return loc != null ? loc.toString() : "(no location)";
+                } else {
+                   return "(no code source)";
                 }
-            });
-    }
-
-    Enumeration getResources(final ClassLoader cl,
-                                           final String name) throws IOException
-    {
-        try{
-        return (Enumeration)
-            AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                public Object run() throws IOException{
-                    Enumeration enumeration;
-                    if (cl == null) {
-                        enumeration = ClassLoader.getSystemResources(name);
-                    } else {
-                        enumeration = cl.getResources(name);
-                    }
-                    return enumeration;
-                }
-            });
-        }catch(PrivilegedActionException e){
-            throw (IOException)e.getException();
-        }
-    }
-
-    InputStream getResourceAsStream(final ClassLoader cl,
-                                           final String name)
-    {
-        return (InputStream)
-            AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
-                    InputStream ris;
-                    if (cl == null) {
-                        ris = Object.class.getResourceAsStream(name);
-                    } else {
-                        ris = cl.getResourceAsStream(name);
-                    }
-                    return ris;
-                }
-            });
+            }
+        });
     }
 
     boolean doesFileExist(final File f) {
-    return ((Boolean)
-            AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
-                    return new Boolean(f.exists());
-                }
-            })).booleanValue();
+        return AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+            @Override
+            public Boolean run() {
+                return f.exists();
+            }
+        });
     }
 
 }

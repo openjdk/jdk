@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import java.security.spec.*;
 import java.security.interfaces.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
-import com.sun.crypto.provider.*;
 import java.math.BigInteger;
 
 public class DHGenSharedSecret {
@@ -69,8 +68,6 @@ public class DHGenSharedSecret {
     };
 
     public static void main(String[] args) throws Exception {
-        SunJCE jce = new SunJCE();
-        Security.addProvider(jce);
         DHGenSharedSecret test = new DHGenSharedSecret();
         test.run();
     }

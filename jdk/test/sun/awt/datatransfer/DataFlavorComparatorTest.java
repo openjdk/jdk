@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@
    @bug 7173464
    @summary Clipboard.getAvailableDataFlavors: Comparison method violates contract
    @author Petr Pchelko
+   @modules java.datatransfer/sun.datatransfer
    @run main DataFlavorComparatorTest
 */
 
-import sun.awt.datatransfer.DataTransferer;
 import java.util.Comparator;
 import sun.datatransfer.DataFlavorUtil;
 import java.awt.datatransfer.DataFlavor;

@@ -76,12 +76,13 @@ class Method : public Metadata {
 
   // Flags
   enum Flags {
-    _jfr_towrite      = 1 << 0,
-    _caller_sensitive = 1 << 1,
-    _force_inline     = 1 << 2,
-    _dont_inline      = 1 << 3,
-    _hidden           = 1 << 4,
-    _running_emcp     = 1 << 5
+    _jfr_towrite          = 1 << 0,
+    _caller_sensitive     = 1 << 1,
+    _force_inline         = 1 << 2,
+    _dont_inline          = 1 << 3,
+    _hidden               = 1 << 4,
+    _has_injected_profile = 1 << 5,
+    _running_emcp         = 1 << 6
   };
   u1 _flags;
 
@@ -812,6 +813,13 @@ class Method : public Metadata {
   }
   void set_hidden(bool x) {
     _flags = x ? (_flags | _hidden) : (_flags & ~_hidden);
+  }
+
+  bool has_injected_profile() {
+    return (_flags & _has_injected_profile) != 0;
+  }
+  void set_has_injected_profile(bool x) {
+    _flags = x ? (_flags | _has_injected_profile) : (_flags & ~_has_injected_profile);
   }
 
   ConstMethod::MethodType method_type() const {

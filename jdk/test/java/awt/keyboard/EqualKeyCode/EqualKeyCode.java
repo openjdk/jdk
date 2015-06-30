@@ -26,6 +26,7 @@
   @bug 6799551
   @summary Extended key codes for small letters undefined
   @author Andrei Dmitriev: area=awt.keyboard
+  @modules java.desktop/sun.awt
   @run main EqualKeyCode
 */
 

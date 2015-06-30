@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,19 +35,17 @@ public class Sealtest {
 
     public static void main(String[] args) throws Exception {
 
-        Security.addProvider(new com.sun.crypto.provider.SunJCE());
-
         // create DSA keypair
         KeyPairGenerator kpgen = KeyPairGenerator.getInstance("DSA");
         kpgen.initialize(512);
         KeyPair kp = kpgen.generateKeyPair();
 
         // create DES key
-        KeyGenerator kg = KeyGenerator.getInstance("DES");
+        KeyGenerator kg = KeyGenerator.getInstance("DES", "SunJCE");
         SecretKey skey = kg.generateKey();
 
         // create cipher
-        Cipher c = Cipher.getInstance("DES/CFB16/PKCS5Padding");
+        Cipher c = Cipher.getInstance("DES/CFB16/PKCS5Padding", "SunJCE");
         c.init(Cipher.ENCRYPT_MODE, skey);
 
         // seal the DSA private key

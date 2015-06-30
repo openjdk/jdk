@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.awt.datatransfer.SystemFlavorMap;
  * @test
  * @summary Check that SystemFlavorMap constructor does not throw unexpected
  *          exceptions in headless mode
+ * @modules java.datatransfer
  * @run main/othervm -Djava.awt.headless=true HeadlessSystemFlavorMap
  */
 

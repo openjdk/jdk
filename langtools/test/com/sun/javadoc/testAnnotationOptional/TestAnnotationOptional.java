@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8025633
+ * @bug 8025633 8081854
  * @summary  Make sure that annotations types with optional elements have
  *           element headers
  * @author   Mahmood Ali
@@ -48,6 +48,6 @@ public class TestAnnotationOptional extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/AnnotationOptional.html", true,
-            "<a id=\"annotation.type.element.detail\">");
+            "<a name=\"annotation.type.element.detail\">");
     }
 }

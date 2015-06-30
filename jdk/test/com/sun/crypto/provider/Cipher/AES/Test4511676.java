@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import java.security.spec.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 import java.security.Provider;
-import com.sun.crypto.provider.*;
 
 public class Test4511676 {
     private static final String ALGO = "AES";
@@ -59,7 +58,6 @@ public class Test4511676 {
     }
 
     public static void main (String[] args) throws Exception {
-        Security.addProvider(new com.sun.crypto.provider.SunJCE());
 
         Test4511676 test = new Test4511676();
         String testName = test.getClass().getName() + "[" + ALGO +

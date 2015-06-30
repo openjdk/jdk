@@ -26,6 +26,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivilegedActionException;
 import java.util.HashMap;
 import java.util.Map;
+
 import javax.security.auth.login.LoginException;
 
 /*
@@ -74,8 +75,9 @@ public class UnboundSSL {
                UnboundSSLUtils.KRB5_CONF_FILENAME);
 
         // start a local KDC instance
-        UnboundSSLUtils.startKDC(UnboundSSLUtils.REALM, principals,
-                UnboundSSLUtils.KTAB_FILENAME, UnboundSSLUtils.KtabMode.APPEND);
+        KDC.startKDC(UnboundSSLUtils.HOST, UnboundSSLUtils.KRB5_CONF_FILENAME,
+                UnboundSSLUtils.REALM, principals,
+                UnboundSSLUtils.KTAB_FILENAME, KDC.KtabMode.APPEND);
 
         System.setProperty("java.security.auth.login.config",
                 UnboundSSLUtils.TEST_SRC + UnboundSSLUtils.FS + jaacConfigFile);

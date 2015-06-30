@@ -106,7 +106,9 @@ import sun.reflect.CallerSensitive;
  * <li>
  * If the adapter being generated can have class-level overrides, constructors taking same arguments as the superclass
  * constructors are created. These constructors simply delegate to the superclass constructor. They are simply used to
- * create instances of the adapter class, with no instance-level overrides, as they don't have them.
+ * create instances of the adapter class, with no instance-level overrides, as they don't have them. If the original
+ * class' constructor was variable arity, the adapter constructor will also be variable arity. Protected constructors
+ * are exposed as public.
  * </li>
  * </ul>
  * </p><p>
@@ -190,7 +192,6 @@ final class JavaAdapterBytecodeGenerator {
     private static final int MAX_GENERATED_TYPE_NAME_LENGTH = 255;
 
     private static final String CLASS_INIT = "<clinit>";
-    static final String CONVERTER_INIT = "<converter-init>";
 
     // Method name prefix for invoking super-methods
     static final String SUPER_PREFIX = "super$";
@@ -494,7 +495,8 @@ final class JavaAdapterBytecodeGenerator {
         final Type[] argTypes = originalCtorType.getArgumentTypes();
 
         // All constructors must be public, even if in the superclass they were protected.
-        final InstructionAdapter mv = new InstructionAdapter(cw.visitMethod(ACC_PUBLIC, INIT,
+        final InstructionAdapter mv = new InstructionAdapter(cw.visitMethod(ACC_PUBLIC |
+                (ctor.isVarArgs() ? ACC_VARARGS : 0), INIT,
                 Type.getMethodDescriptor(originalCtorType.getReturnType(), argTypes), null, null));
 
         mv.visitCode();
@@ -543,7 +545,8 @@ final class JavaAdapterBytecodeGenerator {
         System.arraycopy(originalArgTypes, 0, newArgTypes, 0, argLen);
 
         // All constructors must be public, even if in the superclass they were protected.
-        // Existing super constructor <init>(this, args...) triggers generating <init>(this, scriptObj, args...).
+        // Existing super constructor <init>(this, args...) triggers generating <init>(this, args..., scriptObj).
+        // Any variable arity constructors become fixed-arity with explicit array arguments.
         final InstructionAdapter mv = new InstructionAdapter(cw.visitMethod(ACC_PUBLIC, INIT,
                 Type.getMethodDescriptor(originalCtorType.getReturnType(), newArgTypes), null, null));
 
@@ -593,7 +596,7 @@ final class JavaAdapterBytecodeGenerator {
         if (! fromFunction) {
             newArgTypes[argLen] = OBJECT_TYPE;
             final InstructionAdapter mv2 = new InstructionAdapter(cw.visitMethod(ACC_PUBLIC, INIT,
-                Type.getMethodDescriptor(originalCtorType.getReturnType(), newArgTypes), null, null));
+                    Type.getMethodDescriptor(originalCtorType.getReturnType(), newArgTypes), null, null));
             generateOverridingConstructorWithObjectParam(mv2, ctor, originalCtorType.getDescriptor());
         }
     }

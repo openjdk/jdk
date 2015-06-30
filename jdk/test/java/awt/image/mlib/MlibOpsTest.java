@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug     6556332 8011992 8012112
  * @summary Test verifies that on-demnad loading of medialib library does
  *          not break imageing ops based on this library.
+ * @modules java.desktop/sun.awt.image
  * @run     main MlibOpsTest
  * @run     main/othervm/policy=mlib.security.policy MlibOpsTest
  */

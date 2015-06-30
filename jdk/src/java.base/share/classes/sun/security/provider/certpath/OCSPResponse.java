@@ -239,7 +239,7 @@ public final class OCSPResponse {
         // responseType
         derIn = tmp.data;
         ObjectIdentifier responseType = derIn.getOID();
-        if (responseType.equals((Object)OCSP_BASIC_RESPONSE_OID)) {
+        if (responseType.equals(OCSP_BASIC_RESPONSE_OID)) {
             if (debug != null) {
                 debug.println("OCSP response type: basic");
             }
@@ -338,8 +338,7 @@ public final class OCSPResponse {
                         debug.println("OCSP extension: " + ext);
                     }
                     // Only the NONCE extension is recognized
-                    if (ext.getExtensionId().equals((Object)
-                        OCSP.NONCE_EXTENSION_OID))
+                    if (ext.getExtensionId().equals(OCSP.NONCE_EXTENSION_OID))
                     {
                         nonce = ext.getExtensionValue();
                     } else if (ext.isCritical())  {
