@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import java.security.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 import java.math.*;
-import com.sun.crypto.provider.*;
 
 import java.util.*;
 
@@ -555,8 +554,6 @@ public class TestKATForECB_VT
     }
 
     public static void main (String[] args) throws Exception {
-        Security.addProvider(new com.sun.crypto.provider.SunJCE());
-
         TestKATForECB_VT test = new TestKATForECB_VT();
         String testName = test.getClass().getName() + "[" + ALGO +
             "/" + MODE + "/" + PADDING + "]";

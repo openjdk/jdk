@@ -1408,6 +1408,52 @@ void MacroAssembler::movptr(Register r, uintptr_t imm64) {
   movk(r, imm64 & 0xffff, 32);
 }
 
+// Macro to mov replicated immediate to vector register.
+//  Vd will get the following values for different arrangements in T
+//   imm32 == hex 000000gh  T8B:  Vd = ghghghghghghghgh
+//   imm32 == hex 000000gh  T16B: Vd = ghghghghghghghghghghghghghghghgh
+//   imm32 == hex 0000efgh  T4H:  Vd = efghefghefghefgh
+//   imm32 == hex 0000efgh  T8H:  Vd = efghefghefghefghefghefghefghefgh
+//   imm32 == hex abcdefgh  T2S:  Vd = abcdefghabcdefgh
+//   imm32 == hex abcdefgh  T4S:  Vd = abcdefghabcdefghabcdefghabcdefgh
+//   T1D/T2D: invalid
+void MacroAssembler::mov(FloatRegister Vd, SIMD_Arrangement T, u_int32_t imm32) {
+  assert(T != T1D && T != T2D, "invalid arrangement");
+  if (T == T8B || T == T16B) {
+    assert((imm32 & ~0xff) == 0, "extraneous bits in unsigned imm32 (T8B/T16B)");
+    movi(Vd, T, imm32 & 0xff, 0);
+    return;
+  }
+  u_int32_t nimm32 = ~imm32;
+  if (T == T4H || T == T8H) {
+    assert((imm32  & ~0xffff) == 0, "extraneous bits in unsigned imm32 (T4H/T8H)");
+    imm32 &= 0xffff;
+    nimm32 &= 0xffff;
+  }
+  u_int32_t x = imm32;
+  int movi_cnt = 0;
+  int movn_cnt = 0;
+  while (x) { if (x & 0xff) movi_cnt++; x >>= 8; }
+  x = nimm32;
+  while (x) { if (x & 0xff) movn_cnt++; x >>= 8; }
+  if (movn_cnt < movi_cnt) imm32 = nimm32;
+  unsigned lsl = 0;
+  while (imm32 && (imm32 & 0xff) == 0) { lsl += 8; imm32 >>= 8; }
+  if (movn_cnt < movi_cnt)
+    mvni(Vd, T, imm32 & 0xff, lsl);
+  else
+    movi(Vd, T, imm32 & 0xff, lsl);
+  imm32 >>= 8; lsl += 8;
+  while (imm32) {
+    while ((imm32 & 0xff) == 0) { lsl += 8; imm32 >>= 8; }
+    if (movn_cnt < movi_cnt)
+      bici(Vd, T, imm32 & 0xff, lsl);
+    else
+      orri(Vd, T, imm32 & 0xff, lsl);
+    lsl += 8; imm32 >>= 8;
+  }
+}
+
 void MacroAssembler::mov_immediate64(Register dst, u_int64_t imm64)
 {
 #ifndef PRODUCT

@@ -23,8 +23,9 @@
 
 /*
  * @test
- * @bug 7079560
+ * @bug 7079560 8008577
  * @summary Unit test for context-sensitive month names
+ * @run main/othervm -Djava.locale.providers=JRE,SPI ContextMonthNamesTest
  */
 
 import java.text.*;

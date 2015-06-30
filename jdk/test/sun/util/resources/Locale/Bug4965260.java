@@ -22,8 +22,9 @@
  */
 /**
  *@test
- *@bug 4965260
+ *@bug 4965260 8008577
  *@summary Verifies the language name of "nl" for supported locales
+ *@run main/othervm -Djava.locale.providers=JRE,SPI Bug4965260
  */
 
 import java.util.Locale;

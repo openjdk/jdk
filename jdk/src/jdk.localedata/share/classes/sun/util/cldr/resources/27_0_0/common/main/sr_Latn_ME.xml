@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2015 Unicode, Inc.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+For terms of use, see http://www.unicode.org/copyright.html
+-->
+<ldml>
+	<identity>
+		<version number="$Revision: 11324 $"/>
+		<generation date="$Date: 2015-02-26 16:53:17 -0600 (Thu, 26 Feb 2015) $"/>
+		<language type="sr"/>
+		<script type="Latn"/>
+		<territory type="ME"/>
+	</identity>
+</ldml>
