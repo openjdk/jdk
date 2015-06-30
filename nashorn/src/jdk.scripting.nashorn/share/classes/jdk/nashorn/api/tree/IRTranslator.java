@@ -224,7 +224,7 @@ final class IRTranslator extends NodeVisitor<LexicalContext> {
 
     @Override
     public boolean enterFunctionNode(final FunctionNode functionNode) {
-        assert !functionNode.isDeclared() : "should not reach here for function declaration";
+        assert !functionNode.isDeclared() || functionNode.isAnonymous() : "should not reach here for function declaration";
 
         final List<? extends ExpressionTree> paramTrees
                     = translateExprs(functionNode.getParameters());
