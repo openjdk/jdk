@@ -42,51 +42,54 @@ LOCALE_FILES := $(shell $(FIND) $(JDK_TOPDIR)/src/java.base/share/classes \
 LOCALE_RESOURCES := $(sort $(subst .properties,,$(subst .java,,$(notdir $(LOCALE_FILES)))))
 
 # Include the list of resources found during the previous compile.
--include $(SUPPORT_OUTPUTDIR)/gensrc/java.base/_the.locale_resources
+-include $(SUPPORT_OUTPUTDIR)/gensrc/_the.locale_resources
 
 MISSING_RESOURCES := $(filter-out $(LOCALE_RESOURCES), $(PREV_LOCALE_RESOURCES))
 NEW_RESOURCES := $(filter-out $(PREV_LOCALE_RESOURCES), $(LOCALE_RESOURCES))
 
 ifneq (, $(MISSING_RESOURCES)$(NEW_RESOURCES))
   # There is a difference in the number of supported resources. Trigger a regeneration.
-  $(shell $(RM) $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/util/locale/provider/LocaleDataMetaInfo.java)
+  $(shell $(RM) $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/util/locale/provider/BaseLocaleDataMetaInfo.java \
+    $(SUPPORT_OUTPUTDIR)/gensrc/jdk.localedata/sun/util/resources/provider/NonBaseLocaleDataMetaInfo.java \
+    $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/util/cldr/CLDRBaseLocaleDataMetaInfo.java \
+    $(SUPPORT_OUTPUTDIR)/gensrc/jdk.localedata/sun/util/resources/cldr/provider/CLDRLocaleDataMetaInfo_jdk_localedata.java)
 endif
 
-# The EN locales
-EN_LOCALES := en%
+# The base locales
+BASE_LOCALES := en en-US
 
 # Locales that don't have any resource files should be included here.
-ALL_NON_EN_LOCALES := ja-JP-JP nb-NO nn-NO th-TH-TH
+ALL_NON_BASE_LOCALES := ja-JP-JP nb-NO nn-NO th-TH-TH
 
-SED_ENARGS := -e 's|$(HASH)warn This file is preprocessed before being compiled|// -- This file was mechanically generated: Do not edit! -- //|g'
-SED_NONENARGS := $(SED_ENARGS)
+SED_BASEARGS := -e 's|$(HASH)warn This file is preprocessed before being compiled|// -- This file was mechanically generated: Do not edit! -- //|g'
+SED_NONBASEARGS := $(SED_BASEARGS)
 
 # Fill in the languages and package names
-SED_ENARGS += -e 's/$(HASH)Lang$(HASH)/En/' \
+SED_BASEARGS += -e 's/$(HASH)Lang$(HASH)/Base/' \
     -e 's/$(HASH)Package$(HASH)/sun.util.locale.provider/'
-SED_NONENARGS += -e 's/$(HASH)Lang$(HASH)/NonEn/' \
+SED_NONBASEARGS += -e 's/$(HASH)Lang$(HASH)/NonBase/' \
     -e 's/$(HASH)Package$(HASH)/sun.util.resources.provider/'
 
 # This macro creates a sed expression that substitues for example:
-# #FormatData_ENLocales# with: en% locales.
+# #FormatData_Locales# with: en-US locales.
 define CaptureLocale
   $1_LOCALES := $$(subst _,-,$$(filter-out $1, $$(subst $1_,,$$(filter $1_%, $(LOCALE_RESOURCES)))))
-  $1_EN_LOCALES := $$(filter $(EN_LOCALES), $$($1_LOCALES))
-  $1_NON_EN_LOCALES := $$(filter-out $(EN_LOCALES), $$($1_LOCALES))
+  $1_BASE_LOCALES := $$(filter $(BASE_LOCALES), $$($1_LOCALES))
+  $1_NON_BASE_LOCALES := $$(filter-out $(BASE_LOCALES), $$($1_LOCALES))
 
   # Special handling for Chinese locales to include implicit scripts
-  $1_NON_EN_LOCALES := $$(subst zh-CN,zh-CN$$(SPACE)zh-Hans-CN, $$($1_NON_EN_LOCALES))
-  $1_NON_EN_LOCALES := $$(subst zh-SG,zh-SG$$(SPACE)zh-Hans-SG, $$($1_NON_EN_LOCALES))
-  $1_NON_EN_LOCALES := $$(subst zh-HK,zh-HK$$(SPACE)zh-Hant-HK, $$($1_NON_EN_LOCALES))
-  $1_NON_EN_LOCALES := $$(subst zh-MO,zh-MO$$(SPACE)zh-Hant-MO, $$($1_NON_EN_LOCALES))
-  $1_NON_EN_LOCALES := $$(subst zh-TW,zh-TW$$(SPACE)zh-Hant-TW, $$($1_NON_EN_LOCALES))
+  $1_NON_BASE_LOCALES := $$(subst zh-CN,zh-CN$$(SPACE)zh-Hans-CN, $$($1_NON_BASE_LOCALES))
+  $1_NON_BASE_LOCALES := $$(subst zh-SG,zh-SG$$(SPACE)zh-Hans-SG, $$($1_NON_BASE_LOCALES))
+  $1_NON_BASE_LOCALES := $$(subst zh-HK,zh-HK$$(SPACE)zh-Hant-HK, $$($1_NON_BASE_LOCALES))
+  $1_NON_BASE_LOCALES := $$(subst zh-MO,zh-MO$$(SPACE)zh-Hant-MO, $$($1_NON_BASE_LOCALES))
+  $1_NON_BASE_LOCALES := $$(subst zh-TW,zh-TW$$(SPACE)zh-Hant-TW, $$($1_NON_BASE_LOCALES))
 
-  ALL_EN_LOCALES += $$($1_EN_LOCALES)
-  ALL_NON_EN_LOCALES += $$($1_NON_EN_LOCALES)
+  ALL_BASE_LOCALES += $$($1_BASE_LOCALES)
+  ALL_NON_BASE_LOCALES += $$($1_NON_BASE_LOCALES)
 
   # Don't sed in a space if there are no locales.
-  SED_ENARGS += -e 's/$$(HASH)$1_Locales$$(HASH)/$$(if $$($1_EN_LOCALES),$$(SPACE)$$($1_EN_LOCALES),)/g'
-  SED_NONENARGS += -e 's/$$(HASH)$1_Locales$$(HASH)/$$(if $$($1_NON_EN_LOCALES),$$(SPACE)$$($1_NON_EN_LOCALES),)/g'
+  SED_BASEARGS += -e 's/$$(HASH)$1_Locales$$(HASH)/$$(if $$($1_BASE_LOCALES),$$(SPACE)$$($1_BASE_LOCALES),)/g'
+  SED_NONBASEARGS += -e 's/$$(HASH)$1_Locales$$(HASH)/$$(if $$($1_NON_BASE_LOCALES),$$(SPACE)$$($1_NON_BASE_LOCALES),)/g'
 endef
 
 #sun.text.resources.FormatData
@@ -113,27 +116,27 @@ $(eval $(call CaptureLocale,CurrencyNames))
 #sun.util.resources.CalendarData
 $(eval $(call CaptureLocale,CalendarData))
 
-SED_ENARGS += -e 's/$(HASH)AvailableLocales_Locales$(HASH)/$(sort $(ALL_EN_LOCALES))/g'
-SED_NONENARGS += -e 's/$(HASH)AvailableLocales_Locales$(HASH)/$(sort $(ALL_NON_EN_LOCALES))/g'
+SED_BASEARGS += -e 's/$(HASH)AvailableLocales_Locales$(HASH)/$(sort $(ALL_BASE_LOCALES))/g'
+SED_NONBASEARGS += -e 's/$(HASH)AvailableLocales_Locales$(HASH)/$(sort $(ALL_NON_BASE_LOCALES))/g'
 
-$(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/util/locale/provider/EnLocaleDataMetaInfo.java: \
+$(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/util/locale/provider/BaseLocaleDataMetaInfo.java: \
     $(JDK_TOPDIR)/src/java.base/share/classes/sun/util/locale/provider/LocaleDataMetaInfo-XLocales.java.template
 	$(MKDIR) -p $(@D)
-	$(ECHO) Creating sun/util/locale/provider/EnLocaleDataMetaInfo.java from $(words $(LOCALE_RESOURCES)) found resources.
+	$(ECHO) Creating sun/util/locale/provider/BaseLocaleDataMetaInfo.java from $(words $(LOCALE_RESOURCES)) found resources.
 	$(PRINTF) "PREV_LOCALE_RESOURCES:=$(LOCALE_RESOURCES)" \
 	    > $(SUPPORT_OUTPUTDIR)/gensrc/_the.locale_resources
-	$(SED) $(SED_ENARGS) $< > $@
+	$(SED) $(SED_BASEARGS) $< > $@
 
-$(SUPPORT_OUTPUTDIR)/gensrc/jdk.localedata/sun/util/resources/provider/NonEnLocaleDataMetaInfo.java: \
+$(SUPPORT_OUTPUTDIR)/gensrc/jdk.localedata/sun/util/resources/provider/NonBaseLocaleDataMetaInfo.java: \
     $(JDK_TOPDIR)/src/java.base/share/classes/sun/util/locale/provider/LocaleDataMetaInfo-XLocales.java.template
 	$(MKDIR) -p $(@D)
-	$(ECHO) Creating sun/util/resources/provider/NonEnLocaleDataMetaInfo.java from $(words $(LOCALE_RESOURCES)) found resources.
+	$(ECHO) Creating sun/util/resources/provider/NonBaseLocaleDataMetaInfo.java from $(words $(LOCALE_RESOURCES)) found resources.
 	$(PRINTF) "PREV_LOCALE_RESOURCES:=$(LOCALE_RESOURCES)" \
-	    > $(SUPPORT_OUTPUTDIR)/gensrc/jdk.localedata/_the.locale_resources
-	$(SED) $(SED_NONENARGS) $< > $@
+	    > $(SUPPORT_OUTPUTDIR)/gensrc/_the.locale_resources
+	$(SED) $(SED_NONBASEARGS) $< > $@
 
-GENSRC_BASELOCALEDATA := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/util/locale/provider/EnLocaleDataMetaInfo.java
-GENSRC_LOCALEDATA := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.localedata/sun/util/resources/provider/NonEnLocaleDataMetaInfo.java
+GENSRC_BASELOCALEDATA := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/util/locale/provider/BaseLocaleDataMetaInfo.java
+GENSRC_LOCALEDATA := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.localedata/sun/util/resources/provider/NonBaseLocaleDataMetaInfo.java
 
 ################################################################################
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,29 +41,21 @@ import java.util.function.Function;
  *
  * <ul>
  *
- * <li>Algorithms (such as DSA, RSA, MD5 or SHA-1).
+ * <li>Algorithms (such as DSA, RSA, or SHA-256).
  *
  * <li>Key generation, conversion, and management facilities (such as for
  * algorithm-specific keys).
  *
- *</ul>
- *
- * <p>Each provider has a name and a version number, and is configured
- * in each runtime it is installed in.
- *
- * <p>See <a href =
- * "../../../technotes/guides/security/crypto/CryptoSpec.html#Provider">The Provider Class</a>
- * in the "Java Cryptography Architecture API Specification &amp; Reference"
- * for information about how a particular type of provider, the
- * cryptographic service provider, works and is installed. However,
- * please note that a provider can be used to implement any security
- * service in Java that uses a pluggable architecture with a choice
- * of implementations that fit underneath.
+ * </ul>
  *
  * <p>Some provider implementations may encounter unrecoverable internal
  * errors during their operation, for example a failure to communicate with a
  * security token. A {@link ProviderException} should be used to indicate
  * such errors.
+ *
+ * <p>Please note that a provider can be used to implement any security
+ * service in Java that uses a pluggable architecture with a choice
+ * of implementations that fit underneath.
  *
  * <p>The service type {@code Provider} is reserved for use by the
  * security framework. Services of this type cannot be added, removed,
@@ -81,6 +73,28 @@ import java.util.function.Function;
  * <tr><td>{@code Provider.id className}</td>
  *     <td>{@code provider.getClass().getName()}</td>
  * </table>
+ *
+ * <p>Each provider has a name and a version number. A provider normally
+ * identifies itself with a file named {@code java.security.Provider}
+ * in the resource directory {@code META-INF/services}.
+ * Security providers are looked up via the {@link ServiceLoader} mechanism
+ * using the {@link ClassLoader#getSystemClassLoader application class loader}.
+ *
+ * <p>Providers may be configured such that they are automatically
+ * installed and made available at runtime via the
+ * {@link Security#getProviders() Security.getProviders()} method.
+ * The mechanism for configuring and installing security providers is
+ * implementation-specific.
+ *
+ * @implNote
+ * The JDK implementation supports static registration of the security
+ * providers via the {@code conf/security/java.security} file in the Java
+ * installation directory. These providers are automatically installed by
+ * the JDK runtime, see <a href =
+ * "../../../technotes/guides/security/crypto/CryptoSpec.html#Provider">The Provider Class</a>
+ * in the "Java Cryptography Architecture API Specification &amp; Reference"
+ * for information about how a particular type of provider, the cryptographic
+ * service provider, works and is installed.
  *
  * @author Benjamin Renaud
  * @author Andreas Sterbenz
@@ -121,6 +135,18 @@ public abstract class Provider extends Properties {
 
     private transient boolean initialized;
 
+    private static Object newInstanceUtil(final Class<?> clazz,
+        final Class<?> ctrParamClz, final Object ctorParamObj)
+        throws Exception {
+        if (ctrParamClz == null) {
+            Constructor<?> con = clazz.getConstructor();
+            return con.newInstance();
+        } else {
+            Constructor<?> con = clazz.getConstructor(ctrParamClz);
+            return con.newInstance(ctorParamObj);
+        }
+    }
+
     /**
      * Constructs a provider with the specified name, version number,
      * and information.
@@ -137,6 +163,34 @@ public abstract class Provider extends Properties {
         this.info = info;
         putId();
         initialized = true;
+    }
+
+    /**
+     * Apply the supplied configuration argument to this provider instance
+     * and return the configured provider. Note that if this provider cannot
+     * be configured in-place, a new provider will be created and returned.
+     * Therefore, callers should always use the returned provider.
+     *
+     * @implSpec
+     * The default implementation throws {@code UnsupportedOperationException}.
+     * Subclasses should override this method only if a configuration argument
+     * is supported.
+     *
+     * @param configArg the configuration information for configuring this
+     *         provider.
+     *
+     * @throws UnsupportedOperationException if a configuration argument is
+     *         not supported.
+     * @throws NullPointerException if the supplied configuration argument is
+               null.
+     * @throws InvalidParameterException if the supplied configuration argument
+     *         is invalid.
+     * @return a provider configured with the supplied configuration argument.
+     *
+     * @since 1.9
+     */
+    public Provider configure(String configArg) {
+        throw new UnsupportedOperationException("configure is not supported");
     }
 
     /**
@@ -212,8 +266,8 @@ public abstract class Provider extends Properties {
     /**
      * Reads a property list (key and element pairs) from the input stream.
      *
-     * @param inStream   the input stream.
-     * @exception  IOException  if an error occurred when reading from the
+     * @param inStream the input stream.
+     * @exception IOException if an error occurred when reading from the
      *               input stream.
      * @see java.util.Properties#load
      */
@@ -1579,39 +1633,35 @@ public abstract class Provider extends Properties {
                 }
                 registered = true;
             }
+            Class<?> ctrParamClz;
             try {
                 EngineDescription cap = knownEngines.get(type);
                 if (cap == null) {
                     // unknown engine type, use generic code
                     // this is the code path future for non-core
                     // optional packages
-                    return newInstanceGeneric(constructorParameter);
-                }
-                if (cap.constructorParameterClassName == null) {
-                    if (constructorParameter != null) {
-                        throw new InvalidParameterException
-                            ("constructorParameter not used with " + type
-                            + " engines");
-                    }
-                    Class<?> clazz = getImplClass();
-                    Class<?>[] empty = {};
-                    Constructor<?> con = clazz.getConstructor(empty);
-                    return con.newInstance();
+                    ctrParamClz = constructorParameter == null?
+                        null : constructorParameter.getClass();
                 } else {
-                    Class<?> paramClass = cap.getConstructorParameterClass();
+                    ctrParamClz = cap.constructorParameterClassName == null?
+                        null : Class.forName(cap.constructorParameterClassName);
                     if (constructorParameter != null) {
-                        Class<?> argClass = constructorParameter.getClass();
-                        if (paramClass.isAssignableFrom(argClass) == false) {
+                        if (ctrParamClz == null) {
                             throw new InvalidParameterException
-                            ("constructorParameter must be instanceof "
-                            + cap.constructorParameterClassName.replace('$', '.')
-                            + " for engine type " + type);
+                                ("constructorParameter not used with " + type
+                                + " engines");
+                        } else {
+                            Class<?> argClass = constructorParameter.getClass();
+                            if (ctrParamClz.isAssignableFrom(argClass) == false) {
+                                throw new InvalidParameterException
+                                    ("constructorParameter must be instanceof "
+                                    + cap.constructorParameterClassName.replace('$', '.')
+                                    + " for engine type " + type);
+                            }
                         }
                     }
-                    Class<?> clazz = getImplClass();
-                    Constructor<?> cons = clazz.getConstructor(paramClass);
-                    return cons.newInstance(constructorParameter);
                 }
+                return newInstanceUtil(getImplClass(), ctrParamClz, constructorParameter);
             } catch (NoSuchAlgorithmException e) {
                 throw e;
             } catch (InvocationTargetException e) {
@@ -1652,43 +1702,6 @@ public abstract class Provider extends Properties {
                     ("class configured for " + type + " (provider: " +
                     provider.getName() + ") cannot be found.", e);
             }
-        }
-
-        /**
-         * Generic code path for unknown engine types. Call the
-         * no-args constructor if constructorParameter is null, otherwise
-         * use the first matching constructor.
-         */
-        private Object newInstanceGeneric(Object constructorParameter)
-                throws Exception {
-            Class<?> clazz = getImplClass();
-            if (constructorParameter == null) {
-                // create instance with public no-arg constructor if it exists
-                try {
-                    Class<?>[] empty = {};
-                    Constructor<?> con = clazz.getConstructor(empty);
-                    return con.newInstance();
-                } catch (NoSuchMethodException e) {
-                    throw new NoSuchAlgorithmException("No public no-arg "
-                        + "constructor found in class " + className);
-                }
-            }
-            Class<?> argClass = constructorParameter.getClass();
-            Constructor<?>[] cons = clazz.getConstructors();
-            // find first public constructor that can take the
-            // argument as parameter
-            for (Constructor<?> con : cons) {
-                Class<?>[] paramTypes = con.getParameterTypes();
-                if (paramTypes.length != 1) {
-                    continue;
-                }
-                if (paramTypes[0].isAssignableFrom(argClass) == false) {
-                    continue;
-                }
-                return con.newInstance(constructorParameter);
-            }
-            throw new NoSuchAlgorithmException("No public constructor matching "
-                + argClass.getName() + " found in class " + className);
         }
 
         /**

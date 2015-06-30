@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,10 @@
 
 /**
  * @test
- * @bug 6260888
+ * @bug 6260888 8087157
  * @summary check SunPKCS11-Solaris is available on S10+ systems
  * @author Andreas Sterbenz
+ * @run main/othervm DefaultPKCS11
  */
 
 import java.util.*;
@@ -35,6 +36,8 @@ import java.security.*;
 public class DefaultPKCS11 {
 
     public static void main(String[] args) throws Exception {
+        System.setSecurityManager(new SecurityManager());
+
         String osName = System.getProperty("os.name", "(null)");
         String osVersion = System.getProperty("os.version", "(null)");
         System.out.println("Running on " + osName + " " + osVersion);

@@ -37,6 +37,7 @@ import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
 
@@ -3608,6 +3609,18 @@ public class Check {
                           select.name, List.<Type>nil(), List.<Type>nil(),
                           Kinds.typeKindName(TreeInfo.symbol(select.selected).type),
                           TreeInfo.symbol(select.selected).type);
+            }
+        }
+    }
+
+    // Check that packages imported are in scope (JLS 7.4.3, 6.3, 6.5.3.1, 6.5.3.2)
+    public void checkImportedPackagesObservable(final JCCompilationUnit toplevel) {
+        for (JCImport imp : toplevel.getImports()) {
+            if (!imp.staticImport && TreeInfo.name(imp.qualid) == names.asterisk) {
+                TypeSymbol tsym = ((JCFieldAccess)imp.qualid).selected.type.tsym;
+                if (tsym.kind == PCK && tsym.members().isEmpty() && !tsym.exists()) {
+                    log.error(DiagnosticFlag.RESOLVE_ERROR, imp.pos, "doesnt.exist", tsym);
+                }
             }
         }
     }

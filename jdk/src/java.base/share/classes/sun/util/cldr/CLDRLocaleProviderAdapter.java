@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,14 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.text.spi.BreakIteratorProvider;
 import java.text.spi.CollatorProvider;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -48,11 +53,16 @@ import sun.util.locale.provider.LocaleDataMetaInfo;
  */
 public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
 
-    private final LocaleDataMetaInfo metaInfo;
+    private static final CLDRBaseLocaleDataMetaInfo baseMetaInfo = new CLDRBaseLocaleDataMetaInfo();
+    // Assumption: CLDR has only one non-Base module.
+    private final LocaleDataMetaInfo nonBaseMetaInfo;
+
+    // parent locales map
+    private static volatile Map<Locale, Locale> parentLocalesMap = null;
 
     public CLDRLocaleProviderAdapter() {
         try {
-            metaInfo = AccessController.doPrivileged(new PrivilegedExceptionAction<LocaleDataMetaInfo>() {
+            nonBaseMetaInfo = AccessController.doPrivileged(new PrivilegedExceptionAction<LocaleDataMetaInfo>() {
                     @Override
                 public LocaleDataMetaInfo run() {
                     for (LocaleDataMetaInfo ldmi : ServiceLoader.loadInstalled(LocaleDataMetaInfo.class)) {
@@ -70,7 +80,7 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
             throw new UnsupportedOperationException(e);
         }
 
-        if (metaInfo == null) {
+        if (nonBaseMetaInfo == null) {
             throw new UnsupportedOperationException("CLDR locale data could not be found.");
         }
     }
@@ -107,7 +117,16 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
 
     @Override
     protected Set<String> createLanguageTagSet(String category) {
-        String supportedLocaleString = metaInfo.availableLanguageTags(category);
+        // Directly call Base tags, as we know it's in the base module.
+        String supportedLocaleString = baseMetaInfo.availableLanguageTags(category);
+        String nonBaseTags = nonBaseMetaInfo.availableLanguageTags(category);
+        if (nonBaseTags != null) {
+            if (supportedLocaleString != null) {
+                supportedLocaleString += " " + nonBaseTags;
+            } else {
+                supportedLocaleString = nonBaseTags;
+            }
+        }
         if (supportedLocaleString == null) {
             return Collections.emptySet();
         }
@@ -117,5 +136,47 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
             tagset.add(tokens.nextToken());
         }
         return tagset;
+    }
+
+    // Implementation of ResourceBundleBasedAdapter
+    @Override
+    public List<Locale> getCandidateLocales(String baseName, Locale locale) {
+        List<Locale> candidates = super.getCandidateLocales(baseName, locale);
+        return applyParentLocales(baseName, candidates);
+}
+
+    private List<Locale> applyParentLocales(String baseName, List<Locale> candidates) {
+        if (Objects.isNull(parentLocalesMap)) {
+            Map<Locale, Locale> map = new HashMap<>();
+            Map<String, String> parentLocales = baseMetaInfo.parentLocales();
+            parentLocales.keySet().forEach(parent -> {
+                Arrays.asList(parentLocales.get(parent).split(" ")).stream().forEach(child -> {
+                    map.put(Locale.forLanguageTag(child),
+                        "root".equals(parent) ? Locale.ROOT : Locale.forLanguageTag(parent));
+                });
+            });
+            parentLocalesMap = Collections.unmodifiableMap(map);
+        }
+
+        // check irregular parents
+        for (int i = 0; i < candidates.size(); i++) {
+            Locale l = candidates.get(i);
+            Locale p = parentLocalesMap.get(l);
+            if (!l.equals(Locale.ROOT) &&
+                Objects.nonNull(p) &&
+                !candidates.get(i+1).equals(p)) {
+                List<Locale> applied = candidates.subList(0, i+1);
+                applied.addAll(applyParentLocales(baseName, super.getCandidateLocales(baseName, p)));
+                return applied;
+            }
+        }
+
+        return candidates;
+    }
+
+    @Override
+    public boolean isSupportedProviderLocale(Locale locale, Set<String> langtags) {
+        return Locale.ROOT.equals(locale) ||
+            langtags.contains(locale.stripExtensions().toLanguageTag());
     }
 }

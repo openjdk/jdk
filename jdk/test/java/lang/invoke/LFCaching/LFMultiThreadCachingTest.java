@@ -80,23 +80,18 @@ public final class LFMultiThreadCachingTest extends LFCachingTestCase {
         CountDownLatch end = new CountDownLatch(CORES);
         final Map<Thread, Throwable> threadUncaughtExceptions
                 = Collections.synchronizedMap(new HashMap<Thread, Throwable>(CORES));
-        Thread.UncaughtExceptionHandler exHandler = (t, e) -> {
-            threadUncaughtExceptions.put(t, e);
-        };
         for (int i = 0; i < CORES; ++i) {
             TestMethods.Kind kind = KINDS[i % KINDS.length];
             Thread t = new Thread(() -> {
                 try {
                     begin.await();
                     adapters.add(getTestMethod().getTestCaseMH(data, kind));
-                } catch (InterruptedException | BrokenBarrierException
-                        | IllegalAccessException | NoSuchMethodException ex) {
-                    throw new Error("Unexpected exception", ex);
+                } catch (Throwable ex) {
+                    threadUncaughtExceptions.put(Thread.currentThread(), ex);
                 } finally {
                     end.countDown();
                 }
             });
-            t.setUncaughtExceptionHandler(exHandler);
             t.start();
         }
         try {
