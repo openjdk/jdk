@@ -23,7 +23,7 @@
 /*
  * @test
  * @bug 4290801 4692419 4693631 5101540 5104960 6296410 6336600 6371531
- *    6488442 7036905 8039317 8074350 8074351
+ *    6488442 7036905 8008577 8039317 8074350 8074351
  * @summary Basic tests for Currency class.
  */
 
@@ -98,7 +98,12 @@ public class CurrencyTest {
         int ownCurrencies = 0;
         for (int i = 0; i < locales.length; i++) {
             Locale locale = locales[i];
-            if (locale.getCountry().length() == 0) {
+            String ctryCode = locale.getCountry();
+            int ctryLength = ctryCode.length();
+            if (ctryLength == 0 ||
+                ctryLength == 3 || // UN M.49 code
+                ctryCode.matches("AA|Q[M-Z]|X[A-Z]|ZZ" + // user defined codes
+                                 "AC|CP|DG|EA|EU|FX|IC|SU|TA|UK")) { // exceptional reservation codes
                 boolean gotException = false;
                 try {
                     Currency.getInstance(locale);
@@ -249,7 +254,7 @@ public class CurrencyTest {
         testDisplayName("FRF", Locale.FRENCH, "franc fran\u00e7ais");
         testDisplayName("DEM", Locale.GERMAN, "Deutsche Mark");
         testDisplayName("ESP", new Locale("es"), "peseta espa\u00f1ola");
-        testDisplayName("ITL", new Locale("it"), "Lira Italiana");
+        testDisplayName("ITL", new Locale("it"), "lira italiana");
         testDisplayName("JPY", Locale.JAPANESE, "\u65e5\u672c\u5186");
         testDisplayName("KRW", Locale.KOREAN, "\ub300\ud55c\ubbfc\uad6d \uc6d0");
         testDisplayName("SEK", new Locale("sv"), "svensk krona");
@@ -265,7 +270,6 @@ public class CurrencyTest {
                     "', got '" + name + "'");
         }
     }
-
     static void testFundsCodes() {
         testValidCurrency("BOV");
         testValidCurrency("CHE");

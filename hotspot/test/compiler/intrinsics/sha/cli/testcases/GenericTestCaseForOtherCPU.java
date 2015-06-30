@@ -35,16 +35,18 @@ public class GenericTestCaseForOtherCPU extends
         SHAOptionsBase.TestCase {
     public GenericTestCaseForOtherCPU(String optionName) {
         // Execute the test case on any CPU except SPARC and X86
-        super(optionName, new NotPredicate(new OrPredicate(Platform::isSparc,
-                new OrPredicate(Platform::isX64, Platform::isX86))));
+        super(optionName, new NotPredicate(
+                new OrPredicate(
+                    new OrPredicate(Platform::isSparc, Platform::isAArch64),
+                    new OrPredicate(Platform::isX64, Platform::isX86))));
     }
 
     @Override
     protected void verifyWarnings() throws Throwable {
         String shouldPassMessage = String.format("JVM should start with "
                 + "option '%s' without any warnings", optionName);
-        // Verify that on non-x86 and non-SPARC CPU usage of SHA-related
-        // options will not cause any warnings.
+        // Verify that on non-x86, non-SPARC and non-AArch64 CPU usage of
+        //  SHA-related options will not cause any warnings.
         CommandLineOptionTest.verifySameJVMStartup(null,
                 new String[] { ".*" + optionName + ".*" }, shouldPassMessage,
                 shouldPassMessage, ExitCode.OK,

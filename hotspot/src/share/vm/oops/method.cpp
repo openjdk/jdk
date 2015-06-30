@@ -93,6 +93,7 @@ Method::Method(ConstMethod* xconst, AccessFlags access_flags, int size) {
   set_force_inline(false);
   set_hidden(false);
   set_dont_inline(false);
+  set_has_injected_profile(false);
   set_method_data(NULL);
   clear_method_counters();
   set_vtable_index(Method::garbage_vtable_index);

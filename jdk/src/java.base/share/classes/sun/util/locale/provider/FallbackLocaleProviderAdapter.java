@@ -66,4 +66,9 @@ public class FallbackLocaleProviderAdapter extends JRELocaleProviderAdapter {
     protected Set<String> createLanguageTagSet(String category) {
         return rootTagSet;
     }
+
+    @Override
+    public boolean isSupportedProviderLocale(Locale locale, Set<String>langtags) {
+        return Locale.ROOT.equals(locale);
+}
 }

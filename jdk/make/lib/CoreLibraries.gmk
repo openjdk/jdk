@@ -161,7 +161,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVA, \
         -export:getLastErrorString \
         jvm.lib $(BUILD_LIBFDLIBM) $(WIN_VERIFY_LIB) \
         shell32.lib delayimp.lib -DELAYLOAD:shell32.dll \
-        advapi32.lib, \
+        advapi32.lib version.lib, \
     VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
     RC_FLAGS := $(RC_FLAGS) \
         -D "JDK_FNAME=java.dll" \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,7 +192,7 @@ public class SplittableRandomTest extends OpTestCase {
     public void testInts(TestData.OfInt data, ResultAsserter<Iterable<Integer>> ra) {
         withData(data).
                 stream(s -> s).
-                without(IntStreamTestScenario.PAR_STREAM_TO_ARRAY_CLEAR_SIZED).
+                without(IntStreamTestScenario.CLEAR_SIZED_SCENARIOS).
                 resultAsserter(ra).
                 exercise();
     }
@@ -276,7 +276,7 @@ public class SplittableRandomTest extends OpTestCase {
     public void testLongs(TestData.OfLong data, ResultAsserter<Iterable<Long>> ra) {
         withData(data).
                 stream(s -> s).
-                without(LongStreamTestScenario.PAR_STREAM_TO_ARRAY_CLEAR_SIZED).
+                without(LongStreamTestScenario.CLEAR_SIZED_SCENARIOS).
                 resultAsserter(ra).
                 exercise();
     }
@@ -360,7 +360,7 @@ public class SplittableRandomTest extends OpTestCase {
     public void testDoubles(TestData.OfDouble data, ResultAsserter<Iterable<Double>> ra) {
         withData(data).
                 stream(s -> s).
-                without(DoubleStreamTestScenario.PAR_STREAM_TO_ARRAY_CLEAR_SIZED).
+                without(DoubleStreamTestScenario.CLEAR_SIZED_SCENARIOS).
                 resultAsserter(ra).
                 exercise();
     }

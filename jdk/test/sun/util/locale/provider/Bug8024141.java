@@ -23,8 +23,9 @@
 
 /*
  * @test
- * @bug 8024141
+ * @bug 8008577 8024141
  * @summary Test for cache support of sun.util.locale.provider.LocaleResources.getTimeZoneNames
+ * @run main/othervm -Djava.locale.providers=JRE,SPI Bug8024141
  */
 
 import java.time.ZoneId;

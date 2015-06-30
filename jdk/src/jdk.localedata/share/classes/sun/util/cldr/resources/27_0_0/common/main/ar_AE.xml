@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2014 Unicode, Inc.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+For terms of use, see http://www.unicode.org/copyright.html
+-->
+<ldml>
+	<identity>
+		<version number="$Revision: 11323 $"/>
+		<generation date="$Date: 2015-02-26 15:25:28 -0600 (Thu, 26 Feb 2015) $"/>
+		<language type="ar"/>
+		<territory type="AE"/>
+	</identity>
+	<localeDisplayNames>
+		<territories>
+			<territory type="CI" alt="variant" draft="contributed">ساحل العاج</territory>
+			<territory type="TL" alt="variant" draft="contributed">التيمور الشرقية</territory>
+		</territories>
+	</localeDisplayNames>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<eras>
+					<eraNames>
+						<era type="0" alt="variant" draft="contributed">قبل الميلاد</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" alt="variant" draft="contributed">ق.م</era>
+					</eraAbbr>
+				</eras>
+			</calendar>
+		</calendars>
+		<fields>
+			<field type="year">
+				<relative type="0" draft="contributed">هذه السنة</relative>
+			</field>
+		</fields>
+	</dates>
+	<numbers>
+		<currencies>
+			<currency type="BND">
+				<symbol alt="narrow" draft="contributed">$</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+</ldml>
+

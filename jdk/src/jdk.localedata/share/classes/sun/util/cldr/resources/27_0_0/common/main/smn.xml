@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2014 Unicode, Inc.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+For terms of use, see http://www.unicode.org/copyright.html
+-->
+<ldml>
+	<identity>
+		<version number="$Revision: 10811 $"/>
+		<generation date="$Date: 2014-08-14 16:43:15 -0500 (Thu, 14 Aug 2014) $"/>
+		<language type="smn"/>
+	</identity>
+	<localeDisplayNames>
+		<localeDisplayPattern>
+			<localePattern>{0} ({1})</localePattern>
+			<localeSeparator>{0}, {1}</localeSeparator>
+			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
+		</localeDisplayPattern>
+		<languages>
+			<language type="ain">ainukielâ</language>
+			<language type="ar">arabiakielâ</language>
+			<language type="be">vielgisruošâkielâ</language>
+			<language type="bg">bulgariakielâ</language>
+			<language type="chm">marikielâ</language>
+			<language type="cs">tšeekikielâ</language>
+			<language type="cu">kirkkoslaavi</language>
+			<language type="da">tanskakielâ</language>
+			<language type="de">saksakielâ</language>
+			<language type="de_AT">Nuorttâriijkâ saksakielâ</language>
+			<language type="el">kreikakielâ</language>
+			<language type="en">engâlâskielâ</language>
+			<language type="en_AU">Australia engâlâskielâ</language>
+			<language type="en_CA">Kanada engâlâskielâ</language>
+			<language type="es">espanjakielâ</language>
+			<language type="et">eestikielâ</language>
+			<language type="fi">suomâkielâ</language>
+			<language type="fr">ranskakielâ</language>
+			<language type="ga">iirikielâ</language>
+			<language type="grc">toovláškreikakielâ</language>
+			<language type="he">hepreakielâ</language>
+			<language type="hr">kroatiakielâ</language>
+			<language type="hu">uŋgarkielâ</language>
+			<language type="hy">armeniakielâ</language>
+			<language type="is">islandkielâ</language>
+			<language type="it">italiakielâ</language>
+			<language type="ja">jaapaankielâ</language>
+			<language type="ku">kurdikielâ</language>
+			<language type="kv">komikielâ</language>
+			<language type="la">läättinkielâ</language>
+			<language type="lv">latviakielâ</language>
+			<language type="mdf">mokšâkielâ</language>
+			<language type="mi">maorikielâ</language>
+			<language type="mk">makedoniakielâ</language>
+			<language type="mn">mongoliakielâ</language>
+			<language type="mrj">viestârmarikielâ</language>
+			<language type="ne">neepaalkielâ</language>
+			<language type="nl">hollandkielâ</language>
+			<language type="nn">tárukielâ nynorsk</language>
+			<language type="no">tárukielâ</language>
+			<language type="non">toovláštárukielâ</language>
+			<language type="pl">puolakielâ</language>
+			<language type="pt">portugalkielâ</language>
+			<language type="ro">romaniakielâ</language>
+			<language type="rom">roomaankielâ</language>
+			<language type="ru">ruošâkielâ</language>
+			<language type="sa">sanskritkielâ</language>
+			<language type="se">tavesämikielâ</language>
+			<language type="sl">sloveniakielâ</language>
+			<language type="sma">maadâsämikielâ</language>
+			<language type="smj">juulevsämikielâ</language>
+			<language type="smn">anarâškielâ</language>
+			<language type="sms">nuorttâlâškielâ</language>
+			<language type="sr">serbiakielâ</language>
+			<language type="sv">ruotâkielâ</language>
+			<language type="tr">turkkikielâ</language>
+			<language type="udm">udmurtkielâ</language>
+			<language type="uk">ukrainakielâ</language>
+			<language type="vep">vepsäkielâ</language>
+			<language type="vi">vietnamkielâ</language>
+			<language type="yue">kantonkiinakielâ</language>
+			<language type="zh">kiinakielâ</language>
+			<language type="zh_Hans">oovtâkiärdánis kiinakielâ</language>
+			<language type="zh_Hant">ärbivuáválâš kiinakielâ</language>
+		</languages>
+		<measurementSystemNames>
+			<measurementSystemName type="metric">metrisâš</measurementSystemName>
+			<measurementSystemName type="UK">brittilâš</measurementSystemName>
+			<measurementSystemName type="US">ameriklâš</measurementSystemName>
+		</measurementSystemNames>
+		<codePatterns>
+			<codePattern type="language">kielâ: {0}</codePattern>
+			<codePattern type="script">čäällimvuáhádâh: {0}</codePattern>
+			<codePattern type="territory">kuávlu: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<layout>
+		<orientation>
+			<characterOrder>left-to-right</characterOrder>
+			<lineOrder>top-to-bottom</lineOrder>
+		</orientation>
+	</layout>
+	<characters>
+		<exemplarCharacters>[a â b c č d đ e f g h i j k l m n ŋ o p r s š t u v y z ž ä á]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[à ç é è í ñ ń ó ò q ú ü w x æ ø å ã ö]</exemplarCharacters>
+		<exemplarCharacters type="index">[A Â B C Č D Đ E F G H I J K L M N Ŋ O P R S Š T U V Y Z Ž Ä Á]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="stand-alone">
+						<monthWidth type="wide">
+							<month type="1">uđđâivemáánu</month>
+							<month type="2">kuovâmáánu</month>
+							<month type="3">njuhčâmáánu</month>
+							<month type="4">cuáŋuimáánu</month>
+							<month type="5">vyesimáánu</month>
+							<month type="6">kesimáánu</month>
+							<month type="7">syeinimáánu</month>
+							<month type="8">porgemáánu</month>
+							<month type="9">čohčâmáánu</month>
+							<month type="10">roovvâdmáánu</month>
+							<month type="11">skammâmáánu</month>
+							<month type="12">juovlâmáánu</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun">pa</day>
+							<day type="mon">vu</day>
+							<day type="tue">ma</day>
+							<day type="wed">ko</day>
+							<day type="thu">tu</day>
+							<day type="fri">vá</day>
+							<day type="sat">lá</day>
+						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun">P</day>
+							<day type="mon">V</day>
+							<day type="tue">M</day>
+							<day type="wed">K</day>
+							<day type="thu">T</day>
+							<day type="fri">V</day>
+							<day type="sat">L</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">pasepeeivi</day>
+							<day type="mon">vuossaargâ</day>
+							<day type="tue">majebaargâ</day>
+							<day type="wed">koskoho</day>
+							<day type="thu">tuorâstuv</day>
+							<day type="fri">vástuppeeivi</day>
+							<day type="sat">lávurduv</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="wide">
+							<day type="sun">pasepeivi</day>
+							<day type="mon">vuossargâ</day>
+							<day type="tue">majebargâ</day>
+							<day type="wed">koskokko</day>
+							<day type="thu">tuorâstâh</day>
+							<day type="fri">vástuppeivi</day>
+							<day type="sat">lávurdâh</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">1. niälj.</quarter>
+							<quarter type="2">2. niälj.</quarter>
+							<quarter type="3">3. niälj.</quarter>
+							<quarter type="4">4. niälj.</quarter>
+						</quarterWidth>
+					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="wide">
+							<quarter type="1">1. niäljádâs</quarter>
+							<quarter type="2">2. niäljádâs</quarter>
+							<quarter type="3">3. niäljádâs</quarter>
+							<quarter type="4">4. niäljádâs</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+			</calendar>
+		</calendars>
+	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<nan>epiloho</nan>
+		</symbols>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength type="long">
+				<decimalFormat>
+					<pattern type="1000" count="one">0 tuhháát</pattern>
+					<pattern type="1000" count="two">0 tuhháát</pattern>
+					<pattern type="1000" count="other">0 tuhháát</pattern>
+					<pattern type="10000" count="one">00 tuhháát</pattern>
+					<pattern type="10000" count="two">00 tuhháát</pattern>
+					<pattern type="10000" count="other">00 tuhháát</pattern>
+					<pattern type="100000" count="one">000 tuhháát</pattern>
+					<pattern type="100000" count="two">000 tuhháát</pattern>
+					<pattern type="100000" count="other">000 tuhháát</pattern>
+					<pattern type="1000000" count="one">0 miljovn</pattern>
+					<pattern type="1000000" count="two">0 miljovn</pattern>
+					<pattern type="1000000" count="other">0 miljovn</pattern>
+					<pattern type="10000000" count="one">00 miljovn</pattern>
+					<pattern type="10000000" count="two">00 miljovn</pattern>
+					<pattern type="10000000" count="other">00 miljovn</pattern>
+					<pattern type="100000000" count="one">000 miljovn</pattern>
+					<pattern type="100000000" count="two">000 miljovn</pattern>
+					<pattern type="100000000" count="other">000 miljovn</pattern>
+					<pattern type="1000000000" count="one">0 miljard</pattern>
+					<pattern type="1000000000" count="two">0 miljard</pattern>
+					<pattern type="1000000000" count="other">0 miljard</pattern>
+					<pattern type="10000000000" count="one">00 miljard</pattern>
+					<pattern type="10000000000" count="two">00 miljard</pattern>
+					<pattern type="10000000000" count="other">00 miljard</pattern>
+					<pattern type="100000000000" count="one">000 miljard</pattern>
+					<pattern type="100000000000" count="two">000 miljard</pattern>
+					<pattern type="100000000000" count="other">000 miljard</pattern>
+					<pattern type="1000000000000" count="one">0 biljovn</pattern>
+					<pattern type="1000000000000" count="two">0 biljovn</pattern>
+					<pattern type="1000000000000" count="other">0 biljovn</pattern>
+					<pattern type="10000000000000" count="one">00 biljovn</pattern>
+					<pattern type="10000000000000" count="two">00 biljovn</pattern>
+					<pattern type="10000000000000" count="other">00 biljovn</pattern>
+					<pattern type="100000000000000" count="one">000 biljovn</pattern>
+					<pattern type="100000000000000" count="two">000 biljovn</pattern>
+					<pattern type="100000000000000" count="other">000 biljovn</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<currencies>
+			<currency type="DKK">
+				<displayName>Tanska ruvnâ</displayName>
+			</currency>
+			<currency type="EEK">
+				<displayName>Eesti ruvnâ</displayName>
+			</currency>
+			<currency type="EUR">
+				<displayName>euro</displayName>
+			</currency>
+			<currency type="FIM">
+				<displayName>Suomâ märkki</displayName>
+			</currency>
+			<currency type="ISK">
+				<displayName>Island ruvnâ</displayName>
+			</currency>
+			<currency type="LVR">
+				<displayName>Latvia ruble</displayName>
+			</currency>
+			<currency type="NOK">
+				<displayName>Taažâ ruvnâ</displayName>
+			</currency>
+			<currency type="SEK">
+				<displayName>Ruotâ ruvnâ</displayName>
+			</currency>
+		</currencies>
+		<miscPatterns numberSystem="latn">
+			<pattern type="atLeast">ucemustáá {0}</pattern>
+		</miscPatterns>
+	</numbers>
+	<units>
+		<unitLength type="long">
+			<unit type="duration-day">
+				<displayName>peeivih</displayName>
+			</unit>
+			<unit type="duration-hour">
+				<displayName>tiijmeh</displayName>
+			</unit>
+			<unit type="duration-microsecond">
+				<displayName>mikrosekunteh</displayName>
+				<unitPattern count="one">{0} μs</unitPattern>
+				<unitPattern count="two">{0} μs</unitPattern>
+				<unitPattern count="other">{0} μs</unitPattern>
+			</unit>
+			<unit type="duration-millisecond">
+				<displayName>millisekunteh</displayName>
+			</unit>
+			<unit type="duration-minute">
+				<displayName>minutteh</displayName>
+			</unit>
+			<unit type="duration-month">
+				<displayName>mánuppajeh</displayName>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName>nanosekunteh</displayName>
+			</unit>
+			<unit type="duration-second">
+				<displayName>sekunteh</displayName>
+			</unit>
+			<unit type="duration-week">
+				<displayName>ohoh</displayName>
+			</unit>
+			<unit type="duration-year">
+				<displayName>iveh</displayName>
+			</unit>
+		</unitLength>
+	</units>
+</ldml>
+

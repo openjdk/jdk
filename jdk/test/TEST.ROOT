@@ -8,8 +8,11 @@
 # would not count as "randomness" by this definition.) Extra care
 # should be taken to handle test failures of intermittent or
 # randomness tests.
+#
+# A "headful" test requires a graphical environment to meaningfully
+# run. Tests that are not headful are "headless." 
 
-keys=2d dnd i18n intermittent randomness
+keys=2d dnd i18n intermittent randomness headful
 
 # Tests that must run in othervm mode
 othervm.dirs=java/awt java/beans javax/accessibility javax/imageio javax/sound javax/print javax/management com/sun/awt sun/awt sun/java2d sun/pisces javax/xml/jaxp/testng/validation java/lang/ProcessHandle
