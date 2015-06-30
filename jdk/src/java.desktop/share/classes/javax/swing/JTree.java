@@ -1365,6 +1365,13 @@ public class JTree extends JComponent implements Scrollable, Accessible
 
                     child = getPathForRow(index);
                     parent = child.getParentPath();
+                    TreePath prev = getPathForRow(row).getParentPath();
+                    if (prev != null && !prev.equals(parent)) {
+                        location = new DropLocation(p, prev,
+                              model.getChildCount(prev.getLastPathComponent()));
+                        break;
+                    }
+
                 } else {
                     assert checkOn;
                     location = new DropLocation(p, getPathForRow(row), -1);

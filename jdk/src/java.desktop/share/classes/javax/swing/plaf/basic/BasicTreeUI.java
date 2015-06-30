@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1497,8 +1497,16 @@ public class BasicTreeUI extends TreeUI
                 rect.x = xRect.x;
                 rect.width = xRect.width;
             } else {
-                rect = tree.getPathBounds(path.pathByAddingChild(
-                    model.getChild(path.getLastPathComponent(), index)));
+                if (index >= model.getChildCount(path.getLastPathComponent())) {
+                    rect = tree.getPathBounds(path.pathByAddingChild(
+                            model.getChild(path.getLastPathComponent(),
+                                    index - 1)));
+                    rect.y = rect.y + rect.height;
+                } else {
+                    rect = tree.getPathBounds(path.pathByAddingChild(
+                            model.getChild(path.getLastPathComponent(),
+                                    index)));
+                }
             }
         }
 
