@@ -52,12 +52,12 @@ InterpretedRFrame::InterpretedRFrame(frame fr, JavaThread* thread, RFrame*const 
 : RFrame(fr, thread, callee) {
   RegisterMap map(thread, false);
   _vf     = javaVFrame::cast(vframe::new_vframe(&_fr, &map, thread));
-  _method = methodHandle(thread, _vf->method());
+  _method = _vf->method();
   assert(   _vf->is_interpreted_frame(), "must be interpreted");
   init();
 }
 
-InterpretedRFrame::InterpretedRFrame(frame fr, JavaThread* thread, methodHandle m)
+InterpretedRFrame::InterpretedRFrame(frame fr, JavaThread* thread, Method* m)
 : RFrame(fr, thread, NULL) {
   RegisterMap map(thread, false);
   _vf     = javaVFrame::cast(vframe::new_vframe(&_fr, &map, thread));
@@ -140,8 +140,8 @@ void CompiledRFrame::init() {
   _nm = compiledVFrame::cast(vf)->code();
   vf = vf->top();
   _vf = javaVFrame::cast(vf);
-  _method = methodHandle(thread(), CodeCache::find_nmethod(_fr.pc())->method());
-  assert(_method(), "should have found a method");
+  _method = CodeCache::find_nmethod(_fr.pc())->method();
+  assert(_method, "should have found a method");
 #ifndef PRODUCT
   _invocations = _method->compiled_invocation_count();
 #endif
