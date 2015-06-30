@@ -23,12 +23,13 @@
 
 /*
  * @test
- * @bug 5096553
+ * @bug 5096553 8008577
  * @summary updating dateformat for da_DK
  *          following resources:
  *          http://oss.software.ibm.com/cvs/icu/~checkout~/locale/common/main/da.xml
  *          http://www.microsoft.com/globaldev/nlsweb/default.asp?submitted=406
  *          see bug evaluation for more details
+ * @run main/othervm -Djava.locale.providers=JRE,SPI Bug5096553
  */
 
 import java.util.Date;

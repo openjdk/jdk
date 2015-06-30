@@ -28,7 +28,7 @@
  * ===========================================================================
  */
 /*
- * Copyright (c) 2005, 2014 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015 Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * $Id: XMLDSigRI.java 1400021 2012-10-19 10:16:04Z coheigea $
@@ -59,102 +59,156 @@ public final class XMLDSigRI extends Provider {
         "C14N 1.0, C14N 1.1, Exclusive C14N, Base64, Enveloped, XPath, " +
         "XPath2, XSLT TransformServices)";
 
+    private static final class ProviderService extends Provider.Service {
+
+        ProviderService(Provider p, String type, String algo, String cn) {
+            super(p, type, algo, cn, null, null);
+        }
+
+        ProviderService(Provider p, String type, String algo, String cn,
+            String[] aliases) {
+            super(p, type, algo, cn,
+                (aliases == null? null : Arrays.asList(aliases)), null);
+        }
+
+        ProviderService(Provider p, String type, String algo, String cn,
+            String[] aliases, HashMap<String, String> attrs) {
+            super(p, type, algo, cn,
+                  (aliases == null? null : Arrays.asList(aliases)), attrs);
+        }
+
+        @Override
+        public Object newInstance(Object ctrParamObj)
+            throws NoSuchAlgorithmException {
+            String type = getType();
+            if (ctrParamObj != null) {
+                throw new InvalidParameterException
+                    ("constructorParameter not used with " + type + " engines");
+            }
+
+            String algo = getAlgorithm();
+            try {
+                if (type.equals("XMLSignatureFactory")) {
+                    if (algo.equals("DOM")) {
+                        return new DOMXMLSignatureFactory();
+                    }
+                } else if (type.equals("KeyInfoFactory")) {
+                    if (algo.equals("DOM")) {
+                        return new DOMKeyInfoFactory();
+                    }
+                } else if (type.equals("TransformService")) {
+                    if (algo.equals(CanonicalizationMethod.INCLUSIVE) ||
+                        algo.equals(CanonicalizationMethod.INCLUSIVE_WITH_COMMENTS)) {
+                        return new DOMCanonicalXMLC14NMethod();
+                    } else if (algo.equals("http://www.w3.org/2006/12/xml-c14n11") ||
+                        algo.equals("http://www.w3.org/2006/12/xml-c14n11#WithComments")) {
+                        return new DOMCanonicalXMLC14N11Method();
+                    } else if (algo.equals(CanonicalizationMethod.EXCLUSIVE) ||
+                        algo.equals(CanonicalizationMethod.EXCLUSIVE_WITH_COMMENTS)) {
+                        return new DOMExcC14NMethod();
+                    } else if (algo.equals(Transform.BASE64)) {
+                        return new DOMBase64Transform();
+                    } else if (algo.equals(Transform.ENVELOPED)) {
+                        return new DOMEnvelopedTransform();
+                    } else if (algo.equals(Transform.XPATH2)) {
+                        return new DOMXPathFilter2Transform();
+                    } else if (algo.equals(Transform.XPATH)) {
+                        return new DOMXPathTransform();
+                    } else if (algo.equals(Transform.XSLT)) {
+                        return new DOMXSLTTransform();
+                    }
+                 }
+            } catch (Exception ex) {
+                throw new NoSuchAlgorithmException("Error constructing " +
+                    type + " for " + algo + " using XMLDSig", ex);
+            }
+            throw new ProviderException("No impl for " + algo +
+                " " + type);
+        }
+    }
+
     public XMLDSigRI() {
         /* We are the XMLDSig provider */
         super("XMLDSig", 1.9d, INFO);
 
-        final Map<Object, Object> map = new HashMap<Object, Object>();
-        map.put("XMLSignatureFactory.DOM",
-                "org.jcp.xml.dsig.internal.dom.DOMXMLSignatureFactory");
-        map.put("KeyInfoFactory.DOM",
-                "org.jcp.xml.dsig.internal.dom.DOMKeyInfoFactory");
-
-
-        // Inclusive C14N
-        map.put("TransformService." + CanonicalizationMethod.INCLUSIVE,
-                "org.jcp.xml.dsig.internal.dom.DOMCanonicalXMLC14NMethod");
-        map.put("Alg.Alias.TransformService.INCLUSIVE",
-                CanonicalizationMethod.INCLUSIVE);
-        map.put("TransformService." + CanonicalizationMethod.INCLUSIVE +
-                " MechanismType", "DOM");
-
-        // InclusiveWithComments C14N
-        map.put("TransformService." +
-                CanonicalizationMethod.INCLUSIVE_WITH_COMMENTS,
-                "org.jcp.xml.dsig.internal.dom.DOMCanonicalXMLC14NMethod");
-        map.put("Alg.Alias.TransformService.INCLUSIVE_WITH_COMMENTS",
-                CanonicalizationMethod.INCLUSIVE_WITH_COMMENTS);
-        map.put("TransformService." +
-                CanonicalizationMethod.INCLUSIVE_WITH_COMMENTS +
-                " MechanismType", "DOM");
-
-        // Inclusive C14N 1.1
-        map.put("TransformService.http://www.w3.org/2006/12/xml-c14n11",
-                "org.jcp.xml.dsig.internal.dom.DOMCanonicalXMLC14N11Method");
-        map.put("TransformService.http://www.w3.org/2006/12/xml-c14n11" +
-                " MechanismType", "DOM");
-
-        // InclusiveWithComments C14N 1.1
-        map.put("TransformService.http://www.w3.org/2006/12/xml-c14n11#WithComments",
-                "org.jcp.xml.dsig.internal.dom.DOMCanonicalXMLC14N11Method");
-        map.put("TransformService.http://www.w3.org/2006/12/xml-c14n11#WithComments" +
-                " MechanismType", "DOM");
-
-        // Exclusive C14N
-        map.put("TransformService." + CanonicalizationMethod.EXCLUSIVE,
-                "org.jcp.xml.dsig.internal.dom.DOMExcC14NMethod");
-        map.put("Alg.Alias.TransformService.EXCLUSIVE",
-                CanonicalizationMethod.EXCLUSIVE);
-        map.put("TransformService." + CanonicalizationMethod.EXCLUSIVE +
-                " MechanismType", "DOM");
-
-        // ExclusiveWithComments C14N
-        map.put("TransformService." +
-                CanonicalizationMethod.EXCLUSIVE_WITH_COMMENTS,
-                "org.jcp.xml.dsig.internal.dom.DOMExcC14NMethod");
-        map.put("Alg.Alias.TransformService.EXCLUSIVE_WITH_COMMENTS",
-                CanonicalizationMethod.EXCLUSIVE_WITH_COMMENTS);
-        map.put("TransformService." +
-                CanonicalizationMethod.EXCLUSIVE_WITH_COMMENTS +
-                " MechanismType", "DOM");
-
-        // Base64 Transform
-        map.put("TransformService." + Transform.BASE64,
-                "org.jcp.xml.dsig.internal.dom.DOMBase64Transform");
-        map.put("Alg.Alias.TransformService.BASE64", Transform.BASE64);
-        map.put("TransformService." + Transform.BASE64 +
-                " MechanismType", "DOM");
-
-        // Enveloped Transform
-        map.put("TransformService." + Transform.ENVELOPED,
-                "org.jcp.xml.dsig.internal.dom.DOMEnvelopedTransform");
-        map.put("Alg.Alias.TransformService.ENVELOPED", Transform.ENVELOPED);
-        map.put("TransformService." + Transform.ENVELOPED +
-                " MechanismType", "DOM");
-
-        // XPath2 Transform
-        map.put("TransformService." + Transform.XPATH2,
-                "org.jcp.xml.dsig.internal.dom.DOMXPathFilter2Transform");
-        map.put("Alg.Alias.TransformService.XPATH2", Transform.XPATH2);
-        map.put("TransformService." + Transform.XPATH2 +
-                " MechanismType", "DOM");
-
-        // XPath Transform
-        map.put("TransformService." + Transform.XPATH,
-                "org.jcp.xml.dsig.internal.dom.DOMXPathTransform");
-        map.put("Alg.Alias.TransformService.XPATH", Transform.XPATH);
-        map.put("TransformService." + Transform.XPATH +
-                " MechanismType", "DOM");
-
-        // XSLT Transform
-        map.put("TransformService." + Transform.XSLT,
-                "org.jcp.xml.dsig.internal.dom.DOMXSLTTransform");
-        map.put("Alg.Alias.TransformService.XSLT", Transform.XSLT);
-        map.put("TransformService." + Transform.XSLT + " MechanismType", "DOM");
-
+        final Provider p = this;
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
-                putAll(map);
+                HashMap<String, String> MECH_TYPE = new HashMap<>();
+                MECH_TYPE.put("MechanismType", "DOM");
+
+                putService(new ProviderService(p, "XMLSignatureFactory",
+                    "DOM", "org.jcp.xml.dsig.internal.dom.DOMXMLSignatureFactory"));
+
+                putService(new ProviderService(p, "KeyInfoFactory",
+                    "DOM", "org.jcp.xml.dsig.internal.dom.DOMKeyInfoFactory"));
+
+
+                // Inclusive C14N
+                putService(new ProviderService(p, "TransformService",
+                    CanonicalizationMethod.INCLUSIVE,
+                    "org.jcp.xml.dsig.internal.dom.DOMCanonicalXMLC14NMethod",
+                    new String[] {"INCLUSIVE"}, MECH_TYPE));
+
+                // InclusiveWithComments C14N
+                putService(new ProviderService(p, "TransformService",
+                    CanonicalizationMethod.INCLUSIVE_WITH_COMMENTS,
+                    "org.jcp.xml.dsig.internal.dom.DOMCanonicalXMLC14NMethod",
+                    new String[] {"INCLUSIVE_WITH_COMMENTS"}, MECH_TYPE));
+
+                // Inclusive C14N 1.1
+                putService(new ProviderService(p, "TransformService",
+                    "http://www.w3.org/2006/12/xml-c14n11",
+                    "org.jcp.xml.dsig.internal.dom.DOMCanonicalXMLC14N11Method",
+                    null, MECH_TYPE));
+
+                // InclusiveWithComments C14N 1.1
+                putService(new ProviderService(p, "TransformService",
+                    "http://www.w3.org/2006/12/xml-c14n11#WithComments",
+                    "org.jcp.xml.dsig.internal.dom.DOMCanonicalXMLC14N11Method",
+                    null, MECH_TYPE));
+
+                // Exclusive C14N
+                putService(new ProviderService(p, "TransformService",
+                    CanonicalizationMethod.EXCLUSIVE,
+                    "org.jcp.xml.dsig.internal.dom.DOMExcC14NMethod",
+                    new String[] {"EXCLUSIVE"}, MECH_TYPE));
+
+                // ExclusiveWithComments C14N
+                putService(new ProviderService(p, "TransformService",
+                    CanonicalizationMethod.EXCLUSIVE_WITH_COMMENTS,
+                    "org.jcp.xml.dsig.internal.dom.DOMExcC14NMethod",
+                    new String[] {"EXCLUSIVE_WITH_COMMENTS"}, MECH_TYPE));
+
+                // Base64 Transform
+                putService(new ProviderService(p, "TransformService",
+                    Transform.BASE64,
+                    "org.jcp.xml.dsig.internal.dom.DOMBase64Transform",
+                    new String[] {"BASE64"}, MECH_TYPE));
+
+                // Enveloped Transform
+                putService(new ProviderService(p, "TransformService",
+                    Transform.ENVELOPED,
+                    "org.jcp.xml.dsig.internal.dom.DOMEnvelopedTransform",
+                    new String[] {"ENVELOPED"}, MECH_TYPE));
+
+                // XPath2 Transform
+                putService(new ProviderService(p, "TransformService",
+                    Transform.XPATH2,
+                    "org.jcp.xml.dsig.internal.dom.DOMXPathFilter2Transform",
+                    new String[] {"XPATH2"}, MECH_TYPE));
+
+                // XPath Transform
+                putService(new ProviderService(p, "TransformService",
+                    Transform.XPATH,
+                    "org.jcp.xml.dsig.internal.dom.DOMXPathTransform",
+                    new String[] {"XPATH"}, MECH_TYPE));
+
+                // XSLT Transform
+                putService(new ProviderService(p, "TransformService",
+                    Transform.XSLT,
+                    "org.jcp.xml.dsig.internal.dom.DOMXSLTTransform",
+                    new String[] {"XSLT"}, MECH_TYPE));
                 return null;
             }
         });

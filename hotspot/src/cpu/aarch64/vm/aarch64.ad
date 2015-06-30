@@ -13276,7 +13276,7 @@ instruct replicate16B_imm(vecX dst, immI con)
   ins_cost(INSN_COST);
   format %{ "movi  $dst, $con\t# vector(16B)" %}
   ins_encode %{
-    __ mov(as_FloatRegister($dst$$reg), __ T16B, $con$$constant);
+    __ mov(as_FloatRegister($dst$$reg), __ T16B, $con$$constant & 0xff);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -13298,7 +13298,7 @@ instruct replicate8S_imm(vecX dst, immI con)
   ins_cost(INSN_COST);
   format %{ "movi  $dst, $con\t# vector(8H)" %}
   ins_encode %{
-    __ mov(as_FloatRegister($dst$$reg), __ T8H, $con$$constant);
+    __ mov(as_FloatRegister($dst$$reg), __ T8H, $con$$constant & 0xffff);
   %}
   ins_pipe(pipe_class_default);
 %}

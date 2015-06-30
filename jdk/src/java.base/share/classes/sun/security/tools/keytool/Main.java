@@ -728,21 +728,19 @@ public final class Main {
                     provClass = Class.forName(provName);
                 }
 
-                String provArg = provider.snd;
-                Object obj;
-                if (provArg == null) {
-                    obj = provClass.newInstance();
-                } else {
-                    Constructor<?> c = provClass.getConstructor(PARAM_STRING);
-                    obj = c.newInstance(provArg);
-                }
+                Object obj = provClass.newInstance();
                 if (!(obj instanceof Provider)) {
                     MessageFormat form = new MessageFormat
                         (rb.getString("provName.not.a.provider"));
                     Object[] source = {provName};
                     throw new Exception(form.format(source));
                 }
-                Security.addProvider((Provider)obj);
+                Provider p = (Provider) obj;
+                String provArg = provider.snd;
+                if (provArg != null) {
+                    p = p.configure(provArg);
+                }
+                Security.addProvider(p);
             }
         }
 
@@ -1282,7 +1280,7 @@ public final class Main {
         Iterator<PKCS10Attribute> attrs = req.getAttributes().getAttributes().iterator();
         while (attrs.hasNext()) {
             PKCS10Attribute attr = attrs.next();
-            if (attr.getAttributeId().equals((Object)PKCS9Attribute.EXTENSION_REQUEST_OID)) {
+            if (attr.getAttributeId().equals(PKCS9Attribute.EXTENSION_REQUEST_OID)) {
                 reqex = (CertificateExtensions)attr.getAttributeValue();
             }
         }
@@ -2340,7 +2338,7 @@ public final class Main {
                 req.getSubjectName(), pkey.getFormat(), pkey.getAlgorithm());
         for (PKCS10Attribute attr: req.getAttributes().getAttributes()) {
             ObjectIdentifier oid = attr.getAttributeId();
-            if (oid.equals((Object)PKCS9Attribute.EXTENSION_REQUEST_OID)) {
+            if (oid.equals(PKCS9Attribute.EXTENSION_REQUEST_OID)) {
                 CertificateExtensions exts = (CertificateExtensions)attr.getAttributeValue();
                 if (exts != null) {
                     printExtensions(rb.getString("Extension.Request."), exts, out);

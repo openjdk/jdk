@@ -63,6 +63,14 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
         if (key != null) {
             LocaleResources lr = LocaleProviderAdapter.forType(type).getLocaleResources(locale);
             String[] strings = javatime ? lr.getJavaTimeNames(key) : lr.getCalendarNames(key);
+
+            // If standalone names are requested and no "standalone." resources are found,
+            // try the default ones instead.
+            if (strings == null && key.indexOf("standalone.") != -1) {
+                key = key.replaceFirst("standalone.", "");
+                strings = javatime ? lr.getJavaTimeNames(key) : lr.getCalendarNames(key);
+            }
+
             if (strings != null && strings.length > 0) {
                 if (field == DAY_OF_WEEK || field == YEAR) {
                     --value;
@@ -118,6 +126,14 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
         if (key != null) {
             LocaleResources lr = LocaleProviderAdapter.forType(type).getLocaleResources(locale);
             String[] strings = javatime ? lr.getJavaTimeNames(key) : lr.getCalendarNames(key);
+
+            // If standalone names are requested and no "standalone." resources are found,
+            // try the default ones instead.
+            if (strings == null && key.indexOf("standalone.") != -1) {
+                key = key.replaceFirst("standalone.", "");
+                strings = javatime ? lr.getJavaTimeNames(key) : lr.getCalendarNames(key);
+            }
+
             if (strings != null) {
                 if (!hasDuplicates(strings)) {
                     if (field == YEAR) {
@@ -281,8 +297,8 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
             break;
 
         case DAY_OF_WEEK:
-            // support standalone narrow day names
-            if (isStandalone && isNarrow) {
+            // support standalone day names
+            if (isStandalone) {
                 key.append("standalone.");
             }
             key.append("Day").append(toStyleName(baseStyle));

@@ -26,6 +26,7 @@
 include GensrcCommon.gmk
 
 include GensrcLocaleData.gmk
+include GensrcCLDR.gmk
 include GensrcCharacterData.gmk
 include GensrcMisc.gmk
 include GensrcCharsetMapping.gmk

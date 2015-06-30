@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4496290 4985072 7006178 7068595 8016328 8050031 8048351
+ * @bug 4496290 4985072 7006178 7068595 8016328 8050031 8048351 8081854
  * @summary A simple test to ensure class-use files are correct.
  * @author jamieh
  * @library ../lib
@@ -136,7 +136,7 @@ public class TestUseOption extends JavadocTester {
                 + "UsedInC</a> in <a href=\"../package-summary.html\">&lt;Unnamed&gt;</a>"
         );
         checkOutput("class-use/UsedInC.html", true,
-                "<li class=\"blockList\"><a id=\"unnamed.package\">"
+                "<li class=\"blockList\"><a name=\"unnamed.package\">"
         );
         checkOutput("package-use.html", true,
                 "<td class=\"colOne\">"
