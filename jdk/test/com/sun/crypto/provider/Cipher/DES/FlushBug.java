@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,18 +32,13 @@ import java.io.*;
 import java.security.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
-import com.sun.crypto.provider.SunJCE;
 
 public class FlushBug {
     public static void main(String[] args) throws Exception {
-
-        Provider prov = new com.sun.crypto.provider.SunJCE();
-        Security.addProvider(prov);
-
         SecureRandom sr = new SecureRandom();
 
         // Create new DES key.
-        KeyGenerator kg = KeyGenerator.getInstance("DES");
+        KeyGenerator kg = KeyGenerator.getInstance("DES", "SunJCE");
         kg.init(sr);
         Key key = kg.generateKey();
 
@@ -53,13 +48,13 @@ public class FlushBug {
         IvParameterSpec iv = new IvParameterSpec(iv_bytes);
 
         // Create the consumer
-        Cipher decrypter = Cipher.getInstance("DES/CFB8/NoPadding");
+        Cipher decrypter = Cipher.getInstance("DES/CFB8/NoPadding", "SunJCE");
         decrypter.init(Cipher.DECRYPT_MODE, key, iv);
         PipedInputStream consumer = new PipedInputStream();
         InputStream in = new CipherInputStream(consumer, decrypter);
 
         // Create the producer
-        Cipher encrypter = Cipher.getInstance("DES/CFB8/NoPadding");
+        Cipher encrypter = Cipher.getInstance("DES/CFB8/NoPadding", "SunJCE");
         encrypter.init(Cipher.ENCRYPT_MODE, key, iv);
         PipedOutputStream producer = new PipedOutputStream();
         OutputStream out = new CipherOutputStream(producer, encrypter);

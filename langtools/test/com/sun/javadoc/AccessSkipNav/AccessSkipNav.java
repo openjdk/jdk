@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4638136 7198273 8025633
+ * @bug 4638136 7198273 8025633 8081854
  * @summary  Add ability to skip over nav bar for accessibility
  * @author dkramer
  * @library ../lib
@@ -50,14 +50,14 @@ public class AccessSkipNav extends JavadocTester {
         checkOutput("p1/C1.html", true,
                 // Top navbar <a href>
                 "<a href=\"#skip.navbar.top\" title=\"Skip navigation links\">Skip navigation links</a>",
-                // Top navbar <a id>
-                "<a id=\"skip.navbar.top\">\n"
+                // Top navbar <a name>
+                "<a name=\"skip.navbar.top\">\n"
                 + "<!--   -->\n"
                 + "</a>",
                 // Bottom navbar <a href>
                 "<a href=\"#skip.navbar.bottom\" title=\"Skip navigation links\">Skip navigation links</a>",
-                // Bottom navbar <a id>
-                "<a id=\"skip.navbar.bottom\">\n"
+                // Bottom navbar <a name>
+                "<a name=\"skip.navbar.bottom\">\n"
                 + "<!--   -->\n"
                 + "</a>");
 

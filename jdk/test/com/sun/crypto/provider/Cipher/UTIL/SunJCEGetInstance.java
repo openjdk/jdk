@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
  */
 
 import java.security.Security;
+import java.security.Provider;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -40,13 +41,12 @@ public class SunJCEGetInstance {
 
         try{
             // Remove SunJCE from Provider list
+            Provider prov = Security.getProvider("SunJCE");
             Security.removeProvider("SunJCE");
-
             // Create our own instance of SunJCE provider.  Purposefully not
             // using SunJCE.getInstance() so we can have our own instance
             // for the test.
-            jce = Cipher.getInstance("AES/CBC/PKCS5Padding",
-                new com.sun.crypto.provider.SunJCE());
+            jce = Cipher.getInstance("AES/CBC/PKCS5Padding", prov);
 
             jce.init(Cipher.ENCRYPT_MODE,
                 new SecretKeySpec("1234567890abcedf".getBytes(), "AES"));
