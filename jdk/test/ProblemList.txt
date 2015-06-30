@@ -221,9 +221,6 @@ sun/security/pkcs11/ec/TestKeyFactory.java                      generic-all
 # 7164518: no PortUnreachableException on Mac
 sun/security/krb5/auto/Unreachable.java                         macosx-all
 
-# 8058849
-sun/security/krb5/config/dns.sh                                 generic-all
-
 # 7041639: Solaris DSA keypair generation bug
 java/security/KeyPairGenerator/SolarisShortDSA.java             solaris-all
 sun/security/tools/keytool/standard.sh                          solaris-all

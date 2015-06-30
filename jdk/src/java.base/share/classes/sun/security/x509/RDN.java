@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -321,7 +321,7 @@ public class RDN {
      */
     DerValue findAttribute(ObjectIdentifier oid) {
         for (int i = 0; i < assertion.length; i++) {
-            if (assertion[i].oid.equals((Object)oid)) {
+            if (assertion[i].oid.equals(oid)) {
                 return assertion[i].value;
             }
         }

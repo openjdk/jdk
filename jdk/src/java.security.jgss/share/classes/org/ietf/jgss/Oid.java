@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,7 +157,7 @@ public class Oid {
             return (true);
 
         if (other instanceof Oid)
-            return this.oid.equals((Object)((Oid) other).oid);
+            return this.oid.equals(((Oid) other).oid);
         else if (other instanceof ObjectIdentifier)
             return this.oid.equals(other);
         else

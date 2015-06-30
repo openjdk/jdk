@@ -23,7 +23,6 @@
 
 package javax.naming.spi;
 
-import com.sun.jndi.dns.DnsContext;
 import java.util.Hashtable;
 import javax.naming.Context;
 import javax.naming.NamingException;
@@ -31,6 +30,7 @@ import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.BasicAttribute;
 import javax.naming.directory.BasicAttributes;
+import javax.naming.directory.InitialDirContext;
 
 /**
  * A fake javax.naming.spi.NamingManager. It allows reading a DNS
@@ -43,7 +43,7 @@ public class NamingManager {
     public static Context getURLContext(
             String scheme, Hashtable<?,?> environment)
             throws NamingException {
-        return new DnsContext("", null, new Hashtable<String,String>()) {
+        return new InitialDirContext() {
             public Attributes getAttributes(String name, String[] attrIds)
                     throws NamingException {
                 return new BasicAttributes() {

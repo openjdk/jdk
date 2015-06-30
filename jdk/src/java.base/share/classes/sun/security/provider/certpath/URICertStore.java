@@ -202,7 +202,7 @@ class URICertStore extends CertStoreSpi {
      * object of a certificate's Authority Information Access Extension.
      */
     static CertStore getInstance(AccessDescription ad) {
-        if (!ad.getAccessMethod().equals((Object)
+        if (!ad.getAccessMethod().equals(
                 AccessDescription.Ad_CAISSUERS_Id)) {
             return null;
         }

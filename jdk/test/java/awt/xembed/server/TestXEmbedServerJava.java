@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 4931668
  * @summary Tests XEmbed server/client functionality
  * @author denis mikhalkin: area=awt.xembed
+ * @modules java.desktop/sun.awt
  * @compile JavaClient.java TesterClient.java TestXEmbedServer.java
  * @run main/manual TestXEmbedServerJava
  */

@@ -70,8 +70,9 @@ public class UnboundSSLPrincipalProperty {
                 UnboundSSLUtils.KRB5_CONF_FILENAME);
 
         // start a local KDC instance
-        UnboundSSLUtils.startKDC(UnboundSSLUtils.REALM, principals,
-                UnboundSSLUtils.KTAB_FILENAME, UnboundSSLUtils.KtabMode.APPEND);
+        KDC.startKDC(UnboundSSLUtils.HOST, UnboundSSLUtils.KRB5_CONF_FILENAME,
+                UnboundSSLUtils.REALM, principals,
+                UnboundSSLUtils.KTAB_FILENAME, KDC.KtabMode.APPEND);
 
         System.setProperty("java.security.auth.login.config",
                 UnboundSSLUtils.TEST_SRC + UnboundSSLUtils.FS + jaacConfigFile);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,19 +95,19 @@ public final class AccessDescription {
         if (this == that) {
             return true;
         }
-        return (accessMethod.equals((Object)that.getAccessMethod()) &&
+        return (accessMethod.equals(that.getAccessMethod()) &&
             accessLocation.equals(that.getAccessLocation()));
     }
 
     public String toString() {
         String method = null;
-        if (accessMethod.equals((Object)Ad_CAISSUERS_Id)) {
+        if (accessMethod.equals(Ad_CAISSUERS_Id)) {
             method = "caIssuers";
-        } else if (accessMethod.equals((Object)Ad_CAREPOSITORY_Id)) {
+        } else if (accessMethod.equals(Ad_CAREPOSITORY_Id)) {
             method = "caRepository";
-        } else if (accessMethod.equals((Object)Ad_TIMESTAMPING_Id)) {
+        } else if (accessMethod.equals(Ad_TIMESTAMPING_Id)) {
             method = "timeStamping";
-        } else if (accessMethod.equals((Object)Ad_OCSP_Id)) {
+        } else if (accessMethod.equals(Ad_OCSP_Id)) {
             method = "ocsp";
         } else {
             method = accessMethod.toString();

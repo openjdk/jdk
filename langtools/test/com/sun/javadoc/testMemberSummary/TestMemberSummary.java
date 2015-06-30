@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4951228 6290760 8025633 8026567
+ * @bug      4951228 6290760 8025633 8026567 8081854
  * @summary  Test the case where the overriden method returns a different
  *           type than the method in the child class.  Make sure the
  *           documentation is inherited but the return type isn't.
@@ -59,9 +59,9 @@ public class TestMemberSummary extends JavadocTester {
 
         // Legacy anchor dimensions (6290760)
         checkOutput("pkg2/A.html", true,
-                "<a id=\"f-java.lang.Object:A-\">\n"
+                "<a name=\"f-java.lang.Object:A-\">\n"
                 + "<!--   -->\n"
-                + "</a><a id=\"f-T:A-\">\n"
+                + "</a><a name=\"f-T:A-\">\n"
                 + "<!--   -->\n"
                 + "</a>");
     }

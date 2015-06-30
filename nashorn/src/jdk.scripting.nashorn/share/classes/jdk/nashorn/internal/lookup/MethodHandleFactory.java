@@ -131,8 +131,8 @@ public final class MethodHandleFactory {
     static Object traceReturn(final DebugLogger logger, final Object value) {
         final String str = "    return" +
                 (VOID_TAG.equals(value) ?
-                    ";" :
-                    " " + stripName(value) + "; // [type=" + (value == null ? "null]" : stripName(value.getClass()) + ']'));
+                        ";" :
+                            " " + stripName(value) + "; // [type=" + (value == null ? "null]" : stripName(value.getClass()) + ']'));
         if (logger == null) {
             err(str);
         } else if (logger.isEnabled()) {
@@ -164,13 +164,13 @@ public final class MethodHandleFactory {
             }
 
             sb.append('\'').
-                append(stripName(argString(args[i]))).
-                append('\'').
-                append(' ').
-                append('[').
-                append("type=").
-                append(args[i] == null ? "null" : stripName(args[i].getClass())).
-                append(']');
+            append(stripName(argString(args[i]))).
+            append('\'').
+            append(' ').
+            append('[').
+            append("type=").
+            append(args[i] == null ? "null" : stripName(args[i].getClass())).
+            append(']');
 
             if (i + 1 < args.length) {
                 sb.append(", ");
@@ -216,8 +216,8 @@ public final class MethodHandleFactory {
 
         if (arg instanceof ScriptObject) {
             return arg.toString() +
-                " (map=" + Debug.id(((ScriptObject)arg).getMap()) +
-                ')';
+                    " (map=" + Debug.id(((ScriptObject)arg).getMap()) +
+                    ')';
         }
 
         return arg.toString();
@@ -262,7 +262,7 @@ public final class MethodHandleFactory {
         return addDebugPrintout(null, Level.OFF, mh, paramStart, printReturnValue, tag);
     }
 
-     /**
+    /**
      * Add a debug printout to a method handle, tracing parameters and return values
      *
      * @param logger a specific logger to which to write the output
@@ -278,7 +278,7 @@ public final class MethodHandleFactory {
 
         //if there is no logger, or if it's set to log only coarser events
         //than the trace level, skip and return
-        if (logger != null && logger.levelCoarserThan(level)) {
+        if (logger == null || !logger.isLoggable(level)) {
             return mh;
         }
 
@@ -289,9 +289,9 @@ public final class MethodHandleFactory {
         trace = MethodHandles.foldArguments(
                 mh,
                 trace.asCollector(
-                    Object[].class,
-                    type.parameterCount()).
-                asType(type.changeReturnType(void.class)));
+                        Object[].class,
+                        type.parameterCount()).
+                        asType(type.changeReturnType(void.class)));
 
         final Class<?> retType = type.returnType();
         if (printReturnValue) {
@@ -299,7 +299,7 @@ public final class MethodHandleFactory {
                 final MethodHandle traceReturn = MethodHandles.insertArguments(TRACE_RETURN, 0, logger);
                 trace = MethodHandles.filterReturnValue(trace,
                         traceReturn.asType(
-                            traceReturn.type().changeParameterType(0, retType).changeReturnType(retType)));
+                                traceReturn.type().changeParameterType(0, retType).changeReturnType(retType)));
             } else {
                 trace = MethodHandles.filterReturnValue(trace, MethodHandles.insertArguments(TRACE_RETURN_VOID, 0, logger));
             }
@@ -355,9 +355,9 @@ public final class MethodHandleFactory {
                     sb.append("] ");
                 } else {
                     sb.append(d)
-                        .append('{')
-                        .append(Integer.toHexString(System.identityHashCode(d)))
-                        .append('}');
+                    .append('{')
+                    .append(Integer.toHexString(System.identityHashCode(d)))
+                    .append('}');
                 }
 
                 if (i + 1 < data.length) {

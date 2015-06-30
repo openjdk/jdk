@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1197,10 +1197,13 @@ public class LambdaToMethod extends TreeTranslator {
                         //if a class is defined within a lambda, the lambda must capture
                         //its enclosing instance (if any)
                         TranslationContext<?> localContext = context();
-                        while (localContext != null) {
-                            if (localContext.tree.getTag() == LAMBDA) {
+                        final TypeSymbol outerInstanceSymbol = tree.sym.type.getEnclosingType().tsym;
+                        while (localContext != null && !localContext.owner.isStatic()) {
+                            if (localContext.tree.hasTag(LAMBDA)) {
+                                JCTree block = capturedDecl(localContext.depth, outerInstanceSymbol);
+                                if (block == null) break;
                                 ((LambdaTranslationContext)localContext)
-                                        .addSymbol(tree.sym.type.getEnclosingType().tsym, CAPTURED_THIS);
+                                        .addSymbol(outerInstanceSymbol, CAPTURED_THIS);
                             }
                             localContext = localContext.prev;
                         }
@@ -1236,7 +1239,7 @@ public class LambdaToMethod extends TreeTranslator {
                     }
                 } else if (tree.sym.owner.kind == TYP) {
                     TranslationContext<?> localContext = context();
-                    while (localContext != null) {
+                    while (localContext != null  && !localContext.owner.isStatic()) {
                         if (localContext.tree.hasTag(LAMBDA)) {
                             JCTree block = capturedDecl(localContext.depth, tree.sym);
                             if (block == null) break;
@@ -1312,10 +1315,15 @@ public class LambdaToMethod extends TreeTranslator {
             boolean isLocal = def.isLocal();
             if ((inReferencedClass && isLocal || lambdaNewClassFilter(context(), tree))) {
                 TranslationContext<?> localContext = context();
-                while (localContext != null) {
-                    if (localContext.tree.getTag() == LAMBDA) {
+                final TypeSymbol outerInstanceSymbol = tree.type.getEnclosingType().tsym;
+                while (localContext != null  && !localContext.owner.isStatic()) {
+                    if (localContext.tree.hasTag(LAMBDA)) {
+                        if (outerInstanceSymbol != null) {
+                            JCTree block = capturedDecl(localContext.depth, outerInstanceSymbol);
+                            if (block == null) break;
+                        }
                         ((LambdaTranslationContext)localContext)
-                                .addSymbol(tree.type.getEnclosingType().tsym, CAPTURED_THIS);
+                                .addSymbol(outerInstanceSymbol, CAPTURED_THIS);
                     }
                     localContext = localContext.prev;
                 }
@@ -1404,7 +1412,7 @@ public class LambdaToMethod extends TreeTranslator {
                 // A select of this or super means, if we are in a lambda,
                 // we much have an instance context
                 TranslationContext<?> localContext = context();
-                while (localContext != null) {
+                while (localContext != null  && !localContext.owner.isStatic()) {
                     if (localContext.tree.hasTag(LAMBDA)) {
                         JCClassDecl clazz = (JCClassDecl)capturedDecl(localContext.depth, tree.sym);
                         if (clazz == null) break;
@@ -1579,7 +1587,7 @@ public class LambdaToMethod extends TreeTranslator {
                 switch (block.tree.getTag()) {
                     case CLASSDEF:
                         ClassSymbol clazz = ((JCClassDecl)block.tree).sym;
-                        if (sym.isMemberOf(clazz, types)) {
+                        if (clazz.isSubClass(sym, types) || sym.isMemberOf(clazz, types)) {
                             return currentDepth > depth ? null : block.tree;
                         }
                         break;

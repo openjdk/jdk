@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,6 @@ public class TestExplicitKeyLength {
     }
 
     public static void main (String[] args) throws Exception {
-        Security.addProvider(new com.sun.crypto.provider.SunJCE());
         for (int i = 0; i < ALGOS.length; i++) {
             System.out.println("Testing " + ALGOS[i] + " KeyGenerator with " +
                                KEY_SIZES[i] + "-bit keysize");

@@ -88,17 +88,21 @@ public class LinkedList<E>
 
     /**
      * Pointer to first node.
-     * Invariant: (first == null && last == null) ||
-     *            (first.prev == null && first.item != null)
      */
     transient Node<E> first;
 
     /**
      * Pointer to last node.
-     * Invariant: (first == null && last == null) ||
-     *            (last.next == null && last.item != null)
      */
     transient Node<E> last;
+
+    /*
+    void dataStructureInvariants() {
+        assert (size == 0)
+            ? (first == null && last == null)
+            : (first.prev == null && last.next == null);
+    }
+    */
 
     /**
      * Constructs an empty list.

@@ -128,29 +128,10 @@ public final class SecuritySupport {
         }
     }
 
-    /**
-     * Return resource using the same classloader for the ObjectFactory by
-     * default or bootclassloader when Security Manager is in place
-     */
     public static InputStream getResourceAsStream(final String name) {
-        if (System.getSecurityManager()!=null) {
-            return getResourceAsStream(null, name);
-        } else {
-            return getResourceAsStream(ObjectFactory.findClassLoader(), name);
-        }
-    }
-
-    public static InputStream getResourceAsStream(final ClassLoader cl,
-            final String name) {
         return (InputStream) AccessController.doPrivileged(new PrivilegedAction() {
             public Object run() {
-                InputStream ris;
-                if (cl == null) {
-                    ris = Object.class.getResourceAsStream("/"+name);
-                } else {
-                    ris = cl.getResourceAsStream(name);
-                }
-                return ris;
+                return SecuritySupport.class.getResourceAsStream("/"+name);
             }
         });
     }

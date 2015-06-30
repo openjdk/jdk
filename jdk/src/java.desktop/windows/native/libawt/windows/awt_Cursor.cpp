@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,7 +144,7 @@ AwtCursor * AwtCursor::CreateSystemCursor(jobject jCursor)
         winCursor = IDC_SIZEWE;
         break;
       case java_awt_Cursor_HAND_CURSOR:
-        winCursor = TEXT("HAND_CURSOR");
+        winCursor = IDC_HAND;
         break;
       case java_awt_Cursor_MOVE_CURSOR:
         winCursor = IDC_SIZEALL;

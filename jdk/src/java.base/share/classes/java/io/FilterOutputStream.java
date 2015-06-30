@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,13 +41,15 @@ package java.io;
  * @author  Jonathan Payne
  * @since   1.0
  */
-public
-class FilterOutputStream extends OutputStream {
+public class FilterOutputStream extends OutputStream {
     /**
      * The underlying output stream to be filtered.
      */
     protected OutputStream out;
 
+    /**
+     * Whether the stream is closed; implicitly initialized to false.
+     */
     private boolean closed;
 
     /**
@@ -75,6 +77,7 @@ class FilterOutputStream extends OutputStream {
      * @param      b   the <code>byte</code>.
      * @exception  IOException  if an I/O error occurs.
      */
+    @Override
     public void write(int b) throws IOException {
         out.write(b);
     }
@@ -95,6 +98,7 @@ class FilterOutputStream extends OutputStream {
      * @exception  IOException  if an I/O error occurs.
      * @see        java.io.FilterOutputStream#write(byte[], int, int)
      */
+    @Override
     public void write(byte b[]) throws IOException {
         write(b, 0, b.length);
     }
@@ -119,6 +123,7 @@ class FilterOutputStream extends OutputStream {
      * @exception  IOException  if an I/O error occurs.
      * @see        java.io.FilterOutputStream#write(int)
      */
+    @Override
     public void write(byte b[], int off, int len) throws IOException {
         if ((off | len | (b.length - (len + off)) | (off + len)) < 0)
             throw new IndexOutOfBoundsException();
@@ -138,6 +143,7 @@ class FilterOutputStream extends OutputStream {
      * @exception  IOException  if an I/O error occurs.
      * @see        java.io.FilterOutputStream#out
      */
+    @Override
     public void flush() throws IOException {
         out.flush();
     }
@@ -154,13 +160,40 @@ class FilterOutputStream extends OutputStream {
      * @see        java.io.FilterOutputStream#flush()
      * @see        java.io.FilterOutputStream#out
      */
-    @SuppressWarnings("try")
+    @Override
     public void close() throws IOException {
-        if (closed)
+        if (closed) {
             return;
+        }
         closed = true;
-        try (OutputStream ostream = out) {
+
+        Throwable flushException = null;
+        try {
             flush();
+        } catch (Throwable e) {
+            flushException = e;
+            throw e;
+        } finally {
+            if (flushException == null) {
+                out.close();
+            } else {
+                try {
+                    out.close();
+                } catch (Throwable closeException) {
+                   // evaluate possible precedence of flushException over closeException
+                   if ((flushException instanceof ThreadDeath) &&
+                       !(closeException instanceof ThreadDeath)) {
+                       flushException.addSuppressed(closeException);
+                       throw (ThreadDeath) flushException;
+                   }
+
+                    if (flushException != closeException) {
+                        closeException.addSuppressed(flushException);
+                    }
+
+                    throw closeException;
+                }
+            }
         }
     }
 }

@@ -306,6 +306,8 @@ public class WhiteBox {
   public native boolean isConstantVMFlag(String name);
   public native boolean isLockedVMFlag(String name);
   public native void    setBooleanVMFlag(String name, boolean value);
+  public native void    setIntVMFlag(String name, long value);
+  public native void    setUintVMFlag(String name, long value);
   public native void    setIntxVMFlag(String name, long value);
   public native void    setUintxVMFlag(String name, long value);
   public native void    setUint64VMFlag(String name, long value);
@@ -313,6 +315,8 @@ public class WhiteBox {
   public native void    setStringVMFlag(String name, String value);
   public native void    setDoubleVMFlag(String name, double value);
   public native Boolean getBooleanVMFlag(String name);
+  public native Long    getIntVMFlag(String name);
+  public native Long    getUintVMFlag(String name);
   public native Long    getIntxVMFlag(String name);
   public native Long    getUintxVMFlag(String name);
   public native Long    getUint64VMFlag(String name);
@@ -320,9 +324,9 @@ public class WhiteBox {
   public native String  getStringVMFlag(String name);
   public native Double  getDoubleVMFlag(String name);
   private final List<Function<String,Object>> flagsGetters = Arrays.asList(
-    this::getBooleanVMFlag, this::getIntxVMFlag, this::getUintxVMFlag,
-    this::getUint64VMFlag, this::getSizeTVMFlag, this::getStringVMFlag,
-    this::getDoubleVMFlag);
+    this::getBooleanVMFlag, this::getIntVMFlag, this::getUintVMFlag,
+    this::getIntxVMFlag, this::getUintxVMFlag, this::getUint64VMFlag,
+    this::getSizeTVMFlag, this::getStringVMFlag, this::getDoubleVMFlag);
 
   public Object getVMFlag(String name) {
     return flagsGetters.stream()

@@ -21,7 +21,6 @@
 * questions.
 */
 
-import sun.misc.OSEnvironment;
 import test.java.awt.regtesthelpers.Util;
 
 import javax.swing.*;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
   @bug 4260860
   @summary tests that DataFlavor.normalizeMimeTypeParameter() returns parm value
   @author ssi@sparc.spb.su area=
+  @modules java.datatransfer
   @run main NormalizeMimeTypeParameter
 */
 

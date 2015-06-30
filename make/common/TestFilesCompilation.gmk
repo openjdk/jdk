@@ -86,8 +86,8 @@ define SetupTestFilesCompilationBody
         OBJECT_DIR := $$($1_OUTPUT_DIR)/support/$$($1_PREFIX)$$(name), \
         OUTPUT_DIR := $$($1_OUTPUT_DIR)/$$($1_OUTPUT_SUBDIR), \
         LANG := C, \
-        CFLAGS := $$($1_CFLAGS), \
-        LDFLAGS := $$($1_LDFLAGS), \
+        CFLAGS := $$($1_CFLAGS) $$($1_CFLAGS_$$($1_PREFIX)$$(name)), \
+        LDFLAGS := $$($1_LDFLAGS) $$($1_LDFLAGS_$$($1_PREFIX)$$(name)), \
         OPTIMIZATION := LOW, \
         DEBUG_SYMBOLS := true)) \
     $$(eval $1 += $$(BUILD_TEST_$$(name)) )  \

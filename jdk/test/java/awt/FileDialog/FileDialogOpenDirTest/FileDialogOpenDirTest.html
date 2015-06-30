@@ -1,12 +1,10 @@
 <!--
- Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
  under the terms of the GNU General Public License version 2 only, as
- published by the Free Software Foundation.  Oracle designates this
- particular file as subject to the "Classpath" exception as provided
- by Oracle in the LICENSE file that accompanied this code.
+ published by the Free Software Foundation.
 
  This code is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -24,7 +22,22 @@
 -->
 
 <html>
+<!--
+  @test
+  @bug 4974135
+  @summary FileDialog should open current directory by default.
+  @author tav@sparc.spb.su: area=awt.filedialog
+  @run applet/manual=yesno FileDialogOpenDirTest.html
+  -->
+<head>
+<title>FileDialogOpenDirTest</title>
+</head>
 <body>
-This package defines APIs related to WS-Addressing.
+
+<h1>FileDialogOpenDirTest<br>Bug ID: 4974135</h1>
+
+<p>See the dialog box (usually in upper left corner) for instructions</p>
+
+<APPLET CODE="FileDialogOpenDirTest.class" WIDTH=200 HEIGHT=200></APPLET>
 </body>
 </html>

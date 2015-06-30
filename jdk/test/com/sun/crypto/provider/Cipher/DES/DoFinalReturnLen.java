@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,9 +85,7 @@ public class DoFinalReturnLen {
         IvParameterSpec IvParamSpec = null;
         SecretKey sKey = null;
 
-        // Step 0: add providers
-        Provider sun = new com.sun.crypto.provider.SunJCE();
-        Security.addProvider(sun);
+        // Step 0: list providers
         Provider[] theProviders = Security.getProviders();
         for (int index = 0; index < theProviders.length; index++) {
             System.out.println(theProviders[index].getName());

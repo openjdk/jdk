@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,8 @@ import sun.awt.image.MultiResolutionImage;
  * @bug 8011059
  * @author Alexander Scherbatiy
  * @summary [macosx] Make JDK demos look perfect on retina displays
+ * @modules java.desktop/sun.awt
+ *          java.desktop/sun.awt.image
  * @run main MultiResolutionImageTest CUSTOM
  * @run main MultiResolutionImageTest TOOLKIT_PREPARE
  * @run main MultiResolutionImageTest TOOLKIT_LOAD

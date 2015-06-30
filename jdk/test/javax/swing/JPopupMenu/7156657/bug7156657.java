@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@ import java.util.concurrent.Callable;
    @summary Version 7 doesn't support translucent popup menus against a translucent window
    @library ../../regtesthelpers
    @author Pavel Porvatov
+   @modules java.desktop/com.sun.awt
+            java.desktop/sun.awt
 */
 public class bug7156657 {
     private static JFrame lowerFrame;

@@ -27,3 +27,6 @@ tier1 =
 
 # All nashorn tests are tier 2.
 tier2 = src
+
+# No nashorn tests are tier 3.
+tier3 =

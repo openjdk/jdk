@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Tests memory leak for 20000 files
  * @author Sergey Malenkov
  * @library ../../regtesthelpers
+ * @modules java.desktop/sun.java2d
  * @build Util
  * @run main/othervm/timeout=1000 -mx128m TwentyThousandTest
  */

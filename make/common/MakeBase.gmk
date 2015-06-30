@@ -369,8 +369,9 @@ HG_DIRECTORY=.hg
 HGTIP_FILENAME=.hgtip
 HG_SEARCH = ./REPO ./*/REPO ./*/*/REPO ./*/*/*/REPO
 REPO_LIST = $(patsubst ./%,%,$(patsubst %/,%,$(sort $(dir \
-    $(shell $(CD) $(SRC_ROOT) ; ( $(LS) -d $(HG_SEARCH:%/REPO=%/$(HG_DIRECTORY)) ; \
-        $(LS) $(HG_SEARCH:%/REPO=%/$(HGTIP_FILENAME)) ) \
+    $(shell $(CD) $(SRC_ROOT) ; \
+        $(LS) -d $(HG_SEARCH:%/REPO=%/$(HG_DIRECTORY)) \
+            $(HG_SEARCH:%/REPO=%/$(HGTIP_FILENAME)) \
         2> /dev/null)))))
 
 # Emit the repo:tip pairs to $@

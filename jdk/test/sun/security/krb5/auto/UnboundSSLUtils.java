@@ -50,8 +50,6 @@ import javax.security.auth.login.LoginException;
  */
 class UnboundSSLUtils {
 
-    static enum KtabMode { APPEND, EXISTING };
-
     static final String KTAB_FILENAME = "krb5.keytab.data";
     static final String HOST = "localhost";
     static final String REALM = "TEST.REALM";
@@ -85,65 +83,6 @@ class UnboundSSLUtils {
             SSLEchoServer.startServer(server);
             return null;
         });
-    }
-
-    /*
-     * Start a KDC server:
-     *   - create a KDC instance
-     *   - create Kerberos principals
-     *   - save Kerberos configuration
-     *   - save keys to keytab file
-     *   - no pre-auth required
-     */
-    static void startKDC(String realm, Map<String, String> principals,
-            String ktab, KtabMode mode) {
-        try {
-            KDC kdc = KDC.create(realm, HOST, 0, true);
-            kdc.setOption(KDC.Option.PREAUTH_REQUIRED, Boolean.FALSE);
-            if (principals != null) {
-                for (Map.Entry<String, String> entry : principals.entrySet()) {
-                    String name = entry.getKey();
-                    String password = entry.getValue();
-                    if (password == null || password.isEmpty()) {
-                        System.out.println("KDC: add a principal '" + name +
-                                "' with a random password");
-                        kdc.addPrincipalRandKey(name);
-                    } else {
-                        System.out.println("KDC: add a principal '" + name +
-                                "' with '" + password + "' password");
-                        kdc.addPrincipal(name, password.toCharArray());
-                    }
-                }
-            }
-
-            KDC.saveConfig(KRB5_CONF_FILENAME, kdc);
-
-            if (ktab != null) {
-                File ktabFile = new File(ktab);
-                if (mode == KtabMode.APPEND) {
-                    if (ktabFile.exists()) {
-                        System.out.println("KDC: append keys to an exising " +
-                                "keytab file " + ktab);
-                        kdc.appendKtab(ktab);
-                    } else {
-                        System.out.println("KDC: create a new keytab file " +
-                                ktab);
-                        kdc.writeKtab(ktab);
-                    }
-                } else if (mode == KtabMode.EXISTING) {
-                    System.out.println("KDC: use an existing keytab file "
-                            + ktab);
-                } else {
-                    throw new RuntimeException("KDC: unsupported keytab mode: "
-                            + mode);
-                }
-            }
-
-            System.out.println("KDC: started on " + HOST + ":" + kdc.getPort()
-                    + " with '" + realm + "' realm");
-        } catch (Exception e) {
-            throw new RuntimeException("KDC: unexpected exception", e);
-        }
     }
 
 }

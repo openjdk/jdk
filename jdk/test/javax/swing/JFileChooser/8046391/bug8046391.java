@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary JFileChooser hangs if displayed in Windows L&F
  * @author Alexey Ivanov
  * @library ../../../../lib/testlibrary
+ * @modules java.desktop/com.sun.java.swing.plaf.windows
  * @build jdk.testlibrary.OSInfo
  * @run main/othervm/timeout=10 bug8046391
 */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.util.List;
   @bug 4512530 8027148
   @summary tests that mappings for text flavors are generated properly
   @author das@sparc.spb.su area=datatransfer
+  @modules java.datatransfer
 */
 
 public class MappingGenerationTest {

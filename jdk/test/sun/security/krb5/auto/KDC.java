@@ -30,6 +30,7 @@ import java.lang.reflect.Method;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.*;
+
 import sun.net.spi.nameservice.NameService;
 import sun.net.spi.nameservice.NameServiceDescriptor;
 import sun.security.krb5.*;
@@ -154,6 +155,8 @@ public class KDC {
     private volatile boolean dispatcherReady = false;
     DatagramSocket u1 = null;
     ServerSocket t1 = null;
+
+    public static enum KtabMode { APPEND, EXISTING };
 
     /**
      * Option names, to be expanded forever.
@@ -1316,6 +1319,68 @@ public class KDC {
             // OK
         }
     }
+
+    public static void startKDC(final String host, final String krbConfFileName,
+            final String realm, final Map<String, String> principals,
+            final String ktab, final KtabMode mode) {
+
+        try {
+            KDC kdc = KDC.create(realm, host, 0, true);
+            kdc.setOption(KDC.Option.PREAUTH_REQUIRED, Boolean.FALSE);
+            KDC.saveConfig(krbConfFileName, kdc);
+
+            // Add principals
+            if (principals != null) {
+                principals.forEach((name, password) -> {
+                    if (password == null || password.isEmpty()) {
+                        System.out.println(String.format(
+                                "KDC:add a principal '%s' with a random " +
+                                        "password", name));
+                        kdc.addPrincipalRandKey(name);
+                    } else {
+                        System.out.println(String.format(
+                                "KDC:add a principal '%s' with '%s' password",
+                                name, password));
+                        kdc.addPrincipal(name, password.toCharArray());
+                    }
+                });
+            }
+
+            // Create or append keys to existing keytab file
+            if (ktab != null) {
+                File ktabFile = new File(ktab);
+                switch(mode) {
+                    case APPEND:
+                        if (ktabFile.exists()) {
+                            System.out.println(String.format(
+                                    "KDC:append keys to an exising keytab "
+                                    + "file %s", ktab));
+                            kdc.appendKtab(ktab);
+                        } else {
+                            System.out.println(String.format(
+                                    "KDC:create a new keytab file %s", ktab));
+                            kdc.writeKtab(ktab);
+                        }
+                        break;
+                    case EXISTING:
+                        System.out.println(String.format(
+                                "KDC:use an existing keytab file %s", ktab));
+                        break;
+                    default:
+                        throw new RuntimeException(String.format(
+                                "KDC:unsupported keytab mode: %s", mode));
+                }
+            }
+
+            System.out.println(String.format(
+                    "KDC: started on %s:%s with '%s' realm",
+                    host, kdc.getPort(), realm));
+        } catch (Exception e) {
+            throw new RuntimeException("KDC: unexpected exception", e);
+        }
+
+    }
+
     /**
      * Helper class to encapsulate a job in a KDC.
      */

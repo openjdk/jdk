@@ -35,8 +35,6 @@ import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.awt.event.InputEvent;
 
-import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
-
 public class bug6884066 {
     private static JTableHeader header;
 

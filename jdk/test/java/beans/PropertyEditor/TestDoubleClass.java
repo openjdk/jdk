@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,9 @@
  * @bug 4506596 6258510
  * @summary Tests PropertyEditor for value of type Double with security manager
  * @author Sergey Malenkov
+ * @modules java.compiler
+ *          java.desktop
+ *          jdk.compiler
  */
 
 public class TestDoubleClass {

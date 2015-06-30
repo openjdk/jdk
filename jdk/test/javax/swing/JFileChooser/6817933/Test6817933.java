@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @bug 6817933
  * @summary Tests that HTMLEditorKit does not affect JFileChooser
  * @author Sergey Malenkov
+ * @modules java.desktop/sun.awt
+ *          java.desktop/sun.swing
  */
 
 import java.awt.Color;
