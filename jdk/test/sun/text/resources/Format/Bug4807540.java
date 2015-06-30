@@ -23,8 +23,9 @@
 
 /*
  * @test %i%
- * @bug 4807540
+ * @bug 4807540 8008577
  * @summary updating dateformat for sl_SI
+ * @run main/othervm -Djava.locale.providers=JRE,SPI Bug4807540
  */
 
 import java.text.DateFormat;
