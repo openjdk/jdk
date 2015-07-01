@@ -1,0 +1,72 @@
+#
+# Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+include JavaCompilation.gmk
+include SetupJavaCompilers.gmk
+
+################################################################################
+
+CT_DATA_DESCRIPTION ?= $(LANGTOOLS_TOPDIR)/make/data/symbols/symbols
+
+$(eval $(call SetupJavaCompilation, COMPILE_CREATE_SYMBOLS, \
+    SETUP := GENERATE_OLDBYTECODE, \
+    SRC := $(LANGTOOLS_TOPDIR)/make/src/classes, \
+    INCLUDES := build/tools/symbolgenerator, \
+    ADD_JAVAC_FLAGS := -Xbootclasspath/p:"$(INTERIM_LANGTOOLS_JAR)", \
+    BIN := $(BUILDTOOLS_OUTPUTDIR)/create_symbols, \
+))
+
+$(SUPPORT_OUTPUTDIR)/symbols/ct.sym-files/_the.symbols: \
+    $(COMPILE_CREATE_SYMBOLS) \
+    $(wildcard $(LANGTOOLS_TOPDIR)/make/data/symbols/*)
+	$(RM) -r $(@D)
+	$(MKDIR) -p $(@D)
+	$(ECHO) Creating ct.sym classes
+	$(JAVA) $(INTERIM_LANGTOOLS_ARGS) \
+	    -classpath $(BUILDTOOLS_OUTPUTDIR)/create_symbols \
+	    build.tools.symbolgenerator.CreateSymbols \
+	    build-ctsym \
+	    $(CT_DATA_DESCRIPTION) \
+	    $(@D)
+	$(TOUCH) $@
+
+# Can't generate ct.sym directly into modules libs as the SetupArchive macro
+# creates meta data files in the output dir.
+$(eval $(call SetupArchive, CREATE_CTSYM, \
+    DEPENDENCIES := $(SUPPORT_OUTPUTDIR)/symbols/ct.sym-files/_the.symbols, \
+    SRCS := $(SUPPORT_OUTPUTDIR)/symbols/ct.sym-files, \
+    SUFFIXES := .sig, \
+    JAR := $(SUPPORT_OUTPUTDIR)/symbols/ct.sym, \
+))
+
+# Copy ct.sym to the modules libs dir
+$(eval $(call SetupCopyFiles, COPY_TO_LIBS, \
+    FILES := $(SUPPORT_OUTPUTDIR)/symbols/ct.sym, \
+    DEST := $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.compiler, \
+))
+
+TARGETS += $(CREATE_CTSYM) $(COPY_TO_LIBS)
+
+################################################################################

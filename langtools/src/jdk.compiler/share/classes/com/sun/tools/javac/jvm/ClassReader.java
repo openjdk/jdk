@@ -1317,13 +1317,28 @@ public class ClassReader {
             for (int i = 0; i<numAttributes; i++) {
                 CompoundAnnotationProxy proxy = readCompoundAnnotation();
 
-                if (proxy.type.tsym == syms.annotationTargetType.tsym) {
-                    target = proxy;
-                } else if (proxy.type.tsym == syms.repeatableType.tsym) {
-                    repeatable = proxy;
-                }
+                if (proxy.type.tsym == syms.proprietaryType.tsym)
+                    sym.flags_field |= PROPRIETARY;
+                else if (proxy.type.tsym == syms.profileType.tsym) {
+                    if (profile != Profile.DEFAULT) {
+                        for (Pair<Name,Attribute> v: proxy.values) {
+                            if (v.fst == names.value && v.snd instanceof Attribute.Constant) {
+                                Attribute.Constant c = (Attribute.Constant) v.snd;
+                                if (c.type == syms.intType && ((Integer) c.value) > profile.value) {
+                                    sym.flags_field |= NOT_IN_PROFILE;
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    if (proxy.type.tsym == syms.annotationTargetType.tsym) {
+                        target = proxy;
+                    } else if (proxy.type.tsym == syms.repeatableType.tsym) {
+                        repeatable = proxy;
+                    }
 
-                proxies.append(proxy);
+                    proxies.append(proxy);
+                }
             }
             annotate.normal(new AnnotationCompleter(sym, proxies.toList()));
         }
