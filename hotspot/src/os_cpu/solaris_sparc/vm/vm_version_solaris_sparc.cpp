@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -362,6 +362,11 @@ int VM_Version::platform_features(int features) {
 #define AV_SPARC_CBCOND 0x10000000  /* compare and branch instrs supported */
 #endif
   if (av & AV_SPARC_CBCOND)       features |= cbcond_instructions_m;
+
+#ifndef AV_SPARC_CRC32C
+#define AV_SPARC_CRC32C 0x20000000  /* crc32c instruction supported */
+#endif
+  if (av & AV_SPARC_CRC32C)       features |= crc32c_instruction_m;
 
 #ifndef AV_SPARC_AES
 #define AV_SPARC_AES 0x00020000  /* aes instrs supported */
