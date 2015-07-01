@@ -25,6 +25,7 @@
  * @test
  * @bug 6402062 6487891
  * @summary Tests ScrollPane encoding
+ * @key headful
  * @author Sergey Malenkov
  */
 
