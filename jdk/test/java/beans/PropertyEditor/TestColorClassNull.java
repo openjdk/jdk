@@ -26,6 +26,7 @@
  * @bug 4506596 6498171
  * @summary Tests PropertyEditor for null value of type Color
  * @author Sergey Malenkov
+ * @key headful
  * @modules java.compiler
  *          java.desktop
  *          jdk.compiler

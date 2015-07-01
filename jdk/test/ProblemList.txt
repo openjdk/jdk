@@ -116,6 +116,12 @@
 
 # jdk_beans
 
+# 8060027
+java/beans/XMLEncoder/Test4903007.java                        generic-all
+java/beans/XMLEncoder/java_awt_GridBagLayout.java             generic-all
+java/beans/XMLDecoder/8028054/TestConstructorFinder.java      generic-all
+java/beans/XMLDecoder/8028054/TestMethodFinder.java           generic-all
+
 ############################################################################
 
 # jdk_lang
@@ -292,6 +298,9 @@ sun/security/pkcs11/tls/TestPremaster.java                      windows-all
 ############################################################################
 
 # jdk_sound
+
+# 8059743
+javax/sound/midi/Gervill/SoftProvider/GetDevice.java            generic-all
 
 ############################################################################
 
