@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -903,6 +903,10 @@ public:
   inline void ldf(FloatRegisterImpl::Width w, Register s1, RegisterOrConstant s2, FloatRegister d);
   inline void ldf(FloatRegisterImpl::Width w, const Address& a, FloatRegister d, int offset = 0);
 
+  // little-endian
+  inline void ldxl(Register s1, Register s2, Register d) { ldxa(s1, s2, ASI_PRIMARY_LITTLE, d); }
+  inline void ldfl(FloatRegisterImpl::Width w, Register s1, Register s2, FloatRegister d) { ldfa(w, s1, s2, ASI_PRIMARY_LITTLE, d); }
+
   // membar psuedo instruction.  takes into account target memory model.
   inline void membar( Assembler::Membar_mask_bits const7a );
 
@@ -1435,6 +1439,14 @@ public:
                           Register chr1, Register chr2, Label& Ldone);
   // Use BIS for zeroing
   void bis_zeroing(Register to, Register count, Register temp, Label& Ldone);
+
+  // Update CRC-32[C] with a byte value according to constants in table
+  void update_byte_crc32(Register crc, Register val, Register table);
+
+  // Reverse byte order of lower 32 bits, assuming upper 32 bits all zeros
+  void reverse_bytes_32(Register src, Register dst, Register tmp);
+  void movitof_revbytes(Register src, FloatRegister dst, Register tmp1, Register tmp2);
+  void movftoi_revbytes(FloatRegister src, Register dst, Register tmp1, Register tmp2);
 
 #undef VIRTUAL
 };
