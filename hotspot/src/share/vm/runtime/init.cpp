@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/stringTable.hpp"
+#include "code/codeCacheExtensions.hpp"
 #include "code/icBuffer.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/bytecodes.hpp"
@@ -101,15 +102,20 @@ jint init_globals() {
   classLoader_init();
   compilationPolicy_init();
   codeCache_init();
+  CodeCacheExtensions::initialize();
   VM_Version_init();
+  CodeCacheExtensions::complete_step(CodeCacheExtensionsSteps::VMVersion);
   os_init_globals();
   stubRoutines_init1();
+  CodeCacheExtensions::complete_step(CodeCacheExtensionsSteps::StubRoutines1);
   jint status = universe_init();  // dependent on codeCache_init and
                                   // stubRoutines_init1 and metaspace_init.
   if (status != JNI_OK)
     return status;
 
+  CodeCacheExtensions::complete_step(CodeCacheExtensionsSteps::Universe);
   interpreter_init();  // before any methods loaded
+  CodeCacheExtensions::complete_step(CodeCacheExtensionsSteps::Interpreter);
   invocationCounter_init();  // before any methods loaded
   marksweep_init();
   accessFlags_init();
@@ -137,6 +143,7 @@ jint init_globals() {
   }
   javaClasses_init();   // must happen after vtable initialization
   stubRoutines_init2(); // note: StubRoutines need 2-phase init
+  CodeCacheExtensions::complete_step(CodeCacheExtensionsSteps::StubRoutines2);
 
 #if INCLUDE_NMT
   // Solaris stack is walkable only after stubRoutines are set up.
@@ -150,6 +157,7 @@ jint init_globals() {
     CommandLineFlags::printFlags(tty, false, PrintFlagsRanges);
   }
 
+  CodeCacheExtensions::complete_step(CodeCacheExtensionsSteps::InitGlobals);
   return JNI_OK;
 }
 

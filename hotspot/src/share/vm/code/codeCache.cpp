@@ -409,7 +409,7 @@ CodeBlob* CodeCache::allocate(int size, int code_blob_type, bool strict) {
     }
     if (PrintCodeCacheExtension) {
       ResourceMark rm;
-      if (SegmentedCodeCache) {
+      if (_heaps->length() >= 1) {
         tty->print("%s", heap->name());
       } else {
         tty->print("CodeCache");
@@ -1211,7 +1211,7 @@ void CodeCache::print_internals() {
 
   int i = 0;
   FOR_ALL_HEAPS(heap) {
-    if (SegmentedCodeCache && Verbose) {
+    if ((_heaps->length() >= 1) && Verbose) {
       tty->print_cr("-- %s --", (*heap)->name());
     }
     FOR_ALL_BLOBS(cb, *heap) {
@@ -1360,7 +1360,7 @@ void CodeCache::print_summary(outputStream* st, bool detailed) {
   FOR_ALL_HEAPS(heap_iterator) {
     CodeHeap* heap = (*heap_iterator);
     size_t total = (heap->high_boundary() - heap->low_boundary());
-    if (SegmentedCodeCache) {
+    if (_heaps->length() >= 1) {
       st->print("%s:", heap->name());
     } else {
       st->print("CodeCache:");

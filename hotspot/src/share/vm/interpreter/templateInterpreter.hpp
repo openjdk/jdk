@@ -87,6 +87,7 @@ class TemplateInterpreter: public AbstractInterpreter {
   friend class TemplateInterpreterGenerator;
   friend class InterpreterGenerator;
   friend class TemplateTable;
+  friend class CodeCacheExtensions;
   // friend class Interpreter;
  public:
 
