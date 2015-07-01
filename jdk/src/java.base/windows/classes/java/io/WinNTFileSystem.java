@@ -104,7 +104,7 @@ class WinNTFileSystem extends FileSystem {
         if (off < 3) off = 0;   /* Avoid fencepost cases with UNC pathnames */
         int src;
         char slash = this.slash;
-        StringBuffer sb = new StringBuffer(len);
+        StringBuilder sb = new StringBuilder(len);
 
         if (off == 0) {
             /* Complete normalization, including prefix */
@@ -112,7 +112,7 @@ class WinNTFileSystem extends FileSystem {
         } else {
             /* Partial normalization */
             src = off;
-            sb.append(path.substring(0, off));
+            sb.append(path, 0, off);
         }
 
         /* Remove redundant slashes from the remainder of the path, forcing all
@@ -156,8 +156,7 @@ class WinNTFileSystem extends FileSystem {
             }
         }
 
-        String rv = sb.toString();
-        return rv;
+        return sb.toString();
     }
 
     /* A normal Win32 pathname contains no duplicate slashes, except possibly
@@ -172,7 +171,7 @@ class WinNTFileSystem extends FileSystem {
                 else directory-relative (has form "z:foo")
            3  absolute local pathname (begins with "z:\\")
      */
-    private int normalizePrefix(String path, int len, StringBuffer sb) {
+    private int normalizePrefix(String path, int len, StringBuilder sb) {
         int src = 0;
         while ((src < len) && isSlash(path.charAt(src))) src++;
         char c;
