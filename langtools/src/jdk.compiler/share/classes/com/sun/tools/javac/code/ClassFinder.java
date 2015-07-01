@@ -50,6 +50,7 @@ import com.sun.tools.javac.file.JRTIndex;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.jvm.ClassReader;
 import com.sun.tools.javac.jvm.Profile;
+import com.sun.tools.javac.platform.PlatformDescription;
 import com.sun.tools.javac.util.*;
 
 import static javax.tools.StandardLocation.*;
@@ -58,6 +59,7 @@ import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 
 import static com.sun.tools.javac.main.Option.*;
+
 import com.sun.tools.javac.util.Dependencies.CompletionCause;
 
 /**
@@ -97,6 +99,11 @@ public class ClassFinder {
      * bootclasspath
      */
     protected boolean userPathsFirst;
+
+    /**
+     * Switch: should read OTHER classfiles (.sig files) from PLATFORM_CLASS_PATH.
+     */
+    private boolean allowSigFiles;
 
     /** The log to use for verbose output
      */
@@ -192,6 +199,7 @@ public class ClassFinder {
         cacheCompletionFailure = options.isUnset("dev");
         preferSource = "source".equals(options.get("-Xprefer"));
         userPathsFirst = options.isSet(XXUSERPATHSFIRST);
+        allowSigFiles = context.get(PlatformDescription.class) != null;
 
         completionFailureName =
             options.isSet("failcomplete")
@@ -337,7 +345,8 @@ public class ClassFinder {
                 if (verbose) {
                     log.printVerbose("loading", currentClassFile.toString());
                 }
-                if (classfile.getKind() == JavaFileObject.Kind.CLASS) {
+                if (classfile.getKind() == JavaFileObject.Kind.CLASS ||
+                    classfile.getKind() == JavaFileObject.Kind.OTHER) {
                     reader.readClassFile(c);
                     c.flags_field |= getSupplementaryFlags(c);
                 } else {
@@ -418,7 +427,7 @@ public class ClassFinder {
                 q.flags_field |= EXISTS;
         JavaFileObject.Kind kind = file.getKind();
         int seen;
-        if (kind == JavaFileObject.Kind.CLASS)
+        if (kind == JavaFileObject.Kind.CLASS || kind == JavaFileObject.Kind.OTHER)
             seen = CLASS_SEEN;
         else
             seen = SOURCE_SEEN;
@@ -581,10 +590,13 @@ public class ClassFinder {
         fillIn(p, PLATFORM_CLASS_PATH,
                fileManager.list(PLATFORM_CLASS_PATH,
                                 p.fullname.toString(),
-                                EnumSet.of(JavaFileObject.Kind.CLASS),
+                                allowSigFiles ? EnumSet.of(JavaFileObject.Kind.CLASS,
+                                                           JavaFileObject.Kind.OTHER)
+                                              : EnumSet.of(JavaFileObject.Kind.CLASS),
                                 false));
     }
     // where
+        @SuppressWarnings("fallthrough")
         private void fillIn(PackageSymbol p,
                             Location location,
                             Iterable<JavaFileObject> files)
@@ -592,6 +604,15 @@ public class ClassFinder {
             currentLoc = location;
             for (JavaFileObject fo : files) {
                 switch (fo.getKind()) {
+                case OTHER:
+                    boolean sigFile = location == PLATFORM_CLASS_PATH &&
+                                      allowSigFiles &&
+                                      fo.getName().endsWith(".sig");
+                    if (!sigFile) {
+                        extraFileActions(p, fo);
+                        break;
+                    }
+                    //intentional fall-through:
                 case CLASS:
                 case SOURCE: {
                     // TODO pass binaryName to includeClassFile
