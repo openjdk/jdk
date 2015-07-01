@@ -224,6 +224,7 @@ class AgentLibraryList VALUE_OBJ_CLASS_SPEC {
 class Arguments : AllStatic {
   friend class VMStructs;
   friend class JvmtiExport;
+  friend class CodeCacheExtensions;
  public:
   // Operation modi
   enum Mode {

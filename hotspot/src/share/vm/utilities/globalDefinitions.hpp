@@ -1367,6 +1367,7 @@ template<class T> static void swap(T& a, T& b) {
 #define UINT32_FORMAT_W(width) "%" #width PRIu32
 
 #define PTR32_FORMAT           "0x%08" PRIx32
+#define PTR32_FORMAT_W(width)  "0x%" #width PRIx32
 
 // Format 64-bit quantities.
 #define INT64_FORMAT           "%" PRId64

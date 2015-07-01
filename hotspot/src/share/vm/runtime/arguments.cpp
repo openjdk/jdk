@@ -27,6 +27,7 @@
 #include "classfile/javaAssertions.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
+#include "code/codeCacheExtensions.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
@@ -1586,6 +1587,8 @@ void Arguments::set_ergonomics_flags() {
 
   // Set up runtime image flags.
   set_runtime_image_flags();
+
+  CodeCacheExtensions::set_ergonomics_flags();
 }
 
 void Arguments::set_parallel_gc_flags() {
