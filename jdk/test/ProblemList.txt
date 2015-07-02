@@ -295,6 +295,9 @@ sun/security/pkcs11/tls/TestMasterSecret.java                   windows-all
 sun/security/pkcs11/tls/TestPRF.java                            windows-all
 sun/security/pkcs11/tls/TestPremaster.java                      windows-all
 
+# 8051770
+sun/security/provider/SecureRandom/StrongSecureRandom.java      macosx-10.10
+
 ############################################################################
 
 # jdk_sound
