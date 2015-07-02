@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
    @bug 4714674
    @summary Tests that JEditorPane opens HTTP connection asynchronously
    @author Peter Zhelezniakov
+   @modules java.desktop
+            jdk.httpserver
    @run main bug4714674
 */
 

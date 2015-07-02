@@ -65,8 +65,8 @@ class UnixFileSystem extends FileSystem {
         int n = len;
         while ((n > 0) && (pathname.charAt(n - 1) == '/')) n--;
         if (n == 0) return "/";
-        StringBuffer sb = new StringBuffer(pathname.length());
-        if (off > 0) sb.append(pathname.substring(0, off));
+        StringBuilder sb = new StringBuilder(pathname.length());
+        if (off > 0) sb.append(pathname, 0, off);
         char prevChar = 0;
         for (int i = off; i < n; i++) {
             char c = pathname.charAt(i);

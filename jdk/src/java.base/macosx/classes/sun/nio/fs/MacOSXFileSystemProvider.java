@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,8 @@ public class MacOSXFileSystemProvider extends BsdFileSystemProvider {
     FileTypeDetector getFileTypeDetector() {
         Path userMimeTypes = Paths.get(AccessController.doPrivileged(
             new GetPropertyAction("user.home")), ".mime.types");
-        return new MimeTypesFileTypeDetector(userMimeTypes);
+
+        return chain(new MimeTypesFileTypeDetector(userMimeTypes),
+                     new UTIFileTypeDetector());
     }
 }

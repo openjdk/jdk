@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,13 +182,12 @@ public class PKCS7 {
         contentType = contentInfo.contentType;
         DerValue content = contentInfo.getContent();
 
-        if (contentType.equals((Object)ContentInfo.SIGNED_DATA_OID)) {
+        if (contentType.equals(ContentInfo.SIGNED_DATA_OID)) {
             parseSignedData(content);
-        } else if (contentType.equals((Object)ContentInfo.OLD_SIGNED_DATA_OID)) {
+        } else if (contentType.equals(ContentInfo.OLD_SIGNED_DATA_OID)) {
             // This is for backwards compatibility with JDK 1.1.x
             parseOldSignedData(content);
-        } else if (contentType.equals((Object)
-                       ContentInfo.NETSCAPE_CERT_SEQUENCE_OID)){
+        } else if (contentType.equals(ContentInfo.NETSCAPE_CERT_SEQUENCE_OID)){
             parseNetscapeCertChain(content);
         } else {
             throw new ParsingException("content type " + contentType +

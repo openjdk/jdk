@@ -30,6 +30,7 @@
 
 #include <jni.h>
 #include <stdlib.h>
+#include <string.h>
 #include <windows.h>
 #include <BaseTsd.h>
 #include <wincrypt.h>
@@ -58,11 +59,16 @@ void ThrowException(JNIEnv *env, char *exceptionName, DWORD dwError)
     char szMessage[1024];
     szMessage[0] = '\0';
 
-    FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, dwError, NULL, szMessage,
-        1024, NULL);
+    DWORD res = FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, dwError,
+        NULL, szMessage, sizeof(szMessage), NULL);
+    if (res == 0) {
+        strcpy(szMessage, "Unknown error");
+    }
 
     jclass exceptionClazz = env->FindClass(exceptionName);
-    env->ThrowNew(exceptionClazz, szMessage);
+    if (exceptionClazz != NULL) {
+        env->ThrowNew(exceptionClazz, szMessage);
+    }
 }
 
 
@@ -295,22 +301,42 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_KeyStore_loadKeysOrCertificateCh
 
         // Determine clazz and method ID to generate certificate
         jclass clazzArrayList = env->FindClass("java/util/ArrayList");
+        if (clazzArrayList == NULL) {
+            __leave;
+        }
 
         jmethodID mNewArrayList = env->GetMethodID(clazzArrayList, "<init>", "()V");
+        if (mNewArrayList == NULL) {
+            __leave;
+        }
 
-        jmethodID mGenCert = env->GetMethodID(env->GetObjectClass(obj),
+        jclass clazzOfThis = env->GetObjectClass(obj);
+        if (clazzOfThis == NULL) {
+            __leave;
+        }
+
+        jmethodID mGenCert = env->GetMethodID(clazzOfThis,
                                               "generateCertificate",
                                               "([BLjava/util/Collection;)V");
+        if (mGenCert == NULL) {
+            __leave;
+        }
 
         // Determine method ID to generate certificate chain
-        jmethodID mGenCertChain = env->GetMethodID(env->GetObjectClass(obj),
+        jmethodID mGenCertChain = env->GetMethodID(clazzOfThis,
                                                    "generateCertificateChain",
                                                    "(Ljava/lang/String;Ljava/util/Collection;Ljava/util/Collection;)V");
+        if (mGenCertChain == NULL) {
+            __leave;
+        }
 
         // Determine method ID to generate RSA certificate chain
-        jmethodID mGenRSAKeyAndCertChain = env->GetMethodID(env->GetObjectClass(obj),
+        jmethodID mGenRSAKeyAndCertChain = env->GetMethodID(clazzOfThis,
                                                    "generateRSAKeyAndCertificateChain",
                                                    "(Ljava/lang/String;JJILjava/util/Collection;Ljava/util/Collection;)V");
+        if (mGenRSAKeyAndCertChain == NULL) {
+            __leave;
+        }
 
         // Use CertEnumCertificatesInStore to get the certificates
         // from the open store. pCertContext must be reset to
@@ -590,9 +616,6 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_RSASignature_signHash
     }
     __finally
     {
-        if (hCryptProvAlt)
-            ::CryptReleaseContext(hCryptProvAlt, 0);
-
         if (pSignedHashBuffer)
             delete [] pSignedHashBuffer;
 
@@ -601,6 +624,9 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_RSASignature_signHash
 
         if (hHash)
             ::CryptDestroyHash(hHash);
+
+        if (hCryptProvAlt)
+            ::CryptReleaseContext(hCryptProvAlt, 0);
     }
 
     return jSignedHash;
@@ -688,9 +714,6 @@ JNIEXPORT jboolean JNICALL Java_sun_security_mscapi_RSASignature_verifySignedHas
 
     __finally
     {
-        if (hCryptProvAlt)
-            ::CryptReleaseContext(hCryptProvAlt, 0);
-
         if (pSignedHashBuffer)
             delete [] pSignedHashBuffer;
 
@@ -699,6 +722,9 @@ JNIEXPORT jboolean JNICALL Java_sun_security_mscapi_RSASignature_verifySignedHas
 
         if (hHash)
             ::CryptDestroyHash(hHash);
+
+        if (hCryptProvAlt)
+            ::CryptReleaseContext(hCryptProvAlt, 0);
     }
 
     return result;
@@ -763,9 +789,15 @@ JNIEXPORT jobject JNICALL Java_sun_security_mscapi_RSAKeyPairGenerator_generateR
         // Get the method ID for the RSAKeyPair constructor
         jclass clazzRSAKeyPair =
             env->FindClass("sun/security/mscapi/RSAKeyPair");
+        if (clazzRSAKeyPair == NULL) {
+            __leave;
+        }
 
         jmethodID mNewRSAKeyPair =
             env->GetMethodID(clazzRSAKeyPair, "<init>", "(JJI)V");
+        if (mNewRSAKeyPair == NULL) {
+            __leave;
+        }
 
         // Create a new RSA keypair
         keypair = env->NewObject(clazzRSAKeyPair, mNewRSAKeyPair,
@@ -1948,9 +1980,15 @@ JNIEXPORT jobject JNICALL Java_sun_security_mscapi_KeyStore_storePrivateKey
         // Get the method ID for the RSAPrivateKey constructor
         jclass clazzRSAPrivateKey =
             env->FindClass("sun/security/mscapi/RSAPrivateKey");
+        if (clazzRSAPrivateKey == NULL) {
+            __leave;
+        }
 
         jmethodID mNewRSAPrivateKey =
             env->GetMethodID(clazzRSAPrivateKey, "<init>", "(JJI)V");
+        if (mNewRSAPrivateKey == NULL) {
+            __leave;
+        }
 
         // Create a new RSA private key
         privateKey = env->NewObject(clazzRSAPrivateKey, mNewRSAPrivateKey,
@@ -2035,9 +2073,15 @@ JNIEXPORT jobject JNICALL Java_sun_security_mscapi_RSASignature_importPublicKey
         // Get the method ID for the RSAPublicKey constructor
         jclass clazzRSAPublicKey =
             env->FindClass("sun/security/mscapi/RSAPublicKey");
+        if (clazzRSAPublicKey == NULL) {
+            __leave;
+        }
 
         jmethodID mNewRSAPublicKey =
             env->GetMethodID(clazzRSAPublicKey, "<init>", "(JJI)V");
+        if (mNewRSAPublicKey == NULL) {
+            __leave;
+        }
 
         // Create a new RSA public key
         publicKey = env->NewObject(clazzRSAPublicKey, mNewRSAPublicKey,

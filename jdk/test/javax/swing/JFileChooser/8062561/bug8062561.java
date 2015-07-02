@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import javax.swing.filechooser.FileSystemView;
  * @bug 8062561
  * @summary File system view returns null default directory
  * @library ../../../../lib/testlibrary
+ * @modules java.desktop/sun.awt
  * @build jdk.testlibrary.OSInfo
  * @run main/othervm bug8062561 GENERATE_POLICY
  * @run main/othervm/policy=security.policy bug8062561 CHECK_DEFAULT_DIR run
