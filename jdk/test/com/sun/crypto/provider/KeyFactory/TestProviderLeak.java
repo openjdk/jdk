@@ -66,9 +66,9 @@ public class TestProviderLeak {
                 megaByte = new byte [MB];
                 data.add(megaByte);
             } catch (OutOfMemoryError e) {
+                megaByte = null;    // Free memory ASAP
                 System.out.println("OOME is thrown when allocating "
                         + data.size() + "MB memory.");
-                megaByte = null;
 
                 for (int j = 0; j < RESERVATION && !data.isEmpty(); j++) {
                     data.removeLast();
