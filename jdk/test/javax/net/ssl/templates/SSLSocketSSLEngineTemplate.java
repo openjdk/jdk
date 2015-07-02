@@ -139,6 +139,11 @@ public class SSLSocketSSLEngineTemplate {
      * Main entry point for this test.
      */
     public static void main(String args[]) throws Exception {
+        // reset security properties to make sure that the algorithms
+        // and keys used in this test are not disabled.
+        Security.setProperty("jdk.tls.disabledAlgorithms", "");
+        Security.setProperty("jdk.certpath.disabledAlgorithms", "");
+
         if (debug) {
             System.setProperty("javax.net.debug", "all");
         }
@@ -153,7 +158,12 @@ public class SSLSocketSSLEngineTemplate {
              */
             SSLSocketSSLEngineTemplate test =
                 new SSLSocketSSLEngineTemplate(protocol);
+            log("-------------------------------------");
+            log("Testing " + protocol + " for direct buffers ...");
             test.runTest(true);
+
+            log("---------------------------------------");
+            log("Testing " + protocol + " for indirect buffers ...");
             test.runTest(false);
         }
 
@@ -327,6 +337,10 @@ public class SSLSocketSSLEngineTemplate {
             // Wait for the client to join up with us.
             if (thread != null) {
                 thread.join();
+            }
+
+            if (sslSocket != null) {
+                sslSocket.close();
             }
 
             if (serverException != null) {

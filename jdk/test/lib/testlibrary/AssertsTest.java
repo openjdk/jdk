@@ -21,6 +21,8 @@
  * questions.
  */
 
+import java.lang.SuppressWarnings;
+
 import static jdk.testlibrary.Asserts.*;
 
 /* @test
@@ -75,7 +77,7 @@ public class AssertsTest {
 
     private static void testEquals() throws Exception {
         expectPass(Assertion.EQ, 1, 1);
-        expectPass(Assertion.EQ, (Comparable)null, (Comparable)null);
+        expectPass(Assertion.EQ, (Integer)null, (Integer)null);
 
         Foo f1 = new Foo(1);
         expectPass(Assertion.EQ, f1, f1);
@@ -112,13 +114,13 @@ public class AssertsTest {
         Foo f2 = new Foo(1);
         expectPass(Assertion.NE, f1, f2);
 
-        expectFail(Assertion.NE, (Comparable)null, (Comparable)null);
+        expectFail(Assertion.NE, (Integer)null, (Integer)null);
         expectFail(Assertion.NE, f1, f1);
         expectFail(Assertion.NE, 1, 1);
     }
 
     private static void testNull() throws Exception {
-        expectPass(Assertion.NULL, (Comparable)null);
+        expectPass(Assertion.NULL, (Integer)null);
 
         expectFail(Assertion.NULL, 1);
     }
@@ -126,7 +128,7 @@ public class AssertsTest {
     private static void testNotNull() throws Exception {
         expectPass(Assertion.NOTNULL, 1);
 
-        expectFail(Assertion.NOTNULL, (Comparable)null);
+        expectFail(Assertion.NOTNULL, (Integer)null);
     }
 
     private static void testTrue() throws Exception {
@@ -169,13 +171,13 @@ public class AssertsTest {
         }
     }
 
-
-
+    @SuppressWarnings("unchecked")
     private static <T extends Comparable<T>> void expectPass(Assertion assertion, T ... args)
         throws Exception {
         Assertion.run(assertion, args);
     }
 
+    @SuppressWarnings("unchecked")
     private static <T extends Comparable<T>> void expectFail(Assertion assertion, T ... args)
         throws Exception {
         try {
@@ -192,8 +194,9 @@ public class AssertsTest {
 enum Assertion {
     LT, LTE, EQ, GTE, GT, NE, NULL, NOTNULL, FALSE, TRUE;
 
+    @SuppressWarnings("unchecked")
     public static <T extends Comparable<T>> void run(Assertion assertion, T ... args) {
-        String msg = "Expected " + format(assertion, args) + " to pass";
+        String msg = "Expected " + format(assertion, (Object[])args) + " to pass";
         switch (assertion) {
             case LT:
                 assertLessThan(args[0], args[1], msg);

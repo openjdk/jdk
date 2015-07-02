@@ -464,7 +464,7 @@ public class BytecodeName {
      * Report whether a character is safe in a bytecode name.
      * This is true of any unicode character except the following
      * <em>dangerous characters</em>: {@code ".;:$[]<>/"}.
-     * @param s the proposed character
+     * @param c the proposed character
      * @return true if the character is safe to use in classfiles
      */
     public static boolean isSafeBytecodeChar(char c) {

@@ -190,7 +190,7 @@ public final class AppContext {
      *
      * @see #addPropertyChangeListener
      * @see #removePropertyChangeListener
-     * @see #firePropertyChange
+     * @see PropertyChangeSupport#firePropertyChange
      */
     private PropertyChangeSupport changeSupport = null;
 
@@ -809,7 +809,7 @@ public final class AppContext {
      *
      * @see #addPropertyChangeListener(java.lang.String, java.beans.PropertyChangeListener)
      * @see #getPropertyChangeListeners(java.lang.String)
-     * @see #removePropertyChangeListener(java.beans.PropertyChangeListener)
+     * @see PropertyChangeSupport#removePropertyChangeListener(java.beans.PropertyChangeListener)
      */
     public synchronized void removePropertyChangeListener(
                              String propertyName,

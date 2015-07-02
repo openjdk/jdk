@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,16 +35,9 @@ import java.awt.Component;
 import java.awt.Container;
 import java.awt.EventQueue;
 import java.awt.Window;
-import java.awt.im.InputContext;
 import java.awt.im.InputMethodHighlight;
 import java.awt.im.spi.InputMethodContext;
 import sun.awt.im.InputMethodAdapter;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseEvent;
-import java.awt.event.FocusEvent;
-import java.awt.event.ComponentEvent;
-import java.awt.event.WindowEvent;
 import java.awt.event.InputMethodEvent;
 import java.awt.font.TextAttribute;
 import java.awt.font.TextHitInfo;
@@ -555,7 +548,7 @@ public abstract class X11InputMethod extends InputMethodAdapter {
      * method is invoked from the event handler in canvas.c in the
      * AWT Toolkit thread context and thus inside the AWT Lock.
      * @param   str     committed text
-     * @param   long    when
+     * @param   when    when
      */
     // NOTE: This method may be called by privileged threads.
     //       This functionality is implemented in a package-private method
@@ -1095,7 +1088,7 @@ public abstract class X11InputMethod extends InputMethodAdapter {
     /*
      * Native methods
      */
-    protected native String resetXIC();
+    private native String resetXIC();
     private native void disposeXIC();
     private native boolean setCompositionEnabledNative(boolean enable);
     private native boolean isCompositionEnabledNative();

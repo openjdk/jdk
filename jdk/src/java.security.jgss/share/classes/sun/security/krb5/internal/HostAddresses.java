@@ -31,16 +31,14 @@
 
 package sun.security.krb5.internal;
 
+import sun.security.krb5.Config;
 import sun.security.krb5.PrincipalName;
 import sun.security.krb5.KrbException;
 import sun.security.krb5.Asn1Exception;
 import sun.security.util.*;
-import java.util.Vector;
-import java.util.ArrayList;
-import java.net.InetAddress;
-import java.net.Inet4Address;
-import java.net.Inet6Address;
-import java.net.UnknownHostException;
+
+import java.net.*;
+import java.util.*;
 import java.io.IOException;
 import sun.security.krb5.internal.ccache.CCacheOutputStream;
 
@@ -293,34 +291,35 @@ public class HostAddresses implements Cloneable {
      */
     public static HostAddresses getLocalAddresses() throws IOException
     {
-        String hostname = null;
-        InetAddress[] inetAddresses = null;
+        Set<InetAddress> all = new LinkedHashSet<>();
         try {
-            InetAddress localHost = InetAddress.getLocalHost();
-            hostname = localHost.getHostName();
-            inetAddresses = InetAddress.getAllByName(hostname);
-            HostAddress[] hAddresses = new HostAddress[inetAddresses.length];
-            for (int i = 0; i < inetAddresses.length; i++)
-                {
-                    hAddresses[i] = new HostAddress(inetAddresses[i]);
-                }
             if (DEBUG) {
-                System.out.println(">>> KrbKdcReq local addresses for "
-                                   + hostname + " are: ");
-
-                for (int i = 0; i < inetAddresses.length; i++) {
-                    System.out.println("\n\t" + inetAddresses[i]);
-                    if (inetAddresses[i] instanceof Inet4Address)
-                        System.out.println("IPv4 address");
-                    if (inetAddresses[i] instanceof Inet6Address)
-                        System.out.println("IPv6 address");
+                System.out.println(">>> KrbKdcReq local addresses are:");
+            }
+            String extra = Config.getInstance().getAll(
+                    "libdefaults", "extra_addresses");
+            if (extra != null) {
+                for (String s: extra.split("\\s+")) {
+                    all.add(InetAddress.getByName(s));
+                    if (DEBUG) {
+                        System.out.println("   extra_addresses: "
+                                + InetAddress.getByName(s));
+                    }
                 }
             }
-            return (new HostAddresses(hAddresses));
+            for (NetworkInterface ni:
+                    Collections.list(NetworkInterface.getNetworkInterfaces())) {
+                if (DEBUG) {
+                    System.out.println("   NetworkInterface " + ni + ":");
+                    System.out.println("      "
+                            + Collections.list(ni.getInetAddresses()));
+                }
+                all.addAll(Collections.list(ni.getInetAddresses()));
+            }
+            return new HostAddresses(all.toArray(new InetAddress[all.size()]));
         } catch (Exception exc) {
             throw new IOException(exc.toString());
         }
-
     }
 
     /**

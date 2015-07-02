@@ -406,6 +406,7 @@ public class CipherTestUtils {
                 return params;
             }).forEach((params) -> {
                 try {
+                    System.out.println("Testing " + params);
                     runTest(params);
                     System.out.println("Passed " + params);
                 } catch (Exception e) {

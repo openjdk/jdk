@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -597,12 +597,6 @@ intptr_t* frame::next_younger_sp_or_null(intptr_t* old_sp, intptr_t* sp) {
 */
 bool frame::is_valid_stack_pointer(intptr_t* valid_sp, intptr_t* sp) {
   return next_younger_sp_or_null(valid_sp, sp) != NULL;
-}
-
-
-bool frame::interpreter_frame_equals_unpacked_fp(intptr_t* fp) {
-  assert(is_interpreted_frame(), "must be interpreter frame");
-  return this->fp() == fp;
 }
 
 bool frame::is_interpreted_frame_valid(JavaThread* thread) const {

@@ -36,6 +36,7 @@
  */
 
 import java.lang.ProcessBuilder.Redirect;
+import java.lang.ProcessHandle;
 import static java.lang.ProcessBuilder.Redirect.*;
 
 import java.io.*;
@@ -47,7 +48,6 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.security.*;
-import sun.misc.Unsafe;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import static java.lang.System.getenv;
@@ -309,6 +309,8 @@ public class Basic {
             String action = args[0];
             if (action.equals("sleep")) {
                 Thread.sleep(10 * 60 * 1000L);
+            } else if (action.equals("pid")) {
+                System.out.println(ProcessHandle.current().getPid());
             } else if (action.equals("testIO")) {
                 String expected = "standard input";
                 char[] buf = new char[expected.length()+1];
@@ -1139,49 +1141,29 @@ public class Basic {
     }
 
     static void checkProcessPid() {
-        long actualPid = 0;
-        long expectedPid = -1;
-        if (Windows.is()) {
-            String[] argsTasklist = {"tasklist.exe",  "/NH", "/FI",  "\"IMAGENAME eq tasklist.exe\""};
-            ProcessBuilder pb = new ProcessBuilder(argsTasklist);
-            try {
-                Process proc = pb.start();
-                expectedPid = proc.getPid();
-
-                String output = commandOutput(proc);
-                String[] splits = output.split("\\s+");
-                actualPid = Integer.valueOf(splits[2]);
-            } catch (Throwable t) {
-                unexpected(t);
-            }
-        } else if (Unix.is() || MacOSX.is()) {
-            String[]  shArgs = {"sh", "-c", "echo $$"};
-            ProcessBuilder pb = new ProcessBuilder(shArgs);
-            try {
-                Process proc = pb.start();
-                expectedPid = proc.getPid();
-
-                String output = commandOutput(proc);
-                String[] splits = output.split("\\s+");
-                actualPid = Integer.valueOf(splits[0]);
-            } catch (Throwable t) {
-                unexpected(t);
-            }
-        } else {
-            fail("No test for checkProcessPid on platform: " + System.getProperty("os.name"));
-            return;
+        ProcessBuilder pb = new ProcessBuilder();
+        List<String> list = new ArrayList<String>(javaChildArgs);
+        list.add("pid");
+        pb.command(list);
+        try {
+            Process p = pb.start();
+            String s = commandOutput(p);
+            long actualPid = Long.valueOf(s.trim());
+            long expectedPid = p.getPid();
+            equal(actualPid, expectedPid);
+        } catch (Throwable t) {
+            unexpected(t);
         }
 
-        equal(actualPid, expectedPid);
 
         // Test the default implementation of Process.getPid
-        try {
-            DelegatingProcess p = new DelegatingProcess(null);
-            p.getPid();
-            fail("non-overridden Process.getPid method should throw UOE");
-        } catch (UnsupportedOperationException uoe) {
-            // correct
-        }
+        DelegatingProcess p = new DelegatingProcess(null);
+        THROWS(UnsupportedOperationException.class,
+                () -> p.getPid(),
+                () -> p.toHandle(),
+                () -> p.supportsNormalTermination(),
+                () -> p.children(),
+                () -> p.allChildren());
 
     }
 
@@ -2604,7 +2586,7 @@ public class Basic {
     static volatile int passed = 0, failed = 0;
     static void pass() {passed++;}
     static void fail() {failed++; Thread.dumpStack();}
-    static void fail(String msg) {System.out.println(msg); fail();}
+    static void fail(String msg) {System.err.println(msg); fail();}
     static void unexpected(Throwable t) {failed++; t.printStackTrace();}
     static void check(boolean cond) {if (cond) pass(); else fail();}
     static void check(boolean cond, String m) {if (cond) pass(); else fail(m);}

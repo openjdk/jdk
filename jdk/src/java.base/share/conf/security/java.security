@@ -511,11 +511,11 @@ krb5.kdc.bad.policy = tryLast
 jdk.certpath.disabledAlgorithms=MD2, MD5, RSA keySize < 1024
 
 # Algorithm restrictions for Secure Socket Layer/Transport Layer Security
-# (SSL/TLS) processing
+# (SSL/TLS/DTLS) processing
 #
 # In some environments, certain algorithms or key lengths may be undesirable
-# when using SSL/TLS.  This section describes the mechanism for disabling
-# algorithms during SSL/TLS security parameters negotiation, including
+# when using SSL/TLS/DTLS.  This section describes the mechanism for disabling
+# algorithms during SSL/TLS/DTLS security parameters negotiation, including
 # protocol version negotiation, cipher suites selection, peer authentication
 # and key exchange mechanisms.
 #

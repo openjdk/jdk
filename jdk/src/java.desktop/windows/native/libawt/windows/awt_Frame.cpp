@@ -1864,6 +1864,7 @@ Java_sun_awt_windows_WEmbeddedFrame_initIDs(JNIEnv *env, jclass cls)
 
     AwtFrame::activateEmbeddingTopLevelMID = env->GetMethodID(cls, "activateEmbeddingTopLevel", "()V");
     DASSERT(AwtFrame::activateEmbeddingTopLevelMID != NULL);
+    CHECK_NULL(AwtFrame::activateEmbeddingTopLevelMID);
 
     AwtFrame::isEmbeddedInIEID = env->GetFieldID(cls, "isEmbeddedInIE", "Z");
     DASSERT(AwtFrame::isEmbeddedInIEID != NULL);

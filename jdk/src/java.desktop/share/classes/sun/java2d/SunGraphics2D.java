@@ -874,13 +874,13 @@ public final class SunGraphics2D
      * space.  The rendering attributes taken into account include the
      * clip, transform, and stroke attributes.
      * @param rect The area in device space to check for a hit.
-     * @param p The path to check for a hit.
+     * @param s The path to check for a hit.
      * @param onStroke Flag to choose between testing the stroked or
      * the filled path.
      * @return True if there is a hit, false otherwise.
      * @see #setStroke
-     * @see #fillPath
-     * @see #drawPath
+     * @see #fill(Shape)
+     * @see #draw(Shape)
      * @see #transform
      * @see #setTransform
      * @see #clip
@@ -1295,7 +1295,7 @@ public final class SunGraphics2D
 
     /**
      * Returns the preferences for the rendering algorithms.
-     * @param hintCategory The category of hint to be set. The strings
+     * @param hintKey The category of hint to be set. The strings
      * are defined in the RenderingHints class.
      * @return The preferences for rendering algorithms. The strings
      * are defined in the RenderingHints class.
@@ -1577,7 +1577,7 @@ public final class SunGraphics2D
      * Cx'(p) = Cx(Tx(p)).
      * A copy of the Tx is made, if necessary, so further
      * modifications to Tx do not affect rendering.
-     * @param Tx The Transform object to be composed with the current
+     * @param xform The Transform object to be composed with the current
      * transform.
      * @see #setTransform
      * @see AffineTransform
@@ -1606,7 +1606,6 @@ public final class SunGraphics2D
      * Sets the Transform in the current graphics state.
      * @param Tx The Transform object to be used in the rendering process.
      * @see #transform
-     * @see TransformChain
      * @see AffineTransform
      */
     @Override
@@ -1789,8 +1788,8 @@ public final class SunGraphics2D
      * of the component, use appropriate methods of the component.
      * @param color The background color that should be used in
      * subsequent calls to clearRect().
-     * @see getBackground
-     * @see Graphics.clearRect()
+     * @see #getBackground
+     * @see Graphics#clearRect
      */
     public void setBackground(Color color) {
         backgroundColor = color;
@@ -1798,7 +1797,7 @@ public final class SunGraphics2D
 
     /**
      * Returns the background color used for clearing a region.
-     * @see setBackground
+     * @see #setBackground
      */
     public Color getBackground() {
         return backgroundColor;
@@ -1806,7 +1805,7 @@ public final class SunGraphics2D
 
     /**
      * Returns the current Stroke in the Graphics2D state.
-     * @see setStroke
+     * @see #setStroke
      */
     public Stroke getStroke() {
         return stroke;
@@ -2056,7 +2055,7 @@ public final class SunGraphics2D
      * with the current transform in the Graphics2D state before being
      * intersected with the current clip. This method is used to make the
      * current clip smaller. To make the clip larger, use any setClip method.
-     * @param p The Path to be intersected with the current clip.
+     * @param s The Path to be intersected with the current clip.
      */
     public void clip(Shape s) {
         s = transformShape(s);
@@ -2483,7 +2482,7 @@ public final class SunGraphics2D
      * Strokes the outline of a Path using the settings of the current
      * graphics state.  The rendering attributes applied include the
      * clip, transform, paint or color, composite and stroke attributes.
-     * @param p The path to be drawn.
+     * @param s The path to be drawn.
      * @see #setStroke
      * @see #setPaint
      * @see java.awt.Graphics#setColor

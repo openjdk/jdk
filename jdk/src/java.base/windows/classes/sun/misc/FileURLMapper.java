@@ -46,7 +46,7 @@ public class FileURLMapper {
     }
 
     /**
-     * @returns the platform specific path corresponding to the URL, and in particular
+     * @return the platform specific path corresponding to the URL, and in particular
      *  returns a UNC when the authority contains a hostname
      */
 

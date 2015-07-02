@@ -39,8 +39,10 @@ import java.io.StringReader;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import jdk.nashorn.internal.objects.NativeArray;
 
 /**
  * Global functions supported only in scripting mode.
@@ -54,7 +56,7 @@ public final class ScriptingFunctions {
     public static final MethodHandle READFULLY = findOwnMH("readFully",     Object.class, Object.class, Object.class);
 
     /** Handle to implementation of {@link ScriptingFunctions#exec} - Nashorn extension */
-    public static final MethodHandle EXEC = findOwnMH("exec",     Object.class, Object.class, Object.class, Object.class);
+    public static final MethodHandle EXEC = findOwnMH("exec",     Object.class, Object.class, Object[].class);
 
     /** EXEC name - special property used by $EXEC API. */
     public static final String EXEC_NAME = "$EXEC";
@@ -71,7 +73,8 @@ public final class ScriptingFunctions {
     /** Names of special properties used by $ENV API. */
     public  static final String ENV_NAME  = "$ENV";
 
-    private static final String PWD_NAME  = "PWD";
+    /** Name of the environment variable for the current working directory. */
+    public static final String PWD_NAME  = "PWD";
 
     private ScriptingFunctions() {
     }
@@ -125,19 +128,32 @@ public final class ScriptingFunctions {
      * Nashorn extension: exec a string in a separate process.
      *
      * @param self   self reference
-     * @param string string to execute
-     * @param input  input
+     * @param args   string to execute, input and additional arguments, to be appended to {@code string}. Additional arguments can be passed as
+     *               either one JavaScript array, whose elements will be converted to strings; or as a sequence of
+     *               varargs, each of which will be converted to a string.
      *
      * @return output string from the request
+     *
      * @throws IOException           if any stream access fails
      * @throws InterruptedException  if execution is interrupted
      */
-    public static Object exec(final Object self, final Object string, final Object input) throws IOException, InterruptedException {
+    public static Object exec(final Object self, final Object... args) throws IOException, InterruptedException {
         // Current global is need to fetch additional inputs and for additional results.
         final ScriptObject global = Context.getGlobal();
+        final Object string = args.length > 0? args[0] : UNDEFINED;
+        final Object input = args.length > 1? args[1] : UNDEFINED;
+        final Object[] argv = (args.length > 2)? Arrays.copyOfRange(args, 2, args.length) : ScriptRuntime.EMPTY_ARRAY;
+        // Assemble command line, process additional arguments.
+        final List<String> cmdLine = tokenizeString(JSType.toString(string));
+        final Object[] additionalArgs = argv.length == 1 && argv[0] instanceof NativeArray ?
+                ((NativeArray) argv[0]).asObjectArray() :
+                argv;
+        for (Object arg : additionalArgs) {
+            cmdLine.add(JSType.toString(arg));
+        }
 
         // Set up initial process.
-        final ProcessBuilder processBuilder = new ProcessBuilder(tokenizeCommandLine(JSType.toString(string)));
+        final ProcessBuilder processBuilder = new ProcessBuilder(cmdLine);
 
         // Current ENV property state.
         final Object env = global.get(ENV_NAME);
@@ -237,23 +253,22 @@ public final class ScriptingFunctions {
     }
 
     /**
-     * Break an exec string into tokens, honoring quoted arguments and escaped
-     * spaces.
+     * Break a string into tokens, honoring quoted arguments and escaped spaces.
      *
-     * @param execString a {@link String} with the command line to execute.
+     * @param str a {@link String} to tokenize.
      * @return a {@link List} of {@link String}s representing the tokens that
-     * constitute the command line.
+     * constitute the string.
      * @throws IOException in case {@link StreamTokenizer#nextToken()} raises it.
      */
-    public static List<String> tokenizeCommandLine(final String execString) throws IOException {
-        final StreamTokenizer tokenizer = new StreamTokenizer(new StringReader(execString));
+    public static List<String> tokenizeString(final String str) throws IOException {
+        final StreamTokenizer tokenizer = new StreamTokenizer(new StringReader(str));
         tokenizer.resetSyntax();
         tokenizer.wordChars(0, 255);
         tokenizer.whitespaceChars(0, ' ');
         tokenizer.commentChar('#');
         tokenizer.quoteChar('"');
         tokenizer.quoteChar('\'');
-        final List<String> cmdList = new ArrayList<>();
+        final List<String> tokenList = new ArrayList<>();
         final StringBuilder toAppend = new StringBuilder();
         while (tokenizer.nextToken() != StreamTokenizer.TT_EOF) {
             final String s = tokenizer.sval;
@@ -265,13 +280,13 @@ public final class ScriptingFunctions {
                 // omit trailing \, append space instead
                 toAppend.append(s.substring(0, s.length() - 1)).append(' ');
             } else {
-                cmdList.add(toAppend.append(s).toString());
+                tokenList.add(toAppend.append(s).toString());
                 toAppend.setLength(0);
             }
         }
         if (toAppend.length() != 0) {
-            cmdList.add(toAppend.toString());
+            tokenList.add(toAppend.toString());
         }
-        return cmdList;
+        return tokenList;
     }
 }

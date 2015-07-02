@@ -27,7 +27,6 @@
  *
  *  @author Robert Field
  *
- *  @library scaffold
  *  @modules jdk.jdi
  *  @run build JDIScaffold VMConnection
  *  @run compile -g Vars.java

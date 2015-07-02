@@ -41,9 +41,9 @@
 #endif
 
 TenuredGeneration::TenuredGeneration(ReservedSpace rs,
-                                     size_t initial_byte_size, int level,
+                                     size_t initial_byte_size,
                                      GenRemSet* remset) :
-  CardGeneration(rs, initial_byte_size, level, remset)
+  CardGeneration(rs, initial_byte_size, remset)
 {
   HeapWord* bottom = (HeapWord*) _virtual_space.low();
   HeapWord* end    = (HeapWord*) _virtual_space.high();
@@ -134,11 +134,12 @@ void TenuredGeneration::compute_new_size() {
          " capacity: " SIZE_FORMAT, used(), used_after_gc, capacity()));
 }
 
-void TenuredGeneration::update_gc_stats(int current_level,
+void TenuredGeneration::update_gc_stats(Generation* current_generation,
                                         bool full) {
-  // If the next lower level(s) has been collected, gather any statistics
+  // If the young generation has been collected, gather any statistics
   // that are of interest at this point.
-  if (!full && (current_level + 1) == level()) {
+  bool current_is_young = GenCollectedHeap::heap()->is_young_gen(current_generation);
+  if (!full && current_is_young) {
     // Calculate size of data promoted from the younger generations
     // before doing the collection.
     size_t used_before_gc = used();
@@ -192,7 +193,7 @@ void TenuredGeneration::collect(bool   full,
   SerialOldTracer* gc_tracer = GenMarkSweep::gc_tracer();
   gc_tracer->report_gc_start(gch->gc_cause(), gc_timer->gc_start());
 
-  GenMarkSweep::invoke_at_safepoint(_level, ref_processor(), clear_all_soft_refs);
+  GenMarkSweep::invoke_at_safepoint(ref_processor(), clear_all_soft_refs);
 
   gc_timer->register_gc_end();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ public class SharedSecrets {
     private static JavaUtilZipFileAccess javaUtilZipFileAccess;
     private static JavaAWTAccess javaAWTAccess;
     private static JavaAWTFontAccess javaAWTFontAccess;
-    private static JavaBeansIntrospectorAccess javaBeansIntrospectorAccess;
+    private static JavaBeansAccess javaBeansAccess;
 
     public static JavaUtilJarAccess javaUtilJarAccess() {
         if (javaUtilJarAccess == null) {
@@ -194,11 +194,11 @@ public class SharedSecrets {
         return javaAWTFontAccess;
     }
 
-    public static JavaBeansIntrospectorAccess getJavaBeansIntrospectorAccess() {
-        return javaBeansIntrospectorAccess;
+    public static JavaBeansAccess getJavaBeansAccess() {
+        return javaBeansAccess;
     }
 
-    public static void setJavaBeansIntrospectorAccess(JavaBeansIntrospectorAccess access) {
-        javaBeansIntrospectorAccess = access;
+    public static void setJavaBeansAccess(JavaBeansAccess access) {
+        javaBeansAccess = access;
     }
 }

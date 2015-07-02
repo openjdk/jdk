@@ -68,7 +68,7 @@ class SSLServerSocketImpl extends SSLServerSocket
     private SSLContextImpl      sslContext;
 
     /* Do newly accepted connections require clients to authenticate? */
-    private byte                doClientAuth = SSLEngineImpl.clauth_none;
+    private ClientAuthType    clientAuthType = ClientAuthType.CLIENT_AUTH_NONE;
 
     /* Do new connections created here use the "server" mode of SSL? */
     private boolean             useServerMode = true;
@@ -230,13 +230,13 @@ class SSLServerSocketImpl extends SSLServerSocket
      */
     @Override
     public void setNeedClientAuth(boolean flag) {
-        doClientAuth = (flag ?
-            SSLEngineImpl.clauth_required : SSLEngineImpl.clauth_none);
+        clientAuthType = (flag ? ClientAuthType.CLIENT_AUTH_REQUIRED :
+                ClientAuthType.CLIENT_AUTH_NONE);
     }
 
     @Override
     public boolean getNeedClientAuth() {
-        return (doClientAuth == SSLEngineImpl.clauth_required);
+        return (clientAuthType == ClientAuthType.CLIENT_AUTH_REQUIRED);
     }
 
     /**
@@ -245,13 +245,13 @@ class SSLServerSocketImpl extends SSLServerSocket
      */
     @Override
     public void setWantClientAuth(boolean flag) {
-        doClientAuth = (flag ?
-            SSLEngineImpl.clauth_requested : SSLEngineImpl.clauth_none);
+        clientAuthType = (flag ? ClientAuthType.CLIENT_AUTH_REQUESTED :
+                ClientAuthType.CLIENT_AUTH_NONE);
     }
 
     @Override
     public boolean getWantClientAuth() {
-        return (doClientAuth == SSLEngineImpl.clauth_requested);
+        return (clientAuthType == ClientAuthType.CLIENT_AUTH_REQUESTED);
     }
 
     /**
@@ -341,7 +341,7 @@ class SSLServerSocketImpl extends SSLServerSocket
     @Override
     public Socket accept() throws IOException {
         SSLSocketImpl s = new SSLSocketImpl(sslContext, useServerMode,
-            enabledCipherSuites, doClientAuth, enableSessionCreation,
+            enabledCipherSuites, clientAuthType, enableSessionCreation,
             enabledProtocols, identificationProtocol, algorithmConstraints,
             sniMatchers, preferLocalCipherSuites);
 

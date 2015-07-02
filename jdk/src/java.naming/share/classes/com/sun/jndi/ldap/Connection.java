@@ -393,9 +393,14 @@ public final class Connection implements Runnable {
     BerDecoder readReply(LdapRequest ldr)
             throws IOException, NamingException {
         BerDecoder rber;
-        boolean waited = false;
 
-        while (((rber = ldr.getReplyBer()) == null) && !waited) {
+        // Track down elapsed time to workaround spurious wakeups
+        long elapsedMilli = 0;
+        long elapsedNano = 0;
+
+        while (((rber = ldr.getReplyBer()) == null) &&
+                (readTimeout <= 0 || elapsedMilli < readTimeout))
+        {
             try {
                 // If socket closed, don't even try
                 synchronized (this) {
@@ -409,11 +414,15 @@ public final class Connection implements Runnable {
                     rber = ldr.getReplyBer();
                     if (rber == null) {
                         if (readTimeout > 0) {  // Socket read timeout is specified
+                            long beginNano = System.nanoTime();
 
-                            // will be woken up before readTimeout only if reply is
+                            // will be woken up before readTimeout if reply is
                             // available
-                            ldr.wait(readTimeout);
-                            waited = true;
+                            ldr.wait(readTimeout - elapsedMilli);
+                            elapsedNano += (System.nanoTime() - beginNano);
+                            elapsedMilli += elapsedNano / 1000_000;
+                            elapsedNano %= 1000_000;
+
                         } else {
                             // no timeout is set so we wait infinitely until
                             // a response is received
@@ -430,7 +439,7 @@ public final class Connection implements Runnable {
             }
         }
 
-        if ((rber == null) && waited) {
+        if ((rber == null) && (elapsedMilli >= readTimeout)) {
             abandonRequest(ldr, null);
             throw new NamingException("LDAP response read timed out, timeout used:"
                             + readTimeout + "ms." );

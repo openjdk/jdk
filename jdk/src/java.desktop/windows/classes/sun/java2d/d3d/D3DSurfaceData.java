@@ -118,7 +118,7 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
 
     /**
      * To be used with getNativeResource() only.
-     * @see #getNativeResource()
+     * @see #getNativeResource
      */
     public static final int D3D_DEVICE_RESOURCE= 100;
     /*

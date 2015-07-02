@@ -1294,11 +1294,11 @@ static void setMulticastLoopbackMode(JNIEnv *env, jobject this, int fd,
 
 /*
  * Class:     java_net_PlainDatagramSocketImpl
- * Method:    socketSetOption
+ * Method:    socketSetOption0
  * Signature: (ILjava/lang/Object;)V
  */
 JNIEXPORT void JNICALL
-Java_java_net_PlainDatagramSocketImpl_socketSetOption(JNIEnv *env,
+Java_java_net_PlainDatagramSocketImpl_socketSetOption0(JNIEnv *env,
                                                       jobject this,
                                                       jint opt,
                                                       jobject value) {

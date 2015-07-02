@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package sun.awt;
 
 import java.awt.AWTException;
 import java.awt.BufferCapabilities;
-import java.awt.BufferCapabilities.FlipContents;
 import java.awt.Component;
 import java.awt.Toolkit;
 import java.awt.GraphicsConfiguration;
@@ -35,7 +34,6 @@ import java.awt.GraphicsDevice;
 import java.awt.Image;
 import java.awt.ImageCapabilities;
 import java.awt.Transparency;
-import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.color.ColorSpace;
 import java.awt.image.ComponentColorModel;
@@ -55,13 +53,12 @@ import sun.java2d.x11.X11SurfaceData;
 import sun.awt.image.OffScreenImage;
 import sun.awt.image.SunVolatileImage;
 import sun.awt.image.SurfaceManager;
-import sun.awt.X11ComponentPeer;
 
 /**
  * This is an implementation of a GraphicsConfiguration object for a
  * single X11 visual.
  *
- * @see GraphicsEnvironment
+ * @see java.awt.GraphicsEnvironment
  * @see GraphicsDevice
  */
 public class X11GraphicsConfig extends GraphicsConfiguration
@@ -314,7 +311,7 @@ public class X11GraphicsConfig extends GraphicsConfiguration
         return pGetBounds(screen.getScreen());
     }
 
-    public native Rectangle pGetBounds(int screenNum);
+    private native Rectangle pGetBounds(int screenNum);
 
     private static class XDBECapabilities extends BufferCapabilities {
         public XDBECapabilities() {

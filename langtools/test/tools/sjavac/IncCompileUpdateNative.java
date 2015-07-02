@@ -51,9 +51,10 @@ public class IncCompileUpdateNative extends SJavacTester {
     ToolBox tb = new ToolBox();
 
     void test() throws Exception {
-        Files.createDirectory(GENSRC);
-        Files.createDirectory(BIN);
-        Files.createDirectory(HEADERS);
+        clean(TEST_ROOT);
+        Files.createDirectories(GENSRC);
+        Files.createDirectories(BIN);
+        Files.createDirectories(HEADERS);
 
         initialCompile();
         incrementalCompileChangeNative();
@@ -69,22 +70,26 @@ public class IncCompileUpdateNative extends SJavacTester {
         System.out.println("\nIn incrementalCompileChangeNative() ");
         System.out.println("Verify that beta_B.h is rewritten again");
         tb.writeFile(GENSRC.resolve("beta/B.java"),
-                       "package beta; import alfa.omega.A; public class B {"+
-                       "private int b() { return A.DEFINITION; } "+
-                 "@java.lang.annotation.Native final static int alfa = 43; }");
+                     "package beta; import alfa.omega.A; public class B {"+
+                     "private int b() { return A.DEFINITION; } "+
+                      "@java.lang.annotation.Native final static int alfa = 43; }");
 
-        compile("gensrc", "-d", "bin", "-h", "headers", "-j", "1",
-                SERVER_ARG, "--log=debug");
+        compile(GENSRC.toString(),
+                "-d", BIN.toString(),
+                "-h", HEADERS.toString(),
+                "-j", "1",
+                SERVER_ARG,
+                "--log=debug");
         Map<String,Long> new_bin_state = collectState(BIN);
         verifyNewerFiles(previous_bin_state, new_bin_state,
-                         "bin/beta/B.class",
-                         "bin/beta/BINT.class",
-                         "bin/javac_state");
+                         BIN + "/beta/B.class",
+                         BIN + "/beta/BINT.class",
+                         BIN + "/javac_state");
         previous_bin_state = new_bin_state;
 
         Map<String,Long> new_headers_state = collectState(HEADERS);
         verifyNewerFiles(previous_headers_state, new_headers_state,
-                         "headers/beta_B.h");
+                         HEADERS + "/beta_B.h");
         previous_headers_state = new_headers_state;
     }
 }

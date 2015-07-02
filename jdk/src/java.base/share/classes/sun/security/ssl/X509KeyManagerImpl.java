@@ -190,7 +190,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
             if (session != null) {
                 ProtocolVersion protocolVersion =
                     ProtocolVersion.valueOf(session.getProtocol());
-                if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+                if (protocolVersion.useTLS12PlusSpec()) {
                     String[] peerSupportedSignAlgs = null;
 
                     if (session instanceof ExtendedSSLSession) {
@@ -218,7 +218,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
             if (session != null) {
                 ProtocolVersion protocolVersion =
                     ProtocolVersion.valueOf(session.getProtocol());
-                if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+                if (protocolVersion.useTLS12PlusSpec()) {
                     String[] peerSupportedSignAlgs = null;
 
                     if (session instanceof ExtendedSSLSession) {

@@ -51,6 +51,8 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     private static native void nativeSetNSWindowMenuBar(long nsWindowPtr, long menuBarPtr);
     private static native Insets nativeGetNSWindowInsets(long nsWindowPtr);
     private static native void nativeSetNSWindowBounds(long nsWindowPtr, double x, double y, double w, double h);
+    private static native void nativeSetNSWindowStandardFrame(long nsWindowPtr,
+            double x, double y, double w, double h);
     private static native void nativeSetNSWindowMinMax(long nsWindowPtr, double minW, double minH, double maxW, double maxH);
     private static native void nativePushNSWindowToBack(long nsWindowPtr);
     private static native void nativePushNSWindowToFront(long nsWindowPtr);
@@ -61,9 +63,9 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     private static native void nativeSetEnabled(long nsWindowPtr, boolean isEnabled);
     private static native void nativeSynthesizeMouseEnteredExitedEvents();
     private static native void nativeDispose(long nsWindowPtr);
-    private static native CPlatformWindow nativeGetTopmostPlatformWindowUnderMouse();
     private static native void nativeEnterFullScreenMode(long nsWindowPtr);
     private static native void nativeExitFullScreenMode(long nsWindowPtr);
+    static native CPlatformWindow nativeGetTopmostPlatformWindowUnderMouse();
 
     // Loger to report issues happened during execution but that do not affect functionality
     private static final PlatformLogger logger = PlatformLogger.getLogger("sun.lwawt.macosx.CPlatformWindow");
@@ -474,6 +476,10 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         nativeSetNSWindowBounds(getNSWindowPtr(), x, y, w, h);
     }
 
+    public void setMaximizedBounds(int x, int y, int w, int h) {
+        nativeSetNSWindowStandardFrame(getNSWindowPtr(), x, y, w, h);
+    }
+
     private boolean isMaximized() {
         return undecorated ? this.normalBounds != null
                 : CWrapper.NSWindow.isZoomed(getNSWindowPtr());
@@ -750,10 +756,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         setStyleBits(ALWAYS_ON_TOP, isAlwaysOnTop);
     }
 
-    public PlatformWindow getTopmostPlatformWindowUnderMouse(){
-        return CPlatformWindow.nativeGetTopmostPlatformWindowUnderMouse();
-    }
-
     @Override
     public void setOpacity(float opacity) {
         CWrapper.NSWindow.setAlphaValue(getNSWindowPtr(), opacity);
@@ -983,11 +985,11 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     }
 
     private void checkZoom() {
-        if (target instanceof Frame && isVisible()) {
-            Frame targetFrame = (Frame)target;
-            if (targetFrame.getExtendedState() != Frame.MAXIMIZED_BOTH && isMaximized()) {
+        if (peer != null) {
+            int state = peer.getState();
+            if (state != Frame.MAXIMIZED_BOTH && isMaximized()) {
                 deliverZoom(true);
-            } else if (targetFrame.getExtendedState() == Frame.MAXIMIZED_BOTH && !isMaximized()) {
+            } else if (state == Frame.MAXIMIZED_BOTH && !isMaximized()) {
                 deliverZoom(false);
             }
         }

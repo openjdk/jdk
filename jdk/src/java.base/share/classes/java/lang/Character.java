@@ -646,13 +646,11 @@ class Character implements java.io.Serializable, Comparable<Character> {
      */
     public static final class UnicodeBlock extends Subset {
         /**
-         * 510  - the expected number of enteties
+         * 510  - the expected number of entities
          * 0.75 - the default load factor of HashMap
          */
-        private static final int INITIAL_CAPACITY =
-                (int)(510 / 0.75f + 1.0f);
         private static Map<String, UnicodeBlock> map =
-                new HashMap<>(INITIAL_CAPACITY);
+                new HashMap<>((int)(510 / 0.75f + 1.0f));
 
         /**
          * Creates a UnicodeBlock with the given identifier name.

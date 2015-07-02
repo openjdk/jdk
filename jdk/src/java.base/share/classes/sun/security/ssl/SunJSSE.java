@@ -61,7 +61,7 @@ public abstract class SunJSSE extends java.security.Provider {
 
     private static String info = "Sun JSSE provider" +
         "(PKCS12, SunX509/PKIX key/trust factories, " +
-        "SSLv3/TLSv1/TLSv1.1/TLSv1.2)";
+        "SSLv3/TLSv1/TLSv1.1/TLSv1.2/DTLSv1.0/DTLSv1.2)";
 
     private static String fipsInfo =
         "Sun JSSE provider (FIPS mode, crypto provider ";
@@ -219,6 +219,13 @@ public abstract class SunJSSE extends java.security.Provider {
             put("Alg.Alias.SSLContext.SSL", "TLS");
             put("Alg.Alias.SSLContext.SSLv3", "TLSv1");
         }
+
+        put("SSLContext.DTLSv1.0",
+            "sun.security.ssl.SSLContextImpl$DTLS10Context");
+        put("SSLContext.DTLSv1.2",
+            "sun.security.ssl.SSLContextImpl$DTLS12Context");
+        put("SSLContext.DTLS",
+            "sun.security.ssl.SSLContextImpl$DTLSContext");
 
         put("SSLContext.Default",
             "sun.security.ssl.SSLContextImpl$DefaultSSLContext");

@@ -1369,11 +1369,12 @@ bool os::dll_address_to_library_name(address addr, char* buf,
 }
 
 bool os::dll_address_to_function_name(address addr, char *buf,
-                                      int buflen, int *offset) {
+                                      int buflen, int *offset,
+                                      bool demangle) {
   // buf is not optional, but offset is optional
   assert(buf != NULL, "sanity check");
 
-  if (Decoder::decode(addr, buf, buflen, offset)) {
+  if (Decoder::decode(addr, buf, buflen, offset, demangle)) {
     return true;
   }
   if (offset != NULL)  *offset  = -1;
@@ -1732,7 +1733,7 @@ void os::win32::print_windows_version(outputStream* st) {
   st->cr();
 }
 
-void os::pd_print_cpu_info(outputStream* st) {
+void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   // Nothing to do for now.
 }
 

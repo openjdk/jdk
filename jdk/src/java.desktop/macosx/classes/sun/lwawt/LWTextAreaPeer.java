@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  * questions.
  */
 
-
 package sun.lwawt;
 
 import java.awt.Component;
@@ -40,7 +39,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.text.Document;
-import javax.swing.text.JTextComponent;
 
 /**
  * Lightweight implementation of {@link TextAreaPeer}. Delegates most of the
@@ -75,12 +73,13 @@ final class LWTextAreaPeer
         super.initializeImpl();
         final int visibility = getTarget().getScrollbarVisibility();
         synchronized (getDelegateLock()) {
+            getTextComponent().setWrapStyleWord(true);
             setScrollBarVisibility(visibility);
         }
     }
 
     @Override
-    JTextComponent getTextComponent() {
+    JTextArea getTextComponent() {
         return getDelegate().getView();
     }
 
@@ -165,7 +164,7 @@ final class LWTextAreaPeer
             // JTextArea.replaceRange() is called.
             final Document document = getTextComponent().getDocument();
             document.removeDocumentListener(this);
-            getDelegate().getView().replaceRange(text, start, end);
+            getTextComponent().replaceRange(text, start, end);
             revalidate();
             postEvent(new TextEvent(getTarget(), TextEvent.TEXT_VALUE_CHANGED));
             document.addDocumentListener(this);

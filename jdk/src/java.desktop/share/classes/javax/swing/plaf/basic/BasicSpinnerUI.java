@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -989,7 +989,7 @@ public class BasicSpinnerUI extends SpinnerUI
                                 ((JSpinner.DefaultEditor)newEditor).getTextField();
                             if (tf != null) {
                                 if (tf.getFont() instanceof UIResource) {
-                                    tf.setFont(spinner.getFont());
+                                    tf.setFont(new FontUIResource(spinner.getFont()));
                                 }
                                 tf.addFocusListener(nextButtonHandler);
                                 tf.addFocusListener(previousButtonHandler);
@@ -1002,12 +1002,12 @@ public class BasicSpinnerUI extends SpinnerUI
                     }
                     else if ("font".equals(propertyName)) {
                         JComponent editor = spinner.getEditor();
-                        if (editor!=null && editor instanceof JSpinner.DefaultEditor) {
+                        if (editor instanceof JSpinner.DefaultEditor) {
                             JTextField tf =
                                 ((JSpinner.DefaultEditor)editor).getTextField();
                             if (tf != null) {
                                 if (tf.getFont() instanceof UIResource) {
-                                    tf.setFont(spinner.getFont());
+                                    tf.setFont(new FontUIResource(spinner.getFont()));
                                 }
                             }
                         }

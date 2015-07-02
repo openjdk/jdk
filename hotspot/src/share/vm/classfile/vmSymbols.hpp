@@ -854,6 +854,12 @@
    do_name(     implCompressMB_name,                               "implCompressMultiBlock")                            \
    do_signature(implCompressMB_signature,                          "([BII)I")                                           \
                                                                                                                         \
+  /* support for com.sun.crypto.provider.GHASH */                                                                       \
+  do_class(com_sun_crypto_provider_ghash, "com/sun/crypto/provider/GHASH")                                              \
+  do_intrinsic(_ghash_processBlocks, com_sun_crypto_provider_ghash, processBlocks_name, ghash_processBlocks_signature, F_S) \
+   do_name(processBlocks_name, "processBlocks")                                                                         \
+   do_signature(ghash_processBlocks_signature, "([BII[J[J)V")                                                           \
+                                                                                                                        \
   /* support for java.util.zip */                                                                                       \
   do_class(java_util_zip_CRC32,           "java/util/zip/CRC32")                                                        \
   do_intrinsic(_updateCRC32,               java_util_zip_CRC32,   update_name, int2_int_signature,               F_SN)  \
@@ -864,6 +870,12 @@
   do_intrinsic(_updateByteBufferCRC32,     java_util_zip_CRC32,   updateByteBuffer_name, updateByteBuffer_signature, F_SN) \
    do_name(     updateByteBuffer_name,                           "updateByteBuffer")                                    \
    do_signature(updateByteBuffer_signature,                      "(IJII)I")                                             \
+                                                                                                                        \
+  /* support for java.util.zip.CRC32C */                                                                                \
+  do_class(java_util_zip_CRC32C,          "java/util/zip/CRC32C")                                                       \
+  do_intrinsic(_updateBytesCRC32C,         java_util_zip_CRC32C,  updateBytes_name, updateBytes_signature,       F_S)   \
+  do_intrinsic(_updateDirectByteBufferCRC32C, java_util_zip_CRC32C, updateDirectByteBuffer_name, updateByteBuffer_signature, F_S) \
+   do_name(     updateDirectByteBuffer_name,                     "updateDirectByteBuffer")                              \
                                                                                                                         \
   /* support for sun.misc.Unsafe */                                                                                     \
   do_class(sun_misc_Unsafe,               "sun/misc/Unsafe")                                                            \

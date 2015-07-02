@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package javax.net.ssl;
 import java.util.List;
 
 /**
- * Extends the <code>SSLSession</code> interface to support additional
+ * Extends the {@code SSLSession} interface to support additional
  * session attributes.
  *
  * @since 1.7
@@ -39,8 +39,8 @@ public abstract class ExtendedSSLSession implements SSLSession {
      * is willing to use.
      * <p>
      * Note: this method is used to indicate to the peer which signature
-     * algorithms may be used for digital signatures in TLS 1.2. It is
-     * not meaningful for TLS versions prior to 1.2.
+     * algorithms may be used for digital signatures in TLS/DTLS 1.2. It is
+     * not meaningful for TLS/DTLS versions prior to 1.2.
      * <p>
      * The signature algorithm name must be a standard Java Security
      * name (such as "SHA1withRSA", "SHA256withECDSA", and so on).
@@ -52,7 +52,7 @@ public abstract class ExtendedSSLSession implements SSLSession {
      * Note: the local supported signature algorithms should conform to
      * the algorithm constraints specified by
      * {@link SSLParameters#getAlgorithmConstraints getAlgorithmConstraints()}
-     * method in <code>SSLParameters</code>.
+     * method in {@code SSLParameters}.
      *
      * @return An array of supported signature algorithms, in descending
      *     order of preference.  The return value is an empty array if
@@ -67,8 +67,8 @@ public abstract class ExtendedSSLSession implements SSLSession {
      * able to use.
      * <p>
      * Note: this method is used to indicate to the local side which signature
-     * algorithms may be used for digital signatures in TLS 1.2. It is
-     * not meaningful for TLS versions prior to 1.2.
+     * algorithms may be used for digital signatures in TLS/DTLS 1.2. It is
+     * not meaningful for TLS/DTLS versions prior to 1.2.
      * <p>
      * The signature algorithm name must be a standard Java Security
      * name (such as "SHA1withRSA", "SHA256withECDSA", and so on).

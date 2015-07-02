@@ -30,6 +30,8 @@ import java.util.concurrent.Future;
 
 class OutputBuffer {
     private static class OutputBufferException extends RuntimeException {
+        private static final long serialVersionUID = 8528687792643129571L;
+
         public OutputBufferException(Throwable cause) {
             super(cause);
         }

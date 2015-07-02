@@ -138,7 +138,7 @@ public final class ScriptRun
      * Get the script code for the script of the current script run.
      *
      * @return the script code for the script of the current script run.
-     * @see #Script
+     * @see Script
      */
     public int getScriptCode() {
         return scriptCode;
@@ -274,7 +274,7 @@ public final class ScriptRun
      * @param scriptOne one of the script codes.
      * @param scriptTwo the other script code.
      * @return <code>true</code> if the two scripts are the same.
-     * @see com.ibm.icu.lang.Script
+     * @see Script
      */
     private static boolean sameScript(int scriptOne, int scriptTwo) {
         return scriptOne == scriptTwo || scriptOne <= Script.INHERITED || scriptTwo <= Script.INHERITED;

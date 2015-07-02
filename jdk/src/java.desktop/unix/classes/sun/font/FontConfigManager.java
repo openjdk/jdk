@@ -436,12 +436,6 @@ public class FontConfigManager {
         return (fcInfo.compFont = new CompositeFont(physFont, jdkFont));
     }
 
-    /**
-     *
-     * @param locale
-     * @param fcFamily
-     * @return
-     */
     public FcCompFont[] getFontConfigFonts() {
         return fontConfigFonts;
     }

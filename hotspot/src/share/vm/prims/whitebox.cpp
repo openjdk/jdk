@@ -31,6 +31,7 @@
 #include "code/codeCache.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/metadataFactory.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/wbtestmethods/parserTests.hpp"
@@ -87,6 +88,10 @@ WB_END
 
 WB_ENTRY(jint, WB_GetVMPageSize(JNIEnv* env, jobject o))
   return os::vm_page_size();
+WB_END
+
+WB_ENTRY(jlong, WB_GetVMAllocationGranularity(JNIEnv* env, jobject o))
+  return os::vm_allocation_granularity();
 WB_END
 
 WB_ENTRY(jlong, WB_GetVMLargePageSize(JNIEnv* env, jobject o))
@@ -630,27 +635,27 @@ WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
 WB_END
 
 template <typename T>
-static bool GetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value, bool (*TAt)(const char*, T*, bool, bool)) {
+static bool GetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value, Flag::Error (*TAt)(const char*, T*, bool, bool)) {
   if (name == NULL) {
     return false;
   }
   ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
   const char* flag_name = env->GetStringUTFChars(name, NULL);
-  bool result = (*TAt)(flag_name, value, true, true);
+  Flag::Error result = (*TAt)(flag_name, value, true, true);
   env->ReleaseStringUTFChars(name, flag_name);
-  return result;
+  return (result == Flag::SUCCESS);
 }
 
 template <typename T>
-static bool SetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value, bool (*TAtPut)(const char*, T*, Flag::Flags)) {
+static bool SetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value, Flag::Error (*TAtPut)(const char*, T*, Flag::Flags)) {
   if (name == NULL) {
     return false;
   }
   ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
   const char* flag_name = env->GetStringUTFChars(name, NULL);
-  bool result = (*TAtPut)(flag_name, value, Flag::INTERNAL);
+  Flag::Error result = (*TAtPut)(flag_name, value, Flag::INTERNAL);
   env->ReleaseStringUTFChars(name, flag_name);
-  return result;
+  return (result == Flag::SUCCESS);
 }
 
 template <typename T>
@@ -706,6 +711,24 @@ WB_ENTRY(jobject, WB_GetBooleanVMFlag(JNIEnv* env, jobject o, jstring name))
   if (GetVMFlag <bool> (thread, env, name, &result, &CommandLineFlags::boolAt)) {
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
     return booleanBox(thread, env, result);
+  }
+  return NULL;
+WB_END
+
+WB_ENTRY(jobject, WB_GetIntVMFlag(JNIEnv* env, jobject o, jstring name))
+  int result;
+  if (GetVMFlag <int> (thread, env, name, &result, &CommandLineFlags::intAt)) {
+    ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+    return longBox(thread, env, result);
+  }
+  return NULL;
+WB_END
+
+WB_ENTRY(jobject, WB_GetUintVMFlag(JNIEnv* env, jobject o, jstring name))
+  uint result;
+  if (GetVMFlag <uint> (thread, env, name, &result, &CommandLineFlags::uintAt)) {
+    ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+    return longBox(thread, env, result);
   }
   return NULL;
 WB_END
@@ -769,6 +792,16 @@ WB_END
 WB_ENTRY(void, WB_SetBooleanVMFlag(JNIEnv* env, jobject o, jstring name, jboolean value))
   bool result = value == JNI_TRUE ? true : false;
   SetVMFlag <bool> (thread, env, name, &result, &CommandLineFlags::boolAtPut);
+WB_END
+
+WB_ENTRY(void, WB_SetIntVMFlag(JNIEnv* env, jobject o, jstring name, jlong value))
+  int result = value;
+  SetVMFlag <int> (thread, env, name, &result, &CommandLineFlags::intAtPut);
+WB_END
+
+WB_ENTRY(void, WB_SetUintVMFlag(JNIEnv* env, jobject o, jstring name, jlong value))
+  uint result = value;
+  SetVMFlag <uint> (thread, env, name, &result, &CommandLineFlags::uintAtPut);
 WB_END
 
 WB_ENTRY(void, WB_SetIntxVMFlag(JNIEnv* env, jobject o, jstring name, jlong value))
@@ -1179,6 +1212,15 @@ WB_ENTRY(jobject, WB_GetMethodStringOption(JNIEnv* env, jobject wb, jobject meth
   return NULL;
 WB_END
 
+WB_ENTRY(jboolean, WB_IsShared(JNIEnv* env, jobject wb, jobject obj))
+  oop obj_oop = JNIHandles::resolve(obj);
+  return MetaspaceShared::is_in_shared_space((void*)obj_oop);
+WB_END
+
+WB_ENTRY(jboolean, WB_AreSharedStringsIgnored(JNIEnv* env))
+  return StringTable::shared_string_ignored();
+WB_END
+
 //Some convenience methods to deal with objects from java
 int WhiteBox::offset_for_field(const char* field_name, oop object,
     Symbol* signature_symbol) {
@@ -1263,13 +1305,14 @@ void WhiteBox::register_methods(JNIEnv* env, jclass wbclass, JavaThread* thread,
 #define CC (char*)
 
 static JNINativeMethod methods[] = {
-  {CC"getObjectAddress0",   CC"(Ljava/lang/Object;)J", (void*)&WB_GetObjectAddress  },
-  {CC"getObjectSize0",      CC"(Ljava/lang/Object;)J", (void*)&WB_GetObjectSize     },
-  {CC"isObjectInOldGen0",   CC"(Ljava/lang/Object;)Z", (void*)&WB_isObjectInOldGen  },
-  {CC"getHeapOopSize",     CC"()I",                   (void*)&WB_GetHeapOopSize    },
-  {CC"getVMPageSize",      CC"()I",                   (void*)&WB_GetVMPageSize     },
-  {CC"getVMLargePageSize", CC"()J",                   (void*)&WB_GetVMLargePageSize},
-  {CC"isClassAlive0",      CC"(Ljava/lang/String;)Z", (void*)&WB_IsClassAlive      },
+  {CC"getObjectAddress0",                CC"(Ljava/lang/Object;)J", (void*)&WB_GetObjectAddress  },
+  {CC"getObjectSize0",                   CC"(Ljava/lang/Object;)J", (void*)&WB_GetObjectSize     },
+  {CC"isObjectInOldGen0",                CC"(Ljava/lang/Object;)Z", (void*)&WB_isObjectInOldGen  },
+  {CC"getHeapOopSize",                   CC"()I",                   (void*)&WB_GetHeapOopSize    },
+  {CC"getVMPageSize",                    CC"()I",                   (void*)&WB_GetVMPageSize     },
+  {CC"getVMAllocationGranularity",       CC"()J",                   (void*)&WB_GetVMAllocationGranularity },
+  {CC"getVMLargePageSize",               CC"()J",                   (void*)&WB_GetVMLargePageSize},
+  {CC"isClassAlive0",                    CC"(Ljava/lang/String;)Z", (void*)&WB_IsClassAlive      },
   {CC"parseCommandLine0",
       CC"(Ljava/lang/String;C[Lsun/hotspot/parser/DiagnosticCommand;)[Ljava/lang/Object;",
       (void*) &WB_ParseCommandLine
@@ -1336,6 +1379,8 @@ static JNINativeMethod methods[] = {
   {CC"isConstantVMFlag",   CC"(Ljava/lang/String;)Z", (void*)&WB_IsConstantVMFlag},
   {CC"isLockedVMFlag",     CC"(Ljava/lang/String;)Z", (void*)&WB_IsLockedVMFlag},
   {CC"setBooleanVMFlag",   CC"(Ljava/lang/String;Z)V",(void*)&WB_SetBooleanVMFlag},
+  {CC"setIntVMFlag",       CC"(Ljava/lang/String;J)V",(void*)&WB_SetIntVMFlag},
+  {CC"setUintVMFlag",      CC"(Ljava/lang/String;J)V",(void*)&WB_SetUintVMFlag},
   {CC"setIntxVMFlag",      CC"(Ljava/lang/String;J)V",(void*)&WB_SetIntxVMFlag},
   {CC"setUintxVMFlag",     CC"(Ljava/lang/String;J)V",(void*)&WB_SetUintxVMFlag},
   {CC"setUint64VMFlag",    CC"(Ljava/lang/String;J)V",(void*)&WB_SetUint64VMFlag},
@@ -1345,6 +1390,10 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_SetStringVMFlag},
   {CC"getBooleanVMFlag",   CC"(Ljava/lang/String;)Ljava/lang/Boolean;",
                                                       (void*)&WB_GetBooleanVMFlag},
+  {CC"getIntVMFlag",       CC"(Ljava/lang/String;)Ljava/lang/Long;",
+                                                      (void*)&WB_GetIntVMFlag},
+  {CC"getUintVMFlag",      CC"(Ljava/lang/String;)Ljava/lang/Long;",
+                                                      (void*)&WB_GetUintVMFlag},
   {CC"getIntxVMFlag",      CC"(Ljava/lang/String;)Ljava/lang/Long;",
                                                       (void*)&WB_GetIntxVMFlag},
   {CC"getUintxVMFlag",     CC"(Ljava/lang/String;)Ljava/lang/Long;",
@@ -1397,6 +1446,8 @@ static JNINativeMethod methods[] = {
   {CC"getMethodStringOption",
       CC"(Ljava/lang/reflect/Executable;Ljava/lang/String;)Ljava/lang/String;",
                                                       (void*)&WB_GetMethodStringOption},
+  {CC"isShared",           CC"(Ljava/lang/Object;)Z", (void*)&WB_IsShared },
+  {CC"areSharedStringsIgnored",           CC"()Z",    (void*)&WB_AreSharedStringsIgnored },
 };
 
 #undef CC

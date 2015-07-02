@@ -69,7 +69,7 @@ public class ProxyPrintGraphics extends ProxyGraphics
      * <code>Graphics</code> object, but with a new translation and
      * clip area.
      * Refer to
-     * {@link sun.print.ProxyGraphics#createGraphics}
+     * {@link sun.print.ProxyGraphics#create(int, int, int, int)}
      * for a complete description of this method.
      * <p>
      * @param      x   the <i>x</i> coordinate.

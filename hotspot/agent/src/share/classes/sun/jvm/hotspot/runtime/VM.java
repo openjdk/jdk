@@ -121,6 +121,8 @@ public class VM {
   private Flag[] commandLineFlags;
   private Map flagsMap;
 
+  private static Type intType;
+  private static Type uintType;
   private static Type intxType;
   private static Type uintxType;
   private static Type sizetType;
@@ -170,6 +172,28 @@ public class VM {
         return addr.getCIntegerAt(0, boolType.getSize(), boolType.isUnsigned()) != 0;
      }
 
+     public boolean isInt() {
+        return type.equals("int");
+     }
+
+     public long getInt() {
+        if (Assert.ASSERTS_ENABLED) {
+           Assert.that(isInt(), "not an int flag!");
+        }
+        return addr.getCIntegerAt(0, intType.getSize(), false);
+     }
+
+     public boolean isUInt() {
+        return type.equals("uint");
+     }
+
+     public long getUInt() {
+        if (Assert.ASSERTS_ENABLED) {
+           Assert.that(isUInt(), "not a uint flag!");
+        }
+        return addr.getCIntegerAt(0, uintType.getSize(), false);
+     }
+
      public boolean isIntx() {
         return type.equals("intx");
      }
@@ -206,6 +230,10 @@ public class VM {
      public String getValue() {
         if (isBool()) {
            return new Boolean(getBool()).toString();
+        } else if (isInt()) {
+           return new Long(getInt()).toString();
+        } else if (isUInt()) {
+           return new Long(getUInt()).toString();
         } else if (isIntx()) {
            return new Long(getIntx()).toString();
         } else if (isUIntx()) {
@@ -334,6 +362,8 @@ public class VM {
     heapWordSize = db.lookupIntConstant("HeapWordSize").intValue();
     oopSize  = db.lookupIntConstant("oopSize").intValue();
 
+    intType = db.lookupType("int");
+    uintType = db.lookupType("uint");
     intxType = db.lookupType("intx");
     uintxType = db.lookupType("uintx");
     sizetType = db.lookupType("size_t");

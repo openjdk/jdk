@@ -23,7 +23,6 @@
  * questions.
  */
 
-
 package sun.security.ssl;
 
 import java.io.*;
@@ -35,92 +34,61 @@ import sun.misc.HexDumpEncoder;
 
 
 /**
- * SSL 3.0 records, as written to a TCP stream.
- *
- * Each record has a message area that starts out with data supplied by the
- * application.  It may grow/shrink due to compression and will be modified
- * in place for mac-ing and encryption.
- *
- * Handshake records have additional needs, notably accumulation of a set
- * of hashes which are used to establish that handshaking was done right.
- * Handshake records usually have several handshake messages each, and we
- * need message-level control over what's hashed.
+ * {@code OutputRecord} takes care of the management of SSL/TLS/DTLS output
+ * records, including buffering, encryption, handshake messages marshal, etc.
  *
  * @author David Brownell
  */
-class OutputRecord extends ByteArrayOutputStream implements Record {
+abstract class OutputRecord extends ByteArrayOutputStream
+            implements Record, Closeable {
 
-    private HandshakeHash       handshakeHash;
-    private int                 lastHashed;
-    private boolean             firstMessage;
-    final private byte          contentType;
-    private int                 headerOffset;
+    /* Class and subclass dynamic debugging support */
+    static final Debug          debug = Debug.getInstance("ssl");
+
+    Authenticator               writeAuthenticator;
+    CipherBox                   writeCipher;
+
+    HandshakeHash               handshakeHash;
+    boolean                     firstMessage;
 
     // current protocol version, sent as record version
-    ProtocolVersion     protocolVersion;
+    ProtocolVersion             protocolVersion;
 
     // version for the ClientHello message. Only relevant if this is a
     // client handshake record. If set to ProtocolVersion.SSL20Hello,
     // the V3 client hello is converted to V2 format.
-    private ProtocolVersion     helloVersion;
+    ProtocolVersion             helloVersion;
 
-    /* Class and subclass dynamic debugging support */
-    static final Debug debug = Debug.getInstance("ssl");
+    // Is it the first application record to write?
+    boolean                     isFirstAppOutputRecord = true;
 
-    /*
-     * Default constructor makes a record supporting the maximum
-     * SSL record size.  It allocates the header bytes directly.
-     *
-     * The structure of the byte buffer looks like:
-     *
-     *     |---------+--------+-------+---------------------------------|
-     *     | unused  | header |  IV   | content, MAC/TAG, padding, etc. |
-     *     |    headerPlusMaxIVSize   |
-     *
-     * unused: unused part of the buffer of size
-     *
-     *             headerPlusMaxIVSize - header size - IV size
-     *
-     *         When this object is created, we don't know the protocol
-     *         version number, IV length, etc., so reserve space in front
-     *         to avoid extra data movement (copies).
-     * header: the header of an SSL record
-     * IV:     the optional IV/nonce field, it is only required for block
-     *         (TLS 1.1 or later) and AEAD cipher suites.
-     *
-     * @param type the content type for the record
-     */
-    OutputRecord(byte type, int size) {
-        super(size);
-        this.protocolVersion = ProtocolVersion.DEFAULT;
-        this.helloVersion = ProtocolVersion.DEFAULT_HELLO;
-        firstMessage = true;
-        count = headerPlusMaxIVSize;
-        contentType = type;
-        lastHashed = count;
-        headerOffset = headerPlusMaxIVSize - headerSize;
-    }
+    // packet size
+    int                         packetSize;
 
-    OutputRecord(byte type) {
-        this(type, recordSize(type));
-    }
+    // fragment size
+    int                         fragmentSize;
 
-    /**
-     * Get the size of the buffer we need for records of the specified
-     * type.
-     */
-    private static int recordSize(byte type) {
-        if ((type == ct_change_cipher_spec) || (type == ct_alert)) {
-            return maxAlertRecordSize;
-        } else {
-            return maxRecordSize;
-        }
-    }
+    // closed or not?
+    boolean                     isClosed;
 
     /*
-     * Updates the SSL version of this record.
+     * Mappings from V3 cipher suite encodings to their pure V2 equivalents.
+     * This is taken from the SSL V3 specification, Appendix E.
      */
-    synchronized void setVersion(ProtocolVersion protocolVersion) {
+    private static int[] V3toV2CipherMap1 =
+        {-1, -1, -1, 0x02, 0x01, -1, 0x04, 0x05, -1, 0x06, 0x07};
+    private static int[] V3toV2CipherMap3 =
+        {-1, -1, -1, 0x80, 0x80, -1, 0x80, 0x80, -1, 0x40, 0xC0};
+
+    OutputRecord() {
+        this.writeCipher = CipherBox.NULL;
+        this.firstMessage = true;
+        this.fragmentSize = Record.maxDataSize;
+
+        // Please set packetSize and protocolVersion in the implementation.
+    }
+
+    void setVersion(ProtocolVersion protocolVersion) {
         this.protocolVersion = protocolVersion;
     }
 
@@ -132,60 +100,12 @@ class OutputRecord extends ByteArrayOutputStream implements Record {
     }
 
     /*
-     * Reset the record so that it can be refilled, starting
-     * immediately after the header.
-     */
-    @Override
-    public synchronized void reset() {
-        super.reset();
-        count = headerPlusMaxIVSize;
-        lastHashed = count;
-        headerOffset = headerPlusMaxIVSize - headerSize;
-    }
-
-    /*
      * For handshaking, we need to be able to hash every byte above the
      * record marking layer.  This is where we're guaranteed to see those
      * bytes, so this is where we can hash them.
      */
     void setHandshakeHash(HandshakeHash handshakeHash) {
-        assert(contentType == ct_handshake);
         this.handshakeHash = handshakeHash;
-    }
-
-    /*
-     * We hash (the plaintext) on demand.  There is one place where
-     * we want to access the hash in the middle of a record:  client
-     * cert message gets hashed, and part of the same record is the
-     * client cert verify message which uses that hash.  So we track
-     * how much of each record we've hashed so far.
-     */
-    void doHashes() {
-        int len = count - lastHashed;
-
-        if (len > 0) {
-            hashInternal(buf, lastHashed, len);
-            lastHashed = count;
-        }
-    }
-
-    /*
-     * Need a helper function so we can hash the V2 hello correctly
-     */
-    private void hashInternal(byte buf [], int offset, int len) {
-        if (debug != null && Debug.isOn("data")) {
-            try {
-                HexDumpEncoder hd = new HexDumpEncoder();
-
-                System.out.println("[write] MD5 and SHA1 hashes:  len = "
-                    + len);
-                hd.encodeBuffer(new ByteArrayInputStream(buf,
-                    lastHashed, len), System.out);
-            } catch (IOException e) { }
-        }
-
-        handshakeHash.update(buf, lastHashed, len);
-        lastHashed = count;
     }
 
     /*
@@ -193,380 +113,351 @@ class OutputRecord extends ByteArrayOutputStream implements Record {
      * of sending empty records over the network.
      */
     boolean isEmpty() {
-        return count == headerPlusMaxIVSize;
-    }
-
-    /*
-     * Return true if the record is of an alert of the given description.
-     *
-     * Per SSL/TLS specifications, alert messages convey the severity of the
-     * message (warning or fatal) and a description of the alert. An alert
-     * is defined with a two bytes struct, {byte level, byte description},
-     * following after the header bytes.
-     */
-    boolean isAlert(byte description) {
-        if ((count > (headerPlusMaxIVSize + 1)) && (contentType == ct_alert)) {
-            return buf[headerPlusMaxIVSize + 1] == description;
-        }
-
         return false;
     }
 
-    /*
-     * Encrypt ... length may grow due to block cipher padding, or
-     * message authentication code or tag.
-     */
-    void encrypt(Authenticator authenticator, CipherBox box)
-            throws IOException {
+    boolean seqNumIsHuge() {
+        return (writeAuthenticator != null) &&
+                        writeAuthenticator.seqNumIsHuge();
+    }
 
-        // In case we are automatically flushing a handshake stream, make
-        // sure we have hashed the message first.
-        //
-        // when we support compression, hashing can't go here
-        // since it'll need to be done on the uncompressed data,
-        // and the MAC applies to the compressed data.
-        if (contentType == ct_handshake) {
-            doHashes();
+    // SSLEngine and SSLSocket
+    abstract void encodeAlert(byte level, byte description) throws IOException;
+
+    // SSLEngine and SSLSocket
+    abstract void encodeHandshake(byte[] buffer,
+            int offset, int length) throws IOException;
+
+    // SSLEngine and SSLSocket
+    abstract void encodeChangeCipherSpec() throws IOException;
+
+    // apply to SSLEngine only
+    Ciphertext encode(ByteBuffer[] sources, int offset, int length,
+            ByteBuffer destination) throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    // apply to SSLEngine only
+    void encodeV2NoCipher() throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    // apply to SSLSocket only
+    void deliver(byte[] source, int offset, int length) throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    // apply to SSLSocket only
+    void setDeliverStream(OutputStream outputStream) {
+        throw new UnsupportedOperationException();
+    }
+
+    // apply to SSLEngine only
+    Ciphertext acquireCiphertext(ByteBuffer destination) throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    void changeWriteCiphers(Authenticator writeAuthenticator,
+            CipherBox writeCipher) throws IOException {
+
+        encodeChangeCipherSpec();
+
+        /*
+         * Dispose of any intermediate state in the underlying cipher.
+         * For PKCS11 ciphers, this will release any attached sessions,
+         * and thus make finalization faster.
+         *
+         * Since MAC's doFinal() is called for every SSL/TLS packet, it's
+         * not necessary to do the same with MAC's.
+         */
+        writeCipher.dispose();
+
+        this.writeAuthenticator = writeAuthenticator;
+        this.writeCipher = writeCipher;
+        this.isFirstAppOutputRecord = true;
+    }
+
+    void changePacketSize(int packetSize) {
+        this.packetSize = packetSize;
+    }
+
+    void changeFragmentSize(int fragmentSize) {
+        this.fragmentSize = fragmentSize;
+    }
+
+    int getMaxPacketSize() {
+        return packetSize;
+    }
+
+    // apply to DTLS SSLEngine
+    void initHandshaker() {
+        // blank
+    }
+
+    @Override
+    synchronized public void close() throws IOException {
+        if (!isClosed) {
+            isClosed = true;
+            writeCipher.dispose();
+        }
+    }
+
+    //
+    // shared helpers
+    //
+
+    // Encrypt a fragment and wrap up a record.
+    //
+    // To be consistent with the spec of SSLEngine.wrap() methods, the
+    // destination ByteBuffer's position is updated to reflect the amount
+    // of data produced.  The limit remains the same.
+    static long encrypt(Authenticator authenticator,
+            CipherBox encCipher, byte contentType, ByteBuffer destination,
+            int headerOffset, int dstLim, int headerSize,
+            ProtocolVersion protocolVersion, boolean isDTLS) {
+
+        byte[] sequenceNumber = null;
+        int dstContent = destination.position();
+
+        // Acquire the current sequence number before using.
+        if (isDTLS) {
+            sequenceNumber = authenticator.sequenceNumber();
         }
 
-        // Requires message authentication code for stream and block
-        // cipher suites.
+        // "flip" but skip over header again, add MAC & encrypt
         if (authenticator instanceof MAC) {
             MAC signer = (MAC)authenticator;
             if (signer.MAClen() != 0) {
-                byte[] hash = signer.compute(contentType, buf,
-                    headerPlusMaxIVSize, count - headerPlusMaxIVSize, false);
-                write(hash);
+                byte[] hash = signer.compute(contentType, destination, false);
+
+                /*
+                 * position was advanced to limit in MAC compute above.
+                 *
+                 * Mark next area as writable (above layers should have
+                 * established that we have plenty of room), then write
+                 * out the hash.
+                 */
+                destination.limit(destination.limit() + hash.length);
+                destination.put(hash);
+
+                // reset the position and limit
+                destination.limit(destination.position());
+                destination.position(dstContent);
             }
         }
 
-        if (!box.isNullCipher()) {
-            // Requires explicit IV/nonce for CBC/AEAD cipher suites for
-            // TLS 1.1 or later.
-            if ((protocolVersion.v >= ProtocolVersion.TLS11.v) &&
-                                    (box.isCBCMode() || box.isAEADMode())) {
-                byte[] nonce = box.createExplicitNonce(authenticator,
-                                    contentType, count - headerPlusMaxIVSize);
-                int offset = headerPlusMaxIVSize - nonce.length;
-                System.arraycopy(nonce, 0, buf, offset, nonce.length);
-                headerOffset = offset - headerSize;
-            } else {
-                headerOffset = headerPlusMaxIVSize - headerSize;
+        if (!encCipher.isNullCipher()) {
+            if (protocolVersion.useTLS11PlusSpec() &&
+                    (encCipher.isCBCMode() || encCipher.isAEADMode())) {
+                byte[] nonce = encCipher.createExplicitNonce(
+                        authenticator, contentType, destination.remaining());
+                destination.position(headerOffset + headerSize);
+                destination.put(nonce);
             }
-
-            // encrypt the content
-            int offset = headerPlusMaxIVSize;
-            if (!box.isAEADMode()) {
-                // The explicit IV can be encrypted.
-                offset = headerOffset + headerSize;
+            if (!encCipher.isAEADMode()) {
+                // The explicit IV in TLS 1.1 and later can be encrypted.
+                destination.position(headerOffset + headerSize);
             }   // Otherwise, DON'T encrypt the nonce_explicit for AEAD mode
 
-            count = offset + box.encrypt(buf, offset, count - offset);
-        }
-    }
-
-    /*
-     * Tell how full the buffer is ... for filling it with application or
-     * handshake data.
-     */
-    final int availableDataBytes() {
-        int dataSize = count - headerPlusMaxIVSize;
-        return maxDataSize - dataSize;
-    }
-
-    /*
-     * Increases the capacity if necessary to ensure that it can hold
-     * at least the number of elements specified by the minimum
-     * capacity argument.
-     *
-     * Note that the increased capacity is only can be used for held
-     * record buffer. Please DO NOT update the availableDataBytes()
-     * according to the expended buffer capacity.
-     *
-     * @see availableDataBytes()
-     */
-    private void ensureCapacity(int minCapacity) {
-        // overflow-conscious code
-        if (minCapacity > buf.length) {
-            buf = Arrays.copyOf(buf, minCapacity);
-        }
-    }
-
-    /*
-     * Return the type of SSL record that's buffered here.
-     */
-    final byte contentType() {
-        return contentType;
-    }
-
-    /*
-     * Write the record out on the stream.  Note that you must have (in
-     * order) compressed the data, appended the MAC, and encrypted it in
-     * order for the record to be understood by the other end.  (Some of
-     * those steps will be null early in handshaking.)
-     *
-     * Note that this does no locking for the connection, it's required
-     * that synchronization be done elsewhere.  Also, this does its work
-     * in a single low level write, for efficiency.
-     */
-    void write(OutputStream s, boolean holdRecord,
-            ByteArrayOutputStream heldRecordBuffer) throws IOException {
-
-        /*
-         * Don't emit content-free records.  (Even change cipher spec
-         * messages have a byte of data!)
-         */
-        if (count == headerPlusMaxIVSize) {
-            return;
-        }
-
-        int length = count - headerOffset - headerSize;
-        // "should" really never write more than about 14 Kb...
-        if (length < 0) {
-            throw new SSLException("output record size too small: "
-                + length);
-        }
-
-        if (debug != null
-                && (Debug.isOn("record") || Debug.isOn("handshake"))) {
-            if ((debug != null && Debug.isOn("record"))
-                    || contentType() == ct_change_cipher_spec)
-                System.out.println(Thread.currentThread().getName()
-                    // v3.0/v3.1 ...
-                    + ", WRITE: " + protocolVersion
-                    + " " + InputRecord.contentName(contentType())
-                    + ", length = " + length);
-        }
-
-        /*
-         * If this is the initial ClientHello on this connection and
-         * we're not trying to resume a (V3) session then send a V2
-         * ClientHello instead so we can detect V2 servers cleanly.
-         */
-         if (firstMessage && useV2Hello()) {
-            byte[] v3Msg = new byte[length - 4];
-            System.arraycopy(buf, headerPlusMaxIVSize + 4,
-                                        v3Msg, 0, v3Msg.length);
-            headerOffset = 0;   // reset the header offset
-            V3toV2ClientHello(v3Msg);
-            handshakeHash.reset();
-            lastHashed = 2;
-            doHashes();
-            if (debug != null && Debug.isOn("record"))  {
-                System.out.println(
-                    Thread.currentThread().getName()
-                    + ", WRITE: SSLv2 client hello message"
-                    + ", length = " + (count - 2)); // 2 byte SSLv2 header
-            }
+            // Encrypt may pad, so again the limit may be changed.
+            encCipher.encrypt(destination, dstLim);
         } else {
-            /*
-             * Fill out the header, write it and the message.
-             */
-            buf[headerOffset + 0] = contentType;
-            buf[headerOffset + 1] = protocolVersion.major;
-            buf[headerOffset + 2] = protocolVersion.minor;
-            buf[headerOffset + 3] = (byte)(length >> 8);
-            buf[headerOffset + 4] = (byte)(length);
+            destination.position(destination.limit());
         }
-        firstMessage = false;
 
-        /*
-         * The upper levels may want us to delay sending this packet so
-         * multiple TLS Records can be sent in one (or more) TCP packets.
-         * If so, add this packet to the heldRecordBuffer.
-         *
-         * NOTE:  all writes have been synchronized by upper levels.
-         */
-        int debugOffset = 0;
-        if (holdRecord) {
-            /*
-             * If holdRecord is true, we must have a heldRecordBuffer.
-             *
-             * Don't worry about the override of writeBuffer(), because
-             * when holdRecord is true, the implementation in this class
-             * will be used.
-             */
-            writeBuffer(heldRecordBuffer,
-                        buf, headerOffset, count - headerOffset, debugOffset);
+        // Finish out the record header.
+        int fragLen = destination.limit() - headerOffset - headerSize;
+
+        destination.put(headerOffset, contentType);         // content type
+        destination.put(headerOffset + 1, protocolVersion.major);
+        destination.put(headerOffset + 2, protocolVersion.minor);
+        if (!isDTLS) {
+            // fragment length
+            destination.put(headerOffset + 3, (byte)(fragLen >> 8));
+            destination.put(headerOffset + 4, (byte)fragLen);
         } else {
-            // It's time to send, do we have buffered data?
-            // May or may not have a heldRecordBuffer.
-            if (heldRecordBuffer != null && heldRecordBuffer.size() > 0) {
-                int heldLen = heldRecordBuffer.size();
+            // epoch and sequence_number
+            destination.put(headerOffset + 3, sequenceNumber[0]);
+            destination.put(headerOffset + 4, sequenceNumber[1]);
+            destination.put(headerOffset + 5, sequenceNumber[2]);
+            destination.put(headerOffset + 6, sequenceNumber[3]);
+            destination.put(headerOffset + 7, sequenceNumber[4]);
+            destination.put(headerOffset + 8, sequenceNumber[5]);
+            destination.put(headerOffset + 9, sequenceNumber[6]);
+            destination.put(headerOffset + 10, sequenceNumber[7]);
 
-                // Ensure the capacity of this buffer.
-                int newCount = count + heldLen - headerOffset;
-                ensureCapacity(newCount);
+            // fragment length
+            destination.put(headerOffset + 11, (byte)(fragLen >> 8));
+            destination.put(headerOffset + 12, (byte)fragLen);
 
-                // Slide everything in the buffer to the right.
-                System.arraycopy(buf, headerOffset,
-                                    buf, heldLen, count - headerOffset);
+            // Increase the sequence number for next use.
+            authenticator.increaseSequenceNumber();
+        }
 
-                // Prepend the held record to the buffer.
-                System.arraycopy(
-                    heldRecordBuffer.toByteArray(), 0, buf, 0, heldLen);
-                count = newCount;
-                headerOffset = 0;
+        // Update destination position to reflect the amount of data produced.
+        destination.position(destination.limit());
 
-                // Clear the held buffer.
-                heldRecordBuffer.reset();
+        return Authenticator.toLong(sequenceNumber);
+    }
 
-                // The held buffer has been dumped, set the debug dump offset.
-                debugOffset = heldLen;
+    // Encrypt a fragment and wrap up a record.
+    //
+    // Uses the internal expandable buf variable and the current
+    // protocolVersion variable.
+    void encrypt(Authenticator authenticator,
+            CipherBox encCipher, byte contentType, int headerSize) {
+
+        int position = headerSize + writeCipher.getExplicitNonceSize();
+
+        // "flip" but skip over header again, add MAC & encrypt
+        int macLen = 0;
+        if (authenticator instanceof MAC) {
+            MAC signer = (MAC)authenticator;
+            macLen = signer.MAClen();
+            if (macLen != 0) {
+                byte[] hash = signer.compute(contentType,
+                        buf, position, (count - position), false);
+
+                write(hash, 0, hash.length);
             }
-            writeBuffer(s, buf, headerOffset,
-                        count - headerOffset, debugOffset);
         }
 
-        reset();
-    }
+        if (!encCipher.isNullCipher()) {
+            // Requires explicit IV/nonce for CBC/AEAD cipher suites for
+            // TLS 1.1 or later.
+            if (protocolVersion.useTLS11PlusSpec() &&
+                    (encCipher.isCBCMode() || encCipher.isAEADMode())) {
 
-    /*
-     * Actually do the write here.  For SSLEngine's HS data,
-     * we'll override this method and let it take the appropriate
-     * action.
-     */
-    void writeBuffer(OutputStream s, byte [] buf, int off, int len,
-            int debugOffset) throws IOException {
-        s.write(buf, off, len);
-        s.flush();
+                byte[] nonce = encCipher.createExplicitNonce(
+                        authenticator, contentType, (count - position));
+                int noncePos = position - nonce.length;
+                System.arraycopy(nonce, 0, buf, noncePos, nonce.length);
+            }
 
-        // Output only the record from the specified debug offset.
-        if (debug != null && Debug.isOn("packet")) {
-            try {
-                HexDumpEncoder hd = new HexDumpEncoder();
+            if (!encCipher.isAEADMode()) {
+                // The explicit IV in TLS 1.1 and later can be encrypted.
+                position = headerSize;
+            }   // Otherwise, DON'T encrypt the nonce_explicit for AEAD mode
 
-                System.out.println("[Raw write]: length = " +
-                                                    (len - debugOffset));
-                hd.encodeBuffer(new ByteArrayInputStream(buf,
-                    off + debugOffset, len - debugOffset), System.out);
-            } catch (IOException e) { }
+            // increase buf capacity if necessary
+            int fragSize = count - position;
+            int packetSize =
+                    encCipher.calculatePacketSize(fragSize, macLen, headerSize);
+            if (packetSize > (buf.length - position)) {
+                byte[] newBuf = new byte[position + packetSize];
+                System.arraycopy(buf, 0, newBuf, 0, count);
+                buf = newBuf;
+            }
+
+            // Encrypt may pad, so again the count may be changed.
+            count = position +
+                    encCipher.encrypt(buf, position, (count - position));
         }
+
+        // Fill out the header, write it and the message.
+        int fragLen = count - headerSize;
+        buf[0] = contentType;
+        buf[1] = protocolVersion.major;
+        buf[2] = protocolVersion.minor;
+        buf[3] = (byte)((fragLen >> 8) & 0xFF);
+        buf[4] = (byte)(fragLen & 0xFF);
     }
 
-    /*
-     * Return whether the buffer contains a ClientHello message that should
-     * be converted to V2 format.
-     */
-    private boolean useV2Hello() {
-        return firstMessage
-            && (helloVersion == ProtocolVersion.SSL20Hello)
-            && (contentType == ct_handshake)
-            && (buf[headerOffset + 5] == HandshakeMessage.ht_client_hello)
-                                            //  5: recode header size
-            && (buf[headerPlusMaxIVSize + 4 + 2 + 32] == 0);
-                                            // V3 session ID is empty
-                                            //  4: handshake header size
-                                            //  2: client_version in ClientHello
-                                            // 32: random in ClientHello
-    }
+    static ByteBuffer encodeV2ClientHello(
+            byte[] fragment, int offset, int length) throws IOException {
 
-    /*
-     * Detect "old" servers which are capable of SSL V2.0 protocol ... for
-     * example, Netscape Commerce 1.0 servers.  The V3 message is in the
-     * header and the bytes passed as parameter.  This routine translates
-     * the V3 message into an equivalent V2 one.
-     *
-     * Note that the translation will strip off all hello extensions as
-     * SSL V2.0 does not support hello extension.
-     */
-    private void V3toV2ClientHello(byte v3Msg []) throws SSLException {
-        int v3SessionIdLenOffset = 2 + 32; // version + nonce
-        int v3SessionIdLen = v3Msg[v3SessionIdLenOffset];
-        int v3CipherSpecLenOffset = v3SessionIdLenOffset + 1 + v3SessionIdLen;
-        int v3CipherSpecLen = ((v3Msg[v3CipherSpecLenOffset] & 0xff) << 8) +
-          (v3Msg[v3CipherSpecLenOffset + 1] & 0xff);
-        int cipherSpecs = v3CipherSpecLen / 2; // 2 bytes each in V3
+        int v3SessIdLenOffset = offset + 34;      //  2: client_version
+                                                  // 32: random
+
+        int v3SessIdLen = fragment[v3SessIdLenOffset];
+        int v3CSLenOffset = v3SessIdLenOffset + 1 + v3SessIdLen;
+        int v3CSLen = ((fragment[v3CSLenOffset] & 0xff) << 8) +
+                       (fragment[v3CSLenOffset + 1] & 0xff);
+        int cipherSpecs = v3CSLen / 2;        // 2: cipher spec size
+
+        // Estimate the max V2ClientHello message length
+        //
+        // 11: header size
+        // (cipherSpecs * 6): cipher_specs
+        //    6: one cipher suite may need 6 bytes, see V3toV2CipherSuite.
+        // 3: placeholder for the TLS_EMPTY_RENEGOTIATION_INFO_SCSV
+        //    signaling cipher suite
+        // 32: challenge size
+        int v2MaxMsgLen = 11 + (cipherSpecs * 6) + 3 + 32;
+
+        // Create a ByteBuffer backed by an accessible byte array.
+        byte[] dstBytes = new byte[v2MaxMsgLen];
+        ByteBuffer dstBuf = ByteBuffer.wrap(dstBytes);
 
         /*
-         * Copy over the cipher specs. We don't care about actually translating
-         * them for use with an actual V2 server since we only talk V3.
-         * Therefore, just copy over the V3 cipher spec values with a leading
-         * 0.
+         * Copy over the cipher specs. We don't care about actually
+         * translating them for use with an actual V2 server since
+         * we only talk V3.  Therefore, just copy over the V3 cipher
+         * spec values with a leading 0.
          */
-        int v3CipherSpecOffset = v3CipherSpecLenOffset + 2; // skip length
-        int v2CipherSpecLen = 0;
-        count = 11;
+        int v3CSOffset = v3CSLenOffset + 2;   // skip length field
+        int v2CSLen = 0;
+
+        dstBuf.position(11);
         boolean containsRenegoInfoSCSV = false;
         for (int i = 0; i < cipherSpecs; i++) {
             byte byte1, byte2;
 
-            byte1 = v3Msg[v3CipherSpecOffset++];
-            byte2 = v3Msg[v3CipherSpecOffset++];
-            v2CipherSpecLen += V3toV2CipherSuite(byte1, byte2);
+            byte1 = fragment[v3CSOffset++];
+            byte2 = fragment[v3CSOffset++];
+            v2CSLen += V3toV2CipherSuite(dstBuf, byte1, byte2);
             if (!containsRenegoInfoSCSV &&
-                        byte1 == (byte)0x00 && byte2 == (byte)0xFF) {
+                    byte1 == (byte)0x00 && byte2 == (byte)0xFF) {
                 containsRenegoInfoSCSV = true;
             }
         }
 
         if (!containsRenegoInfoSCSV) {
-            v2CipherSpecLen += V3toV2CipherSuite((byte)0x00, (byte)0xFF);
+            v2CSLen += V3toV2CipherSuite(dstBuf, (byte)0x00, (byte)0xFF);
         }
+
+        /*
+         * Copy in the nonce.
+         */
+        dstBuf.put(fragment, (offset + 2), 32);
 
         /*
          * Build the first part of the V3 record header from the V2 one
          * that's now buffered up.  (Lengths are fixed up later).
          */
-        buf[2] = HandshakeMessage.ht_client_hello;
-        buf[3] = v3Msg[0];      // major version
-        buf[4] = v3Msg[1];      // minor version
-        buf[5] = (byte)(v2CipherSpecLen >>> 8);
-        buf[6] = (byte)v2CipherSpecLen;
-        buf[7] = 0;
-        buf[8] = 0;             // always no session
-        buf[9] = 0;
-        buf[10] = 32;           // nonce length (always 32 in V3)
+        int msgLen = dstBuf.position() - 2;   // Exclude the legth field itself
+        dstBuf.position(0);
+        dstBuf.put((byte)(0x80 | ((msgLen >>> 8) & 0xFF)));  // pos: 0
+        dstBuf.put((byte)(msgLen & 0xFF));                   // pos: 1
+        dstBuf.put(HandshakeMessage.ht_client_hello);        // pos: 2
+        dstBuf.put(fragment[offset]);         // major version, pos: 3
+        dstBuf.put(fragment[offset + 1]);     // minor version, pos: 4
+        dstBuf.put((byte)(v2CSLen >>> 8));                   // pos: 5
+        dstBuf.put((byte)(v2CSLen & 0xFF));                  // pos: 6
+        dstBuf.put((byte)0x00);           // session_id_length, pos: 7
+        dstBuf.put((byte)0x00);                              // pos: 8
+        dstBuf.put((byte)0x00);           // challenge_length,  pos: 9
+        dstBuf.put((byte)32);                                // pos: 10
 
-        /*
-         * Copy in the nonce.
-         */
-        System.arraycopy(v3Msg, 2, buf, count, 32);
-        count += 32;
+        dstBuf.position(0);
+        dstBuf.limit(msgLen + 2);
 
-        /*
-         * Set the length of the message.
-         */
-        count -= 2; // don't include length field itself
-        buf[0] = (byte)(count >>> 8);
-        buf[0] |= 0x80;
-        buf[1] = (byte)(count);
-        count += 2;
+        return dstBuf;
     }
 
-    /*
-     * Mappings from V3 cipher suite encodings to their pure V2 equivalents.
-     * This is taken from the SSL V3 specification, Appendix E.
-     */
-    private static int[] V3toV2CipherMap1 =
-        {-1, -1, -1, 0x02, 0x01, -1, 0x04, 0x05, -1, 0x06, 0x07};
-    private static int[] V3toV2CipherMap3 =
-        {-1, -1, -1, 0x80, 0x80, -1, 0x80, 0x80, -1, 0x40, 0xC0};
+    private static int V3toV2CipherSuite(ByteBuffer dstBuf,
+            byte byte1, byte byte2) {
+        dstBuf.put((byte)0);
+        dstBuf.put(byte1);
+        dstBuf.put(byte2);
 
-    /*
-     * See which matching pure-V2 cipher specs we need to include.
-     * We are including these not because we are actually prepared
-     * to talk V2 but because the Oracle Web Server insists on receiving
-     * at least 1 "pure V2" cipher suite that it supports and returns an
-     * illegal_parameter alert unless one is present. Rather than mindlessly
-     * claiming to implement all documented pure V2 cipher suites the code below
-     * just claims to implement the V2 cipher suite that is "equivalent"
-     * in terms of cipher algorithm & exportability with the actual V3 cipher
-     * suite that we do support.
-     */
-    private int V3toV2CipherSuite(byte byte1, byte byte2) {
-        buf[count++] = 0;
-        buf[count++] = byte1;
-        buf[count++] = byte2;
-
-        if (((byte2 & 0xff) > 0xA) ||
-                (V3toV2CipherMap1[byte2] == -1)) {
+        if (((byte2 & 0xff) > 0xA) || (V3toV2CipherMap1[byte2] == -1)) {
             return 3;
         }
 
-        buf[count++] = (byte)V3toV2CipherMap1[byte2];
-        buf[count++] = 0;
-        buf[count++] = (byte)V3toV2CipherMap3[byte2];
+        dstBuf.put((byte)V3toV2CipherMap1[byte2]);
+        dstBuf.put((byte)0);
+        dstBuf.put((byte)V3toV2CipherMap3[byte2]);
 
         return 6;
     }

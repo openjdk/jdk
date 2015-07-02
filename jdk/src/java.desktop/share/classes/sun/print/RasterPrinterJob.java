@@ -498,7 +498,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * Throws <code>PrinterException</code> if the specified service
      * cannot support the <code>Pageable</code> and
      * <code>Printable</code> interfaces necessary to support 2D printing.
-     * @param a print service which supports 2D printing.
+     * @param service print service which supports 2D printing.
      *
      * @throws PrinterException if the specified service does not support
      * 2D printing or no longer available.
@@ -1024,7 +1024,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * The pages in the document to be printed by this PrinterJob
      * are drawn by the Printable object 'painter'. The PageFormat
      * for each page is the default page format.
-     * @param Printable Called to render each page of the document.
+     * @param painter Called to render each page of the document.
      */
     public void setPrintable(Printable painter) {
         setPageable(new OpenBook(defaultPage(new PageFormat()), painter));
@@ -1034,9 +1034,9 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * The pages in the document to be printed by this PrinterJob
      * are drawn by the Printable object 'painter'. The PageFormat
      * of each page is 'format'.
-     * @param Printable Called to render each page of the document.
-     * @param PageFormat The size and orientation of each page to
-     *                   be printed.
+     * @param painter Called to render each page of the document.
+     * @param format  The size and orientation of each page to
+     *                be printed.
      */
     public void setPrintable(Printable painter, PageFormat format) {
         setPageable(new OpenBook(format, painter));
@@ -1048,7 +1048,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * Pageable instance 'document'. 'document' will be queried
      * for the number of pages as well as the PageFormat and
      * Printable for each page.
-     * @param Pageable The document to be printed. It may not be null.
+     * @param document The document to be printed. It may not be null.
      * @exception NullPointerException the Pageable passed in was null.
      * @see PageFormat
      * @see Printable
