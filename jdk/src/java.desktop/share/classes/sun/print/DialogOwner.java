@@ -45,10 +45,9 @@ public final class DialogOwner
     private Frame dlgOwner;
 
     /**
-     * Construct a new dialog type selection enumeration value with the
-     * given integer value.
+     * Construct a new dialog owner attribute with the given frame.
      *
-     * @param  value  Integer value.
+     * @param  frame the frame that owns the print dialog
      */
     public DialogOwner(Frame frame) {
         dlgOwner = frame;

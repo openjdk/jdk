@@ -847,11 +847,11 @@ Java_java_net_PlainSocketImpl_socketShutdown(JNIEnv *env, jobject this,
 
 /*
  * Class:     java_net_PlainSocketImpl
- * Method:    socketSetOption
+ * Method:    socketSetOption0
  * Signature: (IZLjava/lang/Object;)V
  */
 JNIEXPORT void JNICALL
-Java_java_net_PlainSocketImpl_socketSetOption(JNIEnv *env, jobject this,
+Java_java_net_PlainSocketImpl_socketSetOption0(JNIEnv *env, jobject this,
                                               jint cmd, jboolean on,
                                               jobject value) {
     int fd;

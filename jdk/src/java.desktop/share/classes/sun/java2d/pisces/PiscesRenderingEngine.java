@@ -108,11 +108,11 @@ public class PiscesRenderingEngine extends RenderingEngine {
      * The specified {@code src} {@link Shape} is widened according
      * to the parameters specified by the {@link BasicStroke} object.
      * Adjustments are made to the path as appropriate for the
-     * {@link VALUE_STROKE_NORMALIZE} hint if the {@code normalize}
-     * boolean parameter is true.
+     * {@link java.awt.RenderingHints#VALUE_STROKE_NORMALIZE} hint if the
+     * {@code normalize} boolean parameter is true.
      * Adjustments are made to the path as appropriate for the
-     * {@link VALUE_ANTIALIAS_ON} hint if the {@code antialias}
-     * boolean parameter is true.
+     * {@link java.awt.RenderingHints#VALUE_ANTIALIAS_ON} hint if the
+     * {@code antialias} boolean parameter is true.
      * <p>
      * The geometry of the widened path is forwarded to the indicated
      * {@link PathConsumer2D} object as it is calculated.

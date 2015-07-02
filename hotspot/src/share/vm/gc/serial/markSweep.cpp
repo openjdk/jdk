@@ -313,7 +313,7 @@ void MarkSweep::restore_marks() {
 
 MarkSweep::IsAliveClosure   MarkSweep::is_alive;
 
-bool MarkSweep::IsAliveClosure::do_object_b(oop p) { return p->is_gc_marked(); }
+bool MarkSweep::IsAliveClosure::do_object_b(oop p) { return p->is_gc_marked() || is_archive_object(p); }
 
 MarkSweep::KeepAliveClosure MarkSweep::keep_alive;
 

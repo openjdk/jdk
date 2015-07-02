@@ -192,14 +192,14 @@ public class XMenuWindow extends XBaseMenuWindow {
      ************************************************/
 
     /**
-     * @see XBaseMenuWindow.getParentMenuWindow()
+     * @see XBaseMenuWindow#getParentMenuWindow()
      */
     protected XBaseMenuWindow getParentMenuWindow() {
         return (menuPeer != null) ? menuPeer.getContainer() : null;
     }
 
     /**
-     * @see XBaseMenuWindow.map()
+     * @see XBaseMenuWindow#map()
      */
     protected MappingData map() {
         //TODO:Implement popup-menu caption mapping and painting and tear-off
@@ -274,7 +274,7 @@ public class XMenuWindow extends XBaseMenuWindow {
     }
 
     /**
-     * @see XBaseMenuWindow.getSubmenuBounds()
+     * @see XBaseMenuWindow#getSubmenuBounds
      */
     protected Rectangle getSubmenuBounds(Rectangle itemBounds, Dimension windowSize) {
         Rectangle globalBounds = toGlobal(itemBounds);

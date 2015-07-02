@@ -118,7 +118,7 @@ public class Paint9Painter extends CachedPainter {
      * @param dInsets Destination insets specifying the portion of the image
      *                will be stretched or tiled, if <code>null</code> empty
      *                <code>Insets</code> will be used.
-     * @param paintType Specifies what type of algorithm to use in painting
+     * @param type Specifies what type of algorithm to use in painting
      * @param mask Specifies portion of image to render, if
      *             <code>PAINT_ALL</code> is specified, any other regions
      *             specified will not be painted, for example

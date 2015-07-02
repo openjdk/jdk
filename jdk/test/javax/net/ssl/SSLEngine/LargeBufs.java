@@ -116,7 +116,7 @@ public class LargeBufs {
             if ((result2.bytesConsumed() != 0) &&
                 (result2.bytesConsumed() != appBufferMax) &&
                 (result2.bytesConsumed() != 2 * OFFSET)) {
-                throw new Exception("result1: " + result1);
+                throw new Exception("result2: " + result2);
             }
 
             log("wrap1:  " + result1);

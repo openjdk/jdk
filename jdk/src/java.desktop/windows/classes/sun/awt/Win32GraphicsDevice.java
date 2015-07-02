@@ -226,7 +226,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
      * are disabled.  Do not call this function with an index of 0.
      * @param index a PixelFormat index
      */
-    protected native boolean isPixFmtSupported(int index, int screen);
+    private native boolean isPixFmtSupported(int index, int screen);
 
     /**
      * Returns the PixelFormatID of the default graphics configuration

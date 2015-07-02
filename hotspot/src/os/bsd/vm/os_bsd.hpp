@@ -30,9 +30,6 @@
 // Information about the protection of the page at address '0' on this os.
 static bool zero_page_read_protected() { return true; }
 
-// pthread_getattr_np comes with BsdThreads-0.9-7 on RedHat 7.1
-typedef int (*pthread_getattr_func_type)(pthread_t, pthread_attr_t *);
-
 #ifdef __APPLE__
 // Mac OS X doesn't support clock_gettime. Stub out the type, it is
 // unused
@@ -144,9 +141,6 @@ class Bsd {
   // Stack repair handling
 
   // none present
-
-  // BsdThreads work-around for 6292965
-  static int safe_cond_timedwait(pthread_cond_t *_cond, pthread_mutex_t *_mutex, const struct timespec *_abstime);
 
  private:
   typedef int (*sched_getcpu_func_t)(void);

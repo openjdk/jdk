@@ -2116,7 +2116,7 @@ public class DTMNodeProxy
      */
     @Override
     public String getTextContent() throws DOMException {
-        return getNodeValue();  // overriden in some subclasses
+        return dtm.getStringValue(node).toString();
     }
 
      /**

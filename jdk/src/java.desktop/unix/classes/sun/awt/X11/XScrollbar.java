@@ -161,8 +161,6 @@ abstract class XScrollbar {
      * paint the scrollbar
      * @param g the graphics context to paint into
      * @param colors the colors to use when painting the scrollbar
-     * @param width the width of the scrollbar
-     * @param height the height of the scrollbar
      * @param paintAll paint the whole scrollbar if true, just the thumb is false
      */
     void paint(Graphics g, Color colors[], boolean paintAll) {
@@ -393,7 +391,7 @@ abstract class XScrollbar {
 
     /**
      * Scroll one unit.
-     * @see notifyValue
+     * @see #notifyValue
      */
     void scroll() {
         switch (mode) {
@@ -607,7 +605,6 @@ abstract class XScrollbar {
      * @param minimum is the minimum value of the scrollbar
      * @param maximum is the maximum value of the scrollbar
      * @param unitSize is the unit size for increment or decrement of the value
-     * @param page is the block size for increment or decrement of the value
      * @see #setValues
      */
     synchronized void setValues(int value, int visible, int minimum, int maximum,
@@ -631,7 +628,7 @@ abstract class XScrollbar {
 
     /**
      * Sets the value of this Scrollbar to the specified value.
-     * @param value the new value of the Scrollbar. If this value is
+     * @param newValue the new value of the Scrollbar. If this value is
      * below the current minimum or above the current maximum minus
      * the visible amount, it becomes the new one of those values,
      * respectively.
@@ -655,7 +652,7 @@ abstract class XScrollbar {
 
     /**
      * Sets the minimum value for this Scrollbar.
-     * @param minimum the minimum value of the scrollbar
+     * @param newMinimum the minimum value of the scrollbar
      */
     synchronized void setMinimum(int newMinimum) {
         /* Use setValues so that a consistent policy
@@ -675,7 +672,7 @@ abstract class XScrollbar {
 
     /**
      * Sets the maximum value for this Scrollbar.
-     * @param maximum the maximum value of the scrollbar
+     * @param newMaximum the maximum value of the scrollbar
      */
     synchronized void setMaximum(int newMaximum) {
         /* Use setValues so that a consistent policy
@@ -694,7 +691,7 @@ abstract class XScrollbar {
     /**
      * Sets the visible amount of this Scrollbar, which is the range
      * of values represented by the width of the scroll bar's bubble.
-     * @param visible the amount visible per page
+     * @param newAmount the amount visible per page
      */
     synchronized void setVisibleAmount(int newAmount) {
         setValues(val, newAmount, min, max);
@@ -759,7 +756,7 @@ abstract class XScrollbar {
 
     /**
      * Returns the scale factor for the thumbArea ( thumbAreaH / (max - min)).
-     * @see #getArrowAreaSize
+     * @see #getArrowAreaWidth
      */
     private double getScaleFactor(){
         double f = (double)(barLength - 2*getArrowAreaWidth()) / Math.max(1,(max - min));

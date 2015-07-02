@@ -212,7 +212,7 @@ public class TextComponentPrintable implements CountingPrintable {
      * level {@code JEditorPanes}.  For instance if there is a frame
      * inside the frame it will return the top frame only.
      *
-     * @param c the container to find all frames under
+     * @param container the container to find all frames under
      * @param list {@code List} to append the results too
      */
     private static void getFrames(final Container container, List<JEditorPane> list) {

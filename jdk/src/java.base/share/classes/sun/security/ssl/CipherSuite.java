@@ -122,9 +122,15 @@ final class CipherSuite implements Comparable<CipherSuite> {
     final boolean allowed;
 
     // obsoleted since protocol version
+    //
+    // TLS version is used.  If checking DTLS versions, please map to
+    // TLS version firstly.  See ProtocolVersion.mapToTLSProtocol().
     final int obsoleted;
 
-    // supported since protocol version
+    // supported since protocol version (TLS version is used)
+    //
+    // TLS version is used.  If checking DTLS versions, please map to
+    // TLS version firstly.  See ProtocolVersion.mapToTLSProtocol().
     final int supported;
 
     /**
@@ -180,6 +186,70 @@ final class CipherSuite implements Comparable<CipherSuite> {
 
     boolean isNegotiable() {
         return this != C_SCSV && isAvailable();
+    }
+
+    // See also CipherBox.calculatePacketSize().
+    int calculatePacketSize(int fragmentSize,
+            ProtocolVersion protocolVersion, boolean isDTLS) {
+
+        int packetSize = fragmentSize;
+        if (cipher != B_NULL) {
+            int blockSize = cipher.ivSize;
+            switch (cipher.cipherType) {
+                case BLOCK_CIPHER:
+                    packetSize += macAlg.size;
+                    packetSize += 1;        // 1 byte padding length field
+                    packetSize +=           // use the minimal padding
+                            (blockSize - (packetSize % blockSize)) % blockSize;
+                    if (protocolVersion.useTLS11PlusSpec()) {
+                        packetSize += blockSize;        // explicit IV
+                    }
+
+                    break;
+            case AEAD_CIPHER:
+                packetSize += cipher.ivSize - cipher.fixedIvSize;   // record IV
+                packetSize += cipher.tagSize;
+
+                break;
+            default:    // NULL_CIPHER or STREAM_CIPHER
+                packetSize += macAlg.size;
+            }
+        }
+
+        return packetSize +
+            (isDTLS ? DTLSRecord.headerSize : SSLRecord.headerSize);
+    }
+
+    // See also CipherBox.calculateFragmentSize().
+    int calculateFragSize(int packetLimit,
+            ProtocolVersion protocolVersion, boolean isDTLS) {
+
+        int fragSize = packetLimit -
+                (isDTLS ? DTLSRecord.headerSize : SSLRecord.headerSize);
+        if (cipher != B_NULL) {
+            int blockSize = cipher.ivSize;
+            switch (cipher.cipherType) {
+            case BLOCK_CIPHER:
+                if (protocolVersion.useTLS11PlusSpec()) {
+                    fragSize -= blockSize;              // explicit IV
+                }
+                fragSize -= (fragSize % blockSize);     // cannot hold a block
+                // No padding for a maximum fragment.
+                fragSize -= 1;        // 1 byte padding length field: 0x00
+                fragSize -= macAlg.size;
+
+                break;
+            case AEAD_CIPHER:
+                fragSize -= cipher.tagSize;
+                fragSize -= cipher.ivSize - cipher.fixedIvSize;     // record IV
+
+                break;
+            default:    // NULL_CIPHER or STREAM_CIPHER
+                fragSize -= macAlg.size;
+            }
+        }
+
+        return fragSize;
     }
 
     /**
@@ -242,7 +312,7 @@ final class CipherSuite implements Comparable<CipherSuite> {
         return c;
     }
 
-    // for use by CipherSuiteList only
+    // for use by SSLContextImpl only
     static Collection<CipherSuite> allowedCipherSuites() {
         return nameMap.values();
     }
@@ -372,7 +442,8 @@ final class CipherSuite implements Comparable<CipherSuite> {
     }
 
     static enum CipherType {
-        STREAM_CIPHER,         // null or stream cipher
+        NULL_CIPHER,           // null cipher
+        STREAM_CIPHER,         // stream cipher
         BLOCK_CIPHER,          // block cipher in CBC mode
         AEAD_CIPHER            // AEAD cipher
     }
@@ -387,7 +458,7 @@ final class CipherSuite implements Comparable<CipherSuite> {
     static enum BulkCipher {
 
         // export strength ciphers
-        B_NULL("NULL", STREAM_CIPHER, 0, 0, 0, 0, true),
+        B_NULL("NULL", NULL_CIPHER, 0, 0, 0, 0, true),
         B_RC4_40(CIPHER_RC4, STREAM_CIPHER, 5, 16, 0, 0, true),
         B_RC2_40("RC2", BLOCK_CIPHER, 5, 16, 8, 0, false),
         B_DES_40(CIPHER_DES,  BLOCK_CIPHER, 5, 8, 8, 0, true),
@@ -568,7 +639,7 @@ final class CipherSuite implements Comparable<CipherSuite> {
                             iv = new IvParameterSpec(new byte[cipher.ivSize]);
                         }
                         temporary = cipher.newCipher(
-                                            ProtocolVersion.DEFAULT,
+                                            ProtocolVersion.DEFAULT_TLS,
                                             key, iv, secureRandom, true);
                         b = temporary.isAvailable();
                     } catch (NoSuchAlgorithmException e) {

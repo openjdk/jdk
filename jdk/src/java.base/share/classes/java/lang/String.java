@@ -2247,8 +2247,29 @@ public final class String
      * @since 1.5
      */
     public String replace(CharSequence target, CharSequence replacement) {
-        return Pattern.compile(target.toString(), Pattern.LITERAL).matcher(
-                this).replaceAll(Matcher.quoteReplacement(replacement.toString()));
+        String starget = target.toString();
+        String srepl = replacement.toString();
+        int j = indexOf(starget);
+        if (j < 0) {
+            return this;
+        }
+        int targLen = starget.length();
+        int targLen1 = Math.max(targLen, 1);
+        final char[] value = this.value;
+        final char[] replValue = srepl.value;
+        int newLenHint = value.length - targLen + replValue.length;
+        if (newLenHint < 0) {
+            throw new OutOfMemoryError();
+        }
+        StringBuilder sb = new StringBuilder(newLenHint);
+        int i = 0;
+        do {
+            sb.append(value, i, j - i)
+                    .append(replValue);
+            i = j + targLen;
+        } while (j < value.length && (j = indexOf(starget, j + targLen1)) > 0);
+
+        return sb.append(value, i, value.length - i).toString();
     }
 
     /**

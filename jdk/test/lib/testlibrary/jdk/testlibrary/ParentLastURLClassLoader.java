@@ -38,7 +38,7 @@ public class ParentLastURLClassLoader extends URLClassLoader {
     @Override
     public Class<?> loadClass(String name) throws ClassNotFoundException {
         try {
-            Class c = findClass(name);
+            Class<?> c = findClass(name);
             if (c != null) {
                 return c;
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -504,7 +504,7 @@ public class BasicLabelUI extends LabelUI implements  PropertyChangeListener
                 doPress(label);
             }
             else if (key == RELEASE) {
-                doRelease(label);
+                doRelease(label, e.getActionCommand() != null);
             }
         }
 
@@ -517,33 +517,77 @@ public class BasicLabelUI extends LabelUI implements  PropertyChangeListener
                     SwingUtilities.replaceUIInputMap(label, JComponent.WHEN_FOCUSED, inputMap);
                 }
                 int dka = label.getDisplayedMnemonic();
-                inputMap.put(KeyStroke.getKeyStroke(dka, BasicLookAndFeel.getFocusAcceleratorKeyMask(), true), RELEASE);
+                putOnRelease(inputMap, dka, BasicLookAndFeel
+                        .getFocusAcceleratorKeyMask());
                 // Need this when the sticky keys are enabled
-                inputMap.put(KeyStroke.getKeyStroke(dka, 0, true), RELEASE);
+                putOnRelease(inputMap, dka, 0);
                 // Need this if ALT is released before the accelerator
-                inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ALT, 0, true), RELEASE);
+                putOnRelease(inputMap, KeyEvent.VK_ALT, 0);
                 label.requestFocus();
             }
         }
 
-        private void doRelease(JLabel label) {
+        private void doRelease(JLabel label, boolean isCommand) {
             Component labelFor = label.getLabelFor();
             if (labelFor != null && labelFor.isEnabled()) {
-                InputMap inputMap = SwingUtilities.getUIInputMap(label, JComponent.WHEN_FOCUSED);
-                if (inputMap != null) {
-                    // inputMap should never be null.
+                if (label.hasFocus()) {
+                    InputMap inputMap = SwingUtilities.getUIInputMap(label,
+                            JComponent.WHEN_FOCUSED);
+                    if (inputMap != null) {
+                        // inputMap should never be null.
+                        int dka = label.getDisplayedMnemonic();
+                        removeOnRelease(inputMap, dka, BasicLookAndFeel
+                                .getFocusAcceleratorKeyMask());
+                        removeOnRelease(inputMap, dka, 0);
+                        removeOnRelease(inputMap, KeyEvent.VK_ALT, 0);
+                    }
+                    inputMap = SwingUtilities.getUIInputMap(label,
+                            JComponent.WHEN_IN_FOCUSED_WINDOW);
+                    if (inputMap == null) {
+                        inputMap = new InputMapUIResource();
+                        SwingUtilities.replaceUIInputMap(label,
+                                JComponent.WHEN_IN_FOCUSED_WINDOW, inputMap);
+                    }
                     int dka = label.getDisplayedMnemonic();
-                    inputMap.remove(KeyStroke.getKeyStroke(dka, BasicLookAndFeel.getFocusAcceleratorKeyMask(), true));
-                    inputMap.remove(KeyStroke.getKeyStroke(dka, 0, true));
-                    inputMap.remove(KeyStroke.getKeyStroke(KeyEvent.VK_ALT, 0, true));
-                }
-                if (labelFor instanceof Container &&
-                        ((Container) labelFor).isFocusCycleRoot()) {
-                    labelFor.requestFocus();
+                    if (isCommand) {
+                        putOnRelease(inputMap, KeyEvent.VK_ALT, 0);
+                    } else {
+                        putOnRelease(inputMap, dka, BasicLookAndFeel
+                                .getFocusAcceleratorKeyMask());
+                        // Need this when the sticky keys are enabled
+                        putOnRelease(inputMap, dka, 0);
+                    }
+                    if (labelFor instanceof Container &&
+                            ((Container) labelFor).isFocusCycleRoot()) {
+                        labelFor.requestFocus();
+                    } else {
+                        SwingUtilities2.compositeRequestFocus(labelFor);
+                    }
                 } else {
-                    SwingUtilities2.compositeRequestFocus(labelFor);
+                    InputMap inputMap = SwingUtilities.getUIInputMap(label,
+                            JComponent.WHEN_IN_FOCUSED_WINDOW);
+                    int dka = label.getDisplayedMnemonic();
+                    if (inputMap != null) {
+                        if (isCommand) {
+                            removeOnRelease(inputMap, dka, BasicLookAndFeel
+                                    .getFocusAcceleratorKeyMask());
+                            removeOnRelease(inputMap, dka, 0);
+                        } else {
+                            removeOnRelease(inputMap, KeyEvent.VK_ALT, 0);
+                        }
+                    }
                 }
             }
         }
+
+        private void putOnRelease(InputMap inputMap, int keyCode, int modifiers) {
+            inputMap.put(KeyStroke.getKeyStroke(keyCode, modifiers, true),
+                    RELEASE);
+        }
+
+        private void removeOnRelease(InputMap inputMap, int keyCode, int modifiers) {
+            inputMap.remove(KeyStroke.getKeyStroke(keyCode, modifiers, true));
+        }
+
     }
 }

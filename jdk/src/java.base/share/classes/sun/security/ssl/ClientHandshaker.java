@@ -44,8 +44,6 @@ import javax.crypto.spec.SecretKeySpec;
 
 import javax.net.ssl.*;
 
-import javax.security.auth.Subject;
-
 import sun.security.ssl.HandshakeMessage.*;
 import static sun.security.ssl.CipherSuite.KeyExchange.*;
 
@@ -141,10 +139,19 @@ final class ClientHandshaker extends Handshaker {
     private final static boolean allowUnsafeServerCertChange =
         Debug.getBooleanProperty("jdk.tls.allowUnsafeServerCertChange", false);
 
+    // To switch off the max_fragment_length extension.
+    private final static boolean enableMFLExtension =
+            Debug.getBooleanProperty("jsse.enableMFLExtension", false);
+
     private List<SNIServerName> requestedServerNames =
             Collections.<SNIServerName>emptyList();
 
+    // maximum fragment length
+    private int requestedMFLength = -1;     // -1: no fragment length limit
+
     private boolean serverNamesAccepted = false;
+
+    private ClientHello initialClientHelloMsg = null;   // DTLS only
 
     /*
      * the reserved server certificate chain in previous handshaking
@@ -172,11 +179,12 @@ final class ClientHandshaker extends Handshaker {
             ProtocolList enabledProtocols,
             ProtocolVersion activeProtocolVersion,
             boolean isInitialHandshake, boolean secureRenegotiation,
-            byte[] clientVerifyData, byte[] serverVerifyData) {
+            byte[] clientVerifyData, byte[] serverVerifyData,
+            boolean isDTLS) {
 
         super(engine, context, enabledProtocols, true, true,
             activeProtocolVersion, isInitialHandshake, secureRenegotiation,
-            clientVerifyData, serverVerifyData);
+            clientVerifyData, serverVerifyData, isDTLS);
     }
 
     /*
@@ -191,29 +199,48 @@ final class ClientHandshaker extends Handshaker {
      */
     @Override
     void processMessage(byte type, int messageLen) throws IOException {
-        if (state >= type
-                && (type != HandshakeMessage.ht_hello_request)) {
-            throw new SSLProtocolException(
-                    "Handshake message sequence violation, " + type);
-        }
+        // check the handshake state
+        handshakeState.check(type);
 
         switch (type) {
         case HandshakeMessage.ht_hello_request:
-            this.serverHelloRequest(new HelloRequest(input));
+            HelloRequest helloRequest = new HelloRequest(input);
+            handshakeState.update(helloRequest, resumingSession);
+            this.serverHelloRequest(helloRequest);
+            break;
+
+        case HandshakeMessage.ht_hello_verify_request:
+            if (!isDTLS) {
+                throw new SSLProtocolException(
+                    "hello_verify_request is not a SSL/TLS handshake message");
+            }
+
+            HelloVerifyRequest helloVerifyRequest =
+                        new HelloVerifyRequest(input, messageLen);
+            handshakeState.update(helloVerifyRequest, resumingSession);
+            this.helloVerifyRequest(helloVerifyRequest);
             break;
 
         case HandshakeMessage.ht_server_hello:
-            this.serverHello(new ServerHello(input, messageLen));
+            ServerHello serverHello = new ServerHello(input, messageLen);
+            this.serverHello(serverHello);
+
+            // This handshake state update needs the resumingSession value
+            // set by serverHello().
+            handshakeState.update(serverHello, resumingSession);
             break;
 
         case HandshakeMessage.ht_certificate:
             if (keyExchange == K_DH_ANON || keyExchange == K_ECDH_ANON
-                    || keyExchange == K_KRB5 || keyExchange == K_KRB5_EXPORT) {
+                    || ClientKeyExchangeService.find(keyExchange.name) != null) {
+                // No external key exchange provider needs a cert now.
                 fatalSE(Alerts.alert_unexpected_message,
                     "unexpected server cert chain");
                 // NOTREACHED
             }
-            this.serverCertificate(new CertificateMsg(input));
+            CertificateMsg certificateMsg = new CertificateMsg(input);
+            handshakeState.update(certificateMsg, resumingSession);
+            this.serverCertificate(certificateMsg);
             serverKey =
                 session.getPeerCertificates()[0].getPublicKey();
             break;
@@ -249,41 +276,52 @@ final class ClientHandshaker extends Handshaker {
                 }
 
                 try {
-                    this.serverKeyExchange(new RSA_ServerKeyExchange(input));
+                    RSA_ServerKeyExchange rsaSrvKeyExchange =
+                                    new RSA_ServerKeyExchange(input);
+                    handshakeState.update(rsaSrvKeyExchange, resumingSession);
+                    this.serverKeyExchange(rsaSrvKeyExchange);
                 } catch (GeneralSecurityException e) {
-                    throwSSLException("Server key", e);
+                    throw new SSLException("Server key", e);
                 }
                 break;
             case K_DH_ANON:
                 try {
-                    this.serverKeyExchange(new DH_ServerKeyExchange(
-                                                input, protocolVersion));
+                    DH_ServerKeyExchange dhSrvKeyExchange =
+                            new DH_ServerKeyExchange(input, protocolVersion);
+                    handshakeState.update(dhSrvKeyExchange, resumingSession);
+                    this.serverKeyExchange(dhSrvKeyExchange);
                 } catch (GeneralSecurityException e) {
-                    throwSSLException("Server key", e);
+                    throw new SSLException("Server key", e);
                 }
                 break;
             case K_DHE_DSS:
             case K_DHE_RSA:
                 try {
-                    this.serverKeyExchange(new DH_ServerKeyExchange(
-                        input, serverKey,
-                        clnt_random.random_bytes, svr_random.random_bytes,
-                        messageLen,
-                        localSupportedSignAlgs, protocolVersion));
+                    DH_ServerKeyExchange dhSrvKeyExchange =
+                        new DH_ServerKeyExchange(
+                            input, serverKey,
+                            clnt_random.random_bytes, svr_random.random_bytes,
+                            messageLen,
+                            localSupportedSignAlgs, protocolVersion);
+                    handshakeState.update(dhSrvKeyExchange, resumingSession);
+                    this.serverKeyExchange(dhSrvKeyExchange);
                 } catch (GeneralSecurityException e) {
-                    throwSSLException("Server key", e);
+                    throw new SSLException("Server key", e);
                 }
                 break;
             case K_ECDHE_ECDSA:
             case K_ECDHE_RSA:
             case K_ECDH_ANON:
                 try {
-                    this.serverKeyExchange(new ECDH_ServerKeyExchange
-                        (input, serverKey, clnt_random.random_bytes,
-                        svr_random.random_bytes,
-                        localSupportedSignAlgs, protocolVersion));
+                    ECDH_ServerKeyExchange ecdhSrvKeyExchange =
+                        new ECDH_ServerKeyExchange
+                            (input, serverKey, clnt_random.random_bytes,
+                            svr_random.random_bytes,
+                            localSupportedSignAlgs, protocolVersion);
+                    handshakeState.update(ecdhSrvKeyExchange, resumingSession);
+                    this.serverKeyExchange(ecdhSrvKeyExchange);
                 } catch (GeneralSecurityException e) {
-                    throwSSLException("Server key", e);
+                    throw new SSLException("Server key", e);
                 }
                 break;
             case K_RSA:
@@ -294,13 +332,9 @@ final class ClientHandshaker extends Handshaker {
                 throw new SSLProtocolException(
                     "Protocol violation: server sent a server key exchange"
                     + " message for key exchange " + keyExchange);
-            case K_KRB5:
-            case K_KRB5_EXPORT:
-                throw new SSLProtocolException(
-                    "unexpected receipt of server key exchange algorithm");
             default:
                 throw new SSLProtocolException(
-                    "unsupported key exchange algorithm = "
+                    "unsupported or unexpected key exchange algorithm = "
                     + keyExchange);
             }
             break;
@@ -311,17 +345,19 @@ final class ClientHandshaker extends Handshaker {
                 throw new SSLHandshakeException(
                     "Client authentication requested for "+
                     "anonymous cipher suite.");
-            } else if (keyExchange == K_KRB5 || keyExchange == K_KRB5_EXPORT) {
+            } else if (ClientKeyExchangeService.find(keyExchange.name) != null) {
+                // No external key exchange provider needs a cert now.
                 throw new SSLHandshakeException(
                     "Client certificate requested for "+
-                    "kerberos cipher suite.");
+                    "external cipher suite: " + keyExchange);
             }
             certRequest = new CertificateRequest(input, protocolVersion);
             if (debug != null && Debug.isOn("handshake")) {
                 certRequest.print(System.out);
             }
+            handshakeState.update(certRequest, resumingSession);
 
-            if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+            if (protocolVersion.useTLS12PlusSpec()) {
                 Collection<SignatureAndHashAlgorithm> peerSignAlgs =
                                         certRequest.getSignAlgorithms();
                 if (peerSignAlgs == null || peerSignAlgs.isEmpty()) {
@@ -345,32 +381,23 @@ final class ClientHandshaker extends Handshaker {
             break;
 
         case HandshakeMessage.ht_server_hello_done:
-            this.serverHelloDone(new ServerHelloDone(input));
+            ServerHelloDone serverHelloDone = new ServerHelloDone(input);
+            handshakeState.update(serverHelloDone, resumingSession);
+            this.serverHelloDone(serverHelloDone);
+
             break;
 
         case HandshakeMessage.ht_finished:
-            // A ChangeCipherSpec record must have been received prior to
-            // reception of the Finished message (RFC 5246, 7.4.9).
-            if (!receivedChangeCipherSpec()) {
-                fatalSE(Alerts.alert_handshake_failure,
-                    "Received Finished message before ChangeCipherSpec");
-            }
+            Finished serverFinished =
+                    new Finished(protocolVersion, input, cipherSuite);
+            handshakeState.update(serverFinished, resumingSession);
+            this.serverFinished(serverFinished);
 
-            this.serverFinished(
-                new Finished(protocolVersion, input, cipherSuite));
             break;
 
         default:
             throw new SSLProtocolException(
                 "Illegal client handshake msg, " + type);
-        }
-
-        //
-        // Move state machine forward if the message handling
-        // code didn't already do so
-        //
-        if (state < type) {
-            state = type;
         }
     }
 
@@ -389,10 +416,10 @@ final class ClientHandshaker extends Handshaker {
         // Could be (e.g. at connection setup) that we already
         // sent the "client hello" but the server's not seen it.
         //
-        if (state < HandshakeMessage.ht_client_hello) {
+        if (!clientHelloDelivered) {
             if (!secureRenegotiation && !allowUnsafeRenegotiation) {
                 // renegotiation is not allowed.
-                if (activeProtocolVersion.v >= ProtocolVersion.TLS10.v) {
+                if (activeProtocolVersion.useTLS10PlusSpec()) {
                     // response with a no_renegotiation warning,
                     warningSE(Alerts.alert_no_renegotiation);
 
@@ -428,6 +455,29 @@ final class ClientHandshaker extends Handshaker {
         }
     }
 
+    private void helloVerifyRequest(
+            HelloVerifyRequest mesg) throws IOException {
+
+        if (debug != null && Debug.isOn("handshake")) {
+            mesg.print(System.out);
+        }
+
+        //
+        // Note that HelloVerifyRequest.server_version is used solely to
+        // indicate packet formatting, and not as part of version negotiation.
+        // Need not to check version values match for HelloVerifyRequest
+        // message.
+        //
+        initialClientHelloMsg.cookie = mesg.cookie.clone();
+
+        if (debug != null && Debug.isOn("handshake")) {
+            initialClientHelloMsg.print(System.out);
+        }
+
+        // deliver the ClientHello message with cookie
+        initialClientHelloMsg.write(output);
+        handshakeState.update(initialClientHelloMsg, resumingSession);
+    }
 
     /*
      * Server chooses session parameters given options created by the
@@ -441,6 +491,9 @@ final class ClientHandshaker extends Handshaker {
      * probably authentication getting done.
      */
     private void serverHello(ServerHello mesg) throws IOException {
+        // Dispose the reserved ClientHello message (if exists).
+        initialClientHelloMsg = null;
+
         serverKeyExchangeReceived = false;
         if (debug != null && Debug.isOn("handshake")) {
             mesg.print(System.out);
@@ -536,7 +589,7 @@ final class ClientHandshaker extends Handshaker {
         }
 
         setCipherSuite(mesg.cipherSuite);
-        if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+        if (protocolVersion.useTLS12PlusSpec()) {
             handshakeHash.setFinishedAlg(cipherSuite.prfAlg.getPRFHashAlg());
         }
 
@@ -569,51 +622,22 @@ final class ClientHandshaker extends Handshaker {
                 }
 
                 // validate subject identity
-                if (sessionSuite.keyExchange == K_KRB5 ||
-                    sessionSuite.keyExchange == K_KRB5_EXPORT) {
+                ClientKeyExchangeService p =
+                        ClientKeyExchangeService.find(sessionSuite.keyExchange.name);
+                if (p != null) {
                     Principal localPrincipal = session.getLocalPrincipal();
 
-                    Subject subject = null;
-                    try {
-                        subject = AccessController.doPrivileged(
-                            new PrivilegedExceptionAction<Subject>() {
-                            @Override
-                            public Subject run() throws Exception {
-                                return Krb5Helper.getClientSubject(getAccSE());
-                            }});
-                    } catch (PrivilegedActionException e) {
-                        subject = null;
-                        if (debug != null && Debug.isOn("session")) {
-                            System.out.println("Attempt to obtain" +
-                                        " subject failed!");
-                        }
-                    }
-
-                    if (subject != null) {
-                        // Eliminate dependency on KerberosPrincipal
-                        Set<Principal> principals =
-                            subject.getPrincipals(Principal.class);
-                        if (!principals.contains(localPrincipal)) {
-                            throw new SSLProtocolException("Server resumed" +
-                                " session with wrong subject identity");
-                        } else {
-                            if (debug != null && Debug.isOn("session"))
-                                System.out.println("Subject identity is same");
-                        }
-                    } else {
+                    if (p.isRelated(true, getAccSE(), localPrincipal)) {
                         if (debug != null && Debug.isOn("session"))
-                            System.out.println("Kerberos credentials are not" +
-                                " present in the current Subject; check if " +
-                                " javax.security.auth.useSubjectAsCreds" +
-                                " system property has been set to false");
-                        throw new SSLProtocolException
-                            ("Server resumed session with no subject");
+                            System.out.println("Subject identity is same");
+                    } else {
+                        throw new SSLProtocolException("Server resumed" +
+                                " session with wrong subject identity or no subject");
                     }
                 }
 
-                // looks fine; resume it, and update the state machine.
+                // looks fine; resume it.
                 resumingSession = true;
-                state = HandshakeMessage.ht_finished - 1;
                 calculateConnectionKeys(session.getMasterSecret());
                 if (debug != null && Debug.isOn("session")) {
                     System.out.println("%% Server resumed " + session);
@@ -626,6 +650,24 @@ final class ClientHandshaker extends Handshaker {
                 }
             }
         }
+
+        // check the "max_fragment_length" extension
+        MaxFragmentLengthExtension maxFragLenExt = (MaxFragmentLengthExtension)
+                mesg.extensions.get(ExtensionType.EXT_MAX_FRAGMENT_LENGTH);
+        if (maxFragLenExt != null) {
+            if ((requestedMFLength == -1) ||
+                    maxFragLenExt.getMaxFragLen() != requestedMFLength) {
+                // If the client did not request this extension, or the
+                // response value is different from the length it requested,
+                // abort the handshake with a fatal illegal_parameter alert.
+                fatalSE(Alerts.alert_illegal_parameter,
+                        "Failed to negotiate the max_fragment_length");
+            }
+        } else if (!resumingSession) {
+            // no "max_fragment_length" extension
+            requestedMFLength = -1;
+        }   // Otherwise, using the value negotiated during the original
+            // session initiation
 
         if (resumingSession && session != null) {
             setHandshakeSessionSE(session);
@@ -657,6 +699,8 @@ final class ClientHandshaker extends Handshaker {
                             getLocalSupportedSignAlgs(),
                             mesg.sessionId, getHostSE(), getPortSE());
         session.setRequestedServerNames(requestedServerNames);
+        session.setNegotiatedMaxFragSize(requestedMFLength);
+        session.setMaximumPacketSize(maximumPacketSize);
         setHandshakeSessionSE(session);
         if (debug != null && Debug.isOn("handshake")) {
             System.out.println("** " + cipherSuite);
@@ -680,7 +724,6 @@ final class ClientHandshaker extends Handshaker {
         }
         ephemeralServerKey = mesg.getPublicKey();
     }
-
 
     /*
      * Diffie-Hellman key exchange.  We save the server public key and
@@ -716,13 +759,6 @@ final class ClientHandshaker extends Handshaker {
         if (debug != null && Debug.isOn("handshake")) {
             mesg.print(System.out);
         }
-        /*
-         * Always make sure the input has been digested before we
-         * start emitting data, to ensure the hashes are correctly
-         * computed for the Finished and CertificateVerify messages
-         * which we send (here).
-         */
-        input.digestNow();
 
         /*
          * FIRST ... if requested, send an appropriate Certificate chain
@@ -817,7 +853,7 @@ final class ClientHandshaker extends Handshaker {
                 // server.  For SSLv3, send the no_certificate alert;
                 // TLS uses an empty cert chain instead.
                 //
-                if (protocolVersion.v >= ProtocolVersion.TLS10.v) {
+                if (protocolVersion.useTLS10PlusSpec()) {
                     m1 = new CertificateMsg(new X509Certificate [0]);
                 } else {
                     warningSE(Alerts.alert_no_certificate);
@@ -837,6 +873,7 @@ final class ClientHandshaker extends Handshaker {
                     m1.print(System.out);
                 }
                 m1.write(output);
+                handshakeState.update(m1, resumingSession);
             }
         }
 
@@ -943,8 +980,14 @@ final class ClientHandshaker extends Handshaker {
             ecdh = new ECDHCrypt(params, sslContext.getSecureRandom());
             m2 = new ECDHClientKeyExchange(ecdh.getPublicKey());
             break;
-        case K_KRB5:
-        case K_KRB5_EXPORT:
+        default:
+            ClientKeyExchangeService p =
+                    ClientKeyExchangeService.find(keyExchange.name);
+            if (p == null) {
+                // somethings very wrong
+                throw new RuntimeException
+                        ("Unsupported key exchange: " + keyExchange);
+            }
             String sniHostname = null;
             for (SNIServerName serverName : requestedServerNames) {
                 if (serverName instanceof SNIHostName) {
@@ -953,13 +996,13 @@ final class ClientHandshaker extends Handshaker {
                 }
             }
 
-            KerberosClientKeyExchange kerberosMsg = null;
+            ClientKeyExchange exMsg = null;
             if (sniHostname != null) {
                 // use first requested SNI hostname
                 try {
-                    kerberosMsg = new KerberosClientKeyExchange(
-                        sniHostname, getAccSE(), protocolVersion,
-                        sslContext.getSecureRandom());
+                    exMsg = p.createClientExchange(
+                            sniHostname, getAccSE(), protocolVersion,
+                            sslContext.getSecureRandom());
                 } catch(IOException e) {
                     if (serverNamesAccepted) {
                         // server accepted requested SNI hostname,
@@ -975,32 +1018,28 @@ final class ClientHandshaker extends Handshaker {
                 }
             }
 
-            if (kerberosMsg == null) {
+            if (exMsg == null) {
                 String hostname = getHostSE();
                 if (hostname == null) {
                     throw new IOException("Hostname is required" +
-                        " to use Kerberos cipher suites");
+                        " to use " + keyExchange + " key exchange");
                 }
-                kerberosMsg = new KerberosClientKeyExchange(
-                     hostname, getAccSE(), protocolVersion,
-                     sslContext.getSecureRandom());
+                exMsg = p.createClientExchange(
+                        hostname, getAccSE(), protocolVersion,
+                        sslContext.getSecureRandom());
             }
 
             // Record the principals involved in exchange
-            session.setPeerPrincipal(kerberosMsg.getPeerPrincipal());
-            session.setLocalPrincipal(kerberosMsg.getLocalPrincipal());
-            m2 = kerberosMsg;
+            session.setPeerPrincipal(exMsg.getPeerPrincipal());
+            session.setLocalPrincipal(exMsg.getLocalPrincipal());
+            m2 = exMsg;
             break;
-        default:
-            // somethings very wrong
-            throw new RuntimeException
-                                ("Unsupported key exchange: " + keyExchange);
         }
         if (debug != null && Debug.isOn("handshake")) {
             m2.print(System.out);
         }
         m2.write(output);
-
+        handshakeState.update(m2, resumingSession);
 
         /*
          * THIRD, send a "change_cipher_spec" record followed by the
@@ -1010,8 +1049,6 @@ final class ClientHandshaker extends Handshaker {
          * to compute the "Finished" message, and to compute the keys used
          * to protect all records following the change_cipher_spec.
          */
-
-        output.doHashes();
         output.flush();
 
         /*
@@ -1026,13 +1063,6 @@ final class ClientHandshaker extends Handshaker {
         case K_RSA:
         case K_RSA_EXPORT:
             preMasterSecret = ((RSAClientKeyExchange)m2).preMaster;
-            break;
-        case K_KRB5:
-        case K_KRB5_EXPORT:
-            byte[] secretBytes =
-                ((KerberosClientKeyExchange)m2).getUnencryptedPreMasterSecret();
-            preMasterSecret = new SecretKeySpec(secretBytes,
-                "TlsPremasterSecret");
             break;
         case K_DHE_RSA:
         case K_DHE_DSS:
@@ -1049,8 +1079,13 @@ final class ClientHandshaker extends Handshaker {
             preMasterSecret = ecdh.getAgreedSecret(serverKey);
             break;
         default:
-            throw new IOException("Internal error: unknown key exchange "
-                + keyExchange);
+            if (ClientKeyExchangeService.find(keyExchange.name) != null) {
+                preMasterSecret =
+                        ((ClientKeyExchange) m2).clientKeyExchange();
+            } else {
+                throw new IOException("Internal error: unknown key exchange "
+                        + keyExchange);
+            }
         }
 
         calculateKeys(preMasterSecret, null);
@@ -1069,7 +1104,7 @@ final class ClientHandshaker extends Handshaker {
             CertificateVerify m3;
             try {
                 SignatureAndHashAlgorithm preferableSignatureAlgorithm = null;
-                if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+                if (protocolVersion.useTLS12PlusSpec()) {
                     preferableSignatureAlgorithm =
                         SignatureAndHashAlgorithm.getPreferableAlgorithm(
                             peerSupportedSignAlgs, signingKey.getAlgorithm(),
@@ -1103,13 +1138,17 @@ final class ClientHandshaker extends Handshaker {
                 m3.print(System.out);
             }
             m3.write(output);
-            output.doHashes();
+            handshakeState.update(m3, resumingSession);
+            output.flush();
         }
 
         /*
          * OK, that's that!
          */
         sendChangeCipherAndFinish(false);
+
+        // expecting the final ChangeCipherSpec and Finished messages
+        expectingFinishFlightSE();
     }
 
 
@@ -1158,8 +1197,9 @@ final class ClientHandshaker extends Handshaker {
          * completed handshakes.
          */
         if (resumingSession) {
-            input.digestNow();
             sendChangeCipherAndFinish(true);
+        } else {
+            handshakeFinished = true;
         }
         session.setLastAccessedTime(System.currentTimeMillis());
 
@@ -1188,6 +1228,10 @@ final class ClientHandshaker extends Handshaker {
      */
     private void sendChangeCipherAndFinish(boolean finishedTag)
             throws IOException {
+
+        // Reload if this message has been reserved.
+        handshakeHash.reload();
+
         Finished mesg = new Finished(protocolVersion, handshakeHash,
             Finished.CLIENT, session.getMasterSecret(), cipherSuite);
 
@@ -1205,13 +1249,6 @@ final class ClientHandshaker extends Handshaker {
         if (secureRenegotiation) {
             clientVerifyData = mesg.getVerifyData();
         }
-
-        /*
-         * Update state machine so server MUST send 'finished' next.
-         * (In "long" handshake case; in short case, we're responding
-         * to its message.)
-         */
-        state = HandshakeMessage.ht_finished - 1;
     }
 
 
@@ -1361,10 +1398,10 @@ final class ClientHandshaker extends Handshaker {
         // create the ClientHello message
         ClientHello clientHelloMessage = new ClientHello(
                 sslContext.getSecureRandom(), maxProtocolVersion,
-                sessionId, cipherSuites);
+                sessionId, cipherSuites, isDTLS);
 
         // add signature_algorithm extension
-        if (maxProtocolVersion.v >= ProtocolVersion.TLS12.v) {
+        if (maxProtocolVersion.useTLS12PlusSpec()) {
             // we will always send the signature_algorithm extension
             Collection<SignatureAndHashAlgorithm> localSignAlgs =
                                                 getLocalSupportedSignAlgs();
@@ -1389,6 +1426,37 @@ final class ClientHandshaker extends Handshaker {
             }
         }
 
+        // add max_fragment_length extension
+        if (enableMFLExtension) {
+            if (session != null) {
+                // The same extension should be sent for resumption.
+                requestedMFLength = session.getNegotiatedMaxFragSize();
+            } else if (maximumPacketSize != 0) {
+                // Maybe we can calculate the fragment size more accurate
+                // by condering the enabled cipher suites in the future.
+                requestedMFLength = maximumPacketSize;
+                if (isDTLS) {
+                    requestedMFLength -= DTLSRecord.maxPlaintextPlusSize;
+                } else {
+                    requestedMFLength -= SSLRecord.maxPlaintextPlusSize;
+                }
+            } else {
+                // Need no max_fragment_length extension.
+                requestedMFLength = -1;
+            }
+
+            if ((requestedMFLength > 0) &&
+                MaxFragmentLengthExtension.needFragLenNego(requestedMFLength)) {
+
+                requestedMFLength =
+                        MaxFragmentLengthExtension.getValidMaxFragLen(
+                                                        requestedMFLength);
+                clientHelloMessage.addMFLExtension(requestedMFLength);
+            } else {
+                requestedMFLength = -1;
+            }
+        }
+
         // reset the client random cookie
         clnt_random = clientHelloMessage.clnt_random;
 
@@ -1401,6 +1469,11 @@ final class ClientHandshaker extends Handshaker {
         if (secureRenegotiation ||
                 !cipherSuites.contains(CipherSuite.C_SCSV)) {
             clientHelloMessage.addRenegotiationInfoExtension(clientVerifyData);
+        }
+
+        if (isDTLS) {
+            // Cookie exchange need to reserve the initial ClientHello message.
+            initialClientHelloMsg = clientHelloMessage;
         }
 
         return clientHelloMessage;

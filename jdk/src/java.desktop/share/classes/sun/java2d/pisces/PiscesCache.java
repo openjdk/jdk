@@ -29,8 +29,6 @@ import java.util.Arrays;
 
 /**
  * An object used to cache pre-rendered complex paths.
- *
- * @see PiscesRenderer#render
  */
 final class PiscesCache {
 

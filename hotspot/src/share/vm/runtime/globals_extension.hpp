@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,18 +72,67 @@
 #define ARCH_NOTPRODUCT_FLAG_MEMBER(type, name, value, doc)      FLAG_MEMBER(name),
 
 typedef enum {
- RUNTIME_FLAGS(RUNTIME_DEVELOP_FLAG_MEMBER, RUNTIME_PD_DEVELOP_FLAG_MEMBER, RUNTIME_PRODUCT_FLAG_MEMBER, RUNTIME_PD_PRODUCT_FLAG_MEMBER, RUNTIME_DIAGNOSTIC_FLAG_MEMBER, RUNTIME_EXPERIMENTAL_FLAG_MEMBER, RUNTIME_NOTPRODUCT_FLAG_MEMBER, RUNTIME_MANAGEABLE_FLAG_MEMBER, RUNTIME_PRODUCT_RW_FLAG_MEMBER, RUNTIME_LP64_PRODUCT_FLAG_MEMBER)
- RUNTIME_OS_FLAGS(RUNTIME_DEVELOP_FLAG_MEMBER, RUNTIME_PD_DEVELOP_FLAG_MEMBER, RUNTIME_PRODUCT_FLAG_MEMBER, RUNTIME_PD_PRODUCT_FLAG_MEMBER, RUNTIME_DIAGNOSTIC_FLAG_MEMBER, RUNTIME_NOTPRODUCT_FLAG_MEMBER)
+ RUNTIME_FLAGS(RUNTIME_DEVELOP_FLAG_MEMBER, \
+               RUNTIME_PD_DEVELOP_FLAG_MEMBER, \
+               RUNTIME_PRODUCT_FLAG_MEMBER, \
+               RUNTIME_PD_PRODUCT_FLAG_MEMBER, \
+               RUNTIME_DIAGNOSTIC_FLAG_MEMBER, \
+               RUNTIME_EXPERIMENTAL_FLAG_MEMBER, \
+               RUNTIME_NOTPRODUCT_FLAG_MEMBER, \
+               RUNTIME_MANAGEABLE_FLAG_MEMBER, \
+               RUNTIME_PRODUCT_RW_FLAG_MEMBER, \
+               RUNTIME_LP64_PRODUCT_FLAG_MEMBER, \
+               IGNORE_RANGE, \
+               IGNORE_CONSTRAINT)
+ RUNTIME_OS_FLAGS(RUNTIME_DEVELOP_FLAG_MEMBER, \
+                  RUNTIME_PD_DEVELOP_FLAG_MEMBER, \
+                  RUNTIME_PRODUCT_FLAG_MEMBER, \
+                  RUNTIME_PD_PRODUCT_FLAG_MEMBER, \
+                  RUNTIME_DIAGNOSTIC_FLAG_MEMBER, \
+                  RUNTIME_NOTPRODUCT_FLAG_MEMBER, \
+                  IGNORE_RANGE, \
+                  IGNORE_CONSTRAINT)
 #if INCLUDE_ALL_GCS
- G1_FLAGS(RUNTIME_DEVELOP_FLAG_MEMBER, RUNTIME_PD_DEVELOP_FLAG_MEMBER, RUNTIME_PRODUCT_FLAG_MEMBER, RUNTIME_PD_PRODUCT_FLAG_MEMBER, RUNTIME_DIAGNOSTIC_FLAG_MEMBER, RUNTIME_EXPERIMENTAL_FLAG_MEMBER, RUNTIME_NOTPRODUCT_FLAG_MEMBER, RUNTIME_MANAGEABLE_FLAG_MEMBER, RUNTIME_PRODUCT_RW_FLAG_MEMBER)
+ G1_FLAGS(RUNTIME_DEVELOP_FLAG_MEMBER, \
+          RUNTIME_PD_DEVELOP_FLAG_MEMBER, \
+          RUNTIME_PRODUCT_FLAG_MEMBER, \
+          RUNTIME_PD_PRODUCT_FLAG_MEMBER, \
+          RUNTIME_DIAGNOSTIC_FLAG_MEMBER, \
+          RUNTIME_EXPERIMENTAL_FLAG_MEMBER, \
+          RUNTIME_NOTPRODUCT_FLAG_MEMBER, \
+          RUNTIME_MANAGEABLE_FLAG_MEMBER, \
+          RUNTIME_PRODUCT_RW_FLAG_MEMBER, \
+          IGNORE_RANGE, \
+          IGNORE_CONSTRAINT)
 #endif // INCLUDE_ALL_GCS
 #ifdef COMPILER1
- C1_FLAGS(C1_DEVELOP_FLAG_MEMBER, C1_PD_DEVELOP_FLAG_MEMBER, C1_PRODUCT_FLAG_MEMBER, C1_PD_PRODUCT_FLAG_MEMBER, C1_DIAGNOSTIC_FLAG_MEMBER, C1_NOTPRODUCT_FLAG_MEMBER)
+ C1_FLAGS(C1_DEVELOP_FLAG_MEMBER, \
+          C1_PD_DEVELOP_FLAG_MEMBER, \
+          C1_PRODUCT_FLAG_MEMBER, \
+          C1_PD_PRODUCT_FLAG_MEMBER, \
+          C1_DIAGNOSTIC_FLAG_MEMBER, \
+          C1_NOTPRODUCT_FLAG_MEMBER, \
+          IGNORE_RANGE, \
+          IGNORE_CONSTRAINT)
 #endif
 #ifdef COMPILER2
- C2_FLAGS(C2_DEVELOP_FLAG_MEMBER, C2_PD_DEVELOP_FLAG_MEMBER, C2_PRODUCT_FLAG_MEMBER, C2_PD_PRODUCT_FLAG_MEMBER, C2_DIAGNOSTIC_FLAG_MEMBER, C2_EXPERIMENTAL_FLAG_MEMBER, C2_NOTPRODUCT_FLAG_MEMBER)
+ C2_FLAGS(C2_DEVELOP_FLAG_MEMBER, \
+          C2_PD_DEVELOP_FLAG_MEMBER, \
+          C2_PRODUCT_FLAG_MEMBER, \
+          C2_PD_PRODUCT_FLAG_MEMBER, \
+          C2_DIAGNOSTIC_FLAG_MEMBER, \
+          C2_EXPERIMENTAL_FLAG_MEMBER, \
+          C2_NOTPRODUCT_FLAG_MEMBER, \
+          IGNORE_RANGE, \
+          IGNORE_CONSTRAINT)
 #endif
- ARCH_FLAGS(ARCH_DEVELOP_FLAG_MEMBER, ARCH_PRODUCT_FLAG_MEMBER, ARCH_DIAGNOSTIC_FLAG_MEMBER, ARCH_EXPERIMENTAL_FLAG_MEMBER, ARCH_NOTPRODUCT_FLAG_MEMBER)
+ ARCH_FLAGS(ARCH_DEVELOP_FLAG_MEMBER, \
+            ARCH_PRODUCT_FLAG_MEMBER, \
+            ARCH_DIAGNOSTIC_FLAG_MEMBER, \
+            ARCH_EXPERIMENTAL_FLAG_MEMBER, \
+            ARCH_NOTPRODUCT_FLAG_MEMBER, \
+            IGNORE_RANGE, \
+            IGNORE_CONSTRAINT)
  COMMANDLINEFLAG_EXT
  NUM_CommandLineFlag
 } CommandLineFlag;
@@ -139,13 +188,17 @@ typedef enum {
                RUNTIME_NOTPRODUCT_FLAG_MEMBER_WITH_TYPE,
                RUNTIME_MANAGEABLE_FLAG_MEMBER_WITH_TYPE,
                RUNTIME_PRODUCT_RW_FLAG_MEMBER_WITH_TYPE,
-               RUNTIME_LP64_PRODUCT_FLAG_MEMBER_WITH_TYPE)
+               RUNTIME_LP64_PRODUCT_FLAG_MEMBER_WITH_TYPE,
+               IGNORE_RANGE,
+               IGNORE_CONSTRAINT)
  RUNTIME_OS_FLAGS(RUNTIME_DEVELOP_FLAG_MEMBER_WITH_TYPE,
                   RUNTIME_PD_DEVELOP_FLAG_MEMBER_WITH_TYPE,
                   RUNTIME_PRODUCT_FLAG_MEMBER_WITH_TYPE,
                   RUNTIME_PD_PRODUCT_FLAG_MEMBER_WITH_TYPE,
                   RUNTIME_DIAGNOSTIC_FLAG_MEMBER_WITH_TYPE,
-                  RUNTIME_NOTPRODUCT_FLAG_MEMBER_WITH_TYPE)
+                  RUNTIME_NOTPRODUCT_FLAG_MEMBER_WITH_TYPE,
+                  IGNORE_RANGE,
+                  IGNORE_CONSTRAINT)
 #if INCLUDE_ALL_GCS
  G1_FLAGS(RUNTIME_DEVELOP_FLAG_MEMBER_WITH_TYPE,
           RUNTIME_PD_DEVELOP_FLAG_MEMBER_WITH_TYPE,
@@ -155,7 +208,9 @@ typedef enum {
           RUNTIME_EXPERIMENTAL_FLAG_MEMBER_WITH_TYPE,
           RUNTIME_NOTPRODUCT_FLAG_MEMBER_WITH_TYPE,
           RUNTIME_MANAGEABLE_FLAG_MEMBER_WITH_TYPE,
-          RUNTIME_PRODUCT_RW_FLAG_MEMBER_WITH_TYPE)
+          RUNTIME_PRODUCT_RW_FLAG_MEMBER_WITH_TYPE,
+          IGNORE_RANGE,
+          IGNORE_CONSTRAINT)
 #endif // INCLUDE_ALL_GCS
 #ifdef COMPILER1
  C1_FLAGS(C1_DEVELOP_FLAG_MEMBER_WITH_TYPE,
@@ -163,7 +218,9 @@ typedef enum {
           C1_PRODUCT_FLAG_MEMBER_WITH_TYPE,
           C1_PD_PRODUCT_FLAG_MEMBER_WITH_TYPE,
           C1_DIAGNOSTIC_FLAG_MEMBER_WITH_TYPE,
-          C1_NOTPRODUCT_FLAG_MEMBER_WITH_TYPE)
+          C1_NOTPRODUCT_FLAG_MEMBER_WITH_TYPE,
+          IGNORE_RANGE,
+          IGNORE_CONSTRAINT)
 #endif
 #ifdef COMPILER2
  C2_FLAGS(C2_DEVELOP_FLAG_MEMBER_WITH_TYPE,
@@ -172,13 +229,17 @@ typedef enum {
           C2_PD_PRODUCT_FLAG_MEMBER_WITH_TYPE,
           C2_DIAGNOSTIC_FLAG_MEMBER_WITH_TYPE,
           C2_EXPERIMENTAL_FLAG_MEMBER_WITH_TYPE,
-          C2_NOTPRODUCT_FLAG_MEMBER_WITH_TYPE)
+          C2_NOTPRODUCT_FLAG_MEMBER_WITH_TYPE,
+          IGNORE_RANGE,
+          IGNORE_CONSTRAINT)
 #endif
  ARCH_FLAGS(ARCH_DEVELOP_FLAG_MEMBER_WITH_TYPE,
           ARCH_PRODUCT_FLAG_MEMBER_WITH_TYPE,
           ARCH_DIAGNOSTIC_FLAG_MEMBER_WITH_TYPE,
           ARCH_EXPERIMENTAL_FLAG_MEMBER_WITH_TYPE,
-          ARCH_NOTPRODUCT_FLAG_MEMBER_WITH_TYPE)
+          ARCH_NOTPRODUCT_FLAG_MEMBER_WITH_TYPE,
+          IGNORE_RANGE,
+          IGNORE_CONSTRAINT)
  COMMANDLINEFLAGWITHTYPE_EXT
  NUM_CommandLineFlagWithType
 } CommandLineFlagWithType;
@@ -196,14 +257,16 @@ typedef enum {
 // of a circular dependency on the enum definition.
 class CommandLineFlagsEx : CommandLineFlags {
  public:
-  static void boolAtPut(CommandLineFlagWithType flag, bool value, Flag::Flags origin);
-  static void intxAtPut(CommandLineFlagWithType flag, intx value, Flag::Flags origin);
-  static void uintxAtPut(CommandLineFlagWithType flag, uintx value, Flag::Flags origin);
-  static void uint64_tAtPut(CommandLineFlagWithType flag, uint64_t value, Flag::Flags origin);
-  static void size_tAtPut(CommandLineFlagWithType flag, size_t value, Flag::Flags origin);
-  static void doubleAtPut(CommandLineFlagWithType flag, double value, Flag::Flags origin);
+  static Flag::Error boolAtPut(CommandLineFlagWithType flag, bool value, Flag::Flags origin);
+  static Flag::Error intAtPut(CommandLineFlagWithType flag, int value, Flag::Flags origin);
+  static Flag::Error uintAtPut(CommandLineFlagWithType flag, uint value, Flag::Flags origin);
+  static Flag::Error intxAtPut(CommandLineFlagWithType flag, intx value, Flag::Flags origin);
+  static Flag::Error uintxAtPut(CommandLineFlagWithType flag, uintx value, Flag::Flags origin);
+  static Flag::Error uint64_tAtPut(CommandLineFlagWithType flag, uint64_t value, Flag::Flags origin);
+  static Flag::Error size_tAtPut(CommandLineFlagWithType flag, size_t value, Flag::Flags origin);
+  static Flag::Error doubleAtPut(CommandLineFlagWithType flag, double value, Flag::Flags origin);
   // Contract:  Flag will make private copy of the incoming value
-  static void ccstrAtPut(CommandLineFlagWithType flag, ccstr value, Flag::Flags origin);
+  static Flag::Error ccstrAtPut(CommandLineFlagWithType flag, ccstr value, Flag::Flags origin);
 
   static bool is_default(CommandLineFlag flag);
   static bool is_ergo(CommandLineFlag flag);

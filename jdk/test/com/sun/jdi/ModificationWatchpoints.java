@@ -29,7 +29,6 @@
  *  @author Daniel Prusa (or someone in the FFJ group)
  *  @author Robert Field (modified to JDIScaffold)
  *
- *  @library scaffold
  *  @modules jdk.jdi
  *  @run build JDIScaffold VMConnection
  *  @run compile -g ModificationWatchpoints.java

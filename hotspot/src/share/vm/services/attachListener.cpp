@@ -243,8 +243,8 @@ static jint set_flag(AttachOperation* op, outputStream* out) {
   FormatBuffer<80> err_msg("%s", "");
 
   int ret = WriteableFlags::set_flag(op->arg(0), op->arg(1), Flag::ATTACH_ON_DEMAND, err_msg);
-  if (ret != WriteableFlags::SUCCESS) {
-    if (ret == WriteableFlags::NON_WRITABLE) {
+  if (ret != Flag::SUCCESS) {
+    if (ret == Flag::NON_WRITABLE) {
       // if the flag is not manageable try to change it through
       // the platform dependent implementation
       return AttachListener::pd_set_flag(op, out);

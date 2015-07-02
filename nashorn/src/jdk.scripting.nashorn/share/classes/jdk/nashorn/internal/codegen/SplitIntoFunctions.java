@@ -102,7 +102,7 @@ final class SplitIntoFunctions extends NodeVisitor<BlockLexicalContext> {
     public SplitIntoFunctions(final Compiler compiler) {
         super(new BlockLexicalContext() {
             @Override
-            protected Block afterSetStatements(Block block) {
+            protected Block afterSetStatements(final Block block) {
                 for(Statement stmt: block.getStatements()) {
                     assert !(stmt instanceof SplitNode);
                 }
@@ -305,7 +305,7 @@ final class SplitIntoFunctions extends NodeVisitor<BlockLexicalContext> {
     }
 
     @Override
-    public boolean enterVarNode(VarNode varNode) {
+    public boolean enterVarNode(final VarNode varNode) {
         if (!inSplitNode()) {
             return super.enterVarNode(varNode);
         }

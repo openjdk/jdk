@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,6 +217,9 @@ public class GroupLayout implements LayoutManager2 {
     private static final int SPECIFIC_SIZE = 3;
 
     private static final int UNSET = Integer.MIN_VALUE;
+
+    // Maximum spring size constrain to avoid integer overflow
+    private static final int INFINITE = Integer.MAX_VALUE >> 1;
 
     /**
      * Indicates the size from the component or gap should be used for a
@@ -1389,7 +1392,7 @@ public class GroupLayout implements LayoutManager2 {
         }
 
         int constrain(int value) {
-            return Math.min(value, Short.MAX_VALUE);
+            return Math.min(value, INFINITE);
         }
 
         int getBaseline() {

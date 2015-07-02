@@ -65,7 +65,7 @@ public class ContextCapabilities {
     /**
      * Constructs a {@code ContextCapabilities} object.
      * @param caps an {@code int} representing the capabilities
-     * @param a {@code String} representing the name of the adapter, or null,
+     * @param adapterId {@code String} representing the name of the adapter, or null,
      * in which case the adapterId will be set to "unknown adapter".
      */
     protected ContextCapabilities(int caps, String adapterId) {

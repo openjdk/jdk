@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,6 +156,7 @@ public final class ZoneOffsetTransition
      * @param offsetAfter  the offset at and after the transition, not null
      */
     ZoneOffsetTransition(LocalDateTime transition, ZoneOffset offsetBefore, ZoneOffset offsetAfter) {
+        assert transition.getNano() == 0;
         this.epochSecond = transition.toEpochSecond(offsetBefore);
         this.transition = transition;
         this.offsetBefore = offsetBefore;
@@ -250,7 +251,7 @@ public final class ZoneOffsetTransition
      * @return the transition instant, not null
      */
     public Instant getInstant() {
-        return transition.toInstant(offsetBefore);
+        return Instant.ofEpochSecond(epochSecond);
     }
 
     /**
@@ -403,13 +404,7 @@ public final class ZoneOffsetTransition
      */
     @Override
     public int compareTo(ZoneOffsetTransition transition) {
-        if (epochSecond < transition.epochSecond) {
-            return -1;
-        } else if (epochSecond > transition.epochSecond) {
-            return 1;
-        } else {
-            return this.getInstant().compareTo(transition.getInstant());
-        }
+        return Long.compare(epochSecond, transition.epochSecond);
     }
 
     //-----------------------------------------------------------------------
@@ -429,7 +424,6 @@ public final class ZoneOffsetTransition
         if (other instanceof ZoneOffsetTransition) {
             ZoneOffsetTransition d = (ZoneOffsetTransition) other;
             return epochSecond == d.epochSecond &&
-                transition.equals(d.transition) &&
                 offsetBefore.equals(d.offsetBefore) && offsetAfter.equals(d.offsetAfter);
         }
         return false;

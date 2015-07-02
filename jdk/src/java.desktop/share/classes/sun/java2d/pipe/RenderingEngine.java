@@ -66,7 +66,7 @@ import sun.awt.geom.PathConsumer2D;
  * line width can get before dropouts occur.  Rendering with a BasicStroke
  * is defined to never allow the line to have breaks, gaps, or dropouts
  * even if the width is set to 0.0f, so this information allows the
- * {@link SunGraphics2D} class to detect the "thin line" case and set
+ * {@link sun.java2d.SunGraphics2D} class to detect the "thin line" case and set
  * the rendering attributes accordingly.
  * </dl>
  * At startup the runtime will load a single instance of this class.
@@ -177,11 +177,11 @@ public abstract class RenderingEngine {
      * The specified {@code src} {@link Shape} is widened according
      * to the parameters specified by the {@link BasicStroke} object.
      * Adjustments are made to the path as appropriate for the
-     * {@link VALUE_STROKE_NORMALIZE} hint if the {@code normalize}
-     * boolean parameter is true.
+     * {@link java.awt.RenderingHints#VALUE_STROKE_NORMALIZE} hint if the
+     * {@code normalize} boolean parameter is true.
      * Adjustments are made to the path as appropriate for the
-     * {@link VALUE_ANTIALIAS_ON} hint if the {@code antialias}
-     * boolean parameter is true.
+     * {@link java.awt.RenderingHints#VALUE_ANTIALIAS_ON} hint if the
+     * {@code antialias} boolean parameter is true.
      * <p>
      * The geometry of the widened path is forwarded to the indicated
      * {@link PathConsumer2D} object as it is calculated.

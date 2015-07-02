@@ -391,7 +391,7 @@ public class CheckStatus {
         appOut2.rewind();
 
         log("======================================");
-        log("Client Cert");
+        log("Client Cert and Key Exchange");
         result1 = ssle1.wrap(appOut1, oneToTwo);
         checkResult(appOut1, oneToTwo, result1,
              Status.OK, HandshakeStatus.NEED_WRAP, 0, -1);
@@ -401,22 +401,6 @@ public class CheckStatus {
 
         checkResult(oneToTwo, appIn2, result2,
              Status.OK, HandshakeStatus.NEED_TASK, result1.bytesProduced(), 0);
-        runDelegatedTasks(ssle2);
-
-        oneToTwo.compact();
-
-        log("======================================");
-        log("Key Exchange");
-        result1 = ssle1.wrap(appOut1, oneToTwo);
-        checkResult(appOut1, oneToTwo, result1,
-             Status.OK, HandshakeStatus.NEED_WRAP, 0, -1);
-
-        oneToTwo.flip();
-        result2 = ssle2.unwrap(oneToTwo, appIn2);
-
-        checkResult(oneToTwo, appIn2, result2,
-             Status.OK, HandshakeStatus.NEED_TASK,
-             result1.bytesProduced(), 0);
         runDelegatedTasks(ssle2);
 
         oneToTwo.compact();

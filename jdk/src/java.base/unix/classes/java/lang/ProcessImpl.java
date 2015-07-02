@@ -39,9 +39,7 @@ import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Locale;
 import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.security.AccessController;
 import static java.security.AccessController.doPrivileged;
@@ -50,8 +48,7 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 
 /**
- * This java.lang.Process subclass in the UNIX environment is for the exclusive use of
- * ProcessBuilder.start() to create new processes.
+ * java.lang.Process subclass in the UNIX environment.
  *
  * @author Mario Wolczko and Ross Knippel.
  * @author Konstantin Kladko (ported to Linux and Bsd)
@@ -63,12 +60,16 @@ final class ProcessImpl extends Process {
     private static final sun.misc.JavaIOFileDescriptorAccess fdAccess
         = sun.misc.SharedSecrets.getJavaIOFileDescriptorAccess();
 
+    // Linux platforms support a normal (non-forcible) kill signal.
+    static final boolean SUPPORTS_NORMAL_TERMINATION = true;
+
     private final int pid;
+    private final ProcessHandle processHandle;
     private int exitcode;
     private boolean hasExited;
 
     private /* final */ OutputStream stdin;
-    private /* final */ InputStream stdout;
+    private /* final */ InputStream  stdout;
     private /* final */ InputStream  stderr;
 
     // only used on Solaris
@@ -97,7 +98,7 @@ final class ProcessImpl extends Process {
         Platform(LaunchMechanism ... launchMechanisms) {
             this.defaultLaunchMechanism = launchMechanisms[0];
             this.validLaunchMechanisms =
-                    EnumSet.copyOf(Arrays.asList(launchMechanisms));
+                EnumSet.copyOf(Arrays.asList(launchMechanisms));
         }
 
         @SuppressWarnings("fallthrough")
@@ -121,43 +122,43 @@ final class ProcessImpl extends Process {
 
         String helperPath() {
             return AccessController.doPrivileged(
-                    (PrivilegedAction<String>) () ->
-                            helperPath(System.getProperty("java.home"),
-                                    System.getProperty("os.arch"))
+                (PrivilegedAction<String>) () ->
+                    helperPath(System.getProperty("java.home"),
+                               System.getProperty("os.arch"))
             );
         }
 
         LaunchMechanism launchMechanism() {
             return AccessController.doPrivileged(
-                    (PrivilegedAction<LaunchMechanism>) () -> {
-                        String s = System.getProperty(
-                                "jdk.lang.Process.launchMechanism");
-                        LaunchMechanism lm;
-                        if (s == null) {
-                            lm = defaultLaunchMechanism;
-                            s = lm.name().toLowerCase(Locale.ENGLISH);
-                        } else {
-                            try {
-                                lm = LaunchMechanism.valueOf(
-                                        s.toUpperCase(Locale.ENGLISH));
-                            } catch (IllegalArgumentException e) {
-                                lm = null;
-                            }
+                (PrivilegedAction<LaunchMechanism>) () -> {
+                    String s = System.getProperty(
+                        "jdk.lang.Process.launchMechanism");
+                    LaunchMechanism lm;
+                    if (s == null) {
+                        lm = defaultLaunchMechanism;
+                        s = lm.name().toLowerCase(Locale.ENGLISH);
+                    } else {
+                        try {
+                            lm = LaunchMechanism.valueOf(
+                                s.toUpperCase(Locale.ENGLISH));
+                        } catch (IllegalArgumentException e) {
+                            lm = null;
                         }
-                        if (lm == null || !validLaunchMechanisms.contains(lm)) {
-                            throw new Error(
-                                    s + " is not a supported " +
-                                            "process launch mechanism on this platform."
-                            );
-                        }
-                        return lm;
                     }
+                    if (lm == null || !validLaunchMechanisms.contains(lm)) {
+                        throw new Error(
+                            s + " is not a supported " +
+                            "process launch mechanism on this platform."
+                        );
+                    }
+                    return lm;
+                }
             );
         }
 
         static Platform get() {
             String osName = AccessController.doPrivileged(
-                    (PrivilegedAction<String>) () -> System.getProperty("os.name")
+                (PrivilegedAction<String>) () -> System.getProperty("os.name")
             );
 
             if (osName.equals("Linux")) { return LINUX; }
@@ -173,17 +174,14 @@ final class ProcessImpl extends Process {
     private static final LaunchMechanism launchMechanism = platform.launchMechanism();
     private static final byte[] helperpath = toCString(platform.helperPath());
 
-    /* this is for the reaping thread */
-    private native int waitForProcessExit(int pid);
-
     private static byte[] toCString(String s) {
         if (s == null)
             return null;
         byte[] bytes = s.getBytes();
         byte[] result = new byte[bytes.length + 1];
         System.arraycopy(bytes, 0,
-                result, 0,
-                bytes.length);
+                         result, 0,
+                         bytes.length);
         result[result.length-1] = (byte)0;
         return result;
     }
@@ -304,30 +302,7 @@ final class ProcessImpl extends Process {
                                    byte[] dir,
                                    int[] fds,
                                    boolean redirectErrorStream)
-            throws IOException;
-
-    /**
-     * The thread pool of "process reaper" daemon threads.
-     */
-    private static final Executor processReaperExecutor =
-            doPrivileged((PrivilegedAction<Executor>) () -> {
-
-                ThreadGroup tg = Thread.currentThread().getThreadGroup();
-                while (tg.getParent() != null) tg = tg.getParent();
-                ThreadGroup systemThreadGroup = tg;
-
-                ThreadFactory threadFactory = grimReaper -> {
-                    // Our thread stack requirement is quite modest.
-                    Thread t = new Thread(systemThreadGroup, grimReaper,
-                            "process reaper", 32768);
-                    t.setDaemon(true);
-                    // A small attempt (probably futile) to avoid priority inversion
-                    t.setPriority(Thread.MAX_PRIORITY);
-                    return t;
-                };
-
-                return Executors.newCachedThreadPool(threadFactory);
-            });
+        throws IOException;
 
     private ProcessImpl(final byte[] prog,
                 final byte[] argBlock, final int argc,
@@ -338,13 +313,14 @@ final class ProcessImpl extends Process {
             throws IOException {
 
         pid = forkAndExec(launchMechanism.ordinal() + 1,
-                helperpath,
-                prog,
-                argBlock, argc,
-                envBlock, envc,
-                dir,
-                fds,
-                redirectErrorStream);
+                          helperpath,
+                          prog,
+                          argBlock, argc,
+                          envBlock, envc,
+                          dir,
+                          fds,
+                          redirectErrorStream);
+        processHandle = ProcessHandleImpl.getUnchecked(pid);
 
         try {
             doPrivileged((PrivilegedExceptionAction<Void>) () -> {
@@ -371,18 +347,16 @@ final class ProcessImpl extends Process {
                         new ProcessPipeOutputStream(fds[0]);
 
                 stdout = (fds[1] == -1) ?
-                        ProcessBuilder.NullInputStream.INSTANCE :
-                        new ProcessPipeInputStream(fds[1]);
+                         ProcessBuilder.NullInputStream.INSTANCE :
+                         new ProcessPipeInputStream(fds[1]);
 
                 stderr = (fds[2] == -1) ?
-                        ProcessBuilder.NullInputStream.INSTANCE :
-                        new ProcessPipeInputStream(fds[2]);
+                         ProcessBuilder.NullInputStream.INSTANCE :
+                         new ProcessPipeInputStream(fds[2]);
 
-                processReaperExecutor.execute(() -> {
-                    int exitcode = waitForProcessExit(pid);
-
+                ProcessHandleImpl.completion(pid, true).handle((exitcode, throwable) -> {
                     synchronized (this) {
-                        this.exitcode = exitcode;
+                        this.exitcode = (exitcode == null) ? -1 : exitcode.intValue();
                         this.hasExited = true;
                         this.notifyAll();
                     }
@@ -395,6 +369,8 @@ final class ProcessImpl extends Process {
 
                     if (stdin instanceof ProcessPipeOutputStream)
                         ((ProcessPipeOutputStream) stdin).processExited();
+
+                    return null;
                 });
                 break;
 
@@ -402,18 +378,18 @@ final class ProcessImpl extends Process {
                 stdin = (fds[0] == -1) ?
                         ProcessBuilder.NullOutputStream.INSTANCE :
                         new BufferedOutputStream(
-                                new FileOutputStream(newFileDescriptor(fds[0])));
+                            new FileOutputStream(newFileDescriptor(fds[0])));
 
                 stdout = (fds[1] == -1) ?
-                        ProcessBuilder.NullInputStream.INSTANCE :
-                        new BufferedInputStream(
-                                stdout_inner_stream =
-                                        new DeferredCloseInputStream(
-                                                newFileDescriptor(fds[1])));
+                         ProcessBuilder.NullInputStream.INSTANCE :
+                         new BufferedInputStream(
+                             stdout_inner_stream =
+                                 new DeferredCloseInputStream(
+                                     newFileDescriptor(fds[1])));
 
                 stderr = (fds[2] == -1) ?
-                        ProcessBuilder.NullInputStream.INSTANCE :
-                        new DeferredCloseInputStream(newFileDescriptor(fds[2]));
+                         ProcessBuilder.NullInputStream.INSTANCE :
+                         new DeferredCloseInputStream(newFileDescriptor(fds[2]));
 
                 /*
                  * For each subprocess forked a corresponding reaper task
@@ -423,14 +399,13 @@ final class ProcessImpl extends Process {
                  * exitStatus() to be safely executed in parallel (and they
                  * need no native code).
                  */
-                processReaperExecutor.execute(() -> {
-                    int exitcode = waitForProcessExit(pid);
-
+                ProcessHandleImpl.completion(pid, true).handle((exitcode, throwable) -> {
                     synchronized (this) {
-                        this.exitcode = exitcode;
+                        this.exitcode = (exitcode == null) ? -1 : exitcode.intValue();
                         this.hasExited = true;
                         this.notifyAll();
                     }
+                    return null;
                 });
                 break;
 
@@ -440,18 +415,16 @@ final class ProcessImpl extends Process {
                         new ProcessPipeOutputStream(fds[0]);
 
                 stdout = (fds[1] == -1) ?
-                        ProcessBuilder.NullInputStream.INSTANCE :
-                        new DeferredCloseProcessPipeInputStream(fds[1]);
+                         ProcessBuilder.NullInputStream.INSTANCE :
+                         new DeferredCloseProcessPipeInputStream(fds[1]);
 
                 stderr = (fds[2] == -1) ?
-                        ProcessBuilder.NullInputStream.INSTANCE :
-                        new DeferredCloseProcessPipeInputStream(fds[2]);
+                         ProcessBuilder.NullInputStream.INSTANCE :
+                         new DeferredCloseProcessPipeInputStream(fds[2]);
 
-                processReaperExecutor.execute(() -> {
-                    int exitcode = waitForProcessExit(pid);
-
+                ProcessHandleImpl.completion(pid, true).handle((exitcode, throwable) -> {
                     synchronized (this) {
-                        this.exitcode = exitcode;
+                        this.exitcode = (exitcode == null) ? -1 : exitcode.intValue();
                         this.hasExited = true;
                         this.notifyAll();
                     }
@@ -464,6 +437,8 @@ final class ProcessImpl extends Process {
 
                     if (stdin instanceof ProcessPipeOutputStream)
                         ((ProcessPipeOutputStream) stdin).processExited();
+
+                    return null;
                 });
                 break;
 
@@ -492,7 +467,7 @@ final class ProcessImpl extends Process {
 
     @Override
     public synchronized boolean waitFor(long timeout, TimeUnit unit)
-            throws InterruptedException
+        throws InterruptedException
     {
         long remainingNanos = unit.toNanos(timeout);    // throw NPE before other conditions
         if (hasExited) return true;
@@ -517,8 +492,6 @@ final class ProcessImpl extends Process {
         return exitcode;
     }
 
-    private static native void destroyProcess(int pid, boolean force);
-
     private void destroy(boolean force) {
         switch (platform) {
             case LINUX:
@@ -532,7 +505,7 @@ final class ProcessImpl extends Process {
                 // soon, so this is quite safe.
                 synchronized (this) {
                     if (!hasExited)
-                        destroyProcess(pid, force);
+                        ProcessHandleImpl.destroyProcess(pid, force);
                 }
                 try { stdin.close();  } catch (IOException ignored) {}
                 try { stdout.close(); } catch (IOException ignored) {}
@@ -548,14 +521,14 @@ final class ProcessImpl extends Process {
                 // soon, so this is quite safe.
                 synchronized (this) {
                     if (!hasExited)
-                        destroyProcess(pid, force);
+                        ProcessHandleImpl.destroyProcess(pid, force);
                     try {
                         stdin.close();
                         if (stdout_inner_stream != null)
                             stdout_inner_stream.closeDeferred(stdout);
                         if (stderr instanceof DeferredCloseInputStream)
                             ((DeferredCloseInputStream) stderr)
-                                    .closeDeferred(stderr);
+                                .closeDeferred(stderr);
                     } catch (IOException e) {
                         // ignore
                     }
@@ -566,6 +539,42 @@ final class ProcessImpl extends Process {
         }
     }
 
+    @Override
+    public CompletableFuture<Process> onExit() {
+        return ProcessHandleImpl.completion(pid, false)
+                .handleAsync((exitStatus, unusedThrowable) -> {
+                    boolean interrupted = false;
+                    while (true) {
+                        // Ensure that the concurrent task setting the exit status has completed
+                        try {
+                            waitFor();
+                            break;
+                        } catch (InterruptedException ie) {
+                            interrupted = true;
+                        }
+                    }
+                    if (interrupted) {
+                        Thread.currentThread().interrupt();
+                    }
+                    return this;
+                });
+    }
+
+    @Override
+    public ProcessHandle toHandle() {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(new RuntimePermission("manageProcess"));
+        }
+        return processHandle;
+    }
+
+    @Override
+    public boolean supportsNormalTermination() {
+        return ProcessImpl.SUPPORTS_NORMAL_TERMINATION;
+    }
+
+    @Override
     public void destroy() {
         destroy(false);
     }
@@ -629,8 +638,8 @@ final class ProcessImpl extends Process {
                         byte[] stragglers = drainInputStream(in);
                         in.close();
                         this.in = (stragglers == null) ?
-                                ProcessBuilder.NullInputStream.INSTANCE :
-                                new ByteArrayInputStream(stragglers);
+                            ProcessBuilder.NullInputStream.INSTANCE :
+                            new ByteArrayInputStream(stragglers);
                     }
                 } catch (IOException ignored) {}
             }
@@ -797,7 +806,7 @@ final class ProcessImpl extends Process {
      *
      */
     private static class DeferredCloseProcessPipeInputStream
-            extends BufferedInputStream {
+        extends BufferedInputStream {
 
         private final Object closeLock = new Object();
         private int useCount = 0;

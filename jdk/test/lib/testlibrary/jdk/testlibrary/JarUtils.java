@@ -72,9 +72,9 @@ public final class JarUtils {
             // is in the updated list
             List<String> updatedFiles = new ArrayList<>();
             try (JarFile srcJarFile = new JarFile(src)) {
-                Enumeration entries = srcJarFile.entries();
+                Enumeration<JarEntry> entries = srcJarFile.entries();
                 while (entries.hasMoreElements()) {
-                    JarEntry entry = (JarEntry) entries.nextElement();
+                    JarEntry entry = entries.nextElement();
                     String name = entry.getName();
                     boolean found = false;
                     for (String file : files) {

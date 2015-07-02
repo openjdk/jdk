@@ -1408,6 +1408,52 @@ void MacroAssembler::movptr(Register r, uintptr_t imm64) {
   movk(r, imm64 & 0xffff, 32);
 }
 
+// Macro to mov replicated immediate to vector register.
+//  Vd will get the following values for different arrangements in T
+//   imm32 == hex 000000gh  T8B:  Vd = ghghghghghghghgh
+//   imm32 == hex 000000gh  T16B: Vd = ghghghghghghghghghghghghghghghgh
+//   imm32 == hex 0000efgh  T4H:  Vd = efghefghefghefgh
+//   imm32 == hex 0000efgh  T8H:  Vd = efghefghefghefghefghefghefghefgh
+//   imm32 == hex abcdefgh  T2S:  Vd = abcdefghabcdefgh
+//   imm32 == hex abcdefgh  T4S:  Vd = abcdefghabcdefghabcdefghabcdefgh
+//   T1D/T2D: invalid
+void MacroAssembler::mov(FloatRegister Vd, SIMD_Arrangement T, u_int32_t imm32) {
+  assert(T != T1D && T != T2D, "invalid arrangement");
+  if (T == T8B || T == T16B) {
+    assert((imm32 & ~0xff) == 0, "extraneous bits in unsigned imm32 (T8B/T16B)");
+    movi(Vd, T, imm32 & 0xff, 0);
+    return;
+  }
+  u_int32_t nimm32 = ~imm32;
+  if (T == T4H || T == T8H) {
+    assert((imm32  & ~0xffff) == 0, "extraneous bits in unsigned imm32 (T4H/T8H)");
+    imm32 &= 0xffff;
+    nimm32 &= 0xffff;
+  }
+  u_int32_t x = imm32;
+  int movi_cnt = 0;
+  int movn_cnt = 0;
+  while (x) { if (x & 0xff) movi_cnt++; x >>= 8; }
+  x = nimm32;
+  while (x) { if (x & 0xff) movn_cnt++; x >>= 8; }
+  if (movn_cnt < movi_cnt) imm32 = nimm32;
+  unsigned lsl = 0;
+  while (imm32 && (imm32 & 0xff) == 0) { lsl += 8; imm32 >>= 8; }
+  if (movn_cnt < movi_cnt)
+    mvni(Vd, T, imm32 & 0xff, lsl);
+  else
+    movi(Vd, T, imm32 & 0xff, lsl);
+  imm32 >>= 8; lsl += 8;
+  while (imm32) {
+    while ((imm32 & 0xff) == 0) { lsl += 8; imm32 >>= 8; }
+    if (movn_cnt < movi_cnt)
+      bici(Vd, T, imm32 & 0xff, lsl);
+    else
+      orri(Vd, T, imm32 & 0xff, lsl);
+    lsl += 8; imm32 >>= 8;
+  }
+}
+
 void MacroAssembler::mov_immediate64(Register dst, u_int64_t imm64)
 {
 #ifndef PRODUCT
@@ -2888,41 +2934,40 @@ void MacroAssembler::cmpptr(Register src1, Address src2) {
   cmp(src1, rscratch1);
 }
 
-void MacroAssembler::store_check(Register obj) {
-  // Does a store check for the oop in register obj. The content of
-  // register obj is destroyed afterwards.
-  store_check_part_1(obj);
-  store_check_part_2(obj);
-}
-
 void MacroAssembler::store_check(Register obj, Address dst) {
   store_check(obj);
 }
 
+void MacroAssembler::store_check(Register obj) {
+  // Does a store check for the oop in register obj. The content of
+  // register obj is destroyed afterwards.
 
-// split the store check operation so that other instructions can be scheduled inbetween
-void MacroAssembler::store_check_part_1(Register obj) {
   BarrierSet* bs = Universe::heap()->barrier_set();
   assert(bs->kind() == BarrierSet::CardTableModRef, "Wrong barrier set kind");
-  lsr(obj, obj, CardTableModRefBS::card_shift);
-}
 
-void MacroAssembler::store_check_part_2(Register obj) {
-  BarrierSet* bs = Universe::heap()->barrier_set();
-  assert(bs->kind() == BarrierSet::CardTableModRef, "Wrong barrier set kind");
-  CardTableModRefBS* ct = (CardTableModRefBS*)bs;
+  CardTableModRefBS* ct = barrier_set_cast<CardTableModRefBS>(bs);
   assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
 
-  // The calculation for byte_map_base is as follows:
-  // byte_map_base = _byte_map - (uintptr_t(low_bound) >> card_shift);
-  // So this essentially converts an address to a displacement and
-  // it will never need to be relocated.
+  lsr(obj, obj, CardTableModRefBS::card_shift);
 
-  // FIXME: It's not likely that disp will fit into an offset so we
-  // don't bother to check, but it could save an instruction.
-  intptr_t disp = (intptr_t) ct->byte_map_base;
-  mov(rscratch1, disp);
-  strb(zr, Address(obj, rscratch1));
+  assert(CardTableModRefBS::dirty_card_val() == 0, "must be");
+
+  {
+    ExternalAddress cardtable((address) ct->byte_map_base);
+    unsigned long offset;
+    adrp(rscratch1, cardtable, offset);
+    assert(offset == 0, "byte_map_base is misaligned");
+  }
+
+  if (UseCondCardMark) {
+    Label L_already_dirty;
+    ldrb(rscratch2,  Address(obj, rscratch1));
+    cbz(rscratch2, L_already_dirty);
+    strb(zr, Address(obj, rscratch1));
+    bind(L_already_dirty);
+  } else {
+    strb(zr, Address(obj, rscratch1));
+  }
 }
 
 void MacroAssembler::load_klass(Register dst, Register src) {

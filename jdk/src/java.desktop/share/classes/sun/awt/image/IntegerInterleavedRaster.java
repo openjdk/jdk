@@ -206,7 +206,7 @@ public class IntegerInterleavedRaster extends IntegerComponentRaster {
      * and references anything other than an array of transferType.
      * @param x        The X coordinate of the pixel location.
      * @param y        The Y coordinate of the pixel location.
-     * @param outData  An object reference to an array of type defined by
+     * @param obj      An object reference to an array of type defined by
      *                 getTransferType() and length getNumDataElements().
      *                 If null an array of appropriate type and size will be
      *                 allocated.
@@ -249,9 +249,9 @@ public class IntegerInterleavedRaster extends IntegerComponentRaster {
      * </pre>
      * @param x        The X coordinate of the upper left pixel location.
      * @param y        The Y coordinate of the upper left pixel location.
-     * @param width    Width of the pixel rectangle.
-     * @param height   Height of the pixel rectangle.
-     * @param outData  An object reference to an array of type defined by
+     * @param w        Width of the pixel rectangle.
+     * @param h        Height of the pixel rectangle.
+     * @param obj      An object reference to an array of type defined by
      *                 getTransferType() and length w*h*getNumDataElements().
      *                 If null an array of appropriate type and size will be
      *                 allocated.
@@ -291,7 +291,7 @@ public class IntegerInterleavedRaster extends IntegerComponentRaster {
      * and references anything other than an array of transferType.
      * @param x        The X coordinate of the pixel location.
      * @param y        The Y coordinate of the pixel location.
-     * @param inData   An object reference to an array of type defined by
+     * @param obj      An object reference to an array of type defined by
      *                 getTransferType() and length getNumDataElements()
      *                 containing the pixel data to place at x,y.
      */
@@ -410,7 +410,7 @@ public class IntegerInterleavedRaster extends IntegerComponentRaster {
      * @param y        The Y coordinate of the upper left pixel location.
      * @param w        Width of the pixel rectangle.
      * @param h        Height of the pixel rectangle.
-     * @param inData   An object reference to an array of type defined by
+     * @param obj      An object reference to an array of type defined by
      *                 getTransferType() and length w*h*getNumDataElements()
      *                 containing the pixel data to place between x,y and
      *                 x+h, y+h.

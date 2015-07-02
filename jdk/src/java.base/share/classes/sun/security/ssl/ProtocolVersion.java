@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.security.ssl;
 
 import java.util.*;
 import java.security.CryptoPrimitive;
+import sun.security.ssl.CipherSuite.*;
 
 /**
  * Type safe enum for an SSL/TLS protocol version. Instances are obtained
@@ -61,9 +62,9 @@ public final class ProtocolVersion implements Comparable<ProtocolVersion> {
     // Dummy protocol version value for invalid SSLSession
     final static ProtocolVersion NONE = new ProtocolVersion(-1, "NONE");
 
-    // If enabled, send/ accept SSLv2 hello messages
-    final static ProtocolVersion SSL20Hello = new ProtocolVersion(0x0002,
-                                                                "SSLv2Hello");
+    // If enabled, send/accept SSLv2 hello messages
+    final static ProtocolVersion SSL20Hello =
+                                new ProtocolVersion(0x0002, "SSLv2Hello");
 
     // SSL 3.0
     final static ProtocolVersion SSL30 = new ProtocolVersion(0x0300, "SSLv3");
@@ -77,6 +78,19 @@ public final class ProtocolVersion implements Comparable<ProtocolVersion> {
     // TLS 1.2
     final static ProtocolVersion TLS12 = new ProtocolVersion(0x0303, "TLSv1.2");
 
+    // DTLS 1.0
+    // {254, 255}, the version value of DTLS 1.0.
+    final static ProtocolVersion DTLS10 =
+                                new ProtocolVersion(0xFEFF, "DTLSv1.0");
+
+    // No DTLS 1.1, that version number was skipped in order to harmonize
+    // version numbers with TLS.
+
+    // DTLS 1.2
+    // {254, 253}, the version value of DTLS 1.2.
+    final static ProtocolVersion DTLS12 =
+                                new ProtocolVersion(0xFEFD, "DTLSv1.2");
+
     private static final boolean FIPS = SunJSSE.isFIPS();
 
     // minimum version we implement (SSL 3.0)
@@ -85,8 +99,11 @@ public final class ProtocolVersion implements Comparable<ProtocolVersion> {
     // maximum version we implement (TLS 1.2)
     final static ProtocolVersion MAX = TLS12;
 
-    // ProtocolVersion to use by default (TLS 1.2)
-    final static ProtocolVersion DEFAULT = TLS12;
+    // SSL/TLS ProtocolVersion to use by default (TLS 1.2)
+    final static ProtocolVersion DEFAULT_TLS = TLS12;
+
+    // DTLS ProtocolVersion to use by default (TLS 1.2)
+    final static ProtocolVersion DEFAULT_DTLS = DTLS12;
 
     // Default version for hello messages (SSLv2Hello)
     final static ProtocolVersion DEFAULT_HELLO = FIPS ? TLS10 : SSL30;
@@ -108,10 +125,10 @@ public final class ProtocolVersion implements Comparable<ProtocolVersion> {
 
     // Initialize the available protocols.
     static {
-        Set<ProtocolVersion> protocols = new HashSet<>(5);
+        Set<ProtocolVersion> protocols = new HashSet<>(7);
 
         ProtocolVersion[] pvs = new ProtocolVersion[] {
-                SSL20Hello, SSL30, TLS10, TLS11, TLS12};
+                SSL20Hello, SSL30, TLS10, TLS11, TLS12, DTLS10, DTLS12};
         EnumSet<CryptoPrimitive> cryptoPrimitives =
             EnumSet.<CryptoPrimitive>of(CryptoPrimitive.KEY_AGREEMENT);
         for (ProtocolVersion p : pvs) {
@@ -145,6 +162,10 @@ public final class ProtocolVersion implements Comparable<ProtocolVersion> {
             return TLS12;
         } else if (v == SSL20Hello.v) {
             return SSL20Hello;
+        } else if (v == DTLS10.v) {
+            return DTLS10;
+        } else if (v == DTLS12.v) {
+            return DTLS12;
         } else {
             int major = (v >>> 8) & 0xFF;
             int minor = v & 0xFF;
@@ -172,8 +193,8 @@ public final class ProtocolVersion implements Comparable<ProtocolVersion> {
         }
 
         if (FIPS && (name.equals(SSL30.name) || name.equals(SSL20Hello.name))) {
-            throw new IllegalArgumentException
-                ("Only TLS 1.0 or later allowed in FIPS mode");
+            throw new IllegalArgumentException(
+                    "Only TLS 1.0 or later allowed in FIPS mode");
         }
 
         if (name.equals(SSL30.name)) {
@@ -186,6 +207,10 @@ public final class ProtocolVersion implements Comparable<ProtocolVersion> {
             return TLS12;
         } else if (name.equals(SSL20Hello.name)) {
             return SSL20Hello;
+        } else if (name.equals(DTLS10.name)) {
+            return DTLS10;
+        } else if (name.equals(DTLS12.name)) {
+            return DTLS12;
         } else {
             throw new IllegalArgumentException(name);
         }
@@ -201,6 +226,90 @@ public final class ProtocolVersion implements Comparable<ProtocolVersion> {
      */
     @Override
     public int compareTo(ProtocolVersion protocolVersion) {
-        return this.v - protocolVersion.v;
+        if (maybeDTLSProtocol()) {
+            if (!protocolVersion.maybeDTLSProtocol()) {
+                throw new IllegalArgumentException("Not DTLS protocol");
+            }
+
+            return protocolVersion.v - this.v;
+        } else {
+            if (protocolVersion.maybeDTLSProtocol()) {
+                throw new IllegalArgumentException("Not TLS protocol");
+            }
+
+            return this.v - protocolVersion.v;
+        }
+    }
+
+    /**
+     * Returns true if a ProtocolVersion represents a DTLS protocol.
+     */
+    boolean isDTLSProtocol() {
+        return this.v == DTLS12.v || this.v == DTLS10.v;
+    }
+
+    /**
+     * Returns true if a ProtocolVersion may represent a DTLS protocol.
+     */
+    boolean maybeDTLSProtocol() {
+        return (this.major & 0x80) != 0;
+    }
+
+    boolean useTLS12PlusSpec() {
+        return maybeDTLSProtocol() ? (this.v <= DTLS12.v) : (this.v >= TLS12.v);
+    }
+
+    boolean useTLS11PlusSpec() {
+        return maybeDTLSProtocol() ? true : (this.v >= TLS11.v);
+    }
+
+    boolean useTLS10PlusSpec() {
+        return maybeDTLSProtocol() ? true : (this.v >= TLS10.v);
+    }
+
+    boolean obsoletes(CipherSuite suite) {
+        ProtocolVersion proto = this;
+        if (proto.isDTLSProtocol()) {
+            // DTLS bans stream ciphers.
+            if (suite.cipher.cipherType == CipherType.STREAM_CIPHER) {
+                return true;
+            }
+
+            proto = mapToTLSProtocol(this);
+        }
+
+        return (proto.v >= suite.obsoleted);
+    }
+
+    boolean supports(CipherSuite suite) {
+        ProtocolVersion proto = this;
+        if (proto.isDTLSProtocol()) {
+            // DTLS bans stream ciphers.
+            if (suite.cipher.cipherType == CipherType.STREAM_CIPHER) {
+                return false;
+            }
+
+            proto = mapToTLSProtocol(this);
+        }
+
+        return (proto.v >= suite.supported);
+    }
+
+    // Map a specified protocol to the corresponding TLS version.
+    //
+    // DTLS 1.2 -> TLS 1.2
+    // DTLS 1.0 -> TLS 1.1
+    private static ProtocolVersion mapToTLSProtocol(
+            ProtocolVersion protocolVersion) {
+
+        if (protocolVersion.isDTLSProtocol()) {
+            if (protocolVersion.v == DTLS10.v) {
+                protocolVersion = TLS11;
+            } else {    // DTLS12
+                protocolVersion = TLS12;
+            }
+        }
+
+        return protocolVersion;
     }
 }

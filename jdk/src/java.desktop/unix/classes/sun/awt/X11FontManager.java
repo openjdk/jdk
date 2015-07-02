@@ -44,7 +44,6 @@ import sun.font.MFontConfiguration;
 import sun.font.CompositeFont;
 import sun.font.FontManager;
 import sun.font.SunFontManager;
-import sun.font.FontConfigManager;
 import sun.font.FcFontConfiguration;
 import sun.font.FontAccess;
 import sun.font.FontUtilities;

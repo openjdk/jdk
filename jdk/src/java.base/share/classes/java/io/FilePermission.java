@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,9 @@ package java.io;
 
 import java.security.*;
 import java.util.Enumeration;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Vector;
-import java.util.Collections;
 import java.util.StringJoiner;
+import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
 import sun.security.util.SecurityConstants;
 
 /**
@@ -288,7 +286,6 @@ public final class FilePermission extends Permission implements Serializable {
      * @param path the pathname of the file/directory.
      * @param mask the action mask to use.
      */
-
     // package private for use by the FilePermissionCollection add method
     FilePermission(String path, int mask) {
         super(path);
@@ -315,6 +312,7 @@ public final class FilePermission extends Permission implements Serializable {
      *                  <code>null</code> and is implied by this object,
      *                  <code>false</code> otherwise.
      */
+    @Override
     public boolean implies(Permission p) {
         if (!(p instanceof FilePermission))
             return false;
@@ -387,6 +385,7 @@ public final class FilePermission extends Permission implements Serializable {
      *          pathname and actions as this FilePermission object,
      *          <code>false</code> otherwise.
      */
+    @Override
     public boolean equals(Object obj) {
         if (obj == this)
             return true;
@@ -407,6 +406,7 @@ public final class FilePermission extends Permission implements Serializable {
      *
      * @return a hash code value for this object.
      */
+    @Override
     public int hashCode() {
         return 0;
     }
@@ -587,6 +587,7 @@ public final class FilePermission extends Permission implements Serializable {
      *
      * @return the canonical string representation of the actions.
      */
+    @Override
     public String getActions() {
         if (actions == null)
             actions = getActions(this.mask);
@@ -625,6 +626,7 @@ public final class FilePermission extends Permission implements Serializable {
      * @return a new PermissionCollection object suitable for storing
      * FilePermissions.
      */
+    @Override
     public PermissionCollection newPermissionCollection() {
         return new FilePermissionCollection();
     }
@@ -689,13 +691,13 @@ final class FilePermissionCollection extends PermissionCollection
     implements Serializable
 {
     // Not serialized; see serialization section at end of class
-    private transient List<Permission> perms;
+    private transient ConcurrentHashMap<String, Permission> perms;
 
     /**
      * Create an empty FilePermissionCollection object.
      */
     public FilePermissionCollection() {
-        perms = new ArrayList<>();
+        perms = new ConcurrentHashMap<>();
     }
 
     /**
@@ -710,6 +712,7 @@ final class FilePermissionCollection extends PermissionCollection
      * @exception SecurityException - if this FilePermissionCollection object
      *                                has been marked readonly
      */
+    @Override
     public void add(Permission permission) {
         if (! (permission instanceof FilePermission))
             throw new IllegalArgumentException("invalid permission: "+
@@ -718,9 +721,31 @@ final class FilePermissionCollection extends PermissionCollection
             throw new SecurityException(
                 "attempt to add a Permission to a readonly PermissionCollection");
 
-        synchronized (this) {
-            perms.add(permission);
-        }
+        FilePermission fp = (FilePermission)permission;
+
+        // Add permission to map if it is absent, or replace with new
+        // permission if applicable. NOTE: cannot use lambda for
+        // remappingFunction parameter until JDK-8076596 is fixed.
+        perms.merge(fp.getName(), fp,
+            new java.util.function.BiFunction<>() {
+                @Override
+                public Permission apply(Permission existingVal,
+                                        Permission newVal) {
+                    int oldMask = ((FilePermission)existingVal).getMask();
+                    int newMask = ((FilePermission)newVal).getMask();
+                    if (oldMask != newMask) {
+                        int effective = oldMask | newMask;
+                        if (effective == newMask) {
+                            return newVal;
+                        }
+                        if (effective != oldMask) {
+                            return new FilePermission(fp.getName(), effective);
+                        }
+                    }
+                    return existingVal;
+                }
+            }
+        );
     }
 
     /**
@@ -732,26 +757,25 @@ final class FilePermissionCollection extends PermissionCollection
      * @return true if "permission" is a proper subset of a permission in
      * the set, false if not.
      */
+    @Override
     public boolean implies(Permission permission) {
         if (! (permission instanceof FilePermission))
             return false;
 
-        FilePermission fp = (FilePermission) permission;
+        FilePermission fperm = (FilePermission) permission;
 
-        int desired = fp.getMask();
+        int desired = fperm.getMask();
         int effective = 0;
         int needed = desired;
 
-        synchronized (this) {
-            int len = perms.size();
-            for (int i = 0; i < len; i++) {
-                FilePermission x = (FilePermission) perms.get(i);
-                if (((needed & x.getMask()) != 0) && x.impliesIgnoreMask(fp)) {
-                    effective |=  x.getMask();
-                    if ((effective & desired) == desired)
-                        return true;
-                    needed = (desired ^ effective);
+        for (Permission perm : perms.values()) {
+            FilePermission fp = (FilePermission)perm;
+            if (((needed & fp.getMask()) != 0) && fp.impliesIgnoreMask(fperm)) {
+                effective |= fp.getMask();
+                if ((effective & desired) == desired) {
+                    return true;
                 }
+                needed = (desired ^ effective);
             }
         }
         return false;
@@ -763,11 +787,9 @@ final class FilePermissionCollection extends PermissionCollection
      *
      * @return an enumeration of all the FilePermission objects.
      */
+    @Override
     public Enumeration<Permission> elements() {
-        // Convert Iterator into Enumeration
-        synchronized (this) {
-            return Collections.enumeration(perms);
-        }
+        return perms.elements();
     }
 
     private static final long serialVersionUID = 2202956749081564585L;
@@ -795,10 +817,7 @@ final class FilePermissionCollection extends PermissionCollection
         // Don't call out.defaultWriteObject()
 
         // Write out Vector
-        Vector<Permission> permissions = new Vector<>(perms.size());
-        synchronized (this) {
-            permissions.addAll(perms);
-        }
+        Vector<Permission> permissions = new Vector<>(perms.values());
 
         ObjectOutputStream.PutField pfields = out.putFields();
         pfields.put("permissions", permissions);
@@ -819,7 +838,9 @@ final class FilePermissionCollection extends PermissionCollection
         // Get the one we want
         @SuppressWarnings("unchecked")
         Vector<Permission> permissions = (Vector<Permission>)gfields.get("permissions", null);
-        perms = new ArrayList<>(permissions.size());
-        perms.addAll(permissions);
+        perms = new ConcurrentHashMap<>(permissions.size());
+        for (Permission perm : permissions) {
+            perms.put(perm.getName(), perm);
+        }
     }
 }

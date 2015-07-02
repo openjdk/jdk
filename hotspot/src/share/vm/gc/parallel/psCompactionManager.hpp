@@ -133,7 +133,7 @@ private:
   RegionTaskQueue* region_stack()                { return _region_stack; }
   void set_region_stack(RegionTaskQueue* v)       { _region_stack = v; }
 
-  inline static ParCompactionManager* manager_array(int index);
+  inline static ParCompactionManager* manager_array(uint index);
 
   inline static RegionTaskQueue* region_list(int index) {
     return _region_list[index];
@@ -177,7 +177,7 @@ private:
   void follow_class_loader(ClassLoaderData* klass);
 
   // Access function for compaction managers
-  static ParCompactionManager* gc_thread_compaction_manager(int index);
+  static ParCompactionManager* gc_thread_compaction_manager(uint index);
 
   static bool steal(int queue_num, int* seed, oop& t);
   static bool steal_objarray(int queue_num, int* seed, ObjArrayTask& t);
@@ -229,10 +229,9 @@ private:
   };
 };
 
-inline ParCompactionManager* ParCompactionManager::manager_array(int index) {
+inline ParCompactionManager* ParCompactionManager::manager_array(uint index) {
   assert(_manager_array != NULL, "access of NULL manager_array");
-  assert(index >= 0 && index <= (int)ParallelGCThreads,
-    "out of range manager_array access");
+  assert(index <= ParallelGCThreads, "out of range manager_array access");
   return _manager_array[index];
 }
 

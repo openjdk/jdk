@@ -680,7 +680,6 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
      *      obtained
      * @return the font metrics for <code>font</code>
      * @see       #getFont
-     * @see       #getPeer
      * @see       java.awt.peer.ComponentPeer#getFontMetrics(Font)
      * @see       Toolkit#getFontMetrics(Font)
      * @since     1.0

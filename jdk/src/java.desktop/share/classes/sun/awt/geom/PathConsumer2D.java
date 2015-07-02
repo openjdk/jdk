@@ -27,30 +27,30 @@ package sun.awt.geom;
 
 public interface PathConsumer2D {
     /**
-     * @see java.awt.geom.Path2D.Float.moveTo
+     * @see java.awt.geom.Path2D.Float#moveTo
      */
     public void moveTo(float x, float y);
 
     /**
-     * @see java.awt.geom.Path2D.Float.lineTo
+     * @see java.awt.geom.Path2D.Float#lineTo
      */
     public void lineTo(float x, float y);
 
     /**
-     * @see java.awt.geom.Path2D.Float.quadTo
+     * @see java.awt.geom.Path2D.Float#quadTo
      */
     public void quadTo(float x1, float y1,
                        float x2, float y2);
 
     /**
-     * @see java.awt.geom.Path2D.Float.curveTo
+     * @see java.awt.geom.Path2D.Float#curveTo
      */
     public void curveTo(float x1, float y1,
                         float x2, float y2,
                         float x3, float y3);
 
     /**
-     * @see java.awt.geom.Path2D.Float.closePath
+     * @see java.awt.geom.Path2D.Float#closePath
      */
     public void closePath();
 

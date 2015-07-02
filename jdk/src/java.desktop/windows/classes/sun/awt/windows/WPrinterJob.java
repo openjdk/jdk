@@ -591,7 +591,7 @@ public final class WPrinterJob extends RasterPrinterJob
      * Throws <code>PrinterException</code> if the specified service
      * cannot support the <code>Pageable</code> and
      * </code>Printable</code> interfaces necessary to support 2D printing.
-     * @param a print service which supports 2D printing.
+     * @param service print service which supports 2D printing.
      *
      * @throws PrinterException if the specified service does not support
      * 2D printing.

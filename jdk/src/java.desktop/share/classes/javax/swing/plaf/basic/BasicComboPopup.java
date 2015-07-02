@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,6 +184,8 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
      */
     protected ItemListener             itemListener;
 
+    private MouseWheelListener         scrollerMouseWheelListener;
+
     /**
      * This protected field is implementation specific. Do not access directly
      * or override.
@@ -311,6 +313,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
         uninstallComboBoxModelListeners(comboBox.getModel());
         uninstallKeyboardActions();
         uninstallListListeners();
+        uninstallScrollerListeners();
         // We do this, otherwise the listener the ui installs on
         // the model (the combobox model in this case) will keep a
         // reference to the list, causing the list (and us) to never get gced.
@@ -608,6 +611,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
         scroller.setFocusable( false );
         scroller.getVerticalScrollBar().setFocusable( false );
         scroller.setBorder( null );
+        installScrollerListeners();
     }
 
     /**
@@ -622,6 +626,20 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
         add( scroller );
         setDoubleBuffered( true );
         setFocusable( false );
+    }
+
+    private void installScrollerListeners() {
+        scrollerMouseWheelListener = getHandler();
+        if (scrollerMouseWheelListener != null) {
+            scroller.addMouseWheelListener(scrollerMouseWheelListener);
+        }
+    }
+
+    private void uninstallScrollerListeners() {
+        if (scrollerMouseWheelListener != null) {
+            scroller.removeMouseWheelListener(scrollerMouseWheelListener);
+            scrollerMouseWheelListener = null;
+        }
     }
 
     /**
@@ -835,8 +853,8 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
 
 
     private class Handler implements ItemListener, MouseListener,
-                          MouseMotionListener, PropertyChangeListener,
-                          Serializable {
+                          MouseMotionListener, MouseWheelListener,
+                          PropertyChangeListener, Serializable {
         //
         // MouseListener
         // NOTE: this is added to both the JList and JComboBox
@@ -1023,6 +1041,13 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
                 JComboBox<Object> comboBox = (JComboBox)e.getSource();
                 setListSelection(comboBox.getSelectedIndex());
             }
+        }
+
+        //
+        // MouseWheelListener
+        //
+        public void mouseWheelMoved(MouseWheelEvent e) {
+            e.consume();
         }
     }
 
@@ -1287,11 +1312,24 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
         else {
             screenBounds = new Rectangle(p, toolkit.getScreenSize());
         }
-
-        Rectangle rect = new Rectangle(px,py,pw,ph);
-        if (py+ph > screenBounds.y+screenBounds.height
-            && ph < screenBounds.height) {
-            rect.y = -rect.height;
+        int borderHeight = 0;
+        Border popupBorder = getBorder();
+        if (popupBorder != null) {
+            Insets borderInsets = popupBorder.getBorderInsets(this);
+            borderHeight = borderInsets.top + borderInsets.bottom;
+            screenBounds.width -= (borderInsets.left + borderInsets.right);
+            screenBounds.height -= borderHeight;
+        }
+        Rectangle rect = new Rectangle(px, py, pw, ph);
+        if (py + ph > screenBounds.y + screenBounds.height) {
+            if (ph <= -screenBounds.y - borderHeight) {
+                // popup goes above
+                rect.y = -ph - borderHeight;
+            } else {
+                // a full screen height popup
+                rect.y = screenBounds.y + Math.max(0, (screenBounds.height - ph) / 2 );
+                rect.height = Math.min(screenBounds.height, ph);
+            }
         }
         return rect;
     }

@@ -233,7 +233,7 @@ public class LengthCheckTest {
             // sent back to the server.
             if (gotException == false ||
                 !isTlsMessage(cTOs, TLS_RECTYPE_ALERT, TLS_ALERT_LVL_FATAL,
-                        TLS_ALERT_INTERNAL_ERROR)) {
+                        TLS_ALERT_UNEXPECTED_MSG)) {
                 throw new SSLException(
                     "Client failed to throw Alert:fatal:internal_error");
             }
@@ -285,7 +285,7 @@ public class LengthCheckTest {
             // sent back to the client.
             if (gotException == false ||
                 !isTlsMessage(sTOc, TLS_RECTYPE_ALERT, TLS_ALERT_LVL_FATAL,
-                        TLS_ALERT_INTERNAL_ERROR)) {
+                        TLS_ALERT_UNEXPECTED_MSG)) {
                 throw new SSLException(
                     "Server failed to throw Alert:fatal:internal_error");
             }

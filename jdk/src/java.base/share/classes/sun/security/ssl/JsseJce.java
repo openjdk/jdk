@@ -64,24 +64,9 @@ final class JsseJce {
     // If true, then all the Kerberos-based crypto we need is available.
     private final static boolean kerberosAvailable;
     static {
-        boolean temp;
-        try {
-            AccessController.doPrivileged(
-                new PrivilegedExceptionAction<Void>() {
-                    @Override
-                    public Void run() throws Exception {
-                        // Test for Kerberos using the bootstrap class loader
-                        Class.forName("sun.security.krb5.PrincipalName", true,
-                                null);
-                        return null;
-                    }
-                });
-            temp = true;
-
-        } catch (Exception e) {
-            temp = false;
-        }
-        kerberosAvailable = temp;
+        ClientKeyExchangeService p =
+                ClientKeyExchangeService.find("KRB5");
+        kerberosAvailable = (p != null);
     }
 
     static {

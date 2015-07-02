@@ -354,8 +354,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
             }
         }, CREATE_GLOBAL_ACC_CTXT);
 
-        nashornContext.initGlobal(newGlobal, this);
-        newGlobal.setScriptContext(ctxt);
+        nashornContext.initGlobal(newGlobal, this, ctxt);
 
         return newGlobal;
     }
@@ -404,7 +403,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
         return evalImpl(script, ctxt, getNashornGlobalFrom(ctxt));
     }
 
-    private static Object evalImpl(final Context.MultiGlobalCompiledScript mgcs, final ScriptContext ctxt, final Global ctxtGlobal) throws ScriptException {
+    private Object evalImpl(final Context.MultiGlobalCompiledScript mgcs, final ScriptContext ctxt, final Global ctxtGlobal) throws ScriptException {
         final Global oldGlobal = Context.getGlobal();
         final boolean globalChanged = (oldGlobal != ctxtGlobal);
         try {
@@ -413,8 +412,13 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
             }
 
             final ScriptFunction script = mgcs.getFunction(ctxtGlobal);
+            final ScriptContext oldCtxt = ctxtGlobal.getScriptContext();
             ctxtGlobal.setScriptContext(ctxt);
-            return ScriptObjectMirror.translateUndefined(ScriptObjectMirror.wrap(ScriptRuntime.apply(script, ctxtGlobal), ctxtGlobal));
+            try {
+                return ScriptObjectMirror.translateUndefined(ScriptObjectMirror.wrap(ScriptRuntime.apply(script, ctxtGlobal), ctxtGlobal));
+            } finally {
+                ctxtGlobal.setScriptContext(oldCtxt);
+            }
         } catch (final Exception e) {
             throwAsScriptException(e, ctxtGlobal);
             throw new AssertionError("should not reach here");
@@ -425,7 +429,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
         }
     }
 
-    private static Object evalImpl(final ScriptFunction script, final ScriptContext ctxt, final Global ctxtGlobal) throws ScriptException {
+    private Object evalImpl(final ScriptFunction script, final ScriptContext ctxt, final Global ctxtGlobal) throws ScriptException {
         if (script == null) {
             return null;
         }
@@ -436,8 +440,13 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
                 Context.setGlobal(ctxtGlobal);
             }
 
+            final ScriptContext oldCtxt = ctxtGlobal.getScriptContext();
             ctxtGlobal.setScriptContext(ctxt);
-            return ScriptObjectMirror.translateUndefined(ScriptObjectMirror.wrap(ScriptRuntime.apply(script, ctxtGlobal), ctxtGlobal));
+            try {
+                return ScriptObjectMirror.translateUndefined(ScriptObjectMirror.wrap(ScriptRuntime.apply(script, ctxtGlobal), ctxtGlobal));
+            } finally {
+                ctxtGlobal.setScriptContext(oldCtxt);
+            }
         } catch (final Exception e) {
             throwAsScriptException(e, ctxtGlobal);
             throw new AssertionError("should not reach here");

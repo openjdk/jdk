@@ -197,7 +197,7 @@ class LibraryCallKit : public GraphKit {
   CallJavaNode* generate_method_call_virtual(vmIntrinsics::ID method_id) {
     return generate_method_call(method_id, true, false);
   }
-  Node * load_field_from_object(Node * fromObj, const char * fieldName, const char * fieldTypeString, bool is_exact, bool is_static);
+  Node * load_field_from_object(Node * fromObj, const char * fieldName, const char * fieldTypeString, bool is_exact, bool is_static, ciInstanceKlass * fromKls);
 
   Node* make_string_method_node(int opcode, Node* str1_start, Node* cnt1, Node* str2_start, Node* cnt2);
   Node* make_string_method_node(int opcode, Node* str1, Node* str2);
@@ -278,6 +278,7 @@ class LibraryCallKit : public GraphKit {
   Node* inline_cipherBlockChaining_AESCrypt_predicate(bool decrypting);
   Node* get_key_start_from_aescrypt_object(Node* aescrypt_object);
   Node* get_original_key_start_from_aescrypt_object(Node* aescrypt_object);
+  bool inline_ghash_processBlocks();
   bool inline_sha_implCompress(vmIntrinsics::ID id);
   bool inline_digestBase_implCompressMB(int predicate);
   bool inline_sha_implCompressMB(Node* digestBaseObj, ciInstanceKlass* instklass_SHA,
@@ -290,6 +291,9 @@ class LibraryCallKit : public GraphKit {
   bool inline_updateCRC32();
   bool inline_updateBytesCRC32();
   bool inline_updateByteBufferCRC32();
+  Node* get_table_from_crc32c_class(ciInstanceKlass *crc32c_class);
+  bool inline_updateBytesCRC32C();
+  bool inline_updateDirectByteBufferCRC32C();
   bool inline_multiplyToLen();
   bool inline_squareToLen();
   bool inline_mulAdd();
@@ -537,10 +541,19 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     predicates = 3;
     break;
 
+  case vmIntrinsics::_ghash_processBlocks:
+    if (!UseGHASHIntrinsics) return NULL;
+    break;
+
   case vmIntrinsics::_updateCRC32:
   case vmIntrinsics::_updateBytesCRC32:
   case vmIntrinsics::_updateByteBufferCRC32:
     if (!UseCRC32Intrinsics) return NULL;
+    break;
+
+  case vmIntrinsics::_updateBytesCRC32C:
+  case vmIntrinsics::_updateDirectByteBufferCRC32C:
+    if (!UseCRC32CIntrinsics) return NULL;
     break;
 
   case vmIntrinsics::_incrementExactI:
@@ -943,6 +956,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_montgomerySquare:
     return inline_montgomerySquare();
 
+  case vmIntrinsics::_ghash_processBlocks:
+    return inline_ghash_processBlocks();
+
   case vmIntrinsics::_encodeISOArray:
     return inline_encodeISOArray();
 
@@ -952,6 +968,11 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_updateBytesCRC32();
   case vmIntrinsics::_updateByteBufferCRC32:
     return inline_updateByteBufferCRC32();
+
+  case vmIntrinsics::_updateBytesCRC32C:
+    return inline_updateBytesCRC32C();
+  case vmIntrinsics::_updateDirectByteBufferCRC32C:
+    return inline_updateDirectByteBufferCRC32C();
 
   case vmIntrinsics::_profileBoolean:
     return inline_profileBoolean();
@@ -5658,6 +5679,106 @@ bool LibraryCallKit::inline_updateByteBufferCRC32() {
   return true;
 }
 
+//------------------------------get_table_from_crc32c_class-----------------------
+Node * LibraryCallKit::get_table_from_crc32c_class(ciInstanceKlass *crc32c_class) {
+  Node* table = load_field_from_object(NULL, "byteTable", "[I", /*is_exact*/ false, /*is_static*/ true, crc32c_class);
+  assert (table != NULL, "wrong version of java.util.zip.CRC32C");
+
+  return table;
+}
+
+//------------------------------inline_updateBytesCRC32C-----------------------
+//
+// Calculate CRC32C for byte[] array.
+// int java.util.zip.CRC32C.updateBytes(int crc, byte[] buf, int off, int end)
+//
+bool LibraryCallKit::inline_updateBytesCRC32C() {
+  assert(UseCRC32CIntrinsics, "need CRC32C instruction support");
+  assert(callee()->signature()->size() == 4, "updateBytes has 4 parameters");
+  assert(callee()->holder()->is_loaded(), "CRC32C class must be loaded");
+  // no receiver since it is a static method
+  Node* crc     = argument(0); // type: int
+  Node* src     = argument(1); // type: oop
+  Node* offset  = argument(2); // type: int
+  Node* end     = argument(3); // type: int
+
+  Node* length = _gvn.transform(new SubINode(end, offset));
+
+  const Type* src_type = src->Value(&_gvn);
+  const TypeAryPtr* top_src = src_type->isa_aryptr();
+  if (top_src  == NULL || top_src->klass()  == NULL) {
+    // failed array check
+    return false;
+  }
+
+  // Figure out the size and type of the elements we will be copying.
+  BasicType src_elem = src_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  if (src_elem != T_BYTE) {
+    return false;
+  }
+
+  // 'src_start' points to src array + scaled offset
+  Node* src_start = array_element_address(src, offset, src_elem);
+
+  // static final int[] byteTable in class CRC32C
+  Node* table = get_table_from_crc32c_class(callee()->holder());
+  Node* table_start = array_element_address(table, intcon(0), T_INT);
+
+  // We assume that range check is done by caller.
+  // TODO: generate range check (offset+length < src.length) in debug VM.
+
+  // Call the stub.
+  address stubAddr = StubRoutines::updateBytesCRC32C();
+  const char *stubName = "updateBytesCRC32C";
+
+  Node* call = make_runtime_call(RC_LEAF, OptoRuntime::updateBytesCRC32C_Type(),
+                                 stubAddr, stubName, TypePtr::BOTTOM,
+                                 crc, src_start, length, table_start);
+  Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+  set_result(result);
+  return true;
+}
+
+//------------------------------inline_updateDirectByteBufferCRC32C-----------------------
+//
+// Calculate CRC32C for DirectByteBuffer.
+// int java.util.zip.CRC32C.updateDirectByteBuffer(int crc, long buf, int off, int end)
+//
+bool LibraryCallKit::inline_updateDirectByteBufferCRC32C() {
+  assert(UseCRC32CIntrinsics, "need CRC32C instruction support");
+  assert(callee()->signature()->size() == 5, "updateDirectByteBuffer has 4 parameters and one is long");
+  assert(callee()->holder()->is_loaded(), "CRC32C class must be loaded");
+  // no receiver since it is a static method
+  Node* crc     = argument(0); // type: int
+  Node* src     = argument(1); // type: long
+  Node* offset  = argument(3); // type: int
+  Node* end     = argument(4); // type: int
+
+  Node* length = _gvn.transform(new SubINode(end, offset));
+
+  src = ConvL2X(src);  // adjust Java long to machine word
+  Node* base = _gvn.transform(new CastX2PNode(src));
+  offset = ConvI2X(offset);
+
+  // 'src_start' points to src array + scaled offset
+  Node* src_start = basic_plus_adr(top(), base, offset);
+
+  // static final int[] byteTable in class CRC32C
+  Node* table = get_table_from_crc32c_class(callee()->holder());
+  Node* table_start = array_element_address(table, intcon(0), T_INT);
+
+  // Call the stub.
+  address stubAddr = StubRoutines::updateBytesCRC32C();
+  const char *stubName = "updateBytesCRC32C";
+
+  Node* call = make_runtime_call(RC_LEAF, OptoRuntime::updateBytesCRC32C_Type(),
+                                 stubAddr, stubName, TypePtr::BOTTOM,
+                                 crc, src_start, length, table_start);
+  Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+  set_result(result);
+  return true;
+}
+
 //----------------------------inline_reference_get----------------------------
 // public T java.lang.ref.Reference.get();
 bool LibraryCallKit::inline_reference_get() {
@@ -5693,18 +5814,28 @@ bool LibraryCallKit::inline_reference_get() {
 
 
 Node * LibraryCallKit::load_field_from_object(Node * fromObj, const char * fieldName, const char * fieldTypeString,
-                                              bool is_exact=true, bool is_static=false) {
+                                              bool is_exact=true, bool is_static=false,
+                                              ciInstanceKlass * fromKls=NULL) {
+  if (fromKls == NULL) {
+    const TypeInstPtr* tinst = _gvn.type(fromObj)->isa_instptr();
+    assert(tinst != NULL, "obj is null");
+    assert(tinst->klass()->is_loaded(), "obj is not loaded");
+    assert(!is_exact || tinst->klass_is_exact(), "klass not exact");
+    fromKls = tinst->klass()->as_instance_klass();
+  } else {
+    assert(is_static, "only for static field access");
+  }
+  ciField* field = fromKls->get_field_by_name(ciSymbol::make(fieldName),
+                                              ciSymbol::make(fieldTypeString),
+                                              is_static);
 
-  const TypeInstPtr* tinst = _gvn.type(fromObj)->isa_instptr();
-  assert(tinst != NULL, "obj is null");
-  assert(tinst->klass()->is_loaded(), "obj is not loaded");
-  assert(!is_exact || tinst->klass_is_exact(), "klass not exact");
-
-  ciField* field = tinst->klass()->as_instance_klass()->get_field_by_name(ciSymbol::make(fieldName),
-                                                                          ciSymbol::make(fieldTypeString),
-                                                                          is_static);
-  if (field == NULL) return (Node *) NULL;
   assert (field != NULL, "undefined field");
+  if (field == NULL) return (Node *) NULL;
+
+  if (is_static) {
+    const TypeInstPtr* tip = TypeInstPtr::make(fromKls->java_mirror());
+    fromObj = makecon(tip);
+  }
 
   // Next code  copied from Parse::do_get_xxx():
 
@@ -5986,6 +6117,35 @@ Node* LibraryCallKit::inline_cipherBlockChaining_AESCrypt_predicate(bool decrypt
 
   record_for_igvn(region);
   return _gvn.transform(region);
+}
+
+//------------------------------inline_ghash_processBlocks
+bool LibraryCallKit::inline_ghash_processBlocks() {
+  address stubAddr;
+  const char *stubName;
+  assert(UseGHASHIntrinsics, "need GHASH intrinsics support");
+
+  stubAddr = StubRoutines::ghash_processBlocks();
+  stubName = "ghash_processBlocks";
+
+  Node* data           = argument(0);
+  Node* offset         = argument(1);
+  Node* len            = argument(2);
+  Node* state          = argument(3);
+  Node* subkeyH        = argument(4);
+
+  Node* state_start  = array_element_address(state, intcon(0), T_LONG);
+  assert(state_start, "state is NULL");
+  Node* subkeyH_start  = array_element_address(subkeyH, intcon(0), T_LONG);
+  assert(subkeyH_start, "subkeyH is NULL");
+  Node* data_start  = array_element_address(data, offset, T_BYTE);
+  assert(data_start, "data is NULL");
+
+  Node* ghash = make_runtime_call(RC_LEAF|RC_NO_FP,
+                                  OptoRuntime::ghash_processBlocks_Type(),
+                                  stubAddr, stubName, TypePtr::BOTTOM,
+                                  state_start, subkeyH_start, data_start, len);
+  return true;
 }
 
 //------------------------------inline_sha_implCompress-----------------------

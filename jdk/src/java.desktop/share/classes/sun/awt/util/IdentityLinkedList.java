@@ -41,7 +41,7 @@ import java.util.NoSuchElementException;
  * the <tt>IdentityLinkedList</tt> class provides uniformly named methods to
  * <tt>get</tt>, <tt>remove</tt> and <tt>insert</tt> an element at the
  * beginning and end of the list.  These operations allow linked lists to be
- * used as a stack, {@linkplain Queue queue}, or {@linkplain Deque
+ * used as a stack, {@linkplain java.util.Queue queue}, or {@linkplain Deque
  * double-ended queue}. <p>
  *
  * The class implements the <tt>Deque</tt> interface, providing
@@ -62,7 +62,7 @@ import java.util.NoSuchElementException;
  * encapsulates the list.
  *
  * If no such object exists, the list should be "wrapped" using the
- * {@link Collections#synchronizedList Collections.synchronizedList}
+ * {@link java.util.Collections#synchronizedList Collections.synchronizedList}
  * method.  This is best done at creation time, to prevent accidental
  * unsynchronized access to the list:<pre>
  *   List list = Collections.synchronizedList(new IdentityLinkedList(...));</pre>
@@ -478,7 +478,7 @@ public class IdentityLinkedList<E>
      * Adds the specified element as the tail (last element) of this list.
      *
      * @param e the element to add
-     * @return <tt>true</tt> (as specified by {@link Queue#offer})
+     * @return <tt>true</tt> (as specified by {@link java.util.Queue#offer})
      * @since 1.5
      */
     public boolean offer(E e) {

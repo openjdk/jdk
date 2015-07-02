@@ -47,6 +47,7 @@ import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.ConsString;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ECMAException;
+import jdk.nashorn.internal.runtime.JSONListAdapter;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -72,6 +73,7 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
     private final ScriptObject sobj;
     private final Global  global;
     private final boolean strict;
+    private final boolean jsonCompatible;
 
     @Override
     public boolean equals(final Object other) {
@@ -110,9 +112,9 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
             }
 
             if (sobj instanceof ScriptFunction) {
-                final Object[] modArgs = globalChanged? wrapArray(args, oldGlobal) : args;
-                final Object self = globalChanged? wrap(thiz, oldGlobal) : thiz;
-                return wrap(ScriptRuntime.apply((ScriptFunction)sobj, unwrap(self, global), unwrapArray(modArgs, global)), global);
+                final Object[] modArgs = globalChanged? wrapArrayLikeMe(args, oldGlobal) : args;
+                final Object self = globalChanged? wrapLikeMe(thiz, oldGlobal) : thiz;
+                return wrapLikeMe(ScriptRuntime.apply((ScriptFunction)sobj, unwrap(self, global), unwrapArray(modArgs, global)));
             }
 
             throw new RuntimeException("not a function: " + toString());
@@ -140,8 +142,8 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
             }
 
             if (sobj instanceof ScriptFunction) {
-                final Object[] modArgs = globalChanged? wrapArray(args, oldGlobal) : args;
-                return wrap(ScriptRuntime.construct((ScriptFunction)sobj, unwrapArray(modArgs, global)), global);
+                final Object[] modArgs = globalChanged? wrapArrayLikeMe(args, oldGlobal) : args;
+                return wrapLikeMe(ScriptRuntime.construct((ScriptFunction)sobj, unwrapArray(modArgs, global)));
             }
 
             throw new RuntimeException("not a constructor: " + toString());
@@ -170,7 +172,7 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
                                 return Context.getContext();
                             }
                         }, GET_CONTEXT_ACC_CTXT);
-                return wrap(context.eval(global, s, sobj, null, false), global);
+                return wrapLikeMe(context.eval(global, s, sobj, null));
             }
         });
     }
@@ -193,8 +195,8 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
 
             final Object val = sobj.get(functionName);
             if (val instanceof ScriptFunction) {
-                final Object[] modArgs = globalChanged? wrapArray(args, oldGlobal) : args;
-                return wrap(ScriptRuntime.apply((ScriptFunction)val, sobj, unwrapArray(modArgs, global)), global);
+                final Object[] modArgs = globalChanged? wrapArrayLikeMe(args, oldGlobal) : args;
+                return wrapLikeMe(ScriptRuntime.apply((ScriptFunction)val, sobj, unwrapArray(modArgs, global)));
             } else if (val instanceof JSObject && ((JSObject)val).isFunction()) {
                 return ((JSObject)val).call(sobj, args);
             }
@@ -218,7 +220,7 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
         Objects.requireNonNull(name);
         return inGlobal(new Callable<Object>() {
             @Override public Object call() {
-                return wrap(sobj.get(name), global);
+                return wrapLikeMe(sobj.get(name));
             }
         });
     }
@@ -227,7 +229,7 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
     public Object getSlot(final int index) {
         return inGlobal(new Callable<Object>() {
             @Override public Object call() {
-                return wrap(sobj.get(index), global);
+                return wrapLikeMe(sobj.get(index));
             }
         });
     }
@@ -253,14 +255,12 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
 
     @Override
     public void removeMember(final String name) {
-        Objects.requireNonNull(name);
-        remove(name);
+        remove(Objects.requireNonNull(name));
     }
 
     @Override
     public void setMember(final String name, final Object value) {
-        Objects.requireNonNull(name);
-        put(name, value);
+        put(Objects.requireNonNull(name), value);
     }
 
     @Override
@@ -368,7 +368,7 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
 
                 while (iter.hasNext()) {
                     final String key   = iter.next();
-                    final Object value = translateUndefined(wrap(sobj.get(key), global));
+                    final Object value = translateUndefined(wrapLikeMe(sobj.get(key)));
                     entries.add(new AbstractMap.SimpleImmutableEntry<>(key, value));
                 }
 
@@ -382,7 +382,7 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
         checkKey(key);
         return inGlobal(new Callable<Object>() {
             @Override public Object call() {
-                return translateUndefined(wrap(sobj.get(key), global));
+                return translateUndefined(wrapLikeMe(sobj.get(key)));
             }
         });
     }
@@ -419,22 +419,22 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
         final boolean globalChanged = (oldGlobal != global);
         return inGlobal(new Callable<Object>() {
             @Override public Object call() {
-                final Object modValue = globalChanged? wrap(value, oldGlobal) : value;
-                return translateUndefined(wrap(sobj.put(key, unwrap(modValue, global), strict), global));
+                final Object modValue = globalChanged? wrapLikeMe(value, oldGlobal) : value;
+                return translateUndefined(wrapLikeMe(sobj.put(key, unwrap(modValue, global), strict)));
             }
         });
     }
 
     @Override
     public void putAll(final Map<? extends String, ? extends Object> map) {
-        Objects.requireNonNull(map, "map is null");
+        Objects.requireNonNull(map);
         final ScriptObject oldGlobal = Context.getGlobal();
         final boolean globalChanged = (oldGlobal != global);
         inGlobal(new Callable<Object>() {
             @Override public Object call() {
                 for (final Map.Entry<? extends String, ? extends Object> entry : map.entrySet()) {
                     final Object value = entry.getValue();
-                    final Object modValue = globalChanged? wrap(value, oldGlobal) : value;
+                    final Object modValue = globalChanged? wrapLikeMe(value, oldGlobal) : value;
                     final String key = entry.getKey();
                     checkKey(key);
                     sobj.set(key, unwrap(modValue, global), getCallSiteFlags());
@@ -449,7 +449,7 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
         checkKey(key);
         return inGlobal(new Callable<Object>() {
             @Override public Object call() {
-                return translateUndefined(wrap(sobj.remove(key, strict), global));
+                return translateUndefined(wrapLikeMe(sobj.remove(key, strict)));
             }
         });
     }
@@ -486,7 +486,7 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
                 final Iterator<Object> iter   = sobj.valueIterator();
 
                 while (iter.hasNext()) {
-                    values.add(translateUndefined(wrap(iter.next(), global)));
+                    values.add(translateUndefined(wrapLikeMe(iter.next())));
                 }
 
                 return Collections.unmodifiableList(values);
@@ -503,7 +503,7 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
     public Object getProto() {
         return inGlobal(new Callable<Object>() {
             @Override public Object call() {
-                return wrap(sobj.getProto(), global);
+                return wrapLikeMe(sobj.getProto());
             }
         });
     }
@@ -532,7 +532,7 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
     public Object getOwnPropertyDescriptor(final String key) {
         return inGlobal(new Callable<Object>() {
             @Override public Object call() {
-                return wrap(sobj.getOwnPropertyDescriptor(key), global);
+                return wrapLikeMe(sobj.getOwnPropertyDescriptor(key));
             }
         });
     }
@@ -661,13 +661,73 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
      * @return wrapped/converted object
      */
     public static Object wrap(final Object obj, final Object homeGlobal) {
+        return wrap(obj, homeGlobal, false);
+    }
+
+    /**
+     * Make a script object mirror on given object if needed. Also converts ConsString instances to Strings. The
+     * created wrapper will implement the Java {@code List} interface if {@code obj} is a JavaScript
+     * {@code Array} object; this is compatible with Java JSON libraries expectations. Arrays retrieved through its
+     * properties (transitively) will also implement the list interface.
+     *
+     * @param obj object to be wrapped/converted
+     * @param homeGlobal global to which this object belongs. Not used for ConsStrings.
+     * @return wrapped/converted object
+     */
+    public static Object wrapAsJSONCompatible(final Object obj, final Object homeGlobal) {
+        return wrap(obj, homeGlobal, true);
+    }
+
+    /**
+     * Make a script object mirror on given object if needed. Also converts ConsString instances to Strings.
+     *
+     * @param obj object to be wrapped/converted
+     * @param homeGlobal global to which this object belongs. Not used for ConsStrings.
+     * @param jsonCompatible if true, the created wrapper will implement the Java {@code List} interface if
+     * {@code obj} is a JavaScript {@code Array} object. Arrays retrieved through its properties (transitively)
+     * will also implement the list interface.
+     * @return wrapped/converted object
+     */
+    private static Object wrap(final Object obj, final Object homeGlobal, final boolean jsonCompatible) {
         if(obj instanceof ScriptObject) {
-            return homeGlobal instanceof Global ? new ScriptObjectMirror((ScriptObject)obj, (Global)homeGlobal) : obj;
-        }
-        if(obj instanceof ConsString) {
+            if (!(homeGlobal instanceof Global)) {
+                return obj;
+            }
+            final ScriptObject sobj = (ScriptObject)obj;
+            final Global global = (Global)homeGlobal;
+            final ScriptObjectMirror mirror = new ScriptObjectMirror(sobj, global, jsonCompatible);
+            if (jsonCompatible && sobj.isArray()) {
+                return new JSONListAdapter(mirror, global);
+            }
+            return mirror;
+        } else if(obj instanceof ConsString) {
             return obj.toString();
+        } else if (jsonCompatible && obj instanceof ScriptObjectMirror) {
+            // Since choosing JSON compatible representation is an explicit decision on user's part, if we're asked to
+            // wrap a mirror that was not JSON compatible, explicitly create its compatible counterpart following the
+            // principle of least surprise.
+            return ((ScriptObjectMirror)obj).asJSONCompatible();
         }
         return obj;
+    }
+
+    /**
+     * Wraps the passed object with the same jsonCompatible flag as this mirror.
+     * @param obj the object
+     * @param homeGlobal the object's home global.
+     * @return a wrapper for the object.
+     */
+    private Object wrapLikeMe(final Object obj, final Object homeGlobal) {
+        return wrap(obj, homeGlobal, jsonCompatible);
+    }
+
+    /**
+     * Wraps the passed object with the same home global and jsonCompatible flag as this mirror.
+     * @param obj the object
+     * @return a wrapper for the object.
+     */
+    private Object wrapLikeMe(final Object obj) {
+        return wrapLikeMe(obj, global);
     }
 
     /**
@@ -681,6 +741,8 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
         if (obj instanceof ScriptObjectMirror) {
             final ScriptObjectMirror mirror = (ScriptObjectMirror)obj;
             return (mirror.global == homeGlobal)? mirror.sobj : obj;
+        } else if (obj instanceof JSONListAdapter) {
+            return ((JSONListAdapter)obj).unwrap(homeGlobal);
         }
 
         return obj;
@@ -694,6 +756,10 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
      * @return wrapped array
      */
     public static Object[] wrapArray(final Object[] args, final Object homeGlobal) {
+        return wrapArray(args, homeGlobal, false);
+    }
+
+    private static Object[] wrapArray(final Object[] args, final Object homeGlobal, final boolean jsonCompatible) {
         if (args == null || args.length == 0) {
             return args;
         }
@@ -701,10 +767,14 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
         final Object[] newArgs = new Object[args.length];
         int index = 0;
         for (final Object obj : args) {
-            newArgs[index] = wrap(obj, homeGlobal);
+            newArgs[index] = wrap(obj, homeGlobal, jsonCompatible);
             index++;
         }
         return newArgs;
+    }
+
+    private Object[] wrapArrayLikeMe(final Object[] args, final Object homeGlobal) {
+        return wrapArray(args, homeGlobal, jsonCompatible);
     }
 
     /**
@@ -748,12 +818,17 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
     // package-privates below this.
 
     ScriptObjectMirror(final ScriptObject sobj, final Global global) {
+        this(sobj, global, false);
+    }
+
+    private ScriptObjectMirror(final ScriptObject sobj, final Global global, final boolean jsonCompatible) {
         assert sobj != null : "ScriptObjectMirror on null!";
         assert global != null : "home Global is null";
 
         this.sobj = sobj;
         this.global = global;
         this.strict = global.isStrictContext();
+        this.jsonCompatible = jsonCompatible;
     }
 
     // accessors for script engine
@@ -837,5 +912,12 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
                 }
             }
         });
+    }
+
+    private ScriptObjectMirror asJSONCompatible() {
+        if (this.jsonCompatible) {
+            return this;
+        }
+        return new ScriptObjectMirror(sobj, global, true);
     }
 }

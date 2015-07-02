@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,11 @@ package javax.swing.plaf.metal;
 
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import javax.swing.*;
-import javax.swing.border.*;
 import javax.swing.event.*;
 import javax.swing.plaf.*;
 import javax.swing.plaf.basic.*;
 import java.awt.*;
-import java.io.*;
-import java.security.*;
 
 /**
  * Provides the metal look and feel implementation of <code>RootPaneUI</code>.
@@ -441,7 +437,6 @@ public class MetalRootPaneUI extends BasicRootPaneUI
          * @param the Container for which this layout manager is being used
          * @return a Dimension object containing the layout's preferred size
          */
-        @SuppressWarnings("deprecation")
         public Dimension preferredLayoutSize(Container parent) {
             Dimension cpd, mbd, tpd;
             int cpWidth = 0;
@@ -463,8 +458,8 @@ public class MetalRootPaneUI extends BasicRootPaneUI
                 cpHeight = cpd.height;
             }
 
-            if(root.getMenuBar() != null) {
-                mbd = root.getMenuBar().getPreferredSize();
+            if(root.getJMenuBar() != null) {
+                mbd = root.getJMenuBar().getPreferredSize();
                 if (mbd != null) {
                     mbWidth = mbd.width;
                     mbHeight = mbd.height;
@@ -494,7 +489,6 @@ public class MetalRootPaneUI extends BasicRootPaneUI
          * @param the Container for which this layout manager is being used
          * @return a Dimension object containing the layout's minimum size
          */
-        @SuppressWarnings("deprecation")
         public Dimension minimumLayoutSize(Container parent) {
             Dimension cpd, mbd, tpd;
             int cpWidth = 0;
@@ -516,8 +510,8 @@ public class MetalRootPaneUI extends BasicRootPaneUI
                 cpHeight = cpd.height;
             }
 
-            if(root.getMenuBar() != null) {
-                mbd = root.getMenuBar().getMinimumSize();
+            if(root.getJMenuBar() != null) {
+                mbd = root.getJMenuBar().getMinimumSize();
                 if (mbd != null) {
                     mbWidth = mbd.width;
                     mbHeight = mbd.height;
@@ -546,7 +540,6 @@ public class MetalRootPaneUI extends BasicRootPaneUI
          * @param the Container for which this layout manager is being used
          * @return a Dimension object containing the layout's maximum size
          */
-        @SuppressWarnings("deprecation")
         public Dimension maximumLayoutSize(Container target) {
             Dimension cpd, mbd, tpd;
             int cpWidth = Integer.MAX_VALUE;
@@ -566,8 +559,8 @@ public class MetalRootPaneUI extends BasicRootPaneUI
                 }
             }
 
-            if(root.getMenuBar() != null) {
-                mbd = root.getMenuBar().getMaximumSize();
+            if(root.getJMenuBar() != null) {
+                mbd = root.getJMenuBar().getMaximumSize();
                 if (mbd != null) {
                     mbWidth = mbd.width;
                     mbHeight = mbd.height;
@@ -610,7 +603,6 @@ public class MetalRootPaneUI extends BasicRootPaneUI
          *
          * @param the Container for which this layout manager is being used
          */
-        @SuppressWarnings("deprecation")
         public void layoutContainer(Container parent) {
             JRootPane root = (JRootPane) parent;
             Rectangle b = root.getBounds();
@@ -640,9 +632,9 @@ public class MetalRootPaneUI extends BasicRootPaneUI
                     }
                 }
             }
-            if(root.getMenuBar() != null) {
-                Dimension mbd = root.getMenuBar().getPreferredSize();
-                root.getMenuBar().setBounds(0, nextY, w, mbd.height);
+            if(root.getJMenuBar() != null) {
+                Dimension mbd = root.getJMenuBar().getPreferredSize();
+                root.getJMenuBar().setBounds(0, nextY, w, mbd.height);
                 nextY += mbd.height;
             }
             if(root.getContentPane() != null) {

@@ -491,6 +491,11 @@ class Address VALUE_OBJ_CLASS_SPEC {
         i->rf(_index, 16);
         i->f(_ext.option(), 15, 13);
         unsigned size = i->get(31, 30);
+        if (i->get(26, 26) && i->get(23, 23)) {
+          // SIMD Q Type - Size = 128 bits
+          assert(size == 0, "bad size");
+          size = 0b100;
+        }
         if (size == 0) // It's a byte
           i->f(_ext.shift() >= 0, 12);
         else {
@@ -2050,6 +2055,9 @@ public:
   INSN(negr,  1, 0b100000101110);
   INSN(notr,  1, 0b100000010110);
   INSN(addv,  0, 0b110001101110);
+  INSN(cls,   0, 0b100000010010);
+  INSN(clz,   1, 0b100000010010);
+  INSN(cnt,   0, 0b100000010110);
 
 #undef INSN
 

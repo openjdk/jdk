@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.security.*;
 
 /**
  * This class defines the <i>Service Provider Interface</i> (<b>SPI</b>)
- * for the <code>SSLContext</code> class.
+ * for the {@code SSLContext} class.
  *
  * <p> All the abstract methods in this class must be implemented by each
  * cryptographic service provider who wishes to supply the implementation
@@ -52,31 +52,35 @@ public abstract class SSLContextSpi {
         SecureRandom sr) throws KeyManagementException;
 
     /**
-     * Returns a <code>SocketFactory</code> object for this
+     * Returns a {@code SocketFactory} object for this
      * context.
      *
-     * @return the <code>SocketFactory</code> object
+     * @return the {@code SocketFactory} object
+     * @throws UnsupportedOperationException if the underlying provider
+     *         does not implement the operation.
      * @throws IllegalStateException if the SSLContextImpl requires
-     *         initialization and the <code>engineInit()</code>
+     *         initialization and the {@code engineInit()}
      *         has not been called
      * @see javax.net.ssl.SSLContext#getSocketFactory()
      */
     protected abstract SSLSocketFactory engineGetSocketFactory();
 
     /**
-     * Returns a <code>ServerSocketFactory</code> object for
+     * Returns a {@code ServerSocketFactory} object for
      * this context.
      *
-     * @return the <code>ServerSocketFactory</code> object
+     * @return the {@code ServerSocketFactory} object
+     * @throws UnsupportedOperationException if the underlying provider
+     *         does not implement the operation.
      * @throws IllegalStateException if the SSLContextImpl requires
-     *         initialization and the <code>engineInit()</code>
+     *         initialization and the {@code engineInit()}
      *         has not been called
      * @see javax.net.ssl.SSLContext#getServerSocketFactory()
      */
     protected abstract SSLServerSocketFactory engineGetServerSocketFactory();
 
     /**
-     * Creates a new <code>SSLEngine</code> using this context.
+     * Creates a new {@code SSLEngine} using this context.
      * <P>
      * Applications using this factory method are providing no hints
      * for an internal session reuse strategy. If hints are desired,
@@ -86,9 +90,9 @@ public abstract class SSLContextSpi {
      * Some cipher suites (such as Kerberos) require remote hostname
      * information, in which case this factory method should not be used.
      *
-     * @return  the <code>SSLEngine</code> Object
+     * @return  the {@code SSLEngine} Object
      * @throws IllegalStateException if the SSLContextImpl requires
-     *         initialization and the <code>engineInit()</code>
+     *         initialization and the {@code engineInit()}
      *         has not been called
      *
      * @see     SSLContext#createSSLEngine()
@@ -98,7 +102,7 @@ public abstract class SSLContextSpi {
     protected abstract SSLEngine engineCreateSSLEngine();
 
     /**
-     * Creates a <code>SSLEngine</code> using this context.
+     * Creates a {@code SSLEngine} using this context.
      * <P>
      * Applications using this factory method are providing hints
      * for an internal session reuse strategy.
@@ -108,9 +112,9 @@ public abstract class SSLContextSpi {
      *
      * @param host the non-authoritative name of the host
      * @param port the non-authoritative port
-     * @return  the <code>SSLEngine</code> Object
+     * @return  the {@code SSLEngine} Object
      * @throws IllegalStateException if the SSLContextImpl requires
-     *         initialization and the <code>engineInit()</code>
+     *         initialization and the {@code engineInit()}
      *         has not been called
      *
      * @see     SSLContext#createSSLEngine(String, int)
@@ -120,19 +124,19 @@ public abstract class SSLContextSpi {
     protected abstract SSLEngine engineCreateSSLEngine(String host, int port);
 
     /**
-     * Returns a server <code>SSLSessionContext</code> object for
+     * Returns a server {@code SSLSessionContext} object for
      * this context.
      *
-     * @return the <code>SSLSessionContext</code> object
+     * @return the {@code SSLSessionContext} object
      * @see javax.net.ssl.SSLContext#getServerSessionContext()
      */
     protected abstract SSLSessionContext engineGetServerSessionContext();
 
     /**
-     * Returns a client <code>SSLSessionContext</code> object for
+     * Returns a client {@code SSLSessionContext} object for
      * this context.
      *
-     * @return the <code>SSLSessionContext</code> object
+     * @return the {@code SSLSessionContext} object
      * @see javax.net.ssl.SSLContext#getClientSessionContext()
      */
     protected abstract SSLSessionContext engineGetClientSessionContext();

@@ -42,7 +42,8 @@ void HeapRegionSetBase::verify_region(HeapRegion* hr) {
   assert(hr->is_humongous() == regions_humongous(), err_msg("Wrong humongous state for region %u and set %s", hr->hrm_index(), name()));
   assert(hr->is_free() == regions_free(), err_msg("Wrong free state for region %u and set %s", hr->hrm_index(), name()));
   assert(!hr->is_free() || hr->is_empty(), err_msg("Free region %u is not empty for set %s", hr->hrm_index(), name()));
-  assert(!hr->is_empty() || hr->is_free(), err_msg("Empty region %u is not free for set %s", hr->hrm_index(), name()));
+  assert(!hr->is_empty() || hr->is_free() || hr->is_archive(),
+         err_msg("Empty region %u is not free or archive for set %s", hr->hrm_index(), name()));
   assert(hr->rem_set()->verify_ready_for_par_iteration(), err_msg("Wrong iteration state %u", hr->hrm_index()));
 }
 #endif

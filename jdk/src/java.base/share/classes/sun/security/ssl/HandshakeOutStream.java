@@ -23,10 +23,9 @@
  * questions.
  */
 
-
 package sun.security.ssl;
 
-import java.io.OutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 /**
@@ -40,197 +39,113 @@ import java.io.IOException;
  *
  * @author  David Brownell
  */
-public class HandshakeOutStream extends OutputStream {
+public class HandshakeOutStream extends ByteArrayOutputStream {
 
-    private SSLSocketImpl socket;
-    private SSLEngineImpl engine;
+    OutputRecord outputRecord;      // May be null if not actually used to
+                                    // output handshake message records.
 
-    OutputRecord r;
-
-    HandshakeOutStream(ProtocolVersion protocolVersion,
-            ProtocolVersion helloVersion, HandshakeHash handshakeHash,
-            SSLSocketImpl socket) {
-        this.socket = socket;
-        r = new OutputRecord(Record.ct_handshake);
-        init(protocolVersion, helloVersion, handshakeHash);
+    HandshakeOutStream(OutputRecord outputRecord) {
+        super();
+        this.outputRecord = outputRecord;
     }
 
-    HandshakeOutStream(ProtocolVersion protocolVersion,
-            ProtocolVersion helloVersion, HandshakeHash handshakeHash,
-            SSLEngineImpl engine) {
-        this.engine = engine;
-        r = new EngineOutputRecord(Record.ct_handshake, engine);
-        init(protocolVersion, helloVersion, handshakeHash);
-    }
-
-    private void init(ProtocolVersion protocolVersion,
-            ProtocolVersion helloVersion, HandshakeHash handshakeHash) {
-        r.setVersion(protocolVersion);
-        r.setHelloVersion(helloVersion);
-        r.setHandshakeHash(handshakeHash);
-    }
-
-
-    /*
-     * Update the handshake data hashes ... mostly for use after a
-     * client cert has been sent, so the cert verify message can be
-     * constructed correctly yet without forcing extra I/O.  In all
-     * other cases, automatic hash calculation suffices.
-     */
-    void doHashes() {
-        r.doHashes();
-    }
-
-    /*
-     * Write some data out onto the stream ... buffers as much as possible.
-     * Hashes are updated automatically if something gets flushed to the
-     * network (e.g. a big cert message etc).
-     */
-    @Override
-    public void write(byte buf[], int off, int len) throws IOException {
-        while (len > 0) {
-            int howmuch = Math.min(len, r.availableDataBytes());
-
-            if (howmuch == 0) {
-                flush();
-            } else {
-                r.write(buf, off, howmuch);
-                off += howmuch;
-                len -= howmuch;
-            }
+    // Complete a handshakin message writing. Called by HandshakeMessage.
+    void complete() throws IOException {
+        if (size() < 4) {       // 4: handshake message header size
+            // internal_error alert will be triggered
+            throw new RuntimeException("handshake message is not available");
         }
+
+        // outputRecord cannot be null
+        outputRecord.encodeHandshake(buf, 0, count);
+
+        // reset the byte array output stream
+        reset();
     }
 
-    /*
-     * write-a-byte
-     */
+    //
+    // overridden ByteArrayOutputStream methods
+    //
+
     @Override
-    public void write(int i) throws IOException {
-        if (r.availableDataBytes() < 1) {
-            flush();
-        }
-        r.write(i);
+    public void write(byte[] b, int off, int len) {
+        // The maximum fragment size is 24 bytes.
+        checkOverflow(len, Record.OVERFLOW_OF_INT24);
+        super.write(b, off, len);
     }
 
     @Override
     public void flush() throws IOException {
-        if (socket != null) {
-            try {
-                socket.writeRecord(r);
-            } catch (IOException e) {
-                // Had problems writing; check if there was an
-                // alert from peer. If alert received, waitForClose
-                // will throw an exception for the alert
-                socket.waitForClose(true);
-
-                // No alert was received, just rethrow exception
-                throw e;
-            }
-        } else {  // engine != null
-            /*
-             * Even if record might be empty, flush anyway in case
-             * there is a finished handshake message that we need
-             * to queue.
-             */
-            engine.writeRecord((EngineOutputRecord)r);
-        }
+        outputRecord.flush();
     }
 
-    /*
-     * Tell the OutputRecord that a finished message was
-     * contained either in this record or the one immeiately
-     * preceding it.  We need to reliably pass back notifications
-     * that a finish message occurred.
-     */
-    void setFinishedMsg() {
-        assert(socket == null);
-
-        ((EngineOutputRecord)r).setFinishedMsg();
-    }
+    //
+    // handshake output stream management functions
+    //
 
     /*
      * Put integers encoded in standard 8, 16, 24, and 32 bit
      * big endian formats. Note that OutputStream.write(int) only
      * writes the least significant 8 bits and ignores the rest.
      */
-
     void putInt8(int i) throws IOException {
         checkOverflow(i, Record.OVERFLOW_OF_INT08);
-        r.write(i);
+        super.write(i);
     }
 
     void putInt16(int i) throws IOException {
         checkOverflow(i, Record.OVERFLOW_OF_INT16);
-        if (r.availableDataBytes() < 2) {
-            flush();
-        }
-        r.write(i >> 8);
-        r.write(i);
+        super.write(i >> 8);
+        super.write(i);
     }
 
     void putInt24(int i) throws IOException {
         checkOverflow(i, Record.OVERFLOW_OF_INT24);
-        if (r.availableDataBytes() < 3) {
-            flush();
-        }
-        r.write(i >> 16);
-        r.write(i >> 8);
-        r.write(i);
-    }
-
-    void putInt32(int i) throws IOException {
-        if (r.availableDataBytes() < 4) {
-            flush();
-        }
-        r.write(i >> 24);
-        r.write(i >> 16);
-        r.write(i >> 8);
-        r.write(i);
+        super.write(i >> 16);
+        super.write(i >> 8);
+        super.write(i);
     }
 
     /*
      * Put byte arrays with length encoded as 8, 16, 24 bit
      * integers in big-endian format.
      */
-    void putBytes8(byte b[]) throws IOException {
+    void putBytes8(byte[] b) throws IOException {
         if (b == null) {
             putInt8(0);
-            return;
         } else {
-            checkOverflow(b.length, Record.OVERFLOW_OF_INT08);
+            putInt8(b.length);
+            super.write(b, 0, b.length);
         }
-        putInt8(b.length);
-        write(b, 0, b.length);
     }
 
     public void putBytes16(byte b[]) throws IOException {
         if (b == null) {
             putInt16(0);
-            return;
         } else {
-            checkOverflow(b.length, Record.OVERFLOW_OF_INT16);
+            putInt16(b.length);
+            super.write(b, 0, b.length);
         }
-        putInt16(b.length);
-        write(b, 0, b.length);
     }
 
     void putBytes24(byte b[]) throws IOException {
         if (b == null) {
             putInt24(0);
-            return;
         } else {
-            checkOverflow(b.length, Record.OVERFLOW_OF_INT24);
+            putInt24(b.length);
+            super.write(b, 0, b.length);
         }
-        putInt24(b.length);
-        write(b, 0, b.length);
     }
 
-    private void checkOverflow(int length, int overflow) {
-        if (length >= overflow) {
+    /*
+     * Does the specified length overflow the limitation?
+     */
+    private static void checkOverflow(int length, int limit) {
+        if (length >= limit) {
             // internal_error alert will be triggered
             throw new RuntimeException(
                     "Field length overflow, the field length (" +
-                    length + ") should be less than " + overflow);
+                    length + ") should be less than " + limit);
         }
     }
 }

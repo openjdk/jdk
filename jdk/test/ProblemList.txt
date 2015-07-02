@@ -123,9 +123,6 @@
 # 8029891
 java/lang/ClassLoader/deadlock/GetResource.java                 generic-all
 
-# 8080428
-java/lang/invoke/8022701/MHIllegalAccess.java                   generic-all
-
 ############################################################################
 
 # jdk_instrument
@@ -222,8 +219,7 @@ java/rmi/activation/Activatable/extLoadedImpl/ext.sh            generic-all
 sun/security/pkcs11/ec/TestKeyFactory.java                      generic-all
 
 # 7164518: no PortUnreachableException on Mac
-# 8051952: Unreachable.java test failing on Windows
-sun/security/krb5/auto/Unreachable.java                         windows-all,macosx-all
+sun/security/krb5/auto/Unreachable.java                         macosx-all
 
 # 8058849
 sun/security/krb5/config/dns.sh                                 generic-all

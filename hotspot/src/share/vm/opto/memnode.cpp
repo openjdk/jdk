@@ -108,11 +108,10 @@ extern void print_alias_types();
 
 #endif
 
-static bool membar_for_arraycopy_helper(const TypeOopPtr *t_oop, MergeMemNode* mm, PhaseTransform *phase) {
-  if (mm->memory_at(Compile::AliasIdxRaw)->is_Proj()) {
-    Node* n = mm->memory_at(Compile::AliasIdxRaw)->in(0);
-    if ((n->is_ArrayCopy() && n->as_ArrayCopy()->may_modify(t_oop, phase)) ||
-        (n->is_CallLeaf() && n->as_CallLeaf()->may_modify(t_oop, phase))) {
+static bool membar_for_arraycopy_helper(const TypeOopPtr *t_oop, Node* n, PhaseTransform *phase) {
+  if (n->is_Proj()) {
+    n = n->in(0);
+    if (n->is_Call() && n->as_Call()->may_modify(t_oop, phase)) {
       return true;
     }
   }
@@ -121,16 +120,22 @@ static bool membar_for_arraycopy_helper(const TypeOopPtr *t_oop, MergeMemNode* m
 
 static bool membar_for_arraycopy(const TypeOopPtr *t_oop, MemBarNode* mb, PhaseTransform *phase) {
   Node* mem = mb->in(TypeFunc::Memory);
+
   if (mem->is_MergeMem()) {
-    return membar_for_arraycopy_helper(t_oop, mem->as_MergeMem(), phase);
-  } else if (mem->is_Phi()) {
-    // after macro expansion of an ArrayCopyNode we may have a Phi
-    for (uint i = 1; i < mem->req(); i++) {
-      if (mem->in(i) != NULL && mem->in(i)->is_MergeMem() && membar_for_arraycopy_helper(t_oop, mem->in(i)->as_MergeMem(), phase)) {
-        return true;
+    Node* n = mem->as_MergeMem()->memory_at(Compile::AliasIdxRaw);
+    if (membar_for_arraycopy_helper(t_oop, n, phase)) {
+      return true;
+    } else if (n->is_Phi()) {
+      for (uint i = 1; i < n->req(); i++) {
+        if (n->in(i) != NULL) {
+          if (membar_for_arraycopy_helper(t_oop, n->in(i), phase)) {
+            return true;
+          }
+        }
       }
     }
   }
+
   return false;
 }
 

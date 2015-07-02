@@ -77,7 +77,7 @@ public interface AccelGraphicsConfig extends BufferedContextProvider {
      * events.
      *
      * Note: a hard link to the listener may be kept so it must be explicitly
-     * removed via {@link #removeDeviceEventListener()}.
+     * removed via {@link #removeDeviceEventListener}.
      *
      * @param l the listener
      * @see AccelDeviceEventListener
