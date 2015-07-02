@@ -46,10 +46,14 @@ if (! nashornJar.isAbsolute()) {
     nashornJar = new File(".", nashornJar);
 }
 
+var os = System.getProperty("os.name"),
+    win = os.startsWith("Windows"),
+    jdepsName = "jdeps" + (win ? ".exe" : "");
+
 var javahome = System.getProperty("java.home");
-var jdepsPath = javahome + "/../bin/jdeps".replace(/\//g, File.separator);
+var jdepsPath = javahome + "/../bin/".replace(/\//g, File.separator) + jdepsName;
 if (! new File(jdepsPath).isFile()) {
-    jdepsPath = javahome + "/bin/jdeps".replace(/\//g, File.separator);
+    jdepsPath = javahome + "/bin/".replace(/\//g, File.separator) + jdepsName;
 }
 
 // run jdep on nashorn.jar - only summary but print profile info

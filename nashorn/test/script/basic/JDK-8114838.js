@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  * 
  * This code is free software; you can redistribute it and/or modify it
@@ -22,22 +22,26 @@
  */
 
 /**
- * JDK-8075454: Anonymous functions have internal names exposed via parser API
+ * JDK-8114838: Anonymous functions escape to surrounding scope when defined under "with" statement
  *
  * @test
- * @option -scripting
  * @run
  */
 
-var Parser = Java.type("jdk.nashorn.api.tree.Parser");
-var parser = Parser.create();
-
-var ast = parser.parse("test.js", <<EOF
-
-function(x) {
-  return x*x
+// do *not* introduce new lines! The next line should be 32
+with({}) { function () {} }
+if (typeof this["L:32"] != 'undefined') {
+    throw new Error("anonymous name spills into global scope");
 }
 
-EOF, print);
+var func = eval("function() {}");
+if (typeof func != 'function') {
+    throw new Error("eval of anonymous function does not work!");
+}
 
-Assert.assertNull(ast.sourceElements[0].expression.name);
+var ScriptEngineManager = Java.type("javax.script.ScriptEngineManager");
+var engine = new ScriptEngineManager().getEngineByName("nashorn");
+var func2 = engine.eval("function() {}");
+if (typeof func2 != 'function') {
+    throw new Error("eval of anonymous function does not work from script engine!");
+}
