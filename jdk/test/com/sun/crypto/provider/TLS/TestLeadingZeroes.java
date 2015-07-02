@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.security.interfaces.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 import javax.crypto.interfaces.*;
-import com.sun.crypto.provider.SunJCE;
 
 /**
  * Test that leading zeroes are stripped in TlsPremasterSecret case,
@@ -52,10 +51,6 @@ public class TestLeadingZeroes {
     private TestLeadingZeroes() {}
 
     public static void main(String argv[]) throws Exception {
-        // Add JCE to the list of providers
-        SunJCE jce = new SunJCE();
-        Security.addProvider(jce);
-
         TestLeadingZeroes keyAgree = new TestLeadingZeroes();
         keyAgree.run();
         System.out.println("Test Passed");

@@ -196,7 +196,9 @@ final class ManagementAgentJcmd {
             l.addToolArg(cmd);
         }
 
-        StringBuilder output = new StringBuilder();
+        // this buffer will get filled in different threads
+        //   -> must be the synchronized StringBuffer
+        StringBuffer output = new StringBuffer();
 
         AtomicBoolean portUnavailable = new AtomicBoolean(false);
         Process p = ProcessTools.startProcess(

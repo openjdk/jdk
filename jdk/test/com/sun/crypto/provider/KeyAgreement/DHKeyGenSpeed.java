@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import java.security.spec.*;
 import java.security.interfaces.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
-import com.sun.crypto.provider.*;
 import java.math.*;
 
 public class DHKeyGenSpeed {
@@ -71,8 +70,6 @@ public class DHKeyGenSpeed {
     };
 
     public static void main(String[] args) throws Exception {
-        SunJCE jce = new SunJCE();
-        Security.addProvider(jce);
         DHKeyGenSpeed test = new DHKeyGenSpeed();
         test.run();
         System.out.println("Test Passed");

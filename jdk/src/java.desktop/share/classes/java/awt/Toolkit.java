@@ -58,6 +58,14 @@ import sun.awt.PeerEvent;
 import sun.awt.SunToolkit;
 import sun.util.CoreResourceBundleControl;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.Arrays;
+import java.util.ServiceLoader;
+import java.util.Set;
+import java.util.stream.Collectors;
+import javax.accessibility.AccessibilityProvider;
+
 /**
  * This class is the abstract superclass of all actual
  * implementations of the Abstract Window Toolkit. Subclasses of
@@ -420,7 +428,7 @@ public abstract class Toolkit {
                     }
                 }
 
-                // Get the names of any assistive technolgies to load.  First
+                // Get the names of any assistive technologies to load.  First
                 // check the system property and then check the properties
                 // file.
                 String classNames = System.getProperty("javax.accessibility.assistive_technologies");
@@ -436,85 +444,125 @@ public abstract class Toolkit {
     }
 
     /**
-     * Loads additional classes into the VM, using the property
-     * 'assistive_technologies' specified in the Sun reference
-     * implementation by a line in the 'accessibility.properties'
-     * file.  The form is "assistive_technologies=..." where
-     * the "..." is a comma-separated list of assistive technology
-     * classes to load.  Each class is loaded in the order given
-     * and a single instance of each is created using
-     * Class.forName(class).newInstance().  All errors are handled
-     * via an AWTError exception.
+     * Rethrow the AWTError but include the cause.
      *
-     * <p>The assumption is made that assistive technology classes are supplied
-     * as part of INSTALLED (as opposed to: BUNDLED) extensions or specified
-     * on the class path
-     * (and therefore can be loaded using the class loader returned by
-     * a call to <code>ClassLoader.getSystemClassLoader</code>, whose
-     * delegation parent is the extension class loader for installed
-     * extensions).
+     * @param s the error message
+     * @param e the original exception
+     * @throw the new AWTError including the cause (the original exception)
+     */
+    private static void newAWTError(Throwable e, String s) {
+        AWTError newAWTError = new AWTError(s);
+        newAWTError.initCause(e);
+        throw newAWTError;
+    }
+
+    /**
+     * When a service provider for Assistive Technology is not found look for a
+     * supporting class on the class path and instantiate it.
+     *
+     * @param atName the name of the class to be loaded
+     */
+    private static void fallbackToLoadClassForAT(String atName) {
+        try {
+            Class.forName(atName, false, ClassLoader.getSystemClassLoader()).newInstance();
+        } catch (ClassNotFoundException e) {
+            newAWTError(e, "Assistive Technology not found: " + atName);
+        } catch (InstantiationException e) {
+            newAWTError(e, "Could not instantiate Assistive Technology: " + atName);
+        } catch (IllegalAccessException e) {
+            newAWTError(e, "Could not access Assistive Technology: " + atName);
+        } catch (Exception e) {
+            newAWTError(e, "Error trying to install Assistive Technology: " + atName);
+        }
+    }
+
+    /**
+     * Loads accessibility support using the property assistive_technologies.
+     * The form is assistive_technologies= followed by a comma-separated list of
+     * assistive technology providers to load.  The order in which providers are
+     * loaded is determined by the order in which the ServiceLoader discovers
+     * implementations of the AccessibilityProvider interface, not by the order
+     * of provider names in the property list.  When a provider is found its
+     * accessibility implementation will be started by calling the provider's
+     * activate method.  All errors are handled via an AWTError exception.
      */
     private static void loadAssistiveTechnologies() {
         // Load any assistive technologies
         if (atNames != null) {
             ClassLoader cl = ClassLoader.getSystemClassLoader();
-            StringTokenizer parser = new StringTokenizer(atNames," ,");
-            String atName;
-            while (parser.hasMoreTokens()) {
-                atName = parser.nextToken();
+            Set<String> names = Arrays.stream(atNames.split(","))
+                                      .map(String::trim)
+                                      .collect(Collectors.toSet());
+            final Map<String, AccessibilityProvider> providers = new HashMap<>();
+            AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
                 try {
-                    Class<?> clazz;
-                    if (cl != null) {
-                        clazz = cl.loadClass(atName);
-                    } else {
-                        clazz = Class.forName(atName);
+                    for (AccessibilityProvider p : ServiceLoader.load(AccessibilityProvider.class, cl)) {
+                        String name = p.getName();
+                        if (names.contains(name) && !providers.containsKey(name)) {
+                            p.activate();
+                            providers.put(name, p);
+                        }
                     }
-                    clazz.newInstance();
-                } catch (ClassNotFoundException e) {
-                    throw new AWTError("Assistive Technology not found: "
-                            + atName);
-                } catch (InstantiationException e) {
-                    throw new AWTError("Could not instantiate Assistive"
-                            + " Technology: " + atName);
-                } catch (IllegalAccessException e) {
-                    throw new AWTError("Could not access Assistive"
-                            + " Technology: " + atName);
-                } catch (Exception e) {
-                    throw new AWTError("Error trying to install Assistive"
-                            + " Technology: " + atName + " " + e);
+                } catch (java.util.ServiceConfigurationError | Exception e) {
+                    newAWTError(e, "Could not load or activate service provider");
                 }
-            }
+                return null;
+            });
+            names.stream()
+                 .filter(n -> !providers.containsKey(n))
+                 .forEach(Toolkit::fallbackToLoadClassForAT);
         }
     }
 
     /**
      * Gets the default toolkit.
      * <p>
-     * If a system property named <code>"java.awt.headless"</code> is set
-     * to <code>true</code> then the headless implementation
-     * of <code>Toolkit</code> is used.
+     * If a system property named {@code "java.awt.headless"} is set
+     * to {@code true} then the headless implementation
+     * of {@code Toolkit} is used.
      * <p>
-     * If there is no <code>"java.awt.headless"</code> or it is set to
-     * <code>false</code> and there is a system property named
-     * <code>"awt.toolkit"</code>,
+     * If there is no {@code "java.awt.headless"} or it is set to
+     * {@code false} and there is a system property named
+     * {@code "awt.toolkit"},
      * that property is treated as the name of a class that is a subclass
-     * of <code>Toolkit</code>;
+     * of {@code Toolkit};
      * otherwise the default platform-specific implementation of
-     * <code>Toolkit</code> is used.
+     * {@code Toolkit} is used.
      * <p>
-     * Also loads additional classes into the VM, using the property
-     * 'assistive_technologies' specified in the Sun reference
-     * implementation by a line in the 'accessibility.properties'
-     * file.  The form is "assistive_technologies=..." where
-     * the "..." is a comma-separated list of assistive technology
-     * classes to load.  Each class is loaded in the order given
-     * and a single instance of each is created using
-     * Class.forName(class).newInstance().  This is done just after
-     * the AWT toolkit is created.  All errors are handled via an
-     * AWTError exception.
-     * @return    the default toolkit.
+     * If this Toolkit is not a headless implementation and if they exist, service
+     * providers of {@link javax.accessibility.AccessibilityProvider} will be loaded
+     * if specified by the system property
+     * {@code javax.accessibility.assistive_technologies}.
+     * <p>
+     * An example of setting this property is to invoke Java with
+     * {@code -Djavax.accessibility.assistive_technologies=MyServiceProvider}.
+     * In addition to MyServiceProvider other service providers can be specified
+     * using a comma separated list.  Service providers are loaded after the AWT
+     * toolkit is created. All errors are handled via an AWTError exception.
+     * <p>
+     * The names specified in the assistive_technologies property are used to query
+     * each service provider implementation.  If the requested name matches the
+     * {@linkplain AccessibilityProvider#getName name} of the service provider, the
+     * {@link AccessibilityProvider#activate} method will be invoked to activate the
+     * matching service provider.
+     *
+     * @implSpec
+     * If assistive technology service providers are not specified with a system
+     * property this implementation will look in a properties file located as follows:
+     * <ul>
+     * <li> {@code ${user.home}/.accessibility.properties}
+     * <li> {@code ${java.home}/conf/accessibility.properties}
+     * </ul>
+     * Only the first of these files to be located will be consulted.  The requested
+     * service providers are specified by setting the {@code assistive_technologies=}
+     * property.  A single provider or a comma separated list of providers can be
+     * specified.
+     *
+     * @return     the default toolkit.
      * @exception  AWTError  if a toolkit could not be found, or
      *                 if one could not be accessed or instantiated.
+     * @see java.util.ServiceLoader
+     * @see javax.accessibility.AccessibilityProvider
      */
     public static synchronized Toolkit getDefaultToolkit() {
         if (toolkit == null) {
@@ -550,7 +598,9 @@ public abstract class Toolkit {
                     return null;
                 }
             });
-            loadAssistiveTechnologies();
+            if (!GraphicsEnvironment.isHeadless()) {
+                loadAssistiveTechnologies();
+            }
         }
         return toolkit;
     }
