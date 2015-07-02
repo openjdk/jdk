@@ -894,7 +894,7 @@ void ThreadSafepointState::restart() {
 
     case _running:
     default:
-       tty->print_cr("restart thread "INTPTR_FORMAT" with state %d",
+       tty->print_cr("restart thread " INTPTR_FORMAT " with state %d",
                       _thread, _type);
        _thread->print();
       ShouldNotReachHere();
@@ -1193,7 +1193,7 @@ void SafepointSynchronize::print_statistics() {
     sstats = &_safepoint_stats[index];
     tty->print("%.3f: ", sstats->_time_stamp);
     tty->print("%-26s       ["
-               INT32_FORMAT_W(8)INT32_FORMAT_W(11)INT32_FORMAT_W(15)
+               INT32_FORMAT_W(8) INT32_FORMAT_W(11) INT32_FORMAT_W(15)
                "    ]    ",
                sstats->_vmop_type == -1 ? "no vm operation" :
                VM_Operation::name(sstats->_vmop_type),
@@ -1202,9 +1202,9 @@ void SafepointSynchronize::print_statistics() {
                sstats->_nof_threads_wait_to_block);
     // "/ MICROUNITS " is to convert the unit from nanos to millis.
     tty->print("  ["
-               INT64_FORMAT_W(6)INT64_FORMAT_W(6)
-               INT64_FORMAT_W(6)INT64_FORMAT_W(6)
-               INT64_FORMAT_W(6)"    ]  ",
+               INT64_FORMAT_W(6) INT64_FORMAT_W(6)
+               INT64_FORMAT_W(6) INT64_FORMAT_W(6)
+               INT64_FORMAT_W(6) "    ]  ",
                sstats->_time_to_spin / MICROUNITS,
                sstats->_time_to_wait_to_block / MICROUNITS,
                sstats->_time_to_sync / MICROUNITS,
@@ -1212,9 +1212,9 @@ void SafepointSynchronize::print_statistics() {
                sstats->_time_to_exec_vmop / MICROUNITS);
 
     if (need_to_track_page_armed_status) {
-      tty->print(INT32_FORMAT"         ", sstats->_page_armed);
+      tty->print(INT32_FORMAT "         ", sstats->_page_armed);
     }
-    tty->print_cr(INT32_FORMAT"   ", sstats->_nof_threads_hit_page_trap);
+    tty->print_cr(INT32_FORMAT "   ", sstats->_nof_threads_hit_page_trap);
   }
 }
 
@@ -1249,17 +1249,17 @@ void SafepointSynchronize::print_stat_on_exit() {
 
   for (int index = 0; index < VM_Operation::VMOp_Terminating; index++) {
     if (_safepoint_reasons[index] != 0) {
-      tty->print_cr("%-26s"UINT64_FORMAT_W(10), VM_Operation::name(index),
+      tty->print_cr("%-26s" UINT64_FORMAT_W(10), VM_Operation::name(index),
                     _safepoint_reasons[index]);
     }
   }
 
-  tty->print_cr(UINT64_FORMAT_W(5)" VM operations coalesced during safepoint",
+  tty->print_cr(UINT64_FORMAT_W(5) " VM operations coalesced during safepoint",
                 _coalesced_vmop_count);
-  tty->print_cr("Maximum sync time  "INT64_FORMAT_W(5)" ms",
+  tty->print_cr("Maximum sync time  " INT64_FORMAT_W(5) " ms",
                 _max_sync_time / MICROUNITS);
   tty->print_cr("Maximum vm operation time (except for Exit VM operation)  "
-                INT64_FORMAT_W(5)" ms",
+                INT64_FORMAT_W(5) " ms",
                 _max_vmop_time / MICROUNITS);
 }
 

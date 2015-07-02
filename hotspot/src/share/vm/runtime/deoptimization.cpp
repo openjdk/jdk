@@ -1340,7 +1340,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
       ttyLocker ttyl;
       char buf[100];
       if (xtty != NULL) {
-        xtty->begin_head("uncommon_trap thread='" UINTX_FORMAT"' %s",
+        xtty->begin_head("uncommon_trap thread='" UINTX_FORMAT "' %s",
                          os::current_thread_id(),
                          format_trap_request(buf, sizeof(buf), trap_request));
         nm->log_identity(xtty);

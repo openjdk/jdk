@@ -173,7 +173,7 @@ bool Generation::promotion_attempt_is_safe(size_t max_promotion_in_bytes) const 
   bool   res = (available >= max_promotion_in_bytes);
   if (PrintGC && Verbose) {
     gclog_or_tty->print_cr(
-      "Generation: promo attempt is%s safe: available("SIZE_FORMAT") %s max_promo("SIZE_FORMAT")",
+      "Generation: promo attempt is%s safe: available(" SIZE_FORMAT ") %s max_promo(" SIZE_FORMAT ")",
       res? "":" not", available, res? ">=":"<",
       max_promotion_in_bytes);
   }

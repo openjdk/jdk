@@ -1093,9 +1093,11 @@ void CodeStrings::add_comment(intptr_t offset, const char * comment) {
 
 void CodeStrings::assign(CodeStrings& other) {
   other.check_valid();
-  // Cannot do following because CodeStrings constructor is not alway run!
   assert(is_null(), "Cannot assign onto non-empty CodeStrings");
   _strings = other._strings;
+#ifdef ASSERT
+  _defunct = false;
+#endif
   other.set_null_and_invalidate();
 }
 
@@ -1115,13 +1117,15 @@ void CodeStrings::copy(CodeStrings& other) {
   }
 }
 
+const char* CodeStrings::_prefix = " ;; ";  // default: can be changed via set_prefix
+
 void CodeStrings::print_block_comment(outputStream* stream, intptr_t offset) const {
     check_valid();
     if (_strings != NULL) {
     CodeString* c = find(offset);
     while (c && c->offset() == offset) {
       stream->bol();
-      stream->print("  ;; ");
+      stream->print("%s", _prefix);
       stream->print_cr("%s", c->string());
       c = c->next_comment();
     }

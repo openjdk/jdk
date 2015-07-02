@@ -27,6 +27,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/compiledIC.hpp"
+#include "code/codeCacheExtensions.hpp"
 #include "code/scopeDesc.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/abstractCompiler.hpp"
@@ -2307,19 +2308,35 @@ BufferBlob* AdapterHandlerLibrary::buffer_blob() {
   return _buffer;
 }
 
+extern "C" void unexpected_adapter_call() {
+  ShouldNotCallThis();
+}
+
 void AdapterHandlerLibrary::initialize() {
   if (_adapters != NULL) return;
   _adapters = new AdapterHandlerTable();
 
-  // Create a special handler for abstract methods.  Abstract methods
-  // are never compiled so an i2c entry is somewhat meaningless, but
-  // throw AbstractMethodError just in case.
-  // Pass wrong_method_abstract for the c2i transitions to return
-  // AbstractMethodError for invalid invocations.
-  address wrong_method_abstract = SharedRuntime::get_handle_wrong_method_abstract_stub();
-  _abstract_method_handler = AdapterHandlerLibrary::new_entry(new AdapterFingerPrint(0, NULL),
-                                                              StubRoutines::throw_AbstractMethodError_entry(),
-                                                              wrong_method_abstract, wrong_method_abstract);
+  if (!CodeCacheExtensions::skip_compiler_support()) {
+    // Create a special handler for abstract methods.  Abstract methods
+    // are never compiled so an i2c entry is somewhat meaningless, but
+    // throw AbstractMethodError just in case.
+    // Pass wrong_method_abstract for the c2i transitions to return
+    // AbstractMethodError for invalid invocations.
+    address wrong_method_abstract = SharedRuntime::get_handle_wrong_method_abstract_stub();
+    _abstract_method_handler = AdapterHandlerLibrary::new_entry(new AdapterFingerPrint(0, NULL),
+                                                                StubRoutines::throw_AbstractMethodError_entry(),
+                                                                wrong_method_abstract, wrong_method_abstract);
+  } else {
+    // Adapters are not supposed to be used.
+    // Generate a special one to cause an error if used (and store this
+    // singleton in place of the useless _abstract_method_error adapter).
+    address entry = (address) &unexpected_adapter_call;
+    _abstract_method_handler = AdapterHandlerLibrary::new_entry(new AdapterFingerPrint(0, NULL),
+                                                                entry,
+                                                                entry,
+                                                                entry);
+
+  }
 }
 
 AdapterHandlerEntry* AdapterHandlerLibrary::new_entry(AdapterFingerPrint* fingerprint,
@@ -2345,6 +2362,15 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(methodHandle method) {
     MutexLocker mu(AdapterHandlerLibrary_lock);
     // make sure data structure is initialized
     initialize();
+
+    if (CodeCacheExtensions::skip_compiler_support()) {
+      // adapters are useless and should not be used, including the
+      // abstract_method_handler. However, some callers check that
+      // an adapter was installed.
+      // Return the singleton adapter, stored into _abstract_method_handler
+      // and modified to cause an error if we ever call it.
+      return _abstract_method_handler;
+    }
 
     if (method->is_abstract()) {
       return _abstract_method_handler;

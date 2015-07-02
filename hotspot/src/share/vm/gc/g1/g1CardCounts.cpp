@@ -53,7 +53,7 @@ size_t G1CardCounts::heap_map_factor() {
 void G1CardCounts::clear_range(size_t from_card_num, size_t to_card_num) {
   if (has_count_table()) {
     assert(from_card_num < to_card_num,
-           err_msg("Wrong order? from: " SIZE_FORMAT ", to: "SIZE_FORMAT,
+           err_msg("Wrong order? from: " SIZE_FORMAT ", to: " SIZE_FORMAT,
                    from_card_num, to_card_num));
     Copy::fill_to_bytes(&_card_counts[from_card_num], (to_card_num - from_card_num));
   }
@@ -96,7 +96,7 @@ uint G1CardCounts::add_card_count(jbyte* card_ptr) {
   if (has_count_table()) {
     size_t card_num = ptr_2_card_num(card_ptr);
     assert(card_num < _reserved_max_card_num,
-           err_msg("Card "SIZE_FORMAT" outside of card counts table (max size "SIZE_FORMAT")",
+           err_msg("Card " SIZE_FORMAT " outside of card counts table (max size " SIZE_FORMAT ")",
                    card_num, _reserved_max_card_num));
     count = (uint) _card_counts[card_num];
     if (count < G1ConcRSHotCardLimit) {
