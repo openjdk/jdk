@@ -702,6 +702,7 @@ public:
   static bool supports_avx512cd() { return (_cpuFeatures & CPU_AVX512CD) != 0; }
   static bool supports_avx512bw() { return (_cpuFeatures & CPU_AVX512BW) != 0; }
   static bool supports_avx512vl() { return (_cpuFeatures & CPU_AVX512VL) != 0; }
+  static bool supports_avx512vlbw() { return (supports_avx512bw() && supports_avx512vl()); }
   // Intel features
   static bool is_intel_family_core() { return is_intel() &&
                                        extended_cpu_family() == CPU_FAMILY_INTEL_CORE; }

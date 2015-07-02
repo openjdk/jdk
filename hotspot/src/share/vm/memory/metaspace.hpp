@@ -254,6 +254,8 @@ class Metaspace : public CHeapObj<mtClass> {
   // Debugging support
   void verify();
 
+  static void print_compressed_class_space(outputStream* st, const char* requested_addr = 0);
+
   class AllocRecordClosure :  public StackObj {
   public:
     virtual void doit(address ptr, MetaspaceObj::Type type, int byte_size) = 0;

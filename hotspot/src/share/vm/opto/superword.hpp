@@ -239,12 +239,15 @@ class SuperWord : public ResourceObj {
  public:
   SuperWord(PhaseIdealLoop* phase);
 
-  void transform_loop(IdealLoopTree* lpt);
+  void transform_loop(IdealLoopTree* lpt, bool do_optimization);
+
+  void unrolling_analysis(CountedLoopNode *cl, int &local_loop_unroll_factor);
 
   // Accessors for SWPointer
   PhaseIdealLoop* phase()          { return _phase; }
   IdealLoopTree* lpt()             { return _lpt; }
   PhiNode* iv()                    { return _iv; }
+  bool early_return()              { return _early_return; }
 
  private:
   IdealLoopTree* _lpt;             // Current loop tree node
@@ -252,6 +255,7 @@ class SuperWord : public ResourceObj {
   Node*          _bb;              // Current basic block
   PhiNode*       _iv;              // Induction var
   bool           _race_possible;   // In cases where SDMU is true
+  bool           _early_return;    // True if we do not initialize
   bool           _do_vector_loop;  // whether to do vectorization/simd style
   bool           _vector_loop_debug; // provide more printing in debug mode
   int            _num_work_vecs;   // Number of non memory vector operations
@@ -462,15 +466,18 @@ class SuperWord : public ResourceObj {
 // Information about an address for dependence checking and vector alignment
 class SWPointer VALUE_OBJ_CLASS_SPEC {
  protected:
-  MemNode*   _mem;     // My memory reference node
-  SuperWord* _slp;     // SuperWord class
+  MemNode*   _mem;           // My memory reference node
+  SuperWord* _slp;           // SuperWord class
 
-  Node* _base;         // NULL if unsafe nonheap reference
-  Node* _adr;          // address pointer
-  jint  _scale;        // multiplier for iv (in bytes), 0 if no loop iv
-  jint  _offset;       // constant offset (in bytes)
-  Node* _invar;        // invariant offset (in bytes), NULL if none
-  bool  _negate_invar; // if true then use: (0 - _invar)
+  Node* _base;               // NULL if unsafe nonheap reference
+  Node* _adr;                // address pointer
+  jint  _scale;              // multiplier for iv (in bytes), 0 if no loop iv
+  jint  _offset;             // constant offset (in bytes)
+  Node* _invar;              // invariant offset (in bytes), NULL if none
+  bool  _negate_invar;       // if true then use: (0 - _invar)
+  Node_Stack* _nstack;       // stack used to record a swpointer trace of variants
+  bool        _analyze_only; // Used in loop unrolling only for swpointer trace
+  uint        _stack_idx;    // Used in loop unrolling only for swpointer trace
 
   PhaseIdealLoop* phase() { return _slp->phase(); }
   IdealLoopTree*  lpt()   { return _slp->lpt(); }
@@ -497,7 +504,7 @@ class SWPointer VALUE_OBJ_CLASS_SPEC {
     NotComparable = (Less | Greater | Equal)
   };
 
-  SWPointer(MemNode* mem, SuperWord* slp);
+  SWPointer(MemNode* mem, SuperWord* slp, Node_Stack *nstack, bool analyze_only);
   // Following is used to create a temporary object during
   // the pattern match of an address expression.
   SWPointer(SWPointer* p);
@@ -505,14 +512,15 @@ class SWPointer VALUE_OBJ_CLASS_SPEC {
   bool valid()  { return _adr != NULL; }
   bool has_iv() { return _scale != 0; }
 
-  Node* base()            { return _base; }
-  Node* adr()             { return _adr; }
-  MemNode* mem()          { return _mem; }
-  int   scale_in_bytes()  { return _scale; }
-  Node* invar()           { return _invar; }
-  bool  negate_invar()    { return _negate_invar; }
-  int   offset_in_bytes() { return _offset; }
-  int   memory_size()     { return _mem->memory_size(); }
+  Node* base()             { return _base; }
+  Node* adr()              { return _adr; }
+  MemNode* mem()           { return _mem; }
+  int   scale_in_bytes()   { return _scale; }
+  Node* invar()            { return _invar; }
+  bool  negate_invar()     { return _negate_invar; }
+  int   offset_in_bytes()  { return _offset; }
+  int   memory_size()      { return _mem->memory_size(); }
+  Node_Stack* node_stack() { return _nstack; }
 
   // Comparable?
   int cmp(SWPointer& q) {

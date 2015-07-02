@@ -263,14 +263,19 @@ endif
 $(DtraceOutDir):
 	mkdir $(DtraceOutDir)
 
+# When building using a devkit, dtrace cannot find the correct preprocessor so
+# we run it explicitly before runing dtrace.
 $(DtraceOutDir)/hotspot.h: $(DTRACE_COMMON_SRCDIR)/hotspot.d | $(DtraceOutDir)
-	$(QUIETLY) $(DTRACE_PROG) $(DTRACE_OPTS) -C -I. -h -o $@ -s $(DTRACE_COMMON_SRCDIR)/hotspot.d
+	$(QUIETLY) $(CC) -E $(DTRACE_OPTS) -I. -x c $(DTRACE_COMMON_SRCDIR)/hotspot.d > $(DtraceOutDir)/hotspot.d
+	$(QUIETLY) $(DTRACE_PROG) -h -o $@ -s $(DtraceOutDir)/hotspot.d
 
 $(DtraceOutDir)/hotspot_jni.h: $(DTRACE_COMMON_SRCDIR)/hotspot_jni.d | $(DtraceOutDir)
-	$(QUIETLY) $(DTRACE_PROG) $(DTRACE_OPTS) -C -I. -h -o $@ -s $(DTRACE_COMMON_SRCDIR)/hotspot_jni.d
+	$(QUIETLY) $(CC) -E $(DTRACE_OPTS) -I. -x c $(DTRACE_COMMON_SRCDIR)/hotspot_jni.d > $(DtraceOutDir)/hotspot_jni.d
+	$(QUIETLY) $(DTRACE_PROG) -h -o $@ -s $(DtraceOutDir)/hotspot_jni.d
 
 $(DtraceOutDir)/hs_private.h: $(DTRACE_COMMON_SRCDIR)/hs_private.d | $(DtraceOutDir)
-	$(QUIETLY) $(DTRACE_PROG) $(DTRACE_OPTS) -C -I. -h -o $@ -s $(DTRACE_COMMON_SRCDIR)/hs_private.d
+	$(QUIETLY) $(CC) -E $(DTRACE_OPTS) -I. -x c $(DTRACE_COMMON_SRCDIR)/hs_private.d > $(DtraceOutDir)/hs_private.d
+	$(QUIETLY) $(DTRACE_PROG) -h -o $@ -s $(DtraceOutDir)/hs_private.d
 
 dtrace_gen_headers: $(DtraceOutDir)/hotspot.h $(DtraceOutDir)/hotspot_jni.h $(DtraceOutDir)/hs_private.h 
 

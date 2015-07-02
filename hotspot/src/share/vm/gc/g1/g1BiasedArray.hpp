@@ -26,6 +26,7 @@
 #define SHARE_VM_GC_G1_G1BIASEDARRAY_HPP
 
 #include "memory/allocation.hpp"
+#include "memory/memRegion.hpp"
 #include "utilities/debug.hpp"
 
 // Implements the common base functionality for arrays that contain provisions
@@ -128,11 +129,31 @@ public:
     return biased_base()[biased_index];
   }
 
+  // Return the index of the element of the given array that covers the given
+  // word in the heap.
+  idx_t get_index_by_address(HeapWord* value) const {
+    idx_t biased_index = ((uintptr_t)value) >> this->shift_by();
+    this->verify_biased_index(biased_index);
+    return biased_index - _bias;
+  }
+
   // Set the value of the array entry that corresponds to the given array.
   void set_by_address(HeapWord * address, T value) {
     idx_t biased_index = ((uintptr_t)address) >> this->shift_by();
     this->verify_biased_index(biased_index);
     biased_base()[biased_index] = value;
+  }
+
+  // Set the value of all array entries that correspond to addresses
+  // in the specified MemRegion.
+  void set_by_address(MemRegion range, T value) {
+    idx_t biased_start = ((uintptr_t)range.start()) >> this->shift_by();
+    idx_t biased_last = ((uintptr_t)range.last()) >> this->shift_by();
+    this->verify_biased_index(biased_start);
+    this->verify_biased_index(biased_last);
+    for (idx_t i = biased_start; i <= biased_last; i++) {
+      biased_base()[i] = value;
+    }
   }
 
 protected:

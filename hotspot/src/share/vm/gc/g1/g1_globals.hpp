@@ -30,16 +30,19 @@
 // Defines all globals flags used by the garbage-first compiler.
 //
 
-#define G1_FLAGS(develop, develop_pd, product, product_pd, diagnostic, experimental, notproduct, manageable, product_rw) \
+#define G1_FLAGS(develop, develop_pd, product, product_pd, diagnostic, experimental, notproduct, manageable, product_rw, range, constraint) \
                                                                             \
   product(uintx, G1ConfidencePercent, 50,                                   \
           "Confidence level for MMU/pause predictions")                     \
+          range(0, 100)                                                     \
                                                                             \
   develop(intx, G1MarkingOverheadPercent, 0,                                \
           "Overhead of concurrent marking")                                 \
+          range(0, 100)                                                     \
                                                                             \
   develop(intx, G1MarkingVerboseLevel, 0,                                   \
           "Level (0-4) of verboseness of the marking code")                 \
+          range(0, 4)                                                       \
                                                                             \
   develop(bool, G1TraceMarkStackOverflow, false,                            \
           "If true, extra debugging code for CM restart for ovflw.")        \
@@ -68,10 +71,12 @@
   product(double, G1ConcMarkStepDurationMillis, 10.0,                       \
           "Target duration of individual concurrent marking steps "         \
           "in milliseconds.")                                               \
+          range(1.0, (double)max_uintx)                                     \
                                                                             \
   product(intx, G1RefProcDrainInterval, 10,                                 \
           "The number of discovered reference objects to process before "   \
           "draining concurrent marking work queues.")                       \
+          range(1, max_intx)                                                \
                                                                             \
   experimental(bool, G1UseConcMarkReferenceProcessing, true,                \
           "If true, enable reference discovery during concurrent "          \
@@ -89,9 +94,11 @@
           "the percentage of retained entries is over this threshold "      \
           "the buffer will be enqueued for processing. A value of 0 "       \
           "specifies that mutator threads should not do such filtering.")   \
+          range(0, 100)                                                     \
                                                                             \
   experimental(intx, G1ExpandByPercentOfAvailable, 20,                      \
           "When expanding, % of uncommitted space to claim.")               \
+          range(0, 100)                                                     \
                                                                             \
   develop(bool, G1RSBarrierRegionFilter, true,                              \
           "If true, generate region filtering code in RS barrier")          \
@@ -138,9 +145,11 @@
                                                                             \
   product(size_t, G1ConcRSLogCacheSize, 10,                                 \
           "Log base 2 of the length of conc RS hot-card cache.")            \
+          range(0, 27)                                                      \
                                                                             \
   product(uintx, G1ConcRSHotCardLimit, 4,                                   \
           "The threshold that defines (>=) a hot card.")                    \
+          range(0, max_jubyte)                                              \
                                                                             \
   develop(intx, G1RSetRegionEntriesBase, 256,                               \
           "Max number of regions in a fine-grain table per MB.")            \
@@ -183,6 +192,7 @@
   product(uintx, G1ReservePercent, 10,                                      \
           "It determines the minimum reserve we should have in the heap "   \
           "to minimize the probability of promotion failure.")              \
+          range(0, 100)                                                     \
                                                                             \
   diagnostic(bool, G1PrintHeapRegions, false,                               \
           "If set G1 will print information on which regions are being "    \
@@ -238,22 +248,27 @@
           "The number of times we'll force an overflow during "             \
           "concurrent marking")                                             \
                                                                             \
-  experimental(uintx, G1NewSizePercent, 5,                                  \
-          "Percentage (0-100) of the heap size to use as default "          \
-          "minimum young gen size.")                                        \
-                                                                            \
   experimental(uintx, G1MaxNewSizePercent, 60,                              \
           "Percentage (0-100) of the heap size to use as default "          \
           " maximum young gen size.")                                       \
+          range(0, 100)                                                     \
+          constraint(G1MaxNewSizePercentConstraintFunc)                     \
+                                                                            \
+  experimental(uintx, G1NewSizePercent, 5,                                  \
+          "Percentage (0-100) of the heap size to use as default "          \
+          "minimum young gen size.")                                        \
+          constraint(G1NewSizePercentConstraintFunc)                        \
                                                                             \
   experimental(uintx, G1MixedGCLiveThresholdPercent, 85,                    \
           "Threshold for regions to be considered for inclusion in the "    \
           "collection set of mixed GCs. "                                   \
           "Regions with live bytes exceeding this will not be collected.")  \
+          range(0, 100)                                                     \
                                                                             \
   product(uintx, G1HeapWastePercent, 5,                                     \
           "Amount of space, expressed as a percentage of the heap size, "   \
           "that G1 is willing not to collect to avoid expensive GCs.")      \
+          range(0, 100)                                                     \
                                                                             \
   product(uintx, G1MixedGCCountTarget, 8,                                   \
           "The target number of mixed GCs after a marking cycle.")          \
@@ -272,6 +287,7 @@
   experimental(uintx, G1OldCSetRegionThresholdPercent, 10,                  \
           "An upper bound for the number of old CSet regions expressed "    \
           "as a percentage of the heap size.")                              \
+          range(0, 100)                                                     \
                                                                             \
   experimental(ccstr, G1LogLevel, NULL,                                     \
           "Log level for G1 logging: fine, finer, finest")                  \
@@ -314,6 +330,16 @@
   develop(bool, G1VerifyBitmaps, false,                                     \
           "Verifies the consistency of the marking bitmaps")
 
-G1_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_EXPERIMENTAL_FLAG, DECLARE_NOTPRODUCT_FLAG, DECLARE_MANAGEABLE_FLAG, DECLARE_PRODUCT_RW_FLAG)
+G1_FLAGS(DECLARE_DEVELOPER_FLAG, \
+         DECLARE_PD_DEVELOPER_FLAG, \
+         DECLARE_PRODUCT_FLAG, \
+         DECLARE_PD_PRODUCT_FLAG, \
+         DECLARE_DIAGNOSTIC_FLAG, \
+         DECLARE_EXPERIMENTAL_FLAG, \
+         DECLARE_NOTPRODUCT_FLAG, \
+         DECLARE_MANAGEABLE_FLAG, \
+         DECLARE_PRODUCT_RW_FLAG, \
+         IGNORE_RANGE, \
+         IGNORE_CONSTRAINT)
 
 #endif // SHARE_VM_GC_G1_G1_GLOBALS_HPP
