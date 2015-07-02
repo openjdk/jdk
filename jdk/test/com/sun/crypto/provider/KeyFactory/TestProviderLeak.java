@@ -67,14 +67,16 @@ public class TestProviderLeak {
                 data.add(megaByte);
             } catch (OutOfMemoryError e) {
                 megaByte = null;    // Free memory ASAP
-                System.out.println("OOME is thrown when allocating "
-                        + data.size() + "MB memory.");
+
+                int size = data.size();
 
                 for (int j = 0; j < RESERVATION && !data.isEmpty(); j++) {
                     data.removeLast();
                 }
                 System.gc();
                 hasException = true;
+                System.out.println("OOME is thrown when allocating "
+                        + size + "MB memory.");
             }
         }
         dumpMemoryStats("After memory allocation");
