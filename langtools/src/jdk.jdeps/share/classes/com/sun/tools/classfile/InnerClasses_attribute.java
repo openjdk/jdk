@@ -72,6 +72,13 @@ public class InnerClasses_attribute extends Attribute {
             inner_class_access_flags = new AccessFlags(cr.readUnsignedShort());
         }
 
+        public Info(int inner_class_info_index, int outer_class_info_index, int inner_name_index, AccessFlags inner_class_access_flags) {
+            this.inner_class_info_index = inner_class_info_index;
+            this.outer_class_info_index = outer_class_info_index;
+            this.inner_name_index = inner_name_index;
+            this.inner_class_access_flags = inner_class_access_flags;
+        }
+
         public CONSTANT_Class_info getInnerClassInfo(ConstantPool constant_pool) throws ConstantPoolException {
             if (inner_class_info_index == 0)
                 return null;
