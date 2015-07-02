@@ -163,7 +163,10 @@ public final class ScriptingFunctions {
             // If a working directory is present, use it.
             final Object pwd = envProperties.get(PWD_NAME);
             if (pwd != UNDEFINED) {
-                processBuilder.directory(new File(JSType.toString(pwd)));
+                final File pwdFile = new File(JSType.toString(pwd));
+                if (pwdFile.exists()) {
+                    processBuilder.directory(pwdFile);
+                }
             }
 
             // Set up ENV variables.
