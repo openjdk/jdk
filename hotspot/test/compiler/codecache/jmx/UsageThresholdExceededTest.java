@@ -51,13 +51,9 @@ public class UsageThresholdExceededTest {
     }
 
     public static void main(String[] args) {
-        int iterationsCount =
-            Integer.getInteger("jdk.test.lib.iterations", 1);
+        int iterationsCount = Integer.getInteger("jdk.test.lib.iterations", 1);
         for (BlobType btype : BlobType.getAvailable()) {
-            if (CodeCacheUtils.isCodeHeapPredictable(btype)) {
-                new UsageThresholdExceededTest(btype, iterationsCount)
-                        .runTest();
-            }
+            new UsageThresholdExceededTest(btype, iterationsCount).runTest();
         }
     }
 
@@ -67,9 +63,8 @@ public class UsageThresholdExceededTest {
         for (int i = 0; i < iterations; i++) {
             CodeCacheUtils.hitUsageThreshold(bean, btype);
         }
-        Asserts.assertEQ(bean.getUsageThresholdCount(), oldValue + iterations,
+        CodeCacheUtils.assertEQorGTE(btype, bean.getUsageThresholdCount(), oldValue + iterations,
                 "Unexpected threshold usage count");
-        System.out.printf("INFO: Scenario finished successfully for %s%n",
-                bean.getName());
+        System.out.printf("INFO: Scenario finished successfully for %s%n", bean.getName());
     }
 }
