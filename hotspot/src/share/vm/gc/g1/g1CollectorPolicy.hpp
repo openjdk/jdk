@@ -692,7 +692,7 @@ public:
 
   // Record start, end, and completion of cleanup.
   void record_concurrent_mark_cleanup_start();
-  void record_concurrent_mark_cleanup_end(uint n_workers);
+  void record_concurrent_mark_cleanup_end();
   void record_concurrent_mark_cleanup_completed();
 
   // Records the information about the heap size for reporting in

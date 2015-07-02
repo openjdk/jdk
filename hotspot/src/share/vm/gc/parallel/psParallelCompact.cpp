@@ -832,9 +832,9 @@ void PSParallelCompact::post_initialize() {
   _ref_processor =
     new ReferenceProcessor(mr,            // span
                            ParallelRefProcEnabled && (ParallelGCThreads > 1), // mt processing
-                           (int) ParallelGCThreads, // mt processing degree
+                           (uint) ParallelGCThreads, // mt processing degree
                            true,          // mt discovery
-                           (int) ParallelGCThreads, // mt discovery degree
+                           (uint) ParallelGCThreads, // mt discovery degree
                            true,          // atomic_discovery
                            &_is_alive_closure); // non-header is alive closure
   _counters = new CollectorCounters("PSParallelCompact", 1);
@@ -2029,7 +2029,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     // Set the number of GC threads to be used in this collection
     gc_task_manager()->set_active_gang();
     gc_task_manager()->task_idle_workers();
-    heap->set_par_threads(gc_task_manager()->active_workers());
 
     TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
     GCTraceTime t1(GCCauseString("Full GC", gc_cause), PrintGC, !PrintGCDetails, NULL, _gc_tracer.gc_id());
@@ -2054,7 +2053,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     marking_phase(vmthread_cm, maximum_heap_compaction, &_gc_tracer);
 
     bool max_on_system_gc = UseMaximumCompactionOnSystemGC
-      && gc_cause == GCCause::_java_lang_system_gc;
+      && GCCause::is_user_requested_gc(gc_cause);
     summary_phase(vmthread_cm, maximum_heap_compaction || max_on_system_gc);
 
     COMPILER2_PRESENT(assert(DerivedPointerTable::is_active(), "Sanity"));
@@ -2090,7 +2089,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
       // Don't check if the size_policy is ready here.  Let
       // the size_policy check that internally.
       if (UseAdaptiveGenerationSizePolicyAtMajorCollection &&
-          ((gc_cause != GCCause::_java_lang_system_gc) ||
+          (!GCCause::is_user_requested_gc(gc_cause) ||
             UseAdaptiveSizePolicyWithSystemGC)) {
         // Swap the survivor spaces if from_space is empty. The
         // resize_young_gen() called below is normally used after

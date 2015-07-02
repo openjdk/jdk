@@ -28,24 +28,18 @@
 #include "gc/shared/strongRootsScope.hpp"
 #include "runtime/thread.hpp"
 
-MarkScope::MarkScope(bool activate) : _active(activate) {
-  if (_active) {
-    nmethod::oops_do_marking_prologue();
-  }
+MarkScope::MarkScope() {
+  nmethod::oops_do_marking_prologue();
 }
 
 MarkScope::~MarkScope() {
-  if (_active) {
-    nmethod::oops_do_marking_epilogue();
-  }
+  nmethod::oops_do_marking_epilogue();
 }
 
-StrongRootsScope::StrongRootsScope(bool activate) : MarkScope(activate) {
-  if (_active) {
-    Threads::change_thread_claim_parity();
-    // Zero the claimed high water mark in the StringTable
-    StringTable::clear_parallel_claimed_index();
-  }
+StrongRootsScope::StrongRootsScope(uint n_threads) : _n_threads(n_threads) {
+  Threads::change_thread_claim_parity();
+  // Zero the claimed high water mark in the StringTable
+  StringTable::clear_parallel_claimed_index();
 }
 
 StrongRootsScope::~StrongRootsScope() {

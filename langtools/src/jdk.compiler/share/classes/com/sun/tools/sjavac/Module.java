@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,10 @@ package com.sun.tools.sjavac;
 import java.io.File;
 import java.net.URI;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import com.sun.tools.sjavac.pubapi.PubApi;
 
 /**
  * The module is the root of a set of packages/sources/artifacts.
@@ -86,8 +87,7 @@ public class Module implements Comparable<Module> {
         return new Module(name, "");
     }
 
-    public static void saveModules(Map<String,Module> ms, StringBuilder b)
-    {
+    public static void saveModules(Map<String,Module> ms, StringBuilder b) {
         for (Module m : ms.values()) {
             m.save(b);
         }
@@ -98,6 +98,7 @@ public class Module implements Comparable<Module> {
     }
 
     public Package lookupPackage(String pkg) {
+        // See JDK-8071904
         Package p = packages.get(pkg);
         if (p == null) {
             p = new Package(this, pkg);
@@ -124,18 +125,17 @@ public class Module implements Comparable<Module> {
         }
     }
 
-    public void setDependencies(String pkg, Set<String> deps) {
-        Package p = lookupPackage(pkg);
-        p.setDependencies(deps);
+    public void setDependencies(String pkg, Map<String, Set<String>> deps, boolean cp) {
+        lookupPackage(pkg).setDependencies(deps, cp);
     }
 
-    public void setPubapi(String pkg, List<String> ps) {
+    public void setPubapi(String pkg, PubApi ps) {
         Package p = lookupPackage(pkg);
         p.setPubapi(ps);
     }
 
-    public boolean hasPubapiChanged(String pkg, List<String> ps) {
+    public boolean hasPubapiChanged(String pkg, PubApi newPubApi) {
         Package p = lookupPackage(pkg);
-        return p.hasPubapiChanged(ps);
+        return p.hasPubApiChanged(newPubApi);
     }
 }

@@ -2802,8 +2802,8 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
       uzp2(v21, v20, v16, T2D);
       eor(v20, T16B, v17, v21);
 
-      shl(v16, v28, T2D, 1);
-      shl(v17, v20, T2D, 1);
+      shl(v16, T2D, v28, 1);
+      shl(v17, T2D, v20, 1);
 
       eor(v0, T16B, v0, v16);
       eor(v1, T16B, v1, v17);

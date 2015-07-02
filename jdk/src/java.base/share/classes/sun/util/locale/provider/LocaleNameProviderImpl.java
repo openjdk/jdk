@@ -60,7 +60,7 @@ public class LocaleNameProviderImpl extends LocaleNameProvider implements Availa
 
     @Override
     public boolean isSupportedLocale(Locale locale) {
-        return LocaleProviderAdapter.isSupportedLocale(locale, type, langtags);
+        return LocaleProviderAdapter.forType(type).isSupportedProviderLocale(locale, langtags);
     }
 
     /**
@@ -72,7 +72,7 @@ public class LocaleNameProviderImpl extends LocaleNameProvider implements Availa
      * If the name returned cannot be localized according to <code>locale</code>,
      * (say, the provider does not have a Japanese name for Croatian),
      * this method returns null.
-     * @param languageCode the ISO 639 language code string in the form of two
+     * @param lang the ISO 639 language code string in the form of two
      *     lower-case letters between 'a' (U+0061) and 'z' (U+007A)
      * @param locale the desired locale
      * @return the name of the given language code for the specified locale, or null if it's not
@@ -129,7 +129,7 @@ public class LocaleNameProviderImpl extends LocaleNameProvider implements Availa
      * If the name returned cannot be localized according to <code>locale</code>,
      * (say, the provider does not have a Japanese name for Croatia),
      * this method returns null.
-     * @param countryCode the ISO 3166 country code string in the form of two
+     * @param ctry the ISO 3166 country code string in the form of two
      *     upper-case letters between 'A' (U+0041) and 'Z' (U+005A)
      * @param locale the desired locale
      * @return the name of the given country code for the specified locale, or null if it's not
@@ -152,7 +152,7 @@ public class LocaleNameProviderImpl extends LocaleNameProvider implements Availa
      * is appropriate for display to the user.
      * If the name returned cannot be localized according to <code>locale</code>,
      * this method returns null.
-     * @param variant the variant string
+     * @param vrnt the variant string
      * @param locale the desired locale
      * @return the name of the given variant string for the specified locale, or null if it's not
      *     available.

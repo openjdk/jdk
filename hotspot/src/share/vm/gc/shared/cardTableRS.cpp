@@ -102,9 +102,10 @@ void CardTableRS::prepare_for_younger_refs_iterate(bool parallel) {
 }
 
 void CardTableRS::younger_refs_iterate(Generation* g,
-                                       OopsInGenClosure* blk) {
+                                       OopsInGenClosure* blk,
+                                       uint n_threads) {
   _last_cur_val_in_gen[g->level()+1] = cur_youngergen_card_val();
-  g->younger_refs_iterate(blk);
+  g->younger_refs_iterate(blk, n_threads);
 }
 
 inline bool ClearNoncleanCardWrapper::clear_card(jbyte* entry) {
@@ -164,15 +165,8 @@ inline bool ClearNoncleanCardWrapper::clear_card_serial(jbyte* entry) {
 }
 
 ClearNoncleanCardWrapper::ClearNoncleanCardWrapper(
-  DirtyCardToOopClosure* dirty_card_closure, CardTableRS* ct) :
-    _dirty_card_closure(dirty_card_closure), _ct(ct) {
-    // Cannot yet substitute active_workers for n_par_threads
-    // in the case where parallelism is being turned off by
-    // setting n_par_threads to 0.
-    _is_par = (GenCollectedHeap::heap()->n_par_threads() > 0);
-    assert(!_is_par ||
-           (GenCollectedHeap::heap()->n_par_threads() ==
-            GenCollectedHeap::heap()->workers()->active_workers()), "Mismatch");
+  DirtyCardToOopClosure* dirty_card_closure, CardTableRS* ct, bool is_par) :
+    _dirty_card_closure(dirty_card_closure), _ct(ct), _is_par(is_par) {
 }
 
 bool ClearNoncleanCardWrapper::is_word_aligned(jbyte* entry) {
@@ -272,7 +266,8 @@ void CardTableRS::write_ref_field_gc_par(void* field, oop new_val) {
 }
 
 void CardTableRS::younger_refs_in_space_iterate(Space* sp,
-                                                OopsInGenClosure* cl) {
+                                                OopsInGenClosure* cl,
+                                                uint n_threads) {
   const MemRegion urasm = sp->used_region_at_save_marks();
 #ifdef ASSERT
   // Convert the assertion check to a warning if we are running
@@ -301,7 +296,7 @@ void CardTableRS::younger_refs_in_space_iterate(Space* sp,
     ShouldNotReachHere();
   }
 #endif
-  _ct_bs->non_clean_card_iterate_possibly_parallel(sp, urasm, cl, this);
+  _ct_bs->non_clean_card_iterate_possibly_parallel(sp, urasm, cl, this, n_threads);
 }
 
 void CardTableRS::clear_into_younger(Generation* old_gen) {

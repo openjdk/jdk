@@ -161,7 +161,7 @@ uint AdaptiveSizePolicy::calc_default_active_workers(uintx total_workers,
       }
       _debug_perturbation = !_debug_perturbation;
     }
-    assert((new_active_workers <= (uintx) ParallelGCThreads) &&
+    assert((new_active_workers <= ParallelGCThreads) &&
            (new_active_workers >= min_workers),
       "Jiggled active workers too much");
   }
@@ -244,7 +244,7 @@ void AdaptiveSizePolicy::minor_collection_end(GCCause::Cause gc_cause) {
   // Update the pause time.
   _minor_timer.stop();
 
-  if (gc_cause != GCCause::_java_lang_system_gc ||
+  if (!GCCause::is_user_requested_gc(gc_cause) ||
       UseAdaptiveSizePolicyWithSystemGC) {
     double minor_pause_in_seconds = _minor_timer.seconds();
     double minor_pause_in_ms = minor_pause_in_seconds * MILLIUNITS;

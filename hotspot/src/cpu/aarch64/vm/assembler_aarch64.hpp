@@ -466,6 +466,11 @@ class Address VALUE_OBJ_CLASS_SPEC {
     case base_plus_offset:
       {
         unsigned size = i->get(31, 30);
+        if (i->get(26, 26) && i->get(23, 23)) {
+          // SIMD Q Type - Size = 128 bits
+          assert(size == 0, "bad size");
+          size = 0b100;
+        }
         unsigned mask = (1 << size) - 1;
         if (_offset < 0 || _offset & mask)
           {
@@ -1888,9 +1893,18 @@ public:
   };
 
   enum SIMD_RegVariant {
-       S32, D64, Q128
+       B, H, S, D, Q
   };
 
+#define INSN(NAME, op)                                            \
+  void NAME(FloatRegister Rt, SIMD_RegVariant T, const Address &adr) {   \
+    ld_st2((Register)Rt, adr, (int)T & 3, op + ((T==Q) ? 0b10:0b00), 1); \
+  }                                                                      \
+
+  INSN(ldr, 1);
+  INSN(str, 0);
+
+#undef INSN
 
  private:
 
@@ -1997,27 +2011,87 @@ public:
     rf(Vm, 16), f(0b000111, 15, 10), rf(Vn, 5), rf(Vd, 0);                              \
   }
 
-  INSN(eor, 0b101110001);
-  INSN(orr, 0b001110101);
+  INSN(eor,  0b101110001);
+  INSN(orr,  0b001110101);
   INSN(andr, 0b001110001);
-  INSN(bic, 0b001110011);
-  INSN(bif, 0b101110111);
-  INSN(bit, 0b101110101);
-  INSN(bsl, 0b101110011);
-  INSN(orn, 0b001110111);
+  INSN(bic,  0b001110011);
+  INSN(bif,  0b101110111);
+  INSN(bit,  0b101110101);
+  INSN(bsl,  0b101110011);
+  INSN(orn,  0b001110111);
 
 #undef INSN
 
-#define INSN(NAME, opc)                                                                 \
+#define INSN(NAME, opc, opc2)                                                                 \
   void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm) { \
     starti;                                                                             \
     f(0, 31), f((int)T & 1, 30), f(opc, 29), f(0b01110, 28, 24);                        \
-    f((int)T >> 1, 23, 22), f(1, 21), rf(Vm, 16), f(0b100001, 15, 10);                  \
+    f((int)T >> 1, 23, 22), f(1, 21), rf(Vm, 16), f(opc2, 15, 10);                      \
     rf(Vn, 5), rf(Vd, 0);                                                               \
   }
 
-  INSN(addv, 0);
-  INSN(subv, 1);
+  INSN(addv, 0, 0b100001);
+  INSN(subv, 1, 0b100001);
+  INSN(mulv, 0, 0b100111);
+  INSN(sshl, 0, 0b010001);
+  INSN(ushl, 1, 0b010001);
+
+#undef INSN
+
+#define INSN(NAME, opc, opc2) \
+  void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn) {                   \
+    starti;                                                                             \
+    f(0, 31), f((int)T & 1, 30), f(opc, 29), f(0b01110, 28, 24);                        \
+    f((int)T >> 1, 23, 22), f(opc2, 21, 10);                                            \
+    rf(Vn, 5), rf(Vd, 0);                                                               \
+  }
+
+  INSN(absr,  0, 0b100000101110);
+  INSN(negr,  1, 0b100000101110);
+  INSN(notr,  1, 0b100000010110);
+  INSN(addv,  0, 0b110001101110);
+
+#undef INSN
+
+#define INSN(NAME, op0, cmode0) \
+  void NAME(FloatRegister Vd, SIMD_Arrangement T, unsigned imm8, unsigned lsl = 0) {   \
+    unsigned cmode = cmode0;                                                           \
+    unsigned op = op0;                                                                 \
+    starti;                                                                            \
+    assert(lsl == 0 ||                                                                 \
+           ((T == T4H || T == T8H) && lsl == 8) ||                                     \
+           ((T == T2S || T == T4S) && ((lsl >> 3) < 4)), "invalid shift");             \
+    cmode |= lsl >> 2;                                                                 \
+    if (T == T4H || T == T8H) cmode |= 0b1000;                                         \
+    if (!(T == T4H || T == T8H || T == T2S || T == T4S)) {                             \
+      assert(op == 0 && cmode0 == 0, "must be MOVI");                                  \
+      cmode = 0b1110;                                                                  \
+      if (T == T1D || T == T2D) op = 1;                                                \
+    }                                                                                  \
+    f(0, 31), f((int)T & 1, 30), f(op, 29), f(0b0111100000, 28, 19);                   \
+    f(imm8 >> 5, 18, 16), f(cmode, 15, 12), f(0x01, 11, 10), f(imm8 & 0b11111, 9, 5);  \
+    rf(Vd, 0);                                                                         \
+  }
+
+  INSN(movi, 0, 0);
+  INSN(orri, 0, 1);
+  INSN(mvni, 1, 0);
+  INSN(bici, 1, 1);
+
+#undef INSN
+
+#define INSN(NAME, op1, op2, op3) \
+  void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm) { \
+    starti;                                                                             \
+    assert(T == T2S || T == T4S || T == T2D, "invalid arrangement");                    \
+    f(0, 31), f((int)T & 1, 30), f(op1, 29), f(0b01110, 28, 24), f(op2, 23);            \
+    f(T==T2D ? 1:0, 22); f(1, 21), rf(Vm, 16), f(op3, 15, 10), rf(Vn, 5), rf(Vd, 0);    \
+  }
+
+  INSN(fadd, 0, 0, 0b110101);
+  INSN(fdiv, 1, 0, 0b111111);
+  INSN(fmul, 1, 0, 0b110111);
+  INSN(fsub, 0, 1, 0b110101);
 
 #undef INSN
 
@@ -2064,18 +2138,39 @@ public:
 
 #undef INSN
 
-  void shl(FloatRegister Vd, FloatRegister Vn, SIMD_Arrangement T, int shift){
+  void ins(FloatRegister Vd, SIMD_RegVariant T, FloatRegister Vn, int didx, int sidx) {
     starti;
-    /* The encodings for the immh:immb fields (bits 22:16) are
-     *   0001 xxx       8B/16B, shift = xxx
-     *   001x xxx       4H/8H,  shift = xxxx
-     *   01xx xxx       2S/4S,  shift = xxxxx
-     *   1xxx xxx       1D/2D,  shift = xxxxxx (1D is RESERVED)
-     */
-    assert((1 << ((T>>1)+3)) > shift, "Invalid Shift value");
-    f(0, 31), f(T & 1, 30), f(0b0011110, 29, 23), f((1 << ((T>>1)+3))|shift, 22, 16);
-    f(0b010101, 15, 10), rf(Vn, 5), rf(Vd, 0);
+    assert(T != Q, "invalid register variant");
+    f(0b01101110000, 31, 21), f(((didx<<1)|1)<<(int)T, 20, 16), f(0, 15);
+    f(sidx<<(int)T, 14, 11), f(1, 10), rf(Vn, 5), rf(Vd, 0);
   }
+
+  void umov(Register Rd, FloatRegister Vn, SIMD_RegVariant T, int idx) {
+    starti;
+    f(0, 31), f(T==D ? 1:0, 30), f(0b001110000, 29, 21);
+    f(((idx<<1)|1)<<(int)T, 20, 16), f(0b001111, 15, 10);
+    rf(Vn, 5), rf(Rd, 0);
+  }
+
+#define INSN(NAME, opc, opc2) \
+  void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, int shift){         \
+    starti;                                                                             \
+    /* The encodings for the immh:immb fields (bits 22:16) are                          \
+     *   0001 xxx       8B/16B, shift = xxx                                             \
+     *   001x xxx       4H/8H,  shift = xxxx                                            \
+     *   01xx xxx       2S/4S,  shift = xxxxx                                           \
+     *   1xxx xxx       1D/2D,  shift = xxxxxx (1D is RESERVED)                         \
+     */                                                                                 \
+    assert((1 << ((T>>1)+3)) > shift, "Invalid Shift value");                           \
+    f(0, 31), f(T & 1, 30), f(opc, 29), f(0b011110, 28, 23),                            \
+    f((1 << ((T>>1)+3))|shift, 22, 16); f(opc2, 15, 10), rf(Vn, 5), rf(Vd, 0);          \
+  }
+
+  INSN(shl,  0, 0b010101);
+  INSN(sshr, 0, 0b000001);
+  INSN(ushr, 1, 0b000001);
+
+#undef INSN
 
   void ushll(FloatRegister Vd, SIMD_Arrangement Ta, FloatRegister Vn, SIMD_Arrangement Tb, int shift) {
     starti;
@@ -2147,6 +2242,23 @@ public:
     f(0, 31), f((int)T & 1, 30), f(0b101110, 29, 24);
     f(T <= T16B ? 0b00 : 0b01, 23, 22), f(0b100000000010, 21, 10);
     rf(Vn, 5), rf(Vd, 0);
+  }
+
+  void dup(FloatRegister Vd, SIMD_Arrangement T, Register Xs)
+  {
+    starti;
+    assert(T != T1D, "reserved encoding");
+    f(0,31), f((int)T & 1, 30), f(0b001110000, 29, 21);
+    f((1 << (T >> 1)), 20, 16), f(0b000011, 15, 10), rf(Xs, 5), rf(Vd, 0);
+  }
+
+  void dup(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, int index = 0)
+  {
+    starti;
+    assert(T != T1D, "reserved encoding");
+    f(0, 31), f((int)T & 1, 30), f(0b001110000, 29, 21);
+    f(((1 << (T >> 1)) | (index << ((T >> 1) + 1))), 20, 16);
+    f(0b000001, 15, 10), rf(Vn, 5), rf(Vd, 0);
   }
 
   // CRC32 instructions

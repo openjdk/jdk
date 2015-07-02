@@ -324,7 +324,8 @@ private:
   // explicitly started if:
   // (a) cause == _gc_locker and +GCLockerInvokesConcurrent, or
   // (b) cause == _java_lang_system_gc and +ExplicitGCInvokesConcurrent.
-  // (c) cause == _g1_humongous_allocation
+  // (c) cause == _dcmd_gc_run and +ExplicitGCInvokesConcurrent.
+  // (d) cause == _g1_humongous_allocation
   bool should_do_concurrent_full_gc(GCCause::Cause cause);
 
   // Keeps track of how many "old marking cycles" (i.e., Full GCs or
@@ -606,11 +607,11 @@ protected:
 
   // Process any reference objects discovered during
   // an incremental evacuation pause.
-  void process_discovered_references(uint no_of_gc_workers);
+  void process_discovered_references();
 
   // Enqueue any remaining discovered references
   // after processing.
-  void enqueue_discovered_references(uint no_of_gc_workers);
+  void enqueue_discovered_references();
 
 public:
   FlexibleWorkGang* workers() const { return _workers; }
@@ -981,6 +982,8 @@ public:
 
   RefToScanQueue *task_queue(uint i) const;
 
+  uint num_task_queues() const;
+
   // A set of cards where updates happened during the GC
   DirtyCardQueueSet& dirty_card_queue_set() { return _dirty_card_queue_set; }
 
@@ -1011,11 +1014,6 @@ public:
 
   // Initialize weak reference processing.
   void ref_processing_init();
-
-  // Explicitly import set_par_threads into this scope
-  using CollectedHeap::set_par_threads;
-  // Set _n_par_threads according to a policy TBD.
-  void set_par_threads();
 
   virtual Name kind() const {
     return CollectedHeap::G1CollectedHeap;

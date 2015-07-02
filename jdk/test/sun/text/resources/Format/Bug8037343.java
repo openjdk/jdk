@@ -23,8 +23,9 @@
 
 /*
  * @test
- * @bug 8037343
+ * @bug 8008577 8037343
  * @summary updating dateformat for es_DO
+ * @run main/othervm -Djava.locale.providers=JRE,SPI Bug8037343
  */
 
 import java.text.DateFormat;

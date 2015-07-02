@@ -382,6 +382,8 @@ public:
   bool steal(uint queue_num, int* seed, E& t);
 
   bool peek();
+
+  uint size() const { return _n; }
 };
 
 template<class T, MEMFLAGS F> void

@@ -70,7 +70,6 @@ final class ScriptLoader extends NashornLoader {
      * @return Installed class.
      */
     synchronized Class<?> installClass(final String name, final byte[] data, final CodeSource cs) {
-        Objects.requireNonNull(cs);
-        return defineClass(name, data, 0, data.length, cs);
+        return defineClass(name, data, 0, data.length, Objects.requireNonNull(cs));
     }
 }

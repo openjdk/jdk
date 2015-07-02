@@ -35,11 +35,6 @@ class CardTableModRefBS;
 class DefNewGeneration;
 class KlassRemSet;
 
-template<class E, MEMFLAGS F, unsigned int N> class GenericTaskQueue;
-typedef GenericTaskQueue<oop, mtGC, TASKQUEUE_SIZE> OopTaskQueue;
-template<class T, MEMFLAGS F> class GenericTaskQueueSet;
-typedef GenericTaskQueueSet<OopTaskQueue, mtGC> OopTaskQueueSet;
-
 // Closure for iterating roots from a particular generation
 // Note: all classes deriving from this MUST call this do_barrier
 // method at the end of their own do_oop method!

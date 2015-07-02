@@ -35,12 +35,12 @@ final class LineMapImpl implements LineMap {
     }
 
     @Override
-    public long getLineNumber(long pos) {
+    public long getLineNumber(final long pos) {
         return source.getLine((int)pos);
     }
 
     @Override
-    public long getColumnNumber(long pos) {
+    public long getColumnNumber(final long pos) {
         return source.getColumn((int)pos);
     }
 }

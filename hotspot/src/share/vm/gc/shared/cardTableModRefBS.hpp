@@ -178,14 +178,15 @@ class CardTableModRefBS: public ModRefBarrierSet {
   // region mr in the given space and apply cl to any dirty sub-regions
   // of mr. Clears the dirty cards as they are processed.
   void non_clean_card_iterate_possibly_parallel(Space* sp, MemRegion mr,
-                                                OopsInGenClosure* cl, CardTableRS* ct);
+                                                OopsInGenClosure* cl, CardTableRS* ct,
+                                                uint n_threads);
 
  private:
   // Work method used to implement non_clean_card_iterate_possibly_parallel()
   // above in the parallel case.
   void non_clean_card_iterate_parallel_work(Space* sp, MemRegion mr,
                                             OopsInGenClosure* cl, CardTableRS* ct,
-                                            int n_threads);
+                                            uint n_threads);
 
  protected:
   // Dirty the bytes corresponding to "mr" (not all of which must be

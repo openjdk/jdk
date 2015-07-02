@@ -540,9 +540,10 @@ public class LogManager {
         return result;
     }
 
-    Logger demandSystemLogger(String name, String resourceBundleName) {
+    Logger demandSystemLogger(String name, String resourceBundleName, Class<?> caller) {
         // Add a system logger in the system context's namespace
-        final Logger sysLogger = getSystemContext().demandLogger(name, resourceBundleName);
+        final Logger sysLogger = getSystemContext()
+                .demandLogger(name, resourceBundleName, caller);
 
         // Add the system logger to the LogManager's namespace if not exist
         // so that there is only one single logger of the given name.
@@ -627,11 +628,11 @@ public class LogManager {
             return global;
         }
 
-        Logger demandLogger(String name, String resourceBundleName) {
+        Logger demandLogger(String name, String resourceBundleName, Class<?> caller) {
             // a LogManager subclass may have its own implementation to add and
             // get a Logger.  So delegate to the LogManager to do the work.
             final LogManager owner = getOwner();
-            return owner.demandLogger(name, resourceBundleName, null);
+            return owner.demandLogger(name, resourceBundleName, caller);
         }
 
 
@@ -869,7 +870,7 @@ public class LogManager {
                     owner.getProperty(pname + ".handlers") != null) {
                     // This pname has a level/handlers definition.
                     // Make sure it exists.
-                    demandLogger(pname, null);
+                    demandLogger(pname, null, null);
                 }
                 ix = ix2+1;
             }
@@ -912,11 +913,11 @@ public class LogManager {
         // one single logger of the given name.  System loggers are visible
         // to applications unless a logger of the same name has been added.
         @Override
-        Logger demandLogger(String name, String resourceBundleName) {
+        Logger demandLogger(String name, String resourceBundleName, Class<?> caller) {
             Logger result = findLogger(name);
             if (result == null) {
                 // only allocate the new system logger once
-                Logger newLogger = new Logger(name, resourceBundleName, null, getOwner(), true);
+                Logger newLogger = new Logger(name, resourceBundleName, caller, getOwner(), true);
                 do {
                     if (addLocalLogger(newLogger)) {
                         // We successfully added the new Logger that we

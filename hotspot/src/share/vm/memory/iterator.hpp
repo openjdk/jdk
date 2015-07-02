@@ -381,9 +381,4 @@ template <> class Devirtualizer<false> {
   template <class OopClosureType>             static bool do_metadata(OopClosureType* closure);
 };
 
-// Helper to convert the oop iterate macro suffixes into bool values that can be used by template functions.
-#define nvs_nv_to_bool true
-#define nvs_v_to_bool  false
-#define nvs_to_bool(nv_suffix) nvs##nv_suffix##_to_bool
-
 #endif // SHARE_VM_MEMORY_ITERATOR_HPP

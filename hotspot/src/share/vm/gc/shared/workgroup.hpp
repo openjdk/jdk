@@ -59,13 +59,6 @@ public:
   // The argument tells you which member of the gang you are.
   virtual void work(uint worker_id) = 0;
 
-  // This method configures the task for proper termination.
-  // Some tasks do not have any requirements on termination
-  // and may inherit this method that does nothing.  Some
-  // tasks do some coordination on termination and override
-  // this method to implement that coordination.
-  virtual void set_for_termination(uint active_workers) {};
-
   // Debugging accessor for the name.
   const char* name() const PRODUCT_RETURN_(return NULL;);
   int counter() { return _counter; }
@@ -99,12 +92,9 @@ class AbstractGangTaskWOopQueues : public AbstractGangTask {
   OopTaskQueueSet*       _queues;
   ParallelTaskTerminator _terminator;
  public:
-  AbstractGangTaskWOopQueues(const char* name, OopTaskQueueSet* queues) :
-    AbstractGangTask(name), _queues(queues), _terminator(0, _queues) {}
+  AbstractGangTaskWOopQueues(const char* name, OopTaskQueueSet* queues, uint n_threads) :
+    AbstractGangTask(name), _queues(queues), _terminator(n_threads, _queues) {}
   ParallelTaskTerminator* terminator() { return &_terminator; }
-  virtual void set_for_termination(uint active_workers) {
-    terminator()->reset_for_reuse(active_workers);
-  }
   OopTaskQueueSet* queues() { return _queues; }
 };
 
@@ -113,16 +103,15 @@ class AbstractGangTaskWOopQueues : public AbstractGangTask {
 // An abstract class representing a gang of workers.
 // You subclass this to supply an implementation of run_task().
 class AbstractWorkGang: public CHeapObj<mtInternal> {
-  // Here's the public interface to this class.
+protected:
+  // Work gangs are never deleted, so no need to cleanup.
+  ~AbstractWorkGang() { ShouldNotReachHere(); }
 public:
-  // Constructor and destructor.
+  // Constructor.
   AbstractWorkGang(const char* name, bool are_GC_task_threads,
                    bool are_ConcurrentGC_threads);
-  ~AbstractWorkGang();
   // Run a task, returns when the task is done (or terminated).
   virtual void run_task(AbstractGangTask* task) = 0;
-  // Stop and terminate all workers.
-  virtual void stop();
   // Return true if more workers should be applied to the task.
   virtual bool needs_more_workers() const { return true; }
 public:
@@ -139,8 +128,6 @@ protected:
   Monitor*  _monitor;
   // The count of the number of workers in the gang.
   uint _total_workers;
-  // Whether the workers should terminate.
-  bool _terminate;
   // The array of worker threads for this gang.
   // This is only needed for cleaning up.
   GangWorker** _gang_workers;
@@ -162,9 +149,6 @@ public:
   }
   virtual uint active_workers() const {
     return _total_workers;
-  }
-  bool terminate() const {
-    return _terminate;
   }
   GangWorker** gang_workers() const {
     return _gang_workers;
@@ -215,21 +199,16 @@ protected:
 class WorkData: public StackObj {
   // This would be a struct, but I want accessor methods.
 private:
-  bool              _terminate;
   AbstractGangTask* _task;
   int               _sequence_number;
 public:
   // Constructor and destructor
   WorkData() {
-    _terminate       = false;
     _task            = NULL;
     _sequence_number = 0;
   }
   ~WorkData() {
   }
-  // Accessors and modifiers
-  bool terminate()                       const { return _terminate;  }
-  void set_terminate(bool value)               { _terminate = value; }
   AbstractGangTask* task()               const { return _task; }
   void set_task(AbstractGangTask* value)       { _task = value; }
   int sequence_number()                  const { return _sequence_number; }
@@ -315,16 +294,20 @@ class FlexibleWorkGang: public WorkGang {
   uint _active_workers;
  public:
   // Constructor and destructor.
-  // Initialize active_workers to a minimum value.  Setting it to
-  // the parameter "workers" will initialize it to a maximum
-  // value which is not desirable.
   FlexibleWorkGang(const char* name, uint workers,
                    bool are_GC_task_threads,
                    bool  are_ConcurrentGC_threads) :
     WorkGang(name, workers, are_GC_task_threads, are_ConcurrentGC_threads),
-    _active_workers(UseDynamicNumberOfGCThreads ? 1U : ParallelGCThreads) {}
-  // Accessors for fields
-  virtual uint active_workers() const { return _active_workers; }
+    _active_workers(UseDynamicNumberOfGCThreads ? 1U : workers) {}
+
+  // Accessors for fields.
+  virtual uint active_workers() const {
+    assert(_active_workers <= _total_workers,
+           err_msg("_active_workers: %u > _total_workers: %u", _active_workers, _total_workers));
+    assert(UseDynamicNumberOfGCThreads || _active_workers == _total_workers,
+           "Unless dynamic should use total workers");
+    return _active_workers;
+  }
   void set_active_workers(uint v) {
     assert(v <= _total_workers,
            "Trying to set more workers active than there are");
@@ -390,12 +373,6 @@ public:
 class SubTasksDone: public CHeapObj<mtInternal> {
   uint* _tasks;
   uint _n_tasks;
-  // _n_threads is used to determine when a sub task is done.
-  // It does not control how many threads will execute the subtask
-  // but must be initialized to the number that do execute the task
-  // in order to correctly decide when the subtask is done (all the
-  // threads working on the task have finished).
-  uint _n_threads;
   uint _threads_completed;
 #ifdef ASSERT
   volatile uint _claimed;
@@ -413,11 +390,6 @@ public:
   // True iff the object is in a valid state.
   bool valid();
 
-  // Get/set the number of parallel threads doing the tasks to "t".  Can only
-  // be called before tasks start or after they are complete.
-  uint n_threads() { return _n_threads; }
-  void set_n_threads(uint t);
-
   // Returns "false" if the task "t" is unclaimed, and ensures that task is
   // claimed.  The task "t" is required to be within the range of "this".
   bool is_task_claimed(uint t);
@@ -426,7 +398,9 @@ public:
   // tasks that it will try to claim.  Every thread in the parallel task
   // must execute this.  (When the last thread does so, the task array is
   // cleared.)
-  void all_tasks_completed();
+  //
+  // n_threads - Number of threads executing the sub-tasks.
+  void all_tasks_completed(uint n_threads);
 
   // Destructor.
   ~SubTasksDone();

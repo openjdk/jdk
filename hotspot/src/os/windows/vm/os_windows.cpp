@@ -997,7 +997,16 @@ void os::check_dump_limit(char* buffer, size_t buffsz) {
   if (!FLAG_IS_DEFAULT(CreateCoredumpOnCrash) && !CreateCoredumpOnCrash) {
     jio_snprintf(buffer, buffsz, "CreateCoredumpOnCrash is disabled from command line");
     status = false;
-  } else {
+  }
+
+#ifndef ASSERT
+  if (!os::win32::is_windows_server() && FLAG_IS_DEFAULT(CreateCoredumpOnCrash)) {
+    jio_snprintf(buffer, buffsz, "Minidumps are not enabled by default on client versions of Windows");
+    status = false;
+  }
+#endif
+
+  if (status) {
     const char* cwd = get_current_directory(NULL, 0);
     int pid = current_process_id();
     if (cwd != NULL) {
@@ -1084,10 +1093,6 @@ void os::abort(bool dump_core, void* siginfo, void* context) {
   }
   CloseHandle(dumpFile);
   win32::exit_process_or_thread(win32::EPT_PROCESS, 1);
-}
-
-void os::abort(bool dump_core) {
-  abort(dump_core, NULL, NULL);
 }
 
 // Die immediately, no exit hook, no abort hook, no cleanup.
@@ -3768,7 +3773,7 @@ HINSTANCE os::win32::load_Windows_dll(const char* name, char *ebuf,
   return NULL;
 }
 
-#define EXIT_TIMEOUT     PRODUCT_ONLY(1000) NOT_PRODUCT(4000) /* 1 sec in product, 4 sec in debug */
+#define EXIT_TIMEOUT 300000 /* 5 minutes */
 
 static BOOL CALLBACK init_crit_sect_call(PINIT_ONCE, PVOID pcrit_sect, PVOID*) {
   InitializeCriticalSection((CRITICAL_SECTION*)pcrit_sect);
