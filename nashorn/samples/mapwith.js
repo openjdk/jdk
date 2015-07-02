@@ -1,5 +1,3 @@
-# exec script requires -scripting mode
-
 /*
  * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  *
@@ -31,21 +29,19 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-// The $EXEC builtin function can be used to run external commands:
-$EXEC("ls")
-$EXEC("ls -la")
+// Using a Java map with Javascript "with" statement
 
-// It can also be given a string to use as stdin:
-$EXEC("cat", "Hello, world!")
+var map = new java.util.HashMap();
+map.put("foo", 34);
+map.put("bar", "hello");
 
-// Additional arguments can be passed after the stdin argument, as an array of
-// strings, or a sequence of varargs (if there is no stdin, null or undefined
-// can be passed):
-$EXEC("ls", undefined, "-l", "-a")
-$EXEC("ls", undefined, ["-l", "-a"])
+var obj = {
+    __noSuchProperty__: function(name) {
+        return map.get(name);
+    }
+};
 
-// Output of running external commands is returned from $EXEC:
-print($EXEC("ls"))
-
-// apply on $EXEC
-print($EXEC.apply(this, ["ls"]));
+with(obj) {
+   print(foo);
+   print(bar);
+}

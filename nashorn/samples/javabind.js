@@ -1,5 +1,3 @@
-# exec script requires -scripting mode
-
 /*
  * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  *
@@ -31,21 +29,16 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-// The $EXEC builtin function can be used to run external commands:
-$EXEC("ls")
-$EXEC("ls -la")
+// bind on a Java method
 
-// It can also be given a string to use as stdin:
-$EXEC("cat", "Hello, world!")
+// #javascript "bind" function
+var bind = Function.prototype.bind;
 
-// Additional arguments can be passed after the stdin argument, as an array of
-// strings, or a sequence of varargs (if there is no stdin, null or undefined
-// can be passed):
-$EXEC("ls", undefined, "-l", "-a")
-$EXEC("ls", undefined, ["-l", "-a"])
+// Java console object
+var console = java.lang.System.console();
 
-// Output of running external commands is returned from $EXEC:
-print($EXEC("ls"))
+// arguments "this" and prompt string of Console.readLine method are bound
+var readName = bind.call(console.readLine, console, "Your name: ");
 
-// apply on $EXEC
-print($EXEC.apply(this, ["ls"]));
+// Now call it like a function that takes no arguments!
+print("Hello,", readName());

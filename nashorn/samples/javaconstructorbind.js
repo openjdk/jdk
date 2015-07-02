@@ -1,5 +1,3 @@
-# exec script requires -scripting mode
-
 /*
  * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  *
@@ -31,21 +29,41 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-// The $EXEC builtin function can be used to run external commands:
-$EXEC("ls")
-$EXEC("ls -la")
+// bind on a Java constructor
 
-// It can also be given a string to use as stdin:
-$EXEC("cat", "Hello, world!")
+// See Function.prototype.bind:
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/bind
+var bind = Function.prototype.bind;
 
-// Additional arguments can be passed after the stdin argument, as an array of
-// strings, or a sequence of varargs (if there is no stdin, null or undefined
-// can be passed):
-$EXEC("ls", undefined, "-l", "-a")
-$EXEC("ls", undefined, ["-l", "-a"])
+var URL = Java.type("java.net.URL");
 
-// Output of running external commands is returned from $EXEC:
-print($EXEC("ls"))
+// get the constructor that accepts URL, String parameters.
+// constructor signatures are properties of type object.
+var newURL = URL["(URL, String)"];
 
-// apply on $EXEC
-print($EXEC.apply(this, ["ls"]));
+// bind "context" URL parameter.
+var TwitterURL = bind.call(newURL, null, new URL('https://www.twitter.com'));
+
+// now you can create context relative URLs using the bound constructor
+print(new TwitterURL("sundararajan_a"));
+
+// read the URL content and print (optional part)
+
+var BufferedReader = Java.type("java.io.BufferedReader");
+var InputStreamReader = Java.type("java.io.InputStreamReader");
+
+// function to retrieve text content of the given URL
+function readTextFromURL(url) {
+    var str = '';
+    var u = new URL(url);
+    var reader = new BufferedReader(
+        new InputStreamReader(u.openStream()));
+    try {
+        reader.lines().forEach(function(x) str += x);
+        return str;
+    } finally {
+        reader.close();
+    }
+}
+
+print(readTextFromURL(new TwitterURL("sundararajan_a")));
