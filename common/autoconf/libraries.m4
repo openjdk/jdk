@@ -113,7 +113,7 @@ AC_DEFUN_ONCE([LIB_SETUP_X11],
         if test "x$x_libraries" = xNONE; then
           if test -f "$SYSROOT/usr/X11R6/lib/libX11.so"; then
             x_libraries="$SYSROOT/usr/X11R6/lib"
-          elif test "$SYSROOT/usr/lib64/libX11.so" && test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+          elif test -f "$SYSROOT/usr/lib64/libX11.so" && test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
             x_libraries="$SYSROOT/usr/lib64"
           elif test -f "$SYSROOT/usr/lib/libX11.so"; then
             x_libraries="$SYSROOT/usr/lib"
