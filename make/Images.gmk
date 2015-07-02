@@ -38,7 +38,8 @@ $(eval $(call IncludeCustomExtension, , Images-pre.gmk))
 ############################################################################
 
 MAIN_MODULES += java.se java.smartcardio jdk.httpserver jdk.sctp \
-               jdk.security.auth jdk.security.jgss jdk.pack200 jdk.xml.dom
+               jdk.security.auth jdk.security.jgss jdk.pack200 jdk.xml.dom \
+               jdk.accessibility
 
 # providers
 PROVIDER_MODULES += jdk.charsets jdk.crypto.ec jdk.crypto.pkcs11 jdk.jvmstat jdk.localedata \
@@ -55,10 +56,6 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS), solaris)
   PROVIDER_MODULES += jdk.crypto.ucrypto
-endif
-
-ifeq ($(OPENJDK_TARGET_OS), windows)
-  MAIN_MODULES += jdk.accessibility
 endif
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
@@ -107,6 +104,7 @@ JIMAGE_TOOL := $(JAVA_SMALL) \
 MODULES_XML += $(SRC_ROOT)/modules.xml
 DEPENDENCIES := $(call CacheFind, \
     $(SUPPORT_OUTPUTDIR)/modules_cmds \
+    $(SUPPORT_OUTPUTDIR)/modules_conf \
     $(SUPPORT_OUTPUTDIR)/modules_libs) \
     $(wildcard $(JDK_OUTPUTDIR)/modules/*/_*) \
     $(MODULES_XML)
@@ -455,10 +453,10 @@ endif
 # /sample dir
 
 $(eval $(call SetupCopyFiles,COPY_SAMPLES, \
-    SRC := $(SUPPORT_OUTPUTDIR)/sample, \
+    SRC := $(SUPPORT_OUTPUTDIR)/sample/image, \
     DEST := $(JDK_IMAGE_DIR)/sample, \
-    FILES := $(if $(wildcard $(SUPPORT_OUTPUTDIR)/sample), \
-        $(call CacheFind,$(SUPPORT_OUTPUTDIR)/sample))))
+    FILES := $(if $(wildcard $(SUPPORT_OUTPUTDIR)/sample/image), \
+        $(call CacheFind,$(SUPPORT_OUTPUTDIR)/sample/image))))
 
 JDK_TARGETS += $(COPY_SAMPLES)
 
