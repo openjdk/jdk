@@ -103,6 +103,10 @@ size_t HeapRegion::max_region_size() {
   return HeapRegionBounds::max_size();
 }
 
+size_t HeapRegion::min_region_size_in_words() {
+  return HeapRegionBounds::min_size() >> LogHeapWordSize;
+}
+
 void HeapRegion::setup_heap_region_size(size_t initial_heap_size, size_t max_heap_size) {
   size_t region_size = G1HeapRegionSize;
   if (FLAG_IS_DEFAULT(G1HeapRegionSize)) {
@@ -711,12 +715,12 @@ public:
         _n_failures++;
       }
 
-      if (!_g1h->full_collection() || G1VerifyRSetsDuringFullGC) {
+      if (!_g1h->collector_state()->full_collection() || G1VerifyRSetsDuringFullGC) {
         HeapRegion* from = _g1h->heap_region_containing((HeapWord*)p);
         HeapRegion* to   = _g1h->heap_region_containing(obj);
         if (from != NULL && to != NULL &&
             from != to &&
-            !to->is_humongous()) {
+            !to->is_pinned()) {
           jbyte cv_obj = *_bs->byte_for_const(_containing_obj);
           jbyte cv_field = *_bs->byte_for_const(p);
           const jbyte dirty = CardTableModRefBS::dirty_card_val();

@@ -36,18 +36,17 @@
 #include "gc/cms/parNewGeneration.hpp"
 #endif // INCLUDE_ALL_GCS
 
-Generation* GenerationSpec::init(ReservedSpace rs, int level,
-                                 GenRemSet* remset) {
+Generation* GenerationSpec::init(ReservedSpace rs, GenRemSet* remset) {
   switch (name()) {
     case Generation::DefNew:
-      return new DefNewGeneration(rs, init_size(), level);
+      return new DefNewGeneration(rs, init_size());
 
     case Generation::MarkSweepCompact:
-      return new TenuredGeneration(rs, init_size(), level, remset);
+      return new TenuredGeneration(rs, init_size(), remset);
 
 #if INCLUDE_ALL_GCS
     case Generation::ParNew:
-      return new ParNewGeneration(rs, init_size(), level);
+      return new ParNewGeneration(rs, init_size());
 
     case Generation::ConcurrentMarkSweep: {
       assert(UseConcMarkSweepGC, "UseConcMarkSweepGC should be set");
@@ -61,7 +60,7 @@ Generation* GenerationSpec::init(ReservedSpace rs, int level,
 
       ConcurrentMarkSweepGeneration* g = NULL;
       g = new ConcurrentMarkSweepGeneration(rs,
-                 init_size(), level, ctrs, UseCMSAdaptiveFreeLists,
+                 init_size(), ctrs, UseCMSAdaptiveFreeLists,
                  (FreeBlockDictionary<FreeChunk>::DictionaryChoice)CMSDictionaryChoice);
 
       g->initialize_performance_counters();

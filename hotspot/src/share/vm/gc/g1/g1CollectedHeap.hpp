@@ -31,6 +31,7 @@
 #include "gc/g1/g1AllocationContext.hpp"
 #include "gc/g1/g1Allocator.hpp"
 #include "gc/g1/g1BiasedArray.hpp"
+#include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1HRPrinter.hpp"
 #include "gc/g1/g1InCSetState.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
@@ -187,6 +188,7 @@ class G1CollectedHeap : public CollectedHeap {
   friend class SurvivorGCAllocRegion;
   friend class OldGCAllocRegion;
   friend class G1Allocator;
+  friend class G1ArchiveAllocator;
 
   // Closures used in implementation.
   friend class G1ParScanThreadState;
@@ -248,6 +250,9 @@ private:
 
   // Class that handles the different kinds of allocations.
   G1Allocator* _allocator;
+
+  // Class that handles archive allocation ranges.
+  G1ArchiveAllocator* _archive_allocator;
 
   // Statistics for each allocation context
   AllocationContextStats _allocation_context_stats;
@@ -328,6 +333,9 @@ private:
   // (d) cause == _g1_humongous_allocation
   bool should_do_concurrent_full_gc(GCCause::Cause cause);
 
+  // indicates whether we are in young or mixed GC mode
+  G1CollectorState _collector_state;
+
   // Keeps track of how many "old marking cycles" (i.e., Full GCs or
   // concurrent cycles) we have started.
   volatile uint _old_marking_cycles_started;
@@ -336,7 +344,6 @@ private:
   // concurrent cycles) we have completed.
   volatile uint _old_marking_cycles_completed;
 
-  bool _concurrent_cycle_started;
   bool _heap_summary_sent;
 
   // This is a non-product method that is helpful for testing. It is
@@ -366,6 +373,8 @@ private:
 
   void log_gc_header();
   void log_gc_footer(double pause_time_sec);
+
+  void trace_heap(GCWhen::Type when, const GCTracer* tracer);
 
   // These are macros so that, if the assert fires, we get the correct
   // line number, file, etc.
@@ -571,6 +580,10 @@ protected:
   void retire_gc_alloc_region(HeapRegion* alloc_region,
                               size_t allocated_bytes, InCSetState dest);
 
+  // Allocate the highest free region in the reserved heap. This will commit
+  // regions as necessary.
+  HeapRegion* alloc_highest_free_region();
+
   // - if explicit_gc is true, the GC is for a System.gc() or a heap
   //   inspection request and should collect the entire heap
   // - if clear_all_soft_refs is true, all soft references should be
@@ -701,8 +714,6 @@ public:
   void register_concurrent_cycle_end();
   void trace_heap_after_concurrent_cycle();
 
-  G1YCType yc_type();
-
   G1HRPrinter* hr_printer() { return &_hr_printer; }
 
   // Frees a non-humongous region by initializing its contents and
@@ -728,6 +739,44 @@ public:
   void free_humongous_region(HeapRegion* hr,
                              FreeRegionList* free_list,
                              bool par);
+
+  // Facility for allocating in 'archive' regions in high heap memory and
+  // recording the allocated ranges. These should all be called from the
+  // VM thread at safepoints, without the heap lock held. They can be used
+  // to create and archive a set of heap regions which can be mapped at the
+  // same fixed addresses in a subsequent JVM invocation.
+  void begin_archive_alloc_range();
+
+  // Check if the requested size would be too large for an archive allocation.
+  bool is_archive_alloc_too_large(size_t word_size);
+
+  // Allocate memory of the requested size from the archive region. This will
+  // return NULL if the size is too large or if no memory is available. It
+  // does not trigger a garbage collection.
+  HeapWord* archive_mem_allocate(size_t word_size);
+
+  // Optionally aligns the end address and returns the allocated ranges in
+  // an array of MemRegions in order of ascending addresses.
+  void end_archive_alloc_range(GrowableArray<MemRegion>* ranges,
+                               size_t end_alignment_in_bytes = 0);
+
+  // Facility for allocating a fixed range within the heap and marking
+  // the containing regions as 'archive'. For use at JVM init time, when the
+  // caller may mmap archived heap data at the specified range(s).
+  // Verify that the MemRegions specified in the argument array are within the
+  // reserved heap.
+  bool check_archive_addresses(MemRegion* range, size_t count);
+
+  // Commit the appropriate G1 regions containing the specified MemRegions
+  // and mark them as 'archive' regions. The regions in the array must be
+  // non-overlapping and in order of ascending address.
+  bool alloc_archive_regions(MemRegion* range, size_t count);
+
+  // Insert any required filler objects in the G1 regions around the specified
+  // ranges to make the regions parseable. This must be called after
+  // alloc_archive_regions, and after class loading has occurred.
+  void fill_archive_regions(MemRegion* range, size_t count);
+
 protected:
 
   // Shrink the garbage-first heap by at most the given size (in bytes!).
@@ -755,6 +804,8 @@ protected:
                                 uint           gc_count_before,
                                 bool*          succeeded,
                                 GCCause::Cause gc_cause);
+
+  void wait_for_root_region_scanning();
 
   // The guts of the incremental collection pause, executed by the vm
   // thread. It returns false if it is unable to do the collection due
@@ -791,7 +842,6 @@ protected:
   // The concurrent marker (and the thread it runs in.)
   ConcurrentMark* _cm;
   ConcurrentMarkThread* _cmThread;
-  bool _mark_in_progress;
 
   // The concurrent refiner.
   ConcurrentG1Refine* _cg1r;
@@ -1018,6 +1068,8 @@ public:
   virtual Name kind() const {
     return CollectedHeap::G1CollectedHeap;
   }
+
+  G1CollectorState* collector_state() { return &_collector_state; }
 
   // The current policy object for the collector.
   G1CollectorPolicy* g1_policy() const { return _g1_policy; }
@@ -1391,6 +1443,11 @@ public:
     return word_size > _humongous_object_threshold_in_words;
   }
 
+  // Returns the humongous threshold for a specific region size
+  static size_t humongous_threshold_for(size_t region_size) {
+    return (region_size / 2);
+  }
+
   // Update mod union table with the set of dirty cards.
   void updateModUnion();
 
@@ -1398,17 +1455,6 @@ public:
   // that this is always a safe operation, since it doesn't clear any
   // bits.
   void markModUnionRange(MemRegion mr);
-
-  // Records the fact that a marking phase is no longer in progress.
-  void set_marking_complete() {
-    _mark_in_progress = false;
-  }
-  void set_marking_started() {
-    _mark_in_progress = true;
-  }
-  bool mark_in_progress() {
-    return _mark_in_progress;
-  }
 
   // Print the maximum heap capacity.
   virtual size_t max_capacity() const;
@@ -1448,21 +1494,23 @@ public:
 
   // Determine if an object is dead, given the object and also
   // the region to which the object belongs. An object is dead
-  // iff a) it was not allocated since the last mark and b) it
-  // is not marked.
+  // iff a) it was not allocated since the last mark, b) it
+  // is not marked, and c) it is not in an archive region.
   bool is_obj_dead(const oop obj, const HeapRegion* hr) const {
     return
       !hr->obj_allocated_since_prev_marking(obj) &&
-      !isMarkedPrev(obj);
+      !isMarkedPrev(obj) &&
+      !hr->is_archive();
   }
 
   // This function returns true when an object has been
   // around since the previous marking and hasn't yet
-  // been marked during this marking.
+  // been marked during this marking, and is not in an archive region.
   bool is_obj_ill(const oop obj, const HeapRegion* hr) const {
     return
       !hr->obj_allocated_since_next_marking(obj) &&
-      !isMarkedNext(obj);
+      !isMarkedNext(obj) &&
+      !hr->is_archive();
   }
 
   // Determine if an object is dead, given only the object itself.
@@ -1522,14 +1570,6 @@ public:
   void redirty_logged_cards();
   // Verification
 
-  // The following is just to alert the verification code
-  // that a full collection has occurred and that the
-  // remembered sets are no longer up to date.
-  bool _full_collection;
-  void set_full_collection() { _full_collection = true;}
-  void clear_full_collection() {_full_collection = false;}
-  bool full_collection() {return _full_collection;}
-
   // Perform any cleanup actions necessary before allowing a verification.
   virtual void prepare_for_verify();
 
@@ -1564,6 +1604,8 @@ public:
 
   bool is_obj_dead_cond(const oop obj,
                         const VerifyOption vo) const;
+
+  G1HeapSummary create_g1_heap_summary();
 
   // Printing
 

@@ -176,6 +176,11 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseAESIntrinsics, false);
   }
 
+  if (UseGHASHIntrinsics) {
+    warning("GHASH intrinsics are not available on this CPU");
+    FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
+  }
+
   if (UseSHA) {
     warning("SHA instructions are not available on this CPU");
     FLAG_SET_DEFAULT(UseSHA, false);
@@ -505,7 +510,8 @@ void VM_Version::determine_section_size() {
 
 void VM_Version::determine_features() {
 #if defined(ABI_ELFv2)
-  const int code_size = (num_features+1+2*7)*BytesPerInstWord; // TODO(asmundak): calculation is incorrect.
+  // 1 InstWord per call for the blr instruction.
+  const int code_size = (num_features+1+2*1)*BytesPerInstWord;
 #else
   // 7 InstWords for each call (function descriptor + blr instruction).
   const int code_size = (num_features+1+2*7)*BytesPerInstWord;
@@ -540,7 +546,8 @@ void VM_Version::determine_features() {
   a->popcntw(R7, R5);                          // code[6]  -> popcntw
   a->fcfids(F3, F4);                           // code[7]  -> fcfids
   a->vand(VR0, VR0, VR0);                      // code[8]  -> vand
-  a->lqarx_unchecked(R7, R3_ARG1, R4_ARG2, 1); // code[9]  -> lqarx_m
+  // arg0 of lqarx must be an even register, (arg1 + arg2) must be a multiple of 16
+  a->lqarx_unchecked(R6, R3_ARG1, R4_ARG2, 1); // code[9]  -> lqarx_m
   a->vcipher(VR0, VR1, VR2);                   // code[10] -> vcipher
   a->vpmsumb(VR0, VR1, VR2);                   // code[11] -> vpmsumb
   a->tcheck(0);                                // code[12] -> tcheck
@@ -572,7 +579,8 @@ void VM_Version::determine_features() {
 
   // Execute code. Illegal instructions will be replaced by 0 in the signal handler.
   VM_Version::_is_determine_features_test_running = true;
-  (*test)((address)mid_of_test_area, (uint64_t)0);
+  // We must align the first argument to 16 bytes because of the lqarx check.
+  (*test)((address)align_size_up((intptr_t)mid_of_test_area, 16), (uint64_t)0);
   VM_Version::_is_determine_features_test_running = false;
 
   // determine which instructions are legal.
@@ -614,12 +622,12 @@ void VM_Version::config_dscr() {
   MacroAssembler* a = new MacroAssembler(&cb);
 
   // Emit code.
-  uint64_t (*get_dscr)() = (uint64_t(*)())(void *)a->emit_fd();
+  uint64_t (*get_dscr)() = (uint64_t(*)())(void *)a->function_entry();
   uint32_t *code = (uint32_t *)a->pc();
   a->mfdscr(R3);
   a->blr();
 
-  void (*set_dscr)(long) = (void(*)(long))(void *)a->emit_fd();
+  void (*set_dscr)(long) = (void(*)(long))(void *)a->function_entry();
   a->mtdscr(R3);
   a->blr();
 

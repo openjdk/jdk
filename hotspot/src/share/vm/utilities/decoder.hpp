@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,12 @@ public:
 
   // decode an pc address to corresponding function name and an offset from the beginning of
   // the function
+  //
+  // Note: the 'base' variant does not demangle names. The
+  // demangling that was done systematically in the 'modulepath' variant
+  // is now optional.
   virtual bool decode(address pc, char* buf, int buflen, int* offset,
-    const char* modulepath = NULL) = 0;
+                      const char* modulepath = NULL, bool demangle = true) = 0;
   virtual bool decode(address pc, char* buf, int buflen, int* offset, const void* base) = 0;
 
   // demangle a C++ symbol
@@ -81,7 +85,7 @@ public:
   ~NullDecoder() {};
 
   virtual bool decode(address pc, char* buf, int buflen, int* offset,
-    const char* modulepath = NULL) {
+                      const char* modulepath, bool demangle) {
     return false;
   }
 
@@ -101,7 +105,10 @@ public:
 
 class Decoder : AllStatic {
 public:
-  static bool decode(address pc, char* buf, int buflen, int* offset, const char* modulepath = NULL);
+  static bool decode(address pc, char* buf, int buflen, int* offset, const char* modulepath = NULL, bool demangle = true);
+  static bool decode(address pc, char* buf, int buflen, int* offset, bool demangle) {
+    return decode(pc, buf, buflen, offset, (const char*) NULL, demangle);
+  }
   static bool decode(address pc, char* buf, int buflen, int* offset, const void* base);
   static bool demangle(const char* symbol, char* buf, int buflen);
   static bool can_decode_C_frame_in_vm();
