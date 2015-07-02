@@ -331,6 +331,8 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
         for (Path f: files) {
             String fname = f.getFileName().toString();
+            if (fname.endsWith("/"))
+                fname = fname.substring(0, fname.length() - 1);
             if (Files.isDirectory(f)) {
                 if (recurse && SourceVersion.isIdentifier(fname)) {
                     listDirectory(directory,
