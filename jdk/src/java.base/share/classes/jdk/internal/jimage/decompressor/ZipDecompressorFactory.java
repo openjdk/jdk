@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,24 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.internal.jimage.decompressor;
 
-package jdk.internal.jimage;
+import java.io.IOException;
+import java.util.Properties;
 
-public final class ImageLocation  extends ImageLocationBase {
-    ImageLocation(long[] attributes, ImageStringsReader strings) {
-        super(attributes, strings);
+/**
+ *
+ * ZIP decompressor factory
+ */
+public final class ZipDecompressorFactory extends ResourceDecompressorFactory {
+    public static final String NAME = "zip";
+    public ZipDecompressorFactory() {
+        super(NAME, "ZIP Decompression", null);
     }
 
-    static ImageLocation readFrom(BasicImageReader reader, int offset) {
-        long[] attributes = reader.getAttributes(offset);
-        ImageStringsReader strings = reader.getStrings();
-
-        return new ImageLocation(attributes, strings);
+    @Override
+    public ResourceDecompressor newDecompressor(Properties properties)
+            throws IOException {
+        return new ZipDecompressor();
     }
 }
