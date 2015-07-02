@@ -92,7 +92,7 @@ public:
     regions_at_put(_curr_index, NULL);
     assert(hr->reclaimable_bytes() <= _remaining_reclaimable_bytes,
            err_msg("remaining reclaimable bytes inconsistent "
-                   "from region: "SIZE_FORMAT" remaining: "SIZE_FORMAT,
+                   "from region: " SIZE_FORMAT " remaining: " SIZE_FORMAT,
                    hr->reclaimable_bytes(), _remaining_reclaimable_bytes));
     _remaining_reclaimable_bytes -= hr->reclaimable_bytes();
     _curr_index += 1;

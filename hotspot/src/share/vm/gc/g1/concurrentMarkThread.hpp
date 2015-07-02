@@ -47,8 +47,14 @@ class ConcurrentMarkThread: public ConcurrentGCThread {
 
  private:
   ConcurrentMark*                  _cm;
-  volatile bool                    _started;
-  volatile bool                    _in_progress;
+
+  enum State {
+    Idle,
+    Started,
+    InProgress
+  };
+
+  volatile State _state;
 
   void sleepBeforeNextCycle();
 
@@ -68,23 +74,22 @@ class ConcurrentMarkThread: public ConcurrentGCThread {
 
   ConcurrentMark* cm()     { return _cm; }
 
-  void set_started()       { assert(!_in_progress, "cycle in progress"); _started = true;  }
-  void clear_started()     { assert(_in_progress, "must be starting a cycle"); _started = false; }
-  bool started()           { return _started;  }
+  void set_idle()          { assert(_state != Started, "must not be starting a new cycle"); _state = Idle; }
+  bool idle()              { return _state == Idle; }
+  void set_started()       { assert(_state == Idle, "cycle in progress"); _state = Started; }
+  bool started()           { return _state == Started; }
+  void set_in_progress()   { assert(_state == Started, "must be starting a cycle"); _state = InProgress; }
+  bool in_progress()       { return _state == InProgress; }
 
-  void set_in_progress()   { assert(_started, "must be starting a cycle"); _in_progress = true;  }
-  void clear_in_progress() { assert(!_started, "must not be starting a new cycle"); _in_progress = false; }
-  bool in_progress()       { return _in_progress;  }
-
-  // This flag returns true from the moment a marking cycle is
+  // Returns true from the moment a marking cycle is
   // initiated (during the initial-mark pause when started() is set)
   // to the moment when the cycle completes (just after the next
   // marking bitmap has been cleared and in_progress() is
-  // cleared). While this flag is true we will not start another cycle
+  // cleared). While during_cycle() is true we will not start another cycle
   // so that cycles do not overlap. We cannot use just in_progress()
   // as the CM thread might take some time to wake up before noticing
   // that started() is set and set in_progress().
-  bool during_cycle()      { return started() || in_progress(); }
+  bool during_cycle()      { return !idle(); }
 
   // shutdown
   void stop();

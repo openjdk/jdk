@@ -197,8 +197,8 @@ inline bool CMBitMapRO::iterate(BitMapClosure* cl) {
   assert(_bmStartWord <= (addr) && (addr) < (_bmStartWord + _bmWordSize),      \
          "outside underlying space?");                                         \
   assert(G1CollectedHeap::heap()->is_in_exact(addr),                           \
-         err_msg("Trying to access not available bitmap "PTR_FORMAT            \
-                 " corresponding to "PTR_FORMAT" (%u)",                        \
+         err_msg("Trying to access not available bitmap " PTR_FORMAT           \
+                 " corresponding to " PTR_FORMAT " (%u)",                      \
                  p2i(this), p2i(addr), G1CollectedHeap::heap()->addr_to_region(addr)));
 
 inline void CMBitMap::mark(HeapWord* addr) {
@@ -344,7 +344,7 @@ inline void CMTask::make_reference_grey(oop obj, HeapRegion* hr) {
 
 inline void CMTask::deal_with_reference(oop obj) {
   if (_cm->verbose_high()) {
-    gclog_or_tty->print_cr("[%u] we're dealing with reference = "PTR_FORMAT,
+    gclog_or_tty->print_cr("[%u] we're dealing with reference = " PTR_FORMAT,
                            _worker_id, p2i((void*) obj));
   }
 
@@ -393,7 +393,7 @@ inline void ConcurrentMark::grayRoot(oop obj, size_t word_size,
   // assert that word_size is under an upper bound which is its
   // containing region's capacity.
   assert(word_size * HeapWordSize <= hr->capacity(),
-         err_msg("size: "SIZE_FORMAT" capacity: "SIZE_FORMAT" "HR_FORMAT,
+         err_msg("size: " SIZE_FORMAT " capacity: " SIZE_FORMAT " " HR_FORMAT,
                  word_size * HeapWordSize, hr->capacity(),
                  HR_FORMAT_PARAMS(hr)));
 

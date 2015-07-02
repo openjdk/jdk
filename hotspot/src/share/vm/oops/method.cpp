@@ -2019,9 +2019,9 @@ void Method::print_on(outputStream* st) const {
   assert(is_method(), "must be method");
   st->print_cr("%s", internal_name());
   // get the effect of PrintOopAddress, always, for methods:
-  st->print_cr(" - this oop:          "INTPTR_FORMAT, (intptr_t)this);
+  st->print_cr(" - this oop:          " INTPTR_FORMAT, (intptr_t)this);
   st->print   (" - method holder:     "); method_holder()->print_value_on(st); st->cr();
-  st->print   (" - constants:         "INTPTR_FORMAT" ", (address)constants());
+  st->print   (" - constants:         " INTPTR_FORMAT " ", (address)constants());
   constants()->print_value_on(st); st->cr();
   st->print   (" - access:            0x%x  ", access_flags().as_int()); access_flags().print_on(st); st->cr();
   st->print   (" - name:              ");    name()->print_value_on(st); st->cr();

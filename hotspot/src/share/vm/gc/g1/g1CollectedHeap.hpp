@@ -1109,6 +1109,8 @@ public:
   // The STW reference processor....
   ReferenceProcessor* ref_processor_stw() const { return _ref_processor_stw; }
 
+  G1NewTracer* gc_tracer_stw() const { return _gc_tracer_stw; }
+
   // The Concurrent Marking reference processor...
   ReferenceProcessor* ref_processor_cm() const { return _ref_processor_cm; }
 

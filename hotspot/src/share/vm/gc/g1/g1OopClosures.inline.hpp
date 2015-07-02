@@ -118,7 +118,7 @@ inline void G1CMOopClosure::do_oop_nv(T* p) {
   oop obj = oopDesc::load_decode_heap_oop(p);
   if (_cm->verbose_high()) {
     gclog_or_tty->print_cr("[%u] we're looking at location "
-                           "*"PTR_FORMAT" = "PTR_FORMAT,
+                           "*" PTR_FORMAT " = " PTR_FORMAT,
                            _task->worker_id(), p2i(p), p2i((void*) obj));
   }
   _task->deal_with_reference(obj);

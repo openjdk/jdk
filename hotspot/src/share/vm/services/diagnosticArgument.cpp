@@ -89,7 +89,7 @@ template <> void DCmdArgument<jlong>::parse_value(const char* str,
                                                   size_t len, TRAPS) {
   int scanned = -1;
   if (str == NULL
-      || sscanf(str, JLONG_FORMAT"%n", &_value, &scanned) != 1
+      || sscanf(str, JLONG_FORMAT "%n", &_value, &scanned) != 1
       || (size_t)scanned != len)
   {
     ResourceMark rm;

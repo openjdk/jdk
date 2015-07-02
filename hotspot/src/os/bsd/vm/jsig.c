@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@
 
 static struct sigaction sact[MAXSIGNUM]; /* saved signal handlers */
 static unsigned int jvmsigs = 0; /* signals used by jvm */
+static __thread bool reentry = false; /* prevent reentry deadlock (per-thread) */
 
 /* used to synchronize the installation of signal handlers */
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -76,6 +77,8 @@ static void signal_unlock() {
 
 static sa_handler_t call_os_signal(int sig, sa_handler_t disp,
                                    bool is_sigset) {
+  sa_handler_t res;
+
   if (os_signal == NULL) {
     if (!is_sigset) {
       os_signal = (signal_t)dlsym(RTLD_NEXT, "signal");
@@ -87,7 +90,10 @@ static sa_handler_t call_os_signal(int sig, sa_handler_t disp,
       exit(0);
     }
   }
-  return (*os_signal)(sig, disp);
+  reentry = true;
+  res = (*os_signal)(sig, disp);
+  reentry = false;
+  return res;
 }
 
 static void save_signal_handler(int sig, sa_handler_t disp) {
@@ -160,6 +166,10 @@ int sigaction(int sig, const struct sigaction *act, struct sigaction *oact) {
   int res;
   bool sigused;
   struct sigaction oldAct;
+
+  if (reentry) {
+    return call_os_sigaction(sig, act, oact);
+  }
 
   signal_lock();
 

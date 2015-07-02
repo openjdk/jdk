@@ -1032,6 +1032,10 @@ public:
   product(bool, CreateCoredumpOnCrash, true,                                \
           "Create core/mini dump on VM fatal error")                        \
                                                                             \
+  product(uintx, ErrorLogTimeout, 2 * 60,                                   \
+          "Timeout, in seconds, to limit the time spent on writing an "     \
+          "error log in case of a crash.")                                  \
+                                                                            \
   product_pd(bool, UseOSErrorReporting,                                     \
           "Let VM fatal error propagate to the OS (ie. WER on Windows)")    \
                                                                             \
@@ -1098,6 +1102,9 @@ public:
                                                                             \
   product(bool, AlwaysRestoreFPU, false,                                    \
           "Restore the FPU control word after every JNI call (expensive)")  \
+                                                                            \
+  product(bool, MemoryMapImage, false,                                      \
+          "Memory map entire runtime image")                                \
                                                                             \
   diagnostic(bool, PrintCompilation2, false,                                \
           "Print additional statistics per compilation")                    \
@@ -1360,9 +1367,6 @@ public:
                                                                             \
   develop(uintx, PreallocatedOutOfMemoryErrorCount, 4,                      \
           "Number of OutOfMemoryErrors preallocated with backtrace")        \
-                                                                            \
-  product(bool, LazyBootClassLoader, true,                                  \
-          "Enable/disable lazy opening of boot class path entries")         \
                                                                             \
   product(bool, UseXMMForArrayCopy, false,                                  \
           "Use SSE2 MOVQ instruction for Arraycopy")                        \
