@@ -33,7 +33,9 @@ import java.nio.file.Paths;
  * @test
  * @bug 8014196
  * @summary ktab creates a file with zero kt_vno
+ * @requires os.family == "windows"
  * @modules java.security.jgss/sun.security.krb5.internal.ktab
+ *          java.security.jgss/sun.security.krb5.internal.tools
  */
 public class KtabZero {
 
@@ -52,15 +54,8 @@ public class KtabZero {
 
         // 2. Create with the tool
         Files.deleteIfExists(Paths.get(NAME));
-        try {
-            Class ktab = Class.forName("sun.security.krb5.internal.tools.Ktab");
-            ktab.getDeclaredMethod("main", String[].class).invoke(null,
-                    (Object)(("-k " + NAME + " -a me@HERE pass").split(" ")));
-        } catch (ClassNotFoundException cnfe) {
-            // Only Windows has ktab tool
-            System.out.println("No ktab tool here. Ignored.");
-            return;
-        }
+        sun.security.krb5.internal.tools.Ktab.main(
+            ("-k " + NAME + " -a me@HERE pass").split(" "));
         check(false);
     }
 

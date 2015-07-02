@@ -25,7 +25,6 @@
  * @test
  * @bug 7162687
  * @summary enhance KDC server availability detection
- * @modules java.security.jgss/sun.security.krb5
  * @compile -XDignore.symbol.file Unreachable.java
  * @run main/othervm/timeout=10 Unreachable
  */
