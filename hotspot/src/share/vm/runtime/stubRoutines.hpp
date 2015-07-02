@@ -197,6 +197,8 @@ class StubRoutines: AllStatic {
   static address _updateBytesCRC32;
   static address _crc_table_adr;
 
+  static address _updateBytesCRC32C;
+
   static address _multiplyToLen;
   static address _squareToLen;
   static address _mulAdd;
@@ -358,6 +360,8 @@ class StubRoutines: AllStatic {
 
   static address updateBytesCRC32()    { return _updateBytesCRC32; }
   static address crc_table_addr()      { return _crc_table_adr; }
+
+  static address updateBytesCRC32C()   { return _updateBytesCRC32C; }
 
   static address multiplyToLen()       {return _multiplyToLen; }
   static address squareToLen()         {return _squareToLen; }
