@@ -837,16 +837,19 @@ bool Arguments::process_argument(const char* arg,
     arg_len = equal_sign - argname;
   }
 
-  // Construct a string which consists only of the argument name without '+', '-', or '='.
-  char stripped_argname[256];
-  strncpy(stripped_argname, argname, arg_len);
-  stripped_argname[arg_len] = '\0'; //strncpy doesn't null terminate.
+  // Only make the obsolete check for valid arguments.
+  if (arg_len <= BUFLEN) {
+    // Construct a string which consists only of the argument name without '+', '-', or '='.
+    char stripped_argname[BUFLEN+1];
+    strncpy(stripped_argname, argname, arg_len);
+    stripped_argname[arg_len] = '\0';  // strncpy may not null terminate.
 
-  if (is_newly_obsolete(stripped_argname, &since)) {
-    char version[256];
-    since.to_string(version, sizeof(version));
-    warning("ignoring option %s; support was removed in %s", stripped_argname, version);
-    return true;
+    if (is_newly_obsolete(stripped_argname, &since)) {
+      char version[256];
+      since.to_string(version, sizeof(version));
+      warning("ignoring option %s; support was removed in %s", stripped_argname, version);
+      return true;
+    }
   }
 
   // For locked flags, report a custom error message if available.
