@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 class Bundle {
     static enum Type {
@@ -81,7 +82,10 @@ class Bundle {
     };
 
     private final static String[] DATETIME_PATTERN_KEYS = {
-        "DateTimePatterns/date-time"
+        "DateTimePatterns/full-dateTime",
+        "DateTimePatterns/long-dateTime",
+        "DateTimePatterns/medium-dateTime",
+        "DateTimePatterns/short-dateTime",
     };
 
     private final static String[] ERA_KEYS = {
@@ -170,6 +174,7 @@ class Bundle {
         for (index = 0; index < cldrBundles.length; index++) {
             if (cldrBundles[index].equals(id)) {
                 myMap.putAll(CLDRConverter.getCLDRBundle(cldrBundles[index]));
+                CLDRConverter.handleAliases(myMap);
                 break;
             }
         }
@@ -179,10 +184,11 @@ class Bundle {
         for (int i = cldrBundles.length - 1; i > index; i--) {
             if (!("no".equals(cldrBundles[i]) || cldrBundles[i].startsWith("no_"))) {
                 parentsMap.putAll(CLDRConverter.getCLDRBundle(cldrBundles[i]));
+                CLDRConverter.handleAliases(parentsMap);
             }
         }
         // Duplicate myMap as parentsMap for "root" so that the
-        // fallback works. This is a huck, though.
+        // fallback works. This is a hack, though.
         if ("root".equals(cldrBundles[0])) {
             assert parentsMap.isEmpty();
             parentsMap.putAll(myMap);
@@ -370,6 +376,17 @@ class Bundle {
                 }
             }
         }
+
+        // Remove all duplicates
+        if (Objects.nonNull(parentsMap)) {
+            for (Iterator<String> it = myMap.keySet().iterator(); it.hasNext();) {
+                String key = it.next();
+                if (Objects.deepEquals(parentsMap.get(key), myMap.get(key))) {
+                    it.remove();
+                }
+            }
+        }
+
         return myMap;
     }
 
@@ -506,11 +523,6 @@ class Bundle {
                 if (patterns.isEmpty()) {
                     return;
                 }
-                for (String p : patterns) {
-                    if (p == null) {
-                        return;
-                    }
-                }
                 String key = calendarPrefix + name;
                 if (!rawPatterns.equals(patterns)) {
                     myMap.put("java.time." + key, rawPatterns.toArray(new String[len]));
@@ -630,7 +642,9 @@ class Bundle {
                     if (name.contains("Standard Time")) {
                         name = name.replace("Standard Time", "Daylight Time");
                     } else if (name.endsWith("Mean Time")) {
+                        if (!name.startsWith("Greenwich ")) {
                         name = name.replace("Mean Time", "Summer Time");
+                        }
                     } else if (name.endsWith(" Time")) {
                         name = name.replace(" Time", " Summer Time");
                     }
@@ -644,7 +658,9 @@ class Bundle {
                     if (name.endsWith("Standard Time")) {
                         name = name.replace("Standard Time", "Time");
                     } else if (name.endsWith("Mean Time")) {
+                        if (!name.startsWith("Greenwich ")) {
                         name = name.replace("Mean Time", "Time");
+                    }
                     }
                     map.put(TZ_GEN_LONG_KEY, name);
                     fillInAbbrs(TZ_GEN_LONG_KEY, TZ_GEN_SHORT_KEY, map);
@@ -712,6 +728,15 @@ class Bundle {
             }
             break;
 
+        case 'l':
+            // 'l' is deprecated as a pattern character. Should be ignored.
+            break;
+
+        case 'u':
+            // Use 'y' for now.
+            appendN('y', count, sb);
+            break;
+
         case 'v':
         case 'V':
             appendN('z', count, sb);
@@ -723,16 +748,14 @@ class Bundle {
             }
             break;
 
-        case 'u':
         case 'U':
         case 'q':
         case 'Q':
-        case 'l':
         case 'g':
         case 'j':
         case 'A':
-            throw new InternalError(String.format("Unsupported letter: '%c', count=%d%n",
-                                                  cldrLetter, count));
+            throw new InternalError(String.format("Unsupported letter: '%c', count=%d, id=%s%n",
+                                                  cldrLetter, count, id));
         default:
             appendN(cldrLetter, count, sb);
             break;

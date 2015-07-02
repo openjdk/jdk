@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.spi.TimeZoneNameProvider;
+import sun.util.calendar.ZoneInfoFile;
 
 /**
  * Concrete implementation of the
@@ -42,6 +43,7 @@ import java.util.spi.TimeZoneNameProvider;
 public class TimeZoneNameProviderImpl extends TimeZoneNameProvider {
     private final LocaleProviderAdapter.Type type;
     private final Set<String> langtags;
+    private static final String CLDR_NO_INHERITANCE_MARKER = "\u2205\u2205\u2205";
 
     TimeZoneNameProviderImpl(LocaleProviderAdapter.Type type, Set<String> langtags) {
         this.type = type;
@@ -62,7 +64,7 @@ public class TimeZoneNameProviderImpl extends TimeZoneNameProvider {
 
     @Override
     public boolean isSupportedLocale(Locale locale) {
-        return LocaleProviderAdapter.isSupportedLocale(locale, type, langtags);
+        return LocaleProviderAdapter.forType(type).isSupportedProviderLocale(locale, langtags);
     }
 
     /**
@@ -79,7 +81,7 @@ public class TimeZoneNameProviderImpl extends TimeZoneNameProvider {
      * appropriate for daylight saving time even if the specified time zone
      * has not observed daylight saving time in the past.
      *
-     * @param ID a time zone ID string
+     * @param id a time zone ID string
      * @param daylight if true, return the daylight saving name.
      * @param style either {@link java.util.TimeZone#LONG TimeZone.LONG} or
      *    {@link java.util.TimeZone#SHORT TimeZone.SHORT}
@@ -121,7 +123,28 @@ public class TimeZoneNameProviderImpl extends TimeZoneNameProvider {
     private String[] getDisplayNameArray(String id, Locale locale) {
         Objects.requireNonNull(id);
         Objects.requireNonNull(locale);
-        return LocaleProviderAdapter.forType(type).getLocaleResources(locale).getTimeZoneNames(id);
+
+        String[] ret =
+            LocaleProviderAdapter.forType(type).getLocaleResources(locale).getTimeZoneNames(id);
+
+        if (Objects.nonNull(ret) && type == LocaleProviderAdapter.Type.CLDR) {
+            // check for CLDR's "no inheritance marker"
+            for (int index = 0; index < ret.length; index++) {
+                TimeZone tz = null;
+                if (CLDR_NO_INHERITANCE_MARKER.equals(ret[index])) {
+                    if (Objects.isNull(tz)) {
+                        tz = TimeZone.getTimeZone(id);
+                    }
+                    int offset = tz.getRawOffset();
+                    if (index == 3 || index == 4) { // daylight
+                        offset += tz.getDSTSavings();
+                    }
+                    ret[index] = ZoneInfoFile.toCustomID(offset);
+                }
+            }
+        }
+
+        return ret;
     }
 
     /**

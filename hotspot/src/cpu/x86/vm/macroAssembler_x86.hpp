@@ -1241,6 +1241,25 @@ public:
                                Register carry2);
   void multiply_to_len(Register x, Register xlen, Register y, Register ylen, Register z, Register zlen,
                        Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5);
+
+  void square_rshift(Register x, Register len, Register z, Register tmp1, Register tmp3,
+                     Register tmp4, Register tmp5, Register rdxReg, Register raxReg);
+  void multiply_add_64_bmi2(Register sum, Register op1, Register op2, Register carry,
+                            Register tmp2);
+  void multiply_add_64(Register sum, Register op1, Register op2, Register carry,
+                       Register rdxReg, Register raxReg);
+  void add_one_64(Register z, Register zlen, Register carry, Register tmp1);
+  void lshift_by_1(Register x, Register len, Register z, Register zlen, Register tmp1, Register tmp2,
+                       Register tmp3, Register tmp4);
+  void square_to_len(Register x, Register len, Register z, Register zlen, Register tmp1, Register tmp2,
+                     Register tmp3, Register tmp4, Register tmp5, Register rdxReg, Register raxReg);
+
+  void mul_add_128_x_32_loop(Register out, Register in, Register offset, Register len, Register tmp1,
+               Register tmp2, Register tmp3, Register tmp4, Register tmp5, Register rdxReg,
+               Register raxReg);
+  void mul_add(Register out, Register in, Register offset, Register len, Register k, Register tmp1,
+               Register tmp2, Register tmp3, Register tmp4, Register tmp5, Register rdxReg,
+               Register raxReg);
 #endif
 
   // CRC32 code for java.util.zip.CRC32::updateBytes() instrinsic.

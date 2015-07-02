@@ -662,7 +662,8 @@ public class SwingUtilities2 {
      * Point is within the actual bounds of a list item (not just in the cell)
      * and if the JList has the "List.isFileList" client property set.
      * Otherwise, this method returns -1.
-     * This is used to make WindowsL&F JFileChooser act like native dialogs.
+     * This is used to make Windows {@literal L&F} JFileChooser act
+     * like native dialogs.
      */
     public static int loc2IndexFileList(JList<?> list, Point point) {
         int index = list.locationToIndex(point);
@@ -703,7 +704,8 @@ public class SwingUtilities2 {
      * item at the given row of the table.  (Column must be 0).
      * Does not check the "Table.isFileList" property. That should be checked
      * before calling this method.
-     * This is used to make WindowsL&F JFileChooser act like native dialogs.
+     * This is used to make Windows {@literal L&F} JFileChooser act
+     * like native dialogs.
      */
     public static boolean pointOutsidePrefSize(JTable table, int row, int column, Point p) {
         if (table.convertColumnIndexToModel(column) != 0 || row == -1) {

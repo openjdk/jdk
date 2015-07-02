@@ -599,10 +599,14 @@ Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 }
 
 bool ArrayCopyNode::may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase) {
-  const TypeOopPtr* dest_t = phase->type(in(ArrayCopyNode::Dest))->is_oopptr();
+  Node* dest = in(ArrayCopyNode::Dest);
+  if (dest->is_top()) {
+    return false;
+  }
+  const TypeOopPtr* dest_t = phase->type(dest)->is_oopptr();
   assert(!dest_t->is_known_instance() || _dest_type->is_known_instance(), "result of EA not recorded");
-  const TypeOopPtr* src_t = phase->type(in(ArrayCopyNode::Src))->is_oopptr();
-  assert(!src_t->is_known_instance() || _src_type->is_known_instance(), "result of EA not recorded");
+  assert(in(ArrayCopyNode::Src)->is_top() || !phase->type(in(ArrayCopyNode::Src))->is_oopptr()->is_known_instance() ||
+         _src_type->is_known_instance(), "result of EA not recorded");
 
   if (_dest_type != TypeOopPtr::BOTTOM || t_oop->is_known_instance()) {
     assert(_dest_type == TypeOopPtr::BOTTOM || _dest_type->is_known_instance(), "result of EA is known instance");

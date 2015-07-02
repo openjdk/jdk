@@ -64,7 +64,7 @@ define_pd_global(intx, StackShadowPages, 4 DEBUG_ONLY(+5));
 define_pd_global(intx, PreInflateSpin,           10);
 
 define_pd_global(bool, RewriteBytecodes,     true);
-define_pd_global(bool, RewriteFrequentPairs, false);
+define_pd_global(bool, RewriteFrequentPairs, true);
 
 define_pd_global(bool, UseMembar,            true);
 

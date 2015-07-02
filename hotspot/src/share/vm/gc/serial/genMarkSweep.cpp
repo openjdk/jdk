@@ -40,6 +40,7 @@
 #include "gc/shared/modRefBarrierSet.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/space.hpp"
+#include "gc/shared/strongRootsScope.hpp"
 #include "oops/instanceRefKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -200,14 +201,18 @@ void GenMarkSweep::mark_sweep_phase1(int level,
   // Need new claim bits before marking starts.
   ClassLoaderDataGraph::clear_claimed_marks();
 
-  gch->gen_process_roots(level,
-                         false, // Younger gens are not roots.
-                         true,  // activate StrongRootsScope
-                         GenCollectedHeap::SO_None,
-                         GenCollectedHeap::StrongRootsOnly,
-                         &follow_root_closure,
-                         &follow_root_closure,
-                         &follow_cld_closure);
+  {
+    StrongRootsScope srs(1);
+
+    gch->gen_process_roots(&srs,
+                           level,
+                           false, // Younger gens are not roots.
+                           GenCollectedHeap::SO_None,
+                           GenCollectedHeap::StrongRootsOnly,
+                           &follow_root_closure,
+                           &follow_root_closure,
+                           &follow_cld_closure);
+  }
 
   // Process reference objects found during marking
   {
@@ -284,14 +289,18 @@ void GenMarkSweep::mark_sweep_phase3(int level) {
   assert(level == 1, "We don't use mark-sweep on young generations.");
   adjust_pointer_closure.set_orig_generation(gch->old_gen());
 
-  gch->gen_process_roots(level,
-                         false, // Younger gens are not roots.
-                         true,  // activate StrongRootsScope
-                         GenCollectedHeap::SO_AllCodeCache,
-                         GenCollectedHeap::StrongAndWeakRoots,
-                         &adjust_pointer_closure,
-                         &adjust_pointer_closure,
-                         &adjust_cld_closure);
+  {
+    StrongRootsScope srs(1);
+
+    gch->gen_process_roots(&srs,
+                           level,
+                           false, // Younger gens are not roots.
+                           GenCollectedHeap::SO_AllCodeCache,
+                           GenCollectedHeap::StrongAndWeakRoots,
+                           &adjust_pointer_closure,
+                           &adjust_pointer_closure,
+                           &adjust_cld_closure);
+  }
 
   gch->gen_process_weak_roots(&adjust_pointer_closure);
 

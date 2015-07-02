@@ -94,7 +94,7 @@ public class CalendarUtils {
      * <code>0</code> and <code>-1%4</code> is <code>-1</code>.
      *
      * @param n the numerator
-     * @param d a divisor which must be > 0
+     * @param d a divisor which must be {@literal > 0}
      * @param r an array of at least one element in which the value
      * <code>mod(n, d)</code> is returned.
      * @return the floor of the quotient.
@@ -117,7 +117,7 @@ public class CalendarUtils {
      * <code>0</code> and <code>-1%4</code> is <code>-1</code>.
      *
      * @param n the numerator
-     * @param d a divisor which must be > 0
+     * @param d a divisor which must be {@literal > 0}
      * @param r an array of at least one element in which the value
      * <code>mod(n, d)</code> is returned.
      * @return the floor of the quotient.

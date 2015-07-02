@@ -66,6 +66,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
+import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
@@ -667,12 +668,11 @@ public final class Context {
      * @param string       Evaluated code as a String
      * @param callThis     "this" to be passed to the evaluated code
      * @param location     location of the eval call
-     * @param strict       is this {@code eval} call from a strict mode code?
      * @return the return value of the {@code eval}
      */
     public Object eval(final ScriptObject initialScope, final String string,
-            final Object callThis, final Object location, final boolean strict) {
-        return eval(initialScope, string, callThis, location, strict, false);
+            final Object callThis, final Object location) {
+        return eval(initialScope, string, callThis, location, false, false);
     }
 
     /**
@@ -691,14 +691,16 @@ public final class Context {
             final Object callThis, final Object location, final boolean strict, final boolean evalCall) {
         final String  file       = location == UNDEFINED || location == null ? "<eval>" : location.toString();
         final Source  source     = sourceFor(file, string, evalCall);
-        final boolean directEval = location != UNDEFINED; // is this direct 'eval' call or indirectly invoked eval?
+        // is this direct 'eval' builtin call?
+        final boolean directEval = evalCall && (location != UNDEFINED);
         final Global  global = Context.getGlobal();
         ScriptObject scope = initialScope;
 
         // ECMA section 10.1.1 point 2 says eval code is strict if it begins
         // with "use strict" directive or eval direct call itself is made
         // from from strict mode code. We are passed with caller's strict mode.
-        boolean strictFlag = directEval && strict;
+        // Nashorn extension: any 'eval' is unconditionally strict when -strict is specified.
+        boolean strictFlag = strict || this._strict;
 
         Class<?> clazz = null;
         try {
@@ -722,16 +724,8 @@ public final class Context {
         // In strict mode, eval does not instantiate variables and functions
         // in the caller's environment. A new environment is created!
         if (strictFlag) {
-            // Create a new scope object
-            final ScriptObject strictEvalScope = global.newObject();
-
-            // bless it as a "scope"
-            strictEvalScope.setIsScope();
-
-            // set given scope to be it's proto so that eval can still
-            // access caller environment vars in the new environment.
-            strictEvalScope.setProto(scope);
-            scope = strictEvalScope;
+            // Create a new scope object with given scope as its prototype
+            scope = newScope(scope);
         }
 
         final ScriptFunction func = getProgramFunction(clazz, scope);
@@ -739,10 +733,15 @@ public final class Context {
         if (directEval) {
             evalThis = (callThis != UNDEFINED && callThis != null) || strictFlag ? callThis : global;
         } else {
-            evalThis = global;
+            // either indirect evalCall or non-eval (Function, engine.eval, ScriptObjectMirror.eval..)
+            evalThis = callThis;
         }
 
         return ScriptRuntime.apply(func, evalThis);
+    }
+
+    private static ScriptObject newScope(final ScriptObject callerScope) {
+        return new Scope(callerScope, PropertyMap.newMap(Scope.class));
     }
 
     private static Source loadInternal(final String srcStr, final String prefix, final String resourcePath) {
@@ -778,7 +777,7 @@ public final class Context {
      *
      * @throws IOException if source cannot be found or loaded
      */
-    public Object load(final ScriptObject scope, final Object from) throws IOException {
+    public Object load(final Object scope, final Object from) throws IOException {
         final Object src = from instanceof ConsString ? from.toString() : from;
         Source source = null;
 
@@ -830,7 +829,42 @@ public final class Context {
         }
 
         if (source != null) {
-            return evaluateSource(source, scope, scope);
+            if (scope instanceof ScriptObject && ((ScriptObject)scope).isScope()) {
+                final ScriptObject sobj = (ScriptObject)scope;
+                // passed object is a script object
+                // Global is the only user accessible scope ScriptObject
+                assert sobj.isGlobal() : "non-Global scope object!!";
+                return evaluateSource(source, sobj, sobj);
+            } else if (scope == null || scope == UNDEFINED) {
+                // undefined or null scope. Use current global instance.
+                final Global global = getGlobal();
+                return evaluateSource(source, global, global);
+            } else {
+                /*
+                 * Arbitrary object passed for scope.
+                 * Indirect load that is equivalent to:
+                 *
+                 *    (function(scope, source) {
+                 *        with (scope) {
+                 *            eval(<script_from_source>);
+                 *        }
+                 *    })(scope, source);
+                 */
+                final Global global = getGlobal();
+                // Create a new object. This is where all declarations
+                // (var, function) from the evaluated code go.
+                // make global to be its __proto__ so that global
+                // definitions are accessible to the evaluated code.
+                final ScriptObject evalScope = newScope(global);
+
+                // finally, make a WithObject around user supplied scope object
+                // so that it's properties are accessible as variables.
+                final ScriptObject withObj = ScriptRuntime.openWith(evalScope, scope);
+
+                // evaluate given source with 'withObj' as scope
+                // but use global object as "this".
+                return evaluateSource(source, withObj, global);
+            }
         }
 
         throw typeError("cant.load.script", ScriptRuntime.safeToString(from));
@@ -1095,16 +1129,17 @@ public final class Context {
      *
      * @param global the global
      * @param engine the associated ScriptEngine instance, can be null
+     * @param ctxt the initial ScriptContext, can be null
      * @return the initialized global scope object.
      */
-    public Global initGlobal(final Global global, final ScriptEngine engine) {
+    public Global initGlobal(final Global global, final ScriptEngine engine, final ScriptContext ctxt) {
         // Need only minimal global object, if we are just compiling.
         if (!env._compile_only) {
             final Global oldGlobal = Context.getGlobal();
             try {
                 Context.setGlobal(global);
                 // initialize global scope with builtin global objects
-                global.initBuiltinObjects(engine);
+                global.initBuiltinObjects(engine, ctxt);
             } finally {
                 Context.setGlobal(oldGlobal);
             }
@@ -1120,7 +1155,7 @@ public final class Context {
      * @return the initialized global scope object.
      */
     public Global initGlobal(final Global global) {
-        return initGlobal(global, null);
+        return initGlobal(global, null, null);
     }
 
     /**

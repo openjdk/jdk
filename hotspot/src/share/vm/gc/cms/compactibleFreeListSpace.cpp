@@ -641,6 +641,7 @@ void CompactibleFreeListSpace::set_end(HeapWord* value) {
 class FreeListSpace_DCTOC : public Filtering_DCTOC {
   CompactibleFreeListSpace* _cfls;
   CMSCollector* _collector;
+  bool _parallel;
 protected:
   // Override.
 #define walk_mem_region_with_cl_DECL(ClosureType)                       \
@@ -661,9 +662,10 @@ public:
                       CMSCollector* collector,
                       ExtendedOopClosure* cl,
                       CardTableModRefBS::PrecisionStyle precision,
-                      HeapWord* boundary) :
+                      HeapWord* boundary,
+                      bool parallel) :
     Filtering_DCTOC(sp, cl, precision, boundary),
-    _cfls(sp), _collector(collector) {}
+    _cfls(sp), _collector(collector), _parallel(parallel) {}
 };
 
 // We de-virtualize the block-related calls below, since we know that our
@@ -674,10 +676,7 @@ void FreeListSpace_DCTOC::walk_mem_region_with_cl(MemRegion mr,                 
                                                  HeapWord* bottom,              \
                                                  HeapWord* top,                 \
                                                  ClosureType* cl) {             \
-   bool is_par = GenCollectedHeap::heap()->n_par_threads() > 0;                 \
-   if (is_par) {                                                                \
-     assert(GenCollectedHeap::heap()->n_par_threads() ==                        \
-            GenCollectedHeap::heap()->workers()->active_workers(), "Mismatch"); \
+   if (_parallel) {                                                             \
      walk_mem_region_with_cl_par(mr, bottom, top, cl);                          \
    } else {                                                                     \
      walk_mem_region_with_cl_nopar(mr, bottom, top, cl);                        \
@@ -747,8 +746,9 @@ FreeListSpace_DCTOC__walk_mem_region_with_cl_DEFN(FilteringClosure)
 DirtyCardToOopClosure*
 CompactibleFreeListSpace::new_dcto_cl(ExtendedOopClosure* cl,
                                       CardTableModRefBS::PrecisionStyle precision,
-                                      HeapWord* boundary) {
-  return new FreeListSpace_DCTOC(this, _collector, cl, precision, boundary);
+                                      HeapWord* boundary,
+                                      bool parallel) {
+  return new FreeListSpace_DCTOC(this, _collector, cl, precision, boundary, parallel);
 }
 
 
@@ -1897,11 +1897,9 @@ CompactibleFreeListSpace::splitChunkAndReturnRemainder(FreeChunk* chunk,
   assert(chunk->is_free() && ffc->is_free(), "Error");
   _bt.split_block((HeapWord*)chunk, chunk->size(), new_size);
   if (rem_sz < SmallForDictionary) {
-    bool is_par = (GenCollectedHeap::heap()->n_par_threads() > 0);
+    // The freeList lock is held, but multiple GC task threads might be executing in parallel.
+    bool is_par = Thread::current()->is_GC_task_thread();
     if (is_par) _indexedFreeListParLocks[rem_sz]->lock();
-    assert(!is_par ||
-           (GenCollectedHeap::heap()->n_par_threads() ==
-            GenCollectedHeap::heap()->workers()->active_workers()), "Mismatch");
     returnChunkToFreeList(ffc);
     split(size, rem_sz);
     if (is_par) _indexedFreeListParLocks[rem_sz]->unlock();
@@ -1972,8 +1970,6 @@ void CompactibleFreeListSpace::save_marks() {
 
 bool CompactibleFreeListSpace::no_allocs_since_save_marks() {
   assert(_promoInfo.tracking(), "No preceding save_marks?");
-  assert(GenCollectedHeap::heap()->n_par_threads() == 0,
-         "Shouldn't be called if using parallel gc.");
   return _promoInfo.noPromotions();
 }
 
@@ -1981,8 +1977,6 @@ bool CompactibleFreeListSpace::no_allocs_since_save_marks() {
                                                                             \
 void CompactibleFreeListSpace::                                             \
 oop_since_save_marks_iterate##nv_suffix(OopClosureType* blk) {              \
-  assert(GenCollectedHeap::heap()->n_par_threads() == 0,                    \
-         "Shouldn't be called (yet) during parallel part of gc.");          \
   _promoInfo.promoted_oops_iterate##nv_suffix(blk);                         \
   /*                                                                        \
    * This also restores any displaced headers and removes the elements from \

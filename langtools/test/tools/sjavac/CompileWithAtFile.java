@@ -48,9 +48,13 @@ public class CompileWithAtFile extends SJavacTester {
     }
 
     void test() throws Exception {
+        clean(TEST_ROOT);
         ToolBox tb = new ToolBox();
         tb.writeFile(GENSRC.resolve("list.txt"),
-                 "-if */alfa/omega/A.java\n-if */beta/B.java\ngensrc\n-d bin\n");
+                     "-if */alfa/omega/A.java\n" +
+                     "-if */beta/B.java\n" +
+                     GENSRC + "\n" +
+                     "-d " + BIN + "\n");
         tb.writeFile(GENSRC.resolve("alfa/omega/A.java"),
                  "package alfa.omega; import beta.B; public class A { B b; }");
         tb.writeFile(GENSRC.resolve("beta/B.java"),
@@ -60,13 +64,14 @@ public class CompileWithAtFile extends SJavacTester {
 
         Files.createDirectory(BIN);
         Map<String,Long> previous_bin_state = collectState(BIN);
-        compile("@gensrc/list.txt", "--server:portfile=testserver,background=false");
+
+        compile("@" + GENSRC + "/list.txt", "--server:portfile=testserver,background=false");
 
         Map<String,Long> new_bin_state = collectState(BIN);
         verifyThatFilesHaveBeenAdded(previous_bin_state, new_bin_state,
-                         "bin/javac_state",
-                         "bin/alfa/omega/A.class",
-                         "bin/beta/B.class");
+                         BIN + "/javac_state",
+                         BIN + "/alfa/omega/A.class",
+                         BIN + "/beta/B.class");
         clean(GENSRC, BIN);
     }
 }

@@ -718,8 +718,6 @@ C_O_FLAG_DEBUG
 C_O_FLAG_NORM
 C_O_FLAG_HI
 C_O_FLAG_HIGHEST
-CXXFLAGS_DEBUG_OPTIONS
-CFLAGS_DEBUG_OPTIONS
 CXXFLAGS_DEBUG_SYMBOLS
 CFLAGS_DEBUG_SYMBOLS
 CXX_FLAG_DEPS
@@ -857,6 +855,7 @@ OS_VERSION_MINOR
 OS_VERSION_MAJOR
 PKG_CONFIG
 BASH_ARGS
+SETFILE
 CODESIGN
 XATTR
 DSYMUTIL
@@ -948,7 +947,6 @@ build_vendor
 build_cpu
 build
 CPIO
-SETFILE
 DF
 READLINK
 CYGPATH
@@ -1169,7 +1167,6 @@ SED
 CYGPATH
 READLINK
 DF
-SETFILE
 CPIO
 UNZIP
 ZIP
@@ -1182,6 +1179,7 @@ TIME
 DSYMUTIL
 XATTR
 CODESIGN
+SETFILE
 PKG_CONFIG
 JAVA
 JAVAC
@@ -2051,7 +2049,6 @@ Some influential environment variables:
   CYGPATH     Override default value for CYGPATH
   READLINK    Override default value for READLINK
   DF          Override default value for DF
-  SETFILE     Override default value for SETFILE
   CPIO        Override default value for CPIO
   UNZIP       Override default value for UNZIP
   ZIP         Override default value for ZIP
@@ -2064,6 +2061,7 @@ Some influential environment variables:
   DSYMUTIL    Override default value for DSYMUTIL
   XATTR       Override default value for XATTR
   CODESIGN    Override default value for CODESIGN
+  SETFILE     Override default value for SETFILE
   PKG_CONFIG  path to pkg-config utility
   JAVA        Override default value for JAVA
   JAVAC       Override default value for JAVAC
@@ -4366,7 +4364,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1432629750
+DATE_WHEN_GENERATED=1434614912
 
 ###############################################################################
 #
@@ -13060,192 +13058,6 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$SETFILE" = x; then
-    # The variable is not set by user, try to locate tool using the code snippet
-    for ac_prog in SetFile
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_SETFILE+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $SETFILE in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_SETFILE="$SETFILE" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_SETFILE="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-SETFILE=$ac_cv_path_SETFILE
-if test -n "$SETFILE"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SETFILE" >&5
-$as_echo "$SETFILE" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  test -n "$SETFILE" && break
-done
-
-  else
-    # The variable is set, but is it from the command line or the environment?
-
-    # Try to remove the string !SETFILE! from our list.
-    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!SETFILE!/}
-    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
-      # If it failed, the variable was not from the command line. Ignore it,
-      # but warn the user (except for BASH, which is always set by the calling BASH).
-      if test "xSETFILE" != xBASH; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of SETFILE from the environment. Use command line variables instead." >&5
-$as_echo "$as_me: WARNING: Ignoring value of SETFILE from the environment. Use command line variables instead." >&2;}
-      fi
-      # Try to locate tool using the code snippet
-      for ac_prog in SetFile
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_SETFILE+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $SETFILE in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_SETFILE="$SETFILE" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_SETFILE="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-SETFILE=$ac_cv_path_SETFILE
-if test -n "$SETFILE"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SETFILE" >&5
-$as_echo "$SETFILE" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  test -n "$SETFILE" && break
-done
-
-    else
-      # If it succeeded, then it was overridden by the user. We will use it
-      # for the tool.
-
-      # First remove it from the list of overridden variables, so we can test
-      # for unknown variables in the end.
-      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
-
-      # Check if the provided tool contains a complete path.
-      tool_specified="$SETFILE"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool SETFILE=$tool_basename" >&5
-$as_echo "$as_me: Will search for user supplied tool SETFILE=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
-set dummy $tool_basename; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_SETFILE+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $SETFILE in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_SETFILE="$SETFILE" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_SETFILE="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-SETFILE=$ac_cv_path_SETFILE
-if test -n "$SETFILE"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SETFILE" >&5
-$as_echo "$SETFILE" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-        if test "x$SETFILE" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool SETFILE=$tool_specified" >&5
-$as_echo "$as_me: Will use user supplied tool SETFILE=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SETFILE" >&5
-$as_echo_n "checking for SETFILE... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
-$as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool SETFILE=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
-$as_echo "$tool_specified" >&6; }
-      fi
-    fi
-  fi
-
-
-
-
-  # Publish this variable in the help.
-
-
   if test "x$CPIO" = x; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in cpio bsdcpio
@@ -15142,10 +14954,11 @@ fi
 
 
   if test "x$OPENJDK_BUILD_OS" = "xmacosx"; then
-    # detect if Xcode is installed by running xcodebuild -version
+    # If a devkit has been supplied, find xcodebuild in the toolchain_path.
+    # If not, detect if Xcode is installed by running xcodebuild -version
     # if no Xcode installed, xcodebuild exits with 1
     # if Xcode is installed, even if xcode-select is misconfigured, then it exits with 0
-    if /usr/bin/xcodebuild -version >/dev/null 2>&1; then
+    if test "x$DEVKIT_ROOT" != x || /usr/bin/xcodebuild -version >/dev/null 2>&1; then
       # We need to use xcodebuild in the toolchain dir provided by the user, this will
       # fall back on the stub binary in /usr/bin/xcodebuild
       # Extract the first word of "xcodebuild", so it can be a program name with args.
@@ -19655,6 +19468,199 @@ $as_echo "no" >&6; }
 $as_echo "yes" >&6; }
       fi
     fi
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$SETFILE" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in SetFile
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_SETFILE+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $SETFILE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_SETFILE="$SETFILE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_SETFILE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+SETFILE=$ac_cv_path_SETFILE
+if test -n "$SETFILE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SETFILE" >&5
+$as_echo "$SETFILE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$SETFILE" && break
+done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !SETFILE! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!SETFILE!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xSETFILE" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of SETFILE from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of SETFILE from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in SetFile
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_SETFILE+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $SETFILE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_SETFILE="$SETFILE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_SETFILE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+SETFILE=$ac_cv_path_SETFILE
+if test -n "$SETFILE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SETFILE" >&5
+$as_echo "$SETFILE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$SETFILE" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$SETFILE"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool SETFILE=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool SETFILE=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_SETFILE+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $SETFILE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_SETFILE="$SETFILE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_SETFILE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+SETFILE=$ac_cv_path_SETFILE
+if test -n "$SETFILE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SETFILE" >&5
+$as_echo "$SETFILE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$SETFILE" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool SETFILE=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool SETFILE=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SETFILE" >&5
+$as_echo_n "checking for SETFILE... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool SETFILE=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
+
+
+
+  if test "x$SETFILE" = x; then
+    as_fn_error $? "Could not find required tool for SETFILE" "$LINENO" 5
+  fi
+
+
   fi
 
 
@@ -41837,14 +41843,80 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
       # no adjustment
       ;;
     slowdebug )
-      # Add runtime stack smashing and undefined behavior checks
-      CFLAGS_DEBUG_OPTIONS="-fstack-protector-all --param ssp-buffer-size=1"
-      CXXFLAGS_DEBUG_OPTIONS="-fstack-protector-all --param ssp-buffer-size=1"
-      ;;
-    esac
+      # Add runtime stack smashing and undefined behavior checks.
+      # Not all versions of gcc support -fstack-protector
+      STACK_PROTECTOR_CFLAG="-fstack-protector-all"
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler supports \"$STACK_PROTECTOR_CFLAG\"" >&5
+$as_echo_n "checking if compiler supports \"$STACK_PROTECTOR_CFLAG\"... " >&6; }
+  supports=yes
+
+  saved_cflags="$CFLAGS"
+  CFLAGS="$CFLAGS $STACK_PROTECTOR_CFLAG"
+  ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+int i;
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+else
+  supports=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+  CFLAGS="$saved_cflags"
+
+  saved_cxxflags="$CXXFLAGS"
+  CXXFLAGS="$CXXFLAG $STACK_PROTECTOR_CFLAG"
+  ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+int i;
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+
+else
+  supports=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+  CXXFLAGS="$saved_cxxflags"
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
+$as_echo "$supports" >&6; }
+  if test "x$supports" = "xyes" ; then
+    :
+  else
+    STACK_PROTECTOR_CFLAG=""
   fi
 
 
+      CFLAGS_DEBUG_OPTIONS="$STACK_PROTECTOR_CFLAG --param ssp-buffer-size=1"
+      CXXFLAGS_DEBUG_OPTIONS="$STACK_PROTECTOR_CFLAG --param ssp-buffer-size=1"
+      ;;
+    esac
+  fi
 
   # Optimization levels
   if test "x$TOOLCHAIN_TYPE" = xsolstudio; then

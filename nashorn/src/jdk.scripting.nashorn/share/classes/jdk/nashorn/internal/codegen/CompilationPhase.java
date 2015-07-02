@@ -363,7 +363,7 @@ enum CompilationPhase {
             //partial code generation
             final FunctionNode newFunctionNode = transformFunction(fn, new ReplaceCompileUnits() {
                 @Override
-                CompileUnit getReplacement(CompileUnit original) {
+                CompileUnit getReplacement(final CompileUnit original) {
                     return map.get(original);
                 }
 

@@ -30,6 +30,6 @@ public class DocumentExtFunc {
 
     public static String test(NodeList list) {
         Node node = list.item(0);
-        return "["+node.getNodeName() + ":" + node.getNodeValue()+"]";
+        return "["+node.getNodeName() + ":" + node.getTextContent()+"]";
     }
 }

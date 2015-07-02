@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8003280
+ * @bug 8003280 8081271
  * @summary Add lambda tests
  *  spurious exceptions when checking references to inner constructors where
  *          the enclosing class is not defined in any outer context
@@ -20,7 +20,7 @@ class MethodReference37 {
     static class Outer {
         class Inner { }
 
-        static void test1() {
+        void test1() {
             SAM2<Inner, Outer> sam = Inner::new;
         }
 

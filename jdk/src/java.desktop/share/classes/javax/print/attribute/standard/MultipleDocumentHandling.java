@@ -70,8 +70,8 @@ import javax.print.attribute.PrintJobAttribute;
  * The standard MultipleDocumentHandling values are:
  * <UL>
  * <LI>
- * <A NAME="sdfi">{@link #SINGLE_DOCUMENT
- * <B>SINGLE_DOCUMENT</B>}</A>. If a print job has multiple
+ * <a NAME="sdfi"></a>{@link #SINGLE_DOCUMENT
+ * <B>SINGLE_DOCUMENT</B>}. If a print job has multiple
  * documents -- say, the document data is called <CODE>a</CODE> and
  * <CODE>b</CODE> -- then the result of processing all the document data
  * (<CODE>a</CODE> and then <CODE>b</CODE>) must be treated as a single sequence
@@ -85,8 +85,8 @@ import javax.print.attribute.PrintJobAttribute;
  * each copy (<CODE>a(*),b(*)</CODE>) to start on a new media sheet.
  *
  * <LI>
- * <A NAME="sducfi">{@link #SEPARATE_DOCUMENTS_UNCOLLATED_COPIES
- * <B>SEPARATE_DOCUMENTS_UNCOLLATED_COPIES</B>}</A>. If a print job
+ * <a NAME="sducfi"></a>{@link #SEPARATE_DOCUMENTS_UNCOLLATED_COPIES
+ * <B>SEPARATE_DOCUMENTS_UNCOLLATED_COPIES</B>}. If a print job
  * has multiple documents -- say, the document data is called <CODE>a</CODE> and
  * <CODE>b</CODE> -- then the result of processing the data in each document
  * instance must be treated as a single sequence of media sheets for finishing
@@ -98,8 +98,8 @@ import javax.print.attribute.PrintJobAttribute;
  * <CODE>a(*),a(*),...,b(*),b(*)...</CODE>.
  *
  * <LI>
- * <A NAME="sdccfi">{@link #SEPARATE_DOCUMENTS_COLLATED_COPIES
- * <B>SEPARATE_DOCUMENTS_COLLATED_COPIES</B>}</A>. If a print job
+ * <a NAME="sdccfi"></a>{@link #SEPARATE_DOCUMENTS_COLLATED_COPIES
+ * <B>SEPARATE_DOCUMENTS_COLLATED_COPIES</B>}. If a print job
  * has multiple documents -- say, the document data is called <CODE>a</CODE> and
  * <CODE>b</CODE> -- then the result of processing the data in each document
  * instance must be treated as a single sequence of media sheets for finishing
@@ -111,8 +111,8 @@ import javax.print.attribute.PrintJobAttribute;
  * <CODE>a(*),b(*),a(*),b(*),...</CODE>.
  *
  * <LI>
- * <A NAME="sdnsfi">{@link #SINGLE_DOCUMENT_NEW_SHEET
- * <B>SINGLE_DOCUMENT_NEW_SHEET</B>}</A>. Same as SINGLE_DOCUMENT,
+ * <a NAME="sdnsfi"></a>{@link #SINGLE_DOCUMENT_NEW_SHEET
+ * <B>SINGLE_DOCUMENT_NEW_SHEET</B>}. Same as SINGLE_DOCUMENT,
  * except that the printer must ensure that the first impression of each
  * document instance in the job is placed on a new media sheet. This value
  * allows multiple documents to be stapled together with a single staple where
@@ -153,7 +153,6 @@ import javax.print.attribute.PrintJobAttribute;
  * <CODE>getName()</CODE> is the IPP attribute name.  The enumeration's
  * integer value is the IPP enum value.  The <code>toString()</code> method
  * returns the IPP string representation of the attribute value.
- * <P>
  *
  * @see  Copies
  * @see  Finishings

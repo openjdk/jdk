@@ -25,10 +25,10 @@
 
 /*
  * @test
- * @bug 7153958
+ * @bug 7153958 8073372
  * @summary add constant pool reference to class containing inlined constants
  * @modules jdk.jdeps/com.sun.tools.classfile
- * @compile pkg/ClassToBeStaticallyImported.java CPoolRefClassContainingInlinedCts.java
+ * @compile pkg/ClassToBeStaticallyImportedA.java pkg/ClassToBeStaticallyImportedB.java CPoolRefClassContainingInlinedCts.java
  * @run main CPoolRefClassContainingInlinedCts
  */
 
@@ -39,7 +39,8 @@ import com.sun.tools.classfile.ConstantPoolException;
 import java.io.File;
 import java.io.IOException;
 
-import static pkg.ClassToBeStaticallyImported.staticField;
+import static pkg.ClassToBeStaticallyImportedA.staticFieldA;
+import static pkg.ClassToBeStaticallyImportedB.staticFieldB;
 
 public class CPoolRefClassContainingInlinedCts {
 
@@ -55,10 +56,14 @@ public class CPoolRefClassContainingInlinedCts {
 
     void checkClassName(String className) {
         switch (className) {
-            case "SimpleAssignClass" : case "BinaryExpClass":
-            case "UnaryExpClass" : case "CastClass":
-            case "ParensClass" : case "CondClass":
-            case "IfClass" : case "pkg/ClassToBeStaticallyImported":
+            case "SimpleAssignClassA" : case "BinaryExpClassA":
+            case "UnaryExpClassA" : case "CastClassA":
+            case "ParensClassA" : case "CondClassA":
+            case "IfClassA" : case "pkg/ClassToBeStaticallyImportedA":
+            case "SimpleAssignClassB" : case "BinaryExpClassB":
+            case "UnaryExpClassB" : case "CastClassB":
+            case "ParensClassB" : case "CondClassB":
+            case "IfClassB" : case "pkg/ClassToBeStaticallyImportedB":
                 numberOfReferencedClassesToBeChecked++;
         }
     }
@@ -77,59 +82,111 @@ public class CPoolRefClassContainingInlinedCts {
             }
             i += cpInfo.size();
         }
-        if (numberOfReferencedClassesToBeChecked != 8) {
+        if (numberOfReferencedClassesToBeChecked != 16) {
             throw new AssertionError("Class reference missing in the constant pool");
         }
     }
 
-    private int assign = SimpleAssignClass.x;
-    private int binary = BinaryExpClass.x + 1;
-    private int unary = -UnaryExpClass.x;
-    private int cast = (int)CastClass.x;
-    private int parens = (ParensClass.x);
-    private int cond = (CondClass.x == 1) ? 1 : 2;
-    private static int ifConstant;
-    private static int importStatic;
+    private int assignA = SimpleAssignClassA.x;
+    private int binaryA = BinaryExpClassA.x + 1;
+    private int unaryA = -UnaryExpClassA.x;
+    private int castA = (int)CastClassA.x;
+    private int parensA = (ParensClassA.x);
+    private int condA = (CondClassA.x == 1) ? 1 : 2;
+    private static int ifConstantA;
+    private static int importStaticA;
     static {
-        if (IfClass.x == 1) {
-            ifConstant = 1;
+        if (IfClassA.x == 1) {
+            ifConstantA = 1;
         } else {
-            ifConstant = 2;
+            ifConstantA = 2;
         }
     }
     static {
-        if (staticField == 1) {
-            importStatic = 1;
+        if (staticFieldA == 1) {
+            importStaticA = 1;
         } else {
-            importStatic = 2;
+            importStaticA = 2;
+        }
+    }
+
+    // now as final constants
+    private static final int assignB = SimpleAssignClassB.x;
+    private static final int binaryB = BinaryExpClassB.x + 1;
+    private static final int unaryB = -UnaryExpClassB.x;
+    private static final int castB = (int)CastClassB.x;
+    private static final int parensB = (ParensClassB.x);
+    private static final int condB = (CondClassB.x == 1) ? 1 : 2;
+    private static final int ifConstantB;
+    private static final int importStaticB;
+    static {
+        if (IfClassB.x == 1) {
+            ifConstantB = 1;
+        } else {
+            ifConstantB = 2;
+        }
+    }
+    static {
+        if (staticFieldB == 1) {
+            importStaticB = 1;
+        } else {
+            importStaticB = 2;
         }
     }
 }
 
-class SimpleAssignClass {
+class SimpleAssignClassA {
     public static final int x = 1;
 }
 
-class BinaryExpClass {
+class SimpleAssignClassB {
     public static final int x = 1;
 }
 
-class UnaryExpClass {
+class BinaryExpClassA {
     public static final int x = 1;
 }
 
-class CastClass {
+class BinaryExpClassB {
     public static final int x = 1;
 }
 
-class ParensClass {
+class UnaryExpClassA {
     public static final int x = 1;
 }
 
-class CondClass {
+class UnaryExpClassB {
     public static final int x = 1;
 }
 
-class IfClass {
+class CastClassA {
+    public static final int x = 1;
+}
+
+class CastClassB {
+    public static final int x = 1;
+}
+
+class ParensClassA {
+    public static final int x = 1;
+}
+
+class ParensClassB {
+    public static final int x = 1;
+}
+
+class CondClassA {
+    public static final int x = 1;
+}
+
+class CondClassB {
+    public static final int x = 1;
+}
+
+class IfClassA {
+    public static final int x = 1;
+}
+
+class IfClassB {
     public static final int x = 1;
 }

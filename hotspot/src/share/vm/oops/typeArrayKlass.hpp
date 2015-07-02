@@ -92,24 +92,24 @@ class TypeArrayKlass : public ArrayKlass {
   // The implementation used by all oop_oop_iterate functions in TypeArrayKlasses.
   inline int oop_oop_iterate_impl(oop obj, ExtendedOopClosure* closure);
 
+  // Wraps oop_oop_iterate_impl to conform to macros.
+  template <bool nv, typename OopClosureType>
+  inline int oop_oop_iterate(oop obj, OopClosureType* closure);
+
+  // Wraps oop_oop_iterate_impl to conform to macros.
+  template <bool nv, typename OopClosureType>
+  inline int oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
+
  public:
 
-#define TypeArrayKlass_OOP_OOP_ITERATE_DECL(OopClosureType, nv_suffix)    \
-  int oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure);       \
-  int oop_oop_iterate##nv_suffix##_m(oop obj, OopClosureType* closure,    \
-                                     MemRegion mr);                       \
-  int oop_oop_iterate_range##nv_suffix(oop obj, OopClosureType* closure,  \
-                                     int start, int end);
-
-  ALL_OOP_OOP_ITERATE_CLOSURES_1(TypeArrayKlass_OOP_OOP_ITERATE_DECL)
-  ALL_OOP_OOP_ITERATE_CLOSURES_2(TypeArrayKlass_OOP_OOP_ITERATE_DECL)
+  ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_OOP_ITERATE_DECL)
+  ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_OOP_ITERATE_DECL)
+  ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_OOP_ITERATE_DECL_RANGE)
+  ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_OOP_ITERATE_DECL_RANGE)
 
 #if INCLUDE_ALL_GCS
-#define TypeArrayKlass_OOP_OOP_ITERATE_BACKWARDS_DECL(OopClosureType, nv_suffix)  \
-  int  oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* closure);
-
-  ALL_OOP_OOP_ITERATE_CLOSURES_1(TypeArrayKlass_OOP_OOP_ITERATE_BACKWARDS_DECL)
-  ALL_OOP_OOP_ITERATE_CLOSURES_2(TypeArrayKlass_OOP_OOP_ITERATE_BACKWARDS_DECL)
+  ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_OOP_ITERATE_DECL_NO_BACKWARDS)
+  ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_OOP_ITERATE_DECL_NO_BACKWARDS)
 #endif // INCLUDE_ALL_GCS
 
 

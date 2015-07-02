@@ -225,7 +225,7 @@ public final class TestFinder {
         boolean explicitOptimistic = false;
 
         String allContent = new String(Files.readAllBytes(testFile));
-        Iterator<String> scanner = ScriptingFunctions.tokenizeCommandLine(allContent).iterator();
+        Iterator<String> scanner = ScriptingFunctions.tokenizeString(allContent).iterator();
         while (scanner.hasNext()) {
             // TODO: Scan for /ref=file qualifiers, etc, to determine run
             // behavior

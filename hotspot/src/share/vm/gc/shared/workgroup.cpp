@@ -47,7 +47,6 @@ AbstractWorkGang::AbstractWorkGang(const char* name,
                          /* allow_vm_block */ are_GC_task_threads,
                                               Monitor::_safepoint_check_sometimes);
   assert(monitor() != NULL, "Failed to allocate monitor");
-  _terminate = false;
   _task = NULL;
   _sequence_number = 0;
   _started_workers = 0;
@@ -106,18 +105,6 @@ bool WorkGang::initialize_workers() {
   return true;
 }
 
-AbstractWorkGang::~AbstractWorkGang() {
-  if (TraceWorkGang) {
-    tty->print_cr("Destructing work gang %s", name());
-  }
-  stop();   // stop all the workers
-  for (uint worker = 0; worker < total_workers(); worker += 1) {
-    delete gang_worker(worker);
-  }
-  delete gang_workers();
-  delete monitor();
-}
-
 GangWorker* AbstractWorkGang::gang_worker(uint i) const {
   // Array index bounds checking.
   GangWorker* result = NULL;
@@ -133,8 +120,6 @@ void WorkGang::run_task(AbstractGangTask* task) {
 }
 
 void WorkGang::run_task(AbstractGangTask* task, uint no_of_parallel_workers) {
-  task->set_for_termination(no_of_parallel_workers);
-
   // This thread is executed by the VM thread which does not block
   // on ordinary MutexLocker's.
   MutexLockerEx ml(monitor(), Mutex::_no_safepoint_check_flag);
@@ -177,28 +162,9 @@ void FlexibleWorkGang::run_task(AbstractGangTask* task) {
   WorkGang::run_task(task, (uint) active_workers());
 }
 
-void AbstractWorkGang::stop() {
-  // Tell all workers to terminate, then wait for them to become inactive.
-  MutexLockerEx ml(monitor(), Mutex::_no_safepoint_check_flag);
-  if (TraceWorkGang) {
-    tty->print_cr("Stopping work gang %s task %s", name(), task()->name());
-  }
-  _task = NULL;
-  _terminate = true;
-  monitor()->notify_all();
-  while (finished_workers() < active_workers()) {
-    if (TraceWorkGang) {
-      tty->print_cr("Waiting in work gang %s: %u/%u finished",
-                    name(), finished_workers(), active_workers());
-    }
-    monitor()->wait(/* no_safepoint_check */ true);
-  }
-}
-
 void AbstractWorkGang::internal_worker_poll(WorkData* data) const {
   assert(monitor()->owned_by_self(), "worker_poll is an internal method");
   assert(data != NULL, "worker data is null");
-  data->set_terminate(terminate());
   data->set_task(task());
   data->set_sequence_number(sequence_number());
 }
@@ -261,7 +227,7 @@ void GangWorker::initialize() {
 void GangWorker::loop() {
   int previous_sequence_number = 0;
   Monitor* gang_monitor = gang()->monitor();
-  for ( ; /* !terminate() */; ) {
+  for ( ; ; ) {
     WorkData data;
     int part;  // Initialized below.
     {
@@ -274,8 +240,6 @@ void GangWorker::loop() {
       if (TraceWorkGang) {
         tty->print("Polled outside for work in gang %s worker %u",
                    gang()->name(), id());
-        tty->print("  terminate: %s",
-                   data.terminate() ? "true" : "false");
         tty->print("  sequence: %d (prev: %d)",
                    data.sequence_number(), previous_sequence_number);
         if (data.task() != NULL) {
@@ -285,13 +249,7 @@ void GangWorker::loop() {
         }
         tty->cr();
       }
-      for ( ; /* break or return */; ) {
-        // Terminate if requested.
-        if (data.terminate()) {
-          gang()->internal_note_finish();
-          gang_monitor->notify_all();
-          return;
-        }
+      for ( ; /* break */; ) {
         // Check for new work.
         if ((data.task() != NULL) &&
             (data.sequence_number() != previous_sequence_number)) {
@@ -308,8 +266,6 @@ void GangWorker::loop() {
         if (TraceWorkGang) {
           tty->print("Polled inside for work in gang %s worker %u",
                      gang()->name(), id());
-          tty->print("  terminate: %s",
-                     data.terminate() ? "true" : "false");
           tty->print("  sequence: %d (prev: %d)",
                      data.sequence_number(), previous_sequence_number);
           if (data.task() != NULL) {
@@ -434,7 +390,7 @@ void WorkGangBarrierSync::abort() {
 // SubTasksDone functions.
 
 SubTasksDone::SubTasksDone(uint n) :
-  _n_tasks(n), _n_threads(1), _tasks(NULL) {
+  _n_tasks(n), _tasks(NULL) {
   _tasks = NEW_C_HEAP_ARRAY(uint, n, mtInternal);
   guarantee(_tasks != NULL, "alloc failure");
   clear();
@@ -442,12 +398,6 @@ SubTasksDone::SubTasksDone(uint n) :
 
 bool SubTasksDone::valid() {
   return _tasks != NULL;
-}
-
-void SubTasksDone::set_n_threads(uint t) {
-  assert(_claimed == 0 || _threads_completed == _n_threads,
-         "should not be called while tasks are being processed!");
-  _n_threads = (t == 0 ? 1 : t);
 }
 
 void SubTasksDone::clear() {
@@ -477,7 +427,7 @@ bool SubTasksDone::is_task_claimed(uint t) {
   return res;
 }
 
-void SubTasksDone::all_tasks_completed() {
+void SubTasksDone::all_tasks_completed(uint n_threads) {
   jint observed = _threads_completed;
   jint old;
   do {
@@ -485,7 +435,10 @@ void SubTasksDone::all_tasks_completed() {
     observed = Atomic::cmpxchg(old+1, &_threads_completed, old);
   } while (observed != old);
   // If this was the last thread checking in, clear the tasks.
-  if (observed+1 == (jint)_n_threads) clear();
+  uint adjusted_thread_count = (n_threads == 0 ? 1 : n_threads);
+  if (observed + 1 == (jint)adjusted_thread_count) {
+    clear();
+  }
 }
 
 

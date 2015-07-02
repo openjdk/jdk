@@ -147,6 +147,13 @@ public:
   bool completed() const { return _status == COMPLETED; }
   bool aborted()   const { return _status == ABORTED; }
   bool active()    const { return _status == ACTIVE; }
+
+  // This method configures the task for proper termination.
+  // Some tasks do not have any requirements on termination
+  // and may inherit this method that does nothing.  Some
+  // tasks do some coordination on termination and override
+  // this method to implement that coordination.
+  virtual void set_for_termination(uint active_workers) {}
 };
 // Class YieldingWorkGang: A subclass of WorkGang.
 // In particular, a YieldingWorkGang is made up of
@@ -169,7 +176,7 @@ public:
   GangWorker* allocate_worker(uint which);
 
   // Run a task; returns when the task is done, or the workers yield,
-  // or the task is aborted, or the work gang is terminated via stop().
+  // or the task is aborted.
   // A task that has been yielded can be continued via this same interface
   // by using the same task repeatedly as the argument to the call.
   // It is expected that the YieldingFlexibleGangTask carries the appropriate

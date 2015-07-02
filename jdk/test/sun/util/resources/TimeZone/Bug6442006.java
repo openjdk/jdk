@@ -23,8 +23,9 @@
 
 /*
  *@test
- *@bug 6442006
+ *@bug 6442006 8008577
  *@summary Test case for verifying timezone display name for Asia/Taipei
+ *@run main/othervm -Djava.locale.providers=JRE,SPI Bug6442006
  */
 
 import java.util.Locale;

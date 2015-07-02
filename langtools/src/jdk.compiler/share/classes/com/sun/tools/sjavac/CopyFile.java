@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,20 @@
 
 package com.sun.tools.sjavac;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.net.URI;
-import java.util.Set;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import com.sun.tools.sjavac.options.Options;
+import com.sun.tools.sjavac.pubapi.PubApi;
 import com.sun.tools.sjavac.server.Sjavac;
 
 /**
@@ -58,8 +65,10 @@ public class CopyFile implements Transformer {
                              Map<String,Set<String>> oldPackageDependents,
                              URI destRoot,
                              Map<String,Set<URI>>    packageArtifacts,
-                             Map<String,Set<String>> packageDependencies,
-                             Map<String,String>      packagePubapis,
+                             Map<String,Map<String, Set<String>>> packageDependencies,
+                             Map<String,Map<String, Set<String>>> packageCpDependencies,
+                             Map<String, PubApi> packagePubapis,
+                             Map<String, PubApi> dependencyPubapis,
                              int debugLevel,
                              boolean incremental,
                              int numCores,

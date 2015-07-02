@@ -1,0 +1,6 @@
+test/script/error/JDK-8098847.js:32:5 Expected ident but found prop
+obj."prop" = "hello";
+     ^
+test/script/error/JDK-8098847.js:33:5 Expected ident but found prop
+obj.'prop' = "hello";
+     ^

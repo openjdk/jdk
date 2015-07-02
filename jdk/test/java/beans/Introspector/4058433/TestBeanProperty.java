@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,12 +20,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 import java.beans.BeanProperty;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.beans.PropertyDescriptor;
 import java.util.Arrays;
-/*
+
+/**
  * @test
  * @bug 4058433
  * @summary Tests the BeanProperty annotation
@@ -34,7 +36,10 @@ import java.util.Arrays;
  */
 public class TestBeanProperty {
     public static void main(String[] args) throws Exception {
-        Class<?>[] types = {B.class, BL.class, BLF.class, E.class, H.class, P.class, VU.class, D.class, EV.class, EVL.class, EVX.class};
+        Class<?>[] types =
+                {B.class, BL.class, BLF.class, E.class, H.class, P.class,
+                 VU.class, D.class, EVD.class, EVE.class, EV.class, EVL.class,
+                 EVX.class};
         for (Class<?> type : types) {
             PropertyDescriptor pd = BeanUtils.getPropertyDescriptor(type, "value");
             if (((B.class == type) || (BLF.class == type)) && pd.isBound()) {
@@ -76,6 +81,14 @@ public class TestBeanProperty {
             if ((EVX.class == type) == !isEV(pd, "ZERO", 0, "X.ZERO", "ONE", 1, "X.ONE")) {
                 BeanUtils.reportPropertyDescriptor(pd);
                 throw new Error("enumerationValues from another package");
+            }
+            if (EVD.class == type && !isEV(pd)) {
+                BeanUtils.reportPropertyDescriptor(pd);
+                throw new Error("EV:"+ pd.getValue("enumerationValues"));
+            }
+            if (EVE.class == type && !isEV(pd)) {
+                BeanUtils.reportPropertyDescriptor(pd);
+                throw new Error("EV:"+ pd.getValue("enumerationValues"));
             }
         }
     }
@@ -214,6 +227,34 @@ public class TestBeanProperty {
         }
 
         @BeanProperty(description = "setter")
+        public void setValue(int value) {
+            this.value = value;
+        }
+    }
+
+    public static class EVD {
+
+        private int value;
+
+        public int getValue() {
+            return value;
+        }
+
+        @BeanProperty()
+        public void setValue(int value) {
+            this.value = value;
+        }
+    }
+
+    public static class EVE {
+
+        private int value;
+
+        public int getValue() {
+            return value;
+        }
+
+        @BeanProperty(enumerationValues = {})
         public void setValue(int value) {
             this.value = value;
         }

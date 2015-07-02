@@ -2659,73 +2659,92 @@ public class Types {
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="compute transitive closure of all members in given site">
-    class MembersClosureCache extends SimpleVisitor<CompoundScope, Boolean> {
+    class MembersClosureCache extends SimpleVisitor<Scope.CompoundScope, Void> {
 
-        private WeakHashMap<TypeSymbol, Entry> _map = new WeakHashMap<>();
+        private Map<TypeSymbol, CompoundScope> _map = new HashMap<>();
 
-        class Entry {
-            final boolean skipInterfaces;
-            final CompoundScope compoundScope;
+        Set<TypeSymbol> seenTypes = new HashSet<>();
 
-            public Entry(boolean skipInterfaces, CompoundScope compoundScope) {
-                this.skipInterfaces = skipInterfaces;
-                this.compoundScope = compoundScope;
+        class MembersScope extends CompoundScope {
+
+            CompoundScope scope;
+
+            public MembersScope(CompoundScope scope) {
+                super(scope.owner);
+                this.scope = scope;
             }
 
-            boolean matches(boolean skipInterfaces) {
-                return this.skipInterfaces == skipInterfaces;
+            Filter<Symbol> combine(Filter<Symbol> sf) {
+                return s -> !s.owner.isInterface() && (sf == null || sf.accepts(s));
+            }
+
+            @Override
+            public Iterable<Symbol> getSymbols(Filter<Symbol> sf, LookupKind lookupKind) {
+                return scope.getSymbols(combine(sf), lookupKind);
+            }
+
+            @Override
+            public Iterable<Symbol> getSymbolsByName(Name name, Filter<Symbol> sf, LookupKind lookupKind) {
+                return scope.getSymbolsByName(name, combine(sf), lookupKind);
+            }
+
+            @Override
+            public int getMark() {
+                return scope.getMark();
             }
         }
 
-        List<TypeSymbol> seenTypes = List.nil();
+        CompoundScope nilScope;
 
         /** members closure visitor methods **/
 
-        public CompoundScope visitType(Type t, Boolean skipInterface) {
-            return null;
+        public CompoundScope visitType(Type t, Void _unused) {
+            if (nilScope == null) {
+                nilScope = new CompoundScope(syms.noSymbol);
+            }
+            return nilScope;
         }
 
         @Override
-        public CompoundScope visitClassType(ClassType t, Boolean skipInterface) {
-            if (seenTypes.contains(t.tsym)) {
+        public CompoundScope visitClassType(ClassType t, Void _unused) {
+            if (!seenTypes.add(t.tsym)) {
                 //this is possible when an interface is implemented in multiple
-                //superclasses, or when a classs hierarchy is circular - in such
+                //superclasses, or when a class hierarchy is circular - in such
                 //cases we don't need to recurse (empty scope is returned)
                 return new CompoundScope(t.tsym);
             }
             try {
-                seenTypes = seenTypes.prepend(t.tsym);
+                seenTypes.add(t.tsym);
                 ClassSymbol csym = (ClassSymbol)t.tsym;
-                Entry e = _map.get(csym);
-                if (e == null || !e.matches(skipInterface)) {
-                    CompoundScope membersClosure = new CompoundScope(csym);
-                    if (!skipInterface) {
-                        for (Type i : interfaces(t)) {
-                            membersClosure.prependSubScope(visit(i, skipInterface));
-                        }
+                CompoundScope membersClosure = _map.get(csym);
+                if (membersClosure == null) {
+                    membersClosure = new CompoundScope(csym);
+                    for (Type i : interfaces(t)) {
+                        membersClosure.prependSubScope(visit(i, null));
                     }
-                    membersClosure.prependSubScope(visit(supertype(t), skipInterface));
+                    membersClosure.prependSubScope(visit(supertype(t), null));
                     membersClosure.prependSubScope(csym.members());
-                    e = new Entry(skipInterface, membersClosure);
-                    _map.put(csym, e);
+                    _map.put(csym, membersClosure);
                 }
-                return e.compoundScope;
+                return membersClosure;
             }
             finally {
-                seenTypes = seenTypes.tail;
+                seenTypes.remove(t.tsym);
             }
         }
 
         @Override
-        public CompoundScope visitTypeVar(TypeVar t, Boolean skipInterface) {
-            return visit(t.getUpperBound(), skipInterface);
+        public CompoundScope visitTypeVar(TypeVar t, Void _unused) {
+            return visit(t.getUpperBound(), null);
         }
     }
 
     private MembersClosureCache membersCache = new MembersClosureCache();
 
     public CompoundScope membersClosure(Type site, boolean skipInterface) {
-        return membersCache.visit(site, skipInterface);
+        CompoundScope cs = membersCache.visit(site, null);
+        Assert.checkNonNull(cs, () -> "type " + site);
+        return skipInterface ? membersCache.new MembersScope(cs) : cs;
     }
     // </editor-fold>
 

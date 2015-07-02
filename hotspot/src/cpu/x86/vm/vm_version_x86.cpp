@@ -790,12 +790,30 @@ void VM_Version::get_processor_features() {
   if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
     UseMultiplyToLenIntrinsic = true;
   }
+  if (FLAG_IS_DEFAULT(UseSquareToLenIntrinsic)) {
+    UseSquareToLenIntrinsic = true;
+  }
+  if (FLAG_IS_DEFAULT(UseMulAddIntrinsic)) {
+    UseMulAddIntrinsic = true;
+  }
 #else
   if (UseMultiplyToLenIntrinsic) {
     if (!FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
       warning("multiplyToLen intrinsic is not available in 32-bit VM");
     }
     FLAG_SET_DEFAULT(UseMultiplyToLenIntrinsic, false);
+  }
+  if (UseSquareToLenIntrinsic) {
+    if (!FLAG_IS_DEFAULT(UseSquareToLenIntrinsic)) {
+      warning("squareToLen intrinsic is not available in 32-bit VM");
+    }
+    FLAG_SET_DEFAULT(UseSquareToLenIntrinsic, false);
+  }
+  if (UseMulAddIntrinsic) {
+    if (!FLAG_IS_DEFAULT(UseMulAddIntrinsic)) {
+      warning("mulAdd intrinsic is not available in 32-bit VM");
+    }
+    FLAG_SET_DEFAULT(UseMulAddIntrinsic, false);
   }
 #endif
 #endif // COMPILER2

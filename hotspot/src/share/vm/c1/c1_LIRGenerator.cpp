@@ -1469,7 +1469,9 @@ void LIRGenerator::G1SATBCardTableModRef_pre_barrier(LIR_Opr addr_opr, LIR_Opr p
   } else {
     guarantee(in_bytes(PtrQueue::byte_width_of_active()) == 1,
               "Assumption");
-    flag_type = T_BYTE;
+    // Use unsigned type T_BOOLEAN here rather than signed T_BYTE since some platforms, eg. ARM,
+    // need to use unsigned instructions to use the large offset to load the satb_mark_queue.
+    flag_type = T_BOOLEAN;
   }
   LIR_Opr thrd = getThreadPointer();
   LIR_Address* mark_active_flag_addr =
