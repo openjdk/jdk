@@ -34,10 +34,13 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
+
 import sun.misc.DoubleConsts;
 import sun.misc.FloatConsts;
+import jdk.internal.HotSpotIntrinsicCandidate;
 
 /**
  * Immutable arbitrary-precision integers.  All operations behave as if
@@ -1649,6 +1652,13 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * the result into z. There will be no leading zeros in the resultant array.
      */
     private static int[] multiplyToLen(int[] x, int xlen, int[] y, int ylen, int[] z) {
+        multiplyToLenCheck(x, xlen);
+        multiplyToLenCheck(y, ylen);
+        return implMultiplyToLen(x, xlen, y, ylen, z);
+    }
+
+    @HotSpotIntrinsicCandidate
+    private static int[] implMultiplyToLen(int[] x, int xlen, int[] y, int ylen, int[] z) {
         int xstart = xlen - 1;
         int ystart = ylen - 1;
 
@@ -1676,6 +1686,18 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             z[i] = (int)carry;
         }
         return z;
+    }
+
+    private static void multiplyToLenCheck(int[] array, int length) {
+        if (length <= 0) {
+            return;  // not an error because multiplyToLen won't execute if len <= 0
+        }
+
+        Objects.requireNonNull(array);
+
+        if (length > array.length) {
+            throw new ArrayIndexOutOfBoundsException(length - 1);
+        }
     }
 
     /**
@@ -2008,6 +2030,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      /**
       * Java Runtime may use intrinsic for this method.
       */
+     @HotSpotIntrinsicCandidate
      private static final int[] implSquareToLen(int[] x, int len, int[] z, int zlen) {
         /*
          * The algorithm used here is adapted from Colin Plumb's C library.
@@ -2668,11 +2691,13 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
     // These methods are intended to be be replaced by virtual machine
     // intrinsics.
+    @HotSpotIntrinsicCandidate
     private static int[] implMontgomeryMultiply(int[] a, int[] b, int[] n, int len,
                                          long inv, int[] product) {
         product = multiplyToLen(a, len, b, len, product);
         return montReduce(product, n, len, (int)inv);
     }
+    @HotSpotIntrinsicCandidate
     private static int[] implMontgomerySquare(int[] a, int[] n, int len,
                                        long inv, int[] product) {
         product = squareToLen(a, len, product);
@@ -3004,6 +3029,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     /**
      * Java Runtime may use intrinsic for this method.
      */
+    @HotSpotIntrinsicCandidate
     private static int implMulAdd(int[] out, int[] in, int offset, int len, int k) {
         long kLong = k & LONG_MASK;
         long carry = 0;

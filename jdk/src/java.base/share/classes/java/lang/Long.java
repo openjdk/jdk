@@ -28,6 +28,7 @@ package java.lang;
 import java.lang.annotation.Native;
 import java.math.*;
 import java.util.Objects;
+import jdk.internal.HotSpotIntrinsicCandidate;
 
 
 /**
@@ -1074,6 +1075,7 @@ public final class Long extends Number implements Comparable<Long> {
      * @return a {@code Long} instance representing {@code l}.
      * @since  1.5
      */
+    @HotSpotIntrinsicCandidate
     public static Long valueOf(long l) {
         final int offset = 128;
         if (l >= -128 && l <= 127) { // will cache
@@ -1238,6 +1240,7 @@ public final class Long extends Number implements Comparable<Long> {
      * Returns the value of this {@code Long} as a
      * {@code long} value.
      */
+    @HotSpotIntrinsicCandidate
     public long longValue() {
         return value;
     }
@@ -1655,6 +1658,7 @@ public final class Long extends Number implements Comparable<Long> {
      *     is equal to zero.
      * @since 1.5
      */
+    @HotSpotIntrinsicCandidate
     public static int numberOfLeadingZeros(long i) {
         // HD, Figure 5-6
          if (i == 0)
@@ -1684,6 +1688,7 @@ public final class Long extends Number implements Comparable<Long> {
      *     to zero.
      * @since 1.5
      */
+    @HotSpotIntrinsicCandidate
     public static int numberOfTrailingZeros(long i) {
         // HD, Figure 5-14
         int x, y;
@@ -1707,6 +1712,7 @@ public final class Long extends Number implements Comparable<Long> {
      *     representation of the specified {@code long} value.
      * @since 1.5
      */
+     @HotSpotIntrinsicCandidate
      public static int bitCount(long i) {
         // HD, Figure 5-2
         i = i - ((i >>> 1) & 0x5555555555555555L);
@@ -1810,6 +1816,7 @@ public final class Long extends Number implements Comparable<Long> {
      *     {@code long} value.
      * @since 1.5
      */
+    @HotSpotIntrinsicCandidate
     public static long reverseBytes(long i) {
         i = (i & 0x00ff00ff00ff00ffL) << 8 | (i >>> 8) & 0x00ff00ff00ff00ffL;
         return (i << 48) | ((i & 0xffff0000L) << 16) |
