@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,7 +246,7 @@ public abstract class VolatileSurfaceManager
      * SurfaceData object, or null if the surface creation was not successful.
      *
      * Platform-specific subclasses should initialize an accelerated
-     * surface (e.g. a DirectDraw surface on Windows, an OpenGL pbuffer,
+     * surface (e.g. a DirectDraw surface on Windows, an OpenGL FBO,
      * or an X11 pixmap).
      */
     protected abstract SurfaceData initAcceleratedSurface();
