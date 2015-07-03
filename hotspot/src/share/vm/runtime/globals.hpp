@@ -4120,7 +4120,16 @@ public:
                                                                             \
   product_pd(bool, PreserveFramePointer,                                    \
              "Use the FP register for holding the frame pointer "           \
-             "and not as a general purpose register.")
+             "and not as a general purpose register.")                      \
+                                                                            \
+  diagnostic(bool, CheckIntrinsics, trueInDebug,                            \
+             "When a class C is loaded, check that "                        \
+             "(1) all intrinsics defined by the VM for class C are present "\
+             "in the loaded class file and are marked with the "            \
+             "@HotSpotIntrinsicCandidate annotation and also that "         \
+             "(2) there is an intrinsic registered for all loaded methods " \
+             "that are annotated with the @HotSpotIntrinsicCandidate "      \
+             "annotation.")
 
 /*
  *  Macros for factoring of globals

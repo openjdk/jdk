@@ -130,6 +130,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
       _method_InjectedProfile,
       _method_LambdaForm_Compiled,
       _method_LambdaForm_Hidden,
+      _method_HotSpotIntrinsicCandidate,
       _sun_misc_Contended,
       _field_Stable,
       _annotation_LIMIT
