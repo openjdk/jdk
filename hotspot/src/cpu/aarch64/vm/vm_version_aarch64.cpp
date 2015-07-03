@@ -214,34 +214,31 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
 
-  if (!UseSHA) {
+  if (UseSHA && (auxv & HWCAP_SHA1)) {
+    if (FLAG_IS_DEFAULT(UseSHA1Intrinsics)) {
+      FLAG_SET_DEFAULT(UseSHA1Intrinsics, true);
+    }
+  } else if (UseSHA1Intrinsics) {
+    warning("Intrinsics for SHA-1 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UseSHA1Intrinsics, false);
-    FLAG_SET_DEFAULT(UseSHA256Intrinsics, false);
+  }
+
+  if (UseSHA && (auxv & HWCAP_SHA2)) {
+    if (FLAG_IS_DEFAULT(UseSHA256Intrinsics)) {
+      FLAG_SET_DEFAULT(UseSHA256Intrinsics, true);
+    }
+  } else if (UseSHA256Intrinsics) {
+    warning("Intrinsics for SHA-224 and SHA-256 crypto hash functions not available on this CPU.");
+    FLAG_SET_DEFAULT(UseSHA1Intrinsics, false);
+  }
+
+  if (UseSHA512Intrinsics) {
+    warning("Intrinsics for SHA-384 and SHA-512 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
-  } else {
-    if (auxv & HWCAP_SHA1) {
-      if (FLAG_IS_DEFAULT(UseSHA1Intrinsics)) {
-        FLAG_SET_DEFAULT(UseSHA1Intrinsics, true);
-      }
-    } else if (UseSHA1Intrinsics) {
-      warning("SHA1 instruction is not available on this CPU.");
-      FLAG_SET_DEFAULT(UseSHA1Intrinsics, false);
-    }
-    if (auxv & HWCAP_SHA2) {
-      if (FLAG_IS_DEFAULT(UseSHA256Intrinsics)) {
-        FLAG_SET_DEFAULT(UseSHA256Intrinsics, true);
-      }
-    } else if (UseSHA256Intrinsics) {
-      warning("SHA256 instruction (for SHA-224 and SHA-256) is not available on this CPU.");
-      FLAG_SET_DEFAULT(UseSHA256Intrinsics, false);
-    }
-    if (UseSHA512Intrinsics) {
-      warning("SHA512 instruction (for SHA-384 and SHA-512) is not available on this CPU.");
-      FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
-    }
-    if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) {
-      FLAG_SET_DEFAULT(UseSHA, false);
-    }
+  }
+
+  if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) {
+    FLAG_SET_DEFAULT(UseSHA, false);
   }
 
   // This machine allows unaligned memory accesses
