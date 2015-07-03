@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+/**
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,88 +34,79 @@ import java.util.HashMap;
  */
 // Check /usr/include/libsoftcrypto.h for updates
 public enum UcryptoMech {
-    CRYPTO_AES_ECB(1, new String[]
-        { "Cipher.AES/ECB/NoPadding;com.oracle.security.ucrypto.NativeCipher$AesEcbNoPadding",
-          "Cipher.AES/ECB/PKCS5Padding;com.oracle.security.ucrypto.NativeCipherWithJavaPadding$AesEcbPKCS5",
-          "Alg.Alias.Cipher.AES;AES/ECB/PKCS5Padding",
-          "Cipher.AES_128/ECB/NoPadding;com.oracle.security.ucrypto.NativeCipher$Aes128EcbNoPadding",
-          "Alg.Alias.Cipher.2.16.840.1.101.3.4.1.1;AES_128/ECB/NoPadding",
-          "Alg.Alias.Cipher.OID.2.16.840.1.101.3.4.1.1;AES_128/ECB/NoPadding",
-          "Cipher.AES_192/ECB/NoPadding;com.oracle.security.ucrypto.NativeCipher$Aes192EcbNoPadding",
-          "Alg.Alias.Cipher.2.16.840.1.101.3.4.1.21;AES_192/ECB/NoPadding",
-          "Alg.Alias.Cipher.OID.2.16.840.1.101.3.4.1.21;AES_192/ECB/NoPadding",
-          "Cipher.AES_256/ECB/NoPadding;com.oracle.security.ucrypto.NativeCipher$Aes256EcbNoPadding",
-          "Alg.Alias.Cipher.2.16.840.1.101.3.4.1.41;AES_256/ECB/NoPadding",
-          "Alg.Alias.Cipher.OID.2.16.840.1.101.3.4.1.41;AES_256/ECB/NoPadding"
+
+    CRYPTO_AES_ECB(1, new ServiceDesc[]
+        { sd("Cipher", "AES/ECB/NoPadding", "com.oracle.security.ucrypto.NativeCipher$AesEcbNoPadding"),
+          sd("Cipher", "AES/ECB/PKCS5Padding", "com.oracle.security.ucrypto.NativeCipherWithJavaPadding$AesEcbPKCS5",
+             "AES"),
+          sd("Cipher", "AES_128/ECB/NoPadding", "com.oracle.security.ucrypto.NativeCipher$Aes128EcbNoPadding",
+             "2.16.840.1.101.3.4.1.1", "OID.2.16.840.1.101.3.4.1.1"),
+          sd("Cipher", "AES_192/ECB/NoPadding", "com.oracle.security.ucrypto.NativeCipher$Aes192EcbNoPadding",
+             "2.16.840.1.101.3.4.1.21", "OID.2.16.840.1.101.3.4.1.21"),
+          sd("Cipher", "AES_256/ECB/NoPadding", "com.oracle.security.ucrypto.NativeCipher$Aes256EcbNoPadding",
+             "2.16.840.1.101.3.4.1.41", "OID.2.16.840.1.101.3.4.1.41")
         }),
-    CRYPTO_AES_CBC(2, new String[]
-        { "Cipher.AES/CBC/NoPadding;com.oracle.security.ucrypto.NativeCipher$AesCbcNoPadding",
-          "Cipher.AES/CBC/PKCS5Padding;com.oracle.security.ucrypto.NativeCipherWithJavaPadding$AesCbcPKCS5",
-          "Cipher.AES_128/CBC/NoPadding;com.oracle.security.ucrypto.NativeCipher$Aes128CbcNoPadding",
-          "Alg.Alias.Cipher.2.16.840.1.101.3.4.1.2;AES_128/CBC/NoPadding",
-          "Alg.Alias.Cipher.OID.2.16.840.1.101.3.4.1.2;AES_128/CBC/NoPadding",
-          "Cipher.AES_192/CBC/NoPadding;com.oracle.security.ucrypto.NativeCipher$Aes192CbcNoPadding",
-          "Alg.Alias.Cipher.2.16.840.1.101.3.4.1.22;AES_192/CBC/NoPadding",
-          "Alg.Alias.Cipher.OID.2.16.840.1.101.3.4.1.22;AES_192/CBC/NoPadding",
-          "Cipher.AES_256/CBC/NoPadding;com.oracle.security.ucrypto.NativeCipher$Aes256CbcNoPadding",
-          "Alg.Alias.Cipher.2.16.840.1.101.3.4.1.42;AES_256/CBC/NoPadding",
-          "Alg.Alias.Cipher.OID.2.16.840.1.101.3.4.1.42;AES_256/CBC/NoPadding"
+    CRYPTO_AES_CBC(2, new ServiceDesc[]
+        { sd("Cipher", "AES/CBC/NoPadding", "com.oracle.security.ucrypto.NativeCipher$AesCbcNoPadding"),
+          sd("Cipher", "AES/CBC/PKCS5Padding", "com.oracle.security.ucrypto.NativeCipherWithJavaPadding$AesCbcPKCS5"),
+          sd("Cipher", "AES_128/CBC/NoPadding", "com.oracle.security.ucrypto.NativeCipher$Aes128CbcNoPadding",
+             "2.16.840.1.101.3.4.1.2", "OID.2.16.840.1.101.3.4.1.2"),
+          sd("Cipher", "AES_192/CBC/NoPadding", "com.oracle.security.ucrypto.NativeCipher$Aes192CbcNoPadding",
+             "2.16.840.1.101.3.4.1.22", "OID.2.16.840.1.101.3.4.1.22"),
+          sd("Cipher", "AES_256/CBC/NoPadding", "com.oracle.security.ucrypto.NativeCipher$Aes256CbcNoPadding",
+             "2.16.840.1.101.3.4.1.42", "OID.2.16.840.1.101.3.4.1.42")
         }),
     CRYPTO_AES_CBC_PAD(3, null), // No support from Solaris yet
-    CRYPTO_AES_CTR(4, new String[]
-        { "Cipher.AES/CTR/NoPadding;com.oracle.security.ucrypto.NativeCipher$AesCtrNoPadding" }),
+    CRYPTO_AES_CTR(4, new ServiceDesc[]
+        { sd("Cipher", "AES/CTR/NoPadding", "com.oracle.security.ucrypto.NativeCipher$AesCtrNoPadding") }),
     CRYPTO_AES_CCM(5, null), // Cannot support due to lack of Java API which corresponds to CK_AES_CCM_PARAMS
-    CRYPTO_AES_GCM(6, new String[]
-        { "Cipher.AES/GCM/NoPadding;com.oracle.security.ucrypto.NativeGCMCipher$AesGcmNoPadding",
-          "Cipher.AES_128/GCM/NoPadding;com.oracle.security.ucrypto.NativeGCMCipher$Aes128GcmNoPadding",
-          "Alg.Alias.Cipher.2.16.840.1.101.3.4.1.6;AES_128/GCM/NoPadding",
-          "Alg.Alias.Cipher.OID.2.16.840.1.101.3.4.1.6;AES_128/GCM/NoPadding",
-          "Cipher.AES_192/GCM/NoPadding;com.oracle.security.ucrypto.NativeGCMCipher$Aes192GcmNoPadding",
-          "Alg.Alias.Cipher.2.16.840.1.101.3.4.1.26;AES_192/GCM/NoPadding",
-          "Alg.Alias.Cipher.OID.2.16.840.1.101.3.4.1.26;AES_192/GCM/NoPadding",
-          "Cipher.AES_256/GCM/NoPadding;com.oracle.security.ucrypto.NativeGCMCipher$Aes256GcmNoPadding",
-          "Alg.Alias.Cipher.2.16.840.1.101.3.4.1.46;AES_256/GCM/NoPadding",
-          "Alg.Alias.Cipher.OID.2.16.840.1.101.3.4.1.46;AES_256/GCM/NoPadding",
+    CRYPTO_AES_GCM(6, new ServiceDesc[]
+        { sd("Cipher", "AES/GCM/NoPadding", "com.oracle.security.ucrypto.NativeGCMCipher$AesGcmNoPadding"),
+          sd("Cipher", "AES_128/GCM/NoPadding", "com.oracle.security.ucrypto.NativeGCMCipher$Aes128GcmNoPadding",
+             "2.16.840.1.101.3.4.1.6", "OID.2.16.840.1.101.3.4.1.6"),
+          sd("Cipher", "AES_192/GCM/NoPadding", "com.oracle.security.ucrypto.NativeGCMCipher$Aes192GcmNoPadding",
+             "2.16.840.1.101.3.4.1.26", "OID.2.16.840.1.101.3.4.1.26"),
+          sd("Cipher", "AES_256/GCM/NoPadding", "com.oracle.security.ucrypto.NativeGCMCipher$Aes256GcmNoPadding",
+             "2.16.840.1.101.3.4.1.46", "OID.2.16.840.1.101.3.4.1.46")
         }),
     CRYPTO_AES_GMAC(7, null), // No support from Solaris yet
-    CRYPTO_AES_CFB128(8, new String[]
-        { "Cipher.AES/CFB128/NoPadding;com.oracle.security.ucrypto.NativeCipher$AesCfb128NoPadding",
-          "Cipher.AES/CFB128/PKCS5Padding;com.oracle.security.ucrypto.NativeCipherWithJavaPadding$AesCfb128PKCS5" }),
-    CRYPTO_RSA_PKCS(31, new String[]
-        { "Cipher.RSA/ECB/PKCS1Padding;com.oracle.security.ucrypto.NativeRSACipher$PKCS1Padding",
-          "Alg.Alias.Cipher.RSA;RSA/ECB/PKCS1Padding" }),
-    CRYPTO_RSA_X_509(32, new String[]
-        { "Cipher.RSA/ECB/NoPadding;com.oracle.security.ucrypto.NativeRSACipher$NoPadding" }),
-    CRYPTO_MD5_RSA_PKCS(33, new String[]
-        { "Signature.MD5withRSA;com.oracle.security.ucrypto.NativeRSASignature$MD5",
-          "Alg.Alias.Signature.1.2.840.113549.1.1.4;MD5withRSA",
-          "Alg.Alias.Signature.OID.1.2.840.113549.1.1.4;MD5withRSA" }),
-    CRYPTO_SHA1_RSA_PKCS(34, new String[]
-        { "Signature.SHA1withRSA;com.oracle.security.ucrypto.NativeRSASignature$SHA1",
-          "Alg.Alias.Signature.1.2.840.113549.1.1.5;SHA1withRSA",
-          "Alg.Alias.Signature.OID.1.2.840.113549.1.1.5;SHA1withRSA",
-          "Alg.Alias.Signature.1.3.14.3.2.29;SHA1withRSA" }),
-    CRYPTO_SHA256_RSA_PKCS(35, new String[]
-        { "Signature.SHA256withRSA;com.oracle.security.ucrypto.NativeRSASignature$SHA256",
-          "Alg.Alias.Signature.1.2.840.113549.1.1.11;SHA256withRSA",
-          "Alg.Alias.Signature.OID.1.2.840.113549.1.1.11;SHA256withRSA" }),
-    CRYPTO_SHA384_RSA_PKCS(36, new String[]
-        { "Signature.SHA384withRSA;com.oracle.security.ucrypto.NativeRSASignature$SHA384",
-          "Alg.Alias.Signature.1.2.840.113549.1.1.12;SHA384withRSA",
-          "Alg.Alias.Signature.OID.1.2.840.113549.1.1.12;SHA384withRSA" }),
-    CRYPTO_SHA512_RSA_PKCS(37, new String[]
-        { "Signature.SHA512withRSA;com.oracle.security.ucrypto.NativeRSASignature$SHA512",
-          "Alg.Alias.Signature.1.2.840.113549.1.1.13;SHA512withRSA",
-          "Alg.Alias.Signature.OID.1.2.840.113549.1.1.13;SHA512withRSA" });
+    CRYPTO_AES_CFB128(8, new ServiceDesc[]
+        { sd("Cipher", "AES/CFB128/NoPadding", "com.oracle.security.ucrypto.NativeCipher$AesCfb128NoPadding"),
+          sd("Cipher", "AES/CFB128/PKCS5Padding", "com.oracle.security.ucrypto.NativeCipherWithJavaPadding$AesCfb128PKCS5") }),
+    CRYPTO_RSA_PKCS(31, new ServiceDesc[]
+        { sd("Cipher", "RSA/ECB/PKCS1Padding", "com.oracle.security.ucrypto.NativeRSACipher$PKCS1Padding",
+             "RSA") }),
+    CRYPTO_RSA_X_509(32, new ServiceDesc[]
+        { sd("Cipher", "RSA/ECB/NoPadding", "com.oracle.security.ucrypto.NativeRSACipher$NoPadding") }),
+    CRYPTO_MD5_RSA_PKCS(33, new ServiceDesc[]
+        { sd("Signature", "MD5withRSA", "com.oracle.security.ucrypto.NativeRSASignature$MD5",
+             "1.2.840.113549.1.1.4", "OID.1.2.840.113549.1.1.4") }),
+    CRYPTO_SHA1_RSA_PKCS(34, new ServiceDesc[]
+        { sd("Signature", "SHA1withRSA", "com.oracle.security.ucrypto.NativeRSASignature$SHA1",
+             "1.2.840.113549.1.1.5", "OID.1.2.840.113549.1.1.5",
+             "1.3.14.3.2.29") }),
+    CRYPTO_SHA256_RSA_PKCS(35, new ServiceDesc[]
+        { sd("Signature", "SHA256withRSA", "com.oracle.security.ucrypto.NativeRSASignature$SHA256",
+             "1.2.840.113549.1.1.11", "OID.1.2.840.113549.1.1.11") }),
+    CRYPTO_SHA384_RSA_PKCS(36, new ServiceDesc[]
+        { sd("Signature", "SHA384withRSA", "com.oracle.security.ucrypto.NativeRSASignature$SHA384",
+             "1.2.840.113549.1.1.12", "OID.1.2.840.113549.1.1.12") }),
+    CRYPTO_SHA512_RSA_PKCS(37, new ServiceDesc[]
+        { sd("Signature", "SHA512withRSA", "com.oracle.security.ucrypto.NativeRSASignature$SHA512",
+             "1.2.840.113549.1.1.13", "OID.1.2.840.113549.1.1.13") });
 
-    private int mech;
-    private String[] jceProps;
+    private final int mech;
+    private final ServiceDesc[] serviceDescs;
 
-    UcryptoMech(int mech, String[] jceProps) {
+    private static ServiceDesc sd(String type, String algo, String cn, String... aliases) {
+        return new ServiceDesc(type, algo, cn, aliases);
+    }
+
+    UcryptoMech(int mech, ServiceDesc[] serviceDescs) {
         this.mech = mech;
-        this.jceProps = jceProps;
+        this.serviceDescs = serviceDescs;
     }
 
     public int value() { return mech; }
-    public String[] jceProperties() { return jceProps; }
+    public ServiceDesc[] getServiceDescriptions() { return serviceDescs; }
 }
