@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,8 +43,7 @@ public interface AccelSurface extends BufferedContextProvider, Surface {
      */
     @Native public static final int WINDOW          = 1;
     /**
-     * Render-To Plain surface (pbuffer for OpenGL, Render Target surface
-     * for Direct3D)
+     * Render-To Plain surface (Render Target surface for Direct3D)
      */
     @Native public static final int RT_PLAIN        = 2;
     /**
