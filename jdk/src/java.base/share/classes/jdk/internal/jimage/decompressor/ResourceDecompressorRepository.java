@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,41 +22,49 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-package jdk.internal.jimage;
+package jdk.internal.jimage.decompressor;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
-// Utility to read module info from .jimage file.
+/**
+ *
+ * JImage Decompressors. All decompressors must be registered in the static
+ * initializer of this class.
+ */
+public final class ResourceDecompressorRepository {
 
-public final class PackageModuleMap {
-    private PackageModuleMap() {}
-
-    public static final String MODULES_ENTRY = "module/modules.offsets";
-    public static final String PACKAGES_ENTRY = "packages.offsets";
-
-    /*
-     * Returns a package-to-module map.
-     *
-     * The package name is in binary name format.
-     */
-    static Map<String,String> readFrom(ImageReader reader) throws IOException {
-        Map<String,String> result = new HashMap<>();
-        List<String> moduleNames = reader.getNames(MODULES_ENTRY);
-
-        for (String moduleName : moduleNames) {
-            List<String> packageNames = reader.getNames(moduleName + "/" + PACKAGES_ENTRY);
-
-            for (String packageName : packageNames) {
-                result.put(packageName, moduleName);
-            }
-        }
-        return result;
+    private ResourceDecompressorRepository() {
     }
+
+    private static final Map<String, ResourceDecompressorFactory> factories = new HashMap<>();
+
+    static {
+        registerReaderProvider(new ZipDecompressorFactory());
+    }
+
+    /**
+     * Build a new decompressor for the passed name.
+     * @param properties Contains plugin configuration.
+     * @param name The plugin name to build.
+     * @return A decompressor or null if not found
+     * @throws IOException
+     */
+    public static ResourceDecompressor newResourceDecompressor(Properties properties,
+            String name) throws IOException {
+
+        ResourceDecompressorFactory fact = factories.get(name);
+        if (fact != null) {
+            return fact.newDecompressor(properties);
+        }
+        return null;
+    }
+
+    private static void registerReaderProvider(ResourceDecompressorFactory factory) {
+        factories.put(factory.getName(), factory);
+    }
+
+
 }

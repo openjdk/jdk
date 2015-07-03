@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,46 +22,32 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.jimage;
+package jdk.internal.jimage.decompressor;
 
 /**
- * Resource is a class or resource file.
+ *
+ * JImage Decompressor.
  */
-public class Resource {
-    private final String name;
-    private final long size;
-    private final long csize;
+public interface ResourceDecompressor {
 
-    public Resource(String name, long size, long csize) {
-        this.name = name;
-        this.size = size;
-        this.csize = csize;
+    public interface StringsProvider {
+        public String getString(int offset);
     }
+    /**
+     * Decompressor unique name.
+     * @return The decompressor name.
+     */
+    public String getName();
 
     /**
-     * Returns the name of this entry.
+     * Decompress a resource.
+     * @param strings The String provider
+     * @param content The resource content
+     * @param offset Resource content offset
+     * @param originalSize Uncompressed size
+     * @return Uncompressed resource
+     * @throws Exception
      */
-    public String name() {
-        return name;
-    }
-
-    /**
-     * Returns the number of uncompressed bytes for this entry.
-     */
-    public long size() {
-        return size;
-    }
-
-    /**
-     * Returns the number of compressed bytes for this entry; 0 if
-     * uncompressed.
-     */
-    public long csize() {
-        return csize;
-    }
-
-    @Override
-    public String toString() {
-        return String.format("%s uncompressed size %d compressed size %d", name, size, csize);
-    }
+    public byte[] decompress(StringsProvider strings, byte[] content, int offset,
+            int originalSize) throws Exception;
 }
