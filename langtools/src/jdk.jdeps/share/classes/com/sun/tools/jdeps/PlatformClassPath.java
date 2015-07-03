@@ -97,23 +97,32 @@ class PlatformClassPath {
     }
 
     static class ImageHelper {
+        private static boolean isJrtAvailable() {
+            try {
+                FileSystems.getFileSystem(URI.create("jrt:/"));
+                return true;
+            } catch (ProviderNotFoundException | FileSystemNotFoundException e) {
+                return false;
+            }
+        }
+
         static ImageHelper getInstance(Path mpath) throws IOException {
             if (mpath != null) {
                 return new ImageHelper(mpath);
             }
-            Path home = Paths.get(System.getProperty("java.home"));
-            Path mlib = home.resolve("lib").resolve("modules");
-            if (Files.isDirectory(mlib)) {
-                // jimage
+
+            if (isJrtAvailable()) {
+                // jrt file system
                 FileSystem fs = FileSystems.getFileSystem(URI.create("jrt:/"));
-                return new ImageHelper(fs, fs.getPath("/"));
+                return new ImageHelper(fs, fs.getPath("/modules"));
             } else {
                 // exploded modules
-                mlib = home.resolve("modules");
-                if (!Files.isDirectory(mlib)) {
-                    throw new InternalError(home + " not a modular image");
+                String home = System.getProperty("java.home");
+                Path exploded = Paths.get(home, "modules");
+                if (!Files.isDirectory(exploded)) {
+                     throw new InternalError(home + " not a modular image");
                 }
-                return new ImageHelper(mlib);
+                return new ImageHelper(exploded);
             }
         }
 
