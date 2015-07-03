@@ -42,6 +42,7 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import jdk.internal.HotSpotIntrinsicCandidate;
 
 /**
  * This class contains various methods for manipulating arrays (such as
@@ -2654,6 +2655,7 @@ public class Arrays {
      * @param a2 the other array to be tested for equality
      * @return <tt>true</tt> if the two arrays are equal
      */
+    @HotSpotIntrinsicCandidate
     public static boolean equals(char[] a, char[] a2) {
         if (a==a2)
             return true;
@@ -3205,6 +3207,7 @@ public class Arrays {
      *     an array of class <tt>newType</tt>
      * @since 1.6
      */
+    @HotSpotIntrinsicCandidate
     public static <T,U> T[] copyOf(U[] original, int newLength, Class<? extends T[]> newType) {
         @SuppressWarnings("unchecked")
         T[] copy = ((Object)newType == (Object)Object[].class)
@@ -3474,6 +3477,7 @@ public class Arrays {
      *     an array of class <tt>newType</tt>.
      * @since 1.6
      */
+    @HotSpotIntrinsicCandidate
     public static <T,U> T[] copyOfRange(U[] original, int from, int to, Class<? extends T[]> newType) {
         int newLength = to - from;
         if (newLength < 0)
