@@ -25,15 +25,20 @@
 
 package jdk.internal.jimage;
 
-public final class ImageLocation  extends ImageLocationBase {
-    ImageLocation(long[] attributes, ImageStringsReader strings) {
-        super(attributes, strings);
+class ImageStringsReader implements ImageStrings {
+    private final BasicImageReader reader;
+
+    ImageStringsReader(BasicImageReader reader) {
+        this.reader = reader;
     }
 
-    static ImageLocation readFrom(BasicImageReader reader, int offset) {
-        long[] attributes = reader.getAttributes(offset);
-        ImageStringsReader strings = reader.getStrings();
+    @Override
+    public UTF8String get(int offset) {
+        return reader.getUTF8String(offset);
+    }
 
-        return new ImageLocation(attributes, strings);
+    @Override
+    public int add(final UTF8String string) {
+        throw new InternalError("Can not add strings at runtime");
     }
 }

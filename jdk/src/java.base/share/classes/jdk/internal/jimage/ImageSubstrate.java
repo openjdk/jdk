@@ -22,45 +22,24 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.internal.jimage;
 
-#include <unistd.h>
-#include <errno.h>
+import java.io.Closeable;
+import java.nio.ByteBuffer;
 
-#include "jni.h"
-#include "jni_util.h"
-#include "jlong.h"
-#include "jdk_internal_jimage_concurrent_ConcurrentPReader.h"
-
-#ifdef _ALLBSD_SOURCE
-  #define pread64 pread
-#endif
-
-#define RESTARTABLE(_cmd, _result) do { \
-  do { \
-    _result = _cmd; \
-  } while((_result == -1) && (errno == EINTR)); \
-} while(0)
-
-static jfieldID fd_fdID;
-
-JNIEXPORT void JNICALL
-Java_jdk_internal_jimage_concurrent_ConcurrentPReader_initIDs(JNIEnv *env, jclass clazz)
-{
-    CHECK_NULL(clazz = (*env)->FindClass(env, "java/io/FileDescriptor"));
-    CHECK_NULL(fd_fdID = (*env)->GetFieldID(env, clazz, "fd", "I"));
-}
-
-JNIEXPORT jint JNICALL
-Java_jdk_internal_jimage_concurrent_ConcurrentPReader_pread(JNIEnv *env, jclass clazz,
-                                                            jobject fdo, jlong address,
-                                                            jint len, jlong offset)
-{
-    jint fd = (*env)->GetIntField(env, fdo, fd_fdID);
-    void *buf = (void *)jlong_to_ptr(address);
-    int res;
-    RESTARTABLE(pread64(fd, buf, len, offset), res);
-    if (res == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "pread failed");
-    }
-    return res;
+interface ImageSubstrate extends Closeable {
+    @Override
+    void close();
+    boolean supportsDataBuffer();
+    ByteBuffer getIndexBuffer(long offset, long size);
+    ByteBuffer getDataBuffer(long offset, long size);
+    boolean read(long offset,
+                          ByteBuffer compressedBuffer, long compressedSize,
+                          ByteBuffer uncompressedBuffer, long uncompressedSize);
+    boolean read(long offset,
+                          ByteBuffer uncompressedBuffer, long uncompressedSize);
+    byte[] getStringBytes(int offset);
+    long[] getAttributes(int offset);
+    ImageLocation findLocation(UTF8String name, ImageStringsReader strings);
+    int[] attributeOffsets();
 }

@@ -31,6 +31,9 @@
  *          jdk.jartool/sun.tools.jar
  * @library /lib/testlibrary
  * @library ..
+ * @build jdk.testlibrary.*
+ * @build TestScaffold VMConnection TargetListener TargetAdapter
+ * @build CDSJDITest
  * @run compile -g ../FieldWatchpoints.java
  * @run main CDSFieldWatchpoints
  */

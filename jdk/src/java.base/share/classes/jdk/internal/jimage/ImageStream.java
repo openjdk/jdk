@@ -72,7 +72,7 @@ class ImageStream {
         return this;
     }
 
-    private void ensure(int needs) {
+    void ensure(int needs) {
         assert 0 <= needs : "Negative needs";
 
         if (needs > buffer.remaining()) {
