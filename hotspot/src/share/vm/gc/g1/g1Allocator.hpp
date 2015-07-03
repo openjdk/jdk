@@ -76,7 +76,7 @@ public:
 
    void decrease_used(size_t bytes) {
      assert(_summary_bytes_used >= bytes,
-            err_msg("invariant: _summary_bytes_used: "SIZE_FORMAT" should be >= bytes: "SIZE_FORMAT,
+            err_msg("invariant: _summary_bytes_used: " SIZE_FORMAT " should be >= bytes: " SIZE_FORMAT,
                 _summary_bytes_used, bytes));
      _summary_bytes_used -= bytes;
    }

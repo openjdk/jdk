@@ -105,7 +105,7 @@ void UnhandledOops::unregister_unhandled_oop(oop* op) {
   _level --;
   if (unhandled_oop_print) {
     for (int i=0; i<_level; i++) tty->print(" ");
-    tty->print_cr("u "INTPTR_FORMAT, op);
+    tty->print_cr("u " INTPTR_FORMAT, op);
   }
 
   int i = _oop_list->find_from_end(op, match_oop_entry);

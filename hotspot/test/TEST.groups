@@ -241,7 +241,7 @@ needs_g1gc = \
   gc/arguments/TestParallelGCThreads.java \
   gc/arguments/TestUseCompressedOopsErgo.java \
   gc/class_unloading/TestG1ClassUnloadingHWM.java \
-  gc/ergonomics/TestDynamicNumberOfGCThreads.java
+  gc/ergonomics/TestDynamicNumberOfGCThreads.java \
   gc/g1/ \
   gc/metaspace/G1AddMetaspaceDependency.java \
   gc/metaspace/TestMetaspacePerfCounters.java \

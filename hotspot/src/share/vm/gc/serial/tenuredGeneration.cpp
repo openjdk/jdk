@@ -168,8 +168,8 @@ bool TenuredGeneration::promotion_attempt_is_safe(size_t max_promotion_in_bytes)
   bool   res = (available >= av_promo) || (available >= max_promotion_in_bytes);
   if (PrintGC && Verbose) {
     gclog_or_tty->print_cr(
-      "Tenured: promo attempt is%s safe: available("SIZE_FORMAT") %s av_promo("SIZE_FORMAT"),"
-      "max_promo("SIZE_FORMAT")",
+      "Tenured: promo attempt is%s safe: available(" SIZE_FORMAT ") %s av_promo(" SIZE_FORMAT "),"
+      "max_promo(" SIZE_FORMAT ")",
       res? "":" not", available, res? ">=":"<",
       av_promo, max_promotion_in_bytes);
   }

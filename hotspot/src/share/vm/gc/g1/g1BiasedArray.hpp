@@ -71,10 +71,10 @@ protected:
     assert(is_power_of_2(mapping_granularity_in_bytes),
       err_msg("mapping granularity must be power of 2, is %zd", mapping_granularity_in_bytes));
     assert((uintptr_t)bottom % mapping_granularity_in_bytes == 0,
-      err_msg("bottom mapping area address must be a multiple of mapping granularity %zd, is "PTR_FORMAT,
+      err_msg("bottom mapping area address must be a multiple of mapping granularity %zd, is  " PTR_FORMAT,
         mapping_granularity_in_bytes, p2i(bottom)));
     assert((uintptr_t)end % mapping_granularity_in_bytes == 0,
-      err_msg("end mapping area address must be a multiple of mapping granularity %zd, is "PTR_FORMAT,
+      err_msg("end mapping area address must be a multiple of mapping granularity %zd, is " PTR_FORMAT,
         mapping_granularity_in_bytes, p2i(end)));
     size_t num_target_elems = pointer_delta(end, bottom, mapping_granularity_in_bytes);
     idx_t bias = (uintptr_t)bottom / mapping_granularity_in_bytes;
