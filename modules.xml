@@ -246,6 +246,10 @@
       <to>jdk.scripting.nashorn</to>
     </export>
     <export>
+      <name>jdk.internal</name>
+      <to>jdk.jfr</to>
+    </export>
+    <export>
       <name>sun.misc</name>
       <to>java.corba</to>
       <to>java.desktop</to>
