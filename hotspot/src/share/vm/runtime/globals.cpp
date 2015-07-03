@@ -1240,7 +1240,7 @@ bool CommandLineFlags::check_all_ranges_and_constraints() {
         size_ranges += sizeof(CommandLineFlagRange*);
       }
     }
-    fprintf(stderr, "Size of %d ranges: "SIZE_FORMAT" bytes\n",
+    fprintf(stderr, "Size of %d ranges: " SIZE_FORMAT " bytes\n",
             CommandLineFlagRangeList::length(), size_ranges);
   }
   {
@@ -1270,7 +1270,7 @@ bool CommandLineFlags::check_all_ranges_and_constraints() {
         size_constraints += sizeof(CommandLineFlagConstraint*);
       }
     }
-    fprintf(stderr, "Size of %d constraints: "SIZE_FORMAT" bytes\n",
+    fprintf(stderr, "Size of %d constraints: " SIZE_FORMAT " bytes\n",
             CommandLineFlagConstraintList::length(), size_constraints);
   }
 #endif // PRINT_RANGES_AND_CONSTRAINTS_SIZES

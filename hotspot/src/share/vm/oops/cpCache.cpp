@@ -308,7 +308,7 @@ void ConstantPoolCacheEntry::set_method_handle_common(constantPoolHandle cpool,
                    adapter->size_of_parameters());
 
   if (TraceInvokeDynamic) {
-    tty->print_cr("set_method_handle bc=%d appendix="PTR_FORMAT"%s method_type="PTR_FORMAT"%s method="PTR_FORMAT" ",
+    tty->print_cr("set_method_handle bc=%d appendix=" PTR_FORMAT "%s method_type=" PTR_FORMAT "%s method=" PTR_FORMAT " ",
                   invoke_code,
                   (void *)appendix(),    (has_appendix    ? "" : " (unused)"),
                   (void *)method_type(), (has_method_type ? "" : " (unused)"),
@@ -538,12 +538,12 @@ void ConstantPoolCacheEntry::print(outputStream* st, int index) const {
   // print separator
   if (index == 0) st->print_cr("                 -------------");
   // print entry
-  st->print("%3d  ("PTR_FORMAT")  ", index, (intptr_t)this);
+  st->print("%3d  (" PTR_FORMAT ")  ", index, (intptr_t)this);
   st->print_cr("[%02x|%02x|%5d]", bytecode_2(), bytecode_1(),
                constant_pool_index());
-  st->print_cr("                 [   "PTR_FORMAT"]", (intptr_t)_f1);
-  st->print_cr("                 [   "PTR_FORMAT"]", (intptr_t)_f2);
-  st->print_cr("                 [   "PTR_FORMAT"]", (intptr_t)_flags);
+  st->print_cr("                 [   " PTR_FORMAT "]", (intptr_t)_f1);
+  st->print_cr("                 [   " PTR_FORMAT "]", (intptr_t)_f2);
+  st->print_cr("                 [   " PTR_FORMAT "]", (intptr_t)_flags);
   st->print_cr("                 -------------");
 }
 

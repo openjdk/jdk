@@ -93,10 +93,10 @@ void ThreadLocalAllocBuffer::record_slow_allocation(size_t obj_size) {
 
   if (PrintTLAB && Verbose) {
     Thread* thrd = myThread();
-    gclog_or_tty->print("TLAB: %s thread: "INTPTR_FORMAT" [id: %2d]"
-                        " obj: "SIZE_FORMAT
-                        " free: "SIZE_FORMAT
-                        " waste: "SIZE_FORMAT"\n",
+    gclog_or_tty->print("TLAB: %s thread: " INTPTR_FORMAT " [id: %2d]"
+                        " obj: " SIZE_FORMAT
+                        " free: " SIZE_FORMAT
+                        " waste: " SIZE_FORMAT "\n",
                         "slow", p2i(thrd), thrd->osthread()->thread_id(),
                         obj_size, free(), refill_waste_limit());
   }

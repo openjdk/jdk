@@ -84,7 +84,7 @@ public:
   }
 
   void print(outputStream* st) {
-    st->print("[ "INTX_FORMAT_W(-25)" ... "INTX_FORMAT_W(25)" ]", _min, _max);
+    st->print("[ " INTX_FORMAT_W(-25) " ... " INTX_FORMAT_W(25) " ]", _min, _max);
   }
 };
 
@@ -140,7 +140,7 @@ public:
   }
 
   void print(outputStream* st) {
-    st->print("[ "UINTX_FORMAT_W(-25)" ... "UINTX_FORMAT_W(25)" ]", _min, _max);
+    st->print("[ " UINTX_FORMAT_W(-25) " ... " UINTX_FORMAT_W(25) " ]", _min, _max);
   }
 };
 
@@ -168,7 +168,7 @@ public:
   }
 
   void print(outputStream* st) {
-    st->print("[ "UINT64_FORMAT_W(-25)" ... "UINT64_FORMAT_W(25)" ]", _min, _max);
+    st->print("[ " UINT64_FORMAT_W(-25) " ... " UINT64_FORMAT_W(25) " ]", _min, _max);
   }
 };
 
@@ -196,7 +196,7 @@ public:
   }
 
   void print(outputStream* st) {
-    st->print("[ "SIZE_FORMAT_W(-25)" ... "SIZE_FORMAT_W(25)" ]", _min, _max);
+    st->print("[ " SIZE_FORMAT_W(-25) " ... " SIZE_FORMAT_W(25) " ]", _min, _max);
   }
 };
 

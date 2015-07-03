@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,8 @@ struct CodeBlobType {
     MethodProfiled      = 1,    // Execution level 2 and 3 (profiled) nmethods
     NonNMethod          = 2,    // Non-nmethods like Buffers, Adapters and Runtime Stubs
     All                 = 3,    // All types (No code cache segmentation)
-    NumTypes            = 4     // Number of CodeBlobTypes
+    Pregenerated        = 4,    // Special blobs, managed by CodeCacheExtensions
+    NumTypes            = 5     // Number of CodeBlobTypes
   };
 };
 
@@ -63,6 +64,7 @@ class DeoptimizationBlob;
 class CodeBlob VALUE_OBJ_CLASS_SPEC {
 
   friend class VMStructs;
+  friend class CodeCacheDumper;
 
  private:
   const char* _name;
@@ -205,6 +207,14 @@ class CodeBlob VALUE_OBJ_CLASS_SPEC {
   // Transfer ownership of comments to this CodeBlob
   void set_strings(CodeStrings& strings) {
     _strings.assign(strings);
+  }
+
+  static ByteSize name_field_offset() {
+    return byte_offset_of(CodeBlob, _name);
+  }
+
+  static ByteSize oop_maps_field_offset() {
+    return byte_offset_of(CodeBlob, _oop_maps);
   }
 };
 

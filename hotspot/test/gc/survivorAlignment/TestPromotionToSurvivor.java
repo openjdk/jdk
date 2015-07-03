@@ -31,6 +31,7 @@
  *          java.management
  * @build TestPromotionToSurvivor
  *        SurvivorAlignmentTestMain AlignmentHelper
+ * @ignore 8129886
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions

@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "asm/codeBuffer.hpp"
+#include "code/codeCacheExtensions.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
@@ -188,6 +189,12 @@ typedef void (*arraycopy_fn)(address src, address dst, int count);
 
 // simple tests of generated arraycopy functions
 static void test_arraycopy_func(address func, int alignment) {
+  if (CodeCacheExtensions::use_pregenerated_interpreter() || !CodeCacheExtensions::is_executable(func)) {
+    // Exit safely if stubs were generated but cannot be used.
+    // Also excluding pregenerated interpreter since the code may depend on
+    // some registers being properly initialized (for instance Rthread)
+    return;
+  }
   int v = 0xcc;
   int v2 = 0x11;
   jlong lbuffer[8];

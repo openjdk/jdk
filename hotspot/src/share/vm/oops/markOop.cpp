@@ -49,7 +49,7 @@ void markOopDesc::print_on(outputStream* st) const {
         st->print("monitor=NULL");
       else {
         BasicLock * bl = (BasicLock *) mon->owner();
-        st->print("monitor={count="INTPTR_FORMAT",waiters="INTPTR_FORMAT",recursions="INTPTR_FORMAT",owner="INTPTR_FORMAT"}",
+        st->print("monitor={count=" INTPTR_FORMAT ",waiters=" INTPTR_FORMAT ",recursions=" INTPTR_FORMAT ",owner=" INTPTR_FORMAT "}",
                 mon->count(), mon->waiters(), mon->recursions(), p2i(bl));
       }
     } else {

@@ -424,7 +424,7 @@ G1UpdateRSOrPushRefOopClosure(G1CollectedHeap* g1h,
 bool G1RemSet::refine_card(jbyte* card_ptr, uint worker_i,
                            bool check_for_refs_into_cset) {
   assert(_g1->is_in_exact(_ct_bs->addr_for(card_ptr)),
-         err_msg("Card at "PTR_FORMAT" index "SIZE_FORMAT" representing heap at "PTR_FORMAT" (%u) must be in committed heap",
+         err_msg("Card at " PTR_FORMAT " index " SIZE_FORMAT " representing heap at " PTR_FORMAT " (%u) must be in committed heap",
                  p2i(card_ptr),
                  _ct_bs->index_for(_ct_bs->addr_for(card_ptr)),
                  p2i(_ct_bs->addr_for(card_ptr)),

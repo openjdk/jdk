@@ -600,7 +600,7 @@ void CardTableModRefBS::verify_region(MemRegion mr,
                       (val_equals) ? "" : "not ", val);
         failures = true;
       }
-      tty->print_cr("==   card "PTR_FORMAT" ["PTR_FORMAT","PTR_FORMAT"], "
+      tty->print_cr("==   card " PTR_FORMAT " [" PTR_FORMAT "," PTR_FORMAT "], "
                     "val: %d", p2i(curr), p2i(addr_for(curr)),
                     p2i((HeapWord*) (((size_t) addr_for(curr)) + card_size)),
                     (int) curr_val);
