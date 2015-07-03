@@ -44,6 +44,7 @@ import test.java.awt.regtesthelpers.Util;
 @author sergey.grinev@oracle.com: area=awt.mixing
 @library ../../regtesthelpers
 @modules java.desktop/sun.awt
+         java.desktop/java.awt.peer
 @build Util
 @run main JComboBoxOverlapping
  */
