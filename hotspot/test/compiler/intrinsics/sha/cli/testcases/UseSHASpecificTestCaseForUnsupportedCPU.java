@@ -26,17 +26,19 @@ import jdk.test.lib.ExitCode;
 import jdk.test.lib.Platform;
 import jdk.test.lib.cli.CommandLineOptionTest;
 import jdk.test.lib.cli.predicate.AndPredicate;
+import jdk.test.lib.cli.predicate.OrPredicate;
 import jdk.test.lib.cli.predicate.NotPredicate;
 import sha.predicate.IntrinsicPredicates;
 
 /**
- * UseSHA specific test case targeted to SPARC CPUs which don't support all sha*
- * instructions.
+ * UseSHA specific test case targeted to SPARC and AArch64 CPUs which don't
+ * support all sha* instructions./
  */
-public class UseSHASpecificTestCaseForUnsupportedSparcCPU
+public class UseSHASpecificTestCaseForUnsupportedCPU
         extends SHAOptionsBase.TestCase {
-    public UseSHASpecificTestCaseForUnsupportedSparcCPU(String optionName) {
-        super(SHAOptionsBase.USE_SHA_OPTION, new AndPredicate(Platform::isSparc,
+    public UseSHASpecificTestCaseForUnsupportedCPU(String optionName) {
+        super(SHAOptionsBase.USE_SHA_OPTION, new AndPredicate(
+                new OrPredicate(Platform::isSparc, Platform::isAArch64),
                 new NotPredicate(
                         IntrinsicPredicates.ANY_SHA_INSTRUCTION_AVAILABLE)));
 
@@ -49,7 +51,7 @@ public class UseSHASpecificTestCaseForUnsupportedSparcCPU
     protected void verifyWarnings() throws Throwable {
         // Verify that attempt to use UseSHA option will cause a warning.
         String shouldPassMessage = String.format("JVM startup should pass with"
-                + " '%s' option on unsupported SparcCPU, but there should be"
+                + " '%s' option on unsupported CPU, but there should be"
                 + "the message shown.", optionName);
         CommandLineOptionTest.verifySameJVMStartup(new String[] {
                         SHAOptionsBase.getWarningForUnsupportedCPU(optionName)
@@ -63,7 +65,7 @@ public class UseSHASpecificTestCaseForUnsupportedSparcCPU
         // UseSHA*Intrinsics were enabled.
         CommandLineOptionTest.verifyOptionValueForSameVM(
                 SHAOptionsBase.USE_SHA_OPTION, "false", String.format(
-                    "%s option should be disabled on unsupported SparcCPU"
+                    "%s option should be disabled on unsupported CPU"
                         + " even if all UseSHA*Intrinsics options were enabled.",
                     SHAOptionsBase.USE_SHA_OPTION),
                 CommandLineOptionTest.prepareBooleanFlag(
@@ -77,7 +79,7 @@ public class UseSHASpecificTestCaseForUnsupportedSparcCPU
         // UseSHA*Intrinsics options were enabled and UseSHA was enabled as well.
         CommandLineOptionTest.verifyOptionValueForSameVM(
                 SHAOptionsBase.USE_SHA_OPTION, "false", String.format(
-                    "%s option should be disabled on unsupported SparcCPU"
+                    "%s option should be disabled on unsupported CPU"
                         + " even if all UseSHA*Intrinsics options were enabled"
                         + " and %s was enabled as well",
                     SHAOptionsBase.USE_SHA_OPTION,

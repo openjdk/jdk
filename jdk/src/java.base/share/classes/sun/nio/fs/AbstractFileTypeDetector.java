@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,27 @@ public abstract class AbstractFileTypeDetector
 {
     protected AbstractFileTypeDetector() {
         super();
+    }
+
+    /**
+     * Returns the extension of a file name, specifically the portion of the
+     * parameter string after the first dot. If the parameter is {@code null},
+     * empty, does not contain a dot, or the dot is the last character, then an
+     * empty string is returned, otherwise the characters after the dot are
+     * returned.
+     *
+     * @param name A file name
+     * @return The characters after the first dot or an empty string.
+     */
+    protected final String getExtension(String name) {
+        String ext = "";
+        if (name != null && !name.isEmpty()) {
+            int dot = name.indexOf('.');
+            if ((dot >= 0) && (dot < name.length() - 1)) {
+                ext = name.substring(dot + 1);
+            }
+        }
+        return ext;
     }
 
     /**
