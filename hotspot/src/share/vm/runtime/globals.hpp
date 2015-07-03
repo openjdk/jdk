@@ -728,7 +728,8 @@ public:
           "Control whether AES instructions can be used on x86/x64")        \
                                                                             \
   product(bool, UseSHA, false,                                              \
-          "Control whether SHA instructions can be used on SPARC")          \
+          "Control whether SHA instructions can be used "                   \
+          "on SPARC and on ARM")                                            \
                                                                             \
   product(bool, UseGHASHIntrinsics, false,                                  \
           "Use intrinsics for GHASH versions of crypto")                    \
@@ -837,13 +838,16 @@ public:
           "Use intrinsics for AES versions of crypto")                      \
                                                                             \
   product(bool, UseSHA1Intrinsics, false,                                   \
-          "Use intrinsics for SHA-1 crypto hash function")                  \
+          "Use intrinsics for SHA-1 crypto hash function. "                 \
+          "Requires that UseSHA is enabled.")                                \
                                                                             \
   product(bool, UseSHA256Intrinsics, false,                                 \
-          "Use intrinsics for SHA-224 and SHA-256 crypto hash functions")   \
+          "Use intrinsics for SHA-224 and SHA-256 crypto hash functions. "  \
+          "Requires that UseSHA is enabled.")                               \
                                                                             \
   product(bool, UseSHA512Intrinsics, false,                                 \
-          "Use intrinsics for SHA-384 and SHA-512 crypto hash functions")   \
+          "Use intrinsics for SHA-384 and SHA-512 crypto hash functions. "  \
+          "Requires that UseSHA is enabled.")                               \
                                                                             \
   product(bool, UseCRC32Intrinsics, false,                                  \
           "use intrinsics for java.util.zip.CRC32")                         \
