@@ -651,7 +651,8 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
   const int bci    = kit.bci();
 
   // Try to inline the intrinsic.
-  if (kit.try_to_inline(_last_predicate)) {
+  if ((CheckIntrinsics ? callee->intrinsic_candidate() : true) &&
+      kit.try_to_inline(_last_predicate)) {
     if (C->print_intrinsics() || C->print_inlining()) {
       C->print_inlining(callee, jvms->depth() - 1, bci, is_virtual() ? "(intrinsic, virtual)" : "(intrinsic)");
     }
@@ -672,7 +673,13 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
   if (C->print_intrinsics() || C->print_inlining()) {
     if (jvms->has_method()) {
       // Not a root compile.
-      const char* msg = is_virtual() ? "failed to inline (intrinsic, virtual)" : "failed to inline (intrinsic)";
+      const char* msg;
+      if (callee->intrinsic_candidate()) {
+        msg = is_virtual() ? "failed to inline (intrinsic, virtual)" : "failed to inline (intrinsic)";
+      } else {
+        msg = is_virtual() ? "failed to inline (intrinsic, virtual), method not annotated"
+                           : "failed to inline (intrinsic), method not annotated";
+      }
       C->print_inlining(callee, jvms->depth() - 1, bci, msg);
     } else {
       // Root compile
@@ -5258,7 +5265,7 @@ bool LibraryCallKit::inline_encodeISOArray() {
 
 //-------------inline_multiplyToLen-----------------------------------
 bool LibraryCallKit::inline_multiplyToLen() {
-  assert(UseMultiplyToLenIntrinsic, "not implementated on this platform");
+  assert(UseMultiplyToLenIntrinsic, "not implemented on this platform");
 
   address stubAddr = StubRoutines::multiplyToLen();
   if (stubAddr == NULL) {
