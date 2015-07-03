@@ -34,6 +34,7 @@ import javax.swing.*;
 @author sergey.grinev@oracle.com: area=awt.mixing
 @library ../../regtesthelpers
 @modules java.desktop/sun.awt
+         java.desktop/java.awt.peer
 @build Util
 @run main JButtonOverlapping
  */

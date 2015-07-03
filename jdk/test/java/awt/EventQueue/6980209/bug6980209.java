@@ -27,18 +27,17 @@
    @author Semyon Sadetsky
   */
 
-import sun.util.logging.PlatformLogger;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.util.logging.Logger;
 
 public class bug6980209 implements ActionListener {
-    private final static PlatformLogger log =
-            PlatformLogger.getLogger("java.awt.event.WaitDispatchSupport");
+    private final static Logger log =
+            Logger.getLogger("java.awt.event.WaitDispatchSupport");
     public static final int ATTEMPTS = 100;
     public static final int EVENTS = 5;
 
@@ -52,8 +51,8 @@ public class bug6980209 implements ActionListener {
     public static void main(String[] args) throws Exception {
         System.out.println(
                 "PLEASE DO NOT TOUCH KEYBOARD AND MOUSE DURING THE TEST RUN!");
-        // log.setLevel(PlatformLogger.Level.FINE);
-        // log.setLevel(PlatformLogger.Level.FINEST);
+        // log.setLevel(java.util.logging.Level.FINE);
+        // log.setLevel(java.util.logging.Level.FINEST);
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run() {
