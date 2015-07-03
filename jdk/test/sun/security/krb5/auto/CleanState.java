@@ -24,13 +24,6 @@
 /*
  * @test
  * @bug 6716534
- * @modules java.base/sun.net.spi.nameservice
- *          java.base/sun.security.util
- *          java.security.jgss/sun.security.krb5
- *          java.security.jgss/sun.security.krb5.internal
- *          java.security.jgss/sun.security.krb5.internal.ccache
- *          java.security.jgss/sun.security.krb5.internal.crypto
- *          java.security.jgss/sun.security.krb5.internal.ktab
  * @compile -XDignore.symbol.file CleanState.java
  * @run main/othervm CleanState
  * @summary Krb5LoginModule has not cleaned temp info between authentication attempts

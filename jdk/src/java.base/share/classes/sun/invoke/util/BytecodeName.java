@@ -511,7 +511,7 @@ public class BytecodeName {
                 if (s.charAt(0) != ESCAPE_C && i > 0)
                     sb.append(NULL_ESCAPE);
                 // append the string so far, which is unremarkable:
-                sb.append(s.substring(0, i));
+                sb.append(s, 0, i);
             }
 
             // rewrite \ to \-, / to \|, etc.
@@ -544,7 +544,7 @@ public class BytecodeName {
                     if (sb == null) {
                         sb = new StringBuilder(s.length());
                         // append the string so far, which is unremarkable:
-                        sb.append(s.substring(stringStart, i));
+                        sb.append(s, stringStart, i);
                     }
                     ++i;  // skip both characters
                     c = oc;
