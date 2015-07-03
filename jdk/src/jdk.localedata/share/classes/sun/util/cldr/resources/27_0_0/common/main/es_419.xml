@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2014 Unicode, Inc.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+For terms of use, see http://www.unicode.org/copyright.html
+-->
+<ldml>
+	<identity>
+		<version number="$Revision: 11323 $"/>
+		<generation date="$Date: 2015-02-26 15:25:28 -0600 (Thu, 26 Feb 2015) $"/>
+		<language type="es"/>
+		<territory type="419"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="en_GB" alt="short">inglés (R. U.)</language>
+		</languages>
+		<territories>
+			<territory type="GB" alt="short">R. U.</territory>
+		</territories>
+	</localeDisplayNames>
+	<dates>
+		<calendars>
+			<calendar type="generic">
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="GyMMM" draft="contributed">MMM 'de' y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd" draft="contributed">d 'de' MMM 'de' y G</dateFormatItem>
+						<dateFormatItem id="MMMd" draft="contributed">d 'de' MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd" draft="contributed">E, d 'de' MMM</dateFormatItem>
+						<dateFormatItem id="yMEd" draft="contributed">E d/M/y G</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M" draft="contributed">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="contributed">M/y – M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d" draft="contributed">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="contributed">d/M/y – d/M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d" draft="contributed">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="gregorian">
+				<days>
+					<dayContext type="format">
+						<dayWidth type="narrow">
+							<day type="sun">d</day>
+							<day type="mon">l</day>
+							<day type="tue">m</day>
+							<day type="wed">m</day>
+							<day type="thu">j</day>
+							<day type="fri">v</day>
+							<day type="sat">s</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="narrow">
+							<day type="sun">D</day>
+							<day type="mon">L</day>
+							<day type="tue">M</day>
+							<day type="wed">M</day>
+							<day type="thu">J</day>
+							<day type="fri">V</day>
+							<day type="sat">S</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern>h:mm:ss a zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern>h:mm:ss a z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern>h:mm:ss a</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern>h:mm a</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="EHm" draft="contributed">E, HH:mm</dateFormatItem>
+						<dateFormatItem id="EHms" draft="contributed">E, HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="GyMMMd" draft="contributed">d 'de' MMM 'de' y G</dateFormatItem>
+						<dateFormatItem id="H" draft="contributed">HH</dateFormatItem>
+						<dateFormatItem id="Hm" draft="contributed">HH:mm</dateFormatItem>
+						<dateFormatItem id="Hms" draft="contributed">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="MMMdd" draft="contributed">dd-MMM</dateFormatItem>
+						<dateFormatItem id="yMEd" draft="contributed">E d/M/y</dateFormatItem>
+						<dateFormatItem id="yMMMEd" draft="contributed">E, d 'de' MMM 'de' y</dateFormatItem>
+						<dateFormatItem id="yQQQ" draft="contributed">QQQ 'de' y</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatItem id="H">
+							<greatestDifference id="H" draft="contributed">HH – HH</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hm">
+							<greatestDifference id="H" draft="contributed">HH:mm – HH:mm</greatestDifference>
+							<greatestDifference id="m" draft="contributed">HH:mm – HH:mm</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hmv">
+							<greatestDifference id="H" draft="contributed">HH:mm – HH:mm v</greatestDifference>
+							<greatestDifference id="m" draft="contributed">HH:mm – HH:mm v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hv">
+							<greatestDifference id="H" draft="contributed">HH – HH v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d" draft="contributed">d – d 'de' MMM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d 'de' MMM – d 'de' MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d" draft="contributed">E, d 'de' MMM – E, d 'de' MMM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E, d 'de' MMM – E, d 'de' MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="y" draft="contributed">MMM 'de' y – MMM 'de' y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d" draft="contributed">d – d 'de' MMM 'de' y</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d 'de' MMM – d 'de' MMM 'de' y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">d 'de' MMM 'de' y – d 'de' MMM 'de' y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d" draft="contributed">E, d 'de' MMM – E, d 'de' MMM 'de' y</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E, d 'de' MMM – E, d 'de' MMM 'de' y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E, d 'de' MMM 'de' y – E, d 'de' MMM 'de' y</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+		<timeZoneNames>
+			<metazone type="Europe_Central">
+				<short>
+					<generic>∅∅∅</generic>
+					<standard>∅∅∅</standard>
+					<daylight>∅∅∅</daylight>
+				</short>
+			</metazone>
+			<metazone type="Europe_Eastern">
+				<short>
+					<generic>∅∅∅</generic>
+					<standard>∅∅∅</standard>
+					<daylight>∅∅∅</daylight>
+				</short>
+			</metazone>
+			<metazone type="Europe_Western">
+				<short>
+					<generic>∅∅∅</generic>
+					<standard>∅∅∅</standard>
+					<daylight>∅∅∅</daylight>
+				</short>
+			</metazone>
+			<metazone type="GMT">
+				<short>
+					<standard>∅∅∅</standard>
+				</short>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<decimal>.</decimal>
+			<group>,</group>
+		</symbols>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength type="short">
+				<decimalFormat>
+					<pattern type="1000" count="one" draft="contributed">0</pattern>
+					<pattern type="1000" count="other" draft="contributed">0</pattern>
+					<pattern type="10000" count="one" draft="contributed">00k</pattern>
+					<pattern type="10000" count="other" draft="contributed">00k</pattern>
+					<pattern type="100000" count="one" draft="contributed">000k</pattern>
+					<pattern type="100000" count="other" draft="contributed">000k</pattern>
+					<pattern type="1000000000" count="one" draft="contributed">0k M</pattern>
+					<pattern type="1000000000" count="other" draft="contributed">0k M</pattern>
+					<pattern type="10000000000" count="one" draft="contributed">00k M</pattern>
+					<pattern type="10000000000" count="other" draft="contributed">00k M</pattern>
+					<pattern type="100000000000" count="one" draft="contributed">000k M</pattern>
+					<pattern type="100000000000" count="other" draft="contributed">000k M</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencies>
+			<currency type="CAD">
+				<symbol>CAD</symbol>
+			</currency>
+			<currency type="EUR">
+				<symbol>EUR</symbol>
+				<symbol alt="narrow">€</symbol>
+			</currency>
+			<currency type="THB">
+				<symbol>THB</symbol>
+			</currency>
+			<currency type="USD">
+				<symbol>USD</symbol>
+			</currency>
+			<currency type="VND">
+				<symbol>VND</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+	<units>
+		<unitLength type="short">
+			<unit type="duration-day">
+				<displayName draft="contributed">dd.</displayName>
+				<unitPattern count="one" draft="contributed">{0} d.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} dd.</unitPattern>
+			</unit>
+			<unit type="duration-month">
+				<displayName draft="contributed">mm.</displayName>
+				<unitPattern count="one" draft="contributed">{0} m.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} mm.</unitPattern>
+			</unit>
+			<unit type="duration-week">
+				<displayName draft="contributed">sems.</displayName>
+				<unitPattern count="one" draft="contributed">{0} sem.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} sems.</unitPattern>
+			</unit>
+			<unit type="duration-year">
+				<displayName draft="contributed">aa.</displayName>
+				<unitPattern count="one" draft="contributed">{0} a.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} aa.</unitPattern>
+			</unit>
+			<unit type="length-light-year">
+				<displayName draft="contributed">aa. l.</displayName>
+				<unitPattern count="one" draft="contributed">{0} a. l.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} aa. l.</unitPattern>
+			</unit>
+			<unit type="length-nautical-mile">
+				<displayName draft="contributed">nmi</displayName>
+				<unitPattern count="one" draft="contributed">{0} nmi</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} nmi</unitPattern>
+			</unit>
+		</unitLength>
+		<unitLength type="narrow">
+			<unit type="duration-day">
+				<displayName draft="contributed">d.</displayName>
+				<unitPattern count="one" draft="contributed">{0}d.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}dd.</unitPattern>
+			</unit>
+			<unit type="duration-month">
+				<displayName draft="contributed">m.</displayName>
+				<unitPattern count="one" draft="contributed">{0}m.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}mm.</unitPattern>
+			</unit>
+			<unit type="duration-week">
+				<displayName draft="contributed">sem.</displayName>
+				<unitPattern count="one" draft="contributed">{0}sem.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}sems.</unitPattern>
+			</unit>
+			<unit type="duration-year">
+				<displayName draft="contributed">a.</displayName>
+				<unitPattern count="one" draft="contributed">{0}a.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}aa.</unitPattern>
+			</unit>
+		</unitLength>
+	</units>
+</ldml>
+

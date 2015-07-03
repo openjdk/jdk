@@ -910,14 +910,14 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     /**
      * Get the marker anchor which will be added to the documentation tree.
      *
-     * @param anchorName the anchor name attribute
+     * @param anchorName the anchor name or id attribute
      * @param anchorContent the content that should be added to the anchor
      * @return a content tree for the marker anchor
      */
     public Content getMarkerAnchor(String anchorName, Content anchorContent) {
         if (anchorContent == null)
             anchorContent = new Comment(" ");
-        Content markerAnchor = HtmlTree.A_ID(anchorName, anchorContent);
+        Content markerAnchor = HtmlTree.A(configuration.htmlVersion, anchorName, anchorContent);
         return markerAnchor;
     }
 

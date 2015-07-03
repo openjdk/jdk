@@ -34,13 +34,15 @@ tier2 = \
     :jdk_io \
     :jdk_nio \
     :jdk_net \
-    :jdk_rmi \
     :jdk_time \
     :jdk_security \
     :jdk_text \
     :core_tools \
     :jdk_other \
     :jdk_svc
+
+tier3 = \
+    :jdk_rmi
 
 ###############################################################################
 #

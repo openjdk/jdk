@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,41 +41,46 @@ class CopyrightHeaders {
         " * Copyright (c) 2012, %d, Oracle and/or its affiliates. All rights reserved.\n" +
         " */\n";
 
+    // Last updated:  - 1/16/2015, 1:42:31 PM
     private static final String UNICODE =
         "/*\n" +
         " * COPYRIGHT AND PERMISSION NOTICE\n" +
         " *\n" +
-        " * Copyright (C) 1991-2012 Unicode, Inc. All rights reserved. Distributed under\n" +
-        " * the Terms of Use in http://www.unicode.org/copyright.html.\n" +
+        " * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.\n" +
+        " * Distributed under the Terms of Use in \n" +
+        " * http://www.unicode.org/copyright.html.\n" +
         " *\n" +
-        " * Permission is hereby granted, free of charge, to any person obtaining a copy\n" +
-        " * of the Unicode data files and any associated documentation (the \"Data\n" +
-        " * Files\") or Unicode software and any associated documentation (the\n" +
-        " * \"Software\") to deal in the Data Files or Software without restriction,\n" +
-        " * including without limitation the rights to use, copy, modify, merge,\n" +
-        " * publish, distribute, and/or sell copies of the Data Files or Software, and\n" +
-        " * to permit persons to whom the Data Files or Software are furnished to do so,\n" +
-        " * provided that (a) the above copyright notice(s) and this permission notice\n" +
-        " * appear with all copies of the Data Files or Software, (b) both the above\n" +
-        " * copyright notice(s) and this permission notice appear in associated\n" +
-        " * documentation, and (c) there is clear notice in each modified Data File or\n" +
-        " * in the Software as well as in the documentation associated with the Data\n" +
-        " * File(s) or Software that the data or software has been modified.\n" +
+        " * Permission is hereby granted, free of charge, to any person obtaining\n" +
+        " * a copy of the Unicode data files and any associated documentation\n" +
+        " * (the \"Data Files\") or Unicode software and any associated documentation\n" +
+        " * (the \"Software\") to deal in the Data Files or Software\n" +
+        " * without restriction, including without limitation the rights to use,\n" +
+        " * copy, modify, merge, publish, distribute, and/or sell copies of\n" +
+        " * the Data Files or Software, and to permit persons to whom the Data Files\n" +
+        " * or Software are furnished to do so, provided that\n" +
+        " * (a) this copyright and permission notice appear with all copies \n" +
+        " * of the Data Files or Software,\n" +
+        " * (b) this copyright and permission notice appear in associated \n" +
+        " * documentation, and\n" +
+        " * (c) there is clear notice in each modified Data File or in the Software\n" +
+        " * as well as in the documentation associated with the Data File(s) or\n" +
+        " * Software that the data or software has been modified.\n" +
         " *\n" +
-        " * THE DATA FILES AND SOFTWARE ARE PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY\n" +
-        " * KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\n" +
-        " * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF\n" +
-        " * THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS\n" +
-        " * INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR\n" +
-        " * CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,\n" +
+        " * THE DATA FILES AND SOFTWARE ARE PROVIDED \"AS IS\", WITHOUT WARRANTY OF\n" +
+        " * ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE\n" +
+        " * WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\n" +
+        " * NONINFRINGEMENT OF THIRD PARTY RIGHTS.\n" +
+        " * IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN THIS\n" +
+        " * NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR CONSEQUENTIAL\n" +
+        " * DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,\n" +
         " * DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER\n" +
-        " * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE\n" +
-        " * OF THE DATA FILES OR SOFTWARE.\n" +
+        " * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR\n" +
+        " * PERFORMANCE OF THE DATA FILES OR SOFTWARE.\n" +
         " *\n" +
-        " * Except as contained in this notice, the name of a copyright holder shall not\n" +
-        " * be used in advertising or otherwise to promote the sale, use or other\n" +
-        " * dealings in these Data Files or Software without prior written authorization\n" +
-        " * of the copyright holder.\n" +
+        " * Except as contained in this notice, the name of a copyright holder\n" +
+        " * shall not be used in advertising or otherwise to promote the sale,\n" +
+        " * use or other dealings in these Data Files or Software without prior\n" +
+        " * written authorization of the copyright holder.\n" +
         " */\n";
 
     private static String OPENJDK2012 =

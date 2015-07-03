@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7112427 8012295 8025633 8026567 8061305
+ * @bug 7112427 8012295 8025633 8026567 8061305 8081854
  * @summary Test of the JavaFX doclet features.
  * @author jvalenta
  * @library ../lib
@@ -100,11 +100,11 @@ public class TestJavaFX extends JavadocTester {
                 "pkg2");
         checkExit(Exit.OK);
         checkOutput("pkg2/Test.html", true,
-                "<li class=\"blockList\"><a id=\"property.detail\">\n"
+                "<li class=\"blockList\"><a name=\"property.detail\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
                 + "<h3>Property Detail</h3>\n"
-                + "<a id=\"betaProperty\">\n"
+                + "<a name=\"betaProperty\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
                 + "<ul class=\"blockList\">\n"
@@ -113,7 +113,7 @@ public class TestJavaFX extends JavadocTester {
                 + "<pre>public&nbsp;java.lang.Object betaProperty</pre>\n"
                 + "</li>\n"
                 + "</ul>\n"
-                + "<a id=\"gammaProperty\">\n"
+                + "<a name=\"gammaProperty\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
                 + "<ul class=\"blockList\">\n"
@@ -123,7 +123,7 @@ public class TestJavaFX extends JavadocTester {
                 + "java.lang.String&gt; gammaProperty</pre>\n"
                 + "</li>\n"
                 + "</ul>\n"
-                + "<a id=\"deltaProperty\">\n"
+                + "<a name=\"deltaProperty\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
                 + "<ul class=\"blockListLast\">\n"

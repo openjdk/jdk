@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
 #
 
 # @test
-# @bug 8000983
+# @bug 8000983 8008577
 # @summary Unit test for narrow names support
 # @build NarrowNamesTest
 # @run shell NarrowNamesTest.sh
@@ -34,7 +34,7 @@ STATUS=0
 for P in "JRE,SPI" "CLDR"
 do
     echo "Locale providers: $P"
-    if ! ${TESTJAVA}/bin/java -esa ${TESTVMOPTS} -cp "${TESTCLASSES}" -Djava.locale.providers="${P}" NarrowNamesTest; then
+    if ! ${TESTJAVA}/bin/java -esa ${TESTVMOPTS} -cp "${TESTCLASSES}" -Djava.locale.providers="${P}" NarrowNamesTest ${P}; then
         STATUS=1
     fi
 done

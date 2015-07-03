@@ -23,7 +23,7 @@
 
 /**
  * @test 4235519 8004212 8005394 8007298 8006295 8006315 8006530 8007379 8008925
- *       8014217 8025003 8026330 8028397
+ *       8014217 8025003 8026330 8028397 8129544
  * @summary tests java.util.Base64
  * @key randomness
  */
@@ -408,7 +408,16 @@ public class TestBase64 {
                 }});
             }
         }
-    }
+
+        // anything left after padding is "invalid"/IAE, if
+        // not MIME. In case of MIME, non-base64 character(s)
+        // is ignored.
+        checkIAE(new Runnable() { public void run() {
+            Base64.getDecoder().decode("AA==\u00D2"); }});
+        checkIAE(new Runnable() { public void run() {
+            Base64.getUrlDecoder().decode("AA==\u00D2"); }});
+        Base64.getMimeDecoder().decode("AA==\u00D2");
+     }
 
     private static void  testDecodeUnpadded() throws Throwable {
         byte[] srcA = new byte[] { 'Q', 'Q' };
