@@ -25,14 +25,6 @@
  * @test
  * @bug 8000653
  * @summary SPNEGO tests fail at context.getDelegCred().getRemainingInitLifetime(mechOid)
- * @modules java.base/sun.net.spi.nameservice
- *          java.base/sun.security.util
- *          java.security.jgss/sun.security.jgss
- *          java.security.jgss/sun.security.krb5
- *          java.security.jgss/sun.security.krb5.internal
- *          java.security.jgss/sun.security.krb5.internal.ccache
- *          java.security.jgss/sun.security.krb5.internal.crypto
- *          java.security.jgss/sun.security.krb5.internal.ktab
  * @compile -XDignore.symbol.file SpnegoLifeTime.java
  * @run main/othervm SpnegoLifeTime
  */

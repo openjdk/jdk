@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import java.security.interfaces.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 import javax.crypto.interfaces.*;
-import com.sun.crypto.provider.SunJCE;
 
 /**
  * This test utility executes the Diffie-Hellman key agreement protocol
@@ -51,10 +50,6 @@ public class DHKeyAgreement3 {
     private DHKeyAgreement3() {}
 
     public static void main(String argv[]) throws Exception {
-            // Add JCE to the list of providers
-            SunJCE jce = new SunJCE();
-            Security.addProvider(jce);
-
             DHKeyAgreement3 keyAgree = new DHKeyAgreement3();
             keyAgree.run();
             System.out.println("Test Passed");
@@ -69,36 +64,36 @@ public class DHKeyAgreement3 {
 
         // Alice creates her own DH key pair
         System.err.println("ALICE: Generate DH keypair ...");
-        KeyPairGenerator aliceKpairGen = KeyPairGenerator.getInstance("DH");
+        KeyPairGenerator aliceKpairGen = KeyPairGenerator.getInstance("DH", "SunJCE");
         aliceKpairGen.initialize(dhSkipParamSpec);
         KeyPair aliceKpair = aliceKpairGen.generateKeyPair();
 
         // Bob creates his own DH key pair
         System.err.println("BOB: Generate DH keypair ...");
-        KeyPairGenerator bobKpairGen = KeyPairGenerator.getInstance("DH");
+        KeyPairGenerator bobKpairGen = KeyPairGenerator.getInstance("DH", "SunJCE");
         bobKpairGen.initialize(dhSkipParamSpec);
         KeyPair bobKpair = bobKpairGen.generateKeyPair();
 
         // Carol creates her own DH key pair
         System.err.println("CAROL: Generate DH keypair ...");
-        KeyPairGenerator carolKpairGen = KeyPairGenerator.getInstance("DH");
+        KeyPairGenerator carolKpairGen = KeyPairGenerator.getInstance("DH", "SunJCE");
         carolKpairGen.initialize(dhSkipParamSpec);
         KeyPair carolKpair = carolKpairGen.generateKeyPair();
 
 
         // Alice initialize
         System.err.println("ALICE: Initialize ...");
-        KeyAgreement aliceKeyAgree = KeyAgreement.getInstance("DH");
+        KeyAgreement aliceKeyAgree = KeyAgreement.getInstance("DH", "SunJCE");
         aliceKeyAgree.init(aliceKpair.getPrivate());
 
         // Bob initialize
         System.err.println("BOB: Initialize ...");
-        KeyAgreement bobKeyAgree = KeyAgreement.getInstance("DH");
+        KeyAgreement bobKeyAgree = KeyAgreement.getInstance("DH", "SunJCE");
         bobKeyAgree.init(bobKpair.getPrivate());
 
         // Carol initialize
         System.err.println("CAROL: Initialize ...");
-        KeyAgreement carolKeyAgree = KeyAgreement.getInstance("DH");
+        KeyAgreement carolKeyAgree = KeyAgreement.getInstance("DH", "SunJCE");
         carolKeyAgree.init(carolKpair.getPrivate());
 
 

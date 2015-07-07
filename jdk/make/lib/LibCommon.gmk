@@ -60,17 +60,6 @@ FindSrcDirsForLib = \
       $(JDK_TOPDIR)/src/$(strip $1)/share/native/lib$(strip $2)))
 
 ################################################################################
-# Find lib dir for module
-# Param 1 - module name
-ifeq ($(OPENJDK_TARGET_OS_TYPE), unix)
-  FindLibDirForModule = \
-      $(SUPPORT_OUTPUTDIR)/modules_libs/$(strip $1)$(OPENJDK_TARGET_CPU_LIBDIR)
-else
-  FindLibDirForModule = \
-      $(SUPPORT_OUTPUTDIR)/modules_libs/$(strip $1)
-endif
-
-################################################################################
 # Find a library
 # Param 1 - module name
 # Param 2 - library name

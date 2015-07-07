@@ -33,6 +33,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 import java.util.regex.*;
+import java.util.stream.Collectors;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
@@ -57,6 +58,8 @@ import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.model.JavacTypes;
+import com.sun.tools.javac.platform.PlatformDescription;
+import com.sun.tools.javac.platform.PlatformDescription.PluginInfo;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.Abort;
@@ -66,6 +69,7 @@ import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Convert;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
+import com.sun.tools.javac.util.Iterators;
 import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.JavacMessages;
 import com.sun.tools.javac.util.List;
@@ -282,7 +286,19 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                         processorClassLoaderException);
             }
         }
-        discoveredProcs = new DiscoveredProcessors(processorIterator);
+        PlatformDescription platformProvider = context.get(PlatformDescription.class);
+        java.util.List<Processor> platformProcessors = Collections.emptyList();
+        if (platformProvider != null) {
+            platformProcessors = platformProvider.getAnnotationProcessors()
+                                                 .stream()
+                                                 .map(ap -> ap.getPlugin())
+                                                 .collect(Collectors.toList());
+        }
+        List<Iterator<? extends Processor>> iterators = List.of(processorIterator,
+                                                                platformProcessors.iterator());
+        Iterator<? extends Processor> compoundIterator =
+                Iterators.createCompoundIterator(iterators, i -> i);
+        discoveredProcs = new DiscoveredProcessors(compoundIterator);
     }
 
     /**
@@ -478,6 +494,14 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                         key.substring(sepIndex+1) : null;
                 }
                 tempOptions.put(candidateKey, candidateValue);
+            }
+        }
+
+        PlatformDescription platformProvider = context.get(PlatformDescription.class);
+
+        if (platformProvider != null) {
+            for (PluginInfo<Processor> ap : platformProvider.getAnnotationProcessors()) {
+                tempOptions.putAll(ap.getOptions());
             }
         }
 

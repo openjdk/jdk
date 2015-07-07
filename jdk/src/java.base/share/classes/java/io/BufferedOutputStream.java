@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,7 @@ package java.io;
  * @author  Arthur van Hoff
  * @since   1.0
  */
-public
-class BufferedOutputStream extends FilterOutputStream {
+public class BufferedOutputStream extends FilterOutputStream {
     /**
      * The internal buffer where data is stored.
      */
@@ -90,6 +89,7 @@ class BufferedOutputStream extends FilterOutputStream {
      * @param      b   the byte to be written.
      * @exception  IOException  if an I/O error occurs.
      */
+    @Override
     public synchronized void write(int b) throws IOException {
         if (count >= buf.length) {
             flushBuffer();
@@ -113,6 +113,7 @@ class BufferedOutputStream extends FilterOutputStream {
      * @param      len   the number of bytes to write.
      * @exception  IOException  if an I/O error occurs.
      */
+    @Override
     public synchronized void write(byte b[], int off, int len) throws IOException {
         if (len >= buf.length) {
             /* If the request length exceeds the size of the output buffer,
@@ -136,6 +137,7 @@ class BufferedOutputStream extends FilterOutputStream {
      * @exception  IOException  if an I/O error occurs.
      * @see        java.io.FilterOutputStream#out
      */
+    @Override
     public synchronized void flush() throws IOException {
         flushBuffer();
         out.flush();

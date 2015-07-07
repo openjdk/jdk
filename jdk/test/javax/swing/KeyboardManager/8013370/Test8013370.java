@@ -32,7 +32,6 @@ import javax.swing.JFrame;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.KeyStroke;
-import sun.awt.SunToolkit;
 
 import static java.awt.event.InputEvent.CTRL_DOWN_MASK;
 import static javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW;

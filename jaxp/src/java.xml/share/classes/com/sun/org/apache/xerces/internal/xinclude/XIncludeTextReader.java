@@ -140,7 +140,7 @@ public class XIncludeTextReader {
                     // set preference for redirection
                     boolean followRedirects = httpInputSource.getFollowHTTPRedirects();
                     if (!followRedirects) {
-                        XMLEntityManager.setInstanceFollowRedirects(urlConnection, followRedirects);
+                        urlConnection.setInstanceFollowRedirects(followRedirects);
                     }
                 }
 

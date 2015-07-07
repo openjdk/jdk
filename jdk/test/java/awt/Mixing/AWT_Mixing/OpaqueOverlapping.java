@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,8 @@ import test.java.awt.regtesthelpers.Util;
 @bug 6776743
 @summary Opaque overlapping test for each AWT component
 @library ../../regtesthelpers
+@modules java.desktop/com.sun.awt
+         java.desktop/sun.awt
 @build Util
 @run main OpaqueOverlapping
  */

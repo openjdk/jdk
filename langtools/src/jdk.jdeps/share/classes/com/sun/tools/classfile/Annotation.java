@@ -131,6 +131,11 @@ public class Annotation {
             const_value_index = cr.readUnsignedShort();
         }
 
+        public Primitive_element_value(int const_value_index, int tag) {
+            super(tag);
+            this.const_value_index = const_value_index;
+        }
+
         @Override
         public int length() {
             return 2;
@@ -149,6 +154,12 @@ public class Annotation {
             super(tag);
             type_name_index = cr.readUnsignedShort();
             const_name_index = cr.readUnsignedShort();
+        }
+
+        public Enum_element_value(int type_name_index, int const_name_index, int tag) {
+            super(tag);
+            this.type_name_index = type_name_index;
+            this.const_name_index = const_name_index;
         }
 
         @Override
@@ -170,6 +181,11 @@ public class Annotation {
             class_info_index = cr.readUnsignedShort();
         }
 
+        public Class_element_value(int class_info_index, int tag) {
+            super(tag);
+            this.class_info_index = class_info_index;
+        }
+
         @Override
         public int length() {
             return 2;
@@ -187,6 +203,11 @@ public class Annotation {
                 throws IOException, InvalidAnnotation {
             super(tag);
             annotation_value = new Annotation(cr);
+        }
+
+        public Annotation_element_value(Annotation annotation_value, int tag) {
+            super(tag);
+            this.annotation_value = annotation_value;
         }
 
         @Override
@@ -211,6 +232,12 @@ public class Annotation {
                 values[i] = element_value.read(cr);
         }
 
+        public Array_element_value(element_value[] values, int tag) {
+            super(tag);
+            this.num_values = values.length;
+            this.values = values;
+        }
+
         @Override
         public int length() {
             int n = 2;
@@ -232,6 +259,11 @@ public class Annotation {
                 throws IOException, InvalidAnnotation {
             element_name_index = cr.readUnsignedShort();
             value = element_value.read(cr);
+        }
+
+        public element_value_pair(int element_name_index, element_value value) {
+            this.element_name_index = element_name_index;
+            this.value = value;
         }
 
         public int length() {

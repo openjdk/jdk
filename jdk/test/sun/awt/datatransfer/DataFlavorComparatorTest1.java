@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
    @summary "Comparison method violates its general contract" when using Clipboard
             Ensure that DataFlavorComparator conforms to Comparator contract
    @author Anton Nashatyrev
+   @modules java.datatransfer/sun.datatransfer
    @run main DataFlavorComparatorTest1
 */
 import sun.datatransfer.DataFlavorUtil;

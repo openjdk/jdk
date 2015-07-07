@@ -376,8 +376,8 @@ public enum JSType {
     }
 
     /**
-     * Returns true if double number can be represented as an int. Note that it returns true for negative zero. If you
-     * need to exclude negative zero, combine this check with {@link #isNegativeZero(double)}.
+     * Returns true if double number can be represented as an int. Note that it returns true for negative
+     * zero. If you need to exclude negative zero, use {@link #isStrictlyRepresentableAsInt(double)}.
      *
      * @param number a double to inspect
      *
@@ -385,6 +385,18 @@ public enum JSType {
      */
     public static boolean isRepresentableAsInt(final double number) {
         return (int)number == number;
+    }
+
+    /**
+     * Returns true if double number can be represented as an int. Note that it returns false for negative
+     * zero. If you don't need to distinguish negative zero, use {@link #isRepresentableAsInt(double)}.
+     *
+     * @param number a double to inspect
+     *
+     * @return true for int representable doubles
+     */
+    public static boolean isStrictlyRepresentableAsInt(final double number) {
+        return isRepresentableAsInt(number) && isNotNegativeZero(number);
     }
 
     /**
@@ -402,14 +414,26 @@ public enum JSType {
     }
 
     /**
-     * Returns true if double number can be represented as a long. Note that it returns true for negative zero. If you
-     * need to exclude negative zero, combine this check with {@link #isNegativeZero(double)}.
+     * Returns true if double number can be represented as a long. Note that it returns true for negative
+     * zero. If you need to exclude negative zero, use {@link #isStrictlyRepresentableAsLong(double)}.
      *
      * @param number a double to inspect
      * @return true for long representable doubles
      */
     public static boolean isRepresentableAsLong(final double number) {
         return (long)number == number;
+    }
+
+    /**
+     * Returns true if double number can be represented as a long. Note that it returns false for negative
+     * zero. If you don't need to distinguish negative zero, use {@link #isRepresentableAsLong(double)}.
+     *
+     * @param number a double to inspect
+     *
+     * @return true for long representable doubles
+     */
+    public static boolean isStrictlyRepresentableAsLong(final double number) {
+        return isRepresentableAsLong(number) && isNotNegativeZero(number);
     }
 
     /**
@@ -427,12 +451,12 @@ public enum JSType {
     }
 
     /**
-     * Returns true if the number is the negative zero ({@code -0.0d}).
+     * Returns true if the number is not the negative zero ({@code -0.0d}).
      * @param number the number to test
-     * @return true if it is the negative zero, false otherwise.
+     * @return true if it is not the negative zero, false otherwise.
      */
-    public static boolean isNegativeZero(final double number) {
-        return number == 0.0d && Double.doubleToRawLongBits(number) == 0x8000000000000000L;
+    private static boolean isNotNegativeZero(final double number) {
+        return Double.doubleToRawLongBits(number) != 0x8000000000000000L;
     }
 
     /**
