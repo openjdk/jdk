@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2014 SAP AG. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -225,7 +225,7 @@ inline BasicObjectLock* frame::interpreter_frame_monitor_begin() const {
   return (BasicObjectLock *) get_ijava_state();
 }
 
-// SAPJVM ASc 2012-11-21. Return register stack slot addr at which currently interpreted method is found
+// Return register stack slot addr at which currently interpreted method is found.
 inline Method** frame::interpreter_frame_method_addr() const {
   return (Method**) &(get_ijava_state()->method);
 }

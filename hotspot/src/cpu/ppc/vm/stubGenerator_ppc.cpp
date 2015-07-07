@@ -2053,6 +2053,79 @@ class StubGenerator: public StubCodeGenerator {
     __ blr();
   }
 
+  // Stub for BigInteger::multiplyToLen()
+  //
+  //  Arguments:
+  //
+  //  Input:
+  //    R3 - x address
+  //    R4 - x length
+  //    R5 - y address
+  //    R6 - y length
+  //    R7 - z address
+  //    R8 - z length
+  //
+  address generate_multiplyToLen() {
+
+    StubCodeMark mark(this, "StubRoutines", "multiplyToLen");
+
+    address start = __ function_entry();
+
+    const Register x     = R3;
+    const Register xlen  = R4;
+    const Register y     = R5;
+    const Register ylen  = R6;
+    const Register z     = R7;
+    const Register zlen  = R8;
+
+    const Register tmp1  = R2; // TOC not used.
+    const Register tmp2  = R9;
+    const Register tmp3  = R10;
+    const Register tmp4  = R11;
+    const Register tmp5  = R12;
+
+    // non-volatile regs
+    const Register tmp6  = R31;
+    const Register tmp7  = R30;
+    const Register tmp8  = R29;
+    const Register tmp9  = R28;
+    const Register tmp10 = R27;
+    const Register tmp11 = R26;
+    const Register tmp12 = R25;
+    const Register tmp13 = R24;
+
+    BLOCK_COMMENT("Entry:");
+
+    // Save non-volatile regs (frameless).
+    int current_offs = 8;
+    __ std(R24, -current_offs, R1_SP); current_offs += 8;
+    __ std(R25, -current_offs, R1_SP); current_offs += 8;
+    __ std(R26, -current_offs, R1_SP); current_offs += 8;
+    __ std(R27, -current_offs, R1_SP); current_offs += 8;
+    __ std(R28, -current_offs, R1_SP); current_offs += 8;
+    __ std(R29, -current_offs, R1_SP); current_offs += 8;
+    __ std(R30, -current_offs, R1_SP); current_offs += 8;
+    __ std(R31, -current_offs, R1_SP);
+
+    __ multiply_to_len(x, xlen, y, ylen, z, zlen, tmp1, tmp2, tmp3, tmp4, tmp5,
+                       tmp6, tmp7, tmp8, tmp9, tmp10, tmp11, tmp12, tmp13);
+
+    // Restore non-volatile regs.
+    current_offs = 8;
+    __ ld(R24, -current_offs, R1_SP); current_offs += 8;
+    __ ld(R25, -current_offs, R1_SP); current_offs += 8;
+    __ ld(R26, -current_offs, R1_SP); current_offs += 8;
+    __ ld(R27, -current_offs, R1_SP); current_offs += 8;
+    __ ld(R28, -current_offs, R1_SP); current_offs += 8;
+    __ ld(R29, -current_offs, R1_SP); current_offs += 8;
+    __ ld(R30, -current_offs, R1_SP); current_offs += 8;
+    __ ld(R31, -current_offs, R1_SP);
+
+    __ blr();  // Return to caller.
+
+    return start;
+  }
+
   // Initialization
   void generate_initial() {
     // Generates all stubs and initializes the entry points
@@ -2102,6 +2175,12 @@ class StubGenerator: public StubCodeGenerator {
     generate_safefetch("SafeFetchN", sizeof(intptr_t), &StubRoutines::_safefetchN_entry,
                                                        &StubRoutines::_safefetchN_fault_pc,
                                                        &StubRoutines::_safefetchN_continuation_pc);
+
+#ifdef COMPILER2
+    if (UseMultiplyToLenIntrinsic) {
+      StubRoutines::_multiplyToLen = generate_multiplyToLen();
+    }
+#endif
   }
 
  public:

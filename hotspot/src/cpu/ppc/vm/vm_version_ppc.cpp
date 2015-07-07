@@ -198,6 +198,10 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
   }
 
+  if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
+    UseMultiplyToLenIntrinsic = true;
+  }
+
   // Adjust RTM (Restricted Transactional Memory) flags.
   if (!has_tcheck() && UseRTMLocking) {
     // Can't continue because UseRTMLocking affects UseBiasedLocking flag
@@ -228,7 +232,6 @@ void VM_Version::initialize() {
       warning("RTMAbortRatio must be in the range 0 to 100, resetting it to 50");
       FLAG_SET_DEFAULT(RTMAbortRatio, 50);
     }
-    FLAG_SET_ERGO(bool, UseNewFastLockPPC64, false); // Does not implement TM.
     guarantee(RTMSpinLoopCount > 0, "unsupported");
 #else
     // Only C2 does RTM locking optimization.
