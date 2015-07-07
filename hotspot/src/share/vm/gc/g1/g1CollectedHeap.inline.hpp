@@ -49,7 +49,7 @@ PLABStats* G1CollectedHeap::alloc_buffer_stats(InCSetState dest) {
 }
 
 size_t G1CollectedHeap::desired_plab_sz(InCSetState dest) {
-  size_t gclab_word_size = alloc_buffer_stats(dest)->desired_plab_sz();
+  size_t gclab_word_size = alloc_buffer_stats(dest)->desired_plab_sz(G1CollectedHeap::heap()->workers()->active_workers());
   // Prevent humongous PLAB sizes for two reasons:
   // * PLABs are allocated using a similar paths as oops, but should
   //   never be in a humongous region
