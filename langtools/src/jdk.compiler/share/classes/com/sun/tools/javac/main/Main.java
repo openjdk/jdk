@@ -41,6 +41,7 @@ import com.sun.tools.javac.api.BasicJavacTask;
 import com.sun.tools.javac.file.CacheFSInfo;
 import com.sun.tools.javac.file.BaseFileManager;
 import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.platform.PlatformDescription;
 import com.sun.tools.javac.processing.AnnotationProcessingError;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.Log.PrefixKind;
@@ -229,7 +230,7 @@ public class Main {
 
         // init plugins
         Set<List<String>> pluginOpts = args.getPluginOpts();
-        if (!pluginOpts.isEmpty()) {
+        if (!pluginOpts.isEmpty() || context.get(PlatformDescription.class) != null) {
             BasicJavacTask t = (BasicJavacTask) BasicJavacTask.instance(context);
             t.initPlugins(pluginOpts);
         }

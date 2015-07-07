@@ -42,7 +42,7 @@ public class MailcapTokenizer {
     /**
      *  Constructor
      *
-     *  @parameter  inputString the string to tokenize
+     *  @param  inputString the string to tokenize
      */
     public MailcapTokenizer(String inputString) {
         data = inputString;
@@ -73,7 +73,7 @@ public class MailcapTokenizer {
     /**
      *  Retrieve current token.
      *
-     *  @returns    The current token value
+     *  @return    The current token value
      */
     public int getCurrentToken() {
         return currentToken;
@@ -115,7 +115,7 @@ public class MailcapTokenizer {
     /*
      *  Retrieve current token value.
      *
-     *  @returns    A String containing the current token value
+     *  @return    A String containing the current token value
      */
     public String getCurrentTokenValue() {
         return currentTokenValue;
@@ -123,7 +123,7 @@ public class MailcapTokenizer {
     /*
      *  Process the next token.
      *
-     *  @returns    the next token
+     *  @return    the next token
      */
     public int nextToken() {
         if (dataIndex < dataLength) {

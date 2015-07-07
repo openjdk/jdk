@@ -638,7 +638,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
                         // set preference for redirection
                         followRedirects = httpInputSource.getFollowHTTPRedirects();
                         if (!followRedirects) {
-                            setInstanceFollowRedirects(urlConnection, followRedirects);
+                            urlConnection.setInstanceFollowRedirects(followRedirects);
                         }
                     }
 
@@ -2191,20 +2191,6 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
         // if any exception is thrown, it'll get thrown to the caller.
 
     } // expandSystemIdStrictOn(String,String):String
-
-    /**
-     * Attempt to set whether redirects will be followed for an <code>HttpURLConnection</code>.
-     * This may fail on earlier JDKs which do not support setting this preference.
-     */
-    public static void setInstanceFollowRedirects(HttpURLConnection urlCon, boolean followRedirects) {
-        try {
-            Method method = HttpURLConnection.class.getMethod("setInstanceFollowRedirects", new Class[] {Boolean.TYPE});
-            method.invoke(urlCon, new Object[] {followRedirects ? Boolean.TRUE : Boolean.FALSE});
-        }
-        // setInstanceFollowRedirects doesn't exist.
-        catch (Exception exc) {}
-    }
-
 
     /**
      * Helper method for expandSystemId(String,String,boolean):String

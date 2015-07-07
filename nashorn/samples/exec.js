@@ -39,9 +39,10 @@ $EXEC("ls -la")
 $EXEC("cat", "Hello, world!")
 
 // Additional arguments can be passed after the stdin argument, as an array of
-// strings, or a sequence of varargs:
-$EXEC("ls", "" /* no stdin */, "-l", "-a")
-$EXEC("ls", "" /* no stdin */, ["-l", "-a"])
+// strings, or a sequence of varargs (if there is no stdin, null or undefined
+// can be passed):
+$EXEC("ls", undefined, "-l", "-a")
+$EXEC("ls", undefined, ["-l", "-a"])
 
 // Output of running external commands is returned from $EXEC:
 print($EXEC("ls"))

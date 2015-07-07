@@ -24,9 +24,6 @@
 /*
  * @test
  * @bug 8001326
- * @modules java.security.jgss/sun.security.krb5
- *          java.security.jgss/sun.security.krb5.internal
- *          java.security.jgss/sun.security.krb5.internal.rcache
  * @run main/othervm ReplayCachePrecise
  * @summary when there are 2 two AuthTime with the same time but different hash,
  * it's not a replay.

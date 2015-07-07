@@ -515,8 +515,12 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
                 + s.length());
         int len = end - start;
         ensureCapacityInternal(count + len);
-        for (int i = start, j = count; i < end; i++, j++)
-            value[j] = s.charAt(i);
+        if (s instanceof String) {
+            ((String)s).getChars(start, end, value, count);
+        } else {
+            for (int i = start, j = count; i < end; i++, j++)
+                value[j] = s.charAt(i);
+        }
         count += len;
         return this;
     }

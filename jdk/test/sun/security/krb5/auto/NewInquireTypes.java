@@ -25,14 +25,6 @@
  * @test
  * @bug 8043071
  * @summary Expose session key and KRB_CRED through extended GSS-API
- * @modules java.base/sun.net.spi.nameservice
- *          java.base/sun.security.util
- *          java.security.jgss/sun.security.jgss
- *          java.security.jgss/sun.security.krb5
- *          java.security.jgss/sun.security.krb5.internal
- *          java.security.jgss/sun.security.krb5.internal.ccache
- *          java.security.jgss/sun.security.krb5.internal.crypto
- *          java.security.jgss/sun.security.krb5.internal.ktab
  * @compile -XDignore.symbol.file NewInquireTypes.java
  * @run main/othervm NewInquireTypes
  */

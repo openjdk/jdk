@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,14 @@
 
 package java.net;
 
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.NoSuchElementException;
-import sun.security.action.*;
 import java.security.AccessController;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * This class represents a Network Interface made up of a name,
@@ -95,8 +99,8 @@ public final class NetworkInterface {
     }
 
     /**
-     * Convenience method to return an Enumeration with all or a
-     * subset of the InetAddresses bound to this network interface.
+     * Get an Enumeration with all or a subset of the InetAddresses bound to
+     * this network interface.
      * <p>
      * If there is a security manager, its {@code checkConnect}
      * method is called for each InetAddress. Only InetAddresses where
@@ -104,53 +108,56 @@ public final class NetworkInterface {
      * will be returned in the Enumeration. However, if the caller has the
      * {@link NetPermission}("getNetworkInformation") permission, then all
      * InetAddresses are returned.
+     *
      * @return an Enumeration object with all or a subset of the InetAddresses
      * bound to this network interface
+     * @see #inetAddresses()
      */
     public Enumeration<InetAddress> getInetAddresses() {
+        return enumerationFromArray(getCheckedInetAddresses());
+    }
 
-        class checkedAddresses implements Enumeration<InetAddress> {
+    /**
+     * Get a Stream of all or a subset of the InetAddresses bound to this
+     * network interface.
+     * <p>
+     * If there is a security manager, its {@code checkConnect}
+     * method is called for each InetAddress. Only InetAddresses where
+     * the {@code checkConnect} doesn't throw a SecurityException will be
+     * returned in the Stream. However, if the caller has the
+     * {@link NetPermission}("getNetworkInformation") permission, then all
+     * InetAddresses are returned.
+     *
+     * @return a Stream object with all or a subset of the InetAddresses
+     * bound to this network interface
+     * @since 1.9
+     */
+    public Stream<InetAddress> inetAddresses() {
+        return streamFromArray(getCheckedInetAddresses());
+    }
 
-            private int i=0, count=0;
-            private InetAddress local_addrs[];
+    private InetAddress[] getCheckedInetAddresses() {
+        InetAddress[] local_addrs = new InetAddress[addrs.length];
+        boolean trusted = true;
 
-            checkedAddresses() {
-                local_addrs = new InetAddress[addrs.length];
-                boolean trusted = true;
-
-                SecurityManager sec = System.getSecurityManager();
-                if (sec != null) {
-                    try {
-                        sec.checkPermission(new NetPermission("getNetworkInformation"));
-                    } catch (SecurityException e) {
-                        trusted = false;
-                    }
-                }
-                for (int j=0; j<addrs.length; j++) {
-                    try {
-                        if (sec != null && !trusted) {
-                            sec.checkConnect(addrs[j].getHostAddress(), -1);
-                        }
-                        local_addrs[count++] = addrs[j];
-                    } catch (SecurityException e) { }
-                }
-
-            }
-
-            public InetAddress nextElement() {
-                if (i < count) {
-                    return local_addrs[i++];
-                } else {
-                    throw new NoSuchElementException();
-                }
-            }
-
-            public boolean hasMoreElements() {
-                return (i < count);
+        SecurityManager sec = System.getSecurityManager();
+        if (sec != null) {
+            try {
+                sec.checkPermission(new NetPermission("getNetworkInformation"));
+            } catch (SecurityException e) {
+                trusted = false;
             }
         }
-        return new checkedAddresses();
-
+        int i = 0;
+        for (int j = 0; j < addrs.length; j++) {
+            try {
+                if (!trusted) {
+                    sec.checkConnect(addrs[j].getHostAddress(), -1);
+                }
+                local_addrs[i++] = addrs[j];
+            } catch (SecurityException e) { }
+        }
+        return Arrays.copyOf(local_addrs, i);
     }
 
     /**
@@ -188,30 +195,23 @@ public final class NetworkInterface {
      *
      * @return an Enumeration object with all of the subinterfaces
      * of this network interface
+     * @see #subInterfaces()
      * @since 1.6
      */
     public Enumeration<NetworkInterface> getSubInterfaces() {
-        class subIFs implements Enumeration<NetworkInterface> {
+        return enumerationFromArray(childs);
+    }
 
-            private int i=0;
-
-            subIFs() {
-            }
-
-            public NetworkInterface nextElement() {
-                if (i < childs.length) {
-                    return childs[i++];
-                } else {
-                    throw new NoSuchElementException();
-                }
-            }
-
-            public boolean hasMoreElements() {
-                return (i < childs.length);
-            }
-        }
-        return new subIFs();
-
+    /**
+     * Get a Stream of all subinterfaces (also known as virtual
+     * interfaces) attached to this network interface.
+     *
+     * @return a Stream object with all of the subinterfaces
+     * of this network interface
+     * @since 1.9
+     */
+    public Stream<NetworkInterface> subInterfaces() {
+        return streamFromArray(childs);
     }
 
     /**
@@ -326,41 +326,78 @@ public final class NetworkInterface {
     }
 
     /**
-     * Returns all the interfaces on this machine. The {@code Enumeration}
-     * contains at least one element, possibly representing a loopback
-     * interface that only supports communication between entities on
+     * Returns an {@code Enumeration} of all the interfaces on this machine. The
+     * {@code Enumeration} contains at least one element, possibly representing
+     * a loopback interface that only supports communication between entities on
      * this machine.
      *
-     * NOTE: can use getNetworkInterfaces()+getInetAddresses()
-     *       to obtain all IP addresses for this node
+     * @apiNote this method can be used in combination with
+     * {@link #getInetAddresses()} to obtain all IP addresses for this node
      *
      * @return an Enumeration of NetworkInterfaces found on this machine
      * @exception  SocketException  if an I/O error occurs.
+     * @see #networkInterfaces()
      */
-
     public static Enumeration<NetworkInterface> getNetworkInterfaces()
         throws SocketException {
-        final NetworkInterface[] netifs = getAll();
+        NetworkInterface[] netifs = getAll();
+        assert netifs != null && netifs.length > 0;
 
-        // specified to return null if no network interfaces
-        if (netifs == null)
-            return null;
+        return enumerationFromArray(netifs);
+    }
 
+    /**
+     * Returns a {@code Stream} of all the interfaces on this machine.  The
+     * {@code Stream} contains at least one interface, possibly representing a
+     * loopback interface that only supports communication between entities on
+     * this machine.
+     *
+     * @apiNote this method can be used in combination with
+     * {@link #inetAddresses()}} to obtain a stream of all IP addresses for
+     * this node, for example:
+     * <pre> {@code
+     * Stream<InetAddress> addrs = NetworkInterface.networkInterfaces()
+     *     .flatMap(NetworkInterface::inetAddresses);
+     * }</pre>
+     *
+     * @return a Stream of NetworkInterfaces found on this machine
+     * @exception  SocketException  if an I/O error occurs.
+     * @since 1.9
+     */
+    public static Stream<NetworkInterface> networkInterfaces()
+        throws SocketException {
+        NetworkInterface[] netifs = getAll();
+        assert netifs != null && netifs.length > 0;
+
+        return streamFromArray(netifs);
+    }
+
+    private static <T> Enumeration<T> enumerationFromArray(T[] a) {
         return new Enumeration<>() {
-            private int i = 0;
-            public NetworkInterface nextElement() {
-                if (netifs != null && i < netifs.length) {
-                    NetworkInterface netif = netifs[i++];
-                    return netif;
+            int i = 0;
+
+            @Override
+            public T nextElement() {
+                if (i < a.length) {
+                    return a[i++];
                 } else {
                     throw new NoSuchElementException();
                 }
             }
 
+            @Override
             public boolean hasMoreElements() {
-                return (netifs != null && i < netifs.length);
+                return i < a.length;
             }
         };
+    }
+
+    private static <T> Stream<T> streamFromArray(T[] a) {
+        return StreamSupport.stream(
+                Spliterators.spliterator(
+                        a,
+                        Spliterator.DISTINCT | Spliterator.IMMUTABLE | Spliterator.NONNULL),
+                false);
     }
 
     private native static NetworkInterface[] getAll()

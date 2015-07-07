@@ -754,7 +754,7 @@ public class ToolBox {
                 try {
                     String line;
                     while ((line = in.readLine()) != null) {
-                        out.append(line).append("\n");
+                        out.append(line).append(lineSeparator);
                     }
                 } catch (IOException e) {
                 }

@@ -4364,7 +4364,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1434614912
+DATE_WHEN_GENERATED=1435822080
 
 ###############################################################################
 #
@@ -42961,7 +42961,7 @@ $as_echo "$as_me: WARNING: X11 is not used, so --with-x is ignored" >&2;}
         if test "x$x_libraries" = xNONE; then
           if test -f "$SYSROOT/usr/X11R6/lib/libX11.so"; then
             x_libraries="$SYSROOT/usr/X11R6/lib"
-          elif test "$SYSROOT/usr/lib64/libX11.so" && test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+          elif test -f "$SYSROOT/usr/lib64/libX11.so" && test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
             x_libraries="$SYSROOT/usr/lib64"
           elif test -f "$SYSROOT/usr/lib/libX11.so"; then
             x_libraries="$SYSROOT/usr/lib"
