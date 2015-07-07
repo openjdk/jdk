@@ -379,6 +379,26 @@ implements XMLDTDScanner, XMLComponent, XMLEntityHandler {
 
     } // scanDTDInternalSubset(boolean,boolean,boolean):boolean
 
+    /**
+     * Skip the DTD if javax.xml.stream.supportDTD is false.
+     *
+     * @param supportDTD The value of the property javax.xml.stream.supportDTD.
+     * @return true if DTD is skipped, false otherwise.
+     * @throws java.io.IOException if i/o error occurs
+     */
+    @Override
+    public boolean skipDTD(boolean supportDTD) throws IOException {
+        if (!supportDTD) {
+            fStringBuffer.clear();
+            if (!fEntityScanner.scanData("]", fStringBuffer)) {
+                fEntityScanner.fCurrentEntity.position--;
+            }
+
+            return true;
+        }
+        return false;
+    }
+
     //
     // XMLComponent methods
     //
