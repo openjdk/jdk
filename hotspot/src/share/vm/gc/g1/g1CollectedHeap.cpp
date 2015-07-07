@@ -4273,7 +4273,7 @@ void G1CollectedHeap::finalize_for_evac_failure() {
 void G1CollectedHeap::remove_self_forwarding_pointers() {
   double remove_self_forwards_start = os::elapsedTime();
 
-  G1ParRemoveSelfForwardPtrsTask rsfp_task(this);
+  G1ParRemoveSelfForwardPtrsTask rsfp_task;
   workers()->run_task(&rsfp_task);
 
   // Now restore saved marks, if any.
