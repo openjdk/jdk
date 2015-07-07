@@ -23,12 +23,14 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/stringTable.hpp"
 #include "gc/g1/g1Log.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/g1StringDedupQueue.hpp"
 #include "gc/g1/g1StringDedupTable.hpp"
 #include "gc/g1/g1StringDedupThread.hpp"
 #include "gc/g1/suspendibleThreadSet.hpp"
+#include "oops/oop.inline.hpp"
 #include "runtime/atomic.inline.hpp"
 
 G1StringDedupThread* G1StringDedupThread::_thread = NULL;
@@ -55,11 +57,36 @@ G1StringDedupThread* G1StringDedupThread::thread() {
   return _thread;
 }
 
+class G1StringDedupSharedClosure: public OopClosure {
+ private:
+  G1StringDedupStat& _stat;
+
+ public:
+  G1StringDedupSharedClosure(G1StringDedupStat& stat) : _stat(stat) {}
+
+  virtual void do_oop(oop* p) { ShouldNotReachHere(); }
+  virtual void do_oop(narrowOop* p) {
+    oop java_string = oopDesc::load_decode_heap_oop(p);
+    G1StringDedupTable::deduplicate(java_string, _stat);
+  }
+};
+
+// The CDS archive does not include the string dedupication table. Only the string
+// table is saved in the archive. The shared strings from CDS archive need to be
+// added to the string dedupication table before deduplication occurs. That is
+// done in the begining of the G1StringDedupThread (see G1StringDedupThread::run()
+// below).
+void G1StringDedupThread::deduplicate_shared_strings(G1StringDedupStat& stat) {
+  G1StringDedupSharedClosure sharedStringDedup(stat);
+  StringTable::shared_oops_do(&sharedStringDedup);
+}
+
 void G1StringDedupThread::run() {
   G1StringDedupStat total_stat;
 
   initialize_in_thread();
   wait_for_universe_init();
+  deduplicate_shared_strings(total_stat);
 
   // Main loop
   for (;;) {

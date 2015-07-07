@@ -3803,6 +3803,11 @@ void GraphKit::write_barrier_post(Node* oop_store,
   Node*   zero = __ ConI(0); // Dirty card value
   BasicType bt = T_BYTE;
 
+  if (UseConcMarkSweepGC && UseCondCardMark) {
+    insert_mem_bar(Op_MemBarVolatile);   // StoreLoad barrier
+    __ sync_kit(this);
+  }
+
   if (UseCondCardMark) {
     // The classic GC reference write barrier is typically implemented
     // as a store into the global card mark table.  Unfortunately

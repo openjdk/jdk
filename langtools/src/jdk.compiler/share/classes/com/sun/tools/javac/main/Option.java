@@ -32,7 +32,11 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import javax.lang.model.SourceVersion;
 
@@ -43,12 +47,14 @@ import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.jvm.Profile;
 import com.sun.tools.javac.jvm.Target;
+import com.sun.tools.javac.platform.PlatformProvider;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Log.PrefixKind;
 import com.sun.tools.javac.util.Log.WriterKind;
 import com.sun.tools.javac.util.Options;
 import com.sun.tools.javac.util.StringUtils;
+
 import static com.sun.tools.javac.main.Option.ChoiceKind.*;
 import static com.sun.tools.javac.main.Option.OptionGroup.*;
 import static com.sun.tools.javac.main.Option.OptionKind.*;
@@ -261,6 +267,35 @@ public enum Option {
                 return true;
             }
             return super.process(helper, option, operand);
+        }
+    },
+
+    RELEASE("-release", "opt.arg.release", "opt.release", STANDARD, BASIC) {
+        @Override
+        void help(Log log, OptionKind kind) {
+            if (this.kind != kind)
+                return;
+
+            Iterable<PlatformProvider> providers =
+                    ServiceLoader.load(PlatformProvider.class, Arguments.class.getClassLoader());
+            Set<String> platforms = StreamSupport.stream(providers.spliterator(), false)
+                                                 .flatMap(provider -> StreamSupport.stream(provider.getSupportedPlatformNames()
+                                                                                                   .spliterator(),
+                                                                                           false))
+                                                 .collect(Collectors.toCollection(TreeSet :: new));
+
+            StringBuilder targets = new StringBuilder();
+            String delim = "";
+            for (String platform : platforms) {
+                targets.append(delim);
+                targets.append(platform);
+                delim = ", ";
+            }
+
+            log.printRawLines(WriterKind.NOTICE,
+                    String.format(HELP_LINE_FORMAT,
+                        super.helpSynopsis(log),
+                        log.localize(PrefixKind.JAVAC, descrKey, targets.toString())));
         }
     },
 

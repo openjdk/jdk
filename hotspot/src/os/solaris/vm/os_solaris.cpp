@@ -1627,7 +1627,8 @@ typedef int (*dladdr1_func_type)(void *, Dl_info *, void **, int);
 static dladdr1_func_type dladdr1_func = NULL;
 
 bool os::dll_address_to_function_name(address addr, char *buf,
-                                      int buflen, int * offset) {
+                                      int buflen, int * offset,
+                                      bool demangle) {
   // buf is not optional, but offset is optional
   assert(buf != NULL, "sanity check");
 
@@ -1655,7 +1656,7 @@ bool os::dll_address_to_function_name(address addr, char *buf,
       if (dlinfo.dli_saddr != NULL &&
           (char *)dlinfo.dli_saddr + info->st_size > (char *)addr) {
         if (dlinfo.dli_sname != NULL) {
-          if (!Decoder::demangle(dlinfo.dli_sname, buf, buflen)) {
+          if (!(demangle && Decoder::demangle(dlinfo.dli_sname, buf, buflen))) {
             jio_snprintf(buf, buflen, "%s", dlinfo.dli_sname);
           }
           if (offset != NULL) *offset = addr - (address)dlinfo.dli_saddr;
@@ -1665,7 +1666,7 @@ bool os::dll_address_to_function_name(address addr, char *buf,
       // no matching symbol so try for just file info
       if (dlinfo.dli_fname != NULL && dlinfo.dli_fbase != NULL) {
         if (Decoder::decode((address)(addr - (address)dlinfo.dli_fbase),
-                            buf, buflen, offset, dlinfo.dli_fname)) {
+                            buf, buflen, offset, dlinfo.dli_fname, demangle)) {
           return true;
         }
       }
@@ -1679,7 +1680,7 @@ bool os::dll_address_to_function_name(address addr, char *buf,
   if (dladdr((void *)addr, &dlinfo) != 0) {
     // see if we have a matching symbol
     if (dlinfo.dli_saddr != NULL && dlinfo.dli_sname != NULL) {
-      if (!Decoder::demangle(dlinfo.dli_sname, buf, buflen)) {
+      if (!(demangle && Decoder::demangle(dlinfo.dli_sname, buf, buflen))) {
         jio_snprintf(buf, buflen, dlinfo.dli_sname);
       }
       if (offset != NULL) *offset = addr - (address)dlinfo.dli_saddr;
@@ -1688,7 +1689,7 @@ bool os::dll_address_to_function_name(address addr, char *buf,
     // no matching symbol so try for just file info
     if (dlinfo.dli_fname != NULL && dlinfo.dli_fbase != NULL) {
       if (Decoder::decode((address)(addr - (address)dlinfo.dli_fbase),
-                          buf, buflen, offset, dlinfo.dli_fname)) {
+                          buf, buflen, offset, dlinfo.dli_fname, demangle)) {
         return true;
       }
     }
@@ -1996,7 +1997,7 @@ static bool check_addr0(outputStream* st) {
   return status;
 }
 
-void os::pd_print_cpu_info(outputStream* st) {
+void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   // Nothing to do for now.
 }
 

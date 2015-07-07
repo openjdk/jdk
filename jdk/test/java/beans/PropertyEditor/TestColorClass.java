@@ -26,6 +26,7 @@
  * @bug 4506596 6258510
  * @summary Tests PropertyEditor for value of type Color with security manager
  * @author Sergey Malenkov
+ * @key headful
  * @modules java.compiler
  *          java.desktop
  *          jdk.compiler

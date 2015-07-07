@@ -755,6 +755,17 @@ DependOnVariable = \
     $(call DependOnVariableHelper,$(strip $1),$(strip $2))
 
 ################################################################################
+# Find lib dir for module
+# Param 1 - module name
+ifeq ($(OPENJDK_TARGET_OS_TYPE), unix)
+  FindLibDirForModule = \
+      $(SUPPORT_OUTPUTDIR)/modules_libs/$(strip $1)$(OPENJDK_TARGET_CPU_LIBDIR)
+else
+  FindLibDirForModule = \
+      $(SUPPORT_OUTPUTDIR)/modules_libs/$(strip $1)
+endif
+
+################################################################################
 
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, , common/MakeBase.gmk))

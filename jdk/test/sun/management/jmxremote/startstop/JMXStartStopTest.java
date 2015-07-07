@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -36,7 +37,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -45,6 +45,7 @@ import javax.management.remote.*;
 import javax.net.ssl.SSLHandshakeException;
 
 import jdk.testlibrary.ProcessTools;
+import jdk.testlibrary.Utils;
 import sun.management.Agent;
 import sun.management.AgentConfigurationError;
 
@@ -155,7 +156,28 @@ public class JMXStartStopTest {
     }
 
     private static void testConnect(int port, int rmiPort) throws Exception {
+        EOFException lastException = null;
+        // factor adjusted timeout (5 seconds) for the RMI to become available
+        long timeout = System.currentTimeMillis() + Utils.adjustTimeout(5000);
+        do {
+            try {
+                doTestConnect(port, rmiPort);
+                lastException = null;
+            } catch (EOFException e) {
+                lastException = e;
+                System.out.println("Error establishing RMI connection. Retrying in 500ms.");
+                Thread.sleep(500);
+            }
+        } while (lastException != null && System.currentTimeMillis() < timeout);
 
+        if (lastException != null) {
+            // didn't manage to get the RMI running in time
+            // rethrow the exception
+            throw lastException;
+        }
+    }
+
+    private static void doTestConnect(int port, int rmiPort) throws Exception {
         dbg_print("RmiRegistry lookup...");
 
         dbg_print("Using port: " + port);

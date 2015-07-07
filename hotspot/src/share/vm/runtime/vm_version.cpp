@@ -280,7 +280,8 @@ void VM_Version_init() {
 
 #ifndef PRODUCT
   if (PrintMiscellaneous && Verbose) {
-    os::print_cpu_info(tty);
+    char buf[512];
+    os::print_cpu_info(tty, buf, sizeof(buf));
   }
 #endif
 }

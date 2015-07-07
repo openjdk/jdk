@@ -24,8 +24,6 @@
 /*
  * @test
  * @bug 8001326
- * @modules java.security.jgss/sun.security.krb5.internal
- *          java.security.jgss/sun.security.krb5.internal.rcache
  * @run main/othervm ReplayCacheExpunge 16
  * @run main/othervm/fail ReplayCacheExpunge 15
  * @summary when number of expired entries minus number of good entries

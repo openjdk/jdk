@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,6 @@
 #define OS_LINUX_VM_OS_LINUX_HPP
 
 // Linux_OS defines the interface to Linux operating systems
-
-// pthread_getattr_np comes with LinuxThreads-0.9-7 on RedHat 7.1
-typedef int (*pthread_getattr_func_type)(pthread_t, pthread_attr_t *);
 
 // Information about the protection of the page at address '0' on this os.
 static bool zero_page_read_protected() { return true; }
@@ -63,8 +60,6 @@ class Linux {
   static const char *_glibc_version;
   static const char *_libpthread_version;
 
-  static bool _is_floating_stack;
-  static bool _is_NPTL;
   static bool _supports_fast_thread_cpu_time;
 
   static GrowableArray<int>* _cpu_to_node;
@@ -89,10 +84,6 @@ class Linux {
   static void set_libpthread_version(const char *s) { _libpthread_version = s; }
 
   static bool supports_variable_stack_size();
-
-  static void set_is_NPTL()                   { _is_NPTL = true;  }
-  static void set_is_LinuxThreads()           { _is_NPTL = false; }
-  static void set_is_floating_stack()         { _is_floating_stack = true; }
 
   static void rebuild_cpu_to_node_map();
   static GrowableArray<int>* cpu_to_node()    { return _cpu_to_node; }
@@ -178,14 +169,6 @@ class Linux {
   static const char *glibc_version()          { return _glibc_version; }
   static const char *libpthread_version()     { return _libpthread_version; }
 
-  // NPTL or LinuxThreads?
-  static bool is_LinuxThreads()               { return !_is_NPTL; }
-  static bool is_NPTL()                       { return _is_NPTL;  }
-
-  // NPTL is always floating stack. LinuxThreads could be using floating
-  // stack or fixed stack.
-  static bool is_floating_stack()             { return _is_floating_stack; }
-
   static void libpthread_init();
   static bool libnuma_init();
   static void* libnuma_dlsym(void* handle, const char* name);
@@ -233,9 +216,6 @@ class Linux {
   // Stack repair handling
 
   // none present
-
-  // LinuxThreads work-around for 6292965
-  static int safe_cond_timedwait(pthread_cond_t *_cond, pthread_mutex_t *_mutex, const struct timespec *_abstime);
 
  private:
   typedef int (*sched_getcpu_func_t)(void);

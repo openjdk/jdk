@@ -36,7 +36,7 @@
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=128m -XX:MaxNewSize=128m
- *                   -XX:OldSize=32M -XX:MaxHeapSize=160m -XX:SurvivorRatio=1
+ *                   -XX:OldSize=32M -XX:MaxHeapSize=160m -XX:SurvivorRatio=1 -XX:-ResizePLAB
  *                   -XX:-ExplicitGCInvokesConcurrent
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=32
@@ -44,7 +44,7 @@
  *                   TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=128m -XX:MaxNewSize=128m
- *                   -XX:OldSize=32M -XX:MaxHeapSize=160m -XX:SurvivorRatio=1
+ *                   -XX:OldSize=32M -XX:MaxHeapSize=160m -XX:SurvivorRatio=1 -XX:-ResizePLAB
  *                   -XX:-ExplicitGCInvokesConcurrent
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=32
@@ -52,7 +52,7 @@
  *                   TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=200m -XX:MaxNewSize=200m
- *                   -XX:OldSize=32M -XX:MaxHeapSize=232m -XX:SurvivorRatio=1
+ *                   -XX:OldSize=32M -XX:MaxHeapSize=232m -XX:SurvivorRatio=1 -XX:-ResizePLAB
  *                   -XX:-ExplicitGCInvokesConcurrent
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=64
@@ -60,7 +60,7 @@
  *                   TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=128m -XX:MaxNewSize=128m
- *                   -XX:OldSize=32M -XX:MaxHeapSize=160m -XX:SurvivorRatio=1
+ *                   -XX:OldSize=32M -XX:MaxHeapSize=160m -XX:SurvivorRatio=1 -XX:-ResizePLAB
  *                   -XX:-ExplicitGCInvokesConcurrent
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=64
@@ -68,7 +68,7 @@
  *                   TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=256m -XX:MaxNewSize=256m
- *                   -XX:OldSize=32M -XX:MaxHeapSize=288m -XX:SurvivorRatio=1
+ *                   -XX:OldSize=32M -XX:MaxHeapSize=288m -XX:SurvivorRatio=1 -XX:-ResizePLAB
  *                   -XX:-ExplicitGCInvokesConcurrent
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=128
@@ -76,7 +76,7 @@
  *                    TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=128m -XX:MaxNewSize=128m
- *                   -XX:OldSize=32M -XX:MaxHeapSize=160m -XX:SurvivorRatio=1
+ *                   -XX:OldSize=32M -XX:MaxHeapSize=160m -XX:SurvivorRatio=1 -XX:-ResizePLAB
  *                   -XX:-ExplicitGCInvokesConcurrent
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=128
