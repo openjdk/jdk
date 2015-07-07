@@ -65,7 +65,7 @@ define Clean-java
 	@$(PRINTF) "Cleaning java $(if $1,for $(strip $1) )..."
 	@$(PRINTF) "\n" $(LOG_DEBUG)
 	$(RM) -r $(JDK_OUTPUTDIR)/modules/$(strip $1)
-	$(RM) -r $(SUPPORT_OUTPUTDIR)/misc/$(strip $1)
+	$(RM) -r $(SUPPORT_OUTPUTDIR)/special_classes/$(strip $1)
 	$(PRINTF) " done\n"
 	$(PRINTF) "Cleaning headers $(if $1,for $(strip $1)) ..."
 	$(RM) -r $(SUPPORT_OUTPUTDIR)/headers/$(strip $1)

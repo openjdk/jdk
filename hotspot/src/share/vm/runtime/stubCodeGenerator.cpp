@@ -96,7 +96,7 @@ StubCodeGenerator::~StubCodeGenerator() {
       toprint[toprint_len++] = cdesc;
       if (cdesc == _first_stub) { saw_first = true; break; }
     }
-    assert(saw_first, "must get both first & last");
+    assert(toprint_len == 0 || saw_first, "must get both first & last");
     // Print in reverse order:
     qsort(toprint, toprint_len, sizeof(toprint[0]), compare_cdesc);
     for (int i = 0; i < toprint_len; i++) {

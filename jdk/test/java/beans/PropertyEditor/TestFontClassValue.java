@@ -26,6 +26,7 @@
  * @bug 4222827 4506596 6538853
  * @summary Tests PropertyEditor for value of type Font
  * @author Sergey Malenkov
+ * @key headful
  * @modules java.compiler
  *          java.desktop
  *          jdk.compiler

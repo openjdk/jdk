@@ -56,6 +56,7 @@ import com.sun.tools.javac.comp.CompileStates.CompileState;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.parser.*;
+import com.sun.tools.javac.platform.PlatformDescription;
 import com.sun.tools.javac.processing.*;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
@@ -429,6 +430,11 @@ public class JavaCompiler {
 
         if (options.isUnset("oldDiags"))
             log.setDiagnosticFormatter(RichDiagnosticFormatter.instance(context));
+
+        PlatformDescription platformProvider = context.get(PlatformDescription.class);
+
+        if (platformProvider != null)
+            closeables = closeables.prepend(platformProvider);
     }
 
     /* Switches:

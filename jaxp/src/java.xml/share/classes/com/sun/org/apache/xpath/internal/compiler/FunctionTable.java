@@ -378,6 +378,12 @@ public class FunctionTable
     int funcIndex;
     Object funcIndexObj = getFunctionID(name);
 
+    if (func != null && !Function.class.isAssignableFrom(func)) {
+        throw new ClassCastException(func.getName()
+                  + " cannot be cast to "
+                  + Function.class.getName());
+    }
+
     if (null != funcIndexObj)
     {
       funcIndex = ((Integer) funcIndexObj).intValue();

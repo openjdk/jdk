@@ -832,10 +832,10 @@ void PSParallelCompact::post_initialize() {
   _ref_processor =
     new ReferenceProcessor(mr,            // span
                            ParallelRefProcEnabled && (ParallelGCThreads > 1), // mt processing
-                           (uint) ParallelGCThreads, // mt processing degree
-                           true,          // mt discovery
-                           (uint) ParallelGCThreads, // mt discovery degree
-                           true,          // atomic_discovery
+                           ParallelGCThreads, // mt processing degree
+                           true,              // mt discovery
+                           ParallelGCThreads, // mt discovery degree
+                           true,              // atomic_discovery
                            &_is_alive_closure); // non-header is alive closure
   _counters = new CollectorCounters("PSParallelCompact", 1);
 

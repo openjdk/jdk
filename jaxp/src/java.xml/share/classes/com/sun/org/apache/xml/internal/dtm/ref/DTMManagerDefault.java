@@ -348,8 +348,7 @@ public class DTMManagerDefault extends DTMManager
             if (haveXercesParser) {
               // IncrementalSAXSource_Xerces to avoid threading.
               try {
-                coParser =(IncrementalSAXSource)
-                  Class.forName("com.sun.org.apache.xml.internal.dtm.ref.IncrementalSAXSource_Xerces").newInstance();
+                coParser = new com.sun.org.apache.xml.internal.dtm.ref.IncrementalSAXSource_Xerces();
               }  catch( Exception ex ) {
                 ex.printStackTrace();
                 coParser=null;

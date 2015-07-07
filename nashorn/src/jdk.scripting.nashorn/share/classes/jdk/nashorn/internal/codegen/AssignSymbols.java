@@ -551,9 +551,7 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
     private void defineVarIdent(final VarNode varNode) {
         final IdentNode ident = varNode.getName();
         final int flags;
-        if (varNode.isAnonymousFunctionDeclaration()) {
-            flags = IS_INTERNAL;
-        } else if (!varNode.isBlockScoped() && lc.getCurrentFunction().isProgram()) {
+        if (!varNode.isBlockScoped() && lc.getCurrentFunction().isProgram()) {
             flags = IS_SCOPE;
         } else {
             flags = 0;

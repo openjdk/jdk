@@ -2018,7 +2018,7 @@ public final class URI
             StringBuilder sb = new StringBuilder(base.length() + cn);
             // 5.2 (6a)
             if (i >= 0)
-                sb.append(base.substring(0, i + 1));
+                sb.append(base, 0, i + 1);
             // 5.2 (6b)
             sb.append(child);
             path = sb.toString();
@@ -2686,7 +2686,7 @@ public final class URI
                 if (!match(c, lowMask, highMask)) {
                     if (sb == null) {
                         sb = new StringBuffer();
-                        sb.append(s.substring(0, i));
+                        sb.append(s, 0, i);
                     }
                     appendEscape(sb, (byte)c);
                 } else {
@@ -2698,7 +2698,7 @@ public final class URI
                            || Character.isISOControl(c))) {
                 if (sb == null) {
                     sb = new StringBuffer();
-                    sb.append(s.substring(0, i));
+                    sb.append(s, 0, i);
                 }
                 appendEncoded(sb, c);
             } else {

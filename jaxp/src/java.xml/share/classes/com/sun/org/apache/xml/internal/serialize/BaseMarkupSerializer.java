@@ -1220,37 +1220,13 @@ public abstract class BaseMarkupSerializer
                     if ( internal != null && internal.length() > 0 )
                         _printer.printText( internal );
                     endDTD();
-                }
-                // DOM Level 1 -- does implementation have methods?
-                catch (NoSuchMethodError nsme) {
-                    Class docTypeClass = docType.getClass();
-
-                    String docTypePublicId = null;
-                    String docTypeSystemId = null;
-                    try {
-                        java.lang.reflect.Method getPublicId = docTypeClass.getMethod("getPublicId", (Class[]) null);
-                        if (getPublicId.getReturnType().equals(String.class)) {
-                            docTypePublicId = (String)getPublicId.invoke(docType, (Object[]) null);
-                        }
-                    }
-                    catch (Exception e) {
-                        // ignore
-                    }
-                    try {
-                        java.lang.reflect.Method getSystemId = docTypeClass.getMethod("getSystemId", (Class[]) null);
-                        if (getSystemId.getReturnType().equals(String.class)) {
-                            docTypeSystemId = (String)getSystemId.invoke(docType, (Object[]) null);
-                        }
-                    }
-                    catch (Exception e) {
-                        // ignore
-                    }
+                } catch (Exception e) {
+                    // ignore
                     _printer.enterDTD();
-                    _docTypePublicId = docTypePublicId;
-                    _docTypeSystemId = docTypeSystemId;
+                    _docTypePublicId = null;
+                    _docTypeSystemId = null;
                     endDTD();
                 }
-
                 serializeDTD(docType.getName());
 
             }

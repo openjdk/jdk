@@ -40,7 +40,7 @@ final class FunctionExpressionTreeImpl extends ExpressionTreeImpl
             final BlockTree body) {
         super(node);
         funcNode = node;
-        assert !funcNode.isDeclared() : "function expression expected";
+        assert !funcNode.isDeclared() || funcNode.isAnonymous() : "function expression expected";
 
         final FunctionNode.Kind kind = node.getKind();
         if (node.isAnonymous() || kind == FunctionNode.Kind.GETTER || kind == FunctionNode.Kind.SETTER) {

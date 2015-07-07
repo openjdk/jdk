@@ -40,4 +40,4 @@ function(x) {
 
 EOF, print);
 
-Assert.assertNull(ast.sourceElements[0].name);
+Assert.assertNull(ast.sourceElements[0].expression.name);

@@ -42,8 +42,7 @@
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
 
-Generation::Generation(ReservedSpace rs, size_t initial_size, int level) :
-  _level(level),
+Generation::Generation(ReservedSpace rs, size_t initial_size) :
   _ref_processor(NULL) {
   if (!_virtual_space.initialize(rs, initial_size)) {
     vm_exit_during_initialization("Could not reserve enough space for "
@@ -61,8 +60,10 @@ Generation::Generation(ReservedSpace rs, size_t initial_size, int level) :
 
 GenerationSpec* Generation::spec() {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
-  assert(level() == 0 || level() == 1, "Bad gen level");
-  return level() == 0 ? gch->gen_policy()->young_gen_spec() : gch->gen_policy()->old_gen_spec();
+  if (gch->is_young_gen(this)) {
+    return gch->gen_policy()->young_gen_spec();
+  }
+  return gch->gen_policy()->old_gen_spec();
 }
 
 size_t Generation::max_capacity() const {
@@ -111,9 +112,17 @@ void Generation::print_summary_info() { print_summary_info_on(tty); }
 void Generation::print_summary_info_on(outputStream* st) {
   StatRecord* sr = stat_record();
   double time = sr->accumulated_time.seconds();
+  // I didn't want to change the logging when removing the level concept,
+  // but I guess this logging could say young/old or something instead of 0/1.
+  uint level;
+  if (GenCollectedHeap::heap()->is_young_gen(this)) {
+    level = 0;
+  } else {
+    level = 1;
+  }
   st->print_cr("[Accumulated GC generation %d time %3.7f secs, "
-               "%d GC's, avg GC time %3.7f]",
-               level(), time, sr->invocations,
+               "%u GC's, avg GC time %3.7f]",
+               level, time, sr->invocations,
                sr->invocations > 0 ? time / sr->invocations : 0.0);
 }
 
@@ -149,25 +158,14 @@ bool Generation::is_in(const void* p) const {
   return blk.sp != NULL;
 }
 
-Generation* Generation::next_gen() const {
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
-  if (level() == 0) {
-    return gch->old_gen();
-  } else {
-    return NULL;
-  }
-}
-
 size_t Generation::max_contiguous_available() const {
   // The largest number of contiguous free words in this or any higher generation.
-  size_t max = 0;
-  for (const Generation* gen = this; gen != NULL; gen = gen->next_gen()) {
-    size_t avail = gen->contiguous_available();
-    if (avail > max) {
-      max = avail;
-    }
+  size_t avail = contiguous_available();
+  size_t old_avail = 0;
+  if (GenCollectedHeap::heap()->is_young_gen(this)) {
+    old_avail = GenCollectedHeap::heap()->old_gen()->contiguous_available();
   }
-  return max;
+  return MAX2(avail, old_avail);
 }
 
 bool Generation::promotion_attempt_is_safe(size_t max_promotion_in_bytes) const {

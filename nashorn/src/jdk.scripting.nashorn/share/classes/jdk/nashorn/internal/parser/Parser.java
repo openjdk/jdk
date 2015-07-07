@@ -2765,6 +2765,11 @@ loop:
                 functionBody);
 
         if (isStatement) {
+            if (isAnonymous) {
+                appendStatement(new ExpressionStatement(functionLine, functionToken, finish, function));
+                return function;
+            }
+
             // mark ES6 block functions as lexically scoped
             final int     varFlags = (topLevel || !useBlockScope()) ? 0 : VarNode.IS_LET;
             final VarNode varNode  = new VarNode(functionLine, functionToken, finish, name, function, varFlags);
