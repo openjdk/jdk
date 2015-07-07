@@ -88,13 +88,13 @@ import jdk.nashorn.tools.ShellFunctions;
  */
 @ScriptClass("Global")
 public final class Global extends Scope {
-    // Placeholder value used in place of a location property (__FILE__, __DIR__, __LINE__)
-    private static final Object LOCATION_PROPERTY_PLACEHOLDER = new Object();
+    // This special value is used to flag a lazily initialized global property.
+    // This also serves as placeholder value used in place of a location property
+    // (__FILE__, __DIR__, __LINE__)
+    private static final Object LAZY_SENTINEL = new Object();
+
     private final InvokeByName TO_STRING = new InvokeByName("toString", ScriptObject.class);
     private final InvokeByName VALUE_OF  = new InvokeByName("valueOf",  ScriptObject.class);
-
-    // placeholder value for lazily initialized global objects
-    private static final Object LAZY_SENTINEL = new Object();
 
     /**
      * Optimistic builtin names that require switchpoint invalidation
@@ -182,15 +182,15 @@ public final class Global extends Scope {
 
     /** Value property NaN of the Global Object - ECMA 15.1.1.1 NaN */
     @Property(attributes = Attribute.NON_ENUMERABLE_CONSTANT)
-    public final double NaN = Double.NaN;
+    public static final double NaN = Double.NaN;
 
     /** Value property Infinity of the Global Object - ECMA 15.1.1.2 Infinity */
     @Property(attributes = Attribute.NON_ENUMERABLE_CONSTANT)
-    public final double Infinity = Double.POSITIVE_INFINITY;
+    public static final double Infinity = Double.POSITIVE_INFINITY;
 
     /** Value property Undefined of the Global Object - ECMA 15.1.1.3 Undefined */
     @Property(attributes = Attribute.NON_ENUMERABLE_CONSTANT)
-    public final Object undefined = UNDEFINED;
+    public static final Object undefined = UNDEFINED;
 
     /** ECMA 15.1.2.1 eval(x) */
     @Property(attributes = Attribute.NOT_ENUMERABLE)
@@ -830,15 +830,15 @@ public final class Global extends Scope {
 
     /** Nashorn extension: current script's file name */
     @Property(name = "__FILE__", attributes = Attribute.NON_ENUMERABLE_CONSTANT)
-    public final Object __FILE__ = LOCATION_PROPERTY_PLACEHOLDER;
+    public static final Object __FILE__ = LAZY_SENTINEL;
 
     /** Nashorn extension: current script's directory */
     @Property(name = "__DIR__", attributes = Attribute.NON_ENUMERABLE_CONSTANT)
-    public final Object __DIR__ = LOCATION_PROPERTY_PLACEHOLDER;
+    public static final Object __DIR__ = LAZY_SENTINEL;
 
     /** Nashorn extension: current source line number being executed */
     @Property(name = "__LINE__", attributes = Attribute.NON_ENUMERABLE_CONSTANT)
-    public final Object __LINE__ = LOCATION_PROPERTY_PLACEHOLDER;
+    public static final Object __LINE__ = LAZY_SENTINEL;
 
     private volatile NativeDate DEFAULT_DATE;
 
@@ -2020,7 +2020,7 @@ public final class Global extends Scope {
      * @return true if the value is a placeholder, false otherwise.
      */
     public static boolean isLocationPropertyPlaceholder(final Object placeholder) {
-        return placeholder == LOCATION_PROPERTY_PLACEHOLDER;
+        return placeholder == LAZY_SENTINEL;
     }
 
     /**
