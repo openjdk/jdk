@@ -123,16 +123,17 @@ public class OnExitTest extends ProcessUtil {
 
             children = getAllChildren(procHandle);
 
-            ArrayBlockingQueue<ProcessHandle> completions = new ArrayBlockingQueue<>(expected + 1);
+            ConcurrentHashMap<ProcessHandle, CompletableFuture<ProcessHandle>> completions =
+                    new ConcurrentHashMap<>();
             Instant startTime = Instant.now();
             // Create a future for each of the 9 children
             processes.forEach( (p, parent) -> {
-                        p.onExit().whenComplete((ph, ex) -> {
+                        CompletableFuture<ProcessHandle> cf = p.onExit().whenComplete((ph, ex) -> {
                             Duration elapsed = Duration.between(startTime, Instant.now());
-                            completions.add(ph);
                             printf("whenComplete: pid: %s, exception: %s, thread: %s, elapsed: %s%n",
                                     ph, ex, Thread.currentThread(), elapsed);
                         });
+                        completions.put(p, cf);
                     });
 
             // Check that each of the spawned processes is included in the children
@@ -153,20 +154,23 @@ public class OnExitTest extends ProcessUtil {
             proc.destroy();  // kill off the parent
             proc.waitFor();
 
-            // Wait for all the processes to be completed
+            // Wait for all the processes and corresponding onExit CF to be completed
             processes.forEach((p, parent) -> {
                 try {
                     p.onExit().get();
+                    completions.get(p).join();
                 } catch (InterruptedException | ExecutionException ex) {
                     // ignore
                 }
             });
 
-            // Verify that all 9 exit handlers were called
-            processes.forEach((p, parent) ->
-                Assert.assertTrue(completions.contains(p), "Child onExit not called: " + p
-                        + ", parent: " + parent
-                        + ": " + p.info()));
+            // Verify that all 9 exit handlers were called with the correct ProcessHandle
+            processes.forEach((p, parent) -> {
+                ProcessHandle value = completions.get(p).getNow(null);
+                Assert.assertEquals(p, value, "onExit.get value expected: " + p
+                        + ", actual: " + value
+                        + ": " + p.info());
+            });
 
             // Show the status of the original children
             children.forEach(p -> printProcess(p, "after onExit:"));
