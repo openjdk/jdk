@@ -1031,7 +1031,7 @@ public final class Source implements Loggable {
                     ": " +
                     ECMAErrors.getMessage(
                         "io.error.cant.write",
-                        dir.toString() +
+                        dir +
                         " : " + ioExp.toString()));
         }
     }

@@ -611,7 +611,7 @@ public final class ScriptRuntime {
                 obj = ((ScriptObject)obj).get(property);
                 if(Global.isLocationPropertyPlaceholder(obj)) {
                     if(CompilerConstants.__LINE__.name().equals(property)) {
-                        obj = Integer.valueOf(0);
+                        obj = 0;
                     } else {
                         obj = "";
                     }

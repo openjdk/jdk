@@ -51,7 +51,7 @@ public final class DumpBytecode {
             if (env._print_code) {
 
                 final StringBuilder sb = new StringBuilder();
-                sb.append("class: " + className).
+                sb.append("class: ").append(className).
                     append('\n').
                     append(ClassEmitter.disassemble(bytecode)).
                     append("=====");
