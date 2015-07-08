@@ -46,8 +46,8 @@ import sun.misc.HexDumpEncoder;
  * An example to show the way to use SSLEngine in datagram connections.
  */
 public class DTLSOverDatagram {
-    private static int MAX_HANDSHAKE_LOOPS = 60;
-    private static int MAX_APP_READ_LOOPS = 10;
+    private static int MAX_HANDSHAKE_LOOPS = 200;
+    private static int MAX_APP_READ_LOOPS = 60;
 
     /*
      * The following is to set up the keystores.
