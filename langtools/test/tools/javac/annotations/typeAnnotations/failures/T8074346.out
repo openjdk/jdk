@@ -1,3 +1,0 @@
-T8074346.java:10:35: compiler.err.cant.type.annotate.scoping: T8074346_TA,T8074346_TB
-T8074346.java:10:62: compiler.err.cant.type.annotate.scoping.1: T8074346_TA
-2 errors
