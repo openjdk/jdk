@@ -63,8 +63,6 @@ import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.code.TypeTag.WILDCARD;
 
-import static com.sun.tools.javac.resources.CompilerProperties.Errors.CantTypeAnnotateScoping;
-import static com.sun.tools.javac.resources.CompilerProperties.Errors.CantTypeAnnotateScoping1;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
 /** Type checking helper class for the attribution phase.
@@ -2694,29 +2692,6 @@ public class Check {
  * Check annotations
  **************************************************************************/
 
-    /** Verify that a component of a qualified type name being type annotated
-     * can indeed be legally be annotated. For example, package names and type
-     * names used to access static members cannot be annotated.
-     *
-     * @param typeComponent the component of the qualified name being annotated
-     * @param annotations the annotations
-     * @param pos diagnostic position
-     * @return true if all is swell, false otherwise.
-     */
-    boolean checkAnnotableType(Type typeComponent, List<JCAnnotation> annotations, DiagnosticPosition pos) {
-        if (typeComponent == null || typeComponent.hasTag(PACKAGE) || typeComponent.hasTag(NONE)) {
-            ListBuffer<Symbol> lb = new ListBuffer<>();
-            for (JCAnnotation annotation : annotations) {
-                lb.append(annotation.annotationType.type.tsym);
-            }
-            List<Symbol> symbols = lb.toList();
-            log.error(pos,
-                    symbols.size() > 1 ? CantTypeAnnotateScoping(symbols)
-                            : CantTypeAnnotateScoping1(symbols.get(0)));
-            return false;
-        }
-        return true;
-    }
     /**
      * Recursively validate annotations values
      */
