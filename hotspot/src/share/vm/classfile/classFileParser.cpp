@@ -5087,8 +5087,8 @@ int ClassFileParser::verify_legal_method_signature(Symbol* name, Symbol* signatu
     // The first non-signature thing better be a ')'
     if ((length > 0) && (*p++ == JVM_SIGNATURE_ENDFUNC)) {
       length--;
-      if (name->utf8_length() > 0 && name->byte_at(0) == '<') {
-        // All internal methods must return void
+      if (name == vmSymbols::object_initializer_name()) {
+        // All "<init>" methods must return void
         if ((length == 1) && (p[0] == JVM_SIGNATURE_VOID)) {
           return args_size;
         }
