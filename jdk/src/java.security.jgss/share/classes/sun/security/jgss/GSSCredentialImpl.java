@@ -75,7 +75,7 @@ public class GSSCredentialImpl implements GSSCredential {
     }
 
     GSSCredentialImpl(GSSManagerImpl gssManager, GSSName name,
-                      int lifetime, Oid mechs[], int usage)
+                      int lifetime, Oid[] mechs, int usage)
         throws GSSException {
         init(gssManager);
         boolean defaultList = false;

@@ -40,7 +40,7 @@ public class NTSystem {
     private String domain;
     private String domainSID;
     private String userSID;
-    private String groupIDs[];
+    private String[] groupIDs;
     private String primaryGroupID;
     private long   impersonationToken;
 
