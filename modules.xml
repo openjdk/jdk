@@ -219,6 +219,10 @@
       <to>jdk.dev</to>
     </export>
     <export>
+      <name>jdk.internal.jimage.decompressor</name>
+      <to>jdk.dev</to>
+    </export>
+    <export>
       <name>jdk.internal.org.objectweb.asm</name>
       <to>java.instrument</to>
       <to>jdk.jfr</to>
