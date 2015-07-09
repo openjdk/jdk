@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,23 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package jdk.internal.jimage;
 
-public final class ImageLocation  extends ImageLocationBase {
-    ImageLocation(long[] attributes, ImageStringsReader strings) {
-        super(attributes, strings);
-    }
+/**
+* Added strings are stored in the jimage strings table.
+*/
+public interface StringTable {
+    /**
+     * Add a string to the jimage strings table.
+     * @param str The string to add.
+     * @return a String identifier.
+     */
+    public int addString(String str);
 
-    static ImageLocation readFrom(BasicImageReader reader, int offset) {
-        long[] attributes = reader.getAttributes(offset);
-        ImageStringsReader strings = reader.getStrings();
-
-        return new ImageLocation(attributes, strings);
-    }
+    /**
+     * Retrieve a string from the passed id.
+     * @param id The string id.
+     * @return The string referenced by the passed id.
+     */
+    public String getString(int id);
 }

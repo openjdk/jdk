@@ -25,6 +25,7 @@
 
 package jdk.internal.jrtfs;
 
+import java.nio.file.LinkOption;
 import java.nio.file.attribute.*;
 import java.io.IOException;
 import java.util.LinkedHashMap;
@@ -48,30 +49,32 @@ final class JrtFileAttributeView implements BasicFileAttributeView
 
     private final JrtPath path;
     private final boolean isJrtView;
+    private final LinkOption[] options;
 
-    private JrtFileAttributeView(JrtPath path, boolean isJrtView) {
+    private JrtFileAttributeView(JrtPath path, boolean isJrtView, LinkOption... options) {
         this.path = path;
         this.isJrtView = isJrtView;
+        this.options = options;
     }
 
     @SuppressWarnings("unchecked") // Cast to V
-    static <V extends FileAttributeView> V get(JrtPath path, Class<V> type) {
+    static <V extends FileAttributeView> V get(JrtPath path, Class<V> type, LinkOption... options) {
         if (type == null)
             throw new NullPointerException();
         if (type == BasicFileAttributeView.class)
-            return (V)new JrtFileAttributeView(path, false);
+            return (V)new JrtFileAttributeView(path, false, options);
         if (type == JrtFileAttributeView.class)
-            return (V)new JrtFileAttributeView(path, true);
+            return (V)new JrtFileAttributeView(path, true, options);
         return null;
     }
 
-    static JrtFileAttributeView get(JrtPath path, String type) {
+    static JrtFileAttributeView get(JrtPath path, String type, LinkOption... options) {
         if (type == null)
             throw new NullPointerException();
         if (type.equals("basic"))
-            return new JrtFileAttributeView(path, false);
+            return new JrtFileAttributeView(path, false, options);
         if (type.equals("jjrt"))
-            return new JrtFileAttributeView(path, true);
+            return new JrtFileAttributeView(path, true, options);
         return null;
     }
 
@@ -83,7 +86,7 @@ final class JrtFileAttributeView implements BasicFileAttributeView
     @Override
     public JrtFileAttributes readAttributes() throws IOException
     {
-        return path.getAttributes();
+        return path.getAttributes(options);
     }
 
     @Override
