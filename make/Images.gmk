@@ -46,7 +46,7 @@ PROVIDER_MODULES += jdk.charsets jdk.crypto.ec jdk.crypto.pkcs11 jdk.jvmstat jdk
                jdk.naming.dns jdk.naming.rmi jdk.scripting.nashorn jdk.zipfs
 
 # tools
-TOOLS_MODULES += jdk.attach jdk.compiler jdk.dev jdk.javadoc jdk.jcmd jdk.jconsole \
+TOOLS_MODULES += jdk.attach jdk.compiler jdk.dev jdk.internal.le jdk.javadoc jdk.jcmd jdk.jconsole \
                jdk.hotspot.agent jdk.hprof.agent jdk.jartool jdk.jdeps jdk.jdi jdk.jdwp.agent \
                jdk.policytool jdk.rmic jdk.xml.bind jdk.xml.ws
 
