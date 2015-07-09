@@ -31,6 +31,7 @@
  */
 
 #include "defines.h"
+#include "jli_util.h"
 
 #ifdef _MSC_VER
 #if _MSC_VER > 1400 && _MSC_VER < 1600
@@ -96,6 +97,9 @@ main(int argc, char **argv)
     char** margv;
     const jboolean const_javaw = JNI_FALSE;
 #endif /* JAVAW */
+
+    JLI_InitArgProcessing(!HAS_JAVA_ARGS, const_disable_argfile);
+
 #ifdef _WIN32
     {
         int i = 0;
@@ -119,8 +123,30 @@ main(int argc, char **argv)
         margv[i] = NULL;
     }
 #else /* *NIXES */
-    margc = argc;
-    margv = argv;
+    {
+        // accommodate the NULL at the end
+        JLI_List args = JLI_List_new(argc + 1);
+        int i = 0;
+        for (i = 0; i < argc; i++) {
+            JLI_List argsInFile = JLI_PreprocessArg(argv[i]);
+            if (NULL == argsInFile) {
+                JLI_List_add(args, JLI_StringDup(argv[i]));
+            } else {
+                int cnt, idx;
+                cnt = argsInFile->size;
+                for (idx = 0; idx < cnt; idx++) {
+                    JLI_List_add(args, argsInFile->elements[idx]);
+                }
+                // Shallow free, we reuse the string to avoid copy
+                JLI_MemFree(argsInFile->elements);
+                JLI_MemFree(argsInFile);
+            }
+        }
+        margc = args->size;
+        // add the NULL pointer at argv[argc]
+        JLI_List_add(args, NULL);
+        margv = args->elements;
+    }
 #endif /* WIN32 */
     return JLI_Launch(margc, margv,
                    sizeof(const_jargs) / sizeof(char *), const_jargs,
