@@ -128,8 +128,11 @@ class Assembler : public AbstractAssembler  {
     faligndata_op3 = 0x36,
     flog3_op3    = 0x36,
     edge_op3     = 0x36,
+    fzero_op3    = 0x36,
     fsrc_op3     = 0x36,
+    fnot_op3     = 0x36,
     xmulx_op3    = 0x36,
+    crc32c_op3   = 0x36,
     impdep2_op3  = 0x37,
     stpartialf_op3 = 0x37,
     jmpl_op3     = 0x38,
@@ -231,7 +234,9 @@ class Assembler : public AbstractAssembler  {
 
     sha1_opf           = 0x141,
     sha256_opf         = 0x142,
-    sha512_opf         = 0x143
+    sha512_opf         = 0x143,
+
+    crc32c_opf         = 0x147
   };
 
   enum op5s {
@@ -600,6 +605,11 @@ class Assembler : public AbstractAssembler  {
     return x & ((1 << 10) - 1);
   }
 
+  // create a low12 __value__ (not a field) for a given a 32-bit constant
+  static int low12( int x ) {
+    return x & ((1 << 12) - 1);
+  }
+
   // AES crypto instructions supported only on certain processors
   static void aes_only() { assert( VM_Version::has_aes(), "This instruction only works on SPARC with AES instructions support"); }
 
@@ -607,6 +617,9 @@ class Assembler : public AbstractAssembler  {
   static void sha1_only()   { assert( VM_Version::has_sha1(),   "This instruction only works on SPARC with SHA1"); }
   static void sha256_only() { assert( VM_Version::has_sha256(), "This instruction only works on SPARC with SHA256"); }
   static void sha512_only() { assert( VM_Version::has_sha512(), "This instruction only works on SPARC with SHA512"); }
+
+  // CRC32C instruction supported only on certain processors
+  static void crc32c_only() { assert( VM_Version::has_crc32c(), "This instruction only works on SPARC with CRC32C"); }
 
   // instruction only in VIS1
   static void vis1_only() { assert( VM_Version::has_vis1(), "This instruction only works on SPARC with VIS1"); }
@@ -1022,6 +1035,7 @@ public:
 
   void nop() { emit_int32( op(branch_op) | op2(sethi_op2) ); }
 
+  void sw_count() { emit_int32( op(branch_op) | op2(sethi_op2) | 0x3f0 ); }
 
   // pp 202
 
@@ -1198,7 +1212,13 @@ public:
 
   void faligndata( FloatRegister s1, FloatRegister s2, FloatRegister d ) { vis1_only(); emit_int32( op(arith_op) | fd(d, FloatRegisterImpl::D) | op3(faligndata_op3) | fs1(s1, FloatRegisterImpl::D) | opf(faligndata_opf) | fs2(s2, FloatRegisterImpl::D)); }
 
+  void fzero( FloatRegisterImpl::Width w, FloatRegister d ) { vis1_only(); emit_int32( op(arith_op) | fd(d, w) | op3(fzero_op3) | opf(0x62 - w)); }
+
   void fsrc2( FloatRegisterImpl::Width w, FloatRegister s2, FloatRegister d ) { vis1_only(); emit_int32( op(arith_op) | fd(d, w) | op3(fsrc_op3) | opf(0x7A - w) | fs2(s2, w)); }
+
+  void fnot1( FloatRegisterImpl::Width w, FloatRegister s1, FloatRegister d ) { vis1_only(); emit_int32( op(arith_op) | fd(d, w) | op3(fnot_op3) | fs1(s1, w) | opf(0x6C - w)); }
+
+  void fpmerge( FloatRegister s1, FloatRegister s2, FloatRegister d ) { vis1_only(); emit_int32( op(arith_op) | fd(d, FloatRegisterImpl::D) | op3(0x36) | fs1(s1, FloatRegisterImpl::S) | opf(0x4b) | fs2(s2, FloatRegisterImpl::S)); }
 
   void stpartialf( Register s1, Register s2, FloatRegister d, int ia = -1 ) { vis1_only(); emit_int32( op(ldst_op) | fd(d, FloatRegisterImpl::D) | op3(stpartialf_op3) | rs1(s1) | imm_asi(ia) | rs2(s2)); }
 
@@ -1223,6 +1243,10 @@ public:
   void sha1()   { sha1_only();    emit_int32( op(arith_op) | op3(sha_op3) | opf(sha1_opf)); }
   void sha256() { sha256_only();  emit_int32( op(arith_op) | op3(sha_op3) | opf(sha256_opf)); }
   void sha512() { sha512_only();  emit_int32( op(arith_op) | op3(sha_op3) | opf(sha512_opf)); }
+
+  // CRC32C instruction
+
+  void crc32c( FloatRegister s1, FloatRegister s2, FloatRegister d ) { crc32c_only();  emit_int32( op(arith_op) | fd(d, FloatRegisterImpl::D) | op3(crc32c_op3) | fs1(s1, FloatRegisterImpl::D) | opf(crc32c_opf) | fs2(s2, FloatRegisterImpl::D)); }
 
   // Creation
   Assembler(CodeBuffer* code) : AbstractAssembler(code) {
