@@ -403,7 +403,7 @@ public class AuthPolicyFile extends javax.security.auth.Policy {
                         debug.println("  "+perm);
                     }
                 } catch (ClassNotFoundException cnfe) {
-                    Certificate certs[];
+                    Certificate[] certs;
                     if (pe.signedBy != null) {
                         certs = getCertificates(keyStore, pe.signedBy);
                     } else {
@@ -623,7 +623,7 @@ public class AuthPolicyFile extends javax.security.auth.Policy {
             init();
         }
 
-        final CodeSource codesource[] = {null};
+        final CodeSource[] codesource = {null};
 
         codesource[0] = canonicalizeCodebase(cs, true);
 
@@ -666,7 +666,7 @@ public class AuthPolicyFile extends javax.security.auth.Policy {
         // now see if any of the keys are trusted ids.
 
         if (!ignoreIdentityScope) {
-            Certificate certs[] = codesource[0].getCertificates();
+            Certificate[] certs = codesource[0].getCertificates();
             if (certs != null) {
                 for (int k=0; k < certs.length; k++) {
                     if (aliasMapping.get(certs[k]) == null &&
