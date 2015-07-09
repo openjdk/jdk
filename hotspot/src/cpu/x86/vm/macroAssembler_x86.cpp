@@ -5152,7 +5152,7 @@ RegisterOrConstant MacroAssembler::delayed_value_impl(intptr_t* delayed_value_ad
       {
         ResourceMark rm;
         stringStream ss;
-        ss.print("DelayedValue="INTPTR_FORMAT, delayed_value_addr[1]);
+        ss.print("DelayedValue=" INTPTR_FORMAT, delayed_value_addr[1]);
         buf = code_string(ss.as_string());
       }
       jcc(Assembler::notZero, L);

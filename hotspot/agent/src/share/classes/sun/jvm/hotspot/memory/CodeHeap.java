@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package sun.jvm.hotspot.memory;
 
 import java.util.*;
+import sun.jvm.hotspot.code.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
@@ -90,13 +91,38 @@ public class CodeHeap extends VMObject {
     return h.getAllocatedSpace();
   }
 
-  public Address nextBlock(Address ptr) {
+  private Address nextBlock(Address ptr) {
     Address base = blockBase(ptr);
     if (base == null) {
       return null;
     }
     HeapBlock block = getBlockAt(base);
     return base.addOffsetTo(block.getLength() * (1 << getLog2SegmentSize()));
+  }
+
+  public void iterate(CodeCacheVisitor visitor, CodeCache cache) {
+    CodeBlob lastBlob = null;
+    Address ptr = begin();
+    while (ptr != null && ptr.lessThan(end())) {
+      try {
+        // Use findStart to get a pointer inside blob other findBlob asserts
+        CodeBlob blob = cache.createCodeBlobWrapper(findStart(ptr));
+        if (blob != null) {
+          visitor.visit(blob);
+          if (blob == lastBlob) {
+            throw new InternalError("saw same blob twice");
+          }
+          lastBlob = blob;
+        }
+      } catch (RuntimeException e) {
+        e.printStackTrace();
+      }
+      Address next = nextBlock(ptr);
+      if (next != null && next.lessThan(ptr)) {
+        throw new InternalError("pointer moved backwards");
+      }
+      ptr = next;
+    }
   }
 
   //--------------------------------------------------------------------------------
