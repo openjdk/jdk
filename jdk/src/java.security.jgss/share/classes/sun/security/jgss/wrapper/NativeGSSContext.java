@@ -372,7 +372,7 @@ class NativeGSSContext implements GSSContextSpi {
         }
         return cStub.wrap(pContext, data, msgProp);
     }
-    public void wrap(byte inBuf[], int offset, int len,
+    public void wrap(byte[] inBuf, int offset, int len,
                      OutputStream os, MessageProp msgProp)
         throws GSSException {
         try {

@@ -154,28 +154,28 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
 
     private static final Debug debug = Debug.getInstance("pkcs12");
 
-    private static final int keyBag[]  = {1, 2, 840, 113549, 1, 12, 10, 1, 2};
-    private static final int certBag[] = {1, 2, 840, 113549, 1, 12, 10, 1, 3};
-    private static final int secretBag[] = {1, 2, 840, 113549, 1, 12, 10, 1, 5};
+    private static final int[] keyBag  = {1, 2, 840, 113549, 1, 12, 10, 1, 2};
+    private static final int[] certBag = {1, 2, 840, 113549, 1, 12, 10, 1, 3};
+    private static final int[] secretBag = {1, 2, 840, 113549, 1, 12, 10, 1, 5};
 
-    private static final int pkcs9Name[]  = {1, 2, 840, 113549, 1, 9, 20};
-    private static final int pkcs9KeyId[] = {1, 2, 840, 113549, 1, 9, 21};
+    private static final int[] pkcs9Name  = {1, 2, 840, 113549, 1, 9, 20};
+    private static final int[] pkcs9KeyId = {1, 2, 840, 113549, 1, 9, 21};
 
-    private static final int pkcs9certType[] = {1, 2, 840, 113549, 1, 9, 22, 1};
+    private static final int[] pkcs9certType = {1, 2, 840, 113549, 1, 9, 22, 1};
 
-    private static final int pbeWithSHAAnd40BitRC2CBC[] =
+    private static final int[] pbeWithSHAAnd40BitRC2CBC =
                                         {1, 2, 840, 113549, 1, 12, 1, 6};
-    private static final int pbeWithSHAAnd3KeyTripleDESCBC[] =
+    private static final int[] pbeWithSHAAnd3KeyTripleDESCBC =
                                         {1, 2, 840, 113549, 1, 12, 1, 3};
-    private static final int pbes2[] = {1, 2, 840, 113549, 1, 5, 13};
+    private static final int[] pbes2 = {1, 2, 840, 113549, 1, 5, 13};
     // TODO: temporary Oracle OID
     /*
      * { joint-iso-itu-t(2) country(16) us(840) organization(1) oracle(113894)
      *   jdk(746875) crypto(1) id-at-trustedKeyUsage(1) }
      */
-    private static final int TrustedKeyUsage[] =
+    private static final int[] TrustedKeyUsage =
                                         {2, 16, 840, 1, 113894, 746875, 1, 1};
-    private static final int AnyExtendedKeyUsage[] = {2, 5, 29, 37, 0};
+    private static final int[] AnyExtendedKeyUsage = {2, 5, 29, 37, 0};
 
     private static ObjectIdentifier PKCS8ShroudedKeyBag_OID;
     private static ObjectIdentifier CertBag_OID;
@@ -243,7 +243,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     // A private key entry and its supporting certificate chain
     private static class PrivateKeyEntry extends KeyEntry {
         byte[] protectedPrivKey;
-        Certificate chain[];
+        Certificate[] chain;
     };
 
     // A secret key

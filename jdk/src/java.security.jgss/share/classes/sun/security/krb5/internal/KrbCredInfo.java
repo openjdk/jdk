@@ -172,7 +172,7 @@ public class KrbCredInfo {
         }
         if (caddr != null)
             v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x0A), caddr.asn1Encode()));
-        DerValue der[] = new DerValue[v.size()];
+        DerValue[] der = new DerValue[v.size()];
         v.copyInto(der);
         DerOutputStream out = new DerOutputStream();
         out.putSequence(der);
