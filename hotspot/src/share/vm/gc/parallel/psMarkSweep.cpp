@@ -272,8 +272,7 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
       // Don't check if the size_policy is ready here.  Let
       // the size_policy check that internally.
       if (UseAdaptiveGenerationSizePolicyAtMajorCollection &&
-          (!GCCause::is_user_requested_gc(gc_cause) ||
-            UseAdaptiveSizePolicyWithSystemGC)) {
+          AdaptiveSizePolicy::should_update_promo_stats(gc_cause)) {
         // Swap the survivor spaces if from_space is empty. The
         // resize_young_gen() called below is normally used after
         // a successful young GC and swapping of survivor spaces;
