@@ -237,7 +237,7 @@ public class DSAParameterGenerator extends AlgorithmParameterGeneratorSpi {
             BigInteger offset = ONE;
             /* Step 11 */
             for (counter = 0; counter < 4*valueL; counter++) {
-                BigInteger V[] = new BigInteger[n + 1];
+                BigInteger[] V = new BigInteger[n + 1];
                 /* Step 11.1 */
                 for (int j = 0; j <= n; j++) {
                     BigInteger J = BigInteger.valueOf(j);

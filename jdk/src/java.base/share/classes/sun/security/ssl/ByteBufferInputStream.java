@@ -70,7 +70,7 @@ class ByteBufferInputStream extends InputStream {
      * Increments position().
      */
     @Override
-    public int read(byte b[]) throws IOException {
+    public int read(byte[] b) throws IOException {
 
         if (bb == null) {
             throw new IOException("read on a closed InputStream");
@@ -85,7 +85,7 @@ class ByteBufferInputStream extends InputStream {
      * Increments position().
      */
     @Override
-    public int read(byte b[], int off, int len) throws IOException {
+    public int read(byte[] b, int off, int len) throws IOException {
 
         if (bb == null) {
             throw new IOException("read on a closed InputStream");

@@ -146,7 +146,7 @@ public final class HandshakeInStream extends ByteArrayInputStream {
     byte[] getBytes8() throws IOException {
         int len = getInt8();
         verifyLength(len);
-        byte b[] = new byte[len];
+        byte[] b = new byte[len];
 
         read(b);
         return b;
@@ -155,7 +155,7 @@ public final class HandshakeInStream extends ByteArrayInputStream {
     public byte[] getBytes16() throws IOException {
         int len = getInt16();
         verifyLength(len);
-        byte b[] = new byte[len];
+        byte[] b = new byte[len];
 
         read(b);
         return b;
@@ -164,7 +164,7 @@ public final class HandshakeInStream extends ByteArrayInputStream {
     byte[] getBytes24() throws IOException {
         int len = getInt24();
         verifyLength(len);
-        byte b[] = new byte[len];
+        byte[] b = new byte[len];
 
         read(b);
         return b;

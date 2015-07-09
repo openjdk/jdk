@@ -165,7 +165,7 @@ final class CramMD5Server extends CramMD5Base implements SaslServer {
                 PasswordCallback pcb =
                     new PasswordCallback("CRAM-MD5 password: ", false);
                 cbh.handle(new Callback[]{ncb,pcb});
-                char pwChars[] = pcb.getPassword();
+                char[] pwChars = pcb.getPassword();
                 if (pwChars == null || pwChars.length == 0) {
                     // user has no password; OK to disclose to server
                     aborted = true;
@@ -190,7 +190,7 @@ final class CramMD5Server extends CramMD5Base implements SaslServer {
                 clearPassword();
 
                 // Check whether digest is as expected
-                byte [] expectedDigest = digest.getBytes("UTF8");
+                byte[] expectedDigest = digest.getBytes("UTF8");
                 int digestLen = responseData.length - ulen - 1;
                 if (expectedDigest.length != digestLen) {
                     aborted = true;

@@ -69,7 +69,7 @@ implements CertAttrSet<String> {
     public static final String S_MIME_CA = "s_mime_ca";
     public static final String OBJECT_SIGNING_CA = "object_signing_ca";
 
-    private static final int CertType_data[] = { 2, 16, 840, 1, 113730, 1, 1 };
+    private static final int[] CertType_data = { 2, 16, 840, 1, 113730, 1, 1 };
 
     /**
      * Object identifier for the Netscape-Cert-Type extension.
