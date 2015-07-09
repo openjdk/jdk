@@ -31,7 +31,7 @@ include LauncherCommon.gmk
 # into another dir and copy selectively so debuginfo for java.dll isn't
 # overwritten.
 $(eval $(call SetupLauncher,java, \
-    -DEXPAND_CLASSPATH_WILDCARDS,,,user32.lib comctl32.lib, \
+    -DEXPAND_CLASSPATH_WILDCARDS -DENABLE_ARG_FILES,,,user32.lib comctl32.lib, \
     $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/jli_static.lib, $(JAVA_RC_FLAGS), \
     $(JAVA_VERSION_INFO_RESOURCE), $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/java_objs,true))
 
@@ -44,7 +44,7 @@ TARGETS += $(SUPPORT_OUTPUTDIR)/modules_cmds/java.base/java$(EXE_SUFFIX)
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
   $(eval $(call SetupLauncher,javaw, \
-      -DJAVAW -DEXPAND_CLASSPATH_WILDCARDS,,,user32.lib comctl32.lib, \
+      -DJAVAW -DEXPAND_CLASSPATH_WILDCARDS -DENABLE_ARG_FILES,,,user32.lib comctl32.lib, \
       $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/jli_static.lib, $(JAVA_RC_FLAGS), \
       $(JAVA_VERSION_INFO_RESOURCE),,true))
 endif

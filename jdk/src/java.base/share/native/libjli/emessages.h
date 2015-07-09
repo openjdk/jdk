@@ -71,6 +71,7 @@
 #define CFG_ERROR7      "Error: no known VMs. (check for corrupt jvm.cfg file)"
 #define CFG_ERROR8      "Error: missing `%s' JVM at `%s'.\nPlease install or use the JRE or JDK that contains these missing components."
 #define CFG_ERROR9      "Error: could not determine JVM type."
+#define CFG_ERROR10     "Error: Argument file size should not be larger than %lu."
 
 #define JRE_ERROR1      "Error: Could not find Java SE Runtime Environment."
 #define JRE_ERROR2      "Error: This Java instance does not support a %d-bit JVM.\nPlease install the desired version."
