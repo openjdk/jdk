@@ -956,30 +956,21 @@ public abstract class Scope {
         @Override
         public Iterable<Symbol> getSymbols(final Filter<Symbol> sf,
                                            final LookupKind lookupKind) {
-            return new Iterable<Symbol>() {
-                public Iterator<Symbol> iterator() {
-                    return new CompoundScopeIterator(subScopes) {
-                        Iterator<Symbol> nextIterator(Scope s) {
-                            return s.getSymbols(sf, lookupKind).iterator();
-                        }
-                    };
-                }
-            };
+            return () -> Iterators.createCompoundIterator(subScopes,
+                                                          scope -> scope.getSymbols(sf,
+                                                                                    lookupKind)
+                                                                        .iterator());
         }
 
         @Override
         public Iterable<Symbol> getSymbolsByName(final Name name,
                                                  final Filter<Symbol> sf,
                                                  final LookupKind lookupKind) {
-            return new Iterable<Symbol>() {
-                public Iterator<Symbol> iterator() {
-                    return new CompoundScopeIterator(subScopes) {
-                        Iterator<Symbol> nextIterator(Scope s) {
-                            return s.getSymbolsByName(name, sf, lookupKind).iterator();
-                        }
-                    };
-                }
-            };
+            return () -> Iterators.createCompoundIterator(subScopes,
+                                                          scope -> scope.getSymbolsByName(name,
+                                                                                          sf,
+                                                                                          lookupKind)
+                                                                        .iterator());
         }
 
         @Override
@@ -1002,43 +993,6 @@ public abstract class Scope {
             return false;
         }
 
-        abstract class CompoundScopeIterator implements Iterator<Symbol> {
-
-            private Iterator<Symbol> currentIterator;
-            private List<Scope> scopesToScan;
-
-            public CompoundScopeIterator(List<Scope> scopesToScan) {
-                this.scopesToScan = scopesToScan;
-                update();
-            }
-
-            abstract Iterator<Symbol> nextIterator(Scope s);
-
-            public boolean hasNext() {
-                return currentIterator != null;
-            }
-
-            public Symbol next() {
-                Symbol sym = currentIterator.next();
-                if (!currentIterator.hasNext()) {
-                    update();
-                }
-                return sym;
-            }
-
-            public void remove() {
-                throw new UnsupportedOperationException();
-            }
-
-            private void update() {
-                while (scopesToScan.nonEmpty()) {
-                    currentIterator = nextIterator(scopesToScan.head);
-                    scopesToScan = scopesToScan.tail;
-                    if (currentIterator.hasNext()) return;
-                }
-                currentIterator = null;
-            }
-        }
     }
 
     /** An error scope, for which the owner should be an error symbol. */

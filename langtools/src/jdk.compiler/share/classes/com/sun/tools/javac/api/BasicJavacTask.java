@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.annotation.processing.Processor;
 import javax.lang.model.element.Element;
@@ -46,6 +47,8 @@ import com.sun.tools.doclint.DocLint;
 import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.model.JavacTypes;
+import com.sun.tools.javac.platform.PlatformDescription;
+import com.sun.tools.javac.platform.PlatformDescription.PluginInfo;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.Context;
@@ -171,6 +174,22 @@ public class BasicJavacTask extends JavacTask {
     }
 
     public void initPlugins(Set<List<String>> pluginOpts) {
+        PlatformDescription platformProvider = context.get(PlatformDescription.class);
+
+        if (platformProvider != null) {
+            for (PluginInfo<Plugin> pluginDesc : platformProvider.getPlugins()) {
+                java.util.List<String> options =
+                        pluginDesc.getOptions().entrySet().stream()
+                                                          .map(e -> e.getKey() + "=" + e.getValue())
+                                                          .collect(Collectors.toList());
+                try {
+                    pluginDesc.getPlugin().init(this, options.toArray(new String[options.size()]));
+                } catch (RuntimeException ex) {
+                    throw new PropagatedException(ex);
+                }
+            }
+        }
+
         if (pluginOpts.isEmpty())
             return;
 

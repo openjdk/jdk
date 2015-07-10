@@ -437,7 +437,7 @@ public final class Compiler implements Loggable {
 
         baseName = baseName.replace('.', '_').replace('-', '_');
         if (!env._loader_per_compile) {
-            baseName = baseName + installer.getUniqueScriptId();
+            baseName += installer.getUniqueScriptId();
         }
 
         // ASM's bytecode verifier does not allow JVM allowed safe escapes using '\' as escape char.

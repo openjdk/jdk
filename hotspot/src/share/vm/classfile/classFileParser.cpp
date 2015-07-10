@@ -1751,6 +1751,10 @@ ClassFileParser::AnnotationCollector::annotation_index(ClassLoaderData* loader_d
     if (_location != _in_method)  break;  // only allow for methods
     if (!privileged)              break;  // only allow in privileged code
     return _method_LambdaForm_Hidden;
+  case vmSymbols::VM_SYMBOL_ENUM_NAME(jdk_internal_HotSpotIntrinsicCandidate_signature):
+    if (_location != _in_method)  break;  // only allow for methods
+    if (!privileged)              break;  // only allow in privileged code
+    return _method_HotSpotIntrinsicCandidate;
   case vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_Stable_signature):
     if (_location != _in_field)   break;  // only allow for fields
     if (!privileged)              break;  // only allow in privileged code
@@ -1790,6 +1794,8 @@ void ClassFileParser::MethodAnnotationCollector::apply_to(methodHandle m) {
     m->set_intrinsic_id(vmIntrinsics::_compiledLambdaForm);
   if (has_annotation(_method_LambdaForm_Hidden))
     m->set_hidden(true);
+  if (has_annotation(_method_HotSpotIntrinsicCandidate) && !m->is_synthetic())
+    m->set_intrinsic_candidate(true);
 }
 
 void ClassFileParser::ClassAnnotationCollector::apply_to(instanceKlassHandle k) {
@@ -4131,9 +4137,78 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     // (We used to do this lazily, but now we query it in Rewriter,
     // which is eagerly done for every method, so we might as well do it now,
     // when everything is fresh in memory.)
-    if (Method::klass_id_for_intrinsics(this_klass()) != vmSymbols::NO_SID) {
+    vmSymbols::SID klass_id = Method::klass_id_for_intrinsics(this_klass());
+    if (klass_id != vmSymbols::NO_SID) {
       for (int j = 0; j < methods->length(); j++) {
-        methods->at(j)->init_intrinsic_id();
+        Method* method = methods->at(j);
+        method->init_intrinsic_id();
+
+        if (CheckIntrinsics) {
+          // Check if an intrinsic is defined for method 'method',
+          // but the method is not annotated with @HotSpotIntrinsicCandidate.
+          if (method->intrinsic_id() != vmIntrinsics::_none &&
+              !method->intrinsic_candidate()) {
+            tty->print("Compiler intrinsic is defined for method [%s], "
+                       "but the method is not annotated with @HotSpotIntrinsicCandidate.%s",
+                       method->name_and_sig_as_C_string(),
+                       NOT_DEBUG(" Method will not be inlined.") DEBUG_ONLY(" Exiting.")
+                       );
+            tty->cr();
+            DEBUG_ONLY(vm_exit(1));
+          }
+          // Check is the method 'method' is annotated with @HotSpotIntrinsicCandidate,
+          // but there is no intrinsic available for it.
+          if (method->intrinsic_candidate() &&
+              method->intrinsic_id() == vmIntrinsics::_none) {
+            tty->print("Method [%s] is annotated with @HotSpotIntrinsicCandidate, "
+                       "but no compiler intrinsic is defined for the method.%s",
+                       method->name_and_sig_as_C_string(),
+                       NOT_DEBUG("") DEBUG_ONLY(" Exiting.")
+                       );
+            tty->cr();
+            DEBUG_ONLY(vm_exit(1));
+          }
+        }
+      }
+
+      if (CheckIntrinsics) {
+        // Check for orphan methods in the current class. A method m
+        // of a class C is orphan if an intrinsic is defined for method m,
+        // but class C does not declare m.
+
+        for (int id = vmIntrinsics::FIRST_ID; id < (int)vmIntrinsics::ID_LIMIT; id++) {
+          if (id == vmIntrinsics::_compiledLambdaForm) {
+            // The _compiledLamdbdaForm intrinsic is a special marker for bytecode
+            // generated for the JVM from a LambdaForm and therefore no method
+            // is defined for it.
+            continue;
+          }
+
+          if (vmIntrinsics::class_for(vmIntrinsics::ID_from(id)) == klass_id) {
+            // Check if the current class contains a method with the same
+            // name, flags, signature.
+            bool match = false;
+            for (int j = 0; j < methods->length(); j++) {
+              Method* method = methods->at(j);
+              if (id == method->intrinsic_id()) {
+                match = true;
+                break;
+              }
+            }
+
+            if (!match) {
+              char buf[1000];
+              tty->print("Compiler intrinsic is defined for method [%s], "
+                         "but the method is not available in class [%s].%s",
+                         vmIntrinsics::short_name_as_C_string(vmIntrinsics::ID_from(id), buf, sizeof(buf)),
+                         this_klass->name()->as_C_string(),
+                         NOT_DEBUG("") DEBUG_ONLY(" Exiting.")
+                         );
+              tty->cr();
+              DEBUG_ONLY(vm_exit(1));
+            }
+          }
+        }
       }
     }
 

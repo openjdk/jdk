@@ -116,6 +116,12 @@
 
 # jdk_beans
 
+# 8060027
+java/beans/XMLEncoder/Test4903007.java                        generic-all
+java/beans/XMLEncoder/java_awt_GridBagLayout.java             generic-all
+java/beans/XMLDecoder/8028054/TestConstructorFinder.java      generic-all
+java/beans/XMLDecoder/8028054/TestMethodFinder.java           generic-all
+
 ############################################################################
 
 # jdk_lang
@@ -221,9 +227,6 @@ sun/security/pkcs11/ec/TestKeyFactory.java                      generic-all
 # 7164518: no PortUnreachableException on Mac
 sun/security/krb5/auto/Unreachable.java                         macosx-all
 
-# 8058849
-sun/security/krb5/config/dns.sh                                 generic-all
-
 # 7041639: Solaris DSA keypair generation bug
 java/security/KeyPairGenerator/SolarisShortDSA.java             solaris-all
 sun/security/tools/keytool/standard.sh                          solaris-all
@@ -292,9 +295,15 @@ sun/security/pkcs11/tls/TestMasterSecret.java                   windows-all
 sun/security/pkcs11/tls/TestPRF.java                            windows-all
 sun/security/pkcs11/tls/TestPremaster.java                      windows-all
 
+# 8051770
+sun/security/provider/SecureRandom/StrongSecureRandom.java      macosx-10.10
+
 ############################################################################
 
 # jdk_sound
+
+# 8059743
+javax/sound/midi/Gervill/SoftProvider/GetDevice.java            generic-all
 
 ############################################################################
 

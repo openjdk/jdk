@@ -1044,9 +1044,9 @@ public class Lexer extends Scanner {
         try {
             final long value = Long.parseLong(valueString, radix);
             if(value >= MIN_INT_L && value <= MAX_INT_L) {
-                return Integer.valueOf((int)value);
+                return (int)value;
             }
-            return Long.valueOf(value);
+            return value;
         } catch (final NumberFormatException e) {
             if (radix == 10) {
                 return Double.valueOf(valueString);
@@ -1640,9 +1640,9 @@ public class Lexer extends Scanner {
             //and new Color(float, float, float) will get ambiguous for cases like
             //new Color(1.0, 1.5, 1.5) if we don't respect the decimal point.
             //yet we don't want e.g. 1e6 to be a double unnecessarily
-            if (JSType.isRepresentableAsInt(value) && !JSType.isNegativeZero(value)) {
+            if (JSType.isStrictlyRepresentableAsInt(value)) {
                 return (int)value;
-            } else if (JSType.isRepresentableAsLong(value) && !JSType.isNegativeZero(value)) {
+            } else if (JSType.isStrictlyRepresentableAsLong(value)) {
                 return (long)value;
             }
             return value;

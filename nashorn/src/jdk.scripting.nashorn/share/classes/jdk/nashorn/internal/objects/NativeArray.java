@@ -1874,7 +1874,7 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
     //TODO - fold these into the Link logics, but I'll do that as a later step, as I want to do a checkin
     //where everything works first
 
-    private static final <T> ContinuousArrayData getContinuousNonEmptyArrayDataCCE(final Object self, final Class<T> clazz) {
+    private static <T> ContinuousArrayData getContinuousNonEmptyArrayDataCCE(final Object self, final Class<T> clazz) {
         try {
             @SuppressWarnings("unchecked")
             final ContinuousArrayData data = (ContinuousArrayData)(T)((NativeArray)self).getArray();
@@ -1887,7 +1887,7 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
         throw new ClassCastException();
     }
 
-    private static final ContinuousArrayData getContinuousArrayDataCCE(final Object self) {
+    private static ContinuousArrayData getContinuousArrayDataCCE(final Object self) {
         try {
             return (ContinuousArrayData)((NativeArray)self).getArray();
          } catch (final NullPointerException e) {
@@ -1895,7 +1895,7 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
          }
     }
 
-    private static final ContinuousArrayData getContinuousArrayDataCCE(final Object self, final Class<?> elementType) {
+    private static ContinuousArrayData getContinuousArrayDataCCE(final Object self, final Class<?> elementType) {
         try {
            return (ContinuousArrayData)((NativeArray)self).getArray(elementType); //ensure element type can fit "elementType"
         } catch (final NullPointerException e) {

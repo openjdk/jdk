@@ -176,7 +176,7 @@ public class SharedObject {
     }
 
     public Boolean booleanBoxingMethod(final Boolean arg) {
-        return !arg.booleanValue();
+        return !arg;
     }
 
     public boolean[] booleanArrayMethod(final boolean arg[]) {

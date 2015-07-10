@@ -34,7 +34,11 @@ import java.io.PrintWriter;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Properties;
+import java.util.stream.Collectors;
+
 import static org.testng.Assert.*;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
@@ -350,5 +354,25 @@ public class DriverManagerTests {
         for (String result : results) {
             assertTrue(result.equals(reader.readLine()));
         }
+    }
+
+    /**
+     * Register some driver implementations and validate that the driver
+     * elements covered by the Enumeration obtained from
+     * {@link DriverManager#getDrivers()} are the same as driver elements
+     * covered by the stream obtained from {@link DriverManager#drivers()}}
+     */
+    @Test
+    public void tests19() throws Exception {
+        int n = 8;
+        for (int i = 0; i < n; i++) {
+            DriverManager.registerDriver(new StubDriver());
+        }
+
+        Collection<Driver> expectedDrivers = Collections.list(DriverManager.getDrivers());
+        assertEquals(expectedDrivers.size(), n);
+        Collection<Driver> drivers = DriverManager.drivers().collect(Collectors.toList());
+
+        assertEquals(drivers, expectedDrivers);
     }
 }

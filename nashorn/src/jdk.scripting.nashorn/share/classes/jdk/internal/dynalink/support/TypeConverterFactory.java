@@ -166,7 +166,7 @@ public class TypeConverterFactory {
         }
     };
 
-    private static final ClassLoader getClassLoader(final Class<?> clazz) {
+    private static ClassLoader getClassLoader(final Class<?> clazz) {
         return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
             @Override
             public ClassLoader run() {
@@ -298,7 +298,7 @@ public class TypeConverterFactory {
      * @return true if there can be a conversion, false if there can not.
      */
     public boolean canConvert(final Class<?> from, final Class<?> to) {
-        return canAutoConvert(from, to) || canConvert.get(from).get(to).booleanValue();
+        return canAutoConvert(from, to) || canConvert.get(from).get(to);
     }
 
     /**

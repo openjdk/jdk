@@ -57,11 +57,19 @@ import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.LogManager;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.concurrent.TimeUnit;
 
 public class LoggingDeadlock2 {
+
+    // ask child process to dumpstack after 60secs
+    public static final long DUMP_STACK_FREQUENCY_MS = 60000;
+
+    // A marker that allows to validate the subprocess output.
+    public static final String MARKER = "$";
 
     public static void realMain(String arg[]) throws Throwable {
         try {
@@ -69,23 +77,39 @@ public class LoggingDeadlock2 {
             ProcessBuilder pb = new ProcessBuilder(javaChildArgs);
             ProcessResults r = run(pb.start());
             equal(r.exitValue(), 99);
-            equal(r.out(), "");
+
+            // output of subprocess should end with "$"
+            final String out = r.out();
+            final String trailingOutput = out.indexOf(MARKER) > -1
+                    ? out.substring(out.indexOf(MARKER)+MARKER.length())
+                    : out;
+            equal(trailingOutput, "");
             equal(r.err(), "");
+            equal(out.startsWith("JavaChild started"), true);
+            equal(out.endsWith("$"), true);
         } catch (Throwable t) { unexpected(t); }
     }
 
     public static class JavaChild {
         public static void main(String args[]) throws Throwable {
+            System.out.println("JavaChild started");
+
             final CyclicBarrier startingGate = new CyclicBarrier(2);
             final Throwable[] thrown = new Throwable[1];
 
             // Some random variation, to help tickle races.
             final Random rnd = new Random();
+            final long seed = rnd.nextLong();
+            rnd.setSeed(seed);
+            System.out.println("seed=" + seed);
             final boolean dojoin = rnd.nextBoolean();
             final int JITTER = 1024;
             final int iters1 = rnd.nextInt(JITTER);
             final int iters2 = JITTER - iters1;
             final AtomicInteger counter = new AtomicInteger(0);
+            System.out.println("dojoin=" + dojoin);
+            System.out.println("iters1=" + iters1);
+            System.out.println("iters2=" + iters2);
 
             Thread exiter = new Thread() {
                 public void run() {
@@ -100,6 +124,12 @@ public class LoggingDeadlock2 {
                     }
                 }};
             exiter.start();
+
+            System.out.println("exiter started");
+
+            // signal end of verbose output
+            System.out.print(MARKER);
+            System.out.flush();
 
             startingGate.await();
             for (int i = 0; i < iters2; i++)
@@ -124,6 +154,9 @@ public class LoggingDeadlock2 {
     private static final String javaExe =
         System.getProperty("java.home") +
         File.separator + "bin" + File.separator + "java";
+    private static final String jstackExe =
+        System.getProperty("java.home") +
+        File.separator + "bin" + File.separator + "jstack";
 
     private static final String classpath =
         System.getProperty("java.class.path");
@@ -182,10 +215,15 @@ public class LoggingDeadlock2 {
         public void run() {
             try {
                 Reader r = new InputStreamReader(is);
-                char[] buf = new char[4096];
                 int n;
-                while ((n = r.read(buf)) > 0) {
-                    sb.append(buf,0,n);
+                while ((n = r.read()) > 0) {
+                    sb.append((char)n);
+
+                    // prints everything immediately to System.out so that we can
+                    // see the traces even in the event of a test timeout
+                    System.out.write((char)n);
+                    System.out.flush();
+
                 }
             } catch (Throwable t) {
                 throwable = t;
@@ -194,6 +232,56 @@ public class LoggingDeadlock2 {
                 catch (Throwable t) { throwable = t; }
             }
         }
+    }
+
+    /**
+     * If the child process deadlocks, then the parent may fail in timeout.
+     * In that case, we won't have any interesting traces, unless we manage
+     * to get a thread dump from the child.
+     * It is unsure whether obtaining a thread dump from a deadlocked child
+     * will work - but maybe we could see something if the timeout is a false
+     * positive (the child has not deadlocked but hasn't managed to fully start
+     * yet, for instance).
+     * The idea here is to periodically try to obtain a thread dump from the
+     * child, every 60sec - which should be always less than the jtreg timeout.
+     */
+    private static class TimeoutThread extends Thread {
+        final long ms;
+        final Process process;
+        TimeoutThread(long ms, Process p) {
+            super("TimeoutThread");
+            setDaemon(true);
+            this.ms = ms;
+            this.process = p;
+        }
+
+        @Override
+        public void run() {
+            long start = System.nanoTime();
+            try {
+                while (true) {
+                    sleep(ms);
+                    System.err.println("Timeout reached: " + ms);
+                    if (process.isAlive()) {
+                        long pid = process.getPid();
+                        ProcessBuilder jstack = new ProcessBuilder(jstackExe, String.valueOf(pid));
+                        System.err.println("Dumping subprocess stack: " + pid);
+                        Process p = jstack.inheritIO().start();
+                        p.waitFor(ms, TimeUnit.MILLISECONDS);
+                    } else {
+                        System.err.println("Process is not alive!");
+                        break;
+                    }
+                }
+            } catch (InterruptedException ex) {
+                System.err.println("Interrupted: " + ex);
+            } catch (IOException io) {
+                System.err.println("Failed to get stack from subprocess");
+                io.printStackTrace();
+            }
+        }
+
+
     }
 
     private static ProcessResults run(Process p) {
@@ -208,10 +296,15 @@ public class LoggingDeadlock2 {
             new StreamAccumulator(p.getErrorStream());
 
         try {
+            System.out.println("Waiting for child process to exit");
             outAccumulator.start();
             errAccumulator.start();
 
+            // ask subprocess to dump stack every 60 secs.
+            new TimeoutThread(DUMP_STACK_FREQUENCY_MS, p).start();
+
             exitValue = p.waitFor();
+            System.out.println("\nChild exited with status: " + exitValue);
 
             outAccumulator.join();
             errAccumulator.join();

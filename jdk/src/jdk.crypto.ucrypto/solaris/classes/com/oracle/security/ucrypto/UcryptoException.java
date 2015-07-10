@@ -40,7 +40,7 @@ public final class UcryptoException extends ProviderException {
     private static final long serialVersionUID = -933864511110035746L;
 
     // NOTE: check /usr/include/sys/crypto/common.h for updates
-    private static final String ERROR_MSG[] = {
+    private static final String[] ERROR_MSG = {
         "CRYPTO_SUCCESS",
         "CRYPTO_CANCEL",
         "CRYPTO_HOST_MEMORY",

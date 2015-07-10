@@ -118,14 +118,14 @@ public final class QuantifierNode extends StateNode {
     @Override
     public String toString(final int level) {
         final StringBuilder value = new StringBuilder(super.toString(level));
-        value.append("\n  target: " + pad(target, level + 1));
-        value.append("\n  lower: " + lower);
-        value.append("\n  upper: " + upper);
-        value.append("\n  greedy: " + greedy);
-        value.append("\n  targetEmptyInfo: " + targetEmptyInfo);
-        value.append("\n  headExact: " + pad(headExact, level + 1));
-        value.append("\n  nextHeadExact: " + pad(nextHeadExact, level + 1));
-        value.append("\n  isRefered: " + isRefered);
+        value.append("\n  target: ").append(pad(target, level + 1));
+        value.append("\n  lower: ").append(lower);
+        value.append("\n  upper: ").append(upper);
+        value.append("\n  greedy: ").append(greedy);
+        value.append("\n  targetEmptyInfo: ").append(targetEmptyInfo);
+        value.append("\n  headExact: ").append(pad(headExact, level + 1));
+        value.append("\n  nextHeadExact: ").append(pad(nextHeadExact, level + 1));
+        value.append("\n  isRefered: ").append(isRefered);
 
         return value.toString();
     }

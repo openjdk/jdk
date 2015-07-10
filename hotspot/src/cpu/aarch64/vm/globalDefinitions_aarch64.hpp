@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,6 @@
 #define CPU_AARCH64_VM_GLOBALDEFINITIONS_AARCH64_HPP
 
 const int StackAlignmentInBytes  = 16;
-
-// Indicates whether the C calling conventions require that
-// 32-bit integer argument values are properly extended to 64 bits.
-// If set, SharedRuntime::c_calling_convention() must adapt
-// signatures accordingly.
-const bool CCallingConventionRequiresIntsAsLongs = true;
 
 #define SUPPORTS_NATIVE_CX8
 

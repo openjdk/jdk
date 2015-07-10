@@ -41,13 +41,10 @@ class SecuritySupport  {
 
     ClassLoader getContextClassLoader() {
         return
-        AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+        AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override
             public ClassLoader run() {
-                ClassLoader cl = null;
-                //try {
-                cl = Thread.currentThread().getContextClassLoader();
-                //} catch (SecurityException ex) { }
+                ClassLoader cl = Thread.currentThread().getContextClassLoader();
                 if (cl == null)
                     cl = ClassLoader.getSystemClassLoader();
                 return cl;
@@ -56,7 +53,7 @@ class SecuritySupport  {
     }
 
     String getSystemProperty(final String propName) {
-        return AccessController.doPrivileged(new PrivilegedAction<String>() {
+        return AccessController.doPrivileged(new PrivilegedAction<>() {
                 @Override
                 public String run() {
                     return System.getProperty(propName);
@@ -69,7 +66,7 @@ class SecuritySupport  {
     {
         try {
             return AccessController.doPrivileged(
-                new PrivilegedExceptionAction<FileInputStream>() {
+                new PrivilegedExceptionAction<>() {
                     @Override
                     public FileInputStream run() throws FileNotFoundException {
                         return new FileInputStream(file);
@@ -82,7 +79,7 @@ class SecuritySupport  {
 
     // Used for debugging purposes
     String getClassSource(Class<?> cls) {
-        return AccessController.doPrivileged(new PrivilegedAction<String>() {
+        return AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override
             public String run() {
                 CodeSource cs = cls.getProtectionDomain().getCodeSource();
@@ -97,7 +94,7 @@ class SecuritySupport  {
     }
 
     boolean doesFileExist(final File f) {
-        return AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+        return AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override
             public Boolean run() {
                 return f.exists();

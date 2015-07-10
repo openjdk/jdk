@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,15 @@
 
 package apple.laf;
 
-import com.apple.laf.AquaImageFactory.NineSliceMetrics;
-
-import apple.laf.JRSUIConstants.*;
-import sun.security.action.GetPropertyAction;
-
 import java.security.AccessController;
 
-public class JRSUIUtils {
+import apple.laf.JRSUIConstants.Hit;
+import apple.laf.JRSUIConstants.ScrollBarPart;
+import com.apple.laf.AquaImageFactory.NineSliceMetrics;
+import sun.security.action.GetPropertyAction;
+
+public final class JRSUIUtils {
+
     static boolean isLeopard = isMacOSXLeopard();
     static boolean isSnowLeopardOrBelow = isMacOSXSnowLeopardOrBelow();
 
@@ -48,7 +49,9 @@ public class JRSUIUtils {
         return currentMacOSXVersionMatchesGivenVersionRange(version, true, false, false);
     }
 
-    static boolean currentMacOSXVersionMatchesGivenVersionRange(final int version, final boolean inclusive, final boolean matchBelow, final boolean matchAbove) {
+    static boolean currentMacOSXVersionMatchesGivenVersionRange(
+            final int version, final boolean inclusive,
+            final boolean matchBelow, final boolean matchAbove) {
         // split the "10.x.y" version number
         String osVersion = AccessController.doPrivileged(new GetPropertyAction("os.version"));
         String[] fragments = osVersion.split("\\.");
@@ -99,12 +102,22 @@ public class JRSUIUtils {
             return shouldUseScrollToClick();
         }
 
-        public static void getPartBounds(final double[] rect, final JRSUIControl control, final double x, final double y, final double w, final double h, final ScrollBarPart part) {
+        public static void getPartBounds(final double[] rect,
+                                         final JRSUIControl control,
+                                         final int x, final int y, final int w,
+                                         final int h,
+                                         final ScrollBarPart part) {
             control.getPartBounds(rect, x, y, w, h, part.ordinal);
         }
 
-        public static double getNativeOffsetChange(final JRSUIControl control, final double x, final double y, final double w, final double h, final int offset, final int visibleAmount, final int extent) {
-            return control.getScrollBarOffsetChange(x, y, w, h, offset, visibleAmount, extent);
+        public static double getNativeOffsetChange(final JRSUIControl control,
+                                                   final int x, final int y,
+                                                   final int w, final int h,
+                                                   final int offset,
+                                                   final int visibleAmount,
+                                                   final int extent) {
+            return control.getScrollBarOffsetChange(x, y, w, h, offset,
+                                                    visibleAmount, extent);
         }
     }
 
@@ -115,7 +128,10 @@ public class JRSUIUtils {
     }
 
     public static class HitDetection {
-        public static Hit getHitForPoint(final JRSUIControl control, final double x, final double y, final double w, final double h, final double hitX, final double hitY) {
+        public static Hit getHitForPoint(final JRSUIControl control,
+                                         final int x, final int y, final int w,
+                                         final int h, final int hitX,
+                                         final int hitY) {
             return control.getHitForPoint(x, y, w, h, hitX, hitY);
         }
     }

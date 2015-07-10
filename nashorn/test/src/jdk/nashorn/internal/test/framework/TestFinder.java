@@ -378,7 +378,7 @@ public final class TestFinder {
      * @return true if optimistic type override has been set by test suite
      */
     public static boolean hasOptimisticOverride() {
-        return Boolean.valueOf(OPTIMISTIC_OVERRIDE).toString().equals(System.getProperty("optimistic.override"));
+        return Boolean.toString(OPTIMISTIC_OVERRIDE).equals(System.getProperty("optimistic.override"));
     }
 
     /**
@@ -391,8 +391,8 @@ public final class TestFinder {
     public static String[] addExplicitOptimisticTypes(final String[] args) {
         if (hasOptimisticOverride()) {
             final List<String> newList = new ArrayList<>(Arrays.asList(args));
-            newList.add("--optimistic-types=" + Boolean.valueOf(OPTIMISTIC_OVERRIDE));
-            return newList.toArray(new String[0]);
+            newList.add("--optimistic-types=" + OPTIMISTIC_OVERRIDE);
+            return newList.toArray(new String[newList.size()]);
         }
         return args;
     }
@@ -405,7 +405,7 @@ public final class TestFinder {
      */
     public static void addExplicitOptimisticTypes(final List<String> args) {
         if (hasOptimisticOverride()) {
-            args.add("--optimistic-types=" + Boolean.valueOf(OPTIMISTIC_OVERRIDE));
+            args.add("--optimistic-types=" + OPTIMISTIC_OVERRIDE);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,17 @@
 
 package java.sql;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.List;
 import java.util.ServiceLoader;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Stream;
+
 import sun.reflect.CallerSensitive;
 import sun.reflect.Reflection;
 
@@ -429,28 +435,43 @@ public class DriverManager {
      * <CODE>d.getClass().getName()</CODE>
      *
      * @return the list of JDBC Drivers loaded by the caller's class loader
+     * @see #drivers()
      */
     @CallerSensitive
-    public static java.util.Enumeration<Driver> getDrivers() {
-        java.util.Vector<Driver> result = new java.util.Vector<>();
-
+    public static Enumeration<Driver> getDrivers() {
         ensureDriversInitialized();
 
-        Class<?> callerClass = Reflection.getCallerClass();
+        return Collections.enumeration(getDrivers(Reflection.getCallerClass()));
+    }
 
+    /**
+     * Retrieves a Stream with all of the currently loaded JDBC drivers
+     * to which the current caller has access.
+     *
+     * @return the stream of JDBC Drivers loaded by the caller's class loader
+     * @since 1.9
+     */
+    @CallerSensitive
+    public static Stream<Driver> drivers() {
+        ensureDriversInitialized();
+
+        return getDrivers(Reflection.getCallerClass()).stream();
+    }
+
+    private static List<Driver> getDrivers(Class<?> callerClass) {
+        List<Driver> result = new ArrayList<>();
         // Walk through the loaded registeredDrivers.
         for (DriverInfo aDriver : registeredDrivers) {
             // If the caller does not have permission to load the driver then
             // skip it.
             if (isDriverAllowed(aDriver.driver, callerClass)) {
-                result.addElement(aDriver.driver);
+                result.add(aDriver.driver);
             } else {
                 println("    skipping: " + aDriver.getClass().getName());
             }
         }
-        return (result.elements());
+        return result;
     }
-
 
     /**
      * Sets the maximum time in seconds that a driver will wait
