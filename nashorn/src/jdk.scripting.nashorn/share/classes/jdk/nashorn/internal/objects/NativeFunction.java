@@ -108,7 +108,7 @@ public final class NativeFunction {
         throw new AssertionError("Should not reach here");
     }
 
-     /**
+    /**
      * Given an array-like object, converts it into a Java object array suitable for invocation of ScriptRuntime.apply
      * or for direct invocation of the applied function.
      * @param array the array-like object. Can be null in which case a zero-length array is created.

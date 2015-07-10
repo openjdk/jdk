@@ -55,7 +55,7 @@ import java.util.List;
 import jdk.internal.org.objectweb.asm.Handle;
 
 /**
- * This class generates constructor class for a @ClassInfo annotated class.
+ * This class generates constructor class for a @ScriptClass annotated class.
  *
  */
 public class ConstructorGenerator extends ClassGenerator {
@@ -75,7 +75,7 @@ public class ConstructorGenerator extends ClassGenerator {
     }
 
     byte[] getClassBytes() {
-        // new class extensing from ScriptObject
+        // new class extending from ScriptObject
         final String superClass = (constructor != null)? SCRIPTFUNCTIONIMPL_TYPE : SCRIPTOBJECT_TYPE;
         cw.visit(V1_7, ACC_FINAL, className, null, superClass, null);
         if (memberCount > 0) {
