@@ -29,6 +29,7 @@ import sun.misc.Cleaner;
 import sun.misc.JavaLangRefAccess;
 import sun.misc.ManagedLocalsThread;
 import sun.misc.SharedSecrets;
+import jdk.internal.HotSpotIntrinsicCandidate;
 
 /**
  * Abstract base class for reference objects.  This class defines the
@@ -251,6 +252,7 @@ public abstract class Reference<T> {
      * @return   The object to which this reference refers, or
      *           <code>null</code> if this reference object has been cleared
      */
+    @HotSpotIntrinsicCandidate
     public T get() {
         return this.referent;
     }
