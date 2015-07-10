@@ -44,6 +44,7 @@ class ReferenceProcessor;
 //
 // Class unloading will only occur when a full gc is invoked.
 class G1PrepareCompactClosure;
+class G1ArchiveRegionMap;
 
 class G1MarkSweep : AllStatic {
  public:
@@ -54,7 +55,22 @@ class G1MarkSweep : AllStatic {
   static STWGCTimer* gc_timer() { return GenMarkSweep::_gc_timer; }
   static SerialOldTracer* gc_tracer() { return GenMarkSweep::_gc_tracer; }
 
+  // Create the _archive_region_map which is used to identify archive objects.
+  static void enable_archive_object_check();
+
+  // Mark the regions containing the specified address range as archive regions.
+  static void mark_range_archive(MemRegion range);
+
+  // Check if an object is in an archive region using the _archive_region_map.
+  static bool in_archive_range(oop object);
+
+  // Check if archive object checking is enabled, to avoid calling in_archive_range
+  // unnecessarily.
+  static bool archive_check_enabled() { return G1MarkSweep::_archive_check_enabled; }
+
  private:
+  static bool _archive_check_enabled;
+  static G1ArchiveRegionMap  _archive_region_map;
 
   // Mark live objects
   static void mark_sweep_phase1(bool& marked_for_deopt,
@@ -91,6 +107,14 @@ class G1PrepareCompactClosure : public HeapRegionClosure {
 
   void update_sets();
   bool doHeapRegion(HeapRegion* hr);
+};
+
+// G1ArchiveRegionMap is a boolean array used to mark G1 regions as
+// archive regions.  This allows a quick check for whether an object
+// should not be marked because it is in an archive region.
+class G1ArchiveRegionMap : public G1BiasedMappedArray<bool> {
+protected:
+  bool default_value() const { return false; }
 };
 
 #endif // SHARE_VM_GC_G1_G1MARKSWEEP_HPP

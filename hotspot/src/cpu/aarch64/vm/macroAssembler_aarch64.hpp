@@ -36,6 +36,7 @@
 class MacroAssembler: public Assembler {
   friend class LIR_Assembler;
 
+ public:
   using Assembler::mov;
   using Assembler::movi;
 
@@ -718,10 +719,6 @@ public:
                              Register tmp2);
 
 #endif // INCLUDE_ALL_GCS
-
-  // split store_check(Register obj) to enhance instruction interleaving
-  void store_check_part_1(Register obj);
-  void store_check_part_2(Register obj);
 
   // oop manipulations
   void load_klass(Register dst, Register src);

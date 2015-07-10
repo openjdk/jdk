@@ -1235,7 +1235,7 @@ class Attribute implements Comparable<Attribute> {
         int sofar = 0;  // how far have we processed the layout?
         for (;;) {
             // for each dash, collect everything up to the dash
-            result.append(layout.substring(sofar, dash));
+            result.append(layout, sofar, dash);
             sofar = dash+1;  // skip the dash
             // then collect intermediate values
             int value0 = parseIntBefore(layout, dash);
@@ -1249,7 +1249,7 @@ class Attribute implements Comparable<Attribute> {
             dash = findCaseDash(layout, sofar);
             if (dash < 0)  break;
         }
-        result.append(layout.substring(sofar));  // collect the rest
+        result.append(layout, sofar, layout.length());  // collect the rest
         return result.toString();
     }
     static {

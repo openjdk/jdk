@@ -218,7 +218,7 @@ public final class NativeDate extends ScriptObject {
 
     @Override
     public String toString() {
-        return isValidDate() ? toString(this).toString() : INVALID_DATE;
+        return isValidDate() ? toString(this) : INVALID_DATE;
     }
 
     /**

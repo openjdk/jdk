@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,6 +104,15 @@ public class DefaultProxySelector extends ProxySelector {
                 });
             hasSystemProxies = init();
         }
+    }
+
+    public static int socksProxyVersion() {
+        return AccessController.doPrivileged(
+                new PrivilegedAction<Integer>() {
+                    @Override public Integer run() {
+                        return NetProperties.getInteger(SOCKS_PROXY_VERSION, 5);
+                    }
+                });
     }
 
     /**
@@ -302,8 +311,7 @@ public class DefaultProxySelector extends ProxySelector {
                             saddr = InetSocketAddress.createUnresolved(phost, pport);
                             // Socks is *always* the last on the list.
                             if (j == (props[i].length - 1)) {
-                                int version = NetProperties.getInteger(SOCKS_PROXY_VERSION, 5).intValue();
-                                return SocksProxy.create(saddr, version);
+                                return SocksProxy.create(saddr, socksProxyVersion());
                             } else {
                                 return new Proxy(Proxy.Type.HTTP, saddr);
                             }

@@ -36,13 +36,13 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=128m -XX:MaxNewSize=128m
  *                   -XX:OldSize=32m -XX:MaxHeapSize=160m
- *                   -XX:SurvivorRatio=1 -XX:-ExplicitGCInvokesConcurrent
+ *                   -XX:SurvivorRatio=1 -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=32
  *                   TestPromotionFromSurvivorToTenuredAfterFullGC 10m 9 TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=128m -XX:MaxNewSize=128m
- *                   -XX:OldSize=32m -XX:MaxHeapSize=160m
+ *                   -XX:OldSize=32m -XX:MaxHeapSize=160m -XX:-ResizePLAB
  *                   -XX:SurvivorRatio=1 -XX:-ExplicitGCInvokesConcurrent
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=32
@@ -51,14 +51,14 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=200m -XX:MaxNewSize=200m
  *                   -XX:OldSize=32m -XX:MaxHeapSize=232m
- *                   -XX:SurvivorRatio=1 -XX:-ExplicitGCInvokesConcurrent
+ *                   -XX:SurvivorRatio=1 -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=64
  *                   TestPromotionFromSurvivorToTenuredAfterFullGC 10m 9 TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=128m -XX:MaxNewSize=128m
  *                   -XX:OldSize=32m -XX:MaxHeapSize=160m
- *                   -XX:SurvivorRatio=1 -XX:-ExplicitGCInvokesConcurrent
+ *                   -XX:SurvivorRatio=1 -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=64
  *                   TestPromotionFromSurvivorToTenuredAfterFullGC 20m 87
@@ -66,7 +66,7 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=256m -XX:MaxNewSize=256m
  *                   -XX:OldSize=32M -XX:MaxHeapSize=288m
- *                   -XX:SurvivorRatio=1 -XX:-ExplicitGCInvokesConcurrent
+ *                   -XX:SurvivorRatio=1 -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=128
  *                    TestPromotionFromSurvivorToTenuredAfterFullGC 10m 9
@@ -74,7 +74,7 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=128m -XX:MaxNewSize=128m
  *                   -XX:OldSize=32m -XX:MaxHeapSize=160m
- *                   -XX:SurvivorRatio=1 -XX:-ExplicitGCInvokesConcurrent
+ *                   -XX:SurvivorRatio=1 -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=128
  *                   TestPromotionFromSurvivorToTenuredAfterFullGC 20m 147

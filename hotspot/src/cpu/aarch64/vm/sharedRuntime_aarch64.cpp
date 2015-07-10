@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2120,6 +2120,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       save_native_result(masm, ret_type, stack_slots);
     }
 
+    __ mov(c_rarg2, rthread);
     __ lea(c_rarg1, Address(sp, lock_slot_offset * VMRegImpl::stack_slot_size));
     __ mov(c_rarg0, obj_reg);
 
@@ -2128,7 +2129,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ ldr(r19, Address(rthread, in_bytes(Thread::pending_exception_offset())));
     __ str(zr, Address(rthread, in_bytes(Thread::pending_exception_offset())));
 
-    rt_call(masm, CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_unlocking_C), 2, 0, 1);
+    rt_call(masm, CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_unlocking_C), 3, 0, 1);
 
 #ifdef ASSERT
     {

@@ -200,7 +200,7 @@ class UDPClient extends NetClient {
 
     @Override
     public byte[] receive() throws IOException {
-        byte ibuf[] = new byte[bufSize];
+        byte[] ibuf = new byte[bufSize];
         dgPacketIn = new DatagramPacket(ibuf, ibuf.length);
         try {
             dgSocket.receive(dgPacketIn);

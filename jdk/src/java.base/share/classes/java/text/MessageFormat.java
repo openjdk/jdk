@@ -1239,7 +1239,7 @@ public class MessageFormat extends Format {
         int lastOffset = 0;
         int last = result.length();
         for (int i = 0; i <= maxOffset; ++i) {
-            result.append(pattern.substring(lastOffset, offsets[i]));
+            result.append(pattern, lastOffset, offsets[i]);
             lastOffset = offsets[i];
             int argumentNumber = argumentNumbers[i];
             if (arguments == null || argumentNumber >= arguments.length) {
@@ -1332,7 +1332,7 @@ public class MessageFormat extends Format {
                 }
             }
         }
-        result.append(pattern.substring(lastOffset, pattern.length()));
+        result.append(pattern, lastOffset, pattern.length());
         if (characterIterators != null && last != result.length()) {
             characterIterators.add(createAttributedCharacterIterator(
                                    result.substring(last)));

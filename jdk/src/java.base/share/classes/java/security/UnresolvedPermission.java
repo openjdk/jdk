@@ -130,7 +130,7 @@ implements java.io.Serializable
      */
     private String actions;
 
-    private transient java.security.cert.Certificate certs[];
+    private transient java.security.cert.Certificate[] certs;
 
     /**
      * Creates a new UnresolvedPermission containing the permission
@@ -152,7 +152,7 @@ implements java.io.Serializable
     public UnresolvedPermission(String type,
                                 String name,
                                 String actions,
-                                java.security.cert.Certificate certs[])
+                                java.security.cert.Certificate[] certs)
     {
         super(type);
 
@@ -224,7 +224,7 @@ implements java.io.Serializable
      * try and resolve this permission using the class loader of the permission
      * that was passed in.
      */
-    Permission resolve(Permission p, java.security.cert.Certificate certs[]) {
+    Permission resolve(Permission p, java.security.cert.Certificate[] certs) {
         if (this.certs != null) {
             // if p wasn't signed, we don't have a match
             if (certs == null) {

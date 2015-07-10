@@ -190,10 +190,10 @@ class CMSParGCThreadState: public CHeapObj<mtGC> {
 };
 
 ConcurrentMarkSweepGeneration::ConcurrentMarkSweepGeneration(
-     ReservedSpace rs, size_t initial_byte_size, int level,
+     ReservedSpace rs, size_t initial_byte_size,
      CardTableRS* ct, bool use_adaptive_freelists,
      FreeBlockDictionary<FreeChunk>::DictionaryChoice dictionaryChoice) :
-  CardGeneration(rs, initial_byte_size, level, ct),
+  CardGeneration(rs, initial_byte_size, ct),
   _dilatation_factor(((double)MinChunkSize)/((double)(CollectedHeap::min_fill_size()))),
   _did_compact(false)
 {
@@ -285,9 +285,9 @@ void CMSCollector::ref_processor_init() {
     _ref_processor =
       new ReferenceProcessor(_span,                               // span
                              (ParallelGCThreads > 1) && ParallelRefProcEnabled, // mt processing
-                             (int) ParallelGCThreads,             // mt processing degree
+                             ParallelGCThreads,                   // mt processing degree
                              _cmsGen->refs_discovery_is_mt(),     // mt discovery
-                             (int) MAX2(ConcGCThreads, ParallelGCThreads), // mt discovery degree
+                             MAX2(ConcGCThreads, ParallelGCThreads), // mt discovery degree
                              _cmsGen->refs_discovery_is_atomic(), // discovery is not atomic
                              &_is_alive_closure);                 // closure for liveness info
     // Initialize the _ref_processor field of CMSGen
@@ -562,7 +562,7 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
   // are not shared with parallel scavenge (ParNew).
   {
     uint i;
-    uint num_queues = (uint) MAX2(ParallelGCThreads, ConcGCThreads);
+    uint num_queues = MAX2(ParallelGCThreads, ConcGCThreads);
 
     if ((CMSParallelRemarkEnabled || CMSConcurrentMTEnabled
          || ParallelRefProcEnabled)
@@ -682,12 +682,17 @@ void ConcurrentMarkSweepGeneration::print_statistics() {
 void ConcurrentMarkSweepGeneration::printOccupancy(const char *s) {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   if (PrintGCDetails) {
+    // I didn't want to change the logging when removing the level concept,
+    // but I guess this logging could say "old" or something instead of "1".
+    assert(gch->is_old_gen(this),
+           "The CMS generation should be the old generation");
+    uint level = 1;
     if (Verbose) {
-      gclog_or_tty->print("[%d %s-%s: "SIZE_FORMAT"("SIZE_FORMAT")]",
-        level(), short_name(), s, used(), capacity());
+      gclog_or_tty->print("[%u %s-%s: "SIZE_FORMAT"("SIZE_FORMAT")]",
+        level, short_name(), s, used(), capacity());
     } else {
-      gclog_or_tty->print("[%d %s-%s: "SIZE_FORMAT"K("SIZE_FORMAT"K)]",
-        level(), short_name(), s, used() / K, capacity() / K);
+      gclog_or_tty->print("[%u %s-%s: "SIZE_FORMAT"K("SIZE_FORMAT"K)]",
+        level, short_name(), s, used() / K, capacity() / K);
     }
   }
   if (Verbose) {
@@ -797,27 +802,22 @@ void ConcurrentMarkSweepGeneration::compute_new_size_free_list() {
       gclog_or_tty->print_cr("\nFrom compute_new_size: ");
       gclog_or_tty->print_cr("  Free fraction %f", free_percentage);
       gclog_or_tty->print_cr("  Desired free fraction %f",
-        desired_free_percentage);
+              desired_free_percentage);
       gclog_or_tty->print_cr("  Maximum free fraction %f",
-        maximum_free_percentage);
+              maximum_free_percentage);
       gclog_or_tty->print_cr("  Capacity "SIZE_FORMAT, capacity()/1000);
       gclog_or_tty->print_cr("  Desired capacity "SIZE_FORMAT,
-        desired_capacity/1000);
-      int prev_level = level() - 1;
-      if (prev_level >= 0) {
-        size_t prev_size = 0;
-        GenCollectedHeap* gch = GenCollectedHeap::heap();
-        Generation* prev_gen = gch->young_gen();
-        prev_size = prev_gen->capacity();
-          gclog_or_tty->print_cr("  Younger gen size "SIZE_FORMAT,
-                                 prev_size/1000);
-      }
+              desired_capacity/1000);
+      GenCollectedHeap* gch = GenCollectedHeap::heap();
+      assert(gch->is_old_gen(this), "The CMS generation should always be the old generation");
+      size_t young_size = gch->young_gen()->capacity();
+      gclog_or_tty->print_cr("  Young gen size " SIZE_FORMAT, young_size / 1000);
       gclog_or_tty->print_cr("  unsafe_max_alloc_nogc "SIZE_FORMAT,
-        unsafe_max_alloc_nogc()/1000);
+              unsafe_max_alloc_nogc()/1000);
       gclog_or_tty->print_cr("  contiguous available "SIZE_FORMAT,
-        contiguous_available()/1000);
+              contiguous_available()/1000);
       gclog_or_tty->print_cr("  Expand by "SIZE_FORMAT" (bytes)",
-        expand_bytes);
+              expand_bytes);
     }
     // safe if expansion fails
     expand_for_gc_cause(expand_bytes, 0, CMSExpansionCause::_satisfy_free_ratio);
@@ -1650,8 +1650,7 @@ void CMSCollector::do_compaction_work(bool clear_all_soft_refs) {
                                             _intra_sweep_estimate.padded_average());
   }
 
-  GenMarkSweep::invoke_at_safepoint(_cmsGen->level(),
-    ref_processor(), clear_all_soft_refs);
+  GenMarkSweep::invoke_at_safepoint(ref_processor(), clear_all_soft_refs);
   #ifdef ASSERT
     CompactibleFreeListSpace* cms_space = _cmsGen->cmsSpace();
     size_t free_size = cms_space->free();
@@ -2432,7 +2431,7 @@ void CMSCollector::verify_after_remark_work_1() {
     StrongRootsScope srs(1);
 
     gch->gen_process_roots(&srs,
-                           _cmsGen->level(),
+                           GenCollectedHeap::OldGen,
                            true,   // younger gens are roots
                            GenCollectedHeap::ScanningOption(roots_scanning_options()),
                            should_unload_classes(),
@@ -2504,7 +2503,7 @@ void CMSCollector::verify_after_remark_work_2() {
     StrongRootsScope srs(1);
 
     gch->gen_process_roots(&srs,
-                           _cmsGen->level(),
+                           GenCollectedHeap::OldGen,
                            true,   // younger gens are roots
                            GenCollectedHeap::ScanningOption(roots_scanning_options()),
                            should_unload_classes(),
@@ -3031,7 +3030,7 @@ void CMSCollector::checkpointRootsInitialWork() {
       StrongRootsScope srs(1);
 
       gch->gen_process_roots(&srs,
-                             _cmsGen->level(),
+                             GenCollectedHeap::OldGen,
                              true,   // younger gens are roots
                              GenCollectedHeap::ScanningOption(roots_scanning_options()),
                              should_unload_classes(),
@@ -4282,15 +4281,12 @@ void CMSCollector::checkpointRootsFinal() {
       FlagSetting fl(gch->_is_gc_active, false);
       NOT_PRODUCT(GCTraceTime t("Scavenge-Before-Remark",
         PrintGCDetails && Verbose, true, _gc_timer_cm, _gc_tracer_cm->gc_id());)
-      int level = _cmsGen->level() - 1;
-      if (level >= 0) {
-        gch->do_collection(true,        // full (i.e. force, see below)
-                           false,       // !clear_all_soft_refs
-                           0,           // size
-                           false,       // is_tlab
-                           level        // max_level
-                          );
-      }
+      gch->do_collection(true,                      // full (i.e. force, see below)
+                         false,                     // !clear_all_soft_refs
+                         0,                         // size
+                         false,                     // is_tlab
+                         GenCollectedHeap::YoungGen // type
+        );
     }
     FreelistLocker x(this);
     MutexLockerEx y(bitMapLock(),
@@ -4464,7 +4460,7 @@ void CMSParInitialMarkTask::work(uint worker_id) {
   CLDToOopClosure cld_closure(&par_mri_cl, true);
 
   gch->gen_process_roots(_strong_roots_scope,
-                         _collector->_cmsGen->level(),
+                         GenCollectedHeap::OldGen,
                          false,     // yg was scanned above
                          GenCollectedHeap::ScanningOption(_collector->CMSCollector::roots_scanning_options()),
                          _collector->should_unload_classes(),
@@ -4603,7 +4599,7 @@ void CMSParRemarkTask::work(uint worker_id) {
   _timer.reset();
   _timer.start();
   gch->gen_process_roots(_strong_roots_scope,
-                         _collector->_cmsGen->level(),
+                         GenCollectedHeap::OldGen,
                          false,     // yg was scanned above
                          GenCollectedHeap::ScanningOption(_collector->CMSCollector::roots_scanning_options()),
                          _collector->should_unload_classes(),
@@ -5184,7 +5180,7 @@ void CMSCollector::do_remark_non_parallel() {
     StrongRootsScope srs(1);
 
     gch->gen_process_roots(&srs,
-                           _cmsGen->level(),
+                           GenCollectedHeap::OldGen,
                            true,  // younger gens as roots
                            GenCollectedHeap::ScanningOption(roots_scanning_options()),
                            should_unload_classes(),
@@ -5322,8 +5318,8 @@ CMSParKeepAliveClosure::CMSParKeepAliveClosure(CMSCollector* collector,
    _bit_map(bit_map),
    _work_queue(work_queue),
    _mark_and_push(collector, span, bit_map, work_queue),
-   _low_water_mark(MIN2((uint)(work_queue->max_elems()/4),
-                        (uint)(CMSWorkQueueDrainThreshold * ParallelGCThreads)))
+   _low_water_mark(MIN2((work_queue->max_elems()/4),
+                        ((uint)CMSWorkQueueDrainThreshold * ParallelGCThreads)))
 { }
 
 // . see if we can share work_queues with ParNew? XXX
@@ -5648,11 +5644,12 @@ FreeChunk* ConcurrentMarkSweepGeneration::find_chunk_at_end() {
   return _cmsSpace->find_chunk_at_end();
 }
 
-void ConcurrentMarkSweepGeneration::update_gc_stats(int current_level,
+void ConcurrentMarkSweepGeneration::update_gc_stats(Generation* current_generation,
                                                     bool full) {
-  // The next lower level has been collected.  Gather any statistics
+  // If the young generation has been collected, gather any statistics
   // that are of interest at this point.
-  if (!full && (current_level + 1) == level()) {
+  bool current_is_young = GenCollectedHeap::heap()->is_young_gen(current_generation);
+  if (!full && current_is_young) {
     // Gather statistics on the young generation collection.
     collector()->stats().record_gc0_end(used());
   }
@@ -6251,8 +6248,8 @@ Par_MarkRefsIntoAndScanClosure::Par_MarkRefsIntoAndScanClosure(
   _span(span),
   _bit_map(bit_map),
   _work_queue(work_queue),
-  _low_water_mark(MIN2((uint)(work_queue->max_elems()/4),
-                       (uint)(CMSWorkQueueDrainThreshold * ParallelGCThreads))),
+  _low_water_mark(MIN2((work_queue->max_elems()/4),
+                       ((uint)CMSWorkQueueDrainThreshold * ParallelGCThreads))),
   _par_pushAndMarkClosure(collector, span, rp, bit_map, work_queue)
 {
   _ref_processor = rp;

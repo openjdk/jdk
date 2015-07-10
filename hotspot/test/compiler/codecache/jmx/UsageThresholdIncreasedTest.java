@@ -53,14 +53,12 @@ public class UsageThresholdIncreasedTest {
 
     public static void main(String[] args) {
         for (BlobType btype : BlobType.getAvailable()) {
-            if (CodeCacheUtils.isCodeHeapPredictable(btype)) {
-                new UsageThresholdIncreasedTest(btype).runTest();
-            }
+            new UsageThresholdIncreasedTest(btype).runTest();
         }
     }
 
     private void checkUsageThresholdCount(MemoryPoolMXBean bean, long count){
-        Asserts.assertEQ(bean.getUsageThresholdCount(), count,
+        CodeCacheUtils.assertEQorGTE(btype, bean.getUsageThresholdCount(), count,
                 String.format("Usage threshold was hit: %d times for %s "
                         + "Threshold value: %d with current usage: %d",
                         bean.getUsageThresholdCount(), bean.getName(),

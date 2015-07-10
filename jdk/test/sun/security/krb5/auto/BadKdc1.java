@@ -24,13 +24,6 @@
 /*
  * @test
  * @bug 6843127
- * @modules java.base/sun.net.spi.nameservice
- *          java.base/sun.security.util
- *          java.security.jgss/sun.security.krb5
- *          java.security.jgss/sun.security.krb5.internal
- *          java.security.jgss/sun.security.krb5.internal.ccache
- *          java.security.jgss/sun.security.krb5.internal.crypto
- *          java.security.jgss/sun.security.krb5.internal.ktab
  * @run main/othervm/timeout=300 BadKdc1
  * @summary krb5 should not try to access unavailable kdc too often
  */
@@ -60,8 +53,7 @@ public class BadKdc1 {
                // k3 off k2 on
                "(122212(22){1,2}|1222323232-)", // 1
                // k1 on
-               "(12(12){1,2}|122232-)"  // empty
+               "(12(12){1,2}|122212|122232-)"  // empty
        );
    }
 }
-

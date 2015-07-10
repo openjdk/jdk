@@ -159,7 +159,7 @@ public abstract class AbstractScriptRunnable {
         forkJVMOptions = (vmOptions != null)? vmOptions.split(" ") : new String[0];
     }
 
-    private static ThreadLocal<ScriptEvaluator> evaluators = new ThreadLocal<>();
+    private static final ThreadLocal<ScriptEvaluator> EVALUATORS = new ThreadLocal<>();
 
     /**
      * Create a script evaluator or return from cache
@@ -167,7 +167,7 @@ public abstract class AbstractScriptRunnable {
      */
     protected ScriptEvaluator getEvaluator() {
         synchronized (AbstractScriptRunnable.class) {
-            ScriptEvaluator evaluator = evaluators.get();
+            ScriptEvaluator evaluator = EVALUATORS.get();
             if (evaluator == null) {
                 if (sharedContext) {
                     final String[] args;
@@ -177,10 +177,10 @@ public abstract class AbstractScriptRunnable {
                         args = new String[] { framework };
                     }
                     evaluator = new SharedContextEvaluator(args);
-                    evaluators.set(evaluator);
+                    EVALUATORS.set(evaluator);
                 } else {
                     evaluator = new SeparateContextEvaluator();
-                    evaluators.set(evaluator);
+                    EVALUATORS.set(evaluator);
                 }
             }
             return evaluator;

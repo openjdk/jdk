@@ -353,8 +353,8 @@ final class FoldConstants extends NodeVisitor<LexicalContext> implements Loggabl
                 return null;
             }
 
-            isInteger &= JSType.isRepresentableAsInt(value) && !JSType.isNegativeZero(value);
-            isLong    &= JSType.isRepresentableAsLong(value) && !JSType.isNegativeZero(value);
+            isInteger &= JSType.isStrictlyRepresentableAsInt(value);
+            isLong    &= JSType.isStrictlyRepresentableAsLong(value);
 
             if (isInteger) {
                 return LiteralNode.newInstance(token, finish, (int)value);

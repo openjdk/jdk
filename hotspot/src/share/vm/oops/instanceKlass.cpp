@@ -381,6 +381,9 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
     if (!constants()->is_shared()) {
       MetadataFactory::free_metadata(loader_data, constants());
     }
+    // Delete any cached resolution errors for the constant pool
+    SystemDictionary::delete_resolution_error(constants());
+
     set_constants(NULL);
   }
 

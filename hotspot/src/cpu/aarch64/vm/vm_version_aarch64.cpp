@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -190,8 +190,19 @@ void VM_Version::get_processor_features() {
     }
   }
 
+  if (UseGHASHIntrinsics) {
+    warning("GHASH intrinsics are not available on this CPU");
+    FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
+  }
+
   if (FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
     UseCRC32Intrinsics = true;
+  }
+
+  if (UseCRC32CIntrinsics) {
+    if (!FLAG_IS_DEFAULT(UseCRC32CIntrinsics))
+      warning("CRC32C intrinsics are not available on this CPU");
+    FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
   }
 
   if (auxv & (HWCAP_SHA1 | HWCAP_SHA2)) {
@@ -244,6 +255,10 @@ void VM_Version::get_processor_features() {
 
   if (FLAG_IS_DEFAULT(UseBarriersForVolatile)) {
     UseBarriersForVolatile = (_cpuFeatures & CPU_DMB_ATOMICS) != 0;
+  }
+
+  if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
+    UsePopCountInstruction = true;
   }
 
 #ifdef COMPILER2
