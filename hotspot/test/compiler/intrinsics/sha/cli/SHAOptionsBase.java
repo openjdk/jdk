@@ -47,16 +47,12 @@ public class SHAOptionsBase extends CommandLineOptionTest {
     // expressions, not just a plain strings.
     protected static final String SHA_INSTRUCTIONS_ARE_NOT_AVAILABLE
             = "SHA instructions are not available on this CPU";
-    protected static final String SHA1_INSTRUCTION_IS_NOT_AVAILABLE
-            = "SHA1 instruction is not available on this CPU\\.";
-    protected static final String SHA256_INSTRUCTION_IS_NOT_AVAILABLE
-            = "SHA256 instruction \\(for SHA-224 and SHA-256\\) "
-            + "is not available on this CPU\\.";
-    protected static final String SHA512_INSTRUCTION_IS_NOT_AVAILABLE
-            = "SHA512 instruction \\(for SHA-384 and SHA-512\\) "
-            + "is not available on this CPU\\.";
-    protected static final String SHA_INTRINSICS_ARE_NOT_AVAILABLE
-            = "SHA intrinsics are not available on this CPU";
+    protected static final String SHA1_INTRINSICS_ARE_NOT_AVAILABLE
+            = "Intrinsics for SHA-1 crypto hash functions not available on this CPU.";
+    protected static final String SHA256_INTRINSICS_ARE_NOT_AVAILABLE
+            = "Intrinsics for SHA-224 and SHA-256 crypto hash functions not available on this CPU.";
+    protected static final String SHA512_INTRINSICS_ARE_NOT_AVAILABLE
+            = "Intrinsics for SHA-384 and SHA-512 crypto hash functions not available on this CPU.";
 
     private final TestCase[] testCases;
 
@@ -71,33 +67,23 @@ public class SHAOptionsBase extends CommandLineOptionTest {
      *         instructions required by the option are not supported.
      */
     protected static String getWarningForUnsupportedCPU(String optionName) {
-        if (Platform.isSparc() || Platform.isAArch64()) {
+        if (Platform.isSparc() || Platform.isAArch64() ||
+            Platform.isX64() || Platform.isX86()) {
             switch (optionName) {
-                case SHAOptionsBase.USE_SHA_OPTION:
-                    return SHAOptionsBase.SHA_INSTRUCTIONS_ARE_NOT_AVAILABLE;
-                case SHAOptionsBase.USE_SHA1_INTRINSICS_OPTION:
-                    return SHAOptionsBase.SHA1_INSTRUCTION_IS_NOT_AVAILABLE;
-                case SHAOptionsBase.USE_SHA256_INTRINSICS_OPTION:
-                    return SHAOptionsBase.SHA256_INSTRUCTION_IS_NOT_AVAILABLE;
-                case SHAOptionsBase.USE_SHA512_INTRINSICS_OPTION:
-                    return SHAOptionsBase.SHA512_INSTRUCTION_IS_NOT_AVAILABLE;
-                default:
-                    throw new Error("Unexpected option " + optionName);
-            }
-        } else if (Platform.isX64() || Platform.isX86()) {
-            switch (optionName) {
-                case SHAOptionsBase.USE_SHA_OPTION:
-                    return SHAOptionsBase.SHA_INSTRUCTIONS_ARE_NOT_AVAILABLE;
-                case SHAOptionsBase.USE_SHA1_INTRINSICS_OPTION:
-                case SHAOptionsBase.USE_SHA256_INTRINSICS_OPTION:
-                case SHAOptionsBase.USE_SHA512_INTRINSICS_OPTION:
-                    return SHAOptionsBase.SHA_INTRINSICS_ARE_NOT_AVAILABLE;
-                default:
-                    throw new Error("Unexpected option " + optionName);
+            case SHAOptionsBase.USE_SHA_OPTION:
+                return SHAOptionsBase.SHA_INSTRUCTIONS_ARE_NOT_AVAILABLE;
+            case SHAOptionsBase.USE_SHA1_INTRINSICS_OPTION:
+                return SHAOptionsBase.SHA1_INTRINSICS_ARE_NOT_AVAILABLE;
+            case SHAOptionsBase.USE_SHA256_INTRINSICS_OPTION:
+                return SHAOptionsBase.SHA256_INTRINSICS_ARE_NOT_AVAILABLE;
+            case SHAOptionsBase.USE_SHA512_INTRINSICS_OPTION:
+                return SHAOptionsBase.SHA512_INTRINSICS_ARE_NOT_AVAILABLE;
+            default:
+                throw new Error("Unexpected option " + optionName);
             }
         } else {
-            throw new Error("Support for CPUs other then X86 or SPARC is not "
-                    + "implemented.");
+            throw new Error("Support for CPUs different fromn X86, SPARC, and AARCH64 "
+                            + "is not implemented");
         }
     }
 

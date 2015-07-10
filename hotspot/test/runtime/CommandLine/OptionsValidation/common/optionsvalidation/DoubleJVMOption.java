@@ -25,6 +25,7 @@ package optionsvalidation;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class DoubleJVMOption extends JVMOption {
 
@@ -109,7 +110,7 @@ public class DoubleJVMOption extends JVMOption {
     }
 
     private String formatValue(double value) {
-        return String.format("%f", value);
+        return String.format(Locale.US, "%f", value);
     }
 
     /**

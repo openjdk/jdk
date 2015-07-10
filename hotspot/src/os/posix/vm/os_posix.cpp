@@ -24,6 +24,7 @@
 
 #include "utilities/globalDefinitions.hpp"
 #include "prims/jvm.h"
+#include "semaphore_posix.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/os.hpp"
@@ -34,6 +35,7 @@
 #include <sys/resource.h>
 #include <sys/utsname.h>
 #include <pthread.h>
+#include <semaphore.h>
 #include <signal.h>
 
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
@@ -1015,3 +1017,73 @@ void os::WatcherThreadCrashProtection::check_crash_protection(int sig,
     }
   }
 }
+
+#define check_with_errno(check_type, cond, msg)                                      \
+  do {                                                                               \
+    int err = errno;                                                                 \
+    check_type(cond, err_msg("%s; error='%s' (errno=%d)", msg, strerror(err), err)); \
+} while (false)
+
+#define assert_with_errno(cond, msg)    check_with_errno(assert, cond, msg)
+#define guarantee_with_errno(cond, msg) check_with_errno(guarantee, cond, msg)
+
+// POSIX unamed semaphores are not supported on OS X.
+#ifndef __APPLE__
+
+PosixSemaphore::PosixSemaphore(uint value) {
+  int ret = sem_init(&_semaphore, 0, value);
+
+  guarantee_with_errno(ret == 0, "Failed to initialize semaphore");
+}
+
+PosixSemaphore::~PosixSemaphore() {
+  sem_destroy(&_semaphore);
+}
+
+void PosixSemaphore::signal(uint count) {
+  for (uint i = 0; i < count; i++) {
+    int ret = sem_post(&_semaphore);
+
+    assert_with_errno(ret == 0, "sem_post failed");
+  }
+}
+
+void PosixSemaphore::wait() {
+  int ret;
+
+  do {
+    ret = sem_wait(&_semaphore);
+  } while (ret != 0 && errno == EINTR);
+
+  assert_with_errno(ret == 0, "sem_wait failed");
+}
+
+bool PosixSemaphore::trywait() {
+  int ret;
+
+  do {
+    ret = sem_trywait(&_semaphore);
+  } while (ret != 0 && errno == EINTR);
+
+  assert_with_errno(ret == 0 || errno == EAGAIN, "trywait failed");
+
+  return ret == 0;
+}
+
+bool PosixSemaphore::timedwait(const struct timespec ts) {
+  while (true) {
+    int result = sem_timedwait(&_semaphore, &ts);
+    if (result == 0) {
+      return true;
+    } else if (errno == EINTR) {
+      continue;
+    } else if (errno == ETIMEDOUT) {
+      return false;
+    } else {
+      assert_with_errno(false, "timedwait failed");
+      return false;
+    }
+  }
+}
+
+#endif // __APPLE__

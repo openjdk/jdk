@@ -26,6 +26,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
+#include "code/codeCacheExtensions.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
@@ -369,6 +370,8 @@ volatile bool VM_Exit::_vm_exited = false;
 Thread * VM_Exit::_shutdown_thread = NULL;
 
 int VM_Exit::set_vm_exited() {
+  CodeCacheExtensions::complete_step(CodeCacheExtensionsSteps::LastStep);
+
   Thread * thr_cur = ThreadLocalStorage::get_thread_slow();
 
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint already");

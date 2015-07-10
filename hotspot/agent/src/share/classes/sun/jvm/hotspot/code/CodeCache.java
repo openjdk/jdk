@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,13 @@ public class CodeCache {
     Type type = db.lookupType("CodeCache");
 
     // Get array of CodeHeaps
+    // Note: CodeHeap may be subclassed with optional private heap mechanisms.
+    Type codeHeapType = db.lookupType("CodeHeap");
+    VirtualBaseConstructor heapConstructor =
+        new VirtualBaseConstructor(db, codeHeapType, "sun.jvm.hotspot.memory", CodeHeap.class);
+
     AddressField heapsField = type.getAddressField("_heaps");
-    heapArray = GrowableArray.create(heapsField.getValue(), new StaticBaseConstructor<CodeHeap>(CodeHeap.class));
+    heapArray = GrowableArray.create(heapsField.getValue(), heapConstructor);
 
     scavengeRootNMethodsField = type.getAddressField("_scavenge_root_nmethods");
 
@@ -180,31 +185,9 @@ public class CodeCache {
 
   public void iterate(CodeCacheVisitor visitor) {
     visitor.prologue(lowBound(), highBound());
-    CodeBlob lastBlob = null;
-
     for (int i = 0; i < heapArray.length(); ++i) {
       CodeHeap current_heap = heapArray.at(i);
-      Address ptr = current_heap.begin();
-      while (ptr != null && ptr.lessThan(current_heap.end())) {
-        try {
-          // Use findStart to get a pointer inside blob other findBlob asserts
-          CodeBlob blob = findBlobUnsafe(current_heap.findStart(ptr));
-          if (blob != null) {
-            visitor.visit(blob);
-            if (blob == lastBlob) {
-              throw new InternalError("saw same blob twice");
-            }
-            lastBlob = blob;
-          }
-        } catch (RuntimeException e) {
-          e.printStackTrace();
-        }
-        Address next = current_heap.nextBlock(ptr);
-        if (next != null && next.lessThan(ptr)) {
-          throw new InternalError("pointer moved backwards");
-        }
-        ptr = next;
-      }
+      current_heap.iterate(visitor, this);
     }
     visitor.epilogue();
   }

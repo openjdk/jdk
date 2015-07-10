@@ -731,23 +731,8 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
     case T_SHORT:
     case T_INT:
       // We must cast ints to longs and use full 64 bit stack slots
-      // here. We do the cast in GraphKit::gen_stub() and just guard
-      // here against loosing that change.
-      assert(CCallingConventionRequiresIntsAsLongs,
-             "argument of type int should be promoted to type long");
-      guarantee(i > 0 && sig_bt[i-1] == T_LONG,
-                "argument of type (bt) should have been promoted to type (T_LONG,bt) for bt in "
-                "{T_BOOLEAN, T_CHAR, T_BYTE, T_SHORT, T_INT}");
-      // Do not count halves.
-      regs[i].set_bad();
-      --arg;
-      break;
+      // here.  Thus fall through, handle as long.
     case T_LONG:
-      guarantee(sig_bt[i+1] == T_VOID    ||
-                sig_bt[i+1] == T_BOOLEAN || sig_bt[i+1] == T_CHAR  ||
-                sig_bt[i+1] == T_BYTE    || sig_bt[i+1] == T_SHORT ||
-                sig_bt[i+1] == T_INT,
-                "expecting type (T_LONG,half) or type (T_LONG,bt) with bt in {T_BOOLEAN, T_CHAR, T_BYTE, T_SHORT, T_INT}");
     case T_OBJECT:
     case T_ARRAY:
     case T_ADDRESS:
@@ -1273,7 +1258,7 @@ static void object_move(MacroAssembler* masm,
 static void int_move(MacroAssembler*masm,
                      VMRegPair src, VMRegPair dst,
                      Register r_caller_sp, Register r_temp) {
-  assert(src.first()->is_valid() && src.second() == src.first()->next(), "incoming must be long-int");
+  assert(src.first()->is_valid(), "incoming must be int");
   assert(dst.first()->is_valid() && dst.second() == dst.first()->next(), "outgoing must be long");
 
   if (src.first()->is_stack()) {
@@ -1762,13 +1747,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // the jni function will expect them. To figure out where they go
   // we convert the java signature to a C signature by inserting
   // the hidden arguments as arg[0] and possibly arg[1] (static method)
-  //
-  // Additionally, on ppc64 we must convert integers to longs in the C
-  // signature. We do this in advance in order to have no trouble with
-  // indexes into the bt-arrays.
-  // So convert the signature and registers now, and adjust the total number
-  // of in-arguments accordingly.
-  int i2l_argcnt = convert_ints_to_longints_argcnt(total_in_args, in_sig_bt); // PPC64: pass ints as longs.
 
   // Calculate the total number of C arguments and create arrays for the
   // signature and the outgoing registers.
@@ -1776,7 +1754,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // some floating-point arguments must be passed in registers _and_
   // in stack locations.
   bool method_is_static = method->is_static();
-  int  total_c_args     = i2l_argcnt;
+  int  total_c_args     = total_in_args;
 
   if (!is_critical_native) {
     int n_hidden_args = method_is_static ? 2 : 1;
@@ -1785,7 +1763,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     // No JNIEnv*, no this*, but unpacked arrays (base+length).
     for (int i = 0; i < total_in_args; i++) {
       if (in_sig_bt[i] == T_ARRAY) {
-        total_c_args += 2; // PPC64: T_LONG, T_INT, T_ADDRESS (see convert_ints_to_longints and c_calling_convention)
+        total_c_args++;
       }
     }
   }
@@ -1803,8 +1781,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
   int argc = 0;
   if (!is_critical_native) {
-    convert_ints_to_longints(i2l_argcnt, total_in_args, in_sig_bt, in_regs); // PPC64: pass ints as longs.
-
     out_sig_bt[argc++] = T_ADDRESS;
     if (method->is_static()) {
       out_sig_bt[argc++] = T_OBJECT;
@@ -1815,7 +1791,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     }
   } else {
     Thread* THREAD = Thread::current();
-    in_elem_bt = NEW_RESOURCE_ARRAY(BasicType, i2l_argcnt);
+    in_elem_bt = NEW_RESOURCE_ARRAY(BasicType, total_c_args);
     SignatureStream ss(method->signature());
     int o = 0;
     for (int i = 0; i < total_in_args ; i++, o++) {
@@ -1839,28 +1815,16 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
         }
       } else {
         in_elem_bt[o] = T_VOID;
-        switch(in_sig_bt[i]) { // PPC64: pass ints as longs.
-          case T_BOOLEAN:
-          case T_CHAR:
-          case T_BYTE:
-          case T_SHORT:
-          case T_INT: in_elem_bt[++o] = T_VOID; break;
-          default: break;
-        }
       }
       if (in_sig_bt[i] != T_VOID) {
         assert(in_sig_bt[i] == ss.type(), "must match");
         ss.next();
       }
     }
-    assert(i2l_argcnt==o, "must match");
-
-    convert_ints_to_longints(i2l_argcnt, total_in_args, in_sig_bt, in_regs); // PPC64: pass ints as longs.
 
     for (int i = 0; i < total_in_args ; i++ ) {
       if (in_sig_bt[i] == T_ARRAY) {
         // Arrays are passed as int, elem* pair.
-        out_sig_bt[argc++] = T_LONG; // PPC64: pass ints as longs.
         out_sig_bt[argc++] = T_INT;
         out_sig_bt[argc++] = T_ADDRESS;
       } else {
@@ -1921,7 +1885,8 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
           case T_BYTE:
           case T_SHORT:
           case T_CHAR:
-          case T_INT:  /*single_slots++;*/ break; // PPC64: pass ints as longs.
+          case T_INT:
+          // Fall through.
           case T_ARRAY:
           case T_LONG: double_slots++; break;
           default:  ShouldNotReachHere();
@@ -2019,7 +1984,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
   __ save_LR_CR(r_temp_1);
   __ generate_stack_overflow_check(frame_size_in_bytes); // Check before creating frame.
-  __ mr(r_callers_sp, R1_SP);                       // Remember frame pointer.
+  __ mr(r_callers_sp, R1_SP);                            // Remember frame pointer.
   __ push_frame(frame_size_in_bytes, r_temp_1);          // Push the c2n adapter's frame.
   frame_done_pc = (intptr_t)__ pc();
 
@@ -2098,24 +2063,16 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
       case T_BYTE:
       case T_SHORT:
       case T_INT:
-        guarantee(in > 0 && in_sig_bt[in-1] == T_LONG,
-                  "expecting type (T_LONG,bt) for bt in {T_BOOLEAN, T_CHAR, T_BYTE, T_SHORT, T_INT}");
+        // Move int and do sign extension.
+        int_move(masm, in_regs[in], out_regs[out], r_callers_sp, r_temp_1);
         break;
       case T_LONG:
-        if (in_sig_bt[in+1] == T_VOID) {
-          long_move(masm, in_regs[in], out_regs[out], r_callers_sp, r_temp_1);
-        } else {
-          guarantee(in_sig_bt[in+1] == T_BOOLEAN || in_sig_bt[in+1] == T_CHAR  ||
-                    in_sig_bt[in+1] == T_BYTE    || in_sig_bt[in+1] == T_SHORT ||
-                    in_sig_bt[in+1] == T_INT,
-                 "expecting type (T_LONG,bt) for bt in {T_BOOLEAN, T_CHAR, T_BYTE, T_SHORT, T_INT}");
-          int_move(masm, in_regs[in], out_regs[out], r_callers_sp, r_temp_1);
-        }
+        long_move(masm, in_regs[in], out_regs[out], r_callers_sp, r_temp_1);
         break;
       case T_ARRAY:
         if (is_critical_native) {
           int body_arg = out;
-          out -= 2; // Point to length arg. PPC64: pass ints as longs.
+          out -= 1; // Point to length arg.
           unpack_array_argument(masm, in_regs[in], in_elem_bt[in], out_regs[body_arg], out_regs[out],
                                 r_callers_sp, r_temp_1, r_temp_2);
           break;
@@ -2186,7 +2143,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
   // Make sure that thread is non-volatile; it crosses a bunch of VM calls below.
   assert(R16_thread->is_nonvolatile(), "thread must be in non-volatile register");
-
 
 # if 0
   // DTrace method entry

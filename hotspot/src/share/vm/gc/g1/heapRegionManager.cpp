@@ -486,7 +486,7 @@ void HeapRegionManager::verify() {
     HeapRegion* hr = _regions.get_by_index(i);
     guarantee(hr != NULL, err_msg("invariant: i: %u", i));
     guarantee(!prev_committed || hr->bottom() == prev_end,
-              err_msg("invariant i: %u "HR_FORMAT" prev_end: "PTR_FORMAT,
+              err_msg("invariant i: %u " HR_FORMAT " prev_end: " PTR_FORMAT,
                       i, HR_FORMAT_PARAMS(hr), p2i(prev_end)));
     guarantee(hr->hrm_index() == i,
               err_msg("invariant: i: %u hrm_index(): %u", i, hr->hrm_index()));

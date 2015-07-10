@@ -2359,6 +2359,47 @@ class StubGenerator: public StubCodeGenerator {
   /**
    *  Arguments:
    *
+   * Inputs:
+   *   c_rarg0   - int crc
+   *   c_rarg1   - byte* buf
+   *   c_rarg2   - int length
+   *   c_rarg3   - int* table
+   *
+   * Ouput:
+   *       rax   - int crc result
+   */
+  address generate_updateBytesCRC32C() {
+    assert(UseCRC32CIntrinsics, "what are we doing here?");
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "updateBytesCRC32C");
+
+    address start = __ pc();
+
+    const Register crc   = c_rarg0;  // crc
+    const Register buf   = c_rarg1;  // source java byte array address
+    const Register len   = c_rarg2;  // length
+    const Register table0 = c_rarg3; // crc_table address
+    const Register table1 = c_rarg4;
+    const Register table2 = c_rarg5;
+    const Register table3 = c_rarg6;
+    const Register tmp3 = c_rarg7;
+
+    BLOCK_COMMENT("Entry:");
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+    __ kernel_crc32c(crc, buf, len,
+              table0, table1, table2, table3, rscratch1, rscratch2, tmp3);
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ ret(lr);
+
+    return start;
+  }
+
+  /**
+   *  Arguments:
+   *
    *  Input:
    *    c_rarg0   - x address
    *    c_rarg1   - x length
@@ -2577,6 +2618,10 @@ class StubGenerator: public StubCodeGenerator {
     if (UseSHA256Intrinsics) {
       StubRoutines::_sha256_implCompress   = generate_sha256_implCompress(false, "sha256_implCompress");
       StubRoutines::_sha256_implCompressMB = generate_sha256_implCompress(true,  "sha256_implCompressMB");
+    }
+
+    if (UseCRC32CIntrinsics) {
+      StubRoutines::_updateBytesCRC32C = generate_updateBytesCRC32C();
     }
 
     // Safefetch stubs.

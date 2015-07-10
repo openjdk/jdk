@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -260,4 +260,18 @@ void StubQueue::print() {
   for (Stub* s = first(); s != NULL; s = next(s)) {
     stub_print(s);
   }
+}
+
+// Fixup for pregenerated code
+void StubQueue::fix_buffer(address buffer, address queue_end, address buffer_end, int number_of_stubs) {
+  const int extra_bytes = CodeEntryAlignment;
+  _stub_buffer = buffer;
+  _queue_begin = 0;
+  _queue_end = queue_end - buffer;
+  _number_of_stubs = number_of_stubs;
+  int size = buffer_end - buffer;
+  // Note: _buffer_limit must differ from _queue_end in the iteration loops
+  // => add extra space at the end (preserving alignment for asserts) if needed
+  if (buffer_end == queue_end) size += extra_bytes;
+  _buffer_limit = _buffer_size = size;
 }
