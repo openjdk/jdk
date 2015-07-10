@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.ProviderNotFoundException;
-import java.nio.file.spi.FileSystemProvider;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -93,11 +92,6 @@ public class JRTIndex {
      * The jrt: file system.
      */
     private final FileSystem jrtfs;
-
-    /**
-     * The set of module directories within the jrt: file system.
-     */
-    private final Set<Path> jrtModules;
 
     /**
      * A lazily evaluated set of entries about the contents of the jrt: file system.
@@ -183,14 +177,6 @@ public class JRTIndex {
      */
     private JRTIndex() throws IOException {
         jrtfs = FileSystems.getFileSystem(URI.create("jrt:/"));
-        jrtModules = new LinkedHashSet<>();
-        Path root = jrtfs.getPath("/");
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(root)) {
-            for (Path entry: stream) {
-                if (Files.isDirectory(entry))
-                    jrtModules.add(entry);
-            }
-        }
         entries = new HashMap<>();
     }
 
@@ -204,18 +190,29 @@ public class JRTIndex {
         if (e == null) {
             Map<String, Path> files = new LinkedHashMap<>();
             Set<RelativeDirectory> subdirs = new LinkedHashSet<>();
-            for (Path module: jrtModules) {
-                Path p = rd.getFile(module);
-                if (!Files.exists(p))
-                    continue;
-                try (DirectoryStream<Path> stream = Files.newDirectoryStream(p)) {
-                    for (Path entry: stream) {
-                        String name = entry.getFileName().toString();
-                        if (Files.isRegularFile(entry)) {
-                            // TODO: consider issue of files with same name in different modules
-                            files.put(name, entry);
-                        } else if (Files.isDirectory(entry)) {
-                            subdirs.add(new RelativeDirectory(rd, name));
+            Path dir;
+            if (rd.path.isEmpty()) {
+                dir = jrtfs.getPath("/modules");
+            } else {
+                Path pkgs = jrtfs.getPath("/packages");
+                dir = pkgs.resolve(rd.getPath().replaceAll("/$", "").replace("/", "."));
+            }
+            if (Files.exists(dir)) {
+                try (DirectoryStream<Path> modules = Files.newDirectoryStream(dir)) {
+                    for (Path module: modules) {
+                        Path p = rd.getFile(module);
+                        if (!Files.exists(p))
+                            continue;
+                        try (DirectoryStream<Path> stream = Files.newDirectoryStream(p)) {
+                            for (Path entry: stream) {
+                                String name = entry.getFileName().toString();
+                                if (Files.isRegularFile(entry)) {
+                                    // TODO: consider issue of files with same name in different modules
+                                    files.put(name, entry);
+                                } else if (Files.isDirectory(entry)) {
+                                    subdirs.add(new RelativeDirectory(rd, name));
+                                }
+                            }
                         }
                     }
                 }
