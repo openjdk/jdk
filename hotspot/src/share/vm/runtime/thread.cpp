@@ -28,6 +28,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
+#include "code/codeCacheExtensions.hpp"
 #include "code/scopeDesc.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
@@ -1291,7 +1292,7 @@ void WatcherThread::run() {
         if (!ShowMessageBoxOnError
             && (OnError == NULL || OnError[0] == '\0')
             && Arguments::abort_hook() == NULL) {
-          os::sleep(this, 2 * 60 * 1000, false);
+          os::sleep(this, ErrorLogTimeout * 60 * 1000, false);
           fdStream err(defaultStream::output_fd());
           err.print_raw_cr("# [ timer expired, abort... ]");
           // skip atexit/vm_exit/vm_abort hooks
@@ -3586,6 +3587,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
       WatcherThread::start();
     }
   }
+
+  CodeCacheExtensions::complete_step(CodeCacheExtensionsSteps::CreateVM);
 
   create_vm_timer.end();
 #ifdef ASSERT

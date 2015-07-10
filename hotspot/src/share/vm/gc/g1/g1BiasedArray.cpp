@@ -36,19 +36,19 @@ address G1BiasedMappedArrayBase::create_new_base_array(size_t length, size_t ele
 #ifndef PRODUCT
 void G1BiasedMappedArrayBase::verify_index(idx_t index) const {
   guarantee(_base != NULL, "Array not initialized");
-  guarantee(index < length(), err_msg("Index out of bounds index: "SIZE_FORMAT" length: "SIZE_FORMAT, index, length()));
+  guarantee(index < length(), err_msg("Index out of bounds index: " SIZE_FORMAT " length: " SIZE_FORMAT, index, length()));
 }
 
 void G1BiasedMappedArrayBase::verify_biased_index(idx_t biased_index) const {
   guarantee(_biased_base != NULL, "Array not initialized");
   guarantee(biased_index >= bias() && biased_index < (bias() + length()),
-    err_msg("Biased index out of bounds, index: "SIZE_FORMAT" bias: "SIZE_FORMAT" length: "SIZE_FORMAT, biased_index, bias(), length()));
+    err_msg("Biased index out of bounds, index: " SIZE_FORMAT " bias: " SIZE_FORMAT " length: " SIZE_FORMAT, biased_index, bias(), length()));
 }
 
 void G1BiasedMappedArrayBase::verify_biased_index_inclusive_end(idx_t biased_index) const {
   guarantee(_biased_base != NULL, "Array not initialized");
   guarantee(biased_index >= bias() && biased_index <= (bias() + length()),
-    err_msg("Biased index out of inclusive bounds, index: "SIZE_FORMAT" bias: "SIZE_FORMAT" length: "SIZE_FORMAT, biased_index, bias(), length()));
+    err_msg("Biased index out of inclusive bounds, index: " SIZE_FORMAT " bias: " SIZE_FORMAT " length: " SIZE_FORMAT, biased_index, bias(), length()));
 }
 
 class TestMappedArray : public G1BiasedMappedArray<int> {

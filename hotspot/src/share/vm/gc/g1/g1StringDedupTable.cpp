@@ -556,12 +556,12 @@ void G1StringDedupTable::trim_entry_cache() {
 void G1StringDedupTable::print_statistics(outputStream* st) {
   st->print_cr(
     "   [Table]\n"
-    "      [Memory Usage: "G1_STRDEDUP_BYTES_FORMAT_NS"]\n"
-    "      [Size: "SIZE_FORMAT", Min: "SIZE_FORMAT", Max: "SIZE_FORMAT"]\n"
-    "      [Entries: "UINTX_FORMAT", Load: "G1_STRDEDUP_PERCENT_FORMAT_NS", Cached: " UINTX_FORMAT ", Added: "UINTX_FORMAT", Removed: "UINTX_FORMAT"]\n"
-    "      [Resize Count: "UINTX_FORMAT", Shrink Threshold: "UINTX_FORMAT"("G1_STRDEDUP_PERCENT_FORMAT_NS"), Grow Threshold: "UINTX_FORMAT"("G1_STRDEDUP_PERCENT_FORMAT_NS")]\n"
-    "      [Rehash Count: "UINTX_FORMAT", Rehash Threshold: "UINTX_FORMAT", Hash Seed: 0x%x]\n"
-    "      [Age Threshold: "UINTX_FORMAT"]",
+    "      [Memory Usage: " G1_STRDEDUP_BYTES_FORMAT_NS "]\n"
+    "      [Size: " SIZE_FORMAT ", Min: " SIZE_FORMAT ", Max: " SIZE_FORMAT "]\n"
+    "      [Entries: " UINTX_FORMAT ", Load: " G1_STRDEDUP_PERCENT_FORMAT_NS ", Cached: " UINTX_FORMAT ", Added: " UINTX_FORMAT ", Removed: " UINTX_FORMAT "]\n"
+    "      [Resize Count: " UINTX_FORMAT ", Shrink Threshold: " UINTX_FORMAT "(" G1_STRDEDUP_PERCENT_FORMAT_NS "), Grow Threshold: " UINTX_FORMAT "(" G1_STRDEDUP_PERCENT_FORMAT_NS ")]\n"
+    "      [Rehash Count: " UINTX_FORMAT ", Rehash Threshold: " UINTX_FORMAT ", Hash Seed: 0x%x]\n"
+    "      [Age Threshold: " UINTX_FORMAT "]",
     G1_STRDEDUP_BYTES_PARAM(_table->_size * sizeof(G1StringDedupEntry*) + (_table->_entries + _entry_cache->size()) * sizeof(G1StringDedupEntry)),
     _table->_size, _min_size, _max_size,
     _table->_entries, (double)_table->_entries / (double)_table->_size * 100.0, _entry_cache->size(), _entries_added, _entries_removed,

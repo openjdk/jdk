@@ -87,6 +87,7 @@ public class TestSummarizeRSetStatsTools {
         String[] defaultArgs = new String[] {
             "-XX:+UseG1GC",
             "-Xmn4m",
+            "-Xms20m",
             "-Xmx20m",
             "-XX:InitiatingHeapOccupancyPercent=100", // we don't want the additional GCs due to initial marking
             "-XX:+PrintGC",

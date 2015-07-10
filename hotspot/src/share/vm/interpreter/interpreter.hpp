@@ -45,6 +45,7 @@ class InterpreterMacroAssembler;
 
 class InterpreterCodelet: public Stub {
   friend class VMStructs;
+  friend class CodeCacheDumper; // possible extension [do not remove]
  private:
   int         _size;                             // the size in bytes
   const char* _description;                      // a description of the codelet, for debugging & printing
