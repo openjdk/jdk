@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -364,8 +364,8 @@ public class AVA implements DerEncoder {
 
         // encode as PrintableString unless value contains
         // non-PrintableString chars
-        if (this.oid.equals((Object)PKCS9Attribute.EMAIL_ADDRESS_OID) ||
-            (this.oid.equals((Object)X500Name.DOMAIN_COMPONENT_OID) &&
+        if (this.oid.equals(PKCS9Attribute.EMAIL_ADDRESS_OID) ||
+            (this.oid.equals(X500Name.DOMAIN_COMPONENT_OID) &&
                 PRESERVE_OLD_DC_ENCODING == false)) {
             // EmailAddress and DomainComponent must be IA5String
             return new DerValue(DerValue.tag_IA5String,
@@ -495,8 +495,8 @@ public class AVA implements DerEncoder {
 
         // encode as PrintableString unless value contains
         // non-PrintableString chars
-        if (this.oid.equals((Object)PKCS9Attribute.EMAIL_ADDRESS_OID) ||
-            (this.oid.equals((Object)X500Name.DOMAIN_COMPONENT_OID) &&
+        if (this.oid.equals(PKCS9Attribute.EMAIL_ADDRESS_OID) ||
+            (this.oid.equals(X500Name.DOMAIN_COMPONENT_OID) &&
                 PRESERVE_OLD_DC_ENCODING == false)) {
             // EmailAddress and DomainComponent must be IA5String
             return new DerValue(DerValue.tag_IA5String, temp.toString());
@@ -967,7 +967,7 @@ public class AVA implements DerEncoder {
 
                     previousWhite = false;
 
-                    byte valueBytes[] = null;
+                    byte[] valueBytes = null;
                     try {
                         valueBytes = Character.toString(c).getBytes("UTF8");
                     } catch (IOException ie) {
@@ -1051,7 +1051,7 @@ public class AVA implements DerEncoder {
                 // using the hex format below.  This will be used only
                 // when the value is not a string type
 
-                byte    data [] = value.toByteArray();
+                byte[] data = value.toByteArray();
 
                 retval.append('#');
                 for (int i = 0; i < data.length; i++) {

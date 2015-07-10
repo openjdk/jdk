@@ -25,13 +25,6 @@
  * @test
  * @bug 8014310
  * @summary JAAS/Krb5LoginModule using des encytypes failure with NPE after JDK-8012679
- * @modules java.base/sun.net.spi.nameservice
- *          java.base/sun.security.util
- *          java.security.jgss/sun.security.krb5
- *          java.security.jgss/sun.security.krb5.internal
- *          java.security.jgss/sun.security.krb5.internal.ccache
- *          java.security.jgss/sun.security.krb5.internal.crypto
- *          java.security.jgss/sun.security.krb5.internal.ktab
  * @compile -XDignore.symbol.file OnlyDesLogin.java
  * @run main/othervm OnlyDesLogin
  */

@@ -25,14 +25,6 @@
  * @test
  * @bug 8001104
  * @summary Unbound SASL service: the GSSAPI/krb5 mech
- * @modules java.base/sun.net.spi.nameservice
- *          java.base/sun.security.util
- *          java.security.jgss/sun.security.krb5
- *          java.security.jgss/sun.security.krb5.internal
- *          java.security.jgss/sun.security.krb5.internal.ccache
- *          java.security.jgss/sun.security.krb5.internal.crypto
- *          java.security.jgss/sun.security.krb5.internal.ktab
- *          java.security.sasl
  * @compile -XDignore.symbol.file SaslUnbound.java
  * @run main/othervm SaslUnbound 0
  * @run main/othervm/fail SaslUnbound 1

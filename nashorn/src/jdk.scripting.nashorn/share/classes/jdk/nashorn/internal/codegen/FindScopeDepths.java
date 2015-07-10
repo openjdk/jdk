@@ -121,11 +121,9 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Logga
 
     private static boolean definedInBlock(final Block block, final Symbol symbol) {
         if (symbol.isGlobal()) {
-            if (block.isGlobalScope()) {
-                return true;
-            }
             //globals cannot be defined anywhere else
-            return false;
+
+            return block.isGlobalScope();
         }
         return block.getExistingSymbol(symbol.getName()) == symbol;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,11 +94,20 @@ public:
     int    _version;                  // (from enum, above.)
     size_t _alignment;                // how shared archive should be aligned
     int    _obj_alignment;            // value of ObjectAlignmentInBytes
+    int    _narrow_oop_shift;         // compressed oop encoding shift
+    uintx  _max_heap_size;            // java max heap size during dumping
+    Universe::NARROW_OOP_MODE _narrow_oop_mode; // compressed oop encoding mode
+    int     _narrow_klass_shift;      // save narrow klass base and shift
+    address _narrow_klass_base;
 
     struct space_info {
       int    _crc;           // crc checksum of the current space
       size_t _file_offset;   // sizeof(this) rounded to vm page size
-      char*  _base;          // copy-on-write base address
+      union {
+        char*  _base;        // copy-on-write base address
+        intx   _offset;      // offset from the compressed oop encoding base, only used
+                             // by string space
+      } _addr;
       size_t _capacity;      // for validity checking
       size_t _used;          // for setting space top on read
       bool   _read_only;     // read only space?
@@ -138,6 +147,8 @@ public:
     size_t _classpath_entry_size;
     SharedClassPathEntry* _classpath_entry_table;
 
+    char* region_addr(int idx);
+
     virtual bool validate();
     virtual void populate(FileMapInfo* info, size_t alignment);
     int compute_crc();
@@ -166,8 +177,12 @@ public:
   void   invalidate();
   int    version()                    { return _header->_version; }
   size_t alignment()                  { return _header->_alignment; }
+  Universe::NARROW_OOP_MODE narrow_oop_mode() { return _header->_narrow_oop_mode; }
+  int    narrow_oop_shift()           { return _header->_narrow_oop_shift; }
+  uintx  max_heap_size()              { return _header->_max_heap_size; }
+  address narrow_klass_base() const   { return _header->_narrow_klass_base; }
+  int     narrow_klass_shift() const  { return _header->_narrow_klass_shift; }
   size_t space_capacity(int i)        { return _header->_space[i]._capacity; }
-  char*  region_base(int i)           { return _header->_space[i]._base; }
   struct FileMapHeader* header()      { return _header; }
 
   static FileMapInfo* current_info() {
@@ -185,10 +200,15 @@ public:
   void  write_space(int i, Metaspace* space, bool read_only);
   void  write_region(int region, char* base, size_t size,
                      size_t capacity, bool read_only, bool allow_exec);
+  void  write_string_regions(GrowableArray<MemRegion> *regions);
   void  write_bytes(const void* buffer, int count);
   void  write_bytes_aligned(const void* buffer, int count);
   char* map_region(int i);
+  bool  map_string_regions();
+  bool  verify_string_regions();
+  void  fixup_string_regions();
   void  unmap_region(int i);
+  void  unmap_string_regions();
   bool  verify_region_checksum(int i);
   void  close();
   bool  is_open() { return _file_open; }

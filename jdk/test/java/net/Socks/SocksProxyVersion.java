@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6964547 5001942
+ * @bug 6964547 5001942 8129444
  * @run main/othervm SocksProxyVersion
  * @summary test socksProxyVersion system property
  */
@@ -32,13 +32,15 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.Proxy;
 
 public class SocksProxyVersion implements Runnable {
     final ServerSocket ss;
     volatile boolean failed;
+    volatile boolean stopped = false;
+    volatile int expected;
 
     public static void main(String[] args) throws Exception {
         if (InetAddress.getLocalHost().isLoopbackAddress()) {
@@ -48,43 +50,16 @@ public class SocksProxyVersion implements Runnable {
         new SocksProxyVersion();
     }
 
-    @SuppressWarnings("try")
     public SocksProxyVersion() throws Exception {
         ss = new ServerSocket(0);
-        try (ServerSocket socket = ss) {
-            runTest();
-        }
-    }
-
-    void runTest() throws Exception {
         int port = ss.getLocalPort();
         Thread serverThread = new Thread(this);
         serverThread.start();
-
-        /*
-         * Retreving the IP Address of the machine
-         * since "localhost" is bypassed as a non-proxy host
-         */
-        String addr = InetAddress.getLocalHost().getHostAddress();
-
-        System.setProperty("socksProxyHost", addr);
-        System.setProperty("socksProxyPort", Integer.toString(port));
-
-        // SOCKS V4
-        System.setProperty("socksProxyVersion", Integer.toString(4));
-        try (Socket s = new Socket()) {
-            s.connect(new InetSocketAddress(addr, port));
-        } catch (SocketException e) {
-            // java.net.SocketException: Malformed reply from SOCKS server
-            // This exception is OK, since the "server" does not implement
-            // the socks protocol. It just verifies the version and closes.
+        try (ServerSocket socket = ss) {
+            runTest(port);
+        } finally {
+            stopped = true;
         }
-
-        // SOCKS V5
-        System.setProperty("socksProxyVersion", Integer.toString(5));
-        try (Socket s = new Socket()) {
-            s.connect(new InetSocketAddress(addr, port));
-        } catch (SocketException e) { /* OK */ }
 
         serverThread.join();
         if (failed) {
@@ -92,24 +67,64 @@ public class SocksProxyVersion implements Runnable {
         }
     }
 
+    final void runTest(int port) throws Exception {
+        /*
+         * Retrieving the IP Address of the machine
+         * since "localhost" is bypassed as a non-proxy host
+         */
+        String addr = InetAddress.getLocalHost().getHostAddress();
+
+        System.setProperty("socksProxyHost", addr);
+        System.setProperty("socksProxyPort", Integer.toString(port));
+
+        Proxy proxy = new Proxy(Proxy.Type.SOCKS,
+                                new InetSocketAddress(addr, port));
+
+        // SOCKS V4
+        System.setProperty("socksProxyVersion", Integer.toString(4));
+        this.expected = 4;
+        check(new Socket(), addr, port);
+        check(new Socket(proxy), addr, port);
+
+        // SOCKS V5
+        System.setProperty("socksProxyVersion", Integer.toString(5));
+        this.expected = 5;
+        check(new Socket(), addr, port);
+        check(new Socket(proxy), addr, port);
+    }
+
+    private void check(Socket socket, String addr, int port)
+        throws IOException
+    {
+        try (Socket s = socket) {
+            socket.connect(new InetSocketAddress(addr, port));
+        } catch (SocketException e) {
+            // java.net.SocketException: Malformed reply from SOCKS server
+            // This exception is OK, since the "server" does not implement
+            // the socks protocol. It just verifies the version and closes.
+        }
+    }
+
+    @Override
     public void run() {
+        int count = 0;
         try {
-            try (Socket s = ss.accept()) {
-                int version = (s.getInputStream()).read();
-                if (version != 4) {
-                    System.out.println("Got " + version + ", expected 4");
-                    failed = true;
+            while (!stopped) {
+                try (Socket s = ss.accept()) {
+                    int version = (s.getInputStream()).read();
+                    if (version != expected) {
+                        System.out.printf("Iteration: %d, Got: %d, expected: %d%n",
+                                          count, version, expected);
+                        failed = true;
+                    }
                 }
-            }
-            try (Socket s = ss.accept()) {
-                int version = (s.getInputStream()).read();
-                if (version != 5) {
-                    System.out.println("Got " + version + ", expected 5");
-                    failed = true;
-                }
+                count++;
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            if (!ss.isClosed()) {
+                e.printStackTrace();
+            }
+            // ignore, server socket was closed
         }
     }
 }

@@ -851,6 +851,29 @@ const TypeFunc* OptoRuntime::updateBytesCRC32_Type() {
   return TypeFunc::make(domain, range);
 }
 
+/**
+ * int updateBytesCRC32C(int crc, byte* buf, int len, int* table)
+ */
+const TypeFunc* OptoRuntime::updateBytesCRC32C_Type() {
+  // create input type (domain)
+  int num_args      = 4;
+  int argcnt = num_args;
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypeInt::INT;        // crc
+  fields[argp++] = TypePtr::NOTNULL;    // buf
+  fields[argp++] = TypeInt::INT;        // len
+  fields[argp++] = TypePtr::NOTNULL;    // table
+  assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = TypeInt::INT; // crc result
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms+1, fields);
+  return TypeFunc::make(domain, range);
+}
+
 // for cipherBlockChaining calls of aescrypt encrypt/decrypt, four pointers and a length, returning int
 const TypeFunc* OptoRuntime::cipherBlockChaining_aescrypt_Type() {
   // create input type (domain)
@@ -987,7 +1010,25 @@ const TypeFunc* OptoRuntime::mulAdd_Type() {
   return TypeFunc::make(domain, range);
 }
 
+// GHASH block processing
+const TypeFunc* OptoRuntime::ghash_processBlocks_Type() {
+    int argcnt = 4;
 
+    const Type** fields = TypeTuple::fields(argcnt);
+    int argp = TypeFunc::Parms;
+    fields[argp++] = TypePtr::NOTNULL;    // state
+    fields[argp++] = TypePtr::NOTNULL;    // subkeyH
+    fields[argp++] = TypePtr::NOTNULL;    // data
+    fields[argp++] = TypeInt::INT;        // blocks
+    assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+    // result type needed
+    fields = TypeTuple::fields(1);
+    fields[TypeFunc::Parms+0] = NULL; // void
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
+    return TypeFunc::make(domain, range);
+}
 
 //------------- Interpreter state access for on stack replacement
 const TypeFunc* OptoRuntime::osr_end_Type() {

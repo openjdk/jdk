@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,7 @@
  * questions.
  */
 
-import java.awt.Color;
-import java.awt.Point;
-import java.awt.Robot;
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 import javax.swing.JFrame;
@@ -119,6 +117,20 @@ public class Test8007563 implements Runnable {
             }
 
         }
-        invokeLater(this);
+        SecondaryLoop secondaryLoop =
+                Toolkit.getDefaultToolkit().getSystemEventQueue()
+                        .createSecondaryLoop();
+        new Thread() {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(200);
+                } catch (InterruptedException e) {
+                }
+                secondaryLoop.exit();
+                invokeLater(Test8007563.this);
+            }
+        }.start();
+        secondaryLoop.enter();
     }
 }

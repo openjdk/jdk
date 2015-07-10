@@ -61,6 +61,9 @@ public class AttachSetGetFlag {
     // Since it is not manageable, we can't test the setFlag functionality.
     testGetFlag("ArrayAllocatorMallocLimit", "128");
     // testSetFlag("ArrayAllocatorMallocLimit", "64", "128");
+
+    // Test a uint flag.
+    testGetFlag("ParallelGCThreads", "10");
   }
 
   public static ProcessBuilder runTarget(String flagName, String flagValue) throws Exception {

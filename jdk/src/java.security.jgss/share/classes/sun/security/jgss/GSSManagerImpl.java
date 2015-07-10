@@ -128,7 +128,7 @@ public class GSSManagerImpl extends GSSManager {
         return new GSSNameImpl(this, nameStr, nameType);
     }
 
-    public GSSName createName(byte name[], Oid nameType)
+    public GSSName createName(byte[] name, Oid nameType)
         throws GSSException {
         return new GSSNameImpl(this, name, nameType);
     }
@@ -138,7 +138,7 @@ public class GSSManagerImpl extends GSSManager {
         return new GSSNameImpl(this, nameStr, nameType, mech);
     }
 
-    public GSSName createName(byte name[], Oid nameType, Oid mech)
+    public GSSName createName(byte[] name, Oid nameType, Oid mech)
         throws GSSException {
         return new GSSNameImpl(this, name, nameType, mech);
     }
@@ -155,7 +155,7 @@ public class GSSManagerImpl extends GSSManager {
     }
 
     public GSSCredential createCredential(GSSName aName,
-                                          int lifetime, Oid mechs[], int usage)
+                                          int lifetime, Oid[] mechs, int usage)
         throws GSSException {
         return wrap(new GSSCredentialImpl(this, aName, lifetime, mechs, usage));
     }

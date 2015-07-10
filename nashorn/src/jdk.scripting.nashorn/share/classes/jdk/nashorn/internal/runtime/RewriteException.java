@@ -359,9 +359,9 @@ public final class RewriteException extends Exception {
         if (returnValue instanceof String) {
             str = '\'' + str + '\'';
         } else if (returnValue instanceof Double) {
-            str = str + 'd';
+            str += 'd';
         } else if (returnValue instanceof Long) {
-            str = str + 'l';
+            str += 'l';
         }
         return str;
     }

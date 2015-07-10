@@ -43,8 +43,8 @@ import com.sun.security.sasl.util.PolicyUtils;
 public final class FactoryImpl implements SaslClientFactory,
 SaslServerFactory{
 
-    private static final String myMechs[] = { "NTLM" };
-    private static final int mechPolicies[] = {
+    private static final String[] myMechs = { "NTLM" };
+    private static final int[] mechPolicies = {
             PolicyUtils.NOPLAINTEXT|PolicyUtils.NOANONYMOUS
     };
 

@@ -104,7 +104,9 @@ void CardTableRS::prepare_for_younger_refs_iterate(bool parallel) {
 void CardTableRS::younger_refs_iterate(Generation* g,
                                        OopsInGenClosure* blk,
                                        uint n_threads) {
-  _last_cur_val_in_gen[g->level()+1] = cur_youngergen_card_val();
+  // The indexing in this array is slightly odd. We want to access
+  // the old generation record here, which is at index 2.
+  _last_cur_val_in_gen[2] = cur_youngergen_card_val();
   g->younger_refs_iterate(blk, n_threads);
 }
 
@@ -300,7 +302,8 @@ void CardTableRS::younger_refs_in_space_iterate(Space* sp,
 }
 
 void CardTableRS::clear_into_younger(Generation* old_gen) {
-  assert(old_gen->level() == 1, "Should only be called for the old generation");
+  assert(GenCollectedHeap::heap()->is_old_gen(old_gen),
+         "Should only be called for the old generation");
   // The card tables for the youngest gen need never be cleared.
   // There's a bit of subtlety in the clear() and invalidate()
   // methods that we exploit here and in invalidate_or_clear()
@@ -311,7 +314,8 @@ void CardTableRS::clear_into_younger(Generation* old_gen) {
 }
 
 void CardTableRS::invalidate_or_clear(Generation* old_gen) {
-  assert(old_gen->level() == 1, "Should only be called for the old generation");
+  assert(GenCollectedHeap::heap()->is_old_gen(old_gen),
+         "Should only be called for the old generation");
   // Invalidate the cards for the currently occupied part of
   // the old generation and clear the cards for the
   // unoccupied part of the generation (if any, making use
@@ -377,7 +381,9 @@ public:
   VerifyCTGenClosure(CardTableRS* ct) : _ct(ct) {}
   void do_generation(Generation* gen) {
     // Skip the youngest generation.
-    if (gen->level() == 0) return;
+    if (GenCollectedHeap::heap()->is_young_gen(gen)) {
+      return;
+    }
     // Normally, we're interested in pointers to younger generations.
     VerifyCTSpaceClosure blk(_ct, gen->reserved().start());
     gen->space_iterate(&blk, true);

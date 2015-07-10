@@ -164,7 +164,7 @@ final class P11KeyStore extends KeyStoreSpi {
         private X509Certificate cert = null;
 
         // chain
-        private X509Certificate chain[] = null;
+        private X509Certificate[] chain = null;
 
         // true if CKA_ID for private key and cert match up
         private boolean matched = false;

@@ -53,8 +53,8 @@ import sun.security.ssl.ProtocolVersion;
 final class KerberosPreMasterSecret {
 
     private ProtocolVersion protocolVersion; // preMaster [0,1]
-    private byte preMaster[];           // 48 bytes
-    private byte encrypted[];
+    private byte[] preMaster;           // 48 bytes
+    private byte[] encrypted;
 
     /**
      * Constructor used by client to generate premaster secret.

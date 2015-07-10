@@ -25,29 +25,42 @@
 package com.sun.tools.javac.main;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
+import javax.tools.StandardJavaFileManager;
+import javax.tools.StandardLocation;
 
 import com.sun.tools.doclint.DocLint;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Source;
+import com.sun.tools.javac.file.BaseFileManager;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.jvm.Profile;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.main.OptionHelper.GrumpyHelper;
-import com.sun.tools.javac.file.BaseFileManager;
+import com.sun.tools.javac.platform.PlatformDescription;
+import com.sun.tools.javac.platform.PlatformProvider;
+import com.sun.tools.javac.platform.PlatformProvider.PlatformNotSupported;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Log.PrefixKind;
+import com.sun.tools.javac.util.Log.WriterKind;
 import com.sun.tools.javac.util.Options;
 import com.sun.tools.javac.util.PropagatedException;
 
@@ -272,6 +285,63 @@ public class Arguments {
     private boolean processArgs(Iterable<String> args,
             Set<Option> allowableOpts, OptionHelper helper,
             boolean allowOperands, boolean checkFileManager) {
+        if (!doProcessArgs(args, allowableOpts, helper, allowOperands, checkFileManager))
+            return false;
+
+        String platformString = options.get(Option.RELEASE);
+
+        checkOptionAllowed(platformString == null,
+                option -> error("err.release.bootclasspath.conflict", option.getText()),
+                Option.BOOTCLASSPATH, Option.XBOOTCLASSPATH, Option.XBOOTCLASSPATH_APPEND,
+                Option.XBOOTCLASSPATH_PREPEND, Option.ENDORSEDDIRS, Option.EXTDIRS, Option.SOURCE,
+                Option.TARGET);
+
+        if (platformString != null) {
+            PlatformDescription platformDescription = lookupDescription(platformString);
+
+            if (platformDescription == null) {
+                error("err.unsupported.release.version", platformString);
+                return false;
+            }
+
+            options.put(Option.SOURCE, platformDescription.getSourceVersion());
+            options.put(Option.TARGET, platformDescription.getTargetVersion());
+
+            context.put(PlatformDescription.class, platformDescription);
+
+            if (!doProcessArgs(platformDescription.getAdditionalOptions(), allowableOpts, helper, allowOperands, checkFileManager))
+                return false;
+
+            Collection<Path> platformCP = platformDescription.getPlatformPath();
+
+            if (platformCP != null) {
+                JavaFileManager fm = getFileManager();
+
+                if (!(fm instanceof StandardJavaFileManager)) {
+                    error("err.release.not.standard.file.manager");
+                    return false;
+                }
+
+                try {
+                    StandardJavaFileManager sfm = (StandardJavaFileManager) fm;
+
+                    sfm.setLocationFromPaths(StandardLocation.PLATFORM_CLASS_PATH, platformCP);
+                } catch (IOException ex) {
+                    log.printLines(PrefixKind.JAVAC, "msg.io");
+                    ex.printStackTrace(log.getWriter(WriterKind.NOTICE));
+                    return false;
+                }
+            }
+        }
+
+        options.notifyListeners();
+
+        return true;
+    }
+
+    private boolean doProcessArgs(Iterable<String> args,
+            Set<Option> allowableOpts, OptionHelper helper,
+            boolean allowOperands, boolean checkFileManager) {
         JavaFileManager fm = checkFileManager ? getFileManager() : null;
         Iterator<String> argIter = args.iterator();
         while (argIter.hasNext()) {
@@ -315,10 +385,7 @@ public class Arguments {
                     return false;
                 }
             }
-
         }
-
-        options.notifyListeners();
 
         return true;
     }
@@ -405,7 +472,7 @@ public class Arguments {
 
         boolean lintOptions = options.isUnset(Option.XLINT_CUSTOM, "-" + LintCategory.OPTIONS.option);
 
-        if (lintOptions && source.compareTo(Source.DEFAULT) < 0) {
+        if (lintOptions && source.compareTo(Source.DEFAULT) < 0 && !options.isSet(Option.RELEASE)) {
             JavaFileManager fm = getFileManager();
             if (fm instanceof BaseFileManager) {
                 if (((BaseFileManager) fm).isDefaultBootClassPath())
@@ -433,6 +500,31 @@ public class Arguments {
             log.warning(LintCategory.OPTIONS, "option.obsolete.suppression");
 
         return !errors;
+    }
+
+    private PlatformDescription lookupDescription(String platformString) {
+        int separator = platformString.indexOf(":");
+        String platformProviderName =
+                separator != (-1) ? platformString.substring(0, separator) : platformString;
+        String platformOptions =
+                separator != (-1) ? platformString.substring(separator + 1) : "";
+        Iterable<PlatformProvider> providers =
+                ServiceLoader.load(PlatformProvider.class, Arguments.class.getClassLoader());
+
+        return StreamSupport.stream(providers.spliterator(), false)
+                            .filter(provider -> StreamSupport.stream(provider.getSupportedPlatformNames()
+                                                                             .spliterator(),
+                                                                     false)
+                                                             .anyMatch(platformProviderName::equals))
+                            .findFirst()
+                            .flatMap(provider -> {
+                                try {
+                                    return Optional.of(provider.getPlatform(platformProviderName, platformOptions));
+                                } catch (PlatformNotSupported pns) {
+                                    return Optional.empty();
+                                }
+                            })
+                            .orElse(null);
     }
 
     /**
@@ -526,6 +618,18 @@ public class Arguments {
             return false;
         }
         return true;
+    }
+
+    private interface ErrorReporter {
+        void report(Option o);
+    }
+
+    void checkOptionAllowed(boolean allowed, ErrorReporter r, Option... opts) {
+        if (!allowed) {
+            Stream.of(opts)
+                  .filter(options :: isSet)
+                  .forEach(r :: report);
+        }
     }
 
     void error(String key, Object... args) {

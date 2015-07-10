@@ -291,7 +291,7 @@ public abstract class SunToolkit extends Toolkit
     // Maps from non-Component/MenuComponent to AppContext.
     // WeakHashMap<Component,AppContext>
     private static final Map<Object, AppContext> appContextMap =
-        Collections.synchronizedMap(new WeakHashMap<Object, AppContext>());
+        Collections.synchronizedMap(new WeakIdentityHashMap<Object, AppContext>());
 
     /**
      * Sets the appContext field of target. If target is not a Component or

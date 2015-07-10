@@ -47,13 +47,13 @@ import javax.security.auth.callback.UnsupportedCallbackException;
   * @author Rosanna Lee
   */
 final public class ClientFactoryImpl implements SaslClientFactory {
-    private static final String myMechs[] = {
+    private static final String[] myMechs = {
         "EXTERNAL",
         "CRAM-MD5",
         "PLAIN",
     };
 
-    private static final int mechPolicies[] = {
+    private static final int[] mechPolicies = {
         // %%% RL: Policies should actually depend on the external channel
         PolicyUtils.NOPLAINTEXT|PolicyUtils.NOACTIVE|PolicyUtils.NODICTIONARY,
         PolicyUtils.NOPLAINTEXT|PolicyUtils.NOANONYMOUS,    // CRAM-MD5

@@ -119,7 +119,7 @@ public class HandshakeOutStream extends ByteArrayOutputStream {
         }
     }
 
-    public void putBytes16(byte b[]) throws IOException {
+    public void putBytes16(byte[] b) throws IOException {
         if (b == null) {
             putInt16(0);
         } else {
@@ -128,7 +128,7 @@ public class HandshakeOutStream extends ByteArrayOutputStream {
         }
     }
 
-    void putBytes24(byte b[]) throws IOException {
+    void putBytes24(byte[] b) throws IOException {
         if (b == null) {
             putInt24(0);
         } else {

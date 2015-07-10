@@ -64,9 +64,9 @@ public class JDK_8081015_TestModel {
 
     private static void walkCollection(final Collection<Object> c) {
         final Iterator<Object> it = c.iterator();
-        assertEquals(it.next(), Integer.valueOf(1));
-        assertEquals(it.next(), Integer.valueOf(2));
-        assertEquals(it.next(), Double.valueOf(3.3));
+        assertEquals(it.next(), 1);
+        assertEquals(it.next(), 2);
+        assertEquals(it.next(), 3.3);
         assertEquals(it.next(), "foo");
         assertFalse(it.hasNext());
     }

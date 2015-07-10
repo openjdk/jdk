@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,7 @@
 //
 // Defines Windows specific flags. They are not available on other platforms.
 //
-#define RUNTIME_OS_FLAGS(develop, develop_pd, product, product_pd,       \
-                         diagnostic, notproduct)                         \
+#define RUNTIME_OS_FLAGS(develop, develop_pd, product, product_pd, diagnostic, notproduct, range, constraint) \
                                                                          \
   product(bool, UseUTCFileTimestamp, true,                               \
           "Adjust the timestamp returned from stat() to be UTC")

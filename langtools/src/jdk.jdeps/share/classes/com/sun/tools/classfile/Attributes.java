@@ -69,6 +69,11 @@ public class Attributes implements Iterable<Attribute> {
         }
     }
 
+    public Attributes(Map<String, Attribute> attributes) {
+        this.attrs = attributes.values().toArray(new Attribute[attributes.size()]);
+        map = attributes;
+    }
+
     public Iterator<Attribute> iterator() {
         return Arrays.asList(attrs).iterator();
     }
