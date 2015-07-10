@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4268,6 +4268,7 @@ public class Collections {
 
         public boolean hasMoreElements() { return false; }
         public E nextElement() { throw new NoSuchElementException(); }
+        public Iterator<E> asIterator() { return emptyIterator(); }
     }
 
     /**
@@ -5198,6 +5199,11 @@ public class Collections {
      * Returns an enumeration over the specified collection.  This provides
      * interoperability with legacy APIs that require an enumeration
      * as input.
+     *
+     * <p>The iterator returned from a call to {@link Enumeration#asIterator()}
+     * does not support removal of elements from the specified collection.  This
+     * is necessary to avoid unintentionally increasing the capabilities of the
+     * returned enumeration.
      *
      * @param  <T> the class of the objects in the collection
      * @param c the collection for which an enumeration is to be returned.

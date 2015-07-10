@@ -154,28 +154,28 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
 
     private static final Debug debug = Debug.getInstance("pkcs12");
 
-    private static final int keyBag[]  = {1, 2, 840, 113549, 1, 12, 10, 1, 2};
-    private static final int certBag[] = {1, 2, 840, 113549, 1, 12, 10, 1, 3};
-    private static final int secretBag[] = {1, 2, 840, 113549, 1, 12, 10, 1, 5};
+    private static final int[] keyBag  = {1, 2, 840, 113549, 1, 12, 10, 1, 2};
+    private static final int[] certBag = {1, 2, 840, 113549, 1, 12, 10, 1, 3};
+    private static final int[] secretBag = {1, 2, 840, 113549, 1, 12, 10, 1, 5};
 
-    private static final int pkcs9Name[]  = {1, 2, 840, 113549, 1, 9, 20};
-    private static final int pkcs9KeyId[] = {1, 2, 840, 113549, 1, 9, 21};
+    private static final int[] pkcs9Name  = {1, 2, 840, 113549, 1, 9, 20};
+    private static final int[] pkcs9KeyId = {1, 2, 840, 113549, 1, 9, 21};
 
-    private static final int pkcs9certType[] = {1, 2, 840, 113549, 1, 9, 22, 1};
+    private static final int[] pkcs9certType = {1, 2, 840, 113549, 1, 9, 22, 1};
 
-    private static final int pbeWithSHAAnd40BitRC2CBC[] =
+    private static final int[] pbeWithSHAAnd40BitRC2CBC =
                                         {1, 2, 840, 113549, 1, 12, 1, 6};
-    private static final int pbeWithSHAAnd3KeyTripleDESCBC[] =
+    private static final int[] pbeWithSHAAnd3KeyTripleDESCBC =
                                         {1, 2, 840, 113549, 1, 12, 1, 3};
-    private static final int pbes2[] = {1, 2, 840, 113549, 1, 5, 13};
+    private static final int[] pbes2 = {1, 2, 840, 113549, 1, 5, 13};
     // TODO: temporary Oracle OID
     /*
      * { joint-iso-itu-t(2) country(16) us(840) organization(1) oracle(113894)
      *   jdk(746875) crypto(1) id-at-trustedKeyUsage(1) }
      */
-    private static final int TrustedKeyUsage[] =
+    private static final int[] TrustedKeyUsage =
                                         {2, 16, 840, 1, 113894, 746875, 1, 1};
-    private static final int AnyExtendedKeyUsage[] = {2, 5, 29, 37, 0};
+    private static final int[] AnyExtendedKeyUsage = {2, 5, 29, 37, 0};
 
     private static ObjectIdentifier PKCS8ShroudedKeyBag_OID;
     private static ObjectIdentifier CertBag_OID;
@@ -243,7 +243,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     // A private key entry and its supporting certificate chain
     private static class PrivateKeyEntry extends KeyEntry {
         byte[] protectedPrivKey;
-        Certificate chain[];
+        Certificate[] chain;
     };
 
     // A secret key
@@ -789,7 +789,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                 }
             }
             if (params != null) {
-                if (algorithm.equals((Object)pbes2_OID)) {
+                if (algorithm.equals(pbes2_OID)) {
                     algParams = AlgorithmParameters.getInstance("PBES2");
                 } else {
                     algParams = AlgorithmParameters.getInstance("PBE");
@@ -926,7 +926,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     private static String mapPBEParamsToAlgorithm(ObjectIdentifier algorithm,
         AlgorithmParameters algParams) throws NoSuchAlgorithmException {
         // Check for PBES2 algorithms
-        if (algorithm.equals((Object)pbes2_OID) && algParams != null) {
+        if (algorithm.equals(pbes2_OID) && algParams != null) {
             return algParams.toString();
         }
         return algorithm.toString();
@@ -1937,7 +1937,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         ContentInfo authSafe = new ContentInfo(s);
         ObjectIdentifier contentType = authSafe.getContentType();
 
-        if (contentType.equals((Object)ContentInfo.DATA_OID)) {
+        if (contentType.equals(ContentInfo.DATA_OID)) {
            authSafeData = authSafe.getData();
         } else /* signed data */ {
            throw new IOException("public key protected PKCS12 not supported");
@@ -1965,14 +1965,14 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             safeContents = new ContentInfo(sci);
             contentType = safeContents.getContentType();
             safeContentsData = null;
-            if (contentType.equals((Object)ContentInfo.DATA_OID)) {
+            if (contentType.equals(ContentInfo.DATA_OID)) {
 
                 if (debug != null) {
                     debug.println("Loading PKCS#7 data content-type");
                 }
 
                 safeContentsData = safeContents.getData();
-            } else if (contentType.equals((Object)ContentInfo.ENCRYPTED_DATA_OID)) {
+            } else if (contentType.equals(ContentInfo.ENCRYPTED_DATA_OID)) {
                 if (password == null) {
 
                     if (debug != null) {
@@ -2178,12 +2178,12 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                                         + bagValue.tag);
             }
             bagValue = bagValue.data.getDerValue();
-            if (bagId.equals((Object)PKCS8ShroudedKeyBag_OID)) {
+            if (bagId.equals(PKCS8ShroudedKeyBag_OID)) {
                 PrivateKeyEntry kEntry = new PrivateKeyEntry();
                 kEntry.protectedPrivKey = bagValue.toByteArray();
                 bagItem = kEntry;
                 privateKeyCount++;
-            } else if (bagId.equals((Object)CertBag_OID)) {
+            } else if (bagId.equals(CertBag_OID)) {
                 DerInputStream cs = new DerInputStream(bagValue.toByteArray());
                 DerValue[] certValues = cs.getSequence(2);
                 ObjectIdentifier certId = certValues[0].getOID();
@@ -2198,7 +2198,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                         (new ByteArrayInputStream(certValue.getOctetString()));
                 bagItem = cert;
                 certificateCount++;
-            } else if (bagId.equals((Object)SecretBag_OID)) {
+            } else if (bagId.equals(SecretBag_OID)) {
                 DerInputStream ss = new DerInputStream(bagValue.toByteArray());
                 DerValue[] secretValues = ss.getSequence(2);
                 ObjectIdentifier secretId = secretValues[0].getOID();
@@ -2249,12 +2249,12 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                         throw new IOException("Attribute " + attrId +
                                 " should have a value " + e.getMessage());
                     }
-                    if (attrId.equals((Object)PKCS9FriendlyName_OID)) {
+                    if (attrId.equals(PKCS9FriendlyName_OID)) {
                         alias = valSet[0].getBMPString();
-                    } else if (attrId.equals((Object)PKCS9LocalKeyId_OID)) {
+                    } else if (attrId.equals(PKCS9LocalKeyId_OID)) {
                         keyId = valSet[0].getOctetString();
                     } else if
-                        (attrId.equals((Object)TrustedKeyUsage_OID)) {
+                        (attrId.equals(TrustedKeyUsage_OID)) {
                         trustedKeyUsage = new ObjectIdentifier[valSet.length];
                         for (int k = 0; k < valSet.length; k++) {
                             trustedKeyUsage[k] = valSet[k].getOID();

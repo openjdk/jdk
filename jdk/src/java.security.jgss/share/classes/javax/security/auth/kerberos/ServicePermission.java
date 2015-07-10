@@ -427,7 +427,7 @@ public final class ServicePermission extends Permission
 
 
     /*
-      public static void main(String args[]) throws Exception {
+      public static void main(String[] args) throws Exception {
       ServicePermission this_ =
       new ServicePermission(args[0], "accept");
       ServicePermission that_ =

@@ -689,8 +689,8 @@ static abstract class ServerKeyExchange extends HandshakeMessage
 static final
 class RSA_ServerKeyExchange extends ServerKeyExchange
 {
-    private byte rsa_modulus[];     // 1 to 2^16 - 1 bytes
-    private byte rsa_exponent[];    // 1 to 2^16 - 1 bytes
+    private byte[] rsa_modulus;     // 1 to 2^16 - 1 bytes
+    private byte[] rsa_exponent;    // 1 to 2^16 - 1 bytes
 
     private Signature signature;
     private byte[] signatureBytes;
@@ -698,7 +698,7 @@ class RSA_ServerKeyExchange extends ServerKeyExchange
     /*
      * Hash the nonces and the ephemeral RSA public key.
      */
-    private void updateSignature(byte clntNonce[], byte svrNonce[])
+    private void updateSignature(byte[] clntNonce, byte[] svrNonce)
             throws SignatureException {
         int tmp;
 
@@ -827,11 +827,11 @@ class DH_ServerKeyExchange extends ServerKeyExchange
     private final static boolean dhKeyExchangeFix =
         Debug.getBooleanProperty("com.sun.net.ssl.dhKeyExchangeFix", true);
 
-    private byte                dh_p [];        // 1 to 2^16 - 1 bytes
-    private byte                dh_g [];        // 1 to 2^16 - 1 bytes
-    private byte                dh_Ys [];       // 1 to 2^16 - 1 bytes
+    private byte[]                dh_p;        // 1 to 2^16 - 1 bytes
+    private byte[]                dh_g;        // 1 to 2^16 - 1 bytes
+    private byte[]                dh_Ys;       // 1 to 2^16 - 1 bytes
 
-    private byte                signature [];
+    private byte[]                signature;
 
     // protocol version being established using this ServerKeyExchange message
     ProtocolVersion protocolVersion;
@@ -857,8 +857,8 @@ class DH_ServerKeyExchange extends ServerKeyExchange
      * with the cert chain which was sent ... for DHE_DSS and DHE_RSA
      * key exchange.  (Constructor called by server.)
      */
-    DH_ServerKeyExchange(DHCrypt obj, PrivateKey key, byte clntNonce[],
-            byte svrNonce[], SecureRandom sr,
+    DH_ServerKeyExchange(DHCrypt obj, PrivateKey key, byte[] clntNonce,
+            byte[] svrNonce, SecureRandom sr,
             SignatureAndHashAlgorithm signAlgorithm,
             ProtocolVersion protocolVersion) throws GeneralSecurityException {
 
@@ -913,7 +913,7 @@ class DH_ServerKeyExchange extends ServerKeyExchange
      * DHE_DSS or DHE_RSA key exchange.  (Called by client.)
      */
     DH_ServerKeyExchange(HandshakeInStream input, PublicKey publicKey,
-            byte clntNonce[], byte svrNonce[], int messageSize,
+            byte[] clntNonce, byte[] svrNonce, int messageSize,
             Collection<SignatureAndHashAlgorithm> localSupportedSignAlgs,
             ProtocolVersion protocolVersion)
             throws IOException, GeneralSecurityException {
@@ -948,7 +948,7 @@ class DH_ServerKeyExchange extends ServerKeyExchange
         }
 
         // read the signature
-        byte signature[];
+        byte[] signature;
         if (dhKeyExchangeFix) {
             signature = input.getBytes16();
         } else {
@@ -1004,8 +1004,8 @@ class DH_ServerKeyExchange extends ServerKeyExchange
     /*
      * Update sig with nonces and Diffie-Hellman public key.
      */
-    private void updateSignature(Signature sig, byte clntNonce[],
-            byte svrNonce[]) throws SignatureException {
+    private void updateSignature(Signature sig, byte[] clntNonce,
+            byte[] svrNonce) throws SignatureException {
         int tmp;
 
         sig.update(clntNonce);
@@ -1268,8 +1268,8 @@ class ECDH_ServerKeyExchange extends ServerKeyExchange {
             }
     }
 
-    private void updateSignature(Signature sig, byte clntNonce[],
-            byte svrNonce[]) throws SignatureException {
+    private void updateSignature(Signature sig, byte[] clntNonce,
+            byte[] svrNonce) throws SignatureException {
         sig.update(clntNonce);
         sig.update(svrNonce);
 
@@ -1334,7 +1334,7 @@ static final class DistinguishedName {
      * DER encoded distinguished name.
      * TLS requires that its not longer than 65535 bytes.
      */
-    byte name[];
+    byte[] name;
 
     DistinguishedName(HandshakeInStream input) throws IOException {
         name = input.getBytes16();
@@ -1411,8 +1411,8 @@ class CertificateRequest extends HandshakeMessage
     private final static byte[] TYPES_ECC =
         { cct_rsa_sign, cct_dss_sign, cct_ecdsa_sign };
 
-    byte                types [];               // 1 to 255 types
-    DistinguishedName   authorities [];         // 3 to 2^16 - 1
+    byte[]                types;               // 1 to 255 types
+    DistinguishedName[]   authorities;         // 3 to 2^16 - 1
         // ... "3" because that's the smallest DER-encoded X500 DN
 
     // protocol version being established using this CertificateRequest message
@@ -1424,7 +1424,7 @@ class CertificateRequest extends HandshakeMessage
     // length of supported_signature_algorithms
     private int algorithmsLen;
 
-    CertificateRequest(X509Certificate ca[], KeyExchange keyExchange,
+    CertificateRequest(X509Certificate[] ca, KeyExchange keyExchange,
             Collection<SignatureAndHashAlgorithm> signAlgs,
             ProtocolVersion protocolVersion) throws IOException {
 
@@ -2063,7 +2063,7 @@ static final class Finished extends HandshakeMessage {
         if (protocolVersion.useTLS10PlusSpec()) {
             // TLS 1.0+
             try {
-                byte [] seed;
+                byte[] seed;
                 String prfAlg;
                 PRF prf;
 

@@ -999,10 +999,10 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
            for (final Property p : map0.getProperties()) {
                final Property p2 = map1.findProperty(p.getKey());
                if (p2 == null) {
-                   sb.append("FIRST ONLY : [" + p + "]");
+                   sb.append("FIRST ONLY : [").append(p).append("]");
                    found = true;
                } else if (p2 != p) {
-                   sb.append("DIFFERENT  : [" + p + "] != [" + p2 + "]");
+                   sb.append("DIFFERENT  : [").append(p).append("] != [").append(p2).append("]");
                    found = true;
                }
            }
@@ -1010,7 +1010,7 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
            for (final Property p2 : map1.getProperties()) {
                final Property p1 = map0.findProperty(p2.getKey());
                if (p1 == null) {
-                   sb.append("SECOND ONLY: [" + p2 + "]");
+                   sb.append("SECOND ONLY: [").append(p2).append("]");
                    found = true;
                }
            }

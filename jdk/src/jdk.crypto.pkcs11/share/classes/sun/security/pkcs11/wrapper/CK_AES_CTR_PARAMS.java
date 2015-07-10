@@ -42,7 +42,7 @@ package sun.security.pkcs11.wrapper;
 public class CK_AES_CTR_PARAMS {
 
     private final long ulCounterBits;
-    private final byte cb[];
+    private final byte[] cb;
 
     public CK_AES_CTR_PARAMS(byte[] cb) {
         ulCounterBits = 128;

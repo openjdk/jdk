@@ -47,7 +47,6 @@ import jdk.internal.dynalink.linker.MethodTypeConversionStrategy;
 import jdk.internal.dynalink.support.TypeUtilities;
 import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
-import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.lookup.MethodHandleFunctionality;
 import jdk.nashorn.internal.objects.ScriptFunctionImpl;

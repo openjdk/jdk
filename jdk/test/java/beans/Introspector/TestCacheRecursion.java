@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import com.sun.beans.util.Cache;
  * @bug 8039137
  * @summary Tests Cache recursion
  * @author Sergey Malenkov
+ * @modules java.desktop/com.sun.beans.util
  * @compile -XDignore.symbol.file TestCacheRecursion.java
  * @run main TestCacheRecursion
  */

@@ -143,6 +143,8 @@ address StubRoutines::_updateBytesCRC32C = NULL;
 address StubRoutines::_multiplyToLen = NULL;
 address StubRoutines::_squareToLen = NULL;
 address StubRoutines::_mulAdd = NULL;
+address StubRoutines::_montgomeryMultiply = NULL;
+address StubRoutines::_montgomerySquare = NULL;
 
 double (* StubRoutines::_intrinsic_log   )(double) = NULL;
 double (* StubRoutines::_intrinsic_log10 )(double) = NULL;

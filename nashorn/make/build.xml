@@ -208,10 +208,11 @@
     </jar>
   </target>
 
+  <!-- generate javadoc for all Nashorn and ASM classes -->
   <target name="javadoc" depends="jar">
     <javadoc destdir="${dist.javadoc.dir}" use="yes" overview="${src.dir}/overview.html"
         extdirs="${nashorn.ext.path}" windowtitle="${nashorn.product.name} ${nashorn.version}"
-        additionalparam="-quiet" failonerror="true">
+        additionalparam="-quiet" failonerror="true" useexternalfile="true">
       <classpath>
         <pathelement location="${build.classes.dir}"/>
       </classpath>
@@ -225,10 +226,24 @@
     </javadoc>
   </target>
 
+  <!-- generate javadoc for Nashorn classes -->
+  <target name="javadocnh" depends="jar">
+    <javadoc destdir="${dist.javadoc.dir}" use="yes" overview="${src.dir}/overview.html"
+        extdirs="${nashorn.ext.path}" windowtitle="${nashorn.product.name} ${nashorn.version}"
+        additionalparam="-quiet" failonerror="true" useexternalfile="true">
+      <classpath>
+        <pathelement location="${build.classes.dir}"/>
+      </classpath>
+      <fileset dir="${src.dir}" includes="**/*.java"/>
+      <link href="http://docs.oracle.com/javase/8/docs/api/"/>
+    </javadoc>
+  </target>
+
   <!-- generate javadoc only for nashorn extension api classes -->
   <target name="javadocapi" depends="jar">
-    <javadoc destdir="${dist.javadoc.dir}" use="yes" extdirs="${nashorn.ext.path}"
-        windowtitle="${nashorn.product.name}" additionalparam="-quiet" failonerror="true">
+    <javadoc destdir="${dist.javadoc.dir}" use="yes" overview="${src.dir}/overview.html"
+        extdirs="${nashorn.ext.path}" windowtitle="${nashorn.product.name} ${nashorn.version}"
+        additionalparam="-quiet" failonerror="true" useexternalfile="true">
       <classpath>
         <pathelement location="${build.classes.dir}"/>
       </classpath>
@@ -469,7 +484,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
     </testng>
   </target>
 
-  <target name="test" depends="get-testng, javadoc, test-pessimistic, test-optimistic"/>
+  <target name="test" depends="get-testng, javadocnh, test-pessimistic, test-optimistic"/>
 
   <target name="test-optimistic" depends="jar, -test-classes-all,-test-classes-single, check-testng, check-external-tests, compile-test, generate-policy-file" if="testng.available">
     <echo message="Running test suite in OPTIMISTIC mode..."/>

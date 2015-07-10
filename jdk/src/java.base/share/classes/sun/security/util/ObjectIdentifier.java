@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,7 +212,7 @@ class ObjectIdentifier implements Serializable
      * Constructor, from an array of integers.
      * Validity check included.
      */
-    public ObjectIdentifier (int values []) throws IOException
+    public ObjectIdentifier(int[] values) throws IOException
     {
         checkCount(values.length);
         checkFirstComponent(values[0]);
@@ -316,14 +316,6 @@ class ObjectIdentifier implements Serializable
     void encode (DerOutputStream out) throws IOException
     {
         out.write (DerValue.tag_ObjectId, encoding);
-    }
-
-    /**
-     * @deprecated Use equals((Object)oid)
-     */
-    @Deprecated
-    public boolean equals(ObjectIdentifier other) {
-        return equals((Object)other);
     }
 
     /**

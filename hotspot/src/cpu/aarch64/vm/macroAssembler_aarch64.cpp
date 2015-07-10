@@ -2914,6 +2914,65 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     ornw(crc, zr, crc);
 }
 
+/**
+ * @param crc   register containing existing CRC (32-bit)
+ * @param buf   register pointing to input byte buffer (byte*)
+ * @param len   register containing number of bytes
+ * @param table register that will contain address of CRC table
+ * @param tmp   scratch register
+ */
+void MacroAssembler::kernel_crc32c(Register crc, Register buf, Register len,
+        Register table0, Register table1, Register table2, Register table3,
+        Register tmp, Register tmp2, Register tmp3) {
+  Label L_exit;
+  Label CRC_by64_loop, CRC_by4_loop, CRC_by1_loop;
+
+    subs(len, len, 64);
+    br(Assembler::GE, CRC_by64_loop);
+    adds(len, len, 64-4);
+    br(Assembler::GE, CRC_by4_loop);
+    adds(len, len, 4);
+    br(Assembler::GT, CRC_by1_loop);
+    b(L_exit);
+
+  BIND(CRC_by4_loop);
+    ldrw(tmp, Address(post(buf, 4)));
+    subs(len, len, 4);
+    crc32cw(crc, crc, tmp);
+    br(Assembler::GE, CRC_by4_loop);
+    adds(len, len, 4);
+    br(Assembler::LE, L_exit);
+  BIND(CRC_by1_loop);
+    ldrb(tmp, Address(post(buf, 1)));
+    subs(len, len, 1);
+    crc32cb(crc, crc, tmp);
+    br(Assembler::GT, CRC_by1_loop);
+    b(L_exit);
+
+    align(CodeEntryAlignment);
+  BIND(CRC_by64_loop);
+    subs(len, len, 64);
+    ldp(tmp, tmp3, Address(post(buf, 16)));
+    crc32cx(crc, crc, tmp);
+    crc32cx(crc, crc, tmp3);
+    ldp(tmp, tmp3, Address(post(buf, 16)));
+    crc32cx(crc, crc, tmp);
+    crc32cx(crc, crc, tmp3);
+    ldp(tmp, tmp3, Address(post(buf, 16)));
+    crc32cx(crc, crc, tmp);
+    crc32cx(crc, crc, tmp3);
+    ldp(tmp, tmp3, Address(post(buf, 16)));
+    crc32cx(crc, crc, tmp);
+    crc32cx(crc, crc, tmp3);
+    br(Assembler::GE, CRC_by64_loop);
+    adds(len, len, 64-4);
+    br(Assembler::GE, CRC_by4_loop);
+    adds(len, len, 4);
+    br(Assembler::GT, CRC_by1_loop);
+  BIND(L_exit);
+    return;
+}
+
 SkipIfEqual::SkipIfEqual(
     MacroAssembler* masm, const bool* flag_addr, bool value) {
   _masm = masm;

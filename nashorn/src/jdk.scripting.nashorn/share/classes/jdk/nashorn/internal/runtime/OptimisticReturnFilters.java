@@ -184,7 +184,7 @@ public final class OptimisticReturnFilters {
 
     @SuppressWarnings("unused")
     private static int ensureInt(final double arg, final int programPoint) {
-        if (JSType.isRepresentableAsInt(arg) && !JSType.isNegativeZero(arg)) {
+        if (JSType.isStrictlyRepresentableAsInt(arg)) {
             return (int)arg;
         }
         throw new UnwarrantedOptimismException(arg, programPoint);
@@ -206,7 +206,7 @@ public final class OptimisticReturnFilters {
         // Long into the exception.
         if (isPrimitiveNumberWrapper(arg)) {
             final double d = ((Number)arg).doubleValue();
-            if (JSType.isRepresentableAsInt(d) && !JSType.isNegativeZero(d)) {
+            if (JSType.isStrictlyRepresentableAsInt(d)) {
                 return (int)d;
             }
         }
@@ -239,7 +239,7 @@ public final class OptimisticReturnFilters {
     }
 
     private static long ensureLong(final double arg, final int programPoint) {
-        if (JSType.isRepresentableAsLong(arg) && !JSType.isNegativeZero(arg)) {
+        if (JSType.isStrictlyRepresentableAsLong(arg)) {
             return (long)arg;
         }
         throw new UnwarrantedOptimismException(arg, programPoint);
@@ -260,7 +260,7 @@ public final class OptimisticReturnFilters {
             final Class<?> c = arg.getClass();
             if (c == Long.class) {
                 // Must check for Long separately, as Long.doubleValue() isn't precise.
-                return ((Long)arg).longValue();
+                return ((Long)arg);
             } else if (c == Integer.class || c == Double.class || c == Float.class || c == Short.class ||
                     c == Byte.class) {
                 return ensureLong(((Number)arg).doubleValue(), programPoint);

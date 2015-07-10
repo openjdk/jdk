@@ -81,7 +81,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBNIO, \
     LDFLAGS_SUFFIX_windows := jvm.lib ws2_32.lib $(WIN_JAVA_LIB) \
         $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libnet/net.lib \
         advapi32.lib, \
-    LDFLAGS_SUFFIX_macosx := -ljava -lnet -pthread -framework CoreFoundation, \
+    LDFLAGS_SUFFIX_macosx := -ljava -lnet -pthread \
+        -framework CoreFoundation -framework CoreServices, \
     LDFLAGS_SUFFIX :=, \
     VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
     RC_FLAGS := $(RC_FLAGS) \

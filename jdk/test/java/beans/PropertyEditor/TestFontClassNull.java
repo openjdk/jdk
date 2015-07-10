@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,10 @@
  * @bug 4506596 6498171 6538853
  * @summary Tests PropertyEditor for null value of type Font
  * @author Sergey Malenkov
+ * @key headful
+ * @modules java.compiler
+ *          java.desktop
+ *          jdk.compiler
  */
 
 import java.awt.Font;

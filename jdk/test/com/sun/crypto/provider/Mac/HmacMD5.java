@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,6 @@ public class HmacMD5 {
     public static void main(String argv[]) throws Exception {
             int i, j, n;
             Mac mac;
-
-            Provider jce = new com.sun.crypto.provider.SunJCE();
-            Security.addProvider(jce);
 
             byte[][][] test_data = {
                 {
@@ -92,7 +89,7 @@ public class HmacMD5 {
                 }
             };
 
-            mac = Mac.getInstance("HmacMD5");
+            mac = Mac.getInstance("HmacMD5", "SunJCE");
             for (i=0; i<3; i++) {
                 j=0;
 
@@ -109,7 +106,7 @@ public class HmacMD5 {
             }
 
             // now test multiple-part operation, using the 2nd test vector
-            mac = Mac.getInstance("HmacMD5");
+            mac = Mac.getInstance("HmacMD5", "SunJCE");
             mac.init(new SecretKeySpec("Jefe".getBytes(), "HMAC"));
             mac.update("what do ya ".getBytes());
             mac.update("want for ".getBytes());

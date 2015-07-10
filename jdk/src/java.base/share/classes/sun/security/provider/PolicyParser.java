@@ -1353,7 +1353,7 @@ public class PolicyParser {
         }
     }
 
-    public static void main(String arg[]) throws Exception {
+    public static void main(String[] arg) throws Exception {
         try (FileReader fr = new FileReader(arg[0]);
              FileWriter fw = new FileWriter(arg[1])) {
             PolicyParser pp = new PolicyParser(true);
