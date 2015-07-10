@@ -26,6 +26,7 @@
 package java.lang;
 
 import java.util.Arrays;
+import jdk.internal.HotSpotIntrinsicCandidate;
 
 /**
  * A thread-safe, mutable sequence of characters.
@@ -112,6 +113,7 @@ import java.util.Arrays;
      * Constructs a string buffer with no characters in it and an
      * initial capacity of 16 characters.
      */
+    @HotSpotIntrinsicCandidate
     public StringBuffer() {
         super(16);
     }
@@ -124,6 +126,7 @@ import java.util.Arrays;
      * @exception  NegativeArraySizeException  if the {@code capacity}
      *               argument is less than {@code 0}.
      */
+    @HotSpotIntrinsicCandidate
     public StringBuffer(int capacity) {
         super(capacity);
     }
@@ -135,6 +138,7 @@ import java.util.Arrays;
      *
      * @param   str   the initial contents of the buffer.
      */
+    @HotSpotIntrinsicCandidate
     public StringBuffer(String str) {
         super(str.length() + 16);
         append(str);
@@ -271,6 +275,7 @@ import java.util.Arrays;
     }
 
     @Override
+    @HotSpotIntrinsicCandidate
     public synchronized StringBuffer append(String str) {
         toStringCache = null;
         super.append(str);
@@ -382,6 +387,7 @@ import java.util.Arrays;
     }
 
     @Override
+    @HotSpotIntrinsicCandidate
     public synchronized StringBuffer append(char c) {
         toStringCache = null;
         super.append(c);
@@ -389,6 +395,7 @@ import java.util.Arrays;
     }
 
     @Override
+    @HotSpotIntrinsicCandidate
     public synchronized StringBuffer append(int i) {
         toStringCache = null;
         super.append(i);
@@ -670,6 +677,7 @@ import java.util.Arrays;
     }
 
     @Override
+    @HotSpotIntrinsicCandidate
     public synchronized String toString() {
         if (toStringCache == null) {
             toStringCache = Arrays.copyOfRange(value, 0, count);

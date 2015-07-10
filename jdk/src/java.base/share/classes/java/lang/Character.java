@@ -30,6 +30,8 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Locale;
 
+import jdk.internal.HotSpotIntrinsicCandidate;
+
 /**
  * The {@code Character} class wraps a value of the primitive
  * type {@code char} in an object. An object of type
@@ -4569,6 +4571,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * @return a <tt>Character</tt> instance representing <tt>c</tt>.
      * @since  1.5
      */
+    @HotSpotIntrinsicCandidate
     public static Character valueOf(char c) {
         if (c <= 127) { // must cache
             return CharacterCache.cache[(int)c];
@@ -4581,6 +4584,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * @return  the primitive {@code char} value represented by
      *          this object.
      */
+    @HotSpotIntrinsicCandidate
     public char charValue() {
         return value;
     }
@@ -7181,6 +7185,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      *     the bytes in the specified <tt>char</tt> value.
      * @since 1.5
      */
+    @HotSpotIntrinsicCandidate
     public static char reverseBytes(char ch) {
         return (char) (((ch & 0xFF00) >> 8) | (ch << 8));
     }

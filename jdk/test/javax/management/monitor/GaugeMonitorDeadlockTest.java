@@ -27,6 +27,7 @@
  * @summary Test that no locks are held when a monitor attribute is sampled
  * or notif delivered.
  * @author Eamonn McManus
+ * @library /lib/testlibrary
  * @modules java.management
  * @run clean GaugeMonitorDeadlockTest
  * @run build GaugeMonitorDeadlockTest
@@ -48,6 +49,8 @@ import javax.management.ObjectName;
 import javax.management.monitor.GaugeMonitor;
 import javax.management.monitor.GaugeMonitorMBean;
 
+import jdk.testlibrary.Utils;
+
 public class GaugeMonitorDeadlockTest {
     private static enum When {IN_GET_ATTRIBUTE, IN_NOTIFY};
     private static long checkingTime;
@@ -55,8 +58,7 @@ public class GaugeMonitorDeadlockTest {
     public static void main(String[] args) throws Exception {
         if (args.length != 1)
             throw new Exception("Arg should be test number");
-        double factor = Double.parseDouble(System.getProperty("test.timeout.factor", "1.0"));
-        checkingTime = (long)factor*1000;
+        checkingTime = Utils.adjustTimeout(1000); // default 1s timeout
         System.out.println("=== checkingTime = " + checkingTime + "ms");
 
         int testNo = Integer.parseInt(args[0]) - 1;
@@ -102,11 +104,12 @@ public class GaugeMonitorDeadlockTest {
             monitorProxy.setGranularityPeriod(10L); // 10 ms
             monitorProxy.setNotifyHigh(true);
             monitorProxy.setNotifyLow(true);
-            monitorProxy.start();
 
             System.out.println("=== Waiting observedProxy.getGetCount() to be "
                     + "changed, presumable deadlock if timeout?");
             final int initGetCount = observedProxy.getGetCount();
+            monitorProxy.start();
+
             long checkedTime = System.currentTimeMillis();
             long nowTime;
             ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
