@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import java.security.Principal;
  * for examining the request from the client, and for building and
  * sending the response.
  * <p>
- * A <code>HttpExchange</code> must be closed to free or reuse
+ * A {@code HttpExchange} must be closed to free or reuse
  * underlying resources. The effect of failing to close an exchange
  * is undefined.
  *
@@ -277,7 +277,7 @@ public abstract class HttpExchange {
 
     /**
      * Returns an attribute that is associated with this
-     * <code>HttpExchange</code>. JAX-WS handlers and endpoints may then
+     * {@code HttpExchange}. JAX-WS handlers and endpoints may then
      * access the attribute via {@link MessageContext}.
      * <p>
      * Servlet containers must expose {@link MessageContext#SERVLET_CONTEXT},
@@ -299,7 +299,7 @@ public abstract class HttpExchange {
 
     /**
      * Gives all the attribute names that are associated with
-     * this <code>HttpExchange</code>.
+     * this {@code HttpExchange}.
      *
      * @return set of all attribute names
      * @see #getAttribute(String)
@@ -308,7 +308,7 @@ public abstract class HttpExchange {
 
     /**
      * Returns the {@link Principal} that represents the authenticated
-     * user for this <code>HttpExchange</code>.
+     * user for this {@code HttpExchange}.
      *
      * @return Principal for an authenticated user, or
      *         <tt>null</tt> if not authenticated

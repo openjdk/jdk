@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,12 +55,12 @@ import javax.activation.DataHandler;
  * object, and the {@code SOAPEnvelope} object is used to retrieve the
  * {@code SOAPBody} and {@code SOAPHeader} objects.
  *
- * <PRE>
+ * <pre>{@code
  *     SOAPPart sp = message.getSOAPPart();
  *     SOAPEnvelope se = sp.getEnvelope();
  *     SOAPBody sb = se.getBody();
  *     SOAPHeader sh = se.getHeader();
- * </PRE>
+ * }</pre>
  *
  * <P>
  * In addition to the mandatory {@code SOAPPart} object, a {@code SOAPMessage}
@@ -103,14 +103,15 @@ import javax.activation.DataHandler;
  * @since 1.6
  */
 public abstract class SOAPMessage {
+
     /**
-         * Specifies the character type encoding for the SOAP Message. Valid values
-         * include "utf-8" and "utf-16". See vendor documentation for additional
-         * supported values. The default is "utf-8".
-         *
-         * @see SOAPMessage#setProperty(String, Object) SOAPMessage.setProperty
-         * @since 1.6, SAAJ 1.2
-         */
+     * Specifies the character type encoding for the SOAP Message. Valid values
+     * include "utf-8" and "utf-16". See vendor documentation for additional
+     * supported values. The default is "utf-8".
+     *
+     * @see SOAPMessage#setProperty(String, Object) SOAPMessage.setProperty
+     * @since 1.6, SAAJ 1.2
+     */
     public static final String CHARACTER_SET_ENCODING =
         "javax.xml.soap.character-set-encoding";
 
@@ -146,25 +147,24 @@ public abstract class SOAPMessage {
     public abstract String getContentDescription();
 
     /**
-         * Gets the SOAP part of this {@code SOAPMessage} object.
-         * <P>
-         * {@code SOAPMessage} object contains one or more attachments, the
-         * SOAP Part must be the first MIME body part in the message.
-         *
-         * @return the {@code SOAPPart} object for this {@code SOAPMessage}
-         *         object
-         */
+     * Gets the SOAP part of this {@code SOAPMessage} object.
+     * <p>
+     * {@code SOAPMessage} object contains one or more attachments, the
+     * SOAP Part must be the first MIME body part in the message.
+     *
+     * @return the {@code SOAPPart} object for this {@code SOAPMessage}
+     * object
+     */
     public abstract SOAPPart getSOAPPart();
 
     /**
-         * Gets the SOAP Body contained in this {@code SOAPMessage} object.
-         *
-         * @return the {@code SOAPBody} object contained by this {@code SOAPMessage}
-         *         object
-         * @exception SOAPException
-         *               if the SOAP Body does not exist or cannot be retrieved
-         * @since 1.6, SAAJ 1.2
-         */
+     * Gets the SOAP Body contained in this {@code SOAPMessage} object.
+     *
+     * @return the {@code SOAPBody} object contained by this {@code SOAPMessage}
+     * object
+     * @throws SOAPException if the SOAP Body does not exist or cannot be retrieved
+     * @since 1.6, SAAJ 1.2
+     */
     public SOAPBody getSOAPBody() throws SOAPException {
         throw new UnsupportedOperationException("getSOAPBody must be overridden by all subclasses of SOAPMessage");
     }
@@ -183,41 +183,40 @@ public abstract class SOAPMessage {
     }
 
     /**
-         * Removes all {@code AttachmentPart} objects that have been added
-         * to this {@code SOAPMessage} object.
-         * <P>
-         * This method does not touch the SOAP part.
-         */
+     * Removes all {@code AttachmentPart} objects that have been added
+     * to this {@code SOAPMessage} object.
+     * <p>
+     * This method does not touch the SOAP part.
+     */
     public abstract void removeAllAttachments();
 
     /**
-         * Gets a count of the number of attachments in this message. This count
-         * does not include the SOAP part.
-         *
-         * @return the number of {@code AttachmentPart} objects that are
-         *         part of this {@code SOAPMessage} object
-         */
+     * Gets a count of the number of attachments in this message. This count
+     * does not include the SOAP part.
+     *
+     * @return the number of {@code AttachmentPart} objects that are
+     * part of this {@code SOAPMessage} object
+     */
     public abstract int countAttachments();
 
     /**
-         * Retrieves all the {@code AttachmentPart} objects that are part of
-         * this {@code SOAPMessage} object.
-         *
-         * @return an iterator over all the attachments in this message
-         */
+     * Retrieves all the {@code AttachmentPart} objects that are part of
+     * this {@code SOAPMessage} object.
+     *
+     * @return an iterator over all the attachments in this message
+     */
     public abstract Iterator getAttachments();
 
     /**
-         * Retrieves all the {@code AttachmentPart} objects that have header
-         * entries that match the specified headers. Note that a returned
-         * attachment could have headers in addition to those specified.
-         *
-         * @param headers
-         *           a {@code MimeHeaders} object containing the MIME
-         *           headers for which to search
-         * @return an iterator over all attachments that have a header that matches
-         *         one of the given headers
-         */
+     * Retrieves all the {@code AttachmentPart} objects that have header
+     * entries that match the specified headers. Note that a returned
+     * attachment could have headers in addition to those specified.
+     *
+     * @param headers a {@code MimeHeaders} object containing the MIME
+     *                headers for which to search
+     * @return an iterator over all attachments that have a header that matches
+     * one of the given headers
+     */
     public abstract Iterator getAttachments(MimeHeaders headers);
 
     /**
