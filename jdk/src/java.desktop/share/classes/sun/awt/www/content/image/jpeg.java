@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,31 @@
  * questions.
  */
 
-/**
- * Basic .au and .snd audio handler.
- * @author  Jeff Nisewanger
- */
-package sun.net.www.content.audio;
+package sun.awt.www.content.image;
 
 import java.net.*;
+import sun.awt.image.*;
 import java.io.IOException;
-import sun.applet.AppletAudioClip;
+import java.awt.Image;
+import java.awt.Toolkit;
 
-/**
- * Returns an AppletAudioClip object.
- * This provides backwards compatibility with the behavior
- * of ClassLoader.getResource().getContent() on JDK1.1.
- */
-public class basic extends ContentHandler {
-    public Object getContent(URLConnection uc) throws IOException {
-        return new AppletAudioClip(uc);
+public class jpeg extends ContentHandler {
+    public Object getContent(URLConnection urlc) throws java.io.IOException {
+        return new URLImageSource(urlc);
+    }
+
+    @SuppressWarnings("rawtypes")
+    public Object getContent(URLConnection urlc, Class[] classes) throws IOException {
+        Class<?>[] cls = classes;
+        for (int i = 0; i < cls.length; i++) {
+            if (cls[i].isAssignableFrom(URLImageSource.class)) {
+                return new URLImageSource(urlc);
+            }
+            if (cls[i].isAssignableFrom(Image.class)) {
+                Toolkit tk = Toolkit.getDefaultToolkit();
+                return tk.createImage(new URLImageSource(urlc));
+            }
+        }
+        return null;
     }
 }

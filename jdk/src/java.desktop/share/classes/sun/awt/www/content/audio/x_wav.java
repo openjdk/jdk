@@ -24,10 +24,10 @@
  */
 
 /**
- * Basic .aiff audio handler.
+ * Basic .wav audio handler.
  * @author  Jeff Nisewanger
  */
-package sun.net.www.content.audio;
+package sun.awt.www.content.audio;
 
 import java.net.*;
 import java.io.IOException;
@@ -36,7 +36,7 @@ import sun.applet.AppletAudioClip;
 /**
  * Returns an AppletAudioClip object.
  */
-public class x_aiff extends ContentHandler {
+public class x_wav extends ContentHandler {
     public Object getContent(URLConnection uc) throws IOException {
         return new AppletAudioClip(uc);
     }

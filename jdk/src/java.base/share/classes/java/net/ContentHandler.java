@@ -44,14 +44,14 @@ import java.io.IOException;
  * instance of a subclass of {@code ContentHandler}, and its
  * {@code getContent} method is called to create the object.
  * <p>
- * If no content handler could be found, URLConnection will
- * look for a content handler in a user-defineable set of places.
+ * If no content handler could be {@linkplain URLConnection#getContent() found},
+ * URLConnection will look for a content handler in a user-definable set of places.
  * Users can define a vertical-bar delimited set of class prefixes
- * to search through by defining the <i>java.content.handler.pkgs</i>
+ * to search through by defining the <i>{@value java.net.URLConnection#contentPathProp}</i>
  * property. The class name must be of the form:
  * <blockquote>
  *     <i>{package-prefix}.{major}.{minor}</i>
- *     <P>
+ *     <p>
  *     where <i>{major}.{minor}</i> is formed by taking the
  *     content-type string, replacing all slash characters with a
  *     {@code period} ('.'), and all other non-alphanumeric characters
@@ -82,6 +82,7 @@ import java.io.IOException;
  * @since   1.0
  */
 abstract public class ContentHandler {
+
     /**
      * Given a URL connect stream positioned at the beginning of the
      * representation of an object, this method reads that stream and
@@ -104,8 +105,8 @@ abstract public class ContentHandler {
      * @param      urlc   a URL connection.
      * @param      classes      an array of types requested
      * @return     the object read by the {@code ContentHandler} that is
-     *                 the first match of the suggested types.
-     *                 null if none of the requested  are supported.
+     *                 the first match of the suggested types or
+     *                 {@code null} if none of the requested  are supported.
      * @exception  IOException  if an I/O error occurs while reading the object.
      * @since 1.3
      */
@@ -113,12 +114,11 @@ abstract public class ContentHandler {
     public Object getContent(URLConnection urlc, Class[] classes) throws IOException {
         Object obj = getContent(urlc);
 
-        for (int i = 0; i < classes.length; i++) {
-          if (classes[i].isInstance(obj)) {
+        for (Class<?> c : classes) {
+            if (c.isInstance(obj)) {
                 return obj;
-          }
+            }
         }
         return null;
     }
-
 }

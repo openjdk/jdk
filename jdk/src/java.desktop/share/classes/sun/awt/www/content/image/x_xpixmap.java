@@ -23,14 +23,14 @@
  * questions.
  */
 
-package sun.net.www.content.image;
+package sun.awt.www.content.image;
 
 import java.net.*;
 import sun.awt.image.*;
 import java.awt.Image;
 import java.awt.Toolkit;
 
-public class x_xbitmap extends ContentHandler {
+public class x_xpixmap extends ContentHandler {
     public Object getContent(URLConnection urlc) throws java.io.IOException {
         return new URLImageSource(urlc);
     }

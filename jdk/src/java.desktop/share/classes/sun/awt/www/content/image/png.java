@@ -23,7 +23,7 @@
  * questions.
  */
 
-package sun.net.www.content.image;
+package sun.awt.www.content.image;
 
 import java.net.*;
 import java.io.IOException;
