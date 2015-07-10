@@ -224,7 +224,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
      * same combination of prototype and property map.
      *
      * @param proto the prototype object
-     * @param map intial {@link PropertyMap}
+     * @param map initial {@link PropertyMap}
      */
     protected ScriptObject(final ScriptObject proto, final PropertyMap map) {
         this(map);
@@ -1247,7 +1247,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         if (oldProto != newProto) {
             proto = newProto;
 
-            // Let current listeners know that the protototype has changed and set our map
+            // Let current listeners know that the prototype has changed and set our map
             final PropertyListeners listeners = getMap().getListeners();
             if (listeners != null) {
                 listeners.protoChanged();
@@ -1442,7 +1442,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
      * in {@link ScriptFunction} for hasInstance implementation, walks
      * the proto chain
      *
-     * @param instance instace to check
+     * @param instance instance to check
      * @return true if 'instance' is an instance of this object
      */
     public boolean isInstance(final ScriptObject instance) {
@@ -1859,7 +1859,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
      * @param desc    the call site descriptor.
      * @param request the link request
      *
-     * @return GuardedInvocation to be invoed at call site.
+     * @return GuardedInvocation to be invoked at call site.
      */
     protected GuardedInvocation findCallMethod(final CallSiteDescriptor desc, final LinkRequest request) {
         return notAFunction();
