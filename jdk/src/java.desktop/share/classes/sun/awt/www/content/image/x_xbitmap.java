@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,33 +23,30 @@
  * questions.
  */
 
-package java.net;
+package sun.awt.www.content.image;
 
-/**
- * This interface defines a factory for content handlers. An
- * implementation of this interface should map a MIME type into an
- * instance of {@code ContentHandler}.
- * <p>
- * This interface is used by the {@code URLStreamHandler} class
- * to create a {@code ContentHandler} for a MIME type.
- *
- * @author  James Gosling
- * @see     java.net.ContentHandler
- * @see     java.net.URLStreamHandler
- * @since   1.0
- */
-public interface ContentHandlerFactory {
+import java.net.*;
+import sun.awt.image.*;
+import java.awt.Image;
+import java.awt.Toolkit;
 
-    /**
-     * Creates a new {@code ContentHandler} to read an object from
-     * a {@code URLStreamHandler}.
-     *
-     * @param   mimetype   the MIME type for which a content handler is desired.
-     *
-     * @return  a new {@code ContentHandler} to read an object from a
-     *          {@code URLStreamHandler}.
-     * @see     java.net.ContentHandler
-     * @see     java.net.URLStreamHandler
-     */
-    ContentHandler createContentHandler(String mimetype);
+public class x_xbitmap extends ContentHandler {
+    public Object getContent(URLConnection urlc) throws java.io.IOException {
+        return new URLImageSource(urlc);
+    }
+
+    @SuppressWarnings("rawtypes")
+    public Object getContent(URLConnection urlc, Class[] classes) throws java.io.IOException {
+        Class<?>[] cls = classes;
+        for (int i = 0; i < cls.length; i++) {
+            if (cls[i].isAssignableFrom(URLImageSource.class)) {
+                return new URLImageSource(urlc);
+            }
+            if (cls[i].isAssignableFrom(Image.class)) {
+                Toolkit tk = Toolkit.getDefaultToolkit();
+                return tk.createImage(new URLImageSource(urlc));
+            }
+        }
+        return null;
+    }
 }

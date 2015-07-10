@@ -23,20 +23,22 @@
  * questions.
  */
 
-package sun.net.www.content.image;
+package sun.awt.www.content.image;
 
 import java.net.*;
 import sun.awt.image.*;
+import java.io.IOException;
 import java.awt.Image;
 import java.awt.Toolkit;
 
-public class x_xpixmap extends ContentHandler {
+
+public class gif extends ContentHandler {
     public Object getContent(URLConnection urlc) throws java.io.IOException {
         return new URLImageSource(urlc);
     }
 
     @SuppressWarnings("rawtypes")
-    public Object getContent(URLConnection urlc, Class[] classes) throws java.io.IOException {
+    public Object getContent(URLConnection urlc, Class[] classes) throws IOException {
         Class<?>[] cls = classes;
         for (int i = 0; i < cls.length; i++) {
             if (cls[i].isAssignableFrom(URLImageSource.class)) {

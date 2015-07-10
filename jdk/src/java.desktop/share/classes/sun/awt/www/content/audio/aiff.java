@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,33 +23,21 @@
  * questions.
  */
 
-package java.net;
+/**
+ * Basic .aiff audio handler.
+ * @author  Jeff Nisewanger
+ */
+package sun.awt.www.content.audio;
+
+import java.net.*;
+import java.io.IOException;
+import sun.applet.AppletAudioClip;
 
 /**
- * This interface defines a factory for content handlers. An
- * implementation of this interface should map a MIME type into an
- * instance of {@code ContentHandler}.
- * <p>
- * This interface is used by the {@code URLStreamHandler} class
- * to create a {@code ContentHandler} for a MIME type.
- *
- * @author  James Gosling
- * @see     java.net.ContentHandler
- * @see     java.net.URLStreamHandler
- * @since   1.0
+ * Returns an AppletAudioClip object.
  */
-public interface ContentHandlerFactory {
-
-    /**
-     * Creates a new {@code ContentHandler} to read an object from
-     * a {@code URLStreamHandler}.
-     *
-     * @param   mimetype   the MIME type for which a content handler is desired.
-     *
-     * @return  a new {@code ContentHandler} to read an object from a
-     *          {@code URLStreamHandler}.
-     * @see     java.net.ContentHandler
-     * @see     java.net.URLStreamHandler
-     */
-    ContentHandler createContentHandler(String mimetype);
+public class aiff extends ContentHandler {
+    public Object getContent(URLConnection uc) throws IOException {
+        return new AppletAudioClip(uc);
+    }
 }
