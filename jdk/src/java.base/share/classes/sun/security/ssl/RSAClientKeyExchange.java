@@ -113,14 +113,41 @@ final class RSAClientKeyExchange extends HandshakeMessage {
             }
         }
 
+        boolean needFailover = false;
+        byte[] encoded = null;
         try {
             Cipher cipher = JsseJce.getCipher(JsseJce.CIPHER_RSA_PKCS1);
-            cipher.init(Cipher.UNWRAP_MODE, privateKey,
-                    new TlsRsaPremasterSecretParameterSpec(
-                            maxVersion.v, currentVersion.v),
-                    generator);
-            preMaster = (SecretKey)cipher.unwrap(encrypted,
-                                "TlsRsaPremasterSecret", Cipher.SECRET_KEY);
+            needFailover = !KeyUtil.isOracleJCEProvider(
+                                        cipher.getProvider().getName());
+            if (needFailover) {
+                cipher.init(Cipher.DECRYPT_MODE, privateKey);
+                encoded = cipher.doFinal(encrypted);
+                encoded = KeyUtil.checkTlsPreMasterSecretKey(
+                                maxVersion.v, currentVersion.v,
+                                generator, encoded, false);
+                preMaster = generatePreMasterSecret(
+                                maxVersion.v, currentVersion.v,
+                                encoded, generator);
+            } else {
+                cipher.init(Cipher.UNWRAP_MODE, privateKey,
+                        new TlsRsaPremasterSecretParameterSpec(
+                                maxVersion.v, currentVersion.v),
+                        generator);
+                preMaster = (SecretKey)cipher.unwrap(encrypted,
+                        "TlsRsaPremasterSecret", Cipher.SECRET_KEY);
+            }
+        } catch (BadPaddingException bpe) {
+            if (needFailover) {
+                encoded = KeyUtil.checkTlsPreMasterSecretKey(
+                                maxVersion.v, currentVersion.v,
+                                generator, null, false);
+                preMaster = generatePreMasterSecret(
+                                maxVersion.v, currentVersion.v,
+                                encoded, generator);
+            } else {
+                //  Otherwise, unlikely to happen
+                throw new RuntimeException("Unexpected exception", bpe);
+            }
         } catch (InvalidKeyException ibk) {
             // the message is too big to process with RSA
             throw new SSLProtocolException(
@@ -132,6 +159,35 @@ final class RSAClientKeyExchange extends HandshakeMessage {
                 e.printStackTrace(System.out);
             }
             throw new RuntimeException("Could not generate dummy secret", e);
+        }
+    }
+
+    // generate a premaster secret with the specified version number
+    @SuppressWarnings("deprecation")
+    private static SecretKey generatePreMasterSecret(
+            int clientVersion, int serverVersion,
+            byte[] encodedSecret, SecureRandom generator) {
+
+        if (debug != null && Debug.isOn("handshake")) {
+            System.out.println("Generating a premaster secret");
+        }
+
+        try {
+            String s = ((clientVersion >= ProtocolVersion.TLS12.v) ?
+                "SunTls12RsaPremasterSecret" : "SunTlsRsaPremasterSecret");
+            KeyGenerator kg = JsseJce.getKeyGenerator(s);
+            kg.init(new TlsRsaPremasterSecretParameterSpec(
+                    clientVersion, serverVersion, encodedSecret),
+                    generator);
+            return kg.generateKey();
+        } catch (InvalidAlgorithmParameterException |
+                NoSuchAlgorithmException iae) {
+            // unlikely to happen, otherwise, must be a provider exception
+            if (debug != null && Debug.isOn("handshake")) {
+                System.out.println("RSA premaster secret generation error:");
+                iae.printStackTrace(System.out);
+            }
+            throw new RuntimeException("Could not generate premaster secret", iae);
         }
     }
 

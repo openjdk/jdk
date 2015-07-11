@@ -143,8 +143,6 @@ public final class KeyUtil {
 
     /**
      * Returns whether the specified provider is Oracle provider or not.
-     * <P>
-     * Note that this method is only apply to SunJCE and SunPKCS11 at present.
      *
      * @param  providerName
      *         the provider name
@@ -152,8 +150,11 @@ public final class KeyUtil {
      *         {@code providerName} is Oracle provider
      */
     public static final boolean isOracleJCEProvider(String providerName) {
-        return providerName != null && (providerName.equals("SunJCE") ||
-                                        providerName.startsWith("SunPKCS11"));
+        return providerName != null &&
+                (providerName.equals("SunJCE") ||
+                    providerName.equals("SunMSCAPI") ||
+                    providerName.equals("OracleUcrypto") ||
+                    providerName.startsWith("SunPKCS11"));
     }
 
     /**
