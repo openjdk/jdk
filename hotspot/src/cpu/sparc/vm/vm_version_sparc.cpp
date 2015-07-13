@@ -308,7 +308,7 @@ void VM_Version::initialize() {
     }
   } else if (UseGHASHIntrinsics) {
     if (!FLAG_IS_DEFAULT(UseGHASHIntrinsics))
-      warning("GHASH intrinsics require VIS3 insructions support. Intriniscs will be disabled");
+      warning("GHASH intrinsics require VIS3 instruction support. Intrinsics will be disabled");
     FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
   }
 
