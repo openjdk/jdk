@@ -31,72 +31,21 @@
 #include "jvm.h"
 #include "jdk_util.h"
 
-#ifndef JDK_UPDATE_VERSION
-   /* if not defined set to 00 */
-   #define JDK_UPDATE_VERSION "00"
-#endif
-
 JNIEXPORT void
 JDK_GetVersionInfo0(jdk_version_info* info, size_t info_size) {
-    /* These JDK_* macros are set at Makefile or the command line */
-    const unsigned int jdk_major_version =
-        (unsigned int) atoi(JDK_MAJOR_VERSION);
-    const unsigned int jdk_minor_version =
-        (unsigned int) atoi(JDK_MINOR_VERSION);
-    const unsigned int jdk_micro_version =
-        (unsigned int) atoi(JDK_MICRO_VERSION);
-
-    const char* jdk_build_string = JDK_BUILD_NUMBER;
-    char build_number[4];
-    unsigned int jdk_build_number = 0;
-
-    const char* jdk_update_string = JDK_UPDATE_VERSION;
-    unsigned int jdk_update_version = 0;
-    char update_ver[3];
-    char jdk_special_version = '\0';
-
-    /* If the JDK_BUILD_NUMBER is of format bXX and XX is an integer
-     * XX is the jdk_build_number.
-     */
-    size_t len = strlen(jdk_build_string);
-    if (jdk_build_string[0] == 'b' && len >= 2) {
-        size_t i = 0;
-        for (i = 1; i < len; i++) {
-            if (isdigit(jdk_build_string[i])) {
-                build_number[i-1] = jdk_build_string[i];
-            } else {
-                // invalid build number
-                i = -1;
-                break;
-            }
-        }
-        if (i == len) {
-            build_number[len-1] = '\0';
-            jdk_build_number = (unsigned int) atoi(build_number) ;
-        }
-    }
-
-    assert(jdk_build_number <= 255);
-
-    if (strlen(jdk_update_string) == 2 || strlen(jdk_update_string) == 3) {
-        if (isdigit(jdk_update_string[0]) && isdigit(jdk_update_string[1])) {
-            update_ver[0] = jdk_update_string[0];
-            update_ver[1] = jdk_update_string[1];
-            update_ver[2] = '\0';
-            jdk_update_version = (unsigned int) atoi(update_ver);
-            if (strlen(jdk_update_string) == 3) {
-                jdk_special_version = jdk_update_string[2];
-            }
-        }
-    }
+    /* These VERSION_* macros are given by the build system */
+    const unsigned int version_major = VERSION_MAJOR;
+    const unsigned int version_minor = VERSION_MINOR;
+    const unsigned int version_security = VERSION_SECURITY;
+    const unsigned int version_patch = VERSION_PATCH;
+    const unsigned int version_build = VERSION_BUILD;
 
     memset(info, 0, info_size);
-    info->jdk_version = ((jdk_major_version & 0xFF) << 24) |
-                        ((jdk_minor_version & 0xFF) << 16) |
-                        ((jdk_micro_version & 0xFF) << 8)  |
-                        (jdk_build_number & 0xFF);
-    info->update_version = jdk_update_version;
-    info->special_update_version = (unsigned int) jdk_special_version;
+    info->jdk_version = ((version_major & 0xFF) << 24) |
+                        ((version_minor & 0xFF) << 16) |
+                        ((version_security & 0xFF) << 8)  |
+                        (version_build & 0xFF);
+    info->patch_version = version_patch;
     info->thread_park_blocker = 1;
     // Advertise presence of sun.misc.PostVMInitHook:
     // future optimization: detect if this is enabled.
