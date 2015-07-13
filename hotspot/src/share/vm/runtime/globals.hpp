@@ -1291,7 +1291,7 @@ public:
   experimental(intx, hashCode, 5,                                           \
                "(Unstable) select hashCode generation algorithm")           \
                                                                             \
-  experimental(intx, WorkAroundNPTLTimedWaitHang, 1,                        \
+  experimental(intx, WorkAroundNPTLTimedWaitHang, 0,                        \
                "(Unstable, Linux-specific) "                                \
                "avoid NPTL-FUTEX hang pthread_cond_timedwait")              \
                                                                             \
