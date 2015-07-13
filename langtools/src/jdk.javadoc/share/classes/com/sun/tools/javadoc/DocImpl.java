@@ -129,6 +129,7 @@ public abstract class DocImpl implements Doc, Comparable<Object> {
             String d = documentation();
             if (env.doclint != null
                     && treePath != null
+                    && env.shouldCheck(treePath.getCompilationUnit())
                     && d.equals(getCommentText(treePath))) {
                 env.doclint.scan(treePath);
             }

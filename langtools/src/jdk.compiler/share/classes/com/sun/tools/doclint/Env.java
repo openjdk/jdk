@@ -43,6 +43,7 @@ import javax.lang.model.util.Types;
 import javax.tools.Diagnostic.Kind;
 
 import com.sun.source.doctree.DocCommentTree;
+import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.SourcePositions;
@@ -227,6 +228,35 @@ public class Env {
     long getStartPos(TreePath p) {
         SourcePositions sp = trees.getSourcePositions();
         return sp.getStartPosition(p.getCompilationUnit(), p.getLeaf());
+    }
+
+    boolean shouldCheck(CompilationUnitTree unit) {
+        if (includePackages == null)
+            return true;
+
+        String packageName =   unit.getPackageName() != null
+                             ? unit.getPackageName().toString()
+                             : "";
+
+        if (!includePackages.isEmpty()) {
+            boolean included = false;
+            for (Pattern pack : includePackages) {
+                if (pack.matcher(packageName).matches()) {
+                    included = true;
+                    break;
+                }
+            }
+            if (!included)
+                return false;
+        }
+
+        for (Pattern pack : excludePackages) {
+            if (pack.matcher(packageName).matches()) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private <T extends Comparable<T>> T min(T item1, T item2) {

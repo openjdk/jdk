@@ -344,6 +344,10 @@ public class DocLint implements Plugin {
         checker.scan(dc, p);
     }
 
+    public boolean shouldCheck(CompilationUnitTree unit) {
+        return env.shouldCheck(unit);
+    }
+
     public void reportStats(PrintWriter out) {
         env.messages.reportStats(out);
     }
@@ -406,26 +410,8 @@ public class DocLint implements Plugin {
 
         @Override @DefinedBy(Api.COMPILER_TREE)
         public Void visitCompilationUnit(CompilationUnitTree node, Void p) {
-            if (env.includePackages != null) {
-                String packageName =   node.getPackageName() != null
-                                     ? node.getPackageName().toString()
-                                     : "";
-                if (!env.includePackages.isEmpty()) {
-                    boolean included = false;
-                    for (Pattern pack : env.includePackages) {
-                        if (pack.matcher(packageName).matches()) {
-                            included = true;
-                            break;
-                        }
-                    }
-                    if (!included)
-                        return null;
-                }
-                for (Pattern pack : env.excludePackages) {
-                    if (pack.matcher(packageName).matches()) {
-                        return null;
-                    }
-                }
+            if (!env.shouldCheck(node)) {
+                return null;
             }
             return super.visitCompilationUnit(node, p);
         }
