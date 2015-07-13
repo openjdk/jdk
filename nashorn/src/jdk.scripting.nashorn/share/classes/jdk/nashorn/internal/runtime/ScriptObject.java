@@ -287,9 +287,10 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
      */
     public void addBoundProperties(final ScriptObject source, final Property[] properties) {
         PropertyMap newMap = this.getMap();
+        final boolean extensible = newMap.isExtensible();
 
         for (final Property property : properties) {
-            newMap = addBoundProperty(newMap, source, property);
+            newMap = addBoundProperty(newMap, source, property, extensible);
         }
 
         this.setMap(newMap);
@@ -302,13 +303,18 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
      * @param propMap the property map
      * @param source the source object
      * @param property the property to be added
+     * @param extensible whether the current object is extensible or not
      * @return the new property map
      */
-    protected PropertyMap addBoundProperty(final PropertyMap propMap, final ScriptObject source, final Property property) {
+    protected PropertyMap addBoundProperty(final PropertyMap propMap, final ScriptObject source, final Property property, final boolean extensible) {
         PropertyMap newMap = propMap;
         final String key = property.getKey();
         final Property oldProp = newMap.findProperty(key);
         if (oldProp == null) {
+            if (! extensible) {
+                throw typeError("object.non.extensible", key, ScriptRuntime.safeToString(this));
+            }
+
             if (property instanceof UserAccessorProperty) {
                 // Note: we copy accessor functions to this object which is semantically different from binding.
                 final UserAccessorProperty prop = this.newUserAccessors(key, property.getFlags(), property.getGetterFunction(source), property.getSetterFunction(source));
@@ -337,11 +343,15 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
      */
     public void addBoundProperties(final Object source, final AccessorProperty[] properties) {
         PropertyMap newMap = this.getMap();
+        final boolean extensible = newMap.isExtensible();
 
         for (final AccessorProperty property : properties) {
             final String key = property.getKey();
 
             if (newMap.findProperty(key) == null) {
+                if (! extensible) {
+                    throw typeError("object.non.extensible", key, ScriptRuntime.safeToString(this));
+                }
                 newMap = newMap.addPropertyBind(property, source);
             }
         }
