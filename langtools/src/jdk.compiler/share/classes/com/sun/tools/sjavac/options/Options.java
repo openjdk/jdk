@@ -161,7 +161,7 @@ public class Options {
 
     /**
      * Get a map which maps suffixes to transformers (for example
-     * ".java" -> CompileJavaPackages)
+     * ".java" {@literal ->} CompileJavaPackages)
      */
     public Map<String, Transformer> getTranslationRules() {
         return trRules;

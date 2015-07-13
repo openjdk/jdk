@@ -131,7 +131,7 @@ public class Util {
      * do settings = cleanOptions("--server:",Util.set("-portfile"),settings);
      *    now settings equals "--server:portfile=bar"
      *
-     * @param allowsSubOptions A set of the allowed sub options, id portfile etc.
+     * @param allowedSubOptions A set of the allowed sub options, id portfile etc.
      * @param s The option settings string.
      */
     public static String cleanSubOptions(Set<String> allowedSubOptions, String s) {

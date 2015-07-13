@@ -61,7 +61,7 @@ import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticType.*;
  *  Those implementations are specifically targeting JCDiagnostic objects.
  *  <li> Provides basic support for i18n and a method for executing all locale-dependent conversions
  *  <li> Provides the formatting logic for rendering the arguments of a JCDiagnostic object.
- * <ul>
+ * </ul>
  *
  * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own risk.

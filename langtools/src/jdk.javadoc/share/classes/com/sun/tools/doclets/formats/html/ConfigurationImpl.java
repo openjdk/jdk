@@ -325,7 +325,6 @@ public class ConfigurationImpl extends Configuration {
      * The options arrive as case-sensitive strings. For options that
      * are not case-sensitive, use toLowerCase() on the option string
      * before comparing it.
-     * </blockquote>
      *
      * @return number of arguments + 1 for a option. Zero return means
      * option not known.  Negative value means error occurred.
