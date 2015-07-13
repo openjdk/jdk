@@ -51,18 +51,9 @@ extern void vm_exit_during_initialization(const char* error, const char* message
 extern void vm_shutdown_during_initialization(const char* error, const char* message = NULL);
 
 /**
- * Discovering the JDK_Version during initialization is tricky when the
- * running JDK is less than JDK6.  For JDK6 and greater, a "GetVersion"
- * function exists in libjava.so and we simply call it during the
- * 'initialize()' call to find the version.  For JDKs with version < 6, no
- * such call exists and we have to probe the JDK in order to determine
- * the exact version.  This probing cannot happen during late in
- * the VM initialization process so there's a period of time during
- * initialization when we don't know anything about the JDK version other than
- * that it less than version 6.  This is the "partially initialized" time,
- * when we can answer only certain version queries (such as, is the JDK
- * version greater than 5?  Answer: no).  Once the JDK probing occurs, we
- * know the version and are considered fully initialized.
+ * With the integration of the changes to handle the version string
+ * as defined by JEP-223, most of the code related to handle the version
+ * string prior to JDK 1.6 was removed (partial initialization)
  */
 class JDK_Version VALUE_OBJ_CLASS_SPEC {
   friend class VMStructs;
@@ -74,53 +65,32 @@ class JDK_Version VALUE_OBJ_CLASS_SPEC {
   static const char* _runtime_name;
   static const char* _runtime_version;
 
-  // In this class, we promote the minor version of release to be the
-  // major version for releases >= 5 in anticipation of the JDK doing the
-  // same thing.  For example, we represent "1.5.0" as major version 5 (we
-  // drop the leading 1 and use 5 as the 'major').
-
   uint8_t _major;
   uint8_t _minor;
-  uint8_t _micro;
-  uint8_t _update;
-  uint8_t _special;
+  uint8_t _security;
+  uint8_t _patch;
   uint8_t _build;
-
-  // If partially initialized, the above fields are invalid and we know
-  // that we're less than major version 6.
-  bool _partially_initialized;
 
   bool _thread_park_blocker;
   bool _post_vm_init_hook_enabled;
 
   bool is_valid() const {
-    return (_major != 0 || _partially_initialized);
+    return (_major != 0);
   }
 
   // initializes or partially initializes the _current static field
   static void initialize();
 
-  // Completes initialization for a pre-JDK6 version.
-  static void fully_initialize(uint8_t major, uint8_t minor = 0,
-                               uint8_t micro = 0, uint8_t update = 0);
-
  public:
 
-  // Returns true if the the current version has only been partially initialized
-  static bool is_partially_initialized() {
-    return _current._partially_initialized;
-  }
-
-  JDK_Version() : _major(0), _minor(0), _micro(0), _update(0),
-                  _special(0), _build(0), _partially_initialized(false),
+  JDK_Version() : _major(0), _minor(0), _security(0), _patch(0), _build(0),
                   _thread_park_blocker(false), _post_vm_init_hook_enabled(false)
                   {}
 
-  JDK_Version(uint8_t major, uint8_t minor = 0, uint8_t micro = 0,
-              uint8_t update = 0, uint8_t special = 0, uint8_t build = 0,
+  JDK_Version(uint8_t major, uint8_t minor = 0, uint8_t security = 0,
+              uint8_t patch = 0, uint8_t build = 0,
               bool thread_park_blocker = false, bool post_vm_init_hook_enabled = false) :
-      _major(major), _minor(minor), _micro(micro), _update(update),
-      _special(special), _build(build), _partially_initialized(false),
+      _major(major), _minor(minor), _security(security), _patch(patch), _build(build),
       _thread_park_blocker(thread_park_blocker),
       _post_vm_init_hook_enabled(post_vm_init_hook_enabled)
       {}
@@ -133,15 +103,10 @@ class JDK_Version VALUE_OBJ_CLASS_SPEC {
     return JDK_Version(m);
   }
 
-  static JDK_Version jdk_update(uint8_t major, uint8_t update_number) {
-    return JDK_Version(major, 0, 0, update_number);
-  }
-
   uint8_t major_version() const          { return _major; }
   uint8_t minor_version() const          { return _minor; }
-  uint8_t micro_version() const          { return _micro; }
-  uint8_t update_version() const         { return _update; }
-  uint8_t special_update_version() const { return _special; }
+  uint8_t security_version() const       { return _security; }
+  uint8_t patch_version() const          { return _patch; }
   uint8_t build_number() const           { return _build; }
 
   bool supports_thread_park_blocker() const {
@@ -151,7 +116,7 @@ class JDK_Version VALUE_OBJ_CLASS_SPEC {
     return _post_vm_init_hook_enabled;
   }
 
-  // Performs a full ordering comparison using all fields (update, build, etc.)
+  // Performs a full ordering comparison using all fields (patch, build, etc.)
   int compare(const JDK_Version& other) const;
 
   /**
@@ -160,16 +125,7 @@ class JDK_Version VALUE_OBJ_CLASS_SPEC {
    * equal, and a positive value if it is greater.
    */
   int compare_major(int version) const {
-    if (_partially_initialized) {
-      if (version >= 6) {
-        return -1;
-      } else {
-        assert(false, "Can't make this comparison during init time");
-        return -1; // conservative
-      }
-    } else {
       return major_version() - version;
-    }
   }
 
   void to_string(char* buffer, size_t buflen) const;
