@@ -58,7 +58,6 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
      *
      * @param member the member to write type parameters for.
      * @param htmltree the content tree to which the parameters will be added.
-     * @return the display length required to write this information.
      */
     protected void addTypeParameters(ExecutableMemberDoc member, Content htmltree) {
         Content typeParameters = getTypeParameters(member);

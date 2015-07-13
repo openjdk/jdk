@@ -78,7 +78,7 @@ public class PortFile {
 
     /**
      * Create a new portfile.
-     * @param filename is the path to the file.
+     * @param fn is the path to the file.
      */
     public PortFile(String fn) throws FileNotFoundException {
         filename = fn;
