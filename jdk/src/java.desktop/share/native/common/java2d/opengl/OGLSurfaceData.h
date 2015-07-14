@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,7 +118,7 @@ typedef struct {
  * x/yOffset would be (0,0) (the same applies to pbuffers).
  *
  *     jint width/height;
- * The cached surface bounds.  For offscreen surface types (OGLSD_PBUFFER,
+ * The cached surface bounds.  For offscreen surface types (OGLSD_FBOBJECT,
  * OGLSD_TEXTURE, etc.) these values must remain constant.  Onscreen window
  * surfaces (OGLSD_WINDOW, OGLSD_FLIP_BACKBUFFER, etc.) may have their
  * bounds changed in response to a programmatic or user-initiated event, so
@@ -218,7 +218,6 @@ struct _OGLSDOps {
  */
 #define OGLSD_UNDEFINED       sun_java2d_pipe_hw_AccelSurface_UNDEFINED
 #define OGLSD_WINDOW          sun_java2d_pipe_hw_AccelSurface_WINDOW
-#define OGLSD_PBUFFER         sun_java2d_pipe_hw_AccelSurface_RT_PLAIN
 #define OGLSD_TEXTURE         sun_java2d_pipe_hw_AccelSurface_TEXTURE
 #define OGLSD_FLIP_BACKBUFFER sun_java2d_pipe_hw_AccelSurface_FLIP_BACKBUFFER
 #define OGLSD_FBOBJECT        sun_java2d_pipe_hw_AccelSurface_RT_TEXTURE

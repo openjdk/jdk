@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -554,8 +554,10 @@ static void update_poll_timeout(int timeout_control) {
             curPollTimeout = min(AWT_MAX_POLL_TIMEOUT, curPollTimeout);
         } else if (timeout_control == TIMEOUT_EVENTS) {
             /* subtract 1/4 (plus 1, in case the division truncates to 0) */
-            curPollTimeout -= ((curPollTimeout>>2) + 1);
-            curPollTimeout = max(AWT_MIN_POLL_TIMEOUT, curPollTimeout);
+            if (curPollTimeout > 0) {
+                curPollTimeout -= ((curPollTimeout>>2) + 1);
+                curPollTimeout = max(AWT_MIN_POLL_TIMEOUT, curPollTimeout);
+            }
         }
         break;
     case AWT_POLL_AGING_FAST:

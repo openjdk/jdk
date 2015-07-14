@@ -181,13 +181,7 @@ public final class CDragSourceContextPeer extends SunDragSourceContextPeer {
                     }
                 }
             };
-            Thread dragThread;
-            if (System.getSecurityManager() == null) {
-                dragThread = new Thread(dragRunnable);
-            } else {
-                dragThread = new ManagedLocalsThread(dragRunnable);
-            }
-            dragThread.start();
+            new ManagedLocalsThread(dragRunnable).start();
         } catch (Exception e) {
             final long nativeDragSource = getNativeContext();
             setNativeContext(0);

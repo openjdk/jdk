@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package sun.java2d;
 
 import sun.awt.util.ThreadGroupUtils;
-import sun.misc.InnocuousThread;
+import sun.misc.ManagedLocalsThread;
 
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
@@ -84,13 +84,8 @@ public class Disposer implements Runnable {
         disposerInstance = new Disposer();
         AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
             String name = "Java2D Disposer";
-            Thread t;
-            if (System.getSecurityManager() == null) {
-                ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
-                t = new Thread(rootTG, disposerInstance, name);
-            } else {
-                t = new InnocuousThread(disposerInstance, name);
-            }
+            ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
+            Thread t = new ManagedLocalsThread(rootTG, disposerInstance, name);
             t.setContextClassLoader(null);
             t.setDaemon(true);
             t.setPriority(Thread.MAX_PRIORITY);

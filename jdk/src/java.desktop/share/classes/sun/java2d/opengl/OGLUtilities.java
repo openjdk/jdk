@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,6 @@ class OGLUtilities {
      */
     public static final int UNDEFINED       = OGLSurfaceData.UNDEFINED;
     public static final int WINDOW          = OGLSurfaceData.WINDOW;
-    public static final int PBUFFER         = OGLSurfaceData.PBUFFER;
     public static final int TEXTURE         = OGLSurfaceData.TEXTURE;
     public static final int FLIP_BACKBUFFER = OGLSurfaceData.FLIP_BACKBUFFER;
     public static final int FBOBJECT        = OGLSurfaceData.FBOBJECT;
