@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ import java.io.FileNotFoundException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
-import sun.misc.InnocuousThread;
+import sun.misc.ManagedLocalsThread;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -420,12 +420,8 @@ public abstract class GraphicsPrimitive {
         public static void setShutdownHook() {
             AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
                 TraceReporter t = new TraceReporter();
-                Thread thread;
-                if (System.getSecurityManager() == null) {
-                    thread = new Thread(ThreadGroupUtils.getRootThreadGroup(), t);
-                } else {
-                    thread = new InnocuousThread(t);
-                }
+                Thread thread = new ManagedLocalsThread(
+                        ThreadGroupUtils.getRootThreadGroup(), t);
                 thread.setContextClassLoader(null);
                 Runtime.getRuntime().addShutdownHook(thread);
                 return null;

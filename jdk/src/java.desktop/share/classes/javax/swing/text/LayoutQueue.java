@@ -92,12 +92,7 @@ public class LayoutQueue {
                     }
                 } while (work != null);
             };
-            String name =  "text-layout";
-            if (System.getSecurityManager() == null) {
-                worker = new Thread(workerRunnable, name);
-            } else {
-                worker = new ManagedLocalsThread(workerRunnable, name);
-            }
+            worker = new ManagedLocalsThread(workerRunnable, "text-layout");
             worker.setPriority(Thread.MIN_PRIORITY);
             worker.start();
         }

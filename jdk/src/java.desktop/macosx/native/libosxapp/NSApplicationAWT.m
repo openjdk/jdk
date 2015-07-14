@@ -398,8 +398,14 @@ AWT_ASSERT_APPKIT_THREAD;
     [pool drain];
 }
 
-- (void)waitForDummyEvent {
-    [seenDummyEventLock lockWhenCondition:YES];
+- (void)waitForDummyEvent:(long long) timeout {
+    if (timeout >= 0) {
+        double sec = ((double) timeout)/1000;
+        [seenDummyEventLock lockWhenCondition:YES
+                               beforeDate:[NSDate dateWithTimeIntervalSinceNow:sec]];
+    } else {
+        [seenDummyEventLock lockWhenCondition:YES];
+    }
     [seenDummyEventLock unlock];
     [seenDummyEventLock release];
 

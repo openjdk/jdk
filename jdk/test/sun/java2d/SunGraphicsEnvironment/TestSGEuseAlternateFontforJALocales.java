@@ -28,6 +28,7 @@
  * @summary verify the existence of the  method
  *           SunGraphicsEnvironment.useAlternateFontforJALocales
  *
+ * @modules java.desktop/sun.java2d
  * @run main/othervm TestSGEuseAlternateFontforJALocales
  * @run main/othervm -Dfile.encoding=windows-31j -Duser.language=ja -Duser.country=JA TestSGEuseAlternateFontforJALocales
  *

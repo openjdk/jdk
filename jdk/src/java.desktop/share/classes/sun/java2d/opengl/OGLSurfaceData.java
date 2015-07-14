@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,6 @@ import static sun.java2d.opengl.OGLContext.OGLContextCaps.*;
  * OGL Type          Corresponding SurfaceType
  * --------          -------------------------
  * WINDOW            OpenGLSurface
- * PBUFFER           OpenGLSurface
  * TEXTURE           OpenGLTexture
  * FLIP_BACKBUFFER   OpenGLSurface
  * FBOBJECT          OpenGLSurfaceRTT
@@ -104,7 +103,6 @@ public abstract class OGLSurfaceData extends SurfaceData
      *
      * @see sun.java2d.pipe.hw.AccelSurface
      */
-    public static final int PBUFFER         = RT_PLAIN;
     public static final int FBOBJECT        = RT_TEXTURE;
 
     /**
@@ -172,9 +170,6 @@ public abstract class OGLSurfaceData extends SurfaceData
                                           boolean texRect,
                                           int width, int height);
     protected native boolean initFlipBackbuffer(long pData);
-    protected abstract boolean initPbuffer(long pData, long pConfigInfo,
-                                           boolean isOpaque,
-                                           int width, int height);
 
     private native int getTextureTarget(long pData);
     private native int getTextureID(long pData);
@@ -250,7 +245,6 @@ public abstract class OGLSurfaceData extends SurfaceData
             return OpenGLTexture;
         case FBOBJECT:
             return OpenGLSurfaceRTT;
-        case PBUFFER:
         default:
             return OpenGLSurface;
         }
@@ -266,13 +260,6 @@ public abstract class OGLSurfaceData extends SurfaceData
         boolean success = false;
 
         switch (type) {
-        case PBUFFER:
-            success = initPbuffer(getNativeOps(),
-                                  graphicsConfig.getNativeConfigInfo(),
-                                  isOpaque,
-                                  width, height);
-            break;
-
         case TEXTURE:
             success = initTexture(getNativeOps(),
                                   isOpaque, isTexNonPow2Available(),
@@ -311,10 +298,9 @@ public abstract class OGLSurfaceData extends SurfaceData
         try {
             switch (type) {
             case TEXTURE:
-            case PBUFFER:
             case FBOBJECT:
                 // need to make sure the context is current before
-                // creating the texture (or pbuffer, or fbobject)
+                // creating the texture or fbobject
                 OGLContext.setScratchSurface(graphicsConfig);
                 break;
             default:
