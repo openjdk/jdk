@@ -412,8 +412,9 @@ public:
   static const Type* get_typeflow_type(ciType* type);
 
   static const Type* make_from_constant(ciConstant constant,
-                                        bool require_constant = false,
-                                        bool is_autobox_cache = false);
+                                        bool require_constant = false);
+
+  static const Type* make_constant(ciField* field, Node* obj);
 
   // Speculative type helper methods. See TypePtr.
   virtual const TypePtr* speculative() const                                  { return NULL; }
@@ -973,8 +974,7 @@ public:
   // may return a non-singleton type.
   // If require_constant, produce a NULL if a singleton is not possible.
   static const TypeOopPtr* make_from_constant(ciObject* o,
-                                              bool require_constant = false,
-                                              bool not_null_elements = false);
+                                              bool require_constant = false);
 
   // Make a generic (unclassed) pointer to an oop.
   static const TypeOopPtr* make(PTR ptr, int offset, int instance_id,
@@ -1183,6 +1183,8 @@ public:
 
   const TypeAryPtr* cast_to_stable(bool stable, int stable_dimension = 1) const;
   int stable_dimension() const;
+
+  const TypeAryPtr* cast_to_autobox_cache(bool cache) const;
 
   // Convenience common pre-built types.
   static const TypeAryPtr *RANGE;
@@ -1674,12 +1676,12 @@ inline const TypeKlassPtr *Type::is_klassptr() const {
 
 inline const TypePtr* Type::make_ptr() const {
   return (_base == NarrowOop) ? is_narrowoop()->get_ptrtype() :
-    ((_base == NarrowKlass) ? is_narrowklass()->get_ptrtype() :
-     (isa_ptr() ? is_ptr() : NULL));
+                              ((_base == NarrowKlass) ? is_narrowklass()->get_ptrtype() :
+                                                       isa_ptr());
 }
 
 inline const TypeOopPtr* Type::make_oopptr() const {
-  return (_base == NarrowOop) ? is_narrowoop()->get_ptrtype()->is_oopptr() : is_oopptr();
+  return (_base == NarrowOop) ? is_narrowoop()->get_ptrtype()->isa_oopptr() : isa_oopptr();
 }
 
 inline const TypeNarrowOop* Type::make_narrowoop() const {
@@ -1689,7 +1691,7 @@ inline const TypeNarrowOop* Type::make_narrowoop() const {
 
 inline const TypeNarrowKlass* Type::make_narrowklass() const {
   return (_base == NarrowKlass) ? is_narrowklass() :
-                                (isa_ptr() ? TypeNarrowKlass::make(is_ptr()) : NULL);
+                                  (isa_ptr() ? TypeNarrowKlass::make(is_ptr()) : NULL);
 }
 
 inline bool Type::is_floatingpoint() const {

@@ -2687,35 +2687,48 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
   // of safe & unsafe memory.
   if (need_mem_bar) insert_mem_bar(Op_MemBarCPUOrder);
 
-  if (!is_store) {
-    MemNode::MemOrd mo = is_volatile ? MemNode::acquire : MemNode::unordered;
-    // To be valid, unsafe loads may depend on other conditions than
-    // the one that guards them: pin the Load node
-    Node* p = make_load(control(), adr, value_type, type, adr_type, mo, LoadNode::Pinned, is_volatile);
-    // load value
-    switch (type) {
-    case T_BOOLEAN:
-    case T_CHAR:
-    case T_BYTE:
-    case T_SHORT:
-    case T_INT:
-    case T_LONG:
-    case T_FLOAT:
-    case T_DOUBLE:
-      break;
-    case T_OBJECT:
-      if (need_read_barrier) {
-        insert_pre_barrier(heap_base_oop, offset, p, !(is_volatile || need_mem_bar));
+   if (!is_store) {
+    Node* p = NULL;
+    // Try to constant fold a load from a constant field
+    ciField* field = alias_type->field();
+    if (heap_base_oop != top() &&
+        field != NULL && field->is_constant() && field->layout_type() == type) {
+      // final or stable field
+      const Type* con_type = Type::make_constant(alias_type->field(), heap_base_oop);
+      if (con_type != NULL) {
+        p = makecon(con_type);
       }
-      break;
-    case T_ADDRESS:
-      // Cast to an int type.
-      p = _gvn.transform(new CastP2XNode(NULL, p));
-      p = ConvX2UL(p);
-      break;
-    default:
-      fatal(err_msg_res("unexpected type %d: %s", type, type2name(type)));
-      break;
+    }
+    if (p == NULL) {
+      MemNode::MemOrd mo = is_volatile ? MemNode::acquire : MemNode::unordered;
+      // To be valid, unsafe loads may depend on other conditions than
+      // the one that guards them: pin the Load node
+      p = make_load(control(), adr, value_type, type, adr_type, mo, LoadNode::Pinned, is_volatile);
+      // load value
+      switch (type) {
+      case T_BOOLEAN:
+      case T_CHAR:
+      case T_BYTE:
+      case T_SHORT:
+      case T_INT:
+      case T_LONG:
+      case T_FLOAT:
+      case T_DOUBLE:
+        break;
+      case T_OBJECT:
+        if (need_read_barrier) {
+          insert_pre_barrier(heap_base_oop, offset, p, !(is_volatile || need_mem_bar));
+        }
+        break;
+      case T_ADDRESS:
+        // Cast to an int type.
+        p = _gvn.transform(new CastP2XNode(NULL, p));
+        p = ConvX2UL(p);
+        break;
+      default:
+        fatal(err_msg_res("unexpected type %d: %s", type, type2name(type)));
+        break;
+      }
     }
     // The load node has the control of the preceding MemBarCPUOrder.  All
     // following nodes will have the control of the MemBarCPUOrder inserted at

@@ -149,51 +149,10 @@ void Parse::do_get_xxx(Node* obj, ciField* field, bool is_field) {
   // Does this field have a constant value?  If so, just push the value.
   if (field->is_constant()) {
     // final or stable field
-    const Type* stable_type = NULL;
-    if (FoldStableValues && field->is_stable()) {
-      stable_type = Type::get_const_type(field->type());
-      if (field->type()->is_array_klass()) {
-        int stable_dimension = field->type()->as_array_klass()->dimension();
-        stable_type = stable_type->is_aryptr()->cast_to_stable(true, stable_dimension);
-      }
-    }
-    if (field->is_static()) {
-      // final static field
-      if (C->eliminate_boxing()) {
-        // The pointers in the autobox arrays are always non-null.
-        ciSymbol* klass_name = field->holder()->name();
-        if (field->name() == ciSymbol::cache_field_name() &&
-            field->holder()->uses_default_loader() &&
-            (klass_name == ciSymbol::java_lang_Character_CharacterCache() ||
-             klass_name == ciSymbol::java_lang_Byte_ByteCache() ||
-             klass_name == ciSymbol::java_lang_Short_ShortCache() ||
-             klass_name == ciSymbol::java_lang_Integer_IntegerCache() ||
-             klass_name == ciSymbol::java_lang_Long_LongCache())) {
-          bool require_const = true;
-          bool autobox_cache = true;
-          if (push_constant(field->constant_value(), require_const, autobox_cache)) {
-            return;
-          }
-        }
-      }
-      if (push_constant(field->constant_value(), false, false, stable_type))
-        return;
-    } else {
-      // final or stable non-static field
-      // Treat final non-static fields of trusted classes (classes in
-      // java.lang.invoke and sun.invoke packages and subpackages) as
-      // compile time constants.
-      if (obj->is_Con()) {
-        const TypeOopPtr* oop_ptr = obj->bottom_type()->isa_oopptr();
-        ciObject* constant_oop = oop_ptr->const_oop();
-        ciConstant constant = field->constant_value_of(constant_oop);
-        if (FoldStableValues && field->is_stable() && constant.is_null_or_zero()) {
-          // fall through to field load; the field is not yet initialized
-        } else {
-          if (push_constant(constant, true, false, stable_type))
-            return;
-        }
-      }
+    const Type* con_type = Type::make_constant(field, obj);
+    if (con_type != NULL) {
+      push_node(con_type->basic_type(), makecon(con_type));
+      return;
     }
   }
 
@@ -361,39 +320,6 @@ void Parse::do_put_xxx(Node* obj, ciField* field, bool is_field) {
     }
   }
 }
-
-
-
-bool Parse::push_constant(ciConstant constant, bool require_constant, bool is_autobox_cache, const Type* stable_type) {
-  const Type* con_type = Type::make_from_constant(constant, require_constant, is_autobox_cache);
-  switch (constant.basic_type()) {
-  case T_ARRAY:
-  case T_OBJECT:
-    // cases:
-    //   can_be_constant    = (oop not scavengable || ScavengeRootsInCode != 0)
-    //   should_be_constant = (oop not scavengable || ScavengeRootsInCode >= 2)
-    // An oop is not scavengable if it is in the perm gen.
-    if (stable_type != NULL && con_type != NULL && con_type->isa_oopptr())
-      con_type = con_type->join_speculative(stable_type);
-    break;
-
-  case T_ILLEGAL:
-    // Invalid ciConstant returned due to OutOfMemoryError in the CI
-    assert(C->env()->failing(), "otherwise should not see this");
-    // These always occur because of object types; we are going to
-    // bail out anyway, so make the stack depths match up
-    push( zerocon(T_OBJECT) );
-    return false;
-  }
-
-  if (con_type == NULL)
-    // we cannot inline the oop, but we can use it later to narrow a type
-    return false;
-
-  push_node(constant.basic_type(), makecon(con_type));
-  return true;
-}
-
 
 //=============================================================================
 void Parse::do_anewarray() {
