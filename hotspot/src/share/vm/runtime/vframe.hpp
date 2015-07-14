@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,7 +135,8 @@ class javaVFrame: public vframe {
   // Return an array of monitors locked by this frame in the youngest to oldest order
   GrowableArray<MonitorInfo*>* locked_monitors();
 
-  // printing used during stack dumps
+  // printing used during stack dumps and diagnostics
+  static void print_locked_object_class_name(outputStream* st, Handle obj, const char* lock_state);
   void print_lock_info_on(outputStream* st, int frame_count);
   void print_lock_info(int frame_count) { print_lock_info_on(tty, frame_count); }
 
