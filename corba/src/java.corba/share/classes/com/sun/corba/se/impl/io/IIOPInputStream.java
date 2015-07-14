@@ -1068,6 +1068,9 @@ public class IIOPInputStream
 
             int spBase = spClass;       // current top of stack
 
+            if (currentClass.getName().equals("java.lang.String")) {
+                return this.readUTF();
+            }
             /* The object's classes should be processed from supertype to subtype
              * Push all the clases of the current object onto a stack.
              * Note that only the serializable classes are represented
