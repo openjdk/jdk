@@ -38,7 +38,6 @@
 
 import java.lang.management.ManagementFactory;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.management.Attribute;
 import javax.management.JMX;
 import javax.management.MBeanServer;
 import javax.management.Notification;
@@ -96,9 +95,10 @@ public class StringMonitorDeadlockTest {
             monitorProxy.setStringToCompare("old");
             monitorProxy.setGranularityPeriod(10L); // 10 ms
             monitorProxy.setNotifyDiffer(true);
-            monitorProxy.start();
 
             final int initGetCount = observedProxy.getGetCount();
+            monitorProxy.start();
+
             int getCount = initGetCount;
             for (int i = 0; i < 500; i++) { // 500 * 10 = 5 seconds
                 getCount = observedProxy.getGetCount();

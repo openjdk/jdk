@@ -76,12 +76,12 @@ final class JrtFileAttributes implements BasicFileAttributes
 
     @Override
     public boolean isSymbolicLink() {
-        return false;
+        return node.isLink();
     }
 
     @Override
     public Object fileKey() {
-        return null;
+        return node.resolveLink(true);
     }
 
     ///////// jrt entry attributes ///////////
