@@ -36,6 +36,7 @@
 class MacroAssembler: public Assembler {
   friend class LIR_Assembler;
 
+ public:
   using Assembler::mov;
   using Assembler::movi;
 

@@ -289,9 +289,9 @@ implements Serializable
         if (unresolvedPerms == null)
             return null;
 
-        java.security.cert.Certificate certs[] = null;
+        java.security.cert.Certificate[] certs = null;
 
-        Object signers[] = p.getClass().getSigners();
+        Object[] signers = p.getClass().getSigners();
 
         int n = 0;
         if (signers != null) {

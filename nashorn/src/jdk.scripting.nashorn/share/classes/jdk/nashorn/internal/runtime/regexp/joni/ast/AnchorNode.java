@@ -60,8 +60,8 @@ public final class AnchorNode extends Node implements AnchorType {
     @Override
     public String toString(final int level) {
         final StringBuilder value = new StringBuilder();
-        value.append("\n  type: " + typeToString());
-        value.append("\n  target: " + pad(target, level + 1));
+        value.append("\n  type: ").append(typeToString());
+        value.append("\n  target: ").append(pad(target, level + 1));
         return value.toString();
     }
 

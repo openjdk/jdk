@@ -60,7 +60,7 @@ class RFrame : public ResourceObj {
   frame fr() const                        { return _fr; }
   JavaThread* thread() const              { return _thread; }
   virtual int cost() const = 0;           // estimated inlining cost (size)
-  virtual methodHandle top_method() const  = 0;
+  virtual Method* top_method() const  = 0;
   virtual javaVFrame* top_vframe() const = 0;
   virtual nmethod* nm() const             { ShouldNotCallThis(); return NULL; }
 
@@ -79,7 +79,7 @@ class CompiledRFrame : public RFrame {    // frame containing a compiled method
  protected:
   nmethod*    _nm;
   javaVFrame* _vf;                        // top vframe; may be NULL (for most recent frame)
-  methodHandle _method;                   // top method
+  Method* _method;                        // top method
 
   CompiledRFrame(frame fr, JavaThread* thread, RFrame*const  callee);
   void init();
@@ -88,7 +88,7 @@ class CompiledRFrame : public RFrame {    // frame containing a compiled method
  public:
   CompiledRFrame(frame fr, JavaThread* thread); // for nmethod triggering its counter (callee == NULL)
   bool is_compiled() const                 { return true; }
-  methodHandle top_method() const          { return _method; }
+  Method* top_method() const               { return _method; }
   javaVFrame* top_vframe() const           { return _vf; }
   nmethod* nm() const                      { return _nm; }
   int cost() const;
@@ -98,16 +98,16 @@ class CompiledRFrame : public RFrame {    // frame containing a compiled method
 class InterpretedRFrame : public RFrame {    // interpreter frame
  protected:
   javaVFrame* _vf;                           // may be NULL (for most recent frame)
-  methodHandle   _method;
+  Method* _method;
 
   InterpretedRFrame(frame fr, JavaThread* thread, RFrame*const  callee);
   void init();
   friend class RFrame;
 
  public:
-  InterpretedRFrame(frame fr, JavaThread* thread, methodHandle m); // constructor for method triggering its invocation counter
+  InterpretedRFrame(frame fr, JavaThread* thread, Method* m); // constructor for method triggering its invocation counter
   bool is_interpreted() const                { return true; }
-  methodHandle top_method() const            { return _method; }
+  Method* top_method() const                 { return _method; }
   javaVFrame* top_vframe() const             { return _vf; }
   int cost() const;
   void print();

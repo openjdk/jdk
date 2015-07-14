@@ -88,7 +88,7 @@ public class NashornClassReader extends ClassReader {
             c = bytecode[i++];
             switch (st) {
             case 0:
-                c = c & 0xFF;
+                c &= 0xFF;
                 if (c < 0x80) { // 0xxxxxxx
                     buf[strLen++] = (char) c;
                 } else if (c < 0xE0 && c > 0xBF) { // 110x xxxx 10xx xxxx
@@ -457,7 +457,7 @@ public class NashornClassReader extends ClassReader {
 
         @SuppressWarnings("unused")
         final String getType() {
-            String str = type[tag];
+            String str = TYPE[tag];
             while (str.length() < 16) {
                 str += " ";
             }
@@ -507,7 +507,7 @@ public class NashornClassReader extends ClassReader {
         }
     }
 
-    private static String type[] = {
+    private static final String[] TYPE = {
         //0
         "<error>",
         //1

@@ -101,9 +101,7 @@ public final class BitSet {
     }
 
     public void copy(final BitSet other) {
-        for (int i=0; i<BITSET_SIZE; i++) {
-            bits[i] = other.bits[i];
-        }
+        System.arraycopy(other.bits, 0, bits, 0, BITSET_SIZE);
     }
 
     public int numOn() {

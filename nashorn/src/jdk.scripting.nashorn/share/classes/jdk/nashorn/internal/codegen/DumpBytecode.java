@@ -51,7 +51,7 @@ public final class DumpBytecode {
             if (env._print_code) {
 
                 final StringBuilder sb = new StringBuilder();
-                sb.append("class: " + className).
+                sb.append("class: ").append(className).
                     append('\n').
                     append(ClassEmitter.disassemble(bytecode)).
                     append("=====");
@@ -88,7 +88,7 @@ public final class DumpBytecode {
             }
 
 
-            // should code be dumped to disk - only valid in compile_only mode?
+            // should code be dumped to disk
             if (env._dest_dir != null) {
                 final String fileName = className.replace('.', File.separatorChar) + ".class";
                 final int    index    = fileName.lastIndexOf(File.separatorChar);

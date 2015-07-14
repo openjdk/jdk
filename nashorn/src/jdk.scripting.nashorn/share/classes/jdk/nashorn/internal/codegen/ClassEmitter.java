@@ -705,7 +705,7 @@ public class ClassEmitter {
         /** private access */
         PRIVATE(ACC_PRIVATE);
 
-        private int value;
+        private final int value;
 
         private Flag(final int value) {
             this.value = value;
