@@ -53,7 +53,6 @@
  * - destroy0(pid, force)
  */
 
-
 #ifndef WIFEXITED
 #define WIFEXITED(status) (((status)&0xFF) == 0)
 #endif
@@ -82,15 +81,20 @@
   } while((_result == NULL) && (errno == EINTR)); \
 } while(0)
 
+#ifdef __solaris__
+    #define STAT_FILE "/proc/%d/status"
+#else
+    #define STAT_FILE "/proc/%d/stat"
+#endif
 
 /* Block until a child process exits and return its exit code.
  * Note, can only be called once for any given pid if reapStatus = true.
  */
 JNIEXPORT jint JNICALL
 Java_java_lang_ProcessHandleImpl_waitForProcessExit0(JNIEnv* env,
-                                              jclass junk,
-                                              jlong jpid,
-                                              jboolean reapStatus)
+                                                     jclass junk,
+                                                     jlong jpid,
+                                                     jboolean reapStatus)
 {
     pid_t pid = (pid_t)jpid;
     errno = 0;
@@ -178,21 +182,10 @@ Java_java_lang_ProcessHandleImpl_waitForProcessExit0(JNIEnv* env,
  * Method:    getCurrentPid0
  * Signature: ()J
  */
-JNIEXPORT jlong JNICALL Java_java_lang_ProcessHandleImpl_getCurrentPid0
-(JNIEnv *env, jclass clazz) {
+JNIEXPORT jlong JNICALL
+Java_java_lang_ProcessHandleImpl_getCurrentPid0(JNIEnv *env, jclass clazz) {
     pid_t pid = getpid();
     return (jlong) pid;
-}
-
-/*
- * Class:     java_lang_ProcessHandleImpl
- * Method:    isAlive0
- * Signature: (J)Z
- */
-JNIEXPORT jboolean JNICALL Java_java_lang_ProcessHandleImpl_isAlive0
-(JNIEnv *env, jobject obj, jlong jpid) {
-    pid_t pid = (pid_t) jpid;
-    return (kill(pid, 0) < 0) ? JNI_FALSE : JNI_TRUE;
 }
 
 /*
@@ -200,12 +193,21 @@ JNIEXPORT jboolean JNICALL Java_java_lang_ProcessHandleImpl_isAlive0
  * Method:    destroy0
  * Signature: (Z)Z
  */
-JNIEXPORT jboolean JNICALL Java_java_lang_ProcessHandleImpl_destroy0
-(JNIEnv *env, jobject obj, jlong jpid, jboolean force) {
+JNIEXPORT jboolean JNICALL
+Java_java_lang_ProcessHandleImpl_destroy0(JNIEnv *env,
+                                          jobject obj,
+                                          jlong jpid,
+                                          jlong startTime,
+                                          jboolean force) {
     pid_t pid = (pid_t) jpid;
     int sig = (force == JNI_TRUE) ? SIGKILL : SIGTERM;
-    return (kill(pid, sig) >= 0);
+    jlong start = Java_java_lang_ProcessHandleImpl_isAlive0(env, obj, jpid);
 
+    if (start == startTime || start == 0 || startTime == 0) {
+        return (kill(pid, sig) < 0) ? JNI_FALSE : JNI_TRUE;
+    } else {
+        return JNI_FALSE;
+    }
 }
 
 /**
@@ -260,11 +262,8 @@ jstring uidToUser(JNIEnv* env, uid_t uid) {
 /*
  * Signatures for internal OS specific functions.
  */
-static pid_t parentPid(JNIEnv *env, pid_t pid);
-static jint getChildren(JNIEnv *env, jlong jpid,
-                        jlongArray array, jlongArray jparentArray);
-
-static void getStatInfo(JNIEnv *env, jobject jinfo, pid_t pid);
+static pid_t getStatInfo(JNIEnv *env, pid_t pid,
+                                     jlong *totalTime, jlong* startTime);
 static void getCmdlineInfo(JNIEnv *env, pid_t pid, jobject jinfo);
 static long long getBoottime(JNIEnv *env);
 
@@ -298,8 +297,8 @@ static long long bootTime_ms;
  * Method:    initIDs
  * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_java_lang_ProcessHandleImpl_00024Info_initIDs
-  (JNIEnv *env, jclass clazz) {
+JNIEXPORT void JNICALL
+Java_java_lang_ProcessHandleImpl_00024Info_initIDs(JNIEnv *env, jclass clazz) {
 
     CHECK_NULL(ProcessHandleImpl_Info_commandID = (*env)->GetFieldID(env,
         clazz, "command", "Ljava/lang/String;"));
@@ -311,61 +310,98 @@ JNIEXPORT void JNICALL Java_java_lang_ProcessHandleImpl_00024Info_initIDs
         clazz, "startTime", "J"));
     CHECK_NULL(ProcessHandleImpl_Info_userID = (*env)->GetFieldID(env,
         clazz, "user", "Ljava/lang/String;"));
+}
+
+/**************************************************************
+ * Static method to initialize the ticks per second rate.
+ *
+ * Class:     java_lang_ProcessHandleImpl
+ * Method:    initNative
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL
+Java_java_lang_ProcessHandleImpl_initNative(JNIEnv *env, jclass clazz) {
     clock_ticks_per_second = sysconf(_SC_CLK_TCK);
     bootTime_ms = getBoottime(env);
 }
 
 /*
+ * Check if a process is alive.
+ * Return the start time (ms since 1970) if it is available.
+ * If the start time is not available return 0.
+ * If the pid is invalid, return -1.
+ *
+ * Class:     java_lang_ProcessHandleImpl
+ * Method:    isAlive0
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL
+Java_java_lang_ProcessHandleImpl_isAlive0(JNIEnv *env, jobject obj, jlong jpid) {
+    pid_t pid = (pid_t) jpid;
+    jlong startTime = 0L;
+    jlong totalTime = 0L;
+    pid_t ppid = getStatInfo(env, pid, &totalTime, &startTime);
+    return (ppid <= 0) ? -1 : startTime;
+}
+
+/*
  * Returns the parent pid of the requested pid.
+ * The start time of the process must match (or be ANY).
  *
  * Class:     java_lang_ProcessHandleImpl
  * Method:    parent0
  * Signature: (J)J
  */
-JNIEXPORT jlong JNICALL Java_java_lang_ProcessHandleImpl_parent0
-(JNIEnv *env, jobject obj, jlong jpid) {
+JNIEXPORT jlong JNICALL
+Java_java_lang_ProcessHandleImpl_parent0(JNIEnv *env,
+                                        jobject obj,
+                                        jlong jpid,
+                                        jlong startTime) {
     pid_t pid = (pid_t) jpid;
-    pid_t ppid = -1;
+    pid_t ppid;
 
     pid_t mypid = getpid();
     if (pid == mypid) {
         ppid = getppid();
     } else {
-        ppid = parentPid(env, pid);
+        jlong start = 0L;;
+        jlong total = 0L;        // unused
+        ppid = getStatInfo(env, pid, &total, &start);
+        if (start != startTime && start != 0 && startTime != 0) {
+            ppid = -1;
+        }
     }
     return (jlong) ppid;
 }
 
 /*
  * Returns the children of the requested pid and optionally each parent.
- *
+ * Reads /proc and accumulates any process who parent pid matches.
+ * The resulting pids are stored into the array of longs.
+ * The number of pids is returned if they all fit.
+ * If the array is too short, the negative of the desired length is returned. *
  * Class:     java_lang_ProcessHandleImpl
  * Method:    getChildPids
  * Signature: (J[J[J)I
  */
-JNIEXPORT jint JNICALL Java_java_lang_ProcessHandleImpl_getProcessPids0
-(JNIEnv *env, jclass clazz, jlong jpid,
-    jlongArray jarray, jlongArray jparentArray) {
-    return getChildren(env, jpid, jarray, jparentArray);
-}
+JNIEXPORT jint JNICALL
+Java_java_lang_ProcessHandleImpl_getProcessPids0(JNIEnv *env,
+                                                 jclass clazz,
+                                                 jlong jpid,
+                                                 jlongArray jarray,
+                                                 jlongArray jparentArray,
+                                                 jlongArray jstimesArray) {
 
-/*
- * Reads /proc and accumulates any process who parent pid matches.
- * The resulting pids are stored into the array of longs.
- * The number of pids is returned if they all fit.
- * If the array is too short, the negative of the desired length is returned.
- */
-static jint getChildren(JNIEnv *env, jlong jpid,
-    jlongArray jarray, jlongArray jparentArray) {
     DIR* dir;
     struct dirent* ptr;
     pid_t pid = (pid_t) jpid;
-    pid_t ppid = 0;
-    size_t count = 0;
     jlong* pids = NULL;
     jlong* ppids = NULL;
-    size_t parentArraySize = 0;
-    size_t arraySize = 0;
+    jlong* stimes = NULL;
+    jsize parentArraySize = 0;
+    jsize arraySize = 0;
+    jsize stimesSize = 0;
+    jsize count = 0;
 
     arraySize = (*env)->GetArrayLength(env, jarray);
     JNU_CHECK_EXCEPTION_RETURN(env, -1);
@@ -378,6 +414,15 @@ static jint getChildren(JNIEnv *env, jlong jpid,
             return 0;
         }
     }
+    if (jstimesArray != NULL) {
+        stimesSize = (*env)->GetArrayLength(env, jstimesArray);
+        JNU_CHECK_EXCEPTION_RETURN(env, -1);
+
+        if (arraySize != stimesSize) {
+            JNU_ThrowIllegalArgumentException(env, "array sizes not equal");
+            return 0;
+        }
+    }
 
     /*
      * To locate the children we scan /proc looking for files that have a
@@ -385,7 +430,7 @@ static jint getChildren(JNIEnv *env, jlong jpid,
      */
     if ((dir = opendir("/proc")) == NULL) {
         JNU_ThrowByNameWithLastError(env,
-            "java/lang/Runtime", "Unable to open /proc");
+            "java/lang/RuntimeException", "Unable to open /proc");
         return -1;
     }
 
@@ -400,20 +445,26 @@ static jint getChildren(JNIEnv *env, jlong jpid,
                 break;
             }
         }
+        if (jstimesArray != NULL) {
+            stimes  = (*env)->GetLongArrayElements(env, jstimesArray, NULL);
+            if (stimes == NULL) {
+                break;
+            }
+        }
 
         while ((ptr = readdir(dir)) != NULL) {
+            pid_t ppid = 0;
+            jlong totalTime = 0L;
+            jlong startTime = 0L;
+
             /* skip files that aren't numbers */
             pid_t childpid = (pid_t) atoi(ptr->d_name);
             if ((int) childpid <= 0) {
                 continue;
             }
-
-            ppid = 0;
-            if (pid != 0 || jparentArray != NULL) {
-                // parentPid opens and reads /proc/pid/stat
-                ppid = parentPid(env, childpid);
-            }
-            if (pid == 0 || ppid == pid) {
+            // Read /proc/pid/stat and get the parent pid, and start time
+            ppid = getStatInfo(env, childpid, &totalTime, &startTime);
+            if (ppid > 0 && (pid == 0 || ppid == pid)) {
                 if (count < arraySize) {
                     // Only store if it fits
                     pids[count] = (jlong) childpid;
@@ -421,6 +472,10 @@ static jint getChildren(JNIEnv *env, jlong jpid,
                     if (ppids != NULL) {
                         // Store the parentPid
                         ppids[count] = (jlong) ppid;
+                    }
+                    if (stimes != NULL) {
+                        // Store the process start time
+                        stimes[count] = startTime;
                     }
                 }
                 count++; // Count to tabulate size needed
@@ -434,56 +489,15 @@ static jint getChildren(JNIEnv *env, jlong jpid,
     if (ppids != NULL) {
         (*env)->ReleaseLongArrayElements(env, jparentArray, ppids, 0);
     }
+    if (stimes != NULL) {
+        (*env)->ReleaseLongArrayElements(env, jstimesArray, stimes, 0);
+    }
 
     closedir(dir);
     // If more pids than array had size for; count will be greater than array size
     return count;
 }
 
-/*
- * Returns the parent pid of a given pid, or -1 if not found
- */
-static pid_t parentPid(JNIEnv *env, pid_t pid) {
-    char state;
-    FILE* fp;
-    char stat[2048];
-    int statlen;
-    char fn[32];
-    int i, p;
-    char* s;
-
-    /*
-     * try to open /proc/%d/stat
-     */
-    snprintf(fn, sizeof fn, "/proc/%d/stat", pid);
-    fp = fopen(fn, "r");
-    if (fp == NULL) {
-        return -1;
-    }
-
-    /*
-     * The format is: pid (command) state ppid ...
-     * As the command could be anything we must find the right most
-     * ")" and then skip the white spaces that follow it.
-     */
-    statlen = fread(stat, 1, (sizeof stat - 1), fp);
-    fclose(fp);
-    if (statlen < 0) {
-        return -1;
-    }
-
-    stat[statlen] = '\0';
-    s = strrchr(stat, ')');
-    if (s == NULL) {
-        return -1;
-    }
-    do s++; while (isspace(*s));
-    i = sscanf(s, "%c %d", &state, &p);
-    if (i != 2) {
-        return (pid_t)-1;
-    }
-    return (pid_t) p;
-}
 
 /**************************************************************
  * Implementation of ProcessHandleImpl_Info native methods.
@@ -496,49 +510,51 @@ static pid_t parentPid(JNIEnv *env, pid_t pid) {
  * Method:    info0
  * Signature: (JLjava/lang/ProcessHandle/Info;)I
  */
-JNIEXPORT void JNICALL Java_java_lang_ProcessHandleImpl_00024Info_info0
-  (JNIEnv *env, jobject jinfo, jlong jpid) {
+JNIEXPORT void JNICALL
+Java_java_lang_ProcessHandleImpl_00024Info_info0(JNIEnv *env,
+                                                 jobject jinfo,
+                                                 jlong jpid) {
     pid_t pid = (pid_t) jpid;
-    getStatInfo(env, jinfo, (pid_t)pid);
-    getCmdlineInfo(env, pid, jinfo);
+    pid_t ppid;
+    jlong totalTime = 0L;
+    jlong startTime = -1L;
+
+    ppid = getStatInfo(env, pid,  &totalTime, &startTime);
+    if (ppid > 0) {
+        (*env)->SetLongField(env, jinfo, ProcessHandleImpl_Info_totalTimeID, totalTime);
+        JNU_CHECK_EXCEPTION(env);
+
+        (*env)->SetLongField(env, jinfo, ProcessHandleImpl_Info_startTimeID, startTime);
+        JNU_CHECK_EXCEPTION(env);
+
+        getCmdlineInfo(env, pid, jinfo);
+    }
 }
 
 /**
- * Read /proc/<pid>/stat and fill in the fields of the Info object.
- * The executable name, plus the user, system, and start times are gathered.
+ * Read /proc/<pid>/stat and return the ppid, total cputime and start time.
+ * -1 is fail;  zero is unknown; >  0 is parent pid
  */
-static void getStatInfo(JNIEnv *env, jobject jinfo, pid_t pid) {
-    char state;
+static pid_t getStatInfo(JNIEnv *env, pid_t pid,
+                                     jlong *totalTime, jlong* startTime) {
     FILE* fp;
     char buffer[2048];
-    struct stat stat_buf;
     int statlen;
     char fn[32];
-    int i, ppid = -2;
     char* s;
-    char *cmd;
-    jstring name = NULL;
-    unsigned long userTime = 0;             // clock tics
-    unsigned long totalTime = 0;            // clock tics
-    jlong total = 0;                        // nano seconds
-    unsigned long long startTime = 0;       // microseconds
+    int parentPid;
+    long unsigned int utime = 0;      // clock tics
+    long unsigned int stime = 0;      // clock tics
+    long long unsigned int start = 0; // microseconds
 
     /*
      * Try to stat and then open /proc/%d/stat
      */
-    snprintf(fn, sizeof fn, "/proc/%d/stat", pid);
-
-    if (stat(fn, &stat_buf) < 0) {
-        return;
-    }
-
-    CHECK_NULL((name = uidToUser(env, stat_buf.st_uid)));
-    (*env)->SetObjectField(env, jinfo, ProcessHandleImpl_Info_userID, name);
-    JNU_CHECK_EXCEPTION(env);
+    snprintf(fn, sizeof fn, STAT_FILE, pid);
 
     fp = fopen(fn, "r");
     if (fp == NULL) {
-        return;
+        return -1;              // fail, no such /proc/pid/stat
     }
 
     /*
@@ -549,38 +565,34 @@ static void getStatInfo(JNIEnv *env, jobject jinfo, pid_t pid) {
     statlen = fread(buffer, 1, (sizeof buffer - 1), fp);
     fclose(fp);
     if (statlen < 0) {
-        return;
+        return 0;               // parent pid is not available
     }
 
     buffer[statlen] = '\0';
     s = strchr(buffer, '(');
     if (s == NULL) {
-        return;
+        return 0;               // parent pid is not available
     }
     // Found start of command, skip to end
     s++;
     s = strrchr(s, ')');
     if (s == NULL) {
-        return;
+        return 0;               // parent pid is not available
     }
     s++;
 
     // Scan the needed fields from status, retaining only ppid(4),
     // utime (14), stime(15), starttime(22)
-    i = sscanf(s, " %c %d %*d %*d %*d %*d %*d %*u %*u %*u %*u %lu %lu %*d %*d %*d %*d %*d %*d %llu",
-            &state, &ppid, &userTime, &totalTime, &startTime);
-    if (i != 5) {
-        return;              // not all values parsed; return error
+    if (4 != sscanf(s, " %*c %d %*d %*d %*d %*d %*d %*u %*u %*u %*u %lu %lu %*d %*d %*d %*d %*d %*d %llu",
+            &parentPid, &utime, &stime, &start)) {
+        return 0;              // not all values parsed; return error
     }
 
-    total = (userTime + totalTime) * (jlong)(1000000000 / clock_ticks_per_second);
+    *totalTime = (utime + stime) * (jlong)(1000000000 / clock_ticks_per_second);
 
-    startTime = bootTime_ms + ((startTime * 1000) / clock_ticks_per_second);
+    *startTime = bootTime_ms + ((start * 1000) / clock_ticks_per_second);
 
-    (*env)->SetLongField(env, jinfo, ProcessHandleImpl_Info_totalTimeID, total);
-    JNU_CHECK_EXCEPTION(env);
-    (*env)->SetLongField(env, jinfo, ProcessHandleImpl_Info_startTimeID, startTime);
-    JNU_CHECK_EXCEPTION(env);
+    return parentPid;
 }
 
 /**
@@ -632,6 +644,7 @@ static void getCmdlineInfo(JNIEnv *env, pid_t pid, jobject jinfo) {
     char *cmdline = NULL, *cmdEnd;  // used for command line args and exe
     jstring cmdexe = NULL;
     char fn[32];
+    struct stat stat_buf;
 
     /*
      * Try to open /proc/%d/cmdline
@@ -678,6 +691,14 @@ static void getCmdlineInfo(JNIEnv *env, pid_t pid, jobject jinfo) {
 
         if (fillArgArray(env, jinfo, i, cmdline, cmdEnd, cmdexe) < 0) {
             break;
+        }
+
+        // Get and store the user name
+        if (fstat(fd, &stat_buf) == 0) {
+            jstring name = uidToUser(env, stat_buf.st_uid);
+            if (name != NULL) {
+                (*env)->SetObjectField(env, jinfo, ProcessHandleImpl_Info_userID, name);
+            }
         }
     } while (0);
 
