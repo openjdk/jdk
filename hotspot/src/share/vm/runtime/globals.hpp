@@ -3282,9 +3282,6 @@ public:
   develop(intx, ProfilerNodeSize,  1024,                                    \
           "Size in K to allocate for the Profile Nodes of each thread")     \
                                                                             \
-  product_pd(intx, PreInflateSpin,                                          \
-          "Number of times to spin wait before inflation")                  \
-                                                                            \
   /* gc parameters */                                                       \
   product(size_t, InitialHeapSize, 0,                                       \
           "Initial heap size (in bytes); zero means use ergonomics")        \
@@ -3725,9 +3722,6 @@ public:
   develop(intx, LongCompileThreshold,     50,                               \
           "Used with +TraceLongCompiles")                                   \
                                                                             \
-  product(intx, StarvationMonitorInterval,    200,                          \
-          "Pause between each check (in milliseconds)")                     \
-                                                                            \
   /* recompilation */                                                       \
   product_pd(intx, CompileThreshold,                                        \
           "number of interpreted method invocations before (re-)compiling") \
@@ -4079,9 +4073,6 @@ public:
                                                                             \
   develop(bool, TraceDefaultMethods, false,                                 \
           "Trace the default method processing steps")                      \
-                                                                            \
-  develop(bool, VerifyGenericSignatures, false,                             \
-          "Abort VM on erroneous or inconsistent generic signatures")       \
                                                                             \
   diagnostic(bool, WhiteBoxAPI, false,                                      \
           "Enable internal testing APIs")                                   \
