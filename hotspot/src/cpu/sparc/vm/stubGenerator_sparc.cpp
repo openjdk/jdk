@@ -4910,6 +4910,206 @@ class StubGenerator: public StubCodeGenerator {
       return start;
   }
 
+#define CHUNK_LEN   128          /* 128 x 8B = 1KB */
+#define CHUNK_K1    0x1307a0206  /* reverseBits(pow(x, CHUNK_LEN*8*8*3 - 32) mod P(x)) << 1 */
+#define CHUNK_K2    0x1a0f717c4  /* reverseBits(pow(x, CHUNK_LEN*8*8*2 - 32) mod P(x)) << 1 */
+#define CHUNK_K3    0x0170076fa  /* reverseBits(pow(x, CHUNK_LEN*8*8*1 - 32) mod P(x)) << 1 */
+
+  /**
+   *  Arguments:
+   *
+   * Inputs:
+   *   O0   - int   crc
+   *   O1   - byte* buf
+   *   O2   - int   len
+   *   O3   - int*  table
+   *
+   * Output:
+   *   O0   - int crc result
+   */
+  address generate_updateBytesCRC32C() {
+    assert(UseCRC32CIntrinsics, "need CRC32C instruction");
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "updateBytesCRC32C");
+    address start = __ pc();
+
+    const Register crc   = O0;  // crc
+    const Register buf   = O1;  // source java byte array address
+    const Register len   = O2;  // number of bytes
+    const Register table = O3;  // byteTable
+
+    Label L_crc32c_head, L_crc32c_aligned;
+    Label L_crc32c_parallel, L_crc32c_parallel_loop;
+    Label L_crc32c_serial, L_crc32c_x32_loop, L_crc32c_x8, L_crc32c_x8_loop;
+    Label L_crc32c_done, L_crc32c_tail, L_crc32c_return;
+
+    __ cmp_and_br_short(len, 0, Assembler::lessEqual, Assembler::pn, L_crc32c_return);
+
+    // clear upper 32 bits of crc
+    __ clruwu(crc);
+
+    __ and3(buf, 7, G4);
+    __ cmp_and_brx_short(G4, 0, Assembler::equal, Assembler::pt, L_crc32c_aligned);
+
+    __ mov(8, G1);
+    __ sub(G1, G4, G4);
+
+    // ------ process the misaligned head (7 bytes or less) ------
+    __ BIND(L_crc32c_head);
+
+    // crc = (crc >>> 8) ^ byteTable[(crc ^ b) & 0xFF];
+    __ ldub(buf, 0, G1);
+    __ update_byte_crc32(crc, G1, table);
+
+    __ inc(buf);
+    __ dec(len);
+    __ cmp_and_br_short(len, 0, Assembler::equal, Assembler::pn, L_crc32c_return);
+    __ dec(G4);
+    __ cmp_and_br_short(G4, 0, Assembler::greater, Assembler::pt, L_crc32c_head);
+
+    // ------ process the 8-byte-aligned body ------
+    __ BIND(L_crc32c_aligned);
+    __ nop();
+    __ cmp_and_br_short(len, 8, Assembler::less, Assembler::pn, L_crc32c_tail);
+
+    // reverse the byte order of lower 32 bits to big endian, and move to FP side
+    __ movitof_revbytes(crc, F0, G1, G3);
+
+    __ set(CHUNK_LEN*8*4, G4);
+    __ cmp_and_br_short(len, G4, Assembler::less, Assembler::pt, L_crc32c_serial);
+
+    // ------ process four 1KB chunks in parallel ------
+    __ BIND(L_crc32c_parallel);
+
+    __ fzero(FloatRegisterImpl::D, F2);
+    __ fzero(FloatRegisterImpl::D, F4);
+    __ fzero(FloatRegisterImpl::D, F6);
+
+    __ mov(CHUNK_LEN - 1, G4);
+    __ BIND(L_crc32c_parallel_loop);
+    // schedule ldf's ahead of crc32c's to hide the load-use latency
+    __ ldf(FloatRegisterImpl::D, buf, 0,            F8);
+    __ ldf(FloatRegisterImpl::D, buf, CHUNK_LEN*8,  F10);
+    __ ldf(FloatRegisterImpl::D, buf, CHUNK_LEN*16, F12);
+    __ ldf(FloatRegisterImpl::D, buf, CHUNK_LEN*24, F14);
+    __ crc32c(F0, F8,  F0);
+    __ crc32c(F2, F10, F2);
+    __ crc32c(F4, F12, F4);
+    __ crc32c(F6, F14, F6);
+    __ inc(buf, 8);
+    __ dec(G4);
+    __ cmp_and_br_short(G4, 0, Assembler::greater, Assembler::pt, L_crc32c_parallel_loop);
+
+    __ ldf(FloatRegisterImpl::D, buf, 0,            F8);
+    __ ldf(FloatRegisterImpl::D, buf, CHUNK_LEN*8,  F10);
+    __ ldf(FloatRegisterImpl::D, buf, CHUNK_LEN*16, F12);
+    __ crc32c(F0, F8,  F0);
+    __ crc32c(F2, F10, F2);
+    __ crc32c(F4, F12, F4);
+
+    __ inc(buf, CHUNK_LEN*24);
+    __ ldfl(FloatRegisterImpl::D, buf, G0, F14);  // load in little endian
+    __ inc(buf, 8);
+
+    __ prefetch(buf, 0,            Assembler::severalReads);
+    __ prefetch(buf, CHUNK_LEN*8,  Assembler::severalReads);
+    __ prefetch(buf, CHUNK_LEN*16, Assembler::severalReads);
+    __ prefetch(buf, CHUNK_LEN*24, Assembler::severalReads);
+
+    // move to INT side, and reverse the byte order of lower 32 bits to little endian
+    __ movftoi_revbytes(F0, O4, G1, G4);
+    __ movftoi_revbytes(F2, O5, G1, G4);
+    __ movftoi_revbytes(F4, G5, G1, G4);
+
+    // combine the results of 4 chunks
+    __ set64(CHUNK_K1, G3, G1);
+    __ xmulx(O4, G3, O4);
+    __ set64(CHUNK_K2, G3, G1);
+    __ xmulx(O5, G3, O5);
+    __ set64(CHUNK_K3, G3, G1);
+    __ xmulx(G5, G3, G5);
+
+    __ movdtox(F14, G4);
+    __ xor3(O4, O5, O5);
+    __ xor3(G5, O5, O5);
+    __ xor3(G4, O5, O5);
+
+    // reverse the byte order to big endian, via stack, and move to FP side
+    __ add(SP, -8, G1);
+    __ srlx(G1, 3, G1);
+    __ sllx(G1, 3, G1);
+    __ stx(O5, G1, G0);
+    __ ldfl(FloatRegisterImpl::D, G1, G0, F2);  // load in little endian
+
+    __ crc32c(F6, F2, F0);
+
+    __ set(CHUNK_LEN*8*4, G4);
+    __ sub(len, G4, len);
+    __ cmp_and_br_short(len, G4, Assembler::greaterEqual, Assembler::pt, L_crc32c_parallel);
+    __ nop();
+    __ cmp_and_br_short(len, 0, Assembler::equal, Assembler::pt, L_crc32c_done);
+
+    __ BIND(L_crc32c_serial);
+
+    __ mov(32, G4);
+    __ cmp_and_br_short(len, G4, Assembler::less, Assembler::pn, L_crc32c_x8);
+
+    // ------ process 32B chunks ------
+    __ BIND(L_crc32c_x32_loop);
+    __ ldf(FloatRegisterImpl::D, buf, 0, F2);
+    __ inc(buf, 8);
+    __ crc32c(F0, F2, F0);
+    __ ldf(FloatRegisterImpl::D, buf, 0, F2);
+    __ inc(buf, 8);
+    __ crc32c(F0, F2, F0);
+    __ ldf(FloatRegisterImpl::D, buf, 0, F2);
+    __ inc(buf, 8);
+    __ crc32c(F0, F2, F0);
+    __ ldf(FloatRegisterImpl::D, buf, 0, F2);
+    __ inc(buf, 8);
+    __ crc32c(F0, F2, F0);
+    __ dec(len, 32);
+    __ cmp_and_br_short(len, G4, Assembler::greaterEqual, Assembler::pt, L_crc32c_x32_loop);
+
+    __ BIND(L_crc32c_x8);
+    __ nop();
+    __ cmp_and_br_short(len, 8, Assembler::less, Assembler::pt, L_crc32c_done);
+
+    // ------ process 8B chunks ------
+    __ BIND(L_crc32c_x8_loop);
+    __ ldf(FloatRegisterImpl::D, buf, 0, F2);
+    __ inc(buf, 8);
+    __ crc32c(F0, F2, F0);
+    __ dec(len, 8);
+    __ cmp_and_br_short(len, 8, Assembler::greaterEqual, Assembler::pt, L_crc32c_x8_loop);
+
+    __ BIND(L_crc32c_done);
+
+    // move to INT side, and reverse the byte order of lower 32 bits to little endian
+    __ movftoi_revbytes(F0, crc, G1, G3);
+
+    __ cmp_and_br_short(len, 0, Assembler::equal, Assembler::pt, L_crc32c_return);
+
+    // ------ process the misaligned tail (7 bytes or less) ------
+    __ BIND(L_crc32c_tail);
+
+    // crc = (crc >>> 8) ^ byteTable[(crc ^ b) & 0xFF];
+    __ ldub(buf, 0, G1);
+    __ update_byte_crc32(crc, G1, table);
+
+    __ inc(buf);
+    __ dec(len);
+    __ cmp_and_br_short(len, 0, Assembler::greater, Assembler::pt, L_crc32c_tail);
+
+    __ BIND(L_crc32c_return);
+    __ nop();
+    __ retl();
+    __ delayed()->nop();
+
+    return start;
+  }
+
   void generate_initial() {
     // Generates all stubs and initializes the entry points
 
@@ -5000,6 +5200,11 @@ class StubGenerator: public StubCodeGenerator {
     if (UseSHA512Intrinsics) {
       StubRoutines::_sha512_implCompress   = generate_sha512_implCompress(false, "sha512_implCompress");
       StubRoutines::_sha512_implCompressMB = generate_sha512_implCompress(true,  "sha512_implCompressMB");
+    }
+
+    // generate CRC32C intrinsic code
+    if (UseCRC32CIntrinsics) {
+      StubRoutines::_updateBytesCRC32C = generate_updateBytesCRC32C();
     }
   }
 

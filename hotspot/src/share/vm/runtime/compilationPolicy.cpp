@@ -512,7 +512,7 @@ void StackWalkCompPolicy::method_invocation_event(methodHandle m, JavaThread* th
     RegisterMap reg_map(thread, false);
     javaVFrame* triggerVF = thread->last_java_vframe(&reg_map);
     // triggerVF is the frame that triggered its counter
-    RFrame* first = new InterpretedRFrame(triggerVF->fr(), thread, m);
+    RFrame* first = new InterpretedRFrame(triggerVF->fr(), thread, m());
 
     if (first->top_method()->code() != NULL) {
       // called obsolete method/nmethod -- no need to recompile
@@ -557,8 +557,8 @@ RFrame* StackWalkCompPolicy::findTopInlinableFrame(GrowableArray<RFrame*>* stack
     if( !next )               // No next frame up the stack?
       break;                  // Then compile with current frame
 
-    methodHandle m = current->top_method();
-    methodHandle next_m = next->top_method();
+    Method* m = current->top_method();
+    Method* next_m = next->top_method();
 
     if (TraceCompilationPolicy && Verbose) {
       tty->print("[caller: ");
@@ -644,7 +644,7 @@ RFrame* StackWalkCompPolicy::findTopInlinableFrame(GrowableArray<RFrame*>* stack
     if (TraceCompilationPolicy && Verbose) {
       tty->print("\n\t     check caller: ");
       next_m->print_short_name(tty);
-      tty->print(" ( interpreted " INTPTR_FORMAT ", size=%d ) ", p2i((address)next_m()), next_m->code_size());
+      tty->print(" ( interpreted " INTPTR_FORMAT ", size=%d ) ", p2i((address)next_m), next_m->code_size());
     }
 
     current = next;

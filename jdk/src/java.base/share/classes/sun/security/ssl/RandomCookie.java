@@ -38,7 +38,7 @@ import java.security.SecureRandom;
  */
 final class RandomCookie {
 
-    byte random_bytes[];  // exactly 32 bytes
+    byte[] random_bytes;  // exactly 32 bytes
 
     RandomCookie(SecureRandom generator) {
         long temp = System.currentTimeMillis() / 1000;

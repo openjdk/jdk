@@ -129,7 +129,7 @@ public class EncKrbCredPart {
 
         subDer = der.getData().getDerValue();
         if ((subDer.getTag() & (byte) 0x1F) == (byte) 0x00) {
-            DerValue derValues[] = subDer.getData().getSequence(1);
+            DerValue[] derValues = subDer.getData().getSequence(1);
             ticketInfo = new KrbCredInfo[derValues.length];
             for (int i = 0; i < derValues.length; i++) {
                 ticketInfo[i] = new KrbCredInfo(derValues[i]);

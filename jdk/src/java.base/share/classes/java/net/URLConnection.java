@@ -28,8 +28,12 @@ package java.net;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.security.PrivilegedAction;
 import java.util.Hashtable;
 import java.util.Date;
+import java.util.Iterator;
+import java.util.ServiceConfigurationError;
+import java.util.ServiceLoader;
 import java.util.StringTokenizer;
 import java.util.Collections;
 import java.util.Map;
@@ -107,7 +111,7 @@ import sun.net.www.MessageHeader;
  *   <li>{@code getContentType}
  *   <li>{@code getDate}
  *   <li>{@code getExpiration}
- *   <li>{@code getLastModifed}
+ *   <li>{@code getLastModified}
  * </ul>
  * <p>
  * provide convenient access to these fields. The
@@ -695,16 +699,30 @@ public abstract class URLConnection {
      * This method first determines the content type of the object by
      * calling the {@code getContentType} method. If this is
      * the first time that the application has seen that specific content
-     * type, a content handler for that content type is created:
+     * type, a content handler for that content type is created.
+     * <p> This is done as follows:
      * <ol>
      * <li>If the application has set up a content handler factory instance
      *     using the {@code setContentHandlerFactory} method, the
      *     {@code createContentHandler} method of that instance is called
      *     with the content type as an argument; the result is a content
      *     handler for that content type.
-     * <li>If no content handler factory has yet been set up, or if the
-     *     factory's {@code createContentHandler} method returns
-     *     {@code null}, then this method tries to load a content handler
+     * <li>If no {@code ContentHandlerFactory} has yet been set up,
+     *     or if the factory's {@code createContentHandler} method
+     *     returns {@code null}, then the {@linkplain java.util.ServiceLoader
+     *     ServiceLoader} mechanism is used to locate {@linkplain
+     *     java.net.ContentHandlerFactory ContentHandlerFactory}
+     *     implementations using the system class
+     *     loader. The order that factories are located is implementation
+     *     specific, and an implementation is free to cache the located
+     *     factories. A {@linkplain java.util.ServiceConfigurationError
+     *     ServiceConfigurationError}, {@code Error} or {@code RuntimeException}
+     *     thrown from the {@code createContentHandler}, if encountered, will
+     *     be propagated to the calling thread. The {@code
+     *     createContentHandler} method of each factory, if instantiated, is
+     *     invoked, with the content type, until a factory returns non-null,
+     *     or all factories have been exhausted.
+     * <li>Failing that, this method tries to load a content handler
      *     class as defined by {@link java.net.ContentHandler ContentHandler}.
      *     If the class does not exist, or is not a subclass of {@code
      *     ContentHandler}, then an {@code UnknownServiceException} is thrown.
@@ -855,8 +873,7 @@ public abstract class URLConnection {
      * @see #getDoInput()
      */
     public void setDoInput(boolean doinput) {
-        if (connected)
-            throw new IllegalStateException("Already connected");
+        checkConnected();
         doInput = doinput;
     }
 
@@ -885,8 +902,7 @@ public abstract class URLConnection {
      * @see #getDoOutput()
      */
     public void setDoOutput(boolean dooutput) {
-        if (connected)
-            throw new IllegalStateException("Already connected");
+        checkConnected();
         doOutput = dooutput;
     }
 
@@ -911,8 +927,7 @@ public abstract class URLConnection {
      * @see     #getAllowUserInteraction()
      */
     public void setAllowUserInteraction(boolean allowuserinteraction) {
-        if (connected)
-            throw new IllegalStateException("Already connected");
+        checkConnected();
         allowUserInteraction = allowuserinteraction;
     }
 
@@ -974,8 +989,7 @@ public abstract class URLConnection {
      * @see #getUseCaches()
      */
     public void setUseCaches(boolean usecaches) {
-        if (connected)
-            throw new IllegalStateException("Already connected");
+        checkConnected();
         useCaches = usecaches;
     }
 
@@ -1000,8 +1014,7 @@ public abstract class URLConnection {
      * @see     #getIfModifiedSince()
      */
     public void setIfModifiedSince(long ifmodifiedsince) {
-        if (connected)
-            throw new IllegalStateException("Already connected");
+        checkConnected();
         ifModifiedSince = ifmodifiedsince;
     }
 
@@ -1055,12 +1068,11 @@ public abstract class URLConnection {
      *                  (e.g., "{@code Accept}").
      * @param   value   the value associated with it.
      * @throws IllegalStateException if already connected
-     * @throws NullPointerException if key is <CODE>null</CODE>
+     * @throws NullPointerException if key is {@code null}
      * @see #getRequestProperty(java.lang.String)
      */
     public void setRequestProperty(String key, String value) {
-        if (connected)
-            throw new IllegalStateException("Already connected");
+        checkConnected();
         if (key == null)
             throw new NullPointerException ("key is null");
 
@@ -1084,8 +1096,7 @@ public abstract class URLConnection {
      * @since 1.4
      */
     public void addRequestProperty(String key, String value) {
-        if (connected)
-            throw new IllegalStateException("Already connected");
+        checkConnected();
         if (key == null)
             throw new NullPointerException ("key is null");
 
@@ -1107,8 +1118,7 @@ public abstract class URLConnection {
      * @see #setRequestProperty(java.lang.String, java.lang.String)
      */
     public String getRequestProperty(String key) {
-        if (connected)
-            throw new IllegalStateException("Already connected");
+        checkConnected();
 
         if (requests == null)
             return null;
@@ -1129,8 +1139,7 @@ public abstract class URLConnection {
      * @since 1.4
      */
     public Map<String,List<String>> getRequestProperties() {
-        if (connected)
-            throw new IllegalStateException("Already connected");
+        checkConnected();
 
         if (requests == null)
             return Collections.emptyMap();
@@ -1183,7 +1192,7 @@ public abstract class URLConnection {
     /**
      * The ContentHandler factory.
      */
-    static ContentHandlerFactory factory;
+    private static volatile ContentHandlerFactory factory;
 
     /**
      * Sets the {@code ContentHandlerFactory} of an
@@ -1216,37 +1225,45 @@ public abstract class URLConnection {
         factory = fac;
     }
 
-    private static Hashtable<String, ContentHandler> handlers = new Hashtable<>();
+    private static final Hashtable<String, ContentHandler> handlers = new Hashtable<>();
 
     /**
      * Gets the Content Handler appropriate for this connection.
      */
-    synchronized ContentHandler getContentHandler()
-        throws UnknownServiceException
-    {
+    private ContentHandler getContentHandler() throws UnknownServiceException {
         String contentType = stripOffParameters(getContentType());
-        ContentHandler handler = null;
-        if (contentType == null)
+        if (contentType == null) {
             throw new UnknownServiceException("no content-type");
-        try {
-            handler = handlers.get(contentType);
-            if (handler != null)
-                return handler;
-        } catch(Exception e) {
         }
 
-        if (factory != null)
+        ContentHandler handler = handlers.get(contentType);
+        if (handler != null)
+            return handler;
+
+        if (factory != null) {
             handler = factory.createContentHandler(contentType);
-        if (handler == null) {
-            try {
-                handler = lookupContentHandlerClassFor(contentType);
-            } catch(Exception e) {
-                e.printStackTrace();
-                handler = UnknownContentHandler.INSTANCE;
-            }
-            handlers.put(contentType, handler);
+            if (handler != null)
+                return handler;
         }
-        return handler;
+
+        handler = lookupContentHandlerViaProvider(contentType);
+
+        if (handler != null) {
+            ContentHandler h = handlers.putIfAbsent(contentType, handler);
+            return h != null ? h : handler;
+        }
+
+        try {
+            handler = lookupContentHandlerClassFor(contentType);
+        } catch (Exception e) {
+            e.printStackTrace();
+            handler = UnknownContentHandler.INSTANCE;
+        }
+
+        assert handler != null;
+
+        ContentHandler h = handlers.putIfAbsent(contentType, handler);
+        return h != null ? h : handler;
     }
 
     /*
@@ -1270,10 +1287,10 @@ public abstract class URLConnection {
     private static final String contentPathProp = "java.content.handler.pkgs";
 
     /**
-     * Looks for a content handler in a user-defineable set of places.
-     * By default it looks in sun.net.www.content, but users can define a
-     * vertical-bar delimited set of class prefixes to search through in
-     * addition by defining the java.content.handler.pkgs property.
+     * Looks for a content handler in a user-definable set of places.
+     * By default it looks in {@value #contentClassPrefix}, but users can define
+     * a vertical-bar delimited set of class prefixes to search through in
+     * addition by defining the {@value #contentPathProp} property.
      * The class name must be of the form:
      * <pre>
      *     {package-prefix}.{major}.{minor}
@@ -1281,11 +1298,10 @@ public abstract class URLConnection {
      *     YoyoDyne.experimental.text.plain
      * </pre>
      */
-    private ContentHandler lookupContentHandlerClassFor(String contentType)
-        throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+    private ContentHandler lookupContentHandlerClassFor(String contentType) {
         String contentHandlerClassName = typeToPackageName(contentType);
 
-        String contentHandlerPkgPrefixes =getContentHandlerPkgPrefixes();
+        String contentHandlerPkgPrefixes = getContentHandlerPkgPrefixes();
 
         StringTokenizer packagePrefixIter =
             new StringTokenizer(contentHandlerPkgPrefixes, "|");
@@ -1305,15 +1321,44 @@ public abstract class URLConnection {
                     }
                 }
                 if (cls != null) {
-                    ContentHandler handler =
-                        (ContentHandler)cls.newInstance();
-                    return handler;
+                    return (ContentHandler) cls.newInstance();
                 }
-            } catch(Exception e) {
-            }
+            } catch(Exception ignored) { }
         }
 
         return UnknownContentHandler.INSTANCE;
+    }
+
+    private ContentHandler lookupContentHandlerViaProvider(String contentType) {
+        return AccessController.doPrivileged(
+                new PrivilegedAction<>() {
+                    @Override
+                    public ContentHandler run() {
+                        ClassLoader cl = ClassLoader.getSystemClassLoader();
+                        ServiceLoader<ContentHandlerFactory> sl =
+                                ServiceLoader.load(ContentHandlerFactory.class, cl);
+
+                        Iterator<ContentHandlerFactory> iterator = sl.iterator();
+
+                        ContentHandler handler = null;
+                        while (iterator.hasNext()) {
+                            ContentHandlerFactory f;
+                            try {
+                                f = iterator.next();
+                            } catch (ServiceConfigurationError e) {
+                                if (e.getCause() instanceof SecurityException) {
+                                    continue;
+                                }
+                                throw e;
+                            }
+                            handler = f.createContentHandler(contentType);
+                            if (handler != null) {
+                                break;
+                            }
+                        }
+                        return handler;
+                    }
+                });
     }
 
     /**
@@ -1345,8 +1390,8 @@ public abstract class URLConnection {
      * Returns a vertical bar separated list of package prefixes for potential
      * content handlers.  Tries to get the java.content.handler.pkgs property
      * to use as a set of package prefixes to search.  Whether or not
-     * that property has been defined, the sun.net.www.content is always
-     * the last one on the returned package list.
+     * that property has been defined, the {@value #contentClassPrefix}
+     * is always the last one on the returned package list.
      */
     private String getContentHandlerPkgPrefixes() {
         String packagePrefixList = AccessController.doPrivileged(
@@ -1764,8 +1809,11 @@ public abstract class URLConnection {
         return skipped;
     }
 
+    private void checkConnected() {
+        if (connected)
+            throw new IllegalStateException("Already connected");
+    }
 }
-
 
 class UnknownContentHandler extends ContentHandler {
     static final ContentHandler INSTANCE = new UnknownContentHandler();

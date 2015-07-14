@@ -865,6 +865,42 @@ reg_class double_reg(
     V31, V31_H
 );
 
+// Class for all 64bit vector registers
+reg_class vectord_reg(
+    V0, V0_H,
+    V1, V1_H,
+    V2, V2_H,
+    V3, V3_H,
+    V4, V4_H,
+    V5, V5_H,
+    V6, V6_H,
+    V7, V7_H,
+    V8, V8_H,
+    V9, V9_H,
+    V10, V10_H,
+    V11, V11_H,
+    V12, V12_H,
+    V13, V13_H,
+    V14, V14_H,
+    V15, V15_H,
+    V16, V16_H,
+    V17, V17_H,
+    V18, V18_H,
+    V19, V19_H,
+    V20, V20_H,
+    V21, V21_H,
+    V22, V22_H,
+    V23, V23_H,
+    V24, V24_H,
+    V25, V25_H,
+    V26, V26_H,
+    V27, V27_H,
+    V28, V28_H,
+    V29, V29_H,
+    V30, V30_H,
+    V31, V31_H
+);
+
 // Class for all 128bit vector registers
 reg_class vectorx_reg(
     V0, V0_H, V0_J, V0_K,
@@ -2133,40 +2169,48 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
 
   if (bottom_type()->isa_vect() != NULL) {
     uint len = 4;
+    uint ireg = ideal_reg();
+    assert(ireg == Op_VecD || ireg == Op_VecX, "must be 64 bit or 128 bit vector");
     if (cbuf) {
       MacroAssembler _masm(cbuf);
-      uint ireg = ideal_reg();
       assert((src_lo_rc != rc_int && dst_lo_rc != rc_int), "sanity");
-      assert(ireg == Op_VecX, "sanity");
       if (src_lo_rc == rc_stack && dst_lo_rc == rc_stack) {
         // stack->stack
         int src_offset = ra_->reg2offset(src_lo);
         int dst_offset = ra_->reg2offset(dst_lo);
         assert((src_offset & 7) && (dst_offset & 7), "unaligned stack offset");
         len = 8;
-        if (src_offset < 512) {
-          __ ldp(rscratch1, rscratch2, Address(sp, src_offset));
-        } else {
+        if (ireg == Op_VecD) {
           __ ldr(rscratch1, Address(sp, src_offset));
-          __ ldr(rscratch2, Address(sp, src_offset+4));
-          len += 4;
-        }
-        if (dst_offset < 512) {
-          __ stp(rscratch1, rscratch2, Address(sp, dst_offset));
-        } else {
           __ str(rscratch1, Address(sp, dst_offset));
-          __ str(rscratch2, Address(sp, dst_offset+4));
-          len += 4;
+        } else {
+          if (src_offset < 512) {
+            __ ldp(rscratch1, rscratch2, Address(sp, src_offset));
+          } else {
+            __ ldr(rscratch1, Address(sp, src_offset));
+            __ ldr(rscratch2, Address(sp, src_offset+4));
+            len += 4;
+          }
+          if (dst_offset < 512) {
+            __ stp(rscratch1, rscratch2, Address(sp, dst_offset));
+          } else {
+            __ str(rscratch1, Address(sp, dst_offset));
+            __ str(rscratch2, Address(sp, dst_offset+4));
+            len += 4;
+          }
         }
       } else if (src_lo_rc == rc_float && dst_lo_rc == rc_float) {
-        __ orr(as_FloatRegister(Matcher::_regEncode[dst_lo]), __ T16B,
+        __ orr(as_FloatRegister(Matcher::_regEncode[dst_lo]),
+               ireg == Op_VecD ? __ T8B : __ T16B,
                as_FloatRegister(Matcher::_regEncode[src_lo]),
                as_FloatRegister(Matcher::_regEncode[src_lo]));
       } else if (src_lo_rc == rc_float && dst_lo_rc == rc_stack) {
-        __ str(as_FloatRegister(Matcher::_regEncode[src_lo]), __ Q,
+        __ str(as_FloatRegister(Matcher::_regEncode[src_lo]),
+               ireg == Op_VecD ? __ D : __ Q,
                Address(sp, ra_->reg2offset(dst_lo)));
       } else if (src_lo_rc == rc_stack && dst_lo_rc == rc_float) {
-        __ ldr(as_FloatRegister(Matcher::_regEncode[dst_lo]), __ Q,
+        __ ldr(as_FloatRegister(Matcher::_regEncode[dst_lo]),
+               ireg == Op_VecD ? __ D : __ Q,
                Address(sp, ra_->reg2offset(src_lo)));
       } else {
         ShouldNotReachHere();
@@ -2176,17 +2220,22 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
         // stack->stack
         int src_offset = ra_->reg2offset(src_lo);
         int dst_offset = ra_->reg2offset(dst_lo);
-        if (src_offset < 512) {
-          st->print("ldp  rscratch1, rscratch2, [sp, #%d]", src_offset);
-        } else {
+        if (ireg == Op_VecD) {
           st->print("ldr  rscratch1, [sp, #%d]", src_offset);
-          st->print("\nldr  rscratch2, [sp, #%d]", src_offset+4);
-        }
-        if (dst_offset < 512) {
-          st->print("\nstp  rscratch1, rscratch2, [sp, #%d]", dst_offset);
+          st->print("str  rscratch1, [sp, #%d]", dst_offset);
         } else {
-          st->print("\nstr  rscratch1, [sp, #%d]", dst_offset);
-          st->print("\nstr  rscratch2, [sp, #%d]", dst_offset+4);
+          if (src_offset < 512) {
+            st->print("ldp  rscratch1, rscratch2, [sp, #%d]", src_offset);
+          } else {
+            st->print("ldr  rscratch1, [sp, #%d]", src_offset);
+            st->print("\nldr  rscratch2, [sp, #%d]", src_offset+4);
+          }
+          if (dst_offset < 512) {
+            st->print("\nstp  rscratch1, rscratch2, [sp, #%d]", dst_offset);
+          } else {
+            st->print("\nstr  rscratch1, [sp, #%d]", dst_offset);
+            st->print("\nstr  rscratch2, [sp, #%d]", dst_offset+4);
+          }
         }
         st->print("\t# vector spill, stack to stack");
       } else if (src_lo_rc == rc_float && dst_lo_rc == rc_float) {
@@ -2638,17 +2687,22 @@ const int Matcher::max_vector_size(const BasicType bt) {
   return vector_width_in_bytes(bt)/type2aelembytes(bt);
 }
 const int Matcher::min_vector_size(const BasicType bt) {
-  //return (type2aelembytes(bt) == 1) ? 4 : 2;
-  // For the moment, only support 1 vector size, 128 bits
-  return max_vector_size(bt);
+//  For the moment limit the vector size to 8 bytes
+    int size = 8 / type2aelembytes(bt);
+    if (size < 2) size = 2;
+    return size;
 }
 
 // Vector ideal reg.
 const int Matcher::vector_ideal_reg(int len) {
-  return Op_VecX;
+  switch(len) {
+    case  8: return Op_VecD;
+    case 16: return Op_VecX;
+  }
+  ShouldNotReachHere();
+  return 0;
 }
 
-// Only lowest bits of xmm reg are used for vector shift count.
 const int Matcher::vector_shift_count_ideal_reg(int size) {
   return Op_VecX;
 }
@@ -2660,9 +2714,7 @@ const bool Matcher::pass_original_key_for_aes() {
 
 // x86 supports misaligned vectors store/load.
 const bool Matcher::misaligned_vectors_ok() {
-  // TODO fixme
-  // return !AlignVector; // can be changed by flag
-  return false;
+  return !AlignVector; // can be changed by flag
 }
 
 // false => size gets scaled to BytesPerLong, ok.
@@ -3073,13 +3125,13 @@ encode %{
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}
 
-  enc_class aarch64_enc_ldrvS(vecX dst, memory mem) %{
+  enc_class aarch64_enc_ldrvS(vecD dst, memory mem) %{
     FloatRegister dst_reg = as_FloatRegister($dst$$reg);
     loadStore(MacroAssembler(&cbuf), &MacroAssembler::ldr, dst_reg, MacroAssembler::S,
        $mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}
 
-  enc_class aarch64_enc_ldrvD(vecX dst, memory mem) %{
+  enc_class aarch64_enc_ldrvD(vecD dst, memory mem) %{
     FloatRegister dst_reg = as_FloatRegister($dst$$reg);
     loadStore(MacroAssembler(&cbuf), &MacroAssembler::ldr, dst_reg, MacroAssembler::D,
        $mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
@@ -3159,13 +3211,13 @@ encode %{
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}
 
-  enc_class aarch64_enc_strvS(vecX src, memory mem) %{
+  enc_class aarch64_enc_strvS(vecD src, memory mem) %{
     FloatRegister src_reg = as_FloatRegister($src$$reg);
     loadStore(MacroAssembler(&cbuf), &MacroAssembler::str, src_reg, MacroAssembler::S,
        $mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}
 
-  enc_class aarch64_enc_strvD(vecX src, memory mem) %{
+  enc_class aarch64_enc_strvD(vecD src, memory mem) %{
     FloatRegister src_reg = as_FloatRegister($src$$reg);
     loadStore(MacroAssembler(&cbuf), &MacroAssembler::str, src_reg, MacroAssembler::D,
        $mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
@@ -5181,6 +5233,16 @@ operand vRegD()
 %{
   constraint(ALLOC_IN_RC(double_reg));
   match(RegD);
+
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vecD()
+%{
+  constraint(ALLOC_IN_RC(vectord_reg));
+  match(VecD);
 
   op_cost(0);
   format %{ %}
@@ -7400,6 +7462,96 @@ instruct countTrailingZerosL(iRegINoSp dst, iRegL src) %{
   %}
 
   ins_pipe(ialu_reg);
+%}
+
+//---------- Population Count Instructions -------------------------------------
+//
+
+instruct popCountI(iRegINoSp dst, iRegIorL2I src, vRegF tmp) %{
+  predicate(UsePopCountInstruction);
+  match(Set dst (PopCountI src));
+  effect(TEMP tmp);
+  ins_cost(INSN_COST * 13);
+
+  format %{ "movw   $src, $src\n\t"
+            "mov    $tmp, $src\t# vector (1D)\n\t"
+            "cnt    $tmp, $tmp\t# vector (8B)\n\t"
+            "addv   $tmp, $tmp\t# vector (8B)\n\t"
+            "mov    $dst, $tmp\t# vector (1D)" %}
+  ins_encode %{
+    __ movw($src$$Register, $src$$Register); // ensure top 32 bits 0
+    __ mov($tmp$$FloatRegister, __ T1D, 0, $src$$Register);
+    __ cnt($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
+    __ addv($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
+    __ mov($dst$$Register, $tmp$$FloatRegister, __ T1D, 0);
+  %}
+
+  ins_pipe(pipe_class_default);
+%}
+
+instruct popCountI_mem(iRegINoSp dst, memory mem, vRegF tmp) %{
+  predicate(UsePopCountInstruction);
+  match(Set dst (PopCountI (LoadI mem)));
+  effect(TEMP tmp);
+  ins_cost(INSN_COST * 13);
+
+  format %{ "ldrs   $tmp, $mem\n\t"
+            "cnt    $tmp, $tmp\t# vector (8B)\n\t"
+            "addv   $tmp, $tmp\t# vector (8B)\n\t"
+            "mov    $dst, $tmp\t# vector (1D)" %}
+  ins_encode %{
+    FloatRegister tmp_reg = as_FloatRegister($tmp$$reg);
+    loadStore(MacroAssembler(&cbuf), &MacroAssembler::ldrs, tmp_reg, $mem->opcode(),
+               as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
+    __ cnt($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
+    __ addv($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
+    __ mov($dst$$Register, $tmp$$FloatRegister, __ T1D, 0);
+  %}
+
+  ins_pipe(pipe_class_default);
+%}
+
+// Note: Long.bitCount(long) returns an int.
+instruct popCountL(iRegINoSp dst, iRegL src, vRegD tmp) %{
+  predicate(UsePopCountInstruction);
+  match(Set dst (PopCountL src));
+  effect(TEMP tmp);
+  ins_cost(INSN_COST * 13);
+
+  format %{ "mov    $tmp, $src\t# vector (1D)\n\t"
+            "cnt    $tmp, $tmp\t# vector (8B)\n\t"
+            "addv   $tmp, $tmp\t# vector (8B)\n\t"
+            "mov    $dst, $tmp\t# vector (1D)" %}
+  ins_encode %{
+    __ mov($tmp$$FloatRegister, __ T1D, 0, $src$$Register);
+    __ cnt($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
+    __ addv($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
+    __ mov($dst$$Register, $tmp$$FloatRegister, __ T1D, 0);
+  %}
+
+  ins_pipe(pipe_class_default);
+%}
+
+instruct popCountL_mem(iRegINoSp dst, memory mem, vRegD tmp) %{
+  predicate(UsePopCountInstruction);
+  match(Set dst (PopCountL (LoadL mem)));
+  effect(TEMP tmp);
+  ins_cost(INSN_COST * 13);
+
+  format %{ "ldrd   $tmp, $mem\n\t"
+            "cnt    $tmp, $tmp\t# vector (8B)\n\t"
+            "addv   $tmp, $tmp\t# vector (8B)\n\t"
+            "mov    $dst, $tmp\t# vector (1D)" %}
+  ins_encode %{
+    FloatRegister tmp_reg = as_FloatRegister($tmp$$reg);
+    loadStore(MacroAssembler(&cbuf), &MacroAssembler::ldrd, tmp_reg, $mem->opcode(),
+               as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
+    __ cnt($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
+    __ addv($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
+    __ mov($dst$$Register, $tmp$$FloatRegister, __ T1D, 0);
+  %}
+
+  ins_pipe(pipe_class_default);
 %}
 
 // ============================================================================
@@ -13194,7 +13346,7 @@ instruct tlsLoadP(thread_RegP dst)
 // ====================VECTOR INSTRUCTIONS=====================================
 
 // Load vector (32 bits)
-instruct loadV4(vecX dst, vmem mem)
+instruct loadV4(vecD dst, vmem mem)
 %{
   predicate(n->as_LoadVector()->memory_size() == 4);
   match(Set dst (LoadVector mem));
@@ -13205,7 +13357,7 @@ instruct loadV4(vecX dst, vmem mem)
 %}
 
 // Load vector (64 bits)
-instruct loadV8(vecX dst, vmem mem)
+instruct loadV8(vecD dst, vmem mem)
 %{
   predicate(n->as_LoadVector()->memory_size() == 8);
   match(Set dst (LoadVector mem));
@@ -13227,7 +13379,7 @@ instruct loadV16(vecX dst, vmem mem)
 %}
 
 // Store Vector (32 bits)
-instruct storeV4(vecX src, vmem mem)
+instruct storeV4(vecD src, vmem mem)
 %{
   predicate(n->as_StoreVector()->memory_size() == 4);
   match(Set mem (StoreVector mem src));
@@ -13238,7 +13390,7 @@ instruct storeV4(vecX src, vmem mem)
 %}
 
 // Store Vector (64 bits)
-instruct storeV8(vecX src, vmem mem)
+instruct storeV8(vecD src, vmem mem)
 %{
   predicate(n->as_StoreVector()->memory_size() == 8);
   match(Set mem (StoreVector mem src));
@@ -13259,8 +13411,22 @@ instruct storeV16(vecX src, vmem mem)
   ins_pipe(pipe_class_memory);
 %}
 
+instruct replicate8B(vecD dst, iRegIorL2I src)
+%{
+  predicate(n->as_Vector()->length() == 4 ||
+            n->as_Vector()->length() == 8);
+  match(Set dst (ReplicateB src));
+  ins_cost(INSN_COST);
+  format %{ "dup  $dst, $src\t# vector (8B)" %}
+  ins_encode %{
+    __ dup(as_FloatRegister($dst$$reg), __ T8B, as_Register($src$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct replicate16B(vecX dst, iRegIorL2I src)
 %{
+  predicate(n->as_Vector()->length() == 16);
   match(Set dst (ReplicateB src));
   ins_cost(INSN_COST);
   format %{ "dup  $dst, $src\t# vector (16B)" %}
@@ -13270,8 +13436,22 @@ instruct replicate16B(vecX dst, iRegIorL2I src)
   ins_pipe(pipe_class_default);
 %}
 
+instruct replicate8B_imm(vecD dst, immI con)
+%{
+  predicate(n->as_Vector()->length() == 4 ||
+            n->as_Vector()->length() == 8);
+  match(Set dst (ReplicateB con));
+  ins_cost(INSN_COST);
+  format %{ "movi  $dst, $con\t# vector(8B)" %}
+  ins_encode %{
+    __ mov(as_FloatRegister($dst$$reg), __ T8B, $con$$constant & 0xff);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct replicate16B_imm(vecX dst, immI con)
 %{
+  predicate(n->as_Vector()->length() == 16);
   match(Set dst (ReplicateB con));
   ins_cost(INSN_COST);
   format %{ "movi  $dst, $con\t# vector(16B)" %}
@@ -13281,8 +13461,22 @@ instruct replicate16B_imm(vecX dst, immI con)
   ins_pipe(pipe_class_default);
 %}
 
+instruct replicate4S(vecD dst, iRegIorL2I src)
+%{
+  predicate(n->as_Vector()->length() == 2 ||
+            n->as_Vector()->length() == 4);
+  match(Set dst (ReplicateS src));
+  ins_cost(INSN_COST);
+  format %{ "dup  $dst, $src\t# vector (4S)" %}
+  ins_encode %{
+    __ dup(as_FloatRegister($dst$$reg), __ T4H, as_Register($src$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct replicate8S(vecX dst, iRegIorL2I src)
 %{
+  predicate(n->as_Vector()->length() == 8);
   match(Set dst (ReplicateS src));
   ins_cost(INSN_COST);
   format %{ "dup  $dst, $src\t# vector (8S)" %}
@@ -13292,8 +13486,22 @@ instruct replicate8S(vecX dst, iRegIorL2I src)
   ins_pipe(pipe_class_default);
 %}
 
+instruct replicate4S_imm(vecD dst, immI con)
+%{
+  predicate(n->as_Vector()->length() == 2 ||
+            n->as_Vector()->length() == 4);
+  match(Set dst (ReplicateS con));
+  ins_cost(INSN_COST);
+  format %{ "movi  $dst, $con\t# vector(4H)" %}
+  ins_encode %{
+    __ mov(as_FloatRegister($dst$$reg), __ T4H, $con$$constant & 0xffff);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct replicate8S_imm(vecX dst, immI con)
 %{
+  predicate(n->as_Vector()->length() == 8);
   match(Set dst (ReplicateS con));
   ins_cost(INSN_COST);
   format %{ "movi  $dst, $con\t# vector(8H)" %}
@@ -13303,8 +13511,21 @@ instruct replicate8S_imm(vecX dst, immI con)
   ins_pipe(pipe_class_default);
 %}
 
+instruct replicate2I(vecD dst, iRegIorL2I src)
+%{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (ReplicateI src));
+  ins_cost(INSN_COST);
+  format %{ "dup  $dst, $src\t# vector (2I)" %}
+  ins_encode %{
+    __ dup(as_FloatRegister($dst$$reg), __ T2S, as_Register($src$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct replicate4I(vecX dst, iRegIorL2I src)
 %{
+  predicate(n->as_Vector()->length() == 4);
   match(Set dst (ReplicateI src));
   ins_cost(INSN_COST);
   format %{ "dup  $dst, $src\t# vector (4I)" %}
@@ -13314,8 +13535,21 @@ instruct replicate4I(vecX dst, iRegIorL2I src)
   ins_pipe(pipe_class_default);
 %}
 
+instruct replicate2I_imm(vecD dst, immI con)
+%{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (ReplicateI con));
+  ins_cost(INSN_COST);
+  format %{ "movi  $dst, $con\t# vector(2I)" %}
+  ins_encode %{
+    __ mov(as_FloatRegister($dst$$reg), __ T2S, $con$$constant);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct replicate4I_imm(vecX dst, immI con)
 %{
+  predicate(n->as_Vector()->length() == 4);
   match(Set dst (ReplicateI con));
   ins_cost(INSN_COST);
   format %{ "movi  $dst, $con\t# vector(4I)" %}
@@ -13327,6 +13561,7 @@ instruct replicate4I_imm(vecX dst, immI con)
 
 instruct replicate2L(vecX dst, iRegL src)
 %{
+  predicate(n->as_Vector()->length() == 2);
   match(Set dst (ReplicateL src));
   ins_cost(INSN_COST);
   format %{ "dup  $dst, $src\t# vector (2L)" %}
@@ -13338,6 +13573,7 @@ instruct replicate2L(vecX dst, iRegL src)
 
 instruct replicate2L_zero(vecX dst, immI0 zero)
 %{
+  predicate(n->as_Vector()->length() == 2);
   match(Set dst (ReplicateI zero));
   ins_cost(INSN_COST);
   format %{ "movi  $dst, $zero\t# vector(4I)" %}
@@ -13349,8 +13585,22 @@ instruct replicate2L_zero(vecX dst, immI0 zero)
   ins_pipe(pipe_class_default);
 %}
 
+instruct replicate2F(vecD dst, vRegF src)
+%{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (ReplicateF src));
+  ins_cost(INSN_COST);
+  format %{ "dup  $dst, $src\t# vector (2F)" %}
+  ins_encode %{
+    __ dup(as_FloatRegister($dst$$reg), __ T2S,
+           as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct replicate4F(vecX dst, vRegF src)
 %{
+  predicate(n->as_Vector()->length() == 4);
   match(Set dst (ReplicateF src));
   ins_cost(INSN_COST);
   format %{ "dup  $dst, $src\t# vector (4F)" %}
@@ -13363,6 +13613,7 @@ instruct replicate4F(vecX dst, vRegF src)
 
 instruct replicate2D(vecX dst, vRegD src)
 %{
+  predicate(n->as_Vector()->length() == 2);
   match(Set dst (ReplicateD src));
   ins_cost(INSN_COST);
   format %{ "dup  $dst, $src\t# vector (2D)" %}
@@ -13374,6 +13625,25 @@ instruct replicate2D(vecX dst, vRegD src)
 %}
 
 // ====================REDUCTION ARITHMETIC====================================
+
+instruct reduce_add2I(iRegINoSp dst, iRegIorL2I src1, vecD src2, iRegI tmp, iRegI tmp2)
+%{
+  match(Set dst (AddReductionVI src1 src2));
+  ins_cost(INSN_COST);
+  effect(TEMP tmp, TEMP tmp2);
+  format %{ "umov  $tmp, $src2, S, 0\n\t"
+            "umov  $tmp2, $src2, S, 1\n\t"
+            "addw  $dst, $src1, $tmp\n\t"
+            "addw  $dst, $dst, $tmp2\t add reduction2i"
+  %}
+  ins_encode %{
+    __ umov($tmp$$Register, as_FloatRegister($src2$$reg), __ S, 0);
+    __ umov($tmp2$$Register, as_FloatRegister($src2$$reg), __ S, 1);
+    __ addw($dst$$Register, $src1$$Register, $tmp$$Register);
+    __ addw($dst$$Register, $dst$$Register, $tmp2$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
 
 instruct reduce_add4I(iRegINoSp dst, iRegIorL2I src1, vecX src2, vecX tmp, iRegI tmp2)
 %{
@@ -13389,6 +13659,25 @@ instruct reduce_add4I(iRegINoSp dst, iRegIorL2I src1, vecX src2, vecX tmp, iRegI
             as_FloatRegister($src2$$reg));
     __ umov($tmp2$$Register, as_FloatRegister($tmp$$reg), __ S, 0);
     __ addw($dst$$Register, $tmp2$$Register, $src1$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct reduce_mul2I(iRegINoSp dst, iRegIorL2I src1, vecD src2, iRegI tmp)
+%{
+  match(Set dst (MulReductionVI src1 src2));
+  ins_cost(INSN_COST);
+  effect(TEMP tmp, TEMP dst);
+  format %{ "umov  $tmp, $src2, S, 0\n\t"
+            "mul   $dst, $tmp, $src1\n\t"
+            "umov  $tmp, $src2, S, 1\n\t"
+            "mul   $dst, $tmp, $dst\t mul reduction2i\n\t"
+  %}
+  ins_encode %{
+    __ umov($tmp$$Register, as_FloatRegister($src2$$reg), __ S, 0);
+    __ mul($dst$$Register, $tmp$$Register, $src1$$Register);
+    __ umov($tmp$$Register, as_FloatRegister($src2$$reg), __ S, 1);
+    __ mul($dst$$Register, $tmp$$Register, $dst$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -13414,6 +13703,26 @@ instruct reduce_mul4I(iRegINoSp dst, iRegIorL2I src1, vecX src2, vecX tmp, iRegI
     __ mul($dst$$Register, $tmp2$$Register, $src1$$Register);
     __ umov($tmp2$$Register, as_FloatRegister($tmp$$reg), __ S, 1);
     __ mul($dst$$Register, $tmp2$$Register, $dst$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct reduce_add2F(vRegF dst, vRegF src1, vecD src2, vecD tmp)
+%{
+  match(Set dst (AddReductionVF src1 src2));
+  ins_cost(INSN_COST);
+  effect(TEMP tmp, TEMP dst);
+  format %{ "fadds $dst, $src1, $src2\n\t"
+            "ins   $tmp, S, $src2, 0, 1\n\t"
+            "fadds $dst, $dst, $tmp\t add reduction2f"
+  %}
+  ins_encode %{
+    __ fadds(as_FloatRegister($dst$$reg),
+             as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
+    __ ins(as_FloatRegister($tmp$$reg), __ S,
+           as_FloatRegister($src2$$reg), 0, 1);
+    __ fadds(as_FloatRegister($dst$$reg),
+             as_FloatRegister($dst$$reg), as_FloatRegister($tmp$$reg));
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -13445,6 +13754,26 @@ instruct reduce_add4F(vRegF dst, vRegF src1, vecX src2, vecX tmp)
     __ ins(as_FloatRegister($tmp$$reg), __ S,
            as_FloatRegister($src2$$reg), 0, 3);
     __ fadds(as_FloatRegister($dst$$reg),
+             as_FloatRegister($dst$$reg), as_FloatRegister($tmp$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct reduce_mul2F(vRegF dst, vRegF src1, vecD src2, vecD tmp)
+%{
+  match(Set dst (MulReductionVF src1 src2));
+  ins_cost(INSN_COST);
+  effect(TEMP tmp, TEMP dst);
+  format %{ "fmuls $dst, $src1, $src2\n\t"
+            "ins   $tmp, S, $src2, 0, 1\n\t"
+            "fmuls $dst, $dst, $tmp\t add reduction4f"
+  %}
+  ins_encode %{
+    __ fmuls(as_FloatRegister($dst$$reg),
+             as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
+    __ ins(as_FloatRegister($tmp$$reg), __ S,
+           as_FloatRegister($src2$$reg), 0, 1);
+    __ fmuls(as_FloatRegister($dst$$reg),
              as_FloatRegister($dst$$reg), as_FloatRegister($tmp$$reg));
   %}
   ins_pipe(pipe_class_default);
@@ -13526,8 +13855,24 @@ instruct reduce_mul2D(vRegD dst, vRegD src1, vecX src2, vecX tmp)
 
 // --------------------------------- ADD --------------------------------------
 
+instruct vadd8B(vecD dst, vecD src1, vecD src2)
+%{
+  predicate(n->as_Vector()->length() == 4 ||
+            n->as_Vector()->length() == 8);
+  match(Set dst (AddVB src1 src2));
+  ins_cost(INSN_COST);
+  format %{ "addv  $dst,$src1,$src2\t# vector (8B)" %}
+  ins_encode %{
+    __ addv(as_FloatRegister($dst$$reg), __ T8B,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct vadd16B(vecX dst, vecX src1, vecX src2)
 %{
+  predicate(n->as_Vector()->length() == 16);
   match(Set dst (AddVB src1 src2));
   ins_cost(INSN_COST);
   format %{ "addv  $dst,$src1,$src2\t# vector (16B)" %}
@@ -13539,8 +13884,24 @@ instruct vadd16B(vecX dst, vecX src1, vecX src2)
   ins_pipe(pipe_class_default);
 %}
 
+instruct vadd4S(vecD dst, vecD src1, vecD src2)
+%{
+  predicate(n->as_Vector()->length() == 2 ||
+            n->as_Vector()->length() == 4);
+  match(Set dst (AddVS src1 src2));
+  ins_cost(INSN_COST);
+  format %{ "addv  $dst,$src1,$src2\t# vector (4H)" %}
+  ins_encode %{
+    __ addv(as_FloatRegister($dst$$reg), __ T4H,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct vadd8S(vecX dst, vecX src1, vecX src2)
 %{
+  predicate(n->as_Vector()->length() == 8);
   match(Set dst (AddVS src1 src2));
   ins_cost(INSN_COST);
   format %{ "addv  $dst,$src1,$src2\t# vector (8H)" %}
@@ -13552,8 +13913,23 @@ instruct vadd8S(vecX dst, vecX src1, vecX src2)
   ins_pipe(pipe_class_default);
 %}
 
+instruct vadd2I(vecD dst, vecD src1, vecD src2)
+%{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (AddVI src1 src2));
+  ins_cost(INSN_COST);
+  format %{ "addv  $dst,$src1,$src2\t# vector (2S)" %}
+  ins_encode %{
+    __ addv(as_FloatRegister($dst$$reg), __ T2S,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct vadd4I(vecX dst, vecX src1, vecX src2)
 %{
+  predicate(n->as_Vector()->length() == 4);
   match(Set dst (AddVI src1 src2));
   ins_cost(INSN_COST);
   format %{ "addv  $dst,$src1,$src2\t# vector (4S)" %}
@@ -13567,6 +13943,7 @@ instruct vadd4I(vecX dst, vecX src1, vecX src2)
 
 instruct vadd2L(vecX dst, vecX src1, vecX src2)
 %{
+  predicate(n->as_Vector()->length() == 2);
   match(Set dst (AddVL src1 src2));
   ins_cost(INSN_COST);
   format %{ "addv  $dst,$src1,$src2\t# vector (2L)" %}
@@ -13578,8 +13955,23 @@ instruct vadd2L(vecX dst, vecX src1, vecX src2)
   ins_pipe(pipe_class_default);
 %}
 
+instruct vadd2F(vecD dst, vecD src1, vecD src2)
+%{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (AddVF src1 src2));
+  ins_cost(INSN_COST);
+  format %{ "fadd  $dst,$src1,$src2\t# vector (2S)" %}
+  ins_encode %{
+    __ fadd(as_FloatRegister($dst$$reg), __ T2S,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct vadd4F(vecX dst, vecX src1, vecX src2)
 %{
+  predicate(n->as_Vector()->length() == 4);
   match(Set dst (AddVF src1 src2));
   ins_cost(INSN_COST);
   format %{ "fadd  $dst,$src1,$src2\t# vector (4S)" %}
@@ -13606,8 +13998,24 @@ instruct vadd2D(vecX dst, vecX src1, vecX src2)
 
 // --------------------------------- SUB --------------------------------------
 
+instruct vsub8B(vecD dst, vecD src1, vecD src2)
+%{
+  predicate(n->as_Vector()->length() == 4 ||
+            n->as_Vector()->length() == 8);
+  match(Set dst (SubVB src1 src2));
+  ins_cost(INSN_COST);
+  format %{ "subv  $dst,$src1,$src2\t# vector (8B)" %}
+  ins_encode %{
+    __ subv(as_FloatRegister($dst$$reg), __ T8B,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct vsub16B(vecX dst, vecX src1, vecX src2)
 %{
+  predicate(n->as_Vector()->length() == 16);
   match(Set dst (SubVB src1 src2));
   ins_cost(INSN_COST);
   format %{ "subv  $dst,$src1,$src2\t# vector (16B)" %}
@@ -13619,8 +14027,24 @@ instruct vsub16B(vecX dst, vecX src1, vecX src2)
   ins_pipe(pipe_class_default);
 %}
 
+instruct vsub4S(vecD dst, vecD src1, vecD src2)
+%{
+  predicate(n->as_Vector()->length() == 2 ||
+            n->as_Vector()->length() == 4);
+  match(Set dst (SubVS src1 src2));
+  ins_cost(INSN_COST);
+  format %{ "subv  $dst,$src1,$src2\t# vector (4H)" %}
+  ins_encode %{
+    __ subv(as_FloatRegister($dst$$reg), __ T4H,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct vsub8S(vecX dst, vecX src1, vecX src2)
 %{
+  predicate(n->as_Vector()->length() == 8);
   match(Set dst (SubVS src1 src2));
   ins_cost(INSN_COST);
   format %{ "subv  $dst,$src1,$src2\t# vector (8H)" %}
@@ -13632,8 +14056,23 @@ instruct vsub8S(vecX dst, vecX src1, vecX src2)
   ins_pipe(pipe_class_default);
 %}
 
+instruct vsub2I(vecD dst, vecD src1, vecD src2)
+%{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (SubVI src1 src2));
+  ins_cost(INSN_COST);
+  format %{ "subv  $dst,$src1,$src2\t# vector (2S)" %}
+  ins_encode %{
+    __ subv(as_FloatRegister($dst$$reg), __ T2S,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct vsub4I(vecX dst, vecX src1, vecX src2)
 %{
+  predicate(n->as_Vector()->length() == 4);
   match(Set dst (SubVI src1 src2));
   ins_cost(INSN_COST);
   format %{ "subv  $dst,$src1,$src2\t# vector (4S)" %}
@@ -13647,6 +14086,7 @@ instruct vsub4I(vecX dst, vecX src1, vecX src2)
 
 instruct vsub2L(vecX dst, vecX src1, vecX src2)
 %{
+  predicate(n->as_Vector()->length() == 2);
   match(Set dst (SubVL src1 src2));
   ins_cost(INSN_COST);
   format %{ "subv  $dst,$src1,$src2\t# vector (2L)" %}
@@ -13658,8 +14098,23 @@ instruct vsub2L(vecX dst, vecX src1, vecX src2)
   ins_pipe(pipe_class_default);
 %}
 
+instruct vsub2F(vecD dst, vecD src1, vecD src2)
+%{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (AddVF src1 src2));
+  ins_cost(INSN_COST);
+  format %{ "fsub  $dst,$src1,$src2\t# vector (2S)" %}
+  ins_encode %{
+    __ fsub(as_FloatRegister($dst$$reg), __ T2S,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct vsub4F(vecX dst, vecX src1, vecX src2)
 %{
+  predicate(n->as_Vector()->length() == 4);
   match(Set dst (SubVF src1 src2));
   ins_cost(INSN_COST);
   format %{ "fsub  $dst,$src1,$src2\t# vector (4S)" %}
@@ -13673,6 +14128,7 @@ instruct vsub4F(vecX dst, vecX src1, vecX src2)
 
 instruct vsub2D(vecX dst, vecX src1, vecX src2)
 %{
+  predicate(n->as_Vector()->length() == 2);
   match(Set dst (SubVD src1 src2));
   ins_cost(INSN_COST);
   format %{ "fsub  $dst,$src1,$src2\t# vector (2D)" %}
@@ -13686,8 +14142,24 @@ instruct vsub2D(vecX dst, vecX src1, vecX src2)
 
 // --------------------------------- MUL --------------------------------------
 
+instruct vmul4S(vecD dst, vecD src1, vecD src2)
+%{
+  predicate(n->as_Vector()->length() == 2 ||
+            n->as_Vector()->length() == 4);
+  match(Set dst (MulVS src1 src2));
+  ins_cost(INSN_COST);
+  format %{ "mulv  $dst,$src1,$src2\t# vector (4H)" %}
+  ins_encode %{
+    __ mulv(as_FloatRegister($dst$$reg), __ T4H,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct vmul8S(vecX dst, vecX src1, vecX src2)
 %{
+  predicate(n->as_Vector()->length() == 8);
   match(Set dst (MulVS src1 src2));
   ins_cost(INSN_COST);
   format %{ "mulv  $dst,$src1,$src2\t# vector (8H)" %}
@@ -13699,8 +14171,23 @@ instruct vmul8S(vecX dst, vecX src1, vecX src2)
   ins_pipe(pipe_class_default);
 %}
 
+instruct vmul2I(vecD dst, vecD src1, vecD src2)
+%{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (MulVI src1 src2));
+  ins_cost(INSN_COST);
+  format %{ "mulv  $dst,$src1,$src2\t# vector (2S)" %}
+  ins_encode %{
+    __ mulv(as_FloatRegister($dst$$reg), __ T2S,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct vmul4I(vecX dst, vecX src1, vecX src2)
 %{
+  predicate(n->as_Vector()->length() == 4);
   match(Set dst (MulVI src1 src2));
   ins_cost(INSN_COST);
   format %{ "mulv  $dst,$src1,$src2\t# vector (4S)" %}
@@ -13712,8 +14199,23 @@ instruct vmul4I(vecX dst, vecX src1, vecX src2)
   ins_pipe(pipe_class_default);
 %}
 
+instruct vmul2F(vecD dst, vecD src1, vecD src2)
+%{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (MulVF src1 src2));
+  ins_cost(INSN_COST);
+  format %{ "fmul  $dst,$src1,$src2\t# vector (2S)" %}
+  ins_encode %{
+    __ fmul(as_FloatRegister($dst$$reg), __ T2S,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct vmul4F(vecX dst, vecX src1, vecX src2)
 %{
+  predicate(n->as_Vector()->length() == 4);
   match(Set dst (MulVF src1 src2));
   ins_cost(INSN_COST);
   format %{ "fmul  $dst,$src1,$src2\t# vector (4S)" %}
@@ -13727,6 +14229,7 @@ instruct vmul4F(vecX dst, vecX src1, vecX src2)
 
 instruct vmul2D(vecX dst, vecX src1, vecX src2)
 %{
+  predicate(n->as_Vector()->length() == 2);
   match(Set dst (MulVD src1 src2));
   ins_cost(INSN_COST);
   format %{ "fmul  $dst,$src1,$src2\t# vector (2D)" %}
@@ -13740,8 +14243,23 @@ instruct vmul2D(vecX dst, vecX src1, vecX src2)
 
 // --------------------------------- DIV --------------------------------------
 
+instruct vdiv2F(vecD dst, vecD src1, vecD src2)
+%{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (DivVF src1 src2));
+  ins_cost(INSN_COST);
+  format %{ "fdiv  $dst,$src1,$src2\t# vector (2S)" %}
+  ins_encode %{
+    __ fdiv(as_FloatRegister($dst$$reg), __ T2S,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct vdiv4F(vecX dst, vecX src1, vecX src2)
 %{
+  predicate(n->as_Vector()->length() == 4);
   match(Set dst (DivVF src1 src2));
   ins_cost(INSN_COST);
   format %{ "fdiv  $dst,$src1,$src2\t# vector (4S)" %}
@@ -13755,6 +14273,7 @@ instruct vdiv4F(vecX dst, vecX src1, vecX src2)
 
 instruct vdiv2D(vecX dst, vecX src1, vecX src2)
 %{
+  predicate(n->as_Vector()->length() == 2);
   match(Set dst (DivVD src1 src2));
   ins_cost(INSN_COST);
   format %{ "fdiv  $dst,$src1,$src2\t# vector (2D)" %}
@@ -13768,8 +14287,24 @@ instruct vdiv2D(vecX dst, vecX src1, vecX src2)
 
 // --------------------------------- AND --------------------------------------
 
+instruct vand8B(vecD dst, vecD src1, vecD src2)
+%{
+  predicate(n->as_Vector()->length_in_bytes() == 4 ||
+            n->as_Vector()->length_in_bytes() == 8);
+  match(Set dst (AndV src1 src2));
+  ins_cost(INSN_COST);
+  format %{ "and  $dst,$src1,$src2\t# vector (8B)" %}
+  ins_encode %{
+    __ andr(as_FloatRegister($dst$$reg), __ T8B,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct vand16B(vecX dst, vecX src1, vecX src2)
 %{
+  predicate(n->as_Vector()->length_in_bytes() == 16);
   match(Set dst (AndV src1 src2));
   ins_cost(INSN_COST);
   format %{ "and  $dst,$src1,$src2\t# vector (16B)" %}
@@ -13783,8 +14318,24 @@ instruct vand16B(vecX dst, vecX src1, vecX src2)
 
 // --------------------------------- OR ---------------------------------------
 
+instruct vor8B(vecD dst, vecD src1, vecD src2)
+%{
+  predicate(n->as_Vector()->length_in_bytes() == 4 ||
+            n->as_Vector()->length_in_bytes() == 8);
+  match(Set dst (OrV src1 src2));
+  ins_cost(INSN_COST);
+  format %{ "and  $dst,$src1,$src2\t# vector (8B)" %}
+  ins_encode %{
+    __ orr(as_FloatRegister($dst$$reg), __ T8B,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct vor16B(vecX dst, vecX src1, vecX src2)
 %{
+  predicate(n->as_Vector()->length_in_bytes() == 16);
   match(Set dst (OrV src1 src2));
   ins_cost(INSN_COST);
   format %{ "orr  $dst,$src1,$src2\t# vector (16B)" %}
@@ -13798,8 +14349,24 @@ instruct vor16B(vecX dst, vecX src1, vecX src2)
 
 // --------------------------------- XOR --------------------------------------
 
+instruct vxor8B(vecD dst, vecD src1, vecD src2)
+%{
+  predicate(n->as_Vector()->length_in_bytes() == 4 ||
+            n->as_Vector()->length_in_bytes() == 8);
+  match(Set dst (XorV src1 src2));
+  ins_cost(INSN_COST);
+  format %{ "xor  $dst,$src1,$src2\t# vector (8B)" %}
+  ins_encode %{
+    __ eor(as_FloatRegister($dst$$reg), __ T8B,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct vxor16B(vecX dst, vecX src1, vecX src2)
 %{
+  predicate(n->as_Vector()->length_in_bytes() == 16);
   match(Set dst (XorV src1 src2));
   ins_cost(INSN_COST);
   format %{ "xor  $dst,$src1,$src2\t# vector (16B)" %}
@@ -13833,7 +14400,23 @@ instruct vshiftcntR(vecX dst, iRegIorL2I cnt) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct vsll8B(vecD dst, vecD src, vecX shift) %{
+  predicate(n->as_Vector()->length() == 4 ||
+            n->as_Vector()->length() == 8);
+  match(Set dst (LShiftVB src shift));
+  match(Set dst (RShiftVB src shift));
+  ins_cost(INSN_COST);
+  format %{ "sshl  $dst,$src,$shift\t# vector (8B)" %}
+  ins_encode %{
+    __ sshl(as_FloatRegister($dst$$reg), __ T8B,
+            as_FloatRegister($src$$reg),
+            as_FloatRegister($shift$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct vsll16B(vecX dst, vecX src, vecX shift) %{
+  predicate(n->as_Vector()->length() == 16);
   match(Set dst (LShiftVB src shift));
   match(Set dst (RShiftVB src shift));
   ins_cost(INSN_COST);
@@ -13846,7 +14429,22 @@ instruct vsll16B(vecX dst, vecX src, vecX shift) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct vsrl8B(vecD dst, vecD src, vecX shift) %{
+  predicate(n->as_Vector()->length() == 4 ||
+            n->as_Vector()->length() == 8);
+  match(Set dst (URShiftVB src shift));
+  ins_cost(INSN_COST);
+  format %{ "ushl  $dst,$src,$shift\t# vector (8B)" %}
+  ins_encode %{
+    __ ushl(as_FloatRegister($dst$$reg), __ T8B,
+            as_FloatRegister($src$$reg),
+            as_FloatRegister($shift$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct vsrl16B(vecX dst, vecX src, vecX shift) %{
+  predicate(n->as_Vector()->length() == 16);
   match(Set dst (URShiftVB src shift));
   ins_cost(INSN_COST);
   format %{ "ushl  $dst,$src,$shift\t# vector (16B)" %}
@@ -13858,7 +14456,28 @@ instruct vsrl16B(vecX dst, vecX src, vecX shift) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct vsll8B_imm(vecD dst, vecD src, immI shift) %{
+  predicate(n->as_Vector()->length() == 4 ||
+            n->as_Vector()->length() == 8);
+  match(Set dst (LShiftVB src shift));
+  ins_cost(INSN_COST);
+  format %{ "shl    $dst, $src, $shift\t# vector (8B)" %}
+  ins_encode %{
+    int sh = (int)$shift$$constant & 31;
+    if (sh >= 8) {
+      __ eor(as_FloatRegister($dst$$reg), __ T8B,
+             as_FloatRegister($src$$reg),
+             as_FloatRegister($src$$reg));
+    } else {
+      __ shl(as_FloatRegister($dst$$reg), __ T8B,
+             as_FloatRegister($src$$reg), sh);
+    }
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct vsll16B_imm(vecX dst, vecX src, immI shift) %{
+  predicate(n->as_Vector()->length() == 16);
   match(Set dst (LShiftVB src shift));
   ins_cost(INSN_COST);
   format %{ "shl    $dst, $src, $shift\t# vector (16B)" %}
@@ -13876,7 +14495,24 @@ instruct vsll16B_imm(vecX dst, vecX src, immI shift) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct vsra8B_imm(vecD dst, vecD src, immI shift) %{
+  predicate(n->as_Vector()->length() == 4 ||
+            n->as_Vector()->length() == 8);
+  match(Set dst (RShiftVB src shift));
+  ins_cost(INSN_COST);
+  format %{ "sshr    $dst, $src, $shift\t# vector (8B)" %}
+  ins_encode %{
+    int sh = (int)$shift$$constant & 31;
+    if (sh >= 8) sh = 7;
+    sh = -sh & 7;
+    __ sshr(as_FloatRegister($dst$$reg), __ T8B,
+           as_FloatRegister($src$$reg), sh);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct vsra16B_imm(vecX dst, vecX src, immI shift) %{
+  predicate(n->as_Vector()->length() == 16);
   match(Set dst (RShiftVB src shift));
   ins_cost(INSN_COST);
   format %{ "sshr    $dst, $src, $shift\t# vector (16B)" %}
@@ -13890,7 +14526,28 @@ instruct vsra16B_imm(vecX dst, vecX src, immI shift) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct vsrl8B_imm(vecD dst, vecD src, immI shift) %{
+  predicate(n->as_Vector()->length() == 4 ||
+            n->as_Vector()->length() == 8);
+  match(Set dst (URShiftVB src shift));
+  ins_cost(INSN_COST);
+  format %{ "ushr    $dst, $src, $shift\t# vector (8B)" %}
+  ins_encode %{
+    int sh = (int)$shift$$constant & 31;
+    if (sh >= 8) {
+      __ eor(as_FloatRegister($dst$$reg), __ T8B,
+             as_FloatRegister($src$$reg),
+             as_FloatRegister($src$$reg));
+    } else {
+      __ ushr(as_FloatRegister($dst$$reg), __ T8B,
+             as_FloatRegister($src$$reg), -sh & 7);
+    }
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct vsrl16B_imm(vecX dst, vecX src, immI shift) %{
+  predicate(n->as_Vector()->length() == 16);
   match(Set dst (URShiftVB src shift));
   ins_cost(INSN_COST);
   format %{ "ushr    $dst, $src, $shift\t# vector (16B)" %}
@@ -13908,7 +14565,23 @@ instruct vsrl16B_imm(vecX dst, vecX src, immI shift) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct vsll4S(vecD dst, vecD src, vecX shift) %{
+  predicate(n->as_Vector()->length() == 2 ||
+            n->as_Vector()->length() == 4);
+  match(Set dst (LShiftVS src shift));
+  match(Set dst (RShiftVS src shift));
+  ins_cost(INSN_COST);
+  format %{ "sshl  $dst,$src,$shift\t# vector (4H)" %}
+  ins_encode %{
+    __ sshl(as_FloatRegister($dst$$reg), __ T4H,
+            as_FloatRegister($src$$reg),
+            as_FloatRegister($shift$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct vsll8S(vecX dst, vecX src, vecX shift) %{
+  predicate(n->as_Vector()->length() == 8);
   match(Set dst (LShiftVS src shift));
   match(Set dst (RShiftVS src shift));
   ins_cost(INSN_COST);
@@ -13921,7 +14594,22 @@ instruct vsll8S(vecX dst, vecX src, vecX shift) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct vsrl4S(vecD dst, vecD src, vecX shift) %{
+  predicate(n->as_Vector()->length() == 2 ||
+            n->as_Vector()->length() == 4);
+  match(Set dst (URShiftVS src shift));
+  ins_cost(INSN_COST);
+  format %{ "ushl  $dst,$src,$shift\t# vector (4H)" %}
+  ins_encode %{
+    __ ushl(as_FloatRegister($dst$$reg), __ T4H,
+            as_FloatRegister($src$$reg),
+            as_FloatRegister($shift$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct vsrl8S(vecX dst, vecX src, vecX shift) %{
+  predicate(n->as_Vector()->length() == 8);
   match(Set dst (URShiftVS src shift));
   ins_cost(INSN_COST);
   format %{ "ushl  $dst,$src,$shift\t# vector (8H)" %}
@@ -13933,7 +14621,28 @@ instruct vsrl8S(vecX dst, vecX src, vecX shift) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct vsll4S_imm(vecD dst, vecD src, immI shift) %{
+  predicate(n->as_Vector()->length() == 2 ||
+            n->as_Vector()->length() == 4);
+  match(Set dst (LShiftVS src shift));
+  ins_cost(INSN_COST);
+  format %{ "shl    $dst, $src, $shift\t# vector (4H)" %}
+  ins_encode %{
+    int sh = (int)$shift$$constant & 31;
+    if (sh >= 16) {
+      __ eor(as_FloatRegister($dst$$reg), __ T8B,
+             as_FloatRegister($src$$reg),
+             as_FloatRegister($src$$reg));
+    } else {
+      __ shl(as_FloatRegister($dst$$reg), __ T4H,
+             as_FloatRegister($src$$reg), sh);
+    }
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct vsll8S_imm(vecX dst, vecX src, immI shift) %{
+  predicate(n->as_Vector()->length() == 8);
   match(Set dst (LShiftVS src shift));
   ins_cost(INSN_COST);
   format %{ "shl    $dst, $src, $shift\t# vector (8H)" %}
@@ -13951,7 +14660,24 @@ instruct vsll8S_imm(vecX dst, vecX src, immI shift) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct vsra4S_imm(vecD dst, vecD src, immI shift) %{
+  predicate(n->as_Vector()->length() == 2 ||
+            n->as_Vector()->length() == 4);
+  match(Set dst (RShiftVS src shift));
+  ins_cost(INSN_COST);
+  format %{ "sshr    $dst, $src, $shift\t# vector (4H)" %}
+  ins_encode %{
+    int sh = (int)$shift$$constant & 31;
+    if (sh >= 16) sh = 15;
+    sh = -sh & 15;
+    __ sshr(as_FloatRegister($dst$$reg), __ T4H,
+           as_FloatRegister($src$$reg), sh);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct vsra8S_imm(vecX dst, vecX src, immI shift) %{
+  predicate(n->as_Vector()->length() == 8);
   match(Set dst (RShiftVS src shift));
   ins_cost(INSN_COST);
   format %{ "sshr    $dst, $src, $shift\t# vector (8H)" %}
@@ -13965,7 +14691,28 @@ instruct vsra8S_imm(vecX dst, vecX src, immI shift) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct vsrl4S_imm(vecD dst, vecD src, immI shift) %{
+  predicate(n->as_Vector()->length() == 2 ||
+            n->as_Vector()->length() == 4);
+  match(Set dst (URShiftVS src shift));
+  ins_cost(INSN_COST);
+  format %{ "ushr    $dst, $src, $shift\t# vector (4H)" %}
+  ins_encode %{
+    int sh = (int)$shift$$constant & 31;
+    if (sh >= 16) {
+      __ eor(as_FloatRegister($dst$$reg), __ T8B,
+             as_FloatRegister($src$$reg),
+             as_FloatRegister($src$$reg));
+    } else {
+      __ ushr(as_FloatRegister($dst$$reg), __ T4H,
+             as_FloatRegister($src$$reg), -sh & 15);
+    }
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct vsrl8S_imm(vecX dst, vecX src, immI shift) %{
+  predicate(n->as_Vector()->length() == 8);
   match(Set dst (URShiftVS src shift));
   ins_cost(INSN_COST);
   format %{ "ushr    $dst, $src, $shift\t# vector (8H)" %}
@@ -13983,7 +14730,22 @@ instruct vsrl8S_imm(vecX dst, vecX src, immI shift) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct vsll2I(vecD dst, vecD src, vecX shift) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (LShiftVI src shift));
+  match(Set dst (RShiftVI src shift));
+  ins_cost(INSN_COST);
+  format %{ "sshl  $dst,$src,$shift\t# vector (2S)" %}
+  ins_encode %{
+    __ sshl(as_FloatRegister($dst$$reg), __ T2S,
+            as_FloatRegister($src$$reg),
+            as_FloatRegister($shift$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct vsll4I(vecX dst, vecX src, vecX shift) %{
+  predicate(n->as_Vector()->length() == 4);
   match(Set dst (LShiftVI src shift));
   match(Set dst (RShiftVI src shift));
   ins_cost(INSN_COST);
@@ -13996,7 +14758,21 @@ instruct vsll4I(vecX dst, vecX src, vecX shift) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct vsrl2I(vecD dst, vecD src, vecX shift) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (URShiftVI src shift));
+  ins_cost(INSN_COST);
+  format %{ "ushl  $dst,$src,$shift\t# vector (2S)" %}
+  ins_encode %{
+    __ ushl(as_FloatRegister($dst$$reg), __ T2S,
+            as_FloatRegister($src$$reg),
+            as_FloatRegister($shift$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct vsrl4I(vecX dst, vecX src, vecX shift) %{
+  predicate(n->as_Vector()->length() == 4);
   match(Set dst (URShiftVI src shift));
   ins_cost(INSN_COST);
   format %{ "ushl  $dst,$src,$shift\t# vector (4S)" %}
@@ -14008,7 +14784,21 @@ instruct vsrl4I(vecX dst, vecX src, vecX shift) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct vsll2I_imm(vecD dst, vecD src, immI shift) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (LShiftVI src shift));
+  ins_cost(INSN_COST);
+  format %{ "shl    $dst, $src, $shift\t# vector (2S)" %}
+  ins_encode %{
+    __ shl(as_FloatRegister($dst$$reg), __ T2S,
+           as_FloatRegister($src$$reg),
+           (int)$shift$$constant & 31);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct vsll4I_imm(vecX dst, vecX src, immI shift) %{
+  predicate(n->as_Vector()->length() == 4);
   match(Set dst (LShiftVI src shift));
   ins_cost(INSN_COST);
   format %{ "shl    $dst, $src, $shift\t# vector (4S)" %}
@@ -14020,7 +14810,21 @@ instruct vsll4I_imm(vecX dst, vecX src, immI shift) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct vsra2I_imm(vecD dst, vecD src, immI shift) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (RShiftVI src shift));
+  ins_cost(INSN_COST);
+  format %{ "sshr    $dst, $src, $shift\t# vector (2S)" %}
+  ins_encode %{
+    __ sshr(as_FloatRegister($dst$$reg), __ T2S,
+            as_FloatRegister($src$$reg),
+            -(int)$shift$$constant & 31);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct vsra4I_imm(vecX dst, vecX src, immI shift) %{
+  predicate(n->as_Vector()->length() == 4);
   match(Set dst (RShiftVI src shift));
   ins_cost(INSN_COST);
   format %{ "sshr    $dst, $src, $shift\t# vector (4S)" %}
@@ -14032,7 +14836,21 @@ instruct vsra4I_imm(vecX dst, vecX src, immI shift) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct vsrl2I_imm(vecD dst, vecD src, immI shift) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (URShiftVI src shift));
+  ins_cost(INSN_COST);
+  format %{ "ushr    $dst, $src, $shift\t# vector (2S)" %}
+  ins_encode %{
+    __ ushr(as_FloatRegister($dst$$reg), __ T2S,
+            as_FloatRegister($src$$reg),
+            -(int)$shift$$constant & 31);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct vsrl4I_imm(vecX dst, vecX src, immI shift) %{
+  predicate(n->as_Vector()->length() == 4);
   match(Set dst (URShiftVI src shift));
   ins_cost(INSN_COST);
   format %{ "ushr    $dst, $src, $shift\t# vector (4S)" %}
@@ -14045,6 +14863,7 @@ instruct vsrl4I_imm(vecX dst, vecX src, immI shift) %{
 %}
 
 instruct vsll2L(vecX dst, vecX src, vecX shift) %{
+  predicate(n->as_Vector()->length() == 2);
   match(Set dst (LShiftVL src shift));
   match(Set dst (RShiftVL src shift));
   ins_cost(INSN_COST);
@@ -14058,6 +14877,7 @@ instruct vsll2L(vecX dst, vecX src, vecX shift) %{
 %}
 
 instruct vsrl2L(vecX dst, vecX src, vecX shift) %{
+  predicate(n->as_Vector()->length() == 2);
   match(Set dst (URShiftVL src shift));
   ins_cost(INSN_COST);
   format %{ "ushl  $dst,$src,$shift\t# vector (2D)" %}
@@ -14070,6 +14890,7 @@ instruct vsrl2L(vecX dst, vecX src, vecX shift) %{
 %}
 
 instruct vsll2L_imm(vecX dst, vecX src, immI shift) %{
+  predicate(n->as_Vector()->length() == 2);
   match(Set dst (LShiftVL src shift));
   ins_cost(INSN_COST);
   format %{ "shl    $dst, $src, $shift\t# vector (2D)" %}
@@ -14082,6 +14903,7 @@ instruct vsll2L_imm(vecX dst, vecX src, immI shift) %{
 %}
 
 instruct vsra2L_imm(vecX dst, vecX src, immI shift) %{
+  predicate(n->as_Vector()->length() == 2);
   match(Set dst (RShiftVL src shift));
   ins_cost(INSN_COST);
   format %{ "sshr    $dst, $src, $shift\t# vector (2D)" %}
@@ -14094,6 +14916,7 @@ instruct vsra2L_imm(vecX dst, vecX src, immI shift) %{
 %}
 
 instruct vsrl2L_imm(vecX dst, vecX src, immI shift) %{
+  predicate(n->as_Vector()->length() == 2);
   match(Set dst (URShiftVL src shift));
   ins_cost(INSN_COST);
   format %{ "ushr    $dst, $src, $shift\t# vector (2D)" %}
