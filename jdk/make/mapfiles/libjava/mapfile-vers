@@ -166,11 +166,12 @@ SUNWprivate_1.1 {
 		Java_java_lang_Package_getSystemPackage0;
 		Java_java_lang_Package_getSystemPackages0;
 		Java_java_lang_ProcessEnvironment_environ;
-		Java_java_lang_ProcessHandleImpl_getCurrentPid0;
-		Java_java_lang_ProcessHandleImpl_parent0;
-		Java_java_lang_ProcessHandleImpl_isAlive0;
-		Java_java_lang_ProcessHandleImpl_getProcessPids0;
 		Java_java_lang_ProcessHandleImpl_destroy0;
+		Java_java_lang_ProcessHandleImpl_getCurrentPid0;
+		Java_java_lang_ProcessHandleImpl_getProcessPids0;
+		Java_java_lang_ProcessHandleImpl_initNative;
+		Java_java_lang_ProcessHandleImpl_isAlive0;
+		Java_java_lang_ProcessHandleImpl_parent0;
 		Java_java_lang_ProcessHandleImpl_waitForProcessExit0;
 		Java_java_lang_ProcessHandleImpl_00024Info_initIDs;
 		Java_java_lang_ProcessHandleImpl_00024Info_info0;
