@@ -36,6 +36,7 @@ import sun.invoke.empty.Empty;
 import sun.invoke.util.ValueConversions;
 import sun.invoke.util.VerifyType;
 import sun.invoke.util.Wrapper;
+import jdk.internal.HotSpotIntrinsicCandidate;
 import sun.reflect.CallerSensitive;
 import sun.reflect.Reflection;
 import static java.lang.invoke.LambdaForm.*;
@@ -709,6 +710,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
     // Intrinsified by C2. Counters are used during parsing to calculate branch frequencies.
     @LambdaForm.Hidden
+    @jdk.internal.HotSpotIntrinsicCandidate
     static
     boolean profileBoolean(boolean result, int[] counters) {
         // Profile is int[2] where [0] and [1] correspond to false and true occurrences respectively.
@@ -724,6 +726,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
     // Intrinsified by C2. Returns true if obj is a compile-time constant.
     @LambdaForm.Hidden
+    @jdk.internal.HotSpotIntrinsicCandidate
     static
     boolean isCompileConstant(Object obj) {
         return false;
