@@ -69,7 +69,7 @@ import sun.security.util.Debug;
  *
  * <pre>
  *      SecureRandom random = new SecureRandom();
- *      byte bytes[] = new byte[20];
+ *      byte[] bytes = new byte[20];
  *      random.nextBytes(bytes);
  * </pre>
  *
@@ -77,7 +77,7 @@ import sun.security.util.Debug;
  * to generate a given number of seed bytes (to seed other random number
  * generators, for example):
  * <pre>
- *      byte seed[] = random.generateSeed(20);
+ *      byte[] seed = random.generateSeed(20);
  * </pre>
  *
  * Note: Depending on the implementation, the {@code generateSeed} and
@@ -186,7 +186,7 @@ public class SecureRandom extends java.util.Random {
      *
      * @param seed the seed.
      */
-    public SecureRandom(byte seed[]) {
+    public SecureRandom(byte[] seed) {
         super(0);
         getDefaultPRNG(true, seed);
     }
@@ -486,7 +486,7 @@ public class SecureRandom extends java.util.Random {
     @Override
     final protected int next(int numBits) {
         int numBytes = (numBits+7)/8;
-        byte b[] = new byte[numBytes];
+        byte[] b = new byte[numBytes];
         int next = 0;
 
         nextBytes(b);

@@ -96,11 +96,6 @@ final class SliceOps {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private static <T> IntFunction<T[]> castingArray() {
-        return size -> (T[]) new Object[size];
-    }
-
     /**
      * Appends a "slice" operation to the provided stream.  The slice operation
      * may be may be skip-only, limit-only, or skip-and-limit.
@@ -151,7 +146,7 @@ final class SliceOps {
                     //     cancellation will be more aggressive cancelling later tasks
                     //     if the target slice size has been reached from a given task,
                     //     cancellation should also clear local results if any
-                    return new SliceTask<>(this, helper, spliterator, castingArray(), skip, limit).
+                    return new SliceTask<>(this, helper, spliterator, Nodes.castingArray(), skip, limit).
                             invoke().spliterator();
                 }
             }

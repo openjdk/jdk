@@ -54,9 +54,7 @@ public class ThresholdNotificationsTest implements NotificationListener {
 
     public static void main(String[] args) {
         for (BlobType bt : BlobType.getAvailable()) {
-            if (CodeCacheUtils.isCodeHeapPredictable(bt)) {
-                new ThresholdNotificationsTest(bt).runTest();
-            }
+            new ThresholdNotificationsTest(bt).runTest();
         }
     }
 
@@ -92,7 +90,9 @@ public class ThresholdNotificationsTest implements NotificationListener {
         }
         Asserts.assertTrue(
                 Utils.waitForCondition(
-                        () -> counter == iterationsCount, WAIT_TIME),
+                        () -> (CodeCacheUtils.isCodeHeapPredictable(btype) ?
+                                (counter == iterationsCount) : (counter >= iterationsCount)),
+                        WAIT_TIME),
                 "Couldn't receive expected notifications count");
         try {
             ((NotificationEmitter) ManagementFactory.getMemoryMXBean()).

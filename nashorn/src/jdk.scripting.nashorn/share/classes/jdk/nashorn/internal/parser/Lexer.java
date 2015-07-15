@@ -1044,9 +1044,9 @@ public class Lexer extends Scanner {
         try {
             final long value = Long.parseLong(valueString, radix);
             if(value >= MIN_INT_L && value <= MAX_INT_L) {
-                return Integer.valueOf((int)value);
+                return (int)value;
             }
-            return Long.valueOf(value);
+            return value;
         } catch (final NumberFormatException e) {
             if (radix == 10) {
                 return Double.valueOf(valueString);

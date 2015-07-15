@@ -377,7 +377,7 @@ class Crypt {
      *
      */
 
-    public static void main(String arg[]) {
+    public static void main(String[] arg) {
 
         if (arg.length!=2) {
             System.err.println("usage: Crypt password salt");
@@ -386,7 +386,7 @@ class Crypt {
 
         Crypt c = new Crypt();
         try {
-            byte result[] = c.crypt
+            byte[] result = c.crypt
                 (arg[0].getBytes("ISO-8859-1"), arg[1].getBytes("ISO-8859-1"));
             for (int i=0; i<result.length; i++) {
                 System.out.println(" "+i+" "+(char)result[i]);

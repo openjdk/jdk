@@ -265,7 +265,7 @@ public interface GSSContextSpi {
     /**
      * For apps that want simplicity and don't care about buffer copies.
      */
-    public byte[] wrap(byte inBuf[], int offset, int len,
+    public byte[] wrap(byte[] inBuf, int offset, int len,
                        MessageProp msgProp) throws GSSException;
 
     /**
@@ -275,7 +275,7 @@ public interface GSSContextSpi {
      *
      * NOTE: This method is not defined in public class org.ietf.jgss.GSSContext
      *
-    public int wrap(byte inBuf[], int inOffset, int len,
+    public int wrap(byte[] inBuf, int inOffset, int len,
                     byte[] outBuf, int outOffset,
                     MessageProp msgProp) throws GSSException;
 
@@ -292,7 +292,7 @@ public interface GSSContextSpi {
      *
      * NOTE: This method is not defined in public class org.ietf.jgss.GSSContext
      *
-    public void wrap(byte inBuf[], int offset, int len,
+    public void wrap(byte[] inBuf, int offset, int len,
                      OutputStream os, MessageProp msgProp)
         throws GSSException;
     */
@@ -314,7 +314,7 @@ public interface GSSContextSpi {
     /**
      * For apps that want simplicity and don't care about buffer copies.
      */
-    public byte[] unwrap(byte inBuf[], int offset, int len,
+    public byte[] unwrap(byte[] inBuf, int offset, int len,
                          MessageProp msgProp) throws GSSException;
 
     /**
@@ -324,7 +324,7 @@ public interface GSSContextSpi {
      *
      * NOTE: This method is not defined in public class org.ietf.jgss.GSSContext
      *
-    public int unwrap(byte inBuf[], int inOffset, int len,
+    public int unwrap(byte[] inBuf, int inOffset, int len,
                       byte[] outBuf, int outOffset,
                       MessageProp msgProp) throws GSSException;
 
@@ -356,7 +356,7 @@ public interface GSSContextSpi {
                         MessageProp msgProp)
                 throws GSSException;
 
-    public byte[] getMIC(byte []inMsg, int offset, int len,
+    public byte[] getMIC(byte[] inMsg, int offset, int len,
                          MessageProp msgProp) throws GSSException;
 
     /**
@@ -372,7 +372,7 @@ public interface GSSContextSpi {
     public void verifyMIC(InputStream is, InputStream msgStr,
                            MessageProp mProp) throws GSSException;
 
-    public void verifyMIC(byte []inTok, int tokOffset, int tokLen,
+    public void verifyMIC(byte[] inTok, int tokOffset, int tokLen,
                           byte[] inMsg, int msgOffset, int msgLen,
                           MessageProp msgProp) throws GSSException;
 

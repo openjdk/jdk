@@ -156,7 +156,7 @@ abstract class NashornLoader extends SecureClassLoader {
         }
         // If the file does not exist, then assume that it's a directory
         if (!file.isFile()) {
-            name = name + "/";
+            name += "/";
         }
         try {
             return new URL("file", "", name);

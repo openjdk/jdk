@@ -78,7 +78,7 @@ public final class SunNativeProvider extends Provider {
                             if (DEBUG) err.printStackTrace();
                             return null;
                         }
-                        String gssLibs[] = new String[0];
+                        String[] gssLibs = new String[0];
                         String defaultLib = System.getProperty(LIB_PROP);
                         if (defaultLib == null || defaultLib.trim().equals("")) {
                             String osname = System.getProperty("os.name");

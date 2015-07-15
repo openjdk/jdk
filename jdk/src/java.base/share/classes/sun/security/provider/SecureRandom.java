@@ -85,7 +85,7 @@ implements java.io.Serializable {
      *
      * @param seed the seed.
      */
-    private SecureRandom(byte seed[]) {
+    private SecureRandom(byte[] seed) {
         init(seed);
     }
 

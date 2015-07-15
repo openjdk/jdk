@@ -44,9 +44,9 @@ import com.sun.security.sasl.util.PolicyUtils;
 public final class FactoryImpl implements SaslClientFactory,
 SaslServerFactory{
 
-    private static final String myMechs[] = { "DIGEST-MD5" };
+    private static final String[] myMechs = { "DIGEST-MD5" };
     private static final int DIGEST_MD5 = 0;
-    private static final int mechPolicies[] = {
+    private static final int[] mechPolicies = {
         PolicyUtils.NOPLAINTEXT|PolicyUtils.NOANONYMOUS};
 
     /**
