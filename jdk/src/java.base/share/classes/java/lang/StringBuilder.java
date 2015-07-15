@@ -25,6 +25,7 @@
 
 package java.lang;
 
+import jdk.internal.HotSpotIntrinsicCandidate;
 
 /**
  * A mutable sequence of characters.  This class provides an API compatible
@@ -85,6 +86,7 @@ public final class StringBuilder
      * Constructs a string builder with no characters in it and an
      * initial capacity of 16 characters.
      */
+    @HotSpotIntrinsicCandidate
     public StringBuilder() {
         super(16);
     }
@@ -97,6 +99,7 @@ public final class StringBuilder
      * @throws     NegativeArraySizeException  if the {@code capacity}
      *               argument is less than {@code 0}.
      */
+    @HotSpotIntrinsicCandidate
     public StringBuilder(int capacity) {
         super(capacity);
     }
@@ -108,6 +111,7 @@ public final class StringBuilder
      *
      * @param   str   the initial contents of the buffer.
      */
+    @HotSpotIntrinsicCandidate
     public StringBuilder(String str) {
         super(str.length() + 16);
         append(str);
@@ -132,6 +136,7 @@ public final class StringBuilder
     }
 
     @Override
+    @HotSpotIntrinsicCandidate
     public StringBuilder append(String str) {
         super.append(str);
         return this;
@@ -198,12 +203,14 @@ public final class StringBuilder
     }
 
     @Override
+    @HotSpotIntrinsicCandidate
     public StringBuilder append(char c) {
         super.append(c);
         return this;
     }
 
     @Override
+    @HotSpotIntrinsicCandidate
     public StringBuilder append(int i) {
         super.append(i);
         return this;
@@ -402,6 +409,7 @@ public final class StringBuilder
     }
 
     @Override
+    @HotSpotIntrinsicCandidate
     public String toString() {
         // Create a copy, don't share the array
         return new String(value, 0, count);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ import sun.awt.SunToolkit;
 import sun.awt.util.ThreadGroupUtils;
 import sun.java2d.FontSupport;
 import sun.misc.InnocuousThread;
+import sun.misc.ManagedLocalsThread;
 import sun.util.logging.PlatformLogger;
 
 /**
@@ -2501,12 +2502,9 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                       }
                     };
                     AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-                        if (System.getSecurityManager() == null) {
-                            ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
-                            fileCloser = new Thread(rootTG, fileCloserRunnable);
-                        } else {
-                            fileCloser = new InnocuousThread(fileCloserRunnable);
-                        }
+                        ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
+                        fileCloser = new ManagedLocalsThread(rootTG,
+                                                             fileCloserRunnable);
                         fileCloser.setContextClassLoader(null);
                         Runtime.getRuntime().addShutdownHook(fileCloser);
                         return null;
