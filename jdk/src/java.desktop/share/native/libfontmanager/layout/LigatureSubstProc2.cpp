@@ -98,7 +98,7 @@ le_uint16 LigatureSubstitutionProcessor2::processStateEntry(LEGlyphStorage &glyp
         ap.addObject(ligActionIndex, success);
         LEReferenceToArrayOf<TTGlyphID> ligatureTable(stHeader, success, ligatureOffset, LE_UNBOUNDED_ARRAY);
         LigatureActionEntry action;
-        le_int32 offset, i = 0;
+        le_int32 offset, i = 0, j = 0;
         le_int32 stack[nComponents];
         le_int16 mm = -1;
 
@@ -110,6 +110,10 @@ le_uint16 LigatureSubstitutionProcessor2::processStateEntry(LEGlyphStorage &glyp
 
         do {
             le_uint32 componentGlyph = componentStack[m--]; // pop off
+
+            if (j++ > 0) {
+                ap.addObject(success);
+            }
 
             action = SWAPL(*ap.getAlias());
 
@@ -144,7 +148,6 @@ le_uint16 LigatureSubstitutionProcessor2::processStateEntry(LEGlyphStorage &glyp
               LE_DEBUG_BAD_FONT("m<0")
             }
 #endif
-            ap.addObject(success);
         } while (LE_SUCCESS(success) && !(action & lafLast) && (m>=0) ); // stop if last bit is set, or if run out of items
 
         while (mm >= 0) {

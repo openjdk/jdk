@@ -1008,7 +1008,7 @@ final class CipherSuite implements Comparable<CipherSuite> {
          * 1. Prefer Suite B compliant cipher suites, see RFC6460 (To be
          *    changed later, see below).
          * 2. Prefer the stronger bulk cipher, in the order of AES_256(GCM),
-         *    AES_128(GCM), AES_256, AES_128, 3DES-EDE, RC-4.
+         *    AES_128(GCM), AES_256, AES_128, 3DES-EDE.
          * 3. Prefer the stronger MAC algorithm, in the order of SHA384,
          *    SHA256, SHA, MD5.
          * 4. Prefer the better performance of key exchange and digital
@@ -1143,20 +1143,6 @@ final class CipherSuite implements Comparable<CipherSuite> {
         add("SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA",        0x0013, --p,
             K_DHE_DSS,     B_3DES,        M_SHA,    N);
 
-        // RC-4
-        add("TLS_ECDHE_ECDSA_WITH_RC4_128_SHA",         0xC007, --p,
-            K_ECDHE_ECDSA, B_RC4_128,     M_SHA,    N);
-        add("TLS_ECDHE_RSA_WITH_RC4_128_SHA",           0xC011, --p,
-            K_ECDHE_RSA,   B_RC4_128,     M_SHA,    N);
-        add("SSL_RSA_WITH_RC4_128_SHA",                 0x0005, --p,
-            K_RSA,         B_RC4_128,     M_SHA,    N);
-        add("TLS_ECDH_ECDSA_WITH_RC4_128_SHA",          0xC002, --p,
-            K_ECDH_ECDSA,  B_RC4_128,     M_SHA,    N);
-        add("TLS_ECDH_RSA_WITH_RC4_128_SHA",            0xC00C, --p,
-            K_ECDH_RSA,    B_RC4_128,     M_SHA,    N);
-        add("SSL_RSA_WITH_RC4_128_MD5",                 0x0004, --p,
-            K_RSA,         B_RC4_128,     M_MD5,    N);
-
         // Renegotiation protection request Signalling Cipher Suite Value (SCSV)
         add("TLS_EMPTY_RENEGOTIATION_INFO_SCSV",        0x00ff, --p,
             K_SCSV,        B_NULL,        M_NULL,   T);
@@ -1205,6 +1191,20 @@ final class CipherSuite implements Comparable<CipherSuite> {
             K_ECDH_ANON,   B_3DES,        M_SHA,    N);
         add("SSL_DH_anon_WITH_3DES_EDE_CBC_SHA",        0x001b, --p,
             K_DH_ANON,     B_3DES,        M_SHA,    N);
+
+        // RC-4
+        add("TLS_ECDHE_ECDSA_WITH_RC4_128_SHA",         0xC007, --p,
+            K_ECDHE_ECDSA, B_RC4_128,     M_SHA,    N);
+        add("TLS_ECDHE_RSA_WITH_RC4_128_SHA",           0xC011, --p,
+            K_ECDHE_RSA,   B_RC4_128,     M_SHA,    N);
+        add("SSL_RSA_WITH_RC4_128_SHA",                 0x0005, --p,
+            K_RSA,         B_RC4_128,     M_SHA,    N);
+        add("TLS_ECDH_ECDSA_WITH_RC4_128_SHA",          0xC002, --p,
+            K_ECDH_ECDSA,  B_RC4_128,     M_SHA,    N);
+        add("TLS_ECDH_RSA_WITH_RC4_128_SHA",            0xC00C, --p,
+            K_ECDH_RSA,    B_RC4_128,     M_SHA,    N);
+        add("SSL_RSA_WITH_RC4_128_MD5",                 0x0004, --p,
+            K_RSA,         B_RC4_128,     M_MD5,    N);
 
         add("TLS_ECDH_anon_WITH_RC4_128_SHA",           0xC016, --p,
             K_ECDH_ANON,   B_RC4_128,     M_SHA,    N);
