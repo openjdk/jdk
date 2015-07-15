@@ -1,8 +1,8 @@
-# PropList-6.2.0.txt
-# Date: 2012-05-23, 20:34:59 GMT [MD]
+# PropList-7.0.0.txt
+# Date: 2014-02-19, 15:51:26 GMT [MD]
 #
 # Unicode Character Database
-# Copyright (c) 1991-2012 Unicode, Inc.
+# Copyright (c) 1991-2014 Unicode, Inc.
 # For terms of use, see http://www.unicode.org/terms_of_use.html
 # For documentation, see http://www.unicode.org/reports/tr44/
 
@@ -13,7 +13,6 @@
 0085          ; White_Space # Cc       <control-0085>
 00A0          ; White_Space # Zs       NO-BREAK SPACE
 1680          ; White_Space # Zs       OGHAM SPACE MARK
-180E          ; White_Space # Zs       MONGOLIAN VOWEL SEPARATOR
 2000..200A    ; White_Space # Zs  [11] EN QUAD..HAIR SPACE
 2028          ; White_Space # Zl       LINE SEPARATOR
 2029          ; White_Space # Zp       PARAGRAPH SEPARATOR
@@ -21,14 +20,16 @@
 205F          ; White_Space # Zs       MEDIUM MATHEMATICAL SPACE
 3000          ; White_Space # Zs       IDEOGRAPHIC SPACE
 
-# Total code points: 26
+# Total code points: 25
 
 # ================================================
 
+061C          ; Bidi_Control # Cf       ARABIC LETTER MARK
 200E..200F    ; Bidi_Control # Cf   [2] LEFT-TO-RIGHT MARK..RIGHT-TO-LEFT MARK
 202A..202E    ; Bidi_Control # Cf   [5] LEFT-TO-RIGHT EMBEDDING..RIGHT-TO-LEFT OVERRIDE
+2066..2069    ; Bidi_Control # Cf   [4] LEFT-TO-RIGHT ISOLATE..POP DIRECTIONAL ISOLATE
 
-# Total code points: 7
+# Total code points: 12
 
 # ================================================
 
@@ -51,6 +52,7 @@
 2E17          ; Dash # Pd       DOUBLE OBLIQUE HYPHEN
 2E1A          ; Dash # Pd       HYPHEN WITH DIAERESIS
 2E3A..2E3B    ; Dash # Pd   [2] TWO-EM DASH..THREE-EM DASH
+2E40          ; Dash # Pd       DOUBLE HYPHEN
 301C          ; Dash # Pd       WAVE DASH
 3030          ; Dash # Pd       WAVY DASH
 30A0          ; Dash # Pd       KATAKANA-HIRAGANA DOUBLE HYPHEN
@@ -59,7 +61,7 @@ FE58          ; Dash # Pd       SMALL EM DASH
 FE63          ; Dash # Pd       SMALL HYPHEN-MINUS
 FF0D          ; Dash # Pd       FULLWIDTH HYPHEN-MINUS
 
-# Total code points: 27
+# Total code points: 28
 
 # ================================================
 
@@ -91,6 +93,7 @@ FF65          ; Hyphen # Po       HALFWIDTH KATAKANA MIDDLE DOT
 201F          ; Quotation_Mark # Pi       DOUBLE HIGH-REVERSED-9 QUOTATION MARK
 2039          ; Quotation_Mark # Pi       SINGLE LEFT-POINTING ANGLE QUOTATION MARK
 203A          ; Quotation_Mark # Pf       SINGLE RIGHT-POINTING ANGLE QUOTATION MARK
+2E42          ; Quotation_Mark # Ps       DOUBLE LOW-REVERSED-9 QUOTATION MARK
 300C          ; Quotation_Mark # Ps       LEFT CORNER BRACKET
 300D          ; Quotation_Mark # Pe       RIGHT CORNER BRACKET
 300E          ; Quotation_Mark # Ps       LEFT WHITE CORNER BRACKET
@@ -106,7 +109,7 @@ FF07          ; Quotation_Mark # Po       FULLWIDTH APOSTROPHE
 FF62          ; Quotation_Mark # Ps       HALFWIDTH LEFT CORNER BRACKET
 FF63          ; Quotation_Mark # Pe       HALFWIDTH RIGHT CORNER BRACKET
 
-# Total code points: 29
+# Total code points: 30
 
 # ================================================
 
@@ -136,6 +139,7 @@ FF63          ; Quotation_Mark # Pe       HALFWIDTH RIGHT CORNER BRACKET
 1361..1368    ; Terminal_Punctuation # Po   [8] ETHIOPIC WORDSPACE..ETHIOPIC PARAGRAPH SEPARATOR
 166D..166E    ; Terminal_Punctuation # Po   [2] CANADIAN SYLLABICS CHI SIGN..CANADIAN SYLLABICS FULL STOP
 16EB..16ED    ; Terminal_Punctuation # Po   [3] RUNIC SINGLE PUNCTUATION..RUNIC CROSS PUNCTUATION
+1735..1736    ; Terminal_Punctuation # Po   [2] PHILIPPINE SINGLE PUNCTUATION..PHILIPPINE DOUBLE PUNCTUATION
 17D4..17D6    ; Terminal_Punctuation # Po   [3] KHMER SIGN KHAN..KHMER SIGN CAMNUC PII KUUH
 17DA          ; Terminal_Punctuation # Po       KHMER SIGN KOOMUUT
 1802..1805    ; Terminal_Punctuation # Po   [4] MONGOLIAN COMMA..MONGOLIAN FOUR DOTS
@@ -149,6 +153,8 @@ FF63          ; Quotation_Mark # Pe       HALFWIDTH RIGHT CORNER BRACKET
 203C..203D    ; Terminal_Punctuation # Po   [2] DOUBLE EXCLAMATION MARK..INTERROBANG
 2047..2049    ; Terminal_Punctuation # Po   [3] DOUBLE QUESTION MARK..EXCLAMATION QUESTION MARK
 2E2E          ; Terminal_Punctuation # Po       REVERSED QUESTION MARK
+2E3C          ; Terminal_Punctuation # Po       STENOGRAPHIC FULL STOP
+2E41          ; Terminal_Punctuation # Po       REVERSED COMMA
 3001..3002    ; Terminal_Punctuation # Po   [2] IDEOGRAPHIC COMMA..IDEOGRAPHIC FULL STOP
 A4FE..A4FF    ; Terminal_Punctuation # Po   [2] LISU PUNCTUATION COMMA..LISU PUNCTUATION FULL STOP
 A60D..A60F    ; Terminal_Punctuation # Po   [3] VAI COMMA..VAI QUESTION MARK
@@ -174,14 +180,27 @@ FF64          ; Terminal_Punctuation # Po       HALFWIDTH IDEOGRAPHIC COMMA
 103D0         ; Terminal_Punctuation # Po       OLD PERSIAN WORD DIVIDER
 10857         ; Terminal_Punctuation # Po       IMPERIAL ARAMAIC SECTION SIGN
 1091F         ; Terminal_Punctuation # Po       PHOENICIAN WORD SEPARATOR
+10A56..10A57  ; Terminal_Punctuation # Po   [2] KHAROSHTHI PUNCTUATION DANDA..KHAROSHTHI PUNCTUATION DOUBLE DANDA
+10AF0..10AF5  ; Terminal_Punctuation # Po   [6] MANICHAEAN PUNCTUATION STAR..MANICHAEAN PUNCTUATION TWO DOTS
 10B3A..10B3F  ; Terminal_Punctuation # Po   [6] TINY TWO DOTS OVER ONE DOT PUNCTUATION..LARGE ONE RING OVER TWO RINGS PUNCTUATION
+10B99..10B9C  ; Terminal_Punctuation # Po   [4] PSALTER PAHLAVI SECTION MARK..PSALTER PAHLAVI FOUR DOTS WITH DOT
 11047..1104D  ; Terminal_Punctuation # Po   [7] BRAHMI DANDA..BRAHMI PUNCTUATION LOTUS
 110BE..110C1  ; Terminal_Punctuation # Po   [4] KAITHI SECTION MARK..KAITHI DOUBLE DANDA
 11141..11143  ; Terminal_Punctuation # Po   [3] CHAKMA DANDA..CHAKMA QUESTION MARK
 111C5..111C6  ; Terminal_Punctuation # Po   [2] SHARADA DANDA..SHARADA DOUBLE DANDA
-12470..12473  ; Terminal_Punctuation # Po   [4] CUNEIFORM PUNCTUATION SIGN OLD ASSYRIAN WORD DIVIDER..CUNEIFORM PUNCTUATION SIGN DIAGONAL TRICOLON
+111CD         ; Terminal_Punctuation # Po       SHARADA SUTRA MARK
+11238..1123C  ; Terminal_Punctuation # Po   [5] KHOJKI DANDA..KHOJKI DOUBLE SECTION MARK
+115C2..115C5  ; Terminal_Punctuation # Po   [4] SIDDHAM DANDA..SIDDHAM SEPARATOR BAR
+115C9         ; Terminal_Punctuation # Po       SIDDHAM END OF TEXT MARK
+11641..11642  ; Terminal_Punctuation # Po   [2] MODI DANDA..MODI DOUBLE DANDA
+12470..12474  ; Terminal_Punctuation # Po   [5] CUNEIFORM PUNCTUATION SIGN OLD ASSYRIAN WORD DIVIDER..CUNEIFORM PUNCTUATION SIGN DIAGONAL QUADCOLON
+16A6E..16A6F  ; Terminal_Punctuation # Po   [2] MRO DANDA..MRO DOUBLE DANDA
+16AF5         ; Terminal_Punctuation # Po       BASSA VAH FULL STOP
+16B37..16B39  ; Terminal_Punctuation # Po   [3] PAHAWH HMONG SIGN VOS THOM..PAHAWH HMONG SIGN CIM CHEEM
+16B44         ; Terminal_Punctuation # Po       PAHAWH HMONG SIGN XAUS
+1BC9F         ; Terminal_Punctuation # Po       DUPLOYAN PUNCTUATION CHINOOK FULL STOP
 
-# Total code points: 176
+# Total code points: 214
 
 # ================================================
 
@@ -230,6 +249,10 @@ FF64          ; Terminal_Punctuation # Po       HALFWIDTH IDEOGRAPHIC COMMA
 21D5..21DB    ; Other_Math # So   [7] UP DOWN DOUBLE ARROW..RIGHTWARDS TRIPLE ARROW
 21DD          ; Other_Math # So       RIGHTWARDS SQUIGGLE ARROW
 21E4..21E5    ; Other_Math # So   [2] LEFTWARDS ARROW TO BAR..RIGHTWARDS ARROW TO BAR
+2308          ; Other_Math # Ps       LEFT CEILING
+2309          ; Other_Math # Pe       RIGHT CEILING
+230A          ; Other_Math # Ps       LEFT FLOOR
+230B          ; Other_Math # Pe       RIGHT FLOOR
 23B4..23B5    ; Other_Math # So   [2] TOP SQUARE BRACKET..BOTTOM SQUARE BRACKET
 23B7          ; Other_Math # So       RADICAL SYMBOL BOTTOM
 23D0          ; Other_Math # So       VERTICAL LINE EXTENSION
@@ -358,7 +381,7 @@ FF3E          ; Other_Math # Sk       FULLWIDTH CIRCUMFLEX ACCENT
 1EEA5..1EEA9  ; Other_Math # Lo   [5] ARABIC MATHEMATICAL DOUBLE-STRUCK WAW..ARABIC MATHEMATICAL DOUBLE-STRUCK YEH
 1EEAB..1EEBB  ; Other_Math # Lo  [17] ARABIC MATHEMATICAL DOUBLE-STRUCK LAM..ARABIC MATHEMATICAL DOUBLE-STRUCK GHAIN
 
-# Total code points: 1358
+# Total code points: 1362
 
 # ================================================
 
@@ -403,8 +426,7 @@ FF41..FF46    ; Hex_Digit # L&   [6] FULLWIDTH LATIN SMALL LETTER A..FULLWIDTH L
 0825..0827    ; Other_Alphabetic # Mn   [3] SAMARITAN VOWEL SIGN SHORT A..SAMARITAN VOWEL SIGN U
 0829..082C    ; Other_Alphabetic # Mn   [4] SAMARITAN VOWEL SIGN LONG I..SAMARITAN VOWEL SIGN SUKUN
 08E4..08E9    ; Other_Alphabetic # Mn   [6] ARABIC CURLY FATHA..ARABIC CURLY KASRATAN
-08F0..08FE    ; Other_Alphabetic # Mn  [15] ARABIC OPEN FATHATAN..ARABIC DAMMA WITH DOT
-0900..0902    ; Other_Alphabetic # Mn   [3] DEVANAGARI SIGN INVERTED CANDRABINDU..DEVANAGARI SIGN ANUSVARA
+08F0..0902    ; Other_Alphabetic # Mn  [19] ARABIC OPEN FATHATAN..DEVANAGARI SIGN ANUSVARA
 0903          ; Other_Alphabetic # Mc       DEVANAGARI SIGN VISARGA
 093A          ; Other_Alphabetic # Mn       DEVANAGARI VOWEL SIGN OE
 093B          ; Other_Alphabetic # Mc       DEVANAGARI VOWEL SIGN OOE
@@ -457,6 +479,7 @@ FF41..FF46    ; Hex_Digit # L&   [6] FULLWIDTH LATIN SMALL LETTER A..FULLWIDTH L
 0BC6..0BC8    ; Other_Alphabetic # Mc   [3] TAMIL VOWEL SIGN E..TAMIL VOWEL SIGN AI
 0BCA..0BCC    ; Other_Alphabetic # Mc   [3] TAMIL VOWEL SIGN O..TAMIL VOWEL SIGN AU
 0BD7          ; Other_Alphabetic # Mc       TAMIL AU LENGTH MARK
+0C00          ; Other_Alphabetic # Mn       TELUGU SIGN COMBINING CANDRABINDU ABOVE
 0C01..0C03    ; Other_Alphabetic # Mc   [3] TELUGU SIGN CANDRABINDU..TELUGU SIGN VISARGA
 0C3E..0C40    ; Other_Alphabetic # Mn   [3] TELUGU VOWEL SIGN AA..TELUGU VOWEL SIGN II
 0C41..0C44    ; Other_Alphabetic # Mc   [4] TELUGU VOWEL SIGN U..TELUGU VOWEL SIGN VOCALIC RR
@@ -464,6 +487,7 @@ FF41..FF46    ; Hex_Digit # L&   [6] FULLWIDTH LATIN SMALL LETTER A..FULLWIDTH L
 0C4A..0C4C    ; Other_Alphabetic # Mn   [3] TELUGU VOWEL SIGN O..TELUGU VOWEL SIGN AU
 0C55..0C56    ; Other_Alphabetic # Mn   [2] TELUGU LENGTH MARK..TELUGU AI LENGTH MARK
 0C62..0C63    ; Other_Alphabetic # Mn   [2] TELUGU VOWEL SIGN VOCALIC L..TELUGU VOWEL SIGN VOCALIC LL
+0C81          ; Other_Alphabetic # Mn       KANNADA SIGN CANDRABINDU
 0C82..0C83    ; Other_Alphabetic # Mc   [2] KANNADA SIGN ANUSVARA..KANNADA SIGN VISARGA
 0CBE          ; Other_Alphabetic # Mc       KANNADA VOWEL SIGN AA
 0CBF          ; Other_Alphabetic # Mn       KANNADA VOWEL SIGN I
@@ -474,6 +498,7 @@ FF41..FF46    ; Hex_Digit # L&   [6] FULLWIDTH LATIN SMALL LETTER A..FULLWIDTH L
 0CCC          ; Other_Alphabetic # Mn       KANNADA VOWEL SIGN AU
 0CD5..0CD6    ; Other_Alphabetic # Mc   [2] KANNADA LENGTH MARK..KANNADA AI LENGTH MARK
 0CE2..0CE3    ; Other_Alphabetic # Mn   [2] KANNADA VOWEL SIGN VOCALIC L..KANNADA VOWEL SIGN VOCALIC LL
+0D01          ; Other_Alphabetic # Mn       MALAYALAM SIGN CANDRABINDU
 0D02..0D03    ; Other_Alphabetic # Mc   [2] MALAYALAM SIGN ANUSVARA..MALAYALAM SIGN VISARGA
 0D3E..0D40    ; Other_Alphabetic # Mc   [3] MALAYALAM VOWEL SIGN AA..MALAYALAM VOWEL SIGN II
 0D41..0D44    ; Other_Alphabetic # Mn   [4] MALAYALAM VOWEL SIGN U..MALAYALAM VOWEL SIGN VOCALIC RR
@@ -538,7 +563,8 @@ FF41..FF46    ; Hex_Digit # L&   [6] FULLWIDTH LATIN SMALL LETTER A..FULLWIDTH L
 19B0..19C0    ; Other_Alphabetic # Mc  [17] NEW TAI LUE VOWEL SIGN VOWEL SHORTENER..NEW TAI LUE VOWEL SIGN IY
 19C8..19C9    ; Other_Alphabetic # Mc   [2] NEW TAI LUE TONE MARK-1..NEW TAI LUE TONE MARK-2
 1A17..1A18    ; Other_Alphabetic # Mn   [2] BUGINESE VOWEL SIGN I..BUGINESE VOWEL SIGN U
-1A19..1A1B    ; Other_Alphabetic # Mc   [3] BUGINESE VOWEL SIGN E..BUGINESE VOWEL SIGN AE
+1A19..1A1A    ; Other_Alphabetic # Mc   [2] BUGINESE VOWEL SIGN E..BUGINESE VOWEL SIGN O
+1A1B          ; Other_Alphabetic # Mn       BUGINESE VOWEL SIGN AE
 1A55          ; Other_Alphabetic # Mc       TAI THAM CONSONANT SIGN MEDIAL RA
 1A56          ; Other_Alphabetic # Mn       TAI THAM CONSONANT SIGN MEDIAL LA
 1A57          ; Other_Alphabetic # Mc       TAI THAM CONSONANT SIGN LA TANG LAI
@@ -564,7 +590,7 @@ FF41..FF46    ; Hex_Digit # L&   [6] FULLWIDTH LATIN SMALL LETTER A..FULLWIDTH L
 1BA2..1BA5    ; Other_Alphabetic # Mn   [4] SUNDANESE CONSONANT SIGN PANYAKRA..SUNDANESE VOWEL SIGN PANYUKU
 1BA6..1BA7    ; Other_Alphabetic # Mc   [2] SUNDANESE VOWEL SIGN PANAELAENG..SUNDANESE VOWEL SIGN PANOLONG
 1BA8..1BA9    ; Other_Alphabetic # Mn   [2] SUNDANESE VOWEL SIGN PAMEPET..SUNDANESE VOWEL SIGN PANEULEUNG
-1BAC..1BAD    ; Other_Alphabetic # Mc   [2] SUNDANESE CONSONANT SIGN PASANGAN MA..SUNDANESE CONSONANT SIGN PASANGAN WA
+1BAC..1BAD    ; Other_Alphabetic # Mn   [2] SUNDANESE CONSONANT SIGN PASANGAN MA..SUNDANESE CONSONANT SIGN PASANGAN WA
 1BE7          ; Other_Alphabetic # Mc       BATAK VOWEL SIGN E
 1BE8..1BE9    ; Other_Alphabetic # Mn   [2] BATAK VOWEL SIGN PAKPAK E..BATAK VOWEL SIGN EE
 1BEA..1BEC    ; Other_Alphabetic # Mc   [3] BATAK VOWEL SIGN I..BATAK VOWEL SIGN O
@@ -575,6 +601,7 @@ FF41..FF46    ; Hex_Digit # L&   [6] FULLWIDTH LATIN SMALL LETTER A..FULLWIDTH L
 1C2C..1C33    ; Other_Alphabetic # Mn   [8] LEPCHA VOWEL SIGN E..LEPCHA CONSONANT SIGN T
 1C34..1C35    ; Other_Alphabetic # Mc   [2] LEPCHA CONSONANT SIGN NYIN-DO..LEPCHA CONSONANT SIGN KANG
 1CF2..1CF3    ; Other_Alphabetic # Mc   [2] VEDIC SIGN ARDHAVISARGA..VEDIC SIGN ROTATED ARDHAVISARGA
+1DE7..1DF4    ; Other_Alphabetic # Mn  [14] COMBINING LATIN SMALL LETTER ALPHA..COMBINING LATIN SMALL LETTER U WITH DIAERESIS
 24B6..24E9    ; Other_Alphabetic # So  [52] CIRCLED LATIN CAPITAL LETTER A..CIRCLED LATIN SMALL LETTER Z
 2DE0..2DFF    ; Other_Alphabetic # Mn  [32] COMBINING CYRILLIC LETTER BE..COMBINING CYRILLIC LETTER IOTIFIED BIG YUS
 A674..A67B    ; Other_Alphabetic # Mn   [8] COMBINING CYRILLIC LETTER UKRAINIAN IE..COMBINING CYRILLIC LETTER OMEGA
@@ -616,6 +643,7 @@ ABE6..ABE7    ; Other_Alphabetic # Mc   [2] MEETEI MAYEK VOWEL SIGN YENAP..MEETE
 ABE8          ; Other_Alphabetic # Mn       MEETEI MAYEK VOWEL SIGN UNAP
 ABE9..ABEA    ; Other_Alphabetic # Mc   [2] MEETEI MAYEK VOWEL SIGN CHEINAP..MEETEI MAYEK VOWEL SIGN NUNG
 FB1E          ; Other_Alphabetic # Mn       HEBREW POINT JUDEO-SPANISH VARIKA
+10376..1037A  ; Other_Alphabetic # Mn   [5] COMBINING OLD PERMIC LETTER AN..COMBINING OLD PERMIC LETTER SII
 10A01..10A03  ; Other_Alphabetic # Mn   [3] KHAROSHTHI VOWEL SIGN I..KHAROSHTHI VOWEL SIGN VOCALIC R
 10A05..10A06  ; Other_Alphabetic # Mn   [2] KHAROSHTHI VOWEL SIGN E..KHAROSHTHI VOWEL SIGN O
 10A0C..10A0F  ; Other_Alphabetic # Mn   [4] KHAROSHTHI VOWEL LENGTH MARK..KHAROSHTHI SIGN VISARGA
@@ -636,14 +664,54 @@ FB1E          ; Other_Alphabetic # Mn       HEBREW POINT JUDEO-SPANISH VARIKA
 111B3..111B5  ; Other_Alphabetic # Mc   [3] SHARADA VOWEL SIGN AA..SHARADA VOWEL SIGN II
 111B6..111BE  ; Other_Alphabetic # Mn   [9] SHARADA VOWEL SIGN U..SHARADA VOWEL SIGN O
 111BF         ; Other_Alphabetic # Mc       SHARADA VOWEL SIGN AU
+1122C..1122E  ; Other_Alphabetic # Mc   [3] KHOJKI VOWEL SIGN AA..KHOJKI VOWEL SIGN II
+1122F..11231  ; Other_Alphabetic # Mn   [3] KHOJKI VOWEL SIGN U..KHOJKI VOWEL SIGN AI
+11232..11233  ; Other_Alphabetic # Mc   [2] KHOJKI VOWEL SIGN O..KHOJKI VOWEL SIGN AU
+11234         ; Other_Alphabetic # Mn       KHOJKI SIGN ANUSVARA
+11237         ; Other_Alphabetic # Mn       KHOJKI SIGN SHADDA
+112DF         ; Other_Alphabetic # Mn       KHUDAWADI SIGN ANUSVARA
+112E0..112E2  ; Other_Alphabetic # Mc   [3] KHUDAWADI VOWEL SIGN AA..KHUDAWADI VOWEL SIGN II
+112E3..112E8  ; Other_Alphabetic # Mn   [6] KHUDAWADI VOWEL SIGN U..KHUDAWADI VOWEL SIGN AU
+11301         ; Other_Alphabetic # Mn       GRANTHA SIGN CANDRABINDU
+11302..11303  ; Other_Alphabetic # Mc   [2] GRANTHA SIGN ANUSVARA..GRANTHA SIGN VISARGA
+1133E..1133F  ; Other_Alphabetic # Mc   [2] GRANTHA VOWEL SIGN AA..GRANTHA VOWEL SIGN I
+11340         ; Other_Alphabetic # Mn       GRANTHA VOWEL SIGN II
+11341..11344  ; Other_Alphabetic # Mc   [4] GRANTHA VOWEL SIGN U..GRANTHA VOWEL SIGN VOCALIC RR
+11347..11348  ; Other_Alphabetic # Mc   [2] GRANTHA VOWEL SIGN EE..GRANTHA VOWEL SIGN AI
+1134B..1134C  ; Other_Alphabetic # Mc   [2] GRANTHA VOWEL SIGN OO..GRANTHA VOWEL SIGN AU
+11357         ; Other_Alphabetic # Mc       GRANTHA AU LENGTH MARK
+11362..11363  ; Other_Alphabetic # Mc   [2] GRANTHA VOWEL SIGN VOCALIC L..GRANTHA VOWEL SIGN VOCALIC LL
+114B0..114B2  ; Other_Alphabetic # Mc   [3] TIRHUTA VOWEL SIGN AA..TIRHUTA VOWEL SIGN II
+114B3..114B8  ; Other_Alphabetic # Mn   [6] TIRHUTA VOWEL SIGN U..TIRHUTA VOWEL SIGN VOCALIC LL
+114B9         ; Other_Alphabetic # Mc       TIRHUTA VOWEL SIGN E
+114BA         ; Other_Alphabetic # Mn       TIRHUTA VOWEL SIGN SHORT E
+114BB..114BE  ; Other_Alphabetic # Mc   [4] TIRHUTA VOWEL SIGN AI..TIRHUTA VOWEL SIGN AU
+114BF..114C0  ; Other_Alphabetic # Mn   [2] TIRHUTA SIGN CANDRABINDU..TIRHUTA SIGN ANUSVARA
+114C1         ; Other_Alphabetic # Mc       TIRHUTA SIGN VISARGA
+115AF..115B1  ; Other_Alphabetic # Mc   [3] SIDDHAM VOWEL SIGN AA..SIDDHAM VOWEL SIGN II
+115B2..115B5  ; Other_Alphabetic # Mn   [4] SIDDHAM VOWEL SIGN U..SIDDHAM VOWEL SIGN VOCALIC RR
+115B8..115BB  ; Other_Alphabetic # Mc   [4] SIDDHAM VOWEL SIGN E..SIDDHAM VOWEL SIGN AU
+115BC..115BD  ; Other_Alphabetic # Mn   [2] SIDDHAM SIGN CANDRABINDU..SIDDHAM SIGN ANUSVARA
+115BE         ; Other_Alphabetic # Mc       SIDDHAM SIGN VISARGA
+11630..11632  ; Other_Alphabetic # Mc   [3] MODI VOWEL SIGN AA..MODI VOWEL SIGN II
+11633..1163A  ; Other_Alphabetic # Mn   [8] MODI VOWEL SIGN U..MODI VOWEL SIGN AI
+1163B..1163C  ; Other_Alphabetic # Mc   [2] MODI VOWEL SIGN O..MODI VOWEL SIGN AU
+1163D         ; Other_Alphabetic # Mn       MODI SIGN ANUSVARA
+1163E         ; Other_Alphabetic # Mc       MODI SIGN VISARGA
+11640         ; Other_Alphabetic # Mn       MODI SIGN ARDHACANDRA
 116AB         ; Other_Alphabetic # Mn       TAKRI SIGN ANUSVARA
 116AC         ; Other_Alphabetic # Mc       TAKRI SIGN VISARGA
 116AD         ; Other_Alphabetic # Mn       TAKRI VOWEL SIGN AA
 116AE..116AF  ; Other_Alphabetic # Mc   [2] TAKRI VOWEL SIGN I..TAKRI VOWEL SIGN II
 116B0..116B5  ; Other_Alphabetic # Mn   [6] TAKRI VOWEL SIGN U..TAKRI VOWEL SIGN AU
+16B30..16B36  ; Other_Alphabetic # Mn   [7] PAHAWH HMONG MARK CIM TUB..PAHAWH HMONG MARK CIM TAUM
 16F51..16F7E  ; Other_Alphabetic # Mc  [46] MIAO SIGN ASPIRATION..MIAO VOWEL SIGN NG
+1BC9E         ; Other_Alphabetic # Mn       DUPLOYAN DOUBLE MARK
+1F130..1F149  ; Other_Alphabetic # So  [26] SQUARED LATIN CAPITAL LETTER A..SQUARED LATIN CAPITAL LETTER Z
+1F150..1F169  ; Other_Alphabetic # So  [26] NEGATIVE CIRCLED LATIN CAPITAL LETTER A..NEGATIVE CIRCLED LATIN CAPITAL LETTER Z
+1F170..1F189  ; Other_Alphabetic # So  [26] NEGATIVE SQUARED LATIN CAPITAL LETTER A..NEGATIVE SQUARED LATIN CAPITAL LETTER Z
 
-# Total code points: 922
+# Total code points: 1116
 
 # ================================================
 
@@ -746,6 +814,7 @@ FA70..FAD9    ; Ideographic # Lo [106] CJK COMPATIBILITY IDEOGRAPH-FA70..CJK COM
 1939..193B    ; Diacritic # Mn   [3] LIMBU SIGN MUKPHRENG..LIMBU SIGN SA-I
 1A75..1A7C    ; Diacritic # Mn   [8] TAI THAM SIGN TONE-1..TAI THAM SIGN KHUEN-LUE KARAN
 1A7F          ; Diacritic # Mn       TAI THAM COMBINING CRYPTOGRAMMIC DOT
+1AB0..1ABD    ; Diacritic # Mn  [14] COMBINING DOUBLED CIRCUMFLEX ACCENT..COMBINING PARENTHESES BELOW
 1B34          ; Diacritic # Mn       BALINESE SIGN REREKAN
 1B44          ; Diacritic # Mc       BALINESE ADEG ADEG
 1B6B..1B73    ; Diacritic # Mn   [9] BALINESE MUSICAL SYMBOL COMBINING TEGEH..BALINESE MUSICAL SYMBOL COMBINING GONG
@@ -760,8 +829,10 @@ FA70..FAD9    ; Ideographic # Lo [106] CJK COMPATIBILITY IDEOGRAPH-FA70..CJK COM
 1CE2..1CE8    ; Diacritic # Mn   [7] VEDIC SIGN VISARGA SVARITA..VEDIC SIGN VISARGA ANUDATTA WITH TAIL
 1CED          ; Diacritic # Mn       VEDIC SIGN TIRYAK
 1CF4          ; Diacritic # Mn       VEDIC TONE CANDRA ABOVE
+1CF8..1CF9    ; Diacritic # Mn   [2] VEDIC TONE RING ABOVE..VEDIC TONE DOUBLE RING ABOVE
 1D2C..1D6A    ; Diacritic # Lm  [63] MODIFIER LETTER CAPITAL A..GREEK SUBSCRIPT SMALL LETTER CHI
 1DC4..1DCF    ; Diacritic # Mn  [12] COMBINING MACRON-ACUTE..COMBINING ZIGZAG BELOW
+1DF5          ; Diacritic # Mn       COMBINING UP TACK ABOVE
 1DFD..1DFF    ; Diacritic # Mn   [3] COMBINING ALMOST EQUAL TO BELOW..COMBINING RIGHT ARROWHEAD AND DOWN ARROWHEAD BELOW
 1FBD          ; Diacritic # Sk       GREEK KORONIS
 1FBF..1FC1    ; Diacritic # Sk   [3] GREEK PSILI..GREEK DIALYTIKA AND PERISPOMENI
@@ -779,6 +850,7 @@ FA70..FAD9    ; Ideographic # Lo [106] CJK COMPATIBILITY IDEOGRAPH-FA70..CJK COM
 A66F          ; Diacritic # Mn       COMBINING CYRILLIC VZMET
 A67C..A67D    ; Diacritic # Mn   [2] COMBINING CYRILLIC KAVYKA..COMBINING CYRILLIC PAYEROK
 A67F          ; Diacritic # Lm       CYRILLIC PAYEROK
+A69C..A69D    ; Diacritic # Lm   [2] MODIFIER LETTER CYRILLIC HARD SIGN..MODIFIER LETTER CYRILLIC SOFT SIGN
 A6F0..A6F1    ; Diacritic # Mn   [2] BAMUM COMBINING MARK KOQNDON..BAMUM COMBINING MARK TUKWENTIS
 A717..A71F    ; Diacritic # Lm   [9] MODIFIER LETTER DOT VERTICAL BAR..MODIFIER LETTER LOW INVERTED EXCLAMATION MARK
 A720..A721    ; Diacritic # Sk   [2] MODIFIER LETTER STRESS AND HIGH TONE..MODIFIER LETTER STRESS AND LOW TONE
@@ -791,26 +863,45 @@ A92E          ; Diacritic # Po       KAYAH LI SIGN CWI
 A953          ; Diacritic # Mc       REJANG VIRAMA
 A9B3          ; Diacritic # Mn       JAVANESE SIGN CECAK TELU
 A9C0          ; Diacritic # Mc       JAVANESE PANGKON
+A9E5          ; Diacritic # Mn       MYANMAR SIGN SHAN SAW
 AA7B          ; Diacritic # Mc       MYANMAR SIGN PAO KAREN TONE
+AA7C          ; Diacritic # Mn       MYANMAR SIGN TAI LAING TONE-2
+AA7D          ; Diacritic # Mc       MYANMAR SIGN TAI LAING TONE-5
 AABF          ; Diacritic # Mn       TAI VIET TONE MAI EK
 AAC0          ; Diacritic # Lo       TAI VIET TONE MAI NUENG
 AAC1          ; Diacritic # Mn       TAI VIET TONE MAI THO
 AAC2          ; Diacritic # Lo       TAI VIET TONE MAI SONG
 AAF6          ; Diacritic # Mn       MEETEI MAYEK VIRAMA
+AB5B          ; Diacritic # Sk       MODIFIER BREVE WITH INVERTED BREVE
+AB5C..AB5F    ; Diacritic # Lm   [4] MODIFIER LETTER SMALL HENG..MODIFIER LETTER SMALL U WITH LEFT HOOK
 ABEC          ; Diacritic # Mc       MEETEI MAYEK LUM IYEK
 ABED          ; Diacritic # Mn       MEETEI MAYEK APUN IYEK
 FB1E          ; Diacritic # Mn       HEBREW POINT JUDEO-SPANISH VARIKA
-FE20..FE26    ; Diacritic # Mn   [7] COMBINING LIGATURE LEFT HALF..COMBINING CONJOINING MACRON
+FE20..FE2D    ; Diacritic # Mn  [14] COMBINING LIGATURE LEFT HALF..COMBINING CONJOINING MACRON BELOW
 FF3E          ; Diacritic # Sk       FULLWIDTH CIRCUMFLEX ACCENT
 FF40          ; Diacritic # Sk       FULLWIDTH GRAVE ACCENT
 FF70          ; Diacritic # Lm       HALFWIDTH KATAKANA-HIRAGANA PROLONGED SOUND MARK
 FF9E..FF9F    ; Diacritic # Lm   [2] HALFWIDTH KATAKANA VOICED SOUND MARK..HALFWIDTH KATAKANA SEMI-VOICED SOUND MARK
 FFE3          ; Diacritic # Sk       FULLWIDTH MACRON
+102E0         ; Diacritic # Mn       COPTIC EPACT THOUSANDS MARK
+10AE5..10AE6  ; Diacritic # Mn   [2] MANICHAEAN ABBREVIATION MARK ABOVE..MANICHAEAN ABBREVIATION MARK BELOW
 110B9..110BA  ; Diacritic # Mn   [2] KAITHI SIGN VIRAMA..KAITHI SIGN NUKTA
 11133..11134  ; Diacritic # Mn   [2] CHAKMA VIRAMA..CHAKMA MAAYYAA
+11173         ; Diacritic # Mn       MAHAJANI SIGN NUKTA
 111C0         ; Diacritic # Mc       SHARADA SIGN VIRAMA
+11235         ; Diacritic # Mc       KHOJKI SIGN VIRAMA
+11236         ; Diacritic # Mn       KHOJKI SIGN NUKTA
+112E9..112EA  ; Diacritic # Mn   [2] KHUDAWADI SIGN NUKTA..KHUDAWADI SIGN VIRAMA
+1133C         ; Diacritic # Mn       GRANTHA SIGN NUKTA
+1134D         ; Diacritic # Mc       GRANTHA SIGN VIRAMA
+11366..1136C  ; Diacritic # Mn   [7] COMBINING GRANTHA DIGIT ZERO..COMBINING GRANTHA DIGIT SIX
+11370..11374  ; Diacritic # Mn   [5] COMBINING GRANTHA LETTER A..COMBINING GRANTHA LETTER PA
+114C2..114C3  ; Diacritic # Mn   [2] TIRHUTA SIGN VIRAMA..TIRHUTA SIGN NUKTA
+115BF..115C0  ; Diacritic # Mn   [2] SIDDHAM SIGN VIRAMA..SIDDHAM SIGN NUKTA
+1163F         ; Diacritic # Mn       MODI SIGN VIRAMA
 116B6         ; Diacritic # Mc       TAKRI SIGN VIRAMA
 116B7         ; Diacritic # Mn       TAKRI SIGN NUKTA
+16AF0..16AF4  ; Diacritic # Mn   [5] BASSA VAH COMBINING HIGH TONE..BASSA VAH COMBINING HIGH-LOW TONE
 16F8F..16F92  ; Diacritic # Mn   [4] MIAO TONE RIGHT..MIAO TONE BELOW
 16F93..16F9F  ; Diacritic # Lm  [13] MIAO LETTER TONE-2..MIAO LETTER REFORMED TONE-8
 1D167..1D169  ; Diacritic # Mn   [3] MUSICAL SYMBOL COMBINING TREMOLO-1..MUSICAL SYMBOL COMBINING TREMOLO-3
@@ -818,8 +909,9 @@ FFE3          ; Diacritic # Sk       FULLWIDTH MACRON
 1D17B..1D182  ; Diacritic # Mn   [8] MUSICAL SYMBOL COMBINING ACCENT..MUSICAL SYMBOL COMBINING LOURE
 1D185..1D18B  ; Diacritic # Mn   [7] MUSICAL SYMBOL COMBINING DOIT..MUSICAL SYMBOL COMBINING TRIPLE TONGUE
 1D1AA..1D1AD  ; Diacritic # Mn   [4] MUSICAL SYMBOL COMBINING DOWN BOW..MUSICAL SYMBOL COMBINING SNAP PIZZICATO
+1E8D0..1E8D6  ; Diacritic # Mn   [7] MENDE KIKAKUI COMBINING NUMBER TEENS..MENDE KIKAKUI COMBINING NUMBER MILLIONS
 
-# Total code points: 693
+# Total code points: 766
 
 # ================================================
 
@@ -841,12 +933,16 @@ FFE3          ; Diacritic # Sk       FULLWIDTH MACRON
 A015          ; Extender # Lm       YI SYLLABLE WU
 A60C          ; Extender # Lm       VAI SYLLABLE LENGTHENER
 A9CF          ; Extender # Lm       JAVANESE PANGRANGKEP
+A9E6          ; Extender # Lm       MYANMAR MODIFIER LETTER SHAN REDUPLICATION
 AA70          ; Extender # Lm       MYANMAR MODIFIER LETTER KHAMTI REDUPLICATION
 AADD          ; Extender # Lm       TAI VIET SYMBOL SAM
 AAF3..AAF4    ; Extender # Lm   [2] MEETEI MAYEK SYLLABLE REPETITION MARK..MEETEI MAYEK WORD REPETITION MARK
 FF70          ; Extender # Lm       HALFWIDTH KATAKANA-HIRAGANA PROLONGED SOUND MARK
+1135D         ; Extender # Lo       GRANTHA SIGN PLUTA
+115C6..115C8  ; Extender # Po   [3] SIDDHAM REPETITION MARK-1..SIDDHAM REPETITION MARK-3
+16B42..16B43  ; Extender # Lm   [2] PAHAWH HMONG SIGN VOS NRUA..PAHAWH HMONG SIGN IB YAM
 
-# Total code points: 31
+# Total code points: 38
 
 # ================================================
 
@@ -866,17 +962,22 @@ FF70          ; Extender # Lm       HALFWIDTH KATAKANA-HIRAGANA PROLONGED SOUND 
 2170..217F    ; Other_Lowercase # Nl  [16] SMALL ROMAN NUMERAL ONE..SMALL ROMAN NUMERAL ONE THOUSAND
 24D0..24E9    ; Other_Lowercase # So  [26] CIRCLED LATIN SMALL LETTER A..CIRCLED LATIN SMALL LETTER Z
 2C7C..2C7D    ; Other_Lowercase # Lm   [2] LATIN SUBSCRIPT SMALL LETTER J..MODIFIER LETTER CAPITAL V
+A69C..A69D    ; Other_Lowercase # Lm   [2] MODIFIER LETTER CYRILLIC HARD SIGN..MODIFIER LETTER CYRILLIC SOFT SIGN
 A770          ; Other_Lowercase # Lm       MODIFIER LETTER US
 A7F8..A7F9    ; Other_Lowercase # Lm   [2] MODIFIER LETTER CAPITAL H WITH STROKE..MODIFIER LETTER SMALL LIGATURE OE
+AB5C..AB5F    ; Other_Lowercase # Lm   [4] MODIFIER LETTER SMALL HENG..MODIFIER LETTER SMALL U WITH LEFT HOOK
 
-# Total code points: 183
+# Total code points: 189
 
 # ================================================
 
 2160..216F    ; Other_Uppercase # Nl  [16] ROMAN NUMERAL ONE..ROMAN NUMERAL ONE THOUSAND
 24B6..24CF    ; Other_Uppercase # So  [26] CIRCLED LATIN CAPITAL LETTER A..CIRCLED LATIN CAPITAL LETTER Z
+1F130..1F149  ; Other_Uppercase # So  [26] SQUARED LATIN CAPITAL LETTER A..SQUARED LATIN CAPITAL LETTER Z
+1F150..1F169  ; Other_Uppercase # So  [26] NEGATIVE CIRCLED LATIN CAPITAL LETTER A..NEGATIVE CIRCLED LATIN CAPITAL LETTER Z
+1F170..1F189  ; Other_Uppercase # So  [26] NEGATIVE SQUARED LATIN CAPITAL LETTER A..NEGATIVE SQUARED LATIN CAPITAL LETTER Z
 
-# Total code points: 42
+# Total code points: 120
 
 # ================================================
 
@@ -918,10 +1019,15 @@ FFFFE..FFFFF  ; Noncharacter_Code_Point # Cn   [2] <noncharacter-FFFFE>..<noncha
 200C..200D    ; Other_Grapheme_Extend # Cf   [2] ZERO WIDTH NON-JOINER..ZERO WIDTH JOINER
 302E..302F    ; Other_Grapheme_Extend # Mc   [2] HANGUL SINGLE DOT TONE MARK..HANGUL DOUBLE DOT TONE MARK
 FF9E..FF9F    ; Other_Grapheme_Extend # Lm   [2] HALFWIDTH KATAKANA VOICED SOUND MARK..HALFWIDTH KATAKANA SEMI-VOICED SOUND MARK
+1133E         ; Other_Grapheme_Extend # Mc       GRANTHA VOWEL SIGN AA
+11357         ; Other_Grapheme_Extend # Mc       GRANTHA AU LENGTH MARK
+114B0         ; Other_Grapheme_Extend # Mc       TIRHUTA VOWEL SIGN AA
+114BD         ; Other_Grapheme_Extend # Mc       TIRHUTA VOWEL SIGN SHORT O
+115AF         ; Other_Grapheme_Extend # Mc       SIDDHAM VOWEL SIGN AA
 1D165         ; Other_Grapheme_Extend # Mc       MUSICAL SYMBOL COMBINING STEM
 1D16E..1D172  ; Other_Grapheme_Extend # Mc   [5] MUSICAL SYMBOL COMBINING FLAG-1..MUSICAL SYMBOL COMBINING FLAG-5
 
-# Total code points: 25
+# Total code points: 30
 
 # ================================================
 
@@ -966,7 +1072,7 @@ FA27..FA29    ; Unified_Ideograph # Lo   [3] CJK COMPATIBILITY IDEOGRAPH-FA27..C
 034F          ; Other_Default_Ignorable_Code_Point # Mn       COMBINING GRAPHEME JOINER
 115F..1160    ; Other_Default_Ignorable_Code_Point # Lo   [2] HANGUL CHOSEONG FILLER..HANGUL JUNGSEONG FILLER
 17B4..17B5    ; Other_Default_Ignorable_Code_Point # Mn   [2] KHMER VOWEL INHERENT AQ..KHMER VOWEL INHERENT AA
-2065..2069    ; Other_Default_Ignorable_Code_Point # Cn   [5] <reserved-2065>..<reserved-2069>
+2065          ; Other_Default_Ignorable_Code_Point # Cn       <reserved-2065>
 3164          ; Other_Default_Ignorable_Code_Point # Lo       HANGUL FILLER
 FFA0          ; Other_Default_Ignorable_Code_Point # Lo       HALFWIDTH HANGUL FILLER
 FFF0..FFF8    ; Other_Default_Ignorable_Code_Point # Cn   [9] <reserved-FFF0>..<reserved-FFF8>
@@ -975,7 +1081,7 @@ E0002..E001F  ; Other_Default_Ignorable_Code_Point # Cn  [30] <reserved-E0002>..
 E0080..E00FF  ; Other_Default_Ignorable_Code_Point # Cn [128] <reserved-E0080>..<reserved-E00FF>
 E01F0..E0FFF  ; Other_Default_Ignorable_Code_Point # Cn [3600] <reserved-E01F0>..<reserved-E0FFF>
 
-# Total code points: 3780
+# Total code points: 3776
 
 # ================================================
 
@@ -1060,8 +1166,6 @@ AABB..AABC    ; Logical_Order_Exception # Lo   [2] TAI VIET VOWEL AUE..TAI VIET 
 0021          ; STerm # Po       EXCLAMATION MARK
 002E          ; STerm # Po       FULL STOP
 003F          ; STerm # Po       QUESTION MARK
-055C          ; STerm # Po       ARMENIAN EXCLAMATION MARK
-055E          ; STerm # Po       ARMENIAN QUESTION MARK
 0589          ; STerm # Po       ARMENIAN FULL STOP
 061F          ; STerm # Po       ARABIC QUESTION MARK
 06D4          ; STerm # Po       ARABIC FULL STOP
@@ -1084,6 +1188,7 @@ AABB..AABC    ; Logical_Order_Exception # Lo   [2] TAI VIET VOWEL AUE..TAI VIET 
 203C..203D    ; STerm # Po   [2] DOUBLE EXCLAMATION MARK..INTERROBANG
 2047..2049    ; STerm # Po   [3] DOUBLE QUESTION MARK..EXCLAMATION QUESTION MARK
 2E2E          ; STerm # Po       REVERSED QUESTION MARK
+2E3C          ; STerm # Po       STENOGRAPHIC FULL STOP
 3002          ; STerm # Po       IDEOGRAPHIC FULL STOP
 A4FF          ; STerm # Po       LISU PUNCTUATION FULL STOP
 A60E..A60F    ; STerm # Po   [2] VAI FULL STOP..VAI QUESTION MARK
@@ -1107,8 +1212,19 @@ FF61          ; STerm # Po       HALFWIDTH IDEOGRAPHIC FULL STOP
 110BE..110C1  ; STerm # Po   [4] KAITHI SECTION MARK..KAITHI DOUBLE DANDA
 11141..11143  ; STerm # Po   [3] CHAKMA DANDA..CHAKMA QUESTION MARK
 111C5..111C6  ; STerm # Po   [2] SHARADA DANDA..SHARADA DOUBLE DANDA
+111CD         ; STerm # Po       SHARADA SUTRA MARK
+11238..11239  ; STerm # Po   [2] KHOJKI DANDA..KHOJKI DOUBLE DANDA
+1123B..1123C  ; STerm # Po   [2] KHOJKI SECTION MARK..KHOJKI DOUBLE SECTION MARK
+115C2..115C3  ; STerm # Po   [2] SIDDHAM DANDA..SIDDHAM DOUBLE DANDA
+115C9         ; STerm # Po       SIDDHAM END OF TEXT MARK
+11641..11642  ; STerm # Po   [2] MODI DANDA..MODI DOUBLE DANDA
+16A6E..16A6F  ; STerm # Po   [2] MRO DANDA..MRO DOUBLE DANDA
+16AF5         ; STerm # Po       BASSA VAH FULL STOP
+16B37..16B38  ; STerm # Po   [2] PAHAWH HMONG SIGN VOS THOM..PAHAWH HMONG SIGN VOS TSHAB CEEB
+16B44         ; STerm # Po       PAHAWH HMONG SIGN XAUS
+1BC9F         ; STerm # Po       DUPLOYAN PUNCTUATION CHINOOK FULL STOP
 
-# Total code points: 83
+# Total code points: 99
 
 # ================================================
 
@@ -1210,7 +1326,10 @@ E0100..E01EF  ; Variation_Selector # Mn [240] VARIATION SELECTOR-17..VARIATION S
 21D5..21F3    ; Pattern_Syntax # So  [31] UP DOWN DOUBLE ARROW..UP DOWN WHITE ARROW
 21F4..22FF    ; Pattern_Syntax # Sm [268] RIGHT ARROW WITH SMALL CIRCLE..Z NOTATION BAG MEMBERSHIP
 2300..2307    ; Pattern_Syntax # So   [8] DIAMETER SIGN..WAVY LINE
-2308..230B    ; Pattern_Syntax # Sm   [4] LEFT CEILING..RIGHT FLOOR
+2308          ; Pattern_Syntax # Ps       LEFT CEILING
+2309          ; Pattern_Syntax # Pe       RIGHT CEILING
+230A          ; Pattern_Syntax # Ps       LEFT FLOOR
+230B          ; Pattern_Syntax # Pe       RIGHT FLOOR
 230C..231F    ; Pattern_Syntax # So  [20] BOTTOM RIGHT CROP..BOTTOM RIGHT CORNER
 2320..2321    ; Pattern_Syntax # Sm   [2] TOP HALF INTEGRAL..BOTTOM HALF INTEGRAL
 2322..2328    ; Pattern_Syntax # So   [7] FROWN..KEYBOARD
@@ -1222,8 +1341,8 @@ E0100..E01EF  ; Variation_Selector # Mn [240] VARIATION SELECTOR-17..VARIATION S
 239B..23B3    ; Pattern_Syntax # Sm  [25] LEFT PARENTHESIS UPPER HOOK..SUMMATION BOTTOM
 23B4..23DB    ; Pattern_Syntax # So  [40] TOP SQUARE BRACKET..FUSE
 23DC..23E1    ; Pattern_Syntax # Sm   [6] TOP PARENTHESIS..BOTTOM TORTOISE SHELL BRACKET
-23E2..23F3    ; Pattern_Syntax # So  [18] WHITE TRAPEZIUM..HOURGLASS WITH FLOWING SAND
-23F4..23FF    ; Pattern_Syntax # Cn  [12] <reserved-23F4>..<reserved-23FF>
+23E2..23FA    ; Pattern_Syntax # So  [25] WHITE TRAPEZIUM..BLACK CIRCLE FOR RECORD
+23FB..23FF    ; Pattern_Syntax # Cn   [5] <reserved-23FB>..<reserved-23FF>
 2400..2426    ; Pattern_Syntax # So  [39] SYMBOL FOR NULL..SYMBOL FOR SUBSTITUTE FORM TWO
 2427..243F    ; Pattern_Syntax # Cn  [25] <reserved-2427>..<reserved-243F>
 2440..244A    ; Pattern_Syntax # So  [11] OCR HOOK..OCR DOUBLE BACKSLASH
@@ -1236,9 +1355,7 @@ E0100..E01EF  ; Variation_Selector # Mn [240] VARIATION SELECTOR-17..VARIATION S
 25F8..25FF    ; Pattern_Syntax # Sm   [8] UPPER LEFT TRIANGLE..LOWER RIGHT TRIANGLE
 2600..266E    ; Pattern_Syntax # So [111] BLACK SUN WITH RAYS..MUSIC NATURAL SIGN
 266F          ; Pattern_Syntax # Sm       MUSIC SHARP SIGN
-2670..26FF    ; Pattern_Syntax # So [144] WEST SYRIAC CROSS..WHITE FLAG WITH HORIZONTAL MIDDLE BLACK STRIPE
-2700          ; Pattern_Syntax # Cn       <reserved-2700>
-2701..2767    ; Pattern_Syntax # So [103] UPPER BLADE SCISSORS..ROTATED FLORAL HEART BULLET
+2670..2767    ; Pattern_Syntax # So [248] WEST SYRIAC CROSS..ROTATED FLORAL HEART BULLET
 2768          ; Pattern_Syntax # Ps       MEDIUM LEFT PARENTHESIS ORNAMENT
 2769          ; Pattern_Syntax # Pe       MEDIUM RIGHT PARENTHESIS ORNAMENT
 276A          ; Pattern_Syntax # Ps       MEDIUM FLATTENED LEFT PARENTHESIS ORNAMENT
@@ -1306,9 +1423,16 @@ E0100..E01EF  ; Variation_Selector # Mn [240] VARIATION SELECTOR-17..VARIATION S
 2B30..2B44    ; Pattern_Syntax # Sm  [21] LEFT ARROW WITH SMALL CIRCLE..RIGHTWARDS ARROW THROUGH SUPERSET
 2B45..2B46    ; Pattern_Syntax # So   [2] LEFTWARDS QUADRUPLE ARROW..RIGHTWARDS QUADRUPLE ARROW
 2B47..2B4C    ; Pattern_Syntax # Sm   [6] REVERSE TILDE OPERATOR ABOVE RIGHTWARDS ARROW..RIGHTWARDS ARROW ABOVE REVERSE TILDE OPERATOR
-2B4D..2B4F    ; Pattern_Syntax # Cn   [3] <reserved-2B4D>..<reserved-2B4F>
-2B50..2B59    ; Pattern_Syntax # So  [10] WHITE MEDIUM STAR..HEAVY CIRCLED SALTIRE
-2B5A..2BFF    ; Pattern_Syntax # Cn [166] <reserved-2B5A>..<reserved-2BFF>
+2B4D..2B73    ; Pattern_Syntax # So  [39] DOWNWARDS TRIANGLE-HEADED ZIGZAG ARROW..DOWNWARDS TRIANGLE-HEADED ARROW TO BAR
+2B74..2B75    ; Pattern_Syntax # Cn   [2] <reserved-2B74>..<reserved-2B75>
+2B76..2B95    ; Pattern_Syntax # So  [32] NORTH WEST TRIANGLE-HEADED ARROW TO BAR..RIGHTWARDS BLACK ARROW
+2B96..2B97    ; Pattern_Syntax # Cn   [2] <reserved-2B96>..<reserved-2B97>
+2B98..2BB9    ; Pattern_Syntax # So  [34] THREE-D TOP-LIGHTED LEFTWARDS EQUILATERAL ARROWHEAD..UP ARROWHEAD IN A RECTANGLE BOX
+2BBA..2BBC    ; Pattern_Syntax # Cn   [3] <reserved-2BBA>..<reserved-2BBC>
+2BBD..2BC8    ; Pattern_Syntax # So  [12] BALLOT BOX WITH LIGHT X..BLACK MEDIUM RIGHT-POINTING TRIANGLE CENTRED
+2BC9          ; Pattern_Syntax # Cn       <reserved-2BC9>
+2BCA..2BD1    ; Pattern_Syntax # So   [8] TOP HALF BLACK CIRCLE..UNCERTAINTY SIGN
+2BD2..2BFF    ; Pattern_Syntax # Cn  [46] <reserved-2BD2>..<reserved-2BFF>
 2E00..2E01    ; Pattern_Syntax # Po   [2] RIGHT ANGLE SUBSTITUTION MARKER..RIGHT ANGLE DOTTED SUBSTITUTION MARKER
 2E02          ; Pattern_Syntax # Pi       LEFT SUBSTITUTION BRACKET
 2E03          ; Pattern_Syntax # Pf       RIGHT SUBSTITUTION BRACKET
@@ -1342,7 +1466,11 @@ E0100..E01EF  ; Variation_Selector # Mn [240] VARIATION SELECTOR-17..VARIATION S
 2E2F          ; Pattern_Syntax # Lm       VERTICAL TILDE
 2E30..2E39    ; Pattern_Syntax # Po  [10] RING POINT..TOP HALF SECTION SIGN
 2E3A..2E3B    ; Pattern_Syntax # Pd   [2] TWO-EM DASH..THREE-EM DASH
-2E3C..2E7F    ; Pattern_Syntax # Cn  [68] <reserved-2E3C>..<reserved-2E7F>
+2E3C..2E3F    ; Pattern_Syntax # Po   [4] STENOGRAPHIC FULL STOP..CAPITULUM
+2E40          ; Pattern_Syntax # Pd       DOUBLE HYPHEN
+2E41          ; Pattern_Syntax # Po       REVERSED COMMA
+2E42          ; Pattern_Syntax # Ps       DOUBLE LOW-REVERSED-9 QUOTATION MARK
+2E43..2E7F    ; Pattern_Syntax # Cn  [61] <reserved-2E43>..<reserved-2E7F>
 3001..3003    ; Pattern_Syntax # Po   [3] IDEOGRAPHIC COMMA..DITTO MARK
 3008          ; Pattern_Syntax # Ps       LEFT ANGLE BRACKET
 3009          ; Pattern_Syntax # Pe       RIGHT ANGLE BRACKET
@@ -1368,8 +1496,8 @@ E0100..E01EF  ; Variation_Selector # Mn [240] VARIATION SELECTOR-17..VARIATION S
 301E..301F    ; Pattern_Syntax # Pe   [2] DOUBLE PRIME QUOTATION MARK..LOW DOUBLE PRIME QUOTATION MARK
 3020          ; Pattern_Syntax # So       POSTAL MARK FACE
 3030          ; Pattern_Syntax # Pd       WAVY DASH
-FD3E          ; Pattern_Syntax # Ps       ORNATE LEFT PARENTHESIS
-FD3F          ; Pattern_Syntax # Pe       ORNATE RIGHT PARENTHESIS
+FD3E          ; Pattern_Syntax # Pe       ORNATE LEFT PARENTHESIS
+FD3F          ; Pattern_Syntax # Ps       ORNATE RIGHT PARENTHESIS
 FE45..FE46    ; Pattern_Syntax # Po   [2] SESAME DOT..WHITE SESAME DOT
 
 # Total code points: 2760
