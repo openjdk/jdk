@@ -101,6 +101,13 @@ public class ImageModuleDataWriter {
             PerfectHashBuilder<List<String>> moduleToPackages) {
         ImageStream stream = new ImageStream(writer.getByteOrder());
 
+        // Empty jimage
+        if (packageToModule.getCount() == 0) {
+            stream.putInt(0);
+            stream.putInt(0);
+            return stream.toArray();
+        }
+
         int[] ptmRedirect = packageToModule.getRedirect();
         int[] mtpRedirect = moduleToPackages.getRedirect();
         PerfectHashBuilder.Entry<String>[] ptmOrder = packageToModule.getOrder();
