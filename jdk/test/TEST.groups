@@ -223,7 +223,8 @@ svc_tools = \
     sun/tools \
     -sun/tools/java \
     -sun/tools/jrunscript \
-    sun/jvmstat
+    sun/jvmstat \
+    demo/jvmti
 
 jdk_tools = \
     :core_tools \
@@ -434,6 +435,7 @@ jdk = \
 needs_jdk = \
   :jdk_jdi \
   com/sun/tools \
+  demo \
   sun/security/tools/jarsigner \
   sun/security/tools/policytool \
   sun/rmi/rmic \
