@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -295,8 +295,9 @@ public abstract class $Type$Buffer
      * Allocates a new direct $type$ buffer.
      *
      * <p> The new buffer's position will be zero, its limit will be its
-     * capacity, its mark will be undefined, and each of its elements will be
-     * initialized to zero.  Whether or not it has a
+     * capacity, its mark will be undefined, each of its elements will be
+     * initialized to zero, and its byte order will be
+     * {@link ByteOrder#BIG_ENDIAN BIG_ENDIAN}.  Whether or not it has a
      * {@link #hasArray backing array} is unspecified.
      *
      * @param  capacity
@@ -317,9 +318,16 @@ public abstract class $Type$Buffer
      * Allocates a new $type$ buffer.
      *
      * <p> The new buffer's position will be zero, its limit will be its
-     * capacity, its mark will be undefined, and each of its elements will be
-     * initialized to zero.  It will have a {@link #array backing array},
-     * and its {@link #arrayOffset array offset} will be zero.
+     * capacity, its mark will be undefined, each of its elements will be
+     * initialized to zero, and its byte order will be
+#if[byte]
+     * {@link ByteOrder#BIG_ENDIAN BIG_ENDIAN}.
+#else[byte]
+     * the {@link ByteOrder#nativeOrder native order} of the underlying
+     * hardware.
+#end[byte]
+     * It will have a {@link #array backing array}, and its
+     * {@link #arrayOffset array offset} will be zero.
      *
      * @param  capacity
      *         The new buffer's capacity, in $type$s
@@ -342,8 +350,15 @@ public abstract class $Type$Buffer
      * that is, modifications to the buffer will cause the array to be modified
      * and vice versa.  The new buffer's capacity will be
      * <tt>array.length</tt>, its position will be <tt>offset</tt>, its limit
-     * will be <tt>offset + length</tt>, and its mark will be undefined.  Its
-     * {@link #array backing array} will be the given array, and
+     * will be <tt>offset + length</tt>, its mark will be undefined, and its
+     * byte order will be
+#if[byte]
+     * {@link ByteOrder#BIG_ENDIAN BIG_ENDIAN}.
+#else[byte]
+     * the {@link ByteOrder#nativeOrder native order} of the underlying
+     * hardware.
+#end[byte]
+     * Its {@link #array backing array} will be the given array, and
      * its {@link #arrayOffset array offset} will be zero.  </p>
      *
      * @param  array
@@ -382,10 +397,16 @@ public abstract class $Type$Buffer
      * <p> The new buffer will be backed by the given $type$ array;
      * that is, modifications to the buffer will cause the array to be modified
      * and vice versa.  The new buffer's capacity and limit will be
-     * <tt>array.length</tt>, its position will be zero, and its mark will be
-     * undefined.  Its {@link #array backing array} will be the
-     * given array, and its {@link #arrayOffset array offset} will
-     * be zero.  </p>
+     * <tt>array.length</tt>, its position will be zero, its mark will be
+     * undefined, and its byte order will be
+#if[byte]
+     * {@link ByteOrder#BIG_ENDIAN BIG_ENDIAN}.
+#else[byte]
+     * the {@link ByteOrder#nativeOrder native order} of the underlying
+     * hardware.
+#end[byte]
+     * Its {@link #array backing array} will be the given array, and its
+     * {@link #arrayOffset array offset} will be zero.  </p>
      *
      * @param  array
      *         The array that will back this buffer
@@ -499,10 +520,15 @@ public abstract class $Type$Buffer
      * values will be independent.
      *
      * <p> The new buffer's position will be zero, its capacity and its limit
-     * will be the number of $type$s remaining in this buffer, and its mark
-     * will be undefined.  The new buffer will be direct if, and only if, this
-     * buffer is direct, and it will be read-only if, and only if, this buffer
-     * is read-only.  </p>
+     * will be the number of $type$s remaining in this buffer, its mark will be
+     * undefined, and its byte order will be
+#if[byte]
+     * {@link ByteOrder#BIG_ENDIAN BIG_ENDIAN}.
+#else[byte]
+     * identical to that of this buffer.
+#end[byte]
+     * The new buffer will be direct if, and only if, this buffer is direct, and
+     * it will be read-only if, and only if, this buffer is read-only.  </p>
      *
      * @return  The new $type$ buffer
      */
@@ -516,10 +542,15 @@ public abstract class $Type$Buffer
      * versa; the two buffers' position, limit, and mark values will be
      * independent.
      *
-     * <p> The new buffer's capacity, limit, position, and mark values will be
-     * identical to those of this buffer.  The new buffer will be direct if,
-     * and only if, this buffer is direct, and it will be read-only if, and
-     * only if, this buffer is read-only.  </p>
+     * <p> The new buffer's capacity, limit, position,
+#if[byte]
+     * and mark values will be identical to those of this buffer, and its byte
+     * order will be {@link ByteOrder#BIG_ENDIAN BIG_ENDIAN}.
+#else[byte]
+     * mark values, and byte order will be identical to those of this buffer.
+#end[byte]
+     * The new buffer will be direct if, and only if, this buffer is direct, and
+     * it will be read-only if, and only if, this buffer is read-only.  </p>
      *
      * @return  The new $type$ buffer
      */
@@ -535,8 +566,13 @@ public abstract class $Type$Buffer
      * content to be modified.  The two buffers' position, limit, and mark
      * values will be independent.
      *
-     * <p> The new buffer's capacity, limit, position, and mark values will be
-     * identical to those of this buffer.
+     * <p> The new buffer's capacity, limit, position,
+#if[byte]
+     * and mark values will be identical to those of this buffer, and its byte
+     * order will be {@link ByteOrder#BIG_ENDIAN BIG_ENDIAN}.
+#else[byte]
+     * mark values, and byte order will be identical to those of this buffer.
+#end[byte]
      *
      * <p> If this buffer is itself read-only then this method behaves in
      * exactly the same way as the {@link #duplicate duplicate} method.  </p>
