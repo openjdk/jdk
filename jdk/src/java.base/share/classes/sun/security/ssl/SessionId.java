@@ -43,7 +43,7 @@ final
 class SessionId
 {
     static int MAX_LENGTH = 32;
-    private byte sessionId [];          // max 32 bytes
+    private byte[] sessionId;          // max 32 bytes
 
     /** Constructs a new session ID ... perhaps for a rejoinable session */
     SessionId (boolean isRejoinable, SecureRandom generator)
@@ -56,7 +56,7 @@ class SessionId
     }
 
     /** Constructs a session ID from a byte array (max size 32 bytes) */
-    SessionId (byte sessionId [])
+    SessionId (byte[] sessionId)
         { this.sessionId = sessionId; }
 
     /** Returns the length of the ID, in bytes */
@@ -64,7 +64,7 @@ class SessionId
         { return sessionId.length; }
 
     /** Returns the bytes in the ID.  May be an empty array.  */
-    byte [] getId ()
+    byte[] getId ()
     {
         return sessionId.clone ();
     }
@@ -106,7 +106,7 @@ class SessionId
             return false;
 
         SessionId s = (SessionId) obj;
-        byte b [] = s.getId ();
+        byte[] b = s.getId ();
 
         if (b.length != sessionId.length)
             return false;

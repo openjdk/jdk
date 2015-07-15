@@ -88,13 +88,13 @@ import jdk.nashorn.tools.ShellFunctions;
  */
 @ScriptClass("Global")
 public final class Global extends Scope {
-    // Placeholder value used in place of a location property (__FILE__, __DIR__, __LINE__)
-    private static final Object LOCATION_PROPERTY_PLACEHOLDER = new Object();
+    // This special value is used to flag a lazily initialized global property.
+    // This also serves as placeholder value used in place of a location property
+    // (__FILE__, __DIR__, __LINE__)
+    private static final Object LAZY_SENTINEL = new Object();
+
     private final InvokeByName TO_STRING = new InvokeByName("toString", ScriptObject.class);
     private final InvokeByName VALUE_OF  = new InvokeByName("valueOf",  ScriptObject.class);
-
-    // placeholder value for lazily initialized global objects
-    private static final Object LAZY_SENTINEL = new Object();
 
     /**
      * Optimistic builtin names that require switchpoint invalidation
@@ -182,15 +182,15 @@ public final class Global extends Scope {
 
     /** Value property NaN of the Global Object - ECMA 15.1.1.1 NaN */
     @Property(attributes = Attribute.NON_ENUMERABLE_CONSTANT)
-    public final double NaN = Double.NaN;
+    public static final double NaN = Double.NaN;
 
     /** Value property Infinity of the Global Object - ECMA 15.1.1.2 Infinity */
     @Property(attributes = Attribute.NON_ENUMERABLE_CONSTANT)
-    public final double Infinity = Double.POSITIVE_INFINITY;
+    public static final double Infinity = Double.POSITIVE_INFINITY;
 
     /** Value property Undefined of the Global Object - ECMA 15.1.1.3 Undefined */
     @Property(attributes = Attribute.NON_ENUMERABLE_CONSTANT)
-    public final Object undefined = UNDEFINED;
+    public static final Object undefined = UNDEFINED;
 
     /** ECMA 15.1.2.1 eval(x) */
     @Property(attributes = Attribute.NOT_ENUMERABLE)
@@ -830,15 +830,15 @@ public final class Global extends Scope {
 
     /** Nashorn extension: current script's file name */
     @Property(name = "__FILE__", attributes = Attribute.NON_ENUMERABLE_CONSTANT)
-    public final Object __FILE__ = LOCATION_PROPERTY_PLACEHOLDER;
+    public static final Object __FILE__ = LAZY_SENTINEL;
 
     /** Nashorn extension: current script's directory */
     @Property(name = "__DIR__", attributes = Attribute.NON_ENUMERABLE_CONSTANT)
-    public final Object __DIR__ = LOCATION_PROPERTY_PLACEHOLDER;
+    public static final Object __DIR__ = LAZY_SENTINEL;
 
     /** Nashorn extension: current source line number being executed */
     @Property(name = "__LINE__", attributes = Attribute.NON_ENUMERABLE_CONSTANT)
-    public final Object __LINE__ = LOCATION_PROPERTY_PLACEHOLDER;
+    public static final Object __LINE__ = LAZY_SENTINEL;
 
     private volatile NativeDate DEFAULT_DATE;
 
@@ -1768,36 +1768,8 @@ public final class Global extends Scope {
         return ScriptFunction.getPrototype(getBuiltinFloat64Array());
     }
 
-    private ScriptFunction getBuiltinArray() {
-        return builtinArray;
-    }
-
     ScriptFunction getTypeErrorThrower() {
         return typeErrorThrower;
-    }
-
-    /**
-     * Called from compiled script code to test if builtin has been overridden
-     *
-     * @return true if builtin array has not been overridden
-     */
-    public static boolean isBuiltinArray() {
-        final Global instance = Global.instance();
-        return instance.array == instance.getBuiltinArray();
-    }
-
-    private ScriptFunction getBuiltinBoolean() {
-        return builtinBoolean;
-    }
-
-    /**
-     * Called from compiled script code to test if builtin has been overridden
-     *
-     * @return true if builtin boolean has not been overridden
-     */
-    public static boolean isBuiltinBoolean() {
-        final Global instance = Global.instance();
-        return instance._boolean == instance.getBuiltinBoolean();
     }
 
     private synchronized ScriptFunction getBuiltinDate() {
@@ -1810,30 +1782,6 @@ public final class Global extends Scope {
         return this.builtinDate;
     }
 
-    /**
-     * Called from compiled script code to test if builtin has been overridden
-     *
-     * @return true if builtin date has not been overridden
-     */
-    public static boolean isBuiltinDate() {
-        final Global instance = Global.instance();
-        return instance.date == LAZY_SENTINEL || instance.date == instance.getBuiltinDate();
-    }
-
-    private ScriptFunction getBuiltinError() {
-        return builtinError;
-    }
-
-    /**
-     * Called from compiled script code to test if builtin has been overridden
-     *
-     * @return true if builtin error has not been overridden
-     */
-    public static boolean isBuiltinError() {
-        final Global instance = Global.instance();
-        return instance.error == instance.getBuiltinError();
-    }
-
     private synchronized ScriptFunction getBuiltinEvalError() {
         if (this.builtinEvalError == null) {
             this.builtinEvalError = initErrorSubtype("EvalError", getErrorPrototype());
@@ -1841,28 +1789,8 @@ public final class Global extends Scope {
         return this.builtinEvalError;
     }
 
-    /**
-     * Called from compiled script code to test if builtin has been overridden
-     *
-     * @return true if builtin eval error has not been overridden
-     */
-    public static boolean isBuiltinEvalError() {
-        final Global instance = Global.instance();
-        return instance.evalError == LAZY_SENTINEL || instance.evalError == instance.getBuiltinEvalError();
-    }
-
     private ScriptFunction getBuiltinFunction() {
         return builtinFunction;
-    }
-
-    /**
-     * Called from compiled script code to test if builtin has been overridden
-     *
-     * @return true if builtin function has not been overridden
-     */
-    public static boolean isBuiltinFunction() {
-        final Global instance = Global.instance();
-        return instance.function == instance.getBuiltinFunction();
     }
 
     /**
@@ -1906,59 +1834,11 @@ public final class Global extends Scope {
         return builtinJSAdapter;
     }
 
-    /**
-     * Called from compiled script code to test if builtin has been overridden
-     *
-     * @return true if builtin JSAdapter has not been overridden
-     */
-    public static boolean isBuiltinJSAdapter() {
-        final Global instance = Global.instance();
-        return instance.jsadapter == LAZY_SENTINEL || instance.jsadapter == instance.getBuiltinJSAdapter();
-    }
-
     private synchronized ScriptObject getBuiltinJSON() {
         if (this.builtinJSON == null) {
             this.builtinJSON = initConstructorAndSwitchPoint("JSON", ScriptObject.class);
         }
         return this.builtinJSON;
-    }
-
-    /**
-     * Called from compiled script code to test if builtin has been overridden
-     *
-     * @return true if builtin JSON has has not been overridden
-     */
-    public static boolean isBuiltinJSON() {
-        final Global instance = Global.instance();
-        return instance.json == LAZY_SENTINEL || instance.json == instance.getBuiltinJSON();
-    }
-
-    private ScriptObject getBuiltinJava() {
-        return builtinJava;
-    }
-
-    /**
-     * Called from compiled script code to test if builtin has been overridden
-     *
-     * @return true if builtin Java has not been overridden
-     */
-    public static boolean isBuiltinJava() {
-        final Global instance = Global.instance();
-        return instance.java == instance.getBuiltinJava();
-    }
-
-    private ScriptObject getBuiltinJavax() {
-        return builtinJavax;
-    }
-
-    /**
-     * Called from compiled script code to test if builtin has been overridden
-     *
-     * @return true if builtin Javax has not been overridden
-     */
-    public static boolean isBuiltinJavax() {
-        final Global instance = Global.instance();
-        return instance.javax == instance.getBuiltinJavax();
     }
 
     private synchronized ScriptFunction getBuiltinJavaImporter() {
@@ -1975,97 +1855,11 @@ public final class Global extends Scope {
         return this.builtinJavaApi;
     }
 
-    /**
-     * Called from compiled script code to test if builtin has been overridden
-     *
-     * @return true if builtin Java importer has not been overridden
-     */
-    public static boolean isBuiltinJavaImporter() {
-        final Global instance = Global.instance();
-        return instance.javaImporter == LAZY_SENTINEL || instance.javaImporter == instance.getBuiltinJavaImporter();
-    }
-
-    /**
-     * Called from compiled script code to test if builtin has been overridden
-     *
-     * @return true if builtin math has not been overridden
-     */
-    public static boolean isBuiltinMath() {
-        final Global instance = Global.instance();
-        return instance.math == instance.builtinMath;
-    }
-
-    private ScriptFunction getBuiltinNumber() {
-        return builtinNumber;
-    }
-
-    /**
-     * Called from compiled script code to test if builtin has been overridden
-     *
-     * @return true if builtin number has not been overridden
-     */
-    public static boolean isBuiltinNumber() {
-        final Global instance = Global.instance();
-        return instance.number == instance.getBuiltinNumber();
-    }
-
-    private ScriptFunction getBuiltinObject() {
-        return builtinObject;
-    }
-
-    /**
-     * Called from compiled script code to test if builtin has been overridden
-     *
-     * @return true if builtin object has not been overridden
-     */
-    public static boolean isBuiltinObject() {
-        final Global instance = Global.instance();
-        return instance.object == instance.getBuiltinObject();
-    }
-
-    private ScriptObject getBuiltinPackages() {
-        return builtinPackages;
-    }
-
-    /**
-     * Called from compiled script code to test if builtin has been overridden
-     *
-     * @return true if builtin package has not been overridden
-     */
-    public static boolean isBuiltinPackages() {
-        final Global instance = Global.instance();
-        return instance.packages == instance.getBuiltinPackages();
-    }
-
     private synchronized ScriptFunction getBuiltinRangeError() {
         if (this.builtinRangeError == null) {
             this.builtinRangeError = initErrorSubtype("RangeError", getErrorPrototype());
         }
         return builtinRangeError;
-    }
-
-    /**
-     * Called from compiled script code to test if builtin has been overridden
-     *
-     * @return true if builtin range error has not been overridden
-     */
-    public static boolean isBuiltinRangeError() {
-        final Global instance = Global.instance();
-        return instance.rangeError == LAZY_SENTINEL || instance.rangeError == instance.getBuiltinRangeError();
-    }
-
-    private synchronized ScriptFunction getBuiltinReferenceError() {
-        return builtinReferenceError;
-    }
-
-    /**
-     * Called from compiled script code to test if builtin has been overridden
-     *
-     * @return true if builtin reference error has not been overridden
-     */
-    public static boolean isBuiltinReferenceError() {
-        final Global instance = Global.instance();
-        return instance.referenceError == instance.getBuiltinReferenceError();
     }
 
     private synchronized ScriptFunction getBuiltinRegExp() {
@@ -2081,73 +1875,11 @@ public final class Global extends Scope {
         return builtinRegExp;
     }
 
-    /**
-     * Called from compiled script code to test if builtin has been overridden
-     *
-     * @return true if builtin regexp has not been overridden
-     */
-    public static boolean isBuiltinRegExp() {
-        final Global instance = Global.instance();
-        return instance.regexp == LAZY_SENTINEL || instance.regexp == instance.getBuiltinRegExp();
-    }
-
-    private ScriptFunction getBuiltinString() {
-        return builtinString;
-    }
-
-    /**
-     * Called from compiled script code to test if builtin has been overridden
-     *
-     * @return true if builtin Java has not been overridden
-     */
-    public static boolean isBuiltinString() {
-        final Global instance = Global.instance();
-        return instance.string == instance.getBuiltinString();
-    }
-
-    private ScriptFunction getBuiltinSyntaxError() {
-        return builtinSyntaxError;
-    }
-
-    /**
-     * Called from compiled script code to test if builtin has been overridden
-     *
-     * @return true if builtin syntax error has not been overridden
-     */
-    public static boolean isBuiltinSyntaxError() {
-        final Global instance = Global.instance();
-        return instance.syntaxError == instance.getBuiltinSyntaxError();
-    }
-
-    private ScriptFunction getBuiltinTypeError() {
-        return builtinTypeError;
-    }
-
-    /**
-     * Called from compiled script code to test if builtin has been overridden
-     *
-     * @return true if builtin type error has not been overridden
-     */
-    public static boolean isBuiltinTypeError() {
-        final Global instance = Global.instance();
-        return instance.typeError == instance.getBuiltinTypeError();
-    }
-
     private synchronized ScriptFunction getBuiltinURIError() {
         if (this.builtinURIError == null) {
             this.builtinURIError = initErrorSubtype("URIError", getErrorPrototype());
         }
         return this.builtinURIError;
-    }
-
-    /**
-     * Called from compiled script code to test if builtin has been overridden
-     *
-     * @return true if builtin URI error has not been overridden
-     */
-    public static boolean isBuiltinURIError() {
-        final Global instance = Global.instance();
-        return instance.uriError == LAZY_SENTINEL || instance.uriError == instance.getBuiltinURIError();
     }
 
     @Override
@@ -2288,7 +2020,7 @@ public final class Global extends Scope {
      * @return true if the value is a placeholder, false otherwise.
      */
     public static boolean isLocationPropertyPlaceholder(final Object placeholder) {
-        return placeholder == LOCATION_PROPERTY_PLACEHOLDER;
+        return placeholder == LAZY_SENTINEL;
     }
 
     /**

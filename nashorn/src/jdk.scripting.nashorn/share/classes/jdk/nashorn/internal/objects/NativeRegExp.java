@@ -803,7 +803,7 @@ public final class NativeRegExp extends ScriptObject {
 
     private static final Object REPLACE_VALUE = new Object();
 
-    private static final MethodHandle getReplaceValueInvoker() {
+    private static MethodHandle getReplaceValueInvoker() {
         return Global.instance().getDynamicInvoker(REPLACE_VALUE,
                 new Callable<MethodHandle>() {
                     @Override

@@ -91,7 +91,7 @@ final class NumberArrayData extends ContinuousArrayData implements NumericElemen
         final Object[] oarray = new Object[trim ? len : array.length];
 
         for (int index = 0; index < len; index++) {
-            oarray[index] = Double.valueOf(array[index]);
+            oarray[index] = array[index];
         }
         return oarray;
     }

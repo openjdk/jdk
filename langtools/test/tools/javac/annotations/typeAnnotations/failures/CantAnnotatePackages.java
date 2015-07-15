@@ -1,11 +1,11 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8026564 8074346
+ * @bug 8026564
  * @summary The parts of a fully-qualified type can't be annotated.
  * @author Werner Dietl
+ * @ignore 8057679 clarify error messages trying to annotate scoping
  * @compile/fail/ref=CantAnnotatePackages.out -XDrawDiagnostics CantAnnotatePackages.java
  */
-
 
 import java.lang.annotation.*;
 import java.util.List;
@@ -20,8 +20,6 @@ class CantAnnotatePackages {
     List<@TA java.lang.Object> of2;
     java. @TA lang.Object of3;
     List<java. @TA lang.Object> of4;
-
-    List<@CantAnnotatePackages_TB java.lang.Object> of5; // test that we do reasonable things for missing types.
 
     // TODO: also note the order of error messages.
 }
