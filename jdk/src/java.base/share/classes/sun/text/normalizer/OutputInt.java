@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,35 +25,26 @@
 
 /*
  *******************************************************************************
- * (C) Copyright IBM Corp. 1996-2005 - All Rights Reserved                     *
- *                                                                             *
- * The original version of this source code and documentation is copyrighted   *
- * and owned by IBM, These materials are provided under terms of a License     *
- * Agreement between IBM and Sun. This technology is protected by multiple     *
- * US and International patents. This notice and attribution to IBM may not    *
- * to removed.                                                                 *
+ * Copyright (C) 2014, International Business Machines Corporation and
+ * others. All Rights Reserved.
  *******************************************************************************
  */
-
 package sun.text.normalizer;
 
 /**
- * <code>UnicodeMatcher</code> defines a protocol for objects that can
- * match a range of characters in a Replaceable string.
- * @stable ICU 2.0
+ * Simple struct-like class for int output parameters.
+ * Like <code>Output&lt;Integer&gt;</code> but without auto-boxing.
+ *
+ * @internal but could become public
+ * deprecated This API is ICU internal only.
  */
-public interface UnicodeMatcher {
+class OutputInt {
 
     /**
-     * The character at index {@code i}, where
-     * {@code i < contextStart || i >= contextLimit},
-     * is ETHER.  This allows explicit matching by rules and UnicodeSets
-     * of text outside the context.  In traditional terms, this allows anchoring
-     * at the start and/or end.
-     * @stable ICU 2.0
+     * The value field.
+     *
+     * @internal
+     * deprecated This API is ICU internal only.
      */
-    static final char ETHER = '\uFFFF';
-
+    public int value;
 }
-
-//eof

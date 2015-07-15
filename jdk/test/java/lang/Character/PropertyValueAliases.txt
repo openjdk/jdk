@@ -1,8 +1,8 @@
-# PropertyValueAliases-6.2.0.txt
-# Date: 2012-08-14, 16:05:11 GMT [MD]
+# PropertyValueAliases-7.0.0.txt
+# Date: 2014-05-14, 23:55:16 GMT [MD]
 #
 # Unicode Character Database
-# Copyright (c) 1991-2012 Unicode, Inc.
+# Copyright (c) 1991-2014 Unicode, Inc.
 # For terms of use, see http://www.unicode.org/terms_of_use.html
 # For documentation, see http://www.unicode.org/reports/tr44/
 #
@@ -32,13 +32,14 @@
 #
 # Loose matching should be applied to all property names and property values, with
 # the exception of String Property values. With loose matching of property names and
-# values, the case distinctions, whitespace, and '_' are ignored. For Numeric Property
-# values, numeric equivalencies are applied: thus "01.00" is equivalent to "1".
+# values, the case distinctions, whitespace, hyphens, and '_' are ignored.
+# For Numeric Property values, numeric equivalence is applied: thus "01.00"
+# is equivalent to "1".
 #
 # NOTE: Property value names are NOT unique across properties. For example:
 #
 #   AL means Arabic Letter for the Bidi_Class property, and
-#   AL means Above_Left for the Combining_Class property, and
+#   AL means Above_Left for the Canonical_Combining_Class property, and
 #   AL means Alphabetic for the Line_Break property.
 #
 # In addition, some property names may be the same as some property value names.
@@ -74,6 +75,8 @@ age; 5.2                              ; V5_2
 age; 6.0                              ; V6_0
 age; 6.1                              ; V6_1
 age; 6.2                              ; V6_2
+age; 6.3                              ; V6_3
+age; 7.0                              ; V7_0
 age; NA                               ; Unassigned
 
 # Alphabetic (Alpha)
@@ -91,14 +94,18 @@ bc ; CS                               ; Common_Separator
 bc ; EN                               ; European_Number
 bc ; ES                               ; European_Separator
 bc ; ET                               ; European_Terminator
+bc ; FSI                              ; First_Strong_Isolate
 bc ; L                                ; Left_To_Right
 bc ; LRE                              ; Left_To_Right_Embedding
+bc ; LRI                              ; Left_To_Right_Isolate
 bc ; LRO                              ; Left_To_Right_Override
 bc ; NSM                              ; Nonspacing_Mark
 bc ; ON                               ; Other_Neutral
 bc ; PDF                              ; Pop_Directional_Format
+bc ; PDI                              ; Pop_Directional_Isolate
 bc ; R                                ; Right_To_Left
 bc ; RLE                              ; Right_To_Left_Embedding
+bc ; RLI                              ; Right_To_Left_Isolate
 bc ; RLO                              ; Right_To_Left_Override
 bc ; S                                ; Segment_Separator
 bc ; WS                               ; White_Space
@@ -116,6 +123,17 @@ Bidi_M; Y                             ; Yes                              ; T    
 # Bidi_Mirroring_Glyph (bmg)
 
 # @missing: 0000..10FFFF; Bidi_Mirroring_Glyph; <none>
+
+# Bidi_Paired_Bracket (bpb)
+
+# @missing: 0000..10FFFF; Bidi_Paired_Bracket; <none>
+
+# Bidi_Paired_Bracket_Type (bpt)
+
+bpt; c                                ; Close
+bpt; n                                ; None
+bpt; o                                ; Open
+# @missing: 0000..10FFFF; Bidi_Paired_Bracket_Type; n
 
 # Block (blk)
 
@@ -138,6 +156,7 @@ blk; Avestan                          ; Avestan
 blk; Balinese                         ; Balinese
 blk; Bamum                            ; Bamum
 blk; Bamum_Sup                        ; Bamum_Supplement
+blk; Bassa_Vah                        ; Bassa_Vah
 blk; Batak                            ; Batak
 blk; Bengali                          ; Bengali
 blk; Block_Elements                   ; Block_Elements
@@ -150,6 +169,7 @@ blk; Buginese                         ; Buginese
 blk; Buhid                            ; Buhid
 blk; Byzantine_Music                  ; Byzantine_Musical_Symbols
 blk; Carian                           ; Carian
+blk; Caucasian_Albanian               ; Caucasian_Albanian
 blk; Chakma                           ; Chakma
 blk; Cham                             ; Cham
 blk; Cherokee                         ; Cherokee
@@ -168,6 +188,7 @@ blk; CJK_Symbols                      ; CJK_Symbols_And_Punctuation
 blk; Compat_Jamo                      ; Hangul_Compatibility_Jamo
 blk; Control_Pictures                 ; Control_Pictures
 blk; Coptic                           ; Coptic
+blk; Coptic_Epact_Numbers             ; Coptic_Epact_Numbers
 blk; Counting_Rod                     ; Counting_Rod_Numerals
 blk; Cuneiform                        ; Cuneiform
 blk; Cuneiform_Numbers                ; Cuneiform_Numbers_And_Punctuation
@@ -181,11 +202,14 @@ blk; Deseret                          ; Deseret
 blk; Devanagari                       ; Devanagari
 blk; Devanagari_Ext                   ; Devanagari_Extended
 blk; Diacriticals                     ; Combining_Diacritical_Marks
+blk; Diacriticals_Ext                 ; Combining_Diacritical_Marks_Extended
 blk; Diacriticals_For_Symbols         ; Combining_Diacritical_Marks_For_Symbols; Combining_Marks_For_Symbols
 blk; Diacriticals_Sup                 ; Combining_Diacritical_Marks_Supplement
 blk; Dingbats                         ; Dingbats
 blk; Domino                           ; Domino_Tiles
+blk; Duployan                         ; Duployan
 blk; Egyptian_Hieroglyphs             ; Egyptian_Hieroglyphs
+blk; Elbasan                          ; Elbasan
 blk; Emoticons                        ; Emoticons
 blk; Enclosed_Alphanum                ; Enclosed_Alphanumerics
 blk; Enclosed_Alphanum_Sup            ; Enclosed_Alphanumeric_Supplement
@@ -196,10 +220,12 @@ blk; Ethiopic_Ext                     ; Ethiopic_Extended
 blk; Ethiopic_Ext_A                   ; Ethiopic_Extended_A
 blk; Ethiopic_Sup                     ; Ethiopic_Supplement
 blk; Geometric_Shapes                 ; Geometric_Shapes
+blk; Geometric_Shapes_Ext             ; Geometric_Shapes_Extended
 blk; Georgian                         ; Georgian
 blk; Georgian_Sup                     ; Georgian_Supplement
 blk; Glagolitic                       ; Glagolitic
 blk; Gothic                           ; Gothic
+blk; Grantha                          ; Grantha
 blk; Greek                            ; Greek_And_Coptic
 blk; Greek_Ext                        ; Greek_Extended
 blk; Gujarati                         ; Gujarati
@@ -233,6 +259,8 @@ blk; Kayah_Li                         ; Kayah_Li
 blk; Kharoshthi                       ; Kharoshthi
 blk; Khmer                            ; Khmer
 blk; Khmer_Symbols                    ; Khmer_Symbols
+blk; Khojki                           ; Khojki
+blk; Khudawadi                        ; Khudawadi
 blk; Lao                              ; Lao
 blk; Latin_1_Sup                      ; Latin_1_Supplement               ; Latin_1
 blk; Latin_Ext_A                      ; Latin_Extended_A
@@ -240,22 +268,27 @@ blk; Latin_Ext_Additional             ; Latin_Extended_Additional
 blk; Latin_Ext_B                      ; Latin_Extended_B
 blk; Latin_Ext_C                      ; Latin_Extended_C
 blk; Latin_Ext_D                      ; Latin_Extended_D
+blk; Latin_Ext_E                      ; Latin_Extended_E
 blk; Lepcha                           ; Lepcha
 blk; Letterlike_Symbols               ; Letterlike_Symbols
 blk; Limbu                            ; Limbu
+blk; Linear_A                         ; Linear_A
 blk; Linear_B_Ideograms               ; Linear_B_Ideograms
 blk; Linear_B_Syllabary               ; Linear_B_Syllabary
 blk; Lisu                             ; Lisu
 blk; Low_Surrogates                   ; Low_Surrogates
 blk; Lycian                           ; Lycian
 blk; Lydian                           ; Lydian
+blk; Mahajani                         ; Mahajani
 blk; Mahjong                          ; Mahjong_Tiles
 blk; Malayalam                        ; Malayalam
 blk; Mandaic                          ; Mandaic
+blk; Manichaean                       ; Manichaean
 blk; Math_Alphanum                    ; Mathematical_Alphanumeric_Symbols
 blk; Math_Operators                   ; Mathematical_Operators
 blk; Meetei_Mayek                     ; Meetei_Mayek
 blk; Meetei_Mayek_Ext                 ; Meetei_Mayek_Extensions
+blk; Mende_Kikakui                    ; Mende_Kikakui
 blk; Meroitic_Cursive                 ; Meroitic_Cursive
 blk; Meroitic_Hieroglyphs             ; Meroitic_Hieroglyphs
 blk; Miao                             ; Miao
@@ -265,12 +298,16 @@ blk; Misc_Math_Symbols_B              ; Miscellaneous_Mathematical_Symbols_B
 blk; Misc_Pictographs                 ; Miscellaneous_Symbols_And_Pictographs
 blk; Misc_Symbols                     ; Miscellaneous_Symbols
 blk; Misc_Technical                   ; Miscellaneous_Technical
+blk; Modi                             ; Modi
 blk; Modifier_Letters                 ; Spacing_Modifier_Letters
 blk; Modifier_Tone_Letters            ; Modifier_Tone_Letters
 blk; Mongolian                        ; Mongolian
+blk; Mro                              ; Mro
 blk; Music                            ; Musical_Symbols
 blk; Myanmar                          ; Myanmar
 blk; Myanmar_Ext_A                    ; Myanmar_Extended_A
+blk; Myanmar_Ext_B                    ; Myanmar_Extended_B
+blk; Nabataean                        ; Nabataean
 blk; NB                               ; No_Block
 blk; New_Tai_Lue                      ; New_Tai_Lue
 blk; NKo                              ; NKo
@@ -279,17 +316,24 @@ blk; OCR                              ; Optical_Character_Recognition
 blk; Ogham                            ; Ogham
 blk; Ol_Chiki                         ; Ol_Chiki
 blk; Old_Italic                       ; Old_Italic
+blk; Old_North_Arabian                ; Old_North_Arabian
+blk; Old_Permic                       ; Old_Permic
 blk; Old_Persian                      ; Old_Persian
 blk; Old_South_Arabian                ; Old_South_Arabian
 blk; Old_Turkic                       ; Old_Turkic
 blk; Oriya                            ; Oriya
+blk; Ornamental_Dingbats              ; Ornamental_Dingbats
 blk; Osmanya                          ; Osmanya
+blk; Pahawh_Hmong                     ; Pahawh_Hmong
+blk; Palmyrene                        ; Palmyrene
+blk; Pau_Cin_Hau                      ; Pau_Cin_Hau
 blk; Phags_Pa                         ; Phags_Pa
 blk; Phaistos                         ; Phaistos_Disc
 blk; Phoenician                       ; Phoenician
 blk; Phonetic_Ext                     ; Phonetic_Extensions
 blk; Phonetic_Ext_Sup                 ; Phonetic_Extensions_Supplement
 blk; Playing_Cards                    ; Playing_Cards
+blk; Psalter_Pahlavi                  ; Psalter_Pahlavi
 blk; PUA                              ; Private_Use_Area                 ; Private_Use
 blk; Punctuation                      ; General_Punctuation
 blk; Rejang                           ; Rejang
@@ -299,7 +343,10 @@ blk; Samaritan                        ; Samaritan
 blk; Saurashtra                       ; Saurashtra
 blk; Sharada                          ; Sharada
 blk; Shavian                          ; Shavian
+blk; Shorthand_Format_Controls        ; Shorthand_Format_Controls
+blk; Siddham                          ; Siddham
 blk; Sinhala                          ; Sinhala
+blk; Sinhala_Archaic_Numbers          ; Sinhala_Archaic_Numbers
 blk; Small_Forms                      ; Small_Form_Variants
 blk; Sora_Sompeng                     ; Sora_Sompeng
 blk; Specials                         ; Specials
@@ -307,6 +354,7 @@ blk; Sundanese                        ; Sundanese
 blk; Sundanese_Sup                    ; Sundanese_Supplement
 blk; Sup_Arrows_A                     ; Supplemental_Arrows_A
 blk; Sup_Arrows_B                     ; Supplemental_Arrows_B
+blk; Sup_Arrows_C                     ; Supplemental_Arrows_C
 blk; Sup_Math_Operators               ; Supplemental_Mathematical_Operators
 blk; Sup_PUA_A                        ; Supplementary_Private_Use_Area_A
 blk; Sup_PUA_B                        ; Supplementary_Private_Use_Area_B
@@ -328,6 +376,7 @@ blk; Thaana                           ; Thaana
 blk; Thai                             ; Thai
 blk; Tibetan                          ; Tibetan
 blk; Tifinagh                         ; Tifinagh
+blk; Tirhuta                          ; Tirhuta
 blk; Transport_And_Map                ; Transport_And_Map_Symbols
 blk; UCAS                             ; Unified_Canadian_Aboriginal_Syllabics; Canadian_Syllabics
 blk; UCAS_Ext                         ; Unified_Canadian_Aboriginal_Syllabics_Extended
@@ -337,6 +386,7 @@ blk; Vedic_Ext                        ; Vedic_Extensions
 blk; Vertical_Forms                   ; Vertical_Forms
 blk; VS                               ; Variation_Selectors
 blk; VS_Sup                           ; Variation_Selectors_Supplement
+blk; Warang_Citi                      ; Warang_Citi
 blk; Yi_Radicals                      ; Yi_Radicals
 blk; Yi_Syllables                     ; Yi_Syllables
 blk; Yijing                           ; Yijing_Hexagram_Symbols
@@ -578,6 +628,7 @@ gc ; Z                                ; Separator                        # Zl | 
 gc ; Zl                               ; Line_Separator
 gc ; Zp                               ; Paragraph_Separator
 gc ; Zs                               ; Space_Separator
+# @missing: 0000..10FFFF; General_Category; Unassigned
 
 # Grapheme_Base (Gr_Base)
 
@@ -662,7 +713,6 @@ Ideo; Y                               ; Yes                              ; T    
 
 InMC; Bottom                          ; Bottom
 InMC; Bottom_And_Right                ; Bottom_And_Right
-InMC; Invisible                       ; Invisible
 InMC; Left                            ; Left
 InMC; Left_And_Right                  ; Left_And_Right
 InMC; NA                              ; NA
@@ -680,17 +730,27 @@ InMC; Visual_Order_Left               ; Visual_Order_Left
 
 InSC; Avagraha                        ; Avagraha
 InSC; Bindu                           ; Bindu
+InSC; Brahmi_Joining_Number           ; Brahmi_Joining_Number
+InSC; Cantillation_Mark               ; Cantillation_Mark
 InSC; Consonant                       ; Consonant
 InSC; Consonant_Dead                  ; Consonant_Dead
 InSC; Consonant_Final                 ; Consonant_Final
 InSC; Consonant_Head_Letter           ; Consonant_Head_Letter
 InSC; Consonant_Medial                ; Consonant_Medial
 InSC; Consonant_Placeholder           ; Consonant_Placeholder
-InSC; Consonant_Repha                 ; Consonant_Repha
+InSC; Consonant_Preceding_Repha       ; Consonant_Preceding_Repha
 InSC; Consonant_Subjoined             ; Consonant_Subjoined
+InSC; Consonant_Succeeding_Repha      ; Consonant_Succeeding_Repha
+InSC; Gemination_Mark                 ; Gemination_Mark
+InSC; Invisible_Stacker               ; Invisible_Stacker
+InSC; Joiner                          ; Joiner
 InSC; Modifying_Letter                ; Modifying_Letter
+InSC; Non_Joiner                      ; Non_Joiner
 InSC; Nukta                           ; Nukta
+InSC; Number                          ; Number
+InSC; Number_Joiner                   ; Number_Joiner
 InSC; Other                           ; Other
+InSC; Pure_Killer                     ; Pure_Killer
 InSC; Register_Shifter                ; Register_Shifter
 InSC; Tone_Letter                     ; Tone_Letter
 InSC; Tone_Mark                       ; Tone_Mark
@@ -702,7 +762,6 @@ InSC; Vowel_Independent               ; Vowel_Independent
 
 # Jamo_Short_Name (JSN)
 
-# @missing: 0000..10FFFF; Jamo_Short_Name; <none>
 JSN; A                                ; A
 JSN; AE                               ; AE
 JSN; B                                ; B
@@ -755,6 +814,7 @@ JSN; YEO                              ; YEO
 JSN; YI                               ; YI
 JSN; YO                               ; YO
 JSN; YU                               ; YU
+# @missing: 0000..10FFFF; Jamo_Short_Name; <none>
 
 # Join_Control (Join_C)
 
@@ -789,6 +849,33 @@ jg ; Khaph                            ; Khaph
 jg ; Knotted_Heh                      ; Knotted_Heh
 jg ; Lam                              ; Lam
 jg ; Lamadh                           ; Lamadh
+jg ; Manichaean_Aleph                 ; Manichaean_Aleph
+jg ; Manichaean_Ayin                  ; Manichaean_Ayin
+jg ; Manichaean_Beth                  ; Manichaean_Beth
+jg ; Manichaean_Daleth                ; Manichaean_Daleth
+jg ; Manichaean_Dhamedh               ; Manichaean_Dhamedh
+jg ; Manichaean_Five                  ; Manichaean_Five
+jg ; Manichaean_Gimel                 ; Manichaean_Gimel
+jg ; Manichaean_Heth                  ; Manichaean_Heth
+jg ; Manichaean_Hundred               ; Manichaean_Hundred
+jg ; Manichaean_Kaph                  ; Manichaean_Kaph
+jg ; Manichaean_Lamedh                ; Manichaean_Lamedh
+jg ; Manichaean_Mem                   ; Manichaean_Mem
+jg ; Manichaean_Nun                   ; Manichaean_Nun
+jg ; Manichaean_One                   ; Manichaean_One
+jg ; Manichaean_Pe                    ; Manichaean_Pe
+jg ; Manichaean_Qoph                  ; Manichaean_Qoph
+jg ; Manichaean_Resh                  ; Manichaean_Resh
+jg ; Manichaean_Sadhe                 ; Manichaean_Sadhe
+jg ; Manichaean_Samekh                ; Manichaean_Samekh
+jg ; Manichaean_Taw                   ; Manichaean_Taw
+jg ; Manichaean_Ten                   ; Manichaean_Ten
+jg ; Manichaean_Teth                  ; Manichaean_Teth
+jg ; Manichaean_Thamedh               ; Manichaean_Thamedh
+jg ; Manichaean_Twenty                ; Manichaean_Twenty
+jg ; Manichaean_Waw                   ; Manichaean_Waw
+jg ; Manichaean_Yodh                  ; Manichaean_Yodh
+jg ; Manichaean_Zayin                 ; Manichaean_Zayin
 jg ; Meem                             ; Meem
 jg ; Mim                              ; Mim
 jg ; No_Joining_Group                 ; No_Joining_Group
@@ -806,6 +893,7 @@ jg ; Sadhe                            ; Sadhe
 jg ; Seen                             ; Seen
 jg ; Semkath                          ; Semkath
 jg ; Shin                             ; Shin
+jg ; Straight_Waw                     ; Straight_Waw
 jg ; Swash_Kaf                        ; Swash_Kaf
 jg ; Syriac_Waw                       ; Syriac_Waw
 jg ; Tah                              ; Tah
@@ -883,6 +971,10 @@ LOE; Y                                ; Yes                              ; T    
 
 Lower; N                              ; No                               ; F                                ; False
 Lower; Y                              ; Yes                              ; T                                ; True
+
+# Lowercase_Mapping (lc)
+
+# @missing: 0000..10FFFF; Lowercase_Mapping; <code point>
 
 # Math (Math)
 
@@ -1006,12 +1098,14 @@ STerm; Y                              ; Yes                              ; T    
 
 # Script (sc)
 
+sc ; Aghb                             ; Caucasian_Albanian
 sc ; Arab                             ; Arabic
 sc ; Armi                             ; Imperial_Aramaic
 sc ; Armn                             ; Armenian
 sc ; Avst                             ; Avestan
 sc ; Bali                             ; Balinese
 sc ; Bamu                             ; Bamum
+sc ; Bass                             ; Bassa_Vah
 sc ; Batk                             ; Batak
 sc ; Beng                             ; Bengali
 sc ; Bopo                             ; Bopomofo
@@ -1029,11 +1123,14 @@ sc ; Cprt                             ; Cypriot
 sc ; Cyrl                             ; Cyrillic
 sc ; Deva                             ; Devanagari
 sc ; Dsrt                             ; Deseret
+sc ; Dupl                             ; Duployan
 sc ; Egyp                             ; Egyptian_Hieroglyphs
+sc ; Elba                             ; Elbasan
 sc ; Ethi                             ; Ethiopic
 sc ; Geor                             ; Georgian
 sc ; Glag                             ; Glagolitic
 sc ; Goth                             ; Gothic
+sc ; Gran                             ; Grantha
 sc ; Grek                             ; Greek
 sc ; Gujr                             ; Gujarati
 sc ; Guru                             ; Gurmukhi
@@ -1042,6 +1139,7 @@ sc ; Hani                             ; Han
 sc ; Hano                             ; Hanunoo
 sc ; Hebr                             ; Hebrew
 sc ; Hira                             ; Hiragana
+sc ; Hmng                             ; Pahawh_Hmong
 sc ; Hrkt                             ; Katakana_Or_Hiragana
 sc ; Ital                             ; Old_Italic
 sc ; Java                             ; Javanese
@@ -1049,6 +1147,7 @@ sc ; Kali                             ; Kayah_Li
 sc ; Kana                             ; Katakana
 sc ; Khar                             ; Kharoshthi
 sc ; Khmr                             ; Khmer
+sc ; Khoj                             ; Khojki
 sc ; Knda                             ; Kannada
 sc ; Kthi                             ; Kaithi
 sc ; Lana                             ; Tai_Tham
@@ -1056,25 +1155,37 @@ sc ; Laoo                             ; Lao
 sc ; Latn                             ; Latin
 sc ; Lepc                             ; Lepcha
 sc ; Limb                             ; Limbu
+sc ; Lina                             ; Linear_A
 sc ; Linb                             ; Linear_B
 sc ; Lisu                             ; Lisu
 sc ; Lyci                             ; Lycian
 sc ; Lydi                             ; Lydian
+sc ; Mahj                             ; Mahajani
 sc ; Mand                             ; Mandaic
+sc ; Mani                             ; Manichaean
+sc ; Mend                             ; Mende_Kikakui
 sc ; Merc                             ; Meroitic_Cursive
 sc ; Mero                             ; Meroitic_Hieroglyphs
 sc ; Mlym                             ; Malayalam
+sc ; Modi                             ; Modi
 sc ; Mong                             ; Mongolian
+sc ; Mroo                             ; Mro
 sc ; Mtei                             ; Meetei_Mayek
 sc ; Mymr                             ; Myanmar
+sc ; Narb                             ; Old_North_Arabian
+sc ; Nbat                             ; Nabataean
 sc ; Nkoo                             ; Nko
 sc ; Ogam                             ; Ogham
 sc ; Olck                             ; Ol_Chiki
 sc ; Orkh                             ; Old_Turkic
 sc ; Orya                             ; Oriya
 sc ; Osma                             ; Osmanya
+sc ; Palm                             ; Palmyrene
+sc ; Pauc                             ; Pau_Cin_Hau
+sc ; Perm                             ; Old_Permic
 sc ; Phag                             ; Phags_Pa
 sc ; Phli                             ; Inscriptional_Pahlavi
+sc ; Phlp                             ; Psalter_Pahlavi
 sc ; Phnx                             ; Phoenician
 sc ; Plrd                             ; Miao
 sc ; Prti                             ; Inscriptional_Parthian
@@ -1085,6 +1196,8 @@ sc ; Sarb                             ; Old_South_Arabian
 sc ; Saur                             ; Saurashtra
 sc ; Shaw                             ; Shavian
 sc ; Shrd                             ; Sharada
+sc ; Sidd                             ; Siddham
+sc ; Sind                             ; Khudawadi
 sc ; Sinh                             ; Sinhala
 sc ; Sora                             ; Sora_Sompeng
 sc ; Sund                             ; Sundanese
@@ -1102,8 +1215,10 @@ sc ; Tglg                             ; Tagalog
 sc ; Thaa                             ; Thaana
 sc ; Thai                             ; Thai
 sc ; Tibt                             ; Tibetan
+sc ; Tirh                             ; Tirhuta
 sc ; Ugar                             ; Ugaritic
 sc ; Vaii                             ; Vai
+sc ; Wara                             ; Warang_Citi
 sc ; Xpeo                             ; Old_Persian
 sc ; Xsux                             ; Cuneiform
 sc ; Yiii                             ; Yi
@@ -1159,6 +1274,10 @@ SD ; Y                                ; Yes                              ; T    
 Term; N                               ; No                               ; F                                ; False
 Term; Y                               ; Yes                              ; T                                ; True
 
+# Titlecase_Mapping (tc)
+
+# @missing: 0000..10FFFF; Titlecase_Mapping; <code point>
+
 # Unicode_1_Name (na1)
 
 # @missing: 0000..10FFFF; Unicode_1_Name; <none>
@@ -1173,6 +1292,10 @@ UIdeo; Y                              ; Yes                              ; T    
 Upper; N                              ; No                               ; F                                ; False
 Upper; Y                              ; Yes                              ; T                                ; True
 
+# Uppercase_Mapping (uc)
+
+# @missing: 0000..10FFFF; Uppercase_Mapping; <code point>
+
 # Variation_Selector (VS)
 
 VS ; N                                ; No                               ; F                                ; False
@@ -1186,9 +1309,11 @@ WSpace; Y                             ; Yes                              ; T    
 # Word_Break (WB)
 
 WB ; CR                               ; CR
+WB ; DQ                               ; Double_Quote
 WB ; EX                               ; ExtendNumLet
 WB ; Extend                           ; Extend
 WB ; FO                               ; Format
+WB ; HL                               ; Hebrew_Letter
 WB ; KA                               ; Katakana
 WB ; LE                               ; ALetter
 WB ; LF                               ; LF
@@ -1198,6 +1323,7 @@ WB ; MN                               ; MidNum
 WB ; NL                               ; Newline
 WB ; NU                               ; Numeric
 WB ; RI                               ; Regional_Indicator
+WB ; SQ                               ; Single_Quote
 WB ; XX                               ; Other
 
 # XID_Continue (XIDC)

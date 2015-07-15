@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -226,6 +226,11 @@ class CharacterData00 extends CharacterData {
             case 0xA77D : mapChar = 0x1D79; break;
             case 0xA78D : mapChar = 0x0265; break;
             case 0xA7AA : mapChar = 0x0266; break;
+            case 0xA7AB : mapChar = 0x025C; break;
+            case 0xA7AC : mapChar = 0x0261; break;
+            case 0xA7AD : mapChar = 0x026C; break;
+            case 0xA7B0 : mapChar = 0x029E; break;
+            case 0xA7B1 : mapChar = 0x0287; break;
               // default mapChar is already set, so no
               // need to redo it here.
               // default       : mapChar = ch;
@@ -284,10 +289,15 @@ class CharacterData00 extends CharacterData {
             case 0x0250 : mapChar = 0x2C6F; break;
             case 0x0251 : mapChar = 0x2C6D; break;
             case 0x0252 : mapChar = 0x2C70; break;
+            case 0x025C : mapChar = 0xA7AB; break;
+            case 0x0261 : mapChar = 0xA7AC; break;
             case 0x0265 : mapChar = 0xA78D; break;
             case 0x0266 : mapChar = 0xA7AA; break;
             case 0x026B : mapChar = 0x2C62; break;
+            case 0x026C : mapChar = 0xA7AD; break;
             case 0x0271 : mapChar = 0x2C6E; break;
+            case 0x0287 : mapChar = 0xA7B1; break;
+            case 0x029E : mapChar = 0xA7B0; break;
             case 0x027D : mapChar = 0x2C64; break;
             case 0x1D79 : mapChar = 0xA77D; break;
             case 0x1D7D : mapChar = 0x2C63; break;
@@ -503,6 +513,22 @@ class CharacterData00 extends CharacterData {
                     // This is the only char with RLO
                     directionality = Character.DIRECTIONALITY_RIGHT_TO_LEFT_OVERRIDE;
                     break;
+                case 0x2066 :
+                    // This is the only char with LRI
+                    directionality = Character.DIRECTIONALITY_LEFT_TO_RIGHT_ISOLATE;
+                    break;
+                case 0x2067 :
+                    // This is the only char with RLI
+                    directionality = Character.DIRECTIONALITY_RIGHT_TO_LEFT_ISOLATE;
+                    break;
+                case 0x2068 :
+                    // This is the only char with FSI
+                    directionality = Character.DIRECTIONALITY_FIRST_STRONG_ISOLATE;
+                    break;
+                case 0x2069 :
+                    // This is the only char with PDI
+                    directionality = Character.DIRECTIONALITY_POP_DIRECTIONAL_ISOLATE;
+                    break;
                 default :
                     directionality = Character.DIRECTIONALITY_UNDEFINED;
                     break;
@@ -537,11 +563,16 @@ class CharacterData00 extends CharacterData {
                     case 0x0250 : mapChar = 0x2C6F; break;
                     case 0x0251 : mapChar = 0x2C6D; break;
                     case 0x0252 : mapChar = 0x2C70; break;
+                    case 0x025C : mapChar = 0xA7AB; break;
+                    case 0x0261 : mapChar = 0xA7AC; break;
                     case 0x0265 : mapChar = 0xA78D; break;
                     case 0x0266 : mapChar = 0xA7AA; break;
                     case 0x026B : mapChar = 0x2C62; break;
+                    case 0x026C : mapChar = 0xA7AD; break;
                     case 0x0271 : mapChar = 0x2C6E; break;
                     case 0x027D : mapChar = 0x2C64; break;
+                    case 0x0287 : mapChar = 0xA7B1; break;
+                    case 0x029E : mapChar = 0xA7B0; break;
                     case 0x1D79 : mapChar = 0xA77D; break;
                     case 0x1D7D : mapChar = 0x2C63; break;
                     case 0x2C65 : mapChar = 0x023A; break;
