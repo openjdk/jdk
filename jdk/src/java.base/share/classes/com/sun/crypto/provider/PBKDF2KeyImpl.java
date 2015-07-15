@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Locale;
+import java.security.MessageDigest;
 import java.security.KeyRep;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
@@ -153,7 +154,7 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
                     SecretKey sk = (SecretKey)obj;
                     return prf.getAlgorithm().equalsIgnoreCase(
                         sk.getAlgorithm()) &&
-                        Arrays.equals(password, sk.getEncoded());
+                        MessageDigest.isEqual(password, sk.getEncoded());
                 }
             };
             prf.init(macKey);
@@ -239,7 +240,7 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
         if (!(that.getFormat().equalsIgnoreCase("RAW")))
             return false;
         byte[] thatEncoded = that.getEncoded();
-        boolean ret = Arrays.equals(key, that.getEncoded());
+        boolean ret = MessageDigest.isEqual(key, that.getEncoded());
         java.util.Arrays.fill(thatEncoded, (byte)0x00);
         return ret;
     }

@@ -2059,7 +2059,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                         "(MAC algorithm: " + m.getAlgorithm() + ")");
                 }
 
-                if (!Arrays.equals(macData.getDigest(), macResult)) {
+                if (!MessageDigest.isEqual(macData.getDigest(), macResult)) {
                    throw new SecurityException("Failed PKCS12" +
                                         " integrity checking");
                 }

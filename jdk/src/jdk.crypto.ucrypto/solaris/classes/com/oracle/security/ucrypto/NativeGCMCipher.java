@@ -206,7 +206,7 @@ class NativeGCMCipher extends NativeCipher {
         }
         if (doEncrypt) {
             requireReinit = Arrays.equals(ivBytes, lastEncIv) &&
-                Arrays.equals(keyBytes, lastEncKey);
+                MessageDigest.isEqual(keyBytes, lastEncKey);
             if (requireReinit) {
                 throw new InvalidAlgorithmParameterException
                     ("Cannot reuse iv for GCM encryption");
