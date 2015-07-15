@@ -61,6 +61,7 @@ public final class ImageResourcesTree {
         private final Map<String, Node> children = new TreeMap<>();
         private final Node parent;
         private ImageLocationWriter loc;
+        private boolean isResource;
 
         private Node(String name, Node parent) {
             this.name = name;
@@ -141,6 +142,7 @@ public final class ImageResourcesTree {
                         if (n == null) {
                             n = new Node(s, current);
                             if (i == split.length - 1) { // Leaf
+                                n.isResource = true;
                                 String pkg = toPackageName(n.parent);
                                 if (pkg != null && !pkg.startsWith("META-INF")) {
                                     Set<String> pkgs = moduleToPackage.get(module);
@@ -241,13 +243,6 @@ public final class ImageResourcesTree {
         public Map<String, Node> getMap() {
             return directAccess;
         }
-
-        private boolean isPackageNode(Node node) {
-            if (!node.children.isEmpty()) {
-                throw new RuntimeException("Node is not a package");
-            }
-            return node.getPath().startsWith("/" + PACKAGES);
-        }
     }
 
     private static final class LocationsAdder {
@@ -271,7 +266,7 @@ public final class ImageResourcesTree {
                 ret[i] = addLocations(entry.getValue());
                 i += 1;
             }
-            if (current != tree.getRoot() && (ret.length > 0 || tree.isPackageNode(current))) {
+            if (current != tree.getRoot() && !current.isResource) {
                 int size = ret.length * 4;
                 writer.addLocation(current.getPath(), offset, 0, size);
                 offset += size;
@@ -313,11 +308,13 @@ public final class ImageResourcesTree {
                 byte[] arr = buff.array();
                 content.add(arr);
             } else {
-                if (tree.isPackageNode(current)) {
-                    current.loc = outLocations.get(current.getPath());
-                } else {
+                if (current.isResource) {
+                    // A resource location, remove "/modules"
                     String s = tree.toResourceName(current);
                     current.loc = outLocations.get(s);
+                } else {
+                    // "/packages" leaf node, empty "/packages" or empty "/modules" paths
+                    current.loc = outLocations.get(current.getPath());
                 }
             }
             return current == tree.getRoot() ? 0 : current.loc.getLocationOffset();
