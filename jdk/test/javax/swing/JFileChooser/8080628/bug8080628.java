@@ -33,6 +33,7 @@ import sun.swing.SwingUtilities2;
  * @bug 8080628
  * @summary No mnemonics on Open and Save buttons in JFileChooser.
  * @author Alexey Ivanov
+ * @modules java.desktop/sun.swing
  * @run main bug8080628
  */
 public class bug8080628 {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,12 +167,7 @@ public abstract class InputMethodManager {
                 // to choose from. Otherwise, just keep the instance.
                 if (imm.hasMultipleInputMethods()) {
                     imm.initialize();
-                    Thread immThread;
-                    if (System.getSecurityManager() == null) {
-                        immThread = new Thread(imm, threadName);
-                    } else {
-                        immThread = new ManagedLocalsThread(imm, threadName);
-                    }
+                    Thread immThread = new ManagedLocalsThread(imm, threadName);
                     immThread.setDaemon(true);
                     immThread.setPriority(Thread.NORM_PRIORITY + 1);
                     immThread.start();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6842557 6943963 6959267
+ * @bug 6842557 6943963 6959267 8032446
  * @summary confirm that shaping works as expected. (Mainly for new characters which were added in Unicode 5 and 6)
  * used where appropriate.
  */
@@ -40,6 +40,7 @@ public class ShapingTest {
         test6842557();
         test6943963();
         test6903266();
+        test8032446();
 
         if (err) {
             throw new RuntimeException("shape() returned unexpected value.");
@@ -136,6 +137,18 @@ public class ShapingTest {
         given = "\uabc0 012";
         expected = "\uabc0 \uabf0\uabf1\uabf2";
         checkResult("Range.MEETEI_MAYEK", ns, given, expected);
+    }
+
+    private static void test8032446() {
+        NumericShaper ns = getContextualShaper(EnumSet.of(Range.SINHALA));
+        String given = "\u0d85 012";
+        String expected = "\u0d85 \u0de6\u0de7\u0de8";
+        checkResult("Range.SINHALA", ns, given, expected);
+
+        ns = getContextualShaper(EnumSet.of(Range.MYANMAR_TAI_LAING));
+        given = "\ua9e2 012";
+        expected = "\ua9e2 \ua9f0\ua9f1\ua9f2";
+        checkResult("Range.MYANMAR_TAI_LAING", ns, given, expected);
     }
 
     private static void checkResult(String ranges, NumericShaper ns,

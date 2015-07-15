@@ -28,6 +28,9 @@ package sun.security.provider;
 import java.security.MessageDigestSpi;
 import java.security.DigestException;
 import java.security.ProviderException;
+import java.util.Objects;
+
+import jdk.internal.HotSpotIntrinsicCandidate;
 
 /**
  * Common base message digest implementation for the Sun provider.
@@ -136,10 +139,34 @@ abstract class DigestBase extends MessageDigestSpi implements Cloneable {
 
     // compress complete blocks
     private int implCompressMultiBlock(byte[] b, int ofs, int limit) {
+        implCompressMultiBlockCheck(b, ofs, limit);
+        return implCompressMultiBlock0(b, ofs, limit);
+    }
+
+    @HotSpotIntrinsicCandidate
+    private int implCompressMultiBlock0(byte[] b, int ofs, int limit) {
         for (; ofs <= limit; ofs += blockSize) {
             implCompress(b, ofs);
         }
         return ofs;
+    }
+
+    private void implCompressMultiBlockCheck(byte[] b, int ofs, int limit) {
+        if (limit < 0) {
+            return;  // not an error because implCompressMultiBlockImpl won't execute if limit < 0
+                     // and an exception is thrown if ofs < 0.
+        }
+
+        Objects.requireNonNull(b);
+
+        if (ofs < 0 || ofs >= b.length) {
+            throw new ArrayIndexOutOfBoundsException(ofs);
+        }
+
+        int endIndex = (limit / blockSize) * blockSize  + blockSize - 1;
+        if (endIndex >= b.length) {
+            throw new ArrayIndexOutOfBoundsException(endIndex);
+        }
     }
 
     // reset this object. See JCA doc.

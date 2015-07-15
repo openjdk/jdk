@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package sun.java2d.opengl;
 
 import java.awt.AWTException;
 import java.awt.BufferCapabilities;
-import java.awt.BufferCapabilities.FlipContents;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Graphics;
@@ -425,23 +424,11 @@ public class WGLGraphicsConfig
         createCompatibleVolatileImage(int width, int height,
                                       int transparency, int type)
     {
-        if (type == FLIP_BACKBUFFER || type == WINDOW || type == UNDEFINED ||
-            transparency == Transparency.BITMASK)
-        {
+        if ((type != FBOBJECT && type != TEXTURE)
+                || transparency == Transparency.BITMASK
+                || type == FBOBJECT && !isCapPresent(CAPS_EXT_FBOBJECT)) {
             return null;
         }
-
-        if (type == FBOBJECT) {
-            if (!isCapPresent(CAPS_EXT_FBOBJECT)) {
-                return null;
-            }
-        } else if (type == PBUFFER) {
-            boolean isOpaque = transparency == Transparency.OPAQUE;
-            if (!isOpaque && !isCapPresent(CAPS_STORED_ALPHA)) {
-                return null;
-            }
-        }
-
         SunVolatileImage vi = new AccelTypedVolatileImage(this, width, height,
                                                           transparency, type);
         Surface sd = vi.getDestSurface();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package com.sun.media.sound;
 
-import sun.misc.InnocuousThread;
 import sun.misc.ManagedLocalsThread;
 
 import java.io.BufferedInputStream;
@@ -147,12 +146,7 @@ final class JSSecurityManager {
                                final String threadName,
                                final boolean isDaemon, final int priority,
                                final boolean doStart) {
-        Thread thread;
-        if (System.getSecurityManager() == null) {
-            thread = new Thread(runnable);
-        } else {
-            thread = new ManagedLocalsThread(runnable);
-        }
+        Thread thread = new ManagedLocalsThread(runnable);
 
         if (threadName != null) {
             thread.setName(threadName);

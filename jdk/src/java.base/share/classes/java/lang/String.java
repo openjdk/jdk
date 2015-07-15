@@ -42,6 +42,7 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
+import jdk.internal.HotSpotIntrinsicCandidate;
 
 /**
  * The {@code String} class represents character strings. All
@@ -152,6 +153,7 @@ public final class String
      * @param  original
      *         A {@code String}
      */
+    @HotSpotIntrinsicCandidate
     public String(String original) {
         this.value = original.value;
         this.hash = original.hash;
@@ -978,6 +980,7 @@ public final class String
      * @see  #compareTo(String)
      * @see  #equalsIgnoreCase(String)
      */
+    @HotSpotIntrinsicCandidate
     public boolean equals(Object anObject) {
         if (this == anObject) {
             return true;
@@ -1154,6 +1157,7 @@ public final class String
      *          value greater than {@code 0} if this string is
      *          lexicographically greater than the string argument.
      */
+    @HotSpotIntrinsicCandidate
     public int compareTo(String anotherString) {
         char[] v1 = value;
         char[] v2 = anotherString.value;
@@ -1696,6 +1700,7 @@ public final class String
      * @return  the index of the first occurrence of the specified substring,
      *          or {@code -1} if there is no such occurrence.
      */
+    @HotSpotIntrinsicCandidate
     public int indexOf(String str) {
         return indexOf(str, 0);
     }

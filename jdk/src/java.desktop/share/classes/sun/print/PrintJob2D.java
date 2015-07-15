@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -987,12 +987,7 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
     }
 
     private void startPrinterJobThread() {
-        String name = "printerJobThread";
-        if (System.getSecurityManager() == null) {
-            printerJobThread = new Thread(this, name);
-        } else {
-            printerJobThread = new ManagedLocalsThread(this, name);
-        }
+        printerJobThread = new ManagedLocalsThread(this, "printerJobThread");
         printerJobThread.start();
     }
 

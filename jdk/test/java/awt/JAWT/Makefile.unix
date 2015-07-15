@@ -32,7 +32,7 @@ LINK =		ld
 
 J_INC =		$(TESTJAVA)/include
 INCLUDES =	-I$(J_INC) -I$(J_INC)/$(SYST) -I.
-LIBS =		-L$(TESTJAVA)/jre/lib/$(ARCH) -ljawt -lX11
+LIBS =		-L$(TESTJAVA)/lib/$(ARCH) -ljawt -lX11
 
 all:		$(CLASSES) libmylib.so
 

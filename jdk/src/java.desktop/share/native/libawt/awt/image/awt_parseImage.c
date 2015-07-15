@@ -852,7 +852,7 @@ setHints(JNIEnv *env, BufImageS_t *imageP) {
             hintP->needToExpand = TRUE;
             hintP->expandToNbits = cmodelP->maxNbits;
         }
-        else if (rasterP->sppsm.offsets != NULL) {
+        else {
             for (i=0; i < rasterP->numBands; i++) {
                 if (!(rasterP->sppsm.offsets[i] % 8)) {
                     hintP->needToExpand  = TRUE;

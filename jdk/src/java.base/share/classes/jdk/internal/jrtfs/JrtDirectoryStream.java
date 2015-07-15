@@ -51,7 +51,7 @@ final class JrtDirectoryStream implements DirectoryStream<Path> {
         this.jrtfs = jrtPath.getFileSystem();
         this.path = jrtPath.getResolvedPath();
         // sanity check
-        if (!jrtfs.isDirectory(path))
+        if (!jrtfs.isDirectory(path, true))
             throw new NotDirectoryException(jrtPath.toString());
 
         // absolute path and does not have funky chars in front like /./java.base

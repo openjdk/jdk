@@ -40,7 +40,7 @@ import sun.nio.ch.Interruptible;
 import sun.reflect.CallerSensitive;
 import sun.reflect.Reflection;
 import sun.security.util.SecurityConstants;
-
+import jdk.internal.HotSpotIntrinsicCandidate;
 
 /**
  * A <i>thread</i> is a thread of execution in a program. The Java
@@ -261,6 +261,7 @@ class Thread implements Runnable {
      *
      * @return  the currently executing thread.
      */
+    @HotSpotIntrinsicCandidate
     public static native Thread currentThread();
 
     /**
@@ -966,6 +967,7 @@ class Thread implements Runnable {
      * is reset or not based on the value of ClearInterrupted that is
      * passed.
      */
+    @HotSpotIntrinsicCandidate
     private native boolean isInterrupted(boolean ClearInterrupted);
 
     /**
