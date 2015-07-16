@@ -33,6 +33,7 @@
 #include "compiler/disassembler.hpp"
 #include "memory/resourceArea.hpp"
 #include "nativeInst_aarch64.hpp"
+#include "oops/klass.inline.hpp"
 #include "opto/compile.hpp"
 #include "opto/node.hpp"
 #include "runtime/biasedLocking.hpp"
