@@ -625,6 +625,8 @@ class Method : public Metadata {
 #if INCLUDE_SERVICES
   void collect_statistics(KlassSizeStats *sz) const;
 #endif
+  void log_touched(TRAPS);
+  static void print_touched_methods(outputStream* out);
 
   // interpreter support
   static ByteSize const_offset()                 { return byte_offset_of(Method, _constMethod       ); }
