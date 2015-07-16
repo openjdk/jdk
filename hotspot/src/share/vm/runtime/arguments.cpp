@@ -277,6 +277,8 @@ static ObsoleteFlag obsolete_jvm_flags[] = {
   { "ParallelGCRetainPLAB",          JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "ThreadSafetyMargin",            JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "LazyBootClassLoader",           JDK_Version::jdk(9), JDK_Version::jdk(10) },
+  { "StarvationMonitorInterval",     JDK_Version::jdk(9), JDK_Version::jdk(10) },
+  { "PreInflateSpin",                JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { NULL, JDK_Version(0), JDK_Version(0) }
 };
 

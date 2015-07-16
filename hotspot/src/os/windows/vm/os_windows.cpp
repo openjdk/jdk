@@ -3740,15 +3740,6 @@ void os::win32::initialize_system_info() {
          "stack size not a multiple of page size");
 
   initialize_performance_counter();
-
-  // Win95/Win98 scheduler bug work-around. The Win95/98 scheduler is
-  // known to deadlock the system, if the VM issues to thread operations with
-  // a too high frequency, e.g., such as changing the priorities.
-  // The 6000 seems to work well - no deadlocks has been notices on the test
-  // programs that we have seen experience this problem.
-  if (!os::win32::is_nt()) {
-    StarvationMonitorInterval = 6000;
-  }
 }
 
 
