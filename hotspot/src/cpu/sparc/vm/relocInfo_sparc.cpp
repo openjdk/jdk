@@ -26,6 +26,7 @@
 #include "asm/assembler.hpp"
 #include "code/relocInfo.hpp"
 #include "nativeInst_sparc.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/safepoint.hpp"
 

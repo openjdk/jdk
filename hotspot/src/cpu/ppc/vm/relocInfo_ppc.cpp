@@ -27,6 +27,7 @@
 #include "asm/assembler.inline.hpp"
 #include "code/relocInfo.hpp"
 #include "nativeInst_ppc.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/safepoint.hpp"
 
