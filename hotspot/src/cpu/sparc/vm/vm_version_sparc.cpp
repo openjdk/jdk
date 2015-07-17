@@ -329,39 +329,35 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
 
-  if (!UseSHA) {
+  if (UseSHA && has_sha1()) {
+    if (FLAG_IS_DEFAULT(UseSHA1Intrinsics)) {
+      FLAG_SET_DEFAULT(UseSHA1Intrinsics, true);
+    }
+  } else if (UseSHA1Intrinsics) {
+    warning("Intrinsics for SHA-1 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UseSHA1Intrinsics, false);
-    FLAG_SET_DEFAULT(UseSHA256Intrinsics, false);
-    FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
-  } else {
-    if (has_sha1()) {
-      if (FLAG_IS_DEFAULT(UseSHA1Intrinsics)) {
-        FLAG_SET_DEFAULT(UseSHA1Intrinsics, true);
-      }
-    } else if (UseSHA1Intrinsics) {
-      warning("SHA1 instruction is not available on this CPU.");
-      FLAG_SET_DEFAULT(UseSHA1Intrinsics, false);
-    }
-    if (has_sha256()) {
-      if (FLAG_IS_DEFAULT(UseSHA256Intrinsics)) {
-        FLAG_SET_DEFAULT(UseSHA256Intrinsics, true);
-      }
-    } else if (UseSHA256Intrinsics) {
-      warning("SHA256 instruction (for SHA-224 and SHA-256) is not available on this CPU.");
-      FLAG_SET_DEFAULT(UseSHA256Intrinsics, false);
-    }
+  }
 
-    if (has_sha512()) {
-      if (FLAG_IS_DEFAULT(UseSHA512Intrinsics)) {
-        FLAG_SET_DEFAULT(UseSHA512Intrinsics, true);
-      }
-    } else if (UseSHA512Intrinsics) {
-      warning("SHA512 instruction (for SHA-384 and SHA-512) is not available on this CPU.");
-      FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
+  if (UseSHA && has_sha256()) {
+    if (FLAG_IS_DEFAULT(UseSHA256Intrinsics)) {
+      FLAG_SET_DEFAULT(UseSHA256Intrinsics, true);
     }
-    if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) {
-      FLAG_SET_DEFAULT(UseSHA, false);
+  } else if (UseSHA256Intrinsics) {
+    warning("Intrinsics for SHA-224 and SHA-256 crypto hash functions not available on this CPU.");
+    FLAG_SET_DEFAULT(UseSHA256Intrinsics, false);
+  }
+
+  if (UseSHA && has_sha512()) {
+    if (FLAG_IS_DEFAULT(UseSHA512Intrinsics)) {
+      FLAG_SET_DEFAULT(UseSHA512Intrinsics, true);
     }
+  } else if (UseSHA512Intrinsics) {
+    warning("Intrinsics for SHA-384 and SHA-512 crypto hash functions not available on this CPU.");
+    FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
+  }
+
+  if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) {
+    FLAG_SET_DEFAULT(UseSHA, false);
   }
 
   // SPARC T4 and above should have support for CRC32C instruction

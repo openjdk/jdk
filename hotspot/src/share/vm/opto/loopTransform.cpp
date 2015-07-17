@@ -2941,13 +2941,6 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
     _igvn.register_new_node_with_optimizer(store_value);
   }
 
-  if (CCallingConventionRequiresIntsAsLongs &&
-      // See StubRoutines::select_fill_function for types. FLOAT has been converted to INT.
-      (t == T_FLOAT || t == T_INT ||  is_subword_type(t))) {
-    store_value = new ConvI2LNode(store_value);
-    _igvn.register_new_node_with_optimizer(store_value);
-  }
-
   Node* mem_phi = store->in(MemNode::Memory);
   Node* result_ctrl;
   Node* result_mem;
@@ -2957,9 +2950,6 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
   uint cnt = 0;
   call->init_req(TypeFunc::Parms + cnt++, from);
   call->init_req(TypeFunc::Parms + cnt++, store_value);
-  if (CCallingConventionRequiresIntsAsLongs) {
-    call->init_req(TypeFunc::Parms + cnt++, C->top());
-  }
 #ifdef _LP64
   len = new ConvI2LNode(len);
   _igvn.register_new_node_with_optimizer(len);

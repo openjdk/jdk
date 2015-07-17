@@ -305,6 +305,13 @@ Declares a structure type that can be used in other events.
       <value type="G1YCTYPE" field="type" label="Type" />
     </event>
 
+    <event id="GCG1MMU" path="vm/gc/detailed/g1_mmu_info" label="G1 MMU Information" is_instant="true">
+      <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
+      <value type="DOUBLE" field="timeSlice" label="Time slice used to calculate MMU"/>
+      <value type="DOUBLE" field="gcTime" label="Time spent on GC during last time slice"/>
+      <value type="DOUBLE" field="maxGcTime" label="Max time allowed to be spent on GC during last time slice"/>
+    </event>
+
     <event id="EvacuationInfo" path="vm/gc/detailed/evacuation_info" label="Evacuation Information" is_instant="true">
       <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
       <value type="UINT" field="cSetRegions" label="Collection Set Regions"/>

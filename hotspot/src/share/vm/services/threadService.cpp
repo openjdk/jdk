@@ -888,7 +888,7 @@ void DeadlockCycle::print_on(outputStream* st) const {
       st->print("  waiting to lock monitor " INTPTR_FORMAT, waitingToLockMonitor);
       oop obj = (oop)waitingToLockMonitor->object();
       if (obj != NULL) {
-        st->print(" (object "INTPTR_FORMAT ", a %s)", (address)obj,
+        st->print(" (object " INTPTR_FORMAT ", a %s)", (address)obj,
                    (InstanceKlass::cast(obj->klass()))->external_name());
 
         if (!currentThread->current_pending_monitor_is_from_java()) {
