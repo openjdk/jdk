@@ -4171,10 +4171,13 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
         }
       }
 
+#ifdef ASSERT
       if (CheckIntrinsics) {
         // Check for orphan methods in the current class. A method m
         // of a class C is orphan if an intrinsic is defined for method m,
         // but class C does not declare m.
+        // The check is potentially expensive, therefore it is available
+        // only in debug builds.
 
         for (int id = vmIntrinsics::FIRST_ID; id < (int)vmIntrinsics::ID_LIMIT; id++) {
           if (id == vmIntrinsics::_compiledLambdaForm) {
@@ -4210,7 +4213,9 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
           }
         }
       }
+#endif // ASSERT
     }
+
 
     if (cached_class_file != NULL) {
       // JVMTI: we have an InstanceKlass now, tell it about the cached bytes
