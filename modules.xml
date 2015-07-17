@@ -219,6 +219,10 @@
       <to>jdk.dev</to>
     </export>
     <export>
+      <name>jdk.internal.jimage.decompressor</name>
+      <to>jdk.dev</to>
+    </export>
+    <export>
       <name>jdk.internal.org.objectweb.asm</name>
       <to>java.instrument</to>
       <to>jdk.jfr</to>
@@ -244,6 +248,10 @@
       <to>java.instrument</to>
       <to>jdk.jfr</to>
       <to>jdk.scripting.nashorn</to>
+    </export>
+    <export>
+      <name>jdk.internal</name>
+      <to>jdk.jfr</to>
     </export>
     <export>
       <name>sun.misc</name>
@@ -285,6 +293,7 @@
     </export>
     <export>
       <name>sun.net.util</name>
+      <to>java.desktop</to>
       <to>jdk.jconsole</to>
       <to>jdk.naming.dns</to>
     </export>
