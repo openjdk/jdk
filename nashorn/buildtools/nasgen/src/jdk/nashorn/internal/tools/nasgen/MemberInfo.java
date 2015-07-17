@@ -161,7 +161,7 @@ public final class MemberInfo implements Cloneable {
     }
 
     /**
-     * Tag something as optimitic builtin or not
+     * Tag something as optimistic builtin or not
      * @param isOptimistic boolean, true if builtin constructor
      */
     public void setIsOptimistic(final boolean isOptimistic) {
@@ -178,7 +178,7 @@ public final class MemberInfo implements Cloneable {
     }
 
     /**
-     * Set thre SpecializedFunction link logic class for specializations, i.e. optimistic
+     * Set the SpecializedFunction link logic class for specializations, i.e. optimistic
      * builtins
      * @param linkLogicClass link logic class
      */

@@ -163,7 +163,7 @@ public final class OptionTemplate implements Comparable<OptionTemplate> {
 
     /**
      * Does this option automatically enable another option, i.e. a dependency.
-     * @return the dependecy or null if non exists
+     * @return the dependency or null if none exists
      */
     public String getDependency() {
         return this.dependency;

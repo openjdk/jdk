@@ -48,7 +48,7 @@ import jdk.nashorn.internal.tools.nasgen.MemberInfo.Kind;
  *
  */
 public final class ScriptClassInfo {
-    // descriptots for various annotations
+    // descriptors for various annotations
     static final String SCRIPT_CLASS_ANNO_DESC  = Type.getDescriptor(ScriptClass.class);
     static final String CONSTRUCTOR_ANNO_DESC   = Type.getDescriptor(Constructor.class);
     static final String FUNCTION_ANNO_DESC      = Type.getDescriptor(Function.class);
@@ -140,7 +140,7 @@ public final class ScriptClassInfo {
     }
 
     boolean isPrototypeNeeded() {
-        // Prototype class generation is needed if we have atleast one
+        // Prototype class generation is needed if we have at least one
         // prototype property or @Constructor defined in the class.
         for (final MemberInfo memInfo : members) {
             if (memInfo.getWhere() == Where.PROTOTYPE || memInfo.isConstructor()) {
