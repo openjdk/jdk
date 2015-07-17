@@ -27,6 +27,7 @@
  * @summary [macosx] com.apple.eawt.Application.setDefaultMenuBar is not working
  * @author leonid.romanov@oracle.com
  * @modules java.desktop/sun.awt
+ *          java.desktop/com.apple.eawt
  * @run main DefaultMenuBarTest
  */
 
