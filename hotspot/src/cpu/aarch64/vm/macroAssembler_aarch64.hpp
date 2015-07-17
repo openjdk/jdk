@@ -468,6 +468,10 @@ public:
 
   void mov(FloatRegister Vd, SIMD_Arrangement T, u_int32_t imm32);
 
+  void mov(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn) {
+    orr(Vd, T, Vn, Vn);
+  }
+
   // macro instructions for accessing and updating floating point
   // status register
   //
@@ -1161,6 +1165,46 @@ private:
   // Uses rscratch2.
   Address offsetted_address(Register r, Register r1, Address::extend ext,
                             int offset, int size);
+
+private:
+  // Returns an address on the stack which is reachable with a ldr/str of size
+  // Uses rscratch2 if the address is not directly reachable
+  Address spill_address(int size, int offset, Register tmp=rscratch2);
+
+public:
+  void spill(Register Rx, bool is64, int offset) {
+    if (is64) {
+      str(Rx, spill_address(8, offset));
+    } else {
+      strw(Rx, spill_address(4, offset));
+    }
+  }
+  void spill(FloatRegister Vx, SIMD_RegVariant T, int offset) {
+    str(Vx, T, spill_address(1 << (int)T, offset));
+  }
+  void unspill(Register Rx, bool is64, int offset) {
+    if (is64) {
+      ldr(Rx, spill_address(8, offset));
+    } else {
+      ldrw(Rx, spill_address(4, offset));
+    }
+  }
+  void unspill(FloatRegister Vx, SIMD_RegVariant T, int offset) {
+    ldr(Vx, T, spill_address(1 << (int)T, offset));
+  }
+  void spill_copy128(int src_offset, int dst_offset,
+                     Register tmp1=rscratch1, Register tmp2=rscratch2) {
+    if (src_offset < 512 && (src_offset & 7) == 0 &&
+        dst_offset < 512 && (dst_offset & 7) == 0) {
+      ldp(tmp1, tmp2, Address(sp, src_offset));
+      stp(tmp1, tmp2, Address(sp, dst_offset));
+    } else {
+      unspill(tmp1, true, src_offset);
+      spill(tmp1, true, dst_offset);
+      unspill(tmp1, true, src_offset+8);
+      spill(tmp1, true, dst_offset+8);
+    }
+  }
 };
 
 #ifdef ASSERT
