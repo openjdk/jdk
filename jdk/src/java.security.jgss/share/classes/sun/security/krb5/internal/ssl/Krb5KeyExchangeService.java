@@ -83,6 +83,12 @@ public class Krb5KeyExchangeService implements ClientKeyExchangeService {
                     (PrivilegedExceptionAction<ServiceCreds>)
                             () -> Krb5Util.getServiceCreds(
                                     GSSCaller.CALLER_SSL_SERVER, null, acc));
+            if (serviceCreds == null) {
+                if (debug != null && Debug.isOn("handshake")) {
+                    System.out.println("Kerberos serviceCreds not available");
+                }
+                return null;
+            }
             if (debug != null && Debug.isOn("handshake")) {
                 System.out.println("Using Kerberos creds");
             }
