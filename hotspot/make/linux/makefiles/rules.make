@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ DEMANGLE        = $(DEMANGLER) < $@ > .$@ && $(MV) -f .$@ $@
 CC_COMPILE       = $(CC) $(CXXFLAGS) $(CFLAGS)
 CXX_COMPILE      = $(CXX) $(CXXFLAGS) $(CFLAGS)
 
-AS.S            = $(AS) $(ASFLAGS)
+AS.S             = $(AS) $(ASFLAGS)
 
 COMPILE.CC       = $(CC_COMPILE) -c
 GENASM.CC        = $(CC_COMPILE) -S
@@ -169,6 +169,12 @@ endif
 	@echo $(LOG_INFO) Assembling $<
 	$(QUIETLY) $(REMOVE_TARGET)
 	$(QUIETLY) $(AS.S) $(DEPFLAGS) -o $@ $< $(COMPILE_DONE)
+
+# gcc applies preprocessing if the file extension is .S instead of .s
+%.o: %.S
+	@echo $(LOG_INFO) Preprocessing and assembling $<
+	$(QUIETLY) $(REMOVE_TARGET)
+	$(QUIETLY) $(AS.S) $(DEPFLAGS) -o $@ $< $(COMPILE_DONE) 
 
 %.s: %.cpp
 	@echo $(LOG_INFO) Generating assembly for $<

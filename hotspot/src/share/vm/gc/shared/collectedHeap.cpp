@@ -488,19 +488,17 @@ void CollectedHeap::fill_with_objects(HeapWord* start, size_t words, bool zap)
   DEBUG_ONLY(fill_args_check(start, words);)
   HandleMark hm;  // Free handles before leaving.
 
-#ifdef _LP64
-  // A single array can fill ~8G, so multiple objects are needed only in 64-bit.
-  // First fill with arrays, ensuring that any remaining space is big enough to
-  // fill.  The remainder is filled with a single object.
+  // Multiple objects may be required depending on the filler array maximum size. Fill
+  // the range up to that with objects that are filler_array_max_size sized. The
+  // remainder is filled with a single object.
   const size_t min = min_fill_size();
   const size_t max = filler_array_max_size();
   while (words > max) {
-    const size_t cur = words - max >= min ? max : max - min;
+    const size_t cur = (words - max) >= min ? max : max - min;
     fill_with_array(start, cur, zap);
     start += cur;
     words -= cur;
   }
-#endif
 
   fill_with_object_impl(start, words, zap);
 }

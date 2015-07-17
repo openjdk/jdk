@@ -91,7 +91,7 @@ class G1CardCounts: public CHeapObj<mtGC> {
 
   jbyte* card_num_2_ptr(size_t card_num) {
     assert(card_num < _reserved_max_card_num,
-           err_msg("card num out of range: "SIZE_FORMAT, card_num));
+           err_msg("card num out of range: " SIZE_FORMAT, card_num));
     return (jbyte*) (_ct_bot + card_num);
   }
 

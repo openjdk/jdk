@@ -118,7 +118,8 @@ SIMPLE_DIRS	= \
 	$(PLATFORM_DIR)/generated/dependencies \
 	$(PLATFORM_DIR)/generated/adfiles \
 	$(PLATFORM_DIR)/generated/jvmtifiles \
-	$(PLATFORM_DIR)/generated/tracefiles
+	$(PLATFORM_DIR)/generated/tracefiles \
+	$(PLATFORM_DIR)/generated/extensions
 
 TARGETS      = debug fastdebug optimized product
 SUBMAKE_DIRS = $(addprefix $(PLATFORM_DIR)/,$(TARGETS))

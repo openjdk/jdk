@@ -44,8 +44,7 @@ SurrogateLockerThread*
 ConcurrentMarkThread::ConcurrentMarkThread(ConcurrentMark* cm) :
   ConcurrentGCThread(),
   _cm(cm),
-  _started(false),
-  _in_progress(false),
+  _state(Idle),
   _vtime_accum(0.0),
   _vtime_mark_accum(0.0) {
 
@@ -307,7 +306,6 @@ void ConcurrentMarkThread::sleepBeforeNextCycle() {
 
   if (started()) {
     set_in_progress();
-    clear_started();
   }
 }
 

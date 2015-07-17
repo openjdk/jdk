@@ -1021,7 +1021,7 @@ void ParNewGeneration::collect(bool   full,
   to()->set_concurrent_iteration_safe_limit(to()->top());
 
   if (ResizePLAB) {
-    plab_stats()->adjust_desired_plab_sz(active_workers);
+    plab_stats()->adjust_desired_plab_sz();
   }
 
   if (PrintGC && !PrintGCDetails) {
@@ -1057,6 +1057,10 @@ void ParNewGeneration::collect(bool   full,
   _gc_timer->register_gc_end();
 
   _gc_tracer.report_gc_end(_gc_timer->gc_end(), _gc_timer->time_partitions());
+}
+
+size_t ParNewGeneration::desired_plab_sz() {
+  return _plab_stats.desired_plab_sz(GenCollectedHeap::heap()->workers()->active_workers());
 }
 
 static int sum;
