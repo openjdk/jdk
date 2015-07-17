@@ -2023,10 +2023,10 @@ methodHandle ClassFileParser::parse_method(bool is_interface,
   bool lvt_allocated = false;
   u2 max_lvt_cnt = INITIAL_MAX_LVT_NUMBER;
   u2 max_lvtt_cnt = INITIAL_MAX_LVT_NUMBER;
-  u2* localvariable_table_length;
-  u2** localvariable_table_start;
-  u2* localvariable_type_table_length;
-  u2** localvariable_type_table_start;
+  u2* localvariable_table_length = NULL;
+  u2** localvariable_table_start = NULL;
+  u2* localvariable_type_table_length = NULL;
+  u2** localvariable_type_table_start = NULL;
   int method_parameters_length = -1;
   u1* method_parameters_data = NULL;
   bool method_parameters_seen = false;
