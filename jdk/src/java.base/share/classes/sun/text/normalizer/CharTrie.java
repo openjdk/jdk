@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,22 +22,18 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
- *******************************************************************************
- * (C) Copyright IBM Corp. and others, 1996-2009 - All Rights Reserved         *
- *                                                                             *
- * The original version of this source code and documentation is copyrighted   *
- * and owned by IBM, These materials are provided under terms of a License     *
- * Agreement between IBM and Sun. This technology is protected by multiple     *
- * US and International patents. This notice and attribution to IBM may not    *
- * to removed.                                                                 *
- *******************************************************************************
+ ******************************************************************************
+ * Copyright (C) 1996-2014, International Business Machines Corporation and
+ * others. All Rights Reserved.
+ ******************************************************************************
  */
 
 package sun.text.normalizer;
 
-import java.io.InputStream;
 import java.io.DataInputStream;
+import java.io.InputStream;
 import java.io.IOException;
 
 /**
@@ -73,120 +69,17 @@ public class CharTrie extends Trie
             throw new IllegalArgumentException(
                                "Data given does not belong to a char trie.");
         }
-        m_friendAgent_ = new FriendAgent();
-    }
-
-    /**
-     * Make a dummy CharTrie.
-     * A dummy trie is an empty runtime trie, used when a real data trie cannot
-     * be loaded.
-     *
-     * The trie always returns the initialValue,
-     * or the leadUnitValue for lead surrogate code points.
-     * The Latin-1 part is always set up to be linear.
-     *
-     * @param initialValue the initial value that is set for all code points
-     * @param leadUnitValue the value for lead surrogate code _units_ that do not
-     *                      have associated supplementary data
-     * @param dataManipulate object which provides methods to parse the char data
-     */
-    public CharTrie(int initialValue, int leadUnitValue, DataManipulate dataManipulate) {
-        super(new char[BMP_INDEX_LENGTH+SURROGATE_BLOCK_COUNT], HEADER_OPTIONS_LATIN1_IS_LINEAR_MASK_, dataManipulate);
-
-        int dataLength, latin1Length, i, limit;
-        char block;
-
-        /* calculate the actual size of the dummy trie data */
-
-        /* max(Latin-1, block 0) */
-        dataLength=latin1Length= INDEX_STAGE_1_SHIFT_<=8 ? 256 : DATA_BLOCK_LENGTH;
-        if(leadUnitValue!=initialValue) {
-            dataLength+=DATA_BLOCK_LENGTH;
-        }
-        m_data_=new char[dataLength];
-        m_dataLength_=dataLength;
-
-        m_initialValue_=(char)initialValue;
-
-        /* fill the index and data arrays */
-
-        /* indexes are preset to 0 (block 0) */
-
-        /* Latin-1 data */
-        for(i=0; i<latin1Length; ++i) {
-            m_data_[i]=(char)initialValue;
-        }
-
-        if(leadUnitValue!=initialValue) {
-            /* indexes for lead surrogate code units to the block after Latin-1 */
-            block=(char)(latin1Length>>INDEX_STAGE_2_SHIFT_);
-            i=0xd800>>INDEX_STAGE_1_SHIFT_;
-            limit=0xdc00>>INDEX_STAGE_1_SHIFT_;
-            for(; i<limit; ++i) {
-                m_index_[i]=block;
-            }
-
-            /* data for lead surrogate code units */
-            limit=latin1Length+DATA_BLOCK_LENGTH;
-            for(i=latin1Length; i<limit; ++i) {
-                m_data_[i]=(char)leadUnitValue;
-            }
-        }
-
-        m_friendAgent_ = new FriendAgent();
-    }
-
-    /**
-     * Java friend implementation
-     */
-    public class FriendAgent
-    {
-        /**
-         * Gives out the index array of the trie
-         * @return index array of trie
-         */
-        public char[] getPrivateIndex()
-        {
-            return m_index_;
-        }
-        /**
-         * Gives out the data array of the trie
-         * @return data array of trie
-         */
-        public char[] getPrivateData()
-        {
-            return m_data_;
-        }
-        /**
-         * Gives out the data offset in the trie
-         * @return data offset in the trie
-         */
-        public int getPrivateInitialValue()
-        {
-            return m_initialValue_;
-        }
     }
 
     // public methods --------------------------------------------------
 
     /**
-     * Java friend implementation
-     * To store the index and data array into the argument.
-     * @param friend java friend UCharacterProperty object to store the array
+     * Gets the value associated with the codepoint.
+     * If no value is associated with the codepoint, a default value will be
+     * returned.
+     * @param ch codepoint
+     * @return offset to data
      */
-    public void putIndexData(UCharacterProperty friend)
-    {
-        friend.setIndexData(m_friendAgent_);
-    }
-
-    /**
-    * Gets the value associated with the codepoint.
-    * If no value is associated with the codepoint, a default value will be
-    * returned.
-    * @param ch codepoint
-    * @return offset to data
-    * @draft 2.1
-    */
     public final char getCodePointValue(int ch)
     {
         int offset;
@@ -215,50 +108,10 @@ public class CharTrie extends Trie
     * This method does not guarantee correct results for trail surrogates.
     * @param ch lead surrogate character
     * @return data value
-    * @draft 2.1
     */
     public final char getLeadValue(char ch)
     {
        return m_data_[getLeadOffset(ch)];
-    }
-
-    /**
-    * Get the value associated with a pair of surrogates.
-    * @param lead a lead surrogate
-    * @param trail a trail surrogate
-    * @draft 2.1
-    */
-    public final char getSurrogateValue(char lead, char trail)
-    {
-        int offset = getSurrogateOffset(lead, trail);
-        if (offset > 0) {
-            return m_data_[offset];
-        }
-        return m_initialValue_;
-    }
-
-    /**
-    * <p>Get a value from a folding offset (from the value of a lead surrogate)
-    * and a trail surrogate.</p>
-    * <p>If the
-    * @param leadvalue value associated with the lead surrogate which contains
-    *        the folding offset
-    * @param trail surrogate
-    * @return trie data value associated with the trail character
-    * @draft 2.1
-    */
-    public final char getTrailValue(int leadvalue, char trail)
-    {
-        if (m_dataManipulate_ == null) {
-            throw new NullPointerException(
-                             "The field DataManipulate in this Trie is null");
-        }
-        int offset = m_dataManipulate_.getFoldingOffset(leadvalue);
-        if (offset > 0) {
-            return m_data_[getRawOffset(offset,
-                                        (char)(trail & SURROGATE_MASK_))];
-        }
-        return m_initialValue_;
     }
 
     // protected methods -----------------------------------------------
@@ -309,41 +162,14 @@ public class CharTrie extends Trie
         return -1;
     }
 
-    /**
-    * Gets the value at the argument index.
-    * For use internally in TrieIterator.
-    * @param index value at index will be retrieved
-    * @return 32 bit value
-    * @see com.ibm.icu.impl.TrieIterator
-    * @draft 2.1
-    */
-    protected final int getValue(int index)
-    {
-        return m_data_[index];
-    }
-
-    /**
-    * Gets the default initial value
-    * @return 32 bit value
-    * @draft 2.1
-    */
-    protected final int getInitialValue()
-    {
-        return m_initialValue_;
-    }
-
     // private data members --------------------------------------------
 
     /**
-    * Default value
-    */
+     * Default value
+     */
     private char m_initialValue_;
     /**
-    * Array of char data
-    */
-    private char m_data_[];
-    /**
-     * Agent for friends
+     * Array of char data
      */
-    private FriendAgent m_friendAgent_;
+    private char m_data_[];
 }

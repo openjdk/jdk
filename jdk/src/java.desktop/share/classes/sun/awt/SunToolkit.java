@@ -66,6 +66,7 @@ import sun.awt.image.ToolkitImage;
 import sun.awt.image.URLImageSource;
 import sun.font.FontDesignMetrics;
 import sun.misc.SoftCache;
+import sun.net.util.URLUtil;
 import sun.security.action.GetBooleanAction;
 import sun.security.action.GetPropertyAction;
 import sun.util.logging.PlatformLogger;
@@ -875,7 +876,7 @@ public abstract class SunToolkit extends Toolkit
         if (sm != null) {
             try {
                 java.security.Permission perm =
-                    url.openConnection().getPermission();
+                    URLUtil.getConnectPermission(url);
                 if (perm != null) {
                     try {
                         sm.checkPermission(perm);

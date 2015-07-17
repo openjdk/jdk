@@ -29,7 +29,6 @@
 # @library /lib/testlibrary
 # @modules java.management/sun.management
 #          java.management/sun.management.jmxremote
-# @ignore 8077924
 # @build jdk.testlibrary.* TestLogger Utils RmiBootstrapTest
 # @run shell/timeout=300  RmiSslBootstrapTest.sh
 

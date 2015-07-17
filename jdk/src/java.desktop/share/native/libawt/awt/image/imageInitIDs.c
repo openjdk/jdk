@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,6 @@ Java_java_awt_image_Raster_initIDs(JNIEnv *env, jclass cls) {
     CHECK_NULL(g_RasterWidthID    = (*env)->GetFieldID(env, cls, "width", "I"));
     CHECK_NULL(g_RasterHeightID   = (*env)->GetFieldID(env, cls, "height", "I"));
     CHECK_NULL(g_RasterNumBandsID = (*env)->GetFieldID(env, cls, "numBands", "I"));
-    CHECK_NULL(g_RasterGetDataMID = (*env)->GetMethodID(env, cls, "getDataElements",
-                                        "(IIIILjava/lang/Object;)Ljava/lang/Object;"));
     CHECK_NULL(g_RasterMinXID  = (*env)->GetFieldID(env, cls, "minX", "I"));
     CHECK_NULL(g_RasterMinYID  = (*env)->GetFieldID(env, cls, "minY", "I"));
     CHECK_NULL(g_RasterBaseOriginXID  = (*env)->GetFieldID(env, cls,
@@ -67,7 +65,6 @@ Java_sun_awt_image_ByteComponentRaster_initIDs(JNIEnv *env, jclass cls) {
     CHECK_NULL(g_BCRdataID = (*env)->GetFieldID(env, cls, "data", "[B"));
     CHECK_NULL(g_BCRscanstrID = (*env)->GetFieldID(env, cls, "scanlineStride", "I"));
     CHECK_NULL(g_BCRpixstrID = (*env)->GetFieldID(env, cls, "pixelStride", "I"));
-    CHECK_NULL(g_BCRbandoffsID = (*env)->GetFieldID(env, cls, "bandOffset", "I"));
     CHECK_NULL(g_BCRdataOffsetsID = (*env)->GetFieldID(env, cls, "dataOffsets", "[I"));
     CHECK_NULL(g_BCRtypeID = (*env)->GetFieldID(env, cls, "type", "I"));
 }
@@ -86,7 +83,6 @@ Java_sun_awt_image_ShortComponentRaster_initIDs(JNIEnv *env, jclass cls) {
     CHECK_NULL(g_SCRdataID = (*env)->GetFieldID(env, cls, "data", "[S"));
     CHECK_NULL(g_SCRscanstrID = (*env)->GetFieldID(env, cls, "scanlineStride", "I"));
     CHECK_NULL(g_SCRpixstrID = (*env)->GetFieldID(env, cls, "pixelStride", "I"));
-    CHECK_NULL(g_SCRbandoffsID = (*env)->GetFieldID(env, cls, "bandOffset", "I"));
     CHECK_NULL(g_SCRdataOffsetsID = (*env)->GetFieldID(env, cls, "dataOffsets", "[I"));
     CHECK_NULL(g_SCRtypeID = (*env)->GetFieldID(env, cls, "type", "I"));
 }
@@ -96,9 +92,6 @@ Java_sun_awt_image_IntegerComponentRaster_initIDs(JNIEnv *env, jclass cls) {
     CHECK_NULL(g_ICRscanstrID = (*env)->GetFieldID(env, cls, "scanlineStride", "I"));
     CHECK_NULL(g_ICRpixstrID = (*env)->GetFieldID(env, cls, "pixelStride", "I"));
     CHECK_NULL(g_ICRdataOffsetsID = (*env)->GetFieldID(env, cls, "dataOffsets", "[I"));
-    CHECK_NULL(g_ICRbandoffsID = (*env)->GetFieldID(env, cls, "bandOffset", "I"));
-    CHECK_NULL(g_ICRputDataMID  = (*env)->GetMethodID(env, cls, "setDataElements",
-                                     "(IIIILjava/lang/Object;)V"));
     CHECK_NULL(g_ICRtypeID = (*env)->GetFieldID(env, cls, "type", "I"));
 }
 
@@ -121,8 +114,6 @@ Java_java_awt_image_ColorModel_initIDs(JNIEnv *env, jclass cls) {
     CHECK_NULL(g_CMisAlphaPreID = (*env)->GetFieldID(env, cls, "isAlphaPremultiplied",
                                           "Z"));
     CHECK_NULL(g_CMtransparencyID = (*env)->GetFieldID(env, cls, "transparency", "I"));
-    CHECK_NULL(g_CMgetRGBMID      = (*env)->GetMethodID(env, cls, "getRGB",
-                                             "(Ljava/lang/Object;)I"));
     CHECK_NULL(g_CMcsTypeID       = (*env)->GetFieldID(env, cls, "colorSpaceType", "I"));
     CHECK_NULL(g_CMis_sRGBID      = (*env)->GetFieldID(env, cls, "is_sRGB", "Z"));
     CHECK_NULL(g_CMgetRGBdefaultMID   = (*env)->GetStaticMethodID(env, cls,
@@ -148,20 +139,8 @@ Java_java_awt_image_SampleModel_initIDs(JNIEnv *env, jclass cls) {
 }
 
 JNIEXPORT void JNICALL
-Java_java_awt_image_ComponentSampleModel_initIDs(JNIEnv *env, jclass cls) {
-    CHECK_NULL(g_CSMPixStrideID = (*env)->GetFieldID(env, cls, "pixelStride", "I"));
-    CHECK_NULL(g_CSMScanStrideID = (*env)->GetFieldID(env, cls, "scanlineStride", "I"));
-    CHECK_NULL(g_CSMBandOffsetsID = (*env)->GetFieldID(env, cls, "bandOffsets", "[I"));
-}
-
-JNIEXPORT void JNICALL
 Java_java_awt_image_Kernel_initIDs(JNIEnv *env, jclass cls) {
     CHECK_NULL(g_KernelWidthID   = (*env)->GetFieldID(env, cls, "width", "I"));
     CHECK_NULL(g_KernelHeightID  = (*env)->GetFieldID(env, cls, "height", "I"));
     CHECK_NULL(g_KernelDataID    = (*env)->GetFieldID(env, cls, "data", "[F"));
-}
-
-JNIEXPORT void JNICALL
-Java_java_awt_image_DataBufferInt_initIDs(JNIEnv *env, jclass cls) {
-    CHECK_NULL(g_DataBufferIntPdataID = (*env)->GetFieldID(env, cls, "pData", "J"));
 }

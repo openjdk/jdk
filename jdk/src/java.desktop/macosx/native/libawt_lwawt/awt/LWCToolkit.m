@@ -376,7 +376,7 @@ JNIEXPORT jboolean JNICALL Java_sun_lwawt_macosx_LWCToolkit_nativeSyncQueue
     if ([sharedApp isKindOfClass:[NSApplicationAWT class]]) {
         NSApplicationAWT* theApp = (NSApplicationAWT*)sharedApp;
         [theApp postDummyEvent];
-        [theApp waitForDummyEvent];
+        [theApp waitForDummyEvent:timeout];
     } else {
         // could happen if we are embedded inside SWT application,
         // in this case just spin a single empty block through 

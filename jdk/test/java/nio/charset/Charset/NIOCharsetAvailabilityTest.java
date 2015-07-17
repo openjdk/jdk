@@ -46,9 +46,9 @@ public class NIOCharsetAvailabilityTest {
         // two known charset implementation packages
         FileSystem fs = FileSystems.getFileSystem(URI.create("jrt:/"));
         Set<Class> charsets =
-            Stream.concat(Files.walk(fs.getPath("/java.base/sun/nio/cs/")),
-                          Files.walk(fs.getPath("/jdk.charsets/sun/nio/cs/ext/")))
-                 .map( p -> p.subpath(1, p.getNameCount()).toString())
+            Stream.concat(Files.walk(fs.getPath("/modules/java.base/sun/nio/cs/")),
+                          Files.walk(fs.getPath("/modules/jdk.charsets/sun/nio/cs/ext/")))
+                 .map( p -> p.subpath(2, p.getNameCount()).toString())
                  .filter( s ->  s.indexOf("$") == -1 && s.endsWith(".class"))
                  .map( s -> {
                      try {

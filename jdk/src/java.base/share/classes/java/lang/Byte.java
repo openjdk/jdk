@@ -25,6 +25,8 @@
 
 package java.lang;
 
+import jdk.internal.HotSpotIntrinsicCandidate;
+
 /**
  *
  * The {@code Byte} class wraps a value of primitive type {@code byte}
@@ -98,6 +100,7 @@ public final class Byte extends Number implements Comparable<Byte> {
      * @return a {@code Byte} instance representing {@code b}.
      * @since  1.5
      */
+    @HotSpotIntrinsicCandidate
     public static Byte valueOf(byte b) {
         final int offset = 128;
         return ByteCache.cache[(int)b + offset];
@@ -320,6 +323,7 @@ public final class Byte extends Number implements Comparable<Byte> {
      * Returns the value of this {@code Byte} as a
      * {@code byte}.
      */
+    @HotSpotIntrinsicCandidate
     public byte byteValue() {
         return value;
     }

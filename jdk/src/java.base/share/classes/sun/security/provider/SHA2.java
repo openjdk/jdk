@@ -25,6 +25,9 @@
 
 package sun.security.provider;
 
+import java.util.Objects;
+
+import jdk.internal.HotSpotIntrinsicCandidate;
 import static sun.security.provider.ByteArrayAccess.*;
 
 /**
@@ -186,8 +189,27 @@ abstract class SHA2 extends DigestBase {
      * Process the current block to update the state variable state.
      */
     void implCompress(byte[] buf, int ofs) {
-        b2iBig64(buf, ofs, W);
+        implCompressCheck(buf, ofs);
+        implCompress0(buf, ofs);
+    }
 
+    private void implCompressCheck(byte[] buf, int ofs) {
+        Objects.requireNonNull(buf);
+
+        // The checks performed by the method 'b2iBig64'
+        // are sufficient for the case when the method
+        // 'implCompressImpl' is replaced with a compiler
+        // intrinsic.
+        b2iBig64(buf, ofs, W);
+    }
+
+    // The method 'implCompressImpl' seems not to use its parameters.
+    // The method can, however, be replaced with a compiler intrinsic
+    // that operates directly on the array 'buf' (starting from
+    // offset 'ofs') and not on array 'W', therefore 'buf' and 'ofs'
+    // must be passed as parameter to the method.
+    @HotSpotIntrinsicCandidate
+    private void implCompress0(byte[] buf, int ofs) {
         // The first 16 ints are from the byte stream, compute the rest of
         // the W[]'s
         for (int t = 16; t < ITERATION; t++) {

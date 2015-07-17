@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package com.sun.imageio.stream;
 
 import sun.awt.util.ThreadGroupUtils;
-import sun.misc.InnocuousThread;
+import sun.misc.ManagedLocalsThread;
 
 import java.io.IOException;
 import java.security.AccessController;
@@ -87,17 +87,13 @@ public class StreamCloser {
                 };
 
                 AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
-                    if (System.getSecurityManager() == null) {
-                        /* The thread must be a member of a thread group
-                         * which will not get GCed before VM exit.
-                         * Make its parent the top-level thread group.
-                         */
-                        ThreadGroup tg = ThreadGroupUtils.getRootThreadGroup();
-                        streamCloser = new Thread(tg, streamCloserRunnable);
-                    } else {
-                        /* InnocuousThread is a member of a correct TG by default */
-                        streamCloser = new InnocuousThread(streamCloserRunnable);
-                    }
+                    /* The thread must be a member of a thread group
+                     * which will not get GCed before VM exit.
+                     * Make its parent the top-level thread group.
+                     */
+                    ThreadGroup tg = ThreadGroupUtils.getRootThreadGroup();
+                    streamCloser = new ManagedLocalsThread(tg,
+                                                           streamCloserRunnable);
                     /* Set context class loader to null in order to avoid
                      * keeping a strong reference to an application classloader.
                      */

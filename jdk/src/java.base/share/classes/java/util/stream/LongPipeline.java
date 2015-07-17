@@ -154,10 +154,12 @@ abstract class LongPipeline<E_IN>
     }
 
     @Override
-    final void forEachWithCancel(Spliterator<Long> spliterator, Sink<Long> sink) {
+    final boolean forEachWithCancel(Spliterator<Long> spliterator, Sink<Long> sink) {
         Spliterator.OfLong spl = adapt(spliterator);
         LongConsumer adaptedSink =  adapt(sink);
-        do { } while (!sink.cancellationRequested() && spl.tryAdvance(adaptedSink));
+        boolean cancelled;
+        do { } while (!(cancelled = sink.cancellationRequested()) && spl.tryAdvance(adaptedSink));
+        return cancelled;
     }
 
     @Override
@@ -365,6 +367,16 @@ abstract class LongPipeline<E_IN>
             return this;
         else
             return SliceOps.makeLong(this, n, -1);
+    }
+
+    @Override
+    public final LongStream takeWhile(LongPredicate predicate) {
+        return WhileOps.makeTakeWhileLong(this, predicate);
+    }
+
+    @Override
+    public final LongStream dropWhile(LongPredicate predicate) {
+        return WhileOps.makeDropWhileLong(this, predicate);
     }
 
     @Override

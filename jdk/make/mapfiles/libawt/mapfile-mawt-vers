@@ -196,7 +196,6 @@ SUNWprivate_1.1 {
                 Java_sun_java2d_opengl_GLXGraphicsConfig_initConfig;
                 Java_sun_java2d_opengl_GLXGraphicsConfig_getOGLCapabilities;
                 Java_sun_java2d_opengl_GLXSurfaceData_initOps;
-                Java_sun_java2d_opengl_GLXSurfaceData_initPbuffer;
 
                 Java_sun_print_CUPSPrinter_initIDs;
                 Java_sun_print_CUPSPrinter_getCupsServer;
