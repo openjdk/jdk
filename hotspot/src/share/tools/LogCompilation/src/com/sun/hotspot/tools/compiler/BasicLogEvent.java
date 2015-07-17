@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,29 @@ package com.sun.hotspot.tools.compiler;
 import java.io.PrintStream;
 
 /**
- *
- * @author never
+ * Provide basic data structures and behaviour for {@link LogEvent}s.
  */
 public abstract class BasicLogEvent implements LogEvent {
 
+    /**
+     * The event's ID. This is a number; we represent it as a string for
+     * convenience.
+     */
     protected final String id;
+
+    /**
+     * The event's start time.
+     */
     protected final double start;
+
+    /**
+     * The event's end time.
+     */
     protected double end;
+
+    /**
+     * The compilation during which this event was signalled.
+     */
     protected Compilation compilation;
 
     BasicLogEvent(double start, String id) {
@@ -43,33 +58,37 @@ public abstract class BasicLogEvent implements LogEvent {
         this.id = id;
     }
 
-    public double getStart() {
+    public final double getStart() {
         return start;
     }
 
-    public double getEnd() {
+    public final double getEnd() {
         return end;
     }
 
-    public void setEnd(double end) {
+    public final void setEnd(double end) {
         this.end = end;
     }
 
-    public double getElapsedTime() {
+    public final double getElapsedTime() {
         return ((int) ((getEnd() - getStart()) * 1000)) / 1000.0;
     }
 
-    public String getId() {
+    public final String getId() {
         return id;
     }
 
-    public Compilation getCompilation() {
+    public final Compilation getCompilation() {
         return compilation;
     }
 
+    /**
+     * Set the compilation for this event. This is not a {@code final} method
+     * as it is overridden in {@link UncommonTrapEvent}.
+     */
     public void setCompilation(Compilation compilation) {
         this.compilation = compilation;
     }
 
-    abstract public void print(PrintStream stream);
+    abstract public void print(PrintStream stream, boolean printID);
 }
