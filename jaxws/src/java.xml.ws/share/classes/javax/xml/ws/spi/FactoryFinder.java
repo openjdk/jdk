@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ class FactoryFinder {
 
     /**
      * Creates an instance of the specified class using the specified
-     * <code>ClassLoader</code> object.
+     * {@code ClassLoader} object.
      *
      * @exception WebServiceException if the given class could not be found
      *            or could not be instantiated
@@ -56,22 +56,22 @@ class FactoryFinder {
     }
 
     /**
-     * Finds the implementation <code>Class</code> object for the given
-     * factory name, or if that fails, finds the <code>Class</code> object
+     * Finds the implementation {@code Class} object for the given
+     * factory name, or if that fails, finds the {@code Class} object
      * for the given fallback class name. The arguments supplied MUST be
      * used in order. If using the first argument is successful, the second
      * one will not be used.
      * <P>
      * This method is package private so that this code can be shared.
      *
-     * @return the <code>Class</code> object of the specified message factory;
-     *         may not be <code>null</code>
+     * @return the {@code Class} object of the specified message factory;
+     *         may not be {@code null}
      *
      * @param factoryId             the name of the factory to find, which is
      *                              a system property
      * @param fallbackClassName     the implementation class name, which is
      *                              to be used only if nothing else
-     *                              is found; <code>null</code> to indicate that
+     *                              is found; {@code null} to indicate that
      *                              there is no fallback class name
      * @exception WebServiceException if there is an error
      */
