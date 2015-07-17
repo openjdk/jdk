@@ -2368,7 +2368,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     }
 
     /**
-     * An intersection type, T1 & T2 & ... Tn (used in cast expressions)
+     * An intersection type, {@code T1 & T2 & ... Tn} (used in cast expressions)
      */
     public static class JCTypeIntersection extends JCExpression implements IntersectionTypeTree {
 
