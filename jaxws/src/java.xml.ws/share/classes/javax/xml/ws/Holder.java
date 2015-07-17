@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package javax.xml.ws;
 import java.io.Serializable;
 
 /**
- * Holds a value of type <code>T</code>.
+ * Holds a value of type {@code T}.
  *
  * @since 1.6, JAX-WS 2.0
  */
@@ -42,7 +42,7 @@ public final class Holder<T> implements Serializable {
     public T value;
 
     /**
-     * Creates a new holder with a <code>null</code> value.
+     * Creates a new holder with a {@code null} value.
      */
     public Holder() {
     }

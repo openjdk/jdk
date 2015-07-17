@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,8 @@ import java.lang.reflect.InvocationTargetException;
  * for a web service invocation. Finally, Invoker does the actual
  * invocation of web service on endpoint instance.
  *
- * Container also injects the provided <code>WebServiceContext</code> and takes
- * care of invoking <code>javax.annotation.PostConstruct</code> methods,
+ * Container also injects the provided {@code WebServiceContext} and takes
+ * care of invoking {@code javax.annotation.PostConstruct} methods,
  * if present, on the endpoint implementation.
  *
  * @see Provider#createEndpoint(String, Class, Invoker, WebServiceFeature...)
@@ -51,7 +51,7 @@ public abstract class Invoker {
     /**
      * JAX-WS runtimes calls this method to ask container to inject
      * WebServiceContext on the endpoint instance. The
-     * <code>WebServiceContext</code> object uses thread-local information
+     * {@code WebServiceContext} object uses thread-local information
      * to return the correct information during the actual endpoint invocation
      * regardless of how many threads are concurrently being used to serve
      * requests.
@@ -70,7 +70,7 @@ public abstract class Invoker {
     /**
      * JAX-WS runtime calls this method to do the actual web service
      * invocation on endpoint instance. The injected
-     * <code>WebServiceContext.getMessageContext()</code> gives the correct
+     * {@code WebServiceContext.getMessageContext()} gives the correct
      * information for this invocation.
      *
      * @param m Method to be invoked on the service

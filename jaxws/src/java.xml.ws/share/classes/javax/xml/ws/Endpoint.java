@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,23 +37,23 @@ import org.w3c.dom.Element;
  * A Web service endpoint.
  *
  * <p>Endpoints are created using the static methods defined in this
- * class. An endpoint is always tied to one <code>Binding</code>
+ * class. An endpoint is always tied to one {@code Binding}
  * and one implementor, both set at endpoint creation time.
  *
  * <p>An endpoint is either in a published or an unpublished state.
- * The <code>publish</code> methods can be used to start publishing
+ * The {@code publish} methods can be used to start publishing
  * an endpoint, at which point it starts accepting incoming requests.
- * Conversely, the <code>stop</code> method can be used to stop
+ * Conversely, the {@code stop} method can be used to stop
  * accepting incoming requests and take the endpoint down.
  * Once stopped, an endpoint cannot be published again.
  *
- * <p>An <code>Executor</code> may be set on the endpoint in order
+ * <p>An {@code Executor} may be set on the endpoint in order
  * to gain better control over the threads used to dispatch incoming
  * requests. For instance, thread pooling with certain parameters
- * can be enabled by creating a <code>ThreadPoolExecutor</code> and
+ * can be enabled by creating a {@code ThreadPoolExecutor} and
  * registering it with the endpoint.
  *
- * <p>Handler chains can be set using the contained <code>Binding</code>.
+ * <p>Handler chains can be set using the contained {@code Binding}.
  *
  * <p>An endpoint may have a list of metadata documents, such as WSDL
  * and XMLSchema documents, bound to it. At publishing time, the
@@ -114,8 +114,8 @@ public abstract class Endpoint {
      *
      * @param implementor The endpoint implementor.
      * @param features A list of WebServiceFeature to configure on the
-     *        endpoint. Supported features not in the <code>features
-     *        </code> parameter will have their default values.
+     *        endpoint. Supported features not in the {@code features
+     *        } parameter will have their default values.
      *
      *
      * @return The newly created endpoint.
@@ -135,7 +135,7 @@ public abstract class Endpoint {
      * {@link javax.xml.ws.Endpoint#publish(Object)} methods.
      *
      * @param bindingId A URI specifying the binding to use. If the bindingID is
-     * <code>null</code> and no binding is specified via a BindingType
+     * {@code null} and no binding is specified via a BindingType
      * annotation then a default SOAP 1.1 / HTTP binding MUST be used.
      *
      * @param implementor The endpoint implementor.
@@ -156,14 +156,14 @@ public abstract class Endpoint {
      * {@link javax.xml.ws.Endpoint#publish(Object)} methods.
      *
      * @param bindingId A URI specifying the binding to use. If the bindingID is
-     * <code>null</code> and no binding is specified via a BindingType
+     * {@code null} and no binding is specified via a BindingType
      * annotation then a default SOAP 1.1 / HTTP binding MUST be used.
      *
      * @param implementor The endpoint implementor.
      *
      * @param features A list of WebServiceFeature to configure on the
-     *        endpoint. Supported features not in the <code>features
-     *        </code> parameter will have their default values.
+     *        endpoint. Supported features not in the {@code features
+     *        } parameter will have their default values.
      *
      * @return The newly created endpoint.
      * @since 1.7, JAX-WS 2.2
@@ -205,9 +205,9 @@ public abstract class Endpoint {
      *          If the endpoint has been published already or it has been stopped.
      *
      * @throws java.lang.SecurityException
-     *          If a <code>java.lang.SecurityManger</code>
+     *          If a {@code java.lang.SecurityManger}
      *          is being used and the application doesn't have the
-     *          <code>WebServicePermission("publishEndpoint")</code> permission.
+     *          {@code WebServicePermission("publishEndpoint")} permission.
      **/
     public abstract void publish(String address);
 
@@ -231,9 +231,9 @@ public abstract class Endpoint {
      * @return The newly created endpoint.
      *
      * @throws java.lang.SecurityException
-     *          If a <code>java.lang.SecurityManger</code>
+     *          If a {@code java.lang.SecurityManger}
      *          is being used and the application doesn't have the
-     *          <code>WebServicePermission("publishEndpoint")</code> permission.
+     *          {@code WebServicePermission("publishEndpoint")} permission.
      *
      **/
     public static Endpoint publish(String address, Object implementor) {
@@ -258,14 +258,14 @@ public abstract class Endpoint {
      *        URI schemes.
      * @param implementor The endpoint implementor.
      * @param features A list of WebServiceFeature to configure on the
-     *        endpoint. Supported features not in the <code>features
-     *        </code> parameter will have their default values.
+     *        endpoint. Supported features not in the {@code features
+     *        } parameter will have their default values.
      * @return The newly created endpoint.
      *
      * @throws java.lang.SecurityException
-     *          If a <code>java.lang.SecurityManger</code>
+     *          If a {@code java.lang.SecurityManger}
      *          is being used and the application doesn't have the
-     *          <code>WebServicePermission("publishEndpoint")</code> permission.
+     *          {@code WebServicePermission("publishEndpoint")} permission.
      * @since 1.7, JAX-WS 2.2
      */
     public static Endpoint publish(String address, Object implementor, WebServiceFeature ... features) {
@@ -294,9 +294,9 @@ public abstract class Endpoint {
      *         If the endpoint has been published already or it has been stopped.
      *
      * @throws java.lang.SecurityException
-     *          If a <code>java.lang.SecurityManger</code>
+     *          If a {@code java.lang.SecurityManger}
      *          is being used and the application doesn't have the
-     *          <code>WebServicePermission("publishEndpoint")</code> permission.
+     *          {@code WebServicePermission("publishEndpoint")} permission.
      **/
     public abstract void publish(Object serverContext);
 
@@ -327,9 +327,9 @@ public abstract class Endpoint {
      *         If the endpoint has been published already or it has been stopped.
      *
      * @throws java.lang.SecurityException
-     *          If a <code>java.lang.SecurityManger</code>
+     *          If a {@code java.lang.SecurityManger}
      *          is being used and the application doesn't have the
-     *          <code>WebServicePermission("publishEndpoint")</code> permission.
+     *          {@code WebServicePermission("publishEndpoint")} permission.
      * @since 1.7, JAX-WS 2.2
      */
     public void publish(HttpContext serverContext) {
@@ -348,14 +348,14 @@ public abstract class Endpoint {
     /**
      * Returns true if the endpoint is in the published state.
      *
-     * @return <code>true</code> if the endpoint is in the published state.
+     * @return {@code true} if the endpoint is in the published state.
      **/
     public abstract boolean isPublished();
 
     /**
      * Returns a list of metadata documents for the service.
      *
-     * @return <code>List&lt;javax.xml.transform.Source&gt;</code> A list of metadata documents for the service
+     * @return {@code List<javax.xml.transform.Source>} A list of metadata documents for the service
      **/
     public abstract List<javax.xml.transform.Source> getMetadata();
 
@@ -372,12 +372,12 @@ public abstract class Endpoint {
     public abstract void setMetadata(List<javax.xml.transform.Source> metadata);
 
     /**
-     * Returns the executor for this <code>Endpoint</code>instance.
+     * Returns the executor for this {@code Endpoint}instance.
      *
      * The executor is used to dispatch an incoming request to
      * the implementor object.
      *
-     * @return The <code>java.util.concurrent.Executor</code> to be
+     * @return The {@code java.util.concurrent.Executor} to be
      *         used to dispatch a request.
      *
      * @see java.util.concurrent.Executor
@@ -385,17 +385,17 @@ public abstract class Endpoint {
     public abstract java.util.concurrent.Executor getExecutor();
 
     /**
-     * Sets the executor for this <code>Endpoint</code> instance.
+     * Sets the executor for this {@code Endpoint} instance.
      *
      * The executor is used to dispatch an incoming request to
      * the implementor object.
      *
-     * If this <code>Endpoint</code> is published using the
-     * <code>publish(Object)</code> method and the specified server
+     * If this {@code Endpoint} is published using the
+     * {@code publish(Object)} method and the specified server
      * context defines its own threading behavior, the executor
      * may be ignored.
      *
-     * @param executor The <code>java.util.concurrent.Executor</code>
+     * @param executor The {@code java.util.concurrent.Executor}
      *        to be used to dispatch a request.
      *
      * @throws SecurityException  If the instance does not support
@@ -408,7 +408,7 @@ public abstract class Endpoint {
 
 
     /**
-     * Returns the property bag for this <code>Endpoint</code> instance.
+     * Returns the property bag for this {@code Endpoint} instance.
      *
      * @return Map&lt;String,Object&gt; The property bag
      *         associated with this instance.
@@ -416,7 +416,7 @@ public abstract class Endpoint {
     public abstract Map<String,Object> getProperties();
 
     /**
-     * Sets the property bag for this <code>Endpoint</code> instance.
+     * Sets the property bag for this {@code Endpoint} instance.
      *
      * @param properties The property bag associated with
      *        this instance.
@@ -424,24 +424,24 @@ public abstract class Endpoint {
     public abstract void setProperties(Map<String,Object> properties);
 
     /**
-     * Returns the <code>EndpointReference</code> associated with
-     * this <code>Endpoint</code> instance.
+     * Returns the {@code EndpointReference} associated with
+     * this {@code Endpoint} instance.
      * <p>
-     * If the Binding for this <code>bindingProvider</code> is
+     * If the Binding for this {@code bindingProvider} is
      * either SOAP1.1/HTTP or SOAP1.2/HTTP, then a
-     * <code>W3CEndpointReference</code> MUST be returned.
+     * {@code W3CEndpointReference} MUST be returned.
      *
      * @param referenceParameters Reference parameters to be associated with the
-     * returned <code>EndpointReference</code> instance.
-     * @return EndpointReference of this <code>Endpoint</code> instance.
-     * If the returned <code>EndpointReference</code> is of type
-     * <code>W3CEndpointReference</code> then it MUST contain the
-     * the specified <code>referenceParameters</code>.
+     * returned {@code EndpointReference} instance.
+     * @return EndpointReference of this {@code Endpoint} instance.
+     * If the returned {@code EndpointReference} is of type
+     * {@code W3CEndpointReference} then it MUST contain the
+     * the specified {@code referenceParameters}.
 
      * @throws WebServiceException If any error in the creation of
-     * the <code>EndpointReference</code> or if the <code>Endpoint</code> is
+     * the {@code EndpointReference} or if the {@code Endpoint} is
      * not in the published state.
-     * @throws UnsupportedOperationException If this <code>BindingProvider</code>
+     * @throws UnsupportedOperationException If this {@code BindingProvider}
      * uses the XML/HTTP binding.
      *
      * @see W3CEndpointReference
@@ -452,23 +452,23 @@ public abstract class Endpoint {
 
 
     /**
-     * Returns the <code>EndpointReference</code> associated with
-     * this <code>Endpoint</code> instance.
+     * Returns the {@code EndpointReference} associated with
+     * this {@code Endpoint} instance.
      *
      * @param clazz Specifies the type of EndpointReference  that MUST be returned.
      * @param referenceParameters Reference parameters to be associated with the
-     * returned <code>EndpointReference</code> instance.
-     * @return EndpointReference of type <code>clazz</code> of this
-     * <code>Endpoint</code> instance.
-     * If the returned <code>EndpointReference</code> is of type
-     * <code>W3CEndpointReference</code> then it MUST contain the
-     * the specified <code>referenceParameters</code>.
+     * returned {@code EndpointReference} instance.
+     * @return EndpointReference of type {@code clazz} of this
+     * {@code Endpoint} instance.
+     * If the returned {@code EndpointReference} is of type
+     * {@code W3CEndpointReference} then it MUST contain the
+     * the specified {@code referenceParameters}.
 
      * @throws WebServiceException If any error in the creation of
-     * the <code>EndpointReference</code> or if the <code>Endpoint</code> is
-     * not in the published state or if the <code>clazz</code> is not a supported
-     * <code>EndpointReference</code> type.
-     * @throws UnsupportedOperationException If this <code>BindingProvider</code>
+     * the {@code EndpointReference} or if the {@code Endpoint} is
+     * not in the published state or if the {@code clazz} is not a supported
+     * {@code EndpointReference} type.
+     * @throws UnsupportedOperationException If this {@code BindingProvider}
      * uses the XML/HTTP binding.
      *
      *
@@ -478,7 +478,7 @@ public abstract class Endpoint {
             Element... referenceParameters);
 
     /**
-     * By settng a <code>EndpointContext</code>, JAX-WS runtime knows about
+     * By settng a {@code EndpointContext}, JAX-WS runtime knows about
      * addresses of other endpoints in an application. If multiple endpoints
      * share different ports of a WSDL, then the multiple port addresses
      * are patched when the WSDL is accessed.

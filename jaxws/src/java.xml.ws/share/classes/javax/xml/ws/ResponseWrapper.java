@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,11 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.RetentionPolicy;
 /**
  * Used to annotate methods in the Service Endpoint Interface with the response
- * wrapper bean to be used at runtime. The default value of the <code>localName</code> is
- * the <code>operationName</code> as defined in <code>WebMethod</code> annotation appended with
- * <code>Response</code> and the <code>targetNamespace</code> is the target namespace of the SEI.
+ * wrapper bean to be used at runtime. The default value of the {@code localName} is
+ * the {@code operationName} as defined in {@code WebMethod} annotation appended with
+ * {@code Response} and the {@code targetNamespace} is the target namespace of the SEI.
  * <p> When starting from Java this annotation is used resolve
- * overloading conflicts in document literal mode. Only the <code>className</code>
+ * overloading conflicts in document literal mode. Only the {@code className}
  * is required in this case.
  *
  *  @since 1.6, JAX-WS 2.0
