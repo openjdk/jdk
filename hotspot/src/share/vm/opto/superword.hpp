@@ -203,6 +203,7 @@ class SWNodeInfo VALUE_OBJ_CLASS_SPEC {
 // -----------------------------SuperWord---------------------------------
 // Transforms scalar operations into packed (superword) operations.
 class SuperWord : public ResourceObj {
+ friend class SWPointer;
  private:
   PhaseIdealLoop* _phase;
   Arena*          _arena;
@@ -247,8 +248,17 @@ class SuperWord : public ResourceObj {
   PhaseIdealLoop* phase()          { return _phase; }
   IdealLoopTree* lpt()             { return _lpt; }
   PhiNode* iv()                    { return _iv; }
+
   bool early_return()              { return _early_return; }
 
+#ifndef PRODUCT
+  bool     is_debug()              { return _vector_loop_debug > 0; }
+  bool     is_trace_alignment()    { return (_vector_loop_debug & 2) > 0; }
+  bool     is_trace_mem_slice()    { return (_vector_loop_debug & 4) > 0; }
+  bool     is_trace_loop()         { return (_vector_loop_debug & 8) > 0; }
+  bool     is_trace_adjacent()     { return (_vector_loop_debug & 16) > 0; }
+#endif
+  bool     do_vector_loop()        { return _do_vector_loop; }
  private:
   IdealLoopTree* _lpt;             // Current loop tree node
   LoopNode*      _lp;              // Current LoopNode
@@ -257,12 +267,14 @@ class SuperWord : public ResourceObj {
   bool           _race_possible;   // In cases where SDMU is true
   bool           _early_return;    // True if we do not initialize
   bool           _do_vector_loop;  // whether to do vectorization/simd style
-  bool           _vector_loop_debug; // provide more printing in debug mode
   int            _num_work_vecs;   // Number of non memory vector operations
   int            _num_reductions;  // Number of reduction expressions applied
   int            _ii_first;        // generation with direct deps from mem phi
   int            _ii_last;         // generation with direct deps to   mem phi
   GrowableArray<int> _ii_order;
+#ifndef PRODUCT
+  uintx          _vector_loop_debug; // provide more printing in debug mode
+#endif
 
   // Accessors
   Arena* arena()                   { return _arena; }
@@ -325,12 +337,20 @@ class SuperWord : public ResourceObj {
   Node_List* my_pack(Node* n)                { return !in_bb(n) ? NULL : _node_info.adr_at(bb_idx(n))->_my_pack; }
   void set_my_pack(Node* n, Node_List* p)    { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_my_pack = p; }
 
+  // CloneMap utilities
+  bool same_origin_idx(Node* a, Node* b) const;
+  bool same_generation(Node* a, Node* b) const;
+
   // methods
 
   // Extract the superword level parallelism
   void SLP_extract();
   // Find the adjacent memory references and create pack pairs for them.
   void find_adjacent_refs();
+  // Tracing support
+  #ifndef PRODUCT
+  void find_adjacent_refs_trace_1(Node* best_align_to_mem_ref, int best_iv_adjustment);
+  #endif
   // Find a memory reference to align the loop induction variable to.
   MemNode* find_align_to_ref(Node_List &memops);
   // Calculate loop's iv adjustment for this memory ops.
@@ -340,13 +360,13 @@ class SuperWord : public ResourceObj {
   // rebuild the graph so all loads in different iterations of cloned loop become dependant on phi node (in _do_vector_loop only)
   bool hoist_loads_in_graph();
   // Test whether MemNode::Memory dependency to the same load but in the first iteration of this loop is coming from memory phi
-  // Return false if failed.
+  // Return false if failed
   Node* find_phi_for_mem_dep(LoadNode* ld);
   // Return same node but from the first generation. Return 0, if not found
   Node* first_node(Node* nd);
   // Return same node as this but from the last generation. Return 0, if not found
   Node* last_node(Node* n);
-  // Mark nodes belonging to first and last generation,
+  // Mark nodes belonging to first and last generation
   // returns first generation index or -1 if vectorization/simd is impossible
   int mark_generations();
   // swapping inputs of commutative instruction (Add or Mul)
@@ -483,10 +503,7 @@ class SWPointer VALUE_OBJ_CLASS_SPEC {
   IdealLoopTree*  lpt()   { return _slp->lpt(); }
   PhiNode*        iv()    { return _slp->iv();  } // Induction var
 
-  bool invariant(Node* n) {
-    Node *n_c = phase()->get_ctrl(n);
-    return !lpt()->is_member(phase()->get_loop(n_c));
-  }
+  bool invariant(Node* n);
 
   // Match: k*iv + offset
   bool scaled_iv_plus_offset(Node* n);
@@ -545,6 +562,76 @@ class SWPointer VALUE_OBJ_CLASS_SPEC {
   static bool comparable(int cmp) { return cmp < NotComparable; }
 
   void print();
+
+#ifndef PRODUCT
+  class Tracer {
+    friend class SuperWord;
+    friend class SWPointer;
+    SuperWord*   _slp;
+    static int   _depth;
+    int _depth_save;
+    void print_depth();
+    int  depth() const    { return _depth; }
+    void set_depth(int d) { _depth = d; }
+    void inc_depth()      { _depth++;}
+    void dec_depth()      { if (_depth > 0) _depth--;}
+    void store_depth()    {_depth_save = _depth;}
+    void restore_depth()  {_depth = _depth_save;}
+
+    class Depth {
+      friend class Tracer;
+      friend class SWPointer;
+      friend class SuperWord;
+      Depth()  { ++_depth; }
+      Depth(int x)  { _depth = 0; }
+      ~Depth() { if (_depth > 0) --_depth;}
+    };
+    Tracer (SuperWord* slp) : _slp(slp) {}
+
+    // tracing functions
+    void ctor_1(Node* mem);
+    void ctor_2(Node* adr);
+    void ctor_3(Node* adr, int i);
+    void ctor_4(Node* adr, int i);
+    void ctor_5(Node* adr, Node* base,  int i);
+    void ctor_6(Node* mem);
+
+    void invariant_1(Node *n, Node *n_c);
+
+    void scaled_iv_plus_offset_1(Node* n);
+    void scaled_iv_plus_offset_2(Node* n);
+    void scaled_iv_plus_offset_3(Node* n);
+    void scaled_iv_plus_offset_4(Node* n);
+    void scaled_iv_plus_offset_5(Node* n);
+    void scaled_iv_plus_offset_6(Node* n);
+    void scaled_iv_plus_offset_7(Node* n);
+    void scaled_iv_plus_offset_8(Node* n);
+
+    void scaled_iv_1(Node* n);
+    void scaled_iv_2(Node* n, int scale);
+    void scaled_iv_3(Node* n, int scale);
+    void scaled_iv_4(Node* n, int scale);
+    void scaled_iv_5(Node* n, int scale);
+    void scaled_iv_6(Node* n, int scale);
+    void scaled_iv_7(Node* n);
+    void scaled_iv_8(Node* n, SWPointer* tmp);
+    void scaled_iv_9(Node* n, int _scale, int _offset, int mult);
+    void scaled_iv_10(Node* n);
+
+    void offset_plus_k_1(Node* n);
+    void offset_plus_k_2(Node* n, int _offset);
+    void offset_plus_k_3(Node* n, int _offset);
+    void offset_plus_k_4(Node* n);
+    void offset_plus_k_5(Node* n, Node* _invar);
+    void offset_plus_k_6(Node* n, Node* _invar, bool _negate_invar, int _offset);
+    void offset_plus_k_7(Node* n, Node* _invar, bool _negate_invar, int _offset);
+    void offset_plus_k_8(Node* n, Node* _invar, bool _negate_invar, int _offset);
+    void offset_plus_k_9(Node* n, Node* _invar, bool _negate_invar, int _offset);
+    void offset_plus_k_10(Node* n, Node* _invar, bool _negate_invar, int _offset);
+    void offset_plus_k_11(Node* n);
+
+  } _tracer;//TRacer;
+#endif
 };
 
 
