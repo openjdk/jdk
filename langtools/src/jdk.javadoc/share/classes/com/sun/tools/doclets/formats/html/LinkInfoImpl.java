@@ -247,7 +247,7 @@ public class LinkInfoImpl extends LinkInfo {
     }
 
     /**
-     * {@inherotDoc}
+     * {@inheritDoc}
      */
     protected Content newContent() {
         return new ContentBuilder();

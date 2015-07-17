@@ -409,7 +409,7 @@ public class DocCommentParser {
 
     /**
      * Read Java class name, possibly followed by member
-     * Matching pairs of < > are skipped. The text is terminated by the first
+     * Matching pairs of {@literal < >} are skipped. The text is terminated by the first
      * unmatched }. It is an error if the beginning of the next tag is detected.
      */
     // TODO: boolean allowMember should be enum FORBID, ALLOW, REQUIRE

@@ -1411,7 +1411,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      *
      * Command line options suitable for presenting to annotation
      * processors.

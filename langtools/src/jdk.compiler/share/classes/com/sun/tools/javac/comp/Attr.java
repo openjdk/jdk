@@ -279,7 +279,7 @@ public class Attr extends JCTree.Visitor {
 
     /** Check that variable can be assigned to.
      *  @param pos    The current source code position.
-     *  @param v      The assigned varaible
+     *  @param v      The assigned variable
      *  @param base   If the variable is referred to in a Select, the part
      *                to the left of the `.', null otherwise.
      *  @param env    The current environment.
@@ -759,7 +759,7 @@ public class Attr extends JCTree.Visitor {
     /**
      * Attribute a "lazy constant value".
      *  @param env         The env for the const value
-     *  @param initializer The initializer for the const value
+     *  @param variable    The initializer for the const value
      *  @param type        The expected type, or null
      *  @see VarSymbol#setLazyConstValue
      */

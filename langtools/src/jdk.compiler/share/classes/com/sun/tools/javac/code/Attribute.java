@@ -230,9 +230,11 @@ public abstract class Attribute implements AnnotationValue {
         /**
          * Returns a string representation of this annotation.
          * String is of one of the forms:
-         *     @com.example.foo(name1=val1, name2=val2)
-         *     @com.example.foo(val)
-         *     @com.example.foo
+         * <pre>
+         *     {@code @com.example.foo(name1=val1, name2=val2)}
+         *     {@code @com.example.foo(val)}
+         *     {@code @com.example.foo}
+         * </pre>
          * Omit parens for marker annotations, and omit "value=" when allowed.
          */
         @DefinedBy(Api.LANGUAGE_MODEL)
