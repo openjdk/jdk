@@ -541,4 +541,61 @@ jdk.certpath.disabledAlgorithms=MD2, MD5, RSA keySize < 1024
 #
 # Example:
 #   jdk.tls.disabledAlgorithms=MD5, SSLv3, DSA, RSA keySize < 2048
-jdk.tls.disabledAlgorithms=SSLv3, RC4
+jdk.tls.disabledAlgorithms=SSLv3, RC4, DH keySize < 768
+
+# Legacy algorithms for Secure Socket Layer/Transport Layer Security (SSL/TLS)
+# processing in JSSE implementation.
+#
+# In some environments, a certain algorithm may be undesirable but it
+# cannot be disabled because of its use in legacy applications.  Legacy
+# algorithms may still be supported, but applications should not use them
+# as the security strength of legacy algorithms are usually not strong enough
+# in practice.
+#
+# During SSL/TLS security parameters negotiation, legacy algorithms will
+# not be negotiated unless there are no other candidates.
+#
+# The syntax of the disabled algorithm string is described as this Java
+# BNF-style:
+#   LegacyAlgorithms:
+#       " LegacyAlgorithm { , LegacyAlgorithm } "
+#
+#   LegacyAlgorithm:
+#       AlgorithmName (standard JSSE algorithm name)
+#
+# See the specification of security property "jdk.certpath.disabledAlgorithms"
+# for the syntax and description of the "AlgorithmName" notation.
+#
+# Per SSL/TLS specifications, cipher suites have the form:
+#       SSL_KeyExchangeAlg_WITH_CipherAlg_MacAlg
+# or
+#       TLS_KeyExchangeAlg_WITH_CipherAlg_MacAlg
+#
+# For example, the cipher suite TLS_RSA_WITH_AES_128_CBC_SHA uses RSA as the
+# key exchange algorithm, AES_128_CBC (128 bits AES cipher algorithm in CBC
+# mode) as the cipher (encryption) algorithm, and SHA-1 as the message digest
+# algorithm for HMAC.
+#
+# The LegacyAlgorithm can be one of the following standard algorithm names:
+#     1. JSSE cipher suite name, e.g., TLS_RSA_WITH_AES_128_CBC_SHA
+#     2. JSSE key exchange algorithm name, e.g., RSA
+#     3. JSSE cipher (encryption) algorithm name, e.g., AES_128_CBC
+#     4. JSSE message digest algorithm name, e.g., SHA
+#
+# See SSL/TLS specifications and "Java Cryptography Architecture Standard
+# Algorithm Name Documentation" for information about the algorithm names.
+#
+# Note: This property is currently used by Oracle's JSSE implementation.
+# It is not guaranteed to be examined and used by other implementations.
+# There is no guarantee the property will continue to exist or be of the
+# same syntax in future releases.
+#
+# Example:
+#   jdk.tls.legacyAlgorithms=DH_anon, DES_CBC, SSL_RSA_WITH_RC4_128_MD5
+#
+jdk.tls.legacyAlgorithms= \
+        K_NULL, C_NULL, M_NULL, \
+        DHE_DSS_EXPORT, DHE_RSA_EXPORT, DH_anon_EXPORT, DH_DSS_EXPORT, \
+        DH_RSA_EXPORT, RSA_EXPORT, \
+        DH_anon, ECDH_anon, \
+        RC4_128, RC4_40, DES_CBC, DES40_CBC

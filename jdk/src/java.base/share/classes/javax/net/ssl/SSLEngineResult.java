@@ -156,8 +156,10 @@ public class SSLEngineResult {
          * This value is used to indicate that not-yet-interpreted data
          * has been previously received from the remote side, and does
          * not need to be received again.
+         * <P>
+         * This handshake status only applies to DTLS.
          *
-         * @since   1.9
+         * @since   9
          */
         NEED_UNWRAP_AGAIN;
     }
@@ -219,7 +221,7 @@ public class SSLEngineResult {
      *          arguments are null, or if {@code bytesConsumed} or
      *          {@code bytesProduced} is negative
      *
-     * @since   1.9
+     * @since   9
      */
     public SSLEngineResult(Status status, HandshakeStatus handshakeStatus,
             int bytesConsumed, int bytesProduced, long sequenceNumber) {
@@ -302,7 +304,7 @@ public class SSLEngineResult {
      *
      * @see     java.lang.Long#compareUnsigned(long, long)
      *
-     * @since   1.9
+     * @since   9
      */
     final public long sequenceNumber() {
         return sequenceNumber;

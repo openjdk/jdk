@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2038,11 +2038,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             if (audioRunnable != null) {
                 // Runnable appears to block until completed playing, hence
                 // start up another thread to handle playing.
-                if (System.getSecurityManager() == null) {
-                    new Thread(audioRunnable).start();
-                } else {
-                    new ManagedLocalsThread(audioRunnable).start();
-                }
+                new ManagedLocalsThread(audioRunnable).start();
             }
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -440,6 +440,10 @@ public abstract class MessageDigest extends MessageDigestSpi {
      * @return true if the digests are equal, false otherwise.
      */
     public static boolean isEqual(byte[] digesta, byte[] digestb) {
+        if (digesta == digestb) return true;
+        if (digesta == null || digestb == null) {
+            return false;
+        }
         if (digesta.length != digestb.length) {
             return false;
         }

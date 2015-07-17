@@ -29,22 +29,30 @@
  * @modules java.base/sun.security.util
  *          java.base/sun.security.x509
  *          java.xml.crypto/org.jcp.xml.dsig.internal.dom
+ *          jdk.httpserver/com.sun.net.httpserver
  * @compile -XDignore.symbol.file KeySelectors.java SignatureValidator.java
  *     X509KeySelector.java GenerationTests.java
  * @run main/othervm GenerationTests
  * @author Sean Mullan
  */
 
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
 import java.io.*;
 import java.math.BigInteger;
+import java.net.InetSocketAddress;
 import java.security.Key;
 import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.KeyStore;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
 import java.security.cert.X509CRL;
 import java.security.spec.KeySpec;
 import java.security.spec.DSAPrivateKeySpec;
@@ -59,10 +67,10 @@ import java.security.spec.EllipticCurve;
 import java.security.spec.RSAPrivateKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.*;
+import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.*;
-import org.w3c.dom.*;
 import javax.xml.crypto.Data;
 import javax.xml.crypto.KeySelector;
 import javax.xml.crypto.OctetStreamData;
@@ -80,6 +88,7 @@ import javax.xml.crypto.dsig.spec.*;
 import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+import org.w3c.dom.*;
 
 /**
  * Test that recreates merlin-xmldsig-twenty-three test vectors but with
@@ -123,6 +132,73 @@ public class GenerationTests {
     private final static String DSA_SHA256 =
         "http://www.w3.org/2009/xmldsig11#dsa-sha256";
 
+    private static final String BOGUS = "bogus";
+
+    private static final  String xslt = ""
+          + "<xsl:stylesheet xmlns:xsl='http://www.w3.org/1999/XSL/Transform'\n"
+          + "            xmlns='http://www.w3.org/TR/xhtml1/strict' \n"
+          + "            exclude-result-prefixes='foo' \n"
+          + "            version='1.0'>\n"
+          + "  <xsl:output encoding='UTF-8' \n"
+          + "           indent='no' \n"
+          + "           method='xml' />\n"
+          + "  <xsl:template match='/'>\n"
+          + "    <html>\n"
+          + "   <head>\n"
+          + "    <title>Notaries</title>\n"
+          + "   </head>\n"
+          + "   <body>\n"
+          + "    <table>\n"
+          + "      <xsl:for-each select='Notaries/Notary'>\n"
+          + "           <tr>\n"
+          + "           <th>\n"
+          + "            <xsl:value-of select='@name' />\n"
+          + "           </th>\n"
+          + "           </tr>\n"
+          + "      </xsl:for-each>\n"
+          + "    </table>\n"
+          + "   </body>\n"
+          + "    </html>\n"
+          + "  </xsl:template>\n"
+          + "</xsl:stylesheet>\n";
+
+    private static final String[] canonicalizationMethods = new String[] {
+        CanonicalizationMethod.EXCLUSIVE,
+        CanonicalizationMethod.EXCLUSIVE_WITH_COMMENTS,
+        CanonicalizationMethod.INCLUSIVE,
+        CanonicalizationMethod.INCLUSIVE_WITH_COMMENTS
+    };
+
+    private static final String[] xml_transforms = new String[] {
+        Transform.XSLT,
+        Transform.XPATH,
+        Transform.XPATH2,
+        CanonicalizationMethod.EXCLUSIVE,
+        CanonicalizationMethod.EXCLUSIVE_WITH_COMMENTS,
+        CanonicalizationMethod.INCLUSIVE,
+        CanonicalizationMethod.INCLUSIVE_WITH_COMMENTS,
+    };
+
+    private static final String[] non_xml_transforms = new String[] {
+        null, Transform.BASE64
+    };
+
+    private static final String[] signatureMethods = new String[] {
+        SignatureMethod.DSA_SHA1,
+        SignatureMethod.RSA_SHA1,
+        SignatureMethod.HMAC_SHA1
+    };
+
+    private static enum Content {
+        Xml, Text, Base64, NotExisitng
+    }
+
+    private static enum KeyInfoType {
+        KeyValue, x509data, KeyName
+    }
+
+    private static boolean result = true;
+
     public static void main(String args[]) throws Exception {
         setup();
         test_create_signature_enveloped_dsa(1024);
@@ -156,6 +232,97 @@ public class GenerationTests {
         test_create_signature_reference_dependency();
         test_create_signature_with_attr_in_no_namespace();
         test_create_signature_with_empty_id();
+
+        // run tests for detached signatures with local http server
+        try (Http server = Http.startServer()) {
+            server.start();
+
+            // tests for XML documents
+            Arrays.stream(canonicalizationMethods).forEach(c ->
+                Arrays.stream(signatureMethods).forEach(s ->
+                    Arrays.stream(xml_transforms).forEach(t ->
+                        Arrays.stream(KeyInfoType.values()).forEach(k -> {
+                            test_create_detached_signature(c, s, t, k,
+                                    Content.Xml, server.getPort(), false, null);
+                        }))));
+
+            // tests for text data with no transform
+            Arrays.stream(canonicalizationMethods).forEach(c ->
+                Arrays.stream(signatureMethods).forEach(s ->
+                    Arrays.stream(KeyInfoType.values()).forEach(k -> {
+                        test_create_detached_signature(c, s, null, k,
+                                Content.Text, server.getPort(), false, null);
+                    })));
+
+            // tests for base64 data
+            Arrays.stream(canonicalizationMethods).forEach(c ->
+                Arrays.stream(signatureMethods).forEach(s ->
+                    Arrays.stream(non_xml_transforms).forEach(t ->
+                        Arrays.stream(KeyInfoType.values()).forEach(k -> {
+                            test_create_detached_signature(c, s, t, k,
+                                    Content.Base64, server.getPort(),
+                                    false, null);
+                        }))));
+
+            // negative tests
+
+            // unknown CanonicalizationMethod
+            test_create_detached_signature(
+                    CanonicalizationMethod.EXCLUSIVE + BOGUS,
+                    SignatureMethod.DSA_SHA1,
+                    CanonicalizationMethod.INCLUSIVE,
+                    KeyInfoType.KeyName,
+                    Content.Xml,
+                    server.getPort(),
+                    true,
+                    NoSuchAlgorithmException.class);
+
+            // unknown SignatureMethod
+            test_create_detached_signature(
+                    CanonicalizationMethod.EXCLUSIVE,
+                    SignatureMethod.DSA_SHA1 + BOGUS,
+                    CanonicalizationMethod.INCLUSIVE,
+                    KeyInfoType.KeyName, Content.Xml,
+                    server.getPort(),
+                    true,
+                    NoSuchAlgorithmException.class);
+
+            // unknown Transform
+            test_create_detached_signature(
+                    CanonicalizationMethod.EXCLUSIVE,
+                    SignatureMethod.DSA_SHA1,
+                    CanonicalizationMethod.INCLUSIVE + BOGUS,
+                    KeyInfoType.KeyName, Content.Xml,
+                    server.getPort(),
+                    true,
+                    NoSuchAlgorithmException.class);
+
+            // no source document
+            test_create_detached_signature(
+                    CanonicalizationMethod.EXCLUSIVE,
+                    SignatureMethod.DSA_SHA1,
+                    CanonicalizationMethod.INCLUSIVE,
+                    KeyInfoType.KeyName,
+                    Content.NotExisitng,
+                    server.getPort(),
+                    true,
+                    XMLSignatureException.class);
+
+            // wrong transform for text data
+            test_create_detached_signature(
+                    CanonicalizationMethod.EXCLUSIVE,
+                    SignatureMethod.DSA_SHA1,
+                    CanonicalizationMethod.INCLUSIVE,
+                    KeyInfoType.KeyName,
+                    Content.Text,
+                    server.getPort(),
+                    true,
+                    XMLSignatureException.class);
+        }
+
+        if (!result) {
+            throw new RuntimeException("At least one test case failed");
+        }
     }
 
     private static void setup() throws Exception {
@@ -761,33 +928,6 @@ public class GenerationTests {
 
         // Manifest Reference 3
         List<Transform> manTrans = new ArrayList<>();
-        String xslt = ""
-          + "<xsl:stylesheet xmlns:xsl='http://www.w3.org/1999/XSL/Transform'\n"
-          + "            xmlns='http://www.w3.org/TR/xhtml1/strict' \n"
-          + "            exclude-result-prefixes='foo' \n"
-          + "            version='1.0'>\n"
-          + "  <xsl:output encoding='UTF-8' \n"
-          + "           indent='no' \n"
-          + "           method='xml' />\n"
-          + "  <xsl:template match='/'>\n"
-          + "    <html>\n"
-          + "   <head>\n"
-          + "    <title>Notaries</title>\n"
-          + "   </head>\n"
-          + "   <body>\n"
-          + "    <table>\n"
-          + "      <xsl:for-each select='Notaries/Notary'>\n"
-          + "           <tr>\n"
-          + "           <th>\n"
-          + "            <xsl:value-of select='@name' />\n"
-          + "           </th>\n"
-          + "           </tr>\n"
-          + "      </xsl:for-each>\n"
-          + "    </table>\n"
-          + "   </body>\n"
-          + "    </html>\n"
-          + "  </xsl:template>\n"
-          + "</xsl:stylesheet>\n";
         Document docxslt = db.parse(new ByteArrayInputStream(xslt.getBytes()));
         Node xslElem = docxslt.getDocumentElement();
 
@@ -1166,6 +1306,200 @@ public class GenerationTests {
         System.out.println();
     }
 
+    static void test_create_detached_signature(String canonicalizationMethod,
+            String signatureMethod, String transform, KeyInfoType keyInfo,
+            Content contentType, int port, boolean expectedFailure,
+            Class expectedException) {
+
+        final String digestMethod = DigestMethod.SHA1;
+        System.out.println("Test detached signature:");
+        System.out.println("    Canonicalization method: "
+                + canonicalizationMethod);
+        System.out.println("    Signature method: " + signatureMethod);
+        System.out.println("    Transform: " + transform);
+        System.out.println("    Digest method: " + digestMethod);
+        System.out.println("    KeyInfoType: " + keyInfo);
+        System.out.println("    Content type: " + contentType);
+        System.out.println("    Expected failure: "
+                + (expectedFailure ? "yes" : "no"));
+        System.out.println("    Expected exception: "
+                + (expectedException == null ?
+                        "no" : expectedException.getName()));
+
+        try {
+            boolean success = test_create_detached_signature(
+                    canonicalizationMethod,
+                    signatureMethod,
+                    digestMethod,
+                    transform,
+                    keyInfo,
+                    contentType,
+                    port);
+
+            if (success && expectedFailure) {
+                System.out.println("Signature validation unexpectedly passed");
+                result = false;
+            } else if (!success && !expectedFailure) {
+                System.out.println("Signature validation unexpectedly failed");
+                result = false;
+            } else if (expectedException != null) {
+                System.out.println("Expected " + expectedException
+                        + " not thrown");
+                result = false;
+            }
+        } catch (Exception e) {
+            if (expectedException == null
+                    || !e.getClass().isAssignableFrom(expectedException)) {
+                System.out.println("Unexpected exception: " + e);
+                e.printStackTrace(System.out);
+                result = false;
+            } else {
+                System.out.println("Expected exception: " + e);
+            }
+        }
+
+        System.out.println("Test case passed");
+    }
+
+    static boolean test_create_detached_signature(String canonicalizationMethod,
+            String signatureMethod, String digestMethod, String transform,
+            KeyInfoType keyInfo, Content contentType, int port)
+            throws Exception {
+
+        System.out.print("Sign ...");
+
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
+        dbf.setValidating(false);
+
+        // Create SignedInfo
+        DigestMethod dm = fac.newDigestMethod(digestMethod, null);
+
+        List transformList = null;
+        if (transform != null) {
+            TransformParameterSpec params = null;
+            switch (transform) {
+                case Transform.XPATH:
+                    params = new XPathFilterParameterSpec("//.");
+                    break;
+                case Transform.XPATH2:
+                    params = new XPathFilter2ParameterSpec(
+                            Collections.singletonList(new XPathType("//.",
+                                    XPathType.Filter.INTERSECT)));
+                    break;
+                case Transform.XSLT:
+                    Element element = dbf.newDocumentBuilder()
+                            .parse(new ByteArrayInputStream(xslt.getBytes()))
+                            .getDocumentElement();
+                    DOMStructure stylesheet = new DOMStructure(element);
+                    params = new XSLTTransformParameterSpec(stylesheet);
+                    break;
+            }
+            transformList = Collections.singletonList(fac.newTransform(
+                    transform, params));
+        }
+
+        String url = String.format("http://localhost:%d/%s", port, contentType);
+        List refs = Collections.singletonList(fac.newReference(url, dm,
+                transformList, null, null));
+
+        CanonicalizationMethod cm = fac.newCanonicalizationMethod(
+                canonicalizationMethod, (C14NMethodParameterSpec) null);
+
+        SignatureMethod sm = fac.newSignatureMethod(signatureMethod, null);
+
+        Key signingKey;
+        Key validationKey;
+        switch (signatureMethod) {
+            case SignatureMethod.DSA_SHA1:
+            case SignatureMethod.RSA_SHA1:
+                KeyPair kp = generateKeyPair(sm);
+                validationKey = kp.getPublic();
+                signingKey = kp.getPrivate();
+                break;
+            case SignatureMethod.HMAC_SHA1:
+                KeyGenerator kg = KeyGenerator.getInstance("HmacSHA1");
+                signingKey = kg.generateKey();
+                validationKey = signingKey;
+                break;
+            default:
+                throw new RuntimeException("Unsupported signature algorithm");
+        }
+
+        SignedInfo si = fac.newSignedInfo(cm, sm, refs, null);
+
+        // Create KeyInfo
+        KeyInfoFactory kif = fac.getKeyInfoFactory();
+        List list = null;
+        if (keyInfo == KeyInfoType.KeyValue) {
+            if (validationKey instanceof PublicKey) {
+                KeyValue kv = kif.newKeyValue((PublicKey) validationKey);
+                list = Collections.singletonList(kv);
+            }
+        } else if (keyInfo == KeyInfoType.x509data) {
+            list = Collections.singletonList(
+                    kif.newX509Data(Collections.singletonList("cn=Test")));
+        } else if (keyInfo == KeyInfoType.KeyName) {
+            list = Collections.singletonList(kif.newKeyName("Test"));
+        } else {
+            throw new RuntimeException("Unexpected KeyInfo: " + keyInfo);
+        }
+        KeyInfo ki = list != null ? kif.newKeyInfo(list) : null;
+
+        // Create an empty doc for detached signature
+        Document doc = dbf.newDocumentBuilder().newDocument();
+        DOMSignContext xsc = new DOMSignContext(signingKey, doc);
+
+        // Generate signature
+        XMLSignature signature = fac.newXMLSignature(si, ki);
+        signature.sign(xsc);
+
+        // Save signature
+        String signatureString;
+        try (StringWriter writer = new StringWriter()) {
+            TransformerFactory tf = TransformerFactory.newInstance();
+            Transformer trans = tf.newTransformer();
+            Node parent = xsc.getParent();
+            trans.transform(new DOMSource(parent), new StreamResult(writer));
+            signatureString = writer.toString();
+        }
+
+        System.out.print("Validate ... ");
+        try (ByteArrayInputStream bis = new ByteArrayInputStream(
+                signatureString.getBytes())) {
+            doc = dbf.newDocumentBuilder().parse(bis);
+        }
+
+        NodeList nodeLst = doc.getElementsByTagName("Signature");
+        Node node = nodeLst.item(0);
+        if (node == null) {
+            throw new RuntimeException("Couldn't find Signature element");
+        }
+        if (!(node instanceof Element)) {
+            throw new RuntimeException("Unexpected node type");
+        }
+        Element sig = (Element) node;
+
+        // Validate signature
+        DOMValidateContext vc = new DOMValidateContext(validationKey, sig);
+        vc.setProperty("org.jcp.xml.dsig.secureValidation", Boolean.FALSE);
+        signature = fac.unmarshalXMLSignature(vc);
+
+        boolean success = signature.validate(vc);
+        if (!success) {
+            System.out.println("Core signature validation failed");
+            return false;
+        }
+
+        success = signature.getSignatureValue().validate(vc);
+        if (!success) {
+            System.out.println("Cryptographic validation of signature failed");
+            return false;
+        }
+
+        return true;
+    }
+
     private static final String DSA_Y =
         "070662842167565771936588335128634396171789331656318483584455493822" +
         "400811200853331373030669235424928346190274044631949560438023934623" +
@@ -1390,6 +1724,25 @@ public class GenerationTests {
         };
     }
 
+    static KeyPair generateKeyPair(SignatureMethod sm)
+            throws NoSuchAlgorithmException {
+        KeyPairGenerator keygen;
+        switch (sm.getAlgorithm()) {
+            case SignatureMethod.DSA_SHA1:
+                keygen = KeyPairGenerator.getInstance("DSA");
+                break;
+            case SignatureMethod.RSA_SHA1:
+                keygen = KeyPairGenerator.getInstance("RSA");
+                break;
+            default:
+                throw new RuntimeException("Unsupported signature algorithm");
+        }
+
+        SecureRandom random = new SecureRandom();
+        keygen.initialize(1024, random);
+        return keygen.generateKeyPair();
+    }
+
     /**
      * This URIDereferencer returns locally cached copies of http content to
      * avoid test failures due to network glitches, etc.
@@ -1414,6 +1767,84 @@ public class GenerationTests {
 
             // fallback on builtin deref
             return defaultUd.dereference(ref, ctx);
+        }
+    }
+
+    // local http server
+    static class Http implements HttpHandler, AutoCloseable {
+
+        private final HttpServer server;
+
+        private Http(HttpServer server) {
+            this.server = server;
+        }
+
+        static Http startServer() throws IOException {
+            HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+            return new Http(server);
+        }
+
+        void start() {
+            server.createContext("/", this);
+            server.start();
+        }
+
+        void stop() {
+            server.stop(0);
+        }
+
+        int getPort() {
+            return server.getAddress().getPort();
+        }
+
+        @Override
+        public void handle(HttpExchange t) throws IOException {
+            try {
+                String type;
+                String path = t.getRequestURI().getPath();
+                if (path.startsWith("/")) {
+                    type = path.substring(1);
+                } else {
+                    type = path;
+                }
+
+                String contentTypeHeader = "";
+                byte[] output = new byte[] {};
+                int code = 200;
+                Content testContentType = Content.valueOf(type);
+                switch (testContentType) {
+                    case Base64:
+                        contentTypeHeader = "application/octet-stream";
+                        output = "VGVzdA==".getBytes();
+                        break;
+                    case Text:
+                        contentTypeHeader = "text/plain";
+                        output = "Text".getBytes();
+                        break;
+                    case Xml:
+                        contentTypeHeader = "application/xml";
+                        output = "<tag>test</tag>".getBytes();
+                        break;
+                    case NotExisitng:
+                        code = 404;
+                        break;
+                    default:
+                        throw new IOException("Unknown test content type");
+                }
+
+                t.getResponseHeaders().set("Content-Type", contentTypeHeader);
+                t.sendResponseHeaders(code, output.length);
+                t.getResponseBody().write(output);
+            } catch (IOException e) {
+                System.out.println("Exception: " + e);
+                t.sendResponseHeaders(500, 0);
+            }
+            t.close();
+        }
+
+        @Override
+        public void close() {
+            stop();
         }
     }
 }

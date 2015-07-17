@@ -31,7 +31,7 @@
  * @bug 7188657
  * @summary There should be a way to reorder the JSSE ciphers
  * @run main/othervm UseCipherSuitesOrder
- *     TLS_RSA_WITH_AES_128_CBC_SHA,SSL_RSA_WITH_RC4_128_SHA
+ *     TLS_RSA_WITH_AES_128_CBC_SHA,SSL_RSA_WITH_3DES_EDE_CBC_SHA
  */
 
 import java.io.*;

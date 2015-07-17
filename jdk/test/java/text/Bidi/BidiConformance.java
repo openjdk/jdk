@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6850113
+ * @bug 6850113 8032446
  * @summary confirm the behavior of new Bidi implementation. (Backward compatibility)
  */
 
@@ -39,6 +39,8 @@ public class BidiConformance {
     private static boolean error = false;
     private static boolean verbose = false;
     private static boolean abort = false;
+
+    private static final byte MAX_EXPLICIT_LEVEL = 125;
 
     public static void main(String[] args) {
         for (int i = 0; i < args.length; i++) {
@@ -368,15 +370,15 @@ public class BidiConformance {
         AttributedString astr = new AttributedString(paragraph);
         astr.addAttribute(TextAttribute.RUN_DIRECTION,
                           TextAttribute.RUN_DIRECTION_RTL);
-        astr.addAttribute(TextAttribute.BIDI_EMBEDDING, new Integer(-61),
+        astr.addAttribute(TextAttribute.BIDI_EMBEDDING, new Integer(-MAX_EXPLICIT_LEVEL),
                           start, limit);
         try {
             bidi = new Bidi(astr.getIterator());
             for (int i = start; i < limit; i++) {
-                if (bidi.getLevelAt(i) != 61) {
+                if (bidi.getLevelAt(i) != MAX_EXPLICIT_LEVEL) {
                     errorHandling("Bidi(AttributedCharacterIterator).getLevelAt(" +
                         i + ") should not be " + bidi.getLevelAt(i) +
-                        " but 60 when BIDI_EMBEDDING is -61.");
+                        " but MAX_EXPLICIT_LEVEL-1 when BIDI_EMBEDDING is -MAX_EXPLICIT_LEVEL.");
                 }
             }
         }
@@ -387,14 +389,14 @@ public class BidiConformance {
         astr = new AttributedString(paragraph);
         astr.addAttribute(TextAttribute.RUN_DIRECTION,
                           TextAttribute.RUN_DIRECTION_RTL);
-        astr.addAttribute(TextAttribute.BIDI_EMBEDDING, new Integer(-62),
+        astr.addAttribute(TextAttribute.BIDI_EMBEDDING, new Integer(-(MAX_EXPLICIT_LEVEL+1)),
                           start, limit);
         try {
             bidi = new Bidi(astr.getIterator());
             for (int i = start; i < limit; i++) {
                 if (bidi.getLevelAt(i) != 1) {
                     errorHandling("Bidi(AttributedCharacterIterator).getLevelAt() " +
-                        "should be 1 when BIDI_EMBEDDING is -62.");
+                        "should be 1 when BIDI_EMBEDDING is -(MAX_EXPLICIT_LEVEL+1).");
                 }
             }
         }
@@ -405,14 +407,14 @@ public class BidiConformance {
         astr = new AttributedString(paragraph);
         astr.addAttribute(TextAttribute.RUN_DIRECTION,
                           TextAttribute.RUN_DIRECTION_RTL);
-        astr.addAttribute(TextAttribute.BIDI_EMBEDDING, new Integer(60),
+        astr.addAttribute(TextAttribute.BIDI_EMBEDDING, new Integer(MAX_EXPLICIT_LEVEL-1),
                           start, limit);
         try {
             bidi = new Bidi(astr.getIterator());
             for (int i = start; i < limit; i++) {
-                if (bidi.getLevelAt(i) != 61) {
+                if (bidi.getLevelAt(i) != MAX_EXPLICIT_LEVEL) {
                     errorHandling("Bidi(AttributedCharacterIterator).getLevelAt() " +
-                        "should be 61 when BIDI_EMBEDDING is 60.");
+                        "should be MAX_EXPLICIT_LEVEL when BIDI_EMBEDDING is MAX_EXPLICIT_LEVEL-1.");
                 }
             }
         }
@@ -423,15 +425,15 @@ public class BidiConformance {
         astr = new AttributedString(paragraph);
         astr.addAttribute(TextAttribute.RUN_DIRECTION,
                           TextAttribute.RUN_DIRECTION_RTL);
-        astr.addAttribute(TextAttribute.BIDI_EMBEDDING, new Integer(61),
+        astr.addAttribute(TextAttribute.BIDI_EMBEDDING, new Integer(MAX_EXPLICIT_LEVEL),
                           start, limit);
         try {
             bidi = new Bidi(astr.getIterator());
             for (int i = start; i < limit; i++) {
-                if (bidi.getLevelAt(i) != 61) {
+                if (bidi.getLevelAt(i) != MAX_EXPLICIT_LEVEL) {
                     errorHandling("Bidi(AttributedCharacterIterator).getLevelAt(" +
                         i + ") should not be " + bidi.getLevelAt(i) +
-                        " but 61 when BIDI_EMBEDDING is 61.");
+                        " but MAX_EXPLICIT_LEVEL when BIDI_EMBEDDING is MAX_EXPLICIT_LEVEL.");
                 }
             }
         }
@@ -442,15 +444,15 @@ public class BidiConformance {
         astr = new AttributedString(paragraph);
         astr.addAttribute(TextAttribute.RUN_DIRECTION,
                           TextAttribute.RUN_DIRECTION_RTL);
-        astr.addAttribute(TextAttribute.BIDI_EMBEDDING, new Integer(62),
+        astr.addAttribute(TextAttribute.BIDI_EMBEDDING, new Integer(MAX_EXPLICIT_LEVEL+1),
                           start, limit);
         try {
             bidi = new Bidi(astr.getIterator());
             for (int i = start; i < limit; i++) {
                 if (bidi.getLevelAt(i) != 1) {
-                    errorHandling("Bidi(AttributedCharacterIterator).getLevelAt()" +
-                        " should not be " + bidi.getLevelAt(i) +
-                        " but 1 when BIDI_EMBEDDING is 62.");
+                    errorHandling("Bidi(AttributedCharacterIterator).getLevelAt(" +
+                         i + ") should not be " + bidi.getLevelAt(i) +
+                        " but 1 when BIDI_EMBEDDING is MAX_EXPLICIT_LEVEL+1.");
                 }
             }
         }
@@ -536,8 +538,8 @@ public class BidiConformance {
         }
 
         byte[] actualLevels = new byte[text.length];
-        byte[] validEmbeddings1 = {0, -61, -60, -2, -1};
-        byte[] expectedLevels1  = {0,  61,  60,  2,  1};
+        byte[] validEmbeddings1 = {0, -MAX_EXPLICIT_LEVEL, -(MAX_EXPLICIT_LEVEL-1), -2, -1};
+        byte[] expectedLevels1  = {0,  MAX_EXPLICIT_LEVEL,  MAX_EXPLICIT_LEVEL-1,  2,  1};
         try {
             bidi = new Bidi(text, 0, validEmbeddings1, 0, 5,
                             Bidi.DIRECTION_LEFT_TO_RIGHT);
@@ -553,11 +555,11 @@ public class BidiConformance {
         }
         catch (Exception e) {
             errorHandling("Bidi(char[], ...) should not throw an exception " +
-                "when embeddings is valid(-61).");
+                "when embeddings is valid(-MAX_EXPLICIT_LEVEL).");
         }
 
-        byte[] validEmbeddings2 = {0,  61,  60,  2,  1};
-        byte[] expectedLevels2  = {0,  62,  60,  2,  2};
+        byte[] validEmbeddings2 = {0,  MAX_EXPLICIT_LEVEL,  MAX_EXPLICIT_LEVEL-1,  2,  1};
+        byte[] expectedLevels2  = {0,  MAX_EXPLICIT_LEVEL+1,  MAX_EXPLICIT_LEVEL-1,  2,  2};
         try {
             bidi = new Bidi(text, 0, validEmbeddings2, 0, 5,
                             Bidi.DIRECTION_LEFT_TO_RIGHT);
@@ -573,35 +575,35 @@ public class BidiConformance {
         }
         catch (Exception e) {
             errorHandling("Bidi(char[], ...) should not throw an exception " +
-                "when embeddings is valid(61).");
+                "when embeddings is valid(MAX_EXPLICIT_LEVEL).");
         }
 
-        byte[] invalidEmbeddings1 = {0, -62, 0, 0, 0};
+        byte[] invalidEmbeddings1 = {0, -(MAX_EXPLICIT_LEVEL+1), 0, 0, 0};
         try {
             bidi = new Bidi(text, 0, invalidEmbeddings1, 0, 5,
                             Bidi.DIRECTION_LEFT_TO_RIGHT);
             if (bidi.getLevelAt(1) != 0) {
                 errorHandling("Bidi(char[], ...).getLevelAt(1) should be 0 " +
-                    "when embeddings[1] is -62.");
+                    "when embeddings[1] is -(MAX_EXPLICIT_LEVEL+1).");
             }
         }
         catch (Exception e) {
             errorHandling("Bidi(char[], ...) should not throw an exception " +
-                "even when embeddings includes -62.");
+                "even when embeddings includes -(MAX_EXPLICIT_LEVEL+1).");
         }
 
-        byte[] invalidEmbeddings2 = {0, 62, 0, 0, 0};
+        byte[] invalidEmbeddings2 = {0, MAX_EXPLICIT_LEVEL+1, 0, 0, 0};
         try {
             bidi = new Bidi(text, 0, invalidEmbeddings2, 0, 5,
                             Bidi.DIRECTION_LEFT_TO_RIGHT);
             if (bidi.getLevelAt(1) != 0) {
                 errorHandling("Bidi(char[], ...).getLevelAt(1) should be 0 " +
-                    "when embeddings[1] is 62.");
+                    "when embeddings[1] is MAX_EXPLICIT_LEVEL+1.");
             }
         }
         catch (Exception e) {
             errorHandling("Bidi(char[], ...) should not throw an exception " +
-                "even when embeddings includes 62.");
+                "even when embeddings includes MAX_EXPLICIT_LEVEL+1.");
         }
 
         try {
@@ -1595,6 +1597,10 @@ public class BidiConformance {
     private static final char PDF = '\u202C';
     private static final char LRO = '\u202D';
     private static final char RLO = '\u202E';
+    private static final char LRI = '\u2066';
+    private static final char RLI = '\u2067';
+    private static final char FSI = '\u2068';
+    private static final char PDI = '\u2069';
 
     /*
      *  0x05D0-0x05EA:   [R]   Hewbrew letters (Strong)
@@ -2002,8 +2008,8 @@ public class BidiConformance {
 
         /* For Text #18 */
         {" ABC (" + ArabicABC + " " + Arabic123 + ") 123.",
-             "0000001111222112220", "0000001111222112220",
-             "0000001111222112220", "1222111111222112221"},
+             "0000001111222002220", "0000001111222002220",
+             "0000001111222002220", "1222111111222112221"},
 
         /* For Text #19 */
         {" " + HebrewABC + " (ABC 123) " + NKo123 + ".",
@@ -2028,6 +2034,90 @@ public class BidiConformance {
          PDF,
              "22222221111111111111110", "22222221111111111111110",
              "22222221111111111111110", "44444443333333333333331"},
+
+        /* For Text #23 */
+        {" ABC (" + Arabic123 + " " + ArabicABC + ") 123.",
+             "0000002221111002220", "0000002221111002220",
+             "0000002221111002220", "1222112221111112221"},
+
+        /* For Text #24 */
+        {" 123 (" + ArabicABC + " " + Arabic123 + ") ABC.",
+             "1222111111222112221", "1222111111222112221",
+             "0000001111222000000", "1222111111222112221"},
+
+        /* For Text #25 */
+        {" 123 (" + Arabic123 + " " + ArabicABC + ") ABC.",
+             "1222112221111112221", "1222112221111112221",
+             "0000002221111000000", "1222112221111112221"},
+
+        /* For Text #26 */
+        {" " + ArabicABC + " (ABC 123) "  + Arabic123 + ".",
+             "1111112222222112221", "1111112222222112221",
+             "0111000000000002220", "1111112222222112221"},
+
+        /* For Text #27 */
+        {" " + ArabicABC + " (123 ABC) "  + Arabic123 + ".",
+             "1111112221222112221", "1111112221222112221",
+             "0111002220000002220", "1111112221222112221"},
+
+        /* For Text #28 */
+        {" " + Arabic123 + " (ABC 123) "  + ArabicABC + ".",
+             "0222000000000001110", "0222000000000001110",
+             "0222000000000001110", "1222112222222111111"},
+
+        /* For Text #29 */
+        {" " + Arabic123 + " (123 ABC) "  + ArabicABC + ".",
+             "0222000000000001110", "0222000000000001110",
+             "0222000000000001110", "1222112221222111111"},
+
+        /* For Text #30 */
+        {RLI + "ABC " + ArabicABC + " " + ArabicABC + "." + PDI,
+             "02221111111110", "14443333333331",
+             "02221111111110", "14443333333331"},
+
+        /* For Text #31 */
+        {"ABC abc \"" + RLI + "IJK " + ArabicABC + " " + ArabicABC + PDI +
+         ".\" \"" + RLI + ArabicABC + " " + ArabicABC + PDI + ",\" xyz XYZ.",
+             "0000000000222111111110000001111111000000000000",
+             "0000000000222111111110000001111111000000000000",
+             "0000000000222111111110000001111111000000000000",
+             "2222222222444333333332222223333333222222222221"},
+
+        /* For Text #32 */
+        {ArabicABC + " " + ArabicABC + " '" + LRI + "abc def \"" + RLI +
+         "xyz " + ArabicABC + " " + ArabicABC + PDI + "\"" + PDI + "'?",
+             "111111111122222222224443333333322111",
+             "111111111122222222224443333333322111",
+             "111111100022222222224443333333322000",
+             "111111111122222222224443333333322111"},
+
+        /* For Text #33 */
+        {FSI + Arabic123 + " ABC " + ArabicABC + " " + ArabicABC + "." + PDI,
+             "044422222333333320", "144422222333333321",
+             "044422222333333320", "144422222333333321"},
+
+        /* For Text #34 */
+        {FSI + "123 ABC " + ArabicABC + " " + ArabicABC + "." + PDI,
+             "022222222333333320", "122222222333333321",
+             "022222222333333320", "122222222333333321"},
+
+        /* For Text #35 */
+        {FSI + "123 " + ArabicABC + " ABC " + ArabicABC + "." + PDI,
+             "022211111222111110", "144433333444333331",
+             "022211111222111110", "144433333444333331"},
+
+        /* For Text #36 */
+        {FSI + Arabic123 + " " + ArabicABC + " ABC " + ArabicABC + "." + PDI,
+             "022211111222111110", "144433333444333331",
+             "022211111222111110", "144433333444333331"},
+
+        /* For Text #37 */
+        {FSI + Arabic123 + " 123." + PDI,
+             "0444222220", "1444222221", "0444222220", "1444222221"},
+
+        /* For Text #38 */
+        {FSI + "123 " + Arabic123 + "." + PDI,
+             "0222244420", "1222244421", "0222244420", "1222244421"},
     };
 
     /* Golden data for baseIsLeftToRight() results */
@@ -2060,10 +2150,32 @@ public class BidiConformance {
         {true,  true,  true,  false},
         {false, false, true,  false},
 
-        /* For Text #20 - $22  */
+        /* For Text #20 - $24  */
         {true,  true,  true,  false},
         {true,  true,  true,  false},
         {true,  true,  true,  false},
+        {true,  true,  true,  false},
+        {false, false, true,  false},
+
+        /* For Text #25 - $29  */
+        {false, false, true,  false},
+        {false, false, true,  false},
+        {false, false, true,  false},
+        {true,  true,  true,  false},
+        {true,  true,  true,  false},
+
+        /* For Text #30 - $34  */
+        {true,  false, true,  false},
+        {true,  true,  true,  false},
+        {false, false, true,  false},
+        {true,  false, true,  false},
+        {true , false, true,  false},
+
+        /* For Text #35 - $38  */
+        {true,  false, true,  false},
+        {true,  false, true,  false},
+        {true,  false, true,  false},
+        {true,  false, true,  false},
     };
 
     /* Golden data for isLeftToRight() & isRightToLeft() results */
@@ -2097,7 +2209,29 @@ public class BidiConformance {
         {{false, false, false, false}, {false, false, false, false}},
         {{false, false, false, false}, {false, false, false, false}},
 
-        /* For Text #20 - $22  */
+        /* For Text #20 - $24  */
+        {{false, false, false, false}, {false, false, false, false}},
+        {{false, false, false, false}, {false, false, false, false}},
+        {{false, false, false, false}, {false, false, false, false}},
+        {{false, false, false, false}, {false, false, false, false}},
+        {{false, false, false, false}, {false, false, false, false}},
+
+        /* For Text #25 - $29  */
+        {{false, false, false, false}, {false, false, false, false}},
+        {{false, false, false, false}, {false, false, false, false}},
+        {{false, false, false, false}, {false, false, false, false}},
+        {{false, false, false, false}, {false, false, false, false}},
+        {{false, false, false, false}, {false, false, false, false}},
+
+        /* For Text #30 - $34  */
+        {{false, false, false, false}, {false, false, false, false}},
+        {{false, false, false, false}, {false, false, false, false}},
+        {{false, false, false, false}, {false, false, false, false}},
+        {{false, false, false, false}, {false, false, false, false}},
+        {{false, false, false, false}, {false, false, false, false}},
+
+        /* For Text #35 - $37  */
+        {{false, false, false, false}, {false, false, false, false}},
         {{false, false, false, false}, {false, false, false, false}},
         {{false, false, false, false}, {false, false, false, false}},
         {{false, false, false, false}, {false, false, false, false}},
@@ -2113,8 +2247,13 @@ public class BidiConformance {
         true,  true,  true,  true,  true,
         true,  true,  true,  true,  true,
 
-        /* For Text #20 - $22  */
-        true,  true,  true,
+        /* For Text #20 - $29  */
+        true,  true,  true,  true,  true,
+        true,  true,  true,  true,  true,
+
+        /* For Text #30 - $37  */
+        true,  true,  true,  true,  true,
+        true,  true,  true,  true,
     };
 
     /* --------------------------------------------------------------------- */

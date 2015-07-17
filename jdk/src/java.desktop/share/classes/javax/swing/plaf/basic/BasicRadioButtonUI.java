@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import sun.swing.SwingUtilities2;
 import sun.awt.AppContext;
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.Set;
 
 /**
  * RadioButtonUI implementation for BasicRadioButtonUI
@@ -582,21 +583,30 @@ public class BasicRadioButtonUI extends BasicToggleButtonUI
      */
     private class KeyHandler implements KeyListener {
 
-        // This listener checks if the key event is a KeyEvent.VK_TAB
-        // or shift + KeyEvent.VK_TAB event on a radio button, consume the event
-        // if so and move the focus to next/previous component
+        // This listener checks if the key event is a focus traversal key event
+        // on a radio button, consume the event if so and move the focus
+        // to next/previous component
         public void keyPressed(KeyEvent e) {
-            if (e.getKeyCode() == KeyEvent.VK_TAB) {
-                 // Get the source of the event.
-                Object eventSrc = e.getSource();
-
-                // Check whether the source is a visible and enabled JRadioButton
-                if (isValidRadioButtonObj(eventSrc)) {
+            AWTKeyStroke stroke = AWTKeyStroke.getAWTKeyStrokeForEvent(e);
+            if (stroke != null && e.getSource() instanceof JRadioButton) {
+                JRadioButton source = (JRadioButton) e.getSource();
+                boolean next = isFocusTraversalKey(source,
+                        KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS,
+                        stroke);
+                if (next || isFocusTraversalKey(source,
+                        KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS,
+                        stroke)) {
                     e.consume();
-                    ButtonGroupInfo btnGroupInfo = new ButtonGroupInfo((JRadioButton)eventSrc);
-                    btnGroupInfo.jumpToNextComponent(!e.isShiftDown());
+                    ButtonGroupInfo btnGroupInfo = new ButtonGroupInfo(source);
+                    btnGroupInfo.jumpToNextComponent(next);
                 }
             }
+        }
+
+        private boolean isFocusTraversalKey(JComponent c, int id,
+                                            AWTKeyStroke stroke) {
+            Set<AWTKeyStroke> keys = c.getFocusTraversalKeys(id);
+            return keys != null && keys.contains(stroke);
         }
 
         public void keyReleased(KeyEvent e) {

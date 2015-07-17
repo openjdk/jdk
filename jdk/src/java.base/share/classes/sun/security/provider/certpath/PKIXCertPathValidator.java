@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,12 +159,19 @@ public final class PKIXCertPathValidator extends CertPathValidatorSpi {
                                                         ValidatorParams params)
         throws CertPathValidatorException
     {
+        // check if anchor is untrusted
+        UntrustedChecker untrustedChecker = new UntrustedChecker();
+        X509Certificate anchorCert = anchor.getTrustedCert();
+        if (anchorCert != null) {
+            untrustedChecker.check(anchorCert);
+        }
+
         int certPathLen = params.certificates().size();
 
         // create PKIXCertPathCheckers
         List<PKIXCertPathChecker> certPathCheckers = new ArrayList<>();
         // add standard checkers that we will be using
-        certPathCheckers.add(new UntrustedChecker());
+        certPathCheckers.add(untrustedChecker);
         certPathCheckers.add(new AlgorithmChecker(anchor));
         certPathCheckers.add(new KeyChecker(certPathLen,
                                             params.targetCertConstraints()));
