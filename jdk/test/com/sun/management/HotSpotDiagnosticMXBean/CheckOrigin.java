@@ -63,13 +63,18 @@ public class CheckOrigin {
                 createJavaProcessBuilder(
                     "-XX:+UseConcMarkSweepGC",  // this will cause UseParNewGC to be FLAG_SET_ERGO
                     "-XX:+PrintGCDetails",
+                    "-XX:+UseCerealGC",         // Should be ignored.
                     "-XX:Flags=" + flagsFile.getAbsolutePath(),
                     "-cp", System.getProperty("test.class.path"),
                     "CheckOrigin",
                     "-runtests");
 
             Map<String, String> env = pb.environment();
-            env.put("_JAVA_OPTIONS", "-XX:+PrintOopAddress");
+            // "UseCMSGC" should be ignored.
+            env.put("_JAVA_OPTIONS", "-XX:+TraceExceptions -XX:+UseCMSGC");
+            // "UseGOneGC" should be ignored.
+            env.put("JAVA_TOOL_OPTIONS", "-XX:+IgnoreUnrecognizedVMOptions "
+                + "-XX:+PrintVMOptions -XX:+UseGOneGC");
 
             pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
             pb.redirectError(ProcessBuilder.Redirect.INHERIT);
@@ -94,7 +99,10 @@ public class CheckOrigin {
             // Set on the command line
             checkOrigin("PrintGCDetails", Origin.VM_CREATION);
             // Set in _JAVA_OPTIONS
-            checkOrigin("PrintOopAddress", Origin.ENVIRON_VAR);
+            checkOrigin("TraceExceptions", Origin.ENVIRON_VAR);
+            // Set in JAVA_TOOL_OPTIONS
+            checkOrigin("IgnoreUnrecognizedVMOptions", Origin.ENVIRON_VAR);
+            checkOrigin("PrintVMOptions", Origin.ENVIRON_VAR);
             // Set in -XX:Flags file
             checkOrigin("PrintSafepointStatistics", Origin.CONFIG_FILE);
             // Set through j.l.m
