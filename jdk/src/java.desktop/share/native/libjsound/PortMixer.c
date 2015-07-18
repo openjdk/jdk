@@ -272,7 +272,7 @@ void* PORT_NewCompoundControl(void* creatorV, char* type, void** controls, int c
 }
 
 void* PORT_NewFloatControl(void* creatorV, void* controlID, char* type,
-                           float min, float max, float precision, char* units) {
+                           float min, float max, float precision, const char* units) {
     ControlCreatorJNI* creator = (ControlCreatorJNI*) creatorV;
     jobject ctrl = NULL;
     jstring unitsString;

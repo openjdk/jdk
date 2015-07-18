@@ -123,9 +123,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJSOUND, \
     CFLAGS := $(CFLAGS_JDKLIB) \
         $(LIBJSOUND_CFLAGS), \
     CXXFLAGS := $(CXXFLAGS_JDKLIB) $(LIBJSOUND_CFLAGS), \
-    DISABLED_WARNINGS_clang := implicit-function-declaration \
-        deprecated-writable-strings, \
-    WARNINGS_AS_ERRORS_clang := false, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjsound/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
