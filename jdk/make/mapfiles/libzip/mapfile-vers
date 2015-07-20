@@ -32,8 +32,8 @@ SUNWprivate_1.1 {
 		Java_java_util_zip_Adler32_updateBytes;
 		Java_java_util_zip_Adler32_updateByteBuffer;
 		Java_java_util_zip_CRC32_update;
-		Java_java_util_zip_CRC32_updateBytes;
-		Java_java_util_zip_CRC32_updateByteBuffer;
+		Java_java_util_zip_CRC32_updateBytes0;
+		Java_java_util_zip_CRC32_updateByteBuffer0;
 		Java_java_util_zip_Deflater_deflateBytes;
 		Java_java_util_zip_Deflater_end;
 		Java_java_util_zip_Deflater_getAdler;

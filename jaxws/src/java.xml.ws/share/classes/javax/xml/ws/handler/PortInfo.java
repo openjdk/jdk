@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@ package javax.xml.ws.handler;
 import javax.xml.namespace.QName;
 
 /**
- *  The <code>PortInfo</code> interface is used by a
- *  <code>HandlerResolver</code> to query information about
+ *  The {@code PortInfo} interface is used by a
+ *  {@code HandlerResolver} to query information about
  *  the port it is being asked to create a handler chain for.
  *  <p>
  *  This interface is never implemented by an application,

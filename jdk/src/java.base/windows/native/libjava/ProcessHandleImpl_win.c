@@ -64,8 +64,8 @@ static jfieldID ProcessHandleImpl_Info_userID;
  * Method:    initIDs
  * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_java_lang_ProcessHandleImpl_00024Info_initIDs
-  (JNIEnv *env, jclass clazz) {
+JNIEXPORT void JNICALL
+Java_java_lang_ProcessHandleImpl_00024Info_initIDs(JNIEnv *env, jclass clazz) {
 
     CHECK_NULL(ProcessHandleImpl_Info_commandID = (*env)->GetFieldID(env,
         clazz, "command", "Ljava/lang/String;"));
@@ -78,15 +78,25 @@ JNIEXPORT void JNICALL Java_java_lang_ProcessHandleImpl_00024Info_initIDs
     CHECK_NULL(ProcessHandleImpl_Info_userID = (*env)->GetFieldID(env,
         clazz, "user", "Ljava/lang/String;"));
 }
+/**************************************************************
+ * Static method to initialize native.
+ *
+ * Class:     java_lang_ProcessHandleImpl
+ * Method:    initNative
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL
+Java_java_lang_ProcessHandleImpl_initNative(JNIEnv *env, jclass clazz) {
+}
 
 /*
  * Block until a child process exits and return its exit code.
  */
 JNIEXPORT jint JNICALL
 Java_java_lang_ProcessHandleImpl_waitForProcessExit0(JNIEnv* env,
-                                              jclass junk,
-                                              jlong jpid,
-                                              jboolean reapStatus) {
+                                                     jclass junk,
+                                                     jlong jpid,
+                                                     jboolean reapStatus) {
     DWORD pid = (DWORD)jpid;
     DWORD exitValue = -1;
     HANDLE handle = OpenProcess(SYNCHRONIZE | PROCESS_QUERY_LIMITED_INFORMATION,
@@ -97,7 +107,7 @@ Java_java_lang_ProcessHandleImpl_waitForProcessExit0(JNIEnv* env,
     do {
         if (!GetExitCodeProcess(handle, &exitValue)) {
             JNU_ThrowByNameWithLastError(env,
-                "java/lang/Runtime", "GetExitCodeProcess");
+                "java/lang/RuntimeException", "GetExitCodeProcess");
             break;
         }
         if (exitValue == STILL_ACTIVE) {
@@ -110,7 +120,7 @@ Java_java_lang_ProcessHandleImpl_waitForProcessExit0(JNIEnv* env,
                                        INFINITE) /* Wait forever */
                 == WAIT_FAILED) {
                 JNU_ThrowByNameWithLastError(env,
-                    "java/lang/Runtime", "WaitForMultipleObjects");
+                    "java/lang/RuntimeException", "WaitForMultipleObjects");
                 break;
             }
         }
@@ -126,8 +136,8 @@ Java_java_lang_ProcessHandleImpl_waitForProcessExit0(JNIEnv* env,
  * Method:    getCurrentPid0
  * Signature: ()J
  */
-JNIEXPORT jlong JNICALL Java_java_lang_ProcessHandleImpl_getCurrentPid0
-(JNIEnv *env, jclass clazz) {
+JNIEXPORT jlong JNICALL
+Java_java_lang_ProcessHandleImpl_getCurrentPid0(JNIEnv *env, jclass clazz) {
     DWORD  pid = GetCurrentProcessId();
     return (jlong)pid;
 }
@@ -139,13 +149,21 @@ JNIEXPORT jlong JNICALL Java_java_lang_ProcessHandleImpl_getCurrentPid0
  * Method:    parent0
  * Signature: (J)J
  */
-JNIEXPORT jlong JNICALL Java_java_lang_ProcessHandleImpl_parent0
-(JNIEnv *env, jclass clazz, jlong jpid) {
-
-    DWORD ppid = -1;
+JNIEXPORT jlong JNICALL
+Java_java_lang_ProcessHandleImpl_parent0(JNIEnv *env,
+                                         jclass clazz,
+                                         jlong jpid,
+                                         jlong startTime) {
+    DWORD ppid = 0;
     DWORD wpid = (DWORD)jpid;
     PROCESSENTRY32 pe32;
     HANDLE hProcessSnap;
+    jlong start;
+
+    start = Java_java_lang_ProcessHandleImpl_isAlive0(env, clazz, jpid);
+    if (start != startTime && start != 0 && startTime != 0) {
+        return -1;
+    }
 
     // Take a snapshot of all processes in the system.
     hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -181,18 +199,23 @@ JNIEXPORT jlong JNICALL Java_java_lang_ProcessHandleImpl_parent0
  * Method:    getChildPids
  * Signature: (J[J[J)I
  */
-JNIEXPORT jint JNICALL Java_java_lang_ProcessHandleImpl_getProcessPids0
-(JNIEnv *env, jclass clazz, jlong jpid,
-    jlongArray jarray, jlongArray jparentArray) {
-
+JNIEXPORT jint JNICALL
+Java_java_lang_ProcessHandleImpl_getProcessPids0(JNIEnv *env,
+                                                 jclass clazz,
+                                                 jlong jpid,
+                                                 jlongArray jarray,
+                                                 jlongArray jparentArray,
+                                                 jlongArray jstimesArray) {
     HANDLE hProcessSnap;
     PROCESSENTRY32 pe32;
     DWORD ppid = (DWORD)jpid;
-    size_t count = 0;
     jlong* pids = NULL;
     jlong* ppids = NULL;
-    size_t parentArraySize = 0;
-    size_t arraySize = 0;
+    jlong* stimes = NULL;
+    jsize parentArraySize = 0;
+    jsize arraySize = 0;
+    jsize stimesSize = 0;
+    jsize count = 0;
 
     arraySize = (*env)->GetArrayLength(env, jarray);
     JNU_CHECK_EXCEPTION_RETURN(env, -1);
@@ -201,6 +224,15 @@ JNIEXPORT jint JNICALL Java_java_lang_ProcessHandleImpl_getProcessPids0
         JNU_CHECK_EXCEPTION_RETURN(env, -1);
 
         if (arraySize != parentArraySize) {
+            JNU_ThrowIllegalArgumentException(env, "array sizes not equal");
+            return 0;
+        }
+    }
+    if (jstimesArray != NULL) {
+        stimesSize = (*env)->GetArrayLength(env, jstimesArray);
+        JNU_CHECK_EXCEPTION_RETURN(env, -1);
+
+        if (arraySize != stimesSize) {
             JNU_ThrowIllegalArgumentException(env, "array sizes not equal");
             return 0;
         }
@@ -228,6 +260,12 @@ JNIEXPORT jint JNICALL Java_java_lang_ProcessHandleImpl_getProcessPids0
                     break;
                 }
             }
+            if (jstimesArray != NULL) {
+                stimes  = (*env)->GetLongArrayElements(env, jstimesArray, NULL);
+                if (stimes == NULL) {
+                    break;
+                }
+            }
             // Now walk the snapshot of processes, and
             // save information about each process in turn
             do {
@@ -236,10 +274,16 @@ JNIEXPORT jint JNICALL Java_java_lang_ProcessHandleImpl_getProcessPids0
                     && (pe32.th32ParentProcessID == ppid))) {
                     if (count < arraySize) {
                         // Only store if it fits
-                        pids[count] = (jlong)pe32.th32ProcessID;
+                        pids[count] = (jlong) pe32.th32ProcessID;
                         if (ppids != NULL) {
                             // Store the parentPid
                             ppids[count] = (jlong) pe32.th32ParentProcessID;
+                        }
+                        if (stimes != NULL) {
+                            // Store the process start time
+                            stimes[count] =
+                                    Java_java_lang_ProcessHandleImpl_isAlive0(env,
+                                            clazz, (jlong) pe32.th32ProcessID);
                         }
                     }
                     count++;    // Count to tabulate size needed
@@ -253,6 +297,9 @@ JNIEXPORT jint JNICALL Java_java_lang_ProcessHandleImpl_getProcessPids0
         if (ppids != NULL) {
             (*env)->ReleaseLongArrayElements(env, jparentArray, ppids, 0);
         }
+        if (stimes != NULL) {
+            (*env)->ReleaseLongArrayElements(env, jstimesArray, stimes, 0);
+        }
     } else {
         JNU_ThrowByName(env,
             "java/lang/RuntimeException", "snapshot not available");
@@ -261,48 +308,6 @@ JNIEXPORT jint JNICALL Java_java_lang_ProcessHandleImpl_getProcessPids0
     CloseHandle(hProcessSnap);
     // If more pids than array had size for;  count will be greater than array size
     return (jint)count;
-}
-
-/*
- * Destroy the process.
- *
- * Class:     java_lang_ProcessHandleImpl
- * Method:    destroy0
- * Signature: (Z)V
- */
-JNIEXPORT jboolean JNICALL Java_java_lang_ProcessHandleImpl_destroy0
-(JNIEnv *env, jclass clazz, jlong jpid, jboolean force) {
-    DWORD pid = (DWORD)jpid;
-    HANDLE handle = OpenProcess(PROCESS_TERMINATE, FALSE, pid);
-    if (handle != NULL) {
-        TerminateProcess(handle, 1);
-        CloseHandle(handle);         // Ignore return code
-        return JNI_TRUE;
-    }
-    return JNI_FALSE;
-}
-
-/*
- * Class:     java_lang_ProcessHandleImpl
- * Method:    isAlive0
- * Signature: (J)Z
- */
-JNIEXPORT jboolean JNICALL Java_java_lang_ProcessHandleImpl_isAlive0
-(JNIEnv *env, jclass clazz, jlong jpid) {
-    DWORD pid = (DWORD)jpid;
-
-    jboolean ret = JNI_FALSE;
-    HANDLE handle =
-        OpenProcess(THREAD_QUERY_INFORMATION | PROCESS_QUERY_LIMITED_INFORMATION,
-                    FALSE, pid);
-    if (handle != NULL) {
-        DWORD dwExitStatus;
-
-        GetExitCodeProcess(handle, &dwExitStatus);
-        CloseHandle(handle); // Ignore return code
-        ret = (dwExitStatus == STILL_ACTIVE);
-    }
-    return ret;
 }
 
 /**
@@ -315,14 +320,90 @@ static jlong jlong_from(jint high, jint low) {
 }
 
 /*
+ * Get the start time in ms from 1970 from the handle.
+ */
+static jlong getStartTime(HANDLE handle) {
+    FILETIME CreationTime, ExitTime, KernelTime, UserTime;
+    if (GetProcessTimes(handle, &CreationTime, &ExitTime, &KernelTime, &UserTime)) {
+        jlong start = jlong_from(CreationTime.dwHighDateTime,
+                                 CreationTime.dwLowDateTime) / 10000;
+        start -= 11644473600000L; // Rebase Epoch from 1601 to 1970
+        return start;
+    } else {
+        return 0;
+    }
+}
+
+/*
+ * Destroy the process.
+ *
+ * Class:     java_lang_ProcessHandleImpl
+ * Method:    destroy0
+ * Signature: (Z)V
+ */
+JNIEXPORT jboolean JNICALL
+Java_java_lang_ProcessHandleImpl_destroy0(JNIEnv *env,
+                                          jclass clazz,
+                                          jlong jpid,
+                                          jlong startTime,
+                                          jboolean force) {
+    DWORD pid = (DWORD)jpid;
+    jboolean ret = JNI_FALSE;
+    HANDLE handle = OpenProcess(PROCESS_TERMINATE | THREAD_QUERY_INFORMATION
+                                | PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
+    if (handle != NULL) {
+        jlong start = getStartTime(handle);
+        if (start == startTime || startTime == 0) {
+            ret = TerminateProcess(handle, 1) ? JNI_TRUE : JNI_FALSE;
+        }
+        CloseHandle(handle);         // Ignore return code
+    }
+    return ret;
+}
+
+ /*
+ * Check if a process is alive.
+ * Return the start time (ms since 1970) if it is available.
+ * If the start time is not available return 0.
+ * If the pid is invalid, return -1.
+ *
+ * Class:     java_lang_ProcessHandleImpl
+ * Method:    isAlive0
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL
+Java_java_lang_ProcessHandleImpl_isAlive0(JNIEnv *env, jclass clazz, jlong jpid) {
+    DWORD pid = (DWORD)jpid;
+
+    jlong ret = -1;
+    HANDLE handle =
+        OpenProcess(THREAD_QUERY_INFORMATION | PROCESS_QUERY_LIMITED_INFORMATION,
+                    FALSE, pid);
+    if (handle != NULL) {
+        DWORD dwExitStatus;
+
+        GetExitCodeProcess(handle, &dwExitStatus);
+        if (dwExitStatus == STILL_ACTIVE) {
+            ret = getStartTime(handle);
+        } else {
+            ret = -1;
+        }
+        CloseHandle(handle); // Ignore return code
+   }
+   return ret;
+}
+
+/*
  * Fill in the Info object from the OS information about the process.
  *
  * Class:     java_lang_ProcessHandleImpl
  * Method:    info0
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_java_lang_ProcessHandleImpl_00024Info_info0
-  (JNIEnv *env, jobject jinfo, jlong jpid) {
+JNIEXPORT void JNICALL
+Java_java_lang_ProcessHandleImpl_00024Info_info0(JNIEnv *env,
+                                                 jobject jinfo,
+                                                 jlong jpid) {
     DWORD pid = (DWORD)jpid;
     int ret = 0;
     HANDLE handle =

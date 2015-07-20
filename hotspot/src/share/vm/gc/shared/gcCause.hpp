@@ -92,6 +92,35 @@ class GCCause : public AllStatic {
             cause == GCCause::_heap_dump);
   }
 
+  // Causes for collection of the tenured gernation
+  inline static bool is_tenured_allocation_failure_gc(GCCause::Cause cause) {
+    assert(cause != GCCause::_old_generation_too_full_to_scavenge &&
+      cause != GCCause::_old_generation_expanded_on_last_scavenge,
+      err_msg("This GCCause may be correct but is not expected yet: %s",
+      to_string(cause)));
+    // _tenured_generation_full or _cms_generation_full for full tenured generations
+    // _adaptive_size_policy for a full collection after a young GC
+    // _allocation_failure is the generic cause a collection which could result
+    // in the collection of the tenured generation if there is not enough space
+    // in the tenured generation to support a young GC.
+    // _last_ditch_collection is a collection done to include SoftReferences.
+    return (cause == GCCause::_tenured_generation_full ||
+            cause == GCCause::_cms_generation_full ||
+            cause == GCCause::_adaptive_size_policy ||
+            cause == GCCause::_allocation_failure ||
+            cause == GCCause::_last_ditch_collection);
+  }
+
+  // Causes for collection of the young generation
+  inline static bool is_allocation_failure_gc(GCCause::Cause cause) {
+    // _allocation_failure is the generic cause a collection for allocation failure
+    // _adaptive_size_policy is for a collecton done before a full GC
+    // _last_ditch_collection is a collection done to include SoftReferences.
+    return (cause == GCCause::_allocation_failure ||
+            cause == GCCause::_adaptive_size_policy ||
+            cause == GCCause::_last_ditch_collection);
+  }
+
   // Return a string describing the GCCause.
   static const char* to_string(GCCause::Cause cause);
 };

@@ -82,7 +82,8 @@ class Method : public Metadata {
     _dont_inline          = 1 << 3,
     _hidden               = 1 << 4,
     _has_injected_profile = 1 << 5,
-    _running_emcp         = 1 << 6
+    _running_emcp         = 1 << 6,
+    _intrinsic_candidate  = 1 << 7
   };
   u1 _flags;
 
@@ -813,6 +814,13 @@ class Method : public Metadata {
   }
   void set_hidden(bool x) {
     _flags = x ? (_flags | _hidden) : (_flags & ~_hidden);
+  }
+
+  bool intrinsic_candidate() {
+    return (_flags & _intrinsic_candidate) != 0;
+  }
+  void set_intrinsic_candidate(bool x) {
+    _flags = x ? (_flags | _intrinsic_candidate) : (_flags & ~_intrinsic_candidate);
   }
 
   bool has_injected_profile() {

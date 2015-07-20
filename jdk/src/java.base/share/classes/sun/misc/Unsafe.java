@@ -31,6 +31,8 @@ import java.security.ProtectionDomain;
 import sun.reflect.CallerSensitive;
 import sun.reflect.Reflection;
 
+import jdk.internal.HotSpotIntrinsicCandidate;
+
 
 /**
  * A collection of methods for performing low-level, unsafe operations.
@@ -148,6 +150,7 @@ public final class Unsafe {
      * @throws RuntimeException No defined exceptions are thrown, not even
      *         {@link NullPointerException}
      */
+    @HotSpotIntrinsicCandidate
     public native int getInt(Object o, long offset);
 
     /**
@@ -170,12 +173,14 @@ public final class Unsafe {
      * @throws RuntimeException No defined exceptions are thrown, not even
      *         {@link NullPointerException}
      */
+    @HotSpotIntrinsicCandidate
     public native void putInt(Object o, long offset, int x);
 
     /**
      * Fetches a reference value from a given Java variable.
      * @see #getInt(Object, long)
      */
+    @HotSpotIntrinsicCandidate
     public native Object getObject(Object o, long offset);
 
     /**
@@ -188,35 +193,50 @@ public final class Unsafe {
      * are updated.
      * @see #putInt(Object, long, int)
      */
+    @HotSpotIntrinsicCandidate
     public native void putObject(Object o, long offset, Object x);
 
     /** @see #getInt(Object, long) */
+    @HotSpotIntrinsicCandidate
     public native boolean getBoolean(Object o, long offset);
     /** @see #putInt(Object, long, int) */
+    @HotSpotIntrinsicCandidate
     public native void    putBoolean(Object o, long offset, boolean x);
     /** @see #getInt(Object, long) */
+    @HotSpotIntrinsicCandidate
     public native byte    getByte(Object o, long offset);
     /** @see #putInt(Object, long, int) */
+    @HotSpotIntrinsicCandidate
     public native void    putByte(Object o, long offset, byte x);
     /** @see #getInt(Object, long) */
+    @HotSpotIntrinsicCandidate
     public native short   getShort(Object o, long offset);
     /** @see #putInt(Object, long, int) */
+    @HotSpotIntrinsicCandidate
     public native void    putShort(Object o, long offset, short x);
     /** @see #getInt(Object, long) */
+    @HotSpotIntrinsicCandidate
     public native char    getChar(Object o, long offset);
     /** @see #putInt(Object, long, int) */
+    @HotSpotIntrinsicCandidate
     public native void    putChar(Object o, long offset, char x);
     /** @see #getInt(Object, long) */
+    @HotSpotIntrinsicCandidate
     public native long    getLong(Object o, long offset);
     /** @see #putInt(Object, long, int) */
+    @HotSpotIntrinsicCandidate
     public native void    putLong(Object o, long offset, long x);
     /** @see #getInt(Object, long) */
+    @HotSpotIntrinsicCandidate
     public native float   getFloat(Object o, long offset);
     /** @see #putInt(Object, long, int) */
+    @HotSpotIntrinsicCandidate
     public native void    putFloat(Object o, long offset, float x);
     /** @see #getInt(Object, long) */
+    @HotSpotIntrinsicCandidate
     public native double  getDouble(Object o, long offset);
     /** @see #putInt(Object, long, int) */
+    @HotSpotIntrinsicCandidate
     public native void    putDouble(Object o, long offset, double x);
 
     // These read VM internal data.
@@ -257,6 +277,7 @@ public final class Unsafe {
      *
      * @see #allocateMemory
      */
+    @HotSpotIntrinsicCandidate
     public native byte    getByte(long address);
 
     /**
@@ -266,31 +287,44 @@ public final class Unsafe {
      *
      * @see #getByte(long)
      */
+    @HotSpotIntrinsicCandidate
     public native void    putByte(long address, byte x);
 
     /** @see #getByte(long) */
+    @HotSpotIntrinsicCandidate
     public native short   getShort(long address);
     /** @see #putByte(long, byte) */
+    @HotSpotIntrinsicCandidate
     public native void    putShort(long address, short x);
     /** @see #getByte(long) */
+    @HotSpotIntrinsicCandidate
     public native char    getChar(long address);
     /** @see #putByte(long, byte) */
+    @HotSpotIntrinsicCandidate
     public native void    putChar(long address, char x);
     /** @see #getByte(long) */
+    @HotSpotIntrinsicCandidate
     public native int     getInt(long address);
     /** @see #putByte(long, byte) */
+    @HotSpotIntrinsicCandidate
     public native void    putInt(long address, int x);
     /** @see #getByte(long) */
+    @HotSpotIntrinsicCandidate
     public native long    getLong(long address);
     /** @see #putByte(long, byte) */
+    @HotSpotIntrinsicCandidate
     public native void    putLong(long address, long x);
     /** @see #getByte(long) */
+    @HotSpotIntrinsicCandidate
     public native float   getFloat(long address);
     /** @see #putByte(long, byte) */
+    @HotSpotIntrinsicCandidate
     public native void    putFloat(long address, float x);
     /** @see #getByte(long) */
+    @HotSpotIntrinsicCandidate
     public native double  getDouble(long address);
     /** @see #putByte(long, byte) */
+    @HotSpotIntrinsicCandidate
     public native void    putDouble(long address, double x);
 
     /**
@@ -307,6 +341,7 @@ public final class Unsafe {
      *
      * @see #allocateMemory
      */
+    @HotSpotIntrinsicCandidate
     public native long getAddress(long address);
 
     /**
@@ -319,6 +354,7 @@ public final class Unsafe {
      *
      * @see #getAddress(long)
      */
+    @HotSpotIntrinsicCandidate
     public native void putAddress(long address, long x);
 
     /// wrappers for malloc, realloc, free:
@@ -406,6 +442,7 @@ public final class Unsafe {
      *
      * @since 1.7
      */
+    @HotSpotIntrinsicCandidate
     public native void copyMemory(Object srcBase, long srcOffset,
                                   Object destBase, long destOffset,
                                   long bytes);
@@ -651,6 +688,7 @@ public final class Unsafe {
      * Allocates an instance but does not run any constructor.
      * Initializes the class if it has not yet been.
      */
+    @HotSpotIntrinsicCandidate
     public native Object allocateInstance(Class<?> cls)
         throws InstantiationException;
 
@@ -666,6 +704,7 @@ public final class Unsafe {
      *
      * @return {@code true} if successful
      */
+    @HotSpotIntrinsicCandidate
     public final native boolean compareAndSwapObject(Object o, long offset,
                                                      Object expected,
                                                      Object x);
@@ -679,6 +718,7 @@ public final class Unsafe {
      *
      * @return {@code true} if successful
      */
+    @HotSpotIntrinsicCandidate
     public final native boolean compareAndSwapInt(Object o, long offset,
                                                   int expected,
                                                   int x);
@@ -692,6 +732,7 @@ public final class Unsafe {
      *
      * @return {@code true} if successful
      */
+    @HotSpotIntrinsicCandidate
     public final native boolean compareAndSwapLong(Object o, long offset,
                                                    long expected,
                                                    long x);
@@ -700,60 +741,78 @@ public final class Unsafe {
      * Fetches a reference value from a given Java variable, with volatile
      * load semantics. Otherwise identical to {@link #getObject(Object, long)}
      */
+    @HotSpotIntrinsicCandidate
     public native Object getObjectVolatile(Object o, long offset);
 
     /**
      * Stores a reference value into a given Java variable, with
      * volatile store semantics. Otherwise identical to {@link #putObject(Object, long, Object)}
      */
+    @HotSpotIntrinsicCandidate
     public native void    putObjectVolatile(Object o, long offset, Object x);
 
     /** Volatile version of {@link #getInt(Object, long)}  */
+    @HotSpotIntrinsicCandidate
     public native int     getIntVolatile(Object o, long offset);
 
     /** Volatile version of {@link #putInt(Object, long, int)}  */
+    @HotSpotIntrinsicCandidate
     public native void    putIntVolatile(Object o, long offset, int x);
 
     /** Volatile version of {@link #getBoolean(Object, long)}  */
+    @HotSpotIntrinsicCandidate
     public native boolean getBooleanVolatile(Object o, long offset);
 
     /** Volatile version of {@link #putBoolean(Object, long, boolean)}  */
+    @HotSpotIntrinsicCandidate
     public native void    putBooleanVolatile(Object o, long offset, boolean x);
 
     /** Volatile version of {@link #getByte(Object, long)}  */
+    @HotSpotIntrinsicCandidate
     public native byte    getByteVolatile(Object o, long offset);
 
     /** Volatile version of {@link #putByte(Object, long, byte)}  */
+    @HotSpotIntrinsicCandidate
     public native void    putByteVolatile(Object o, long offset, byte x);
 
     /** Volatile version of {@link #getShort(Object, long)}  */
+    @HotSpotIntrinsicCandidate
     public native short   getShortVolatile(Object o, long offset);
 
     /** Volatile version of {@link #putShort(Object, long, short)}  */
+    @HotSpotIntrinsicCandidate
     public native void    putShortVolatile(Object o, long offset, short x);
 
     /** Volatile version of {@link #getChar(Object, long)}  */
+    @HotSpotIntrinsicCandidate
     public native char    getCharVolatile(Object o, long offset);
 
     /** Volatile version of {@link #putChar(Object, long, char)}  */
+    @HotSpotIntrinsicCandidate
     public native void    putCharVolatile(Object o, long offset, char x);
 
     /** Volatile version of {@link #getLong(Object, long)}  */
+    @HotSpotIntrinsicCandidate
     public native long    getLongVolatile(Object o, long offset);
 
     /** Volatile version of {@link #putLong(Object, long, long)}  */
+    @HotSpotIntrinsicCandidate
     public native void    putLongVolatile(Object o, long offset, long x);
 
     /** Volatile version of {@link #getFloat(Object, long)}  */
+    @HotSpotIntrinsicCandidate
     public native float   getFloatVolatile(Object o, long offset);
 
     /** Volatile version of {@link #putFloat(Object, long, float)}  */
+    @HotSpotIntrinsicCandidate
     public native void    putFloatVolatile(Object o, long offset, float x);
 
     /** Volatile version of {@link #getDouble(Object, long)}  */
+    @HotSpotIntrinsicCandidate
     public native double  getDoubleVolatile(Object o, long offset);
 
     /** Volatile version of {@link #putDouble(Object, long, double)}  */
+    @HotSpotIntrinsicCandidate
     public native void    putDoubleVolatile(Object o, long offset, double x);
 
     /**
@@ -765,12 +824,15 @@ public final class Unsafe {
      *
      * Corresponds to C11 atomic_store_explicit(..., memory_order_release).
      */
+    @HotSpotIntrinsicCandidate
     public native void    putOrderedObject(Object o, long offset, Object x);
 
     /** Ordered/Lazy version of {@link #putIntVolatile(Object, long, int)}  */
+    @HotSpotIntrinsicCandidate
     public native void    putOrderedInt(Object o, long offset, int x);
 
     /** Ordered/Lazy version of {@link #putLongVolatile(Object, long, long)} */
+    @HotSpotIntrinsicCandidate
     public native void    putOrderedLong(Object o, long offset, long x);
 
     /**
@@ -785,6 +847,7 @@ public final class Unsafe {
      *
      * @param thread the thread to unpark.
      */
+    @HotSpotIntrinsicCandidate
     public native void unpark(Object thread);
 
     /**
@@ -798,6 +861,7 @@ public final class Unsafe {
      * because {@code unpark} is, so it would be strange to place it
      * elsewhere.
      */
+    @HotSpotIntrinsicCandidate
     public native void park(boolean isAbsolute, long time);
 
     /**
@@ -831,6 +895,7 @@ public final class Unsafe {
      * @return the previous value
      * @since 1.8
      */
+    @HotSpotIntrinsicCandidate
     public final int getAndAddInt(Object o, long offset, int delta) {
         int v;
         do {
@@ -850,6 +915,7 @@ public final class Unsafe {
      * @return the previous value
      * @since 1.8
      */
+    @HotSpotIntrinsicCandidate
     public final long getAndAddLong(Object o, long offset, long delta) {
         long v;
         do {
@@ -869,6 +935,7 @@ public final class Unsafe {
      * @return the previous value
      * @since 1.8
      */
+    @HotSpotIntrinsicCandidate
     public final int getAndSetInt(Object o, long offset, int newValue) {
         int v;
         do {
@@ -888,6 +955,7 @@ public final class Unsafe {
      * @return the previous value
      * @since 1.8
      */
+    @HotSpotIntrinsicCandidate
     public final long getAndSetLong(Object o, long offset, long newValue) {
         long v;
         do {
@@ -907,6 +975,7 @@ public final class Unsafe {
      * @return the previous value
      * @since 1.8
      */
+    @HotSpotIntrinsicCandidate
     public final Object getAndSetObject(Object o, long offset, Object newValue) {
         Object v;
         do {
@@ -928,6 +997,7 @@ public final class Unsafe {
      * provide a LoadLoad barrier also provide a LoadStore barrier for free.
      * @since 1.8
      */
+    @HotSpotIntrinsicCandidate
     public native void loadFence();
 
     /**
@@ -942,6 +1012,7 @@ public final class Unsafe {
      * provide a StoreStore barrier also provide a LoadStore barrier for free.
      * @since 1.8
      */
+    @HotSpotIntrinsicCandidate
     public native void storeFence();
 
     /**
@@ -953,6 +1024,7 @@ public final class Unsafe {
      * Corresponds to C11 atomic_thread_fence(memory_order_seq_cst).
      * @since 1.8
      */
+    @HotSpotIntrinsicCandidate
     public native void fullFence();
 
     /**
@@ -1010,6 +1082,7 @@ public final class Unsafe {
      *         {@link NullPointerException}
      * @since 1.9
      */
+    @HotSpotIntrinsicCandidate
     public final long getLongUnaligned(Object o, long offset) {
         if ((offset & 7) == 0) {
             return getLong(o, offset);
@@ -1048,6 +1121,7 @@ public final class Unsafe {
     }
 
     /** @see #getLongUnaligned(Object, long) */
+    @HotSpotIntrinsicCandidate
     public final int getIntUnaligned(Object o, long offset) {
         if ((offset & 3) == 0) {
             return getInt(o, offset);
@@ -1067,6 +1141,7 @@ public final class Unsafe {
     }
 
     /** @see #getLongUnaligned(Object, long) */
+    @HotSpotIntrinsicCandidate
     public final short getShortUnaligned(Object o, long offset) {
         if ((offset & 1) == 0) {
             return getShort(o, offset);
@@ -1081,9 +1156,11 @@ public final class Unsafe {
     }
 
     /** @see #getLongUnaligned(Object, long) */
+    @HotSpotIntrinsicCandidate
     public final char getCharUnaligned(Object o, long offset) {
         return (char)getShortUnaligned(o, offset);
     }
+
     /** @see #getLongUnaligned(Object, long, boolean) */
     public final char getCharUnaligned(Object o, long offset, boolean bigEndian) {
         return convEndian(bigEndian, getCharUnaligned(o, offset));
@@ -1117,6 +1194,7 @@ public final class Unsafe {
      *         {@link NullPointerException}
      * @since 1.9
      */
+    @HotSpotIntrinsicCandidate
     public final void putLongUnaligned(Object o, long offset, long x) {
         if ((offset & 7) == 0) {
             putLong(o, offset, x);
@@ -1142,6 +1220,7 @@ public final class Unsafe {
                          (byte)(x >>> 56));
         }
     }
+
     /**
      * As {@link #putLongUnaligned(Object, long, long)} but with an additional
      * argument which specifies the endianness of the value as stored in memory.
@@ -1158,6 +1237,7 @@ public final class Unsafe {
     }
 
     /** @see #putLongUnaligned(Object, long, long) */
+    @HotSpotIntrinsicCandidate
     public final void putIntUnaligned(Object o, long offset, int x) {
         if ((offset & 3) == 0) {
             putInt(o, offset, x);
@@ -1179,6 +1259,7 @@ public final class Unsafe {
     }
 
     /** @see #putLongUnaligned(Object, long, long) */
+    @HotSpotIntrinsicCandidate
     public final void putShortUnaligned(Object o, long offset, short x) {
         if ((offset & 1) == 0) {
             putShort(o, offset, x);
@@ -1194,6 +1275,7 @@ public final class Unsafe {
     }
 
     /** @see #putLongUnaligned(Object, long, long) */
+    @HotSpotIntrinsicCandidate
     public final void putCharUnaligned(Object o, long offset, char x) {
         putShortUnaligned(o, offset, (short)x);
     }

@@ -87,7 +87,7 @@ public class WhileOpStatefulTest extends OpTestCase {
                 });
     }
 
-    @Test
+    @Test(groups = { "serialization-hostile" })
     public void testCountTakeWithCount() {
         testTakeWhileMulti(
                 s -> {
@@ -116,7 +116,7 @@ public class WhileOpStatefulTest extends OpTestCase {
                 });
     }
 
-    @Test
+    @Test(groups = { "serialization-hostile" })
     public void testCountTakeWithToArray() {
         testTakeWhileMulti(
                 s -> {
@@ -146,7 +146,7 @@ public class WhileOpStatefulTest extends OpTestCase {
     }
 
 
-    @Test
+    @Test(groups = { "serialization-hostile" })
     public void testCountDropWithCount() {
         testDropWhileMulti(
                 s -> {
@@ -179,7 +179,7 @@ public class WhileOpStatefulTest extends OpTestCase {
                 });
     }
 
-    @Test
+    @Test(groups = { "serialization-hostile" })
     public void testCountDropWithToArray() {
         testDropWhileMulti(
                 s -> {

@@ -24,63 +24,88 @@
  */
 package jdk.internal.jimage;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.File;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.Comparator;
+import java.util.stream.IntStream;
 
 public class BasicImageReader {
     private final String imagePath;
-    private final PReader preader;
+    private final ImageSubstrate substrate;
     private final ByteOrder byteOrder;
-    private final ImageHeader header;
-    private final int indexSize;
-    private final IntBuffer redirectBuffer;
-    private final IntBuffer offsetsBuffer;
-    private final ByteBuffer locationsBuffer;
-    private final ByteBuffer stringsBuffer;
-    private final ImageStrings strings;
+    private final ImageStringsReader strings;
 
-    protected BasicImageReader(String imagePath, ByteOrder byteOrder) throws IOException {
+    protected BasicImageReader(String imagePath, ByteOrder byteOrder)
+            throws IOException {
         this.imagePath = imagePath;
-        this.preader = PReader.open(imagePath);
+        this.substrate = openImageSubstrate(imagePath, byteOrder);
         this.byteOrder = byteOrder;
-        this.header = ImageHeader.readFrom(byteOrder, getIntBuffer(0, ImageHeader.getHeaderSize()));
-        this.indexSize = header.getIndexSize();
-        this.redirectBuffer = getIntBuffer(header.getRedirectOffset(), header.getRedirectSize());
-        this.offsetsBuffer = getIntBuffer(header.getOffsetsOffset(), header.getOffsetsSize());
-        this.locationsBuffer = getByteBuffer(header.getLocationsOffset(), header.getLocationsSize());
-        this.stringsBuffer = getByteBuffer(header.getStringsOffset(), header.getStringsSize());
-        this.strings = new ImageStrings(new ImageStream(stringsBuffer));
+        this.strings = new ImageStringsReader(this);
     }
 
     protected BasicImageReader(String imagePath) throws IOException {
         this(imagePath, ByteOrder.nativeOrder());
     }
 
+    private static ImageSubstrate openImageSubstrate(String imagePath, ByteOrder byteOrder)
+            throws IOException {
+        ImageSubstrate substrate;
+
+        try {
+            substrate = ImageNativeSubstrate.openImage(imagePath, byteOrder);
+        } catch (UnsatisfiedLinkError ex) {
+            substrate = ImageJavaSubstrate.openImage(imagePath, byteOrder);
+        }
+
+        return substrate;
+    }
+
     public static BasicImageReader open(String imagePath) throws IOException {
         return new BasicImageReader(imagePath, ByteOrder.nativeOrder());
+    }
+
+    public static void releaseByteBuffer(ByteBuffer buffer) {
+        ImageBufferCache.releaseBuffer(buffer);
+    }
+
+    public ByteOrder getByteOrder() {
+        return byteOrder;
     }
 
     public String imagePath() {
         return imagePath;
     }
 
+    public String imagePathName() {
+        int slash = imagePath().lastIndexOf(File.separator);
+
+        if (slash != -1) {
+            return imagePath().substring(slash + 1);
+        }
+
+        return imagePath();
+    }
+
     public boolean isOpen() {
-        return preader.isOpen();
+        return true;
     }
 
     public void close() throws IOException {
-        preader.close();
+        substrate.close();
     }
 
-    public ImageHeader getHeader() {
-        return header;
+    public ImageHeader getHeader() throws IOException {
+        return ImageHeader.readFrom(
+                getIndexIntBuffer(0, ImageHeader.getHeaderSize()));
+    }
+
+    public ImageStringsReader getStrings() {
+        return strings;
     }
 
     public ImageLocation findLocation(String name) {
@@ -92,148 +117,147 @@ public class BasicImageReader {
     }
 
     public synchronized ImageLocation findLocation(UTF8String name) {
-        int count = header.getLocationCount();
-        int hash = name.hashCode() % count;
-        int redirect = getRedirect(hash);
-
-        if (redirect == 0) {
-            return null;
-        }
-
-        int index;
-
-        if (redirect < 0) {
-            // If no collision.
-            index = -redirect - 1;
-        } else {
-            // If collision, recompute hash code.
-            index = name.hashCode(redirect) % count;
-        }
-
-        int offset = getOffset(index);
-
-        if (offset == 0) {
-            return null;
-        }
-
-        ImageLocation location = getLocation(offset);
-
-        return location.verify(name) ? location : null;
+        return substrate.findLocation(name, strings);
     }
 
     public String[] getEntryNames() {
-        return getEntryNames(true);
-    }
-
-    public String[] getEntryNames(boolean sorted) {
-        int count = header.getLocationCount();
-        List<String> list = new ArrayList<>();
-
-        for (int i = 0; i < count; i++) {
-            int offset = getOffset(i);
-
-            if (offset != 0) {
-                ImageLocation location = ImageLocation.readFrom(locationsBuffer, offset, strings);
-                list.add(location.getFullnameString());
-            }
-        }
-
-        String[] array = list.toArray(new String[0]);
-
-        if (sorted) {
-            Arrays.sort(array);
-        }
-
-        return array;
+        return IntStream.of(substrate.attributeOffsets())
+                        .filter(o -> o != 0)
+                        .mapToObj(o -> ImageLocation.readFrom(this, o).getFullNameString())
+                        .sorted()
+                        .toArray(String[]::new);
     }
 
     protected ImageLocation[] getAllLocations(boolean sorted) {
-        int count = header.getLocationCount();
-        List<ImageLocation> list = new ArrayList<>();
-
-        for (int i = 0; i < count; i++) {
-            int offset = getOffset(i);
-
-            if (offset != 0) {
-                ImageLocation location = ImageLocation.readFrom(locationsBuffer, offset, strings);
-                list.add(location);
-            }
-        }
-
-        ImageLocation[] array = list.toArray(new ImageLocation[0]);
-
-        if (sorted) {
-            Arrays.sort(array, (ImageLocation loc1, ImageLocation loc2) ->
-                    loc1.getFullnameString().compareTo(loc2.getFullnameString()));
-        }
-
-        return array;
+        return IntStream.of(substrate.attributeOffsets())
+                        .filter(o -> o != 0)
+                        .mapToObj(o -> ImageLocation.readFrom(this, o))
+                        .sorted(Comparator.comparing(ImageLocation::getFullNameString))
+                        .toArray(ImageLocation[]::new);
     }
 
-    private IntBuffer getIntBuffer(long offset, long size) throws IOException {
-        MappedByteBuffer buffer = preader.channel().map(FileChannel.MapMode.READ_ONLY, offset, size);
+    private IntBuffer getIndexIntBuffer(long offset, long size)
+            throws IOException {
+        ByteBuffer buffer = substrate.getIndexBuffer(offset, size);
         buffer.order(byteOrder);
 
         return buffer.asIntBuffer();
     }
 
-    private ByteBuffer getByteBuffer(long offset, long size) throws IOException {
-        MappedByteBuffer buffer = preader.channel().map(FileChannel.MapMode.READ_ONLY, offset, size);
-        // order is not copied into the readonly copy.
-        ByteBuffer readOnly = buffer.asReadOnlyBuffer();
-        readOnly.order(byteOrder);
-        return readOnly;
+    ImageLocation getLocation(int offset) {
+        return ImageLocation.readFrom(this, offset);
     }
 
-    private int getRedirect(int index) {
-        return redirectBuffer.get(index);
-    }
-
-    private int getOffset(int index) {
-        return offsetsBuffer.get(index);
-    }
-
-    private ImageLocation getLocation(int offset) {
-        return ImageLocation.readFrom(locationsBuffer, offset, strings);
+    public long[] getAttributes(int offset) {
+        return substrate.getAttributes(offset);
     }
 
     public String getString(int offset) {
-        return strings.get(offset).toString();
+        return getUTF8String(offset).toString();
     }
 
-    public byte[] getResource(ImageLocation loc) throws IOException {
+    public UTF8String getUTF8String(int offset) {
+        return new UTF8String(substrate.getStringBytes(offset));
+    }
+
+    private byte[] getBufferBytes(ByteBuffer buffer, long size) {
+        assert size < Integer.MAX_VALUE;
+        byte[] bytes = new byte[(int)size];
+        buffer.get(bytes);
+
+        return bytes;
+    }
+
+    private byte[] getBufferBytes(long offset, long size) {
+        ByteBuffer buffer = substrate.getDataBuffer(offset, size);
+
+        return getBufferBytes(buffer, size);
+    }
+
+    public byte[] getResource(ImageLocation loc) {
+        long offset = loc.getContentOffset();
         long compressedSize = loc.getCompressedSize();
+        long uncompressedSize = loc.getUncompressedSize();
         assert compressedSize < Integer.MAX_VALUE;
+        assert uncompressedSize < Integer.MAX_VALUE;
 
-        if (compressedSize == 0) {
-            return preader.read((int)loc.getUncompressedSize(),
-                                indexSize + loc.getContentOffset());
-        } else {
-            byte[] buf = preader.read((int)compressedSize,
-                                      indexSize + loc.getContentOffset());
-            return ImageFile.Compressor.decompress(buf);
+        if (substrate.supportsDataBuffer() && compressedSize == 0) {
+            return getBufferBytes(offset, uncompressedSize);
         }
+
+        ByteBuffer uncompressedBuffer = ImageBufferCache.getBuffer(uncompressedSize);
+        boolean isRead;
+
+        if (compressedSize != 0) {
+            ByteBuffer compressedBuffer = ImageBufferCache.getBuffer(compressedSize);
+            isRead = substrate.read(offset, compressedBuffer, compressedSize,
+                                          uncompressedBuffer, uncompressedSize);
+            ImageBufferCache.releaseBuffer(compressedBuffer);
+        } else {
+            isRead = substrate.read(offset, uncompressedBuffer, uncompressedSize);
+        }
+
+        byte[] bytes = isRead ? getBufferBytes(uncompressedBuffer,
+                                               uncompressedSize) : null;
+
+        ImageBufferCache.releaseBuffer(uncompressedBuffer);
+
+        return bytes;
     }
 
-    public byte[] getResource(String name) throws IOException {
+    public byte[] getResource(String name) {
         ImageLocation location = findLocation(name);
 
         return location != null ? getResource(location) : null;
     }
 
-    public List<String> getNames(String name) throws IOException {
-        return getNames(getResource(name));
-    }
+    public ByteBuffer getResourceBuffer(ImageLocation loc) {
+        long offset = loc.getContentOffset();
+        long compressedSize = loc.getCompressedSize();
+        long uncompressedSize = loc.getUncompressedSize();
+        assert compressedSize < Integer.MAX_VALUE;
+        assert uncompressedSize < Integer.MAX_VALUE;
 
-    public List<String> getNames(byte[] bytes) {
-        IntBuffer buffer = ByteBuffer.wrap(bytes).asIntBuffer();
-        List<String> names = new ArrayList<>();
-
-        while (buffer.hasRemaining()) {
-            int offset = buffer.get();
-            names.add(getString(offset));
+        if (substrate.supportsDataBuffer() && compressedSize == 0) {
+            return substrate.getDataBuffer(offset, uncompressedSize);
         }
 
-        return names;
+        ByteBuffer uncompressedBuffer = ImageBufferCache.getBuffer(uncompressedSize);
+        boolean isRead;
+
+        if (compressedSize != 0) {
+            ByteBuffer compressedBuffer = ImageBufferCache.getBuffer(compressedSize);
+            isRead = substrate.read(offset, compressedBuffer, compressedSize,
+                                          uncompressedBuffer, uncompressedSize);
+            ImageBufferCache.releaseBuffer(compressedBuffer);
+        } else {
+            isRead = substrate.read(offset, uncompressedBuffer, uncompressedSize);
+        }
+
+        if (isRead) {
+            return uncompressedBuffer;
+        } else {
+            ImageBufferCache.releaseBuffer(uncompressedBuffer);
+
+            return null;
+        }
+    }
+
+    public ByteBuffer getResourceBuffer(String name) {
+        ImageLocation location = findLocation(name);
+
+        return location != null ? getResourceBuffer(location) : null;
+    }
+
+    public InputStream getResourceStream(ImageLocation loc) {
+        byte[] bytes = getResource(loc);
+
+        return new ByteArrayInputStream(bytes);
+    }
+
+    public InputStream getResourceStream(String name) {
+        ImageLocation location = findLocation(name);
+
+        return location != null ? getResourceStream(location) : null;
     }
 }

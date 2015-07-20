@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,8 +141,18 @@ public final class SimpleValidator extends Validator {
         // create distrusted certificates checker
         UntrustedChecker untrustedChecker = new UntrustedChecker();
 
+        // check if anchor is untrusted
+        X509Certificate anchorCert = chain[chain.length - 1];
+        try {
+            untrustedChecker.check(anchorCert);
+        } catch (CertPathValidatorException cpve) {
+            throw new ValidatorException(
+                "Untrusted certificate: "+ anchorCert.getSubjectX500Principal(),
+                ValidatorException.T_UNTRUSTED_CERT, anchorCert, cpve);
+        }
+
         // create default algorithm constraints checker
-        TrustAnchor anchor = new TrustAnchor(chain[chain.length - 1], null);
+        TrustAnchor anchor = new TrustAnchor(anchorCert, null);
         AlgorithmChecker defaultAlgChecker = new AlgorithmChecker(anchor);
 
         // create application level algorithm constraints checker

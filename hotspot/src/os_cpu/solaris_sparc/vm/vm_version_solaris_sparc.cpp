@@ -191,7 +191,7 @@ public:
     return CPUVisitor::visit(nodeh, state);
   }
 
-  PICL(bool is_fujitsu) : _L1_data_cache_line_size(0), _L2_data_cache_line_size(0), _dl_handle(NULL) {
+  PICL(bool is_fujitsu, bool is_sun4v) : _L1_data_cache_line_size(0), _L2_data_cache_line_size(0), _dl_handle(NULL) {
     if (!open_library()) {
       return;
     }
@@ -203,7 +203,7 @@ public:
         if (is_fujitsu) {
           cpu_class = "core";
         }
-        CPUVisitor cpu_visitor(this, os::processor_count());
+        CPUVisitor cpu_visitor(this, (is_sun4v && !is_fujitsu) ? 1 : os::processor_count());
         _picl_walk_tree_by_class(rooth, cpu_class, &cpu_visitor, PICL_visit_cpu_helper);
         if (cpu_visitor.l1_visitor()->is_assigned()) { // Is there a value?
           _L1_data_cache_line_size = cpu_visitor.l1_visitor()->value();
@@ -447,7 +447,7 @@ int VM_Version::platform_features(int features) {
   }
 
   // Figure out cache line sizes using PICL
-  PICL picl((features & sparc64_family_m) != 0);
+  PICL picl((features & sparc64_family_m) != 0, (features & sun4v_m) != 0);
   _L1_data_cache_line_size = picl.L1_data_cache_line_size();
   _L2_data_cache_line_size = picl.L2_data_cache_line_size();
 

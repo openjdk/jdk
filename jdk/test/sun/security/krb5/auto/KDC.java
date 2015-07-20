@@ -1320,14 +1320,17 @@ public class KDC {
         }
     }
 
-    public static void startKDC(final String host, final String krbConfFileName,
+    public static KDC startKDC(final String host, final String krbConfFileName,
             final String realm, final Map<String, String> principals,
             final String ktab, final KtabMode mode) {
 
+        KDC kdc;
         try {
-            KDC kdc = KDC.create(realm, host, 0, true);
+            kdc = KDC.create(realm, host, 0, true);
             kdc.setOption(KDC.Option.PREAUTH_REQUIRED, Boolean.FALSE);
-            KDC.saveConfig(krbConfFileName, kdc);
+            if (krbConfFileName != null) {
+                KDC.saveConfig(krbConfFileName, kdc);
+            }
 
             // Add principals
             if (principals != null) {
@@ -1379,6 +1382,7 @@ public class KDC {
             throw new RuntimeException("KDC: unexpected exception", e);
         }
 
+        return kdc;
     }
 
     /**
@@ -1428,13 +1432,20 @@ public class KDC {
     }
 
     public static class KDCNameService implements NameServiceDescriptor {
+
+        public static String NOT_EXISTING_HOST = "not.existing.host";
+
         @Override
         public NameService createNameService() throws Exception {
             NameService ns = new NameService() {
                 @Override
                 public InetAddress[] lookupAllHostAddr(String host)
                         throws UnknownHostException {
-                    // Everything is localhost
+                    // Everything is localhost except NOT_EXISTING_HOST
+                    if (NOT_EXISTING_HOST.equals(host)) {
+                        throw new UnknownHostException("Unknown host name: "
+                                + NOT_EXISTING_HOST);
+                    }
                     return new InetAddress[]{
                         InetAddress.getByAddress(host, new byte[]{127,0,0,1})
                     };

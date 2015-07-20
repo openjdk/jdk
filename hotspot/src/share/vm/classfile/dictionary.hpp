@@ -370,7 +370,7 @@ class SymbolPropertyEntry : public HashtableEntry<Symbol*, mtSymbol> {
 
   void print_on(outputStream* st) const {
     symbol()->print_value_on(st);
-    st->print("/mode="INTX_FORMAT, symbol_mode());
+    st->print("/mode=" INTX_FORMAT, symbol_mode());
     st->print(" -> ");
     bool printed = false;
     if (method() != NULL) {

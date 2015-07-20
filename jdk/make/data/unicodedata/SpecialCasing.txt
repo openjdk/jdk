@@ -1,18 +1,25 @@
-# SpecialCasing-6.2.0.txt
-# Date: 2012-05-23, 20:35:15 GMT [MD]
+# SpecialCasing-7.0.0.txt
+# Date: 2014-03-18, 07:18:02 GMT [MD]
 #
 # Unicode Character Database
-# Copyright (c) 1991-2012 Unicode, Inc.
+# Copyright (c) 1991-2014 Unicode, Inc.
 # For terms of use, see http://www.unicode.org/terms_of_use.html
 # For documentation, see http://www.unicode.org/reports/tr44/
 #
-# Special Casing Properties
+# Special Casing
 #
-# This file is a supplement to the UnicodeData file.
-# It contains additional information about the casing of Unicode characters.
-# (For compatibility, the UnicodeData.txt file only contains case mappings for
-# characters where they are 1-1, and independent of context and language.
-# For more information, see the discussion of Case Mappings in the Unicode Standard.
+# This file is a supplement to the UnicodeData.txt file. It does not define any
+# properties, but rather provides additional information about the casing of
+# Unicode characters, for situations when casing incurs a change in string length
+# or is dependent on context or locale. For compatibility, the UnicodeData.txt
+# file only contains simple case mappings for characters where they are one-to-one
+# and independent of context and language. The data in this file, combined with
+# the simple case mappings in UnicodeData.txt, defines the full case mappings
+# Lowercase_Mapping (lc), Titlecase_Mapping (tc), and Uppercase_Mapping (uc).
+#
+# Note that the preferred mechanism for defining tailored casing operations is
+# the Unicode Common Locale Data Repository (CLDR). For more information, see the
+# discussion of case mappings and case algorithms in the Unicode Standard.
 #
 # All code points not listed in this file that do not have a simple case mappings
 # in UnicodeData.txt map to themselves.
@@ -21,16 +28,17 @@
 # ================================================================================
 # The entries in this file are in the following machine-readable format:
 #
-# <code>; <lower> ; <title> ; <upper> ; (<condition_list> ;)? # <comment>
+# <code>; <lower>; <title>; <upper>; (<condition_list>;)? # <comment>
 #
-# <code>, <lower>, <title>, and <upper> provide character values in hex. If there is more
-# than one character, they are separated by spaces. Other than as used to separate 
-# elements, spaces are to be ignored.
+# <code>, <lower>, <title>, and <upper> provide the respective full case mappings
+# of <code>, expressed as character values in hex. If there is more than one character,
+# they are separated by spaces. Other than as used to separate elements, spaces are
+# to be ignored.
 #
 # The <condition_list> is optional. Where present, it consists of one or more language IDs
-# or contexts, separated by spaces. In these conditions:
+# or casing contexts, separated by spaces. In these conditions:
 # - A condition list overrides the normal behavior if all of the listed conditions are true.
-# - The context is always the context of the characters in the original string,
+# - The casing context is always the context of the characters in the original string,
 #   NOT in the resulting string.
 # - Case distinctions in the condition list are not significant.
 # - Conditions preceded by "Not_" represent the negation of the condition.
@@ -38,17 +46,13 @@
 #
 # A language ID is defined by BCP 47, with '-' and '_' treated equivalently.
 #
-# A context for a character C is defined by Section 3.13 Default Case 
-# Operations, of The Unicode Standard, Version 5.0.
-# (This is identical to the context defined by Unicode 4.1.0,
-#  as specified in http://www.unicode.org/versions/Unicode4.1.0/)
+# A casing context for a character is defined by Section 3.13 Default Case Algorithms
+# of The Unicode Standard.
 #
 # Parsers of this file must be prepared to deal with future additions to this format:
 #  * Additional contexts
 #  * Additional fields
 # ================================================================================
-
-# @missing: 0000..10FFFF; <slc>; <stc>; <suc>;
 
 # ================================================================================
 # Unconditional mappings
@@ -114,7 +118,7 @@ FB17; FB17; 0544 056D; 0544 053D; # ARMENIAN SMALL LIGATURE MEN XEH
 #  This process can be achieved by first transforming the text to NFC before casing.
 #  E.g. <alpha><iota_subscript><acute> is uppercased to <ALPHA><acute><IOTA>
 
-# The following cases are already in the UnicodeData file, so are only commented here.
+# The following cases are already in the UnicodeData.txt file, so are only commented here.
 
 # 0345; 0345; 0345; 0399; # COMBINING GREEK YPOGEGRAMMENI
 
@@ -205,7 +209,7 @@ FB17; FB17; 0544 056D; 0544 053D; # ARMENIAN SMALL LIGATURE MEN XEH
 
 03A3; 03C2; 03A3; 03A3; Final_Sigma; # GREEK CAPITAL LETTER SIGMA
 
-# Note: the following cases for non-final are already in the UnicodeData file.
+# Note: the following cases for non-final are already in the UnicodeData.txt file.
 
 # 03A3; 03C3; 03A3; 03A3; # GREEK CAPITAL LETTER SIGMA
 # 03C3; 03C3; 03A3; 03A3; # GREEK SMALL LETTER SIGMA
@@ -268,7 +272,7 @@ FB17; FB17; 0544 056D; 0544 053D; # ARMENIAN SMALL LIGATURE MEN XEH
 0069; 0069; 0130; 0130; tr; # LATIN SMALL LETTER I
 0069; 0069; 0130; 0130; az; # LATIN SMALL LETTER I
 
-# Note: the following case is already in the UnicodeData file.
+# Note: the following case is already in the UnicodeData.txt file.
 
 # 0131; 0131; 0049; 0049; tr; # LATIN SMALL LETTER DOTLESS I
 

@@ -199,6 +199,17 @@ void G1NewTracer::send_g1_young_gc_event() {
   }
 }
 
+void G1MMUTracer::send_g1_mmu_event(const GCId& gcId, double timeSlice, double gcTime, double maxTime) {
+  EventGCG1MMU e;
+  if (e.should_commit()) {
+    e.set_gcId(gcId.id());
+    e.set_timeSlice(timeSlice);
+    e.set_gcTime(gcTime);
+    e.set_maxGcTime(maxTime);
+    e.commit();
+  }
+}
+
 void G1NewTracer::send_evacuation_info_event(EvacuationInfo* info) {
   EventEvacuationInfo e;
   if (e.should_commit()) {
