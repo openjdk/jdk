@@ -124,7 +124,7 @@ public final class SunMSCAPI extends Provider {
     }
 
     public SunMSCAPI() {
-        super("SunMSCAPI", 1.9d, INFO);
+        super("SunMSCAPI", 9.0d, INFO);
 
         final Provider p = this;
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
