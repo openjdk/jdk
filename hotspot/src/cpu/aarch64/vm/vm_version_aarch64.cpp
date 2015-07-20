@@ -261,6 +261,13 @@ void VM_Version::get_processor_features() {
     UsePopCountInstruction = true;
   }
 
+  if (FLAG_IS_DEFAULT(UseMontgomeryMultiplyIntrinsic)) {
+    UseMontgomeryMultiplyIntrinsic = true;
+  }
+  if (FLAG_IS_DEFAULT(UseMontgomerySquareIntrinsic)) {
+    UseMontgomerySquareIntrinsic = true;
+  }
+
 #ifdef COMPILER2
   if (FLAG_IS_DEFAULT(OptoScheduling)) {
     OptoScheduling = true;

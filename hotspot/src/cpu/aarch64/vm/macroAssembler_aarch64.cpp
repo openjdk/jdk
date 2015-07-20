@@ -2008,6 +2008,14 @@ void MacroAssembler::addw(Register Rd, Register Rn, RegisterOrConstant increment
   }
 }
 
+void MacroAssembler::sub(Register Rd, Register Rn, RegisterOrConstant decrement) {
+  if (decrement.is_register()) {
+    sub(Rd, Rn, decrement.as_register());
+  } else {
+    sub(Rd, Rn, decrement.as_constant());
+  }
+}
+
 void MacroAssembler::reinit_heapbase()
 {
   if (UseCompressedOops) {
