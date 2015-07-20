@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4236543
+ * @bug 4236543 8129833
  * @summary rmic w/o -d should put class files in package directory
  * @author Dana Burns
  * @library ../../../../java/rmi/testlibrary
@@ -40,38 +40,47 @@
  */
 
 import java.io.File;
-import java.io.IOException;
 
 public class RmicDefault {
+    private static final String PKG_DIR = "packagedir";
+    private static final String[] remoteClasses = new String[] {
+        "RmicMeImpl", "AppletServer"
+    };
+
     public static void main(String args[]) throws Exception {
         String javahome = System.getProperty("java.home");
         String testclasses = System.getProperty("test.classes");
         String userDir = System.getProperty("user.dir");
+        String cmd = javahome + File.separator + "bin" + File.separator +
+            "javac -d " + testclasses + " " + System.getProperty("test.src") +
+            File.separator + PKG_DIR + File.separator;
 
-        Process javacProcess = Runtime.getRuntime().exec(
-            javahome + File.separator + "bin" + File.separator +
-            "javac -d " + testclasses + " " +
-            System.getProperty("test.src") + File.separator + "packagedir" +
-            File.separator + "RmicMeImpl.java");
+        for (String clz : remoteClasses) {
+            System.out.println("Working on class " + clz);
+            Process javacProcess = Runtime.getRuntime().exec(cmd + clz + ".java");
 
-        StreamPipe.plugTogether(javacProcess.getInputStream(), System.out);
-        StreamPipe.plugTogether(javacProcess.getErrorStream(), System.out);
+            StreamPipe.plugTogether(javacProcess.getInputStream(), System.out);
+            StreamPipe.plugTogether(javacProcess.getErrorStream(), System.out);
 
-        javacProcess.waitFor();
+            javacProcess.waitFor();
 
-        Process rmicProcess = Runtime.getRuntime().exec(
-            javahome + File.separator + "bin" + File.separator +
-            "rmic -classpath " + testclasses + " packagedir.RmicMeImpl");
+            Process rmicProcess = Runtime.getRuntime().exec(
+                javahome + File.separator + "bin" + File.separator +
+                "rmic -classpath " + testclasses + " " + PKG_DIR + "." + clz);
 
-        StreamPipe.plugTogether(rmicProcess.getInputStream(), System.out);
-        StreamPipe.plugTogether(rmicProcess.getErrorStream(), System.err);
+            StreamPipe.plugTogether(rmicProcess.getInputStream(), System.out);
+            StreamPipe.plugTogether(rmicProcess.getErrorStream(), System.err);
 
-        rmicProcess.waitFor();
+            rmicProcess.waitFor();
+            int exitCode = rmicProcess.exitValue();
+            if (rmicProcess.exitValue() != 0) {
+                throw new RuntimeException("Rmic failed. The exit code is " + exitCode);
+            }
 
-        File stub = new File(userDir + File.separator + "packagedir" +
-                             File.separator + "RmicMeImpl_Stub.class");
-        if (!stub.exists()) {
-            throw new RuntimeException("TEST FAILED: could not find stub");
+            File stub = new File(userDir + File.separator + PKG_DIR + File.separator + clz + "_Stub.class");
+            if (!stub.exists()) {
+                throw new RuntimeException("TEST FAILED: could not find stub");
+            }
         }
 
         System.err.println("TEST PASSED");

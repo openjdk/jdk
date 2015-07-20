@@ -187,7 +187,7 @@ public class BuildState {
 
     /**
      * Verify that the setModules method above did the right thing when
-     * running through the module->package->source structure.
+     * running through the {@literal module->package->source} structure.
      */
     public void checkInternalState(String msg, boolean linkedOnly, Map<String,Source> srcs) {
         boolean baad = false;

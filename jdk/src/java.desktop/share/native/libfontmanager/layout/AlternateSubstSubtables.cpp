@@ -53,6 +53,7 @@ le_uint32 AlternateSubstitutionSubtable::process(const LEReferenceTo<AlternateSu
             Offset alternateSetTableOffset = SWAPW(alternateSetTableOffsetArray[coverageIndex]);
             const LEReferenceTo<AlternateSetTable> alternateSetTable(base, success,
                                   (const AlternateSetTable *) ((char *) this + alternateSetTableOffset));
+            if (!LE_SUCCESS(success)) return 0;
             TTGlyphID alternate = SWAPW(alternateSetTable->alternateArray[0]);
 
             if (filter == NULL || filter->accept(LE_SET_GLYPH(glyph, alternate), success)) {

@@ -28,6 +28,7 @@
  *          when their age exceeded tenuring threshold are not aligned to
  *          SurvivorAlignmentInBytes value.
  * @library /testlibrary /../../test/lib
+ * @ignore 8130308
  * @modules java.base/sun.misc
  *          java.management
  * @build TestPromotionFromSurvivorToTenuredAfterMinorGC

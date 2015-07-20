@@ -267,7 +267,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
      * navigation bar, and then the title (from the"-title"
      * option), at the top of page.
      *
-     * @body the documentation tree to which the navigation bar header will be added
+     * @param body the documentation tree to which the navigation bar header will be added
      */
     protected void addNavigationBarHeader(Content body) {
         Content htmlTree = (configuration.allowTag(HtmlTag.HEADER))

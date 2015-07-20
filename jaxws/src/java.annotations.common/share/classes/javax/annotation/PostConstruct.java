@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import static java.lang.annotation.RetentionPolicy.*;
  * method can be annotated with this annotation. The method on which the
  * PostConstruct annotation is applied MUST fulfill all of the following
  * criteria:
+ * <p>
  * <ul>
  * <li>The method MUST NOT have any parameters except in the case of
  * interceptors in which case it takes an InvocationContext object as

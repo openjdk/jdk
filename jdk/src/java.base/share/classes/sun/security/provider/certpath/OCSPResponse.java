@@ -151,8 +151,8 @@ public final class OCSPResponse {
     private static final int DEFAULT_MAX_CLOCK_SKEW = 900000;
 
     /**
-     * Integer value indicating the maximum allowable clock skew, in seconds,
-     * to be used for the OCSP check.
+     * Integer value indicating the maximum allowable clock skew,
+     * in milliseconds, to be used for the OCSP check.
      */
     private static final int MAX_CLOCK_SKEW = initializeClockSkew();
 
@@ -585,12 +585,13 @@ public final class OCSPResponse {
                 "Unable to verify OCSP Response's signature");
         }
 
-        // Check freshness of OCSPResponse
         if (nonce != null) {
             if (responseNonce != null && !Arrays.equals(nonce, responseNonce)) {
                 throw new CertPathValidatorException("Nonces don't match");
             }
         }
+
+        // Check freshness of OCSPResponse
 
         long now = (date == null) ? System.currentTimeMillis() : date.getTime();
         Date nowPlusSkew = new Date(now + MAX_CLOCK_SKEW);
@@ -601,13 +602,18 @@ public final class OCSPResponse {
                 if (sr.nextUpdate != null) {
                     until = " until " + sr.nextUpdate;
                 }
-                debug.println("Response's validity interval is from " +
+                debug.println("OCSP response validity interval is from " +
                               sr.thisUpdate + until);
+                debug.println("Checking validity of OCSP response on: " +
+                    new Date(now));
             }
 
-            // Check that the test date is within the validity interval
-            if ((sr.thisUpdate != null && nowPlusSkew.before(sr.thisUpdate)) ||
-                (sr.nextUpdate != null && nowMinusSkew.after(sr.nextUpdate)))
+            // Check that the test date is within the validity interval:
+            //   [ thisUpdate - MAX_CLOCK_SKEW,
+            //     MAX(thisUpdate, nextUpdate) + MAX_CLOCK_SKEW ]
+            if (nowPlusSkew.before(sr.thisUpdate) ||
+                nowMinusSkew.after(
+                    sr.nextUpdate != null ? sr.nextUpdate : sr.thisUpdate))
             {
                 throw new CertPathValidatorException(
                                       "Response is unreliable: its validity " +

@@ -64,18 +64,20 @@ public class GenericTestCaseForSupportedCPU extends
                         SHAOptionsBase.USE_SHA_OPTION, true),
                 CommandLineOptionTest.prepareBooleanFlag(optionName, false));
 
-        // Verify that it is possible to enable the tested option and disable
-        // all SHA intrinsics via -UseSHA without any warnings.
-        CommandLineOptionTest.verifySameJVMStartup(null, new String[] {
-                        SHAOptionsBase.getWarningForUnsupportedCPU(optionName)
-                }, shouldPassMessage, String.format("It should be able to "
-                        + "enable option '%s' even if %s was passed to JVM",
-                        optionName, CommandLineOptionTest.prepareBooleanFlag(
-                            SHAOptionsBase.USE_SHA_OPTION, false)),
-                ExitCode.OK,
-                CommandLineOptionTest.prepareBooleanFlag(
-                        SHAOptionsBase.USE_SHA_OPTION, false),
-                CommandLineOptionTest.prepareBooleanFlag(optionName, true));
+        if (!optionName.equals(SHAOptionsBase.USE_SHA_OPTION)) {
+            // Verify that if -XX:-UseSHA is passed to the JVM, it is not possible
+            // to enable the tested option and a warning is printed.
+            CommandLineOptionTest.verifySameJVMStartup(
+                    new String[] { SHAOptionsBase.getWarningForUnsupportedCPU(optionName) },
+                    null,
+                    shouldPassMessage,
+                    String.format("Enabling option '%s' should not be possible and should result in a warning if %s was passed to JVM",
+                                  optionName,
+                                  CommandLineOptionTest.prepareBooleanFlag(SHAOptionsBase.USE_SHA_OPTION, false)),
+                    ExitCode.OK,
+                    CommandLineOptionTest.prepareBooleanFlag(SHAOptionsBase.USE_SHA_OPTION, false),
+                    CommandLineOptionTest.prepareBooleanFlag(optionName, true));
+        }
     }
 
     @Override

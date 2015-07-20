@@ -487,6 +487,18 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
                                GCCause::Cause gc_cause,
                                CollectorPolicy* collector_policy);
 
+  static bool should_update_promo_stats(GCCause::Cause cause) {
+    return ((GCCause::is_user_requested_gc(cause)  &&
+               UseAdaptiveSizePolicyWithSystemGC) ||
+            GCCause::is_tenured_allocation_failure_gc(cause));
+  }
+
+  static bool should_update_eden_stats(GCCause::Cause cause) {
+    return ((GCCause::is_user_requested_gc(cause)  &&
+               UseAdaptiveSizePolicyWithSystemGC) ||
+            GCCause::is_allocation_failure_gc(cause));
+  }
+
   // Printing support
   virtual bool print_adaptive_size_policy_on(outputStream* st) const;
   bool print_adaptive_size_policy_on(outputStream* st,

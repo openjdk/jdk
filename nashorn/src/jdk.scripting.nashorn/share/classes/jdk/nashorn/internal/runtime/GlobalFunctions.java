@@ -187,14 +187,14 @@ public final class GlobalFunctions {
 
         double result = 0.0;
         int digit;
-        // we should see atleast one valid digit
+        // we should see at least one valid digit
         boolean entered = false;
         while (idx < length) {
             digit = fastDigit(str.charAt(idx++), radix);
             if (digit < 0) {
                 break;
             }
-            // we have seen atleast one valid digit in the specified radix
+            // we have seen at least one valid digit in the specified radix
             entered = true;
             result *= radix;
             result += digit;

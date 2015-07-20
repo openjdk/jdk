@@ -36,7 +36,7 @@ import static com.sun.tools.classfile.ConstantPool.*;
 /**
  * A utility class to find where in a ClassFile references
  * a {@link CONSTANT_Methodref_info method},
- * a {@link CONSTANT_InterfaceMethodref_info interface method,
+ * a {@link CONSTANT_InterfaceMethodref_info interface method},
  * or a {@link CONSTANT_Fieldref_info field}.
  */
 public final class ReferenceFinder {

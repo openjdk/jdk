@@ -168,7 +168,7 @@ public class JavacRoundEnvironment implements RoundEnvironment {
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
     @DefinedBy(Api.ANNOTATION_PROCESSING)
     public Set<? extends Element> getElementsAnnotatedWith(Class<? extends Annotation> a) {

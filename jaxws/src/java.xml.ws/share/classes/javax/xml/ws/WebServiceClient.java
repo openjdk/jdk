@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,8 @@ import java.lang.annotation.RetentionPolicy;
  *  Used to annotate a generated service interface.
  *
  *  <p>The information specified in this annotation is sufficient
- *  to uniquely identify a <code>wsdl:service</code>
- *  element inside a WSDL document. This <code>wsdl:service</code>
+ *  to uniquely identify a {@code wsdl:service}
+ *  element inside a WSDL document. This {@code wsdl:service}
  *  element represents the Web service for which the generated
  *  service interface provides a client view.
  *

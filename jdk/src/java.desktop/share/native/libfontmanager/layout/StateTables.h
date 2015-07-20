@@ -126,7 +126,7 @@ typedef le_uint8 EntryTableIndex;
 struct StateEntry
 {
     ByteOffset  newStateOffset;
-    le_int16    flags;
+    le_uint16    flags;
 };
 
 typedef le_uint16 EntryTableIndex2;

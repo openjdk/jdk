@@ -50,7 +50,6 @@ import java.text.ParseException;
 import sun.text.Normalizer;
 import sun.text.normalizer.CharTrie;
 import sun.text.normalizer.Trie;
-import sun.text.normalizer.NormalizerImpl;
 import sun.text.normalizer.VersionInfo;
 import sun.text.normalizer.UCharacter;
 import sun.text.normalizer.UCharacterIterator;
@@ -227,7 +226,7 @@ public final class StringPrep {
         checkBiDi         = ((indexes[OPTIONS] & CHECK_BIDI_ON) > 0);
         sprepUniVer   = getVersionInfo(reader.getUnicodeVersion());
         normCorrVer   = getVersionInfo(indexes[NORM_CORRECTNS_LAST_UNI_VERSION]);
-        VersionInfo normUniVer = NormalizerImpl.getUnicodeVersion();
+        VersionInfo normUniVer = UCharacter.getUnicodeVersion();
         if(normUniVer.compareTo(sprepUniVer) < 0 && /* the Unicode version of SPREP file must be less than the Unicode Vesion of the normalization data */
            normUniVer.compareTo(normCorrVer) < 0 && /* the Unicode version of the NormalizationCorrections.txt file should be less than the Unicode Vesion of the normalization data */
            ((indexes[OPTIONS] & NORMALIZATION_ON) > 0) /* normalization turned on*/
@@ -354,7 +353,7 @@ public final class StringPrep {
             Normalizer.normalize(
                 src.toString(),
                 java.text.Normalizer.Form.NFKC,
-                Normalizer.UNICODE_3_2|NormalizerImpl.BEFORE_PRI_29));
+                Normalizer.UNICODE_3_2));
     }
     /*
     boolean isLabelSeparator(int ch){

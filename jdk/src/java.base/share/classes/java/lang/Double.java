@@ -27,6 +27,7 @@ package java.lang;
 
 import sun.misc.FloatingDecimal;
 import sun.misc.DoubleConsts;
+import jdk.internal.HotSpotIntrinsicCandidate;
 
 /**
  * The {@code Double} class wraps a value of the primitive type
@@ -514,6 +515,7 @@ public final class Double extends Number implements Comparable<Double> {
      * @return a {@code Double} instance representing {@code d}.
      * @since  1.5
      */
+    @HotSpotIntrinsicCandidate
     public static Double valueOf(double d) {
         return new Double(d);
     }
@@ -711,6 +713,7 @@ public final class Double extends Number implements Comparable<Double> {
      *
      * @return the {@code double} value represented by this object
      */
+    @HotSpotIntrinsicCandidate
     public double doubleValue() {
         return value;
     }
@@ -831,6 +834,7 @@ public final class Double extends Number implements Comparable<Double> {
      * @param   value   a {@code double} precision floating-point number.
      * @return the bits that represent the floating-point number.
      */
+    @HotSpotIntrinsicCandidate
     public static long doubleToLongBits(double value) {
         if (!isNaN(value)) {
             return doubleToRawLongBits(value);
@@ -874,6 +878,7 @@ public final class Double extends Number implements Comparable<Double> {
      * @return the bits that represent the floating-point number.
      * @since 1.3
      */
+    @HotSpotIntrinsicCandidate
     public static native long doubleToRawLongBits(double value);
 
     /**
@@ -937,6 +942,7 @@ public final class Double extends Number implements Comparable<Double> {
      * @return  the {@code double} floating-point value with the same
      *          bit pattern.
      */
+    @HotSpotIntrinsicCandidate
     public static native double longBitsToDouble(long bits);
 
     /**

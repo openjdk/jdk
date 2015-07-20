@@ -140,7 +140,7 @@ HeapWord* G1AllocRegion::new_alloc_region_and_allocate(size_t word_size,
 }
 
 void G1AllocRegion::fill_in_ext_msg(ar_ext_msg* msg, const char* message) {
-  msg->append("[%s] %s c: %u b: %s r: "PTR_FORMAT" u: "SIZE_FORMAT,
+  msg->append("[%s] %s c: %u b: %s r: " PTR_FORMAT " u: " SIZE_FORMAT,
               _name, message, _count, BOOL_TO_STR(_bot_updates),
               p2i(_alloc_region), _used_bytes_before);
 }
@@ -217,7 +217,7 @@ void G1AllocRegion::trace(const char* str, size_t word_size, HeapWord* result) {
 
     if (G1_ALLOC_REGION_TRACING > 1) {
       if (result != NULL) {
-        jio_snprintf(rest_buffer, buffer_length, SIZE_FORMAT" "PTR_FORMAT,
+        jio_snprintf(rest_buffer, buffer_length, SIZE_FORMAT " " PTR_FORMAT,
                      word_size, result);
       } else if (word_size != 0) {
         jio_snprintf(rest_buffer, buffer_length, SIZE_FORMAT, word_size);

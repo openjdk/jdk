@@ -25,6 +25,8 @@
 
 package java.lang;
 
+import jdk.internal.HotSpotIntrinsicCandidate;
+
 /**
  * Class {@code Object} is the root of the class hierarchy.
  * Every class has {@code Object} as a superclass. All objects,
@@ -44,6 +46,7 @@ public class Object {
     /**
      * Constructs a new object.
      */
+    @HotSpotIntrinsicCandidate
     public Object() {}
 
     /**
@@ -65,6 +68,7 @@ public class Object {
      *         class of this object.
      * @jls 15.8.2 Class Literals
      */
+    @HotSpotIntrinsicCandidate
     public final native Class<?> getClass();
 
     /**
@@ -101,6 +105,7 @@ public class Object {
      * @see     java.lang.Object#equals(java.lang.Object)
      * @see     java.lang.System#identityHashCode
      */
+    @HotSpotIntrinsicCandidate
     public native int hashCode();
 
     /**
@@ -213,6 +218,7 @@ public class Object {
      *               be cloned.
      * @see java.lang.Cloneable
      */
+    @HotSpotIntrinsicCandidate
     protected native Object clone() throws CloneNotSupportedException;
 
     /**

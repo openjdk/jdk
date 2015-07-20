@@ -60,6 +60,7 @@
 #include "runtime/threadCritical.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_version.hpp"
+#include "semaphore_posix.hpp"
 #include "services/attachListener.hpp"
 #include "services/memTracker.hpp"
 #include "services/runtimeService.hpp"
@@ -2263,55 +2264,11 @@ void* os::user_handler() {
   return CAST_FROM_FN_PTR(void*, UserHandler);
 }
 
-class Semaphore : public StackObj {
- public:
-  Semaphore();
-  ~Semaphore();
-  void signal();
-  void wait();
-  bool trywait();
-  bool timedwait(unsigned int sec, int nsec);
- private:
-  sema_t _semaphore;
-};
-
-
-Semaphore::Semaphore() {
-  sema_init(&_semaphore, 0, NULL, NULL);
-}
-
-Semaphore::~Semaphore() {
-  sema_destroy(&_semaphore);
-}
-
-void Semaphore::signal() {
-  sema_post(&_semaphore);
-}
-
-void Semaphore::wait() {
-  sema_wait(&_semaphore);
-}
-
-bool Semaphore::trywait() {
-  return sema_trywait(&_semaphore) == 0;
-}
-
-bool Semaphore::timedwait(unsigned int sec, int nsec) {
+struct timespec PosixSemaphore::create_timespec(unsigned int sec, int nsec) {
   struct timespec ts;
   unpackTime(&ts, false, (sec * NANOSECS_PER_SEC) + nsec);
 
-  while (1) {
-    int result = sema_timedwait(&_semaphore, &ts);
-    if (result == 0) {
-      return true;
-    } else if (errno == EINTR) {
-      continue;
-    } else if (errno == ETIME) {
-      return false;
-    } else {
-      return false;
-    }
-  }
+  return ts;
 }
 
 extern "C" {
@@ -3711,7 +3668,7 @@ static void suspend_save_context(OSThread *osthread, ucontext_t* context) {
   osthread->set_ucontext(context);
 }
 
-static Semaphore sr_semaphore;
+static PosixSemaphore sr_semaphore;
 
 void os::Solaris::SR_handler(Thread* thread, ucontext_t* uc) {
   // Save and restore errno to avoid confusing native code with EINTR
