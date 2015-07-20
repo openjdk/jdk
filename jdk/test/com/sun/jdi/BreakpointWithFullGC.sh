@@ -29,6 +29,7 @@
 #  @author dcubed (based on the test program posted to the following
 #  Eclipse thread https://bugs.eclipse.org/bugs/show_bug.cgi?id=279137)
 #
+#  @key intermittent
 #  @run shell BreakpointWithFullGC.sh
 
 compileOptions=-g

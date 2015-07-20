@@ -31,6 +31,7 @@
 #   methods are called.
 # @author Daniel D. Daugherty
 #
+# @key intermittent
 # @run shell RedefineAbstractClass.sh
 
 compileOptions=-g
