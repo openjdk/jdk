@@ -28,6 +28,7 @@
  *
  *  @author jjh
  *
+ *  @key intermittent
  *  @modules jdk.jdi
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g BreakpointTest.java
