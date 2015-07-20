@@ -464,6 +464,13 @@ public:
     mov(dst, (long)i);
   }
 
+  void mov(Register dst, RegisterOrConstant src) {
+    if (src.is_register())
+      mov(dst, src.as_register());
+    else
+      mov(dst, src.as_constant());
+  }
+
   void movptr(Register r, uintptr_t imm64);
 
   void mov(FloatRegister Vd, SIMD_Arrangement T, u_int32_t imm32);
@@ -1045,6 +1052,7 @@ public:
 
   void add(Register Rd, Register Rn, RegisterOrConstant increment);
   void addw(Register Rd, Register Rn, RegisterOrConstant increment);
+  void sub(Register Rd, Register Rn, RegisterOrConstant decrement);
 
   void adrp(Register reg1, const Address &dest, unsigned long &byte_offset);
 
