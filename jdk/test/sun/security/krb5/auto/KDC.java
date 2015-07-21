@@ -28,6 +28,10 @@ import java.net.*;
 import java.io.*;
 import java.lang.reflect.Method;
 import java.security.SecureRandom;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAmount;
+import java.time.temporal.TemporalUnit;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -939,6 +943,13 @@ public class KDC {
             } else if (till.isZero()) {
                 till = new KerberosTime(
                         new Date().getTime() + 1000 * DEFAULT_LIFETIME);
+            } else if (till.greaterThan(new KerberosTime(Instant.now()
+                    .plus(1, ChronoUnit.DAYS)))) {
+                // If till is more than 1 day later, make it renewable
+                till = new KerberosTime(
+                        new Date().getTime() + 1000 * DEFAULT_LIFETIME);
+                body.kdcOptions.set(KDCOptions.RENEWABLE, true);
+                if (rtime == null) rtime = till;
             }
             if (rtime == null && body.kdcOptions.get(KDCOptions.RENEWABLE)) {
                 rtime = new KerberosTime(
