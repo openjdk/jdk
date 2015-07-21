@@ -26,7 +26,6 @@
 # @bug     6528083
 # @summary Test RMI Bootstrap
 #
-# @key intermittent
 # @library /lib/testlibrary
 # @modules java.management/sun.management
 #          java.management/sun.management.jmxremote

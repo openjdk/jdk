@@ -27,7 +27,6 @@
 #  @bug 4525714
 #  @summary jtreg test PopAsynchronousTest fails in build 85 with -Xcomp
 #  @author Jim Holmlund/Swamy Venkataramanappa
-#  @key intermittent
 #  @run shell DeoptimizeWalk.sh
 
 #  This is another test of the same bug.  The bug occurs when trying

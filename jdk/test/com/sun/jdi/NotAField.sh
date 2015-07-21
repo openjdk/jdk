@@ -29,7 +29,6 @@
 #  @summary TTY: NullPointerException at
 #           com.sun.tools.jdi.MirrorImpl.validateMirrors
 #  @author Tim Bell
-#  @key intermittent
 #  @run shell NotAField.sh
 #
 

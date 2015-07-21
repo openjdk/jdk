@@ -28,7 +28,6 @@
 #  @summary The VM crashes when a method in a redefined class throws an exception.
 #  @author Jim Holmlund
 #
-#  @key intermittent
 #  @run shell RedefineException.sh
 
 # This is another symptomm of 4559100

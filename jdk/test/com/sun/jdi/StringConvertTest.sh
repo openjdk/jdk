@@ -29,7 +29,6 @@
 #           2. TTY: run on expression evaluation
 #  @author jim/suvasis mukherjee
 #
-#  @key intermittent
 #  @run shell StringConvertTest.sh
 
 #  Run this script to see the bug.  See comments at the end

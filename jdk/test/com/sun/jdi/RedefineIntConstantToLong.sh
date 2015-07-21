@@ -27,7 +27,6 @@
 #  @bug 6394084
 #  @summary Redefine class can't handle addition of 64 bit constants in JDK1.5.0_05
 #
-#  @key intermittent
 #  @run shell RedefineIntConstantToLong.sh
 
 compileOptions=-g

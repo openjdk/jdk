@@ -40,7 +40,6 @@ import jdk.testlibrary.ProcessTools;
  * @bug 8075926
  * @summary Makes sure that the current management agent status is reflected
  *          in the related performance counters.
- * @key intermittent
  * @library /lib/testlibrary
  * @build jdk.testlibrary.* PortAllocator TestApp ManagementAgentJcmd
  * @run testng/othervm -XX:+UsePerfData JMXStatusPerfCountersTest
