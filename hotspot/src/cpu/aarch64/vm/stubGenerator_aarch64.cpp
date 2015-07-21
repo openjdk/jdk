@@ -2435,6 +2435,137 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  /**
+   *  Arguments:
+   *
+   *  Input:
+   *  c_rarg0   - current state address
+   *  c_rarg1   - H key address
+   *  c_rarg2   - data address
+   *  c_rarg3   - number of blocks
+   *
+   *  Output:
+   *  Updated state at c_rarg0
+   */
+  address generate_ghash_processBlocks() {
+    __ align(CodeEntryAlignment);
+    Label L_ghash_loop, L_exit;
+
+    StubCodeMark mark(this, "StubRoutines", "ghash_processBlocks");
+    address start = __ pc();
+
+    Register state   = c_rarg0;
+    Register subkeyH = c_rarg1;
+    Register data    = c_rarg2;
+    Register blocks  = c_rarg3;
+
+    FloatRegister vzr = v30;
+    __ eor(vzr, __ T16B, vzr, vzr); // zero register
+
+    __ mov(v26, __ T16B, 1);
+    __ mov(v27, __ T16B, 63);
+    __ mov(v28, __ T16B, 62);
+    __ mov(v29, __ T16B, 57);
+
+    __ ldrq(v6, Address(state));
+    __ ldrq(v16, Address(subkeyH));
+
+    __ ext(v0, __ T16B, v6, v6, 0x08);
+    __ ext(v1, __ T16B, v16, v16, 0x08);
+    __ eor(v16, __ T16B, v16, v1);
+
+    __ bind(L_ghash_loop);
+
+    __ ldrq(v2, Address(__ post(data, 0x10)));
+    __ rev64(v2, __ T16B, v2); // swap data
+
+    __ ext(v6, __ T16B, v0, v0, 0x08);
+    __ eor(v6, __ T16B, v6, v2);
+    __ ext(v2, __ T16B, v6, v6, 0x08);
+
+    __ pmull2(v7, __ T1Q, v2, v1, __ T2D);  // A1*B1
+    __ eor(v6, __ T16B, v6, v2);
+    __ pmull(v5,  __ T1Q, v2, v1, __ T1D);  // A0*B0
+    __ pmull(v20, __ T1Q, v6, v16, __ T1D);  // (A1 + A0)(B1 + B0)
+
+    __ ext(v21, __ T16B, v5, v7, 0x08);
+    __ eor(v18, __ T16B, v7, v5); // A1*B1 xor A0*B0
+    __ eor(v20, __ T16B, v20, v21);
+    __ eor(v20, __ T16B, v20, v18);
+
+    // Registers pair <v7:v5> holds the result of carry-less multiplication
+    __ ins(v7, __ D, v20, 0, 1);
+    __ ins(v5, __ D, v20, 1, 0);
+
+    // Result of the multiplication is shifted by one bit position
+    // [X3:X2:X1:X0] = [X3:X2:X1:X0] << 1
+    __ ushr(v18, __ T2D, v5, -63 & 63);
+    __ ins(v25, __ D, v18, 1, 0);
+    __ ins(v25, __ D, vzr, 0, 0);
+    __ ushl(v5, __ T2D, v5, v26);
+    __ orr(v5, __ T16B, v5, v25);
+
+    __ ushr(v19, __ T2D, v7, -63 & 63);
+    __ ins(v19, __ D, v19, 1, 0);
+    __ ins(v19, __ D, v18, 0, 1);
+    __ ushl(v7, __ T2D, v7, v26);
+    __ orr(v6, __ T16B, v7, v19);
+
+    __ ins(v24, __ D, v5, 0, 1);
+
+    // A = X0 << 63
+    __ ushl(v21, __ T2D, v5, v27);
+
+    // A = X0 << 62
+    __ ushl(v22, __ T2D, v5, v28);
+
+    // A = X0 << 57
+    __ ushl(v23, __ T2D, v5, v29);
+
+    // D = X1^A^B^C
+    __ eor(v21, __ T16B, v21, v22);
+    __ eor(v21, __ T16B, v21, v23);
+    __ eor(v21, __ T16B, v21, v24);
+    __ ins(v5, __ D, v21, 1, 0);
+
+    // [E1:E0] = [D:X0] >> 1
+    __ ushr(v20, __ T2D, v5, -1 & 63);
+    __ ushl(v18, __ T2D, v5, v27);
+    __ ext(v25, __ T16B, v18, vzr, 0x08);
+    __ orr(v19, __ T16B, v20, v25);
+
+    __ eor(v7, __ T16B, v5, v19);
+
+    // [F1:F0] = [D:X0] >> 2
+    __ ushr(v20, __ T2D, v5, -2 & 63);
+    __ ushl(v18, __ T2D, v5, v28);
+    __ ins(v25, __ D, v18, 0, 1);
+    __ orr(v19, __ T16B, v20, v25);
+
+    __ eor(v7, __ T16B, v7, v19);
+
+    // [G1:G0] = [D:X0] >> 7
+    __ ushr(v20, __ T2D, v5, -7 & 63);
+    __ ushl(v18, __ T2D, v5, v29);
+    __ ins(v25, __ D, v18, 0, 1);
+    __ orr(v19, __ T16B, v20, v25);
+
+    // [H1:H0] = [D^E1^F1^G1:X0^E0^F0^G0]
+    __ eor(v7, __ T16B, v7, v19);
+
+    // Result = [H1:H0]^[X3:X2]
+    __ eor(v0, __ T16B, v7, v6);
+
+    __ subs(blocks, blocks, 1);
+    __ cbnz(blocks, L_ghash_loop);
+
+    __ ext(v1, __ T16B, v0, v0, 0x08);
+    __ st1(v1, __ T16B, state);
+    __ ret(lr);
+
+    return start;
+  }
+
   // Continuation point for throwing of implicit exceptions that are
   // not handled in the current activation. Fabricates an exception
   // oop and initiates normal exception dispatching in this
@@ -3438,6 +3569,11 @@ class StubGenerator: public StubCodeGenerator {
     }
 
 #ifndef BUILTIN_SIM
+    // generate GHASH intrinsics code
+    if (UseGHASHIntrinsics) {
+      StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks();
+    }
+
     if (UseAESIntrinsics) {
       StubRoutines::_aescrypt_encryptBlock = generate_aescrypt_encryptBlock();
       StubRoutines::_aescrypt_decryptBlock = generate_aescrypt_decryptBlock();
