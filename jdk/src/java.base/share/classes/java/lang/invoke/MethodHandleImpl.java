@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,7 +219,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             if (convSpec == null)  continue;
             MethodHandle fn;
             if (convSpec instanceof Class) {
-                fn = Lazy.MH_castReference.bindTo(convSpec);
+                fn = Lazy.MH_cast.bindTo(convSpec);
             } else {
                 fn = (MethodHandle) convSpec;
             }
@@ -239,7 +239,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                 if (convSpec == void.class)
                     fn = null;
                 else
-                    fn = Lazy.MH_castReference.bindTo(convSpec);
+                    fn = Lazy.MH_cast.bindTo(convSpec);
             } else {
                 fn = (MethodHandle) convSpec;
             }
@@ -302,7 +302,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             Name conv;
             if (convSpec instanceof Class) {
                 Class<?> convClass = (Class<?>) convSpec;
-                conv = new Name(Lazy.MH_castReference, convClass, names[INARG_BASE + i]);
+                conv = new Name(Lazy.MH_cast, convClass, names[INARG_BASE + i]);
             } else {
                 MethodHandle fn = (MethodHandle) convSpec;
                 conv = new Name(fn, names[INARG_BASE + i]);
@@ -326,7 +326,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                 conv = new Name(LambdaForm.constantZero(BasicType.basicType(srcType.returnType())));
             } else if (convSpec instanceof Class) {
                 Class<?> convClass = (Class<?>) convSpec;
-                conv = new Name(Lazy.MH_castReference, convClass, names[OUT_CALL]);
+                conv = new Name(Lazy.MH_cast, convClass, names[OUT_CALL]);
             } else {
                 MethodHandle fn = (MethodHandle) convSpec;
                 if (fn.type().parameterCount() == 0)
@@ -341,25 +341,6 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
         LambdaForm form = new LambdaForm("convert", lambdaType.parameterCount(), names, RESULT);
         return SimpleMethodHandle.make(srcType, form);
-    }
-
-    /**
-     * Identity function, with reference cast.
-     * @param t an arbitrary reference type
-     * @param x an arbitrary reference value
-     * @return the same value x
-     */
-    @ForceInline
-    @SuppressWarnings("unchecked")
-    static <T,U> T castReference(Class<? extends T> t, U x) {
-        // inlined Class.cast because we can't ForceInline it
-        if (x != null && !t.isInstance(x))
-            throw newClassCastException(t, x);
-        return (T) x;
-    }
-
-    private static ClassCastException newClassCastException(Class<?> t, Object obj) {
-        return new ClassCastException("Cannot cast " + obj.getClass().getName() + " to " + t.getName());
     }
 
     static Object[] computeValueConversions(MethodType srcType, MethodType dstType,
@@ -591,6 +572,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
      */
     static class Lazy {
         private static final Class<?> MHI = MethodHandleImpl.class;
+        private static final Class<?> CLS = Class.class;
 
         private static final MethodHandle[] ARRAYS;
         private static final MethodHandle[] FILL_ARRAYS;
@@ -600,7 +582,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         static final NamedFunction NF_throwException;
         static final NamedFunction NF_profileBoolean;
 
-        static final MethodHandle MH_castReference;
+        static final MethodHandle MH_cast;
         static final MethodHandle MH_selectAlternative;
         static final MethodHandle MH_copyAsPrimitiveArray;
         static final MethodHandle MH_fillNewTypedArray;
@@ -623,8 +605,8 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                 NF_throwException.resolve();
                 NF_profileBoolean.resolve();
 
-                MH_castReference        = IMPL_LOOKUP.findStatic(MHI, "castReference",
-                                            MethodType.methodType(Object.class, Class.class, Object.class));
+                MH_cast                 = IMPL_LOOKUP.findVirtual(CLS, "cast",
+                                            MethodType.methodType(Object.class, Object.class));
                 MH_copyAsPrimitiveArray = IMPL_LOOKUP.findStatic(MHI, "copyAsPrimitiveArray",
                                             MethodType.methodType(Object.class, Wrapper.class, Object[].class));
                 MH_arrayIdentity        = IMPL_LOOKUP.findStatic(MHI, "identity",
