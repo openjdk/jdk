@@ -26,7 +26,6 @@
 #  @test
 #  @bug 4660158
 #  @author Staffan Larsen
-#  @key intermittent
 #  @run shell JdbExprTest.sh
 
 # These are variables that can be set to control execution

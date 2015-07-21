@@ -27,7 +27,6 @@
 #  @bug 4705330
 #  @summary Netbeans Fix and Continue crashes JVM
 #  @author Jim Holmlund/Swamy Venkataramanappa
-#  @key intermittent
 #  @run shell RedefineClearBreakpoint.sh
 
 #  The failure occurs after a bkpt is set and then cleared

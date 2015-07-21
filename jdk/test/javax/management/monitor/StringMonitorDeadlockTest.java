@@ -27,7 +27,6 @@
  * @summary Test that no locks are held when a monitor attribute is sampled
  * or notif delivered.
  * @author Eamonn McManus
- * @key intermittent
  * @modules java.management
  * @run clean StringMonitorDeadlockTest
  * @run build StringMonitorDeadlockTest

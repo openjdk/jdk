@@ -30,7 +30,6 @@
 #           TTY: dump <ArrayReference> command not implemented.
 #  @author Tim Bell
 #
-#  @key intermittent
 #  @run shell ArrayLengthDumpTest.sh
 #
 classname=ArrayLengthDumpTarg

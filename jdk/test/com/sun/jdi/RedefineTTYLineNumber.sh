@@ -27,7 +27,6 @@
 #  @bug 4660756
 #  @summary TTY: Need to clear source cache after doing a redefine class
 #  @author Jim Holmlund
-#  @key intermittent
 #  @run shell/timeout=240 RedefineTTYLineNumber.sh
 
 #set -x

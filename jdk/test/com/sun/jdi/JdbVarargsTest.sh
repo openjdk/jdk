@@ -29,7 +29,6 @@
 #
 #  @author jjh
 #
-#  @key intermittent
 #  @run shell JdbVarargsTest.sh
 
 classname=JdbVarargsTest

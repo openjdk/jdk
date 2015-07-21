@@ -28,7 +28,6 @@
 #  @summary REGRESSION: jdb / jdi not stopping at some breakpoints and steps in j2sdk1.4.
 #  @author Jim Holmlund
 #
-#  @key intermittent
 #  @run shell JdbMissStep.sh
 
 # These are variables that can be set to control execution

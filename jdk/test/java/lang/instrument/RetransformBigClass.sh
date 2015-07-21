@@ -26,7 +26,6 @@
 # @summary Retransform a big class.
 # @author Daniel D. Daugherty
 #
-# @key intermittent
 # @modules java.instrument
 # @run shell MakeJAR4.sh RetransformBigClassAgent SimpleIdentityTransformer 'Can-Retransform-Classes: true'
 # @run build BigClass RetransformBigClassApp NMTHelper

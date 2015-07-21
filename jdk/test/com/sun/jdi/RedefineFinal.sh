@@ -27,7 +27,6 @@
 #  @bug 4788344
 #  @summary RedefineClasses is an apparent no-op if instance method is final
 #
-#  @key intermittent
 #  @run shell RedefineFinal.sh
 
 compileOptions=-g
