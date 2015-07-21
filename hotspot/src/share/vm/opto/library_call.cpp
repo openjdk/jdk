@@ -225,6 +225,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_pow();
   Node* finish_pow_exp(Node* result, Node* x, Node* y, const TypeFunc* call_type, address funcAddr, const char* funcName);
   bool inline_min_max(vmIntrinsics::ID id);
+  bool inline_notify(vmIntrinsics::ID id);
   Node* generate_min_max(vmIntrinsics::ID id, Node* x, Node* y);
   // This returns Type::AnyPtr, RawPtr, or OopPtr.
   int classify_unsafe_addr(Node* &base, Node* &offset);
@@ -775,6 +776,13 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_min:
   case vmIntrinsics::_max:                      return inline_min_max(intrinsic_id());
+
+  case vmIntrinsics::_notify:
+  case vmIntrinsics::_notifyAll:
+    if (InlineNotify) {
+      return inline_notify(intrinsic_id());
+    }
+    return false;
 
   case vmIntrinsics::_addExactI:                return inline_math_addExactI(false /* add */);
   case vmIntrinsics::_addExactL:                return inline_math_addExactL(false /* add */);
@@ -2074,6 +2082,21 @@ static bool is_simple_name(Node* n) {
           || n->is_Phi()        // local of some sort
           );
 }
+
+//----------------------------inline_notify-----------------------------------*
+bool LibraryCallKit::inline_notify(vmIntrinsics::ID id) {
+  const TypeFunc* ftype = OptoRuntime::monitor_notify_Type();
+  address func;
+  if (id == vmIntrinsics::_notify) {
+    func = OptoRuntime::monitor_notify_Java();
+  } else {
+    func = OptoRuntime::monitor_notifyAll_Java();
+  }
+  Node* call = make_runtime_call(RC_NO_LEAF, ftype, func, NULL, TypeRawPtr::BOTTOM, argument(0));
+  make_slow_call_ex(call, env()->Throwable_klass(), false);
+  return true;
+}
+
 
 //----------------------------inline_min_max-----------------------------------
 bool LibraryCallKit::inline_min_max(vmIntrinsics::ID id) {

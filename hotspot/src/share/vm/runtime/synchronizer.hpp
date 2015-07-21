@@ -72,6 +72,7 @@ class ObjectSynchronizer : AllStatic {
   static void notify(Handle obj, TRAPS);
   static void notifyall(Handle obj, TRAPS);
 
+  static bool quick_notify(oopDesc* obj, Thread* Self, bool All);
   static bool quick_enter(oop obj, Thread* Self, BasicLock* Lock);
 
   // Special internal-use-only method for use by JVM infrastructure
