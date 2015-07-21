@@ -679,6 +679,10 @@
    do_name(     getClass_name,                                   "getClass")                                            \
   do_intrinsic(_clone,                    java_lang_Object,       clone_name, void_object_signature,             F_R)   \
    do_name(     clone_name,                                      "clone")                                               \
+  do_intrinsic(_notify,                   java_lang_Object,       notify_name, void_method_signature,            F_R)   \
+   do_name(     notify_name,                                     "notify")                                              \
+  do_intrinsic(_notifyAll,                java_lang_Object,       notifyAll_name, void_method_signature,         F_R)   \
+   do_name(     notifyAll_name,                                  "notifyAll")                                           \
                                                                                                                         \
   /* Math & StrictMath intrinsics are defined in terms of just a few signatures: */                                     \
   do_class(java_lang_Math,                "java/lang/Math")                                                             \
