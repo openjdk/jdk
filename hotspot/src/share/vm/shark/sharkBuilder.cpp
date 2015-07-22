@@ -25,6 +25,8 @@
 
 #include "precompiled.hpp"
 #include "ci/ciMethod.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/cardTableModRefBS.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/method.hpp"
 #include "runtime/os.hpp"
@@ -442,7 +444,7 @@ void SharkBuilder::CreateUpdateBarrierSet(BarrierSet* bs, Value* field) {
     Unimplemented();
 
   CreateStore(
-    LLVMValue::jbyte_constant(CardTableModRefBS::dirty_card),
+    LLVMValue::jbyte_constant(CardTableModRefBS::dirty_card_val()),
     CreateIntToPtr(
       CreateAdd(
         LLVMValue::intptr_constant(
