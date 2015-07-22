@@ -236,6 +236,15 @@ void os::Posix::print_uname_info(outputStream* st) {
   st->cr();
 }
 
+#ifndef PRODUCT
+bool os::get_host_name(char* buf, size_t buflen) {
+  struct utsname name;
+  uname(&name);
+  jio_snprintf(buf, buflen, "%s", name.nodename);
+  return true;
+}
+#endif // PRODUCT
+
 bool os::has_allocatable_memory_limit(julong* limit) {
   struct rlimit rlim;
   int getrlimit_res = getrlimit(RLIMIT_AS, &rlim);
