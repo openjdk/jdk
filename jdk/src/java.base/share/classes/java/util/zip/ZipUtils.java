@@ -144,4 +144,13 @@ class ZipUtils {
     public static final long get64(byte b[], int off) {
         return get32(b, off) | (get32(b, off+4) << 32);
     }
+
+    /**
+     * Fetches signed 32-bit value from byte array at specified offset.
+     * The bytes are assumed to be in Intel (little-endian) byte order.
+     *
+     */
+    public static final int get32S(byte b[], int off) {
+        return (get16(b, off) | (get16(b, off+2) << 16));
+    }
 }
