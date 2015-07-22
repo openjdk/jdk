@@ -28,6 +28,7 @@
 #  @summary TTY: surprising ExceptionSpec.resolveEventRequest() wildcard results
 #  @author Tim Bell
 #
+#  @key intermittent
 #  @run shell CatchPatternTest.sh
 classname=CatchPatternTestTarg
 createJavaFile()
