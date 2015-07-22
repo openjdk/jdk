@@ -495,6 +495,7 @@ class Arguments : AllStatic {
 
   // print jvm_flags, jvm_args and java_command
   static void print_on(outputStream* st);
+  static void print_summary_on(outputStream* st);
 
   // convenient methods to obtain / print jvm_flags and jvm_args
   static const char* jvm_flags()           { return build_resource_string(_jvm_flags_array, _num_jvm_flags); }
