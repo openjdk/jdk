@@ -36,6 +36,7 @@ import jdk.testlibrary.ProcessTools;
  * @test
  * @bug 6321286
  * @summary Unit test for jmap utility
+ * @key intermittent
  * @library /lib/testlibrary
  * @library /../../test/lib/share/classes
  * @modules java.management
