@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4759491 6303183 7012868 8015666 8023713 8068790 8076641
+ * @bug 4759491 6303183 7012868 8015666 8023713 8068790 8076641 8075526
  * @summary Test ZOS and ZIS timestamp in extra field correctly
  */
 
@@ -54,8 +54,12 @@ public class TestExtraTime {
 
             for (byte[] extra : new byte[][] { null, new byte[] {1, 2, 3}}) {
                 test(mtime, null, null, null, extra);
+
                 // ms-dos 1980 epoch problem
                 test(FileTime.from(10, TimeUnit.MILLISECONDS), null, null, null, extra);
+                // negative epoch time
+                test(FileTime.from(-100, TimeUnit.DAYS), null, null, null, extra);
+
                 // non-default tz
                 test(mtime, null, null, tz, extra);
 
