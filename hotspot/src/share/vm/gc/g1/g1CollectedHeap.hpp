@@ -867,44 +867,27 @@ protected:
   // forwarding pointers to themselves.  Reset them.
   void remove_self_forwarding_pointers();
 
-  // Together, these store an object with a preserved mark, and its mark value.
-  Stack<oop, mtGC>     _objs_with_preserved_marks;
-  Stack<markOop, mtGC> _preserved_marks_of_objs;
+  struct OopAndMarkOop {
+   private:
+    oop _o;
+    markOop _m;
+   public:
+    OopAndMarkOop(oop obj, markOop m) : _o(obj), _m(m) {
+    }
+
+    void set_mark() {
+      _o->set_mark(_m);
+    }
+  };
+
+  typedef Stack<OopAndMarkOop,mtGC> OopAndMarkOopStack;
+  // Stores marks with the corresponding oop that we need to preserve during evacuation
+  // failure.
+  OopAndMarkOopStack*  _preserved_objs;
 
   // Preserve the mark of "obj", if necessary, in preparation for its mark
   // word being overwritten with a self-forwarding-pointer.
-  void preserve_mark_if_necessary(oop obj, markOop m);
-
-  // The stack of evac-failure objects left to be scanned.
-  GrowableArray<oop>*    _evac_failure_scan_stack;
-  // The closure to apply to evac-failure objects.
-
-  OopsInHeapRegionClosure* _evac_failure_closure;
-  // Set the field above.
-  void
-  set_evac_failure_closure(OopsInHeapRegionClosure* evac_failure_closure) {
-    _evac_failure_closure = evac_failure_closure;
-  }
-
-  // Push "obj" on the scan stack.
-  void push_on_evac_failure_scan_stack(oop obj);
-  // Process scan stack entries until the stack is empty.
-  void drain_evac_failure_scan_stack();
-  // True iff an invocation of "drain_scan_stack" is in progress; to
-  // prevent unnecessary recursion.
-  bool _drain_in_progress;
-
-  // Do any necessary initialization for evacuation-failure handling.
-  // "cl" is the closure that will be used to process evac-failure
-  // objects.
-  void init_for_evac_failure(OopsInHeapRegionClosure* cl);
-  // Do any necessary cleanup for evacuation-failure handling data
-  // structures.
-  void finalize_for_evac_failure();
-
-  // An attempt to evacuate "obj" has failed; take necessary steps.
-  oop handle_evacuation_failure_par(G1ParScanThreadState* _par_scan_state, oop obj);
-  void handle_evacuation_failure_common(oop obj, markOop m);
+  void preserve_mark_during_evac_failure(uint queue, oop obj, markOop m);
 
 #ifndef PRODUCT
   // Support for forcing evacuation failures. Analogous to

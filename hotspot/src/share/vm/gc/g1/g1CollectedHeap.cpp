@@ -1917,7 +1917,6 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _ref_processor_cm(NULL),
   _ref_processor_stw(NULL),
   _bot_shared(NULL),
-  _evac_failure_scan_stack(NULL),
   _cg1r(NULL),
   _g1mm(NULL),
   _refine_cte_cl(NULL),
@@ -2204,6 +2203,11 @@ jint G1CollectedHeap::initialize() {
   _g1mm = new G1MonitoringSupport(this);
 
   G1StringDedup::initialize();
+
+  _preserved_objs = NEW_C_HEAP_ARRAY(OopAndMarkOopStack, ParallelGCThreads, mtGC);
+  for (uint i = 0; i < ParallelGCThreads; i++) {
+    new (&_preserved_objs[i]) OopAndMarkOopStack();
+  }
 
   return JNI_OK;
 }
@@ -4256,21 +4260,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
   return true;
 }
 
-void G1CollectedHeap::init_for_evac_failure(OopsInHeapRegionClosure* cl) {
-  _drain_in_progress = false;
-  set_evac_failure_closure(cl);
-  _evac_failure_scan_stack = new (ResourceObj::C_HEAP, mtGC) GrowableArray<oop>(40, true);
-}
-
-void G1CollectedHeap::finalize_for_evac_failure() {
-  assert(_evac_failure_scan_stack != NULL &&
-         _evac_failure_scan_stack->length() == 0,
-         "Postcondition");
-  assert(!_drain_in_progress, "Postcondition");
-  delete _evac_failure_scan_stack;
-  _evac_failure_scan_stack = NULL;
-}
-
 void G1CollectedHeap::remove_self_forwarding_pointers() {
   double remove_self_forwards_start = os::elapsedTime();
 
@@ -4278,104 +4267,30 @@ void G1CollectedHeap::remove_self_forwarding_pointers() {
   workers()->run_task(&rsfp_task);
 
   // Now restore saved marks, if any.
-  assert(_objs_with_preserved_marks.size() ==
-            _preserved_marks_of_objs.size(), "Both or none.");
-  while (!_objs_with_preserved_marks.is_empty()) {
-    oop obj = _objs_with_preserved_marks.pop();
-    markOop m = _preserved_marks_of_objs.pop();
-    obj->set_mark(m);
+  for (uint i = 0; i < ParallelGCThreads; i++) {
+    OopAndMarkOopStack& cur = _preserved_objs[i];
+    while (!cur.is_empty()) {
+      OopAndMarkOop elem = cur.pop();
+      elem.set_mark();
+    }
+    cur.clear(true);
   }
-  _objs_with_preserved_marks.clear(true);
-  _preserved_marks_of_objs.clear(true);
 
   g1_policy()->phase_times()->record_evac_fail_remove_self_forwards((os::elapsedTime() - remove_self_forwards_start) * 1000.0);
 }
 
-void G1CollectedHeap::push_on_evac_failure_scan_stack(oop obj) {
-  _evac_failure_scan_stack->push(obj);
-}
-
-void G1CollectedHeap::drain_evac_failure_scan_stack() {
-  assert(_evac_failure_scan_stack != NULL, "precondition");
-
-  while (_evac_failure_scan_stack->length() > 0) {
-     oop obj = _evac_failure_scan_stack->pop();
-     _evac_failure_closure->set_region(heap_region_containing(obj));
-     obj->oop_iterate_backwards(_evac_failure_closure);
-  }
-}
-
-oop
-G1CollectedHeap::handle_evacuation_failure_par(G1ParScanThreadState* _par_scan_state,
-                                               oop old) {
-  assert(obj_in_cs(old),
-         err_msg("obj: " PTR_FORMAT " should still be in the CSet",
-                 p2i(old)));
-  markOop m = old->mark();
-  oop forward_ptr = old->forward_to_atomic(old);
-  if (forward_ptr == NULL) {
-    // Forward-to-self succeeded.
-    assert(_par_scan_state != NULL, "par scan state");
-    OopsInHeapRegionClosure* cl = _par_scan_state->evac_failure_closure();
-    uint queue_num = _par_scan_state->queue_num();
-
+void G1CollectedHeap::preserve_mark_during_evac_failure(uint queue_num, oop obj, markOop m) {
+  if (!_evacuation_failed) {
     _evacuation_failed = true;
-    _evacuation_failed_info_array[queue_num].register_copy_failure(old->size());
-    if (_evac_failure_closure != cl) {
-      MutexLockerEx x(EvacFailureStack_lock, Mutex::_no_safepoint_check_flag);
-      assert(!_drain_in_progress,
-             "Should only be true while someone holds the lock.");
-      // Set the global evac-failure closure to the current thread's.
-      assert(_evac_failure_closure == NULL, "Or locking has failed.");
-      set_evac_failure_closure(cl);
-      // Now do the common part.
-      handle_evacuation_failure_common(old, m);
-      // Reset to NULL.
-      set_evac_failure_closure(NULL);
-    } else {
-      // The lock is already held, and this is recursive.
-      assert(_drain_in_progress, "This should only be the recursive case.");
-      handle_evacuation_failure_common(old, m);
-    }
-    return old;
-  } else {
-    // Forward-to-self failed. Either someone else managed to allocate
-    // space for this object (old != forward_ptr) or they beat us in
-    // self-forwarding it (old == forward_ptr).
-    assert(old == forward_ptr || !obj_in_cs(forward_ptr),
-           err_msg("obj: " PTR_FORMAT " forwarded to: " PTR_FORMAT " "
-                   "should not be in the CSet",
-                   p2i(old), p2i(forward_ptr)));
-    return forward_ptr;
-  }
-}
-
-void G1CollectedHeap::handle_evacuation_failure_common(oop old, markOop m) {
-  preserve_mark_if_necessary(old, m);
-
-  HeapRegion* r = heap_region_containing(old);
-  if (!r->evacuation_failed()) {
-    r->set_evacuation_failed(true);
-    _hr_printer.evac_failure(r);
   }
 
-  push_on_evac_failure_scan_stack(old);
+  _evacuation_failed_info_array[queue_num].register_copy_failure(obj->size());
 
-  if (!_drain_in_progress) {
-    // prevent recursion in copy_to_survivor_space()
-    _drain_in_progress = true;
-    drain_evac_failure_scan_stack();
-    _drain_in_progress = false;
-  }
-}
-
-void G1CollectedHeap::preserve_mark_if_necessary(oop obj, markOop m) {
-  assert(evacuation_failed(), "Oversaving!");
   // We want to call the "for_promotion_failure" version only in the
   // case of a promotion failure.
   if (m->must_be_preserved_for_promotion_failure(obj)) {
-    _objs_with_preserved_marks.push(obj);
-    _preserved_marks_of_objs.push(m);
+    OopAndMarkOop elem(obj, m);
+    _preserved_objs[queue_num].push(elem);
   }
 }
 
@@ -4451,14 +4366,7 @@ void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
       mark_object(obj);
     }
   }
-
-  if (barrier == G1BarrierEvac) {
-    _par_scan_state->update_rs(_from, p, _worker_id);
-  }
 }
-
-template void G1ParCopyClosure<G1BarrierEvac, G1MarkNone>::do_oop_work(oop* p);
-template void G1ParCopyClosure<G1BarrierEvac, G1MarkNone>::do_oop_work(narrowOop* p);
 
 class G1ParEvacuateFollowersClosure : public VoidClosure {
 protected:
@@ -4598,9 +4506,6 @@ public:
       ReferenceProcessor*             rp = _g1h->ref_processor_stw();
 
       G1ParScanThreadState            pss(_g1h, worker_id, rp);
-      G1ParScanHeapEvacFailureClosure evac_failure_cl(_g1h, &pss, rp);
-
-      pss.set_evac_failure_closure(&evac_failure_cl);
 
       bool only_young = _g1h->collector_state()->gcs_are_young();
 
@@ -5270,9 +5175,6 @@ public:
     G1STWIsAliveClosure is_alive(_g1h);
 
     G1ParScanThreadState            pss(_g1h, worker_id, NULL);
-    G1ParScanHeapEvacFailureClosure evac_failure_cl(_g1h, &pss, NULL);
-
-    pss.set_evac_failure_closure(&evac_failure_cl);
 
     G1ParScanExtRootClosure        only_copy_non_heap_cl(_g1h, &pss, NULL);
 
@@ -5369,10 +5271,6 @@ public:
     HandleMark   hm;
 
     G1ParScanThreadState            pss(_g1h, worker_id, NULL);
-    G1ParScanHeapEvacFailureClosure evac_failure_cl(_g1h, &pss, NULL);
-
-    pss.set_evac_failure_closure(&evac_failure_cl);
-
     assert(pss.queue_is_empty(), "both queue and overflow should be empty");
 
     G1ParScanExtRootClosure        only_copy_non_heap_cl(_g1h, &pss, NULL);
@@ -5477,15 +5375,11 @@ void G1CollectedHeap::process_discovered_references() {
 
   // Use only a single queue for this PSS.
   G1ParScanThreadState            pss(this, 0, NULL);
+  assert(pss.queue_is_empty(), "pre-condition");
 
   // We do not embed a reference processor in the copying/scanning
   // closures while we're actually processing the discovered
   // reference objects.
-  G1ParScanHeapEvacFailureClosure evac_failure_cl(this, &pss, NULL);
-
-  pss.set_evac_failure_closure(&evac_failure_cl);
-
-  assert(pss.queue_is_empty(), "pre-condition");
 
   G1ParScanExtRootClosure        only_copy_non_heap_cl(this, &pss, NULL);
 
@@ -5591,8 +5485,6 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
 
   const uint n_workers = workers()->active_workers();
 
-  init_for_evac_failure(NULL);
-
   assert(dirty_card_queue_set().completed_buffers_num() == 0, "Should be empty");
   double start_par_time_sec = os::elapsedTime();
   double end_par_time_sec;
@@ -5655,8 +5547,6 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
   hot_card_cache->set_use_cache(true);
 
   purge_code_root_memory();
-
-  finalize_for_evac_failure();
 
   if (evacuation_failed()) {
     remove_self_forwarding_pointers();
