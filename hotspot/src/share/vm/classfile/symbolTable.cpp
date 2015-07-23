@@ -58,14 +58,14 @@ Symbol* SymbolTable::allocate_symbol(const u1* name, int len, bool c_heap, TRAPS
 
   if (DumpSharedSpaces) {
     // Allocate all symbols to CLD shared metaspace
-    sym = new (len, ClassLoaderData::the_null_class_loader_data(), THREAD) Symbol(name, len, -1);
+    sym = new (len, ClassLoaderData::the_null_class_loader_data(), THREAD) Symbol(name, len, PERM_REFCOUNT);
   } else if (c_heap) {
     // refcount starts as 1
     sym = new (len, THREAD) Symbol(name, len, 1);
     assert(sym != NULL, "new should call vm_exit_out_of_memory if C_HEAP is exhausted");
   } else {
     // Allocate to global arena
-    sym = new (len, arena(), THREAD) Symbol(name, len, -1);
+    sym = new (len, arena(), THREAD) Symbol(name, len, PERM_REFCOUNT);
   }
   return sym;
 }

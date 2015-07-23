@@ -45,6 +45,7 @@ public class TestOnError {
         // Execute the VM so that a
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
            "-XX:-TransmitErrorReport",
+           "-XX:-CreateCoredumpOnCrash",
            "-XX:ErrorHandlerTest=12", // trigger potential SEGV
            "-XX:OnError=echo " + msg,
            TestOnError.class.getName());

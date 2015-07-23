@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,37 +19,14 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-package com.sun.hotspot.tools.compiler;
+/* used by PrintTouchedMethods.java */
+public class TestLogTouchedMethods {
+  public static void main(String[] args) {
+    new TestLogTouchedMethods().methodA();
+  }
 
-import java.io.PrintStream;
-
-/**
- * The interface of an event from a HotSpot compilation log. Events can have a
- * duration, e.g., a compiler {@link Phase} is an event, and so is an entire
- * {@link Compilation}.
- */
-public interface LogEvent {
-
-    /**
-     * The event's start time.
-     */
-    public double getStart();
-
-    /**
-     * The event's duration in milliseconds.
-     */
-    public double getElapsedTime();
-
-    /**
-     * The compilation during which this event was signalled.
-     */
-    public Compilation getCompilation();
-
-    /**
-     * Print the event to the given stream.
-     */
-    public void print(PrintStream stream, boolean printID);
+  public void methodA() {} // called
+  public void methodB() {} // this should not be called
 }

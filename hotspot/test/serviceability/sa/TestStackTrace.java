@@ -34,6 +34,7 @@ import jdk.test.lib.apps.LingeredApp;
  * @test
  * @library /../../test/lib/share/classes
  * @library /testlibrary
+ * @ignore 8129971
  * @build jdk.test.lib.*
  * @build jdk.test.lib.apps.*
  * @run main TestStackTrace
