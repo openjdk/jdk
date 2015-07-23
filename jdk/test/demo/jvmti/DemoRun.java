@@ -122,7 +122,6 @@ public class DemoRun {
         String libprefix = os_name.contains("Windows")?"":"lib";
         String libsuffix = os_name.contains("Windows")?".dll":
                                 os_name.contains("OS X")?".dylib":".so";
-        boolean hprof    = demo_name.equals("hprof");
         String java      = sdk_home
                              + File.separator + "bin"
                              + File.separator + "java";
@@ -155,22 +154,15 @@ public class DemoRun {
         cmdLine += (cmd[i++] = "-Xcheck:jni");
         cmdLine += " ";
         cmdLine += (cmd[i++] = "-Xverify:all");
-        if ( hprof ) {
-            /* Load hprof with -agentlib since it's part of jre */
-            cmdLine += " ";
-            cmdLine += (cmd[i++] = "-agentlib:" + demo_name
-                     + (demo_options.equals("")?"":("="+demo_options)));
-        } else {
-            String libname  = sdk_home
-                         + File.separator + "demo"
-                         + File.separator + "jvmti"
-                         + File.separator + demo_name
-                         + File.separator + "lib"
-                         + File.separator + libprefix + demo_name + libsuffix;
-            cmdLine += " ";
-            cmdLine += (cmd[i++] = "-agentpath:" + libname
-                     + (demo_options.equals("")?"":("="+demo_options)));
-        }
+        String libname = sdk_home
+                + File.separator + "demo"
+                + File.separator + "jvmti"
+                + File.separator + demo_name
+                + File.separator + "lib"
+                + File.separator + libprefix + demo_name + libsuffix;
+        cmdLine += " ";
+        cmdLine += (cmd[i++] = "-agentpath:" + libname
+                + (demo_options.equals("") ? "" : ("=" + demo_options)));
         /* Add any special VM options */
         for ( j = 0; j < nvm_options; j++ ) {
             cmdLine += " ";
