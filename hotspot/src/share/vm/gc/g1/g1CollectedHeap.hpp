@@ -251,6 +251,15 @@ private:
   // Class that handles the different kinds of allocations.
   G1Allocator* _allocator;
 
+  // Outside of GC pauses, the number of bytes used in all regions other
+  // than the current allocation region(s).
+  size_t _summary_bytes_used;
+
+  void increase_used(size_t bytes);
+  void decrease_used(size_t bytes);
+
+  void set_used(size_t bytes);
+
   // Class that handles archive allocation ranges.
   G1ArchiveAllocator* _archive_allocator;
 
