@@ -632,7 +632,7 @@ G1CollectedHeap::humongous_obj_allocate_initialize_regions(uint first,
   check_bitmaps("Humongous Region Allocation", first_hr);
 
   assert(first_hr->used() == word_size * HeapWordSize, "invariant");
-  _allocator->increase_used(first_hr->used());
+  increase_used(first_hr->used());
   _humongous_set.add(first_hr);
 
   return new_obj;
@@ -998,7 +998,7 @@ bool G1CollectedHeap::alloc_archive_regions(MemRegion* ranges, size_t count) {
     if ((prev_last_region != NULL) && (start_region == prev_last_region)) {
       start_address = start_region->end();
       if (start_address > last_address) {
-        _allocator->increase_used(word_size * HeapWordSize);
+        increase_used(word_size * HeapWordSize);
         start_region->set_top(last_address + 1);
         continue;
       }
@@ -1012,7 +1012,7 @@ bool G1CollectedHeap::alloc_archive_regions(MemRegion* ranges, size_t count) {
     if (!_hrm.allocate_containing_regions(curr_range, &commits)) {
       return false;
     }
-    _allocator->increase_used(word_size * HeapWordSize);
+    increase_used(word_size * HeapWordSize);
     if (commits != 0) {
       ergo_verbose1(ErgoHeapSizing,
                     "attempt heap expansion",
@@ -1104,7 +1104,7 @@ void G1CollectedHeap::fill_archive_regions(MemRegion* ranges, size_t count) {
     if (start_address != bottom_address) {
       size_t fill_size = pointer_delta(start_address, bottom_address);
       G1CollectedHeap::fill_with_objects(bottom_address, fill_size);
-      _allocator->increase_used(fill_size * HeapWordSize);
+      increase_used(fill_size * HeapWordSize);
     }
   }
 }
@@ -1930,6 +1930,7 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _free_regions_coming(false),
   _young_list(new YoungList(this)),
   _gc_time_stamp(0),
+  _summary_bytes_used(0),
   _survivor_plab_stats(YoungPLABSize, PLABWeight),
   _old_plab_stats(OldPLABSize, PLABWeight),
   _expand_heap_after_alloc_failure(true),
@@ -2371,7 +2372,7 @@ void G1CollectedHeap::iterate_dirty_card_closure(CardTableEntryClosure* cl,
 
 // Computes the sum of the storage used by the various regions.
 size_t G1CollectedHeap::used() const {
-  size_t result = _allocator->used();
+  size_t result = _summary_bytes_used + _allocator->used_in_alloc_regions();
   if (_archive_allocator != NULL) {
     result += _archive_allocator->used();
   }
@@ -2379,7 +2380,7 @@ size_t G1CollectedHeap::used() const {
 }
 
 size_t G1CollectedHeap::used_unlocked() const {
-  return _allocator->used_unlocked();
+  return _summary_bytes_used;
 }
 
 class SumUsedClosure: public HeapRegionClosure {
@@ -4102,7 +4103,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         _young_list->reset_auxilary_lists();
 
         if (evacuation_failed()) {
-          _allocator->set_used(recalculate_used());
+          set_used(recalculate_used());
           if (_archive_allocator != NULL) {
             _archive_allocator->clear_used();
           }
@@ -4114,7 +4115,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         } else {
           // The "used" of the the collection set have already been subtracted
           // when they were freed.  Add in the bytes evacuated.
-          _allocator->increase_used(g1_policy()->bytes_copied_during_gc());
+          increase_used(g1_policy()->bytes_copied_during_gc());
         }
 
         if (collector_state()->during_initial_mark_pause()) {
@@ -5745,7 +5746,7 @@ void G1CollectedHeap::prepend_to_freelist(FreeRegionList* list) {
 }
 
 void G1CollectedHeap::decrement_summary_bytes(size_t bytes) {
-  _allocator->decrease_used(bytes);
+  decrease_used(bytes);
 }
 
 class G1ParCleanupCTTask : public AbstractGangTask {
@@ -6395,6 +6396,21 @@ void G1CollectedHeap::tear_down_region_sets(bool free_list_only) {
   _hrm.remove_all_free_regions();
 }
 
+void G1CollectedHeap::increase_used(size_t bytes) {
+  _summary_bytes_used += bytes;
+}
+
+void G1CollectedHeap::decrease_used(size_t bytes) {
+  assert(_summary_bytes_used >= bytes,
+         err_msg("invariant: _summary_bytes_used: " SIZE_FORMAT " should be >= bytes: " SIZE_FORMAT,
+                 _summary_bytes_used, bytes));
+  _summary_bytes_used -= bytes;
+}
+
+void G1CollectedHeap::set_used(size_t bytes) {
+  _summary_bytes_used = bytes;
+}
+
 class RebuildRegionSetsClosure : public HeapRegionClosure {
 private:
   bool            _free_list_only;
@@ -6463,15 +6479,15 @@ void G1CollectedHeap::rebuild_region_sets(bool free_list_only) {
   heap_region_iterate(&cl);
 
   if (!free_list_only) {
-    _allocator->set_used(cl.total_used());
+    set_used(cl.total_used());
     if (_archive_allocator != NULL) {
       _archive_allocator->clear_used();
     }
   }
-  assert(_allocator->used_unlocked() == recalculate_used(),
-         err_msg("inconsistent _allocator->used_unlocked(), "
+  assert(used_unlocked() == recalculate_used(),
+         err_msg("inconsistent used_unlocked(), "
                  "value: " SIZE_FORMAT " recalculated: " SIZE_FORMAT,
-                 _allocator->used_unlocked(), recalculate_used()));
+                 used_unlocked(), recalculate_used()));
 }
 
 void G1CollectedHeap::set_refine_cte_cl_concurrency(bool concurrent) {
@@ -6511,7 +6527,7 @@ void G1CollectedHeap::retire_mutator_alloc_region(HeapRegion* alloc_region,
   assert(alloc_region->is_eden(), "all mutator alloc regions should be eden");
 
   g1_policy()->add_region_to_incremental_cset_lhs(alloc_region);
-  _allocator->increase_used(allocated_bytes);
+  increase_used(allocated_bytes);
   _hr_printer.retire(alloc_region);
   // We update the eden sizes here, when the region is retired,
   // instead of when it's allocated, since this is the point that its
