@@ -1286,7 +1286,7 @@ public:
                                                                             \
   experimental(intx, SyncVerbose, 0, "(Unstable)")                          \
                                                                             \
-  product(bool, InlineNotify, true, "intrinsify subset of notify" )         \
+  diagnostic(bool, InlineNotify, true, "intrinsify subset of notify")       \
                                                                             \
   experimental(intx, ClearFPUAtPark, 0, "(Unsafe, Unstable)")               \
                                                                             \
