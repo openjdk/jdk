@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,11 +159,12 @@ enum {
     ITEM_InitObject,            /* "this" is init method, before call
                                     to super() */
     ITEM_ReturnAddress,         /* Extra info gives instr # of start pc */
-    /* The following three are only used within array types.
+    /* The following four are only used within array types.
      * Normally, we use ITEM_Integer, instead. */
     ITEM_Byte,
     ITEM_Short,
-    ITEM_Char
+    ITEM_Char,
+    ITEM_Boolean
 };
 
 
@@ -1446,7 +1447,9 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
                 full_info = MAKE_FULLINFO(ITEM_Float, 1, 0); break;
             case JVM_T_DOUBLE:
                 full_info = MAKE_FULLINFO(ITEM_Double, 1, 0); break;
-            case JVM_T_BYTE: case JVM_T_BOOLEAN:
+            case JVM_T_BOOLEAN:
+                full_info = MAKE_FULLINFO(ITEM_Boolean, 1, 0); break;
+            case JVM_T_BYTE:
                 full_info = MAKE_FULLINFO(ITEM_Byte, 1, 0); break;
             case JVM_T_CHAR:
                 full_info = MAKE_FULLINFO(ITEM_Char, 1, 0); break;
@@ -2250,10 +2253,11 @@ pop_stack(context_type *context, unsigned int inumber, stack_info_type *new_stac
                         break;
                     }
 
-                    case 'B':   /* array of bytes */
-                        if (top_type != MAKE_FULLINFO(ITEM_Byte, 1, 0))
+                    case 'B':    /* array of bytes or booleans */
+                        if (top_type != MAKE_FULLINFO(ITEM_Byte, 1, 0) &&
+                            top_type != MAKE_FULLINFO(ITEM_Boolean, 1, 0))
                             CCerror(context,
-                                  "Expecting to find array of bytes on stack");
+                                  "Expecting to find array of bytes or Booleans on stack");
                         break;
 
                     case 'C':   /* array of characters */
@@ -3728,7 +3732,14 @@ signature_to_fieldtype(context_type *context,
                 result = 0;
                 break;
 
-            case JVM_SIGNATURE_BOOLEAN: case JVM_SIGNATURE_BYTE:
+            case JVM_SIGNATURE_BOOLEAN:
+                full_info = (array_depth > 0)
+                              ? MAKE_FULLINFO(ITEM_Boolean, 0, 0)
+                              : MAKE_FULLINFO(ITEM_Integer, 0, 0);
+                result = 'I';
+                break;
+
+            case JVM_SIGNATURE_BYTE:
                 full_info = (array_depth > 0)
                               ? MAKE_FULLINFO(ITEM_Byte, 0, 0)
                               : MAKE_FULLINFO(ITEM_Integer, 0, 0);
@@ -3831,7 +3842,7 @@ decrement_indirection(fullinfo_type array_info)
         int indirection = GET_INDIRECTION(array_info) - 1;
         int extra_info = GET_EXTRA_INFO(array_info);
         if (   (indirection == 0)
-               && ((type == ITEM_Short || type == ITEM_Byte || type == ITEM_Char)))
+               && ((type == ITEM_Short || type == ITEM_Byte || type == ITEM_Boolean || type == ITEM_Char)))
             type = ITEM_Integer;
         return MAKE_FULLINFO(type, indirection, extra_info);
     }
@@ -4286,6 +4297,8 @@ print_fullinfo_type(context_type *context, fullinfo_type type, jboolean verbose)
             jio_fprintf(stdout, "C"); break;
         case ITEM_Short:
             jio_fprintf(stdout, "S"); break;
+        case ITEM_Boolean:
+            jio_fprintf(stdout, "Z"); break;
         case ITEM_Byte:
             jio_fprintf(stdout, "B"); break;
         case ITEM_NewObject:
