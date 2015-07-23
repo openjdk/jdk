@@ -27,6 +27,10 @@ include LauncherCommon.gmk
 
 $(eval $(call SetupLauncher,jsadebugd, \
     -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.jvm.hotspot.jdi.SADebugServer"$(COMMA) }' \
-    -DAPP_CLASSPATH='{ "/lib/tools.jar"$(COMMA) "/lib/sa-jdi.jar"$(COMMA) "/classes" }' \
+    ,,,,,,,,,Info-privileged.plist))
+
+
+$(eval $(call SetupLauncher,jhsdb, \
+    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.jvm.hotspot.SALauncher"$(COMMA) }' \
     ,,,,,,,,,Info-privileged.plist))
 
