@@ -3659,8 +3659,7 @@ JVM_ENTRY(void, JVM_GetVersionInfo(JNIEnv* env, jvm_version_info* info, size_t i
   memset(info, 0, info_size);
 
   info->jvm_version = Abstract_VM_Version::jvm_version();
-  info->update_version = 0;          /* 0 in HotSpot Express VM */
-  info->special_update_version = 0;  /* 0 in HotSpot Express VM */
+  info->patch_version = Abstract_VM_Version::vm_patch_version();
 
   // when we add a new capability in the jvm_version_info struct, we should also
   // consider to expose this new capability in the sun.rt.jvmCapabilities jvmstat
