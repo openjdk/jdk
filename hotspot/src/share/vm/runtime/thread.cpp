@@ -2739,6 +2739,9 @@ void JavaThread::metadata_do(void f(Metadata*)) {
     if (ct->env() != NULL) {
       ct->env()->metadata_do(f);
     }
+    if (ct->task() != NULL) {
+      ct->task()->metadata_do(f);
+    }
   }
 }
 
