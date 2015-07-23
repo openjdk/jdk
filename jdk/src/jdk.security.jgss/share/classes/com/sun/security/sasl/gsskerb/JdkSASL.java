@@ -73,7 +73,7 @@ public final class JdkSASL extends Provider {
     }
 
     public JdkSASL() {
-        super("JdkSASL", 1.9d, info);
+        super("JdkSASL", 9.0d, info);
 
         final Provider p = this;
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
