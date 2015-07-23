@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -906,6 +906,14 @@ OUTER:  for (int i = 0; i < n; i += m) {
             return Integer.toString(UnicodeSpec.DIRECTIONALITY_WHITESPACE);
         if (x.equals(UnicodeSpec.bidiCategoryList[UnicodeSpec.DIRECTIONALITY_OTHER_NEUTRALS][UnicodeSpec.LONG]))
             return Integer.toString(UnicodeSpec.DIRECTIONALITY_OTHER_NEUTRALS);
+        if (x.equals(UnicodeSpec.bidiCategoryList[UnicodeSpec.DIRECTIONALITY_LEFT_TO_RIGHT_ISOLATE][UnicodeSpec.LONG]))
+            return Integer.toString(UnicodeSpec.DIRECTIONALITY_LEFT_TO_RIGHT_ISOLATE);
+        if (x.equals(UnicodeSpec.bidiCategoryList[UnicodeSpec.DIRECTIONALITY_RIGHT_TO_LEFT_ISOLATE][UnicodeSpec.LONG]))
+            return Integer.toString(UnicodeSpec.DIRECTIONALITY_RIGHT_TO_LEFT_ISOLATE);
+        if (x.equals(UnicodeSpec.bidiCategoryList[UnicodeSpec.DIRECTIONALITY_FIRST_STRONG_ISOLATE][UnicodeSpec.LONG]))
+            return Integer.toString(UnicodeSpec.DIRECTIONALITY_FIRST_STRONG_ISOLATE);
+        if (x.equals(UnicodeSpec.bidiCategoryList[UnicodeSpec.DIRECTIONALITY_POP_DIRECTIONAL_ISOLATE][UnicodeSpec.LONG]))
+            return Integer.toString(UnicodeSpec.DIRECTIONALITY_POP_DIRECTIONAL_ISOLATE);
         FAIL("Unknown text substitution marker " + commandMarker + x);
         return commandMarker + x;
     }

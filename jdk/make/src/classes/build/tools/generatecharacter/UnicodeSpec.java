@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,7 @@ public class UnicodeSpec {
         String[] tokens = null;
 
         try {
-                        tokens = tokenSeparator.split(s, REQUIRED_FIELDS);
+            tokens = tokenSeparator.split(s, REQUIRED_FIELDS);
             spec = new UnicodeSpec();
             spec.setCodePoint(parseCodePoint(tokens[FIELD_VALUE]));
             spec.setName(parseName(tokens[FIELD_NAME]));
@@ -672,7 +672,8 @@ public class UnicodeSpec {
      * Bidirectional categories
      */
     public static final byte
-                DIRECTIONALITY_UNDEFINED                  = -1,
+        DIRECTIONALITY_UNDEFINED                  = -1,
+
         // Strong category
         DIRECTIONALITY_LEFT_TO_RIGHT              =  0, // L
         DIRECTIONALITY_RIGHT_TO_LEFT              =  1, // R
@@ -689,15 +690,19 @@ public class UnicodeSpec {
         DIRECTIONALITY_PARAGRAPH_SEPARATOR        = 10, // B
         DIRECTIONALITY_SEGMENT_SEPARATOR          = 11, // S
         DIRECTIONALITY_WHITESPACE                 = 12, // WS
-        DIRECTIONALITY_OTHER_NEUTRALS              = 13, // ON
-
+        DIRECTIONALITY_OTHER_NEUTRALS             = 13, // ON
+        // Explicit Formatting category
         DIRECTIONALITY_LEFT_TO_RIGHT_EMBEDDING    = 14, // LRE
         DIRECTIONALITY_LEFT_TO_RIGHT_OVERRIDE     = 15, // LRO
         DIRECTIONALITY_RIGHT_TO_LEFT_EMBEDDING    = 16, // RLE
         DIRECTIONALITY_RIGHT_TO_LEFT_OVERRIDE     = 17, // RLO
         DIRECTIONALITY_POP_DIRECTIONAL_FORMAT     = 18, // PDF
+        DIRECTIONALITY_LEFT_TO_RIGHT_ISOLATE      = 19, // LRI
+        DIRECTIONALITY_RIGHT_TO_LEFT_ISOLATE      = 20, // RLI
+        DIRECTIONALITY_FIRST_STRONG_ISOLATE       = 21, // FSI
+        DIRECTIONALITY_POP_DIRECTIONAL_ISOLATE    = 22, // PDI
 
-        DIRECTIONALITY_CATEGORY_COUNT             = 19; // sentinel value
+        DIRECTIONALITY_CATEGORY_COUNT             = 23; // sentinel value
 
     // If changes are made to the above bidi category assignments, this
     // list of bidi category names must be changed to keep their order in synch.
@@ -722,7 +727,10 @@ public class UnicodeSpec {
         {"RLE", "DIRECTIONALITY_RIGHT_TO_LEFT_EMBEDDING"},
         {"RLO", "DIRECTIONALITY_RIGHT_TO_LEFT_OVERRIDE"},
         {"PDF", "DIRECTIONALITY_POP_DIRECTIONAL_FORMAT"},
-
+        {"LRI", "DIRECTIONALITY_LEFT_TO_RIGHT_ISOLATE"},
+        {"RLI", "DIRECTIONALITY_RIGHT_TO_LEFT_ISOLATE"},
+        {"FSI", "DIRECTIONALITY_FIRST_STRONG_ISOLATE"},
+        {"PDI", "DIRECTIONALITY_POP_DIRECTIONAL_ISOLATE"},
     };
 
     // Unicode specification lines have fields in this order.

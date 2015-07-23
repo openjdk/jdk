@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.peer.TrayIconPeer;
 import sun.awt.*;
-import sun.misc.InnocuousThread;
 import sun.misc.ManagedLocalsThread;
 
 import java.awt.image.*;
@@ -455,11 +454,7 @@ public abstract class InfoWindow extends Window {
             final Thread thread;
 
             Displayer() {
-                if (System.getSecurityManager() == null) {
-                    this.thread = new Thread(this);
-                } else {
-                    this.thread = new ManagedLocalsThread(this);
-                }
+                this.thread = new ManagedLocalsThread(this);
                 this.thread.setDaemon(true);
             }
 

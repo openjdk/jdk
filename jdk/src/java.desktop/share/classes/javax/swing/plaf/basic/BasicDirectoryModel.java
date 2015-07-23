@@ -271,11 +271,7 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
             this.currentDirectory = currentDirectory;
             this.fid = fid;
             String name = "Basic L&F File Loading Thread";
-            if (System.getSecurityManager() == null) {
-                this.loadThread = new Thread(this, name);
-            } else {
-                this.loadThread = new ManagedLocalsThread(this, name);
-            }
+            this.loadThread = new ManagedLocalsThread(this, name);
             this.loadThread.start();
         }
 

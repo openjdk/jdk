@@ -46,7 +46,7 @@ import static sun.java2d.pipe.hw.ExtendedBufferCapabilities.VSyncType.*;
 
 public class GLXVolatileSurfaceManager extends VolatileSurfaceManager {
 
-    private boolean accelerationEnabled;
+    private final boolean accelerationEnabled;
 
     public GLXVolatileSurfaceManager(SunVolatileImage vImg, Object context) {
         super(vImg, context);
@@ -54,18 +54,13 @@ public class GLXVolatileSurfaceManager extends VolatileSurfaceManager {
         /*
          * We will attempt to accelerate this image only under the
          * following conditions:
-         *   - the image is opaque OR
-         *   - the image is translucent AND
-         *       - the GraphicsConfig supports the FBO extension OR
-         *       - the GraphicsConfig has a stored alpha channel
+         *   - the image is not bitmask AND the GraphicsConfig supports the FBO
+         *     extension
          */
         int transparency = vImg.getTransparency();
-        GLXGraphicsConfig gc = (GLXGraphicsConfig)vImg.getGraphicsConfig();
-        accelerationEnabled =
-            (transparency == Transparency.OPAQUE) ||
-            ((transparency == Transparency.TRANSLUCENT) &&
-             (gc.isCapPresent(CAPS_EXT_FBOBJECT) ||
-              gc.isCapPresent(CAPS_STORED_ALPHA)));
+        GLXGraphicsConfig gc = (GLXGraphicsConfig) vImg.getGraphicsConfig();
+        accelerationEnabled = gc.isCapPresent(CAPS_EXT_FBOBJECT)
+                && transparency != Transparency.BITMASK;
     }
 
     protected boolean isAccelerationEnabled() {
@@ -73,7 +68,7 @@ public class GLXVolatileSurfaceManager extends VolatileSurfaceManager {
     }
 
     /**
-     * Create a pbuffer-based SurfaceData object (or init the backbuffer
+     * Create a FBO-based SurfaceData object (or init the backbuffer
      * of an existing window if this is a double buffered GraphicsConfig)
      */
     protected SurfaceData initAcceleratedSurface() {
@@ -113,10 +108,9 @@ public class GLXVolatileSurfaceManager extends VolatileSurfaceManager {
                 ColorModel cm = gc.getColorModel(vImg.getTransparency());
                 int type = vImg.getForcedAccelSurfaceType();
                 // if acceleration type is forced (type != UNDEFINED) then
-                // use the forced type, otherwise choose one based on caps
+                // use the forced type, otherwise choose FBOBJECT
                 if (type == OGLSurfaceData.UNDEFINED) {
-                    type = gc.isCapPresent(CAPS_EXT_FBOBJECT) ?
-                        OGLSurfaceData.FBOBJECT : OGLSurfaceData.PBUFFER;
+                    type = OGLSurfaceData.FBOBJECT;
                 }
                 if (createVSynced) {
                     sData = GLXSurfaceData.createData(peer, vImg, type);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,28 +107,13 @@ Java_sun_java2d_opengl_WGLSurfaceData_initOps(JNIEnv *env, jobject wglsd,
 
 /**
  * This function disposes of any native windowing system resources associated
- * with this surface.  For instance, if the given OGLSDOps is of type
- * OGLSD_PBUFFER, this method implementation will destroy the actual pbuffer
- * surface.
+ * with this surface.
  */
 void
 OGLSD_DestroyOGLSurface(JNIEnv *env, OGLSDOps *oglsdo)
 {
-    WGLSDOps *wglsdo = (WGLSDOps *)oglsdo->privOps;
-
     J2dTraceLn(J2D_TRACE_INFO, "OGLSD_DestroyOGLSurface");
-
-    if (oglsdo->drawableType == OGLSD_PBUFFER) {
-        if (wglsdo->pbuffer != 0) {
-            if (wglsdo->pbufferDC != 0) {
-                j2d_wglReleasePbufferDCARB(wglsdo->pbuffer,
-                                           wglsdo->pbufferDC);
-                wglsdo->pbufferDC = 0;
-            }
-            j2d_wglDestroyPbufferARB(wglsdo->pbuffer);
-            wglsdo->pbuffer = 0;
-        }
-    }
+    // Window is free'd later by AWT code...
 }
 
 /**
@@ -276,19 +261,11 @@ OGLSD_MakeOGLContextCurrent(JNIEnv *env, OGLSDOps *srcOps, OGLSDOps *dstOps)
     ctxinfo = (WGLCtxInfo *)oglc->ctxInfo;
 
     // get the hdc for the destination surface
-    if (dstOps->drawableType == OGLSD_PBUFFER) {
-        dstHDC = dstWGLOps->pbufferDC;
-    } else {
-        dstHDC = GetDC(dstWGLOps->window);
-    }
+    dstHDC = GetDC(dstWGLOps->window);
 
     // get the hdc for the source surface
-    if (srcOps->drawableType == OGLSD_PBUFFER) {
-        srcHDC = srcWGLOps->pbufferDC;
-    } else {
-        // the source will always be equal to the destination in this case
-        srcHDC = dstHDC;
-    }
+    // the source will always be equal to the destination in this case
+    srcHDC = dstHDC;
 
     // REMIND: in theory we should be able to use wglMakeContextCurrentARB()
     // even when the src/dst surfaces are the same, but this causes problems
@@ -306,9 +283,7 @@ OGLSD_MakeOGLContextCurrent(JNIEnv *env, OGLSDOps *srcOps, OGLSDOps *dstOps)
     if (!success) {
         J2dRlsTraceLn(J2D_TRACE_ERROR,
                       "OGLSD_MakeOGLContextCurrent: could not make current");
-        if (dstOps->drawableType != OGLSD_PBUFFER) {
-            ReleaseDC(dstWGLOps->window, dstHDC);
-        }
+        ReleaseDC(dstWGLOps->window, dstHDC);
         return NULL;
     }
 
@@ -319,9 +294,7 @@ OGLSD_MakeOGLContextCurrent(JNIEnv *env, OGLSDOps *srcOps, OGLSDOps *dstOps)
         j2d_glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
     }
 
-    if (dstOps->drawableType != OGLSD_PBUFFER) {
-        ReleaseDC(dstWGLOps->window, dstHDC);
-    }
+    ReleaseDC(dstWGLOps->window, dstHDC);
 
     return oglc;
 }
@@ -396,141 +369,6 @@ OGLSD_InitOGLWindow(JNIEnv *env, OGLSDOps *oglsdo)
 
     J2dTraceLn2(J2D_TRACE_VERBOSE, "  created window: w=%d h=%d",
                 oglsdo->width, oglsdo->height);
-
-    return JNI_TRUE;
-}
-
-JNIEXPORT jboolean JNICALL
-Java_sun_java2d_opengl_WGLSurfaceData_initPbuffer
-    (JNIEnv *env, jobject wglsd,
-     jlong pData, jlong pConfigInfo,
-     jboolean isOpaque,
-     jint width, jint height)
-{
-    int attrKeys[] = {
-        WGL_MAX_PBUFFER_WIDTH_ARB,
-        WGL_MAX_PBUFFER_HEIGHT_ARB,
-    };
-    int attrVals[2];
-    int pbAttrList[] = { 0 };
-    OGLSDOps *oglsdo = (OGLSDOps *)jlong_to_ptr(pData);
-    WGLGraphicsConfigInfo *wglInfo =
-        (WGLGraphicsConfigInfo *)jlong_to_ptr(pConfigInfo);
-    WGLSDOps *wglsdo;
-    HWND hwnd;
-    HDC hdc, pbufferDC;
-    HPBUFFERARB pbuffer;
-    int maxWidth, maxHeight;
-    int actualWidth, actualHeight;
-
-    J2dTraceLn3(J2D_TRACE_INFO,
-                "WGLSurfaceData_initPbuffer: w=%d h=%d opq=%d",
-                width, height, isOpaque);
-
-    if (oglsdo == NULL) {
-        J2dRlsTraceLn(J2D_TRACE_ERROR,
-            "WGLSurfaceData_initPbuffer: ops are null");
-        return JNI_FALSE;
-    }
-
-    wglsdo = (WGLSDOps *)oglsdo->privOps;
-    if (wglsdo == NULL) {
-        J2dRlsTraceLn(J2D_TRACE_ERROR,
-            "WGLSurfaceData_initPbuffer: wgl ops are null");
-        return JNI_FALSE;
-    }
-
-    if (wglInfo == NULL) {
-        J2dRlsTraceLn(J2D_TRACE_ERROR,
-            "WGLSurfaceData_initPbuffer: wgl config info is null");
-        return JNI_FALSE;
-    }
-
-    // create a scratch window
-    hwnd = WGLGC_CreateScratchWindow(wglInfo->screen);
-    if (hwnd == 0) {
-        J2dRlsTraceLn(J2D_TRACE_ERROR,
-            "WGLSurfaceData_initPbuffer: could not create scratch window");
-        return JNI_FALSE;
-    }
-
-    // get the HDC for the scratch window
-    hdc = GetDC(hwnd);
-    if (hdc == 0) {
-        J2dRlsTraceLn(J2D_TRACE_ERROR,
-            "WGLSurfaceData_initPbuffer: could not get dc for scratch window");
-        DestroyWindow(hwnd);
-        return JNI_FALSE;
-    }
-
-    // get the maximum allowable pbuffer dimensions
-    j2d_wglGetPixelFormatAttribivARB(hdc, wglInfo->pixfmt, 0, 2,
-                                     attrKeys, attrVals);
-    maxWidth  = attrVals[0];
-    maxHeight = attrVals[1];
-
-    J2dTraceLn4(J2D_TRACE_VERBOSE,
-                "  desired pbuffer dimensions: w=%d h=%d maxw=%d maxh=%d",
-                width, height, maxWidth, maxHeight);
-
-    // if either dimension is 0 or larger than the maximum, we cannot
-    // allocate a pbuffer with the requested dimensions
-    if (width  == 0 || width  > maxWidth ||
-        height == 0 || height > maxHeight)
-    {
-        J2dRlsTraceLn(J2D_TRACE_ERROR,
-            "WGLSurfaceData_initPbuffer: invalid dimensions");
-        ReleaseDC(hwnd, hdc);
-        DestroyWindow(hwnd);
-        return JNI_FALSE;
-    }
-
-    pbuffer = j2d_wglCreatePbufferARB(hdc, wglInfo->pixfmt,
-                                      width, height, pbAttrList);
-
-    ReleaseDC(hwnd, hdc);
-    DestroyWindow(hwnd);
-
-    if (pbuffer == 0) {
-        J2dRlsTraceLn(J2D_TRACE_ERROR,
-            "WGLSurfaceData_initPbuffer: could not create wgl pbuffer");
-        return JNI_FALSE;
-    }
-
-    // note that we get the DC for the pbuffer at creation time, and then
-    // release the DC when the pbuffer is disposed; the WGL_ARB_pbuffer
-    // spec is vague about such things, but from past experience we know
-    // this approach to be more robust than, for example, doing a
-    // Get/ReleasePbufferDC() everytime we make a context current
-    pbufferDC = j2d_wglGetPbufferDCARB(pbuffer);
-    if (pbufferDC == 0) {
-        J2dRlsTraceLn(J2D_TRACE_ERROR,
-            "WGLSurfaceData_initPbuffer: could not get dc for pbuffer");
-        j2d_wglDestroyPbufferARB(pbuffer);
-        return JNI_FALSE;
-    }
-
-    // make sure the actual dimensions match those that we requested
-    j2d_wglQueryPbufferARB(pbuffer, WGL_PBUFFER_WIDTH_ARB, &actualWidth);
-    j2d_wglQueryPbufferARB(pbuffer, WGL_PBUFFER_HEIGHT_ARB, &actualHeight);
-
-    if (width != actualWidth || height != actualHeight) {
-        J2dRlsTraceLn2(J2D_TRACE_ERROR,
-            "WGLSurfaceData_initPbuffer: actual (w=%d h=%d) != requested",
-                       actualWidth, actualHeight);
-        j2d_wglReleasePbufferDCARB(pbuffer, pbufferDC);
-        j2d_wglDestroyPbufferARB(pbuffer);
-        return JNI_FALSE;
-    }
-
-    oglsdo->drawableType = OGLSD_PBUFFER;
-    oglsdo->isOpaque = isOpaque;
-    oglsdo->width = width;
-    oglsdo->height = height;
-    wglsdo->pbuffer = pbuffer;
-    wglsdo->pbufferDC = pbufferDC;
-
-    OGLSD_SetNativeDimensions(env, oglsdo, width, height);
 
     return JNI_TRUE;
 }

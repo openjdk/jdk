@@ -658,7 +658,10 @@
 // annotation. If CheckIntrinsics is enabled, the VM performs the following
 // checks when a class C is loaded: (1) all intrinsics defined by the VM for
 // class C are present in the loaded class file and are marked;
-// (2) an intrinsic is defined by the VM for all marked methods of class C.
+// (2) an intrinsic is defined by the VM for all marked methods of class C;
+// (3) check for orphan methods in class C (i.e., methods for which the VM
+// declares an intrinsic but that are not declared for the loaded class C.
+// Check (3) is available only in debug builds.
 //
 // If a mismatch is detected for a method, the VM behaves differently depending
 // on the type of build. A fastdebug build exits and reports an error on a mismatch.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package javax.xml.ws;
 
-/** The <code>WebServiceException</code> class is the base
+/** The {@code WebServiceException} class is the base
  *  exception class for all JAX-WS API runtime exceptions.
  *
  *  @since 1.6, JAX-WS 2.0
@@ -33,7 +33,7 @@ package javax.xml.ws;
 
 public class WebServiceException extends java.lang.RuntimeException {
 
-  /** Constructs a new exception with <code>null</code> as its
+  /** Constructs a new exception with {@code null} as its
    *  detail message. The cause is not initialized.
   **/
   public WebServiceException() {

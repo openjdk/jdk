@@ -128,12 +128,6 @@ public class SjavacClient implements Sjavac {
 
     /**
      * Make a request to the server only to get the maximum possible heap size to use for compilations.
-     *
-     * @param port_file The port file used to synchronize creation of this server.
-     * @param id The identify of the compilation.
-     * @param out Standard out information.
-     * @param err Standard err information.
-     * @return The maximum heap size in bytes.
      */
     @Override
     public SysInfo getSysInfo() {

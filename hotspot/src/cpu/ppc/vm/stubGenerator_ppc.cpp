@@ -2126,6 +2126,54 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  /**
+   * Arguments:
+   *
+   * Inputs:
+   *   R3_ARG1    - int   crc
+   *   R4_ARG2    - byte* buf
+   *   R5_ARG3    - int   length (of buffer)
+   *
+   * scratch:
+   *   R6_ARG4    - crc table address
+   *   R7_ARG5    - tmp1
+   *   R8_ARG6    - tmp2
+   *
+   * Ouput:
+   *   R3_RET     - int   crc result
+   */
+  // Compute CRC32 function.
+  address generate_CRC32_updateBytes(const char* name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", name);
+    address start = __ function_entry();  // Remember stub start address (is rtn value).
+
+    // arguments to kernel_crc32:
+    Register       crc     = R3_ARG1;  // Current checksum, preset by caller or result from previous call.
+    Register       data    = R4_ARG2;  // source byte array
+    Register       dataLen = R5_ARG3;  // #bytes to process
+    Register       table   = R6_ARG4;  // crc table address
+
+    Register       t0      = R9;       // work reg for kernel* emitters
+    Register       t1      = R10;      // work reg for kernel* emitters
+    Register       t2      = R11;      // work reg for kernel* emitters
+    Register       t3      = R12;      // work reg for kernel* emitters
+
+    BLOCK_COMMENT("Stub body {");
+    assert_different_registers(crc, data, dataLen, table);
+
+    StubRoutines::ppc64::generate_load_crc_table_addr(_masm, table);
+
+    __ kernel_crc32_1byte(crc, data, dataLen, table, t0, t1, t2, t3);
+
+    BLOCK_COMMENT("return");
+    __ mr_if_needed(R3_RET, crc);      // Updated crc is function result. No copying required (R3_ARG1 == R3_RET).
+    __ blr();
+
+    BLOCK_COMMENT("} Stub body");
+    return start;
+  }
+
   // Initialization
   void generate_initial() {
     // Generates all stubs and initializes the entry points
@@ -2144,6 +2192,12 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_throw_StackOverflowError_entry   =
       generate_throw_exception("StackOverflowError throw_exception",
                                CAST_FROM_FN_PTR(address, SharedRuntime::throw_StackOverflowError), false);
+
+    // CRC32 Intrinsics.
+    if (UseCRC32Intrinsics) {
+      StubRoutines::_crc_table_adr    = (address)StubRoutines::ppc64::_crc_table;
+      StubRoutines::_updateBytesCRC32 = generate_CRC32_updateBytes("CRC32_updateBytes");
+    }
   }
 
   void generate_all() {

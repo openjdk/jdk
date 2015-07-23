@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,16 @@
 package javax.xml.soap;
 
 /**
- * <code>SOAPElementFactory</code> is a factory for XML fragments that
+ * {@code SOAPElementFactory} is a factory for XML fragments that
  * will eventually end up in the SOAP part. These fragments
- * can be inserted as children of the <code>SOAPHeader</code> or
- * <code>SOAPBody</code> or <code>SOAPEnvelope</code>.
+ * can be inserted as children of the {@code SOAPHeader} or
+ * {@code SOAPBody} or {@code SOAPEnvelope}.
  *
  * <p>Elements created using this factory do not have the properties
  * of an element that lives inside a SOAP header document. These
  * elements are copied into the XML document tree when they are
  * inserted.
- * @deprecated - Use <code>javax.xml.soap.SOAPFactory</code> for creating SOAPElements.
+ * @deprecated - Use {@code javax.xml.soap.SOAPFactory} for creating SOAPElements.
  * @see javax.xml.soap.SOAPFactory
  * @since 1.6
  */
@@ -48,17 +48,17 @@ public class SOAPElementFactory {
     }
 
     /**
-     * Create a <code>SOAPElement</code> object initialized with the
-     * given <code>Name</code> object.
+     * Create a {@code SOAPElement} object initialized with the
+     * given {@code Name} object.
      *
-     * @param name a <code>Name</code> object with the XML name for
+     * @param name a {@code Name} object with the XML name for
      *             the new element
      *
-     * @return the new <code>SOAPElement</code> object that was
+     * @return the new {@code SOAPElement} object that was
      *         created
      *
      * @exception SOAPException if there is an error in creating the
-     *            <code>SOAPElement</code> object
+     *            {@code SOAPElement} object
      *
      * @deprecated Use
      * javax.xml.soap.SOAPFactory.createElement(javax.xml.soap.Name)
@@ -72,17 +72,17 @@ public class SOAPElementFactory {
     }
 
     /**
-     * Create a <code>SOAPElement</code> object initialized with the
+     * Create a {@code SOAPElement} object initialized with the
      * given local name.
      *
-     * @param localName a <code>String</code> giving the local name for
+     * @param localName a {@code String} giving the local name for
      *             the new element
      *
-     * @return the new <code>SOAPElement</code> object that was
+     * @return the new {@code SOAPElement} object that was
      *         created
      *
      * @exception SOAPException if there is an error in creating the
-     *            <code>SOAPElement</code> object
+     *            {@code SOAPElement} object
      *
      * @deprecated Use
      * javax.xml.soap.SOAPFactory.createElement(String localName) instead
@@ -94,17 +94,17 @@ public class SOAPElementFactory {
     }
 
     /**
-     * Create a new <code>SOAPElement</code> object with the given
+     * Create a new {@code SOAPElement} object with the given
      * local name, prefix and uri.
      *
-     * @param localName a <code>String</code> giving the local name
+     * @param localName a {@code String} giving the local name
      *                  for the new element
-     * @param prefix the prefix for this <code>SOAPElement</code>
-     * @param uri a <code>String</code> giving the URI of the
+     * @param prefix the prefix for this {@code SOAPElement}
+     * @param uri a {@code String} giving the URI of the
      *            namespace to which the new element belongs
      *
      * @exception SOAPException if there is an error in creating the
-     *            <code>SOAPElement</code> object
+     *            {@code SOAPElement} object
      *
      * @deprecated Use
      * javax.xml.soap.SOAPFactory.createElement(String localName,
@@ -120,12 +120,12 @@ public class SOAPElementFactory {
     }
 
     /**
-     * Creates a new instance of <code>SOAPElementFactory</code>.
+     * Creates a new instance of {@code SOAPElementFactory}.
      *
-     * @return a new instance of a <code>SOAPElementFactory</code>
+     * @return a new instance of a {@code SOAPElementFactory}
      *
      * @exception SOAPException if there was an error creating the
-     *            default <code>SOAPElementFactory</code>
+     *            default {@code SOAPElementFactory}
      */
     public static SOAPElementFactory newInstance() throws SOAPException {
         try {

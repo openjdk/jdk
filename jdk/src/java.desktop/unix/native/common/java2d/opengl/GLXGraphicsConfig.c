@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -472,7 +472,7 @@ Java_sun_java2d_opengl_GLXGraphicsConfig_getGLXConfigInfo(JNIEnv *env,
     GLXPbuffer scratch;
     GLXGraphicsConfigInfo *glxinfo;
     jint caps = CAPS_EMPTY;
-    int db, alpha;
+    int db;
     const unsigned char *versionstr;
 
     J2dRlsTraceLn(J2D_TRACE_INFO, "GLXGraphicsConfig_getGLXConfigInfo");
@@ -582,10 +582,6 @@ Java_sun_java2d_opengl_GLXGraphicsConfig_getGLXConfigInfo(JNIEnv *env,
     j2d_glXGetFBConfigAttrib(awt_display, fbconfig, GLX_DOUBLEBUFFER, &db);
     if (db) {
         caps |= CAPS_DOUBLEBUFFERED;
-    }
-    j2d_glXGetFBConfigAttrib(awt_display, fbconfig, GLX_ALPHA_SIZE, &alpha);
-    if (alpha > 0) {
-        caps |= CAPS_STORED_ALPHA;
     }
 
     // initialize the OGLContext, which wraps the GLXFBConfig and GLXContext

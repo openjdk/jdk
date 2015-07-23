@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,9 @@
  * questions.
  */
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -208,6 +207,12 @@ public class TestBase {
         Set<?> copy = new HashSet<>(expected);
         copy.removeAll(found);
         assertTrue(found.containsAll(expected), message + " : " + copy);
+    }
+
+    public void writeToFile(Path path, String source) throws IOException {
+        try (BufferedWriter writer = Files.newBufferedWriter(path)) {
+            writer.write(source);
+        }
     }
 
     public File getSourceDir() {

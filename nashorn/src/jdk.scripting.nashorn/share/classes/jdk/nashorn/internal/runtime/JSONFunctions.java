@@ -104,16 +104,28 @@ public final class JSONFunctions {
         final Object val = holder.get(name);
         if (val instanceof ScriptObject) {
             final ScriptObject     valueObj = (ScriptObject)val;
-            final Iterator<String> iter     = valueObj.propertyIterator();
+            if (valueObj.isArray()) {
+                final int length = JSType.toInteger(valueObj.getLength());
+                for (int i = 0; i < length; i++) {
+                    final String key = Integer.toString(i);
+                    final Object newElement = walk(valueObj, key, reviver);
 
-            while (iter.hasNext()) {
-                final String key        = iter.next();
-                final Object newElement = walk(valueObj, key, reviver);
+                    if (newElement == ScriptRuntime.UNDEFINED) {
+                        valueObj.delete(i, false);
+                    } else {
+                        setPropertyValue(valueObj, key, newElement);
+                    }
+                }
+            } else {
+                final String[] keys = valueObj.getOwnKeys(false);
+                for (final String key : keys) {
+                    final Object newElement = walk(valueObj, key, reviver);
 
-                if (newElement == ScriptRuntime.UNDEFINED) {
-                    valueObj.delete(key, false);
-                } else {
-                    setPropertyValue(valueObj, key, newElement);
+                    if (newElement == ScriptRuntime.UNDEFINED) {
+                        valueObj.delete(key, false);
+                    } else {
+                        setPropertyValue(valueObj, key, newElement);
+                    }
                 }
             }
         }

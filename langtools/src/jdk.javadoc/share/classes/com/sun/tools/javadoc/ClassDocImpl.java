@@ -1278,8 +1278,8 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
      * each Serializable field defined by an <code>ObjectStreamField</code>
      * array component of <code>serialPersistentField</code>.
      *
-     * @returns an array of <code>FieldDoc</code> for the Serializable fields
-     * of this class.
+     * @return an array of {@code FieldDoc} for the Serializable fields
+     *         of this class.
      *
      * @see #definesSerializableFields()
      * @see SerialFieldTagImpl

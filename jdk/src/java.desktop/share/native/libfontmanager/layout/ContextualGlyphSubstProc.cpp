@@ -76,6 +76,10 @@ ByteOffset ContextualGlyphSubstitutionProcessor::processStateEntry(LEGlyphStorag
   WordOffset currOffset = SWAPW(entry->currOffset);
 
   if (markOffset != 0 && LE_SUCCESS(success)) {
+    if (markGlyph < 0 || markGlyph >= glyphStorage.getGlyphCount()) {
+       success = LE_INDEX_OUT_OF_BOUNDS_ERROR;
+       return 0;
+    }
     LEGlyphID mGlyph = glyphStorage[markGlyph];
     TTGlyphID newGlyph = SWAPW(int16Table.getObject(markOffset + LE_GET_GLYPH(mGlyph), success)); // whew.
 
@@ -83,6 +87,10 @@ ByteOffset ContextualGlyphSubstitutionProcessor::processStateEntry(LEGlyphStorag
   }
 
   if (currOffset != 0) {
+    if (currGlyph < 0 || currGlyph >= glyphStorage.getGlyphCount()) {
+       success = LE_INDEX_OUT_OF_BOUNDS_ERROR;
+       return 0;
+    }
     LEGlyphID thisGlyph = glyphStorage[currGlyph];
     TTGlyphID newGlyph = SWAPW(int16Table.getObject(currOffset + LE_GET_GLYPH(thisGlyph), success)); // whew.
 

@@ -34,7 +34,6 @@
 
 define_pd_global(bool, ConvertSleepToYield,      true);
 define_pd_global(bool, ShareVtableStubs,         true);
-define_pd_global(bool, CountInterpCalls,         true);
 define_pd_global(bool, NeedsDeoptSuspend,        false); // only register window machines need this
 
 define_pd_global(bool, ImplicitNullChecks,       true);  // Generate code for implicit null checks
@@ -60,8 +59,6 @@ define_pd_global(intx, StackYellowPages, 2);
 define_pd_global(intx, StackRedPages, 1);
 
 define_pd_global(intx, StackShadowPages, 4 DEBUG_ONLY(+5));
-
-define_pd_global(intx, PreInflateSpin,           10);
 
 define_pd_global(bool, RewriteBytecodes,     true);
 define_pd_global(bool, RewriteFrequentPairs, true);
