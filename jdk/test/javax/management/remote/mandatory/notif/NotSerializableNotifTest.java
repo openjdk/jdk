@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Tests to send a not serializable notification.
- * @bug 5022196
+ * @bug 5022196 8132003
  * @author Shanliang JIANG
  * @modules java.management
  * @run clean NotSerializableNotifTest
@@ -53,21 +53,12 @@ public class NotSerializableNotifTest {
     private static final MBeanServer mbeanServer = MBeanServerFactory.createMBeanServer();
     private static ObjectName emitter;
 
-    private static String[] protocols;
+    private static String[] protocols = new String[] {"rmi", "iiop", "jmxmp"};
 
     private static final int sentNotifs = 10;
 
     public static void main(String[] args) throws Exception {
         System.out.println(">>> Test to send a not serializable notification");
-
-        // IIOP fails on JDK1.4, see 5034318
-        final String v = System.getProperty("java.version");
-        float f = Float.parseFloat(v.substring(0, 3));
-        if (f<1.5) {
-            protocols = new String[] {"rmi", "jmxmp"};
-        } else {
-            protocols = new String[] {"rmi", "iiop", "jmxmp"};
-        }
 
         emitter = new ObjectName("Default:name=NotificationEmitter");
         mbeanServer.registerMBean(new NotificationEmitter(), emitter);
