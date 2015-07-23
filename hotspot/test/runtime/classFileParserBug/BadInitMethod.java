@@ -19,28 +19,36 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
 /*
  * @test
- * @bug 8076421
- * @summary Test of hprof option crashes Zero
- * @compile cpu002.java
- * @run main/othervm -Xrunhprof:cpu=times,file=cpu002.hprof.out cpu002
+ * @bug 8130669
+ * @summary VM prohibits <clinit> methods with return values
+ * @compile ignoredClinit.jasm
+ * @compile badInit.jasm
+ * @run main/othervm -Xverify:all BadInitMethod
  */
 
-import java.io.*;
+// Test that a non-void <clinit> method does not cause an exception to be
+// thrown.  But that a non-void <init> method causes a ClassFormatError
+// exception.
+public class BadInitMethod {
+    public static void main(String args[]) throws Throwable {
 
-public class cpu002 {
-    public static final int PASSED = 0;
-    public static final int FAILED = 2;
-    public static final int JCK_STATUS_BASE = 95;
+        System.out.println("Regression test for bug 8130669");
+        try {
+            Class newClass = Class.forName("ignoredClinit");
+        } catch (java.lang.Throwable e) {
+            throw new RuntimeException("Unexpected exception: " + e.getMessage());
+        }
 
-    public static void main (String argv[]) {
-        System.exit(run(argv,System.out) + JCK_STATUS_BASE);
-    }
-
-    public static int run(String argv[], PrintStream out) {
-        return PASSED;
+        try {
+            Class newClass = Class.forName("badInit");
+            throw new RuntimeException("Expected ClassFormatError exception not thrown");
+        } catch (java.lang.ClassFormatError e) {
+            System.out.println("Test BadInitMethod passed");
+        }
     }
 }

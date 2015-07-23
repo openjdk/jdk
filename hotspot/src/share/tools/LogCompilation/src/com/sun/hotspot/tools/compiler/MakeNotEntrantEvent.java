@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,25 @@
  * questions.
  *
  */
-
 package com.sun.hotspot.tools.compiler;
 
 import java.io.PrintStream;
 
+/**
+ * In a compilation log, represent the event of making a given compiled method
+ * not-entrant, e.g., during an OSR compilation.
+ */
 class MakeNotEntrantEvent extends BasicLogEvent {
+
+    /**
+     * Denote whether the method is marked as a zombie, i.e., no further
+     * activations exist.
+     */
     private final boolean zombie;
 
+    /**
+     * The method in question.
+     */
     private NMethod nmethod;
 
     MakeNotEntrantEvent(double s, String i, boolean z, NMethod nm) {
@@ -41,7 +52,7 @@ class MakeNotEntrantEvent extends BasicLogEvent {
         return nmethod;
     }
 
-    public void print(PrintStream stream) {
+    public void print(PrintStream stream, boolean printID) {
         if (isZombie()) {
             stream.printf("%s make_zombie\n", getId());
         } else {

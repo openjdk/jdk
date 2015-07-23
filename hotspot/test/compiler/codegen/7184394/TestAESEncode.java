@@ -33,7 +33,7 @@ public class TestAESEncode extends TestAESBase {
   public void run() {
     try {
       if (mode.equals("GCM")) {
-        gcm_init();
+        gcm_init(true);
       } else if (!noReinit) {
         cipher.init(Cipher.ENCRYPT_MODE, key, algParams);
       }
