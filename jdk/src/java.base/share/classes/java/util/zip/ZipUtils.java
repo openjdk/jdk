@@ -99,9 +99,9 @@ class ZipUtils {
         if (year < 1980) {
             return ZipEntry.DOSTIME_BEFORE_1980;
         }
-        return (year - 1980) << 25 | (d.getMonth() + 1) << 21 |
-               d.getDate() << 16 | d.getHours() << 11 | d.getMinutes() << 5 |
-               d.getSeconds() >> 1;
+        return ((year - 1980) << 25 | (d.getMonth() + 1) << 21 |
+                d.getDate() << 16 | d.getHours() << 11 | d.getMinutes() << 5 |
+                d.getSeconds() >> 1) & 0xffffffffL;
     }
 
     /**
