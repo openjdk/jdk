@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,9 +110,7 @@ JNF_COCOA_EXIT(env);
 
 /**
  * This function disposes of any native windowing system resources associated
- * with this surface.  For instance, if the given OGLSDOps is of type
- * OGLSD_PBUFFER, this method implementation will destroy the actual pbuffer
- * surface.
+ * with this surface.
  */
 void
 OGLSD_DestroyOGLSurface(JNIEnv *env, OGLSDOps *oglsdo)
@@ -122,16 +120,7 @@ OGLSD_DestroyOGLSurface(JNIEnv *env, OGLSDOps *oglsdo)
 JNF_COCOA_ENTER(env);
 
     CGLSDOps *cglsdo = (CGLSDOps *)oglsdo->privOps;
-    if (oglsdo->drawableType == OGLSD_PBUFFER) {
-        if (oglsdo->textureID != 0) {
-            j2d_glDeleteTextures(1, &oglsdo->textureID);
-            oglsdo->textureID = 0;
-        }
-        if (cglsdo->pbuffer != NULL) {
-            [cglsdo->pbuffer release];
-            cglsdo->pbuffer = NULL;
-        }
-    } else if (oglsdo->drawableType == OGLSD_WINDOW) {
+    if (oglsdo->drawableType == OGLSD_WINDOW) {
         // detach the NSView from the NSOpenGLContext
         CGLGraphicsConfigInfo *cglInfo = cglsdo->configInfo;
         OGLContext *oglc = cglInfo->context;
@@ -277,23 +266,12 @@ OGLSD_MakeOGLContextCurrent(JNIEnv *env, OGLSDOps *srcOps, OGLSDOps *dstOps)
 
 JNF_COCOA_ENTER(env);
 
-    // set the current surface
-    if (dstOps->drawableType == OGLSD_PBUFFER) {
-        // REMIND: pbuffers are not fully tested yet...
-        [ctxinfo->context clearDrawable];
-        [ctxinfo->context makeCurrentContext];
-        [ctxinfo->context setPixelBuffer: dstCGLOps->pbuffer
-                cubeMapFace: 0
-                mipMapLevel: 0
-                currentVirtualScreen: [ctxinfo->context currentVirtualScreen]];
-    } else {
-        CGLSDOps *cglsdo = (CGLSDOps *)dstOps->privOps;
-        NSView *nsView = (NSView *)cglsdo->peerData;
+    CGLSDOps *cglsdo = (CGLSDOps *)dstOps->privOps;
+    NSView *nsView = (NSView *)cglsdo->peerData;
 
-        if ([ctxinfo->context view] != nsView) {
-            [ctxinfo->context makeCurrentContext];
-            [ctxinfo->context setView: nsView];
-        }
+    if ([ctxinfo->context view] != nsView) {
+        [ctxinfo->context makeCurrentContext];
+        [ctxinfo->context setView: nsView];
     }
 
     if (OGLC_IS_CAP_PRESENT(oglc, CAPS_EXT_FBOBJECT)) {
@@ -301,16 +279,6 @@ JNF_COCOA_ENTER(env);
         // must bind to the default (windowing system provided)
         // framebuffer
         j2d_glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-    }
-
-    if ((srcOps != dstOps) && (srcOps->drawableType == OGLSD_PBUFFER)) {
-        // bind pbuffer to the render texture object (since we are preparing
-        // to copy from the pbuffer)
-        CGLSDOps *srcCGLOps = (CGLSDOps *)srcOps->privOps;
-        j2d_glBindTexture(GL_TEXTURE_2D, srcOps->textureID);
-        [ctxinfo->context
-                setTextureImageToPixelBuffer: srcCGLOps->pbuffer
-                colorBuffer: GL_FRONT];
     }
 
 JNF_COCOA_EXIT(env);
@@ -462,105 +430,6 @@ Java_sun_java2d_opengl_CGLSurfaceData_clearWindow
 
     cglsdo->peerData = NULL;
     cglsdo->layer = NULL;
-}
-
-JNIEXPORT jboolean JNICALL
-Java_sun_java2d_opengl_CGLSurfaceData_initPbuffer
-    (JNIEnv *env, jobject cglsd,
-     jlong pData, jlong pConfigInfo, jboolean isOpaque,
-     jint width, jint height)
-{
-    J2dTraceLn3(J2D_TRACE_INFO, "CGLSurfaceData_initPbuffer: w=%d h=%d opq=%d", width, height, isOpaque);
-
-    OGLSDOps *oglsdo = (OGLSDOps *)jlong_to_ptr(pData);
-    if (oglsdo == NULL) {
-        J2dRlsTraceLn(J2D_TRACE_ERROR, "CGLSurfaceData_initPbuffer: ops are null");
-        return JNI_FALSE;
-    }
-
-    CGLSDOps *cglsdo = (CGLSDOps *)oglsdo->privOps;
-    if (cglsdo == NULL) {
-        J2dRlsTraceLn(J2D_TRACE_ERROR, "CGLSurfaceData_initPbuffer: cgl ops are null");
-        return JNI_FALSE;
-    }
-
-    CGLGraphicsConfigInfo *cglInfo = (CGLGraphicsConfigInfo *)
-        jlong_to_ptr(pConfigInfo);
-    if (cglInfo == NULL) {
-        J2dRlsTraceLn(J2D_TRACE_ERROR, "CGLSurfaceData_initPbuffer: cgl config info is null");
-        return JNI_FALSE;
-    }
-
-    // find the maximum allowable texture dimensions (this value ultimately
-    // determines our maximum pbuffer size)
-    int pbMax = 0;
-    j2d_glGetIntegerv(GL_MAX_TEXTURE_SIZE, &pbMax);
-
-    int pbWidth = 0;
-    int pbHeight = 0;
-    if (OGLC_IS_CAP_PRESENT(cglInfo->context, CAPS_TEXNONPOW2)) {
-        // use non-power-of-two dimensions directly
-        pbWidth = (width <= pbMax) ? width : 0;
-        pbHeight = (height <= pbMax) ? height : 0;
-    } else {
-        // find the appropriate power-of-two dimensions
-        pbWidth = OGLSD_NextPowerOfTwo(width, pbMax);
-        pbHeight = OGLSD_NextPowerOfTwo(height, pbMax);
-    }
-
-    J2dTraceLn3(J2D_TRACE_VERBOSE, "  desired pbuffer dimensions: w=%d h=%d max=%d", pbWidth, pbHeight, pbMax);
-
-    // if either dimension is 0, we cannot allocate a pbuffer/texture with the
-    // requested dimensions
-    if (pbWidth == 0 || pbHeight == 0) {
-        J2dRlsTraceLn(J2D_TRACE_ERROR, "CGLSurfaceData_initPbuffer: dimensions too large");
-        return JNI_FALSE;
-    }
-
-    int format = isOpaque ? GL_RGB : GL_RGBA;
-
-JNF_COCOA_ENTER(env);
-
-    cglsdo->pbuffer =
-        [[NSOpenGLPixelBuffer alloc]
-            initWithTextureTarget: GL_TEXTURE_2D
-            textureInternalFormat: format
-            textureMaxMipMapLevel: 0
-            pixelsWide: pbWidth
-            pixelsHigh: pbHeight];
-    if (cglsdo->pbuffer == nil) {
-        J2dRlsTraceLn(J2D_TRACE_ERROR, "CGLSurfaceData_initPbuffer: could not create pbuffer");
-        return JNI_FALSE;
-    }
-
-    // make sure the actual dimensions match those that we requested
-    GLsizei actualWidth  = [cglsdo->pbuffer pixelsWide];
-    GLsizei actualHeight = [cglsdo->pbuffer pixelsHigh];
-    if (actualWidth != pbWidth || actualHeight != pbHeight) {
-        J2dRlsTraceLn2(J2D_TRACE_ERROR, "CGLSurfaceData_initPbuffer: actual (w=%d h=%d) != requested", actualWidth, actualHeight);
-        [cglsdo->pbuffer release];
-        return JNI_FALSE;
-    }
-
-    GLuint texID = 0;
-    j2d_glGenTextures(1, &texID);
-    j2d_glBindTexture(GL_TEXTURE_2D, texID);
-
-    oglsdo->drawableType = OGLSD_PBUFFER;
-    oglsdo->isOpaque = isOpaque;
-    oglsdo->width = width;
-    oglsdo->height = height;
-    oglsdo->textureID = texID;
-    oglsdo->textureWidth = pbWidth;
-    oglsdo->textureHeight = pbHeight;
-    oglsdo->activeBuffer = GL_FRONT;
-    oglsdo->needsInit = JNI_TRUE;
-
-    OGLSD_INIT_TEXTURE_FILTER(oglsdo, GL_NEAREST);
-
-JNF_COCOA_EXIT(env);
-
-    return JNI_TRUE;
 }
 
 #pragma mark -

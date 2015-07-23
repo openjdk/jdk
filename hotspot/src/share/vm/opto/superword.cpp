@@ -2169,7 +2169,7 @@ bool SuperWord::construct_bb() {
   }//while
 
   int ii_current = -1;
-  unsigned int load_idx = -1;
+  unsigned int load_idx = (unsigned int)-1;
   _ii_order.clear();
   // Create real map of block indices for nodes
   for (int j = 0; j < _block.length(); j++) {

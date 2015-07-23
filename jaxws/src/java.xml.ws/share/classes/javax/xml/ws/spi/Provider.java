@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -288,7 +288,7 @@ public abstract class Provider {
      * method can automatically determine the {@code address} of
      * an endpoint that is published by the same Java EE application and is
      * identified by the {@code serviceName} and
-     * {@code portName} propeties.  If the {@code address} is
+     * {@code portName} properties.  If the {@code address} is
      * {@code null} and the {@code serviceName} and
      * {@code portName} do not identify an endpoint published by the
      * same Java EE application, a

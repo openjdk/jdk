@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,13 +94,6 @@ public class CipherSuitesInOrder {
         "SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA",
         "SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA",
 
-        "TLS_ECDHE_ECDSA_WITH_RC4_128_SHA",
-        "TLS_ECDHE_RSA_WITH_RC4_128_SHA",
-        "SSL_RSA_WITH_RC4_128_SHA",
-        "TLS_ECDH_ECDSA_WITH_RC4_128_SHA",
-        "TLS_ECDH_RSA_WITH_RC4_128_SHA",
-        "SSL_RSA_WITH_RC4_128_MD5",
-
         "TLS_EMPTY_RENEGOTIATION_INFO_SCSV",
 
         "TLS_DH_anon_WITH_AES_256_GCM_SHA384",
@@ -114,6 +107,13 @@ public class CipherSuitesInOrder {
         "TLS_DH_anon_WITH_AES_128_CBC_SHA",
         "TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA",
         "SSL_DH_anon_WITH_3DES_EDE_CBC_SHA",
+
+        "TLS_ECDHE_ECDSA_WITH_RC4_128_SHA",
+        "TLS_ECDHE_RSA_WITH_RC4_128_SHA",
+        "SSL_RSA_WITH_RC4_128_SHA",
+        "TLS_ECDH_ECDSA_WITH_RC4_128_SHA",
+        "TLS_ECDH_RSA_WITH_RC4_128_SHA",
+        "SSL_RSA_WITH_RC4_128_MD5",
         "TLS_ECDH_anon_WITH_RC4_128_SHA",
         "SSL_DH_anon_WITH_RC4_128_MD5",
 

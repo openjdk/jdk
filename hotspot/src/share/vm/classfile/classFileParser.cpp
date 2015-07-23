@@ -2698,8 +2698,7 @@ u2 ClassFileParser::parse_classfile_inner_classes_attribute(u1* inner_classes_at
     // Inner class index
     u2 inner_class_info_index = cfs->get_u2_fast();
     check_property(
-      inner_class_info_index == 0 ||
-        valid_klass_reference_at(inner_class_info_index),
+      valid_klass_reference_at(inner_class_info_index),
       "inner_class_info_index %u has bad constant type in class file %s",
       inner_class_info_index, CHECK_0);
     // Outer class index
@@ -4172,10 +4171,13 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
         }
       }
 
+#ifdef ASSERT
       if (CheckIntrinsics) {
         // Check for orphan methods in the current class. A method m
         // of a class C is orphan if an intrinsic is defined for method m,
         // but class C does not declare m.
+        // The check is potentially expensive, therefore it is available
+        // only in debug builds.
 
         for (int id = vmIntrinsics::FIRST_ID; id < (int)vmIntrinsics::ID_LIMIT; id++) {
           if (id == vmIntrinsics::_compiledLambdaForm) {
@@ -4211,7 +4213,9 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
           }
         }
       }
+#endif // ASSERT
     }
+
 
     if (cached_class_file != NULL) {
       // JVMTI: we have an InstanceKlass now, tell it about the cached bytes
@@ -5163,8 +5167,8 @@ int ClassFileParser::verify_legal_method_signature(Symbol* name, Symbol* signatu
     // The first non-signature thing better be a ')'
     if ((length > 0) && (*p++ == JVM_SIGNATURE_ENDFUNC)) {
       length--;
-      if (name->utf8_length() > 0 && name->byte_at(0) == '<') {
-        // All internal methods must return void
+      if (name == vmSymbols::object_initializer_name()) {
+        // All "<init>" methods must return void
         if ((length == 1) && (p[0] == JVM_SIGNATURE_VOID)) {
           return args_size;
         }

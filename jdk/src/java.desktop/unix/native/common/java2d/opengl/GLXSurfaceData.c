@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,25 +111,13 @@ Java_sun_java2d_opengl_GLXSurfaceData_initOps(JNIEnv *env, jobject glxsd,
 
 /**
  * This function disposes of any native windowing system resources associated
- * with this surface.  For instance, if the given OGLSDOps is of type
- * OGLSD_PBUFFER, this method implementation will destroy the actual pbuffer
- * surface.
+ * with this surface.
  */
 void
 OGLSD_DestroyOGLSurface(JNIEnv *env, OGLSDOps *oglsdo)
 {
-    GLXSDOps *glxsdo = (GLXSDOps *)oglsdo->privOps;
-
     J2dTraceLn(J2D_TRACE_INFO, "OGLSD_DestroyOGLSurface");
-
-    if (oglsdo->drawableType == OGLSD_PBUFFER) {
-        if (glxsdo->drawable != 0) {
-            j2d_glXDestroyPbuffer(awt_display, glxsdo->drawable);
-            glxsdo->drawable = 0;
-        }
-    } else if (oglsdo->drawableType == OGLSD_WINDOW) {
-        // X Window is free'd later by AWT code...
-    }
+    // X Window is free'd later by AWT code...
 }
 
 /**
@@ -356,74 +344,6 @@ GLXSD_BadAllocXErrHandler(Display *display, XErrorEvent *xerr)
         surfaceCreationFailed = JNI_TRUE;
     }
     return 0;
-}
-
-JNIEXPORT jboolean JNICALL
-Java_sun_java2d_opengl_GLXSurfaceData_initPbuffer
-    (JNIEnv *env, jobject glxsd,
-     jlong pData, jlong pConfigInfo,
-     jboolean isOpaque,
-     jint width, jint height)
-{
-    OGLSDOps *oglsdo = (OGLSDOps *)jlong_to_ptr(pData);
-    GLXGraphicsConfigInfo *glxinfo =
-        (GLXGraphicsConfigInfo *)jlong_to_ptr(pConfigInfo);
-    GLXSDOps *glxsdo;
-    GLXPbuffer pbuffer;
-    int attrlist[] = {GLX_PBUFFER_WIDTH, 0,
-                      GLX_PBUFFER_HEIGHT, 0,
-                      GLX_PRESERVED_CONTENTS, GL_FALSE, 0};
-
-    J2dTraceLn3(J2D_TRACE_INFO,
-                "GLXSurfaceData_initPbuffer: w=%d h=%d opq=%d",
-                width, height, isOpaque);
-
-    if (oglsdo == NULL) {
-        J2dRlsTraceLn(J2D_TRACE_ERROR,
-                      "GLXSurfaceData_initPbuffer: ops are null");
-        return JNI_FALSE;
-    }
-
-    glxsdo = (GLXSDOps *)oglsdo->privOps;
-    if (glxsdo == NULL) {
-        J2dRlsTraceLn(J2D_TRACE_ERROR,
-                      "GLXSurfaceData_initPbuffer: glx ops are null");
-        return JNI_FALSE;
-    }
-
-    if (glxinfo == NULL) {
-        J2dRlsTraceLn(J2D_TRACE_ERROR,
-                      "GLXSurfaceData_initPbuffer: glx config info is null");
-        return JNI_FALSE;
-    }
-
-    attrlist[1] = width;
-    attrlist[3] = height;
-
-    surfaceCreationFailed = JNI_FALSE;
-    EXEC_WITH_XERROR_HANDLER(
-        GLXSD_BadAllocXErrHandler,
-        pbuffer = j2d_glXCreatePbuffer(awt_display,
-                                       glxinfo->fbconfig, attrlist));
-    if ((pbuffer == 0) || surfaceCreationFailed) {
-        J2dRlsTraceLn(J2D_TRACE_ERROR,
-            "GLXSurfaceData_initPbuffer: could not create glx pbuffer");
-        return JNI_FALSE;
-    }
-
-    oglsdo->drawableType = OGLSD_PBUFFER;
-    oglsdo->isOpaque = isOpaque;
-    oglsdo->width = width;
-    oglsdo->height = height;
-    oglsdo->xOffset = 0;
-    oglsdo->yOffset = 0;
-
-    glxsdo->drawable = pbuffer;
-    glxsdo->xdrawable = 0;
-
-    OGLSD_SetNativeDimensions(env, oglsdo, width, height);
-
-    return JNI_TRUE;
 }
 
 void

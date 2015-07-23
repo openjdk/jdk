@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,16 +205,33 @@ class InetAddress implements java.io.Serializable {
     static transient boolean preferIPv6Address = false;
 
     static class InetAddressHolder {
+        /**
+         * Reserve the original application specified hostname.
+         *
+         * The original hostname is useful for domain-based endpoint
+         * identification (see RFC 2818 and RFC 6125).  If an address
+         * was created with a raw IP address, a reverse name lookup
+         * may introduce endpoint identification security issue via
+         * DNS forging.
+         *
+         * Oracle JSSE provider is using this original hostname, via
+         * sun.misc.JavaNetAccess, for SSL/TLS endpoint identification.
+         *
+         * Note: May define a new public method in the future if necessary.
+         */
+        private String originalHostName;
 
         InetAddressHolder() {}
 
         InetAddressHolder(String hostName, int address, int family) {
+            this.originalHostName = hostName;
             this.hostName = hostName;
             this.address = address;
             this.family = family;
         }
 
         void init(String hostName, int family) {
+            this.originalHostName = hostName;
             this.hostName = hostName;
             if (family != -1) {
                 this.family = family;
@@ -225,6 +242,10 @@ class InetAddress implements java.io.Serializable {
 
         String getHostName() {
             return hostName;
+        }
+
+        String getOriginalHostName() {
+            return originalHostName;
         }
 
         /**

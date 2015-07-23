@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ public final class ComposedCharIter {
     private static int decompNum;
 
     static {
-        int maxNum = 2000;     //TBD: Unicode 4.0 only has 1926 canoDecomp...
+        int maxNum = 2100;
         chars = new int[maxNum];
         decomps = new String[maxNum];
         decompNum = NormalizerImpl.getDecompose(chars, decomps);

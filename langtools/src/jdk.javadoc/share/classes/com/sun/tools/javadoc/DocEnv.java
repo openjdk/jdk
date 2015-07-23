@@ -31,6 +31,7 @@ import java.util.*;
 import javax.tools.JavaFileManager;
 
 import com.sun.javadoc.*;
+import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.TreePath;
 import com.sun.tools.doclint.DocLint;
@@ -816,16 +817,19 @@ public class DocEnv {
 
     void initDoclint(Collection<String> opts, Collection<String> customTagNames, String htmlVersion) {
         ArrayList<String> doclintOpts = new ArrayList<>();
+        boolean msgOptionSeen = false;
 
-        for (String opt: opts) {
-            doclintOpts.add(opt == null ? DocLint.XMSGS_OPTION : DocLint.XMSGS_CUSTOM_PREFIX + opt);
+        for (String opt : opts) {
+            if (opt.startsWith(DocLint.XMSGS_OPTION)) {
+                if (opt.equals(DocLint.XMSGS_CUSTOM_PREFIX + "none"))
+                    return;
+                msgOptionSeen = true;
+            }
+            doclintOpts.add(opt);
         }
 
-        if (doclintOpts.isEmpty()) {
+        if (!msgOptionSeen) {
             doclintOpts.add(DocLint.XMSGS_OPTION);
-        } else if (doclintOpts.size() == 1
-                && doclintOpts.get(0).equals(DocLint.XMSGS_CUSTOM_PREFIX + "none")) {
-            return;
         }
 
         String sep = "";
@@ -847,5 +851,11 @@ public class DocEnv {
 
     boolean showTagMessages() {
         return (doclint == null);
+    }
+
+    Map<CompilationUnitTree, Boolean> shouldCheck = new HashMap<>();
+
+    boolean shouldCheck(CompilationUnitTree unit) {
+        return shouldCheck.computeIfAbsent(unit, doclint :: shouldCheck);
     }
 }

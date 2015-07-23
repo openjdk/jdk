@@ -55,7 +55,7 @@ package sun.text.bidi;
  *
  * @see com.ibm.icu.text.Bidi
  */
-public class BidiRun {
+class BidiRun {
 
     int start;              /* first logical position of the run */
     int limit;              /* last visual position of the run +1 */
@@ -106,7 +106,7 @@ public class BidiRun {
     /**
      * Get level of run
      */
-    public byte getEmbeddingLevel()
+    byte getEmbeddingLevel()
     {
         return level;
     }

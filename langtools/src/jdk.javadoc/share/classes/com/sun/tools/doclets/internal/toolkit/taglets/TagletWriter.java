@@ -58,7 +58,7 @@ public abstract class TagletWriter {
     public abstract Content getOutputInstance();
 
     /**
-     * Return the output for a {@code...} tag.
+     * Return the output for a {@code {@code ...}} tag.
      *
      * @param tag the tag.
      * @return the output of the taglet.
@@ -80,7 +80,7 @@ public abstract class TagletWriter {
     protected abstract Content deprecatedTagOutput(Doc doc);
 
     /**
-     * Return the output for a {@literal...} tag.
+     * Return the output for a {@code {@literal ...}} tag.
      *
      * @param tag the tag.
      * @return the output of the taglet.

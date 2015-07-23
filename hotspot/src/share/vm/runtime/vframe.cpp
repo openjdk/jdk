@@ -144,7 +144,7 @@ GrowableArray<MonitorInfo*>* javaVFrame::locked_monitors() {
   return result;
 }
 
-static void print_locked_object_class_name(outputStream* st, Handle obj, const char* lock_state) {
+void javaVFrame::print_locked_object_class_name(outputStream* st, Handle obj, const char* lock_state) {
   if (obj.not_null()) {
     st->print("\t- %s <" INTPTR_FORMAT "> ", lock_state, (address)obj());
     if (obj->klass() == SystemDictionary::Class_klass()) {
@@ -160,17 +160,29 @@ static void print_locked_object_class_name(outputStream* st, Handle obj, const c
 void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
   ResourceMark rm;
 
-  // If this is the first frame, and java.lang.Object.wait(...) then print out the receiver.
+  // If this is the first frame and it is java.lang.Object.wait(...)
+  // then print out the receiver. Locals are not always available,
+  // e.g., compiled native frames have no scope so there are no locals.
   if (frame_count == 0) {
     if (method()->name() == vmSymbols::wait_name() &&
         method()->method_holder()->name() == vmSymbols::java_lang_Object()) {
+      const char *wait_state = "waiting on"; // assume we are waiting
+      // If earlier in the output we reported java.lang.Thread.State ==
+      // "WAITING (on object monitor)" and now we report "waiting on", then
+      // we are still waiting for notification or timeout. Otherwise if
+      // we earlier reported java.lang.Thread.State == "BLOCKED (on object
+      // monitor)", then we are actually waiting to re-lock the monitor.
+      // At this level we can't distinguish the two cases to report
+      // "waited on" rather than "waiting on" for the second case.
       StackValueCollection* locs = locals();
       if (!locs->is_empty()) {
         StackValue* sv = locs->at(0);
         if (sv->type() == T_OBJECT) {
           Handle o = locs->at(0)->get_obj();
-          print_locked_object_class_name(st, o, "waiting on");
+          print_locked_object_class_name(st, o, wait_state);
         }
+      } else {
+        st->print_cr("\t- %s <no object reference available>", wait_state);
       }
     } else if (thread()->current_park_blocker() != NULL) {
       oop obj = thread()->current_park_blocker();
@@ -179,8 +191,8 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
     }
   }
 
-
-  // Print out all monitors that we have locked or are trying to lock
+  // Print out all monitors that we have locked, or are trying to lock,
+  // including re-locking after being notified or timing out in a wait().
   GrowableArray<MonitorInfo*>* mons = monitors();
   if (!mons->is_empty()) {
     bool found_first_monitor = false;
@@ -202,14 +214,14 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
       if (monitor->owner() != NULL) {
         // the monitor is associated with an object, i.e., it is locked
 
-        // First, assume we have the monitor locked. If we haven't found an
-        // owned monitor before and this is the first frame, then we need to
-        // see if we have completed the lock or we are blocked trying to
-        // acquire it - we can only be blocked if the monitor is inflated
-
         markOop mark = NULL;
         const char *lock_state = "locked"; // assume we have the monitor locked
         if (!found_first_monitor && frame_count == 0) {
+          // If this is the first frame and we haven't found an owned
+          // monitor before, then we need to see if we have completed
+          // the lock or if we are blocked trying to acquire it. Only
+          // an inflated monitor that is first on the monitor list in
+          // the first frame can block us on a monitor enter.
           mark = monitor->owner()->mark();
           if (mark->has_monitor() &&
               ( // we have marked ourself as pending on this monitor
@@ -219,13 +231,35 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
               )) {
             lock_state = "waiting to lock";
           } else {
-            mark = NULL; // Disable printing below
+            // We own the monitor which is not as interesting so
+            // disable the extra printing below.
+            mark = NULL;
+          }
+        } else if (frame_count != 0 && ObjectMonitor::Knob_Verbose) {
+          // This is not the first frame so we either own this monitor
+          // or we owned the monitor before and called wait(). Because
+          // wait() could have been called on any monitor in a lower
+          // numbered frame on the stack, we have to check all the
+          // monitors on the list for this frame.
+          // Note: Only enable this new output line in verbose mode
+          // since existing tests are not ready for it.
+          mark = monitor->owner()->mark();
+          if (mark->has_monitor() &&
+              ( // we have marked ourself as pending on this monitor
+                mark->monitor() == thread()->current_pending_monitor() ||
+                // we are not the owner of this monitor
+                !mark->monitor()->is_entered(thread())
+              )) {
+            lock_state = "waiting to re-lock in wait()";
+          } else {
+            // We own the monitor which is not as interesting so
+            // disable the extra printing below.
+            mark = NULL;
           }
         }
         print_locked_object_class_name(st, monitor->owner(), lock_state);
-        if (Verbose && mark != NULL) {
-          // match with format above, replacing "-" with " ".
-          st->print("\t  lockbits=");
+        if (ObjectMonitor::Knob_Verbose && mark != NULL) {
+          st->print("\t- lockbits=");
           mark->print_on(st);
           st->cr();
         }

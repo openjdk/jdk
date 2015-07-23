@@ -180,7 +180,7 @@ public abstract class AbstractJSObject implements JSObject {
     /**
      * Checking whether the given object is an instance of 'this' object.
      *
-     * @param instance instace to check
+     * @param instance instance to check
      * @return true if the given 'instance' is an instance of this 'function' object
      */
     @Override

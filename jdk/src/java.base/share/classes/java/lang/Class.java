@@ -56,6 +56,7 @@ import java.util.HashMap;
 import java.util.Objects;
 import java.util.StringJoiner;
 import sun.misc.Unsafe;
+import jdk.internal.HotSpotIntrinsicCandidate;
 import sun.reflect.CallerSensitive;
 import sun.reflect.ConstantPool;
 import sun.reflect.Reflection;
@@ -502,6 +503,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @since 1.1
      */
+    @HotSpotIntrinsicCandidate
     public native boolean isInstance(Object obj);
 
 
@@ -529,6 +531,7 @@ public final class Class<T> implements java.io.Serializable,
      *            null.
      * @since 1.1
      */
+    @HotSpotIntrinsicCandidate
     public native boolean isAssignableFrom(Class<?> cls);
 
 
@@ -539,6 +542,7 @@ public final class Class<T> implements java.io.Serializable,
      * @return  {@code true} if this object represents an interface;
      *          {@code false} otherwise.
      */
+    @HotSpotIntrinsicCandidate
     public native boolean isInterface();
 
 
@@ -549,6 +553,7 @@ public final class Class<T> implements java.io.Serializable,
      *          {@code false} otherwise.
      * @since   1.1
      */
+    @HotSpotIntrinsicCandidate
     public native boolean isArray();
 
 
@@ -580,6 +585,7 @@ public final class Class<T> implements java.io.Serializable,
      * @see     java.lang.Void#TYPE
      * @since 1.1
      */
+    @HotSpotIntrinsicCandidate
     public native boolean isPrimitive();
 
     /**
@@ -751,6 +757,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @return the direct superclass of the class represented by this object
      */
+    @HotSpotIntrinsicCandidate
     public native Class<? super T> getSuperclass();
 
 
@@ -984,6 +991,7 @@ public final class Class<T> implements java.io.Serializable,
      * @see     java.lang.reflect.Modifier
      * @since 1.1
      */
+    @HotSpotIntrinsicCandidate
     public native int getModifiers();
 
 
@@ -3382,6 +3390,7 @@ public final class Class<T> implements java.io.Serializable,
      * @since 1.5
      */
     @SuppressWarnings("unchecked")
+    @HotSpotIntrinsicCandidate
     public T cast(Object obj) {
         if (obj != null && !isInstance(obj))
             throw new ClassCastException(cannotCastMsg(obj));

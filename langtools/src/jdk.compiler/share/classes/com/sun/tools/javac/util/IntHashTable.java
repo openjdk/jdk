@@ -28,7 +28,7 @@ package com.sun.tools.javac.util;
 /**
  * A hash table that maps Object to int.
  *
- * This is a custom hash table optimised for the Object -> int
+ * This is a custom hash table optimised for the Object {@literal ->} int
  * maps. This is done to avoid unnecessary object allocation in the image set.
  *
  * @author Charles Turner
@@ -43,7 +43,7 @@ public class IntHashTable {
     private final static Object DELETED = new Object();
 
     /**
-     * Construct an Object -> int hash table.
+     * Construct an Object {@literal ->} int hash table.
      *
      * The default size of the hash table is 64 mappings.
      */
@@ -54,7 +54,7 @@ public class IntHashTable {
     }
 
     /**
-     * Construct an Object -> int hash table with a specified amount of mappings.
+     * Construct an Object {@literal ->} int hash table with a specified amount of mappings.
      * @param capacity The number of default mappings in this hash table.
      */
     public IntHashTable(int capacity) {

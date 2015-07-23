@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,12 +99,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
                 return;
             }
             // start the printer listener thread
-            Thread thr;
-            if (System.getSecurityManager() == null) {
-                thr = new Thread(new PrinterChangeListener());
-            } else {
-                thr = new ManagedLocalsThread(new PrinterChangeListener());
-            }
+            Thread thr = new ManagedLocalsThread(new PrinterChangeListener());
             thr.setDaemon(true);
             thr.start();
         } /* else condition ought to never happen! */

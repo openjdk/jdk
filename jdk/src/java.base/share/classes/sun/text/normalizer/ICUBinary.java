@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,25 +25,38 @@
 
 /*
  *******************************************************************************
- * (C) Copyright IBM Corp. 1996-2005 - All Rights Reserved                     *
- *                                                                             *
- * The original version of this source code and documentation is copyrighted   *
- * and owned by IBM, These materials are provided under terms of a License     *
- * Agreement between IBM and Sun. This technology is protected by multiple     *
- * US and International patents. This notice and attribution to IBM may not    *
- * to removed.                                                                 *
+ * Copyright (C) 1996-2014, International Business Machines Corporation and
+ * others. All Rights Reserved.
  *******************************************************************************
  */
 
 package sun.text.normalizer;
 
-import java.io.InputStream;
+import java.io.BufferedInputStream;
 import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.net.URL;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
+import java.nio.file.FileSystems;
 import java.util.Arrays;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
-public final class ICUBinary
-{
+public final class ICUBinary {
+
+    private static final class IsAcceptable implements Authenticate {
+        // @Override when we switch to Java 6
+        public boolean isDataVersionAcceptable(byte version[]) {
+            return version[0] == 1;
+        }
+    }
+
     // public inner interface ------------------------------------------------
 
     /**
@@ -63,53 +76,44 @@ public final class ICUBinary
     // public methods --------------------------------------------------------
 
     /**
-    * <p>ICU data header reader method.
-    * Takes a ICU generated big-endian input stream, parse the ICU standard
-    * file header and authenticates them.
-    * <p>Header format:
-    * <ul>
-    *     <li> Header size (char)
-    *     <li> Magic number 1 (byte)
-    *     <li> Magic number 2 (byte)
-    *     <li> Rest of the header size (char)
-    *     <li> Reserved word (char)
-    *     <li> Big endian indicator (byte)
-    *     <li> Character set family indicator (byte)
-    *     <li> Size of a char (byte) for c++ and c use
-    *     <li> Reserved byte (byte)
-    *     <li> Data format identifier (4 bytes), each ICU data has its own
-    *          identifier to distinguish them. [0] major [1] minor
-    *                                          [2] milli [3] micro
-    *     <li> Data version (4 bytes), the change version of the ICU data
-    *                             [0] major [1] minor [2] milli [3] micro
-    *     <li> Unicode version (4 bytes) this ICU is based on.
-    * </ul>
-    *
-    * <p>
-    * Example of use:<br>
-    * <pre>
-    * try {
-    *    FileInputStream input = new FileInputStream(filename);
-    *    If (Utility.readICUDataHeader(input, dataformat, dataversion,
-    *                                  unicode) {
-    *        System.out.println("Verified file header, this is a ICU data file");
-    *    }
-    * } catch (IOException e) {
-    *    System.out.println("This is not a ICU data file");
-    * }
-    * </pre>
-    *
-    * @param inputStream input stream that contains the ICU data header
-    * @param dataFormatIDExpected Data format expected. An array of 4 bytes
-    *                     information about the data format.
-    *                     E.g. data format ID 1.2.3.4. will became an array of
-    *                     {1, 2, 3, 4}
-    * @param authenticate user defined extra data authentication. This value
-    *                     can be null, if no extra authentication is needed.
-    * @exception IOException thrown if there is a read error or
-    *            when header authentication fails.
-    * @draft 2.1
-    */
+     * Loads an ICU binary data file and returns it as a ByteBuffer.
+     * The buffer contents is normally read-only, but its position etc. can be modified.
+     *
+     * @param itemPath Relative ICU data item path, for example "root.res" or "coll/ucadata.icu".
+     * @return The data as a read-only ByteBuffer.
+     */
+    public static ByteBuffer getRequiredData(String itemPath) {
+        final Class<ICUBinary> root = ICUBinary.class;
+
+        try (InputStream is = AccessController.doPrivileged(new PrivilegedAction<InputStream>() {
+                public InputStream run() {
+                    return root.getResourceAsStream(itemPath);
+                }
+            })) {
+
+            BufferedInputStream b=new BufferedInputStream(is, 4096 /* data buffer size */);
+            DataInputStream inputStream = new DataInputStream(b);
+            byte[] bb = new byte[120000];
+            int n = inputStream.read(bb);
+            ByteBuffer bytes = ByteBuffer.wrap(bb, 0, n);
+            return bytes;
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    /**
+     * Same as readHeader(), but returns a VersionInfo rather than a compact int.
+     */
+    public static VersionInfo readHeaderAndDataVersion(ByteBuffer bytes,
+                                                             int dataFormat,
+                                                             Authenticate authenticate)
+                                                                throws IOException {
+        return getVersionInfoFromCompactInt(readHeader(bytes, dataFormat, authenticate));
+    }
+
+    private static final byte BIG_ENDIAN_ = 1;
     public static final byte[] readHeader(InputStream inputStream,
                                         byte dataFormatIDExpected[],
                                         Authenticate authenticate)
@@ -164,6 +168,80 @@ public final class ICUBinary
         return unicodeVersion;
     }
 
+    /**
+     * Reads an ICU data header, checks the data format, and returns the data version.
+     *
+     * <p>Assumes that the ByteBuffer position is 0 on input.
+     * The buffer byte order is set according to the data.
+     * The buffer position is advanced past the header (including UDataInfo and comment).
+     *
+     * <p>See C++ ucmndata.h and unicode/udata.h.
+     *
+     * @return dataVersion
+     * @throws IOException if this is not a valid ICU data item of the expected dataFormat
+     */
+    public static int readHeader(ByteBuffer bytes, int dataFormat, Authenticate authenticate)
+            throws IOException {
+        assert bytes.position() == 0;
+        byte magic1 = bytes.get(2);
+        byte magic2 = bytes.get(3);
+        if (magic1 != MAGIC1 || magic2 != MAGIC2) {
+            throw new IOException(MAGIC_NUMBER_AUTHENTICATION_FAILED_);
+        }
+
+        byte isBigEndian = bytes.get(8);
+        byte charsetFamily = bytes.get(9);
+        byte sizeofUChar = bytes.get(10);
+        if (isBigEndian < 0 || 1 < isBigEndian ||
+                charsetFamily != CHAR_SET_ || sizeofUChar != CHAR_SIZE_) {
+            throw new IOException(HEADER_AUTHENTICATION_FAILED_);
+        }
+        bytes.order(isBigEndian != 0 ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN);
+
+        int headerSize = bytes.getChar(0);
+        int sizeofUDataInfo = bytes.getChar(4);
+        if (sizeofUDataInfo < 20 || headerSize < (sizeofUDataInfo + 4)) {
+            throw new IOException("Internal Error: Header size error");
+        }
+        // TODO: Change Authenticate to take int major, int minor, int milli, int micro
+        // to avoid array allocation.
+        byte[] formatVersion = new byte[] {
+            bytes.get(16), bytes.get(17), bytes.get(18), bytes.get(19)
+        };
+        if (bytes.get(12) != (byte)(dataFormat >> 24) ||
+                bytes.get(13) != (byte)(dataFormat >> 16) ||
+                bytes.get(14) != (byte)(dataFormat >> 8) ||
+                bytes.get(15) != (byte)dataFormat ||
+                (authenticate != null && !authenticate.isDataVersionAcceptable(formatVersion))) {
+            throw new IOException(HEADER_AUTHENTICATION_FAILED_ +
+                    String.format("; data format %02x%02x%02x%02x, format version %d.%d.%d.%d",
+                            bytes.get(12), bytes.get(13), bytes.get(14), bytes.get(15),
+                            formatVersion[0] & 0xff, formatVersion[1] & 0xff,
+                            formatVersion[2] & 0xff, formatVersion[3] & 0xff));
+        }
+
+        bytes.position(headerSize);
+        return  // dataVersion
+                ((int)bytes.get(20) << 24) |
+                ((bytes.get(21) & 0xff) << 16) |
+                ((bytes.get(22) & 0xff) << 8) |
+                (bytes.get(23) & 0xff);
+    }
+
+    public static void skipBytes(ByteBuffer bytes, int skipLength) {
+        if (skipLength > 0) {
+            bytes.position(bytes.position() + skipLength);
+        }
+    }
+
+    /**
+     * Returns a VersionInfo for the bytes in the compact version integer.
+     */
+    public static VersionInfo getVersionInfoFromCompactInt(int version) {
+        return VersionInfo.getInstance(
+                version >>> 24, (version >> 16) & 0xff, (version >> 8) & 0xff, version & 0xff);
+    }
+
     // private variables -------------------------------------------------
 
     /**
@@ -175,7 +253,6 @@ public final class ICUBinary
     /**
     * File format authentication values
     */
-    private static final byte BIG_ENDIAN_ = 1;
     private static final byte CHAR_SET_ = 0;
     private static final byte CHAR_SIZE_ = 2;
 
@@ -183,7 +260,7 @@ public final class ICUBinary
     * Error messages
     */
     private static final String MAGIC_NUMBER_AUTHENTICATION_FAILED_ =
-                       "ICU data file error: Not an ICU data file";
+                       "ICUBinary data file error: Magin number authentication failed";
     private static final String HEADER_AUTHENTICATION_FAILED_ =
-        "ICU data file error: Header authentication failed, please check if you have a valid ICU data file";
+        "ICUBinary data file error: Header authentication failed";
 }

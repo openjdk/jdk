@@ -1291,7 +1291,7 @@ public:
   experimental(intx, hashCode, 5,                                           \
                "(Unstable) select hashCode generation algorithm")           \
                                                                             \
-  experimental(intx, WorkAroundNPTLTimedWaitHang, 1,                        \
+  experimental(intx, WorkAroundNPTLTimedWaitHang, 0,                        \
                "(Unstable, Linux-specific) "                                \
                "avoid NPTL-FUTEX hang pthread_cond_timedwait")              \
                                                                             \
@@ -2717,6 +2717,12 @@ public:
   develop(bool, EagerInitialization, false,                                 \
           "Eagerly initialize classes if possible")                         \
                                                                             \
+  diagnostic(bool, LogTouchedMethods, false,                                \
+          "Log methods which have been ever touched in runtime")            \
+                                                                            \
+  diagnostic(bool, PrintTouchedMethodsAtExit, false,                        \
+          "Print all methods that have been ever touched in runtime")       \
+                                                                            \
   develop(bool, TraceMethodReplacement, false,                              \
           "Print when methods are replaced do to recompilation")            \
                                                                             \
@@ -3282,9 +3288,6 @@ public:
   develop(intx, ProfilerNodeSize,  1024,                                    \
           "Size in K to allocate for the Profile Nodes of each thread")     \
                                                                             \
-  product_pd(intx, PreInflateSpin,                                          \
-          "Number of times to spin wait before inflation")                  \
-                                                                            \
   /* gc parameters */                                                       \
   product(size_t, InitialHeapSize, 0,                                       \
           "Initial heap size (in bytes); zero means use ergonomics")        \
@@ -3725,9 +3728,6 @@ public:
   develop(intx, LongCompileThreshold,     50,                               \
           "Used with +TraceLongCompiles")                                   \
                                                                             \
-  product(intx, StarvationMonitorInterval,    200,                          \
-          "Pause between each check (in milliseconds)")                     \
-                                                                            \
   /* recompilation */                                                       \
   product_pd(intx, CompileThreshold,                                        \
           "number of interpreted method invocations before (re-)compiling") \
@@ -4080,9 +4080,6 @@ public:
   develop(bool, TraceDefaultMethods, false,                                 \
           "Trace the default method processing steps")                      \
                                                                             \
-  develop(bool, VerifyGenericSignatures, false,                             \
-          "Abort VM on erroneous or inconsistent generic signatures")       \
-                                                                            \
   diagnostic(bool, WhiteBoxAPI, false,                                      \
           "Enable internal testing APIs")                                   \
                                                                             \
@@ -4130,14 +4127,18 @@ public:
              "Use the FP register for holding the frame pointer "           \
              "and not as a general purpose register.")                      \
                                                                             \
-  diagnostic(bool, CheckIntrinsics, trueInDebug,                            \
+  diagnostic(bool, CheckIntrinsics, true,                                   \
              "When a class C is loaded, check that "                        \
              "(1) all intrinsics defined by the VM for class C are present "\
              "in the loaded class file and are marked with the "            \
-             "@HotSpotIntrinsicCandidate annotation and also that "         \
+             "@HotSpotIntrinsicCandidate annotation, that "                 \
              "(2) there is an intrinsic registered for all loaded methods " \
              "that are annotated with the @HotSpotIntrinsicCandidate "      \
-             "annotation.")
+             "annotation, and that "                                        \
+             "(3) no orphan methods exist for class C (i.e., methods for "  \
+             "which the VM declares an intrinsic but that are not declared "\
+             "in the loaded class C. "                                      \
+             "Check (3) is available only in debug builds.")
 
 /*
  *  Macros for factoring of globals

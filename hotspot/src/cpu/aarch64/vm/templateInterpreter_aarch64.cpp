@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -869,7 +869,7 @@ void InterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
 // native method than the typical interpreter frame setup.
 address InterpreterGenerator::generate_native_entry(bool synchronized) {
   // determine code generation flags
-  bool inc_counter  = UseCompiler || CountCompiledCalls;
+  bool inc_counter  = UseCompiler || CountCompiledCalls || LogTouchedMethods;
 
   // r1: Method*
   // rscratch1: sender sp
@@ -1307,7 +1307,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
 //
 address InterpreterGenerator::generate_normal_entry(bool synchronized) {
   // determine code generation flags
-  bool inc_counter  = UseCompiler || CountCompiledCalls;
+  bool inc_counter  = UseCompiler || CountCompiledCalls || LogTouchedMethods;
 
   // rscratch1: sender sp
   address entry_point = __ pc();

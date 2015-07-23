@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4503641
+ * @bug 4503641 8130394
  * @summary Check that DatagramChannel.receive returns a new SocketAddress
  *          when it receives a packet from the same source address but
  *          different endpoint.
@@ -63,6 +63,7 @@ public class ReceiveISA {
         SocketAddress sa[] = new SocketAddress[3];
         for (int i=0; i<3; i++) {
             sa[i] = dc3.receive(rb);
+            System.out.println("received "+ sa[i] );
             rb.clear();
         }
 

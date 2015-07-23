@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,29 +22,31 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
  *******************************************************************************
- * (C) Copyright IBM Corp. and others, 1996-2009 - All Rights Reserved         *
- *                                                                             *
- * The original version of this source code and documentation is copyrighted   *
- * and owned by IBM, These materials are provided under terms of a License     *
- * Agreement between IBM and Sun. This technology is protected by multiple     *
- * US and International patents. This notice and attribution to IBM may not    *
- * to removed.                                                                 *
+ * Copyright (C) 1996-2015, International Business Machines Corporation and
+ * others. All Rights Reserved.
  *******************************************************************************
  */
-
 package sun.text.normalizer;
 
+import java.io.IOException;
 import java.text.ParsePosition;
-import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.TreeSet;
 
 /**
- * A mutable set of Unicode characters and multicharacter strings.  Objects of this class
- * represent <em>character classes</em> used in regular expressions.
- * A character specifies a subset of Unicode code points.  Legal
- * code points are U+0000 to U+10FFFF, inclusive.
+ * A mutable set of Unicode characters and multicharacter strings.
+ * Objects of this class represent <em>character classes</em> used
+ * in regular expressions. A character specifies a subset of Unicode
+ * code points.  Legal code points are U+0000 to U+10FFFF, inclusive.
+ *
+ * Note: method freeze() will not only make the set immutable, but
+ * also makes important methods much higher performance:
+ * contains(c), containsNone(...), span(...), spanBack(...) etc.
+ * After the object is frozen, any subsequent call that wants to change
+ * the object will throw UnsupportedOperationException.
  *
  * <p>The UnicodeSet class is not designed to be subclassed.
  *
@@ -118,7 +120,7 @@ import java.util.TreeSet;
  * </blockquote>
  *
  * Any character may be preceded by a backslash in order to remove any special
- * meaning.  White space characters, as defined by UCharacterProperty.isRuleWhiteSpace(), are
+ * meaning.  White space characters, as defined by the Unicode Pattern_White_Space property, are
  * ignored, unless they are escaped.
  *
  * <p>Property patterns specify a set of characters having a certain
@@ -267,18 +269,24 @@ import java.util.TreeSet;
  *     </tr>
  *   </table>
  * </blockquote>
- * <p>To iterate over contents of UnicodeSet, use UnicodeSetIterator class.
+ * <p>To iterate over contents of UnicodeSet, the following are available:
+ * <ul><li>{@link #ranges()} to iterate through the ranges</li>
+ * <li>{@link #strings()} to iterate through the strings</li>
+ * <li>{@link #iterator()} to iterate through the entire contents in a single loop.
+ * That method is, however, not particularly efficient, since it "boxes" each code point into a String.
+ * </ul>
+ * All of the above can be used in <b>for</b> loops.
+ * The {@link com.ibm.icu.text.UnicodeSetIterator UnicodeSetIterator} can also be used, but not in <b>for</b> loops.
+ * <p>To replace, count elements, or delete spans, see {@link com.ibm.icu.text.UnicodeSetSpanner UnicodeSetSpanner}.
  *
  * @author Alan Liu
  * @stable ICU 2.0
- * @see UnicodeSetIterator
  */
-@SuppressWarnings("deprecation")
-public class UnicodeSet implements UnicodeMatcher {
+class UnicodeSet {
 
     private static final int LOW = 0x000000; // LOW <= all valid values. ZERO for codepoints
     private static final int HIGH = 0x110000; // HIGH > all valid values. 10000 for code units.
-                                             // 110000 for codepoints
+    // 110000 for codepoints
 
     /**
      * Minimum value that can be stored in a UnicodeSet.
@@ -299,7 +307,7 @@ public class UnicodeSet implements UnicodeMatcher {
 
     // NOTE: normally the field should be of type SortedSet; but that is missing a public clone!!
     // is not private so that UnicodeSetIterator can get access
-    TreeSet<String> strings = new TreeSet<>();
+    TreeSet<String> strings = new TreeSet<String>();
 
     /**
      * The pattern representation of this set.  This may not be the
@@ -310,18 +318,14 @@ public class UnicodeSet implements UnicodeMatcher {
      * indicating that toPattern() must generate a pattern
      * representation from the inversion list.
      */
-    private String pat = null;
 
     private static final int START_EXTRA = 16;         // initial storage. Must be >= 0
     private static final int GROW_EXTRA = START_EXTRA; // extra amount for growth. Must be >= 0
 
-    /**
-     * A set of all characters _except_ the second through last characters of
-     * certain ranges.  These ranges are ranges of characters whose
-     * properties are all exactly alike, e.g. CJK Ideographs from
-     * U+4E00 to U+9FA5.
-     */
-    private static UnicodeSet INCLUSIONS[] = null;
+    private static UnicodeSet INCLUSION = null;
+
+    private volatile BMPSet bmpSet; // The set is frozen if bmpSet or stringSpan is not null.
+    private volatile UnicodeSetStringSpan stringSpan;
 
     //----------------------------------------------------------------
     // Public API
@@ -331,14 +335,22 @@ public class UnicodeSet implements UnicodeMatcher {
      * Constructs an empty set.
      * @stable ICU 2.0
      */
-    public UnicodeSet() {
+    private UnicodeSet() {
         list = new int[1 + START_EXTRA];
         list[len++] = HIGH;
     }
 
     /**
-     * Constructs a set containing the given range.
-     * If {@code end > start} then an empty set is created.
+     * Constructs a copy of an existing set.
+     * @stable ICU 2.0
+     */
+    private UnicodeSet(UnicodeSet other) {
+        set(other);
+    }
+
+    /**
+     * Constructs a set containing the given range. If <code>end >
+     * start</code> then an empty set is created.
      *
      * @param start first character, inclusive, of range
      * @param end last character, inclusive, of range
@@ -359,7 +371,7 @@ public class UnicodeSet implements UnicodeMatcher {
      */
     public UnicodeSet(String pattern) {
         this();
-        applyPattern(pattern, null, null, IGNORE_SPACE);
+        applyPattern(pattern, null);
     }
 
     /**
@@ -368,172 +380,29 @@ public class UnicodeSet implements UnicodeMatcher {
      * copied to this object
      * @stable ICU 2.0
      */
-    @SuppressWarnings("unchecked") // Casting result of clone of a collection
     public UnicodeSet set(UnicodeSet other) {
+        checkFrozen();
         list = other.list.clone();
         len = other.len;
-        pat = other.pat;
-        strings = (TreeSet)other.strings.clone();
+        strings = new TreeSet<String>(other.strings);
         return this;
     }
 
     /**
-     * Modifies this set to represent the set specified by the given pattern.
-     * See the class description for the syntax of the pattern language.
-     * Whitespace is ignored.
-     * @param pattern a string specifying what characters are in the set
-     * @exception java.lang.IllegalArgumentException if the pattern
-     * contains a syntax error.
+     * Returns the number of elements in this set (its cardinality)
+     * Note than the elements of a set may include both individual
+     * codepoints and strings.
+     *
+     * @return the number of elements in this set (its cardinality).
      * @stable ICU 2.0
      */
-    public final UnicodeSet applyPattern(String pattern) {
-        return applyPattern(pattern, null, null, IGNORE_SPACE);
-    }
-
-    /**
-     * Append the <code>toPattern()</code> representation of a
-     * string to the given <code>StringBuffer</code>.
-     */
-    private static void _appendToPat(StringBuffer buf, String s, boolean escapeUnprintable) {
-        for (int i = 0; i < s.length(); i += UTF16.getCharCount(i)) {
-            _appendToPat(buf, UTF16.charAt(s, i), escapeUnprintable);
-        }
-    }
-
-    /**
-     * Append the <code>toPattern()</code> representation of a
-     * character to the given <code>StringBuffer</code>.
-     */
-    private static void _appendToPat(StringBuffer buf, int c, boolean escapeUnprintable) {
-        if (escapeUnprintable && Utility.isUnprintable(c)) {
-            // Use hex escape notation (<backslash>uxxxx or <backslash>Uxxxxxxxx) for anything
-            // unprintable
-            if (Utility.escapeUnprintable(buf, c)) {
-                return;
-            }
-        }
-        // Okay to let ':' pass through
-        switch (c) {
-        case '[': // SET_OPEN:
-        case ']': // SET_CLOSE:
-        case '-': // HYPHEN:
-        case '^': // COMPLEMENT:
-        case '&': // INTERSECTION:
-        case '\\': //BACKSLASH:
-        case '{':
-        case '}':
-        case '$':
-        case ':':
-            buf.append('\\');
-            break;
-        default:
-            // Escape whitespace
-            if (UCharacterProperty.isRuleWhiteSpace(c)) {
-                buf.append('\\');
-            }
-            break;
-        }
-        UTF16.append(buf, c);
-    }
-
-    /**
-     * Append a string representation of this set to result.  This will be
-     * a cleaned version of the string passed to applyPattern(), if there
-     * is one.  Otherwise it will be generated.
-     */
-    private StringBuffer _toPattern(StringBuffer result,
-                                    boolean escapeUnprintable) {
-        if (pat != null) {
-            int i;
-            int backslashCount = 0;
-            for (i=0; i<pat.length(); ) {
-                int c = UTF16.charAt(pat, i);
-                i += UTF16.getCharCount(c);
-                if (escapeUnprintable && Utility.isUnprintable(c)) {
-                    // If the unprintable character is preceded by an odd
-                    // number of backslashes, then it has been escaped.
-                    // Before unescaping it, we delete the final
-                    // backslash.
-                    if ((backslashCount % 2) == 1) {
-                        result.setLength(result.length() - 1);
-                    }
-                    Utility.escapeUnprintable(result, c);
-                    backslashCount = 0;
-                } else {
-                    UTF16.append(result, c);
-                    if (c == '\\') {
-                        ++backslashCount;
-                    } else {
-                        backslashCount = 0;
-                    }
-                }
-            }
-            return result;
-        }
-
-        return _generatePattern(result, escapeUnprintable, true);
-    }
-
-    /**
-     * Generate and append a string representation of this set to result.
-     * This does not use this.pat, the cleaned up copy of the string
-     * passed to applyPattern().
-     * @param includeStrings if false, doesn't include the strings.
-     * @stable ICU 3.8
-     */
-    public StringBuffer _generatePattern(StringBuffer result,
-                                         boolean escapeUnprintable, boolean includeStrings) {
-        result.append('[');
-
+    public int size() {
+        int n = 0;
         int count = getRangeCount();
-
-        // If the set contains at least 2 intervals and includes both
-        // MIN_VALUE and MAX_VALUE, then the inverse representation will
-        // be more economical.
-        if (count > 1 &&
-            getRangeStart(0) == MIN_VALUE &&
-            getRangeEnd(count-1) == MAX_VALUE) {
-
-            // Emit the inverse
-            result.append('^');
-
-            for (int i = 1; i < count; ++i) {
-                int start = getRangeEnd(i-1)+1;
-                int end = getRangeStart(i)-1;
-                _appendToPat(result, start, escapeUnprintable);
-                if (start != end) {
-                    if ((start+1) != end) {
-                        result.append('-');
-                    }
-                    _appendToPat(result, end, escapeUnprintable);
-                }
-            }
+        for (int i = 0; i < count; ++i) {
+            n += getRangeEnd(i) - getRangeStart(i) + 1;
         }
-
-        // Default; emit the ranges as pairs
-        else {
-            for (int i = 0; i < count; ++i) {
-                int start = getRangeStart(i);
-                int end = getRangeEnd(i);
-                _appendToPat(result, start, escapeUnprintable);
-                if (start != end) {
-                    if ((start+1) != end) {
-                        result.append('-');
-                    }
-                    _appendToPat(result, end, escapeUnprintable);
-                }
-            }
-        }
-
-        if (includeStrings && strings.size() > 0) {
-            Iterator<String> it = strings.iterator();
-            while (it.hasNext()) {
-                result.append('{');
-                _appendToPat(result, it.next(), escapeUnprintable);
-                result.append('}');
-            }
-        }
-        return result.append(']');
+        return n + strings.size();
     }
 
     // for internal use, after checkFrozen has been called
@@ -559,6 +428,7 @@ public class UnicodeSet implements UnicodeMatcher {
      * @stable ICU 2.0
      */
     public final UnicodeSet add(int c) {
+        checkFrozen();
         return add_unchecked(c);
     }
 
@@ -643,7 +513,6 @@ public class UnicodeSet implements UnicodeMatcher {
             len += 2;
         }
 
-        pat = null;
         return this;
     }
 
@@ -657,11 +526,11 @@ public class UnicodeSet implements UnicodeMatcher {
      * @return this object, for chaining
      * @stable ICU 2.0
      */
-    public final UnicodeSet add(String s) {
+    public final UnicodeSet add(CharSequence s) {
+        checkFrozen();
         int cp = getSingleCP(s);
         if (cp < 0) {
-            strings.add(s);
-            pat = null;
+            strings.add(s.toString());
         } else {
             add_unchecked(cp, cp);
         }
@@ -669,11 +538,13 @@ public class UnicodeSet implements UnicodeMatcher {
     }
 
     /**
+     * Utility for getting code point from single code point CharSequence.
+     * See the public UTF16.getSingleCodePoint()
      * @return a code point IF the string consists of a single one.
      * otherwise returns -1.
-     * @param string to test
+     * @param s to test
      */
-    private static int getSingleCP(String s) {
+    private static int getSingleCP(CharSequence s) {
         if (s.length() < 1) {
             throw new IllegalArgumentException("Can't use zero-length strings in UnicodeSet");
         }
@@ -701,6 +572,7 @@ public class UnicodeSet implements UnicodeMatcher {
      * @stable ICU 2.0
      */
     public UnicodeSet complement(int start, int end) {
+        checkFrozen();
         if (start < MIN_VALUE || start > MAX_VALUE) {
             throw new IllegalArgumentException("Invalid code point U+" + Utility.hex(start, 6));
         }
@@ -710,26 +582,6 @@ public class UnicodeSet implements UnicodeMatcher {
         if (start <= end) {
             xor(range(start, end), 2, 0);
         }
-        pat = null;
-        return this;
-    }
-
-    /**
-     * This is equivalent to
-     * <code>complement(MIN_VALUE, MAX_VALUE)</code>.
-     * @stable ICU 2.0
-     */
-    public UnicodeSet complement() {
-        if (list[0] == LOW) {
-            System.arraycopy(list, 1, list, 0, len-1);
-            --len;
-        } else {
-            ensureCapacity(len+1);
-            System.arraycopy(list, 0, list, 1, len);
-            list[0] = LOW;
-            ++len;
-        }
-        pat = null;
         return this;
     }
 
@@ -743,6 +595,12 @@ public class UnicodeSet implements UnicodeMatcher {
         if (c < MIN_VALUE || c > MAX_VALUE) {
             throw new IllegalArgumentException("Invalid code point U+" + Utility.hex(c, 6));
         }
+        if (bmpSet != null) {
+            return bmpSet.contains(c);
+        }
+        if (stringSpan != null) {
+            return stringSpan.contains(c);
+        }
 
         /*
         // Set i to the index of the start item greater than ch
@@ -751,7 +609,7 @@ public class UnicodeSet implements UnicodeMatcher {
         while (true) {
             if (c < list[++i]) break;
         }
-        */
+         */
 
         int i = findCodePoint(c);
 
@@ -790,29 +648,13 @@ public class UnicodeSet implements UnicodeMatcher {
         // invariant: c < list[hi]
         for (;;) {
             int i = (lo + hi) >>> 1;
-            if (i == lo) return hi;
+        if (i == lo) return hi;
             if (c < list[i]) {
                 hi = i;
             } else {
                 lo = i;
             }
         }
-    }
-
-    /**
-     * Adds all of the elements in the specified set to this set if
-     * they're not already present.  This operation effectively
-     * modifies this set so that its value is the <i>union</i> of the two
-     * sets.  The behavior of this operation is unspecified if the specified
-     * collection is modified while the operation is in progress.
-     *
-     * @param c set whose elements are to be added to this set.
-     * @stable ICU 2.0
-     */
-    public UnicodeSet addAll(UnicodeSet c) {
-        add(c.list, c.len, 0);
-        strings.addAll(c.strings);
-        return this;
     }
 
     /**
@@ -826,24 +668,9 @@ public class UnicodeSet implements UnicodeMatcher {
      * @stable ICU 2.0
      */
     public UnicodeSet retainAll(UnicodeSet c) {
+        checkFrozen();
         retain(c.list, c.len, 0);
         strings.retainAll(c.strings);
-        return this;
-    }
-
-    /**
-     * Removes from this set all of its elements that are contained in the
-     * specified set.  This operation effectively modifies this
-     * set so that its value is the <i>asymmetric set difference</i> of
-     * the two sets.
-     *
-     * @param c set that defines which elements will be removed from
-     *          this set.
-     * @stable ICU 2.0
-     */
-    public UnicodeSet removeAll(UnicodeSet c) {
-        retain(c.list, c.len, 2);
-        strings.removeAll(c.strings);
         return this;
     }
 
@@ -853,9 +680,9 @@ public class UnicodeSet implements UnicodeMatcher {
      * @stable ICU 2.0
      */
     public UnicodeSet clear() {
+        checkFrozen();
         list[0] = HIGH;
         len = 1;
-        pat = null;
         strings.clear();
         return this;
     }
@@ -923,405 +750,18 @@ public class UnicodeSet implements UnicodeMatcher {
      * of <code>pattern</code>
      * @exception java.lang.IllegalArgumentException if the parse fails.
      */
-    UnicodeSet applyPattern(String pattern,
-                      ParsePosition pos,
-                      SymbolTable symbols,
-                      int options) {
-
-        // Need to build the pattern in a temporary string because
-        // _applyPattern calls add() etc., which set pat to empty.
-        boolean parsePositionWasNull = pos == null;
-        if (parsePositionWasNull) {
-            pos = new ParsePosition(0);
-        }
-
-        StringBuffer rebuiltPat = new StringBuffer();
-        RuleCharacterIterator chars =
-            new RuleCharacterIterator(pattern, symbols, pos);
-        applyPattern(chars, symbols, rebuiltPat, options);
-        if (chars.inVariable()) {
-            syntaxError(chars, "Extra chars in variable value");
-        }
-        pat = rebuiltPat.toString();
-        if (parsePositionWasNull) {
-            int i = pos.getIndex();
-
-            // Skip over trailing whitespace
-            if ((options & IGNORE_SPACE) != 0) {
-                i = Utility.skipWhitespace(pattern, i);
-            }
-
-            if (i != pattern.length()) {
-                throw new IllegalArgumentException("Parse of \"" + pattern +
-                                                   "\" failed at " + i);
-            }
-        }
-        return this;
-    }
-
-    /**
-     * Parse the pattern from the given RuleCharacterIterator.  The
-     * iterator is advanced over the parsed pattern.
-     * @param chars iterator over the pattern characters.  Upon return
-     * it will be advanced to the first character after the parsed
-     * pattern, or the end of the iteration if all characters are
-     * parsed.
-     * @param symbols symbol table to use to parse and dereference
-     * variables, or null if none.
-     * @param rebuiltPat the pattern that was parsed, rebuilt or
-     * copied from the input pattern, as appropriate.
-     * @param options a bit mask of zero or more of the following:
-     * IGNORE_SPACE, CASE.
-     */
-    void applyPattern(RuleCharacterIterator chars, SymbolTable symbols,
-                      StringBuffer rebuiltPat, int options) {
-        // Syntax characters: [ ] ^ - & { }
-
-        // Recognized special forms for chars, sets: c-c s-s s&s
-
-        int opts = RuleCharacterIterator.PARSE_VARIABLES |
-                   RuleCharacterIterator.PARSE_ESCAPES;
-        if ((options & IGNORE_SPACE) != 0) {
-            opts |= RuleCharacterIterator.SKIP_WHITESPACE;
-        }
-
-        StringBuffer patBuf = new StringBuffer(), buf = null;
-        boolean usePat = false;
-        UnicodeSet scratch = null;
-        Object backup = null;
-
-        // mode: 0=before [, 1=between [...], 2=after ]
-        // lastItem: 0=none, 1=char, 2=set
-        int lastItem = 0, lastChar = 0, mode = 0;
-        char op = 0;
-
-        boolean invert = false;
-
-        clear();
-
-        while (mode != 2 && !chars.atEnd()) {
-            if (false) {
-                // Debugging assertion
-                if (!((lastItem == 0 && op == 0) ||
-                      (lastItem == 1 && (op == 0 || op == '-')) ||
-                      (lastItem == 2 && (op == 0 || op == '-' || op == '&')))) {
-                    throw new IllegalArgumentException();
-                }
-            }
-
-            int c = 0;
-            boolean literal = false;
-            UnicodeSet nested = null;
-
-            // -------- Check for property pattern
-
-            // setMode: 0=none, 1=unicodeset, 2=propertypat, 3=preparsed
-            int setMode = 0;
-            if (resemblesPropertyPattern(chars, opts)) {
-                setMode = 2;
-            }
-
-            // -------- Parse '[' of opening delimiter OR nested set.
-            // If there is a nested set, use `setMode' to define how
-            // the set should be parsed.  If the '[' is part of the
-            // opening delimiter for this pattern, parse special
-            // strings "[", "[^", "[-", and "[^-".  Check for stand-in
-            // characters representing a nested set in the symbol
-            // table.
-
-            else {
-                // Prepare to backup if necessary
-                backup = chars.getPos(backup);
-                c = chars.next(opts);
-                literal = chars.isEscaped();
-
-                if (c == '[' && !literal) {
-                    if (mode == 1) {
-                        chars.setPos(backup); // backup
-                        setMode = 1;
-                    } else {
-                        // Handle opening '[' delimiter
-                        mode = 1;
-                        patBuf.append('[');
-                        backup = chars.getPos(backup); // prepare to backup
-                        c = chars.next(opts);
-                        literal = chars.isEscaped();
-                        if (c == '^' && !literal) {
-                            invert = true;
-                            patBuf.append('^');
-                            backup = chars.getPos(backup); // prepare to backup
-                            c = chars.next(opts);
-                            literal = chars.isEscaped();
-                        }
-                        // Fall through to handle special leading '-';
-                        // otherwise restart loop for nested [], \p{}, etc.
-                        if (c == '-') {
-                            literal = true;
-                            // Fall through to handle literal '-' below
-                        } else {
-                            chars.setPos(backup); // backup
-                            continue;
-                        }
-                    }
-                } else if (symbols != null) {
-                     UnicodeMatcher m = symbols.lookupMatcher(c); // may be null
-                     if (m != null) {
-                         try {
-                             nested = (UnicodeSet) m;
-                             setMode = 3;
-                         } catch (ClassCastException e) {
-                             syntaxError(chars, "Syntax error");
-                         }
-                     }
-                }
-            }
-
-            // -------- Handle a nested set.  This either is inline in
-            // the pattern or represented by a stand-in that has
-            // previously been parsed and was looked up in the symbol
-            // table.
-
-            if (setMode != 0) {
-                if (lastItem == 1) {
-                    if (op != 0) {
-                        syntaxError(chars, "Char expected after operator");
-                    }
-                    add_unchecked(lastChar, lastChar);
-                    _appendToPat(patBuf, lastChar, false);
-                    lastItem = op = 0;
-                }
-
-                if (op == '-' || op == '&') {
-                    patBuf.append(op);
-                }
-
-                if (nested == null) {
-                    if (scratch == null) scratch = new UnicodeSet();
-                    nested = scratch;
-                }
-                switch (setMode) {
-                case 1:
-                    nested.applyPattern(chars, symbols, patBuf, options);
-                    break;
-                case 2:
-                    chars.skipIgnored(opts);
-                    nested.applyPropertyPattern(chars, patBuf, symbols);
-                    break;
-                case 3: // `nested' already parsed
-                    nested._toPattern(patBuf, false);
-                    break;
-                }
-
-                usePat = true;
-
-                if (mode == 0) {
-                    // Entire pattern is a category; leave parse loop
-                    set(nested);
-                    mode = 2;
-                    break;
-                }
-
-                switch (op) {
-                case '-':
-                    removeAll(nested);
-                    break;
-                case '&':
-                    retainAll(nested);
-                    break;
-                case 0:
-                    addAll(nested);
-                    break;
-                }
-
-                op = 0;
-                lastItem = 2;
-
-                continue;
-            }
-
-            if (mode == 0) {
-                syntaxError(chars, "Missing '['");
-            }
-
-            // -------- Parse special (syntax) characters.  If the
-            // current character is not special, or if it is escaped,
-            // then fall through and handle it below.
-
-            if (!literal) {
-                switch (c) {
-                case ']':
-                    if (lastItem == 1) {
-                        add_unchecked(lastChar, lastChar);
-                        _appendToPat(patBuf, lastChar, false);
-                    }
-                    // Treat final trailing '-' as a literal
-                    if (op == '-') {
-                        add_unchecked(op, op);
-                        patBuf.append(op);
-                    } else if (op == '&') {
-                        syntaxError(chars, "Trailing '&'");
-                    }
-                    patBuf.append(']');
-                    mode = 2;
-                    continue;
-                case '-':
-                    if (op == 0) {
-                        if (lastItem != 0) {
-                            op = (char) c;
-                            continue;
-                        } else {
-                            // Treat final trailing '-' as a literal
-                            add_unchecked(c, c);
-                            c = chars.next(opts);
-                            literal = chars.isEscaped();
-                            if (c == ']' && !literal) {
-                                patBuf.append("-]");
-                                mode = 2;
-                                continue;
-                            }
-                        }
-                    }
-                    syntaxError(chars, "'-' not after char or set");
-                    break;
-                case '&':
-                    if (lastItem == 2 && op == 0) {
-                        op = (char) c;
-                        continue;
-                    }
-                    syntaxError(chars, "'&' not after set");
-                    break;
-                case '^':
-                    syntaxError(chars, "'^' not after '['");
-                    break;
-                case '{':
-                    if (op != 0) {
-                        syntaxError(chars, "Missing operand after operator");
-                    }
-                    if (lastItem == 1) {
-                        add_unchecked(lastChar, lastChar);
-                        _appendToPat(patBuf, lastChar, false);
-                    }
-                    lastItem = 0;
-                    if (buf == null) {
-                        buf = new StringBuffer();
-                    } else {
-                        buf.setLength(0);
-                    }
-                    boolean ok = false;
-                    while (!chars.atEnd()) {
-                        c = chars.next(opts);
-                        literal = chars.isEscaped();
-                        if (c == '}' && !literal) {
-                            ok = true;
-                            break;
-                        }
-                        UTF16.append(buf, c);
-                    }
-                    if (buf.length() < 1 || !ok) {
-                        syntaxError(chars, "Invalid multicharacter string");
-                    }
-                    // We have new string. Add it to set and continue;
-                    // we don't need to drop through to the further
-                    // processing
-                    add(buf.toString());
-                    patBuf.append('{');
-                    _appendToPat(patBuf, buf.toString(), false);
-                    patBuf.append('}');
-                    continue;
-                case SymbolTable.SYMBOL_REF:
-                    //         symbols  nosymbols
-                    // [a-$]   error    error (ambiguous)
-                    // [a$]    anchor   anchor
-                    // [a-$x]  var "x"* literal '$'
-                    // [a-$.]  error    literal '$'
-                    // *We won't get here in the case of var "x"
-                    backup = chars.getPos(backup);
-                    c = chars.next(opts);
-                    literal = chars.isEscaped();
-                    boolean anchor = (c == ']' && !literal);
-                    if (symbols == null && !anchor) {
-                        c = SymbolTable.SYMBOL_REF;
-                        chars.setPos(backup);
-                        break; // literal '$'
-                    }
-                    if (anchor && op == 0) {
-                        if (lastItem == 1) {
-                            add_unchecked(lastChar, lastChar);
-                            _appendToPat(patBuf, lastChar, false);
-                        }
-                        add_unchecked(UnicodeMatcher.ETHER);
-                        usePat = true;
-                        patBuf.append(SymbolTable.SYMBOL_REF).append(']');
-                        mode = 2;
-                        continue;
-                    }
-                    syntaxError(chars, "Unquoted '$'");
-                    break;
-                default:
-                    break;
-                }
-            }
-
-            // -------- Parse literal characters.  This includes both
-            // escaped chars ("\u4E01") and non-syntax characters
-            // ("a").
-
-            switch (lastItem) {
-            case 0:
-                lastItem = 1;
-                lastChar = c;
-                break;
-            case 1:
-                if (op == '-') {
-                    if (lastChar >= c) {
-                        // Don't allow redundant (a-a) or empty (b-a) ranges;
-                        // these are most likely typos.
-                        syntaxError(chars, "Invalid range");
-                    }
-                    add_unchecked(lastChar, c);
-                    _appendToPat(patBuf, lastChar, false);
-                    patBuf.append(op);
-                    _appendToPat(patBuf, c, false);
-                    lastItem = op = 0;
-                } else {
-                    add_unchecked(lastChar, lastChar);
-                    _appendToPat(patBuf, lastChar, false);
-                    lastChar = c;
-                }
-                break;
-            case 2:
-                if (op != 0) {
-                    syntaxError(chars, "Set expected after operator");
-                }
-                lastChar = c;
-                lastItem = 1;
-                break;
-            }
-        }
-
-        if (mode != 2) {
-            syntaxError(chars, "Missing ']'");
-        }
-
-        chars.skipIgnored(opts);
-
-        if (invert) {
-            complement();
-        }
-
-        // Use the rebuilt pattern (pat) only if necessary.  Prefer the
-        // generated pattern.
-        if (usePat) {
-            rebuiltPat.append(patBuf.toString());
+    private UnicodeSet applyPattern(String pattern,
+            ParsePosition pos) {
+        if ("[:age=3.2:]".equals(pattern)) {
+            checkFrozen();
+            VersionInfo version = VersionInfo.getInstance("3.2");
+            applyFilter(new VersionFilter(version), UCharacterProperty.SRC_PROPSVEC);
         } else {
-            _generatePattern(rebuiltPat, false, true);
+            throw new IllegalStateException("UnicodeSet.applyPattern(unexpected pattern "
+                          + pattern + ")");
         }
-    }
 
-    private static void syntaxError(RuleCharacterIterator chars, String msg) {
-        throw new IllegalArgumentException("Error: " + msg + " at \"" +
-                                           Utility.escape(chars.toString()) +
-                                           '"');
+        return this;
     }
 
     //----------------------------------------------------------------
@@ -1397,7 +837,6 @@ public class UnicodeSet implements UnicodeMatcher {
         int[] temp = list;
         list = buffer;
         buffer = temp;
-        pat = null;
         return this;
     }
 
@@ -1414,88 +853,87 @@ public class UnicodeSet implements UnicodeMatcher {
         // change from xor is that we have to check overlapping pairs
         // polarity bit 1 means a is second, bit 2 means b is.
         main:
-        while (true) {
-            switch (polarity) {
-              case 0: // both first; take lower if unequal
-                if (a < b) { // take a
-                    // Back up over overlapping ranges in buffer[]
-                    if (k > 0 && a <= buffer[k-1]) {
-                        // Pick latter end value in buffer[] vs. list[]
-                        a = max(list[i], buffer[--k]);
-                    } else {
-                        // No overlap
-                        buffer[k++] = a;
-                        a = list[i];
+            while (true) {
+                switch (polarity) {
+                case 0: // both first; take lower if unequal
+                    if (a < b) { // take a
+                        // Back up over overlapping ranges in buffer[]
+                        if (k > 0 && a <= buffer[k-1]) {
+                            // Pick latter end value in buffer[] vs. list[]
+                            a = max(list[i], buffer[--k]);
+                        } else {
+                            // No overlap
+                            buffer[k++] = a;
+                            a = list[i];
+                        }
+                        i++; // Common if/else code factored out
+                        polarity ^= 1;
+                    } else if (b < a) { // take b
+                        if (k > 0 && b <= buffer[k-1]) {
+                            b = max(other[j], buffer[--k]);
+                        } else {
+                            buffer[k++] = b;
+                            b = other[j];
+                        }
+                        j++;
+                        polarity ^= 2;
+                    } else { // a == b, take a, drop b
+                        if (a == HIGH) break main;
+                        // This is symmetrical; it doesn't matter if
+                        // we backtrack with a or b. - liu
+                        if (k > 0 && a <= buffer[k-1]) {
+                            a = max(list[i], buffer[--k]);
+                        } else {
+                            // No overlap
+                            buffer[k++] = a;
+                            a = list[i];
+                        }
+                        i++;
+                        polarity ^= 1;
+                        b = other[j++]; polarity ^= 2;
                     }
-                    i++; // Common if/else code factored out
-                    polarity ^= 1;
-                } else if (b < a) { // take b
-                    if (k > 0 && b <= buffer[k-1]) {
-                        b = max(other[j], buffer[--k]);
-                    } else {
+                    break;
+                case 3: // both second; take higher if unequal, and drop other
+                    if (b <= a) { // take a
+                        if (a == HIGH) break main;
+                        buffer[k++] = a;
+                    } else { // take b
+                        if (b == HIGH) break main;
                         buffer[k++] = b;
-                        b = other[j];
                     }
-                    j++;
-                    polarity ^= 2;
-                } else { // a == b, take a, drop b
-                    if (a == HIGH) break main;
-                    // This is symmetrical; it doesn't matter if
-                    // we backtrack with a or b. - liu
-                    if (k > 0 && a <= buffer[k-1]) {
-                        a = max(list[i], buffer[--k]);
-                    } else {
-                        // No overlap
-                        buffer[k++] = a;
-                        a = list[i];
+                    a = list[i++]; polarity ^= 1;   // factored common code
+                    b = other[j++]; polarity ^= 2;
+                    break;
+                case 1: // a second, b first; if b < a, overlap
+                    if (a < b) { // no overlap, take a
+                        buffer[k++] = a; a = list[i++]; polarity ^= 1;
+                    } else if (b < a) { // OVERLAP, drop b
+                        b = other[j++]; polarity ^= 2;
+                    } else { // a == b, drop both!
+                        if (a == HIGH) break main;
+                        a = list[i++]; polarity ^= 1;
+                        b = other[j++]; polarity ^= 2;
                     }
-                    i++;
-                    polarity ^= 1;
-                    b = other[j++]; polarity ^= 2;
+                    break;
+                case 2: // a first, b second; if a < b, overlap
+                    if (b < a) { // no overlap, take b
+                        buffer[k++] = b; b = other[j++]; polarity ^= 2;
+                    } else  if (a < b) { // OVERLAP, drop a
+                        a = list[i++]; polarity ^= 1;
+                    } else { // a == b, drop both!
+                        if (a == HIGH) break main;
+                        a = list[i++]; polarity ^= 1;
+                        b = other[j++]; polarity ^= 2;
+                    }
+                    break;
                 }
-                break;
-              case 3: // both second; take higher if unequal, and drop other
-                if (b <= a) { // take a
-                    if (a == HIGH) break main;
-                    buffer[k++] = a;
-                } else { // take b
-                    if (b == HIGH) break main;
-                    buffer[k++] = b;
-                }
-                a = list[i++]; polarity ^= 1;   // factored common code
-                b = other[j++]; polarity ^= 2;
-                break;
-              case 1: // a second, b first; if b < a, overlap
-                if (a < b) { // no overlap, take a
-                    buffer[k++] = a; a = list[i++]; polarity ^= 1;
-                } else if (b < a) { // OVERLAP, drop b
-                    b = other[j++]; polarity ^= 2;
-                } else { // a == b, drop both!
-                    if (a == HIGH) break main;
-                    a = list[i++]; polarity ^= 1;
-                    b = other[j++]; polarity ^= 2;
-                }
-                break;
-              case 2: // a first, b second; if a < b, overlap
-                if (b < a) { // no overlap, take b
-                    buffer[k++] = b; b = other[j++]; polarity ^= 2;
-                } else  if (a < b) { // OVERLAP, drop a
-                    a = list[i++]; polarity ^= 1;
-                } else { // a == b, drop both!
-                    if (a == HIGH) break main;
-                    a = list[i++]; polarity ^= 1;
-                    b = other[j++]; polarity ^= 2;
-                }
-                break;
             }
-        }
         buffer[k++] = HIGH;    // terminate
         len = k;
         // swap list and buffer
         int[] temp = list;
         list = buffer;
         buffer = temp;
-        pat = null;
         return this;
     }
 
@@ -1512,61 +950,60 @@ public class UnicodeSet implements UnicodeMatcher {
         // change from xor is that we have to check overlapping pairs
         // polarity bit 1 means a is second, bit 2 means b is.
         main:
-        while (true) {
-            switch (polarity) {
-              case 0: // both first; drop the smaller
-                if (a < b) { // drop a
-                    a = list[i++]; polarity ^= 1;
-                } else if (b < a) { // drop b
-                    b = other[j++]; polarity ^= 2;
-                } else { // a == b, take one, drop other
-                    if (a == HIGH) break main;
-                    buffer[k++] = a; a = list[i++]; polarity ^= 1;
-                    b = other[j++]; polarity ^= 2;
+            while (true) {
+                switch (polarity) {
+                case 0: // both first; drop the smaller
+                    if (a < b) { // drop a
+                        a = list[i++]; polarity ^= 1;
+                    } else if (b < a) { // drop b
+                        b = other[j++]; polarity ^= 2;
+                    } else { // a == b, take one, drop other
+                        if (a == HIGH) break main;
+                        buffer[k++] = a; a = list[i++]; polarity ^= 1;
+                        b = other[j++]; polarity ^= 2;
+                    }
+                    break;
+                case 3: // both second; take lower if unequal
+                    if (a < b) { // take a
+                        buffer[k++] = a; a = list[i++]; polarity ^= 1;
+                    } else if (b < a) { // take b
+                        buffer[k++] = b; b = other[j++]; polarity ^= 2;
+                    } else { // a == b, take one, drop other
+                        if (a == HIGH) break main;
+                        buffer[k++] = a; a = list[i++]; polarity ^= 1;
+                        b = other[j++]; polarity ^= 2;
+                    }
+                    break;
+                case 1: // a second, b first;
+                    if (a < b) { // NO OVERLAP, drop a
+                        a = list[i++]; polarity ^= 1;
+                    } else if (b < a) { // OVERLAP, take b
+                        buffer[k++] = b; b = other[j++]; polarity ^= 2;
+                    } else { // a == b, drop both!
+                        if (a == HIGH) break main;
+                        a = list[i++]; polarity ^= 1;
+                        b = other[j++]; polarity ^= 2;
+                    }
+                    break;
+                case 2: // a first, b second; if a < b, overlap
+                    if (b < a) { // no overlap, drop b
+                        b = other[j++]; polarity ^= 2;
+                    } else  if (a < b) { // OVERLAP, take a
+                        buffer[k++] = a; a = list[i++]; polarity ^= 1;
+                    } else { // a == b, drop both!
+                        if (a == HIGH) break main;
+                        a = list[i++]; polarity ^= 1;
+                        b = other[j++]; polarity ^= 2;
+                    }
+                    break;
                 }
-                break;
-              case 3: // both second; take lower if unequal
-                if (a < b) { // take a
-                    buffer[k++] = a; a = list[i++]; polarity ^= 1;
-                } else if (b < a) { // take b
-                    buffer[k++] = b; b = other[j++]; polarity ^= 2;
-                } else { // a == b, take one, drop other
-                    if (a == HIGH) break main;
-                    buffer[k++] = a; a = list[i++]; polarity ^= 1;
-                    b = other[j++]; polarity ^= 2;
-                }
-                break;
-              case 1: // a second, b first;
-                if (a < b) { // NO OVERLAP, drop a
-                    a = list[i++]; polarity ^= 1;
-                } else if (b < a) { // OVERLAP, take b
-                    buffer[k++] = b; b = other[j++]; polarity ^= 2;
-                } else { // a == b, drop both!
-                    if (a == HIGH) break main;
-                    a = list[i++]; polarity ^= 1;
-                    b = other[j++]; polarity ^= 2;
-                }
-                break;
-              case 2: // a first, b second; if a < b, overlap
-                if (b < a) { // no overlap, drop b
-                    b = other[j++]; polarity ^= 2;
-                } else  if (a < b) { // OVERLAP, take a
-                    buffer[k++] = a; a = list[i++]; polarity ^= 1;
-                } else { // a == b, drop both!
-                    if (a == HIGH) break main;
-                    a = list[i++]; polarity ^= 1;
-                    b = other[j++]; polarity ^= 2;
-                }
-                break;
             }
-        }
         buffer[k++] = HIGH;    // terminate
         len = k;
         // swap list and buffer
         int[] temp = list;
         list = buffer;
         buffer = temp;
-        pat = null;
         return this;
     }
 
@@ -1582,58 +1019,46 @@ public class UnicodeSet implements UnicodeMatcher {
         boolean contains(int codePoint);
     }
 
-    // VersionInfo for unassigned characters
-    static final VersionInfo NO_VERSION = VersionInfo.getInstance(0, 0, 0, 0);
+    private static final VersionInfo NO_VERSION = VersionInfo.getInstance(0, 0, 0, 0);
 
     private static class VersionFilter implements Filter {
         VersionInfo version;
-
         VersionFilter(VersionInfo version) { this.version = version; }
-
         public boolean contains(int ch) {
             VersionInfo v = UCharacter.getAge(ch);
             // Reference comparison ok; VersionInfo caches and reuses
             // unique objects.
             return v != NO_VERSION &&
-                   v.compareTo(version) <= 0;
+                    v.compareTo(version) <= 0;
         }
     }
 
     private static synchronized UnicodeSet getInclusions(int src) {
-        if (INCLUSIONS == null) {
-            INCLUSIONS = new UnicodeSet[UCharacterProperty.SRC_COUNT];
+        if (src != UCharacterProperty.SRC_PROPSVEC) {
+            throw new IllegalStateException("UnicodeSet.getInclusions(unknown src "+src+")");
         }
-        if(INCLUSIONS[src] == null) {
+
+        if (INCLUSION == null) {
             UnicodeSet incl = new UnicodeSet();
-            switch(src) {
-            case UCharacterProperty.SRC_PROPSVEC:
-                UCharacterProperty.getInstance().upropsvec_addPropertyStarts(incl);
-                break;
-            default:
-                throw new IllegalStateException("UnicodeSet.getInclusions(unknown src "+src+")");
-            }
-            INCLUSIONS[src] = incl;
+            UCharacterProperty.INSTANCE.upropsvec_addPropertyStarts(incl);
+            INCLUSION = incl;
         }
-        return INCLUSIONS[src];
+        return INCLUSION;
     }
 
     /**
      * Generic filter-based scanning code for UCD property UnicodeSets.
      */
     private UnicodeSet applyFilter(Filter filter, int src) {
-        // Walk through all Unicode characters, noting the start
+        // Logically, walk through all Unicode characters, noting the start
         // and end of each range for which filter.contain(c) is
         // true.  Add each range to a set.
         //
-        // To improve performance, use the INCLUSIONS set, which
+        // To improve performance, use an inclusions set which
         // encodes information about character ranges that are known
-        // to have identical properties, such as the CJK Ideographs
-        // from U+4E00 to U+9FA5.  INCLUSIONS contains all characters
-        // except the first characters of such ranges.
-        //
-        // TODO Where possible, instead of scanning over code points,
-        // use internal property data to initialize UnicodeSets for
-        // those properties.  Scanning code points is slow.
+        // to have identical properties.
+        // getInclusions(src) contains exactly the first characters of
+        // same-value ranges for the given properties "source".
 
         clear();
 
@@ -1668,204 +1093,315 @@ public class UnicodeSet implements UnicodeMatcher {
     }
 
     /**
-     * Remove leading and trailing rule white space and compress
-     * internal rule white space to a single space character.
+     * Is this frozen, according to the Freezable interface?
      *
-     * @see UCharacterProperty#isRuleWhiteSpace
+     * @return value
+     * @stable ICU 3.8
      */
-    private static String mungeCharName(String source) {
-        StringBuffer buf = new StringBuffer();
-        for (int i=0; i<source.length(); ) {
-            int ch = UTF16.charAt(source, i);
-            i += UTF16.getCharCount(ch);
-            if (UCharacterProperty.isRuleWhiteSpace(ch)) {
-                if (buf.length() == 0 ||
-                    buf.charAt(buf.length() - 1) == ' ') {
-                    continue;
+    public boolean isFrozen() {
+        return (bmpSet != null || stringSpan != null);
+    }
+
+    /**
+     * Freeze this class, according to the Freezable interface.
+     *
+     * @return this
+     * @stable ICU 4.4
+     */
+    public UnicodeSet freeze() {
+        if (!isFrozen()) {
+            // Do most of what compact() does before freezing because
+            // compact() will not work when the set is frozen.
+            // Small modification: Don't shrink if the savings would be tiny (<=GROW_EXTRA).
+
+            // Delete buffer first to defragment memory less.
+            buffer = null;
+            if (list.length > (len + GROW_EXTRA)) {
+                // Make the capacity equal to len or 1.
+                // We don't want to realloc of 0 size.
+                int capacity = (len == 0) ? 1 : len;
+                int[] oldList = list;
+                list = new int[capacity];
+                for (int i = capacity; i-- > 0;) {
+                    list[i] = oldList[i];
                 }
-                ch = ' '; // convert to ' '
             }
-            UTF16.append(buf, ch);
-        }
-        if (buf.length() != 0 &&
-            buf.charAt(buf.length() - 1) == ' ') {
-            buf.setLength(buf.length() - 1);
-        }
-        return buf.toString();
-    }
 
-    /**
-     * Modifies this set to contain those code points which have the
-     * given value for the given property.  Prior contents of this
-     * set are lost.
-     * @param propertyAlias the property alias
-     * @param valueAlias the value alias
-     * @param symbols if not null, then symbols are first called to see if a property
-     * is available. If true, then everything else is skipped.
-     * @return this set
-     * @stable ICU 3.2
-     */
-    public UnicodeSet applyPropertyAlias(String propertyAlias,
-                                         String valueAlias, SymbolTable symbols) {
-        if (valueAlias.length() > 0) {
-            if (propertyAlias.equals("Age")) {
-                // Must munge name, since
-                // VersionInfo.getInstance() does not do
-                // 'loose' matching.
-                VersionInfo version = VersionInfo.getInstance(mungeCharName(valueAlias));
-                applyFilter(new VersionFilter(version), UCharacterProperty.SRC_PROPSVEC);
-                return this;
+            // Optimize contains() and span() and similar functions.
+            if (!strings.isEmpty()) {
+                stringSpan = new UnicodeSetStringSpan(this, new ArrayList<String>(strings), UnicodeSetStringSpan.ALL);
+            }
+            if (stringSpan == null || !stringSpan.needsStringSpanUTF16()) {
+                // Optimize for code point spans.
+                // There are no strings, or
+                // all strings are irrelevant for span() etc. because
+                // all of each string's code points are contained in this set.
+                // However, fully contained strings are relevant for spanAndCount(),
+                // so we create both objects.
+                bmpSet = new BMPSet(list, len);
             }
         }
-        throw new IllegalArgumentException("Unsupported property: " + propertyAlias);
-    }
-
-    /**
-     * Return true if the given iterator appears to point at a
-     * property pattern.  Regardless of the result, return with the
-     * iterator unchanged.
-     * @param chars iterator over the pattern characters.  Upon return
-     * it will be unchanged.
-     * @param iterOpts RuleCharacterIterator options
-     */
-    private static boolean resemblesPropertyPattern(RuleCharacterIterator chars,
-                                                    int iterOpts) {
-        boolean result = false;
-        iterOpts &= ~RuleCharacterIterator.PARSE_ESCAPES;
-        Object pos = chars.getPos(null);
-        int c = chars.next(iterOpts);
-        if (c == '[' || c == '\\') {
-            int d = chars.next(iterOpts & ~RuleCharacterIterator.SKIP_WHITESPACE);
-            result = (c == '[') ? (d == ':') :
-                     (d == 'N' || d == 'p' || d == 'P');
-        }
-        chars.setPos(pos);
-        return result;
-    }
-
-    /**
-     * Parse the given property pattern at the given parse position.
-     * @param symbols TODO
-     */
-    private UnicodeSet applyPropertyPattern(String pattern, ParsePosition ppos, SymbolTable symbols) {
-        int pos = ppos.getIndex();
-
-        // On entry, ppos should point to one of the following locations:
-
-        // Minimum length is 5 characters, e.g. \p{L}
-        if ((pos+5) > pattern.length()) {
-            return null;
-        }
-
-        boolean posix = false; // true for [:pat:], false for \p{pat} \P{pat} \N{pat}
-        boolean isName = false; // true for \N{pat}, o/w false
-        boolean invert = false;
-
-        // Look for an opening [:, [:^, \p, or \P
-        if (pattern.regionMatches(pos, "[:", 0, 2)) {
-            posix = true;
-            pos = Utility.skipWhitespace(pattern, pos+2);
-            if (pos < pattern.length() && pattern.charAt(pos) == '^') {
-                ++pos;
-                invert = true;
-            }
-        } else if (pattern.regionMatches(true, pos, "\\p", 0, 2) ||
-                   pattern.regionMatches(pos, "\\N", 0, 2)) {
-            char c = pattern.charAt(pos+1);
-            invert = (c == 'P');
-            isName = (c == 'N');
-            pos = Utility.skipWhitespace(pattern, pos+2);
-            if (pos == pattern.length() || pattern.charAt(pos++) != '{') {
-                // Syntax error; "\p" or "\P" not followed by "{"
-                return null;
-            }
-        } else {
-            // Open delimiter not seen
-            return null;
-        }
-
-        // Look for the matching close delimiter, either :] or }
-        int close = pattern.indexOf(posix ? ":]" : "}", pos);
-        if (close < 0) {
-            // Syntax error; close delimiter missing
-            return null;
-        }
-
-        // Look for an '=' sign.  If this is present, we will parse a
-        // medium \p{gc=Cf} or long \p{GeneralCategory=Format}
-        // pattern.
-        int equals = pattern.indexOf('=', pos);
-        String propName, valueName;
-        if (equals >= 0 && equals < close && !isName) {
-            // Equals seen; parse medium/long pattern
-            propName = pattern.substring(pos, equals);
-            valueName = pattern.substring(equals+1, close);
-        }
-
-        else {
-            // Handle case where no '=' is seen, and \N{}
-            propName = pattern.substring(pos, close);
-            valueName = "";
-
-            // Handle \N{name}
-            if (isName) {
-                // This is a little inefficient since it means we have to
-                // parse "na" back to UProperty.NAME even though we already
-                // know it's UProperty.NAME.  If we refactor the API to
-                // support args of (int, String) then we can remove
-                // "na" and make this a little more efficient.
-                valueName = propName;
-                propName = "na";
-            }
-        }
-
-        applyPropertyAlias(propName, valueName, symbols);
-
-        if (invert) {
-            complement();
-        }
-
-        // Move to the limit position after the close delimiter
-        ppos.setIndex(close + (posix ? 2 : 1));
-
         return this;
     }
 
     /**
-     * Parse a property pattern.
-     * @param chars iterator over the pattern characters.  Upon return
-     * it will be advanced to the first character after the parsed
-     * pattern, or the end of the iteration if all characters are
-     * parsed.
-     * @param rebuiltPat the pattern that was parsed, rebuilt or
-     * copied from the input pattern, as appropriate.
-     * @param symbols TODO
+     * Span a string using this UnicodeSet.
+     * <p>To replace, count elements, or delete spans, see {@link com.ibm.icu.text.UnicodeSetSpanner UnicodeSetSpanner}.
+     * @param s The string to be spanned
+     * @param spanCondition The span condition
+     * @return the length of the span
+     * @stable ICU 4.4
      */
-    private void applyPropertyPattern(RuleCharacterIterator chars,
-                                      StringBuffer rebuiltPat, SymbolTable symbols) {
-        String patStr = chars.lookahead();
-        ParsePosition pos = new ParsePosition(0);
-        applyPropertyPattern(patStr, pos, symbols);
-        if (pos.getIndex() == 0) {
-            syntaxError(chars, "Invalid property pattern");
-        }
-        chars.jumpahead(pos.getIndex());
-        rebuiltPat.append(patStr, 0, pos.getIndex());
+    public int span(CharSequence s, SpanCondition spanCondition) {
+        return span(s, 0, spanCondition);
     }
 
-    //----------------------------------------------------------------
-    // Case folding API
-    //----------------------------------------------------------------
+    /**
+     * Span a string using this UnicodeSet.
+     *   If the start index is less than 0, span will start from 0.
+     *   If the start index is greater than the string length, span returns the string length.
+     * <p>To replace, count elements, or delete spans, see {@link com.ibm.icu.text.UnicodeSetSpanner UnicodeSetSpanner}.
+     * @param s The string to be spanned
+     * @param start The start index that the span begins
+     * @param spanCondition The span condition
+     * @return the string index which ends the span (i.e. exclusive)
+     * @stable ICU 4.4
+     */
+    public int span(CharSequence s, int start, SpanCondition spanCondition) {
+        int end = s.length();
+        if (start < 0) {
+            start = 0;
+        } else if (start >= end) {
+            return end;
+        }
+        if (bmpSet != null) {
+            // Frozen set without strings, or no string is relevant for span().
+            return bmpSet.span(s, start, spanCondition, null);
+        }
+        if (stringSpan != null) {
+            return stringSpan.span(s, start, spanCondition);
+        } else if (!strings.isEmpty()) {
+            int which = spanCondition == SpanCondition.NOT_CONTAINED ? UnicodeSetStringSpan.FWD_UTF16_NOT_CONTAINED
+                    : UnicodeSetStringSpan.FWD_UTF16_CONTAINED;
+            UnicodeSetStringSpan strSpan = new UnicodeSetStringSpan(this, new ArrayList<String>(strings), which);
+            if (strSpan.needsStringSpanUTF16()) {
+                return strSpan.span(s, start, spanCondition);
+            }
+        }
+
+        return spanCodePointsAndCount(s, start, spanCondition, null);
+    }
 
     /**
-     * Bitmask for constructor and applyPattern() indicating that
-     * white space should be ignored.  If set, ignore characters for
-     * which UCharacterProperty.isRuleWhiteSpace() returns true,
-     * unless they are quoted or escaped.  This may be ORed together
-     * with other selectors.
-     * @stable ICU 3.8
+     * Same as span() but also counts the smallest number of set elements on any path across the span.
+     * <p>To replace, count elements, or delete spans, see {@link com.ibm.icu.text.UnicodeSetSpanner UnicodeSetSpanner}.
+     * @param outCount An output-only object (must not be null) for returning the count.
+     * @return the limit (exclusive end) of the span
      */
-    public static final int IGNORE_SPACE = 1;
+    public int spanAndCount(CharSequence s, int start, SpanCondition spanCondition, OutputInt outCount) {
+        if (outCount == null) {
+            throw new IllegalArgumentException("outCount must not be null");
+        }
+        int end = s.length();
+        if (start < 0) {
+            start = 0;
+        } else if (start >= end) {
+            return end;
+        }
+        if (stringSpan != null) {
+            // We might also have bmpSet != null,
+            // but fully-contained strings are relevant for counting elements.
+            return stringSpan.spanAndCount(s, start, spanCondition, outCount);
+        } else if (bmpSet != null) {
+            return bmpSet.span(s, start, spanCondition, outCount);
+        } else if (!strings.isEmpty()) {
+            int which = spanCondition == SpanCondition.NOT_CONTAINED ? UnicodeSetStringSpan.FWD_UTF16_NOT_CONTAINED
+                    : UnicodeSetStringSpan.FWD_UTF16_CONTAINED;
+            which |= UnicodeSetStringSpan.WITH_COUNT;
+            UnicodeSetStringSpan strSpan = new UnicodeSetStringSpan(this, new ArrayList<String>(strings), which);
+            return strSpan.spanAndCount(s, start, spanCondition, outCount);
+        }
+
+        return spanCodePointsAndCount(s, start, spanCondition, outCount);
+    }
+
+    private int spanCodePointsAndCount(CharSequence s, int start,
+            SpanCondition spanCondition, OutputInt outCount) {
+        // Pin to 0/1 values.
+        boolean spanContained = (spanCondition != SpanCondition.NOT_CONTAINED);
+
+        int c;
+        int next = start;
+        int length = s.length();
+        int count = 0;
+        do {
+            c = Character.codePointAt(s, next);
+            if (spanContained != contains(c)) {
+                break;
+            }
+            ++count;
+            next += Character.charCount(c);
+        } while (next < length);
+        if (outCount != null) { outCount.value = count; }
+        return next;
+    }
+
+    /**
+     * Span a string backwards (from the fromIndex) using this UnicodeSet.
+     * If the fromIndex is less than 0, spanBack will return 0.
+     * If fromIndex is greater than the string length, spanBack will start from the string length.
+     * <p>To replace, count elements, or delete spans, see {@link com.ibm.icu.text.UnicodeSetSpanner UnicodeSetSpanner}.
+     * @param s The string to be spanned
+     * @param fromIndex The index of the char (exclusive) that the string should be spanned backwards
+     * @param spanCondition The span condition
+     * @return The string index which starts the span (i.e. inclusive).
+     * @stable ICU 4.4
+     */
+    public int spanBack(CharSequence s, int fromIndex, SpanCondition spanCondition) {
+        if (fromIndex <= 0) {
+            return 0;
+        }
+        if (fromIndex > s.length()) {
+            fromIndex = s.length();
+        }
+        if (bmpSet != null) {
+            // Frozen set without strings, or no string is relevant for spanBack().
+            return bmpSet.spanBack(s, fromIndex, spanCondition);
+        }
+        if (stringSpan != null) {
+            return stringSpan.spanBack(s, fromIndex, spanCondition);
+        } else if (!strings.isEmpty()) {
+            int which = (spanCondition == SpanCondition.NOT_CONTAINED)
+                    ? UnicodeSetStringSpan.BACK_UTF16_NOT_CONTAINED
+                            : UnicodeSetStringSpan.BACK_UTF16_CONTAINED;
+            UnicodeSetStringSpan strSpan = new UnicodeSetStringSpan(this, new ArrayList<String>(strings), which);
+            if (strSpan.needsStringSpanUTF16()) {
+                return strSpan.spanBack(s, fromIndex, spanCondition);
+            }
+        }
+
+        // Pin to 0/1 values.
+        boolean spanContained = (spanCondition != SpanCondition.NOT_CONTAINED);
+
+        int c;
+        int prev = fromIndex;
+        do {
+            c = Character.codePointBefore(s, prev);
+            if (spanContained != contains(c)) {
+                break;
+            }
+            prev -= Character.charCount(c);
+        } while (prev > 0);
+        return prev;
+    }
+
+    /**
+     * Clone a thawed version of this class, according to the Freezable interface.
+     * @return the clone, not frozen
+     * @stable ICU 4.4
+     */
+    public UnicodeSet cloneAsThawed() {
+        UnicodeSet result = new UnicodeSet(this);
+        assert !result.isFrozen();
+        return result;
+    }
+
+    // internal function
+    private void checkFrozen() {
+        if (isFrozen()) {
+            throw new UnsupportedOperationException("Attempt to modify frozen object");
+        }
+    }
+
+    /**
+     * Argument values for whether span() and similar functions continue while the current character is contained vs.
+     * not contained in the set.
+     * <p>
+     * The functionality is straightforward for sets with only single code points, without strings (which is the common
+     * case):
+     * <ul>
+     * <li>CONTAINED and SIMPLE work the same.
+     * <li>CONTAINED and SIMPLE are inverses of NOT_CONTAINED.
+     * <li>span() and spanBack() partition any string the
+     * same way when alternating between span(NOT_CONTAINED) and span(either "contained" condition).
+     * <li>Using a
+     * complemented (inverted) set and the opposite span conditions yields the same results.
+     * </ul>
+     * When a set contains multi-code point strings, then these statements may not be true, depending on the strings in
+     * the set (for example, whether they overlap with each other) and the string that is processed. For a set with
+     * strings:
+     * <ul>
+     * <li>The complement of the set contains the opposite set of code points, but the same set of strings.
+     * Therefore, complementing both the set and the span conditions may yield different results.
+     * <li>When starting spans
+     * at different positions in a string (span(s, ...) vs. span(s+1, ...)) the ends of the spans may be different
+     * because a set string may start before the later position.
+     * <li>span(SIMPLE) may be shorter than
+     * span(CONTAINED) because it will not recursively try all possible paths. For example, with a set which
+     * contains the three strings "xy", "xya" and "ax", span("xyax", CONTAINED) will return 4 but span("xyax",
+     * SIMPLE) will return 3. span(SIMPLE) will never be longer than span(CONTAINED).
+     * <li>With either "contained" condition, span() and spanBack() may partition a string in different ways. For example,
+     * with a set which contains the two strings "ab" and "ba", and when processing the string "aba", span() will yield
+     * contained/not-contained boundaries of { 0, 2, 3 } while spanBack() will yield boundaries of { 0, 1, 3 }.
+     * </ul>
+     * Note: If it is important to get the same boundaries whether iterating forward or backward through a string, then
+     * either only span() should be used and the boundaries cached for backward operation, or an ICU BreakIterator could
+     * be used.
+     * <p>
+     * Note: Unpaired surrogates are treated like surrogate code points. Similarly, set strings match only on code point
+     * boundaries, never in the middle of a surrogate pair.
+     *
+     * @stable ICU 4.4
+     */
+    public enum SpanCondition {
+        /**
+         * Continues a span() while there is no set element at the current position.
+         * Increments by one code point at a time.
+         * Stops before the first set element (character or string).
+         * (For code points only, this is like while contains(current)==false).
+         * <p>
+         * When span() returns, the substring between where it started and the position it returned consists only of
+         * characters that are not in the set, and none of its strings overlap with the span.
+         *
+         * @stable ICU 4.4
+         */
+        NOT_CONTAINED,
+
+        /**
+         * Spans the longest substring that is a concatenation of set elements (characters or strings).
+         * (For characters only, this is like while contains(current)==true).
+         * <p>
+         * When span() returns, the substring between where it started and the position it returned consists only of set
+         * elements (characters or strings) that are in the set.
+         * <p>
+         * If a set contains strings, then the span will be the longest substring for which there
+         * exists at least one non-overlapping concatenation of set elements (characters or strings).
+         * This is equivalent to a POSIX regular expression for <code>(OR of each set element)*</code>.
+         * (Java/ICU/Perl regex stops at the first match of an OR.)
+         *
+         * @stable ICU 4.4
+         */
+        CONTAINED,
+
+        /**
+         * Continues a span() while there is a set element at the current position.
+         * Increments by the longest matching element at each position.
+         * (For characters only, this is like while contains(current)==true).
+         * <p>
+         * When span() returns, the substring between where it started and the position it returned consists only of set
+         * elements (characters or strings) that are in the set.
+         * <p>
+         * If a set only contains single characters, then this is the same as CONTAINED.
+         * <p>
+         * If a set contains strings, then the span will be the longest substring with a match at each position with the
+         * longest single set element (character or string).
+         * <p>
+         * Use this span condition together with other longest-match algorithms, such as ICU converters
+         * (ucnv_getUnicodeSet()).
+         *
+         * @stable ICU 4.4
+         */
+        SIMPLE,
+    }
 
 }
-

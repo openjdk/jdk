@@ -68,6 +68,11 @@ le_uint16 IndicRearrangementProcessor2::processStateEntry(LEGlyphStorage &glyphS
     le_uint16 newState = SWAPW(entry->newStateIndex); // index to the new state
     IndicRearrangementFlags  flags =  (IndicRearrangementFlags) SWAPW(entry->flags);
 
+    if (currGlyph < 0 || currGlyph >= glyphStorage.getGlyphCount()) {
+       success = LE_INDEX_OUT_OF_BOUNDS_ERROR;
+       return 0;
+    }
+
     if (flags & irfMarkFirst) {
         firstGlyph = currGlyph;
     }

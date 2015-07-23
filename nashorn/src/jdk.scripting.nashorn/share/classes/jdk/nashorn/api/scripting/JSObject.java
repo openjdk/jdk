@@ -142,7 +142,7 @@ public interface JSObject {
     /**
      * Checking whether the given object is an instance of 'this' object.
      *
-     * @param instance instace to check
+     * @param instance instance to check
      * @return true if the given 'instance' is an instance of this 'function' object
      */
     public boolean isInstance(final Object instance);

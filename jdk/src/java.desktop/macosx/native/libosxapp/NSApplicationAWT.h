@@ -38,7 +38,7 @@
 - (void) setDockIconWithEnv:(JNIEnv *)env;
 - (void) postDummyEvent;
 - (void) postRunnableEvent:(void (^)())block;
-- (void) waitForDummyEvent;
+- (void) waitForDummyEvent:(long long) timeout;
 
 + (void) runAWTLoopWithApp:(NSApplication*)app;
 
