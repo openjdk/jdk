@@ -340,6 +340,7 @@
       <to>java.sql</to>
       <to>java.sql.rowset</to>
       <to>jdk.scripting.nashorn</to>
+      <to>jdk.vm.cds</to>
     </export>
     <export>
       <name>sun.reflect.annotation</name>
