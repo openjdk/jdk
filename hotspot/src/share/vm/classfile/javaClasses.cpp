@@ -1468,6 +1468,19 @@ class BacktraceBuilder: public StackObj {
 
 };
 
+Symbol* get_source_file_name(InstanceKlass* holder, int version) {
+  // Find the specific ik version that contains this source_file_name_index
+  // via the previous versions list, but use the current version's
+  // constant pool to look it up.  The previous version's index has been
+  // merged for the current constant pool.
+  InstanceKlass* ik = holder->get_klass_version(version);
+  // This version has been cleaned up.
+  if (ik == NULL) return NULL;
+  int source_file_name_index = ik->source_file_name_index();
+  return (source_file_name_index == 0) ?
+      (Symbol*)NULL : holder->constants()->symbol_at(source_file_name_index);
+}
+
 // Print stack trace element to resource allocated buffer
 char* java_lang_Throwable::print_stack_element_to_buffer(Handle mirror,
                                   int method_id, int version, int bci, int cpref) {
@@ -1484,17 +1497,11 @@ char* java_lang_Throwable::print_stack_element_to_buffer(Handle mirror,
   char* method_name = sym->as_C_string();
   buf_len += (int)strlen(method_name);
 
-  // Use specific ik version as a holder since the mirror might
-  // refer to version that is now obsolete and no longer accessible
-  // via the previous versions list.
-  holder = holder->get_klass_version(version);
   char* source_file_name = NULL;
-  if (holder != NULL) {
-    Symbol* source = holder->source_file_name();
-    if (source != NULL) {
-      source_file_name = source->as_C_string();
-      buf_len += (int)strlen(source_file_name);
-    }
+  Symbol* source = get_source_file_name(holder, version);
+  if (source != NULL) {
+    source_file_name = source->as_C_string();
+    buf_len += (int)strlen(source_file_name);
   }
 
   // Allocate temporary buffer with extra space for formatting and line number
@@ -1909,12 +1916,7 @@ oop java_lang_StackTraceElement::create(Handle mirror, int method_id,
     java_lang_StackTraceElement::set_lineNumber(element(), -1);
   } else {
     // Fill in source file name and line number.
-    // Use specific ik version as a holder since the mirror might
-    // refer to version that is now obsolete and no longer accessible
-    // via the previous versions list.
-    holder = holder->get_klass_version(version);
-    assert(holder != NULL, "sanity check");
-    Symbol* source = holder->source_file_name();
+    Symbol* source = get_source_file_name(holder, version);
     if (ShowHiddenFrames && source == NULL)
       source = vmSymbols::unknown_class_name();
     oop filename = StringTable::intern(source, CHECK_0);
