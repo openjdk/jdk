@@ -56,6 +56,8 @@ public class RuntimeNode extends Expression {
         REFERENCE_ERROR,
         /** Delete operator */
         DELETE(TokenType.DELETE, Type.BOOLEAN, 1),
+        /** Delete operator for slow scopes */
+        SLOW_DELETE(TokenType.DELETE, Type.BOOLEAN, 1, false),
         /** Delete operator that always fails -- see Lower */
         FAIL_DELETE(TokenType.DELETE, Type.BOOLEAN, 1, false),
         /** === operator with at least one object */

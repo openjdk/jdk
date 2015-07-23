@@ -685,6 +685,33 @@ public final class ScriptRuntime {
     }
 
     /**
+     * ECMA 11.4.1 - delete operator, implementation for slow scopes
+     *
+     * This implementation of 'delete' walks the scope chain to find the scope that contains the
+     * property to be deleted, then invokes delete on it.
+     *
+     * @param obj       top scope object
+     * @param property  property to delete
+     * @param strict    are we in strict mode
+     *
+     * @return true if property was successfully found and deleted
+     */
+    public static boolean SLOW_DELETE(final Object obj, final Object property, final Object strict) {
+        if (obj instanceof ScriptObject) {
+            ScriptObject sobj = (ScriptObject) obj;
+            final String key = property.toString();
+            while (sobj != null && sobj.isScope()) {
+                final FindProperty find = sobj.findProperty(key, false);
+                if (find != null) {
+                    return sobj.delete(key, Boolean.TRUE.equals(strict));
+                }
+                sobj = sobj.getProto();
+            }
+        }
+        return DELETE(obj, property, strict);
+    }
+
+    /**
      * ECMA 11.4.1 - delete operator, special case
      *
      * This is 'delete' that always fails. We have to check strict mode and throw error.
