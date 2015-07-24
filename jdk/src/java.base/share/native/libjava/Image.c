@@ -104,6 +104,9 @@ Java_jdk_internal_jimage_ImageNativeSubstrate_getStringBytes(JNIEnv *env,
     size = strlen(data);
     // Allocate byte array.
     byteArray = (*env)->NewByteArray(env, (jsize) size);
+    if (byteArray == NULL) {
+        return NULL;
+    }
     // Get array base address.
     rawBytes = (*env)->GetByteArrayElements(env, byteArray, NULL);
     // Copy bytes from image string table.
@@ -122,6 +125,9 @@ Java_jdk_internal_jimage_ImageNativeSubstrate_getAttributes(JNIEnv *env,
     jlong* ret;
 
     attributes = (*env)->NewLongArray(env, JVM_ImageGetAttributesCount(env));
+    if (attributes == NULL) {
+        return NULL;
+    }
     // Get base address for jlong array.
     rawAttributes = (*env)->GetLongArrayElements(env, attributes, NULL);
     ret = JVM_ImageGetAttributes(env, rawAttributes, id, offset);
@@ -143,6 +149,9 @@ Java_jdk_internal_jimage_ImageNativeSubstrate_findAttributes(JNIEnv *env,
 
     count = JVM_ImageGetAttributesCount(env);
     attributes = (*env)->NewLongArray(env, JVM_ImageGetAttributesCount(env));
+    if (attributes == NULL) {
+        return NULL;
+    }
     // Get base address for jlong array.
     rawAttributes = (*env)->GetLongArrayElements(env, attributes, NULL);
     size = (*env)->GetArrayLength(env, utf8);
@@ -165,6 +174,9 @@ Java_jdk_internal_jimage_ImageNativeSubstrate_attributeOffsets(JNIEnv *env,
 
     length = JVM_ImageAttributeOffsetsLength(env, id);
     offsets = (*env)->NewIntArray(env, length);
+    if (offsets == NULL) {
+        return NULL;
+    }
     // Get base address of result.
     rawOffsets = (*env)->GetIntArrayElements(env, offsets, NULL);
     ret = JVM_ImageAttributeOffsets(env, rawOffsets, length, id);

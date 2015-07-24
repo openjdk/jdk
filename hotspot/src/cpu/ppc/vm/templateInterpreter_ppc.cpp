@@ -58,7 +58,7 @@
 #define BLOCK_COMMENT(str) __ block_comment(str)
 #endif
 
-#define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
+#define BIND(label)        __ bind(label); BLOCK_COMMENT(#label ":")
 
 //-----------------------------------------------------------------------------
 
@@ -725,7 +725,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     }
     generate_counter_incr(&invocation_counter_overflow, NULL, NULL);
 
-    __ BIND(continue_after_compile);
+    BIND(continue_after_compile);
     // Reset the _do_not_unlock_if_synchronized flag.
     if (synchronized) {
       __ li(R0, 0);
@@ -785,7 +785,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ ld(signature_handler_fd, method_(signature_handler));
   __ twi_0(signature_handler_fd); // Order wrt. load of klass mirror and entry point (isync is below).
 
-  __ BIND(call_signature_handler);
+  BIND(call_signature_handler);
 
   // Before we call the signature handler we push a new frame to
   // protect the interpreter frame volatile registers when we return
@@ -855,7 +855,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ std(R0/*mirror*/, _ijava_state_neg(oop_tmp), R11_scratch1);
     // R4_ARG2 = &state->_oop_temp;
     __ addi(R4_ARG2, R11_scratch1, _ijava_state_neg(oop_tmp));
-    __ BIND(method_is_not_static);
+    BIND(method_is_not_static);
   }
 
   // At this point, arguments have been copied off the stack into
@@ -1068,14 +1068,14 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // interpreter will do the correct thing. If it isn't interpreted
   // (call stub/compiled code) we will change our return and continue.
 
-  __ BIND(exception_return_sync_check);
+  BIND(exception_return_sync_check);
 
   if (synchronized) {
     // Don't check for exceptions since we're still in the i2n frame. Do that
     // manually afterwards.
     unlock_method(false);
   }
-  __ BIND(exception_return_sync_check_already_unlocked);
+  BIND(exception_return_sync_check_already_unlocked);
 
   const Register return_pc = R31;
 
@@ -1238,6 +1238,179 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
     generate_counter_overflow(profile_method_continue);
   }
   return entry;
+}
+
+// CRC32 Intrinsics.
+//
+// Contract on scratch and work registers.
+// =======================================
+//
+// On ppc, the register set {R2..R12} is available in the interpreter as scratch/work registers.
+// You should, however, keep in mind that {R3_ARG1..R10_ARG8} is the C-ABI argument register set.
+// You can't rely on these registers across calls.
+//
+// The generators for CRC32_update and for CRC32_updateBytes use the
+// scratch/work register set internally, passing the work registers
+// as arguments to the MacroAssembler emitters as required.
+//
+// R3_ARG1..R6_ARG4 are preset to hold the incoming java arguments.
+// Their contents is not constant but may change according to the requirements
+// of the emitted code.
+//
+// All other registers from the scratch/work register set are used "internally"
+// and contain garbage (i.e. unpredictable values) once blr() is reached.
+// Basically, only R3_RET contains a defined value which is the function result.
+//
+/**
+ * Method entry for static native methods:
+ *   int java.util.zip.CRC32.update(int crc, int b)
+ */
+address InterpreterGenerator::generate_CRC32_update_entry() {
+  address start = __ pc();  // Remember stub start address (is rtn value).
+
+  if (UseCRC32Intrinsics) {
+    Label slow_path;
+
+    // Safepoint check
+    const Register sync_state = R11_scratch1;
+    int sync_state_offs = __ load_const_optimized(sync_state, SafepointSynchronize::address_of_state(), /*temp*/R0, true);
+    __ lwz(sync_state, sync_state_offs, sync_state);
+    __ cmpwi(CCR0, sync_state, SafepointSynchronize::_not_synchronized);
+    __ bne(CCR0, slow_path);
+
+    // We don't generate local frame and don't align stack because
+    // we not even call stub code (we generate the code inline)
+    // and there is no safepoint on this path.
+
+    // Load java parameters.
+    // R15_esp is callers operand stack pointer, i.e. it points to the parameters.
+    const Register argP    = R15_esp;
+    const Register crc     = R3_ARG1;  // crc value
+    const Register data    = R4_ARG2;  // address of java byte value (kernel_crc32 needs address)
+    const Register dataLen = R5_ARG3;  // source data len (1 byte). Not used because calling the single-byte emitter.
+    const Register table   = R6_ARG4;  // address of crc32 table
+    const Register tmp     = dataLen;  // Reuse unused len register to show we don't actually need a separate tmp here.
+
+    BLOCK_COMMENT("CRC32_update {");
+
+    // Arguments are reversed on java expression stack
+#ifdef VM_LITTLE_ENDIAN
+    __ addi(data, argP, 0+1*wordSize); // (stack) address of byte value. Emitter expects address, not value.
+                                       // Being passed as an int, the single byte is at offset +0.
+#else
+    __ addi(data, argP, 3+1*wordSize); // (stack) address of byte value. Emitter expects address, not value.
+                                       // Being passed from java as an int, the single byte is at offset +3.
+#endif
+    __ lwz(crc,  2*wordSize, argP);    // Current crc state, zero extend to 64 bit to have a clean register.
+
+    StubRoutines::ppc64::generate_load_crc_table_addr(_masm, table);
+    __ kernel_crc32_singleByte(crc, data, dataLen, table, tmp);
+
+    // Restore caller sp for c2i case and return.
+    __ mr(R1_SP, R21_sender_SP); // Cut the stack back to where the caller started.
+    __ blr();
+
+    // Generate a vanilla native entry as the slow path.
+    BLOCK_COMMENT("} CRC32_update");
+    BIND(slow_path);
+  }
+
+  (void) generate_native_entry(false);
+
+  return start;
+}
+
+// CRC32 Intrinsics.
+/**
+ * Method entry for static native methods:
+ *   int java.util.zip.CRC32.updateBytes(     int crc, byte[] b,  int off, int len)
+ *   int java.util.zip.CRC32.updateByteBuffer(int crc, long* buf, int off, int len)
+ */
+address InterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
+  address start = __ pc();  // Remember stub start address (is rtn value).
+
+  if (UseCRC32Intrinsics) {
+    Label slow_path;
+
+    // Safepoint check
+    const Register sync_state = R11_scratch1;
+    int sync_state_offs = __ load_const_optimized(sync_state, SafepointSynchronize::address_of_state(), /*temp*/R0, true);
+    __ lwz(sync_state, sync_state_offs, sync_state);
+    __ cmpwi(CCR0, sync_state, SafepointSynchronize::_not_synchronized);
+    __ bne(CCR0, slow_path);
+
+    // We don't generate local frame and don't align stack because
+    // we not even call stub code (we generate the code inline)
+    // and there is no safepoint on this path.
+
+    // Load parameters.
+    // Z_esp is callers operand stack pointer, i.e. it points to the parameters.
+    const Register argP    = R15_esp;
+    const Register crc     = R3_ARG1;  // crc value
+    const Register data    = R4_ARG2;  // address of java byte array
+    const Register dataLen = R5_ARG3;  // source data len
+    const Register table   = R6_ARG4;  // address of crc32 table
+
+    const Register t0      = R9;       // scratch registers for crc calculation
+    const Register t1      = R10;
+    const Register t2      = R11;
+    const Register t3      = R12;
+
+    const Register tc0     = R2;       // registers to hold pre-calculated column addresses
+    const Register tc1     = R7;
+    const Register tc2     = R8;
+    const Register tc3     = table;    // table address is reconstructed at the end of kernel_crc32_* emitters
+
+    const Register tmp     = t0;       // Only used very locally to calculate byte buffer address.
+
+    // Arguments are reversed on java expression stack.
+    // Calculate address of start element.
+    if (kind == Interpreter::java_util_zip_CRC32_updateByteBuffer) { // Used for "updateByteBuffer direct".
+      BLOCK_COMMENT("CRC32_updateByteBuffer {");
+      // crc     @ (SP + 5W) (32bit)
+      // buf     @ (SP + 3W) (64bit ptr to long array)
+      // off     @ (SP + 2W) (32bit)
+      // dataLen @ (SP + 1W) (32bit)
+      // data = buf + off
+      __ ld(  data,    3*wordSize, argP);  // start of byte buffer
+      __ lwa( tmp,     2*wordSize, argP);  // byte buffer offset
+      __ lwa( dataLen, 1*wordSize, argP);  // #bytes to process
+      __ lwz( crc,     5*wordSize, argP);  // current crc state
+      __ add( data, data, tmp);            // Add byte buffer offset.
+    } else {                                                         // Used for "updateBytes update".
+      BLOCK_COMMENT("CRC32_updateBytes {");
+      // crc     @ (SP + 4W) (32bit)
+      // buf     @ (SP + 3W) (64bit ptr to byte array)
+      // off     @ (SP + 2W) (32bit)
+      // dataLen @ (SP + 1W) (32bit)
+      // data = buf + off + base_offset
+      __ ld(  data,    3*wordSize, argP);  // start of byte buffer
+      __ lwa( tmp,     2*wordSize, argP);  // byte buffer offset
+      __ lwa( dataLen, 1*wordSize, argP);  // #bytes to process
+      __ add( data, data, tmp);            // add byte buffer offset
+      __ lwz( crc,     4*wordSize, argP);  // current crc state
+      __ addi(data, data, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+    }
+
+    StubRoutines::ppc64::generate_load_crc_table_addr(_masm, table);
+
+    // Performance measurements show the 1word and 2word variants to be almost equivalent,
+    // with very light advantages for the 1word variant. We chose the 1word variant for
+    // code compactness.
+    __ kernel_crc32_1word(crc, data, dataLen, table, t0, t1, t2, t3, tc0, tc1, tc2, tc3);
+
+    // Restore caller sp for c2i case and return.
+    __ mr(R1_SP, R21_sender_SP); // Cut the stack back to where the caller started.
+    __ blr();
+
+    // Generate a vanilla native entry as the slow path.
+    BLOCK_COMMENT("} CRC32_updateBytes(Buffer)");
+    BIND(slow_path);
+  }
+
+  (void) generate_native_entry(false);
+
+  return start;
 }
 
 // These should never be compiled since the interpreter will prefer
