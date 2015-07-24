@@ -4129,14 +4129,18 @@ public:
              "Use the FP register for holding the frame pointer "           \
              "and not as a general purpose register.")                      \
                                                                             \
-  diagnostic(bool, CheckIntrinsics, trueInDebug,                            \
+  diagnostic(bool, CheckIntrinsics, true,                                   \
              "When a class C is loaded, check that "                        \
              "(1) all intrinsics defined by the VM for class C are present "\
              "in the loaded class file and are marked with the "            \
-             "@HotSpotIntrinsicCandidate annotation and also that "         \
+             "@HotSpotIntrinsicCandidate annotation, that "                 \
              "(2) there is an intrinsic registered for all loaded methods " \
              "that are annotated with the @HotSpotIntrinsicCandidate "      \
-             "annotation.")
+             "annotation, and that "                                        \
+             "(3) no orphan methods exist for class C (i.e., methods for "  \
+             "which the VM declares an intrinsic but that are not declared "\
+             "in the loaded class C. "                                      \
+             "Check (3) is available only in debug builds.")
 
 /*
  *  Macros for factoring of globals
