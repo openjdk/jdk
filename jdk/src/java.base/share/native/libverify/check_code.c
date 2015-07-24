@@ -2407,7 +2407,6 @@ pop_stack(context_type *context, unsigned int inumber, stack_info_type *new_stac
                         CCerror(context, "Call to wrong initialization method");
                     }
                     if (this_idata->protected
-                        && context->major_version > LDC_CLASS_MAJOR_VERSION
                         && !isAssignableTo(context, object_type,
                                            context->currentclass_info)) {
                       CCerror(context, "Bad access to protected data");
