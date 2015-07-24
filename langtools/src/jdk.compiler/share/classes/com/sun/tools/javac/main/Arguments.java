@@ -33,11 +33,8 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Optional;
-import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
@@ -53,8 +50,7 @@ import com.sun.tools.javac.jvm.Profile;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.main.OptionHelper.GrumpyHelper;
 import com.sun.tools.javac.platform.PlatformDescription;
-import com.sun.tools.javac.platform.PlatformProvider;
-import com.sun.tools.javac.platform.PlatformProvider.PlatformNotSupported;
+import com.sun.tools.javac.platform.PlatformUtils;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
@@ -297,7 +293,7 @@ public class Arguments {
                 Option.TARGET);
 
         if (platformString != null) {
-            PlatformDescription platformDescription = lookupDescription(platformString);
+            PlatformDescription platformDescription = PlatformUtils.lookupPlatformDescription(platformString);
 
             if (platformDescription == null) {
                 error("err.unsupported.release.version", platformString);
@@ -500,31 +496,6 @@ public class Arguments {
             log.warning(LintCategory.OPTIONS, "option.obsolete.suppression");
 
         return !errors;
-    }
-
-    private PlatformDescription lookupDescription(String platformString) {
-        int separator = platformString.indexOf(":");
-        String platformProviderName =
-                separator != (-1) ? platformString.substring(0, separator) : platformString;
-        String platformOptions =
-                separator != (-1) ? platformString.substring(separator + 1) : "";
-        Iterable<PlatformProvider> providers =
-                ServiceLoader.load(PlatformProvider.class, Arguments.class.getClassLoader());
-
-        return StreamSupport.stream(providers.spliterator(), false)
-                            .filter(provider -> StreamSupport.stream(provider.getSupportedPlatformNames()
-                                                                             .spliterator(),
-                                                                     false)
-                                                             .anyMatch(platformProviderName::equals))
-                            .findFirst()
-                            .flatMap(provider -> {
-                                try {
-                                    return Optional.of(provider.getPlatform(platformProviderName, platformOptions));
-                                } catch (PlatformNotSupported pns) {
-                                    return Optional.empty();
-                                }
-                            })
-                            .orElse(null);
     }
 
     /**
