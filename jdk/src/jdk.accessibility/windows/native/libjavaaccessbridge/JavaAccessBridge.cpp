@@ -114,7 +114,7 @@ extern "C" {
      * Our window proc
      *
      */
-    BOOL APIENTRY AccessBridgeDialogProc (HWND hDlg, UINT message, UINT wParam, LONG lParam) {
+    BOOL APIENTRY AccessBridgeDialogProc (HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
         int command;
         COPYDATASTRUCT *sentToUs;
         char *package;
@@ -151,7 +151,7 @@ extern "C" {
             } else {
                 //DEBUG_CODE(sprintf(buffer, "Got AB_MESSAGE_WAITING from HWND %p", wParam));
                 //DEBUG_CODE(SetDlgItemText(theDialogWindow, cStatusText, buffer));
-                LRESULT returnVal = theJavaAccessBridge->receiveMemoryPackage((HWND) wParam, lParam);
+                LRESULT returnVal = theJavaAccessBridge->receiveMemoryPackage((HWND) wParam, (long) lParam);
             }
             break;
 
