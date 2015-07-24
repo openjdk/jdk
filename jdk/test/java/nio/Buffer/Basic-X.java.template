@@ -128,6 +128,15 @@ public class Basic$Type$
         c.position(7);
         b.put(c);
         b.flip();
+        try {
+            b.put(b);
+            fail("IllegalArgumentException expected for put into same buffer");
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage() == null) {
+                fail("Non-null IllegalArgumentException message expected from"
+                     + " put into same buffer");
+            }
+        }
     }
 
     //6231529
@@ -464,6 +473,46 @@ public class Basic$Type$
                     b.reset();
                 }});
 
+        try {
+            b.position(b.limit() + 1);
+            fail("IllegalArgumentException expected for position beyond limit");
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage() == null) {
+                fail("Non-null IllegalArgumentException message expected for"
+                     + " position beyond limit");
+            }
+        }
+
+        try {
+            b.position(-1);
+            fail("IllegalArgumentException expected for negative position");
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage() == null) {
+                fail("Non-null IllegalArgumentException message expected for"
+                     + " negative position");
+            }
+        }
+
+        try {
+            b.limit(b.capacity() + 1);
+            fail("IllegalArgumentException expected for limit beyond capacity");
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage() == null) {
+                fail("Non-null IllegalArgumentException message expected for"
+                     + " limit beyond capacity");
+            }
+        }
+
+        try {
+            b.limit(-1);
+            fail("IllegalArgumentException expected for negative limit");
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage() == null) {
+                fail("Non-null IllegalArgumentException message expected for"
+                     + " negative limit");
+            }
+        }
+
         // Values
 
         b.clear();
@@ -502,7 +551,8 @@ public class Basic$Type$
         ck(b, b.get(), -Float.MIN_VALUE);
         ck(b, b.get(), Float.NEGATIVE_INFINITY);
         ck(b, b.get(), Float.POSITIVE_INFINITY);
-        if (Float.floatToRawIntBits(v = b.get()) != Float.floatToRawIntBits(Float.NaN))
+        if (Float.floatToRawIntBits(v = b.get()) !=
+            Float.floatToRawIntBits(Float.NaN))
             fail(b, (long)Float.NaN, (long)v);
         ck(b, b.get(), 0.91697687f);
 #end[float]
@@ -934,11 +984,27 @@ public class Basic$Type$
                 public void run() {
                     $Type$Buffer.allocate(-1);
                 }});
+        try {
+            $Type$Buffer.allocate(-1);
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage() == null) {
+                fail("Non-null IllegalArgumentException message expected for"
+                     + " attempt to allocate negative capacity buffer");
+            }
+        }
 #if[byte]
         tryCatch((Buffer) null, IllegalArgumentException.class, new Runnable() {
                 public void run() {
                     $Type$Buffer.allocateDirect(-1);
                 }});
+        try {
+            $Type$Buffer.allocateDirect(-1);
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage() == null) {
+                fail("Non-null IllegalArgumentException message expected for"
+                     + " attempt to allocate negative capacity direct buffer");
+            }
+        }
 #end[byte]
     }
 
