@@ -848,7 +848,7 @@ void EvacuateFollowersClosureGeneral::do_void() {
     _gch->oop_since_save_marks_iterate(GenCollectedHeap::YoungGen,
                                        _scan_cur_or_nonheap,
                                        _scan_older);
-  } while (!_gch->no_allocs_since_save_marks(true /* include_young */));
+  } while (!_gch->no_allocs_since_save_marks());
 }
 
 
