@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ all: logc.jar
 
 logc.jar: filelist manifest.mf
 	@mkdir -p $(OUTPUT_DIR)
-	$(JAVAC) -source 1.5 -deprecation -sourcepath $(SRC_DIR) -d $(OUTPUT_DIR) @filelist
+	$(JAVAC) -deprecation -sourcepath $(SRC_DIR) -d $(OUTPUT_DIR) @filelist
 	$(JAR) cvfm logc.jar manifest.mf -C $(OUTPUT_DIR) com
 
 .PHONY: filelist

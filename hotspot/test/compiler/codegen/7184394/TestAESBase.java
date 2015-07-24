@@ -61,12 +61,12 @@ abstract public class TestAESBase {
   final Random random = Utils.getRandomInstance();
   Cipher cipher;
   Cipher dCipher;
-  AlgorithmParameters algParams;
+  AlgorithmParameters algParams = null;
   SecretKey key;
   GCMParameterSpec gcm_spec;
-  byte[] aad;
+  byte[] aad = { 0x11, 0x22, 0x33, 0x44, 0x55 };
   int tlen = 12;
-  byte[] iv;
+  byte[] iv = new byte[16];
 
   static int numThreads = 0;
   int  threadId;
@@ -80,7 +80,10 @@ abstract public class TestAESBase {
 
   public void prepare() {
     try {
-    System.out.println("\nalgorithm=" + algorithm + ", mode=" + mode + ", paddingStr=" + paddingStr + ", msgSize=" + msgSize + ", keySize=" + keySize + ", noReinit=" + noReinit + ", checkOutput=" + checkOutput + ", encInputOffset=" + encInputOffset + ", encOutputOffset=" + encOutputOffset + ", decOutputOffset=" + decOutputOffset + ", lastChunkSize=" +lastChunkSize );
+      System.out.println("\nalgorithm=" + algorithm + ", mode=" + mode + ", paddingStr=" + paddingStr +
+              ", msgSize=" + msgSize + ", keySize=" + keySize + ", noReinit=" + noReinit +
+              ", checkOutput=" + checkOutput + ", encInputOffset=" + encInputOffset + ", encOutputOffset=" +
+              encOutputOffset + ", decOutputOffset=" + decOutputOffset + ", lastChunkSize=" +lastChunkSize );
 
       if (encInputOffset % ALIGN != 0 || encOutputOffset % ALIGN != 0 || decOutputOffset % ALIGN !=0 )
         testingMisalignment = true;
@@ -101,22 +104,24 @@ abstract public class TestAESBase {
       cipher = Cipher.getInstance(algorithm + "/" + mode + "/" + paddingStr, "SunJCE");
       dCipher = Cipher.getInstance(algorithm + "/" + mode + "/" + paddingStr, "SunJCE");
 
+      // CBC init
       if (mode.equals("CBC")) {
-        int ivLen = (algorithm.equals("AES") ? 16 : algorithm.equals("DES") ? 8 : 0);
-        IvParameterSpec initVector = new IvParameterSpec(new byte[ivLen]);
+        IvParameterSpec initVector = new IvParameterSpec(iv);
         cipher.init(Cipher.ENCRYPT_MODE, key, initVector);
-      } else if (mode.equals("GCM")) {
-          iv = new byte[64];
-          random.nextBytes(iv);
-          aad = new byte[5];
-          random.nextBytes(aad);
-          gcm_init();
-      } else {
         algParams = cipher.getParameters();
+        dCipher.init(Cipher.DECRYPT_MODE, key, initVector);
+
+      // GCM init
+      } else if (mode.equals("GCM")) {
+        gcm_init(true);
+        gcm_init(false);
+
+      // ECB init
+      } else {
         cipher.init(Cipher.ENCRYPT_MODE, key, algParams);
+        dCipher.init(Cipher.DECRYPT_MODE, key, algParams);
       }
-      algParams = cipher.getParameters();
-      dCipher.init(Cipher.DECRYPT_MODE, key, algParams);
+
       if (threadId == 0) {
         childShowCipher();
       }
@@ -198,11 +203,18 @@ abstract public class TestAESBase {
 
   abstract void childShowCipher();
 
-  void gcm_init() throws Exception {
-    tlen = 12;
+  void gcm_init(boolean encrypt) throws Exception {
     gcm_spec = new GCMParameterSpec(tlen * 8, iv);
-    cipher = Cipher.getInstance(algorithm + "/" + mode + "/" + paddingStr, "SunJCE");
-    cipher.init(Cipher.ENCRYPT_MODE, key, gcm_spec);
-    cipher.update(aad);
+    if (encrypt) {
+      // Get a new instance everytime because of reuse IV restrictions
+      cipher = Cipher.getInstance(algorithm + "/" + mode + "/" + paddingStr, "SunJCE");
+      cipher.init(Cipher.ENCRYPT_MODE, key, gcm_spec);
+      cipher.updateAAD(aad);
+    } else {
+      dCipher.init(Cipher.DECRYPT_MODE, key, gcm_spec);
+      dCipher.updateAAD(aad);
+
+
+    }
   }
 }
