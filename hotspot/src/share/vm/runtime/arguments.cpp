@@ -788,9 +788,11 @@ void Arguments::print_on(outputStream* st) {
   st->print_cr("VM Arguments:");
   if (num_jvm_flags() > 0) {
     st->print("jvm_flags: "); print_jvm_flags_on(st);
+    st->cr();
   }
   if (num_jvm_args() > 0) {
     st->print("jvm_args: "); print_jvm_args_on(st);
+    st->cr();
   }
   st->print_cr("java_command: %s", java_command() ? java_command() : "<unknown>");
   if (_java_class_path != NULL) {
@@ -800,12 +802,32 @@ void Arguments::print_on(outputStream* st) {
   st->print_cr("Launcher Type: %s", _sun_java_launcher);
 }
 
+void Arguments::print_summary_on(outputStream* st) {
+  // Print the command line.  Environment variables that are helpful for
+  // reproducing the problem are written later in the hs_err file.
+  // flags are from setting file
+  if (num_jvm_flags() > 0) {
+    st->print_raw("Settings File: ");
+    print_jvm_flags_on(st);
+    st->cr();
+  }
+  // args are the command line and environment variable arguments.
+  st->print_raw("Command Line: ");
+  if (num_jvm_args() > 0) {
+    print_jvm_args_on(st);
+  }
+  // this is the classfile and any arguments to the java program
+  if (java_command() != NULL) {
+    st->print("%s", java_command());
+  }
+  st->cr();
+}
+
 void Arguments::print_jvm_flags_on(outputStream* st) {
   if (_num_jvm_flags > 0) {
     for (int i=0; i < _num_jvm_flags; i++) {
       st->print("%s ", _jvm_flags_array[i]);
     }
-    st->cr();
   }
 }
 
@@ -814,7 +836,6 @@ void Arguments::print_jvm_args_on(outputStream* st) {
     for (int i=0; i < _num_jvm_args; i++) {
       st->print("%s ", _jvm_args_array[i]);
     }
-    st->cr();
   }
 }
 

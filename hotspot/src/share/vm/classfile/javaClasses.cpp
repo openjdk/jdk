@@ -809,6 +809,22 @@ Symbol* java_lang_Class::as_signature(oop java_class, bool intern_if_not_found, 
   return name;
 }
 
+// Returns the Java name for this Java mirror (Resource allocated)
+// See Klass::external_name().
+// For primitive type Java mirrors, its type name is returned.
+const char* java_lang_Class::as_external_name(oop java_class) {
+  assert(java_lang_Class::is_instance(java_class), "must be a Class object");
+  const char* name = NULL;
+  if (is_primitive(java_class)) {
+    name = type2name(primitive_type(java_class));
+  } else {
+    name = as_Klass(java_class)->external_name();
+  }
+  if (name == NULL) {
+    name = "<null>";
+  }
+  return name;
+}
 
 Klass* java_lang_Class::array_klass(oop java_class) {
   Klass* k = ((Klass*)java_class->metadata_field(_array_klass_offset));
