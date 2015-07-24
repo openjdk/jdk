@@ -38,7 +38,6 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.comp.Attr.ResultInfo;
-import com.sun.tools.javac.comp.Infer.InferenceContext;
 import com.sun.tools.javac.comp.Resolve.MethodResolutionPhase;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
@@ -1013,7 +1012,7 @@ public class DeferredAttr extends JCTree.Visitor {
     class CheckStuckPolicy extends PolyScanner implements DeferredStuckPolicy, Infer.FreeTypeListener {
 
         Type pt;
-        Infer.InferenceContext inferenceContext;
+        InferenceContext inferenceContext;
         Set<Type> stuckVars = new LinkedHashSet<>();
         Set<Type> depVars = new LinkedHashSet<>();
 
