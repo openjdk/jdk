@@ -339,7 +339,7 @@ public class CodeSource implements java.io.Serializable {
      * @param strict If true then a strict equality match is performed.
      *               Otherwise a subset match is performed.
      */
-    private boolean matchCerts(CodeSource that, boolean strict)
+    boolean matchCerts(CodeSource that, boolean strict)
     {
         boolean match;
 

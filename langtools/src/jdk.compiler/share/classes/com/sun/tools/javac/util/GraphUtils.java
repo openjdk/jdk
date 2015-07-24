@@ -151,32 +151,57 @@ public class GraphUtils {
      * directed graph in linear time. Works on TarjanNode.
      */
     public static <D, N extends TarjanNode<D, N>> List<? extends List<? extends N>> tarjan(Iterable<? extends N> nodes) {
-        ListBuffer<List<N>> cycles = new ListBuffer<>();
-        ListBuffer<N> stack = new ListBuffer<>();
-        int index = 0;
-        for (N node: nodes) {
-            if (node.index == -1) {
-                index += tarjan(node, index, stack, cycles);
-            }
-        }
-        return cycles.toList();
+        Tarjan<D, N> tarjan = new Tarjan<>();
+        return tarjan.findSCC(nodes);
     }
+    //where
+    private static class Tarjan<D, N extends TarjanNode<D, N>> {
 
-    private static <D, N extends TarjanNode<D, N>> int tarjan(N v, int index, ListBuffer<N> stack, ListBuffer<List<N>> cycles) {
-        v.index = index;
-        v.lowlink = index;
-        index++;
-        stack.prepend(v);
-        v.active = true;
-        for (N n: v.getAllDependencies()) {
-            if (n.index == -1) {
-                tarjan(n, index, stack, cycles);
-                v.lowlink = Math.min(v.lowlink, n.lowlink);
-            } else if (stack.contains(n)) {
-                v.lowlink = Math.min(v.lowlink, n.index);
+        /** Unique node identifier. */
+        int index = 0;
+
+        /** List of SCCs found fso far. */
+        ListBuffer<List<N>> sccs = new ListBuffer<>();
+
+        /** Stack of all reacheable nodes from given root. */
+        ListBuffer<N> stack = new ListBuffer<>();
+
+        private List<? extends List<? extends N>> findSCC(Iterable<? extends N> nodes) {
+            for (N node : nodes) {
+                if (node.index == -1) {
+                    findSCC(node);
+                }
+            }
+            return sccs.toList();
+        }
+
+        private void findSCC(N v) {
+            visitNode(v);
+            for (N n: v.getAllDependencies()) {
+                if (n.index == -1) {
+                    //it's the first time we see this node
+                    findSCC(n);
+                    v.lowlink = Math.min(v.lowlink, n.lowlink);
+                } else if (stack.contains(n)) {
+                    //this node is already reachable from current root
+                    v.lowlink = Math.min(v.lowlink, n.index);
+                }
+            }
+            if (v.lowlink == v.index) {
+                //v is the root of a SCC
+                addSCC(v);
             }
         }
-        if (v.lowlink == v.index) {
+
+        private void visitNode(N n) {
+            n.index = index;
+            n.lowlink = index;
+            index++;
+            stack.prepend(n);
+            n.active = true;
+        }
+
+        private void addSCC(N v) {
             N n;
             ListBuffer<N> cycle = new ListBuffer<>();
             do {
@@ -184,9 +209,8 @@ public class GraphUtils {
                 n.active = false;
                 cycle.add(n);
             } while (n != v);
-            cycles.add(cycle.toList());
+            sccs.add(cycle.toList());
         }
-        return index;
     }
 
     /**
