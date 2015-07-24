@@ -3792,8 +3792,8 @@ void MacroAssembler::eden_allocate(Register obj,
     br(Assembler::HI, slow_case);
 
     // If heap_top hasn't been changed by some other thread, update it.
-    stlxr(rscratch1, end, rscratch1);
-    cbnzw(rscratch1, retry);
+    stlxr(rscratch2, end, rscratch1);
+    cbnzw(rscratch2, retry);
   }
 }
 
