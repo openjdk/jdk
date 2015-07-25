@@ -1079,7 +1079,7 @@ bool PosixSemaphore::trywait() {
   return ret == 0;
 }
 
-bool PosixSemaphore::timedwait(const struct timespec ts) {
+bool PosixSemaphore::timedwait(struct timespec ts) {
   while (true) {
     int result = sem_timedwait(&_semaphore, &ts);
     if (result == 0) {
