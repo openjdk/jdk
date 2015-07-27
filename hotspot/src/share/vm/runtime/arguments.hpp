@@ -466,8 +466,8 @@ class Arguments : AllStatic {
   static jint apply_ergo();
   // Adjusts the arguments after the OS have adjusted the arguments
   static jint adjust_after_os();
-  // Set any arguments that need to be set after the final range and constraint check
-  static void post_final_range_and_constraint_check(bool check_passed);
+  // Set any arguments that need to be set after the 'CommandLineFlagConstraint::AfterErgo' constraint check
+  static void post_after_ergo_constraint_check(bool check_passed);
 
   static void set_gc_specific_flags();
   static inline bool gc_selected(); // whether a gc has been selected
