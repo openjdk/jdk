@@ -1,12 +1,5 @@
 '\" t
-.\" Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
-.\" Title: rmiregistry
-.\" Language: English
-.\" Date: 2013年11月21日
-.\" SectDesc: Remote Method Invocation (RMI)ツール
-.\" Software: JDK 8
-.\" Arch: 汎用
-.\"
+.\" Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -15,7 +8,7 @@
 .\"
 .\" This code is distributed in the hope that it will be useful, but WITHOUT
 .\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 .\" version 2 for more details (a copy is included in the LICENSE file that
 .\" accompanied this code).
 .\"
@@ -27,8 +20,17 @@
 .\" or visit www.oracle.com if you need additional information or have any
 .\" questions.
 .\"
-.pl 99999
-.TH "rmiregistry" "1" "2013年11月21日" "JDK 8" "Remote Method Invocation (RMI)"
+.\" Title: rmiregistry
+.\" Language: Japanese
+.\" Date: 2013ǯ11��21��
+.\" SectDesc: Remote Method Invocation (RMI)�ġ���
+.\" Software: JDK 8
+.\" Arch: ����
+.\" Part Number: E58103-01
+.\" Doc ID: JSSON
+.\"
+.if n .pl 99999
+.TH "rmiregistry" "1" "2013ǯ11��21��" "JDK 8" "Remote Method Invocation (RMI)"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -48,15 +50,15 @@
 .\" -----------------------------------------------------------------
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
-.SH "NAME"
-rmiregistry \- 現在のホストの指定したポート上にリモート・オブジェクト・レジストリを開始します。
-.SH "概要"
+.SH "̾��"
+rmiregistry \- ���ߤΥۥ��Ȥλ��ꤷ���ݡ��Ⱦ�˥�⡼�ȡ����֥������ȡ��쥸���ȥ�򳫻Ϥ��ޤ���
+.SH "����"
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\fIrmiregistry\fR [ \fIport\fR ]
+\fBrmiregistry\fR [ \fIport\fR ]
 .fi
 .if n \{\
 .RE
@@ -64,36 +66,37 @@ rmiregistry \- 現在のホストの指定したポート上にリモート・�
 .PP
 \fIport\fR
 .RS 4
-リモート・オブジェクト・レジストリを開始する現在のホスト上の\fIport\fRの数。
+��⡼�ȡ����֥������ȡ��쥸���ȥ�򳫻Ϥ��븽�ߤΥۥ��Ⱦ��\fBport\fR�ο���
 .RE
-.SH "説明"
+.SH "����"
 .PP
-\fIrmiregistry\fRコマンドは、現在のホストの指定したポート上にリモート・オブジェクト・レジストリを作成し、開始します。portの指定を省略した場合、レジストリはポート1099で開始します。\fIrmiregistry\fRコマンドに、出力機能はありません。通常、これはバックグラウンドで実行されます。次に例を示します。
+\fBrmiregistry\fR���ޥ�ɤϡ����ߤΥۥ��Ȥλ��ꤷ���ݡ��Ⱦ�˥�⡼�ȡ����֥������ȡ��쥸���ȥ������������Ϥ��ޤ���port�λ�����ά������硢�쥸���ȥ�ϥݡ���1099�ǳ��Ϥ��ޤ���\fBrmiregistry\fR���ޥ�ɤˡ����ϵ�ǽ�Ϥ���ޤ����̾����ϥХå����饦��ɤǼ¹Ԥ���ޤ���������򼨤��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-rmiregistry &
+\fBrmiregistry &\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .PP
-リモート・オブジェクト・レジストリは、ブートストラップのネーム・サービスです。同一ホストのRMIサーバーが、リモート・オブジェクトを名前にバインドするために使用されます。次に、ローカルおよびリモート・ホストのクライアントはリモート・オブジェクトを検索し、リモート・メソッドの呼出しを行います。
+��⡼�ȡ����֥������ȡ��쥸���ȥ�ϡ��֡��ȥ��ȥ�åפΥ͡��ࡦ�����ӥ��Ǥ���Ʊ��ۥ��Ȥ�RMI�����С�������⡼�ȡ����֥������Ȥ�̾���˥Х���ɤ��뤿��˻��Ѥ���ޤ������ˡ��������뤪��ӥ�⡼�ȡ��ۥ��ȤΥ��饤����Ȥϥ�⡼�ȡ����֥������Ȥ򸡺�������⡼�ȡ��᥽�åɤθƽФ���Ԥ��ޤ���
 .PP
-レジストリは、一般的に、最初のリモート・オブジェクトの位置を指定します。そこで、アプリケーションはメソッドを呼び出す必要があります。その後、そのオブジェクトはアプリケーション指定のサポートを提供し、他のオブジェクトを探します。
+�쥸���ȥ�ϡ�����Ū�ˡ��ǽ�Υ�⡼�ȡ����֥������Ȥΰ��֤���ꤷ�ޤ��������ǡ����ץꥱ�������ϥ᥽�åɤ�ƤӽФ�ɬ�פ�����ޤ������θ塢���Υ��֥������Ȥϥ��ץꥱ����������Υ��ݡ��Ȥ��󶡤���¾�Υ��֥������Ȥ�õ���ޤ���
 .PP
-\fIjava\&.rmi\&.registry\&.LocateRegistry\fRクラスのメソッドは、ローカル・ホスト、またはローカル・ホストとポートで動作するレジストリを取得するために使用されます。
+\fBjava\&.rmi\&.registry\&.LocateRegistry\fR���饹�Υ᥽�åɤϡ��������롦�ۥ��ȡ��ޤ��ϥ������롦�ۥ��Ȥȥݡ��Ȥ�ư���쥸���ȥ��������뤿��˻��Ѥ���ޤ���
 .PP
-\fIjava\&.rmi\&.Naming\fRクラスのURLベース・メソッドはレジストリに対して操作を実行し、任意のホストおよびローカル・ホストでのリモート・オブジェクトの検索に使用できます。単純名(文字列)をリモート・オブジェクトにバインドし、新しい名前をリモート・オブジェクトに再バインドし(古いバインドをオーバーライド)、リモート・オブジェクトをアンバインドし、レジストリにバインドされているURLをリスト表示します。
-.SH "オプション"
+\fBjava\&.rmi\&.Naming\fR���饹��URL�١������᥽�åɤϥ쥸���ȥ���Ф�������¹Ԥ���Ǥ�դΥۥ��Ȥ���ӥ������롦�ۥ��ȤǤΥ�⡼�ȡ����֥������Ȥθ����˻��ѤǤ��ޤ���ñ��̾(ʸ����)���⡼�ȡ����֥������Ȥ˥Х���ɤ���������̾�����⡼�ȡ����֥������Ȥ˺ƥХ���ɤ�(�Ť��Х���ɤ򥪡��С��饤��)����⡼�ȡ����֥������Ȥ򥢥�Х���ɤ����쥸���ȥ�˥Х���ɤ���Ƥ���URL��ꥹ��ɽ�����ޤ���
+.SH "���ץ����"
 .PP
 \-J
 .RS 4
-Javaオプションとともに使用して、\fI\-J\fRの後ろに続くオプションをJavaインタプリタに引き渡します(\fI\-J\fRとオプションの間にスペースは入れません)。
+Java���ץ����ȤȤ�˻��Ѥ��ơ�\fB\-J\fR�θ����³�����ץ�����Java���󥿥ץ꥿�˰����Ϥ��ޤ�(\fB\-J\fR�ȥ��ץ����δ֤˥��ڡ���������ޤ���)��
 .RE
-.SH "関連項目"
+.SH "��Ϣ����"
 .sp
 .RS 4
 .ie n \{\
@@ -114,7 +117,7 @@ java(1)
 .sp -1
 .IP \(bu 2.3
 .\}
-\fI「java\&.rmi\&.registry\&.LocateRegistry」\fR(http://docs\&.oracle\&.com/javase/8/docs/api/java/rmi/registry/LocateRegistry\&.html)
+\fB��java\&.rmi\&.registry\&.LocateRegistry��\fR(http://docs\&.oracle\&.com/javase/8/docs/api/java/rmi/registry/LocateRegistry\&.html)
 .RE
 .sp
 .RS 4
@@ -125,7 +128,7 @@ java(1)
 .sp -1
 .IP \(bu 2.3
 .\}
-\fI「java\&.rmi\&.Naming class description」\fR(http://docs\&.oracle\&.com/javase/8/docs/api/java/rmi/Naming\&.html)
+\fB��java\&.rmi\&.Naming class description��\fR(http://docs\&.oracle\&.com/javase/8/docs/api/java/rmi/Naming\&.html)
 .RE
 .br
 'pl 8.5i
