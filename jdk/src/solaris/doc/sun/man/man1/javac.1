@@ -1,6 +1,5 @@
 '\" t
-.\"  Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
-.\"
+.\" Copyright (c) 1994, 2015, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -9,7 +8,7 @@
 .\"
 .\" This code is distributed in the hope that it will be useful, but WITHOUT
 .\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 .\" version 2 for more details (a copy is included in the LICENSE file that
 .\" accompanied this code).
 .\"
@@ -23,12 +22,12 @@
 .\"
 .\"     Arch: generic
 .\"     Software: JDK 8
-.\"     Date: 21 November 2013
+.\"     Date: 03 March 2015
 .\"     SectDesc: Basic Tools
 .\"     Title: javac.1
 .\"
 .if n .pl 99999
-.TH javac 1 "21 November 2013" "JDK 8" "Basic Tools"
+.TH javac 1 "03 March 2015" "JDK 8" "Basic Tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -235,10 +234,16 @@ No language changes were introduced in Java SE 6\&. However, encoding errors in 
 Synonym for 1\&.6\&.
 .TP     
 1\&.7
-This is the default value\&. The compiler accepts code with features introduced in Java SE 7\&.
+The compiler accepts code with features introduced in Java SE 7\&.
 .TP     
 7
 Synonym for 1\&.7\&.
+.TP     
+1\&.8
+This is the default value\&. The compiler accepts code with features introduced in Java SE 8\&.
+.TP     
+8
+Synonym for 1\&.8\&.
 .RE     
 
 .TP
@@ -268,13 +273,13 @@ By default, classes are compiled against the bootstrap and extension classes of 
 .TP
 -target \fIversion\fR
 .br
-Generates class files that target a specified release of the virtual machine\&. Class files will run on the specified target and on later releases, but not on earlier releases of the JVM\&. Valid targets are 1\&.1, 1\&.2, 1\&.3, 1\&.4, 1\&.5 (also 5), 1\&.6 (also 6), and 1\&.7 (also 7)\&.
+Generates class files that target a specified release of the virtual machine\&. Class files will run on the specified target and on later releases, but not on earlier releases of the JVM\&. Valid targets are 1\&.1, 1\&.2, 1\&.3, 1\&.4, 1\&.5 (also 5), 1\&.6 (also 6), 1\&.7 (also 7), and 1\&.8 (also 8)\&.
 
 The default for the \f3-target\fR option depends on the value of the \f3-source\fR option:
 .RS     
 .TP 0.2i    
 \(bu
-If the \f3-source\fR option is not specified, then the value of the \f3-target\fR option is 1\&.7
+If the \f3-source\fR option is not specified, then the value of the \f3-target\fR option is 1\&.8
 .TP 0.2i    
 \(bu
 If the \f3-source\fR option is 1\&.2, then the value of the \f3-target\fR option is 1\&.4
@@ -283,10 +288,13 @@ If the \f3-source\fR option is 1\&.2, then the value of the \f3-target\fR option
 If the \f3-source\fR option is 1\&.3, then the value of the \f3-target\fR option is 1\&.4
 .TP 0.2i    
 \(bu
-If the \f3-source\fR option is 1\&.5, then the value of the \f3-target\fR option is 1\&.7
+If the \f3-source\fR option is 1\&.5, then the value of the \f3-target\fR option is 1\&.8
 .TP 0.2i    
 \(bu
-If the \f3-source\fR option is 1\&.6, then the value of the \f3-target\fR is option 1\&.7
+If the \f3-source\fR option is 1\&.6, then the value of the \f3-target\fR is option 1\&.8
+.TP 0.2i    
+\(bu
+If the \f3-source\fR option is 1\&.7, then the value of the \f3-target\fR is option 1\&.8
 .TP 0.2i    
 \(bu
 For all other values of the \f3-source\fR option, the value of the \f3-target\fR option is the value of the \f3-source\fR option\&.
@@ -1114,9 +1122,6 @@ To compile as though providing command-line arguments, use the following syntax:
 \f3JavaCompiler javac = ToolProvider\&.getSystemJavaCompiler();\fP
 .fi     
 .nf     
-\f3JavaCompiler javac = ToolProvider\&.getSystemJavaCompiler();\fP
-.fi     
-.nf     
 \f3\fP
 .fi     
 .sp     
@@ -1279,10 +1284,10 @@ To execute a class in the \f3greetings\fR package, the program needs access to t
 .sp     
 \f3Example 4 Separate Source Files and Class Files\fR
 .PP
-The following example uses \f3javac\fR to compile code that runs on JVM 1\&.6\&.
+The following example uses \f3javac\fR to compile code that runs on JVM 1\&.7\&.
 .sp     
 .nf     
-\f3javac \-source 1\&.6 \-target 1\&.6 \-bootclasspath jdk1\&.6\&.0/lib/rt\&.jar \e \fP
+\f3javac \-source 1\&.7 \-target 1\&.7 \-bootclasspath jdk1\&.7\&.0/lib/rt\&.jar \e \fP
 .fi     
 .nf     
 \f3\-extdirs "" OldCode\&.java\fP
@@ -1291,31 +1296,31 @@ The following example uses \f3javac\fR to compile code that runs on JVM 1\&.6\&.
 \f3\fP
 .fi     
 .sp     
-The \f3-source 1\&.6\fR option specifies that release 1\&.6 (or 6) of the Java programming language be used to compile \f3OldCode\&.java\fR\&. The option \f3-target 1\&.6\fR option ensures that the generated class files are compatible with JVM 1\&.6\&. Note that in most cases, the value of the \f3-target\fR option is the value of the \f3-source\fR option; in this example, you can omit the \f3-target\fR option\&.
+The \f3-source 1\&.7\fR option specifies that release 1\&.7 (or 7) of the Java programming language be used to compile \f3OldCode\&.java\fR\&. The option \f3-target 1\&.7\fR option ensures that the generated class files are compatible with JVM 1\&.7\&. Note that in most cases, the value of the \f3-target\fR option is the value of the \f3-source\fR option; in this example, you can omit the \f3-target\fR option\&.
 .PP
 You must specify the \f3-bootclasspath\fR option to specify the correct version of the bootstrap classes (the \f3rt\&.jar\fR library)\&. If not, then the compiler generates a warning:
 .sp     
 .nf     
-\f3javac \-source 1\&.6 OldCode\&.java\fP
+\f3javac \-source 1\&.7 OldCode\&.java\fP
 .fi     
 .nf     
 \f3warning: [options] bootstrap class path not set in conjunction with \fP
 .fi     
 .nf     
-\f3\-source 1\&.6\fP
+\f3\-source 1\&.7\fP
 .fi     
 .nf     
 \f3\fP
 .fi     
 .sp     
-If you do not specify the correct version of bootstrap classes, then the compiler uses the old language rules (in this example, it uses version 1\&.6 of the Java programming language) combined with the new bootstrap classes, which can result in class files that do not work on the older platform (in this case, Java SE 6) because reference to nonexistent methods can get included\&.
+If you do not specify the correct version of bootstrap classes, then the compiler uses the old language rules (in this example, it uses version 1\&.7 of the Java programming language) combined with the new bootstrap classes, which can result in class files that do not work on the older platform (in this case, Java SE 7) because reference to nonexistent methods can get included\&.
 .PP
 \f3Example 5 Cross Compile\fR
 .PP
-This example uses \f3javac\fR to compile code that runs on JVM 1\&.6\&.
+This example uses \f3javac\fR to compile code that runs on JVM 1\&.7\&.
 .sp     
 .nf     
-\f3javac \-source 1\&.6 \-target 1\&.6 \-bootclasspath jdk1\&.6\&.0/lib/rt\&.jar \e\fP
+\f3javac \-source 1\&.7 \-target 1\&.7 \-bootclasspath jdk1\&.7\&.0/lib/rt\&.jar \e\fP
 .fi     
 .nf     
 \f3            \-extdirs "" OldCode\&.java\fP
@@ -1324,21 +1329,21 @@ This example uses \f3javac\fR to compile code that runs on JVM 1\&.6\&.
 \f3\fP
 .fi     
 .sp     
-The\f3-source 1\&.6\fR option specifies that release 1\&.6 (or 6) of the Java programming language to be used to compile OldCode\&.java\&. The \f3-target 1\&.6\fR option ensures that the generated class files are compatible with JVM 1\&.6\&. In most cases, the value of the \f3-target\fR is the value of \f3-source\fR\&. In this example, the \f3-target\fR option is omitted\&.
+The\f3-source 1\&.7\fR option specifies that release 1\&.7 (or 7) of the Java programming language to be used to compile OldCode\&.java\&. The \f3-target 1\&.7\fR option ensures that the generated class files are compatible with JVM 1\&.7\&.
 .PP
 You must specify the \f3-bootclasspath\fR option to specify the correct version of the bootstrap classes (the \f3rt\&.jar\fR library)\&. If not, then the compiler generates a warning:
 .sp     
 .nf     
-\f3javac \-source 1\&.6 OldCode\&.java\fP
+\f3javac \-source 1\&.7 OldCode\&.java\fP
 .fi     
 .nf     
-\f3warning: [options] bootstrap class path not set in conjunction with \-source 1\&.6\fP
+\f3warning: [options] bootstrap class path not set in conjunction with \-source 1\&.7\fP
 .fi     
 .nf     
 \f3\fP
 .fi     
 .sp     
-If you do not specify the correct version of bootstrap classes, then the compiler uses the old language rules combined with the new bootstrap classes\&. This combination can result in class files that do not work on the older platform (in this case, Java SE 6) because reference to nonexistent methods can get included\&. In this example, the compiler uses release 1\&.6 of the Java programming language\&.
+If you do not specify the correct version of bootstrap classes, then the compiler uses the old language rules combined with the new bootstrap classes\&. This combination can result in class files that do not work on the older platform (in this case, Java SE 7) because reference to nonexistent methods can get included\&. In this example, the compiler uses release 1\&.7 of the Java programming language\&.
 .SH SEE\ ALSO    
 .TP 0.2i    
 \(bu
