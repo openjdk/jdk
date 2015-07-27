@@ -4010,10 +4010,10 @@ jint Arguments::adjust_after_os() {
   return JNI_OK;
 }
 
-// Any custom code post the final range and constraint check
+// Any custom code post the 'CommandLineFlagConstraint::AfterErgo' constraint check
 // can be done here. We pass a flag that specifies whether
 // the check passed successfully
-void Arguments::post_final_range_and_constraint_check(bool check_passed) {
+void Arguments::post_after_ergo_constraint_check(bool check_passed) {
   // This does not set the flag itself, but stores the value in a safe place for later usage.
   _min_heap_free_ratio = MinHeapFreeRatio;
   _max_heap_free_ratio = MaxHeapFreeRatio;
