@@ -445,9 +445,6 @@ class Arguments : AllStatic {
   static char*  SharedArchivePath;
 
  public:
-  // Tiered
-  static int  get_min_number_of_compiler_threads();
-
   // Scale compile thresholds
   // Returns threshold scaled with CompileThresholdScaling
   static intx scaled_compile_threshold(intx threshold, double scale);
