@@ -289,7 +289,7 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
 
             XNETProtocol net_protocol = XWM.getWM().getNETProtocol();
             if (net_protocol != null) {
-                net_protocol.setActiveWindow(this);
+                net_protocol.setActiveWindow(getWindow());
             }
             xSetVisible(true);
         }

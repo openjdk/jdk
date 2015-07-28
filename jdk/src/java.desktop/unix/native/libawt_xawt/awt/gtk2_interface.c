@@ -576,6 +576,7 @@ void gtk2_file_chooser_load()
     fp_gtk_file_chooser_get_filenames = dl_symbol(
             "gtk_file_chooser_get_filenames");
     fp_gtk_g_slist_length = dl_symbol("g_slist_length");
+    fp_gdk_x11_drawable_get_xid = dl_symbol("gdk_x11_drawable_get_xid");
 }
 
 gboolean gtk2_load(JNIEnv *env)
