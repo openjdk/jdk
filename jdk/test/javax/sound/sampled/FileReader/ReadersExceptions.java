@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,17 +21,19 @@
  * questions.
  */
 
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
+import javax.sound.sampled.spi.AudioFileReader;
+
+import static java.util.ServiceLoader.load;
 
 /**
  * @test
- * @bug 7058662 7058666 7058672
+ * @bug 7058662 7058666 7058672 8130305
  * @author Sergey Bylokhov
  */
 public final class ReadersExceptions {
@@ -111,16 +113,18 @@ public final class ReadersExceptions {
              0, 0, 0, 0, // dataLength
             };
 
+    static byte[][] data = {wrongAIFFCh, wrongAIFFSSL, wrongAIFFSSH, wrongAUCh,
+                            wrongWAVCh, wrongWAVSSB};
+
     public static void main(final String[] args) throws IOException {
-        test(wrongAIFFCh);
-        test(wrongAIFFSSL);
-        test(wrongAIFFSSH);
-        test(wrongAUCh);
-        test(wrongWAVCh);
-        test(wrongWAVSSB);
+        for (final byte[] bytes : data) {
+            testAS(bytes);
+            testAFR(bytes);
+        }
     }
 
-    private static void test(final byte[] buffer) throws IOException {
+    private static void testAS(final byte[] buffer) throws IOException {
+        // AudioSystem API
         final InputStream is = new ByteArrayInputStream(buffer);
         try {
             AudioSystem.getAudioFileFormat(is);
@@ -129,5 +133,20 @@ public final class ReadersExceptions {
             return;
         }
         throw new RuntimeException("Test Failed");
+    }
+
+    private static void testAFR(final byte[] buffer) throws IOException {
+        // AudioFileReader API
+        final InputStream is = new ByteArrayInputStream(buffer);
+        for (final AudioFileReader afr : load(AudioFileReader.class)) {
+            for (int i = 0; i < 10; ++i) {
+                try {
+                    afr.getAudioFileFormat(is);
+                    throw new RuntimeException("UAFE expected");
+                } catch (final UnsupportedAudioFileException ignored) {
+                    // Expected.
+                }
+            }
+        }
     }
 }
