@@ -1,6 +1,5 @@
 '\" t
-.\"  Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
-.\"
+.\" Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -9,7 +8,7 @@
 .\"
 .\" This code is distributed in the hope that it will be useful, but WITHOUT
 .\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 .\" version 2 for more details (a copy is included in the LICENSE file that
 .\" accompanied this code).
 .\"
@@ -23,12 +22,12 @@
 .\"
 .\"     Arch: generic
 .\"     Software: JDK 8
-.\"     Date: 6 August 2013
+.\"     Date: 03 March 2015
 .\"     SectDesc: Security Tools
 .\"     Title: keytool.1
 .\"
 .if n .pl 99999
-.TH keytool 1 "6 August 2013" "JDK 8" "Security Tools"
+.TH keytool 1 "03 March 2015" "JDK 8" "Security Tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -185,10 +184,16 @@ Brackets surrounding an option signify that the user is prompted for the values 
 .TP 0.2i    
 \(bu
 Items in italics (option values) represent the actual values that must be supplied\&. For example, here is the format of the \f3-printcert\fR command:
+.sp     
+.nf     
+\f3keytool \-printcert {\-file \fIcert_file\fR} {\-v}\fP
+.fi     
+.sp     
 
-\f3keytool -printcert {-file cert_file} {-v}\fR
 
-When you specify a \f3-printcert\fR command, replace \f3cert_file\fR with the actual file name, as follows: \f3keytool -printcert -file VScert\&.cer\fR
+
+
+When you specify a \f3-printcert\fR command, replace \fIcert_file\fR with the actual file name, as follows: \f3keytool -printcert -file VScert\&.cer\fR
 .TP 0.2i    
 \(bu
 Option values must be put in quotation marks when they contain a blank (space)\&.
@@ -385,10 +390,39 @@ The \f3subjectKeyIdentifier\fR extension is always created\&. For non-self-signe
 .PP
 \fINote:\fR Users should be aware that some combinations of extensions (and other certificate fields) may not conform to the Internet standard\&. See Certificate Conformance Warning\&.
 .SH COMMANDS    
-.TP
+.TP     
 -gencert
-.br
-\f3{-rfc} {-infile infile} {-outfile outfile} {-alias alias} {-sigalg sigalg} {-dname dname} {-startdate startdate {-ext ext}* {-validity valDays} [-keypass keypass] {-keystore keystore} [-storepass storepass] {-storetype storetype} {-providername provider_name} {-providerClass provider_class_name {-providerArg provider_arg}} {-v} {-protected} {-Jjavaoption}\fR
+.sp     
+.nf     
+\f3{\-rfc} {\-infile \fIinfile\fR} {\-outfile \fIoutfile\fR} {\-alias \fIalias\fR} {\-sigalg \fIsigalg\fR}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-dname \fIdname\fR} {\-startdate \fIstartdate\fR {\-ext \fIext\fR}* {\-validity \fIvalDays\fR}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3[\-keypass \fIkeypass\fR] {\-keystore \fIkeystore\fR} [\-storepass \fIstorepass\fR]\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-storetype \fIstoretype\fR} {\-providername \fIprovider_name\fR}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-providerClass \fIprovider_class_name\fR {\-providerArg \fIprovider_arg\fR}}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-v} {\-protected} {\-Jjavaoption}\fP
+.fi     
+.sp     
+
 
 Generates a certificate as a response to a certificate request file (which can be created by the \f3keytool\fR\f3-certreq\fR command)\&. The command reads the request from \fIinfile\fR (if omitted, from the standard input), signs it using alias\&'s private key, and outputs the X\&.509 certificate into \fIoutfile\fR (if omitted, to the standard output)\&. When\f3-rfc\fR is specified, the output format is Base64-encoded PEM; otherwise, a binary DER is created\&.
 
@@ -459,10 +493,39 @@ The following command creates the certificate \f3e1\fR and stores it in the file
 .fi     
 .sp     
 
-.TP
+.TP     
 -genkeypair
-.br
-\f3{-alias alias} {-keyalg keyalg} {-keysize keysize} {-sigalg sigalg} [-dname dname] [-keypass keypass] {-startdate value} {-ext ext}* {-validity valDays} {-storetype storetype} {-keystore keystore} [-storepass storepass] {-providerClass provider_class_name {-providerArg provider_arg}} {-v} {-protected} {-Jjavaoption}\fR
+.sp     
+.nf     
+\f3{\-alias \fIalias\fR} {\-keyalg \fIkeyalg\fR} {\-keysize \fIkeysize\fR} {\-sigalg \fIsigalg\fR}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3[\-dname \fIdname\fR] [\-keypass \fIkeypass\fR] {\-startdate \fIvalue\fR} {\-ext \fIext\fR}*\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-validity \fIvalDays\fR} {\-storetype \fIstoretype\fR} {\-keystore \fIkeystore\fR}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3[\-storepass \fIstorepass\fR]\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-providerClass \fIprovider_class_name\fR {\-providerArg \fIprovider_arg\fR}}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-v} {\-protected} {\-Jjavaoption}\fP
+.fi     
+.sp     
+
 
 Generates a key pair (a public key and associated private key)\&. Wraps the public key into an X\&.509 v3 self-signed certificate, which is stored as a single-element certificate chain\&. This certificate chain and the private key are stored in a new keystore entry identified by alias\&.
 
@@ -510,18 +573,61 @@ When the option is not provided, the start date is the current time\&. The optio
 The value of \f3valDays\fR specifies the number of days (starting at the date specified by \f3-startdate\fR, or the current date when \f3-startdate\fR is not specified) for which the certificate should be considered valid\&.
 
 This command was named \f3-genkey\fR in earlier releases\&. The old name is still supported in this release\&. The new name, \f3-genkeypair\fR, is preferred going forward\&.
-.TP
+.TP     
 -genseckey
-.br
-\f3-genseckey {-alias alias} {-keyalg keyalg} {-keysize keysize} [-keypass keypass] {-storetype storetype} {-keystore keystore} [-storepass storepass] {-providerClass provider_class_name {-providerArg provider_arg}} {-v} {-protected} {-Jjavaoption}\fR
+.sp     
+.nf     
+\f3{\-alias \fIalias\fR} {\-keyalg \fIkeyalg\fR} {\-keysize \fIkeysize\fR} [\-keypass \fIkeypass\fR]\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-storetype \fIstoretype\fR} {\-keystore \fIkeystore\fR} [\-storepass \fIstorepass\fR]\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-providerClass \fIprovider_class_name\fR {\-providerArg \fIprovider_arg\fR}} {\-v}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-protected} {\-Jjavaoption}\fP
+.fi     
+.sp     
+
 
 Generates a secret key and stores it in a new \f3KeyStore\&.SecretKeyEntry\fR identified by \f3alias\fR\&.
 
 The value of \f3keyalg\fR specifies the algorithm to be used to generate the secret key, and the value of \f3keysize\fR specifies the size of the key to be generated\&. The \f3keypass\fR value is a password that protects the secret key\&. If no password is provided, then the user is prompted for it\&. If you press the Return key at the prompt, then the key password is set to the same password that is used for the \f3keystore\fR\&. The \f3keypass\fR value must be at least 6 characters\&.
-.TP
+.TP     
 -importcert
-.br
-\f3-importcert {-alias alias} {-file cert_file} [-keypass keypass] {-noprompt} {-trustcacerts} {-storetype storetype} {-keystore keystore} [-storepass storepass] {-providerName provider_name} {-providerClass provider_class_name {-providerArg provider_arg}} {-v} {-protected} {-Jjavaoption}\fR
+.sp     
+.nf     
+\f3{\-alias \fIalias\fR} {\-file \fIcert_file\fR} [\-keypass \fIkeypass\fR] {\-noprompt} {\-trustcacerts}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-storetype \fIstoretype\fR} {\-keystore \fIkeystore\fR} [\-storepass \fIstorepass\fR]\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-providerName \fIprovider_name\fR}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-providerClass \fIprovider_class_name\fR {\-providerArg \fIprovider_arg\fR}}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-v} {\-protected} {\-Jjavaoption}\fP
+.fi     
+.sp     
+
 
 Reads the certificate or certificate chain (where the latter is supplied in a PKCS#7 formatted reply or a sequence of X\&.509 certificates) from the file \f3cert_file\fR, and stores it in the \f3keystore\fR entry identified by \f3alias\fR\&. If no file is specified, then the certificate or certificate chain is read from \f3stdin\fR\&.
 
@@ -530,16 +636,74 @@ The \f3keytool\fR command can import X\&.509 v1, v2, and v3 certificates, and PK
 You import a certificate for two reasons: To add it to the list of trusted certificates, and to import a certificate reply received from a certificate authority (CA) as the result of submitting a Certificate Signing Request to that CA (see the \f3-certreq\fR option in Commands)\&.
 
 Which type of import is intended is indicated by the value of the \f3-alias\fR option\&. If the alias does not point to a key entry, then the \f3keytool\fR command assumes you are adding a trusted certificate entry\&. In this case, the alias should not already exist in the keystore\&. If the alias does already exist, then the \f3keytool\fR command outputs an error because there is already a trusted certificate for that alias, and does not import the certificate\&. If the alias points to a key entry, then the \f3keytool\fR command assumes you are importing a certificate reply\&.
-.TP
+.TP     
 -importpassword
-.br
-\f3{-alias alias} [-keypass keypass] {-storetype storetype} {-keystore keystore} [-storepass storepass] {-providerClass provider_class_name {-providerArg provider_arg}} {-v} {-protected} {-Jjavaoption}\fR
+.sp     
+.nf     
+\f3{\-alias \fIalias\fR} [\-keypass \fIkeypass\fR] {\-storetype \fIstoretype\fR} {\-keystore \fIkeystore\fR}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3[\-storepass \fIstorepass\fR]\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-providerClass \fIprovider_class_name\fR {\-providerArg \fIprovider_arg\fR}}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-v} {\-protected} {\-Jjavaoption}\fP
+.fi     
+.sp     
+
 
 Imports a passphrase and stores it in a new \f3KeyStore\&.SecretKeyEntry\fR identified by \f3alias\fR\&. The passphrase may be supplied via the standard input stream; otherwise the user is prompted for it\&. \f3keypass\fR is a password used to protect the imported passphrase\&. If no password is provided, the user is prompted for it\&. If you press the Return key at the prompt, the key password is set to the same password as that used for the \f3keystore\fR\&. \f3keypass\fR must be at least 6 characters long\&.
-.TP
+.TP     
 -importkeystore
-.br
-\f3{-srcstoretype srcstoretype} {-deststoretype deststoretype} [-srcstorepass srcstorepass] [-deststorepass deststorepass] {-srcprotected} {-destprotected} {-srcalias srcalias {-destalias destalias} [-srckeypass srckeypass] } [-destkeypass destkeypass] {-noprompt} {-srcProviderName src_provider_name} {-destProviderName dest_provider_name} {-providerClass provider_class_name {-providerArg provider_arg}} {-v} {-protected} {-Jjavaoption}\fR
+.sp     
+.nf     
+\f3{\-srcstoretype \fIsrcstoretype\fR} {\-deststoretype \fIdeststoretype\fR}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3[\-srcstorepass \fIsrcstorepass\fR] [\-deststorepass \fIdeststorepass\fR] {\-srcprotected}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-destprotected} \fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-srcalias \fIsrcalias\fR {\-destalias \fIdestalias\fR} [\-srckeypass \fIsrckeypass\fR]} \fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3[\-destkeypass \fIdestkeypass\fR] {\-noprompt}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-srcProviderName \fIsrc_provider_name\fR} {\-destProviderName \fIdest_provider_name\fR}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-providerClass \fIprovider_class_name\fR {\-providerArg \fIprovider_arg\fR}} {\-v}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-protected} {\-Jjavaoption}\fP
+.fi     
+.sp     
+
 
 Imports a single entry or all entries from a source keystore to a destination keystore\&.
 
@@ -550,16 +714,44 @@ If the \f3-srcalias\fR option is not provided, then all entries in the source ke
 If the destination alias already exists in the destination keystore, then the user is prompted to either overwrite the entry or to create a new entry under a different alias name\&.
 
 If the \f3-noprompt\fR option is provided, then the user is not prompted for a new destination alias\&. Existing entries are overwritten with the destination alias name\&. Entries that cannot be imported are skipped and a warning is displayed\&.
-.TP
+.TP     
 -printcertreq
-.br
-\f3{-file file}\fR
+.sp     
+.nf     
+\f3{\-file \fIfile\fR}\fP
+.fi     
+.sp     
+
 
 Prints the content of a PKCS #10 format certificate request, which can be generated by the \f3keytool\fR\f3-certreq\fR command\&. The command reads the request from file\&. If there is no file, then the request is read from the standard input\&.
-.TP
+.TP     
 -certreq
-.br
-\f3{-alias alias} {-dname dname} {-sigalg sigalg} {-file certreq_file} [-keypass keypass] {-storetype storetype} {-keystore keystore} [-storepass storepass] {-providerName provider_name} {-providerClass provider_class_name {-providerArg provider_arg}} {-v} {-protected} {-Jjavaoption}\fR
+.sp     
+.nf     
+\f3{\-alias \fIalias\fR} {\-dname \fIdname\fR} {\-sigalg \fIsigalg\fR} {\-file \fIcertreq_file\fR}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3[\-keypass \fIkeypass\fR] {\-storetype \fIstoretype\fR} {\-keystore \fIkeystore\fR}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3[\-storepass \fIstorepass\fR] {\-providerName \fIprovider_name\fR}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-providerClass \fIprovider_class_name\fR {\-providerArg \fIprovider_arg\fR}}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-v} {\-protected} {\-Jjavaoption}\fP
+.fi     
+.sp     
+
 
 Generates a Certificate Signing Request (CSR) using the PKCS #10 format\&.
 
@@ -572,10 +764,29 @@ The \f3sigalg\fR value specifies the algorithm that should be used to sign the C
 The CSR is stored in the file certreq_file\&. If no file is specified, then the CSR is output to \f3stdout\fR\&.
 
 Use the \f3importcert\fR command to import the response from the CA\&.
-.TP
+.TP     
 -exportcert
-.br
-\f3{-alias alias} {-file cert_file} {-storetype storetype} {-keystore keystore} [-storepass storepass] {-providerName provider_name} {-providerClass provider_class_name {-providerArg provider_arg}} {-rfc} {-v} {-protected} {-Jjavaoption}\fR
+.sp     
+.nf     
+\f3{\-alias \fIalias\fR} {\-file \fIcert_file\fR} {\-storetype \fIstoretype\fR} {\-keystore \fIkeystore\fR}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3[\-storepass \fIstorepass\fR] {\-providerName \fIprovider_name\fR}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-providerClass \fIprovider_class_name\fR {\-providerArg \fIprovider_arg\fR}}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-rfc} {\-v} {\-protected} {\-Jjavaoption}\fP
+.fi     
+.sp     
+
 
 Reads from the keystore the certificate associated with \fIalias\fR and stores it in the cert_file file\&. When no file is specified, the certificate is output to \f3stdout\fR\&.
 
@@ -584,20 +795,48 @@ The certificate is by default output in binary encoding\&. If the \f3-rfc\fR opt
 If \f3alias\fR refers to a trusted certificate, then that certificate is output\&. Otherwise, \f3alias\fR refers to a key entry with an associated certificate chain\&. In that case, the first certificate in the chain is returned\&. This certificate authenticates the public key of the entity addressed by \f3alias\fR\&.
 
 This command was named \f3-export\fR in earlier releases\&. The old name is still supported in this release\&. The new name, \f3-exportcert\fR, is preferred going forward\&.
-.TP
+.TP     
 -list
-.br
-\f3{-alias alias} {-storetype storetype} {-keystore keystore} [-storepass storepass] {-providerName provider_name} {-providerClass provider_class_name {-providerArg provider_arg}} {-v | -rfc} {-protected} {-Jjavaoption}\fR
+.sp     
+.nf     
+\f3{\-alias \fIalias\fR} {\-storetype \fIstoretype\fR} {\-keystore \fIkeystore\fR} [\-storepass \fIstorepass\fR]\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-providerName \fIprovider_name\fR}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-providerClass \fIprovider_class_name\fR {\-providerArg \fIprovider_arg\fR}}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-v | \-rfc} {\-protected} {\-Jjavaoption}\fP
+.fi     
+.sp     
+
 
 Prints to \f3stdout\fR the contents of the keystore entry identified by \f3alias\fR\&. If no \f3alias\fR is specified, then the contents of the entire keystore are printed\&.
 
 This command by default prints the SHA1 fingerprint of a certificate\&. If the \f3-v\fR option is specified, then the certificate is printed in human-readable format, with additional information such as the owner, issuer, serial number, and any extensions\&. If the \f3-rfc\fR option is specified, then the certificate contents are printed using the printable encoding format, as defined by the Internet RFC 1421 Certificate Encoding Standard\&.
 
 You cannot specify both \f3-v\fR and \f3-rfc\fR\&.
-.TP
+.TP     
 -printcert
-.br
-\f3{-file cert_file | -sslserver host[:port]} {-jarfile JAR_file {-rfc} {-v} {-Jjavaoption}\fR
+.sp     
+.nf     
+\f3{\-file \fIcert_file\fR | \-sslserver \fIhost\fR[:\fIport\fR]} {\-jarfile \fIJAR_file\fR {\-rfc} {\-v}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-Jjavaoption}\fP
+.fi     
+.sp     
+
 
 Reads the certificate from the file cert_file, the SSL server located at host:port, or the signed JAR file \f3JAR_file\fR (with the \f3-jarfile\fR option and prints its contents in a human-readable format\&. When no port is specified, the standard HTTPS port 443 is assumed\&. Note that \f3-sslserver\fR and -file options cannot be provided at the same time\&. Otherwise, an error is reported\&. If neither option is specified, then the certificate is read from \f3stdin\fR\&.
 
@@ -608,40 +847,120 @@ If the certificate is read from a file or \f3stdin\fR, then it might be either b
 If the SSL server is behind a firewall, then the \f3-J-Dhttps\&.proxyHost=proxyhost\fR and \f3-J-Dhttps\&.proxyPort=proxyport\fR options can be specified on the command line for proxy tunneling\&. See Java Secure Socket Extension (JSSE) Reference Guide at http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/security/jsse/JSSERefGuide\&.html
 
 \fINote:\fR This option can be used independently of a keystore\&.
-.TP
+.TP     
 -printcrl
-.br
-\f3-file crl_ {-v}\fR
+.sp     
+.nf     
+\f3\-file \fIcrl_\fR {\-v}\fP
+.fi     
+.sp     
+
 
 Reads the Certificate Revocation List (CRL) from the file \f3crl_\fR\&. A CRL is a list of digital certificates that were revoked by the CA that issued them\&. The CA generates the \f3crl_\fR file\&.
 
 \fINote:\fR This option can be used independently of a keystore\&.
-.TP
+.TP     
 -storepasswd
-.br
-\f3[-new new_storepass] {-storetype storetype} {-keystore keystore} [-storepass storepass] {-providerName provider_name} {-providerClass provider_class_name {-providerArg provider_arg}} {-v} {-Jjavaoption}\fR
+.sp     
+.nf     
+\f3[\-new \fInew_storepass\fR] {\-storetype \fIstoretype\fR} {\-keystore \fIkeystore\fR}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3[\-storepass \fIstorepass\fR] {\-providerName \fIprovider_name\fR}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-providerClass \fIprovider_class_name\fR {\-providerArg \fIprovider_arg\fR}}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-v} {\-Jjavaoption}\fP
+.fi     
+.sp     
+
 
 Changes the password used to protect the integrity of the keystore contents\&. The new password is \f3new_storepass\fR, which must be at least 6 characters\&.
-.TP
+.TP     
 -keypasswd
-.br
-\f3{-alias alias} [-keypass old_keypass] [-new new_keypass] {-storetype storetype} {-keystore keystore} [-storepass storepass] {-providerName provider_name} {-providerClass provider_class_name {-providerArg provider_arg}} {-v} {-Jjavaoption}\fR
+.sp     
+.nf     
+\f3{\-alias \fIalias\fR} [\-keypass \fIold_keypass\fR] [\-new \fInew_keypass\fR] {\-storetype \fIstoretype\fR}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-keystore \fIkeystore\fR} [\-storepass \fIstorepass\fR] {\-providerName \fIprovider_name\fR}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-providerClass \fIprovider_class_name\fR {\-providerArg \fIprovider_arg\fR}} {\-v}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-Jjavaoption}\fP
+.fi     
+.sp     
+
 
 Changes the password under which the private/secret key identified by \f3alias\fR is protected, from \f3old_keypass\fR to \f3new_keypass\fR, which must be at least 6 characters\&.
 
 If the \f3-keypass\fR option is not provided at the command line, and the key password is different from the keystore password, then the user is prompted for it\&.
 
 If the \f3-new\fR option is not provided at the command line, then the user is prompted for it
-.TP
+.TP     
 -delete
-.br
-\f3[-alias alias] {-storetype storetype} {-keystore keystore} [-storepass storepass] {-providerName provider_name} {-providerClass provider_class_name {-providerArg provider_arg}} {-v} {-protected} {-Jjavaoption}\fR
+.sp     
+.nf     
+\f3[\-alias \fIalias\fR] {\-storetype \fIstoretype\fR} {\-keystore \fIkeystore\fR} [\-storepass \fIstorepass\fR]\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-providerName \fIprovider_name\fR}  \fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-providerClass \fIprovider_class_name\fR {\-providerArg \fIprovider_arg\fR}}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-v} {\-protected} {\-Jjavaoption}\fP
+.fi     
+.sp     
+
 
 Deletes from the keystore the entry identified by \f3alias\fR\&. The user is prompted for the alias, when no alias is provided at the command line\&.
-.TP
+.TP     
 -changealias
-.br
-\f3{-alias alias} [-destalias destalias] [-keypass keypass] {-storetype storetype} {-keystore keystore} [-storepass storepass] {-providerName provider_name} {-providerClass provider_class_name {-providerArg provider_arg}} {-v} {-protected} {-Jjavaoption}\fR
+.sp     
+.nf     
+\f3{\-alias \fIalias\fR} [\-destalias \fIdestalias\fR] [\-keypass \fIkeypass\fR] {\-storetype \fIstoretype\fR}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-keystore \fIkeystore\fR} [\-storepass \fIstorepass\fR] {\-providerName \fIprovider_name\fR}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-providerClass \fIprovider_class_name\fR {\-providerArg \fIprovider_arg\fR}} {\-v}\fP
+.fi     
+.sp     
+.sp     
+.nf     
+\f3{\-protected} {\-Jjavaoption}\fP
+.fi     
+.sp     
+
 
 Move an existing keystore entry from the specified \f3alias\fR to a new alias, \f3destalias\fR\&. If no destination alias is provided, then the command prompts for one\&. If the original entry is protected with an entry password, then the password can be supplied with the \f3-keypass\fR option\&. If no key password is provided, then the \f3storepass\fR (if provided) is attempted first\&. If the attempt fails, then the user is prompted for a password\&.
 .TP

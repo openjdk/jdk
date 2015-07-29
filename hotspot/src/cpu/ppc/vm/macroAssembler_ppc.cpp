@@ -3433,6 +3433,376 @@ void MacroAssembler::char_arrays_equalsImm(Register str1_reg, Register str2_reg,
   bind(Ldone_false);
 }
 
+// dest_lo += src1 + src2
+// dest_hi += carry1 + carry2
+void MacroAssembler::add2_with_carry(Register dest_hi,
+                                     Register dest_lo,
+                                     Register src1, Register src2) {
+  li(R0, 0);
+  addc(dest_lo, dest_lo, src1);
+  adde(dest_hi, dest_hi, R0);
+  addc(dest_lo, dest_lo, src2);
+  adde(dest_hi, dest_hi, R0);
+}
+
+// Multiply 64 bit by 64 bit first loop.
+void MacroAssembler::multiply_64_x_64_loop(Register x, Register xstart,
+                                           Register x_xstart,
+                                           Register y, Register y_idx,
+                                           Register z,
+                                           Register carry,
+                                           Register product_high, Register product,
+                                           Register idx, Register kdx,
+                                           Register tmp) {
+  //  jlong carry, x[], y[], z[];
+  //  for (int idx=ystart, kdx=ystart+1+xstart; idx >= 0; idx--, kdx--) {
+  //    huge_128 product = y[idx] * x[xstart] + carry;
+  //    z[kdx] = (jlong)product;
+  //    carry  = (jlong)(product >>> 64);
+  //  }
+  //  z[xstart] = carry;
+
+  Label L_first_loop, L_first_loop_exit;
+  Label L_one_x, L_one_y, L_multiply;
+
+  addic_(xstart, xstart, -1);
+  blt(CCR0, L_one_x);   // Special case: length of x is 1.
+
+  // Load next two integers of x.
+  sldi(tmp, xstart, LogBytesPerInt);
+  ldx(x_xstart, x, tmp);
+#ifdef VM_LITTLE_ENDIAN
+  rldicl(x_xstart, x_xstart, 32, 0);
+#endif
+
+  align(32, 16);
+  bind(L_first_loop);
+
+  cmpdi(CCR0, idx, 1);
+  blt(CCR0, L_first_loop_exit);
+  addi(idx, idx, -2);
+  beq(CCR0, L_one_y);
+
+  // Load next two integers of y.
+  sldi(tmp, idx, LogBytesPerInt);
+  ldx(y_idx, y, tmp);
+#ifdef VM_LITTLE_ENDIAN
+  rldicl(y_idx, y_idx, 32, 0);
+#endif
+
+
+  bind(L_multiply);
+  multiply64(product_high, product, x_xstart, y_idx);
+
+  li(tmp, 0);
+  addc(product, product, carry);         // Add carry to result.
+  adde(product_high, product_high, tmp); // Add carry of the last addition.
+  addi(kdx, kdx, -2);
+
+  // Store result.
+#ifdef VM_LITTLE_ENDIAN
+  rldicl(product, product, 32, 0);
+#endif
+  sldi(tmp, kdx, LogBytesPerInt);
+  stdx(product, z, tmp);
+  mr_if_needed(carry, product_high);
+  b(L_first_loop);
+
+
+  bind(L_one_y); // Load one 32 bit portion of y as (0,value).
+
+  lwz(y_idx, 0, y);
+  b(L_multiply);
+
+
+  bind( L_one_x ); // Load one 32 bit portion of x as (0,value).
+
+  lwz(x_xstart, 0, x);
+  b(L_first_loop);
+
+  bind(L_first_loop_exit);
+}
+
+// Multiply 64 bit by 64 bit and add 128 bit.
+void MacroAssembler::multiply_add_128_x_128(Register x_xstart, Register y,
+                                            Register z, Register yz_idx,
+                                            Register idx, Register carry,
+                                            Register product_high, Register product,
+                                            Register tmp, int offset) {
+
+  //  huge_128 product = (y[idx] * x_xstart) + z[kdx] + carry;
+  //  z[kdx] = (jlong)product;
+
+  sldi(tmp, idx, LogBytesPerInt);
+  if ( offset ) {
+    addi(tmp, tmp, offset);
+  }
+  ldx(yz_idx, y, tmp);
+#ifdef VM_LITTLE_ENDIAN
+  rldicl(yz_idx, yz_idx, 32, 0);
+#endif
+
+  multiply64(product_high, product, x_xstart, yz_idx);
+  ldx(yz_idx, z, tmp);
+#ifdef VM_LITTLE_ENDIAN
+  rldicl(yz_idx, yz_idx, 32, 0);
+#endif
+
+  add2_with_carry(product_high, product, carry, yz_idx);
+
+  sldi(tmp, idx, LogBytesPerInt);
+  if ( offset ) {
+    addi(tmp, tmp, offset);
+  }
+#ifdef VM_LITTLE_ENDIAN
+  rldicl(product, product, 32, 0);
+#endif
+  stdx(product, z, tmp);
+}
+
+// Multiply 128 bit by 128 bit. Unrolled inner loop.
+void MacroAssembler::multiply_128_x_128_loop(Register x_xstart,
+                                             Register y, Register z,
+                                             Register yz_idx, Register idx, Register carry,
+                                             Register product_high, Register product,
+                                             Register carry2, Register tmp) {
+
+  //  jlong carry, x[], y[], z[];
+  //  int kdx = ystart+1;
+  //  for (int idx=ystart-2; idx >= 0; idx -= 2) { // Third loop
+  //    huge_128 product = (y[idx+1] * x_xstart) + z[kdx+idx+1] + carry;
+  //    z[kdx+idx+1] = (jlong)product;
+  //    jlong carry2 = (jlong)(product >>> 64);
+  //    product = (y[idx] * x_xstart) + z[kdx+idx] + carry2;
+  //    z[kdx+idx] = (jlong)product;
+  //    carry = (jlong)(product >>> 64);
+  //  }
+  //  idx += 2;
+  //  if (idx > 0) {
+  //    product = (y[idx] * x_xstart) + z[kdx+idx] + carry;
+  //    z[kdx+idx] = (jlong)product;
+  //    carry = (jlong)(product >>> 64);
+  //  }
+
+  Label L_third_loop, L_third_loop_exit, L_post_third_loop_done;
+  const Register jdx = R0;
+
+  // Scale the index.
+  srdi_(jdx, idx, 2);
+  beq(CCR0, L_third_loop_exit);
+  mtctr(jdx);
+
+  align(32, 16);
+  bind(L_third_loop);
+
+  addi(idx, idx, -4);
+
+  multiply_add_128_x_128(x_xstart, y, z, yz_idx, idx, carry, product_high, product, tmp, 8);
+  mr_if_needed(carry2, product_high);
+
+  multiply_add_128_x_128(x_xstart, y, z, yz_idx, idx, carry2, product_high, product, tmp, 0);
+  mr_if_needed(carry, product_high);
+  bdnz(L_third_loop);
+
+  bind(L_third_loop_exit);  // Handle any left-over operand parts.
+
+  andi_(idx, idx, 0x3);
+  beq(CCR0, L_post_third_loop_done);
+
+  Label L_check_1;
+
+  addic_(idx, idx, -2);
+  blt(CCR0, L_check_1);
+
+  multiply_add_128_x_128(x_xstart, y, z, yz_idx, idx, carry, product_high, product, tmp, 0);
+  mr_if_needed(carry, product_high);
+
+  bind(L_check_1);
+
+  addi(idx, idx, 0x2);
+  andi_(idx, idx, 0x1) ;
+  addic_(idx, idx, -1);
+  blt(CCR0, L_post_third_loop_done);
+
+  sldi(tmp, idx, LogBytesPerInt);
+  lwzx(yz_idx, y, tmp);
+  multiply64(product_high, product, x_xstart, yz_idx);
+  lwzx(yz_idx, z, tmp);
+
+  add2_with_carry(product_high, product, yz_idx, carry);
+
+  sldi(tmp, idx, LogBytesPerInt);
+  stwx(product, z, tmp);
+  srdi(product, product, 32);
+
+  sldi(product_high, product_high, 32);
+  orr(product, product, product_high);
+  mr_if_needed(carry, product);
+
+  bind(L_post_third_loop_done);
+}   // multiply_128_x_128_loop
+
+void MacroAssembler::multiply_to_len(Register x, Register xlen,
+                                     Register y, Register ylen,
+                                     Register z, Register zlen,
+                                     Register tmp1, Register tmp2,
+                                     Register tmp3, Register tmp4,
+                                     Register tmp5, Register tmp6,
+                                     Register tmp7, Register tmp8,
+                                     Register tmp9, Register tmp10,
+                                     Register tmp11, Register tmp12,
+                                     Register tmp13) {
+
+  ShortBranchVerifier sbv(this);
+
+  assert_different_registers(x, xlen, y, ylen, z, zlen,
+                             tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
+  assert_different_registers(x, xlen, y, ylen, z, zlen,
+                             tmp1, tmp2, tmp3, tmp4, tmp5, tmp7);
+  assert_different_registers(x, xlen, y, ylen, z, zlen,
+                             tmp1, tmp2, tmp3, tmp4, tmp5, tmp8);
+
+  const Register idx = tmp1;
+  const Register kdx = tmp2;
+  const Register xstart = tmp3;
+
+  const Register y_idx = tmp4;
+  const Register carry = tmp5;
+  const Register product = tmp6;
+  const Register product_high = tmp7;
+  const Register x_xstart = tmp8;
+  const Register tmp = tmp9;
+
+  // First Loop.
+  //
+  //  final static long LONG_MASK = 0xffffffffL;
+  //  int xstart = xlen - 1;
+  //  int ystart = ylen - 1;
+  //  long carry = 0;
+  //  for (int idx=ystart, kdx=ystart+1+xstart; idx >= 0; idx-, kdx--) {
+  //    long product = (y[idx] & LONG_MASK) * (x[xstart] & LONG_MASK) + carry;
+  //    z[kdx] = (int)product;
+  //    carry = product >>> 32;
+  //  }
+  //  z[xstart] = (int)carry;
+
+  mr_if_needed(idx, ylen);        // idx = ylen
+  mr_if_needed(kdx, zlen);        // kdx = xlen + ylen
+  li(carry, 0);                   // carry = 0
+
+  Label L_done;
+
+  addic_(xstart, xlen, -1);
+  blt(CCR0, L_done);
+
+  multiply_64_x_64_loop(x, xstart, x_xstart, y, y_idx, z,
+                        carry, product_high, product, idx, kdx, tmp);
+
+  Label L_second_loop;
+
+  cmpdi(CCR0, kdx, 0);
+  beq(CCR0, L_second_loop);
+
+  Label L_carry;
+
+  addic_(kdx, kdx, -1);
+  beq(CCR0, L_carry);
+
+  // Store lower 32 bits of carry.
+  sldi(tmp, kdx, LogBytesPerInt);
+  stwx(carry, z, tmp);
+  srdi(carry, carry, 32);
+  addi(kdx, kdx, -1);
+
+
+  bind(L_carry);
+
+  // Store upper 32 bits of carry.
+  sldi(tmp, kdx, LogBytesPerInt);
+  stwx(carry, z, tmp);
+
+  // Second and third (nested) loops.
+  //
+  //  for (int i = xstart-1; i >= 0; i--) { // Second loop
+  //    carry = 0;
+  //    for (int jdx=ystart, k=ystart+1+i; jdx >= 0; jdx--, k--) { // Third loop
+  //      long product = (y[jdx] & LONG_MASK) * (x[i] & LONG_MASK) +
+  //                     (z[k] & LONG_MASK) + carry;
+  //      z[k] = (int)product;
+  //      carry = product >>> 32;
+  //    }
+  //    z[i] = (int)carry;
+  //  }
+  //
+  //  i = xlen, j = tmp1, k = tmp2, carry = tmp5, x[i] = rdx
+
+  bind(L_second_loop);
+
+  li(carry, 0);                   // carry = 0;
+
+  addic_(xstart, xstart, -1);     // i = xstart-1;
+  blt(CCR0, L_done);
+
+  Register zsave = tmp10;
+
+  mr(zsave, z);
+
+
+  Label L_last_x;
+
+  sldi(tmp, xstart, LogBytesPerInt);
+  add(z, z, tmp);                 // z = z + k - j
+  addi(z, z, 4);
+  addic_(xstart, xstart, -1);     // i = xstart-1;
+  blt(CCR0, L_last_x);
+
+  sldi(tmp, xstart, LogBytesPerInt);
+  ldx(x_xstart, x, tmp);
+#ifdef VM_LITTLE_ENDIAN
+  rldicl(x_xstart, x_xstart, 32, 0);
+#endif
+
+
+  Label L_third_loop_prologue;
+
+  bind(L_third_loop_prologue);
+
+  Register xsave = tmp11;
+  Register xlensave = tmp12;
+  Register ylensave = tmp13;
+
+  mr(xsave, x);
+  mr(xlensave, xstart);
+  mr(ylensave, ylen);
+
+
+  multiply_128_x_128_loop(x_xstart, y, z, y_idx, ylen,
+                          carry, product_high, product, x, tmp);
+
+  mr(z, zsave);
+  mr(x, xsave);
+  mr(xlen, xlensave);   // This is the decrement of the loop counter!
+  mr(ylen, ylensave);
+
+  addi(tmp3, xlen, 1);
+  sldi(tmp, tmp3, LogBytesPerInt);
+  stwx(carry, z, tmp);
+  addic_(tmp3, tmp3, -1);
+  blt(CCR0, L_done);
+
+  srdi(carry, carry, 32);
+  sldi(tmp, tmp3, LogBytesPerInt);
+  stwx(carry, z, tmp);
+  b(L_second_loop);
+
+  // Next infrequent code is moved outside loops.
+  bind(L_last_x);
+
+  lwz(x_xstart, 0, x);
+  b(L_third_loop_prologue);
+
+  bind(L_done);
+}   // multiply_to_len
 
 void MacroAssembler::asm_assert(bool check_equal, const char *msg, int id) {
 #ifdef ASSERT

@@ -1,12 +1,5 @@
 '\" t
-.\" Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
-.\" Title: wsimport
-.\" Language: English
-.\" Date: 2013å¹´11æœˆ21æ—¥
-.\" SectDesc: Java Webã‚µãƒ¼ãƒ“ã‚¹ãƒ»ãƒ„ãƒ¼ãƒ«
-.\" Software: JDK 8
-.\" Arch: æ±ç”¨
-.\"
+.\" Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -15,7 +8,7 @@
 .\"
 .\" This code is distributed in the hope that it will be useful, but WITHOUT
 .\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 .\" version 2 for more details (a copy is included in the LICENSE file that
 .\" accompanied this code).
 .\"
@@ -27,8 +20,17 @@
 .\" or visit www.oracle.com if you need additional information or have any
 .\" questions.
 .\"
-.pl 99999
-.TH "wsimport" "1" "2013å¹´11æœˆ21æ—¥" "JDK 8" "Java Webã‚µãƒ¼ãƒ“ã‚¹ãƒ»ãƒ„ãƒ¼ãƒ«"
+.\" Title: wsimport
+.\" Language: Japanese
+.\" Date: 2013Ç¯11·î21Æü
+.\" SectDesc: Java Web¥µ¡¼¥Ó¥¹¡¦¥Ä¡¼¥ë
+.\" Software: JDK 8
+.\" Arch: ÈÆÍÑ
+.\" Part Number: E58103-01
+.\" Doc ID: JSSON
+.\"
+.if n .pl 99999
+.TH "wsimport" "1" "2013Ç¯11·î21Æü" "JDK 8" "Java Web¥µ¡¼¥Ó¥¹¡¦¥Ä¡¼¥ë"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -48,15 +50,15 @@
 .\" -----------------------------------------------------------------
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
-.SH "NAME"
-wsimport \- Webã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ãƒ»ã‚¢ãƒ¼ã‚«ã‚¤ãƒ–(WAR)ãƒ•ã‚¡ã‚¤ãƒ«ã«ãƒ‘ãƒƒã‚±ãƒ¼ã‚¸ã§ãã‚‹JAX\-WSãƒãƒ¼ã‚¿ãƒ–ãƒ«ãƒ»ã‚¢ãƒ¼ãƒ†ã‚£ãƒ•ã‚¡ã‚¯ãƒˆã‚’ç”Ÿæˆã—ã¦ã€Antã‚¿ã‚¹ã‚¯ã‚’æŒ‡å®šã—ã¾ã™ã€‚
-.SH "æ¦‚è¦"
+.SH "Ì¾Á°"
+wsimport \- Web¥¢¥×¥ê¥±¡¼¥·¥ç¥ó¡¦¥¢¡¼¥«¥¤¥Ö(WAR)¥Õ¥¡¥¤¥ë¤Ë¥Ñ¥Ã¥±¡¼¥¸¤Ç¤­¤ëJAX\-WS¥İ¡¼¥¿¥Ö¥ë¡¦¥¢¡¼¥Æ¥£¥Õ¥¡¥¯¥È¤òÀ¸À®¤·¤Æ¡¢Ant¥¿¥¹¥¯¤ò»ØÄê¤·¤Ş¤¹¡£
+.SH "³µÍ×"
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\fIwsimport\fR [ \fIoptions\fR ] \fIwsdl\fR
+\fBwsimport\fR [ \fIoptions\fR ] \fIwsdl\fR
 .fi
 .if n \{\
 .RE
@@ -64,18 +66,18 @@ wsimport \- Webã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ãƒ»ã‚¢ãƒ¼ã‚«ã‚¤ãƒ–(WAR)ãƒ•ã‚¡ã‚¤ãƒ«ã«ãƒ‘
 .PP
 \fIoptions\fR
 .RS 4
-ã‚³ãƒãƒ³ãƒ‰ãƒ©ã‚¤ãƒ³ãƒ»ã‚ªãƒ—ã‚·ãƒ§ãƒ³ã€‚ã‚ªãƒ—ã‚·ãƒ§ãƒ³ã‚’å‚ç…§ã—ã¦ãã ã•ã„ã€‚
+¥³¥Ş¥ó¥É¹Ô¥ª¥×¥·¥ç¥ó¡£¥ª¥×¥·¥ç¥ó¤ò»²¾È¤·¤Æ¤¯¤À¤µ¤¤¡£
 .RE
 .PP
 \fIwsdl\fR
 .RS 4
-Webã‚µãƒ¼ãƒ“ã‚¹ã‚’å‘¼ã³å‡ºã™æ–¹æ³•ã€ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã«å¿…è¦ãªå€¤ã€è¿”ã•ã‚Œã‚‹ãƒ‡ãƒ¼ã‚¿æ§‹é€ ã«ã¤ã„ã¦ã®ã‚³ãƒ³ãƒ”ãƒ¥ãƒ¼ã‚¿ã§èª­å–ã‚Šå¯èƒ½ãªè¨˜è¿°ãŒå«ã¾ã‚Œã¾ã‚‹ãƒ•ã‚¡ã‚¤ãƒ«ã§ã™ã€‚
+Web¥µ¡¼¥Ó¥¹¤ò¸Æ¤Ó½Ğ¤¹ÊıË¡¡¢¥Ñ¥é¥á¡¼¥¿¤ËÉ¬Í×¤ÊÃÍ¡¢ÊÖ¤µ¤ì¤ë¥Ç¡¼¥¿¹½Â¤¤Ë¤Ä¤¤¤Æ¤Î¥³¥ó¥Ô¥å¡¼¥¿¤ÇÆÉ¼è¤ê²ÄÇ½¤Êµ­½Ò¤¬´Ş¤Ş¤ì¤Ş¤ë¥Õ¥¡¥¤¥ë¤Ç¤¹¡£
 .RE
-.SH "èª¬æ˜"
+.SH "ÀâÌÀ"
 .PP
-\fIwsimport\fRã‚³ãƒãƒ³ãƒ‰ã¯ã€æ¬¡ã®JAX\-WSãƒãƒ¼ã‚¿ãƒ–ãƒ«ãƒ»ã‚¢ãƒ¼ãƒ†ã‚£ãƒ•ã‚¡ã‚¯ãƒˆã‚’ç”Ÿæˆã—ã¾ã™ã€‚ã“ã‚Œã‚‰ã®ã‚¢ãƒ¼ãƒ†ã‚£ãƒ•ã‚¡ã‚¯ãƒˆã¯ã€ãƒ‡ãƒ—ãƒ­ã‚¤ã™ã‚‹WSDLãŠã‚ˆã³ã‚¹ã‚­ãƒ¼ãƒãƒ»ãƒ‰ã‚­ãƒ¥ãƒ¡ãƒ³ãƒˆãŠã‚ˆã³ã‚¨ãƒ³ãƒ‰ãƒã‚¤ãƒ³ãƒˆå®Ÿè£…ã¨ã¨ã‚‚ã«ã€WARãƒ•ã‚¡ã‚¤ãƒ«ã«ãƒ‘ãƒƒã‚±ãƒ¼ã‚¸ã§ãã¾ã™ã€‚\fIwsimport\fRã‚³ãƒãƒ³ãƒ‰ã§ã¯\fIwsimport\fR
-Antã‚¿ã‚¹ã‚¯ã‚‚æä¾›ã•ã‚Œã¾ã™ã€‚
-http://jax\-ws\&.java\&.net/nonav/2\&.1\&.1/docs/wsimportant\&.htmlã®Wsimport Ant Taskãƒšãƒ¼ã‚¸ã®Toolsã‚¿ãƒ–ã‚’å‚ç…§ã—ã¦ãã ã•ã„ã€‚
+\fBwsimport\fR¥³¥Ş¥ó¥É¤Ï¡¢¼¡¤ÎJAX\-WS¥İ¡¼¥¿¥Ö¥ë¡¦¥¢¡¼¥Æ¥£¥Õ¥¡¥¯¥È¤òÀ¸À®¤·¤Ş¤¹¡£¤³¤ì¤é¤Î¥¢¡¼¥Æ¥£¥Õ¥¡¥¯¥È¤Ï¡¢¥Ç¥×¥í¥¤¤¹¤ëWSDL¤ª¤è¤Ó¥¹¥­¡¼¥Ş¡¦¥É¥­¥å¥á¥ó¥È¤ª¤è¤Ó¥¨¥ó¥É¥İ¥¤¥ó¥È¼ÂÁõ¤È¤È¤â¤Ë¡¢WAR¥Õ¥¡¥¤¥ë¤Ë¥Ñ¥Ã¥±¡¼¥¸¤Ç¤­¤Ş¤¹¡£\fBwsimport\fR¥³¥Ş¥ó¥É¤Ç¤Ï\fBwsimport\fR
+Ant¥¿¥¹¥¯¤âÄó¶¡¤µ¤ì¤Ş¤¹¡£
+http://jax\-ws\&.java\&.net/nonav/2\&.1\&.1/docs/wsimportant\&.html¤ÎWsimport Ant Task¥Ú¡¼¥¸¤ÎTools¥¿¥Ö¤ò»²¾È¤·¤Æ¤¯¤À¤µ¤¤¡£
 .sp
 .RS 4
 .ie n \{\
@@ -85,7 +87,7 @@ http://jax\-ws\&.java\&.net/nonav/2\&.1\&.1/docs/wsimportant\&.htmlã®Wsimport A
 .sp -1
 .IP \(bu 2.3
 .\}
-ã‚µãƒ¼ãƒ“ã‚¹ãƒ»ã‚¨ãƒ³ãƒ‰ãƒã‚¤ãƒ³ãƒˆãƒ»ã‚¤ãƒ³ã‚¿ãƒ•ã‚§ãƒ¼ã‚¹(SEI)
+¥µ¡¼¥Ó¥¹¡¦¥¨¥ó¥É¥İ¥¤¥ó¥È¡¦¥¤¥ó¥¿¥Õ¥§¡¼¥¹(SEI)
 .RE
 .sp
 .RS 4
@@ -96,7 +98,7 @@ http://jax\-ws\&.java\&.net/nonav/2\&.1\&.1/docs/wsimportant\&.htmlã®Wsimport A
 .sp -1
 .IP \(bu 2.3
 .\}
-ã‚µãƒ¼ãƒ“ã‚¹
+¥µ¡¼¥Ó¥¹
 .RE
 .sp
 .RS 4
@@ -107,7 +109,7 @@ http://jax\-ws\&.java\&.net/nonav/2\&.1\&.1/docs/wsimportant\&.htmlã®Wsimport A
 .sp -1
 .IP \(bu 2.3
 .\}
-ä¾‹å¤–ã‚¯ãƒ©ã‚¹ã¯\fIwsdl:fault\fRã‹ã‚‰ãƒãƒƒãƒ—ã•ã‚Œã¾ã™(å­˜åœ¨ã™ã‚‹å ´åˆ)
+Îã³°¥¯¥é¥¹¤Ï\fBwsdl:fault\fR¤«¤é¥Ş¥Ã¥×¤µ¤ì¤Ş¤¹(Â¸ºß¤¹¤ë¾ì¹ç)
 .RE
 .sp
 .RS 4
@@ -118,7 +120,7 @@ http://jax\-ws\&.java\&.net/nonav/2\&.1\&.1/docs/wsimportant\&.htmlã®Wsimport A
 .sp -1
 .IP \(bu 2.3
 .\}
-éåŒæœŸãƒ¬ã‚¹ãƒãƒ³ã‚¹Beanã¯ãƒ¬ã‚¹ãƒãƒ³ã‚¹\fIwsdl:message\fRã‹ã‚‰æ´¾ç”Ÿã—ã¾ã™(å­˜åœ¨ã™ã‚‹å ´åˆ)
+ÈóÆ±´ü¥ì¥¹¥İ¥ó¥¹Bean¤Ï¥ì¥¹¥İ¥ó¥¹\fBwsdl:message\fR¤«¤éÇÉÀ¸¤·¤Ş¤¹(Â¸ºß¤¹¤ë¾ì¹ç)
 .RE
 .sp
 .RS 4
@@ -129,10 +131,10 @@ http://jax\-ws\&.java\&.net/nonav/2\&.1\&.1/docs/wsimportant\&.htmlã®Wsimport A
 .sp -1
 .IP \(bu 2.3
 .\}
-JAXBãŒç”Ÿæˆã™ã‚‹å€¤ã‚¿ã‚¤ãƒ—(ã‚¹ã‚­ãƒ¼ãƒã®ã‚¿ã‚¤ãƒ—ã‹ã‚‰ãƒãƒƒãƒ—ã•ã‚ŒãŸJavaã‚¯ãƒ©ã‚¹)
+JAXB¤¬À¸À®¤¹¤ëÃÍ¥¿¥¤¥×(¥¹¥­¡¼¥Ş¤Î¥¿¥¤¥×¤«¤é¥Ş¥Ã¥×¤µ¤ì¤¿Java¥¯¥é¥¹)
 .RE
 .PP
-\fIwsgen\fRã‚³ãƒãƒ³ãƒ‰ã‚’èµ·å‹•ã™ã‚‹ã«ã¯ã€æ¬¡ã‚’è¡Œã„ã¾ã™ã€‚
+\fBwsgen\fR¥³¥Ş¥ó¥É¤òµ¯Æ°¤¹¤ë¤Ë¤Ï¡¢¼¡¤ò¹Ô¤¤¤Ş¤¹¡£
 .PP
 \fBOracle Solaris/Linux\fR:
 .sp
@@ -140,146 +142,149 @@ JAXBãŒç”Ÿæˆã™ã‚‹å€¤ã‚¿ã‚¤ãƒ—(ã‚¹ã‚­ãƒ¼ãƒã®ã‚¿ã‚¤ãƒ—ã‹ã‚‰ãƒãƒƒãƒ—ã•ã‚ŒãŸ
 .RS 4
 .\}
 .nf
-/bin/wsimport\&.sh \-help
+\fB/bin/wsimport\&.sh \-help\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .PP
-\fBWindows\fRã®å ´åˆ:
+\fBWindows\fR¤Î¾ì¹ç:
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\ebin\ewsimport\&.bat \-help
+\fB\ebin\ewsimport\&.bat \-help\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-.SH "ã‚ªãƒ—ã‚·ãƒ§ãƒ³"
+.SH "¥ª¥×¥·¥ç¥ó"
 .PP
 \-d \fIdirectory\fR
 .RS 4
-ç”Ÿæˆã•ã‚Œã‚‹å‡ºåŠ›ãƒ•ã‚¡ã‚¤ãƒ«ã‚’æ ¼ç´ã™ã‚‹å ´æ‰€ã‚’æŒ‡å®šã—ã¾ã™ã€‚
+À¸À®¤µ¤ì¤ë½ĞÎÏ¥Õ¥¡¥¤¥ë¤ò³ÊÇ¼¤¹¤ë¾ì½ê¤ò»ØÄê¤·¤Ş¤¹¡£
 .RE
 .PP
 \-b \fIpath\fR
 .RS 4
-å¤–éƒ¨JAX\-WSã¾ãŸã¯JAXBãƒã‚¤ãƒ³ãƒ‡ã‚£ãƒ³ã‚°ãƒ»ãƒ•ã‚¡ã‚¤ãƒ«ã‚’æŒ‡å®šã—ã¾ã™ã€‚\fI\-b\fRã‚ªãƒ—ã‚·ãƒ§ãƒ³ã§è¤‡æ•°ã®JAX\-WSãŠã‚ˆã³JAXBãƒã‚¤ãƒ³ãƒ‡ã‚£ãƒ³ã‚°ãƒ»ãƒ•ã‚¡ã‚¤ãƒ«ã‚’æŒ‡å®šã§ãã¾ã™ã€‚ã“ã‚Œã‚‰ã®ãƒ•ã‚¡ã‚¤ãƒ«ã‚’ä½¿ç”¨ã—ã¦ã€ãƒ‘ãƒƒã‚±ãƒ¼ã‚¸åã€Beanåãªã©ã‚’ã‚«ã‚¹ã‚¿ãƒã‚¤ã‚ºã§ãã¾ã™ã€‚JAX\-WSãŠã‚ˆã³JAXBãƒã‚¤ãƒ³ãƒ‡ã‚£ãƒ³ã‚°ãƒ»ãƒ•ã‚¡ã‚¤ãƒ«ã®è©³ç´°ã¯ã€
-http://jax\-ws\&.java\&.net/nonav/2\&.1\&.1/docs/wsimportant\&.htmlã®WSDL Customizationã®Users Guideã‚¿ãƒ–ã‚’å‚ç…§ã—ã¦ãã ã•ã„
+³°ÉôJAX\-WS¤Ş¤¿¤ÏJAXB¥Ğ¥¤¥ó¥Ç¥£¥ó¥°¡¦¥Õ¥¡¥¤¥ë¤ò»ØÄê¤·¤Ş¤¹¡£\fB\-b\fR¥ª¥×¥·¥ç¥ó¤ÇÊ£¿ô¤ÎJAX\-WS¤ª¤è¤ÓJAXB¥Ğ¥¤¥ó¥Ç¥£¥ó¥°¡¦¥Õ¥¡¥¤¥ë¤ò»ØÄê¤Ç¤­¤Ş¤¹¡£¤³¤ì¤é¤Î¥Õ¥¡¥¤¥ë¤ò»ÈÍÑ¤·¤Æ¡¢¥Ñ¥Ã¥±¡¼¥¸Ì¾¡¢BeanÌ¾¤Ê¤É¤ò¥«¥¹¥¿¥Ş¥¤¥º¤Ç¤­¤Ş¤¹¡£JAX\-WS¤ª¤è¤ÓJAXB¥Ğ¥¤¥ó¥Ç¥£¥ó¥°¡¦¥Õ¥¡¥¤¥ë¤Î¾ÜºÙ¤Ï¡¢
+http://jax\-ws\&.java\&.net/nonav/2\&.1\&.1/docs/wsimportant\&.html¤ÎWSDL Customization¤ÎUsers Guide¥¿¥Ö¤ò»²¾È¤·¤Æ¤¯¤À¤µ¤¤
 .RE
 .PP
 \-B \fIjaxbOption\fR
 .RS 4
-JAXBã‚¹ã‚­ãƒ¼ãƒãƒ»ã‚³ãƒ³ãƒ‘ã‚¤ãƒ©ã«\fIjaxbOption\fRã‚ªãƒ—ã‚·ãƒ§ãƒ³ã‚’æ¸¡ã—ã¾ã™ã€‚
+JAXB¥¹¥­¡¼¥Ş¡¦¥³¥ó¥Ñ¥¤¥é¤Ë\fBjaxbOption\fR¥ª¥×¥·¥ç¥ó¤òÅÏ¤·¤Ş¤¹¡£
 .RE
 .PP
 \-catalog
 .RS 4
-å¤–éƒ¨ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£å‚ç…§ã‚’è§£æ±ºã™ã‚‹ã‚«ã‚¿ãƒ­ã‚°ãƒ»ãƒ•ã‚¡ã‚¤ãƒ«ã‚’æŒ‡å®šã—ã¾ã™ã€‚\fI\-catalog\fRã‚ªãƒ—ã‚·ãƒ§ãƒ³ã¯ã€TR9401ã€XCatalogã€OASIS XML Catalogã®å„å½¢å¼ã‚’ã‚µãƒãƒ¼ãƒˆã—ã¦ã„ã¾ã™ã€‚http://jax\-ws\&.java\&.net/nonav/2\&.1\&.1/docs/catalog\-support\&.htmlã®
-Catalog Supportãƒšãƒ¼ã‚¸ã®Users Guideã‚¿ãƒ–ã‚’å‚ç…§ã—ã¦ãã ã•ã„ã€‚
+³°Éô¥¨¥ó¥Æ¥£¥Æ¥£»²¾È¤ò²ò·è¤¹¤ë¥«¥¿¥í¥°¡¦¥Õ¥¡¥¤¥ë¤ò»ØÄê¤·¤Ş¤¹¡£\fB\-catalog\fR¥ª¥×¥·¥ç¥ó¤Ï¡¢TR9401¡¢XCatalog¡¢OASIS XML Catalog¤Î³Æ·Á¼°¤ò¥µ¥İ¡¼¥È¤·¤Æ¤¤¤Ş¤¹¡£http://jax\-ws\&.java\&.net/nonav/2\&.1\&.1/docs/catalog\-support\&.html¤Î
+Catalog Support¥Ú¡¼¥¸¤ÎUsers Guide¥¿¥Ö¤ò»²¾È¤·¤Æ¤¯¤À¤µ¤¤¡£
 .RE
 .PP
 \-extension
 .RS 4
-ãƒ™ãƒ³ãƒ€ãƒ¼æ‹¡å¼µã‚’ä½¿ç”¨å¯èƒ½ã«ã—ã¾ã™ã€‚æ‹¡å¼µã‚’ä½¿ç”¨ã™ã‚‹ã¨ã€ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ã®ç§»æ¤æ€§ãŒå¤±ã‚ã‚ŒãŸã‚Šã€ä»–ã®å®Ÿè£…ã¨é€£æºã§ããªããªã‚‹å¯èƒ½æ€§ãŒã‚ã‚Šã¾ã™ã€‚
+¥Ù¥ó¥À¡¼³ÈÄ¥¤ò»ÈÍÑ²ÄÇ½¤Ë¤·¤Ş¤¹¡£³ÈÄ¥¤ò»ÈÍÑ¤¹¤ë¤È¡¢¥¢¥×¥ê¥±¡¼¥·¥ç¥ó¤Î°Ü¿¢À­¤¬¼º¤ï¤ì¤¿¤ê¡¢Â¾¤Î¼ÂÁõ¤ÈÏ¢·È¤Ç¤­¤Ê¤¯¤Ê¤ë²ÄÇ½À­¤¬¤¢¤ê¤Ş¤¹¡£
 .RE
 .PP
 \-help
 .RS 4
-\fIwsimport\fRã‚³ãƒãƒ³ãƒ‰ã«é–¢ã™ã‚‹ãƒ˜ãƒ«ãƒ—ãƒ»ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’è¡¨ç¤ºã—ã¾ã™ã€‚
+\fBwsimport\fR¥³¥Ş¥ó¥É¤Ë´Ø¤¹¤ë¥Ø¥ë¥×¡¦¥á¥Ã¥»¡¼¥¸¤òÉ½¼¨¤·¤Ş¤¹¡£
 .RE
 .PP
 \-httpproxy: \fIhost\fR:\fIport\fR
 .RS 4
-HTTPãƒ—ãƒ­ã‚­ã‚·ãƒ»ã‚µãƒ¼ãƒãƒ¼ã‚’æŒ‡å®šã—ã¾ã™ã€‚ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã¯8080ã§ã™ã€‚
+HTTP¥×¥í¥­¥·¡¦¥µ¡¼¥Ğ¡¼¤ò»ØÄê¤·¤Ş¤¹¡£¥Ç¥Õ¥©¥ë¥È¤Ï8080¤Ç¤¹¡£
 .RE
 .PP
 \-keep
 .RS 4
-ç”Ÿæˆã•ã‚ŒãŸãƒ•ã‚¡ã‚¤ãƒ«ã‚’ä¿æŒã—ã¾ã™
+À¸À®¤µ¤ì¤¿¥Õ¥¡¥¤¥ë¤òÊİ»ı¤·¤Ş¤¹
 .RE
 .PP
 \-p \fIname\fR
 .RS 4
-ã‚¿ãƒ¼ã‚²ãƒƒãƒˆãƒ»ãƒ‘ãƒƒã‚±ãƒ¼ã‚¸\fIname\fRã‚’æŒ‡å®šã—ã¦ã€WSDLãŠã‚ˆã³ã‚¹ã‚­ãƒ¼ãƒãƒ»ãƒã‚¤ãƒ³ãƒ‡ã‚£ãƒ³ã‚°ã®ã‚«ã‚¹ã‚¿ãƒã‚¤ã‚ºã€ãŠã‚ˆã³ä»•æ§˜éƒ¨ã§å®šç¾©ã•ã‚ŒãŸãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã®ã‚¢ãƒ«ã‚´ãƒªã‚ºãƒ ã‚’ã‚ªãƒ¼ãƒãƒ¼ãƒ©ã‚¤ãƒ‰ã—ã¾ã™ã€‚
+¥¿¡¼¥²¥Ã¥È¡¦¥Ñ¥Ã¥±¡¼¥¸\fIname\fR¤ò»ØÄê¤·¤Æ¡¢WSDL¤ª¤è¤Ó¥¹¥­¡¼¥Ş¡¦¥Ğ¥¤¥ó¥Ç¥£¥ó¥°¤Î¥«¥¹¥¿¥Ş¥¤¥º¡¢¤ª¤è¤Ó»ÅÍÍÉô¤ÇÄêµÁ¤µ¤ì¤¿¥Ç¥Õ¥©¥ë¥È¤Î¥¢¥ë¥´¥ê¥º¥à¤ò¥ª¡¼¥Ğ¡¼¥é¥¤¥É¤·¤Ş¤¹¡£
 .RE
 .PP
 \-s \fIdirectory\fR
 .RS 4
-ç”Ÿæˆã•ã‚Œã‚‹ã‚½ãƒ¼ã‚¹ãƒ»ãƒ•ã‚¡ã‚¤ãƒ«ã‚’æ ¼ç´ã™ã‚‹å ´æ‰€ã‚’æŒ‡å®šã—ã¾ã™
+À¸À®¤µ¤ì¤ë¥½¡¼¥¹¡¦¥Õ¥¡¥¤¥ë¤ò³ÊÇ¼¤¹¤ë¾ì½ê¤ò»ØÄê¤·¤Ş¤¹
 .RE
 .PP
 \-verbose
 .RS 4
-ã‚³ãƒ³ãƒ‘ã‚¤ãƒ©ãƒ»ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’è¡¨ç¤ºã—ã¾ã™ã€‚
+¥³¥ó¥Ñ¥¤¥é¡¦¥á¥Ã¥»¡¼¥¸¤òÉ½¼¨¤·¤Ş¤¹¡£
 .RE
 .PP
 \-version
 .RS 4
-ãƒªãƒªãƒ¼ã‚¹æƒ…å ±ã‚’å‡ºåŠ›ã—ã¾ã™ã€‚
+¥ê¥ê¡¼¥¹¾ğÊó¤ò½ĞÎÏ¤·¤Ş¤¹¡£
 .RE
 .PP
 \-wsdllocation \fIlocation\fR
 .RS 4
-\fI@WebServiceClient\&.wsdlLocation\fRã®å€¤ã‚’æŒ‡å®šã—ã¾ã™ã€‚
+\fB@WebServiceClient\&.wsdlLocation\fR¤ÎÃÍ¤ò»ØÄê¤·¤Ş¤¹¡£
 .RE
 .PP
 \-target
 .RS 4
-æŒ‡å®šã•ã‚ŒãŸJAX\-WSä»•æ§˜ãƒãƒ¼ã‚¸ãƒ§ãƒ³ã«å¾“ã£ã¦ã€ã‚³ãƒ¼ãƒ‰ã‚’ç”Ÿæˆã—ã¾ã™ã€‚ãƒãƒ¼ã‚¸ãƒ§ãƒ³2\&.0ã§ã¯ã€JAX\-WS 2\&.0ä»•æ§˜ã«æº–æ‹ ã—ãŸã‚³ãƒ¼ãƒ‰ã‚’ç”Ÿæˆã—ã¾ã™ã€‚
+»ØÄê¤µ¤ì¤¿JAX\-WS»ÅÍÍ¥Ğ¡¼¥¸¥ç¥ó¤Ë½¾¤Ã¤Æ¡¢¥³¡¼¥É¤òÀ¸À®¤·¤Ş¤¹¡£¥Ğ¡¼¥¸¥ç¥ó2\&.0¤Ç¤Ï¡¢JAX\-WS 2\&.0»ÅÍÍ¤Ë½àµò¤·¤¿¥³¡¼¥É¤òÀ¸À®¤·¤Ş¤¹¡£
 .RE
 .PP
 \-quiet
 .RS 4
-\fIwsimport\fRã‚³ãƒãƒ³ãƒ‰å‡ºåŠ›ã‚’æŠ‘åˆ¶ã—ã¾ã™ã€‚
+\fBwsimport\fR¥³¥Ş¥ó¥É½ĞÎÏ¤òÍŞÀ©¤·¤Ş¤¹¡£
 .RE
 .PP
-\fI\-b\fRã‚ªãƒ—ã‚·ãƒ§ãƒ³ã‚’ä½¿ç”¨ã—ã¦ã€è¤‡æ•°ã®\fIJAX\-WS\fRãŠã‚ˆã³\fIJAXB\fRãƒã‚¤ãƒ³ãƒ‡ã‚£ãƒ³ã‚°ãƒ»ãƒ•ã‚¡ã‚¤ãƒ«ã‚’æŒ‡å®šã§ãã¾ã™ã€‚ã“ã‚Œã‚‰ã®ãƒ•ã‚¡ã‚¤ãƒ«ã‚’ä½¿ç”¨ã—ã¦ã€ãƒ‘ãƒƒã‚±ãƒ¼ã‚¸åã‚„Beanåãªã©ã€æ§˜ã€…ãªã‚‚ã®ã‚’ã‚«ã‚¹ã‚¿ãƒã‚¤ã‚ºã§ãã¾ã™ã€‚\fIJAX\-WS\fRãŠã‚ˆã³\fIJAXB\fRãƒã‚¤ãƒ³ãƒ‡ã‚£ãƒ³ã‚°ãƒ»ãƒ•ã‚¡ã‚¤ãƒ«ã®è©³ç´°ã¯ã€
-https://jax\-ws\&.dev\&.java\&.net/nonav/2\&.1\&.1/docs/customizations\&.htmlã®JAXBã‚¿ãƒ–ã‚’å‚ç…§ã—ã¦ãã ã•ã„
-.SH "éæ¨™æº–ã‚ªãƒ—ã‚·ãƒ§ãƒ³"
+\fB\-b\fR¥ª¥×¥·¥ç¥ó¤ò»ÈÍÑ¤·¤Æ¡¢Ê£¿ô¤Î\fBJAX\-WS\fR¤ª¤è¤Ó\fBJAXB\fR¥Ğ¥¤¥ó¥Ç¥£¥ó¥°¡¦¥Õ¥¡¥¤¥ë¤ò»ØÄê¤Ç¤­¤Ş¤¹¡£¤³¤ì¤é¤Î¥Õ¥¡¥¤¥ë¤ò»ÈÍÑ¤·¤Æ¡¢¥Ñ¥Ã¥±¡¼¥¸Ì¾¤äBeanÌ¾¤Ê¤É¡¢ÍÍ¡¹¤Ê¤â¤Î¤ò¥«¥¹¥¿¥Ş¥¤¥º¤Ç¤­¤Ş¤¹¡£\fBJAX\-WS\fR¤ª¤è¤Ó\fBJAXB\fR¥Ğ¥¤¥ó¥Ç¥£¥ó¥°¡¦¥Õ¥¡¥¤¥ë¤Î¾ÜºÙ¤Ï¡¢
+https://jax\-ws\&.java\&.net/nonav/2\&.1\&.2/docs/customizations\&.html¤Î¥«¥¹¥¿¥Ş¥¤¥º¡¦¥É¥­¥å¥á¥ó¥È¤ò»²¾È¤·¤Æ¤¯¤À¤µ¤¤
+.SH "ÈóÉ¸½à¥ª¥×¥·¥ç¥ó"
 .PP
 \-XadditionalHeaders
 .RS 4
-ãƒªã‚¯ã‚¨ã‚¹ãƒˆã¾ãŸã¯ãƒ¬ã‚¹ãƒãƒ³ã‚¹ãƒ»ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã«ãƒã‚¤ãƒ³ãƒ‰ã•ã‚Œãªã„ãƒ˜ãƒƒãƒ€ãƒ¼ã‚’Javaãƒ¡ã‚½ãƒƒãƒ‰ã®ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã«ãƒãƒƒãƒ—ã—ã¾ã™
+¥ê¥¯¥¨¥¹¥È¤Ş¤¿¤Ï¥ì¥¹¥İ¥ó¥¹¡¦¥á¥Ã¥»¡¼¥¸¤Ë¥Ğ¥¤¥ó¥É¤µ¤ì¤Ê¤¤¥Ø¥Ã¥À¡¼¤òJava¥á¥½¥Ã¥É¤Î¥Ñ¥é¥á¡¼¥¿¤Ë¥Ş¥Ã¥×¤·¤Ş¤¹
 .RE
 .PP
 \-Xauthfile \fIfile\fR
 .RS 4
-èªè¨¼æƒ…å ±ã‚’å«ã‚€ãƒ•ã‚¡ã‚¤ãƒ«ã‚’æŒ‡å®šã™ã‚‹WSDL URIã§ã™ã€‚ã“ã®URIã®å½¢å¼ã¯æ¬¡ã®ã¨ãŠã‚Šã§ã™ã€‚
+Ç§¾Ú¾ğÊó¤ò´Ş¤à¥Õ¥¡¥¤¥ë¤ò»ØÄê¤¹¤ëWSDL URI¤Ç¤¹¡£¤³¤ÎURI¤Î·Á¼°¤Ï¼¡¤Î¤È¤ª¤ê¤Ç¤¹¡£
 .sp
-http://\fIuser\-name\fR:\fIpassword\fR@\fIhost\-name\fR/\fIweb\-service\-name\fR>?wsdl
+http://\fIuser\-name\fR:\fBpassword\fR@\fIhost\-name\fR/\fIweb\-service\-name\fR>?wsdl\&.
 .RE
 .PP
 \-Xdebug
 .RS 4
-ãƒ‡ãƒãƒƒã‚°æƒ…å ±ã‚’å‡ºåŠ›ã—ã¾ã™
+¥Ç¥Ğ¥Ã¥°¾ğÊó¤ò½ĞÎÏ¤·¤Ş¤¹
 .RE
 .PP
 \-Xno\-addressing\-databinding
 .RS 4
-W3C EndpointReferenceTypeã¨Javaã®ãƒã‚¤ãƒ³ãƒ‡ã‚£ãƒ³ã‚°ã‚’æœ‰åŠ¹ã«ã—ã¾ã™ã€‚
+W3C EndpointReferenceType¤ÈJava¤Î¥Ğ¥¤¥ó¥Ç¥£¥ó¥°¤òÍ­¸ú¤Ë¤·¤Ş¤¹¡£
 .RE
 .PP
 \-Xnocompile
 .RS 4
-ç”Ÿæˆã•ã‚ŒãŸJavaãƒ•ã‚¡ã‚¤ãƒ«ã‚’ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«ã—ã¾ã›ã‚“
+À¸À®¤µ¤ì¤¿Java¥Õ¥¡¥¤¥ë¤ò¥³¥ó¥Ñ¥¤¥ë¤·¤Ş¤»¤ó
 .RE
-.SH "ä¾‹"
+.SH "Îã"
 .PP
-æ¬¡ã®ä¾‹ã§ã¯ã€Javaã‚¢ãƒ¼ãƒ†ã‚£ãƒ•ã‚¡ã‚¯ãƒˆã‚’ç”Ÿæˆã—ã€\fIhttp://stockquote\&.example\&.com/quote?wsdl\fRã‚’ã‚¤ãƒ³ãƒãƒ¼ãƒˆã—ã¦ã‚¢ãƒ¼ãƒ†ã‚£ãƒ•ã‚¡ã‚¯ãƒˆã‚’ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«ã—ã¾ã™ã€‚
+¼¡¤ÎÎã¤Ç¤Ï¡¢Java¥¢¡¼¥Æ¥£¥Õ¥¡¥¯¥È¤òÀ¸À®¤·¡¢\fBhttp://stockquote\&.example\&.com/quote?wsdl\fR¤ò¥¤¥ó¥İ¡¼¥È¤·¤Æ¥¢¡¼¥Æ¥£¥Õ¥¡¥¯¥È¤ò¥³¥ó¥Ñ¥¤¥ë¤·¤Ş¤¹¡£
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-wsimport \-p stockquote http://stockquote\&.example\&.com/quote?wsdl
+\fBwsimport \-p stockquote http://stockquote\&.example\&.com/quote?wsdl\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-.SH "é–¢é€£é …ç›®"
+.SH "´ØÏ¢¹àÌÜ"
 .sp
 .RS 4
 .ie n \{\
@@ -300,8 +305,8 @@ wsgen(1)
 .sp -1
 .IP \(bu 2.3
 .\}
-http://jax\-ws\&.java\&.net/nonav/2\&.1\&.1/docs/wsimportant\&.htmlã®
-Wsimport Ant Taskãƒšãƒ¼ã‚¸ã®Toolsã‚¿ãƒ–
+http://jax\-ws\&.java\&.net/nonav/2\&.1\&.1/docs/wsimportant\&.html¤Î
+Wsimport Ant Task¥Ú¡¼¥¸¤ÎTools¥¿¥Ö
 .RE
 .sp
 .RS 4
@@ -312,8 +317,8 @@ Wsimport Ant Taskãƒšãƒ¼ã‚¸ã®Toolsã‚¿ãƒ–
 .sp -1
 .IP \(bu 2.3
 .\}
-http://jax\-ws\&.java\&.net/nonav/2\&.1\&.1/docs/catalog\-support\&.htmlã®
-Catalog Supportãƒšãƒ¼ã‚¸ã®Users Guideã‚¿ãƒ–
+http://jax\-ws\&.java\&.net/nonav/2\&.1\&.1/docs/catalog\-support\&.html¤Î
+Catalog Support¥Ú¡¼¥¸¤ÎUsers Guide¥¿¥Ö
 .RE
 .sp
 .RS 4
@@ -324,8 +329,8 @@ Catalog Supportãƒšãƒ¼ã‚¸ã®Users Guideã‚¿ãƒ–
 .sp -1
 .IP \(bu 2.3
 .\}
-http://jax\-ws\&.java\&.net/nonav/2\&.1\&.1/docs/wsimportant\&.htmlã®
-WSDL Customizationãƒšãƒ¼ã‚¸ã®Users Guideã‚¿ãƒ–
+http://jax\-ws\&.java\&.net/nonav/2\&.1\&.1/docs/wsimportant\&.html¤Î
+WSDL Customization¥Ú¡¼¥¸¤ÎUsers Guide¥¿¥Ö
 .RE
 .br
 'pl 8.5i

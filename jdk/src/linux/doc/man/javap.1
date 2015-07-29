@@ -1,6 +1,5 @@
 '\" t
-.\"  Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
-.\"
+.\" Copyright (c) 1994, 2014, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -9,7 +8,7 @@
 .\"
 .\" This code is distributed in the hope that it will be useful, but WITHOUT
 .\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 .\" version 2 for more details (a copy is included in the LICENSE file that
 .\" accompanied this code).
 .\"
@@ -21,14 +20,16 @@
 .\" or visit www.oracle.com if you need additional information or have any
 .\" questions.
 .\"
-.\"     Arch: generic
-.\"     Software: JDK 8
-.\"     Date: 21 November 2013
-.\"     SectDesc: Basic Tools
-.\"     Title: javap.1
+.\" Title: javap
+.\" Language: English
+.\" Date: 8 August 2014
+.\" SectDesc: Basic Tools
+.\" Software: JDK 8
+.\" Arch: generic
+.\" Part Number: E38207-03
 .\"
 .if n .pl 99999
-.TH javap 1 "21 November 2013" "JDK 8" "Basic Tools"
+.TH "javap" "1" "8 August 2014" "JDK 8" "Basic Tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -48,395 +49,342 @@
 .\" -----------------------------------------------------------------
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
-
-.SH NAME    
+.SH "NAME"
 javap \- Disassembles one or more class files\&.
-.SH SYNOPSIS    
-.sp     
-.nf     
-
+.SH "SYNOPSIS"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
 \fBjavap\fR [\fIoptions\fR] \fIclassfile\fR\&.\&.\&.
-.fi     
-.sp     
-.TP     
+.fi
+.if n \{\
+.RE
+.\}
+.PP
 \fIoptions\fR
-The command-line options\&. See Options\&.
-.TP     
+.RS 4
+The command\-line options\&. See Options\&.
+.RE
+.PP
 \fIclassfile\fR
-One or more classes separated by spaces to be processed for annotations such as DocFooter\&.class\&. You can specify a class that can be found in the class path, by its file name or with a URL such as \f3file:///home/user/myproject/src/DocFooter\&.class\fR\&.
-.SH DESCRIPTION    
-The \f3javap\fR command disassembles one or more class files\&. The output depends on the options used\&. When no options are used, then the \f3javap\fR command prints the package, protected and public fields, and methods of the classes passed to it\&. The \f3javap\fR command prints its output to \f3stdout\fR\&.
-.SH OPTIONS    
-.TP
--help, --help, -?
+.RS 4
+One or more classes separated by spaces to be processed for annotations such as DocFooter\&.class\&. You can specify a class that can be found in the class path, by its file name or with a URL such as
+\fBfile:///home/user/myproject/src/DocFooter\&.class\fR\&.
+.RE
+.SH "DESCRIPTION"
+.PP
+The
+\fBjavap\fR
+command disassembles one or more class files\&. The output depends on the options used\&. When no options are used, then the
+\fBjavap\fR
+command prints the package, protected and public fields, and methods of the classes passed to it\&. The
+\fBjavap\fR
+command prints its output to
+\fBstdout\fR\&.
+.SH "OPTIONS"
+.PP
+\-help
 .br
-Prints a help message for the \f3javap\fR command\&.
-.TP
--version
+\-\-help
 .br
+\-?
+.RS 4
+Prints a help message for the
+\fBjavap\fR
+command\&.
+.RE
+.PP
+\-version
+.RS 4
 Prints release information\&.
-.TP
--l
-.br
+.RE
+.PP
+\-l
+.RS 4
 Prints line and local variable tables\&.
-.TP
--public
-.br
+.RE
+.PP
+\-public
+.RS 4
 Shows only public classes and members\&.
-.TP
--protected
-.br
+.RE
+.PP
+\-protected
+.RS 4
 Shows only protected and public classes and members\&.
-.TP
--private, -p
+.RE
+.PP
+\-private
 .br
+\-p
+.RS 4
 Shows all classes and members\&.
-.TP
--J\fIoption\fR
-.br
+.RE
+.PP
+\-J\fIoption\fR
+.RS 4
 Passes the specified option to the JVM\&. For example:
-.sp     
-.nf     
-\f3javap \-J\-version\fP
-.fi     
-.nf     
-\f3javap \-J\-Djava\&.security\&.manager \-J\-Djava\&.security\&.policy=MyPolicy MyClassName\fP
-.fi     
-.nf     
-\f3\fP
-.fi     
-.sp     
-
-
-For more information about JVM options, see the \f3java(1)\fR command documentation\&.
-.TP
--s
-.br
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBjavap \-J\-version\fR
+\fBjavap \-J\-Djava\&.security\&.manager \-J\-Djava\&.security\&.policy=MyPolicy MyClassName\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+For more information about JVM options, see the command documentation\&.
+.RE
+.PP
+\-s
+.RS 4
 Prints internal type signatures\&.
-.TP
--sysinfo
-.br
+.RE
+.PP
+\-sysinfo
+.RS 4
 Shows system information (path, size, date, MD5 hash) of the class being processed\&.
-.TP
--constants
-.br
-Shows \f3static final\fR constants\&.
-.TP
--c
-.br
+.RE
+.PP
+\-constants
+.RS 4
+Shows
+\fBstatic final\fR
+constants\&.
+.RE
+.PP
+\-c
+.RS 4
 Prints disassembled code, for example, the instructions that comprise the Java bytecodes, for each of the methods in the class\&.
-.TP
--verbose
-.br
+.RE
+.PP
+\-verbose
+.RS 4
 Prints stack size, number of locals and arguments for methods\&.
-.TP
--classpath \fIpath\fR
-.br
-Specifies the path the \f3javap\fR command uses to look up classes\&. Overrides the default or the \f3CLASSPATH\fR environment variable when it is set\&.
-.TP
--bootclasspath \fIpath\fR
-.br
-Specifies the path from which to load bootstrap classes\&. By default, the bootstrap classes are the classes that implement the core Java platform located in \f3jre/lib/rt\&.jar\fR and several other JAR files\&.
-.TP
--extdir \fIdirs\fR
-.br
-Overrides the location at which installed extensions are searched for\&. The default location for extensions is the value of \f3java\&.ext\&.dirs\fR\&.
-.SH EXAMPLE    
-Compile the following \f3DocFooter\fR class:
-.sp     
-.nf     
-\f3import java\&.awt\&.*;\fP
-.fi     
-.nf     
-\f3import java\&.applet\&.*;\fP
-.fi     
-.nf     
-\f3\fP
-.fi     
-.nf     
-\f3public class DocFooter extends Applet {\fP
-.fi     
-.nf     
-\f3        String date;\fP
-.fi     
-.nf     
-\f3        String email;\fP
-.fi     
-.nf     
-\f3\fP
-.fi     
-.nf     
-\f3        public void init() {\fP
-.fi     
-.nf     
-\f3                resize(500,100);\fP
-.fi     
-.nf     
-\f3                date = getParameter("LAST_UPDATED");\fP
-.fi     
-.nf     
-\f3                email = getParameter("EMAIL");\fP
-.fi     
-.nf     
-\f3        }\fP
-.fi     
-.nf     
-\f3\fP
-.fi     
-.nf     
-\f3        public void paint(Graphics g) {\fP
-.fi     
-.nf     
-\f3                g\&.drawString(date + " by ",100, 15);\fP
-.fi     
-.nf     
-\f3                g\&.drawString(email,290,15);\fP
-.fi     
-.nf     
-\f3        }\fP
-.fi     
-.nf     
-\f3}\fP
-.fi     
-.nf     
-\f3\fP
-.fi     
-.sp     
-The output from the \f3javap DocFooter\&.class\fR command yields the following:
-.sp     
-.nf     
-\f3Compiled from "DocFooter\&.java"\fP
-.fi     
-.nf     
-\f3public class DocFooter extends java\&.applet\&.Applet {\fP
-.fi     
-.nf     
-\f3  java\&.lang\&.String date;\fP
-.fi     
-.nf     
-\f3  java\&.lang\&.String email;\fP
-.fi     
-.nf     
-\f3  public DocFooter();\fP
-.fi     
-.nf     
-\f3  public void init();\fP
-.fi     
-.nf     
-\f3  public void paint(java\&.awt\&.Graphics);\fP
-.fi     
-.nf     
-\f3}\fP
-.fi     
-.nf     
-\f3\fP
-.fi     
-.sp     
-The output from \f3javap -c DocFooter\&.class\fR command yields the following:
-.sp     
-.nf     
-\f3Compiled from "DocFooter\&.java"\fP
-.fi     
-.nf     
-\f3public class DocFooter extends java\&.applet\&.Applet {\fP
-.fi     
-.nf     
-\f3  java\&.lang\&.String date;\fP
-.fi     
-.nf     
-\f3  java\&.lang\&.String email;\fP
-.fi     
-.nf     
-\f3\fP
-.fi     
-.nf     
-\f3  public DocFooter();\fP
-.fi     
-.nf     
-\f3    Code:\fP
-.fi     
-.nf     
-\f3       0: aload_0       \fP
-.fi     
-.nf     
-\f3       1: invokespecial #1                  // Method\fP
-.fi     
-.nf     
-\f3java/applet/Applet\&."<init>":()V\fP
-.fi     
-.nf     
-\f3       4: return        \fP
-.fi     
-.nf     
-\f3\fP
-.fi     
-.nf     
-\f3  public void init();\fP
-.fi     
-.nf     
-\f3    Code:\fP
-.fi     
-.nf     
-\f3       0: aload_0       \fP
-.fi     
-.nf     
-\f3       1: sipush        500\fP
-.fi     
-.nf     
-\f3       4: bipush        100\fP
-.fi     
-.nf     
-\f3       6: invokevirtual #2                  // Method resize:(II)V\fP
-.fi     
-.nf     
-\f3       9: aload_0       \fP
-.fi     
-.nf     
-\f3      10: aload_0       \fP
-.fi     
-.nf     
-\f3      11: ldc           #3                  // String LAST_UPDATED\fP
-.fi     
-.nf     
-\f3      13: invokevirtual #4                  // Method\fP
-.fi     
-.nf     
-\f3 getParameter:(Ljava/lang/String;)Ljava/lang/String;\fP
-.fi     
-.nf     
-\f3      16: putfield      #5                  // Field date:Ljava/lang/String;\fP
-.fi     
-.nf     
-\f3      19: aload_0       \fP
-.fi     
-.nf     
-\f3      20: aload_0       \fP
-.fi     
-.nf     
-\f3      21: ldc           #6                  // String EMAIL\fP
-.fi     
-.nf     
-\f3      23: invokevirtual #4                  // Method\fP
-.fi     
-.nf     
-\f3 getParameter:(Ljava/lang/String;)Ljava/lang/String;\fP
-.fi     
-.nf     
-\f3      26: putfield      #7                  // Field email:Ljava/lang/String;\fP
-.fi     
-.nf     
-\f3      29: return        \fP
-.fi     
-.nf     
-\f3\fP
-.fi     
-.nf     
-\f3  public void paint(java\&.awt\&.Graphics);\fP
-.fi     
-.nf     
-\f3    Code:\fP
-.fi     
-.nf     
-\f3       0: aload_1       \fP
-.fi     
-.nf     
-\f3       1: new           #8                  // class java/lang/StringBuilder\fP
-.fi     
-.nf     
-\f3       4: dup           \fP
-.fi     
-.nf     
-\f3       5: invokespecial #9                  // Method\fP
-.fi     
-.nf     
-\f3 java/lang/StringBuilder\&."<init>":()V\fP
-.fi     
-.nf     
-\f3       8: aload_0       \fP
-.fi     
-.nf     
-\f3       9: getfield      #5                  // Field date:Ljava/lang/String;\fP
-.fi     
-.nf     
-\f3      12: invokevirtual #10                 // Method\fP
-.fi     
-.nf     
-\f3 java/lang/StringBuilder\&.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;\fP
-.fi     
-.nf     
-\f3      15: ldc           #11                 // String  by \fP
-.fi     
-.nf     
-\f3      17: invokevirtual #10                 // Method\fP
-.fi     
-.nf     
-\f3 java/lang/StringBuilder\&.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;\fP
-.fi     
-.nf     
-\f3      20: invokevirtual #12                 // Method\fP
-.fi     
-.nf     
-\f3 java/lang/StringBuilder\&.toString:()Ljava/lang/String;\fP
-.fi     
-.nf     
-\f3      23: bipush        100\fP
-.fi     
-.nf     
-\f3      25: bipush        15\fP
-.fi     
-.nf     
-\f3      27: invokevirtual #13                 // Method\fP
-.fi     
-.nf     
-\f3 java/awt/Graphics\&.drawString:(Ljava/lang/String;II)V\fP
-.fi     
-.nf     
-\f3      30: aload_1       \fP
-.fi     
-.nf     
-\f3      31: aload_0       \fP
-.fi     
-.nf     
-\f3      32: getfield      #7                  // Field email:Ljava/lang/String;\fP
-.fi     
-.nf     
-\f3      35: sipush        290\fP
-.fi     
-.nf     
-\f3      38: bipush        15\fP
-.fi     
-.nf     
-\f3      40: invokevirtual #13                 // Method\fP
-.fi     
-.nf     
-\f3java/awt/Graphics\&.drawString:(Ljava/lang/String;II)V\fP
-.fi     
-.nf     
-\f3      43: return        \fP
-.fi     
-.nf     
-\f3}\fP
-.fi     
-.nf     
-\f3\fP
-.fi     
-.sp     
-.SH SEE\ ALSO    
-.TP 0.2i    
-\(bu
-javac(1)
-.TP 0.2i    
-\(bu
+.RE
+.PP
+\-classpath \fIpath\fR
+.RS 4
+Specifies the path the
+\fBjavap\fR
+command uses to look up classes\&. Overrides the default or the
+\fBCLASSPATH\fR
+environment variable when it is set\&.
+.RE
+.PP
+\-bootclasspath \fIpath\fR
+.RS 4
+Specifies the path from which to load bootstrap classes\&. By default, the bootstrap classes are the classes that implement the core Java platform located in
+\fBjre/lib/rt\&.jar\fR
+and several other JAR files\&.
+.RE
+.PP
+\-extdir \fIdirs\fR
+.RS 4
+Overrides the location at which installed extensions are searched for\&. The default location for extensions is the value of
+\fBjava\&.ext\&.dirs\fR\&.
+.RE
+.SH "EXAMPLE"
+.PP
+Compile the following
+\fBDocFooter\fR
+class:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBimport java\&.awt\&.*;\fR
+\fBimport java\&.applet\&.*;\fR
+\fB \fR
+\fBpublic class DocFooter extends Applet {\fR
+\fB        String date;\fR
+\fB        String email;\fR
+\fB \fR
+\fB        public void init() {\fR
+\fB                resize(500,100);\fR
+\fB                date = getParameter("LAST_UPDATED");\fR
+\fB                email = getParameter("EMAIL");\fR
+\fB        }\fR
+\fB \fR
+\fB        public void paint(Graphics g) {\fR
+\fB                g\&.drawString(date + " by ",100, 15);\fR
+\fB                g\&.drawString(email,290,15);\fR
+\fB        }\fR
+\fB}\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+The output from the
+\fBjavap DocFooter\&.class\fR
+command yields the following:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBCompiled from "DocFooter\&.java"\fR
+\fBpublic class DocFooter extends java\&.applet\&.Applet {\fR
+\fB  java\&.lang\&.String date;\fR
+\fB  java\&.lang\&.String email;\fR
+\fB  public DocFooter();\fR
+\fB  public void init();\fR
+\fB  public void paint(java\&.awt\&.Graphics);\fR
+\fB}\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+The output from
+\fBjavap \-c DocFooter\&.class\fR
+command yields the following:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBCompiled from "DocFooter\&.java"\fR
+\fBpublic class DocFooter extends java\&.applet\&.Applet {\fR
+\fB  java\&.lang\&.String date;\fR
+\fB  java\&.lang\&.String email;\fR
+ 
+\fB  public DocFooter();\fR
+\fB    Code:\fR
+\fB       0: aload_0       \fR
+\fB       1: invokespecial #1                  // Method\fR
+\fBjava/applet/Applet\&."<init>":()V\fR
+\fB       4: return        \fR
+ 
+\fB  public void init();\fR
+\fB    Code:\fR
+\fB       0: aload_0       \fR
+\fB       1: sipush        500\fR
+\fB       4: bipush        100\fR
+\fB       6: invokevirtual #2                  // Method resize:(II)V\fR
+\fB       9: aload_0       \fR
+\fB      10: aload_0       \fR
+\fB      11: ldc           #3                  // String LAST_UPDATED\fR
+\fB      13: invokevirtual #4                  // Method\fR
+\fB getParameter:(Ljava/lang/String;)Ljava/lang/String;\fR
+\fB      16: putfield      #5                  // Field date:Ljava/lang/String;\fR
+\fB      19: aload_0       \fR
+\fB      20: aload_0       \fR
+\fB      21: ldc           #6                  // String EMAIL\fR
+\fB      23: invokevirtual #4                  // Method\fR
+\fB getParameter:(Ljava/lang/String;)Ljava/lang/String;\fR
+\fB      26: putfield      #7                  // Field email:Ljava/lang/String;\fR
+\fB      29: return        \fR
+ 
+\fB  public void paint(java\&.awt\&.Graphics);\fR
+\fB    Code:\fR
+\fB       0: aload_1       \fR
+\fB       1: new           #8                  // class java/lang/StringBuilder\fR
+\fB       4: dup           \fR
+\fB       5: invokespecial #9                  // Method\fR
+\fB java/lang/StringBuilder\&."<init>":()V\fR
+\fB       8: aload_0       \fR
+\fB       9: getfield      #5                  // Field date:Ljava/lang/String;\fR
+\fB      12: invokevirtual #10                 // Method\fR
+\fB java/lang/StringBuilder\&.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;\fR
+\fB      15: ldc           #11                 // String  by \fR
+\fB      17: invokevirtual #10                 // Method\fR
+\fB java/lang/StringBuilder\&.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;\fR
+\fB      20: invokevirtual #12                 // Method\fR
+\fB java/lang/StringBuilder\&.toString:()Ljava/lang/String;\fR
+\fB      23: bipush        100\fR
+\fB      25: bipush        15\fR
+\fB      27: invokevirtual #13                 // Method\fR
+\fB java/awt/Graphics\&.drawString:(Ljava/lang/String;II)V\fR
+\fB      30: aload_1       \fR
+\fB      31: aload_0       \fR
+\fB      32: getfield      #7                  // Field email:Ljava/lang/String;\fR
+\fB      35: sipush        290\fR
+\fB      38: bipush        15\fR
+\fB      40: invokevirtual #13                 // Method\fR
+\fBjava/awt/Graphics\&.drawString:(Ljava/lang/String;II)V\fR
+\fB      43: return        \fR
+\fB}\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+.SH "SEE ALSO"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
 java(1)
-.TP 0.2i    
-\(bu
-jdb(1)
-.TP 0.2i    
-\(bu
-javah(1)
-.TP 0.2i    
-\(bu
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+javac(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
 javadoc(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+javah(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+jdb(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+jdeps(1)
 .RE
 .br
 'pl 8.5i

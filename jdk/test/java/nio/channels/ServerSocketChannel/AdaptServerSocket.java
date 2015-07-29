@@ -123,7 +123,7 @@ public class AdaptServerSocket {
 
     public static void main(String[] args) throws Exception {
         test(0, 0, false);
-        test(50, 500, false);
+        test(50, 5000, false);
         test(500, 50, true);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,31 +21,27 @@
  * questions.
  */
 
-
-/* @test
- * @bug 5012882 6299047
- * @summary Test jvmti hprof
- *
- * @compile -g HelloWorld.java ../DemoRun.java
- * @build CpuTimesTest
- * @run main CpuTimesTest HelloWorld
+/*
+ * @test
+ * @bug 8131051
+ * @summary KDC might issue a renewable ticket even if not requested
+ * @compile -XDignore.symbol.file LongLife.java
+ * @run main/othervm LongLife
  */
 
-public class CpuTimesTest {
+import sun.security.krb5.Config;
 
-    public static void main(String args[]) throws Exception {
-        DemoRun hprof;
+public class LongLife {
 
-        /* Run JVMTI hprof agent with cpu=times */
-        hprof = new DemoRun("hprof", "cpu=times,file=cputimes.txt");
-        hprof.runit(args[0]);
+    public static void main(String[] args) throws Exception {
 
-        /* Make sure patterns in output look ok */
-        if (hprof.output_contains("ERROR")) {
-            throw new RuntimeException("Test failed - ERROR seen in output");
-        }
+        OneKDC kdc = new OneKDC(null).writeJAASConf();
 
-        /* Must be a pass. */
-        System.out.println("Test passed - cleanly terminated");
+        // A lifetime 2d will make it renewable
+        KDC.saveConfig(OneKDC.KRB5_CONF, kdc,
+                "ticket_lifetime = 2d");
+        Config.refresh();
+
+        Context.fromJAAS("client");
     }
 }
