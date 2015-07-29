@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,8 +196,10 @@ class ObjectMonitor {
   static PerfCounter * _sync_Deflations;
   static PerfLongVariable * _sync_MonExtant;
 
+  static int Knob_ExitRelease;
   static int Knob_Verbose;
   static int Knob_VerifyInUse;
+  static int Knob_VerifyMatch;
   static int Knob_SpinLimit;
 
   void* operator new (size_t size) throw() {
@@ -317,7 +319,6 @@ class ObjectMonitor {
   void      print();
 #endif
 
-  bool      try_enter(TRAPS);
   void      enter(TRAPS);
   void      exit(bool not_suspended, TRAPS);
   void      wait(jlong millis, bool interruptable, TRAPS);
@@ -354,14 +355,14 @@ class ObjectMonitor {
 #undef TEVENT
 #define TEVENT(nom) { if (SyncVerbose) FEVENT(nom); }
 
-#define FEVENT(nom)                 \
-  {                                 \
-    static volatile int ctr = 0;    \
-    int v = ++ctr;                  \
-    if ((v & (v - 1)) == 0) {       \
-      ::printf(#nom " : %d\n", v);  \
-      ::fflush(stdout);             \
-    }                               \
+#define FEVENT(nom)                             \
+  {                                             \
+    static volatile int ctr = 0;                \
+    int v = ++ctr;                              \
+    if ((v & (v - 1)) == 0) {                   \
+      tty->print_cr("INFO: " #nom " : %d", v);  \
+      tty->flush();                             \
+    }                                           \
   }
 
 #undef  TEVENT

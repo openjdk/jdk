@@ -501,8 +501,8 @@ void CompileTask::log_task(xmlStream* log) {
   methodHandle method(thread, this->method());
   ResourceMark rm(thread);
 
-  // <task id='9' method='M' osr_bci='X' level='1' blocking='1' stamp='1.234'>
-  log->print(" compile_id='%d'", _compile_id);
+  // <task compiler='Cx' id='9' method='M' osr_bci='X' level='1' blocking='1' stamp='1.234'>
+  log->print(" compiler='%s' compile_id='%d'", _comp_level <= CompLevel_full_profile ? "C1" : "C2", _compile_id);
   if (_osr_bci != CompileBroker::standard_entry_bci) {
     log->print(" compile_kind='osr'");  // same as nmethod::compile_kind
   } // else compile_kind='c2c'

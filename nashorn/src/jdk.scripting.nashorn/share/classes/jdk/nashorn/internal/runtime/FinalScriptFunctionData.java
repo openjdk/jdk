@@ -27,6 +27,7 @@ package jdk.nashorn.internal.runtime;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -72,11 +73,6 @@ final class FinalScriptFunctionData extends ScriptFunctionData {
     }
 
     @Override
-    boolean isRecompilable() {
-        return false;
-    }
-
-    @Override
     protected boolean needsCallee() {
         final boolean needsCallee = code.getFirst().needsCallee();
         assert allNeedCallee(needsCallee);
@@ -90,6 +86,20 @@ final class FinalScriptFunctionData extends ScriptFunctionData {
             }
         }
         return true;
+    }
+
+    @Override
+    CompiledFunction getBest(final MethodType callSiteType, final ScriptObject runtimeScope, final Collection<CompiledFunction> forbidden) {
+        assert isValidCallSite(callSiteType) : callSiteType;
+
+        CompiledFunction best = null;
+        for (final CompiledFunction candidate: code) {
+            if (!forbidden.contains(candidate) && candidate.betterThanFinal(best, callSiteType)) {
+                best = candidate;
+            }
+        }
+
+        return best;
     }
 
     @Override

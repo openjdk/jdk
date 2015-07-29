@@ -241,7 +241,7 @@ class SuperWord : public ResourceObj {
 
   void transform_loop(IdealLoopTree* lpt, bool do_optimization);
 
-  void unrolling_analysis(CountedLoopNode *cl, int &local_loop_unroll_factor);
+  void unrolling_analysis(int &local_loop_unroll_factor);
 
   // Accessors for SWPointer
   PhaseIdealLoop* phase()          { return _phase; }
