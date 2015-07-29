@@ -1,12 +1,5 @@
 '\" t
-.\" Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
-.\" Title: javah
-.\" Language: English
-.\" Date: 2013年11月21日
-.\" SectDesc: 基本ツール
-.\" Software: JDK 8
-.\" Arch: 汎用
-.\"
+.\" Copyright (c) 1994, 2014, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -15,7 +8,7 @@
 .\"
 .\" This code is distributed in the hope that it will be useful, but WITHOUT
 .\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 .\" version 2 for more details (a copy is included in the LICENSE file that
 .\" accompanied this code).
 .\"
@@ -27,8 +20,17 @@
 .\" or visit www.oracle.com if you need additional information or have any
 .\" questions.
 .\"
-.pl 99999
-.TH "javah" "1" "2013年11月21日" "JDK 8" "基本ツール"
+.\" Title: javah
+.\" Language: Japanese
+.\" Date: 2013ǯ11��21��
+.\" SectDesc: ���ܥġ���
+.\" Software: JDK 8
+.\" Arch: ����
+.\" Part Number: E58103-01
+.\" Doc ID: JSSON
+.\"
+.if n .pl 99999
+.TH "javah" "1" "2013ǯ11��21��" "JDK 8" "���ܥġ���"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -48,15 +50,15 @@
 .\" -----------------------------------------------------------------
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
-.SH "NAME"
-javah \- JavaクラスからCヘッダーとソース・ファイルを生成します。
-.SH "概要"
+.SH "̾��"
+javah \- Java���饹����C�إå����ȥ��������ե�������������ޤ���
+.SH "����"
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\fIjavah\fR [ \fIoptions\fR ] f\fIully\-qualified\-class\-name \&.\&.\&.\fR
+\fBjavah\fR [ \fIoptions\fR ] f\fIully\-qualified\-class\-name \&.\&.\&.\fR
 .fi
 .if n \{\
 .RE
@@ -64,102 +66,102 @@ javah \- JavaクラスからCヘッダーとソース・ファイルを生成し
 .PP
 \fIoptions\fR
 .RS 4
-コマンドライン・オプション。オプションを参照してください。
+���ޥ�ɹԥ��ץ���󡣥��ץ����򻲾Ȥ��Ƥ���������
 .RE
 .PP
 \fIfully\-qualified\-class\-name\fR
 .RS 4
-Cヘッダーとソース・ファイルに変換されるクラスの完全修飾された場所。
+C�إå����ȥ��������ե�������Ѵ�����륯�饹�δ����������줿��ꡣ
 .RE
-.SH "説明"
+.SH "����"
 .PP
-\fIjavah\fRコマンドは、ネイティブ・メソッドを実装するために必要なCヘッダーとソース・ファイルを生成します。作成されたヘッダーとソース・ファイルは、ネイティブ・ソース・コードからオブジェクトのインスタンス変数を参照するためにCプログラムによって使用されます。\fI\&.h\fRファイルは、対応するクラスと一致する配置を持つ\fIstruct\fR定義を含みます。\fIstruct\fRのフィールドは、クラスのインスタンス変数に対応します。
+\fBjavah\fR���ޥ�ɤϡ��ͥ��ƥ��֡��᥽�åɤ�������뤿���ɬ�פ�C�إå����ȥ��������ե�������������ޤ����������줿�إå����ȥ��������ե�����ϡ��ͥ��ƥ��֡��������������ɤ��饪�֥������ȤΥ��󥹥����ѿ��򻲾Ȥ��뤿���C�ץ������ˤ�äƻ��Ѥ���ޤ���\fB\&.h\fR�ե�����ϡ��б����륯�饹�Ȱ��פ������֤����\fBstruct\fR�����ޤߤޤ���\fBstruct\fR�Υե�����ɤϡ����饹�Υ��󥹥����ѿ����б����ޤ���
 .PP
-ヘッダー・ファイルとその中で宣言される構造体の名前はクラスの名前から派生します。\fIjavah\fRコマンドに渡されるクラスがパッケージの中にある場合、パッケージ名はヘッダー・ファイル名と構造体名の両方の先頭に付加されます。下線(_)が名前の区切り文字として使用されます。
+�إå������ե�����Ȥ�������������빽¤�Τ�̾���ϥ��饹��̾�������������ޤ���\fBjavah\fR���ޥ�ɤ��Ϥ���륯�饹���ѥå���������ˤ����硢�ѥå�����̾�ϥإå������ե�����̾�ȹ�¤��̾��ξ������Ƭ���ղä���ޤ����������������(_)��̾���ζ��ڤ�ʸ���Ȥ��ƻ��Ѥ���ޤ���
 .PP
-デフォルトでは\fIjavah\fRコマンドは、コマンドラインにリストされる各クラスのヘッダー・ファイルを作成し、現在のディレクトリにファイルを置きます。ソース・ファイルを作成するには、\fI\-stubs\fRオプションを使用してください。1つのファイルの中に、リストされたすべてのクラスの結果を連結するには、\fI\-o\fRオプションを使用してください。
+�ǥե���ȤǤ�\fBjavah\fR���ޥ�ɤϡ����ޥ�ɹԤ˥ꥹ�Ȥ����ƥ��饹�Υإå������ե����������������ߤΥǥ��쥯�ȥ�˥ե�������֤��ޤ������������ե�������������ˤϡ�\fB\-stubs\fR���ץ�������Ѥ��Ƥ���������1�ĤΥե��������ˡ��ꥹ�Ȥ��줿���٤ƤΥ��饹�η�̤�Ϣ�뤹��ˤϡ�\fB\-o\fR���ץ�������Ѥ��Ƥ���������
 .PP
-Java Native Interface (JNI)はヘッダー情報またはスタブ・ファイルを必要としません。\fIjavah\fRコマンドは引き続きJNI形式のネイティブ・メソッドに必要なネイティブ・メソッド関数プロトタイプの生成に使用できます。\fIjavah\fRコマンドはデフォルトでJNI形式の出力を生成し、その結果を\fI\&.h\fRファイルに格納します。
-.SH "オプション"
+Java Native Interface (JNI)�ϥإå�������ޤ��ϥ����֡��ե������ɬ�פȤ��ޤ���\fBjavah\fR���ޥ�ɤϰ���³��JNI�����Υͥ��ƥ��֡��᥽�åɤ�ɬ�פʥͥ��ƥ��֡��᥽�åɴؿ��ץ��ȥ����פ������˻��ѤǤ��ޤ���\fBjavah\fR���ޥ�ɤϥǥե���Ȥ�JNI�����ν��Ϥ������������η�̤�\fB\&.h\fR�ե�����˳�Ǽ���ޤ���
+.SH "���ץ����"
 .PP
 \-o \fIoutputfile\fR
 .RS 4
-コマンドラインにリストされたすべてのクラスに対して、結果のヘッダーまたはソース・ファイルを連結して出力ファイルに格納します。\fI\-o\fRまたは\fI\-d\fRのどちらかのみ使用できます。
+���ޥ�ɹԤ˥ꥹ�Ȥ��줿���٤ƤΥ��饹���Ф��ơ���̤Υإå����ޤ��ϥ��������ե������Ϣ�뤷�ƽ��ϥե�����˳�Ǽ���ޤ���\fB\-o\fR�ޤ���\fB\-d\fR�Τɤ��餫�Τ߻��ѤǤ��ޤ���
 .RE
 .PP
 \-d \fIdirectory\fR
 .RS 4
-\fIjavah\fRがヘッダー・ファイルまたはスタブ・ファイルを保存する、ディレクトリを設定します。\fI\-d\fRまたは\fI\-o\fRのどちらかのみ使用できます。
+\fBjavah\fR���إå������ե�����ޤ��ϥ����֡��ե��������¸���롢�ǥ��쥯�ȥ�����ꤷ�ޤ���\fB\-d\fR�ޤ���\fB\-o\fR�Τɤ��餫�Τ߻��ѤǤ��ޤ���
 .RE
 .PP
 \-stubs
 .RS 4
-\fIjavah\fRコマンドが、Javaオブジェクト・ファイルからC宣言を生成します。
+\fBjavah\fR���ޥ�ɤ���Java���֥������ȡ��ե����뤫��C������������ޤ���
 .RE
 .PP
 \-verbose
 .RS 4
-詳細出力を指定し、作成ファイルの状態に関するメッセージを、\fIjavah\fRコマンドが\fI標準出力\fRに出力します。
+�ܺٽ��Ϥ���ꤷ�������ե�����ξ��֤˴ؤ����å�������\fBjavah\fR���ޥ�ɤ�\fBɸ�����\fR�˽��Ϥ��ޤ���
 .RE
 .PP
 \-help
 .RS 4
-\fIjavah\fRの使用方法についてのヘルプ・メッセージを出力します。
+\fBjavah\fR�λ�����ˡ�ˤĤ��ƤΥإ�ס���å���������Ϥ��ޤ���
 .RE
 .PP
 \-version
 .RS 4
-\fIjavah\fRコマンドのリリース情報を出力します。
+\fBjavah\fR���ޥ�ɤΥ�꡼���������Ϥ��ޤ���
 .RE
 .PP
 \-jni
 .RS 4
-JNI形式のネイティブ・メソッド機能プロトタイプを含む出力ファイルを、\fIjavah\fRコマンドが作成します。これは標準出力であるため、\fI\-jni\fRの使用はオプションです。
+JNI�����Υͥ��ƥ��֡��᥽�åɵ�ǽ�ץ��ȥ����פ�ޤ���ϥե������\fBjavah\fR���ޥ�ɤ��������ޤ��������ɸ����ϤǤ��뤿�ᡢ\fB\-jni\fR�λ��Ѥϥ��ץ����Ǥ���
 .RE
 .PP
 \-classpath \fIpath\fR
 .RS 4
-クラスを探すために\fIjavah\fRコマンドが使用するパスを指定します。デフォルトまたは\fICLASSPATH\fR環境変数の設定をオーバーライドします。ディレクトリはOracle Solarisの場合はコロンで、Windowsの場合はセミコロンで区切られます。パスの一般的な形式は次のようになります。
+���饹��õ�������\fBjavah\fR���ޥ�ɤ����Ѥ���ѥ�����ꤷ�ޤ����ǥե���Ȥޤ���\fBCLASSPATH\fR�Ķ��ѿ�������򥪡��С��饤�ɤ��ޤ����ǥ��쥯�ȥ��Oracle Solaris�ξ��ϥ�����ǡ�Windows�ξ��ϥ��ߥ�����Ƕ��ڤ��ޤ����ѥ��ΰ���Ū�ʷ����ϼ��Τ褦�ˤʤ�ޤ���
 .sp
-\fBOracle Solaris\fRの場合:
+\fBOracle Solaris\fR�ξ��:
 .sp
 \&.:\fIyour\-path\fR
 .sp
-例:
-\fI\&.:/home/avh/classes:/usr/local/java/classes\fR
+��:
+\fB\&.:/home/avh/classes:/usr/local/java/classes\fR
 .sp
-\fBWindows\fRの場合:
+\fBWindows\fR�ξ��:
 .sp
 \&.;\fIyour\-path\fR
 .sp
-例:
-\fI\&.;C:\eusers\edac\eclasses;C:\etools\ejava\eclasses\fR
+��:
+\fB\&.;C:\eusers\edac\eclasses;C:\etools\ejava\eclasses\fR
 .sp
-便宜上、*のベース名を含むクラス・パス要素は、\fI\&.jar\fRまたは\fI\&.JAR\fRを拡張子に持つディレクトリ内のすべてのファイルのリストを指定するのと同等とみなされます。
+�ص��塢*�Υ١���̾��ޤ९�饹���ѥ����Ǥϡ�\fB\&.jar\fR�ޤ���\fB\&.JAR\fR���ĥ�Ҥ˻��ĥǥ��쥯�ȥ���Τ��٤ƤΥե�����Υꥹ�Ȥ���ꤹ��Τ�Ʊ���Ȥߤʤ���ޤ���
 .sp
-たとえば、ディレクトリ\fImydir\fRに\fIa\&.jar\fRと\fIb\&.JAR\fRが含まれている場合、クラス・パス要素\fImydir/*\fRは\fIA\fR\fI\&.jar:b\&.JAR\fRに展開されますが、JARファイルの順番は未指定となります。このリストには、隠しファイルも含め、指定されたディレクトリ内のすべてのJARファイルが含まれます。*からなるクラス・パス・エントリは、現在のディレクトリ内のすべてのJARファイルのリストに展開されます。\fICLASSPATH\fR環境変数も、定義時には同様に展開されます。クラス・パスのワイルドカードの展開は、Java仮想マシン(JVM)の開始前に行われます。Javaプログラムは、環境を問い合せる場合を除き、展開されていないワイルドカードを参照しません。たとえば、\fISystem\&.getenv("CLASSPATH")\fRをコールして問い合せる場合です。
+���Ȥ��С��ǥ��쥯�ȥ�\fBmydir\fR��\fBa\&.jar\fR��\fBb\&.JAR\fR���ޤޤ�Ƥ����硢���饹���ѥ�����\fBmydir/*\fR��\fBA\fR\fB\&.jar:b\&.JAR\fR��Ÿ������ޤ�����JAR�ե�����ν��֤�̤����Ȥʤ�ޤ������Υꥹ�Ȥˤϡ������ե������ޤᡢ���ꤵ�줿�ǥ��쥯�ȥ���Τ��٤Ƥ�JAR�ե����뤬�ޤޤ�ޤ���*����ʤ륯�饹���ѥ�������ȥ�ϡ����ߤΥǥ��쥯�ȥ���Τ��٤Ƥ�JAR�ե�����Υꥹ�Ȥ�Ÿ������ޤ���\fBCLASSPATH\fR�Ķ��ѿ��⡢������ˤ�Ʊ�ͤ�Ÿ������ޤ������饹���ѥ��Υ磻��ɥ����ɤ�Ÿ���ϡ�Java Virtual Machine (JVM)�γ������˹Ԥ��ޤ���Java�ץ������ϡ��Ķ����䤤�礻����������Ÿ������Ƥ��ʤ��磻��ɥ����ɤ򻲾Ȥ��ޤ��󡣤��Ȥ��С�\fBSystem\&.getenv("CLASSPATH")\fR�򥳡��뤷���䤤�礻����Ǥ���
 .RE
 .PP
 \-bootclasspath \fIpath\fR
 .RS 4
-ブートストラップ・クラスをロードするパスを指定します。ブートストラップ・クラスは、デフォルトでは\fIjre\elib\ert\&.jar\fRおよび他のいくつかのJARファイルにある、コアJavaプラットフォームを実装するクラスです。
+�֡��ȥ��ȥ�åס����饹������ɤ���ѥ�����ꤷ�ޤ����֡��ȥ��ȥ�åס����饹�ϡ��ǥե���ȤǤ�\fBjre\elib\ert\&.jar\fR�����¾�Τ����Ĥ���JAR�ե�����ˤ��롢����Java�ץ�åȥե������������륯�饹�Ǥ���
 .RE
 .PP
 \-old
 .RS 4
-古いJDK 1\&.0形式のヘッダー・ファイルを生成するように指定します。
+�Ť�JDK 1\&.0�����Υإå������ե��������������褦�˻��ꤷ�ޤ���
 .RE
 .PP
 \-force
 .RS 4
-出力ファイルが常に書き込まれるように指定します。
+���ϥե����뤬��˽񤭹��ޤ��褦�˻��ꤷ�ޤ���
 .RE
 .PP
 \-J\fIoption\fR
 .RS 4
-Java仮想マシンに\fIoption\fRを渡します。\fIoption\fRには、Javaアプリケーション起動ツールのリファレンス・ページに記載されているオプションを1つ指定します。たとえば、\fI\-J\-Xms48m\fRと指定すると、スタートアップ・メモリーは48MBに設定されます。java(1)を参照してください。
+Java Virtual Machine��\fBoption\fR���Ϥ��ޤ���\fBoption\fR�ˤϡ�Java���ץꥱ�������ư�ġ���Υ�ե���󥹡��ڡ����˵��ܤ���Ƥ��륪�ץ�����1�Ļ��ꤷ�ޤ������Ȥ��С�\fB\-J\-Xms48m\fR�Ȼ��ꤹ��ȡ��������ȥ��åס����꡼��48MB�����ꤵ��ޤ���java(1)�򻲾Ȥ��Ƥ���������
 .RE
-.SH "関連項目"
+.SH "��Ϣ����"
 .sp
 .RS 4
 .ie n \{\
