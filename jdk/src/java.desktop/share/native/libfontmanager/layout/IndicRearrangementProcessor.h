@@ -56,7 +56,7 @@ public:
 
     virtual void endStateTable();
 
-    void doRearrangementAction(LEGlyphStorage &glyphStorage, IndicRearrangementVerb verb) const;
+    void doRearrangementAction(LEGlyphStorage &glyphStorage, IndicRearrangementVerb verb, LEErrorCode &success) const;
 
     IndicRearrangementProcessor(const LEReferenceTo<MorphSubtableHeader> &morphSubtableHeader, LEErrorCode &success);
     virtual ~IndicRearrangementProcessor();
@@ -76,8 +76,8 @@ public:
     static UClassID getStaticClassID();
 
 protected:
-    le_int32 firstGlyph;
-    le_int32 lastGlyph;
+    le_uint32 firstGlyph;
+    le_uint32 lastGlyph;
 
     LEReferenceTo<IndicRearrangementSubtableHeader> indicRearrangementSubtableHeader;
     LEReferenceToArrayOf<IndicRearrangementStateEntry> entryTable;
