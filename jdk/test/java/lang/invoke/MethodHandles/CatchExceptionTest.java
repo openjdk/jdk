@@ -168,6 +168,11 @@ public class CatchExceptionTest {
         try {
             returned = target.invokeWithArguments(args);
         } catch (Throwable ex) {
+            if (CodeCacheOverflowProcessor.isThrowableCausedByVME(ex)) {
+                // This error will be treated by CodeCacheOverflowProcessor
+                // to prevent the test from failing because of code cache overflow.
+                throw new Error(ex);
+            }
             testCase.assertCatch(ex);
             returned = ex;
         }

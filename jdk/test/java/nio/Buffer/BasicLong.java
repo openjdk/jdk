@@ -128,6 +128,15 @@ public class BasicLong
         c.position(7);
         b.put(c);
         b.flip();
+        try {
+            b.put(b);
+            fail("IllegalArgumentException expected for put into same buffer");
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage() == null) {
+                fail("Non-null IllegalArgumentException message expected from"
+                     + " put into same buffer");
+            }
+        }
     }
 
     //6231529
@@ -464,6 +473,46 @@ public class BasicLong
                     b.reset();
                 }});
 
+        try {
+            b.position(b.limit() + 1);
+            fail("IllegalArgumentException expected for position beyond limit");
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage() == null) {
+                fail("Non-null IllegalArgumentException message expected for"
+                     + " position beyond limit");
+            }
+        }
+
+        try {
+            b.position(-1);
+            fail("IllegalArgumentException expected for negative position");
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage() == null) {
+                fail("Non-null IllegalArgumentException message expected for"
+                     + " negative position");
+            }
+        }
+
+        try {
+            b.limit(b.capacity() + 1);
+            fail("IllegalArgumentException expected for limit beyond capacity");
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage() == null) {
+                fail("Non-null IllegalArgumentException message expected for"
+                     + " limit beyond capacity");
+            }
+        }
+
+        try {
+            b.limit(-1);
+            fail("IllegalArgumentException expected for negative limit");
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage() == null) {
+                fail("Non-null IllegalArgumentException message expected for"
+                     + " negative limit");
+            }
+        }
+
         // Values
 
         b.clear();
@@ -496,6 +545,7 @@ public class BasicLong
         ck(b, b.get(), 1);
         ck(b, b.get(), Long.MAX_VALUE);
         ck(b, b.get(), Long.MIN_VALUE);
+
 
 
 
@@ -934,6 +984,22 @@ public class BasicLong
                 public void run() {
                     LongBuffer.allocate(-1);
                 }});
+        try {
+            LongBuffer.allocate(-1);
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage() == null) {
+                fail("Non-null IllegalArgumentException message expected for"
+                     + " attempt to allocate negative capacity buffer");
+            }
+        }
+
+
+
+
+
+
+
+
 
 
 

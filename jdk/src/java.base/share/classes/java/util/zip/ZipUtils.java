@@ -99,9 +99,9 @@ class ZipUtils {
         if (year < 1980) {
             return ZipEntry.DOSTIME_BEFORE_1980;
         }
-        return (year - 1980) << 25 | (d.getMonth() + 1) << 21 |
-               d.getDate() << 16 | d.getHours() << 11 | d.getMinutes() << 5 |
-               d.getSeconds() >> 1;
+        return ((year - 1980) << 25 | (d.getMonth() + 1) << 21 |
+                d.getDate() << 16 | d.getHours() << 11 | d.getMinutes() << 5 |
+                d.getSeconds() >> 1) & 0xffffffffL;
     }
 
     /**
@@ -143,5 +143,14 @@ class ZipUtils {
      */
     public static final long get64(byte b[], int off) {
         return get32(b, off) | (get32(b, off+4) << 32);
+    }
+
+    /**
+     * Fetches signed 32-bit value from byte array at specified offset.
+     * The bytes are assumed to be in Intel (little-endian) byte order.
+     *
+     */
+    public static final int get32S(byte b[], int off) {
+        return (get16(b, off) | (get16(b, off+2) << 16));
     }
 }
