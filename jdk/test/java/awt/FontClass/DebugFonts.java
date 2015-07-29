@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4956241 80769790
+ * @bug 4956241 8076979 8080953
  * @summary NPE debugging fonts
  * @run main/othervm DebugFonts
  */
