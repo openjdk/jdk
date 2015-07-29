@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,33 +19,29 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- */
-
-
-/* @test
- * @bug 5012882 6299047
- * @summary Test jvmti hprof
  *
- * @compile -g:vars HelloWorld.java ../DemoRun.java
- * @build HeapSitesTest
- * @run main HeapSitesTest HelloWorld
  */
 
-public class HeapSitesTest {
+super public class badInit
+    version 52:0
+{
 
-    public static void main(String args[]) throws Exception {
-        DemoRun hprof;
 
-        /* Run JVMTI hprof agent with heap=sites */
-        hprof = new DemoRun("hprof", "heap=sites,file=heapsites.txt");
-        hprof.runit(args[0]);
-
-        /* Make sure patterns in output look ok */
-        if (hprof.output_contains("ERROR")) {
-            throw new RuntimeException("Test failed - ERROR seen in output");
-        }
-
-        /* Must be a pass. */
-        System.out.println("Test passed - cleanly terminated");
-    }
+// This <init> method has a non-void signature.  It should cause a
+// ClassFormatError exception.
+Method "<init>":"(I)I"
+    stack 1 locals 2
+{
+    aload_0;
+    invokespecial    Method java/lang/Object."<init>":"()V";
+    iconst_4;
+    ireturn;
 }
+
+public static Method main:"([Ljava/lang/String;)V"
+    stack 0 locals 1
+{
+    return;
+}
+
+} // end Class badInit

@@ -1,12 +1,5 @@
 '\" t
-.\" Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
-.\" Title: javap
-.\" Language: English
-.\" Date: 2013å¹´11æœˆ21æ—¥
-.\" SectDesc: åŸºæœ¬ãƒ„ãƒ¼ãƒ«
-.\" Software: JDK 8
-.\" Arch: æ±ç”¨
-.\"
+.\" Copyright (c) 1994, 2014, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -15,7 +8,7 @@
 .\"
 .\" This code is distributed in the hope that it will be useful, but WITHOUT
 .\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 .\" version 2 for more details (a copy is included in the LICENSE file that
 .\" accompanied this code).
 .\"
@@ -27,8 +20,17 @@
 .\" or visit www.oracle.com if you need additional information or have any
 .\" questions.
 .\"
-.pl 99999
-.TH "javap" "1" "2013å¹´11æœˆ21æ—¥" "JDK 8" "åŸºæœ¬ãƒ„ãƒ¼ãƒ«"
+.\" Title: javap
+.\" Language: Japanese
+.\" Date: 2014Ç¯8·î8Æü
+.\" SectDesc: ´ğËÜ¥Ä¡¼¥ë
+.\" Software: JDK 8
+.\" Arch: ÈÆÍÑ
+.\" Part Number: E58103-01
+.\" Doc ID: JSSON
+.\"
+.if n .pl 99999
+.TH "javap" "1" "2014Ç¯8·î8Æü" "JDK 8" "´ğËÜ¥Ä¡¼¥ë"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -48,15 +50,15 @@
 .\" -----------------------------------------------------------------
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
-.SH "NAME"
-javap \- 1ã¤ä»¥ä¸Šã®ã‚¯ãƒ©ã‚¹ãƒ»ãƒ•ã‚¡ã‚¤ãƒ«ã‚’é€†ã‚¢ã‚»ãƒ³ãƒ–ãƒ«ã—ã¾ã™ã€‚
-.SH "æ¦‚è¦"
+.SH "Ì¾Á°"
+javap \- 1¤Ä°Ê¾å¤Î¥¯¥é¥¹¡¦¥Õ¥¡¥¤¥ë¤òµÕ¥¢¥»¥ó¥Ö¥ë¤·¤Ş¤¹¡£
+.SH "³µÍ×"
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\fIjavap\fR [\fIoptions\fR] \fIclassfile\fR\&.\&.\&.
+\fBjavap\fR [\fIoptions\fR] \fIclassfile\fR\&.\&.\&.
 .fi
 .if n \{\
 .RE
@@ -64,237 +66,236 @@ javap \- 1ã¤ä»¥ä¸Šã®ã‚¯ãƒ©ã‚¹ãƒ»ãƒ•ã‚¡ã‚¤ãƒ«ã‚’é€†ã‚¢ã‚»ãƒ³ãƒ–ãƒ«ã—ã¾ã™ã€‚
 .PP
 \fIoptions\fR
 .RS 4
-ã‚³ãƒãƒ³ãƒ‰ãƒ©ã‚¤ãƒ³ãƒ»ã‚ªãƒ—ã‚·ãƒ§ãƒ³ã€‚ã‚ªãƒ—ã‚·ãƒ§ãƒ³ã‚’å‚ç…§ã—ã¦ãã ã•ã„ã€‚
+¥³¥Ş¥ó¥É¹Ô¥ª¥×¥·¥ç¥ó¡£¥ª¥×¥·¥ç¥ó¤ò»²¾È¤·¤Æ¤¯¤À¤µ¤¤¡£
 .RE
 .PP
 \fIclassfile\fR
 .RS 4
-æ³¨é‡ˆã®å‡¦ç†å¯¾è±¡ã¨ãªã‚‹ã€ç©ºç™½ã§åŒºåˆ‡ã£ãŸ1ã¤ä»¥ä¸Šã®ã‚¯ãƒ©ã‚¹(DocFooter\&.classãªã©)ã€‚ã‚¯ãƒ©ã‚¹ãƒ»ãƒ‘ã‚¹ã§æ¤œå‡ºã§ãã‚‹ã‚¯ãƒ©ã‚¹ã‚’ã€ãƒ•ã‚¡ã‚¤ãƒ«åã¾ãŸã¯URL(\fIfile:///home/user/myproject/src/DocFooter\&.class\fRãªã©)ã§æŒ‡å®šã§ãã¾ã™ã€‚
+Ãí¼á¤Î½èÍıÂĞ¾İ¤È¤Ê¤ë¡¢¶õÇò¤Ç¶èÀÚ¤Ã¤¿1¤Ä°Ê¾å¤Î¥¯¥é¥¹(DocFooter\&.class¤Ê¤É)¡£¥¯¥é¥¹¡¦¥Ñ¥¹¤Ç¸¡½Ğ¤Ç¤­¤ë¥¯¥é¥¹¤ò¡¢¥Õ¥¡¥¤¥ëÌ¾¤Ş¤¿¤ÏURL(\fBfile:///home/user/myproject/src/DocFooter\&.class\fR¤Ê¤É)¤Ç»ØÄê¤Ç¤­¤Ş¤¹¡£
 .RE
-.SH "èª¬æ˜"
+.SH "ÀâÌÀ"
 .PP
-\fIjavap\fRã‚³ãƒãƒ³ãƒ‰ã¯ã€1ã¤ã¾ãŸã¯è¤‡æ•°ã®ã‚¯ãƒ©ã‚¹ãƒ»ãƒ•ã‚¡ã‚¤ãƒ«ã‚’é€†ã‚¢ã‚»ãƒ³ãƒ–ãƒ«ã—ã¾ã™ã€‚ãã®å‡ºåŠ›ã¯æŒ‡å®šã™ã‚‹ã‚ªãƒ—ã‚·ãƒ§ãƒ³ã«ã‚ˆã‚Šç•°ãªã‚Šã¾ã™ã€‚ã‚ªãƒ—ã‚·ãƒ§ãƒ³ã‚’æŒ‡å®šã—ãªã„å ´åˆã€\fIjavap\fRã‚³ãƒãƒ³ãƒ‰ã¯ã€ãã®ãƒ‘ãƒƒã‚±ãƒ¼ã‚¸ã€æ¸¡ã•ã‚ŒãŸã‚¯ãƒ©ã‚¹ã®protectedãŠã‚ˆã³publicã®ãƒ•ã‚£ãƒ¼ãƒ«ãƒ‰ã¨ãƒ¡ã‚½ãƒƒãƒ‰ã‚’å‡ºåŠ›ã—ã¾ã™ã€‚\fIjavap\fRã‚³ãƒãƒ³ãƒ‰ã¯ãã®å‡ºåŠ›ã‚’\fIæ¨™æº–å‡ºåŠ›\fRã«è¡¨ç¤ºã—ã¾ã™ã€‚
-.SH "ã‚ªãƒ—ã‚·ãƒ§ãƒ³"
+\fBjavap\fR¥³¥Ş¥ó¥É¤Ï¡¢1¤Ä¤Ş¤¿¤ÏÊ£¿ô¤Î¥¯¥é¥¹¡¦¥Õ¥¡¥¤¥ë¤òµÕ¥¢¥»¥ó¥Ö¥ë¤·¤Ş¤¹¡£¤½¤Î½ĞÎÏ¤Ï»ØÄê¤¹¤ë¥ª¥×¥·¥ç¥ó¤Ë¤è¤ê°Û¤Ê¤ê¤Ş¤¹¡£¥ª¥×¥·¥ç¥ó¤ò»ØÄê¤·¤Ê¤¤¾ì¹ç¡¢\fBjavap\fR¥³¥Ş¥ó¥É¤Ï¡¢¤½¤Î¥Ñ¥Ã¥±¡¼¥¸¡¢ÅÏ¤µ¤ì¤¿¥¯¥é¥¹¤Îprotected¤ª¤è¤Ópublic¤Î¥Õ¥£¡¼¥ë¥É¤È¥á¥½¥Ã¥É¤ò½ĞÎÏ¤·¤Ş¤¹¡£\fBjavap\fR¥³¥Ş¥ó¥É¤Ï¤½¤Î½ĞÎÏ¤ò\fBÉ¸½à½ĞÎÏ\fR¤ËÉ½¼¨¤·¤Ş¤¹¡£
+.SH "¥ª¥×¥·¥ç¥ó"
 .PP
-\-help, \-\-help, \-?
+\-help
+.br
+\-\-help
+.br
+\-?
 .RS 4
-\fIjavap\fRã‚³ãƒãƒ³ãƒ‰ã«ã¤ã„ã¦ã®ãƒ˜ãƒ«ãƒ—ãƒ»ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’å‡ºåŠ›ã—ã¾ã™ã€‚
+\fBjavap\fR¥³¥Ş¥ó¥É¤Ë¤Ä¤¤¤Æ¤Î¥Ø¥ë¥×¡¦¥á¥Ã¥»¡¼¥¸¤ò½ĞÎÏ¤·¤Ş¤¹¡£
 .RE
 .PP
 \-version
 .RS 4
-ãƒªãƒªãƒ¼ã‚¹æƒ…å ±ã‚’å‡ºåŠ›ã—ã¾ã™ã€‚
+¥ê¥ê¡¼¥¹¾ğÊó¤ò½ĞÎÏ¤·¤Ş¤¹¡£
 .RE
 .PP
 \-l
 .RS 4
-è¡Œç•ªå·ã¨ãƒ­ãƒ¼ã‚«ãƒ«å¤‰æ•°è¡¨ã‚’å‡ºåŠ›ã—ã¾ã™ã€‚
+¹ÔÈÖ¹æ¤È¥í¡¼¥«¥ëÊÑ¿ôÉ½¤ò½ĞÎÏ¤·¤Ş¤¹¡£
 .RE
 .PP
 \-public
 .RS 4
-publicã‚¯ãƒ©ã‚¹ãŠã‚ˆã³ãƒ¡ãƒ³ãƒãƒ¼ã®ã¿è¡¨ç¤ºã—ã¾ã™ã€‚
+public¥¯¥é¥¹¤ª¤è¤Ó¥á¥ó¥Ğ¡¼¤Î¤ßÉ½¼¨¤·¤Ş¤¹¡£
 .RE
 .PP
 \-protected
 .RS 4
-protectedãŠã‚ˆã³publicã®ã‚¯ãƒ©ã‚¹ã¨ãƒ¡ãƒ³ãƒãƒ¼ã®ã¿ã‚’è¡¨ç¤ºã—ã¾ã™ã€‚
+protected¤ª¤è¤Ópublic¤Î¥¯¥é¥¹¤È¥á¥ó¥Ğ¡¼¤Î¤ß¤òÉ½¼¨¤·¤Ş¤¹¡£
 .RE
 .PP
-\-private, \-p
+\-private
+.br
+\-p
 .RS 4
-ã™ã¹ã¦ã®ã‚¯ãƒ©ã‚¹ã¨ãƒ¡ãƒ³ãƒãƒ¼ã‚’è¡¨ç¤ºã—ã¾ã™ã€‚
+¤¹¤Ù¤Æ¤Î¥¯¥é¥¹¤È¥á¥ó¥Ğ¡¼¤òÉ½¼¨¤·¤Ş¤¹¡£
 .RE
 .PP
 \-J\fIoption\fR
 .RS 4
-æŒ‡å®šã•ã‚ŒãŸã‚ªãƒ—ã‚·ãƒ§ãƒ³ã‚’JVMã«æ¸¡ã—ã¾ã™ã€‚æ¬¡ã«ä¾‹ã‚’ç¤ºã—ã¾ã™ã€‚
+»ØÄê¤µ¤ì¤¿¥ª¥×¥·¥ç¥ó¤òJVM¤ËÅÏ¤·¤Ş¤¹¡£¼¡¤ËÎã¤ò¼¨¤·¤Ş¤¹¡£
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-javap \-J\-version
-javap \-J\-Djava\&.security\&.manager \-J\-Djava\&.security\&.policy=MyPolicy MyClassName
+\fBjavap \-J\-version\fR
+\fBjavap \-J\-Djava\&.security\&.manager \-J\-Djava\&.security\&.policy=MyPolicy MyClassName\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-JVMã‚ªãƒ—ã‚·ãƒ§ãƒ³ã®è©³ç´°ã¯ã€ã‚³ãƒãƒ³ãƒ‰ã®ãƒãƒ‹ãƒ¥ã‚¢ãƒ«ã‚’å‚ç…§ã—ã¦ãã ã•ã„ã€‚
+JVM¥ª¥×¥·¥ç¥ó¤Î¾ÜºÙ¤Ï¡¢¥³¥Ş¥ó¥É¤Î¥Ş¥Ë¥å¥¢¥ë¤ò»²¾È¤·¤Æ¤¯¤À¤µ¤¤¡£
 .RE
 .PP
 \-s
 .RS 4
-å†…éƒ¨ã®å‹ã‚·ã‚°ãƒ‹ãƒãƒ£ã‚’å‡ºåŠ›ã—ã¾ã™ã€‚
+ÆâÉô¤Î·¿¥·¥°¥Ë¥Á¥ã¤ò½ĞÎÏ¤·¤Ş¤¹¡£
 .RE
 .PP
 \-sysinfo
 .RS 4
-å‡¦ç†ä¸­ã®ã‚¯ãƒ©ã‚¹ã®ã‚·ã‚¹ãƒ†ãƒ æƒ…å ±(ãƒ‘ã‚¹ã€ã‚µã‚¤ã‚ºã€æ—¥ä»˜ã€MD5ãƒãƒƒã‚·ãƒ¥)ã‚’è¡¨ç¤ºã—ã¾ã™ã€‚
+½èÍıÃæ¤Î¥¯¥é¥¹¤Î¥·¥¹¥Æ¥à¾ğÊó(¥Ñ¥¹¡¢¥µ¥¤¥º¡¢ÆüÉÕ¡¢MD5¥Ï¥Ã¥·¥å)¤òÉ½¼¨¤·¤Ş¤¹¡£
 .RE
 .PP
 \-constants
 .RS 4
-\fIstatic final\fRå®šæ•°ã‚’è¡¨ç¤ºã—ã¾ã™ã€‚
+\fBstatic final\fRÄê¿ô¤òÉ½¼¨¤·¤Ş¤¹¡£
 .RE
 .PP
 \-c
 .RS 4
-ã‚¯ãƒ©ã‚¹ã®å„ãƒ¡ã‚½ãƒƒãƒ‰ã®ãŸã‚ã«é€†ã‚¢ã‚»ãƒ³ãƒ–ãƒ«ã•ã‚Œã‚‹ã‚³ãƒ¼ãƒ‰ã€ã™ãªã‚ã¡Javaãƒã‚¤ãƒˆã‚³ãƒ¼ãƒ‰ã‹ã‚‰ãªã‚‹å‘½ä»¤ã‚’è¡¨ç¤ºã—ã¾ã™ã€‚
+¥¯¥é¥¹¤Î³Æ¥á¥½¥Ã¥É¤Î¤¿¤á¤ËµÕ¥¢¥»¥ó¥Ö¥ë¤µ¤ì¤ë¥³¡¼¥É¡¢¤¹¤Ê¤ï¤ÁJava¥Ğ¥¤¥È¥³¡¼¥É¤«¤é¤Ê¤ëÌ¿Îá¤òÉ½¼¨¤·¤Ş¤¹¡£
 .RE
 .PP
 \-verbose
 .RS 4
-ãƒ¡ã‚½ãƒƒãƒ‰ã®ã‚¹ã‚¿ãƒƒã‚¯ãƒ»ã‚µã‚¤ã‚ºã€localsã¨argumentsã®æ•°ã‚’å‡ºåŠ›ã—ã¾ã™ã€‚
+¥á¥½¥Ã¥É¤Î¥¹¥¿¥Ã¥¯¡¦¥µ¥¤¥º¡¢locals¤Èarguments¤Î¿ô¤ò½ĞÎÏ¤·¤Ş¤¹¡£
 .RE
 .PP
 \-classpath \fIpath\fR
 .RS 4
-ã‚¯ãƒ©ã‚¹ã‚’æ¢ã™ãŸã‚ã«\fIjavap\fRã‚³ãƒãƒ³ãƒ‰ãŒä½¿ç”¨ã™ã‚‹ãƒ‘ã‚¹ã‚’æŒ‡å®šã—ã¾ã™ã€‚ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã¾ãŸã¯\fICLASSPATH\fRç’°å¢ƒå¤‰æ•°ã®è¨­å®šã‚’ã‚ªãƒ¼ãƒãƒ¼ãƒ©ã‚¤ãƒ‰ã—ã¾ã™ã€‚
+¥¯¥é¥¹¤òÃµ¤¹¤¿¤á¤Ë\fBjavap\fR¥³¥Ş¥ó¥É¤¬»ÈÍÑ¤¹¤ë¥Ñ¥¹¤ò»ØÄê¤·¤Ş¤¹¡£¥Ç¥Õ¥©¥ë¥È¤Ş¤¿¤Ï\fBCLASSPATH\fR´Ä¶­ÊÑ¿ô¤ÎÀßÄê¤ò¥ª¡¼¥Ğ¡¼¥é¥¤¥É¤·¤Ş¤¹¡£
 .RE
 .PP
 \-bootclasspath \fIpath\fR
 .RS 4
-ãƒ–ãƒ¼ãƒˆã‚¹ãƒˆãƒ©ãƒƒãƒ—ãƒ»ã‚¯ãƒ©ã‚¹ã‚’ãƒ­ãƒ¼ãƒ‰ã™ã‚‹ãƒ‘ã‚¹ã‚’æŒ‡å®šã—ã¾ã™ã€‚ãƒ–ãƒ¼ãƒˆã‚¹ãƒˆãƒ©ãƒƒãƒ—ãƒ»ã‚¯ãƒ©ã‚¹ã¯ã€ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã§ã¯\fIjre/lib/rt\&.jar\fRãŠã‚ˆã³ä»–ã®ã„ãã¤ã‹ã®JARãƒ•ã‚¡ã‚¤ãƒ«ã«ã‚ã‚‹ã€ã‚³ã‚¢Javaãƒ—ãƒ©ãƒƒãƒˆãƒ•ã‚©ãƒ¼ãƒ ã‚’å®Ÿè£…ã™ã‚‹ã‚¯ãƒ©ã‚¹ã§ã™ã€‚
+¥Ö¡¼¥È¥¹¥È¥é¥Ã¥×¡¦¥¯¥é¥¹¤ò¥í¡¼¥É¤¹¤ë¥Ñ¥¹¤ò»ØÄê¤·¤Ş¤¹¡£¥Ö¡¼¥È¥¹¥È¥é¥Ã¥×¡¦¥¯¥é¥¹¤Ï¡¢¥Ç¥Õ¥©¥ë¥È¤Ç¤Ï\fBjre/lib/rt\&.jar\fR¤ª¤è¤ÓÂ¾¤Î¤¤¤¯¤Ä¤«¤ÎJAR¥Õ¥¡¥¤¥ë¤Ë¤¢¤ë¡¢¥³¥¢Java¥×¥é¥Ã¥È¥Õ¥©¡¼¥à¤ò¼ÂÁõ¤¹¤ë¥¯¥é¥¹¤Ç¤¹¡£
 .RE
 .PP
 \-extdir \fIdirs\fR
 .RS 4
-ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã•ã‚ŒãŸæ‹¡å¼µæ©Ÿèƒ½ã‚’æ¤œç´¢ã™ã‚‹å ´æ‰€ã‚’ã‚ªãƒ¼ãƒãƒ¼ãƒ©ã‚¤ãƒ‰ã—ã¾ã™ã€‚æ‹¡å¼µæ©Ÿèƒ½ã®ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆä½ç½®ã¯\fIjava\&.ext\&.dirs\fRã§ã™ã€‚
+¥¤¥ó¥¹¥È¡¼¥ë¤µ¤ì¤¿³ÈÄ¥µ¡Ç½¤ò¸¡º÷¤¹¤ë¾ì½ê¤ò¥ª¡¼¥Ğ¡¼¥é¥¤¥É¤·¤Ş¤¹¡£³ÈÄ¥µ¡Ç½¤Î¥Ç¥Õ¥©¥ë¥È°ÌÃÖ¤Ï\fBjava\&.ext\&.dirs\fR¤Ç¤¹¡£
 .RE
-.SH "ä¾‹"
+.SH "Îã"
 .PP
-æ¬¡ã®\fIDocFooter\fRã‚¯ãƒ©ã‚¹ã‚’ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«ã—ã¾ã™ã€‚
+¼¡¤Î\fBDocFooter\fR¥¯¥é¥¹¤ò¥³¥ó¥Ñ¥¤¥ë¤·¤Ş¤¹¡£
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-import java\&.awt\&.*;
-import java\&.applet\&.*;
+\fBimport java\&.awt\&.*;\fR
+\fBimport java\&.applet\&.*;\fR
+\fB \fR
+\fBpublic class DocFooter extends Applet {\fR
+\fB        String date;\fR
+\fB        String email;\fR
+\fB \fR
+\fB        public void init() {\fR
+\fB                resize(500,100);\fR
+\fB                date = getParameter("LAST_UPDATED");\fR
+\fB                email = getParameter("EMAIL");\fR
+\fB        }\fR
+\fB \fR
+\fB        public void paint(Graphics g) {\fR
+\fB                g\&.drawString(date + " by ",100, 15);\fR
+\fB                g\&.drawString(email,290,15);\fR
+\fB        }\fR
+\fB}\fR
  
-public class DocFooter extends Applet {
-        String date;
-        String email;
- 
-        public void init() {
-                resize(500,100);
-                date = getParameter("LAST_UPDATED");
-                email = getParameter("EMAIL");
-        }
- 
-        public void paint(Graphics g) {
-                g\&.drawString(date + " by ",100, 15);
-                g\&.drawString(email,290,15);
-        }
-}
 .fi
 .if n \{\
 .RE
 .\}
 .PP
-\fIjavap DocFooter\&.class\fRã‚³ãƒãƒ³ãƒ‰ã‹ã‚‰ã®å‡ºåŠ›ã¯æ¬¡ã‚’ç”Ÿæˆã—ã¾ã™ã€‚
+\fBjavap DocFooter\&.class\fR¥³¥Ş¥ó¥É¤«¤é¤Î½ĞÎÏ¤Ï¼¡¤òÀ¸À®¤·¤Ş¤¹¡£
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-Compiled from "DocFooter\&.java"
-public class DocFooter extends java\&.applet\&.Applet {
-  java\&.lang\&.String date;
-  java\&.lang\&.String email;
-  public DocFooter();
-  public void init();
-  public void paint(java\&.awt\&.Graphics);
-}
+\fBCompiled from "DocFooter\&.java"\fR
+\fBpublic class DocFooter extends java\&.applet\&.Applet {\fR
+\fB  java\&.lang\&.String date;\fR
+\fB  java\&.lang\&.String email;\fR
+\fB  public DocFooter();\fR
+\fB  public void init();\fR
+\fB  public void paint(java\&.awt\&.Graphics);\fR
+\fB}\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .PP
-\fIjavap \-c DocFooter\&.class\fRã‚³ãƒãƒ³ãƒ‰ã‹ã‚‰ã®å‡ºåŠ›ã¯æ¬¡ã‚’ç”Ÿæˆã—ã¾ã™ã€‚
+\fBjavap \-c DocFooter\&.class\fR¥³¥Ş¥ó¥É¤«¤é¤Î½ĞÎÏ¤Ï¼¡¤òÀ¸À®¤·¤Ş¤¹¡£
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-Compiled from "DocFooter\&.java"
-public class DocFooter extends java\&.applet\&.Applet {
-  java\&.lang\&.String date;
-  java\&.lang\&.String email;
-
-  public DocFooter();
-    Code:
-       0: aload_0       
-       1: invokespecial #1                  // Method
-java/applet/Applet\&."<init>":()V
-       4: return        
-
-  public void init();
-    Code:
-       0: aload_0       
-       1: sipush        500
-       4: bipush        100
-       6: invokevirtual #2                  // Method resize:(II)V
-       9: aload_0       
-      10: aload_0       
-      11: ldc           #3                  // String LAST_UPDATED
-      13: invokevirtual #4                  // Method
- getParameter:(Ljava/lang/String;)Ljava/lang/String;
-      16: putfield      #5                  // Field date:Ljava/lang/String;
-      19: aload_0       
-      20: aload_0       
-      21: ldc           #6                  // String EMAIL
-      23: invokevirtual #4                  // Method
- getParameter:(Ljava/lang/String;)Ljava/lang/String;
-      26: putfield      #7                  // Field email:Ljava/lang/String;
-      29: return        
-
-  public void paint(java\&.awt\&.Graphics);
-    Code:
-       0: aload_1       
-       1: new           #8                  // class java/lang/StringBuilder
-       4: dup           
-       5: invokespecial #9                  // Method
- java/lang/StringBuilder\&."<init>":()V
-       8: aload_0       
-       9: getfield      #5                  // Field date:Ljava/lang/String;
-      12: invokevirtual #10                 // Method
- java/lang/StringBuilder\&.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
-      15: ldc           #11                 // String  by 
-      17: invokevirtual #10                 // Method
- java/lang/StringBuilder\&.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
-      20: invokevirtual #12                 // Method
- java/lang/StringBuilder\&.toString:()Ljava/lang/String;
-      23: bipush        100
-      25: bipush        15
-      27: invokevirtual #13                 // Method
- java/awt/Graphics\&.drawString:(Ljava/lang/String;II)V
-      30: aload_1       
-      31: aload_0       
-      32: getfield      #7                  // Field email:Ljava/lang/String;
-      35: sipush        290
-      38: bipush        15
-      40: invokevirtual #13                 // Method
-java/awt/Graphics\&.drawString:(Ljava/lang/String;II)V
-      43: return        
-}
+\fBCompiled from "DocFooter\&.java"\fR
+\fBpublic class DocFooter extends java\&.applet\&.Applet {\fR
+\fB  java\&.lang\&.String date;\fR
+\fB  java\&.lang\&.String email;\fR
+ 
+\fB  public DocFooter();\fR
+\fB    Code:\fR
+\fB       0: aload_0       \fR
+\fB       1: invokespecial #1                  // Method\fR
+\fBjava/applet/Applet\&."<init>":()V\fR
+\fB       4: return        \fR
+ 
+\fB  public void init();\fR
+\fB    Code:\fR
+\fB       0: aload_0       \fR
+\fB       1: sipush        500\fR
+\fB       4: bipush        100\fR
+\fB       6: invokevirtual #2                  // Method resize:(II)V\fR
+\fB       9: aload_0       \fR
+\fB      10: aload_0       \fR
+\fB      11: ldc           #3                  // String LAST_UPDATED\fR
+\fB      13: invokevirtual #4                  // Method\fR
+\fB getParameter:(Ljava/lang/String;)Ljava/lang/String;\fR
+\fB      16: putfield      #5                  // Field date:Ljava/lang/String;\fR
+\fB      19: aload_0       \fR
+\fB      20: aload_0       \fR
+\fB      21: ldc           #6                  // String EMAIL\fR
+\fB      23: invokevirtual #4                  // Method\fR
+\fB getParameter:(Ljava/lang/String;)Ljava/lang/String;\fR
+\fB      26: putfield      #7                  // Field email:Ljava/lang/String;\fR
+\fB      29: return        \fR
+ 
+\fB  public void paint(java\&.awt\&.Graphics);\fR
+\fB    Code:\fR
+\fB       0: aload_1       \fR
+\fB       1: new           #8                  // class java/lang/StringBuilder\fR
+\fB       4: dup           \fR
+\fB       5: invokespecial #9                  // Method\fR
+\fB java/lang/StringBuilder\&."<init>":()V\fR
+\fB       8: aload_0       \fR
+\fB       9: getfield      #5                  // Field date:Ljava/lang/String;\fR
+\fB      12: invokevirtual #10                 // Method\fR
+\fB java/lang/StringBuilder\&.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;\fR
+\fB      15: ldc           #11                 // String  by \fR
+\fB      17: invokevirtual #10                 // Method\fR
+\fB java/lang/StringBuilder\&.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;\fR
+\fB      20: invokevirtual #12                 // Method\fR
+\fB java/lang/StringBuilder\&.toString:()Ljava/lang/String;\fR
+\fB      23: bipush        100\fR
+\fB      25: bipush        15\fR
+\fB      27: invokevirtual #13                 // Method\fR
+\fB java/awt/Graphics\&.drawString:(Ljava/lang/String;II)V\fR
+\fB      30: aload_1       \fR
+\fB      31: aload_0       \fR
+\fB      32: getfield      #7                  // Field email:Ljava/lang/String;\fR
+\fB      35: sipush        290\fR
+\fB      38: bipush        15\fR
+\fB      40: invokevirtual #13                 // Method\fR
+\fBjava/awt/Graphics\&.drawString:(Ljava/lang/String;II)V\fR
+\fB      43: return        \fR
+\fB}\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-.SH "é–¢é€£é …ç›®"
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-javac(1)
-.RE
+.SH "´ØÏ¢¹àÌÜ"
 .sp
 .RS 4
 .ie n \{\
@@ -315,7 +316,18 @@ java(1)
 .sp -1
 .IP \(bu 2.3
 .\}
-jdb(1)
+javac(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+javadoc(1)
 .RE
 .sp
 .RS 4
@@ -337,7 +349,18 @@ javah(1)
 .sp -1
 .IP \(bu 2.3
 .\}
-javadoc(1)
+jdb(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+jdeps(1)
 .RE
 .br
 'pl 8.5i

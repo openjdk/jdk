@@ -1,12 +1,5 @@
 '\" t
-.\" Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
-.\" Title: schemagen
-.\" Language: English
-.\" Date: 2013年11月21日
-.\" SectDesc: Java Webサービス・ツール
-.\" Software: JDK 8
-.\" Arch: 汎用
-.\"
+.\" Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -15,7 +8,7 @@
 .\"
 .\" This code is distributed in the hope that it will be useful, but WITHOUT
 .\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 .\" version 2 for more details (a copy is included in the LICENSE file that
 .\" accompanied this code).
 .\"
@@ -27,8 +20,17 @@
 .\" or visit www.oracle.com if you need additional information or have any
 .\" questions.
 .\"
-.pl 99999
-.TH "schemagen" "1" "2013年11月21日" "JDK 8" "Java Webサービス・ツール"
+.\" Title: schemagen
+.\" Language: Japanese
+.\" Date: 2013ǯ11��21��
+.\" SectDesc: Java Web�����ӥ����ġ���
+.\" Software: JDK 8
+.\" Arch: ����
+.\" Part Number: E58103-01
+.\" Doc ID: JSSON
+.\"
+.if n .pl 99999
+.TH "schemagen" "1" "2013ǯ11��21��" "JDK 8" "Java Web�����ӥ����ġ���"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -48,15 +50,15 @@
 .\" -----------------------------------------------------------------
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
-.SH "NAME"
-schemagen \- Javaクラス内で参照されているネームスペースごとにスキーマを生成します。
-.SH "概要"
+.SH "̾��"
+schemagen \- Java���饹��ǻ��Ȥ���Ƥ���͡��ॹ�ڡ������Ȥ˥������ޤ��������ޤ���
+.SH "����"
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\fIschemagen\fR [ \fIoptions\fR ] \fIjava\-files\fR
+\fBschemagen\fR [ \fIoptions\fR ] \fIjava\-files\fR
 .fi
 .if n \{\
 .RE
@@ -64,69 +66,70 @@ schemagen \- Javaクラス内で参照されているネームスペースごと
 .PP
 \fIoptions\fR
 .RS 4
-コマンドライン・オプション。オプションを参照してください。
+���ޥ�ɹԥ��ץ���󡣥��ץ����򻲾Ȥ��Ƥ���������
 .RE
 .PP
 \fIjava\-files\fR
 .RS 4
-処理するJavaクラス・ファイル。
+��������Java���饹���ե����롣
 .RE
-.SH "説明"
+.SH "����"
 .PP
-スキーマ・ジェネレータは、Javaクラス内で参照されているネームスペースごとに1つのスキーマ・ファイルを作成します。現在、生成されるスキーマ・ファイルの名前は制御できません。スキーマ・ファイル名を制御する場合は、http://jaxb\&.java\&.net/nonav/2\&.2\&.3u1/docs/schemagenTask\&.htmlにある
-「Using SchemaGen with Ant」を参照してください
+�������ޡ������ͥ졼���ϡ�Java���饹��ǻ��Ȥ���Ƥ���͡��ॹ�ڡ������Ȥ�1�ĤΥ������ޡ��ե������������ޤ������ߡ���������륹�����ޡ��ե������̾��������Ǥ��ޤ��󡣥������ޡ��ե�����̾�����椹����ϡ�http://jaxb\&.java\&.net/nonav/2\&.2\&.3u1/docs/schemagenTask\&.html�ˤ���
+��Using SchemaGen with Ant�פ򻲾Ȥ��Ƥ�������
 .PP
-プラットフォームのbinディレクトリにある適切な\fIschemagen\fRシェル・スクリプトを使用して、スキーマ・ジェネレータを起動します。現在のスキーマ・ジェネレータは、Javaソース・ファイルとクラス・ファイルのいずれも処理できます。
+�ץ�åȥե������bin�ǥ��쥯�ȥ�ˤ���Ŭ�ڤ�\fBschemagen\fR�����롦������ץȤ���Ѥ��ơ��������ޡ������ͥ졼����ư���ޤ������ߤΥ������ޡ������ͥ졼���ϡ�Java���������ե�����ȥ��饹���ե�����Τ����������Ǥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-schemagen\&.sh Foo\&.java Bar\&.java \&.\&.\&.
-Note: Writing schema1\&.xsd
+\fBschemagen\&.sh Foo\&.java Bar\&.java \&.\&.\&.\fR
+\fBNote: Writing schema1\&.xsd\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .PP
-javaファイルが他のクラスを参照している場合、それらのクラスにシステム\fICLASSPATH\fR環境変数でアクセスできる必要があります。または、クラス・パス・オプションを指定して\fIschemagen\fRコマンド・ラインで指定する必要があります。オプションを参照してください。参照されるファイルにアクセスできない、または参照されるファイルが指定されていない場合、スキーマの生成時にエラーが表示されます。
-.SH "オプション"
+java�ե����뤬¾�Υ��饹�򻲾Ȥ��Ƥ����硢�����Υ��饹�˥����ƥ�\fBCLASSPATH\fR�Ķ��ѿ��ǥ��������Ǥ���ɬ�פ�����ޤ����ޤ��ϡ����饹���ѥ������ץ�������ꤷ��\fBschemagen\fR���ޥ�ɹԤǻ��ꤹ��ɬ�פ�����ޤ������ץ����򻲾Ȥ��Ƥ������������Ȥ����ե�����˥��������Ǥ��ʤ����ޤ��ϻ��Ȥ����ե����뤬���ꤵ��Ƥ��ʤ���硢�������ޤ��������˥��顼��ɽ������ޤ���
+.SH "���ץ����"
 .PP
 \-d \fIpath\fR
 .RS 4
-\fIschemagen\fRコマンドがプロセッサ生成および\fIjavac\fR生成クラス・ファイルを配置する場所。
+\fBschemagen\fR���ޥ�ɤ��ץ����å����������\fBjavac\fR�������饹���ե���������֤����ꡣ
 .RE
 .PP
 \-cp \fIpath\fR
 .RS 4
-\fIschemagen\fRコマンドがユーザー指定ファイルを配置する場所。
+\fBschemagen\fR���ޥ�ɤ��桼��������ե���������֤����ꡣ
 .RE
 .PP
 \-classpath \fIpath\fR
 .RS 4
-\fIschemagen\fRコマンドがユーザー指定ファイルを配置する場所。
+\fBschemagen\fR���ޥ�ɤ��桼��������ե���������֤����ꡣ
 .RE
 .PP
 \-encoding \fIencoding\fR
 .RS 4
-\fIapt\fRまたは\fIjavac\fRコマンドの呼出しに使用するエンコーディングを指定します。
+\fBapt\fR�ޤ���\fBjavac\fR���ޥ�ɤθƽФ��˻��Ѥ��륨�󥳡��ǥ��󥰤���ꤷ�ޤ���
 .RE
 .PP
 \-episode \fIfile\fR
 .RS 4
-コンパイルごとにエピソード・ファイルを生成します。
+����ѥ��뤴�Ȥ˥��ԥ����ɡ��ե�������������ޤ���
 .RE
 .PP
 \-version
 .RS 4
-リリース情報を表示します。
+��꡼�������ɽ�����ޤ���
 .RE
 .PP
 \-help
 .RS 4
-ヘルプ・メッセージを表示します。
+�إ�ס���å�������ɽ�����ޤ���
 .RE
-.SH "関連項目"
+.SH "��Ϣ����"
 .sp
 .RS 4
 .ie n \{\

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,36 +21,13 @@
  * questions.
  */
 
+public class Helper {
 
-/* @test
- * @bug 5012882
- * @summary Test jvmti hprof
- *
- * @compile -g ../Context.java ../DemoRun.java
- * @build MonitorTest
- * @run main MonitorTest Context 25 200 1000
- */
-
-/* To create monitor contention, increase the default configuration.
- *   Hprof seems to have historically not output anything unless certain
- *   limits have been reached on the total contention time.
- */
-
-public class MonitorTest {
-
-    public static void main(String args[]) throws Exception {
-        DemoRun hprof;
-
-        /* Run JVMTI hprof agent with monitor=y */
-        hprof = new DemoRun("hprof", "monitor=y,file=monitor.txt");
-        hprof.runit(args[0]);
-
-        /* Make sure patterns in output look ok */
-        if (hprof.output_contains("ERROR")) {
-            throw new RuntimeException("Test failed - ERROR seen in output");
+    public static byte[] generateBytes(int length) {
+        byte[] bytes = new byte[length];
+        for (int i = 0; i < length; i++) {
+            bytes[i] = (byte) (i % 256);
         }
-
-        /* Must be a pass. */
-        System.out.println("Test passed - cleanly terminated");
+        return bytes;
     }
 }

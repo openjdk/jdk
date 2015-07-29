@@ -1,51 +1,89 @@
 /*
- * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
+ * 
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
  * published by the Free Software Foundation.
- *
+ * 
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
- *
+ * 
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
+ * 
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
 
-
-/* @test
- * @bug 5012882 6299047
- * @summary Test jvmti hprof
+/**
+ * JDK-8131683: Delete fails over multiple scopes
  *
- * @compile -g HelloWorld.java ../DemoRun.java
- * @build CpuOldTest
- * @run main CpuOldTest HelloWorld
+ * @test
+ * @run
  */
 
-public class CpuOldTest {
+a = 1;
+b = 2;
+c = 3;
 
-    public static void main(String args[]) throws Exception {
-        DemoRun hprof;
+var A = 1;
+var B = 2;
+var C = 3;
+function D() {}
 
-        /* Run JVMTI hprof agent with cpu=old */
-        hprof = new DemoRun("hprof", "cpu=old,file=cpuold.txt");
-        hprof.runit(args[0]);
+print((function() {
+    var x; // force creation of scope
+    (function() { x; })();
+    return delete a;
+})());
 
-        /* Make sure patterns in output look ok */
-        if (hprof.output_contains("ERROR")) {
-            throw new RuntimeException("Test failed - ERROR seen in output");
-        }
+print((function() {
+    eval("");
+    return delete b;
+})());
 
-        /* Must be a pass. */
-        System.out.println("Test passed - cleanly terminated");
-    }
-}
+print((function() {
+    return eval("delete c");
+})());
+
+print((function() {
+    eval("d = 4");
+    return eval("delete d");
+})());
+
+print(typeof a);
+print(typeof b);
+print(typeof c);
+print(typeof d);
+
+print((function() {
+    var x; // force creation of scope
+    (function() { x; })();
+    return delete A;
+})());
+
+print((function() {
+    eval("");
+    return delete B;
+})());
+
+print((function() {
+    return eval("delete C");
+})());
+
+print((function() {
+    eval("");
+    return delete D;
+})());
+
+print(typeof A);
+print(typeof B);
+print(typeof C);
+print(typeof D);
+

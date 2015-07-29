@@ -339,7 +339,7 @@ public abstract class $Type$Buffer
      */
     public static $Type$Buffer allocate(int capacity) {
         if (capacity < 0)
-            throw new IllegalArgumentException();
+            throw createCapacityException(capacity);
         return new Heap$Type$Buffer(capacity, capacity);
     }
 
@@ -797,7 +797,7 @@ public abstract class $Type$Buffer
      */
     public $Type$Buffer put($Type$Buffer src) {
         if (src == this)
-            throw new IllegalArgumentException();
+            throw createSameBufferException();
         if (isReadOnly())
             throw new ReadOnlyBufferException();
         int n = src.remaining();

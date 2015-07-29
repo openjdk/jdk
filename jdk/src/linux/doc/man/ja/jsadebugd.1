@@ -1,12 +1,5 @@
 '\" t
-.\" Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
-.\" Title: jsadebugd
-.\" Language: English
-.\" Date: 2013年11月21日
-.\" SectDesc: トラブルシューティング・ツール
-.\" Software: JDK 8
-.\" Arch: 汎用
-.\"
+.\" Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -15,7 +8,7 @@
 .\"
 .\" This code is distributed in the hope that it will be useful, but WITHOUT
 .\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 .\" version 2 for more details (a copy is included in the LICENSE file that
 .\" accompanied this code).
 .\"
@@ -27,8 +20,17 @@
 .\" or visit www.oracle.com if you need additional information or have any
 .\" questions.
 .\"
-.pl 99999
-.TH "jsadebugd" "1" "2013年11月21日" "JDK 8" "トラブルシューティング・ツール"
+.\" Title: jsadebugd
+.\" Language: Japanese
+.\" Date: 2013ǯ11��21��
+.\" SectDesc: �ȥ�֥륷�塼�ƥ��󥰡��ġ���
+.\" Software: JDK 8
+.\" Arch: ����
+.\" Part Number: E58103-01
+.\" Doc ID: JSSON
+.\"
+.if n .pl 99999
+.TH "jsadebugd" "1" "2013ǯ11��21��" "JDK 8" "�ȥ�֥륷�塼�ƥ��󥰡��ġ���"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -48,15 +50,15 @@
 .\" -----------------------------------------------------------------
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
-.SH "NAME"
-jsadebugd \- Javaプロセスまたはコア・ファイルに接続し、デバッグ・サーバーとして機能します。このコマンドは試験的なもので、サポートされていません。
-.SH "概要"
+.SH "̾��"
+jsadebugd \- Java�ץ������ޤ��ϥ������ե��������³�����ǥХå��������С��Ȥ��Ƶ�ǽ���ޤ������Υ��ޥ�ɤϻŪ�ʤ�Τǡ����ݡ��Ȥ���Ƥ��ޤ���
+.SH "����"
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\fIjsadebugd\fR \fIpid\fR [ \fIserver\-id\fR ]
+\fBjsadebugd\fR \fIpid\fR [ \fIserver\-id\fR ]
 .fi
 .if n \{\
 .RE
@@ -66,7 +68,7 @@ jsadebugd \- Javaプロセスまたはコア・ファイルに接続し、デバ
 .RS 4
 .\}
 .nf
-\fIjsadebugd\fR \fIexecutable\fR \fIcore\fR [ \fIserver\-id\fR ]
+\fBjsadebugd\fR \fIexecutable\fR \fIcore\fR [ \fIserver\-id\fR ]
 .fi
 .if n \{\
 .RE
@@ -74,43 +76,44 @@ jsadebugd \- Javaプロセスまたはコア・ファイルに接続し、デバ
 .PP
 \fIpid\fR
 .RS 4
-デバッグ・サーバーが接続するプロセスのプロセスIDです。プロセスはJavaプロセスである必要があります。マシン上で実行しているJavaプロセスの一覧を取得するには、jps(1)コマンドを使用します。単一のプロセスに接続できるデバッグ・サーバーのインスタンスは、1つに制限されます。
+�ǥХå��������С�����³����ץ������Υץ�����ID�Ǥ����ץ�������Java�ץ������Ǥ���ɬ�פ�����ޤ����ޥ����Ǽ¹Ԥ��Ƥ���Java�ץ������ΰ������������ˤϡ�jps(1)���ޥ�ɤ���Ѥ��ޤ���ñ��Υץ���������³�Ǥ���ǥХå��������С��Υ��󥹥��󥹤ϡ�1�Ĥ����¤���ޤ���
 .RE
 .PP
-\fI実行可能ファイル\fR
+\fI�¹Բ�ǽ�ե�����\fR
 .RS 4
-コア・ダンプの作成元のJava実行可能ファイル。
+����������פκ�������Java�¹Բ�ǽ�ե����롣
 .RE
 .PP
-\fIコア\fR
+\fI����\fR
 .RS 4
-デバッグ・サーバーを接続するコア・ファイルです。
+�ǥХå��������С�����³���륳�����ե�����Ǥ���
 .RE
 .PP
 \fIserver\-id\fR
 .RS 4
-複数のデバッグ・サーバーが同一のマシン上で実行されている場合に必要になる、オプションの一意のIDです。このIDは、リモート・クライアントが、接続先のデバッグ・サーバーを特定するために使用する必要があります。このIDは、単一のマシン内で一意にする必要があります。
+ʣ���ΥǥХå��������С���Ʊ��Υޥ����Ǽ¹Ԥ���Ƥ������ɬ�פˤʤ롢���ץ����ΰ�դ�ID�Ǥ�������ID�ϡ���⡼�ȡ����饤����Ȥ�����³��ΥǥХå��������С������ꤹ�뤿��˻��Ѥ���ɬ�פ�����ޤ�������ID�ϡ�ñ��Υޥ�����ǰ�դˤ���ɬ�פ�����ޤ���
 .RE
-.SH "説明"
+.SH "����"
 .PP
-\fIjsadebugd\fRコマンドは、Javaプロセスまたはコア・ファイルに接続し、デバッグ・サーバーとして機能します。\fIjstack\fR、\fIjmap\fRおよび\fIjinfo\fRなどのリモート・クライアントは、Java Remote Method Invocation (RMI)を使用しているサーバーに接続できます。\fIjsadebugd\fRコマンドを起動する前に、\fIrmiregistry\fRコマンドでRMIレジストリを次のように起動します。\fI$JAVA_HOME\fRはJDKのインストール・ディレクトリです。
+\fBjsadebugd\fR���ޥ�ɤϡ�Java�ץ������ޤ��ϥ������ե��������³�����ǥХå��������С��Ȥ��Ƶ�ǽ���ޤ���\fBjstack\fR��\fBjmap\fR�����\fBjinfo\fR�ʤɤΥ�⡼�ȡ����饤����Ȥϡ�Java Remote Method Invocation (RMI)����Ѥ��Ƥ��륵���С�����³�Ǥ��ޤ���\fBjsadebugd\fR���ޥ�ɤ�ư�������ˡ�\fBrmiregistry\fR���ޥ�ɤ�RMI�쥸���ȥ�򼡤Τ褦�˵�ư���ޤ���\fI$JAVA_HOME\fR��JDK�Υ��󥹥ȡ��롦�ǥ��쥯�ȥ�Ǥ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-rmiregistry \-J\-Xbootclasspath/p:$JAVA_HOME/lib/sajdi\&.jar
+\fBrmiregistry \-J\-Xbootclasspath/p:$JAVA_HOME/lib/sajdi\&.jar\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .PP
-RMIレジストリが起動していない場合、\fIjsadebugd\fRコマンドはRMIレジストリを標準(1099)ポートで内部で起動します。デバッグ・サーバーは、\fISIGINT\fRを送信することにより停止できます。SIGINTを送信するには、\fB[Ctrl] + [C]\fRを押します。
+RMI�쥸���ȥ꤬��ư���Ƥ��ʤ���硢\fBjsadebugd\fR���ޥ�ɤ�RMI�쥸���ȥ��ɸ��(1099)�ݡ��Ȥ������ǵ�ư���ޤ����ǥХå��������С��ϡ�\fBSIGINT\fR���������뤳�Ȥˤ����ߤǤ��ޤ���SIGINT����������ˤϡ�\fB[Ctrl] + [C]\fR�򲡤��ޤ���
 .PP
-\fB注意:\fR
-このユーティリティはサポート対象外であり、将来のJDKのリリースでは利用できなくなる可能性があります。\fIdbgeng\&.dll\fRが存在していないWindowsシステムでは、Debugging Tools For Windowsをインストールしないとこれらのツールが正常に動作しません。\fIPATH\fR環境変数には、ターゲット・プロセスによって使用されるjvm\&.dllの場所、またはクラッシュ・ダンプ・ファイルが生成された場所が含まれるようにしてください。例:
-\fIs\fR\fIet PATH=%JDK_HOME%\ejre\ebin\eclient;%PATH%\fR
-.SH "関連項目"
+\fB����:\fR
+���Υ桼�ƥ���ƥ��ϥ��ݡ����оݳ��Ǥ��ꡢ�����JDK�Υ�꡼���Ǥ����ѤǤ��ʤ��ʤ��ǽ��������ޤ���\fBdbgeng\&.dll\fR��¸�ߤ��Ƥ��ʤ�Windows�����ƥ�Ǥϡ�Debugging Tools For Windows�򥤥󥹥ȡ��뤷�ʤ��Ȥ����Υġ��뤬�����ư��ޤ���\fBPATH\fR�Ķ��ѿ��ˤϡ��������åȡ��ץ������ˤ�äƻ��Ѥ����jvm\&.dll�ξ�ꡢ�ޤ��ϥ���å��塦����ס��ե����뤬�������줿��꤬�ޤޤ��褦�ˤ��Ƥ�����������:
+\fBs\fR\fBet PATH=%JDK_HOME%\ejre\ebin\eclient;%PATH%\fR
+.SH "��Ϣ����"
 .sp
 .RS 4
 .ie n \{\

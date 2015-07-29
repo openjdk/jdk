@@ -64,7 +64,9 @@ protected:
          PartialPeelLoop=32,
          PartialPeelFailed=64,
          HasReductions=128,
-         PassedSlpAnalysis=256 };
+         WasSlpAnalyzed=256,
+         PassedSlpAnalysis=512,
+         DoUnrollOnly=1024 };
   char _unswitch_count;
   enum { _unswitch_max=3 };
 
@@ -80,7 +82,9 @@ public:
   int partial_peel_has_failed() const { return _loop_flags & PartialPeelFailed; }
   void mark_partial_peel_failed() { _loop_flags |= PartialPeelFailed; }
   void mark_has_reductions() { _loop_flags |= HasReductions; }
+  void mark_was_slp() { _loop_flags |= WasSlpAnalyzed; }
   void mark_passed_slp() { _loop_flags |= PassedSlpAnalysis; }
+  void mark_do_unroll_only() { _loop_flags |= DoUnrollOnly; }
 
   int unswitch_max() { return _unswitch_max; }
   int unswitch_count() { return _unswitch_count; }
@@ -212,7 +216,9 @@ public:
   int is_main_loop     () const { return (_loop_flags&PreMainPostFlagsMask) == Main;   }
   int is_post_loop     () const { return (_loop_flags&PreMainPostFlagsMask) == Post;   }
   int is_reduction_loop() const { return (_loop_flags&HasReductions) == HasReductions; }
+  int was_slp_analyzed () const { return (_loop_flags&WasSlpAnalyzed) == WasSlpAnalyzed; }
   int has_passed_slp   () const { return (_loop_flags&PassedSlpAnalysis) == PassedSlpAnalysis; }
+  int do_unroll_only      () const { return (_loop_flags&DoUnrollOnly) == DoUnrollOnly; }
   int is_main_no_pre_loop() const { return _loop_flags & MainHasNoPreLoop; }
   void set_main_no_pre_loop() { _loop_flags |= MainHasNoPreLoop; }
 
@@ -234,6 +240,9 @@ public:
   }
   void set_nonexact_trip_count() {
     _loop_flags &= ~HasExactTripCount;
+  }
+  void set_notpassed_slp() {
+    _loop_flags &= ~PassedSlpAnalysis;
   }
 
   void set_profile_trip_cnt(float ptc) { _profile_trip_cnt = ptc; }
