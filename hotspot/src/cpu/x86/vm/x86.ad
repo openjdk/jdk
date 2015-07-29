@@ -1594,7 +1594,10 @@ int HandlerImpl::emit_exception_handler(CodeBuffer& cbuf) {
   // That's why we must use the macroassembler to generate a handler.
   MacroAssembler _masm(&cbuf);
   address base = __ start_a_stub(size_exception_handler());
-  if (base == NULL)  return 0;  // CodeBuffer::expand failed
+  if (base == NULL) {
+    ciEnv::current()->record_failure("CodeCache is full");
+    return 0;  // CodeBuffer::expand failed
+  }
   int offset = __ offset();
   __ jump(RuntimeAddress(OptoRuntime::exception_blob()->entry_point()));
   assert(__ offset() - offset <= (int) size_exception_handler(), "overflow");
@@ -1609,7 +1612,10 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf) {
   // That's why we must use the macroassembler to generate a handler.
   MacroAssembler _masm(&cbuf);
   address base = __ start_a_stub(size_deopt_handler());
-  if (base == NULL)  return 0;  // CodeBuffer::expand failed
+  if (base == NULL) {
+    ciEnv::current()->record_failure("CodeCache is full");
+    return 0;  // CodeBuffer::expand failed
+  }
   int offset = __ offset();
 
 #ifdef _LP64

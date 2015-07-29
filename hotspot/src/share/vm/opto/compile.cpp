@@ -594,6 +594,10 @@ uint Compile::scratch_emit_size(const Node* n) {
     n->as_MachBranch()->label_set(&fakeL, 0);
   }
   n->emit(buf, this->regalloc());
+
+  // Emitting into the scratch buffer should not fail
+  assert (!failing(), err_msg_res("Must not have pending failure. Reason is: %s", failure_reason()));
+
   if (is_branch) // Restore label.
     n->as_MachBranch()->label_set(saveL, save_bnum);
 
