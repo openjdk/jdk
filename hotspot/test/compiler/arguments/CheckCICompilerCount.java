@@ -26,6 +26,7 @@ import jdk.test.lib.*;
 /*
  * @test CheckCheckCICompilerCount
  * @bug 8130858
+ * @bug 8132525
  * @summary Check that correct range of values for CICompilerCount are allowed depending on whether tiered is enabled or not
  * @library /testlibrary
  * @modules java.base/sun.misc
@@ -36,12 +37,28 @@ import jdk.test.lib.*;
 public class CheckCICompilerCount {
     private static final String[][] NON_TIERED_ARGUMENTS = {
         {
+            "-server",
             "-XX:-TieredCompilation",
             "-XX:+PrintFlagsFinal",
             "-XX:CICompilerCount=0",
             "-version"
         },
         {
+            "-server",
+            "-XX:-TieredCompilation",
+            "-XX:+PrintFlagsFinal",
+            "-XX:CICompilerCount=1",
+            "-version"
+        },
+        {
+            "-client",
+            "-XX:-TieredCompilation",
+            "-XX:+PrintFlagsFinal",
+            "-XX:CICompilerCount=0",
+            "-version"
+        },
+        {
+            "-client",
             "-XX:-TieredCompilation",
             "-XX:+PrintFlagsFinal",
             "-XX:CICompilerCount=1",
@@ -56,22 +73,47 @@ public class CheckCICompilerCount {
         },
         {
             "intx CICompilerCount                          := 1                                   {product}"
+        },
+        {
+            "CICompilerCount=0 must be at least 1",
+            "Improperly specified VM option 'CICompilerCount=0'"
+        },
+        {
+            "intx CICompilerCount                          := 1                                   {product}"
         }
     };
 
     private static final int[] NON_TIERED_EXIT = {
+        1,
+        0,
         1,
         0
     };
 
     private static final String[][] TIERED_ARGUMENTS = {
         {
+            "-server",
             "-XX:+TieredCompilation",
             "-XX:+PrintFlagsFinal",
             "-XX:CICompilerCount=1",
             "-version"
         },
         {
+            "-server",
+            "-XX:+TieredCompilation",
+            "-XX:+PrintFlagsFinal",
+            "-XX:CICompilerCount=2",
+            "-version"
+        },
+        {
+            "-client",
+            "-XX:+TieredCompilation",
+            "-XX:+PrintFlagsFinal",
+            "-XX:CICompilerCount=1",
+            "-version"
+        },
+        {
+            "-client",
             "-XX:+TieredCompilation",
             "-XX:+PrintFlagsFinal",
             "-XX:CICompilerCount=2",
@@ -86,10 +128,19 @@ public class CheckCICompilerCount {
         },
         {
             "intx CICompilerCount                          := 2                                   {product}"
+        },
+        {
+            "CICompilerCount=1 must be at least 2",
+            "Improperly specified VM option 'CICompilerCount=1'"
+        },
+        {
+            "intx CICompilerCount                          := 2                                   {product}"
         }
     };
 
     private static final int[] TIERED_EXIT = {
+        1,
+        0,
         1,
         0
     };
