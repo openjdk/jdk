@@ -2371,39 +2371,46 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   Node* mem     = in(MemNode::Memory);
   Node* address = in(MemNode::Address);
-
   // Back-to-back stores to same address?  Fold em up.  Generally
   // unsafe if I have intervening uses...  Also disallowed for StoreCM
   // since they must follow each StoreP operation.  Redundant StoreCMs
   // are eliminated just before matching in final_graph_reshape.
-  if (mem->is_Store() && mem->in(MemNode::Address)->eqv_uncast(address) &&
-      mem->Opcode() != Op_StoreCM) {
-    // Looking at a dead closed cycle of memory?
-    assert(mem != mem->in(MemNode::Memory), "dead loop in StoreNode::Ideal");
+  {
+    Node* st = mem;
+    // If Store 'st' has more than one use, we cannot fold 'st' away.
+    // For example, 'st' might be the final state at a conditional
+    // return.  Or, 'st' might be used by some node which is live at
+    // the same time 'st' is live, which might be unschedulable.  So,
+    // require exactly ONE user until such time as we clone 'mem' for
+    // each of 'mem's uses (thus making the exactly-1-user-rule hold
+    // true).
+    while (st->is_Store() && st->outcnt() == 1 && st->Opcode() != Op_StoreCM) {
+      // Looking at a dead closed cycle of memory?
+      assert(st != st->in(MemNode::Memory), "dead loop in StoreNode::Ideal");
+      assert(Opcode() == st->Opcode() ||
+             st->Opcode() == Op_StoreVector ||
+             Opcode() == Op_StoreVector ||
+             phase->C->get_alias_index(adr_type()) == Compile::AliasIdxRaw ||
+             (Opcode() == Op_StoreL && st->Opcode() == Op_StoreI), // expanded ClearArrayNode
+             err_msg_res("no mismatched stores, except on raw memory: %s %s", NodeClassNames[Opcode()], NodeClassNames[st->Opcode()]));
 
-    assert(Opcode() == mem->Opcode() ||
-           phase->C->get_alias_index(adr_type()) == Compile::AliasIdxRaw,
-           "no mismatched stores, except on raw memory");
-
-    if (mem->outcnt() == 1 &&           // check for intervening uses
-        mem->as_Store()->memory_size() <= this->memory_size()) {
-      // If anybody other than 'this' uses 'mem', we cannot fold 'mem' away.
-      // For example, 'mem' might be the final state at a conditional return.
-      // Or, 'mem' might be used by some node which is live at the same time
-      // 'this' is live, which might be unschedulable.  So, require exactly
-      // ONE user, the 'this' store, until such time as we clone 'mem' for
-      // each of 'mem's uses (thus making the exactly-1-user-rule hold true).
-      if (can_reshape) {  // (%%% is this an anachronism?)
-        set_req_X(MemNode::Memory, mem->in(MemNode::Memory),
-                  phase->is_IterGVN());
-      } else {
-        // It's OK to do this in the parser, since DU info is always accurate,
-        // and the parser always refers to nodes via SafePointNode maps.
-        set_req(MemNode::Memory, mem->in(MemNode::Memory));
+      if (st->in(MemNode::Address)->eqv_uncast(address) &&
+          st->as_Store()->memory_size() <= this->memory_size()) {
+        Node* use = st->raw_out(0);
+        phase->igvn_rehash_node_delayed(use);
+        if (can_reshape) {
+          use->set_req_X(MemNode::Memory, st->in(MemNode::Memory), phase->is_IterGVN());
+        } else {
+          // It's OK to do this in the parser, since DU info is always accurate,
+          // and the parser always refers to nodes via SafePointNode maps.
+          use->set_req(MemNode::Memory, st->in(MemNode::Memory));
+        }
+        return this;
       }
-      return this;
+      st = st->in(MemNode::Memory);
     }
   }
+
 
   // Capture an unaliased, unconditional, simple store into an initializer.
   // Or, if it is independent of the allocation, hoist it above the allocation.
