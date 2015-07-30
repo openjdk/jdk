@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package java.lang.ref;
+
+import java.util.function.Consumer;
 
 /**
  * Reference queues, to which registered reference objects are appended by the
@@ -75,13 +77,12 @@ public class ReferenceQueue<T> {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private Reference<? extends T> reallyPoll() {       /* Must hold lock */
         Reference<? extends T> r = head;
         if (r != null) {
-            head = (r.next == r) ?
-                null :
-                r.next; // Unchecked due to the next field having a raw type in Reference
+            @SuppressWarnings("unchecked")
+            Reference<? extends T> rn = r.next;
+            head = (rn == r) ? null : rn;
             r.queue = NULL;
             r.next = r;
             queueLength--;
@@ -164,4 +165,32 @@ public class ReferenceQueue<T> {
         return remove(0);
     }
 
+    /**
+     * Iterate queue and invoke given action with each Reference.
+     * Suitable for diagnostic purposes.
+     * WARNING: any use of this method should make sure to not
+     * retain the referents of iterated references (in case of
+     * FinalReference(s)) so that their life is not prolonged more
+     * than necessary.
+     */
+    void forEach(Consumer<? super Reference<? extends T>> action) {
+        for (Reference<? extends T> r = head; r != null;) {
+            action.accept(r);
+            @SuppressWarnings("unchecked")
+            Reference<? extends T> rn = r.next;
+            if (rn == r) {
+                if (r.queue == ENQUEUED) {
+                    // still enqueued -> we reached end of chain
+                    r = null;
+                } else {
+                    // already dequeued: r.queue == NULL; ->
+                    // restart from head when overtaken by queue poller(s)
+                    r = head;
+                }
+            } else {
+                // next in chain
+                r = rn;
+            }
+        }
+    }
 }
