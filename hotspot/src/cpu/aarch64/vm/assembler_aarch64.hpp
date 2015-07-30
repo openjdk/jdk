@@ -1106,11 +1106,13 @@ public:
 
 #define INSN4(NAME, sz, op, o0) /* Four registers */                    \
   void NAME(Register Rs, Register Rt1, Register Rt2, Register Rn) {     \
+    assert(Rs != Rn, "unpredictable instruction");                  \
     load_store_exclusive(Rs, Rt1, Rt2, Rn, sz, op, o0);                 \
   }
 
 #define INSN3(NAME, sz, op, o0) /* Three registers */                   \
   void NAME(Register Rs, Register Rt, Register Rn) {                    \
+    assert(Rs != Rn, "unpredictable instruction");                  \
     load_store_exclusive(Rs, Rt, (Register)0b11111, Rn, sz, op, o0);    \
   }
 

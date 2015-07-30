@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,35 @@
 // definition. See stubRoutines.hpp for a description on how to
 // extend it.
 
-static bool    returns_to_call_stub(address return_pc)   { return return_pc == _call_stub_return_address; }
+static bool returns_to_call_stub(address return_pc) { return return_pc == _call_stub_return_address; }
 
 enum platform_dependent_constants {
   code_size1 = 20000,          // simply increase if too small (assembler will crash if too small)
   code_size2 = 20000           // simply increase if too small (assembler will crash if too small)
+};
+
+// CRC32 Intrinsics.
+#define CRC32_COLUMN_SIZE 256
+#define CRC32_BYFOUR
+#ifdef  CRC32_BYFOUR
+  #define CRC32_TABLES 8
+#else
+  #define CRC32_TABLES 1
+#endif
+
+class ppc64 {
+ friend class StubGenerator;
+
+ private:
+
+  // CRC32 Intrinsics.
+  static juint _crc_table[CRC32_TABLES][CRC32_COLUMN_SIZE];
+
+ public:
+
+  // CRC32 Intrinsics.
+  static void generate_load_crc_table_addr(MacroAssembler* masm, Register table);
+
 };
 
 #endif // CPU_PPC_VM_STUBROUTINES_PPC_64_HPP
