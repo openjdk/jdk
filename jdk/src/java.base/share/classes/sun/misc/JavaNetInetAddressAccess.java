@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,12 @@
 
 package sun.misc;
 
-import java.net.URLClassLoader;
+import java.net.InetAddress;
 
-public interface JavaNetAccess {
+public interface JavaNetInetAddressAccess {
     /**
-     * return the URLClassPath belonging to the given loader
+     * Return the original application specified hostname of
+     * the given InetAddress object.
      */
-    URLClassPath getURLClassPath (URLClassLoader u);
+    String getOriginalHostName(InetAddress ia);
 }
