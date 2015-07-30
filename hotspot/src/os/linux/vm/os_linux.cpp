@@ -653,8 +653,7 @@ static void *java_start(Thread *thread) {
   OSThread* osthread = thread->osthread();
   Monitor* sync = osthread->startThread_lock();
 
-  // thread_id is kernel thread id (similar to Solaris LWP id)
-  osthread->set_thread_id(os::Linux::gettid());
+  osthread->set_thread_id(os::current_thread_id());
 
   if (UseNUMA) {
     int lgrp_id = os::numa_get_group_id();
@@ -1424,7 +1423,8 @@ size_t os::lasterror(char *buf, size_t len) {
   return n;
 }
 
-intx os::current_thread_id() { return (intx)pthread_self(); }
+// thread_id is kernel thread id (similar to Solaris LWP id)
+intx os::current_thread_id() { return os::Linux::gettid(); }
 int os::current_process_id() {
   return ::getpid();
 }
