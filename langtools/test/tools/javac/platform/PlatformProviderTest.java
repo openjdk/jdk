@@ -88,6 +88,7 @@ public class PlatformProviderTest implements PlatformProvider {
         ToolBox tb = new ToolBox();
         ToolBox.Result result =
                 tb.new JavacTask(ToolBox.Mode.EXEC)
+                  .outdir(".")
                   .options("-J-classpath",
                            "-J" + System.getProperty("test.classes"),
                            "-XDrawDiagnostics",
@@ -121,6 +122,7 @@ public class PlatformProviderTest implements PlatformProvider {
         ToolBox tb = new ToolBox();
         ToolBox.Result result =
                 tb.new JavacTask(ToolBox.Mode.EXEC)
+                  .outdir(".")
                   .options("-J-classpath",
                            "-J" + System.getProperty("test.classes"),
                            "-release",
