@@ -86,19 +86,24 @@ public class MultiResolutionCachedImage extends AbstractMultiResolutionImage {
     @Override
     public int getWidth(ImageObserver observer) {
         updateInfo(observer, ImageObserver.WIDTH);
-        return super.getWidth(observer);
+        return baseImageWidth;
     }
 
     @Override
     public int getHeight(ImageObserver observer) {
         updateInfo(observer, ImageObserver.HEIGHT);
-        return super.getHeight(observer);
+        return baseImageHeight;
     }
 
     @Override
     public Object getProperty(String name, ImageObserver observer) {
         updateInfo(observer, ImageObserver.PROPERTIES);
-        return super.getProperty(name, observer);
+        return Image.UndefinedProperty;
+    }
+
+    @Override
+    public Image getScaledInstance(int width, int height, int hints) {
+        return getResolutionVariant(width, height);
     }
 
     @Override
