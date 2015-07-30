@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,12 +67,12 @@ public class WindowsGraphicsUtils {
         XPStyle xp = XPStyle.getXP();
         if (xp != null && !(b instanceof JMenuItem)) {
             paintXPText(b, g, textRect.x + textShiftOffset,
-                        textRect.y + fm.getAscent() + textShiftOffset,
-                        text, mnemIndex);
+                    textRect.y + fm.getAscent() + textShiftOffset,
+                    text, mnemIndex);
         } else {
             paintClassicText(b, g, textRect.x + textShiftOffset,
-                             textRect.y + fm.getAscent() + textShiftOffset,
-                             text, mnemIndex);
+                    textRect.y + fm.getAscent() + textShiftOffset,
+                    text, mnemIndex);
         }
     }
 
@@ -95,7 +95,10 @@ public class WindowsGraphicsUtils {
             }
             SwingUtilities2.drawStringUnderlineCharAt(b, g,text, mnemIndex, x, y);
         } else {        /*** paint the text disabled ***/
-            color        = UIManager.getColor("Button.shadow");
+            color = getDisabledTextColor(b);
+            if (color == null) {
+                color = UIManager.getColor("Button.shadow");
+            }
             Color shadow = UIManager.getColor("Button.disabledShadow");
             if(model.isArmed()) {
                 color = UIManager.getColor("Button.disabledForeground");
@@ -115,6 +118,19 @@ public class WindowsGraphicsUtils {
         }
     }
 
+    private static Color getDisabledTextColor(AbstractButton b) {
+        if (b instanceof JCheckBox) {
+            return UIManager.getColor("CheckBox.disabledText");
+        } else if (b instanceof JRadioButton) {
+            return UIManager.getColor("RadioButton.disabledText");
+        } else if (b instanceof JToggleButton) {
+            return  UIManager.getColor("ToggleButton.disabledText");
+        } else if (b instanceof JButton) {
+            return UIManager.getColor("Button.disabledText");
+        }
+        return null;
+    }
+
     static void paintXPText(AbstractButton b, Graphics g, int x, int y,
                             String text, int mnemIndex) {
         Part part = WindowsButtonUI.getXPButtonType(b);
@@ -128,9 +144,15 @@ public class WindowsGraphicsUtils {
         if (xp == null) {
             return;
         }
-        Color textColor = b.getForeground();
+        Color textColor;
+        if (b.isEnabled()) {
+            textColor = b.getForeground();
+        }
+        else {
+            textColor = getDisabledTextColor(b);
+        }
 
-        if (textColor instanceof UIResource) {
+        if (textColor == null || textColor instanceof UIResource) {
             textColor = xp.getColor(b, part, state, Prop.TEXTCOLOR, b.getForeground());
             // to work around an apparent bug in Windows, use the pushbutton
             // color for disabled toolbar buttons if the disabled color is the

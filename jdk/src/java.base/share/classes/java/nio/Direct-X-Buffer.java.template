@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -314,7 +314,7 @@ class Direct$Type$Buffer$RW$$BO$
 #if[rw]
         if (src instanceof Direct$Type$Buffer$BO$) {
             if (src == this)
-                throw new IllegalArgumentException();
+                throw createSameBufferException();
             Direct$Type$Buffer$RW$$BO$ sb = (Direct$Type$Buffer$RW$$BO$)src;
 
             int spos = sb.position();

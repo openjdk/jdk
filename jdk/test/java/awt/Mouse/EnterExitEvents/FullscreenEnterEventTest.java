@@ -39,6 +39,7 @@ import java.lang.reflect.Proxy;
  *    The core reason of the issue was the lack of a mouse entered event in fullscreen
  * @library ../../regtesthelpers
  * @build Util
+ * @modules java.desktop/com.apple.eawt
  * @author Petr Pchelko area=awt.event
  * @run main FullscreenEnterEventTest
  */
@@ -62,6 +63,7 @@ public class FullscreenEnterEventTest {
 
         //Move the mouse out, because it could interfere with the test.
         Robot r = Util.createRobot();
+        r.setAutoDelay(50);
         Util.waitForIdle(r);
         r.mouseMove(0, 0);
         Util.waitForIdle(r);
@@ -85,6 +87,7 @@ public class FullscreenEnterEventTest {
             }
         });
         Util.waitForIdle(r);
+        r.delay(150);
         if (mouseEnterCount != 1) {
             throw new RuntimeException("No MouseEntered event for view-base full screen. Failed.");
         }
@@ -100,6 +103,7 @@ public class FullscreenEnterEventTest {
         Point fullScreenButtonPos = frame.getLocation();
         fullScreenButtonPos.translate(frame.getWidth() - 10, 10);
         r.mouseMove(fullScreenButtonPos.x, fullScreenButtonPos.y);
+        r.delay(150);
         mouseEnterCount = 0;
 
         //Cant use waitForIdle for full screen transition.
@@ -118,7 +122,7 @@ public class FullscreenEnterEventTest {
         }
 
         if (mouseEnterCount != 1) {
-            throw new RuntimeException("No MouseEntered event for native full screen. Failed.");
+            throw new RuntimeException("No MouseEntered event for native full screen. Failed. mouseEnterCount:"+mouseEnterCount);
         }
     }
 

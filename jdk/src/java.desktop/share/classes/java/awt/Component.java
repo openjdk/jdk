@@ -3980,9 +3980,10 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
     /**
      * Inner class for flipping buffers on a component.  That component must
-     * be a <code>Canvas</code> or <code>Window</code>.
+     * be a <code>Canvas</code> or <code>Window</code> or <code>Applet</code>.
      * @see Canvas
      * @see Window
+     * @see Applet
      * @see java.awt.image.BufferStrategy
      * @author Michael Martak
      * @since 1.4
@@ -4030,9 +4031,11 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
         /**
          * Creates a new flipping buffer strategy for this component.
-         * The component must be a <code>Canvas</code> or <code>Window</code>.
+         * The component must be a <code>Canvas</code> or <code>Window</code> or
+         * <code>Applet</code>.
          * @see Canvas
          * @see Window
+         * @see Applet
          * @param numBuffers the number of buffers
          * @param caps the capabilities of the buffers
          * @exception AWTException if the capabilities supplied could not be
@@ -4049,10 +4052,11 @@ public abstract class Component implements ImageObserver, MenuContainer,
             throws AWTException
         {
             if (!(Component.this instanceof Window) &&
-                !(Component.this instanceof Canvas))
+                !(Component.this instanceof Canvas) &&
+                !(Component.this instanceof Applet))
             {
                 throw new ClassCastException(
-                    "Component must be a Canvas or Window");
+                        "Component must be a Canvas or Window or Applet");
             }
             this.numBuffers = numBuffers;
             this.caps = caps;

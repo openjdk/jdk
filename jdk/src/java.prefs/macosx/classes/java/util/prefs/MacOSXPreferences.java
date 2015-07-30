@@ -37,9 +37,6 @@ class MacOSXPreferences extends AbstractPreferences {
     // true if this node is a child of userRoot or is userRoot
     private final boolean isUser;
 
-    // true if this node is userRoot or systemRoot
-    private final boolean isRoot;
-
     // CF's storage location for this node and its keys
     private final MacOSXPreferencesFile file;
 
@@ -94,7 +91,6 @@ class MacOSXPreferences extends AbstractPreferences {
                               boolean isNew, boolean isRoot, boolean isUser)
     {
         super(parent, name);
-        this.isRoot = isRoot;
         if (isRoot)
             this.isUser = isUser;
         else
@@ -115,7 +111,6 @@ class MacOSXPreferences extends AbstractPreferences {
         // /one/two/three/four/five/
         // The fourth slash is the end of the first three components.
         // If there is no fourth slash, the name has fewer than 3 components
-        int componentCount = 0;
         int pos = -1;
         for (int i = 0; i < 4; i++) {
             pos = name.indexOf('/', pos+1);

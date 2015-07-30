@@ -1,6 +1,5 @@
 '\" t
-.\"  Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
-.\"
+.\" Copyright (c) 1994, 2015, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -9,7 +8,7 @@
 .\"
 .\" This code is distributed in the hope that it will be useful, but WITHOUT
 .\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 .\" version 2 for more details (a copy is included in the LICENSE file that
 .\" accompanied this code).
 .\"
@@ -23,12 +22,12 @@
 .\"
 .\"     Arch: generic
 .\"     Software: JDK 8
-.\"     Date: 10 May 2011
+.\"     Date: 03 March 2015
 .\"     SectDesc: Basic Tools
 .\"     Title: javadoc.1
 .\"
 .if n .pl 99999
-.TH javadoc 1 "10 May 2011" "JDK 8" "Basic Tools"
+.TH javadoc 1 "03 March 2015" "JDK 8" "Basic Tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -209,7 +208,7 @@ The \f3package-info\&.java\fR file can contain a package comment of the followin
 \f3package java\&.lang\&.applet;\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -251,7 +250,7 @@ File: \f3java/applet/package\&.html\fR
 \f3initialize, start, and stop the applet\&. \fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .nf     
 \f3@since 1\&.0 \fP
@@ -266,7 +265,7 @@ File: \f3java/applet/package\&.html\fR
 \f3</HTML>\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 The \f3package\&.html\fR file is a typical HTML file and does not include a package declaration\&. The content of the package comment file is written in HTML with one exception\&. The documentation comment should not include the comment separators \f3/**\fR and \f3*/\fR or leading asterisks\&. When writing the comment, make the first sentence a summary about the package, and do not put a title or any other text between the \f3<body>\fR tag and the first sentence\&. You can include package tags\&. All block tags must appear after the main description\&. If you add an \f3@see\fR tag in a package comment file, then it must have a fully qualified name\&.
@@ -334,7 +333,7 @@ All links to the unprocessed files must be included in the code because the \f3j
 \f3 */\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 .SS TEST\ AND\ TEMPLATE\ FILES    
@@ -350,7 +349,7 @@ If you want your test files to belong to either an unnamed package or to a packa
 \f3com/package1/test\-files/\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 If your test files contain documentation comments, then you can set up a separate run of the \f3javadoc\fR command to produce test file documentation by passing in their test source file names with wild cards, such as \f3com/package1/test-files/*\&.java\fR\&.
@@ -560,7 +559,7 @@ The \f3javadoc\fR command generates a declaration at the start of each class, in
 \f3implements Serializable\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 The declaration for the \f3Boolean\&.valueOf\fR method is:
@@ -569,7 +568,7 @@ The declaration for the \f3Boolean\&.valueOf\fR method is:
 \f3public static Boolean valueOf(String s)\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 The \f3javadoc\fR command can include the modifiers \f3public\fR, \f3protected\fR, \f3private\fR, \f3abstract\fR, \f3final\fR, \f3static\fR, \f3transient\fR, and \f3volatile\fR, but not \f3synchronized\fR or \f3native\fR\&. The \f3synchronized\fR and \f3native\fR modifiers are considered implementation detail and not part of the API specification\&.
@@ -593,7 +592,7 @@ You can include documentation comments in the source code, ahead of declarations
 \f3 */\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 To save space you can put a comment on one line:
@@ -602,7 +601,7 @@ To save space you can put a comment on one line:
 \f3/** This comment takes up only one line\&. */\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -623,19 +622,19 @@ A common mistake is to put an \f3import\fR statement between the class comment a
 \f3 */\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .nf     
 \f3import com\&.example;   // MISTAKE \- Important not to put import statement here\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .nf     
 \f3public class Whatever{ }\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -657,7 +656,7 @@ A documentation comment has a main description followed by a tag section\&. The 
 \f3 */\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -676,7 +675,7 @@ A tag is a special keyword within a documentation comment that the \f3javadoc\fR
 \f3 */\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -700,7 +699,7 @@ For example, entities for the less than symbol (<) and the greater than symbol (
 \f3 */\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -730,7 +729,7 @@ The Java platform lets you declare multiple fields in a single statement, but th
 \f3public int x, y;      // Avoid this \fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 The \f3javadoc\fR command generates the following documentation from the previous code:
@@ -739,7 +738,7 @@ The \f3javadoc\fR command generates the following documentation from the previou
 \f3public int x\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 The horizontal and vertical distances of point (x, y)\&.
@@ -748,7 +747,7 @@ The horizontal and vertical distances of point (x, y)\&.
 \f3public int y\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 The horizontal and vertical distances of point (x, y)\&.
@@ -872,7 +871,7 @@ In a documentation comment:
 \f3 */\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -899,11 +898,10 @@ In the main description block of a method\&. In this case, the main description 
 .TP 0.2i    
 \(bu
 In the text arguments of the \f3@return\fR, \f3@param,\fR and \f3@throws\fR tags of a method\&. In this case, the tag text is copied from the corresponding tag up the hierarchy\&.
-.RE
-.RS
-See Method Comment Inheritance for a description of how comments are found in the inheritance hierarchy\&. Note that if this tag is missing, then the comment is or is not automatically inherited according to rules described in that section\&.
+.RE     
 
-.RE
+
+See Method Comment Inheritance for a description of how comments are found in the inheritance hierarchy\&. Note that if this tag is missing, then the comment is or is not automatically inherited according to rules described in that section\&.
 .TP     
 {@link \fIpackage\&.class#member label\fR}
 Introduced in JDK 1\&.2
@@ -920,7 +918,7 @@ For example, here is a comment that refers to the \f3getComponentAt(int, int)\fR
 \f3Use the {@link #getComponentAt(int, int) getComponentAt} method\&.\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -931,7 +929,7 @@ From this code, the standard doclet generates the following HTML (assuming it re
 \f3Use the <a href="Component\&.html#getComponentAt(int, int)">getComponentAt</a> method\&.\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -942,7 +940,7 @@ The previous line appears on the web page as:
 \f3Use the getComponentAt method\&.\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -982,7 +980,7 @@ Example of a type parameter of a class:
 \f3}\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -1014,7 +1012,7 @@ Example of a type parameter of a method:
 \f3}\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -1071,7 +1069,7 @@ A space is the delimiter between \f3package\&.class#member\fR and \f3label\fR\&.
 \f3 */\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -1091,7 +1089,7 @@ The standard doclet produces HTML that is similar to:
 \f3</dl>\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -1128,7 +1126,7 @@ Specify a Name
 \f3@see #constructor(Type argname, Type argname,\&.\&.\&.) \fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .nf     
 \f3\fIReferencing another class in the current or imported packages\fR\fP
@@ -1155,7 +1153,7 @@ Specify a Name
 \f3@see Class \fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .nf     
 \f3\fIReferencing an element in another package (fully qualified)\fR\fP
@@ -1185,7 +1183,7 @@ Specify a Name
 \f3@see package\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 \f3\fRNotes about the previous listing:
@@ -1215,7 +1213,7 @@ The current class or interface\&.
 Any enclosing classes and interfaces searching the closest first\&.
 .TP 0.4i    
 3\&.
-Any superclasses and superonterfaces, searching the closest first\&.
+Any superclasses and superinterfaces, searching the closest first\&.
 .TP 0.4i    
 4\&.
 The current package\&.
@@ -1307,7 +1305,7 @@ The comment to the right shows how the name appears when the \f3@see\fR tag is i
 \f3@see "The Java Programming Language"    //  "The Java Programming Language" \fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 \fINote:\fR You can extend the \f3@se\fR\f3e\fR tag to link to classes not being documented with the \f3-link\fR option\&.
@@ -1317,7 +1315,7 @@ Introduced in JDK 1\&.2
 
 Used in the documentation comment for a default serializable field\&. See Documenting Serializable Fields and Data for a Class at http://docs\&.oracle\&.com/javase/8/docs/platform/serialization/spec/serial-arch\&.html#5251
 
-See also Oracle\(cqs Criteria for Including Classes in the Serialilzed Form Specification at http://www\&.oracle\&.com/technetwork/java/javase/documentation/serialized-criteria-137781\&.html
+See also Oracle\(cqs Criteria for Including Classes in the Serialized Form Specification at http://www\&.oracle\&.com/technetwork/java/javase/documentation/serialized-criteria-137781\&.html
 
 An optional \f3field-description\fR should explain the meaning of the field and list the acceptable values\&. When needed, the description can span multiple lines\&. The standard doclet adds this information to the serialized form page\&. See Cross-Reference Pages\&.
 
@@ -1331,13 +1329,12 @@ A public or protected class that implements \f3Serializable\fR is included unles
 .TP 0.2i    
 \(bu
 A private or package-private class that implements \f3Serializable\fR is excluded unless that class (or its package) is marked with the \f3@serial include\fR tag\&.
-.RE
-.RS
+.RE     
+
+
 For example, the \f3javax\&.swing\fR package is marked with the \f3@serial\fR\f3exclude\fR tag in package\&.html or package-info\&.java\&. The public class \f3java\&.security\&.BasicPermission\fR is marked with the \f3@serial exclude\fR tag\&. The package-private class \f3java\&.util\&.PropertyPermissionCollection\fR is marked with the \f3@serial include\fR tag\&.
 
 The \f3@serial\fR tag at the class level overrides the \f3@serial\fR tag at the package level\&.
-
-.RE
 .TP     
 @serialData \fIdata-description\fR
 Introduced in JDK 1\&.2
@@ -1387,7 +1384,7 @@ Displays constant values\&. When the \f3{@value}\fR tag is used without an argum
 \f3public static final String SCRIPT_START = "<script>"\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -1407,7 +1404,7 @@ When used with the argument \f3package\&.class#field\fR in any documentation com
 \f3public String evalScript(String script) {}\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -1494,7 +1491,7 @@ Class comment example:
 \f3}\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 .SS FIELD\ TAGS    
@@ -1523,7 +1520,7 @@ Field comment example:
 \f3    int x = 1263732;\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 .SS CONSTRUCTOR\ AND\ METHOD\ TAGS    
@@ -1578,7 +1575,7 @@ Method comment example:
 \f3    }\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 .SH OPTIONS    
@@ -1592,7 +1589,7 @@ See also Standard Doclet Options
 .PP
 The options are:
 .PP
--1\&.1 || -author || -bootclasspath classpathlist || -bottom text || -breakiterator || -charset name || -classpath classpathlist || -d directory || -docencoding name || -docfilesubdirs || -doclet class || -docletpath classpathlist || -doctitle title || -encoding || -exclude packagename1:packagename2:\&.\&.\&. || -excludedocfilessubdir name1:name2 || -extdirs dirist || -footer footer || -group groupheading packagepattern:packagepattern || -header header || -help || -helpfile path\efilename || -Jflag || -keywords || -link extdocURL || -linkoffline extdocURL packagelistLoc || -linksource || -locale language_country_variant || -nocomment || -nodeprecated || -nodeprecatedlist || -nohelp || -noindex || -nonavbar || -noqualifier all | packagename1:packagename2\&.\&.\&. || -nosince || -notimestamp || -notree || -overview path/filename || -package || -private || -protected || -public || -quiet || -serialwarn || -source release || -sourcepath sourcepathlist || -sourcetab tablength || -splitindex || -stylesheet path/filename || -subpackages package1:package2:\&.\&.\&. || -tag tagname:Xaoptcmf:"taghead" || -taglet class || -tagletpath tagletpathlist || -title title || -top || -use || -verbose || -version || -windowtitle title
+-1\&.1 || -author || -bootclasspath classpathlist || -bottom text || -breakiterator || -charset name || -classpath classpathlist || -d directory || -docencoding name || -docfilesubdirs || -doclet class || -docletpath classpathlist || -doctitle title || -encoding || -exclude packagename1:packagename2:\&.\&.\&. || -excludedocfilessubdir name1:name2 || -extdirs dirist || -footer footer || -group groupheading packagepattern:packagepattern || -header header || -help || -helpfile path\efilename || -Jflag || -javafx ||-keywords || -link extdocURL || -linkoffline extdocURL packagelistLoc || -linksource || -locale language_country_variant || -nocomment || -nodeprecated || -nodeprecatedlist || -nohelp || -noindex || -nonavbar || -noqualifier all | packagename1:packagename2\&.\&.\&. || -nosince || -notimestamp || -notree || -overview path/filename || -package || -private || -protected || -public || -quiet || -serialwarn || -source release || -sourcepath sourcepathlist || -sourcetab tablength || -splitindex || -stylesheet path/filename || -subpackages package1:package2:\&.\&.\&. || -tag tagname:Xaoptcmf:"taghead" || -taglet class || -tagletpath tagletpathlist || -title title || -top || -use || -verbose || -version || -windowtitle title
 .PP
 The following options are the core Javadoc options that are available to all doclets\&. The standard doclet provides the rest of the doclets: \f3-bootclasspath\fR, \f3-breakiterator\fR, \f3-classpath\fR, \f3-doclet\fR, \f3-docletpath\fR, \f3-encoding\fR, -\f3exclude\fR, \f3-extdirs\fR, \f3-help\fR, \f3-locale\fR, \f3-\fR\f3overview\fR, \f3-package\fR, \f3-private\fR, \f3-protected\fR, \f3-public\fR, \f3-quiet\fR, \f3-source\fR, \f3-sourcepath\fR, \f3-subpackages\fR, and \f3-verbose\fR\&.
 .SS JAVADOC\ OPTIONS    
@@ -1635,12 +1632,11 @@ Change what the \f3-Xdoclint\fR option reports with the following options:
 .TP 0.2i    
 \(bu
 \f3-Xdoclint all,\fR\fI-group\fR : enable all except \fIgroup\fR checks
-.RE
-.RS
+.RE     
+
+
 The variable \fIgroup\fR has one of the following values:
 .RS     
-
-.RE
 .TP 0.2i    
 \(bu
 \f3accessibility\fR : Checks for the issues to be detected by an accessibility checker (for example, no caption or summary attributes specified in a \f3<table>\fR tag)\&.
@@ -1656,8 +1652,9 @@ The variable \fIgroup\fR has one of the following values:
 .TP 0.2i    
 \(bu
 \f3syntax\fR : Checks for low level issues like unescaped angle brackets (\f3<\fR and \f3>\fR) and ampersands (\f3&\fR) and invalid Javadoc tags\&.
-.RE
-.RS
+.RE     
+
+
 You can specify the \f3-Xdoclint\fR option multiple times to enable the option to check errors and warnings in multiple categories\&. Alternatively, you can specify multiple error and warning categories by using the preceding options\&. For example, use either of the following commands to check for the HTML, syntax, and accessibility issues in the file \fIfilename\fR\&.
 .sp     
 .nf     
@@ -1667,7 +1664,7 @@ You can specify the \f3-Xdoclint\fR option multiple times to enable the option t
 \f3javadoc \-Xdoclint:html,syntax,accessibility \fIfilename\fR\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -1675,8 +1672,6 @@ You can specify the \f3-Xdoclint\fR option multiple times to enable the option t
 \fINote:\fR The \f3javadoc\fR command does not guarantee the completeness of these checks\&. In particular, it is not a full HTML compliance checker\&. The goal of the -\f3Xdoclint\fR option is to enable the \f3javadoc\fR command to report majority of common errors\&.
 
 The \f3javadoc\fR command does not attempt to fix invalid input, it just reports it\&.
-
-.RE
 .TP
 -public
 .br
@@ -1740,7 +1735,7 @@ For example, suppose you want to document a package called \f3com\&.mypackage\fR
 \f3javadoc \-sourcepath /home/user/src/ com\&.mypackage\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -1755,7 +1750,7 @@ To point to two source paths:
 \f3javadoc \-sourcepath /home/user1/src:/home/user2/src com\&.mypackage\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -1766,13 +1761,13 @@ Specifies the paths where the \f3javadoc\fR command searches for referenced clas
 
 If you omit \f3-sourcepath\fR, then the \f3javadoc\fR command uses \f3-classpath\fR to find the source files and class files (for backward compatibility)\&. If you want to search for source and class files in separate paths, then use both \f3-sourcepath\fR and \f3-classpath\fR\&.
 
-For example, if you want to document \f3com\&.mypackage\fR, whose source files reside in the directory /home/user/src/com/mypackage, and if this package relies on a library in /home/user/libthen you would use the following command:
+For example, if you want to document \f3com\&.mypackage\fR, whose source files reside in the directory /home/user/src/com/mypackage, and if this package relies on a library in /home/user/lib, then you would use the following command:
 .sp     
 .nf     
 \f3javadoc \-sourcepath /home/user/lib \-classpath /home/user/src com\&.mypackage\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -1795,7 +1790,7 @@ For example, the following command generates documentation for packages named \f
 \f3javadoc \-d docs \-sourcepath /home/user/src  \-subpackages java:javax\&.swing \fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -1813,7 +1808,7 @@ The following example would include \f3java\&.io\fR, \f3java\&.util\fR, and \f3j
 \f3    java\&.net:java\&.lang\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -1846,11 +1841,10 @@ English default sentence-break algorithm\&. Stops at a period followed by a spac
 .TP 0.2i    
 \(bu
 Breakiterator sentence-break algorithm\&. Stops at a period, question mark, or exclamation point followed by a space when the next word starts with a capital letter\&. This is meant to handle most abbreviations (such as "The serial no\&. is valid", but will not handle "Mr\&. Smith")\&. The \f3-breakiterator\fR option does not stop at HTML tags or sentences that begin with numbers or symbols\&. The algorithm stops at the last period in \&.\&./filename, even when embedded in an HTML tag\&.
-.RE
-.RS
-In Java SE 1\&.5 the \f3-breakiterator\fR option warning messages are removed, and the default sentence-break algorithm is unchanged\&. If you have not modified your source code to eliminate the \f3-breakiterator\fR option warnings in Java SE 1\&.4\&.x, then you do not have to do anything\&. The warnings go away starting with Java SE 1\&.5\&.0\&.
+.RE     
 
-.RE
+
+In Java SE 1\&.5 the \f3-breakiterator\fR option warning messages are removed, and the default sentence-break algorithm is unchanged\&. If you have not modified your source code to eliminate the \f3-breakiterator\fR option warnings in Java SE 1\&.4\&.x, then you do not have to do anything\&. The warnings go away starting with Java SE 1\&.5\&.0\&.
 .TP
 -locale \fIlanguage_country_variant\fR
 .br
@@ -1885,7 +1879,21 @@ Use the \f3-version\fR option to find out what version of the \f3javadoc\fR comm
 \f3Java HotSpot(TM) 64\-Bit Server VM (build 23\&.5\-b02, mixed mode)\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
+.fi     
+.sp     
+
+.TP
+-javafx
+.br
+Generates HTML documentation using the JavaFX extensions to the standard doclet\&. The generated documentation includes a Property Summary section in addition to the other summary sections generated by the standard Java doclet\&. The listed properties are linked to the sections for the getter and setter methods of each property\&.
+
+If there are no documentation comments written explicitly for getter and setter methods, the documentation comments from the property method are automatically copied to the generated documentation for these methods\&. This option also adds a new \f3@defaultValue\fR tag that allows documenting the default value for a property\&.
+
+Example:
+.sp     
+.nf     
+\f3javadoc \-javafx MyClass\&.java \-d testdir\fP
 .fi     
 .sp     
 
@@ -1957,7 +1965,7 @@ The package-list file must be found in this directory (otherwise, use the \f3-li
 \f3\-link <directory>/<directory>/\&.\&.\&./<name>\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -1982,7 +1990,7 @@ Use the following command if you want to link to the \f3java\&.lang\fR, \f3java\
 \f3javadoc \-link http://docs\&.oracle\&.com/javase/8/docs/api/ com\&.mypackage\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 The command generates documentation for the package \f3com\&.mypackage\fR with links to the Java SE packages\&. The generated documentation contains links to the \f3Object\fR class, for example, in the class \f3trees\fR\&. Other options, such as the \f3-sourcepath\fR and \f3-d\fR options, are not shown\&.
@@ -2044,7 +2052,7 @@ The package list starts as follows:
 \f3and so on \&.\&.\&.\&.\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 When \f3javadoc\fR is run without the \f3-link\fR option and encounters a name that belongs to an externally referenced class, it prints the name with no link\&. However, when the \f3-link\fR option is used, the \f3javadoc\fR command searches the package-list file at the specified \fIextdocURL\fR location for that package name\&. When it finds the package name, it prefixes the name with \fIextdocURL\fR\&.
@@ -2094,7 +2102,7 @@ The following command generates documentation for the package c\f3om\&.mypackage
 \f3javadoc \-linkoffline http://docs\&.oracle\&.com/javase/8/docs/api/ \&.  com\&.mypackage \fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -2118,7 +2126,7 @@ You can include the \f3-linkoffline\fR option once for each generated document y
 \f3packagelistLoc2 \&.\&.\&.\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -2133,7 +2141,7 @@ First, create a new destination directory, such as update, for this new small ru
 \f3javadoc \-d update \-linkoffline \&. html com\&.mypackage\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 When the \f3javadoc\fR command completes, copy these generated class pages in update/com/package (not the overview or index) to the original files in html/com/package\&.
@@ -2150,7 +2158,7 @@ Each link appears on the name of the identifier in its declaration\&. For exampl
 \f3public class Button extends Component implements Accessible\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -2161,7 +2169,7 @@ The link to the source code of the \f3getLabel\fR method in the \f3Button\fR cla
 \f3public String getLabel()\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -2176,8 +2184,9 @@ The \f3groupheading\fR can be any text and can include white space\&. This text 
 .TP 0.2i    
 \(bu
 The \f3packagepattern\fR value can be any package name at the start of any package name followed by an asterisk (*)\&. The asterisk is the only wildcard allowed and means match any characters\&. Multiple patterns can be included in a group by separating them with colons (:)\&. If you use an asterisk in a pattern or pattern list, then the pattern list must be inside quotation marks, such as \f3"java\&.lang*:java\&.util"\fR\&.
-.RE
-.RS
+.RE     
+
+
 When you do not supply a \f3-group\fR option, all packages are placed in one group with the heading \fIPackages\fR and appropriate subheadings\&. If the subheadings do not include all documented packages (all groups), then the remaining packages appear in a separate group with the subheading Other Packages\&.
 
 For example, the following \f3javadoc\fR command separates the three documented packages into \fICore\fR, \fIExtension\fR, and \fIOther Packages\fR\&. The trailing dot (\&.) does not appear in \f3java\&.lang*\fR\&. Including the dot, such as \f3java\&.lang\&.*\fR omits the\f3java\&.lang\fR package\&.
@@ -2192,7 +2201,7 @@ For example, the following \f3javadoc\fR command separates the three documented 
 \f3        java\&.lang java\&.lang\&.reflect java\&.util javax\&.servlet java\&.new\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -2212,8 +2221,6 @@ For example, the following \f3javadoc\fR command separates the three documented 
 \fIOther Packages\fR
 
 \f3java\&.new\fR
-
-.RE
 .TP
 -nodeprecated
 .br
@@ -2251,7 +2258,7 @@ Specifies the path of an alternate help file path\efilename that the HELP link i
 \f3javadoc \-helpfile /home/user/myhelp\&.html java\&.awt\&.\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -2264,7 +2271,7 @@ Specifies the path of an alternate HTML stylesheet file\&. Without this option, 
 \f3javadoc \-stylesheet file /home/user/mystylesheet\&.css com\&.mypackage\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -2283,7 +2290,7 @@ For example, \f3javadoc -charset "iso-8859-1" mypackage\fR inserts the following
 \f3<META http\-equiv="Content\-Type" content="text/html; charset=ISO\-8859\-1">\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -2296,7 +2303,7 @@ See also the \f3-encoding\fR and \f3-docencoding name\fR options\&.
 .br
 Specifies the encoding of the generated HTML files\&. The name should be a preferred MIME name as specified in the IANA Registry, Character Sets at http://www\&.iana\&.org/assignments/character-sets
 
-If you omit the \f3-docencoding\fR option but use the \f3-encoding\fR option, then the encoding of the generated HTML files is determined by the \f3-encoding\fR option, for example: \f3javadoc -docencoding"iso-8859-1" mypackage\fR\&. See also the \f3-encoding\fR and \f3-docencoding name\fR options\&.
+If you omit the \f3-docencoding\fR option but use the \f3-encoding\fR option, then the encoding of the generated HTML files is determined by the \f3-encoding\fR option, for example: \f3javadoc -docencoding "iso-8859-1" mypackage\fR\&. See also the \f3-encoding\fR and \f3-docencoding name\fR options\&.
 .TP
 -keywords
 .br
@@ -2315,7 +2322,7 @@ Adds HTML keyword <META> tags to the generated file for each class\&. These tags
 \f3<META NAME="keywords" CONTENT="charAt()">\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -2360,7 +2367,7 @@ Notice the last colon (:) is not a parameter separator, but is part of the headi
 \f3 */\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -2390,7 +2397,7 @@ Notice the last colon (:) is not a parameter separator, but is part of the headi
 \f3\-tag example:X\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -2433,7 +2440,7 @@ Taglets are useful for block or inline tags\&. They can have any number of argum
 \f3\-tag see\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -2523,7 +2530,7 @@ Create a file named options that contains:
 \f3\-sourcepath /java/pubs/ws/1\&.7\&.0/src/share/classes\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 Create a file named packages that contains:
@@ -2538,7 +2545,7 @@ Create a file named packages that contains:
 \f3com\&.mypackage3\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 Run the \f3javadoc\fR command as follows:
@@ -2547,7 +2554,7 @@ Run the \f3javadoc\fR command as follows:
 \f3javadoc @options @packages\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 \f3Example 3 Argument Files with Paths\fR
@@ -2558,7 +2565,7 @@ The argument files can have paths, but any file names inside the files are relat
 \f3javadoc @path1/options @path2/packages\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 \f3Example 4 Option Arguments\fR
@@ -2581,7 +2588,7 @@ The following example saves an argument to a \f3javadoc\fR command option in an 
 \f3    Other names may be trademarks of their respective owners\&.</font>\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 Run the \f3javadoc\fR command as follows:\f3javadoc -bottom @bottom @packages\fR\&.
@@ -2616,7 +2623,7 @@ This example uses \f3-sourcepath\fR so the \f3javadoc\fR command can be run from
 \f3javadoc \-d /home/html \-sourcepath /home/src \-subpackages java \-exclude\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 \f3Example 2 Change to Root and Run Explicit Packages\fR
@@ -2630,7 +2637,7 @@ Change to the parent directory of the fully qualified package\&. Then, run the \
 \f3javadoc \-d /home/html java\&.awt java\&.awt\&.event\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 To also traverse down other package trees, append their names to the \f3-subpackages\fR argument, such as j\f3ava:javax:org\&.xml\&.sax\fR\&.
@@ -2643,7 +2650,7 @@ In this case, it does not matter what the current directory is\&. Run the \f3jav
 \f3javadoc \-d /home/html \-sourcepath /home/src java\&.awt java\&.awt\&.event\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 \f3Example 4 Run from Any Directory on Explicit Packages in Multiple Trees\fR
@@ -2654,7 +2661,7 @@ Run the \f3javadoc\fR command and use the \f3-sourcepath\fR option with a colon-
 \f3javadoc \-d /home/html \-sourcepath /home/src1:/home/src2 java\&.awt java\&.awt\&.event\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 The result is that all cases generate HTML-formatted documentation for the \f3public\fR and \f3protected\fR classes and interfaces in packages j\f3ava\&.awt\fR and \f3java\&.awt\&.even\fRt and save the HTML files in the specified destination directory\&. Because two or more packages are being generated, the document has three HTML frames: one for the list of packages, another for the list of classes, and the third for the main class pages\&.
@@ -2676,7 +2683,7 @@ This example generates HTML-formatted documentation for the classes \f3Button\fR
 \f3javadoc \-d /home/html Button\&.java Canvas\&.java Graphics*\&.java\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 \f3Example 2 Change to the Root Directory of the Package\fR
@@ -2690,7 +2697,7 @@ This is useful for documenting individual source files from different subpackage
 \f3javadoc \-d /home/html java/awt/Button\&.java java/applet/Applet\&.java\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 \f3Example 3 Document Files from Any Directory\fR
@@ -2704,7 +2711,7 @@ In this case, it does not matter what the current directory is\&. Run the \f3jav
 \f3/home/src/java/awt/Graphics*\&.java\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -2720,7 +2727,7 @@ You can document entire packages and individual classes at the same time\&. Here
 \f3/home/src/java/applet/Applet\&.java\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 .SS REAL-WORLD\ EXAMPLES    
@@ -2784,7 +2791,7 @@ In the example, \f3packages\fR is the name of a file that contains the packages 
 \f3@packages\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 
@@ -2802,7 +2809,7 @@ For example, the following statements are equivalent to the command \f3javadoc -
 \f3import javax\&.tools\&.ToolProvider;\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .nf     
 \f3public class JavaAccessSample{\fP
@@ -2838,7 +2845,7 @@ For example, the following statements are equivalent to the command \f3javadoc -
 \f3 }\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 The first three arguments of the \f3run\fR method specify input, standard output, and standard error streams\&. \f3Null\fR is the default value for \f3System\&.in\fR, \f3System\&.out\fR, and \f3System\&.err\fR, respectively\&.
@@ -2891,7 +2898,7 @@ This is an example of a GNU \f3makefile\fR\&. Single quotation marks surround \f
 \f3        java\&.applet\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .nf     
 \f3WINDOWTITLE = \&'Java\(tm SE 7 API Specification\&'\fP
@@ -2927,7 +2934,7 @@ This is an example of a GNU \f3makefile\fR\&. Single quotation marks surround \f
 \f3SRCDIR = \&'/java/jdk/1\&.7\&.0/src/share/classes\&'\fP
 .fi     
 .nf     
-\f3\fR
+\f3\fP
 .fi     
 .sp     
 .SS NOTES    
