@@ -241,6 +241,46 @@ public:
     virtual void execute(DCmdSource source, TRAPS);
 };
 
+class HeapInfoDCmd : public DCmd {
+public:
+  HeapInfoDCmd(outputStream* output, bool heap) : DCmd(output, heap) { }
+  static const char* name() { return "GC.heap_info"; }
+  static const char* description() {
+    return "Provide generic Java heap information.";
+  }
+  static const char* impact() {
+    return "Medium";
+  }
+  static int num_arguments() { return 0; }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+      "monitor", NULL};
+      return p;
+  }
+
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
+class FinalizerInfoDCmd : public DCmd {
+public:
+  FinalizerInfoDCmd(outputStream* output, bool heap) : DCmd(output, heap) { }
+  static const char* name() { return "GC.finalizer_info"; }
+  static const char* description() {
+    return "Provide information about Java finalization queue.";
+  }
+  static const char* impact() {
+    return "Medium";
+  }
+  static int num_arguments() { return 0; }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+      "monitor", NULL};
+      return p;
+  }
+
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
 #if INCLUDE_SERVICES   // Heap dumping supported
 // See also: dump_heap in attachListener.cpp
 class HeapDumpDCmd : public DCmdWithParser {
