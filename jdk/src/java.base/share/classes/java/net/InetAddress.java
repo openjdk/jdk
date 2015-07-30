@@ -297,6 +297,13 @@ class InetAddress implements java.io.Serializable {
                     return null;
                 }
             });
+        sun.misc.SharedSecrets.setJavaNetInetAddressAccess(
+                new sun.misc.JavaNetInetAddressAccess() {
+                    public String getOriginalHostName(InetAddress ia) {
+                        return ia.holder.getOriginalHostName();
+                    }
+                }
+        );
         init();
     }
 

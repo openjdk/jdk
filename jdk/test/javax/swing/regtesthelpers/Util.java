@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
-//import sun.swing.*;
 
 /**
  * <p>This class contains utilities useful for regression testing.
@@ -264,7 +263,7 @@ public class Util {
         if (osName.contains("OS X")) {
             result.add(KeyEvent.VK_CONTROL);
         }
-        result.add(KeyEvent.ALT_MASK);
+        result.add(KeyEvent.VK_ALT);
         return result;
     }
 }

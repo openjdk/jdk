@@ -1,12 +1,5 @@
 '\" t
-.\" Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
-.\" Title: jcmd
-.\" Language: English
-.\" Date: 2013年11月21日
-.\" SectDesc: トラブルシューティング・ツール
-.\" Software: JDK 8
-.\" Arch: 汎用
-.\"
+.\" Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -15,7 +8,7 @@
 .\"
 .\" This code is distributed in the hope that it will be useful, but WITHOUT
 .\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 .\" version 2 for more details (a copy is included in the LICENSE file that
 .\" accompanied this code).
 .\"
@@ -27,8 +20,17 @@
 .\" or visit www.oracle.com if you need additional information or have any
 .\" questions.
 .\"
-.pl 99999
-.TH "jcmd" "1" "2013年11月21日" "JDK 8" "トラブルシューティング・ツール"
+.\" Title: jcmd
+.\" Language: Japanese
+.\" Date: 2013ǯ11��21��
+.\" SectDesc: �ȥ�֥륷�塼�ƥ��󥰡��ġ���
+.\" Software: JDK 8
+.\" Arch: ����
+.\" Part Number: E58103-01
+.\" Doc ID: JSSON
+.\"
+.if n .pl 99999
+.TH "jcmd" "1" "2013ǯ11��21��" "JDK 8" "�ȥ�֥륷�塼�ƥ��󥰡��ġ���"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -48,15 +50,15 @@
 .\" -----------------------------------------------------------------
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
-.SH "NAME"
-jcmd \- 実行中のJava仮想マシン(JVM)に診断コマンド・リクエストを送信します。
-.SH "概要"
+.SH "̾��"
+jcmd \- �¹����Java Virtual Machine (JVM)�˿��ǥ��ޥ�ɡ��ꥯ�����Ȥ��������ޤ���
+.SH "����"
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\fIjcmd\fR [\fI\-l\fR|\fI\-h\fR|\fI\-help\fR]
+\fBjcmd\fR [\fB\-l\fR|\fB\-h\fR|\fB\-help\fR]
 .fi
 .if n \{\
 .RE
@@ -66,7 +68,7 @@ jcmd \- 実行中のJava仮想マシン(JVM)に診断コマンド・リクエス
 .RS 4
 .\}
 .nf
-\fIjcmd\fR \fIpid\fR|\fImain\-class\fR \fIPerfCounter\&.print\fR
+\fBjcmd\fR \fIpid\fR|\fImain\-class\fR \fBPerfCounter\&.print\fR
 .fi
 .if n \{\
 .RE
@@ -76,7 +78,7 @@ jcmd \- 実行中のJava仮想マシン(JVM)に診断コマンド・リクエス
 .RS 4
 .\}
 .nf
-\fIjcmd\fR \fIpid\fR|\fImain\-class\fR \fI\-f\fR \fIfilename\fR
+\fBjcmd\fR \fIpid\fR|\fImain\-class\fR \fB\-f\fR \fIfilename\fR
 .fi
 .if n \{\
 .RE
@@ -86,58 +88,60 @@ jcmd \- 実行中のJava仮想マシン(JVM)に診断コマンド・リクエス
 .RS 4
 .\}
 .nf
-\fIjcmd\fR \fIpid\fR|\fImain\-class\fR \fIcommand\fR[ \fIarguments\fR]
+\fBjcmd\fR \fIpid\fR|\fImain\-class\fR \fIcommand\fR[ \fIarguments\fR]
 .fi
 .if n \{\
 .RE
 .\}
-.SH "説明"
+.SH "����"
 .PP
-\fIjcmd\fRユーティリティは、JVMに診断コマンド・リクエストを送信するために使用されます。これはJVMが稼働しているのと同じマシンで使用し、JVMの起動に使用したものと同じ有効ユーザーおよびグループ識別子を持っている必要があります。
+\fBjcmd\fR�桼�ƥ���ƥ��ϡ�JVM�˿��ǥ��ޥ�ɡ��ꥯ�����Ȥ��������뤿��˻��Ѥ���ޤ��������JVM����Ư���Ƥ���Τ�Ʊ���ޥ���ǻ��Ѥ���JVM�ε�ư�˻��Ѥ�����Τ�Ʊ��ͭ���桼��������ӥ��롼�׼��̻Ҥ���äƤ���ɬ�פ�����ޤ���
 .PP
-\fB注意:\fR
-リモート・マシンから、または別の識別子で診断コマンドを起動するには、\fIcom\&.sun\&.management\&.DiagnosticCommandMBean\fRインタフェースを使用できます。\fIDiagnosticCommandMBean\fRインタフェースの詳細は、http://download\&.java\&.net/jdk8/docs/jre/api/management/extension/com/sun/management/DiagnosticCommandMBean\&.htmlにあるAPIドキュメントを参照してください。
+\fB����:\fR
+��⡼�ȡ��ޥ��󤫤顢�ޤ����̤μ��̻Ҥǿ��ǥ��ޥ�ɤ�ư����ˤϡ�\fBcom\&.sun\&.management\&.DiagnosticCommandMBean\fR���󥿥ե���������ѤǤ��ޤ���\fBDiagnosticCommandMBean\fR���󥿥ե������ξܺ٤ϡ�http://docs\&.oracle\&.com/javase/8/docs/jre/api/management/extension/com/sun/management/DiagnosticCommandMBean\&.html�ˤ���API�ɥ�����Ȥ򻲾Ȥ��Ƥ���������
 .PP
-\fIjcmd\fRを引数なしまたは\fI\- l\fRオプションを指定して実行した場合は、実行中のJavaプロセス識別子のリストが、メイン・クラスおよびプロセスの起動に使用されたコマンドライン引数とともに出力されます。\fI\-h\fRまたは\fI\-help\fRオプションを指定して\fIjcmd\fRを実行すると、ツールのヘルプ・メッセージが出力されます。
+\fBjcmd\fR������ʤ��ޤ���\fB\- l\fR���ץ�������ꤷ�Ƽ¹Ԥ������ϡ��¹����Java�ץ��������̻ҤΥꥹ�Ȥ����ᥤ�󡦥��饹����ӥץ������ε�ư�˻��Ѥ��줿���ޥ�ɹ԰����ȤȤ�˽��Ϥ���ޤ���\fB\-h\fR�ޤ���\fB\-help\fR���ץ�������ꤷ��\fBjcmd\fR��¹Ԥ���ȡ��ġ���Υإ�ס���å����������Ϥ���ޤ���
 .PP
-プロセス識別子(\fIpid\fR)またはメイン・クラス(\fImain\-class\fR)を最初の引数として指定した場合、\fIjcmd\fRは、識別子を指定した場合はJavaプロセスに、メイン・クラスの名前を指定した場合はすべてのJavaプロセスに診断コマンド・リクエストを送信します。プロセス識別子として\fI0\fRを指定して、すべての使用可能なJavaプロセスに診断コマンド・リクエストを送信することもできます。診断コマンド・リクエストとして、次のいずれかを使用します。
+�ץ��������̻�(\fIpid\fR)�ޤ��ϥᥤ�󡦥��饹(\fImain\-class\fR)��ǽ�ΰ����Ȥ��ƻ��ꤷ����硢\fBjcmd\fR�ϡ����̻Ҥ���ꤷ������Java�ץ������ˡ��ᥤ�󡦥��饹��̾������ꤷ�����Ϥ��٤Ƥ�Java�ץ������˿��ǥ��ޥ�ɡ��ꥯ�����Ȥ��������ޤ����ץ��������̻ҤȤ���\fB0\fR����ꤷ�ơ����٤Ƥλ��Ѳ�ǽ��Java�ץ������˿��ǥ��ޥ�ɡ��ꥯ�����Ȥ��������뤳�Ȥ�Ǥ��ޤ������ǥ��ޥ�ɡ��ꥯ�����ȤȤ��ơ����Τ����줫����Ѥ��ޤ���
 .PP
 Perfcounter\&.print
 .RS 4
-指定したJavaプロセスで使用可能なパフォーマンス・カウンタが出力されます。パフォーマンス・カウンタのリストはJavaプロセスによって異なる場合があります。
+���ꤷ��Java�ץ������ǻ��Ѳ�ǽ�ʥѥե����ޥ󥹡������󥿤����Ϥ���ޤ����ѥե����ޥ󥹡������󥿤Υꥹ�Ȥ�Java�ץ������ˤ�äưۤʤ��礬����ޤ���
 .RE
 .PP
 \-f \fIfilename\fR
 .RS 4
-診断コマンドを読み取り、指定したJavaプロセスに送信するファイルの名前。\fI\-f\fRオプションでのみ使用します。ファイル内の各コマンドは、1行で記述する必要があります。番号記号(\fI#\fR)で始まる行は無視されます。すべての行が読み取られるか、\fIstop\fRキーワードを含む行が読み取られると、ファイルの処理が終了します。
+���ǥ��ޥ�ɤ��ɤ߼�ꡢ���ꤷ��Java�ץ���������������ե������̾����\fB\-f\fR���ץ����ǤΤ߻��Ѥ��ޤ����ե�������γƥ��ޥ�ɤϡ�1�Ԥǵ��Ҥ���ɬ�פ�����ޤ����ֹ浭��(\fB#\fR)�ǻϤޤ�Ԥ�̵�뤵��ޤ������٤ƤιԤ��ɤ߼���뤫��\fBstop\fR������ɤ�ޤ�Ԥ��ɤ߼����ȡ��ե�����ν�������λ���ޤ���
 .RE
 .PP
 \fIcommand\fR [\fIarguments\fR]
 .RS 4
-指定されたJavaプロセスに送信するコマンド。指定したプロセスで使用できる診断コマンドのリストは、このプロセスに対して\fIhelp\fRコマンドを送信すれば表示されます。各診断コマンドに独自の引数セットがあります。コマンドの説明、構文および使用可能な引数のリストを表示するには、\fIhelp\fRコマンドの引数としてコマンド名を使用します。
+���ꤵ�줿Java�ץ��������������륳�ޥ�ɡ����ꤷ���ץ������ǻ��ѤǤ�����ǥ��ޥ�ɤΥꥹ�Ȥϡ����Υץ��������Ф���\fBhelp\fR���ޥ�ɤ����������ɽ������ޤ����ƿ��ǥ��ޥ�ɤ��ȼ��ΰ������åȤ�����ޤ������ޥ�ɤ���������ʸ����ӻ��Ѳ�ǽ�ʰ����Υꥹ�Ȥ�ɽ������ˤϡ�\fBhelp\fR���ޥ�ɤΰ����Ȥ��ƥ��ޥ��̾����Ѥ��ޤ���
 .sp
-\fB注意:\fR
-引数にスペースが含まれている場合は、一重引用符または二重引用符(\fI\*(Aq\fRまたは\fI"\fR)で囲む必要があります。加えて、オペレーティング・システム・シェルが引用符を処理しないように、バックスラッシュ(\fI\e\fR)で一重引用符または二重引用符をエスケープする必要があります。または、これらの引数を一重引用符で囲んでから、二重引用符で囲むこともできます(または二重引用符で囲んでから、一重引用符で囲む)。
+\fB����:\fR
+�����˥��ڡ������ޤޤ�Ƥ�����ϡ���Ű�����ޤ�����Ű�����(\fB\*(Aq\fR�ޤ���\fB"\fR)�ǰϤ�ɬ�פ�����ޤ����ä��ơ����ڥ졼�ƥ��󥰡������ƥࡦ�����뤬�������������ʤ��褦�ˡ��Хå�����å���(\fB\e\fR)�ǰ�Ű�����ޤ�����Ű�����򥨥������פ���ɬ�פ�����ޤ����ޤ��ϡ������ΰ������Ű�����ǰϤ�Ǥ��顢��Ű�����ǰϤळ�Ȥ�Ǥ��ޤ�(�ޤ�����Ű�����ǰϤ�Ǥ��顢��Ű�����ǰϤ�)��
 .RE
-.SH "オプション"
+.SH "���ץ����"
 .PP
-各オプションは互いに排他的です。
+�ƥ��ץ����ϸߤ�����¾Ū�Ǥ���
 .PP
 \-f \fIfilename\fR
 .RS 4
-指定されたファイルからコマンドを読み取ります。このオプションは、最初の引数としてプロセス識別子またはメイン・クラスを指定する場合にのみ使用できます。ファイル内の各コマンドは、1行で記述する必要があります。番号記号(\fI#\fR)で始まる行は無視されます。すべての行が読み取られるか、\fIstop\fRキーワードを含む行が読み取られると、ファイルの処理が終了します。
+���ꤵ�줿�ե����뤫�饳�ޥ�ɤ��ɤ߼��ޤ������Υ��ץ����ϡ��ǽ�ΰ����Ȥ��ƥץ��������̻Ҥޤ��ϥᥤ�󡦥��饹����ꤹ����ˤΤ߻��ѤǤ��ޤ����ե�������γƥ��ޥ�ɤϡ�1�Ԥǵ��Ҥ���ɬ�פ�����ޤ����ֹ浭��(\fB#\fR)�ǻϤޤ�Ԥ�̵�뤵��ޤ������٤ƤιԤ��ɤ߼���뤫��\fBstop\fR������ɤ�ޤ�Ԥ��ɤ߼����ȡ��ե�����ν�������λ���ޤ���
 .RE
 .PP
-\-h, \-help
+\-h
+.br
+\-help
 .RS 4
-ヘルプ・メッセージが出力されます。
+�إ�ס���å����������Ϥ���ޤ���
 .RE
 .PP
 \-l
 .RS 4
-実行中のJavaプロセス識別子のリストをメイン・クラスおよびコマンドライン引数とともに出力します。
+�¹����Java�ץ��������̻ҤΥꥹ�Ȥ�ᥤ�󡦥��饹����ӥ��ޥ�ɹ԰����ȤȤ�˽��Ϥ��ޤ���
 .RE
-.SH "関連項目"
+.SH "��Ϣ����"
 .sp
 .RS 4
 .ie n \{\

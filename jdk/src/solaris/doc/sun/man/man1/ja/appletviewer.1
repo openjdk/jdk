@@ -1,12 +1,5 @@
 '\" t
-.\" Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
-.\" Title: appletviewer
-.\" Language: English
-.\" Date: 2013年11月21日
-.\" SectDesc: 基本ツール
-.\" Software: JDK 8
-.\" Arch: 汎用
-.\"
+.\" Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -15,7 +8,7 @@
 .\"
 .\" This code is distributed in the hope that it will be useful, but WITHOUT
 .\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 .\" version 2 for more details (a copy is included in the LICENSE file that
 .\" accompanied this code).
 .\"
@@ -27,8 +20,17 @@
 .\" or visit www.oracle.com if you need additional information or have any
 .\" questions.
 .\"
-.pl 99999
-.TH "appletviewer" "1" "2013年11月21日" "JDK 8" "基本ツール"
+.\" Title: appletviewer
+.\" Language: Japanese
+.\" Date: 2013ǯ11��21��
+.\" SectDesc: ���ܥġ���
+.\" Software: JDK 8
+.\" Arch: ����
+.\" Part Number: E58103-01
+.\" Doc ID: JSSON
+.\"
+.if n .pl 99999
+.TH "appletviewer" "1" "2013ǯ11��21��" "JDK 8" "���ܥġ���"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -48,15 +50,15 @@
 .\" -----------------------------------------------------------------
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
-.SH "NAME"
-appletviewer \- Webブラウザの外側でアプレットを実行します。
-.SH "概要"
+.SH "̾��"
+appletviewer \- Web�֥饦���γ�¦�ǥ��ץ�åȤ�¹Ԥ��ޤ���
+.SH "����"
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\fIappletviewer\fR [\fIoptions\fR] \fIurl\fR\&.\&.\&.
+\fBappletviewer\fR [\fIoptions\fR] \fIurl\fR\&.\&.\&.
 .fi
 .if n \{\
 .RE
@@ -64,39 +66,39 @@ appletviewer \- Webブラウザの外側でアプレットを実行します。
 .PP
 \fIoptions\fR
 .RS 4
-空白で区切られたコマンドライン・オプション。オプションを参照してください。
+����Ƕ��ڤ�줿���ޥ�ɹԥ��ץ���󡣥��ץ����򻲾Ȥ��Ƥ���������
 .RE
 .PP
 \fIurl\fR
 .RS 4
-表示するドキュメントまたはリソースの場所。空白で区切られた複数のURLを指定できます。
+ɽ������ɥ�����Ȥޤ��ϥ꥽�����ξ�ꡣ����Ƕ��ڤ�줿ʣ����URL�����Ǥ��ޤ���
 .RE
-.SH "説明"
+.SH "����"
 .PP
-\fIappletviewer\fRコマンドは\fIurls\fRに指定されたドキュメントあるいはリソースと接続して、そのドキュメントが参照するそれぞれのアプレットを独自のウィンドウで表示します。urlsによって参照されたドキュメントが、\fIOBJECT\fR、\fIEMBED\fRまたは\fIAPPLET\fRタグでどのアプレットも参照していない場合、\fIappletviewer\fRコマンドは何も行いません。\fIappletviewer\fRコマンドでサポートされるHTMLタグの詳細は、http://docs\&.oracle\&.com/javase/8/docs/technotes/tools/appletviewertags\&.htmlにある
-アプレット・ビューア・タグを参照してください。
+\fBappletviewer\fR���ޥ�ɤ�\fIurls\fR�˻��ꤵ�줿�ɥ�����Ȥ��뤤�ϥ꥽��������³���ơ����Υɥ�����Ȥ����Ȥ��뤽�줾��Υ��ץ�åȤ��ȼ��Υ�����ɥ���ɽ�����ޤ���urls�ˤ�äƻ��Ȥ��줿�ɥ�����Ȥ���\fBOBJECT\fR��\fBEMBED\fR�ޤ���\fBAPPLET\fR�����ǤɤΥ��ץ�åȤ⻲�Ȥ��Ƥ��ʤ���硢\fBappletviewer\fR���ޥ�ɤϲ���Ԥ��ޤ���\fBappletviewer\fR���ޥ�ɤǥ��ݡ��Ȥ����HTML�����ξܺ٤ϡ�http://docs\&.oracle\&.com/javase/8/docs/technotes/tools/appletviewertags\&.html�ˤ���
+���ץ�åȡ��ӥ塼���������򻲾Ȥ��Ƥ���������
 .PP
-\fIappletviewer\fRコマンドは、RFC2396で定義されたエスケープ・メカニズムに従ってエンコードされたURLを必要とします。サポートされるのは、エンコードされたURLのみです。ただし、ファイル名については、RFC2396の仕様に従ってエンコードを解除しておく必要があります。
+\fBappletviewer\fR���ޥ�ɤϡ�RFC2396��������줿���������ס��ᥫ�˥���˽��äƥ��󥳡��ɤ��줿URL��ɬ�פȤ��ޤ������ݡ��Ȥ����Τϡ����󥳡��ɤ��줿URL�ΤߤǤ������������ե�����̾�ˤĤ��Ƥϡ�RFC2396�λ��ͤ˽��äƥ��󥳡��ɤ������Ƥ���ɬ�פ�����ޤ���
 .PP
-\fB注意:\fR
+\fB����:\fR
 The
-\fIappletviewer\fRコマンドは開発専用です。詳細は、http://docs\&.oracle\&.com/javase/8/docs/technotes/samples/aboutCodeSamples\&.htmlにある
-サンプル/テスト・アプリケーションおよびコードについてを参照してください。
-.SH "オプション"
+\fBappletviewer\fR���ޥ�ɤϳ�ȯ���ѤǤ����ܺ٤ϡ�http://docs\&.oracle\&.com/javase/8/docs/technotes/samples/aboutCodeSamples\&.html�ˤ���
+����ץ�/�ƥ��ȡ����ץꥱ������󤪤�ӥ����ɤˤĤ��Ƥ򻲾Ȥ��Ƥ���������
+.SH "���ץ����"
 .PP
 \-debug
 .RS 4
-\fIjdb\fRコマンドを使用してJavaデバッガでアプレット・ビューアを開始して、ドキュメント中のアプレットをデバッグします。
+\fBjdb\fR���ޥ�ɤ���Ѥ���Java�ǥХå��ǥ��ץ�åȡ��ӥ塼���򳫻Ϥ��ơ��ɥ��������Υ��ץ�åȤ�ǥХå����ޤ���
 .RE
 .PP
 \-encoding \fIencoding\-name\fR
 .RS 4
-入力HTMLファイルのエンコーディング名を指定します。
+����HTML�ե�����Υ��󥳡��ǥ���̾����ꤷ�ޤ���
 .RE
 .PP
 \-J\fIjavaoption\fR
 .RS 4
-文字列\fIjavaoption\fRは、アプレット・ビューアを実行するJavaインタプリタに1つの引数として渡されます。引数にスペースを含めないでください。複数の引数は、すべてが接頭辞\fI\-J\fRで始まる必要があります。これは、コンパイラの実行環境またはメモリー使用の調整に有効です。
+ʸ����\fBjavaoption\fR�ϡ����ץ�åȡ��ӥ塼����¹Ԥ���Java���󥿥ץ꥿��1�Ĥΰ����Ȥ����Ϥ���ޤ��������˥��ڡ�����ޤ�ʤ��Ǥ���������ʣ���ΰ����ϡ����٤Ƥ���Ƭ��\fB\-J\fR�ǻϤޤ�ɬ�פ�����ޤ�������ϡ�����ѥ���μ¹ԴĶ��ޤ��ϥ��꡼���Ѥ�Ĵ����ͭ���Ǥ���
 .RE
 .PP
 

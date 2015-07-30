@@ -58,7 +58,7 @@ class ExternalFilesWriter implements Consumer<Entry> {
                     case NATIVE_CMD:
                         Path path = destFile("bin", filename);
                         writeEntry(in, path);
-                        path.toFile().setExecutable(true);
+                        path.toFile().setExecutable(true, false);
                         break;
                     case CONFIG:
                         writeEntry(in, destFile("conf", filename));
