@@ -581,6 +581,10 @@ public class JavacParser implements Parser {
      * Ident = IDENTIFIER
      */
     protected Name ident() {
+        return ident(false);
+    }
+
+    protected Name ident(boolean advanceOnErrors) {
         if (token.kind == IDENTIFIER) {
             Name name = token.name();
             nextToken();
@@ -616,6 +620,9 @@ public class JavacParser implements Parser {
             return name;
         } else {
             accept(IDENTIFIER);
+            if (advanceOnErrors) {
+                nextToken();
+            }
             return names.error;
         }
     }
@@ -1413,7 +1420,7 @@ public class JavacParser implements Parser {
                         // is the mode check needed?
                         tyannos = typeAnnotationsOpt();
                     }
-                    t = toP(F.at(pos1).Select(t, ident()));
+                    t = toP(F.at(pos1).Select(t, ident(true)));
                     if (tyannos != null && tyannos.nonEmpty()) {
                         t = toP(F.at(tyannos.head.pos).AnnotatedType(tyannos, t));
                     }
