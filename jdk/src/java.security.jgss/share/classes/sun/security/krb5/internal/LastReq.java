@@ -38,12 +38,12 @@ import java.io.IOException;
 /**
  * Implements the ASN.1 LastReq type.
  *
- * <xmp>
+ * <pre>{@code
  * LastReq         ::=     SEQUENCE OF SEQUENCE {
  *         lr-type         [0] Int32,
  *         lr-value        [1] KerberosTime
  * }
- * </xmp>
+ * }</pre>
  *
  * <p>
  * This definition reflects the Network Working Group RFC 4120

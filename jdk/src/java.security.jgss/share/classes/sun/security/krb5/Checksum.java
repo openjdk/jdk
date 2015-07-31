@@ -128,8 +128,8 @@ public class Checksum {
 
     /**
      * Constructs a new Checksum using the raw data and type.
-     * @data the byte array of checksum.
-     * @new_cksumType the type of checksum.
+     * @param data the byte array of checksum.
+     * @param new_cksumType the type of checksum.
      *
      */
          // used in InitialToken
@@ -141,8 +141,8 @@ public class Checksum {
     /**
      * Constructs a new Checksum by calculating the checksum over the data
      * using specified checksum type.
-     * @new_cksumType the type of checksum.
-     * @data the data that needs to be performed a checksum calculation on.
+     * @param new_cksumType the type of checksum.
+     * @param data the data that needs to be performed a checksum calculation on.
      */
     public Checksum(int new_cksumType, byte[] data)
         throws KdcErrException, KrbCryptoException {
@@ -159,8 +159,8 @@ public class Checksum {
     /**
      * Constructs a new Checksum by calculating the keyed checksum
      * over the data using specified checksum type.
-     * @new_cksumType the type of checksum.
-     * @data the data that needs to be performed a checksum calculation on.
+     * @param new_cksumType the type of checksum.
+     * @param data the data that needs to be performed a checksum calculation on.
      */
          // KrbSafe, KrbTgsReq
     public Checksum(int new_cksumType, byte[] data,
@@ -238,12 +238,12 @@ public class Checksum {
 
     /**
      * Encodes a Checksum object.
-     * <xmp>
+     * <pre>{@code
      * Checksum    ::= SEQUENCE {
      *         cksumtype   [0] Int32,
      *         checksum    [1] OCTET STRING
      * }
-     * </xmp>
+     * }</pre>
      *
      * <p>
      * This definition reflects the Network Working Group RFC 4120

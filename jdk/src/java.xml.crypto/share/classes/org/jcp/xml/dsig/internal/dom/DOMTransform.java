@@ -53,7 +53,7 @@ public class DOMTransform extends DOMStructure implements Transform {
     protected TransformService spi;
 
     /**
-     * Creates a <code>DOMTransform</code>.
+     * Creates a {@code DOMTransform}.
      *
      * @param spi the TransformService
      */
@@ -62,7 +62,7 @@ public class DOMTransform extends DOMStructure implements Transform {
     }
 
     /**
-     * Creates a <code>DOMTransform</code> from an element. This constructor
+     * Creates a {@code DOMTransform} from an element. This constructor
      * invokes the abstract {@link #unmarshalParams unmarshalParams} method to
      * unmarshal any algorithm-specific input parameters.
      *
@@ -138,12 +138,12 @@ public class DOMTransform extends DOMStructure implements Transform {
      * Transforms the specified data using the underlying transform algorithm.
      *
      * @param data the data to be transformed
-     * @param sc the <code>XMLCryptoContext</code> containing
-     *    additional context (may be <code>null</code> if not applicable)
+     * @param xc the {@code XMLCryptoContext} containing
+     *     additional context (may be {@code null} if not applicable)
      * @return the transformed data
-     * @throws NullPointerException if <code>data</code> is <code>null</code>
+     * @throws NullPointerException if {@code data} is {@code null}
      * @throws XMLSignatureException if an unexpected error occurs while
-     *    executing the transform
+     *     executing the transform
      */
     public Data transform(Data data, XMLCryptoContext xc)
         throws TransformException
@@ -155,14 +155,14 @@ public class DOMTransform extends DOMStructure implements Transform {
      * Transforms the specified data using the underlying transform algorithm.
      *
      * @param data the data to be transformed
-     * @param sc the <code>XMLCryptoContext</code> containing
-     *    additional context (may be <code>null</code> if not applicable)
-     * @param os the <code>OutputStream</code> that should be used to write
-     *    the transformed data to
+     * @param xc the {@code XMLCryptoContext} containing
+     *     additional context (may be {@code null} if not applicable)
+     * @param os the {@code OutputStream} that should be used to write
+     *     the transformed data to
      * @return the transformed data
-     * @throws NullPointerException if <code>data</code> is <code>null</code>
+     * @throws NullPointerException if {@code data} is {@code null}
      * @throws XMLSignatureException if an unexpected error occurs while
-     *    executing the transform
+     *     executing the transform
      */
     public Data transform(Data data, XMLCryptoContext xc, OutputStream os)
         throws TransformException
@@ -201,16 +201,16 @@ public class DOMTransform extends DOMStructure implements Transform {
     /**
      * Transforms the specified data using the underlying transform algorithm.
      * This method invokes the {@link #marshal marshal} method and passes it
-     * the specified <code>DOMSignContext</code> before transforming the data.
+     * the specified {@code DOMSignContext} before transforming the data.
      *
      * @param data the data to be transformed
-     * @param sc the <code>XMLCryptoContext</code> containing
-     *    additional context (may be <code>null</code> if not applicable)
+     * @param sc the {@code XMLCryptoContext} containing
+     *    additional context (may be {@code null} if not applicable)
      * @param context the marshalling context
      * @return the transformed data
      * @throws MarshalException if an exception occurs while marshalling
-     * @throws NullPointerException if <code>data</code> or <code>context</code>
-     *    is <code>null</code>
+     * @throws NullPointerException if {@code data} or {@code context}
+     *    is {@code null}
      * @throws XMLSignatureException if an unexpected error occurs while
      *    executing the transform
      */
