@@ -45,14 +45,14 @@ import sun.security.krb5.internal.util.KerberosString;
 
 /**
  * Implements the ASN.1 PrincipalName type and its realm in a single class.
- * <xmp>
+ * <pre>{@code
  *    Realm           ::= KerberosString
  *
  *    PrincipalName   ::= SEQUENCE {
  *            name-type       [0] Int32,
  *            name-string     [1] SEQUENCE OF KerberosString
  *    }
- * </xmp>
+ * }</pre>
  * This class is immutable.
  * @see Realm
  */
@@ -211,14 +211,14 @@ public class PrincipalName implements Cloneable {
 
     /**
      * Returns the ASN.1 encoding of the
-     * <xmp>
+     * <pre>{@code
      * PrincipalName    ::= SEQUENCE {
      *          name-type       [0] Int32,
      *          name-string     [1] SEQUENCE OF KerberosString
      * }
      *
      * KerberosString   ::= GeneralString (IA5String)
-     * </xmp>
+     * }</pre>
      *
      * <p>
      * This definition reflects the Network Working Group RFC 4120
@@ -638,7 +638,8 @@ public class PrincipalName implements Cloneable {
      * name, the second component is returned.
      * Null is returned if there are not two or more
      * components in the name.
-     * @returns instance component of a multi-component name.
+     *
+     * @return instance component of a multi-component name.
      */
     public String getInstanceComponent()
     {

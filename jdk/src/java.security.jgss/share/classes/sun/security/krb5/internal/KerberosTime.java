@@ -46,9 +46,7 @@ import java.util.TimeZone;
 /**
  * Implements the ASN.1 KerberosTime type. This is an immutable class.
  *
- * <xmp>
- * KerberosTime    ::= GeneralizedTime -- with no fractional seconds
- * </xmp>
+ * {@code KerberosTime ::= GeneralizedTime} -- with no fractional seconds
  *
  * The timestamps used in Kerberos are encoded as GeneralizedTimes. A
  * KerberosTime value shall not include any fractional portions of the

@@ -63,7 +63,6 @@ public final class DOMXMLObject extends DOMStructure implements XMLObject {
      * @param id the Id (may be <code>null</code>)
      * @param mimeType the mime type (may be <code>null</code>)
      * @param encoding the encoding (may be <code>null</code>)
-     * @return an <code>XMLObject</code>
      * @throws ClassCastException if <code>content</code> contains any
      *    entries that are not of type {@link XMLStructure}
      */

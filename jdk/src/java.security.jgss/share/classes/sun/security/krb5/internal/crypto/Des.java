@@ -226,7 +226,7 @@ public final class Des {
 
     /**
      * Generates DES key from the password.
-     * @param password a char[] used to create the key.
+     * @param passwdChars a char[] used to create the key.
      * @return DES key.
      *
      * @modified by Yanni Zhang, Dec 6, 99

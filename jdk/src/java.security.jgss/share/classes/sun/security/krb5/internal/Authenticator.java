@@ -38,7 +38,7 @@ import java.math.BigInteger;
 /**
  * Implements the ASN.1 Authenticator type.
  *
- * <xmp>
+ * <pre>{@code
  * Authenticator   ::= [APPLICATION 2] SEQUENCE  {
  *         authenticator-vno       [0] INTEGER (5),
  *         crealm                  [1] Realm,
@@ -50,7 +50,7 @@ import java.math.BigInteger;
  *         seq-number              [7] UInt32 OPTIONAL,
  *         authorization-data      [8] AuthorizationData OPTIONAL
  * }
- * </xmp>
+ * }</pre>
  *
  * <p>
  * This definition reflects the Network Working Group RFC 4120
