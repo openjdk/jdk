@@ -2643,8 +2643,8 @@ public:
   /* because of overflow issue                                   */         \
   product(intx, CICompilerCount, CI_COMPILER_COUNT,                         \
           "Number of compiler threads to run")                              \
-          range((intx)Arguments::get_min_number_of_compiler_threads(),      \
-                max_jint)                                                   \
+          range(0, max_jint)                                                \
+          constraint(CICompilerCountConstraintFunc, AtParse)                \
                                                                             \
   product(intx, CompilationPolicyChoice, 0,                                 \
           "which compilation policy (0-3)")                                 \
