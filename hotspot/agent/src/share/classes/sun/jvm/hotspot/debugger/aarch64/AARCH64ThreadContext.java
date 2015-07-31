@@ -37,6 +37,21 @@ import sun.jvm.hotspot.debugger.cdbg.*;
 public abstract class AARCH64ThreadContext implements ThreadContext {
     // Taken from /usr/include/asm/sigcontext.h on Linux/AARCH64.
 
+    //  /*
+    //   * Signal context structure - contains all info to do with the state
+    //   * before the signal handler was invoked.
+    //   */
+    // struct sigcontext {
+    //         __u64 fault_address;
+    //         /* AArch64 registers */
+    //          __u64 regs[31];
+    //          __u64 sp;
+    //          __u64 pc;
+    //          __u64 pstate;
+    //          /* 4K reserved for FP/SIMD state and future expansion */
+    //          __u8 __reserved[4096] __attribute__((__aligned__(16)));
+    //  };
+
     // NOTE: the indices for the various registers must be maintained as
     // listed across various operating systems. However, only a small
     // subset of the registers' values are guaranteed to be present (and
@@ -78,8 +93,9 @@ public abstract class AARCH64ThreadContext implements ThreadContext {
     public static final int LR = 30;
     public static final int SP = 31;
     public static final int PC = 32;
+    public static final int PSTATE = 33;
 
-    public static final int NPRGREG = 33;
+    public static final int NPRGREG = 34;
 
     private long[] data;
 

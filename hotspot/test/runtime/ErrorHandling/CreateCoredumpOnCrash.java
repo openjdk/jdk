@@ -38,7 +38,7 @@ import sun.misc.Unsafe;
 public class CreateCoredumpOnCrash {
     private static class Crasher {
         public static void main(String[] args) {
-            Utils.getUnsafe().getInt(0);
+            Utils.getUnsafe().putInt(0L, 0);
         }
     }
 

@@ -49,13 +49,27 @@ typedef Flag::Error (*CommandLineFlagConstraintFunc_size_t)(bool verbose, size_t
 typedef Flag::Error (*CommandLineFlagConstraintFunc_double)(bool verbose, double* value);
 
 class CommandLineFlagConstraint : public CHeapObj<mtInternal> {
+public:
+  // During VM initialization, constraint validation will be done order of ConstraintType.
+  enum ConstraintType {
+    // Will be validated during argument processing (Arguments::parse_argument).
+    AtParse         = 0,
+    // Will be validated by CommandLineFlags::check_constraints_of_after_ergo().
+    AfterErgo      = 1,
+    // Will be validated by CommandLineFlags::check_constraints_of_after_memory_init().
+    AfterMemoryInit = 2
+  };
+
 private:
   const char* _name;
+  ConstraintType _validate_type;
+
 public:
   // the "name" argument must be a string literal
-  CommandLineFlagConstraint(const char* name) { _name=name; };
+  CommandLineFlagConstraint(const char* name, ConstraintType type) { _name=name; _validate_type=type; };
   ~CommandLineFlagConstraint() {};
-  const char* name() { return _name; }
+  const char* name() const { return _name; }
+  ConstraintType type() const { return _validate_type; }
   virtual Flag::Error apply_bool(bool* value, bool verbose = true) { ShouldNotReachHere(); return Flag::ERR_OTHER; };
   virtual Flag::Error apply_int(int* value, bool verbose = true) { ShouldNotReachHere(); return Flag::ERR_OTHER; };
   virtual Flag::Error apply_intx(intx* value, bool verbose = true) { ShouldNotReachHere(); return Flag::ERR_OTHER; };
@@ -69,12 +83,17 @@ public:
 class CommandLineFlagConstraintList : public AllStatic {
 private:
   static GrowableArray<CommandLineFlagConstraint*>* _constraints;
+  // Latest constraint validation type.
+  static CommandLineFlagConstraint::ConstraintType _validating_type;
 public:
   static void init();
   static int length() { return (_constraints != NULL) ? _constraints->length() : 0; }
   static CommandLineFlagConstraint* at(int i) { return (_constraints != NULL) ? _constraints->at(i) : NULL; }
-  static CommandLineFlagConstraint* find(const char* name);
+  static CommandLineFlagConstraint* find_if_needs_check(const char* name);
   static void add(CommandLineFlagConstraint* constraint) { _constraints->append(constraint); }
+  // True if 'AfterErgo' or later constraint functions are validated.
+  static bool validated_after_ergo() { return _validating_type >= CommandLineFlagConstraint::AfterErgo; };
+  static bool check_constraints(CommandLineFlagConstraint::ConstraintType type);
 };
 
 #endif /* SHARE_VM_RUNTIME_COMMANDLINEFLAGCONSTRAINTLIST_HPP */

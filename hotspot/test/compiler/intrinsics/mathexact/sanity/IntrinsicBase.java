@@ -67,7 +67,7 @@ public abstract class IntrinsicBase extends CompilerWhiteBoxTest {
                     compileAtLevel(CompilerWhiteBoxTest.COMP_LEVEL_SIMPLE);
                 }
 
-                if (!isIntrinsicSupported()) {
+                if (!isIntrinsicAvailable()) {
                     expectedIntrinsicCount = 0;
                 }
                 break;
@@ -114,7 +114,11 @@ public abstract class IntrinsicBase extends CompilerWhiteBoxTest {
         }
     }
 
-    protected abstract boolean isIntrinsicSupported();
+    // An intrinsic is available if:
+    // - the intrinsic is enabled (by using the appropriate command-line flag) and
+    // - the intrinsic is supported by the VM (i.e., the platform on which the VM is
+    //   running provides the instructions necessary for the VM to generate the intrinsic).
+    protected abstract boolean isIntrinsicAvailable();
 
     protected abstract String getIntrinsicId();
 
@@ -123,14 +127,20 @@ public abstract class IntrinsicBase extends CompilerWhiteBoxTest {
     }
 
     static class IntTest extends IntrinsicBase {
+
+        protected boolean isIntrinsicAvailable; // The tested intrinsic is available on the current platform.
+
         protected IntTest(MathIntrinsic.IntIntrinsic testCase) {
             super(testCase);
+            // Only the C2 compiler intrinsifies exact math methods
+            // so check if the intrinsics are available with C2.
+            isIntrinsicAvailable = WHITE_BOX.isIntrinsicAvailable(testCase.getTestMethod(),
+                                                                  COMP_LEVEL_FULL_OPTIMIZATION);
         }
 
         @Override
-        protected boolean isIntrinsicSupported() {
-            return isServerVM() && Boolean.valueOf(useMathExactIntrinsics)
-                && (Platform.isX86() || Platform.isX64() || Platform.isAArch64());
+        protected boolean isIntrinsicAvailable() {
+            return isIntrinsicAvailable;
         }
 
         @Override
@@ -140,14 +150,20 @@ public abstract class IntrinsicBase extends CompilerWhiteBoxTest {
     }
 
     static class LongTest extends IntrinsicBase {
+
+        protected boolean isIntrinsicAvailable; // The tested intrinsic is available on the current platform.
+
         protected LongTest(MathIntrinsic.LongIntrinsic testCase) {
             super(testCase);
+            // Only the C2 compiler intrinsifies exact math methods
+            // so check if the intrinsics are available with C2.
+            isIntrinsicAvailable = WHITE_BOX.isIntrinsicAvailable(testCase.getTestMethod(),
+                                                                  COMP_LEVEL_FULL_OPTIMIZATION);
         }
 
         @Override
-        protected boolean isIntrinsicSupported() {
-            return isServerVM() && Boolean.valueOf(useMathExactIntrinsics) &&
-                (Platform.isX64() || Platform.isPPC() || Platform.isAArch64());
+        protected boolean isIntrinsicAvailable() {
+            return isIntrinsicAvailable;
         }
 
         @Override

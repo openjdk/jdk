@@ -240,7 +240,7 @@ void ClearNoncleanCardWrapper::do_MemRegion(MemRegion mr) {
 // cur-younger-gen                ==> cur_younger_gen
 // cur_youngergen_and_prev_nonclean_card ==> no change.
 void CardTableRS::write_ref_field_gc_par(void* field, oop new_val) {
-  jbyte* entry = ct_bs()->byte_for(field);
+  jbyte* entry = _ct_bs->byte_for(field);
   do {
     jbyte entry_val = *entry;
     // We put this first because it's probably the most common case.
@@ -398,10 +398,10 @@ void CardTableRS::verify_space(Space* s, HeapWord* gen_boundary) {
   jbyte* cur_entry = byte_for(used.start());
   jbyte* limit = byte_after(used.last());
   while (cur_entry < limit) {
-    if (*cur_entry == CardTableModRefBS::clean_card) {
+    if (*cur_entry == clean_card_val()) {
       jbyte* first_dirty = cur_entry+1;
       while (first_dirty < limit &&
-             *first_dirty == CardTableModRefBS::clean_card) {
+             *first_dirty == clean_card_val()) {
         first_dirty++;
       }
       // If the first object is a regular object, and it has a
@@ -418,7 +418,7 @@ void CardTableRS::verify_space(Space* s, HeapWord* gen_boundary) {
               !boundary_obj->is_typeArray()) {
             guarantee(cur_entry > byte_for(used.start()),
                       "else boundary would be boundary_block");
-            if (*byte_for(boundary_block) != CardTableModRefBS::clean_card) {
+            if (*byte_for(boundary_block) != clean_card_val()) {
               begin = boundary_block + s->block_size(boundary_block);
               start_block = begin;
             }
