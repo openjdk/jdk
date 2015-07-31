@@ -21,15 +21,13 @@
  * questions.
  */
 
-import org.testng.annotations.Test;
-import org.testng.Assert;
-
+import java.util.concurrent.Phaser;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.TimeoutException;
 
 import jdk.test.lib.dcmd.CommandExecutor;
 import jdk.test.lib.dcmd.JMXExecutor;
+import jdk.test.lib.Utils;
 
 /*
  * @test
@@ -41,62 +39,71 @@ import jdk.test.lib.dcmd.JMXExecutor;
  *          jdk.jvmstat/sun.jvmstat.monitor
  * @build jdk.test.lib.*
  * @build jdk.test.lib.dcmd.*
- * @run testng RunFinalizationTest
+ * @run main/othervm RunFinalizationTest
  */
 public class RunFinalizationTest {
-    static ReentrantLock lock = new ReentrantLock();
-    static Condition cond = lock.newCondition();
+    private static final long TIMEOUT = Utils.adjustTimeout(15000); // 15s
+    private static final Phaser ph = new Phaser(3);
     static volatile boolean wasFinalized = false;
     static volatile boolean wasInitialized = false;
 
-    class MyObject {
+    static class MyObject {
         public MyObject() {
             /* Make sure object allocation/deallocation is not optimized out */
             wasInitialized = true;
         }
 
         protected void finalize() {
-            lock.lock();
-            wasFinalized = true;
-            cond.signalAll();
-            lock.unlock();
+            if (!Thread.currentThread().getName().equals("Finalizer")) {
+                wasFinalized = true;
+                ph.arrive();
+            } else {
+                ph.arriveAndAwaitAdvance();
+            }
         }
     }
 
     public static MyObject o;
 
-    public void run(CommandExecutor executor) {
-        lock.lock();
+    private static void run(CommandExecutor executor) {
         o = new MyObject();
         o = null;
         System.gc();
         executor.execute("GC.run_finalization");
 
-        int waited = 0;
-        int waitTime = 15;
+        System.out.println("Waiting for signal from finalizer");
 
-        try {
-            System.out.println("Waiting for signal from finalizer");
-
-            while (!cond.await(waitTime, TimeUnit.SECONDS)) {
-                waited += waitTime;
-                System.out.println(String.format("Waited %d seconds", waited));
+        long targetTime = System.currentTimeMillis() + TIMEOUT;
+        while (System.currentTimeMillis() < targetTime) {
+            try {
+                ph.awaitAdvanceInterruptibly(ph.arrive(), 200, TimeUnit.MILLISECONDS);
+                System.out.println("Received signal");
+                break;
+            } catch (InterruptedException e) {
+                fail("Test error: Interrupted while waiting for signal from finalizer", e);
+            } catch (TimeoutException e) {
+                System.out.println("Haven't received signal in 200ms. Retrying ...");
             }
-
-            System.out.println("Received signal");
-        } catch (InterruptedException e) {
-            Assert.fail("Test error: Interrupted while waiting for signal from finalizer", e);
-        } finally {
-            lock.unlock();
         }
 
         if (!wasFinalized) {
-            Assert.fail("Test failure: Object was not finalized");
+            fail("Test failure: Object was not finalized");
         }
     }
 
-    @Test
-    public void jmx() {
-        run(new JMXExecutor());
+    public static void main(String ... args) {
+        MyObject o = new MyObject();
+        o = null;
+        Runtime.getRuntime().addShutdownHook(new Thread(()->{
+            run(new JMXExecutor());
+        }));
+    }
+
+    private static void fail(String msg, Exception e) {
+        throw new Error(msg, e);
+    }
+
+    private static void fail(String msg) {
+        throw new Error(msg);
     }
 }
