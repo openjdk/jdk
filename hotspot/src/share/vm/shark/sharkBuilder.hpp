@@ -27,8 +27,6 @@
 #define SHARE_VM_SHARK_SHARKBUILDER_HPP
 
 #include "ci/ciType.hpp"
-#include "gc/shared/barrierSet.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
 #include "shark/llvmHeaders.hpp"
 #include "shark/llvmValue.hpp"
 #include "shark/sharkCodeBuffer.hpp"
@@ -37,6 +35,8 @@
 #include "shark/sharkValue.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/sizes.hpp"
+
+class BarrierSet;
 
 class SharkBuilder : public llvm::IRBuilder<> {
   friend class SharkCompileInvariants;

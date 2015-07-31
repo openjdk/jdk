@@ -24,7 +24,6 @@
 package jdk.test.lib;
 
 import java.util.regex.Pattern;
-import jdk.test.lib.Utils;
 
 public class Platform {
     private static final String osName      = System.getProperty("os.name");

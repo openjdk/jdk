@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
 
   int          compile_id() const                { return _compile_id; }
   Method*      method() const                    { return _method; }
+  Method*      hot_method() const                { return _hot_method; }
   int          osr_bci() const                   { return _osr_bci; }
   bool         is_complete() const               { return _is_complete; }
   bool         is_blocking() const               { return _is_blocking; }
@@ -107,6 +108,9 @@ class CompileTask : public CHeapObj<mtCompiler> {
   void         set_prev(CompileTask* prev)       { _prev = prev; }
   bool         is_free() const                   { return _is_free; }
   void         set_is_free(bool val)             { _is_free = val; }
+
+  // RedefineClasses support
+  void         metadata_do(void f(Metadata*));
 
 private:
   static void  print_compilation_impl(outputStream* st, Method* method, int compile_id, int comp_level,
