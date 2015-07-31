@@ -26,6 +26,7 @@
 # @summary Redefine a big class.
 # @author Daniel D. Daugherty
 #
+# @key intermittent
 # @modules java.instrument
 # @run shell MakeJAR3.sh RedefineBigClassAgent 'Can-Redefine-Classes: true'
 # @run build BigClass RedefineBigClassApp NMTHelper
