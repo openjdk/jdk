@@ -334,7 +334,7 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
                   relocInfo::static_call_type);
   address call = __ trampoline_call(resolve);
   if (call == NULL) {
-    bailout("trampoline stub overflow");
+    ce->bailout("trampoline stub overflow");
     return;
   }
   ce->add_call_info_here(info());
