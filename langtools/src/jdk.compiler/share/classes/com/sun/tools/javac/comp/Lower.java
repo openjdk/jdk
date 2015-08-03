@@ -3084,7 +3084,7 @@ public class Lower extends TreeTranslator {
             if (!unboxedTarget.hasTag(NONE)) {
                 if (!types.isSubtype(tree.type, unboxedTarget)) //e.g. Character c = 89;
                     tree.type = unboxedTarget.constType(tree.type.constValue());
-                return (T)boxPrimitive((JCExpression)tree, type);
+                return (T)boxPrimitive((JCExpression)tree, types.erasure(type));
             } else {
                 tree = (T)boxPrimitive((JCExpression)tree);
             }

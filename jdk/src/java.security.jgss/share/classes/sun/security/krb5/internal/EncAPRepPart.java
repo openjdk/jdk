@@ -39,14 +39,14 @@ import java.math.BigInteger;
 /**
  * Implements the ASN.1 EncAPRepPart type.
  *
- * <xmp>
+ * <pre>{@code
  * EncAPRepPart ::= [APPLICATION 27] SEQUENCE {
  *      ctime           [0] KerberosTime,
  *      cusec           [1] Microseconds,
  *      subkey          [2] EncryptionKey OPTIONAL,
  *      seq-number      [3] UInt32 OPTIONAL
  * }
- * </xmp>
+ * }</pre>
  *
  * <p>
  * This definition reflects the Network Working Group RFC 4120

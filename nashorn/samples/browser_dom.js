@@ -43,7 +43,7 @@ var WebView   = Java.type("javafx.scene.web.WebView");
 
 // JavaFX start method
 function start(stage) {
-    start.title = "Web View";
+    stage.title = "Web View";
     var wv = new WebView();
     wv.engine.loadContent(<<EOF
 <html>

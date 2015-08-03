@@ -96,6 +96,8 @@ address OptoRuntime::_g1_wb_pre_Java                              = NULL;
 address OptoRuntime::_g1_wb_post_Java                             = NULL;
 address OptoRuntime::_vtable_must_compile_Java                    = NULL;
 address OptoRuntime::_complete_monitor_locking_Java               = NULL;
+address OptoRuntime::_monitor_notify_Java                         = NULL;
+address OptoRuntime::_monitor_notifyAll_Java                      = NULL;
 address OptoRuntime::_rethrow_Java                                = NULL;
 
 address OptoRuntime::_slow_arraycopy_Java                         = NULL;
@@ -144,6 +146,8 @@ bool OptoRuntime::generate(ciEnv* env) {
   gen(env, _g1_wb_pre_Java                 , g1_wb_pre_Type               , SharedRuntime::g1_wb_pre        ,    0 , false, false, false);
   gen(env, _g1_wb_post_Java                , g1_wb_post_Type              , SharedRuntime::g1_wb_post       ,    0 , false, false, false);
   gen(env, _complete_monitor_locking_Java  , complete_monitor_enter_Type  , SharedRuntime::complete_monitor_locking_C, 0, false, false, false);
+  gen(env, _monitor_notify_Java            , monitor_notify_Type          , monitor_notify_C                ,    0 , false, false, false);
+  gen(env, _monitor_notifyAll_Java         , monitor_notify_Type          , monitor_notifyAll_C             ,    0 , false, false, false);
   gen(env, _rethrow_Java                   , rethrow_Type                 , rethrow_C                       ,    2 , true , false, true );
 
   gen(env, _slow_arraycopy_Java            , slow_arraycopy_Type          , SharedRuntime::slow_arraycopy_C ,    0 , false, false, false);
@@ -426,6 +430,45 @@ JRT_ENTRY(void, OptoRuntime::multianewarrayN_C(Klass* elem_type, arrayOopDesc* d
   thread->set_vm_result(obj);
 JRT_END
 
+JRT_BLOCK_ENTRY(void, OptoRuntime::monitor_notify_C(oopDesc* obj, JavaThread *thread))
+
+  // Very few notify/notifyAll operations find any threads on the waitset, so
+  // the dominant fast-path is to simply return.
+  // Relatedly, it's critical that notify/notifyAll be fast in order to
+  // reduce lock hold times.
+  if (!SafepointSynchronize::is_synchronizing()) {
+    if (ObjectSynchronizer::quick_notify(obj, thread, false)) {
+      return;
+    }
+  }
+
+  // This is the case the fast-path above isn't provisioned to handle.
+  // The fast-path is designed to handle frequently arising cases in an efficient manner.
+  // (The fast-path is just a degenerate variant of the slow-path).
+  // Perform the dreaded state transition and pass control into the slow-path.
+  JRT_BLOCK;
+  Handle h_obj(THREAD, obj);
+  ObjectSynchronizer::notify(h_obj, CHECK);
+  JRT_BLOCK_END;
+JRT_END
+
+JRT_BLOCK_ENTRY(void, OptoRuntime::monitor_notifyAll_C(oopDesc* obj, JavaThread *thread))
+
+  if (!SafepointSynchronize::is_synchronizing() ) {
+    if (ObjectSynchronizer::quick_notify(obj, thread, true)) {
+      return;
+    }
+  }
+
+  // This is the case the fast-path above isn't provisioned to handle.
+  // The fast-path is designed to handle frequently arising cases in an efficient manner.
+  // (The fast-path is just a degenerate variant of the slow-path).
+  // Perform the dreaded state transition and pass control into the slow-path.
+  JRT_BLOCK;
+  Handle h_obj(THREAD, obj);
+  ObjectSynchronizer::notifyall(h_obj, CHECK);
+  JRT_BLOCK_END;
+JRT_END
 
 const TypeFunc *OptoRuntime::new_instance_Type() {
   // create input type (domain)
@@ -604,14 +647,26 @@ const TypeFunc *OptoRuntime::complete_monitor_exit_Type() {
   fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL;  // Object to be Locked
   fields[TypeFunc::Parms+1] = TypeRawPtr::BOTTOM;    // Address of stack location for lock - BasicLock
   fields[TypeFunc::Parms+2] = TypeRawPtr::BOTTOM;    // Thread pointer (Self)
-  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+3,fields);
+  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+3, fields);
 
   // create result type (range)
   fields = TypeTuple::fields(0);
 
-  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0,fields);
+  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0, fields);
 
-  return TypeFunc::make(domain,range);
+  return TypeFunc::make(domain, range);
+}
+
+const TypeFunc *OptoRuntime::monitor_notify_Type() {
+  // create input type (domain)
+  const Type **fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL;  // Object to be Locked
+  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+1, fields);
+
+  // create result type (range)
+  fields = TypeTuple::fields(0);
+  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0, fields);
+  return TypeFunc::make(domain, range);
 }
 
 const TypeFunc* OptoRuntime::flush_windows_Type() {

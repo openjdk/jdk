@@ -39,7 +39,7 @@ import java.math.BigInteger;
 /**
  * Implements the ASN.1 KRB_KDC_REQ type.
  *
- * <xmp>
+ * <pre>{@code
  * KDC-REQ              ::= SEQUENCE {
  *      -- NOTE: first tag is [1], not [0]
  *      pvno            [1] INTEGER (5) ,
@@ -48,7 +48,7 @@ import java.math.BigInteger;
  *                            -- NOTE: not empty --,
  *      req-body        [4] KDC-REQ-BODY
  * }
- * </xmp>
+ * }</pre>
  *
  * <p>
  * This definition reflects the Network Working Group RFC 4120
@@ -95,7 +95,7 @@ public class KDCReq {
      * @param req_type a encoded asn1 type value.
      * @exception Asn1Exception if an error occurs while decoding an ASN1 encoded data.
      * @exception IOException if an I/O error occurs while reading encoded data.
-     * @exceptoin KrbErrException
+     * @exception KrbErrException
      */
     public KDCReq(DerValue der, int req_type) throws Asn1Exception,
             IOException, KrbException {

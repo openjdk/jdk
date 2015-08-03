@@ -45,7 +45,7 @@ import sun.security.krb5.internal.KrbApErrException;
  * self-cleanup of expired items in the cache.
  *
  * AuthTimeWithHash objects inside a cache are always sorted from big (new) to
- * small (old) as determined by {@see AuthTimeWithHash#compareTo}. In the most
+ * small (old) as determined by {@link AuthTimeWithHash#compareTo}. In the most
  * common case a newcomer should be newer than the first element.
  *
  * @author Yanni Zhang

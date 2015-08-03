@@ -101,11 +101,11 @@ public class EncryptionKey
      * Obtains all versions of the secret key of the principal from a
      * keytab.
      *
-     * @Param princ the principal whose secret key is desired
+     * @param princ the principal whose secret key is desired
      * @param keytab the path to the keytab file. A value of null
      * will be accepted to indicate that the default path should be
      * searched.
-     * @returns an array of secret keys or null if none were found.
+     * @return an array of secret keys or null if none were found.
      */
     public static EncryptionKey[] acquireSecretKeys(PrincipalName princ,
                                                     String keytab) {
@@ -127,7 +127,7 @@ public class EncryptionKey
      * @param password NOT null
      * @param etype
      * @param snp can be NULL
-     * @returns never null
+     * @return never null
      */
     public static EncryptionKey acquireSecretKey(PrincipalName cname,
             char[] password, int etype, PAData.SaltAndParams snp)
@@ -150,7 +150,7 @@ public class EncryptionKey
      * @param salt NOT null
      * @param etype
      * @param s2kparams can be NULL
-     * @returns never null
+     * @return never null
      */
     public static EncryptionKey acquireSecretKey(char[] password,
             String salt, int etype, byte[] s2kparams)
@@ -388,11 +388,11 @@ public class EncryptionKey
     /**
      * Returns the ASN.1 encoding of this EncryptionKey.
      *
-     * <xmp>
+     * <pre>{@code
      * EncryptionKey ::=   SEQUENCE {
      *                             keytype[0]    INTEGER,
      *                             keyvalue[1]   OCTET STRING }
-     * </xmp>
+     * }</pre>
      *
      * <p>
      * This definition reflects the Network Working Group RFC 4120

@@ -38,7 +38,7 @@ import java.math.BigInteger;
 /**
  * Implements the ASN.1 AP-REQ type.
  *
- * <xmp>
+ * <pre>{@code
  * AP-REQ               ::= [APPLICATION 14] SEQUENCE {
  *      pvno            [0] INTEGER (5),
  *      msg-type        [1] INTEGER (14),
@@ -46,7 +46,7 @@ import java.math.BigInteger;
  *      ticket          [3] Ticket,
  *      authenticator   [4] EncryptedData -- Authenticator
  * }
- * </xmp>
+ * }</pre>
  *
  * <p>
  * This definition reflects the Network Working Group RFC 4120
