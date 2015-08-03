@@ -26,6 +26,9 @@
 #ifndef CPU_X86_VM_C1_LIRASSEMBLER_X86_HPP
 #define CPU_X86_VM_C1_LIRASSEMBLER_X86_HPP
 
+// ArrayCopyStub needs access to bailout
+friend class ArrayCopyStub;
+
  private:
 
   int array_element_size(BasicType type) const;
