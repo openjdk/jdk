@@ -417,8 +417,59 @@ int vmIntrinsics::predicates_needed(vmIntrinsics::ID id) {
   }
 }
 
-bool vmIntrinsics::is_disabled_by_flags(vmIntrinsics::ID id) {
+bool vmIntrinsics::is_disabled_by_flags(methodHandle method, methodHandle compilation_context) {
+  vmIntrinsics::ID id = method->intrinsic_id();
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
+
+  // Check if the intrinsic corresponding to 'method' has been disabled on
+  // the command line by using the DisableIntrinsic flag (either globally
+  // or on a per-method level, see src/share/vm/compiler/abstractCompiler.hpp
+  // for details).
+  // Usually, the compilation context is the caller of the method 'method'.
+  // The only case when for a non-recursive method 'method' the compilation context
+  // is not the caller of the 'method' (but it is the method itself) is
+  // java.lang.ref.Referene::get.
+  // For java.lang.ref.Reference::get, the intrinsic version is used
+  // instead of the compiled version so that the value in the referent
+  // field can be registered by the G1 pre-barrier code. The intrinsified
+  // version of Reference::get also adds a memory barrier to prevent
+  // commoning reads from the referent field across safepoint since GC
+  // can change the referent field's value. See Compile::Compile()
+  // in src/share/vm/opto/compile.cpp or
+  // GraphBuilder::GraphBuilder() in src/share/vm/c1/c1_GraphBuilder.cpp
+  // for more details.
+  ccstr disable_intr = NULL;
+  if ((DisableIntrinsic[0] != '\0' && strstr(DisableIntrinsic, vmIntrinsics::name_at(id)) != NULL) ||
+      (!compilation_context.is_null() &&
+       CompilerOracle::has_option_value(compilation_context, "DisableIntrinsic", disable_intr) &&
+       strstr(disable_intr, vmIntrinsics::name_at(id)) != NULL)
+  ) {
+    return true;
+  }
+
+  // -XX:-InlineNatives disables nearly all intrinsics except the ones listed in
+  // the following switch statement.
+  if (!InlineNatives) {
+    switch (id) {
+    case vmIntrinsics::_indexOf:
+    case vmIntrinsics::_compareTo:
+    case vmIntrinsics::_equals:
+    case vmIntrinsics::_equalsC:
+    case vmIntrinsics::_getAndAddInt:
+    case vmIntrinsics::_getAndAddLong:
+    case vmIntrinsics::_getAndSetInt:
+    case vmIntrinsics::_getAndSetLong:
+    case vmIntrinsics::_getAndSetObject:
+    case vmIntrinsics::_loadFence:
+    case vmIntrinsics::_storeFence:
+    case vmIntrinsics::_fullFence:
+    case vmIntrinsics::_Reference_get:
+      break;
+    default:
+      return true;
+    }
+  }
+
   switch (id) {
   case vmIntrinsics::_isInstance:
   case vmIntrinsics::_isAssignableFrom:
@@ -430,6 +481,7 @@ bool vmIntrinsics::is_disabled_by_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_Class_cast:
   case vmIntrinsics::_getLength:
   case vmIntrinsics::_newArray:
+  case vmIntrinsics::_getClass:
     if (!InlineClassNatives) return true;
     break;
   case vmIntrinsics::_currentThread:
@@ -522,6 +574,12 @@ bool vmIntrinsics::is_disabled_by_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_getAndSetInt:
   case vmIntrinsics::_getAndSetLong:
   case vmIntrinsics::_getAndSetObject:
+  case vmIntrinsics::_loadFence:
+  case vmIntrinsics::_storeFence:
+  case vmIntrinsics::_fullFence:
+  case vmIntrinsics::_compareAndSwapObject:
+  case vmIntrinsics::_compareAndSwapLong:
+  case vmIntrinsics::_compareAndSwapInt:
     if (!InlineUnsafeOps) return true;
     break;
   case vmIntrinsics::_getShortUnaligned:
@@ -584,8 +642,8 @@ bool vmIntrinsics::is_disabled_by_flags(vmIntrinsics::ID id) {
     if (!InlineObjectCopy || !InlineArrayCopy) return true;
     break;
   case vmIntrinsics::_compareTo:
-     if (!SpecialStringCompareTo) return true;
-     break;
+    if (!SpecialStringCompareTo) return true;
+    break;
   case vmIntrinsics::_indexOf:
     if (!SpecialStringIndexOf) return true;
     break;
@@ -602,8 +660,8 @@ bool vmIntrinsics::is_disabled_by_flags(vmIntrinsics::ID id) {
     if (!InlineReflectionGetCallerClass) return true;
     break;
   case vmIntrinsics::_multiplyToLen:
-      if (!UseMultiplyToLenIntrinsic) return true;
-      break;
+    if (!UseMultiplyToLenIntrinsic) return true;
+    break;
   case vmIntrinsics::_squareToLen:
     if (!UseSquareToLenIntrinsic) return true;
     break;

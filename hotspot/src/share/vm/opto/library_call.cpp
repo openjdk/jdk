@@ -327,7 +327,7 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     methodHandle mh(THREAD, m->get_Method());
     methodHandle ct(THREAD, method()->get_Method());
     is_available = compiler->is_intrinsic_supported(mh, is_virtual) &&
-                   !compiler->is_intrinsic_disabled_by_flag(mh, ct);
+                   !vmIntrinsics::is_disabled_by_flags(mh, ct);
   }
 
   if (is_available) {

@@ -855,6 +855,9 @@ public:
   product(bool, UseCRC32CIntrinsics, false,                                 \
           "use intrinsics for java.util.zip.CRC32C")                        \
                                                                             \
+  diagnostic(ccstrlist, DisableIntrinsic, "",                               \
+         "do not expand intrinsics whose (internal) names appear here")     \
+                                                                            \
   develop(bool, TraceCallFixup, false,                                      \
           "Trace all call fixups")                                          \
                                                                             \
