@@ -343,7 +343,7 @@ public class DiagnosticCommandImpl extends NotificationEmitterSupport
                                                    "Diagnostic Framework Notification");
             }
         }
-        return notifInfo;
+        return notifInfo.clone();
     }
 
     private static long seqNumber = 0;
