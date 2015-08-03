@@ -39,6 +39,7 @@ import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.UnknownHostException;
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * Implements the ASN.1 HostAddress type.
@@ -295,4 +296,11 @@ public class HostAddress implements Cloneable {
         }
     }
 
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(Arrays.toString(address));
+        sb.append('(').append(addrType).append(')');
+        return sb.toString();
+    }
 }
