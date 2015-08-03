@@ -131,8 +131,6 @@ class Aix {
   static void initialize_libo4();
   static void initialize_libperfstat();
 
-  static bool supports_variable_stack_size();
-
  public:
   static void init_thread_fpu_state();
   static pthread_t main_thread(void)                                { return _main_thread; }
