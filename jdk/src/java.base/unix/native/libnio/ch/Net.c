@@ -29,6 +29,7 @@
 #include <string.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <limits.h>
 
 #include "jni.h"
 #include "jni_util.h"
@@ -709,7 +710,12 @@ Java_sun_nio_ch_Net_poll(JNIEnv* env, jclass this, jobject fdo, jint events, jlo
     int rv;
     pfd.fd = fdval(env, fdo);
     pfd.events = events;
-    rv = poll(&pfd, 1, timeout);
+    if (timeout < -1) {
+        timeout = -1;
+    } else if (timeout > INT_MAX) {
+        timeout = INT_MAX;
+    }
+    rv = poll(&pfd, 1, (int)timeout);
 
     if (rv >= 0) {
         return pfd.revents;
