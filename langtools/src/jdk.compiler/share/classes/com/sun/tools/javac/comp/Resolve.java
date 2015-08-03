@@ -35,7 +35,6 @@ import com.sun.tools.javac.comp.Check.CheckContext;
 import com.sun.tools.javac.comp.DeferredAttr.AttrMode;
 import com.sun.tools.javac.comp.DeferredAttr.DeferredAttrContext;
 import com.sun.tools.javac.comp.DeferredAttr.DeferredType;
-import com.sun.tools.javac.comp.Infer.InferenceContext;
 import com.sun.tools.javac.comp.Infer.FreeTypeListener;
 import com.sun.tools.javac.comp.Resolve.MethodResolutionContext.Candidate;
 import com.sun.tools.javac.comp.Resolve.MethodResolutionDiagHelper.Template;

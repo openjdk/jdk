@@ -41,9 +41,8 @@ import sun.security.krb5.internal.util.KerberosString;
 /**
  * Implements the ASN.1 Realm type.
  *
- * <xmp>
- * Realm ::= GeneralString
- * </xmp>
+ * {@code Realm ::= GeneralString}
+ *
  * This class is immutable.
  */
 public class Realm implements Cloneable {
@@ -244,8 +243,8 @@ public class Realm implements Cloneable {
      *
      * @param cRealm the initiating realm, not null
      * @param sRealm the target realm, not null, not equals to cRealm
-     * @returns array of realms including at least cRealm as the first
-     *          element
+     * @return array of realms including at least cRealm as the first
+     *         element
      */
     public static String[] getRealmsList(String cRealm, String sRealm) {
         try {

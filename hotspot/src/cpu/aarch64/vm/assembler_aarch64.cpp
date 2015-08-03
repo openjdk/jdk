@@ -261,7 +261,7 @@ void entry(CodeBuffer *cb) {
 
 // LoadStoreExclusiveOp
     __ stxr(r20, r21, r2);                             //       stxr    w20, x21, [x2]
-    __ stlxr(r7, r29, r7);                             //       stlxr   w7, x29, [x7]
+    __ stlxr(r5, r29, r7);                             //       stlxr   w5, x29, [x7]
     __ ldxr(r5, r16);                                  //       ldxr    x5, [x16]
     __ ldaxr(r27, r29);                                //       ldaxr   x27, [x29]
     __ stlr(r0, r29);                                  //       stlr    x0, [x29]
@@ -295,7 +295,7 @@ void entry(CodeBuffer *cb) {
     __ ldxp(r8, r2, r19);                              //       ldxp    x8, x2, [x19]
     __ ldaxp(r7, r19, r14);                            //       ldaxp   x7, x19, [x14]
     __ stxp(r8, r27, r28, r5);                         //       stxp    w8, x27, x28, [x5]
-    __ stlxp(r6, r8, r14, r6);                         //       stlxp   w6, x8, x14, [x6]
+    __ stlxp(r5, r8, r14, r6);                         //       stlxp   w5, x8, x14, [x6]
 
 // LoadStoreExclusiveOp
     __ ldxpw(r25, r4, r22);                            //       ldxp    w25, w4, [x22]
@@ -768,7 +768,7 @@ Disassembly of section .text:
  24c:   d61f0040        br      x2
  250:   d63f00a0        blr     x5
  254:   c8147c55        stxr    w20, x21, [x2]
- 258:   c807fcfd        stlxr   w7, x29, [x7]
+ 258:   c805fcfd        stlxr   w5, x29, [x7]
  25c:   c85f7e05        ldxr    x5, [x16]
  260:   c85fffbb        ldaxr   x27, [x29]
  264:   c89fffa0        stlr    x0, [x29]
@@ -794,7 +794,7 @@ Disassembly of section .text:
  2b4:   c87f0a68        ldxp    x8, x2, [x19]
  2b8:   c87fcdc7        ldaxp   x7, x19, [x14]
  2bc:   c82870bb        stxp    w8, x27, x28, [x5]
- 2c0:   c826b8c8        stlxp   w6, x8, x14, [x6]
+ 2c0:   c825b8c8        stlxp   w5, x8, x14, [x6]
  2c4:   887f12d9        ldxp    w25, w4, [x22]
  2c8:   887fb9ee        ldaxp   w14, w14, [x15]
  2cc:   8834215a        stxp    w20, w26, w8, [x10]
@@ -1084,14 +1084,14 @@ Disassembly of section .text:
     0xd4063721,     0xd4035082,     0xd400bfe3,     0xd4282fc0,
     0xd444c320,     0xd503201f,     0xd69f03e0,     0xd6bf03e0,
     0xd5033fdf,     0xd5033f9f,     0xd5033abf,     0xd61f0040,
-    0xd63f00a0,     0xc8147c55,     0xc807fcfd,     0xc85f7e05,
+    0xd63f00a0,     0xc8147c55,     0xc805fcfd,     0xc85f7e05,
     0xc85fffbb,     0xc89fffa0,     0xc8dfff95,     0x88187cf8,
     0x8815ff9a,     0x885f7cd5,     0x885fffcf,     0x889ffc73,
     0x88dffc56,     0x48127c0f,     0x480bff85,     0x485f7cdd,
     0x485ffcf2,     0x489fff99,     0x48dffe62,     0x080a7c3e,
     0x0814fed5,     0x085f7c59,     0x085ffcb8,     0x089ffc70,
     0x08dfffb6,     0xc87f0a68,     0xc87fcdc7,     0xc82870bb,
-    0xc826b8c8,     0x887f12d9,     0x887fb9ee,     0x8834215a,
+    0xc825b8c8,     0x887f12d9,     0x887fb9ee,     0x8834215a,
     0x8837ca52,     0xf806317e,     0xb81b3337,     0x39000dc2,
     0x78005149,     0xf84391f4,     0xb85b220c,     0x385fd356,
     0x785d127e,     0x389f4149,     0x79801e3c,     0x79c014a3,

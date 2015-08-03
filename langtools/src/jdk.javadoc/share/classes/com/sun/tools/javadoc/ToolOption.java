@@ -96,6 +96,13 @@ public enum ToolOption {
         }
     },
 
+    RELEASE("-release", true) {
+        @Override
+        public void process(Helper helper, String arg) {
+            helper.setCompilerOpt(opt, arg);
+        }
+    },
+
     SOURCE("-source", true) {
         @Override
         public void process(Helper helper, String arg) {

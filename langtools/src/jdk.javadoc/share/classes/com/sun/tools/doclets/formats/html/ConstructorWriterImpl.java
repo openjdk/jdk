@@ -135,6 +135,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     public Content getSignature(ConstructorDoc constructor) {
         Content pre = new HtmlTree(HtmlTag.PRE);
         writer.addAnnotationInfo(constructor, pre);
+        int annotationLength = pre.charCount();
         addModifiers(constructor, pre);
         if (configuration.linksource) {
             Content constructorName = new StringContent(constructor.name());
@@ -142,7 +143,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
         } else {
             addName(constructor.name(), pre);
         }
-        int indent = pre.charCount();
+        int indent = pre.charCount() - annotationLength;
         addParameters(constructor, pre, indent);
         addExceptions(constructor, pre, indent);
         return pre;

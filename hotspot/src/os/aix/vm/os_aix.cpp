@@ -1655,13 +1655,6 @@ void os::print_memory_info(outputStream* st) {
 }
 
 void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
-  // cpu
-  st->print("CPU:");
-  st->print("total %d", os::processor_count());
-  // It's not safe to query number of active processors after crash
-  // st->print("(active %d)", os::active_processor_count());
-  st->print(" %s", VM_Version::cpu_features());
-  st->cr();
 }
 
 void os::print_siginfo(outputStream* st, void* siginfo) {
@@ -3483,7 +3476,6 @@ void os::init(void) {
   // For now UseLargePages is just ignored.
   FLAG_SET_ERGO(bool, UseLargePages, false);
   _page_sizes[0] = 0;
-  _large_page_size = -1;
 
   // debug trace
   trcVerbose("os::vm_page_size %s\n", describe_pagesize(os::vm_page_size()));

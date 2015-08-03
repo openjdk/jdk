@@ -110,7 +110,7 @@ public final class KrbAsReqBuilder {
      * realm, where default realm will be used. This realm will be the target
      * realm for AS-REQ. I believe a client should only get initial TGT from
      * its own realm.
-     * @param keys must not be null. if empty, might be quite useless.
+     * @param ktab must not be null. If empty, might be quite useless.
      * This argument will neither be modified nor stored by the method.
      * @throws KrbException
      */

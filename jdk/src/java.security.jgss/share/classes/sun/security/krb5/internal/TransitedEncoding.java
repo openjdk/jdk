@@ -38,12 +38,12 @@ import java.math.BigInteger;
 /**
  * Implements the ASN.1 TransitedEncoding type.
  *
- * <xmp>
+ * <pre>{@code
  *  TransitedEncoding      ::= SEQUENCE {
  *         tr-type         [0] Int32 -- must be registered --,
  *         contents        [1] OCTET STRING
  *  }
- * </xmp>
+ * }</pre>
  *
  * <p>
  * This definition reflects the Network Working Group RFC 4120

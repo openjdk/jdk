@@ -1936,7 +1936,9 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         for (Content annotation: annotations) {
             htmltree.addContent(sep);
             htmltree.addContent(annotation);
-            sep = " ";
+            if (!lineBreak) {
+                sep = " ";
+            }
         }
         return true;
     }

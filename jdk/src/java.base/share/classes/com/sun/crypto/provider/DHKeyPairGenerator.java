@@ -100,7 +100,7 @@ public final class DHKeyPairGenerator extends KeyPairGeneratorSpi {
      * generator, and optionally the requested size in bits of the random
      * exponent (private value).
      *
-     * @param params the parameter set used to generate the key pair
+     * @param algParams the parameter set used to generate the key pair
      * @param random the source of randomness
      *
      * @exception InvalidAlgorithmParameterException if the given parameters
