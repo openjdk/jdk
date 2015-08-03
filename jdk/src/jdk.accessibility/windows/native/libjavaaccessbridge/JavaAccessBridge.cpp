@@ -89,27 +89,6 @@ extern "C" {
         theJavaAccessBridge->javaRun(env, obj);
     }
 
-#if 0 // SetDlgItemText has caused problems with JAWS
-    /**
-     * Append debug info to dialog
-     *
-     */
-    void AppendToCallInfo(char *s) {
-        char buffer[4096];
-
-        PrintDebugString(s);
-
-        GetDlgItemText(theDialogWindow, cCallInfo, buffer, sizeof(buffer));
-        if (strlen(buffer) < (sizeof(buffer) - strlen(s))) {
-            strncat(buffer, s, sizeof(buffer));
-            SetDlgItemText(theDialogWindow, cCallInfo, buffer);
-        } else {
-            SetDlgItemText(theDialogWindow, cCallInfo, s);
-        }
-    }
-#endif
-
-
     /**
      * Our window proc
      *
@@ -118,24 +97,23 @@ extern "C" {
         int command;
         COPYDATASTRUCT *sentToUs;
         char *package;
-        //DEBUG_CODE(char buffer[256]);
 
         switch (message) {
         case WM_INITDIALOG:
-            //DEBUG_CODE(SetDlgItemText(theDialogWindow, cStatusText, "Initializing"));
+            PrintDebugString("In AccessBridgeDialog - Initializing");
             break;
 
         case WM_COMMAND:
             command = LOWORD (wParam);
+            PrintDebugString("In AccessBridgeDialog - Got WM_COMMAND, command: %X", command);
             break;
 
             // call from Java with data for us to deliver
         case WM_COPYDATA:
             if (theDialogWindow == (HWND) wParam) {
-                //DEBUG_CODE(SetDlgItemText(theDialogWindow, cStatusText, "Got WM_COPYDATA from ourselves"));
+                PrintDebugString("In AccessBridgeDialog - Got WM_COPYDATA from ourselves");
             } else {
-                //DEBUG_CODE(sprintf(buffer, "Got WM_COPYDATA from HWND %p", wParam));
-                //DEBUG_CODE(SetDlgItemText(theDialogWindow, cStatusText, buffer));
+                PrintDebugString("In AccessBridgeDialog - Got WM_COPYDATA from HWND %p", wParam);
                 sentToUs = (COPYDATASTRUCT *) lParam;
                 package = (char *) sentToUs->lpData;
                 theJavaAccessBridge->processPackage(package, sentToUs->cbData);
@@ -147,18 +125,16 @@ extern "C" {
             // wParam == sourceHwnd
             // lParam == buffer size in shared memory
             if (theDialogWindow == (HWND) wParam) {
-                //DEBUG_CODE(SetDlgItemText(theDialogWindow, cStatusText, "Got AB_MESSAGE_WAITING from ourselves"));
+                PrintDebugString("In AccessBridgeDialog - Got AB_MESSAGE_WAITING from ourselves");
             } else {
-                //DEBUG_CODE(sprintf(buffer, "Got AB_MESSAGE_WAITING from HWND %p", wParam));
-                //DEBUG_CODE(SetDlgItemText(theDialogWindow, cStatusText, buffer));
+                PrintDebugString("In AccessBridgeDialog - Got AB_MESSAGE_WAITING from HWND %p", wParam);
                 LRESULT returnVal = theJavaAccessBridge->receiveMemoryPackage((HWND) wParam, (long) lParam);
             }
             break;
 
             // a JavaAccessBridge DLL is going away
         case AB_DLL_GOING_AWAY:
-            // wParam == sourceHwnd
-            //DEBUG_CODE(SetDlgItemText(theDialogWindow, cStatusText, "Got AB_DLL_GOING_AWAY message"));
+            PrintDebugString("In AccessBridgeDialog - Got AB_DLL_GOING_AWAY message");
             theJavaAccessBridge->WindowsATDestroyed((HWND) wParam);
             break;
 
@@ -169,6 +145,7 @@ extern "C" {
                 // A new Windows AT just said "hi";
                 // say "hi" back so it can mate up with us
                 // otherwise don't do anything (e.g. don't set up data structures yet)
+                PrintDebugString("In AccessBridgeDialog - Got theFromWindowsHelloMsgID message");
                 theJavaAccessBridge->postHelloToWindowsDLLMsg((HWND) wParam);
             }
         }
@@ -324,9 +301,9 @@ JavaAccessBridge::initWindow() {
  */
 void
 JavaAccessBridge::postHelloToWindowsDLLMsg(HWND destHwnd) {
-    PrintDebugString("\r\nin JavaAccessBridge::postHelloToWindowsDLLMsg");
+    PrintDebugString("\r\nIn JavaAccessBridge::postHelloToWindowsDLLMsg");
     PrintDebugString("  calling PostMessage(%p, %X, %p, %p)",
-                     destHwnd, theFromJavaHelloMsgID, dialogWindow, javaVM);
+                     destHwnd, theFromJavaHelloMsgID, dialogWindow, dialogWindow);
     PostMessage(destHwnd, theFromJavaHelloMsgID, (WPARAM) dialogWindow, (LPARAM) dialogWindow);
 }
 
@@ -2493,7 +2470,7 @@ JavaAccessBridge::firePropertyTableModelChange(JNIEnv *env, jobject callingObj,
                                     jobject eventObj, jobject source) {                 \
                                                                                         \
         PrintDebugString("\r\nFiring event id = %d(%p, %p, %p, %p); vmID = %X",         \
-                         eventConstant, env, callingObj, eventObj, source, javaVM);     \
+                         eventConstant, env, callingObj, eventObj, source, dialogWindow); \
                                                                                         \
         /* sanity check */                                                              \
         if (ATs == (AccessBridgeATInstance *) 0) {                                      \
@@ -2531,7 +2508,7 @@ JavaAccessBridge::firePropertyTableModelChange(JNIEnv *env, jobject callingObj,
     void JavaAccessBridge::javaShutdown(JNIEnv *env, jobject callingObj) {
 
         PrintDebugString("\r\nFiring event id = %d(%p, %p); vmID = %X",
-                         cJavaShutdownEvent, env, callingObj, javaVM);
+                         cJavaShutdownEvent, env, callingObj, dialogWindow);
 
         /* sanity check */
         if (ATs == (AccessBridgeATInstance *) 0) {
