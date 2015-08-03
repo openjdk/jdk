@@ -40,7 +40,7 @@ AccessBridgeJavaEntryPoints::AccessBridgeJavaEntryPoints(JNIEnv *jniEnvironment,
                                                          jobject bridgeObject) {
     jniEnv = jniEnvironment;
     accessBridgeObject = (jobject)bridgeObject;
-    PrintDebugString("AccessBridgeJavaEntryPoints(%X, %X) called", jniEnv, accessBridgeObject);
+    PrintDebugString("AccessBridgeJavaEntryPoints(%p, %p) called", jniEnv, accessBridgeObject);
 }
 
 
