@@ -463,8 +463,8 @@ class Arguments : AllStatic {
   static jint apply_ergo();
   // Adjusts the arguments after the OS have adjusted the arguments
   static jint adjust_after_os();
-  // Set any arguments that need to be set after the final range and constraint check
-  static void post_final_range_and_constraint_check(bool check_passed);
+  // Set any arguments that need to be set after the 'CommandLineFlagConstraint::AfterErgo' constraint check
+  static void post_after_ergo_constraint_check(bool check_passed);
 
   static void set_gc_specific_flags();
   static inline bool gc_selected(); // whether a gc has been selected
@@ -492,6 +492,7 @@ class Arguments : AllStatic {
 
   // print jvm_flags, jvm_args and java_command
   static void print_on(outputStream* st);
+  static void print_summary_on(outputStream* st);
 
   // convenient methods to obtain / print jvm_flags and jvm_args
   static const char* jvm_flags()           { return build_resource_string(_jvm_flags_array, _num_jvm_flags); }

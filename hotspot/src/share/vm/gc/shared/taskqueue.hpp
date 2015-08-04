@@ -295,8 +295,9 @@ public:
   // Delete any resource associated with the queue.
   ~GenericTaskQueue();
 
-  // apply the closure to all elements in the task queue
-  void oops_do(OopClosure* f);
+  // Apply fn to each element in the task queue.  The queue must not
+  // be modified while iterating.
+  template<typename Fn> void iterate(Fn fn);
 
 private:
   // Element array.

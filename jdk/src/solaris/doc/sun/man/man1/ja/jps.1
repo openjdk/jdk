@@ -1,12 +1,5 @@
 '\" t
-.\" Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
-.\" Title: jps
-.\" Language: English
-.\" Date: 2013年11月21日
-.\" SectDesc: モニタリング・ツール
-.\" Software: JDK 8
-.\" Arch: 汎用
-.\"
+.\" Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -15,7 +8,7 @@
 .\"
 .\" This code is distributed in the hope that it will be useful, but WITHOUT
 .\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 .\" version 2 for more details (a copy is included in the LICENSE file that
 .\" accompanied this code).
 .\"
@@ -27,8 +20,17 @@
 .\" or visit www.oracle.com if you need additional information or have any
 .\" questions.
 .\"
-.pl 99999
-.TH "jps" "1" "2013年11月21日" "JDK 8" "モニタリング・ツール"
+.\" Title: jps
+.\" Language: Japanese
+.\" Date: 2013ǯ11��21��
+.\" SectDesc: ��˥���󥰡��ġ���
+.\" Software: JDK 8
+.\" Arch: ����
+.\" Part Number: E58103-01
+.\" Doc ID: JSSON
+.\"
+.if n .pl 99999
+.TH "jps" "1" "2013ǯ11��21��" "JDK 8" "��˥���󥰡��ġ���"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -48,15 +50,15 @@
 .\" -----------------------------------------------------------------
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
-.SH "NAME"
-jps \- ターゲット・システム上で計測されたJava仮想マシン(JVM)を一覧表示します。このコマンドは試験的なもので、サポートされていません。
-.SH "概要"
+.SH "̾��"
+jps \- �������åȡ������ƥ��Ƿ�¬���줿Java���ۥޥ���(JVM)�����ɽ�����ޤ������Υ��ޥ�ɤϻŪ�ʤ�Τǡ����ݡ��Ȥ���Ƥ��ޤ���
+.SH "����"
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\fIjps\fR [ \fIoptions\fR ] [ \fIhostid\fR ]
+\fBjps\fR [ \fIoptions\fR ] [ \fIhostid\fR ]
 .fi
 .if n \{\
 .RE
@@ -64,66 +66,67 @@ jps \- ターゲット・システム上で計測されたJava仮想マシン(JV
 .PP
 \fIoptions\fR
 .RS 4
-コマンドライン・オプション。オプションを参照してください。
+���ޥ�ɹԥ��ץ���󡣥��ץ����򻲾Ȥ��Ƥ���������
 .RE
 .PP
 \fIhostid\fR
 .RS 4
-プロセス・レポートを生成するホストの識別子。\fIhostid\fRには、通信プロトコル、ポート番号、実装に固有な他のデータを指定したオプション・コンポーネントを含めることができます。ホスト識別子を参照してください。
+�ץ���������ݡ��Ȥ���������ۥ��Ȥμ��̻ҡ�\fBhostid\fR�ˤϡ��̿��ץ��ȥ��롢�ݡ����ֹ桢�����˸�ͭ��¾�Υǡ�������ꤷ�����ץ���󡦥���ݡ��ͥ�Ȥ�ޤ�뤳�Ȥ��Ǥ��ޤ����ۥ��ȼ��̻Ҥ򻲾Ȥ��Ƥ���������
 .RE
-.SH "説明"
+.SH "����"
 .PP
-\fIjps\fRコマンドは、ターゲット・システム上で計測されたJava HotSpot VMを一覧表示します。このコマンドで表示できるレポート情報は、アクセス権を持ったJVMに関するものに限定されます。
+\fBjps\fR���ޥ�ɤϡ��������åȡ������ƥ��Ƿ�¬���줿Java HotSpot VM�����ɽ�����ޤ������Υ��ޥ�ɤ�ɽ���Ǥ����ݡ��Ⱦ���ϡ���������������ä�JVM�˴ؤ����Τ˸��ꤵ��ޤ���
 .PP
-\fIhostid\fRを指定せずに\fIjps\fRコマンドを実行した場合、ローカル・ホストで計測されたJVMが検索されます。\fIhostid\fRを指定して起動した場合、指定されたプロトコルとポートを使用して、指定されたホスト上のJVMを検索します。\fIjstatd\fRプロセスがターゲット・ホスト上で実行されていると想定されます。
+\fBhostid\fR����ꤻ����\fBjps\fR���ޥ�ɤ�¹Ԥ�����硢�������롦�ۥ��ȤǷ�¬���줿JVM����������ޤ���\fBhostid\fR����ꤷ�Ƶ�ư������硢���ꤵ�줿�ץ��ȥ���ȥݡ��Ȥ���Ѥ��ơ����ꤵ�줿�ۥ��Ⱦ��JVM�򸡺����ޤ���\fBjstatd\fR�ץ��������������åȡ��ۥ��Ⱦ�Ǽ¹Ԥ���Ƥ�������ꤵ��ޤ���
 .PP
-\fIjps\fRコマンドは、ターゲット・システムで計測された各JVMについて、ローカルVM識別子、つまり\fIlvmid\fRをレポートします。\fIlvmid\fRは、一般的にはJVMプロセスに対するオペレーティング・システムのプロセス識別子ですが、必ずしもそうであるとは限りません。オプションを指定しない場合、\fIjps\fRによって、各Javaアプリケーションの\fIlvmid\fRが一覧表示され、それぞれにアプリケーションのクラス名またはJARファイル名が簡単な形式で示されます。この簡単な形式のクラス名とJARファイル名では、クラスのパッケージ情報またはJARファイル・パス情報が省略されています。
+\fBjps\fR���ޥ�ɤϡ��������åȡ������ƥ�Ƿ�¬���줿��JVM�ˤĤ��ơ���������VM���̻ҡ��Ĥޤ�\fBlvmid\fR���ݡ��Ȥ��ޤ���\fBlvmid\fR�ϡ�����Ū�ˤ�JVM�ץ��������Ф��륪�ڥ졼�ƥ��󥰡������ƥ�Υץ��������̻ҤǤ�����ɬ�����⤽���Ǥ���Ȥϸ¤�ޤ��󡣥��ץ�������ꤷ�ʤ���硢\fBjps\fR�ˤ�äơ���Java���ץꥱ��������\fBlvmid\fR������ɽ�����졢���줾��˥��ץꥱ�������Υ��饹̾�ޤ���JAR�ե�����̾����ñ�ʷ����Ǽ�����ޤ������δ�ñ�ʷ����Υ��饹̾��JAR�ե�����̾�Ǥϡ����饹�Υѥå���������ޤ���JAR�ե����롦�ѥ����󤬾�ά����Ƥ��ޤ���
 .PP
-\fIjps\fRコマンドは、Java起動ツールを使用してmainメソッドに渡されるクラス名と引数を検索します。独自の起動ツールを使用してターゲットJVMを起動した場合は、\fImain\fRメソッドに渡されるクラス名またはJARファイル名と引数は利用できません。この場合、\fIjps\fRコマンドは、\fImain\fRメソッドに渡されるクラス名またはJARファイル名と引数に対して、文字列\fIUnknown\fRを出力します。
+\fBjps\fR���ޥ�ɤϡ�Java��ư�ġ������Ѥ���main�᥽�åɤ��Ϥ���륯�饹̾�Ȱ����򸡺����ޤ����ȼ��ε�ư�ġ������Ѥ��ƥ������å�JVM��ư�������ϡ�\fBmain\fR�᥽�åɤ��Ϥ���륯�饹̾�ޤ���JAR�ե�����̾�Ȱ��������ѤǤ��ޤ��󡣤��ξ�硢\fBjps\fR���ޥ�ɤϡ�\fBmain\fR�᥽�åɤ��Ϥ���륯�饹̾�ޤ���JAR�ե�����̾�Ȱ������Ф��ơ�ʸ����\fBUnknown\fR����Ϥ��ޤ���
 .PP
-\fIjps\fRコマンドで生成されるJVMのリストは、このコマンドを実行するプリンシパルに与えられたアクセス権に基づき、制限される場合があります。このコマンドは、オペレーティング・システム独自のアクセス制御機構による決定に基づいて、プリンシパルにアクセス権が与えられているJVMのみを一覧表示します。
-.SH "オプション"
+\fBjps\fR���ޥ�ɤ����������JVM�Υꥹ�Ȥϡ����Υ��ޥ�ɤ�¹Ԥ���ץ�󥷥ѥ��Ϳ����줿�����������˴�Ť������¤�����礬����ޤ������Υ��ޥ�ɤϡ����ڥ졼�ƥ��󥰡������ƥ��ȼ��Υ����������浡���ˤ�����˴�Ť��ơ��ץ�󥷥ѥ�˥�����������Ϳ�����Ƥ���JVM�Τߤ����ɽ�����ޤ���
+.SH "���ץ����"
 .PP
-\fIjps\fRコマンドでは、コマンドの出力を変更するオプションが多数サポートされています。将来、これらのオプションは、変更または廃止される可能性があります。
+\fBjps\fR���ޥ�ɤǤϡ����ޥ�ɤν��Ϥ��ѹ����륪�ץ����¿�����ݡ��Ȥ���Ƥ��ޤ������衢�����Υ��ץ����ϡ��ѹ��ޤ����ѻߤ�����ǽ��������ޤ���
 .PP
 \-q
 .RS 4
-クラス名、JARファイル名、および\fImain\fRメソッドに渡された引数の出力を抑制し、ローカルVM識別子の一覧のみを生成します。
+���饹̾��JAR�ե�����̾�������\fBmain\fR�᥽�åɤ��Ϥ��줿�����ν��Ϥ�����������������VM���̻Ҥΰ����Τߤ��������ޤ���
 .RE
 .PP
 \-m
 .RS 4
-\fImain\fRメソッドに渡される引数を出力します。この出力は、組み込まれているJVMに対して\fInull\fRになることもあります。
+\fBmain\fR�᥽�åɤ��Ϥ�����������Ϥ��ޤ������ν��Ϥϡ��Ȥ߹��ޤ�Ƥ���JVM���Ф���\fBnull\fR�ˤʤ뤳�Ȥ⤢��ޤ���
 .RE
 .PP
 \-l
 .RS 4
-アプリケーションの\fImain\fRクラスのフル・パッケージ名、またはアプリケーションのJARファイルへのフルパス名を出力します。
+���ץꥱ��������\fBmain\fR���饹�Υե롦�ѥå�����̾���ޤ��ϥ��ץꥱ��������JAR�ե�����ؤΥե�ѥ�̾����Ϥ��ޤ���
 .RE
 .PP
 \-v
 .RS 4
-JVMに渡される引数を表示します。
+JVM���Ϥ���������ɽ�����ޤ���
 .RE
 .PP
 \-V
 .RS 4
-クラス名、JARファイル名、およびmaiメソッドに渡された引数の出力を抑制し、ローカルVM識別子の一覧のみを生成します。
+���饹̾��JAR�ե�����̾�������mai�᥽�åɤ��Ϥ��줿�����ν��Ϥ�����������������VM���̻Ҥΰ����Τߤ��������ޤ���
 .RE
 .PP
-\-J\fIoption\fR
+\-J\fBoption\fR
 .RS 4
-JVMに\fIoption\fRを渡します。optionには、Javaアプリケーション起動ツールのリファレンス・ページに記載されている\fIオプション\fRを1つ指定します。たとえば、\fI\-J\-Xms48m\fRと指定すると、スタートアップ・メモリーは48MBに設定されます。java(1)を参照してください。
+JVM��\fBoption\fR���Ϥ��ޤ���option�ˤϡ�Java���ץꥱ�������ư�ġ���Υ�ե���󥹡��ڡ����˵��ܤ���Ƥ���\fB���ץ����\fR��1�Ļ��ꤷ�ޤ������Ȥ��С�\fB\-J\-Xms48m\fR�Ȼ��ꤹ��ȡ��������ȥ��åס����꡼��48MB�����ꤵ��ޤ���java(1)�򻲾Ȥ��Ƥ���������
 .RE
-.SH "ホスト識別子"
+.SH "�ۥ��ȼ��̻�"
 .PP
-ホスト識別子、つまり\fIhostid\fRは、ターゲット・システムを示す文字列です。\fIhostid\fR文字列の構文は、URIの構文に対応しています。
+�ۥ��ȼ��̻ҡ��Ĥޤ�\fBhostid\fR�ϡ��������åȡ������ƥ�򼨤�ʸ����Ǥ���\fBhostid\fRʸ����ι�ʸ�ϡ�URI�ι�ʸ���б����Ƥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-[protocol:][[//]hostname][:port][/servername]
+\fB[protocol:][[//]hostname][:port][/servername]\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -131,89 +134,93 @@ JVMに\fIoption\fRを渡します。optionには、Javaアプリケーション�
 .PP
 \fIprotocol\fR
 .RS 4
-通信プロトコルです。\fIprotocol\fRが省略され、\fIhostname\fRが指定されていない場合、デフォルトのプロトコルが、プラットフォーム固有の最適化されたローカル・プロトコルになります。プロトコルが省略され、ホスト名が指定されている場合は、デフォルト・プロトコルは\fIrmi\fRになります。
+�̿��ץ��ȥ���Ǥ���\fBprotocol\fR����ά���졢\fBhostname\fR�����ꤵ��Ƥ��ʤ���硢�ǥե���ȤΥץ��ȥ��뤬���ץ�åȥե������ͭ�κ�Ŭ�����줿�������롦�ץ��ȥ���ˤʤ�ޤ����ץ��ȥ��뤬��ά���졢�ۥ���̾�����ꤵ��Ƥ�����ϡ��ǥե���ȡ��ץ��ȥ����\fBrmi\fR�ˤʤ�ޤ���
 .RE
 .PP
 hostname
 .RS 4
-ターゲット・ホストを示すホスト名またはIPアドレスです。\fIhostname\fRパラメータが省略されている場合は、ターゲット・ホストはローカル・ホストになります。
+�������åȡ��ۥ��Ȥ򼨤��ۥ���̾�ޤ���IP���ɥ쥹�Ǥ���\fBhostname\fR�ѥ�᡼������ά����Ƥ�����ϡ��������åȡ��ۥ��Ȥϥ������롦�ۥ��Ȥˤʤ�ޤ���
 .RE
 .PP
 port
 .RS 4
-リモート・サーバーと通信するためのデフォルト・ポートです。\fIhostname\fRパラメータが省略されているか、\fIprotocol\fRパラメータが、最適化されたローカル・プロトコルを指定している場合、\fIport\fRパラメータは無視されます。それ以外の場合、\fIport\fRパラメータの扱いは、実装によって異なります。デフォルトの
-\fIrmi\fRプロトコルの場合、\fIport\fRパラメータは、リモート・ホスト上のrmiregistryのポート番号を示します。\fIport\fRパラメータが省略されているか、\fIprotocol\fRパラメータが\fIrmi\fRを示している場合、デフォルトのrmiregistryポート(1099)が使用されます。
+��⡼�ȡ������С����̿����뤿��Υǥե���ȡ��ݡ��ȤǤ���\fBhostname\fR�ѥ�᡼������ά����Ƥ��뤫��\fBprotocol\fR�ѥ�᡼��������Ŭ�����줿�������롦�ץ��ȥ������ꤷ�Ƥ����硢\fBport\fR�ѥ�᡼����̵�뤵��ޤ�������ʳ��ξ�硢\fBport\fR�ѥ�᡼���ΰ����ϡ������ˤ�äưۤʤ�ޤ����ǥե���Ȥ�
+\fBrmi\fR�ץ��ȥ���ξ�硢\fBport\fR�ѥ�᡼���ϡ���⡼�ȡ��ۥ��Ⱦ��rmiregistry�Υݡ����ֹ�򼨤��ޤ���\fBport\fR�ѥ�᡼������ά����Ƥ��뤫��\fBprotocol\fR�ѥ�᡼����\fBrmi\fR�򼨤��Ƥ����硢�ǥե���Ȥ�rmiregistry�ݡ���(1099)�����Ѥ���ޤ���
 .RE
 .PP
 servername
 .RS 4
-このパラメータの扱いは、実装によって異なります。最適化されたローカル・プロトコルの場合、このフィールドは無視されます。\fIrmi\fRプロトコルの場合、このパラメータは、リモート・ホスト上のRMIリモート・オブジェクトの名前を示す文字列になります。詳細は、\fIjstatd\fRコマンドの\fI\-n\fRオプションを参照してください。
+���Υѥ�᡼���ΰ����ϡ������ˤ�äưۤʤ�ޤ�����Ŭ�����줿�������롦�ץ��ȥ���ξ�硢���Υե�����ɤ�̵�뤵��ޤ���\fBrmi\fR�ץ��ȥ���ξ�硢���Υѥ�᡼���ϡ���⡼�ȡ��ۥ��Ⱦ��RMI��⡼�ȡ����֥������Ȥ�̾���򼨤�ʸ����ˤʤ�ޤ����ܺ٤ϡ�\fBjstatd\fR���ޥ�ɤ�\fB\-n\fR���ץ����򻲾Ȥ��Ƥ���������
 .RE
-.SH "出力フォーマット"
+.SH "���ϥե����ޥå�"
 .PP
-\fIjps\fRコマンドの出力は、次のパターンに従います。
+\fBjps\fR���ޥ�ɤν��Ϥϡ����Υѥ�����˽����ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-lvmid [ [ classname | JARfilename | "Unknown"] [ arg* ] [ jvmarg* ] ]
+\fBlvmid [ [ classname | JARfilename | "Unknown"] [ arg* ] [ jvmarg* ] ]\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .PP
-すべての出力トークンは空白文字で区切られます。\fIarg\fR値の中で空白を使用すると、実際の定位置パラメータに引数をマッピングしようとするときに、あいまいになります。
+���٤Ƥν��ϥȡ�����϶���ʸ���Ƕ��ڤ��ޤ���\fBarg\fR�ͤ���Ƕ������Ѥ���ȡ��ºݤ�����֥ѥ�᡼���˰�����ޥåԥ󥰤��褦�Ȥ���Ȥ��ˡ������ޤ��ˤʤ�ޤ���
 .PP
-\fB注意:\fR
-将来のリリースでこの形式は変更される可能性があるため、\fIjps\fRの出力を解析するスクリプトは作成しないことをお薦めします。\fIjps\fR出力を解析するスクリプトを作成すると、このツールの将来のリリースで、作成したスクリプトの変更が必要になる可能性があります。
-.SH "例"
+\fB����:\fR
+����Υ�꡼���Ǥ��η������ѹ�������ǽ�������뤿�ᡢ\fBjps\fR�ν��Ϥ���Ϥ��륹����ץȤϺ������ʤ����Ȥ����ᤷ�ޤ���\fBjps\fR���Ϥ���Ϥ��륹����ץȤ��������ȡ����Υġ���ξ���Υ�꡼���ǡ���������������ץȤ��ѹ���ɬ�פˤʤ��ǽ��������ޤ���
+.SH "��"
 .PP
-この項では、\fIjps\fRコマンドの例を示します。
+���ι�Ǥϡ�\fBjps\fR���ޥ�ɤ���򼨤��ޤ���
 .PP
-ローカル・ホスト上で計測されたJVMを一覧表示する場合:
+�������롦�ۥ��Ⱦ�Ƿ�¬���줿JVM�����ɽ��������:
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-jps
-18027 Java2Demo\&.JAR
-18032 jps
-18005 jstat
+\fBjps\fR
+\fB18027 Java2Demo\&.JAR\fR
+\fB18032 jps\fR
+\fB18005 jstat\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .PP
-次の例では、リモート・ホスト上で計測されたJVMを一覧表示します。この例では、\fIjstat\fRサーバーと、その内部RMIレジストリまたは別の外部rmiregistryプロセスのいずれかが、リモート・ホストのデフォルト・ポート(ポート1099)で実行されていると想定しています。また、ローカル・ホストが、リモート・ホストへの有効なアクセス権を持っていることも想定しています。この例には、\fI\-l\fRオプションも含まれ、クラス名またはJARファイル名を詳細な形式で出力します。
+������Ǥϡ���⡼�ȡ��ۥ��Ⱦ�Ƿ�¬���줿JVM�����ɽ�����ޤ���������Ǥϡ�\fBjstat\fR�����С��ȡ���������RMI�쥸���ȥ�ޤ����̤γ���rmiregistry�ץ������Τ����줫������⡼�ȡ��ۥ��ȤΥǥե���ȡ��ݡ���(�ݡ���1099)�Ǽ¹Ԥ���Ƥ�������ꤷ�Ƥ��ޤ����ޤ����������롦�ۥ��Ȥ�����⡼�ȡ��ۥ��Ȥؤ�ͭ���ʥ�������������äƤ��뤳�Ȥ����ꤷ�Ƥ��ޤ���������ˤϡ�\fB\-l\fR���ץ�����ޤޤ졢���饹̾�ޤ���JAR�ե�����̾��ܺ٤ʷ����ǽ��Ϥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-jps \-l remote\&.domain
-3002 /opt/jdk1\&.7\&.0/demo/jfc/Java2D/Java2Demo\&.JAR
-2857 sun\&.tools\&.jstatd\&.jstatd
+\fBjps \-l remote\&.domain\fR
+\fB3002 /opt/jdk1\&.7\&.0/demo/jfc/Java2D/Java2Demo\&.JAR\fR
+\fB2857 sun\&.tools\&.jstatd\&.jstatd\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .PP
-次の例では、RMIレジストリにデフォルトではないポートを使用して、リモート・ホスト上で計測されたJVMを一覧表示します。この例では、内部RMIレジストリがポート2002にバインドされた\fIjstatd\fRサーバーが、リモート・ホスト上で実行されていると想定しています。また、\fI\-m\fRオプションを使用して、一覧表示されたそれぞれのJavaアプリケーションの\fImain\fRメソッドに渡される引数を組み込んでいます。
+������Ǥϡ�RMI�쥸���ȥ�˥ǥե���ȤǤϤʤ��ݡ��Ȥ���Ѥ��ơ���⡼�ȡ��ۥ��Ⱦ�Ƿ�¬���줿JVM�����ɽ�����ޤ���������Ǥϡ�����RMI�쥸���ȥ꤬�ݡ���2002�˥Х���ɤ��줿\fBjstatd\fR�����С�������⡼�ȡ��ۥ��Ⱦ�Ǽ¹Ԥ���Ƥ�������ꤷ�Ƥ��ޤ����ޤ���\fB\-m\fR���ץ�������Ѥ��ơ�����ɽ�����줿���줾���Java���ץꥱ��������\fBmain\fR�᥽�åɤ��Ϥ����������Ȥ߹���Ǥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-jps \-m remote\&.domain:2002
-3002 /opt/jdk1\&.7\&.0/demo/jfc/Java2D/Java2Demo\&.JAR
-3102 sun\&.tools\&.jstatd\&.jstatd \-p 2002
+\fBjps \-m remote\&.domain:2002\fR
+\fB3002 /opt/jdk1\&.7\&.0/demo/jfc/Java2D/Java2Demo\&.JAR\fR
+\fB3102 sun\&.tools\&.jstatd\&.jstatd \-p 2002\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-.SH "関連項目"
+.SH "��Ϣ����"
 .sp
 .RS 4
 .ie n \{\

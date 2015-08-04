@@ -29,20 +29,24 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Map;
 import java.util.Objects;
 
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
+import javax.tools.StandardJavaFileManager;
+import javax.tools.StandardLocation;
 
 import com.sun.javadoc.*;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.main.CommandLine;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.file.BaseFileManager;
+import com.sun.tools.javac.platform.PlatformDescription;
+import com.sun.tools.javac.platform.PlatformUtils;
 import com.sun.tools.javac.util.ClientCodeException;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
@@ -350,6 +354,40 @@ public class Start extends ToolOption.Helper {
         }
         if (fileManager instanceof BaseFileManager) {
             ((BaseFileManager) fileManager).handleOptions(fileManagerOpts);
+        }
+
+        String platformString = compOpts.get("-release");
+
+        if (platformString != null) {
+            if (compOpts.isSet("-source")) {
+                usageError("main.release.bootclasspath.conflict", "-source");
+            }
+            if (fileManagerOpts.containsKey(Option.BOOTCLASSPATH)) {
+                usageError("main.release.bootclasspath.conflict", Option.BOOTCLASSPATH.getText());
+            }
+
+            PlatformDescription platformDescription =
+                    PlatformUtils.lookupPlatformDescription(platformString);
+
+            if (platformDescription == null) {
+                usageError("main.unsupported.release.version", platformString);
+            }
+
+            compOpts.put(Option.SOURCE, platformDescription.getSourceVersion());
+
+            context.put(PlatformDescription.class, platformDescription);
+
+            Collection<Path> platformCP = platformDescription.getPlatformPath();
+
+            if (platformCP != null) {
+                if (fileManager instanceof StandardJavaFileManager) {
+                    StandardJavaFileManager sfm = (StandardJavaFileManager) fileManager;
+
+                    sfm.setLocationFromPaths(StandardLocation.PLATFORM_CLASS_PATH, platformCP);
+                } else {
+                    usageError("main.release.not.standard.file.manager", platformString);
+                }
+            }
         }
 
         compOpts.notifyListeners();

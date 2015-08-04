@@ -450,7 +450,6 @@ class SizeTFlagSetting {
 
 
 class CommandLineFlags {
-  static bool _finished_initializing;
 public:
   static Flag::Error boolAt(const char* name, size_t len, bool* value, bool allow_locked = false, bool return_flag = false);
   static Flag::Error boolAt(const char* name, bool* value, bool allow_locked = false, bool return_flag = false)      { return boolAt(name, strlen(name), value, allow_locked, return_flag); }
@@ -505,12 +504,6 @@ public:
 
   // printRanges will print out flags type, name and range values as expected by -XX:+PrintFlagsRanges
   static void printFlags(outputStream* out, bool withComments, bool printRanges = false);
-
-  // Returns true if all flags have their final values set (ready for ranges and constraint check)
-  static bool finishedInitializing() { return _finished_initializing; }
-
-  // Check the final values of all flags for ranges and constraints
-  static bool check_all_ranges_and_constraints();
 
   static void verify() PRODUCT_RETURN;
 };
@@ -640,7 +633,7 @@ public:
   lp64_product(intx, ObjectAlignmentInBytes, 8,                             \
           "Default object alignment in bytes, 8 is minimum")                \
           range(8, 256)                                                     \
-          constraint(ObjectAlignmentInBytesConstraintFunc)                  \
+          constraint(ObjectAlignmentInBytesConstraintFunc,AtParse)          \
                                                                             \
   product(bool, AssumeMP, false,                                            \
           "Instruct the VM to assume multiple processors are available")    \
@@ -1289,7 +1282,7 @@ public:
                                                                             \
   experimental(intx, SyncVerbose, 0, "(Unstable)")                          \
                                                                             \
-  product(bool, InlineNotify, true, "intrinsify subset of notify" )         \
+  diagnostic(bool, InlineNotify, true, "intrinsify subset of notify")       \
                                                                             \
   experimental(intx, ClearFPUAtPark, 0, "(Unsafe, Unstable)")               \
                                                                             \
@@ -1399,7 +1392,7 @@ public:
   product(intx, ContendedPaddingWidth, 128,                                 \
           "How many bytes to pad the fields/classes marked @Contended with")\
           range(0, 8192)                                                    \
-          constraint(ContendedPaddingWidthConstraintFunc)                   \
+          constraint(ContendedPaddingWidthConstraintFunc,AtParse)           \
                                                                             \
   product(bool, EnableContended, true,                                      \
           "Enable @Contended annotation support")                           \
@@ -1600,6 +1593,7 @@ public:
                                                                             \
   product(size_t, YoungPLABSize, 4096,                                      \
           "Size of young gen promotion LAB's (in HeapWords)")               \
+          constraint(YoungPLABSizeConstraintFunc,AfterMemoryInit)           \
                                                                             \
   product(size_t, OldPLABSize, 1024,                                        \
           "Size of old gen promotion LAB's (in HeapWords), or Number        \
@@ -1738,7 +1732,7 @@ public:
           "Minimum size of CMS gen promotion LAB caches per worker "        \
           "per block size")                                                 \
           range(1, max_uintx)                                               \
-          constraint(CMSOldPLABMinConstraintFunc)                           \
+          constraint(CMSOldPLABMinConstraintFunc,AfterErgo)                 \
                                                                             \
   product(uintx, CMSOldPLABNumRefills, 4,                                   \
           "Nominal number of refills of CMS gen promotion LAB cache "       \
@@ -1934,13 +1928,13 @@ public:
           "CMSPrecleanNumerator:CMSPrecleanDenominator yields convergence " \
           "ratio")                                                          \
           range(1, max_uintx)                                               \
-          constraint(CMSPrecleanDenominatorConstraintFunc)                  \
+          constraint(CMSPrecleanDenominatorConstraintFunc,AfterErgo)        \
                                                                             \
   product(uintx, CMSPrecleanNumerator, 2,                                   \
           "CMSPrecleanNumerator:CMSPrecleanDenominator yields convergence " \
           "ratio")                                                          \
           range(0, max_uintx-1)                                             \
-          constraint(CMSPrecleanNumeratorConstraintFunc)                    \
+          constraint(CMSPrecleanNumeratorConstraintFunc,AfterErgo)          \
                                                                             \
   product(bool, CMSPrecleanRefLists1, true,                                 \
           "Preclean ref lists during (initial) preclean phase")             \
@@ -2653,7 +2647,7 @@ public:
   product(intx, CICompilerCount, CI_COMPILER_COUNT,                         \
           "Number of compiler threads to run")                              \
           range(0, max_jint)                                                \
-          constraint(CICompilerCountConstraintFunc)                         \
+          constraint(CICompilerCountConstraintFunc, AtParse)                \
                                                                             \
   product(intx, CompilationPolicyChoice, 0,                                 \
           "which compilation policy (0-3)")                                 \
@@ -3364,14 +3358,14 @@ public:
           " For most GCs this applies to the old generation. In G1 and"     \
           " ParallelGC it applies to the whole heap.")                      \
           range(0, 100)                                                     \
-          constraint(MinHeapFreeRatioConstraintFunc)                        \
+          constraint(MinHeapFreeRatioConstraintFunc,AfterErgo)              \
                                                                             \
   manageable(uintx, MaxHeapFreeRatio, 70,                                   \
           "The maximum percentage of heap free after GC to avoid shrinking."\
           " For most GCs this applies to the old generation. In G1 and"     \
           " ParallelGC it applies to the whole heap.")                      \
           range(0, 100)                                                     \
-          constraint(MaxHeapFreeRatioConstraintFunc)                        \
+          constraint(MaxHeapFreeRatioConstraintFunc,AfterErgo)              \
                                                                             \
   product(intx, SoftRefLRUPolicyMSPerMB, 1000,                              \
           "Number of milliseconds per MB of free space in the heap")        \
@@ -3386,13 +3380,13 @@ public:
           "The maximum percentage of Metaspace free after GC to avoid "     \
           "shrinking")                                                      \
           range(0, 100)                                                     \
-          constraint(MaxMetaspaceFreeRatioConstraintFunc)                   \
+          constraint(MaxMetaspaceFreeRatioConstraintFunc,AfterErgo)         \
                                                                             \
   product(uintx, MinMetaspaceFreeRatio,    40,                              \
           "The minimum percentage of Metaspace free after GC to avoid "     \
           "expansion")                                                      \
           range(0, 99)                                                      \
-          constraint(MinMetaspaceFreeRatioConstraintFunc)                   \
+          constraint(MinMetaspaceFreeRatioConstraintFunc,AfterErgo)         \
                                                                             \
   product(size_t, MaxMetaspaceExpansion, ScaleForWordSize(4*M),             \
           "The maximum expansion of Metaspace without full GC (in bytes)")  \
@@ -3410,12 +3404,12 @@ public:
   product(uintx, MaxTenuringThreshold,    15,                               \
           "Maximum value for tenuring threshold")                           \
           range(0, markOopDesc::max_age + 1)                                \
-          constraint(MaxTenuringThresholdConstraintFunc)                    \
+          constraint(MaxTenuringThresholdConstraintFunc,AfterErgo)          \
                                                                             \
   product(uintx, InitialTenuringThreshold,    7,                            \
           "Initial value for tenuring threshold")                           \
           range(0, markOopDesc::max_age + 1)                                \
-          constraint(InitialTenuringThresholdConstraintFunc)                \
+          constraint(InitialTenuringThresholdConstraintFunc,AfterErgo)      \
                                                                             \
   product(uintx, TargetSurvivorRatio,    50,                                \
           "Desired percentage of survivor space used after scavenge")       \
@@ -4093,7 +4087,7 @@ public:
                                                                             \
   experimental(intx, SurvivorAlignmentInBytes, 0,                           \
            "Default survivor space alignment in bytes")                     \
-           constraint(SurvivorAlignmentInBytesConstraintFunc)               \
+           constraint(SurvivorAlignmentInBytesConstraintFunc,AfterErgo)     \
                                                                             \
   product(bool , AllowNonVirtualCalls, false,                               \
           "Obey the ACC_SUPER flag and allow invokenonvirtual calls")       \
@@ -4197,7 +4191,7 @@ public:
 // Only materialize src code for range checking when required, ignore otherwise
 #define IGNORE_RANGE(a, b)
 // Only materialize src code for contraint checking when required, ignore otherwise
-#define IGNORE_CONSTRAINT(func)
+#define IGNORE_CONSTRAINT(func,type)
 
 RUNTIME_FLAGS(DECLARE_DEVELOPER_FLAG, \
               DECLARE_PD_DEVELOPER_FLAG, \

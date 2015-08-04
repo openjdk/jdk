@@ -39,7 +39,9 @@ class CommandLineFlagConstraint_bool : public CommandLineFlagConstraint {
 
 public:
   // the "name" argument must be a string literal
-  CommandLineFlagConstraint_bool(const char* name, CommandLineFlagConstraintFunc_bool func) : CommandLineFlagConstraint(name) {
+  CommandLineFlagConstraint_bool(const char* name,
+                                 CommandLineFlagConstraintFunc_bool func,
+                                 ConstraintType type) : CommandLineFlagConstraint(name, type) {
     _constraint=func;
   }
 
@@ -53,7 +55,9 @@ class CommandLineFlagConstraint_int : public CommandLineFlagConstraint {
 
 public:
   // the "name" argument must be a string literal
-  CommandLineFlagConstraint_int(const char* name, CommandLineFlagConstraintFunc_int func) : CommandLineFlagConstraint(name) {
+  CommandLineFlagConstraint_int(const char* name,
+                                CommandLineFlagConstraintFunc_int func,
+                                ConstraintType type) : CommandLineFlagConstraint(name, type) {
     _constraint=func;
   }
 
@@ -67,7 +71,9 @@ class CommandLineFlagConstraint_intx : public CommandLineFlagConstraint {
 
 public:
   // the "name" argument must be a string literal
-  CommandLineFlagConstraint_intx(const char* name, CommandLineFlagConstraintFunc_intx func) : CommandLineFlagConstraint(name) {
+  CommandLineFlagConstraint_intx(const char* name,
+                                 CommandLineFlagConstraintFunc_intx func,
+                                 ConstraintType type) : CommandLineFlagConstraint(name, type) {
     _constraint=func;
   }
 
@@ -81,7 +87,9 @@ class CommandLineFlagConstraint_uint : public CommandLineFlagConstraint {
 
 public:
   // the "name" argument must be a string literal
-  CommandLineFlagConstraint_uint(const char* name, CommandLineFlagConstraintFunc_uint func) : CommandLineFlagConstraint(name) {
+  CommandLineFlagConstraint_uint(const char* name,
+                                 CommandLineFlagConstraintFunc_uint func,
+                                 ConstraintType type) : CommandLineFlagConstraint(name, type) {
     _constraint=func;
   }
 
@@ -95,7 +103,9 @@ class CommandLineFlagConstraint_uintx : public CommandLineFlagConstraint {
 
 public:
   // the "name" argument must be a string literal
-  CommandLineFlagConstraint_uintx(const char* name, CommandLineFlagConstraintFunc_uintx func) : CommandLineFlagConstraint(name) {
+  CommandLineFlagConstraint_uintx(const char* name,
+                                  CommandLineFlagConstraintFunc_uintx func,
+                                  ConstraintType type) : CommandLineFlagConstraint(name, type) {
     _constraint=func;
   }
 
@@ -109,7 +119,9 @@ class CommandLineFlagConstraint_uint64_t : public CommandLineFlagConstraint {
 
 public:
   // the "name" argument must be a string literal
-  CommandLineFlagConstraint_uint64_t(const char* name, CommandLineFlagConstraintFunc_uint64_t func) : CommandLineFlagConstraint(name) {
+  CommandLineFlagConstraint_uint64_t(const char* name,
+                                     CommandLineFlagConstraintFunc_uint64_t func,
+                                     ConstraintType type) : CommandLineFlagConstraint(name, type) {
     _constraint=func;
   }
 
@@ -123,7 +135,9 @@ class CommandLineFlagConstraint_size_t : public CommandLineFlagConstraint {
 
 public:
   // the "name" argument must be a string literal
-  CommandLineFlagConstraint_size_t(const char* name, CommandLineFlagConstraintFunc_size_t func) : CommandLineFlagConstraint(name) {
+  CommandLineFlagConstraint_size_t(const char* name,
+                                   CommandLineFlagConstraintFunc_size_t func,
+                                   ConstraintType type) : CommandLineFlagConstraint(name, type) {
     _constraint=func;
   }
 
@@ -137,7 +151,9 @@ class CommandLineFlagConstraint_double : public CommandLineFlagConstraint {
 
 public:
   // the "name" argument must be a string literal
-  CommandLineFlagConstraint_double(const char* name, CommandLineFlagConstraintFunc_double func) : CommandLineFlagConstraint(name) {
+  CommandLineFlagConstraint_double(const char* name,
+                                   CommandLineFlagConstraintFunc_double func,
+                                   ConstraintType type) : CommandLineFlagConstraint(name, type) {
     _constraint=func;
   }
 
@@ -162,29 +178,29 @@ void emit_constraint_size_t(const char* /*name*/)     { /* NOP */ }
 void emit_constraint_double(const char* /*name*/)     { /* NOP */ }
 
 // CommandLineFlagConstraint emitting code functions if function argument is provided
-void emit_constraint_bool(const char* name, CommandLineFlagConstraintFunc_bool func) {
-  CommandLineFlagConstraintList::add(new CommandLineFlagConstraint_bool(name, func));
+void emit_constraint_bool(const char* name, CommandLineFlagConstraintFunc_bool func, CommandLineFlagConstraint::ConstraintType type) {
+  CommandLineFlagConstraintList::add(new CommandLineFlagConstraint_bool(name, func, type));
 }
-void emit_constraint_int(const char* name, CommandLineFlagConstraintFunc_int func) {
-  CommandLineFlagConstraintList::add(new CommandLineFlagConstraint_int(name, func));
+void emit_constraint_int(const char* name, CommandLineFlagConstraintFunc_int func, CommandLineFlagConstraint::ConstraintType type) {
+  CommandLineFlagConstraintList::add(new CommandLineFlagConstraint_int(name, func, type));
 }
-void emit_constraint_intx(const char* name, CommandLineFlagConstraintFunc_intx func) {
-  CommandLineFlagConstraintList::add(new CommandLineFlagConstraint_intx(name, func));
+void emit_constraint_intx(const char* name, CommandLineFlagConstraintFunc_intx func, CommandLineFlagConstraint::ConstraintType type) {
+  CommandLineFlagConstraintList::add(new CommandLineFlagConstraint_intx(name, func, type));
 }
-void emit_constraint_uint(const char* name, CommandLineFlagConstraintFunc_uint func) {
-  CommandLineFlagConstraintList::add(new CommandLineFlagConstraint_uint(name, func));
+void emit_constraint_uint(const char* name, CommandLineFlagConstraintFunc_uint func, CommandLineFlagConstraint::ConstraintType type) {
+  CommandLineFlagConstraintList::add(new CommandLineFlagConstraint_uint(name, func, type));
 }
-void emit_constraint_uintx(const char* name, CommandLineFlagConstraintFunc_uintx func) {
-  CommandLineFlagConstraintList::add(new CommandLineFlagConstraint_uintx(name, func));
+void emit_constraint_uintx(const char* name, CommandLineFlagConstraintFunc_uintx func, CommandLineFlagConstraint::ConstraintType type) {
+  CommandLineFlagConstraintList::add(new CommandLineFlagConstraint_uintx(name, func, type));
 }
-void emit_constraint_uint64_t(const char* name, CommandLineFlagConstraintFunc_uint64_t func) {
-  CommandLineFlagConstraintList::add(new CommandLineFlagConstraint_uint64_t(name, func));
+void emit_constraint_uint64_t(const char* name, CommandLineFlagConstraintFunc_uint64_t func, CommandLineFlagConstraint::ConstraintType type) {
+  CommandLineFlagConstraintList::add(new CommandLineFlagConstraint_uint64_t(name, func, type));
 }
-void emit_constraint_size_t(const char* name, CommandLineFlagConstraintFunc_size_t func) {
-  CommandLineFlagConstraintList::add(new CommandLineFlagConstraint_size_t(name, func));
+void emit_constraint_size_t(const char* name, CommandLineFlagConstraintFunc_size_t func, CommandLineFlagConstraint::ConstraintType type) {
+  CommandLineFlagConstraintList::add(new CommandLineFlagConstraint_size_t(name, func, type));
 }
-void emit_constraint_double(const char* name, CommandLineFlagConstraintFunc_double func) {
-  CommandLineFlagConstraintList::add(new CommandLineFlagConstraint_double(name, func));
+void emit_constraint_double(const char* name, CommandLineFlagConstraintFunc_double func, CommandLineFlagConstraint::ConstraintType type) {
+  CommandLineFlagConstraintList::add(new CommandLineFlagConstraint_double(name, func, type));
 }
 
 // Generate code to call emit_constraint_xxx function
@@ -201,16 +217,17 @@ void emit_constraint_double(const char* name, CommandLineFlagConstraintFunc_doub
 #define EMIT_CONSTRAINT_LP64_PRODUCT_FLAG(type, name, value, doc) ); emit_constraint_##type(#name
 
 // Generate func argument to pass into emit_constraint_xxx functions
-#define EMIT_CONSTRAINT_CHECK(func)                               , func
+#define EMIT_CONSTRAINT_CHECK(func, type)                               , func, CommandLineFlagConstraint::type
 
 // the "name" argument must be a string literal
-#define INITIAL_CONTRAINTS_SIZE 16
+#define INITIAL_CONSTRAINTS_SIZE 16
 GrowableArray<CommandLineFlagConstraint*>* CommandLineFlagConstraintList::_constraints = NULL;
+CommandLineFlagConstraint::ConstraintType CommandLineFlagConstraintList::_validating_type = CommandLineFlagConstraint::AtParse;
 
 // Check the ranges of all flags that have them or print them out and exit if requested
 void CommandLineFlagConstraintList::init(void) {
 
-  _constraints = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<CommandLineFlagConstraint*>(INITIAL_CONTRAINTS_SIZE, true);
+  _constraints = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<CommandLineFlagConstraint*>(INITIAL_CONSTRAINTS_SIZE, true);
 
   emit_constraint_no(NULL RUNTIME_FLAGS(EMIT_CONSTRAINT_DEVELOPER_FLAG,
                                         EMIT_CONSTRAINT_PD_DEVELOPER_FLAG,
@@ -273,14 +290,89 @@ void CommandLineFlagConstraintList::init(void) {
 #endif // INCLUDE_ALL_GCS
 }
 
-CommandLineFlagConstraint* CommandLineFlagConstraintList::find(const char* name) {
+// Find constraints by name and return only if found constraint's type is equal or lower than current validating type.
+CommandLineFlagConstraint* CommandLineFlagConstraintList::find_if_needs_check(const char* name) {
   CommandLineFlagConstraint* found = NULL;
   for (int i=0; i<length(); i++) {
     CommandLineFlagConstraint* constraint = at(i);
-    if (strcmp(constraint->name(), name) == 0) {
+    if ((strcmp(constraint->name(), name) == 0) &&
+        (constraint->type() <= _validating_type)) {
       found = constraint;
       break;
     }
   }
   return found;
+}
+
+// Check constraints for specific constraint type.
+bool CommandLineFlagConstraintList::check_constraints(CommandLineFlagConstraint::ConstraintType type) {
+//#define PRINT_CONSTRAINTS_SIZES
+#ifdef PRINT_CONSTRAINTS_SIZES
+  {
+    size_t size_constraints = sizeof(CommandLineFlagConstraintList);
+    for (int i=0; i<length(); i++) {
+      size_constraints += sizeof(CommandLineFlagConstraint);
+      CommandLineFlagConstraint* constraint = at(i);
+      const char* name = constraint->name();
+      Flag* flag = Flag::find_flag(name, strlen(name), true, true);
+      if (flag->is_bool()) {
+        size_constraints += sizeof(CommandLineFlagConstraintFunc_bool);
+        size_constraints += sizeof(CommandLineFlagConstraint*);
+      } else if (flag->is_intx()) {
+        size_constraints += sizeof(CommandLineFlagConstraintFunc_intx);
+        size_constraints += sizeof(CommandLineFlagConstraint*);
+      } else if (flag->is_uintx()) {
+        size_constraints += sizeof(CommandLineFlagConstraintFunc_uintx);
+        size_constraints += sizeof(CommandLineFlagConstraint*);
+      } else if (flag->is_uint64_t()) {
+        size_constraints += sizeof(CommandLineFlagConstraintFunc_uint64_t);
+        size_constraints += sizeof(CommandLineFlagConstraint*);
+      } else if (flag->is_size_t()) {
+        size_constraints += sizeof(CommandLineFlagConstraintFunc_size_t);
+        size_constraints += sizeof(CommandLineFlagConstraint*);
+      } else if (flag->is_double()) {
+        size_constraints += sizeof(CommandLineFlagConstraintFunc_double);
+        size_constraints += sizeof(CommandLineFlagConstraint*);
+      }
+    }
+    fprintf(stderr, "Size of %d constraints: " SIZE_FORMAT " bytes\n",
+            length(), size_constraints);
+  }
+#endif // PRINT_CONSTRAINTS_SIZES
+
+  // Skip if we already checked.
+  if (type < _validating_type) {
+    return true;
+  }
+  _validating_type = type;
+
+  bool status = true;
+  for (int i=0; i<length(); i++) {
+    CommandLineFlagConstraint* constraint = at(i);
+    if (type != constraint->type()) continue;
+    const char*name = constraint->name();
+    Flag* flag = Flag::find_flag(name, strlen(name), true, true);
+    if (flag != NULL) {
+      if (flag->is_bool()) {
+        bool value = flag->get_bool();
+        if (constraint->apply_bool(&value, true) != Flag::SUCCESS) status = false;
+      } else if (flag->is_intx()) {
+        intx value = flag->get_intx();
+        if (constraint->apply_intx(&value, true) != Flag::SUCCESS) status = false;
+      } else if (flag->is_uintx()) {
+        uintx value = flag->get_uintx();
+        if (constraint->apply_uintx(&value, true) != Flag::SUCCESS) status = false;
+      } else if (flag->is_uint64_t()) {
+        uint64_t value = flag->get_uint64_t();
+        if (constraint->apply_uint64_t(&value, true) != Flag::SUCCESS) status = false;
+      } else if (flag->is_size_t()) {
+        size_t value = flag->get_size_t();
+        if (constraint->apply_size_t(&value, true) != Flag::SUCCESS) status = false;
+      } else if (flag->is_double()) {
+        double value = flag->get_double();
+        if (constraint->apply_double(&value, true) != Flag::SUCCESS) status = false;
+      }
+    }
+  }
+  return status;
 }

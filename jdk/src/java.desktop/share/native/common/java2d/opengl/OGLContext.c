@@ -913,6 +913,10 @@ OGLContext_GetExtensionInfo(JNIEnv *env, jint *caps)
             }
         }
     }
+    if (OGLContext_IsExtensionAvailable(e, "GL_NV_texture_barrier")) {
+        *caps |= CAPS_EXT_TEXBARRIER;
+    }
+
     // stuff vendor descriptor in the upper bits of the caps
     if (vendor != NULL) {
         if (strncmp(vendor, "ATI", 3) == 0) {
