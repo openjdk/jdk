@@ -96,8 +96,12 @@ public final class Undefined extends DefaultPropertyAccess {
 
         switch (operator) {
         case "new":
-        case "call":
-            throw lookupTypeError("cant.call.undefined", desc);
+        case "call": {
+            final String name = desc.getNameTokenCount() > 2? desc.getNameToken(2) : null;
+            final String msg = name != null? "cant.call.undefined.arg" : "cant.call.undefined";
+            throw typeError(msg, name);
+        }
+
         case "callMethod":
             throw lookupTypeError("cant.read.property.of.undefined", desc);
         // NOTE: we support getElem and setItem as JavaScript doesn't distinguish items from properties. Nashorn itself
@@ -125,7 +129,8 @@ public final class Undefined extends DefaultPropertyAccess {
     }
 
     private static ECMAException lookupTypeError(final String msg, final CallSiteDescriptor desc) {
-        return typeError(msg, desc.getNameTokenCount() > 2 ? desc.getNameToken(2) : null);
+        final String name = desc.getNameToken(2);
+        return typeError(msg, name != null && !name.isEmpty()? name : null);
     }
 
     private static final MethodHandle GET_METHOD = findOwnMH("get", Object.class, Object.class);

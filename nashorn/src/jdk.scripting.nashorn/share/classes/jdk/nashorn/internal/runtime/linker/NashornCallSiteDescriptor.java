@@ -150,7 +150,7 @@ public final class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor 
     public static NashornCallSiteDescriptor get(final MethodHandles.Lookup lookup, final String name,
             final MethodType methodType, final int flags) {
         final String[] tokenizedName = CallSiteDescriptorFactory.tokenizeName(name);
-        assert tokenizedName.length == 2 || tokenizedName.length == 3;
+        assert tokenizedName.length >= 2;
         assert "dyn".equals(tokenizedName[0]);
         assert tokenizedName[1] != null;
         // TODO: see if we can move mangling/unmangling into Dynalink
