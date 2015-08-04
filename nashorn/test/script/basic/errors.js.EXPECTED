@@ -21,7 +21,7 @@ ReferenceError
 "foo" is not defined
 true
 TypeError
-Cannot call undefined
+Cannot call "foo_method" that has undefined value
 Error
 EvalError
 RangeError

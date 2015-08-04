@@ -1,0 +1,3 @@
+TypeError: Cannot call "func" that has undefined value
+TypeError: Cannot call "foo" that has undefined value
+TypeError: Cannot call "func" that has undefined value
