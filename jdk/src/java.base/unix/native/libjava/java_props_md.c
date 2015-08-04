@@ -503,8 +503,21 @@ GetJavaProperties(JNIEnv *env)
         struct utsname name;
         uname(&name);
         sprops.os_name = strdup(name.sysname);
+#ifdef _AIX
+        {
+            char *os_version = malloc(strlen(name.version) +
+                                      strlen(name.release) + 2);
+            if (os_version != NULL) {
+                strcpy(os_version, name.version);
+                strcat(os_version, ".");
+                strcat(os_version, name.release);
+            }
+            sprops.os_version = os_version;
+        }
+#else
         sprops.os_version = strdup(name.release);
-#endif
+#endif /* _AIX   */
+#endif /* MACOSX */
 
         sprops.os_arch = ARCHPROPNAME;
 

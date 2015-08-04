@@ -35,11 +35,9 @@ import javax.swing.*;
 import javax.swing.event.*;
 import java.awt.event.*;
 import java.awt.*;
-import sun.awt.SunToolkit;
 
 public class bug8075609 {
     private static Robot robot;
-    private static SunToolkit toolkit;
     private static JTextField textField;
 
     public static void main(String args[]) throws Throwable {
@@ -53,7 +51,6 @@ public class bug8075609 {
         Thread.sleep(100);
 
         robot.setAutoDelay(100);
-        toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
 
         // Radio button group tab key test
         runTest1();
@@ -96,10 +93,10 @@ public class bug8075609 {
     private static void runTest1() throws Exception{
         hitKey(robot, KeyEvent.VK_TAB);
 
-        robot.setAutoDelay(1000 );
+        robot.delay(1000 );
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
-                if (textField.hasFocus()) {
+                if (!textField.hasFocus()) {
                     System.out.println("Radio Button Group Go To Next Component through Tab Key failed");
                     throw new RuntimeException("Focus is not on textField as Expected");
                 }
@@ -110,6 +107,6 @@ public class bug8075609 {
     private static void hitKey(Robot robot, int keycode) {
         robot.keyPress(keycode);
         robot.keyRelease(keycode);
-        toolkit.realSync();
+        robot.waitForIdle();
     }
 }

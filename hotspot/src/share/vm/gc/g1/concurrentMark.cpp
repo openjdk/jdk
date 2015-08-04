@@ -403,14 +403,6 @@ void CMMarkStack::note_end_of_gc() {
   _saved_index = -1;
 }
 
-void CMMarkStack::oops_do(OopClosure* f) {
-  assert(_saved_index == _index,
-         err_msg("saved index: %d index: %d", _saved_index, _index));
-  for (int i = 0; i < _index; i += 1) {
-    f->do_oop(&_base[i]);
-  }
-}
-
 CMRootRegions::CMRootRegions() :
   _young_list(NULL), _cm(NULL), _scan_in_progress(false),
   _should_abort(false),  _next_survivor(NULL) { }
@@ -2717,53 +2709,26 @@ ConcurrentMark::claim_region(uint worker_id) {
 }
 
 #ifndef PRODUCT
-enum VerifyNoCSetOopsPhase {
-  VerifyNoCSetOopsStack,
-  VerifyNoCSetOopsQueues
-};
-
-class VerifyNoCSetOopsClosure : public OopClosure, public ObjectClosure  {
+class VerifyNoCSetOops VALUE_OBJ_CLASS_SPEC {
 private:
   G1CollectedHeap* _g1h;
-  VerifyNoCSetOopsPhase _phase;
+  const char* _phase;
   int _info;
 
-  const char* phase_str() {
-    switch (_phase) {
-    case VerifyNoCSetOopsStack:         return "Stack";
-    case VerifyNoCSetOopsQueues:        return "Queue";
-    default:                            ShouldNotReachHere();
-    }
-    return NULL;
-  }
+public:
+  VerifyNoCSetOops(const char* phase, int info = -1) :
+    _g1h(G1CollectedHeap::heap()),
+    _phase(phase),
+    _info(info)
+  { }
 
-  void do_object_work(oop obj) {
+  void operator()(oop obj) const {
+    guarantee(obj->is_oop(),
+              err_msg("Non-oop " PTR_FORMAT ", phase: %s, info: %d",
+                      p2i(obj), _phase, _info));
     guarantee(!_g1h->obj_in_cs(obj),
               err_msg("obj: " PTR_FORMAT " in CSet, phase: %s, info: %d",
-                      p2i((void*) obj), phase_str(), _info));
-  }
-
-public:
-  VerifyNoCSetOopsClosure() : _g1h(G1CollectedHeap::heap()) { }
-
-  void set_phase(VerifyNoCSetOopsPhase phase, int info = -1) {
-    _phase = phase;
-    _info = info;
-  }
-
-  virtual void do_oop(oop* p) {
-    oop obj = oopDesc::load_decode_heap_oop(p);
-    do_object_work(obj);
-  }
-
-  virtual void do_oop(narrowOop* p) {
-    // We should not come across narrow oops while scanning marking
-    // stacks
-    ShouldNotReachHere();
-  }
-
-  virtual void do_object(oop obj) {
-    do_object_work(obj);
+                      p2i(obj), _phase, _info));
   }
 };
 
@@ -2773,17 +2738,13 @@ void ConcurrentMark::verify_no_cset_oops() {
     return;
   }
 
-  VerifyNoCSetOopsClosure cl;
-
   // Verify entries on the global mark stack
-  cl.set_phase(VerifyNoCSetOopsStack);
-  _markStack.oops_do(&cl);
+  _markStack.iterate(VerifyNoCSetOops("Stack"));
 
   // Verify entries on the task queues
-  for (uint i = 0; i < _max_worker_id; i += 1) {
-    cl.set_phase(VerifyNoCSetOopsQueues, i);
+  for (uint i = 0; i < _max_worker_id; ++i) {
     CMTaskQueue* queue = _task_queues->queue(i);
-    queue->oops_do(&cl);
+    queue->iterate(VerifyNoCSetOops("Queue", i));
   }
 
   // Verify the global finger
@@ -2806,7 +2767,7 @@ void ConcurrentMark::verify_no_cset_oops() {
 
   // Verify the task fingers
   assert(parallel_marking_threads() <= _max_worker_id, "sanity");
-  for (int i = 0; i < (int) parallel_marking_threads(); i += 1) {
+  for (uint i = 0; i < parallel_marking_threads(); ++i) {
     CMTask* task = _tasks[i];
     HeapWord* task_finger = task->finger();
     if (task_finger != NULL && task_finger < _heap_end) {

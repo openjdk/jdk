@@ -1,12 +1,5 @@
 '\" t
-.\" Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
-.\" Title: tnameserv
-.\" Language: English
-.\" Date: 2013年11月21日
-.\" SectDesc: Java IDLおよびRMI-IIOPツール
-.\" Software: JDK 8
-.\" Arch: 汎用
-.\"
+.\" Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -15,7 +8,7 @@
 .\"
 .\" This code is distributed in the hope that it will be useful, but WITHOUT
 .\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 .\" version 2 for more details (a copy is included in the LICENSE file that
 .\" accompanied this code).
 .\"
@@ -27,8 +20,17 @@
 .\" or visit www.oracle.com if you need additional information or have any
 .\" questions.
 .\"
-.pl 99999
-.TH "tnameserv" "1" "2013年11月21日" "JDK 8" "Java IDLおよびRMI-IIOPツール"
+.\" Title: tnameserv
+.\" Language: Japanese
+.\" Date: 2013ǯ11��21��
+.\" SectDesc: Java IDL�����RMI-IIOP�ġ���
+.\" Software: JDK 8
+.\" Arch: ����
+.\" Part Number: E58103-01
+.\" Doc ID: JSSON
+.\"
+.if n .pl 99999
+.TH "tnameserv" "1" "2013ǯ11��21��" "JDK 8" "Java IDL�����RMI-IIOP�ġ���"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -48,15 +50,15 @@
 .\" -----------------------------------------------------------------
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
-.SH "NAME"
-tnameserv \- インタフェース定義言語(IDL)。
-.SH "概要"
+.SH "̾��"
+tnameserv \- ���󥿥ե������������(IDL)��
+.SH "����"
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\fItnameserve\fR \fI\-ORBInitialPort\fR [ \fInameserverport\fR ]
+\fBtnameserve\fR \fB\-ORBInitialPort\fR [ \fInameserverport\fR ]
 .fi
 .if n \{\
 .RE
@@ -64,351 +66,370 @@ tnameserv \- インタフェース定義言語(IDL)。
 .PP
 \-ORBInitialPort \fInameserverport\fR
 .RS 4
-ネーミング・サービスがORBの\fIresolve_initial_references\fRメソッドと\fIlist_initial_references\fRメソッドの実装に使用するブートストラップ・プロトコルをリスニングする初期ポートです。
+�͡��ߥ󥰡������ӥ���ORB��\fBresolve_initial_references\fR�᥽�åɤ�\fBlist_initial_references\fR�᥽�åɤμ����˻��Ѥ���֡��ȥ��ȥ�åס��ץ��ȥ����ꥹ�˥󥰤������ݡ��ȤǤ���
 .RE
-.SH "説明"
+.SH "����"
 .PP
-Java IDLには、Object Request Broker Daemon (ORBD)が含まれます。ORBDは、ブートストラップ・サービス、一時ネーミング・サービス、永続ネーミング・サービスおよびサーバー・マネージャを含むデーモン・プロセスです。Java IDLのすべてのチュートリアルではORBDを使用していますが、一時ネーミング・サービスを使用する例では、\fIorbd\fRのかわりに\fItnameserv\fRを使用できます。
+Java IDL�ˤϡ�Object Request Broker Daemon (ORBD)���ޤޤ�ޤ���ORBD�ϡ��֡��ȥ��ȥ�åס������ӥ�������͡��ߥ󥰡������ӥ�����³�͡��ߥ󥰡������ӥ�����ӥ����С����ޥ͡������ޤ�ǡ���󡦥ץ������Ǥ���Java IDL�Τ��٤ƤΥ��塼�ȥꥢ��Ǥ�ORBD����Ѥ��Ƥ��ޤ���������͡��ߥ󥰡������ӥ�����Ѥ�����Ǥϡ�\fBorbd\fR�Τ�����\fBtnameserv\fR����ѤǤ��ޤ���
 .PP
-http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/idl/jidlNaming\&.htmlにある
-orbd(1)または「Naming Service」を参照してください。
+orbd(1)http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/idl/jidlNaming\&.html
+�ˤ���ޤ��ϡ�Naming Service�פ򻲾Ȥ��Ƥ���������
 .PP
-CORBAのCOS (Common Object Services)ネーミング・サービスは、ファイル・システムがファイルに対してディレクトリ構造を提供しているのと同じように、オブジェクト参照に対してツリー構造のディレクトリを提供します。Java IDLの一時ネーム・サービスである\fItnameserv\fRは、COSネーム・サービスの仕様を単純な形で実装したものです。
+CORBA��COS (Common Object Services)�͡��ߥ󥰡������ӥ��ϡ��ե����롦�����ƥब�ե�������Ф��ƥǥ��쥯�ȥ깽¤���󶡤��Ƥ���Τ�Ʊ���褦�ˡ����֥������Ȼ��Ȥ��Ф��ƥĥ꡼��¤�Υǥ��쥯�ȥ���󶡤��ޤ���Java IDL�ΰ���͡��ࡦ�����ӥ��Ǥ���\fBtnameserv\fR�ϡ�COS�͡��ࡦ�����ӥ��λ��ͤ�ñ��ʷ��Ǽ���������ΤǤ���
 .PP
-オブジェクト参照はネームスペースに名前で格納され、オブジェクト参照と名前のペアは、それぞれネーム・バインディングと呼ばれます。ネーム・バインディングはネーミング・コンテキストに組み込むことができます。ネーミング・コンテキストはネーム・バインディングであり、ファイル・システムのサブディレクトリと同じ編成機能を持ちます。すべてのバインディングは初期ネーミング・コンテキストの下に格納されます。初期ネーミング・コンテキストは、ネームスペースの唯一の永続バインディングです。Java IDLネーミング・サービス・プロセスを停止して再起動すると、残りのネームスペースは失われます。
+���֥������Ȼ��Ȥϥ͡��ॹ�ڡ�����̾���ǳ�Ǽ���졢���֥������Ȼ��Ȥ�̾���Υڥ��ϡ����줾��͡��ࡦ�Х���ǥ��󥰤ȸƤФ�ޤ����͡��ࡦ�Х���ǥ��󥰤ϥ͡��ߥ󥰡�����ƥ����Ȥ��Ȥ߹��ळ�Ȥ��Ǥ��ޤ����͡��ߥ󥰡�����ƥ����Ȥϥ͡��ࡦ�Х���ǥ��󥰤Ǥ��ꡢ�ե����롦�����ƥ�Υ��֥ǥ��쥯�ȥ��Ʊ��������ǽ������ޤ������٤ƤΥХ���ǥ��󥰤Ͻ���͡��ߥ󥰡�����ƥ����Ȥβ��˳�Ǽ����ޤ�������͡��ߥ󥰡�����ƥ����Ȥϡ��͡��ॹ�ڡ�����ͣ��α�³�Х���ǥ��󥰤Ǥ���Java IDL�͡��ߥ󥰡������ӥ����ץ���������ߤ��ƺƵ�ư����ȡ��Ĥ�Υ͡��ॹ�ڡ����ϼ����ޤ���
 .PP
-アプレットまたはアプリケーションからCOSネーミング・サービスを使用するためには、そのORBがネーミング・サービスが動作しているホストのポートを知っているか、そのネーミング・サービスの初期ネーミング・コンテキスト文字列にアクセスできる必要があります。ネーム・サービスは、Java IDLのネーム・サービスでもその他のCOS準拠のネーム・サービスでもかまいません。
-.SS "ネーミング・サービスの起動"
+���ץ�åȤޤ��ϥ��ץꥱ������󤫤�COS�͡��ߥ󥰡������ӥ�����Ѥ��뤿��ˤϡ�����ORB���͡��ߥ󥰡������ӥ���ư��Ƥ���ۥ��ȤΥݡ��Ȥ��ΤäƤ��뤫�����Υ͡��ߥ󥰡������ӥ��ν���͡��ߥ󥰡�����ƥ�����ʸ����˥��������Ǥ���ɬ�פ�����ޤ����͡��ࡦ�����ӥ��ϡ�Java IDL�Υ͡��ࡦ�����ӥ��Ǥ⤽��¾��COS���Υ͡��ࡦ�����ӥ��Ǥ⤫�ޤ��ޤ���
+.SS "�͡��ߥ󥰡������ӥ��ε�ư"
 .PP
-Java IDLネーム・サービスは、ネーム・サービスを使用するアプリケーションまたはアプレットより前に起動しておく必要があります。Java IDL製品をインストールすると、Java IDLネーミング・サービスを起動するスクリプト(Oracle Solaris:
-\fItnameserv\fR)または実行可能ファイル(Windows:
-\fItnameserv\&.exe\fR)が作成されます。バックグラウンドで動作するように、ネーム・サービスを起動してください。
+Java IDL�͡��ࡦ�����ӥ��ϡ��͡��ࡦ�����ӥ�����Ѥ��륢�ץꥱ�������ޤ��ϥ��ץ�åȤ�����˵�ư���Ƥ���ɬ�פ�����ޤ���Java IDL���ʤ򥤥󥹥ȡ��뤹��ȡ�Java IDL�͡��ߥ󥰡������ӥ���ư���륹����ץ�(Oracle Solaris:
+\fBtnameserv\fR)�ޤ��ϼ¹Բ�ǽ�ե�����(Windows:
+\fBtnameserv\&.exe\fR)����������ޤ����Хå����饦��ɤ�ư���褦�ˡ��͡��ࡦ�����ӥ���ư���Ƥ���������
 .PP
-特に指定しない場合、Java IDLネーミング・サービスは、ORBの\fIresolve_initial_references\fRメソッドと\fIlist_initial_references methods\fRメソッドの実装に使用するブートストラップ・プロトコルに対してポート900でリスニングします。
+�ä˻��ꤷ�ʤ���硢Java IDL�͡��ߥ󥰡������ӥ��ϡ�ORB��\fBresolve_initial_references\fR�᥽�åɤ�\fBlist_initial_references methods\fR�᥽�åɤμ����˻��Ѥ���֡��ȥ��ȥ�åס��ץ��ȥ�����Ф��ƥݡ���900�ǥꥹ�˥󥰤��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-tnameserv \-ORBInitialPort nameserverport&
+\fBtnameserv \-ORBInitialPort nameserverport&\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .PP
-ネーム・サーバー・ポートを指定しない場合、デフォルトでポート900が使用されます。Oracle Solarisソフトウェアの実行時、1024より小さいポートでプロセスを開始する場合は、rootユーザーになる必要があります。このため、1024以上のポート番号を使用することをお薦めします。1050のように別のポートを指定し、ネーム・サービスをバックグラウンドで実行するには、UNIXコマンド・シェルで次のように入力します。
+�͡��ࡦ�����С����ݡ��Ȥ���ꤷ�ʤ���硢�ǥե���Ȥǥݡ���900�����Ѥ���ޤ���Oracle Solaris���եȥ������μ¹Ի���1024��꾮�����ݡ��Ȥǥץ������򳫻Ϥ�����ϡ�root�桼�����ˤʤ�ɬ�פ�����ޤ������Τ��ᡢ1024�ʾ�Υݡ����ֹ����Ѥ��뤳�Ȥ����ᤷ�ޤ���1050�Τ褦���̤Υݡ��Ȥ���ꤷ���͡��ࡦ�����ӥ���Хå����饦��ɤǼ¹Ԥ���ˤϡ�Solaris��Linux�ޤ���OS X���ޥ�ɡ�������Ǽ��Τ褦�����Ϥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-tnameserv \-ORBInitialPort 1050&
+\fBtnameserv \-ORBInitialPort 1050&\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .PP
-WindowsのMS\-DOSシステム・プロンプトでは、次のように入力します。
+Windows��MS\-DOS�����ƥࡦ�ץ���ץȤǤϡ����Τ褦�����Ϥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-start tnameserv \-ORBInitialPort 1050
+\fBstart tnameserv \-ORBInitialPort 1050\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .PP
-ネーム・サーバーのクライアントには、新しいポート番号を知らせる必要があります。これを行うには、ORBオブジェクトの作成時に\fIorg\&.omg\&.CORBA\&.ORBInitialPort\fRプロパティに新しいポート番号を設定します。
-.SS "異なるホスト上でのサーバーとクライアントの実行"
+�͡��ࡦ�����С��Υ��饤����Ȥˤϡ��������ݡ����ֹ���Τ餻��ɬ�פ�����ޤ��������Ԥ��ˤϡ�ORB���֥������Ȥκ�������\fBorg\&.omg\&.CORBA\&.ORBInitialPort\fR�ץ��ѥƥ��˿������ݡ����ֹ�����ꤷ�ޤ���
+.SS "�ۤʤ�ۥ��Ⱦ�ǤΥ����С��ȥ��饤����Ȥμ¹�"
 .PP
-Java IDLとRMI\-IIOPのほとんどのチュートリアルでは、ネーミング・サービス、サーバーおよびクライアントはすべて開発用のマシン上で実行されます。実際にデプロイメントする場合には、クライアントとサーバーを、ネーミング・サービスとは異なるホスト・マシン上で実行することが多くなります。
+Java IDL��RMI\-IIOP�ΤۤȤ�ɤΥ��塼�ȥꥢ��Ǥϡ��͡��ߥ󥰡������ӥ��������С�����ӥ��饤����ȤϤ��٤Ƴ�ȯ�ѤΥޥ����Ǽ¹Ԥ���ޤ����ºݤ˥ǥץ������Ȥ�����ˤϡ����饤����Ȥȥ����С��򡢥͡��ߥ󥰡������ӥ��Ȥϰۤʤ�ۥ��ȡ��ޥ����Ǽ¹Ԥ��뤳�Ȥ�¿���ʤ�ޤ���
 .PP
-クライアントとサーバーがネーム・サービスを見つけるには、クライアントとサーバーが、ネーム・サービスが実行されているポートの番号とホストを認識している必要があります。そのためには、クライアントとサーバーのファイル内の\fIorg\&.omg\&.CORBA\&.ORBInitialPort\fRプロパティと\fIorg\&.omg\&.CORBA\&.ORBInitialHost\fRプロパティをネーム・サービスが実行されているポートの番号とマシンの名前に設定します。この例は、「Getting Started Using RMI\-IIOP」
-(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/rmi\-iiop/rmiiiopexample\&.html)に示されています
+���饤����Ȥȥ����С����͡��ࡦ�����ӥ��򸫤Ĥ���ˤϡ����饤����Ȥȥ����С������͡��ࡦ�����ӥ����¹Ԥ���Ƥ���ݡ��Ȥ��ֹ�ȥۥ��Ȥ�ǧ�����Ƥ���ɬ�פ�����ޤ������Τ���ˤϡ����饤����Ȥȥ����С��Υե��������\fBorg\&.omg\&.CORBA\&.ORBInitialPort\fR�ץ��ѥƥ���\fBorg\&.omg\&.CORBA\&.ORBInitialHost\fR�ץ��ѥƥ���͡��ࡦ�����ӥ����¹Ԥ���Ƥ���ݡ��Ȥ��ֹ�ȥޥ����̾�������ꤷ�ޤ���������ϡ���Getting Started Using RMI\-IIOP��
+(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/rmi\-iiop/rmiiiopexample\&.html)�˼�����Ƥ��ޤ�
 .PP
-コマンドライン・オプション\fI\-ORBInitialPort nameserverport#\fRと\fI\-ORBInitialHost nameserverhostname\fRを使用して、クライアントとサーバーに対してネーミング・サービスを探す場所を指定することもできます。コマンドライン・オプションを使用してこれを行う方法の1つの例は、http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/idl/tutorial/jidl2machines\&.htmlの「Java IDL: The Hello World Example on Two Machines」
-を参照してください
+���ޥ�ɹԥ��ץ����\fB\-ORBInitialPort nameserverport#\fR��\fB\-ORBInitialHost nameserverhostname\fR����Ѥ��ơ����饤����Ȥȥ����С����Ф��ƥ͡��ߥ󥰡������ӥ���õ��������ꤹ�뤳�Ȥ�Ǥ��ޤ������ޥ�ɹԥ��ץ�������Ѥ��Ƥ����Ԥ���ˡ��1�Ĥ���ϡ�http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/idl/tutorial/jidl2machines\&.html�Ρ�Java IDL: The Hello World Example on Two Machines��
+�򻲾Ȥ��Ƥ�������
 .PP
-たとえば、一時ネーム・サービス\fItnameserv\fRが、ホスト\fInameserverhost\fRのポート1050上で実行されているとします。さらに、クライアントがホスト\fIclienthost\fR上で実行され、サーバーはホスト\fIserverhost\fR上で実行されているとします。
+���Ȥ��С�����͡��ࡦ�����ӥ�\fBtnameserv\fR�����ۥ���\fBnameserverhost\fR�Υݡ���1050��Ǽ¹Ԥ���Ƥ���Ȥ��ޤ�������ˡ����饤����Ȥ��ۥ���\fBclienthost\fR��Ǽ¹Ԥ��졢�����С��ϥۥ���\fBserverhost\fR��Ǽ¹Ԥ���Ƥ���Ȥ��ޤ���
 .PP
-ホスト\fInameserverhost\fR上で\fItnameserv\fRを起動します。
+�ۥ���\fBnameserverhost\fR���\fBtnameserv\fR��ư���ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-tnameserv \-ORBInitialPort 1050
+\fBtnameserv \-ORBInitialPort 1050\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .PP
-\fIserverhost\fR上でサーバーを起動します。
+\fBserverhost\fR��ǥ����С���ư���ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-java Server \-ORBInitialPort 1050 \-ORBInitialHost nameserverhost
+\fBjava Server \-ORBInitialPort 1050 \-ORBInitialHost nameserverhost\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .PP
 
-\fIclienthost\fR上でクライアントを起動します。
+\fBclienthost\fR��ǥ��饤����Ȥ�ư���ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-java Client \-ORBInitialPort 1050 \-ORBInitialHost nameserverhost
+\fBjava Client \-ORBInitialPort 1050 \-ORBInitialHost nameserverhost\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-.SS "ネーミング・サービスの停止"
+.SS "�͡��ߥ󥰡������ӥ������"
 .PP
-Java IDLネーミング・サービスを停止するには、Unixの場合は、\fIkill\fRなどのオペレーティング・システムのコマンドを使用し、Windowsの場合は、\fI[Ctrl]+[C]\fRキーを使用します。ネーミング・サービスを明示的に停止するまでは、呼出し待機状態が続きます。サービスを終了させると、Java IDLネーム・サービスに登録されている名前は失われます。
-.SH "オプション"
+Java IDL�͡��ߥ󥰡������ӥ�����ߤ���ˤϡ�Solaris��Linux�ޤ���OS X�ξ��ϡ�\fBkill\fR�ʤɤΥ��ڥ졼�ƥ��󥰡������ƥ�Υ��ޥ�ɤ���Ѥ���Windows�ξ��ϡ�\fB[Ctrl]+[C]\fR��������Ѥ��ޤ����͡��ߥ󥰡������ӥ�������Ū����ߤ���ޤǤϡ��ƽФ��Ե����֤�³���ޤ��������ӥ���λ������ȡ�Java IDL�͡��ࡦ�����ӥ�����Ͽ����Ƥ���̾���ϼ����ޤ���
+.SH "���ץ����"
 .PP
 \-J\fIoption\fR
 .RS 4
-Java仮想マシンに\fIoption\fRを渡します。\fIoption\fRには、Javaアプリケーション起動ツールのリファレンス・ページに記載されているオプションを1つ指定します。たとえば、\fI\-J\-Xms48m\fRと指定すると、スタートアップ・メモリーは48MBに設定されます。java(1)を参照してください。
+Java Virtual Machine��\fBoption\fR���Ϥ��ޤ���\fBoption\fR�ˤϡ�Java���ץꥱ�������ư�ġ���Υ�ե���󥹡��ڡ����˵��ܤ���Ƥ��륪�ץ�����1�Ļ��ꤷ�ޤ������Ȥ��С�\fB\-J\-Xms48m\fR�Ȼ��ꤹ��ȡ��������ȥ��åס����꡼��48MB�����ꤵ��ޤ���java(1)�򻲾Ȥ��Ƥ���������
 .RE
-.SH "例"
-.SS "ネームスペースへのオブジェクトの追加"
+.SH "��"
+.SS "�͡��ॹ�ڡ����ؤΥ��֥������Ȥ��ɲ�"
 .PP
-次の例では、ネームスペースに名前を追加する方法を示します。このサンプル・プログラムは、このままの状態で完全に動作する一時ネーム・サービス・クライアントで、次のような単純なツリーを作成するものです。
+������Ǥϡ��͡��ॹ�ڡ�����̾�����ɲä�����ˡ�򼨤��ޤ������Υ���ץ롦�ץ������ϡ����ʴ��뷿�ΰ���͡��ࡦ�����ӥ������饤����Ȥǡ����Τ褦��ñ��ʥĥ꡼����������ΤǤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-Initial Naming Context
-     plans
-     Personal
-          calendar
-          schedule
-.fi
-.if n \{\
-.RE
-.\}
-.PP
-この例で、\fIplans\fRはオブジェクト参照、\fIPersonal\fRは\fIcalendar\fRと\fIschedule\fRの2つのオブジェクト参照を含むネーミング・コンテキストです。
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-import java\&.util\&.Properties;
-import org\&.omg\&.CORBA\&.*;
-import org\&.omg\&.CosNaming\&.*;
+\fBInitial Naming Context\fR
+\fB     plans\fR
+\fB     Personal\fR
+\fB          calendar\fR
+\fB          schedule\fR
  
-public class NameClient {
-
-    public static void main(String args[]) {
-
-        try {
 .fi
 .if n \{\
 .RE
 .\}
 .PP
-ネーミング・サービスの起動で、\fInameserver\fRはポート1050で起動されました。次のコードで、このポート番号をクライアント・システムに知らせます。
+������ǡ�\fBplans\fR�ϥ��֥������Ȼ��ȡ�\fBPersonal\fR��\fBcalendar\fR��\fBschedule\fR��2�ĤΥ��֥������Ȼ��Ȥ�ޤ�͡��ߥ󥰡�����ƥ����ȤǤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-            Properties props = new Properties();
-            props\&.put("org\&.omg\&.CORBA\&.ORBInitialPort", "1050");
-            ORB orb = ORB\&.init(args, props);
-.fi
-.if n \{\
-.RE
-.\}
-.PP
-次のコードでは、初期ネーミング・コンテキストを取得し、それを\fIctx\fRに代入します。2行目では、\fIctx\fRをダミーのオブジェクト参照\fIobjref\fRにコピーします。このobjrefには、あとで様々な名前を割り当ててネームスペースに追加します。
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-            NamingContext ctx =
-                NamingContextHelper\&.narrow(
-                    orb\&.resolve_initial_references("NameService"));
-             NamingContext objref = ctx;
-.fi
-.if n \{\
-.RE
-.\}
-.PP
-次のコードでは、\fItext\fRタイプの名前\fIplans\fRを作成し、それをダミーのオブジェクト参照にバインドします。その後、\fIrebind\fRメソッドを使用して初期ネーミング・コンテキストの下に\fIplans\fRを追加しています。\fIrebind\fRメソッドを使用すれば、\fIbind\fRメソッドを使用した場合に発生する例外を発生させずに、このプログラムを何度も繰返し実行できます。
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-            NameComponent nc1 = new NameComponent("plans", "text");
-            NameComponent[] name1 = {nc1};
-            ctx\&.rebind(name1, objref);
-            System\&.out\&.println("plans rebind successful!");
-.fi
-.if n \{\
-.RE
-.\}
-.PP
-次のコードでは、\fIdirectory\fRタイプの\fIPersonal\fRというネーミング・コンテキストを作成します。その結果得られるオブジェクト参照\fIctx2\fRを\fIname\fRにバインドし、初期ネーミング・コンテキストに追加します。
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-            NameComponent nc2 = new NameComponent("Personal", "directory");
-            NameComponent[] name2 = {nc2};
-            NamingContext ctx2 = ctx\&.bind_new_context(name2);
-            System\&.out\&.println("new naming context added\&.\&.");
-.fi
-.if n \{\
-.RE
-.\}
-.PP
-残りのコードでは、ダミーのオブジェクト参照を\fIschedule\fRと\fIcalendar\fRという名前でネーミング・コンテキスト\fIPersonal\fR(\fIctx2\fR)にバインドします。
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-            NameComponent nc3 = new NameComponent("schedule", "text");
-            NameComponent[] name3 = {nc3};
-            ctx2\&.rebind(name3, objref);
-            System\&.out\&.println("schedule rebind successful!");
+\fBimport java\&.util\&.Properties;\fR
+\fBimport org\&.omg\&.CORBA\&.*;\fR
+\fBimport org\&.omg\&.CosNaming\&.*;\fR
+\fB \fR
+\fBpublic class NameClient {\fR
  
-            NameComponent nc4 = new NameComponent("calender", "text");
-            NameComponent[] name4 = {nc4};
-            ctx2\&.rebind(name4, objref);
-            System\&.out\&.println("calender rebind successful!");
-        } catch (Exception e) {
-            e\&.printStackTrace(System\&.err);
-        }
-    }
-}
-.fi
-.if n \{\
-.RE
-.\}
-.SS "ネームスペースの参照"
-.PP
-次のサンプル・プログラムでは、ネームスペースをブラウズする方法を示します。
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-import java\&.util\&.Properties;
-import org\&.omg\&.CORBA\&.*;
-import org\&.omg\&.CosNaming\&.*;
+\fB    public static void main(String args[]) {\fR
  
-public class NameClientList {
-
-    public static void main(String args[]) {
-
-        try {
-.fi
-.if n \{\
-.RE
-.\}
-.PP
-ネーミング・サービスの起動で、\fInameserver\fRはポート1050で起動されました。次のコードで、このポート番号をクライアント・システムに知らせます。
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-            Properties props = new Properties();
-            props\&.put("org\&.omg\&.CORBA\&.ORBInitialPort", "1050");
-            ORB orb = ORB\&.init(args, props);
-.fi
-.if n \{\
-.RE
-.\}
-.PP
-次のコードでは、初期ネーミング・コンテキストを取得しています。
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-            NamingContext nc =
-            NamingContextHelper\&.narrow(
-                orb\&.resolve_initial_references("NameService"));
-.fi
-.if n \{\
-.RE
-.\}
-.PP
-\fIlist\fRメソッドは、ネーミング・コンテキストのバインディングをリストします。この場合、最大1000個までのバインディングが初期ネーミング・コンテキストから\fIBindingListHolder\fRに返されます。残りのバインディングは、\fIBindingIteratorHolder\fRに返されます。
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-            BindingListHolder bl = new BindingListHolder();
-            BindingIteratorHolder blIt= new BindingIteratorHolder();
-            nc\&.list(1000, bl, blIt);
-.fi
-.if n \{\
-.RE
-.\}
-.PP
-次のコードでは、返された\fIBindingListHolder\fRからバインディングの配列を取得します。バインディングがない場合は、プログラムが終了します。
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-            Binding bindings[] = bl\&.value;
-            if (bindings\&.length == 0) return;
-.fi
-.if n \{\
-.RE
-.\}
-.PP
-残りのコードでは、バインディングに対してループ処理を行い、名前を出力します。
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-            for (int i=0; i < bindings\&.length; i++) {
+\fB        try {\fR
  
-                // get the object reference for each binding
-                org\&.omg\&.CORBA\&.Object obj = nc\&.resolve(bindings[i]\&.binding_name);
-                String objStr = orb\&.object_to_string(obj);
-                int lastIx = bindings[i]\&.binding_name\&.length\-1;
- 
-                // check to see if this is a naming context
-                if (bindings[i]\&.binding_type == BindingType\&.ncontext) {
-                    System\&.out\&.println("Context: " +
-                        bindings[i]\&.binding_name[lastIx]\&.id);
-                } else {
-                    System\&.out\&.println("Object: " +
-                        bindings[i]\&.binding_name[lastIx]\&.id);
-                }
-            }
-        } catch (Exception e) {
-            e\&.printStackTrace(System\&.err)
-        }
-    }
-}
 .fi
 .if n \{\
 .RE
 .\}
-.SH "関連項目"
+.PP
+�͡��ߥ󥰡������ӥ��ε�ư�ǡ�\fBnameserver\fR�ϥݡ���1050�ǵ�ư����ޤ��������Υ����ɤǡ����Υݡ����ֹ�򥯥饤����ȡ������ƥ���Τ餻�ޤ���
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB            Properties props = new Properties();\fR
+\fB            props\&.put("org\&.omg\&.CORBA\&.ORBInitialPort", "1050");\fR
+\fB            ORB orb = ORB\&.init(args, props);\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+���Υ����ɤǤϡ�����͡��ߥ󥰡�����ƥ����Ȥ�������������\fBctx\fR���������ޤ���2���ܤǤϡ�\fBctx\fR����ߡ��Υ��֥������Ȼ���\fBobjref\fR�˥��ԡ����ޤ�������objref�ˤϡ����Ȥ��͡���̾���������Ƥƥ͡��ॹ�ڡ������ɲä��ޤ���
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB            NamingContext ctx =\fR
+\fB                NamingContextHelper\&.narrow(\fR
+\fB                    orb\&.resolve_initial_references("NameService"));\fR
+\fB             NamingContext objref = ctx;\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+���Υ����ɤǤϡ�\fBtext\fR�����פ�̾��\fBplans\fR����������������ߡ��Υ��֥������Ȼ��Ȥ˥Х���ɤ��ޤ������θ塢\fBrebind\fR�᥽�åɤ���Ѥ��ƽ���͡��ߥ󥰡�����ƥ����Ȥβ���\fBplans\fR���ɲä��Ƥ��ޤ���\fBrebind\fR�᥽�åɤ���Ѥ���С�\fBbind\fR�᥽�åɤ���Ѥ�������ȯ�������㳰��ȯ���������ˡ����Υץ��������٤ⷫ�֤��¹ԤǤ��ޤ���
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB            NameComponent nc1 = new NameComponent("plans", "text");\fR
+\fB            NameComponent[] name1 = {nc1};\fR
+\fB            ctx\&.rebind(name1, objref);\fR
+\fB            System\&.out\&.println("plans rebind successful!");\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+���Υ����ɤǤϡ�\fBdirectory\fR�����פ�\fBPersonal\fR�Ȥ����͡��ߥ󥰡�����ƥ����Ȥ�������ޤ������η�������륪�֥������Ȼ���\fBctx2\fR��\fBname\fR�˥Х���ɤ�������͡��ߥ󥰡�����ƥ����Ȥ��ɲä��ޤ���
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB            NameComponent nc2 = new NameComponent("Personal", "directory");\fR
+\fB            NameComponent[] name2 = {nc2};\fR
+\fB            NamingContext ctx2 = ctx\&.bind_new_context(name2);\fR
+\fB            System\&.out\&.println("new naming context added\&.\&.");\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+�Ĥ�Υ����ɤǤϡ����ߡ��Υ��֥������Ȼ��Ȥ�\fBschedule\fR��\fBcalendar\fR�Ȥ���̾���ǥ͡��ߥ󥰡�����ƥ�����\fBPersonal\fR(\fBctx2\fR)�˥Х���ɤ��ޤ���
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB            NameComponent nc3 = new NameComponent("schedule", "text");\fR
+\fB            NameComponent[] name3 = {nc3};\fR
+\fB            ctx2\&.rebind(name3, objref);\fR
+\fB            System\&.out\&.println("schedule rebind successful!");\fR
+\fB \fR
+\fB            NameComponent nc4 = new NameComponent("calender", "text");\fR
+\fB            NameComponent[] name4 = {nc4};\fR
+\fB            ctx2\&.rebind(name4, objref);\fR
+\fB            System\&.out\&.println("calender rebind successful!");\fR
+\fB        } catch (Exception e) {\fR
+\fB            e\&.printStackTrace(System\&.err);\fR
+\fB        }\fR
+\fB    }\fR
+\fB}\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+.SS "�͡��ॹ�ڡ����λ���"
+.PP
+���Υ���ץ롦�ץ������Ǥϡ��͡��ॹ�ڡ�����֥饦��������ˡ�򼨤��ޤ���
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBimport java\&.util\&.Properties;\fR
+\fBimport org\&.omg\&.CORBA\&.*;\fR
+\fBimport org\&.omg\&.CosNaming\&.*;\fR
+\fB \fR
+\fBpublic class NameClientList {\fR
+ 
+\fB    public static void main(String args[]) {\fR
+ 
+\fB        try {\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+�͡��ߥ󥰡������ӥ��ε�ư�ǡ�\fBnameserver\fR�ϥݡ���1050�ǵ�ư����ޤ��������Υ����ɤǡ����Υݡ����ֹ�򥯥饤����ȡ������ƥ���Τ餻�ޤ���
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB            Properties props = new Properties();\fR
+\fB            props\&.put("org\&.omg\&.CORBA\&.ORBInitialPort", "1050");\fR
+\fB            ORB orb = ORB\&.init(args, props);\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+���Υ����ɤǤϡ�����͡��ߥ󥰡�����ƥ����Ȥ�������Ƥ��ޤ���
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB            NamingContext nc =\fR
+\fB            NamingContextHelper\&.narrow(\fR
+\fB                orb\&.resolve_initial_references("NameService"));\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+\fBlist\fR�᥽�åɤϡ��͡��ߥ󥰡�����ƥ����ȤΥХ���ǥ��󥰤�ꥹ�Ȥ��ޤ������ξ�硢����1000�ĤޤǤΥХ���ǥ��󥰤�����͡��ߥ󥰡�����ƥ����Ȥ���\fBBindingListHolder\fR���֤���ޤ����Ĥ�ΥХ���ǥ��󥰤ϡ�\fBBindingIteratorHolder\fR���֤���ޤ���
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB            BindingListHolder bl = new BindingListHolder();\fR
+\fB            BindingIteratorHolder blIt= new BindingIteratorHolder();\fR
+\fB            nc\&.list(1000, bl, blIt);\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+���Υ����ɤǤϡ��֤��줿\fBBindingListHolder\fR����Х���ǥ��󥰤������������ޤ����Х���ǥ��󥰤��ʤ����ϡ��ץ�����ब��λ���ޤ���
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB            Binding bindings[] = bl\&.value;\fR
+\fB            if (bindings\&.length == 0) return;\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+�Ĥ�Υ����ɤǤϡ��Х���ǥ��󥰤��Ф��ƥ롼�׽�����Ԥ���̾������Ϥ��ޤ���
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB            for (int i=0; i < bindings\&.length; i++) {\fR
+\fB \fR
+\fB                // get the object reference for each binding\fR
+\fB                org\&.omg\&.CORBA\&.Object obj = nc\&.resolve(bindings[i]\&.binding_name);\fR
+\fB                String objStr = orb\&.object_to_string(obj);\fR
+\fB                int lastIx = bindings[i]\&.binding_name\&.length\-1;\fR
+\fB \fR
+\fB                // check to see if this is a naming context\fR
+\fB                if (bindings[i]\&.binding_type == BindingType\&.ncontext) {\fR
+\fB                    System\&.out\&.println("Context: " +\fR
+\fB                        bindings[i]\&.binding_name[lastIx]\&.id);\fR
+\fB                } else {\fR
+\fB                    System\&.out\&.println("Object: " +\fR
+\fB                        bindings[i]\&.binding_name[lastIx]\&.id);\fR
+\fB                }\fR
+\fB            }\fR
+\fB        } catch (Exception e) {\fR
+\fB            e\&.printStackTrace(System\&.err)\fR
+\fB        }\fR
+\fB    }\fR
+\fB}\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+.SH "��Ϣ����"
 .sp
 .RS 4
 .ie n \{\

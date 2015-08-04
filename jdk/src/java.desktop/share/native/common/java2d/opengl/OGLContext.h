@@ -132,6 +132,8 @@ typedef struct {
     sun_java2d_opengl_OGLContext_OGLContextCaps_CAPS_EXT_GRAD_SHADER
 #define CAPS_EXT_TEXRECT     \
     sun_java2d_opengl_OGLContext_OGLContextCaps_CAPS_EXT_TEXRECT
+#define CAPS_EXT_TEXBARRIER  \
+    sun_java2d_opengl_OGLContext_OGLContextCaps_CAPS_EXT_TEXBARRIER
 
 /**
  * Evaluates to true if the given capability bitmask is present for the

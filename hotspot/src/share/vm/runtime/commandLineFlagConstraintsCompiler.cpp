@@ -29,18 +29,17 @@
 #include "utilities/defaultStream.hpp"
 
 Flag::Error AliasLevelConstraintFunc(bool verbose, intx* value) {
-  if (CommandLineFlags::finishedInitializing() == true) {
-    if ((*value <= 1) && (Arguments::mode() == Arguments::_comp)) {
-      if (verbose == true) {
-        jio_fprintf(defaultStream::error_stream(),
-                  "AliasLevel (" INTX_FORMAT ") is not compatible "
-                  "with -Xcomp \n",
-                  *value);
-      }
-      return Flag::VIOLATES_CONSTRAINT;
+  if ((*value <= 1) && (Arguments::mode() == Arguments::_comp)) {
+    if (verbose == true) {
+      jio_fprintf(defaultStream::error_stream(),
+                "AliasLevel (" INTX_FORMAT ") is not compatible "
+                "with -Xcomp \n",
+                *value);
     }
+    return Flag::VIOLATES_CONSTRAINT;
+  } else {
+    return Flag::SUCCESS;
   }
-  return Flag::SUCCESS;
 }
 
 /**

@@ -48,7 +48,6 @@ public class ObjectAlignment {
                 .shouldHaveExitValue(1);
 
             testObjectAlignment(-1)
-                .shouldContain("must be power of 2")
                 .shouldContain("outside the allowed range")
                 .shouldHaveExitValue(1);
 

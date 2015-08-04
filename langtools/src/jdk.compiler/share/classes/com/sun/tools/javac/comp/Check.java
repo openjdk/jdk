@@ -43,13 +43,10 @@ import com.sun.tools.javac.util.List;
 
 import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.Lint.LintCategory;
-import com.sun.tools.javac.code.Scope.CompoundScope;
-import com.sun.tools.javac.code.Scope.NamedImportScope;
 import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.comp.DeferredAttr.DeferredAttrContext;
-import com.sun.tools.javac.comp.Infer.InferenceContext;
 import com.sun.tools.javac.comp.Infer.FreeTypeListener;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.JCTree.JCPolyExpression.*;
@@ -456,7 +453,7 @@ public class Check {
          */
         public Warner checkWarner(DiagnosticPosition pos, Type found, Type req);
 
-        public Infer.InferenceContext inferenceContext();
+        public InferenceContext inferenceContext();
 
         public DeferredAttr.DeferredAttrContext deferredAttrContext();
     }
@@ -486,7 +483,7 @@ public class Check {
             return enclosingContext.checkWarner(pos, found, req);
         }
 
-        public Infer.InferenceContext inferenceContext() {
+        public InferenceContext inferenceContext() {
             return enclosingContext.inferenceContext();
         }
 
@@ -535,7 +532,7 @@ public class Check {
     }
 
     Type checkType(final DiagnosticPosition pos, final Type found, final Type req, final CheckContext checkContext) {
-        final Infer.InferenceContext inferenceContext = checkContext.inferenceContext();
+        final InferenceContext inferenceContext = checkContext.inferenceContext();
         if (inferenceContext.free(req) || inferenceContext.free(found)) {
             inferenceContext.addFreeTypeListener(List.of(req, found), new FreeTypeListener() {
                 @Override

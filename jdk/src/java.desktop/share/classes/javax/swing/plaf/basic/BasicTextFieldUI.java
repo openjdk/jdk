@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,12 @@ public class BasicTextFieldUI extends BasicTextUI {
             String kind = elem.getName();
             if (kind != null) {
                 if (kind.equals(AbstractDocument.ContentElementName)) {
-                    return new GlyphView(elem);
+                    return new GlyphView(elem) {
+                        @Override
+                        public int getResizeWeight(int axis) {
+                            return 0;
+                        }
+                    };
                 } else if (kind.equals(AbstractDocument.ParagraphElementName)) {
                     return new I18nFieldView(elem);
                 }
