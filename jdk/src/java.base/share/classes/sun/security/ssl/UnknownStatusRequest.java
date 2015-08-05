@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,21 +23,39 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 8080535
- * @summary Expected size of Character.UnicodeBlock.map is not optimal
- * @library /lib/testlibrary
- * @build jdk.testlibrary.OptimalCapacity
- * @run main OptimalListSize
- */
+package sun.security.ssl;
 
-import jdk.testlibrary.OptimalCapacity;
+import java.io.IOException;
 
-public class OptimalListSize {
-    public static void main(String[] args) throws Throwable {
-        OptimalCapacity.ofArrayList(
-                Class.forName("sun.security.ssl.ExtensionType"),
-                "knownExtensions", 14);
+final class UnknownStatusRequest implements StatusRequest  {
+
+    private final byte[] data;
+
+    UnknownStatusRequest(HandshakeInStream s, int len) throws IOException {
+        data = new byte[len];
+        if (len > 0) {
+            s.read(data);
+        }
+    }
+
+    UnknownStatusRequest(byte[] requestBytes) {
+        data = requestBytes;
+    }
+
+    @Override
+    public int length() {
+        return data.length;
+    }
+
+    @Override
+    public void send(HandshakeOutStream s) throws IOException {
+        // A raw write of the data
+        s.write(data);
+    }
+
+    @Override
+    public String toString() {
+        return "Unsupported StatusRequest, data: " +
+            Debug.toString(data);
     }
 }

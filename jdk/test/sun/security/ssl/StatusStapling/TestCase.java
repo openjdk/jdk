@@ -21,21 +21,12 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 8080535
- * @summary Expected size of Character.UnicodeBlock.map is not optimal
- * @library /lib/testlibrary
- * @build jdk.testlibrary.OptimalCapacity
- * @run main OptimalListSize
- */
+package sun.security.ssl;
 
-import jdk.testlibrary.OptimalCapacity;
+import java.util.Map;
 
-public class OptimalListSize {
-    public static void main(String[] args) throws Throwable {
-        OptimalCapacity.ofArrayList(
-                Class.forName("sun.security.ssl.ExtensionType"),
-                "knownExtensions", 14);
-    }
+public interface TestCase {
+    Map.Entry<Boolean, String> runTest();
 }
+
+
