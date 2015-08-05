@@ -27,22 +27,22 @@ package javax.naming.event;
 
 /**
   * This interface is the root of listener interfaces that
-  * handle <tt>NamingEvent</tt>s.
+  * handle {@code NamingEvent}s.
   * It does not make sense for a listener to implement just this interface.
-  * A listener typically implements a subinterface of <tt>NamingListener</tt>,
-  * such as <tt>ObjectChangeListener</tt> or <tt>NamespaceChangeListener</tt>.
+  * A listener typically implements a subinterface of {@code NamingListener},
+  * such as {@code ObjectChangeListener} or {@code NamespaceChangeListener}.
   *<p>
-  * This interface contains a single method, <tt>namingExceptionThrown()</tt>,
+  * This interface contains a single method, {@code namingExceptionThrown()},
   * that must be implemented so that the listener can be notified of
   * exceptions that are thrown (by the service provider) while gathering
   * information about the events that they're interested in.
   * When this method is invoked, the listener has been automatically deregistered
-  * from the <tt>EventContext</tt> with which it has registered.
+  * from the {@code EventContext} with which it has registered.
   *<p>
-  * For example, suppose a listener implements <tt>ObjectChangeListener</tt> and
-  * registers with a <tt>EventContext</tt>.
+  * For example, suppose a listener implements {@code ObjectChangeListener} and
+  * registers with a {@code EventContext}.
   * Then, if the connection to the server is subsequently broken,
-  * the listener will receive a <tt>NamingExceptionEvent</tt> and may
+  * the listener will receive a {@code NamingExceptionEvent} and may
   * take some corrective action, such as notifying the user of the application.
   *
   * @author Rosanna Lee
@@ -57,7 +57,7 @@ package javax.naming.event;
 public interface NamingListener extends java.util.EventListener {
     /**
      * Called when a naming exception is thrown while attempting
-     * to fire a <tt>NamingEvent</tt>.
+     * to fire a {@code NamingEvent}.
      *
      * @param evt The nonnull event.
      */

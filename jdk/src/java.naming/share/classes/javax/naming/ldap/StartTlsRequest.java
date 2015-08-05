@@ -43,9 +43,9 @@ import java.util.ServiceConfigurationError;
  * The object identifier for StartTLS is 1.3.6.1.4.1.1466.20037
  * and no extended request value is defined.
  *<p>
- * <tt>StartTlsRequest</tt>/<tt>StartTlsResponse</tt> are used to establish
+ * {@code StartTlsRequest}/{@code StartTlsResponse} are used to establish
  * a TLS connection over the existing LDAP connection associated with
- * the JNDI context on which <tt>extendedOperation()</tt> is invoked.
+ * the JNDI context on which {@code extendedOperation()} is invoked.
  * Typically, a JNDI program uses these classes as follows.
  * <blockquote><pre>
  * import javax.naming.ldap.*;
@@ -127,16 +127,16 @@ public class StartTlsRequest implements ExtendedRequest {
      * <p>
      * This method locates the implementation class by locating
      * configuration files that have the name:
-     * <blockquote><tt>
+     * <blockquote>{@code
      *     META-INF/services/javax.naming.ldap.StartTlsResponse
-     * </tt></blockquote>
+     * }</blockquote>
      * The configuration files and their corresponding implementation classes must
      * be accessible to the calling thread's context class loader.
      * <p>
      * Each configuration file should contain a list of fully-qualified class
      * names, one per line.  Space and tab characters surrounding each name, as
-     * well as blank lines, are ignored.  The comment character is <tt>'#'</tt>
-     * (<tt>0x23</tt>); on each line all characters following the first comment
+     * well as blank lines, are ignored.  The comment character is {@code '#'}
+     * ({@code 0x23}); on each line all characters following the first comment
      * character are ignored.  The file must be encoded in UTF-8.
      * <p>
      * This method will return an instance of the first implementation
