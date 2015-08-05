@@ -35,35 +35,35 @@ import javax.naming.NamingEnumeration;
 import javax.naming.OperationNotSupportedException;
 
 /**
-  * This class provides a basic implementation of the <tt>Attribute</tt> interface.
+  * This class provides a basic implementation of the {@code Attribute} interface.
   *<p>
   * This implementation does not support the schema methods
-  * <tt>getAttributeDefinition()</tt> and <tt>getAttributeSyntaxDefinition()</tt>.
-  * They simply throw <tt>OperationNotSupportedException</tt>.
-  * Subclasses of <tt>BasicAttribute</tt> should override these methods if they
+  * {@code getAttributeDefinition()} and {@code getAttributeSyntaxDefinition()}.
+  * They simply throw {@code OperationNotSupportedException}.
+  * Subclasses of {@code BasicAttribute} should override these methods if they
   * support them.
   *<p>
-  * The <tt>BasicAttribute</tt> class by default uses <tt>Object.equals()</tt> to
+  * The {@code BasicAttribute} class by default uses {@code Object.equals()} to
   * determine equality of attribute values when testing for equality or
   * when searching for values, <em>except</em> when the value is an array.
-  * For an array, each element of the array is checked using <tt>Object.equals()</tt>.
-  * Subclasses of <tt>BasicAttribute</tt> can make use of schema information
+  * For an array, each element of the array is checked using {@code Object.equals()}.
+  * Subclasses of {@code BasicAttribute} can make use of schema information
   * when doing similar equality checks by overriding methods
   * in which such use of schema is meaningful.
-  * Similarly, the <tt>BasicAttribute</tt> class by default returns the values passed to its
+  * Similarly, the {@code BasicAttribute} class by default returns the values passed to its
   * constructor and/or manipulated using the add/remove methods.
-  * Subclasses of <tt>BasicAttribute</tt> can override <tt>get()</tt> and <tt>getAll()</tt>
+  * Subclasses of {@code BasicAttribute} can override {@code get()} and {@code getAll()}
   * to get the values dynamically from the directory (or implement
-  * the <tt>Attribute</tt> interface directly instead of subclassing <tt>BasicAttribute</tt>).
+  * the {@code Attribute} interface directly instead of subclassing {@code BasicAttribute}).
   *<p>
-  * Note that updates to <tt>BasicAttribute</tt> (such as adding or removing a value)
+  * Note that updates to {@code BasicAttribute} (such as adding or removing a value)
   * does not affect the corresponding representation of the attribute
   * in the directory.  Updates to the directory can only be effected
-  * using operations in the <tt>DirContext</tt> interface.
+  * using operations in the {@code DirContext} interface.
   *<p>
-  * A <tt>BasicAttribute</tt> instance is not synchronized against concurrent
+  * A {@code BasicAttribute} instance is not synchronized against concurrent
   * multithreaded access. Multiple threads trying to access and modify a
-  * <tt>BasicAttribute</tt> should lock the object.
+  * {@code BasicAttribute} should lock the object.
   *
   * @author Rosanna Lee
   * @author Scott Seligman
@@ -112,16 +112,16 @@ public class BasicAttribute implements Attribute {
       * order the values must match.
       * If obj is null or not an Attribute, false is returned.
       *<p>
-      * By default <tt>Object.equals()</tt> is used when comparing the attribute
+      * By default {@code Object.equals()} is used when comparing the attribute
       * id and its values except when a value is an array. For an array,
-      * each element of the array is checked using <tt>Object.equals()</tt>.
+      * each element of the array is checked using {@code Object.equals()}.
       * A subclass may override this to make
       * use of schema syntax information and matching rules,
       * which define what it means for two attributes to be equal.
       * How and whether a subclass makes
       * use of the schema information is determined by the subclass.
-      * If a subclass overrides <tt>equals()</tt>, it should also override
-      * <tt>hashCode()</tt>
+      * If a subclass overrides {@code equals()}, it should also override
+      * {@code hashCode()}
       * such that two attributes that are equal have the same hash code.
       *
       * @param obj      The possibly null object to check.
@@ -172,8 +172,8 @@ public class BasicAttribute implements Attribute {
       * the attribute's id and that of all of its values except for
       * values that are arrays.
       * For an array, the hash code of each element of the array is summed.
-      * If a subclass overrides <tt>hashCode()</tt>, it should override
-      * <tt>equals()</tt>
+      * If a subclass overrides {@code hashCode()}, it should override
+      * {@code equals()}
       * as well so that two attributes that are equal have the same hash code.
       *
       * @return an int representing the hash code of this attribute.
@@ -315,10 +315,10 @@ public class BasicAttribute implements Attribute {
       * Determines whether a value is in this attribute.
       *<p>
       * By default,
-      * <tt>Object.equals()</tt> is used when comparing <tt>attrVal</tt>
-      * with this attribute's values except when <tt>attrVal</tt> is an array.
+      * {@code Object.equals()} is used when comparing {@code attrVal}
+      * with this attribute's values except when {@code attrVal} is an array.
       * For an array, each element of the array is checked using
-      * <tt>Object.equals()</tt>.
+      * {@code Object.equals()}.
       * A subclass may use schema information to determine equality.
       */
     public boolean contains(Object attrVal) {
@@ -352,7 +352,7 @@ public class BasicAttribute implements Attribute {
 
     /**
      * Determines whether two attribute values are equal.
-     * Use arrayEquals for arrays and <tt>Object.equals()</tt> otherwise.
+     * Use arrayEquals for arrays and {@code Object.equals()} otherwise.
      */
     private static boolean valueEquals(Object obj1, Object obj2) {
         if (obj1 == obj2) {
@@ -370,7 +370,7 @@ public class BasicAttribute implements Attribute {
 
     /**
      * Determines whether two arrays are equal by comparing each of their
-     * elements using <tt>Object.equals()</tt>.
+     * elements using {@code Object.equals()}.
      */
     private static boolean arrayEquals(Object a1, Object a2) {
         int len;
@@ -393,10 +393,10 @@ public class BasicAttribute implements Attribute {
     /**
       * Adds a new value to this attribute.
       *<p>
-      * By default, <tt>Object.equals()</tt> is used when comparing <tt>attrVal</tt>
-      * with this attribute's values except when <tt>attrVal</tt> is an array.
+      * By default, {@code Object.equals()} is used when comparing {@code attrVal}
+      * with this attribute's values except when {@code attrVal} is an array.
       * For an array, each element of the array is checked using
-      * <tt>Object.equals()</tt>.
+      * {@code Object.equals()}.
       * A subclass may use schema information to determine equality.
       */
     public boolean add(Object attrVal) {
@@ -411,10 +411,10 @@ public class BasicAttribute implements Attribute {
     /**
       * Removes a specified value from this attribute.
       *<p>
-      * By default, <tt>Object.equals()</tt> is used when comparing <tt>attrVal</tt>
-      * with this attribute's values except when <tt>attrVal</tt> is an array.
+      * By default, {@code Object.equals()} is used when comparing {@code attrVal}
+      * with this attribute's values except when {@code attrVal} is an array.
       * For an array, each element of the array is checked using
-      * <tt>Object.equals()</tt>.
+      * {@code Object.equals()}.
       * A subclass may use schema information to determine equality.
       */
     public boolean remove(Object attrval) {

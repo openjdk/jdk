@@ -49,7 +49,7 @@ import com.sun.naming.internal.FactoryEnumeration;
  * NamingManager is safe for concurrent access by multiple threads.
  *<p>
  * Except as otherwise noted,
- * a <tt>Name</tt> or environment parameter
+ * a {@code Name} or environment parameter
  * passed to any method is owned by the caller.
  * The implementation will not modify the object or keep a reference
  * to it, although it may keep a reference to a clone or copy.
@@ -164,8 +164,8 @@ public class NamingManager {
 
     /**
      * Creates an object using the factories specified in the
-     * <tt>Context.OBJECT_FACTORIES</tt> property of the environment
-     * or of the provider resource file associated with <tt>nameCtx</tt>.
+     * {@code Context.OBJECT_FACTORIES} property of the environment
+     * or of the provider resource file associated with {@code nameCtx}.
      *
      * @return factory created; null if cannot create
      */
@@ -205,69 +205,69 @@ public class NamingManager {
      * create a factory for creating the object.
      * Otherwise, the following rules are used to create the object:
      *<ol>
-     * <li>If <code>refInfo</code> is a <code>Reference</code>
-     *    or <code>Referenceable</code> containing a factory class name,
+     * <li>If {@code refInfo} is a {@code Reference}
+     *    or {@code Referenceable} containing a factory class name,
      *    use the named factory to create the object.
-     *    Return <code>refInfo</code> if the factory cannot be created.
+     *    Return {@code refInfo} if the factory cannot be created.
      *    Under JDK 1.1, if the factory class must be loaded from a location
-     *    specified in the reference, a <tt>SecurityManager</tt> must have
+     *    specified in the reference, a {@code SecurityManager} must have
      *    been installed or the factory creation will fail.
      *    If an exception is encountered while creating the factory,
      *    it is passed up to the caller.
-     * <li>If <tt>refInfo</tt> is a <tt>Reference</tt> or
-     *    <tt>Referenceable</tt> with no factory class name,
-     *    and the address or addresses are <tt>StringRefAddr</tt>s with
+     * <li>If {@code refInfo} is a {@code Reference} or
+     *    {@code Referenceable} with no factory class name,
+     *    and the address or addresses are {@code StringRefAddr}s with
      *    address type "URL",
      *    try the URL context factory corresponding to each URL's scheme id
-     *    to create the object (see <tt>getURLContext()</tt>).
+     *    to create the object (see {@code getURLContext()}).
      *    If that fails, continue to the next step.
      * <li> Use the object factories specified in
-     *    the <tt>Context.OBJECT_FACTORIES</tt> property of the environment,
+     *    the {@code Context.OBJECT_FACTORIES} property of the environment,
      *    and of the provider resource file associated with
-     *    <tt>nameCtx</tt>, in that order.
+     *    {@code nameCtx}, in that order.
      *    The value of this property is a colon-separated list of factory
      *    class names that are tried in order, and the first one that succeeds
      *    in creating an object is the one used.
      *    If none of the factories can be loaded,
-     *    return <code>refInfo</code>.
+     *    return {@code refInfo}.
      *    If an exception is encountered while creating the object, the
      *    exception is passed up to the caller.
      *</ol>
      *<p>
-     * Service providers that implement the <tt>DirContext</tt>
+     * Service providers that implement the {@code DirContext}
      * interface should use
-     * <tt>DirectoryManager.getObjectInstance()</tt>, not this method.
-     * Service providers that implement only the <tt>Context</tt>
+     * {@code DirectoryManager.getObjectInstance()}, not this method.
+     * Service providers that implement only the {@code Context}
      * interface should use this method.
      * <p>
      * Note that an object factory (an object that implements the ObjectFactory
      * interface) must be public and must have a public constructor that
      * accepts no arguments.
      * <p>
-     * The <code>name</code> and <code>nameCtx</code> parameters may
+     * The {@code name} and {@code nameCtx} parameters may
      * optionally be used to specify the name of the object being created.
-     * <code>name</code> is the name of the object, relative to context
-     * <code>nameCtx</code>.  This information could be useful to the object
+     * {@code name} is the name of the object, relative to context
+     * {@code nameCtx}.  This information could be useful to the object
      * factory or to the object implementation.
      *  If there are several possible contexts from which the object
      *  could be named -- as will often be the case -- it is up to
      *  the caller to select one.  A good rule of thumb is to select the
      * "deepest" context available.
-     * If <code>nameCtx</code> is null, <code>name</code> is relative
+     * If {@code nameCtx} is null, {@code name} is relative
      * to the default initial context.  If no name is being specified, the
-     * <code>name</code> parameter should be null.
+     * {@code name} parameter should be null.
      *
      * @param refInfo The possibly null object for which to create an object.
-     * @param name The name of this object relative to <code>nameCtx</code>.
+     * @param name The name of this object relative to {@code nameCtx}.
      *          Specifying a name is optional; if it is
-     *          omitted, <code>name</code> should be null.
-     * @param nameCtx The context relative to which the <code>name</code>
-     *          parameter is specified.  If null, <code>name</code> is
+     *          omitted, {@code name} should be null.
+     * @param nameCtx The context relative to which the {@code name}
+     *          parameter is specified.  If null, {@code name} is
      *          relative to the default initial context.
      * @param environment The possibly null environment to
      *          be used in the creation of the object factory and the object.
-     * @return An object created using <code>refInfo</code>; or
-     *          <code>refInfo</code> if an object cannot be created using
+     * @return An object created using {@code refInfo}; or
+     *          {@code refInfo} if an object cannot be created using
      *          the algorithm described above.
      * @exception NamingException if a naming exception was encountered
      *  while attempting to get a URL context, or if one of the
@@ -404,23 +404,23 @@ public class NamingManager {
 
 
     /**
-     * Retrieves a context identified by <code>obj</code>, using the specified
+     * Retrieves a context identified by {@code obj}, using the specified
      * environment.
      * Used by ContinuationContext.
      *
      * @param obj       The object identifying the context.
      * @param name      The name of the context being returned, relative to
-     *                  <code>nameCtx</code>, or null if no name is being
+     *                  {@code nameCtx}, or null if no name is being
      *                  specified.
-     *                  See the <code>getObjectInstance</code> method for
+     *                  See the {@code getObjectInstance} method for
      *                  details.
-     * @param nameCtx   The context relative to which <code>name</code> is
+     * @param nameCtx   The context relative to which {@code name} is
      *                  specified, or null for the default initial context.
-     *                  See the <code>getObjectInstance</code> method for
+     *                  See the {@code getObjectInstance} method for
      *                  details.
      * @param environment Environment specifying characteristics of the
      *                  resulting context.
-     * @return A context identified by <code>obj</code>.
+     * @return A context identified by {@code obj}.
      *
      * @see #getObjectInstance
      */
@@ -480,7 +480,7 @@ public class NamingManager {
      * Creates a context for the given URL scheme id.
      * <p>
      * The resulting context is for resolving URLs of the
-     * scheme <code>scheme</code>. The resulting context is not tied
+     * scheme {@code scheme}. The resulting context is not tied
      * to a specific URL. It is able to handle arbitrary URLs with
      * the specified scheme.
      *<p>
@@ -488,7 +488,7 @@ public class NamingManager {
      * has the naming convention <i>scheme-id</i>URLContextFactory
      * (e.g. "ftpURLContextFactory" for the "ftp" scheme-id),
      * in the package specified as follows.
-     * The <tt>Context.URL_PKG_PREFIXES</tt> environment property (which
+     * The {@code Context.URL_PKG_PREFIXES} environment property (which
      * may contain values taken from system properties,
      * or application resource files)
      * contains a colon-separated list of package prefixes.
@@ -500,7 +500,7 @@ public class NamingManager {
      * concatenated with the scheme id.
      *<p>
      * For example, if the scheme id is "ldap", and the
-     * <tt>Context.URL_PKG_PREFIXES</tt> property
+     * {@code Context.URL_PKG_PREFIXES} property
      * contains "com.widget:com.wiz.jndi",
      * the naming manager would attempt to load the following classes
      * until one is successfully instantiated:
@@ -514,7 +514,7 @@ public class NamingManager {
      * If a factory is instantiated, it is invoked with the following
      * parameters to produce the resulting context.
      * <p>
-     * <code>factory.getObjectInstance(null, environment);</code>
+     * {@code factory.getObjectInstance(null, environment);}
      * <p>
      * For example, invoking getObjectInstance() as shown above
      * on a LDAP URL context factory would return a
@@ -530,8 +530,8 @@ public class NamingManager {
      * @param environment The possibly null environment properties to be
      *           used in the creation of the object factory and the context.
      * @return A context for resolving URLs with the
-     *         scheme id <code>scheme</code>;
-     *  <code>null</code> if the factory for creating the
+     *         scheme id {@code scheme};
+     *  {@code null} if the factory for creating the
      *         context is not found.
      * @exception NamingException If a naming exception occurs while creating
      *          the context.
@@ -575,7 +575,7 @@ public class NamingManager {
      * context factory for the URL scheme.
      * @param scheme the URL scheme id for the context
      * @param urlInfo information used to create the context
-     * @param name name of this object relative to <code>nameCtx</code>
+     * @param name name of this object relative to {@code nameCtx}
      * @param nameCtx Context whose provider resource file will be searched
      *          for package prefix values (or null if none)
      * @param environment Environment properties for creating the context
@@ -630,7 +630,7 @@ public class NamingManager {
      *     it is used to create the factory for creating the initial
      *     context</li>
      * <li>Otherwise, the class specified in the
-     *     <tt>Context.INITIAL_CONTEXT_FACTORY</tt> environment property
+     *     {@code Context.INITIAL_CONTEXT_FACTORY} environment property
      *     is used
      *     <ul>
      *     <li>First, the {@linkplain java.util.ServiceLoader ServiceLoader}
@@ -649,7 +649,7 @@ public class NamingManager {
      *                  creating the context.
      * @return A non-null initial context.
      * @exception NoInitialContextException If the
-     *          <tt>Context.INITIAL_CONTEXT_FACTORY</tt> property
+     *          {@code Context.INITIAL_CONTEXT_FACTORY} property
      *         is not found or names a nonexistent
      *         class or a class that cannot be instantiated,
      *          or if the initial context could not be created for some other
@@ -764,8 +764,8 @@ public class NamingManager {
 
     /**
      * Constant that holds the name of the environment property into
-     * which <tt>getContinuationContext()</tt> stores the value of its
-     * <tt>CannotProceedException</tt> parameter.
+     * which {@code getContinuationContext()} stores the value of its
+     * {@code CannotProceedException} parameter.
      * This property is inherited by the continuation context, and may
      * be used by that context's service provider to inspect the
      * fields of the exception.
@@ -784,18 +784,18 @@ public class NamingManager {
      * namespaces, a context from one naming system may need to pass
      * the operation on to the next naming system.  The context
      * implementation does this by first constructing a
-     * <code>CannotProceedException</code> containing information
+     * {@code CannotProceedException} containing information
      * pinpointing how far it has proceeded.  It then obtains a
      * continuation context from JNDI by calling
-     * <code>getContinuationContext</code>.  The context
+     * {@code getContinuationContext}.  The context
      * implementation should then resume the context operation by
      * invoking the same operation on the continuation context, using
      * the remainder of the name that has not yet been resolved.
      *<p>
-     * Before making use of the <tt>cpe</tt> parameter, this method
+     * Before making use of the {@code cpe} parameter, this method
      * updates the environment associated with that object by setting
-     * the value of the property <a href="#CPE"><tt>CPE</tt></a>
-     * to <tt>cpe</tt>.  This property will be inherited by the
+     * the value of the property <a href="#CPE">{@code CPE}</a>
+     * to {@code cpe}.  This property will be inherited by the
      * continuation context, and may be used by that context's
      * service provider to inspect the fields of this exception.
      *
@@ -826,15 +826,15 @@ public class NamingManager {
     /**
      * Retrieves the state of an object for binding.
      * <p>
-     * Service providers that implement the <tt>DirContext</tt> interface
-     * should use <tt>DirectoryManager.getStateToBind()</tt>, not this method.
-     * Service providers that implement only the <tt>Context</tt> interface
+     * Service providers that implement the {@code DirContext} interface
+     * should use {@code DirectoryManager.getStateToBind()}, not this method.
+     * Service providers that implement only the {@code Context} interface
      * should use this method.
      *<p>
      * This method uses the specified state factories in
-     * the <tt>Context.STATE_FACTORIES</tt> property from the environment
+     * the {@code Context.STATE_FACTORIES} property from the environment
      * properties, and from the provider resource file associated with
-     * <tt>nameCtx</tt>, in that order.
+     * {@code nameCtx}, in that order.
      *    The value of this property is a colon-separated list of factory
      *    class names that are tried in order, and the first one that succeeds
      *    in returning the object's state is the one used.
@@ -848,35 +848,35 @@ public class NamingManager {
      * interface) must be public and must have a public constructor that
      * accepts no arguments.
      * <p>
-     * The <code>name</code> and <code>nameCtx</code> parameters may
+     * The {@code name} and {@code nameCtx} parameters may
      * optionally be used to specify the name of the object being created.
      * See the description of "Name and Context Parameters" in
      * {@link ObjectFactory#getObjectInstance
      *          ObjectFactory.getObjectInstance()}
      * for details.
      * <p>
-     * This method may return a <tt>Referenceable</tt> object.  The
+     * This method may return a {@code Referenceable} object.  The
      * service provider obtaining this object may choose to store it
      * directly, or to extract its reference (using
-     * <tt>Referenceable.getReference()</tt>) and store that instead.
+     * {@code Referenceable.getReference()}) and store that instead.
      *
      * @param obj The non-null object for which to get state to bind.
-     * @param name The name of this object relative to <code>nameCtx</code>,
+     * @param name The name of this object relative to {@code nameCtx},
      *          or null if no name is specified.
-     * @param nameCtx The context relative to which the <code>name</code>
-     *          parameter is specified, or null if <code>name</code> is
+     * @param nameCtx The context relative to which the {@code name}
+     *          parameter is specified, or null if {@code name} is
      *          relative to the default initial context.
      *  @param environment The possibly null environment to
      *          be used in the creation of the state factory and
      *  the object's state.
-     * @return The non-null object representing <tt>obj</tt>'s state for
-     *  binding.  It could be the object (<tt>obj</tt>) itself.
+     * @return The non-null object representing {@code obj}'s state for
+     *  binding.  It could be the object ({@code obj}) itself.
      * @exception NamingException If one of the factories accessed throws an
      *          exception, or if an error was encountered while loading
      *          and instantiating the factory and object classes.
      *          A factory should only throw an exception if it does not want
      *          other factories to be used in an attempt to create an object.
-     *  See <tt>StateFactory.getStateToBind()</tt>.
+     *  See {@code StateFactory.getStateToBind()}.
      * @see StateFactory
      * @see StateFactory#getStateToBind
      * @see DirectoryManager#getStateToBind
