@@ -148,6 +148,13 @@ class Bundle {
         return id;
     }
 
+    String getJavaID() {
+        // Tweak ISO compatibility for bundle generation
+        return id.replaceFirst("^he", "iw")
+            .replaceFirst("^id", "in")
+            .replaceFirst("^yi", "ji");
+    }
+
     boolean isRoot() {
         return "root".equals(id);
     }
