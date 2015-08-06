@@ -38,12 +38,12 @@ import java.math.BigInteger;
 /**
  * Implements the ASN.1 EncKrbPrivPart type.
  *
- * <xmp>
+ * <pre>{@code
  *     METHOD-DATA ::=    SEQUENCE {
  *                        method-type[0]   INTEGER,
  *                        method-data[1]   OCTET STRING OPTIONAL
  *  }
- * </xmp>
+ * }</pre>
  */
 public class MethodData {
     private int methodType;

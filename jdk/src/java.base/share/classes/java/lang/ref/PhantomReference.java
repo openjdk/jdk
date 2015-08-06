@@ -38,8 +38,8 @@ package java.lang.ref;
  * time or at some later time it will enqueue the reference.
  *
  * <p> In order to ensure that a reclaimable object remains so, the referent of
- * a phantom reference may not be retrieved: The <code>get</code> method of a
- * phantom reference always returns <code>null</code>.
+ * a phantom reference may not be retrieved: The {@code get} method of a
+ * phantom reference always returns {@code null}.
  *
  * <p> Unlike soft and weak references, phantom references are not
  * automatically cleared by the garbage collector as they are enqueued.  An
@@ -55,9 +55,9 @@ public class PhantomReference<T> extends Reference<T> {
     /**
      * Returns this reference object's referent.  Because the referent of a
      * phantom reference is always inaccessible, this method always returns
-     * <code>null</code>.
+     * {@code null}.
      *
-     * @return  <code>null</code>
+     * @return {@code null}
      */
     public T get() {
         return null;
@@ -67,14 +67,14 @@ public class PhantomReference<T> extends Reference<T> {
      * Creates a new phantom reference that refers to the given object and
      * is registered with the given queue.
      *
-     * <p> It is possible to create a phantom reference with a <tt>null</tt>
-     * queue, but such a reference is completely useless: Its <tt>get</tt>
+     * <p> It is possible to create a phantom reference with a {@code null}
+     * queue, but such a reference is completely useless: Its {@code get}
      * method will always return null and, since it does not have a queue, it
      * will never be enqueued.
      *
      * @param referent the object the new phantom reference will refer to
      * @param q the queue with which the reference is to be registered,
-     *          or <tt>null</tt> if registration is not required
+     *          or {@code null} if registration is not required
      */
     public PhantomReference(T referent, ReferenceQueue<? super T> q) {
         super(referent, q);

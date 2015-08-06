@@ -205,7 +205,7 @@ public final class System {
      * Returns the unique {@link java.io.Console Console} object associated
      * with the current Java virtual machine, if any.
      *
-     * @return  The system console, if any, otherwise <tt>null</tt>.
+     * @return  The system console, if any, otherwise {@code null}.
      *
      * @since   1.6
      */
@@ -232,7 +232,7 @@ public final class System {
      * inheritedChannel}, this method may return other kinds of
      * channels in the future.
      *
-     * @return  The inherited channel, if any, otherwise <tt>null</tt>.
+     * @return  The inherited channel, if any, otherwise {@code null}.
      *
      * @throws  IOException
      *          If an I/O error occurs

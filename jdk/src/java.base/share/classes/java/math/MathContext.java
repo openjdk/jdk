@@ -268,7 +268,7 @@ public final class MathContext implements Serializable {
      * Returns the string representation of this {@code MathContext}.
      * The {@code String} returned represents the settings of the
      * {@code MathContext} object as two space-delimited words
-     * (separated by a single space character, <tt>'&#92;u0020'</tt>,
+     * (separated by a single space character, <code>'&#92;u0020'</code>,
      * and with no leading or trailing white space), as follows:
      * <ol>
      * <li>

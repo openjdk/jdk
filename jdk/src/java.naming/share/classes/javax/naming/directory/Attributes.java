@@ -103,7 +103,7 @@ public interface Attributes extends Cloneable, java.io.Serializable {
       * are undefined.
       *
       * @return A non-null enumeration of the attributes in this attribute set.
-      *         Each element of the enumeration is of class <tt>Attribute</tt>.
+      *         Each element of the enumeration is of class {@code Attribute}.
       *         If attribute set has zero attributes, an empty enumeration
       *         is returned.
       */

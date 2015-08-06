@@ -57,7 +57,7 @@ public interface OpenMBeanParameterInfo {
 
     /**
      * Returns a human readable description of the parameter
-     * described by this <tt>OpenMBeanParameterInfo</tt> instance.
+     * described by this {@code OpenMBeanParameterInfo} instance.
      *
      * @return the description.
      */
@@ -65,7 +65,7 @@ public interface OpenMBeanParameterInfo {
 
     /**
      * Returns the name of the parameter
-     * described by this <tt>OpenMBeanParameterInfo</tt> instance.
+     * described by this {@code OpenMBeanParameterInfo} instance.
      *
      * @return the name.
      */
@@ -77,7 +77,7 @@ public interface OpenMBeanParameterInfo {
 
     /**
      * Returns the <i>open type</i> of the values of the parameter
-     * described by this <tt>OpenMBeanParameterInfo</tt> instance.
+     * described by this {@code OpenMBeanParameterInfo} instance.
      *
      * @return the open type.
      */
@@ -85,7 +85,7 @@ public interface OpenMBeanParameterInfo {
 
     /**
      * Returns the default value for this parameter, if it has one, or
-     * <tt>null</tt> otherwise.
+     * {@code null} otherwise.
      *
      * @return the default value.
      */
@@ -93,7 +93,7 @@ public interface OpenMBeanParameterInfo {
 
     /**
      * Returns the set of legal values for this parameter, if it has
-     * one, or <tt>null</tt> otherwise.
+     * one, or {@code null} otherwise.
      *
      * @return the set of legal values.
      */
@@ -101,7 +101,7 @@ public interface OpenMBeanParameterInfo {
 
     /**
      * Returns the minimal value for this parameter, if it has one, or
-     * <tt>null</tt> otherwise.
+     * {@code null} otherwise.
      *
      * @return the minimum value.
      */
@@ -109,39 +109,39 @@ public interface OpenMBeanParameterInfo {
 
     /**
      * Returns the maximal value for this parameter, if it has one, or
-     * <tt>null</tt> otherwise.
+     * {@code null} otherwise.
      *
      * @return the maximum value.
      */
     public Comparable<?> getMaxValue() ;
 
     /**
-     * Returns <tt>true</tt> if this parameter has a specified default
-     * value, or <tt>false</tt> otherwise.
+     * Returns {@code true} if this parameter has a specified default
+     * value, or {@code false} otherwise.
      *
      * @return true if there is a default value.
      */
     public boolean hasDefaultValue() ;
 
     /**
-     * Returns <tt>true</tt> if this parameter has a specified set of
-     * legal values, or <tt>false</tt> otherwise.
+     * Returns {@code true} if this parameter has a specified set of
+     * legal values, or {@code false} otherwise.
      *
      * @return true if there is a set of legal values.
      */
     public boolean hasLegalValues() ;
 
     /**
-     * Returns <tt>true</tt> if this parameter has a specified minimal
-     * value, or <tt>false</tt> otherwise.
+     * Returns {@code true} if this parameter has a specified minimal
+     * value, or {@code false} otherwise.
      *
      * @return true if there is a minimum value.
      */
     public boolean hasMinValue() ;
 
     /**
-     * Returns <tt>true</tt> if this parameter has a specified maximal
-     * value, or <tt>false</tt> otherwise.
+     * Returns {@code true} if this parameter has a specified maximal
+     * value, or {@code false} otherwise.
      *
      * @return true if there is a maximum value.
      */
@@ -149,62 +149,62 @@ public interface OpenMBeanParameterInfo {
 
     /**
      * Tests whether <var>obj</var> is a valid value for the parameter
-     * described by this <code>OpenMBeanParameterInfo</code> instance.
+     * described by this {@code OpenMBeanParameterInfo} instance.
      *
      * @param obj the object to be tested.
      *
-     * @return <code>true</code> if <var>obj</var> is a valid value
+     * @return {@code true} if <var>obj</var> is a valid value
      * for the parameter described by this
-     * <code>OpenMBeanParameterInfo</code> instance,
-     * <code>false</code> otherwise.
+     * {@code OpenMBeanParameterInfo} instance,
+     * {@code false} otherwise.
      */
     public boolean isValue(Object obj) ;
 
 
     /**
-     * Compares the specified <var>obj</var> parameter with this <code>OpenMBeanParameterInfo</code> instance for equality.
+     * Compares the specified <var>obj</var> parameter with this {@code OpenMBeanParameterInfo} instance for equality.
      * <p>
-     * Returns <tt>true</tt> if and only if all of the following statements are true:
+     * Returns {@code true} if and only if all of the following statements are true:
      * <ul>
      * <li><var>obj</var> is non null,</li>
-     * <li><var>obj</var> also implements the <code>OpenMBeanParameterInfo</code> interface,</li>
+     * <li><var>obj</var> also implements the {@code OpenMBeanParameterInfo} interface,</li>
      * <li>their names are equal</li>
      * <li>their open types are equal</li>
      * <li>their default, min, max and legal values are equal.</li>
      * </ul>
-     * This ensures that this <tt>equals</tt> method works properly for <var>obj</var> parameters which are
-     * different implementations of the <code>OpenMBeanParameterInfo</code> interface.
+     * This ensures that this {@code equals} method works properly for <var>obj</var> parameters which are
+     * different implementations of the {@code OpenMBeanParameterInfo} interface.
      * <br>&nbsp;
-     * @param  obj  the object to be compared for equality with this <code>OpenMBeanParameterInfo</code> instance;
+     * @param  obj  the object to be compared for equality with this {@code OpenMBeanParameterInfo} instance;
      *
-     * @return  <code>true</code> if the specified object is equal to this <code>OpenMBeanParameterInfo</code> instance.
+     * @return  {@code true} if the specified object is equal to this {@code OpenMBeanParameterInfo} instance.
      */
     public boolean equals(Object obj);
 
     /**
-     * Returns the hash code value for this <code>OpenMBeanParameterInfo</code> instance.
+     * Returns the hash code value for this {@code OpenMBeanParameterInfo} instance.
      * <p>
-     * The hash code of an <code>OpenMBeanParameterInfo</code> instance is the sum of the hash codes
-     * of all elements of information used in <code>equals</code> comparisons
+     * The hash code of an {@code OpenMBeanParameterInfo} instance is the sum of the hash codes
+     * of all elements of information used in {@code equals} comparisons
      * (ie: its name, its <i>open type</i>, and its default, min, max and legal values).
      * <p>
-     * This ensures that <code> t1.equals(t2) </code> implies that <code> t1.hashCode()==t2.hashCode() </code>
-     * for any two <code>OpenMBeanParameterInfo</code> instances <code>t1</code> and <code>t2</code>,
+     * This ensures that {@code t1.equals(t2)} implies that {@code t1.hashCode()==t2.hashCode()}
+     * for any two {@code OpenMBeanParameterInfo} instances {@code t1} and {@code t2},
      * as required by the general contract of the method
      * {@link Object#hashCode() Object.hashCode()}.
      *
-     * @return  the hash code value for this <code>OpenMBeanParameterInfo</code> instance
+     * @return  the hash code value for this {@code OpenMBeanParameterInfo} instance
      */
     public int hashCode();
 
     /**
-     * Returns a string representation of this <code>OpenMBeanParameterInfo</code> instance.
+     * Returns a string representation of this {@code OpenMBeanParameterInfo} instance.
      * <p>
-     * The string representation consists of the name of this class (ie <code>javax.management.openmbean.OpenMBeanParameterInfo</code>),
+     * The string representation consists of the name of this class (ie {@code javax.management.openmbean.OpenMBeanParameterInfo}),
      * the string representation of the name and open type of the described parameter,
      * and the string representation of its default, min, max and legal values.
      *
-     * @return  a string representation of this <code>OpenMBeanParameterInfo</code> instance
+     * @return  a string representation of this {@code OpenMBeanParameterInfo} instance
      */
     public String toString();
 

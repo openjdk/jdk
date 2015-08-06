@@ -41,14 +41,14 @@ import java.math.BigInteger;
 /**
  * Implements the ASN.1 Authenticator type.
  *
- * <xmp>
+ * <pre>{@code
  * KRB-CRED     ::= [APPLICATION 22] SEQUENCE {
  *      pvno            [0] INTEGER (5),
  *      msg-type        [1] INTEGER (22),
  *      tickets         [2] SEQUENCE OF Ticket,
  *      enc-part        [3] EncryptedData -- EncKrbCredPart
  * }
- * </xmp>
+ * }</pre>
  *
  * <p>
  * This definition reflects the Network Working Group RFC 4120

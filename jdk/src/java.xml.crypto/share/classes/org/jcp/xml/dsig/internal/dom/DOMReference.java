@@ -118,7 +118,6 @@ public final class DOMReference extends DOMStructure
      *    is defensively copied to protect against subsequent modification.
      *    May be <code>null</code> or empty.
      * @param id the reference ID (may be <code>null</code>)
-     * @return a <code>Reference</code>
      * @throws NullPointerException if <code>dm</code> is <code>null</code>
      * @throws ClassCastException if any of the <code>transforms</code> are
      *    not of type <code>Transform</code>

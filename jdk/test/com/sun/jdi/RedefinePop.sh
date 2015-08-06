@@ -30,6 +30,7 @@
 #
 #  The failure occurs with debug java when the pop deletes the
 #  line that called the method which is being popped.
+#  @key intermittent
 #  @run shell RedefinePop.sh
 
 
