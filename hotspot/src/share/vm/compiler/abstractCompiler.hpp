@@ -66,6 +66,58 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
   virtual bool supports_osr   ()                 { return true; }
   virtual bool can_compile_method(methodHandle method)  { return true; }
 
+  // Determine if the current compiler provides an intrinsic
+  // for method 'method'. An intrinsic is available if:
+  //  - the intrinsic is enabled (by using the appropriate command-line flag) and
+  //  - the platform on which the VM is running supports the intrinsic
+  //    (i.e., the platform provides the instructions necessary for the compiler
+  //    to generate the intrinsic code).
+  //
+  // The second parameter, 'compilation_context', is needed to implement functionality
+  // related to the DisableIntrinsic command-line flag. The DisableIntrinsic flag can
+  // be used to prohibit the C2 compiler (but not the C1 compiler) to use an intrinsic.
+  // There are three ways to disable an intrinsic using the DisableIntrinsic flag:
+  //
+  // (1) -XX:DisableIntrinsic=_hashCode,_getClass
+  //     Disables intrinsification of _hashCode and _getClass globally
+  //     (i.e., the intrinsified version the methods will not be used at all).
+  // (2) -XX:CompileCommand=option,aClass::aMethod,ccstr,DisableIntrinsic,_hashCode
+  //     Disables intrinsification of _hashCode if it is called from
+  //     aClass::aMethod (but not for any other call site of _hashCode)
+  // (3) -XX:CompileCommand=option,java.lang.ref.Reference::get,ccstr,DisableIntrinsic,_Reference_get
+  //     Some methods are not compiled by C2. Instead, the C2 compiler
+  //     returns directly the intrinsified version of these methods.
+  //     The command above forces C2 to compile _Reference_get, but
+  //     allows using the intrinsified version of _Reference_get at all
+  //     other call sites.
+  //
+  // From the modes above, (1) disable intrinsics globally, (2) and (3)
+  // disable intrinsics on a per-method basis. In cases (2) and (3) the
+  // compilation context is aClass::aMethod and java.lang.ref.Reference::get,
+  // respectively.
+  virtual bool is_intrinsic_available(methodHandle method, methodHandle compilation_context) {
+    return false;
+  }
+
+  // Determines if an intrinsic is supported by the compiler, that is,
+  // the compiler provides the instructions necessary to generate
+  // the intrinsic code for method 'method'.
+  //
+  // The 'is_intrinsic_supported' method is a white list, that is,
+  // by default no intrinsics are supported by a compiler except
+  // the ones listed in the method. Overriding methods should conform
+  // to this behavior.
+  virtual bool is_intrinsic_supported(methodHandle method) {
+    return false;
+  }
+
+  // Implements compiler-specific processing of command-line flags.
+  // Processing of command-line flags common to all compilers is implemented
+  // in vmIntrinsicss::is_disabled_by_flag.
+  virtual bool is_intrinsic_disabled_by_flag(methodHandle method) {
+    return false;
+  }
+
   // Compiler type queries.
   bool is_c1()                                   { return _type == c1; }
   bool is_c2()                                   { return _type == c2; }
