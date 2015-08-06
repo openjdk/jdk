@@ -28,7 +28,7 @@ package java.util.prefs;
 import java.io.NotSerializableException;
 
 /**
- * An event emitted by a <tt>Preferences</tt> node to indicate that
+ * An event emitted by a {@code Preferences} node to indicate that
  * a child of that node has been added or removed.<p>
  *
  * Note, that although NodeChangeEvent inherits Serializable interface from
@@ -52,7 +52,7 @@ public class NodeChangeEvent extends java.util.EventObject {
     private Preferences child;
 
     /**
-     * Constructs a new <code>NodeChangeEvent</code> instance.
+     * Constructs a new {@code NodeChangeEvent} instance.
      *
      * @param parent  The parent of the node that was added or removed.
      * @param child   The node that was added or removed.

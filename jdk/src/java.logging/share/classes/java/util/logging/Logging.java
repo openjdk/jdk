@@ -32,7 +32,7 @@ import java.util.ArrayList;
 /**
  * Logging is the implementation class of LoggingMXBean.
  *
- * The <tt>LoggingMXBean</tt> interface provides a standard
+ * The {@code LoggingMXBean} interface provides a standard
  * method for management access to the individual
  * {@code Logger} objects available at runtime.
  *
