@@ -854,7 +854,7 @@ protected:
 
   // Preserve the mark of "obj", if necessary, in preparation for its mark
   // word being overwritten with a self-forwarding-pointer.
-  void preserve_mark_during_evac_failure(uint queue, oop obj, markOop m);
+  void preserve_mark_during_evac_failure(uint worker_id, oop obj, markOop m);
 
 #ifndef PRODUCT
   // Support for forcing evacuation failures. Analogous to
