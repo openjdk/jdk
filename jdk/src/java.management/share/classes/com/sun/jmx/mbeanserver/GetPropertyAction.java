@@ -28,7 +28,7 @@ package com.sun.jmx.mbeanserver;
 import java.security.PrivilegedAction;
 
 /**
- * Utility class to be used by the method <tt>AccessControler.doPrivileged</tt>
+ * Utility class to be used by the method {@code AccessControler.doPrivileged}
  * to get a system property.
  *
  * @since 1.5

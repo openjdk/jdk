@@ -37,13 +37,13 @@ import java.util.Map;
  * that can be obtained by calling
  * the {@link ManagementFactory#getThreadMXBean} method or
  * from the {@link ManagementFactory#getPlatformMBeanServer
- * platform <tt>MBeanServer</tt>} method.
+ * platform MBeanServer} method.
  *
- * <p>The <tt>ObjectName</tt> for uniquely identifying the MXBean for
+ * <p>The {@code ObjectName} for uniquely identifying the MXBean for
  * the thread system within an MBeanServer is:
  * <blockquote>
  *    {@link ManagementFactory#THREAD_MXBEAN_NAME
- *           <tt>java.lang:type=Threading</tt>}
+ *           java.lang:type=Threading}
  * </blockquote>
  *
  * It can be obtained by calling the
@@ -88,7 +88,7 @@ import java.util.Map;
  * When thread contention monitoring is enabled, the accumulated elapsed
  * time that the thread has blocked for synchronization or waited for
  * notification will be collected and returned in the
- * <a href="ThreadInfo.html#SyncStats"><tt>ThreadInfo</tt></a> object.
+ * <a href="ThreadInfo.html#SyncStats">{@code ThreadInfo}</a> object.
  * <p>
  * The {@link #isThreadContentionMonitoringSupported} method can be used to
  * determine if a Java virtual machine supports thread contention monitoring.
@@ -106,7 +106,7 @@ import java.util.Map;
  * {@linkplain LockInfo <i>lock</i>} a thread is blocked to
  * acquire or waiting on and which locks the thread currently owns.
  * <p>
- * The <tt>ThreadMXBean</tt> interface provides the
+ * The {@code ThreadMXBean} interface provides the
  * {@link #findMonitorDeadlockedThreads} and
  * {@link #findDeadlockedThreads} methods to find deadlocks in
  * the running application.
@@ -158,7 +158,7 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * Some threads included in the returned array
      * may have been terminated when this method returns.
      *
-     * @return an array of <tt>long</tt>, each is a thread ID.
+     * @return an array of {@code long}, each is a thread ID.
      *
      * @throws java.lang.SecurityException if a security manager
      *         exists and the caller does not have
@@ -168,34 +168,34 @@ public interface ThreadMXBean extends PlatformManagedObject {
 
     /**
      * Returns the thread info for a thread of the specified
-     * <tt>id</tt> with no stack trace.
+     * {@code id} with no stack trace.
      * This method is equivalent to calling:
      * <blockquote>
      *   {@link #getThreadInfo(long, int) getThreadInfo(id, 0);}
      * </blockquote>
      *
      * <p>
-     * This method returns a <tt>ThreadInfo</tt> object representing
+     * This method returns a {@code ThreadInfo} object representing
      * the thread information for the thread of the specified ID.
      * The stack trace, locked monitors, and locked synchronizers
-     * in the returned <tt>ThreadInfo</tt> object will
+     * in the returned {@code ThreadInfo} object will
      * be empty.
      *
      * If a thread of the given ID is not alive or does not exist,
-     * this method will return <tt>null</tt>.  A thread is alive if
+     * this method will return {@code null}.  A thread is alive if
      * it has been started and has not yet died.
      *
      * <p>
      * <b>MBeanServer access</b>:<br>
-     * The mapped type of <tt>ThreadInfo</tt> is
-     * <tt>CompositeData</tt> with attributes as specified in the
+     * The mapped type of {@code ThreadInfo} is
+     * {@code CompositeData} with attributes as specified in the
      * {@link ThreadInfo#from ThreadInfo.from} method.
      *
      * @param id the thread ID of the thread. Must be positive.
      *
      * @return a {@link ThreadInfo} object for the thread of the given ID
      * with no stack trace, no locked monitor and no synchronizer info;
-     * <tt>null</tt> if the thread of the given ID is not alive or
+     * {@code null} if the thread of the given ID is not alive or
      * it does not exist.
      *
      * @throws IllegalArgumentException if {@code id <= 0}.
@@ -207,26 +207,26 @@ public interface ThreadMXBean extends PlatformManagedObject {
 
     /**
      * Returns the thread info for each thread
-     * whose ID is in the input array <tt>ids</tt> with no stack trace.
+     * whose ID is in the input array {@code ids} with no stack trace.
      * This method is equivalent to calling:
      * <blockquote><pre>
      *   {@link #getThreadInfo(long[], int) getThreadInfo}(ids, 0);
      * </pre></blockquote>
      *
      * <p>
-     * This method returns an array of the <tt>ThreadInfo</tt> objects.
+     * This method returns an array of the {@code ThreadInfo} objects.
      * The stack trace, locked monitors, and locked synchronizers
-     * in each <tt>ThreadInfo</tt> object will be empty.
+     * in each {@code ThreadInfo} object will be empty.
      *
      * If a thread of a given ID is not alive or does not exist,
      * the corresponding element in the returned array will
-     * contain <tt>null</tt>.  A thread is alive if
+     * contain {@code null}.  A thread is alive if
      * it has been started and has not yet died.
      *
      * <p>
      * <b>MBeanServer access</b>:<br>
-     * The mapped type of <tt>ThreadInfo</tt> is
-     * <tt>CompositeData</tt> with attributes as specified in the
+     * The mapped type of {@code ThreadInfo} is
+     * {@code CompositeData} with attributes as specified in the
      * {@link ThreadInfo#from ThreadInfo.from} method.
      *
      * @param ids an array of thread IDs.
@@ -236,7 +236,7 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * with no stack trace, no locked monitor and no synchronizer info.
      *
      * @throws IllegalArgumentException if any element in the input array
-     *         <tt>ids</tt> is {@code <= 0}.
+     *         {@code ids} is {@code <= 0}.
      * @throws java.lang.SecurityException if a security manager
      *         exists and the caller does not have
      *         ManagementPermission("monitor").
@@ -244,46 +244,46 @@ public interface ThreadMXBean extends PlatformManagedObject {
     public ThreadInfo[] getThreadInfo(long[] ids);
 
     /**
-     * Returns a thread info for a thread of the specified <tt>id</tt>,
+     * Returns a thread info for a thread of the specified {@code id},
      * with stack trace of a specified number of stack trace elements.
-     * The <tt>maxDepth</tt> parameter indicates the maximum number of
+     * The {@code maxDepth} parameter indicates the maximum number of
      * {@link StackTraceElement} to be retrieved from the stack trace.
-     * If <tt>maxDepth == Integer.MAX_VALUE</tt>, the entire stack trace of
+     * If {@code maxDepth == Integer.MAX_VALUE}, the entire stack trace of
      * the thread will be dumped.
-     * If <tt>maxDepth == 0</tt>, no stack trace of the thread
+     * If {@code maxDepth == 0}, no stack trace of the thread
      * will be dumped.
      * This method does not obtain the locked monitors and locked
      * synchronizers of the thread.
      * <p>
      * When the Java virtual machine has no stack trace information
-     * about a thread or <tt>maxDepth == 0</tt>,
+     * about a thread or {@code maxDepth == 0},
      * the stack trace in the
-     * <tt>ThreadInfo</tt> object will be an empty array of
-     * <tt>StackTraceElement</tt>.
+     * {@code ThreadInfo} object will be an empty array of
+     * {@code StackTraceElement}.
      *
      * <p>
      * If a thread of the given ID is not alive or does not exist,
-     * this method will return <tt>null</tt>.  A thread is alive if
+     * this method will return {@code null}.  A thread is alive if
      * it has been started and has not yet died.
      *
      * <p>
      * <b>MBeanServer access</b>:<br>
-     * The mapped type of <tt>ThreadInfo</tt> is
-     * <tt>CompositeData</tt> with attributes as specified in the
+     * The mapped type of {@code ThreadInfo} is
+     * {@code CompositeData} with attributes as specified in the
      * {@link ThreadInfo#from ThreadInfo.from} method.
      *
      * @param id the thread ID of the thread. Must be positive.
      * @param maxDepth the maximum number of entries in the stack trace
-     * to be dumped. <tt>Integer.MAX_VALUE</tt> could be used to request
+     * to be dumped. {@code Integer.MAX_VALUE} could be used to request
      * the entire stack to be dumped.
      *
      * @return a {@link ThreadInfo} of the thread of the given ID
      * with no locked monitor and synchronizer info.
-     * <tt>null</tt> if the thread of the given ID is not alive or
+     * {@code null} if the thread of the given ID is not alive or
      * it does not exist.
      *
      * @throws IllegalArgumentException if {@code id <= 0}.
-     * @throws IllegalArgumentException if <tt>maxDepth is negative</tt>.
+     * @throws IllegalArgumentException if {@code maxDepth is negative}.
      * @throws java.lang.SecurityException if a security manager
      *         exists and the caller does not have
      *         ManagementPermission("monitor").
@@ -293,40 +293,40 @@ public interface ThreadMXBean extends PlatformManagedObject {
 
     /**
      * Returns the thread info for each thread
-     * whose ID is in the input array <tt>ids</tt>,
+     * whose ID is in the input array {@code ids},
      * with stack trace of a specified number of stack trace elements.
-     * The <tt>maxDepth</tt> parameter indicates the maximum number of
+     * The {@code maxDepth} parameter indicates the maximum number of
      * {@link StackTraceElement} to be retrieved from the stack trace.
-     * If <tt>maxDepth == Integer.MAX_VALUE</tt>, the entire stack trace of
+     * If {@code maxDepth == Integer.MAX_VALUE}, the entire stack trace of
      * the thread will be dumped.
-     * If <tt>maxDepth == 0</tt>, no stack trace of the thread
+     * If {@code maxDepth == 0}, no stack trace of the thread
      * will be dumped.
      * This method does not obtain the locked monitors and locked
      * synchronizers of the threads.
      * <p>
      * When the Java virtual machine has no stack trace information
-     * about a thread or <tt>maxDepth == 0</tt>,
+     * about a thread or {@code maxDepth == 0},
      * the stack trace in the
-     * <tt>ThreadInfo</tt> object will be an empty array of
-     * <tt>StackTraceElement</tt>.
+     * {@code ThreadInfo} object will be an empty array of
+     * {@code StackTraceElement}.
      * <p>
-     * This method returns an array of the <tt>ThreadInfo</tt> objects,
+     * This method returns an array of the {@code ThreadInfo} objects,
      * each is the thread information about the thread with the same index
-     * as in the <tt>ids</tt> array.
+     * as in the {@code ids} array.
      * If a thread of the given ID is not alive or does not exist,
-     * <tt>null</tt> will be set in the corresponding element
+     * {@code null} will be set in the corresponding element
      * in the returned array.  A thread is alive if
      * it has been started and has not yet died.
      *
      * <p>
      * <b>MBeanServer access</b>:<br>
-     * The mapped type of <tt>ThreadInfo</tt> is
-     * <tt>CompositeData</tt> with attributes as specified in the
+     * The mapped type of {@code ThreadInfo} is
+     * {@code CompositeData} with attributes as specified in the
      * {@link ThreadInfo#from ThreadInfo.from} method.
      *
      * @param ids an array of thread IDs
      * @param maxDepth the maximum number of entries in the stack trace
-     * to be dumped. <tt>Integer.MAX_VALUE</tt> could be used to request
+     * to be dumped. {@code Integer.MAX_VALUE} could be used to request
      * the entire stack to be dumped.
      *
      * @return an array of the {@link ThreadInfo} objects, each containing
@@ -334,9 +334,9 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * element of the input array of IDs with no locked monitor and
      * synchronizer info.
      *
-     * @throws IllegalArgumentException if <tt>maxDepth is negative</tt>.
+     * @throws IllegalArgumentException if {@code maxDepth is negative}.
      * @throws IllegalArgumentException if any element in the input array
-     *      <tt>ids</tt> is {@code <= 0}.
+     *      {@code ids} is {@code <= 0}.
      * @throws java.lang.SecurityException if a security manager
      *         exists and the caller does not have
      *         ManagementPermission("monitor").
@@ -348,17 +348,17 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * Tests if the Java virtual machine supports thread contention monitoring.
      *
      * @return
-     *   <tt>true</tt>
+     *   {@code true}
      *     if the Java virtual machine supports thread contention monitoring;
-     *   <tt>false</tt> otherwise.
+     *   {@code false} otherwise.
      */
     public boolean isThreadContentionMonitoringSupported();
 
     /**
      * Tests if thread contention monitoring is enabled.
      *
-     * @return <tt>true</tt> if thread contention monitoring is enabled;
-     *         <tt>false</tt> otherwise.
+     * @return {@code true} if thread contention monitoring is enabled;
+     *         {@code false} otherwise.
      *
      * @throws java.lang.UnsupportedOperationException if the Java virtual
      * machine does not support thread contention monitoring.
@@ -371,8 +371,8 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * Enables or disables thread contention monitoring.
      * Thread contention monitoring is disabled by default.
      *
-     * @param enable <tt>true</tt> to enable;
-     *               <tt>false</tt> to disable.
+     * @param enable {@code true} to enable;
+     *               {@code false} to disable.
      *
      * @throws java.lang.UnsupportedOperationException if the Java
      * virtual machine does not support thread contention monitoring.
@@ -401,7 +401,7 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * </pre></blockquote>
      *
      * @return the total CPU time for the current thread if CPU time
-     * measurement is enabled; <tt>-1</tt> otherwise.
+     * measurement is enabled; {@code -1} otherwise.
      *
      * @throws java.lang.UnsupportedOperationException if the Java
      * virtual machine does not support CPU time measurement for
@@ -428,7 +428,7 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * </pre></blockquote>
      *
      * @return the user-level CPU time for the current thread if CPU time
-     * measurement is enabled; <tt>-1</tt> otherwise.
+     * measurement is enabled; {@code -1} otherwise.
      *
      * @throws java.lang.UnsupportedOperationException if the Java
      * virtual machine does not support CPU time measurement for
@@ -451,8 +451,8 @@ public interface ThreadMXBean extends PlatformManagedObject {
      *
      * <p>
      * If the thread of the specified ID is not alive or does not exist,
-     * this method returns <tt>-1</tt>. If CPU time measurement
-     * is disabled, this method returns <tt>-1</tt>.
+     * this method returns {@code -1}. If CPU time measurement
+     * is disabled, this method returns {@code -1}.
      * A thread is alive if it has been started and has not yet died.
      * <p>
      * If CPU time measurement is enabled after the thread has started,
@@ -464,7 +464,7 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * @return the total CPU time for a thread of the specified ID
      * if the thread of the specified ID exists, the thread is alive,
      * and CPU time measurement is enabled;
-     * <tt>-1</tt> otherwise.
+     * {@code -1} otherwise.
      *
      * @throws IllegalArgumentException if {@code id <= 0}.
      * @throws java.lang.UnsupportedOperationException if the Java
@@ -486,8 +486,8 @@ public interface ThreadMXBean extends PlatformManagedObject {
      *
      * <p>
      * If the thread of the specified ID is not alive or does not exist,
-     * this method returns <tt>-1</tt>. If CPU time measurement
-     * is disabled, this method returns <tt>-1</tt>.
+     * this method returns {@code -1}. If CPU time measurement
+     * is disabled, this method returns {@code -1}.
      * A thread is alive if it has been started and has not yet died.
      * <p>
      * If CPU time measurement is enabled after the thread has started,
@@ -499,7 +499,7 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * @return the user-level CPU time for a thread of the specified ID
      * if the thread of the specified ID exists, the thread is alive,
      * and CPU time measurement is enabled;
-     * <tt>-1</tt> otherwise.
+     * {@code -1} otherwise.
      *
      * @throws IllegalArgumentException if {@code id <= 0}.
      * @throws java.lang.UnsupportedOperationException if the Java
@@ -521,32 +521,32 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * measurement for the current thread.
      *
      * @return
-     *   <tt>true</tt>
+     *   {@code true}
      *     if the Java virtual machine supports CPU time
      *     measurement for any thread;
-     *   <tt>false</tt> otherwise.
+     *   {@code false} otherwise.
      */
     public boolean isThreadCpuTimeSupported();
 
     /**
      * Tests if the Java virtual machine supports CPU time
      * measurement for the current thread.
-     * This method returns <tt>true</tt> if {@link #isThreadCpuTimeSupported}
-     * returns <tt>true</tt>.
+     * This method returns {@code true} if {@link #isThreadCpuTimeSupported}
+     * returns {@code true}.
      *
      * @return
-     *   <tt>true</tt>
+     *   {@code true}
      *     if the Java virtual machine supports CPU time
      *     measurement for current thread;
-     *   <tt>false</tt> otherwise.
+     *   {@code false} otherwise.
      */
     public boolean isCurrentThreadCpuTimeSupported();
 
     /**
      * Tests if thread CPU time measurement is enabled.
      *
-     * @return <tt>true</tt> if thread CPU time measurement is enabled;
-     *         <tt>false</tt> otherwise.
+     * @return {@code true} if thread CPU time measurement is enabled;
+     *         {@code false} otherwise.
      *
      * @throws java.lang.UnsupportedOperationException if the Java virtual
      * machine does not support CPU time measurement for other threads
@@ -561,8 +561,8 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * Enables or disables thread CPU time measurement.  The default
      * is platform dependent.
      *
-     * @param enable <tt>true</tt> to enable;
-     *               <tt>false</tt> to disable.
+     * @param enable {@code true} to enable;
+     *               {@code false} to disable.
      *
      * @throws java.lang.UnsupportedOperationException if the Java
      * virtual machine does not support CPU time measurement for
@@ -602,7 +602,7 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * should be used.
      *
      * @return an array of IDs of the threads that are monitor
-     * deadlocked, if any; <tt>null</tt> otherwise.
+     * deadlocked, if any; {@code null} otherwise.
      *
      * @throws java.lang.SecurityException if a security manager
      *         exists and the caller does not have
@@ -640,7 +640,7 @@ public interface ThreadMXBean extends PlatformManagedObject {
      *
      * @return an array of IDs of the threads that are
      * deadlocked waiting for object monitors or ownable synchronizers, if any;
-     * <tt>null</tt> otherwise.
+     * {@code null} otherwise.
      *
      * @throws java.lang.SecurityException if a security manager
      *         exists and the caller does not have
@@ -659,10 +659,10 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * object monitor usage.
      *
      * @return
-     *   <tt>true</tt>
+     *   {@code true}
      *     if the Java virtual machine supports monitoring of
      *     object monitor usage;
-     *   <tt>false</tt> otherwise.
+     *   {@code false} otherwise.
      *
      * @see #dumpAllThreads
      * @since 1.6
@@ -675,10 +675,10 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * ownable synchronizer</a> usage.
      *
      * @return
-     *   <tt>true</tt>
+     *   {@code true}
      *     if the Java virtual machine supports monitoring of ownable
      *     synchronizer usage;
-     *   <tt>false</tt> otherwise.
+     *   {@code false} otherwise.
      *
      * @see #dumpAllThreads
      * @since 1.6
@@ -687,7 +687,7 @@ public interface ThreadMXBean extends PlatformManagedObject {
 
     /**
      * Returns the thread info for each thread
-     * whose ID is in the input array <tt>ids</tt>, with stack trace
+     * whose ID is in the input array {@code ids}, with stack trace
      * and synchronization information.
      *
      * <p>
@@ -696,30 +696,30 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * <ul>
      *    <li>the entire stack trace,</li>
      *    <li>the object monitors currently locked by the thread
-     *        if <tt>lockedMonitors</tt> is <tt>true</tt>, and</li>
+     *        if {@code lockedMonitors} is {@code true}, and</li>
      *    <li>the <a href="LockInfo.html#OwnableSynchronizer">
      *        ownable synchronizers</a> currently locked by the thread
-     *        if <tt>lockedSynchronizers</tt> is <tt>true</tt>.</li>
+     *        if {@code lockedSynchronizers} is {@code true}.</li>
      * </ul>
      * <p>
-     * This method returns an array of the <tt>ThreadInfo</tt> objects,
+     * This method returns an array of the {@code ThreadInfo} objects,
      * each is the thread information about the thread with the same index
-     * as in the <tt>ids</tt> array.
+     * as in the {@code ids} array.
      * If a thread of the given ID is not alive or does not exist,
-     * <tt>null</tt> will be set in the corresponding element
+     * {@code null} will be set in the corresponding element
      * in the returned array.  A thread is alive if
      * it has been started and has not yet died.
      * <p>
-     * If a thread does not lock any object monitor or <tt>lockedMonitors</tt>
-     * is <tt>false</tt>, the returned <tt>ThreadInfo</tt> object will have an
-     * empty <tt>MonitorInfo</tt> array.  Similarly, if a thread does not
-     * lock any synchronizer or <tt>lockedSynchronizers</tt> is <tt>false</tt>,
-     * the returned <tt>ThreadInfo</tt> object
-     * will have an empty <tt>LockInfo</tt> array.
+     * If a thread does not lock any object monitor or {@code lockedMonitors}
+     * is {@code false}, the returned {@code ThreadInfo} object will have an
+     * empty {@code MonitorInfo} array.  Similarly, if a thread does not
+     * lock any synchronizer or {@code lockedSynchronizers} is {@code false},
+     * the returned {@code ThreadInfo} object
+     * will have an empty {@code LockInfo} array.
      *
      * <p>
-     * When both <tt>lockedMonitors</tt> and <tt>lockedSynchronizers</tt>
-     * parameters are <tt>false</tt>, it is equivalent to calling:
+     * When both {@code lockedMonitors} and {@code lockedSynchronizers}
+     * parameters are {@code false}, it is equivalent to calling:
      * <blockquote><pre>
      *     {@link #getThreadInfo(long[], int)  getThreadInfo(ids, Integer.MAX_VALUE)}
      * </pre></blockquote>
@@ -730,13 +730,13 @@ public interface ThreadMXBean extends PlatformManagedObject {
      *
      * <p>
      * <b>MBeanServer access</b>:<br>
-     * The mapped type of <tt>ThreadInfo</tt> is
-     * <tt>CompositeData</tt> with attributes as specified in the
+     * The mapped type of {@code ThreadInfo} is
+     * {@code CompositeData} with attributes as specified in the
      * {@link ThreadInfo#from ThreadInfo.from} method.
      *
      * @param  ids an array of thread IDs.
-     * @param  lockedMonitors if <tt>true</tt>, retrieves all locked monitors.
-     * @param  lockedSynchronizers if <tt>true</tt>, retrieves all locked
+     * @param  lockedMonitors if {@code true}, retrieves all locked monitors.
+     * @param  lockedSynchronizers if {@code true}, retrieves all locked
      *             ownable synchronizers.
      *
      * @return an array of the {@link ThreadInfo} objects, each containing
@@ -748,11 +748,11 @@ public interface ThreadMXBean extends PlatformManagedObject {
      *         ManagementPermission("monitor").
      * @throws java.lang.UnsupportedOperationException
      *         <ul>
-     *           <li>if <tt>lockedMonitors</tt> is <tt>true</tt> but
+     *           <li>if {@code lockedMonitors} is {@code true} but
      *               the Java virtual machine does not support monitoring
      *               of {@linkplain #isObjectMonitorUsageSupported
      *               object monitor usage}; or</li>
-     *           <li>if <tt>lockedSynchronizers</tt> is <tt>true</tt> but
+     *           <li>if {@code lockedSynchronizers} is {@code true} but
      *               the Java virtual machine does not support monitoring
      *               of {@linkplain #isSynchronizerUsageSupported
      *               ownable synchronizer usage}.</li>
@@ -776,8 +776,8 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * as specified in the {@link #getThreadInfo(long[], boolean, boolean)}
      * method.
      *
-     * @param  lockedMonitors if <tt>true</tt>, dump all locked monitors.
-     * @param  lockedSynchronizers if <tt>true</tt>, dump all locked
+     * @param  lockedMonitors if {@code true}, dump all locked monitors.
+     * @param  lockedSynchronizers if {@code true}, dump all locked
      *             ownable synchronizers.
      *
      * @return an array of {@link ThreadInfo} for all live threads.
@@ -787,11 +787,11 @@ public interface ThreadMXBean extends PlatformManagedObject {
      *         ManagementPermission("monitor").
      * @throws java.lang.UnsupportedOperationException
      *         <ul>
-     *           <li>if <tt>lockedMonitors</tt> is <tt>true</tt> but
+     *           <li>if {@code lockedMonitors} is {@code true} but
      *               the Java virtual machine does not support monitoring
      *               of {@linkplain #isObjectMonitorUsageSupported
      *               object monitor usage}; or</li>
-     *           <li>if <tt>lockedSynchronizers</tt> is <tt>true</tt> but
+     *           <li>if {@code lockedSynchronizers} is {@code true} but
      *               the Java virtual machine does not support monitoring
      *               of {@linkplain #isSynchronizerUsageSupported
      *               ownable synchronizer usage}.</li>

@@ -29,50 +29,50 @@ import javax.management.openmbean.CompositeData;
 import sun.management.MemoryUsageCompositeData;
 
 /**
- * A <tt>MemoryUsage</tt> object represents a snapshot of memory usage.
- * Instances of the <tt>MemoryUsage</tt> class are usually constructed
+ * A {@code MemoryUsage} object represents a snapshot of memory usage.
+ * Instances of the {@code MemoryUsage} class are usually constructed
  * by methods that are used to obtain memory usage
  * information about individual memory pool of the Java virtual machine or
  * the heap or non-heap memory of the Java virtual machine as a whole.
  *
- * <p> A <tt>MemoryUsage</tt> object contains four values:
+ * <p> A {@code MemoryUsage} object contains four values:
  * <table summary="Describes the MemoryUsage object content">
  * <tr>
- * <td valign=top> <tt>init</tt> </td>
+ * <td valign=top> {@code init} </td>
  * <td valign=top> represents the initial amount of memory (in bytes) that
  *      the Java virtual machine requests from the operating system
  *      for memory management during startup.  The Java virtual machine
  *      may request additional memory from the operating system and
  *      may also release memory to the system over time.
- *      The value of <tt>init</tt> may be undefined.
+ *      The value of {@code init} may be undefined.
  * </td>
  * </tr>
  * <tr>
- * <td valign=top> <tt>used</tt> </td>
+ * <td valign=top> {@code used} </td>
  * <td valign=top> represents the amount of memory currently used (in bytes).
  * </td>
  * </tr>
  * <tr>
- * <td valign=top> <tt>committed</tt> </td>
+ * <td valign=top> {@code committed} </td>
  * <td valign=top> represents the amount of memory (in bytes) that is
  *      guaranteed to be available for use by the Java virtual machine.
  *      The amount of committed memory may change over time (increase
  *      or decrease).  The Java virtual machine may release memory to
- *      the system and <tt>committed</tt> could be less than <tt>init</tt>.
- *      <tt>committed</tt> will always be greater than
- *      or equal to <tt>used</tt>.
+ *      the system and {@code committed} could be less than {@code init}.
+ *      {@code committed} will always be greater than
+ *      or equal to {@code used}.
  * </td>
  * </tr>
  * <tr>
- * <td valign=top> <tt>max</tt> </td>
+ * <td valign=top> {@code max} </td>
  * <td valign=top> represents the maximum amount of memory (in bytes)
  *      that can be used for memory management. Its value may be undefined.
  *      The maximum amount of memory may change over time if defined.
  *      The amount of used and committed memory will always be less than
- *      or equal to <tt>max</tt> if <tt>max</tt> is defined.
+ *      or equal to {@code max} if {@code max} is defined.
  *      A memory allocation may fail if it attempts to increase the
- *      used memory such that <tt>used &gt; committed</tt> even
- *      if <tt>used &lt;= max</tt> would still be true (for example,
+ *      used memory such that {@code used > committed} even
+ *      if {@code used <= max} would still be true (for example,
  *      when the system is low on virtual memory).
  * </td>
  * </tr>
@@ -97,7 +97,7 @@ import sun.management.MemoryUsageCompositeData;
  * </pre>
  *
  * <h3>MXBean Mapping</h3>
- * <tt>MemoryUsage</tt> is mapped to a {@link CompositeData CompositeData}
+ * {@code MemoryUsage} is mapped to a {@link CompositeData CompositeData}
  * with attributes as specified in the {@link #from from} method.
  *
  * @author   Mandy Chung
@@ -110,26 +110,26 @@ public class MemoryUsage {
     private final long max;
 
     /**
-     * Constructs a <tt>MemoryUsage</tt> object.
+     * Constructs a {@code MemoryUsage} object.
      *
      * @param init      the initial amount of memory in bytes that
      *                  the Java virtual machine allocates;
-     *                  or <tt>-1</tt> if undefined.
+     *                  or {@code -1} if undefined.
      * @param used      the amount of used memory in bytes.
      * @param committed the amount of committed memory in bytes.
      * @param max       the maximum amount of memory in bytes that
-     *                  can be used; or <tt>-1</tt> if undefined.
+     *                  can be used; or {@code -1} if undefined.
      *
      * @throws IllegalArgumentException if
      * <ul>
-     * <li> the value of <tt>init</tt> or <tt>max</tt> is negative
-     *      but not <tt>-1</tt>; or</li>
-     * <li> the value of <tt>used</tt> or <tt>committed</tt> is negative;
+     * <li> the value of {@code init} or {@code max} is negative
+     *      but not {@code -1}; or</li>
+     * <li> the value of {@code used} or {@code committed} is negative;
      *      or</li>
-     * <li> <tt>used</tt> is greater than the value of <tt>committed</tt>;
+     * <li> {@code used} is greater than the value of {@code committed};
      *      or</li>
-     * <li> <tt>committed</tt> is greater than the value of <tt>max</tt>
-     *      <tt>max</tt> if defined.</li>
+     * <li> {@code committed} is greater than the value of {@code max}
+     *      {@code max} if defined.</li>
      * </ul>
      */
     public MemoryUsage(long init,
@@ -168,7 +168,7 @@ public class MemoryUsage {
     }
 
     /**
-     * Constructs a <tt>MemoryUsage</tt> object from a
+     * Constructs a {@code MemoryUsage} object from a
      * {@link CompositeData CompositeData}.
      */
     private MemoryUsage(CompositeData cd) {
@@ -184,10 +184,10 @@ public class MemoryUsage {
     /**
      * Returns the amount of memory in bytes that the Java virtual machine
      * initially requests from the operating system for memory management.
-     * This method returns <tt>-1</tt> if the initial memory size is undefined.
+     * This method returns {@code -1} if the initial memory size is undefined.
      *
      * @return the initial size of memory in bytes;
-     * <tt>-1</tt> if undefined.
+     * {@code -1} if undefined.
      */
     public long getInit() {
         return init;
@@ -217,7 +217,7 @@ public class MemoryUsage {
 
     /**
      * Returns the maximum amount of memory in bytes that can be
-     * used for memory management.  This method returns <tt>-1</tt>
+     * used for memory management.  This method returns {@code -1}
      * if the maximum memory size is undefined.
      *
      * <p> This amount of memory is not guaranteed to be available
@@ -227,7 +227,7 @@ public class MemoryUsage {
      * maximum size.
      *
      * @return the maximum amount of memory in bytes;
-     * <tt>-1</tt> if undefined.
+     * {@code -1} if undefined.
      */
     public long getMax() {
         return max;
@@ -247,8 +247,8 @@ public class MemoryUsage {
     }
 
     /**
-     * Returns a <tt>MemoryUsage</tt> object represented by the
-     * given <tt>CompositeData</tt>. The given <tt>CompositeData</tt>
+     * Returns a {@code MemoryUsage} object represented by the
+     * given {@code CompositeData}. The given {@code CompositeData}
      * must contain the following attributes:
      *
      * <blockquote>
@@ -259,32 +259,32 @@ public class MemoryUsage {
      * </tr>
      * <tr>
      *   <td>init</td>
-     *   <td><tt>java.lang.Long</tt></td>
+     *   <td>{@code java.lang.Long}</td>
      * </tr>
      * <tr>
      *   <td>used</td>
-     *   <td><tt>java.lang.Long</tt></td>
+     *   <td>{@code java.lang.Long}</td>
      * </tr>
      * <tr>
      *   <td>committed</td>
-     *   <td><tt>java.lang.Long</tt></td>
+     *   <td>{@code java.lang.Long}</td>
      * </tr>
      * <tr>
      *   <td>max</td>
-     *   <td><tt>java.lang.Long</tt></td>
+     *   <td>{@code java.lang.Long}</td>
      * </tr>
      * </table>
      * </blockquote>
      *
-     * @param cd <tt>CompositeData</tt> representing a <tt>MemoryUsage</tt>
+     * @param cd {@code CompositeData} representing a {@code MemoryUsage}
      *
-     * @throws IllegalArgumentException if <tt>cd</tt> does not
-     *   represent a <tt>MemoryUsage</tt> with the attributes described
+     * @throws IllegalArgumentException if {@code cd} does not
+     *   represent a {@code MemoryUsage} with the attributes described
      *   above.
      *
-     * @return a <tt>MemoryUsage</tt> object represented by <tt>cd</tt>
-     *         if <tt>cd</tt> is not <tt>null</tt>;
-     *         <tt>null</tt> otherwise.
+     * @return a {@code MemoryUsage} object represented by {@code cd}
+     *         if {@code cd} is not {@code null};
+     *         {@code null} otherwise.
      */
     public static MemoryUsage from(CompositeData cd) {
         if (cd == null) {
