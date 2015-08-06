@@ -31,13 +31,13 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
 
-G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint queue_num, ReferenceProcessor* rp)
+G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint worker_id, ReferenceProcessor* rp)
   : _g1h(g1h),
-    _refs(g1h->task_queue(queue_num)),
+    _refs(g1h->task_queue(worker_id)),
     _dcq(&g1h->dirty_card_queue_set()),
     _ct_bs(g1h->g1_barrier_set()),
     _g1_rem(g1h->g1_rem_set()),
-    _hash_seed(17), _queue_num(queue_num),
+    _hash_seed(17), _worker_id(worker_id),
     _term_attempts(0),
     _tenuring_threshold(g1h->g1_policy()->tenuring_threshold()),
     _age_table(false), _scanner(g1h, rp),
@@ -93,7 +93,7 @@ void G1ParScanThreadState::print_termination_stats(outputStream* const st) const
   st->print_cr("%3u %9.2f %9.2f %6.2f "
                "%9.2f %6.2f " SIZE_FORMAT_W(8) " "
                SIZE_FORMAT_W(7) " " SIZE_FORMAT_W(7) " " SIZE_FORMAT_W(7),
-               _queue_num, elapsed_ms, s_roots_ms, s_roots_ms * 100 / elapsed_ms,
+               _worker_id, elapsed_ms, s_roots_ms, s_roots_ms * 100 / elapsed_ms,
                term_ms, term_ms * 100 / elapsed_ms, term_attempts(),
                (alloc_buffer_waste + undo_waste) * HeapWordSize / K,
                alloc_buffer_waste * HeapWordSize / K,
@@ -267,7 +267,7 @@ oop G1ParScanThreadState::copy_to_survivor_space(InCSetState const state,
              "sanity");
       G1StringDedup::enqueue_from_evacuation(is_from_young,
                                              is_to_young,
-                                             queue_num(),
+                                             _worker_id,
                                              obj);
     }
 
@@ -307,7 +307,7 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markOop m) {
      _g1h->hr_printer()->evac_failure(r);
     }
 
-    _g1h->preserve_mark_during_evac_failure(_queue_num, old, m);
+    _g1h->preserve_mark_during_evac_failure(_worker_id, old, m);
 
     _scanner.set_region(r);
     old->oop_iterate_backwards(&_scanner);

@@ -4285,18 +4285,18 @@ void G1CollectedHeap::remove_self_forwarding_pointers() {
   g1_policy()->phase_times()->record_evac_fail_remove_self_forwards((os::elapsedTime() - remove_self_forwards_start) * 1000.0);
 }
 
-void G1CollectedHeap::preserve_mark_during_evac_failure(uint queue_num, oop obj, markOop m) {
+void G1CollectedHeap::preserve_mark_during_evac_failure(uint worker_id, oop obj, markOop m) {
   if (!_evacuation_failed) {
     _evacuation_failed = true;
   }
 
-  _evacuation_failed_info_array[queue_num].register_copy_failure(obj->size());
+  _evacuation_failed_info_array[worker_id].register_copy_failure(obj->size());
 
   // We want to call the "for_promotion_failure" version only in the
   // case of a promotion failure.
   if (m->must_be_preserved_for_promotion_failure(obj)) {
     OopAndMarkOop elem(obj, m);
-    _preserved_objs[queue_num].push(elem);
+    _preserved_objs[worker_id].push(elem);
   }
 }
 
@@ -4340,7 +4340,7 @@ void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
 
   oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
 
-  assert(_worker_id == _par_scan_state->queue_num(), "sanity");
+  assert(_worker_id == _par_scan_state->worker_id(), "sanity");
 
   const InCSetState state = _g1->in_cset_state(obj);
   if (state.is_in_cset()) {
