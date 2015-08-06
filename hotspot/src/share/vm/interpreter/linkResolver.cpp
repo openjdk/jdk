@@ -379,7 +379,8 @@ int LinkResolver::vtable_index_of_interface_method(KlassHandle klass,
   if (!resolved_method->is_abstract() &&
     (InstanceKlass::cast(klass())->default_methods() != NULL)) {
     int index = InstanceKlass::find_method_index(InstanceKlass::cast(klass())->default_methods(),
-                                                 name, signature, Klass::find_overpass, Klass::find_static);
+                                                 name, signature, Klass::find_overpass,
+                                                 Klass::find_static, Klass::find_private);
     if (index >= 0 ) {
       vtable_index = InstanceKlass::cast(klass())->default_vtable_indices()->at(index);
     }
@@ -1189,7 +1190,7 @@ void LinkResolver::runtime_resolve_virtual_method(CallInfo& result,
   assert(resolved_method->method_holder()->is_linked(), "must be linked");
 
   // do lookup based on receiver klass using the vtable index
-  if (resolved_method->method_holder()->is_interface()) { // miranda method
+  if (resolved_method->method_holder()->is_interface()) { // default or miranda method
     vtable_index = vtable_index_of_interface_method(resolved_klass,
                            resolved_method);
     assert(vtable_index >= 0 , "we should have valid vtable index at this point");
@@ -1198,7 +1199,7 @@ void LinkResolver::runtime_resolve_virtual_method(CallInfo& result,
     selected_method = methodHandle(THREAD, inst->method_at_vtable(vtable_index));
   } else {
     // at this point we are sure that resolved_method is virtual and not
-    // a miranda method; therefore, it must have a valid vtable index.
+    // a default or miranda method; therefore, it must have a valid vtable index.
     assert(!resolved_method->has_itable_index(), "");
     vtable_index = resolved_method->vtable_index();
     // We could get a negative vtable_index for final methods,
