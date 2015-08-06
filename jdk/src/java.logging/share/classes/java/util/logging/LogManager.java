@@ -72,7 +72,7 @@ import sun.misc.SharedSecrets;
  * loaded, an object will be instantiated, and that object's constructor
  * is responsible for reading in the initial configuration.  (That object
  * may use other system properties to control its configuration.)  The
- * alternate configuration class can use <tt>readConfiguration(InputStream)</tt>
+ * alternate configuration class can use {@code readConfiguration(InputStream)}
  * to define properties in the LogManager.
  * <p>
  * If "java.util.logging.config.class" property is <b>not</b> set,
@@ -1800,7 +1800,7 @@ public class LogManager {
         = "java.util.logging:type=Logging";
 
     /**
-     * Returns <tt>LoggingMXBean</tt> for managing loggers.
+     * Returns {@code LoggingMXBean} for managing loggers.
      * An alternative way to manage loggers is through the
      * {@link java.lang.management.PlatformLoggingMXBean} interface
      * that can be obtained by calling:
