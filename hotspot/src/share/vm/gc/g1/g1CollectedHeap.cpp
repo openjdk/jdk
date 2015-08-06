@@ -4449,9 +4449,6 @@ protected:
   ParallelTaskTerminator _terminator;
   uint _n_workers;
 
-  Mutex _stats_lock;
-  Mutex* stats_lock() { return &_stats_lock; }
-
 public:
   G1ParTask(G1CollectedHeap* g1h, RefToScanQueueSet *task_queues, G1RootProcessor* root_processor, uint n_workers)
     : AbstractGangTask("G1 collection"),
@@ -4459,8 +4456,7 @@ public:
       _queues(task_queues),
       _root_processor(root_processor),
       _terminator(n_workers, _queues),
-      _n_workers(n_workers),
-      _stats_lock(Mutex::leaf, "parallel G1 stats lock", true)
+      _n_workers(n_workers)
   {}
 
   RefToScanQueueSet* queues() { return _queues; }
@@ -4587,8 +4583,8 @@ public:
       _g1h->update_surviving_young_words(pss.surviving_young_words()+1);
 
       if (PrintTerminationStats) {
-        MutexLocker x(stats_lock());
-        pss.print_termination_stats(worker_id);
+        MutexLockerEx x(ParGCRareEvent_lock, Mutex::_no_safepoint_check_flag);
+        pss.print_termination_stats();
       }
 
       assert(pss.queue_is_empty(), "should be empty");
@@ -5504,7 +5500,9 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
     }
 
     // The individual threads will set their evac-failure closures.
-    if (PrintTerminationStats) G1ParScanThreadState::print_termination_stats_hdr();
+    if (PrintTerminationStats) {
+      G1ParScanThreadState::print_termination_stats_hdr();
+    }
 
     workers()->run_task(&g1_par_task);
     end_par_time_sec = os::elapsedTime();
