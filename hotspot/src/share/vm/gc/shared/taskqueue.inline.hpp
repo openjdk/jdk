@@ -259,20 +259,14 @@ inline typename TaskQueueSuper<N, F>::Age TaskQueueSuper<N, F>::Age::cmpxchg(con
 }
 
 template<class E, MEMFLAGS F, unsigned int N>
-inline void GenericTaskQueue<E, F, N>::oops_do(OopClosure* f) {
-  // tty->print_cr("START OopTaskQueue::oops_do");
+template<class Fn>
+inline void GenericTaskQueue<E, F, N>::iterate(Fn fn) {
   uint iters = size();
   uint index = _bottom;
   for (uint i = 0; i < iters; ++i) {
     index = decrement_index(index);
-    // tty->print_cr("  doing entry %d," INTPTR_T " -> " INTPTR_T,
-    //            index, &_elems[index], _elems[index]);
-    E* t = (E*)&_elems[index];      // cast away volatility
-    oop* p = (oop*)t;
-    assert((*t)->is_oop_or_null(), err_msg("Expected an oop or NULL at " PTR_FORMAT, p2i(*t)));
-    f->do_oop(p);
+    fn(const_cast<E&>(_elems[index])); // cast away volatility
   }
-  // tty->print_cr("END OopTaskQueue::oops_do");
 }
 
 
