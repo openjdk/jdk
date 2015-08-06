@@ -97,8 +97,8 @@ public final class Undefined extends DefaultPropertyAccess {
         switch (operator) {
         case "new":
         case "call": {
-            final String name = desc.getNameTokenCount() > 2? desc.getNameToken(2) : null;
-            final String msg = name != null? "cant.call.undefined.arg" : "cant.call.undefined";
+            final String name = NashornCallSiteDescriptor.getFunctionDescription(desc);
+            final String msg = name != null? "not.a.function" : "cant.call.undefined";
             throw typeError(msg, name);
         }
 

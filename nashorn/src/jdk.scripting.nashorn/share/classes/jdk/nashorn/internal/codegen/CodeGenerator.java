@@ -1610,7 +1610,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                     }
                     @Override
                     void consumeStack() {
-                        dynamicCall(2 + argCount, flags, node.getProperty());
+                        dynamicCall(2 + argCount, flags, node.toString(false));
                     }
                 }.emit();
 
@@ -1635,9 +1635,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
                     @Override
                     void consumeStack() {
-                        final int flags = getCallSiteFlags();
-                        //assert callNodeType.equals(callee.getReturnType()) : callNodeType + " != " + callee.getReturnType();
-                        dynamicCall(2 + argsCount, flags, origCallee.getName());
+                        dynamicCall(2 + argsCount, getCallSiteFlags(), origCallee.getName());
                     }
                 }.emit();
                 return false;
@@ -1666,8 +1664,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                     }
                     @Override
                     void consumeStack() {
-                        final int flags = getCallSiteFlags();
-                        dynamicCall(2 + argsCount, flags, null);
+                        dynamicCall(2 + argsCount, getCallSiteFlags(), node.toString(false));
                     }
                 }.emit();
                 return false;
@@ -1687,7 +1684,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                         @Override
                         void consumeStack() {
                             final int flags = getCallSiteFlags() | CALLSITE_SCOPE;
-                            dynamicCall(2 + argsCount, flags, null);
+                            dynamicCall(2 + argsCount, flags, node.toString(false));
                         }
                 }.emit();
                 return false;
@@ -3711,8 +3708,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         // Load function reference.
         loadExpressionAsObject(func); // must detect type error
 
-        method.dynamicNew(1 + loadArgs(args), getCallSiteFlags(),
-            func instanceof IdentNode? ((IdentNode)func).getName() : null);
+        method.dynamicNew(1 + loadArgs(args), getCallSiteFlags(), func.toString(false));
     }
 
     private void loadNOT(final UnaryNode unaryNode) {
