@@ -27,7 +27,6 @@
 
 #include "gc/g1/concurrentMark.hpp"
 #include "gc/g1/evacuationInfo.hpp"
-#include "gc/g1/g1AllocRegion.hpp"
 #include "gc/g1/g1AllocationContext.hpp"
 #include "gc/g1/g1Allocator.hpp"
 #include "gc/g1/g1BiasedArray.hpp"
@@ -193,7 +192,7 @@ class G1CollectedHeap : public CollectedHeap {
   // Closures used in implementation.
   friend class G1ParScanThreadState;
   friend class G1ParTask;
-  friend class G1ParGCAllocator;
+  friend class G1PLABAllocator;
   friend class G1PrepareCompactClosure;
 
   // Other related classes.
@@ -248,7 +247,7 @@ private:
   // The sequence of all heap regions in the heap.
   HeapRegionManager _hrm;
 
-  // Class that handles the different kinds of allocations.
+  // Handles non-humongous allocations in the G1CollectedHeap.
   G1Allocator* _allocator;
 
   // Outside of GC pauses, the number of bytes used in all regions other
@@ -279,22 +278,6 @@ private:
   // Currently, it is only consulted during GC and it's reset at the
   // start of each GC.
   bool _expand_heap_after_alloc_failure;
-
-  // It resets the mutator alloc region before new allocations can take place.
-  void init_mutator_alloc_region();
-
-  // It releases the mutator alloc region.
-  void release_mutator_alloc_region();
-
-  // It initializes the GC alloc regions at the start of a GC.
-  void init_gc_alloc_regions(EvacuationInfo& evacuation_info);
-
-  // It releases the GC alloc regions at the end of a GC.
-  void release_gc_alloc_regions(EvacuationInfo& evacuation_info);
-
-  // It does any cleanup that needs to be done on the GC alloc regions
-  // before a Full GC.
-  void abandon_gc_alloc_regions();
 
   // Helper for monitoring and management support.
   G1MonitoringSupport* _g1mm;
@@ -557,25 +540,6 @@ protected:
   // belongs to a young region.
   inline void dirty_young_block(HeapWord* start, size_t word_size);
 
-  // Allocate blocks during garbage collection. Will ensure an
-  // allocation region, either by picking one or expanding the
-  // heap, and then allocate a block of the given size. The block
-  // may not be a humongous - it must fit into a single heap region.
-  inline HeapWord* par_allocate_during_gc(InCSetState dest,
-                                          size_t word_size,
-                                          AllocationContext_t context);
-  // Ensure that no further allocations can happen in "r", bearing in mind
-  // that parallel threads might be attempting allocations.
-  void par_allocate_remaining_space(HeapRegion* r);
-
-  // Allocation attempt during GC for a survivor object / PLAB.
-  inline HeapWord* survivor_attempt_allocation(size_t word_size,
-                                               AllocationContext_t context);
-
-  // Allocation attempt during GC for an old object / PLAB.
-  inline HeapWord* old_attempt_allocation(size_t word_size,
-                                          AllocationContext_t context);
-
   // These methods are the "callbacks" from the G1AllocRegion class.
 
   // For mutator alloc regions.
@@ -724,6 +688,9 @@ public:
   void trace_heap_after_concurrent_cycle();
 
   G1HRPrinter* hr_printer() { return &_hr_printer; }
+
+  // Allocates a new heap region instance.
+  HeapRegion* new_heap_region(uint hrs_index, MemRegion mr);
 
   // Frees a non-humongous region by initializing its contents and
   // adding it to the free list that's passed as a parameter (this is
@@ -887,7 +854,7 @@ protected:
 
   // Preserve the mark of "obj", if necessary, in preparation for its mark
   // word being overwritten with a self-forwarding-pointer.
-  void preserve_mark_during_evac_failure(uint queue, oop obj, markOop m);
+  void preserve_mark_during_evac_failure(uint worker_id, oop obj, markOop m);
 
 #ifndef PRODUCT
   // Support for forcing evacuation failures. Analogous to
@@ -1263,7 +1230,7 @@ public:
 
   // Return "TRUE" iff the given object address is within the collection
   // set. Slow implementation.
-  inline bool obj_in_cs(oop obj);
+  bool obj_in_cs(oop obj);
 
   inline bool is_in_cset(const HeapRegion *hr);
   inline bool is_in_cset(oop obj);
