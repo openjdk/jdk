@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,8 +74,6 @@ class Bsd {
   static julong available_memory();
   static julong physical_memory() { return _physical_memory; }
   static void initialize_system_info();
-
-  static bool supports_variable_stack_size();
 
   static void rebuild_cpu_to_node_map();
   static GrowableArray<int>* cpu_to_node()    { return _cpu_to_node; }
