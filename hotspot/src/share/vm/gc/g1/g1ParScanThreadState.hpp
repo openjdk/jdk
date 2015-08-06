@@ -46,7 +46,7 @@ class G1ParScanThreadState : public StackObj {
   G1SATBCardTableModRefBS* _ct_bs;
   G1RemSet* _g1_rem;
 
-  G1ParGCAllocator* _g1_par_allocator;
+  G1PLABAllocator*  _plab_allocator;
 
   ageTable          _age_table;
   InCSetState       _dest[InCSetState::Num];
