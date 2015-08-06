@@ -38,17 +38,17 @@ import java.io.IOException;
 /**
  * Implements the ASN.1 APOptions type.
  *
- * <xmp>
+ * <pre>{@code
  * APOptions    ::= KerberosFlags
  *      -- reserved(0),
  *      -- use-session-key(1),
  *      -- mutual-required(2)
- * </xmp>
  *
  * KerberosFlags   ::= BIT STRING (SIZE (32..MAX))
  *              -- minimum number of bits shall be sent,
  *              -- but no fewer than 32
  *
+ * }</pre>
  * <p>
  * This definition reflects the Network Working Group RFC4120
  * specification available at

@@ -54,7 +54,7 @@ public abstract class Reader implements Readable, Closeable {
      * The object used to synchronize operations on this stream.  For
      * efficiency, a character-stream object may use an object other than
      * itself to protect critical sections.  A subclass should therefore use
-     * the object in this field rather than <tt>this</tt> or a synchronized
+     * the object in this field rather than {@code this} or a synchronized
      * method.
      */
     protected Object lock;
@@ -111,7 +111,7 @@ public abstract class Reader implements Readable, Closeable {
      * should override this method.
      *
      * @return     The character read, as an integer in the range 0 to 65535
-     *             (<tt>0x00-0xffff</tt>), or -1 if the end of the stream has
+     *             ({@code 0x00-0xffff}), or -1 if the end of the stream has
      *             been reached
      *
      * @exception  IOException  If an I/O error occurs

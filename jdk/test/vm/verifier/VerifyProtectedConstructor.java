@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @test
 
  * @bug 6490436
- * @summary Verify that protected constructor calls are not allowed for classfile version >= 50 (but that they are allowed for lesser versions).
+ * @summary Verify that protected constructor calls are not allowed for any classfile versions in either verifier.
  * @author Keith McGuigan
  */
 
@@ -38,9 +38,10 @@ public class VerifyProtectedConstructor extends ClassLoader {
 
     try {
       t.checkClassVersion(49); // should not throw VerifyError
+      throw new Exception("FAIL: should be a VerifyError for CF version 49");
     }
     catch(VerifyError e) {
-       throw new Exception("FAIL: should be no VerifyError for CF version 49");
+       System.out.println("PASS for CF version 49");
     }
 
     try {

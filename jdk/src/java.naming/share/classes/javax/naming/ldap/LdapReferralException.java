@@ -32,15 +32,15 @@ import java.util.Hashtable;
 
 /**
  * This abstract class is used to represent an LDAP referral exception.
- * It extends the base <tt>ReferralException</tt> by providing a
- * <tt>getReferralContext()</tt> method that accepts request controls.
+ * It extends the base {@code ReferralException} by providing a
+ * {@code getReferralContext()} method that accepts request controls.
  * LdapReferralException is an abstract class. Concrete implementations of it
  * determine its synchronization and serialization properties.
  *<p>
- * A <tt>Control[]</tt> array passed as a parameter to
- * the <tt>getReferralContext()</tt> method is owned by the caller.
+ * A {@code Control[]} array passed as a parameter to
+ * the {@code getReferralContext()} method is owned by the caller.
  * The service provider will not modify the array or keep a reference to it,
- * although it may keep references to the individual <tt>Control</tt> objects
+ * although it may keep references to the individual {@code Control} objects
  * in the array.
  *
  * @author Rosanna Lee
@@ -73,20 +73,20 @@ public abstract class LdapReferralException extends ReferralException {
      * Retrieves the context at which to continue the method using the
      * context's environment and no controls.
      * The referral context is created using the environment properties of
-     * the context that threw the <tt>ReferralException</tt> and no controls.
+     * the context that threw the {@code ReferralException} and no controls.
      *<p>
      * This method is equivalent to
      *<blockquote><pre>
      * getReferralContext(ctx.getEnvironment(), null);
      *</pre></blockquote>
-     * where <tt>ctx</tt> is the context that threw the <tt>ReferralException.</tt>
+     * where {@code ctx} is the context that threw the {@code ReferralException.}
      *<p>
      * It is overridden in this class for documentation purposes only.
-     * See <tt>ReferralException</tt> for how to use this method.
+     * See {@code ReferralException} for how to use this method.
      *
      * @return The non-null context at which to continue the method.
      * @exception NamingException If a naming exception was encountered.
-     * Call either <tt>retryReferral()</tt> or <tt>skipReferral()</tt>
+     * Call either {@code retryReferral()} or {@code skipReferral()}
      * to continue processing referrals.
      */
     public abstract Context getReferralContext() throws NamingException;
@@ -94,7 +94,7 @@ public abstract class LdapReferralException extends ReferralException {
     /**
      * Retrieves the context at which to continue the method using
      * environment properties and no controls.
-     * The referral context is created using <tt>env</tt> as its environment
+     * The referral context is created using {@code env} as its environment
      * properties and no controls.
      *<p>
      * This method is equivalent to
@@ -103,14 +103,14 @@ public abstract class LdapReferralException extends ReferralException {
      *</pre></blockquote>
      *<p>
      * It is overridden in this class for documentation purposes only.
-     * See <tt>ReferralException</tt> for how to use this method.
+     * See {@code ReferralException} for how to use this method.
      *
      * @param env The possibly null environment to use when retrieving the
      *          referral context. If null, no environment properties will be used.
      *
      * @return The non-null context at which to continue the method.
      * @exception NamingException If a naming exception was encountered.
-     * Call either <tt>retryReferral()</tt> or <tt>skipReferral()</tt>
+     * Call either {@code retryReferral()} or {@code skipReferral()}
      * to continue processing referrals.
      */
     public abstract Context
@@ -127,12 +127,12 @@ public abstract class LdapReferralException extends ReferralException {
      * To continue the operation, the client program should re-invoke
      * the method using the same arguments as the original invocation.
      *<p>
-     * <tt>reqCtls</tt> is used when creating the connection to the referred
+     * {@code reqCtls} is used when creating the connection to the referred
      * server. These controls will be used as the connection request controls for
      * the context and context instances
      * derived from the context.
-     * <tt>reqCtls</tt> will also be the context's request controls for
-     * subsequent context operations. See the <tt>LdapContext</tt> class
+     * {@code reqCtls} will also be the context's request controls for
+     * subsequent context operations. See the {@code LdapContext} class
      * description for details.
      *<p>
      * This method should be used instead of the other two overloaded forms
@@ -141,7 +141,7 @@ public abstract class LdapReferralException extends ReferralException {
      * it needs to supply special controls relating to authentication.
      *<p>
      * Service provider implementors should read the "Service Provider" section
-     * in the <tt>LdapContext</tt> class description for implementation details.
+     * in the {@code LdapContext} class description for implementation details.
      *
      * @param reqCtls The possibly null request controls to use for the new context.
      * If null or the empty array means use no request controls.
@@ -150,7 +150,7 @@ public abstract class LdapReferralException extends ReferralException {
      * properties.
      * @return The non-null context at which to continue the method.
      * @exception NamingException If a naming exception was encountered.
-     * Call either <tt>retryReferral()</tt> or <tt>skipReferral()</tt>
+     * Call either {@code retryReferral()} or {@code skipReferral()}
      * to continue processing referrals.
      */
     public abstract Context

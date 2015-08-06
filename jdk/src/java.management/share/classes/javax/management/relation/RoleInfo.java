@@ -42,7 +42,7 @@ import javax.management.NotCompliantMBeanException;
 /**
  * A RoleInfo object summarises a role in a relation type.
  *
- * <p>The <b>serialVersionUID</b> of this class is <code>2504952983494636987L</code>.
+ * <p>The <b>serialVersionUID</b> of this class is {@code 2504952983494636987L}.
  *
  * @since 1.5
  */
@@ -89,8 +89,8 @@ public class RoleInfo implements Serializable {
     private static final long serialVersionUID;
     /**
      * @serialField name String Role name
-     * @serialField isReadable boolean Read access mode: <code>true</code> if role is readable
-     * @serialField isWritable boolean Write access mode: <code>true</code> if role is writable
+     * @serialField isReadable boolean Read access mode: {@code true} if role is readable
+     * @serialField isWritable boolean Write access mode: {@code true} if role is writable
      * @serialField description String Role description
      * @serialField minDegree int Minimum degree (i.e. minimum number of referenced MBeans in corresponding role)
      * @serialField maxDegree int Maximum degree (i.e. maximum number of referenced MBeans in corresponding role)
@@ -136,12 +136,12 @@ public class RoleInfo implements Serializable {
     private String name = null;
 
     /**
-     * @serial Read access mode: <code>true</code> if role is readable
+     * @serial Read access mode: {@code true} if role is readable
      */
     private boolean isReadable;
 
     /**
-     * @serial Write access mode: <code>true</code> if role is writable
+     * @serial Write access mode: {@code true} if role is writable
      */
     private boolean isWritable;
 
@@ -183,11 +183,11 @@ public class RoleInfo implements Serializable {
      * can be set
      * @param min  minimum degree for role, i.e. minimum number of
      * MBeans to provide in corresponding role
-     * Must be less than or equal to <tt>max</tt>.
+     * Must be less than or equal to {@code max}.
      * (ROLE_CARDINALITY_INFINITY for unlimited)
      * @param max  maximum degree for role, i.e. maximum number of
      * MBeans to provide in corresponding role
-     * Must be greater than or equal to <tt>min</tt>
+     * Must be greater than or equal to {@code min}
      * (ROLE_CARDINALITY_INFINITY for unlimited)
      * @param descr  description of the role (can be null)
      *
@@ -316,7 +316,7 @@ public class RoleInfo implements Serializable {
     /**
      * Copy constructor.
      *
-     * @param roleInfo the <tt>RoleInfo</tt> instance to be copied.
+     * @param roleInfo the {@code RoleInfo} instance to be copied.
      *
      * @exception IllegalArgumentException  if null parameter
      */
@@ -413,7 +413,7 @@ public class RoleInfo implements Serializable {
     }
 
     /**
-     * Returns true if the <tt>value</tt> parameter is greater than or equal to
+     * Returns true if the {@code value} parameter is greater than or equal to
      * the expected minimum degree, false otherwise.
      *
      * @param value  the value to be checked
@@ -431,7 +431,7 @@ public class RoleInfo implements Serializable {
     }
 
     /**
-     * Returns true if the <tt>value</tt> parameter is lower than or equal to
+     * Returns true if the {@code value} parameter is lower than or equal to
      * the expected maximum degree, false otherwise.
      *
      * @param value  the value to be checked

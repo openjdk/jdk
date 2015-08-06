@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,7 +186,8 @@ abstract class UnixFileStore
             return false;
         UnixFileStore other = (UnixFileStore)ob;
         return (this.dev == other.dev) &&
-               Arrays.equals(this.entry.dir(), other.entry.dir());
+               Arrays.equals(this.entry.dir(), other.entry.dir()) &&
+               this.entry.name().equals(other.entry.name());
     }
 
     @Override

@@ -57,7 +57,7 @@ public final class DOMPGPData extends DOMStructure implements PGPData {
      * and optional list of external elements.
      *
      * @param keyPacket a PGP Key Material Packet as defined in section 5.5 of
-     *    <a href="http://www.ietf.org/rfc/rfc2440.txt"/>RFC 2440</a>. The
+     *    <a href="http://www.ietf.org/rfc/rfc2440.txt">RFC 2440</a>. The
      *    array is cloned to prevent subsequent modification.
      * @param other a list of {@link XMLStructure}s representing elements from
      *    an external namespace. The list is defensively copied to prevent
@@ -90,10 +90,10 @@ public final class DOMPGPData extends DOMStructure implements PGPData {
      * optional key packet and list of external elements.
      *
      * @param keyId a PGP public key id as defined in section 11.2 of
-     *    <a href="http://www.ietf.org/rfc/rfc2440.txt"/>RFC 2440</a>. The
+     *    <a href="http://www.ietf.org/rfc/rfc2440.txt">RFC 2440</a>. The
      *    array is cloned to prevent subsequent modification.
      * @param keyPacket a PGP Key Material Packet as defined in section 5.5 of
-     *    <a href="http://www.ietf.org/rfc/rfc2440.txt"/>RFC 2440</a> (may
+     *    <a href="http://www.ietf.org/rfc/rfc2440.txt">RFC 2440</a> (may
      *    be <code>null</code>). The array is cloned to prevent subsequent
      *    modification.
      * @param other a list of {@link XMLStructure}s representing elements from

@@ -279,7 +279,7 @@ public class Credentials {
      * @param ticketCache the path to the tickets file. A value
      * of null will be accepted to indicate that the default
      * path should be searched
-     * @returns the TGT credentials or null if none were found. If the tgt
+     * @return the TGT credentials or null if none were found. If the tgt
      * expired, it is the responsibility of the caller to determine this.
      */
     public static Credentials acquireTGTFromCache(PrincipalName princ,

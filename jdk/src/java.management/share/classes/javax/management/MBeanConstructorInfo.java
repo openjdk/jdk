@@ -55,14 +55,14 @@ public class MBeanConstructorInfo extends MBeanFeatureInfo implements Cloneable 
     private final MBeanParameterInfo[] signature;
 
     /**
-     * Constructs an <CODE>MBeanConstructorInfo</CODE> object.  The
+     * Constructs an {@code MBeanConstructorInfo} object.  The
      * {@link Descriptor} of the constructed object will include
      * fields contributed by any annotations on the {@code
      * Constructor} object that contain the {@link DescriptorKey}
      * meta-annotation.
      *
      * @param description A human readable description of the operation.
-     * @param constructor The <CODE>java.lang.reflect.Constructor</CODE>
+     * @param constructor The {@code java.lang.reflect.Constructor}
      * object describing the MBean constructor.
      */
     public MBeanConstructorInfo(String description, Constructor<?> constructor) {
@@ -72,10 +72,10 @@ public class MBeanConstructorInfo extends MBeanFeatureInfo implements Cloneable 
     }
 
     /**
-     * Constructs an <CODE>MBeanConstructorInfo</CODE> object.
+     * Constructs an {@code MBeanConstructorInfo} object.
      *
      * @param name The name of the constructor.
-     * @param signature <CODE>MBeanParameterInfo</CODE> objects
+     * @param signature {@code MBeanParameterInfo} objects
      * describing the parameters(arguments) of the constructor.  This
      * may be null with the same effect as a zero-length array.
      * @param description A human readable description of the constructor.
@@ -87,10 +87,10 @@ public class MBeanConstructorInfo extends MBeanFeatureInfo implements Cloneable 
     }
 
     /**
-     * Constructs an <CODE>MBeanConstructorInfo</CODE> object.
+     * Constructs an {@code MBeanConstructorInfo} object.
      *
      * @param name The name of the constructor.
-     * @param signature <CODE>MBeanParameterInfo</CODE> objects
+     * @param signature {@code MBeanParameterInfo} objects
      * describing the parameters(arguments) of the constructor.  This
      * may be null with the same effect as a zero-length array.
      * @param description A human readable description of the constructor.
@@ -118,9 +118,9 @@ public class MBeanConstructorInfo extends MBeanFeatureInfo implements Cloneable 
 
     /**
      * <p>Returns a shallow clone of this instance.  The clone is
-     * obtained by simply calling <tt>super.clone()</tt>, thus calling
+     * obtained by simply calling {@code super.clone()}, thus calling
      * the default native shallow cloning mechanism implemented by
-     * <tt>Object.clone()</tt>.  No deeper cloning of any internal
+     * {@code Object.clone()}.  No deeper cloning of any internal
      * field is made.</p>
      *
      * <p>Since this class is immutable, cloning is chiefly of
@@ -137,16 +137,16 @@ public class MBeanConstructorInfo extends MBeanFeatureInfo implements Cloneable 
 
     /**
      * <p>Returns the list of parameters for this constructor.  Each
-     * parameter is described by an <CODE>MBeanParameterInfo</CODE>
+     * parameter is described by an {@code MBeanParameterInfo}
      * object.</p>
      *
      * <p>The returned array is a shallow copy of the internal array,
      * which means that it is a copy of the internal array of
-     * references to the <CODE>MBeanParameterInfo</CODE> objects but
-     * that each referenced <CODE>MBeanParameterInfo</CODE> object is
+     * references to the {@code MBeanParameterInfo} objects but
+     * that each referenced {@code MBeanParameterInfo} object is
      * not copied.</p>
      *
-     * @return  An array of <CODE>MBeanParameterInfo</CODE> objects.
+     * @return  An array of {@code MBeanParameterInfo} objects.
      */
     public MBeanParameterInfo[] getSignature() {
         if (signature.length == 0)
@@ -177,7 +177,7 @@ public class MBeanConstructorInfo extends MBeanFeatureInfo implements Cloneable 
      *
      * @param o the object to compare to.
      *
-     * @return true if and only if <code>o</code> is an MBeanConstructorInfo such
+     * @return true if and only if {@code o} is an MBeanConstructorInfo such
      * that its {@link #getName()}, {@link #getDescription()},
      * {@link #getSignature()}, and {@link #getDescriptor()}
      * values are equal (not necessarily

@@ -27,6 +27,7 @@
 #  @bug 4689395
 #  @summary "step over" after a class is redefined acts like "step out"
 #  @author Jim Holmlund
+#  @key intermittent
 #  @run shell RedefineStep.sh
 #
 

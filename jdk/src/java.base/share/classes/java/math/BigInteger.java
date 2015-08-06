@@ -2289,11 +2289,11 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     }
 
     /**
-     * Returns a BigInteger whose value is <tt>(this<sup>exponent</sup>)</tt>.
+     * Returns a BigInteger whose value is <code>(this<sup>exponent</sup>)</code>.
      * Note that {@code exponent} is an integer rather than a BigInteger.
      *
      * @param  exponent exponent to which this BigInteger is to be raised.
-     * @return <tt>this<sup>exponent</sup></tt>
+     * @return <code>this<sup>exponent</sup></code>
      * @throws ArithmeticException {@code exponent} is negative.  (This would
      *         cause the operation to yield a non-integer value.)
      */
@@ -2552,12 +2552,12 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
     /**
      * Returns a BigInteger whose value is
-     * <tt>(this<sup>exponent</sup> mod m)</tt>.  (Unlike {@code pow}, this
+     * <code>(this<sup>exponent</sup> mod m)</code>.  (Unlike {@code pow}, this
      * method permits negative exponents.)
      *
      * @param  exponent the exponent.
      * @param  m the modulus.
-     * @return <tt>this<sup>exponent</sup> mod m</tt>
+     * @return <code>this<sup>exponent</sup> mod m</code>
      * @throws ArithmeticException {@code m} &le; 0 or the exponent is
      *         negative and this BigInteger is not <i>relatively
      *         prime</i> to {@code m}.
@@ -3152,7 +3152,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Returns a BigInteger whose value is {@code (this << n)}.
      * The shift distance, {@code n}, may be negative, in which case
      * this method performs a right shift.
-     * (Computes <tt>floor(this * 2<sup>n</sup>)</tt>.)
+     * (Computes <code>floor(this * 2<sup>n</sup>)</code>.)
      *
      * @param  n shift distance, in bits.
      * @return {@code this << n}
@@ -3175,7 +3175,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     /**
      * Returns a magnitude array whose value is {@code (mag << n)}.
      * The shift distance, {@code n}, is considered unnsigned.
-     * (Computes <tt>this * 2<sup>n</sup></tt>.)
+     * (Computes <code>this * 2<sup>n</sup></code>.)
      *
      * @param mag magnitude, the most-significant int ({@code mag[0]}) must be non-zero.
      * @param  n unsigned shift distance, in bits.
@@ -3212,7 +3212,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Returns a BigInteger whose value is {@code (this >> n)}.  Sign
      * extension is performed.  The shift distance, {@code n}, may be
      * negative, in which case this method performs a left shift.
-     * (Computes <tt>floor(this / 2<sup>n</sup>)</tt>.)
+     * (Computes <code>floor(this / 2<sup>n</sup>)</code>.)
      *
      * @param  n shift distance, in bits.
      * @return {@code this >> n}
@@ -3235,7 +3235,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     /**
      * Returns a BigInteger whose value is {@code (this >> n)}. The shift
      * distance, {@code n}, is considered unsigned.
-     * (Computes <tt>floor(this * 2<sup>-n</sup>)</tt>.)
+     * (Computes <code>floor(this * 2<sup>-n</sup>)</code>.)
      *
      * @param  n unsigned shift distance, in bits.
      * @return {@code this >> n}

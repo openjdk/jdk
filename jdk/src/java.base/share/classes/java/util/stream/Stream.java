@@ -498,7 +498,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *
      * <p>Independent of whether this stream is ordered or unordered if all
      * elements of this stream match the given predicate then this operation
-     * takes all elements (the result is the same is the input), or if no
+     * takes all elements (the result is the same as the input), or if no
      * elements of the stream match the given predicate then no elements are
      * taken (the result is an empty stream).
      *
@@ -533,6 +533,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *                  predicate to apply to elements to determine the longest
      *                  prefix of elements.
      * @return the new stream
+     * @since 1.9
      */
     default Stream<T> takeWhile(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate);
@@ -565,7 +566,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * elements of this stream match the given predicate then this operation
      * drops all elements (the result is an empty stream), or if no elements of
      * the stream match the given predicate then no elements are dropped (the
-     * result is the same is the input).
+     * result is the same as the input).
      *
      * <p>This is a <a href="package-summary.html#StreamOps">stateful
      * intermediate operation</a>.
@@ -598,6 +599,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *                  predicate to apply to elements to determine the longest
      *                  prefix of elements.
      * @return the new stream
+     * @since 1.9
      */
     default Stream<T> dropWhile(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate);
@@ -1229,6 +1231,9 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * Use caution when constructing streams from repeated concatenation.
      * Accessing an element of a deeply concatenated stream can result in deep
      * call chains, or even {@code StackOverflowError}.
+     *
+     * <p>Subsequent changes to the sequential/parallel execution mode of the
+     * returned stream are not guaranteed to be propagated to the input streams.
      *
      * @param <T> The type of stream elements
      * @param a the first stream

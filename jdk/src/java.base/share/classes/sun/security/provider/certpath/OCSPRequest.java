@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,11 @@ import java.util.List;
 
 import sun.misc.HexDumpEncoder;
 import sun.security.util.*;
+import sun.security.x509.PKIXExtensions;
 
 /**
  * This class can be used to generate an OCSP request and send it over
- * an outputstream. Currently we do not support signing requests
+ * an output stream. Currently we do not support signing requests.
  * The OCSP Request is specified in RFC 2560 and
  * the ASN.1 definition is as follows:
  * <pre>
@@ -118,7 +119,8 @@ class OCSPRequest {
             DerOutputStream extOut = new DerOutputStream();
             for (Extension ext : extensions) {
                 ext.encode(extOut);
-                if (ext.getId().equals(OCSP.NONCE_EXTENSION_OID.toString())) {
+                if (ext.getId().equals(
+                        PKIXExtensions.OCSPNonce_Id.toString())) {
                     nonce = ext.getValue();
                 }
             }

@@ -40,7 +40,7 @@ import java.math.BigInteger;
 /**
  * Implements the ASN.1 EncKDCRepPart type.
  *
- * <xmp>
+ * <pre>{@code
  * EncKDCRepPart        ::= SEQUENCE {
  *      key             [0] EncryptionKey,
  *      last-req        [1] LastReq,
@@ -55,7 +55,7 @@ import java.math.BigInteger;
  *      sname           [10] PrincipalName,
  *      caddr           [11] HostAddresses OPTIONAL
  * }
- * </xmp>
+ * }</pre>
  *
  * <p>
  * This definition reflects the Network Working Group RFC 4120

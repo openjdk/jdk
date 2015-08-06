@@ -50,7 +50,7 @@ import java.io.IOException;
  * An example of an RDN is "OU=Sales+CN=J.Smith". In this example,
  * the RDN consist of multiple attribute type/value pairs. The
  * RDN is parsed as described in the class description for
- * {@link javax.naming.ldap.LdapName <tt>LdapName</tt>}.
+ * {@link javax.naming.ldap.LdapName LdapName}.
  * <p>
  * The Rdn class represents an RDN as attribute type/value mappings,
  * which can be viewed using
@@ -79,11 +79,11 @@ import java.io.IOException;
  *      Rdn rdn = new Rdn("cn", "Juicy, Fruit");
  *      System.out.println(rdn.toString());
  * </pre>
- * The last line will print <tt>cn=Juicy\, Fruit</tt>. The
- * {@link #unescapeValue(String) <tt>unescapeValue()</tt>} method can be
+ * The last line will print {@code cn=Juicy\, Fruit}. The
+ * {@link #unescapeValue(String) unescapeValue()} method can be
  * used to unescape the escaped comma resulting in the original
- * value <tt>"Juicy, Fruit"</tt>. The {@link #escapeValue(Object)
- * <tt>escapeValue()</tt>} method adds the escape back preceding the comma.
+ * value {@code "Juicy, Fruit"}. The {@link #escapeValue(Object)
+ * escapeValue()} method adds the escape back preceding the comma.
  * <p>
  * This class can be instantiated by a string representation
  * of the RDN defined in RFC 2253 as shown in the following code example:
@@ -91,10 +91,10 @@ import java.io.IOException;
  *      Rdn rdn = new Rdn("cn=Juicy\\, Fruit");
  *      System.out.println(rdn.toString());
  * </pre>
- * The last line will print <tt>cn=Juicy\, Fruit</tt>.
+ * The last line will print {@code cn=Juicy\, Fruit}.
  * <p>
  * Concurrent multithreaded read-only access of an instance of
- * <tt>Rdn</tt> need not be synchronized.
+ * {@code Rdn} need not be synchronized.
  * <p>
  * Unless otherwise noted, the behavior of passing a null argument
  * to a constructor or method in this class will cause NullPointerException
@@ -123,7 +123,7 @@ public class Rdn implements Serializable, Comparable<Object> {
      *
      * @param attrSet The non-null and non-empty attributes containing
      * type/value mappings.
-     * @throws InvalidNameException If contents of <tt>attrSet</tt> cannot
+     * @throws InvalidNameException If contents of {@code attrSet} cannot
      *          be used to construct a valid RDN.
      */
     public Rdn(Attributes attrSet) throws InvalidNameException {
@@ -166,8 +166,8 @@ public class Rdn implements Serializable, Comparable<Object> {
     }
 
     /**
-     * Constructs an Rdn from the given <tt>rdn</tt>.
-     * The contents of the <tt>rdn</tt> are simply copied into the newly
+     * Constructs an Rdn from the given {@code rdn}.
+     * The contents of the {@code rdn} are simply copied into the newly
      * created Rdn.
      * @param rdn The non-null Rdn to be copied.
      */
@@ -583,7 +583,7 @@ public class Rdn implements Serializable, Comparable<Object> {
      * This method is generous in accepting the values and does not
      * catch all illegal values.
      * Therefore, passing in an illegal value might not necessarily
-     * trigger an <tt>IllegalArgumentException</tt>.
+     * trigger an {@code IllegalArgumentException}.
      *
      * @param   val     The non-null string to be unescaped.
      * @return          Unescaped value.

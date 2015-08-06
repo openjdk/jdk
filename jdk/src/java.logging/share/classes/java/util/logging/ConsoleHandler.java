@@ -27,25 +27,25 @@
 package java.util.logging;
 
 /**
- * This <tt>Handler</tt> publishes log records to <tt>System.err</tt>.
- * By default the <tt>SimpleFormatter</tt> is used to generate brief summaries.
+ * This {@code Handler} publishes log records to {@code System.err}.
+ * By default the {@code SimpleFormatter} is used to generate brief summaries.
  * <p>
  * <b>Configuration:</b>
- * By default each <tt>ConsoleHandler</tt> is initialized using the following
- * <tt>LogManager</tt> configuration properties where {@code <handler-name>}
+ * By default each {@code ConsoleHandler} is initialized using the following
+ * {@code LogManager} configuration properties where {@code <handler-name>}
  * refers to the fully-qualified class name of the handler.
  * If properties are not defined
  * (or have invalid values) then the specified default values are used.
  * <ul>
  * <li>   &lt;handler-name&gt;.level
- *        specifies the default level for the <tt>Handler</tt>
- *        (defaults to <tt>Level.INFO</tt>). </li>
+ *        specifies the default level for the {@code Handler}
+ *        (defaults to {@code Level.INFO}). </li>
  * <li>   &lt;handler-name&gt;.filter
- *        specifies the name of a <tt>Filter</tt> class to use
- *        (defaults to no <tt>Filter</tt>). </li>
+ *        specifies the name of a {@code Filter} class to use
+ *        (defaults to no {@code Filter}). </li>
  * <li>   &lt;handler-name&gt;.formatter
- *        specifies the name of a <tt>Formatter</tt> class to use
- *        (defaults to <tt>java.util.logging.SimpleFormatter</tt>). </li>
+ *        specifies the name of a {@code Formatter} class to use
+ *        (defaults to {@code java.util.logging.SimpleFormatter}). </li>
  * <li>   &lt;handler-name&gt;.encoding
  *        the name of the character set encoding to use (defaults to
  *        the default platform encoding). </li>
@@ -68,10 +68,10 @@ package java.util.logging;
 public class ConsoleHandler extends StreamHandler {
 
     /**
-     * Create a <tt>ConsoleHandler</tt> for <tt>System.err</tt>.
+     * Create a {@code ConsoleHandler} for {@code System.err}.
      * <p>
-     * The <tt>ConsoleHandler</tt> is configured based on
-     * <tt>LogManager</tt> properties (or their default values).
+     * The {@code ConsoleHandler} is configured based on
+     * {@code LogManager} properties (or their default values).
      *
      */
     public ConsoleHandler() {
@@ -82,10 +82,10 @@ public class ConsoleHandler extends StreamHandler {
     }
 
     /**
-     * Publish a <tt>LogRecord</tt>.
+     * Publish a {@code LogRecord}.
      * <p>
-     * The logging request was made initially to a <tt>Logger</tt> object,
-     * which initialized the <tt>LogRecord</tt> and forwarded it here.
+     * The logging request was made initially to a {@code Logger} object,
+     * which initialized the {@code LogRecord} and forwarded it here.
      *
      * @param  record  description of the log event. A null record is
      *                 silently ignored and is not published
@@ -97,9 +97,9 @@ public class ConsoleHandler extends StreamHandler {
     }
 
     /**
-     * Override <tt>StreamHandler.close</tt> to do a flush but not
+     * Override {@code StreamHandler.close} to do a flush but not
      * to close the output stream.  That is, we do <b>not</b>
-     * close <tt>System.err</tt>.
+     * close {@code System.err}.
      */
     @Override
     public void close() {

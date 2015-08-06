@@ -360,6 +360,22 @@ public abstract class KeyStoreSpi {
      *          that specifies how to load the keystore,
      *          which may be {@code null}
      *
+     * @implSpec
+     * The default implementation examines {@code KeyStore.LoadStoreParameter}
+     * to extract its password and pass it to
+     * {@link KeyStoreSpi#engineLoad(InputStream, char[])} along with a
+     * {@code null} {@code InputStream}.
+     * <p>
+     * If {@code KeyStore.LoadStoreParameter} is {@code null} then
+     * the password parameter will also be {@code null}.
+     * Otherwise the {@code KeyStore.ProtectionParameter} of
+     * {@code KeyStore.LoadStoreParameter} must be either a
+     * {@code KeyStore.PasswordProtection} or a
+     * {@code KeyStore.CallbackHandlerProtection} that supports
+     * {@code PasswordCallback} so that the password parameter can be
+     * extracted. If the {@code KeyStore.ProtectionParameter} is neither
+     * of those classes then a {@code NoSuchAlgorithmException} is thrown.
+     *
      * @exception IllegalArgumentException if the given
      *          {@code KeyStore.LoadStoreParameter}
      *          input is not recognized
@@ -385,37 +401,32 @@ public abstract class KeyStoreSpi {
             return;
         }
 
-        if (param instanceof KeyStore.SimpleLoadStoreParameter) {
-            ProtectionParameter protection = param.getProtectionParameter();
-            char[] password;
-            if (protection instanceof PasswordProtection) {
-                password = ((PasswordProtection)protection).getPassword();
-            } else if (protection instanceof CallbackHandlerProtection) {
-                CallbackHandler handler =
-                    ((CallbackHandlerProtection)protection).getCallbackHandler();
-                PasswordCallback callback =
-                    new PasswordCallback("Password: ", false);
-                try {
-                    handler.handle(new Callback[] {callback});
-                } catch (UnsupportedCallbackException e) {
-                    throw new NoSuchAlgorithmException
-                        ("Could not obtain password", e);
-                }
-                password = callback.getPassword();
-                callback.clearPassword();
-                if (password == null) {
-                    throw new NoSuchAlgorithmException
-                        ("No password provided");
-                }
-            } else {
-                throw new NoSuchAlgorithmException("ProtectionParameter must"
-                    + " be PasswordProtection or CallbackHandlerProtection");
+        ProtectionParameter protection = param.getProtectionParameter();
+        char[] password;
+        if (protection instanceof PasswordProtection) {
+            password = ((PasswordProtection)protection).getPassword();
+        } else if (protection instanceof CallbackHandlerProtection) {
+            CallbackHandler handler =
+                ((CallbackHandlerProtection)protection).getCallbackHandler();
+            PasswordCallback callback =
+                new PasswordCallback("Password: ", false);
+            try {
+                handler.handle(new Callback[] {callback});
+            } catch (UnsupportedCallbackException e) {
+                throw new NoSuchAlgorithmException
+                    ("Could not obtain password", e);
             }
-            engineLoad(null, password);
-            return;
+            password = callback.getPassword();
+            callback.clearPassword();
+            if (password == null) {
+                throw new NoSuchAlgorithmException("No password provided");
+            }
+        } else {
+            throw new NoSuchAlgorithmException("ProtectionParameter must"
+                + " be PasswordProtection or CallbackHandlerProtection");
         }
-
-        throw new UnsupportedOperationException();
+        engineLoad(null, password);
+        return;
     }
 
     /**
