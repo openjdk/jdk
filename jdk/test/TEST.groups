@@ -30,6 +30,7 @@ tier1 = \
     :jdk_util \
     sun/nio/cs/ISO8859x.java \
     java/nio/Buffer \
+    com/sun/crypto/provider/Cipher \
     :jdk_math
 
 tier2 = \
@@ -40,6 +41,7 @@ tier2 = \
     :jdk_net \
     :jdk_time \
     :jdk_security \
+    -com/sun/crypto/provider/Cipher \
     :jdk_text \
     :core_tools \
     :jdk_other \
