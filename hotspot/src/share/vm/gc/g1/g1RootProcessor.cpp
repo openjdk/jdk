@@ -34,6 +34,7 @@
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1RemSet.inline.hpp"
 #include "gc/g1/g1RootProcessor.hpp"
+#include "gc/g1/heapRegion.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/fprofiler.hpp"
 #include "runtime/mutex.hpp"
