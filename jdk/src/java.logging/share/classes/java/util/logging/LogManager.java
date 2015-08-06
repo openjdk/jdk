@@ -353,7 +353,8 @@ public class LogManager {
         // see that initializationDone is still false, and perform the
         // initialization.
         //
-        synchronized(this) {
+        configurationLock.lock();
+        try {
             // If initializedCalled is true it means that we're already in
             // the process of initializing the LogManager in this thread.
             // There has been a recursive call to ensureLogManagerInitialized().
@@ -409,6 +410,8 @@ public class LogManager {
             } finally {
                 initializationDone = true;
             }
+        } finally {
+            configurationLock.unlock();
         }
     }
 
@@ -423,33 +426,22 @@ public class LogManager {
         return manager;
     }
 
-    private void readPrimordialConfiguration() {
+    private void readPrimordialConfiguration() { // must be called while holding configurationLock
         if (!readPrimordialConfiguration) {
-            synchronized (this) {
-                if (!readPrimordialConfiguration) {
-                    // If System.in/out/err are null, it's a good
-                    // indication that we're still in the
-                    // bootstrapping phase
-                    if (System.out == null) {
-                        return;
-                    }
-                    readPrimordialConfiguration = true;
+            // If System.in/out/err are null, it's a good
+            // indication that we're still in the
+            // bootstrapping phase
+            if (System.out == null) {
+                return;
+            }
+            readPrimordialConfiguration = true;
+            try {
+                readConfiguration();
 
-                    try {
-                        AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
-                                @Override
-                                public Void run() throws Exception {
-                                    readConfiguration();
-
-                                    // Platform loggers begin to delegate to java.util.logging.Logger
-                                    sun.util.logging.PlatformLogger.redirectPlatformLoggers();
-                                    return null;
-                                }
-                            });
-                    } catch (Exception ex) {
-                        assert false : "Exception raised while reading logging configuration: " + ex;
-                    }
-                }
+                // Platform loggers begin to delegate to java.util.logging.Logger
+                sun.util.logging.PlatformLogger.redirectPlatformLoggers();
+            } catch (Exception ex) {
+                assert false : "Exception raised while reading logging configuration: " + ex;
             }
         }
     }
