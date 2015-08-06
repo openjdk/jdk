@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 8129632
+ * @bug 4313887 8129632 8129633
  * @summary Unit test for probeContentType method
  * @library ../..
  * @build Basic SimpleFileTypeDetector
