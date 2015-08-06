@@ -254,7 +254,7 @@ class MutableBigInteger {
     /**
      * Compare the magnitude of two MutableBigIntegers. Returns -1, 0 or 1
      * as this MutableBigInteger is numerically less than, equal to, or
-     * greater than <tt>b</tt>.
+     * greater than {@code b}.
      */
     final int compare(MutableBigInteger b) {
         int blen = b.intLen;

@@ -96,10 +96,10 @@ public class ReferenceQueue<T> {
     /**
      * Polls this queue to see if a reference object is available.  If one is
      * available without further delay then it is removed from the queue and
-     * returned.  Otherwise this method immediately returns <tt>null</tt>.
+     * returned.  Otherwise this method immediately returns {@code null}.
      *
      * @return  A reference object, if one was immediately available,
-     *          otherwise <code>null</code>
+     *          otherwise {@code null}
      */
     public Reference<? extends T> poll() {
         if (head == null)
@@ -116,12 +116,12 @@ public class ReferenceQueue<T> {
      * <p> This method does not offer real-time guarantees: It schedules the
      * timeout as if by invoking the {@link Object#wait(long)} method.
      *
-     * @param  timeout  If positive, block for up to <code>timeout</code>
+     * @param  timeout  If positive, block for up to {@code timeout}
      *                  milliseconds while waiting for a reference to be
      *                  added to this queue.  If zero, block indefinitely.
      *
      * @return  A reference object, if one was available within the specified
-     *          timeout period, otherwise <code>null</code>
+     *          timeout period, otherwise {@code null}
      *
      * @throws  IllegalArgumentException
      *          If the value of the timeout argument is negative

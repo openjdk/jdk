@@ -616,7 +616,7 @@ class Thread implements Runnable {
      * Similarly, specifying a lower value may allow a greater number of
      * threads to exist concurrently without throwing an {@link
      * OutOfMemoryError} (or other internal error).  The details of
-     * the relationship between the value of the <tt>stackSize</tt> parameter
+     * the relationship between the value of the {@code stackSize} parameter
      * and the maximum recursion depth and concurrency level are
      * platform-dependent.  <b>On some platforms, the value of the
      * {@code stackSize} parameter may have no effect whatsoever.</b>
@@ -1476,7 +1476,7 @@ class Thread implements Runnable {
     }
 
     /**
-     * Returns <tt>true</tt> if and only if the current thread holds the
+     * Returns {@code true} if and only if the current thread holds the
      * monitor lock on the specified object.
      *
      * <p>This method is designed to allow a program to assert that
@@ -1486,8 +1486,8 @@ class Thread implements Runnable {
      * </pre>
      *
      * @param  obj the object on which to test lock ownership
-     * @throws NullPointerException if obj is <tt>null</tt>
-     * @return <tt>true</tt> if the current thread holds the monitor lock on
+     * @throws NullPointerException if obj is {@code null}
+     * @return {@code true} if the current thread holds the monitor lock on
      *         the specified object.
      * @since 1.4
      */
@@ -1509,8 +1509,8 @@ class Thread implements Runnable {
      *
      * <p>If there is a security manager, and this thread is not
      * the current thread, then the security manager's
-     * <tt>checkPermission</tt> method is called with a
-     * <tt>RuntimePermission("getStackTrace")</tt> permission
+     * {@code checkPermission} method is called with a
+     * {@code RuntimePermission("getStackTrace")} permission
      * to see if it's ok to get the stack trace.
      *
      * <p>Some virtual machines may, under some circumstances, omit one
@@ -1519,12 +1519,12 @@ class Thread implements Runnable {
      * this thread is permitted to return a zero-length array from this
      * method.
      *
-     * @return an array of <tt>StackTraceElement</tt>,
+     * @return an array of {@code StackTraceElement},
      * each represents one stack frame.
      *
      * @throws SecurityException
      *        if a security manager exists and its
-     *        <tt>checkPermission</tt> method doesn't allow
+     *        {@code checkPermission} method doesn't allow
      *        getting the stack trace of thread.
      * @see SecurityManager#checkPermission
      * @see RuntimePermission
@@ -1562,8 +1562,8 @@ class Thread implements Runnable {
     /**
      * Returns a map of stack traces for all live threads.
      * The map keys are threads and each map value is an array of
-     * <tt>StackTraceElement</tt> that represents the stack dump
-     * of the corresponding <tt>Thread</tt>.
+     * {@code StackTraceElement} that represents the stack dump
+     * of the corresponding {@code Thread}.
      * The returned stack traces are in the format specified for
      * the {@link #getStackTrace getStackTrace} method.
      *
@@ -1574,18 +1574,18 @@ class Thread implements Runnable {
      * no stack trace information about a thread.
      *
      * <p>If there is a security manager, then the security manager's
-     * <tt>checkPermission</tt> method is called with a
-     * <tt>RuntimePermission("getStackTrace")</tt> permission as well as
-     * <tt>RuntimePermission("modifyThreadGroup")</tt> permission
+     * {@code checkPermission} method is called with a
+     * {@code RuntimePermission("getStackTrace")} permission as well as
+     * {@code RuntimePermission("modifyThreadGroup")} permission
      * to see if it is ok to get the stack trace of all threads.
      *
-     * @return a <tt>Map</tt> from <tt>Thread</tt> to an array of
-     * <tt>StackTraceElement</tt> that represents the stack trace of
+     * @return a {@code Map} from {@code Thread} to an array of
+     * {@code StackTraceElement} that represents the stack trace of
      * the corresponding thread.
      *
      * @throws SecurityException
      *        if a security manager exists and its
-     *        <tt>checkPermission</tt> method doesn't allow
+     *        {@code checkPermission} method doesn't allow
      *        getting the stack trace of thread.
      * @see #getStackTrace
      * @see SecurityManager#checkPermission
@@ -1693,7 +1693,7 @@ class Thread implements Runnable {
 
     /**
      * Returns the identifier of this Thread.  The thread ID is a positive
-     * <tt>long</tt> number generated when this thread was created.
+     * {@code long} number generated when this thread was created.
      * The thread ID is unique and remains unchanged during its lifetime.
      * When a thread is terminated, this thread ID may be reused.
      *
@@ -1774,10 +1774,10 @@ class Thread implements Runnable {
          * <p>A thread in the waiting state is waiting for another thread to
          * perform a particular action.
          *
-         * For example, a thread that has called <tt>Object.wait()</tt>
+         * For example, a thread that has called {@code Object.wait()}
          * on an object is waiting for another thread to call
-         * <tt>Object.notify()</tt> or <tt>Object.notifyAll()</tt> on
-         * that object. A thread that has called <tt>Thread.join()</tt>
+         * {@code Object.notify()} or {@code Object.notifyAll()} on
+         * that object. A thread that has called {@code Thread.join()}
          * is waiting for a specified thread to terminate.
          */
         WAITING,
@@ -1819,17 +1819,17 @@ class Thread implements Runnable {
     // Added in JSR-166
 
     /**
-     * Interface for handlers invoked when a <tt>Thread</tt> abruptly
+     * Interface for handlers invoked when a {@code Thread} abruptly
      * terminates due to an uncaught exception.
      * <p>When a thread is about to terminate due to an uncaught exception
      * the Java Virtual Machine will query the thread for its
-     * <tt>UncaughtExceptionHandler</tt> using
+     * {@code UncaughtExceptionHandler} using
      * {@link #getUncaughtExceptionHandler} and will invoke the handler's
-     * <tt>uncaughtException</tt> method, passing the thread and the
+     * {@code uncaughtException} method, passing the thread and the
      * exception as arguments.
-     * If a thread has not had its <tt>UncaughtExceptionHandler</tt>
-     * explicitly set, then its <tt>ThreadGroup</tt> object acts as its
-     * <tt>UncaughtExceptionHandler</tt>. If the <tt>ThreadGroup</tt> object
+     * If a thread has not had its {@code UncaughtExceptionHandler}
+     * explicitly set, then its {@code ThreadGroup} object acts as its
+     * {@code UncaughtExceptionHandler}. If the {@code ThreadGroup} object
      * has no
      * special requirements for dealing with the exception, it can forward
      * the invocation to the {@linkplain #getDefaultUncaughtExceptionHandler
@@ -1869,8 +1869,8 @@ class Thread implements Runnable {
      * uncaught exception handler. If the thread does not have an explicit
      * uncaught exception handler set, and the thread's thread group
      * (including parent thread groups)  does not specialize its
-     * <tt>uncaughtException</tt> method, then the default handler's
-     * <tt>uncaughtException</tt> method will be invoked.
+     * {@code uncaughtException} method, then the default handler's
+     * {@code uncaughtException} method will be invoked.
      * <p>By setting the default uncaught exception handler, an application
      * can change the way in which uncaught exceptions are handled (such as
      * logging to a specific device, or file) for those threads that would
@@ -1878,15 +1878,14 @@ class Thread implements Runnable {
      * provided.
      *
      * <p>Note that the default uncaught exception handler should not usually
-     * defer to the thread's <tt>ThreadGroup</tt> object, as that could cause
+     * defer to the thread's {@code ThreadGroup} object, as that could cause
      * infinite recursion.
      *
      * @param eh the object to use as the default uncaught exception handler.
-     * If <tt>null</tt> then there is no default handler.
+     * If {@code null} then there is no default handler.
      *
-     * @throws SecurityException if a security manager is present and it
-     *         denies <tt>{@link RuntimePermission}
-     *         (&quot;setDefaultUncaughtExceptionHandler&quot;)</tt>
+     * @throws SecurityException if a security manager is present and it denies
+     *         {@link RuntimePermission}{@code ("setDefaultUncaughtExceptionHandler")}
      *
      * @see #setUncaughtExceptionHandler
      * @see #getUncaughtExceptionHandler
@@ -1906,7 +1905,7 @@ class Thread implements Runnable {
 
     /**
      * Returns the default handler invoked when a thread abruptly terminates
-     * due to an uncaught exception. If the returned value is <tt>null</tt>,
+     * due to an uncaught exception. If the returned value is {@code null},
      * there is no default.
      * @since 1.5
      * @see #setDefaultUncaughtExceptionHandler
@@ -1920,8 +1919,8 @@ class Thread implements Runnable {
      * Returns the handler invoked when this thread abruptly terminates
      * due to an uncaught exception. If this thread has not had an
      * uncaught exception handler explicitly set then this thread's
-     * <tt>ThreadGroup</tt> object is returned, unless this thread
-     * has terminated, in which case <tt>null</tt> is returned.
+     * {@code ThreadGroup} object is returned, unless this thread
+     * has terminated, in which case {@code null} is returned.
      * @since 1.5
      * @return the uncaught exception handler for this thread
      */
@@ -1935,10 +1934,10 @@ class Thread implements Runnable {
      * due to an uncaught exception.
      * <p>A thread can take full control of how it responds to uncaught
      * exceptions by having its uncaught exception handler explicitly set.
-     * If no such handler is set then the thread's <tt>ThreadGroup</tt>
+     * If no such handler is set then the thread's {@code ThreadGroup}
      * object acts as its handler.
      * @param eh the object to use as this thread's uncaught exception
-     * handler. If <tt>null</tt> then this thread has no explicit handler.
+     * handler. If {@code null} then this thread has no explicit handler.
      * @throws  SecurityException  if the current thread is not allowed to
      *          modify this thread.
      * @see #setDefaultUncaughtExceptionHandler
