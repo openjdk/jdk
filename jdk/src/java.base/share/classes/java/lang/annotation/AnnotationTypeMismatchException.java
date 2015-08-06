@@ -42,7 +42,7 @@ public class AnnotationTypeMismatchException extends RuntimeException {
     private static final long serialVersionUID = 8125925355765570191L;
 
     /**
-     * The <tt>Method</tt> object for the annotation element.
+     * The {@code Method} object for the annotation element.
      */
     private final Method element;
 
@@ -57,7 +57,7 @@ public class AnnotationTypeMismatchException extends RuntimeException {
      * Constructs an AnnotationTypeMismatchException for the specified
      * annotation type element and found data type.
      *
-     * @param element the <tt>Method</tt> object for the annotation element
+     * @param element the {@code Method} object for the annotation element
      * @param foundType the (erroneous) type of data found in the annotation.
      *        This string may, but is not required to, contain the value
      *        as well.  The exact format of the string is unspecified.
@@ -70,9 +70,9 @@ public class AnnotationTypeMismatchException extends RuntimeException {
     }
 
     /**
-     * Returns the <tt>Method</tt> object for the incorrectly typed element.
+     * Returns the {@code Method} object for the incorrectly typed element.
      *
-     * @return the <tt>Method</tt> object for the incorrectly typed element
+     * @return the {@code Method} object for the incorrectly typed element
      */
     public Method element() {
         return this.element;

@@ -29,8 +29,8 @@ package java.lang;
  * A collection of assertion status directives (such as "enable assertions
  * in package p" or "disable assertions in class c").  This class is used by
  * the JVM to communicate the assertion status directives implied by
- * the <tt>java</tt> command line flags <tt>-enableassertions</tt>
- * (<tt>-ea</tt>) and <tt>-disableassertions</tt> (<tt>-da</tt>).
+ * the {@code java} command line flags {@code -enableassertions}
+ * ({@code -ea}) and {@code -disableassertions} ({@code -da}).
  *
  * @since  1.4
  * @author Josh Bloch
@@ -44,19 +44,19 @@ class AssertionStatusDirectives {
     String[] classes;
 
     /**
-     * A parallel array to <tt>classes</tt>, indicating whether each class
-     * is to have assertions enabled or disabled.  A value of <tt>true</tt>
-     * for <tt>classEnabled[i]</tt> indicates that the class named by
-     * <tt>classes[i]</tt> should have assertions enabled; a value of
-     * <tt>false</tt> indicates that it should have classes disabled.
-     * This array must have the same number of elements as <tt>classes</tt>.
+     * A parallel array to {@code classes}, indicating whether each class
+     * is to have assertions enabled or disabled.  A value of {@code true}
+     * for {@code classEnabled[i]} indicates that the class named by
+     * {@code classes[i]} should have assertions enabled; a value of
+     * {@code false} indicates that it should have classes disabled.
+     * This array must have the same number of elements as {@code classes}.
      *
      * <p>In the case of conflicting directives for the same class, the
      * last directive for a given class wins.  In other words, if a string
-     * <tt>s</tt> appears multiple times in the <tt>classes</tt> array
-     * and <tt>i</tt> is the highest integer for which
-     * <tt>classes[i].equals(s)</tt>, then <tt>classEnabled[i]</tt>
-     * indicates whether assertions are to be enabled in class <tt>s</tt>.
+     * {@code s} appears multiple times in the {@code classes} array
+     * and {@code i} is the highest integer for which
+     * {@code classes[i].equals(s)}, then {@code classEnabled[i]}
+     * indicates whether assertions are to be enabled in class {@code s}.
      */
     boolean[] classEnabled;
 
@@ -68,21 +68,21 @@ class AssertionStatusDirectives {
     String[] packages;
 
     /**
-     * A parallel array to <tt>packages</tt>, indicating whether each
+     * A parallel array to {@code packages}, indicating whether each
      * package-tree is to have assertions enabled or disabled.  A value of
-     * <tt>true</tt> for <tt>packageEnabled[i]</tt> indicates that the
-     * package-tree named by <tt>packages[i]</tt> should have assertions
-     * enabled; a value of <tt>false</tt> indicates that it should have
+     * {@code true} for {@code packageEnabled[i]} indicates that the
+     * package-tree named by {@code packages[i]} should have assertions
+     * enabled; a value of {@code false} indicates that it should have
      * assertions disabled.  This array must have the same number of
-     * elements as <tt>packages</tt>.
+     * elements as {@code packages}.
      *
      * In the case of conflicting directives for the same package-tree, the
      * last directive for a given package-tree wins.  In other words, if a
-     * string <tt>s</tt> appears multiple times in the <tt>packages</tt> array
-     * and <tt>i</tt> is the highest integer for which
-     * <tt>packages[i].equals(s)</tt>, then <tt>packageEnabled[i]</tt>
+     * string {@code s} appears multiple times in the {@code packages} array
+     * and {@code i} is the highest integer for which
+     * {@code packages[i].equals(s)}, then {@code packageEnabled[i]}
      * indicates whether assertions are to be enabled in package-tree
-     * <tt>s</tt>.
+     * {@code s}.
      */
     boolean[] packageEnabled;
 

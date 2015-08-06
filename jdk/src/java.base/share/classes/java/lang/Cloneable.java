@@ -36,11 +36,11 @@ package java.lang;
  * <code>CloneNotSupportedException</code> being thrown.
  * <p>
  * By convention, classes that implement this interface should override
- * <tt>Object.clone</tt> (which is protected) with a public method.
+ * {@code Object.clone} (which is protected) with a public method.
  * See {@link java.lang.Object#clone()} for details on overriding this
  * method.
  * <p>
- * Note that this interface does <i>not</i> contain the <tt>clone</tt> method.
+ * Note that this interface does <i>not</i> contain the {@code clone} method.
  * Therefore, it is not possible to clone an object merely by virtue of the
  * fact that it implements this interface.  Even if the clone method is invoked
  * reflectively, there is no guarantee that it will succeed.

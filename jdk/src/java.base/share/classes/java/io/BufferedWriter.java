@@ -34,7 +34,7 @@ package java.io;
  * The default is large enough for most purposes.
  *
  * <p> A newLine() method is provided, which uses the platform's own notion of
- * line separator as defined by the system property <tt>line.separator</tt>.
+ * line separator as defined by the system property {@code line.separator}.
  * Not all platforms use the newline character ('\n') to terminate lines.
  * Calling this method to terminate each output line is therefore preferred to
  * writing a newline character directly.
@@ -195,7 +195,7 @@ public class BufferedWriter extends Writer {
     /**
      * Writes a portion of a String.
      *
-     * <p> If the value of the <tt>len</tt> parameter is negative then no
+     * <p> If the value of the {@code len} parameter is negative then no
      * characters are written.  This is contrary to the specification of this
      * method in the {@linkplain java.io.Writer#write(java.lang.String,int,int)
      * superclass}, which requires that an {@link IndexOutOfBoundsException} be
@@ -225,7 +225,7 @@ public class BufferedWriter extends Writer {
 
     /**
      * Writes a line separator.  The line separator string is defined by the
-     * system property <tt>line.separator</tt>, and is not necessarily a single
+     * system property {@code line.separator}, and is not necessarily a single
      * newline ('\n') character.
      *
      * @exception  IOException  If an I/O error occurs
