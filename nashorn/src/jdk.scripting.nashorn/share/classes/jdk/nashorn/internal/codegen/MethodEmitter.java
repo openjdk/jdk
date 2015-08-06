@@ -2132,10 +2132,25 @@ public class MethodEmitter {
      * @return the method emitter
      */
     MethodEmitter dynamicNew(final int argCount, final int flags) {
+        return dynamicNew(argCount, flags, null);
+    }
+
+    /**
+     * Generate a dynamic new
+     *
+     * @param argCount  number of arguments
+     * @param flags     callsite flags
+     * @param msg        additional message to be used when reporting error
+     *
+     * @return the method emitter
+     */
+    MethodEmitter dynamicNew(final int argCount, final int flags, final String msg) {
         assert !isOptimistic(flags);
         debug("dynamic_new", "argcount=", argCount);
         final String signature = getDynamicSignature(Type.OBJECT, argCount);
-        method.visitInvokeDynamicInsn("dyn:new", signature, LINKERBOOTSTRAP, flags);
+        method.visitInvokeDynamicInsn(
+                msg != null && msg.length() < LARGE_STRING_THRESHOLD? "dyn:new:" + NameCodec.encode(msg) : "dyn:new",
+                signature, LINKERBOOTSTRAP, flags);
         pushType(Type.OBJECT); //TODO fix result type
         return this;
     }
@@ -2150,10 +2165,26 @@ public class MethodEmitter {
      * @return the method emitter
      */
     MethodEmitter dynamicCall(final Type returnType, final int argCount, final int flags) {
+        return dynamicCall(returnType, argCount, flags, null);
+    }
+
+    /**
+     * Generate a dynamic call
+     *
+     * @param returnType return type
+     * @param argCount   number of arguments
+     * @param flags      callsite flags
+     * @param msg        additional message to be used when reporting error
+     *
+     * @return the method emitter
+     */
+    MethodEmitter dynamicCall(final Type returnType, final int argCount, final int flags, final String msg) {
         debug("dynamic_call", "args=", argCount, "returnType=", returnType);
         final String signature = getDynamicSignature(returnType, argCount); // +1 because the function itself is the 1st parameter for dynamic calls (what you call - call target)
         debug("   signature", signature);
-        method.visitInvokeDynamicInsn("dyn:call", signature, LINKERBOOTSTRAP, flags);
+        method.visitInvokeDynamicInsn(
+                msg != null && msg.length() < LARGE_STRING_THRESHOLD? "dyn:call:" + NameCodec.encode(msg) : "dyn:call",
+                signature, LINKERBOOTSTRAP, flags);
         pushType(returnType);
 
         return this;
