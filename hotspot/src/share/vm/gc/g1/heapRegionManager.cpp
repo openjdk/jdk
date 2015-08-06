@@ -70,7 +70,7 @@ HeapRegion* HeapRegionManager::new_heap_region(uint hrm_index) {
   HeapWord* bottom = g1h->bottom_addr_for_region(hrm_index);
   MemRegion mr(bottom, bottom + HeapRegion::GrainWords);
   assert(reserved().contains(mr), "invariant");
-  return g1h->allocator()->new_heap_region(hrm_index, g1h->bot_shared(), mr);
+  return g1h->new_heap_region(hrm_index, mr);
 }
 
 void HeapRegionManager::commit_regions(uint index, size_t num_regions) {
