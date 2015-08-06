@@ -31,7 +31,7 @@
 #include "gc/g1/concurrentG1Refine.hpp"
 #include "gc/g1/concurrentG1RefineThread.hpp"
 #include "gc/g1/concurrentMarkThread.inline.hpp"
-#include "gc/g1/g1AllocRegion.inline.hpp"
+#include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/g1/g1CollectorState.hpp"
@@ -815,22 +815,16 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size,
 
     {
       MutexLockerEx x(Heap_lock);
-      result = _allocator->mutator_alloc_region(context)->attempt_allocation_locked(word_size,
-                                                                                    false /* bot_updates */);
+      result = _allocator->attempt_allocation_locked(word_size, context);
       if (result != NULL) {
         return result;
       }
-
-      // If we reach here, attempt_allocation_locked() above failed to
-      // allocate a new region. So the mutator alloc region should be NULL.
-      assert(_allocator->mutator_alloc_region(context)->get() == NULL, "only way to get here");
 
       if (GC_locker::is_active_and_needs_gc()) {
         if (g1_policy()->can_expand_young_list()) {
           // No need for an ergo verbose message here,
           // can_expand_young_list() does this when it returns true.
-          result = _allocator->mutator_alloc_region(context)->attempt_allocation_force(word_size,
-                                                                                       false /* bot_updates */);
+          result = _allocator->attempt_allocation_force(word_size, context);
           if (result != NULL) {
             return result;
           }
@@ -890,8 +884,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size,
     // first attempt (without holding the Heap_lock) here and the
     // follow-on attempt will be at the start of the next loop
     // iteration (after taking the Heap_lock).
-    result = _allocator->mutator_alloc_region(context)->attempt_allocation(word_size,
-                                                                           false /* bot_updates */);
+    result = _allocator->attempt_allocation(word_size, context);
     if (result != NULL) {
       return result;
     }
@@ -1109,6 +1102,29 @@ void G1CollectedHeap::fill_archive_regions(MemRegion* ranges, size_t count) {
   }
 }
 
+inline HeapWord* G1CollectedHeap::attempt_allocation(size_t word_size,
+                                                     uint* gc_count_before_ret,
+                                                     uint* gclocker_retry_count_ret) {
+  assert_heap_not_locked_and_not_at_safepoint();
+  assert(!is_humongous(word_size), "attempt_allocation() should not "
+         "be called for humongous allocation requests");
+
+  AllocationContext_t context = AllocationContext::current();
+  HeapWord* result = _allocator->attempt_allocation(word_size, context);
+
+  if (result == NULL) {
+    result = attempt_allocation_slow(word_size,
+                                     context,
+                                     gc_count_before_ret,
+                                     gclocker_retry_count_ret);
+  }
+  assert_heap_not_locked();
+  if (result != NULL) {
+    dirty_young_block(result, word_size);
+  }
+  return result;
+}
+
 HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size,
                                                         uint* gc_count_before_ret,
                                                         uint* gclocker_retry_count_ret) {
@@ -1231,13 +1247,11 @@ HeapWord* G1CollectedHeap::attempt_allocation_at_safepoint(size_t word_size,
                                                            AllocationContext_t context,
                                                            bool expect_null_mutator_alloc_region) {
   assert_at_safepoint(true /* should_be_vm_thread */);
-  assert(_allocator->mutator_alloc_region(context)->get() == NULL ||
-                                             !expect_null_mutator_alloc_region,
+  assert(!_allocator->has_mutator_alloc_region(context) || !expect_null_mutator_alloc_region,
          "the current alloc region was unexpectedly found to be non-NULL");
 
   if (!is_humongous(word_size)) {
-    return _allocator->mutator_alloc_region(context)->attempt_allocation_locked(word_size,
-                                                      false /* bot_updates */);
+    return _allocator->attempt_allocation_locked(word_size, context);
   } else {
     HeapWord* result = humongous_obj_allocate(word_size, context);
     if (result != NULL && g1_policy()->need_to_start_conc_mark("STW humongous allocation")) {
@@ -2373,7 +2387,6 @@ void G1CollectedHeap::iterate_dirty_card_closure(CardTableEntryClosure* cl,
   assert(!dcqs.completed_buffers_exist_dirty(), "Completed buffers exist!");
 }
 
-
 // Computes the sum of the storage used by the various regions.
 size_t G1CollectedHeap::used() const {
   size_t result = _summary_bytes_used + _allocator->used_in_alloc_regions();
@@ -2632,6 +2645,11 @@ bool G1CollectedHeap::is_in_exact(const void* p) const {
 }
 #endif
 
+bool G1CollectedHeap::obj_in_cs(oop obj) {
+  HeapRegion* r = _hrm.addr_to_region((HeapWord*) obj);
+  return r != NULL && r->in_collection_set();
+}
+
 // Iteration functions.
 
 // Applies an ExtendedOopClosure onto all references of objects within a HeapRegion.
@@ -2833,20 +2851,8 @@ size_t G1CollectedHeap::max_tlab_size() const {
 }
 
 size_t G1CollectedHeap::unsafe_max_tlab_alloc(Thread* ignored) const {
-  // Return the remaining space in the cur alloc region, but not less than
-  // the min TLAB size.
-
-  // Also, this value can be at most the humongous object threshold,
-  // since we can't allow tlabs to grow big enough to accommodate
-  // humongous objects.
-
-  HeapRegion* hr = _allocator->mutator_alloc_region(AllocationContext::current())->get();
-  size_t max_tlab = max_tlab_size() * wordSize;
-  if (hr == NULL) {
-    return max_tlab;
-  } else {
-    return MIN2(MAX2(hr->free(), (size_t) MinTLABSize), max_tlab);
-  }
+  AllocationContext_t context = AllocationContext::current();
+  return _allocator->unsafe_max_tlab_alloc(context);
 }
 
 size_t G1CollectedHeap::max_capacity() const {
@@ -5009,7 +5015,7 @@ public:
 bool G1STWIsAliveClosure::do_object_b(oop p) {
   // An object is reachable if it is outside the collection set,
   // or is inside and copied.
-  return !_g1->obj_in_cs(p) || p->is_forwarded();
+  return !_g1->is_in_cset(p) || p->is_forwarded();
 }
 
 // Non Copying Keep Alive closure

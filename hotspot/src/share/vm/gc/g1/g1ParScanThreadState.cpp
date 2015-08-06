@@ -59,7 +59,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint queue_num,
   _surviving_young_words = _surviving_young_words_base + PADDING_ELEM_NUM;
   memset(_surviving_young_words, 0, (size_t) real_length * sizeof(size_t));
 
-  _g1_par_allocator = G1ParGCAllocator::create_allocator(_g1h);
+  _plab_allocator = G1PLABAllocator::create_allocator(_g1h->allocator());
 
   _dest[InCSetState::NotInCSet]    = InCSetState::NotInCSet;
   // The dest for Young is used when the objects are aged enough to
@@ -71,8 +71,8 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint queue_num,
 }
 
 G1ParScanThreadState::~G1ParScanThreadState() {
-  _g1_par_allocator->retire_alloc_buffers();
-  delete _g1_par_allocator;
+  _plab_allocator->retire_alloc_buffers();
+  delete _plab_allocator;
   FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_base);
 }
 
@@ -97,7 +97,7 @@ G1ParScanThreadState::print_termination_stats(int i,
   const double term_ms    = term_time() * 1000.0;
   size_t alloc_buffer_waste = 0;
   size_t undo_waste = 0;
-  _g1_par_allocator->waste(alloc_buffer_waste, undo_waste);
+  _plab_allocator->waste(alloc_buffer_waste, undo_waste);
   st->print_cr("%3d %9.2f %9.2f %6.2f "
                "%9.2f %6.2f " SIZE_FORMAT_W(8) " "
                SIZE_FORMAT_W(7) " " SIZE_FORMAT_W(7) " " SIZE_FORMAT_W(7),
@@ -167,8 +167,9 @@ HeapWord* G1ParScanThreadState::allocate_in_next_plab(InCSetState const state,
   // Right now we only have two types of regions (young / old) so
   // let's keep the logic here simple. We can generalize it when necessary.
   if (dest->is_young()) {
-    HeapWord* const obj_ptr = _g1_par_allocator->allocate(InCSetState::Old,
-                                                          word_sz, context);
+    HeapWord* const obj_ptr = _plab_allocator->allocate(InCSetState::Old,
+                                                        word_sz,
+                                                        context);
     if (obj_ptr == NULL) {
       return NULL;
     }
@@ -209,12 +210,12 @@ oop G1ParScanThreadState::copy_to_survivor_space(InCSetState const state,
 
   uint age = 0;
   InCSetState dest_state = next_state(state, old_mark, age);
-  HeapWord* obj_ptr = _g1_par_allocator->plab_allocate(dest_state, word_sz, context);
+  HeapWord* obj_ptr = _plab_allocator->plab_allocate(dest_state, word_sz, context);
 
   // PLAB allocations should succeed most of the time, so we'll
   // normally check against NULL once and that's it.
   if (obj_ptr == NULL) {
-    obj_ptr = _g1_par_allocator->allocate_direct_or_new_plab(dest_state, word_sz, context);
+    obj_ptr = _plab_allocator->allocate_direct_or_new_plab(dest_state, word_sz, context);
     if (obj_ptr == NULL) {
       obj_ptr = allocate_in_next_plab(state, &dest_state, word_sz, context);
       if (obj_ptr == NULL) {
@@ -233,7 +234,7 @@ oop G1ParScanThreadState::copy_to_survivor_space(InCSetState const state,
   if (_g1h->evacuation_should_fail()) {
     // Doing this after all the allocation attempts also tests the
     // undo_allocation() method too.
-    _g1_par_allocator->undo_allocation(dest_state, obj_ptr, word_sz, context);
+    _plab_allocator->undo_allocation(dest_state, obj_ptr, word_sz, context);
     return handle_evacuation_failure_par(old, old_mark);
   }
 #endif // !PRODUCT
@@ -295,7 +296,7 @@ oop G1ParScanThreadState::copy_to_survivor_space(InCSetState const state,
     }
     return obj;
   } else {
-    _g1_par_allocator->undo_allocation(dest_state, obj_ptr, word_sz, context);
+    _plab_allocator->undo_allocation(dest_state, obj_ptr, word_sz, context);
     return forward_ptr;
   }
 }
