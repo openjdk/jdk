@@ -1,0 +1,8 @@
+TypeError: obj.func is not a function
+TypeError: arr[0].func is not a function
+TypeError: obj.func is not a function
+TypeError: arr[0].func is not a function
+TypeError: obj.foo is not a function
+TypeError: obj.foo is not a function
+TypeError: v is not a function
+TypeError: v is not a function
