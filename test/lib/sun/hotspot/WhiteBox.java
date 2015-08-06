@@ -182,6 +182,30 @@ public class WhiteBox {
     Objects.requireNonNull(method);
     return isMethodQueuedForCompilation0(method);
   }
+  // Determine if the compiler corresponding to the compilation level 'compLevel'
+  // and to the compilation context 'compilation_context' provides an intrinsic
+  // for the method 'method'. An intrinsic is available for method 'method' if:
+  //  - the intrinsic is enabled (by using the appropriate command-line flag) and
+  //  - the platform on which the VM is running provides the instructions necessary
+  //    for the compiler to generate the intrinsic code.
+  //
+  // The compilation context is related to using the DisableIntrinsic flag on a
+  // per-method level, see hotspot/src/share/vm/compiler/abstractCompiler.hpp
+  // for more details.
+  public boolean isIntrinsicAvailable(Executable method,
+                                      Executable compilationContext,
+                                      int compLevel) {
+      Objects.requireNonNull(method);
+      return isIntrinsicAvailable0(method, compilationContext, compLevel);
+  }
+  // If usage of the DisableIntrinsic flag is not expected (or the usage can be ignored),
+  // use the below method that does not require the compilation context as argument.
+  public boolean isIntrinsicAvailable(Executable method, int compLevel) {
+      return isIntrinsicAvailable(method, null, compLevel);
+  }
+  private native boolean isIntrinsicAvailable0(Executable method,
+                                               Executable compilationContext,
+                                               int compLevel);
   public        int     deoptimizeMethod(Executable method) {
     return deoptimizeMethod(method, false /*not osr*/);
   }
