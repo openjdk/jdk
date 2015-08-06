@@ -139,8 +139,11 @@ class G1ParScanThreadState : public StackObj {
     return os::elapsedTime() - _start;
   }
 
+  // Print the header for the per-thread termination statistics.
   static void print_termination_stats_hdr(outputStream* const st = gclog_or_tty);
-  void print_termination_stats(int i, outputStream* const st = gclog_or_tty) const;
+
+  // Print actual per-thread termination statistics.
+  void print_termination_stats(outputStream* const st = gclog_or_tty) const;
 
   size_t* surviving_young_words() {
     // We add on to hide entry 0 which accumulates surviving words for

@@ -76,32 +76,24 @@ G1ParScanThreadState::~G1ParScanThreadState() {
   FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_base);
 }
 
-void
-G1ParScanThreadState::print_termination_stats_hdr(outputStream* const st)
-{
+void G1ParScanThreadState::print_termination_stats_hdr(outputStream* const st) {
   st->print_raw_cr("GC Termination Stats");
-  st->print_raw_cr("     elapsed  --strong roots-- -------termination-------"
-                   " ------waste (KiB)------");
-  st->print_raw_cr("thr     ms        ms      %        ms      %    attempts"
-                   "  total   alloc    undo");
-  st->print_raw_cr("--- --------- --------- ------ --------- ------ --------"
-                   " ------- ------- -------");
+  st->print_raw_cr("     elapsed  --strong roots-- -------termination------- ------waste (KiB)------");
+  st->print_raw_cr("thr     ms        ms      %        ms      %    attempts  total   alloc    undo");
+  st->print_raw_cr("--- --------- --------- ------ --------- ------ -------- ------- ------- -------");
 }
 
-void
-G1ParScanThreadState::print_termination_stats(int i,
-                                              outputStream* const st) const
-{
+void G1ParScanThreadState::print_termination_stats(outputStream* const st) const {
   const double elapsed_ms = elapsed_time() * 1000.0;
   const double s_roots_ms = strong_roots_time() * 1000.0;
   const double term_ms    = term_time() * 1000.0;
   size_t alloc_buffer_waste = 0;
   size_t undo_waste = 0;
   _plab_allocator->waste(alloc_buffer_waste, undo_waste);
-  st->print_cr("%3d %9.2f %9.2f %6.2f "
+  st->print_cr("%3u %9.2f %9.2f %6.2f "
                "%9.2f %6.2f " SIZE_FORMAT_W(8) " "
                SIZE_FORMAT_W(7) " " SIZE_FORMAT_W(7) " " SIZE_FORMAT_W(7),
-               i, elapsed_ms, s_roots_ms, s_roots_ms * 100 / elapsed_ms,
+               _queue_num, elapsed_ms, s_roots_ms, s_roots_ms * 100 / elapsed_ms,
                term_ms, term_ms * 100 / elapsed_ms, term_attempts(),
                (alloc_buffer_waste + undo_waste) * HeapWordSize / K,
                alloc_buffer_waste * HeapWordSize / K,
