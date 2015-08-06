@@ -164,6 +164,7 @@ public:
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
+  virtual void dump_compact_spec(outputStream* st) const;
 #endif
 };
 #endif // SHARE_VM_OPTO_ARRAYCOPYNODE_HPP
