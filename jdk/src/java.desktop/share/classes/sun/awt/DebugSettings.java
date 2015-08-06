@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ import sun.util.logging.PlatformLogger;
  * are read the same way as described above (as before
  * the fix for 4638447).
  */
-final class DebugSettings {
+public final class DebugSettings {
     private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.debug.DebugSettings");
 
     /* standard debug property key names */
@@ -87,28 +87,21 @@ final class DebugSettings {
     };
 
     /* global instance of the settings object */
-    private static DebugSettings instance = null;
+    private static final DebugSettings instance = new DebugSettings();
 
-    private Properties props = new Properties();
+    private final Properties props = new Properties();
 
-    static void init() {
-        if (instance != null) {
+    static synchronized void init() {
+        if (!instance.props.isEmpty()) {
             return;
         }
-
         NativeLibLoader.loadLibraries();
-        instance = new DebugSettings();
+        instance.loadProperties();
         instance.loadNativeSettings();
     }
 
-    private DebugSettings() {
-        java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Void>() {
-                public Void run() {
-                    loadProperties();
-                    return null;
-                }
-            });
+    public static DebugSettings getInstance() {
+        return instance;
     }
 
     /*
