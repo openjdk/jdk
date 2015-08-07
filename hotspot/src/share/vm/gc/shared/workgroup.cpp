@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerManager.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/atomic.inline.hpp"
@@ -35,37 +36,45 @@
 // Definitions of WorkGang methods.
 
 // The current implementation will exit if the allocation
-// of any worker fails.  Still, return a boolean so that
-// a future implementation can possibly do a partial
-// initialization of the workers and report such to the
-// caller.
-bool AbstractWorkGang::initialize_workers() {
+// of any worker fails.
+void  AbstractWorkGang::initialize_workers() {
   log_develop_trace(gc, workgang)("Constructing work gang %s with %u threads", name(), total_workers());
   _workers = NEW_C_HEAP_ARRAY(AbstractGangWorker*, total_workers(), mtInternal);
   if (_workers == NULL) {
     vm_exit_out_of_memory(0, OOM_MALLOC_ERROR, "Cannot create GangWorker array.");
-    return false;
   }
+
+  _active_workers = ParallelGCThreads;
+  if (UseDynamicNumberOfGCThreads && !FLAG_IS_CMDLINE(ParallelGCThreads)) {
+    _active_workers = 1U;
+  }
+
+  add_workers(true);
+}
+
+
+AbstractGangWorker* AbstractWorkGang::install_worker(uint worker_id) {
+  AbstractGangWorker* new_worker = allocate_worker(worker_id);
+  set_thread(worker_id, new_worker);
+  return new_worker;
+}
+
+void AbstractWorkGang::add_workers(bool initializing) {
+
   os::ThreadType worker_type;
   if (are_ConcurrentGC_threads()) {
     worker_type = os::cgc_thread;
   } else {
     worker_type = os::pgc_thread;
   }
-  for (uint worker = 0; worker < total_workers(); worker += 1) {
-    AbstractGangWorker* new_worker = allocate_worker(worker);
-    assert(new_worker != NULL, "Failed to allocate GangWorker");
-    _workers[worker] = new_worker;
-    if (new_worker == NULL || !os::create_thread(new_worker, worker_type)) {
-      vm_exit_out_of_memory(0, OOM_MALLOC_ERROR,
-              "Cannot create worker GC thread. Out of system resources.");
-      return false;
-    }
-    if (!DisableStartThread) {
-      os::start_thread(new_worker);
-    }
-  }
-  return true;
+
+  _created_workers = WorkerManager::add_workers(this,
+                                                _active_workers,
+                                                _total_workers,
+                                                _created_workers,
+                                                worker_type,
+                                                initializing);
+  _active_workers = MIN2(_created_workers, _active_workers);
 }
 
 AbstractGangWorker* AbstractWorkGang::worker(uint i) const {
@@ -79,7 +88,7 @@ AbstractGangWorker* AbstractWorkGang::worker(uint i) const {
 }
 
 void AbstractWorkGang::print_worker_threads_on(outputStream* st) const {
-  uint workers = total_workers();
+  uint workers = created_workers();
   for (uint i = 0; i < workers; i++) {
     worker(i)->print_on(st);
     st->cr();
@@ -88,7 +97,7 @@ void AbstractWorkGang::print_worker_threads_on(outputStream* st) const {
 
 void AbstractWorkGang::threads_do(ThreadClosure* tc) const {
   assert(tc != NULL, "Null ThreadClosure");
-  uint workers = total_workers();
+  uint workers = created_workers();
   for (uint i = 0; i < workers; i++) {
     tc->do_thread(worker(i));
   }
