@@ -67,11 +67,11 @@ void G1Allocator::reuse_retained_old_region(EvacuationInfo& evacuation_info,
     // retired. We have to remove it now, since we don't allow regions
     // we allocate to in the region sets. We'll re-add it later, when
     // it's retired again.
-    _g1h->_old_set.remove(retained_region);
+    _g1h->old_set_remove(retained_region);
     bool during_im = _g1h->collector_state()->during_initial_mark_pause();
     retained_region->note_start_of_copying(during_im);
     old->set(retained_region);
-    _g1h->_hr_printer.reuse(retained_region);
+    _g1h->hr_printer()->reuse(retained_region);
     evacuation_info.set_alloc_regions_used_before(retained_region->used());
   }
 }
@@ -264,8 +264,8 @@ bool G1ArchiveAllocator::alloc_new_region() {
   }
   assert(hr->is_empty(), err_msg("expected empty region (index %u)", hr->hrm_index()));
   hr->set_archive();
-  _g1h->_old_set.add(hr);
-  _g1h->_hr_printer.alloc(hr, G1HRPrinter::Archive);
+  _g1h->old_set_add(hr);
+  _g1h->hr_printer()->alloc(hr, G1HRPrinter::Archive);
   _allocated_regions.append(hr);
   _allocation_region = hr;
 
