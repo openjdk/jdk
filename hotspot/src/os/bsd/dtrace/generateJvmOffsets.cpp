@@ -108,7 +108,7 @@ StubQueue* AbstractInterpreter::_code = NULL;
 #define GEN_SIZE(Type)                                  \
   switch(gen_variant) {                                 \
   case GEN_OFFSET:                                      \
-    printf("#define SIZE_%-35s %ld\n",                   \
+    printf("#define SIZE_%-35s %ld\n",                  \
             #Type, sizeof(Type));                       \
     break;                                              \
   case GEN_INDEX:                                       \
@@ -228,10 +228,10 @@ int generateJvmOffsets(GEN_variant gen_variant) {
   printf("\n");
 
   GEN_OFFS(Method, _constMethod);
-  GEN_OFFS(Method, _constants);
   GEN_OFFS(Method, _access_flags);
   printf("\n");
 
+  GEN_OFFS(ConstMethod, _constants);
   GEN_OFFS(ConstMethod, _flags);
   GEN_OFFS(ConstMethod, _code_size);
   GEN_OFFS(ConstMethod, _name_index);
@@ -264,7 +264,7 @@ int generateJvmOffsets(GEN_variant gen_variant) {
 
   GEN_OFFS(nmethod, _method);
   GEN_OFFS(nmethod, _dependencies_offset);
-  GEN_OFFS(nmethod, _oops_offset);
+  GEN_OFFS(nmethod, _metadata_offset);
   GEN_OFFS(nmethod, _scopes_data_offset);
   GEN_OFFS(nmethod, _scopes_pcs_offset);
   GEN_OFFS(nmethod, _handler_table_offset);
