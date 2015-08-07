@@ -107,6 +107,10 @@ inline void G1CollectedHeap::increment_gc_time_stamp() {
   OrderAccess::fence();
 }
 
+inline void G1CollectedHeap::old_set_add(HeapRegion* hr) {
+  _old_set.add(hr);
+}
+
 inline void G1CollectedHeap::old_set_remove(HeapRegion* hr) {
   _old_set.remove(hr);
 }

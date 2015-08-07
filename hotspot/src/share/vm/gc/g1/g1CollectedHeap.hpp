@@ -186,8 +186,6 @@ class G1CollectedHeap : public CollectedHeap {
   friend class MutatorAllocRegion;
   friend class SurvivorGCAllocRegion;
   friend class OldGCAllocRegion;
-  friend class G1Allocator;
-  friend class G1ArchiveAllocator;
 
   // Closures used in implementation.
   friend class G1ParScanThreadState;
@@ -534,12 +532,6 @@ protected:
                                             AllocationContext_t context,
                                             bool expect_null_mutator_alloc_region);
 
-  // It dirties the cards that cover the block so that so that the post
-  // write barrier never queues anything when updating objects on this
-  // block. It is assumed (and in fact we assert) that the block
-  // belongs to a young region.
-  inline void dirty_young_block(HeapWord* start, size_t word_size);
-
   // These methods are the "callbacks" from the G1AllocRegion class.
 
   // For mutator alloc regions.
@@ -552,10 +544,6 @@ protected:
                                   InCSetState dest);
   void retire_gc_alloc_region(HeapRegion* alloc_region,
                               size_t allocated_bytes, InCSetState dest);
-
-  // Allocate the highest free region in the reserved heap. This will commit
-  // regions as necessary.
-  HeapRegion* alloc_highest_free_region();
 
   // - if explicit_gc is true, the GC is for a System.gc() or a heap
   //   inspection request and should collect the entire heap
@@ -692,6 +680,10 @@ public:
   // Allocates a new heap region instance.
   HeapRegion* new_heap_region(uint hrs_index, MemRegion mr);
 
+  // Allocate the highest free region in the reserved heap. This will commit
+  // regions as necessary.
+  HeapRegion* alloc_highest_free_region();
+
   // Frees a non-humongous region by initializing its contents and
   // adding it to the free list that's passed as a parameter (this is
   // usually a local list which will be appended to the master free
@@ -704,6 +696,12 @@ public:
                    FreeRegionList* free_list,
                    bool par,
                    bool locked = false);
+
+  // It dirties the cards that cover the block so that the post
+  // write barrier never queues anything when updating objects on this
+  // block. It is assumed (and in fact we assert) that the block
+  // belongs to a young region.
+  inline void dirty_young_block(HeapWord* start, size_t word_size);
 
   // Frees a humongous region by collapsing it into individual regions
   // and calling free_region() for each of them. The freed regions
@@ -1183,6 +1181,7 @@ public:
     }
   }
 
+  inline void old_set_add(HeapRegion* hr);
   inline void old_set_remove(HeapRegion* hr);
 
   size_t non_young_capacity_bytes() {
