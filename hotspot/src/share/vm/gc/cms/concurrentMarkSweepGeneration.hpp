@@ -739,10 +739,6 @@ class CMSCollector: public CHeapObj<mtGC> {
   size_t*    _cursor;
   ChunkArray* _survivor_plab_array;
 
-  // A bounded minimum size of PLABs, should not return too small values since
-  // this will affect the size of the data structures used for parallel young gen rescan
-  size_t plab_sample_minimum_size();
-
   // Support for marking stack overflow handling
   bool take_from_overflow_list(size_t num, CMSMarkStack* to_stack);
   bool par_take_from_overflow_list(size_t num,
