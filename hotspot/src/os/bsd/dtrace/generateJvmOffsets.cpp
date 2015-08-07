@@ -134,7 +134,7 @@ StubQueue* AbstractInterpreter::_code = NULL;
   }
 
 void gen_prologue(GEN_variant gen_variant) {
-    const char *suffix;
+    const char *suffix = "Undefined-Suffix";
 
     switch(gen_variant) {
       case GEN_OFFSET: suffix = ".h";        break;

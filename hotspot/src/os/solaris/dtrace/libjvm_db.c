@@ -882,7 +882,7 @@ get_real_pc(Nmethod_t *N, uint64_t pc_desc, uint64_t *real_pc)
 /* Finds a PcDesc with real-pc equal to N->pc */
 static int pc_desc_at(Nmethod_t *N)
 {
-  uint64_t pc_diff;
+  uint64_t pc_diff = 999;
   int32_t offs;
   int32_t err;
 
