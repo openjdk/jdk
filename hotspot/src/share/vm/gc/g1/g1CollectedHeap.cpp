@@ -6495,7 +6495,6 @@ HeapRegion* G1CollectedHeap::alloc_highest_free_region() {
   return NULL;
 }
 
-
 // Heap region set verification
 
 class VerifyRegionListsClosure : public HeapRegionClosure {
