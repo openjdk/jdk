@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,10 +130,7 @@ uint AdaptiveSizePolicy::calc_default_active_workers(uintx total_workers,
   uintx max_active_workers =
     MAX2(active_workers_by_JT, active_workers_by_heap_size);
 
-  // Limit the number of workers to the the number created,
-  // (workers()).
-  new_active_workers = MIN2(max_active_workers,
-                                (uintx) total_workers);
+  new_active_workers = MIN2(max_active_workers, (uintx) total_workers);
 
   // Increase GC workers instantly but decrease them more
   // slowly.
@@ -167,7 +164,7 @@ uint AdaptiveSizePolicy::calc_default_active_workers(uintx total_workers,
       "Jiggled active workers too much");
   }
 
-   log_trace(gc, task)("GCTaskManager::calc_default_active_workers() : "
+  log_trace(gc, task)("GCTaskManager::calc_default_active_workers() : "
      "active_workers(): " UINTX_FORMAT "  new_active_workers: " UINTX_FORMAT "  "
      "prev_active_workers: " UINTX_FORMAT "\n"
      " active_workers_by_JT: " UINTX_FORMAT "  active_workers_by_heap_size: " UINTX_FORMAT,
