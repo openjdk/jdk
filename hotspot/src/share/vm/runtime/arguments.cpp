@@ -3305,7 +3305,9 @@ jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_req
 
   if (scp_assembly_required) {
     // Assemble the bootclasspath elements into the final path.
-    Arguments::set_sysclasspath(scp_p->combined_path());
+    char *combined_path = scp_p->combined_path();
+    Arguments::set_sysclasspath(combined_path);
+    FREE_C_HEAP_ARRAY(char, combined_path);
   }
 
   // This must be done after all arguments have been processed.
