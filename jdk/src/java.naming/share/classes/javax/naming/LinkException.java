@@ -204,7 +204,7 @@ public class LinkException extends NamingException {
     /**
      * Sets the resolved link name field of this exception.
      *<p>
-     * <tt>name</tt> is a composite name. If the intent is to set
+     * {@code name} is a composite name. If the intent is to set
      * this field using a compound name or string, you must
      * "stringify" the compound name, and create a composite
      * name with a single component using the string. You can then
@@ -230,7 +230,7 @@ public class LinkException extends NamingException {
     /**
      * Sets the remaining link name field of this exception.
      *<p>
-     * <tt>name</tt> is a composite name. If the intent is to set
+     * {@code name} is a composite name. If the intent is to set
      * this field using a compound name or string, you must
      * "stringify" the compound name, and create a composite
      * name with a single component using the string. You can then

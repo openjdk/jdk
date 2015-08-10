@@ -57,12 +57,12 @@ import static javax.management.ImmutableDescriptor.nonNullDescriptor;
  * <a href="Descriptor.html#infoTimeout">infoTimeout</a> fields in the {@code
  * MBeanInfo} {@link Descriptor}.</p>
  *
- * <p>The contents of the <code>MBeanInfo</code> for a Dynamic MBean
+ * <p>The contents of the {@code MBeanInfo} for a Dynamic MBean
  * are determined by its {@link DynamicMBean#getMBeanInfo
  * getMBeanInfo()} method.  This includes Open MBeans and Model
  * MBeans, which are kinds of Dynamic MBeans.</p>
  *
- * <p>The contents of the <code>MBeanInfo</code> for a Standard MBean
+ * <p>The contents of the {@code MBeanInfo} for a Standard MBean
  * are determined by the MBean server as follows:</p>
  *
  * <ul>
@@ -96,7 +96,7 @@ import static javax.management.ImmutableDescriptor.nonNullDescriptor;
  * <p>The description returned by {@link #getDescription()} and the
  * descriptions of the contained attributes and operations are not specified.</p>
  *
- * <p>The remaining details of the <code>MBeanInfo</code> for a
+ * <p>The remaining details of the {@code MBeanInfo} for a
  * Standard MBean are not specified.  This includes the description of
  * any contained constructors, and notifications; the names
  * of parameters to constructors and operations; and the descriptions of
@@ -161,10 +161,10 @@ public class MBeanInfo implements Cloneable, Serializable, DescriptorRead {
     private final transient boolean arrayGettersSafe;
 
     /**
-     * Constructs an <CODE>MBeanInfo</CODE>.
+     * Constructs an {@code MBeanInfo}.
      *
      * @param className The name of the Java class of the MBean described
-     * by this <CODE>MBeanInfo</CODE>.  This value may be any
+     * by this {@code MBeanInfo}.  This value may be any
      * syntactically legal Java class name.  It does not have to be a
      * Java class known to the MBean server or to the MBean's
      * ClassLoader.  If it is a Java class known to the MBean's
@@ -195,10 +195,10 @@ public class MBeanInfo implements Cloneable, Serializable, DescriptorRead {
     }
 
     /**
-     * Constructs an <CODE>MBeanInfo</CODE>.
+     * Constructs an {@code MBeanInfo}.
      *
      * @param className The name of the Java class of the MBean described
-     * by this <CODE>MBeanInfo</CODE>.  This value may be any
+     * by this {@code MBeanInfo}.  This value may be any
      * syntactically legal Java class name.  It does not have to be a
      * Java class known to the MBean server or to the MBean's
      * ClassLoader.  If it is a Java class known to the MBean's
@@ -260,9 +260,9 @@ public class MBeanInfo implements Cloneable, Serializable, DescriptorRead {
 
     /**
      * <p>Returns a shallow clone of this instance.
-     * The clone is obtained by simply calling <tt>super.clone()</tt>,
+     * The clone is obtained by simply calling {@code super.clone()},
      * thus calling the default native shallow cloning mechanism
-     * implemented by <tt>Object.clone()</tt>.
+     * implemented by {@code Object.clone()}.
      * No deeper cloning of any internal field is made.</p>
      *
      * <p>Since this class is immutable, the clone method is chiefly of
@@ -281,7 +281,7 @@ public class MBeanInfo implements Cloneable, Serializable, DescriptorRead {
 
     /**
      * Returns the name of the Java class of the MBean described by
-     * this <CODE>MBeanInfo</CODE>.
+     * this {@code MBeanInfo}.
      *
      * @return the class name.
      */
@@ -300,14 +300,14 @@ public class MBeanInfo implements Cloneable, Serializable, DescriptorRead {
 
     /**
      * Returns the list of attributes exposed for management.
-     * Each attribute is described by an <CODE>MBeanAttributeInfo</CODE> object.
+     * Each attribute is described by an {@code MBeanAttributeInfo} object.
      *
      * The returned array is a shallow copy of the internal array,
      * which means that it is a copy of the internal array of
-     * references to the <CODE>MBeanAttributeInfo</CODE> objects
-     * but that each referenced <CODE>MBeanAttributeInfo</CODE> object is not copied.
+     * references to the {@code MBeanAttributeInfo} objects
+     * but that each referenced {@code MBeanAttributeInfo} object is not copied.
      *
-     * @return  An array of <CODE>MBeanAttributeInfo</CODE> objects.
+     * @return  An array of {@code MBeanAttributeInfo} objects.
      */
     public MBeanAttributeInfo[] getAttributes()   {
         MBeanAttributeInfo[] as = nonNullAttributes();
@@ -342,14 +342,14 @@ public class MBeanInfo implements Cloneable, Serializable, DescriptorRead {
 
     /**
      * Returns the list of operations  of the MBean.
-     * Each operation is described by an <CODE>MBeanOperationInfo</CODE> object.
+     * Each operation is described by an {@code MBeanOperationInfo} object.
      *
      * The returned array is a shallow copy of the internal array,
      * which means that it is a copy of the internal array of
-     * references to the <CODE>MBeanOperationInfo</CODE> objects
-     * but that each referenced <CODE>MBeanOperationInfo</CODE> object is not copied.
+     * references to the {@code MBeanOperationInfo} objects
+     * but that each referenced {@code MBeanOperationInfo} object is not copied.
      *
-     * @return  An array of <CODE>MBeanOperationInfo</CODE> objects.
+     * @return  An array of {@code MBeanOperationInfo} objects.
      */
     public MBeanOperationInfo[] getOperations()  {
         MBeanOperationInfo[] os = nonNullOperations();
@@ -374,12 +374,12 @@ public class MBeanInfo implements Cloneable, Serializable, DescriptorRead {
     /**
      * <p>Returns the list of the public constructors of the MBean.
      * Each constructor is described by an
-     * <CODE>MBeanConstructorInfo</CODE> object.</p>
+     * {@code MBeanConstructorInfo} object.</p>
      *
      * <p>The returned array is a shallow copy of the internal array,
      * which means that it is a copy of the internal array of
-     * references to the <CODE>MBeanConstructorInfo</CODE> objects but
-     * that each referenced <CODE>MBeanConstructorInfo</CODE> object
+     * references to the {@code MBeanConstructorInfo} objects but
+     * that each referenced {@code MBeanConstructorInfo} object
      * is not copied.</p>
      *
      * <p>The returned list is not necessarily exhaustive.  That is,
@@ -388,7 +388,7 @@ public class MBeanInfo implements Cloneable, Serializable, DescriptorRead {
      * instance of this MBean's class using that constructor, even
      * though it is not listed here.</p>
      *
-     * @return  An array of <CODE>MBeanConstructorInfo</CODE> objects.
+     * @return  An array of {@code MBeanConstructorInfo} objects.
      */
     public MBeanConstructorInfo[] getConstructors()  {
         MBeanConstructorInfo[] cs = nonNullConstructors();
@@ -412,14 +412,14 @@ public class MBeanInfo implements Cloneable, Serializable, DescriptorRead {
 
     /**
      * Returns the list of the notifications emitted by the MBean.
-     * Each notification is described by an <CODE>MBeanNotificationInfo</CODE> object.
+     * Each notification is described by an {@code MBeanNotificationInfo} object.
      *
      * The returned array is a shallow copy of the internal array,
      * which means that it is a copy of the internal array of
-     * references to the <CODE>MBeanNotificationInfo</CODE> objects
-     * but that each referenced <CODE>MBeanNotificationInfo</CODE> object is not copied.
+     * references to the {@code MBeanNotificationInfo} objects
+     * but that each referenced {@code MBeanNotificationInfo} object is not copied.
      *
-     * @return  An array of <CODE>MBeanNotificationInfo</CODE> objects.
+     * @return  An array of {@code MBeanNotificationInfo} objects.
      */
     public MBeanNotificationInfo[] getNotifications()  {
         MBeanNotificationInfo[] ns = nonNullNotifications();
@@ -482,7 +482,7 @@ public class MBeanInfo implements Cloneable, Serializable, DescriptorRead {
      *
      * @param o the object to compare to.
      *
-     * @return true if and only if <code>o</code> is an MBeanInfo that is equal
+     * @return true if and only if {@code o} is an MBeanInfo that is equal
      * to this one according to the rules above.
      */
     @Override
@@ -534,12 +534,12 @@ public class MBeanInfo implements Cloneable, Serializable, DescriptorRead {
         new WeakHashMap<Class<?>, Boolean>();
 
     /**
-     * Return true if <code>subclass</code> is known to preserve the
-     * immutability of <code>immutableClass</code>.  The class
-     * <code>immutableClass</code> is a reference class that is known
-     * to be immutable.  The subclass <code>subclass</code> is
+     * Return true if {@code subclass} is known to preserve the
+     * immutability of {@code immutableClass}.  The class
+     * {@code immutableClass} is a reference class that is known
+     * to be immutable.  The subclass {@code subclass} is
      * considered immutable if it does not override any public method
-     * of <code>immutableClass</code> whose name begins with "get".
+     * of {@code immutableClass} whose name begins with "get".
      * This is obviously not an infallible test for immutability,
      * but it works for the public interfaces of the MBean*Info classes.
     */

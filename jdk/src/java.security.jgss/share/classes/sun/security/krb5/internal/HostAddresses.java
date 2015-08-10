@@ -338,4 +338,9 @@ public class HostAddresses implements Cloneable {
         for (int i = 0; i < inetAddresses.length; i++)
             addresses[i] = new HostAddress(inetAddresses[i]);
     }
+
+    @Override
+    public String toString() {
+        return Arrays.toString(addresses);
+    }
 }

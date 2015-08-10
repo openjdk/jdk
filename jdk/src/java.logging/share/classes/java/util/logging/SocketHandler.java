@@ -30,27 +30,27 @@ import java.io.*;
 import java.net.*;
 
 /**
- * Simple network logging <tt>Handler</tt>.
+ * Simple network logging {@code Handler}.
  * <p>
- * <tt>LogRecords</tt> are published to a network stream connection.  By default
- * the <tt>XMLFormatter</tt> class is used for formatting.
+ * {@code LogRecords} are published to a network stream connection.  By default
+ * the {@code XMLFormatter} class is used for formatting.
  * <p>
  * <b>Configuration:</b>
- * By default each <tt>SocketHandler</tt> is initialized using the following
- * <tt>LogManager</tt> configuration properties where <tt>&lt;handler-name&gt;</tt>
+ * By default each {@code SocketHandler} is initialized using the following
+ * {@code LogManager} configuration properties where {@code <handler-name>}
  * refers to the fully-qualified class name of the handler.
  * If properties are not defined
  * (or have invalid values) then the specified default values are used.
  * <ul>
  * <li>   &lt;handler-name&gt;.level
- *        specifies the default level for the <tt>Handler</tt>
- *        (defaults to <tt>Level.ALL</tt>). </li>
+ *        specifies the default level for the {@code Handler}
+ *        (defaults to {@code Level.ALL}). </li>
  * <li>   &lt;handler-name&gt;.filter
- *        specifies the name of a <tt>Filter</tt> class to use
- *        (defaults to no <tt>Filter</tt>). </li>
+ *        specifies the name of a {@code Filter} class to use
+ *        (defaults to no {@code Filter}). </li>
  * <li>   &lt;handler-name&gt;.formatter
- *        specifies the name of a <tt>Formatter</tt> class to use
- *        (defaults to <tt>java.util.logging.XMLFormatter</tt>). </li>
+ *        specifies the name of a {@code Formatter} class to use
+ *        (defaults to {@code java.util.logging.XMLFormatter}). </li>
  * <li>   &lt;handler-name&gt;.encoding
  *        the name of the character set encoding to use (defaults to
  *        the default platform encoding). </li>
@@ -73,7 +73,7 @@ import java.net.*;
  * </ul>
  * <p>
  * The output IO stream is buffered, but is flushed after each
- * <tt>LogRecord</tt> is written.
+ * {@code LogRecord} is written.
  *
  * @since 1.4
  */
@@ -84,7 +84,7 @@ public class SocketHandler extends StreamHandler {
     private int port;
 
     /**
-     * Create a <tt>SocketHandler</tt>, using only <tt>LogManager</tt> properties
+     * Create a {@code SocketHandler}, using only {@code LogManager} properties
      * (or their defaults).
      * @throws IllegalArgumentException if the host or port are invalid or
      *          are not specified as LogManager properties.
@@ -109,9 +109,9 @@ public class SocketHandler extends StreamHandler {
     }
 
     /**
-     * Construct a <tt>SocketHandler</tt> using a specified host and port.
+     * Construct a {@code SocketHandler} using a specified host and port.
      *
-     * The <tt>SocketHandler</tt> is configured based on <tt>LogManager</tt>
+     * The {@code SocketHandler} is configured based on {@code LogManager}
      * properties (or their default values) except that the given target host
      * and port arguments are used. If the host argument is empty, but not
      * null String then the localhost is used.
@@ -153,7 +153,7 @@ public class SocketHandler extends StreamHandler {
      * Close this output stream.
      *
      * @exception  SecurityException  if a security manager exists and if
-     *             the caller does not have <tt>LoggingPermission("control")</tt>.
+     *             the caller does not have {@code LoggingPermission("control")}.
      */
     @Override
     public synchronized void close() throws SecurityException {
@@ -169,7 +169,7 @@ public class SocketHandler extends StreamHandler {
     }
 
     /**
-     * Format and publish a <tt>LogRecord</tt>.
+     * Format and publish a {@code LogRecord}.
      *
      * @param  record  description of the log event. A null record is
      *                 silently ignored and is not published

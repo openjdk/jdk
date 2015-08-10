@@ -28,8 +28,8 @@ package java.lang;
 import java.io.IOException;
 
 /**
- * A <tt>Readable</tt> is a source of characters. Characters from
- * a <tt>Readable</tt> are made available to callers of the read
+ * A {@code Readable} is a source of characters. Characters from
+ * a {@code Readable} are made available to callers of the read
  * method via a {@link java.nio.CharBuffer CharBuffer}.
  *
  * @since 1.5

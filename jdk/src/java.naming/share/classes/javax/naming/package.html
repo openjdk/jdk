@@ -43,13 +43,13 @@ already deployed ones--can be accessed in a common way.
 <h4>Context</h4>
 <p>
 This package defines the notion of a <em>context</em>, represented
-by the <tt>Context</tt> interface.
+by the <code>Context</code> interface.
 A context consists of a set of name-to-object <em>bindings</em>.
-<tt>Context</tt> is the core interface for looking up, binding, unbinding, 
+<code>Context</code> is the core interface for looking up, binding, unbinding,
 and renaming objects, and for creating and destroying subcontexts.
 <p>
-<tt>lookup()</tt> is the most commonly used operation.
-You supply <tt>lookup()</tt>
+<code>lookup()</code> is the most commonly used operation.
+You supply <code>lookup()</code>
 the name of the object you want
 to look up, and it returns the object bound to that name.
 For example, the following code fragment looks up 
@@ -65,17 +65,17 @@ printer.print(report);
 
 <h4>Names</h4>
 <p>
-Every naming method in the <tt>Context</tt>
+Every naming method in the <code>Context</code>
 interface has two
 overloads: one that accepts a 
-<tt>Name</tt> argument and one that accepts a string name.
-<tt>Name</tt> is an interface that represents a generic 
+<code>Name</code> argument and one that accepts a string name.
+<code>Name</code> is an interface that represents a generic 
 name--an ordered sequence of zero of more components.
-For these methods, <tt>Name</tt> can be used to represent a
-<em>composite name</em> (<tt>CompositeName</tt>)
+For these methods, <code>Name</code> can be used to represent a
+<em>composite name</em> (<code>CompositeName</code>)
 so that you can name an object using a name which spans multiple namespaces.
 <p>
-The overloads that accept <tt>Name</tt>
+The overloads that accept <code>Name</code>
 are useful for applications that need to manipulate names: composing
 them, comparing components, and so on.
 The overloads that accept string names are likely to be more useful
@@ -84,14 +84,14 @@ and look up the corresponding object.
 
 <h4>Bindings</h4>
 
-The <tt>Binding</tt> class represents a name-to-object binding.
+The <code>Binding</code> class represents a name-to-object binding.
 It is a tuple containing the name of the bound object,
 the name of the object's class, and the object itself.
 <p>
-The <tt>Binding</tt> class is actually a subclass of
-<tt>NameClassPair</tt>, which consists
+The <code>Binding</code> class is actually a subclass of
+<code>NameClassPair</code>, which consists
 simply of the object's name and the object's class name.
-The <tt>NameClassPair</tt> is useful when you only want
+The <code>NameClassPair</code> is useful when you only want
 information about the object's class and do not want to
 pay the extra cost of getting the object.
 
@@ -104,7 +104,7 @@ storing of Java objects. Furthermore, for some
 objects in the directory, Java programs are but one group of applications 
 that access them. In this case, a serialized Java object might
 not be the most appropriate representation.
-JNDI defines a <em>reference</em>, represented by the <tt>Reference</tt>
+JNDI defines a <em>reference</em>, represented by the <code>Reference</code>
 class, which contains information on how to construct a copy of the object.
 JNDI will attempt to turn references looked up from the directory
 into the Java objects they represent, so that
@@ -117,7 +117,7 @@ is stored in the directory are Java objects.
 In JNDI, all naming and directory operations are performed relative
 to a context. There are no absolute roots.
 Therefore JNDI defines an <em>initial context</em>, 
-<tt>InitialContext</tt>,
+<code>InitialContext</code>,
 which provides a starting point for naming and directory operations.
 Once you have an initial context, you can use it to
 look up other contexts and objects.
@@ -126,10 +126,10 @@ look up other contexts and objects.
 
 JNDI defines a class hierarchy for exceptions that can be thrown in
 the course of performing naming and directory operations.  The root of
-this class hierarchy is <tt>NamingException</tt>.
+this class hierarchy is <code>NamingException</code>.
 Programs interested in dealing with a particular exception
 can catch the corresponding subclass of the exception.
-Otherwise, programs should catch <tt>NamingException</tt>.
+Otherwise, programs should catch <code>NamingException</code>.
 
 
 <h2>Package Specification</h2>

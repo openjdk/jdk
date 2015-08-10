@@ -53,12 +53,12 @@ import sun.management.MemoryNotifInfoCompositeData;
  *
  * <p>
  * A {@link CompositeData CompositeData} representing
- * the <tt>MemoryNotificationInfo</tt> object
+ * the {@code MemoryNotificationInfo} object
  * is stored in the
  * {@link javax.management.Notification#setUserData user data}
  * of a {@link javax.management.Notification notification}.
  * The {@link #from from} method is provided to convert from
- * a <tt>CompositeData</tt> to a <tt>MemoryNotificationInfo</tt>
+ * a {@code CompositeData} to a {@code MemoryNotificationInfo}
  * object. For example:
  *
  * <blockquote><pre>
@@ -78,7 +78,7 @@ import sun.management.MemoryNotifInfoCompositeData;
  * </pre></blockquote>
  *
  * <p>
- * The types of notifications emitted by <tt>MemoryMXBean</tt> are:
+ * The types of notifications emitted by {@code MemoryMXBean} are:
  * <ul>
  *   <li>A {@link #MEMORY_THRESHOLD_EXCEEDED
  *       usage threshold exceeded notification}.
@@ -119,7 +119,7 @@ public class MemoryNotificationInfo {
      * further notification until the memory usage has returned
      * to become less than the usage threshold value.
      * The value of this notification type is
-     * <tt>java.management.memory.threshold.exceeded</tt>.
+     * {@code java.management.memory.threshold.exceeded}.
      */
     public static final String MEMORY_THRESHOLD_EXCEEDED =
         "java.management.memory.threshold.exceeded";
@@ -133,13 +133,13 @@ public class MemoryNotificationInfo {
      * memory pool.
      * This notification is emitted by {@link MemoryMXBean}.
      * The value of this notification type is
-     * <tt>java.management.memory.collection.threshold.exceeded</tt>.
+     * {@code java.management.memory.collection.threshold.exceeded}.
      */
     public static final String MEMORY_COLLECTION_THRESHOLD_EXCEEDED =
         "java.management.memory.collection.threshold.exceeded";
 
     /**
-     * Constructs a <tt>MemoryNotificationInfo</tt> object.
+     * Constructs a {@code MemoryNotificationInfo} object.
      *
      * @param poolName The name of the memory pool which triggers this notification.
      * @param usage Memory usage of the memory pool.
@@ -207,9 +207,9 @@ public class MemoryNotificationInfo {
     }
 
     /**
-     * Returns a <tt>MemoryNotificationInfo</tt> object represented by the
-     * given <tt>CompositeData</tt>.
-     * The given <tt>CompositeData</tt> must contain
+     * Returns a {@code MemoryNotificationInfo} object represented by the
+     * given {@code CompositeData}.
+     * The given {@code CompositeData} must contain
      * the following attributes:
      * <blockquote>
      * <table border summary="The attributes and the types the given CompositeData contains">
@@ -219,28 +219,28 @@ public class MemoryNotificationInfo {
      * </tr>
      * <tr>
      *   <td>poolName</td>
-     *   <td><tt>java.lang.String</tt></td>
+     *   <td>{@code java.lang.String}</td>
      * </tr>
      * <tr>
      *   <td>usage</td>
-     *   <td><tt>javax.management.openmbean.CompositeData</tt></td>
+     *   <td>{@code javax.management.openmbean.CompositeData}</td>
      * </tr>
      * <tr>
      *   <td>count</td>
-     *   <td><tt>java.lang.Long</tt></td>
+     *   <td>{@code java.lang.Long}</td>
      * </tr>
      * </table>
      * </blockquote>
      *
-     * @param cd <tt>CompositeData</tt> representing a
-     *           <tt>MemoryNotificationInfo</tt>
+     * @param cd {@code CompositeData} representing a
+     *           {@code MemoryNotificationInfo}
      *
-     * @throws IllegalArgumentException if <tt>cd</tt> does not
-     *   represent a <tt>MemoryNotificationInfo</tt> object.
+     * @throws IllegalArgumentException if {@code cd} does not
+     *   represent a {@code MemoryNotificationInfo} object.
      *
-     * @return a <tt>MemoryNotificationInfo</tt> object represented
-     *         by <tt>cd</tt> if <tt>cd</tt> is not <tt>null</tt>;
-     *         <tt>null</tt> otherwise.
+     * @return a {@code MemoryNotificationInfo} object represented
+     *         by {@code cd} if {@code cd} is not {@code null};
+     *         {@code null} otherwise.
      */
     public static MemoryNotificationInfo from(CompositeData cd) {
         if (cd == null) {

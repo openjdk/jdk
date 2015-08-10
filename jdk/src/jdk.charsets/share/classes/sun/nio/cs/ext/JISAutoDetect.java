@@ -79,32 +79,6 @@ public class JISAutoDetect
         throw new UnsupportedOperationException();
     }
 
-    /**
-     * accessor methods used to share byte masking tables
-     * with the sun.io JISAutoDetect implementation
-     */
-
-    public static byte[] getByteMask1() {
-        return Decoder.maskTable1;
-    }
-
-    public static byte[] getByteMask2() {
-        return Decoder.maskTable2;
-    }
-
-    public final static boolean canBeSJIS1B(int mask) {
-        return (mask & SJIS1B_MASK) != 0;
-    }
-
-    public final static boolean canBeEUCJP(int mask) {
-        return (mask & EUCJP_MASK) != 0;
-    }
-
-    public final static boolean canBeEUCKana(int mask1, int mask2) {
-        return ((mask1 & EUCJP_KANA1_MASK) != 0)
-            && ((mask2 & EUCJP_KANA2_MASK) != 0);
-    }
-
     // A heuristic algorithm for guessing if EUC-decoded text really
     // might be Japanese text.  Better heuristics are possible...
     private static boolean looksLikeJapanese(CharBuffer cb) {
@@ -144,9 +118,10 @@ public class JISAutoDetect
             src.position(p);
         }
 
-        private CoderResult decodeLoop(Charset cs,
+        private CoderResult decodeLoop(DelegatableDecoder decoder,
                                        ByteBuffer src, CharBuffer dst) {
-            detectedDecoder = (DelegatableDecoder) cs.newDecoder();
+            ((CharsetDecoder)decoder).reset();
+            detectedDecoder = decoder;
             return detectedDecoder.decodeLoop(src, dst);
         }
 
@@ -157,7 +132,9 @@ public class JISAutoDetect
                 // All ASCII?
                 if (! src.hasRemaining())
                     return CoderResult.UNDERFLOW;
-                if (! dst.hasRemaining())
+                // Overflow only if there is still ascii but no out buffer.
+                if (!dst.hasRemaining() &&
+                    isPlainASCII(src.get(src.position())))
                     return CoderResult.OVERFLOW;
 
                 // We need to perform double, not float, arithmetic; otherwise
@@ -172,7 +149,7 @@ public class JISAutoDetect
                 ByteBuffer src2022 = src.asReadOnlyBuffer();
                 CoderResult res2022 = dd2022.decodeLoop(src2022, sandbox);
                 if (! res2022.isError())
-                    return decodeLoop(cs2022, src, dst);
+                    return decodeLoop(dd2022, src, dst);
 
                 // We must choose between EUC and SJIS
                 Charset csEUCJ = Charset.forName(EUCJPName);
@@ -180,30 +157,30 @@ public class JISAutoDetect
 
                 DelegatableDecoder ddEUCJ
                     = (DelegatableDecoder) csEUCJ.newDecoder();
+                DelegatableDecoder ddSJIS
+                    = (DelegatableDecoder) csSJIS.newDecoder();
+
                 ByteBuffer srcEUCJ = src.asReadOnlyBuffer();
                 sandbox.clear();
                 CoderResult resEUCJ = ddEUCJ.decodeLoop(srcEUCJ, sandbox);
                 // If EUC decoding fails, must be SJIS
                 if (resEUCJ.isError())
-                    return decodeLoop(csSJIS, src, dst);
-
-                DelegatableDecoder ddSJIS
-                    = (DelegatableDecoder) csSJIS.newDecoder();
+                    return decodeLoop(ddSJIS, src, dst);
                 ByteBuffer srcSJIS = src.asReadOnlyBuffer();
                 CharBuffer sandboxSJIS = CharBuffer.allocate(cbufsiz);
                 CoderResult resSJIS = ddSJIS.decodeLoop(srcSJIS, sandboxSJIS);
                 // If SJIS decoding fails, must be EUC
                 if (resSJIS.isError())
-                    return decodeLoop(csEUCJ, src, dst);
+                    return decodeLoop(ddEUCJ, src, dst);
 
                 // From here on, we have some ambiguity, and must guess.
 
                 // We prefer input that does not appear to end mid-character.
                 if (srcEUCJ.position() > srcSJIS.position())
-                    return decodeLoop(csEUCJ, src, dst);
+                    return decodeLoop(ddEUCJ, src, dst);
 
                 if (srcEUCJ.position() < srcSJIS.position())
-                    return decodeLoop(csSJIS, src, dst);
+                    return decodeLoop(ddSJIS, src, dst);
 
                 // end-of-input is after the first byte of the first char?
                 if (src.position() == srcEUCJ.position())
@@ -211,8 +188,8 @@ public class JISAutoDetect
 
                 // Use heuristic knowledge of typical Japanese text
                 sandbox.flip();
-                Charset guess = looksLikeJapanese(sandbox) ? csEUCJ : csSJIS;
-                return decodeLoop(guess, src, dst);
+                return decodeLoop(looksLikeJapanese(sandbox) ? ddEUCJ : ddSJIS,
+                                  src, dst);
             }
 
             return detectedDecoder.decodeLoop(src, dst);
@@ -267,140 +244,5 @@ public class JISAutoDetect
                 return("EUC_JP");
         }
 
-        // Mask tables - each entry indicates possibility of first or
-        // second byte being SJIS or EUC_JP
-        private static final byte maskTable1[] = {
-            0, 0, 0, 0, // 0x00 - 0x03
-            0, 0, 0, 0, // 0x04 - 0x07
-            0, 0, 0, 0, // 0x08 - 0x0b
-            0, 0, 0, 0, // 0x0c - 0x0f
-            0, 0, 0, 0, // 0x10 - 0x13
-            0, 0, 0, 0, // 0x14 - 0x17
-            0, 0, 0, 0, // 0x18 - 0x1b
-            0, 0, 0, 0, // 0x1c - 0x1f
-            0, 0, 0, 0, // 0x20 - 0x23
-            0, 0, 0, 0, // 0x24 - 0x27
-            0, 0, 0, 0, // 0x28 - 0x2b
-            0, 0, 0, 0, // 0x2c - 0x2f
-            0, 0, 0, 0, // 0x30 - 0x33
-            0, 0, 0, 0, // 0x34 - 0x37
-            0, 0, 0, 0, // 0x38 - 0x3b
-            0, 0, 0, 0, // 0x3c - 0x3f
-            0, 0, 0, 0, // 0x40 - 0x43
-            0, 0, 0, 0, // 0x44 - 0x47
-            0, 0, 0, 0, // 0x48 - 0x4b
-            0, 0, 0, 0, // 0x4c - 0x4f
-            0, 0, 0, 0, // 0x50 - 0x53
-            0, 0, 0, 0, // 0x54 - 0x57
-            0, 0, 0, 0, // 0x58 - 0x5b
-            0, 0, 0, 0, // 0x5c - 0x5f
-            0, 0, 0, 0, // 0x60 - 0x63
-            0, 0, 0, 0, // 0x64 - 0x67
-            0, 0, 0, 0, // 0x68 - 0x6b
-            0, 0, 0, 0, // 0x6c - 0x6f
-            0, 0, 0, 0, // 0x70 - 0x73
-            0, 0, 0, 0, // 0x74 - 0x77
-            0, 0, 0, 0, // 0x78 - 0x7b
-            0, 0, 0, 0, // 0x7c - 0x7f
-            0, SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK,   // 0x80 - 0x83
-            SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, // 0x84 - 0x87
-            SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, // 0x88 - 0x8b
-            SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK|EUCJP_MASK, SJIS2B_MASK|EUCJP_MASK,   // 0x8c - 0x8f
-            SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, // 0x90 - 0x93
-            SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, // 0x94 - 0x97
-            SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, // 0x98 - 0x9b
-            SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, // 0x9c - 0x9f
-            0, SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK,  // 0xa0 - 0xa3
-            SJIS1B_MASK|EUCJP_MASK|EUCJP_KANA1_MASK, SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK,    // 0xa4 - 0xa7
-            SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK,     // 0xa8 - 0xab
-            SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK,     // 0xac - 0xaf
-            SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK,     // 0xb0 - 0xb3
-            SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK,     // 0xb4 - 0xb7
-            SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK,     // 0xb8 - 0xbb
-            SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK,     // 0xbc - 0xbf
-            SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK,     // 0xc0 - 0xc3
-            SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK,     // 0xc4 - 0xc7
-            SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK,     // 0xc8 - 0xcb
-            SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK,     // 0xcc - 0xcf
-            SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK,     // 0xd0 - 0xd3
-            SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK,     // 0xd4 - 0xd7
-            SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK,     // 0xd8 - 0xdb
-            SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK, SJIS1B_MASK|EUCJP_MASK,     // 0xdc - 0xdf
-            SJIS2B_MASK|EUCJP_MASK, SJIS2B_MASK|EUCJP_MASK, SJIS2B_MASK|EUCJP_MASK, SJIS2B_MASK|EUCJP_MASK,     // 0xe0 - 0xe3
-            SJIS2B_MASK|EUCJP_MASK, SJIS2B_MASK|EUCJP_MASK, SJIS2B_MASK|EUCJP_MASK, SJIS2B_MASK|EUCJP_MASK,     // 0xe4 - 0xe7
-            SJIS2B_MASK|EUCJP_MASK, SJIS2B_MASK|EUCJP_MASK, SJIS2B_MASK|EUCJP_MASK, SJIS2B_MASK|EUCJP_MASK,     // 0xe8 - 0xeb
-            SJIS2B_MASK|EUCJP_MASK, SJIS2B_MASK|EUCJP_MASK, SJIS2B_MASK|EUCJP_MASK, SJIS2B_MASK|EUCJP_MASK,     // 0xec - 0xef
-            SJIS2B_MASK|EUCJP_MASK, SJIS2B_MASK|EUCJP_MASK, SJIS2B_MASK|EUCJP_MASK, SJIS2B_MASK|EUCJP_MASK,     // 0xf0 - 0xf3
-            SJIS2B_MASK|EUCJP_MASK, SJIS2B_MASK|EUCJP_MASK, SJIS2B_MASK|EUCJP_MASK, SJIS2B_MASK|EUCJP_MASK,     // 0xf4 - 0xf7
-            SJIS2B_MASK|EUCJP_MASK, SJIS2B_MASK|EUCJP_MASK, SJIS2B_MASK|EUCJP_MASK, SJIS2B_MASK|EUCJP_MASK,     // 0xf8 - 0xfb
-            SJIS2B_MASK|EUCJP_MASK, EUCJP_MASK, EUCJP_MASK, 0   // 0xfc - 0xff
-        };
-
-        private static final byte maskTable2[] = {
-            0, 0, 0, 0, // 0x00 - 0x03
-            0, 0, 0, 0, // 0x04 - 0x07
-            0, 0, 0, 0, // 0x08 - 0x0b
-            0, 0, 0, 0, // 0x0c - 0x0f
-            0, 0, 0, 0, // 0x10 - 0x13
-            0, 0, 0, 0, // 0x14 - 0x17
-            0, 0, 0, 0, // 0x18 - 0x1b
-            0, 0, 0, 0, // 0x1c - 0x1f
-            0, 0, 0, 0, // 0x20 - 0x23
-            0, 0, 0, 0, // 0x24 - 0x27
-            0, 0, 0, 0, // 0x28 - 0x2b
-            0, 0, 0, 0, // 0x2c - 0x2f
-            0, 0, 0, 0, // 0x30 - 0x33
-            0, 0, 0, 0, // 0x34 - 0x37
-            0, 0, 0, 0, // 0x38 - 0x3b
-            0, 0, 0, 0, // 0x3c - 0x3f
-            SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, // 0x40 - 0x43
-            SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, // 0x44 - 0x47
-            SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, // 0x48 - 0x4b
-            SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, // 0x4c - 0x4f
-            SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, // 0x50 - 0x53
-            SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, // 0x54 - 0x57
-            SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, // 0x58 - 0x5b
-            SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, // 0x5c - 0x5f
-            SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, // 0x60 - 0x63
-            SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, // 0x64 - 0x67
-            SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, // 0x68 - 0x6b
-            SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, // 0x6c - 0x6f
-            SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, // 0x70 - 0x73
-            SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, // 0x74 - 0x77
-            SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, // 0x78 - 0x7b
-            SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, 0,   // 0x7c - 0x7f
-            SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, // 0x80 - 0x83
-            SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, // 0x84 - 0x87
-            SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, // 0x88 - 0x8b
-            SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, // 0x8c - 0x8f
-            SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, // 0x90 - 0x93
-            SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, // 0x94 - 0x97
-            SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, // 0x98 - 0x9b
-            SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, SJIS2B_MASK, // 0x9c - 0x9f
-            SJIS2B_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, // 0xa0 - 0xa3
-            SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, // 0xa4 - 0xa7
-            SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, // 0xa8 - 0xab
-            SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, // 0xac - 0xaf
-            SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, // 0xb0 - 0xb3
-            SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, // 0xb4 - 0xb7
-            SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, // 0xb8 - 0xbb
-            SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, // 0xbc - 0xbf
-            SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, // 0xc0 - 0xc3
-            SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, // 0xc4 - 0xc7
-            SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, // 0xc8 - 0xcb
-            SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, // 0xcc - 0xcf
-            SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, // 0xd0 - 0xd3
-            SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, // 0xd4 - 0xd7
-            SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, // 0xd8 - 0xdb
-            SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS1B_MASK|SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, // 0xdc - 0xdf
-            SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, // 0xe0 - 0xe3
-            SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, // 0xe4 - 0xe7
-            SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, // 0xe8 - 0xeb
-            SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, // 0xec - 0xef
-            SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, SJIS2B_MASK|EUCJP_MASK|EUCJP_KANA2_MASK, // 0xf0 - 0xf3
-            SJIS2B_MASK|EUCJP_MASK, SJIS2B_MASK|EUCJP_MASK, SJIS2B_MASK|EUCJP_MASK, SJIS2B_MASK|EUCJP_MASK,     // 0xf4 - 0xf7
-            SJIS2B_MASK|EUCJP_MASK, SJIS2B_MASK|EUCJP_MASK, SJIS2B_MASK|EUCJP_MASK, SJIS2B_MASK|EUCJP_MASK,     // 0xf8 - 0xfb
-            SJIS2B_MASK|EUCJP_MASK, EUCJP_MASK, EUCJP_MASK, 0   // 0xfc - 0xff
-        };
     }
 }

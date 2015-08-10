@@ -40,8 +40,8 @@ import java.lang.Double;
  * This class provides a skeletal implementation of the {@link Preferences}
  * class, greatly easing the task of implementing it.
  *
- * <p><strong>This class is for <tt>Preferences</tt> implementers only.
- * Normal users of the <tt>Preferences</tt> facility should have no need to
+ * <p><strong>This class is for {@code Preferences} implementers only.
+ * Normal users of the {@code Preferences} facility should have no need to
  * consult this documentation.  The {@link Preferences} documentation
  * should suffice.</strong>
  *
@@ -56,11 +56,11 @@ import java.lang.Double;
  * performance.
  *
  * <p>The SPI methods fall into three groups concerning exception
- * behavior. The <tt>getSpi</tt> method should never throw exceptions, but it
+ * behavior. The {@code getSpi} method should never throw exceptions, but it
  * doesn't really matter, as any exception thrown by this method will be
  * intercepted by {@link #get(String,String)}, which will return the specified
- * default value to the caller.  The <tt>removeNodeSpi, keysSpi,
- * childrenNamesSpi, syncSpi</tt> and <tt>flushSpi</tt> methods are specified
+ * default value to the caller.  The {@code removeNodeSpi, keysSpi,
+ * childrenNamesSpi, syncSpi} and {@code flushSpi} methods are specified
  * to throw {@link BackingStoreException}, and the implementation is required
  * to throw this checked exception if it is unable to perform the operation.
  * The exception propagates outward, causing the corresponding API method
@@ -69,7 +69,7 @@ import java.lang.Double;
  * <p>The remaining SPI methods {@link #putSpi(String,String)}, {@link
  * #removeSpi(String)} and {@link #childSpi(String)} have more complicated
  * exception behavior.  They are not specified to throw
- * <tt>BackingStoreException</tt>, as they can generally obey their contracts
+ * {@code BackingStoreException}, as they can generally obey their contracts
  * even if the backing store is unavailable.  This is true because they return
  * no information and their effects are not required to become permanent until
  * a subsequent call to {@link Preferences#flush()} or
@@ -79,11 +79,11 @@ import java.lang.Double;
  * later processing.  Even under these circumstances it is generally better to
  * simply ignore the invocation and return, rather than throwing an
  * exception.  Under these circumstances, however, subsequently invoking
- * <tt>flush()</tt> or <tt>sync</tt> would not imply that all previous
+ * {@code flush()} or {@code sync} would not imply that all previous
  * operations had successfully been made permanent.
  *
- * <p>There is one circumstance under which <tt>putSpi, removeSpi and
- * childSpi</tt> <i>should</i> throw an exception: if the caller lacks
+ * <p>There is one circumstance under which {@code putSpi, removeSpi and
+ * childSpi} <i>should</i> throw an exception: if the caller lacks
  * sufficient privileges on the underlying operating system to perform the
  * requested operation.  This will, for instance, occur on most systems
  * if a non-privileged user attempts to modify system preferences.
@@ -103,18 +103,18 @@ import java.lang.Double;
  * backing store.  It is the implementation's responsibility to recreate the
  * node if it has been deleted.
  *
- * <p>Implementation note: In Sun's default <tt>Preferences</tt>
+ * <p>Implementation note: In Sun's default {@code Preferences}
  * implementations, the user's identity is inherited from the underlying
  * operating system and does not change for the lifetime of the virtual
- * machine.  It is recognized that server-side <tt>Preferences</tt>
+ * machine.  It is recognized that server-side {@code Preferences}
  * implementations may have the user identity change from request to request,
- * implicitly passed to <tt>Preferences</tt> methods via the use of a
+ * implicitly passed to {@code Preferences} methods via the use of a
  * static {@link ThreadLocal} instance.  Authors of such implementations are
  * <i>strongly</i> encouraged to determine the user at the time preferences
  * are accessed (for example by the {@link #get(String,String)} or {@link
  * #put(String,String)} method) rather than permanently associating a user
- * with each <tt>Preferences</tt> instance.  The latter behavior conflicts
- * with normal <tt>Preferences</tt> usage and would lead to great confusion.
+ * with each {@code Preferences} instance.  The latter behavior conflicts
+ * with normal {@code Preferences} usage and would lead to great confusion.
  *
  * @author  Josh Bloch
  * @see     Preferences
@@ -149,7 +149,7 @@ public abstract class AbstractPreferences extends Preferences {
     private final AbstractPreferences root; // Relative to this node
 
     /**
-     * This field should be <tt>true</tt> if this node did not exist in the
+     * This field should be {@code true} if this node did not exist in the
      * backing store prior to the creation of this object.  The field
      * is initialized to false, but may be set to true by a subclass
      * constructor (and should not be modified thereafter).  This field
@@ -197,10 +197,10 @@ public abstract class AbstractPreferences extends Preferences {
      * @param parent the parent of this preference node, or null if this
      *               is the root.
      * @param name the name of this preference node, relative to its parent,
-     *             or <tt>""</tt> if this is the root.
-     * @throws IllegalArgumentException if <tt>name</tt> contains a slash
-     *          (<tt>'/'</tt>),  or <tt>parent</tt> is <tt>null</tt> and
-     *          name isn't <tt>""</tt>.
+     *             or {@code ""} if this is the root.
+     * @throws IllegalArgumentException if {@code name} contains a slash
+     *          ({@code '/'}),  or {@code parent} is {@code null} and
+     *          name isn't {@code ""}.
      */
     protected AbstractPreferences(AbstractPreferences parent, String name) {
         if (parent==null) {
@@ -225,7 +225,7 @@ public abstract class AbstractPreferences extends Preferences {
     }
 
     /**
-     * Implements the <tt>put</tt> method as per the specification in
+     * Implements the {@code put} method as per the specification in
      * {@link Preferences#put(String,String)}.
      *
      * <p>This implementation checks that the key and value are legal,
@@ -236,10 +236,10 @@ public abstract class AbstractPreferences extends Preferences {
      *
      * @param key key with which the specified value is to be associated.
      * @param value value to be associated with the specified key.
-     * @throws NullPointerException if key or value is <tt>null</tt>.
-     * @throws IllegalArgumentException if <tt>key.length()</tt> exceeds
-     *       <tt>MAX_KEY_LENGTH</tt> or if <tt>value.length</tt> exceeds
-     *       <tt>MAX_VALUE_LENGTH</tt>.
+     * @throws NullPointerException if key or value is {@code null}.
+     * @throws IllegalArgumentException if {@code key.length()} exceeds
+     *       {@code MAX_KEY_LENGTH} or if {@code value.length} exceeds
+     *       {@code MAX_VALUE_LENGTH}.
      * @throws IllegalArgumentException if either key or value contain
      *         the null control character, code point U+0000.
      * @throws IllegalStateException if this node (or an ancestor) has been
@@ -267,26 +267,26 @@ public abstract class AbstractPreferences extends Preferences {
     }
 
     /**
-     * Implements the <tt>get</tt> method as per the specification in
+     * Implements the {@code get} method as per the specification in
      * {@link Preferences#get(String,String)}.
      *
-     * <p>This implementation first checks to see if <tt>key</tt> is
-     * <tt>null</tt> throwing a <tt>NullPointerException</tt> if this is
+     * <p>This implementation first checks to see if {@code key} is
+     * {@code null} throwing a {@code NullPointerException} if this is
      * the case.  Then it obtains this preference node's lock,
      * checks that the node has not been removed, invokes {@link
-     * #getSpi(String)}, and returns the result, unless the <tt>getSpi</tt>
-     * invocation returns <tt>null</tt> or throws an exception, in which case
-     * this invocation returns <tt>def</tt>.
+     * #getSpi(String)}, and returns the result, unless the {@code getSpi}
+     * invocation returns {@code null} or throws an exception, in which case
+     * this invocation returns {@code def}.
      *
      * @param key key whose associated value is to be returned.
      * @param def the value to be returned in the event that this
-     *        preference node has no value associated with <tt>key</tt>.
-     * @return the value associated with <tt>key</tt>, or <tt>def</tt>
-     *         if no value is associated with <tt>key</tt>.
+     *        preference node has no value associated with {@code key}.
+     * @return the value associated with {@code key}, or {@code def}
+     *         if no value is associated with {@code key}.
      * @throws IllegalStateException if this node (or an ancestor) has been
      *         removed with the {@link #removeNode()} method.
-     * @throws NullPointerException if key is <tt>null</tt>.  (A
-     *         <tt>null</tt> default <i>is</i> permitted.)
+     * @throws NullPointerException if key is {@code null}.  (A
+     *         {@code null} default <i>is</i> permitted.)
      * @throws IllegalArgumentException if key contains the null control
      *         character, code point U+0000.
      */
@@ -310,7 +310,7 @@ public abstract class AbstractPreferences extends Preferences {
     }
 
     /**
-     * Implements the <tt>remove(String)</tt> method as per the specification
+     * Implements the {@code remove(String)} method as per the specification
      * in {@link Preferences#remove(String)}.
      *
      * <p>This implementation obtains this preference node's lock,
@@ -340,7 +340,7 @@ public abstract class AbstractPreferences extends Preferences {
     }
 
     /**
-     * Implements the <tt>clear</tt> method as per the specification in
+     * Implements the {@code clear} method as per the specification in
      * {@link Preferences#clear()}.
      *
      * <p>This implementation obtains this preference node's lock,
@@ -361,18 +361,18 @@ public abstract class AbstractPreferences extends Preferences {
     }
 
     /**
-     * Implements the <tt>putInt</tt> method as per the specification in
+     * Implements the {@code putInt} method as per the specification in
      * {@link Preferences#putInt(String,int)}.
      *
-     * <p>This implementation translates <tt>value</tt> to a string with
+     * <p>This implementation translates {@code value} to a string with
      * {@link Integer#toString(int)} and invokes {@link #put(String,String)}
      * on the result.
      *
      * @param key key with which the string form of value is to be associated.
      * @param value value whose string form is to be associated with key.
-     * @throws NullPointerException if key is <tt>null</tt>.
-     * @throws IllegalArgumentException if <tt>key.length()</tt> exceeds
-     *         <tt>MAX_KEY_LENGTH</tt>.
+     * @throws NullPointerException if key is {@code null}.
+     * @throws IllegalArgumentException if {@code key.length()} exceeds
+     *         {@code MAX_KEY_LENGTH}.
      * @throws IllegalArgumentException if key contains
      *         the null control character, code point U+0000.
      * @throws IllegalStateException if this node (or an ancestor) has been
@@ -383,26 +383,26 @@ public abstract class AbstractPreferences extends Preferences {
     }
 
     /**
-     * Implements the <tt>getInt</tt> method as per the specification in
+     * Implements the {@code getInt} method as per the specification in
      * {@link Preferences#getInt(String,int)}.
      *
-     * <p>This implementation invokes {@link #get(String,String) <tt>get(key,
-     * null)</tt>}.  If the return value is non-null, the implementation
-     * attempts to translate it to an <tt>int</tt> with
+     * <p>This implementation invokes {@link #get(String,String) get(key,
+     * null)}.  If the return value is non-null, the implementation
+     * attempts to translate it to an {@code int} with
      * {@link Integer#parseInt(String)}.  If the attempt succeeds, the return
-     * value is returned by this method.  Otherwise, <tt>def</tt> is returned.
+     * value is returned by this method.  Otherwise, {@code def} is returned.
      *
      * @param key key whose associated value is to be returned as an int.
      * @param def the value to be returned in the event that this
-     *        preference node has no value associated with <tt>key</tt>
+     *        preference node has no value associated with {@code key}
      *        or the associated value cannot be interpreted as an int.
      * @return the int value represented by the string associated with
-     *         <tt>key</tt> in this preference node, or <tt>def</tt> if the
+     *         {@code key} in this preference node, or {@code def} if the
      *         associated value does not exist or cannot be interpreted as
      *         an int.
      * @throws IllegalStateException if this node (or an ancestor) has been
      *         removed with the {@link #removeNode()} method.
-     * @throws NullPointerException if <tt>key</tt> is <tt>null</tt>.
+     * @throws NullPointerException if {@code key} is {@code null}.
      * @throws IllegalArgumentException if key contains the null control
      *         character, code point U+0000.
      */
@@ -420,18 +420,18 @@ public abstract class AbstractPreferences extends Preferences {
     }
 
     /**
-     * Implements the <tt>putLong</tt> method as per the specification in
+     * Implements the {@code putLong} method as per the specification in
      * {@link Preferences#putLong(String,long)}.
      *
-     * <p>This implementation translates <tt>value</tt> to a string with
+     * <p>This implementation translates {@code value} to a string with
      * {@link Long#toString(long)} and invokes {@link #put(String,String)}
      * on the result.
      *
      * @param key key with which the string form of value is to be associated.
      * @param value value whose string form is to be associated with key.
-     * @throws NullPointerException if key is <tt>null</tt>.
-     * @throws IllegalArgumentException if <tt>key.length()</tt> exceeds
-     *         <tt>MAX_KEY_LENGTH</tt>.
+     * @throws NullPointerException if key is {@code null}.
+     * @throws IllegalArgumentException if {@code key.length()} exceeds
+     *         {@code MAX_KEY_LENGTH}.
      * @throws IllegalArgumentException if key contains
      *         the null control character, code point U+0000.
      * @throws IllegalStateException if this node (or an ancestor) has been
@@ -442,26 +442,26 @@ public abstract class AbstractPreferences extends Preferences {
     }
 
     /**
-     * Implements the <tt>getLong</tt> method as per the specification in
+     * Implements the {@code getLong} method as per the specification in
      * {@link Preferences#getLong(String,long)}.
      *
-     * <p>This implementation invokes {@link #get(String,String) <tt>get(key,
-     * null)</tt>}.  If the return value is non-null, the implementation
-     * attempts to translate it to a <tt>long</tt> with
+     * <p>This implementation invokes {@link #get(String,String) get(key,
+     * null)}.  If the return value is non-null, the implementation
+     * attempts to translate it to a {@code long} with
      * {@link Long#parseLong(String)}.  If the attempt succeeds, the return
-     * value is returned by this method.  Otherwise, <tt>def</tt> is returned.
+     * value is returned by this method.  Otherwise, {@code def} is returned.
      *
      * @param key key whose associated value is to be returned as a long.
      * @param def the value to be returned in the event that this
-     *        preference node has no value associated with <tt>key</tt>
+     *        preference node has no value associated with {@code key}
      *        or the associated value cannot be interpreted as a long.
      * @return the long value represented by the string associated with
-     *         <tt>key</tt> in this preference node, or <tt>def</tt> if the
+     *         {@code key} in this preference node, or {@code def} if the
      *         associated value does not exist or cannot be interpreted as
      *         a long.
      * @throws IllegalStateException if this node (or an ancestor) has been
      *         removed with the {@link #removeNode()} method.
-     * @throws NullPointerException if <tt>key</tt> is <tt>null</tt>.
+     * @throws NullPointerException if {@code key} is {@code null}.
      * @throws IllegalArgumentException if key contains the null control
      *         character, code point U+0000.
      */
@@ -479,18 +479,18 @@ public abstract class AbstractPreferences extends Preferences {
     }
 
     /**
-     * Implements the <tt>putBoolean</tt> method as per the specification in
+     * Implements the {@code putBoolean} method as per the specification in
      * {@link Preferences#putBoolean(String,boolean)}.
      *
-     * <p>This implementation translates <tt>value</tt> to a string with
+     * <p>This implementation translates {@code value} to a string with
      * {@link String#valueOf(boolean)} and invokes {@link #put(String,String)}
      * on the result.
      *
      * @param key key with which the string form of value is to be associated.
      * @param value value whose string form is to be associated with key.
-     * @throws NullPointerException if key is <tt>null</tt>.
-     * @throws IllegalArgumentException if <tt>key.length()</tt> exceeds
-     *         <tt>MAX_KEY_LENGTH</tt>.
+     * @throws NullPointerException if key is {@code null}.
+     * @throws IllegalArgumentException if {@code key.length()} exceeds
+     *         {@code MAX_KEY_LENGTH}.
      * @throws IllegalArgumentException if key contains
      *         the null control character, code point U+0000.
      * @throws IllegalStateException if this node (or an ancestor) has been
@@ -501,29 +501,29 @@ public abstract class AbstractPreferences extends Preferences {
     }
 
     /**
-     * Implements the <tt>getBoolean</tt> method as per the specification in
+     * Implements the {@code getBoolean} method as per the specification in
      * {@link Preferences#getBoolean(String,boolean)}.
      *
-     * <p>This implementation invokes {@link #get(String,String) <tt>get(key,
-     * null)</tt>}.  If the return value is non-null, it is compared with
-     * <tt>"true"</tt> using {@link String#equalsIgnoreCase(String)}.  If the
-     * comparison returns <tt>true</tt>, this invocation returns
-     * <tt>true</tt>.  Otherwise, the original return value is compared with
-     * <tt>"false"</tt>, again using {@link String#equalsIgnoreCase(String)}.
-     * If the comparison returns <tt>true</tt>, this invocation returns
-     * <tt>false</tt>.  Otherwise, this invocation returns <tt>def</tt>.
+     * <p>This implementation invokes {@link #get(String,String) get(key,
+     * null)}.  If the return value is non-null, it is compared with
+     * {@code "true"} using {@link String#equalsIgnoreCase(String)}.  If the
+     * comparison returns {@code true}, this invocation returns
+     * {@code true}.  Otherwise, the original return value is compared with
+     * {@code "false"}, again using {@link String#equalsIgnoreCase(String)}.
+     * If the comparison returns {@code true}, this invocation returns
+     * {@code false}.  Otherwise, this invocation returns {@code def}.
      *
      * @param key key whose associated value is to be returned as a boolean.
      * @param def the value to be returned in the event that this
-     *        preference node has no value associated with <tt>key</tt>
+     *        preference node has no value associated with {@code key}
      *        or the associated value cannot be interpreted as a boolean.
      * @return the boolean value represented by the string associated with
-     *         <tt>key</tt> in this preference node, or <tt>def</tt> if the
+     *         {@code key} in this preference node, or {@code def} if the
      *         associated value does not exist or cannot be interpreted as
      *         a boolean.
      * @throws IllegalStateException if this node (or an ancestor) has been
      *         removed with the {@link #removeNode()} method.
-     * @throws NullPointerException if <tt>key</tt> is <tt>null</tt>.
+     * @throws NullPointerException if {@code key} is {@code null}.
      * @throws IllegalArgumentException if key contains the null control
      *         character, code point U+0000.
      */
@@ -541,18 +541,18 @@ public abstract class AbstractPreferences extends Preferences {
     }
 
     /**
-     * Implements the <tt>putFloat</tt> method as per the specification in
+     * Implements the {@code putFloat} method as per the specification in
      * {@link Preferences#putFloat(String,float)}.
      *
-     * <p>This implementation translates <tt>value</tt> to a string with
+     * <p>This implementation translates {@code value} to a string with
      * {@link Float#toString(float)} and invokes {@link #put(String,String)}
      * on the result.
      *
      * @param key key with which the string form of value is to be associated.
      * @param value value whose string form is to be associated with key.
-     * @throws NullPointerException if key is <tt>null</tt>.
-     * @throws IllegalArgumentException if <tt>key.length()</tt> exceeds
-     *         <tt>MAX_KEY_LENGTH</tt>.
+     * @throws NullPointerException if key is {@code null}.
+     * @throws IllegalArgumentException if {@code key.length()} exceeds
+     *         {@code MAX_KEY_LENGTH}.
      * @throws IllegalArgumentException if key contains
      *         the null control character, code point U+0000.
      * @throws IllegalStateException if this node (or an ancestor) has been
@@ -563,26 +563,26 @@ public abstract class AbstractPreferences extends Preferences {
     }
 
     /**
-     * Implements the <tt>getFloat</tt> method as per the specification in
+     * Implements the {@code getFloat} method as per the specification in
      * {@link Preferences#getFloat(String,float)}.
      *
-     * <p>This implementation invokes {@link #get(String,String) <tt>get(key,
-     * null)</tt>}.  If the return value is non-null, the implementation
-     * attempts to translate it to an <tt>float</tt> with
+     * <p>This implementation invokes {@link #get(String,String) get(key,
+     * null)}.  If the return value is non-null, the implementation
+     * attempts to translate it to an {@code float} with
      * {@link Float#parseFloat(String)}.  If the attempt succeeds, the return
-     * value is returned by this method.  Otherwise, <tt>def</tt> is returned.
+     * value is returned by this method.  Otherwise, {@code def} is returned.
      *
      * @param key key whose associated value is to be returned as a float.
      * @param def the value to be returned in the event that this
-     *        preference node has no value associated with <tt>key</tt>
+     *        preference node has no value associated with {@code key}
      *        or the associated value cannot be interpreted as a float.
      * @return the float value represented by the string associated with
-     *         <tt>key</tt> in this preference node, or <tt>def</tt> if the
+     *         {@code key} in this preference node, or {@code def} if the
      *         associated value does not exist or cannot be interpreted as
      *         a float.
      * @throws IllegalStateException if this node (or an ancestor) has been
      *         removed with the {@link #removeNode()} method.
-     * @throws NullPointerException if <tt>key</tt> is <tt>null</tt>.
+     * @throws NullPointerException if {@code key} is {@code null}.
      * @throws IllegalArgumentException if key contains the null control
      *         character, code point U+0000.
      */
@@ -600,18 +600,18 @@ public abstract class AbstractPreferences extends Preferences {
     }
 
     /**
-     * Implements the <tt>putDouble</tt> method as per the specification in
+     * Implements the {@code putDouble} method as per the specification in
      * {@link Preferences#putDouble(String,double)}.
      *
-     * <p>This implementation translates <tt>value</tt> to a string with
+     * <p>This implementation translates {@code value} to a string with
      * {@link Double#toString(double)} and invokes {@link #put(String,String)}
      * on the result.
      *
      * @param key key with which the string form of value is to be associated.
      * @param value value whose string form is to be associated with key.
-     * @throws NullPointerException if key is <tt>null</tt>.
-     * @throws IllegalArgumentException if <tt>key.length()</tt> exceeds
-     *         <tt>MAX_KEY_LENGTH</tt>.
+     * @throws NullPointerException if key is {@code null}.
+     * @throws IllegalArgumentException if {@code key.length()} exceeds
+     *         {@code MAX_KEY_LENGTH}.
      * @throws IllegalArgumentException if key contains
      *         the null control character, code point U+0000.
      * @throws IllegalStateException if this node (or an ancestor) has been
@@ -622,26 +622,26 @@ public abstract class AbstractPreferences extends Preferences {
     }
 
     /**
-     * Implements the <tt>getDouble</tt> method as per the specification in
+     * Implements the {@code getDouble} method as per the specification in
      * {@link Preferences#getDouble(String,double)}.
      *
-     * <p>This implementation invokes {@link #get(String,String) <tt>get(key,
-     * null)</tt>}.  If the return value is non-null, the implementation
-     * attempts to translate it to an <tt>double</tt> with
+     * <p>This implementation invokes {@link #get(String,String) get(key,
+     * null)}.  If the return value is non-null, the implementation
+     * attempts to translate it to an {@code double} with
      * {@link Double#parseDouble(String)}.  If the attempt succeeds, the return
-     * value is returned by this method.  Otherwise, <tt>def</tt> is returned.
+     * value is returned by this method.  Otherwise, {@code def} is returned.
      *
      * @param key key whose associated value is to be returned as a double.
      * @param def the value to be returned in the event that this
-     *        preference node has no value associated with <tt>key</tt>
+     *        preference node has no value associated with {@code key}
      *        or the associated value cannot be interpreted as a double.
      * @return the double value represented by the string associated with
-     *         <tt>key</tt> in this preference node, or <tt>def</tt> if the
+     *         {@code key} in this preference node, or {@code def} if the
      *         associated value does not exist or cannot be interpreted as
      *         a double.
      * @throws IllegalStateException if this node (or an ancestor) has been
      *         removed with the {@link #removeNode()} method.
-     * @throws NullPointerException if <tt>key</tt> is <tt>null</tt>.
+     * @throws NullPointerException if {@code key} is {@code null}.
      * @throws IllegalArgumentException if key contains the null control
      *         character, code point U+0000.
      */
@@ -659,12 +659,12 @@ public abstract class AbstractPreferences extends Preferences {
     }
 
     /**
-     * Implements the <tt>putByteArray</tt> method as per the specification in
+     * Implements the {@code putByteArray} method as per the specification in
      * {@link Preferences#putByteArray(String,byte[])}.
      *
      * @param key key with which the string form of value is to be associated.
      * @param value value whose string form is to be associated with key.
-     * @throws NullPointerException if key or value is <tt>null</tt>.
+     * @throws NullPointerException if key or value is {@code null}.
      * @throws IllegalArgumentException if key.length() exceeds MAX_KEY_LENGTH
      *         or if value.length exceeds MAX_VALUE_LENGTH*3/4.
      * @throws IllegalArgumentException if key contains
@@ -677,21 +677,21 @@ public abstract class AbstractPreferences extends Preferences {
     }
 
     /**
-     * Implements the <tt>getByteArray</tt> method as per the specification in
+     * Implements the {@code getByteArray} method as per the specification in
      * {@link Preferences#getByteArray(String,byte[])}.
      *
      * @param key key whose associated value is to be returned as a byte array.
      * @param def the value to be returned in the event that this
-     *        preference node has no value associated with <tt>key</tt>
+     *        preference node has no value associated with {@code key}
      *        or the associated value cannot be interpreted as a byte array.
      * @return the byte array value represented by the string associated with
-     *         <tt>key</tt> in this preference node, or <tt>def</tt> if the
+     *         {@code key} in this preference node, or {@code def} if the
      *         associated value does not exist or cannot be interpreted as
      *         a byte array.
      * @throws IllegalStateException if this node (or an ancestor) has been
      *         removed with the {@link #removeNode()} method.
-     * @throws NullPointerException if <tt>key</tt> is <tt>null</tt>.  (A
-     *         <tt>null</tt> value for <tt>def</tt> <i>is</i> permitted.)
+     * @throws NullPointerException if {@code key} is {@code null}.  (A
+     *         {@code null} value for {@code def} <i>is</i> permitted.)
      * @throws IllegalArgumentException if key contains the null control
      *         character, code point U+0000.
      */
@@ -710,7 +710,7 @@ public abstract class AbstractPreferences extends Preferences {
     }
 
     /**
-     * Implements the <tt>keys</tt> method as per the specification in
+     * Implements the {@code keys} method as per the specification in
      * {@link Preferences#keys()}.
      *
      * <p>This implementation obtains this preference node's lock, checks that
@@ -734,15 +734,15 @@ public abstract class AbstractPreferences extends Preferences {
     }
 
     /**
-     * Implements the <tt>children</tt> method as per the specification in
+     * Implements the {@code children} method as per the specification in
      * {@link Preferences#childrenNames()}.
      *
      * <p>This implementation obtains this preference node's lock, checks that
-     * the node has not been removed, constructs a <tt>TreeSet</tt> initialized
+     * the node has not been removed, constructs a {@code TreeSet} initialized
      * to the names of children already cached (the children in this node's
      * "child-cache"), invokes {@link #childrenNamesSpi()}, and adds all of the
      * returned child-names into the set.  The elements of the tree set are
-     * dumped into a <tt>String</tt> array using the <tt>toArray</tt> method,
+     * dumped into a {@code String} array using the {@code toArray} method,
      * and this array is returned.
      *
      * @return the names of the children of this preference node.
@@ -780,7 +780,7 @@ public abstract class AbstractPreferences extends Preferences {
         = new AbstractPreferences[0];
 
     /**
-     * Implements the <tt>parent</tt> method as per the specification in
+     * Implements the {@code parent} method as per the specification in
      * {@link Preferences#parent()}.
      *
      * <p>This implementation obtains this preference node's lock, checks that
@@ -801,35 +801,35 @@ public abstract class AbstractPreferences extends Preferences {
     }
 
     /**
-     * Implements the <tt>node</tt> method as per the specification in
+     * Implements the {@code node} method as per the specification in
      * {@link Preferences#node(String)}.
      *
      * <p>This implementation obtains this preference node's lock and checks
-     * that the node has not been removed.  If <tt>path</tt> is <tt>""</tt>,
-     * this node is returned; if <tt>path</tt> is <tt>"/"</tt>, this node's
-     * root is returned.  If the first character in <tt>path</tt> is
-     * not <tt>'/'</tt>, the implementation breaks <tt>path</tt> into
+     * that the node has not been removed.  If {@code path} is {@code ""},
+     * this node is returned; if {@code path} is {@code "/"}, this node's
+     * root is returned.  If the first character in {@code path} is
+     * not {@code '/'}, the implementation breaks {@code path} into
      * tokens and recursively traverses the path from this node to the
-     * named node, "consuming" a name and a slash from <tt>path</tt> at
+     * named node, "consuming" a name and a slash from {@code path} at
      * each step of the traversal.  At each step, the current node is locked
      * and the node's child-cache is checked for the named node.  If it is
      * not found, the name is checked to make sure its length does not
-     * exceed <tt>MAX_NAME_LENGTH</tt>.  Then the {@link #childSpi(String)}
+     * exceed {@code MAX_NAME_LENGTH}.  Then the {@link #childSpi(String)}
      * method is invoked, and the result stored in this node's child-cache.
-     * If the newly created <tt>Preferences</tt> object's {@link #newNode}
-     * field is <tt>true</tt> and there are any node change listeners,
+     * If the newly created {@code Preferences} object's {@link #newNode}
+     * field is {@code true} and there are any node change listeners,
      * a notification event is enqueued for processing by the event dispatch
      * thread.
      *
      * <p>When there are no more tokens, the last value found in the
-     * child-cache or returned by <tt>childSpi</tt> is returned by this
-     * method.  If during the traversal, two <tt>"/"</tt> tokens occur
-     * consecutively, or the final token is <tt>"/"</tt> (rather than a name),
-     * an appropriate <tt>IllegalArgumentException</tt> is thrown.
+     * child-cache or returned by {@code childSpi} is returned by this
+     * method.  If during the traversal, two {@code "/"} tokens occur
+     * consecutively, or the final token is {@code "/"} (rather than a name),
+     * an appropriate {@code IllegalArgumentException} is thrown.
      *
-     * <p> If the first character of <tt>path</tt> is <tt>'/'</tt>
+     * <p> If the first character of {@code path} is {@code '/'}
      * (indicating an absolute path name) this preference node's
-     * lock is dropped prior to breaking <tt>path</tt> into tokens, and
+     * lock is dropped prior to breaking {@code path} into tokens, and
      * this method recursively traverses the path starting from the root
      * (rather than starting from this node).  The traversal is otherwise
      * identical to the one described for relative path names.  Dropping
@@ -889,7 +889,7 @@ public abstract class AbstractPreferences extends Preferences {
     }
 
     /**
-     * Implements the <tt>nodeExists</tt> method as per the specification in
+     * Implements the {@code nodeExists} method as per the specification in
      * {@link Preferences#nodeExists(String)}.
      *
      * <p>This implementation is very similar to {@link #node(String)},
@@ -906,7 +906,7 @@ public abstract class AbstractPreferences extends Preferences {
      *         with a slash character and is more than one character long).
      * @throws IllegalStateException if this node (or an ancestor) has been
      *         removed with the {@link #removeNode()} method and
-     *         <tt>pathname</tt> is not the empty string (<tt>""</tt>).
+     *         {@code pathname} is not the empty string ({@code ""}).
      */
     public boolean nodeExists(String path)
         throws BackingStoreException
@@ -953,7 +953,7 @@ public abstract class AbstractPreferences extends Preferences {
 
     /**
 
-     * Implements the <tt>removeNode()</tt> method as per the specification in
+     * Implements the {@code removeNode()} method as per the specification in
      * {@link Preferences#removeNode()}.
      *
      * <p>This implementation checks to see that this node is the root; if so,
@@ -964,7 +964,7 @@ public abstract class AbstractPreferences extends Preferences {
      * of its children are cached: The {@link #childrenNamesSpi()} method is
      * invoked and each returned child name is checked for containment in the
      * child-cache.  If a child is not already cached, the {@link
-     * #childSpi(String)} method is invoked to create a <tt>Preferences</tt>
+     * #childSpi(String)} method is invoked to create a {@code Preferences}
      * instance for it, and this instance is put into the child-cache.  Then
      * the helper method calls itself recursively on each node contained in its
      * child-cache.  Next, it invokes {@link #removeNodeSpi()}, marks itself
@@ -1024,7 +1024,7 @@ public abstract class AbstractPreferences extends Preferences {
     }
 
     /**
-     * Implements the <tt>name</tt> method as per the specification in
+     * Implements the {@code name} method as per the specification in
      * {@link Preferences#name()}.
      *
      * <p>This implementation merely returns the name that was
@@ -1037,7 +1037,7 @@ public abstract class AbstractPreferences extends Preferences {
     }
 
     /**
-     * Implements the <tt>absolutePath</tt> method as per the specification in
+     * Implements the {@code absolutePath} method as per the specification in
      * {@link Preferences#absolutePath()}.
      *
      * <p>This implementation merely returns the absolute path name that
@@ -1052,7 +1052,7 @@ public abstract class AbstractPreferences extends Preferences {
     }
 
     /**
-     * Implements the <tt>isUserNode</tt> method as per the specification in
+     * Implements the {@code isUserNode} method as per the specification in
      * {@link Preferences#isUserNode()}.
      *
      * <p>This implementation compares this node's root node (which is stored
@@ -1060,8 +1060,8 @@ public abstract class AbstractPreferences extends Preferences {
      * {@link Preferences#userRoot()}.  If the two object references are
      * identical, this method returns true.
      *
-     * @return <tt>true</tt> if this preference node is in the user
-     *         preference tree, <tt>false</tt> if it's in the system
+     * @return {@code true} if this preference node is in the user
+     *         preference tree, {@code false} if it's in the system
      *         preference tree.
      */
     public boolean isUserNode() {
@@ -1160,7 +1160,7 @@ public abstract class AbstractPreferences extends Preferences {
 
     /**
      * Put the given key-value association into this preference node.  It is
-     * guaranteed that <tt>key</tt> and <tt>value</tt> are non-null and of
+     * guaranteed that {@code key} and {@code value} are non-null and of
      * legal length.  Also, it is guaranteed that this node has not been
      * removed.  (The implementor needn't check for any of these things.)
      *
@@ -1172,29 +1172,29 @@ public abstract class AbstractPreferences extends Preferences {
 
     /**
      * Return the value associated with the specified key at this preference
-     * node, or <tt>null</tt> if there is no association for this key, or the
+     * node, or {@code null} if there is no association for this key, or the
      * association cannot be determined at this time.  It is guaranteed that
-     * <tt>key</tt> is non-null.  Also, it is guaranteed that this node has
+     * {@code key} is non-null.  Also, it is guaranteed that this node has
      * not been removed.  (The implementor needn't check for either of these
      * things.)
      *
      * <p> Generally speaking, this method should not throw an exception
      * under any circumstances.  If, however, if it does throw an exception,
-     * the exception will be intercepted and treated as a <tt>null</tt>
+     * the exception will be intercepted and treated as a {@code null}
      * return value.
      *
      * <p>This method is invoked with the lock on this node held.
      *
      * @param key the key
      * @return the value associated with the specified key at this preference
-     *          node, or <tt>null</tt> if there is no association for this
+     *          node, or {@code null} if there is no association for this
      *          key, or the association cannot be determined at this time.
      */
     protected abstract String getSpi(String key);
 
     /**
      * Remove the association (if any) for the specified key at this
-     * preference node.  It is guaranteed that <tt>key</tt> is non-null.
+     * preference node.  It is guaranteed that {@code key} is non-null.
      * Also, it is guaranteed that this node has not been removed.
      * (The implementor needn't check for either of these things.)
      *
@@ -1215,9 +1215,9 @@ public abstract class AbstractPreferences extends Preferences {
      * result of a single invocation to {@link Preferences#removeNode()}).
      *
      * <p>The removal of a node needn't become persistent until the
-     * <tt>flush</tt> method is invoked on this node (or an ancestor).
+     * {@code flush} method is invoked on this node (or an ancestor).
      *
-     * <p>If this node throws a <tt>BackingStoreException</tt>, the exception
+     * <p>If this node throws a {@code BackingStoreException}, the exception
      * will propagate out beyond the enclosing {@link #removeNode()}
      * invocation.
      *
@@ -1235,7 +1235,7 @@ public abstract class AbstractPreferences extends Preferences {
      *
      * <p>This method is invoked with the lock on this node held.
      *
-     * <p>If this node throws a <tt>BackingStoreException</tt>, the exception
+     * <p>If this node throws a {@code BackingStoreException}, the exception
      * will propagate out beyond the enclosing {@link #keys()} invocation.
      *
      * @return an array of the keys that have an associated value in this
@@ -1254,7 +1254,7 @@ public abstract class AbstractPreferences extends Preferences {
      *
      * <p>This method is invoked with the lock on this node held.
      *
-     * <p>If this node throws a <tt>BackingStoreException</tt>, the exception
+     * <p>If this node throws a {@code BackingStoreException}, the exception
      * will propagate out beyond the enclosing {@link #childrenNames()}
      * invocation.
      *
@@ -1268,8 +1268,8 @@ public abstract class AbstractPreferences extends Preferences {
         throws BackingStoreException;
 
     /**
-     * Returns the named child if it exists, or <tt>null</tt> if it does not.
-     * It is guaranteed that <tt>nodeName</tt> is non-null, non-empty,
+     * Returns the named child if it exists, or {@code null} if it does not.
+     * It is guaranteed that {@code nodeName} is non-null, non-empty,
      * does not contain the slash character ('/'), and is no longer than
      * {@link #MAX_NAME_LENGTH} characters.  Also, it is guaranteed
      * that this node has not been removed.  (The implementor needn't check
@@ -1288,7 +1288,7 @@ public abstract class AbstractPreferences extends Preferences {
      * with the specified node name.  If a child node has the correct name,
      * the {@link #childSpi(String)} method is invoked and the resulting
      * node is returned.  If the iteration completes without finding the
-     * specified name, <tt>null</tt> is returned.
+     * specified name, {@code null} is returned.
      *
      * @param nodeName name of the child to be searched for.
      * @return the named child if it exists, or null if it does not.
@@ -1310,7 +1310,7 @@ public abstract class AbstractPreferences extends Preferences {
 
     /**
      * Returns the named child of this preference node, creating it if it does
-     * not already exist.  It is guaranteed that <tt>name</tt> is non-null,
+     * not already exist.  It is guaranteed that {@code name} is non-null,
      * non-empty, does not contain the slash character ('/'), and is no longer
      * than {@link #MAX_NAME_LENGTH} characters.  Also, it is guaranteed that
      * this node has not been removed.  (The implementor needn't check for any
@@ -1325,12 +1325,12 @@ public abstract class AbstractPreferences extends Preferences {
      *
      * <p>The implementer must ensure that the returned node has not been
      * removed.  If a like-named child of this node was previously removed, the
-     * implementer must return a newly constructed <tt>AbstractPreferences</tt>
-     * node; once removed, an <tt>AbstractPreferences</tt> node
+     * implementer must return a newly constructed {@code AbstractPreferences}
+     * node; once removed, an {@code AbstractPreferences} node
      * cannot be "resuscitated."
      *
      * <p>If this method causes a node to be created, this node is not
-     * guaranteed to be persistent until the <tt>flush</tt> method is
+     * guaranteed to be persistent until the {@code flush} method is
      * invoked on this node or one of its ancestors (or descendants).
      *
      * <p>This method is invoked with the lock on this node held.
@@ -1350,7 +1350,7 @@ public abstract class AbstractPreferences extends Preferences {
     }
 
     /**
-     * Implements the <tt>sync</tt> method as per the specification in
+     * Implements the {@code sync} method as per the specification in
      * {@link Preferences#sync()}.
      *
      * <p>This implementation calls a recursive helper method that locks this
@@ -1398,7 +1398,7 @@ public abstract class AbstractPreferences extends Preferences {
      * entire subtree at once, the implementer is encouraged to override
      * sync(), rather than merely overriding this method.
      *
-     * <p>If this node throws a <tt>BackingStoreException</tt>, the exception
+     * <p>If this node throws a {@code BackingStoreException}, the exception
      * will propagate out beyond the enclosing {@link #sync()} invocation.
      *
      * @throws BackingStoreException if this operation cannot be completed
@@ -1408,7 +1408,7 @@ public abstract class AbstractPreferences extends Preferences {
     protected abstract void syncSpi() throws BackingStoreException;
 
     /**
-     * Implements the <tt>flush</tt> method as per the specification in
+     * Implements the {@code flush} method as per the specification in
      * {@link Preferences#flush()}.
      *
      * <p>This implementation calls a recursive helper method that locks this
@@ -1459,7 +1459,7 @@ public abstract class AbstractPreferences extends Preferences {
      * encouraged to override flush(), rather than merely overriding this
      * method.
      *
-     * <p>If this node throws a <tt>BackingStoreException</tt>, the exception
+     * <p>If this node throws a {@code BackingStoreException}, the exception
      * will propagate out beyond the enclosing {@link #flush()} invocation.
      *
      * @throws BackingStoreException if this operation cannot be completed
@@ -1469,12 +1469,12 @@ public abstract class AbstractPreferences extends Preferences {
     protected abstract void flushSpi() throws BackingStoreException;
 
     /**
-     * Returns <tt>true</tt> iff this node (or an ancestor) has been
+     * Returns {@code true} iff this node (or an ancestor) has been
      * removed with the {@link #removeNode()} method.  This method
      * locks this node prior to returning the contents of the private
      * field used to track this state.
      *
-     * @return <tt>true</tt> iff this node (or an ancestor) has been
+     * @return {@code true} iff this node (or an ancestor) has been
      *       removed with the {@link #removeNode()} method.
      */
     protected boolean isRemoved() {
@@ -1630,12 +1630,12 @@ public abstract class AbstractPreferences extends Preferences {
     }
 
     /**
-     * Implements the <tt>exportNode</tt> method as per the specification in
+     * Implements the {@code exportNode} method as per the specification in
      * {@link Preferences#exportNode(OutputStream)}.
      *
      * @param os the output stream on which to emit the XML document.
      * @throws IOException if writing to the specified output stream
-     *         results in an <tt>IOException</tt>.
+     *         results in an {@code IOException}.
      * @throws BackingStoreException if preference data cannot be read from
      *         backing store.
      */
@@ -1646,12 +1646,12 @@ public abstract class AbstractPreferences extends Preferences {
     }
 
     /**
-     * Implements the <tt>exportSubtree</tt> method as per the specification in
+     * Implements the {@code exportSubtree} method as per the specification in
      * {@link Preferences#exportSubtree(OutputStream)}.
      *
      * @param os the output stream on which to emit the XML document.
      * @throws IOException if writing to the specified output stream
-     *         results in an <tt>IOException</tt>.
+     *         results in an {@code IOException}.
      * @throws BackingStoreException if preference data cannot be read from
      *         backing store.
      */

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4831163 5053096 5056440
+ * @bug 4831163 5053096 5056440 8022224
  * @summary NIO charset basic verification of JISAutodetect decoder
  * @author Martin Buchholz
  */
@@ -239,6 +239,14 @@ public class NIOJISAutoDetectTest {
             check(cb.position() == 2, "cb.position()");
         }
 
+        // test #8022224
+        Charset cs = Charset.forName("x-JISAutoDetect");
+        ByteBuffer bb = ByteBuffer.wrap(new byte[] { 'a', 0x1b, 0x24, 0x40 });
+        CharBuffer cb = CharBuffer.wrap(new char[10]);
+        CoderResult cr = cs.newDecoder().decode(bb, cb, false);
+        bb.rewind();
+        cb.clear().limit(1);
+        check(cr == cs.newDecoder().decode(bb, cb, false), "#8022224");
 
         if (failures > 0)
             throw new RuntimeException(failures + " tests failed");
