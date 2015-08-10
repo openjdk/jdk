@@ -92,7 +92,7 @@ public class MBeanAttributeInfo extends MBeanFeatureInfo implements Cloneable {
 
 
     /**
-     * Constructs an <CODE>MBeanAttributeInfo</CODE> object.
+     * Constructs an {@code MBeanAttributeInfo} object.
      *
      * @param name The name of the attribute.
      * @param type The type or class name of the attribute.
@@ -118,7 +118,7 @@ public class MBeanAttributeInfo extends MBeanFeatureInfo implements Cloneable {
     }
 
     /**
-     * Constructs an <CODE>MBeanAttributeInfo</CODE> object.
+     * Constructs an {@code MBeanAttributeInfo} object.
      *
      * @param name The name of the attribute.
      * @param type The type or class name of the attribute.
@@ -193,9 +193,9 @@ public class MBeanAttributeInfo extends MBeanFeatureInfo implements Cloneable {
 
     /**
      * <p>Returns a shallow clone of this instance.
-     * The clone is obtained by simply calling <tt>super.clone()</tt>,
+     * The clone is obtained by simply calling {@code super.clone()},
      * thus calling the default native shallow cloning mechanism
-     * implemented by <tt>Object.clone()</tt>.
+     * implemented by {@code Object.clone()}.
      * No deeper cloning of any internal field is made.</p>
      *
      * <p>Since this class is immutable, cloning is chiefly of
@@ -274,7 +274,7 @@ public class MBeanAttributeInfo extends MBeanFeatureInfo implements Cloneable {
      *
      * @param o the object to compare to.
      *
-     * @return true if and only if <code>o</code> is an MBeanAttributeInfo such
+     * @return true if and only if {@code o} is an MBeanAttributeInfo such
      * that its {@link #getName()}, {@link #getType()}, {@link
      * #getDescription()}, {@link #isReadable()}, {@link
      * #isWritable()}, and {@link #isIs()} values are equal (not

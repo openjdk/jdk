@@ -41,12 +41,12 @@ import com.sun.org.apache.xml.internal.security.utils.Base64;
  * as defined in the W3C specification for XML-Signature Syntax and Processing.
  * The XML Schema Definition is defined as:
  *
- * <xmp>
+ * <pre>{@code
  * <simpleType name="CryptoBinary">
  *   <restriction base = "base64Binary">
  *   </restriction>
  * </simpleType>
- * </xmp>
+ * }</pre>
  *
  * @author Sean Mullan
  */

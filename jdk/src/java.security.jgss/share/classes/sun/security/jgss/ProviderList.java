@@ -46,7 +46,7 @@ import sun.security.action.GetPropertyAction;
  * queries this class whenever it needs a mechanism's factory.<p>
  *
  * This class stores an ordered list of pairs of the form
- * <provider, oid>. When it attempts to instantiate a mechanism
+ * {@code <provider, oid>}. When it attempts to instantiate a mechanism
  * defined by oid o, it steps through the list looking for an entry
  * with oid=o, or with oid=null. (An entry with oid=null matches all
  * mechanisms.) When it finds such an entry, the corresponding
@@ -74,12 +74,12 @@ import sun.security.action.GetPropertyAction;
  * the system ones don't suffice.<p>
  *
  * If a mechanism's factory is being obtained from a provider as a
- * result of encountering a entryof the form <provider, oid> where
+ * result of encountering a entryof the form {@code <provider, oid>} where
  * oid is non-null, then the assumption is that the application added
  * this entry and it wants this mechanism to be obtained from this
  * provider. Thus is the provider does not actually contain the
  * requested mechanism, an exception will be thrown. However, if the
- * entry were of the form <provider, null>, then it is viewed more
+ * entry were of the form {@code <provider, null>}, then it is viewed more
  * liberally and is simply skipped over if the provider does not claim to
  * support the requested mechanism.
  */

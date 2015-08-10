@@ -728,7 +728,7 @@ class ThreadGroup implements Thread.UncaughtExceptionHandler {
      * @see        java.lang.ThreadGroup#checkAccess()
      * @since      1.0
      * @deprecated    This method is used solely in conjunction with
-     *      <tt>Thread.suspend</tt> and <tt>ThreadGroup.suspend</tt>,
+     *       {@code Thread.suspend} and {@code ThreadGroup.suspend},
      *       both of which have been deprecated, as they are inherently
      *       deadlock-prone.  See {@link Thread#suspend} for details.
      */

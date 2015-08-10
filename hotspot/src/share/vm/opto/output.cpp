@@ -1504,6 +1504,13 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
       n->emit(*cb, _regalloc);
       current_offset  = cb->insts_size();
 
+      // Above we only verified that there is enough space in the instruction section.
+      // However, the instruction may emit stubs that cause code buffer expansion.
+      // Bail out here if expansion failed due to a lack of code cache space.
+      if (failing()) {
+        return;
+      }
+
 #ifdef ASSERT
       if (n->size(_regalloc) < (current_offset-instr_offset)) {
         n->dump();
@@ -1632,11 +1639,14 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
   if (_method) {
     // Emit the exception handler code.
     _code_offsets.set_value(CodeOffsets::Exceptions, HandlerImpl::emit_exception_handler(*cb));
+    if (failing()) {
+      return; // CodeBuffer::expand failed
+    }
     // Emit the deopt handler code.
     _code_offsets.set_value(CodeOffsets::Deopt, HandlerImpl::emit_deopt_handler(*cb));
 
     // Emit the MethodHandle deopt handler code (if required).
-    if (has_method_handle_invokes()) {
+    if (has_method_handle_invokes() && !failing()) {
       // We can use the same code as for the normal deopt handler, we
       // just need a different entry point address.
       _code_offsets.set_value(CodeOffsets::DeoptMH, HandlerImpl::emit_deopt_handler(*cb));

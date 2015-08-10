@@ -35,7 +35,7 @@ import java.util.Hashtable;
  * extended operations.
  *
  * For applications that do not require such controls or extended
- * operations, the more generic <tt>javax.naming.directory.DirContext</tt>
+ * operations, the more generic {@code javax.naming.directory.DirContext}
  * should be used instead.
  *
  * <h3>Usage Details About Controls</h3>
@@ -44,7 +44,7 @@ import java.util.Hashtable;
  * At a high level, this support allows a user
  * program to set request controls for LDAP operations that are executed
  * in the course of the user program's invocation of
- * <tt>Context</tt>/<tt>DirContext</tt>
+ * {@code Context}/{@code DirContext}
  * methods, and read response controls resulting from LDAP operations.
  * At the implementation level, there are some details that developers of
  * both the user program and service providers need to understand in order
@@ -78,60 +78,60 @@ import java.util.Hashtable;
  * <h4>Context Request Controls</h4>
  * There are two ways in which a context instance gets its request controls:
  * <ol>
- * <li><tt>ldapContext.newInstance(<strong>reqCtls</strong>)</tt>
- * <li><tt>ldapContext.setRequestControls(<strong>reqCtls</strong>)</tt>
+ * <li><code>ldapContext.newInstance(<strong>reqCtls</strong>)</code>
+ * <li><code>ldapContext.setRequestControls(<strong>reqCtls</strong>)</code>
  * </ol>
- * where <tt>ldapContext</tt> is an instance of <tt>LdapContext</tt>.
- * Specifying <tt>null</tt> or an empty array for <tt>reqCtls</tt>
+ * where {@code ldapContext} is an instance of {@code LdapContext}.
+ * Specifying {@code null} or an empty array for {@code reqCtls}
  * means no request controls.
- * <tt>newInstance()</tt> creates a new instance of a context using
- * <tt>reqCtls</tt>, while <tt>setRequestControls()</tt>
- * updates an existing context instance's request controls to <tt>reqCtls</tt>.
+ * {@code newInstance()} creates a new instance of a context using
+ * {@code reqCtls}, while {@code setRequestControls()}
+ * updates an existing context instance's request controls to {@code reqCtls}.
  * <p>
  * Unlike environment properties, request controls of a context instance
  * <em>are not inherited</em> by context instances that are derived from
- * it.  Derived context instances have <tt>null</tt> as their context
+ * it.  Derived context instances have {@code null} as their context
  * request controls.  You must set the request controls of a derived context
- * instance explicitly using <tt>setRequestControls()</tt>.
+ * instance explicitly using {@code setRequestControls()}.
  * <p>
  * A context instance's request controls are retrieved using
- * the method <tt>getRequestControls()</tt>.
+ * the method {@code getRequestControls()}.
  *
  * <h4>Connection Request Controls</h4>
  * There are three ways in which connection request controls are set:
  * <ol>
- * <li><tt>
- * new InitialLdapContext(env, <strong>connCtls</strong>)</tt>
- * <li><tt>refException.getReferralContext(env, <strong>connCtls</strong>)</tt>
- * <li><tt>ldapContext.reconnect(<strong>connCtls</strong>);</tt>
+ * <li><code>
+ * new InitialLdapContext(env, <strong>connCtls</strong>)</code>
+ * <li><code>refException.getReferralContext(env, <strong>connCtls</strong>)</code>
+ * <li><code>ldapContext.reconnect(<strong>connCtls</strong>);</code>
  * </ol>
- * where <tt>refException</tt> is an instance of
- * <tt>LdapReferralException</tt>, and <tt>ldapContext</tt> is an
- * instance of <tt>LdapContext</tt>.
- * Specifying <tt>null</tt> or an empty array for <tt>connCtls</tt>
+ * where {@code refException} is an instance of
+ * {@code LdapReferralException}, and {@code ldapContext} is an
+ * instance of {@code LdapContext}.
+ * Specifying {@code null} or an empty array for {@code connCtls}
  * means no connection request controls.
  * <p>
  * Like environment properties, connection request controls of a context
  * <em>are inherited</em> by contexts that are derived from it.
  * Typically, you initialize the connection request controls using the
- * <tt>InitialLdapContext</tt> constructor or
- * <tt>LdapReferralContext.getReferralContext()</tt>. These connection
+ * {@code InitialLdapContext} constructor or
+ * {@code LdapReferralContext.getReferralContext()}. These connection
  * request controls are inherited by contexts that share the same
  * connection--that is, contexts derived from the initial or referral
  * contexts.
  * <p>
- * Use <tt>reconnect()</tt> to change the connection request controls of
+ * Use {@code reconnect()} to change the connection request controls of
  * a context.
- * Invoking <tt>ldapContext.reconnect()</tt> affects only the
- * connection used by <tt>ldapContext</tt> and any new contexts instances that are
- * derived form <tt>ldapContext</tt>. Contexts that previously shared the
- * connection with <tt>ldapContext</tt> remain unchanged. That is, a context's
+ * Invoking {@code ldapContext.reconnect()} affects only the
+ * connection used by {@code ldapContext} and any new contexts instances that are
+ * derived form {@code ldapContext}. Contexts that previously shared the
+ * connection with {@code ldapContext} remain unchanged. That is, a context's
  * connection request controls must be explicitly changed and is not
  * affected by changes to another context's connection request
  * controls.
  * <p>
  * A context instance's connection request controls are retrieved using
- * the method <tt>getConnectControls()</tt>.
+ * the method {@code getConnectControls()}.
  *
  * <h4>Service Provider Requirements</h4>
  *
@@ -145,22 +145,22 @@ import java.util.Hashtable;
  *
  * <h3>Response Controls</h3>
  *
- * The method <tt>LdapContext.getResponseControls()</tt> is used to
+ * The method {@code LdapContext.getResponseControls()} is used to
  * retrieve the response controls generated by LDAP operations executed
- * as the result of invoking a <tt>Context</tt>/<tt>DirContext</tt>
+ * as the result of invoking a {@code Context}/{@code DirContext}
  * operation. The result is all of the responses controls generated
  * by the underlying LDAP operations, including any implicit reconnection.
  * To get only the reconnection response controls,
- * use <tt>reconnect()</tt> followed by <tt>getResponseControls()</tt>.
+ * use {@code reconnect()} followed by {@code getResponseControls()}.
  *
  * <h3>Parameters</h3>
  *
- * A <tt>Control[]</tt> array
+ * A {@code Control[]} array
  * passed as a parameter to any method is owned by the caller.
  * The service provider will not modify the array or keep a reference to it,
- * although it may keep references to the individual <tt>Control</tt> objects
+ * although it may keep references to the individual {@code Control} objects
  * in the array.
- * A <tt>Control[]</tt> array returned by any method is immutable, and may
+ * A {@code Control[]} array returned by any method is immutable, and may
  * not subsequently be modified by either the caller or the service provider.
  *
  * @author Rosanna Lee
@@ -207,7 +207,7 @@ public interface LdapContext extends DirContext {
      * to use for the new context.
      * If null, the context is initialized with no request controls.
      *
-     * @return A non-null <tt>LdapContext</tt> instance.
+     * @return A non-null {@code LdapContext} instance.
      * @exception NamingException If an error occurred while creating
      * the new instance.
      * @see InitialLdapContext
@@ -224,16 +224,16 @@ public interface LdapContext extends DirContext {
      * the LDAP "bind" operation, or to explicitly connect to the server
      * to get response controls returned by the LDAP "bind" operation.
      *<p>
-     * This method sets this context's <tt>connCtls</tt>
+     * This method sets this context's {@code connCtls}
      * to be its new connection request controls. This context's
      * context request controls are not affected.
      * After this method has been invoked, any subsequent
-     * implicit reconnections will be done using <tt>connCtls</tt>.
-     * <tt>connCtls</tt> are also used as
+     * implicit reconnections will be done using {@code connCtls}.
+     * {@code connCtls} are also used as
      * connection request controls for new context instances derived from this
      * context.
      * These connection request controls are not
-     * affected by <tt>setRequestControls()</tt>.
+     * affected by {@code setRequestControls()}.
      *<p>
      * Service provider implementors should read the "Service Provider" section
      * in the class description for implementation details.
@@ -266,17 +266,17 @@ public interface LdapContext extends DirContext {
      * caller.
      * <p>
      * This removes any previous request controls and adds
-     * <tt>requestControls</tt>
+     * {@code requestControls}
      * for use by subsequent methods invoked on this context.
      * This method does not affect this context's connection request controls.
      *<p>
-     * Note that <tt>requestControls</tt> will be in effect until the next
-     * invocation of <tt>setRequestControls()</tt>. You need to explicitly
-     * invoke <tt>setRequestControls()</tt> with <tt>null</tt> or an empty
+     * Note that {@code requestControls} will be in effect until the next
+     * invocation of {@code setRequestControls()}. You need to explicitly
+     * invoke {@code setRequestControls()} with {@code null} or an empty
      * array to clear the controls if you don't want them to affect the
      * context methods any more.
      * To check what request controls are in effect for this context, use
-     * <tt>getRequestControls()</tt>.
+     * {@code getRequestControls()}.
      * @param requestControls The possibly null controls to use. If null, no
      * controls are used.
      * @exception NamingException If an error occurred while setting the
@@ -312,10 +312,10 @@ public interface LdapContext extends DirContext {
      *<p>
      * When a context method that may return response controls is invoked,
      * response controls from the previous method invocation are cleared.
-     * <tt>getResponseControls()</tt> returns all of the response controls
+     * {@code getResponseControls()} returns all of the response controls
      * generated by LDAP operations used by the context method in the order
      * received from the LDAP server.
-     * Invoking <tt>getResponseControls()</tt> does not
+     * Invoking {@code getResponseControls()} does not
      * clear the response controls. You can call it many times (and get
      * back the same controls) until the next context method that may return
      * controls is invoked.
@@ -333,7 +333,7 @@ public interface LdapContext extends DirContext {
      * of the property should be a colon-separated list of the fully
      * qualified class names of factory classes that will create a control
      * given another control. See
-     * <tt>ControlFactory.getControlInstance()</tt> for details.
+     * {@code ControlFactory.getControlInstance()} for details.
      * This property may be specified in the environment, a system property,
      * or one or more resource files.
      *<p>

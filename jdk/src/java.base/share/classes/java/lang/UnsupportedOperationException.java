@@ -63,7 +63,7 @@ public class UnsupportedOperationException extends RuntimeException {
      * @param  message the detail message (which is saved for later retrieval
      *         by the {@link Throwable#getMessage()} method).
      * @param  cause the cause (which is saved for later retrieval by the
-     *         {@link Throwable#getCause()} method).  (A <tt>null</tt> value
+     *         {@link Throwable#getCause()} method).  (A {@code null} value
      *         is permitted, and indicates that the cause is nonexistent or
      *         unknown.)
      * @since 1.5
@@ -74,14 +74,14 @@ public class UnsupportedOperationException extends RuntimeException {
 
     /**
      * Constructs a new exception with the specified cause and a detail
-     * message of <tt>(cause==null ? null : cause.toString())</tt> (which
-     * typically contains the class and detail message of <tt>cause</tt>).
+     * message of {@code (cause==null ? null : cause.toString())} (which
+     * typically contains the class and detail message of {@code cause}).
      * This constructor is useful for exceptions that are little more than
      * wrappers for other throwables (for example, {@link
      * java.security.PrivilegedActionException}).
      *
      * @param  cause the cause (which is saved for later retrieval by the
-     *         {@link Throwable#getCause()} method).  (A <tt>null</tt> value is
+     *         {@link Throwable#getCause()} method).  (A {@code null} value is
      *         permitted, and indicates that the cause is nonexistent or
      *         unknown.)
      * @since  1.5

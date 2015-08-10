@@ -32,9 +32,9 @@ package java.io;
  * counter keeps track of the next byte to
  * be supplied by the <code>read</code> method.
  * <p>
- * Closing a <tt>ByteArrayInputStream</tt> has no effect. The methods in
+ * Closing a {@code ByteArrayInputStream} has no effect. The methods in
  * this class can be called after the stream has been closed without
- * generating an <tt>IOException</tt>.
+ * generating an {@code IOException}.
  *
  * @author  Arthur van Hoff
  * @see     java.io.StringBufferInputStream
@@ -272,9 +272,9 @@ class ByteArrayInputStream extends InputStream {
     }
 
     /**
-     * Closing a <tt>ByteArrayInputStream</tt> has no effect. The methods in
+     * Closing a {@code ByteArrayInputStream} has no effect. The methods in
      * this class can be called after the stream has been closed without
-     * generating an <tt>IOException</tt>.
+     * generating an {@code IOException}.
      */
     public void close() throws IOException {
     }

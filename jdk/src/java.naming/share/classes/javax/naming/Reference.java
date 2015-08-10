@@ -250,7 +250,7 @@ public class Reference implements Cloneable, java.io.Serializable {
       * its effects on this enumeration are undefined.
       *
       * @return An non-null enumeration of the addresses
-      *         (<tt>RefAddr</tt>) in this reference.
+      *         ({@code RefAddr}) in this reference.
       *         If this reference has zero addresses, an enumeration with
       *         zero elements is returned.
       */

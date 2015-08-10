@@ -122,6 +122,7 @@ public final class SimpleValidator extends Validator {
     @Override
     X509Certificate[] engineValidate(X509Certificate[] chain,
             Collection<X509Certificate> otherCerts,
+            List<byte[]> responseList,
             AlgorithmConstraints constraints,
             Object parameter) throws CertificateException {
         if ((chain == null) || (chain.length == 0)) {

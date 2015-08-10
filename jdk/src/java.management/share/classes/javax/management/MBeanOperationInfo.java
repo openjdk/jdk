@@ -83,10 +83,7 @@ public class MBeanOperationInfo extends MBeanFeatureInfo implements Cloneable {
 
     /**
      * @serial The impact of the method, one of
-     *         <CODE>INFO</CODE>,
-     *         <CODE>ACTION</CODE>,
-     *         <CODE>ACTION_INFO</CODE>,
-     *         <CODE>UNKNOWN</CODE>
+     *         {@code INFO, ACTION, ACTION_INFO, UNKNOWN}.
      */
     private final int impact;
 
@@ -95,12 +92,12 @@ public class MBeanOperationInfo extends MBeanFeatureInfo implements Cloneable {
 
 
     /**
-     * Constructs an <CODE>MBeanOperationInfo</CODE> object.  The
+     * Constructs an {@code MBeanOperationInfo} object.  The
      * {@link Descriptor} of the constructed object will include
      * fields contributed by any annotations on the {@code Method}
      * object that contain the {@link DescriptorKey} meta-annotation.
      *
-     * @param method The <CODE>java.lang.reflect.Method</CODE> object
+     * @param method The {@code java.lang.reflect.Method} object
      * describing the MBean operation.
      * @param description A human readable description of the operation.
      */
@@ -114,11 +111,11 @@ public class MBeanOperationInfo extends MBeanFeatureInfo implements Cloneable {
     }
 
     /**
-     * Constructs an <CODE>MBeanOperationInfo</CODE> object.
+     * Constructs an {@code MBeanOperationInfo} object.
      *
      * @param name The name of the method.
      * @param description A human readable description of the operation.
-     * @param signature <CODE>MBeanParameterInfo</CODE> objects
+     * @param signature {@code MBeanParameterInfo} objects
      * describing the parameters(arguments) of the method.  This may be
      * null with the same effect as a zero-length array.
      * @param type The type of the method's return value.
@@ -135,11 +132,11 @@ public class MBeanOperationInfo extends MBeanFeatureInfo implements Cloneable {
     }
 
     /**
-     * Constructs an <CODE>MBeanOperationInfo</CODE> object.
+     * Constructs an {@code MBeanOperationInfo} object.
      *
      * @param name The name of the method.
      * @param description A human readable description of the operation.
-     * @param signature <CODE>MBeanParameterInfo</CODE> objects
+     * @param signature {@code MBeanParameterInfo} objects
      * describing the parameters(arguments) of the method.  This may be
      * null with the same effect as a zero-length array.
      * @param type The type of the method's return value.
@@ -174,9 +171,9 @@ public class MBeanOperationInfo extends MBeanFeatureInfo implements Cloneable {
 
     /**
      * <p>Returns a shallow clone of this instance.
-     * The clone is obtained by simply calling <tt>super.clone()</tt>,
+     * The clone is obtained by simply calling {@code super.clone()},
      * thus calling the default native shallow cloning mechanism
-     * implemented by <tt>Object.clone()</tt>.
+     * implemented by {@code Object.clone()}.
      * No deeper cloning of any internal field is made.</p>
      *
      * <p>Since this class is immutable, cloning is chiefly of interest
@@ -203,16 +200,16 @@ public class MBeanOperationInfo extends MBeanFeatureInfo implements Cloneable {
 
     /**
      * <p>Returns the list of parameters for this operation.  Each
-     * parameter is described by an <CODE>MBeanParameterInfo</CODE>
+     * parameter is described by an {@code MBeanParameterInfo}
      * object.</p>
      *
      * <p>The returned array is a shallow copy of the internal array,
      * which means that it is a copy of the internal array of
-     * references to the <CODE>MBeanParameterInfo</CODE> objects but
-     * that each referenced <CODE>MBeanParameterInfo</CODE> object is
+     * references to the {@code MBeanParameterInfo} objects but
+     * that each referenced {@code MBeanParameterInfo} object is
      * not copied.</p>
      *
-     * @return  An array of <CODE>MBeanParameterInfo</CODE> objects.
+     * @return  An array of {@code MBeanParameterInfo} objects.
      */
     public MBeanParameterInfo[] getSignature() {
         // If MBeanOperationInfo was created in our implementation,
@@ -247,7 +244,7 @@ public class MBeanOperationInfo extends MBeanFeatureInfo implements Cloneable {
 
     /**
      * Returns the impact of the method, one of
-     * <CODE>INFO</CODE>, <CODE>ACTION</CODE>, <CODE>ACTION_INFO</CODE>, <CODE>UNKNOWN</CODE>.
+     * {@code INFO, ACTION, ACTION_INFO, UNKNOWN}.
      *
      * @return the impact code.
      */
@@ -280,7 +277,7 @@ public class MBeanOperationInfo extends MBeanFeatureInfo implements Cloneable {
      *
      * @param o the object to compare to.
      *
-     * @return true if and only if <code>o</code> is an MBeanOperationInfo such
+     * @return true if and only if {@code o} is an MBeanOperationInfo such
      * that its {@link #getName()}, {@link #getReturnType()}, {@link
      * #getDescription()}, {@link #getImpact()}, {@link #getDescriptor()}
      * and {@link #getSignature()} values are equal (not necessarily identical)

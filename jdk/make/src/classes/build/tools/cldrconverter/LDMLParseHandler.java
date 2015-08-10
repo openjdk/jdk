@@ -27,6 +27,7 @@ package build.tools.cldrconverter;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.DateFormatSymbols;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -900,6 +901,12 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                 Entry<?> entry = (Entry<?>) currentContainer;
                 Object value = entry.getValue();
                 if (value != null) {
+                    String key = entry.getKey();
+                    // Tweak for MonthNames for the root locale, Needed for
+                    // SimpleDateFormat.format()/parse() roundtrip.
+                    if (id.equals("root") && key.startsWith("MonthNames")) {
+                        value = new DateFormatSymbols(Locale.US).getShortMonths();
+                    }
                     put(entry.getKey(), value);
                 }
             }

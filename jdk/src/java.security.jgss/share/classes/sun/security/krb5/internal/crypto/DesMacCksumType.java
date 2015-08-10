@@ -125,7 +125,7 @@ public class DesMacCksumType extends CksumType {
      * @param data the data.
      * @param size the length of data.
      * @param key the key used to encrypt the checksum.
-     * @param checksum
+     * @param checksum the checksum.
      * @return true if verification is successful.
      *
      * @modified by Yanni Zhang, 12/08/99.

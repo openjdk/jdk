@@ -194,14 +194,14 @@ public class NamingException extends Exception {
     /**
      * Sets the resolved name field of this exception.
      *<p>
-     * <tt>name</tt> is a composite name. If the intent is to set
+     * {@code name} is a composite name. If the intent is to set
      * this field using a compound name or string, you must
      * "stringify" the compound name, and create a composite
      * name with a single component using the string. You can then
      * invoke this method using the resulting composite name.
      *<p>
-     * A copy of <code>name</code> is made and stored.
-     * Subsequent changes to <code>name</code> do not
+     * A copy of {@code name} is made and stored.
+     * Subsequent changes to {@code name} do not
      * affect the copy in this NamingException and vice versa.
      *
      * @param name The possibly null name to set resolved name to.
@@ -218,14 +218,14 @@ public class NamingException extends Exception {
     /**
      * Sets the remaining name field of this exception.
      *<p>
-     * <tt>name</tt> is a composite name. If the intent is to set
+     * {@code name} is a composite name. If the intent is to set
      * this field using a compound name or string, you must
      * "stringify" the compound name, and create a composite
      * name with a single component using the string. You can then
      * invoke this method using the resulting composite name.
      *<p>
-     * A copy of <code>name</code> is made and stored.
-     * Subsequent changes to <code>name</code> do not
+     * A copy of {@code name} is made and stored.
+     * Subsequent changes to {@code name} do not
      * affect the copy in this NamingException and vice versa.
      * @param name The possibly null name to set remaining name to.
      *          If null, it sets the remaining name field to null.
@@ -275,11 +275,11 @@ public class NamingException extends Exception {
       * Add components from 'name' as the last components in
       * remaining name.
       *<p>
-      * <tt>name</tt> is a composite name. If the intent is to append
+      * {@code name} is a composite name. If the intent is to append
       * a compound name, you should "stringify" the compound name
       * then invoke the overloaded form that accepts a String parameter.
       *<p>
-      * Subsequent changes to <code>name</code> do not
+      * Subsequent changes to {@code name} do not
       * affect the remaining name field in this NamingException and vice versa.
       * @param name The possibly null name containing ordered components to add.
       *                 If name is null, this method does not do anything.
@@ -326,7 +326,7 @@ public class NamingException extends Exception {
 
     /**
       * Records the root cause of this NamingException.
-      * If <tt>e</tt> is <tt>this</tt>, this method does not do anything.
+      * If {@code e} is {@code this}, this method does not do anything.
       *<p>
       * This method predates the general-purpose exception chaining facility.
       * The {@link #initCause(Throwable)} method is now the preferred means
@@ -348,10 +348,10 @@ public class NamingException extends Exception {
     /**
       * Returns the cause of this exception.  The cause is the
       * throwable that caused this naming exception to be thrown.
-      * Returns <code>null</code> if the cause is nonexistent or
+      * Returns {@code null} if the cause is nonexistent or
       * unknown.
       *
-      * @return  the cause of this exception, or <code>null</code> if the
+      * @return  the cause of this exception, or {@code null} if the
       *          cause is nonexistent or unknown.
       * @see #initCause(Throwable)
       * @since 1.4
@@ -368,10 +368,10 @@ public class NamingException extends Exception {
       * This method may be called at most once.
       *
       * @param  cause   the cause, which is saved for later retrieval by
-      *         the {@link #getCause()} method.  A <tt>null</tt> value
+      *         the {@link #getCause()} method.  A {@code null} value
       *         indicates that the cause is nonexistent or unknown.
-      * @return a reference to this <code>NamingException</code> instance.
-      * @throws IllegalArgumentException if <code>cause</code> is this
+      * @return a reference to this {@code NamingException} instance.
+      * @throws IllegalArgumentException if {@code cause} is this
       *         exception.  (A throwable cannot be its own cause.)
       * @throws IllegalStateException if this method has already
       *         been called on this exception.

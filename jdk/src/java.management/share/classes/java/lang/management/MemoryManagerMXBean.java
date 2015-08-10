@@ -36,13 +36,13 @@ package java.lang.management;
  * that can be obtained by calling
  * the {@link ManagementFactory#getMemoryManagerMXBeans} method or
  * from the {@link ManagementFactory#getPlatformMBeanServer
- * platform <tt>MBeanServer</tt>} method.
+ * platform MBeanServer} method.
  *
- * <p>The <tt>ObjectName</tt> for uniquely identifying the MXBean for
+ * <p>The {@code ObjectName} for uniquely identifying the MXBean for
  * a memory manager within an MBeanServer is:
  * <blockquote>
  *   {@link ManagementFactory#MEMORY_MANAGER_MXBEAN_DOMAIN_TYPE
- *    <tt>java.lang:type=MemoryManager</tt>}<tt>,name=</tt><i>manager's name</i>
+ *    java.lang:type=MemoryManager}{@code ,name=}<i>manager's name</i>
  * </blockquote>
  *
  * It can be obtained by calling the
@@ -72,16 +72,16 @@ public interface MemoryManagerMXBean extends PlatformManagedObject {
      * machine.  A memory manager becomes invalid once the Java virtual
      * machine removes it from the memory system.
      *
-     * @return <tt>true</tt> if the memory manager is valid in the
+     * @return {@code true} if the memory manager is valid in the
      *               Java virtual machine;
-     *         <tt>false</tt> otherwise.
+     *         {@code false} otherwise.
      */
     public boolean isValid();
 
     /**
      * Returns the name of memory pools that this memory manager manages.
      *
-     * @return an array of <tt>String</tt> objects, each is
+     * @return an array of {@code String} objects, each is
      * the name of a memory pool that this memory manager manages.
      */
     public String[] getMemoryPoolNames();

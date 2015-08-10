@@ -28,6 +28,7 @@
  *
  *  @author jjh
  *
+ *  @key intermittent
  *  @modules jdk.jdi
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g BreakpointTest.java
@@ -45,7 +46,7 @@ import java.util.*;
 // the debuggee, waits a bit, and enables the bkpt again.
 
 class BreakpointTarg {
-    public final static int BKPT_LINE = 55;
+    public final static int BKPT_LINE = 56;
             // LINE NUMBER SENSITIVE
 
     public static long count;

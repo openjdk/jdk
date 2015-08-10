@@ -33,10 +33,10 @@ import java.security.PrivilegedAction;
 import sun.util.logging.PlatformLogger;
 
 /**
- * Windows registry based implementation of  <tt>Preferences</tt>.
- * <tt>Preferences</tt>' <tt>systemRoot</tt> and <tt>userRoot</tt> are stored in
- * <tt>HKEY_LOCAL_MACHINE\SOFTWARE\JavaSoft\Prefs</tt> and
- * <tt>HKEY_CURRENT_USER\Software\JavaSoft\Prefs</tt> correspondingly.
+ * Windows registry based implementation of  {@code Preferences}.
+ * {@code Preferences}' {@code systemRoot} and {@code userRoot} are stored in
+ * {@code HKEY_LOCAL_MACHINE\SOFTWARE\JavaSoft\Prefs} and
+ * {@code HKEY_CURRENT_USER\Software\JavaSoft\Prefs} correspondingly.
  *
  * @author  Konstantin Kladko
  * @see Preferences
@@ -60,31 +60,31 @@ class WindowsPreferences extends AbstractPreferences {
     private static PlatformLogger logger;
 
     /**
-     * Windows registry path to <tt>Preferences</tt>'s root nodes.
+     * Windows registry path to {@code Preferences}'s root nodes.
      */
     private static final byte[] WINDOWS_ROOT_PATH =
         stringToByteArray("Software\\JavaSoft\\Prefs");
 
     /**
-     * Windows handles to <tt>HKEY_CURRENT_USER</tt> and
-     * <tt>HKEY_LOCAL_MACHINE</tt> hives.
+     * Windows handles to {@code HKEY_CURRENT_USER} and
+     * {@code HKEY_LOCAL_MACHINE} hives.
      */
     private static final int HKEY_CURRENT_USER = 0x80000001;
     private static final int HKEY_LOCAL_MACHINE = 0x80000002;
 
     /**
-     * Mount point for <tt>Preferences</tt>'  user root.
+     * Mount point for {@code Preferences}'  user root.
      */
     private static final int USER_ROOT_NATIVE_HANDLE = HKEY_CURRENT_USER;
 
     /**
-     * Mount point for <tt>Preferences</tt>'  system root.
+     * Mount point for {@code Preferences}'  system root.
      */
     private static final int SYSTEM_ROOT_NATIVE_HANDLE = HKEY_LOCAL_MACHINE;
 
     /**
      * Maximum byte-encoded path length for Windows native functions,
-     * ending <tt>null</tt> character not included.
+     * ending {@code null} character not included.
      */
     private static final int MAX_WINDOWS_PATH_LENGTH = 256;
 
@@ -388,7 +388,7 @@ class WindowsPreferences extends AbstractPreferences {
     }
 
     /**
-     * Constructs a <tt>WindowsPreferences</tt> node, creating underlying
+     * Constructs a {@code WindowsPreferences} node, creating underlying
      * Windows registry node and all its Windows parents, if they are not yet
      * created.
      * Logs a warning message, if Windows Registry is unavailable.
@@ -617,7 +617,7 @@ class WindowsPreferences extends AbstractPreferences {
     }
 
      /**
-     * Implements <tt>AbstractPreferences</tt> <tt>putSpi()</tt> method.
+     * Implements {@code AbstractPreferences} {@code putSpi()} method.
      * Puts name-value pair into the underlying Windows registry node.
      * Logs a warning, if Windows registry is unavailable.
      * @see #getSpi(String)
@@ -645,7 +645,7 @@ class WindowsPreferences extends AbstractPreferences {
     }
 
     /**
-     * Implements <tt>AbstractPreferences</tt> <tt>getSpi()</tt> method.
+     * Implements {@code AbstractPreferences} {@code getSpi()} method.
      * Gets a string value from the underlying Windows registry node.
      * Logs a warning, if Windows registry is unavailable.
      * @see #putSpi(String, String)
@@ -666,7 +666,7 @@ class WindowsPreferences extends AbstractPreferences {
     }
 
     /**
-     * Implements <tt>AbstractPreferences</tt> <tt>removeSpi()</tt> method.
+     * Implements {@code AbstractPreferences} {@code removeSpi()} method.
      * Deletes a string name-value pair from the underlying Windows registry
      * node, if this value still exists.
      * Logs a warning, if Windows registry is unavailable or key has already
@@ -692,7 +692,7 @@ class WindowsPreferences extends AbstractPreferences {
     }
 
     /**
-     * Implements <tt>AbstractPreferences</tt> <tt>keysSpi()</tt> method.
+     * Implements {@code AbstractPreferences} {@code keysSpi()} method.
      * Gets value names from the underlying Windows registry node.
      * Throws a BackingStoreException and logs a warning, if
      * Windows registry is unavailable.
@@ -744,7 +744,7 @@ class WindowsPreferences extends AbstractPreferences {
     }
 
     /**
-     * Implements <tt>AbstractPreferences</tt> <tt>childrenNamesSpi()</tt> method.
+     * Implements {@code AbstractPreferences} {@code childrenNamesSpi()} method.
      * Calls Windows registry to retrive children of this node.
      * Throws a BackingStoreException and logs a warning message,
      * if Windows registry is not available.
@@ -798,7 +798,7 @@ class WindowsPreferences extends AbstractPreferences {
     }
 
     /**
-     * Implements <tt>Preferences</tt> <tt>flush()</tt> method.
+     * Implements {@code Preferences} {@code flush()} method.
      * Flushes Windows registry changes to disk.
      * Throws a BackingStoreException and logs a warning message if Windows
      * registry is not available.
@@ -837,7 +837,7 @@ class WindowsPreferences extends AbstractPreferences {
 
 
     /**
-     * Implements <tt>Preferences</tt> <tt>sync()</tt> method.
+     * Implements {@code Preferences} {@code sync()} method.
      * Flushes Windows registry changes to disk. Equivalent to flush().
      * @see flush()
      */
@@ -848,7 +848,7 @@ class WindowsPreferences extends AbstractPreferences {
     }
 
     /**
-     * Implements <tt>AbstractPreferences</tt> <tt>childSpi()</tt> method.
+     * Implements {@code AbstractPreferences} {@code childSpi()} method.
      * Constructs a child node with a
      * given name and creates its underlying Windows registry node,
      * if it does not exist.
@@ -859,7 +859,7 @@ class WindowsPreferences extends AbstractPreferences {
     }
 
     /**
-     * Implements <tt>AbstractPreferences</tt> <tt>removeNodeSpi()</tt> method.
+     * Implements {@code AbstractPreferences} {@code removeNodeSpi()} method.
      * Deletes underlying Windows registry node.
      * Throws a BackingStoreException and logs a warning, if Windows registry
      * is not available.
@@ -956,7 +956,7 @@ class WindowsPreferences extends AbstractPreferences {
      * "A" is encoded as "/A". Character '\' is encoded as '//',
      * '/' is encoded as '\'.
      * The constructed string is converted to byte array by truncating the
-     * highest byte and adding the terminating <tt>null</tt> character.
+     * highest byte and adding the terminating {@code null} character.
      * <p>
      * <i>altBase64</i>  encoding is used, if java string does contain at least
      * one character less, than 0x0020, or greater, than 0x007f.

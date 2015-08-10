@@ -39,13 +39,13 @@ import java.math.BigInteger;
 /**
  * Implements the ASN.1 AP-REP type.
  *
- * <xmp>
+ * <pre>{@code
  * AP-REP          ::= [APPLICATION 15] SEQUENCE {
  *         pvno            [0] INTEGER (5),
  *         msg-type        [1] INTEGER (15),
  *         enc-part        [2] EncryptedData -- EncAPRepPart
  * }
- * </xmp>
+ * }</pre>
  *
  * <p>
  * This definition reflects the Network Working Group RFC 4120

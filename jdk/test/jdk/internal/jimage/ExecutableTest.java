@@ -27,7 +27,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
 import static java.nio.file.attribute.PosixFilePermission.*;
+import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Set;
 
 /*
@@ -41,6 +43,11 @@ import java.util.Set;
 
 public class ExecutableTest {
 
+    // The bin/ directory may contain non-executable files (see 8132704)
+    private static final String[] exclude = { "jmc.ini" };
+    private static final Set<String> excludeSet =
+        new HashSet<String>(Arrays.asList(exclude));
+
     public static void main(String args[]) throws Throwable {
         String JAVA_HOME = System.getProperty("java.home");
         Path binPath = Paths.get(JAVA_HOME, "bin");
@@ -48,6 +55,7 @@ public class ExecutableTest {
         EnumSet<PosixFilePermission> execPerms =
             EnumSet.of(GROUP_EXECUTE, OTHERS_EXECUTE, OWNER_EXECUTE);
         for (Path entry : stream) {
+            if (excludeSet.contains(entry.getFileName().toString())) continue;
             if (Files.isRegularFile(entry)) {
                 if (!Files.isExecutable(entry)) {
                     throw new Error(entry + " is not executable!");
