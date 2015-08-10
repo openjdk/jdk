@@ -42,14 +42,14 @@ import java.math.BigInteger;
 /**
  * Implements the ASN.1 Ticket type.
  *
- * <xmp>
+ * <pre>{@code
  * Ticket               ::= [APPLICATION 1] SEQUENCE {
  *      tkt-vno         [0] INTEGER (5),
  *      realm           [1] Realm,
  *      sname           [2] PrincipalName,
  *      enc-part        [3] EncryptedData -- EncTicketPart
  * }
- * </xmp>
+ * }</pre>
  *
  * <p>
  * This definition reflects the Network Working Group RFC 4120

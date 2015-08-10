@@ -37,13 +37,13 @@ import javax.management.openmbean.CompositeData;
  * that can be obtained by calling
  * the {@link ManagementFactory#getMemoryMXBean} method or
  * from the {@link ManagementFactory#getPlatformMBeanServer
- * platform <tt>MBeanServer</tt>} method.
+ * platform MBeanServer} method.
  *
- * <p>The <tt>ObjectName</tt> for uniquely identifying the MXBean for
+ * <p>The {@code ObjectName} for uniquely identifying the MXBean for
  * the memory system within an MBeanServer is:
  * <blockquote>
  *    {@link ManagementFactory#MEMORY_MXBEAN_NAME
- *           <tt>java.lang:type=Memory</tt>}
+ *           java.lang:type=Memory}
  * </blockquote>
  *
  * It can be obtained by calling the
@@ -133,7 +133,7 @@ import javax.management.openmbean.CompositeData;
  *
  * <h3>Notifications</h3>
  *
- * <p>This <tt>MemoryMXBean</tt> is a
+ * <p>This {@code MemoryMXBean} is a
  * {@link javax.management.NotificationEmitter NotificationEmitter}
  * that emits two types of memory {@link javax.management.Notification
  * notifications} if any one of the memory pools
@@ -164,20 +164,20 @@ import javax.management.openmbean.CompositeData;
  * user data} is set to a {@link CompositeData CompositeData}
  * that represents a {@link MemoryNotificationInfo} object
  * containing information about the memory pool when the notification
- * was constructed. The <tt>CompositeData</tt> contains the attributes
+ * was constructed. The {@code CompositeData} contains the attributes
  * as described in {@link MemoryNotificationInfo#from
  * MemoryNotificationInfo}.
  *
  * <hr>
  * <h3>NotificationEmitter</h3>
- * The <tt>MemoryMXBean</tt> object returned by
+ * The {@code MemoryMXBean} object returned by
  * {@link ManagementFactory#getMemoryMXBean} implements
  * the {@link javax.management.NotificationEmitter NotificationEmitter}
  * interface that allows a listener to be registered within the
- * <tt>MemoryMXBean</tt> as a notification listener.
+ * {@code MemoryMXBean} as a notification listener.
  *
- * Below is an example code that registers a <tt>MyListener</tt> to handle
- * notification emitted by the <tt>MemoryMXBean</tt>.
+ * Below is an example code that registers a {@code MyListener} to handle
+ * notification emitted by the {@code MemoryMXBean}.
  *
  * <blockquote><pre>
  * class MyListener implements javax.management.NotificationListener {
@@ -215,10 +215,10 @@ public interface MemoryMXBean extends PlatformManagedObject {
     /**
      * Returns the current memory usage of the heap that
      * is used for object allocation.  The heap consists
-     * of one or more memory pools.  The <tt>used</tt>
-     * and <tt>committed</tt> size of the returned memory
+     * of one or more memory pools.  The {@code used}
+     * and {@code committed} size of the returned memory
      * usage is the sum of those values of all heap memory pools
-     * whereas the <tt>init</tt> and <tt>max</tt> size of the
+     * whereas the {@code init} and {@code max} size of the
      * returned memory usage represents the setting of the heap
      * memory which may not be the sum of those of all heap
      * memory pools.
@@ -229,8 +229,8 @@ public interface MemoryMXBean extends PlatformManagedObject {
      *
      * <p>
      * <b>MBeanServer access</b>:<br>
-     * The mapped type of <tt>MemoryUsage</tt> is
-     * <tt>CompositeData</tt> with attributes as specified in
+     * The mapped type of {@code MemoryUsage} is
+     * {@code CompositeData} with attributes as specified in
      * {@link MemoryUsage#from MemoryUsage}.
      *
      * @return a {@link MemoryUsage} object representing
@@ -242,18 +242,18 @@ public interface MemoryMXBean extends PlatformManagedObject {
      * Returns the current memory usage of non-heap memory that
      * is used by the Java virtual machine.
      * The non-heap memory consists of one or more memory pools.
-     * The <tt>used</tt> and <tt>committed</tt> size of the
+     * The {@code used} and {@code committed} size of the
      * returned memory usage is the sum of those values of
-     * all non-heap memory pools whereas the <tt>init</tt>
-     * and <tt>max</tt> size of the returned memory usage
+     * all non-heap memory pools whereas the {@code init}
+     * and {@code max} size of the returned memory usage
      * represents the setting of the non-heap
      * memory which may not be the sum of those of all non-heap
      * memory pools.
      *
      * <p>
      * <b>MBeanServer access</b>:<br>
-     * The mapped type of <tt>MemoryUsage</tt> is
-     * <tt>CompositeData</tt> with attributes as specified in
+     * The mapped type of {@code MemoryUsage} is
+     * {@code CompositeData} with attributes as specified in
      * {@link MemoryUsage#from MemoryUsage}.
      *
      * @return a {@link MemoryUsage} object representing
@@ -264,8 +264,8 @@ public interface MemoryMXBean extends PlatformManagedObject {
     /**
      * Tests if verbose output for the memory system is enabled.
      *
-     * @return <tt>true</tt> if verbose output for the memory
-     * system is enabled; <tt>false</tt> otherwise.
+     * @return {@code true} if verbose output for the memory
+     * system is enabled; {@code false} otherwise.
      */
     public boolean isVerbose();
 
@@ -280,8 +280,8 @@ public interface MemoryMXBean extends PlatformManagedObject {
      * Each invocation of this method enables or disables verbose
      * output globally.
      *
-     * @param value <tt>true</tt> to enable verbose output;
-     *              <tt>false</tt> to disable.
+     * @param value {@code true} to enable verbose output;
+     *              {@code false} to disable.
      *
      * @exception  java.lang.SecurityException if a security manager
      *             exists and the caller does not have

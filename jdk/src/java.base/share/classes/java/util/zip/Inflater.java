@@ -34,8 +34,8 @@ package java.util.zip;
  * package description</a>.
  *
  * <p>The following code fragment demonstrates a trivial compression
- * and decompression of a string using <tt>Deflater</tt> and
- * <tt>Inflater</tt>.
+ * and decompression of a string using {@code Deflater} and
+ * {@code Inflater}.
  *
  * <blockquote><pre>
  * try {

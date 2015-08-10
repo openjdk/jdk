@@ -1389,10 +1389,9 @@ public:
   // 'method' requires predicated logic.
   static int predicates_needed(vmIntrinsics::ID id);
 
-  // Returns true if an intrinsic is disabled by command-line flags and
-  // false otherwise. Implements functionality common to the C1
-  // and the C2 compiler.
-  static bool is_disabled_by_flags(vmIntrinsics::ID id);
+  // Returns true if a compiler intrinsic is disabled by command-line flags
+  // and false otherwise.
+  static bool is_disabled_by_flags(methodHandle method, methodHandle compilation_context);
 };
 
 #endif // SHARE_VM_CLASSFILE_VMSYMBOLS_HPP

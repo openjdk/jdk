@@ -39,7 +39,7 @@ import java.io.*;
 /**
  * Implements the ASN.1 EncTicketPart type.
  *
- * <xmp>
+ * <pre>{@code
  * EncTicketPart   ::= [APPLICATION 3] SEQUENCE {
  *         flags                   [0] TicketFlags,
  *         key                     [1] EncryptionKey,
@@ -53,7 +53,7 @@ import java.io.*;
  *         caddr                   [9] HostAddresses OPTIONAL,
  *         authorization-data      [10] AuthorizationData OPTIONAL
  * }
- * </xmp>
+ * }</pre>
  *
  * <p>
  * This definition reflects the Network Working Group RFC 4120

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7004029
+ * @bug 7004029 8131915
  * @summary Basher for star-import scopes
  * @modules jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.file
@@ -39,6 +39,7 @@ import com.sun.tools.javac.code.Scope.StarImportScope;
 import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.*;
 
 import static com.sun.tools.javac.code.Kinds.Kind.*;
@@ -136,6 +137,7 @@ public class StarImportTest {
             log ("setup");
             context = new Context();
             JavacFileManager.preRegister(context); // required by ClassReader which is required by Symtab
+            make = TreeMaker.instance(context);
             names = Names.instance(context);       // Name.Table impls tied to an instance of Names
             symtab = Symtab.instance(context);
             types = Types.instance(context);
@@ -227,7 +229,7 @@ public class StarImportTest {
                     public boolean accepts(Scope origin, Symbol t) {
                         return t.kind == TYP;
                     }
-                }, false);
+                }, make.Import(null, false), (i, cf) -> { throw new IllegalStateException(); });
 
                 for (Symbol sym : members.getSymbols()) {
                     starImportModel.enter(sym);
@@ -295,6 +297,7 @@ public class StarImportTest {
 
         Context context;
         Symtab symtab;
+        TreeMaker make;
         Names names;
         Types types;
         int nextNameSerial;

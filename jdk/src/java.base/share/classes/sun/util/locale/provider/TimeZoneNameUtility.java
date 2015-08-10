@@ -80,7 +80,17 @@ public final class TimeZoneNameUtility {
         LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(TimeZoneNameProvider.class, locale);
         TimeZoneNameProvider provider = adapter.getTimeZoneNameProvider();
         if (provider instanceof TimeZoneNameProviderImpl) {
-            return ((TimeZoneNameProviderImpl)provider).getZoneStrings(locale);
+            String[][] zoneStrings = ((TimeZoneNameProviderImpl)provider).getZoneStrings(locale);
+
+            if (zoneStrings.length == 0 && locale.equals(Locale.ROOT)) {
+                // Unlike other *Name provider, zoneStrings search won't do the fallback
+                // name search. If the ResourceBundle found for the root locale contains no
+                // zoneStrings, just use the one for English, assuming English bundle
+                // contains all the tzids and their names.
+                zoneStrings= getZoneStrings(Locale.ENGLISH);
+            }
+
+            return zoneStrings;
         }
 
         // Performs per-ID retrieval.

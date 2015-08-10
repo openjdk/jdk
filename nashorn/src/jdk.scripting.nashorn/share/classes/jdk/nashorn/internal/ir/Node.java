@@ -141,9 +141,17 @@ public abstract class Node implements Cloneable, Serializable {
     public abstract Node accept(NodeVisitor<? extends LexicalContext> visitor);
 
     @Override
-    public String toString() {
+    public final String toString() {
+        return toString(true);
+    }
+
+    /*
+     * Return String representation of this Node.
+     * @param includeTypeInfo include type information or not
+     */
+    public final String toString(final boolean includeTypeInfo) {
         final StringBuilder sb = new StringBuilder();
-        toString(sb);
+        toString(sb, includeTypeInfo);
         return sb.toString();
     }
 

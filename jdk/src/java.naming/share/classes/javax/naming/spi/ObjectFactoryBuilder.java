@@ -40,10 +40,10 @@ import javax.naming.NamingException;
   * after the lookup.  An ObjectFactory is responsible for creating
   * objects of a specific type.  JNDI uses a default policy for using
   * and loading object factories.  You can override this default policy
-  * by calling <tt>NamingManager.setObjectFactoryBuilder()</tt> with an ObjectFactoryBuilder,
+  * by calling {@code NamingManager.setObjectFactoryBuilder()} with an ObjectFactoryBuilder,
   * which contains the program-defined way of creating/loading
   * object factories.
-  * Any <tt>ObjectFactoryBuilder</tt> implementation must implement this
+  * Any {@code ObjectFactoryBuilder} implementation must implement this
   * interface that for creating object factories.
   *
   * @author Rosanna Lee

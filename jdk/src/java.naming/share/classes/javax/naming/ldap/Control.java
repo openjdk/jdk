@@ -52,13 +52,13 @@ package javax.naming.ldap;
 public interface Control extends java.io.Serializable {
     /**
       * Indicates a critical control.
-      * The value of this constant is <tt>true</tt>.
+      * The value of this constant is {@code true}.
       */
     public static final boolean CRITICAL = true;
 
     /**
       * Indicates a non-critical control.
-      * The value of this constant is <tt>false</tt>.
+      * The value of this constant is {@code false}.
       */
     public static final boolean NONCRITICAL = false;
 
@@ -75,7 +75,7 @@ public interface Control extends java.io.Serializable {
       * In other words, if the server receives a critical control
       * that it does not support, regardless of whether the control
       * makes sense for the operation, the operation will not be performed
-      * and an <tt>OperationNotSupportedException</tt> will be thrown.
+      * and an {@code OperationNotSupportedException} will be thrown.
       * @return true if this control is critical; false otherwise.
       */
     public boolean isCritical();

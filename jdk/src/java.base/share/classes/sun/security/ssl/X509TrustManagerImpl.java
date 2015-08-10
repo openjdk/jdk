@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,6 +184,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
         Validator v = checkTrustedInit(chain, authType, isClient);
 
         AlgorithmConstraints constraints = null;
+        List<byte[]> responseList = Collections.emptyList();
         if ((socket != null) && socket.isConnected() &&
                                         (socket instanceof SSLSocket)) {
 
@@ -195,7 +196,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
 
             // check endpoint identity
             String identityAlg = sslSocket.getSSLParameters().
-                                        getEndpointIdentificationAlgorithm();
+                    getEndpointIdentificationAlgorithm();
             if (identityAlg != null && identityAlg.length() != 0) {
                 checkIdentity(session, chain[0], identityAlg, isClient,
                         getRequestedServerNames(socket));
@@ -204,7 +205,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
             // create the algorithm constraints
             ProtocolVersion protocolVersion =
                 ProtocolVersion.valueOf(session.getProtocol());
-            if (protocolVersion.useTLS12PlusSpec()) {
+            if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
                 if (session instanceof ExtendedSSLSession) {
                     ExtendedSSLSession extSession =
                                     (ExtendedSSLSession)session;
@@ -220,13 +221,21 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
             } else {
                 constraints = new SSLAlgorithmConstraints(sslSocket, false);
             }
+
+            // Grab any stapled OCSP responses for use in validation
+            if (session instanceof ExtendedSSLSession) {
+                responseList =
+                        ((ExtendedSSLSession)session).getStatusResponses();
+            }
         }
 
         X509Certificate[] trustedChain = null;
         if (isClient) {
-            trustedChain = validate(v, chain, constraints, null);
+            trustedChain = validate(v, chain, Collections.emptyList(),
+                    constraints, null);
         } else {
-            trustedChain = validate(v, chain, constraints, authType);
+            trustedChain = validate(v, chain, responseList, constraints,
+                    authType);
         }
         if (debug != null && Debug.isOn("trustmanager")) {
             System.out.println("Found trusted certificate:");
@@ -239,6 +248,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
         Validator v = checkTrustedInit(chain, authType, isClient);
 
         AlgorithmConstraints constraints = null;
+        List<byte[]> responseList = Collections.emptyList();
         if (engine != null) {
             SSLSession session = engine.getHandshakeSession();
             if (session == null) {
@@ -247,7 +257,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
 
             // check endpoint identity
             String identityAlg = engine.getSSLParameters().
-                                        getEndpointIdentificationAlgorithm();
+                    getEndpointIdentificationAlgorithm();
             if (identityAlg != null && identityAlg.length() != 0) {
                 checkIdentity(session, chain[0], identityAlg, isClient,
                         getRequestedServerNames(engine));
@@ -256,7 +266,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
             // create the algorithm constraints
             ProtocolVersion protocolVersion =
                 ProtocolVersion.valueOf(session.getProtocol());
-            if (protocolVersion.useTLS12PlusSpec()) {
+            if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
                 if (session instanceof ExtendedSSLSession) {
                     ExtendedSSLSession extSession =
                                     (ExtendedSSLSession)session;
@@ -272,13 +282,21 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
             } else {
                 constraints = new SSLAlgorithmConstraints(engine, false);
             }
+
+            // Grab any stapled OCSP responses for use in validation
+            if (session instanceof ExtendedSSLSession) {
+                responseList =
+                        ((ExtendedSSLSession)session).getStatusResponses();
+            }
         }
 
         X509Certificate[] trustedChain = null;
         if (isClient) {
-            trustedChain = validate(v, chain, constraints, null);
+            trustedChain = validate(v, chain, Collections.emptyList(),
+                    constraints, null);
         } else {
-            trustedChain = validate(v, chain, constraints, authType);
+            trustedChain = validate(v, chain, responseList, constraints,
+                    authType);
         }
         if (debug != null && Debug.isOn("trustmanager")) {
             System.out.println("Found trusted certificate:");
@@ -317,11 +335,12 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
     }
 
     private static X509Certificate[] validate(Validator v,
-            X509Certificate[] chain, AlgorithmConstraints constraints,
-            String authType) throws CertificateException {
+            X509Certificate[] chain, List<byte[]> responseList,
+            AlgorithmConstraints constraints, String authType)
+            throws CertificateException {
         Object o = JsseJce.beginFipsProvider();
         try {
-            return v.validate(chain, null, constraints, authType);
+            return v.validate(chain, null, responseList, constraints, authType);
         } finally {
             JsseJce.endFipsProvider(o);
         }

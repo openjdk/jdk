@@ -32,9 +32,9 @@ package java.io;
  * size are appropriate.  To specify these values yourself, construct an
  * InputStreamReader on a FileInputStream.
  *
- * <p><code>FileReader</code> is meant for reading streams of characters.
+ * <p>{@code FileReader} is meant for reading streams of characters.
  * For reading streams of raw bytes, consider using a
- * <code>FileInputStream</code>.
+ * {@code FileInputStream}.
  *
  * @see InputStreamReader
  * @see FileInputStream
@@ -45,7 +45,7 @@ package java.io;
 public class FileReader extends InputStreamReader {
 
    /**
-    * Creates a new <tt>FileReader</tt>, given the name of the
+    * Creates a new {@code FileReader}, given the name of the
     * file to read from.
     *
     * @param fileName the name of the file to read from
@@ -59,10 +59,10 @@ public class FileReader extends InputStreamReader {
     }
 
    /**
-    * Creates a new <tt>FileReader</tt>, given the <tt>File</tt>
+    * Creates a new {@code FileReader}, given the {@code File}
     * to read from.
     *
-    * @param file the <tt>File</tt> to read from
+    * @param file the {@code File} to read from
     * @exception  FileNotFoundException  if the file does not exist,
     *                   is a directory rather than a regular file,
     *                   or for some other reason cannot be opened for
@@ -73,8 +73,8 @@ public class FileReader extends InputStreamReader {
     }
 
    /**
-    * Creates a new <tt>FileReader</tt>, given the
-    * <tt>FileDescriptor</tt> to read from.
+    * Creates a new {@code FileReader}, given the
+    * {@code FileDescriptor} to read from.
     *
     * @param fd the FileDescriptor to read from
     */

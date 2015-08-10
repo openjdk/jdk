@@ -1772,7 +1772,7 @@ import sun.misc.FormattedFloatingDecimal;
  *
  * <tr><td valign="top">{@code 'n'}
  *     <td> the platform-specific line separator as returned by {@link
- *     System#getProperty System.getProperty("line.separator")}.
+ *     System#lineSeparator()}.
  *
  * </table>
  *

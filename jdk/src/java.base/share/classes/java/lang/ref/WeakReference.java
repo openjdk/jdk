@@ -63,7 +63,7 @@ public class WeakReference<T> extends Reference<T> {
      *
      * @param referent object the new weak reference will refer to
      * @param q the queue with which the reference is to be registered,
-     *          or <tt>null</tt> if registration is not required
+     *          or {@code null} if registration is not required
      */
     public WeakReference(T referent, ReferenceQueue<? super T> q) {
         super(referent, q);

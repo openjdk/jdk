@@ -53,9 +53,9 @@ public class SearchResult extends Binding {
       * Constructs a search result using the result's name, its bound object, and
       * its attributes.
       *<p>
-      * <tt>getClassName()</tt> will return the class name of <tt>obj</tt>
-      * (or null if <tt>obj</tt> is null) unless the class name has been
-      * explicitly set using <tt>setClassName()</tt>.
+      * {@code getClassName()} will return the class name of {@code obj}
+      * (or null if {@code obj} is null) unless the class name has been
+      * explicitly set using {@code setClassName()}.
       *
       * @param name The non-null name of the search item. It is relative
       *             to the <em>target context</em> of the search (which is
@@ -76,9 +76,9 @@ public class SearchResult extends Binding {
       * Constructs a search result using the result's name, its bound object, and
       * its attributes, and whether the name is relative.
       *<p>
-      * <tt>getClassName()</tt> will return the class name of <tt>obj</tt>
-      * (or null if <tt>obj</tt> is null) unless the class name has been
-      * explicitly set using <tt>setClassName()</tt>
+      * {@code getClassName()} will return the class name of {@code obj}
+      * (or null if {@code obj} is null) unless the class name has been
+      * explicitly set using {@code setClassName()}
       *
       * @param name The non-null name of the search item.
       * @param obj  The object bound to name. Can be null.
@@ -106,9 +106,9 @@ public class SearchResult extends Binding {
       * named by the first parameter of the <code>search()</code> method)
       *
       * @param  className       The possibly null class name of the object
-      *         bound to <tt>name</tt>. If null, the class name of <tt>obj</tt> is
-      *         returned by <tt>getClassName()</tt>. If <tt>obj</tt> is also null,
-      *         <tt>getClassName()</tt> will return null.
+      *         bound to {@code name}. If null, the class name of {@code obj} is
+      *         returned by {@code getClassName()}. If {@code obj} is also null,
+      *         {@code getClassName()} will return null.
       * @param obj  The object bound to name. Can be null.
       * @param attrs The attributes that were requested to be returned with
       * this search item. Cannot be null.
@@ -127,9 +127,9 @@ public class SearchResult extends Binding {
       *
       * @param name The non-null name of the search item.
       * @param  className       The possibly null class name of the object
-      *         bound to <tt>name</tt>. If null, the class name of <tt>obj</tt> is
-      *         returned by <tt>getClassName()</tt>. If <tt>obj</tt> is also null,
-      *         <tt>getClassName()</tt> will return null.
+      *         bound to {@code name}. If null, the class name of {@code obj} is
+      *         returned by {@code getClassName()}. If {@code obj} is also null,
+      *         {@code getClassName()} will return null.
       * @param obj  The object bound to name. Can be null.
       * @param attrs The attributes that were requested to be returned with
       * this search item. Cannot be null.

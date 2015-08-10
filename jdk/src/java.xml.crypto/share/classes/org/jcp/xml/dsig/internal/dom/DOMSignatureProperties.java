@@ -58,7 +58,6 @@ public final class DOMSignatureProperties extends DOMStructure
      * @param properties a list of one or more {@link SignatureProperty}s. The
      *    list is defensively copied to protect against subsequent modification.
      * @param id the Id (may be <code>null</code>)
-     * @return a <code>DOMSignatureProperties</code>
      * @throws ClassCastException if <code>properties</code> contains any
      *    entries that are not of type {@link SignatureProperty}
      * @throws IllegalArgumentException if <code>properties</code> is empty

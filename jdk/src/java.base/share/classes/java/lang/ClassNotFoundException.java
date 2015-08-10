@@ -98,7 +98,7 @@ public class ClassNotFoundException extends ReflectiveOperationException {
 
     /**
      * Returns the exception that was raised if an error occurred while
-     * attempting to load the class. Otherwise, returns <tt>null</tt>.
+     * attempting to load the class. Otherwise, returns {@code null}.
      *
      * <p>This method predates the general-purpose exception chaining facility.
      * The {@link Throwable#getCause()} method is now the preferred means of
@@ -114,7 +114,7 @@ public class ClassNotFoundException extends ReflectiveOperationException {
     /**
      * Returns the cause of this exception (the exception that was raised
      * if an error occurred while attempting to load the class; otherwise
-     * <tt>null</tt>).
+     * {@code null}).
      *
      * @return  the cause of this exception.
      * @since   1.4

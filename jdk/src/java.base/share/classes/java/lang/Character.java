@@ -3502,7 +3502,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
         /**
          * Returns the UnicodeBlock with the given name. Block
          * names are determined by The Unicode Standard. The file
-         * Blocks-&lt;version&gt;.txt defines blocks for a particular
+         * {@code Blocks-<version>.txt} defines blocks for a particular
          * version of the standard. The {@link Character} class specifies
          * the version of the standard that it supports.
          * <p>
@@ -7195,8 +7195,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
         /**
          * Returns the UnicodeScript constant with the given Unicode script
          * name or the script name alias. Script names and their aliases are
-         * determined by The Unicode Standard. The files Scripts&lt;version&gt;.txt
-         * and PropertyValueAliases&lt;version&gt;.txt define script names
+         * determined by The Unicode Standard. The files {@code Scripts<version>.txt}
+         * and {@code PropertyValueAliases<version>.txt} define script names
          * and the script name aliases for a particular version of the
          * standard. The {@link Character} class specifies the version of
          * the standard that it supports.
@@ -7255,9 +7255,9 @@ class Character implements java.io.Serializable, Comparable<Character> {
     }
 
     /**
-     * Returns a <tt>Character</tt> instance representing the specified
-     * <tt>char</tt> value.
-     * If a new <tt>Character</tt> instance is not required, this method
+     * Returns a {@code Character} instance representing the specified
+     * {@code char} value.
+     * If a new {@code Character} instance is not required, this method
      * should generally be used in preference to the constructor
      * {@link #Character(char)}, as this method is likely to yield
      * significantly better space and time performance by caching
@@ -7268,7 +7268,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * cache other values outside of this range.
      *
      * @param  c a char value.
-     * @return a <tt>Character</tt> instance representing <tt>c</tt>.
+     * @return a {@code Character} instance representing {@code c}.
      * @since  1.5
      */
     @HotSpotIntrinsicCandidate
@@ -9871,7 +9871,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
     }
 
     /**
-     * The number of bits used to represent a <tt>char</tt> value in unsigned
+     * The number of bits used to represent a {@code char} value in unsigned
      * binary form, constant {@code 16}.
      *
      * @since 1.5
@@ -9888,11 +9888,11 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
     /**
      * Returns the value obtained by reversing the order of the bytes in the
-     * specified <tt>char</tt> value.
+     * specified {@code char} value.
      *
      * @param ch The {@code char} of which to reverse the byte order.
      * @return the value obtained by reversing (or, equivalently, swapping)
-     *     the bytes in the specified <tt>char</tt> value.
+     *     the bytes in the specified {@code char} value.
      * @since 1.5
      */
     @HotSpotIntrinsicCandidate
