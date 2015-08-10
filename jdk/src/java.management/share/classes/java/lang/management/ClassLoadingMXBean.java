@@ -35,13 +35,13 @@ package java.lang.management;
  * that can be obtained by calling
  * the {@link ManagementFactory#getClassLoadingMXBean} method or
  * from the {@link ManagementFactory#getPlatformMBeanServer
- * platform <tt>MBeanServer</tt>}.
+ * platform MBeanServer}.
  *
- * <p>The <tt>ObjectName</tt> for uniquely identifying the MXBean for
- * the class loading system within an <tt>MBeanServer</tt> is:
+ * <p>The {@code ObjectName} for uniquely identifying the MXBean for
+ * the class loading system within an {@code MBeanServer} is:
  * <blockquote>
  * {@link ManagementFactory#CLASS_LOADING_MXBEAN_NAME
- *        <tt>java.lang:type=ClassLoading</tt>}
+ *        java.lang:type=ClassLoading}
  * </blockquote>
  *
  * It can be obtained by calling the
@@ -86,8 +86,8 @@ public interface ClassLoadingMXBean extends PlatformManagedObject {
     /**
      * Tests if the verbose output for the class loading system is enabled.
      *
-     * @return <tt>true</tt> if the verbose output for the class loading
-     * system is enabled; <tt>false</tt> otherwise.
+     * @return {@code true} if the verbose output for the class loading
+     * system is enabled; {@code false} otherwise.
      */
     public boolean isVerbose();
 
@@ -102,8 +102,8 @@ public interface ClassLoadingMXBean extends PlatformManagedObject {
      * Each invocation of this method enables or disables the verbose
      * output globally.
      *
-     * @param value <tt>true</tt> to enable the verbose output;
-     *              <tt>false</tt> to disable.
+     * @param value {@code true} to enable the verbose output;
+     *              {@code false} to disable.
      *
      * @exception  java.lang.SecurityException if a security manager
      *             exists and the caller does not have

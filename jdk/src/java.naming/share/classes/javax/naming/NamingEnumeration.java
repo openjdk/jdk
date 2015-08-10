@@ -85,7 +85,7 @@ public interface NamingEnumeration<T> extends Enumeration<T> {
       * retrieving the next element to be caught and handled
       * by the application.
       * <p>
-      * Note that <tt>next()</tt> can also throw the runtime exception
+      * Note that {@code next()} can also throw the runtime exception
       * NoSuchElementException to indicate that the caller is
       * attempting to enumerate beyond the end of the enumeration.
       * This is different from a NamingException, which indicates
@@ -128,16 +128,16 @@ public interface NamingEnumeration<T> extends Enumeration<T> {
      * its methods will yield undefined results.
      * This method is intended for aborting an enumeration to free up resources.
      * If an enumeration proceeds to the end--that is, until
-     * <tt>hasMoreElements()</tt> or <tt>hasMore()</tt> returns <tt>false</tt>--
+     * {@code hasMoreElements()} or {@code hasMore()} returns {@code false}--
      * resources will be freed up automatically and there is no need to
-     * explicitly call <tt>close()</tt>.
+     * explicitly call {@code close()}.
      *<p>
      * This method indicates to the service provider that it is free
      * to release resources associated with the enumeration, and can
-     * notify servers to cancel any outstanding requests. The <tt>close()</tt>
+     * notify servers to cancel any outstanding requests. The {@code close()}
      * method is a hint to implementations for managing their resources.
      * Implementations are encouraged to use appropriate algorithms to
-     * manage their resources when client omits the <tt>close()</tt> calls.
+     * manage their resources when client omits the {@code close()} calls.
      *
      * @exception NamingException If a naming exception is encountered
      * while closing the enumeration.

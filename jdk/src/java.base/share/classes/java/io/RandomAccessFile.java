@@ -82,10 +82,10 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * {@link FileDescriptor} object is created to represent the
      * connection to the file.
      *
-     * <p> The <tt>mode</tt> argument specifies the access mode with which the
+     * <p> The {@code mode} argument specifies the access mode with which the
      * file is to be opened.  The permitted values and their meanings are as
      * specified for the <a
-     * href="#mode"><tt>RandomAccessFile(File,String)</tt></a> constructor.
+     * href="#mode">{@code RandomAccessFile(File,String)}</a> constructor.
      *
      * <p>
      * If there is a security manager, its {@code checkRead} method
@@ -99,19 +99,19 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @param      name   the system-dependent filename
      * @param      mode   the access <a href="#mode">mode</a>
      * @exception  IllegalArgumentException  if the mode argument is not equal
-     *               to one of <tt>"r"</tt>, <tt>"rw"</tt>, <tt>"rws"</tt>, or
-     *               <tt>"rwd"</tt>
+     *             to one of {@code "r"}, {@code "rw"}, {@code "rws"}, or
+     *             {@code "rwd"}
      * @exception FileNotFoundException
-     *            if the mode is <tt>"r"</tt> but the given string does not
+     *            if the mode is {@code "r"} but the given string does not
      *            denote an existing regular file, or if the mode begins with
-     *            <tt>"rw"</tt> but the given string does not denote an
+     *            {@code "rw"} but the given string does not denote an
      *            existing, writable regular file and a new regular file of
      *            that name cannot be created, or if some other error occurs
      *            while opening or creating the file
-     * @exception  SecurityException         if a security manager exists and its
-     *               {@code checkRead} method denies read access to the file
-     *               or the mode is "rw" and the security manager's
-     *               {@code checkWrite} method denies write access to the file
+     * @exception  SecurityException   if a security manager exists and its
+     *             {@code checkRead} method denies read access to the file
+     *             or the mode is {@code "rw"} and the security manager's
+     *             {@code checkWrite} method denies write access to the file
      * @see        java.lang.SecurityException
      * @see        java.lang.SecurityManager#checkRead(java.lang.String)
      * @see        java.lang.SecurityManager#checkWrite(java.lang.String)
@@ -129,33 +129,33 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * write to, the file specified by the {@link File} argument.  A new {@link
      * FileDescriptor} object is created to represent this file connection.
      *
-     * <p>The <a name="mode"><tt>mode</tt></a> argument specifies the access mode
+     * <p>The <a name="mode">{@code mode}</a> argument specifies the access mode
      * in which the file is to be opened.  The permitted values and their
      * meanings are:
      *
      * <table summary="Access mode permitted values and meanings">
      * <tr><th align="left">Value</th><th align="left">Meaning</th></tr>
-     * <tr><td valign="top"><tt>"r"</tt></td>
-     *     <td> Open for reading only.  Invoking any of the <tt>write</tt>
-     *     methods of the resulting object will cause an {@link
-     *     java.io.IOException} to be thrown. </td></tr>
-     * <tr><td valign="top"><tt>"rw"</tt></td>
+     * <tr><td valign="top">{@code "r"}</td>
+     *     <td> Open for reading only. Invoking any of the {@code write}
+     *     methods of the resulting object will cause an
+     *     {@link java.io.IOException} to be thrown.</td></tr>
+     * <tr><td valign="top">{@code "rw"}</td>
      *     <td> Open for reading and writing.  If the file does not already
-     *     exist then an attempt will be made to create it. </td></tr>
-     * <tr><td valign="top"><tt>"rws"</tt></td>
-     *     <td> Open for reading and writing, as with <tt>"rw"</tt>, and also
+     *     exist then an attempt will be made to create it.</td></tr>
+     * <tr><td valign="top">{@code "rws"}</td>
+     *     <td> Open for reading and writing, as with {@code "rw"}, and also
      *     require that every update to the file's content or metadata be
-     *     written synchronously to the underlying storage device.  </td></tr>
-     * <tr><td valign="top"><tt>"rwd"&nbsp;&nbsp;</tt></td>
-     *     <td> Open for reading and writing, as with <tt>"rw"</tt>, and also
+     *     written synchronously to the underlying storage device.</td></tr>
+     * <tr><td valign="top">{@code "rwd"}</td>
+     *     <td> Open for reading and writing, as with {@code "rw"}, and also
      *     require that every update to the file's content be written
-     *     synchronously to the underlying storage device. </td></tr>
+     *     synchronously to the underlying storage device.</td></tr>
      * </table>
      *
-     * The <tt>"rws"</tt> and <tt>"rwd"</tt> modes work much like the {@link
+     * The {@code "rws"} and {@code "rwd"} modes work much like the {@link
      * java.nio.channels.FileChannel#force(boolean) force(boolean)} method of
      * the {@link java.nio.channels.FileChannel} class, passing arguments of
-     * <tt>true</tt> and <tt>false</tt>, respectively, except that they always
+     * {@code true} and {@code false}, respectively, except that they always
      * apply to every I/O operation and are therefore often more efficient.  If
      * the file resides on a local storage device then when an invocation of a
      * method of this class returns it is guaranteed that all changes made to
@@ -164,9 +164,9 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * event of a system crash.  If the file does not reside on a local device
      * then no such guarantee is made.
      *
-     * <p>The <tt>"rwd"</tt> mode can be used to reduce the number of I/O
-     * operations performed.  Using <tt>"rwd"</tt> only requires updates to the
-     * file's content to be written to storage; using <tt>"rws"</tt> requires
+     * <p>The {@code "rwd"} mode can be used to reduce the number of I/O
+     * operations performed.  Using {@code "rwd"} only requires updates to the
+     * file's content to be written to storage; using {@code "rws"} requires
      * updates to both the file's content and its metadata to be written, which
      * generally requires at least one more low-level I/O operation.
      *
@@ -181,19 +181,19 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @param      mode   the access mode, as described
      *                    <a href="#mode">above</a>
      * @exception  IllegalArgumentException  if the mode argument is not equal
-     *               to one of <tt>"r"</tt>, <tt>"rw"</tt>, <tt>"rws"</tt>, or
-     *               <tt>"rwd"</tt>
+     *             to one of {@code "r"}, {@code "rw"}, {@code "rws"}, or
+     *             {@code "rwd"}
      * @exception FileNotFoundException
-     *            if the mode is <tt>"r"</tt> but the given file object does
+     *            if the mode is {@code "r"} but the given file object does
      *            not denote an existing regular file, or if the mode begins
-     *            with <tt>"rw"</tt> but the given file object does not denote
+     *            with {@code "rw"} but the given file object does not denote
      *            an existing, writable regular file and a new regular file of
      *            that name cannot be created, or if some other error occurs
      *            while opening or creating the file
-     * @exception  SecurityException         if a security manager exists and its
-     *               {@code checkRead} method denies read access to the file
-     *               or the mode is "rw" and the security manager's
-     *               {@code checkWrite} method denies write access to the file
+     * @exception  SecurityException  if a security manager exists and its
+     *             {@code checkRead} method denies read access to the file
+     *             or the mode is {@code "rw"} and the security manager's
+     *             {@code checkWrite} method denies write access to the file
      * @see        java.lang.SecurityManager#checkRead(java.lang.String)
      * @see        java.lang.SecurityManager#checkWrite(java.lang.String)
      * @see        java.nio.channels.FileChannel#force(boolean)

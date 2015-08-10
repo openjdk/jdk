@@ -27,12 +27,12 @@ package java.lang;
 import java.lang.ref.*;
 
 /**
- * This class extends <tt>ThreadLocal</tt> to provide inheritance of values
+ * This class extends {@code ThreadLocal} to provide inheritance of values
  * from parent thread to child thread: when a child thread is created, the
  * child receives initial values for all inheritable thread-local variables
  * for which the parent has values.  Normally the child's values will be
  * identical to the parent's; however, the child's value can be made an
- * arbitrary function of the parent's by overriding the <tt>childValue</tt>
+ * arbitrary function of the parent's by overriding the {@code childValue}
  * method in this class.
  *
  * <p>Inheritable thread-local variables are used in preference to

@@ -40,7 +40,7 @@ import java.util.Arrays;
  * decimal point.  If negative, the unscaled value of the number is
  * multiplied by ten to the power of the negation of the scale.  The
  * value of the number represented by the {@code BigDecimal} is
- * therefore <tt>(unscaledValue &times; 10<sup>-scale</sup>)</tt>.
+ * therefore <code>(unscaledValue &times; 10<sup>-scale</sup>)</code>.
  *
  * <p>The {@code BigDecimal} class provides operations for
  * arithmetic, scale manipulation, rounding, comparison, hashing, and
@@ -709,8 +709,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     /**
      * Translates the string representation of a {@code BigDecimal}
      * into a {@code BigDecimal}.  The string representation consists
-     * of an optional sign, {@code '+'} (<tt> '&#92;u002B'</tt>) or
-     * {@code '-'} (<tt>'&#92;u002D'</tt>), followed by a sequence of
+     * of an optional sign, {@code '+'} (<code> '&#92;u002B'</code>) or
+     * {@code '-'} (<code>'&#92;u002D'</code>), followed by a sequence of
      * zero or more decimal digits ("the integer"), optionally
      * followed by a fraction, optionally followed by an exponent.
      *
@@ -721,7 +721,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * <i>significand</i>.
      *
      * <p>The exponent consists of the character {@code 'e'}
-     * (<tt>'&#92;u0065'</tt>) or {@code 'E'} (<tt>'&#92;u0045'</tt>)
+     * (<code>'&#92;u0065'</code>) or {@code 'E'} (<code>'&#92;u0045'</code>)
      * followed by one or more decimal digits.  The value of the
      * exponent must lie between -{@link Integer#MAX_VALUE} ({@link
      * Integer#MIN_VALUE}+1) and {@link Integer#MAX_VALUE}, inclusive.
@@ -834,7 +834,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * is the exact decimal representation of the {@code double}'s
      * binary floating-point value.  The scale of the returned
      * {@code BigDecimal} is the smallest value such that
-     * <tt>(10<sup>scale</sup> &times; val)</tt> is an integer.
+     * <code>(10<sup>scale</sup> &times; val)</code> is an integer.
      * <p>
      * <b>Notes:</b>
      * <ol>
@@ -857,7 +857,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * creates a {@code BigDecimal} which is <i>exactly</i> equal to
      * 0.1, as one would expect.  Therefore, it is generally
      * recommended that the {@linkplain #BigDecimal(String)
-     * <tt>String</tt> constructor} be used in preference to this one.
+     * String constructor} be used in preference to this one.
      *
      * <li>
      * When a {@code double} must be used as a source for a
@@ -881,7 +881,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * Translates a {@code double} into a {@code BigDecimal}, with
      * rounding according to the context settings.  The scale of the
      * {@code BigDecimal} is the smallest value such that
-     * <tt>(10<sup>scale</sup> &times; val)</tt> is an integer.
+     * <code>(10<sup>scale</sup> &times; val)</code> is an integer.
      *
      * <p>The results of this constructor can be somewhat unpredictable
      * and its use is generally not recommended; see the notes under
@@ -1010,7 +1010,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * Translates a {@code BigInteger} unscaled value and an
      * {@code int} scale into a {@code BigDecimal}.  The value of
      * the {@code BigDecimal} is
-     * <tt>(unscaledVal &times; 10<sup>-scale</sup>)</tt>.
+     * <code>(unscaledVal &times; 10<sup>-scale</sup>)</code>.
      *
      * @param unscaledVal unscaled value of the {@code BigDecimal}.
      * @param scale scale of the {@code BigDecimal}.
@@ -1026,8 +1026,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * Translates a {@code BigInteger} unscaled value and an
      * {@code int} scale into a {@code BigDecimal}, with rounding
      * according to the context settings.  The value of the
-     * {@code BigDecimal} is <tt>(unscaledVal &times;
-     * 10<sup>-scale</sup>)</tt>, rounded according to the
+     * {@code BigDecimal} is <code>(unscaledVal &times;
+     * 10<sup>-scale</sup>)</code>, rounded according to the
      * {@code precision} and rounding mode settings.
      *
      * @param  unscaledVal unscaled value of the {@code BigDecimal}.
@@ -1196,7 +1196,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @param unscaledVal unscaled value of the {@code BigDecimal}.
      * @param scale scale of the {@code BigDecimal}.
      * @return a {@code BigDecimal} whose value is
-     *         <tt>(unscaledVal &times; 10<sup>-scale</sup>)</tt>.
+     *         <code>(unscaledVal &times; 10<sup>-scale</sup>)</code>.
      */
     public static BigDecimal valueOf(long unscaledVal, int scale) {
         if (scale == 0)
@@ -1476,8 +1476,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     }
 
     /**
-     * Returns a {@code BigDecimal} whose value is <tt>(this &times;
-     * multiplicand)</tt>, and whose scale is {@code (this.scale() +
+     * Returns a {@code BigDecimal} whose value is <code>(this &times;
+     * multiplicand)</code>, and whose scale is {@code (this.scale() +
      * multiplicand.scale())}.
      *
      * @param  multiplicand value to be multiplied by this {@code BigDecimal}.
@@ -1501,8 +1501,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     }
 
     /**
-     * Returns a {@code BigDecimal} whose value is <tt>(this &times;
-     * multiplicand)</tt>, with rounding according to the context settings.
+     * Returns a {@code BigDecimal} whose value is <code>(this &times;
+     * multiplicand)</code>, with rounding according to the context settings.
      *
      * @param  multiplicand value to be multiplied by this {@code BigDecimal}.
      * @param  mc the context to use.
@@ -1995,7 +1995,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
     /**
      * Returns a {@code BigDecimal} whose value is
-     * <tt>(this<sup>n</sup>)</tt>, The power is computed exactly, to
+     * <code>(this<sup>n</sup>)</code>, The power is computed exactly, to
      * unlimited precision.
      *
      * <p>The parameter {@code n} must be in the range 0 through
@@ -2006,7 +2006,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * range of this method.
      *
      * @param  n power to raise this {@code BigDecimal} to.
-     * @return <tt>this<sup>n</sup></tt>
+     * @return <code>this<sup>n</sup></code>
      * @throws ArithmeticException if {@code n} is out of range.
      * @since  1.5
      */
@@ -2022,7 +2022,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
     /**
      * Returns a {@code BigDecimal} whose value is
-     * <tt>(this<sup>n</sup>)</tt>.  The current implementation uses
+     * <code>(this<sup>n</sup>)</code>.  The current implementation uses
      * the core algorithm defined in ANSI standard X3.274-1996 with
      * rounding according to the context settings.  In general, the
      * returned numerical value is within two ulps of the exact
@@ -2063,7 +2063,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      *
      * @param  n power to raise this {@code BigDecimal} to.
      * @param  mc the context to use.
-     * @return <tt>this<sup>n</sup></tt> using the ANSI standard X3.274-1996
+     * @return <code>this<sup>n</sup></code> using the ANSI standard X3.274-1996
      *         algorithm
      * @throws ArithmeticException if the result is inexact but the
      *         rounding mode is {@code UNNECESSARY}, or {@code n} is out
@@ -2251,8 +2251,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
     /**
      * Returns a {@code BigInteger} whose value is the <i>unscaled
-     * value</i> of this {@code BigDecimal}.  (Computes <tt>(this *
-     * 10<sup>this.scale()</sup>)</tt>.)
+     * value</i> of this {@code BigDecimal}.  (Computes <code>(this *
+     * 10<sup>this.scale()</sup>)</code>.)
      *
      * @return the unscaled value of this {@code BigDecimal}.
      * @since  1.2
@@ -2371,7 +2371,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * <p>Note that since BigDecimal objects are immutable, calls of
      * this method do <i>not</i> result in the original object being
      * modified, contrary to the usual convention of having methods
-     * named <tt>set<i>X</i></tt> mutate field <i>{@code X}</i>.
+     * named <code>set<i>X</i></code> mutate field <i>{@code X}</i>.
      * Instead, {@code setScale} returns an object with the proper
      * scale; the returned object may or may not be newly allocated.
      *
@@ -2404,7 +2404,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * <p>Note that since BigDecimal objects are immutable, calls of
      * this method do <i>not</i> result in the original object being
      * modified, contrary to the usual convention of having methods
-     * named <tt>set<i>X</i></tt> mutate field <i>{@code X}</i>.
+     * named <code>set<i>X</i></code> mutate field <i>{@code X}</i>.
      * Instead, {@code setScale} returns an object with the proper
      * scale; the returned object may or may not be newly allocated.
      *
@@ -2498,7 +2498,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * <p>Note that since {@code BigDecimal} objects are immutable,
      * calls of this method do <i>not</i> result in the original
      * object being modified, contrary to the usual convention of
-     * having methods named <tt>set<i>X</i></tt> mutate field
+     * having methods named <code>set<i>X</i></code> mutate field
      * <i>{@code X}</i>.  Instead, {@code setScale} returns an
      * object with the proper scale; the returned object may or may
      * not be newly allocated.
@@ -2525,8 +2525,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * {@code n} is non-negative, the call merely adds {@code n} to
      * the scale.  If {@code n} is negative, the call is equivalent
      * to {@code movePointRight(-n)}.  The {@code BigDecimal}
-     * returned by this call has value <tt>(this &times;
-     * 10<sup>-n</sup>)</tt> and scale {@code max(this.scale()+n,
+     * returned by this call has value <code>(this &times;
+     * 10<sup>-n</sup>)</code> and scale {@code max(this.scale()+n,
      * 0)}.
      *
      * @param  n number of places to move the decimal point to the left.
@@ -2547,8 +2547,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * If {@code n} is non-negative, the call merely subtracts
      * {@code n} from the scale.  If {@code n} is negative, the call
      * is equivalent to {@code movePointLeft(-n)}.  The
-     * {@code BigDecimal} returned by this call has value <tt>(this
-     * &times; 10<sup>n</sup>)</tt> and scale {@code max(this.scale()-n,
+     * {@code BigDecimal} returned by this call has value <code>(this
+     * &times; 10<sup>n</sup>)</code> and scale {@code max(this.scale()-n,
      * 0)}.
      *
      * @param  n number of places to move the decimal point to the right.
@@ -2825,12 +2825,12 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * adjusted exponent converted to a character form.  The latter is
      * in base ten, using the characters {@code '0'} through
      * {@code '9'} with no leading zeros, and is always prefixed by a
-     * sign character {@code '-'} (<tt>'&#92;u002D'</tt>) if the
+     * sign character {@code '-'} (<code>'&#92;u002D'</code>) if the
      * adjusted exponent is negative, {@code '+'}
-     * (<tt>'&#92;u002B'</tt>) otherwise).
+     * (<code>'&#92;u002B'</code>) otherwise).
      *
      * <p>Finally, the entire string is prefixed by a minus sign
-     * character {@code '-'} (<tt>'&#92;u002D'</tt>) if the unscaled
+     * character {@code '-'} (<code>'&#92;u002D'</code>) if the unscaled
      * value is less than zero.  No sign character is prefixed if the
      * unscaled value is zero or positive.
      *
@@ -2930,7 +2930,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * in the result.
      *
      * The entire string is prefixed by a minus sign character '-'
-     * (<tt>'&#92;u002D'</tt>) if the unscaled value is less than
+     * (<code>'&#92;u002D'</code>) if the unscaled value is less than
      * zero. No sign character is prefixed if the unscaled value is
      * zero or positive.
      *

@@ -29,12 +29,12 @@ import java.util.*;
 /**
  * A factory object that generates Preferences objects.  Providers of
  * new {@link Preferences} implementations should provide corresponding
- * <tt>PreferencesFactory</tt> implementations so that the new
- * <tt>Preferences</tt> implementation can be installed in place of the
+ * {@code PreferencesFactory} implementations so that the new
+ * {@code Preferences} implementation can be installed in place of the
  * platform-specific default implementation.
  *
- * <p><strong>This class is for <tt>Preferences</tt> implementers only.
- * Normal users of the <tt>Preferences</tt> facility should have no need to
+ * <p><strong>This class is for {@code Preferences} implementers only.
+ * Normal users of the {@code Preferences} facility should have no need to
  * consult this documentation.</strong>
  *
  * @author  Josh Bloch

@@ -32,7 +32,7 @@ import javax.naming.NamingException;
  * <A HREF="http://www.ietf.org/rfc/rfc2251.txt">RFC 2251</A>.
  * An unsolicited notification is sent by the LDAP server to the LDAP
  * client without any provocation from the client.
- * Its format is that of an extended response (<tt>ExtendedResponse</tt>).
+ * Its format is that of an extended response ({@code ExtendedResponse}).
  *
  * @author Rosanna Lee
  * @author Scott Seligman

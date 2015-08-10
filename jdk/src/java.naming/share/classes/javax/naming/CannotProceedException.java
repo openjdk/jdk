@@ -93,9 +93,9 @@ public class CannotProceedException extends NamingException {
 
     /**
      * Contains the name of the resolved object, relative
-     * to the context <code>altNameCtx</code>.  It is a composite name.
+     * to the context {@code altNameCtx}.  It is a composite name.
      * If null, then no name is specified.
-     * See the <code>javax.naming.spi.ObjectFactory.getObjectInstance</code>
+     * See the {@code javax.naming.spi.ObjectFactory.getObjectInstance}
      * method for details on how this is used.
      * <p>
      * This field is initialized to null.
@@ -112,9 +112,9 @@ public class CannotProceedException extends NamingException {
 
     /**
      * Contains the context relative to which
-     * <code>altName</code> is specified.  If null, then the default initial
+     * {@code altName} is specified.  If null, then the default initial
      * context is implied.
-     * See the <code>javax.naming.spi.ObjectFactory.getObjectInstance</code>
+     * See the {@code javax.naming.spi.ObjectFactory.getObjectInstance}
      * method for details on how this is used.
      * <p>
      * This field is initialized to null.
@@ -189,16 +189,16 @@ public class CannotProceedException extends NamingException {
 
     /**
      * Sets the "remaining new name" field of this exception.
-     * This is the value returned by <code>getRemainingNewName()</code>.
+     * This is the value returned by {@code getRemainingNewName()}.
      *<p>
-     * <tt>newName</tt> is a composite name. If the intent is to set
+     * {@code newName} is a composite name. If the intent is to set
      * this field using a compound name or string, you must
      * "stringify" the compound name, and create a composite
      * name with a single component using the string. You can then
      * invoke this method using the resulting composite name.
      *<p>
-     * A copy of <code>newName</code> is made and stored.
-     * Subsequent changes to <code>name</code> does not
+     * A copy of {@code newName} is made and stored.
+     * Subsequent changes to {@code name} does not
      * affect the copy in this NamingException and vice versa.
      *
      * @param newName The possibly null name to set the "remaining new name" to.
@@ -214,13 +214,13 @@ public class CannotProceedException extends NamingException {
     }
 
     /**
-     * Retrieves the <code>altName</code> field of this exception.
+     * Retrieves the {@code altName} field of this exception.
      * This is the name of the resolved object, relative to the context
-     * <code>altNameCtx</code>. It will be used during a subsequent call to the
-     * <code>javax.naming.spi.ObjectFactory.getObjectInstance</code> method.
+     * {@code altNameCtx}. It will be used during a subsequent call to the
+     * {@code javax.naming.spi.ObjectFactory.getObjectInstance} method.
      *
      * @return The name of the resolved object, relative to
-     *          <code>altNameCtx</code>.
+     *          {@code altNameCtx}.
      *          It is a composite name.  If null, then no name is specified.
      *
      * @see #setAltName
@@ -232,10 +232,10 @@ public class CannotProceedException extends NamingException {
     }
 
     /**
-     * Sets the <code>altName</code> field of this exception.
+     * Sets the {@code altName} field of this exception.
      *
      * @param altName   The name of the resolved object, relative to
-     *                  <code>altNameCtx</code>.
+     *                  {@code altNameCtx}.
      *                  It is a composite name.
      *                  If null, then no name is specified.
      *
@@ -247,12 +247,12 @@ public class CannotProceedException extends NamingException {
     }
 
     /**
-     * Retrieves the <code>altNameCtx</code> field of this exception.
-     * This is the context relative to which <code>altName</code> is named.
+     * Retrieves the {@code altNameCtx} field of this exception.
+     * This is the context relative to which {@code altName} is named.
      * It will be used during a subsequent call to the
-     * <code>javax.naming.spi.ObjectFactory.getObjectInstance</code> method.
+     * {@code javax.naming.spi.ObjectFactory.getObjectInstance} method.
      *
-     * @return  The context relative to which <code>altName</code> is named.
+     * @return  The context relative to which {@code altName} is named.
      *          If null, then the default initial context is implied.
      *
      * @see #setAltNameCtx
@@ -264,10 +264,10 @@ public class CannotProceedException extends NamingException {
     }
 
     /**
-     * Sets the <code>altNameCtx</code> field of this exception.
+     * Sets the {@code altNameCtx} field of this exception.
      *
      * @param altNameCtx
-     *                  The context relative to which <code>altName</code>
+     *                  The context relative to which {@code altName}
      *                  is named.  If null, then the default initial context
      *                  is implied.
      *

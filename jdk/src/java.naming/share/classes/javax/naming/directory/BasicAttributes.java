@@ -207,17 +207,17 @@ public class BasicAttributes implements Attributes {
     }
 
     /**
-     * Determines whether this <tt>BasicAttributes</tt> is equal to another
-     * <tt>Attributes</tt>
-     * Two <tt>Attributes</tt> are equal if they are both instances of
-     * <tt>Attributes</tt>,
+     * Determines whether this {@code BasicAttributes} is equal to another
+     * {@code Attributes}
+     * Two {@code Attributes} are equal if they are both instances of
+     * {@code Attributes},
      * treat the case of attribute IDs the same way, and contain the
-     * same attributes. Each <tt>Attribute</tt> in this <tt>BasicAttributes</tt>
-     * is checked for equality using <tt>Object.equals()</tt>, which may have
-     * be overridden by implementations of <tt>Attribute</tt>).
-     * If a subclass overrides <tt>equals()</tt>,
-     * it should override <tt>hashCode()</tt>
-     * as well so that two <tt>Attributes</tt> instances that are equal
+     * same attributes. Each {@code Attribute} in this {@code BasicAttributes}
+     * is checked for equality using {@code Object.equals()}, which may have
+     * be overridden by implementations of {@code Attribute}).
+     * If a subclass overrides {@code equals()},
+     * it should override {@code hashCode()}
+     * as well so that two {@code Attributes} instances that are equal
      * have the same hash code.
      * @param obj the possibly null object to compare against.
      *
@@ -259,9 +259,9 @@ public class BasicAttributes implements Attributes {
      * The hash code is computed by adding the hash code of
      * the attributes of this object. If this BasicAttributes
      * ignores case of its attribute IDs, one is added to the hash code.
-     * If a subclass overrides <tt>hashCode()</tt>,
-     * it should override <tt>equals()</tt>
-     * as well so that two <tt>Attributes</tt> instances that are equal
+     * If a subclass overrides {@code hashCode()},
+     * it should override {@code equals()}
+     * as well so that two {@code Attributes} instances that are equal
      * have the same hash code.
      *
      * @return an int representing the hash code of this BasicAttributes instance.
