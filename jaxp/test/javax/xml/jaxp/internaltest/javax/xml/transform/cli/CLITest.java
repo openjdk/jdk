@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @modules java.xml/com.sun.org.apache.xalan.internal.xslt
+ * @modules java.xml/com.sun.org.apache.xml.internal.utils
  * @summary Test internal transform CLI.
  */
 
@@ -37,7 +37,7 @@ public class CLITest {
         try {
             String[] args = new String[] { "-XSLTC", "-XSL", getClass().getResource("tigertest.xsl").toString(), "-IN",
                     getClass().getResource("tigertest-in.xml").toString(), };
-            com.sun.org.apache.xalan.internal.xslt.Process._main(args);
+            ProcessXSLT.main(args);
         } catch (Exception e) {
             Assert.fail(e.getMessage());
         }

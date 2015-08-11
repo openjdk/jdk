@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,29 @@
  * questions.
  */
 
-/*
+/**
+ * JDK-8073733: TypeError messages with "call" and "new" could be improved
+ *
  * @test
- * @modules java.xml/com.sun.org.apache.xerces.internal.impl
- *          java.xml/com.sun.org.apache.xalan.internal
- * @bug 6979306
- * @summary Test JAXP component version.
+ * @run
  */
 
-import org.testng.annotations.Test;
+var func = undefined;
+try {
+    func();
+} catch (e) {
+    print(e);
+}
 
-public class Bug6979306Test {
+var obj = {};
+try {
+    obj.foo();
+} catch (e) {
+    print(e);
+}
 
-    @Test
-    public void test() {
-        String[] input = {};
-        com.sun.org.apache.xerces.internal.impl.Version.main(input);
-        com.sun.org.apache.xalan.internal.Version._main(input);
-    }
-
+try {
+    new func();
+} catch (e) {
+    print(e);
 }
