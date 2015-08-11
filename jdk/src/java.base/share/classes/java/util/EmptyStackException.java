@@ -26,7 +26,7 @@
 package java.util;
 
 /**
- * Thrown by methods in the <code>Stack</code> class to indicate
+ * Thrown by methods in the {@code Stack} class to indicate
  * that the stack is empty.
  *
  * @author  Jonathan Payne
@@ -38,7 +38,7 @@ class EmptyStackException extends RuntimeException {
     private static final long serialVersionUID = 5084686378493302095L;
 
     /**
-     * Constructs a new <code>EmptyStackException</code> with <tt>null</tt>
+     * Constructs a new {@code EmptyStackException} with {@code null}
      * as its error message string.
      */
     public EmptyStackException() {
