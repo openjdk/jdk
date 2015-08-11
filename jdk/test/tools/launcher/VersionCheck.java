@@ -183,13 +183,6 @@ public class VersionCheck extends TestHelper {
                                            "build".length() + 1,
                                            refVersion.lastIndexOf(")"));
 
-        String[] vStr = bStr.split("\\.|-|_");
-        String jdkMajor = vStr[0];
-        String jdkMinor = vStr[1];
-        String jdkMicro = vStr[2];
-        String jdkBuild = vStr[vStr.length - 1];
-
-        String expectedDotVersion = "dotversion:" + jdkMajor + "." + jdkMinor;
         String expectedFullVersion = "fullversion:" + bStr;
 
         Map<String, String> envMap = new HashMap<>();
@@ -199,10 +192,6 @@ public class VersionCheck extends TestHelper {
         alist.addAll(tr.testOutput);
         for (String x : tr.testOutput) {
             alist.add(x.trim());
-        }
-        if (!alist.contains(expectedDotVersion)) {
-            System.out.println("Error: could not find " + expectedDotVersion);
-            failcount++;
         }
 
         if (!alist.contains(expectedFullVersion)) {
