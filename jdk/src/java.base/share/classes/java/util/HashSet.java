@@ -28,18 +28,18 @@ package java.util;
 import java.io.InvalidObjectException;
 
 /**
- * This class implements the <tt>Set</tt> interface, backed by a hash table
- * (actually a <tt>HashMap</tt> instance).  It makes no guarantees as to the
+ * This class implements the {@code Set} interface, backed by a hash table
+ * (actually a {@code HashMap} instance).  It makes no guarantees as to the
  * iteration order of the set; in particular, it does not guarantee that the
- * order will remain constant over time.  This class permits the <tt>null</tt>
+ * order will remain constant over time.  This class permits the {@code null}
  * element.
  *
  * <p>This class offers constant time performance for the basic operations
- * (<tt>add</tt>, <tt>remove</tt>, <tt>contains</tt> and <tt>size</tt>),
+ * ({@code add}, {@code remove}, {@code contains} and {@code size}),
  * assuming the hash function disperses the elements properly among the
  * buckets.  Iterating over this set requires time proportional to the sum of
- * the <tt>HashSet</tt> instance's size (the number of elements) plus the
- * "capacity" of the backing <tt>HashMap</tt> instance (the number of
+ * the {@code HashSet} instance's size (the number of elements) plus the
+ * "capacity" of the backing {@code HashMap} instance (the number of
  * buckets).  Thus, it's very important not to set the initial capacity too
  * high (or the load factor too low) if iteration performance is important.
  *
@@ -55,9 +55,9 @@ import java.io.InvalidObjectException;
  * unsynchronized access to the set:<pre>
  *   Set s = Collections.synchronizedSet(new HashSet(...));</pre>
  *
- * <p>The iterators returned by this class's <tt>iterator</tt> method are
+ * <p>The iterators returned by this class's {@code iterator} method are
  * <i>fail-fast</i>: if the set is modified at any time after the iterator is
- * created, in any way except through the iterator's own <tt>remove</tt>
+ * created, in any way except through the iterator's own {@code remove}
  * method, the Iterator throws a {@link ConcurrentModificationException}.
  * Thus, in the face of concurrent modification, the iterator fails quickly
  * and cleanly, rather than risking arbitrary, non-deterministic behavior at
@@ -66,7 +66,7 @@ import java.io.InvalidObjectException;
  * <p>Note that the fail-fast behavior of an iterator cannot be guaranteed
  * as it is, generally speaking, impossible to make any hard guarantees in the
  * presence of unsynchronized concurrent modification.  Fail-fast iterators
- * throw <tt>ConcurrentModificationException</tt> on a best-effort basis.
+ * throw {@code ConcurrentModificationException} on a best-effort basis.
  * Therefore, it would be wrong to write a program that depended on this
  * exception for its correctness: <i>the fail-fast behavior of iterators
  * should be used only to detect bugs.</i>
@@ -98,7 +98,7 @@ public class HashSet<E>
     private static final Object PRESENT = new Object();
 
     /**
-     * Constructs a new, empty set; the backing <tt>HashMap</tt> instance has
+     * Constructs a new, empty set; the backing {@code HashMap} instance has
      * default initial capacity (16) and load factor (0.75).
      */
     public HashSet() {
@@ -107,7 +107,7 @@ public class HashSet<E>
 
     /**
      * Constructs a new set containing the elements in the specified
-     * collection.  The <tt>HashMap</tt> is created with default load factor
+     * collection.  The {@code HashMap} is created with default load factor
      * (0.75) and an initial capacity sufficient to contain the elements in
      * the specified collection.
      *
@@ -120,7 +120,7 @@ public class HashSet<E>
     }
 
     /**
-     * Constructs a new, empty set; the backing <tt>HashMap</tt> instance has
+     * Constructs a new, empty set; the backing {@code HashMap} instance has
      * the specified initial capacity and the specified load factor.
      *
      * @param      initialCapacity   the initial capacity of the hash map
@@ -133,7 +133,7 @@ public class HashSet<E>
     }
 
     /**
-     * Constructs a new, empty set; the backing <tt>HashMap</tt> instance has
+     * Constructs a new, empty set; the backing {@code HashMap} instance has
      * the specified initial capacity and default load factor (0.75).
      *
      * @param      initialCapacity   the initial capacity of the hash table
@@ -182,22 +182,22 @@ public class HashSet<E>
     }
 
     /**
-     * Returns <tt>true</tt> if this set contains no elements.
+     * Returns {@code true} if this set contains no elements.
      *
-     * @return <tt>true</tt> if this set contains no elements
+     * @return {@code true} if this set contains no elements
      */
     public boolean isEmpty() {
         return map.isEmpty();
     }
 
     /**
-     * Returns <tt>true</tt> if this set contains the specified element.
-     * More formally, returns <tt>true</tt> if and only if this set
-     * contains an element <tt>e</tt> such that
-     * <tt>(o==null&nbsp;?&nbsp;e==null&nbsp;:&nbsp;o.equals(e))</tt>.
+     * Returns {@code true} if this set contains the specified element.
+     * More formally, returns {@code true} if and only if this set
+     * contains an element {@code e} such that
+     * {@code Objects.equals(o, e)}.
      *
      * @param o element whose presence in this set is to be tested
-     * @return <tt>true</tt> if this set contains the specified element
+     * @return {@code true} if this set contains the specified element
      */
     public boolean contains(Object o) {
         return map.containsKey(o);
@@ -205,14 +205,14 @@ public class HashSet<E>
 
     /**
      * Adds the specified element to this set if it is not already present.
-     * More formally, adds the specified element <tt>e</tt> to this set if
-     * this set contains no element <tt>e2</tt> such that
-     * <tt>(e==null&nbsp;?&nbsp;e2==null&nbsp;:&nbsp;e.equals(e2))</tt>.
+     * More formally, adds the specified element {@code e} to this set if
+     * this set contains no element {@code e2} such that
+     * {@code Objects.equals(e, e2)}.
      * If this set already contains the element, the call leaves the set
-     * unchanged and returns <tt>false</tt>.
+     * unchanged and returns {@code false}.
      *
      * @param e element to be added to this set
-     * @return <tt>true</tt> if this set did not already contain the specified
+     * @return {@code true} if this set did not already contain the specified
      * element
      */
     public boolean add(E e) {
@@ -221,15 +221,15 @@ public class HashSet<E>
 
     /**
      * Removes the specified element from this set if it is present.
-     * More formally, removes an element <tt>e</tt> such that
-     * <tt>(o==null&nbsp;?&nbsp;e==null&nbsp;:&nbsp;o.equals(e))</tt>,
-     * if this set contains such an element.  Returns <tt>true</tt> if
+     * More formally, removes an element {@code e} such that
+     * {@code Objects.equals(o, e)},
+     * if this set contains such an element.  Returns {@code true} if
      * this set contained the element (or equivalently, if this set
      * changed as a result of the call).  (This set will not contain the
      * element once the call returns.)
      *
      * @param o object to be removed from this set, if present
-     * @return <tt>true</tt> if the set contained the specified element
+     * @return {@code true} if the set contained the specified element
      */
     public boolean remove(Object o) {
         return map.remove(o)==PRESENT;
@@ -244,7 +244,7 @@ public class HashSet<E>
     }
 
     /**
-     * Returns a shallow copy of this <tt>HashSet</tt> instance: the elements
+     * Returns a shallow copy of this {@code HashSet} instance: the elements
      * themselves are not cloned.
      *
      * @return a shallow copy of this set
@@ -261,10 +261,10 @@ public class HashSet<E>
     }
 
     /**
-     * Save the state of this <tt>HashSet</tt> instance to a stream (that is,
+     * Save the state of this {@code HashSet} instance to a stream (that is,
      * serialize it).
      *
-     * @serialData The capacity of the backing <tt>HashMap</tt> instance
+     * @serialData The capacity of the backing {@code HashMap} instance
      *             (int), and its load factor (float) are emitted, followed by
      *             the size of the set (the number of elements it contains)
      *             (int), followed by all of its elements (each an Object) in
@@ -288,7 +288,7 @@ public class HashSet<E>
     }
 
     /**
-     * Reconstitute the <tt>HashSet</tt> instance from a stream (that is,
+     * Reconstitute the {@code HashSet} instance from a stream (that is,
      * deserialize it).
      */
     private void readObject(java.io.ObjectInputStream s)

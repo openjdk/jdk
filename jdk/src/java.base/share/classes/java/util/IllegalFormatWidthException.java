@@ -27,7 +27,7 @@ package java.util;
 
 /**
  * Unchecked exception thrown when the format width is a negative value other
- * than <tt>-1</tt> or is otherwise unsupported.
+ * than {@code -1} or is otherwise unsupported.
  *
  * @since 1.5
  */
