@@ -33,7 +33,9 @@
 #include "runtime/os.hpp"
 
 void LIR_Assembler::patching_epilog(PatchingStub* patch, LIR_PatchCode patch_code, Register obj, CodeEmitInfo* info) {
-  // we must have enough patching space so that call can be inserted
+  // We must have enough patching space so that call can be inserted.
+  // We cannot use fat nops here, since the concurrent code rewrite may transiently
+  // create the illegal instruction sequence.
   while ((intx) _masm->pc() - (intx) patch->pc_start() < NativeCall::instruction_size) {
     _masm->nop();
   }
@@ -592,9 +594,7 @@ void LIR_Assembler::emit_op1(LIR_Op1* op) {
 void LIR_Assembler::emit_op0(LIR_Op0* op) {
   switch (op->code()) {
     case lir_word_align: {
-      while (code_offset() % BytesPerWord != 0) {
-        _masm->nop();
-      }
+      _masm->align(BytesPerWord);
       break;
     }
 
