@@ -93,7 +93,7 @@ typedef void* (*PORT_NewCompoundControlPtr)(void* creator, char* type, void** co
  * returns an opaque pointer to the created control
  */
 typedef void* (*PORT_NewFloatControlPtr)(void* creator, void* controlID, char* type,
-              float min, float max, float precision, char* units);
+              float min, float max, float precision, const char* units);
 
 /* control: The control to add to current port
  * creator: pointer to the creator struct provided by PORT_GetControls

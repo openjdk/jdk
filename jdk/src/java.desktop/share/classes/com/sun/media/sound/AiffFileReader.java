@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,18 +27,13 @@ package com.sun.media.sound;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 
 import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
-
 
 /**
  * AIFF file reader and writer.
@@ -49,177 +44,10 @@ import javax.sound.sampled.UnsupportedAudioFileException;
  */
 public final class AiffFileReader extends SunFileReader {
 
-    private static final int MAX_READ_LENGTH = 8;
-
-    // METHODS TO IMPLEMENT AudioFileReader
-
-    /**
-     * Obtains the audio file format of the input stream provided.  The stream must
-     * point to valid audio file data.  In general, audio file providers may
-     * need to read some data from the stream before determining whether they
-     * support it.  These parsers must
-     * be able to mark the stream, read enough data to determine whether they
-     * support the stream, and, if not, reset the stream's read pointer to its original
-     * position.  If the input stream does not support this, this method may fail
-     * with an IOException.
-     * @param stream the input stream from which file format information should be
-     * extracted
-     * @return an <code>AudioFileFormat</code> object describing the audio file format
-     * @throws UnsupportedAudioFileException if the stream does not point to valid audio
-     * file data recognized by the system
-     * @throws IOException if an I/O exception occurs
-     * @see InputStream#markSupported
-     * @see InputStream#mark
-     */
-    public AudioFileFormat getAudioFileFormat(InputStream stream) throws UnsupportedAudioFileException, IOException {
-        // fix for 4489272: AudioSystem.getAudioFileFormat() fails for InputStream, but works for URL
-        AudioFileFormat aff = getCOMM(stream, true);
-        // the following is not strictly necessary - but was implemented like that in 1.3.0 - 1.4.1
-        // so I leave it as it was. May remove this for 1.5.0
-        stream.reset();
-        return aff;
-    }
-
-
-    /**
-     * Obtains the audio file format of the URL provided.  The URL must
-     * point to valid audio file data.
-     * @param url the URL from which file format information should be
-     * extracted
-     * @return an <code>AudioFileFormat</code> object describing the audio file format
-     * @throws UnsupportedAudioFileException if the URL does not point to valid audio
-     * file data recognized by the system
-     * @throws IOException if an I/O exception occurs
-     */
-    public AudioFileFormat getAudioFileFormat(URL url) throws UnsupportedAudioFileException, IOException {
-        AudioFileFormat fileFormat = null;
-        InputStream urlStream = url.openStream();       // throws IOException
-        try {
-            fileFormat = getCOMM(urlStream, false);
-        } finally {
-            urlStream.close();
-        }
-        return fileFormat;
-    }
-
-
-    /**
-     * Obtains the audio file format of the File provided.  The File must
-     * point to valid audio file data.
-     * @param file the File from which file format information should be
-     * extracted
-     * @return an <code>AudioFileFormat</code> object describing the audio file format
-     * @throws UnsupportedAudioFileException if the File does not point to valid audio
-     * file data recognized by the system
-     * @throws IOException if an I/O exception occurs
-     */
-    public AudioFileFormat getAudioFileFormat(File file) throws UnsupportedAudioFileException, IOException {
-        AudioFileFormat fileFormat = null;
-        FileInputStream fis = new FileInputStream(file);       // throws IOException
-        // part of fix for 4325421
-        try {
-            fileFormat = getCOMM(fis, false);
-        } finally {
-            fis.close();
-        }
-
-        return fileFormat;
-    }
-
-
-
-
-    /**
-     * Obtains an audio stream from the input stream provided.  The stream must
-     * point to valid audio file data.  In general, audio file providers may
-     * need to read some data from the stream before determining whether they
-     * support it.  These parsers must
-     * be able to mark the stream, read enough data to determine whether they
-     * support the stream, and, if not, reset the stream's read pointer to its original
-     * position.  If the input stream does not support this, this method may fail
-     * with an IOException.
-     * @param stream the input stream from which the <code>AudioInputStream</code> should be
-     * constructed
-     * @return an <code>AudioInputStream</code> object based on the audio file data contained
-     * in the input stream.
-     * @throws UnsupportedAudioFileException if the stream does not point to valid audio
-     * file data recognized by the system
-     * @throws IOException if an I/O exception occurs
-     * @see InputStream#markSupported
-     * @see InputStream#mark
-     */
-    public AudioInputStream getAudioInputStream(InputStream stream) throws UnsupportedAudioFileException, IOException {
-        // getCOMM leaves the input stream at the beginning of the audio data
-        AudioFileFormat fileFormat = getCOMM(stream, true);     // throws UnsupportedAudioFileException, IOException
-
-        // we've got everything, and the stream is at the
-        // beginning of the audio data, so return an AudioInputStream.
-        return new AudioInputStream(stream, fileFormat.getFormat(), fileFormat.getFrameLength());
-    }
-
-
-    /**
-     * Obtains an audio stream from the URL provided.  The URL must
-     * point to valid audio file data.
-     * @param url the URL for which the <code>AudioInputStream</code> should be
-     * constructed
-     * @return an <code>AudioInputStream</code> object based on the audio file data pointed
-     * to by the URL
-     * @throws UnsupportedAudioFileException if the URL does not point to valid audio
-     * file data recognized by the system
-     * @throws IOException if an I/O exception occurs
-     */
-    public AudioInputStream getAudioInputStream(URL url) throws UnsupportedAudioFileException, IOException {
-        InputStream urlStream = url.openStream();  // throws IOException
-        AudioFileFormat fileFormat = null;
-        try {
-            fileFormat = getCOMM(urlStream, false);
-        } finally {
-            if (fileFormat == null) {
-                urlStream.close();
-            }
-        }
-        return new AudioInputStream(urlStream, fileFormat.getFormat(), fileFormat.getFrameLength());
-    }
-
-
-    /**
-     * Obtains an audio stream from the File provided.  The File must
-     * point to valid audio file data.
-     * @param file the File for which the <code>AudioInputStream</code> should be
-     * constructed
-     * @return an <code>AudioInputStream</code> object based on the audio file data pointed
-     * to by the File
-     * @throws UnsupportedAudioFileException if the File does not point to valid audio
-     * file data recognized by the system
-     * @throws IOException if an I/O exception occurs
-     */
-    public AudioInputStream getAudioInputStream(File file)
-        throws UnsupportedAudioFileException, IOException {
-
-        FileInputStream fis = new FileInputStream(file); // throws IOException
-        AudioFileFormat fileFormat = null;
-        // part of fix for 4325421
-        try {
-            fileFormat = getCOMM(fis, false);
-        } finally {
-            if (fileFormat == null) {
-                fis.close();
-            }
-        }
-        return new AudioInputStream(fis, fileFormat.getFormat(), fileFormat.getFrameLength());
-    }
-
-    //--------------------------------------------------------------------
-
-    private AudioFileFormat getCOMM(InputStream is, boolean doReset)
-        throws UnsupportedAudioFileException, IOException {
-
-        DataInputStream dis = new DataInputStream(is);
-
-        if (doReset) {
-            dis.mark(MAX_READ_LENGTH);
-        }
+    @Override
+    AudioFileFormat getAudioFileFormatImpl(final InputStream stream)
+            throws UnsupportedAudioFileException, IOException {
+        DataInputStream dis = new DataInputStream(stream);
 
         // assumes a stream at the beginning of the file which has already
         // passed the magic number test...
@@ -234,9 +62,6 @@ public final class AiffFileReader extends SunFileReader {
         // $$fb: fix for 4369044: javax.sound.sampled.AudioSystem.getAudioInputStream() works wrong with Cp037
         if (magic != AiffFileFormat.AIFF_MAGIC) {
             // not AIFF, throw exception
-            if (doReset) {
-                dis.reset();
-            }
             throw new UnsupportedAudioFileException("not an AIFF file");
         }
 
