@@ -26,18 +26,17 @@
 package javax.security.auth;
 
 /**
- * This class is for authentication permissions.
- * An AuthPermission contains a name
- * (also referred to as a "target name")
- * but no actions list; you either have the named permission
- * or you don't.
+ * This class is for authentication permissions. An {@code AuthPermission}
+ * contains a name (also referred to as a "target name") but no actions
+ * list; you either have the named permission or you don't.
  *
  * <p> The target name is the name of a security configuration parameter
- * (see below).  Currently the AuthPermission object is used to
- * guard access to the Policy, Subject, LoginContext,
- * and Configuration objects.
+ * (see below).  Currently the {@code AuthPermission} object is used to
+ * guard access to the {@link Policy}, {@link Subject},
+ * {@link javax.security.auth.login.LoginContext}, and
+ * {@link javax.security.auth.login.Configuration} objects.
  *
- * <p> The possible target names for an Authentication Permission are:
+ * <p> The standard target names for an Authentication Permission are:
  *
  * <pre>
  *      doAs -                  allow the caller to invoke the
@@ -125,6 +124,9 @@ package javax.security.auth;
  *                              Subject-based access control policy.
  * </pre>
  *
+ * @implNote
+ * Implementations may define additional target names, but should use naming
+ * conventions such as reverse domain name notation to avoid name clashes.
  */
 public final class AuthPermission extends
 java.security.BasicPermission {
