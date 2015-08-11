@@ -29,7 +29,8 @@ import java.util.ArrayList;
 /* @test
  * @summary Test probing content type simultaneously from multiple threads.
  * @requires (os.family == "linux") | (os.family == "solaris")
- * @run main ParallelProbes 10
+ * @build ParallelProbes SimpleFileTypeDetector
+ * @run main/othervm ParallelProbes 10
  */
 public class ParallelProbes {
 
