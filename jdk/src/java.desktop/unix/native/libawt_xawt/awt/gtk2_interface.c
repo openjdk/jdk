@@ -203,9 +203,6 @@ static void (*fp_gdk_draw_rectangle)(GdkDrawable*, GdkGC*, gboolean,
         gint, gint, gint, gint);
 static GdkPixbuf *(*fp_gdk_pixbuf_new)(GdkColorspace colorspace,
         gboolean has_alpha, int bits_per_sample, int width, int height);
-static GdkPixbuf *(*fp_gdk_pixbuf_get_from_drawable)(GdkPixbuf *dest,
-        GdkDrawable *src, GdkColormap *cmap, int src_x, int src_y,
-        int dest_x, int dest_y, int width, int height);
 static void (*fp_gdk_drawable_get_size)(GdkDrawable *drawable,
         gint* width, gint* height);
 
@@ -646,6 +643,8 @@ gboolean gtk2_load(JNIEnv *env)
         fp_g_object_set = dl_symbol("g_object_set");
 
         /* GDK */
+        fp_gdk_get_default_root_window =
+            dl_symbol("gdk_get_default_root_window");
         fp_gdk_pixmap_new = dl_symbol("gdk_pixmap_new");
         fp_gdk_pixbuf_get_from_drawable =
             dl_symbol("gdk_pixbuf_get_from_drawable");
@@ -670,6 +669,8 @@ gboolean gtk2_load(JNIEnv *env)
                 dl_symbol("gdk_pixbuf_get_bits_per_sample");
         fp_gdk_pixbuf_get_n_channels =
                 dl_symbol("gdk_pixbuf_get_n_channels");
+        fp_gdk_pixbuf_get_colorspace =
+                dl_symbol("gdk_pixbuf_get_colorspace");
 
         /* GTK painting */
         fp_gtk_init_check = dl_symbol("gtk_init_check");
