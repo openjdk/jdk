@@ -1772,10 +1772,10 @@ public class Arrays {
      * @param a the array to be searched
      * @param key the value to be searched for
      * @return index of the search key, if it is contained in the array;
-     *         otherwise, <tt>(-(<i>insertion point</i>) - 1)</tt>.  The
+     *         otherwise, <code>(-(<i>insertion point</i>) - 1)</code>.  The
      *         <i>insertion point</i> is defined as the point at which the
      *         key would be inserted into the array: the index of the first
-     *         element greater than the key, or <tt>a.length</tt> if all
+     *         element greater than the key, or {@code a.length} if all
      *         elements in the array are less than the specified key.  Note
      *         that this guarantees that the return value will be &gt;= 0 if
      *         and only if the key is found.
@@ -1802,11 +1802,11 @@ public class Arrays {
      * @param key the value to be searched for
      * @return index of the search key, if it is contained in the array
      *         within the specified range;
-     *         otherwise, <tt>(-(<i>insertion point</i>) - 1)</tt>.  The
+     *         otherwise, <code>(-(<i>insertion point</i>) - 1)</code>.  The
      *         <i>insertion point</i> is defined as the point at which the
      *         key would be inserted into the array: the index of the first
      *         element in the range greater than the key,
-     *         or <tt>toIndex</tt> if all
+     *         or {@code toIndex} if all
      *         elements in the range are less than the specified key.  Note
      *         that this guarantees that the return value will be &gt;= 0 if
      *         and only if the key is found.
@@ -1853,10 +1853,10 @@ public class Arrays {
      * @param a the array to be searched
      * @param key the value to be searched for
      * @return index of the search key, if it is contained in the array;
-     *         otherwise, <tt>(-(<i>insertion point</i>) - 1)</tt>.  The
+     *         otherwise, <code>(-(<i>insertion point</i>) - 1)</code>.  The
      *         <i>insertion point</i> is defined as the point at which the
      *         key would be inserted into the array: the index of the first
-     *         element greater than the key, or <tt>a.length</tt> if all
+     *         element greater than the key, or {@code a.length} if all
      *         elements in the array are less than the specified key.  Note
      *         that this guarantees that the return value will be &gt;= 0 if
      *         and only if the key is found.
@@ -1883,11 +1883,11 @@ public class Arrays {
      * @param key the value to be searched for
      * @return index of the search key, if it is contained in the array
      *         within the specified range;
-     *         otherwise, <tt>(-(<i>insertion point</i>) - 1)</tt>.  The
+     *         otherwise, <code>(-(<i>insertion point</i>) - 1)</code>.  The
      *         <i>insertion point</i> is defined as the point at which the
      *         key would be inserted into the array: the index of the first
      *         element in the range greater than the key,
-     *         or <tt>toIndex</tt> if all
+     *         or {@code toIndex} if all
      *         elements in the range are less than the specified key.  Note
      *         that this guarantees that the return value will be &gt;= 0 if
      *         and only if the key is found.
@@ -1934,10 +1934,10 @@ public class Arrays {
      * @param a the array to be searched
      * @param key the value to be searched for
      * @return index of the search key, if it is contained in the array;
-     *         otherwise, <tt>(-(<i>insertion point</i>) - 1)</tt>.  The
+     *         otherwise, <code>(-(<i>insertion point</i>) - 1)</code>.  The
      *         <i>insertion point</i> is defined as the point at which the
      *         key would be inserted into the array: the index of the first
-     *         element greater than the key, or <tt>a.length</tt> if all
+     *         element greater than the key, or {@code a.length} if all
      *         elements in the array are less than the specified key.  Note
      *         that this guarantees that the return value will be &gt;= 0 if
      *         and only if the key is found.
@@ -1964,11 +1964,11 @@ public class Arrays {
      * @param key the value to be searched for
      * @return index of the search key, if it is contained in the array
      *         within the specified range;
-     *         otherwise, <tt>(-(<i>insertion point</i>) - 1)</tt>.  The
+     *         otherwise, <code>(-(<i>insertion point</i>) - 1)</code>.  The
      *         <i>insertion point</i> is defined as the point at which the
      *         key would be inserted into the array: the index of the first
      *         element in the range greater than the key,
-     *         or <tt>toIndex</tt> if all
+     *         or {@code toIndex} if all
      *         elements in the range are less than the specified key.  Note
      *         that this guarantees that the return value will be &gt;= 0 if
      *         and only if the key is found.
@@ -2015,10 +2015,10 @@ public class Arrays {
      * @param a the array to be searched
      * @param key the value to be searched for
      * @return index of the search key, if it is contained in the array;
-     *         otherwise, <tt>(-(<i>insertion point</i>) - 1)</tt>.  The
+     *         otherwise, <code>(-(<i>insertion point</i>) - 1)</code>.  The
      *         <i>insertion point</i> is defined as the point at which the
      *         key would be inserted into the array: the index of the first
-     *         element greater than the key, or <tt>a.length</tt> if all
+     *         element greater than the key, or {@code a.length} if all
      *         elements in the array are less than the specified key.  Note
      *         that this guarantees that the return value will be &gt;= 0 if
      *         and only if the key is found.
@@ -2045,11 +2045,11 @@ public class Arrays {
      * @param key the value to be searched for
      * @return index of the search key, if it is contained in the array
      *         within the specified range;
-     *         otherwise, <tt>(-(<i>insertion point</i>) - 1)</tt>.  The
+     *         otherwise, <code>(-(<i>insertion point</i>) - 1)</code>.  The
      *         <i>insertion point</i> is defined as the point at which the
      *         key would be inserted into the array: the index of the first
      *         element in the range greater than the key,
-     *         or <tt>toIndex</tt> if all
+     *         or {@code toIndex} if all
      *         elements in the range are less than the specified key.  Note
      *         that this guarantees that the return value will be &gt;= 0 if
      *         and only if the key is found.
@@ -2096,10 +2096,10 @@ public class Arrays {
      * @param a the array to be searched
      * @param key the value to be searched for
      * @return index of the search key, if it is contained in the array;
-     *         otherwise, <tt>(-(<i>insertion point</i>) - 1)</tt>.  The
+     *         otherwise, <code>(-(<i>insertion point</i>) - 1)</code>.  The
      *         <i>insertion point</i> is defined as the point at which the
      *         key would be inserted into the array: the index of the first
-     *         element greater than the key, or <tt>a.length</tt> if all
+     *         element greater than the key, or {@code a.length} if all
      *         elements in the array are less than the specified key.  Note
      *         that this guarantees that the return value will be &gt;= 0 if
      *         and only if the key is found.
@@ -2126,11 +2126,11 @@ public class Arrays {
      * @param key the value to be searched for
      * @return index of the search key, if it is contained in the array
      *         within the specified range;
-     *         otherwise, <tt>(-(<i>insertion point</i>) - 1)</tt>.  The
+     *         otherwise, <code>(-(<i>insertion point</i>) - 1)</code>.  The
      *         <i>insertion point</i> is defined as the point at which the
      *         key would be inserted into the array: the index of the first
      *         element in the range greater than the key,
-     *         or <tt>toIndex</tt> if all
+     *         or {@code toIndex} if all
      *         elements in the range are less than the specified key.  Note
      *         that this guarantees that the return value will be &gt;= 0 if
      *         and only if the key is found.
@@ -2178,10 +2178,10 @@ public class Arrays {
      * @param a the array to be searched
      * @param key the value to be searched for
      * @return index of the search key, if it is contained in the array;
-     *         otherwise, <tt>(-(<i>insertion point</i>) - 1)</tt>.  The
+     *         otherwise, <code>(-(<i>insertion point</i>) - 1)</code>.  The
      *         <i>insertion point</i> is defined as the point at which the
      *         key would be inserted into the array: the index of the first
-     *         element greater than the key, or <tt>a.length</tt> if all
+     *         element greater than the key, or {@code a.length} if all
      *         elements in the array are less than the specified key.  Note
      *         that this guarantees that the return value will be &gt;= 0 if
      *         and only if the key is found.
@@ -2209,11 +2209,11 @@ public class Arrays {
      * @param key the value to be searched for
      * @return index of the search key, if it is contained in the array
      *         within the specified range;
-     *         otherwise, <tt>(-(<i>insertion point</i>) - 1)</tt>.  The
+     *         otherwise, <code>(-(<i>insertion point</i>) - 1)</code>.  The
      *         <i>insertion point</i> is defined as the point at which the
      *         key would be inserted into the array: the index of the first
      *         element in the range greater than the key,
-     *         or <tt>toIndex</tt> if all
+     *         or {@code toIndex} if all
      *         elements in the range are less than the specified key.  Note
      *         that this guarantees that the return value will be &gt;= 0 if
      *         and only if the key is found.
@@ -2269,10 +2269,10 @@ public class Arrays {
      * @param a the array to be searched
      * @param key the value to be searched for
      * @return index of the search key, if it is contained in the array;
-     *         otherwise, <tt>(-(<i>insertion point</i>) - 1)</tt>. The
+     *         otherwise, <code>(-(<i>insertion point</i>) - 1)</code>. The
      *         <i>insertion point</i> is defined as the point at which the
      *         key would be inserted into the array: the index of the first
-     *         element greater than the key, or <tt>a.length</tt> if all
+     *         element greater than the key, or {@code a.length} if all
      *         elements in the array are less than the specified key. Note
      *         that this guarantees that the return value will be &gt;= 0 if
      *         and only if the key is found.
@@ -2300,11 +2300,11 @@ public class Arrays {
      * @param key the value to be searched for
      * @return index of the search key, if it is contained in the array
      *         within the specified range;
-     *         otherwise, <tt>(-(<i>insertion point</i>) - 1)</tt>. The
+     *         otherwise, <code>(-(<i>insertion point</i>) - 1)</code>. The
      *         <i>insertion point</i> is defined as the point at which the
      *         key would be inserted into the array: the index of the first
      *         element in the range greater than the key,
-     *         or <tt>toIndex</tt> if all
+     *         or {@code toIndex} if all
      *         elements in the range are less than the specified key. Note
      *         that this guarantees that the return value will be &gt;= 0 if
      *         and only if the key is found.
@@ -2366,10 +2366,10 @@ public class Arrays {
      * @param a the array to be searched
      * @param key the value to be searched for
      * @return index of the search key, if it is contained in the array;
-     *         otherwise, <tt>(-(<i>insertion point</i>) - 1)</tt>.  The
+     *         otherwise, <code>(-(<i>insertion point</i>) - 1)</code>.  The
      *         <i>insertion point</i> is defined as the point at which the
      *         key would be inserted into the array: the index of the first
-     *         element greater than the key, or <tt>a.length</tt> if all
+     *         element greater than the key, or {@code a.length} if all
      *         elements in the array are less than the specified key.  Note
      *         that this guarantees that the return value will be &gt;= 0 if
      *         and only if the key is found.
@@ -2404,11 +2404,11 @@ public class Arrays {
      * @param key the value to be searched for
      * @return index of the search key, if it is contained in the array
      *         within the specified range;
-     *         otherwise, <tt>(-(<i>insertion point</i>) - 1)</tt>.  The
+     *         otherwise, <code>(-(<i>insertion point</i>) - 1)</code>.  The
      *         <i>insertion point</i> is defined as the point at which the
      *         key would be inserted into the array: the index of the first
      *         element in the range greater than the key,
-     *         or <tt>toIndex</tt> if all
+     *         or {@code toIndex} if all
      *         elements in the range are less than the specified key.  Note
      *         that this guarantees that the return value will be &gt;= 0 if
      *         and only if the key is found.
@@ -2464,13 +2464,13 @@ public class Arrays {
      * @param a the array to be searched
      * @param key the value to be searched for
      * @param c the comparator by which the array is ordered.  A
-     *        <tt>null</tt> value indicates that the elements'
+     *        {@code null} value indicates that the elements'
      *        {@linkplain Comparable natural ordering} should be used.
      * @return index of the search key, if it is contained in the array;
-     *         otherwise, <tt>(-(<i>insertion point</i>) - 1)</tt>.  The
+     *         otherwise, <code>(-(<i>insertion point</i>) - 1)</code>.  The
      *         <i>insertion point</i> is defined as the point at which the
      *         key would be inserted into the array: the index of the first
-     *         element greater than the key, or <tt>a.length</tt> if all
+     *         element greater than the key, or {@code a.length} if all
      *         elements in the array are less than the specified key.  Note
      *         that this guarantees that the return value will be &gt;= 0 if
      *         and only if the key is found.
@@ -2503,15 +2503,15 @@ public class Arrays {
      * @param toIndex the index of the last element (exclusive) to be searched
      * @param key the value to be searched for
      * @param c the comparator by which the array is ordered.  A
-     *        <tt>null</tt> value indicates that the elements'
+     *        {@code null} value indicates that the elements'
      *        {@linkplain Comparable natural ordering} should be used.
      * @return index of the search key, if it is contained in the array
      *         within the specified range;
-     *         otherwise, <tt>(-(<i>insertion point</i>) - 1)</tt>.  The
+     *         otherwise, <code>(-(<i>insertion point</i>) - 1)</code>.  The
      *         <i>insertion point</i> is defined as the point at which the
      *         key would be inserted into the array: the index of the first
      *         element in the range greater than the key,
-     *         or <tt>toIndex</tt> if all
+     *         or {@code toIndex} if all
      *         elements in the range are less than the specified key.  Note
      *         that this guarantees that the return value will be &gt;= 0 if
      *         and only if the key is found.
@@ -2557,16 +2557,16 @@ public class Arrays {
     // Equality Testing
 
     /**
-     * Returns <tt>true</tt> if the two specified arrays of longs are
+     * Returns {@code true} if the two specified arrays of longs are
      * <i>equal</i> to one another.  Two arrays are considered equal if both
      * arrays contain the same number of elements, and all corresponding pairs
      * of elements in the two arrays are equal.  In other words, two arrays
      * are equal if they contain the same elements in the same order.  Also,
-     * two array references are considered equal if both are <tt>null</tt>.
+     * two array references are considered equal if both are {@code null}.
      *
      * @param a one array to be tested for equality
      * @param a2 the other array to be tested for equality
-     * @return <tt>true</tt> if the two arrays are equal
+     * @return {@code true} if the two arrays are equal
      */
     public static boolean equals(long[] a, long[] a2) {
         if (a==a2)
@@ -2586,16 +2586,16 @@ public class Arrays {
     }
 
     /**
-     * Returns <tt>true</tt> if the two specified arrays of ints are
+     * Returns {@code true} if the two specified arrays of ints are
      * <i>equal</i> to one another.  Two arrays are considered equal if both
      * arrays contain the same number of elements, and all corresponding pairs
      * of elements in the two arrays are equal.  In other words, two arrays
      * are equal if they contain the same elements in the same order.  Also,
-     * two array references are considered equal if both are <tt>null</tt>.
+     * two array references are considered equal if both are {@code null}.
      *
      * @param a one array to be tested for equality
      * @param a2 the other array to be tested for equality
-     * @return <tt>true</tt> if the two arrays are equal
+     * @return {@code true} if the two arrays are equal
      */
     public static boolean equals(int[] a, int[] a2) {
         if (a==a2)
@@ -2615,16 +2615,16 @@ public class Arrays {
     }
 
     /**
-     * Returns <tt>true</tt> if the two specified arrays of shorts are
+     * Returns {@code true} if the two specified arrays of shorts are
      * <i>equal</i> to one another.  Two arrays are considered equal if both
      * arrays contain the same number of elements, and all corresponding pairs
      * of elements in the two arrays are equal.  In other words, two arrays
      * are equal if they contain the same elements in the same order.  Also,
-     * two array references are considered equal if both are <tt>null</tt>.
+     * two array references are considered equal if both are {@code null}.
      *
      * @param a one array to be tested for equality
      * @param a2 the other array to be tested for equality
-     * @return <tt>true</tt> if the two arrays are equal
+     * @return {@code true} if the two arrays are equal
      */
     public static boolean equals(short[] a, short a2[]) {
         if (a==a2)
@@ -2644,16 +2644,16 @@ public class Arrays {
     }
 
     /**
-     * Returns <tt>true</tt> if the two specified arrays of chars are
+     * Returns {@code true} if the two specified arrays of chars are
      * <i>equal</i> to one another.  Two arrays are considered equal if both
      * arrays contain the same number of elements, and all corresponding pairs
      * of elements in the two arrays are equal.  In other words, two arrays
      * are equal if they contain the same elements in the same order.  Also,
-     * two array references are considered equal if both are <tt>null</tt>.
+     * two array references are considered equal if both are {@code null}.
      *
      * @param a one array to be tested for equality
      * @param a2 the other array to be tested for equality
-     * @return <tt>true</tt> if the two arrays are equal
+     * @return {@code true} if the two arrays are equal
      */
     @HotSpotIntrinsicCandidate
     public static boolean equals(char[] a, char[] a2) {
@@ -2674,16 +2674,16 @@ public class Arrays {
     }
 
     /**
-     * Returns <tt>true</tt> if the two specified arrays of bytes are
+     * Returns {@code true} if the two specified arrays of bytes are
      * <i>equal</i> to one another.  Two arrays are considered equal if both
      * arrays contain the same number of elements, and all corresponding pairs
      * of elements in the two arrays are equal.  In other words, two arrays
      * are equal if they contain the same elements in the same order.  Also,
-     * two array references are considered equal if both are <tt>null</tt>.
+     * two array references are considered equal if both are {@code null}.
      *
      * @param a one array to be tested for equality
      * @param a2 the other array to be tested for equality
-     * @return <tt>true</tt> if the two arrays are equal
+     * @return {@code true} if the two arrays are equal
      */
     public static boolean equals(byte[] a, byte[] a2) {
         if (a==a2)
@@ -2703,16 +2703,16 @@ public class Arrays {
     }
 
     /**
-     * Returns <tt>true</tt> if the two specified arrays of booleans are
+     * Returns {@code true} if the two specified arrays of booleans are
      * <i>equal</i> to one another.  Two arrays are considered equal if both
      * arrays contain the same number of elements, and all corresponding pairs
      * of elements in the two arrays are equal.  In other words, two arrays
      * are equal if they contain the same elements in the same order.  Also,
-     * two array references are considered equal if both are <tt>null</tt>.
+     * two array references are considered equal if both are {@code null}.
      *
      * @param a one array to be tested for equality
      * @param a2 the other array to be tested for equality
-     * @return <tt>true</tt> if the two arrays are equal
+     * @return {@code true} if the two arrays are equal
      */
     public static boolean equals(boolean[] a, boolean[] a2) {
         if (a==a2)
@@ -2732,21 +2732,21 @@ public class Arrays {
     }
 
     /**
-     * Returns <tt>true</tt> if the two specified arrays of doubles are
+     * Returns {@code true} if the two specified arrays of doubles are
      * <i>equal</i> to one another.  Two arrays are considered equal if both
      * arrays contain the same number of elements, and all corresponding pairs
      * of elements in the two arrays are equal.  In other words, two arrays
      * are equal if they contain the same elements in the same order.  Also,
-     * two array references are considered equal if both are <tt>null</tt>.
+     * two array references are considered equal if both are {@code null}.
      *
-     * Two doubles <tt>d1</tt> and <tt>d2</tt> are considered equal if:
-     * <pre>    <tt>new Double(d1).equals(new Double(d2))</tt></pre>
-     * (Unlike the <tt>==</tt> operator, this method considers
-     * <tt>NaN</tt> equals to itself, and 0.0d unequal to -0.0d.)
+     * Two doubles {@code d1} and {@code d2} are considered equal if:
+     * <pre>    {@code new Double(d1).equals(new Double(d2))}</pre>
+     * (Unlike the {@code ==} operator, this method considers
+     * {@code NaN} equals to itself, and 0.0d unequal to -0.0d.)
      *
      * @param a one array to be tested for equality
      * @param a2 the other array to be tested for equality
-     * @return <tt>true</tt> if the two arrays are equal
+     * @return {@code true} if the two arrays are equal
      * @see Double#equals(Object)
      */
     public static boolean equals(double[] a, double[] a2) {
@@ -2767,21 +2767,21 @@ public class Arrays {
     }
 
     /**
-     * Returns <tt>true</tt> if the two specified arrays of floats are
+     * Returns {@code true} if the two specified arrays of floats are
      * <i>equal</i> to one another.  Two arrays are considered equal if both
      * arrays contain the same number of elements, and all corresponding pairs
      * of elements in the two arrays are equal.  In other words, two arrays
      * are equal if they contain the same elements in the same order.  Also,
-     * two array references are considered equal if both are <tt>null</tt>.
+     * two array references are considered equal if both are {@code null}.
      *
-     * Two floats <tt>f1</tt> and <tt>f2</tt> are considered equal if:
-     * <pre>    <tt>new Float(f1).equals(new Float(f2))</tt></pre>
-     * (Unlike the <tt>==</tt> operator, this method considers
-     * <tt>NaN</tt> equals to itself, and 0.0f unequal to -0.0f.)
+     * Two floats {@code f1} and {@code f2} are considered equal if:
+     * <pre>    {@code new Float(f1).equals(new Float(f2))}</pre>
+     * (Unlike the {@code ==} operator, this method considers
+     * {@code NaN} equals to itself, and 0.0f unequal to -0.0f.)
      *
      * @param a one array to be tested for equality
      * @param a2 the other array to be tested for equality
-     * @return <tt>true</tt> if the two arrays are equal
+     * @return {@code true} if the two arrays are equal
      * @see Float#equals(Object)
      */
     public static boolean equals(float[] a, float[] a2) {
@@ -2802,18 +2802,19 @@ public class Arrays {
     }
 
     /**
-     * Returns <tt>true</tt> if the two specified arrays of Objects are
+     * Returns {@code true} if the two specified arrays of Objects are
      * <i>equal</i> to one another.  The two arrays are considered equal if
      * both arrays contain the same number of elements, and all corresponding
-     * pairs of elements in the two arrays are equal.  Two objects <tt>e1</tt>
-     * and <tt>e2</tt> are considered <i>equal</i> if <tt>(e1==null ? e2==null
-     * : e1.equals(e2))</tt>.  In other words, the two arrays are equal if
+     * pairs of elements in the two arrays are equal.  Two objects {@code e1}
+     * and {@code e2} are considered <i>equal</i> if
+     * {@code Objects.equals(e1, e2)}.
+     * In other words, the two arrays are equal if
      * they contain the same elements in the same order.  Also, two array
-     * references are considered equal if both are <tt>null</tt>.
+     * references are considered equal if both are {@code null}.
      *
      * @param a one array to be tested for equality
      * @param a2 the other array to be tested for equality
-     * @return <tt>true</tt> if the two arrays are equal
+     * @return {@code true} if the two arrays are equal
      */
     public static boolean equals(Object[] a, Object[] a2) {
         if (a==a2)
@@ -2852,8 +2853,8 @@ public class Arrays {
     /**
      * Assigns the specified long value to each element of the specified
      * range of the specified array of longs.  The range to be filled
-     * extends from index <tt>fromIndex</tt>, inclusive, to index
-     * <tt>toIndex</tt>, exclusive.  (If <tt>fromIndex==toIndex</tt>, the
+     * extends from index {@code fromIndex}, inclusive, to index
+     * {@code toIndex}, exclusive.  (If {@code fromIndex==toIndex}, the
      * range to be filled is empty.)
      *
      * @param a the array to be filled
@@ -2862,9 +2863,9 @@ public class Arrays {
      * @param toIndex the index of the last element (exclusive) to be
      *        filled with the specified value
      * @param val the value to be stored in all elements of the array
-     * @throws IllegalArgumentException if <tt>fromIndex &gt; toIndex</tt>
-     * @throws ArrayIndexOutOfBoundsException if <tt>fromIndex &lt; 0</tt> or
-     *         <tt>toIndex &gt; a.length</tt>
+     * @throws IllegalArgumentException if {@code fromIndex > toIndex}
+     * @throws ArrayIndexOutOfBoundsException if {@code fromIndex < 0} or
+     *         {@code toIndex > a.length}
      */
     public static void fill(long[] a, int fromIndex, int toIndex, long val) {
         rangeCheck(a.length, fromIndex, toIndex);
@@ -2887,8 +2888,8 @@ public class Arrays {
     /**
      * Assigns the specified int value to each element of the specified
      * range of the specified array of ints.  The range to be filled
-     * extends from index <tt>fromIndex</tt>, inclusive, to index
-     * <tt>toIndex</tt>, exclusive.  (If <tt>fromIndex==toIndex</tt>, the
+     * extends from index {@code fromIndex}, inclusive, to index
+     * {@code toIndex}, exclusive.  (If {@code fromIndex==toIndex}, the
      * range to be filled is empty.)
      *
      * @param a the array to be filled
@@ -2897,9 +2898,9 @@ public class Arrays {
      * @param toIndex the index of the last element (exclusive) to be
      *        filled with the specified value
      * @param val the value to be stored in all elements of the array
-     * @throws IllegalArgumentException if <tt>fromIndex &gt; toIndex</tt>
-     * @throws ArrayIndexOutOfBoundsException if <tt>fromIndex &lt; 0</tt> or
-     *         <tt>toIndex &gt; a.length</tt>
+     * @throws IllegalArgumentException if {@code fromIndex > toIndex}
+     * @throws ArrayIndexOutOfBoundsException if {@code fromIndex < 0} or
+     *         {@code toIndex > a.length}
      */
     public static void fill(int[] a, int fromIndex, int toIndex, int val) {
         rangeCheck(a.length, fromIndex, toIndex);
@@ -2922,8 +2923,8 @@ public class Arrays {
     /**
      * Assigns the specified short value to each element of the specified
      * range of the specified array of shorts.  The range to be filled
-     * extends from index <tt>fromIndex</tt>, inclusive, to index
-     * <tt>toIndex</tt>, exclusive.  (If <tt>fromIndex==toIndex</tt>, the
+     * extends from index {@code fromIndex}, inclusive, to index
+     * {@code toIndex}, exclusive.  (If {@code fromIndex==toIndex}, the
      * range to be filled is empty.)
      *
      * @param a the array to be filled
@@ -2932,9 +2933,9 @@ public class Arrays {
      * @param toIndex the index of the last element (exclusive) to be
      *        filled with the specified value
      * @param val the value to be stored in all elements of the array
-     * @throws IllegalArgumentException if <tt>fromIndex &gt; toIndex</tt>
-     * @throws ArrayIndexOutOfBoundsException if <tt>fromIndex &lt; 0</tt> or
-     *         <tt>toIndex &gt; a.length</tt>
+     * @throws IllegalArgumentException if {@code fromIndex > toIndex}
+     * @throws ArrayIndexOutOfBoundsException if {@code fromIndex < 0} or
+     *         {@code toIndex > a.length}
      */
     public static void fill(short[] a, int fromIndex, int toIndex, short val) {
         rangeCheck(a.length, fromIndex, toIndex);
@@ -2957,8 +2958,8 @@ public class Arrays {
     /**
      * Assigns the specified char value to each element of the specified
      * range of the specified array of chars.  The range to be filled
-     * extends from index <tt>fromIndex</tt>, inclusive, to index
-     * <tt>toIndex</tt>, exclusive.  (If <tt>fromIndex==toIndex</tt>, the
+     * extends from index {@code fromIndex}, inclusive, to index
+     * {@code toIndex}, exclusive.  (If {@code fromIndex==toIndex}, the
      * range to be filled is empty.)
      *
      * @param a the array to be filled
@@ -2967,9 +2968,9 @@ public class Arrays {
      * @param toIndex the index of the last element (exclusive) to be
      *        filled with the specified value
      * @param val the value to be stored in all elements of the array
-     * @throws IllegalArgumentException if <tt>fromIndex &gt; toIndex</tt>
-     * @throws ArrayIndexOutOfBoundsException if <tt>fromIndex &lt; 0</tt> or
-     *         <tt>toIndex &gt; a.length</tt>
+     * @throws IllegalArgumentException if {@code fromIndex > toIndex}
+     * @throws ArrayIndexOutOfBoundsException if {@code fromIndex < 0} or
+     *         {@code toIndex > a.length}
      */
     public static void fill(char[] a, int fromIndex, int toIndex, char val) {
         rangeCheck(a.length, fromIndex, toIndex);
@@ -2992,8 +2993,8 @@ public class Arrays {
     /**
      * Assigns the specified byte value to each element of the specified
      * range of the specified array of bytes.  The range to be filled
-     * extends from index <tt>fromIndex</tt>, inclusive, to index
-     * <tt>toIndex</tt>, exclusive.  (If <tt>fromIndex==toIndex</tt>, the
+     * extends from index {@code fromIndex}, inclusive, to index
+     * {@code toIndex}, exclusive.  (If {@code fromIndex==toIndex}, the
      * range to be filled is empty.)
      *
      * @param a the array to be filled
@@ -3002,9 +3003,9 @@ public class Arrays {
      * @param toIndex the index of the last element (exclusive) to be
      *        filled with the specified value
      * @param val the value to be stored in all elements of the array
-     * @throws IllegalArgumentException if <tt>fromIndex &gt; toIndex</tt>
-     * @throws ArrayIndexOutOfBoundsException if <tt>fromIndex &lt; 0</tt> or
-     *         <tt>toIndex &gt; a.length</tt>
+     * @throws IllegalArgumentException if {@code fromIndex > toIndex}
+     * @throws ArrayIndexOutOfBoundsException if {@code fromIndex < 0} or
+     *         {@code toIndex > a.length}
      */
     public static void fill(byte[] a, int fromIndex, int toIndex, byte val) {
         rangeCheck(a.length, fromIndex, toIndex);
@@ -3027,8 +3028,8 @@ public class Arrays {
     /**
      * Assigns the specified boolean value to each element of the specified
      * range of the specified array of booleans.  The range to be filled
-     * extends from index <tt>fromIndex</tt>, inclusive, to index
-     * <tt>toIndex</tt>, exclusive.  (If <tt>fromIndex==toIndex</tt>, the
+     * extends from index {@code fromIndex}, inclusive, to index
+     * {@code toIndex}, exclusive.  (If {@code fromIndex==toIndex}, the
      * range to be filled is empty.)
      *
      * @param a the array to be filled
@@ -3037,9 +3038,9 @@ public class Arrays {
      * @param toIndex the index of the last element (exclusive) to be
      *        filled with the specified value
      * @param val the value to be stored in all elements of the array
-     * @throws IllegalArgumentException if <tt>fromIndex &gt; toIndex</tt>
-     * @throws ArrayIndexOutOfBoundsException if <tt>fromIndex &lt; 0</tt> or
-     *         <tt>toIndex &gt; a.length</tt>
+     * @throws IllegalArgumentException if {@code fromIndex > toIndex}
+     * @throws ArrayIndexOutOfBoundsException if {@code fromIndex < 0} or
+     *         {@code toIndex > a.length}
      */
     public static void fill(boolean[] a, int fromIndex, int toIndex,
                             boolean val) {
@@ -3063,8 +3064,8 @@ public class Arrays {
     /**
      * Assigns the specified double value to each element of the specified
      * range of the specified array of doubles.  The range to be filled
-     * extends from index <tt>fromIndex</tt>, inclusive, to index
-     * <tt>toIndex</tt>, exclusive.  (If <tt>fromIndex==toIndex</tt>, the
+     * extends from index {@code fromIndex}, inclusive, to index
+     * {@code toIndex}, exclusive.  (If {@code fromIndex==toIndex}, the
      * range to be filled is empty.)
      *
      * @param a the array to be filled
@@ -3073,9 +3074,9 @@ public class Arrays {
      * @param toIndex the index of the last element (exclusive) to be
      *        filled with the specified value
      * @param val the value to be stored in all elements of the array
-     * @throws IllegalArgumentException if <tt>fromIndex &gt; toIndex</tt>
-     * @throws ArrayIndexOutOfBoundsException if <tt>fromIndex &lt; 0</tt> or
-     *         <tt>toIndex &gt; a.length</tt>
+     * @throws IllegalArgumentException if {@code fromIndex > toIndex}
+     * @throws ArrayIndexOutOfBoundsException if {@code fromIndex < 0} or
+     *         {@code toIndex > a.length}
      */
     public static void fill(double[] a, int fromIndex, int toIndex,double val){
         rangeCheck(a.length, fromIndex, toIndex);
@@ -3098,8 +3099,8 @@ public class Arrays {
     /**
      * Assigns the specified float value to each element of the specified
      * range of the specified array of floats.  The range to be filled
-     * extends from index <tt>fromIndex</tt>, inclusive, to index
-     * <tt>toIndex</tt>, exclusive.  (If <tt>fromIndex==toIndex</tt>, the
+     * extends from index {@code fromIndex}, inclusive, to index
+     * {@code toIndex}, exclusive.  (If {@code fromIndex==toIndex}, the
      * range to be filled is empty.)
      *
      * @param a the array to be filled
@@ -3108,9 +3109,9 @@ public class Arrays {
      * @param toIndex the index of the last element (exclusive) to be
      *        filled with the specified value
      * @param val the value to be stored in all elements of the array
-     * @throws IllegalArgumentException if <tt>fromIndex &gt; toIndex</tt>
-     * @throws ArrayIndexOutOfBoundsException if <tt>fromIndex &lt; 0</tt> or
-     *         <tt>toIndex &gt; a.length</tt>
+     * @throws IllegalArgumentException if {@code fromIndex > toIndex}
+     * @throws ArrayIndexOutOfBoundsException if {@code fromIndex < 0} or
+     *         {@code toIndex > a.length}
      */
     public static void fill(float[] a, int fromIndex, int toIndex, float val) {
         rangeCheck(a.length, fromIndex, toIndex);
@@ -3135,8 +3136,8 @@ public class Arrays {
     /**
      * Assigns the specified Object reference to each element of the specified
      * range of the specified array of Objects.  The range to be filled
-     * extends from index <tt>fromIndex</tt>, inclusive, to index
-     * <tt>toIndex</tt>, exclusive.  (If <tt>fromIndex==toIndex</tt>, the
+     * extends from index {@code fromIndex}, inclusive, to index
+     * {@code toIndex}, exclusive.  (If {@code fromIndex==toIndex}, the
      * range to be filled is empty.)
      *
      * @param a the array to be filled
@@ -3145,9 +3146,9 @@ public class Arrays {
      * @param toIndex the index of the last element (exclusive) to be
      *        filled with the specified value
      * @param val the value to be stored in all elements of the array
-     * @throws IllegalArgumentException if <tt>fromIndex &gt; toIndex</tt>
-     * @throws ArrayIndexOutOfBoundsException if <tt>fromIndex &lt; 0</tt> or
-     *         <tt>toIndex &gt; a.length</tt>
+     * @throws IllegalArgumentException if {@code fromIndex > toIndex}
+     * @throws ArrayIndexOutOfBoundsException if {@code fromIndex < 0} or
+     *         {@code toIndex > a.length}
      * @throws ArrayStoreException if the specified value is not of a
      *         runtime type that can be stored in the specified array
      */
@@ -3164,7 +3165,7 @@ public class Arrays {
      * so the copy has the specified length.  For all indices that are
      * valid in both the original array and the copy, the two arrays will
      * contain identical values.  For any indices that are valid in the
-     * copy but not the original, the copy will contain <tt>null</tt>.
+     * copy but not the original, the copy will contain {@code null}.
      * Such indices will exist if and only if the specified length
      * is greater than that of the original array.
      * The resulting array is of exactly the same class as the original array.
@@ -3174,8 +3175,8 @@ public class Arrays {
      * @param newLength the length of the copy to be returned
      * @return a copy of the original array, truncated or padded with nulls
      *     to obtain the specified length
-     * @throws NegativeArraySizeException if <tt>newLength</tt> is negative
-     * @throws NullPointerException if <tt>original</tt> is null
+     * @throws NegativeArraySizeException if {@code newLength} is negative
+     * @throws NullPointerException if {@code original} is null
      * @since 1.6
      */
     @SuppressWarnings("unchecked")
@@ -3188,10 +3189,10 @@ public class Arrays {
      * so the copy has the specified length.  For all indices that are
      * valid in both the original array and the copy, the two arrays will
      * contain identical values.  For any indices that are valid in the
-     * copy but not the original, the copy will contain <tt>null</tt>.
+     * copy but not the original, the copy will contain {@code null}.
      * Such indices will exist if and only if the specified length
      * is greater than that of the original array.
-     * The resulting array is of the class <tt>newType</tt>.
+     * The resulting array is of the class {@code newType}.
      *
      * @param <U> the class of the objects in the original array
      * @param <T> the class of the objects in the returned array
@@ -3200,11 +3201,11 @@ public class Arrays {
      * @param newType the class of the copy to be returned
      * @return a copy of the original array, truncated or padded with nulls
      *     to obtain the specified length
-     * @throws NegativeArraySizeException if <tt>newLength</tt> is negative
-     * @throws NullPointerException if <tt>original</tt> is null
+     * @throws NegativeArraySizeException if {@code newLength} is negative
+     * @throws NullPointerException if {@code original} is null
      * @throws ArrayStoreException if an element copied from
-     *     <tt>original</tt> is not of a runtime type that can be stored in
-     *     an array of class <tt>newType</tt>
+     *     {@code original} is not of a runtime type that can be stored in
+     *     an array of class {@code newType}
      * @since 1.6
      */
     @HotSpotIntrinsicCandidate
@@ -3223,7 +3224,7 @@ public class Arrays {
      * so the copy has the specified length.  For all indices that are
      * valid in both the original array and the copy, the two arrays will
      * contain identical values.  For any indices that are valid in the
-     * copy but not the original, the copy will contain <tt>(byte)0</tt>.
+     * copy but not the original, the copy will contain {@code (byte)0}.
      * Such indices will exist if and only if the specified length
      * is greater than that of the original array.
      *
@@ -3231,8 +3232,8 @@ public class Arrays {
      * @param newLength the length of the copy to be returned
      * @return a copy of the original array, truncated or padded with zeros
      *     to obtain the specified length
-     * @throws NegativeArraySizeException if <tt>newLength</tt> is negative
-     * @throws NullPointerException if <tt>original</tt> is null
+     * @throws NegativeArraySizeException if {@code newLength} is negative
+     * @throws NullPointerException if {@code original} is null
      * @since 1.6
      */
     public static byte[] copyOf(byte[] original, int newLength) {
@@ -3247,7 +3248,7 @@ public class Arrays {
      * so the copy has the specified length.  For all indices that are
      * valid in both the original array and the copy, the two arrays will
      * contain identical values.  For any indices that are valid in the
-     * copy but not the original, the copy will contain <tt>(short)0</tt>.
+     * copy but not the original, the copy will contain {@code (short)0}.
      * Such indices will exist if and only if the specified length
      * is greater than that of the original array.
      *
@@ -3255,8 +3256,8 @@ public class Arrays {
      * @param newLength the length of the copy to be returned
      * @return a copy of the original array, truncated or padded with zeros
      *     to obtain the specified length
-     * @throws NegativeArraySizeException if <tt>newLength</tt> is negative
-     * @throws NullPointerException if <tt>original</tt> is null
+     * @throws NegativeArraySizeException if {@code newLength} is negative
+     * @throws NullPointerException if {@code original} is null
      * @since 1.6
      */
     public static short[] copyOf(short[] original, int newLength) {
@@ -3271,7 +3272,7 @@ public class Arrays {
      * so the copy has the specified length.  For all indices that are
      * valid in both the original array and the copy, the two arrays will
      * contain identical values.  For any indices that are valid in the
-     * copy but not the original, the copy will contain <tt>0</tt>.
+     * copy but not the original, the copy will contain {@code 0}.
      * Such indices will exist if and only if the specified length
      * is greater than that of the original array.
      *
@@ -3279,8 +3280,8 @@ public class Arrays {
      * @param newLength the length of the copy to be returned
      * @return a copy of the original array, truncated or padded with zeros
      *     to obtain the specified length
-     * @throws NegativeArraySizeException if <tt>newLength</tt> is negative
-     * @throws NullPointerException if <tt>original</tt> is null
+     * @throws NegativeArraySizeException if {@code newLength} is negative
+     * @throws NullPointerException if {@code original} is null
      * @since 1.6
      */
     public static int[] copyOf(int[] original, int newLength) {
@@ -3295,7 +3296,7 @@ public class Arrays {
      * so the copy has the specified length.  For all indices that are
      * valid in both the original array and the copy, the two arrays will
      * contain identical values.  For any indices that are valid in the
-     * copy but not the original, the copy will contain <tt>0L</tt>.
+     * copy but not the original, the copy will contain {@code 0L}.
      * Such indices will exist if and only if the specified length
      * is greater than that of the original array.
      *
@@ -3303,8 +3304,8 @@ public class Arrays {
      * @param newLength the length of the copy to be returned
      * @return a copy of the original array, truncated or padded with zeros
      *     to obtain the specified length
-     * @throws NegativeArraySizeException if <tt>newLength</tt> is negative
-     * @throws NullPointerException if <tt>original</tt> is null
+     * @throws NegativeArraySizeException if {@code newLength} is negative
+     * @throws NullPointerException if {@code original} is null
      * @since 1.6
      */
     public static long[] copyOf(long[] original, int newLength) {
@@ -3319,7 +3320,7 @@ public class Arrays {
      * so the copy has the specified length.  For all indices that are valid
      * in both the original array and the copy, the two arrays will contain
      * identical values.  For any indices that are valid in the copy but not
-     * the original, the copy will contain <tt>'\\u000'</tt>.  Such indices
+     * the original, the copy will contain {@code '\\u000'}.  Such indices
      * will exist if and only if the specified length is greater than that of
      * the original array.
      *
@@ -3327,8 +3328,8 @@ public class Arrays {
      * @param newLength the length of the copy to be returned
      * @return a copy of the original array, truncated or padded with null characters
      *     to obtain the specified length
-     * @throws NegativeArraySizeException if <tt>newLength</tt> is negative
-     * @throws NullPointerException if <tt>original</tt> is null
+     * @throws NegativeArraySizeException if {@code newLength} is negative
+     * @throws NullPointerException if {@code original} is null
      * @since 1.6
      */
     public static char[] copyOf(char[] original, int newLength) {
@@ -3343,7 +3344,7 @@ public class Arrays {
      * so the copy has the specified length.  For all indices that are
      * valid in both the original array and the copy, the two arrays will
      * contain identical values.  For any indices that are valid in the
-     * copy but not the original, the copy will contain <tt>0f</tt>.
+     * copy but not the original, the copy will contain {@code 0f}.
      * Such indices will exist if and only if the specified length
      * is greater than that of the original array.
      *
@@ -3351,8 +3352,8 @@ public class Arrays {
      * @param newLength the length of the copy to be returned
      * @return a copy of the original array, truncated or padded with zeros
      *     to obtain the specified length
-     * @throws NegativeArraySizeException if <tt>newLength</tt> is negative
-     * @throws NullPointerException if <tt>original</tt> is null
+     * @throws NegativeArraySizeException if {@code newLength} is negative
+     * @throws NullPointerException if {@code original} is null
      * @since 1.6
      */
     public static float[] copyOf(float[] original, int newLength) {
@@ -3367,7 +3368,7 @@ public class Arrays {
      * so the copy has the specified length.  For all indices that are
      * valid in both the original array and the copy, the two arrays will
      * contain identical values.  For any indices that are valid in the
-     * copy but not the original, the copy will contain <tt>0d</tt>.
+     * copy but not the original, the copy will contain {@code 0d}.
      * Such indices will exist if and only if the specified length
      * is greater than that of the original array.
      *
@@ -3375,8 +3376,8 @@ public class Arrays {
      * @param newLength the length of the copy to be returned
      * @return a copy of the original array, truncated or padded with zeros
      *     to obtain the specified length
-     * @throws NegativeArraySizeException if <tt>newLength</tt> is negative
-     * @throws NullPointerException if <tt>original</tt> is null
+     * @throws NegativeArraySizeException if {@code newLength} is negative
+     * @throws NullPointerException if {@code original} is null
      * @since 1.6
      */
     public static double[] copyOf(double[] original, int newLength) {
@@ -3387,11 +3388,11 @@ public class Arrays {
     }
 
     /**
-     * Copies the specified array, truncating or padding with <tt>false</tt> (if necessary)
+     * Copies the specified array, truncating or padding with {@code false} (if necessary)
      * so the copy has the specified length.  For all indices that are
      * valid in both the original array and the copy, the two arrays will
      * contain identical values.  For any indices that are valid in the
-     * copy but not the original, the copy will contain <tt>false</tt>.
+     * copy but not the original, the copy will contain {@code false}.
      * Such indices will exist if and only if the specified length
      * is greater than that of the original array.
      *
@@ -3399,8 +3400,8 @@ public class Arrays {
      * @param newLength the length of the copy to be returned
      * @return a copy of the original array, truncated or padded with false elements
      *     to obtain the specified length
-     * @throws NegativeArraySizeException if <tt>newLength</tt> is negative
-     * @throws NullPointerException if <tt>original</tt> is null
+     * @throws NegativeArraySizeException if {@code newLength} is negative
+     * @throws NullPointerException if {@code original} is null
      * @since 1.6
      */
     public static boolean[] copyOf(boolean[] original, int newLength) {
@@ -3412,17 +3413,17 @@ public class Arrays {
 
     /**
      * Copies the specified range of the specified array into a new array.
-     * The initial index of the range (<tt>from</tt>) must lie between zero
-     * and <tt>original.length</tt>, inclusive.  The value at
-     * <tt>original[from]</tt> is placed into the initial element of the copy
-     * (unless <tt>from == original.length</tt> or <tt>from == to</tt>).
+     * The initial index of the range ({@code from}) must lie between zero
+     * and {@code original.length}, inclusive.  The value at
+     * {@code original[from]} is placed into the initial element of the copy
+     * (unless {@code from == original.length} or {@code from == to}).
      * Values from subsequent elements in the original array are placed into
      * subsequent elements in the copy.  The final index of the range
-     * (<tt>to</tt>), which must be greater than or equal to <tt>from</tt>,
-     * may be greater than <tt>original.length</tt>, in which case
-     * <tt>null</tt> is placed in all elements of the copy whose index is
-     * greater than or equal to <tt>original.length - from</tt>.  The length
-     * of the returned array will be <tt>to - from</tt>.
+     * ({@code to}), which must be greater than or equal to {@code from},
+     * may be greater than {@code original.length}, in which case
+     * {@code null} is placed in all elements of the copy whose index is
+     * greater than or equal to {@code original.length - from}.  The length
+     * of the returned array will be {@code to - from}.
      * <p>
      * The resulting array is of exactly the same class as the original array.
      *
@@ -3435,8 +3436,8 @@ public class Arrays {
      *     truncated or padded with nulls to obtain the required length
      * @throws ArrayIndexOutOfBoundsException if {@code from < 0}
      *     or {@code from > original.length}
-     * @throws IllegalArgumentException if <tt>from &gt; to</tt>
-     * @throws NullPointerException if <tt>original</tt> is null
+     * @throws IllegalArgumentException if {@code from > to}
+     * @throws NullPointerException if {@code original} is null
      * @since 1.6
      */
     @SuppressWarnings("unchecked")
@@ -3446,18 +3447,18 @@ public class Arrays {
 
     /**
      * Copies the specified range of the specified array into a new array.
-     * The initial index of the range (<tt>from</tt>) must lie between zero
-     * and <tt>original.length</tt>, inclusive.  The value at
-     * <tt>original[from]</tt> is placed into the initial element of the copy
-     * (unless <tt>from == original.length</tt> or <tt>from == to</tt>).
+     * The initial index of the range ({@code from}) must lie between zero
+     * and {@code original.length}, inclusive.  The value at
+     * {@code original[from]} is placed into the initial element of the copy
+     * (unless {@code from == original.length} or {@code from == to}).
      * Values from subsequent elements in the original array are placed into
      * subsequent elements in the copy.  The final index of the range
-     * (<tt>to</tt>), which must be greater than or equal to <tt>from</tt>,
-     * may be greater than <tt>original.length</tt>, in which case
-     * <tt>null</tt> is placed in all elements of the copy whose index is
-     * greater than or equal to <tt>original.length - from</tt>.  The length
-     * of the returned array will be <tt>to - from</tt>.
-     * The resulting array is of the class <tt>newType</tt>.
+     * ({@code to}), which must be greater than or equal to {@code from},
+     * may be greater than {@code original.length}, in which case
+     * {@code null} is placed in all elements of the copy whose index is
+     * greater than or equal to {@code original.length - from}.  The length
+     * of the returned array will be {@code to - from}.
+     * The resulting array is of the class {@code newType}.
      *
      * @param <U> the class of the objects in the original array
      * @param <T> the class of the objects in the returned array
@@ -3470,11 +3471,11 @@ public class Arrays {
      *     truncated or padded with nulls to obtain the required length
      * @throws ArrayIndexOutOfBoundsException if {@code from < 0}
      *     or {@code from > original.length}
-     * @throws IllegalArgumentException if <tt>from &gt; to</tt>
-     * @throws NullPointerException if <tt>original</tt> is null
+     * @throws IllegalArgumentException if {@code from > to}
+     * @throws NullPointerException if {@code original} is null
      * @throws ArrayStoreException if an element copied from
-     *     <tt>original</tt> is not of a runtime type that can be stored in
-     *     an array of class <tt>newType</tt>.
+     *     {@code original} is not of a runtime type that can be stored in
+     *     an array of class {@code newType}.
      * @since 1.6
      */
     @HotSpotIntrinsicCandidate
@@ -3493,17 +3494,17 @@ public class Arrays {
 
     /**
      * Copies the specified range of the specified array into a new array.
-     * The initial index of the range (<tt>from</tt>) must lie between zero
-     * and <tt>original.length</tt>, inclusive.  The value at
-     * <tt>original[from]</tt> is placed into the initial element of the copy
-     * (unless <tt>from == original.length</tt> or <tt>from == to</tt>).
+     * The initial index of the range ({@code from}) must lie between zero
+     * and {@code original.length}, inclusive.  The value at
+     * {@code original[from]} is placed into the initial element of the copy
+     * (unless {@code from == original.length} or {@code from == to}).
      * Values from subsequent elements in the original array are placed into
      * subsequent elements in the copy.  The final index of the range
-     * (<tt>to</tt>), which must be greater than or equal to <tt>from</tt>,
-     * may be greater than <tt>original.length</tt>, in which case
-     * <tt>(byte)0</tt> is placed in all elements of the copy whose index is
-     * greater than or equal to <tt>original.length - from</tt>.  The length
-     * of the returned array will be <tt>to - from</tt>.
+     * ({@code to}), which must be greater than or equal to {@code from},
+     * may be greater than {@code original.length}, in which case
+     * {@code (byte)0} is placed in all elements of the copy whose index is
+     * greater than or equal to {@code original.length - from}.  The length
+     * of the returned array will be {@code to - from}.
      *
      * @param original the array from which a range is to be copied
      * @param from the initial index of the range to be copied, inclusive
@@ -3513,8 +3514,8 @@ public class Arrays {
      *     truncated or padded with zeros to obtain the required length
      * @throws ArrayIndexOutOfBoundsException if {@code from < 0}
      *     or {@code from > original.length}
-     * @throws IllegalArgumentException if <tt>from &gt; to</tt>
-     * @throws NullPointerException if <tt>original</tt> is null
+     * @throws IllegalArgumentException if {@code from > to}
+     * @throws NullPointerException if {@code original} is null
      * @since 1.6
      */
     public static byte[] copyOfRange(byte[] original, int from, int to) {
@@ -3529,17 +3530,17 @@ public class Arrays {
 
     /**
      * Copies the specified range of the specified array into a new array.
-     * The initial index of the range (<tt>from</tt>) must lie between zero
-     * and <tt>original.length</tt>, inclusive.  The value at
-     * <tt>original[from]</tt> is placed into the initial element of the copy
-     * (unless <tt>from == original.length</tt> or <tt>from == to</tt>).
+     * The initial index of the range ({@code from}) must lie between zero
+     * and {@code original.length}, inclusive.  The value at
+     * {@code original[from]} is placed into the initial element of the copy
+     * (unless {@code from == original.length} or {@code from == to}).
      * Values from subsequent elements in the original array are placed into
      * subsequent elements in the copy.  The final index of the range
-     * (<tt>to</tt>), which must be greater than or equal to <tt>from</tt>,
-     * may be greater than <tt>original.length</tt>, in which case
-     * <tt>(short)0</tt> is placed in all elements of the copy whose index is
-     * greater than or equal to <tt>original.length - from</tt>.  The length
-     * of the returned array will be <tt>to - from</tt>.
+     * ({@code to}), which must be greater than or equal to {@code from},
+     * may be greater than {@code original.length}, in which case
+     * {@code (short)0} is placed in all elements of the copy whose index is
+     * greater than or equal to {@code original.length - from}.  The length
+     * of the returned array will be {@code to - from}.
      *
      * @param original the array from which a range is to be copied
      * @param from the initial index of the range to be copied, inclusive
@@ -3549,8 +3550,8 @@ public class Arrays {
      *     truncated or padded with zeros to obtain the required length
      * @throws ArrayIndexOutOfBoundsException if {@code from < 0}
      *     or {@code from > original.length}
-     * @throws IllegalArgumentException if <tt>from &gt; to</tt>
-     * @throws NullPointerException if <tt>original</tt> is null
+     * @throws IllegalArgumentException if {@code from > to}
+     * @throws NullPointerException if {@code original} is null
      * @since 1.6
      */
     public static short[] copyOfRange(short[] original, int from, int to) {
@@ -3565,17 +3566,17 @@ public class Arrays {
 
     /**
      * Copies the specified range of the specified array into a new array.
-     * The initial index of the range (<tt>from</tt>) must lie between zero
-     * and <tt>original.length</tt>, inclusive.  The value at
-     * <tt>original[from]</tt> is placed into the initial element of the copy
-     * (unless <tt>from == original.length</tt> or <tt>from == to</tt>).
+     * The initial index of the range ({@code from}) must lie between zero
+     * and {@code original.length}, inclusive.  The value at
+     * {@code original[from]} is placed into the initial element of the copy
+     * (unless {@code from == original.length} or {@code from == to}).
      * Values from subsequent elements in the original array are placed into
      * subsequent elements in the copy.  The final index of the range
-     * (<tt>to</tt>), which must be greater than or equal to <tt>from</tt>,
-     * may be greater than <tt>original.length</tt>, in which case
-     * <tt>0</tt> is placed in all elements of the copy whose index is
-     * greater than or equal to <tt>original.length - from</tt>.  The length
-     * of the returned array will be <tt>to - from</tt>.
+     * ({@code to}), which must be greater than or equal to {@code from},
+     * may be greater than {@code original.length}, in which case
+     * {@code 0} is placed in all elements of the copy whose index is
+     * greater than or equal to {@code original.length - from}.  The length
+     * of the returned array will be {@code to - from}.
      *
      * @param original the array from which a range is to be copied
      * @param from the initial index of the range to be copied, inclusive
@@ -3585,8 +3586,8 @@ public class Arrays {
      *     truncated or padded with zeros to obtain the required length
      * @throws ArrayIndexOutOfBoundsException if {@code from < 0}
      *     or {@code from > original.length}
-     * @throws IllegalArgumentException if <tt>from &gt; to</tt>
-     * @throws NullPointerException if <tt>original</tt> is null
+     * @throws IllegalArgumentException if {@code from > to}
+     * @throws NullPointerException if {@code original} is null
      * @since 1.6
      */
     public static int[] copyOfRange(int[] original, int from, int to) {
@@ -3601,17 +3602,17 @@ public class Arrays {
 
     /**
      * Copies the specified range of the specified array into a new array.
-     * The initial index of the range (<tt>from</tt>) must lie between zero
-     * and <tt>original.length</tt>, inclusive.  The value at
-     * <tt>original[from]</tt> is placed into the initial element of the copy
-     * (unless <tt>from == original.length</tt> or <tt>from == to</tt>).
+     * The initial index of the range ({@code from}) must lie between zero
+     * and {@code original.length}, inclusive.  The value at
+     * {@code original[from]} is placed into the initial element of the copy
+     * (unless {@code from == original.length} or {@code from == to}).
      * Values from subsequent elements in the original array are placed into
      * subsequent elements in the copy.  The final index of the range
-     * (<tt>to</tt>), which must be greater than or equal to <tt>from</tt>,
-     * may be greater than <tt>original.length</tt>, in which case
-     * <tt>0L</tt> is placed in all elements of the copy whose index is
-     * greater than or equal to <tt>original.length - from</tt>.  The length
-     * of the returned array will be <tt>to - from</tt>.
+     * ({@code to}), which must be greater than or equal to {@code from},
+     * may be greater than {@code original.length}, in which case
+     * {@code 0L} is placed in all elements of the copy whose index is
+     * greater than or equal to {@code original.length - from}.  The length
+     * of the returned array will be {@code to - from}.
      *
      * @param original the array from which a range is to be copied
      * @param from the initial index of the range to be copied, inclusive
@@ -3621,8 +3622,8 @@ public class Arrays {
      *     truncated or padded with zeros to obtain the required length
      * @throws ArrayIndexOutOfBoundsException if {@code from < 0}
      *     or {@code from > original.length}
-     * @throws IllegalArgumentException if <tt>from &gt; to</tt>
-     * @throws NullPointerException if <tt>original</tt> is null
+     * @throws IllegalArgumentException if {@code from > to}
+     * @throws NullPointerException if {@code original} is null
      * @since 1.6
      */
     public static long[] copyOfRange(long[] original, int from, int to) {
@@ -3637,17 +3638,17 @@ public class Arrays {
 
     /**
      * Copies the specified range of the specified array into a new array.
-     * The initial index of the range (<tt>from</tt>) must lie between zero
-     * and <tt>original.length</tt>, inclusive.  The value at
-     * <tt>original[from]</tt> is placed into the initial element of the copy
-     * (unless <tt>from == original.length</tt> or <tt>from == to</tt>).
+     * The initial index of the range ({@code from}) must lie between zero
+     * and {@code original.length}, inclusive.  The value at
+     * {@code original[from]} is placed into the initial element of the copy
+     * (unless {@code from == original.length} or {@code from == to}).
      * Values from subsequent elements in the original array are placed into
      * subsequent elements in the copy.  The final index of the range
-     * (<tt>to</tt>), which must be greater than or equal to <tt>from</tt>,
-     * may be greater than <tt>original.length</tt>, in which case
-     * <tt>'\\u000'</tt> is placed in all elements of the copy whose index is
-     * greater than or equal to <tt>original.length - from</tt>.  The length
-     * of the returned array will be <tt>to - from</tt>.
+     * ({@code to}), which must be greater than or equal to {@code from},
+     * may be greater than {@code original.length}, in which case
+     * {@code '\\u000'} is placed in all elements of the copy whose index is
+     * greater than or equal to {@code original.length - from}.  The length
+     * of the returned array will be {@code to - from}.
      *
      * @param original the array from which a range is to be copied
      * @param from the initial index of the range to be copied, inclusive
@@ -3657,8 +3658,8 @@ public class Arrays {
      *     truncated or padded with null characters to obtain the required length
      * @throws ArrayIndexOutOfBoundsException if {@code from < 0}
      *     or {@code from > original.length}
-     * @throws IllegalArgumentException if <tt>from &gt; to</tt>
-     * @throws NullPointerException if <tt>original</tt> is null
+     * @throws IllegalArgumentException if {@code from > to}
+     * @throws NullPointerException if {@code original} is null
      * @since 1.6
      */
     public static char[] copyOfRange(char[] original, int from, int to) {
@@ -3673,17 +3674,17 @@ public class Arrays {
 
     /**
      * Copies the specified range of the specified array into a new array.
-     * The initial index of the range (<tt>from</tt>) must lie between zero
-     * and <tt>original.length</tt>, inclusive.  The value at
-     * <tt>original[from]</tt> is placed into the initial element of the copy
-     * (unless <tt>from == original.length</tt> or <tt>from == to</tt>).
+     * The initial index of the range ({@code from}) must lie between zero
+     * and {@code original.length}, inclusive.  The value at
+     * {@code original[from]} is placed into the initial element of the copy
+     * (unless {@code from == original.length} or {@code from == to}).
      * Values from subsequent elements in the original array are placed into
      * subsequent elements in the copy.  The final index of the range
-     * (<tt>to</tt>), which must be greater than or equal to <tt>from</tt>,
-     * may be greater than <tt>original.length</tt>, in which case
-     * <tt>0f</tt> is placed in all elements of the copy whose index is
-     * greater than or equal to <tt>original.length - from</tt>.  The length
-     * of the returned array will be <tt>to - from</tt>.
+     * ({@code to}), which must be greater than or equal to {@code from},
+     * may be greater than {@code original.length}, in which case
+     * {@code 0f} is placed in all elements of the copy whose index is
+     * greater than or equal to {@code original.length - from}.  The length
+     * of the returned array will be {@code to - from}.
      *
      * @param original the array from which a range is to be copied
      * @param from the initial index of the range to be copied, inclusive
@@ -3693,8 +3694,8 @@ public class Arrays {
      *     truncated or padded with zeros to obtain the required length
      * @throws ArrayIndexOutOfBoundsException if {@code from < 0}
      *     or {@code from > original.length}
-     * @throws IllegalArgumentException if <tt>from &gt; to</tt>
-     * @throws NullPointerException if <tt>original</tt> is null
+     * @throws IllegalArgumentException if {@code from > to}
+     * @throws NullPointerException if {@code original} is null
      * @since 1.6
      */
     public static float[] copyOfRange(float[] original, int from, int to) {
@@ -3709,17 +3710,17 @@ public class Arrays {
 
     /**
      * Copies the specified range of the specified array into a new array.
-     * The initial index of the range (<tt>from</tt>) must lie between zero
-     * and <tt>original.length</tt>, inclusive.  The value at
-     * <tt>original[from]</tt> is placed into the initial element of the copy
-     * (unless <tt>from == original.length</tt> or <tt>from == to</tt>).
+     * The initial index of the range ({@code from}) must lie between zero
+     * and {@code original.length}, inclusive.  The value at
+     * {@code original[from]} is placed into the initial element of the copy
+     * (unless {@code from == original.length} or {@code from == to}).
      * Values from subsequent elements in the original array are placed into
      * subsequent elements in the copy.  The final index of the range
-     * (<tt>to</tt>), which must be greater than or equal to <tt>from</tt>,
-     * may be greater than <tt>original.length</tt>, in which case
-     * <tt>0d</tt> is placed in all elements of the copy whose index is
-     * greater than or equal to <tt>original.length - from</tt>.  The length
-     * of the returned array will be <tt>to - from</tt>.
+     * ({@code to}), which must be greater than or equal to {@code from},
+     * may be greater than {@code original.length}, in which case
+     * {@code 0d} is placed in all elements of the copy whose index is
+     * greater than or equal to {@code original.length - from}.  The length
+     * of the returned array will be {@code to - from}.
      *
      * @param original the array from which a range is to be copied
      * @param from the initial index of the range to be copied, inclusive
@@ -3729,8 +3730,8 @@ public class Arrays {
      *     truncated or padded with zeros to obtain the required length
      * @throws ArrayIndexOutOfBoundsException if {@code from < 0}
      *     or {@code from > original.length}
-     * @throws IllegalArgumentException if <tt>from &gt; to</tt>
-     * @throws NullPointerException if <tt>original</tt> is null
+     * @throws IllegalArgumentException if {@code from > to}
+     * @throws NullPointerException if {@code original} is null
      * @since 1.6
      */
     public static double[] copyOfRange(double[] original, int from, int to) {
@@ -3745,17 +3746,17 @@ public class Arrays {
 
     /**
      * Copies the specified range of the specified array into a new array.
-     * The initial index of the range (<tt>from</tt>) must lie between zero
-     * and <tt>original.length</tt>, inclusive.  The value at
-     * <tt>original[from]</tt> is placed into the initial element of the copy
-     * (unless <tt>from == original.length</tt> or <tt>from == to</tt>).
+     * The initial index of the range ({@code from}) must lie between zero
+     * and {@code original.length}, inclusive.  The value at
+     * {@code original[from]} is placed into the initial element of the copy
+     * (unless {@code from == original.length} or {@code from == to}).
      * Values from subsequent elements in the original array are placed into
      * subsequent elements in the copy.  The final index of the range
-     * (<tt>to</tt>), which must be greater than or equal to <tt>from</tt>,
-     * may be greater than <tt>original.length</tt>, in which case
-     * <tt>false</tt> is placed in all elements of the copy whose index is
-     * greater than or equal to <tt>original.length - from</tt>.  The length
-     * of the returned array will be <tt>to - from</tt>.
+     * ({@code to}), which must be greater than or equal to {@code from},
+     * may be greater than {@code original.length}, in which case
+     * {@code false} is placed in all elements of the copy whose index is
+     * greater than or equal to {@code original.length - from}.  The length
+     * of the returned array will be {@code to - from}.
      *
      * @param original the array from which a range is to be copied
      * @param from the initial index of the range to be copied, inclusive
@@ -3765,8 +3766,8 @@ public class Arrays {
      *     truncated or padded with false elements to obtain the required length
      * @throws ArrayIndexOutOfBoundsException if {@code from < 0}
      *     or {@code from > original.length}
-     * @throws IllegalArgumentException if <tt>from &gt; to</tt>
-     * @throws NullPointerException if <tt>original</tt> is null
+     * @throws IllegalArgumentException if {@code from > to}
+     * @throws NullPointerException if {@code original} is null
      * @since 1.6
      */
     public static boolean[] copyOfRange(boolean[] original, int from, int to) {
@@ -3902,18 +3903,18 @@ public class Arrays {
 
     /**
      * Returns a hash code based on the contents of the specified array.
-     * For any two <tt>long</tt> arrays <tt>a</tt> and <tt>b</tt>
-     * such that <tt>Arrays.equals(a, b)</tt>, it is also the case that
-     * <tt>Arrays.hashCode(a) == Arrays.hashCode(b)</tt>.
+     * For any two {@code long} arrays {@code a} and {@code b}
+     * such that {@code Arrays.equals(a, b)}, it is also the case that
+     * {@code Arrays.hashCode(a) == Arrays.hashCode(b)}.
      *
      * <p>The value returned by this method is the same value that would be
-     * obtained by invoking the {@link List#hashCode() <tt>hashCode</tt>}
+     * obtained by invoking the {@link List#hashCode() hashCode}
      * method on a {@link List} containing a sequence of {@link Long}
-     * instances representing the elements of <tt>a</tt> in the same order.
-     * If <tt>a</tt> is <tt>null</tt>, this method returns 0.
+     * instances representing the elements of {@code a} in the same order.
+     * If {@code a} is {@code null}, this method returns 0.
      *
      * @param a the array whose hash value to compute
-     * @return a content-based hash code for <tt>a</tt>
+     * @return a content-based hash code for {@code a}
      * @since 1.5
      */
     public static int hashCode(long a[]) {
@@ -3931,18 +3932,18 @@ public class Arrays {
 
     /**
      * Returns a hash code based on the contents of the specified array.
-     * For any two non-null <tt>int</tt> arrays <tt>a</tt> and <tt>b</tt>
-     * such that <tt>Arrays.equals(a, b)</tt>, it is also the case that
-     * <tt>Arrays.hashCode(a) == Arrays.hashCode(b)</tt>.
+     * For any two non-null {@code int} arrays {@code a} and {@code b}
+     * such that {@code Arrays.equals(a, b)}, it is also the case that
+     * {@code Arrays.hashCode(a) == Arrays.hashCode(b)}.
      *
      * <p>The value returned by this method is the same value that would be
-     * obtained by invoking the {@link List#hashCode() <tt>hashCode</tt>}
+     * obtained by invoking the {@link List#hashCode() hashCode}
      * method on a {@link List} containing a sequence of {@link Integer}
-     * instances representing the elements of <tt>a</tt> in the same order.
-     * If <tt>a</tt> is <tt>null</tt>, this method returns 0.
+     * instances representing the elements of {@code a} in the same order.
+     * If {@code a} is {@code null}, this method returns 0.
      *
      * @param a the array whose hash value to compute
-     * @return a content-based hash code for <tt>a</tt>
+     * @return a content-based hash code for {@code a}
      * @since 1.5
      */
     public static int hashCode(int a[]) {
@@ -3958,18 +3959,18 @@ public class Arrays {
 
     /**
      * Returns a hash code based on the contents of the specified array.
-     * For any two <tt>short</tt> arrays <tt>a</tt> and <tt>b</tt>
-     * such that <tt>Arrays.equals(a, b)</tt>, it is also the case that
-     * <tt>Arrays.hashCode(a) == Arrays.hashCode(b)</tt>.
+     * For any two {@code short} arrays {@code a} and {@code b}
+     * such that {@code Arrays.equals(a, b)}, it is also the case that
+     * {@code Arrays.hashCode(a) == Arrays.hashCode(b)}.
      *
      * <p>The value returned by this method is the same value that would be
-     * obtained by invoking the {@link List#hashCode() <tt>hashCode</tt>}
+     * obtained by invoking the {@link List#hashCode() hashCode}
      * method on a {@link List} containing a sequence of {@link Short}
-     * instances representing the elements of <tt>a</tt> in the same order.
-     * If <tt>a</tt> is <tt>null</tt>, this method returns 0.
+     * instances representing the elements of {@code a} in the same order.
+     * If {@code a} is {@code null}, this method returns 0.
      *
      * @param a the array whose hash value to compute
-     * @return a content-based hash code for <tt>a</tt>
+     * @return a content-based hash code for {@code a}
      * @since 1.5
      */
     public static int hashCode(short a[]) {
@@ -3985,18 +3986,18 @@ public class Arrays {
 
     /**
      * Returns a hash code based on the contents of the specified array.
-     * For any two <tt>char</tt> arrays <tt>a</tt> and <tt>b</tt>
-     * such that <tt>Arrays.equals(a, b)</tt>, it is also the case that
-     * <tt>Arrays.hashCode(a) == Arrays.hashCode(b)</tt>.
+     * For any two {@code char} arrays {@code a} and {@code b}
+     * such that {@code Arrays.equals(a, b)}, it is also the case that
+     * {@code Arrays.hashCode(a) == Arrays.hashCode(b)}.
      *
      * <p>The value returned by this method is the same value that would be
-     * obtained by invoking the {@link List#hashCode() <tt>hashCode</tt>}
+     * obtained by invoking the {@link List#hashCode() hashCode}
      * method on a {@link List} containing a sequence of {@link Character}
-     * instances representing the elements of <tt>a</tt> in the same order.
-     * If <tt>a</tt> is <tt>null</tt>, this method returns 0.
+     * instances representing the elements of {@code a} in the same order.
+     * If {@code a} is {@code null}, this method returns 0.
      *
      * @param a the array whose hash value to compute
-     * @return a content-based hash code for <tt>a</tt>
+     * @return a content-based hash code for {@code a}
      * @since 1.5
      */
     public static int hashCode(char a[]) {
@@ -4012,18 +4013,18 @@ public class Arrays {
 
     /**
      * Returns a hash code based on the contents of the specified array.
-     * For any two <tt>byte</tt> arrays <tt>a</tt> and <tt>b</tt>
-     * such that <tt>Arrays.equals(a, b)</tt>, it is also the case that
-     * <tt>Arrays.hashCode(a) == Arrays.hashCode(b)</tt>.
+     * For any two {@code byte} arrays {@code a} and {@code b}
+     * such that {@code Arrays.equals(a, b)}, it is also the case that
+     * {@code Arrays.hashCode(a) == Arrays.hashCode(b)}.
      *
      * <p>The value returned by this method is the same value that would be
-     * obtained by invoking the {@link List#hashCode() <tt>hashCode</tt>}
+     * obtained by invoking the {@link List#hashCode() hashCode}
      * method on a {@link List} containing a sequence of {@link Byte}
-     * instances representing the elements of <tt>a</tt> in the same order.
-     * If <tt>a</tt> is <tt>null</tt>, this method returns 0.
+     * instances representing the elements of {@code a} in the same order.
+     * If {@code a} is {@code null}, this method returns 0.
      *
      * @param a the array whose hash value to compute
-     * @return a content-based hash code for <tt>a</tt>
+     * @return a content-based hash code for {@code a}
      * @since 1.5
      */
     public static int hashCode(byte a[]) {
@@ -4039,18 +4040,18 @@ public class Arrays {
 
     /**
      * Returns a hash code based on the contents of the specified array.
-     * For any two <tt>boolean</tt> arrays <tt>a</tt> and <tt>b</tt>
-     * such that <tt>Arrays.equals(a, b)</tt>, it is also the case that
-     * <tt>Arrays.hashCode(a) == Arrays.hashCode(b)</tt>.
+     * For any two {@code boolean} arrays {@code a} and {@code b}
+     * such that {@code Arrays.equals(a, b)}, it is also the case that
+     * {@code Arrays.hashCode(a) == Arrays.hashCode(b)}.
      *
      * <p>The value returned by this method is the same value that would be
-     * obtained by invoking the {@link List#hashCode() <tt>hashCode</tt>}
+     * obtained by invoking the {@link List#hashCode() hashCode}
      * method on a {@link List} containing a sequence of {@link Boolean}
-     * instances representing the elements of <tt>a</tt> in the same order.
-     * If <tt>a</tt> is <tt>null</tt>, this method returns 0.
+     * instances representing the elements of {@code a} in the same order.
+     * If {@code a} is {@code null}, this method returns 0.
      *
      * @param a the array whose hash value to compute
-     * @return a content-based hash code for <tt>a</tt>
+     * @return a content-based hash code for {@code a}
      * @since 1.5
      */
     public static int hashCode(boolean a[]) {
@@ -4066,18 +4067,18 @@ public class Arrays {
 
     /**
      * Returns a hash code based on the contents of the specified array.
-     * For any two <tt>float</tt> arrays <tt>a</tt> and <tt>b</tt>
-     * such that <tt>Arrays.equals(a, b)</tt>, it is also the case that
-     * <tt>Arrays.hashCode(a) == Arrays.hashCode(b)</tt>.
+     * For any two {@code float} arrays {@code a} and {@code b}
+     * such that {@code Arrays.equals(a, b)}, it is also the case that
+     * {@code Arrays.hashCode(a) == Arrays.hashCode(b)}.
      *
      * <p>The value returned by this method is the same value that would be
-     * obtained by invoking the {@link List#hashCode() <tt>hashCode</tt>}
+     * obtained by invoking the {@link List#hashCode() hashCode}
      * method on a {@link List} containing a sequence of {@link Float}
-     * instances representing the elements of <tt>a</tt> in the same order.
-     * If <tt>a</tt> is <tt>null</tt>, this method returns 0.
+     * instances representing the elements of {@code a} in the same order.
+     * If {@code a} is {@code null}, this method returns 0.
      *
      * @param a the array whose hash value to compute
-     * @return a content-based hash code for <tt>a</tt>
+     * @return a content-based hash code for {@code a}
      * @since 1.5
      */
     public static int hashCode(float a[]) {
@@ -4093,18 +4094,18 @@ public class Arrays {
 
     /**
      * Returns a hash code based on the contents of the specified array.
-     * For any two <tt>double</tt> arrays <tt>a</tt> and <tt>b</tt>
-     * such that <tt>Arrays.equals(a, b)</tt>, it is also the case that
-     * <tt>Arrays.hashCode(a) == Arrays.hashCode(b)</tt>.
+     * For any two {@code double} arrays {@code a} and {@code b}
+     * such that {@code Arrays.equals(a, b)}, it is also the case that
+     * {@code Arrays.hashCode(a) == Arrays.hashCode(b)}.
      *
      * <p>The value returned by this method is the same value that would be
-     * obtained by invoking the {@link List#hashCode() <tt>hashCode</tt>}
+     * obtained by invoking the {@link List#hashCode() hashCode}
      * method on a {@link List} containing a sequence of {@link Double}
-     * instances representing the elements of <tt>a</tt> in the same order.
-     * If <tt>a</tt> is <tt>null</tt>, this method returns 0.
+     * instances representing the elements of {@code a} in the same order.
+     * If {@code a} is {@code null}, this method returns 0.
      *
      * @param a the array whose hash value to compute
-     * @return a content-based hash code for <tt>a</tt>
+     * @return a content-based hash code for {@code a}
      * @since 1.5
      */
     public static int hashCode(double a[]) {
@@ -4127,16 +4128,16 @@ public class Arrays {
      * element,  either directly or indirectly through one or more levels of
      * arrays.
      *
-     * <p>For any two arrays <tt>a</tt> and <tt>b</tt> such that
-     * <tt>Arrays.equals(a, b)</tt>, it is also the case that
-     * <tt>Arrays.hashCode(a) == Arrays.hashCode(b)</tt>.
+     * <p>For any two arrays {@code a} and {@code b} such that
+     * {@code Arrays.equals(a, b)}, it is also the case that
+     * {@code Arrays.hashCode(a) == Arrays.hashCode(b)}.
      *
      * <p>The value returned by this method is equal to the value that would
-     * be returned by <tt>Arrays.asList(a).hashCode()</tt>, unless <tt>a</tt>
-     * is <tt>null</tt>, in which case <tt>0</tt> is returned.
+     * be returned by {@code Arrays.asList(a).hashCode()}, unless {@code a}
+     * is {@code null}, in which case {@code 0} is returned.
      *
      * @param a the array whose content-based hash code to compute
-     * @return a content-based hash code for <tt>a</tt>
+     * @return a content-based hash code for {@code a}
      * @see #deepHashCode(Object[])
      * @since 1.5
      */
@@ -4161,23 +4162,23 @@ public class Arrays {
      * one or more levels of arrays.  The behavior of such an invocation is
      * undefined.
      *
-     * <p>For any two arrays <tt>a</tt> and <tt>b</tt> such that
-     * <tt>Arrays.deepEquals(a, b)</tt>, it is also the case that
-     * <tt>Arrays.deepHashCode(a) == Arrays.deepHashCode(b)</tt>.
+     * <p>For any two arrays {@code a} and {@code b} such that
+     * {@code Arrays.deepEquals(a, b)}, it is also the case that
+     * {@code Arrays.deepHashCode(a) == Arrays.deepHashCode(b)}.
      *
      * <p>The computation of the value returned by this method is similar to
      * that of the value returned by {@link List#hashCode()} on a list
-     * containing the same elements as <tt>a</tt> in the same order, with one
-     * difference: If an element <tt>e</tt> of <tt>a</tt> is itself an array,
-     * its hash code is computed not by calling <tt>e.hashCode()</tt>, but as
-     * by calling the appropriate overloading of <tt>Arrays.hashCode(e)</tt>
-     * if <tt>e</tt> is an array of a primitive type, or as by calling
-     * <tt>Arrays.deepHashCode(e)</tt> recursively if <tt>e</tt> is an array
-     * of a reference type.  If <tt>a</tt> is <tt>null</tt>, this method
+     * containing the same elements as {@code a} in the same order, with one
+     * difference: If an element {@code e} of {@code a} is itself an array,
+     * its hash code is computed not by calling {@code e.hashCode()}, but as
+     * by calling the appropriate overloading of {@code Arrays.hashCode(e)}
+     * if {@code e} is an array of a primitive type, or as by calling
+     * {@code Arrays.deepHashCode(e)} recursively if {@code e} is an array
+     * of a reference type.  If {@code a} is {@code null}, this method
      * returns 0.
      *
      * @param a the array whose deep-content-based hash code to compute
-     * @return a deep-content-based hash code for <tt>a</tt>
+     * @return a deep-content-based hash code for {@code a}
      * @see #hashCode(Object[])
      * @since 1.5
      */
@@ -4217,28 +4218,28 @@ public class Arrays {
     }
 
     /**
-     * Returns <tt>true</tt> if the two specified arrays are <i>deeply
+     * Returns {@code true} if the two specified arrays are <i>deeply
      * equal</i> to one another.  Unlike the {@link #equals(Object[],Object[])}
      * method, this method is appropriate for use with nested arrays of
      * arbitrary depth.
      *
      * <p>Two array references are considered deeply equal if both
-     * are <tt>null</tt>, or if they refer to arrays that contain the same
+     * are {@code null}, or if they refer to arrays that contain the same
      * number of elements and all corresponding pairs of elements in the two
      * arrays are deeply equal.
      *
-     * <p>Two possibly <tt>null</tt> elements <tt>e1</tt> and <tt>e2</tt> are
+     * <p>Two possibly {@code null} elements {@code e1} and {@code e2} are
      * deeply equal if any of the following conditions hold:
      * <ul>
-     *    <li> <tt>e1</tt> and <tt>e2</tt> are both arrays of object reference
-     *         types, and <tt>Arrays.deepEquals(e1, e2) would return true</tt>
-     *    <li> <tt>e1</tt> and <tt>e2</tt> are arrays of the same primitive
+     *    <li> {@code e1} and {@code e2} are both arrays of object reference
+     *         types, and {@code Arrays.deepEquals(e1, e2) would return true}
+     *    <li> {@code e1} and {@code e2} are arrays of the same primitive
      *         type, and the appropriate overloading of
-     *         <tt>Arrays.equals(e1, e2)</tt> would return true.
-     *    <li> <tt>e1 == e2</tt>
-     *    <li> <tt>e1.equals(e2)</tt> would return true.
+     *         {@code Arrays.equals(e1, e2)} would return true.
+     *    <li> {@code e1 == e2}
+     *    <li> {@code e1.equals(e2)} would return true.
      * </ul>
-     * Note that this definition permits <tt>null</tt> elements at any depth.
+     * Note that this definition permits {@code null} elements at any depth.
      *
      * <p>If either of the specified arrays contain themselves as elements
      * either directly or indirectly through one or more levels of arrays,
@@ -4246,7 +4247,7 @@ public class Arrays {
      *
      * @param a1 one array to be tested for equality
      * @param a2 the other array to be tested for equality
-     * @return <tt>true</tt> if the two arrays are equal
+     * @return {@code true} if the two arrays are equal
      * @see #equals(Object[],Object[])
      * @see Objects#deepEquals(Object, Object)
      * @since 1.5
@@ -4307,14 +4308,14 @@ public class Arrays {
     /**
      * Returns a string representation of the contents of the specified array.
      * The string representation consists of a list of the array's elements,
-     * enclosed in square brackets (<tt>"[]"</tt>).  Adjacent elements are
-     * separated by the characters <tt>", "</tt> (a comma followed by a
+     * enclosed in square brackets ({@code "[]"}).  Adjacent elements are
+     * separated by the characters {@code ", "} (a comma followed by a
      * space).  Elements are converted to strings as by
-     * <tt>String.valueOf(long)</tt>.  Returns <tt>"null"</tt> if <tt>a</tt>
-     * is <tt>null</tt>.
+     * {@code String.valueOf(long)}.  Returns {@code "null"} if {@code a}
+     * is {@code null}.
      *
      * @param a the array whose string representation to return
-     * @return a string representation of <tt>a</tt>
+     * @return a string representation of {@code a}
      * @since 1.5
      */
     public static String toString(long[] a) {
@@ -4337,14 +4338,14 @@ public class Arrays {
     /**
      * Returns a string representation of the contents of the specified array.
      * The string representation consists of a list of the array's elements,
-     * enclosed in square brackets (<tt>"[]"</tt>).  Adjacent elements are
-     * separated by the characters <tt>", "</tt> (a comma followed by a
+     * enclosed in square brackets ({@code "[]"}).  Adjacent elements are
+     * separated by the characters {@code ", "} (a comma followed by a
      * space).  Elements are converted to strings as by
-     * <tt>String.valueOf(int)</tt>.  Returns <tt>"null"</tt> if <tt>a</tt> is
-     * <tt>null</tt>.
+     * {@code String.valueOf(int)}.  Returns {@code "null"} if {@code a} is
+     * {@code null}.
      *
      * @param a the array whose string representation to return
-     * @return a string representation of <tt>a</tt>
+     * @return a string representation of {@code a}
      * @since 1.5
      */
     public static String toString(int[] a) {
@@ -4367,14 +4368,14 @@ public class Arrays {
     /**
      * Returns a string representation of the contents of the specified array.
      * The string representation consists of a list of the array's elements,
-     * enclosed in square brackets (<tt>"[]"</tt>).  Adjacent elements are
-     * separated by the characters <tt>", "</tt> (a comma followed by a
+     * enclosed in square brackets ({@code "[]"}).  Adjacent elements are
+     * separated by the characters {@code ", "} (a comma followed by a
      * space).  Elements are converted to strings as by
-     * <tt>String.valueOf(short)</tt>.  Returns <tt>"null"</tt> if <tt>a</tt>
-     * is <tt>null</tt>.
+     * {@code String.valueOf(short)}.  Returns {@code "null"} if {@code a}
+     * is {@code null}.
      *
      * @param a the array whose string representation to return
-     * @return a string representation of <tt>a</tt>
+     * @return a string representation of {@code a}
      * @since 1.5
      */
     public static String toString(short[] a) {
@@ -4397,14 +4398,14 @@ public class Arrays {
     /**
      * Returns a string representation of the contents of the specified array.
      * The string representation consists of a list of the array's elements,
-     * enclosed in square brackets (<tt>"[]"</tt>).  Adjacent elements are
-     * separated by the characters <tt>", "</tt> (a comma followed by a
+     * enclosed in square brackets ({@code "[]"}).  Adjacent elements are
+     * separated by the characters {@code ", "} (a comma followed by a
      * space).  Elements are converted to strings as by
-     * <tt>String.valueOf(char)</tt>.  Returns <tt>"null"</tt> if <tt>a</tt>
-     * is <tt>null</tt>.
+     * {@code String.valueOf(char)}.  Returns {@code "null"} if {@code a}
+     * is {@code null}.
      *
      * @param a the array whose string representation to return
-     * @return a string representation of <tt>a</tt>
+     * @return a string representation of {@code a}
      * @since 1.5
      */
     public static String toString(char[] a) {
@@ -4427,14 +4428,14 @@ public class Arrays {
     /**
      * Returns a string representation of the contents of the specified array.
      * The string representation consists of a list of the array's elements,
-     * enclosed in square brackets (<tt>"[]"</tt>).  Adjacent elements
-     * are separated by the characters <tt>", "</tt> (a comma followed
+     * enclosed in square brackets ({@code "[]"}).  Adjacent elements
+     * are separated by the characters {@code ", "} (a comma followed
      * by a space).  Elements are converted to strings as by
-     * <tt>String.valueOf(byte)</tt>.  Returns <tt>"null"</tt> if
-     * <tt>a</tt> is <tt>null</tt>.
+     * {@code String.valueOf(byte)}.  Returns {@code "null"} if
+     * {@code a} is {@code null}.
      *
      * @param a the array whose string representation to return
-     * @return a string representation of <tt>a</tt>
+     * @return a string representation of {@code a}
      * @since 1.5
      */
     public static String toString(byte[] a) {
@@ -4457,14 +4458,14 @@ public class Arrays {
     /**
      * Returns a string representation of the contents of the specified array.
      * The string representation consists of a list of the array's elements,
-     * enclosed in square brackets (<tt>"[]"</tt>).  Adjacent elements are
-     * separated by the characters <tt>", "</tt> (a comma followed by a
+     * enclosed in square brackets ({@code "[]"}).  Adjacent elements are
+     * separated by the characters {@code ", "} (a comma followed by a
      * space).  Elements are converted to strings as by
-     * <tt>String.valueOf(boolean)</tt>.  Returns <tt>"null"</tt> if
-     * <tt>a</tt> is <tt>null</tt>.
+     * {@code String.valueOf(boolean)}.  Returns {@code "null"} if
+     * {@code a} is {@code null}.
      *
      * @param a the array whose string representation to return
-     * @return a string representation of <tt>a</tt>
+     * @return a string representation of {@code a}
      * @since 1.5
      */
     public static String toString(boolean[] a) {
@@ -4487,14 +4488,14 @@ public class Arrays {
     /**
      * Returns a string representation of the contents of the specified array.
      * The string representation consists of a list of the array's elements,
-     * enclosed in square brackets (<tt>"[]"</tt>).  Adjacent elements are
-     * separated by the characters <tt>", "</tt> (a comma followed by a
+     * enclosed in square brackets ({@code "[]"}).  Adjacent elements are
+     * separated by the characters {@code ", "} (a comma followed by a
      * space).  Elements are converted to strings as by
-     * <tt>String.valueOf(float)</tt>.  Returns <tt>"null"</tt> if <tt>a</tt>
-     * is <tt>null</tt>.
+     * {@code String.valueOf(float)}.  Returns {@code "null"} if {@code a}
+     * is {@code null}.
      *
      * @param a the array whose string representation to return
-     * @return a string representation of <tt>a</tt>
+     * @return a string representation of {@code a}
      * @since 1.5
      */
     public static String toString(float[] a) {
@@ -4518,14 +4519,14 @@ public class Arrays {
     /**
      * Returns a string representation of the contents of the specified array.
      * The string representation consists of a list of the array's elements,
-     * enclosed in square brackets (<tt>"[]"</tt>).  Adjacent elements are
-     * separated by the characters <tt>", "</tt> (a comma followed by a
+     * enclosed in square brackets ({@code "[]"}).  Adjacent elements are
+     * separated by the characters {@code ", "} (a comma followed by a
      * space).  Elements are converted to strings as by
-     * <tt>String.valueOf(double)</tt>.  Returns <tt>"null"</tt> if <tt>a</tt>
-     * is <tt>null</tt>.
+     * {@code String.valueOf(double)}.  Returns {@code "null"} if {@code a}
+     * is {@code null}.
      *
      * @param a the array whose string representation to return
-     * @return a string representation of <tt>a</tt>
+     * @return a string representation of {@code a}
      * @since 1.5
      */
     public static String toString(double[] a) {
@@ -4549,15 +4550,15 @@ public class Arrays {
      * Returns a string representation of the contents of the specified array.
      * If the array contains other arrays as elements, they are converted to
      * strings by the {@link Object#toString} method inherited from
-     * <tt>Object</tt>, which describes their <i>identities</i> rather than
+     * {@code Object}, which describes their <i>identities</i> rather than
      * their contents.
      *
      * <p>The value returned by this method is equal to the value that would
-     * be returned by <tt>Arrays.asList(a).toString()</tt>, unless <tt>a</tt>
-     * is <tt>null</tt>, in which case <tt>"null"</tt> is returned.
+     * be returned by {@code Arrays.asList(a).toString()}, unless {@code a}
+     * is {@code null}, in which case {@code "null"} is returned.
      *
      * @param a the array whose string representation to return
-     * @return a string representation of <tt>a</tt>
+     * @return a string representation of {@code a}
      * @see #deepToString(Object[])
      * @since 1.5
      */
@@ -4586,29 +4587,29 @@ public class Arrays {
      * designed for converting multidimensional arrays to strings.
      *
      * <p>The string representation consists of a list of the array's
-     * elements, enclosed in square brackets (<tt>"[]"</tt>).  Adjacent
-     * elements are separated by the characters <tt>", "</tt> (a comma
+     * elements, enclosed in square brackets ({@code "[]"}).  Adjacent
+     * elements are separated by the characters {@code ", "} (a comma
      * followed by a space).  Elements are converted to strings as by
-     * <tt>String.valueOf(Object)</tt>, unless they are themselves
+     * {@code String.valueOf(Object)}, unless they are themselves
      * arrays.
      *
-     * <p>If an element <tt>e</tt> is an array of a primitive type, it is
+     * <p>If an element {@code e} is an array of a primitive type, it is
      * converted to a string as by invoking the appropriate overloading of
-     * <tt>Arrays.toString(e)</tt>.  If an element <tt>e</tt> is an array of a
+     * {@code Arrays.toString(e)}.  If an element {@code e} is an array of a
      * reference type, it is converted to a string as by invoking
      * this method recursively.
      *
      * <p>To avoid infinite recursion, if the specified array contains itself
      * as an element, or contains an indirect reference to itself through one
      * or more levels of arrays, the self-reference is converted to the string
-     * <tt>"[...]"</tt>.  For example, an array containing only a reference
-     * to itself would be rendered as <tt>"[[...]]"</tt>.
+     * {@code "[...]"}.  For example, an array containing only a reference
+     * to itself would be rendered as {@code "[[...]]"}.
      *
-     * <p>This method returns <tt>"null"</tt> if the specified array
-     * is <tt>null</tt>.
+     * <p>This method returns {@code "null"} if the specified array
+     * is {@code null}.
      *
      * @param a the array whose string representation to return
-     * @return a string representation of <tt>a</tt>
+     * @return a string representation of {@code a}
      * @see #toString(Object[])
      * @since 1.5
      */
