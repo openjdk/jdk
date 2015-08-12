@@ -25,7 +25,7 @@
 package java.util.prefs;
 
 /**
- * Implementation of  <tt>PreferencesFactory</tt> to return
+ * Implementation of  {@code PreferencesFactory} to return
  * WindowsPreferences objects.
  *
  * @author  Konstantin Kladko

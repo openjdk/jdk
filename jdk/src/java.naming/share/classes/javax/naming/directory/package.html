@@ -28,7 +28,7 @@ questions.
 </head>
 <body bgcolor="white">
 
-Extends the <tt>javax.naming</tt> package to provide functionality
+Extends the <code>javax.naming</code> package to provide functionality
 for accessing directory services.
 
 <p>
@@ -47,20 +47,20 @@ objects using specified attributes.
 
 <h4>The Directory Context</h4>
 
-The <tt>DirContext</tt>
+The <code>DirContext</code>
 interface represents a <em>directory context</em>.
 It defines methods for examining and updating attributes associated with a
 <em>directory object</em>, or <em>directory entry</em> as it is sometimes
 called.
 <p>
-You use	<tt>getAttributes()</tt> to retrieve the attributes 
+You use	<code>getAttributes()</code> to retrieve the attributes
 associated with a directory object (for which you supply the name).
-Attributes are modified using <tt>modifyAttributes()</tt>. 
+Attributes are modified using <code>modifyAttributes()</code>.
 You can add, replace, or remove attributes and/or attribute values
 using this operation.
 <p>
-<tt>DirContext</tt> also behaves as a naming context
-by extending the <tt>Context</tt> interface in the <tt>javax.naming</tt> package.
+<code>DirContext</code> also behaves as a naming context
+by extending the <code>Context</code> interface in the <code>javax.naming</code> package.
 This means that any directory object can also provide
 a naming context. 
 For example, the directory object for a person might contain
@@ -69,13 +69,13 @@ a context for naming objects relative to that person
 such as his printers and home directory.
 
 <h4>Searches</h4>
-<tt>DirContext</tt> contains methods for 
+<code>DirContext</code> contains methods for
 performing content-based searching of the directory.
 In the simplest and most common form of usage, the application
-specifies a set of attributes--possibly with specific 
-values--to match, and submits this attribute set, to the 
-<tt>search()</tt> method.
-There are other overloaded forms of <tt>search()</tt>
+specifies a set of attributes--possibly with specific
+values--to match, and submits this attribute set, to the
+<code>search()</code> method.
+There are other overloaded forms of <code>search()</code>
 that support more sophisticated <em>search filters</em>.
 
 

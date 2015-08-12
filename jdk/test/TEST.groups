@@ -28,14 +28,20 @@
 tier1 = \
     :jdk_lang \
     :jdk_util \
+    sun/nio/cs/ISO8859x.java \
+    java/nio/Buffer \
+    com/sun/crypto/provider/Cipher \
     :jdk_math
 
 tier2 = \
     :jdk_io \
     :jdk_nio \
+    -sun/nio/cs/ISO8859x.java \
+    -java/nio/Buffer \
     :jdk_net \
     :jdk_time \
     :jdk_security \
+    -com/sun/crypto/provider/Cipher \
     :jdk_text \
     :core_tools \
     :jdk_other \

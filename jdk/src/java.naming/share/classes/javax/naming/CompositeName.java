@@ -76,7 +76,7 @@ import java.util.Properties;
  *<h1>Composite Name Examples</h1>
  *This table shows examples of some composite names. Each row shows
  *the string form of a composite name and its corresponding structural form
- *(<tt>CompositeName</tt>).
+ *({@code CompositeName}).
  *
 <table border="1" cellpadding=3 summary="examples showing string form of composite name and its corresponding structural form (CompositeName)">
 
@@ -140,7 +140,7 @@ import java.util.Properties;
  *<h1>Composition Examples</h1>
  * Here are some composition examples.  The right column shows composing
  * string composite names while the left column shows composing the
- * corresponding <tt>CompositeName</tt>s.  Notice that composing the
+ * corresponding {@code CompositeName}s.  Notice that composing the
  * string forms of two composite names simply involves concatenating
  * their string forms together.
 
@@ -190,9 +190,9 @@ import java.util.Properties;
 </table>
  *
  *<h1>Multithreaded Access</h1>
- * A <tt>CompositeName</tt> instance is not synchronized against concurrent
+ * A {@code CompositeName} instance is not synchronized against concurrent
  * multithreaded access. Multiple threads trying to access and modify a
- * <tt>CompositeName</tt> should lock the object.
+ * {@code CompositeName} should lock the object.
  *
  * @author Rosanna Lee
  * @author Scott Seligman
@@ -557,8 +557,8 @@ public class CompositeName implements Name {
 
     /**
      * Overridden to avoid implementation dependency.
-     * @serialData The number of components (an <tt>int</tt>) followed by
-     * the individual components (each a <tt>String</tt>).
+     * @serialData The number of components (an {@code int}) followed by
+     * the individual components (each a {@code String}).
      */
     private void writeObject(java.io.ObjectOutputStream s)
             throws java.io.IOException {

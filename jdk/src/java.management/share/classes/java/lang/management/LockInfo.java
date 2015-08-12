@@ -43,7 +43,7 @@ import sun.management.LockInfoCompositeData;
  * two examples of ownable synchronizers provided by the platform.
  *
  * <h3><a name="MappedType">MXBean Mapping</a></h3>
- * <tt>LockInfo</tt> is mapped to a {@link CompositeData CompositeData}
+ * {@code LockInfo} is mapped to a {@link CompositeData CompositeData}
  * as specified in the {@link #from from} method.
  *
  * @see java.util.concurrent.locks.AbstractOwnableSynchronizer
@@ -59,7 +59,7 @@ public class LockInfo {
     private int    identityHashCode;
 
     /**
-     * Constructs a <tt>LockInfo</tt> object.
+     * Constructs a {@code LockInfo} object.
      *
      * @param className the fully qualified name of the class of the lock object.
      * @param identityHashCode the {@link System#identityHashCode
@@ -112,11 +112,11 @@ public class LockInfo {
      * </tr>
      * <tr>
      *   <td>className</td>
-     *   <td><tt>java.lang.String</tt></td>
+     *   <td>{@code java.lang.String}</td>
      * </tr>
      * <tr>
      *   <td>identityHashCode</td>
-     *   <td><tt>java.lang.Integer</tt></td>
+     *   <td>{@code java.lang.Integer}</td>
      * </tr>
      * </table>
      * </blockquote>
@@ -154,7 +154,7 @@ public class LockInfo {
      * <pre>
      * lock.getClass().getName() + '@' + Integer.toHexString(System.identityHashCode(lock))
      * </pre></blockquote>
-     * where <tt>lock</tt> is the lock object.
+     * where {@code lock} is the lock object.
      *
      * @return the string representation of a lock.
      */

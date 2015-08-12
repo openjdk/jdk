@@ -111,7 +111,6 @@ protected:
 
 enum G1Barrier {
   G1BarrierNone,
-  G1BarrierEvac,
   G1BarrierKlass
 };
 
@@ -147,8 +146,6 @@ typedef G1ParCopyClosure<G1BarrierNone,  G1MarkFromRoot>         G1ParScanAndMar
 typedef G1ParCopyClosure<G1BarrierNone,  G1MarkPromotedFromRoot> G1ParScanAndMarkWeakExtRootClosure;
 // We use a separate closure to handle references during evacuation
 // failure processing.
-
-typedef G1ParCopyClosure<G1BarrierEvac, G1MarkNone> G1ParScanHeapEvacFailureClosure;
 
 class FilterIntoCSClosure: public ExtendedOopClosure {
   G1CollectedHeap* _g1;

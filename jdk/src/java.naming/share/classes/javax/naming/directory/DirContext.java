@@ -33,7 +33,7 @@ import javax.naming.*;
  * associated with objects, and for searching the directory.
  *
  * <h1>Names</h1>
- * Each name passed as an argument to a <tt>DirContext</tt> method is relative
+ * Each name passed as an argument to a {@code DirContext} method is relative
  * to that context.  The empty name is used to name the context itself.
  * The name parameter may never be null.
  * <p>
@@ -47,9 +47,9 @@ import javax.naming.*;
  * The second version instead has a link to the first:  the same
  * documentation applies to both.
  * <p>
- * See <tt>Context</tt> for a discussion on the interpretation of the
- * name argument to the <tt>Context</tt> methods. These same rules
- * apply to the name argument to the <tt>DirContext</tt> methods.
+ * See {@code Context} for a discussion on the interpretation of the
+ * name argument to the {@code Context} methods. These same rules
+ * apply to the name argument to the {@code DirContext} methods.
  *
  * <h1>Attribute Models</h1>
  * There are two basic models of what attributes should be
@@ -82,7 +82,7 @@ import javax.naming.*;
  * within the parent object and associated with the object's name.
  *
  * <h1>Attribute Type Names</h1>
- * In the <tt>getAttributes()</tt> and <tt>search()</tt> methods,
+ * In the {@code getAttributes()} and {@code search()} methods,
  * you can supply the attributes to return by supplying a list of
  * attribute names (strings).
  * The attributes that you get back might not have the same names as the
@@ -120,9 +120,9 @@ import javax.naming.*;
  * purposes. An example of operational attributes is the access control
  * list for an object.
  * <p>
- * In the <tt>getAttributes()</tt> and <tt>search()</tt> methods,
+ * In the {@code getAttributes()} and {@code search()} methods,
  * you can specify that all attributes associated with the requested objects
- * be returned by supply <tt>null</tt> as the list of attributes to return.
+ * be returned by supply {@code null} as the list of attributes to return.
  * The attributes returned do <em>not</em> include operational attributes.
  * In order to retrieve operational attributes, you must name them explicitly.
  *
@@ -140,13 +140,13 @@ import javax.naming.*;
  *
  *<h1>Parameters</h1>
  *<p>
- * An <tt>Attributes</tt>, <tt>SearchControls</tt>, or array object
+ * An {@code Attributes}, {@code SearchControls}, or array object
  * passed as a parameter to any method will not be modified by the
  * service provider.  The service provider may keep a reference to it
  * for the duration of the operation, including any enumeration of the
  * method's results and the processing of any referrals generated.
  * The caller should not modify the object during this time.
- * An <tt>Attributes</tt> object returned by any method is owned by
+ * An {@code Attributes} object returned by any method is owned by
  * the caller.  The caller may subsequently modify it; the service
  * provider will not.
  *
@@ -254,7 +254,7 @@ public interface DirContext extends Context {
      * If attempting to add more than one value to a single-valued attribute,
      * throws <code>InvalidAttributeValueException</code>.
      * <p>
-     * The value of this constant is <tt>1</tt>.
+     * The value of this constant is {@code 1}.
      *
      * @see ModificationItem
      * @see #modifyAttributes
@@ -273,7 +273,7 @@ public interface DirContext extends Context {
      * attempting to add more than one value to a single-valued attribute,
      * throws <code>InvalidAttributeValueException</code>.
      * <p>
-     * The value of this constant is <tt>2</tt>.
+     * The value of this constant is {@code 2}.
      *
      * @see ModificationItem
      * @see #modifyAttributes
@@ -294,7 +294,7 @@ public interface DirContext extends Context {
      * Removal of the last value will remove the attribute if the
      * attribute is required to have at least one value.
      * <p>
-     * The value of this constant is <tt>3</tt>.
+     * The value of this constant is {@code 3}.
      *
      * @see ModificationItem
      * @see #modifyAttributes
@@ -391,12 +391,12 @@ public interface DirContext extends Context {
 
     /**
      * Binds a name to an object, along with associated attributes.
-     * If <tt>attrs</tt> is null, the resulting binding will have
-     * the attributes associated with <tt>obj</tt> if <tt>obj</tt> is a
-     * <tt>DirContext</tt>, and no attributes otherwise.
-     * If <tt>attrs</tt> is non-null, the resulting binding will have
-     * <tt>attrs</tt> as its attributes; any attributes associated with
-     * <tt>obj</tt> are ignored.
+     * If {@code attrs} is null, the resulting binding will have
+     * the attributes associated with {@code obj} if {@code obj} is a
+     * {@code DirContext}, and no attributes otherwise.
+     * If {@code attrs} is non-null, the resulting binding will have
+     * {@code attrs} as its attributes; any attributes associated with
+     * {@code obj} are ignored.
      *
      * @param name
      *          the name to bind; may not be empty
@@ -438,16 +438,16 @@ public interface DirContext extends Context {
     /**
      * Binds a name to an object, along with associated attributes,
      * overwriting any existing binding.
-     * If <tt>attrs</tt> is null and <tt>obj</tt> is a <tt>DirContext</tt>,
-     * the attributes from <tt>obj</tt> are used.
-     * If <tt>attrs</tt> is null and <tt>obj</tt> is not a <tt>DirContext</tt>,
+     * If {@code attrs} is null and {@code obj} is a {@code DirContext},
+     * the attributes from {@code obj} are used.
+     * If {@code attrs} is null and {@code obj} is not a {@code DirContext},
      * any existing attributes associated with the object already bound
      * in the directory remain unchanged.
-     * If <tt>attrs</tt> is non-null, any existing attributes associated with
-     * the object already bound in the directory are removed and <tt>attrs</tt>
-     * is associated with the named object.  If <tt>obj</tt> is a
-     * <tt>DirContext</tt> and <tt>attrs</tt> is non-null, the attributes
-     * of <tt>obj</tt> are ignored.
+     * If {@code attrs} is non-null, any existing attributes associated with
+     * the object already bound in the directory are removed and {@code attrs}
+     * is associated with the named object.  If {@code obj} is a
+     * {@code DirContext} and {@code attrs} is non-null, the attributes
+     * of {@code obj} are ignored.
      *
      * @param name
      *          the name to bind; may not be empty
@@ -492,8 +492,8 @@ public interface DirContext extends Context {
      * component of the name), and associates the supplied attributes
      * with the newly created object.
      * All intermediate and target contexts must already exist.
-     * If <tt>attrs</tt> is null, this method is equivalent to
-     * <tt>Context.createSubcontext()</tt>.
+     * If {@code attrs} is null, this method is equivalent to
+     * {@code Context.createSubcontext()}.
      *
      * @param name
      *          the name of the context to create; may not be empty
@@ -579,8 +579,8 @@ public interface DirContext extends Context {
      * "object class" being referred to here is in the directory sense
      * rather than in the Java sense.
      * For example, if the named object is a directory object of
-     * "Person" class, <tt>getSchemaClassDefinition()</tt> would return a
-     * <tt>DirContext</tt> representing the (directory's) object class
+     * "Person" class, {@code getSchemaClassDefinition()} would return a
+     * {@code DirContext} representing the (directory's) object class
      * definition of "Person".
      *<p>
      * The information that can be retrieved from an object class definition
@@ -589,13 +589,13 @@ public interface DirContext extends Context {
      * Prior to JNDI 1.2, this method
      * returned a single schema object representing the class definition of
      * the named object.
-     * Since JNDI 1.2, this method returns a <tt>DirContext</tt> containing
+     * Since JNDI 1.2, this method returns a {@code DirContext} containing
      * all of the named object's class definitions.
      *
      * @param name
      *          the name of the object whose object class
      *          definition is to be retrieved
-     * @return  the <tt>DirContext</tt> containing the named
+     * @return  the {@code DirContext} containing the named
      *          object's class definitions; never null
      *
      * @throws  OperationNotSupportedException if schema not supported
@@ -612,7 +612,7 @@ public interface DirContext extends Context {
      * @param name
      *          the name of the object whose object class
      *          definition is to be retrieved
-     * @return  the <tt>DirContext</tt> containing the named
+     * @return  the {@code DirContext} containing the named
      *          object's class definitions; never null
      *
      * @throws  OperationNotSupportedException if schema not supported
@@ -656,7 +656,7 @@ public interface DirContext extends Context {
      * substring comparison) use the version of the <code>search</code>
      * method that takes a filter argument.
      * <p>
-     * When changes are made to this <tt>DirContext</tt>,
+     * When changes are made to this {@code DirContext},
      * the effect on enumerations returned by prior calls to this method
      * is undefined.
      *<p>
@@ -681,8 +681,8 @@ public interface DirContext extends Context {
      *          all attributes are to be returned;
      *          an empty array indicates that none are to be returned.
      * @return
-     *          a non-null enumeration of <tt>SearchResult</tt> objects.
-     *          Each <tt>SearchResult</tt> contains the attributes
+     *          a non-null enumeration of {@code SearchResult} objects.
+     *          Each {@code SearchResult} contains the attributes
      *          identified by <code>attributesToReturn</code>
      *          and the name of the corresponding object, named relative
      *          to the context named by <code>name</code>.
@@ -709,7 +709,7 @@ public interface DirContext extends Context {
      *          the attributes to search for
      * @param attributesToReturn
      *          the attributes to return
-     * @return  a non-null enumeration of <tt>SearchResult</tt> objects
+     * @return  a non-null enumeration of {@code SearchResult} objects
      * @throws  NamingException if a naming exception is encountered
      */
     public NamingEnumeration<SearchResult>
@@ -723,7 +723,7 @@ public interface DirContext extends Context {
      * specified set of attributes.
      * This method returns all the attributes of such objects.
      * It is equivalent to supplying null as
-     * the <tt>attributesToReturn</tt> parameter to the method
+     * the {@code attributesToReturn} parameter to the method
      * <code>search(Name, Attributes, String[])</code>.
      * <br>
      * See {@link #search(Name, Attributes, String[])} for a full description.
@@ -732,7 +732,7 @@ public interface DirContext extends Context {
      *          the name of the context to search
      * @param matchingAttributes
      *          the attributes to search for
-     * @return  an enumeration of <tt>SearchResult</tt> objects
+     * @return  an enumeration of {@code SearchResult} objects
      * @throws  NamingException if a naming exception is encountered
      *
      * @see #search(Name, Attributes, String[])
@@ -750,7 +750,7 @@ public interface DirContext extends Context {
      *          the name of the context to search
      * @param matchingAttributes
      *          the attributes to search for
-     * @return  an enumeration of <tt>SearchResult</tt> objects
+     * @return  an enumeration of {@code SearchResult} objects
      * @throws  NamingException if a naming exception is encountered
      */
     public NamingEnumeration<SearchResult>
@@ -807,8 +807,8 @@ public interface DirContext extends Context {
      * attributes.  When an operator is not applicable, the exception
      * <code>InvalidSearchFilterException</code> is thrown.
      * <p>
-     * The result is returned in an enumeration of <tt>SearchResult</tt>s.
-     * Each <tt>SearchResult</tt> contains the name of the object
+     * The result is returned in an enumeration of {@code SearchResult}s.
+     * Each {@code SearchResult} contains the name of the object
      * and other information about the object (see SearchResult).
      * The name is either relative to the target context of the search
      * (which is named by the <code>name</code> parameter), or
@@ -817,8 +817,8 @@ public interface DirContext extends Context {
      * <code>cons</code> specifies a search scope of
      * <code>SearchControls.OBJECT_SCOPE</code> or
      * <code>SearchControls.SUBSTREE_SCOPE</code>), its name is the empty
-     * string. The <tt>SearchResult</tt> may also contain attributes of the
-     * matching object if the <tt>cons</tt> argument specified that attributes
+     * string. The {@code SearchResult} may also contain attributes of the
+     * matching object if the {@code cons} argument specified that attributes
      * be returned.
      *<p>
      * If the object does not have a requested attribute, that
@@ -839,8 +839,8 @@ public interface DirContext extends Context {
      * @param cons
      *          the search controls that control the search.  If null,
      *          the default search controls are used (equivalent
-     *          to <tt>(new SearchControls())</tt>).
-     * @return  an enumeration of <tt>SearchResult</tt>s of
+     *          to {@code (new SearchControls())}).
+     * @return  an enumeration of {@code SearchResult}s of
      *          the objects that satisfy the filter; never null
      *
      * @throws  InvalidSearchFilterException if the search filter specified is
@@ -872,9 +872,9 @@ public interface DirContext extends Context {
      * @param cons
      *          the search controls that control the search.  If null,
      *          the default search controls are used (equivalent
-     *          to <tt>(new SearchControls())</tt>).
+     *          to {@code (new SearchControls())}).
      *
-     * @return  an enumeration of <tt>SearchResult</tt>s for
+     * @return  an enumeration of {@code SearchResult}s for
      *          the objects that satisfy the filter.
      * @throws  InvalidSearchFilterException if the search filter specified is
      *          not supported or understood by the underlying directory
@@ -935,8 +935,8 @@ public interface DirContext extends Context {
      * <code>SearchControls.SUBSTREE_SCOPE</code>),
      * its name is the empty string.
      *<p>
-     * The <tt>SearchResult</tt> may also contain attributes of the matching
-     * object if the <tt>cons</tt> argument specifies that attributes be
+     * The {@code SearchResult} may also contain attributes of the matching
+     * object if the {@code cons} argument specifies that attributes be
      * returned.
      *<p>
      * If the object does not have a requested attribute, that
@@ -972,17 +972,17 @@ public interface DirContext extends Context {
      * @param cons
      *          the search controls that control the search.  If null,
      *          the default search controls are used (equivalent
-     *          to <tt>(new SearchControls())</tt>).
-     * @return  an enumeration of <tt>SearchResult</tt>s of the objects
+     *          to {@code (new SearchControls())}).
+     * @return  an enumeration of {@code SearchResult}s of the objects
      *          that satisfy the filter; never null
      *
-     * @throws  ArrayIndexOutOfBoundsException if <tt>filterExpr</tt> contains
+     * @throws  ArrayIndexOutOfBoundsException if {@code filterExpr} contains
      *          <code>{i}</code> expressions where <code>i</code> is outside
      *          the bounds of the array <code>filterArgs</code>
-     * @throws  InvalidSearchControlsException if <tt>cons</tt> contains
+     * @throws  InvalidSearchControlsException if {@code cons} contains
      *          invalid settings
-     * @throws  InvalidSearchFilterException if <tt>filterExpr</tt> with
-     *          <tt>filterArgs</tt> represents an invalid search filter
+     * @throws  InvalidSearchFilterException if {@code filterExpr} with
+     *          {@code filterArgs} represents an invalid search filter
      * @throws  NamingException if a naming exception is encountered
      *
      * @see #search(Name, Attributes, String[])
@@ -1017,17 +1017,17 @@ public interface DirContext extends Context {
      * @param cons
      *          the search controls that control the search.  If null,
      *          the default search controls are used (equivalent
-     *          to <tt>(new SearchControls())</tt>).
-     * @return  an enumeration of <tt>SearchResult</tt>s of the objects
+     *          to {@code (new SearchControls())}).
+     * @return  an enumeration of {@code SearchResult}s of the objects
      *          that satisfy the filter; never null
      *
-     * @throws  ArrayIndexOutOfBoundsException if <tt>filterExpr</tt> contains
+     * @throws  ArrayIndexOutOfBoundsException if {@code filterExpr} contains
      *          <code>{i}</code> expressions where <code>i</code> is outside
      *          the bounds of the array <code>filterArgs</code>
-     * @throws  InvalidSearchControlsException if <tt>cons</tt> contains
+     * @throws  InvalidSearchControlsException if {@code cons} contains
      *          invalid settings
-     * @throws  InvalidSearchFilterException if <tt>filterExpr</tt> with
-     *          <tt>filterArgs</tt> represents an invalid search filter
+     * @throws  InvalidSearchFilterException if {@code filterExpr} with
+     *          {@code filterArgs} represents an invalid search filter
      * @throws  NamingException if a naming exception is encountered
      */
     public NamingEnumeration<SearchResult>

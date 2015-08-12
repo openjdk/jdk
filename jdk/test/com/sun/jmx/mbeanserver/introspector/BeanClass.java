@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -20,24 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-/*
- * @test
- * @modules java.xml/com.sun.org.apache.xerces.internal.impl
- *          java.xml/com.sun.org.apache.xalan.internal
- * @bug 6979306
- * @summary Test JAXP component version.
- */
-
-import org.testng.annotations.Test;
-
-public class Bug6979306Test {
-
-    @Test
-    public void test() {
-        String[] input = {};
-        com.sun.org.apache.xerces.internal.impl.Version.main(input);
-        com.sun.org.apache.xalan.internal.Version._main(input);
-    }
-
+public class BeanClass {
+    public int getNumber() {return 1;}
+    public boolean isAvailable() {return false;}
 }

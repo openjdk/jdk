@@ -26,48 +26,48 @@
 package java.util.logging;
 
 /**
- * <tt>Handler</tt> that buffers requests in a circular buffer in memory.
+ * {@code Handler} that buffers requests in a circular buffer in memory.
  * <p>
- * Normally this <tt>Handler</tt> simply stores incoming <tt>LogRecords</tt>
+ * Normally this {@code Handler} simply stores incoming {@code LogRecords}
  * into its memory buffer and discards earlier records.  This buffering
  * is very cheap and avoids formatting costs.  On certain trigger
- * conditions, the <tt>MemoryHandler</tt> will push out its current buffer
- * contents to a target <tt>Handler</tt>, which will typically publish
+ * conditions, the {@code MemoryHandler} will push out its current buffer
+ * contents to a target {@code Handler}, which will typically publish
  * them to the outside world.
  * <p>
  * There are three main models for triggering a push of the buffer:
  * <ul>
  * <li>
- * An incoming <tt>LogRecord</tt> has a type that is greater than
- * a pre-defined level, the <tt>pushLevel</tt>. </li>
+ * An incoming {@code LogRecord} has a type that is greater than
+ * a pre-defined level, the {@code pushLevel}. </li>
  * <li>
- * An external class calls the <tt>push</tt> method explicitly. </li>
+ * An external class calls the {@code push} method explicitly. </li>
  * <li>
- * A subclass overrides the <tt>log</tt> method and scans each incoming
- * <tt>LogRecord</tt> and calls <tt>push</tt> if a record matches some
+ * A subclass overrides the {@code log} method and scans each incoming
+ * {@code LogRecord} and calls {@code push} if a record matches some
  * desired criteria. </li>
  * </ul>
  * <p>
  * <b>Configuration:</b>
- * By default each <tt>MemoryHandler</tt> is initialized using the following
- * <tt>LogManager</tt> configuration properties where <tt>&lt;handler-name&gt;</tt>
+ * By default each {@code MemoryHandler} is initialized using the following
+ * {@code LogManager} configuration properties where {@code <handler-name>}
  * refers to the fully-qualified class name of the handler.
  * If properties are not defined
  * (or have invalid values) then the specified default values are used.
  * If no default value is defined then a RuntimeException is thrown.
  * <ul>
  * <li>   &lt;handler-name&gt;.level
- *        specifies the level for the <tt>Handler</tt>
- *        (defaults to <tt>Level.ALL</tt>). </li>
+ *        specifies the level for the {@code Handler}
+ *        (defaults to {@code Level.ALL}). </li>
  * <li>   &lt;handler-name&gt;.filter
- *        specifies the name of a <tt>Filter</tt> class to use
- *        (defaults to no <tt>Filter</tt>). </li>
+ *        specifies the name of a {@code Filter} class to use
+ *        (defaults to no {@code Filter}). </li>
  * <li>   &lt;handler-name&gt;.size
  *        defines the buffer size (defaults to 1000). </li>
  * <li>   &lt;handler-name&gt;.push
- *        defines the <tt>pushLevel</tt> (defaults to <tt>level.SEVERE</tt>). </li>
+ *        defines the {@code pushLevel} (defaults to {@code level.SEVERE}). </li>
  * <li>   &lt;handler-name&gt;.target
- *        specifies the name of the target <tt>Handler </tt> class.
+ *        specifies the name of the target {@code Handler } class.
  *        (no default). </li>
  * </ul>
  * <p>
@@ -95,8 +95,8 @@ public class MemoryHandler extends Handler {
     int start, count;
 
     /**
-     * Create a <tt>MemoryHandler</tt> and configure it based on
-     * <tt>LogManager</tt> configuration properties.
+     * Create a {@code MemoryHandler} and configure it based on
+     * {@code LogManager} configuration properties.
      */
     public MemoryHandler() {
         // configure with specific defaults for MemoryHandler
@@ -132,10 +132,10 @@ public class MemoryHandler extends Handler {
     }
 
     /**
-     * Create a <tt>MemoryHandler</tt>.
+     * Create a {@code MemoryHandler}.
      * <p>
-     * The <tt>MemoryHandler</tt> is configured based on <tt>LogManager</tt>
-     * properties (or their default values) except that the given <tt>pushLevel</tt>
+     * The {@code MemoryHandler} is configured based on {@code LogManager}
+     * properties (or their default values) except that the given {@code pushLevel}
      * argument and buffer size argument are used.
      *
      * @param target  the Handler to which to publish output.
@@ -161,16 +161,16 @@ public class MemoryHandler extends Handler {
     }
 
     /**
-     * Store a <tt>LogRecord</tt> in an internal buffer.
+     * Store a {@code LogRecord} in an internal buffer.
      * <p>
-     * If there is a <tt>Filter</tt>, its <tt>isLoggable</tt>
+     * If there is a {@code Filter}, its {@code isLoggable}
      * method is called to check if the given log record is loggable.
      * If not we return.  Otherwise the given record is copied into
      * an internal circular buffer.  Then the record's level property is
-     * compared with the <tt>pushLevel</tt>. If the given level is
-     * greater than or equal to the <tt>pushLevel</tt> then <tt>push</tt>
+     * compared with the {@code pushLevel}. If the given level is
+     * greater than or equal to the {@code pushLevel} then {@code push}
      * is called to write all buffered records to the target output
-     * <tt>Handler</tt>.
+     * {@code Handler}.
      *
      * @param  record  description of the log event. A null record is
      *                 silently ignored and is not published
@@ -194,7 +194,7 @@ public class MemoryHandler extends Handler {
     }
 
     /**
-     * Push any buffered output to the target <tt>Handler</tt>.
+     * Push any buffered output to the target {@code Handler}.
      * <p>
      * The buffer is then cleared.
      */
@@ -210,9 +210,9 @@ public class MemoryHandler extends Handler {
     }
 
     /**
-     * Causes a flush on the target <tt>Handler</tt>.
+     * Causes a flush on the target {@code Handler}.
      * <p>
-     * Note that the current contents of the <tt>MemoryHandler</tt>
+     * Note that the current contents of the {@code MemoryHandler}
      * buffer are <b>not</b> written out.  That requires a "push".
      */
     @Override
@@ -221,11 +221,11 @@ public class MemoryHandler extends Handler {
     }
 
     /**
-     * Close the <tt>Handler</tt> and free all associated resources.
-     * This will also close the target <tt>Handler</tt>.
+     * Close the {@code Handler} and free all associated resources.
+     * This will also close the target {@code Handler}.
      *
      * @exception  SecurityException  if a security manager exists and if
-     *             the caller does not have <tt>LoggingPermission("control")</tt>.
+     *             the caller does not have {@code LoggingPermission("control")}.
      */
     @Override
     public void close() throws SecurityException {
@@ -234,13 +234,13 @@ public class MemoryHandler extends Handler {
     }
 
     /**
-     * Set the <tt>pushLevel</tt>.  After a <tt>LogRecord</tt> is copied
+     * Set the {@code pushLevel}.  After a {@code LogRecord} is copied
      * into our internal buffer, if its level is greater than or equal to
-     * the <tt>pushLevel</tt>, then <tt>push</tt> will be called.
+     * the {@code pushLevel}, then {@code push} will be called.
      *
-     * @param newLevel the new value of the <tt>pushLevel</tt>
+     * @param newLevel the new value of the {@code pushLevel}
      * @exception  SecurityException  if a security manager exists and if
-     *             the caller does not have <tt>LoggingPermission("control")</tt>.
+     *             the caller does not have {@code LoggingPermission("control")}.
      */
     public synchronized void setPushLevel(Level newLevel) throws SecurityException {
         if (newLevel == null) {
@@ -251,25 +251,25 @@ public class MemoryHandler extends Handler {
     }
 
     /**
-     * Get the <tt>pushLevel</tt>.
+     * Get the {@code pushLevel}.
      *
-     * @return the value of the <tt>pushLevel</tt>
+     * @return the value of the {@code pushLevel}
      */
     public Level getPushLevel() {
         return pushLevel;
     }
 
     /**
-     * Check if this <tt>Handler</tt> would actually log a given
-     * <tt>LogRecord</tt> into its internal buffer.
+     * Check if this {@code Handler} would actually log a given
+     * {@code LogRecord} into its internal buffer.
      * <p>
-     * This method checks if the <tt>LogRecord</tt> has an appropriate level and
-     * whether it satisfies any <tt>Filter</tt>.  However it does <b>not</b>
-     * check whether the <tt>LogRecord</tt> would result in a "push" of the
-     * buffer contents. It will return false if the <tt>LogRecord</tt> is null.
+     * This method checks if the {@code LogRecord} has an appropriate level and
+     * whether it satisfies any {@code Filter}.  However it does <b>not</b>
+     * check whether the {@code LogRecord} would result in a "push" of the
+     * buffer contents. It will return false if the {@code LogRecord} is null.
      *
-     * @param record  a <tt>LogRecord</tt>
-     * @return true if the <tt>LogRecord</tt> would be logged.
+     * @param record  a {@code LogRecord}
+     * @return true if the {@code LogRecord} would be logged.
      *
      */
     @Override

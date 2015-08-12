@@ -56,6 +56,7 @@
 #include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.inline.hpp"
+#include "runtime/commandLineFlagConstraintList.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fprofiler.hpp"
 #include "runtime/handles.inline.hpp"
@@ -655,6 +656,11 @@ jint universe_init() {
   }
 
   Metaspace::global_initialize();
+
+  // Checks 'AfterMemoryInit' constraints.
+  if (!CommandLineFlagConstraintList::check_constraints(CommandLineFlagConstraint::AfterMemoryInit)) {
+    return JNI_EINVAL;
+  }
 
   // Create memory for metadata.  Must be after initializing heap for
   // DumpSharedSpaces.
