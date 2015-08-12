@@ -49,6 +49,7 @@ import sun.security.internal.spec.TlsPrfParameterSpec;
 import sun.security.ssl.CipherSuite.*;
 import static sun.security.ssl.CipherSuite.PRF.*;
 import sun.security.util.KeyUtil;
+import sun.security.provider.certpath.OCSPResponse;
 
 /**
  * Many data structures are involved in the handshake messages.  These
@@ -393,6 +394,24 @@ static final class ClientHello extends HandshakeMessage {
         cookieDigest.update(hos.toByteArray());
     }
 
+    // Add status_request extension type
+    void addCertStatusRequestExtension() {
+        extensions.add(new CertStatusReqExtension(StatusRequestType.OCSP,
+                new OCSPStatusRequest()));
+    }
+
+    // Add status_request_v2 extension type
+    void addCertStatusReqListV2Extension() {
+        // Create a default OCSPStatusRequest that we can use for both
+        // OCSP_MULTI and OCSP request list items.
+        OCSPStatusRequest osr = new OCSPStatusRequest();
+        List<CertStatusReqItemV2> itemList = new ArrayList<>(2);
+        itemList.add(new CertStatusReqItemV2(StatusRequestType.OCSP_MULTI,
+                osr));
+        itemList.add(new CertStatusReqItemV2(StatusRequestType.OCSP, osr));
+        extensions.add(new CertStatusReqListV2Extension(itemList));
+    }
+
     @Override
     int messageType() { return ht_client_hello; }
 
@@ -632,6 +651,240 @@ class CertificateMsg extends HandshakeMessage
 
     X509Certificate[] getCertificateChain() {
         return chain.clone();
+    }
+}
+
+/*
+ * CertificateStatus ... SERVER --> CLIENT
+ *
+ * When a ClientHello asserting the status_request or status_request_v2
+ * extensions is accepted by the server, it will fetch and return one
+ * or more status responses in this handshake message.
+ *
+ * NOTE: Like the Certificate handshake message, this can potentially
+ * be a very large message both due to the size of multiple status
+ * responses and the certificate chains that are often attached to them.
+ * Up to 2^24 bytes of status responses may be sent, possibly fragmented
+ * over multiple TLS records.
+ */
+static final class CertificateStatus extends HandshakeMessage
+{
+    private final StatusRequestType statusType;
+    private int encodedResponsesLen;
+    private int messageLength = -1;
+    private List<byte[]> encodedResponses;
+
+    @Override
+    int messageType() { return ht_certificate_status; }
+
+    /**
+     * Create a CertificateStatus message from the certificates and their
+     * respective OCSP responses
+     *
+     * @param type an indication of the type of response (OCSP or OCSP_MULTI)
+     * @param responses a {@code List} of OCSP responses in DER-encoded form.
+     *      For the OCSP type, only the first entry in the response list is
+     *      used, and must correspond to the end-entity certificate sent to the
+     *      peer.  Zero-length or null values for the response data are not
+     *      allowed for the OCSP type.  For the OCSP_MULTI type, each entry in
+     *      the list should match its corresponding certificate sent in the
+     *      Server Certificate message.  Where an OCSP response does not exist,
+     *      either a zero-length array or a null value should be used.
+     *
+     * @throws SSLException if an unsupported StatusRequestType or invalid
+     *      OCSP response data is provided.
+     */
+    CertificateStatus(StatusRequestType type, X509Certificate[] chain,
+            Map<X509Certificate, byte[]> responses) throws SSLException {
+        statusType = type;
+        encodedResponsesLen = 0;
+        encodedResponses = new ArrayList<>(chain.length);
+
+        Objects.requireNonNull(chain, "Null chain not allowed");
+        Objects.requireNonNull(responses, "Null responses not allowed");
+
+        if (statusType == StatusRequestType.OCSP) {
+            // Just get the response for the end-entity certificate
+            byte[] respDER = responses.get(chain[0]);
+            if (respDER != null && respDER.length > 0) {
+                encodedResponses.add(respDER);
+                encodedResponsesLen = 3 + respDER.length;
+            } else {
+                throw new SSLHandshakeException("Zero-length or null " +
+                        "OCSP Response");
+            }
+        } else if (statusType == StatusRequestType.OCSP_MULTI) {
+            for (X509Certificate cert : chain) {
+                byte[] respDER = responses.get(cert);
+                if (respDER != null) {
+                    encodedResponses.add(respDER);
+                    encodedResponsesLen += (respDER.length + 3);
+                } else {
+                    // If we cannot find a response for a given certificate
+                    // then use a zero-length placeholder.
+                    encodedResponses.add(new byte[0]);
+                    encodedResponsesLen += 3;
+                }
+            }
+        } else {
+            throw new SSLHandshakeException("Unsupported StatusResponseType: " +
+                    statusType);
+        }
+    }
+
+    /**
+     * Decode the CertificateStatus handshake message coming from a
+     * {@code HandshakeInputStream}.
+     *
+     * @param input the {@code HandshakeInputStream} containing the
+     * CertificateStatus message bytes.
+     *
+     * @throws SSLHandshakeException if a zero-length response is found in the
+     * OCSP response type, or an unsupported response type is detected.
+     * @throws IOException if a decoding error occurs.
+     */
+    CertificateStatus(HandshakeInStream input) throws IOException {
+        encodedResponsesLen = 0;
+        encodedResponses = new ArrayList<>();
+
+        statusType = StatusRequestType.get(input.getInt8());
+        if (statusType == StatusRequestType.OCSP) {
+            byte[] respDER = input.getBytes24();
+            // Convert the incoming bytes to a OCSPResponse strucutre
+            if (respDER.length > 0) {
+                encodedResponses.add(respDER);
+                encodedResponsesLen = 3 + respDER.length;
+            } else {
+                throw new SSLHandshakeException("Zero-length OCSP Response");
+            }
+        } else if (statusType == StatusRequestType.OCSP_MULTI) {
+            int respListLen = input.getInt24();
+            encodedResponsesLen = respListLen;
+
+            // Add each OCSP reponse into the array list in the order
+            // we receive them off the wire.  A zero-length array is
+            // allowed for ocsp_multi, and means that a response for
+            // a given certificate is not available.
+            while (respListLen > 0) {
+                byte[] respDER = input.getBytes24();
+                encodedResponses.add(respDER);
+                respListLen -= (respDER.length + 3);
+            }
+
+            if (respListLen != 0) {
+                throw new SSLHandshakeException(
+                        "Bad OCSP response list length");
+            }
+        } else {
+            throw new SSLHandshakeException("Unsupported StatusResponseType: " +
+                    statusType);
+        }
+    }
+
+    /**
+     * Get the length of the CertificateStatus message.
+     *
+     * @return the length of the message in bytes.
+     */
+    @Override
+    int messageLength() {
+        int len = 1;            // Length + Status type
+
+        if (messageLength == -1) {
+            if (statusType == StatusRequestType.OCSP) {
+                len += encodedResponsesLen;
+            } else if (statusType == StatusRequestType.OCSP_MULTI) {
+                len += 3 + encodedResponsesLen;
+            }
+            messageLength = len;
+        }
+
+        return messageLength;
+    }
+
+    /**
+     * Encode the CertificateStatus handshake message and place it on a
+     * {@code HandshakeOutputStream}.
+     *
+     * @param s the HandshakeOutputStream that will the message bytes.
+     *
+     * @throws IOException if an encoding error occurs.
+     */
+    @Override
+    void send(HandshakeOutStream s) throws IOException {
+        s.putInt8(statusType.id);
+        if (statusType == StatusRequestType.OCSP) {
+            s.putBytes24(encodedResponses.get(0));
+        } else if (statusType == StatusRequestType.OCSP_MULTI) {
+            s.putInt24(encodedResponsesLen);
+            for (byte[] respBytes : encodedResponses) {
+                if (respBytes != null) {
+                    s.putBytes24(respBytes);
+                } else {
+                    s.putBytes24(null);
+                }
+            }
+        } else {
+            // It is highly unlikely that we will fall into this section of
+            // the code.
+            throw new SSLHandshakeException("Unsupported status_type: " +
+                    statusType.id);
+        }
+    }
+
+    /**
+     * Display a human-readable representation of the CertificateStatus message.
+     *
+     * @param s the PrintStream used to display the message data.
+     *
+     * @throws IOException if any errors occur while parsing the OCSP response
+     * bytes into a readable form.
+     */
+    @Override
+    void print(PrintStream s) throws IOException {
+        s.println("*** CertificateStatus");
+        if (debug != null && Debug.isOn("verbose")) {
+            s.println("Type: " + statusType);
+            if (statusType == StatusRequestType.OCSP) {
+                OCSPResponse oResp = new OCSPResponse(encodedResponses.get(0));
+                s.println(oResp);
+            } else if (statusType == StatusRequestType.OCSP_MULTI) {
+                int numResponses = encodedResponses.size();
+                s.println(numResponses +
+                        (numResponses == 1 ? " entry:" : " entries:"));
+                for (byte[] respDER : encodedResponses) {
+                    if (respDER.length > 0) {
+                        OCSPResponse oResp = new OCSPResponse(respDER);
+                        s.println(oResp);
+                    } else {
+                        s.println("<Zero-length entry>");
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Get the type of CertificateStatus message
+     *
+     * @return the {@code StatusRequestType} for this CertificateStatus
+     *      message.
+     */
+    StatusRequestType getType() {
+        return statusType;
+    }
+
+    /**
+     * Get the list of non-zero length OCSP responses.
+     * The responses returned in this list can be used to map to
+     * {@code X509Certificate} objects provided by the peer and
+     * provided to a {@code PKIXRevocationChecker}.
+     *
+     * @return an unmodifiable List of zero or more byte arrays, each one
+     *      consisting of a single status response.
+     */
+    List<byte[]> getResponses() {
+        return Collections.unmodifiableList(encodedResponses);
     }
 }
 

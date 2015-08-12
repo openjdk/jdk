@@ -30,9 +30,9 @@ import javax.naming.NamingException;
 /**
   * This class represents an event fired when the procedures/processes
   * used to collect information for notifying listeners of
-  * <tt>NamingEvent</tt>s threw a <tt>NamingException</tt>.
+  * {@code NamingEvent}s threw a {@code NamingException}.
   * This can happen, for example, if the server which the listener is using
-  * aborts subsequent to the <tt>addNamingListener()</tt> call.
+  * aborts subsequent to the {@code addNamingListener()} call.
   *
   * @author Rosanna Lee
   * @author Scott Seligman
@@ -50,12 +50,12 @@ public class NamingExceptionEvent extends java.util.EventObject {
     private NamingException exception;
 
     /**
-     * Constructs an instance of <tt>NamingExceptionEvent</tt> using
-     * the context in which the <tt>NamingException</tt> was thrown and the exception
+     * Constructs an instance of {@code NamingExceptionEvent} using
+     * the context in which the {@code NamingException} was thrown and the exception
      * that was thrown.
      *
      * @param source The non-null context in which the exception was thrown.
-     * @param exc    The non-null <tt>NamingException</tt> that was thrown.
+     * @param exc    The non-null {@code NamingException} that was thrown.
      *
      */
     public NamingExceptionEvent(EventContext source, NamingException exc) {
@@ -72,16 +72,16 @@ public class NamingExceptionEvent extends java.util.EventObject {
     }
 
     /**
-     * Retrieves the <tt>EventContext</tt> that fired this event.
-     * This returns the same object as <tt>EventObject.getSource()</tt>.
-     * @return The non-null <tt>EventContext</tt> that fired this event.
+     * Retrieves the {@code EventContext} that fired this event.
+     * This returns the same object as {@code EventObject.getSource()}.
+     * @return The non-null {@code EventContext} that fired this event.
      */
     public EventContext getEventContext() {
         return (EventContext)getSource();
     }
 
     /**
-     * Invokes the <tt>namingExceptionThrown()</tt> method on
+     * Invokes the {@code namingExceptionThrown()} method on
      * a listener using this event.
      * @param listener The non-null naming listener on which to invoke
      * the method.

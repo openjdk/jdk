@@ -843,6 +843,28 @@ void os::print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   pd_print_cpu_info(st, buf, buflen);
 }
 
+// Print a one line string summarizing the cpu, number of cores, memory, and operating system version
+void os::print_summary_info(outputStream* st, char* buf, size_t buflen) {
+  st->print("Host: ");
+#ifndef PRODUCT
+  if (get_host_name(buf, buflen)) {
+    st->print("%s, ", buf);
+  }
+#endif // PRODUCT
+  get_summary_cpu_info(buf, buflen);
+  st->print("%s, ", buf);
+  size_t mem = physical_memory()/G;
+  if (mem == 0) {  // for low memory systems
+    mem = physical_memory()/M;
+    st->print("%d cores, %dM, ", processor_count(), mem);
+  } else {
+    st->print("%d cores, %dG, ", processor_count(), mem);
+  }
+  get_summary_os_info(buf, buflen);
+  st->print_raw(buf);
+  st->cr();
+}
+
 void os::print_date_and_time(outputStream *st, char* buf, size_t buflen) {
   const int secs_per_day  = 86400;
   const int secs_per_hour = 3600;
@@ -850,12 +872,19 @@ void os::print_date_and_time(outputStream *st, char* buf, size_t buflen) {
 
   time_t tloc;
   (void)time(&tloc);
-  st->print("time: %s", ctime(&tloc));  // ctime adds newline.
+  char* timestring = ctime(&tloc);  // ctime adds newline.
+  // edit out the newline
+  char* nl = strchr(timestring, '\n');
+  if (nl != NULL) {
+    *nl = '\0';
+  }
 
   struct tm tz;
   if (localtime_pd(&tloc, &tz) != NULL) {
     ::strftime(buf, buflen, "%Z", &tz);
-    st->print_cr("timezone: %s", buf);
+    st->print("Time: %s %s", timestring, buf);
+  } else {
+    st->print("Time: %s", timestring);
   }
 
   double t = os::elapsedTime();
@@ -872,7 +901,7 @@ void os::print_date_and_time(outputStream *st, char* buf, size_t buflen) {
   int elmins = (eltime - day_secs - hour_secs) / secs_per_min;
   int minute_secs = elmins * secs_per_min;
   int elsecs = (eltime - day_secs - hour_secs - minute_secs);
-  st->print_cr("elapsed time: %d seconds (%dd %dh %dm %ds)", eltime, eldays, elhours, elmins, elsecs);
+  st->print_cr(" elapsed time: %d seconds (%dd %dh %dm %ds)", eltime, eldays, elhours, elmins, elsecs);
 }
 
 // moved from debug.cpp (used to be find()) but still called from there

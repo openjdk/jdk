@@ -54,7 +54,7 @@ public class SearchControls implements java.io.Serializable {
      * It contains zero element if the named object does not satisfy
      * the search filter specified in search().
      * <p>
-     * The value of this constant is <tt>0</tt>.
+     * The value of this constant is {@code 0}.
      */
     public final static int OBJECT_SCOPE = 0;
 
@@ -68,7 +68,7 @@ public class SearchControls implements java.io.Serializable {
      * The names of elements in the NamingEnumeration are atomic names
      * relative to the named context.
      * <p>
-     * The value of this constant is <tt>1</tt>.
+     * The value of this constant is {@code 1}.
      */
     public final static int ONELEVEL_SCOPE = 1;
     /**
@@ -90,14 +90,14 @@ public class SearchControls implements java.io.Serializable {
      * included in the enumeration with the empty string as
      * its name.
      * <p>
-     * The value of this constant is <tt>2</tt>.
+     * The value of this constant is {@code 2}.
      */
     public final static int SUBTREE_SCOPE = 2;
 
     /**
      * Contains the scope with which to apply the search. One of
-     * <tt>ONELEVEL_SCOPE</tt>, <tt>OBJECT_SCOPE</tt>, or
-     * <tt>SUBTREE_SCOPE</tt>.
+     * {@code ONELEVEL_SCOPE}, {@code OBJECT_SCOPE}, or
+     * {@code SUBTREE_SCOPE}.
      * @serial
      */
     private int searchScope;
@@ -117,7 +117,7 @@ public class SearchControls implements java.io.Serializable {
     private boolean derefLink;
 
     /**
-     *  Indicates whether object is returned in <tt>SearchResult</tt>.
+     *  Indicates whether object is returned in {@code SearchResult}.
      * @serial
      */
     private boolean returnObj;
@@ -130,7 +130,7 @@ public class SearchControls implements java.io.Serializable {
 
     /**
      *  Contains the list of attributes to be returned in
-     * <tt>SearchResult</tt> for each matching entry of search. <tt>null</tt>
+     * {@code SearchResult} for each matching entry of search. {@code null}
      * indicates that all attributes are to be returned.
      * @serial
      */

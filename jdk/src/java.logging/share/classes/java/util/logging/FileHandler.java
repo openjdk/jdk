@@ -48,9 +48,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Simple file logging <tt>Handler</tt>.
+ * Simple file logging {@code Handler}.
  * <p>
- * The <tt>FileHandler</tt> can either write to a specified file,
+ * The {@code FileHandler} can either write to a specified file,
  * or it can write to a rotating set of files.
  * <p>
  * For a rotating set of files, as each file reaches a given size
@@ -61,24 +61,24 @@ import java.util.Set;
  * By default buffering is enabled in the IO libraries but each log
  * record is flushed out when it is complete.
  * <p>
- * By default the <tt>XMLFormatter</tt> class is used for formatting.
+ * By default the {@code XMLFormatter} class is used for formatting.
  * <p>
  * <b>Configuration:</b>
- * By default each <tt>FileHandler</tt> is initialized using the following
- * <tt>LogManager</tt> configuration properties where <tt>&lt;handler-name&gt;</tt>
+ * By default each {@code FileHandler} is initialized using the following
+ * {@code LogManager} configuration properties where {@code <handler-name>}
  * refers to the fully-qualified class name of the handler.
  * If properties are not defined
  * (or have invalid values) then the specified default values are used.
  * <ul>
  * <li>   &lt;handler-name&gt;.level
- *        specifies the default level for the <tt>Handler</tt>
- *        (defaults to <tt>Level.ALL</tt>). </li>
+ *        specifies the default level for the {@code Handler}
+ *        (defaults to {@code Level.ALL}). </li>
  * <li>   &lt;handler-name&gt;.filter
- *        specifies the name of a <tt>Filter</tt> class to use
- *        (defaults to no <tt>Filter</tt>). </li>
+ *        specifies the name of a {@code Filter} class to use
+ *        (defaults to no {@code Filter}). </li>
  * <li>   &lt;handler-name&gt;.formatter
- *        specifies the name of a <tt>Formatter</tt> class to use
- *        (defaults to <tt>java.util.logging.XMLFormatter</tt>) </li>
+ *        specifies the name of a {@code Formatter} class to use
+ *        (defaults to {@code java.util.logging.XMLFormatter}) </li>
  * <li>   &lt;handler-name&gt;.encoding
  *        the name of the character set encoding to use (defaults to
  *        the default platform encoding). </li>
@@ -129,10 +129,10 @@ import java.util.Set;
  * <p>
  * Generation numbers follow the sequence 0, 1, 2, etc.
  * <p>
- * Normally the "%u" unique field is set to 0.  However, if the <tt>FileHandler</tt>
+ * Normally the "%u" unique field is set to 0.  However, if the {@code FileHandler}
  * tries to open the filename and finds the file is currently in use by
  * another process it will increment the unique number field and try
- * again.  This will be repeated until <tt>FileHandler</tt> finds a file name that
+ * again.  This will be repeated until {@code FileHandler} finds a file name that
  * is  not currently in use. If there is a conflict and no "%u" field has
  * been specified, it will be added at the end of the filename after a dot.
  * (This will be after any automatically added generation number.)
@@ -249,12 +249,12 @@ public class FileHandler extends StreamHandler {
 
 
     /**
-     * Construct a default <tt>FileHandler</tt>.  This will be configured
-     * entirely from <tt>LogManager</tt> properties (or their default values).
+     * Construct a default {@code FileHandler}.  This will be configured
+     * entirely from {@code LogManager} properties (or their default values).
      *
      * @exception  IOException if there are IO problems opening the files.
      * @exception  SecurityException  if a security manager exists and if
-     *             the caller does not have <tt>LoggingPermission("control"))</tt>.
+     *             the caller does not have {@code LoggingPermission("control"))}.
      * @exception  NullPointerException if pattern property is an empty String.
      */
     public FileHandler() throws IOException, SecurityException {
@@ -269,9 +269,9 @@ public class FileHandler extends StreamHandler {
     }
 
     /**
-     * Initialize a <tt>FileHandler</tt> to write to the given filename.
+     * Initialize a {@code FileHandler} to write to the given filename.
      * <p>
-     * The <tt>FileHandler</tt> is configured based on <tt>LogManager</tt>
+     * The {@code FileHandler} is configured based on {@code LogManager}
      * properties (or their default values) except that the given pattern
      * argument is used as the filename pattern, the file limit is
      * set to no limit, and the file count is set to one.
@@ -282,7 +282,7 @@ public class FileHandler extends StreamHandler {
      * @param pattern  the name of the output file
      * @exception  IOException if there are IO problems opening the files.
      * @exception  SecurityException  if a security manager exists and if
-     *             the caller does not have <tt>LoggingPermission("control")</tt>.
+     *             the caller does not have {@code LoggingPermission("control")}.
      * @exception  IllegalArgumentException if pattern is an empty string
      */
     public FileHandler(String pattern) throws IOException, SecurityException {
@@ -298,14 +298,14 @@ public class FileHandler extends StreamHandler {
     }
 
     /**
-     * Initialize a <tt>FileHandler</tt> to write to the given filename,
+     * Initialize a {@code FileHandler} to write to the given filename,
      * with optional append.
      * <p>
-     * The <tt>FileHandler</tt> is configured based on <tt>LogManager</tt>
+     * The {@code FileHandler} is configured based on {@code LogManager}
      * properties (or their default values) except that the given pattern
      * argument is used as the filename pattern, the file limit is
      * set to no limit, the file count is set to one, and the append
-     * mode is set to the given <tt>append</tt> argument.
+     * mode is set to the given {@code append} argument.
      * <p>
      * There is no limit on the amount of data that may be written,
      * so use this with care.
@@ -314,7 +314,7 @@ public class FileHandler extends StreamHandler {
      * @param append  specifies append mode
      * @exception  IOException if there are IO problems opening the files.
      * @exception  SecurityException  if a security manager exists and if
-     *             the caller does not have <tt>LoggingPermission("control")</tt>.
+     *             the caller does not have {@code LoggingPermission("control")}.
      * @exception  IllegalArgumentException if pattern is an empty string
      */
     public FileHandler(String pattern, boolean append) throws IOException,
@@ -332,12 +332,12 @@ public class FileHandler extends StreamHandler {
     }
 
     /**
-     * Initialize a <tt>FileHandler</tt> to write to a set of files.  When
+     * Initialize a {@code FileHandler} to write to a set of files.  When
      * (approximately) the given limit has been written to one file,
      * another file will be opened.  The output will cycle through a set
      * of count files.
      * <p>
-     * The <tt>FileHandler</tt> is configured based on <tt>LogManager</tt>
+     * The {@code FileHandler} is configured based on {@code LogManager}
      * properties (or their default values) except that the given pattern
      * argument is used as the filename pattern, the file limit is
      * set to the limit argument, and the file count is set to the
@@ -350,7 +350,7 @@ public class FileHandler extends StreamHandler {
      * @param count  the number of files to use
      * @exception  IOException if there are IO problems opening the files.
      * @exception  SecurityException  if a security manager exists and if
-     *             the caller does not have <tt>LoggingPermission("control")</tt>.
+     *             the caller does not have {@code LoggingPermission("control")}.
      * @exception  IllegalArgumentException if {@code limit < 0}, or {@code count < 1}.
      * @exception  IllegalArgumentException if pattern is an empty string
      */
@@ -368,17 +368,17 @@ public class FileHandler extends StreamHandler {
     }
 
     /**
-     * Initialize a <tt>FileHandler</tt> to write to a set of files
+     * Initialize a {@code FileHandler} to write to a set of files
      * with optional append.  When (approximately) the given limit has
      * been written to one file, another file will be opened.  The
      * output will cycle through a set of count files.
      * <p>
-     * The <tt>FileHandler</tt> is configured based on <tt>LogManager</tt>
+     * The {@code FileHandler} is configured based on {@code LogManager}
      * properties (or their default values) except that the given pattern
      * argument is used as the filename pattern, the file limit is
      * set to the limit argument, and the file count is set to the
      * given count argument, and the append mode is set to the given
-     * <tt>append</tt> argument.
+     * {@code append} argument.
      * <p>
      * The count must be at least 1.
      *
@@ -388,7 +388,7 @@ public class FileHandler extends StreamHandler {
      * @param append  specifies append mode
      * @exception  IOException if there are IO problems opening the files.
      * @exception  SecurityException  if a security manager exists and if
-     *             the caller does not have <tt>LoggingPermission("control")</tt>.
+     *             the caller does not have {@code LoggingPermission("control")}.
      * @exception  IllegalArgumentException if {@code limit < 0}, or {@code count < 1}.
      * @exception  IllegalArgumentException if pattern is an empty string
      *
@@ -711,7 +711,7 @@ public class FileHandler extends StreamHandler {
     }
 
     /**
-     * Format and publish a <tt>LogRecord</tt>.
+     * Format and publish a {@code LogRecord}.
      *
      * @param  record  description of the log event. A null record is
      *                 silently ignored and is not published
@@ -743,7 +743,7 @@ public class FileHandler extends StreamHandler {
      * Close all the files.
      *
      * @exception  SecurityException  if a security manager exists and if
-     *             the caller does not have <tt>LoggingPermission("control")</tt>.
+     *             the caller does not have {@code LoggingPermission("control")}.
      */
     @Override
     public synchronized void close() throws SecurityException {

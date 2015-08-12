@@ -39,12 +39,12 @@ public class FormattableFlags {
     private FormattableFlags() {}
 
     /**
-     * Left-justifies the output.  Spaces (<tt>'&#92;u0020'</tt>) will be added
+     * Left-justifies the output.  Spaces (<code>'&#92;u0020'</code>) will be added
      * at the end of the converted value as required to fill the minimum width
      * of the field.  If this flag is not set then the output will be
      * right-justified.
      *
-     * <p> This flag corresponds to <tt>'-'</tt> (<tt>'&#92;u002d'</tt>) in
+     * <p> This flag corresponds to {@code '-'} (<code>'&#92;u002d'</code>) in
      * the format specifier.
      */
     public static final int LEFT_JUSTIFY = 1<<0; // '-'
@@ -52,23 +52,23 @@ public class FormattableFlags {
     /**
      * Converts the output to upper case according to the rules of the
      * {@linkplain java.util.Locale locale} given during creation of the
-     * <tt>formatter</tt> argument of the {@link Formattable#formatTo
+     * {@code formatter} argument of the {@link Formattable#formatTo
      * formatTo()} method.  The output should be equivalent the following
      * invocation of {@link String#toUpperCase(java.util.Locale)}
      *
      * <pre>
      *     out.toUpperCase() </pre>
      *
-     * <p> This flag corresponds to <tt>'S'</tt> (<tt>'&#92;u0053'</tt>) in
+     * <p> This flag corresponds to {@code 'S'} (<code>'&#92;u0053'</code>) in
      * the format specifier.
      */
     public static final int UPPERCASE = 1<<1;    // 'S'
 
     /**
      * Requires the output to use an alternate form.  The definition of the
-     * form is specified by the <tt>Formattable</tt>.
+     * form is specified by the {@code Formattable}.
      *
-     * <p> This flag corresponds to <tt>'#'</tt> (<tt>'&#92;u0023'</tt>) in
+     * <p> This flag corresponds to {@code '#'} (<code>'&#92;u0023'</code>) in
      * the format specifier.
      */
     public static final int ALTERNATE = 1<<2;    // '#'

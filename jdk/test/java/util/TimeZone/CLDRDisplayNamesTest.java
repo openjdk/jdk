@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,13 @@
 
 /*
  * @test
- * @bug 8005471 8008577
+ * @bug 8005471 8008577 8129881 8130845
  * @run main/othervm -Djava.locale.providers=CLDR CLDRDisplayNamesTest
  * @summary Make sure that localized time zone names of CLDR are used
  * if specified.
  */
 
+import java.text.*;
 import java.util.*;
 import static java.util.TimeZone.*;
 
@@ -72,6 +73,8 @@ public class CLDRDisplayNamesTest {
     };
 
     public static void main(String[] args) {
+        // Make sure that localized time zone names of CLDR are used
+        // if specified.
         TimeZone tz = TimeZone.getTimeZone("America/Los_Angeles");
         int errors = 0;
         for (String[] data : CLDR_DATA) {
@@ -87,6 +90,32 @@ public class CLDRDisplayNamesTest {
                 }
             }
         }
+
+        // for 8129881
+        tz = TimeZone.getTimeZone("Europe/Vienna");
+        String name = tz.getDisplayName(false, SHORT);
+        if (!"CET".equals(name)) {
+            System.err.printf("error: got '%s' expected 'CET' %n", name);
+            errors++;
+        }
+
+        // for 8130845
+        SimpleDateFormat fmtROOT = new SimpleDateFormat("EEE MMM d hh:mm:ss z yyyy", Locale.ROOT);
+        SimpleDateFormat fmtUS = new SimpleDateFormat("EEE MMM d hh:mm:ss z yyyy", Locale.US);
+        SimpleDateFormat fmtUK = new SimpleDateFormat("EEE MMM d hh:mm:ss z yyyy", Locale.UK);
+        Locale originalLocale = Locale.getDefault();
+        try {
+            Locale.setDefault(Locale.ROOT);
+            fmtROOT.parse("Thu Nov 13 04:35:51 AKST 2008");
+            fmtUS.parse("Thu Nov 13 04:35:51 AKST 2008");
+            fmtUK.parse("Thu Nov 13 04:35:51 GMT-09:00 2008");
+        } catch (ParseException pe) {
+            System.err.println(pe);
+            errors++;
+        } finally {
+            Locale.setDefault(originalLocale);
+        }
+
         if (errors > 0) {
             throw new RuntimeException("test failed");
         }

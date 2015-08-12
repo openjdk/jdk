@@ -28,6 +28,7 @@
 #  @summary Redefine a class that has an annotation and verify that the
 #    new annotation is returned.
 #
+#  @key intermittent
 #  @run shell RedefineAnnotation.sh
 
 compileOptions=-g

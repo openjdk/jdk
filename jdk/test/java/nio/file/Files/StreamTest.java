@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8006884 8019526
+ * @bug 8006884 8019526 8132539
  * @library ..
  * @build PassThroughFileSystem FaultyFileSystem
  * @run testng StreamTest
@@ -683,6 +683,20 @@ public class StreamTest {
             fail("Operate on closed stream should throw IllegalStateException");
         } catch (IllegalStateException ex) {
             // expected
+        }
+    }
+
+    public void testProcFile() throws IOException {
+        if (System.getProperty("os.name").equals("Linux")) {
+            Path path = Paths.get("/proc/cpuinfo");
+            if (Files.exists(path)) {
+                String NEW_LINE = System.getProperty("line.separator");
+                String s =
+                    Files.lines(path).collect(Collectors.joining(NEW_LINE));
+                if (s.length() == 0) {
+                    fail("Files.lines(\"" + path + "\") returns no data");
+                }
+            }
         }
     }
 }

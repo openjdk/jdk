@@ -33,12 +33,12 @@ import java.util.Hashtable;
  * such as that returned by LDAP v3 servers.
  * <p>
  * A service provider provides
- * a subclass of <tt>ReferralException</tt> by providing implementations
- * for <tt>getReferralInfo()</tt> and <tt>getReferralContext()</tt> (and appropriate
+ * a subclass of {@code ReferralException} by providing implementations
+ * for {@code getReferralInfo()} and {@code getReferralContext()} (and appropriate
  * constructors and/or corresponding "set" methods).
  * <p>
- * The following code sample shows how <tt>ReferralException</tt> can be used.
- * <blockquote>{@code
+ * The following code sample shows how {@code ReferralException} can be used.
+ * <blockquote><pre>{@code
  *      while (true) {
  *          try {
  *              bindings = ctx.listBindings(name);
@@ -51,12 +51,12 @@ import java.util.Hashtable;
  *              ctx = e.getReferralContext();
  *          }
  *      }
- * }</blockquote>
+ * }</pre></blockquote>
  *<p>
- * <tt>ReferralException</tt> is an abstract class. Concrete implementations
+ * {@code ReferralException} is an abstract class. Concrete implementations
  * determine its synchronization and serialization properties.
  *<p>
- * An environment parameter passed to the <tt>getReferralContext()</tt>
+ * An environment parameter passed to the {@code getReferralContext()}
  * method is owned by the caller.
  * The service provider will not modify the object or keep a reference to it,
  * but may keep a reference to a clone of it.
@@ -114,7 +114,7 @@ public abstract class ReferralException extends NamingException {
      *
      * @return The non-null context at which to continue the method.
      * @exception NamingException If a naming exception was encountered.
-     * Call either <tt>retryReferral()</tt> or <tt>skipReferral()</tt>
+     * Call either {@code retryReferral()} or {@code skipReferral()}
      * to continue processing referrals.
      */
     public abstract Context getReferralContext() throws NamingException;
@@ -127,7 +127,7 @@ public abstract class ReferralException extends NamingException {
      * enumeration, the referral exception should provide a context
      * at which to continue the operation.
      *<p>
-     * The referral context is created using <tt>env</tt> as its environment
+     * The referral context is created using {@code env} as its environment
      * properties.
      * This method should be used instead of the no-arg overloaded form
      * when the caller needs to use different environment properties for
@@ -143,7 +143,7 @@ public abstract class ReferralException extends NamingException {
      *
      * @return The non-null context at which to continue the method.
      * @exception NamingException If a naming exception was encountered.
-     * Call either <tt>retryReferral()</tt> or <tt>skipReferral()</tt>
+     * Call either {@code retryReferral()} or {@code skipReferral()}
      * to continue processing referrals.
      */
     public abstract Context
@@ -153,7 +153,7 @@ public abstract class ReferralException extends NamingException {
     /**
      * Discards the referral about to be processed.
      * A call to this method should be followed by a call to
-     * <code>getReferralContext</code> to allow the processing of
+     * {@code getReferralContext} to allow the processing of
      * other referrals to continue.
      * The following code fragment shows a typical usage pattern.
      * <blockquote><pre>
@@ -174,7 +174,7 @@ public abstract class ReferralException extends NamingException {
     /**
      * Retries the referral currently being processed.
      * A call to this method should be followed by a call to
-     * <code>getReferralContext</code> to allow the current
+     * {@code getReferralContext} to allow the current
      * referral to be retried.
      * The following code fragment shows a typical usage pattern.
      * <blockquote><pre>

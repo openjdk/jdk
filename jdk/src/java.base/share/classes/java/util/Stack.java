@@ -26,12 +26,12 @@
 package java.util;
 
 /**
- * The <code>Stack</code> class represents a last-in-first-out
- * (LIFO) stack of objects. It extends class <tt>Vector</tt> with five
+ * The {@code Stack} class represents a last-in-first-out
+ * (LIFO) stack of objects. It extends class {@code Vector} with five
  * operations that allow a vector to be treated as a stack. The usual
- * <tt>push</tt> and <tt>pop</tt> operations are provided, as well as a
- * method to <tt>peek</tt> at the top item on the stack, a method to test
- * for whether the stack is <tt>empty</tt>, and a method to <tt>search</tt>
+ * {@code push} and {@code pop} operations are provided, as well as a
+ * method to {@code peek} at the top item on the stack, a method to test
+ * for whether the stack is {@code empty}, and a method to {@code search}
  * the stack for an item and discover how far it is from the top.
  * <p>
  * When a stack is first created, it contains no items.
@@ -60,7 +60,7 @@ class Stack<E> extends Vector<E> {
      * addElement(item)</pre></blockquote>
      *
      * @param   item   the item to be pushed onto this stack.
-     * @return  the <code>item</code> argument.
+     * @return  the {@code item} argument.
      * @see     java.util.Vector#addElement
      */
     public E push(E item) {
@@ -74,7 +74,7 @@ class Stack<E> extends Vector<E> {
      * object as the value of this function.
      *
      * @return  The object at the top of this stack (the last item
-     *          of the <tt>Vector</tt> object).
+     *          of the {@code Vector} object).
      * @throws  EmptyStackException  if this stack is empty.
      */
     public synchronized E pop() {
@@ -92,7 +92,7 @@ class Stack<E> extends Vector<E> {
      * from the stack.
      *
      * @return  the object at the top of this stack (the last item
-     *          of the <tt>Vector</tt> object).
+     *          of the {@code Vector} object).
      * @throws  EmptyStackException  if this stack is empty.
      */
     public synchronized E peek() {
@@ -106,8 +106,8 @@ class Stack<E> extends Vector<E> {
     /**
      * Tests if this stack is empty.
      *
-     * @return  <code>true</code> if and only if this stack contains
-     *          no items; <code>false</code> otherwise.
+     * @return  {@code true} if and only if this stack contains
+     *          no items; {@code false} otherwise.
      */
     public boolean empty() {
         return size() == 0;
@@ -115,16 +115,16 @@ class Stack<E> extends Vector<E> {
 
     /**
      * Returns the 1-based position where an object is on this stack.
-     * If the object <tt>o</tt> occurs as an item in this stack, this
+     * If the object {@code o} occurs as an item in this stack, this
      * method returns the distance from the top of the stack of the
      * occurrence nearest the top of the stack; the topmost item on the
-     * stack is considered to be at distance <tt>1</tt>. The <tt>equals</tt>
-     * method is used to compare <tt>o</tt> to the
+     * stack is considered to be at distance {@code 1}. The {@code equals}
+     * method is used to compare {@code o} to the
      * items in this stack.
      *
      * @param   o   the desired object.
      * @return  the 1-based position from the top of the stack where
-     *          the object is located; the return value <code>-1</code>
+     *          the object is located; the return value {@code -1}
      *          indicates that the object is not on the stack.
      */
     public synchronized int search(Object o) {

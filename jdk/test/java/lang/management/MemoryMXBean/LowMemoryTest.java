@@ -33,7 +33,7 @@
  * @library /lib/testlibrary/
  * @modules java.management
  * @build jdk.testlibrary.* LowMemoryTest MemoryUtil RunUtil
-  * @run main/timeout=600 LowMemoryTest
+ * @run main/timeout=600 LowMemoryTest
  * @requires vm.opt.ExplicitGCInvokesConcurrent != "true"
  * @requires vm.opt.ExplicitGCInvokesConcurrentAndUnloadsClasses != "true"
  * @requires vm.opt.DisableExplicitGC != "true"
@@ -44,6 +44,9 @@ import java.util.*;
 import java.util.concurrent.Phaser;
 import javax.management.*;
 import javax.management.openmbean.CompositeData;
+import jdk.testlibrary.ProcessTools;
+import jdk.testlibrary.JDKToolFinder;
+import jdk.testlibrary.Utils;
 
 public class LowMemoryTest {
     private static final MemoryMXBean mm = ManagementFactory.getMemoryMXBean();
@@ -56,6 +59,7 @@ public class LowMemoryTest {
     private static final int NUM_CHUNKS = 2;
     private static final int YOUNG_GEN_SIZE = 8 * 1024 * 1024;
     private static long chunkSize;
+    private static final String classMain = "LowMemoryTest$TestMain";
 
     /**
      * Run the test multiple times with different GC versions.
@@ -63,7 +67,6 @@ public class LowMemoryTest {
      * Then with GC versions specified by the test.
      */
     public static void main(String a[]) throws Throwable {
-        final String main = "LowMemoryTest$TestMain";
         // Use a low young gen size to ensure that the
         // allocated objects are put in the old gen.
         final String nmFlag = "-Xmn" + YOUNG_GEN_SIZE;
@@ -73,11 +76,74 @@ public class LowMemoryTest {
         // Prevent G1 from selecting a large heap region size,
         // since that would change the young gen size.
         final String g1Flag = "-XX:G1HeapRegionSize=1m";
-        RunUtil.runTestClearGcOpts(main, nmFlag, lpFlag, "-XX:+UseSerialGC");
-        RunUtil.runTestClearGcOpts(main, nmFlag, lpFlag, "-XX:+UseParallelGC");
-        RunUtil.runTestClearGcOpts(main, nmFlag, lpFlag, "-XX:+UseG1GC", g1Flag);
-        RunUtil.runTestClearGcOpts(main, nmFlag, lpFlag, "-XX:+UseConcMarkSweepGC");
+
+        // Runs the test collecting subprocess I/O while it's running.
+        traceTest(classMain + ", -XX:+UseSerialGC", nmFlag, lpFlag, "-XX:+UseSerialGC");
+        traceTest(classMain + ", -XX:+UseParallelGC", nmFlag, lpFlag, "-XX:+UseParallelGC");
+        traceTest(classMain + ", -XX:+UseG1GC", nmFlag, lpFlag, "-XX:+UseG1GC", g1Flag);
+        traceTest(classMain + ", -XX:+UseConcMarkSweepGC", nmFlag, lpFlag, "-XX:+UseConcMarkSweepGC");
     }
+
+    /*
+     * Creating command-line for running subprocess JVM:
+     *
+     * JVM command line is like:
+     * {test_jdk}/bin/java {defaultopts} -cp {test.class.path} {testopts} main
+     *
+     * {defaultopts} are the default java options set by the framework.
+     *
+     * @param testOpts java options specified by the test.
+     */
+    private static List<String> buildCommandLine(String... testOpts) {
+        List<String> opts = new ArrayList<>();
+        opts.add(JDKToolFinder.getJDKTool("java"));
+        opts.addAll(Arrays.asList(Utils.getTestJavaOpts()));
+        opts.add("-cp");
+        opts.add(System.getProperty("test.class.path", "test.class.path"));
+        opts.add("-XX:+PrintGCDetails");
+        opts.addAll(Arrays.asList(testOpts));
+        opts.add(classMain);
+
+        return opts;
+    }
+
+    /**
+     * Runs LowMemoryTest$TestMain with the passed options and redirects subprocess
+     * standard I/O to the current (parent) process. This provides a trace of what
+     * happens in the subprocess while it is runnning (and before it terminates).
+     *
+     * @param prefixName the prefix string for redirected outputs
+     * @param testOpts java options specified by the test.
+     */
+    private static void traceTest(String prefixName,
+                                  String... testOpts)
+                throws Throwable {
+
+        // Building command-line
+        List<String> opts = buildCommandLine(testOpts);
+
+        // We activate all tracing in subprocess
+        opts.add("trace");
+
+        // Launch separate JVM subprocess
+        String[] optsArray = opts.toArray(new String[0]);
+        ProcessBuilder pb = new ProcessBuilder(optsArray);
+        System.out.println("\n========= Tracing of subprocess " + prefixName + " =========");
+        Process p = ProcessTools.startProcess(prefixName, pb);
+
+        // Handling end of subprocess
+        try {
+            int exitCode = p.waitFor();
+            if (exitCode != 0) {
+                throw new RuntimeException(
+                    "Subprocess unexpected exit value of [" + exitCode + "]. Expected 0.\n");
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Parent process interrupted with exception : \n " + e + " :" );
+        }
+
+
+     }
 
     private static volatile boolean listenerInvoked = false;
     static class SensorListener implements NotificationListener {
@@ -204,6 +270,7 @@ public class LowMemoryTest {
             System.out.println("Setting threshold for " + mpool.getName() +
                 " from " + mpool.getUsageThreshold() + " to " + newThreshold +
                 ".  Current used = " + mu.getUsed());
+
             mpool.setUsageThreshold(newThreshold);
 
             if (mpool.getUsageThreshold() != newThreshold) {
@@ -236,7 +303,6 @@ public class LowMemoryTest {
                 throw new RuntimeException("TEST FAILED.");
 
             System.out.println(RunUtil.successMessage);
-
         }
     }
 
@@ -298,28 +364,42 @@ public class LowMemoryTest {
 
     static class SweeperThread extends Thread {
         private void doTask() {
+            int iterations = 0;
+            if (trace) {
+                System.out.println("SweeperThread clearing allocated objects.");
+            }
+
             for (; mpool.getUsage().getUsed() >=
                        mpool.getUsageThreshold();) {
                 // clear all allocated objects and invoke GC
                 objectPool.clear();
                 mm.gc();
+
+                if (trace) {
+                    iterations++;
+                    System.out.println("SweeperThread called " + iterations +
+                        " time(s) MemoryMXBean.gc().");
+                }
+
                 goSleep(100);
             }
         }
+
         @Override
         public void run() {
             for (int i = 1; i <= NUM_TRIGGERS; i++) {
                 // Sync with AllocatorThread's first phase.
                 phaser.arriveAndAwaitAdvance();
-                System.out.println("SweepThread is doing task " + i +
+                System.out.println("SweeperThread is doing task " + i +
                     " phase " + phaser.getPhase());
+
                 doTask();
 
                 listenerInvoked = false;
 
                 // Sync with AllocatorThread's second phase.
                 phaser.arriveAndAwaitAdvance();
-                System.out.println("SweepThread done task " + i +
+                System.out.println("SweeperThread done task " + i +
                     " phase " + phaser.getPhase());
                 if (testFailed) return;
             }

@@ -49,7 +49,7 @@ public class Binding extends NameClassPair {
     /**
      * Contains this binding's object.
      * It is initialized by the constructor and can be updated using
-     * <tt>setObject</tt>.
+     * {@code setObject}.
      * @serial
      * @see #getObject
      * @see #setObject
@@ -59,9 +59,9 @@ public class Binding extends NameClassPair {
     /**
       * Constructs an instance of a Binding given its name and object.
       *<p>
-      * <tt>getClassName()</tt> will return
-      * the class name of <tt>obj</tt> (or null if <tt>obj</tt> is null)
-      * unless the class name has been explicitly set using <tt>setClassName()</tt>
+      * {@code getClassName()} will return
+      * the class name of {@code obj} (or null if {@code obj} is null)
+      * unless the class name has been explicitly set using {@code setClassName()}
       *
       * @param  name    The non-null name of the object. It is relative
       *             to the <em>target context</em> (which is
@@ -78,9 +78,9 @@ public class Binding extends NameClassPair {
       * Constructs an instance of a Binding given its name, object, and whether
       * the name is relative.
       *<p>
-      * <tt>getClassName()</tt> will return the class name of <tt>obj</tt>
-      * (or null if <tt>obj</tt> is null) unless the class name has been
-      * explicitly set using <tt>setClassName()</tt>
+      * {@code getClassName()} will return the class name of {@code obj}
+      * (or null if {@code obj} is null) unless the class name has been
+      * explicitly set using {@code setClassName()}
       *
       * @param  name    The non-null string name of the object.
       * @param  obj     The possibly null object bound to name.
@@ -104,9 +104,9 @@ public class Binding extends NameClassPair {
       *             to the <em>target context</em> (which is
       * named by the first parameter of the <code>listBindings()</code> method)
       * @param  className       The possibly null class name of the object
-      *         bound to <tt>name</tt>. If null, the class name of <tt>obj</tt> is
-      *         returned by <tt>getClassName()</tt>. If <tt>obj</tt> is also
-      *         null, <tt>getClassName()</tt> will return null.
+      *         bound to {@code name}. If null, the class name of {@code obj} is
+      *         returned by {@code getClassName()}. If {@code obj} is also
+      *         null, {@code getClassName()} will return null.
       * @param  obj     The possibly null object bound to name.
       * @see NameClassPair#setClassName
       */
@@ -121,9 +121,9 @@ public class Binding extends NameClassPair {
       *
       * @param  name    The non-null string name of the object.
       * @param  className       The possibly null class name of the object
-      *         bound to <tt>name</tt>. If null, the class name of <tt>obj</tt> is
-      *         returned by <tt>getClassName()</tt>. If <tt>obj</tt> is also
-      *         null, <tt>getClassName()</tt> will return null.
+      *         bound to {@code name}. If null, the class name of {@code obj} is
+      *         returned by {@code getClassName()}. If {@code obj} is also
+      *         null, {@code getClassName()} will return null.
       * @param  obj     The possibly null object bound to name.
       * @param isRelative true if <code>name</code> is a name relative
       *         to the target context (which is named by

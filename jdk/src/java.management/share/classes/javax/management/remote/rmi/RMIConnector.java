@@ -142,7 +142,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
     }
 
     /**
-     * <p>Constructs an <code>RMIConnector</code> that will connect
+     * <p>Constructs an {@code RMIConnector} that will connect
      * the RMI connector server with the given address.</p>
      *
      * <p>The address can refer directly to the connector server,
@@ -153,7 +153,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
      * service:jmx:iiop://<em>[host[:port]]</em>/ior/<em>encoded-IOR</em>
      * </pre>
      *
-     * <p>(Here, the square brackets <code>[]</code> are not part of the
+     * <p>(Here, the square brackets {@code []} are not part of the
      * address but indicate that the host and port are optional.)</p>
      *
      * <p>The address can instead indicate where to find an RMI stub
@@ -179,7 +179,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
      * InitialContext#InitialContext(Hashtable) InitialContext}.  This
      * parameter can be null, which is equivalent to an empty Map.
      *
-     * @exception IllegalArgumentException if <code>url</code>
+     * @exception IllegalArgumentException if {@code url}
      * is null.
      */
     public RMIConnector(JMXServiceURL url, Map<String,?> environment) {
@@ -187,14 +187,14 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
     }
 
     /**
-     * <p>Constructs an <code>RMIConnector</code> using the given RMI stub.
+     * <p>Constructs an {@code RMIConnector} using the given RMI stub.
      *
      * @param rmiServer an RMI stub representing the RMI connector server.
      * @param environment additional attributes specifying how to make
      * the connection.  This parameter can be null, which is
      * equivalent to an empty Map.
      *
-     * @exception IllegalArgumentException if <code>rmiServer</code>
+     * @exception IllegalArgumentException if {@code rmiServer}
      * is null.
      */
     public RMIConnector(RMIServer rmiServer, Map<String,?> environment) {
@@ -203,7 +203,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
 
     /**
      * <p>Returns a string representation of this object.  In general,
-     * the <code>toString</code> method returns a string that
+     * the {@code toString} method returns a string that
      * "textually represents" this object. The result should be a
      * concise but informative representation that is easy for a
      * person to read.</p>
@@ -1732,7 +1732,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
      * @param environment An environment map, possibly containing an ORB.
      * @return the given stub.
      * @exception IllegalArgumentException if the
-     *      <tt>java.naming.corba.orb</tt> property is specified and
+     *      {@code java.naming.corba.orb} property is specified and
      *      does not point to an {@link org.omg.CORBA.ORB ORB}.
      * @exception IOException if the connection to the ORB failed.
      **/
@@ -1767,7 +1767,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
      * @param environment An environment map, possibly containing an ORB.
      * @return An ORB.
      * @exception IllegalArgumentException if the
-     *      <tt>java.naming.corba.orb</tt> property is specified and
+     *      {@code java.naming.corba.orb} property is specified and
      *      does not point to an {@link org.omg.CORBA.ORB ORB}.
      * @exception IOException if the ORB initialization failed.
      **/
@@ -1793,7 +1793,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
     /**
      * Read RMIConnector fields from an {@link java.io.ObjectInputStream
      * ObjectInputStream}.
-     * Calls <code>s.defaultReadObject()</code> and then initializes
+     * Calls {@code s.defaultReadObject()} and then initializes
      * all transient variables that need initializing.
      * @param s The ObjectInputStream to read from.
      * @exception InvalidObjectException if none of <var>rmiServer</var> stub
@@ -1818,7 +1818,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
      * before serializing it. This is done using the environment
      * map that was provided to the constructor, if any, and as documented
      * in {@link javax.management.remote.rmi}.</p>
-     * <p>This method then calls <code>s.defaultWriteObject()</code>.
+     * <p>This method then calls {@code s.defaultWriteObject()}.
      * Usually, <var>rmiServer</var> is null if this object
      * was constructed with a JMXServiceURL, and <var>jmxServiceURL</var>
      * is null if this object is constructed with a RMIServer stub.
@@ -1939,9 +1939,9 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
      * Lookup the RMIServer stub in a directory.
      * @param jndiURL A JNDI URL indicating the location of the Stub
      *                (see {@link javax.management.remote.rmi}), e.g.:
-     *   <ul><li><tt>rmi://registry-host:port/rmi-stub-name</tt></li>
-     *       <li>or <tt>iiop://cosnaming-host:port/iiop-stub-name</tt></li>
-     *       <li>or <tt>ldap://ldap-host:port/java-container-dn</tt></li>
+     *   <ul><li>{@code rmi://registry-host:port/rmi-stub-name}</li>
+     *       <li>or {@code iiop://cosnaming-host:port/iiop-stub-name}</li>
+     *       <li>or {@code ldap://ldap-host:port/java-container-dn}</li>
      *   </ul>
      * @param env the environment Map passed to the connector.
      * @param isIiop true if the stub is expected to be an IIOP stub.

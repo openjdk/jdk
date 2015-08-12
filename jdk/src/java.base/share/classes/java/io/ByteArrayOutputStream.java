@@ -31,12 +31,12 @@ import java.util.Arrays;
  * This class implements an output stream in which the data is
  * written into a byte array. The buffer automatically grows as data
  * is written to it.
- * The data can be retrieved using <code>toByteArray()</code> and
- * <code>toString()</code>.
+ * The data can be retrieved using {@code toByteArray()} and
+ * {@code toString()}.
  * <p>
- * Closing a <tt>ByteArrayOutputStream</tt> has no effect. The methods in
+ * Closing a {@code ByteArrayOutputStream} has no effect. The methods in
  * this class can be called after the stream has been closed without
- * generating an <tt>IOException</tt>.
+ * generating an {@code IOException}.
  *
  * @author  Arthur van Hoff
  * @since   1.0
@@ -138,8 +138,8 @@ public class ByteArrayOutputStream extends OutputStream {
     }
 
     /**
-     * Writes <code>len</code> bytes from the specified byte array
-     * starting at offset <code>off</code> to this byte array output stream.
+     * Writes {@code len} bytes from the specified byte array
+     * starting at offset {@code off} to this byte array output stream.
      *
      * @param   b     the data.
      * @param   off   the start offset in the data.
@@ -158,7 +158,7 @@ public class ByteArrayOutputStream extends OutputStream {
     /**
      * Writes the complete contents of this byte array output stream to
      * the specified output stream argument, as if by calling the output
-     * stream's write method using <code>out.write(buf, 0, count)</code>.
+     * stream's write method using {@code out.write(buf, 0, count)}.
      *
      * @param      out   the output stream to which to write the data.
      * @exception  IOException  if an I/O error occurs.
@@ -168,7 +168,7 @@ public class ByteArrayOutputStream extends OutputStream {
     }
 
     /**
-     * Resets the <code>count</code> field of this byte array output
+     * Resets the {@code count} field of this byte array output
      * stream to zero, so that all currently accumulated output in the
      * output stream is discarded. The output stream can be used again,
      * reusing the already allocated buffer space.
@@ -194,7 +194,7 @@ public class ByteArrayOutputStream extends OutputStream {
     /**
      * Returns the current size of the buffer.
      *
-     * @return  the value of the <code>count</code> field, which is the number
+     * @return  the value of the {@code count} field, which is the number
      *          of valid bytes in this output stream.
      * @see     java.io.ByteArrayOutputStream#count
      */
@@ -204,7 +204,7 @@ public class ByteArrayOutputStream extends OutputStream {
 
     /**
      * Converts the buffer's contents into a string decoding bytes using the
-     * platform's default character set. The length of the new <tt>String</tt>
+     * platform's default character set. The length of the new {@code String}
      * is a function of the character set, and hence may not be equal to the
      * size of the buffer.
      *
@@ -224,7 +224,7 @@ public class ByteArrayOutputStream extends OutputStream {
     /**
      * Converts the buffer's contents into a string by decoding the bytes using
      * the named {@link java.nio.charset.Charset charset}. The length of the new
-     * <tt>String</tt> is a function of the charset, and hence may not be equal
+     * {@code String} is a function of the charset, and hence may not be equal
      * to the length of the byte array.
      *
      * <p> This method always replaces malformed-input and unmappable-character
@@ -251,14 +251,14 @@ public class ByteArrayOutputStream extends OutputStream {
      * copied into it. Each character <i>c</i> in the resulting string is
      * constructed from the corresponding element <i>b</i> in the byte
      * array such that:
-     * <blockquote><pre>
-     *     c == (char)(((hibyte &amp; 0xff) &lt;&lt; 8) | (b &amp; 0xff))
-     * </pre></blockquote>
+     * <blockquote><pre>{@code
+     *     c == (char)(((hibyte & 0xff) << 8) | (b & 0xff))
+     * }</pre></blockquote>
      *
      * @deprecated This method does not properly convert bytes into characters.
      * As of JDK&nbsp;1.1, the preferred way to do this is via the
-     * <code>toString(String enc)</code> method, which takes an encoding-name
-     * argument, or the <code>toString()</code> method, which uses the
+     * {@code toString(String enc)} method, which takes an encoding-name
+     * argument, or the {@code toString()} method, which uses the
      * platform's default character encoding.
      *
      * @param      hibyte    the high byte of each resulting Unicode character.
@@ -273,9 +273,9 @@ public class ByteArrayOutputStream extends OutputStream {
     }
 
     /**
-     * Closing a <tt>ByteArrayOutputStream</tt> has no effect. The methods in
+     * Closing a {@code ByteArrayOutputStream} has no effect. The methods in
      * this class can be called after the stream has been closed without
-     * generating an <tt>IOException</tt>.
+     * generating an {@code IOException}.
      */
     public void close() throws IOException {
     }
