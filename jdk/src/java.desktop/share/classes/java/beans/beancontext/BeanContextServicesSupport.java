@@ -134,10 +134,10 @@ public class      BeanContextServicesSupport extends BeanContextSupport
     }
 
     /**
-     * Gets the <tt>BeanContextServices</tt> associated with this
-     * <tt>BeanContextServicesSupport</tt>.
+     * Gets the {@code BeanContextServices} associated with this
+     * {@code BeanContextServicesSupport}.
      *
-     * @return the instance of <tt>BeanContext</tt>
+     * @return the instance of {@code BeanContext}
      * this object is providing the implementation for.
      */
     public BeanContextServices getBeanContextServicesPeer() {
@@ -1001,7 +1001,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
     }
 
     /**
-     * Gets the <tt>BeanContextServicesListener</tt> (if any) of the specified
+     * Gets the {@code BeanContextServicesListener} (if any) of the specified
      * child.
      *
      * @param child the specified child
@@ -1084,7 +1084,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
     }
 
     /**
-     * Fires a <tt>BeanContextServiceEvent</tt> notifying of a new service.
+     * Fires a {@code BeanContextServiceEvent} notifying of a new service.
      * @param serviceClass the service class
      */
     protected final void fireServiceAdded(Class<?> serviceClass) {
@@ -1094,10 +1094,10 @@ public class      BeanContextServicesSupport extends BeanContextSupport
     }
 
     /**
-     * Fires a <tt>BeanContextServiceAvailableEvent</tt> indicating that a new
+     * Fires a {@code BeanContextServiceAvailableEvent} indicating that a new
      * service has become available.
      *
-     * @param bcssae the <tt>BeanContextServiceAvailableEvent</tt>
+     * @param bcssae the {@code BeanContextServiceAvailableEvent}
      */
     protected final void fireServiceAdded(BeanContextServiceAvailableEvent bcssae) {
         Object[]                         copy;
@@ -1110,9 +1110,9 @@ public class      BeanContextServicesSupport extends BeanContextSupport
     }
 
     /**
-     * Fires a <tt>BeanContextServiceEvent</tt> notifying of a service being revoked.
+     * Fires a {@code BeanContextServiceEvent} notifying of a service being revoked.
      *
-     * @param bcsre the <tt>BeanContextServiceRevokedEvent</tt>
+     * @param bcsre the {@code BeanContextServiceRevokedEvent}
      */
     protected final void fireServiceRevoked(BeanContextServiceRevokedEvent bcsre) {
         Object[]                         copy;
@@ -1125,7 +1125,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
     }
 
     /**
-     * Fires a <tt>BeanContextServiceRevokedEvent</tt>
+     * Fires a {@code BeanContextServiceRevokedEvent}
      * indicating that a particular service is
      * no longer available.
      * @param serviceClass the service class
@@ -1235,25 +1235,25 @@ public class      BeanContextServicesSupport extends BeanContextSupport
      */
 
     /**
-     * all accesses to the <code> protected transient HashMap services </code>
+     * all accesses to the {@code protected transient HashMap services}
      * field should be synchronized on that object
      */
     protected transient HashMap<Object, BCSSServiceProvider>  services;
 
     /**
-     * The number of instances of a serializable <tt>BeanContextServceProvider</tt>.
+     * The number of instances of a serializable {@code BeanContextServceProvider}.
      */
     protected transient int                      serializable = 0;
 
 
     /**
-     * Delegate for the <tt>BeanContextServiceProvider</tt>.
+     * Delegate for the {@code BeanContextServiceProvider}.
      */
     protected transient BCSSProxyServiceProvider proxy;
 
 
     /**
-     * List of <tt>BeanContextServicesListener</tt> objects.
+     * List of {@code BeanContextServicesListener} objects.
      */
     protected transient ArrayList<BeanContextServicesListener> bcsListeners;
 }

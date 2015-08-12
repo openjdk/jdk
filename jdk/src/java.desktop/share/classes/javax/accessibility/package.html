@@ -43,7 +43,7 @@ below.
 <A NAME="Accessible"></A><A HREF="Accessible.html">Interface Accessible</A></H3>
 <A HREF="Accessible.html">Interface Accessible</A> is the main interface
 of the Java Accessibility API. All components that support the Java Accessibility
-API must implement this interface. It contains a single method, <TT>getAccessibleContext</TT>,
+API must implement this interface. It contains a single method, <code>getAccessibleContext</code>,
 that returns an instance of the class <A HREF="#AccessibleContext">AccessibleContext</A>.
 Sun thinks that implementing this interface is the absolute minimum requirement
 of every object that is part of the user interface of a Java application,
@@ -53,7 +53,7 @@ if that program is to be compatible with assistive technologies.
 AccessibleContext</A></H3>
 <A HREF="AccessibleContext.html">AccessibleContext</A> represents the minimum
 information all accessible objects return and is obtained by calling the
-<TT>getAccessibleContext</TT> method on an object that implements the <A HREF="#Accessible">Accessible</A>
+<code>getAccessibleContext</code> method on an object that implements the <A HREF="#Accessible">Accessible</A>
 interface. This information includes the accessible name, description,
 <A HREF="#AccessibleRole">role</A>, and <A HREF="#AccessibleState">state</A>
 of the object, as well as information about the parent and children of
@@ -69,7 +69,7 @@ an object that implements one or more of the following interfaces:
 perform one or more actions. This interface provides the standard mechanism
 for an assistive technology to determine what those actions are and tell
 the object to perform those actions. Any object that can be manipulated
-should return an object that implements this interface when the <TT>getAccessibleAction</TT>
+should return an object that implements this interface when the <code>getAccessibleAction</code>
 method is called on an AccessibleContext.</LI>
 
 <LI>
@@ -77,7 +77,7 @@ method is called on an AccessibleContext.</LI>
 has a graphical representation. This interface provides the standard mechanism
 for an assistive technology to determine and set the graphical representation
 of the object. Any object that is rendered on the screen should return
-an object that implements this interface when the <TT>getAccessibleComponent</TT>
+an object that implements this interface when the <code>getAccessibleComponent</code>
 method is called on an AccessibleContext.</LI>
 
 <LI>
@@ -86,7 +86,7 @@ allows its children to be selected. This interface provides the standard
 mechanism for an assistive technology to determine the currently selected
 children as well as modify the selection set. Any object that has children
 that can be selected should return an object that implements this interface
-when the <TT>getAccessibleSelection</TT> method is called on an AccessibleContext.</LI>
+when the <code>getAccessibleSelection</code> method is called on an AccessibleContext.</LI>
 
 <LI>
 <B><A HREF="#AccessibleText">AccessibleText</A></B> - the object presents
@@ -94,7 +94,7 @@ editable textual information on the display. This interface provides the
 standard mechanism for an assistive technology to access that text via
 its content, attributes, and spatial location. Any object that contains
 editable text should return an object that implements this interface when
-the <TT>getAccessibleText</TT> method is called on an AccessibleContext.</LI>
+the <code>getAccessibleText</code> method is called on an AccessibleContext.</LI>
 
 <LI>
 <B><A HREF="#AccessibleHypertext">AccessibleHypertext</A></B> - the object
@@ -102,25 +102,25 @@ presents hypertext information on the display. This interface provides
 the standard mechanism for an assistive technology to access that hypertext
 via its content, attributes, and spatial location. Any object that contains
 hypertext should return an object that implements this interface when the
-<TT>getAccessibleText</TT> method is called on an AccessibleContext.</LI>
+<code>getAccessibleText</code> method is called on an AccessibleContext.</LI>
 
 <LI>
 <B><A HREF="#AccessibleValue">AccessibleValue</A></B> - the object supports
 a numerical value. This interface provides the standard mechanism for an
 assistive technology to determine and set the current value of the object,
 as well as the minimum and maximum values. Any object that supports a numerical
-value should return an object that implements this interface when the <TT>getAccessibleValue</TT>
+value should return an object that implements this interface when the <code>getAccessibleValue</code>
 method is called on an AccessibleContext.</LI>
 </UL>
 
 <H3>
 <A NAME="AccessibleRole"></A><A HREF="AccessibleRole.html">Class AccessibleRole</A></H3>
 This class encapsulates the Accessible object's role in the user interface
-and is obtained by calling the <TT>getAccessibleRole</TT> method on an
+and is obtained by calling the <code>getAccessibleRole</code> method on an
 <A HREF="#AccessibleContext">AccessibleContext</A>. Accessible roles include
 "Check box", "Menu Item", "Panel", etc. These roles are identified by the
-constants in this class such as <TT>AccessibleRole.CHECK_BOX, AccessibleRole.MENU_ITEM,</TT>
-and <TT>AccessibleRole.PANEL</TT>. The constants in this class present
+constants in this class such as <code>AccessibleRole.CHECK_BOX, AccessibleRole.MENU_ITEM,</code>
+and <code>AccessibleRole.PANEL</code>. The constants in this class present
 a strongly typed enumeration of common object roles. A public constructor
 for this class has been purposely omitted and applications should use one
 of the constants from this class. Although this class pre-defines a large
@@ -131,10 +131,10 @@ roles can be added in the future without needing to modify the base class.
 <A NAME="AccessibleState"></A><A HREF="AccessibleState.html">Class AccessibleState</A></H3>
 This class encapsulates a particular state of the Accessible object. Accessible
 states include things like "Armed", "Busy", "Checked", "Focused", etc.
-These roles are identified by the constants in this class such as <TT>AccessibleState.ARMED,
-AccessibleState.BUSY, AccessibleState.CHECKED,</TT> and <TT>AccessibleState.FOCUSED</TT>.
+These roles are identified by the constants in this class such as <code>AccessibleState.ARMED,
+AccessibleState.BUSY, AccessibleState.CHECKED,</code> and <code>AccessibleState.FOCUSED</code>.
 The sum of all the states of an Accessible object is called the <A HREF="#AccessibleStateSet">AccessibleStateSet</A>,
-and can be obtained by calling the <TT>getAccessibleStateSet</TT> method
+and can be obtained by calling the <code>getAccessibleStateSet</code> method
 on an <A HREF="#AccessibleContext">AccessibleContext</A>.
 
 <P>The constants in this class present a strongly typed enumeration of
@@ -148,7 +148,7 @@ needing to modify the base class.
 <A NAME="AccessibleStateSet"></A><A HREF="AccessibleStateSet.html">Class
 AccessibleStateSet</A></H3>
 This class encapsulates a collection of states of the Accessible object
-and is obtained by calling the <TT>getAccessibleStateSet</TT> method on
+and is obtained by calling the <code>getAccessibleStateSet</code> method on
 an <A HREF="#AccessibleContext">AccessibleContext</A>. Since an object
 might have multiple states (e.g. it might be both "Checked" and "Focused"),
 this class is needed to encapsulate a collection of these states. Methods
@@ -173,7 +173,7 @@ Any object that can be manipulated should support this interface.
 
 <P>Applications can determine if an object supports the AccessibleAction
 interface by first obtaining its <A HREF="#AccessibleContext">AccessibleContext</A>
-(see <A HREF="#Accessible">Accessible</A>) and then calling the <TT>getAccessibleAction</TT>
+(see <A HREF="#Accessible">Accessible</A>) and then calling the <code>getAccessibleAction</code>
 method of <A HREF="#AccessibleContext">AccessibleContext</A>. If the return
 value is not null, the object supports this interface.
 <H3>
@@ -186,7 +186,7 @@ determine and set the graphical representation of an object.
 
 <P>Applications can determine if an object supports the AccessibleComponent
 interface by first obtaining its <A HREF="#AccessibleContext">AccessibleContext</A>
-(see <A HREF="#Accessible">Accessible</A>) and then calling the <TT>getAccessibleComponent</TT>
+(see <A HREF="#Accessible">Accessible</A>) and then calling the <code>getAccessibleComponent</code>
 method of <A HREF="#AccessibleContext">AccessibleContext</A>. If the return
 value is not null, the object supports this interface.
 <H3>
@@ -200,7 +200,7 @@ the AccessibleSelection interface.
 
 <P>Applications can determine if an object supports the AccessibleSelection
 interface by first obtaining its <A HREF="#AccessibleContext">AccessibleContext</A>
-(see <A HREF="#Accessible">Accessible</A>) and then calling the <TT>getAccessibleSelection</TT>
+(see <A HREF="#Accessible">Accessible</A>) and then calling the <code>getAccessibleSelection</code>
 method of <A HREF="#AccessibleContext">AccessibleContext</A>. If the return
 value is not null, the object supports this interface.
 <H3>
@@ -222,7 +222,7 @@ the text caret.
 
 <P>Applications can determine if an object supports the AccessibleText
 interface by first obtaining its <A HREF="#AccessibleContext">AccessibleContext</A>
-(see <A HREF="#Accessible">Accessible</A>) and then calling the <TT>getAccessibleText</TT>
+(see <A HREF="#Accessible">Accessible</A>) and then calling the <code>getAccessibleText</code>
 method of <A HREF="#AccessibleContext">AccessibleContext</A>. If the return
 value is not null, the object supports this interface.
 <H3><A NAME="AccessibleHypertext"></A>
@@ -256,7 +256,7 @@ maximum values.
 
 <P>Applications can determine if an object supports the AccessibleValue
 interface by first obtaining its <A HREF="#AccessibleContext">AccessibleContext</A>
-(see <A HREF="#Accessible">Accessible</A>) and then calling the <TT>getAccessibleValue</TT>
+(see <A HREF="#Accessible">Accessible</A>) and then calling the <code>getAccessibleValue</code>
 method of <A HREF="#AccessibleContext">AccessibleContext</A>. If the return
 value is not null, the object supports this interface.
 

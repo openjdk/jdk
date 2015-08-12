@@ -59,8 +59,8 @@ import javax.print.attribute.PrintJobAttribute;
  * java.util.Collections}).
  * <P>
  * <B>IPP Compatibility:</B> The string value returned by each individual {@link
- * JobStateReason JobStateReason} object's <CODE>toString()</CODE> method gives
- * the IPP keyword value. The category name returned by <CODE>getName()</CODE>
+ * JobStateReason JobStateReason} object's {@code toString()} method gives
+ * the IPP keyword value. The category name returned by {@code getName()}
  * gives the IPP attribute name.
  *
  * @author  Alan Kaminsky
@@ -114,11 +114,11 @@ public final class JobStateReasons
      * @param  collection  Collection to copy.
      *
      * @exception  NullPointerException
-     *     (unchecked exception) Thrown if <CODE>collection</CODE> is null or
-     *     if any element in <CODE>collection</CODE> is null.
+     *     (unchecked exception) Thrown if {@code collection} is null or
+     *     if any element in {@code collection} is null.
      * @throws  ClassCastException
      *     (unchecked exception) Thrown if any element in
-     *     <CODE>collection</CODE> is not an instance of class {@link
+     *     {@code collection} is not an instance of class {@link
      *     JobStateReason JobStateReason}.
      */
    public JobStateReasons(Collection<JobStateReason> collection) {
@@ -130,11 +130,11 @@ public final class JobStateReasons
      * not already present. The element to be added must be an instance of class
      * {@link JobStateReason JobStateReason}. If this job state reasons
      * attribute already contains the specified element, the call leaves this
-     * job state reasons attribute unchanged and returns <tt>false</tt>.
+     * job state reasons attribute unchanged and returns {@code false}.
      *
      * @param  o  Element to be added to this job state reasons attribute.
      *
-     * @return  <tt>true</tt> if this job state reasons attribute did not
+     * @return  {@code true} if this job state reasons attribute did not
      *          already contain the specified element.
      *
      * @throws  NullPointerException
@@ -169,7 +169,7 @@ public final class JobStateReasons
      * instance.
      * <P>
      * For class JobStateReasons, the category
-     * name is <CODE>"job-state-reasons"</CODE>.
+     * name is {@code "job-state-reasons"}.
      *
      * @return  Attribute category name.
      */
