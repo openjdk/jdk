@@ -32,7 +32,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 
 /**
- * Class HashAttributeSet provides an <code>AttributeSet</code>
+ * Class HashAttributeSet provides an {@code AttributeSet}
  * implementation with characteristics of a hash map.
  *
  * @author  Alan Kaminsky
@@ -104,7 +104,7 @@ public class HashAttributeSet implements AttributeSet, Serializable {
      * @param  attribute  Attribute value to add to the set.
      *
      * @exception  NullPointerException
-     *     (unchecked exception) Thrown if <CODE>attribute</CODE> is null.
+     *     (unchecked exception) Thrown if {@code attribute} is null.
      */
     public HashAttributeSet(Attribute attribute) {
         this (attribute, Attribute.class);
@@ -114,7 +114,7 @@ public class HashAttributeSet implements AttributeSet, Serializable {
      * Construct a new attribute set,
      * initially populated with the values from the
      * given array. The new attribute set is populated by
-     * adding the elements of <CODE>attributes</CODE> array to the set in
+     * adding the elements of {@code attributes} array to the set in
      * sequence, starting at index 0. Thus, later array elements may replace
      * earlier array elements if the array contains duplicate attribute
      * values or attribute categories.
@@ -124,7 +124,7 @@ public class HashAttributeSet implements AttributeSet, Serializable {
      *
      * @exception  NullPointerException
      *     (unchecked exception) Thrown if any element of
-     *     <CODE>attributes</CODE> is null.
+     *     {@code attributes} is null.
      */
     public HashAttributeSet(Attribute[] attributes) {
         this (attributes, Attribute.class);
@@ -171,11 +171,11 @@ public class HashAttributeSet implements AttributeSet, Serializable {
      *                    subinterface thereof.
      *
      * @exception  NullPointerException
-     *     (unchecked exception) Thrown if <CODE>attribute</CODE> is null.
+     *     (unchecked exception) Thrown if {@code attribute} is null.
      * @exception NullPointerException if interfaceName is null.
      * @exception  ClassCastException
-     *     (unchecked exception) Thrown if <CODE>attribute</CODE> is not an
-     *     instance of <CODE>interfaceName</CODE>.
+     *     (unchecked exception) Thrown if {@code attribute} is not an
+     *     instance of {@code interfaceName}.
      */
     protected HashAttributeSet(Attribute attribute, Class<?> interfaceName) {
         if (interfaceName == null) {
@@ -189,7 +189,7 @@ public class HashAttributeSet implements AttributeSet, Serializable {
      * Construct a new attribute set, where the members of the attribute
      * set are restricted to the given interface.
      * The new attribute set is populated
-     * by adding the elements of <CODE>attributes</CODE> array to the set in
+     * by adding the elements of {@code attributes} array to the set in
      * sequence, starting at index 0. Thus, later array elements may replace
      * earlier array elements if the array contains duplicate attribute
      * values or attribute categories.
@@ -203,12 +203,12 @@ public class HashAttributeSet implements AttributeSet, Serializable {
      *
      * @exception  NullPointerException
      *     (unchecked exception) Thrown if any element of
-     * <CODE>attributes</CODE> is null.
+     * {@code attributes} is null.
      * @exception NullPointerException if interfaceName is null.
      * @exception  ClassCastException
      *     (unchecked exception) Thrown if any element of
-     * <CODE>attributes</CODE> is not an instance of
-     * <CODE>interfaceName</CODE>.
+     * {@code attributes} is not an instance of
+     * {@code interfaceName}.
      */
     protected HashAttributeSet(Attribute[] attributes, Class<?> interfaceName) {
         if (interfaceName == null) {
@@ -235,8 +235,8 @@ public class HashAttributeSet implements AttributeSet, Serializable {
      *
      * @exception  ClassCastException
      *     (unchecked exception) Thrown if any element of
-     * <CODE>attributes</CODE> is not an instance of
-     * <CODE>interfaceName</CODE>.
+     * {@code attributes} is not an instance of
+     * {@code interfaceName}.
      */
     protected HashAttributeSet(AttributeSet attributes, Class<?> interfaceName) {
       myInterface = interfaceName;
@@ -251,7 +251,7 @@ public class HashAttributeSet implements AttributeSet, Serializable {
 
     /**
      * Returns the attribute value which this attribute set contains in the
-     * given attribute category. Returns <tt>null</tt> if this attribute set
+     * given attribute category. Returns {@code null} if this attribute set
      * does not contain any attribute value in the given attribute category.
      *
      * @param  category  Attribute category whose associated attribute value
@@ -261,14 +261,14 @@ public class HashAttributeSet implements AttributeSet, Serializable {
      *                   Attribute}.
      *
      * @return  The attribute value in the given attribute category contained
-     *          in this attribute set, or <tt>null</tt> if this attribute set
+     *          in this attribute set, or {@code null} if this attribute set
      *          does not contain any attribute value in the given attribute
      *          category.
      *
      * @throws  NullPointerException
-     *     (unchecked exception) Thrown if the <CODE>category</CODE> is null.
+     *     (unchecked exception) Thrown if the {@code category} is null.
      * @throws  ClassCastException
-     *     (unchecked exception) Thrown if the <CODE>category</CODE> is not a
+     *     (unchecked exception) Thrown if the {@code category} is not a
      *     {@link java.lang.Class Class} that implements interface {@link
      *     Attribute Attribute}.
      */
@@ -285,15 +285,15 @@ public class HashAttributeSet implements AttributeSet, Serializable {
      *
      * @param  attribute  Attribute value to be added to this attribute set.
      *
-     * @return  <tt>true</tt> if this attribute set changed as a result of the
+     * @return  {@code true} if this attribute set changed as a result of the
      *          call, i.e., the given attribute value was not already a
      *          member of this attribute set.
      *
      * @throws  NullPointerException
-     *    (unchecked exception) Thrown if the <CODE>attribute</CODE> is null.
+     *    (unchecked exception) Thrown if the {@code attribute} is null.
      * @throws  UnmodifiableSetException
      *    (unchecked exception) Thrown if this attribute set does not support
-     *     the <CODE>add()</CODE> operation.
+     *     the {@code add()} operation.
      */
     public boolean add(Attribute attribute) {
         Object oldAttribute =
@@ -305,19 +305,19 @@ public class HashAttributeSet implements AttributeSet, Serializable {
 
     /**
      * Removes any attribute for this category from this attribute set if
-     * present. If <CODE>category</CODE> is null, then
-     * <CODE>remove()</CODE> does nothing and returns <tt>false</tt>.
+     * present. If {@code category} is null, then
+     * {@code remove()} does nothing and returns {@code false}.
      *
      * @param  category Attribute category to be removed from this
      *                  attribute set.
      *
-     * @return  <tt>true</tt> if this attribute set changed as a result of the
+     * @return  {@code true} if this attribute set changed as a result of the
      *         call, i.e., the given attribute category had been a member of
      *         this attribute set.
      *
      * @throws  UnmodifiableSetException
      *     (unchecked exception) Thrown if this attribute set does not
-     *     support the <CODE>remove()</CODE> operation.
+     *     support the {@code remove()} operation.
      */
     public boolean remove(Class<?> category) {
         return
@@ -329,18 +329,18 @@ public class HashAttributeSet implements AttributeSet, Serializable {
 
     /**
      * Removes the specified attribute from this attribute set if
-     * present. If <CODE>attribute</CODE> is null, then
-     * <CODE>remove()</CODE> does nothing and returns <tt>false</tt>.
+     * present. If {@code attribute} is null, then
+     * {@code remove()} does nothing and returns {@code false}.
      *
      * @param attribute Attribute value to be removed from this attribute set.
      *
-     * @return  <tt>true</tt> if this attribute set changed as a result of the
+     * @return  {@code true} if this attribute set changed as a result of the
      *         call, i.e., the given attribute value had been a member of
      *         this attribute set.
      *
      * @throws  UnmodifiableSetException
      *     (unchecked exception) Thrown if this attribute set does not
-     *     support the <CODE>remove()</CODE> operation.
+     *     support the {@code remove()} operation.
      */
     public boolean remove(Attribute attribute) {
         return
@@ -349,13 +349,13 @@ public class HashAttributeSet implements AttributeSet, Serializable {
     }
 
     /**
-     * Returns <tt>true</tt> if this attribute set contains an
+     * Returns {@code true} if this attribute set contains an
      * attribute for the specified category.
      *
      * @param  category whose presence in this attribute set is
      *            to be tested.
      *
-     * @return  <tt>true</tt> if this attribute set contains an attribute
+     * @return  {@code true} if this attribute set contains an attribute
      *         value for the specified category.
      */
     public boolean containsKey(Class<?> category) {
@@ -367,13 +367,13 @@ public class HashAttributeSet implements AttributeSet, Serializable {
     }
 
     /**
-     * Returns <tt>true</tt> if this attribute set contains the given
+     * Returns {@code true} if this attribute set contains the given
      * attribute.
      *
      * @param  attribute  value whose presence in this attribute set is
      *            to be tested.
      *
-     * @return  <tt>true</tt> if this attribute set contains the given
+     * @return  {@code true} if this attribute set contains the given
      *      attribute    value.
      */
     public boolean containsValue(Attribute attribute) {
@@ -389,11 +389,11 @@ public class HashAttributeSet implements AttributeSet, Serializable {
      * {@link #add(Attribute) add(Attribute)}
      * operation had been applied to this attribute set successively with
      * each element from the specified set.
-     * The behavior of the <CODE>addAll(AttributeSet)</CODE>
+     * The behavior of the {@code addAll(AttributeSet)}
      * operation is unspecified if the specified set is modified while
      * the operation is in progress.
      * <P>
-     * If the <CODE>addAll(AttributeSet)</CODE> operation throws an exception,
+     * If the {@code addAll(AttributeSet)} operation throws an exception,
      * the effect on this attribute set's state is implementation dependent;
      * elements from the specified set before the point of the exception may
      * or may not have been added to this attribute set.
@@ -401,12 +401,12 @@ public class HashAttributeSet implements AttributeSet, Serializable {
      * @param  attributes  whose elements are to be added to this attribute
      *            set.
      *
-     * @return  <tt>true</tt> if this attribute set changed as a result of the
+     * @return  {@code true} if this attribute set changed as a result of the
      *          call.
      *
      * @throws  UnmodifiableSetException
      *    (Unchecked exception) Thrown if this attribute set does not
-     *     support the <tt>addAll(AttributeSet)</tt> method.
+     *     support the {@code addAll(AttributeSet)} method.
      * @throws  NullPointerException
      *     (Unchecked exception) Thrown if some element in the specified
      *     set is null, or the set is null.
@@ -429,8 +429,8 @@ public class HashAttributeSet implements AttributeSet, Serializable {
 
     /**
      * Returns the number of attributes in this attribute set. If this
-     * attribute set contains more than <tt>Integer.MAX_VALUE</tt> elements,
-     * returns  <tt>Integer.MAX_VALUE</tt>.
+     * attribute set contains more than {@code Integer.MAX_VALUE} elements,
+     * returns  {@code Integer.MAX_VALUE}.
      *
      * @return  The number of attributes in this attribute set.
      */
@@ -455,7 +455,7 @@ public class HashAttributeSet implements AttributeSet, Serializable {
      *
      * @throws  UnmodifiableSetException
      *   (unchecked exception) Thrown if this attribute set does not support
-     *     the <CODE>clear()</CODE> operation.
+     *     the {@code clear()} operation.
      */
     public void clear() {
         attrMap.clear();
@@ -472,15 +472,15 @@ public class HashAttributeSet implements AttributeSet, Serializable {
 
     /**
      * Compares the specified object with this attribute set for equality.
-     * Returns <tt>true</tt> if the given object is also an attribute set and
+     * Returns {@code true} if the given object is also an attribute set and
      * the two attribute sets contain the same attribute category-attribute
      * value mappings. This ensures that the
-     * <tt>equals()</tt> method works properly across different
+     * {@code equals()} method works properly across different
      * implementations of the AttributeSet interface.
      *
      * @param  object to be compared for equality with this attribute set.
      *
-     * @return  <tt>true</tt> if the specified object is equal to this
+     * @return  {@code true} if the specified object is equal to this
      *       attribute   set.
      */
 
@@ -507,9 +507,9 @@ public class HashAttributeSet implements AttributeSet, Serializable {
      * Returns the hash code value for this attribute set.
      * The hash code of an attribute set is defined to be the sum
      * of the hash codes of each entry in the AttributeSet.
-     * This ensures that <tt>t1.equals(t2)</tt> implies that
-     * <tt>t1.hashCode()==t2.hashCode()</tt> for any two attribute sets
-     * <tt>t1</tt> and <tt>t2</tt>, as required by the general contract of
+     * This ensures that {@code t1.equals(t2)} implies that
+     * {@code t1.hashCode()==t2.hashCode()} for any two attribute sets
+     * {@code t1} and {@code t2}, as required by the general contract of
      * {@link java.lang.Object#hashCode() Object.hashCode()}.
      *
      * @return  The hash code value for this attribute set.
