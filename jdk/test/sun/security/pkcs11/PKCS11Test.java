@@ -630,4 +630,18 @@ public abstract class PKCS11Test {
         return algorithms;
     }
 
+    /**
+     * Get the identifier for the operating system distribution
+     */
+    public String getDistro() {
+
+        try (BufferedReader in =
+            new BufferedReader(new InputStreamReader(
+                Runtime.getRuntime().exec("uname -v").getInputStream()))) {
+
+            return in.readLine();
+        } catch (Exception e) {
+            return "";
+        }
+    }
 }
