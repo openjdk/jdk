@@ -3835,7 +3835,9 @@ public final class Files {
             // Obtaining the size from the FileChannel is much faster
             // than obtaining using path.toFile().length()
             long length = fc.size();
-            if (length <= Integer.MAX_VALUE) {
+            // FileChannel.size() may in certain circumstances return zero
+            // for a non-zero length file so disallow this case.
+            if (length > 0 && length <= Integer.MAX_VALUE) {
                 Spliterator<String> s = new FileChannelLinesSpliterator(fc, cs, 0, (int) length);
                 return StreamSupport.stream(s, false)
                         .onClose(Files.asUncheckedRunnable(fc));
