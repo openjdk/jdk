@@ -2920,12 +2920,6 @@ public:
   notproduct(bool, ICMissHistogram, false,                                  \
           "Produce histogram of IC misses")                                 \
                                                                             \
-  notproduct(bool, PrintClassStatistics, false,                             \
-          "Print class statistics at end of run")                           \
-                                                                            \
-  notproduct(bool, PrintMethodStatistics, false,                            \
-          "Print method statistics at end of run")                          \
-                                                                            \
   /* interpreter */                                                         \
   develop(bool, ClearInterpreterLocals, false,                              \
           "Always clear local variables of interpreter activations upon "   \
