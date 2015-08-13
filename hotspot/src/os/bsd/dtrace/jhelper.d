@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ extern pointer __1cJCodeCacheG_heaps_;
 extern pointer __1cIUniverseO_collectedHeap_;
 
 extern pointer __1cHnmethodG__vtbl_;
-extern pointer __1cNMethodG__vtbl_;
+extern pointer __1cGMethodG__vtbl_;
 extern pointer __1cKBufferBlobG__vtbl_;
 
 #define copyin_ptr(ADDR)    *(pointer*)  copyin((pointer) (ADDR), sizeof(pointer))
@@ -164,7 +164,7 @@ dtrace:helper:ustack:
   this->number_of_heaps = copyin_uint32(this->code_heaps_address + OFFSET_GrowableArray_CodeHeap_len);
 
   this->Method_vtbl = (pointer) &``__1cGMethodG__vtbl_;
-  
+ 
   /*
    * Get Java heap bounds
    */
@@ -457,12 +457,15 @@ dtrace:helper:ustack:
 
   this->nameSymbol = copyin_ptr(this->constantPool +
       this->nameIndex * sizeof (pointer) + SIZE_ConstantPool);
+  /* The symbol is a CPSlot and has lower bit set to indicate metadata */
+  this->nameSymbol &= (~1); /* remove metadata lsb */
 
   this->nameSymbolLength = copyin_uint16(this->nameSymbol +
       OFFSET_Symbol_length);
 
   this->signatureSymbol = copyin_ptr(this->constantPool +
       this->signatureIndex * sizeof (pointer) + SIZE_ConstantPool);
+  this->signatureSymbol &= (~1); /* remove metadata lsb */
 
   this->signatureSymbolLength = copyin_uint16(this->signatureSymbol +
       OFFSET_Symbol_length);
