@@ -52,16 +52,16 @@ public interface ReadableByteChannel extends Channel {
      *
      * <p> An attempt is made to read up to <i>r</i> bytes from the channel,
      * where <i>r</i> is the number of bytes remaining in the buffer, that is,
-     * <tt>dst.remaining()</tt>, at the moment this method is invoked.
+     * {@code dst.remaining()}, at the moment this method is invoked.
      *
      * <p> Suppose that a byte sequence of length <i>n</i> is read, where
-     * <tt>0</tt>&nbsp;<tt>&lt;=</tt>&nbsp;<i>n</i>&nbsp;<tt>&lt;=</tt>&nbsp;<i>r</i>.
+     * {@code 0}&nbsp;{@code <=}&nbsp;<i>n</i>&nbsp;{@code <=}&nbsp;<i>r</i>.
      * This byte sequence will be transferred into the buffer so that the first
      * byte in the sequence is at index <i>p</i> and the last byte is at index
-     * <i>p</i>&nbsp;<tt>+</tt>&nbsp;<i>n</i>&nbsp;<tt>-</tt>&nbsp;<tt>1</tt>,
+     * <i>p</i>&nbsp;{@code +}&nbsp;<i>n</i>&nbsp;{@code -}&nbsp;{@code 1},
      * where <i>p</i> is the buffer's position at the moment this method is
      * invoked.  Upon return the buffer's position will be equal to
-     * <i>p</i>&nbsp;<tt>+</tt>&nbsp;<i>n</i>; its limit will not have changed.
+     * <i>p</i>&nbsp;{@code +}&nbsp;<i>n</i>; its limit will not have changed.
      *
      * <p> A read operation might not fill the buffer, and in fact it might not
      * read any bytes at all.  Whether or not it does so depends upon the
@@ -81,7 +81,7 @@ public interface ReadableByteChannel extends Channel {
      * @param  dst
      *         The buffer into which bytes are to be transferred
      *
-     * @return  The number of bytes read, possibly zero, or <tt>-1</tt> if the
+     * @return  The number of bytes read, possibly zero, or {@code -1} if the
      *          channel has reached end-of-stream
      *
      * @throws  NonReadableChannelException

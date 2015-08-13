@@ -1033,7 +1033,7 @@ public final class Files {
      *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager
-     *          is installed, it denies {@link LinkPermission}<tt>("symbolic")</tt>
+     *          is installed, it denies {@link LinkPermission}{@code ("symbolic")}
      *          or its {@link SecurityManager#checkWrite(String) checkWrite}
      *          method denies write access to the path of the symbolic link.
      */
@@ -1078,7 +1078,7 @@ public final class Files {
      *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager
-     *          is installed, it denies {@link LinkPermission}<tt>("hard")</tt>
+     *          is installed, it denies {@link LinkPermission}{@code ("hard")}
      *          or its {@link SecurityManager#checkWrite(String) checkWrite}
      *          method denies write access to either the link or the
      *          existing file.
@@ -1455,8 +1455,8 @@ public final class Files {
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkRead(String) checkRead}
      *          method is invoked to check read access to the file, and in
-     *          addition it checks {@link RuntimePermission}<tt>
-     *          ("getFileStoreAttributes")</tt>
+     *          addition it checks
+     *          {@link RuntimePermission}{@code ("getFileStoreAttributes")}
      */
     public static FileStore getFileStore(Path path) throws IOException {
         return provider(path).getFileStore(path);
@@ -1995,7 +1995,8 @@ public final class Files {
      *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, a security manager is
-     *          installed, and it denies {@link RuntimePermission}<tt>("accessUserInformation")</tt>
+     *          installed, and it denies
+     *          {@link RuntimePermission}{@code ("accessUserInformation")}
      *          or its {@link SecurityManager#checkRead(String) checkRead} method
      *          denies read access to the file.
      */
@@ -2032,7 +2033,8 @@ public final class Files {
      *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
-     *          installed, it denies {@link RuntimePermission}<tt>("accessUserInformation")</tt>
+     *          installed, it denies
+     *          {@link RuntimePermission}{@code ("accessUserInformation")}
      *          or its {@link SecurityManager#checkWrite(String) checkWrite}
      *          method denies write access to the file.
      */
@@ -2069,7 +2071,8 @@ public final class Files {
      *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
-     *          installed, it denies {@link RuntimePermission}<tt>("accessUserInformation")</tt>
+     *          installed, it denies
+     *          {@link RuntimePermission}{@code ("accessUserInformation")}
      *          or its {@link SecurityManager#checkRead(String) checkRead} method
      *          denies read access to the file.
      */
@@ -2112,7 +2115,8 @@ public final class Files {
      *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
-     *          installed, it denies {@link RuntimePermission}<tt>("accessUserInformation")</tt>
+     *          installed, it denies
+     *          {@link RuntimePermission}{@code ("accessUserInformation")}
      *          or its {@link SecurityManager#checkWrite(String) checkWrite}
      *          method denies write access to the file.
      *
