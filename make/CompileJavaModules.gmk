@@ -491,6 +491,7 @@ SHARE_SRC_DIRS += \
     $(CORBA_TOPDIR)/src/$1/share/classes \
     $(JAXP_TOPDIR)/src/$1/share/classes \
     $(JAXWS_TOPDIR)/src/$1/share/classes \
+    $(NASHORN_TOPDIR)/src/$1/share/classes \
     #
 
 ALL_SRC_DIRS = \
