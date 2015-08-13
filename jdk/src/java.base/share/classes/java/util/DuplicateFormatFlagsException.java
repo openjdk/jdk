@@ -29,7 +29,7 @@ package java.util;
  * Unchecked exception thrown when duplicate flags are provided in the format
  * specifier.
  *
- * <p> Unless otherwise specified, passing a <tt>null</tt> argument to any
+ * <p> Unless otherwise specified, passing a {@code null} argument to any
  * method or constructor in this class will cause a {@link
  * NullPointerException} to be thrown.
  *

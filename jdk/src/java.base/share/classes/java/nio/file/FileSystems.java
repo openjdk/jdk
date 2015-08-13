@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -321,9 +321,12 @@ public final class FileSystems {
         String scheme = uri.getScheme();
 
         // check installed providers
-        for (FileSystemProvider provider: FileSystemProvider.installedProviders()) {
+        for (FileSystemProvider provider : FileSystemProvider.installedProviders()) {
             if (scheme.equalsIgnoreCase(provider.getScheme())) {
-                return provider.newFileSystem(uri, env);
+                try {
+                    return provider.newFileSystem(uri, env);
+                } catch (UnsupportedOperationException uoe) {
+                }
             }
         }
 
@@ -331,9 +334,12 @@ public final class FileSystems {
         if (loader != null) {
             ServiceLoader<FileSystemProvider> sl = ServiceLoader
                 .load(FileSystemProvider.class, loader);
-            for (FileSystemProvider provider: sl) {
+            for (FileSystemProvider provider : sl) {
                 if (scheme.equalsIgnoreCase(provider.getScheme())) {
-                    return provider.newFileSystem(uri, env);
+                    try {
+                        return provider.newFileSystem(uri, env);
+                    } catch (UnsupportedOperationException uoe) {
+                    }
                 }
             }
         }

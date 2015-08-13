@@ -54,7 +54,7 @@ public class UserPrincipalNotFoundException
 
     /**
      * Returns the user principal name if this exception was created with the
-     * user principal name that was not found, otherwise <tt>null</tt>.
+     * user principal name that was not found, otherwise {@code null}.
      *
      * @return  the user principal name or {@code null}
      */

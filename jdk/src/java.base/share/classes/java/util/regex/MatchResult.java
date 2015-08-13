@@ -31,7 +31,7 @@ package java.util.regex;
  * <p>This interface contains query methods used to determine the
  * results of a match against a regular expression. The match boundaries,
  * groups and group boundaries can be seen but not modified through
- * a <code>MatchResult</code>.
+ * a {@code MatchResult}.
  *
  * @author  Michael McCloskey
  * @see Matcher
@@ -56,14 +56,14 @@ public interface MatchResult {
      *
      * <p> <a href="Pattern.html#cg">Capturing groups</a> are indexed from left
      * to right, starting at one.  Group zero denotes the entire pattern, so
-     * the expression <i>m.</i><tt>start(0)</tt> is equivalent to
-     * <i>m.</i><tt>start()</tt>.  </p>
+     * the expression <i>m.</i>{@code start(0)} is equivalent to
+     * <i>m.</i>{@code start()}.  </p>
      *
      * @param  group
      *         The index of a capturing group in this matcher's pattern
      *
      * @return  The index of the first character captured by the group,
-     *          or <tt>-1</tt> if the match was successful but the group
+     *          or {@code -1} if the match was successful but the group
      *          itself did not match anything
      *
      * @throws  IllegalStateException
@@ -93,14 +93,14 @@ public interface MatchResult {
      *
      * <p> <a href="Pattern.html#cg">Capturing groups</a> are indexed from left
      * to right, starting at one.  Group zero denotes the entire pattern, so
-     * the expression <i>m.</i><tt>end(0)</tt> is equivalent to
-     * <i>m.</i><tt>end()</tt>.  </p>
+     * the expression <i>m.</i>{@code end(0)} is equivalent to
+     * <i>m.</i>{@code end()}.  </p>
      *
      * @param  group
      *         The index of a capturing group in this matcher's pattern
      *
      * @return  The offset after the last character captured by the group,
-     *          or <tt>-1</tt> if the match was successful
+     *          or {@code -1} if the match was successful
      *          but the group itself did not match anything
      *
      * @throws  IllegalStateException
@@ -117,11 +117,11 @@ public interface MatchResult {
      * Returns the input subsequence matched by the previous match.
      *
      * <p> For a matcher <i>m</i> with input sequence <i>s</i>,
-     * the expressions <i>m.</i><tt>group()</tt> and
-     * <i>s.</i><tt>substring(</tt><i>m.</i><tt>start(),</tt>&nbsp;<i>m.</i><tt>end())</tt>
+     * the expressions <i>m.</i>{@code group()} and
+     * <i>s.</i>{@code substring(}<i>m.</i>{@code start(),}&nbsp;<i>m.</i>{@code end())}
      * are equivalent.  </p>
      *
-     * <p> Note that some patterns, for example <tt>a*</tt>, match the empty
+     * <p> Note that some patterns, for example {@code a*}, match the empty
      * string.  This method will return the empty string when the pattern
      * successfully matches the empty string in the input.  </p>
      *
@@ -139,18 +139,19 @@ public interface MatchResult {
      * previous match operation.
      *
      * <p> For a matcher <i>m</i>, input sequence <i>s</i>, and group index
-     * <i>g</i>, the expressions <i>m.</i><tt>group(</tt><i>g</i><tt>)</tt> and
-     * <i>s.</i><tt>substring(</tt><i>m.</i><tt>start(</tt><i>g</i><tt>),</tt>&nbsp;<i>m.</i><tt>end(</tt><i>g</i><tt>))</tt>
+     * <i>g</i>, the expressions <i>m.</i>{@code group(}<i>g</i>{@code )} and
+     * <i>s.</i>{@code substring(}<i>m.</i>{@code start(}<i>g</i>{@code
+     * ),}&nbsp;<i>m.</i>{@code end(}<i>g</i>{@code ))}
      * are equivalent.  </p>
      *
      * <p> <a href="Pattern.html#cg">Capturing groups</a> are indexed from left
      * to right, starting at one.  Group zero denotes the entire pattern, so
-     * the expression <tt>m.group(0)</tt> is equivalent to <tt>m.group()</tt>.
+     * the expression {@code m.group(0)} is equivalent to {@code m.group()}.
      * </p>
      *
      * <p> If the match was successful but the group specified failed to match
-     * any part of the input sequence, then <tt>null</tt> is returned. Note
-     * that some groups, for example <tt>(a*)</tt>, match the empty string.
+     * any part of the input sequence, then {@code null} is returned. Note
+     * that some groups, for example {@code (a*)}, match the empty string.
      * This method will return the empty string when such a group successfully
      * matches the empty string in the input.  </p>
      *
@@ -158,7 +159,7 @@ public interface MatchResult {
      *         The index of a capturing group in this matcher's pattern
      *
      * @return  The (possibly empty) subsequence captured by the group
-     *          during the previous match, or <tt>null</tt> if the group
+     *          during the previous match, or {@code null} if the group
      *          failed to match part of the input
      *
      * @throws  IllegalStateException
