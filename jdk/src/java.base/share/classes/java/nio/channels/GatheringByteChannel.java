@@ -66,11 +66,11 @@ public interface GatheringByteChannel
      * at the moment that this method is invoked.
      *
      * <p> Suppose that a byte sequence of length <i>n</i> is written, where
-     * <tt>0</tt>&nbsp;<tt>&lt;=</tt>&nbsp;<i>n</i>&nbsp;<tt>&lt;=</tt>&nbsp;<i>r</i>.
-     * Up to the first <tt>srcs[offset].remaining()</tt> bytes of this sequence
-     * are written from buffer <tt>srcs[offset]</tt>, up to the next
-     * <tt>srcs[offset+1].remaining()</tt> bytes are written from buffer
-     * <tt>srcs[offset+1]</tt>, and so forth, until the entire byte sequence is
+     * {@code 0}&nbsp;{@code <=}&nbsp;<i>n</i>&nbsp;{@code <=}&nbsp;<i>r</i>.
+     * Up to the first {@code srcs[offset].remaining()} bytes of this sequence
+     * are written from buffer {@code srcs[offset]}, up to the next
+     * {@code srcs[offset+1].remaining()} bytes are written from buffer
+     * {@code srcs[offset+1]}, and so forth, until the entire byte sequence is
      * written.  As many bytes as possible are written from each buffer, hence
      * the final position of each updated buffer, except the last updated
      * buffer, is guaranteed to be equal to that buffer's limit.
@@ -92,17 +92,17 @@ public interface GatheringByteChannel
      * @param  offset
      *         The offset within the buffer array of the first buffer from
      *         which bytes are to be retrieved; must be non-negative and no
-     *         larger than <tt>srcs.length</tt>
+     *         larger than {@code srcs.length}
      *
      * @param  length
      *         The maximum number of buffers to be accessed; must be
      *         non-negative and no larger than
-     *         <tt>srcs.length</tt>&nbsp;-&nbsp;<tt>offset</tt>
+     *         {@code srcs.length}&nbsp;-&nbsp;{@code offset}
      *
      * @return  The number of bytes written, possibly zero
      *
      * @throws  IndexOutOfBoundsException
-     *          If the preconditions on the <tt>offset</tt> and <tt>length</tt>
+     *          If the preconditions on the {@code offset} and {@code length}
      *          parameters do not hold
      *
      * @throws  NonWritableChannelException
@@ -131,7 +131,7 @@ public interface GatheringByteChannel
     /**
      * Writes a sequence of bytes to this channel from the given buffers.
      *
-     * <p> An invocation of this method of the form <tt>c.write(srcs)</tt>
+     * <p> An invocation of this method of the form {@code c.write(srcs)}
      * behaves in exactly the same manner as the invocation
      *
      * <blockquote><pre>
