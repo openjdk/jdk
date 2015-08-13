@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4268317
+ * @bug 4268317 8132306
  * @summary Test if Reference.enqueue() works properly with GC
  */
 
