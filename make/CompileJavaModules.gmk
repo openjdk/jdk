@@ -491,6 +491,7 @@ SHARE_SRC_DIRS += \
     $(CORBA_TOPDIR)/src/$1/share/classes \
     $(JAXP_TOPDIR)/src/$1/share/classes \
     $(JAXWS_TOPDIR)/src/$1/share/classes \
+    $(NASHORN_TOPDIR)/src/$1/share/classes \
     #
 
 ALL_SRC_DIRS = \
@@ -512,8 +513,8 @@ JAVA_MODULES := $(ALL_JAVA_MODULES)
 JDK_USER_DEFINED_FILTER := $(strip $(subst $(COMMA),$(SPACE), $(JDK_FILTER)))
 
 # Create an empty directory to set the bootclasspath to.
-EMPTY_BOOTCLASSPATH := $(SUPPORT_OUTPUTDIR)/empty-dir
-$(call MakeDir, $(EMPTY_BOOTCLASSPATH))
+EMPTY_DIR := $(SUPPORT_OUTPUTDIR)/empty-dir
+$(call MakeDir, $(EMPTY_DIR))
 
 # This macro sets up compilation of a module and declares dependencies for it.
 # Param 1 - module name
@@ -534,7 +535,7 @@ define SetupModuleCompilation
     $1_CLASSPATH := $$($1_CLASSPATH) $$(addprefix $(JDK_OUTPUTDIR)/modules/,jdk.hotspot.agent)
   endif
   $1_CLASSPATH := $$(subst $$(SPACE),$$(PATH_SEP),$$($1_CLASSPATH))
-  $1_JAVAC_FLAGS := -bootclasspath $(EMPTY_BOOTCLASSPATH) -classpath "$$($1_CLASSPATH)" $$($1_ADD_JAVAC_FLAGS)
+  $1_JAVAC_FLAGS := -bootclasspath $(EMPTY_DIR) -extdirs $(EMPTY_DIR) -endorseddirs $(EMPTY_DIR) -classpath "$$($1_CLASSPATH)" $$($1_ADD_JAVAC_FLAGS)
 
   $$(eval $$(call SetupJavaCompilation,$1, \
       SETUP := $$(if $$($1_SETUP), $$($1_SETUP), GENERATE_JDKBYTECODE), \
