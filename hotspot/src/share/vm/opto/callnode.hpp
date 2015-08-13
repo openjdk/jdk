@@ -84,6 +84,7 @@ public:
   virtual uint ideal_reg() const { return 0; }
 #ifndef PRODUCT
   virtual void  dump_spec(outputStream *st) const;
+  virtual void  dump_compact_spec(outputStream *st) const;
 #endif
 };
 
@@ -110,6 +111,8 @@ public:
   virtual uint ideal_reg() const;
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
+  virtual void dump_compact_spec(outputStream *st) const;
+  virtual void related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
 #endif
 };
 
@@ -476,6 +479,7 @@ public:
 
 #ifndef PRODUCT
   virtual void           dump_spec(outputStream *st) const;
+  virtual void           related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
 #endif
 };
 
@@ -675,6 +679,7 @@ public:
 
 #ifndef PRODUCT
   virtual void  dump_spec(outputStream *st) const;
+  virtual void  dump_compact_spec(outputStream *st) const;
 #endif
 };
 
@@ -730,6 +735,7 @@ public:
   virtual int         Opcode() const;
 #ifndef PRODUCT
   virtual void        dump_spec(outputStream *st) const;
+  virtual void        dump_compact_spec(outputStream *st) const;
 #endif
 };
 
@@ -951,6 +957,7 @@ private:
   } _kind;
 #ifndef PRODUCT
   NamedCounter* _counter;
+  static const char* _kind_names[Nested+1];
 #endif
 
 protected:
@@ -1005,6 +1012,9 @@ public:
 #ifndef PRODUCT
   void create_lock_counter(JVMState* s);
   NamedCounter* counter() const { return _counter; }
+  virtual void dump_spec(outputStream* st) const;
+  virtual void dump_compact_spec(outputStream* st) const;
+  virtual void related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
 #endif
 };
 

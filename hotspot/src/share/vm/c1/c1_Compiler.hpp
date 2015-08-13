@@ -55,17 +55,8 @@ class Compiler: public AbstractCompiler {
   // Print compilation timers and statistics
   virtual void print_timers();
 
-  // Check the availability of an intrinsic for 'method' given a compilation context.
-  // The compilation context is needed to support per-method usage of the
-  // DisableIntrinsic flag. However, as C1 ignores the DisableIntrinsic flag, it
-  // ignores the compilation context.
-  virtual bool is_intrinsic_available(methodHandle method, methodHandle compilation_context);
-
   // Check if the C1 compiler supports an intrinsic for 'method'.
   virtual bool is_intrinsic_supported(methodHandle method);
-
-  // Processing of command-line flags specific to the C1 compiler.
-  virtual bool is_intrinsic_disabled_by_flag(methodHandle method);
 
   // Size of the code buffer
   static int code_buffer_size();

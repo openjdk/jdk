@@ -848,6 +848,9 @@ public:
   product(bool, UseCRC32CIntrinsics, false,                                 \
           "use intrinsics for java.util.zip.CRC32C")                        \
                                                                             \
+  diagnostic(ccstrlist, DisableIntrinsic, "",                               \
+         "do not expand intrinsics whose (internal) names appear here")     \
+                                                                            \
   develop(bool, TraceCallFixup, false,                                      \
           "Trace all call fixups")                                          \
                                                                             \
@@ -3913,7 +3916,7 @@ public:
   product(bool, PerfDisableSharedMem, false,                                \
           "Store performance data in standard memory")                      \
                                                                             \
-  product(intx, PerfDataMemorySize, 32*K,                                   \
+  product(intx, PerfDataMemorySize, 64*K,                                   \
           "Size of performance data memory region. Will be rounded "        \
           "up to a multiple of the native os page size.")                   \
                                                                             \
