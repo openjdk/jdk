@@ -507,7 +507,7 @@ void PhaseIdealLoop::Dominators() {
 // 'semi' as vertex to DFS mapping.  Set 'parent' to DFS parent.
 int NTarjan::DFS( NTarjan *ntarjan, VectorSet &visited, PhaseIdealLoop *pil, uint *dfsorder) {
   // Allocate stack of size C->unique()/8 to avoid frequent realloc
-  GrowableArray <Node *> dfstack(pil->C->unique() >> 3);
+  GrowableArray <Node *> dfstack(pil->C->live_nodes() >> 3);
   Node *b = pil->C->root();
   int dfsnum = 1;
   dfsorder[b->_idx] = dfsnum; // Cache parent's dfsnum for a later use
