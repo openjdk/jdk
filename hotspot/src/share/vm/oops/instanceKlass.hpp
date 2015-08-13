@@ -503,12 +503,28 @@ class InstanceKlass: public Klass {
   Method* find_instance_method(Symbol* name, Symbol* signature);
   static Method* find_instance_method(Array<Method*>* methods, Symbol* name, Symbol* signature);
 
-  // true if method matches signature and conforms to skipping_X conditions.
-  static bool method_matches(Method* m, Symbol* signature, bool skipping_overpass, bool skipping_static);
+  // find a local method (returns NULL if not found)
+  Method* find_local_method(Symbol* name, Symbol* signature,
+                           OverpassLookupMode overpass_mode,
+                           StaticLookupMode static_mode,
+                           PrivateLookupMode private_mode) const;
 
-  // find a local method index in default_methods (returns -1 if not found)
-  static int find_method_index(Array<Method*>* methods, Symbol* name, Symbol* signature,
-                               OverpassLookupMode overpass_mode, StaticLookupMode static_mode);
+  // find a local method from given methods array (returns NULL if not found)
+  static Method* find_local_method(Array<Method*>* methods,
+                           Symbol* name, Symbol* signature,
+                           OverpassLookupMode overpass_mode,
+                           StaticLookupMode static_mode,
+                           PrivateLookupMode private_mode);
+
+  // true if method matches signature and conforms to skipping_X conditions.
+  static bool method_matches(Method* m, Symbol* signature, bool skipping_overpass, bool skipping_static, bool skipping_private);
+
+  // find a local method index in methods or default_methods (returns -1 if not found)
+  static int find_method_index(Array<Method*>* methods,
+                               Symbol* name, Symbol* signature,
+                               OverpassLookupMode overpass_mode,
+                               StaticLookupMode static_mode,
+                               PrivateLookupMode private_mode);
 
   // lookup operation (returns NULL if not found)
   Method* uncached_lookup_method(Symbol* name, Symbol* signature, OverpassLookupMode overpass_mode) const;
@@ -1153,9 +1169,14 @@ private:
 
   // find a local method (returns NULL if not found)
   Method* find_method_impl(Symbol* name, Symbol* signature,
-                           OverpassLookupMode overpass_mode, StaticLookupMode static_mode) const;
-  static Method* find_method_impl(Array<Method*>* methods, Symbol* name, Symbol* signature,
-                                  OverpassLookupMode overpass_mode, StaticLookupMode static_mode);
+                           OverpassLookupMode overpass_mode,
+                           StaticLookupMode static_mode,
+                           PrivateLookupMode private_mode) const;
+  static Method* find_method_impl(Array<Method*>* methods,
+                                  Symbol* name, Symbol* signature,
+                                  OverpassLookupMode overpass_mode,
+                                  StaticLookupMode static_mode,
+                                  PrivateLookupMode private_mode);
 
   // Free CHeap allocated fields.
   void release_C_heap_structures();

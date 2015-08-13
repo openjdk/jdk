@@ -345,9 +345,7 @@ int LIR_Assembler::check_icache() {
   const bool do_post_padding = VerifyOops || UseCompressedClassPointers;
   if (!do_post_padding) {
     // insert some nops so that the verified entry point is aligned on CodeEntryAlignment
-    while ((__ offset() + ic_cmp_size) % CodeEntryAlignment != 0) {
-      __ nop();
-    }
+    __ align(CodeEntryAlignment, __ offset() + ic_cmp_size);
   }
   int offset = __ offset();
   __ inline_cache_check(receiver, IC_Klass);
@@ -2861,9 +2859,7 @@ void LIR_Assembler::align_call(LIR_Code code) {
       case lir_virtual_call:  // currently, sparc-specific for niagara
       default: ShouldNotReachHere();
     }
-    while (offset++ % BytesPerWord != 0) {
-      __ nop();
-    }
+    __ align(BytesPerWord, offset);
   }
 }
 
@@ -2902,10 +2898,7 @@ void LIR_Assembler::emit_static_call_stub() {
   int start = __ offset();
   if (os::is_MP()) {
     // make sure that the displacement word of the call ends up word aligned
-    int offset = __ offset() + NativeMovConstReg::instruction_size + NativeCall::displacement_offset;
-    while (offset++ % BytesPerWord != 0) {
-      __ nop();
-    }
+    __ align(BytesPerWord, __ offset() + NativeMovConstReg::instruction_size + NativeCall::displacement_offset);
   }
   __ relocate(static_stub_Relocation::spec(call_pc));
   __ mov_metadata(rbx, (Metadata*)NULL);

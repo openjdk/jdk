@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/g1Allocator.hpp"
+#include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/g1/g1MarkSweep.hpp"
@@ -67,11 +67,11 @@ void G1Allocator::reuse_retained_old_region(EvacuationInfo& evacuation_info,
     // retired. We have to remove it now, since we don't allow regions
     // we allocate to in the region sets. We'll re-add it later, when
     // it's retired again.
-    _g1h->_old_set.remove(retained_region);
+    _g1h->old_set_remove(retained_region);
     bool during_im = _g1h->collector_state()->during_initial_mark_pause();
     retained_region->note_start_of_copying(during_im);
     old->set(retained_region);
-    _g1h->_hr_printer.reuse(retained_region);
+    _g1h->hr_printer()->reuse(retained_region);
     evacuation_info.set_alloc_regions_used_before(retained_region->used());
   }
 }
@@ -116,15 +116,85 @@ void G1DefaultAllocator::abandon_gc_alloc_regions() {
 G1PLAB::G1PLAB(size_t gclab_word_size) :
   PLAB(gclab_word_size), _retired(true) { }
 
-HeapWord* G1ParGCAllocator::allocate_direct_or_new_plab(InCSetState dest,
-                                                        size_t word_sz,
-                                                        AllocationContext_t context) {
+size_t G1Allocator::unsafe_max_tlab_alloc(AllocationContext_t context) {
+  // Return the remaining space in the cur alloc region, but not less than
+  // the min TLAB size.
+
+  // Also, this value can be at most the humongous object threshold,
+  // since we can't allow tlabs to grow big enough to accommodate
+  // humongous objects.
+
+  HeapRegion* hr = mutator_alloc_region(context)->get();
+  size_t max_tlab = _g1h->max_tlab_size() * wordSize;
+  if (hr == NULL) {
+    return max_tlab;
+  } else {
+    return MIN2(MAX2(hr->free(), (size_t) MinTLABSize), max_tlab);
+  }
+}
+
+HeapWord* G1Allocator::par_allocate_during_gc(InCSetState dest,
+                                              size_t word_size,
+                                              AllocationContext_t context) {
+  switch (dest.value()) {
+    case InCSetState::Young:
+      return survivor_attempt_allocation(word_size, context);
+    case InCSetState::Old:
+      return old_attempt_allocation(word_size, context);
+    default:
+      ShouldNotReachHere();
+      return NULL; // Keep some compilers happy
+  }
+}
+
+HeapWord* G1Allocator::survivor_attempt_allocation(size_t word_size,
+                                                   AllocationContext_t context) {
+  assert(!_g1h->is_humongous(word_size),
+         "we should not be seeing humongous-size allocations in this path");
+
+  HeapWord* result = survivor_gc_alloc_region(context)->attempt_allocation(word_size,
+                                                                           false /* bot_updates */);
+  if (result == NULL) {
+    MutexLockerEx x(FreeList_lock, Mutex::_no_safepoint_check_flag);
+    result = survivor_gc_alloc_region(context)->attempt_allocation_locked(word_size,
+                                                                          false /* bot_updates */);
+  }
+  if (result != NULL) {
+    _g1h->dirty_young_block(result, word_size);
+  }
+  return result;
+}
+
+HeapWord* G1Allocator::old_attempt_allocation(size_t word_size,
+                                              AllocationContext_t context) {
+  assert(!_g1h->is_humongous(word_size),
+         "we should not be seeing humongous-size allocations in this path");
+
+  HeapWord* result = old_gc_alloc_region(context)->attempt_allocation(word_size,
+                                                                      true /* bot_updates */);
+  if (result == NULL) {
+    MutexLockerEx x(FreeList_lock, Mutex::_no_safepoint_check_flag);
+    result = old_gc_alloc_region(context)->attempt_allocation_locked(word_size,
+                                                                     true /* bot_updates */);
+  }
+  return result;
+}
+
+G1PLABAllocator::G1PLABAllocator(G1Allocator* allocator) :
+  _g1h(G1CollectedHeap::heap()),
+  _allocator(allocator),
+  _survivor_alignment_bytes(calc_survivor_alignment_bytes()) {
+}
+
+HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(InCSetState dest,
+                                                       size_t word_sz,
+                                                       AllocationContext_t context) {
   size_t gclab_word_size = _g1h->desired_plab_sz(dest);
   if (word_sz * 100 < gclab_word_size * ParallelGCBufferWastePct) {
     G1PLAB* alloc_buf = alloc_buffer(dest, context);
     alloc_buf->retire();
 
-    HeapWord* buf = _g1h->par_allocate_during_gc(dest, gclab_word_size, context);
+    HeapWord* buf = _allocator->par_allocate_during_gc(dest, gclab_word_size, context);
     if (buf == NULL) {
       return NULL; // Let caller handle allocation failure.
     }
@@ -136,14 +206,18 @@ HeapWord* G1ParGCAllocator::allocate_direct_or_new_plab(InCSetState dest,
     assert(obj != NULL, "buffer was definitely big enough...");
     return obj;
   } else {
-    return _g1h->par_allocate_during_gc(dest, word_sz, context);
+    return _allocator->par_allocate_during_gc(dest, word_sz, context);
   }
 }
 
-G1DefaultParGCAllocator::G1DefaultParGCAllocator(G1CollectedHeap* g1h) :
-  G1ParGCAllocator(g1h),
-  _surviving_alloc_buffer(g1h->desired_plab_sz(InCSetState::Young)),
-  _tenured_alloc_buffer(g1h->desired_plab_sz(InCSetState::Old)) {
+void G1PLABAllocator::undo_allocation(InCSetState dest, HeapWord* obj, size_t word_sz, AllocationContext_t context) {
+  alloc_buffer(dest, context)->undo_allocation(obj, word_sz);
+}
+
+G1DefaultPLABAllocator::G1DefaultPLABAllocator(G1Allocator* allocator) :
+  G1PLABAllocator(allocator),
+  _surviving_alloc_buffer(_g1h->desired_plab_sz(InCSetState::Young)),
+  _tenured_alloc_buffer(_g1h->desired_plab_sz(InCSetState::Old)) {
   for (uint state = 0; state < InCSetState::Num; state++) {
     _alloc_buffers[state] = NULL;
   }
@@ -151,7 +225,7 @@ G1DefaultParGCAllocator::G1DefaultParGCAllocator(G1CollectedHeap* g1h) :
   _alloc_buffers[InCSetState::Old]  = &_tenured_alloc_buffer;
 }
 
-void G1DefaultParGCAllocator::retire_alloc_buffers() {
+void G1DefaultPLABAllocator::retire_alloc_buffers() {
   for (uint state = 0; state < InCSetState::Num; state++) {
     G1PLAB* const buf = _alloc_buffers[state];
     if (buf != NULL) {
@@ -160,7 +234,7 @@ void G1DefaultParGCAllocator::retire_alloc_buffers() {
   }
 }
 
-void G1DefaultParGCAllocator::waste(size_t& wasted, size_t& undo_wasted) {
+void G1DefaultPLABAllocator::waste(size_t& wasted, size_t& undo_wasted) {
   wasted = 0;
   undo_wasted = 0;
   for (uint state = 0; state < InCSetState::Num; state++) {
@@ -190,8 +264,8 @@ bool G1ArchiveAllocator::alloc_new_region() {
   }
   assert(hr->is_empty(), err_msg("expected empty region (index %u)", hr->hrm_index()));
   hr->set_archive();
-  _g1h->_old_set.add(hr);
-  _g1h->_hr_printer.alloc(hr, G1HRPrinter::Archive);
+  _g1h->old_set_add(hr);
+  _g1h->hr_printer()->alloc(hr, G1HRPrinter::Archive);
   _allocated_regions.append(hr);
   _allocation_region = hr;
 
