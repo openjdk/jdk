@@ -60,8 +60,9 @@ bool CompiledIC::is_icholder_call_site(virtual_call_Relocation* call_site) {
 
 // ----------------------------------------------------------------------------
 
-void CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf) {
+address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf) {
   ShouldNotReachHere(); // Only needed for COMPILER2.
+  return NULL;
 }
 
 int CompiledStaticCall::to_interp_stub_size() {

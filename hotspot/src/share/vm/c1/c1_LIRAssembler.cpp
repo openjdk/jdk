@@ -443,6 +443,7 @@ void LIR_Assembler::emit_call(LIR_OpJavaCall* op) {
 
   // emit the static call stub stuff out of line
   emit_static_call_stub();
+  CHECK_BAILOUT();
 
   switch (op->code()) {
   case lir_static_call:

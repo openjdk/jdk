@@ -432,6 +432,9 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
   __ mov(length()->as_register(),  O4);
 
   ce->emit_static_call_stub();
+  if (ce->compilation()->bailed_out()) {
+    return; // CodeCache is full
+  }
 
   __ call(SharedRuntime::get_resolve_static_call_stub(), relocInfo::static_call_type);
   __ delayed()->nop();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,6 +118,20 @@ const TypePtr *ProjNode::adr_type() const {
 bool ProjNode::pinned() const { return in(0)->pinned(); }
 #ifndef PRODUCT
 void ProjNode::dump_spec(outputStream *st) const { st->print("#%d",_con); if(_is_io_use) st->print(" (i_o_use)");}
+
+void ProjNode::dump_compact_spec(outputStream *st) const {
+  for (DUIterator i = this->outs(); this->has_out(i); i++) {
+    Node* o = this->out(i);
+    if (NotANode(o)) {
+      st->print("[?]");
+    } else if (o == NULL) {
+      st->print("[_]");
+    } else {
+      st->print("[%d]", o->_idx);
+    }
+  }
+  st->print("#%d", _con);
+}
 #endif
 
 //----------------------------check_con----------------------------------------
