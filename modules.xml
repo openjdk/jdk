@@ -1623,10 +1623,6 @@
     <depend>jdk.jdi</depend>
   </module>
   <module>
-    <name>jdk.hprof.agent</name>
-    <depend>java.base</depend>
-  </module>
-  <module>
     <name>jdk.httpserver</name>
     <depend>java.base</depend>
     <depend>java.logging</depend>
