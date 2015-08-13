@@ -31,15 +31,15 @@ import java.util.function.BiFunction;
 import java.io.IOException;
 
 /**
- * <p>Hash table and linked list implementation of the <tt>Map</tt> interface,
+ * <p>Hash table and linked list implementation of the {@code Map} interface,
  * with predictable iteration order.  This implementation differs from
- * <tt>HashMap</tt> in that it maintains a doubly-linked list running through
+ * {@code HashMap} in that it maintains a doubly-linked list running through
  * all of its entries.  This linked list defines the iteration ordering,
  * which is normally the order in which keys were inserted into the map
  * (<i>insertion-order</i>).  Note that insertion order is not affected
- * if a key is <i>re-inserted</i> into the map.  (A key <tt>k</tt> is
- * reinserted into a map <tt>m</tt> if <tt>m.put(k, v)</tt> is invoked when
- * <tt>m.containsKey(k)</tt> would return <tt>true</tt> immediately prior to
+ * if a key is <i>re-inserted</i> into the map.  (A key {@code k} is
+ * reinserted into a map {@code m} if {@code m.put(k, v)} is invoked when
+ * {@code m.containsKey(k)} would return {@code true} immediately prior to
  * the invocation.)
  *
  * <p>This implementation spares its clients from the unspecified, generally
@@ -78,23 +78,23 @@ import java.io.IOException;
  * impose a policy for removing stale mappings automatically when new mappings
  * are added to the map.
  *
- * <p>This class provides all of the optional <tt>Map</tt> operations, and
- * permits null elements.  Like <tt>HashMap</tt>, it provides constant-time
- * performance for the basic operations (<tt>add</tt>, <tt>contains</tt> and
- * <tt>remove</tt>), assuming the hash function disperses elements
+ * <p>This class provides all of the optional {@code Map} operations, and
+ * permits null elements.  Like {@code HashMap}, it provides constant-time
+ * performance for the basic operations ({@code add}, {@code contains} and
+ * {@code remove}), assuming the hash function disperses elements
  * properly among the buckets.  Performance is likely to be just slightly
- * below that of <tt>HashMap</tt>, due to the added expense of maintaining the
+ * below that of {@code HashMap}, due to the added expense of maintaining the
  * linked list, with one exception: Iteration over the collection-views
- * of a <tt>LinkedHashMap</tt> requires time proportional to the <i>size</i>
- * of the map, regardless of its capacity.  Iteration over a <tt>HashMap</tt>
+ * of a {@code LinkedHashMap} requires time proportional to the <i>size</i>
+ * of the map, regardless of its capacity.  Iteration over a {@code HashMap}
  * is likely to be more expensive, requiring time proportional to its
  * <i>capacity</i>.
  *
  * <p>A linked hash map has two parameters that affect its performance:
  * <i>initial capacity</i> and <i>load factor</i>.  They are defined precisely
- * as for <tt>HashMap</tt>.  Note, however, that the penalty for choosing an
+ * as for {@code HashMap}.  Note, however, that the penalty for choosing an
  * excessively high value for initial capacity is less severe for this class
- * than for <tt>HashMap</tt>, as iteration times for this class are unaffected
+ * than for {@code HashMap}, as iteration times for this class are unaffected
  * by capacity.
  *
  * <p><strong>Note that this implementation is not synchronized.</strong>
@@ -114,14 +114,14 @@ import java.io.IOException;
  * iteration order.  In insertion-ordered linked hash maps, merely changing
  * the value associated with a key that is already contained in the map is not
  * a structural modification.  <strong>In access-ordered linked hash maps,
- * merely querying the map with <tt>get</tt> is a structural modification.
+ * merely querying the map with {@code get} is a structural modification.
  * </strong>)
  *
- * <p>The iterators returned by the <tt>iterator</tt> method of the collections
+ * <p>The iterators returned by the {@code iterator} method of the collections
  * returned by all of this class's collection view methods are
  * <em>fail-fast</em>: if the map is structurally modified at any time after
  * the iterator is created, in any way except through the iterator's own
- * <tt>remove</tt> method, the iterator will throw a {@link
+ * {@code remove} method, the iterator will throw a {@link
  * ConcurrentModificationException}.  Thus, in the face of concurrent
  * modification, the iterator fails quickly and cleanly, rather than risking
  * arbitrary, non-deterministic behavior at an undetermined time in the future.
@@ -129,7 +129,7 @@ import java.io.IOException;
  * <p>Note that the fail-fast behavior of an iterator cannot be guaranteed
  * as it is, generally speaking, impossible to make any hard guarantees in the
  * presence of unsynchronized concurrent modification.  Fail-fast iterators
- * throw <tt>ConcurrentModificationException</tt> on a best-effort basis.
+ * throw {@code ConcurrentModificationException} on a best-effort basis.
  * Therefore, it would be wrong to write a program that depended on this
  * exception for its correctness:   <i>the fail-fast behavior of iterators
  * should be used only to detect bugs.</i>
@@ -209,8 +209,8 @@ public class LinkedHashMap<K,V>
     transient LinkedHashMap.Entry<K,V> tail;
 
     /**
-     * The iteration ordering method for this linked hash map: <tt>true</tt>
-     * for access-order, <tt>false</tt> for insertion-order.
+     * The iteration ordering method for this linked hash map: {@code true}
+     * for access-order, {@code false} for insertion-order.
      *
      * @serial
      */
@@ -335,7 +335,7 @@ public class LinkedHashMap<K,V>
     }
 
     /**
-     * Constructs an empty insertion-ordered <tt>LinkedHashMap</tt> instance
+     * Constructs an empty insertion-ordered {@code LinkedHashMap} instance
      * with the specified initial capacity and load factor.
      *
      * @param  initialCapacity the initial capacity
@@ -349,7 +349,7 @@ public class LinkedHashMap<K,V>
     }
 
     /**
-     * Constructs an empty insertion-ordered <tt>LinkedHashMap</tt> instance
+     * Constructs an empty insertion-ordered {@code LinkedHashMap} instance
      * with the specified initial capacity and a default load factor (0.75).
      *
      * @param  initialCapacity the initial capacity
@@ -361,7 +361,7 @@ public class LinkedHashMap<K,V>
     }
 
     /**
-     * Constructs an empty insertion-ordered <tt>LinkedHashMap</tt> instance
+     * Constructs an empty insertion-ordered {@code LinkedHashMap} instance
      * with the default initial capacity (16) and load factor (0.75).
      */
     public LinkedHashMap() {
@@ -370,8 +370,8 @@ public class LinkedHashMap<K,V>
     }
 
     /**
-     * Constructs an insertion-ordered <tt>LinkedHashMap</tt> instance with
-     * the same mappings as the specified map.  The <tt>LinkedHashMap</tt>
+     * Constructs an insertion-ordered {@code LinkedHashMap} instance with
+     * the same mappings as the specified map.  The {@code LinkedHashMap}
      * instance is created with a default load factor (0.75) and an initial
      * capacity sufficient to hold the mappings in the specified map.
      *
@@ -385,13 +385,13 @@ public class LinkedHashMap<K,V>
     }
 
     /**
-     * Constructs an empty <tt>LinkedHashMap</tt> instance with the
+     * Constructs an empty {@code LinkedHashMap} instance with the
      * specified initial capacity, load factor and ordering mode.
      *
      * @param  initialCapacity the initial capacity
      * @param  loadFactor      the load factor
-     * @param  accessOrder     the ordering mode - <tt>true</tt> for
-     *         access-order, <tt>false</tt> for insertion-order
+     * @param  accessOrder     the ordering mode - {@code true} for
+     *         access-order, {@code false} for insertion-order
      * @throws IllegalArgumentException if the initial capacity is negative
      *         or the load factor is nonpositive
      */
@@ -404,11 +404,11 @@ public class LinkedHashMap<K,V>
 
 
     /**
-     * Returns <tt>true</tt> if this map maps one or more keys to the
+     * Returns {@code true} if this map maps one or more keys to the
      * specified value.
      *
      * @param value value whose presence in this map is to be tested
-     * @return <tt>true</tt> if this map maps one or more keys to the
+     * @return {@code true} if this map maps one or more keys to the
      *         specified value
      */
     public boolean containsValue(Object value) {
@@ -465,8 +465,8 @@ public class LinkedHashMap<K,V>
     }
 
     /**
-     * Returns <tt>true</tt> if this map should remove its eldest entry.
-     * This method is invoked by <tt>put</tt> and <tt>putAll</tt> after
+     * Returns {@code true} if this map should remove its eldest entry.
+     * This method is invoked by {@code put} and {@code putAll} after
      * inserting a new entry into the map.  It provides the implementor
      * with the opportunity to remove the eldest entry each time a new one
      * is added.  This is useful if the map represents a cache: it allows
@@ -487,23 +487,23 @@ public class LinkedHashMap<K,V>
      * instead allowing the map to modify itself as directed by its
      * return value.  It <i>is</i> permitted for this method to modify
      * the map directly, but if it does so, it <i>must</i> return
-     * <tt>false</tt> (indicating that the map should not attempt any
-     * further modification).  The effects of returning <tt>true</tt>
+     * {@code false} (indicating that the map should not attempt any
+     * further modification).  The effects of returning {@code true}
      * after modifying the map from within this method are unspecified.
      *
-     * <p>This implementation merely returns <tt>false</tt> (so that this
+     * <p>This implementation merely returns {@code false} (so that this
      * map acts like a normal map - the eldest element is never removed).
      *
      * @param    eldest The least recently inserted entry in the map, or if
      *           this is an access-ordered map, the least recently accessed
      *           entry.  This is the entry that will be removed it this
-     *           method returns <tt>true</tt>.  If the map was empty prior
-     *           to the <tt>put</tt> or <tt>putAll</tt> invocation resulting
+     *           method returns {@code true}.  If the map was empty prior
+     *           to the {@code put} or {@code putAll} invocation resulting
      *           in this invocation, this will be the entry that was just
      *           inserted; in other words, if the map contains a single
      *           entry, the eldest entry is also the newest.
-     * @return   <tt>true</tt> if the eldest entry should be removed
-     *           from the map; <tt>false</tt> if it should be retained.
+     * @return   {@code true} if the eldest entry should be removed
+     *           from the map; {@code false} if it should be retained.
      */
     protected boolean removeEldestEntry(Map.Entry<K,V> eldest) {
         return false;
@@ -514,12 +514,12 @@ public class LinkedHashMap<K,V>
      * The set is backed by the map, so changes to the map are
      * reflected in the set, and vice-versa.  If the map is modified
      * while an iteration over the set is in progress (except through
-     * the iterator's own <tt>remove</tt> operation), the results of
+     * the iterator's own {@code remove} operation), the results of
      * the iteration are undefined.  The set supports element removal,
      * which removes the corresponding mapping from the map, via the
-     * <tt>Iterator.remove</tt>, <tt>Set.remove</tt>,
-     * <tt>removeAll</tt>, <tt>retainAll</tt>, and <tt>clear</tt>
-     * operations.  It does not support the <tt>add</tt> or <tt>addAll</tt>
+     * {@code Iterator.remove}, {@code Set.remove},
+     * {@code removeAll}, {@code retainAll}, and {@code clear}
+     * operations.  It does not support the {@code add} or {@code addAll}
      * operations.
      * Its {@link Spliterator} typically provides faster sequential
      * performance but much poorer parallel performance than that of
@@ -563,13 +563,13 @@ public class LinkedHashMap<K,V>
      * The collection is backed by the map, so changes to the map are
      * reflected in the collection, and vice-versa.  If the map is
      * modified while an iteration over the collection is in progress
-     * (except through the iterator's own <tt>remove</tt> operation),
+     * (except through the iterator's own {@code remove} operation),
      * the results of the iteration are undefined.  The collection
      * supports element removal, which removes the corresponding
-     * mapping from the map, via the <tt>Iterator.remove</tt>,
-     * <tt>Collection.remove</tt>, <tt>removeAll</tt>,
-     * <tt>retainAll</tt> and <tt>clear</tt> operations.  It does not
-     * support the <tt>add</tt> or <tt>addAll</tt> operations.
+     * mapping from the map, via the {@code Iterator.remove},
+     * {@code Collection.remove}, {@code removeAll},
+     * {@code retainAll} and {@code clear} operations.  It does not
+     * support the {@code add} or {@code addAll} operations.
      * Its {@link Spliterator} typically provides faster sequential
      * performance but much poorer parallel performance than that of
      * {@code HashMap}.
@@ -608,14 +608,14 @@ public class LinkedHashMap<K,V>
      * The set is backed by the map, so changes to the map are
      * reflected in the set, and vice-versa.  If the map is modified
      * while an iteration over the set is in progress (except through
-     * the iterator's own <tt>remove</tt> operation, or through the
-     * <tt>setValue</tt> operation on a map entry returned by the
+     * the iterator's own {@code remove} operation, or through the
+     * {@code setValue} operation on a map entry returned by the
      * iterator) the results of the iteration are undefined.  The set
      * supports element removal, which removes the corresponding
-     * mapping from the map, via the <tt>Iterator.remove</tt>,
-     * <tt>Set.remove</tt>, <tt>removeAll</tt>, <tt>retainAll</tt> and
-     * <tt>clear</tt> operations.  It does not support the
-     * <tt>add</tt> or <tt>addAll</tt> operations.
+     * mapping from the map, via the {@code Iterator.remove},
+     * {@code Set.remove}, {@code removeAll}, {@code retainAll} and
+     * {@code clear} operations.  It does not support the
+     * {@code add} or {@code addAll} operations.
      * Its {@link Spliterator} typically provides faster sequential
      * performance but much poorer parallel performance than that of
      * {@code HashMap}.

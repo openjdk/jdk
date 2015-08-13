@@ -26,14 +26,14 @@
 package java.util;
 
 /**
- * The <code>Dictionary</code> class is the abstract parent of any
- * class, such as <code>Hashtable</code>, which maps keys to values.
- * Every key and every value is an object. In any one <tt>Dictionary</tt>
+ * The {@code Dictionary} class is the abstract parent of any
+ * class, such as {@code Hashtable}, which maps keys to values.
+ * Every key and every value is an object. In any one {@code Dictionary}
  * object, every key is associated with at most one value. Given a
- * <tt>Dictionary</tt> and a key, the associated element can be looked up.
- * Any non-<code>null</code> object can be used as a key and as a value.
+ * {@code Dictionary} and a key, the associated element can be looked up.
+ * Any non-{@code null} object can be used as a key and as a value.
  * <p>
- * As a rule, the <code>equals</code> method should be used by
+ * As a rule, the {@code equals} method should be used by
  * implementations of this class to decide if two keys are the same.
  * <p>
  * <strong>NOTE: This class is obsolete.  New implementations should
@@ -64,17 +64,17 @@ class Dictionary<K,V> {
 
     /**
      * Tests if this dictionary maps no keys to value. The general contract
-     * for the <tt>isEmpty</tt> method is that the result is true if and only
+     * for the {@code isEmpty} method is that the result is true if and only
      * if this dictionary contains no entries.
      *
-     * @return  <code>true</code> if this dictionary maps no keys to values;
-     *          <code>false</code> otherwise.
+     * @return  {@code true} if this dictionary maps no keys to values;
+     *          {@code false} otherwise.
      */
     abstract public boolean isEmpty();
 
     /**
      * Returns an enumeration of the keys in this dictionary. The general
-     * contract for the keys method is that an <tt>Enumeration</tt> object
+     * contract for the keys method is that an {@code Enumeration} object
      * is returned that will generate all the keys for which this dictionary
      * contains entries.
      *
@@ -86,8 +86,8 @@ class Dictionary<K,V> {
 
     /**
      * Returns an enumeration of the values in this dictionary. The general
-     * contract for the <tt>elements</tt> method is that an
-     * <tt>Enumeration</tt> is returned that will generate all the elements
+     * contract for the {@code elements} method is that an
+     * {@code Enumeration} is returned that will generate all the elements
      * contained in entries in this dictionary.
      *
      * @return  an enumeration of the values in this dictionary.
@@ -98,58 +98,58 @@ class Dictionary<K,V> {
 
     /**
      * Returns the value to which the key is mapped in this dictionary.
-     * The general contract for the <tt>isEmpty</tt> method is that if this
+     * The general contract for the {@code isEmpty} method is that if this
      * dictionary contains an entry for the specified key, the associated
-     * value is returned; otherwise, <tt>null</tt> is returned.
+     * value is returned; otherwise, {@code null} is returned.
      *
      * @return  the value to which the key is mapped in this dictionary;
      * @param   key   a key in this dictionary.
-     *          <code>null</code> if the key is not mapped to any value in
+     *          {@code null} if the key is not mapped to any value in
      *          this dictionary.
-     * @exception NullPointerException if the <tt>key</tt> is <tt>null</tt>.
+     * @exception NullPointerException if the {@code key} is {@code null}.
      * @see     java.util.Dictionary#put(java.lang.Object, java.lang.Object)
      */
     abstract public V get(Object key);
 
     /**
-     * Maps the specified <code>key</code> to the specified
-     * <code>value</code> in this dictionary. Neither the key nor the
-     * value can be <code>null</code>.
+     * Maps the specified {@code key} to the specified
+     * {@code value} in this dictionary. Neither the key nor the
+     * value can be {@code null}.
      * <p>
      * If this dictionary already contains an entry for the specified
-     * <tt>key</tt>, the value already in this dictionary for that
-     * <tt>key</tt> is returned, after modifying the entry to contain the
+     * {@code key}, the value already in this dictionary for that
+     * {@code key} is returned, after modifying the entry to contain the
      *  new element. <p>If this dictionary does not already have an entry
-     *  for the specified <tt>key</tt>, an entry is created for the
-     *  specified <tt>key</tt> and <tt>value</tt>, and <tt>null</tt> is
+     *  for the specified {@code key}, an entry is created for the
+     *  specified {@code key} and {@code value}, and {@code null} is
      *  returned.
      * <p>
-     * The <code>value</code> can be retrieved by calling the
-     * <code>get</code> method with a <code>key</code> that is equal to
-     * the original <code>key</code>.
+     * The {@code value} can be retrieved by calling the
+     * {@code get} method with a {@code key} that is equal to
+     * the original {@code key}.
      *
      * @param      key     the hashtable key.
      * @param      value   the value.
-     * @return     the previous value to which the <code>key</code> was mapped
-     *             in this dictionary, or <code>null</code> if the key did not
+     * @return     the previous value to which the {@code key} was mapped
+     *             in this dictionary, or {@code null} if the key did not
      *             have a previous mapping.
-     * @exception  NullPointerException  if the <code>key</code> or
-     *               <code>value</code> is <code>null</code>.
+     * @exception  NullPointerException  if the {@code key} or
+     *               {@code value} is {@code null}.
      * @see        java.lang.Object#equals(java.lang.Object)
      * @see        java.util.Dictionary#get(java.lang.Object)
      */
     abstract public V put(K key, V value);
 
     /**
-     * Removes the <code>key</code> (and its corresponding
-     * <code>value</code>) from this dictionary. This method does nothing
-     * if the <code>key</code> is not in this dictionary.
+     * Removes the {@code key} (and its corresponding
+     * {@code value}) from this dictionary. This method does nothing
+     * if the {@code key} is not in this dictionary.
      *
      * @param   key   the key that needs to be removed.
-     * @return  the value to which the <code>key</code> had been mapped in this
-     *          dictionary, or <code>null</code> if the key did not have a
+     * @return  the value to which the {@code key} had been mapped in this
+     *          dictionary, or {@code null} if the key did not have a
      *          mapping.
-     * @exception NullPointerException if <tt>key</tt> is <tt>null</tt>.
+     * @exception NullPointerException if {@code key} is {@code null}.
      */
     abstract public V remove(Object key);
 }

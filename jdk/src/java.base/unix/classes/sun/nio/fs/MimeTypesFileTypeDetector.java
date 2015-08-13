@@ -159,7 +159,7 @@ class MimeTypesFileTypeDetector extends AbstractFileTypeDetector {
 
                 final String EXTEQUAL = "exts=";
                 String extRegex = "\\b" + EXTEQUAL +
-                        "(\"[\\p{Graph}|\\p{Blank}]+?\"|\\p{Graph}+\\b)";
+                        "(\"[\\p{Graph}\\p{Blank}]+?\"|\\p{Graph}+\\b)";
                 Pattern extPattern = Pattern.compile(extRegex);
                 Matcher extMatcher = extPattern.matcher(entry);
 
@@ -169,7 +169,7 @@ class MimeTypesFileTypeDetector extends AbstractFileTypeDetector {
                     if (exts.charAt(0) == '"') {
                         exts = exts.substring(1, exts.length() - 1);
                     }
-                    String[] extList = exts.split("[\\p{Blank}|\\p{Punct}]+");
+                    String[] extList = exts.split("[\\p{Blank}\\p{Punct}]+");
                     for (String ext : extList) {
                         putIfAbsent(ext, type);
                     }

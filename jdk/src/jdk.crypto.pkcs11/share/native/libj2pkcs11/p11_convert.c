@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -474,6 +474,7 @@ CK_SSL3_MASTER_KEY_DERIVE_PARAMS jSsl3MasterKeyDeriveParamToCKSsl3MasterKeyDeriv
     jfieldID fieldID;
     jclass jSsl3RandomDataClass;
     jobject jRandomInfo, jRIClientRandom, jRIServerRandom, jVersion;
+    memset(&ckParam, 0, sizeof(CK_SSL3_MASTER_KEY_DERIVE_PARAMS));
 
     /* get RandomInfo */
     jSsl3MasterKeyDeriveParamsClass = (*env)->FindClass(env, CLASS_SSL3_MASTER_KEY_DERIVE_PARAMS);
@@ -527,6 +528,7 @@ CK_TLS_PRF_PARAMS jTlsPrfParamsToCKTlsPrfParam(JNIEnv *env, jobject jParam)
     CK_TLS_PRF_PARAMS ckParam;
     jfieldID fieldID;
     jobject jSeed, jLabel, jOutput;
+    memset(&ckParam, 0, sizeof(CK_TLS_PRF_PARAMS));
 
     // TBD: what if jParam == NULL?!
 
@@ -592,6 +594,7 @@ CK_SSL3_KEY_MAT_PARAMS jSsl3KeyMatParamToCKSsl3KeyMatParam(JNIEnv *env, jobject 
     jobject jRandomInfo, jRIClientRandom, jRIServerRandom;
     jobject jReturnedKeyMaterial, jRMIvClient, jRMIvServer;
     CK_ULONG ckTemp;
+    memset(&ckParam, 0, sizeof(CK_SSL3_KEY_MAT_PARAMS));
 
     /* get ulMacSizeInBits */
     jSsl3KeyMatParamsClass = (*env)->FindClass(env, CLASS_SSL3_KEY_MAT_PARAMS);
@@ -1355,6 +1358,7 @@ CK_RSA_PKCS_OAEP_PARAMS jRsaPkcsOaepParamToCKRsaPkcsOaepParam(JNIEnv *env, jobje
     jlong jHashAlg, jMgf, jSource;
     jobject jSourceData;
     CK_BYTE_PTR ckpByte;
+    memset(&ckParam, 0, sizeof(CK_RSA_PKCS_OAEP_PARAMS));
 
     /* get hashAlg */
     jRsaPkcsOaepParamsClass = (*env)->FindClass(env, CLASS_RSA_PKCS_OAEP_PARAMS);
@@ -1404,6 +1408,7 @@ CK_PBE_PARAMS jPbeParamToCKPbeParam(JNIEnv *env, jobject jParam)
     jlong jIteration;
     jobject jInitVector, jPassword, jSalt;
     CK_ULONG ckTemp;
+    memset(&ckParam, 0, sizeof(CK_PBE_PARAMS));
 
     /* get pInitVector */
     jPbeParamsClass = (*env)->FindClass(env, CLASS_PBE_PARAMS);
@@ -1522,6 +1527,7 @@ CK_PKCS5_PBKD2_PARAMS jPkcs5Pbkd2ParamToCKPkcs5Pbkd2Param(JNIEnv *env, jobject j
     jfieldID fieldID;
     jlong jSaltSource, jIteration, jPrf;
     jobject jSaltSourceData, jPrfData;
+    memset(&ckParam, 0, sizeof(CK_PKCS5_PBKD2_PARAMS));
 
     /* get saltSource */
     jPkcs5Pbkd2ParamsClass = (*env)->FindClass(env, CLASS_PKCS5_PBKD2_PARAMS);
@@ -1734,6 +1740,7 @@ CK_X9_42_DH1_DERIVE_PARAMS jX942Dh1DeriveParamToCKX942Dh1DeriveParam(JNIEnv *env
     jfieldID fieldID;
     jlong jKdf;
     jobject jOtherInfo, jPublicData;
+    memset(&ckParam, 0, sizeof(CK_X9_42_DH1_DERIVE_PARAMS));
 
     /* get kdf */
     jX942Dh1DeriveParamsClass = (*env)->FindClass(env, CLASS_X9_42_DH1_DERIVE_PARAMS);
@@ -1779,6 +1786,7 @@ CK_X9_42_DH2_DERIVE_PARAMS jX942Dh2DeriveParamToCKX942Dh2DeriveParam(JNIEnv *env
     jfieldID fieldID;
     jlong jKdf, jPrivateDataLen, jPrivateData;
     jobject jOtherInfo, jPublicData, jPublicData2;
+    memset(&ckParam, 0, sizeof(CK_X9_42_DH2_DERIVE_PARAMS));
 
     /* get kdf */
     jX942Dh2DeriveParamsClass = (*env)->FindClass(env, CLASS_X9_42_DH2_DERIVE_PARAMS);

@@ -223,7 +223,7 @@ public abstract class ServerSocketChannel
      * Accepts a connection made to this channel's socket.
      *
      * <p> If this channel is in non-blocking mode then this method will
-     * immediately return <tt>null</tt> if there are no pending connections.
+     * immediately return {@code null} if there are no pending connections.
      * Otherwise it will block indefinitely until a new connection is available
      * or an I/O error occurs.
      *
@@ -239,7 +239,7 @@ public abstract class ServerSocketChannel
      * java.lang.SecurityManager#checkAccept checkAccept} method.  </p>
      *
      * @return  The socket channel for the new connection,
-     *          or <tt>null</tt> if this channel is in non-blocking mode
+     *          or {@code null} if this channel is in non-blocking mode
      *          and no connection is available to be accepted
      *
      * @throws  ClosedChannelException

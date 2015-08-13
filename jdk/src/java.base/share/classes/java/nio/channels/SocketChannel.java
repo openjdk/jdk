@@ -58,7 +58,7 @@ import java.nio.channels.spi.SelectorProvider;
  * If the input side of a socket is shut down by one thread while another
  * thread is blocked in a read operation on the socket's channel, then the read
  * operation in the blocked thread will complete without reading any bytes and
- * will return <tt>-1</tt>.  If the output side of a socket is shut down by one
+ * will return {@code -1}.  If the output side of a socket is shut down by one
  * thread while another thread is blocked in a write operation on the socket's
  * channel, then the blocked thread will receive an {@link
  * AsynchronousCloseException}.
@@ -150,7 +150,7 @@ public abstract class SocketChannel
      *
      * <p> This convenience method works as if by invoking the {@link #open()}
      * method, invoking the {@link #connect(SocketAddress) connect} method upon
-     * the resulting socket channel, passing it <tt>remote</tt>, and then
+     * the resulting socket channel, passing it {@code remote}, and then
      * returning that channel.  </p>
      *
      * @param  remote
@@ -204,9 +204,9 @@ public abstract class SocketChannel
      * operations.
      *
      * <p> Socket channels support connecting, reading, and writing, so this
-     * method returns <tt>(</tt>{@link SelectionKey#OP_CONNECT}
-     * <tt>|</tt>&nbsp;{@link SelectionKey#OP_READ} <tt>|</tt>&nbsp;{@link
-     * SelectionKey#OP_WRITE}<tt>)</tt>.  </p>
+     * method returns {@code (}{@link SelectionKey#OP_CONNECT}
+     * {@code |}&nbsp;{@link SelectionKey#OP_READ} {@code |}&nbsp;{@link
+     * SelectionKey#OP_WRITE}{@code )}.
      *
      * @return  The valid-operation set
      */
@@ -304,7 +304,7 @@ public abstract class SocketChannel
     /**
      * Tells whether or not this channel's network socket is connected.
      *
-     * @return  <tt>true</tt> if, and only if, this channel's network socket
+     * @return  {@code true} if, and only if, this channel's network socket
      *          is {@link #isOpen open} and connected
      */
     public abstract boolean isConnected();
@@ -313,7 +313,7 @@ public abstract class SocketChannel
      * Tells whether or not a connection operation is in progress on this
      * channel.
      *
-     * @return  <tt>true</tt> if, and only if, a connection operation has been
+     * @return  {@code true} if, and only if, a connection operation has been
      *          initiated on this channel but not yet completed by invoking the
      *          {@link #finishConnect finishConnect} method
      */
@@ -325,8 +325,8 @@ public abstract class SocketChannel
      * <p> If this channel is in non-blocking mode then an invocation of this
      * method initiates a non-blocking connection operation.  If the connection
      * is established immediately, as can happen with a local connection, then
-     * this method returns <tt>true</tt>.  Otherwise this method returns
-     * <tt>false</tt> and the connection operation must later be completed by
+     * this method returns {@code true}.  Otherwise this method returns
+     * {@code false} and the connection operation must later be completed by
      * invoking the {@link #finishConnect finishConnect} method.
      *
      * <p> If this channel is in blocking mode then an invocation of this
@@ -349,8 +349,8 @@ public abstract class SocketChannel
      * @param  remote
      *         The remote address to which this channel is to be connected
      *
-     * @return  <tt>true</tt> if a connection was established,
-     *          <tt>false</tt> if this channel is in non-blocking mode
+     * @return  {@code true} if a connection was established,
+     *          {@code false} if this channel is in non-blocking mode
      *          and the connection operation is in progress
      *
      * @throws  AlreadyConnectedException
@@ -400,11 +400,11 @@ public abstract class SocketChannel
      * {@link java.io.IOException} to be thrown.
      *
      * <p> If this channel is already connected then this method will not block
-     * and will immediately return <tt>true</tt>.  If this channel is in
-     * non-blocking mode then this method will return <tt>false</tt> if the
+     * and will immediately return {@code true}.  If this channel is in
+     * non-blocking mode then this method will return {@code false} if the
      * connection process is not yet complete.  If this channel is in blocking
      * mode then this method will block until the connection either completes
-     * or fails, and will always either return <tt>true</tt> or throw a checked
+     * or fails, and will always either return {@code true} or throw a checked
      * exception describing the failure.
      *
      * <p> This method may be invoked at any time.  If a read or write
@@ -414,7 +414,7 @@ public abstract class SocketChannel
      * invocation of this method throws a checked exception, then the channel
      * will be closed.  </p>
      *
-     * @return  <tt>true</tt> if, and only if, this channel's socket is now
+     * @return  {@code true} if, and only if, this channel's socket is now
      *          connected
      *
      * @throws  NoConnectionPendingException

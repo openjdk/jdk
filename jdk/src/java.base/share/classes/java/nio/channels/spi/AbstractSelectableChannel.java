@@ -305,8 +305,8 @@ public abstract class AbstractSelectableChannel
      * changing the blocking mode.  This method is only invoked if the new mode
      * is different from the current mode.  </p>
      *
-     * @param  block  If <tt>true</tt> then this channel will be placed in
-     *                blocking mode; if <tt>false</tt> then it will be placed
+     * @param  block  If {@code true} then this channel will be placed in
+     *                blocking mode; if {@code false} then it will be placed
      *                non-blocking mode
      *
      * @throws IOException

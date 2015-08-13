@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,55 +22,40 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioFormat.Encoding;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
-import javax.sound.sampled.AudioFormat.Encoding;
-import javax.sound.sampled.spi.AudioFileReader;
 
 /**
  * WAVE file reader for files using format WAVE_FORMAT_EXTENSIBLE (0xFFFE).
  *
  * @author Karl Helgason
  */
-public final class WaveExtensibleFileReader extends AudioFileReader {
+public final class WaveExtensibleFileReader extends SunFileReader {
 
-    static private class GUID {
-        long i1;
-
-        int s1;
-
-        int s2;
-
-        int x1;
-
-        int x2;
-
-        int x3;
-
-        int x4;
-
-        int x5;
-
-        int x6;
-
-        int x7;
-
-        int x8;
-
+    private static class GUID {
+        private long i1;
+        private int s1;
+        private int s2;
+        private int x1;
+        private int x2;
+        private int x3;
+        private int x4;
+        private int x5;
+        private int x6;
+        private int x7;
+        private int x8;
         private GUID() {
         }
 
@@ -105,10 +90,12 @@ public final class WaveExtensibleFileReader extends AudioFileReader {
             return d;
         }
 
+        @Override
         public int hashCode() {
             return (int) i1;
         }
 
+        @Override
         public boolean equals(Object obj) {
             if (!(obj instanceof GUID))
                 return false;
@@ -161,7 +148,7 @@ public final class WaveExtensibleFileReader extends AudioFileReader {
     private static final GUID SUBTYPE_IEEE_FLOAT = new GUID(0x00000003, 0x0000,
             0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);
 
-    private String decodeChannelMask(long channelmask) {
+    private static String decodeChannelMask(long channelmask) {
         StringBuilder sb = new StringBuilder();
         long m = 1;
         for (int i = 0; i < allchannelnames.length; i++) {
@@ -180,20 +167,8 @@ public final class WaveExtensibleFileReader extends AudioFileReader {
 
     }
 
-    public AudioFileFormat getAudioFileFormat(InputStream stream)
-            throws UnsupportedAudioFileException, IOException {
-
-        stream.mark(200);
-        AudioFileFormat format;
-        try {
-            format = internal_getAudioFileFormat(stream);
-        } finally {
-            stream.reset();
-        }
-        return format;
-    }
-
-    private AudioFileFormat internal_getAudioFileFormat(InputStream stream)
+    @Override
+    AudioFileFormat getAudioFileFormatImpl(final InputStream stream)
             throws UnsupportedAudioFileException, IOException {
 
         RIFFReader riffiterator = new RIFFReader(stream);
@@ -244,12 +219,9 @@ public final class WaveExtensibleFileReader extends AudioFileReader {
                 break;
             }
         }
-
-        if (!fmt_found)
+        if (!fmt_found || !data_found) {
             throw new UnsupportedAudioFileException();
-        if (!data_found)
-            throw new UnsupportedAudioFileException();
-
+        }
         Map<String, Object> p = new HashMap<String, Object>();
         String s_channelmask = decodeChannelMask(channelMask);
         if (s_channelmask != null)
@@ -273,24 +245,22 @@ public final class WaveExtensibleFileReader extends AudioFileReader {
         } else if (subFormat.equals(SUBTYPE_IEEE_FLOAT)) {
             audioformat = new AudioFormat(Encoding.PCM_FLOAT,
                     samplerate, bits, channels, framesize, samplerate, false, p);
-        } else
+        } else {
             throw new UnsupportedAudioFileException();
-
-        AudioFileFormat fileformat = new AudioFileFormat(
-                AudioFileFormat.Type.WAVE, audioformat,
-                AudioSystem.NOT_SPECIFIED);
-        return fileformat;
+        }
+        return new AudioFileFormat(AudioFileFormat.Type.WAVE, audioformat,
+                                   AudioSystem.NOT_SPECIFIED);
     }
 
-    public AudioInputStream getAudioInputStream(InputStream stream)
+    @Override
+    public AudioInputStream getAudioInputStream(final InputStream stream)
             throws UnsupportedAudioFileException, IOException {
 
         AudioFileFormat format = getAudioFileFormat(stream);
+        // we've got everything, the stream is supported and it is at the
+        // beginning of the header, so find the data chunk again and return an
+        // AudioInputStream
         RIFFReader riffiterator = new RIFFReader(stream);
-        if (!riffiterator.getFormat().equals("RIFF"))
-            throw new UnsupportedAudioFileException();
-        if (!riffiterator.getType().equals("WAVE"))
-            throw new UnsupportedAudioFileException();
         while (riffiterator.hasNextChunk()) {
             RIFFReader chunk = riffiterator.nextChunk();
             if (chunk.getFormat().equals("data")) {
@@ -300,40 +270,4 @@ public final class WaveExtensibleFileReader extends AudioFileReader {
         }
         throw new UnsupportedAudioFileException();
     }
-
-    public AudioFileFormat getAudioFileFormat(URL url)
-            throws UnsupportedAudioFileException, IOException {
-        InputStream stream = url.openStream();
-        AudioFileFormat format;
-        try {
-            format = getAudioFileFormat(new BufferedInputStream(stream));
-        } finally {
-            stream.close();
-        }
-        return format;
-    }
-
-    public AudioFileFormat getAudioFileFormat(File file)
-            throws UnsupportedAudioFileException, IOException {
-        InputStream stream = new FileInputStream(file);
-        AudioFileFormat format;
-        try {
-            format = getAudioFileFormat(new BufferedInputStream(stream));
-        } finally {
-            stream.close();
-        }
-        return format;
-    }
-
-    public AudioInputStream getAudioInputStream(URL url)
-            throws UnsupportedAudioFileException, IOException {
-        return getAudioInputStream(new BufferedInputStream(url.openStream()));
-    }
-
-    public AudioInputStream getAudioInputStream(File file)
-            throws UnsupportedAudioFileException, IOException {
-        return getAudioInputStream(new BufferedInputStream(new FileInputStream(
-                file)));
-    }
-
 }

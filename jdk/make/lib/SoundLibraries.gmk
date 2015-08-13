@@ -123,9 +123,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJSOUND, \
     CFLAGS := $(CFLAGS_JDKLIB) \
         $(LIBJSOUND_CFLAGS), \
     CXXFLAGS := $(CXXFLAGS_JDKLIB) $(LIBJSOUND_CFLAGS), \
-    DISABLED_WARNINGS_clang := implicit-function-declaration \
-        deprecated-writable-strings, \
-    WARNINGS_AS_ERRORS_clang := false, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjsound/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -171,7 +168,6 @@ ifneq ($(filter jsoundalsa, $(EXTRA_SOUND_JNI_LIBS)), )
           -DUSE_PORTS=TRUE \
           -DUSE_PLATFORM_MIDI_OUT=TRUE \
           -DUSE_PLATFORM_MIDI_IN=TRUE, \
-      DISABLED_WARNINGS_gcc := parentheses, \
       MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjsoundalsa/mapfile-vers, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \

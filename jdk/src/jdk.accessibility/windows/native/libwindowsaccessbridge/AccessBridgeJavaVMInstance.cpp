@@ -188,7 +188,7 @@ AccessBridgeJavaVMInstance::initiateIPC() {
  *               with the Java AccessBridge DLL
  *
  *               NOTE: WM_COPYDATA is only for one-way IPC; there
- *               is now way to return parameters (especially big ones)
+ *               is no way to return parameters (especially big ones)
  *               Use sendMemoryPackage() to do that!
  */
 LRESULT

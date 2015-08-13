@@ -431,8 +431,8 @@ void PORT_GetControls(void* id, INT32 portIndex, PortControlCreator* creator) {
             }
         } else { // more than two channels, each channels has its own control.
             for (channel = SND_MIXER_SCHN_FRONT_LEFT; channel <= SND_MIXER_SCHN_LAST; channel++) {
-                if (isPlayback && snd_mixer_selem_has_playback_channel(elem, channel) ||
-                    !isPlayback && snd_mixer_selem_has_capture_channel(elem, channel)) {
+                if ((isPlayback && snd_mixer_selem_has_playback_channel(elem, channel)) ||
+                    (!isPlayback && snd_mixer_selem_has_capture_channel(elem, channel))) {
                     if (getControlSlot(portMixer, &portControl)) {
                         portControl->elem = elem;
                         portControl->portType = portMixer->types[portIndex];

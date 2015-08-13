@@ -552,8 +552,10 @@ public class Introspector {
                 // Java Beans introspection
                 //
                 Class<?> clazz = complex.getClass();
-                Method readMethod = JavaBeansAccessor.getReadMethod(clazz, element);
-                if (readMethod == null) {
+                Method readMethod;
+                if (JavaBeansAccessor.isAvailable()) {
+                    readMethod = JavaBeansAccessor.getReadMethod(clazz, element);
+                } else {
                     // Java Beans not available so use simple introspection
                     // to locate method
                     readMethod = SimpleIntrospector.getReadMethod(clazz, element);
@@ -676,7 +678,12 @@ public class Introspector {
          * {@code null} if no method is found.
          */
         static Method getReadMethod(Class<?> clazz, String property) {
-            // first character in uppercase (compatibility with JavaBeans)
+            if (Character.isUpperCase(property.charAt(0))) {
+                // the property name must start with a lower-case letter
+                return null;
+            }
+            // first character after 'get/is' prefix must be in uppercase
+            // (compatibility with JavaBeans)
             property = property.substring(0, 1).toUpperCase(Locale.ENGLISH) +
                 property.substring(1);
             String getMethod = GET_METHOD_PREFIX + property;
