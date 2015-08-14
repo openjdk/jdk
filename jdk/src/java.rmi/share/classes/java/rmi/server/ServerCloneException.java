@@ -26,8 +26,8 @@
 package java.rmi.server;
 
 /**
- * A <code>ServerCloneException</code> is thrown if a remote exception occurs
- * during the cloning of a <code>UnicastRemoteObject</code>.
+ * A {@code ServerCloneException} is thrown if a remote exception occurs
+ * during the cloning of a {@code UnicastRemoteObject}.
  *
  * <p>As of release 1.4, this exception has been retrofitted to conform to
  * the general purpose exception-chaining mechanism.  The "nested exception"
@@ -37,7 +37,7 @@ package java.rmi.server;
  * the aforementioned "legacy field."
  *
  * <p>Invoking the method {@link Throwable#initCause(Throwable)} on an
- * instance of <code>ServerCloneException</code> always throws {@link
+ * instance of {@code ServerCloneException} always throws {@link
  * IllegalStateException}.
  *
  * @author  Ann Wollrath
@@ -61,7 +61,7 @@ public class ServerCloneException extends CloneNotSupportedException {
     private static final long serialVersionUID = 6617456357664815945L;
 
     /**
-     * Constructs a <code>ServerCloneException</code> with the specified
+     * Constructs a {@code ServerCloneException} with the specified
      * detail message.
      *
      * @param s the detail message.
@@ -72,7 +72,7 @@ public class ServerCloneException extends CloneNotSupportedException {
     }
 
     /**
-     * Constructs a <code>ServerCloneException</code> with the specified
+     * Constructs a {@code ServerCloneException} with the specified
      * detail message and cause.
      *
      * @param s the detail message.
@@ -103,7 +103,7 @@ public class ServerCloneException extends CloneNotSupportedException {
      * Returns the cause of this exception.  This method returns the value
      * of the {@link #detail} field.
      *
-     * @return  the cause, which may be <tt>null</tt>.
+     * @return  the cause, which may be {@code null}.
      * @since   1.4
      */
     public Throwable getCause() {

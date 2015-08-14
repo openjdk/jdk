@@ -33,10 +33,10 @@ import java.lang.management.PlatformManagedObject;
  * <p>The diagnostic MBean is registered to the platform MBeanServer
  * as are other platform MBeans.
  *
- * <p>The <tt>ObjectName</tt> for uniquely identifying the diagnostic
+ * <p>The {@code ObjectName} for uniquely identifying the diagnostic
  * MXBean within an MBeanServer is:
  * <blockquote>
- *    <tt>com.sun.management:type=HotSpotDiagnostic</tt>
+ *    {@code com.sun.management:type=HotSpotDiagnostic}
  * </blockquote>
 .*
  * It can be obtained by calling the
@@ -50,22 +50,22 @@ import java.lang.management.PlatformManagedObject;
 @jdk.Exported
 public interface HotSpotDiagnosticMXBean extends PlatformManagedObject {
     /**
-     * Dumps the heap to the <tt>outputFile</tt> file in the same
+     * Dumps the heap to the {@code outputFile} file in the same
      * format as the hprof heap dump.
      * <p>
      * If this method is called remotely from another process,
-     * the heap dump output is written to a file named <tt>outputFile</tt>
+     * the heap dump output is written to a file named {@code outputFile}
      * on the machine where the target VM is running.  If outputFile is
      * a relative path, it is relative to the working directory where
      * the target VM was started.
      *
      * @param  outputFile the system-dependent filename
-     * @param  live if <tt>true</tt> dump only <i>live</i> objects
+     * @param  live if {@code true} dump only <i>live</i> objects
      *         i.e. objects that are reachable from others
-     * @throws IOException if the <tt>outputFile</tt>
+     * @throws IOException if the {@code outputFile}
      *                     cannot be created, opened, or written to.
      * @throws UnsupportedOperationException if this operation is not supported.
-     * @throws NullPointerException if <tt>outputFile</tt> is <tt>null</tt>.
+     * @throws NullPointerException if {@code outputFile} is {@code null}.
      * @throws SecurityException
      *         If a security manager exists and its {@link
      *         java.lang.SecurityManager#checkWrite(java.lang.String)}
@@ -75,21 +75,21 @@ public interface HotSpotDiagnosticMXBean extends PlatformManagedObject {
     public void dumpHeap(String outputFile, boolean live) throws java.io.IOException;
 
     /**
-     * Returns a list of <tt>VMOption</tt> objects for all diagnostic options.
+     * Returns a list of {@code VMOption} objects for all diagnostic options.
      * A diagnostic option is a {@link VMOption#isWriteable writeable}
      * VM option that can be set dynamically mainly for troubleshooting
      * and diagnosis.
      *
-     * @return a list of <tt>VMOption</tt> objects for all diagnostic options.
+     * @return a list of {@code VMOption} objects for all diagnostic options.
      */
     public java.util.List<VMOption> getDiagnosticOptions();
 
     /**
-     * Returns a <tt>VMOption</tt> object for a VM option of the given
+     * Returns a {@code VMOption} object for a VM option of the given
      * name.
      *
-     * @return a <tt>VMOption</tt> object for a VM option of the given name.
-     * @throws NullPointerException if name is <tt>null</tt>.
+     * @return a {@code VMOption} object for a VM option of the given name.
+     * @throws NullPointerException if name is {@code null}.
      * @throws IllegalArgumentException if a VM option of the given name
      *                                     does not exist.
      */
@@ -97,10 +97,10 @@ public interface HotSpotDiagnosticMXBean extends PlatformManagedObject {
 
     /**
      * Sets a VM option of the given name to the specified value.
-     * The new value will be reflected in a new <tt>VMOption</tt>
+     * The new value will be reflected in a new {@code VMOption}
      * object returned by the {@link #getVMOption} method or
      * the {@link #getDiagnosticOptions} method.  This method does
-     * not change the value of this <tt>VMOption</tt> object.
+     * not change the value of this {@code VMOption} object.
      *
      * @param name Name of a VM option
      * @param value New value of the VM option to be set
@@ -109,7 +109,7 @@ public interface HotSpotDiagnosticMXBean extends PlatformManagedObject {
      *                                     does not exist.
      * @throws IllegalArgumentException if the new value is invalid.
      * @throws IllegalArgumentException if the VM option is not writable.
-     * @throws NullPointerException if name or value is <tt>null</tt>.
+     * @throws NullPointerException if name or value is {@code null}.
      *
      * @throws  java.lang.SecurityException
      *     if a security manager exists and the caller does not have

@@ -116,8 +116,8 @@ public class Handler extends URLStreamHandler {
      * Compares the host components of two URLs.
      * @param u1 the URL of the first host to compare
      * @param u2 the URL of the second host to compare
-     * @return  <tt>true</tt> if and only if they
-     * are equal, <tt>false</tt> otherwise.
+     * @return  {@code true} if and only if they
+     * are equal, {@code false} otherwise.
      */
     protected boolean hostsEqual(URL u1, URL u2) {
         /*
