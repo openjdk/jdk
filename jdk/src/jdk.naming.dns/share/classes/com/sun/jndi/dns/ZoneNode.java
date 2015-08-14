@@ -154,7 +154,7 @@ class ZoneNode extends NameNode {
     }
 
     /*
-     * Set this zone's data to expire in <tt>secsToExpiration</tt> seconds.
+     * Set this zone's data to expire in {@code secsToExpiration} seconds.
      */
     private void setExpiration(long secsToExpiration) {
         expiration = new Date(System.currentTimeMillis() +
