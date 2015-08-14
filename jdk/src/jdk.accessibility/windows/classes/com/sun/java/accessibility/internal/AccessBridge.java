@@ -23,7 +23,7 @@
  * questions.
  */
 
-package com.sun.java.accessibility;
+package com.sun.java.accessibility.internal;
 
 import java.awt.*;
 import java.awt.event.*;
