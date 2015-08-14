@@ -28,30 +28,86 @@
 #include "java_lang_ProcessHandleImpl.h"
 #include "java_lang_ProcessHandleImpl_Info.h"
 
+#include "ProcessHandleImpl_unix.h"
+
 
 #include <stdio.h>
-
 #include <errno.h>
 #include <fcntl.h>
 #include <pwd.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
+#include <dirent.h>
+#include <ctype.h>
+#include <limits.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 
-#include <string.h>
-#include <dirent.h>
-#include <ctype.h>
+#ifdef _AIX
+#include <sys/procfs.h>
+#endif
+#ifdef __solaris__
+#include <procfs.h>
+#endif
 
 /**
- * Implementations of ProcessHandleImpl functions that are common to all
- * Unix variants:
- * - waitForProcessExit0(pid, reap)
- * - getCurrentPid0()
- * - destroy0(pid, force)
+ * This file contains the implementation of the native ProcessHandleImpl
+ * functions which are common to all Unix variants.
+ *
+ * The currently supported Unix variants are Solaris, Linux, MaxOS X and AIX.
+ * The various similarities and differences between these systems make it hard
+ * to find a clear boundary between platform specific and shared code.
+ *
+ * In order to ease code sharing between the platforms while still keeping the
+ * code as clean as possible (i.e. free of preprocessor macros) we use the
+ * following source code layout (remember that ProcessHandleImpl_unix.c will
+ * be compiled on EVERY Unix platform while ProcessHandleImpl_<os>.c will be
+ * only compiled on the specific OS):
+ *
+ * - all the JNI wrappers for the ProcessHandleImpl functions go into this file
+ * - if their implementation is common on ALL the supported Unix platforms it
+ *   goes right into the JNI wrappers
+ * - if the whole function or substantial parts of it are platform dependent,
+ *   the implementation goes into os_<function_name> functions in
+ *   ProcessHandleImpl_<os>.c
+ * - if at least two platforms implement an os_<function_name> function in the
+ *   same way, this implementation is factored out into unix_<function_name>,
+ *   placed into this file and called from the corresponding os_<function_name>
+ *   function.
+ * - For convenience, all the os_ and unix_ functions are declared in
+ *   ProcessHandleImpl_unix.h which is included into every
+ *   ProcessHandleImpl_<os>.c file.
+ *
+ * Example 1:
+ * ----------
+ * The implementation of Java_java_lang_ProcessHandleImpl_initNative()
+ * is the same on all platforms except on Linux where it initilizes one
+ * additional field. So we place the implementation right into
+ * Java_java_lang_ProcessHandleImpl_initNative() but add call to
+ * os_init() at the end of the function which is empty on all platforms
+ * except Linux where it performs the additionally initializations.
+ *
+ * Example 2:
+ * ----------
+ * The implementation of Java_java_lang_ProcessHandleImpl_00024Info_info0 is the
+ * same on Solaris and AIX but different on Linux and MacOSX. We therefore simply
+ * call the helpers os_getParentPidAndTimings() and os_getCmdlineAndUserInfo().
+ * The Linux and MaxOS X versions of these functions (in the corresponding files
+ * ProcessHandleImpl_linux.c and ProcessHandleImpl_macosx.c) directly contain
+ * the platform specific implementations while the Solaris and AIX
+ * implementations simply call back to unix_getParentPidAndTimings() and
+ * unix_getCmdlineAndUserInfo() which are implemented right in this file.
+ *
+ * The term "same implementation" is still a question of interpretation. It my
+ * be acceptable to have a few ifdef'ed lines if that allows the sharing of a
+ * huge function. On the other hand, if the platform specific code in a shared
+ * function grows over a certain limit, it may be better to refactor that
+ * functionality into corresponding, platform-specific os_ functions.
  */
+
 
 #ifndef WIFEXITED
 #define WIFEXITED(status) (((status)&0xFF) == 0)
@@ -69,6 +125,19 @@
 #define WTERMSIG(status) ((status)&0x7F)
 #endif
 
+#ifdef __solaris__
+/* The child exited because of a signal.
+ * The best value to return is 0x80 + signal number,
+ * because that is what all Unix shells do, and because
+ * it allows callers to distinguish between process exit and
+ * process death by signal.
+ * Unfortunately, the historical behavior on Solaris is to return
+ * the signal number, and we preserve this for compatibility. */
+#define WTERMSIG_RETURN(status) WTERMSIG(status)
+#else
+#define WTERMSIG_RETURN(status) (WTERMSIG(status) + 0x80)
+#endif
+
 #define RESTARTABLE(_cmd, _result) do { \
   do { \
     _result = _cmd; \
@@ -81,21 +150,83 @@
   } while((_result == NULL) && (errno == EINTR)); \
 } while(0)
 
-#ifdef __solaris__
-    #define STAT_FILE "/proc/%d/status"
-#else
-    #define STAT_FILE "/proc/%d/stat"
-#endif
+
+/* Field id for jString 'command' in java.lang.ProcessHandleImpl.Info */
+jfieldID ProcessHandleImpl_Info_commandID;
+
+/* Field id for jString 'commandLine' in java.lang.ProcessHandleImpl.Info */
+jfieldID ProcessHandleImpl_Info_commandLineID;
+
+/* Field id for jString[] 'arguments' in java.lang.ProcessHandleImpl.Info */
+jfieldID ProcessHandleImpl_Info_argumentsID;
+
+/* Field id for jlong 'totalTime' in java.lang.ProcessHandleImpl.Info */
+jfieldID ProcessHandleImpl_Info_totalTimeID;
+
+/* Field id for jlong 'startTime' in java.lang.ProcessHandleImpl.Info */
+jfieldID ProcessHandleImpl_Info_startTimeID;
+
+/* Field id for jString 'user' in java.lang.ProcessHandleImpl.Info */
+jfieldID ProcessHandleImpl_Info_userID;
+
+/* Size of password or group entry when not available via sysconf */
+#define ENT_BUF_SIZE   1024
+/* The value for the size of the buffer used by getpwuid_r(). The result of */
+/* sysconf(_SC_GETPW_R_SIZE_MAX) if available or ENT_BUF_SIZE otherwise. */
+static long getpw_buf_size;
+
+/**************************************************************
+ * Static method to initialize field IDs and the ticks per second rate.
+ *
+ * Class:     java_lang_ProcessHandleImpl_Info
+ * Method:    initIDs
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL
+Java_java_lang_ProcessHandleImpl_00024Info_initIDs(JNIEnv *env, jclass clazz) {
+
+    CHECK_NULL(ProcessHandleImpl_Info_commandID =
+            (*env)->GetFieldID(env, clazz, "command", "Ljava/lang/String;"));
+    CHECK_NULL(ProcessHandleImpl_Info_commandLineID =
+            (*env)->GetFieldID(env, clazz, "commandLine", "Ljava/lang/String;"));
+    CHECK_NULL(ProcessHandleImpl_Info_argumentsID =
+            (*env)->GetFieldID(env, clazz, "arguments", "[Ljava/lang/String;"));
+    CHECK_NULL(ProcessHandleImpl_Info_totalTimeID =
+            (*env)->GetFieldID(env, clazz, "totalTime", "J"));
+    CHECK_NULL(ProcessHandleImpl_Info_startTimeID =
+            (*env)->GetFieldID(env, clazz, "startTime", "J"));
+    CHECK_NULL(ProcessHandleImpl_Info_userID =
+            (*env)->GetFieldID(env, clazz, "user", "Ljava/lang/String;"));
+}
+
+/***********************************************************
+ * Static method to initialize platform dependent constants.
+ *
+ * Class:     java_lang_ProcessHandleImpl
+ * Method:    initNative
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL
+Java_java_lang_ProcessHandleImpl_initNative(JNIEnv *env, jclass clazz) {
+    getpw_buf_size = sysconf(_SC_GETPW_R_SIZE_MAX);
+    if (getpw_buf_size == -1) {
+        getpw_buf_size = ENT_BUF_SIZE;
+    }
+    os_initNative(env, clazz);
+}
 
 /* Block until a child process exits and return its exit code.
  * Note, can only be called once for any given pid if reapStatus = true.
+ *
+ * Class:     java_lang_ProcessHandleImpl
+ * Method:    waitForProcessExit0
+ * Signature: (JZ)I
  */
 JNIEXPORT jint JNICALL
 Java_java_lang_ProcessHandleImpl_waitForProcessExit0(JNIEnv* env,
                                                      jclass junk,
                                                      jlong jpid,
-                                                     jboolean reapStatus)
-{
+                                                     jboolean reapStatus) {
     pid_t pid = (pid_t)jpid;
     errno = 0;
 
@@ -117,18 +248,7 @@ Java_java_lang_ProcessHandleImpl_waitForProcessExit0(JNIEnv* env,
         if (WIFEXITED(status)) {
             return WEXITSTATUS(status);
         } else if (WIFSIGNALED(status)) {
-            /* The child exited because of a signal.
-             * The best value to return is 0x80 + signal number,
-             * because that is what all Unix shells do, and because
-             * it allows callers to distinguish between process exit and
-             * process death by signal.
-             * Unfortunately, the historical behavior on Solaris is to return
-             * the signal number, and we preserve this for compatibility. */
-#ifdef __solaris__
-            return WTERMSIG(status);
-#else
-            return 0x80 + WTERMSIG(status);
-#endif
+            return WTERMSIG_RETURN(status);
         } else {
             return status;
         }
@@ -156,18 +276,7 @@ Java_java_lang_ProcessHandleImpl_waitForProcessExit0(JNIEnv* env,
               */
              return siginfo.si_status;
         } else if (siginfo.si_code == CLD_KILLED || siginfo.si_code == CLD_DUMPED) {
-             /* The child exited because of a signal.
-              * The best value to return is 0x80 + signal number,
-              * because that is what all Unix shells do, and because
-              * it allows callers to distinguish between process exit and
-              * process death by signal.
-              * Unfortunately, the historical behavior on Solaris is to return
-              * the signal number, and we preserve this for compatibility. */
- #ifdef __solaris__
-             return WTERMSIG(siginfo.si_status);
- #else
-             return 0x80 + WTERMSIG(siginfo.si_status);
- #endif
+             return WTERMSIG_RETURN(siginfo.si_status);
         } else {
              /*
               * Unknown exit code; pass it through.
@@ -191,7 +300,7 @@ Java_java_lang_ProcessHandleImpl_getCurrentPid0(JNIEnv *env, jclass clazz) {
 /*
  * Class:     java_lang_ProcessHandleImpl
  * Method:    destroy0
- * Signature: (Z)Z
+ * Signature: (JJZ)Z
  */
 JNIEXPORT jboolean JNICALL
 Java_java_lang_ProcessHandleImpl_destroy0(JNIEnv *env,
@@ -210,119 +319,52 @@ Java_java_lang_ProcessHandleImpl_destroy0(JNIEnv *env,
     }
 }
 
-/**
- * Size of password or group entry when not available via sysconf
+/*
+ * Returns the children of the requested pid and optionally each parent and
+ * start time.
+ * Accumulates any process who parent pid matches.
+ * The resulting pids are stored into the array of longs.
+ * The number of pids is returned if they all fit.
+ * If the array is too short, the negative of the desired length is returned.
+ * Class:     java_lang_ProcessHandleImpl
+ * Method:    getProcessPids0
+ * Signature: (J[J[J[J)I
  */
-#define ENT_BUF_SIZE   1024
-
-/**
- * Return a strong username for the uid_t or null.
- */
-jstring uidToUser(JNIEnv* env, uid_t uid) {
-    int result = 0;
-    int buflen;
-    char* pwbuf;
-    jstring name = NULL;
-
-    /* allocate buffer for password record */
-    buflen = (int)sysconf(_SC_GETPW_R_SIZE_MAX);
-    if (buflen == -1)
-        buflen = ENT_BUF_SIZE;
-    pwbuf = (char*)malloc(buflen);
-    if (pwbuf == NULL) {
-        JNU_ThrowOutOfMemoryError(env, "Unable to open getpwent");
-    } else {
-        struct passwd pwent;
-        struct passwd* p = NULL;
-
-#ifdef __solaris__
-        RESTARTABLE_RETURN_PTR(getpwuid_r(uid, &pwent, pwbuf, (size_t)buflen), p);
-#else
-        RESTARTABLE(getpwuid_r(uid, &pwent, pwbuf, (size_t)buflen, &p), result);
-#endif
-
-        // Return the Java String if a name was found
-        if (result == 0 && p != NULL &&
-            p->pw_name != NULL && *(p->pw_name) != '\0') {
-            name = JNU_NewStringPlatform(env, p->pw_name);
-        }
-        free(pwbuf);
-    }
-    return name;
+JNIEXPORT jint JNICALL
+Java_java_lang_ProcessHandleImpl_getProcessPids0(JNIEnv *env,
+                                                 jclass clazz,
+                                                 jlong jpid,
+                                                 jlongArray jarray,
+                                                 jlongArray jparentArray,
+                                                 jlongArray jstimesArray) {
+    return os_getChildren(env, jpid, jarray, jparentArray, jstimesArray);
 }
-
-/**
- * Implementations of ProcessHandleImpl functions that are common to
- * (some) Unix variants:
- * - getProcessPids0(pid, pidArray, parentArray)
- */
-
-#if defined(__linux__) || defined(__AIX__)
 
 /*
- * Signatures for internal OS specific functions.
- */
-static pid_t getStatInfo(JNIEnv *env, pid_t pid,
-                                     jlong *totalTime, jlong* startTime);
-static void getCmdlineInfo(JNIEnv *env, pid_t pid, jobject jinfo);
-static long long getBoottime(JNIEnv *env);
-
-jstring uidToUser(JNIEnv* env, uid_t uid);
-
-/* Field id for jString 'command' in java.lang.ProcessHandleImpl.Info */
-static jfieldID ProcessHandleImpl_Info_commandID;
-
-/* Field id for jString[] 'arguments' in java.lang.ProcessHandleImpl.Info */
-static jfieldID ProcessHandleImpl_Info_argumentsID;
-
-/* Field id for jlong 'totalTime' in java.lang.ProcessHandleImpl.Info */
-static jfieldID ProcessHandleImpl_Info_totalTimeID;
-
-/* Field id for jlong 'startTime' in java.lang.ProcessHandleImpl.Info */
-static jfieldID ProcessHandleImpl_Info_startTimeID;
-
-/* Field id for jString 'user' in java.lang.ProcessHandleImpl.Info */
-static jfieldID ProcessHandleImpl_Info_userID;
-
-/* static value for clock ticks per second. */
-static long clock_ticks_per_second;
-
-/* A static offset in milliseconds since boot. */
-static long long bootTime_ms;
-
-/**************************************************************
- * Static method to initialize field IDs and the ticks per second rate.
+ * Fill in the Info object from the OS information about the process.
  *
  * Class:     java_lang_ProcessHandleImpl_Info
- * Method:    initIDs
- * Signature: ()V
+ * Method:    info0
+ * Signature: (Ljava/lang/ProcessHandle/Info;J)I
  */
 JNIEXPORT void JNICALL
-Java_java_lang_ProcessHandleImpl_00024Info_initIDs(JNIEnv *env, jclass clazz) {
+Java_java_lang_ProcessHandleImpl_00024Info_info0(JNIEnv *env,
+                                                 jobject jinfo,
+                                                 jlong jpid) {
+    pid_t pid = (pid_t) jpid;
+    pid_t ppid;
+    jlong totalTime = -1L;
+    jlong startTime = -1L;
 
-    CHECK_NULL(ProcessHandleImpl_Info_commandID = (*env)->GetFieldID(env,
-        clazz, "command", "Ljava/lang/String;"));
-    CHECK_NULL(ProcessHandleImpl_Info_argumentsID = (*env)->GetFieldID(env,
-        clazz, "arguments", "[Ljava/lang/String;"));
-    CHECK_NULL(ProcessHandleImpl_Info_totalTimeID = (*env)->GetFieldID(env,
-        clazz, "totalTime", "J"));
-    CHECK_NULL(ProcessHandleImpl_Info_startTimeID = (*env)->GetFieldID(env,
-        clazz, "startTime", "J"));
-    CHECK_NULL(ProcessHandleImpl_Info_userID = (*env)->GetFieldID(env,
-        clazz, "user", "Ljava/lang/String;"));
-}
+    ppid = os_getParentPidAndTimings(env, pid,  &totalTime, &startTime);
+    if (ppid >= 0) {
+        (*env)->SetLongField(env, jinfo, ProcessHandleImpl_Info_totalTimeID, totalTime);
+        JNU_CHECK_EXCEPTION(env);
 
-/**************************************************************
- * Static method to initialize the ticks per second rate.
- *
- * Class:     java_lang_ProcessHandleImpl
- * Method:    initNative
- * Signature: ()V
- */
-JNIEXPORT void JNICALL
-Java_java_lang_ProcessHandleImpl_initNative(JNIEnv *env, jclass clazz) {
-    clock_ticks_per_second = sysconf(_SC_CLK_TCK);
-    bootTime_ms = getBoottime(env);
+        (*env)->SetLongField(env, jinfo, ProcessHandleImpl_Info_startTimeID, startTime);
+        JNU_CHECK_EXCEPTION(env);
+    }
+    os_getCmdlineAndUserInfo(env, jinfo, pid);
 }
 
 /*
@@ -340,8 +382,8 @@ Java_java_lang_ProcessHandleImpl_isAlive0(JNIEnv *env, jobject obj, jlong jpid) 
     pid_t pid = (pid_t) jpid;
     jlong startTime = 0L;
     jlong totalTime = 0L;
-    pid_t ppid = getStatInfo(env, pid, &totalTime, &startTime);
-    return (ppid <= 0) ? -1 : startTime;
+    pid_t ppid = os_getParentPidAndTimings(env, pid, &totalTime, &startTime);
+    return (ppid < 0) ? -1 : startTime;
 }
 
 /*
@@ -350,7 +392,7 @@ Java_java_lang_ProcessHandleImpl_isAlive0(JNIEnv *env, jobject obj, jlong jpid) 
  *
  * Class:     java_lang_ProcessHandleImpl
  * Method:    parent0
- * Signature: (J)J
+ * Signature: (JJ)J
  */
 JNIEXPORT jlong JNICALL
 Java_java_lang_ProcessHandleImpl_parent0(JNIEnv *env,
@@ -360,13 +402,12 @@ Java_java_lang_ProcessHandleImpl_parent0(JNIEnv *env,
     pid_t pid = (pid_t) jpid;
     pid_t ppid;
 
-    pid_t mypid = getpid();
-    if (pid == mypid) {
+    if (pid == getpid()) {
         ppid = getppid();
     } else {
-        jlong start = 0L;;
+        jlong start = 0L;
         jlong total = 0L;        // unused
-        ppid = getStatInfo(env, pid, &total, &start);
+        ppid = os_getParentPidAndTimings(env, pid, &total, &start);
         if (start != startTime && start != 0 && startTime != 0) {
             ppid = -1;
         }
@@ -374,24 +415,94 @@ Java_java_lang_ProcessHandleImpl_parent0(JNIEnv *env,
     return (jlong) ppid;
 }
 
+/**
+ * Construct the argument array by parsing the arguments from the sequence
+ * of arguments.
+ */
+void unix_fillArgArray(JNIEnv *env, jobject jinfo, int nargs, char *cp,
+                       char *argsEnd, jstring cmdexe, char *cmdline) {
+    jobject argsArray;
+    int i;
+
+    (*env)->SetObjectField(env, jinfo, ProcessHandleImpl_Info_commandID, cmdexe);
+    JNU_CHECK_EXCEPTION(env);
+
+    if (nargs >= 1) {
+        // Create a String array for nargs-1 elements
+        argsArray = (*env)->NewObjectArray(env, nargs - 1, JNU_ClassString(env), NULL);
+        CHECK_NULL(argsArray);
+
+        for (i = 0; i < nargs - 1; i++) {
+            jstring str = NULL;
+
+            cp += strlen(cp) + 1;
+            if (cp > argsEnd || *cp == '\0') {
+                return;  // Off the end pointer or an empty argument is an error
+            }
+
+            CHECK_NULL((str = JNU_NewStringPlatform(env, cp)));
+
+            (*env)->SetObjectArrayElement(env, argsArray, i, str);
+            JNU_CHECK_EXCEPTION(env);
+        }
+        (*env)->SetObjectField(env, jinfo, ProcessHandleImpl_Info_argumentsID, argsArray);
+        JNU_CHECK_EXCEPTION(env);
+    }
+    if (cmdline != NULL) {
+        jstring commandLine = NULL;
+        CHECK_NULL((commandLine = JNU_NewStringPlatform(env, cmdline)));
+        (*env)->SetObjectField(env, jinfo, ProcessHandleImpl_Info_commandLineID, commandLine);
+        JNU_CHECK_EXCEPTION(env);
+    }
+}
+
+void unix_getUserInfo(JNIEnv* env, jobject jinfo, uid_t uid) {
+    int result = 0;
+    char* pwbuf;
+    jstring name = NULL;
+
+    /* allocate buffer for password record */
+    pwbuf = (char*)malloc(getpw_buf_size);
+    if (pwbuf == NULL) {
+        JNU_ThrowOutOfMemoryError(env, "Unable to open getpwent");
+    } else {
+        struct passwd pwent;
+        struct passwd* p = NULL;
+
+#ifdef __solaris__
+        RESTARTABLE_RETURN_PTR(getpwuid_r(uid, &pwent, pwbuf, (size_t)getpw_buf_size), p);
+#else
+        RESTARTABLE(getpwuid_r(uid, &pwent, pwbuf, (size_t)getpw_buf_size, &p), result);
+#endif
+
+        // Create the Java String if a name was found
+        if (result == 0 && p != NULL &&
+            p->pw_name != NULL && *(p->pw_name) != '\0') {
+            name = JNU_NewStringPlatform(env, p->pw_name);
+        }
+        free(pwbuf);
+    }
+    if (name != NULL) {
+        (*env)->SetObjectField(env, jinfo, ProcessHandleImpl_Info_userID, name);
+    }
+}
+
 /*
- * Returns the children of the requested pid and optionally each parent.
+ * The following functions are common on Solaris, Linux and AIX.
+ */
+
+#if defined(__solaris__) || defined (__linux__) || defined(_AIX)
+
+/*
+ * Returns the children of the requested pid and optionally each parent and
+ * start time.
  * Reads /proc and accumulates any process who parent pid matches.
  * The resulting pids are stored into the array of longs.
  * The number of pids is returned if they all fit.
- * If the array is too short, the negative of the desired length is returned. *
- * Class:     java_lang_ProcessHandleImpl
- * Method:    getChildPids
- * Signature: (J[J[J)I
+ * If the array is too short, the negative of the desired length is returned.
  */
-JNIEXPORT jint JNICALL
-Java_java_lang_ProcessHandleImpl_getProcessPids0(JNIEnv *env,
-                                                 jclass clazz,
-                                                 jlong jpid,
-                                                 jlongArray jarray,
-                                                 jlongArray jparentArray,
-                                                 jlongArray jstimesArray) {
-
+jint unix_getChildren(JNIEnv *env, jlong jpid, jlongArray jarray,
+                      jlongArray jparentArray, jlongArray jstimesArray) {
     DIR* dir;
     struct dirent* ptr;
     pid_t pid = (pid_t) jpid;
@@ -462,9 +573,10 @@ Java_java_lang_ProcessHandleImpl_getProcessPids0(JNIEnv *env,
             if ((int) childpid <= 0) {
                 continue;
             }
-            // Read /proc/pid/stat and get the parent pid, and start time
-            ppid = getStatInfo(env, childpid, &totalTime, &startTime);
-            if (ppid > 0 && (pid == 0 || ppid == pid)) {
+
+            // Get the parent pid, and start time
+            ppid = os_getParentPidAndTimings(env, childpid, &totalTime, &startTime);
+            if (ppid >= 0 && (pid == 0 || ppid == pid)) {
                 if (count < arraySize) {
                     // Only store if it fits
                     pids[count] = (jlong) childpid;
@@ -498,293 +610,110 @@ Java_java_lang_ProcessHandleImpl_getProcessPids0(JNIEnv *env,
     return count;
 }
 
-
-/**************************************************************
- * Implementation of ProcessHandleImpl_Info native methods.
- */
+#endif // defined(__solaris__) || defined (__linux__) || defined(_AIX)
 
 /*
- * Fill in the Info object from the OS information about the process.
- *
- * Class:     java_lang_ProcessHandleImpl_Info
- * Method:    info0
- * Signature: (JLjava/lang/ProcessHandle/Info;)I
+ * The following functions are common on Solaris and AIX.
  */
-JNIEXPORT void JNICALL
-Java_java_lang_ProcessHandleImpl_00024Info_info0(JNIEnv *env,
-                                                 jobject jinfo,
-                                                 jlong jpid) {
-    pid_t pid = (pid_t) jpid;
-    pid_t ppid;
-    jlong totalTime = 0L;
-    jlong startTime = -1L;
 
-    ppid = getStatInfo(env, pid,  &totalTime, &startTime);
-    if (ppid > 0) {
-        (*env)->SetLongField(env, jinfo, ProcessHandleImpl_Info_totalTimeID, totalTime);
-        JNU_CHECK_EXCEPTION(env);
-
-        (*env)->SetLongField(env, jinfo, ProcessHandleImpl_Info_startTimeID, startTime);
-        JNU_CHECK_EXCEPTION(env);
-
-        getCmdlineInfo(env, pid, jinfo);
-    }
-}
+#if defined(__solaris__) || defined(_AIX)
 
 /**
- * Read /proc/<pid>/stat and return the ppid, total cputime and start time.
- * -1 is fail;  zero is unknown; >  0 is parent pid
+ * Helper function to get the 'psinfo_t' data from "/proc/%d/psinfo".
+ * Returns 0 on success and -1 on error.
  */
-static pid_t getStatInfo(JNIEnv *env, pid_t pid,
-                                     jlong *totalTime, jlong* startTime) {
+static int getPsinfo(pid_t pid, psinfo_t *psinfo) {
     FILE* fp;
-    char buffer[2048];
-    int statlen;
     char fn[32];
-    char* s;
-    int parentPid;
-    long unsigned int utime = 0;      // clock tics
-    long unsigned int stime = 0;      // clock tics
-    long long unsigned int start = 0; // microseconds
+    int ret;
 
     /*
-     * Try to stat and then open /proc/%d/stat
+     * Try to open /proc/%d/psinfo
      */
-    snprintf(fn, sizeof fn, STAT_FILE, pid);
-
+    snprintf(fn, sizeof fn, "/proc/%d/psinfo", pid);
     fp = fopen(fn, "r");
-    if (fp == NULL) {
-        return -1;              // fail, no such /proc/pid/stat
-    }
-
-    /*
-     * The format is: pid (command) state ppid ...
-     * As the command could be anything we must find the right most
-     * ")" and then skip the white spaces that follow it.
-     */
-    statlen = fread(buffer, 1, (sizeof buffer - 1), fp);
-    fclose(fp);
-    if (statlen < 0) {
-        return 0;               // parent pid is not available
-    }
-
-    buffer[statlen] = '\0';
-    s = strchr(buffer, '(');
-    if (s == NULL) {
-        return 0;               // parent pid is not available
-    }
-    // Found start of command, skip to end
-    s++;
-    s = strrchr(s, ')');
-    if (s == NULL) {
-        return 0;               // parent pid is not available
-    }
-    s++;
-
-    // Scan the needed fields from status, retaining only ppid(4),
-    // utime (14), stime(15), starttime(22)
-    if (4 != sscanf(s, " %*c %d %*d %*d %*d %*d %*d %*u %*u %*u %*u %lu %lu %*d %*d %*d %*d %*d %*d %llu",
-            &parentPid, &utime, &stime, &start)) {
-        return 0;              // not all values parsed; return error
-    }
-
-    *totalTime = (utime + stime) * (jlong)(1000000000 / clock_ticks_per_second);
-
-    *startTime = bootTime_ms + ((start * 1000) / clock_ticks_per_second);
-
-    return parentPid;
-}
-
-/**
- * Construct the argument array by parsing the arguments from the sequence
- * of arguments. The zero'th arg is the command executable
- */
-static int fillArgArray(JNIEnv *env, jobject jinfo,
-                        int nargs, char *cp, char *argsEnd, jstring cmdexe) {
-    jobject argsArray;
-    int i;
-
-    if (nargs < 1) {
-        return 0;
-    }
-
-    if (cmdexe == NULL) {
-        // Create a string from arg[0]
-        CHECK_NULL_RETURN((cmdexe = JNU_NewStringPlatform(env, cp)), -1);
-    }
-    (*env)->SetObjectField(env, jinfo, ProcessHandleImpl_Info_commandID, cmdexe);
-    JNU_CHECK_EXCEPTION_RETURN(env, -3);
-
-    // Create a String array for nargs-1 elements
-    argsArray = (*env)->NewObjectArray(env, nargs - 1, JNU_ClassString(env), NULL);
-    CHECK_NULL_RETURN(argsArray, -1);
-
-    for (i = 0; i < nargs - 1; i++) {
-        jstring str = NULL;
-
-        cp += strnlen(cp, (argsEnd - cp)) + 1;
-        if (cp > argsEnd || *cp == '\0') {
-            return -2;  // Off the end pointer or an empty argument is an error
-        }
-
-        CHECK_NULL_RETURN((str = JNU_NewStringPlatform(env, cp)), -1);
-
-        (*env)->SetObjectArrayElement(env, argsArray, i, str);
-        JNU_CHECK_EXCEPTION_RETURN(env, -3);
-    }
-    (*env)->SetObjectField(env, jinfo, ProcessHandleImpl_Info_argumentsID, argsArray);
-    JNU_CHECK_EXCEPTION_RETURN(env, -4);
-    return 0;
-}
-
-
-static void getCmdlineInfo(JNIEnv *env, pid_t pid, jobject jinfo) {
-    int fd;
-    int cmdlen = 0;
-    char *cmdline = NULL, *cmdEnd;  // used for command line args and exe
-    jstring cmdexe = NULL;
-    char fn[32];
-    struct stat stat_buf;
-
-    /*
-     * Try to open /proc/%d/cmdline
-     */
-    snprintf(fn, sizeof fn, "/proc/%d/cmdline", pid);
-    if ((fd = open(fn, O_RDONLY)) < 0) {
-        return;
-    }
-
-    do {                // Block to break out of on errors
-        int i;
-        char *s;
-
-        cmdline = (char*)malloc(PATH_MAX);
-        if (cmdline == NULL) {
-            break;
-        }
-
-        /*
-         * The path to the executable command is the link in /proc/<pid>/exe.
-         */
-        snprintf(fn, sizeof fn, "/proc/%d/exe", pid);
-        if ((cmdlen = readlink(fn, cmdline, PATH_MAX - 1)) > 0) {
-            // null terminate and create String to store for command
-            cmdline[cmdlen] = '\0';
-            cmdexe = JNU_NewStringPlatform(env, cmdline);
-            (*env)->ExceptionClear(env);        // unconditionally clear any exception
-        }
-
-        /*
-         * The buffer format is the arguments nul terminated with an extra nul.
-         */
-        cmdlen = read(fd, cmdline, PATH_MAX-1);
-        if (cmdlen < 0) {
-            break;
-        }
-
-        // Terminate the buffer and count the arguments
-        cmdline[cmdlen] = '\0';
-        cmdEnd = &cmdline[cmdlen + 1];
-        for (s = cmdline,i = 0; *s != '\0' && (s < cmdEnd); i++) {
-            s += strnlen(s, (cmdEnd - s)) + 1;
-        }
-
-        if (fillArgArray(env, jinfo, i, cmdline, cmdEnd, cmdexe) < 0) {
-            break;
-        }
-
-        // Get and store the user name
-        if (fstat(fd, &stat_buf) == 0) {
-            jstring name = uidToUser(env, stat_buf.st_uid);
-            if (name != NULL) {
-                (*env)->SetObjectField(env, jinfo, ProcessHandleImpl_Info_userID, name);
-            }
-        }
-    } while (0);
-
-    if (cmdline != NULL) {
-        free(cmdline);
-    }
-    if (fd >= 0) {
-        close(fd);
-    }
-}
-
-/**
- * Read the boottime from /proc/stat.
- */
-static long long getBoottime(JNIEnv *env) {
-    FILE *fp;
-    char *line = NULL;
-    size_t len = 0;
-    long long bootTime = 0;
-
-    fp = fopen("/proc/stat", "r");
     if (fp == NULL) {
         return -1;
     }
 
-    while (getline(&line, &len, fp) != -1) {
-        if (sscanf(line, "btime %llu", &bootTime) == 1) {
-            break;
-        }
+    ret = fread(psinfo, 1, sizeof(psinfo_t), fp);
+    fclose(fp);
+    if (ret < sizeof(psinfo_t)) {
+        return -1;
     }
-    free(line);
-
-    if (fp != 0) {
-        fclose(fp);
-    }
-
-    return bootTime * 1000;
+    return 0;
 }
 
-#endif  //  defined(__linux__) || defined(__AIX__)
+/**
+ * Read /proc/<pid>/psinfo and return the ppid, total cputime and start time.
+ * Return: -1 is fail;  >=  0 is parent pid
+ * 'total' will contain the running time of 'pid' in nanoseconds.
+ * 'start' will contain the start time of 'pid' in milliseconds since epoch.
+ */
+pid_t unix_getParentPidAndTimings(JNIEnv *env, pid_t pid,
+                                  jlong *totalTime, jlong* startTime) {
+    psinfo_t psinfo;
 
-
-/* Block until a child process exits and return its exit code.
-   Note, can only be called once for any given pid. */
-JNIEXPORT jint JNICALL
-Java_java_lang_ProcessImpl_waitForProcessExit(JNIEnv* env,
-                                              jobject junk,
-                                              jint pid)
-{
-    /* We used to use waitid() on Solaris, waitpid() on Linux, but
-     * waitpid() is more standard, so use it on all POSIX platforms. */
-    int status;
-    /* Wait for the child process to exit.  This returns immediately if
-       the child has already exited. */
-    while (waitpid(pid, &status, 0) < 0) {
-        switch (errno) {
-        case ECHILD: return 0;
-        case EINTR: break;
-        default: return -1;
-        }
+    if (getPsinfo(pid, &psinfo) < 0) {
+        return -1;
     }
 
-    if (WIFEXITED(status)) {
-        /*
-         * The child exited normally; get its exit code.
-         */
-        return WEXITSTATUS(status);
-    } else if (WIFSIGNALED(status)) {
-        /* The child exited because of a signal.
-         * The best value to return is 0x80 + signal number,
-         * because that is what all Unix shells do, and because
-         * it allows callers to distinguish between process exit and
-         * process death by signal.
-         * Unfortunately, the historical behavior on Solaris is to return
-         * the signal number, and we preserve this for compatibility. */
-#ifdef __solaris__
-        return WTERMSIG(status);
-#else
-        return 0x80 + WTERMSIG(status);
+    *totalTime = psinfo.pr_time.tv_sec * 1000000000L + psinfo.pr_time.tv_nsec;
+
+    *startTime = psinfo.pr_start.tv_sec * (jlong)1000 +
+                 psinfo.pr_start.tv_nsec / 1000000;
+
+    return (pid_t) psinfo.pr_ppid;
+}
+
+void unix_getCmdlineAndUserInfo(JNIEnv *env, jobject jinfo, pid_t pid) {
+    psinfo_t psinfo;
+    char fn[32];
+    char exePath[PATH_MAX];
+    char prargs[PRARGSZ + 1];
+    jstring cmdexe = NULL;
+    int ret;
+
+    /*
+     * On Solaris, the full path to the executable command is the link in
+     * /proc/<pid>/paths/a.out. But it is only readable for processes we own.
+     */
+#if defined(__solaris__)
+    snprintf(fn, sizeof fn, "/proc/%d/path/a.out", pid);
+    if ((ret = readlink(fn, exePath, PATH_MAX - 1)) > 0) {
+        // null terminate and create String to store for command
+        exePath[ret] = '\0';
+        CHECK_NULL(cmdexe = JNU_NewStringPlatform(env, exePath));
+    }
 #endif
-    } else {
-        /*
-         * Unknown exit code; pass it through.
-         */
-        return status;
+
+    /*
+     * Now try to open /proc/%d/psinfo
+     */
+    if (getPsinfo(pid, &psinfo) < 0) {
+        unix_fillArgArray(env, jinfo, 0, NULL, NULL, cmdexe, NULL);
+        return;
     }
+
+    unix_getUserInfo(env, jinfo, psinfo.pr_uid);
+
+    /*
+     * Now read psinfo.pr_psargs which contains the first PRARGSZ characters of the
+     * argument list (i.e. arg[0] arg[1] ...). Unfortunately, PRARGSZ is usually set
+     * to 80 characters only. Nevertheless it's better than nothing :)
+     */
+    strncpy(prargs, psinfo.pr_psargs, PRARGSZ);
+    prargs[PRARGSZ] = '\0';
+    if (prargs[0] == '\0') {
+        /* If psinfo.pr_psargs didn't contain any strings, use psinfo.pr_fname
+         * (which only contains the last component of exec()ed pathname) as a
+         * last resort. This is true for AIX kernel processes for example.
+         */
+        strncpy(prargs, psinfo.pr_fname, PRARGSZ);
+        prargs[PRARGSZ] = '\0';
+    }
+    unix_fillArgArray(env, jinfo, 0, NULL, NULL, cmdexe,
+                      prargs[0] == '\0' ? NULL : prargs);
 }
 
-
+#endif // defined(__solaris__) || defined(_AIX)
