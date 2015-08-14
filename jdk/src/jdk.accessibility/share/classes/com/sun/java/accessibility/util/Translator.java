@@ -78,8 +78,8 @@ public class Translator extends AccessibleContext
             return null;
         }
         try {
-            t = Class.forName("com.sun.java.accessibility.util."
-                              + c.getName()
+            t = Class.forName("com.sun.java.accessibility.util.internal"
+                              + c.getSimpleName()
                               + "Translator");
             return t;
         } catch (Exception e) {

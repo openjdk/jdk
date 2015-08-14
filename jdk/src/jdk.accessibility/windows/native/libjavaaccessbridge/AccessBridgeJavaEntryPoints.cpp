@@ -103,7 +103,7 @@ AccessBridgeJavaEntryPoints::BuildJavaEntryPoints() {
 
     PrintDebugString("Calling BuildJavaEntryPoints():");
 
-    FIND_CLASS(bridgeClass, "com/sun/java/accessibility/AccessBridge");
+    FIND_CLASS(bridgeClass, "com/sun/java/accessibility/internal/AccessBridge");
 
     // ------- general methods
 
