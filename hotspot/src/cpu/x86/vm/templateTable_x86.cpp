@@ -2014,6 +2014,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     __ pop(rcx);
     __ pop(rdx);
     __ movptr(rax, Address(rcx, Method::method_counters_offset()));
+    __ testptr(rax, rax);
     __ jcc(Assembler::zero, dispatch);
     __ bind(has_counters);
 
