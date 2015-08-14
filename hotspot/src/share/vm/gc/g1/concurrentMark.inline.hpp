@@ -232,6 +232,9 @@ inline void CMMarkStack::iterate(Fn fn) {
   }
 }
 
+// It scans an object and visits its children.
+inline void CMTask::scan_object(oop obj) { process_grey_object<true>(obj); }
+
 inline void CMTask::push(oop obj) {
   HeapWord* objAddr = (HeapWord*) obj;
   assert(_g1h->is_in_g1_reserved(objAddr), "invariant");
@@ -298,6 +301,28 @@ inline bool CMTask::is_below_finger(oop obj, HeapWord* global_finger) const {
   // Check global finger.
   return objAddr < global_finger;
 }
+
+template<bool scan>
+inline void CMTask::process_grey_object(oop obj) {
+  assert(scan || obj->is_typeArray(), "Skipping scan of grey non-typeArray");
+  assert(_nextMarkBitMap->isMarked((HeapWord*) obj), "invariant");
+
+  if (_cm->verbose_high()) {
+    gclog_or_tty->print_cr("[%u] processing grey object " PTR_FORMAT,
+                           _worker_id, p2i((void*) obj));
+  }
+
+  size_t obj_size = obj->size();
+  _words_scanned += obj_size;
+
+  if (scan) {
+    obj->oop_iterate(_cm_oop_closure);
+  }
+  statsOnly( ++_objs_scanned );
+  check_limits();
+}
+
+
 
 inline void CMTask::make_reference_grey(oop obj, HeapRegion* hr) {
   if (_cm->par_mark_and_count(obj, hr, _marked_bytes_array, _card_bm)) {
