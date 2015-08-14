@@ -225,7 +225,33 @@ public interface ProcessHandle extends Comparable<ProcessHandle> {
         public Optional<String> command();
 
         /**
+         * Returns the command line of the process.
+         * <p>
+         * If {@link #command command()} and  {@link #arguments arguments()} return
+         * non-empty optionals, this is simply a convenience method which concatenates
+         * the values of the two functions separated by spaces. Otherwise it will return a
+         * best-effort, platform dependent representation of the command line.
+         *
+         * @apiNote Note that the returned executable pathname and the
+         *          arguments may be truncated on some platforms due to system
+         *          limitations.
+         *          <p>
+         *          The executable pathname may contain only the
+         *          name of the executable without the full path information.
+         *          It is undecideable whether white space separates different
+         *          arguments or is part of a single argument.
+         *
+         * @return an {@code Optional<String>} of the command line
+         *         of the process
+         */
+        public Optional<String> commandLine();
+
+        /**
          * Returns an array of Strings of the arguments of the process.
+         *
+         * @apiNote On some platforms, native applications are free to change
+         *          the arguments array after startup and this method may only
+         *          show the changed values.
          *
          * @return an {@code Optional<String[]>} of the arguments of the process
          */

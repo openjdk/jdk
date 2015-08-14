@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,10 @@
 
 #include "ProcessHandleImpl_unix.h"
 
-#include <procfs.h>
+#include <sys/procfs.h>
 
 /*
- * Implementation of native ProcessHandleImpl functions for Solaris.
+ * Implementation of native ProcessHandleImpl functions for AIX.
  * See ProcessHandleImpl_unix.c for more details.
  */
 
@@ -48,4 +48,3 @@ pid_t os_getParentPidAndTimings(JNIEnv *env, pid_t pid, jlong *total, jlong *sta
 void os_getCmdlineAndUserInfo(JNIEnv *env, jobject jinfo, pid_t pid) {
     unix_getCmdlineAndUserInfo(env, jinfo, pid);
 }
-
