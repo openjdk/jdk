@@ -3088,29 +3088,6 @@ void ConcurrentMark::print_finger() {
 }
 #endif
 
-template<bool scan>
-inline void CMTask::process_grey_object(oop obj) {
-  assert(scan || obj->is_typeArray(), "Skipping scan of grey non-typeArray");
-  assert(_nextMarkBitMap->isMarked((HeapWord*) obj), "invariant");
-
-  if (_cm->verbose_high()) {
-    gclog_or_tty->print_cr("[%u] processing grey object " PTR_FORMAT,
-                           _worker_id, p2i((void*) obj));
-  }
-
-  size_t obj_size = obj->size();
-  _words_scanned += obj_size;
-
-  if (scan) {
-    obj->oop_iterate(_cm_oop_closure);
-  }
-  statsOnly( ++_objs_scanned );
-  check_limits();
-}
-
-template void CMTask::process_grey_object<true>(oop);
-template void CMTask::process_grey_object<false>(oop);
-
 // Closure for iteration over bitmaps
 class CMBitMapClosure : public BitMapClosure {
 private:
