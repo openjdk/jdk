@@ -108,37 +108,6 @@ extern void print_alias_types();
 
 #endif
 
-static bool membar_for_arraycopy_helper(const TypeOopPtr *t_oop, Node* n, PhaseTransform *phase) {
-  if (n->is_Proj()) {
-    n = n->in(0);
-    if (n->is_Call() && n->as_Call()->may_modify(t_oop, phase)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-static bool membar_for_arraycopy(const TypeOopPtr *t_oop, MemBarNode* mb, PhaseTransform *phase) {
-  Node* mem = mb->in(TypeFunc::Memory);
-
-  if (mem->is_MergeMem()) {
-    Node* n = mem->as_MergeMem()->memory_at(Compile::AliasIdxRaw);
-    if (membar_for_arraycopy_helper(t_oop, n, phase)) {
-      return true;
-    } else if (n->is_Phi()) {
-      for (uint i = 1; i < n->req(); i++) {
-        if (n->in(i) != NULL) {
-          if (membar_for_arraycopy_helper(t_oop, n->in(i), phase)) {
-            return true;
-          }
-        }
-      }
-    }
-  }
-
-  return false;
-}
-
 Node *MemNode::optimize_simple_memory_chain(Node *mchain, const TypeOopPtr *t_oop, Node *load, PhaseGVN *phase) {
   assert((t_oop != NULL), "sanity");
   bool is_instance = t_oop->is_known_instance_field();
@@ -183,7 +152,7 @@ Node *MemNode::optimize_simple_memory_chain(Node *mchain, const TypeOopPtr *t_oo
           }
         }
       } else if (proj_in->is_MemBar()) {
-        if (membar_for_arraycopy(t_oop, proj_in->as_MemBar(), phase)) {
+        if (ArrayCopyNode::may_modify(t_oop, proj_in->as_MemBar(), phase)) {
           break;
         }
         result = proj_in->in(TypeFunc::Memory);
@@ -545,35 +514,12 @@ Node* LoadNode::find_previous_arraycopy(PhaseTransform* phase, Node* ld_alloc, N
         Node* dest = ac->in(ArrayCopyNode::Dest);
 
         if (dest == ld_base) {
-          Node* src_pos = ac->in(ArrayCopyNode::SrcPos);
-          Node* dest_pos = ac->in(ArrayCopyNode::DestPos);
-          Node* len = ac->in(ArrayCopyNode::Length);
-
-          const TypeInt *dest_pos_t = phase->type(dest_pos)->isa_int();
           const TypeX *ld_offs_t = phase->type(ld_offs)->isa_intptr_t();
-          const TypeInt *len_t = phase->type(len)->isa_int();
-          const TypeAryPtr* ary_t = phase->type(dest)->isa_aryptr();
-
-          if (dest_pos_t != NULL && ld_offs_t != NULL && len_t != NULL && ary_t != NULL) {
-            BasicType ary_elem  = ary_t->klass()->as_array_klass()->element_type()->basic_type();
-            uint header = arrayOopDesc::base_offset_in_bytes(ary_elem);
-            uint elemsize = type2aelembytes(ary_elem);
-
-            intptr_t dest_pos_plus_len_lo = (((intptr_t)dest_pos_t->_lo) + len_t->_lo) * elemsize + header;
-            intptr_t dest_pos_plus_len_hi = (((intptr_t)dest_pos_t->_hi) + len_t->_hi) * elemsize + header;
-            intptr_t dest_pos_lo = ((intptr_t)dest_pos_t->_lo) * elemsize + header;
-            intptr_t dest_pos_hi = ((intptr_t)dest_pos_t->_hi) * elemsize + header;
-
-            if (can_see_stored_value) {
-              if (ld_offs_t->_lo >= dest_pos_hi && ld_offs_t->_hi < dest_pos_plus_len_lo) {
-                return ac;
-              }
-            } else {
-              if (ld_offs_t->_hi < dest_pos_lo || ld_offs_t->_lo >= dest_pos_plus_len_hi) {
-                mem = ac->in(TypeFunc::Memory);
-              }
-              return ac;
-            }
+          if (ac->modifies(ld_offs_t->_lo, ld_offs_t->_hi, phase, can_see_stored_value)) {
+            return ac;
+          }
+          if (!can_see_stored_value) {
+            mem = ac->in(TypeFunc::Memory);
           }
         }
       }
@@ -703,7 +649,7 @@ Node* MemNode::find_previous_store(PhaseTransform* phase) {
           continue;         // (a) advance through independent call memory
         }
       } else if (mem->is_Proj() && mem->in(0)->is_MemBar()) {
-        if (membar_for_arraycopy(addr_t, mem->in(0)->as_MemBar(), phase)) {
+        if (ArrayCopyNode::may_modify(addr_t, mem->in(0)->as_MemBar(), phase)) {
           break;
         }
         mem = mem->in(0)->in(TypeFunc::Memory);
@@ -883,18 +829,17 @@ static bool skip_through_membars(Compile::AliasType* atp, const TypeInstPtr* tp,
 // Is the value loaded previously stored by an arraycopy? If so return
 // a load node that reads from the source array so we may be able to
 // optimize out the ArrayCopy node later.
-Node* MemNode::can_see_arraycopy_value(Node* st, PhaseTransform* phase) const {
+Node* LoadNode::can_see_arraycopy_value(Node* st, PhaseTransform* phase) const {
   Node* ld_adr = in(MemNode::Address);
   intptr_t ld_off = 0;
   AllocateNode* ld_alloc = AllocateNode::Ideal_allocation(ld_adr, phase, ld_off);
   Node* ac = find_previous_arraycopy(phase, ld_alloc, st, true);
   if (ac != NULL) {
     assert(ac->is_ArrayCopy(), "what kind of node can this be?");
-    assert(is_Load(), "only for loads");
 
+    Node* ld = clone();
     if (ac->as_ArrayCopy()->is_clonebasic()) {
       assert(ld_alloc != NULL, "need an alloc");
-      Node* ld = clone();
       Node* addp = in(MemNode::Address)->clone();
       assert(addp->is_AddP(), "address must be addp");
       assert(addp->in(AddPNode::Base) == ac->in(ArrayCopyNode::Dest)->in(AddPNode::Base), "strange pattern");
@@ -906,9 +851,7 @@ Node* MemNode::can_see_arraycopy_value(Node* st, PhaseTransform* phase) const {
         assert(ld_alloc->in(0) != NULL, "alloc must have control");
         ld->set_req(0, ld_alloc->in(0));
       }
-      return ld;
     } else {
-      Node* ld = clone();
       Node* addp = in(MemNode::Address)->clone();
       assert(addp->in(AddPNode::Base) == addp->in(AddPNode::Address), "should be");
       addp->set_req(AddPNode::Base, ac->in(ArrayCopyNode::Src));
@@ -933,8 +876,10 @@ Node* MemNode::can_see_arraycopy_value(Node* st, PhaseTransform* phase) const {
         assert(ac->in(0) != NULL, "alloc must have control");
         ld->set_req(0, ac->in(0));
       }
-      return ld;
     }
+    // load depends on the tests that validate the arraycopy
+    ld->as_Load()->_depends_only_on_test = Pinned;
+    return ld;
   }
   return NULL;
 }
