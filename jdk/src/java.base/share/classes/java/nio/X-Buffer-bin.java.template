@@ -78,7 +78,7 @@ class XXX {
      * @return  The $type$ value at the given index
      *
      * @throws  IndexOutOfBoundsException
-     *          If <tt>index</tt> is negative
+     *          If {@code index} is negative
      *          or not smaller than the buffer's limit,
      *          minus $nbytesButOne$
      */
@@ -100,7 +100,7 @@ class XXX {
      * @return  This buffer
      *
      * @throws  IndexOutOfBoundsException
-     *          If <tt>index</tt> is negative
+     *          If {@code index} is negative
      *          or not smaller than the buffer's limit,
      *          minus $nbytesButOne$
      *

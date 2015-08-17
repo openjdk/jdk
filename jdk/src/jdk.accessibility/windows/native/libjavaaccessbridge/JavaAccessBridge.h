@@ -44,7 +44,7 @@ extern "C" {
                             LPVOID lpvReserved);
         void AppendToCallOutput(char *s);
         BOOL APIENTRY AccessBridgeDialogProc(HWND hDlg, UINT message,
-                                             UINT wParam, LONG lParam);
+                                             WPARAM wParam, LPARAM lParam);
 }
 
 /**

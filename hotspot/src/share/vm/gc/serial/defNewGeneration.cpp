@@ -623,7 +623,7 @@ void DefNewGeneration::collect(bool   full,
   {
     // DefNew needs to run with n_threads == 0, to make sure the serial
     // version of the card table scanning code is used.
-    // See: CardTableModRefBS::non_clean_card_iterate_possibly_parallel.
+    // See: CardTableModRefBSForCTRS::non_clean_card_iterate_possibly_parallel.
     StrongRootsScope srs(0);
 
     gch->gen_process_roots(&srs,

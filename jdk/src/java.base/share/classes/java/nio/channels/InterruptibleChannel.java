@@ -54,7 +54,7 @@ import java.io.IOException;
  *
  * <p> A channel supports asynchronous closing and interruption if, and only
  * if, it implements this interface.  This can be tested at runtime, if
- * necessary, via the <tt>instanceof</tt> operator.
+ * necessary, via the {@code instanceof} operator.
  *
  *
  * @author Mark Reinhold

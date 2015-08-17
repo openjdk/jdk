@@ -519,13 +519,7 @@ public abstract class Toolkit {
      * <p>
      * If a system property named {@code "java.awt.headless"} is set
      * to {@code true} then the headless implementation
-     * of {@code Toolkit} is used.
-     * <p>
-     * If there is no {@code "java.awt.headless"} or it is set to
-     * {@code false} and there is a system property named
-     * {@code "awt.toolkit"},
-     * that property is treated as the name of a class that is a subclass
-     * of {@code Toolkit};
+     * of {@code Toolkit} is used,
      * otherwise the default platform-specific implementation of
      * {@code Toolkit} is used.
      * <p>

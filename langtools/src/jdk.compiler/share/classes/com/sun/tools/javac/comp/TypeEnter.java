@@ -27,6 +27,7 @@ package com.sun.tools.javac.comp;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 import javax.tools.JavaFileObject;
 
@@ -284,6 +285,8 @@ public class TypeEnter implements Completer {
         Env<AttrContext> env;
         ImportFilter staticImportFilter;
         ImportFilter typeImportFilter;
+        BiConsumer<JCImport, CompletionFailure> cfHandler =
+                (imp, cf) -> chk.completionError(imp.pos(), cf);
 
         @Override
         protected void doRunPhase(Env<AttrContext> env) {
@@ -327,7 +330,7 @@ public class TypeEnter implements Completer {
                 PackageSymbol javaLang = syms.enterPackage(names.java_lang);
                 if (javaLang.members().isEmpty() && !javaLang.exists())
                     throw new FatalError(diags.fragment("fatal.err.no.java.lang"));
-                importAll(tree.pos, javaLang, env);
+                importAll(make.at(tree.pos()).Import(make.QualIdent(javaLang), false), javaLang, env);
 
                 // Process the package def and all import clauses.
                 if (tree.getPackage() != null)
@@ -378,13 +381,13 @@ public class TypeEnter implements Completer {
                 // Import on demand.
                 chk.checkCanonical(imp.selected);
                 if (tree.staticImport)
-                    importStaticAll(tree.pos, p, env);
+                    importStaticAll(tree, p, env);
                 else
-                    importAll(tree.pos, p, env);
+                    importAll(tree, p, env);
             } else {
                 // Named type import.
                 if (tree.staticImport) {
-                    importNamedStatic(tree.pos(), p, name, localEnv, tree);
+                    importNamedStatic(tree, p, name, localEnv);
                     chk.checkCanonical(imp.selected);
                 } else {
                     TypeSymbol c = attribImportType(imp, localEnv).tsym;
@@ -411,51 +414,50 @@ public class TypeEnter implements Completer {
         }
 
         /** Import all classes of a class or package on demand.
-         *  @param pos           Position to be used for error reporting.
+         *  @param imp           The import that is being handled.
          *  @param tsym          The class or package the members of which are imported.
          *  @param env           The env in which the imported classes will be entered.
          */
-        private void importAll(int pos,
+        private void importAll(JCImport imp,
                                final TypeSymbol tsym,
                                Env<AttrContext> env) {
-            env.toplevel.starImportScope.importAll(types, tsym.members(), typeImportFilter, false);
+            env.toplevel.starImportScope.importAll(types, tsym.members(), typeImportFilter, imp, cfHandler);
         }
 
         /** Import all static members of a class or package on demand.
-         *  @param pos           Position to be used for error reporting.
+         *  @param imp           The import that is being handled.
          *  @param tsym          The class or package the members of which are imported.
          *  @param env           The env in which the imported classes will be entered.
          */
-        private void importStaticAll(int pos,
+        private void importStaticAll(JCImport imp,
                                      final TypeSymbol tsym,
                                      Env<AttrContext> env) {
             final StarImportScope toScope = env.toplevel.starImportScope;
             final TypeSymbol origin = tsym;
 
-            toScope.importAll(types, origin.members(), staticImportFilter, true);
+            toScope.importAll(types, origin.members(), staticImportFilter, imp, cfHandler);
         }
 
         /** Import statics types of a given name.  Non-types are handled in Attr.
-         *  @param pos           Position to be used for error reporting.
+         *  @param imp           The import that is being handled.
          *  @param tsym          The class from which the name is imported.
          *  @param name          The (simple) name being imported.
          *  @param env           The environment containing the named import
          *                  scope to add to.
          */
-        private void importNamedStatic(final DiagnosticPosition pos,
+        private void importNamedStatic(final JCImport imp,
                                        final TypeSymbol tsym,
                                        final Name name,
-                                       final Env<AttrContext> env,
-                                       final JCImport imp) {
+                                       final Env<AttrContext> env) {
             if (tsym.kind != TYP) {
-                log.error(DiagnosticFlag.RECOVERABLE, pos, "static.imp.only.classes.and.interfaces");
+                log.error(DiagnosticFlag.RECOVERABLE, imp.pos(), "static.imp.only.classes.and.interfaces");
                 return;
             }
 
             final NamedImportScope toScope = env.toplevel.namedImportScope;
             final Scope originMembers = tsym.members();
 
-            imp.importScope = toScope.importByName(types, originMembers, name, staticImportFilter);
+            imp.importScope = toScope.importByName(types, originMembers, name, staticImportFilter, imp, cfHandler);
         }
 
         /** Import given class.

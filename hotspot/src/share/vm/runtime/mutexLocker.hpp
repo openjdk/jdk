@@ -87,7 +87,6 @@ extern Mutex*   Shared_DirtyCardQ_lock;          // Lock protecting dirty card
                                                  // non-Java threads.
                                                  // (see option ExplicitGCInvokesConcurrent)
 extern Mutex*   ParGCRareEvent_lock;             // Synchronizes various (rare) parallel GC ops.
-extern Mutex*   EvacFailureStack_lock;           // guards the evac failure scan stack
 extern Mutex*   Compile_lock;                    // a lock held when Compilation is updating code (used to block CodeCache traversal, CHA updates, etc)
 extern Monitor* MethodCompileQueue_lock;         // a lock held when method compilations are enqueued, dequeued
 extern Monitor* CompileThread_lock;              // a lock held by compile threads during compilation system initialization
