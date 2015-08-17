@@ -129,8 +129,8 @@ BW	-2439+02555	Africa/Gaborone
 BY	+5354+02734	Europe/Minsk
 BZ	+1730-08812	America/Belize
 CA	+4734-05243	America/St_Johns	Newfoundland Time, including SE Labrador
-CA	+4439-06336	America/Halifax	Atlantic Time - Nova Scotia (most places), PEI
-CA	+4612-05957	America/Glace_Bay	Atlantic Time - Nova Scotia - places that did not observe DST 1966-1971
+CA	+4439-06336	America/Halifax	Atlantic Time - Nova Scotia (peninsula), PEI
+CA	+4612-05957	America/Glace_Bay	Atlantic Time - Nova Scotia (Cape Breton)
 CA	+4606-06447	America/Moncton	Atlantic Time - New Brunswick
 CA	+5320-06025	America/Goose_Bay	Atlantic Time - Labrador - most locations
 CA	+5125-05707	America/Blanc-Sablon	Atlantic Standard Time - Quebec - Lower North Shore
