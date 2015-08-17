@@ -327,9 +327,16 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
   ce->align_call(lir_static_call);
 
   ce->emit_static_call_stub();
+  if (ce->compilation()->bailed_out()) {
+    return; // CodeCache is full
+  }
   Address resolve(SharedRuntime::get_resolve_static_call_stub(),
                   relocInfo::static_call_type);
-  __ trampoline_call(resolve);
+  address call = __ trampoline_call(resolve);
+  if (call == NULL) {
+    ce->bailout("trampoline stub overflow");
+    return;
+  }
   ce->add_call_info_here(info());
 
 #ifndef PRODUCT

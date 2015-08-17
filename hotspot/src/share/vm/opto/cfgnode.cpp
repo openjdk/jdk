@@ -2023,6 +2023,14 @@ const RegMask &PhiNode::out_RegMask() const {
 }
 
 #ifndef PRODUCT
+void PhiNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
+  // For a PhiNode, the set of related nodes includes all inputs till level 2,
+  // and all outputs till level 1. In compact mode, inputs till level 1 are
+  // collected.
+  this->collect_nodes(in_rel, compact ? 1 : 2, false, false);
+  this->collect_nodes(out_rel, -1, false, false);
+}
+
 void PhiNode::dump_spec(outputStream *st) const {
   TypeNode::dump_spec(st);
   if (is_tripcount()) {
@@ -2047,10 +2055,32 @@ const RegMask &GotoNode::out_RegMask() const {
   return RegMask::Empty;
 }
 
+#ifndef PRODUCT
+//-----------------------------related-----------------------------------------
+// The related nodes of a GotoNode are all inputs at level 1, as well as the
+// outputs at level 1. This is regardless of compact mode.
+void GotoNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
+  this->collect_nodes(in_rel, 1, false, false);
+  this->collect_nodes(out_rel, -1, false, false);
+}
+#endif
+
+
 //=============================================================================
 const RegMask &JumpNode::out_RegMask() const {
   return RegMask::Empty;
 }
+
+#ifndef PRODUCT
+//-----------------------------related-----------------------------------------
+// The related nodes of a JumpNode are all inputs at level 1, as well as the
+// outputs at level 2 (to include actual jump targets beyond projection nodes).
+// This is regardless of compact mode.
+void JumpNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
+  this->collect_nodes(in_rel, 1, false, false);
+  this->collect_nodes(out_rel, -2, false, false);
+}
+#endif
 
 //=============================================================================
 const RegMask &JProjNode::out_RegMask() const {
@@ -2105,7 +2135,18 @@ uint JumpProjNode::cmp( const Node &n ) const {
 #ifndef PRODUCT
 void JumpProjNode::dump_spec(outputStream *st) const {
   ProjNode::dump_spec(st);
-   st->print("@bci %d ",_dest_bci);
+  st->print("@bci %d ",_dest_bci);
+}
+
+void JumpProjNode::dump_compact_spec(outputStream *st) const {
+  ProjNode::dump_compact_spec(st);
+  st->print("(%d)%d@%d", _switch_val, _proj_no, _dest_bci);
+}
+
+void JumpProjNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
+  // The related nodes of a JumpProjNode are its inputs and outputs at level 1.
+  this->collect_nodes(in_rel, 1, false, false);
+  this->collect_nodes(out_rel, -1, false, false);
 }
 #endif
 

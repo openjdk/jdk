@@ -2389,9 +2389,11 @@ int HandlerImpl::emit_exception_handler(CodeBuffer& cbuf)
   // Note that the code buffer's insts_mark is always relative to insts.
   // That's why we must use the macroassembler to generate a handler.
   MacroAssembler _masm(&cbuf);
-  address base =
-  __ start_a_stub(size_exception_handler());
-  if (base == NULL)  return 0;  // CodeBuffer::expand failed
+  address base = __ start_a_stub(size_exception_handler());
+  if (base == NULL) {
+    ciEnv::current()->record_failure("CodeCache is full");
+    return 0;  // CodeBuffer::expand failed
+  }
   int offset = __ offset();
   __ far_jump(RuntimeAddress(OptoRuntime::exception_blob()->entry_point()));
   assert(__ offset() - offset <= (int) size_exception_handler(), "overflow");
@@ -2405,9 +2407,11 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf)
   // Note that the code buffer's insts_mark is always relative to insts.
   // That's why we must use the macroassembler to generate a handler.
   MacroAssembler _masm(&cbuf);
-  address base =
-  __ start_a_stub(size_deopt_handler());
-  if (base == NULL)  return 0;  // CodeBuffer::expand failed
+  address base = __ start_a_stub(size_deopt_handler());
+  if (base == NULL) {
+    ciEnv::current()->record_failure("CodeCache is full");
+    return 0;  // CodeBuffer::expand failed
+  }
   int offset = __ offset();
 
   __ adr(lr, __ pc());
@@ -3657,24 +3661,37 @@ encode %{
     MacroAssembler _masm(&cbuf);
 
     address addr = (address)$meth$$method;
+    address call;
     if (!_method) {
       // A call to a runtime wrapper, e.g. new, new_typeArray_Java, uncommon_trap.
-      __ trampoline_call(Address(addr, relocInfo::runtime_call_type), &cbuf);
+      call = __ trampoline_call(Address(addr, relocInfo::runtime_call_type), &cbuf);
     } else if (_optimized_virtual) {
-      __ trampoline_call(Address(addr, relocInfo::opt_virtual_call_type), &cbuf);
+      call = __ trampoline_call(Address(addr, relocInfo::opt_virtual_call_type), &cbuf);
     } else {
-      __ trampoline_call(Address(addr, relocInfo::static_call_type), &cbuf);
+      call = __ trampoline_call(Address(addr, relocInfo::static_call_type), &cbuf);
+    }
+    if (call == NULL) {
+      ciEnv::current()->record_failure("CodeCache is full"); 
+      return;
     }
 
     if (_method) {
       // Emit stub for static call
-      CompiledStaticCall::emit_to_interp_stub(cbuf);
+      address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
+      if (stub == NULL) {
+        ciEnv::current()->record_failure("CodeCache is full"); 
+        return;
+      }
     }
   %}
 
   enc_class aarch64_enc_java_dynamic_call(method meth) %{
     MacroAssembler _masm(&cbuf);
-    __ ic_call((address)$meth$$method);
+    address call = __ ic_call((address)$meth$$method);
+    if (call == NULL) {
+      ciEnv::current()->record_failure("CodeCache is full"); 
+      return;
+    }
   %}
 
   enc_class aarch64_enc_call_epilog() %{
@@ -3695,7 +3712,11 @@ encode %{
     address entry = (address)$meth$$method;
     CodeBlob *cb = CodeCache::find_blob(entry);
     if (cb) {
-      __ trampoline_call(Address(entry, relocInfo::runtime_call_type));
+      address call = __ trampoline_call(Address(entry, relocInfo::runtime_call_type));
+      if (call == NULL) {
+        ciEnv::current()->record_failure("CodeCache is full"); 
+        return;
+      }
     } else {
       int gpcnt;
       int fpcnt;

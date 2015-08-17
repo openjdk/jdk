@@ -84,7 +84,7 @@ public class PerfDataFile {
      * for the JVM identified by the given local Vm Identifier.
      * <p>
      * This method looks for the most up to date backing store file for
-     * the given <tt>lvmid</tt>. It will search all the user specific
+     * the given {@code lvmid}. It will search all the user specific
      * directories in the temporary directory for the host operating
      * system, which may be influenced by platform specific environment
      * variables.

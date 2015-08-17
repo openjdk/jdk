@@ -94,7 +94,7 @@ public abstract class MonitoredHost {
 
     /**
      * Factory method to construct MonitoredHost instances to manage
-     * connections to the host indicated by <tt>hostIdString</tt>
+     * connections to the host indicated by {@code hostIdString}
      *
      * @param hostIdString a String representation of a {@link HostIdentifier}
      * @return MonitoredHost - the MonitoredHost instance for communicating
@@ -113,7 +113,7 @@ public abstract class MonitoredHost {
 
     /**
      * Factory method to construct a MonitoredHost instance to manage the
-     * connection to the Java Virtual Machine indicated by <tt>vmid</tt>.
+     * connection to the Java Virtual Machine indicated by {@code vmid}.
      *
      * This method provide a convenient short cut for attaching to a specific
      * instrumented Java Virtual Machine. The information in the VmIdentifier
@@ -142,7 +142,7 @@ public abstract class MonitoredHost {
 
     /**
      * Factory method to construct a MonitoredHost instance to manage the
-     * connection to the host indicated by <tt>hostId</tt>.
+     * connection to the host indicated by {@code hostId}.
      *
      * @param hostId the identifier for the target host.
      * @return MonitoredHost - The MonitoredHost object needed to attach to
@@ -269,7 +269,7 @@ public abstract class MonitoredHost {
      * Get the last exception encountered while polling this MonitoredHost.
      *
      * @return Exception - the last exception occurred while polling this
-     *                     MonitoredHost, or <tt>null</tt> if no exception
+     *                     MonitoredHost, or {@code null} if no exception
      *                     has occurred or the exception has been cleared,
      */
     public Exception getLastException() {
