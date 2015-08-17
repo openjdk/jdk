@@ -207,7 +207,7 @@ public enum TestMethods {
                     return MethodHandles.filterReturnValue(target, filter);
                 }
             },
-    INSERT_ARGUMENTS("insertArguments") {
+    INSERT_ARGUMENTS("insertArguments", Helper.MAX_ARITY - 3) {
                 @Override
                 public Map<String, Object> getTestCaseData() {
                     Map<String, Object> data = new HashMap<>();
