@@ -70,7 +70,10 @@ Flag::Error CICompilerCountConstraintFunc(bool verbose, intx* value) {
 #endif
 
   // The default CICompilerCount's value is CI_COMPILER_COUNT.
-  assert(min_number_of_compiler_threads <= CI_COMPILER_COUNT, "minimum should be less or equal default number");
+  // With a client VM, -XX:+TieredCompilation causes TieredCompilation
+  // to be true here (the option is validated later) and
+  // min_number_of_compiler_threads to exceed CI_COMPILER_COUNT.
+  min_number_of_compiler_threads = MIN2(min_number_of_compiler_threads, CI_COMPILER_COUNT);
 
   if (*value < (intx)min_number_of_compiler_threads) {
     if (verbose == true) {

@@ -98,7 +98,7 @@ public class PerfByteArrayMonitor extends AbstractMonitor
      * Get the current value of an element of the byte array instrument.
      *
      * @return byte - a copy of the current value of the element at index
-     *                <tt>index</tt> of the byte array instrument.
+     *                {@code index} of the byte array instrument.
      */
     public byte byteAt(int index) {
         bb.position(index);

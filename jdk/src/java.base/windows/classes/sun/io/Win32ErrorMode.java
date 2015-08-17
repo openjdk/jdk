@@ -59,8 +59,8 @@ public class Win32ErrorMode {
      * Invoke at VM initialization time to disable the critical error message box.
      * <p>
      * The critial error message box is disabled unless the system property
-     * <tt>sun.io.allowCriticalErrorMessageBox</tt> is set to something other than
-     * <code>false</code>. This includes the empty string.
+     * {@code sun.io.allowCriticalErrorMessageBox} is set to something other than
+     * {@code false}. This includes the empty string.
      * <p>
      * This method does nothing if invoked after VM and class library initialization
      * has completed.

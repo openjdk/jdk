@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -497,6 +497,37 @@ const Type *SubDNode::sub( const Type *t1, const Type *t2 ) const {
 Node *CmpNode::Identity( PhaseTransform *phase ) {
   return this;
 }
+
+#ifndef PRODUCT
+//----------------------------related------------------------------------------
+// Related nodes of comparison nodes include all data inputs (until hitting a
+// control boundary) as well as all outputs until and including control nodes
+// as well as their projections. In compact mode, data inputs till depth 1 and
+// all outputs till depth 1 are considered.
+void CmpNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
+  if (compact) {
+    this->collect_nodes(in_rel, 1, false, true);
+    this->collect_nodes(out_rel, -1, false, false);
+  } else {
+    this->collect_nodes_in_all_data(in_rel, false);
+    this->collect_nodes_out_all_ctrl_boundary(out_rel);
+    // Now, find all control nodes in out_rel, and include their projections
+    // and projection targets (if any) in the result.
+    GrowableArray<Node*> proj(Compile::current()->unique());
+    for (GrowableArrayIterator<Node*> it = out_rel->begin(); it != out_rel->end(); ++it) {
+      Node* n = *it;
+      if (n->is_CFG() && !n->is_Proj()) {
+        // Assume projections and projection targets are found at levels 1 and 2.
+        n->collect_nodes(&proj, -2, false, false);
+        for (GrowableArrayIterator<Node*> p = proj.begin(); p != proj.end(); ++p) {
+          out_rel->append_if_missing(*p);
+        }
+        proj.clear();
+      }
+    }
+  }
+}
+#endif
 
 //=============================================================================
 //------------------------------cmp--------------------------------------------
@@ -1396,17 +1427,31 @@ const Type *BoolNode::Value( PhaseTransform *phase ) const {
   return _test.cc2logical( phase->type( in(1) ) );
 }
 
+#ifndef PRODUCT
 //------------------------------dump_spec--------------------------------------
 // Dump special per-node info
-#ifndef PRODUCT
 void BoolNode::dump_spec(outputStream *st) const {
   st->print("[");
   _test.dump_on(st);
   st->print("]");
 }
+
+//-------------------------------related---------------------------------------
+// A BoolNode's related nodes are all of its data inputs, and all of its
+// outputs until control nodes are hit, which are included. In compact
+// representation, inputs till level 3 and immediate outputs are included.
+void BoolNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
+  if (compact) {
+    this->collect_nodes(in_rel, 3, false, true);
+    this->collect_nodes(out_rel, -1, false, false);
+  } else {
+    this->collect_nodes_in_all_data(in_rel, false);
+    this->collect_nodes_out_all_ctrl_boundary(out_rel);
+  }
+}
 #endif
 
-//------------------------------is_counted_loop_exit_test--------------------------------------
+//----------------------is_counted_loop_exit_test------------------------------
 // Returns true if node is used by a counted loop node.
 bool BoolNode::is_counted_loop_exit_test() {
   for( DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++ ) {

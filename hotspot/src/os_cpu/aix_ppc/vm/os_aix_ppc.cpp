@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -488,10 +488,6 @@ void os::Aix::init_thread_fpu_state(void) {
 // thread stack
 
 size_t os::Aix::min_stack_allowed = 128*K;
-
-// Aix is always in floating stack mode. The stack size for a new
-// thread can be set via pthread_attr_setstacksize().
-bool os::Aix::supports_variable_stack_size() { return true; }
 
 // return default stack size for thr_type
 size_t os::Aix::default_stack_size(os::ThreadType thr_type) {
