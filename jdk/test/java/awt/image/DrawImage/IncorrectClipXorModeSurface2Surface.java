@@ -40,7 +40,7 @@ import static java.awt.geom.Rectangle2D.Double;
 
 /**
  * @test
- * @bug 8061831
+ * @bug 8061831 8130400
  * @summary Tests drawing volatile image to volatile image using different
  *          clips + xor mode. Results of the blit compatibleImage to
  *          compatibleImage is used for comparison.

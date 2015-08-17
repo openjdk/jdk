@@ -27,16 +27,16 @@ package java.util;
 
 /**
  * A collection that contains no duplicate elements.  More formally, sets
- * contain no pair of elements <code>e1</code> and <code>e2</code> such that
- * <code>e1.equals(e2)</code>, and at most one null element.  As implied by
+ * contain no pair of elements {@code e1} and {@code e2} such that
+ * {@code e1.equals(e2)}, and at most one null element.  As implied by
  * its name, this interface models the mathematical <i>set</i> abstraction.
  *
- * <p>The <tt>Set</tt> interface places additional stipulations, beyond those
- * inherited from the <tt>Collection</tt> interface, on the contracts of all
- * constructors and on the contracts of the <tt>add</tt>, <tt>equals</tt> and
- * <tt>hashCode</tt> methods.  Declarations for other inherited methods are
+ * <p>The {@code Set} interface places additional stipulations, beyond those
+ * inherited from the {@code Collection} interface, on the contracts of all
+ * constructors and on the contracts of the {@code add}, {@code equals} and
+ * {@code hashCode} methods.  Declarations for other inherited methods are
  * also included here for convenience.  (The specifications accompanying these
- * declarations have been tailored to the <tt>Set</tt> interface, but they do
+ * declarations have been tailored to the {@code Set} interface, but they do
  * not contain any additional stipulations.)
  *
  * <p>The additional stipulation on constructors is, not surprisingly,
@@ -45,7 +45,7 @@ package java.util;
  *
  * <p>Note: Great care must be exercised if mutable objects are used as set
  * elements.  The behavior of a set is not specified if the value of an object
- * is changed in a manner that affects <tt>equals</tt> comparisons while the
+ * is changed in a manner that affects {@code equals} comparisons while the
  * object is an element in the set.  A special case of this prohibition is
  * that it is not permissible for a set to contain itself as an element.
  *
@@ -53,7 +53,7 @@ package java.util;
  * they may contain.  For example, some implementations prohibit null elements,
  * and some have restrictions on the types of their elements.  Attempting to
  * add an ineligible element throws an unchecked exception, typically
- * <tt>NullPointerException</tt> or <tt>ClassCastException</tt>.  Attempting
+ * {@code NullPointerException} or {@code ClassCastException}.  Attempting
  * to query the presence of an ineligible element may throw an exception,
  * or it may simply return false; some implementations will exhibit the former
  * behavior and some will exhibit the latter.  More generally, attempting an
@@ -87,28 +87,28 @@ public interface Set<E> extends Collection<E> {
 
     /**
      * Returns the number of elements in this set (its cardinality).  If this
-     * set contains more than <tt>Integer.MAX_VALUE</tt> elements, returns
-     * <tt>Integer.MAX_VALUE</tt>.
+     * set contains more than {@code Integer.MAX_VALUE} elements, returns
+     * {@code Integer.MAX_VALUE}.
      *
      * @return the number of elements in this set (its cardinality)
      */
     int size();
 
     /**
-     * Returns <tt>true</tt> if this set contains no elements.
+     * Returns {@code true} if this set contains no elements.
      *
-     * @return <tt>true</tt> if this set contains no elements
+     * @return {@code true} if this set contains no elements
      */
     boolean isEmpty();
 
     /**
-     * Returns <tt>true</tt> if this set contains the specified element.
-     * More formally, returns <tt>true</tt> if and only if this set
-     * contains an element <tt>e</tt> such that
-     * <tt>(o==null&nbsp;?&nbsp;e==null&nbsp;:&nbsp;o.equals(e))</tt>.
+     * Returns {@code true} if this set contains the specified element.
+     * More formally, returns {@code true} if and only if this set
+     * contains an element {@code e} such that
+     * {@code Objects.equals(o, e)}.
      *
      * @param o element whose presence in this set is to be tested
-     * @return <tt>true</tt> if this set contains the specified element
+     * @return {@code true} if this set contains the specified element
      * @throws ClassCastException if the type of the specified element
      *         is incompatible with this set
      * (<a href="Collection.html#optional-restrictions">optional</a>)
@@ -155,7 +155,7 @@ public interface Set<E> extends Collection<E> {
      * <p>If this set fits in the specified array with room to spare
      * (i.e., the array has more elements than this set), the element in
      * the array immediately following the end of the set is set to
-     * <tt>null</tt>.  (This is useful in determining the length of this
+     * {@code null}.  (This is useful in determining the length of this
      * set <i>only</i> if the caller knows that this set does not contain
      * any null elements.)
      *
@@ -168,15 +168,15 @@ public interface Set<E> extends Collection<E> {
      * precise control over the runtime type of the output array, and may,
      * under certain circumstances, be used to save allocation costs.
      *
-     * <p>Suppose <tt>x</tt> is a set known to contain only strings.
+     * <p>Suppose {@code x} is a set known to contain only strings.
      * The following code can be used to dump the set into a newly allocated
-     * array of <tt>String</tt>:
+     * array of {@code String}:
      *
      * <pre>
      *     String[] y = x.toArray(new String[0]);</pre>
      *
-     * Note that <tt>toArray(new Object[0])</tt> is identical in function to
-     * <tt>toArray()</tt>.
+     * Note that {@code toArray(new Object[0])} is identical in function to
+     * {@code toArray()}.
      *
      * @param a the array into which the elements of this set are to be
      *        stored, if it is big enough; otherwise, a new array of the same
@@ -195,25 +195,25 @@ public interface Set<E> extends Collection<E> {
     /**
      * Adds the specified element to this set if it is not already present
      * (optional operation).  More formally, adds the specified element
-     * <tt>e</tt> to this set if the set contains no element <tt>e2</tt>
+     * {@code e} to this set if the set contains no element {@code e2}
      * such that
-     * <tt>(e==null&nbsp;?&nbsp;e2==null&nbsp;:&nbsp;e.equals(e2))</tt>.
+     * {@code Objects.equals(e, e2)}.
      * If this set already contains the element, the call leaves the set
-     * unchanged and returns <tt>false</tt>.  In combination with the
+     * unchanged and returns {@code false}.  In combination with the
      * restriction on constructors, this ensures that sets never contain
      * duplicate elements.
      *
      * <p>The stipulation above does not imply that sets must accept all
      * elements; sets may refuse to add any particular element, including
-     * <tt>null</tt>, and throw an exception, as described in the
+     * {@code null}, and throw an exception, as described in the
      * specification for {@link Collection#add Collection.add}.
      * Individual set implementations should clearly document any
      * restrictions on the elements that they may contain.
      *
      * @param e element to be added to this set
-     * @return <tt>true</tt> if this set did not already contain the specified
+     * @return {@code true} if this set did not already contain the specified
      *         element
-     * @throws UnsupportedOperationException if the <tt>add</tt> operation
+     * @throws UnsupportedOperationException if the {@code add} operation
      *         is not supported by this set
      * @throws ClassCastException if the class of the specified element
      *         prevents it from being added to this set
@@ -227,23 +227,23 @@ public interface Set<E> extends Collection<E> {
 
     /**
      * Removes the specified element from this set if it is present
-     * (optional operation).  More formally, removes an element <tt>e</tt>
+     * (optional operation).  More formally, removes an element {@code e}
      * such that
-     * <tt>(o==null&nbsp;?&nbsp;e==null&nbsp;:&nbsp;o.equals(e))</tt>, if
-     * this set contains such an element.  Returns <tt>true</tt> if this set
+     * {@code Objects.equals(o, e)}, if
+     * this set contains such an element.  Returns {@code true} if this set
      * contained the element (or equivalently, if this set changed as a
      * result of the call).  (This set will not contain the element once the
      * call returns.)
      *
      * @param o object to be removed from this set, if present
-     * @return <tt>true</tt> if this set contained the specified element
+     * @return {@code true} if this set contained the specified element
      * @throws ClassCastException if the type of the specified element
      *         is incompatible with this set
      * (<a href="Collection.html#optional-restrictions">optional</a>)
      * @throws NullPointerException if the specified element is null and this
      *         set does not permit null elements
      * (<a href="Collection.html#optional-restrictions">optional</a>)
-     * @throws UnsupportedOperationException if the <tt>remove</tt> operation
+     * @throws UnsupportedOperationException if the {@code remove} operation
      *         is not supported by this set
      */
     boolean remove(Object o);
@@ -252,12 +252,12 @@ public interface Set<E> extends Collection<E> {
     // Bulk Operations
 
     /**
-     * Returns <tt>true</tt> if this set contains all of the elements of the
+     * Returns {@code true} if this set contains all of the elements of the
      * specified collection.  If the specified collection is also a set, this
-     * method returns <tt>true</tt> if it is a <i>subset</i> of this set.
+     * method returns {@code true} if it is a <i>subset</i> of this set.
      *
      * @param  c collection to be checked for containment in this set
-     * @return <tt>true</tt> if this set contains all of the elements of the
+     * @return {@code true} if this set contains all of the elements of the
      *         specified collection
      * @throws ClassCastException if the types of one or more elements
      *         in the specified collection are incompatible with this
@@ -275,15 +275,15 @@ public interface Set<E> extends Collection<E> {
     /**
      * Adds all of the elements in the specified collection to this set if
      * they're not already present (optional operation).  If the specified
-     * collection is also a set, the <tt>addAll</tt> operation effectively
+     * collection is also a set, the {@code addAll} operation effectively
      * modifies this set so that its value is the <i>union</i> of the two
      * sets.  The behavior of this operation is undefined if the specified
      * collection is modified while the operation is in progress.
      *
      * @param  c collection containing elements to be added to this set
-     * @return <tt>true</tt> if this set changed as a result of the call
+     * @return {@code true} if this set changed as a result of the call
      *
-     * @throws UnsupportedOperationException if the <tt>addAll</tt> operation
+     * @throws UnsupportedOperationException if the {@code addAll} operation
      *         is not supported by this set
      * @throws ClassCastException if the class of an element of the
      *         specified collection prevents it from being added to this set
@@ -305,8 +305,8 @@ public interface Set<E> extends Collection<E> {
      * <i>intersection</i> of the two sets.
      *
      * @param  c collection containing elements to be retained in this set
-     * @return <tt>true</tt> if this set changed as a result of the call
-     * @throws UnsupportedOperationException if the <tt>retainAll</tt> operation
+     * @return {@code true} if this set changed as a result of the call
+     * @throws UnsupportedOperationException if the {@code retainAll} operation
      *         is not supported by this set
      * @throws ClassCastException if the class of an element of this set
      *         is incompatible with the specified collection
@@ -327,8 +327,8 @@ public interface Set<E> extends Collection<E> {
      * the two sets.
      *
      * @param  c collection containing elements to be removed from this set
-     * @return <tt>true</tt> if this set changed as a result of the call
-     * @throws UnsupportedOperationException if the <tt>removeAll</tt> operation
+     * @return {@code true} if this set changed as a result of the call
+     * @throws UnsupportedOperationException if the {@code removeAll} operation
      *         is not supported by this set
      * @throws ClassCastException if the class of an element of this set
      *         is incompatible with the specified collection
@@ -346,7 +346,7 @@ public interface Set<E> extends Collection<E> {
      * Removes all of the elements from this set (optional operation).
      * The set will be empty after this call returns.
      *
-     * @throws UnsupportedOperationException if the <tt>clear</tt> method
+     * @throws UnsupportedOperationException if the {@code clear} method
      *         is not supported by this set
      */
     void clear();
@@ -356,7 +356,7 @@ public interface Set<E> extends Collection<E> {
 
     /**
      * Compares the specified object with this set for equality.  Returns
-     * <tt>true</tt> if the specified object is also a set, the two sets
+     * {@code true} if the specified object is also a set, the two sets
      * have the same size, and every member of the specified set is
      * contained in this set (or equivalently, every member of this set is
      * contained in the specified set).  This definition ensures that the
@@ -364,17 +364,17 @@ public interface Set<E> extends Collection<E> {
      * set interface.
      *
      * @param o object to be compared for equality with this set
-     * @return <tt>true</tt> if the specified object is equal to this set
+     * @return {@code true} if the specified object is equal to this set
      */
     boolean equals(Object o);
 
     /**
      * Returns the hash code value for this set.  The hash code of a set is
      * defined to be the sum of the hash codes of the elements in the set,
-     * where the hash code of a <tt>null</tt> element is defined to be zero.
-     * This ensures that <tt>s1.equals(s2)</tt> implies that
-     * <tt>s1.hashCode()==s2.hashCode()</tt> for any two sets <tt>s1</tt>
-     * and <tt>s2</tt>, as required by the general contract of
+     * where the hash code of a {@code null} element is defined to be zero.
+     * This ensures that {@code s1.equals(s2)} implies that
+     * {@code s1.hashCode()==s2.hashCode()} for any two sets {@code s1}
+     * and {@code s2}, as required by the general contract of
      * {@link Object#hashCode}.
      *
      * @return the hash code value for this set

@@ -53,7 +53,10 @@ $(eval $(call SetupJavaCompiler,GENERATE_NEWBYTECODE_DEBUG, \
     SERVER_JVM := $(SJAVAC_SERVER_JAVA)))
 
 # Build nashorn into intermediate directory
-$(eval $(call SetupJavaCompilation,BUILD_NASHORN, \
+# Name the compilation setup the same as the module, as is done in the global
+# CompileJavaModules.gmk, to make dependency checking with other modules work
+# seamlessly.
+$(eval $(call SetupJavaCompilation,jdk.scripting.nashorn, \
     SETUP := GENERATE_NEWBYTECODE_DEBUG, \
     SRC := $(NASHORN_TOPDIR)/src/jdk.scripting.nashorn/share/classes, \
     EXCLUDE_FILES := META-INF/MANIFEST.MF, \
@@ -71,7 +74,7 @@ $(eval $(call SetupJavaCompilation,BUILD_NASGEN, \
     ADD_JAVAC_FLAGS := -Xbootclasspath/p:"$(SUPPORT_OUTPUTDIR)/special_classes/jdk.scripting.nashorn/classes"))
 
 # Nasgen needs nashorn classes
-$(BUILD_NASGEN): $(BUILD_NASHORN)
+$(BUILD_NASGEN): $(jdk.scripting.nashorn)
 
 NASHORN_CLASSES_DIR := $(JDK_OUTPUTDIR)/modules/jdk.scripting.nashorn
 NASGEN_RUN_FILE := $(NASHORN_CLASSES_DIR)/_the.nasgen.run

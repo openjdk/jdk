@@ -55,12 +55,12 @@ import java.util.Arrays;
  *   has not been used before; </p></li>
  *
  *   <li><p> Invoke the {@link #$code$ $code$} method zero or more times, as
- *   long as additional input may be available, passing <tt>false</tt> for the
- *   <tt>endOfInput</tt> argument and filling the input buffer and flushing the
+ *   long as additional input may be available, passing {@code false} for the
+ *   {@code endOfInput} argument and filling the input buffer and flushing the
  *   output buffer between invocations; </p></li>
  *
  *   <li><p> Invoke the {@link #$code$ $code$} method one final time, passing
- *   <tt>true</tt> for the <tt>endOfInput</tt> argument; and then </p></li>
+ *   {@code true} for the {@code endOfInput} argument; and then </p></li>
  *
  *   <li><p> Invoke the {@link #flush flush} method so that the $coder$ can
  *   flush any internal state to the output buffer. </p></li>
@@ -175,7 +175,7 @@ public abstract class Charset$Coder$ {
      *         $otype$s that will be produced for each input $itype$
      *
      * @param  replacement
-     *         The initial replacement; must not be <tt>null</tt>, must have
+     *         The initial replacement; must not be {@code null}, must have
      *         non-zero length, must not be longer than max$ItypesPerOtype$,
      *         and must be {@linkplain #isLegalReplacement legal}
      *
@@ -248,7 +248,7 @@ public abstract class Charset$Coder$ {
      * Returns this $coder$'s replacement value.
      *
      * @return  This $coder$'s current replacement,
-     *          which is never <tt>null</tt> and is never empty
+     *          which is never {@code null} and is never empty
      */
     public final $replType$ replacement() {
 #if[decoder]
@@ -267,7 +267,7 @@ public abstract class Charset$Coder$ {
      * replacement is acceptable.  </p>
      *
      * @param  newReplacement  The new replacement; must not be
-     *         <tt>null</tt>, must have non-zero length,
+     *         {@code null}, must have non-zero length,
 #if[decoder]
      *         and must not be longer than the value returned by the
      *         {@link #max$ItypesPerOtype$() max$ItypesPerOtype$} method
@@ -332,7 +332,7 @@ public abstract class Charset$Coder$ {
      *
      * @param  repl  The byte array to be tested
      *
-     * @return  <tt>true</tt> if, and only if, the given byte array
+     * @return  {@code true} if, and only if, the given byte array
      *          is a legal replacement value for this encoder
      */
     public boolean isLegalReplacement(byte[] repl) {
@@ -358,7 +358,7 @@ public abstract class Charset$Coder$ {
     /**
      * Returns this $coder$'s current action for malformed-input errors.
      *
-     * @return The current malformed-input action, which is never <tt>null</tt>
+     * @return The current malformed-input action, which is never {@code null}
      */
     public CodingErrorAction malformedInputAction() {
         return malformedInputAction;
@@ -370,7 +370,7 @@ public abstract class Charset$Coder$ {
      * <p> This method invokes the {@link #implOnMalformedInput
      * implOnMalformedInput} method, passing the new action.  </p>
      *
-     * @param  newAction  The new action; must not be <tt>null</tt>
+     * @param  newAction  The new action; must not be {@code null}
      *
      * @return  This $coder$
      *
@@ -400,7 +400,7 @@ public abstract class Charset$Coder$ {
      * Returns this $coder$'s current action for unmappable-character errors.
      *
      * @return The current unmappable-character action, which is never
-     *         <tt>null</tt>
+     *         {@code null}
      */
     public CodingErrorAction unmappableCharacterAction() {
         return unmappableCharacterAction;
@@ -412,7 +412,7 @@ public abstract class Charset$Coder$ {
      * <p> This method invokes the {@link #implOnUnmappableCharacter
      * implOnUnmappableCharacter} method, passing the new action.  </p>
      *
-     * @param  newAction  The new action; must not be <tt>null</tt>
+     * @param  newAction  The new action; must not be {@code null}
      *
      * @return  This $coder$
      *
@@ -521,16 +521,16 @@ public abstract class Charset$Coder$ {
      * operation then care should be taken to preserve any $itype$s remaining
      * in the input buffer so that they are available to the next invocation.
      *
-     * <p> The <tt>endOfInput</tt> parameter advises this method as to whether
+     * <p> The {@code endOfInput} parameter advises this method as to whether
      * the invoker can provide further input beyond that contained in the given
      * input buffer.  If there is a possibility of providing additional input
-     * then the invoker should pass <tt>false</tt> for this parameter; if there
+     * then the invoker should pass {@code false} for this parameter; if there
      * is no possibility of providing further input then the invoker should
-     * pass <tt>true</tt>.  It is not erroneous, and in fact it is quite
-     * common, to pass <tt>false</tt> in one invocation and later discover that
+     * pass {@code true}.  It is not erroneous, and in fact it is quite
+     * common, to pass {@code false} in one invocation and later discover that
      * no further input was actually available.  It is critical, however, that
      * the final invocation of this method in a sequence of invocations always
-     * pass <tt>true</tt> so that any remaining un$code$d input will be treated
+     * pass {@code true} so that any remaining un$code$d input will be treated
      * as being malformed.
      *
      * <p> This method works by invoking the {@link #$code$Loop $code$Loop}
@@ -545,7 +545,7 @@ public abstract class Charset$Coder$ {
      *         The output $otype$ buffer
      *
      * @param  endOfInput
-     *         <tt>true</tt> if, and only if, the invoker can provide no
+     *         {@code true} if, and only if, the invoker can provide no
      *         additional input $itype$s beyond those in the given buffer
      *
      * @return  A coder-result object describing the reason for termination
@@ -553,9 +553,9 @@ public abstract class Charset$Coder$ {
      * @throws  IllegalStateException
      *          If $a$ $coding$ operation is already in progress and the previous
      *          step was an invocation neither of the {@link #reset reset}
-     *          method, nor of this method with a value of <tt>false</tt> for
-     *          the <tt>endOfInput</tt> parameter, nor of this method with a
-     *          value of <tt>true</tt> for the <tt>endOfInput</tt> parameter
+     *          method, nor of this method with a value of {@code false} for
+     *          the {@code endOfInput} parameter, nor of this method with a
+     *          value of {@code true} for the {@code endOfInput} parameter
      *          but a return value indicating an incomplete $coding$ operation
      *
      * @throws  CoderMalfunctionError
@@ -659,7 +659,7 @@ public abstract class Charset$Coder$ {
      *          invocation neither of the {@link #flush flush} method nor of
      *          the three-argument {@link
      *          #$code$($Itype$Buffer,$Otype$Buffer,boolean) $code$} method
-     *          with a value of <tt>true</tt> for the <tt>endOfInput</tt>
+     *          with a value of {@code true} for the {@code endOfInput}
      *          parameter
      */
     public final CoderResult flush($Otype$Buffer out) {
@@ -824,10 +824,10 @@ public abstract class Charset$Coder$ {
      * Tells whether or not this decoder implements an auto-detecting charset.
      *
      * <p> The default implementation of this method always returns
-     * <tt>false</tt>; it should be overridden by auto-detecting decoders to
-     * return <tt>true</tt>.  </p>
+     * {@code false}; it should be overridden by auto-detecting decoders to
+     * return {@code true}.  </p>
      *
-     * @return  <tt>true</tt> if, and only if, this decoder implements an
+     * @return  {@code true} if, and only if, this decoder implements an
      *          auto-detecting charset
      */
     public boolean isAutoDetecting() {
@@ -840,21 +840,21 @@ public abstract class Charset$Coder$ {
      *
      * <p> If this decoder implements an auto-detecting charset then at a
      * single point during a decoding operation this method may start returning
-     * <tt>true</tt> to indicate that a specific charset has been detected in
+     * {@code true} to indicate that a specific charset has been detected in
      * the input byte sequence.  Once this occurs, the {@link #detectedCharset
      * detectedCharset} method may be invoked to retrieve the detected charset.
      *
-     * <p> That this method returns <tt>false</tt> does not imply that no bytes
+     * <p> That this method returns {@code false} does not imply that no bytes
      * have yet been decoded.  Some auto-detecting decoders are capable of
      * decoding some, or even all, of an input byte sequence without fixing on
      * a particular charset.
      *
      * <p> The default implementation of this method always throws an {@link
      * UnsupportedOperationException}; it should be overridden by
-     * auto-detecting decoders to return <tt>true</tt> once the input charset
+     * auto-detecting decoders to return {@code true} once the input charset
      * has been determined.  </p>
      *
-     * @return  <tt>true</tt> if, and only if, this decoder has detected a
+     * @return  {@code true} if, and only if, this decoder has detected a
      *          specific charset
      *
      * @throws  UnsupportedOperationException
@@ -880,7 +880,7 @@ public abstract class Charset$Coder$ {
      * auto-detecting decoders to return the appropriate value.  </p>
      *
      * @return  The charset detected by this auto-detecting decoder,
-     *          or <tt>null</tt> if the charset has not yet been determined
+     *          or {@code null} if the charset has not yet been determined
      *
      * @throws  IllegalStateException
      *          If insufficient bytes have been read to determine a charset
@@ -920,7 +920,7 @@ public abstract class Charset$Coder$ {
     /**
      * Tells whether or not this encoder can encode the given character.
      *
-     * <p> This method returns <tt>false</tt> if the given character is a
+     * <p> This method returns {@code false} if the given character is a
      * surrogate character; such characters can be interpreted only when they
      * are members of a pair consisting of a high surrogate followed by a low
      * surrogate.  The {@link #canEncode(java.lang.CharSequence)
@@ -937,7 +937,7 @@ public abstract class Charset$Coder$ {
      * @param   c
      *          The given character
      *
-     * @return  <tt>true</tt> if, and only if, this encoder can encode
+     * @return  {@code true} if, and only if, this encoder can encode
      *          the given character
      *
      * @throws  IllegalStateException
@@ -954,7 +954,7 @@ public abstract class Charset$Coder$ {
      * Tells whether or not this encoder can encode the given character
      * sequence.
      *
-     * <p> If this method returns <tt>false</tt> for a particular character
+     * <p> If this method returns {@code false} for a particular character
      * sequence then more information about why the sequence cannot be encoded
      * may be obtained by performing a full <a href="#steps">encoding
      * operation</a>.
@@ -968,7 +968,7 @@ public abstract class Charset$Coder$ {
      * @param   cs
      *          The given character sequence
      *
-     * @return  <tt>true</tt> if, and only if, this encoder can encode
+     * @return  {@code true} if, and only if, this encoder can encode
      *          the given character without throwing any exceptions and without
      *          performing any replacements
      *
