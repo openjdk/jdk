@@ -1794,7 +1794,7 @@
     <name>jdk.scripting.nashorn</name>
     <depend>java.base</depend>
     <depend>java.logging</depend>
-    <depend>java.scripting</depend>
+    <depend re-exports="true">java.scripting</depend>
     <export>
       <name>jdk.nashorn.internal.runtime</name>
       <to>jdk.scripting.nashorn.shell</to>
@@ -1806,6 +1806,12 @@
     <export>
       <name>jdk.nashorn.tools</name>
       <to>jdk.scripting.nashorn.shell</to>
+    </export>
+    <export>
+      <name>jdk.nashorn.api.scripting</name>
+    </export>
+    <export>
+      <name>jdk.nashorn.api.tree</name>
     </export>
   </module>
   <module>
