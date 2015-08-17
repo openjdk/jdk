@@ -44,16 +44,16 @@ public interface GarbageCollectorMXBean
     /**
      * Returns the GC information about the most recent GC.
      * This method returns a {@link GcInfo}.
-     * If no GC information is available, <tt>null</tt> is returned.
+     * If no GC information is available, {@code null} is returned.
      * The collector-specific attributes, if any, can be obtained
      * via the {@link CompositeData CompositeData} interface.
      * <p>
      * <b>MBeanServer access:</b>
-     * The mapped type of <tt>GcInfo</tt> is <tt>CompositeData</tt>
+     * The mapped type of {@code GcInfo} is {@code CompositeData}
      * with attributes specified in {@link GcInfo#from GcInfo}.
      *
-     * @return a <tt>GcInfo</tt> object representing
-     * the most GC information; or <tt>null</tt> if no GC
+     * @return a {@code GcInfo} object representing
+     * the most GC information; or {@code null} if no GC
      * information available.
      */
     public GcInfo getLastGcInfo();

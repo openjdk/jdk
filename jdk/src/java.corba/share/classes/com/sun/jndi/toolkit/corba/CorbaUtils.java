@@ -76,7 +76,7 @@ public class CorbaUtils {
       *
       * @param remoteObj The non-null remote object for
       * @param orb       The non-null ORB to connect the remote object to
-      * @return The CORBA Object for remoteObj; null if <tt>remoteObj</tt>
+      * @return The CORBA Object for remoteObj; null if {@code remoteObj}
       *                 is a JRMP implementation or JRMP stub.
       * @exception ConfigurationException The CORBA Object cannot be obtained
       *         because of configuration problems.

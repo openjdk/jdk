@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -495,9 +495,6 @@ bool os::is_allocatable(size_t bytes) {
 // thread stack
 
 size_t os::Linux::min_stack_allowed  = 64 * K;
-
-// aarch64: pthread on aarch64 is always in floating stack mode
-bool os::Linux::supports_variable_stack_size() {  return true; }
 
 // return default stack size for thr_type
 size_t os::Linux::default_stack_size(os::ThreadType thr_type) {

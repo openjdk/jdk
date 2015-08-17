@@ -34,7 +34,7 @@ import javax.naming.*;
 
 
 /**
- * <tt>DnsName</tt> implements compound names for DNS as specified by
+ * {@code DnsName} implements compound names for DNS as specified by
  * RFCs 1034 and 1035, and as updated and clarified by RFCs 1123 and 2181.
  *
  * <p> The labels in a domain name correspond to JNDI atomic names.
@@ -57,45 +57,45 @@ import javax.naming.*;
  * <p> DNS does not specify an encoding (such as UTF-8) to use for
  * octets with non-ASCII values.  As of this writing there is some
  * work going on in this area, but it is not yet finalized.
- * <tt>DnsName</tt> currently converts any non-ASCII octets into
+ * {@code DnsName} currently converts any non-ASCII octets into
  * characters using ISO-LATIN-1 encoding, in effect taking the
  * value of each octet and storing it directly into the low-order byte
  * of a Java character and <i>vice versa</i>.  As a consequence, no
  * character in a DNS name will ever have a non-zero high-order byte.
  * When the work on internationalizing domain names has stabilized
- * (see for example <i>draft-ietf-idn-idna-10.txt</i>), <tt>DnsName</tt>
+ * (see for example <i>draft-ietf-idn-idna-10.txt</i>), {@code DnsName}
  * may be updated to conform to that work.
  *
- * <p> Backslash (<tt>\</tt>) is used as the escape character in the
+ * <p> Backslash ({@code \}) is used as the escape character in the
  * textual representation of a domain name.  The character sequence
- * `<tt>\DDD</tt>', where <tt>DDD</tt> is a 3-digit decimal number
+ * `{@code \DDD}', where {@code DDD} is a 3-digit decimal number
  * (with leading zeros if needed), represents the octet whose value
- * is <tt>DDD</tt>.  The character sequence `<tt>\C</tt>', where
- * <tt>C</tt> is a character other than <tt>'0'</tt> through
- * <tt>'9'</tt>, represents the octet whose value is that of
- * <tt>C</tt> (again using ISO-LATIN-1 encoding); this is particularly
- * useful for escaping <tt>'.'</tt> or backslash itself.  Backslash is
+ * is {@code DDD}.  The character sequence `{@code \C}', where
+ * {@code C} is a character other than {@code '0'} through
+ * {@code '9'}, represents the octet whose value is that of
+ * {@code C} (again using ISO-LATIN-1 encoding); this is particularly
+ * useful for escaping {@code '.'} or backslash itself.  Backslash is
  * otherwise not allowed in a domain name.  Note that escape characters
  * are interpreted when a name is parsed.  So, for example, the character
- * sequences `<tt>S</tt>', `<tt>\S</tt>', and `<tt>\083</tt>' each
- * represent the same one-octet name.  The <tt>toString()</tt> method
+ * sequences `{@code S}', `{@code \S}', and `{@code \083}' each
+ * represent the same one-octet name.  The {@code toString()} method
  * does not generally insert escape sequences except where necessary.
- * If, however, the <tt>DnsName</tt> was constructed using unneeded
- * escapes, those escapes may appear in the <tt>toString</tt> result.
+ * If, however, the {@code DnsName} was constructed using unneeded
+ * escapes, those escapes may appear in the {@code toString} result.
  *
  * <p> Atomic names passed as parameters to methods of
- * <tt>DnsName</tt>, and those returned by them, are unescaped.  So,
- * for example, <tt>(new&nbsp;DnsName()).add("a.b")</tt> creates an
- * object representing the one-label domain name <tt>a\.b</tt>, and
- * calling <tt>get(0)</tt> on this object returns <tt>"a.b"</tt>.
+ * {@code DnsName}, and those returned by them, are unescaped.  So,
+ * for example, <code>(new&nbsp;DnsName()).add("a.b")</code> creates an
+ * object representing the one-label domain name {@code a\.b}, and
+ * calling {@code get(0)} on this object returns {@code "a.b"}.
  *
  * <p> While DNS names are case-preserving, comparisons between them
  * are case-insensitive.  When comparing names containing non-ASCII
- * octets, <tt>DnsName</tt> uses case-insensitive comparison
+ * octets, {@code DnsName} uses case-insensitive comparison
  * between pairs of ASCII values, and exact binary comparison
  * otherwise.
 
- * <p> A <tt>DnsName</tt> instance is not synchronized against
+ * <p> A {@code DnsName} instance is not synchronized against
  * concurrent access by multiple threads.
  *
  * @author Scott Seligman
@@ -119,16 +119,16 @@ public final class DnsName implements Name {
 
 
     /**
-     * Constructs a <tt>DnsName</tt> representing the empty domain name.
+     * Constructs a {@code DnsName} representing the empty domain name.
      */
     public DnsName() {
     }
 
     /**
-     * Constructs a <tt>DnsName</tt> representing a given domain name.
+     * Constructs a {@code DnsName} representing a given domain name.
      *
      * @param   name    the domain name to parse
-     * @throws InvalidNameException if <tt>name</tt> does not conform
+     * @throws InvalidNameException if {@code name} does not conform
      *          to DNS syntax.
      */
     public DnsName(String name) throws InvalidNameException {

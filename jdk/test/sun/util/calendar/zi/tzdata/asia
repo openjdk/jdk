@@ -29,7 +29,7 @@
 # tz@iana.org for general use in the future).  For more, please see
 # the file CONTRIBUTING in the tz distribution.
 
-# From Paul Eggert (2014-10-31):
+# From Paul Eggert (2015-08-08):
 #
 # Unless otherwise specified, the source for data through 1990 is:
 # Thomas G. Shanks and Rique Pottenger, The International Atlas (6th edition),
@@ -66,7 +66,7 @@
 #	2:00 EET  EEST	Eastern European Time
 #	2:00 IST  IDT	Israel
 #	3:00 AST  ADT	Arabia*
-#	3:30 IRST IRDT	Iran
+#	3:30 IRST IRDT	Iran*
 #	4:00 GST	Gulf*
 #	5:30 IST	India
 #	7:00 ICT	Indochina, most times and locations*
@@ -75,10 +75,11 @@
 #	8:00 CST	China
 #	8:00 IDT	Indochina, 1943-45, 1947-55, 1960-75 (some locations)*
 #	8:00 JWST	Western Standard Time (Japan, 1896/1937)*
+#	8:30 KST  KDT	Korea when at +0830*
 #	9:00 JCST	Central Standard Time (Japan, 1896/1937)
 #	9:00 WIT	east Indonesia (Waktu Indonesia Timur)
 #	9:00 JST  JDT	Japan
-#	9:00 KST  KDT	Korea
+#	9:00 KST  KDT	Korea when at +09
 #	9:30 ACST	Australian Central Standard Time
 #
 # See the 'europe' file for Russia and Turkey in Asia.
@@ -1050,7 +1051,7 @@ Zone Asia/Jayapura	9:22:48 -	LMT	1932 Nov
 #
 # From Roozbeh Pournader (2007-11-05):
 # This is quoted from Official Gazette of the Islamic Republic of
-# Iran, Volume 63, Number 18242, dated Tuesday 1386/6/24
+# Iran, Volume 63, No. 18242, dated Tuesday 1386/6/24
 # [2007-10-16]. I am doing the best translation I can:...
 # The official time of the country will be moved forward for one hour
 # on the 24 hours of the first day of the month of Farvardin and will
@@ -1580,7 +1581,7 @@ Zone	Asia/Amman	2:23:44 -	LMT	1931
 # - Qyzylorda switched from +5:00 to +6:00 on 1992-01-19 02:00.
 # - Oral switched from +5:00 to +4:00 in spring 1989.
 
-# From Kazakhstan Embassy's News Bulletin #11
+# From Kazakhstan Embassy's News Bulletin No. 11
 # <http://www.kazsociety.org.uk/news/2005/03/30.htm> (2005-03-21):
 # The Government of Kazakhstan passed a resolution March 15 abolishing
 # daylight saving time citing lack of economic benefits and health
@@ -1734,6 +1735,17 @@ Rule	ROK	1987	1988	-	Oct	Sun>=8	3:00	0	S
 #
 # For Pyongyang we have no information; guess no changes since World War II.
 
+# From Steffen Thorsen (2015-08-07):
+# According to many news sources, North Korea is going to change to
+# the 8:30 time zone on August 15, one example:
+# http://www.bbc.com/news/world-asia-33815049
+#
+# From Paul Eggert (2015-08-07):
+# No transition time is specified; assume 00:00.
+# There is no common English-language abbreviation for this time zone.
+# Use %z rather than invent one.  We can't assume %z works everywhere yet,
+# so for now substitute its output manually.
+
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Seoul	8:27:52	-	LMT	1908 Apr  1
 			8:30	-	KST	1912 Jan  1
@@ -1746,7 +1758,8 @@ Zone	Asia/Pyongyang	8:23:00 -	LMT	1908 Apr  1
 			8:30	-	KST	1912 Jan  1
 			9:00	-	JCST	1937 Oct  1
 			9:00	-	JST	1945 Aug 24
-			9:00	-	KST
+			9:00	-	KST	2015 Aug 15
+			8:30	-	KST
 
 ###############################################################################
 
