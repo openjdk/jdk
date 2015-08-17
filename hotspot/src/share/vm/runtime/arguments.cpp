@@ -222,12 +222,11 @@ void Arguments::init_system_properties() {
 void Arguments::init_version_specific_system_properties() {
   enum { bufsz = 16 };
   char buffer[bufsz];
-  const char* spec_vendor = "Sun Microsystems Inc.";
-  uint32_t spec_version = 0;
+  const char* spec_vendor = "Oracle Corporation";
+  uint32_t spec_version_major = 0;
 
-  spec_vendor = "Oracle Corporation";
-  spec_version = JDK_Version::current().major_version();
-  jio_snprintf(buffer, bufsz, "1." UINT32_FORMAT, spec_version);
+  spec_version_major = JDK_Version::current().major_version();
+  jio_snprintf(buffer, bufsz, UINT32_FORMAT, spec_version_major);
 
   PropertyList_add(&_system_properties,
       new SystemProperty("java.vm.specification.vendor",  spec_vendor, false));
