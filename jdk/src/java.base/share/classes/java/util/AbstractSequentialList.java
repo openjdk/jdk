@@ -26,31 +26,31 @@
 package java.util;
 
 /**
- * This class provides a skeletal implementation of the <tt>List</tt>
+ * This class provides a skeletal implementation of the {@code List}
  * interface to minimize the effort required to implement this interface
  * backed by a "sequential access" data store (such as a linked list).  For
- * random access data (such as an array), <tt>AbstractList</tt> should be used
+ * random access data (such as an array), {@code AbstractList} should be used
  * in preference to this class.<p>
  *
- * This class is the opposite of the <tt>AbstractList</tt> class in the sense
- * that it implements the "random access" methods (<tt>get(int index)</tt>,
- * <tt>set(int index, E element)</tt>, <tt>add(int index, E element)</tt> and
- * <tt>remove(int index)</tt>) on top of the list's list iterator, instead of
+ * This class is the opposite of the {@code AbstractList} class in the sense
+ * that it implements the "random access" methods ({@code get(int index)},
+ * {@code set(int index, E element)}, {@code add(int index, E element)} and
+ * {@code remove(int index)}) on top of the list's list iterator, instead of
  * the other way around.<p>
  *
  * To implement a list the programmer needs only to extend this class and
- * provide implementations for the <tt>listIterator</tt> and <tt>size</tt>
+ * provide implementations for the {@code listIterator} and {@code size}
  * methods.  For an unmodifiable list, the programmer need only implement the
- * list iterator's <tt>hasNext</tt>, <tt>next</tt>, <tt>hasPrevious</tt>,
- * <tt>previous</tt> and <tt>index</tt> methods.<p>
+ * list iterator's {@code hasNext}, {@code next}, {@code hasPrevious},
+ * {@code previous} and {@code index} methods.<p>
  *
  * For a modifiable list the programmer should additionally implement the list
- * iterator's <tt>set</tt> method.  For a variable-size list the programmer
- * should additionally implement the list iterator's <tt>remove</tt> and
- * <tt>add</tt> methods.<p>
+ * iterator's {@code set} method.  For a variable-size list the programmer
+ * should additionally implement the list iterator's {@code remove} and
+ * {@code add} methods.<p>
  *
  * The programmer should generally provide a void (no argument) and collection
- * constructor, as per the recommendation in the <tt>Collection</tt> interface
+ * constructor, as per the recommendation in the {@code Collection} interface
  * specification.<p>
  *
  * This class is a member of the
@@ -78,8 +78,8 @@ public abstract class AbstractSequentialList<E> extends AbstractList<E> {
      * Returns the element at the specified position in this list.
      *
      * <p>This implementation first gets a list iterator pointing to the
-     * indexed element (with <tt>listIterator(index)</tt>).  Then, it gets
-     * the element using <tt>ListIterator.next</tt> and returns it.
+     * indexed element (with {@code listIterator(index)}).  Then, it gets
+     * the element using {@code ListIterator.next} and returns it.
      *
      * @throws IndexOutOfBoundsException {@inheritDoc}
      */
@@ -96,13 +96,13 @@ public abstract class AbstractSequentialList<E> extends AbstractList<E> {
      * specified element (optional operation).
      *
      * <p>This implementation first gets a list iterator pointing to the
-     * indexed element (with <tt>listIterator(index)</tt>).  Then, it gets
-     * the current element using <tt>ListIterator.next</tt> and replaces it
-     * with <tt>ListIterator.set</tt>.
+     * indexed element (with {@code listIterator(index)}).  Then, it gets
+     * the current element using {@code ListIterator.next} and replaces it
+     * with {@code ListIterator.set}.
      *
      * <p>Note that this implementation will throw an
-     * <tt>UnsupportedOperationException</tt> if the list iterator does not
-     * implement the <tt>set</tt> operation.
+     * {@code UnsupportedOperationException} if the list iterator does not
+     * implement the {@code set} operation.
      *
      * @throws UnsupportedOperationException {@inheritDoc}
      * @throws ClassCastException            {@inheritDoc}
@@ -128,12 +128,12 @@ public abstract class AbstractSequentialList<E> extends AbstractList<E> {
      * indices).
      *
      * <p>This implementation first gets a list iterator pointing to the
-     * indexed element (with <tt>listIterator(index)</tt>).  Then, it
-     * inserts the specified element with <tt>ListIterator.add</tt>.
+     * indexed element (with {@code listIterator(index)}).  Then, it
+     * inserts the specified element with {@code ListIterator.add}.
      *
      * <p>Note that this implementation will throw an
-     * <tt>UnsupportedOperationException</tt> if the list iterator does not
-     * implement the <tt>add</tt> operation.
+     * {@code UnsupportedOperationException} if the list iterator does not
+     * implement the {@code add} operation.
      *
      * @throws UnsupportedOperationException {@inheritDoc}
      * @throws ClassCastException            {@inheritDoc}
@@ -156,12 +156,12 @@ public abstract class AbstractSequentialList<E> extends AbstractList<E> {
      * list.
      *
      * <p>This implementation first gets a list iterator pointing to the
-     * indexed element (with <tt>listIterator(index)</tt>).  Then, it removes
-     * the element with <tt>ListIterator.remove</tt>.
+     * indexed element (with {@code listIterator(index)}).  Then, it removes
+     * the element with {@code ListIterator.remove}.
      *
      * <p>Note that this implementation will throw an
-     * <tt>UnsupportedOperationException</tt> if the list iterator does not
-     * implement the <tt>remove</tt> operation.
+     * {@code UnsupportedOperationException} if the list iterator does not
+     * implement the {@code remove} operation.
      *
      * @throws UnsupportedOperationException {@inheritDoc}
      * @throws IndexOutOfBoundsException     {@inheritDoc}
@@ -193,14 +193,14 @@ public abstract class AbstractSequentialList<E> extends AbstractList<E> {
      *
      * <p>This implementation gets an iterator over the specified collection and
      * a list iterator over this list pointing to the indexed element (with
-     * <tt>listIterator(index)</tt>).  Then, it iterates over the specified
+     * {@code listIterator(index)}).  Then, it iterates over the specified
      * collection, inserting the elements obtained from the iterator into this
-     * list, one at a time, using <tt>ListIterator.add</tt> followed by
-     * <tt>ListIterator.next</tt> (to skip over the added element).
+     * list, one at a time, using {@code ListIterator.add} followed by
+     * {@code ListIterator.next} (to skip over the added element).
      *
      * <p>Note that this implementation will throw an
-     * <tt>UnsupportedOperationException</tt> if the list iterator returned by
-     * the <tt>listIterator</tt> method does not implement the <tt>add</tt>
+     * {@code UnsupportedOperationException} if the list iterator returned by
+     * the {@code listIterator} method does not implement the {@code add}
      * operation.
      *
      * @throws UnsupportedOperationException {@inheritDoc}
@@ -243,7 +243,7 @@ public abstract class AbstractSequentialList<E> extends AbstractList<E> {
      * sequence).
      *
      * @param  index index of first element to be returned from the list
-     *         iterator (by a call to the <code>next</code> method)
+     *         iterator (by a call to the {@code next} method)
      * @return a list iterator over the elements in this list (in proper
      *         sequence)
      * @throws IndexOutOfBoundsException {@inheritDoc}

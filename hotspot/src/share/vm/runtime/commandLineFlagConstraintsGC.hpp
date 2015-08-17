@@ -34,6 +34,8 @@
  * an appropriate error value.
  */
 
+Flag::Error YoungPLABSizeConstraintFunc(bool verbose, size_t* value);
+
 Flag::Error MinHeapFreeRatioConstraintFunc(bool verbose, uintx* value);
 Flag::Error MaxHeapFreeRatioConstraintFunc(bool verbose, uintx* value);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,10 +39,9 @@ final class WListPeer extends WComponentPeer implements ListPeer {
     // ListPeer implementation
 
     @Override
-    @SuppressWarnings("deprecation")
     public int[] getSelectedIndexes() {
         List l = (List)target;
-        int len = l.countItems();
+        int len = l.getItemCount();
         int sel[] = new int[len];
         int nsel = 0;
         for (int i = 0 ; i < len ; i++) {
@@ -93,10 +92,9 @@ final class WListPeer extends WComponentPeer implements ListPeer {
 
     @Override
     public native void delItems(int start, int end);
-    @SuppressWarnings("deprecation")
     public void clear() {
         List l = (List)target;
-        delItems(0, l.countItems());
+        delItems(0, l.getItemCount());
     }
     @Override
     public native void select(int index);
@@ -131,7 +129,6 @@ final class WListPeer extends WComponentPeer implements ListPeer {
     native void create(WComponentPeer parent);
 
     @Override
-    @SuppressWarnings("deprecation")
     void initialize() {
         List li = (List)target;
 
@@ -144,7 +141,7 @@ final class WListPeer extends WComponentPeer implements ListPeer {
         }
 
         // add any items that were already inserted in the target.
-        int  nitems = li.countItems();
+        int  nitems = li.getItemCount();
         if (nitems > 0) {
             String[] items = new String[nitems];
             int maxWidth = 0;
@@ -160,7 +157,7 @@ final class WListPeer extends WComponentPeer implements ListPeer {
         }
 
         // set whether this list should allow multiple selections.
-        setMultipleSelections(li.allowsMultipleSelections());
+        setMultipleSelections(li.isMultipleMode());
 
         // select the item if necessary.
         int sel[] = li.getSelectedIndexes();

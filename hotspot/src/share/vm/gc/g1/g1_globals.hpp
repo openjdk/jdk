@@ -252,12 +252,12 @@
           "Percentage (0-100) of the heap size to use as default "          \
           " maximum young gen size.")                                       \
           range(0, 100)                                                     \
-          constraint(G1MaxNewSizePercentConstraintFunc)                     \
+          constraint(G1MaxNewSizePercentConstraintFunc,AfterErgo)           \
                                                                             \
   experimental(uintx, G1NewSizePercent, 5,                                  \
           "Percentage (0-100) of the heap size to use as default "          \
           "minimum young gen size.")                                        \
-          constraint(G1NewSizePercentConstraintFunc)                        \
+          constraint(G1NewSizePercentConstraintFunc,AfterErgo)              \
                                                                             \
   experimental(uintx, G1MixedGCLiveThresholdPercent, 85,                    \
           "Threshold for regions to be considered for inclusion in the "    \

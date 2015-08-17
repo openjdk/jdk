@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <jni_util.h>
 #include <string.h>
+#include <X11/X.h>
 #include "gtk2_interface.h"
 #include "sun_awt_X11_GtkFileDialogPeer.h"
 #include "java_awt_FileDialog.h"
@@ -38,6 +39,7 @@ static JavaVM *jvm;
 static jmethodID filenameFilterCallbackMethodID = NULL;
 static jmethodID setFileInternalMethodID = NULL;
 static jfieldID  widgetFieldID = NULL;
+static jmethodID  setWindowMethodID = NULL;
 
 JNIEXPORT void JNICALL Java_sun_awt_X11_GtkFileDialogPeer_initIDs
 (JNIEnv *env, jclass cx)
@@ -54,6 +56,10 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_GtkFileDialogPeer_initIDs
 
     widgetFieldID = (*env)->GetFieldID(env, cx, "widget", "J");
     DASSERT(widgetFieldID != NULL);
+    CHECK_NULL(widgetFieldID);
+
+    setWindowMethodID = (*env)->GetMethodID(env, cx, "setWindow", "(J)Z");
+    DASSERT(setWindowMethodID != NULL);
 }
 
 static gboolean filenameFilterCallback(const GtkFileFilterInfo * filter_info, gpointer obj)
@@ -401,7 +407,11 @@ Java_sun_awt_X11_GtkFileDialogPeer_run(JNIEnv * env, jobject jpeer,
 
     fp_gtk_widget_show(dialog);
 
-    fp_gtk_main();
+    XID xid = fp_gdk_x11_drawable_get_xid(dialog->window);
+    if( (*env)->CallBooleanMethod(env, jpeer, setWindowMethodID, xid) ) {
+        fp_gtk_main();
+    }
+
     fp_gdk_threads_leave();
 }
 

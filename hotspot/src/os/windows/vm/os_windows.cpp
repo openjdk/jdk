@@ -1593,6 +1593,21 @@ int os::get_loaded_modules_info(os::LoadedModulesCallbackFunc callback, void *pa
   return result;
 }
 
+#ifndef PRODUCT
+bool os::get_host_name(char* buf, size_t buflen) {
+  DWORD size = (DWORD)buflen;
+  return (GetComputerNameEx(ComputerNameDnsHostname, buf, &size) == TRUE);
+}
+#endif // PRODUCT
+
+void os::get_summary_os_info(char* buf, size_t buflen) {
+  stringStream sst(buf, buflen);
+  os::win32::print_windows_version(&sst);
+  // chop off newline character
+  char* nl = strchr(buf, '\n');
+  if (nl != NULL) *nl = '\0';
+}
+
 void os::print_os_info_brief(outputStream* st) {
   os::print_os_info(st);
 }
@@ -1600,15 +1615,14 @@ void os::print_os_info_brief(outputStream* st) {
 void os::print_os_info(outputStream* st) {
 #ifdef ASSERT
   char buffer[1024];
-  DWORD size = sizeof(buffer);
-  st->print(" HostName: ");
-  if (GetComputerNameEx(ComputerNameDnsHostname, buffer, &size)) {
-    st->print("%s", buffer);
+  st->print("HostName: ");
+  if (get_host_name(buffer, sizeof(buffer))) {
+    st->print("%s ", buffer);
   } else {
-    st->print("N/A");
+    st->print("N/A ");
   }
 #endif
-  st->print(" OS:");
+  st->print("OS:");
   os::win32::print_windows_version(st);
 }
 
@@ -1736,6 +1750,23 @@ void os::win32::print_windows_version(outputStream* st) {
 
 void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   // Nothing to do for now.
+}
+
+void os::get_summary_cpu_info(char* buf, size_t buflen) {
+  HKEY key;
+  DWORD status = RegOpenKey(HKEY_LOCAL_MACHINE,
+               "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", &key);
+  if (status == ERROR_SUCCESS) {
+    DWORD size = (DWORD)buflen;
+    status = RegQueryValueEx(key, "ProcessorNameString", NULL, NULL, (byte*)buf, &size);
+    if (status != ERROR_SUCCESS) {
+        strncpy(buf, "## __CPU__", buflen);
+    }
+    RegCloseKey(key);
+  } else {
+    // Put generic cpu info to return
+    strncpy(buf, "## __CPU__", buflen);
+  }
 }
 
 void os::print_memory_info(outputStream* st) {

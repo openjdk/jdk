@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -233,10 +233,13 @@ DWORD getFinalAttributes(WCHAR *path)
 
     if (GetFileAttributesExW(path, GetFileExInfoStandard, &wfad)) {
         attr = getFinalAttributesIfReparsePoint(path, wfad.dwFileAttributes);
-    } else if (GetLastError() == ERROR_SHARING_VIOLATION &&
-               (h = FindFirstFileW(path, &wfd)) != INVALID_HANDLE_VALUE) {
-        attr = getFinalAttributesIfReparsePoint(path, wfd.dwFileAttributes);
-        FindClose(h);
+    } else {
+        DWORD lerr = GetLastError();
+        if ((lerr == ERROR_SHARING_VIOLATION || lerr == ERROR_ACCESS_DENIED) &&
+            (h = FindFirstFileW(path, &wfd)) != INVALID_HANDLE_VALUE) {
+            attr = getFinalAttributesIfReparsePoint(path, wfd.dwFileAttributes);
+            FindClose(h);
+        }
     }
     return attr;
 }

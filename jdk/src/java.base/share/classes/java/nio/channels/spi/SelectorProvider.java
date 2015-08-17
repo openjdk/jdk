@@ -46,7 +46,7 @@ import sun.security.action.GetPropertyAction;
  * #provider() provider} method.  The first invocation of that method will locate
  * the default provider as specified below.
  *
- * <p> The system-wide default provider is used by the static <tt>open</tt>
+ * <p> The system-wide default provider is used by the static {@code open}
  * methods of the {@link java.nio.channels.DatagramChannel#open
  * DatagramChannel}, {@link java.nio.channels.Pipe#open Pipe}, {@link
  * java.nio.channels.Selector#open Selector}, {@link
@@ -54,7 +54,7 @@ import sun.security.action.GetPropertyAction;
  * java.nio.channels.SocketChannel#open SocketChannel} classes.  It is also
  * used by the {@link java.lang.System#inheritedChannel System.inheritedChannel()}
  * method. A program may make use of a provider other than the default provider
- * by instantiating that provider and then directly invoking the <tt>open</tt>
+ * by instantiating that provider and then directly invoking the {@code open}
  * methods defined in this class.
  *
  * <p> All of the methods in this class are safe for use by multiple concurrent
@@ -84,7 +84,7 @@ public abstract class SelectorProvider {
      *
      * @throws  SecurityException
      *          If a security manager has been installed and it denies
-     *          {@link RuntimePermission}<tt>("selectorProvider")</tt>
+     *          {@link RuntimePermission}{@code ("selectorProvider")}
      */
     protected SelectorProvider() {
         this(checkPermission());
@@ -142,7 +142,7 @@ public abstract class SelectorProvider {
      * <ol>
      *
      *   <li><p> If the system property
-     *   <tt>java.nio.channels.spi.SelectorProvider</tt> is defined then it is
+     *   {@code java.nio.channels.spi.SelectorProvider} is defined then it is
      *   taken to be the fully-qualified name of a concrete provider class.
      *   The class is loaded and instantiated; if this process fails then an
      *   unspecified error is thrown.  </p></li>
@@ -150,8 +150,8 @@ public abstract class SelectorProvider {
      *   <li><p> If a provider class has been installed in a jar file that is
      *   visible to the system class loader, and that jar file contains a
      *   provider-configuration file named
-     *   <tt>java.nio.channels.spi.SelectorProvider</tt> in the resource
-     *   directory <tt>META-INF/services</tt>, then the first class name
+     *   {@code java.nio.channels.spi.SelectorProvider} in the resource
+     *   directory {@code META-INF/services}, then the first class name
      *   specified in that file is taken.  The class is loaded and
      *   instantiated; if this process fails then an unspecified error is
      *   thrown.  </p></li>
@@ -305,14 +305,14 @@ public abstract class SelectorProvider {
      * returned. Subsequent invocations of this method return the same
      * channel. </p>
      *
-     * @return  The inherited channel, if any, otherwise <tt>null</tt>.
+     * @return  The inherited channel, if any, otherwise {@code null}.
      *
      * @throws  IOException
      *          If an I/O error occurs
      *
      * @throws  SecurityException
      *          If a security manager has been installed and it denies
-     *          {@link RuntimePermission}<tt>("inheritedChannel")</tt>
+     *          {@link RuntimePermission}{@code ("inheritedChannel")}
      *
      * @since 1.5
      */
