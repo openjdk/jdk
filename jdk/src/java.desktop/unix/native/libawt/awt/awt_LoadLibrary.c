@@ -71,6 +71,10 @@ JNIEXPORT jboolean JNICALL AWTIsHeadless() {
         }
         isHeadless = (*env)->CallStaticBooleanMethod(env, graphicsEnvClass,
                                                      headlessFn);
+        if ((*env)->ExceptionCheck(env)) {
+            (*env)->ExceptionClear(env);
+            return JNI_TRUE;
+        }
     }
     return isHeadless;
 }

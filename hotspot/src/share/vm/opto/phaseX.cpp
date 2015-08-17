@@ -791,7 +791,7 @@ void PhaseGVN::dead_loop_check( Node *n ) {
 //------------------------------PhaseIterGVN-----------------------------------
 // Initialize hash table to fresh and clean for +VerifyOpto
 PhaseIterGVN::PhaseIterGVN( PhaseIterGVN *igvn, const char *dummy ) : PhaseGVN(igvn,dummy), _worklist( ),
-                                                                      _stack(C->unique() >> 1),
+                                                                      _stack(C->live_nodes() >> 1),
                                                                       _delay_transform(false) {
 }
 
@@ -808,7 +808,11 @@ PhaseIterGVN::PhaseIterGVN( PhaseIterGVN *igvn ) : PhaseGVN(igvn),
 // Initialize with previous PhaseGVN info from Parser
 PhaseIterGVN::PhaseIterGVN( PhaseGVN *gvn ) : PhaseGVN(gvn),
                                               _worklist(*C->for_igvn()),
-                                              _stack(C->unique() >> 1),
+// TODO: Before incremental inlining it was allocated only once and it was fine. Now that
+//       the constructor is used in incremental inlining, this consumes too much memory:
+//                                            _stack(C->live_nodes() >> 1),
+//       So, as a band-aid, we replace this by:
+                                              _stack(C->comp_arena(), 32),
                                               _delay_transform(false)
 {
   uint max;
@@ -1638,7 +1642,7 @@ Node *PhaseCCP::transform( Node *n ) {
   _nodes.map( n->_idx, new_node );  // Flag as having been cloned
 
   // Allocate stack of size _nodes.Size()/2 to avoid frequent realloc
-  GrowableArray <Node *> trstack(C->unique() >> 1);
+  GrowableArray <Node *> trstack(C->live_nodes() >> 1);
 
   trstack.push(new_node);           // Process children of cloned node
   while ( trstack.is_nonempty() ) {

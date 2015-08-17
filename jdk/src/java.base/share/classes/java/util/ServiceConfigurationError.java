@@ -65,7 +65,7 @@ public class ServiceConfigurationError
     /**
      * Constructs a new instance with the specified message.
      *
-     * @param  msg  The message, or <tt>null</tt> if there is no message
+     * @param  msg  The message, or {@code null} if there is no message
      *
      */
     public ServiceConfigurationError(String msg) {
@@ -75,9 +75,9 @@ public class ServiceConfigurationError
     /**
      * Constructs a new instance with the specified message and cause.
      *
-     * @param  msg  The message, or <tt>null</tt> if there is no message
+     * @param  msg  The message, or {@code null} if there is no message
      *
-     * @param  cause  The cause, or <tt>null</tt> if the cause is nonexistent
+     * @param  cause  The cause, or {@code null} if the cause is nonexistent
      *                or unknown
      */
     public ServiceConfigurationError(String msg, Throwable cause) {

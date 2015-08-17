@@ -2050,7 +2050,7 @@ bool Matcher::is_bmi_pattern(Node *n, Node *m) {
 // Set bits if Node is shared or otherwise a root
 void Matcher::find_shared( Node *n ) {
   // Allocate stack of size C->unique() * 2 to avoid frequent realloc
-  MStack mstack(C->unique() * 2);
+  MStack mstack(C->live_nodes() * 2);
   // Mark nodes as address_visited if they are inputs to an address expression
   VectorSet address_visited(Thread::current()->resource_area());
   mstack.push(n, Visit);     // Don't need to pre-visit root node

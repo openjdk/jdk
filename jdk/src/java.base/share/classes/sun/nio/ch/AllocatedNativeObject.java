@@ -36,14 +36,14 @@ class AllocatedNativeObject                             // package-private
 {
 
     /**
-     * Allocates a memory area of at least <tt>size</tt> bytes outside of the
+     * Allocates a memory area of at least {@code size} bytes outside of the
      * Java heap and creates a native object for that area.
      *
      * @param  size
      *         Number of bytes to allocate
      *
      * @param  pageAligned
-     *         If <tt>true</tt> then the area will be aligned on a hardware
+     *         If {@code true} then the area will be aligned on a hardware
      *         page boundary
      *
      * @throws OutOfMemoryError

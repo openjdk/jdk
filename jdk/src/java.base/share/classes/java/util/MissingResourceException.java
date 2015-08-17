@@ -64,10 +64,10 @@ class MissingResourceException extends RuntimeException {
     }
 
     /**
-     * Constructs a <code>MissingResourceException</code> with
-     * <code>message</code>, <code>className</code>, <code>key</code>,
-     * and <code>cause</code>. This constructor is package private for
-     * use by <code>ResourceBundle.getBundle</code>.
+     * Constructs a {@code MissingResourceException} with
+     * {@code message}, {@code className}, {@code key},
+     * and {@code cause}. This constructor is package private for
+     * use by {@code ResourceBundle.getBundle}.
      *
      * @param message
      *        the detail message

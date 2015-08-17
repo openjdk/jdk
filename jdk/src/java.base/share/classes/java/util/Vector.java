@@ -365,7 +365,7 @@ public class Vector<E>
      * Returns {@code true} if this vector contains the specified element.
      * More formally, returns {@code true} if and only if this vector
      * contains at least one element {@code e} such that
-     * <tt>(o==null&nbsp;?&nbsp;e==null&nbsp;:&nbsp;o.equals(e))</tt>.
+     * {@code Objects.equals(o, e)}.
      *
      * @param o element whose presence in this vector is to be tested
      * @return {@code true} if this vector contains the specified element
@@ -378,7 +378,7 @@ public class Vector<E>
      * Returns the index of the first occurrence of the specified element
      * in this vector, or -1 if this vector does not contain the element.
      * More formally, returns the lowest index {@code i} such that
-     * <tt>(o==null&nbsp;?&nbsp;get(i)==null&nbsp;:&nbsp;o.equals(get(i)))</tt>,
+     * {@code Objects.equals(o, get(i))},
      * or -1 if there is no such index.
      *
      * @param o element to search for
@@ -394,7 +394,7 @@ public class Vector<E>
      * this vector, searching forwards from {@code index}, or returns -1 if
      * the element is not found.
      * More formally, returns the lowest index {@code i} such that
-     * <tt>(i&nbsp;&gt;=&nbsp;index&nbsp;&amp;&amp;&nbsp;(o==null&nbsp;?&nbsp;get(i)==null&nbsp;:&nbsp;o.equals(get(i))))</tt>,
+     * {@code (i >= index && Objects.equals(o, get(i)))},
      * or -1 if there is no such index.
      *
      * @param o element to search for
@@ -422,7 +422,7 @@ public class Vector<E>
      * Returns the index of the last occurrence of the specified element
      * in this vector, or -1 if this vector does not contain the element.
      * More formally, returns the highest index {@code i} such that
-     * <tt>(o==null&nbsp;?&nbsp;get(i)==null&nbsp;:&nbsp;o.equals(get(i)))</tt>,
+     * {@code Objects.equals(o, get(i))},
      * or -1 if there is no such index.
      *
      * @param o element to search for
@@ -438,7 +438,7 @@ public class Vector<E>
      * this vector, searching backwards from {@code index}, or returns -1 if
      * the element is not found.
      * More formally, returns the highest index {@code i} such that
-     * <tt>(i&nbsp;&lt;=&nbsp;index&nbsp;&amp;&amp;&nbsp;(o==null&nbsp;?&nbsp;get(i)==null&nbsp;:&nbsp;o.equals(get(i))))</tt>,
+     * {@code (i <= index && Objects.equals(o, get(i)))},
      * or -1 if there is no such index.
      *
      * @param o element to search for
@@ -798,7 +798,7 @@ public class Vector<E>
      * Removes the first occurrence of the specified element in this Vector
      * If the Vector does not contain the element, it is unchanged.  More
      * formally, removes the element with the lowest index i such that
-     * {@code (o==null ? get(i)==null : o.equals(get(i)))} (if such
+     * {@code Objects.equals(o, get(i))} (if such
      * an element exists).
      *
      * @param o element to be removed from this Vector, if present
@@ -991,8 +991,8 @@ public class Vector<E>
      * true if and only if the specified Object is also a List, both Lists
      * have the same size, and all corresponding pairs of elements in the two
      * Lists are <em>equal</em>.  (Two elements {@code e1} and
-     * {@code e2} are <em>equal</em> if {@code (e1==null ? e2==null :
-     * e1.equals(e2))}.)  In other words, two Lists are defined to be
+     * {@code e2} are <em>equal</em> if {@code Objects.equals(e1, e2)}.)
+     * In other words, two Lists are defined to be
      * equal if they contain the same elements in the same order.
      *
      * @param o the Object to be compared for equality with this Vector

@@ -31,9 +31,12 @@ import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
+import javax.tools.JavaFileManager;
 import javax.tools.JavaFileManager.Location;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
@@ -124,7 +127,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
     public RootDocImpl getRootDocImpl(String doclocale,
                                       String encoding,
                                       ModifierFilter filter,
-                                      List<String> javaNames,
+                                      List<String> args,
                                       List<String[]> options,
                                       Iterable<? extends JavaFileObject> fileObjects,
                                       boolean breakiterator,
@@ -144,61 +147,79 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
 
         javadocFinder.sourceCompleter = docClasses ? Completer.NULL_COMPLETER : sourceCompleter;
 
-        ListBuffer<String> names = new ListBuffer<>();
+        if (docClasses) {
+            // If -Xclasses is set, the args should be a series of class names
+            for (String arg: args) {
+                if (!isValidPackageName(arg)) // checks
+                    docenv.error(null, "main.illegal_class_name", arg);
+            }
+            if (messager.nerrors() != 0) {
+                return null;
+            }
+            return new RootDocImpl(docenv, args, options);
+        }
+
         ListBuffer<JCCompilationUnit> classTrees = new ListBuffer<>();
-        ListBuffer<JCCompilationUnit> packTrees = new ListBuffer<>();
+        Set<String> includedPackages = new LinkedHashSet<>();
 
         try {
             StandardJavaFileManager fm = docenv.fileManager instanceof StandardJavaFileManager
                     ? (StandardJavaFileManager) docenv.fileManager : null;
-            for (List<String> it = javaNames; it.nonEmpty(); it = it.tail) {
-                String name = it.head;
-                if (!docClasses && fm != null && name.endsWith(".java") && new File(name).exists()) {
-                    JavaFileObject fo = fm.getJavaFileObjects(name).iterator().next();
-                    parse(fo, classTrees, true);
-                } else if (isValidPackageName(name)) {
-                    names = names.append(name);
-                } else if (name.endsWith(".java")) {
+            Set<String> packageNames = new LinkedHashSet<>();
+            // Normally, the args should be a series of package names or file names.
+            // Parse the files and collect the package names.
+            for (String arg: args) {
+                if (fm != null && arg.endsWith(".java") && new File(arg).exists()) {
+                    parse(fm.getJavaFileObjects(arg), classTrees, true);
+                } else if (isValidPackageName(arg)) {
+                    packageNames.add(arg);
+                } else if (arg.endsWith(".java")) {
                     if (fm == null)
                         throw new IllegalArgumentException();
                     else
-                        docenv.error(null, "main.file_not_found", name);
+                        docenv.error(null, "main.file_not_found", arg);
                 } else {
-                    docenv.error(null, "main.illegal_package_name", name);
+                    docenv.error(null, "main.illegal_package_name", arg);
                 }
             }
-            for (JavaFileObject fo: fileObjects) {
-                parse(fo, classTrees, true);
+
+            // Parse file objects provide via the DocumentationTool API
+            parse(fileObjects, classTrees, true);
+
+            // Build up the complete list of any packages to be documented
+            Location location = docenv.fileManager.hasLocation(StandardLocation.SOURCE_PATH)
+                ? StandardLocation.SOURCE_PATH : StandardLocation.CLASS_PATH;
+
+            PackageTable t = new PackageTable(docenv.fileManager, location)
+                    .packages(packageNames)
+                    .subpackages(subPackages, excludedPackages);
+
+            includedPackages = t.getIncludedPackages();
+
+            // Parse the files in the packages to be documented
+            ListBuffer<JCCompilationUnit> packageTrees = new ListBuffer<>();
+            for (String packageName: includedPackages) {
+                List<JavaFileObject> files = t.getFiles(packageName);
+                docenv.notice("main.Loading_source_files_for_package", packageName);
+
+                if (files.isEmpty())
+                    messager.warning(Messager.NOPOS, "main.no_source_files_for_package", packageName);
+                parse(files, packageTrees, false);
             }
 
-            if (!docClasses) {
-                // Recursively search given subpackages.  If any packages
-                //are found, add them to the list.
-                Map<String,List<JavaFileObject>> packageFiles =
-                        searchSubPackages(subPackages, names, excludedPackages);
-
-                // Parse the packages
-                for (List<String> packs = names.toList(); packs.nonEmpty(); packs = packs.tail) {
-                    // Parse sources ostensibly belonging to package.
-                    String packageName = packs.head;
-                    parsePackageClasses(packageName, packageFiles.get(packageName), packTrees, excludedPackages);
-                }
-
-                if (messager.nerrors() != 0) return null;
-
-                // Enter symbols for all files
-                docenv.notice("main.Building_tree");
-                javadocEnter.main(classTrees.toList().appendList(packTrees.toList()));
+            if (messager.nerrors() != 0) {
+                return null;
             }
+
+            // Enter symbols for all files
+            docenv.notice("main.Building_tree");
+            javadocEnter.main(classTrees.toList().appendList(packageTrees.toList()));
         } catch (Abort ex) {}
 
         if (messager.nerrors() != 0)
             return null;
 
-        if (docClasses)
-            return new RootDocImpl(docenv, javaNames, options);
-        else
-            return new RootDocImpl(docenv, listClasses(classTrees.toList()), names.toList(), options);
+        return new RootDocImpl(docenv, listClasses(classTrees.toList()), List.from(includedPackages), options);
     }
 
     /** Is the given string a valid package name? */
@@ -211,183 +232,15 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
         return isValidClassName(s);
     }
 
-    /**
-     * search all directories in path for subdirectory name. Add all
-     * .java files found in such a directory to args.
-     */
-    private void parsePackageClasses(String name,
-            List<JavaFileObject> files,
-            ListBuffer<JCCompilationUnit> trees,
-            List<String> excludedPackages)
-            throws IOException {
-        if (excludedPackages.contains(name)) {
-            return;
-        }
-
-        docenv.notice("main.Loading_source_files_for_package", name);
-
-        if (files == null) {
-            Location location = docenv.fileManager.hasLocation(StandardLocation.SOURCE_PATH)
-                    ? StandardLocation.SOURCE_PATH : StandardLocation.CLASS_PATH;
-            ListBuffer<JavaFileObject> lb = new ListBuffer<>();
-            for (JavaFileObject fo: docenv.fileManager.list(
-                    location, name, EnumSet.of(JavaFileObject.Kind.SOURCE), false)) {
-                String binaryName = docenv.fileManager.inferBinaryName(location, fo);
-                String simpleName = getSimpleName(binaryName);
-                if (isValidClassName(simpleName)) {
-                    lb.append(fo);
-                }
-            }
-            files = lb.toList();
-        }
-        if (files.nonEmpty()) {
-            for (JavaFileObject fo : files) {
-                parse(fo, trees, false);
-            }
-        } else {
-            messager.warning(Messager.NOPOS, "main.no_source_files_for_package",
-                             name.replace(File.separatorChar, '.'));
-        }
-    }
-
-    private void parse(JavaFileObject fo, ListBuffer<JCCompilationUnit> trees,
+    private void parse(Iterable<? extends JavaFileObject> files, ListBuffer<JCCompilationUnit> trees,
                        boolean trace) {
-        if (uniquefiles.add(fo)) { // ignore duplicates
-            if (trace)
-                docenv.notice("main.Loading_source_file", fo.getName());
-            trees.append(parse(fo));
-        }
-    }
-
-    /**
-     * Recursively search all directories in path for subdirectory name.
-     * Add all packages found in such a directory to packages list.
-     */
-    private Map<String,List<JavaFileObject>> searchSubPackages(
-            List<String> subPackages,
-            ListBuffer<String> packages,
-            List<String> excludedPackages)
-            throws IOException {
-        Map<String,List<JavaFileObject>> packageFiles = new HashMap<>();
-
-        Map<String,Boolean> includedPackages = new HashMap<>();
-        includedPackages.put("", true);
-        for (String p: excludedPackages)
-            includedPackages.put(p, false);
-
-        StandardLocation path = docenv.fileManager.hasLocation(StandardLocation.SOURCE_PATH)
-                ? StandardLocation.SOURCE_PATH : StandardLocation.CLASS_PATH;
-
-        searchSubPackages(subPackages,
-                includedPackages,
-                packages, packageFiles,
-                path,
-                EnumSet.of(JavaFileObject.Kind.SOURCE));
-
-        return packageFiles;
-    }
-
-    private void searchSubPackages(List<String> subPackages,
-            Map<String,Boolean> includedPackages,
-            ListBuffer<String> packages,
-            Map<String, List<JavaFileObject>> packageFiles,
-            StandardLocation location, Set<JavaFileObject.Kind> kinds)
-            throws IOException {
-        for (String subPackage: subPackages) {
-            if (!isIncluded(subPackage, includedPackages))
-                continue;
-
-            for (JavaFileObject fo: docenv.fileManager.list(location, subPackage, kinds, true)) {
-                String binaryName = docenv.fileManager.inferBinaryName(location, fo);
-                String packageName = getPackageName(binaryName);
-                String simpleName = getSimpleName(binaryName);
-                if (isIncluded(packageName, includedPackages) && isValidClassName(simpleName)) {
-                    List<JavaFileObject> list = packageFiles.get(packageName);
-                    list = (list == null ? List.of(fo) : list.prepend(fo));
-                    packageFiles.put(packageName, list);
-                    if (!packages.contains(packageName))
-                        packages.add(packageName);
-                }
+        for (JavaFileObject fo: files) {
+            if (uniquefiles.add(fo)) { // ignore duplicates
+                if (trace)
+                    docenv.notice("main.Loading_source_file", fo.getName());
+                trees.append(parse(fo));
             }
         }
-    }
-
-    private String getPackageName(String name) {
-        int lastDot = name.lastIndexOf(".");
-        return (lastDot == -1 ? "" : name.substring(0, lastDot));
-    }
-
-    private String getSimpleName(String name) {
-        int lastDot = name.lastIndexOf(".");
-        return (lastDot == -1 ? name : name.substring(lastDot + 1));
-    }
-
-    private boolean isIncluded(String packageName, Map<String,Boolean> includedPackages) {
-        Boolean b = includedPackages.get(packageName);
-        if (b == null) {
-            b = isIncluded(getPackageName(packageName), includedPackages);
-            includedPackages.put(packageName, b);
-        }
-        return b;
-    }
-
-    /**
-     * Recursively search all directories in path for subdirectory name.
-     * Add all packages found in such a directory to packages list.
-     */
-    private void searchSubPackage(String packageName,
-                                  ListBuffer<String> packages,
-                                  List<String> excludedPackages,
-                                  Collection<File> pathnames) {
-        if (excludedPackages.contains(packageName))
-            return;
-
-        String packageFilename = packageName.replace('.', File.separatorChar);
-        boolean addedPackage = false;
-        for (File pathname : pathnames) {
-            File f = new File(pathname, packageFilename);
-            String filenames[] = f.list();
-            // if filenames not null, then found directory
-            if (filenames != null) {
-                for (String filename : filenames) {
-                    if (!addedPackage
-                            && (isValidJavaSourceFile(filename) ||
-                                isValidJavaClassFile(filename))
-                            && !packages.contains(packageName)) {
-                        packages.append(packageName);
-                        addedPackage = true;
-                    } else if (isValidClassName(filename) &&
-                               (new File(f, filename)).isDirectory()) {
-                        searchSubPackage(packageName + "." + filename,
-                                         packages, excludedPackages, pathnames);
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Return true if given file name is a valid class file name.
-     * @param file the name of the file to check.
-     * @return true if given file name is a valid class file name
-     * and false otherwise.
-     */
-    private static boolean isValidJavaClassFile(String file) {
-        if (!file.endsWith(".class")) return false;
-        String clazzName = file.substring(0, file.length() - ".class".length());
-        return isValidClassName(clazzName);
-    }
-
-    /**
-     * Return true if given file name is a valid Java source file name.
-     * @param file the name of the file to check.
-     * @return true if given file name is a valid Java source file name
-     * and false otherwise.
-     */
-    private static boolean isValidJavaSourceFile(String file) {
-        if (!file.endsWith(".java")) return false;
-        String clazzName = file.substring(0, file.length() - ".java".length());
-        return isValidClassName(clazzName);
     }
 
     /** Are surrogates supported?
@@ -443,6 +296,120 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
             }
         }
         return result.toList();
+    }
+
+    /**
+     * A table to manage included and excluded packages.
+     */
+    static class PackageTable {
+        private final Map<String, Entry> entries = new LinkedHashMap<>();
+        private final Set<String> includedPackages = new LinkedHashSet<>();
+        private final JavaFileManager fm;
+        private final Location location;
+        private final Set<JavaFileObject.Kind> sourceKinds = EnumSet.of(JavaFileObject.Kind.SOURCE);
+
+        /**
+         * Creates a table to manage included and excluded packages.
+         * @param fm The file manager used to locate source files
+         * @param locn the location used to locate source files
+         */
+        PackageTable(JavaFileManager fm, Location locn) {
+            this.fm = fm;
+            this.location = locn;
+            getEntry("").excluded = false;
+        }
+
+        PackageTable packages(Collection<String> packageNames) {
+            includedPackages.addAll(packageNames);
+            return this;
+        }
+
+        PackageTable subpackages(Collection<String> packageNames, Collection<String> excludePackageNames)
+                throws IOException {
+            for (String p: excludePackageNames) {
+                getEntry(p).excluded = true;
+            }
+
+            for (String packageName: packageNames) {
+                for (JavaFileObject fo: fm.list(location, packageName, sourceKinds, true)) {
+                    String binaryName = fm.inferBinaryName(location, fo);
+                    String pn = getPackageName(binaryName);
+                    String simpleName = getSimpleName(binaryName);
+                    Entry e = getEntry(pn);
+                    if (!e.isExcluded() && isValidClassName(simpleName)) {
+                        includedPackages.add(pn);
+                        e.files = (e.files == null ? List.of(fo) : e.files.prepend(fo));
+                    }
+                }
+            }
+            return this;
+        }
+
+        /**
+         * Returns the aggregate set of included packages.
+         * @return the aggregate set of included packages
+         */
+        Set<String> getIncludedPackages() {
+            return includedPackages;
+        }
+
+        /**
+         * Returns the set of source files for a package.
+         * @param packageName the specified package
+         * @return the set of file objects for the specified package
+         * @throws IOException if an error occurs while accessing the files
+         */
+        List<JavaFileObject> getFiles(String packageName) throws IOException {
+            Entry e = getEntry(packageName);
+            // The files may have been found as a side effect of searching for subpackages
+            if (e.files != null)
+                return e.files;
+
+            ListBuffer<JavaFileObject> lb = new ListBuffer<>();
+            for (JavaFileObject fo: fm.list(location, packageName, sourceKinds, false)) {
+                String binaryName = fm.inferBinaryName(location, fo);
+                String simpleName = getSimpleName(binaryName);
+                if (isValidClassName(simpleName)) {
+                    lb.append(fo);
+                }
+            }
+
+            return lb.toList();
+        }
+
+
+        private Entry getEntry(String name) {
+            Entry e = entries.get(name);
+            if (e == null)
+                entries.put(name, e = new Entry(name));
+            return e;
+        }
+
+        private String getPackageName(String name) {
+            int lastDot = name.lastIndexOf(".");
+            return (lastDot == -1 ? "" : name.substring(0, lastDot));
+        }
+
+        private String getSimpleName(String name) {
+            int lastDot = name.lastIndexOf(".");
+            return (lastDot == -1 ? name : name.substring(lastDot + 1));
+        }
+
+        class Entry {
+            final String name;
+            Boolean excluded;
+            List<JavaFileObject> files;
+
+            Entry(String name) {
+                this.name = name;
+            }
+
+            boolean isExcluded() {
+                if (excluded == null)
+                    excluded = getEntry(getPackageName(name)).isExcluded();
+                return excluded;
+            }
+        }
     }
 
 }
