@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,14 +49,14 @@ public interface PlatformEventNotifier {
      * point of the client area is (insets.top, insets.left).
      */
     void notifyMouseEvent(int id, long when, int button,
-                          int x, int y, int screenX, int screenY,
+                          int x, int y, int absX, int absY,
                           int modifiers, int clickCount, boolean popupTrigger,
                           byte[] bdata);
 
-    void notifyMouseWheelEvent(long when, int x, int y, int modifiers,
-                               int scrollType, int scrollAmount,
-                               int wheelRotation, double preciseWheelRotation,
-                               byte[] bdata);
+    void notifyMouseWheelEvent(long when, int x, int y, final int absX,
+                               final int absY, int modifiers, int scrollType,
+                               int scrollAmount, int wheelRotation,
+                               double preciseWheelRotation, byte[] bdata);
     /*
      * Called by the delegate when a key is pressed.
      */
