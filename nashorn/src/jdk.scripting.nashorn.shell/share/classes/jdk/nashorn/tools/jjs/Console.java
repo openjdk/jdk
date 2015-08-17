@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 import jdk.internal.jline.console.ConsoleReader;
+import jdk.internal.jline.console.completer.Completer;
 import jdk.internal.jline.console.history.History.Entry;
 import jdk.internal.jline.console.history.MemoryHistory;
 
@@ -43,15 +44,18 @@ class Console implements AutoCloseable {
     private final ConsoleReader in;
     private final PersistentHistory history;
 
-    Console(InputStream cmdin, PrintStream cmdout, Preferences prefs) throws IOException {
+    Console(final InputStream cmdin, final PrintStream cmdout, final Preferences prefs,
+            final Completer completer) throws IOException {
         in = new ConsoleReader(cmdin, cmdout);
         in.setExpandEvents(false);
         in.setHandleUserInterrupt(true);
+        in.setBellEnabled(true);
         in.setHistory(history = new PersistentHistory(prefs));
+        in.addCompleter(completer);
         Runtime.getRuntime().addShutdownHook(new Thread(()->close()));
     }
 
-    String readLine(String prompt) throws IOException {
+    String readLine(final String prompt) throws IOException {
         return in.readLine(prompt);
     }
 
@@ -65,7 +69,7 @@ class Console implements AutoCloseable {
 
         private final Preferences prefs;
 
-        protected PersistentHistory(Preferences prefs) {
+        protected PersistentHistory(final Preferences prefs) {
             this.prefs = prefs;
             load();
         }
@@ -74,7 +78,7 @@ class Console implements AutoCloseable {
 
         public final void load() {
             try {
-                List<String> keys = new ArrayList<>(Arrays.asList(prefs.keys()));
+                final List<String> keys = new ArrayList<>(Arrays.asList(prefs.keys()));
                 Collections.sort(keys);
                 for (String key : keys) {
                     if (!key.startsWith(HISTORY_LINE_PREFIX))
