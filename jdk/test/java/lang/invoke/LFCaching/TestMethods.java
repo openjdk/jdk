@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -610,26 +610,7 @@ public enum TestMethods {
      * @return MethodType generated randomly.
      */
     private static MethodType randomMethodTypeGenerator(int arity) {
-        final Class<?>[] CLASSES = {
-            Object.class,
-            int.class,
-            boolean.class,
-            byte.class,
-            short.class,
-            char.class,
-            long.class,
-            float.class,
-            double.class
-        };
-        if (arity > Helper.MAX_ARITY) {
-            throw new IllegalArgumentException(
-                    String.format("Arity should not exceed %d!", Helper.MAX_ARITY));
-        }
-        List<Class<?>> list = Helper.randomClasses(CLASSES, arity);
-        list = Helper.getParams(list, false, arity);
-        int i = Helper.RNG.nextInt(CLASSES.length + 1);
-        Class<?> rtype = i == CLASSES.length ? void.class : CLASSES[i];
-        return MethodType.methodType(rtype, list);
+        return Helper.randomMethodTypeGenerator(arity);
     }
 
     /**
