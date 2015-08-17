@@ -45,9 +45,9 @@ class Abstract_VM_Version: AllStatic {
   static unsigned int _L1_data_cache_line_size;
   static int          _vm_major_version;
   static int          _vm_minor_version;
-  static int          _vm_micro_version;
+  static int          _vm_security_version;
+  static int          _vm_patch_version;
   static int          _vm_build_number;
-  static bool         _initialized;
   static unsigned int _parallel_worker_threads;
   static bool         _parallel_worker_threads_initialized;
   static int          _reserve_for_allocation_prefetch;
@@ -75,10 +75,11 @@ class Abstract_VM_Version: AllStatic {
   static const char* vm_platform_string();
   static const char* vm_build_user();
 
-  static int vm_major_version()               { assert(_initialized, "not initialized"); return _vm_major_version; }
-  static int vm_minor_version()               { assert(_initialized, "not initialized"); return _vm_minor_version; }
-  static int vm_micro_version()               { assert(_initialized, "not initialized"); return _vm_micro_version; }
-  static int vm_build_number()                { assert(_initialized, "not initialized"); return _vm_build_number; }
+  static int vm_major_version()               { return _vm_major_version; }
+  static int vm_minor_version()               { return _vm_minor_version; }
+  static int vm_security_version()            { return _vm_security_version; }
+  static int vm_patch_version()               { return _vm_patch_version; }
+  static int vm_build_number()                { return _vm_build_number; }
 
   // Gets the jvm_version_info.jvm_version defined in jvm.h
   static unsigned int jvm_version();
