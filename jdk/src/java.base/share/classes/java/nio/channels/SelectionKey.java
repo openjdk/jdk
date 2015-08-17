@@ -139,7 +139,7 @@ public abstract class SelectionKey {
      * <p> A key is valid upon creation and remains so until it is cancelled,
      * its channel is closed, or its selector is closed.  </p>
      *
-     * @return  <tt>true</tt> if, and only if, this key is valid
+     * @return  {@code true} if, and only if, this key is valid
      */
     public abstract boolean isValid();
 
@@ -218,11 +218,11 @@ public abstract class SelectionKey {
      * Operation-set bit for read operations.
      *
      * <p> Suppose that a selection key's interest set contains
-     * <tt>OP_READ</tt> at the start of a <a
+     * {@code OP_READ} at the start of a <a
      * href="Selector.html#selop">selection operation</a>.  If the selector
      * detects that the corresponding channel is ready for reading, has reached
      * end-of-stream, has been remotely shut down for further reading, or has
-     * an error pending, then it will add <tt>OP_READ</tt> to the key's
+     * an error pending, then it will add {@code OP_READ} to the key's
      * ready-operation set and add the key to its selected-key&nbsp;set.  </p>
      */
     public static final int OP_READ = 1 << 0;
@@ -231,11 +231,11 @@ public abstract class SelectionKey {
      * Operation-set bit for write operations.
      *
      * <p> Suppose that a selection key's interest set contains
-     * <tt>OP_WRITE</tt> at the start of a <a
+     * {@code OP_WRITE} at the start of a <a
      * href="Selector.html#selop">selection operation</a>.  If the selector
      * detects that the corresponding channel is ready for writing, has been
      * remotely shut down for further writing, or has an error pending, then it
-     * will add <tt>OP_WRITE</tt> to the key's ready set and add the key to its
+     * will add {@code OP_WRITE} to the key's ready set and add the key to its
      * selected-key&nbsp;set.  </p>
      */
     public static final int OP_WRITE = 1 << 2;
@@ -244,11 +244,11 @@ public abstract class SelectionKey {
      * Operation-set bit for socket-connect operations.
      *
      * <p> Suppose that a selection key's interest set contains
-     * <tt>OP_CONNECT</tt> at the start of a <a
+     * {@code OP_CONNECT} at the start of a <a
      * href="Selector.html#selop">selection operation</a>.  If the selector
      * detects that the corresponding socket channel is ready to complete its
      * connection sequence, or has an error pending, then it will add
-     * <tt>OP_CONNECT</tt> to the key's ready set and add the key to its
+     * {@code OP_CONNECT} to the key's ready set and add the key to its
      * selected-key&nbsp;set.  </p>
      */
     public static final int OP_CONNECT = 1 << 3;
@@ -257,11 +257,11 @@ public abstract class SelectionKey {
      * Operation-set bit for socket-accept operations.
      *
      * <p> Suppose that a selection key's interest set contains
-     * <tt>OP_ACCEPT</tt> at the start of a <a
+     * {@code OP_ACCEPT} at the start of a <a
      * href="Selector.html#selop">selection operation</a>.  If the selector
      * detects that the corresponding server-socket channel is ready to accept
      * another connection, or has an error pending, then it will add
-     * <tt>OP_ACCEPT</tt> to the key's ready set and add the key to its
+     * {@code OP_ACCEPT} to the key's ready set and add the key to its
      * selected-key&nbsp;set.  </p>
      */
     public static final int OP_ACCEPT = 1 << 4;
@@ -269,7 +269,7 @@ public abstract class SelectionKey {
     /**
      * Tests whether this key's channel is ready for reading.
      *
-     * <p> An invocation of this method of the form <tt>k.isReadable()</tt>
+     * <p> An invocation of this method of the form {@code k.isReadable()}
      * behaves in exactly the same way as the expression
      *
      * <blockquote><pre>{@code
@@ -277,9 +277,9 @@ public abstract class SelectionKey {
      * }</pre></blockquote>
      *
      * <p> If this key's channel does not support read operations then this
-     * method always returns <tt>false</tt>.  </p>
+     * method always returns {@code false}.  </p>
      *
-     * @return  <tt>true</tt> if, and only if,
+     * @return  {@code true} if, and only if,
                 {@code readyOps() & OP_READ} is nonzero
      *
      * @throws  CancelledKeyException
@@ -292,7 +292,7 @@ public abstract class SelectionKey {
     /**
      * Tests whether this key's channel is ready for writing.
      *
-     * <p> An invocation of this method of the form <tt>k.isWritable()</tt>
+     * <p> An invocation of this method of the form {@code k.isWritable()}
      * behaves in exactly the same way as the expression
      *
      * <blockquote><pre>{@code
@@ -300,9 +300,9 @@ public abstract class SelectionKey {
      * }</pre></blockquote>
      *
      * <p> If this key's channel does not support write operations then this
-     * method always returns <tt>false</tt>.  </p>
+     * method always returns {@code false}.  </p>
      *
-     * @return  <tt>true</tt> if, and only if,
+     * @return  {@code true} if, and only if,
      *          {@code readyOps() & OP_WRITE} is nonzero
      *
      * @throws  CancelledKeyException
@@ -316,7 +316,7 @@ public abstract class SelectionKey {
      * Tests whether this key's channel has either finished, or failed to
      * finish, its socket-connection operation.
      *
-     * <p> An invocation of this method of the form <tt>k.isConnectable()</tt>
+     * <p> An invocation of this method of the form {@code k.isConnectable()}
      * behaves in exactly the same way as the expression
      *
      * <blockquote><pre>{@code
@@ -324,9 +324,9 @@ public abstract class SelectionKey {
      * }</pre></blockquote>
      *
      * <p> If this key's channel does not support socket-connect operations
-     * then this method always returns <tt>false</tt>.  </p>
+     * then this method always returns {@code false}.  </p>
      *
-     * @return  <tt>true</tt> if, and only if,
+     * @return  {@code true} if, and only if,
      *          {@code readyOps() & OP_CONNECT} is nonzero
      *
      * @throws  CancelledKeyException
@@ -340,7 +340,7 @@ public abstract class SelectionKey {
      * Tests whether this key's channel is ready to accept a new socket
      * connection.
      *
-     * <p> An invocation of this method of the form <tt>k.isAcceptable()</tt>
+     * <p> An invocation of this method of the form {@code k.isAcceptable()}
      * behaves in exactly the same way as the expression
      *
      * <blockquote><pre>{@code
@@ -348,9 +348,9 @@ public abstract class SelectionKey {
      * }</pre></blockquote>
      *
      * <p> If this key's channel does not support socket-accept operations then
-     * this method always returns <tt>false</tt>.  </p>
+     * this method always returns {@code false}.  </p>
      *
-     * @return  <tt>true</tt> if, and only if,
+     * @return  {@code true} if, and only if,
      *          {@code readyOps() & OP_ACCEPT} is nonzero
      *
      * @throws  CancelledKeyException
@@ -376,13 +376,13 @@ public abstract class SelectionKey {
      * <p> An attached object may later be retrieved via the {@link #attachment()
      * attachment} method.  Only one object may be attached at a time; invoking
      * this method causes any previous attachment to be discarded.  The current
-     * attachment may be discarded by attaching <tt>null</tt>.  </p>
+     * attachment may be discarded by attaching {@code null}.  </p>
      *
      * @param  ob
-     *         The object to be attached; may be <tt>null</tt>
+     *         The object to be attached; may be {@code null}
      *
      * @return  The previously-attached object, if any,
-     *          otherwise <tt>null</tt>
+     *          otherwise {@code null}
      */
     public final Object attach(Object ob) {
         return attachmentUpdater.getAndSet(this, ob);
@@ -392,7 +392,7 @@ public abstract class SelectionKey {
      * Retrieves the current attachment.
      *
      * @return  The object currently attached to this key,
-     *          or <tt>null</tt> if there is no attachment
+     *          or {@code null} if there is no attachment
      */
     public final Object attachment() {
         return attachment;

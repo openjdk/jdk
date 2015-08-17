@@ -24,6 +24,7 @@
 #
 
 BUILD_LIBNIO_SRC := \
+    $(JDK_TOPDIR)/src/java.base/share/native/libnio \
     $(JDK_TOPDIR)/src/java.base/share/native/libnio/ch \
     $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libnio \
     $(sort $(wildcard \

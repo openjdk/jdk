@@ -79,10 +79,4 @@ public class WEmbeddedFramePeer extends WFramePeer {
         return !Win32GraphicsEnvironment.isDWMCompositionEnabled();
     }
 
-    /**
-     * Sets the focus to plugin control window, the parent of embedded frame.
-     * Eventually, it will synthesizeWindowActivation to activate the embedded frame,
-     * if plugin control window gets the focus.
-     */
-    public native boolean requestFocusToEmbedder();
 }

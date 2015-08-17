@@ -147,16 +147,16 @@
        <fileset dir="${meta.inf.dir}/services/"/>
     </copy>
      <copy todir="${build.classes.dir}/jdk/nashorn/api/scripting/resources">
-       <fileset dir="${src.dir}/jdk/nashorn/api/scripting/resources/"/>
+       <fileset dir="${nashorn.module.src.dir}/jdk/nashorn/api/scripting/resources/"/>
     </copy>
     <copy todir="${build.classes.dir}/jdk/nashorn/internal/runtime/resources">
-       <fileset dir="${src.dir}/jdk/nashorn/internal/runtime/resources/"/>
+       <fileset dir="${nashorn.module.src.dir}/jdk/nashorn/internal/runtime/resources/"/>
     </copy>
     <copy todir="${build.classes.dir}/jdk/nashorn/tools/resources">
-       <fileset dir="${src.dir}/jdk/nashorn/tools/resources/"/>
+       <fileset dir="${nashorn.module.src.dir}/jdk/nashorn/tools/resources/"/>
     </copy>
-    <copy file="${src.dir}/jdk/internal/dynalink/support/messages.properties" todir="${build.classes.dir}/jdk/internal/dynalink/support"/>
-    <copy file="${src.dir}/jdk/nashorn/internal/codegen/anchor.properties" todir="${build.classes.dir}/jdk/nashorn/internal/codegen"/>
+    <copy file="${nashorn.module.src.dir}/jdk/internal/dynalink/support/messages.properties" todir="${build.classes.dir}/jdk/internal/dynalink/support"/>
+    <copy file="${nashorn.module.src.dir}/jdk/nashorn/internal/codegen/anchor.properties" todir="${build.classes.dir}/jdk/nashorn/internal/codegen"/>
 
     <echo message="full=${nashorn.fullversion}" file="${build.classes.dir}/jdk/nashorn/internal/runtime/resources/version.properties"/>
     <echo file="${build.classes.dir}/jdk/nashorn/internal/runtime/resources/version.properties" append="true">${line.separator}</echo>
@@ -165,7 +165,14 @@
 
   <target name="jar" depends="compile, run-nasgen, generate-cc-template" description="Creates nashorn.jar" unless="compile.suppress.jar">
     <jar jarfile="${dist.jar}" manifest="${meta.inf.dir}/MANIFEST.MF" index="true" filesetmanifest="merge">
-      <fileset dir="${build.classes.dir}"/>
+      <!-- 
+        Exclude jjs classes from nashorn.jar to avoid desktop dependency.
+        We have a test to make sure basic nashorn code has only "compact1"
+        dependency - except for jjs shell code which has desktop dependency.
+      -->
+      <fileset dir="${build.classes.dir}">
+          <exclude name="**/jdk/nashorn/tools/jjs/*"/>
+      </fileset>
       <manifest>
         <attribute name="Archiver-Version" value="n/a"/>
         <attribute name="Build-Jdk" value="${java.runtime.version}"/>
@@ -230,13 +237,14 @@
 
   <!-- generate javadoc for Nashorn classes -->
   <target name="javadocnh" depends="jar">
-    <javadoc destdir="${dist.javadoc.dir}" use="yes" overview="${src.dir}/overview.html"
+    <javadoc destdir="${dist.javadoc.dir}" use="yes" overview="${nashorn.module.src.dir}/overview.html"
         extdirs="${nashorn.ext.path}" windowtitle="${nashorn.product.name} ${nashorn.version}"
         additionalparam="-quiet" failonerror="true" useexternalfile="true">
       <classpath>
         <pathelement location="${build.classes.dir}"/>
       </classpath>
-      <fileset dir="${src.dir}" includes="**/*.java"/>
+      <fileset dir="${nashorn.module.src.dir}" includes="**/*.java"/>
+      <fileset dir="${nashorn.shell.module.src.dir}" includes="**/*.java"/>
       <link href="http://docs.oracle.com/javase/8/docs/api/"/>
     </javadoc>
   </target>

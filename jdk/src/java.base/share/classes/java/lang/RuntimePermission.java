@@ -31,22 +31,19 @@ import java.util.Hashtable;
 import java.util.StringTokenizer;
 
 /**
- * This class is for runtime permissions. A RuntimePermission
- * contains a name (also referred to as a "target name") but
- * no actions list; you either have the named permission
- * or you don't.
- *
- * <P>
+ * This class is for runtime permissions. A {@code RuntimePermission}
+ * contains a name (also referred to as a "target name") but no actions
+ * list; you either have the named permission or you don't.
+ * <p>
  * The target name is the name of the runtime permission (see below). The
  * naming convention follows the  hierarchical property naming convention.
- * Also, an asterisk
- * may appear at the end of the name, following a ".", or by itself, to
- * signify a wildcard match. For example: "loadLibrary.*" and "*" signify a
- * wildcard match, while "*loadLibrary" and "a*b" do not.
- * <P>
- * The following table lists all the possible RuntimePermission target names,
- * and for each provides a description of what the permission allows
- * and a discussion of the risks of granting code the permission.
+ * Also, an asterisk may appear at the end of the name, following a ".",
+ * or by itself, to signify a wildcard match. For example: "loadLibrary.*"
+ * and "*" signify a wildcard match, while "*loadLibrary" and "a*b" do not.
+ * <p>
+ * The following table lists the standard {@code RuntimePermission}
+ * target names, and for each provides a description of what the permission
+ * allows and a discussion of the risks of granting code the permission.
  *
  * <table border=1 cellpadding=5 summary="permission target name,
  *  what the target allows,and associated risks">
@@ -352,6 +349,10 @@ import java.util.StringTokenizer;
  *   information.</td>
  * </tr>
  * </table>
+ *
+ * @implNote
+ * Implementations may define additional target names, but should use naming
+ * conventions such as reverse domain name notation to avoid name clashes.
  *
  * @see java.security.BasicPermission
  * @see java.security.Permission

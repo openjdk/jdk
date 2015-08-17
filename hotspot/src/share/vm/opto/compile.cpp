@@ -3315,7 +3315,7 @@ bool Compile::final_graph_reshaping() {
 
   // Visit everybody reachable!
   // Allocate stack of size C->unique()/2 to avoid frequent realloc
-  Node_Stack nstack(unique() >> 1);
+  Node_Stack nstack(live_nodes() >> 1);
   final_graph_reshaping_walk(nstack, root(), frc);
 
   // Check for unreachable (from below) code (i.e., infinite loops).

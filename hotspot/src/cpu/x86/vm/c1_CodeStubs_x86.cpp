@@ -416,7 +416,8 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
   int jmp_off = __ offset();
   __ jmp(_patch_site_entry);
   // Add enough nops so deoptimization can overwrite the jmp above with a call
-  // and not destroy the world.
+  // and not destroy the world. We cannot use fat nops here, since the concurrent
+  // code rewrite may transiently create the illegal instruction sequence.
   for (int j = __ offset() ; j < jmp_off + 5 ; j++ ) {
     __ nop();
   }

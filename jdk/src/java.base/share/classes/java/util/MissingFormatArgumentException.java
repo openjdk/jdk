@@ -30,7 +30,7 @@ package java.util;
  * have a corresponding argument or if an argument index refers to an argument
  * that does not exist.
  *
- * <p> Unless otherwise specified, passing a <tt>null</tt> argument to any
+ * <p> Unless otherwise specified, passing a {@code null} argument to any
  * method or constructor in this class will cause a {@link
  * NullPointerException} to be thrown.
  *

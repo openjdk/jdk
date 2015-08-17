@@ -102,7 +102,7 @@ public abstract class FileSystemProvider {
      *
      * @throws  SecurityException
      *          If a security manager has been installed and it denies
-     *          {@link RuntimePermission}<tt>("fileSystemProvider")</tt>
+     *          {@link RuntimePermission}{@code ("fileSystemProvider")}
      */
     protected FileSystemProvider() {
         this(checkPermission());
@@ -644,7 +644,7 @@ public abstract class FileSystemProvider {
      *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager
-     *          is installed, it denies {@link LinkPermission}<tt>("symbolic")</tt>
+     *          is installed, it denies {@link LinkPermission}{@code ("symbolic")}
      *          or its {@link SecurityManager#checkWrite(String) checkWrite}
      *          method denies write access to the path of the symbolic link.
      */
@@ -677,7 +677,7 @@ public abstract class FileSystemProvider {
      *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager
-     *          is installed, it denies {@link LinkPermission}<tt>("hard")</tt>
+     *          is installed, it denies {@link LinkPermission}{@code ("hard")}
      *          or its {@link SecurityManager#checkWrite(String) checkWrite}
      *          method denies write access to either the  link or the
      *          existing file.
@@ -902,8 +902,8 @@ public abstract class FileSystemProvider {
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkRead(String) checkRead}
      *          method is invoked to check read access to the file, and in
-     *          addition it checks {@link RuntimePermission}<tt>
-     *          ("getFileStoreAttributes")</tt>
+     *          addition it checks
+     *          {@link RuntimePermission}{@code ("getFileStoreAttributes")}
      */
     public abstract FileStore getFileStore(Path path) throws IOException;
 
