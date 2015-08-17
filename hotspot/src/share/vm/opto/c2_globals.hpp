@@ -623,9 +623,6 @@
   diagnostic(bool, PrintIntrinsics, false,                                  \
           "prints attempted and successful inlining of intrinsics")         \
                                                                             \
-  diagnostic(ccstrlist, DisableIntrinsic, "",                               \
-          "do not expand intrinsics whose (internal) names appear here")    \
-                                                                            \
   develop(bool, StressReflectiveCode, false,                                \
           "Use inexact types at allocations, etc., to test reflection")     \
                                                                             \

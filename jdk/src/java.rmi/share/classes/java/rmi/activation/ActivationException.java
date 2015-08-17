@@ -36,7 +36,7 @@ package java.rmi.activation;
  * the aforementioned "legacy field."
  *
  * <p>Invoking the method {@link Throwable#initCause(Throwable)} on an
- * instance of <code>ActivationException</code> always throws {@link
+ * instance of {@code ActivationException} always throws {@link
  * IllegalStateException}.
  *
  * @author      Ann Wollrath
@@ -59,14 +59,14 @@ public class ActivationException extends Exception {
     private static final long serialVersionUID = -4320118837291406071L;
 
     /**
-     * Constructs an <code>ActivationException</code>.
+     * Constructs an {@code ActivationException}.
      */
     public ActivationException() {
         initCause(null);  // Disallow subsequent initCause
     }
 
     /**
-     * Constructs an <code>ActivationException</code> with the specified
+     * Constructs an {@code ActivationException} with the specified
      * detail message.
      *
      * @param s the detail message
@@ -77,9 +77,9 @@ public class ActivationException extends Exception {
     }
 
     /**
-     * Constructs an <code>ActivationException</code> with the specified
+     * Constructs an {@code ActivationException} with the specified
      * detail message and cause.  This constructor sets the {@link #detail}
-     * field to the specified <code>Throwable</code>.
+     * field to the specified {@code Throwable}.
      *
      * @param s the detail message
      * @param cause the cause
@@ -109,7 +109,7 @@ public class ActivationException extends Exception {
      * Returns the cause of this exception.  This method returns the value
      * of the {@link #detail} field.
      *
-     * @return  the cause, which may be <tt>null</tt>.
+     * @return  the cause, which may be {@code null}.
      * @since   1.4
      */
     public Throwable getCause() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -780,9 +780,6 @@ bool os::is_allocatable(size_t bytes) {
 
 #ifdef AMD64
 size_t os::Bsd::min_stack_allowed  = 64 * K;
-
-// amd64: pthread on amd64 is always in floating stack mode
-bool os::Bsd::supports_variable_stack_size() {  return true; }
 #else
 size_t os::Bsd::min_stack_allowed  =  (48 DEBUG_ONLY(+4))*K;
 
@@ -790,7 +787,6 @@ size_t os::Bsd::min_stack_allowed  =  (48 DEBUG_ONLY(+4))*K;
 #define GET_GS() ({int gs; __asm__ volatile("movw %%gs, %w0":"=q"(gs)); gs&0xffff;})
 #endif
 
-bool os::Bsd::supports_variable_stack_size() { return true; }
 #endif // AMD64
 
 // return default stack size for thr_type

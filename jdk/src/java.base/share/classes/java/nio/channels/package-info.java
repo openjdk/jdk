@@ -32,29 +32,29 @@
  *
  * <blockquote><table cellspacing=1 cellpadding=0 summary="Lists channels and their descriptions">
  * <tr><th align="left">Channels</th><th align="left">Description</th></tr>
- * <tr><td valign=top><tt><i>{@link java.nio.channels.Channel}</i></tt></td>
+ * <tr><td valign=top><i>{@link java.nio.channels.Channel}</i></td>
  *     <td>A nexus for I/O operations</td></tr>
- * <tr><td valign=top><tt>&nbsp;&nbsp;<i>{@link java.nio.channels.ReadableByteChannel}</i></tt></td>
+ * <tr><td valign=top>&nbsp;&nbsp;<i>{@link java.nio.channels.ReadableByteChannel}</i></td>
  *     <td>Can read into a buffer</td></tr>
- * <tr><td valign=top><tt>&nbsp;&nbsp;&nbsp;&nbsp;<i>{@link java.nio.channels.ScatteringByteChannel}&nbsp;&nbsp;</i></tt></td>
+ * <tr><td valign=top>&nbsp;&nbsp;&nbsp;&nbsp;<i>{@link java.nio.channels.ScatteringByteChannel}&nbsp;&nbsp;</i></td>
  *     <td>Can read into a sequence of&nbsp;buffers</td></tr>
- * <tr><td valign=top><tt>&nbsp;&nbsp;<i>{@link java.nio.channels.WritableByteChannel}</i></tt></td>
+ * <tr><td valign=top>&nbsp;&nbsp;<i>{@link java.nio.channels.WritableByteChannel}</i></td>
  *     <td>Can write from a buffer</td></tr>
- * <tr><td valign=top><tt>&nbsp;&nbsp;&nbsp;&nbsp;<i>{@link java.nio.channels.GatheringByteChannel}</i></tt></td>
+ * <tr><td valign=top>&nbsp;&nbsp;&nbsp;&nbsp;<i>{@link java.nio.channels.GatheringByteChannel}</i></td>
  *     <td>Can write from a sequence of&nbsp;buffers</td></tr>
- * <tr><td valign=top><tt>&nbsp;&nbsp;<i>{@link java.nio.channels.ByteChannel}</i></tt></td>
+ * <tr><td valign=top>&nbsp;&nbsp;<i>{@link java.nio.channels.ByteChannel}</i></td>
  *     <td>Can read/write to/from a&nbsp;buffer</td></tr>
- * <tr><td valign=top><tt>&nbsp;&nbsp;&nbsp;&nbsp;<i>{@link java.nio.channels.SeekableByteChannel}</i></tt></td>
+ * <tr><td valign=top>&nbsp;&nbsp;&nbsp;&nbsp;<i>{@link java.nio.channels.SeekableByteChannel}</i></td>
  *     <td>A {@code ByteChannel} connected to an entity that contains a variable-length sequence of bytes</td></tr>
- * <tr><td valign=top><tt>&nbsp;&nbsp;<i>{@link java.nio.channels.AsynchronousChannel}</i></tt></td>
+ * <tr><td valign=top>&nbsp;&nbsp;<i>{@link java.nio.channels.AsynchronousChannel}</i></td>
  *     <td>Supports asynchronous I/O operations.</td></tr>
- * <tr><td valign=top><tt>&nbsp;&nbsp;&nbsp;&nbsp;<i>{@link java.nio.channels.AsynchronousByteChannel}</i></tt></td>
+ * <tr><td valign=top>&nbsp;&nbsp;&nbsp;&nbsp;<i>{@link java.nio.channels.AsynchronousByteChannel}</i></td>
  *     <td>Can read and write bytes asynchronously</td></tr>
- * <tr><td valign=top><tt>&nbsp;&nbsp;<i>{@link java.nio.channels.NetworkChannel}</i></tt></td>
+ * <tr><td valign=top>&nbsp;&nbsp;<i>{@link java.nio.channels.NetworkChannel}</i></td>
  *     <td>A channel to a network socket</td></tr>
- * <tr><td valign=top><tt>&nbsp;&nbsp;&nbsp;&nbsp;<i>{@link java.nio.channels.MulticastChannel}</i></tt></td>
+ * <tr><td valign=top>&nbsp;&nbsp;&nbsp;&nbsp;<i>{@link java.nio.channels.MulticastChannel}</i></td>
  *     <td>Can join Internet Protocol (IP) multicast groups</td></tr>
- * <tr><td valign=top><tt>{@link java.nio.channels.Channels}</tt></td>
+ * <tr><td valign=top>{@link java.nio.channels.Channels}</td>
  *     <td>Utility methods for channel/stream interoperation</td></tr>
  * </table></blockquote>
  *
@@ -99,8 +99,8 @@
  * Internet Protocol (IP) multicast groups.
  *
  * <p> The {@link java.nio.channels.Channels} utility class defines static methods
- * that support the interoperation of the stream classes of the <tt>{@link
- * java.io}</tt> package with the channel classes of this package.  An appropriate
+ * that support the interoperation of the stream classes of the {@link
+ * java.io} package with the channel classes of this package.  An appropriate
  * channel can be constructed from an {@link java.io.InputStream} or an {@link
  * java.io.OutputStream}, and conversely an {@link java.io.InputStream} or an
  * {@link java.io.OutputStream} can be constructed from a channel.  A {@link
@@ -111,11 +111,11 @@
  *
  * <blockquote><table cellspacing=1 cellpadding=0 summary="Lists file channels and their descriptions">
  * <tr><th align="left">File channels</th><th align="left">Description</th></tr>
- * <tr><td valign=top><tt>{@link java.nio.channels.FileChannel}</tt></td>
+ * <tr><td valign=top>{@link java.nio.channels.FileChannel}</td>
  *     <td>Reads, writes, maps, and manipulates files</td></tr>
- * <tr><td valign=top><tt>{@link java.nio.channels.FileLock}</tt></td>
+ * <tr><td valign=top>{@link java.nio.channels.FileLock}</td>
  *     <td>A lock on a (region of a) file</td></tr>
- * <tr><td valign=top><tt>{@link java.nio.MappedByteBuffer}&nbsp;&nbsp;</tt></td>
+ * <tr><td valign=top>{@link java.nio.MappedByteBuffer}&nbsp;&nbsp;</td>
  *     <td>A direct byte buffer mapped to a region of a&nbsp;file</td></tr>
  * </table></blockquote>
  *
@@ -133,30 +133,30 @@
  * java.nio.channels.FileChannel#open open} methods, or by invoking the {@code
  * getChannel} method of a {@link java.io.FileInputStream}, {@link
  * java.io.FileOutputStream}, or {@link java.io.RandomAccessFile} to return a
- * file channel connected to the same underlying file as the <tt>{@link java.io}</tt>
+ * file channel connected to the same underlying file as the {@link java.io}
  * class.
  *
  * <a name="multiplex"></a>
  * <blockquote><table cellspacing=1 cellpadding=0 summary="Lists multiplexed, non-blocking channels and their descriptions">
  * <tr><th align="left">Multiplexed, non-blocking I/O</th><th align="left"><p>Description</th></tr>
- * <tr><td valign=top><tt>{@link java.nio.channels.SelectableChannel}</tt></td>
+ * <tr><td valign=top>{@link java.nio.channels.SelectableChannel}</td>
  *     <td>A channel that can be multiplexed</td></tr>
- * <tr><td valign=top><tt>&nbsp;&nbsp;{@link java.nio.channels.DatagramChannel}</tt></td>
+ * <tr><td valign=top>&nbsp;&nbsp;{@link java.nio.channels.DatagramChannel}</td>
  *     <td>A channel to a datagram-oriented socket</td></tr>
- * <tr><td valign=top><tt>&nbsp;&nbsp;{@link java.nio.channels.Pipe.SinkChannel}</tt></td>
+ * <tr><td valign=top>&nbsp;&nbsp;{@link java.nio.channels.Pipe.SinkChannel}</td>
  *     <td>The write end of a pipe</td></tr>
- * <tr><td valign=top><tt>&nbsp;&nbsp;{@link java.nio.channels.Pipe.SourceChannel}</tt></td>
+ * <tr><td valign=top>&nbsp;&nbsp;{@link java.nio.channels.Pipe.SourceChannel}</td>
  *     <td>The read end of a pipe</td></tr>
- * <tr><td valign=top><tt>&nbsp;&nbsp;{@link java.nio.channels.ServerSocketChannel}&nbsp;&nbsp;</tt></td>
+ * <tr><td valign=top>&nbsp;&nbsp;{@link java.nio.channels.ServerSocketChannel}&nbsp;&nbsp;</td>
  *     <td>A channel to a stream-oriented listening socket</td></tr>
- * <tr><td valign=top><tt>&nbsp;&nbsp;{@link java.nio.channels.SocketChannel}</tt></td>
+ * <tr><td valign=top>&nbsp;&nbsp;{@link java.nio.channels.SocketChannel}</td>
  *     <td>A channel for a stream-oriented connecting socket</td></tr>
- * <tr><td valign=top><tt>{@link java.nio.channels.Selector}</tt></td>
+ * <tr><td valign=top>{@link java.nio.channels.Selector}</td>
  *     <td>A multiplexor of selectable channels</td></tr>
- * <tr><td valign=top><tt>{@link java.nio.channels.SelectionKey}</tt></td>
+ * <tr><td valign=top>{@link java.nio.channels.SelectionKey}</td>
  *     <td>A token representing the registration <br> of a channel
  *     with&nbsp;a&nbsp;selector</td></tr>
- * <tr><td valign=top><tt>{@link java.nio.channels.Pipe}</tt></td>
+ * <tr><td valign=top>{@link java.nio.channels.Pipe}</td>
  *     <td>Two channels that form a unidirectional&nbsp;pipe</td></tr>
  * </table></blockquote>
  *
@@ -194,18 +194,18 @@
  *
  * <p> This package defines selectable-channel classes corresponding to the {@link
  * java.net.DatagramSocket}, {@link java.net.ServerSocket}, and {@link
- * java.net.Socket} classes defined in the <tt>{@link java.net}</tt> package.
+ * java.net.Socket} classes defined in the {@link java.net} package.
  * Minor changes to these classes have been made in order to support sockets that
  * are associated with channels.  This package also defines a simple class that
  * implements unidirectional pipes.  In all cases, a new selectable channel is
- * created by invoking the static <tt>open</tt> method of the corresponding class.
+ * created by invoking the static {@code open} method of the corresponding class.
  * If a channel needs an associated socket then a socket will be created as a side
  * effect of this operation.
  *
  * <p> The implementation of selectors, selectable channels, and selection keys
  * can be replaced by "plugging in" an alternative definition or instance of the
- * {@link java.nio.channels.spi.SelectorProvider} class defined in the <tt>{@link
- * java.nio.channels.spi}</tt> package.  It is not expected that many developers
+ * {@link java.nio.channels.spi.SelectorProvider} class defined in the {@link
+ * java.nio.channels.spi} package.  It is not expected that many developers
  * will actually make use of this facility; it is provided primarily so that
  * sophisticated users can take advantage of operating-system-specific
  * I/O-multiplexing mechanisms when very high performance is required.
@@ -215,8 +215,8 @@
  * java.nio.channels.spi.AbstractInterruptibleChannel}, {@link
  * java.nio.channels.spi.AbstractSelectableChannel}, {@link
  * java.nio.channels.spi.AbstractSelectionKey}, and {@link
- * java.nio.channels.spi.AbstractSelector} classes in the <tt>{@link
- * java.nio.channels.spi}</tt> package.  When defining a custom selector provider,
+ * java.nio.channels.spi.AbstractSelector} classes in the {@link
+ * java.nio.channels.spi} package.  When defining a custom selector provider,
  * only the {@link java.nio.channels.spi.AbstractSelector} and {@link
  * java.nio.channels.spi.AbstractSelectionKey} classes should be subclassed
  * directly; custom channel classes should extend the appropriate {@link
@@ -226,15 +226,15 @@
  *
  * <blockquote><table cellspacing=1 cellpadding=0 summary="Lists asynchronous channels and their descriptions">
  * <tr><th align="left">Asynchronous I/O</th><th align="left">Description</th></tr>
- * <tr><td valign=top><tt>{@link java.nio.channels.AsynchronousFileChannel}</tt></td>
+ * <tr><td valign=top>{@link java.nio.channels.AsynchronousFileChannel}</td>
  *     <td>An asynchronous channel for reading, writing, and manipulating a file</td></tr>
- * <tr><td valign=top><tt>{@link java.nio.channels.AsynchronousSocketChannel}</tt></td>
+ * <tr><td valign=top>{@link java.nio.channels.AsynchronousSocketChannel}</td>
  *     <td>An asynchronous channel to a stream-oriented connecting socket</td></tr>
- * <tr><td valign=top><tt>{@link java.nio.channels.AsynchronousServerSocketChannel}&nbsp;&nbsp;</tt></td>
+ * <tr><td valign=top>{@link java.nio.channels.AsynchronousServerSocketChannel}&nbsp;&nbsp;</td>
  *     <td>An asynchronous channel to a stream-oriented listening socket</td></tr>
- * <tr><td valign=top><tt>{@link java.nio.channels.CompletionHandler}</tt></td>
+ * <tr><td valign=top>{@link java.nio.channels.CompletionHandler}</td>
  *     <td>A handler for consuming the result of an asynchronous operation</td></tr>
- * <tr><td valign=top><tt>{@link java.nio.channels.AsynchronousChannelGroup}</tt></td>
+ * <tr><td valign=top>{@link java.nio.channels.AsynchronousChannelGroup}</td>
  *     <td>A grouping of asynchronous channels for the purpose of resource sharing</td></tr>
  * </table></blockquote>
  *
@@ -272,13 +272,13 @@
  * <p> As with selectors, the implementation of asynchronous channels can be
  * replaced by "plugging in" an alternative definition or instance of the {@link
  * java.nio.channels.spi.AsynchronousChannelProvider} class defined in the
- * <tt>{@link java.nio.channels.spi}</tt> package.  It is not expected that many
+ * {@link java.nio.channels.spi} package.  It is not expected that many
  * developers will actually make use of this facility; it is provided primarily
  * so that sophisticated users can take advantage of operating-system-specific
  * asynchronous I/O mechanisms when very high performance is required.
  *
  * <hr width="80%">
- * <p> Unless otherwise noted, passing a <tt>null</tt> argument to a constructor
+ * <p> Unless otherwise noted, passing a {@code null} argument to a constructor
  * or method in any class or interface in this package will cause a {@link
  * java.lang.NullPointerException NullPointerException} to be thrown.
  *

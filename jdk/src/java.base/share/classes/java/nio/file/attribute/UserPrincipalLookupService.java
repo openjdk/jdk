@@ -72,7 +72,8 @@ public abstract class UserPrincipalLookupService {
      *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
-     *          installed, it checks {@link RuntimePermission}<tt>("lookupUserInformation")</tt>
+     *          installed, it checks
+     *          {@link RuntimePermission}{@code ("lookupUserInformation")}
      */
     public abstract UserPrincipal lookupPrincipalByName(String name)
         throws IOException;
@@ -97,7 +98,8 @@ public abstract class UserPrincipalLookupService {
      *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
-     *          installed, it checks {@link RuntimePermission}<tt>("lookupUserInformation")</tt>
+     *          installed, it checks
+     *          {@link RuntimePermission}{@code ("lookupUserInformation")}
      */
     public abstract GroupPrincipal lookupPrincipalByGroupName(String group)
         throws IOException;

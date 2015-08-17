@@ -126,6 +126,11 @@ public class OnExitTest extends ProcessUtil {
             } while (processes.size() < expected &&
                     Instant.now().isBefore(endTimeout));
 
+            if (processes.size() < expected) {
+                printf("WARNING: not all children have been started. Can't complete test.%n");
+                printf("         You can try to increase the timeout or%n");
+                printf("         you can try to use a faster VM (i.e. not a debug version).%n");
+            }
             children = getAllChildren(procHandle);
 
             ConcurrentHashMap<ProcessHandle, CompletableFuture<ProcessHandle>> completions =
