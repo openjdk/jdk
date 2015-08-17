@@ -257,8 +257,12 @@ public class CtrlASCII extends Applet implements KeyListener
     }// start()
     public void punchCtrlKey( Robot ro, int keyCode ) {
         ro.keyPress(KeyEvent.VK_CONTROL);
-        ro.keyPress(keyCode);
-        ro.keyRelease(keyCode);
+        try {
+            ro.keyPress(keyCode);
+            ro.keyRelease(keyCode);
+        }catch(IllegalArgumentException iae) {
+            System.err.println("skip probably invalid keyCode "+keyCode);
+        }
         ro.keyRelease(KeyEvent.VK_CONTROL);
         ro.delay(200);
     }

@@ -538,11 +538,11 @@ public abstract class SctpChannel
      * {@link java.io.IOException} to be thrown.
      *
      * <P> If this channel is already connected then this method will not block
-     * and will immediately return <tt>true</tt>.  If this channel is in
-     * non-blocking mode then this method will return <tt>false</tt> if the
+     * and will immediately return {@code true}.  If this channel is in
+     * non-blocking mode then this method will return {@code false} if the
      * connection process is not yet complete.  If this channel is in blocking
      * mode then this method will block until the connection either completes
-     * or fails, and will always either return <tt>true</tt> or throw a checked
+     * or fails, and will always either return {@code true} or throw a checked
      * exception describing the failure.
      *
      * <P> This method may be invoked at any time. If a {@link #send send} or {@link #receive receive}
@@ -711,9 +711,9 @@ public abstract class SctpChannel
      * Returns an operation set identifying this channel's supported operations.
      *
      * <P> SCTP channels support connecting, reading, and writing, so this
-     * method returns <tt>(</tt>{@link SelectionKey#OP_CONNECT}
-     * <tt>|</tt>&nbsp;{@link SelectionKey#OP_READ} <tt>|</tt>&nbsp;{@link
-     * SelectionKey#OP_WRITE}<tt>)</tt>.  </p>
+     * method returns {@code (}{@link SelectionKey#OP_CONNECT}
+     * {@code |}&nbsp;{@link SelectionKey#OP_READ} {@code |}&nbsp;{@link
+     * SelectionKey#OP_WRITE}{@code )}.
      *
      * @return  The valid-operation set
      */

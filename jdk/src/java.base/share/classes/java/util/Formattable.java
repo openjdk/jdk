@@ -28,8 +28,8 @@ package java.util;
 import java.io.IOException;
 
 /**
- * The <tt>Formattable</tt> interface must be implemented by any class that
- * needs to perform custom formatting using the <tt>'s'</tt> conversion
+ * The {@code Formattable} interface must be implemented by any class that
+ * needs to perform custom formatting using the {@code 's'} conversion
  * specifier of {@link java.util.Formatter}.  This interface allows basic
  * control for formatting arbitrary objects.
  *
@@ -110,7 +110,7 @@ import java.io.IOException;
  * safety is optional and may be enforced by classes that extend and implement
  * this interface.
  *
- * <p> Unless otherwise specified, passing a <tt>null</tt> argument to
+ * <p> Unless otherwise specified, passing a {@code null} argument to
  * any method in this interface will cause a {@link
  * NullPointerException} to be thrown.
  *
@@ -126,7 +126,7 @@ public interface Formattable {
      *         {@link Formatter#out() formatter.out()} or {@link
      *         Formatter#locale() formatter.locale()} to obtain the {@link
      *         Appendable} or {@link Locale} used by this
-     *         <tt>formatter</tt> respectively.
+     *         {@code formatter} respectively.
      *
      * @param  flags
      *         The flags modify the output format.  The value is interpreted as
@@ -139,19 +139,19 @@ public interface Formattable {
      * @param  width
      *         The minimum number of characters to be written to the output.
      *         If the length of the converted value is less than the
-     *         <tt>width</tt> then the output will be padded by
-     *         <tt>'&nbsp;&nbsp;'</tt> until the total number of characters
+     *         {@code width} then the output will be padded by
+     *         <code>'&nbsp;&nbsp;'</code> until the total number of characters
      *         equals width.  The padding is at the beginning by default.  If
      *         the {@link FormattableFlags#LEFT_JUSTIFY} flag is set then the
-     *         padding will be at the end.  If <tt>width</tt> is <tt>-1</tt>
+     *         padding will be at the end.  If {@code width} is {@code -1}
      *         then there is no minimum.
      *
      * @param  precision
      *         The maximum number of characters to be written to the output.
      *         The precision is applied before the width, thus the output will
-     *         be truncated to <tt>precision</tt> characters even if the
-     *         <tt>width</tt> is greater than the <tt>precision</tt>.  If
-     *         <tt>precision</tt> is <tt>-1</tt> then there is no explicit
+     *         be truncated to {@code precision} characters even if the
+     *         {@code width} is greater than the {@code precision}.  If
+     *         {@code precision} is {@code -1} then there is no explicit
      *         limit on the number of characters.
      *
      * @throws  IllegalFormatException

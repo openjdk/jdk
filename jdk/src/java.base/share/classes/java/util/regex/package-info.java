@@ -37,7 +37,7 @@
  * interface in order to support matching against characters from a
  * wide variety of input sources. </p>
  *
- * <p> Unless otherwise noted, passing a <tt>null</tt> argument to a
+ * <p> Unless otherwise noted, passing a <code>null</code> argument to a
  * method in any class or interface in this package will cause a
  * {@link java.lang.NullPointerException NullPointerException} to be
  * thrown.

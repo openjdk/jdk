@@ -132,7 +132,7 @@ public abstract class SelectableChannel
      * of its keys have been cancelled.  A channel may also remain registered
      * for some time after it is closed.  </p>
      *
-     * @return <tt>true</tt> if, and only if, this channel is registered
+     * @return {@code true} if, and only if, this channel is registered
      */
     public abstract boolean isRegistered();
     //
@@ -146,7 +146,7 @@ public abstract class SelectableChannel
      *          The selector
      *
      * @return  The key returned when this channel was last registered with the
-     *          given selector, or <tt>null</tt> if this channel is not
+     *          given selector, or {@code null} if this channel is not
      *          currently registered with that selector
      */
     public abstract SelectionKey keyFor(Selector sel);
@@ -159,16 +159,16 @@ public abstract class SelectableChannel
      *
      * <p> If this channel is currently registered with the given selector then
      * the selection key representing that registration is returned.  The key's
-     * interest set will have been changed to <tt>ops</tt>, as if by invoking
+     * interest set will have been changed to {@code ops}, as if by invoking
      * the {@link SelectionKey#interestOps(int) interestOps(int)} method.  If
-     * the <tt>att</tt> argument is not <tt>null</tt> then the key's attachment
+     * the {@code att} argument is not {@code null} then the key's attachment
      * will have been set to that value.  A {@link CancelledKeyException} will
      * be thrown if the key has already been cancelled.
      *
      * <p> Otherwise this channel has not yet been registered with the given
      * selector, so it is registered and the resulting new key is returned.
-     * The key's initial interest set will be <tt>ops</tt> and its attachment
-     * will be <tt>att</tt>.
+     * The key's initial interest set will be {@code ops} and its attachment
+     * will be {@code att}.
      *
      * <p> This method may be invoked at any time.  If this method is invoked
      * while another invocation of this method or of the {@link
@@ -189,7 +189,7 @@ public abstract class SelectableChannel
      *         The interest set for the resulting key
      *
      * @param  att
-     *         The attachment for the resulting key; may be <tt>null</tt>
+     *         The attachment for the resulting key; may be {@code null}
      *
      * @throws  ClosedChannelException
      *          If this channel is closed
@@ -209,7 +209,7 @@ public abstract class SelectableChannel
      *          but the corresponding key has already been cancelled
      *
      * @throws  IllegalArgumentException
-     *          If a bit in the <tt>ops</tt> set does not correspond to an
+     *          If a bit in the {@code ops} set does not correspond to an
      *          operation that is supported by this channel, that is, if
      *          {@code set & ~validOps() != 0}
      *
@@ -235,13 +235,13 @@ public abstract class SelectableChannel
      *
      * <p> An invocation of this convenience method of the form
      *
-     * <blockquote><tt>sc.register(sel, ops)</tt></blockquote>
+     * <blockquote>{@code sc.register(sel, ops)}</blockquote>
      *
      * behaves in exactly the same way as the invocation
      *
-     * <blockquote><tt>sc.{@link
+     * <blockquote>{@code sc.}{@link
      * #register(java.nio.channels.Selector,int,java.lang.Object)
-     * register}(sel, ops, null)</tt></blockquote>
+     * register(sel, ops, null)}</blockquote>
      *
      * @param  sel
      *         The selector with which this channel is to be registered
@@ -267,7 +267,7 @@ public abstract class SelectableChannel
      *          but the corresponding key has already been cancelled
      *
      * @throws  IllegalArgumentException
-     *          If a bit in <tt>ops</tt> does not correspond to an operation
+     *          If a bit in {@code ops} does not correspond to an operation
      *          that is supported by this channel, that is, if {@code set &
      *          ~validOps() != 0}
      *
@@ -296,8 +296,8 @@ public abstract class SelectableChannel
      * of the {@link #register(Selector, int) register} method is in progress
      * then it will first block until the other operation is complete. </p>
      *
-     * @param  block  If <tt>true</tt> then this channel will be placed in
-     *                blocking mode; if <tt>false</tt> then it will be placed
+     * @param  block  If {@code true} then this channel will be placed in
+     *                blocking mode; if {@code false} then it will be placed
      *                non-blocking mode
      *
      * @return  This selectable channel
@@ -306,7 +306,7 @@ public abstract class SelectableChannel
      *          If this channel is closed
      *
      * @throws  IllegalBlockingModeException
-     *          If <tt>block</tt> is <tt>true</tt> and this channel is
+     *          If {@code block} is {@code true} and this channel is
      *          registered with one or more selectors
      *
      * @throws IOException
@@ -327,7 +327,7 @@ public abstract class SelectableChannel
      * <p> If this channel is closed then the value returned by this method is
      * not specified. </p>
      *
-     * @return <tt>true</tt> if, and only if, this channel is in blocking mode
+     * @return {@code true} if, and only if, this channel is in blocking mode
      */
     public abstract boolean isBlocking();
 

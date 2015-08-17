@@ -1282,7 +1282,7 @@ void PhaseIdealLoop::do_unroll( IdealLoopTree *loop, Node_List &old_new, bool ad
 
   if (C->do_vector_loop() && (PrintOpto && VerifyLoopOptimizations || TraceLoopOpts)) {
     Arena* arena = Thread::current()->resource_area();
-    Node_Stack stack(arena, C->unique() >> 2);
+    Node_Stack stack(arena, C->live_nodes() >> 2);
     Node_List rpo_list;
     VectorSet visited(arena);
     visited.set(loop_head->_idx);

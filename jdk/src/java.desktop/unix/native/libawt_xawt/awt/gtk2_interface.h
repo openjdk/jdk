@@ -27,6 +27,7 @@
 
 #include <stdlib.h>
 #include <jni.h>
+#include <X11/X.h>
 
 #define _G_TYPE_CIC(ip, gt, ct)       ((ct*) ip)
 #define G_TYPE_CHECK_INSTANCE_CAST(instance, g_type, c_type)    (_G_TYPE_CIC ((instance), (g_type), c_type))
@@ -820,6 +821,7 @@ void (*fp_gtk_widget_show)(GtkWidget *widget);
 void (*fp_gtk_main)(void);
 guint (*fp_gtk_main_level)(void);
 gchar* (*fp_g_path_get_dirname) (const gchar *file_name);
+XID (*fp_gdk_x11_drawable_get_xid) (GdkWindow *drawable);
 
 /**
  * This function is available for GLIB > 2.20, so it MUST be
