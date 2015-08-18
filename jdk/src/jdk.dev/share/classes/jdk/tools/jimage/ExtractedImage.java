@@ -164,17 +164,19 @@ public final class ExtractedImage {
     private Set<Archive> archives = new HashSet<>();
     private final PrintWriter log;
     private final boolean verbose;
-
+    private final String jdataName;
     ExtractedImage(Path dirPath, PrintWriter log,
             boolean verbose) throws IOException {
         if (!Files.isDirectory(dirPath)) {
             throw new IOException("Not a directory");
         }
+        List<String> jdataNameHolder = new ArrayList<>();
         Files.walk(dirPath, 1).forEach((p) -> {
             try {
                 if (!dirPath.equals(p)) {
                     String name = getPathName(p);
                     if (name.endsWith(ImageModuleData.META_DATA_EXTENSION)) {
+                        jdataNameHolder.add(p.getFileName().toString());
                         List<String> lines = Files.readAllLines(p);
                         for (Entry<String, List<String>> entry
                                 : ImageModuleDataWriter.toModulePackages(lines).entrySet()) {
@@ -197,11 +199,22 @@ public final class ExtractedImage {
         archives = Collections.unmodifiableSet(archives);
         this.log = log;
         this.verbose = verbose;
+        if (jdataNameHolder.size() != 1) {
+            throw new IOException("Wrong module information");
+        }
+        // The name of the metadata resource must be reused in the recreated jimage
+        String name = jdataNameHolder.get(0);
+        // Extension will be added when recreating the jimage
+        if (name.endsWith(ImageModuleData.META_DATA_EXTENSION)) {
+            name = name.substring(0, name.length()
+                    - ImageModuleData.META_DATA_EXTENSION.length());
+        }
+        jdataName = name;
     }
 
     void recreateJImage(Path path) throws IOException {
 
-        ImageFileCreator.recreateJimage(path, archives, modulePackages);
+        ImageFileCreator.recreateJimage(path, jdataName, archives, modulePackages);
     }
 
     private static String getPathName(Path path) {
