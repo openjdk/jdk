@@ -1360,7 +1360,7 @@ ObjectMonitor * NOINLINE ObjectSynchronizer::inflate(Thread * Self,
       }
 
       // We've successfully installed INFLATING (0) into the mark-word.
-      // This is the only case where 0 will appear in a mark-work.
+      // This is the only case where 0 will appear in a mark-word.
       // Only the singular thread that successfully swings the mark-word
       // to 0 can perform (or more precisely, complete) inflation.
       //
