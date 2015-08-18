@@ -49,10 +49,12 @@ import org.testng.TestNG;
 
 /*
  * @test
+ * @bug 8077350 8081566 8081567 8098852
  * @build jdk.testlibrary.*
  * @library /lib/testlibrary
  * @summary Functions of ProcessHandle.Info
  * @author Roger Riggs
+ * @key intermittent
  */
 
 public class InfoTest {
