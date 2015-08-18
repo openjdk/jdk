@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_CLASSFILE_SHAREDPATHSMISCINFO_HPP
 #define SHARE_VM_CLASSFILE_SHAREDPATHSMISCINFO_HPP
 
+#include "classfile/classLoader.hpp"
 #include "runtime/os.hpp"
 
 // During dumping time, when processing class paths, we build up the dump-time
@@ -104,19 +105,6 @@ public:
   // The path must not exist at run-time
   void add_nonexist_path(const char* path) {
     add_path(path, NON_EXIST);
-  }
-
-  // The path must exist and have required size and modification time
-  void add_required_file(const char* path) {
-    add_path(path, REQUIRED);
-
-    struct stat st;
-    if (os::stat(path, &st) != 0) {
-      assert(0, "sanity");
-      ClassLoader::exit_with_path_failure("failed to os::stat(%s)", path); // should not happen
-    }
-    write_time(st.st_mtime);
-    write_long(st.st_size);
   }
 
   // The path must exist, and must contain exactly <num_entries> files/dirs
