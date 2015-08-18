@@ -106,7 +106,7 @@ public final class KeychainStore extends KeyStoreSpi {
         AccessController.doPrivileged(
             new PrivilegedAction<Void>() {
                 public Void run() {
-                    System.loadLibrary("osx");
+                    System.loadLibrary("osxsecurity");
                     return null;
                 }
             });
