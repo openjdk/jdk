@@ -215,8 +215,8 @@ public abstract class Buffer {
      * {@code put(src)} when the parameter is the {@code Buffer} on which the
      * method is being invoked.
      *
-     * @returns  IllegalArgumentException
-     *           With a message indicating equal source and target buffers
+     * @return  IllegalArgumentException
+     *          With a message indicating equal source and target buffers
      */
     static IllegalArgumentException createSameBufferException() {
         return new IllegalArgumentException("The source buffer is this buffer");
