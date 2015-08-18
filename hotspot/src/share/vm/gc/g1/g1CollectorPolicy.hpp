@@ -634,8 +634,6 @@ public:
   virtual HeapWord* satisfy_failed_allocation(size_t size,
                                               bool is_tlab);
 
-  BarrierSet::Name barrier_set_name() { return BarrierSet::G1SATBCTLogging; }
-
   bool need_to_start_conc_mark(const char* source, size_t alloc_word_size = 0);
 
   // Record the start and end of an evacuation pause.
