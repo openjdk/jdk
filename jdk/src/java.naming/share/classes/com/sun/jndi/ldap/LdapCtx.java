@@ -909,7 +909,7 @@ final public class LdapCtx extends ComponentDirContext
      * @param dn The non-null DN of the entry to add
      * @param attrs The non-null attributes of entry to add
      * @param directUpdate Whether attrs can be updated directly
-     * @returns Non-null attributes with attributes from the RDN added
+     * @return Non-null attributes with attributes from the RDN added
      */
     private static Attributes addRdnAttributes(String dn, Attributes attrs,
         boolean directUpdate) throws NamingException {
