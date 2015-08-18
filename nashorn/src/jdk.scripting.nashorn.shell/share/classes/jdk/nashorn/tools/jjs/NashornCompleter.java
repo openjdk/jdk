@@ -26,6 +26,7 @@
 package jdk.nashorn.tools.jjs;
 
 import java.util.List;
+import java.util.regex.Pattern;
 import jdk.internal.jline.console.completer.Completer;
 import jdk.nashorn.api.tree.AssignmentTree;
 import jdk.nashorn.api.tree.BinaryTree;
@@ -34,8 +35,11 @@ import jdk.nashorn.api.tree.CompoundAssignmentTree;
 import jdk.nashorn.api.tree.ConditionalExpressionTree;
 import jdk.nashorn.api.tree.ExpressionTree;
 import jdk.nashorn.api.tree.ExpressionStatementTree;
+import jdk.nashorn.api.tree.FunctionCallTree;
+import jdk.nashorn.api.tree.IdentifierTree;
 import jdk.nashorn.api.tree.InstanceOfTree;
 import jdk.nashorn.api.tree.MemberSelectTree;
+import jdk.nashorn.api.tree.NewTree;
 import jdk.nashorn.api.tree.SimpleTreeVisitorES5_1;
 import jdk.nashorn.api.tree.Tree;
 import jdk.nashorn.api.tree.UnaryTree;
@@ -57,6 +61,10 @@ final class NashornCompleter implements Completer {
         this.parser = Parser.create();
     }
 
+    // Pattern to match a unfinished member selection expression. object part and "."
+    // but property name missing pattern.
+    private static final Pattern SELECT_PROP_MISSING = Pattern.compile(".*\\.\\s*");
+
     @Override
     public int complete(final String test, final int cursor, final List<CharSequence> result) {
         // check that cursor is at the end of test string. Do not complete in the middle!
@@ -64,63 +72,66 @@ final class NashornCompleter implements Completer {
             return cursor;
         }
 
-        // if it has a ".", then assume it is a member selection expression
-        final int idx = test.lastIndexOf('.');
-        if (idx == -1) {
-            if (isIdentifier(test)) {
-                // identifier - return matching global variable names, if any
-                result.addAll(PropertiesHelper.getProperties(global, test));
-                return idx + 1;
-            }
+        // do we have an incomplete member selection expression that misses property name?
+        final boolean endsWithDot = SELECT_PROP_MISSING.matcher(test).matches();
 
-            return cursor;
-        }
+        // If this is an incomplete member selection, then it is not legal code
+        // Make it legal by adding a random property name "x" to it.
+        final String exprToEval = endsWithDot? test + "x" : test;
 
-        // stuff before the last "."
-        final String exprBeforeDot = test.substring(0, idx);
-
-        // Make sure that completed code will have a member expression! Adding ".x" as a
-        // random property/field name selected to make it possible to be a proper member select
-        final ExpressionTree topExpr = getTopLevelExpression(parser, exprBeforeDot + ".x");
+        final ExpressionTree topExpr = getTopLevelExpression(parser, exprToEval);
         if (topExpr == null) {
             // did not parse to be a top level expression, no suggestions!
             return cursor;
         }
 
 
-        // Find 'right most' member select expression's start position
-        final int startPosition = (int) getStartOfMemberSelect(topExpr);
-        if (startPosition == -1) {
-            // not a member expression that we can handle for completion
+        // Find 'right most' expression of the top level expression
+        final Tree rightMostExpr = getRightMostExpression(topExpr);
+        if (rightMostExpr instanceof MemberSelectTree) {
+            return completeMemberSelect(test, cursor, result, (MemberSelectTree)rightMostExpr, endsWithDot);
+        } else if (rightMostExpr instanceof IdentifierTree) {
+            return completeIdentifier(test, cursor, result, (IdentifierTree)rightMostExpr);
+        } else {
+            // expression that we cannot handle for completion
             return cursor;
         }
+    }
 
-        // The part of the right most member select expression before the "."
-        final String objExpr = test.substring(startPosition, idx);
+    private int completeMemberSelect(final String test, final int cursor, final List<CharSequence> result,
+                final MemberSelectTree select, final boolean endsWithDot) {
+        final ExpressionTree objExpr = select.getExpression();
+        final String objExprCode = test.substring((int)objExpr.getStartPosition(), (int)objExpr.getEndPosition());
 
         // try to evaluate the object expression part as a script
         Object obj = null;
         try {
-            obj = context.eval(global, objExpr, global, "<suggestions>");
+            obj = context.eval(global, objExprCode, global, "<suggestions>");
         } catch (Exception ignored) {
             // throw the exception - this is during tab-completion
         }
 
         if (obj != null && obj != ScriptRuntime.UNDEFINED) {
-            // where is the last dot? Is there a partial property name specified?
-            final String prefix = test.substring(idx + 1);
-            if (prefix.isEmpty()) {
+            if (endsWithDot) {
                 // no user specified "prefix". List all properties of the object
                 result.addAll(PropertiesHelper.getProperties(obj));
                 return cursor;
             } else {
                 // list of properties matching the user specified prefix
+                final String prefix = select.getIdentifier();
                 result.addAll(PropertiesHelper.getProperties(obj, prefix));
-                return idx + 1;
+                return cursor - prefix.length();
             }
         }
 
         return cursor;
+    }
+
+    private int completeIdentifier(final String test, final int cursor, final List<CharSequence> result,
+                final IdentifierTree ident) {
+        final String name = ident.getName();
+        result.addAll(PropertiesHelper.getProperties(global, name));
+        return cursor - name.length();
     }
 
     // returns ExpressionTree if the given code parses to a top level expression.
@@ -143,65 +154,63 @@ final class NashornCompleter implements Completer {
         return null;
     }
 
-
-    private long getStartOfMemberSelect(final ExpressionTree expr) {
-        if (expr instanceof MemberSelectTree) {
-            return ((MemberSelectTree)expr).getStartPosition();
-        }
-
-        final Tree rightMostExpr = expr.accept(new SimpleTreeVisitorES5_1<Tree, Void>() {
+    private Tree getRightMostExpression(final ExpressionTree expr) {
+        return expr.accept(new SimpleTreeVisitorES5_1<Tree, Void>() {
             @Override
             public Tree visitAssignment(final AssignmentTree at, final Void v) {
-                return at.getExpression();
+                return getRightMostExpression(at.getExpression());
             }
 
             @Override
             public Tree visitCompoundAssignment(final CompoundAssignmentTree cat, final Void v) {
-                return cat.getExpression();
+                return getRightMostExpression(cat.getExpression());
             }
 
             @Override
             public Tree visitConditionalExpression(final ConditionalExpressionTree cet, final Void v) {
-                return cet.getFalseExpression();
+                return getRightMostExpression(cet.getFalseExpression());
             }
 
             @Override
             public Tree visitBinary(final BinaryTree bt, final Void v) {
-                return bt.getRightOperand();
+                return getRightMostExpression(bt.getRightOperand());
             }
+
+            @Override
+            public Tree visitIdentifier(final IdentifierTree ident, final Void v) {
+                return ident;
+            }
+
 
             @Override
             public Tree visitInstanceOf(final InstanceOfTree it, final Void v) {
                 return it.getType();
             }
 
+
+            @Override
+            public Tree visitMemberSelect(final MemberSelectTree select, final Void v) {
+                return select;
+            }
+
+            @Override
+            public Tree visitNew(final NewTree nt, final Void v) {
+                final ExpressionTree call = nt.getConstructorExpression();
+                if (call instanceof FunctionCallTree) {
+                    final ExpressionTree func = ((FunctionCallTree)call).getFunctionSelect();
+                    // Is this "new Foo" or "new obj.Foo" with no user arguments?
+                    // If so, we may be able to do completion of constructor name.
+                    if (func.getEndPosition() == nt.getEndPosition()) {
+                        return func;
+                    }
+                }
+                return null;
+            }
+
             @Override
             public Tree visitUnary(final UnaryTree ut, final Void v) {
-                return ut.getExpression();
+                return getRightMostExpression(ut.getExpression());
             }
         }, null);
-
-        return (rightMostExpr instanceof MemberSelectTree)?
-            rightMostExpr.getStartPosition() : -1L;
-    }
-
-    // return if the given String is a valid identifier name or not
-    private boolean isIdentifier(final String test) {
-        if (test.isEmpty()) {
-            return false;
-        }
-
-        final char[] buf = test.toCharArray();
-        if (! Character.isJavaIdentifierStart(buf[0])) {
-            return false;
-        }
-
-        for (int idx = 1; idx < buf.length; idx++) {
-            if (! Character.isJavaIdentifierPart(buf[idx])) {
-                return false;
-            }
-        }
-
-        return true;
     }
 }
