@@ -1817,7 +1817,6 @@
   <module>
     <name>jdk.scripting.nashorn.shell</name>
     <depend>java.base</depend>
-    <depend>java.prefs</depend>
     <depend>jdk.scripting.nashorn</depend>
     <depend>jdk.internal.le</depend>
   </module>
