@@ -26,12 +26,12 @@
 package jdk.nashorn.tools.jjs;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.util.prefs.Preferences;
 import jdk.internal.jline.console.completer.Completer;
 import jdk.internal.jline.console.UserInterruptException;
 import jdk.nashorn.api.scripting.NashornException;
@@ -48,7 +48,8 @@ import jdk.nashorn.tools.Shell;
 public final class Main extends Shell {
     private Main() {}
 
-    static final Preferences PREFS = Preferences.userRoot().node("tool/jjs");
+    // file where history is persisted.
+    private static final File HIST_FILE = new File(new File(System.getProperty("user.home")), ".jjs.history");
 
     /**
      * Main entry point with the default input, output and error streams.
@@ -99,12 +100,14 @@ public final class Main extends Shell {
         final boolean globalChanged = (oldGlobal != global);
         final Completer completer = new NashornCompleter(context, global);
 
-        try (final Console in = new Console(System.in, System.out, PREFS, completer)) {
+        try (final Console in = new Console(System.in, System.out, HIST_FILE, completer)) {
             if (globalChanged) {
                 Context.setGlobal(global);
             }
 
             global.addShellBuiltins();
+            // expose history object for reflecting on command line history
+            global.put("history", new HistoryObject(in.getHistory()), false);
 
             while (true) {
                 String source = "";
