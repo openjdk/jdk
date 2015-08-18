@@ -2989,7 +2989,7 @@ initialize_sequential_subtasks_for_marking(int n_threads,
   assert(task_size > CardTableModRefBS::card_size_in_words &&
          (task_size %  CardTableModRefBS::card_size_in_words == 0),
          "Otherwise arithmetic below would be incorrect");
-  MemRegion span = _gen->reserved();
+  MemRegion span = _old_gen->reserved();
   if (low != NULL) {
     if (span.contains(low)) {
       // Align low down to  a card boundary so that

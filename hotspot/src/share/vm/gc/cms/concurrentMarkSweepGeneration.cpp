@@ -212,7 +212,7 @@ ConcurrentMarkSweepGeneration::ConcurrentMarkSweepGeneration(
                                            use_adaptive_freelists,
                                            dictionaryChoice);
   NOT_PRODUCT(debug_cms_space = _cmsSpace;)
-  _cmsSpace->_gen = this;
+  _cmsSpace->_old_gen = this;
 
   _gc_stats = new CMSGCStats();
 
@@ -359,13 +359,13 @@ double CMSStats::time_until_cms_gen_full() const {
                                    (size_t) _cms_gen->gc_stats()->avg_promoted()->padded_average());
   if (cms_free > expected_promotion) {
     // Start a cms collection if there isn't enough space to promote
-    // for the next minor collection.  Use the padded average as
+    // for the next young collection.  Use the padded average as
     // a safety factor.
     cms_free -= expected_promotion;
 
     // Adjust by the safety factor.
     double cms_free_dbl = (double)cms_free;
-    double cms_adjustment = (100.0 - CMSIncrementalSafetyFactor)/100.0;
+    double cms_adjustment = (100.0 - CMSIncrementalSafetyFactor) / 100.0;
     // Apply a further correction factor which tries to adjust
     // for recent occurance of concurrent mode failures.
     cms_adjustment = cms_adjustment * cms_free_adjustment_factor(cms_free);
@@ -531,7 +531,7 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
   if (CMSConcurrentMTEnabled) {
     if (FLAG_IS_DEFAULT(ConcGCThreads)) {
       // just for now
-      FLAG_SET_DEFAULT(ConcGCThreads, (ParallelGCThreads + 3)/4);
+      FLAG_SET_DEFAULT(ConcGCThreads, (ParallelGCThreads + 3) / 4);
     }
     if (ConcGCThreads > 1) {
       _conc_workers = new YieldingFlexibleWorkGang("CMS Thread",
@@ -592,7 +592,7 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
   _cmsGen ->init_initiating_occupancy(CMSInitiatingOccupancyFraction, CMSTriggerRatio);
 
   // Clip CMSBootstrapOccupancy between 0 and 100.
-  _bootstrap_occupancy = ((double)CMSBootstrapOccupancy)/(double)100;
+  _bootstrap_occupancy = CMSBootstrapOccupancy / 100.0;
 
   // Now tell CMS generations the identity of their collector
   ConcurrentMarkSweepGeneration::set_collector(this);
@@ -613,7 +613,7 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
     _end_addr = gch->end_addr();
     assert(_young_gen != NULL, "no _young_gen");
     _eden_chunk_index = 0;
-    _eden_chunk_capacity = (_young_gen->max_capacity()+CMSSamplingGrain)/CMSSamplingGrain;
+    _eden_chunk_capacity = (_young_gen->max_capacity() + CMSSamplingGrain) / CMSSamplingGrain;
     _eden_chunk_array = NEW_C_HEAP_ARRAY(HeapWord*, _eden_chunk_capacity, mtGC);
   }
 
@@ -795,29 +795,22 @@ void ConcurrentMarkSweepGeneration::compute_new_size_free_list() {
       size_t desired_capacity = (size_t)(used() / ((double) 1 - desired_free_percentage));
       gclog_or_tty->print_cr("\nFrom compute_new_size: ");
       gclog_or_tty->print_cr("  Free fraction %f", free_percentage);
-      gclog_or_tty->print_cr("  Desired free fraction %f",
-              desired_free_percentage);
-      gclog_or_tty->print_cr("  Maximum free fraction %f",
-              maximum_free_percentage);
-      gclog_or_tty->print_cr("  Capacity " SIZE_FORMAT, capacity()/1000);
-      gclog_or_tty->print_cr("  Desired capacity " SIZE_FORMAT,
-              desired_capacity/1000);
+      gclog_or_tty->print_cr("  Desired free fraction %f", desired_free_percentage);
+      gclog_or_tty->print_cr("  Maximum free fraction %f", maximum_free_percentage);
+      gclog_or_tty->print_cr("  Capacity " SIZE_FORMAT, capacity() / 1000);
+      gclog_or_tty->print_cr("  Desired capacity " SIZE_FORMAT, desired_capacity / 1000);
       GenCollectedHeap* gch = GenCollectedHeap::heap();
       assert(gch->is_old_gen(this), "The CMS generation should always be the old generation");
       size_t young_size = gch->young_gen()->capacity();
       gclog_or_tty->print_cr("  Young gen size " SIZE_FORMAT, young_size / 1000);
-      gclog_or_tty->print_cr("  unsafe_max_alloc_nogc " SIZE_FORMAT,
-              unsafe_max_alloc_nogc()/1000);
-      gclog_or_tty->print_cr("  contiguous available " SIZE_FORMAT,
-              contiguous_available()/1000);
-      gclog_or_tty->print_cr("  Expand by " SIZE_FORMAT " (bytes)",
-              expand_bytes);
+      gclog_or_tty->print_cr("  unsafe_max_alloc_nogc " SIZE_FORMAT, unsafe_max_alloc_nogc() / 1000);
+      gclog_or_tty->print_cr("  contiguous available " SIZE_FORMAT, contiguous_available() / 1000);
+      gclog_or_tty->print_cr("  Expand by " SIZE_FORMAT " (bytes)", expand_bytes);
     }
     // safe if expansion fails
     expand_for_gc_cause(expand_bytes, 0, CMSExpansionCause::_satisfy_free_ratio);
     if (PrintGCDetails && Verbose) {
-      gclog_or_tty->print_cr("  Expanded free fraction %f",
-        ((double) free()) / capacity());
+      gclog_or_tty->print_cr("  Expanded free fraction %f", ((double) free()) / capacity());
     }
   } else {
     size_t desired_capacity = (size_t)(used() / ((double) 1 - desired_free_percentage));
@@ -834,16 +827,14 @@ Mutex* ConcurrentMarkSweepGeneration::freelistLock() const {
   return cmsSpace()->freelistLock();
 }
 
-HeapWord* ConcurrentMarkSweepGeneration::allocate(size_t size,
-                                                  bool   tlab) {
+HeapWord* ConcurrentMarkSweepGeneration::allocate(size_t size, bool tlab) {
   CMSSynchronousYieldRequest yr;
-  MutexLockerEx x(freelistLock(),
-                  Mutex::_no_safepoint_check_flag);
+  MutexLockerEx x(freelistLock(), Mutex::_no_safepoint_check_flag);
   return have_lock_and_allocate(size, tlab);
 }
 
 HeapWord* ConcurrentMarkSweepGeneration::have_lock_and_allocate(size_t size,
-                                                  bool   tlab /* ignored */) {
+                                                                bool   tlab /* ignored */) {
   assert_lock_strong(freelistLock());
   size_t adjustedSize = CompactibleFreeListSpace::adjustObjectSize(size);
   HeapWord* res = cmsSpace()->allocate(adjustedSize);
@@ -2426,7 +2417,7 @@ void CMSCollector::verify_after_remark_work_1() {
 
     gch->gen_process_roots(&srs,
                            GenCollectedHeap::OldGen,
-                           true,   // younger gens are roots
+                           true,   // young gen as roots
                            GenCollectedHeap::ScanningOption(roots_scanning_options()),
                            should_unload_classes(),
                            &notOlder,
@@ -2498,7 +2489,7 @@ void CMSCollector::verify_after_remark_work_2() {
 
     gch->gen_process_roots(&srs,
                            GenCollectedHeap::OldGen,
-                           true,   // younger gens are roots
+                           true,   // young gen as roots
                            GenCollectedHeap::ScanningOption(roots_scanning_options()),
                            should_unload_classes(),
                            &notOlder,
@@ -2952,12 +2943,7 @@ void CMSCollector::checkpointRootsInitialWork() {
   assert(SafepointSynchronize::is_at_safepoint(), "world should be stopped");
   assert(_collectorState == InitialMarking, "just checking");
 
-  // If there has not been a GC[n-1] since last GC[n] cycle completed,
-  // precede our marking with a collection of all
-  // younger generations to keep floating garbage to a minimum.
-  // XXX: we won't do this for now -- it's an optimization to be done later.
-
-  // already have locks
+  // Already have locks.
   assert_lock_strong(bitMapLock());
   assert(_markBitMap.isAllClear(), "was reset at end of previous cycle");
 
@@ -3027,7 +3013,7 @@ void CMSCollector::checkpointRootsInitialWork() {
 
       gch->gen_process_roots(&srs,
                              GenCollectedHeap::OldGen,
-                             true,   // younger gens are roots
+                             true,   // young gen as roots
                              GenCollectedHeap::ScanningOption(roots_scanning_options()),
                              should_unload_classes(),
                              &notOlder,
@@ -3037,7 +3023,7 @@ void CMSCollector::checkpointRootsInitialWork() {
   }
 
   // Clear mod-union table; it will be dirtied in the prologue of
-  // CMS generation per each younger generation collection.
+  // CMS generation per each young generation collection.
 
   assert(_modUnionTable.isAllClear(),
        "Was cleared in most recent final checkpoint phase"
@@ -3057,7 +3043,7 @@ bool CMSCollector::markFromRoots() {
   // assert(!SafepointSynchronize::is_at_safepoint(),
   //        "inconsistent argument?");
   // However that wouldn't be right, because it's possible that
-  // a safepoint is indeed in progress as a younger generation
+  // a safepoint is indeed in progress as a young generation
   // stop-the-world GC happens even as we mark in this generation.
   assert(_collectorState == Marking, "inconsistent state?");
   check_correct_thread_executing();
@@ -3065,7 +3051,7 @@ bool CMSCollector::markFromRoots() {
 
   // Weak ref discovery note: We may be discovering weak
   // refs in this generation concurrent (but interleaved) with
-  // weak ref discovery by a younger generation collector.
+  // weak ref discovery by the young generation collector.
 
   CMSTokenSyncWithLocks ts(true, bitMapLock());
   TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
@@ -3095,7 +3081,7 @@ bool CMSCollector::markFromRootsWork() {
 
   // Note that when we do a marking step we need to hold the
   // bit map lock -- recall that direct allocation (by mutators)
-  // and promotion (by younger generation collectors) is also
+  // and promotion (by the young generation collector) is also
   // marking the bit map. [the so-called allocate live policy.]
   // Because the implementation of bit map marking is not
   // robust wrt simultaneous marking of bits in the same word,
@@ -4049,7 +4035,7 @@ size_t CMSCollector::preclean_work(bool clean_refs, bool clean_survivor) {
 // one of these methods, please check the other method too.
 
 size_t CMSCollector::preclean_mod_union_table(
-  ConcurrentMarkSweepGeneration* gen,
+  ConcurrentMarkSweepGeneration* old_gen,
   ScanMarkedObjectsAgainCarefullyClosure* cl) {
   verify_work_stacks_empty();
   verify_overflow_empty();
@@ -4064,10 +4050,10 @@ size_t CMSCollector::preclean_mod_union_table(
   // generation, but we might potentially miss cards when the
   // generation is rapidly expanding while we are in the midst
   // of precleaning.
-  HeapWord* startAddr = gen->reserved().start();
-  HeapWord* endAddr   = gen->reserved().end();
+  HeapWord* startAddr = old_gen->reserved().start();
+  HeapWord* endAddr   = old_gen->reserved().end();
 
-  cl->setFreelistLock(gen->freelistLock());   // needed for yielding
+  cl->setFreelistLock(old_gen->freelistLock());   // needed for yielding
 
   size_t numDirtyCards, cumNumDirtyCards;
   HeapWord *nextAddr, *lastAddr;
@@ -4109,7 +4095,7 @@ size_t CMSCollector::preclean_mod_union_table(
       HeapWord* stop_point = NULL;
       stopTimer();
       // Potential yield point
-      CMSTokenSyncWithLocks ts(true, gen->freelistLock(),
+      CMSTokenSyncWithLocks ts(true, old_gen->freelistLock(),
                                bitMapLock());
       startTimer();
       {
@@ -4117,7 +4103,7 @@ size_t CMSCollector::preclean_mod_union_table(
         verify_overflow_empty();
         sample_eden();
         stop_point =
-          gen->cmsSpace()->object_iterate_careful_m(dirtyRegion, cl);
+          old_gen->cmsSpace()->object_iterate_careful_m(dirtyRegion, cl);
       }
       if (stop_point != NULL) {
         // The careful iteration stopped early either because it found an
@@ -4152,15 +4138,15 @@ size_t CMSCollector::preclean_mod_union_table(
 // below are largely identical; if you need to modify
 // one of these methods, please check the other method too.
 
-size_t CMSCollector::preclean_card_table(ConcurrentMarkSweepGeneration* gen,
+size_t CMSCollector::preclean_card_table(ConcurrentMarkSweepGeneration* old_gen,
   ScanMarkedObjectsAgainCarefullyClosure* cl) {
   // strategy: it's similar to precleamModUnionTable above, in that
   // we accumulate contiguous ranges of dirty cards, mark these cards
   // precleaned, then scan the region covered by these cards.
-  HeapWord* endAddr   = (HeapWord*)(gen->_virtual_space.high());
-  HeapWord* startAddr = (HeapWord*)(gen->_virtual_space.low());
+  HeapWord* endAddr   = (HeapWord*)(old_gen->_virtual_space.high());
+  HeapWord* startAddr = (HeapWord*)(old_gen->_virtual_space.low());
 
-  cl->setFreelistLock(gen->freelistLock());   // needed for yielding
+  cl->setFreelistLock(old_gen->freelistLock());   // needed for yielding
 
   size_t numDirtyCards, cumNumDirtyCards;
   HeapWord *lastAddr, *nextAddr;
@@ -4197,13 +4183,13 @@ size_t CMSCollector::preclean_card_table(ConcurrentMarkSweepGeneration* gen,
 
     if (!dirtyRegion.is_empty()) {
       stopTimer();
-      CMSTokenSyncWithLocks ts(true, gen->freelistLock(), bitMapLock());
+      CMSTokenSyncWithLocks ts(true, old_gen->freelistLock(), bitMapLock());
       startTimer();
       sample_eden();
       verify_work_stacks_empty();
       verify_overflow_empty();
       HeapWord* stop_point =
-        gen->cmsSpace()->object_iterate_careful_m(dirtyRegion, cl);
+        old_gen->cmsSpace()->object_iterate_careful_m(dirtyRegion, cl);
       if (stop_point != NULL) {
         assert((_collectorState == AbortablePreclean && should_abort_preclean()),
                "Should only be AbortablePreclean.");
@@ -5086,7 +5072,7 @@ void CMSCollector::do_remark_parallel() {
   // preclean phase did of eden, plus the [two] tasks of
   // scanning the [two] survivor spaces. Further fine-grain
   // parallelization of the scanning of the survivor spaces
-  // themselves, and of precleaning of the younger gen itself
+  // themselves, and of precleaning of the young gen itself
   // is deferred to the future.
   initialize_sequential_subtasks_for_young_gen_rescan(n_workers);
 
@@ -5177,7 +5163,7 @@ void CMSCollector::do_remark_non_parallel() {
 
     gch->gen_process_roots(&srs,
                            GenCollectedHeap::OldGen,
-                           true,  // younger gens as roots
+                           true,  // young gen as roots
                            GenCollectedHeap::ScanningOption(roots_scanning_options()),
                            should_unload_classes(),
                            &mrias_cl,
@@ -5661,7 +5647,7 @@ void ConcurrentMarkSweepGeneration::update_gc_stats(Generation* current_generati
   }
 }
 
-void CMSCollector::sweepWork(ConcurrentMarkSweepGeneration* gen) {
+void CMSCollector::sweepWork(ConcurrentMarkSweepGeneration* old_gen) {
   // We iterate over the space(s) underlying this generation,
   // checking the mark bit map to see if the bits corresponding
   // to specific blocks are marked or not. Blocks that are
@@ -5690,26 +5676,26 @@ void CMSCollector::sweepWork(ConcurrentMarkSweepGeneration* gen) {
   // check that we hold the requisite locks
   assert(have_cms_token(), "Should hold cms token");
   assert(ConcurrentMarkSweepThread::cms_thread_has_cms_token(), "Should possess CMS token to sweep");
-  assert_lock_strong(gen->freelistLock());
+  assert_lock_strong(old_gen->freelistLock());
   assert_lock_strong(bitMapLock());
 
   assert(!_inter_sweep_timer.is_active(), "Was switched off in an outer context");
   assert(_intra_sweep_timer.is_active(),  "Was switched on  in an outer context");
-  gen->cmsSpace()->beginSweepFLCensus((float)(_inter_sweep_timer.seconds()),
-                                      _inter_sweep_estimate.padded_average(),
-                                      _intra_sweep_estimate.padded_average());
-  gen->setNearLargestChunk();
+  old_gen->cmsSpace()->beginSweepFLCensus((float)(_inter_sweep_timer.seconds()),
+                                          _inter_sweep_estimate.padded_average(),
+                                          _intra_sweep_estimate.padded_average());
+  old_gen->setNearLargestChunk();
 
   {
-    SweepClosure sweepClosure(this, gen, &_markBitMap, CMSYield);
-    gen->cmsSpace()->blk_iterate_careful(&sweepClosure);
+    SweepClosure sweepClosure(this, old_gen, &_markBitMap, CMSYield);
+    old_gen->cmsSpace()->blk_iterate_careful(&sweepClosure);
     // We need to free-up/coalesce garbage/blocks from a
     // co-terminal free run. This is done in the SweepClosure
     // destructor; so, do not remove this scope, else the
     // end-of-sweep-census below will be off by a little bit.
   }
-  gen->cmsSpace()->sweep_completed();
-  gen->cmsSpace()->endSweepFLCensus(sweep_count());
+  old_gen->cmsSpace()->sweep_completed();
+  old_gen->cmsSpace()->endSweepFLCensus(sweep_count());
   if (should_unload_classes()) {                // unloaded classes this cycle,
     _concurrent_cycles_since_last_unload = 0;   // ... reset count
   } else {                                      // did not unload classes,
