@@ -310,13 +310,17 @@ void Flag::unlock_diagnostic() {
 void Flag::get_locked_message(char* buf, int buflen) const {
   buf[0] = '\0';
   if (is_diagnostic() && !is_unlocked()) {
-    jio_snprintf(buf, buflen, "Error: VM option '%s' is diagnostic and must be enabled via -XX:+UnlockDiagnosticVMOptions.\n",
-                 _name);
+    jio_snprintf(buf, buflen,
+                 "Error: VM option '%s' is diagnostic and must be enabled via -XX:+UnlockDiagnosticVMOptions.\n"
+                 "Error: The unlock option must precede '%s'.\n",
+                 _name, _name);
     return;
   }
   if (is_experimental() && !is_unlocked()) {
-    jio_snprintf(buf, buflen, "Error: VM option '%s' is experimental and must be enabled via -XX:+UnlockExperimentalVMOptions.\n",
-                 _name);
+    jio_snprintf(buf, buflen,
+                 "Error: VM option '%s' is experimental and must be enabled via -XX:+UnlockExperimentalVMOptions.\n"
+                 "Error: The unlock option must precede '%s'.\n",
+                 _name, _name);
     return;
   }
   if (is_develop() && is_product_build()) {
