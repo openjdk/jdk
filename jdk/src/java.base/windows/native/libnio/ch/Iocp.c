@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,16 +55,6 @@ Java_sun_nio_ch_Iocp_initIDs(JNIEnv* env, jclass this)
     CHECK_NULL(completionStatus_completionKey);
     completionStatus_overlapped = (*env)->GetFieldID(env, clazz, "overlapped", "J");
     CHECK_NULL(completionStatus_overlapped);
-}
-
-JNIEXPORT jint JNICALL
-Java_sun_nio_ch_Iocp_osMajorVersion(JNIEnv* env, jclass this)
-{
-    OSVERSIONINFOEX ver;
-    ver.dwOSVersionInfoSize = sizeof(ver);
-    GetVersionEx((OSVERSIONINFO *) &ver);
-    return (ver.dwPlatformId == VER_PLATFORM_WIN32_NT) ?
-        (jint)(ver.dwMajorVersion) : (jint)0;
 }
 
 JNIEXPORT jlong JNICALL
