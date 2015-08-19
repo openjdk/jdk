@@ -35,6 +35,7 @@
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
 
+class G1PLABAllocator;
 class HeapRegion;
 class outputStream;
 

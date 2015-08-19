@@ -6217,6 +6217,10 @@ void G1CollectedHeap::wait_while_free_regions_coming() {
   }
 }
 
+bool G1CollectedHeap::is_old_gc_alloc_region(HeapRegion* hr) {
+  return _allocator->is_retained_old_region(hr);
+}
+
 void G1CollectedHeap::set_region_short_lived_locked(HeapRegion* hr) {
   _young_list->push_region(hr);
 }

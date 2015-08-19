@@ -28,7 +28,6 @@
 #include "gc/g1/concurrentMark.hpp"
 #include "gc/g1/evacuationInfo.hpp"
 #include "gc/g1/g1AllocationContext.hpp"
-#include "gc/g1/g1Allocator.hpp"
 #include "gc/g1/g1BiasedArray.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1HRPrinter.hpp"
@@ -41,6 +40,7 @@
 #include "gc/g1/heapRegionSet.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/plab.hpp"
 #include "memory/memRegion.hpp"
 #include "utilities/stack.hpp"
 
@@ -76,6 +76,8 @@ class EvacuationFailedInfo;
 class nmethod;
 class Ticks;
 class WorkGang;
+class G1Allocator;
+class G1ArchiveAllocator;
 
 typedef OverflowTaskQueue<StarTask, mtGC>         RefToScanQueue;
 typedef GenericTaskQueueSet<RefToScanQueue, mtGC> RefToScanQueueSet;
@@ -1195,9 +1197,7 @@ public:
 
   // Determine whether the given region is one that we are using as an
   // old GC alloc region.
-  bool is_old_gc_alloc_region(HeapRegion* hr) {
-    return _allocator->is_retained_old_region(hr);
-  }
+  bool is_old_gc_alloc_region(HeapRegion* hr);
 
   // Perform a collection of the heap; intended for use in implementing
   // "System.gc".  This probably implies as full a collection as the

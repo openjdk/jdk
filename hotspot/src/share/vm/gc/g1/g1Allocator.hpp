@@ -247,16 +247,9 @@ public:
 
   // Allocate word_sz words in the PLAB of dest.  Returns the address of the
   // allocated memory, NULL if not successful.
-  HeapWord* plab_allocate(InCSetState dest,
-                          size_t word_sz,
-                          AllocationContext_t context) {
-    G1PLAB* buffer = alloc_buffer(dest, context);
-    if (_survivor_alignment_bytes == 0 || !dest.is_young()) {
-      return buffer->allocate(word_sz);
-    } else {
-      return buffer->allocate_aligned(word_sz, _survivor_alignment_bytes);
-    }
-  }
+  inline HeapWord* plab_allocate(InCSetState dest,
+                                 size_t word_sz,
+                                 AllocationContext_t context);
 
   HeapWord* allocate(InCSetState dest,
                      size_t word_sz,

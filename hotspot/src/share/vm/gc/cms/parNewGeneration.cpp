@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/cms/compactibleFreeListSpace.hpp"
 #include "gc/cms/concurrentMarkSweepGeneration.hpp"
-#include "gc/cms/parNewGeneration.hpp"
+#include "gc/cms/parNewGeneration.inline.hpp"
 #include "gc/cms/parOopClosures.inline.hpp"
 #include "gc/serial/defNewGeneration.inline.hpp"
 #include "gc/shared/adaptiveSizePolicy.hpp"
