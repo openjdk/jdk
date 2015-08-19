@@ -30,6 +30,13 @@
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
 
+G1DefaultAllocator::G1DefaultAllocator(G1CollectedHeap* heap) :
+  G1Allocator(heap),
+  _retained_old_gc_alloc_region(NULL),
+  _survivor_gc_alloc_region(heap->alloc_buffer_stats(InCSetState::Young)),
+  _old_gc_alloc_region(heap->alloc_buffer_stats(InCSetState::Old)) {
+}
+
 void G1DefaultAllocator::init_mutator_alloc_region() {
   assert(_mutator_alloc_region.get() == NULL, "pre-condition");
   _mutator_alloc_region.init();
@@ -103,10 +110,8 @@ void G1DefaultAllocator::release_gc_alloc_regions(EvacuationInfo& evacuation_inf
     _retained_old_gc_alloc_region->record_retained_region();
   }
 
-  if (ResizePLAB) {
-    _g1h->alloc_buffer_stats(InCSetState::Young)->adjust_desired_plab_sz();
-    _g1h->alloc_buffer_stats(InCSetState::Old)->adjust_desired_plab_sz();
-  }
+  _g1h->alloc_buffer_stats(InCSetState::Young)->adjust_desired_plab_sz();
+  _g1h->alloc_buffer_stats(InCSetState::Old)->adjust_desired_plab_sz();
 }
 
 void G1DefaultAllocator::abandon_gc_alloc_regions() {
@@ -213,6 +218,9 @@ G1PLABAllocator::G1PLABAllocator(G1Allocator* allocator) :
   _g1h(G1CollectedHeap::heap()),
   _allocator(allocator),
   _survivor_alignment_bytes(calc_survivor_alignment_bytes()) {
+  for (size_t i = 0; i < ARRAY_SIZE(_direct_allocated); i++) {
+    _direct_allocated[i] = 0;
+  }
 }
 
 HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(InCSetState dest,
@@ -237,8 +245,12 @@ HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(InCSetState dest,
     // Otherwise.
     *plab_refill_failed = true;
   }
-  // Try inline allocation.
-  return _allocator->par_allocate_during_gc(dest, word_sz, context);
+  // Try direct allocation.
+  HeapWord* result = _allocator->par_allocate_during_gc(dest, word_sz, context);
+  if (result != NULL) {
+    _direct_allocated[dest.value()] += word_sz;
+  }
+  return result;
 }
 
 void G1PLABAllocator::undo_allocation(InCSetState dest, HeapWord* obj, size_t word_sz, AllocationContext_t context) {
@@ -256,11 +268,14 @@ G1DefaultPLABAllocator::G1DefaultPLABAllocator(G1Allocator* allocator) :
   _alloc_buffers[InCSetState::Old]  = &_tenured_alloc_buffer;
 }
 
-void G1DefaultPLABAllocator::retire_alloc_buffers() {
+void G1DefaultPLABAllocator::flush_and_retire_stats() {
   for (uint state = 0; state < InCSetState::Num; state++) {
     G1PLAB* const buf = _alloc_buffers[state];
     if (buf != NULL) {
-      buf->flush_and_retire_stats(_g1h->alloc_buffer_stats(state));
+      G1EvacStats* stats = _g1h->alloc_buffer_stats(state);
+      buf->flush_and_retire_stats(stats);
+      stats->add_direct_allocated(_direct_allocated[state]);
+      _direct_allocated[state] = 0;
     }
   }
 }

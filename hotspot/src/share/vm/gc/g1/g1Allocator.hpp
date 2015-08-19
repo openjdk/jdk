@@ -123,7 +123,7 @@ protected:
 
   HeapRegion* _retained_old_gc_alloc_region;
 public:
-  G1DefaultAllocator(G1CollectedHeap* heap) : G1Allocator(heap), _retained_old_gc_alloc_region(NULL) { }
+  G1DefaultAllocator(G1CollectedHeap* heap);
 
   virtual void init_mutator_alloc_region();
   virtual void release_mutator_alloc_region();
@@ -172,6 +172,10 @@ public:
     guarantee(_retired, "Allocation buffer has not been retired");
   }
 
+  // The amount of space in words wasted within the PLAB including
+  // waste due to refills and alignment.
+  size_t wasted() const { return _wasted; }
+
   virtual void set_buf(HeapWord* buf) {
     PLAB::set_buf(buf);
     _retired = false;
@@ -207,7 +211,10 @@ protected:
   // architectures have a special compare against zero instructions.
   const uint _survivor_alignment_bytes;
 
-  virtual void retire_alloc_buffers() = 0;
+  // Number of words allocated directly (not counting PLAB allocation).
+  size_t _direct_allocated[InCSetState::Num];
+
+  virtual void flush_and_retire_stats() = 0;
   virtual G1PLAB* alloc_buffer(InCSetState dest, AllocationContext_t context) = 0;
 
   // Calculate the survivor space object alignment in bytes. Returns that or 0 if
@@ -283,7 +290,7 @@ public:
     return _alloc_buffers[dest.value()];
   }
 
-  virtual void retire_alloc_buffers();
+  virtual void flush_and_retire_stats();
 
   virtual void waste(size_t& wasted, size_t& undo_wasted);
 };

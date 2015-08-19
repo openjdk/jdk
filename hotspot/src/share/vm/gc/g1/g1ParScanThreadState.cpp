@@ -74,7 +74,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint worker_id,
 }
 
 G1ParScanThreadState::~G1ParScanThreadState() {
-  _plab_allocator->retire_alloc_buffers();
+  _plab_allocator->flush_and_retire_stats();
   delete _plab_allocator;
   FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_base);
 }

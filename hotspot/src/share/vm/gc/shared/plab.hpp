@@ -27,7 +27,6 @@
 
 #include "gc/shared/gcUtil.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // Forward declarations.
@@ -149,7 +148,8 @@ public:
 };
 
 // PLAB book-keeping.
-class PLABStats VALUE_OBJ_CLASS_SPEC {
+class PLABStats : public CHeapObj<mtGC> {
+ protected:
   size_t _allocated;          // Total allocated
   size_t _wasted;             // of which wasted (internal fragmentation)
   size_t _undo_wasted;        // of which wasted on undo (is not used for calculation of PLAB size)
@@ -158,7 +158,7 @@ class PLABStats VALUE_OBJ_CLASS_SPEC {
   AdaptiveWeightedAverage
          _filter;             // Integrator with decay
 
-  void reset() {
+  virtual void reset() {
     _allocated   = 0;
     _wasted      = 0;
     _undo_wasted = 0;
@@ -174,6 +174,8 @@ class PLABStats VALUE_OBJ_CLASS_SPEC {
     _filter(wt)
   { }
 
+  virtual ~PLABStats() { }
+
   static const size_t min_size() {
     return PLAB::min_size();
   }
@@ -187,7 +189,7 @@ class PLABStats VALUE_OBJ_CLASS_SPEC {
 
   // Updates the current desired PLAB size. Computes the new desired PLAB size with one gc worker thread,
   // updates _desired_plab_sz and clears sensor accumulators.
-  void adjust_desired_plab_sz();
+  virtual void adjust_desired_plab_sz();
 
   inline void add_allocated(size_t v);
 

@@ -33,6 +33,7 @@
 #include "gc/g1/g1HRPrinter.hpp"
 #include "gc/g1/g1InCSetState.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
+#include "gc/g1/g1EvacStats.hpp"
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/g1/g1YCTypes.hpp"
 #include "gc/g1/hSpaceCounters.hpp"
@@ -186,8 +187,7 @@ class G1CollectedHeap : public CollectedHeap {
   friend class VM_G1IncCollectionPause;
   friend class VMStructs;
   friend class MutatorAllocRegion;
-  friend class SurvivorGCAllocRegion;
-  friend class OldGCAllocRegion;
+  friend class G1GCAllocRegion;
 
   // Closures used in implementation.
   friend class G1ParScanThreadState;
@@ -247,7 +247,7 @@ private:
   // The sequence of all heap regions in the heap.
   HeapRegionManager _hrm;
 
-  // Handles non-humongous allocations in the G1CollectedHeap.
+  // Manages all allocations with regions except humongous object allocations.
   G1Allocator* _allocator;
 
   // Outside of GC pauses, the number of bytes used in all regions other
@@ -265,11 +265,11 @@ private:
   // Statistics for each allocation context
   AllocationContextStats _allocation_context_stats;
 
-  // PLAB sizing policy for survivors.
-  PLABStats _survivor_plab_stats;
+  // GC allocation statistics policy for survivors.
+  G1EvacStats _survivor_evac_stats;
 
-  // PLAB sizing policy for tenured objects.
-  PLABStats _old_plab_stats;
+  // GC allocation statistics policy for tenured objects.
+  G1EvacStats _old_evac_stats;
 
   // It specifies whether we should attempt to expand the heap after a
   // region allocation failure. If heap expansion fails we set this to
@@ -608,7 +608,7 @@ public:
   bool expand(size_t expand_bytes);
 
   // Returns the PLAB statistics for a given destination.
-  inline PLABStats* alloc_buffer_stats(InCSetState dest);
+  inline G1EvacStats* alloc_buffer_stats(InCSetState dest);
 
   // Determines PLAB size for a given destination.
   inline size_t desired_plab_sz(InCSetState dest);
