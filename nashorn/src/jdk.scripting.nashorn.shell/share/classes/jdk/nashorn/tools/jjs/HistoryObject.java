@@ -26,6 +26,9 @@
 package jdk.nashorn.tools.jjs;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Function;
 import jdk.internal.jline.console.history.FileHistory;
 import jdk.internal.jline.console.history.History;
@@ -38,6 +41,16 @@ import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
  * A script friendly object that exposes history of commands to scripts.
  */
 final class HistoryObject extends AbstractJSObject {
+    private static final Set<String> props;
+    static {
+        final HashSet<String> s = new HashSet<>();
+        s.add("clear");
+        s.add("forEach");
+        s.add("print");
+        s.add("size");
+        props = Collections.unmodifiableSet(s);
+    }
+
     private final FileHistory hist;
 
     HistoryObject(final FileHistory hist) {
@@ -70,6 +83,11 @@ final class HistoryObject extends AbstractJSObject {
     @Override
     public String toString() {
         return "[object history]";
+    }
+
+    @Override
+    public Set<String> keySet() {
+        return props;
     }
 
     private void print() {
