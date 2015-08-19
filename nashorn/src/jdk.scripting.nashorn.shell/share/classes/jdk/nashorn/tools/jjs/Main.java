@@ -85,6 +85,7 @@ public final class Main extends Shell {
         return new Main().run(in, out, err, args);
     }
 
+
     /**
      * read-eval-print loop for Nashorn shell.
      *
@@ -98,7 +99,7 @@ public final class Main extends Shell {
         final PrintWriter err = context.getErr();
         final Global oldGlobal = Context.getGlobal();
         final boolean globalChanged = (oldGlobal != global);
-        final Completer completer = new NashornCompleter(context, global);
+        final Completer completer = new NashornCompleter(context, global, this);
 
         try (final Console in = new Console(System.in, System.out, HIST_FILE, completer)) {
             if (globalChanged) {

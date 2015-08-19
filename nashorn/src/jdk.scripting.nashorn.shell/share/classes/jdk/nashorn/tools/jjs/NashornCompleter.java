@@ -45,6 +45,7 @@ import jdk.nashorn.api.tree.Tree;
 import jdk.nashorn.api.tree.UnaryTree;
 import jdk.nashorn.api.tree.Parser;
 import jdk.nashorn.api.scripting.NashornException;
+import jdk.nashorn.tools.PartialParser;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
@@ -53,11 +54,13 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
 final class NashornCompleter implements Completer {
     private final Context context;
     private final Global global;
+    private final PartialParser partialParser;
     private final Parser parser;
 
-    NashornCompleter(final Context context, final Global global) {
+    NashornCompleter(final Context context, final Global global, final PartialParser partialParser) {
         this.context = context;
         this.global = global;
+        this.partialParser = partialParser;
         this.parser = Parser.create();
     }
 
@@ -72,14 +75,26 @@ final class NashornCompleter implements Completer {
             return cursor;
         }
 
+        // get the start of the last expression embedded in the given code
+        // using the partial parsing support - so that we can complete expressions
+        // inside statements, function call argument lists, array index etc.
+        final int exprStart = partialParser.getLastExpressionStart(context, test);
+        if (exprStart == -1) {
+            return cursor;
+        }
+
+
+        // extract the last expression string
+        final String exprStr = test.substring(exprStart);
+
         // do we have an incomplete member selection expression that misses property name?
-        final boolean endsWithDot = SELECT_PROP_MISSING.matcher(test).matches();
+        final boolean endsWithDot = SELECT_PROP_MISSING.matcher(exprStr).matches();
 
-        // If this is an incomplete member selection, then it is not legal code
+        // If this is an incomplete member selection, then it is not legal code.
         // Make it legal by adding a random property name "x" to it.
-        final String exprToEval = endsWithDot? test + "x" : test;
+        final String completeExpr = endsWithDot? exprStr + "x" : exprStr;
 
-        final ExpressionTree topExpr = getTopLevelExpression(parser, exprToEval);
+        final ExpressionTree topExpr = getTopLevelExpression(parser, completeExpr);
         if (topExpr == null) {
             // did not parse to be a top level expression, no suggestions!
             return cursor;
@@ -89,19 +104,19 @@ final class NashornCompleter implements Completer {
         // Find 'right most' expression of the top level expression
         final Tree rightMostExpr = getRightMostExpression(topExpr);
         if (rightMostExpr instanceof MemberSelectTree) {
-            return completeMemberSelect(test, cursor, result, (MemberSelectTree)rightMostExpr, endsWithDot);
+            return completeMemberSelect(exprStr, cursor, result, (MemberSelectTree)rightMostExpr, endsWithDot);
         } else if (rightMostExpr instanceof IdentifierTree) {
-            return completeIdentifier(test, cursor, result, (IdentifierTree)rightMostExpr);
+            return completeIdentifier(exprStr, cursor, result, (IdentifierTree)rightMostExpr);
         } else {
             // expression that we cannot handle for completion
             return cursor;
         }
     }
 
-    private int completeMemberSelect(final String test, final int cursor, final List<CharSequence> result,
+    private int completeMemberSelect(final String exprStr, final int cursor, final List<CharSequence> result,
                 final MemberSelectTree select, final boolean endsWithDot) {
         final ExpressionTree objExpr = select.getExpression();
-        final String objExprCode = test.substring((int)objExpr.getStartPosition(), (int)objExpr.getEndPosition());
+        final String objExprCode = exprStr.substring((int)objExpr.getStartPosition(), (int)objExpr.getEndPosition());
 
         // try to evaluate the object expression part as a script
         Object obj = null;
