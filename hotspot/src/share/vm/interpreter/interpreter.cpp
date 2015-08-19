@@ -234,7 +234,15 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(methodHandle m)
       case vmIntrinsics::_updateByteBufferCRC32  : return java_util_zip_CRC32_updateByteBuffer;
     }
   }
-#endif
+
+  switch(m->intrinsic_id()) {
+  case vmIntrinsics::_intBitsToFloat:      return java_lang_Float_intBitsToFloat;
+  case vmIntrinsics::_floatToRawIntBits:   return java_lang_Float_floatToRawIntBits;
+  case vmIntrinsics::_longBitsToDouble:    return java_lang_Double_longBitsToDouble;
+  case vmIntrinsics::_doubleToRawLongBits: return java_lang_Double_doubleToRawLongBits;
+  }
+
+#endif // CC_INTERP
 
   // Native method?
   // Note: This test must come _before_ the test for intrinsic
@@ -559,6 +567,25 @@ address InterpreterGenerator::generate_method_entry(
                                            : // fall thru
   case Interpreter::java_util_zip_CRC32_updateByteBuffer
                                            : entry_point = generate_CRC32_updateBytes_entry(kind); break;
+#if defined(TARGET_ARCH_x86) && !defined(_LP64)
+  // On x86_32 platforms, a special entry is generated for the following four methods.
+  // On other platforms the normal entry is used to enter these methods.
+  case Interpreter::java_lang_Float_intBitsToFloat
+                                           : entry_point = generate_Float_intBitsToFloat_entry(); break;
+  case Interpreter::java_lang_Float_floatToRawIntBits
+                                           : entry_point = generate_Float_floatToRawIntBits_entry(); break;
+  case Interpreter::java_lang_Double_longBitsToDouble
+                                           : entry_point = generate_Double_longBitsToDouble_entry(); break;
+  case Interpreter::java_lang_Double_doubleToRawLongBits
+                                           : entry_point = generate_Double_doubleToRawLongBits_entry(); break;
+#else
+  case Interpreter::java_lang_Float_intBitsToFloat:
+  case Interpreter::java_lang_Float_floatToRawIntBits:
+  case Interpreter::java_lang_Double_longBitsToDouble:
+  case Interpreter::java_lang_Double_doubleToRawLongBits:
+    entry_point = generate_native_entry(false);
+    break;
+#endif // defined(TARGET_ARCH_x86) && !defined(_LP64)
 #endif // CC_INTERP
   default:
     fatal(err_msg("unexpected method kind: %d", kind));
