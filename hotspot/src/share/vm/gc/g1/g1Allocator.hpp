@@ -38,10 +38,19 @@ class EvacuationInfo;
 // Also keeps track of retained regions across GCs.
 class G1Allocator : public CHeapObj<mtGC> {
   friend class VMStructs;
+private:
+  bool _survivor_is_full;
+  bool _old_is_full;
 protected:
   G1CollectedHeap* _g1h;
 
   virtual MutatorAllocRegion* mutator_alloc_region(AllocationContext_t context) = 0;
+
+  virtual bool survivor_is_full(AllocationContext_t context) const;
+  virtual bool old_is_full(AllocationContext_t context) const;
+
+  virtual void set_survivor_full(AllocationContext_t context);
+  virtual void set_old_full(AllocationContext_t context);
 
   // Accessors to the allocation regions.
   virtual SurvivorGCAllocRegion* survivor_gc_alloc_region(AllocationContext_t context) = 0;
@@ -54,7 +63,7 @@ protected:
   inline HeapWord* old_attempt_allocation(size_t word_size,
                                           AllocationContext_t context);
 public:
-  G1Allocator(G1CollectedHeap* heap) : _g1h(heap) { }
+  G1Allocator(G1CollectedHeap* heap) : _g1h(heap), _survivor_is_full(false), _old_is_full(false) { }
   virtual ~G1Allocator() { }
 
   static G1Allocator* create_allocator(G1CollectedHeap* g1h);
@@ -66,7 +75,7 @@ public:
   virtual void init_mutator_alloc_region() = 0;
   virtual void release_mutator_alloc_region() = 0;
 
-  virtual void init_gc_alloc_regions(EvacuationInfo& evacuation_info) = 0;
+  virtual void init_gc_alloc_regions(EvacuationInfo& evacuation_info);
   virtual void release_gc_alloc_regions(EvacuationInfo& evacuation_info) = 0;
   virtual void abandon_gc_alloc_regions() = 0;
 
@@ -215,6 +224,10 @@ protected:
     }
   }
 
+  HeapWord* allocate_new_plab(InCSetState dest,
+                              size_t word_sz,
+                              AllocationContext_t context);
+
 public:
   G1PLABAllocator(G1Allocator* allocator);
   virtual ~G1PLABAllocator() { }
@@ -225,10 +238,12 @@ public:
 
   // Allocate word_sz words in dest, either directly into the regions or by
   // allocating a new PLAB. Returns the address of the allocated memory, NULL if
-  // not successful.
+  // not successful. Plab_refill_failed indicates whether an attempt to refill the
+  // PLAB failed or not.
   HeapWord* allocate_direct_or_new_plab(InCSetState dest,
                                         size_t word_sz,
-                                        AllocationContext_t context);
+                                        AllocationContext_t context,
+                                        bool* plab_refill_failed);
 
   // Allocate word_sz words in the PLAB of dest.  Returns the address of the
   // allocated memory, NULL if not successful.
@@ -243,13 +258,15 @@ public:
     }
   }
 
-  HeapWord* allocate(InCSetState dest, size_t word_sz,
-                     AllocationContext_t context) {
+  HeapWord* allocate(InCSetState dest,
+                     size_t word_sz,
+                     AllocationContext_t context,
+                     bool* refill_failed) {
     HeapWord* const obj = plab_allocate(dest, word_sz, context);
     if (obj != NULL) {
       return obj;
     }
-    return allocate_direct_or_new_plab(dest, word_sz, context);
+    return allocate_direct_or_new_plab(dest, word_sz, context, refill_failed);
   }
 
   void undo_allocation(InCSetState dest, HeapWord* obj, size_t word_sz, AllocationContext_t context);

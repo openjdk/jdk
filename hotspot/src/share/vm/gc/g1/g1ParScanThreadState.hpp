@@ -71,6 +71,10 @@ class G1ParScanThreadState : public StackObj {
   // this points into the array, as we use the first few entries for padding
   size_t* _surviving_young_words;
 
+  // Indicates whether in the last generation (old) there is no more space
+  // available for allocation.
+  bool _old_gen_is_full;
+
 #define PADDING_ELEM_NUM (DEFAULT_CACHE_LINE_SIZE / sizeof(size_t))
 
   DirtyCardQueue& dirty_card_queue()             { return _dcq;  }
@@ -190,12 +194,16 @@ class G1ParScanThreadState : public StackObj {
 
   // Tries to allocate word_sz in the PLAB of the next "generation" after trying to
   // allocate into dest. State is the original (source) cset state for the object
-  // that is allocated for.
+  // that is allocated for. Previous_plab_refill_failed indicates whether previously
+  // a PLAB refill into "state" failed.
   // Returns a non-NULL pointer if successful, and updates dest if required.
+  // Also determines whether we should continue to try to allocate into the various
+  // generations or just end trying to allocate.
   HeapWord* allocate_in_next_plab(InCSetState const state,
                                   InCSetState* dest,
                                   size_t word_sz,
-                                  AllocationContext_t const context);
+                                  AllocationContext_t const context,
+                                  bool previous_plab_refill_failed);
 
   inline InCSetState next_state(InCSetState const state, markOop const m, uint& age);
  public:
