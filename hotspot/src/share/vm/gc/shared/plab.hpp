@@ -95,7 +95,7 @@ public:
   }
 
   // Allocate the object aligned to "alignment_in_bytes".
-  HeapWord* allocate_aligned(size_t word_sz, unsigned short alignment_in_bytes);
+  inline HeapWord* allocate_aligned(size_t word_sz, unsigned short alignment_in_bytes);
 
   // Undo any allocation in the buffer, which is required to be of the
   // "obj" of the given "word_sz".
@@ -189,21 +189,13 @@ class PLABStats VALUE_OBJ_CLASS_SPEC {
   // updates _desired_plab_sz and clears sensor accumulators.
   void adjust_desired_plab_sz();
 
-  void add_allocated(size_t v) {
-    Atomic::add_ptr(v, &_allocated);
-  }
+  inline void add_allocated(size_t v);
 
-  void add_unused(size_t v) {
-    Atomic::add_ptr(v, &_unused);
-  }
+  inline void add_unused(size_t v);
 
-  void add_wasted(size_t v) {
-    Atomic::add_ptr(v, &_wasted);
-  }
+  inline void add_wasted(size_t v);
 
-  void add_undo_wasted(size_t v) {
-    Atomic::add_ptr(v, &_undo_wasted);
-  }
+  inline void add_undo_wasted(size_t v);
 };
 
 #endif // SHARE_VM_GC_SHARED_PLAB_HPP
