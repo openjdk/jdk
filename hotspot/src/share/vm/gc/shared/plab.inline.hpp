@@ -27,6 +27,7 @@
 
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/plab.hpp"
+#include "memory/allocation.inline.hpp"
 #include "runtime/atomic.inline.hpp"
 
 inline HeapWord* PLAB::allocate_aligned(size_t word_sz, unsigned short alignment_in_bytes) {

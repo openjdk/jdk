@@ -1944,8 +1944,8 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _young_list(new YoungList(this)),
   _gc_time_stamp(0),
   _summary_bytes_used(0),
-  _survivor_plab_stats(YoungPLABSize, PLABWeight),
-  _old_plab_stats(OldPLABSize, PLABWeight),
+  _survivor_evac_stats(YoungPLABSize, PLABWeight),
+  _old_evac_stats(OldPLABSize, PLABWeight),
   _expand_heap_after_alloc_failure(true),
   _surviving_young_words(NULL),
   _old_marking_cycles_started(0),
@@ -5972,6 +5972,11 @@ void G1CollectedHeap::free_collection_set(HeapRegion* cs_head, EvacuationInfo& e
       cur->set_evacuation_failed(false);
       // The region is now considered to be old.
       cur->set_old();
+      // Do some allocation statistics accounting. Regions that failed evacuation
+      // are always made old, so there is no need to update anything in the young
+      // gen statistics, but we need to update old gen statistics.
+      size_t used_words = cur->marked_bytes() / HeapWordSize;
+      _old_evac_stats.add_failure_used_and_waste(used_words, HeapRegion::GrainWords - used_words);
       _old_set.add(cur);
       evacuation_info.increment_collectionset_used_after(cur->used());
     }
