@@ -139,6 +139,7 @@ public final class ImageFileCreator {
     }
 
     public static void recreateJimage(Path jimageFile,
+            String jdataName,
             Set<Archive> archives,
             Map<String, Set<String>> modulePackages)
             throws IOException {
@@ -159,12 +160,7 @@ public final class ImageFileCreator {
             throw new UnsupportedOperationException("Not supported, no external file "
                     + "in a jimage file");
         }, entriesForModule, order);
-        String fileName = jimageFile.getFileName().toString();
-        if (fileName.endsWith(IMAGE_EXT)) {
-            fileName = fileName.substring(0, fileName.length()
-                    - BasicImageWriter.IMAGE_EXT.length());
-        }
-        generateJImage(jimageFile, fileName, resources, order);
+        generateJImage(jimageFile, jdataName, resources, order);
     }
 
     private void writeImage(String fileName,

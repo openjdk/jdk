@@ -201,7 +201,7 @@ public class LocaleData {
          *
          * @param baseName the resource bundle base name.
          *        locale   the requested locale for the resource bundle.
-         * @returns a list of candidate locales to search from.
+         * @return a list of candidate locales to search from.
          * @exception NullPointerException if baseName or locale is null.
          */
         @Override

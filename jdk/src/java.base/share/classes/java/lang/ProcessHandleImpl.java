@@ -472,7 +472,7 @@ final class ProcessHandleImpl implements ProcessHandle {
     /**
      * Implementation of ProcessHandle.Info.
      * Information snapshot about a process.
-     * The attributes of a process vary by operating system and not available
+     * The attributes of a process vary by operating system and are not available
      * in all implementations.  Additionally, information about other processes
      * is limited by the operating system privileges of the process making the request.
      * If a value is not available, either a {@code null} or {@code -1} is stored.
@@ -496,6 +496,7 @@ final class ProcessHandleImpl implements ProcessHandle {
         private native void info0(long pid);
 
         String command;
+        String commandLine;
         String[] arguments;
         long startTime;
         long totalTime;
@@ -503,6 +504,7 @@ final class ProcessHandleImpl implements ProcessHandle {
 
         Info() {
             command = null;
+            commandLine = null;
             arguments = null;
             startTime = -1L;
             totalTime = -1L;
@@ -536,6 +538,15 @@ final class ProcessHandleImpl implements ProcessHandle {
         @Override
         public Optional<String> command() {
             return Optional.ofNullable(command);
+        }
+
+        @Override
+        public Optional<String> commandLine() {
+            if (command != null && arguments != null) {
+                return Optional.of(command + " " + String.join(" ", arguments));
+            } else {
+                return Optional.ofNullable(commandLine);
+            }
         }
 
         @Override
@@ -579,6 +590,11 @@ final class ProcessHandleImpl implements ProcessHandle {
                 if (sb.length() != 0) sb.append(", ");
                 sb.append("args: ");
                 sb.append(Arrays.toString(arguments));
+            }
+            if (commandLine != null) {
+                if (sb.length() != 0) sb.append(", ");
+                sb.append("cmdLine: ");
+                sb.append(commandLine);
             }
             if (startTime > 0) {
                 if (sb.length() != 0) sb.append(", ");

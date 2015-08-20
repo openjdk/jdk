@@ -297,7 +297,7 @@ final public class StartTlsResponseImpl extends StartTlsResponse {
      * Returns the default SSL socket factory.
      *
      * @return The default SSL socket factory.
-     * @throw IOException If TLS is not supported.
+     * @throws IOException If TLS is not supported.
      */
     private SSLSocketFactory getDefaultFactory() throws IOException {
 
@@ -314,7 +314,7 @@ final public class StartTlsResponseImpl extends StartTlsResponse {
      *
      * @param factory The SSL socket factory to use.
      * @return The SSL socket.
-     * @throw IOException If an exception occurred while performing the
+     * @throws IOException If an exception occurred while performing the
      * TLS handshake.
      */
     private SSLSocket startHandshake(SSLSocketFactory factory)
