@@ -3504,6 +3504,13 @@ G1HeapSummary G1CollectedHeap::create_g1_heap_summary() {
   return G1HeapSummary(heap_summary, used(), eden_used_bytes, eden_capacity_bytes, survivor_used_bytes);
 }
 
+G1EvacSummary G1CollectedHeap::create_g1_evac_summary(G1EvacStats* stats) {
+  return G1EvacSummary(stats->allocated(), stats->wasted(), stats->undo_wasted(),
+                       stats->unused(), stats->used(), stats->region_end_waste(),
+                       stats->regions_filled(), stats->direct_allocated(),
+                       stats->failure_used(), stats->failure_waste());
+}
+
 void G1CollectedHeap::trace_heap(GCWhen::Type when, const GCTracer* gc_tracer) {
   const G1HeapSummary& heap_summary = create_g1_heap_summary();
   gc_tracer->report_gc_heap_summary(when, heap_summary);
@@ -5544,6 +5551,8 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
   _allocator->release_gc_alloc_regions(evacuation_info);
   g1_rem_set()->cleanup_after_oops_into_collection_set_do();
 
+  record_obj_copy_mem_stats();
+
   // Reset and re-enable the hot card cache.
   // Note the counts for the cards in the regions in the
   // collection set are reset when the collection set is freed.
@@ -5572,6 +5581,11 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
 
   redirty_logged_cards();
   COMPILER2_PRESENT(DerivedPointerTable::update_pointers());
+}
+
+void G1CollectedHeap::record_obj_copy_mem_stats() {
+  _gc_tracer_stw->report_evacuation_statistics(create_g1_evac_summary(&_survivor_evac_stats),
+                                               create_g1_evac_summary(&_old_evac_stats));
 }
 
 void G1CollectedHeap::free_region(HeapRegion* hr,
