@@ -77,7 +77,7 @@
 #if INCLUDE_ALL_GCS
 #include "gc/cms/cmsCollectorPolicy.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1CollectorPolicy_ext.hpp"
+#include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/shared/adaptiveSizePolicy.hpp"
 #endif // INCLUDE_ALL_GCS
@@ -707,7 +707,7 @@ CollectedHeap* Universe::create_heap() {
   if (UseParallelGC) {
     return Universe::create_heap_with_policy<ParallelScavengeHeap, GenerationSizer>();
   } else if (UseG1GC) {
-    return Universe::create_heap_with_policy<G1CollectedHeap, G1CollectorPolicyExt>();
+    return Universe::create_heap_with_policy<G1CollectedHeap, G1CollectorPolicy>();
   } else if (UseConcMarkSweepGC) {
     return Universe::create_heap_with_policy<GenCollectedHeap, ConcurrentMarkSweepPolicy>();
 #endif
