@@ -366,8 +366,6 @@ public:
   // Printing
   static void print(bool details = true);
   static void print_shared(bool details = true);
-  static void print_class_statistics()  PRODUCT_RETURN;
-  static void print_method_statistics() PRODUCT_RETURN;
 
   // Number of contained klasses
   // This is both fully loaded classes and classes in the process

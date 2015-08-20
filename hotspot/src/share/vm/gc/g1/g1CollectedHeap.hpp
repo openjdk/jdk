@@ -75,7 +75,7 @@ class G1OldTracer;
 class EvacuationFailedInfo;
 class nmethod;
 class Ticks;
-class FlexibleWorkGang;
+class WorkGang;
 
 typedef OverflowTaskQueue<StarTask, mtGC>         RefToScanQueue;
 typedef GenericTaskQueueSet<RefToScanQueue, mtGC> RefToScanQueueSet;
@@ -200,7 +200,7 @@ class G1CollectedHeap : public CollectedHeap {
   friend class G1CheckCSetFastTableClosure;
 
 private:
-  FlexibleWorkGang* _workers;
+  WorkGang* _workers;
 
   static size_t _humongous_object_threshold_in_words;
 
@@ -588,7 +588,7 @@ protected:
   void enqueue_discovered_references();
 
 public:
-  FlexibleWorkGang* workers() const { return _workers; }
+  WorkGang* workers() const { return _workers; }
 
   G1Allocator* allocator() {
     return _allocator;
