@@ -300,5 +300,3 @@ HeapRegion* OldGCAllocRegion::release() {
   }
   return G1AllocRegion::release();
 }
-
-
