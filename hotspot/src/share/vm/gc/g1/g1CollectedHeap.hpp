@@ -791,6 +791,9 @@ protected:
   // Actually do the work of evacuating the collection set.
   void evacuate_collection_set(EvacuationInfo& evacuation_info);
 
+  // Update object copying statistics.
+  void record_obj_copy_mem_stats();
+
   // The g1 remembered set of the heap.
   G1RemSet* _g1_rem_set;
 
@@ -1566,6 +1569,7 @@ public:
                         const VerifyOption vo) const;
 
   G1HeapSummary create_g1_heap_summary();
+  G1EvacSummary create_g1_evac_summary(G1EvacStats* stats);
 
   // Printing
 
