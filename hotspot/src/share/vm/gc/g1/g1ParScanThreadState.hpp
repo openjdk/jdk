@@ -39,13 +39,13 @@ class G1PLABAllocator;
 class HeapRegion;
 class outputStream;
 
-class G1ParScanThreadState : public StackObj {
+class G1ParScanThreadState : public CHeapObj<mtGC> {
  private:
   G1CollectedHeap* _g1h;
   RefToScanQueue*  _refs;
   DirtyCardQueue   _dcq;
   G1SATBCardTableModRefBS* _ct_bs;
-  G1RemSet* _g1_rem;
+  G1RemSet*         _g1_rem;
 
   G1PLABAllocator*  _plab_allocator;
 
@@ -57,14 +57,6 @@ class G1ParScanThreadState : public StackObj {
 
   int  _hash_seed;
   uint _worker_id;
-
-  size_t _term_attempts;
-
-  double _start;
-  double _start_strong_roots;
-  double _strong_roots_time;
-  double _start_term;
-  double _term_time;
 
   // Map from young-age-index (0 == not young, 1 is youngest) to
   // surviving words. base is what we get back from the malloc call
@@ -90,8 +82,10 @@ class G1ParScanThreadState : public StackObj {
   }
 
  public:
-  G1ParScanThreadState(G1CollectedHeap* g1h, uint worker_id, ReferenceProcessor* rp);
+  G1ParScanThreadState(G1CollectedHeap* g1h, uint worker_id);
   ~G1ParScanThreadState();
+
+  void set_ref_processor(ReferenceProcessor* rp) { _scanner.set_ref_processor(rp); }
 
   ageTable*         age_table()       { return &_age_table;       }
 
@@ -119,40 +113,14 @@ class G1ParScanThreadState : public StackObj {
 
   uint worker_id() { return _worker_id; }
 
-  size_t term_attempts() const  { return _term_attempts; }
-  void note_term_attempt() { _term_attempts++; }
-
-  void start_strong_roots() {
-    _start_strong_roots = os::elapsedTime();
-  }
-  void end_strong_roots() {
-    _strong_roots_time += (os::elapsedTime() - _start_strong_roots);
-  }
-  double strong_roots_time() const { return _strong_roots_time; }
-
-  void start_term_time() {
-    note_term_attempt();
-    _start_term = os::elapsedTime();
-  }
-  void end_term_time() {
-    _term_time += (os::elapsedTime() - _start_term);
-  }
-  double term_time() const { return _term_time; }
-
-  double elapsed_time() const {
-    return os::elapsedTime() - _start;
-  }
-
-  // Print the header for the per-thread termination statistics.
-  static void print_termination_stats_hdr(outputStream* const st = gclog_or_tty);
-
-  // Print actual per-thread termination statistics.
-  void print_termination_stats(outputStream* const st = gclog_or_tty) const;
+  // Returns the current amount of waste due to alignment or not being able to fit
+  // objects within LABs and the undo waste.
+  virtual void waste(size_t& wasted, size_t& undo_wasted);
 
   size_t* surviving_young_words() {
-    // We add on to hide entry 0 which accumulates surviving words for
+    // We add one to hide entry 0 which accumulates surviving words for
     // age -1 regions (i.e. non-young ones)
-    return _surviving_young_words;
+    return _surviving_young_words + 1;
   }
 
  private:
