@@ -3760,8 +3760,7 @@ void G1CollectedHeap::register_humongous_regions_with_cset() {
   cl.flush_rem_set_entries();
 }
 
-void
-G1CollectedHeap::setup_surviving_young_words() {
+void G1CollectedHeap::setup_surviving_young_words() {
   assert(_surviving_young_words == NULL, "pre-condition");
   uint array_length = g1_policy()->young_cset_region_length();
   _surviving_young_words = NEW_C_HEAP_ARRAY(size_t, (size_t) array_length, mtGC);
@@ -3777,17 +3776,15 @@ G1CollectedHeap::setup_surviving_young_words() {
 #endif // !ASSERT
 }
 
-void
-G1CollectedHeap::update_surviving_young_words(size_t* surv_young_words) {
-  MutexLockerEx x(ParGCRareEvent_lock, Mutex::_no_safepoint_check_flag);
+void G1CollectedHeap::update_surviving_young_words(size_t* surv_young_words) {
+  assert_at_safepoint(true);
   uint array_length = g1_policy()->young_cset_region_length();
   for (uint i = 0; i < array_length; ++i) {
     _surviving_young_words[i] += surv_young_words[i];
   }
 }
 
-void
-G1CollectedHeap::cleanup_surviving_young_words() {
+void G1CollectedHeap::cleanup_surviving_young_words() {
   guarantee( _surviving_young_words != NULL, "pre-condition" );
   FREE_C_HEAP_ARRAY(size_t, _surviving_young_words);
   _surviving_young_words = NULL;
@@ -4604,10 +4601,6 @@ public:
         _g1h->g1_policy()->phase_times()->record_time_secs(G1GCPhaseTimes::Termination, worker_id, term_sec);
         _g1h->g1_policy()->phase_times()->record_thread_work_item(G1GCPhaseTimes::Termination, worker_id, evac_term_attempts);
       }
-
-      // Flush any statistics.
-      _g1h->g1_policy()->record_thread_age_table(pss->age_table());
-      _g1h->update_surviving_young_words(pss->surviving_young_words());
 
       assert(pss->queue_is_empty(), "should be empty");
 
