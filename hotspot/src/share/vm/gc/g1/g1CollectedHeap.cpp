@@ -1960,7 +1960,7 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _gc_tracer_stw(new (ResourceObj::C_HEAP, mtGC) G1NewTracer()),
   _gc_tracer_cm(new (ResourceObj::C_HEAP, mtGC) G1OldTracer()) {
 
-  _workers = new FlexibleWorkGang("GC Thread", ParallelGCThreads,
+  _workers = new WorkGang("GC Thread", ParallelGCThreads,
                           /* are_GC_task_threads */true,
                           /* are_ConcurrentGC_threads */false);
   _workers->initialize_workers();
@@ -5127,12 +5127,12 @@ class G1STWRefProcTaskExecutor: public AbstractRefProcTaskExecutor {
 private:
   G1CollectedHeap*   _g1h;
   RefToScanQueueSet* _queues;
-  FlexibleWorkGang*  _workers;
+  WorkGang*          _workers;
   uint               _active_workers;
 
 public:
   G1STWRefProcTaskExecutor(G1CollectedHeap* g1h,
-                           FlexibleWorkGang* workers,
+                           WorkGang* workers,
                            RefToScanQueueSet *task_queues,
                            uint n_workers) :
     _g1h(g1h),

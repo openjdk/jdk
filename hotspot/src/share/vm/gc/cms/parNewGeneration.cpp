@@ -803,7 +803,7 @@ public:
 void ParNewRefProcTaskExecutor::execute(ProcessTask& task)
 {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
-  FlexibleWorkGang* workers = gch->workers();
+  WorkGang* workers = gch->workers();
   assert(workers != NULL, "Need parallel worker threads.");
   _state_set.reset(workers->active_workers(), _young_gen.promotion_failed());
   ParNewRefProcTaskProxy rp_task(task, _young_gen, _old_gen,
@@ -816,7 +816,7 @@ void ParNewRefProcTaskExecutor::execute(ProcessTask& task)
 void ParNewRefProcTaskExecutor::execute(EnqueueTask& task)
 {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
-  FlexibleWorkGang* workers = gch->workers();
+  WorkGang* workers = gch->workers();
   assert(workers != NULL, "Need parallel worker threads.");
   ParNewRefEnqueueTaskProxy enq_task(task);
   workers->run_task(&enq_task);
@@ -890,7 +890,7 @@ void ParNewGeneration::collect(bool   full,
   _gc_timer->register_gc_start();
 
   AdaptiveSizePolicy* size_policy = gch->gen_policy()->size_policy();
-  FlexibleWorkGang* workers = gch->workers();
+  WorkGang* workers = gch->workers();
   assert(workers != NULL, "Need workgang for parallel work");
   uint active_workers =
        AdaptiveSizePolicy::calc_active_workers(workers->total_workers(),
