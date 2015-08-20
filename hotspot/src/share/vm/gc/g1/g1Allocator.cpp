@@ -223,23 +223,34 @@ G1PLABAllocator::G1PLABAllocator(G1Allocator* allocator) :
   }
 }
 
+bool G1PLABAllocator::may_throw_away_buffer(size_t const allocation_word_sz, size_t const buffer_size) const {
+  return (allocation_word_sz * 100 < buffer_size * ParallelGCBufferWastePct);
+}
+
 HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(InCSetState dest,
                                                        size_t word_sz,
                                                        AllocationContext_t context,
                                                        bool* plab_refill_failed) {
-  size_t gclab_word_size = _g1h->desired_plab_sz(dest);
-  if (word_sz * 100 < gclab_word_size * ParallelGCBufferWastePct) {
+  size_t plab_word_size = G1CollectedHeap::heap()->desired_plab_sz(dest);
+  size_t required_in_plab = PLAB::size_required_for_allocation(word_sz);
+
+  // Only get a new PLAB if the allocation fits and it would not waste more than
+  // ParallelGCBufferWastePct in the existing buffer.
+  if ((required_in_plab <= plab_word_size) &&
+    may_throw_away_buffer(required_in_plab, plab_word_size)) {
+
     G1PLAB* alloc_buf = alloc_buffer(dest, context);
     alloc_buf->retire();
 
-    HeapWord* buf = _allocator->par_allocate_during_gc(dest, gclab_word_size, context);
+    HeapWord* buf = _allocator->par_allocate_during_gc(dest, plab_word_size, context);
     if (buf != NULL) {
       // Otherwise.
-      alloc_buf->set_word_size(gclab_word_size);
-      alloc_buf->set_buf(buf);
+      alloc_buf->set_buf(buf, plab_word_size);
 
       HeapWord* const obj = alloc_buf->allocate(word_sz);
-      assert(obj != NULL, "buffer was definitely big enough...");
+      assert(obj != NULL, err_msg("PLAB should have been big enough, tried to allocate "
+                                  SIZE_FORMAT " requiring " SIZE_FORMAT " PLAB size " SIZE_FORMAT,
+                                  word_sz, required_in_plab, plab_word_size));
       return obj;
     }
     // Otherwise.

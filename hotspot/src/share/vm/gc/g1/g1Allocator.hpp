@@ -176,8 +176,8 @@ public:
   // waste due to refills and alignment.
   size_t wasted() const { return _wasted; }
 
-  virtual void set_buf(HeapWord* buf) {
-    PLAB::set_buf(buf);
+  virtual void set_buf(HeapWord* buf, size_t word_size) {
+    PLAB::set_buf(buf, word_size);
     _retired = false;
   }
 
@@ -235,6 +235,7 @@ protected:
                               size_t word_sz,
                               AllocationContext_t context);
 
+  bool may_throw_away_buffer(size_t const allocation_word_sz, size_t const buffer_size) const;
 public:
   G1PLABAllocator(G1Allocator* allocator);
   virtual ~G1PLABAllocator() { }

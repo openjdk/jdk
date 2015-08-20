@@ -74,6 +74,8 @@ public:
   PLAB(size_t word_sz);
   virtual ~PLAB() {}
 
+  static size_t size_required_for_allocation(size_t word_size) { return word_size + AlignmentReserve; }
+
   // Minimum PLAB size.
   static size_t min_size();
   // Maximum PLAB size.
@@ -107,13 +109,6 @@ public:
   size_t waste() { return _wasted; }
   size_t undo_waste() { return _undo_wasted; }
 
-  // Should only be done if we are about to reset with a new buffer of the
-  // given size.
-  void set_word_size(size_t new_word_sz) {
-    assert(new_word_sz > AlignmentReserve, "Too small");
-    _word_sz = new_word_sz;
-  }
-
   // The number of words of unallocated space remaining in the buffer.
   size_t words_remaining() {
     assert(_end >= _top, "Negative buffer");
@@ -125,7 +120,10 @@ public:
   }
 
   // Sets the space of the buffer to be [buf, space+word_sz()).
-  virtual void set_buf(HeapWord* buf) {
+  virtual void set_buf(HeapWord* buf, size_t new_word_sz) {
+    assert(new_word_sz > AlignmentReserve, "Too small");
+    _word_sz = new_word_sz;
+
     _bottom   = buf;
     _top      = _bottom;
     _hard_end = _bottom + word_sz();
