@@ -27,7 +27,6 @@
 
 #include "gc/shared/gcUtil.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // Forward declarations.
@@ -95,7 +94,7 @@ public:
   }
 
   // Allocate the object aligned to "alignment_in_bytes".
-  HeapWord* allocate_aligned(size_t word_sz, unsigned short alignment_in_bytes);
+  inline HeapWord* allocate_aligned(size_t word_sz, unsigned short alignment_in_bytes);
 
   // Undo any allocation in the buffer, which is required to be of the
   // "obj" of the given "word_sz".
@@ -149,7 +148,8 @@ public:
 };
 
 // PLAB book-keeping.
-class PLABStats VALUE_OBJ_CLASS_SPEC {
+class PLABStats : public CHeapObj<mtGC> {
+ protected:
   size_t _allocated;          // Total allocated
   size_t _wasted;             // of which wasted (internal fragmentation)
   size_t _undo_wasted;        // of which wasted on undo (is not used for calculation of PLAB size)
@@ -158,7 +158,7 @@ class PLABStats VALUE_OBJ_CLASS_SPEC {
   AdaptiveWeightedAverage
          _filter;             // Integrator with decay
 
-  void reset() {
+  virtual void reset() {
     _allocated   = 0;
     _wasted      = 0;
     _undo_wasted = 0;
@@ -174,6 +174,8 @@ class PLABStats VALUE_OBJ_CLASS_SPEC {
     _filter(wt)
   { }
 
+  virtual ~PLABStats() { }
+
   static const size_t min_size() {
     return PLAB::min_size();
   }
@@ -187,23 +189,15 @@ class PLABStats VALUE_OBJ_CLASS_SPEC {
 
   // Updates the current desired PLAB size. Computes the new desired PLAB size with one gc worker thread,
   // updates _desired_plab_sz and clears sensor accumulators.
-  void adjust_desired_plab_sz();
+  virtual void adjust_desired_plab_sz();
 
-  void add_allocated(size_t v) {
-    Atomic::add_ptr(v, &_allocated);
-  }
+  inline void add_allocated(size_t v);
 
-  void add_unused(size_t v) {
-    Atomic::add_ptr(v, &_unused);
-  }
+  inline void add_unused(size_t v);
 
-  void add_wasted(size_t v) {
-    Atomic::add_ptr(v, &_wasted);
-  }
+  inline void add_wasted(size_t v);
 
-  void add_undo_wasted(size_t v) {
-    Atomic::add_ptr(v, &_undo_wasted);
-  }
+  inline void add_undo_wasted(size_t v);
 };
 
 #endif // SHARE_VM_GC_SHARED_PLAB_HPP

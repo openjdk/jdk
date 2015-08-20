@@ -26,6 +26,8 @@
 #define SHARE_VM_GC_G1_G1ALLOCREGION_HPP
 
 #include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1EvacStats.hpp"
+#include "gc/g1/g1InCSetState.hpp"
 
 class G1CollectedHeap;
 
@@ -105,13 +107,10 @@ private:
 
   // Ensure that the region passed as a parameter has been filled up
   // so that noone else can allocate out of it any more.
-  static void fill_up_remaining_space(HeapRegion* alloc_region,
-                                      bool bot_updates);
-
-  // Retire the active allocating region. If fill_up is true then make
-  // sure that the region is full before we retire it so that noone
-  // else can allocate out of it.
-  void retire(bool fill_up);
+  // Returns the number of bytes that have been wasted by filled up
+  // the space.
+  static size_t fill_up_remaining_space(HeapRegion* alloc_region,
+                                        bool bot_updates);
 
   // After a region is allocated by alloc_new_region, this
   // method is used to set it as the active alloc_region
@@ -126,6 +125,12 @@ private:
   void fill_in_ext_msg(ar_ext_msg* msg, const char* message);
 
 protected:
+  // Retire the active allocating region. If fill_up is true then make
+  // sure that the region is full before we retire it so that no one
+  // else can allocate out of it.
+  // Returns the number of bytes that have been filled up during retire.
+  virtual size_t retire(bool fill_up);
+
   // For convenience as subclasses use it.
   static G1CollectedHeap* _g1h;
 
@@ -201,22 +206,33 @@ public:
     : G1AllocRegion("Mutator Alloc Region", false /* bot_updates */) { }
 };
 
-class SurvivorGCAllocRegion : public G1AllocRegion {
+// Common base class for allocation regions used during GC.
+class G1GCAllocRegion : public G1AllocRegion {
 protected:
+  G1EvacStats* _stats;
+  InCSetState::in_cset_state_t _purpose;
+
   virtual HeapRegion* allocate_new_region(size_t word_size, bool force);
   virtual void retire_region(HeapRegion* alloc_region, size_t allocated_bytes);
+
+  virtual size_t retire(bool fill_up);
 public:
-  SurvivorGCAllocRegion()
-  : G1AllocRegion("Survivor GC Alloc Region", false /* bot_updates */) { }
+  G1GCAllocRegion(const char* name, bool bot_updates, G1EvacStats* stats, InCSetState::in_cset_state_t purpose)
+  : G1AllocRegion(name, bot_updates), _stats(stats), _purpose(purpose) {
+    assert(stats != NULL, "Must pass non-NULL PLAB statistics");
+  }
 };
 
-class OldGCAllocRegion : public G1AllocRegion {
-protected:
-  virtual HeapRegion* allocate_new_region(size_t word_size, bool force);
-  virtual void retire_region(HeapRegion* alloc_region, size_t allocated_bytes);
+class SurvivorGCAllocRegion : public G1GCAllocRegion {
 public:
-  OldGCAllocRegion()
-  : G1AllocRegion("Old GC Alloc Region", true /* bot_updates */) { }
+  SurvivorGCAllocRegion(G1EvacStats* stats)
+  : G1GCAllocRegion("Survivor GC Alloc Region", false /* bot_updates */, stats, InCSetState::Young) { }
+};
+
+class OldGCAllocRegion : public G1GCAllocRegion {
+public:
+  OldGCAllocRegion(G1EvacStats* stats)
+  : G1GCAllocRegion("Old GC Alloc Region", true /* bot_updates */, stats, InCSetState::Old) { }
 
   // This specialization of release() makes sure that the last card that has
   // been allocated into has been completely filled by a dummy object.  This
