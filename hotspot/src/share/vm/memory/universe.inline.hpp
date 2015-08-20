@@ -49,4 +49,11 @@ inline void Universe::set_allocation_context_notification_obj(oop obj) {
   _allocation_context_notification_obj = obj;
 }
 
+template <class Heap, class Policy>
+CollectedHeap* Universe::create_heap_with_policy() {
+  Policy* policy = new Policy();
+  policy->initialize_all();
+  return new Heap(policy);
+}
+
 #endif // SHARE_VM_MEMORY_UNIVERSE_INLINE_HPP
