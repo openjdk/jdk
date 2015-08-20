@@ -87,8 +87,6 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
 
   void set_ref_processor(ReferenceProcessor* rp) { _scanner.set_ref_processor(rp); }
 
-  ageTable*         age_table()       { return &_age_table;       }
-
 #ifdef ASSERT
   bool queue_is_empty() const { return _refs->is_empty(); }
 

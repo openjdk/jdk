@@ -72,8 +72,12 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint worker_id)
 }
 
 G1ParScanThreadState::~G1ParScanThreadState() {
+  // Update allocation statistics.
   _plab_allocator->flush_and_retire_stats();
   delete _plab_allocator;
+  _g1h->g1_policy()->record_thread_age_table(&_age_table);
+  // Update heap statistics.
+  _g1h->update_surviving_young_words(_surviving_young_words);
   FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_base);
 }
 
@@ -252,7 +256,7 @@ oop G1ParScanThreadState::copy_to_survivor_space(InCSetState const state,
       } else {
         obj->set_mark(old_mark->set_age(age));
       }
-      age_table()->add(age, word_sz);
+      _age_table.add(age, word_sz);
     } else {
       obj->set_mark(old_mark);
     }
