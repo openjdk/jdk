@@ -1623,10 +1623,6 @@
     <depend>jdk.jdi</depend>
   </module>
   <module>
-    <name>jdk.hprof.agent</name>
-    <depend>java.base</depend>
-  </module>
-  <module>
     <name>jdk.httpserver</name>
     <depend>java.base</depend>
     <depend>java.logging</depend>
@@ -1798,7 +1794,7 @@
     <name>jdk.scripting.nashorn</name>
     <depend>java.base</depend>
     <depend>java.logging</depend>
-    <depend>java.scripting</depend>
+    <depend re-exports="true">java.scripting</depend>
     <export>
       <name>jdk.nashorn.internal.runtime</name>
       <to>jdk.scripting.nashorn.shell</to>
@@ -1811,11 +1807,16 @@
       <name>jdk.nashorn.tools</name>
       <to>jdk.scripting.nashorn.shell</to>
     </export>
+    <export>
+      <name>jdk.nashorn.api.scripting</name>
+    </export>
+    <export>
+      <name>jdk.nashorn.api.tree</name>
+    </export>
   </module>
   <module>
     <name>jdk.scripting.nashorn.shell</name>
     <depend>java.base</depend>
-    <depend>java.prefs</depend>
     <depend>jdk.scripting.nashorn</depend>
     <depend>jdk.internal.le</depend>
   </module>
