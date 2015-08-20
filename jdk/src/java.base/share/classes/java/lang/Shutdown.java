@@ -86,10 +86,10 @@ class Shutdown {
      *               to be registered even if the shutdown is in progress.
      * @params hook  the hook to be registered
      *
-     * @throw IllegalStateException
-     *        if registerShutdownInProgress is false and shutdown is in progress; or
-     *        if registerShutdownInProgress is true and the shutdown process
-     *           already passes the given slot
+     * @throws IllegalStateException
+     *         if registerShutdownInProgress is false and shutdown is in progress; or
+     *         if registerShutdownInProgress is true and the shutdown process
+     *         already passes the given slot
      */
     static void add(int slot, boolean registerShutdownInProgress, Runnable hook) {
         synchronized (lock) {

@@ -1258,10 +1258,19 @@ Zone America/Goose_Bay	-4:01:40 -	LMT	1884 # Happy Valley-Goose Bay
 
 # west Labrador, Nova Scotia, Prince Edward I
 
-# From Paul Eggert (2006-03-22):
+# From Brian Inglis (2015-07-20):
+# From the historical weather station records available at:
+# https://weatherspark.com/history/28351/1971/Sydney-Nova-Scotia-Canada
+# Sydney shares the same time history as Glace Bay, so was
+# likely to be the same across the island....
+# Sydney, as the capital and most populous location, or Cape Breton, would
+# have been better names for the zone had we known this in 1996.
+
+# From Paul Eggert (2015-07-20):
 # Shanks & Pottenger write that since 1970 most of this region has been like
 # Halifax.  Many locales did not observe peacetime DST until 1972;
-# Glace Bay, NS is the largest that we know of.
+# the Cape Breton area, represented by Glace Bay, is the largest we know of
+# (Glace Bay was perhaps not the best name choice but no point changing now).
 # Shanks & Pottenger also write that Liverpool, NS was the only town
 # in Canada to observe DST in 1971 but not 1970; for now we'll assume
 # this is a typo.
@@ -1819,13 +1828,13 @@ Zone America/Edmonton	-7:33:52 -	LMT	1906 Sep
 # Exact date in October unknown; Sunday October 1 is a reasonable guess.
 # 3. June 1918: switch to Pacific Daylight Time (GMT-7)
 # Exact date in June unknown; Sunday June 2 is a reasonable guess.
-# note#1:
+# note 1:
 # On Oct 27/1918 when daylight saving ended in the rest of Canada,
 # Creston did not change its clocks.
-# note#2:
+# note 2:
 # During WWII when the Federal Government legislated a mandatory clock change,
 # Creston did not oblige.
-# note#3:
+# note 3:
 # There is no guarantee that Creston will remain on Mountain Standard Time
 # (UTC-7) forever.
 # The subject was debated at least once this year by the town Council.

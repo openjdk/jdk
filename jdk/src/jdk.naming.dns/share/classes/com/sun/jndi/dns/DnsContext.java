@@ -125,7 +125,7 @@ public class DnsContext extends ComponentDirContext {
      * Returns a clone of a DNS context.  The context's modifiable
      * private state is independent of the original's (so closing one
      * context, for example, won't close the other).  The two contexts
-     * share <tt>environment</tt>, but it's copy-on-write so there's
+     * share {@code environment}, but it's copy-on-write so there's
      * no conflict.
      */
     private DnsContext(DnsContext ctx) {

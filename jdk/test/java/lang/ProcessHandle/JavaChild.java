@@ -68,8 +68,9 @@ private static volatile int commandSeq = 0;         // Command sequence number
      * {@link #forEachOutputLine} can be used to process output from the child
      * @param delegate the process to delegate and send commands to and get responses from
      */
-    private JavaChild(Process delegate) {
-        this.delegate = delegate;
+    private JavaChild(ProcessBuilder pb) throws IOException {
+        allArgs = pb.command();
+        delegate = pb.start();
         // Initialize PrintWriter with autoflush (on println)
         inputWriter = new PrintWriter(delegate.getOutputStream(), true);
         outputReader = new BufferedReader(new InputStreamReader(delegate.getInputStream()));
@@ -117,6 +118,10 @@ private static volatile int commandSeq = 0;         // Command sequence number
     @Override
     public String toString() {
         return "delegate: " + delegate.toString();
+    }
+
+    public List<String> getArgs() {
+        return allArgs;
     }
 
     public CompletableFuture<JavaChild> onJavaChildExit() {
@@ -187,7 +192,7 @@ private static volatile int commandSeq = 0;         // Command sequence number
         }
         ProcessBuilder pb = build(stringArgs);
         pb.redirectError(ProcessBuilder.Redirect.INHERIT);
-        return new JavaChild(pb.start());
+        return new JavaChild(pb);
     }
 
     /**
@@ -235,6 +240,9 @@ private static volatile int commandSeq = 0;         // Command sequence number
                     "-Dtest.jdk=" + javaHome,
                     "-classpath", absolutifyPath(classpath),
                     "JavaChild");
+
+    // Will hold the complete list of arguments which was given to Processbuilder.command()
+    private List<String> allArgs;
 
     private static String absolutifyPath(String path) {
         StringBuilder sb = new StringBuilder();
