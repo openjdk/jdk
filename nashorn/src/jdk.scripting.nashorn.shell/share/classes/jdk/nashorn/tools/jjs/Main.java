@@ -38,6 +38,7 @@ import jdk.nashorn.api.scripting.NashornException;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.JSType;
+import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.tools.Shell;
@@ -107,8 +108,29 @@ public final class Main extends Shell {
             }
 
             global.addShellBuiltins();
-            // expose history object for reflecting on command line history
-            global.put("history", new HistoryObject(in.getHistory()), false);
+
+            if (System.getSecurityManager() == null) {
+                // expose history object for reflecting on command line history
+                global.addOwnProperty("history", Property.NOT_ENUMERABLE, new HistoryObject(in.getHistory()));
+
+                // 'edit' command
+                global.addOwnProperty("edit", Property.NOT_ENUMERABLE, new EditObject(err::println,
+                    str -> {
+                        // could be called from different thread (GUI), we need to handle Context set/reset
+                        final Global _oldGlobal = Context.getGlobal();
+                        final boolean _globalChanged = (oldGlobal != global);
+                        if (_globalChanged) {
+                            Context.setGlobal(global);
+                        }
+                        try {
+                            evalImpl(context, global, str, err, env._dump_on_error);
+                        } finally {
+                            if (_globalChanged) {
+                                Context.setGlobal(_oldGlobal);
+                            }
+                        }
+                    }, in));
+            }
 
             while (true) {
                 String source = "";
@@ -128,17 +150,7 @@ public final class Main extends Shell {
                     continue;
                 }
 
-                try {
-                    final Object res = context.eval(global, source, global, "<shell>");
-                    if (res != ScriptRuntime.UNDEFINED) {
-                        err.println(JSType.toString(res));
-                    }
-                } catch (final Exception e) {
-                    err.println(e);
-                    if (env._dump_on_error) {
-                        e.printStackTrace(err);
-                    }
-                }
+                evalImpl(context, global, source, err, env._dump_on_error);
             }
         } catch (final Exception e) {
             err.println(e);
@@ -152,5 +164,20 @@ public final class Main extends Shell {
         }
 
         return SUCCESS;
+    }
+
+    private void evalImpl(final Context context, final Global global, final String source,
+            final PrintWriter err, final boolean doe) {
+        try {
+            final Object res = context.eval(global, source, global, "<shell>");
+            if (res != ScriptRuntime.UNDEFINED) {
+                err.println(JSType.toString(res));
+            }
+        } catch (final Exception e) {
+            err.println(e);
+            if (doe) {
+                e.printStackTrace(err);
+            }
+        }
     }
 }
