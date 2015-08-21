@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4639861
+ * @bug 4639861 8133015
  * @summary API to test reachability of a host
  */
 import java.net.InetAddress;
