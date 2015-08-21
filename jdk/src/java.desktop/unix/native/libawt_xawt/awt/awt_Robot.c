@@ -259,6 +259,7 @@ Java_sun_awt_X11_XRobotPeer_getRGBPixelsImpl( JNIEnv *env,
 
     if (isGtkSupported) {
         GdkPixbuf *pixbuf;
+        (*fp_gdk_threads_enter)();
         GdkWindow *root = (*fp_gdk_get_default_root_window)();
 
         pixbuf = (*fp_gdk_pixbuf_get_from_drawable)(NULL, root, NULL,
@@ -279,6 +280,7 @@ Java_sun_awt_X11_XRobotPeer_getRGBPixelsImpl( JNIEnv *env,
                 ary = (*env)->GetPrimitiveArrayCritical(env, pixelArray, NULL);
                 if (!ary) {
                     (*fp_g_object_unref)(pixbuf);
+                    (*fp_gdk_threads_leave)();
                     AWT_UNLOCK();
                     return;
                 }
@@ -298,6 +300,7 @@ Java_sun_awt_X11_XRobotPeer_getRGBPixelsImpl( JNIEnv *env,
                 (*env)->ReleasePrimitiveArrayCritical(env, pixelArray, ary, 0);
                 if ((*env)->ExceptionCheck(env)) {
                     (*fp_g_object_unref)(pixbuf);
+                    (*fp_gdk_threads_leave)();
                     AWT_UNLOCK();
                     return;
                 }
@@ -305,6 +308,7 @@ Java_sun_awt_X11_XRobotPeer_getRGBPixelsImpl( JNIEnv *env,
             }
             (*fp_g_object_unref)(pixbuf);
         }
+        (*fp_gdk_threads_leave)();
     }
 
     if (gtk_failed) {
