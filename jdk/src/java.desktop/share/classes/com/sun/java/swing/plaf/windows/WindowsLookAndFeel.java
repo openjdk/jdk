@@ -835,12 +835,12 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             "InternalFrame.closeIcon",
                 WindowsIconFactory.createFrameCloseIcon(),
             "InternalFrame.icon",
-               (LazyValue) t -> new Object[]{
+                (LazyValue) t -> new WindowsInternalFrameTitlePane.ScalableIconUIResource(new Object[]{
                     // The constructor takes one arg: an array of UIDefaults.LazyValue
                     // representing the icons
                         SwingUtilities2.makeIcon(getClass(), BasicLookAndFeel.class, "icons/JavaCup16.png"),
                         SwingUtilities2.makeIcon(getClass(), WindowsLookAndFeel.class, "icons/JavaCup32.png")
-                },
+                }),
             // Internal Frame Auditory Cue Mappings
             "InternalFrame.closeSound", "win.sound.close",
             "InternalFrame.maximizeSound", "win.sound.maximize",
