@@ -107,9 +107,7 @@ class MacroAssembler: public Assembler {
   // Biased locking support
   // lock_reg and obj_reg must be loaded up with the appropriate values.
   // swap_reg is killed.
-  // tmp_reg is optional. If it is supplied (i.e., != noreg) it will
-  // be killed; if not supplied, push/pop will be used internally to
-  // allocate a temporary (inefficient, avoid if possible).
+  // tmp_reg must be supplied and must not be rscratch1 or rscratch2
   // Optional slow case is for implementations (interpreter and C1) which branch to
   // slow case directly. Leaves condition codes set for C2's Fast_Lock node.
   // Returns offset of first potentially-faulting instruction for null
@@ -126,10 +124,10 @@ class MacroAssembler: public Assembler {
 
   // Helper functions for statistics gathering.
   // Unconditional atomic increment.
-  void atomic_incw(Register counter_addr, Register tmp);
-  void atomic_incw(Address counter_addr, Register tmp1, Register tmp2) {
+  void atomic_incw(Register counter_addr, Register tmp, Register tmp2);
+  void atomic_incw(Address counter_addr, Register tmp1, Register tmp2, Register tmp3) {
     lea(tmp1, counter_addr);
-    atomic_incw(tmp1, tmp2);
+    atomic_incw(tmp1, tmp2, tmp3);
   }
   // Load Effective Address
   void lea(Register r, const Address &a) {
@@ -1057,6 +1055,7 @@ public:
   void add(Register Rd, Register Rn, RegisterOrConstant increment);
   void addw(Register Rd, Register Rn, RegisterOrConstant increment);
   void sub(Register Rd, Register Rn, RegisterOrConstant decrement);
+  void subw(Register Rd, Register Rn, RegisterOrConstant decrement);
 
   void adrp(Register reg1, const Address &dest, unsigned long &byte_offset);
 
