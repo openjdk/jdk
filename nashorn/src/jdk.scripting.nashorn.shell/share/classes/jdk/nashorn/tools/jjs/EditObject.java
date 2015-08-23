@@ -25,6 +25,9 @@
 
 package jdk.nashorn.tools.jjs;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Consumer;
 import jdk.nashorn.api.scripting.AbstractJSObject;
 import jdk.nashorn.internal.runtime.JSType;
@@ -35,6 +38,13 @@ import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
  * for editing and evaluating scripts from it.
  */
 final class EditObject extends AbstractJSObject {
+    private static final Set<String> props;
+    static {
+        final HashSet<String> s = new HashSet<>();
+        s.add("editor");
+        props = Collections.unmodifiableSet(s);
+    }
+
     private final Consumer<String> errorHandler;
     private final Consumer<String> evaluator;
     private final Console console;
@@ -58,6 +68,11 @@ final class EditObject extends AbstractJSObject {
     @Override
     public String toString() {
         return "function edit() { [native code] }";
+    }
+
+    @Override
+    public Set<String> keySet() {
+        return props;
     }
 
     @Override

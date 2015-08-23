@@ -61,6 +61,9 @@ public final class ScriptEnvironment {
     /** Size of the per-global Class cache size */
     public final int     _class_cache_size;
 
+    /** -classpath value. */
+    public final String  _classpath;
+
     /** Only compile script, do not run it or generate other ScriptObjects */
     public final boolean _compile_only;
 
@@ -220,6 +223,7 @@ public final class ScriptEnvironment {
         this.options = options;
 
         _class_cache_size     = options.getInteger("class.cache.size");
+        _classpath            = options.getString("classpath");
         _compile_only         = options.getBoolean("compile.only");
         _const_as_var         = options.getBoolean("const.as.var");
         _debug_lines          = options.getBoolean("debug.lines");

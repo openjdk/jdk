@@ -49,6 +49,8 @@ import jdk.nashorn.tools.Shell;
 public final class Main extends Shell {
     private Main() {}
 
+    static final boolean DEBUG = Boolean.getBoolean("nashorn.jjs.debug");
+
     // file where history is persisted.
     private static final File HIST_FILE = new File(new File(System.getProperty("user.home")), ".jjs.history");
 
@@ -100,7 +102,8 @@ public final class Main extends Shell {
         final PrintWriter err = context.getErr();
         final Global oldGlobal = Context.getGlobal();
         final boolean globalChanged = (oldGlobal != global);
-        final Completer completer = new NashornCompleter(context, global, this);
+        final PropertiesHelper propsHelper = new PropertiesHelper(env._classpath);
+        final Completer completer = new NashornCompleter(context, global, this, propsHelper);
 
         try (final Console in = new Console(System.in, System.out, HIST_FILE, completer)) {
             if (globalChanged) {
@@ -160,6 +163,13 @@ public final class Main extends Shell {
         } finally {
             if (globalChanged) {
                 Context.setGlobal(oldGlobal);
+            }
+            try {
+                propsHelper.close();
+            } catch (final Exception exp) {
+                if (DEBUG) {
+                    exp.printStackTrace();
+                }
             }
         }
 
