@@ -55,12 +55,15 @@ final class NashornCompleter implements Completer {
     private final Context context;
     private final Global global;
     private final PartialParser partialParser;
+    private final PropertiesHelper propsHelper;
     private final Parser parser;
 
-    NashornCompleter(final Context context, final Global global, final PartialParser partialParser) {
+    NashornCompleter(final Context context, final Global global,
+            final PartialParser partialParser, final PropertiesHelper propsHelper) {
         this.context = context;
         this.global = global;
         this.partialParser = partialParser;
+        this.propsHelper = propsHelper;
         this.parser = Parser.create();
     }
 
@@ -122,19 +125,22 @@ final class NashornCompleter implements Completer {
         Object obj = null;
         try {
             obj = context.eval(global, objExprCode, global, "<suggestions>");
-        } catch (Exception ignored) {
-            // throw the exception - this is during tab-completion
+        } catch (Exception exp) {
+            // throw away the exception - this is during tab-completion
+            if (Main.DEBUG) {
+                exp.printStackTrace();
+            }
         }
 
         if (obj != null && obj != ScriptRuntime.UNDEFINED) {
             if (endsWithDot) {
                 // no user specified "prefix". List all properties of the object
-                result.addAll(PropertiesHelper.getProperties(obj));
+                result.addAll(propsHelper.getProperties(obj));
                 return cursor;
             } else {
                 // list of properties matching the user specified prefix
                 final String prefix = select.getIdentifier();
-                result.addAll(PropertiesHelper.getProperties(obj, prefix));
+                result.addAll(propsHelper.getProperties(obj, prefix));
                 return cursor - prefix.length();
             }
         }
@@ -145,7 +151,7 @@ final class NashornCompleter implements Completer {
     private int completeIdentifier(final String test, final int cursor, final List<CharSequence> result,
                 final IdentifierTree ident) {
         final String name = ident.getName();
-        result.addAll(PropertiesHelper.getProperties(global, name));
+        result.addAll(propsHelper.getProperties(global, name));
         return cursor - name.length();
     }
 
