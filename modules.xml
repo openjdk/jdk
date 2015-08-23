@@ -1822,8 +1822,9 @@
     <name>jdk.scripting.nashorn.shell</name>
     <depend>java.base</depend>
     <depend>jdk.scripting.nashorn</depend>
-    <depend>jdk.internal.le</depend>
-    <depend>java.desktop</depend>
+    <depend>jdk.internal.le</depend> <!-- jline -->
+    <depend>java.desktop</depend> <!-- EditPad -->
+    <depend>java.compiler</depend> <!-- java package completion -->
   </module>
   <module>
     <name>jdk.sctp</name>
