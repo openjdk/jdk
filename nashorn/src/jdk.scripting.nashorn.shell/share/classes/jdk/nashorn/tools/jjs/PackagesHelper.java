@@ -86,7 +86,7 @@ final class PackagesHelper {
 
     // LRU cache for java package properties lists
     private final LinkedHashMap<String, List<String>> propsCache =
-        new LinkedHashMap<>(32, 0.75f, true) {
+        new LinkedHashMap<String, List<String>>(32, 0.75f, true) {
             private static final int CACHE_SIZE = 100;
             private static final long serialVersionUID = 1;
 
