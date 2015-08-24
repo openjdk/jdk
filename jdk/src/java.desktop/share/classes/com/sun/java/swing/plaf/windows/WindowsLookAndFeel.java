@@ -556,8 +556,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
              * for both client property and UIDefaults.
              * Also need to set up listeners for changes in these settings.
              */
-            Object aaTextInfo = SwingUtilities2.AATextInfo.getAATextInfo(true);
-            table.put(SwingUtilities2.AA_TEXT_PROPERTY_KEY, aaTextInfo);
+            SwingUtilities2.putAATextInfo(true, table);
             this.aaSettings =
                 new FontDesktopProperty(SunToolkit.DESKTOPFONTHINTS);
         }
@@ -2402,9 +2401,8 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         }
 
         protected void updateUI() {
-            Object aaTextInfo = SwingUtilities2.AATextInfo.getAATextInfo(true);
             UIDefaults defaults = UIManager.getLookAndFeelDefaults();
-            defaults.put(SwingUtilities2.AA_TEXT_PROPERTY_KEY, aaTextInfo);
+            SwingUtilities2.putAATextInfo(true, defaults);
             super.updateUI();
         }
     }
