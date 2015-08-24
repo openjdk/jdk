@@ -991,9 +991,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "Tree.ancestorInputMap", new UIDefaults.LazyInputMap(new Object[]{"ESCAPE", "cancel"}),};
 
         table.putDefaults(defaults);
-
-        Object aaTextInfo = SwingUtilities2.AATextInfo.getAATextInfo(true);
-        table.put(SwingUtilities2.AA_TEXT_PROPERTY_KEY, aaTextInfo);
+        SwingUtilities2.putAATextInfo(true, table);
     }
 
     protected void initSystemColorDefaults(final UIDefaults table) {
