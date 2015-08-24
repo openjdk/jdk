@@ -304,8 +304,8 @@ public final class OptionTemplate implements Comparable<OptionTemplate> {
         }
     }
 
-    boolean matches(final String key0) {
-        return key0.equals(this.shortName) || key0.equals(this.name);
+    boolean nameMatches(final String aName) {
+        return aName.equals(this.shortName) || aName.equals(this.name);
     }
 
     private static final int LINE_BREAK = 64;
