@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
+#include "gc/g1/g1AllocRegion.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/g1/g1MarkSweep.hpp"
@@ -143,11 +144,24 @@ size_t G1Allocator::unsafe_max_tlab_alloc(AllocationContext_t context) {
 HeapWord* G1Allocator::par_allocate_during_gc(InCSetState dest,
                                               size_t word_size,
                                               AllocationContext_t context) {
+  size_t temp = 0;
+  HeapWord* result = par_allocate_during_gc(dest, word_size, word_size, &temp, context);
+  assert(result == NULL || temp == word_size,
+         err_msg("Requested " SIZE_FORMAT " words, but got " SIZE_FORMAT " at " PTR_FORMAT,
+                 word_size, temp, p2i(result)));
+  return result;
+}
+
+HeapWord* G1Allocator::par_allocate_during_gc(InCSetState dest,
+                                              size_t min_word_size,
+                                              size_t desired_word_size,
+                                              size_t* actual_word_size,
+                                              AllocationContext_t context) {
   switch (dest.value()) {
     case InCSetState::Young:
-      return survivor_attempt_allocation(word_size, context);
+      return survivor_attempt_allocation(min_word_size, desired_word_size, actual_word_size, context);
     case InCSetState::Old:
-      return old_attempt_allocation(word_size, context);
+      return old_attempt_allocation(min_word_size, desired_word_size, actual_word_size, context);
     default:
       ShouldNotReachHere();
       return NULL; // Keep some compilers happy
@@ -170,37 +184,49 @@ void G1Allocator::set_old_full(AllocationContext_t context) {
   _old_is_full = true;
 }
 
-HeapWord* G1Allocator::survivor_attempt_allocation(size_t word_size,
+HeapWord* G1Allocator::survivor_attempt_allocation(size_t min_word_size,
+                                                   size_t desired_word_size,
+                                                   size_t* actual_word_size,
                                                    AllocationContext_t context) {
-  assert(!_g1h->is_humongous(word_size),
+  assert(!_g1h->is_humongous(desired_word_size),
          "we should not be seeing humongous-size allocations in this path");
 
-  HeapWord* result = survivor_gc_alloc_region(context)->attempt_allocation(word_size,
+  HeapWord* result = survivor_gc_alloc_region(context)->attempt_allocation(min_word_size,
+                                                                           desired_word_size,
+                                                                           actual_word_size,
                                                                            false /* bot_updates */);
   if (result == NULL && !survivor_is_full(context)) {
     MutexLockerEx x(FreeList_lock, Mutex::_no_safepoint_check_flag);
-    result = survivor_gc_alloc_region(context)->attempt_allocation_locked(word_size,
+    result = survivor_gc_alloc_region(context)->attempt_allocation_locked(min_word_size,
+                                                                          desired_word_size,
+                                                                          actual_word_size,
                                                                           false /* bot_updates */);
     if (result == NULL) {
       set_survivor_full(context);
     }
   }
   if (result != NULL) {
-    _g1h->dirty_young_block(result, word_size);
+    _g1h->dirty_young_block(result, *actual_word_size);
   }
   return result;
 }
 
-HeapWord* G1Allocator::old_attempt_allocation(size_t word_size,
+HeapWord* G1Allocator::old_attempt_allocation(size_t min_word_size,
+                                              size_t desired_word_size,
+                                              size_t* actual_word_size,
                                               AllocationContext_t context) {
-  assert(!_g1h->is_humongous(word_size),
+  assert(!_g1h->is_humongous(desired_word_size),
          "we should not be seeing humongous-size allocations in this path");
 
-  HeapWord* result = old_gc_alloc_region(context)->attempt_allocation(word_size,
+  HeapWord* result = old_gc_alloc_region(context)->attempt_allocation(min_word_size,
+                                                                      desired_word_size,
+                                                                      actual_word_size,
                                                                       true /* bot_updates */);
   if (result == NULL && !old_is_full(context)) {
     MutexLockerEx x(FreeList_lock, Mutex::_no_safepoint_check_flag);
-    result = old_gc_alloc_region(context)->attempt_allocation_locked(word_size,
+    result = old_gc_alloc_region(context)->attempt_allocation_locked(min_word_size,
+                                                                     desired_word_size,
+                                                                     actual_word_size,
                                                                      true /* bot_updates */);
     if (result == NULL) {
       set_old_full(context);
@@ -242,10 +268,19 @@ HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(InCSetState dest,
     G1PLAB* alloc_buf = alloc_buffer(dest, context);
     alloc_buf->retire();
 
-    HeapWord* buf = _allocator->par_allocate_during_gc(dest, plab_word_size, context);
+    size_t actual_plab_size = 0;
+    HeapWord* buf = _allocator->par_allocate_during_gc(dest,
+                                                       required_in_plab,
+                                                       plab_word_size,
+                                                       &actual_plab_size,
+                                                       context);
+
+    assert(buf == NULL || ((actual_plab_size >= required_in_plab) && (actual_plab_size <= plab_word_size)),
+           err_msg("Requested at minimum " SIZE_FORMAT ", desired " SIZE_FORMAT " words, but got " SIZE_FORMAT " at " PTR_FORMAT,
+                   required_in_plab, plab_word_size, actual_plab_size, p2i(buf)));
+
     if (buf != NULL) {
-      // Otherwise.
-      alloc_buf->set_buf(buf, plab_word_size);
+      alloc_buf->set_buf(buf, actual_plab_size);
 
       HeapWord* const obj = alloc_buf->allocate(word_sz);
       assert(obj != NULL, err_msg("PLAB should have been big enough, tried to allocate "
