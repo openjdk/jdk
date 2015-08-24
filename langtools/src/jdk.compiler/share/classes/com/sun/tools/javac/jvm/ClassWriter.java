@@ -138,7 +138,7 @@ public class ClassWriter extends ClassFile {
     /** The bootstrap methods to be written in the corresponding class attribute
      *  (one for each invokedynamic)
      */
-    Map<DynamicMethod, MethodHandle> bootstrapMethods;
+    Map<DynamicMethod.BootstrapMethodsKey, MethodHandle> bootstrapMethods;
 
     /** The log to use for verbose output.
      */
@@ -401,8 +401,8 @@ public class ClassWriter extends ClassFile {
                     //invokedynamic
                     DynamicMethodSymbol dynSym = (DynamicMethodSymbol)m;
                     MethodHandle handle = new MethodHandle(dynSym.bsmKind, dynSym.bsm, types);
-                    DynamicMethod dynMeth = new DynamicMethod(dynSym, types);
-                    bootstrapMethods.put(dynMeth, handle);
+                    DynamicMethod.BootstrapMethodsKey key = new DynamicMethod.BootstrapMethodsKey(dynSym, types);
+                    bootstrapMethods.put(key, handle);
                     //init cp entries
                     pool.put(names.BootstrapMethods);
                     pool.put(handle);
@@ -1024,15 +1024,14 @@ public class ClassWriter extends ClassFile {
     void writeBootstrapMethods() {
         int alenIdx = writeAttr(names.BootstrapMethods);
         databuf.appendChar(bootstrapMethods.size());
-        for (Map.Entry<DynamicMethod, MethodHandle> entry : bootstrapMethods.entrySet()) {
-            DynamicMethod dmeth = entry.getKey();
-            DynamicMethodSymbol dsym = (DynamicMethodSymbol)dmeth.baseSymbol();
+        for (Map.Entry<DynamicMethod.BootstrapMethodsKey, MethodHandle> entry : bootstrapMethods.entrySet()) {
+            DynamicMethod.BootstrapMethodsKey bsmKey = entry.getKey();
             //write BSM handle
             databuf.appendChar(pool.get(entry.getValue()));
+            Object[] uniqueArgs = bsmKey.getUniqueArgs();
             //write static args length
-            databuf.appendChar(dsym.staticArgs.length);
+            databuf.appendChar(uniqueArgs.length);
             //write static args array
-            Object[] uniqueArgs = dmeth.uniqueStaticArgs;
             for (Object o : uniqueArgs) {
                 databuf.appendChar(pool.get(o));
             }
