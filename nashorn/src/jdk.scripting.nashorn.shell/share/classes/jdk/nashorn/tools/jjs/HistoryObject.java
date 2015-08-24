@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import jdk.internal.jline.console.history.FileHistory;
 import jdk.internal.jline.console.history.History;
 import jdk.nashorn.api.scripting.AbstractJSObject;
@@ -48,6 +49,7 @@ final class HistoryObject extends AbstractJSObject {
         s.add("forEach");
         s.add("print");
         s.add("size");
+        s.add("toString");
         props = Collections.unmodifiableSet(s);
     }
 
@@ -68,6 +70,8 @@ final class HistoryObject extends AbstractJSObject {
                 return (Runnable)this::print;
             case "size":
                 return hist.size();
+            case "toString":
+                return (Supplier<String>)this::toString;
         }
         return UNDEFINED;
     }
@@ -82,7 +86,11 @@ final class HistoryObject extends AbstractJSObject {
 
     @Override
     public String toString() {
-        return "[object history]";
+        final StringBuilder buf = new StringBuilder();
+        for (History.Entry e : hist) {
+            buf.append(e.value()).append('\n');
+        }
+        return buf.toString();
     }
 
     @Override

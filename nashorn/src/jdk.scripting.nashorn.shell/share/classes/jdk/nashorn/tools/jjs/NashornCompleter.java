@@ -25,9 +25,12 @@
 
 package jdk.nashorn.tools.jjs;
 
+import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 import jdk.internal.jline.console.completer.Completer;
+import jdk.internal.jline.console.UserInterruptException;
 import jdk.nashorn.api.tree.AssignmentTree;
 import jdk.nashorn.api.tree.BinaryTree;
 import jdk.nashorn.api.tree.CompilationUnitTree;
@@ -46,14 +49,21 @@ import jdk.nashorn.api.tree.UnaryTree;
 import jdk.nashorn.api.tree.Parser;
 import jdk.nashorn.api.scripting.NashornException;
 import jdk.nashorn.tools.PartialParser;
+import jdk.nashorn.internal.objects.NativeSyntaxError;
 import jdk.nashorn.internal.objects.Global;
+import jdk.nashorn.internal.runtime.ECMAException;
 import jdk.nashorn.internal.runtime.Context;
+import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 
-// A simple source completer for nashorn
+/**
+ * A simple source completer for nashorn. Handles code completion for
+ * expressions as well as handles incomplete single line code.
+ */
 final class NashornCompleter implements Completer {
     private final Context context;
     private final Global global;
+    private final ScriptEnvironment env;
     private final PartialParser partialParser;
     private final PropertiesHelper propsHelper;
     private final Parser parser;
@@ -62,9 +72,110 @@ final class NashornCompleter implements Completer {
             final PartialParser partialParser, final PropertiesHelper propsHelper) {
         this.context = context;
         this.global = global;
+        this.env = context.getEnv();
         this.partialParser = partialParser;
         this.propsHelper = propsHelper;
-        this.parser = Parser.create();
+        this.parser = createParser(env);
+    }
+
+
+    /**
+     * Is this a ECMAScript SyntaxError thrown for parse issue at the given line and column?
+     *
+     * @param exp Throwable to check
+     * @param line line number to check
+     * @param column column number to check
+     *
+     * @return true if the given Throwable is a ECMAScript SyntaxError at given line, column
+     */
+    boolean isSyntaxErrorAt(final Throwable exp, final int line, final int column) {
+        if (exp instanceof ECMAException) {
+            final ECMAException eexp = (ECMAException)exp;
+            if (eexp.getThrown() instanceof NativeSyntaxError) {
+                return isParseErrorAt(eexp.getCause(), line, column);
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Is this a parse error at the given line and column?
+     *
+     * @param exp Throwable to check
+     * @param line line number to check
+     * @param column column number to check
+     *
+     * @return true if the given Throwable is a parser error at given line, column
+     */
+    boolean isParseErrorAt(final Throwable exp, final int line, final int column) {
+        if (exp instanceof NashornException) {
+            final NashornException nexp = (NashornException)exp;
+            return nexp.getLineNumber() == line && nexp.getColumnNumber() == column;
+        }
+        return false;
+    }
+
+
+    /**
+     * Read more lines of code if we got SyntaxError at EOF and we can it fine by
+     * by reading more lines of code from the user. This is used for multiline editing.
+     *
+     * @param firstLine First line of code from the user
+     * @param exp       Exception thrown by evaluting first line code
+     * @param in        Console to get read more lines from the user
+     * @param prompt    Prompt to be printed to read more lines from the user
+     * @param err       PrintWriter to print any errors in the proecess of reading
+     *
+     * @return Complete code read from the user including the first line. This is null
+     *         if any error or the user discarded multiline editing by Ctrl-C.
+     */
+    String readMoreLines(final String firstLine, final Exception exp, final Console in,
+            final String prompt, final PrintWriter err) {
+        int line = 1;
+        final StringBuilder buf = new StringBuilder(firstLine);
+        while (true) {
+            buf.append('\n');
+            String curLine = null;
+            try {
+                curLine = in.readLine(prompt);
+                buf.append(curLine);
+                line++;
+            } catch (final Throwable th) {
+                if (th instanceof UserInterruptException) {
+                    // Ctrl-C from user - discard the whole thing silently!
+                    return null;
+                } else {
+                    // print anything else -- but still discard the code
+                    err.println(th);
+                    if (env._dump_on_error) {
+                        th.printStackTrace(err);
+                    }
+                    return null;
+                }
+            }
+
+            final String allLines = buf.toString();
+            try {
+                parser.parse("<shell>", allLines, null);
+            } catch (final Exception pexp) {
+                // Do we have a parse error at the end of current line?
+                // If so, read more lines from the console.
+                if (isParseErrorAt(pexp, line, curLine.length())) {
+                    continue;
+                } else {
+                    // print anything else and bail out!
+                    err.println(pexp);
+                    if (env._dump_on_error) {
+                        pexp.printStackTrace(err);
+                    }
+                    return null;
+                }
+            }
+
+            // We have complete parseable code!
+            return buf.toString();
+        }
     }
 
     // Pattern to match a unfinished member selection expression. object part and "."
@@ -116,6 +227,9 @@ final class NashornCompleter implements Completer {
         }
     }
 
+    // Internals only below this point
+
+    // fill properties of the incomplete member expression
     private int completeMemberSelect(final String exprStr, final int cursor, final List<CharSequence> result,
                 final MemberSelectTree select, final boolean endsWithDot) {
         final ExpressionTree objExpr = select.getExpression();
@@ -148,6 +262,7 @@ final class NashornCompleter implements Completer {
         return cursor;
     }
 
+    // fill properties for the given (partial) identifer
     private int completeIdentifier(final String test, final int cursor, final List<CharSequence> result,
                 final IdentifierTree ident) {
         final String name = ident.getName();
@@ -175,6 +290,7 @@ final class NashornCompleter implements Completer {
         return null;
     }
 
+    // get the right most expreesion of the given expression
     private Tree getRightMostExpression(final ExpressionTree expr) {
         return expr.accept(new SimpleTreeVisitorES5_1<Tree, Void>() {
             @Override
@@ -233,5 +349,28 @@ final class NashornCompleter implements Completer {
                 return getRightMostExpression(ut.getExpression());
             }
         }, null);
+    }
+
+    // create a Parser instance that uses compatible command line options of the
+    // current ScriptEnvironment being used for REPL.
+    private static Parser createParser(final ScriptEnvironment env) {
+        final List<String> args = new ArrayList<>();
+        if (env._const_as_var) {
+            args.add("--const-as-var");
+        }
+
+        if (env._no_syntax_extensions) {
+            args.add("-nse");
+        }
+
+        if (env._scripting) {
+            args.add("-scripting");
+        }
+
+        if (env._strict) {
+            args.add("-strict");
+        }
+
+        return Parser.create(args.toArray(new String[0]));
     }
 }

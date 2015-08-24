@@ -99,11 +99,12 @@ public final class Main extends Shell {
     protected int readEvalPrint(final Context context, final Global global) {
         final ScriptEnvironment env = context.getEnv();
         final String prompt = bundle.getString("shell.prompt");
+        final String prompt2 = bundle.getString("shell.prompt2");
         final PrintWriter err = context.getErr();
         final Global oldGlobal = Context.getGlobal();
         final boolean globalChanged = (oldGlobal != global);
         final PropertiesHelper propsHelper = new PropertiesHelper(env._classpath);
-        final Completer completer = new NashornCompleter(context, global, this, propsHelper);
+        final NashornCompleter completer = new NashornCompleter(context, global, this, propsHelper);
 
         try (final Console in = new Console(System.in, System.out, HIST_FILE, completer)) {
             if (globalChanged) {
@@ -153,7 +154,32 @@ public final class Main extends Shell {
                     continue;
                 }
 
-                evalImpl(context, global, source, err, env._dump_on_error);
+                try {
+                    final Object res = context.eval(global, source, global, "<shell>");
+                    if (res != ScriptRuntime.UNDEFINED) {
+                        err.println(JSType.toString(res));
+                    }
+                } catch (final Exception exp) {
+                    // Is this a ECMAScript SyntaxError at last column (of the single line)?
+                    // If so, it is because parser expected more input but got EOF. Try to
+                    // to more lines from the user (multiline edit support).
+
+                    if (completer.isSyntaxErrorAt(exp, 1, source.length())) {
+                        final String fullSrc = completer.readMoreLines(source, exp, in, prompt2, err);
+
+                        // check if we succeeded in getting complete code.
+                        if (fullSrc != null && !fullSrc.isEmpty()) {
+                            evalImpl(context, global, fullSrc, err, env._dump_on_error);
+                        } // else ignore, error reported already by 'completer.readMoreLines'
+                    } else {
+
+                        // can't read more lines to have parseable/complete code.
+                        err.println(exp);
+                        if (env._dump_on_error) {
+                            exp.printStackTrace(err);
+                        }
+                    }
+                }
             }
         } catch (final Exception e) {
             err.println(e);
