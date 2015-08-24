@@ -46,6 +46,11 @@ import jdk.nashorn.internal.runtime.options.Options;
  * and output and error writers, top level Namespace etc.
  */
 public final class ScriptEnvironment {
+    // Primarily intended to be used in test environments so that eager compilation tests work without an
+    // error when tested with optimistic compilation.
+    private static final boolean ALLOW_EAGER_COMPILATION_SILENT_OVERRIDE = Options.getBooleanProperty(
+            "nashorn.options.allowEagerCompilationSilentOverride", false);
+
     /** Output writer for this environment */
     private final PrintWriter out;
 
@@ -241,8 +246,20 @@ public final class ScriptEnvironment {
         }
         _fx                   = options.getBoolean("fx");
         _global_per_engine    = options.getBoolean("global.per.engine");
-        _lazy_compilation     = options.getBoolean("lazy.compilation");
         _optimistic_types     = options.getBoolean("optimistic.types");
+        final boolean lazy_compilation = options.getBoolean("lazy.compilation");
+        if (!lazy_compilation && _optimistic_types) {
+            if (!ALLOW_EAGER_COMPILATION_SILENT_OVERRIDE) {
+                throw new IllegalStateException(
+                        ECMAErrors.getMessage(
+                                "config.error.eagerCompilationConflictsWithOptimisticTypes",
+                                options.getOptionTemplateByKey("lazy.compilation").getName(),
+                                options.getOptionTemplateByKey("optimistic.types").getName()));
+            }
+            _lazy_compilation = true;
+        } else {
+            _lazy_compilation = lazy_compilation;
+        }
         _loader_per_compile   = options.getBoolean("loader.per.compile");
         _no_java              = options.getBoolean("no.java");
         _no_syntax_extensions = options.getBoolean("no.syntax.extensions");
