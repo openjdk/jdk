@@ -25,10 +25,13 @@
 
 package jdk.nashorn.tools.jjs;
 
+import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
+import javax.swing.JFileChooser;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import jdk.internal.jline.console.completer.Completer;
 import jdk.internal.jline.console.UserInterruptException;
 import jdk.nashorn.api.tree.AssignmentTree;
@@ -67,6 +70,7 @@ final class NashornCompleter implements Completer {
     private final PartialParser partialParser;
     private final PropertiesHelper propsHelper;
     private final Parser parser;
+    private static final boolean BACKSLASH_FILE_SEPARATOR = File.separatorChar == '\\';
 
     NashornCompleter(final Context context, final Global global,
             final PartialParser partialParser, final PropertiesHelper propsHelper) {
@@ -182,6 +186,9 @@ final class NashornCompleter implements Completer {
     // but property name missing pattern.
     private static final Pattern SELECT_PROP_MISSING = Pattern.compile(".*\\.\\s*");
 
+    // Pattern to match load call
+    private static final Pattern LOAD_CALL = Pattern.compile("\\s*load\\s*\\(\\s*");
+
     @Override
     public int complete(final String test, final int cursor, final List<CharSequence> result) {
         // check that cursor is at the end of test string. Do not complete in the middle!
@@ -210,6 +217,23 @@ final class NashornCompleter implements Completer {
 
         final ExpressionTree topExpr = getTopLevelExpression(parser, completeExpr);
         if (topExpr == null) {
+            // special case for load call that looks like "load(" with optional whitespaces
+            if (LOAD_CALL.matcher(test).matches()) {
+                // throw a file dialog box
+                final JFileChooser chooser = new JFileChooser();
+                chooser.setFileFilter(new FileNameExtensionFilter("JavaScript Files", "js"));
+                int retVal = chooser.showOpenDialog(null);
+                if (retVal == JFileChooser.APPROVE_OPTION) {
+                    String name = chooser.getSelectedFile().getAbsolutePath();
+                    // handle '\' file separator
+                    if (BACKSLASH_FILE_SEPARATOR) {
+                        name = name.replace("\\", "\\\\");
+                    }
+                    result.add("\"" + name + "\")");
+                    return cursor + name.length() + 3;
+                }
+            }
+
             // did not parse to be a top level expression, no suggestions!
             return cursor;
         }
