@@ -27,14 +27,17 @@ package sun.reflect.annotation;
 
 import java.lang.annotation.*;
 import java.lang.reflect.*;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 import sun.misc.JavaLangAccess;
+import sun.reflect.LangReflectAccess;
+import sun.reflect.ReflectionFactory;
 
 public final class AnnotationSupport {
     private static final JavaLangAccess LANG_ACCESS = sun.misc.SharedSecrets.getJavaLangAccess();
@@ -62,7 +65,7 @@ public final class AnnotationSupport {
     public static <A extends Annotation> A[] getDirectlyAndIndirectlyPresent(
             Map<Class<? extends Annotation>, Annotation> annotations,
             Class<A> annoClass) {
-        List<A> result = new ArrayList<A>();
+        List<A> result = new ArrayList<>();
 
         @SuppressWarnings("unchecked")
         A direct = (A) annotations.get(annoClass);
@@ -188,27 +191,68 @@ public final class AnnotationSupport {
             AnnotationType annoType = AnnotationType.getInstance(containerClass);
             if (annoType == null)
                 throw invalidContainerException(container, null);
-
             Method m = annoType.members().get("value");
             if (m == null)
                 throw invalidContainerException(container, null);
 
-            m.setAccessible(true);
+            if (Proxy.isProxyClass(container.getClass())) {
+                // Invoke by invocation handler
+                InvocationHandler handler = Proxy.getInvocationHandler(container);
 
-            // This will erase to (Annotation[]) but we do a runtime cast on the
-            // return-value in the method that call this method.
-            @SuppressWarnings("unchecked")
-            A[] values = (A[]) m.invoke(container);
+                try {
+                    // This will erase to (Annotation[]) but we do a runtime cast on the
+                    // return-value in the method that call this method.
+                    @SuppressWarnings("unchecked")
+                    A[] values = (A[]) handler.invoke(container, m, null);
+                    return values;
+                } catch (Throwable t) { // from InvocationHandler::invoke
+                    throw invalidContainerException(container, t);
+                }
+            } else {
+                // In theory there might be instances of Annotations that are not
+                // implemented using Proxies. Try to invoke the "value" element with
+                // reflection.
 
-            return values;
+                // Declaring class should be an annotation type
+                Class<?> iface = m.getDeclaringClass();
+                if (!iface.isAnnotation())
+                    throw new UnsupportedOperationException("Unsupported container annotation type.");
+                // Method must be public
+                if (!Modifier.isPublic(m.getModifiers()))
+                    throw new UnsupportedOperationException("Unsupported value member.");
 
+                // Interface might not be public though
+                final Method toInvoke;
+                if (!Modifier.isPublic(iface.getModifiers())) {
+                    if (System.getSecurityManager() != null) {
+                        toInvoke = AccessController.doPrivileged(new PrivilegedAction<Method>() {
+                            @Override
+                            public Method run() {
+                                Method res = ReflectionFactory.getReflectionFactory().leafCopyMethod(m);
+                                res.setAccessible(true);
+                                return res;
+                            }
+                        });
+                    } else {
+                        toInvoke = ReflectionFactory.getReflectionFactory().leafCopyMethod(m);
+                        toInvoke.setAccessible(true);
+                    }
+                } else {
+                    toInvoke = m;
+                }
+
+                // This will erase to (Annotation[]) but we do a runtime cast on the
+                // return-value in the method that call this method.
+                @SuppressWarnings("unchecked")
+                A[] values = (A[]) toInvoke.invoke(container);
+
+                return values;
+            }
         } catch (IllegalAccessException    | // couldn't loosen security
                  IllegalArgumentException  | // parameters doesn't match
                  InvocationTargetException | // the value method threw an exception
                  ClassCastException e) {
-
             throw invalidContainerException(container, e);
-
         }
     }
 
