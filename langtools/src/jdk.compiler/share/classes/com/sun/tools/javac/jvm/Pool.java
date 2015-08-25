@@ -251,6 +251,16 @@ public class Pool {
                 return uniqueStaticArgs;
             }
         }
+
+        static class BootstrapMethodsValue {
+            final MethodHandle mh;
+            final int index;
+
+            public BootstrapMethodsValue(MethodHandle mh, int index) {
+                this.mh = mh;
+                this.index = index;
+            }
+        }
     }
 
     static class Variable extends DelegatedSymbol<VarSymbol> {
