@@ -92,7 +92,7 @@ public class CoreResourceBundleControl extends ResourceBundle.Control {
     }
 
     /**
-     * @returns a list of candidate locales to search from.
+     * @return a list of candidate locales to search from.
      * @exception NullPointerException if baseName or locale is null.
      */
     @Override

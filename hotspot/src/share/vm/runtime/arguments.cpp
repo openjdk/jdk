@@ -2295,13 +2295,13 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs *java_tool_options_args,
 }
 
 // Checks if name in command-line argument -agent{lib,path}:name[=options]
-// represents a valid HPROF of JDWP agent.  is_path==true denotes that we
+// represents a valid JDWP agent.  is_path==true denotes that we
 // are dealing with -agentpath (case where name is a path), otherwise with
 // -agentlib
-bool valid_hprof_or_jdwp_agent(char *name, bool is_path) {
+bool valid_jdwp_agent(char *name, bool is_path) {
   char *_name;
-  const char *_hprof = "hprof", *_jdwp = "jdwp";
-  size_t _len_hprof, _len_jdwp, _len_prefix;
+  const char *_jdwp = "jdwp";
+  size_t _len_jdwp, _len_prefix;
 
   if (is_path) {
     if ((_name = strrchr(name, (int) *os::file_separator())) == NULL) {
@@ -2316,13 +2316,9 @@ bool valid_hprof_or_jdwp_agent(char *name, bool is_path) {
     }
 
     _name += _len_prefix;
-    _len_hprof = strlen(_hprof);
     _len_jdwp = strlen(_jdwp);
 
-    if (strncmp(_name, _hprof, _len_hprof) == 0) {
-      _name += _len_hprof;
-    }
-    else if (strncmp(_name, _jdwp, _len_jdwp) == 0) {
+    if (strncmp(_name, _jdwp, _len_jdwp) == 0) {
       _name += _len_jdwp;
     }
     else {
@@ -2336,7 +2332,7 @@ bool valid_hprof_or_jdwp_agent(char *name, bool is_path) {
     return true;
   }
 
-  if (strcmp(name, _hprof) == 0 || strcmp(name, _jdwp) == 0) {
+  if (strcmp(name, _jdwp) == 0) {
     return true;
   }
 
@@ -2427,9 +2423,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
           options = (char*)memcpy(NEW_C_HEAP_ARRAY(char, len2, mtInternal), pos+1, len2);
         }
 #if !INCLUDE_JVMTI
-        if ((strcmp(name, "hprof") == 0) || (strcmp(name, "jdwp") == 0)) {
+        if (strcmp(name, "jdwp") == 0) {
           jio_fprintf(defaultStream::error_stream(),
-            "Profiling and debugging agents are not supported in this VM\n");
+            "Debugging agents are not supported in this VM\n");
           return JNI_ERR;
         }
 #endif // !INCLUDE_JVMTI
@@ -2449,9 +2445,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
           options = os::strdup_check_oom(pos + 1, mtInternal);
         }
 #if !INCLUDE_JVMTI
-        if (valid_hprof_or_jdwp_agent(name, is_absolute_path)) {
+        if (valid_jdwp_agent(name, is_absolute_path)) {
           jio_fprintf(defaultStream::error_stream(),
-            "Profiling and debugging agents are not supported in this VM\n");
+            "Debugging agents are not supported in this VM\n");
           return JNI_ERR;
         }
 #endif // !INCLUDE_JVMTI
@@ -3305,7 +3301,9 @@ jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_req
 
   if (scp_assembly_required) {
     // Assemble the bootclasspath elements into the final path.
-    Arguments::set_sysclasspath(scp_p->combined_path());
+    char *combined_path = scp_p->combined_path();
+    Arguments::set_sysclasspath(combined_path);
+    FREE_C_HEAP_ARRAY(char, combined_path);
   }
 
   // This must be done after all arguments have been processed.

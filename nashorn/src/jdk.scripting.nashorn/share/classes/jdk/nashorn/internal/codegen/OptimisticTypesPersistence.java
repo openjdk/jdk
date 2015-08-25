@@ -398,7 +398,7 @@ public final class OptimisticTypesPersistence {
         } else if(protocol.equals("jrt")) {
             return getJrtVersionDirName();
         } else {
-            throw new AssertionError();
+            throw new AssertionError("unknown protocol");
         }
     }
 
@@ -556,13 +556,15 @@ public final class OptimisticTypesPersistence {
         return Math.max(0, Integer.parseInt(str));
     }
 
+    private static final String JRT_NASHORN_DIR = "/modules/jdk.scripting.nashorn";
+
     // version directory name if nashorn is loaded from jrt:/ URL
     private static String getJrtVersionDirName() throws Exception {
         final FileSystem fs = getJrtFileSystem();
         // consider all .class resources under nashorn module to compute checksum
-        final Path nashorn = fs.getPath("/jdk.scripting.nashorn");
+        final Path nashorn = fs.getPath(JRT_NASHORN_DIR);
         if (! Files.isDirectory(nashorn)) {
-            throw new FileNotFoundException("missing /jdk.scripting.nashorn dir in jrt fs");
+            throw new FileNotFoundException("missing " + JRT_NASHORN_DIR + " dir in jrt fs");
         }
         final MessageDigest digest = MessageDigest.getInstance("SHA-1");
         Files.walk(nashorn).forEach(new Consumer<Path>() {

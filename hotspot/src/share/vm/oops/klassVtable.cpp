@@ -683,7 +683,6 @@ bool klassVtable::is_miranda_entry_at(int i) {
   if (mhk->is_interface()) {
     assert(m->is_public(), "should be public");
     assert(ik()->implements_interface(method_holder) , "this class should implement the interface");
-    // the search could find a miranda or a default method
     if (is_miranda(m, ik()->methods(), ik()->default_methods(), ik()->super())) {
       return true;
     }
@@ -691,25 +690,57 @@ bool klassVtable::is_miranda_entry_at(int i) {
   return false;
 }
 
-// check if a method is a miranda method, given a class's methods table,
-// its default_method table  and its super
-// Miranda methods are calculated twice:
-// first: before vtable size calculation: including abstract and superinterface default
+// Check if a method is a miranda method, given a class's methods array,
+// its default_method table and its super class.
+// "Miranda" means an abstract non-private method that would not be
+// overridden for the local class.
+// A "miranda" method should only include non-private interface
+// instance methods, i.e. not private methods, not static methods,
+// not default methods (concrete interface methods), not overpass methods.
+// If a given class already has a local (including overpass) method, a
+// default method, or any of its superclasses has the same which would have
+// overridden an abstract method, then this is not a miranda method.
+//
+// Miranda methods are checked multiple times.
+// Pass 1: during class load/class file parsing: before vtable size calculation:
+// include superinterface abstract and default methods (non-private instance).
 // We include potential default methods to give them space in the vtable.
-// During the first run, the default_methods list is empty
-// This is seen by default method creation
-// Second: recalculated during vtable initialization: only include abstract methods.
+// During the first run, the current instanceKlass has not yet been
+// created, the superclasses and superinterfaces do have instanceKlasses
+// but may not have vtables, the default_methods list is empty, no overpasses.
+// This is seen by default method creation.
+//
+// Pass 2: recalculated during vtable initialization: only include abstract methods.
+// The goal of pass 2 is to walk through the superinterfaces to see if any of
+// the superinterface methods (which were all abstract pre-default methods)
+// need to be added to the vtable.
+// With the addition of default methods, we have three new challenges:
+// overpasses, static interface methods and private interface methods.
+// Static and private interface methods do not get added to the vtable and
+// are not seen by the method resolution process, so we skip those.
+// Overpass methods are already in the vtable, so vtable lookup will
+// find them and we don't need to add a miranda method to the end of
+// the vtable. So we look for overpass methods and if they are found we
+// return false. Note that we inherit our superclasses vtable, so
+// the superclass' search also needs to use find_overpass so that if
+// one is found we return false.
+// False means - we don't need a miranda method added to the vtable.
+//
 // During the second run, default_methods is set up, so concrete methods from
 // superinterfaces with matching names/signatures to default_methods are already
 // in the default_methods list and do not need to be appended to the vtable
-// as mirandas
-// This is seen by link resolution and selection.
-// "miranda" means not static, not defined by this class.
-// private methods in interfaces do not belong in the miranda list.
-// the caller must make sure that the method belongs to an interface implemented by the class
-// Miranda methods only include public interface instance methods
-// Not private methods, not static methods, not default == concrete abstract
-// Miranda methods also do not include overpass methods in interfaces
+// as mirandas. Abstract methods may already have been handled via
+// overpasses - either local or superclass overpasses, which may be
+// in the vtable already.
+//
+// Pass 3: They are also checked by link resolution and selection,
+// for invocation on a method (not interface method) reference that
+// resolves to a method with an interface as its method_holder.
+// Used as part of walking from the bottom of the vtable to find
+// the vtable index for the miranda method.
+//
+// Part of the Miranda Rights in the US mean that if you do not have
+// an attorney one will be appointed for you.
 bool klassVtable::is_miranda(Method* m, Array<Method*>* class_methods,
                              Array<Method*>* default_methods, Klass* super) {
   if (m->is_static() || m->is_private() || m->is_overpass()) {
@@ -717,44 +748,36 @@ bool klassVtable::is_miranda(Method* m, Array<Method*>* class_methods,
   }
   Symbol* name = m->name();
   Symbol* signature = m->signature();
-  Method* mo;
 
-  if ((mo = InstanceKlass::find_instance_method(class_methods, name, signature)) == NULL) {
-    // did not find it in the method table of the current class
-    if ((default_methods == NULL) ||
-        InstanceKlass::find_method(default_methods, name, signature) == NULL) {
-      if (super == NULL) {
-        // super doesn't exist
-        return true;
-      }
-
-      mo = InstanceKlass::cast(super)->lookup_method(name, signature);
-      while (mo != NULL && mo->access_flags().is_static()
-             && mo->method_holder() != NULL
-             && mo->method_holder()->super() != NULL)
-      {
-         mo = mo->method_holder()->super()->uncached_lookup_method(name, signature, Klass::find_overpass);
-      }
-      if (mo == NULL || mo->access_flags().is_private() ) {
-        // super class hierarchy does not implement it or protection is different
-        return true;
-      }
-    }
-  } else {
-     // if the local class has a private method, the miranda will not
-     // override it, so a vtable slot is needed
-     if (mo->access_flags().is_private()) {
-
-       // Second round, weed out any superinterface methods that turned
-       // into default methods, i.e. were concrete not abstract in the end
-       if ((default_methods == NULL) ||
-         InstanceKlass::find_method(default_methods, name, signature) == NULL) {
-         return true;
-       }
-    }
+  // First look in local methods to see if already covered
+  if (InstanceKlass::find_local_method(class_methods, name, signature,
+              Klass::find_overpass, Klass::skip_static, Klass::skip_private) != NULL)
+  {
+    return false;
   }
 
-  return false;
+  // Check local default methods
+  if ((default_methods != NULL) &&
+    (InstanceKlass::find_method(default_methods, name, signature) != NULL))
+   {
+     return false;
+   }
+
+  InstanceKlass* cursuper;
+  // Iterate on all superclasses, which should have instanceKlasses
+  // Note that we explicitly look for overpasses at each level.
+  // Overpasses may or may not exist for supers for pass 1,
+  // they should have been created for pass 2 and later.
+
+  for (cursuper = InstanceKlass::cast(super); cursuper != NULL;  cursuper = (InstanceKlass*)cursuper->super())
+  {
+     if (cursuper->find_local_method(name, signature,
+           Klass::find_overpass, Klass::skip_static, Klass::skip_private) != NULL) {
+       return false;
+     }
+  }
+
+  return true;
 }
 
 // Scans current_interface_methods for miranda methods that do not

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ public class IPAddressUtil {
 
         long tmpValue = 0;
         int currByte = 0;
+        boolean newOctet = true;
 
         int len = src.length();
         if (len == 0 || len > 15) {
@@ -77,11 +78,12 @@ public class IPAddressUtil {
         for (int i = 0; i < len; i++) {
             char c = src.charAt(i);
             if (c == '.') {
-                if (tmpValue < 0 || tmpValue > 0xff || currByte == 3) {
+                if (newOctet || tmpValue < 0 || tmpValue > 0xff || currByte == 3) {
                     return null;
                 }
                 res[currByte++] = (byte) (tmpValue & 0xff);
                 tmpValue = 0;
+                newOctet = true;
             } else {
                 int digit = Character.digit(c, 10);
                 if (digit < 0) {
@@ -89,9 +91,10 @@ public class IPAddressUtil {
                 }
                 tmpValue *= 10;
                 tmpValue += digit;
+                newOctet = false;
             }
         }
-        if (tmpValue < 0 || tmpValue >= (1L << ((4 - currByte) * 8))) {
+        if (newOctet || tmpValue < 0 || tmpValue >= (1L << ((4 - currByte) * 8))) {
             return null;
         }
         switch (currByte) {

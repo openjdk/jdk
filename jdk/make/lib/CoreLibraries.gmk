@@ -330,6 +330,13 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJLI, \
         -export:JLI_CmdToArgs \
         -export:JLI_GetStdArgc \
         -export:JLI_GetStdArgs \
+        -export:JLI_List_new \
+        -export:JLI_List_add \
+        -export:JLI_StringDup \
+        -export:JLI_MemFree \
+        -export:JLI_InitArgProcessing \
+        -export:JLI_PreprocessArg \
+        -export:JLI_GetAppArgIndex \
         advapi32.lib \
         comctl32.lib \
         user32.lib, \

@@ -170,8 +170,8 @@ final class PlainClient implements SaslClient {
     /**
      * Retrieves the negotiated property.
      * This method can be called only after the authentication exchange has
-     * completed (i.e., when <tt>isComplete()</tt> returns true); otherwise, a
-     * <tt>SaslException</tt> is thrown.
+     * completed (i.e., when {@code isComplete()} returns true); otherwise, a
+     * {@code SaslException} is thrown.
      *
      * @return value of property; only QOP is applicable to PLAIN.
      * @exception IllegalStateException if this authentication exchange

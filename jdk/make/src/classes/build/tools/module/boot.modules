@@ -19,7 +19,6 @@ java.xml.crypto
 jdk.charsets
 jdk.deploy
 jdk.deploy.osx
-jdk.hprof.agent
 jdk.httpserver
 jdk.jfr
 jdk.management

@@ -33,8 +33,8 @@ import java.io.PrintWriter;
 /**
  * Indicates an exceptional condition thrown by a {@link KeySelector}.
  *
- * <p>A <code>KeySelectorException</code> can contain a cause: another
- * throwable that caused this <code>KeySelectorException</code> to get thrown.
+ * <p>A {@code KeySelectorException} can contain a cause: another
+ * throwable that caused this {@code KeySelectorException} to get thrown.
  *
  * @author Sean Mullan
  * @author JSR 105 Expert Group
@@ -46,7 +46,7 @@ public class KeySelectorException extends Exception {
 
     /**
      * The throwable that caused this exception to get thrown, or
-     * <code>null</code> if this exception was not caused by another throwable
+     * {@code null} if this exception was not caused by another throwable
      * or if the causative throwable is unknown.
      *
      * @serial
@@ -54,15 +54,15 @@ public class KeySelectorException extends Exception {
     private Throwable cause;
 
     /**
-     * Constructs a new <code>KeySelectorException</code> with
-     * <code>null</code> as its detail message.
+     * Constructs a new {@code KeySelectorException} with
+     * {@code null} as its detail message.
      */
     public KeySelectorException() {
         super();
     }
 
     /**
-     * Constructs a new <code>KeySelectorException</code> with the specified
+     * Constructs a new {@code KeySelectorException} with the specified
      * detail message.
      *
      * @param message the detail message
@@ -72,14 +72,14 @@ public class KeySelectorException extends Exception {
     }
 
     /**
-     * Constructs a new <code>KeySelectorException</code> with the
+     * Constructs a new {@code KeySelectorException} with the
      * specified detail message and cause.
      * <p>Note that the detail message associated with
-     * <code>cause</code> is <i>not</i> automatically incorporated in
+     * {@code cause} is <i>not</i> automatically incorporated in
      * this exception's detail message.
      *
      * @param message the detail message
-     * @param cause the cause (A <tt>null</tt> value is permitted, and
+     * @param cause the cause (A {@code null} value is permitted, and
      *        indicates that the cause is nonexistent or unknown.)
      */
     public KeySelectorException(String message, Throwable cause) {
@@ -88,13 +88,13 @@ public class KeySelectorException extends Exception {
     }
 
     /**
-     * Constructs a new <code>KeySelectorException</code> with the specified
+     * Constructs a new {@code KeySelectorException} with the specified
      * cause and a detail message of
-     * <code>(cause==null ? null : cause.toString())</code>
+     * {@code (cause==null ? null : cause.toString())}
      * (which typically contains the class and detail message of
-     * <code>cause</code>).
+     * {@code cause}).
      *
-     * @param cause the cause (A <tt>null</tt> value is permitted, and
+     * @param cause the cause (A {@code null} value is permitted, and
      *        indicates that the cause is nonexistent or unknown.)
      */
     public KeySelectorException(Throwable cause) {
@@ -103,20 +103,20 @@ public class KeySelectorException extends Exception {
     }
 
     /**
-     * Returns the cause of this <code>KeySelectorException</code> or
-     * <code>null</code> if the cause is nonexistent or unknown.  (The
+     * Returns the cause of this {@code KeySelectorException} or
+     * {@code null} if the cause is nonexistent or unknown.  (The
      * cause is the throwable that caused this
-     * <code>KeySelectorException</code> to get thrown.)
+     * {@code KeySelectorException} to get thrown.)
      *
-     * @return the cause of this <code>KeySelectorException</code> or
-     *         <code>null</code> if the cause is nonexistent or unknown.
+     * @return the cause of this {@code KeySelectorException} or
+     *         {@code null} if the cause is nonexistent or unknown.
      */
     public Throwable getCause() {
         return cause;
     }
 
     /**
-     * Prints this <code>KeySelectorException</code>, its backtrace and
+     * Prints this {@code KeySelectorException}, its backtrace and
      * the cause's backtrace to the standard error stream.
      */
     public void printStackTrace() {
@@ -125,10 +125,10 @@ public class KeySelectorException extends Exception {
     }
 
     /**
-     * Prints this <code>KeySelectorException</code>, its backtrace and
+     * Prints this {@code KeySelectorException}, its backtrace and
      * the cause's backtrace to the specified print stream.
      *
-     * @param s <code>PrintStream</code> to use for output
+     * @param s {@code PrintStream} to use for output
      */
     public void printStackTrace(PrintStream s) {
         super.printStackTrace(s);
@@ -136,10 +136,10 @@ public class KeySelectorException extends Exception {
     }
 
     /**
-     * Prints this <code>KeySelectorException</code>, its backtrace and
+     * Prints this {@code KeySelectorException}, its backtrace and
      * the cause's backtrace to the specified print writer.
      *
-     * @param s <code>PrintWriter</code> to use for output
+     * @param s {@code PrintWriter} to use for output
      */
     public void printStackTrace(PrintWriter s) {
         super.printStackTrace(s);

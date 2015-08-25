@@ -24,10 +24,16 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
+#include "gc/g1/heapRegion.inline.hpp"
 
 bool G1CollectedHeap::copy_allocation_context_stats(const jint* contexts,
                                                     jlong* totals,
                                                     jbyte* accuracy,
                                                     jint len) {
   return false;
+}
+
+HeapRegion* G1CollectedHeap::new_heap_region(uint hrs_index,
+                                             MemRegion mr) {
+  return new HeapRegion(hrs_index, bot_shared(), mr);
 }
