@@ -353,20 +353,20 @@ class NativeRSASignature extends SignatureSpi {
 
     /**
      * calls ucrypto_sign_update(...) or ucrypto_verify_update(...)
-     * @returns an error status code (0 means SUCCESS)
+     * @return an error status code (0 means SUCCESS)
      */
     private native static int nativeUpdate(long pContext, boolean sign,
                                            byte[] in, int inOfs, int inLen);
     /**
      * calls ucrypto_sign_update(...) or ucrypto_verify_update(...)
-     * @returns an error status code (0 means SUCCESS)
+     * @return an error status code (0 means SUCCESS)
      */
     private native static int nativeUpdate(long pContext, boolean sign,
                                            long pIn, int inLen);
 
     /**
      * calls ucrypto_sign_final(...) or ucrypto_verify_final(...)
-     * @returns the length of signature bytes or verification status.
+     * @return the length of signature bytes or verification status.
      * If negative, it indicates an error status code
      */
     private native static int nativeFinal(long pContext, boolean sign,

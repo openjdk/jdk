@@ -474,7 +474,7 @@ class NativeCipher extends CipherSpi {
 
     /**
      * calls ucrypto_encrypt_update(...) or ucrypto_decrypt_update(...)
-     * @returns the length of output or if negative, an error status code
+     * @return the length of output or if negative, an error status code
      */
     private native static int nativeUpdate(long pContext, boolean encrypt,
                                            byte[] in, int inOfs, int inLen,
@@ -482,7 +482,7 @@ class NativeCipher extends CipherSpi {
 
     /**
      * calls ucrypto_encrypt_final(...) or ucrypto_decrypt_final(...)
-     * @returns the length of output or if negative, an error status code
+     * @return the length of output or if negative, an error status code
      */
     native static int nativeFinal(long pContext, boolean encrypt,
                                           byte[] out, int outOfs);

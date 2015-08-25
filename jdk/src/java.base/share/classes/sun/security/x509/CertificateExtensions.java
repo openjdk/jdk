@@ -289,8 +289,8 @@ public class CertificateExtensions implements CertAttrSet<Extension> {
 
     /**
      * Compares this CertificateExtensions for equality with the specified
-     * object. If the <code>other</code> object is an
-     * <code>instanceof</code> <code>CertificateExtensions</code>, then
+     * object. If the {@code other} object is an
+     * {@code instanceof} {@code CertificateExtensions}, then
      * all the entries are compared with the entries from this.
      *
      * @param other the object to test for equality with this
@@ -339,10 +339,10 @@ public class CertificateExtensions implements CertAttrSet<Extension> {
     }
 
     /**
-     * Returns a string representation of this <tt>CertificateExtensions</tt>
+     * Returns a string representation of this {@code CertificateExtensions}
      * object in the form of a set of entries, enclosed in braces and separated
-     * by the ASCII characters "<tt>,&nbsp;</tt>" (comma and space).
-     * <p>Overrides to <tt>toString</tt> method of <tt>Object</tt>.
+     * by the ASCII characters "<code>,&nbsp;</code>" (comma and space).
+     * <p>Overrides to {@code toString} method of {@code Object}.
      *
      * @return  a string representation of this CertificateExtensions.
      */

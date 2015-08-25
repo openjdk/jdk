@@ -39,8 +39,8 @@ import javax.xml.crypto.dsig.keyinfo.KeyInfoFactory;
  * This exception is thrown when a particular XML mechanism is requested but
  * is not available in the environment.
  *
- * <p>A <code>NoSuchMechanismException</code> can contain a cause: another
- * throwable that caused this <code>NoSuchMechanismException</code> to get
+ * <p>A {@code NoSuchMechanismException} can contain a cause: another
+ * throwable that caused this {@code NoSuchMechanismException} to get
  * thrown.
  *
  * @author Sean Mullan
@@ -63,15 +63,15 @@ public class NoSuchMechanismException extends RuntimeException {
     private Throwable cause;
 
     /**
-     * Constructs a new <code>NoSuchMechanismException</code> with
-     * <code>null</code> as its detail message.
+     * Constructs a new {@code NoSuchMechanismException} with
+     * {@code null} as its detail message.
      */
     public NoSuchMechanismException() {
         super();
     }
 
     /**
-     * Constructs a new <code>NoSuchMechanismException</code> with the
+     * Constructs a new {@code NoSuchMechanismException} with the
      * specified detail message.
      *
      * @param message the detail message
@@ -81,14 +81,14 @@ public class NoSuchMechanismException extends RuntimeException {
     }
 
     /**
-     * Constructs a new <code>NoSuchMechanismException</code> with the
+     * Constructs a new {@code NoSuchMechanismException} with the
      * specified detail message and cause.
      * <p>Note that the detail message associated with
-     * <code>cause</code> is <i>not</i> automatically incorporated in
+     * {@code cause} is <i>not</i> automatically incorporated in
      * this exception's detail message.
      *
      * @param message the detail message
-     * @param cause the cause (A <tt>null</tt> value is permitted, and
+     * @param cause the cause (A {@code null} value is permitted, and
      *        indicates that the cause is nonexistent or unknown.)
      */
     public NoSuchMechanismException(String message, Throwable cause) {
@@ -97,12 +97,12 @@ public class NoSuchMechanismException extends RuntimeException {
     }
 
     /**
-     * Constructs a new <code>NoSuchMechanismException</code> with the
+     * Constructs a new {@code NoSuchMechanismException} with the
      * specified cause and a detail message of
-     * <code>(cause==null ? null : cause.toString())</code> (which typically
-     * contains the class and detail message of <code>cause</code>).
+     * {@code (cause==null ? null : cause.toString())} (which typically
+     * contains the class and detail message of {@code cause}).
      *
-     * @param cause the cause (A <tt>null</tt> value is permitted, and
+     * @param cause the cause (A {@code null} value is permitted, and
      *        indicates that the cause is nonexistent or unknown.)
      */
     public NoSuchMechanismException(Throwable cause) {
@@ -111,20 +111,20 @@ public class NoSuchMechanismException extends RuntimeException {
     }
 
     /**
-     * Returns the cause of this <code>NoSuchMechanismException</code> or
-     * <code>null</code> if the cause is nonexistent or unknown.  (The
+     * Returns the cause of this {@code NoSuchMechanismException} or
+     * {@code null} if the cause is nonexistent or unknown.  (The
      * cause is the throwable that caused this
-     * <code>NoSuchMechanismException</code> to get thrown.)
+     * {@code NoSuchMechanismException} to get thrown.)
      *
-     * @return the cause of this <code>NoSuchMechanismException</code> or
-     *         <code>null</code> if the cause is nonexistent or unknown.
+     * @return the cause of this {@code NoSuchMechanismException} or
+     *         {@code null} if the cause is nonexistent or unknown.
      */
     public Throwable getCause() {
         return cause;
     }
 
     /**
-     * Prints this <code>NoSuchMechanismException</code>, its backtrace and
+     * Prints this {@code NoSuchMechanismException}, its backtrace and
      * the cause's backtrace to the standard error stream.
      */
     public void printStackTrace() {
@@ -133,10 +133,10 @@ public class NoSuchMechanismException extends RuntimeException {
     }
 
     /**
-     * Prints this <code>NoSuchMechanismException</code>, its backtrace and
+     * Prints this {@code NoSuchMechanismException}, its backtrace and
      * the cause's backtrace to the specified print stream.
      *
-     * @param s <code>PrintStream</code> to use for output
+     * @param s {@code PrintStream} to use for output
      */
     public void printStackTrace(PrintStream s) {
         super.printStackTrace(s);
@@ -144,10 +144,10 @@ public class NoSuchMechanismException extends RuntimeException {
     }
 
     /**
-     * Prints this <code>NoSuchMechanismException</code>, its backtrace and
+     * Prints this {@code NoSuchMechanismException}, its backtrace and
      * the cause's backtrace to the specified print writer.
      *
-     * @param s <code>PrintWriter</code> to use for output
+     * @param s {@code PrintWriter} to use for output
      */
     public void printStackTrace(PrintWriter s) {
         super.printStackTrace(s);
