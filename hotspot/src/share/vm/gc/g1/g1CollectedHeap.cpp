@@ -65,6 +65,7 @@
 #include "memory/iterator.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.inline.hpp"
+#include "runtime/init.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -949,6 +950,7 @@ bool G1CollectedHeap::check_archive_addresses(MemRegion* ranges, size_t count) {
 }
 
 bool G1CollectedHeap::alloc_archive_regions(MemRegion* ranges, size_t count) {
+  assert(!is_init_completed(), "Expect to be called at JVM init time");
   assert(ranges != NULL, "MemRegion array NULL");
   assert(count != 0, "No MemRegions provided");
   MutexLockerEx x(Heap_lock);
@@ -1037,12 +1039,13 @@ bool G1CollectedHeap::alloc_archive_regions(MemRegion* ranges, size_t count) {
     }
 
     // Notify mark-sweep of the archive range.
-    G1MarkSweep::mark_range_archive(curr_range);
+    G1MarkSweep::set_range_archive(curr_range, true);
   }
   return true;
 }
 
 void G1CollectedHeap::fill_archive_regions(MemRegion* ranges, size_t count) {
+  assert(!is_init_completed(), "Expect to be called at JVM init time");
   assert(ranges != NULL, "MemRegion array NULL");
   assert(count != 0, "No MemRegions provided");
   MemRegion reserved = _hrm.reserved();
@@ -1123,6 +1126,81 @@ inline HeapWord* G1CollectedHeap::attempt_allocation(size_t word_size,
     dirty_young_block(result, word_size);
   }
   return result;
+}
+
+void G1CollectedHeap::dealloc_archive_regions(MemRegion* ranges, size_t count) {
+  assert(!is_init_completed(), "Expect to be called at JVM init time");
+  assert(ranges != NULL, "MemRegion array NULL");
+  assert(count != 0, "No MemRegions provided");
+  MemRegion reserved = _hrm.reserved();
+  HeapWord* prev_last_addr = NULL;
+  HeapRegion* prev_last_region = NULL;
+  size_t size_used = 0;
+  size_t uncommitted_regions = 0;
+
+  // For each Memregion, free the G1 regions that constitute it, and
+  // notify mark-sweep that the range is no longer to be considered 'archive.'
+  MutexLockerEx x(Heap_lock);
+  for (size_t i = 0; i < count; i++) {
+    HeapWord* start_address = ranges[i].start();
+    HeapWord* last_address = ranges[i].last();
+
+    assert(reserved.contains(start_address) && reserved.contains(last_address),
+           err_msg("MemRegion outside of heap [" PTR_FORMAT ", " PTR_FORMAT "]",
+                   p2i(start_address), p2i(last_address)));
+    assert(start_address > prev_last_addr,
+           err_msg("Ranges not in ascending order: " PTR_FORMAT " <= " PTR_FORMAT ,
+                   p2i(start_address), p2i(prev_last_addr)));
+    size_used += ranges[i].byte_size();
+    prev_last_addr = last_address;
+
+    HeapRegion* start_region = _hrm.addr_to_region(start_address);
+    HeapRegion* last_region = _hrm.addr_to_region(last_address);
+
+    // Check for ranges that start in the same G1 region in which the previous
+    // range ended, and adjust the start address so we don't try to free
+    // the same region again. If the current range is entirely within that
+    // region, skip it.
+    if (start_region == prev_last_region) {
+      start_address = start_region->end();
+      if (start_address > last_address) {
+        continue;
+      }
+      start_region = _hrm.addr_to_region(start_address);
+    }
+    prev_last_region = last_region;
+
+    // After verifying that each region was marked as an archive region by
+    // alloc_archive_regions, set it free and empty and uncommit it.
+    HeapRegion* curr_region = start_region;
+    while (curr_region != NULL) {
+      guarantee(curr_region->is_archive(),
+                err_msg("Expected archive region at index %u", curr_region->hrm_index()));
+      uint curr_index = curr_region->hrm_index();
+      _old_set.remove(curr_region);
+      curr_region->set_free();
+      curr_region->set_top(curr_region->bottom());
+      if (curr_region != last_region) {
+        curr_region = _hrm.next_region_in_heap(curr_region);
+      } else {
+        curr_region = NULL;
+      }
+      _hrm.shrink_at(curr_index, 1);
+      uncommitted_regions++;
+    }
+
+    // Notify mark-sweep that this is no longer an archive range.
+    G1MarkSweep::set_range_archive(ranges[i], false);
+  }
+
+  if (uncommitted_regions != 0) {
+    ergo_verbose1(ErgoHeapSizing,
+                  "attempt heap shrinking",
+                  ergo_format_reason("uncommitted archive regions")
+                  ergo_format_byte("total size"),
+                  HeapRegion::GrainWords * HeapWordSize * uncommitted_regions);
+  }
+  decrease_used(size_used);
 }
 
 HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size,
