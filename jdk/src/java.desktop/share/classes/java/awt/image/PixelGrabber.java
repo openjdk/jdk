@@ -99,7 +99,7 @@ public class PixelGrabber implements ImageConsumer {
      * The pixels are stored into the array in the default RGB ColorModel.
      * The RGB data for pixel (i, j) where (i, j) is inside the rectangle
      * (x, y, w, h) is stored in the array at
-     * <tt>pix[(j - y) * scansize + (i - x) + off]</tt>.
+     * {@code pix[(j - y) * scansize + (i - x) + off]}.
      * @see ColorModel#getRGBdefault
      * @param img the image to retrieve pixels from
      * @param x the x coordinate of the upper left corner of the rectangle
@@ -127,8 +127,8 @@ public class PixelGrabber implements ImageConsumer {
      * The pixels are stored into the array in the default RGB ColorModel.
      * The RGB data for pixel (i, j) where (i, j) is inside the rectangle
      * (x, y, w, h) is stored in the array at
-     * <tt>pix[(j - y) * scansize + (i - x) + off]</tt>.
-     * @param ip the <code>ImageProducer</code> that produces the
+     * {@code pix[(j - y) * scansize + (i - x) + off]}.
+     * @param ip the {@code ImageProducer} that produces the
      * image from which to retrieve pixels
      * @param x the x coordinate of the upper left corner of the rectangle
      * of pixels to retrieve from the image, relative to the default
@@ -231,13 +231,13 @@ public class PixelGrabber implements ImageConsumer {
      * wait for all of the pixels in the rectangle of interest to be
      * delivered or until the specified timeout has elapsed.  This method
      * behaves in the following ways, depending on the value of
-     * <code>ms</code>:
+     * {@code ms}:
      * <ul>
      * <li> If {@code ms == 0}, waits until all pixels are delivered
      * <li> If {@code ms > 0}, waits until all pixels are delivered
      * as timeout expires.
-     * <li> If {@code ms < 0}, returns <code>true</code> if all pixels
-     * are grabbed, <code>false</code> otherwise and does not wait.
+     * <li> If {@code ms < 0}, returns {@code true} if all pixels
+     * are grabbed, {@code false} otherwise and does not wait.
      * </ul>
      * @param ms the number of milliseconds to wait for the image pixels
      * to arrive before timing out
@@ -420,7 +420,7 @@ public class PixelGrabber implements ImageConsumer {
      * this class to retrieve pixels from an image should avoid calling
      * this method directly since that operation could result in problems
      * with retrieving the requested pixels.
-     * @param model the specified <code>ColorModel</code>
+     * @param model the specified {@code ColorModel}
      * @see #getColorModel
      */
     public void setColorModel(ColorModel model) {
@@ -461,7 +461,7 @@ public class PixelGrabber implements ImageConsumer {
      *        of the area of pixels to be set
      * @param srcW the width of the area of pixels
      * @param srcH the height of the area of pixels
-     * @param model the specified <code>ColorModel</code>
+     * @param model the specified {@code ColorModel}
      * @param pixels the array of pixels
      * @param srcOff the offset into the pixels array
      * @param srcScan the distance from one row of pixels to the next
@@ -548,7 +548,7 @@ public class PixelGrabber implements ImageConsumer {
      *        of the area of pixels to be set
      * @param srcW the width of the area of pixels
      * @param srcH the height of the area of pixels
-     * @param model the specified <code>ColorModel</code>
+     * @param model the specified {@code ColorModel}
      * @param pixels the array of pixels
      * @param srcOff the offset into the pixels array
      * @param srcScan the distance from one row of pixels to the next
@@ -658,7 +658,7 @@ public class PixelGrabber implements ImageConsumer {
      * Returns the status of the pixels.  The ImageObserver flags
      * representing the available pixel information are returned.
      * This method and {@link #getStatus() getStatus} have the
-     * same implementation, but <code>getStatus</code> is the
+     * same implementation, but {@code getStatus} is the
      * preferred method because it conforms to the convention of
      * naming information-retrieval methods with the form
      * "getXXX".

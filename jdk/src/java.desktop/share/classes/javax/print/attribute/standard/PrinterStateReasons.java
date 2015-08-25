@@ -72,10 +72,10 @@ import javax.print.attribute.PrintServiceAttribute;
  * <P>
  * <B>IPP Compatibility:</B> The string values returned by each individual
  * {@link PrinterStateReason PrinterStateReason} object's and the associated
- * {@link Severity Severity} object's <CODE>toString()</CODE> methods,
+ * {@link Severity Severity} object's {@code toString()} methods,
  * concatenated
- * together with a hyphen (<CODE>"-"</CODE>) in between, gives the IPP keyword
- * value. The category name returned by <CODE>getName()</CODE> gives the IPP
+ * together with a hyphen ({@code "-"}) in between, gives the IPP keyword
+ * value. The category name returned by {@code getName()} gives the IPP
  * attribute name.
  *
  * @author  Alan Kaminsky
@@ -133,12 +133,12 @@ public final class PrinterStateReasons
      * @param  map  Map to copy.
      *
      * @exception  NullPointerException
-     *     (unchecked exception) Thrown if <CODE>map</CODE> is null or if any
-     *     key or value in <CODE>map</CODE> is null.
+     *     (unchecked exception) Thrown if {@code map} is null or if any
+     *     key or value in {@code map} is null.
      * @throws  ClassCastException
-     *     (unchecked exception) Thrown if any key in <CODE>map</CODE> is not
+     *     (unchecked exception) Thrown if any key in {@code map} is not
      *   an instance of class {@link PrinterStateReason PrinterStateReason} or
-     *     if any value in <CODE>map</CODE> is not an instance of class
+     *     if any value in {@code map} is not an instance of class
      *     {@link Severity Severity}.
      */
     public PrinterStateReasons(Map<PrinterStateReason,Severity> map) {
@@ -159,16 +159,16 @@ public final class PrinterStateReasons
      *                      an instance of class {@link Severity Severity}.
      *
      * @return  Previous severity associated with the given printer state
-     *          reason, or <tt>null</tt> if the given printer state reason was
+     *          reason, or {@code null} if the given printer state reason was
      *          not present.
      *
      * @throws  NullPointerException
-     *     (unchecked exception) Thrown if <CODE>reason</CODE> is null or
-     *     <CODE>severity</CODE> is null.
+     *     (unchecked exception) Thrown if {@code reason} is null or
+     *     {@code severity} is null.
      * @throws  ClassCastException
-     *     (unchecked exception) Thrown if <CODE>reason</CODE> is not an
+     *     (unchecked exception) Thrown if {@code reason} is not an
      *   instance of class {@link PrinterStateReason PrinterStateReason} or if
-     *     <CODE>severity</CODE> is not an instance of class {@link Severity
+     *     {@code severity} is not an instance of class {@link Severity
      *     Severity}.
      * @since 1.5
      */
@@ -201,7 +201,7 @@ public final class PrinterStateReasons
      * instance.
      * <P>
      * For class PrinterStateReasons, the
-     * category name is <CODE>"printer-state-reasons"</CODE>.
+     * category name is {@code "printer-state-reasons"}.
      *
      * @return  Attribute category name.
      */
@@ -228,7 +228,7 @@ public final class PrinterStateReasons
      *          Severity} level.
      *
      * @exception  NullPointerException
-     *     (unchecked exception) Thrown if <CODE>severity</CODE> is null.
+     *     (unchecked exception) Thrown if {@code severity} is null.
      */
     public Set<PrinterStateReason> printerStateReasonSet(Severity severity) {
         if (severity == null) {

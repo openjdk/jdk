@@ -23,7 +23,7 @@
  * questions.
  */
 
-package com.sun.java.accessibility.util.java.awt;
+package com.sun.java.accessibility.util.internal;
 
 import java.lang.*;
 import java.util.*;
@@ -49,25 +49,14 @@ import com.sun.java.accessibility.util.*;
  * </PRE>
  *
  * <P>This class extends the Translator class to provide specific support
- * for the Label class.  Translator.getAccessible() will automatically
+ * for the TextComponent class.  Translator.getAccessible() will automatically
  * load this class when an assistive technology asks for an accessible
- * translator for Label.
+ * translator for TextComponent.
  *
  */
-public class LabelTranslator extends Translator {
-
-    public String getAccessibleName() {
-        return ((Label) source).getText();
-    }
-
-    /**
-     * Set the name of this object.
-     */
-    public void setAccessibleName(String s) {
-        ((Label) source).setText(s);
-    }
+public class TextComponentTranslator extends Translator {
 
     public AccessibleRole getAccessibleRole() {
-        return AccessibleRole.LABEL;
+        return AccessibleRole.TEXT;
     }
 }

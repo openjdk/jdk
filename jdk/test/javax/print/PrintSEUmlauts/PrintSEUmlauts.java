@@ -85,7 +85,7 @@ public class PrintSEUmlauts implements Printable {
 
     private static final boolean DEBUG = false;
     private static void testPrintAndExit() {
-        String expected = "<e4> 7.44 100.0 100.0 S";
+        String expected = "<e4>";
         String content = "";
 
         File file = new File("out.ps");

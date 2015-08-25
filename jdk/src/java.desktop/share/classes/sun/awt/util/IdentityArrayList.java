@@ -33,33 +33,33 @@ import java.util.List;
 import java.util.RandomAccess;
 
 /**
- * Resizable-array implementation of the <tt>List</tt> interface.  Implements
+ * Resizable-array implementation of the {@code List} interface.  Implements
  * all optional list operations, and permits all elements, including
- * <tt>null</tt>.  In addition to implementing the <tt>List</tt> interface,
+ * {@code null}.  In addition to implementing the {@code List} interface,
  * this class provides methods to manipulate the size of the array that is
  * used internally to store the list.  (This class is roughly equivalent to
- * <tt>Vector</tt>, except that it is unsynchronized.)<p>
+ * {@code Vector}, except that it is unsynchronized.)<p>
  *
- * The <tt>size</tt>, <tt>isEmpty</tt>, <tt>get</tt>, <tt>set</tt>,
- * <tt>iterator</tt>, and <tt>listIterator</tt> operations run in constant
- * time.  The <tt>add</tt> operation runs in <i>amortized constant time</i>,
+ * The {@code size}, {@code isEmpty}, {@code get}, {@code set},
+ * {@code iterator}, and {@code listIterator} operations run in constant
+ * time.  The {@code add} operation runs in <i>amortized constant time</i>,
  * that is, adding n elements requires O(n) time.  All of the other operations
  * run in linear time (roughly speaking).  The constant factor is low compared
- * to that for the <tt>LinkedList</tt> implementation.<p>
+ * to that for the {@code LinkedList} implementation.<p>
  *
- * Each <tt>IdentityArrayList</tt> instance has a <i>capacity</i>.  The capacity is
+ * Each {@code IdentityArrayList} instance has a <i>capacity</i>.  The capacity is
  * the size of the array used to store the elements in the list.  It is always
  * at least as large as the list size.  As elements are added to an IdentityArrayList,
  * its capacity grows automatically.  The details of the growth policy are not
  * specified beyond the fact that adding an element has constant amortized
  * time cost.<p>
  *
- * An application can increase the capacity of an <tt>IdentityArrayList</tt> instance
- * before adding a large number of elements using the <tt>ensureCapacity</tt>
+ * An application can increase the capacity of an {@code IdentityArrayList} instance
+ * before adding a large number of elements using the {@code ensureCapacity}
  * operation.  This may reduce the amount of incremental reallocation.
  *
  * <p><strong>Note that this implementation is not synchronized.</strong>
- * If multiple threads access an <tt>IdentityArrayList</tt> instance concurrently,
+ * If multiple threads access an {@code IdentityArrayList} instance concurrently,
  * and at least one of the threads modifies the list structurally, it
  * <i>must</i> be synchronized externally.  (A structural modification is
  * any operation that adds or deletes one or more elements, or explicitly
@@ -73,10 +73,10 @@ import java.util.RandomAccess;
  * unsynchronized access to the list:<pre>
  *   List list = Collections.synchronizedList(new IdentityArrayList(...));</pre>
  *
- * <p>The iterators returned by this class's <tt>iterator</tt> and
- * <tt>listIterator</tt> methods are <i>fail-fast</i>: if the list is
+ * <p>The iterators returned by this class's {@code iterator} and
+ * {@code listIterator} methods are <i>fail-fast</i>: if the list is
  * structurally modified at any time after the iterator is created, in any way
- * except through the iterator's own <tt>remove</tt> or <tt>add</tt> methods,
+ * except through the iterator's own {@code remove} or {@code add} methods,
  * the iterator will throw a {@link ConcurrentModificationException}.  Thus, in
  * the face of concurrent modification, the iterator fails quickly and cleanly,
  * rather than risking arbitrary, non-deterministic behavior at an undetermined
@@ -85,7 +85,7 @@ import java.util.RandomAccess;
  * Note that the fail-fast behavior of an iterator cannot be guaranteed
  * as it is, generally speaking, impossible to make any hard guarantees in the
  * presence of unsynchronized concurrent modification.  Fail-fast iterators
- * throw <tt>ConcurrentModificationException</tt> on a best-effort basis.
+ * throw {@code ConcurrentModificationException} on a best-effort basis.
  * Therefore, it would be wrong to write a program that depended on this
  * exception for its correctness: <i>the fail-fast behavior of iterators
  * should be used only to detect bugs.</i><p>
@@ -149,9 +149,9 @@ public class IdentityArrayList<E> extends AbstractList<E>
     }
 
     /**
-     * Trims the capacity of this <tt>IdentityArrayList</tt> instance to be the
+     * Trims the capacity of this {@code IdentityArrayList} instance to be the
      * list's current size.  An application can use this operation to minimize
-     * the storage of an <tt>IdentityArrayList</tt> instance.
+     * the storage of an {@code IdentityArrayList} instance.
      */
     public void trimToSize() {
         modCount++;
@@ -162,7 +162,7 @@ public class IdentityArrayList<E> extends AbstractList<E>
     }
 
     /**
-     * Increases the capacity of this <tt>IdentityArrayList</tt> instance, if
+     * Increases the capacity of this {@code IdentityArrayList} instance, if
      * necessary, to ensure that it can hold at least the number of elements
      * specified by the minimum capacity argument.
      *
@@ -191,22 +191,22 @@ public class IdentityArrayList<E> extends AbstractList<E>
     }
 
     /**
-     * Returns <tt>true</tt> if this list contains no elements.
+     * Returns {@code true} if this list contains no elements.
      *
-     * @return <tt>true</tt> if this list contains no elements
+     * @return {@code true} if this list contains no elements
      */
     public boolean isEmpty() {
         return size == 0;
     }
 
     /**
-     * Returns <tt>true</tt> if this list contains the specified element.
-     * More formally, returns <tt>true</tt> if and only if this list contains
-     * at least one element <tt>e</tt> such that
-     * <tt>(o==null&nbsp;?&nbsp;e==null&nbsp;:&nbsp;o == e)</tt>.
+     * Returns {@code true} if this list contains the specified element.
+     * More formally, returns {@code true} if and only if this list contains
+     * at least one element {@code e} such that
+     * {@code Objects.equals(o, e)}.
      *
      * @param o element whose presence in this list is to be tested
-     * @return <tt>true</tt> if this list contains the specified element
+     * @return {@code true} if this list contains the specified element
      */
     public boolean contains(Object o) {
         return indexOf(o) >= 0;
@@ -215,8 +215,8 @@ public class IdentityArrayList<E> extends AbstractList<E>
     /**
      * Returns the index of the first occurrence of the specified element
      * in this list, or -1 if this list does not contain the element.
-     * More formally, returns the lowest index <tt>i</tt> such that
-     * <tt>(o==null&nbsp;?&nbsp;get(i)==null&nbsp;:&nbsp;o == get(i))</tt>,
+     * More formally, returns the lowest index {@code i} such that
+     * {@code Objects.equals(o, get(i))},
      * or -1 if there is no such index.
      */
     public int indexOf(Object o) {
@@ -231,8 +231,8 @@ public class IdentityArrayList<E> extends AbstractList<E>
     /**
      * Returns the index of the last occurrence of the specified element
      * in this list, or -1 if this list does not contain the element.
-     * More formally, returns the highest index <tt>i</tt> such that
-     * <tt>(o==null&nbsp;?&nbsp;get(i)==null&nbsp;:&nbsp;o == get(i))</tt>,
+     * More formally, returns the highest index {@code i} such that
+     * {@code Objects.equals(o, get(i))},
      * or -1 if there is no such index.
      */
     public int lastIndexOf(Object o) {
@@ -273,7 +273,7 @@ public class IdentityArrayList<E> extends AbstractList<E>
      * <p>If the list fits in the specified array with room to spare
      * (i.e., the array has more elements than the list), the element in
      * the array immediately following the end of the collection is set to
-     * <tt>null</tt>.  (This is useful in determining the length of the
+     * {@code null}.  (This is useful in determining the length of the
      * list <i>only</i> if the caller knows that the list does not contain
      * any null elements.)
      *
@@ -336,7 +336,7 @@ public class IdentityArrayList<E> extends AbstractList<E>
      * Appends the specified element to the end of this list.
      *
      * @param e element to be appended to this list
-     * @return <tt>true</tt> (as specified by {@link Collection#add})
+     * @return {@code true} (as specified by {@link Collection#add})
      */
     public boolean add(E e) {
         ensureCapacity(size + 1);  // Increments modCount!!
@@ -392,14 +392,13 @@ public class IdentityArrayList<E> extends AbstractList<E>
      * Removes the first occurrence of the specified element from this list,
      * if it is present.  If the list does not contain the element, it is
      * unchanged.  More formally, removes the element with the lowest index
-     * <tt>i</tt> such that
-     * <tt>(o==null&nbsp;?&nbsp;get(i)==null&nbsp;:&nbsp;o == get(i))</tt>
-     * (if such an element exists).  Returns <tt>true</tt> if this list
+     * {@code i} such that {@code Objects.equals(o, get(i))}
+     * (if such an element exists).  Returns {@code true} if this list
      * contained the specified element (or equivalently, if this list
      * changed as a result of the call).
      *
      * @param o element to be removed from this list, if present
-     * @return <tt>true</tt> if this list contained the specified element
+     * @return {@code true} if this list contained the specified element
      */
     public boolean remove(Object o) {
         for (int index = 0; index < size; index++) {
@@ -448,7 +447,7 @@ public class IdentityArrayList<E> extends AbstractList<E>
      * list is nonempty.)
      *
      * @param c collection containing elements to be added to this list
-     * @return <tt>true</tt> if this list changed as a result of the call
+     * @return {@code true} if this list changed as a result of the call
      * @throws NullPointerException if the specified collection is null
      */
     public boolean addAll(Collection<? extends E> c) {
@@ -471,7 +470,7 @@ public class IdentityArrayList<E> extends AbstractList<E>
      * @param index index at which to insert the first element from the
      *              specified collection
      * @param c collection containing elements to be added to this list
-     * @return <tt>true</tt> if this list changed as a result of the call
+     * @return {@code true} if this list changed as a result of the call
      * @throws IndexOutOfBoundsException {@inheritDoc}
      * @throws NullPointerException if the specified collection is null
      */
@@ -494,10 +493,10 @@ public class IdentityArrayList<E> extends AbstractList<E>
 
     /**
      * Removes from this list all of the elements whose index is between
-     * <tt>fromIndex</tt>, inclusive, and <tt>toIndex</tt>, exclusive.
+     * {@code fromIndex}, inclusive, and {@code toIndex}, exclusive.
      * Shifts any succeeding elements to the left (reduces their index).
-     * This call shortens the list by <tt>(toIndex - fromIndex)</tt> elements.
-     * (If <tt>toIndex==fromIndex</tt>, this operation has no effect.)
+     * This call shortens the list by {@code (toIndex - fromIndex)} elements.
+     * (If {@code toIndex==fromIndex}, this operation has no effect.)
      *
      * @param fromIndex index of first element to be removed
      * @param toIndex index after last element to be removed
