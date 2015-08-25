@@ -326,16 +326,16 @@ public class RescaleOp implements BufferedImageOp, RasterOp {
     public final BufferedImage filter (BufferedImage src, BufferedImage dst) {
         ColorModel srcCM = src.getColorModel();
         ColorModel dstCM;
-        int numBands = srcCM.getNumColorComponents();
-
+        int numSrcColorComp = srcCM.getNumColorComponents();
+        int scaleConst = length;
 
         if (srcCM instanceof IndexColorModel) {
             throw new
                 IllegalArgumentException("Rescaling cannot be "+
                                          "performed on an indexed image");
         }
-        if (length != 1 && length != numBands &&
-            length != srcCM.getNumComponents())
+        if (scaleConst != 1 && scaleConst != numSrcColorComp &&
+            scaleConst != srcCM.getNumComponents())
         {
             throw new IllegalArgumentException("Number of scaling constants "+
                                                "does not equal the number of"+
@@ -346,13 +346,14 @@ public class RescaleOp implements BufferedImageOp, RasterOp {
         boolean needToConvert = false;
 
         // Include alpha
-        if (length > numBands && srcCM.hasAlpha()) {
-            length = numBands+1;
+        if (scaleConst > numSrcColorComp && srcCM.hasAlpha()) {
+            scaleConst = numSrcColorComp+1;
         }
 
         int width = src.getWidth();
         int height = src.getHeight();
 
+        BufferedImage origDst = dst;
         if (dst == null) {
             dst = createCompatibleDestImage(src, null);
             dstCM = srcCM;
@@ -380,7 +381,19 @@ public class RescaleOp implements BufferedImageOp, RasterOp {
 
         }
 
-        BufferedImage origDst = dst;
+        boolean scaleAlpha = true;
+
+        //
+        // The number of sets of scaling constants may be one,
+        // in which case the same constants are applied to all color
+        // (but NOT alpha) components. Otherwise, the number of sets
+        // of scaling constants may equal the number of Source color
+        // components, in which case NO rescaling of the alpha component
+        // (if present) is performed.
+        //
+        if (numSrcColorComp == scaleConst || scaleConst == 1) {
+            scaleAlpha = false;
+        }
 
         //
         // Try to use a native BI rescale operation first
@@ -392,12 +405,13 @@ public class RescaleOp implements BufferedImageOp, RasterOp {
             WritableRaster srcRaster = src.getRaster();
             WritableRaster dstRaster = dst.getRaster();
 
-            if (srcCM.hasAlpha()) {
-                if (numBands-1 == length || length == 1) {
+            if (!scaleAlpha) {
+                if (srcCM.hasAlpha()) {
+                    // Do not rescale Alpha component
                     int minx = srcRaster.getMinX();
                     int miny = srcRaster.getMinY();
-                    int[] bands = new int[numBands-1];
-                    for (int i=0; i < numBands-1; i++) {
+                    int[] bands = new int[numSrcColorComp];
+                    for (int i=0; i < numSrcColorComp; i++) {
                         bands[i] = i;
                     }
                     srcRaster =
@@ -407,14 +421,11 @@ public class RescaleOp implements BufferedImageOp, RasterOp {
                                                       minx, miny,
                                                       bands);
                 }
-            }
-            if (dstCM.hasAlpha()) {
-                int dstNumBands = dstRaster.getNumBands();
-                if (dstNumBands-1 == length || length == 1) {
+                if (dstCM.hasAlpha()) {
                     int minx = dstRaster.getMinX();
                     int miny = dstRaster.getMinY();
-                    int[] bands = new int[numBands-1];
-                    for (int i=0; i < numBands-1; i++) {
+                    int[] bands = new int[numSrcColorComp];
+                    for (int i=0; i < numSrcColorComp; i++) {
                         bands[i] = i;
                     }
                     dstRaster =
@@ -429,17 +440,42 @@ public class RescaleOp implements BufferedImageOp, RasterOp {
             //
             // Call the raster filter method
             //
-            filter(srcRaster, dstRaster);
+            filterRasterImpl(srcRaster, dstRaster, scaleConst);
 
+            //
+            // here copy the unscaled src alpha to destination alpha channel
+            //
+            if (!scaleAlpha) {
+                Raster srcAlphaRaster = null;
+                WritableRaster dstAlphaRaster = null;
+
+                if (srcCM.hasAlpha()) {
+                    srcAlphaRaster = src.getAlphaRaster();
+                }
+                if (dstCM.hasAlpha()) {
+                    dstAlphaRaster = dst.getAlphaRaster();
+                    if (srcAlphaRaster != null) {
+                        dstAlphaRaster.setRect(srcAlphaRaster);
+                    } else {
+                        int alpha = 0xff << 24;
+                        for (int cy=0; cy < dst.getHeight(); cy++) {
+                            for (int cx=0; cx < dst.getWidth(); cx++) {
+                                int color = dst.getRGB(cx, cy);
+
+                                dst.setRGB(cx, cy, color | alpha);
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         if (needToConvert) {
             // ColorModels are not the same
             ColorConvertOp ccop = new ColorConvertOp(hints);
-            ccop.filter(dst, origDst);
+            dst = ccop.filter(dst, origDst);
         }
-
-        return origDst;
+        return dst;
     }
 
     /**
@@ -461,6 +497,10 @@ public class RescaleOp implements BufferedImageOp, RasterOp {
      *         stated in the class comments.
      */
     public final WritableRaster filter (Raster src, WritableRaster dst)  {
+        return filterRasterImpl(src, dst, length);
+    }
+
+    private WritableRaster filterRasterImpl(Raster src, WritableRaster dst, int scaleConst) {
         int numBands = src.getNumBands();
         int width  = src.getWidth();
         int height = src.getHeight();
@@ -484,14 +524,14 @@ public class RescaleOp implements BufferedImageOp, RasterOp {
                             + " does not equal number of bands in dest "
                             + dst.getNumBands());
         }
+
         // Make sure that the arrays match
         // Make sure that the low/high/constant arrays match
-        if (length != 1 && length != src.getNumBands()) {
+        if (scaleConst != 1 && scaleConst != src.getNumBands()) {
             throw new IllegalArgumentException("Number of scaling constants "+
                                                "does not equal the number of"+
                                                " of bands in the src raster");
         }
-
 
         //
         // Try for a native raster rescale first
@@ -523,7 +563,7 @@ public class RescaleOp implements BufferedImageOp, RasterOp {
             //
             // Fall back to the slow code
             //
-            if (length > 1) {
+            if (scaleConst > 1) {
                 step = 1;
             }
 

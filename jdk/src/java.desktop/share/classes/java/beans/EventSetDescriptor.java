@@ -54,16 +54,16 @@ public class EventSetDescriptor extends FeatureDescriptor {
     private boolean inDefaultEventSet = true;
 
     /**
-     * Creates an <TT>EventSetDescriptor</TT> assuming that you are
+     * Creates an {@code EventSetDescriptor} assuming that you are
      * following the most simple standard design pattern where a named
-     * event &quot;fred&quot; is (1) delivered as a call on the single method of
+     * event "fred" is (1) delivered as a call on the single method of
      * interface FredListener, (2) has a single argument of type FredEvent,
      * and (3) where the FredListener may be registered with a call on an
      * addFredListener method of the source component and removed with a
      * call on a removeFredListener method.
      *
      * @param sourceClass  The class firing the event.
-     * @param eventSetName  The programmatic name of the event.  E.g. &quot;fred&quot;.
+     * @param eventSetName  The programmatic name of the event.  E.g. "fred".
      *          Note that this should normally start with a lower-case character.
      * @param listenerType  The target interface that events
      *          will get delivered to.
@@ -100,7 +100,7 @@ public class EventSetDescriptor extends FeatureDescriptor {
     }
 
     /**
-     * Creates an <TT>EventSetDescriptor</TT> from scratch using
+     * Creates an {@code EventSetDescriptor} from scratch using
      * string names.
      *
      * @param sourceClass  The class firing the event.
@@ -199,8 +199,8 @@ public class EventSetDescriptor extends FeatureDescriptor {
     }
 
     /**
-     * Creates an <TT>EventSetDescriptor</TT> from scratch using
-     * <TT>java.lang.reflect.Method</TT> and <TT>java.lang.Class</TT> objects.
+     * Creates an {@code EventSetDescriptor} from scratch using
+     * {@code java.lang.reflect.Method} and {@code java.lang.Class} objects.
      *
      * @param eventSetName The programmatic name of the event set.
      * @param listenerType The Class for the listener interface.
@@ -267,8 +267,8 @@ public class EventSetDescriptor extends FeatureDescriptor {
     }
 
     /**
-     * Creates an <TT>EventSetDescriptor</TT> from scratch using
-     * <TT>java.lang.reflect.MethodDescriptor</TT> and <TT>java.lang.Class</TT>
+     * Creates an {@code EventSetDescriptor} from scratch using
+     * {@code java.lang.reflect.MethodDescriptor} and {@code java.lang.Class}
      *  objects.
      *
      * @param eventSetName The programmatic name of the event set.
@@ -299,7 +299,7 @@ public class EventSetDescriptor extends FeatureDescriptor {
     }
 
     /**
-     * Gets the <TT>Class</TT> object for the target interface.
+     * Gets the {@code Class} object for the target interface.
      *
      * @return The Class object for the target interface that will
      * get invoked when the event is fired.
@@ -317,7 +317,7 @@ public class EventSetDescriptor extends FeatureDescriptor {
     /**
      * Gets the methods of the target listener interface.
      *
-     * @return An array of <TT>Method</TT> objects for the target methods
+     * @return An array of {@code Method} objects for the target methods
      * within the target listener interface that will get called when
      * events are fired.
      */
@@ -355,9 +355,9 @@ public class EventSetDescriptor extends FeatureDescriptor {
     }
 
     /**
-     * Gets the <code>MethodDescriptor</code>s of the target listener interface.
+     * Gets the {@code MethodDescriptor}s of the target listener interface.
      *
-     * @return An array of <code>MethodDescriptor</code> objects for the target methods
+     * @return An array of {@code MethodDescriptor} objects for the target methods
      * within the target listener interface that will get called when
      * events are fired.
      */
@@ -442,30 +442,30 @@ public class EventSetDescriptor extends FeatureDescriptor {
      * Normally event sources are multicast.  However there are some
      * exceptions that are strictly unicast.
      *
-     * @return  <TT>true</TT> if the event set is unicast.
-     *          Defaults to <TT>false</TT>.
+     * @return  {@code true} if the event set is unicast.
+     *          Defaults to {@code false}.
      */
     public boolean isUnicast() {
         return unicast;
     }
 
     /**
-     * Marks an event set as being in the &quot;default&quot; set (or not).
-     * By default this is <TT>true</TT>.
+     * Marks an event set as being in the "default" set (or not).
+     * By default this is {@code true}.
      *
-     * @param inDefaultEventSet <code>true</code> if the event set is in
-     *                          the &quot;default&quot; set,
-     *                          <code>false</code> if not
+     * @param inDefaultEventSet {@code true} if the event set is in
+     *                          the "default" set,
+     *                          {@code false} if not
      */
     public void setInDefaultEventSet(boolean inDefaultEventSet) {
         this.inDefaultEventSet = inDefaultEventSet;
     }
 
     /**
-     * Reports if an event set is in the &quot;default&quot; set.
+     * Reports if an event set is in the "default" set.
      *
-     * @return  <TT>true</TT> if the event set is in
-     *          the &quot;default&quot; set.  Defaults to <TT>true</TT>.
+     * @return  {@code true} if the event set is in
+     *          the "default" set.  Defaults to {@code true}.
      */
     public boolean isInDefaultEventSet() {
         return inDefaultEventSet;

@@ -72,7 +72,7 @@ import java.util.concurrent.FutureTask;
  */
 public class SwingUtilities2 {
     /**
-     * The <code>AppContext</code> key for our one <code>LAFState</code>
+     * The {@code AppContext} key for our one {@code LAFState}
      * instance.
      */
     public static final Object LAF_STATE_KEY =
@@ -180,7 +180,7 @@ public class SwingUtilities2 {
 
     /**
      * Key used in client properties used to indicate that the
-     * <code>ComponentUI</code> of the JComponent instance should be returned.
+     * {@code ComponentUI} of the JComponent instance should be returned.
      */
     public static final Object COMPONENT_UI_PROPERTY_KEY =
                             new StringBuffer("ComponentUIPropertyKey");
@@ -221,8 +221,8 @@ public class SwingUtilities2 {
      * @param text characters to be tested
      * @param start start
      * @param limit limit
-     * @return <tt>true</tt>  if TextLayout is required
-     *         <tt>false</tt> if TextLayout is not required
+     * @return {@code true}  if TextLayout is required
+     *         {@code false} if TextLayout is not required
      */
     public static final boolean isComplexLayout(char[] text, int start, int limit) {
         return FontUtilities.isComplexText(text, start, limit);
@@ -374,7 +374,7 @@ public class SwingUtilities2 {
 
     /**
      * Returns the width of the passed in String.
-     * If the passed String is <code>null</code>, returns zero.
+     * If the passed String is {@code null}, returns zero.
      *
      * @param c JComponent that will display the string, may be null
      * @param fm FontMetrics used to measure the String width
@@ -761,7 +761,7 @@ public class SwingUtilities2 {
 
     /**
      * Request focus on the given component if it doesn't already have it
-     * and <code>isRequestFocusEnabled()</code> returns true.
+     * and {@code isRequestFocusEnabled()} returns true.
      */
     public static void adjustFocus(JComponent c) {
         if (!c.hasFocus() && c.isRequestFocusEnabled()) {
@@ -1200,9 +1200,9 @@ public class SwingUtilities2 {
 
     /**
      * LSBCacheEntry is used to cache the left side bearing (lsb) for
-     * a particular <code>Font</code> and <code>FontRenderContext</code>.
+     * a particular {@code Font} and {@code FontRenderContext}.
      * This only caches characters that fall in the range
-     * <code>MIN_CHAR_INDEX</code> to <code>MAX_CHAR_INDEX</code>.
+     * {@code MIN_CHAR_INDEX} to {@code MAX_CHAR_INDEX}.
      */
     private static class LSBCacheEntry {
         // Used to indicate a particular entry in lsb has not been set.
@@ -1472,20 +1472,20 @@ public class SwingUtilities2 {
     }
 
     /**
-     * Utility method that creates a <code>UIDefaults.LazyValue</code> that
-     * creates an <code>ImageIcon</code> <code>UIResource</code> for the
+     * Utility method that creates a {@code UIDefaults.LazyValue} that
+     * creates an {@code ImageIcon} {@code UIResource} for the
      * specified image file name. The image is loaded using
-     * <code>getResourceAsStream</code>, starting with a call to that method
+     * {@code getResourceAsStream}, starting with a call to that method
      * on the base class parameter. If it cannot be found, searching will
      * continue through the base class' inheritance hierarchy, up to and
-     * including <code>rootClass</code>.
+     * including {@code rootClass}.
      *
      * @param baseClass the first class to use in searching for the resource
-     * @param rootClass an ancestor of <code>baseClass</code> to finish the
+     * @param rootClass an ancestor of {@code baseClass} to finish the
      *                  search at
      * @param imageFile the name of the file to be found
-     * @return a lazy value that creates the <code>ImageIcon</code>
-     *         <code>UIResource</code> for the image,
+     * @return a lazy value that creates the {@code ImageIcon}
+     *         {@code UIResource} for the image,
      *         or null if it cannot be found
      */
     public static Object makeIcon(final Class<?> baseClass,
@@ -1495,22 +1495,22 @@ public class SwingUtilities2 {
     }
 
     /**
-     * Utility method that creates a <code>UIDefaults.LazyValue</code> that
-     * creates an <code>ImageIcon</code> <code>UIResource</code> for the
+     * Utility method that creates a {@code UIDefaults.LazyValue} that
+     * creates an {@code ImageIcon} {@code UIResource} for the
      * specified image file name. The image is loaded using
-     * <code>getResourceAsStream</code>, starting with a call to that method
+     * {@code getResourceAsStream}, starting with a call to that method
      * on the base class parameter. If it cannot be found, searching will
      * continue through the base class' inheritance hierarchy, up to and
-     * including <code>rootClass</code>.
+     * including {@code rootClass}.
      *
      * Finds an image with a given name without privileges enabled.
      *
      * @param baseClass the first class to use in searching for the resource
-     * @param rootClass an ancestor of <code>baseClass</code> to finish the
+     * @param rootClass an ancestor of {@code baseClass} to finish the
      *                  search at
      * @param imageFile the name of the file to be found
-     * @return a lazy value that creates the <code>ImageIcon</code>
-     *         <code>UIResource</code> for the image,
+     * @return a lazy value that creates the {@code ImageIcon}
+     *         {@code UIResource} for the image,
      *         or null if it cannot be found
      */
     public static Object makeIcon_Unprivileged(final Class<?> baseClass,
@@ -1604,11 +1604,11 @@ public class SwingUtilities2 {
     }
 
     /**
-     * Returns an integer from the defaults table. If <code>key</code> does
-     * not map to a valid <code>Integer</code>, or can not be convered from
-     * a <code>String</code> to an integer, the value 0 is returned.
+     * Returns an integer from the defaults table. If {@code key} does
+     * not map to a valid {@code Integer}, or can not be convered from
+     * a {@code String} to an integer, the value 0 is returned.
      *
-     * @param key  an <code>Object</code> specifying the int.
+     * @param key  an {@code Object} specifying the int.
      * @return the int
      */
     public static int getUIDefaultsInt(Object key) {
@@ -1617,13 +1617,13 @@ public class SwingUtilities2 {
 
     /**
      * Returns an integer from the defaults table that is appropriate
-     * for the given locale. If <code>key</code> does not map to a valid
-     * <code>Integer</code>, or can not be convered from a <code>String</code>
+     * for the given locale. If {@code key} does not map to a valid
+     * {@code Integer}, or can not be convered from a {@code String}
      * to an integer, the value 0 is returned.
      *
-     * @param key  an <code>Object</code> specifying the int. Returned value
-     *             is 0 if <code>key</code> is not available,
-     * @param l the <code>Locale</code> for which the int is desired
+     * @param key  an {@code Object} specifying the int. Returned value
+     *             is 0 if {@code key} is not available,
+     * @param l the {@code Locale} for which the int is desired
      * @return the int
      */
     public static int getUIDefaultsInt(Object key, Locale l) {
@@ -1631,14 +1631,14 @@ public class SwingUtilities2 {
     }
 
     /**
-     * Returns an integer from the defaults table. If <code>key</code> does
-     * not map to a valid <code>Integer</code>, or can not be convered from
-     * a <code>String</code> to an integer, <code>default</code> is
+     * Returns an integer from the defaults table. If {@code key} does
+     * not map to a valid {@code Integer}, or can not be convered from
+     * a {@code String} to an integer, {@code default} is
      * returned.
      *
-     * @param key  an <code>Object</code> specifying the int. Returned value
-     *             is 0 if <code>key</code> is not available,
-     * @param defaultValue Returned value if <code>key</code> is not available,
+     * @param key  an {@code Object} specifying the int. Returned value
+     *             is 0 if {@code key} is not available,
+     * @param defaultValue Returned value if {@code key} is not available,
      *                     or is not an Integer
      * @return the int
      */
@@ -1648,14 +1648,14 @@ public class SwingUtilities2 {
 
     /**
      * Returns an integer from the defaults table that is appropriate
-     * for the given locale. If <code>key</code> does not map to a valid
-     * <code>Integer</code>, or can not be convered from a <code>String</code>
-     * to an integer, <code>default</code> is returned.
+     * for the given locale. If {@code key} does not map to a valid
+     * {@code Integer}, or can not be convered from a {@code String}
+     * to an integer, {@code default} is returned.
      *
-     * @param key  an <code>Object</code> specifying the int. Returned value
-     *             is 0 if <code>key</code> is not available,
-     * @param l the <code>Locale</code> for which the int is desired
-     * @param defaultValue Returned value if <code>key</code> is not available,
+     * @param key  an {@code Object} specifying the int. Returned value
+     *             is 0 if {@code key} is not available,
+     * @param l the {@code Locale} for which the int is desired
+     * @param defaultValue Returned value if {@code key} is not available,
      *                     or is not an Integer
      * @return the int
      */
@@ -1749,7 +1749,7 @@ public class SwingUtilities2 {
      * @param task the task to submit
      * @param result the result to return upon successful completion
      * @return a Future representing pending completion of the task,
-     *         and whose <tt>get()</tt> method will return the given
+     *         and whose {@code get()} method will return the given
      *         result value upon completion
      * @throws NullPointerException if the task is null
      */

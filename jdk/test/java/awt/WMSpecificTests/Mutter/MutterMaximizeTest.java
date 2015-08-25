@@ -28,6 +28,8 @@
   @bug      7043963
   @summary  Tests  that the screen location of windows is
             updated properly after a maximize.
+  @requires (os.name == "linux" | os.name == "solaris")
+  @modules java.desktop/sun.awt.X11
   @author   Denis Lila
   @library  ../../regtesthelpers
   @build    Util

@@ -246,6 +246,10 @@ package.access=sun.,\
                jdk.nashorn.tools.,\
                jdk.tools.jimage.,\
                com.sun.activation.registries.,\
+               com.sun.java.accessibility.util.internal.,\
+#ifdef windows
+               com.sun.java.accessibility.internal.,\
+#endif
 #ifdef macosx
                apple.,\
 #endif
@@ -297,6 +301,10 @@ package.definition=sun.,\
                    jdk.nashorn.tools.,\
                    jdk.tools.jimage.,\
                    com.sun.activation.registries.,\
+                   com.sun.java.accessibility.util.internal.,\
+#ifdef windows
+                   com.sun.java.accessibility.internal.,\
+#endif
 #ifdef macosx
                    apple.,\
 #endif

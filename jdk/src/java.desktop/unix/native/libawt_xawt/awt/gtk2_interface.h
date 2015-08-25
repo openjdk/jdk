@@ -772,6 +772,8 @@ void gtk2_set_range_value(WidgetType widget_type, jdouble value,
 
 void (*fp_g_free)(gpointer mem);
 void (*fp_g_object_unref)(gpointer object);
+GdkWindow *(*fp_gdk_get_default_root_window) (void);
+
 int (*fp_gdk_pixbuf_get_bits_per_sample)(const GdkPixbuf *pixbuf);
 guchar *(*fp_gdk_pixbuf_get_pixels)(const GdkPixbuf *pixbuf);
 gboolean (*fp_gdk_pixbuf_get_has_alpha)(const GdkPixbuf *pixbuf);
@@ -780,6 +782,13 @@ int (*fp_gdk_pixbuf_get_n_channels)(const GdkPixbuf *pixbuf);
 int (*fp_gdk_pixbuf_get_rowstride)(const GdkPixbuf *pixbuf);
 int (*fp_gdk_pixbuf_get_width)(const GdkPixbuf *pixbuf);
 GdkPixbuf *(*fp_gdk_pixbuf_new_from_file)(const char *filename, GError **error);
+GdkColorspace (*fp_gdk_pixbuf_get_colorspace)(const GdkPixbuf *pixbuf);
+
+GdkPixbuf *(*fp_gdk_pixbuf_get_from_drawable)(GdkPixbuf *dest,
+        GdkDrawable *src, GdkColormap *cmap, int src_x, int src_y,
+        int dest_x, int dest_y, int width, int height);
+
+
 void (*fp_gtk_widget_destroy)(GtkWidget *widget);
 void (*fp_gtk_window_present)(GtkWindow *window);
 void (*fp_gtk_window_move)(GtkWindow *window, gint x, gint y);

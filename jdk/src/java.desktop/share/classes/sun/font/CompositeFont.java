@@ -71,6 +71,13 @@ public final class CompositeFont extends Font2D {
         } else {
             numSlots = componentNames.length;
         }
+        /* We will limit the number of slots to 254.
+         * We store the slot for a glyph id in a byte and we may use one slot
+         * for an EUDC font, and we may also create a composite
+         * using this composite as a backup for a physical font.
+         * So we want to leave space for the two additional slots.
+         */
+         numSlots = (numSlots <= 254) ? numSlots : 254;
 
         /* Only the first "numMetricsSlots" slots are used for font metrics.
          * the rest are considered "fallback" slots".

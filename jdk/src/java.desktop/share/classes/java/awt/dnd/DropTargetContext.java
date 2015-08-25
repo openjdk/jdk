@@ -43,11 +43,11 @@ import sun.awt.AWTAccessor;
 import sun.awt.AWTAccessor.DropTargetContextAccessor;
 
 /**
- * A <code>DropTargetContext</code> is created
+ * A {@code DropTargetContext} is created
  * whenever the logical cursor associated
  * with a Drag and Drop operation coincides with the visible geometry of
- * a <code>Component</code> associated with a <code>DropTarget</code>.
- * The <code>DropTargetContext</code> provides
+ * a {@code Component} associated with a {@code DropTarget}.
+ * The {@code DropTargetContext} provides
  * the mechanism for a potential receiver
  * of a drop operation to both provide the end user with the appropriate
  * drag under feedback, but also to effect the subsequent data transfer
@@ -74,8 +74,8 @@ public class DropTargetContext implements Serializable {
         });
     }
     /**
-     * Construct a <code>DropTargetContext</code>
-     * given a specified <code>DropTarget</code>.
+     * Construct a {@code DropTargetContext}
+     * given a specified {@code DropTarget}.
      *
      * @param dt the DropTarget to associate with
      */
@@ -87,17 +87,17 @@ public class DropTargetContext implements Serializable {
     }
 
     /**
-     * This method returns the <code>DropTarget</code> associated with this
-     * <code>DropTargetContext</code>.
+     * This method returns the {@code DropTarget} associated with this
+     * {@code DropTargetContext}.
      *
-     * @return the <code>DropTarget</code> associated with this <code>DropTargetContext</code>
+     * @return the {@code DropTarget} associated with this {@code DropTargetContext}
      */
 
     public DropTarget getDropTarget() { return dropTarget; }
 
     /**
-     * This method returns the <code>Component</code> associated with
-     * this <code>DropTargetContext</code>.
+     * This method returns the {@code Component} associated with
+     * this {@code DropTargetContext}.
      *
      * @return the Component associated with this Context
      */
@@ -105,7 +105,7 @@ public class DropTargetContext implements Serializable {
     public Component getComponent() { return dropTarget.getComponent(); }
 
     /**
-     * Called when disassociated with the <code>DropTargetContextPeer</code>.
+     * Called when disassociated with the {@code DropTargetContextPeer}.
      */
     void reset() {
         dropTargetContextPeer = null;
@@ -114,9 +114,9 @@ public class DropTargetContext implements Serializable {
 
     /**
      * This method sets the current actions acceptable to
-     * this <code>DropTarget</code>.
+     * this {@code DropTarget}.
      *
-     * @param actions an <code>int</code> representing the supported action(s)
+     * @param actions an {@code int} representing the supported action(s)
      */
 
     protected void setTargetActions(int actions) {
@@ -132,10 +132,10 @@ public class DropTargetContext implements Serializable {
     }
 
     /**
-     * This method returns an <code>int</code> representing the
-     * current actions this <code>DropTarget</code> will accept.
+     * This method returns an {@code int} representing the
+     * current actions this {@code DropTarget} will accept.
      *
-     * @return the current actions acceptable to this <code>DropTarget</code>
+     * @return the current actions acceptable to this {@code DropTarget}
      */
 
     protected int getTargetActions() {
@@ -215,11 +215,11 @@ public class DropTargetContext implements Serializable {
 
     /**
      * get the available DataFlavors of the
-     * <code>Transferable</code> operand of this operation.
+     * {@code Transferable} operand of this operation.
      *
-     * @return a <code>DataFlavor[]</code> containing the
-     * supported <code>DataFlavor</code>s of the
-     * <code>Transferable</code> operand.
+     * @return a {@code DataFlavor[]} containing the
+     * supported {@code DataFlavor}s of the
+     * {@code Transferable} operand.
      */
 
     protected DataFlavor[] getCurrentDataFlavors() {
@@ -229,11 +229,11 @@ public class DropTargetContext implements Serializable {
 
     /**
      * This method returns a the currently available DataFlavors
-     * of the <code>Transferable</code> operand
-     * as a <code>java.util.List</code>.
+     * of the {@code Transferable} operand
+     * as a {@code java.util.List}.
      *
      * @return the currently available
-     * DataFlavors as a <code>java.util.List</code>
+     * DataFlavors as a {@code java.util.List}
      */
 
     protected List<DataFlavor> getCurrentDataFlavorsAsList() {
@@ -241,13 +241,13 @@ public class DropTargetContext implements Serializable {
     }
 
     /**
-     * This method returns a <code>boolean</code>
-     * indicating if the given <code>DataFlavor</code> is
-     * supported by this <code>DropTargetContext</code>.
+     * This method returns a {@code boolean}
+     * indicating if the given {@code DataFlavor} is
+     * supported by this {@code DropTargetContext}.
      *
-     * @param df the <code>DataFlavor</code>
+     * @param df the {@code DataFlavor}
      *
-     * @return if the <code>DataFlavor</code> specified is supported
+     * @return if the {@code DataFlavor} specified is supported
      */
 
     protected boolean isDataFlavorSupported(DataFlavor df) {
@@ -259,7 +259,7 @@ public class DropTargetContext implements Serializable {
      *
      * @throws InvalidDnDOperationException if a drag is not outstanding/extant
      *
-     * @return the <code>Transferable</code>
+     * @return the {@code Transferable}
      */
 
     protected Transferable getTransferable() throws InvalidDnDOperationException {
@@ -282,7 +282,7 @@ public class DropTargetContext implements Serializable {
     }
 
     /**
-     * Get the <code>DropTargetContextPeer</code>
+     * Get the {@code DropTargetContextPeer}
      *
      * @return the platform peer
      */
@@ -301,10 +301,10 @@ public class DropTargetContext implements Serializable {
      * Creates a TransferableProxy to proxy for the specified
      * Transferable.
      *
-     * @param t the <tt>Transferable</tt> to be proxied
-     * @param local <tt>true</tt> if <tt>t</tt> represents
+     * @param t the {@code Transferable} to be proxied
+     * @param local {@code true} if {@code t} represents
      *        the result of a local drag-n-drop operation.
-     * @return the new <tt>TransferableProxy</tt> instance.
+     * @return the new {@code TransferableProxy} instance.
      */
     protected Transferable createTransferableProxy(Transferable t, boolean local) {
         return new TransferableProxy(t, local);
@@ -314,9 +314,9 @@ public class DropTargetContext implements Serializable {
 
 
     /**
-     * <code>TransferableProxy</code> is a helper inner class that implements
-     * <code>Transferable</code> interface and serves as a proxy for another
-     * <code>Transferable</code> object which represents data transfer for
+     * {@code TransferableProxy} is a helper inner class that implements
+     * {@code Transferable} interface and serves as a proxy for another
+     * {@code Transferable} object which represents data transfer for
      * a particular drag-n-drop operation.
      * <p>
      * The proxy forwards all requests to the encapsulated transferable
@@ -327,14 +327,14 @@ public class DropTargetContext implements Serializable {
     protected class TransferableProxy implements Transferable {
 
         /**
-         * Constructs a <code>TransferableProxy</code> given
-         * a specified <code>Transferable</code> object representing
+         * Constructs a {@code TransferableProxy} given
+         * a specified {@code Transferable} object representing
          * data transfer for a particular drag-n-drop operation and
-         * a <code>boolean</code> which indicates whether the
+         * a {@code boolean} which indicates whether the
          * drag-n-drop operation is local (within the same JVM).
          *
-         * @param t the <code>Transferable</code> object
-         * @param local <code>true</code>, if <code>t</code> represents
+         * @param t the {@code Transferable} object
+         * @param local {@code true}, if {@code t} represents
          *        the result of local drag-n-drop operation
          */
         TransferableProxy(Transferable t, boolean local) {
@@ -358,8 +358,8 @@ public class DropTargetContext implements Serializable {
          * Returns whether or not the specified data flavor is supported by
          * the encapsulated transferable.
          * @param flavor the requested flavor for the data
-         * @return <code>true</code> if the data flavor is supported,
-         *         <code>false</code> otherwise
+         * @return {@code true} if the data flavor is supported,
+         *         {@code false} otherwise
          */
         public boolean isDataFlavorSupported(DataFlavor flavor) {
             return proxy.isDataFlavorSupported(flavor);
@@ -397,13 +397,13 @@ public class DropTargetContext implements Serializable {
         // public constructor.
 
         /**
-         * The encapsulated <code>Transferable</code> object.
+         * The encapsulated {@code Transferable} object.
          */
         protected Transferable  transferable;
 
         /**
-         * A <code>boolean</code> indicating if the encapsulated
-         * <code>Transferable</code> object represents the result
+         * A {@code boolean} indicating if the encapsulated
+         * {@code Transferable} object represents the result
          * of local drag-n-drop operation (within the same JVM).
          */
         protected boolean       isLocal;

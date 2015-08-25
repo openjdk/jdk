@@ -4954,6 +4954,10 @@ AwtComponent::SendMouseWheelEvent(jint id, jlong when, jint x, jint y,
         return;
     }
     jobject target = GetTarget(env);
+    DWORD curMousePos = ::GetMessagePos();
+    int xAbs = GET_X_LPARAM(curMousePos);
+    int yAbs = GET_Y_LPARAM(curMousePos);
+
     DTRACE_PRINTLN("creating MWE in JNI");
 
     jobject mouseWheelEvent = env->NewObject(mouseWheelEventCls,
@@ -4961,7 +4965,7 @@ AwtComponent::SendMouseWheelEvent(jint id, jlong when, jint x, jint y,
                                              target,
                                              id, when, modifiers,
                                              x+insets.left, y+insets.top,
-                                             0, 0,
+                                             xAbs, yAbs,
                                              clickCount, popupTrigger,
                                              scrollType, scrollAmount,
                                              roundedWheelRotation, preciseWheelRotation);
