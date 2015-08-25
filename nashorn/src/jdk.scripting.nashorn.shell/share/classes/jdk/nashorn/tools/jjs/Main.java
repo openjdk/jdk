@@ -25,6 +25,7 @@
 
 package jdk.nashorn.tools.jjs;
 
+import java.awt.GraphicsEnvironment;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
@@ -50,6 +51,7 @@ public final class Main extends Shell {
     private Main() {}
 
     static final boolean DEBUG = Boolean.getBoolean("nashorn.jjs.debug");
+    static final boolean HEADLESS = GraphicsEnvironment.isHeadless();
 
     // file where history is persisted.
     private static final File HIST_FILE = new File(new File(System.getProperty("user.home")), ".jjs.history");
@@ -200,6 +202,10 @@ public final class Main extends Shell {
         }
 
         return SUCCESS;
+    }
+
+    static String getMessage(final String id) {
+        return bundle.getString(id);
     }
 
     private void evalImpl(final Context context, final Global global, final String source,

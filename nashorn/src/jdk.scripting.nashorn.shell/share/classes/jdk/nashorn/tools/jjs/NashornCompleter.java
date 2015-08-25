@@ -254,6 +254,11 @@ final class NashornCompleter implements Completer {
 
     // read file name from the user using by showing a swing file chooser diablog
     private static String readFileName(final PrintWriter err) {
+        // if running on AWT Headless mode, don't attempt swing dialog box!
+        if (Main.HEADLESS) {
+            return null;
+        }
+
         final FutureTask<String> fileChooserTask = new FutureTask<String>(() -> {
             // show a file chooser dialog box
             final JFileChooser chooser = new JFileChooser();
