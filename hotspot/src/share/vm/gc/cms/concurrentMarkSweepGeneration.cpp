@@ -620,12 +620,12 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
   // Support for parallelizing survivor space rescan
   if ((CMSParallelRemarkEnabled && CMSParallelSurvivorRemarkEnabled) || CMSParallelInitialMarkEnabled) {
     const size_t max_plab_samples =
-      ((DefNewGeneration*)_young_gen)->max_survivor_size() / plab_sample_minimum_size();
+      _young_gen->max_survivor_size() / (ThreadLocalAllocBuffer::min_size() * HeapWordSize);
 
     _survivor_plab_array  = NEW_C_HEAP_ARRAY(ChunkArray, ParallelGCThreads, mtGC);
-    _survivor_chunk_array = NEW_C_HEAP_ARRAY(HeapWord*, 2*max_plab_samples, mtGC);
+    _survivor_chunk_array = NEW_C_HEAP_ARRAY(HeapWord*, max_plab_samples, mtGC);
     _cursor               = NEW_C_HEAP_ARRAY(size_t, ParallelGCThreads, mtGC);
-    _survivor_chunk_capacity = 2*max_plab_samples;
+    _survivor_chunk_capacity = max_plab_samples;
     for (uint i = 0; i < ParallelGCThreads; i++) {
       HeapWord** vec = NEW_C_HEAP_ARRAY(HeapWord*, max_plab_samples, mtGC);
       ChunkArray* cur = ::new (&_survivor_plab_array[i]) ChunkArray(vec, max_plab_samples);
@@ -639,12 +639,6 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
   _gc_counters = new CollectorCounters("CMS", 1);
   _completed_initialization = true;
   _inter_sweep_timer.start();  // start of time
-}
-
-size_t CMSCollector::plab_sample_minimum_size() {
-  // The default value of MinTLABSize is 2k, but there is
-  // no way to get the default value if the flag has been overridden.
-  return MAX2(ThreadLocalAllocBuffer::min_size() * HeapWordSize, 2 * K);
 }
 
 const char* ConcurrentMarkSweepGeneration::name() const {

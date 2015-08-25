@@ -295,11 +295,8 @@ public class Date extends java.util.Date {
     }
 
     /**
-     * Converts this {@code Date} object to a {@code LocalDate}
-     * <p>
-     * The conversion creates a {@code LocalDate} that represents the same
-     * date value as this {@code Date} in local time zone
-     *
+     * Creates a {@code LocalDate} instance using the year, month and day
+     * from this {@code Date} object.
      * @return a {@code LocalDate} object representing the same date value
      *
      * @since 1.8

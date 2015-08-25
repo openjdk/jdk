@@ -23,16 +23,16 @@
 package com.sun.org.apache.xml.internal.security.encryption;
 
 /**
- * A container for <code>ds:Transform</code>s.
+ * A container for {@code ds:Transform}s.
  * <p>
  * It is defined as follows:
- * <xmp>
+ * <pre>{@code
  * <complexType name='TransformsType'>
  *     <sequence>
  *         <element ref='ds:Transform' maxOccurs='unbounded'/>
  *     </sequence>
  * </complexType>
- * </xmp>
+ * }</pre>
  *
  * @author Axl Mattheus
  * @see com.sun.org.apache.xml.internal.security.encryption.CipherReference

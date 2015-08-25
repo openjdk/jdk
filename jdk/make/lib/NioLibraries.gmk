@@ -69,9 +69,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBNIO, \
     OPTIMIZATION := HIGH, \
     CFLAGS := $(CFLAGS_JDKLIB) \
         $(BUILD_LIBNIO_CFLAGS), \
-    DISABLED_WARNINGS_gcc := type-limits, \
-    DISABLED_WARNINGS_clang := tautological-compare, \
-    DISABLED_WARNINGS_microsoft := 4244 4996, \
     MAPFILE := $(BUILD_LIBNIO_MAPFILE), \
     LDFLAGS := $(LDFLAGS_JDKLIB) $(BUILD_LIBNIO_LDFLAGS) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \

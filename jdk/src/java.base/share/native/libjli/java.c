@@ -1082,15 +1082,6 @@ ParseArguments(int *pargc, char ***pargv,
             AddOption("-Xverify:remote", NULL);
         } else if (JLI_StrCmp(arg, "-noverify") == 0) {
             AddOption("-Xverify:none", NULL);
-        } else if (JLI_StrCCmp(arg, "-prof") == 0) {
-            char *p = arg + 5;
-            char *tmp = JLI_MemAlloc(JLI_StrLen(arg) + 50);
-            if (*p) {
-                sprintf(tmp, "-Xrunhprof:cpu=old,file=%s", p + 1);
-            } else {
-                sprintf(tmp, "-Xrunhprof:cpu=old,file=java.prof");
-            }
-            AddOption(tmp, NULL);
         } else if (JLI_StrCCmp(arg, "-ss") == 0 ||
                    JLI_StrCCmp(arg, "-oss") == 0 ||
                    JLI_StrCCmp(arg, "-ms") == 0 ||
@@ -1972,6 +1963,7 @@ DumpState()
 {
     if (!JLI_IsTraceLauncher()) return ;
     printf("Launcher state:\n");
+    printf("\tFirst application arg index: %d\n", JLI_GetAppArgIndex());
     printf("\tdebug:%s\n", (JLI_IsTraceLauncher() == JNI_TRUE) ? "on" : "off");
     printf("\tjavargs:%s\n", (_is_java_args == JNI_TRUE) ? "on" : "off");
     printf("\tprogram name:%s\n", GetProgramName());

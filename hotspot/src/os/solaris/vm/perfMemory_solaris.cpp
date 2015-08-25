@@ -219,9 +219,9 @@ static bool is_statbuf_secure(struct stat *statp) {
     //
     return false;
   }
-  // See if the uid of the directory matches the effective uid of the process.
-  //
-  if (statp->st_uid != geteuid()) {
+  // If user is not root then see if the uid of the directory matches the effective uid of the process.
+  uid_t euid = geteuid();
+  if ((euid != 0) && (statp->st_uid != euid)) {
     // The directory was not created by this user, declare it insecure.
     //
     return false;

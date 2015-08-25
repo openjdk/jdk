@@ -141,9 +141,9 @@ public final class TimestampedSigner extends ContentSigner {
     /**
      * Examine the certificate for a Subject Information Access extension
      * (<a href="http://tools.ietf.org/html/rfc5280">RFC 5280</a>).
-     * The extension's <tt>accessMethod</tt> field should contain the object
+     * The extension's {@code accessMethod} field should contain the object
      * identifier defined for timestamping: 1.3.6.1.5.5.7.48.3 and its
-     * <tt>accessLocation</tt> field should contain an HTTP or HTTPS URL.
+     * {@code accessLocation} field should contain an HTTP or HTTPS URL.
      *
      * @param tsaCertificate An X.509 certificate for the TSA.
      * @return An HTTP or HTTPS URI or null if none was found.

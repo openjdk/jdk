@@ -42,6 +42,7 @@ import jdk.testlibrary.Utils;
 import jdk.testlibrary.OutputAnalyzer;
 import jdk.testlibrary.ProcessTools;
 import jdk.test.lib.apps.LingeredApp;
+import jdk.testlibrary.Platform;
 
 public class BasicLauncherTest {
 
@@ -131,10 +132,16 @@ public class BasicLauncherTest {
     public static void main(String[] args)
         throws IOException {
 
+        if (!Platform.shouldSAAttach()) {
+            // Silently skip the test if we don't have enough permissions to attach
+            System.err.println("Error! Insufficient permissions to attach.");
+            return;
+        }
+
         launchCLHSDB();
 
         launch("No deadlocks found", "jstack");
-        launch("Server compiler detected", "jmap");
+        launch("compiler detected", "jmap");
         launch("Java System Properties", "jinfo");
 
         // The test throws RuntimeException on error.

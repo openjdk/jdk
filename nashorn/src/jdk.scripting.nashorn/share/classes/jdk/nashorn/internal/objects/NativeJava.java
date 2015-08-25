@@ -30,11 +30,14 @@ import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import jdk.internal.dynalink.beans.BeansLinker;
 import jdk.internal.dynalink.beans.StaticClass;
 import jdk.internal.dynalink.support.TypeUtilities;
 import jdk.nashorn.api.scripting.JSObject;
@@ -441,6 +444,47 @@ public final class NativeJava {
         }
 
         throw typeError("cant.convert.to.javascript.array", objArray.getClass().getName());
+    }
+
+    /**
+     * Return properties of the given object. Properties also include "method names".
+     * This is meant for source code completion in interactive shells or editors.
+     *
+     * @param object the object whose properties are returned.
+     * @return list of properties
+     */
+    public static List<String> getProperties(final Object object) {
+        if (object instanceof StaticClass) {
+            // static properties of the given class
+            final Class<?> clazz = ((StaticClass)object).getRepresentedClass();
+            final ArrayList<String> props = new ArrayList<>();
+            try {
+                Bootstrap.checkReflectionAccess(clazz, true);
+                // Usually writable properties are a subset as 'write-only' properties are rare
+                props.addAll(BeansLinker.getReadableStaticPropertyNames(clazz));
+                props.addAll(BeansLinker.getStaticMethodNames(clazz));
+            } catch (Exception ignored) {}
+            return props;
+        } else if (object instanceof JSObject) {
+            final JSObject jsObj = ((JSObject)object);
+            final ArrayList<String> props = new ArrayList<>();
+            props.addAll(jsObj.keySet());
+            return props;
+        } else if (object != null && object != UNDEFINED) {
+            // instance properties of the given object
+            final Class<?> clazz = object.getClass();
+            final ArrayList<String> props = new ArrayList<>();
+            try {
+                Bootstrap.checkReflectionAccess(clazz, false);
+                // Usually writable properties are a subset as 'write-only' properties are rare
+                props.addAll(BeansLinker.getReadableInstancePropertyNames(clazz));
+                props.addAll(BeansLinker.getInstanceMethodNames(clazz));
+            } catch (Exception ignored) {}
+            return props;
+        }
+
+        // don't know about that object
+        return Collections.<String>emptyList();
     }
 
     private static int[] copyArray(final byte[] in) {

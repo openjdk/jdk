@@ -34,8 +34,8 @@ import java.io.PrintWriter;
  * Indicates an exceptional condition that occurred while executing a
  * transform algorithm.
  *
- * <p>A <code>TransformException</code> can contain a cause: another
- * throwable that caused this <code>TransformException</code> to get thrown.
+ * <p>A {@code TransformException} can contain a cause: another
+ * throwable that caused this {@code TransformException} to get thrown.
  *
  * @see Transform#transform
  * @author Sean Mullan
@@ -56,15 +56,15 @@ public class TransformException extends Exception {
     private Throwable cause;
 
     /**
-     * Constructs a new <code>TransformException</code> with
-     * <code>null</code> as its detail message.
+     * Constructs a new {@code TransformException} with
+     * {@code null} as its detail message.
      */
     public TransformException() {
         super();
     }
 
     /**
-     * Constructs a new <code>TransformException</code> with the specified
+     * Constructs a new {@code TransformException} with the specified
      * detail message.
      *
      * @param message the detail message
@@ -74,14 +74,14 @@ public class TransformException extends Exception {
     }
 
     /**
-     * Constructs a new <code>TransformException</code> with the
+     * Constructs a new {@code TransformException} with the
      * specified detail message and cause.
      * <p>Note that the detail message associated with
-     * <code>cause</code> is <i>not</i> automatically incorporated in
+     * {@code cause} is <i>not</i> automatically incorporated in
      * this exception's detail message.
      *
      * @param message the detail message
-     * @param cause the cause (A <tt>null</tt> value is permitted, and
+     * @param cause the cause (A {@code null} value is permitted, and
      *        indicates that the cause is nonexistent or unknown.)
      */
     public TransformException(String message, Throwable cause) {
@@ -90,13 +90,13 @@ public class TransformException extends Exception {
     }
 
     /**
-     * Constructs a new <code>TransformException</code> with the specified
+     * Constructs a new {@code TransformException} with the specified
      * cause and a detail message of
-     * <code>(cause==null ? null : cause.toString())</code>
+     * {@code (cause==null ? null : cause.toString())}
      * (which typically contains the class and detail message of
-     * <code>cause</code>).
+     * {@code cause}).
      *
-     * @param cause the cause (A <tt>null</tt> value is permitted, and
+     * @param cause the cause (A {@code null} value is permitted, and
      *        indicates that the cause is nonexistent or unknown.)
      */
     public TransformException(Throwable cause) {
@@ -105,20 +105,20 @@ public class TransformException extends Exception {
     }
 
     /**
-     * Returns the cause of this <code>TransformException</code> or
-     * <code>null</code> if the cause is nonexistent or unknown.  (The
+     * Returns the cause of this {@code TransformException} or
+     * {@code null} if the cause is nonexistent or unknown.  (The
      * cause is the throwable that caused this
-     * <code>TransformException</code> to get thrown.)
+     * {@code TransformException} to get thrown.)
      *
-     * @return the cause of this <code>TransformException</code> or
-     *         <code>null</code> if the cause is nonexistent or unknown.
+     * @return the cause of this {@code TransformException} or
+     *         {@code null} if the cause is nonexistent or unknown.
      */
     public Throwable getCause() {
         return cause;
     }
 
     /**
-     * Prints this <code>TransformException</code>, its backtrace and
+     * Prints this {@code TransformException}, its backtrace and
      * the cause's backtrace to the standard error stream.
      */
     public void printStackTrace() {
@@ -129,10 +129,10 @@ public class TransformException extends Exception {
     }
 
     /**
-     * Prints this <code>TransformException</code>, its backtrace and
+     * Prints this {@code TransformException}, its backtrace and
      * the cause's backtrace to the specified print stream.
      *
-     * @param s <code>PrintStream</code> to use for output
+     * @param s {@code PrintStream} to use for output
      */
     public void printStackTrace(PrintStream s) {
         super.printStackTrace(s);
@@ -142,10 +142,10 @@ public class TransformException extends Exception {
     }
 
     /**
-     * Prints this <code>TransformException</code>, its backtrace and
+     * Prints this {@code TransformException}, its backtrace and
      * the cause's backtrace to the specified print writer.
      *
-     * @param s <code>PrintWriter</code> to use for output
+     * @param s {@code PrintWriter} to use for output
      */
     public void printStackTrace(PrintWriter s) {
         super.printStackTrace(s);

@@ -567,7 +567,7 @@ final class DigestMD5Client extends DigestMD5Base implements SaslClient {
      *    username-value
      *    cnonce-value
      *    authzid-value
-     * @returns <tt>digest-response</tt> in a byte array
+     * @return {@code digest-response} in a byte array
      * @throws SaslException if there is an error generating the
      * response value or the cnonce value.
      */

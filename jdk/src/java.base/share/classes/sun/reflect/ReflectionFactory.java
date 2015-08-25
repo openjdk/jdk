@@ -302,6 +302,14 @@ public class ReflectionFactory {
         return langReflectAccess().copyMethod(arg);
     }
 
+    /** Makes a copy of the passed method. The returned method is NOT
+     * a "child" but a "sibling" of the Method in arg. Should only be
+     * used on non-root methods. */
+    public Method leafCopyMethod(Method arg) {
+        return langReflectAccess().leafCopyMethod(arg);
+    }
+
+
     /** Makes a copy of the passed field. The returned field is a
         "child" of the passed one; see the comments in Field.java for
         details. */
