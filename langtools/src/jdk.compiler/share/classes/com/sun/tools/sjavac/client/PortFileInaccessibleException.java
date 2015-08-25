@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,39 +22,15 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package com.sun.tools.sjavac.client;
 
-package com.sun.tools.sjavac.server;
+import java.io.IOException;
 
-import java.io.Serializable;
+public class PortFileInaccessibleException extends IOException {
 
-/**
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
- */
-public class CompilationResult implements Serializable {
+    private static final long serialVersionUID = -4755261881545398973L;
 
-    static final long serialVersionUID = 46739181113L;
-
-    // Return code constants
-    public final static int ERROR_FATAL = -1;
-
-    public String stdout;
-    public String stderr;
-    public int returnCode;
-
-    public CompilationResult(int returnCode) {
-        this(returnCode, "", "");
-    }
-
-    public CompilationResult(int returnCode, String stdout, String stderr) {
-        this.returnCode = returnCode;
-        this.stdout = stdout;
-        this.stderr = stderr;
-    }
-
-    public void setReturnCode(int returnCode) {
-        this.returnCode = returnCode;
+    public PortFileInaccessibleException(Throwable cause) {
+        super(cause);
     }
 }

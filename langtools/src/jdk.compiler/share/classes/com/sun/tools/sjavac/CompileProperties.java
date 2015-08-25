@@ -44,9 +44,9 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import com.sun.tools.sjavac.comp.CompilationService;
 import com.sun.tools.sjavac.options.Options;
 import com.sun.tools.sjavac.pubapi.PubApi;
-import com.sun.tools.sjavac.server.Sjavac;
 
 /**
  * Compile properties transform a properties file into a Java source file.
@@ -71,7 +71,7 @@ public class CompileProperties implements Transformer {
     public void setExtra(Options a) {
     }
 
-    public boolean transform(Sjavac sjavac,
+    public boolean transform(CompilationService compilationService,
                              Map<String,Set<URI>> pkgSrcs,
                              Set<URI>             visibleSrcs,
                              Map<URI,Set<String>> visibleClasses,
