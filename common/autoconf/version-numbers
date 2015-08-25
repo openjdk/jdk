@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 # questions.
 #
 
-JDK_MAJOR_VERSION=1
-JDK_MINOR_VERSION=9
-JDK_MICRO_VERSION=0
-JDK_UPDATE_VERSION=
+# Default version numbers to use unless overridden by configure
+
+DEFAULT_VERSION_MAJOR=9
+
 LAUNCHER_NAME=openjdk
 PRODUCT_NAME=OpenJDK
 PRODUCT_SUFFIX="Runtime Environment"
