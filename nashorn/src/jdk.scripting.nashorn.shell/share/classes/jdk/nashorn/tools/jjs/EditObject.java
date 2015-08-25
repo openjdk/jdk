@@ -86,7 +86,7 @@ final class EditObject extends AbstractJSObject {
     @Override
     public void setMember(final String name, final Object value) {
         if (name.equals("editor")) {
-            this.editor = JSType.toString(value);
+            this.editor = value != null && value != UNDEFINED? JSType.toString(value) : "";
         }
     }
 
@@ -115,8 +115,10 @@ final class EditObject extends AbstractJSObject {
         final SaveHandler saveHandler = new SaveHandler(initText);
         if (editor != null && !editor.isEmpty()) {
             ExternalEditor.edit(editor, errorHandler, initText, saveHandler, console);
-        } else {
+        } else if (! Main.HEADLESS) {
             EditPad.edit(errorHandler, initText, saveHandler);
+        } else {
+            errorHandler.accept(Main.getMessage("no.editor"));
         }
         return UNDEFINED;
     }
