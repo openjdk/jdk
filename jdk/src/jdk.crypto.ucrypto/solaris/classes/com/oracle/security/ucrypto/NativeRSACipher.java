@@ -377,7 +377,7 @@ public class NativeRSACipher extends CipherSpi {
 
     /**
      * calls ucrypto_encrypt(...) or ucrypto_decrypt(...)
-     * @returns the length of output or an negative error status code
+     * @return the length of output or an negative error status code
      */
     private native static int nativeAtomic(int mech, boolean encrypt,
                                            long keyValue, int keyLength,
