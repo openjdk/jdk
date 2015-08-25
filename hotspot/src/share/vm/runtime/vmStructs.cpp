@@ -1565,6 +1565,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_toplevel_type(Generation*)                                      \
   declare_toplevel_type(GenerationSpec**)                                 \
   declare_toplevel_type(HeapWord*)                                        \
+  declare_toplevel_type(HeapWord* volatile)                               \
   declare_toplevel_type(MemRegion*)                                       \
   declare_toplevel_type(OffsetTableContigSpace*)                          \
   declare_toplevel_type(Space*)                                           \

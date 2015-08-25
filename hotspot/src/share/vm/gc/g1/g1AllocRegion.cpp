@@ -205,11 +205,11 @@ HeapRegion* G1AllocRegion::release() {
 }
 
 #if G1_ALLOC_REGION_TRACING
-void G1AllocRegion::trace(const char* str, size_t word_size, HeapWord* result) {
+void G1AllocRegion::trace(const char* str, size_t min_word_size, size_t desired_word_size, size_t actual_word_size, HeapWord* result) {
   // All the calls to trace that set either just the size or the size
   // and the result are considered part of level 2 tracing and are
   // skipped during level 1 tracing.
-  if ((word_size == 0 && result == NULL) || (G1_ALLOC_REGION_TRACING > 1)) {
+  if ((actual_word_size == 0 && result == NULL) || (G1_ALLOC_REGION_TRACING > 1)) {
     const size_t buffer_length = 128;
     char hr_buffer[buffer_length];
     char rest_buffer[buffer_length];
@@ -226,10 +226,10 @@ void G1AllocRegion::trace(const char* str, size_t word_size, HeapWord* result) {
 
     if (G1_ALLOC_REGION_TRACING > 1) {
       if (result != NULL) {
-        jio_snprintf(rest_buffer, buffer_length, SIZE_FORMAT " " PTR_FORMAT,
-                     word_size, result);
-      } else if (word_size != 0) {
-        jio_snprintf(rest_buffer, buffer_length, SIZE_FORMAT, word_size);
+        jio_snprintf(rest_buffer, buffer_length, "min " SIZE_FORMAT " desired " SIZE_FORMAT " actual " SIZE_FORMAT " " PTR_FORMAT,
+                     min_word_size, desired_word_size, actual_word_size, result);
+      } else if (min_word_size != 0) {
+        jio_snprintf(rest_buffer, buffer_length, "min " SIZE_FORMAT " desired " SIZE_FORMAT, min_word_size, desired_word_size);
       } else {
         jio_snprintf(rest_buffer, buffer_length, "");
       }
