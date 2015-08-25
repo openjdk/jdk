@@ -45,9 +45,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.sun.tools.sjavac.comp.CompilationService;
 import com.sun.tools.sjavac.options.Options;
 import com.sun.tools.sjavac.pubapi.PubApi;
-import com.sun.tools.sjavac.server.Sjavac;
 
 /**
  * The javac state class maintains the previous (prev) and the current (now)
@@ -748,7 +748,7 @@ public class JavacState {
     /**
      * Compile all the java sources. Return true, if it needs to be called again!
      */
-    public boolean performJavaCompilations(Sjavac sjavac,
+    public boolean performJavaCompilations(CompilationService sjavac,
                                            Options args,
                                            Set<String> recentlyCompiled,
                                            boolean[] rcValue) {
@@ -790,7 +790,7 @@ public class JavacState {
      * For all packages, find all sources belonging to the package, group the sources
      * based on their transformers and apply the transformers on each source code group.
      */
-    private boolean perform(Sjavac sjavac,
+    private boolean perform(CompilationService sjavac,
                             File outputDir,
                             Map<String,Transformer> suffixRules) {
         boolean rc = true;

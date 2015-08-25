@@ -32,18 +32,12 @@
  * @build Wrapper
  * @run main Wrapper PooledExecution
  */
-import java.io.File;
-import java.net.URI;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.sun.tools.sjavac.comp.PooledSjavac;
 import com.sun.tools.sjavac.server.CompilationResult;
 import com.sun.tools.sjavac.server.Sjavac;
-import com.sun.tools.sjavac.server.SysInfo;
 
 
 public class PooledExecution {
@@ -75,12 +69,7 @@ public class PooledExecution {
             for (int i = 0; i < NUM_REQUESTS; i++) {
                 tasks[i] = new Thread() {
                     public void run() {
-                        service.compile("",
-                                        "",
-                                        new String[0],
-                                        Collections.<File>emptyList(),
-                                        Collections.<URI>emptySet(),
-                                        Collections.<URI>emptySet());
+                        service.compile(new String[0]);
                         tasksFinished.incrementAndGet();
                     }
                 };
@@ -122,12 +111,7 @@ public class PooledExecution {
             AtomicInteger activeRequests = new AtomicInteger(0);
 
             @Override
-            public CompilationResult compile(String protocolId,
-                                             String invocationId,
-                                             String[] args,
-                                             List<File> explicitSources,
-                                             Set<URI> sourcesToCompile,
-                                             Set<URI> visibleSources) {
+            public CompilationResult compile(String[] args) {
                 leftToStart.countDown();
                 int numActiveRequests = activeRequests.incrementAndGet();
                 System.out.printf("Left to start: %2d / Currently active: %2d%n",
@@ -145,17 +129,7 @@ public class PooledExecution {
             }
 
             @Override
-            public SysInfo getSysInfo() {
-                return null;
-            }
-
-            @Override
             public void shutdown() {
-            }
-
-            @Override
-            public String serverSettings() {
-                return "";
             }
         }
     }
