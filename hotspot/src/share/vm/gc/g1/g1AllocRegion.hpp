@@ -104,6 +104,15 @@ private:
   static inline HeapWord* par_allocate(HeapRegion* alloc_region,
                                        size_t word_size,
                                        bool bot_updates);
+  // Perform a MT-safe allocation out of the given region, with the given
+  // minimum and desired size. Returns the actual size allocated (between
+  // minimum and desired size) in actual_word_size if the allocation has been
+  // successful.
+  static inline HeapWord* par_allocate(HeapRegion* alloc_region,
+                                       size_t min_word_size,
+                                       size_t desired_word_size,
+                                       size_t* actual_word_size,
+                                       bool bot_updates);
 
   // Ensure that the region passed as a parameter has been filled up
   // so that noone else can allocate out of it any more.
@@ -159,7 +168,18 @@ public:
   // First-level allocation: Should be called without holding a
   // lock. It will try to allocate lock-free out of the active region,
   // or return NULL if it was unable to.
-  inline HeapWord* attempt_allocation(size_t word_size, bool bot_updates);
+  inline HeapWord* attempt_allocation(size_t word_size,
+                                      bool bot_updates);
+  // Perform an allocation out of the current allocation region, with the given
+  // minimum and desired size. Returns the actual size allocated (between
+  // minimum and desired size) in actual_word_size if the allocation has been
+  // successful.
+  // Should be called without holding a lock. It will try to allocate lock-free
+  // out of the active region, or return NULL if it was unable to.
+  inline HeapWord* attempt_allocation(size_t min_word_size,
+                                      size_t desired_word_size,
+                                      size_t* actual_word_size,
+                                      bool bot_updates);
 
   // Second-level allocation: Should be called while holding a
   // lock. It will try to first allocate lock-free out of the active
@@ -168,6 +188,14 @@ public:
   // appropriate lock before calling this so that it is easier to make
   // it conform to its locking protocol.
   inline HeapWord* attempt_allocation_locked(size_t word_size,
+                                             bool bot_updates);
+  // Same as attempt_allocation_locked(size_t, bool), but allowing specification
+  // of minimum word size of the block in min_word_size, and the maximum word
+  // size of the allocation in desired_word_size. The actual size of the block is
+  // returned in actual_word_size.
+  inline HeapWord* attempt_allocation_locked(size_t min_word_size,
+                                             size_t desired_word_size,
+                                             size_t* actual_word_size,
                                              bool bot_updates);
 
   // Should be called to allocate a new region even if the max of this
@@ -191,9 +219,17 @@ public:
   virtual HeapRegion* release();
 
 #if G1_ALLOC_REGION_TRACING
-  void trace(const char* str, size_t word_size = 0, HeapWord* result = NULL);
+  void trace(const char* str,
+             size_t min_word_size = 0,
+             size_t desired_word_size = 0,
+             size_t actual_word_size = 0,
+             HeapWord* result = NULL);
 #else // G1_ALLOC_REGION_TRACING
-  void trace(const char* str, size_t word_size = 0, HeapWord* result = NULL) { }
+  void trace(const char* str,
+             size_t min_word_size = 0,
+             size_t desired_word_size = 0,
+             size_t actual_word_size = 0,
+             HeapWord* result = NULL) { }
 #endif // G1_ALLOC_REGION_TRACING
 };
 

@@ -57,10 +57,14 @@ protected:
   virtual OldGCAllocRegion* old_gc_alloc_region(AllocationContext_t context) = 0;
 
   // Allocation attempt during GC for a survivor object / PLAB.
-  inline HeapWord* survivor_attempt_allocation(size_t word_size,
+  inline HeapWord* survivor_attempt_allocation(size_t min_word_size,
+                                               size_t desired_word_size,
+                                               size_t* actual_word_size,
                                                AllocationContext_t context);
   // Allocation attempt during GC for an old object / PLAB.
-  inline HeapWord* old_attempt_allocation(size_t word_size,
+  inline HeapWord* old_attempt_allocation(size_t min_word_size,
+                                          size_t desired_word_size,
+                                          size_t* actual_word_size,
                                           AllocationContext_t context);
 public:
   G1Allocator(G1CollectedHeap* heap) : _g1h(heap), _survivor_is_full(false), _old_is_full(false) { }
@@ -100,6 +104,12 @@ public:
   // may not be a humongous - it must fit into a single heap region.
   HeapWord* par_allocate_during_gc(InCSetState dest,
                                    size_t word_size,
+                                   AllocationContext_t context);
+
+  HeapWord* par_allocate_during_gc(InCSetState dest,
+                                   size_t min_word_size,
+                                   size_t desired_word_size,
+                                   size_t* actual_word_size,
                                    AllocationContext_t context);
 
   virtual size_t used_in_alloc_regions() = 0;
