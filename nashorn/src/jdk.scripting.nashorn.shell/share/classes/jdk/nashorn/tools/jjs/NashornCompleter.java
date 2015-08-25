@@ -29,9 +29,12 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 import java.util.regex.Pattern;
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.SwingUtilities;
 import jdk.internal.jline.console.completer.Completer;
 import jdk.internal.jline.console.UserInterruptException;
 import jdk.nashorn.api.tree.AssignmentTree;
@@ -219,12 +222,8 @@ final class NashornCompleter implements Completer {
         if (topExpr == null) {
             // special case for load call that looks like "load(" with optional whitespaces
             if (LOAD_CALL.matcher(test).matches()) {
-                // throw a file dialog box
-                final JFileChooser chooser = new JFileChooser();
-                chooser.setFileFilter(new FileNameExtensionFilter("JavaScript Files", "js"));
-                int retVal = chooser.showOpenDialog(null);
-                if (retVal == JFileChooser.APPROVE_OPTION) {
-                    String name = chooser.getSelectedFile().getAbsolutePath();
+                String name = readFileName(context.getErr());
+                if (name != null) {
                     // handle '\' file separator
                     if (BACKSLASH_FILE_SEPARATOR) {
                         name = name.replace("\\", "\\\\");
@@ -252,6 +251,30 @@ final class NashornCompleter implements Completer {
     }
 
     // Internals only below this point
+
+    // read file name from the user using by showing a swing file chooser diablog
+    private static String readFileName(final PrintWriter err) {
+        final FutureTask<String> fileChooserTask = new FutureTask<String>(() -> {
+            // show a file chooser dialog box
+            final JFileChooser chooser = new JFileChooser();
+            chooser.setFileFilter(new FileNameExtensionFilter("JavaScript Files", "js"));
+            final int retVal = chooser.showOpenDialog(null);
+            return retVal == JFileChooser.APPROVE_OPTION ?
+                chooser.getSelectedFile().getAbsolutePath() : null;
+        });
+
+        SwingUtilities.invokeLater(fileChooserTask);
+
+        try {
+            return fileChooserTask.get();
+        } catch (final ExecutionException | InterruptedException e) {
+            err.println(e);
+            if (Main.DEBUG) {
+                e.printStackTrace();
+            }
+        }
+        return null;
+    }
 
     // fill properties of the incomplete member expression
     private int completeMemberSelect(final String exprStr, final int cursor, final List<CharSequence> result,
