@@ -742,7 +742,7 @@ uint CallNode::match_edge(uint idx) const {
 //
 bool CallNode::may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase) {
   assert((t_oop != NULL), "sanity");
-  if (is_call_to_arraycopystub()) {
+  if (is_call_to_arraycopystub() && strcmp(_name, "unsafe_arraycopy") != 0) {
     const TypeTuple* args = _tf->domain();
     Node* dest = NULL;
     // Stubs that can be called once an ArrayCopyNode is expanded have
