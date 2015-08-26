@@ -1453,7 +1453,7 @@ public class Lexer extends Scanner {
 
             // Scan identifier. It might be quoted, indicating that no string editing should take place.
             final char quoteChar = ch0;
-            final boolean noStringEditing = isStringDelimiter(quoteChar);
+            final boolean noStringEditing = quoteChar == '"' || quoteChar == '\'';
             if (noStringEditing) {
                 skip(1);
             }

@@ -44,10 +44,6 @@ print(<<'EOM')
 ${a}${b}
 EOM
 
-print(<<`EOM`)
-${c}
-EOM
-
 print(<<"EOM")
 $\{a}
 EOM
