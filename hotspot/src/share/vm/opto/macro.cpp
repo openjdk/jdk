@@ -521,6 +521,9 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
         return NULL;
       } else if (val->is_ArrayCopy()) {
         Node* res = make_arraycopy_load(val->as_ArrayCopy(), offset, val->in(0), ft, phi_type, alloc);
+        if (res == NULL) {
+          return NULL;
+        }
         values.at_put(j, res);
       } else {
 #ifdef ASSERT
