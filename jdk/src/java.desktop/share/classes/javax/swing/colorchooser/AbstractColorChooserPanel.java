@@ -50,6 +50,14 @@ import javax.swing.*;
 @SuppressWarnings("serial") // Same-version serialization only
 public abstract class AbstractColorChooserPanel extends JPanel {
 
+
+    /**
+     * Identifies that the transparency of the color (alpha value) can be
+     * selected
+     */
+    public static final String TRANSPARENCY_ENABLED_PROPERTY
+            = "TransparencyEnabled";
+
     private final PropertyChangeListener enabledListener = new PropertyChangeListener() {
         public void propertyChange(PropertyChangeEvent event) {
             Object value = event.getNewValue();
@@ -199,6 +207,40 @@ public abstract class AbstractColorChooserPanel extends JPanel {
         if (model != null) {
             model.setSelectedColor(color);
         }
+    }
+
+    /**
+     * Sets whether color chooser panel allows to select the transparency
+     * (alpha value) of a color.
+     * This method fires a property-changed event, using the string value of
+     * {@code TRANSPARENCY_ENABLED_PROPERTY} as the name
+     * of the property.
+     *
+     * <p>The value is a hint and may not be applicable to all types of chooser
+     * panel.
+     *
+     * <p>The default value is {@code true}.
+     *
+     * @param b true if the transparency of a color can be selected
+     *
+     * @beaninfo
+     *       bound: true
+     * description: Sets the transparency of a color selection on or off.
+     *
+     * @see #isColorTransparencySelectionEnabled()
+     */
+    public void setColorTransparencySelectionEnabled(boolean b){
+    }
+
+    /**
+     * Gets whether color chooser panel allows to select the transparency
+     * (alpha value) of a color.
+     *
+     * @return true if the transparency of a color can be selected
+     * @see #setColorTransparencySelectionEnabled(boolean)
+     */
+    public boolean isColorTransparencySelectionEnabled(){
+        return true;
     }
 
     /**
