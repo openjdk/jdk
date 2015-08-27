@@ -282,6 +282,8 @@ class GenCollectorPolicy : public CollectorPolicy {
 
   size_t young_gen_size_lower_bound();
 
+  size_t old_gen_size_lower_bound();
+
   HeapWord* mem_allocate_work(size_t size,
                               bool is_tlab,
                               bool* gc_overhead_limit_was_exceeded);

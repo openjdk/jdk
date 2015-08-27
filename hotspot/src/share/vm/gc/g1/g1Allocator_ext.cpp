@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/g1Allocator.hpp"
+#include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 
 G1Allocator* G1Allocator::create_allocator(G1CollectedHeap* g1h) {
