@@ -428,7 +428,7 @@ uint HeapRegionManager::shrink_by(uint num_regions_to_remove) {
 
     uncommit_regions(idx_last_found + num_last_found - to_remove, to_remove);
 
-    cur -= num_last_found;
+    cur = idx_last_found;
     removed += to_remove;
   }
 

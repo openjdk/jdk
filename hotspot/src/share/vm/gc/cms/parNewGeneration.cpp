@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/cms/compactibleFreeListSpace.hpp"
 #include "gc/cms/concurrentMarkSweepGeneration.hpp"
-#include "gc/cms/parNewGeneration.hpp"
+#include "gc/cms/parNewGeneration.inline.hpp"
 #include "gc/cms/parOopClosures.inline.hpp"
 #include "gc/serial/defNewGeneration.inline.hpp"
 #include "gc/shared/adaptiveSizePolicy.hpp"
@@ -248,8 +248,7 @@ HeapWord* ParScanThreadState::alloc_in_to_space_slow(size_t word_sz) {
         }
       }
       if (buf_space != NULL) {
-        plab->set_word_size(buf_size);
-        plab->set_buf(buf_space);
+        plab->set_buf(buf_space, buf_size);
         record_survivor_plab(buf_space, buf_size);
         obj = plab->allocate_aligned(word_sz, SurvivorAlignmentInBytes);
         // Note that we cannot compare buf_size < word_sz below
