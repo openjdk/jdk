@@ -964,8 +964,8 @@ public abstract class RasterPrinterJob extends PrinterJob {
    /**
      * Presents the user a dialog for changing properties of the
      * print job interactively.
-     * @returns false if the user cancels the dialog and
-     *          true otherwise.
+     * @return false if the user cancels the dialog and
+     *         true otherwise.
      * @exception HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
