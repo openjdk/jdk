@@ -80,10 +80,19 @@ public class Symbol extends VMObject {
   public byte getByteAt(long index) {
     return addr.getJByteAt(baseOffset + index);
   }
-
+  // _identity_hash is a short
   private static CIntegerField idHash;
 
-  public int identityHash() { return     (int)idHash.getValue(this.addr); }
+  public int identityHash() {
+    long addr_value = getAddress().asLongValue();
+    int  addr_bits = (int)(addr_value >> (VM.getVM().getLogMinObjAlignmentInBytes() + 3));
+    int  length = (int)getLength();
+    int  byte0 = getByteAt(0);
+    int  byte1 = getByteAt(1);
+    int  id_hash = (int)(0xffff & idHash.getValue(this.addr));
+    return id_hash |
+           ((addr_bits ^ (length << 8) ^ ((byte0 << 8) | byte1)) << 16);
+  }
 
   public boolean equals(byte[] modUTF8Chars) {
     int l = (int) getLength();

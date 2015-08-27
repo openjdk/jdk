@@ -109,7 +109,7 @@ public:
 // evacuation pauses between two cleanups, which is _highly_ unlikely.
 class G1OffsetTableContigSpace: public CompactibleSpace {
   friend class VMStructs;
-  HeapWord* _top;
+  HeapWord* volatile _top;
   HeapWord* volatile _scan_top;
  protected:
   G1BlockOffsetArrayContigSpace _offsets;
@@ -134,10 +134,18 @@ class G1OffsetTableContigSpace: public CompactibleSpace {
   // Reset the G1OffsetTableContigSpace.
   virtual void initialize(MemRegion mr, bool clear_space, bool mangle_space);
 
-  HeapWord** top_addr() { return &_top; }
-  // Allocation helpers (return NULL if full).
-  inline HeapWord* allocate_impl(size_t word_size, HeapWord* end_value);
-  inline HeapWord* par_allocate_impl(size_t word_size, HeapWord* end_value);
+  HeapWord* volatile* top_addr() { return &_top; }
+  // Try to allocate at least min_word_size and up to desired_size from this Space.
+  // Returns NULL if not possible, otherwise sets actual_word_size to the amount of
+  // space allocated.
+  // This version assumes that all allocation requests to this Space are properly
+  // synchronized.
+  inline HeapWord* allocate_impl(size_t min_word_size, size_t desired_word_size, size_t* actual_word_size);
+  // Try to allocate at least min_word_size and up to desired_size from this Space.
+  // Returns NULL if not possible, otherwise sets actual_word_size to the amount of
+  // space allocated.
+  // This version synchronizes with other calls to par_allocate_impl().
+  inline HeapWord* par_allocate_impl(size_t min_word_size, size_t desired_word_size, size_t* actual_word_size);
 
  public:
   void reset_after_compaction() { set_top(compaction_top()); }
@@ -179,9 +187,14 @@ class G1OffsetTableContigSpace: public CompactibleSpace {
   HeapWord* block_start(const void* p);
   HeapWord* block_start_const(const void* p) const;
 
-  // Add offset table update.
+  // Allocation (return NULL if full).  Assumes the caller has established
+  // mutually exclusive access to the space.
+  HeapWord* allocate(size_t min_word_size, size_t desired_word_size, size_t* actual_word_size);
+  // Allocation (return NULL if full).  Enforces mutual exclusion internally.
+  HeapWord* par_allocate(size_t min_word_size, size_t desired_word_size, size_t* actual_word_size);
+
   virtual HeapWord* allocate(size_t word_size);
-  HeapWord* par_allocate(size_t word_size);
+  virtual HeapWord* par_allocate(size_t word_size);
 
   HeapWord* saved_mark_word() const { ShouldNotReachHere(); return NULL; }
 
@@ -351,8 +364,9 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // Override for scan_and_forward support.
   void prepare_for_compaction(CompactPoint* cp);
 
-  inline HeapWord* par_allocate_no_bot_updates(size_t word_size);
+  inline HeapWord* par_allocate_no_bot_updates(size_t min_word_size, size_t desired_word_size, size_t* word_size);
   inline HeapWord* allocate_no_bot_updates(size_t word_size);
+  inline HeapWord* allocate_no_bot_updates(size_t min_word_size, size_t desired_word_size, size_t* actual_size);
 
   // If this region is a member of a HeapRegionManager, the index in that
   // sequence, otherwise -1.

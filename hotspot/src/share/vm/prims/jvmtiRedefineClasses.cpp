@@ -3771,7 +3771,7 @@ void VM_RedefineClasses::flush_dependent_code(instanceKlassHandle k_h, TRAPS) {
     // Deoptimize all activations depending on marked nmethods
     Deoptimization::deoptimize_dependents();
 
-    // Make the dependent methods not entrant (in VM_Deoptimize they are made zombies)
+    // Make the dependent methods not entrant
     CodeCache::make_marked_nmethods_not_entrant();
 
     // From now on we know that the dependency information is complete

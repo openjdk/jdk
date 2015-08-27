@@ -189,4 +189,44 @@ class MetaspaceSummary : public StackObj {
 
 };
 
+class G1EvacSummary : public StackObj {
+private:
+  size_t _allocated;          // Total allocated
+  size_t _wasted;             // of which wasted (internal fragmentation)
+  size_t _undo_wasted;        // of which wasted on undo (is not used for calculation of PLAB size)
+  size_t _unused;             // Unused in last buffer
+  size_t _used;
+
+  size_t _region_end_waste; // Number of words wasted due to skipping to the next region.
+  uint   _regions_filled;   // Number of regions filled completely.
+  size_t _direct_allocated; // Number of words allocated directly into the regions.
+
+  // Number of words in live objects remaining in regions that ultimately suffered an
+  // evacuation failure. This is used in the regions when the regions are made old regions.
+  size_t _failure_used;
+  // Number of words wasted in regions which failed evacuation. This is the sum of space
+  // for objects successfully copied out of the regions (now dead space) plus waste at the
+  // end of regions.
+  size_t _failure_waste;
+public:
+  G1EvacSummary(size_t allocated, size_t wasted, size_t undo_wasted, size_t unused,
+    size_t used, size_t region_end_waste, uint regions_filled, size_t direct_allocated,
+    size_t failure_used, size_t failure_waste) :
+    _allocated(allocated), _wasted(wasted), _undo_wasted(undo_wasted), _unused(unused),
+    _used(used),  _region_end_waste(region_end_waste), _regions_filled(regions_filled),
+    _direct_allocated(direct_allocated), _failure_used(failure_used), _failure_waste(failure_waste)
+  { }
+
+  size_t allocated() const { return _allocated; }
+  size_t wasted() const { return _wasted; }
+  size_t undo_wasted() const { return _undo_wasted; }
+  size_t unused() const { return _unused; }
+  size_t used() const { return _used; }
+  size_t region_end_waste() const { return _region_end_waste; }
+  uint regions_filled() const { return _regions_filled; }
+  size_t direct_allocated() const { return _direct_allocated; }
+  size_t failure_used() const { return _failure_used; }
+  size_t failure_waste() const { return _failure_waste; }
+};
+
 #endif // SHARE_VM_GC_SHARED_GCHEAPSUMMARY_HPP

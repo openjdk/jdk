@@ -254,7 +254,7 @@ class Metaspace : public CHeapObj<mtClass> {
   // Debugging support
   void verify();
 
-  static void print_compressed_class_space(outputStream* st, const char* requested_addr = 0);
+  static void print_compressed_class_space(outputStream* st, const char* requested_addr = 0) NOT_LP64({});
 
   class AllocRecordClosure :  public StackObj {
   public:
