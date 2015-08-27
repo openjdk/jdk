@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,16 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "gc/g1/g1Allocator.inline.hpp"
-#include "gc/g1/g1CollectedHeap.hpp"
+#ifndef SHARE_VM_GC_CMS_PARNEWGENERATION_INLINE_HPP
+#define SHARE_VM_GC_CMS_PARNEWGENERATION_INLINE_HPP
 
-G1Allocator* G1Allocator::create_allocator(G1CollectedHeap* g1h) {
-  return new G1DefaultAllocator(g1h);
-}
+#include "gc/cms/parNewGeneration.hpp"
+#include "gc/shared/plab.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-G1PLABAllocator* G1PLABAllocator::create_allocator(G1Allocator* allocator) {
-  return new G1DefaultPLABAllocator(allocator);
+inline HeapWord* ParScanThreadState::alloc_in_to_space(size_t word_sz) {
+  HeapWord* obj = to_space_alloc_buffer()->allocate_aligned(word_sz, SurvivorAlignmentInBytes);
+  if (obj != NULL) return obj;
+  else return alloc_in_to_space_slow(word_sz);
 }
+#endif // SHARE_VM_GC_CMS_PARNEWGENERATION_INLINE_HPP

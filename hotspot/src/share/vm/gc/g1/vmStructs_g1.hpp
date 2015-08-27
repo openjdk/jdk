@@ -34,7 +34,7 @@
   static_field(HeapRegion, GrainBytes,        size_t)                         \
   static_field(HeapRegion, LogOfHRGrainBytes, int)                            \
                                                                               \
-  nonstatic_field(G1OffsetTableContigSpace, _top,       HeapWord*)            \
+  nonstatic_field(G1OffsetTableContigSpace, _top,       HeapWord* volatile)   \
                                                                               \
   nonstatic_field(G1HeapRegionTable, _base,             address)              \
   nonstatic_field(G1HeapRegionTable, _length,           size_t)               \
