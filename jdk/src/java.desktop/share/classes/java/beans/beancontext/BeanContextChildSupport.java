@@ -91,9 +91,9 @@ public class BeanContextChildSupport implements BeanContextChild, BeanContextSer
     }
 
     /**
-     * Sets the <code>BeanContext</code> for
-     * this <code>BeanContextChildSupport</code>.
-     * @param bc the new value to be assigned to the <code>BeanContext</code>
+     * Sets the {@code BeanContext} for
+     * this {@code BeanContextChildSupport}.
+     * @param bc the new value to be assigned to the {@code BeanContext}
      * property
      * @throws PropertyVetoException if the change is rejected
      */
@@ -137,10 +137,10 @@ public class BeanContextChildSupport implements BeanContextChild, BeanContextSer
     }
 
     /**
-     * Gets the nesting <code>BeanContext</code>
-     * for this <code>BeanContextChildSupport</code>.
-     * @return the nesting <code>BeanContext</code> for
-     * this <code>BeanContextChildSupport</code>.
+     * Gets the nesting {@code BeanContext}
+     * for this {@code BeanContextChildSupport}.
+     * @return the nesting {@code BeanContext} for
+     * this {@code BeanContextChildSupport}.
      */
     public synchronized BeanContext getBeanContext() { return beanContext; }
 
@@ -149,11 +149,11 @@ public class BeanContextChildSupport implements BeanContextChild, BeanContextSer
      * The same listener object may be added more than once.  For each
      * property,  the listener will be invoked the number of times it was added
      * for that property.
-     * If <code>name</code> or <code>pcl</code> is null, no exception is thrown
+     * If {@code name} or {@code pcl} is null, no exception is thrown
      * and no action is taken.
      *
      * @param name The name of the property to listen on
-     * @param pcl The <code>PropertyChangeListener</code> to be added
+     * @param pcl The {@code PropertyChangeListener} to be added
      */
     public void addPropertyChangeListener(String name, PropertyChangeListener pcl) {
         pcSupport.addPropertyChangeListener(name, pcl);
@@ -161,12 +161,12 @@ public class BeanContextChildSupport implements BeanContextChild, BeanContextSer
 
     /**
      * Remove a PropertyChangeListener for a specific property.
-     * If <code>pcl</code> was added more than once to the same event
+     * If {@code pcl} was added more than once to the same event
      * source for the specified property, it will be notified one less time
      * after being removed.
-     * If <code>name</code> is null, no exception is thrown
+     * If {@code name} is null, no exception is thrown
      * and no action is taken.
-     * If <code>pcl</code> is null, or was never added for the specified
+     * If {@code pcl} is null, or was never added for the specified
      * property, no exception is thrown and no action is taken.
      *
      * @param name The name of the property that was listened on
@@ -181,28 +181,28 @@ public class BeanContextChildSupport implements BeanContextChild, BeanContextSer
      * The same listener object may be added more than once.  For each
      * property,  the listener will be invoked the number of times it was added
      * for that property.
-     * If <code>name</code> or <code>vcl</code> is null, no exception is thrown
+     * If {@code name} or {@code vcl} is null, no exception is thrown
      * and no action is taken.
      *
      * @param name The name of the property to listen on
-     * @param vcl The <code>VetoableChangeListener</code> to be added
+     * @param vcl The {@code VetoableChangeListener} to be added
      */
     public void addVetoableChangeListener(String name, VetoableChangeListener vcl) {
         vcSupport.addVetoableChangeListener(name, vcl);
     }
 
     /**
-     * Removes a <code>VetoableChangeListener</code>.
-     * If <code>pcl</code> was added more than once to the same event
+     * Removes a {@code VetoableChangeListener}.
+     * If {@code pcl} was added more than once to the same event
      * source for the specified property, it will be notified one less time
      * after being removed.
-     * If <code>name</code> is null, no exception is thrown
+     * If {@code name} is null, no exception is thrown
      * and no action is taken.
-     * If <code>vcl</code> is null, or was never added for the specified
+     * If {@code vcl} is null, or was never added for the specified
      * property, no exception is thrown and no action is taken.
      *
      * @param name The name of the property that was listened on
-     * @param vcl The <code>VetoableChangeListener</code> to be removed
+     * @param vcl The {@code VetoableChangeListener} to be removed
      */
     public void removeVetoableChangeListener(String name, VetoableChangeListener vcl) {
         vcSupport.removeVetoableChangeListener(name, vcl);
@@ -213,7 +213,7 @@ public class BeanContextChildSupport implements BeanContextChild, BeanContextSer
      *
      * Subclasses may override this method in order to implement their own
      * behaviors.
-     * @param bcsre The <code>BeanContextServiceRevokedEvent</code> fired as a
+     * @param bcsre The {@code BeanContextServiceRevokedEvent} fired as a
      * result of a service being revoked
      */
     public void serviceRevoked(BeanContextServiceRevokedEvent bcsre) { }
@@ -230,10 +230,10 @@ public class BeanContextChildSupport implements BeanContextChild, BeanContextSer
     public void serviceAvailable(BeanContextServiceAvailableEvent bcsae) { }
 
     /**
-     * Gets the <tt>BeanContextChild</tt> associated with this
-     * <tt>BeanContextChildSupport</tt>.
+     * Gets the {@code BeanContextChild} associated with this
+     * {@code BeanContextChildSupport}.
      *
-     * @return the <tt>BeanContextChild</tt> peer of this class
+     * @return the {@code BeanContextChild} peer of this class
      */
     public BeanContextChild getBeanContextChildPeer() { return beanContextChildPeer; }
 
@@ -283,7 +283,7 @@ public class BeanContextChildSupport implements BeanContextChild, BeanContextSer
      * PropertyVetoException.
      * @param newValue the new value that has been requested for
      *  the BeanContext property
-     * @return <code>true</code> if the change operation is to be vetoed
+     * @return {@code true} if the change operation is to be vetoed
      */
     public boolean validatePendingSetBeanContext(BeanContext newValue) {
         return true;
@@ -345,20 +345,20 @@ public class BeanContextChildSupport implements BeanContextChild, BeanContextSer
      */
 
     /**
-     * The <code>BeanContext</code> in which
-     * this <code>BeanContextChild</code> is nested.
+     * The {@code BeanContext} in which
+     * this {@code BeanContextChild} is nested.
      */
     public    BeanContextChild      beanContextChildPeer;
 
    /**
-    * The <tt>PropertyChangeSupport</tt> associated with this
-    * <tt>BeanContextChildSupport</tt>.
+    * The {@code PropertyChangeSupport} associated with this
+    * {@code BeanContextChildSupport}.
     */
     protected PropertyChangeSupport pcSupport;
 
    /**
-    * The <tt>VetoableChangeSupport</tt> associated with this
-    * <tt>BeanContextChildSupport</tt>.
+    * The {@code VetoableChangeSupport} associated with this
+    * {@code BeanContextChildSupport}.
     */
     protected VetoableChangeSupport vcSupport;
 
@@ -369,7 +369,7 @@ public class BeanContextChildSupport implements BeanContextChild, BeanContextSer
 
    /**
     * A flag indicating that there has been
-    * at least one <code>PropertyChangeVetoException</code>
+    * at least one {@code PropertyChangeVetoException}
     * thrown for the attempted setBeanContext operation.
     */
     protected transient boolean               rejectedSetBCOnce;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,8 @@
 #include "wsutils.h"
 #include "list.h"
 #include "multiVis.h"
+#include "gtk2_interface.h"
+
 #if defined(__linux__) || defined(MACOSX)
 #include <sys/socket.h>
 #endif
@@ -204,63 +206,139 @@ JNIEXPORT void JNICALL
 Java_sun_awt_X11_XRobotPeer_getRGBPixelsImpl( JNIEnv *env,
                              jclass cls,
                              jobject xgc,
-                             jint x,
-                             jint y,
-                             jint width,
-                             jint height,
-                             jintArray pixelArray) {
-
+                             jint jx,
+                             jint jy,
+                             jint jwidth,
+                             jint jheight,
+                             jintArray pixelArray,
+                             jboolean isGtkSupported) {
     XImage *image;
     jint *ary;               /* Array of jints for sending pixel values back
                               * to parent process.
                               */
     Window rootWindow;
+    XWindowAttributes attr;
     AwtGraphicsConfigDataPtr adata;
 
-    DTRACE_PRINTLN6("RobotPeer: getRGBPixelsImpl(%lx, %d, %d, %d, %d, %x)", xgc, x, y, width, height, pixelArray);
+    DTRACE_PRINTLN6("RobotPeer: getRGBPixelsImpl(%lx, %d, %d, %d, %d, %x)", xgc, jx, jy, jwidth, jheight, pixelArray);
 
-    AWT_LOCK();
-
-    /* avoid a lot of work for empty rectangles */
-    if ((width * height) == 0) {
-        AWT_UNLOCK();
+    if (jwidth <= 0 || jheight <= 0) {
         return;
     }
-    DASSERT(width * height > 0); /* only allow positive size */
 
     adata = (AwtGraphicsConfigDataPtr) JNU_GetLongFieldAsPtr(env, xgc, x11GraphicsConfigIDs.aData);
     DASSERT(adata != NULL);
 
+    AWT_LOCK();
+
     rootWindow = XRootWindow(awt_display, adata->awt_visInfo.screen);
-    image = getWindowImage(awt_display, rootWindow, x, y, width, height);
 
-    /* Array to use to crunch around the pixel values */
-    if (!IS_SAFE_SIZE_MUL(width, height) ||
-        !(ary = (jint *) SAFE_SIZE_ARRAY_ALLOC(malloc, width * height, sizeof (jint))))
-    {
-        JNU_ThrowOutOfMemoryError(env, "OutOfMemoryError");
-        XDestroyImage(image);
+    if (!XGetWindowAttributes(awt_display, rootWindow, &attr)
+            || jx + jwidth <= attr.x
+            || attr.x + attr.width <= jx
+            || jy + jheight <= attr.y
+            || attr.y + attr.height <= jy) {
+
         AWT_UNLOCK();
-        return;
+        return; // Does not intersect with root window
     }
-    /* convert to Java ARGB pixels */
-    for (y = 0; y < height; y++) {
-        for (x = 0; x < width; x++) {
-            jint pixel = (jint) XGetPixel(image, x, y); /* Note ignore upper
-                                                         * 32-bits on 64-bit
-                                                         * OSes.
-                                                         */
 
-            pixel |= 0xff000000; /* alpha - full opacity */
+    gboolean gtk_failed = TRUE;
+    jint _x, _y;
 
-            ary[(y * width) + x] = pixel;
+    jint x = MAX(jx, attr.x);
+    jint y = MAX(jy, attr.y);
+    jint width = MIN(jx + jwidth, attr.x + attr.width) - x;
+    jint height = MIN(jy + jheight, attr.y + attr.height) - y;
+
+
+    int dx = attr.x > jx ? attr.x - jx : 0;
+    int dy = attr.y > jy ? attr.y - jy : 0;
+
+    int index;
+
+    if (isGtkSupported) {
+        GdkPixbuf *pixbuf;
+        (*fp_gdk_threads_enter)();
+        GdkWindow *root = (*fp_gdk_get_default_root_window)();
+
+        pixbuf = (*fp_gdk_pixbuf_get_from_drawable)(NULL, root, NULL,
+                                                    x, y, 0, 0, width, height);
+
+        if (pixbuf) {
+            int nchan = (*fp_gdk_pixbuf_get_n_channels)(pixbuf);
+            int stride = (*fp_gdk_pixbuf_get_rowstride)(pixbuf);
+
+            if ((*fp_gdk_pixbuf_get_width)(pixbuf) == width
+                    && (*fp_gdk_pixbuf_get_height)(pixbuf) == height
+                    && (*fp_gdk_pixbuf_get_bits_per_sample)(pixbuf) == 8
+                    && (*fp_gdk_pixbuf_get_colorspace)(pixbuf) == GDK_COLORSPACE_RGB
+                    && nchan >= 3
+                    ) {
+                guchar *p, *pix = (*fp_gdk_pixbuf_get_pixels)(pixbuf);
+
+                ary = (*env)->GetPrimitiveArrayCritical(env, pixelArray, NULL);
+                if (!ary) {
+                    (*fp_g_object_unref)(pixbuf);
+                    (*fp_gdk_threads_leave)();
+                    AWT_UNLOCK();
+                    return;
+                }
+
+                for (_y = 0; _y < height; _y++) {
+                    for (_x = 0; _x < width; _x++) {
+                        p = pix + _y * stride + _x * nchan;
+
+                        index = (_y + dy) * jwidth + (_x + dx);
+                        ary[index] = 0xff000000
+                                        | (p[0] << 16)
+                                        | (p[1] << 8)
+                                        | (p[2]);
+
+                    }
+                }
+                (*env)->ReleasePrimitiveArrayCritical(env, pixelArray, ary, 0);
+                if ((*env)->ExceptionCheck(env)) {
+                    (*fp_g_object_unref)(pixbuf);
+                    (*fp_gdk_threads_leave)();
+                    AWT_UNLOCK();
+                    return;
+                }
+                gtk_failed = FALSE;
+            }
+            (*fp_g_object_unref)(pixbuf);
         }
+        (*fp_gdk_threads_leave)();
     }
-    (*env)->SetIntArrayRegion(env, pixelArray, 0, height * width, ary);
-    free(ary);
 
-    XDestroyImage(image);
+    if (gtk_failed) {
+        image = getWindowImage(awt_display, rootWindow, x, y, width, height);
 
+        ary = (*env)->GetPrimitiveArrayCritical(env, pixelArray, NULL);
+
+        if (!ary) {
+            XDestroyImage(image);
+            AWT_UNLOCK();
+            return;
+        }
+
+        /* convert to Java ARGB pixels */
+        for (_y = 0; _y < height; _y++) {
+            for (_x = 0; _x < width; _x++) {
+                jint pixel = (jint) XGetPixel(image, _x, _y); /* Note ignore upper
+                                                               * 32-bits on 64-bit
+                                                               * OSes.
+                                                               */
+                pixel |= 0xff000000; /* alpha - full opacity */
+
+                index = (_y + dy) * jwidth + (_x + dx);
+                ary[index] = pixel;
+            }
+        }
+
+        XDestroyImage(image);
+        (*env)->ReleasePrimitiveArrayCritical(env, pixelArray, ary, 0);
+    }
     AWT_UNLOCK();
 }
 

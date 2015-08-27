@@ -23,7 +23,7 @@
  * questions.
  */
 
-package com.sun.java.accessibility.util.java.awt;
+package com.sun.java.accessibility.util.internal;
 
 import java.lang.*;
 import java.util.*;
@@ -49,30 +49,30 @@ import com.sun.java.accessibility.util.*;
  * </PRE>
  *
  * <P>This class extends the Translator class to provide specific support
- * for the List class.  Translator.getAccessible() will automatically
+ * for the Button class.  Translator.getAccessible() will automatically
  * load this class when an assistive technology asks for an accessible
- * translator for List.
+ * translator for Button.
  *
  */
-public class ListTranslator extends Translator {
+public class ButtonTranslator extends Translator {
 
     /**
-     * Get the state of this object.
-     * @return an instance of AccessibleState containing the current state of the object
-     * @see AccessibleState
+     * Get the name of this object.
+     * @return the name of the object -- can be null if this object does
+     * not have a name
      */
-    public AccessibleStateSet getAccessibleStateSet() {
-        AccessibleStateSet states = super.getAccessibleStateSet();
-        if (((java.awt.List) source).isMultipleMode()) {
-            states.add(AccessibleState.MULTISELECTABLE);
-        }
-        if (((java.awt.List) source).getSelectedItems().length > 0) {
-            states.add(AccessibleState.SELECTED);
-        }
-        return states;
+    public String getAccessibleName() {
+        return ((Button) source).getLabel();
+    }
+
+    /**
+     * Set the name of this object.
+     */
+    public void setAccessibleName(String s) {
+        ((Button) source).setLabel(s);
     }
 
     public AccessibleRole getAccessibleRole() {
-        return AccessibleRole.LIST;
+        return AccessibleRole.PUSH_BUTTON;
     }
 }

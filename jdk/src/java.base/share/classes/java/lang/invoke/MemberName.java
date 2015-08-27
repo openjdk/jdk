@@ -93,7 +93,7 @@ import java.util.Objects;
     /** Return the simple name of this member.
      *  For a type, it is the same as {@link Class#getSimpleName}.
      *  For a method or field, it is the simple name of the member.
-     *  For a constructor, it is always {@code "&lt;init&gt;"}.
+     *  For a constructor, it is always {@code "<init>"}.
      */
     public String getName() {
         if (name == null) {
@@ -727,7 +727,7 @@ import java.util.Objects;
     }
     /** Create a method or constructor name from the given components:
      *  Declaring class, name, type, reference kind.
-     *  It will be a constructor if and only if the name is {@code "&lt;init&gt;"}.
+     *  It will be a constructor if and only if the name is {@code "<init>"}.
      *  The declaring class may be supplied as null if this is to be a bare name and type.
      *  The last argument is optional, a boolean which requests REF_invokeSpecial.
      *  The resulting name will in an unresolved state.

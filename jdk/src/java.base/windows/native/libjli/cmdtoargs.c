@@ -198,18 +198,37 @@ void JLI_CmdToArgs(char* cmdline) {
     StdArg* argv = NULL;
     jboolean wildcard = JNI_FALSE;
     char* src = cmdline;
+    JLI_List argsInFile;
 
     // allocate arg buffer with sufficient space to receive the largest arg
     char* arg = JLI_StringDup(cmdline);
 
     do {
         src = next_arg(src, arg, &wildcard);
-        // resize to accommodate another Arg
-        argv = (StdArg*) JLI_MemRealloc(argv, (nargs+1) * sizeof(StdArg));
-        argv[nargs].arg = JLI_StringDup(arg);
-        argv[nargs].has_wildcard = wildcard;
+        argsInFile = JLI_PreprocessArg(arg);
+        if (argsInFile != NULL) {
+            size_t cnt, i;
+            // resize to accommodate another Arg
+            cnt = argsInFile->size;
+            argv = (StdArg*) JLI_MemRealloc(argv, (nargs + cnt) * sizeof(StdArg));
+            for (i = 0; i < cnt; i++) {
+                argv[nargs].arg = argsInFile->elements[i];
+                // wildcard is not supported in argfile
+                argv[nargs].has_wildcard = JNI_FALSE;
+                nargs++;
+            }
+            // Shallow free, we reuse the string to avoid copy
+            JLI_MemFree(argsInFile->elements);
+            JLI_MemFree(argsInFile);
+        } else {
+            // resize to accommodate another Arg
+            argv = (StdArg*) JLI_MemRealloc(argv, (nargs+1) * sizeof(StdArg));
+            argv[nargs].arg = JLI_StringDup(arg);
+            argv[nargs].has_wildcard = wildcard;
+            *arg = '\0';
+            nargs++;
+        }
         *arg = '\0';
-        nargs++;
     } while (src != NULL);
 
     JLI_MemFree(arg);

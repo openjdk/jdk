@@ -21,6 +21,12 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 8087190
+ * @summary Exercise the sun.net.util.IPAddressUtil class
+ */
+
 import sun.net.util.*;
 
 /*
@@ -39,6 +45,10 @@ public class IPAddressUtilTest {
         {"238.255.2550.255", bad},
         {"238.2550.255.255", bad},
         {"2380.255.255.255", bad},
+        {".1.1.1", bad},
+        {"1..1.1", bad},
+        {"1.1.1.", bad},
+        {"...", bad},
         {"10::10", good},
         {"10::10.1", bad},
         {"10::10.1.2", bad},

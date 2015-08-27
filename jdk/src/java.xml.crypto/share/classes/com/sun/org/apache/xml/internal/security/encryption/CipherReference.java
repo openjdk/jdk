@@ -25,18 +25,18 @@ package com.sun.org.apache.xml.internal.security.encryption;
 import org.w3c.dom.Attr;
 
 /**
- * <code>CipherReference</code> identifies a source which, when processed,
+ * {@code CipherReference} identifies a source which, when processed,
  * yields the encrypted octet sequence.
  * <p>
- * The actual value is obtained as follows. The <code>CipherReference URI</code>
+ * The actual value is obtained as follows. The {@code CipherReference URI}
  * contains an identifier that is dereferenced. Should the
- * Transforms, the data resulting from dereferencing the <code>URI</code> is
+ * Transforms, the data resulting from dereferencing the {@code URI} is
  * transformed as specified so as to yield the intended cipher value. For
  * example, if the value is base64 encoded within an XML document; the
  * transforms could specify an XPath expression followed by a base64 decoding so
  * as to extract the octets.
  * <p>
- * The syntax of the <code>URI</code> and Transforms is similar to that of
+ * The syntax of the {@code URI} and Transforms is similar to that of
  * [XML-DSIG]. However, there is a difference between signature and encryption
  * processing. In [XML-DSIG] both generation and validation processing start
  * with the same source data and perform that transform in the same order. In
@@ -46,7 +46,7 @@ import org.w3c.dom.Attr;
  * the &xenc; namespace.
  * <p>
  * The schema definition is as follows:
- * <xmp>
+ * <pre>{@code
  * <element name='CipherReference' type='xenc:CipherReferenceType'/>
  * <complexType name='CipherReferenceType'>
  *     <sequence>
@@ -54,15 +54,15 @@ import org.w3c.dom.Attr;
  *     </sequence>
  *     <attribute name='URI' type='anyURI' use='required'/>
  * </complexType>
- * </xmp>
+ * }</pre>
  *
  * @author Axl Mattheus
  */
 public interface CipherReference {
     /**
-     * Returns an <code>URI</code> that contains an identifier that should be
+     * Returns an {@code URI} that contains an identifier that should be
      * dereferenced.
-     * @return an <code>URI</code> that contains an identifier that should be
+     * @return an {@code URI} that contains an identifier that should be
      * dereferenced.
      */
     String getURI();
@@ -75,8 +75,8 @@ public interface CipherReference {
     Attr getURIAsAttr();
 
     /**
-     * Returns the <code>Transforms</code> that specifies how to transform the
-     * <code>URI</code> to yield the appropriate cipher value.
+     * Returns the {@code Transforms} that specifies how to transform the
+     * {@code URI} to yield the appropriate cipher value.
      *
      * @return the transform that specifies how to transform the reference to
      *   yield the intended cipher value.
@@ -84,10 +84,10 @@ public interface CipherReference {
     Transforms getTransforms();
 
     /**
-     * Sets the <code>Transforms</code> that specifies how to transform the
-     * <code>URI</code> to yield the appropriate cipher value.
+     * Sets the {@code Transforms} that specifies how to transform the
+     * {@code URI} to yield the appropriate cipher value.
      *
-     * @param transforms the set of <code>Transforms</code> that specifies how
+     * @param transforms the set of {@code Transforms} that specifies how
      *   to transform the reference to yield the intended cipher value.
      */
     void setTransforms(Transforms transforms);

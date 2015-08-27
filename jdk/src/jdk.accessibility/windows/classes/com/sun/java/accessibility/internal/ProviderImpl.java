@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.sun.java.accessibility;
+package com.sun.java.accessibility.internal;
 
 import javax.accessibility.AccessibilityProvider;
 

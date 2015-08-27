@@ -1219,10 +1219,11 @@ Java_sun_font_FontConfigManager_getFontConfig
                 minGlyphs = val;
             }
         }
+        FcCharSet *unionCharset = NULL;
         for (j=0; j<nfonts; j++) {
             FcPattern *fontPattern = fontset->fonts[j];
             FcChar8 *fontformat;
-            FcCharSet *unionCharset = NULL, *charset;
+            FcCharSet *charset = NULL;
 
             fontformat = NULL;
             (*FcPatternGetString)(fontPattern, FC_FONTFORMAT, 0, &fontformat);
@@ -1279,6 +1280,9 @@ Java_sun_font_FontConfigManager_getFontConfig
             (*FcPatternGetString)(fontPattern, FC_FULLNAME, 0, &fullname[j]);
             if (!includeFallbacks) {
                 break;
+            }
+            if (fontCount == 254) {
+                break; // CompositeFont will only use up to 254 slots from here.
             }
         }
 

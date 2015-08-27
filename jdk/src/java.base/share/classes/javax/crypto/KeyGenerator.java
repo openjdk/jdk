@@ -38,7 +38,7 @@ import sun.security.util.Debug;
 /**
  * This class provides the functionality of a secret (symmetric) key generator.
  *
- * <p>Key generators are constructed using one of the <code>getInstance</code>
+ * <p>Key generators are constructed using one of the {@code getInstance}
  * class methods of this class.
  *
  * <p>KeyGenerator objects are reusable, i.e., after a key has been
@@ -57,14 +57,14 @@ import sun.security.util.Debug;
  * {@link #init(int, java.security.SecureRandom) init}
  * method in this KeyGenerator class that takes these two universally
  * shared types of arguments. There is also one that takes just a
- * <code>keysize</code> argument, and uses the SecureRandom implementation
+ * {@code keysize} argument, and uses the SecureRandom implementation
  * of the highest-priority installed provider as the source of randomness
  * (or a system-provided source of randomness if none of the installed
  * providers supply a SecureRandom implementation), and one that takes just a
  * source of randomness.
  *
  * <p>Since no other parameters are specified when you call the above
- * algorithm-independent <code>init</code> methods, it is up to the
+ * algorithm-independent {@code init} methods, it is up to the
  * provider what to do about the algorithm-specific parameters (if any) to be
  * associated with each of the keys.
  *
@@ -72,8 +72,8 @@ import sun.security.util.Debug;
  * <p>For situations where a set of algorithm-specific parameters already
  * exists, there are two
  * {@link #init(java.security.spec.AlgorithmParameterSpec) init}
- * methods that have an <code>AlgorithmParameterSpec</code>
- * argument. One also has a <code>SecureRandom</code> argument, while the
+ * methods that have an {@code AlgorithmParameterSpec}
+ * argument. One also has a {@code SecureRandom} argument, while the
  * other uses the SecureRandom implementation
  * of the highest-priority installed provider as the source of randomness
  * (or a system-provided source of randomness if none of the installed
@@ -81,18 +81,18 @@ import sun.security.util.Debug;
  * </ul>
  *
  * <p>In case the client does not explicitly initialize the KeyGenerator
- * (via a call to an <code>init</code> method), each provider must
+ * (via a call to an {@code init} method), each provider must
  * supply (and document) a default initialization.
  *
  * <p> Every implementation of the Java platform is required to support the
- * following standard <code>KeyGenerator</code> algorithms with the keysizes in
+ * following standard {@code KeyGenerator} algorithms with the keysizes in
  * parentheses:
  * <ul>
- * <li><tt>AES</tt> (128)</li>
- * <li><tt>DES</tt> (56)</li>
- * <li><tt>DESede</tt> (168)</li>
- * <li><tt>HmacSHA1</tt></li>
- * <li><tt>HmacSHA256</tt></li>
+ * <li>{@code AES} (128)</li>
+ * <li>{@code DES} (56)</li>
+ * <li>{@code DESede} (168)</li>
+ * <li>{@code HmacSHA1}</li>
+ * <li>{@code HmacSHA256}</li>
  * </ul>
  * These algorithms are described in the <a href=
  * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyGenerator">
@@ -177,20 +177,20 @@ public class KeyGenerator {
     }
 
     /**
-     * Returns the algorithm name of this <code>KeyGenerator</code> object.
+     * Returns the algorithm name of this {@code KeyGenerator} object.
      *
      * <p>This is the same name that was specified in one of the
-     * <code>getInstance</code> calls that created this
-     * <code>KeyGenerator</code> object.
+     * {@code getInstance} calls that created this
+     * {@code KeyGenerator} object.
      *
-     * @return the algorithm name of this <code>KeyGenerator</code> object.
+     * @return the algorithm name of this {@code KeyGenerator} object.
      */
     public final String getAlgorithm() {
         return this.algorithm;
     }
 
     /**
-     * Returns a <code>KeyGenerator</code> object that generates secret keys
+     * Returns a {@code KeyGenerator} object that generates secret keys
      * for the specified algorithm.
      *
      * <p> This method traverses the list of registered security Providers,
@@ -208,7 +208,7 @@ public class KeyGenerator {
      * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard algorithm names.
      *
-     * @return the new <code>KeyGenerator</code> object.
+     * @return the new {@code KeyGenerator} object.
      *
      * @exception NullPointerException if the specified algorithm is null.
      *
@@ -224,7 +224,7 @@ public class KeyGenerator {
     }
 
     /**
-     * Returns a <code>KeyGenerator</code> object that generates secret keys
+     * Returns a {@code KeyGenerator} object that generates secret keys
      * for the specified algorithm.
      *
      * <p> A new KeyGenerator object encapsulating the
@@ -243,7 +243,7 @@ public class KeyGenerator {
      *
      * @param provider the name of the provider.
      *
-     * @return the new <code>KeyGenerator</code> object.
+     * @return the new {@code KeyGenerator} object.
      *
      * @exception NullPointerException if the specified algorithm is null.
      *
@@ -254,7 +254,7 @@ public class KeyGenerator {
      * @exception NoSuchProviderException if the specified provider is not
      *          registered in the security provider list.
      *
-     * @exception IllegalArgumentException if the <code>provider</code>
+     * @exception IllegalArgumentException if the {@code provider}
      *          is null or empty.
      *
      * @see java.security.Provider
@@ -269,7 +269,7 @@ public class KeyGenerator {
     }
 
     /**
-     * Returns a <code>KeyGenerator</code> object that generates secret keys
+     * Returns a {@code KeyGenerator} object that generates secret keys
      * for the specified algorithm.
      *
      * <p> A new KeyGenerator object encapsulating the
@@ -285,7 +285,7 @@ public class KeyGenerator {
      *
      * @param provider the provider.
      *
-     * @return the new <code>KeyGenerator</code> object.
+     * @return the new {@code KeyGenerator} object.
      *
      * @exception NullPointerException if the specified algorithm is null.
      *
@@ -293,7 +293,7 @@ public class KeyGenerator {
      *          implementation for the specified algorithm is not available
      *          from the specified Provider object.
      *
-     * @exception IllegalArgumentException if the <code>provider</code>
+     * @exception IllegalArgumentException if the {@code provider}
      *          is null.
      *
      * @see java.security.Provider
@@ -307,9 +307,9 @@ public class KeyGenerator {
     }
 
     /**
-     * Returns the provider of this <code>KeyGenerator</code> object.
+     * Returns the provider of this {@code KeyGenerator} object.
      *
-     * @return the provider of this <code>KeyGenerator</code> object
+     * @return the provider of this {@code KeyGenerator} object
      */
     public final Provider getProvider() {
         synchronized (lock) {
@@ -437,7 +437,7 @@ public class KeyGenerator {
      * @param params the key generation parameters
      * @param random the source of randomness for this key generator
      *
-     * @exception InvalidAlgorithmParameterException if <code>params</code> is
+     * @exception InvalidAlgorithmParameterException if {@code params} is
      * inappropriate for this key generator
      */
     public final void init(AlgorithmParameterSpec params, SecureRandom random)

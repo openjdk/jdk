@@ -72,8 +72,9 @@ public class NervousText extends Applet implements Runnable, MouseListener {
     public void init() {
         banner = getParameter("text");
         if (banner == null) {
-            banner = "HotJava";
+            banner = "Java Development Kit ";
         }
+        banner += System.getProperty("java.version", "");
 
         int bannerLength = banner.length();
         StringBuilder bc = new StringBuilder(bannerLength);

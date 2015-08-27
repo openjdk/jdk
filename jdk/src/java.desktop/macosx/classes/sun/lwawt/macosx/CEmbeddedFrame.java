@@ -75,8 +75,8 @@ public class CEmbeddedFrame extends EmbeddedFrame {
         int x = (int)pluginX;
         int y = (int)pluginY;
         Point locationOnScreen = getLocationOnScreen();
-        int screenX = locationOnScreen.x + x;
-        int screenY = locationOnScreen.y + y;
+        int absX = locationOnScreen.x + x;
+        int absY = locationOnScreen.y + y;
 
         if (eventType == CocoaConstants.NPCocoaEventMouseEntered) {
             CCursorManager.nativeSetAllowsCursorSetInBackground(true);
@@ -85,15 +85,19 @@ public class CEmbeddedFrame extends EmbeddedFrame {
         }
 
         responder.handleMouseEvent(eventType, modifierFlags, buttonNumber,
-                                   clickCount, x, y, screenX, screenY);
+                                   clickCount, x, y, absX, absY);
     }
 
     public void handleScrollEvent(double pluginX, double pluginY, int modifierFlags,
                                   double deltaX, double deltaY, double deltaZ) {
         int x = (int)pluginX;
         int y = (int)pluginY;
+        Point locationOnScreen = getLocationOnScreen();
+        int absX = locationOnScreen.x + x;
+        int absY = locationOnScreen.y + y;
 
-        responder.handleScrollEvent(x, y, modifierFlags, deltaX, deltaY);
+        responder.handleScrollEvent(x, y, absX, absY, modifierFlags, deltaX,
+                                    deltaY);
     }
 
     public void handleKeyEvent(int eventType, int modifierFlags, String characters,
