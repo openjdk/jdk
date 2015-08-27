@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,6 @@
  */
 package com.sun.tools.sjavac.server;
 
-import java.io.File;
-import java.net.URI;
-import java.util.List;
-import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -64,30 +60,10 @@ public class IdleResetSjavac implements Sjavac {
     }
 
     @Override
-    public SysInfo getSysInfo() {
+    public CompilationResult compile(String[] args) {
         startCall();
         try {
-            return delegate.getSysInfo();
-        } finally {
-            endCall();
-        }
-    }
-
-    @Override
-    public CompilationResult compile(String protocolId,
-                                     String invocationId,
-                                     String[] args,
-                                     List<File> explicitSources,
-                                     Set<URI> sourcesToCompile,
-                                     Set<URI> visibleSources) {
-        startCall();
-        try {
-            return delegate.compile(protocolId,
-                                    invocationId,
-                                    args,
-                                    explicitSources,
-                                    sourcesToCompile,
-                                    visibleSources);
+            return delegate.compile(args);
         } finally {
             endCall();
         }
@@ -129,8 +105,4 @@ public class IdleResetSjavac implements Sjavac {
         delegate.shutdown();
     }
 
-    @Override
-    public String serverSettings() {
-        return delegate.serverSettings();
-    }
 }
