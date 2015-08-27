@@ -45,16 +45,16 @@ final class EditObject extends AbstractJSObject {
         props = Collections.unmodifiableSet(s);
     }
 
+    private final Console console;
     private final Consumer<String> errorHandler;
     private final Consumer<String> evaluator;
-    private final Console console;
     private String editor;
 
-    EditObject(final Consumer<String> errorHandler, final Consumer<String> evaluator,
-            final Console console) {
+    EditObject(final Console console, final Consumer<String> errorHandler,
+            final Consumer<String> evaluator) {
+        this.console = console;
         this.errorHandler = errorHandler;
         this.evaluator = evaluator;
-        this.console = console;
     }
 
     @Override

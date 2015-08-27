@@ -33,6 +33,7 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.util.function.Consumer;
 import jdk.internal.jline.console.completer.Completer;
 import jdk.internal.jline.console.UserInterruptException;
 import jdk.nashorn.api.scripting.NashornException;
@@ -116,26 +117,27 @@ public final class Main extends Shell {
             global.addShellBuiltins();
 
             if (System.getSecurityManager() == null) {
+                final Consumer<String> evaluator = str -> {
+                    // could be called from different thread (GUI), we need to handle Context set/reset
+                    final Global _oldGlobal = Context.getGlobal();
+                    final boolean _globalChanged = (oldGlobal != global);
+                    if (_globalChanged) {
+                        Context.setGlobal(global);
+                    }
+                    try {
+                        evalImpl(context, global, str, err, env._dump_on_error);
+                    } finally {
+                        if (_globalChanged) {
+                            Context.setGlobal(_oldGlobal);
+                        }
+                    }
+                };
+
                 // expose history object for reflecting on command line history
-                global.addOwnProperty("history", Property.NOT_ENUMERABLE, new HistoryObject(in.getHistory()));
+                global.addOwnProperty("history", Property.NOT_ENUMERABLE, new HistoryObject(in.getHistory(), err, evaluator));
 
                 // 'edit' command
-                global.addOwnProperty("edit", Property.NOT_ENUMERABLE, new EditObject(err::println,
-                    str -> {
-                        // could be called from different thread (GUI), we need to handle Context set/reset
-                        final Global _oldGlobal = Context.getGlobal();
-                        final boolean _globalChanged = (oldGlobal != global);
-                        if (_globalChanged) {
-                            Context.setGlobal(global);
-                        }
-                        try {
-                            evalImpl(context, global, str, err, env._dump_on_error);
-                        } finally {
-                            if (_globalChanged) {
-                                Context.setGlobal(_oldGlobal);
-                            }
-                        }
-                    }, in));
+                global.addOwnProperty("edit", Property.NOT_ENUMERABLE, new EditObject(in, err::println, evaluator));
             }
 
             while (true) {
