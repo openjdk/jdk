@@ -640,7 +640,7 @@ public:
 
   // Record the start and end of an evacuation pause.
   void record_collection_pause_start(double start_time_sec);
-  void record_collection_pause_end(double pause_time_ms, EvacuationInfo& evacuation_info);
+  void record_collection_pause_end(double pause_time_ms);
 
   // Record the start and end of a full collection.
   void record_full_collection_start();
@@ -682,6 +682,10 @@ public:
     return _bytes_copied_during_gc;
   }
 
+  size_t collection_set_bytes_used_before() const {
+    return _collection_set_bytes_used_before;
+  }
+
   // Determine whether there are candidate regions so that the
   // next GC should be mixed. The two action strings are used
   // in the ergo output when the method returns true or false.
@@ -691,7 +695,7 @@ public:
   // Choose a new collection set.  Marks the chosen regions as being
   // "in_collection_set", and links them together.  The head and number of
   // the collection set are available via access methods.
-  void finalize_cset(double target_pause_time_ms, EvacuationInfo& evacuation_info);
+  void finalize_cset(double target_pause_time_ms);
 
   // The head of the list (via "next_in_collection_set()") representing the
   // current collection set.

@@ -4129,7 +4129,9 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         g1_policy()->print_collection_set(g1_policy()->inc_cset_head(), gclog_or_tty);
 #endif // YOUNG_LIST_VERBOSE
 
-        g1_policy()->finalize_cset(target_pause_time_ms, evacuation_info);
+        g1_policy()->finalize_cset(target_pause_time_ms);
+
+        evacuation_info.set_collectionset_regions(g1_policy()->cset_region_length());
 
         register_humongous_regions_with_cset();
 
@@ -4253,7 +4255,10 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         // investigate this in CR 7178365.
         double sample_end_time_sec = os::elapsedTime();
         double pause_time_ms = (sample_end_time_sec - sample_start_time_sec) * MILLIUNITS;
-        g1_policy()->record_collection_pause_end(pause_time_ms, evacuation_info);
+        g1_policy()->record_collection_pause_end(pause_time_ms);
+
+        evacuation_info.set_collectionset_used_before(g1_policy()->collection_set_bytes_used_before());
+        evacuation_info.set_bytes_copied(g1_policy()->bytes_copied_during_gc());
 
         MemoryService::track_memory_usage();
 

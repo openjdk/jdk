@@ -932,7 +932,7 @@ bool G1CollectorPolicy::need_to_start_conc_mark(const char* source, size_t alloc
 // Anything below that is considered to be zero
 #define MIN_TIMER_GRANULARITY 0.0000001
 
-void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, EvacuationInfo& evacuation_info) {
+void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms) {
   double end_time_sec = os::elapsedTime();
   assert(_cur_collection_pause_used_regions_at_start >= cset_region_length(),
          "otherwise, the subtraction below does not make sense");
@@ -963,9 +963,6 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, Evacua
 
   _mmu_tracker->add_pause(end_time_sec - pause_time_ms/1000.0,
                           end_time_sec, _g1->gc_tracer_stw()->gc_id());
-
-  evacuation_info.set_collectionset_used_before(_collection_set_bytes_used_before);
-  evacuation_info.set_bytes_copied(_bytes_copied_during_gc);
 
   if (update_stats) {
     _trace_young_gen_time_data.record_end_collection(pause_time_ms, phase_times());
@@ -1883,7 +1880,7 @@ uint G1CollectorPolicy::calc_max_old_cset_length() {
 }
 
 
-void G1CollectorPolicy::finalize_cset(double target_pause_time_ms, EvacuationInfo& evacuation_info) {
+void G1CollectorPolicy::finalize_cset(double target_pause_time_ms) {
   double young_start_time_sec = os::elapsedTime();
 
   YoungList* young_list = _g1->young_list();
@@ -2093,7 +2090,6 @@ void G1CollectorPolicy::finalize_cset(double target_pause_time_ms, EvacuationInf
 
   double non_young_end_time_sec = os::elapsedTime();
   phase_times()->record_non_young_cset_choice_time_ms((non_young_end_time_sec - non_young_start_time_sec) * 1000.0);
-  evacuation_info.set_collectionset_regions(cset_region_length());
 }
 
 void TraceYoungGenTimeData::record_start_collection(double time_to_stop_the_world_ms) {
