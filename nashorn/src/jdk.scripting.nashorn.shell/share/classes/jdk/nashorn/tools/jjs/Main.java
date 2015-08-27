@@ -25,6 +25,7 @@
 
 package jdk.nashorn.tools.jjs;
 
+import java.awt.GraphicsEnvironment;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
@@ -32,12 +33,14 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.util.function.Consumer;
 import jdk.internal.jline.console.completer.Completer;
 import jdk.internal.jline.console.UserInterruptException;
 import jdk.nashorn.api.scripting.NashornException;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.JSType;
+import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.tools.Shell;
@@ -47,6 +50,9 @@ import jdk.nashorn.tools.Shell;
  */
 public final class Main extends Shell {
     private Main() {}
+
+    static final boolean DEBUG = Boolean.getBoolean("nashorn.jjs.debug");
+    static final boolean HEADLESS = GraphicsEnvironment.isHeadless();
 
     // file where history is persisted.
     private static final File HIST_FILE = new File(new File(System.getProperty("user.home")), ".jjs.history");
@@ -96,10 +102,12 @@ public final class Main extends Shell {
     protected int readEvalPrint(final Context context, final Global global) {
         final ScriptEnvironment env = context.getEnv();
         final String prompt = bundle.getString("shell.prompt");
+        final String prompt2 = bundle.getString("shell.prompt2");
         final PrintWriter err = context.getErr();
         final Global oldGlobal = Context.getGlobal();
         final boolean globalChanged = (oldGlobal != global);
-        final Completer completer = new NashornCompleter(context, global, this);
+        final PropertiesHelper propsHelper = new PropertiesHelper(env._classpath);
+        final NashornCompleter completer = new NashornCompleter(context, global, this, propsHelper);
 
         try (final Console in = new Console(System.in, System.out, HIST_FILE, completer)) {
             if (globalChanged) {
@@ -107,8 +115,30 @@ public final class Main extends Shell {
             }
 
             global.addShellBuiltins();
-            // expose history object for reflecting on command line history
-            global.put("history", new HistoryObject(in.getHistory()), false);
+
+            if (System.getSecurityManager() == null) {
+                final Consumer<String> evaluator = str -> {
+                    // could be called from different thread (GUI), we need to handle Context set/reset
+                    final Global _oldGlobal = Context.getGlobal();
+                    final boolean _globalChanged = (oldGlobal != global);
+                    if (_globalChanged) {
+                        Context.setGlobal(global);
+                    }
+                    try {
+                        evalImpl(context, global, str, err, env._dump_on_error);
+                    } finally {
+                        if (_globalChanged) {
+                            Context.setGlobal(_oldGlobal);
+                        }
+                    }
+                };
+
+                // expose history object for reflecting on command line history
+                global.addOwnProperty("history", Property.NOT_ENUMERABLE, new HistoryObject(in.getHistory(), err, evaluator));
+
+                // 'edit' command
+                global.addOwnProperty("edit", Property.NOT_ENUMERABLE, new EditObject(in, err::println, evaluator));
+            }
 
             while (true) {
                 String source = "";
@@ -133,10 +163,25 @@ public final class Main extends Shell {
                     if (res != ScriptRuntime.UNDEFINED) {
                         err.println(JSType.toString(res));
                     }
-                } catch (final Exception e) {
-                    err.println(e);
-                    if (env._dump_on_error) {
-                        e.printStackTrace(err);
+                } catch (final Exception exp) {
+                    // Is this a ECMAScript SyntaxError at last column (of the single line)?
+                    // If so, it is because parser expected more input but got EOF. Try to
+                    // to more lines from the user (multiline edit support).
+
+                    if (completer.isSyntaxErrorAt(exp, 1, source.length())) {
+                        final String fullSrc = completer.readMoreLines(source, exp, in, prompt2, err);
+
+                        // check if we succeeded in getting complete code.
+                        if (fullSrc != null && !fullSrc.isEmpty()) {
+                            evalImpl(context, global, fullSrc, err, env._dump_on_error);
+                        } // else ignore, error reported already by 'completer.readMoreLines'
+                    } else {
+
+                        // can't read more lines to have parseable/complete code.
+                        err.println(exp);
+                        if (env._dump_on_error) {
+                            exp.printStackTrace(err);
+                        }
                     }
                 }
             }
@@ -149,8 +194,34 @@ public final class Main extends Shell {
             if (globalChanged) {
                 Context.setGlobal(oldGlobal);
             }
+            try {
+                propsHelper.close();
+            } catch (final Exception exp) {
+                if (DEBUG) {
+                    exp.printStackTrace();
+                }
+            }
         }
 
         return SUCCESS;
+    }
+
+    static String getMessage(final String id) {
+        return bundle.getString(id);
+    }
+
+    private void evalImpl(final Context context, final Global global, final String source,
+            final PrintWriter err, final boolean doe) {
+        try {
+            final Object res = context.eval(global, source, global, "<shell>");
+            if (res != ScriptRuntime.UNDEFINED) {
+                err.println(JSType.toString(res));
+            }
+        } catch (final Exception e) {
+            err.println(e);
+            if (doe) {
+                e.printStackTrace(err);
+            }
+        }
     }
 }
