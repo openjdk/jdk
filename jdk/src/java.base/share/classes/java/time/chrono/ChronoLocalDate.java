@@ -715,7 +715,7 @@ public interface ChronoLocalDate
      * only compares the underlying date and not the chronology.
      * This allows dates in different calendar systems to be compared based
      * on the time-line position.
-     * This is equivalent to using {@code date1.toEpochDay() &gt; date2.toEpochDay()}.
+     * This is equivalent to using {@code date1.toEpochDay() > date2.toEpochDay()}.
      * <p>
      * This default implementation performs the comparison based on the epoch-day.
      *
@@ -733,7 +733,7 @@ public interface ChronoLocalDate
      * only compares the underlying date and not the chronology.
      * This allows dates in different calendar systems to be compared based
      * on the time-line position.
-     * This is equivalent to using {@code date1.toEpochDay() &lt; date2.toEpochDay()}.
+     * This is equivalent to using {@code date1.toEpochDay() < date2.toEpochDay()}.
      * <p>
      * This default implementation performs the comparison based on the epoch-day.
      *

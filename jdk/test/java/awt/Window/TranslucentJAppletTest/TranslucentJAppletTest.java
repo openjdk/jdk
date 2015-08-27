@@ -100,12 +100,10 @@ public class TranslucentJAppletTest {
         if (!paintComponentCalled) {
             throw new RuntimeException("Test FAILED: panel's paintComponent() method is not called");
         }
+        Thread.sleep(1500);
 
         Color newColor1 = r.getPixelColor(100, 100);
-        // unfortunately, robot.getPixelColor() doesn't work for some unknown reason
-        // Color newColor2 = r.getPixelColor(200, 200);
-        BufferedImage bim = r.createScreenCapture(new Rectangle(200, 200, 1, 1));
-        Color newColor2 = new Color(bim.getRGB(0, 0));
+        Color newColor2 = r.getPixelColor(200, 200);
 
         // Frame must be transparent at (100, 100) in screen coords
         if (!color1.equals(newColor1)) {

@@ -31,6 +31,8 @@
 #include <malloc.h>
 #include <sys/types.h>
 #include <process.h>
+#include <iphlpapi.h>
+#include <icmpapi.h>
 
 #include "java_net_InetAddress.h"
 #include "java_net_Inet4AddressImpl.h"
@@ -281,114 +283,47 @@ Java_java_net_Inet4AddressImpl_getHostByAddr(JNIEnv *env, jobject this,
  * Returns true is an ECHO_REPLY is received, otherwise, false.
  */
 static jboolean
-ping4(JNIEnv *env, jint fd, struct sockaddr_in* him, jint timeout,
-      struct sockaddr_in* netif, jint ttl) {
-    jint size;
-    jint n, len, hlen1, icmplen;
-    char sendbuf[1500];
-    char recvbuf[1500];
-    struct icmp *icmp;
-    struct ip *ip;
-    WSAEVENT hEvent;
-    struct sockaddr sa_recv;
-    jint tmout2;
-    u_short pid, seq;
-    int read_rv = 0;
+ping4(JNIEnv *env, unsigned long ipaddr, jint timeout) {
 
-    /* Initialize the sequence number to a suitable random number and
-       shift right one place to allow sufficient room for increamenting. */
-    seq = ((unsigned short)rand()) >> 1;
+    // See https://msdn.microsoft.com/en-us/library/aa366050%28VS.85%29.aspx
 
-    /* icmp_id is a 16 bit data type, therefore down cast the pid */
-    pid = (u_short) _getpid();
-    size = 60*1024;
-    setsockopt(fd, SOL_SOCKET, SO_RCVBUF, (const char *) &size, sizeof(size));
-    /**
-     * A TTL was specified, let's set the socket option.
-     */
-    if (ttl > 0) {
-      setsockopt(fd, IPPROTO_IP, IP_TTL, (const char *) &ttl, sizeof(ttl));
+    HANDLE hIcmpFile;
+    DWORD dwRetVal = 0;
+    char SendData[32] = {0};
+    LPVOID ReplyBuffer = NULL;
+    DWORD ReplySize = 0;
+
+    hIcmpFile = IcmpCreateFile();
+    if (hIcmpFile == INVALID_HANDLE_VALUE) {
+        NET_ThrowNew(env, WSAGetLastError(), "Unable to open handle");
+        return JNI_FALSE;
     }
 
-    /**
-     * A network interface was specified, let's bind to it.
-     */
-    if (netif != NULL) {
-      if (bind(fd, (struct sockaddr*)netif, sizeof(struct sockaddr_in)) < 0) {
-        NET_ThrowNew(env, WSAGetLastError(), "Can't bind socket");
-        closesocket(fd);
+    ReplySize = sizeof(ICMP_ECHO_REPLY) + sizeof(SendData);
+    ReplyBuffer = (VOID*) malloc(ReplySize);
+    if (ReplyBuffer == NULL) {
+        IcmpCloseHandle(hIcmpFile);
+        NET_ThrowNew(env, WSAGetLastError(), "Unable to allocate memory");
         return JNI_FALSE;
-      }
     }
 
-    /**
-     * Let's make the socket non blocking
-     */
-    hEvent = WSACreateEvent();
-    WSAEventSelect(fd, hEvent, FD_READ|FD_CONNECT|FD_CLOSE);
+    dwRetVal = IcmpSendEcho(hIcmpFile,  // HANDLE IcmpHandle,
+                            ipaddr,     // IPAddr DestinationAddress,
+                            SendData,   // LPVOID RequestData,
+                            sizeof(SendData),   // WORD RequestSize,
+                            NULL,       // PIP_OPTION_INFORMATION RequestOptions,
+                            ReplyBuffer,// LPVOID ReplyBuffer,
+                            ReplySize,  // DWORD ReplySize,
+                            timeout);   // DWORD Timeout
 
-    /**
-     * send 1 ICMP REQUEST every second until either we get a valid reply
-     * or the timeout expired.
-     */
-    do {
-      /**
-       * construct the ICMP header
-       */
-      memset(sendbuf, 0, 1500);
-      icmp = (struct icmp *) sendbuf;
-      icmp->icmp_type = ICMP_ECHO;
-      icmp->icmp_code = 0;
-      icmp->icmp_id = htons(pid);
-      icmp->icmp_seq = htons(seq);
-      /**
-       * checksum has to be set to zero before we can calculate the
-       * real checksum!
-       */
-      icmp->icmp_cksum = 0;
-      icmp->icmp_cksum = in_cksum((u_short *)icmp, 64);
-      /**
-       * Ping!
-       */
-      n = sendto(fd, sendbuf, 64, 0, (struct sockaddr *)him,
-                 sizeof(struct sockaddr));
-      if (n < 0 && WSAGetLastError() != WSAEWOULDBLOCK) {
-        NET_ThrowNew(env, WSAGetLastError(), "Can't send ICMP packet");
-        closesocket(fd);
-        WSACloseEvent(hEvent);
+    free(ReplyBuffer);
+    IcmpCloseHandle(hIcmpFile);
+
+    if (dwRetVal != 0) {
+        return JNI_TRUE;
+    } else {
         return JNI_FALSE;
-      }
-
-      /*
-       * wait for 1 second at most
-       */
-      tmout2 = timeout > 1000 ? 1000 : timeout;
-      do {
-        tmout2 = NET_Wait(env, fd, NET_WAIT_READ, tmout2);
-        if (tmout2 >= 0) {
-          len = sizeof(sa_recv);
-          n = recvfrom(fd, recvbuf, sizeof(recvbuf), 0, &sa_recv, &len);
-          ip = (struct ip*) recvbuf;
-          hlen1 = (ip->ip_hl) << 2;
-          icmp = (struct icmp *) (recvbuf + hlen1);
-          icmplen = n - hlen1;
-          /**
-           * Is that a proper ICMP reply?
-           */
-          if (icmplen >= 8 && icmp->icmp_type == ICMP_ECHOREPLY &&
-              (ntohs(icmp->icmp_seq) == seq) && (ntohs(icmp->icmp_id) == pid)) {
-            closesocket(fd);
-            WSACloseEvent(hEvent);
-            return JNI_TRUE;
-          }
-        }
-      } while (tmout2 > 0);
-      timeout -= 1000;
-      seq++;
-    } while (timeout > 0);
-    closesocket(fd);
-    WSACloseEvent(hEvent);
-    return JNI_FALSE;
+    }
 }
 
 /*
@@ -404,13 +339,7 @@ Java_java_net_Inet4AddressImpl_isReachable0(JNIEnv *env, jobject this,
                                            jint ttl) {
     jint addr;
     jbyte caddr[4];
-    jint fd;
     struct sockaddr_in him;
-    struct sockaddr_in* netif = NULL;
-    struct sockaddr_in inf;
-    int len = 0;
-    WSAEVENT hEvent;
-    int connect_rv = -1;
     int sz;
 
     /**
@@ -428,135 +357,6 @@ Java_java_net_Inet4AddressImpl_isReachable0(JNIEnv *env, jobject this,
     addr |= ((caddr[2] <<8) & 0xff00);
     addr |= (caddr[3] & 0xff);
     addr = htonl(addr);
-    /**
-     * Socket address
-     */
-    him.sin_addr.s_addr = addr;
-    him.sin_family = AF_INET;
-    len = sizeof(him);
 
-    /**
-     * If a network interface was specified, let's convert its address
-     * as well.
-     */
-    if (!(IS_NULL(ifArray))) {
-      memset((char *) caddr, 0, sizeof(caddr));
-      (*env)->GetByteArrayRegion(env, ifArray, 0, 4, caddr);
-      addr = ((caddr[0]<<24) & 0xff000000);
-      addr |= ((caddr[1] <<16) & 0xff0000);
-      addr |= ((caddr[2] <<8) & 0xff00);
-      addr |= (caddr[3] & 0xff);
-      addr = htonl(addr);
-      inf.sin_addr.s_addr = addr;
-      inf.sin_family = AF_INET;
-      inf.sin_port = 0;
-      netif = &inf;
-    }
-
-#if 0
-    /*
-     * Windows implementation of ICMP & RAW sockets is too unreliable for now.
-     * Therefore it's best not to try it at all and rely only on TCP
-     * We may revisit and enable this code in the future.
-     */
-
-    /*
-     * Let's try to create a RAW socket to send ICMP packets
-     * This usually requires "root" privileges, so it's likely to fail.
-     */
-    fd = NET_Socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
-    if (fd != -1) {
-      /*
-       * It didn't fail, so we can use ICMP_ECHO requests.
-       */
-        return ping4(env, fd, &him, timeout, netif, ttl);
-    }
-#endif
-
-    /*
-     * Can't create a raw socket, so let's try a TCP socket
-     */
-    fd = NET_Socket(AF_INET, SOCK_STREAM, 0);
-    if (fd == SOCKET_ERROR) {
-        /* note: if you run out of fds, you may not be able to load
-         * the exception class, and get a NoClassDefFoundError
-         * instead.
-         */
-        NET_ThrowNew(env, WSAGetLastError(), "Can't create socket");
-        return JNI_FALSE;
-    }
-    if (ttl > 0) {
-      setsockopt(fd, IPPROTO_IP, IP_TTL, (const char *)&ttl, sizeof(ttl));
-    }
-    /*
-     * A network interface was specified, so let's bind to it.
-     */
-    if (netif != NULL) {
-      if (bind(fd, (struct sockaddr*)netif, sizeof(struct sockaddr_in)) < 0) {
-        NET_ThrowNew(env, WSAGetLastError(), "Can't bind socket");
-        closesocket(fd);
-        return JNI_FALSE;
-      }
-    }
-
-    /*
-     * Make the socket non blocking so we can use select/poll.
-     */
-    hEvent = WSACreateEvent();
-    WSAEventSelect(fd, hEvent, FD_READ|FD_CONNECT|FD_CLOSE);
-
-    /* no need to use NET_Connect as non-blocking */
-    him.sin_port = htons(7);    /* Echo */
-    connect_rv = connect(fd, (struct sockaddr *)&him, len);
-
-    /**
-     * connection established or refused immediately, either way it means
-     * we were able to reach the host!
-     */
-    if (connect_rv == 0 || WSAGetLastError() == WSAECONNREFUSED) {
-        WSACloseEvent(hEvent);
-        closesocket(fd);
-        return JNI_TRUE;
-    } else {
-        int optlen;
-
-        switch (WSAGetLastError()) {
-        case WSAEHOSTUNREACH:   /* Host Unreachable */
-        case WSAENETUNREACH:    /* Network Unreachable */
-        case WSAENETDOWN:       /* Network is down */
-        case WSAEPFNOSUPPORT:   /* Protocol Family unsupported */
-          WSACloseEvent(hEvent);
-          closesocket(fd);
-          return JNI_FALSE;
-        }
-
-        if (WSAGetLastError() != WSAEWOULDBLOCK) {
-            NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "ConnectException",
-                                         "connect failed");
-            WSACloseEvent(hEvent);
-            closesocket(fd);
-            return JNI_FALSE;
-        }
-
-        timeout = NET_Wait(env, fd, NET_WAIT_CONNECT, timeout);
-
-        /* has connection been established */
-
-        if (timeout >= 0) {
-          optlen = sizeof(connect_rv);
-          if (getsockopt(fd, SOL_SOCKET, SO_ERROR, (void*)&connect_rv,
-                         &optlen) <0) {
-            connect_rv = WSAGetLastError();
-          }
-
-          if (connect_rv == 0 || connect_rv == WSAECONNREFUSED) {
-            WSACloseEvent(hEvent);
-            closesocket(fd);
-            return JNI_TRUE;
-          }
-        }
-    }
-    WSACloseEvent(hEvent);
-    closesocket(fd);
-    return JNI_FALSE;
+    return ping4(env, addr, timeout);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@
  */
 
 import java.io.*;
-import java.net.SocketException;
+import java.net.*;
 import java.util.*;
 import java.security.Security;
 import java.security.cert.*;
@@ -94,7 +94,9 @@ public class AIACheck {
             throw new Exception("Successfully validated an invalid path");
 
         } catch (CertPathValidatorException e ) {
-            if (! (e.getCause() instanceof SocketException)) {
+            Throwable rootCause = e.getCause();
+            if (!(rootCause instanceof SocketException ||
+                  rootCause instanceof SocketTimeoutException)) {
                 throw e;
             }
 

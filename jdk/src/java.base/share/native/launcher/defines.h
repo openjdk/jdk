@@ -89,4 +89,9 @@ static const jint const_ergo_class = ALWAYS_SERVER_CLASS;
 static const jint const_ergo_class = DEFAULT_POLICY;
 #endif /* NEVER_ACT_AS_SERVER_CLASS_MACHINE */
 
+#ifdef ENABLE_ARG_FILES
+static const jboolean const_disable_argfile = JNI_FALSE;
+#else
+static const jboolean const_disable_argfile = JNI_TRUE;
+#endif
 #endif /*_DEFINES_H */

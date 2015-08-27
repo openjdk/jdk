@@ -104,6 +104,9 @@ public interface LangReflectAccess {
     /** Makes a "child" copy of a Method */
     public Method      copyMethod(Method arg);
 
+    /** Makes a copy of this non-root a Method */
+    public Method      leafCopyMethod(Method arg);
+
     /** Makes a "child" copy of a Field */
     public Field       copyField(Field arg);
 

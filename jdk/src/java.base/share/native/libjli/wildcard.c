@@ -218,116 +218,6 @@ equal(const char *s1, const char *s2)
     return JLI_StrCmp(s1, s2) == 0;
 }
 
-/*
- * FileList ADT - a dynamic list of C filenames
- */
-struct FileList_
-{
-    char **files;
-    int size;
-    int capacity;
-};
-typedef struct FileList_ *FileList;
-
-static FileList
-FileList_new(int capacity)
-{
-    FileList fl = NEW_(FileList);
-    fl->capacity = capacity;
-    fl->files = (char **) JLI_MemAlloc(capacity * sizeof(fl->files[0]));
-    fl->size = 0;
-    return fl;
-}
-
-
-
-static void
-FileList_free(FileList fl)
-{
-    if (fl) {
-        if (fl->files) {
-            int i;
-            for (i = 0; i < fl->size; i++)
-                JLI_MemFree(fl->files[i]);
-            JLI_MemFree(fl->files);
-        }
-        JLI_MemFree(fl);
-    }
-}
-
-static void
-FileList_ensureCapacity(FileList fl, int capacity)
-{
-    if (fl->capacity < capacity) {
-        while (fl->capacity < capacity)
-            fl->capacity *= 2;
-        fl->files = JLI_MemRealloc(fl->files,
-                               fl->capacity * sizeof(fl->files[0]));
-    }
-}
-
-static void
-FileList_add(FileList fl, char *file)
-{
-    FileList_ensureCapacity(fl, fl->size+1);
-    fl->files[fl->size++] = file;
-}
-
-static void
-FileList_addSubstring(FileList fl, const char *beg, size_t len)
-{
-    char *filename = (char *) JLI_MemAlloc(len+1);
-    memcpy(filename, beg, len);
-    filename[len] = '\0';
-    FileList_ensureCapacity(fl, fl->size+1);
-    fl->files[fl->size++] = filename;
-}
-
-static char *
-FileList_join(FileList fl, char sep)
-{
-    int i;
-    int size;
-    char *path;
-    char *p;
-    for (i = 0, size = 1; i < fl->size; i++)
-        size += (int)JLI_StrLen(fl->files[i]) + 1;
-
-    path = JLI_MemAlloc(size);
-
-    for (i = 0, p = path; i < fl->size; i++) {
-        int len = (int)JLI_StrLen(fl->files[i]);
-        if (i > 0) *p++ = sep;
-        memcpy(p, fl->files[i], len);
-        p += len;
-    }
-    *p = '\0';
-
-    return path;
-}
-
-static FileList
-FileList_split(const char *path, char sep)
-{
-    const char *p, *q;
-    size_t len = JLI_StrLen(path);
-    int count;
-    FileList fl;
-    for (count = 1, p = path; p < path + len; p++)
-        count += (*p == sep);
-    fl = FileList_new(count);
-    for (p = path;;) {
-        for (q = p; q <= path + len; q++) {
-            if (*q == sep || *q == '\0') {
-                FileList_addSubstring(fl, p, q - p);
-                if (*q == '\0')
-                    return fl;
-                p = q + 1;
-            }
-        }
-    }
-}
-
 static int
 isJarFileName(const char *filename)
 {
@@ -352,22 +242,22 @@ wildcardConcat(const char *wildcard, const char *basename)
     return filename;
 }
 
-static FileList
+static JLI_List
 wildcardFileList(const char *wildcard)
 {
     const char *basename;
-    FileList fl = FileList_new(16);
+    JLI_List fl = JLI_List_new(16);
     WildcardIterator it = WildcardIterator_for(wildcard);
 
     if (it == NULL)
     {
-        FileList_free(fl);
+        JLI_List_free(fl);
         return NULL;
     }
 
     while ((basename = WildcardIterator_next(it)) != NULL)
         if (isJarFileName(basename))
-            FileList_add(fl, wildcardConcat(wildcard, basename));
+            JLI_List_add(fl, wildcardConcat(wildcard, basename));
     WildcardIterator_close(it);
     return fl;
 }
@@ -383,25 +273,25 @@ isWildcard(const char *filename)
 }
 
 static void
-FileList_expandWildcards(FileList fl)
+FileList_expandWildcards(JLI_List fl)
 {
-    int i, j;
+    size_t i, j;
     for (i = 0; i < fl->size; i++) {
-        if (isWildcard(fl->files[i])) {
-            FileList expanded = wildcardFileList(fl->files[i]);
+        if (isWildcard(fl->elements[i])) {
+            JLI_List expanded = wildcardFileList(fl->elements[i]);
             if (expanded != NULL && expanded->size > 0) {
-                JLI_MemFree(fl->files[i]);
-                FileList_ensureCapacity(fl, fl->size + expanded->size);
+                JLI_MemFree(fl->elements[i]);
+                JLI_List_ensureCapacity(fl, fl->size + expanded->size);
                 for (j = fl->size - 1; j >= i+1; j--)
-                    fl->files[j+expanded->size-1] = fl->files[j];
+                    fl->elements[j+expanded->size-1] = fl->elements[j];
                 for (j = 0; j < expanded->size; j++)
-                    fl->files[i+j] = expanded->files[j];
+                    fl->elements[i+j] = expanded->elements[j];
                 i += expanded->size - 1;
                 fl->size += expanded->size - 1;
                 /* fl expropriates expanded's elements. */
                 expanded->size = 0;
             }
-            FileList_free(expanded);
+            JLI_List_free(expanded);
         }
     }
 }
@@ -410,14 +300,14 @@ const char *
 JLI_WildcardExpandClasspath(const char *classpath)
 {
     char *expanded;
-    FileList fl;
+    JLI_List fl;
 
     if (JLI_StrChr(classpath, '*') == NULL)
         return classpath;
-    fl = FileList_split(classpath, PATH_SEPARATOR);
+    fl = JLI_List_split(classpath, PATH_SEPARATOR);
     FileList_expandWildcards(fl);
-    expanded = FileList_join(fl, PATH_SEPARATOR);
-    FileList_free(fl);
+    expanded = JLI_List_join(fl, PATH_SEPARATOR);
+    JLI_List_free(fl);
     if (getenv(JLDEBUG_ENV_ENTRY) != 0)
         printf("Expanded wildcards:\n"
                "    before: \"%s\"\n"
@@ -428,13 +318,13 @@ JLI_WildcardExpandClasspath(const char *classpath)
 
 #ifdef DEBUG_WILDCARD
 static void
-FileList_print(FileList fl)
+FileList_print(JLI_List fl)
 {
-    int i;
+    size_t i;
     putchar('[');
     for (i = 0; i < fl->size; i++) {
         if (i > 0) printf(", ");
-        printf("\"%s\"",fl->files[i]);
+        printf("\"%s\"",fl->elements[i]);
     }
     putchar(']');
 }
