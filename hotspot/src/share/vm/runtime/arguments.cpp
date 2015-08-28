@@ -983,53 +983,61 @@ const char* Arguments::get_property(const char* key) {
 
 bool Arguments::add_property(const char* prop) {
   const char* eq = strchr(prop, '=');
-  char* key;
-  // ns must be static--its address may be stored in a SystemProperty object.
-  const static char ns[1] = {0};
-  char* value = (char *)ns;
+  const char* key;
+  const char* value = "";
 
-  size_t key_len = (eq == NULL) ? strlen(prop) : (eq - prop);
-  key = AllocateHeap(key_len + 1, mtInternal);
-  strncpy(key, prop, key_len);
-  key[key_len] = '\0';
+  if (eq == NULL) {
+    // property doesn't have a value, thus use passed string
+    key = prop;
+  } else {
+    // property have a value, thus extract it and save to the
+    // allocated string
+    size_t key_len = eq - prop;
+    char* tmp_key = AllocateHeap(key_len + 1, mtInternal);
 
-  if (eq != NULL) {
-    size_t value_len = strlen(prop) - key_len - 1;
-    value = AllocateHeap(value_len + 1, mtInternal);
-    strncpy(value, &prop[key_len + 1], value_len + 1);
+    strncpy(tmp_key, prop, key_len);
+    tmp_key[key_len] = '\0';
+    key = tmp_key;
+
+    value = &prop[key_len + 1];
   }
 
   if (strcmp(key, "java.compiler") == 0) {
     process_java_compiler_argument(value);
-    FreeHeap(key);
-    if (eq != NULL) {
-      FreeHeap(value);
-    }
-    return true;
-  } else if (strcmp(key, "sun.java.command") == 0) {
-    _java_command = value;
-
     // Record value in Arguments, but let it get passed to Java.
   } else if (strcmp(key, "sun.java.launcher.is_altjvm") == 0 ||
              strcmp(key, "sun.java.launcher.pid") == 0) {
     // sun.java.launcher.is_altjvm and sun.java.launcher.pid property are
     // private and are processed in process_sun_java_launcher_properties();
     // the sun.java.launcher property is passed on to the java application
-    FreeHeap(key);
-    if (eq != NULL) {
-      FreeHeap(value);
-    }
-    return true;
-  } else if (strcmp(key, "java.vendor.url.bug") == 0) {
-    // save it in _java_vendor_url_bug, so JVM fatal error handler can access
-    // its value without going through the property list or making a Java call.
-    _java_vendor_url_bug = value;
   } else if (strcmp(key, "sun.boot.library.path") == 0) {
     PropertyList_unique_add(&_system_properties, key, value, true);
-    return true;
+  } else {
+    if (strcmp(key, "sun.java.command") == 0) {
+      if (_java_command != NULL) {
+        os::free(_java_command);
+      }
+      _java_command = os::strdup_check_oom(value, mtInternal);
+    } else if (strcmp(key, "java.vendor.url.bug") == 0) {
+      if (_java_vendor_url_bug != DEFAULT_VENDOR_URL_BUG) {
+        assert(_java_vendor_url_bug != NULL, "_java_vendor_url_bug is NULL");
+        os::free((void *)_java_vendor_url_bug);
+      }
+      // save it in _java_vendor_url_bug, so JVM fatal error handler can access
+      // its value without going through the property list or making a Java call.
+      _java_vendor_url_bug = os::strdup_check_oom(value, mtInternal);
+    }
+
+    // Create new property and add at the end of the list
+    PropertyList_unique_add(&_system_properties, key, value);
   }
-  // Create new property and add at the end of the list
-  PropertyList_unique_add(&_system_properties, key, value);
+
+  if (key != prop) {
+    // SystemProperty copy passed value, thus free previously allocated
+    // memory
+    FreeHeap((void *)key);
+  }
+
   return true;
 }
 
@@ -1046,7 +1054,7 @@ void Arguments::set_mode_flags(Mode mode) {
   // Ensure Agent_OnLoad has the correct initial values.
   // This may not be the final mode; mode may change later in onload phase.
   PropertyList_unique_add(&_system_properties, "java.vm.info",
-                          (char*)VM_Version::vm_info_string(), false);
+                          VM_Version::vm_info_string(), false);
 
   UseInterpreter             = true;
   UseCompiler                = true;
@@ -1858,7 +1866,7 @@ void Arguments::set_bytecode_flags() {
 }
 
 // Aggressive optimization flags  -XX:+AggressiveOpts
-void Arguments::set_aggressive_opts_flags() {
+jint Arguments::set_aggressive_opts_flags() {
 #ifdef COMPILER2
   if (AggressiveUnboxing) {
     if (FLAG_IS_DEFAULT(EliminateAutoBox)) {
@@ -1885,7 +1893,9 @@ void Arguments::set_aggressive_opts_flags() {
     // Feed the cache size setting into the JDK
     char buffer[1024];
     sprintf(buffer, "java.lang.Integer.IntegerCache.high=" INTX_FORMAT, AutoBoxCacheMax);
-    add_property(buffer);
+    if (!add_property(buffer)) {
+      return JNI_ENOMEM;
+    }
   }
   if (AggressiveOpts && FLAG_IS_DEFAULT(BiasedLockingStartupDelay)) {
     FLAG_SET_DEFAULT(BiasedLockingStartupDelay, 500);
@@ -1898,12 +1908,14 @@ void Arguments::set_aggressive_opts_flags() {
 //      FLAG_SET_DEFAULT(EliminateZeroing, true);
 //    }
   }
+
+  return JNI_OK;
 }
 
 //===========================================================================================================
 // Parsing of java.compiler property
 
-void Arguments::process_java_compiler_argument(char* arg) {
+void Arguments::process_java_compiler_argument(const char* arg) {
   // For backwards compatibility, Djava.compiler=NONE or ""
   // causes us to switch to -Xint mode UNLESS -Xdebug
   // is also specified.
@@ -3870,7 +3882,10 @@ jint Arguments::apply_ergo() {
   set_bytecode_flags();
 
   // Set flags if Aggressive optimization flags (-XX:+AggressiveOpts) enabled
-  set_aggressive_opts_flags();
+  jint code = set_aggressive_opts_flags();
+  if (code != JNI_OK) {
+    return code;
+  }
 
   // Turn off biased locking for locking debug mode flags,
   // which are subtly different from each other but neither works with
@@ -4036,7 +4051,7 @@ void Arguments::PropertyList_add(SystemProperty** plist, SystemProperty *new_p) 
   }
 }
 
-void Arguments::PropertyList_add(SystemProperty** plist, const char* k, char* v) {
+void Arguments::PropertyList_add(SystemProperty** plist, const char* k, const char* v) {
   if (plist == NULL)
     return;
 
@@ -4049,7 +4064,7 @@ void Arguments::PropertyList_add(SystemProperty *element) {
 }
 
 // This add maintains unique property key in the list.
-void Arguments::PropertyList_unique_add(SystemProperty** plist, const char* k, char* v, jboolean append) {
+void Arguments::PropertyList_unique_add(SystemProperty** plist, const char* k, const char* v, jboolean append) {
   if (plist == NULL)
     return;
 
