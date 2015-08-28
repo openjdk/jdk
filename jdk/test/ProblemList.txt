@@ -136,6 +136,9 @@ java/lang/ClassLoader/deadlock/GetResource.java                 generic-all
 # 8133552
 java/lang/ProcessHandle/InfoTest.java                           generic-all
 
+# 8134677
+java/lang/SecurityManager/CheckPackageMatching.java             windows-all
+
 ############################################################################
 
 # jdk_instrument
