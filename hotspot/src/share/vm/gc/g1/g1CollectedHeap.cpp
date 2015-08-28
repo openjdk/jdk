@@ -4584,8 +4584,7 @@ public:
                  bool only_young, bool claim)
         : _oop_closure(oop_closure),
           _oop_in_klass_closure(oop_closure->g1(),
-                                oop_closure->pss(),
-                                oop_closure->rp()),
+                                oop_closure->pss()),
           _klass_in_cld_closure(&_oop_in_klass_closure, only_young),
           _claim(claim) {
 
@@ -4614,18 +4613,18 @@ public:
       bool only_young = _g1h->collector_state()->gcs_are_young();
 
       // Non-IM young GC.
-      G1ParCopyClosure<G1BarrierNone, G1MarkNone>             scan_only_root_cl(_g1h, pss, rp);
+      G1ParCopyClosure<G1BarrierNone, G1MarkNone>             scan_only_root_cl(_g1h, pss);
       G1CLDClosure<G1MarkNone>                                scan_only_cld_cl(&scan_only_root_cl,
                                                                                only_young, // Only process dirty klasses.
                                                                                false);     // No need to claim CLDs.
       // IM young GC.
       //    Strong roots closures.
-      G1ParCopyClosure<G1BarrierNone, G1MarkFromRoot>         scan_mark_root_cl(_g1h, pss, rp);
+      G1ParCopyClosure<G1BarrierNone, G1MarkFromRoot>         scan_mark_root_cl(_g1h, pss);
       G1CLDClosure<G1MarkFromRoot>                            scan_mark_cld_cl(&scan_mark_root_cl,
                                                                                false, // Process all klasses.
                                                                                true); // Need to claim CLDs.
       //    Weak roots closures.
-      G1ParCopyClosure<G1BarrierNone, G1MarkPromotedFromRoot> scan_mark_weak_root_cl(_g1h, pss, rp);
+      G1ParCopyClosure<G1BarrierNone, G1MarkPromotedFromRoot> scan_mark_weak_root_cl(_g1h, pss);
       G1CLDClosure<G1MarkPromotedFromRoot>                    scan_mark_weak_cld_cl(&scan_mark_weak_root_cl,
                                                                                     false, // Process all klasses.
                                                                                     true); // Need to claim CLDs.
@@ -5324,9 +5323,9 @@ public:
     G1ParScanThreadState*           pss = _pss[worker_id];
     pss->set_ref_processor(NULL);
 
-    G1ParScanExtRootClosure        only_copy_non_heap_cl(_g1h, pss, NULL);
+    G1ParScanExtRootClosure        only_copy_non_heap_cl(_g1h, pss);
 
-    G1ParScanAndMarkExtRootClosure copy_mark_non_heap_cl(_g1h, pss, NULL);
+    G1ParScanAndMarkExtRootClosure copy_mark_non_heap_cl(_g1h, pss);
 
     OopClosure*                    copy_non_heap_cl = &only_copy_non_heap_cl;
 
@@ -5424,9 +5423,9 @@ public:
     pss->set_ref_processor(NULL);
     assert(pss->queue_is_empty(), "both queue and overflow should be empty");
 
-    G1ParScanExtRootClosure        only_copy_non_heap_cl(_g1h, pss, NULL);
+    G1ParScanExtRootClosure        only_copy_non_heap_cl(_g1h, pss);
 
-    G1ParScanAndMarkExtRootClosure copy_mark_non_heap_cl(_g1h, pss, NULL);
+    G1ParScanAndMarkExtRootClosure copy_mark_non_heap_cl(_g1h, pss);
 
     OopClosure*                    copy_non_heap_cl = &only_copy_non_heap_cl;
 
@@ -5534,9 +5533,9 @@ void G1CollectedHeap::process_discovered_references(G1ParScanThreadState** per_t
   // closures while we're actually processing the discovered
   // reference objects.
 
-  G1ParScanExtRootClosure        only_copy_non_heap_cl(this, pss, NULL);
+  G1ParScanExtRootClosure        only_copy_non_heap_cl(this, pss);
 
-  G1ParScanAndMarkExtRootClosure copy_mark_non_heap_cl(this, pss, NULL);
+  G1ParScanAndMarkExtRootClosure copy_mark_non_heap_cl(this, pss);
 
   OopClosure*                    copy_non_heap_cl = &only_copy_non_heap_cl;
 
