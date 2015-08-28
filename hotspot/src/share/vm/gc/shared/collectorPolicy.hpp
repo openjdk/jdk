@@ -150,8 +150,6 @@ class CollectorPolicy : public CHeapObj<mtGC> {
 #endif // INCLUDE_ALL_GCS
 
 
-  virtual BarrierSet::Name barrier_set_name() = 0;
-
   virtual GenRemSet* create_rem_set(MemRegion reserved);
 
   // This method controls how a collector satisfies a request
@@ -298,8 +296,6 @@ class GenCollectorPolicy : public CollectorPolicy {
   virtual void post_heap_initialize() {
     assert(_max_young_size == MaxNewSize, "Should be taken care of by initialize_size_info");
   }
-
-  BarrierSet::Name barrier_set_name()  { return BarrierSet::CardTableModRef; }
 
   virtual CollectorPolicy::Name kind() {
     return CollectorPolicy::GenCollectorPolicyKind;

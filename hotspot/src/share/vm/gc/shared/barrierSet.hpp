@@ -132,6 +132,9 @@ public:
   // First the pre-write versions...
   template <class T> inline void write_ref_field_pre(T* field, oop new_val);
 private:
+  // Helper for write_ref_field_pre and friends, testing for specialized cases.
+  bool devirtualize_reference_writes() const;
+
   // Keep this private so as to catch violations at build time.
   virtual void write_ref_field_pre_work(     void* field, oop new_val) { guarantee(false, "Not needed"); };
 protected:
