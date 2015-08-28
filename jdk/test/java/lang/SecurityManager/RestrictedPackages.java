@@ -77,7 +77,8 @@ final class RestrictedPackages {
         "jdk.nashorn.internal.",
         "jdk.nashorn.tools.",
         "jdk.tools.jimage.",
-        "com.sun.activation.registries."
+        "com.sun.activation.registries.",
+        "com.sun.java.accessibility.util.internal."
     };
 
     /*
@@ -125,6 +126,9 @@ final class RestrictedPackages {
         List<String> pkgs = new ArrayList<>(Arrays.asList(EXPECTED));
         if (OS_NAME.contains("OS X")) {
             pkgs.add("apple.");  // add apple package for OS X
+        }
+        if (OS_NAME.contains("Win")) {
+            pkgs.add("com.sun.java.accessibility.internal.");  // add Win only package
         }
         return pkgs;
     }
