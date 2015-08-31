@@ -281,9 +281,6 @@ CACERTS_FILE=@CACERTS_FILE@
 # Enable unlimited crypto policy
 UNLIMITED_CRYPTO=@UNLIMITED_CRYPTO@
 
-# Enable RMIConnector IIOP transport
-RMICONNECTOR_IIOP=@RMICONNECTOR_IIOP@
-
 GCOV_ENABLED=@GCOV_ENABLED@
 
 # Necessary additional compiler flags to compile X11
