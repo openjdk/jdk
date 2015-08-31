@@ -29,6 +29,7 @@
  * @option -pcc
  * @option --lazy-compilation=false
  * @option -Dnashorn.persistent.code.cache=build/nashorn_code_cache
+ * @option -Dnashorn.options.allowEagerCompilationSilentOverride
  * @fork
  */
 

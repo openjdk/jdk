@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8134250
+ * @bug 8134250 8134520
  * @summary Tests CLDR/LDML features are correctly reflected in JDK.
  * @run main/othervm -Djava.locale.providers=CLDR Bug8134250
  */
@@ -61,6 +61,7 @@ public class Bug8134250 {
         Chronology chrono = Chronology.ofLocale(locale);
         dtf = DateTimeFormatter
             .ofLocalizedDate(FormatStyle.FULL)
+            .withLocale(locale)
             .withChronology(chrono);
         result = dtf.format(d);
         System.out.println(dtf.format(d));
