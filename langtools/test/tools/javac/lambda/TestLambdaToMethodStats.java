@@ -23,34 +23,35 @@
 
 /*
  * @test
- * @bug 8013576
+ * @bug 8013576 8129962
  * @summary Add stat support to LambdaToMethod
- * @library ../lib
+ * @library /tools/javac/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.code
+ *          jdk.compiler/com.sun.tools.javac.comp
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util
- * @build JavacTestingAbstractThreadedTest
- * @run main/othervm TestLambdaToMethodStats
+ * @build combo.ComboTestHelper
+ * @run main TestLambdaToMethodStats
  */
 
-// use /othervm to avoid jtreg timeout issues (CODETOOLS-7900047)
-// see JDK-8006746
-
-import java.net.URI;
-import java.util.Arrays;
+import java.io.IOException;
 
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
-import javax.tools.SimpleJavaFileObject;
 
-import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.api.ClientCodeWrapper;
-import com.sun.tools.javac.util.JCDiagnostic;
 
-public class TestLambdaToMethodStats
-    extends JavacTestingAbstractThreadedTest
-    implements Runnable {
+import com.sun.tools.javac.util.List;
+import combo.ComboInstance;
+import combo.ComboParameter;
+import combo.ComboTask.Result;
+import combo.ComboTestHelper;
 
-    enum ExprKind {
+public class TestLambdaToMethodStats extends ComboInstance<TestLambdaToMethodStats> {
+
+    enum ExprKind implements ComboParameter {
         LAMBDA("()->null"),
         MREF1("this::g"),
         MREF2("this::h");
@@ -60,9 +61,14 @@ public class TestLambdaToMethodStats
         ExprKind(String exprStr) {
             this.exprStr = exprStr;
         }
+
+        @Override
+        public String expand(String optParameter) {
+            return exprStr;
+        }
     }
 
-    enum TargetKind {
+    enum TargetKind implements ComboParameter {
         IMPLICIT(""),
         SERIALIZABLE("(A & java.io.Serializable)");
 
@@ -71,124 +77,89 @@ public class TestLambdaToMethodStats
         TargetKind(String targetStr) {
             this.targetStr = targetStr;
         }
+
+        @Override
+        public String expand(String optParameter) {
+            return targetStr;
+        }
+    }
+
+    enum DiagnosticKind {
+        LAMBDA_STAT("compiler.note.lambda.stat", true, false),
+        MREF_STAT("compiler.note.mref.stat", false, false),
+        MREF_STAT1("compiler.note.mref.stat.1", false, true);
+
+        String code;
+        boolean lambda;
+        boolean bridge;
+
+        DiagnosticKind(String code, boolean lambda, boolean bridge) {
+            this.code = code;
+            this.lambda = lambda;
+            this.bridge = bridge;
+        }
     }
 
     public static void main(String... args) throws Exception {
-        for (ExprKind ek : ExprKind.values()) {
-            for (TargetKind tk : TargetKind.values()) {
-                pool.execute(new TestLambdaToMethodStats(ek, tk));
-            }
-        }
-
-        checkAfterExec(true);
+        new ComboTestHelper<TestLambdaToMethodStats>()
+                .withDimension("EXPR", (x, expr) -> x.ek = expr, ExprKind.values())
+                .withDimension("CAST", (x, target) -> x.tk = target, TargetKind.values())
+                .run(TestLambdaToMethodStats::new);
     }
 
     ExprKind ek;
     TargetKind tk;
-    JavaSource source;
-    DiagnosticChecker diagChecker;
 
+    String template = "interface A {\n" +
+            "   Object o();\n" +
+            "}\n" +
+            "class Test {\n" +
+            "   A a = #{CAST}#{EXPR};\n" +
+            "   Object g() { return null; }\n" +
+            "   Object h(Object... o) { return null; }\n" +
+            "}";
 
-    TestLambdaToMethodStats(ExprKind ek, TargetKind tk) {
-        this.ek = ek;
-        this.tk = tk;
-        this.source = new JavaSource();
-        this.diagChecker = new DiagnosticChecker();
+    @Override
+    public void doWork() throws IOException {
+        check(newCompilationTask()
+                .withOption("-XDdumpLambdaToMethodStats")
+                .withSourceFromTemplate(template)
+                .generate());
     }
 
-    class JavaSource extends SimpleJavaFileObject {
-
-        String template = "interface A {\n" +
-                          "   Object o();\n" +
-                          "}\n" +
-                          "class Test {\n" +
-                          "   A a = #C#E;\n" +
-                          "   Object g() { return null; }\n" +
-                          "   Object h(Object... o) { return null; }\n" +
-                          "}";
-
-        String source;
-
-        public JavaSource() {
-            super(URI.create("myfo:/Test.java"), JavaFileObject.Kind.SOURCE);
-            source = template.replaceAll("#E", ek.exprStr)
-                    .replaceAll("#C", tk.targetStr);
+    void check(Result<?> res) {
+        DiagnosticKind diag = null;
+        boolean altMetafactory = false;
+        for (DiagnosticKind dk : DiagnosticKind.values()) {
+            List<Diagnostic<? extends JavaFileObject>> jcDiag = res.diagnosticsForKey(dk.code);
+            if (jcDiag.nonEmpty()) {
+                diag = dk;
+                ClientCodeWrapper.DiagnosticSourceUnwrapper dsu =
+                        (ClientCodeWrapper.DiagnosticSourceUnwrapper)jcDiag.head;
+                altMetafactory = (Boolean)dsu.d.getArgs()[0];
+                break;
+            }
         }
 
-        @Override
-        public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-            return source;
+        if (diag == null) {
+            fail("No diagnostic found; " + res.compilationInfo());
         }
-    }
 
-    public void run() {
-        JavacTask ct = (JavacTask)comp.getTask(null, fm.get(), diagChecker,
-                Arrays.asList("-XDdumpLambdaToMethodStats"),
-                null, Arrays.asList(source));
-        try {
-            ct.generate();
-        } catch (Throwable ex) {
-            throw new
-                AssertionError("Error thron when analyzing the following source:\n" +
-                    source.getCharContent(true));
-        }
-        check();
-    }
-
-    void check() {
-        checkCount.incrementAndGet();
-
-        boolean error = diagChecker.lambda !=
+        boolean error = diag.lambda !=
                 (ek == ExprKind.LAMBDA);
 
-        error |= diagChecker.bridge !=
+        error |= diag.bridge !=
                 (ek == ExprKind.MREF2);
 
-        error |= diagChecker.altMetafactory !=
+        error |= altMetafactory !=
                 (tk == TargetKind.SERIALIZABLE);
 
         if (error) {
-            throw new AssertionError("Bad stat diagnostic found for source\n" +
-                    "lambda = " + diagChecker.lambda + "\n" +
-                    "bridge = " + diagChecker.bridge + "\n" +
-                    "altMF = " + diagChecker.altMetafactory + "\n" +
-                    source.source);
-        }
-    }
-
-    static class DiagnosticChecker
-        implements javax.tools.DiagnosticListener<JavaFileObject> {
-
-        boolean altMetafactory;
-        boolean bridge;
-        boolean lambda;
-
-        public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
-            try {
-                if (diagnostic.getKind() == Diagnostic.Kind.NOTE) {
-                    switch (diagnostic.getCode()) {
-                        case "compiler.note.lambda.stat":
-                            lambda = true;
-                            break;
-                        case "compiler.note.mref.stat":
-                            lambda = false;
-                            bridge = false;
-                            break;
-                        case "compiler.note.mref.stat.1":
-                            lambda = false;
-                            bridge = true;
-                            break;
-                        default:
-                            throw new AssertionError("unexpected note: " + diagnostic.getCode());
-                    }
-                    ClientCodeWrapper.DiagnosticSourceUnwrapper dsu =
-                        (ClientCodeWrapper.DiagnosticSourceUnwrapper)diagnostic;
-                    altMetafactory = (Boolean)dsu.d.getArgs()[0];
-                }
-            } catch (RuntimeException t) {
-                t.printStackTrace();
-                throw t;
-            }
+            fail("Bad stat diagnostic found for source\n" +
+                    "lambda = " + diag.lambda + "\n" +
+                    "bridge = " + diag.bridge + "\n" +
+                    "altMF = " + altMetafactory + "\n" +
+                    res.compilationInfo());
         }
     }
 }

@@ -29,6 +29,7 @@
  */
 
 import com.sun.tools.javac.code.Scope;
+import com.sun.tools.javac.code.Scope.ScopeListenerList;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Types;
@@ -53,20 +54,14 @@ public class ScopeListenerTest {
         types.membersClosure(syms.stringType, true);
         types.membersClosure(syms.stringType, false);
 
-        Field listenersField = Scope.class.getDeclaredField("listeners");
-
-        listenersField.setAccessible(true);
-
-        int listenerCount =
-                ((Collection) listenersField.get(syms.stringType.tsym.members())).size();
+        int listenerCount = listenerCount(syms.stringType.tsym.members());
 
         for (int i = 0; i < 100; i++) {
             types.membersClosure(syms.stringType, true);
             types.membersClosure(syms.stringType, false);
         }
 
-        int newListenerCount
-                = ((Collection) listenersField.get(syms.stringType.tsym.members())).size();
+        int newListenerCount = listenerCount(syms.stringType.tsym.members());
 
         if (listenerCount != newListenerCount) {
             throw new AssertionError("Orig listener count: " + listenerCount +
@@ -77,6 +72,14 @@ public class ScopeListenerTest {
             ;
         for (Symbol s : types.membersClosure(syms.stringType, false).getSymbolsByName(names.fromString("substring")))
             ;
+    }
+
+    int listenerCount(Scope s) throws ReflectiveOperationException {
+        Field listenersListField = Scope.class.getDeclaredField("listeners");
+        listenersListField.setAccessible(true);
+        Field listenersField = ScopeListenerList.class.getDeclaredField("listeners");
+        listenersField.setAccessible(true);
+        return ((Collection<?>)listenersField.get(listenersListField.get(s))).size();
     }
 
 }

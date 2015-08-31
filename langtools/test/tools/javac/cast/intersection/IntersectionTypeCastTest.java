@@ -23,53 +23,47 @@
 
 /*
  * @test
- * @bug 8002099 8006694
+ * @bug 8002099 8006694 8129962
  * @summary Add support for intersection types in cast expression
  *  temporarily workaround combo tests are causing time out in several platforms
- * @library ../../lib
- * @modules jdk.compiler/com.sun.tools.javac.util
- * @build JavacTestingAbstractThreadedTest
- * @run main/othervm/timeout=360 IntersectionTypeCastTest
+ * @library /tools/javac/lib
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.code
+ *          jdk.compiler/com.sun.tools.javac.comp
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.javac.tree
+ *          jdk.compiler/com.sun.tools.javac.util
+ * @build combo.ComboTestHelper
+
+ * @run main IntersectionTypeCastTest
  */
 
-// use /othervm to avoid jtreg timeout issues (CODETOOLS-7900047)
-// see JDK-8006746
-
-import java.net.URI;
-import java.util.Arrays;
-import javax.tools.Diagnostic;
-import javax.tools.JavaCompiler;
-import javax.tools.JavaFileObject;
-import javax.tools.SimpleJavaFileObject;
-import javax.tools.ToolProvider;
-
-import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.util.List;
-import com.sun.tools.javac.util.ListBuffer;
 
-public class IntersectionTypeCastTest
-    extends JavacTestingAbstractThreadedTest
-    implements Runnable {
+import combo.ComboInstance;
+import combo.ComboParameter;
+import combo.ComboTask.Result;
+import combo.ComboTestHelper;
 
-    interface Type {
+import java.io.IOException;
+
+public class IntersectionTypeCastTest extends ComboInstance<IntersectionTypeCastTest> {
+
+    interface Type extends ComboParameter {
         boolean subtypeOf(Type that);
-        String asString();
         boolean isClass();
         boolean isInterface();
     }
 
     enum InterfaceKind implements Type {
-        A("interface A { }\n", "A", null),
-        B("interface B { }\n", "B", null),
-        C("interface C extends A { }\n", "C", A);
+        A("A", null),
+        B("B", null),
+        C("C", A);
 
-        String declStr;
         String typeStr;
         InterfaceKind superInterface;
 
-        InterfaceKind(String declStr, String typeStr,
-                InterfaceKind superInterface) {
-            this.declStr = declStr;
+        InterfaceKind(String typeStr, InterfaceKind superInterface) {
             this.typeStr = typeStr;
             this.superInterface = superInterface;
         }
@@ -81,11 +75,6 @@ public class IntersectionTypeCastTest
         }
 
         @Override
-        public String asString() {
-            return typeStr;
-        }
-
-        @Override
         public boolean isClass() {
             return false;
         }
@@ -94,40 +83,29 @@ public class IntersectionTypeCastTest
         public boolean isInterface() {
             return true;
         }
+
+        @Override
+        public String expand(String optParameter) {
+            return typeStr;
+        }
     }
 
     enum ClassKind implements Type {
-        OBJECT(null, "Object"),
-        CA("#M class CA implements A { }\n", "CA",
-           InterfaceKind.A),
-        CB("#M class CB implements B { }\n", "CB",
-           InterfaceKind.B),
-        CAB("#M class CAB implements A, B { }\n", "CAB",
-            InterfaceKind.A, InterfaceKind.B),
-        CC("#M class CC implements C { }\n", "CC",
-           InterfaceKind.C, InterfaceKind.A),
-        CCA("#M class CCA implements C, A { }\n", "CCA",
-            InterfaceKind.C, InterfaceKind.A),
-        CCB("#M class CCB implements C, B { }\n", "CCB",
-            InterfaceKind.C, InterfaceKind.A, InterfaceKind.B),
-        CCAB("#M class CCAB implements C, A, B { }\n", "CCAB",
-             InterfaceKind.C, InterfaceKind.A, InterfaceKind.B);
+        OBJECT("Object"),
+        CA("CA", InterfaceKind.A),
+        CB("CB", InterfaceKind.B),
+        CAB("CAB", InterfaceKind.A, InterfaceKind.B),
+        CC("CC", InterfaceKind.C, InterfaceKind.A),
+        CCA("CCA", InterfaceKind.C, InterfaceKind.A),
+        CCB("CCB", InterfaceKind.C, InterfaceKind.A, InterfaceKind.B),
+        CCAB("CCAB", InterfaceKind.C, InterfaceKind.A, InterfaceKind.B);
 
-        String declTemplate;
         String typeStr;
         List<InterfaceKind> superInterfaces;
 
-        ClassKind(String declTemplate, String typeStr,
-                InterfaceKind... superInterfaces) {
-            this.declTemplate = declTemplate;
+        ClassKind(String typeStr, InterfaceKind... superInterfaces) {
             this.typeStr = typeStr;
             this.superInterfaces = List.from(superInterfaces);
-        }
-
-        String getDecl(ModifierKind mod) {
-            return declTemplate != null ?
-                    declTemplate.replaceAll("#M", mod.modStr) :
-                    "";
         }
 
         @Override
@@ -137,11 +115,6 @@ public class IntersectionTypeCastTest
         }
 
         @Override
-        public String asString() {
-            return typeStr;
-        }
-
-        @Override
         public boolean isClass() {
             return true;
         }
@@ -150,9 +123,14 @@ public class IntersectionTypeCastTest
         public boolean isInterface() {
             return false;
         }
+
+        @Override
+        public String expand(String optParameter) {
+            return typeStr;
+        }
     }
 
-    enum ModifierKind {
+    enum ModifierKind implements ComboParameter {
         NONE(""),
         FINAL("final");
 
@@ -161,14 +139,18 @@ public class IntersectionTypeCastTest
         ModifierKind(String modStr) {
             this.modStr = modStr;
         }
+
+        @Override
+        public String expand(String optParameter) {
+            return modStr;
+        }
     }
 
-    enum CastKind {
-        CLASS("(#C)", 0),
-        INTERFACE("(#I0)", 1),
-        INTERSECTION2("(#C & #I0)", 1),
-        INTERSECTION3("(#C & #I0 & #I1)", 2);
-        //INTERSECTION4("(#C & #I0 & #I1 & #I2)", 3);
+    enum CastKind implements ComboParameter {
+        CLASS("(#{CLAZZ#IDX})", 0),
+        INTERFACE("(#{INTF1#IDX})", 1),
+        INTERSECTION2("(#{CLAZZ#IDX} & #{INTF1#IDX})", 1),
+        INTERSECTION3("(#{CLAZZ#IDX} & #{INTF1#IDX} & #{INTF2#IDX})", 2);
 
         String castTemplate;
         int interfaceBounds;
@@ -176,6 +158,11 @@ public class IntersectionTypeCastTest
         CastKind(String castTemplate, int interfaceBounds) {
             this.castTemplate = castTemplate;
             this.interfaceBounds = interfaceBounds;
+        }
+
+        @Override
+        public String expand(String optParameter) {
+            return castTemplate.replaceAll("#IDX", optParameter);
         }
     }
 
@@ -188,19 +175,9 @@ public class IntersectionTypeCastTest
             this.types = types;
         }
 
-        String getCast() {
-            String temp = kind.castTemplate.replaceAll("#C",
-                    types[0].asString());
-            for (int i = 0; i < kind.interfaceBounds ; i++) {
-                temp = temp.replace(String.format("#I%d", i),
-                                    types[i + 1].asString());
-            }
-            return temp;
-        }
-
         boolean hasDuplicateTypes() {
-            for (int i = 0 ; i < types.length ; i++) {
-                for (int j = 0 ; j < types.length ; j++) {
+            for (int i = 0 ; i < arity() ; i++) {
+                for (int j = 0 ; j < arity() ; j++) {
                     if (i != j && types[i] == types[j]) {
                         return true;
                     }
@@ -210,8 +187,10 @@ public class IntersectionTypeCastTest
         }
 
         boolean compatibleWith(ModifierKind mod, CastInfo that) {
-            for (Type t1 : types) {
-                for (Type t2 : that.types) {
+            for (int i = 0 ; i < arity() ; i++) {
+                Type t1 = types[i];
+                for (int j = 0 ; j < that.arity() ; j++) {
+                    Type t2 = that.types[j];
                     boolean compat =
                             t1.subtypeOf(t2) ||
                             t2.subtypeOf(t1) ||
@@ -223,138 +202,92 @@ public class IntersectionTypeCastTest
             }
             return true;
         }
+
+        private int arity() {
+            return kind.interfaceBounds + 1;
+        }
     }
 
     public static void main(String... args) throws Exception {
-        for (ModifierKind mod : ModifierKind.values()) {
-            for (CastInfo cast1 : allCastInfo()) {
-                for (CastInfo cast2 : allCastInfo()) {
-                    pool.execute(
-                        new IntersectionTypeCastTest(mod, cast1, cast2));
-                }
-            }
-        }
-        checkAfterExec();
+        new ComboTestHelper<IntersectionTypeCastTest>()
+                .withFilter(IntersectionTypeCastTest::isRedundantCast)
+                .withFilter(IntersectionTypeCastTest::arityFilter)
+                .withArrayDimension("CAST", (x, ck, idx) -> x.castKinds[idx] = ck, 2, CastKind.values())
+                .withDimension("CLAZZ1", (x, ty) -> x.types1[0] = ty, ClassKind.values())
+                .withDimension("INTF11", (x, ty) -> x.types1[1] = ty, InterfaceKind.values())
+                .withDimension("INTF21", (x, ty) -> x.types1[2] = ty, InterfaceKind.values())
+                .withDimension("CLAZZ2", (x, ty) -> x.types2[0] = ty, ClassKind.values())
+                .withDimension("INTF12", (x, ty) -> x.types2[1] = ty, InterfaceKind.values())
+                .withDimension("INTF22", (x, ty) -> x.types2[2] = ty, InterfaceKind.values())
+                .withDimension("MOD", (x, mod) -> x.mod = mod, ModifierKind.values())
+                .run(IntersectionTypeCastTest::new);
     }
 
-    static List<CastInfo> allCastInfo() {
-        ListBuffer<CastInfo> buf = new ListBuffer<>();
-        for (CastKind kind : CastKind.values()) {
-            for (ClassKind clazz : ClassKind.values()) {
-                if (kind == CastKind.INTERFACE && clazz != ClassKind.OBJECT) {
-                    continue;
-                } else if (kind.interfaceBounds == 0) {
-                    buf.append(new CastInfo(kind, clazz));
-                    continue;
-                } else {
-                    for (InterfaceKind intf1 : InterfaceKind.values()) {
-                        if (kind.interfaceBounds == 1) {
-                            buf.append(new CastInfo(kind, clazz, intf1));
-                            continue;
-                        } else {
-                            for (InterfaceKind intf2 : InterfaceKind.values()) {
-                                if (kind.interfaceBounds == 2) {
-                                    buf.append(
-                                            new CastInfo(kind, clazz, intf1, intf2));
-                                    continue;
-                                } else {
-                                    for (InterfaceKind intf3 : InterfaceKind.values()) {
-                                        buf.append(
-                                                new CastInfo(kind, clazz, intf1,
-                                                             intf2, intf3));
-                                        continue;
-                                    }
-                                }
-                            }
-                        }
-                    }
+    boolean isRedundantCast() {
+        for (int i = 0 ; i < 2 ; i++) {
+            Type[] types = i == 0 ? types1 : types2;
+            if (castKinds[i] == CastKind.INTERFACE && types[0] != ClassKind.OBJECT) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    boolean arityFilter() {
+        for (int i = 0 ; i < 2 ; i++) {
+            int lastPos = castKinds[i].interfaceBounds + 1;
+            Type[] types = i == 0 ? types1 : types2;
+            for (int j = 1; j < types.length; j++) {
+                boolean shouldBeSet = j < lastPos;
+                if (!shouldBeSet && (types[j] != InterfaceKind.A)) {
+                    return false;
                 }
             }
         }
-        return buf.toList();
+        return true;
     }
 
     ModifierKind mod;
-    CastInfo cast1, cast2;
-    JavaSource source;
-    DiagnosticChecker diagChecker;
-
-    IntersectionTypeCastTest(ModifierKind mod, CastInfo cast1, CastInfo cast2) {
-        this.mod = mod;
-        this.cast1 = cast1;
-        this.cast2 = cast2;
-        this.source = new JavaSource();
-        this.diagChecker = new DiagnosticChecker();
-    }
+    CastKind[] castKinds = new CastKind[2];
+    Type[] types1 = new Type[3];
+    Type[] types2 = new Type[3];
 
     @Override
-    public void run() {
-        final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
-
-        JavacTask ct = (JavacTask)tool.getTask(null, fm.get(), diagChecker,
-                null, null, Arrays.asList(source));
-        try {
-            ct.analyze();
-        } catch (Throwable ex) {
-            throw new AssertionError("Error thrown when compiling the following code:\n" +
-                    source.getCharContent(true));
-        }
-        check();
+    public void doWork() throws IOException {
+        check(newCompilationTask()
+                .withSourceFromTemplate(bodyTemplate)
+                .analyze());
     }
 
-    class JavaSource extends SimpleJavaFileObject {
+    String bodyTemplate = "class Test {\n" +
+                          "   void test() {\n" +
+                          "      Object o = #{CAST[0].1}#{CAST[1].2}null;\n" +
+                          "   } }\n" +
+                          "interface A { }\n" +
+                          "interface B { }\n" +
+                          "interface C extends A { }\n" +
+                          "#{MOD} class CA implements A { }\n" +
+                          "#{MOD} class CB implements B { }\n" +
+                          "#{MOD} class CAB implements A, B { }\n" +
+                          "#{MOD} class CC implements C { }\n" +
+                          "#{MOD} class CCA implements C, A { }\n" +
+                          "#{MOD} class CCB implements C, B { }\n" +
+                          "#{MOD} class CCAB implements C, A, B { }";
 
-        String bodyTemplate = "class Test {\n" +
-                              "   void test() {\n" +
-                              "      Object o = #C1#C2null;\n" +
-                              "   } }";
-
-        String source = "";
-
-        public JavaSource() {
-            super(URI.create("myfo:/Test.java"), JavaFileObject.Kind.SOURCE);
-            for (ClassKind ck : ClassKind.values()) {
-                source += ck.getDecl(mod);
-            }
-            for (InterfaceKind ik : InterfaceKind.values()) {
-                source += ik.declStr;
-            }
-            source += bodyTemplate.replaceAll("#C1", cast1.getCast()).
-                    replaceAll("#C2", cast2.getCast());
-        }
-
-        @Override
-        public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-            return source;
-        }
-    }
-
-    void check() {
-        checkCount.incrementAndGet();
-
+    void check(Result<?> res) {
+        CastInfo cast1 = new CastInfo(castKinds[0], types1);
+        CastInfo cast2 = new CastInfo(castKinds[1], types2);
         boolean errorExpected = cast1.hasDuplicateTypes() ||
                 cast2.hasDuplicateTypes();
 
         errorExpected |= !cast2.compatibleWith(mod, cast1);
 
-        if (errorExpected != diagChecker.errorFound) {
-            throw new Error("invalid diagnostics for source:\n" +
-                source.getCharContent(true) +
-                "\nFound error: " + diagChecker.errorFound +
+        boolean errorsFound = res.hasErrors();
+        if (errorExpected != errorsFound) {
+            fail("invalid diagnostics for source:\n" +
+                res.compilationInfo() +
+                "\nFound error: " + errorsFound +
                 "\nExpected error: " + errorExpected);
         }
     }
-
-    static class DiagnosticChecker
-        implements javax.tools.DiagnosticListener<JavaFileObject> {
-
-        boolean errorFound;
-
-        public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
-            if (diagnostic.getKind() == Diagnostic.Kind.ERROR) {
-                errorFound = true;
-            }
-        }
-    }
-
 }
