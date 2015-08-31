@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ public final class SunRsaSign extends Provider {
     private static final long serialVersionUID = 866040293550393045L;
 
     public SunRsaSign() {
-        super("SunRsaSign", 1.9d, "Sun RSA signature provider");
+        super("SunRsaSign", 9.0d, "Sun RSA signature provider");
 
         // if there is no security manager installed, put directly into
         // the provider. Otherwise, create a temporary map and use a

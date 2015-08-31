@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,16 +30,16 @@ public class Version {
 
 
     private static final String launcher_name =
-        "@@launcher_name@@";
+        "@@LAUNCHER_NAME@@";
 
     private static final String java_version =
-        "@@java_version@@";
+        "@@VERSION_SHORT@@";
 
     private static final String java_runtime_name =
-        "@@java_runtime_name@@";
+        "@@RUNTIME_NAME@@";
 
     private static final String java_runtime_version =
-        "@@java_runtime_version@@";
+        "@@VERSION_STRING@@";
 
     static {
         init();
@@ -54,16 +54,14 @@ public class Version {
     private static boolean versionsInitialized = false;
     private static int jvm_major_version = 0;
     private static int jvm_minor_version = 0;
-    private static int jvm_micro_version = 0;
-    private static int jvm_update_version = 0;
+    private static int jvm_security_version = 0;
+    private static int jvm_patch_version = 0;
     private static int jvm_build_number = 0;
-    private static String jvm_special_version = null;
     private static int jdk_major_version = 0;
     private static int jdk_minor_version = 0;
-    private static int jdk_micro_version = 0;
-    private static int jdk_update_version = 0;
+    private static int jdk_security_version = 0;
+    private static int jdk_patch_version = 0;
     private static int jdk_build_number = 0;
-    private static String jdk_special_version = null;
 
     /**
      * In case you were wondering this method is called by java -version.
@@ -146,44 +144,29 @@ public class Version {
 
 
     /**
-     * Returns the micro version of the running JVM if it's 1.6 or newer
-     * or any RE VM build. It will return 0 if it's an internal 1.5 or
-     * 1.4.x build.
+     * Returns the security version of the running JVM 
      * @since 1.6
      */
-    public static synchronized int jvmMicroVersion() {
+    public static synchronized int jvmSecurityVersion() {
         if (!versionsInitialized) {
             initVersions();
         }
-        return jvm_micro_version;
+        return jvm_security_version;
     }
 
     /**
-     * Returns the update release version of the running JVM if it's
-     * a RE build. It will return 0 if it's an internal build.
-     * @since 1.6
+     * Returns the patch release version of the running JVM
+     * @since JDK9
      */
-    public static synchronized int jvmUpdateVersion() {
+    public static synchronized int jvmPatchVersion() {
         if (!versionsInitialized) {
             initVersions();
         }
-        return jvm_update_version;
+        return jvm_patch_version;
     }
-
-    public static synchronized String jvmSpecialVersion() {
-        if (!versionsInitialized) {
-            initVersions();
-        }
-        if (jvm_special_version == null) {
-            jvm_special_version = getJvmSpecialVersion();
-        }
-        return jvm_special_version;
-    }
-    public static native String getJvmSpecialVersion();
 
     /**
-     * Returns the build number of the running JVM if it's a RE build
-     * It will return 0 if it's an internal build.
+     * Returns the build number of the running JVM
      * @since 1.6
      */
     public static synchronized int jvmBuildNumber() {
@@ -217,42 +200,29 @@ public class Version {
     }
 
     /**
-     * Returns the micro version of the running JDK.
+     * Returns the security version of the running JDK.
      * @since 1.6
      */
-    public static synchronized int jdkMicroVersion() {
+    public static synchronized int jdkSecurityVersion() {
         if (!versionsInitialized) {
             initVersions();
         }
-        return jdk_micro_version;
+        return jdk_security_version;
     }
 
     /**
-     * Returns the update release version of the running JDK if it's
-     * a RE build. It will return 0 if it's an internal build.
-     * @since 1.6
+     * Returns the patch release version of the running JDK
+     * @since 9
      */
-    public static synchronized int jdkUpdateVersion() {
+    public static synchronized int jdkPatchVersion() {
         if (!versionsInitialized) {
             initVersions();
         }
-        return jdk_update_version;
+        return jdk_patch_version;
     }
-
-    public static synchronized String jdkSpecialVersion() {
-        if (!versionsInitialized) {
-            initVersions();
-        }
-        if (jdk_special_version == null) {
-            jdk_special_version = getJdkSpecialVersion();
-        }
-        return jdk_special_version;
-    }
-    public static native String getJdkSpecialVersion();
 
     /**
-     * Returns the build number of the running JDK if it's a RE build
-     * It will return 0 if it's an internal build.
+     * Returns the build number of the running JDK
      * @since 1.6
      */
     public static synchronized int jdkBuildNumber() {
@@ -262,64 +232,12 @@ public class Version {
         return jdk_build_number;
     }
 
-    // true if JVM exports the version info including the capabilities
-    private static boolean jvmVersionInfoAvailable;
     private static synchronized void initVersions() {
         if (versionsInitialized) {
             return;
         }
-        jvmVersionInfoAvailable = getJvmVersionInfo();
-        if (!jvmVersionInfoAvailable) {
-            // parse java.vm.version for older JVM before the
-            // new JVM_GetVersionInfo is added.
-            // valid format of the version string is:
-            // n.n.n[_uu[c]][-<identifer>]-bxx
-            CharSequence cs = System.getProperty("java.vm.version");
-            if (cs.length() >= 5 &&
-                Character.isDigit(cs.charAt(0)) && cs.charAt(1) == '.' &&
-                Character.isDigit(cs.charAt(2)) && cs.charAt(3) == '.' &&
-                Character.isDigit(cs.charAt(4))) {
-                jvm_major_version = Character.digit(cs.charAt(0), 10);
-                jvm_minor_version = Character.digit(cs.charAt(2), 10);
-                jvm_micro_version = Character.digit(cs.charAt(4), 10);
-                cs = cs.subSequence(5, cs.length());
-                if (cs.charAt(0) == '_' && cs.length() >= 3 &&
-                    Character.isDigit(cs.charAt(1)) &&
-                    Character.isDigit(cs.charAt(2))) {
-                    int nextChar = 3;
-                    try {
-                        String uu = cs.subSequence(1, 3).toString();
-                        jvm_update_version = Integer.valueOf(uu).intValue();
-                        if (cs.length() >= 4) {
-                            char c = cs.charAt(3);
-                            if (c >= 'a' && c <= 'z') {
-                                jvm_special_version = Character.toString(c);
-                                nextChar++;
-                            }
-                        }
-                    } catch (NumberFormatException e) {
-                        // not conforming to the naming convention
-                        return;
-                    }
-                    cs = cs.subSequence(nextChar, cs.length());
-                }
-                if (cs.charAt(0) == '-') {
-                    // skip the first character
-                    // valid format: <identifier>-bxx or bxx
-                    // non-product VM will have -debug|-release appended
-                    cs = cs.subSequence(1, cs.length());
-                    String[] res = cs.toString().split("-");
-                    for (String s : res) {
-                        if (s.charAt(0) == 'b' && s.length() == 3 &&
-                            Character.isDigit(s.charAt(1)) &&
-                            Character.isDigit(s.charAt(2))) {
-                            jvm_build_number =
-                                Integer.valueOf(s.substring(1, 3)).intValue();
-                            break;
-                        }
-                    }
-                }
-            }
+        if (!getJvmVersionInfo()) {
+            throw new InternalError("Unable to obtain JVM version info");
         }
         getJdkVersionInfo();
         versionsInitialized = true;
@@ -327,8 +245,6 @@ public class Version {
 
     // Gets the JVM version info if available and sets the jvm_*_version fields
     // and its capabilities.
-    //
-    // Return false if not available which implies an old VM (Tiger or before).
     private static native boolean getJvmVersionInfo();
     private static native void getJdkVersionInfo();
 }
