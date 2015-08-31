@@ -25,7 +25,10 @@
 
 package jdk.nashorn.internal.ir;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -47,7 +50,9 @@ import jdk.nashorn.internal.runtime.options.Options;
  * refer to their location.
  */
 
-public final class Symbol implements Comparable<Symbol> {
+public final class Symbol implements Comparable<Symbol>, Cloneable, Serializable {
+    private static final long serialVersionUID = 1L;
+
     /** Is this Global */
     public static final int IS_GLOBAL   = 1;
     /** Is this a variable */
@@ -94,10 +99,10 @@ public final class Symbol implements Comparable<Symbol> {
 
     /** First bytecode method local variable slot for storing the value(s) of this variable. -1 indicates the variable
      * is not stored in local variable slots or it is not yet known. */
-    private int firstSlot = -1;
+    private transient int firstSlot = -1;
 
     /** Field number in scope or property; array index in varargs when not using arguments object. */
-    private int fieldIndex = -1;
+    private transient int fieldIndex = -1;
 
     /** Number of times this symbol is used in code */
     private int useCount;
@@ -141,6 +146,15 @@ public final class Symbol implements Comparable<Symbol> {
         this.flags      = flags;
         if(shouldTrace()) {
             trace("CREATE SYMBOL " + name);
+        }
+    }
+
+    @Override
+    public Symbol clone() {
+        try {
+            return (Symbol)super.clone();
+        } catch (final CloneNotSupportedException e) {
+            throw new AssertionError(e);
         }
     }
 
@@ -337,7 +351,7 @@ public final class Symbol implements Comparable<Symbol> {
      * Flag this symbol as scope as described in {@link Symbol#isScope()}
      * @return the symbol
      */
-     public Symbol setIsScope() {
+    public Symbol setIsScope() {
         if (!isScope()) {
             if(shouldTrace()) {
                 trace("SET IS SCOPE");
@@ -609,11 +623,11 @@ public final class Symbol implements Comparable<Symbol> {
 
     /**
      * Increase the symbol's use count by one.
-     * @return the symbol
      */
-    public Symbol increaseUseCount() {
-        useCount++;
-        return this;
+    public void increaseUseCount() {
+        if (isScope()) { // Avoid dirtying a cache line; we only need the use count for scoped symbols
+            useCount++;
+        }
     }
 
     /**
@@ -668,5 +682,11 @@ public final class Symbol implements Comparable<Symbol> {
         if (TRACE_SYMBOLS_STACKTRACE != null && (TRACE_SYMBOLS_STACKTRACE.isEmpty() || TRACE_SYMBOLS_STACKTRACE.contains(name))) {
             new Throwable().printStackTrace(Context.getCurrentErr());
         }
+    }
+
+    private void readObject(final ObjectInputStream in) throws ClassNotFoundException, IOException {
+        in.defaultReadObject();
+        firstSlot = -1;
+        fieldIndex = -1;
     }
 }
