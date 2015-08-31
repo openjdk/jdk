@@ -122,6 +122,10 @@ java/beans/XMLEncoder/java_awt_GridBagLayout.java             generic-all
 java/beans/XMLDecoder/8028054/TestConstructorFinder.java      generic-all
 java/beans/XMLDecoder/8028054/TestMethodFinder.java           generic-all
 
+# 8132565
+java/beans/Introspector/8132566/OverridePropertyInfoTest.java generic-all
+java/beans/Introspector/8132566/OverrideUserDefPropertyInfoTest.java generic-all
+
 ############################################################################
 
 # jdk_lang
@@ -131,6 +135,9 @@ java/lang/ClassLoader/deadlock/GetResource.java                 generic-all
 
 # 8133552
 java/lang/ProcessHandle/InfoTest.java                           generic-all
+
+# 8134677
+java/lang/SecurityManager/CheckPackageMatching.java             windows-all
 
 ############################################################################
 
@@ -379,6 +386,11 @@ sun/tools/jstatd/TestJstatdExternalRegistry.java                generic-all
 
 # 6456333
 sun/tools/jps/TestJpsJarRelative.java				generic-all
+
+# 8134420
+sun/tools/jps/TestJpsClass.java				generic-all
+sun/tools/jps/TestJpsJar.java					generic-all
+sun/tools/jps/TestJpsSanity.java				generic-all
 
 # 6734748
 sun/tools/jinfo/JInfoRunningProcessFlagTest.java		generic-all
