@@ -1026,6 +1026,14 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
     }
 
     /**
+     * Return the number of parameters to this function
+     * @return the number of parameters
+     */
+    public int getNumOfParams() {
+        return parameters.size();
+    }
+
+    /**
      * Returns the identifier for a named parameter at the specified position in this function's parameter list.
      * @param index the parameter's position.
      * @return the identifier for the requested named parameter.
