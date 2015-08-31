@@ -3241,7 +3241,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
     // Note 2: MergeMem may already contains instance memory slices added
     // during find_inst_mem() call when memory nodes were processed above.
     igvn->hash_delete(nmm);
-    uint nslices = nmm->req();
+    uint nslices = MIN2(nmm->req(), new_index_start);
     for (uint i = Compile::AliasIdxRaw+1; i < nslices; i++) {
       Node* mem = nmm->in(i);
       Node* cur = NULL;
