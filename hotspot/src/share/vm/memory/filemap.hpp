@@ -208,7 +208,7 @@ public:
   bool  verify_string_regions();
   void  fixup_string_regions();
   void  unmap_region(int i);
-  void  unmap_string_regions();
+  void  dealloc_string_regions();
   bool  verify_region_checksum(int i);
   void  close();
   bool  is_open() { return _file_open; }
