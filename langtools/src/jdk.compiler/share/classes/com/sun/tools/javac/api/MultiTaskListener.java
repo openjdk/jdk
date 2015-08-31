@@ -47,6 +47,9 @@ public class MultiTaskListener implements TaskListener {
     /** The context key for the MultiTaskListener. */
     public static final Context.Key<MultiTaskListener> taskListenerKey = new Context.Key<>();
 
+    /** Empty array of task listeners */
+    private static final TaskListener[] EMPTY_LISTENERS = new TaskListener[0];
+
     /** Get the MultiTaskListener instance for this context. */
     public static MultiTaskListener instance(Context context) {
         MultiTaskListener instance = context.get(taskListenerKey);
@@ -64,7 +67,7 @@ public class MultiTaskListener implements TaskListener {
      * The current set of registered listeners.
      * This is a mutable reference to an immutable array.
      */
-    TaskListener[] listeners = { };
+    TaskListener[] listeners = EMPTY_LISTENERS;
 
     ClientCodeWrapper ccw;
 
@@ -73,7 +76,7 @@ public class MultiTaskListener implements TaskListener {
     }
 
     public boolean isEmpty() {
-        return (listeners.length == 0);
+        return listeners == EMPTY_LISTENERS;
     }
 
     public void add(TaskListener listener) {
@@ -88,10 +91,14 @@ public class MultiTaskListener implements TaskListener {
     public void remove(TaskListener listener) {
         for (int i = 0; i < listeners.length; i++) {
             if (ccw.unwrap(listeners[i]) == listener) {
-                TaskListener[] newListeners = new TaskListener[listeners.length - 1];
-                System.arraycopy(listeners, 0, newListeners, 0, i);
-                System.arraycopy(listeners, i + 1, newListeners, i, newListeners.length - i);
-                listeners = newListeners;
+                if (listeners.length == 1) {
+                    listeners = EMPTY_LISTENERS;
+                } else {
+                    TaskListener[] newListeners = new TaskListener[listeners.length - 1];
+                    System.arraycopy(listeners, 0, newListeners, 0, i);
+                    System.arraycopy(listeners, i + 1, newListeners, i, newListeners.length - i);
+                    listeners = newListeners;
+                }
                 break;
             }
         }
@@ -116,5 +123,9 @@ public class MultiTaskListener implements TaskListener {
     @Override
     public String toString() {
         return Arrays.toString(listeners);
+    }
+
+    public void clear() {
+        listeners = EMPTY_LISTENERS;
     }
 }
