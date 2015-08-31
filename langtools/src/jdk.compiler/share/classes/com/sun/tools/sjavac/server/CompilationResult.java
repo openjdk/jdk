@@ -26,15 +26,8 @@
 package com.sun.tools.sjavac.server;
 
 import java.io.Serializable;
-import java.net.URI;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-
-import com.sun.tools.sjavac.pubapi.PubApi;
 
 /**
- *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
@@ -47,17 +40,18 @@ public class CompilationResult implements Serializable {
     // Return code constants
     public final static int ERROR_FATAL = -1;
 
+    public String stdout;
+    public String stderr;
     public int returnCode;
-    public Map<String, Set<URI>> packageArtifacts = new HashMap<>();
-    public Map<String, Map<String, Set<String>>> packageDependencies = new HashMap<>();
-    public Map<String, Map<String, Set<String>>> packageCpDependencies = new HashMap<>();
-    public Map<String, PubApi> packagePubapis = new HashMap<>();
-    public Map<String, PubApi> dependencyPubapis = new HashMap<>();
-    public String stdout = "";
-    public String stderr = "";
 
     public CompilationResult(int returnCode) {
+        this(returnCode, "", "");
+    }
+
+    public CompilationResult(int returnCode, String stdout, String stderr) {
         this.returnCode = returnCode;
+        this.stdout = stdout;
+        this.stderr = stderr;
     }
 
     public void setReturnCode(int returnCode) {
