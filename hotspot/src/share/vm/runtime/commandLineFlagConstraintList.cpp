@@ -220,7 +220,7 @@ void emit_constraint_double(const char* name, CommandLineFlagConstraintFunc_doub
 #define EMIT_CONSTRAINT_CHECK(func, type)                               , func, CommandLineFlagConstraint::type
 
 // the "name" argument must be a string literal
-#define INITIAL_CONSTRAINTS_SIZE 16
+#define INITIAL_CONSTRAINTS_SIZE 40
 GrowableArray<CommandLineFlagConstraint*>* CommandLineFlagConstraintList::_constraints = NULL;
 CommandLineFlagConstraint::ConstraintType CommandLineFlagConstraintList::_validating_type = CommandLineFlagConstraint::AtParse;
 
@@ -274,7 +274,7 @@ void CommandLineFlagConstraintList::init(void) {
                                    EMIT_CONSTRAINT_CHECK));
 #endif // COMPILER2
 
-#ifndef INCLUDE_ALL_GCS
+#if INCLUDE_ALL_GCS
   emit_constraint_no(NULL G1_FLAGS(EMIT_CONSTRAINT_DEVELOPER_FLAG,
                                    EMIT_CONSTRAINT_PD_DEVELOPER_FLAG,
                                    EMIT_CONSTRAINT_PRODUCT_FLAG,
@@ -305,10 +305,7 @@ CommandLineFlagConstraint* CommandLineFlagConstraintList::find_if_needs_check(co
 
 // Check constraints for specific constraint type.
 bool CommandLineFlagConstraintList::check_constraints(CommandLineFlagConstraint::ConstraintType type) {
-  // Skip if we already checked.
-  if (type < _validating_type) {
-    return true;
-  }
+  guarantee(type > _validating_type, "Constraint check is out of order.");
   _validating_type = type;
 
   bool status = true;
