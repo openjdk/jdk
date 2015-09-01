@@ -30,7 +30,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.stream.Stream;
 import java.security.BasicPermission;
 import java.util.Objects;
 
@@ -84,6 +83,7 @@ public class WhiteBox {
   public native int  getVMPageSize();
   public native long getVMAllocationGranularity();
   public native long getVMLargePageSize();
+  public native long getHeapSpaceAlignment();
 
   private native boolean isObjectInOldGen0(Object o);
   public         boolean isObjectInOldGen(Object o) {
@@ -142,6 +142,10 @@ public class WhiteBox {
     Objects.requireNonNull(args);
     return parseCommandLine0(commandline, delim, args);
   }
+
+  // Parallel GC
+  public native long psVirtualSpaceAlignment();
+  public native long psHeapGenerationAlignment();
 
   // NMT
   public native long NMTMalloc(long size);
