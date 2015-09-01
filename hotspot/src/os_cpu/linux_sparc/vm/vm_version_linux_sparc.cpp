@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,10 @@ static bool detect_niagara() {
   return cpuinfo_field_contains("cpu", "Niagara");
 }
 
+static bool detect_M_family() {
+  return cpuinfo_field_contains("cpu", "SPARC-M");
+}
+
 static bool detect_blkinit() {
   return cpuinfo_field_contains("cpucaps", "blkinit");
 }
@@ -64,6 +68,11 @@ int VM_Version::platform_features(int features) {
   if (detect_niagara()) {
     NOT_PRODUCT(if (PrintMiscellaneous && Verbose) tty->print_cr("Detected Linux on Niagara");)
     features = niagara1_m | T_family_m;
+  }
+
+  if (detect_M_family()) {
+    NOT_PRODUCT(if (PrintMiscellaneous && Verbose) tty->print_cr("Detected Linux on M family");)
+    features = sun4v_m | generic_v9_m | M_family_m | T_family_m;
   }
 
   if (detect_blkinit()) {
