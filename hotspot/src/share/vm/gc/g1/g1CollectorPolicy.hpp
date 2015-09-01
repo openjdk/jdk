@@ -604,10 +604,6 @@ public:
 
   virtual G1CollectorPolicy* as_g1_policy() { return this; }
 
-  virtual CollectorPolicy::Name kind() {
-    return CollectorPolicy::G1CollectorPolicyKind;
-  }
-
   G1CollectorState* collector_state();
 
   G1GCPhaseTimes* phase_times() const { return _phase_times; }
