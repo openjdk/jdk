@@ -483,7 +483,9 @@ public class SwingUtilities2 {
                 }
             }
 
-            Object aaHint = c.getClientProperty(KEY_TEXT_ANTIALIASING);
+            Object aaHint = (c == null)
+                                ? null
+                                : c.getClientProperty(KEY_TEXT_ANTIALIASING);
             if (aaHint != null) {
                 Object oldContrast = null;
                 Object oldAAValue = g2.getRenderingHint(KEY_TEXT_ANTIALIASING);
@@ -765,7 +767,9 @@ public class SwingUtilities2 {
         }
         // Assume we're not printing if we get here, or that we are invoked
         // via Swing text printing which is laid out for the printer.
-        Object aaHint = c.getClientProperty(KEY_TEXT_ANTIALIASING);
+        Object aaHint = (c == null)
+                            ? null
+                            : c.getClientProperty(KEY_TEXT_ANTIALIASING);
         if (aaHint != null && (g instanceof Graphics2D)) {
             Graphics2D g2 = (Graphics2D)g;
 
