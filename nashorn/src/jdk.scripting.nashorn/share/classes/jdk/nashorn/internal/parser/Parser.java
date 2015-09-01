@@ -273,7 +273,7 @@ public class Parser extends AbstractParser implements Loggable {
 
         try {
             stream = new TokenStream();
-            lexer  = new Lexer(source, startPos, len, stream, scripting && !env._no_syntax_extensions, reparsedFunction != null);
+            lexer  = new Lexer(source, startPos, len, stream, scripting && !env._no_syntax_extensions, env._es6, reparsedFunction != null);
             lexer.line = lexer.pendingLine = lineOffset + 1;
             line = lineOffset;
 
@@ -309,7 +309,7 @@ public class Parser extends AbstractParser implements Loggable {
     public List<IdentNode> parseFormalParameterList() {
         try {
             stream = new TokenStream();
-            lexer  = new Lexer(source, stream, scripting && !env._no_syntax_extensions);
+            lexer  = new Lexer(source, stream, scripting && !env._no_syntax_extensions, env._es6);
 
             // Set up first token (skips opening EOL.)
             k = -1;
@@ -333,7 +333,7 @@ public class Parser extends AbstractParser implements Loggable {
     public FunctionNode parseFunctionBody() {
         try {
             stream = new TokenStream();
-            lexer  = new Lexer(source, stream, scripting && !env._no_syntax_extensions);
+            lexer  = new Lexer(source, stream, scripting && !env._no_syntax_extensions, env._es6);
             final int functionLine = line;
 
             // Set up first token (skips opening EOL.)
@@ -1955,7 +1955,7 @@ loop:
             }
             detectSpecialProperty(ident);
             return ident;
-        case OCTAL:
+        case OCTAL_LEGACY:
             if (isStrictMode) {
                throw error(AbstractParser.message("strict.no.octal"), token);
             }
@@ -1963,6 +1963,8 @@ loop:
         case ESCSTRING:
         case DECIMAL:
         case HEXADECIMAL:
+        case OCTAL:
+        case BINARY_NUMBER:
         case FLOATING:
         case REGEX:
         case XML:
@@ -2224,7 +2226,7 @@ loop:
         switch (type) {
         case IDENT:
             return getIdent().setIsPropertyName();
-        case OCTAL:
+        case OCTAL_LEGACY:
             if (isStrictMode) {
                 throw error(AbstractParser.message("strict.no.octal"), token);
             }
@@ -2232,6 +2234,8 @@ loop:
         case ESCSTRING:
         case DECIMAL:
         case HEXADECIMAL:
+        case OCTAL:
+        case BINARY_NUMBER:
         case FLOATING:
             return getLiteral();
         default:
@@ -3035,7 +3039,7 @@ loop:
         assert parserState != null;
 
         stream.reset();
-        lexer = parserState.createLexer(source, lexer, stream, scripting && !env._no_syntax_extensions);
+        lexer = parserState.createLexer(source, lexer, stream, scripting && !env._no_syntax_extensions, env._es6);
         line = parserState.line;
         linePosition = parserState.linePosition;
         // Doesn't really matter, but it's safe to treat it as if there were a semicolon before
@@ -3064,8 +3068,8 @@ loop:
             this.linePosition = linePosition;
         }
 
-        Lexer createLexer(final Source source, final Lexer lexer, final TokenStream stream, final boolean scripting) {
-            final Lexer newLexer = new Lexer(source, position, lexer.limit - position, stream, scripting, true);
+        Lexer createLexer(final Source source, final Lexer lexer, final TokenStream stream, final boolean scripting, final boolean es6) {
+            final Lexer newLexer = new Lexer(source, position, lexer.limit - position, stream, scripting, es6, true);
             newLexer.restoreState(new Lexer.State(position, Integer.MAX_VALUE, line, -1, linePosition, SEMICOLON));
             return newLexer;
         }
