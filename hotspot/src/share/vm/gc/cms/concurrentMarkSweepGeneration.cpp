@@ -4623,7 +4623,7 @@ void CMSParRemarkTask::work(uint worker_id) {
     ResourceMark rm;
     GrowableArray<ClassLoaderData*>* array = ClassLoaderDataGraph::new_clds();
     for (int i = 0; i < array->length(); i++) {
-      par_mrias_cl.do_class_loader_data(array->at(i));
+      par_mrias_cl.do_cld_nv(array->at(i));
     }
 
     // We don't need to keep track of new CLDs anymore.
@@ -5199,7 +5199,7 @@ void CMSCollector::do_remark_non_parallel() {
     ResourceMark rm;
     GrowableArray<ClassLoaderData*>* array = ClassLoaderDataGraph::new_clds();
     for (int i = 0; i < array->length(); i++) {
-      mrias_cl.do_class_loader_data(array->at(i));
+      mrias_cl.do_cld_nv(array->at(i));
     }
 
     // We don't need to keep track of new CLDs anymore.
@@ -6324,12 +6324,12 @@ size_t ScanMarkedObjectsAgainCarefullyClosure::do_object_careful_m(
           // objArrays are precisely marked; restrict scanning
           // to dirty cards only.
           size = CompactibleFreeListSpace::adjustObjectSize(
-                   p->oop_iterate(_scanningClosure, mr));
+                   p->oop_iterate_size(_scanningClosure, mr));
         } else {
           // A non-array may have been imprecisely marked; we need
           // to scan object in its entirety.
           size = CompactibleFreeListSpace::adjustObjectSize(
-                   p->oop_iterate(_scanningClosure));
+                   p->oop_iterate_size(_scanningClosure));
         }
         #ifdef ASSERT
           size_t direct_size =
@@ -6417,7 +6417,7 @@ size_t SurvivorSpacePrecleanClosure::do_object_careful(oop p) {
   // Note that we do not yield while we iterate over
   // the interior oops of p, pushing the relevant ones
   // on our marking stack.
-  size_t size = p->oop_iterate(_scanning_closure);
+  size_t size = p->oop_iterate_size(_scanning_closure);
   do_yield_check();
   // Observe that below, we do not abandon the preclean
   // phase as soon as we should; rather we empty the
