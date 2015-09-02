@@ -15,5 +15,3 @@
 6. connect jconsole to host2:50234
    Make sure jconsole works
    Make sure only host2.50234 and host2.50235 appears in tcpdump output.
-
-
