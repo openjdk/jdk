@@ -181,15 +181,6 @@ G1CollectorPolicy::G1CollectorPolicy() :
     G1ErgoVerbose::set_enabled(false);
   }
 
-  // Verify PLAB sizes
-  const size_t region_size = HeapRegion::GrainWords;
-  if (YoungPLABSize > region_size || OldPLABSize > region_size) {
-    char buffer[128];
-    jio_snprintf(buffer, sizeof(buffer), "%sPLABSize should be at most " SIZE_FORMAT,
-                 OldPLABSize > region_size ? "Old" : "Young", region_size);
-    vm_exit_during_initialization(buffer);
-  }
-
   _recent_prev_end_times_for_all_gcs_sec->add(os::elapsedTime());
   _prev_collection_pause_end_ms = os::elapsedTime() * 1000.0;
 
