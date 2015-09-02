@@ -175,6 +175,11 @@ void YoungGCTracer::report_tenuring_threshold(const uint tenuring_threshold) {
   _tenuring_threshold = tenuring_threshold;
 }
 
+bool YoungGCTracer::should_report_promotion_events() const {
+  return should_report_promotion_in_new_plab_event() ||
+          should_report_promotion_outside_plab_event();
+}
+
 bool YoungGCTracer::should_report_promotion_in_new_plab_event() const {
   return should_send_promotion_in_new_plab_event();
 }
