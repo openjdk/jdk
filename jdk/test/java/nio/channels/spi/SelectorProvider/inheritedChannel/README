@@ -31,5 +31,3 @@ For step 4 (re-building libLauncher.so) the following environment is required:
 (c) Execute the make script :-
 	Solaris:	gnumake all
 	Linux:		gmake all
-
-

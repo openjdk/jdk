@@ -989,5 +989,3 @@ void* CMSEXPORT cmsGetContextUserData(cmsContext ContextID)
 {
     return _cmsContextGetClientChunk(ContextID, UserPtr);
 }
-
-
