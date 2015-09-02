@@ -702,7 +702,7 @@ void FreeListSpace_DCTOC::walk_mem_region_with_cl_par(MemRegion mr,             
         !_cfls->CompactibleFreeListSpace::obj_allocated_since_save_marks(       \
                     oop(bottom)) &&                                             \
         !_collector->CMSCollector::is_dead_obj(oop(bottom))) {                  \
-      size_t word_sz = oop(bottom)->oop_iterate(cl, mr);                        \
+      size_t word_sz = oop(bottom)->oop_iterate_size(cl, mr);                   \
       bottom += _cfls->adjustObjectSize(word_sz);                               \
     } else {                                                                    \
       bottom += _cfls->CompactibleFreeListSpace::block_size(bottom);            \
@@ -729,7 +729,7 @@ void FreeListSpace_DCTOC::walk_mem_region_with_cl_nopar(MemRegion mr,           
         !_cfls->CompactibleFreeListSpace::obj_allocated_since_save_marks(       \
                     oop(bottom)) &&                                             \
         !_collector->CMSCollector::is_dead_obj(oop(bottom))) {                  \
-      size_t word_sz = oop(bottom)->oop_iterate(cl, mr);                        \
+      size_t word_sz = oop(bottom)->oop_iterate_size(cl, mr);                   \
       bottom += _cfls->adjustObjectSize(word_sz);                               \
     } else {                                                                    \
       bottom += _cfls->CompactibleFreeListSpace::block_size_nopar(bottom);      \
