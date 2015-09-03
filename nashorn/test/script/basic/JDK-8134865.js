@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,18 +21,16 @@
  * questions.
  */
 
-package jdk.nashorn.internal.runtime.linker;
+/**
+ * JDK-8134865: Need to restore for container block from lexical context in finally
+ *
+ * @test
+ * @option --language=es6
+ */
 
-@SuppressWarnings("serial")
-final class AdaptationException extends Exception {
-    private final AdaptationResult adaptationResult;
-
-    AdaptationException(final AdaptationResult.Outcome outcome, final String classList) {
-        super(null, null, false, false);
-        this.adaptationResult = new AdaptationResult(outcome, classList);
-    }
-
-    AdaptationResult getAdaptationResult() {
-        return adaptationResult;
-    }
+try {
+  eval("function f() { for (x : y) { } }");
+  throw "should not reach here";
+} catch (e) {
+  if (!(e instanceof SyntaxError)) throw e;
 }

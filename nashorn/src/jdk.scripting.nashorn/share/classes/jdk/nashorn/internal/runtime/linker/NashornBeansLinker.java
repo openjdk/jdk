@@ -79,10 +79,10 @@ public class NashornBeansLinker implements GuardingDynamicLinker {
     }
 
     // cache of @FunctionalInterface method of implementor classes
-    private static final ClassValue<Method> FUNCTIONAL_IFACE_METHOD = new ClassValue<Method>() {
+    private static final ClassValue<String> FUNCTIONAL_IFACE_METHOD_NAME = new ClassValue<String>() {
         @Override
-        protected Method computeValue(final Class<?> type) {
-            return findFunctionalInterfaceMethod(type);
+        protected String computeValue(final Class<?> type) {
+            return findFunctionalInterfaceMethodName(type);
         }
     };
 
@@ -107,19 +107,21 @@ public class NashornBeansLinker implements GuardingDynamicLinker {
             // annotated interface. This way Java method, constructor references or
             // implementations of java.util.function.* interfaces can be called as though
             // those are script functions.
-            final Method m = getFunctionalInterfaceMethod(self.getClass());
-            if (m != null) {
+            final String name = getFunctionalInterfaceMethodName(self.getClass());
+            if (name != null) {
                 final MethodType callType = desc.getMethodType();
-                // 'callee' and 'thiz' passed from script + actual arguments
-                if (callType.parameterCount() != m.getParameterCount() + 2) {
-                    throw typeError("no.method.matches.args", ScriptRuntime.safeToString(self));
-                }
-                return new GuardedInvocation(
-                        // drop 'thiz' passed from the script.
-                        MH.dropArguments(linkerServices.filterInternalObjects(desc.getLookup().unreflect(m)), 1,
-                                callType.parameterType(1)), Guards.getInstanceOfGuard(
-                                        m.getDeclaringClass())).asTypeSafeReturn(
-                                                new NashornBeansLinkerServices(linkerServices), callType);
+                // drop callee (Undefined ScriptFunction) and change the request to be dyn:callMethod:<name>
+                final NashornCallSiteDescriptor newDesc = NashornCallSiteDescriptor.get(desc.getLookup(),
+                        "dyn:callMethod:" + name, desc.getMethodType().dropParameterTypes(1, 2),
+                        NashornCallSiteDescriptor.getFlags(desc));
+                final GuardedInvocation gi = getGuardedInvocation(beansLinker,
+                        linkRequest.replaceArguments(newDesc, linkRequest.getArguments()),
+                        new NashornBeansLinkerServices(linkerServices));
+
+                // drop 'thiz' passed from the script.
+                return gi.replaceMethods(
+                    MH.dropArguments(linkerServices.filterInternalObjects(gi.getInvocation()), 1, callType.parameterType(1)),
+                    gi.getGuard());
             }
         }
         return getGuardedInvocation(beansLinker, linkRequest, linkerServices);
@@ -163,7 +165,7 @@ public class NashornBeansLinker implements GuardingDynamicLinker {
         return arg instanceof ConsString ? arg.toString() : arg;
     }
 
-    private static Method findFunctionalInterfaceMethod(final Class<?> clazz) {
+    private static String findFunctionalInterfaceMethodName(final Class<?> clazz) {
         if (clazz == null) {
             return null;
         }
@@ -179,20 +181,20 @@ public class NashornBeansLinker implements GuardingDynamicLinker {
                 // return the first abstract method
                 for (final Method m : iface.getMethods()) {
                     if (Modifier.isAbstract(m.getModifiers())) {
-                        return m;
+                        return m.getName();
                     }
                 }
             }
         }
 
         // did not find here, try super class
-        return findFunctionalInterfaceMethod(clazz.getSuperclass());
+        return findFunctionalInterfaceMethodName(clazz.getSuperclass());
     }
 
     // Returns @FunctionalInterface annotated interface's single abstract
-    // method. If not found, returns null.
-    static Method getFunctionalInterfaceMethod(final Class<?> clazz) {
-        return FUNCTIONAL_IFACE_METHOD.get(clazz);
+    // method name. If not found, returns null.
+    static String getFunctionalInterfaceMethodName(final Class<?> clazz) {
+        return FUNCTIONAL_IFACE_METHOD_NAME.get(clazz);
     }
 
     static MethodHandleTransformer createHiddenObjectFilter() {
