@@ -278,5 +278,3 @@ public class CDataTransferer extends DataTransferer {
         return false;
     }
 }
-
-

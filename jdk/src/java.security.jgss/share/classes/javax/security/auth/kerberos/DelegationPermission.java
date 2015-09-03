@@ -132,7 +132,9 @@ public final class DelegationPermission extends BasicPermission
      * Checks if this Kerberos delegation permission object "implies" the
      * specified permission.
      * <P>
-     * If none of the above are true, {@code implies} returns false.
+     * This method returns true if this {@code DelegationPermission}
+     * is equal to {@code p}, and returns false otherwise.
+     *
      * @param p the permission to check against.
      *
      * @return true if the specified permission is implied by this object,
