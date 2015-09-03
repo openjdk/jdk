@@ -218,6 +218,9 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseRDPCForConstantTableBase, true);
   }
 
+  // Currently not supported anywhere.
+  FLAG_SET_DEFAULT(UseFPUForSpilling, false);
+
   MaxVectorSize = 8;
 
   assert((InteriorEntryAlignment % relocInfo::addr_unit()) == 0, "alignment is not a multiple of NOP size");
@@ -262,18 +265,6 @@ void VM_Version::initialize() {
     UseVIS = MIN2((intx)1,UseVIS);
   if (!has_vis1()) // Drop to 0 if no VIS1 support
     UseVIS = 0;
-
-  // Enable UseFPUForSpilling if low-latency GP-to-FP register move instructions are available
-  if (UseVIS > 2) { // FP spill use VIS3 MOVxTOd/MOVdTOx
-    if (FLAG_IS_DEFAULT(UseFPUForSpilling)) {
-      FLAG_SET_DEFAULT(UseFPUForSpilling, true);
-    }
-  } else if (UseFPUForSpilling) {
-    if (!FLAG_IS_DEFAULT(UseFPUForSpilling)) {
-      warning("Spill to float registers requires VIS3 instructions (not available on this CPU).");
-    }
-    FLAG_SET_DEFAULT(UseFPUForSpilling, false);
-  }
 
   // SPARC T4 and above should have support for AES instructions
   if (has_aes()) {
