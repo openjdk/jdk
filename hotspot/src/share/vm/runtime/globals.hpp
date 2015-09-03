@@ -836,6 +836,9 @@ public:
   product(bool, UseCRC32CIntrinsics, false,                                 \
           "use intrinsics for java.util.zip.CRC32C")                        \
                                                                             \
+  product(bool, UseAdler32Intrinsics, false,                                \
+          "use intrinsics for java.util.zip.Adler32")                       \
+                                                                            \
   diagnostic(ccstrlist, DisableIntrinsic, "",                               \
          "do not expand intrinsics whose (internal) names appear here")     \
                                                                             \

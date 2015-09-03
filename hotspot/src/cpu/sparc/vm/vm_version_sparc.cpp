@@ -377,6 +377,15 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
   }
 
+  if (UseVIS > 2) {
+    if (FLAG_IS_DEFAULT(UseAdler32Intrinsics)) {
+      FLAG_SET_DEFAULT(UseAdler32Intrinsics, true);
+    }
+  } else if (UseAdler32Intrinsics) {
+    warning("SPARC Adler32 intrinsics require VIS3 instruction support. Intrinsics will be disabled.");
+    FLAG_SET_DEFAULT(UseAdler32Intrinsics, false);
+  }
+
   if (FLAG_IS_DEFAULT(ContendedPaddingWidth) &&
     (cache_line_size > ContendedPaddingWidth))
     ContendedPaddingWidth = cache_line_size;
