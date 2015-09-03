@@ -23,33 +23,27 @@
 
 /*
  * @test
- * @bug 7194586 8003280 8006694 8010404
+ * @bug 7194586 8003280 8006694 8010404 8129962
  * @summary Add lambda tests
  *  Add back-end support for invokedynamic
  *  temporarily workaround combo tests are causing time out in several platforms
- * @library ../lib
+ * @library /tools/javac/lib
  * @modules jdk.jdeps/com.sun.tools.classfile
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.code
+ *          jdk.compiler/com.sun.tools.javac.comp
+ *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.jvm
  *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util
- * @build JavacTestingAbstractThreadedTest
- * @run main/othervm TestInvokeDynamic
+ * @build combo.ComboTestHelper
+ * @run main TestInvokeDynamic
  */
 
-// use /othervm to avoid jtreg timeout issues (CODETOOLS-7900047)
-// see JDK-8006746
+import java.io.IOException;
+import java.io.InputStream;
 
-import java.io.File;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Locale;
-
-import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
-import javax.tools.SimpleJavaFileObject;
 
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
@@ -78,13 +72,17 @@ import com.sun.tools.javac.tree.JCTree.JCIdent;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Names;
 
+import combo.ComboParameter;
+import combo.ComboTask;
+import combo.ComboTestHelper;
+import combo.ComboInstance;
+import combo.ComboTask.Result;
+
 import static com.sun.tools.javac.jvm.ClassFile.*;
 
-public class TestInvokeDynamic
-    extends JavacTestingAbstractThreadedTest
-    implements Runnable {
+public class TestInvokeDynamic extends ComboInstance<TestInvokeDynamic> {
 
-    enum StaticArgumentKind {
+    enum StaticArgumentKind implements ComboParameter {
         STRING("Hello!", "String", "Ljava/lang/String;") {
             @Override
             boolean check(CPInfo cpInfo) throws Exception {
@@ -189,88 +187,91 @@ public class TestInvokeDynamic
                     throw new AssertionError();
             }
         }
+
+        @Override
+        public String expand(String optParameter) {
+            return sourceTypeStr;
+        }
     }
 
-    enum StaticArgumentsArity {
-        ZERO(0),
-        ONE(1),
-        TWO(2),
-        THREE(3);
+    enum StaticArgumentsArity implements ComboParameter {
+        ZERO(0, ""),
+        ONE(1, ",#{SARG[0]} s1"),
+        TWO(2, ",#{SARG[0]} s1, #{SARG[1]} s2"),
+        THREE(3, ",#{SARG[0]} s1, #{SARG[1]} s2, #{SARG[2]} s3");
 
         int arity;
+        String argsTemplate;
 
-        StaticArgumentsArity(int arity) {
+        StaticArgumentsArity(int arity, String argsTemplate) {
             this.arity = arity;
+            this.argsTemplate = argsTemplate;
+        }
+
+        @Override
+        public String expand(String optParameter) {
+            return argsTemplate;
         }
     }
 
     public static void main(String... args) throws Exception {
-        for (StaticArgumentsArity arity : StaticArgumentsArity.values()) {
-            if (arity.arity == 0) {
-                pool.execute(new TestInvokeDynamic(arity));
-            } else {
-                for (StaticArgumentKind sak1 : StaticArgumentKind.values()) {
-                    if (arity.arity == 1) {
-                        pool.execute(new TestInvokeDynamic(arity, sak1));
-                    } else {
-                        for (StaticArgumentKind sak2 : StaticArgumentKind.values()) {
-                            if (arity.arity == 2) {
-                                pool.execute(new TestInvokeDynamic(arity, sak1, sak2));
-                            } else {
-                                for (StaticArgumentKind sak3 : StaticArgumentKind.values()) {
-                                    pool.execute(
-                                        new TestInvokeDynamic(arity, sak1, sak2, sak3));
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        checkAfterExec();
+        new ComboTestHelper<TestInvokeDynamic>()
+                .withFilter(TestInvokeDynamic::redundantTestFilter)
+                .withDimension("SARGS", (x, arity) -> x.arity = arity, StaticArgumentsArity.values())
+                .withArrayDimension("SARG", (x, arg, idx) -> x.saks[idx] = arg, 3, StaticArgumentKind.values())
+                .run(TestInvokeDynamic::new);
     }
 
     StaticArgumentsArity arity;
-    StaticArgumentKind[] saks;
-    DiagChecker dc;
+    StaticArgumentKind[] saks = new StaticArgumentKind[3];
 
-    TestInvokeDynamic(StaticArgumentsArity arity, StaticArgumentKind... saks) {
-        this.arity = arity;
-        this.saks = saks;
-        dc = new DiagChecker();
+    boolean redundantTestFilter() {
+        for (int i = arity.arity ; i < saks.length ; i++) {
+            if (saks[i].ordinal() != 0) {
+                return false;
+            }
+        }
+        return true;
     }
 
-    public void run() {
-        int id = checkCount.incrementAndGet();
-        JavaSource source = new JavaSource(id);
-        JavacTaskImpl ct = (JavacTaskImpl)comp.getTask(null, fm.get(), dc,
-                Arrays.asList("-g"), null, Arrays.asList(source));
+    final String source_template =
+                "import java.lang.invoke.*;\n" +
+                "class Test {\n" +
+                "   void m() { }\n" +
+                "   void test() {\n" +
+                "      Object o = this; // marker statement \n" +
+                "      m();\n" +
+                "   }\n" +
+                "}\n" +
+                "class Bootstrap {\n" +
+                "   public static CallSite bsm(MethodHandles.Lookup lookup, " +
+                "String name, MethodType methodType #{SARGS}) {\n" +
+                "       return null;\n" +
+                "   }\n" +
+                "}";
+
+    @Override
+    public void doWork() throws IOException {
+        ComboTask comboTask = newCompilationTask()
+                .withOption("-g")
+                .withSourceFromTemplate(source_template);
+
+        JavacTaskImpl ct = (JavacTaskImpl)comboTask.getTask();
         Context context = ct.getContext();
         Symtab syms = Symtab.instance(context);
         Names names = Names.instance(context);
         Types types = Types.instance(context);
         ct.addTaskListener(new Indifier(syms, names, types));
-        try {
-            ct.generate();
-        } catch (Throwable t) {
-            t.printStackTrace();
-            throw new AssertionError(
-                    String.format("Error thrown when compiling following code\n%s",
-                    source.source));
-        }
-        if (dc.diagFound) {
-            throw new AssertionError(
-                    String.format("Diags found when compiling following code\n%s\n\n%s",
-                    source.source, dc.printDiags()));
-        }
-        verifyBytecode(id);
+        verifyBytecode(comboTask.generate());
     }
 
-    void verifyBytecode(int id) {
-        File compiledTest = new File(String.format("Test%d.class", id));
-        try {
-            ClassFile cf = ClassFile.read(compiledTest);
+    void verifyBytecode(Result<Iterable<? extends JavaFileObject>> res) {
+        if (res.hasErrors()) {
+            fail("Diags found when compiling instance: " + res.compilationInfo());
+            return;
+        }
+        try (InputStream is = res.get().iterator().next().openInputStream()){
+            ClassFile cf = ClassFile.read(is);
             Method testMethod = null;
             for (Method m : cf.methods) {
                 if (m.getName(cf.constant_pool).equals("test")) {
@@ -279,12 +280,14 @@ public class TestInvokeDynamic
                 }
             }
             if (testMethod == null) {
-                throw new Error("Test method not found");
+                fail("Test method not found");
+                return;
             }
             Code_attribute ea =
                     (Code_attribute)testMethod.attributes.get(Attribute.Code);
             if (testMethod == null) {
-                throw new Error("Code attribute for test() method not found");
+                fail("Code attribute for test() method not found");
+                return;
             }
 
             int bsmIdx = -1;
@@ -296,37 +299,39 @@ public class TestInvokeDynamic
                             .constant_pool.get(i.getShort(1));
                     bsmIdx = indyInfo.bootstrap_method_attr_index;
                     if (!indyInfo.getNameAndTypeInfo().getType().equals("()V")) {
-                        throw new
-                            AssertionError("type mismatch for CONSTANT_InvokeDynamic_info");
+                        fail("type mismatch for CONSTANT_InvokeDynamic_info");
+                        return;
                     }
                 }
             }
             if (bsmIdx == -1) {
-                throw new Error("Missing invokedynamic in generated code");
+                fail("Missing invokedynamic in generated code");
+                return;
             }
 
             BootstrapMethods_attribute bsm_attr =
                     (BootstrapMethods_attribute)cf
                     .getAttribute(Attribute.BootstrapMethods);
             if (bsm_attr.bootstrap_method_specifiers.length != 1) {
-                throw new Error("Bad number of method specifiers " +
+                fail("Bad number of method specifiers " +
                         "in BootstrapMethods attribute");
+                return;
             }
             BootstrapMethods_attribute.BootstrapMethodSpecifier bsm_spec =
                     bsm_attr.bootstrap_method_specifiers[0];
 
             if (bsm_spec.bootstrap_arguments.length != arity.arity) {
-                throw new Error("Bad number of static invokedynamic args " +
+                fail("Bad number of static invokedynamic args " +
                         "in BootstrapMethod attribute");
+                return;
             }
 
-            int count = 0;
-            for (StaticArgumentKind sak : saks) {
-                if (!sak.check(cf.constant_pool
-                        .get(bsm_spec.bootstrap_arguments[count]))) {
-                    throw new Error("Bad static argument value " + sak);
+            for (int i = 0 ; i < arity.arity ; i++) {
+                if (!saks[i].check(cf.constant_pool
+                        .get(bsm_spec.bootstrap_arguments[i]))) {
+                    fail("Bad static argument value " + saks[i]);
+                    return;
                 }
-                count++;
             }
 
             CONSTANT_MethodHandle_info bsm_handle =
@@ -334,7 +339,8 @@ public class TestInvokeDynamic
                     .get(bsm_spec.bootstrap_method_ref);
 
             if (bsm_handle.reference_kind != RefKind.REF_invokeStatic) {
-                throw new Error("Bad kind on boostrap method handle");
+                fail("Bad kind on boostrap method handle");
+                return;
             }
 
             CONSTANT_Methodref_info bsm_ref =
@@ -342,86 +348,49 @@ public class TestInvokeDynamic
                     .get(bsm_handle.reference_index);
 
             if (!bsm_ref.getClassInfo().getName().equals("Bootstrap")) {
-                throw new Error("Bad owner of boostrap method");
+                fail("Bad owner of boostrap method");
+                return;
             }
 
             if (!bsm_ref.getNameAndTypeInfo().getName().equals("bsm")) {
-                throw new Error("Bad boostrap method name");
+                fail("Bad boostrap method name");
+                return;
             }
 
             if (!bsm_ref.getNameAndTypeInfo()
                     .getType().equals(asBSMSignatureString())) {
-                throw new Error("Bad boostrap method type" +
+                fail("Bad boostrap method type" +
                         bsm_ref.getNameAndTypeInfo().getType() + " " +
                         asBSMSignatureString());
+                return;
             }
 
             LineNumberTable_attribute lnt =
                     (LineNumberTable_attribute)ea.attributes.get(Attribute.LineNumberTable);
 
             if (lnt == null) {
-                throw new Error("No LineNumberTable attribute");
+                fail("No LineNumberTable attribute");
+                return;
             }
             if (lnt.line_number_table_length != 3) {
-                throw new Error("Wrong number of entries in LineNumberTable");
+                fail("Wrong number of entries in LineNumberTable");
+                return;
             }
         } catch (Exception e) {
             e.printStackTrace();
-            throw new Error("error reading " + compiledTest +": " + e);
+            fail("error reading classfile: " + res.compilationInfo());
+            return;
         }
     }
 
     String asBSMSignatureString() {
         StringBuilder buf = new StringBuilder();
         buf.append("(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;");
-        for (StaticArgumentKind sak : saks) {
-            buf.append(sak.bytecodeTypeStr);
+        for (int i = 0 ; i < arity.arity ; i++) {
+            buf.append(saks[i].bytecodeTypeStr);
         }
         buf.append(")Ljava/lang/invoke/CallSite;");
         return buf.toString();
-    }
-
-    class JavaSource extends SimpleJavaFileObject {
-
-        static final String source_template = "import java.lang.invoke.*;\n" +
-                "class Bootstrap {\n" +
-                "   public static CallSite bsm(MethodHandles.Lookup lookup, " +
-                "String name, MethodType methodType #SARGS) {\n" +
-                "       return null;\n" +
-                "   }\n" +
-                "}\n" +
-                "class Test#ID {\n" +
-                "   void m() { }\n" +
-                "   void test() {\n" +
-                "      Object o = this; // marker statement \n" +
-                "      m();\n" +
-                "   }\n" +
-                "}";
-
-        String source;
-
-        JavaSource(int id) {
-            super(URI.create("myfo:/Test.java"), JavaFileObject.Kind.SOURCE);
-            source = source_template.replace("#SARGS", asSignatureString())
-                    .replace("#ID", String.valueOf(id));
-        }
-
-        @Override
-        public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-            return source;
-        }
-
-        String asSignatureString() {
-            int count = 0;
-            StringBuilder buf = new StringBuilder();
-            for (StaticArgumentKind sak : saks) {
-                buf.append(",");
-                buf.append(sak.sourceTypeStr);
-                buf.append(' ');
-                buf.append(String.format("x%d", count++));
-            }
-            return buf.toString();
-        }
     }
 
     class Indifier extends TreeScanner<Void, Void> implements TaskListener {
@@ -475,26 +444,4 @@ public class TestInvokeDynamic
             return null;
         }
     }
-
-    static class DiagChecker
-        implements javax.tools.DiagnosticListener<JavaFileObject> {
-
-        boolean diagFound;
-        ArrayList<String> diags = new ArrayList<>();
-
-        public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
-            diags.add(diagnostic.getMessage(Locale.getDefault()));
-            diagFound = true;
-        }
-
-        String printDiags() {
-            StringBuilder buf = new StringBuilder();
-            for (String s : diags) {
-                buf.append(s);
-                buf.append("\n");
-            }
-            return buf.toString();
-        }
-    }
-
 }

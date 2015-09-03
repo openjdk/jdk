@@ -334,7 +334,7 @@ public class Log extends AbstractLog {
      *  error message more than once. For each error, a pair consisting of the
      *  source file name and source code position of the error is added to the set.
      */
-    private Set<Pair<JavaFileObject, Integer>> recorded = new HashSet<>();
+    protected Set<Pair<JavaFileObject, Integer>> recorded = new HashSet<>();
 
     public boolean hasDiagnosticListener() {
         return diagListener != null;
