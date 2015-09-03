@@ -273,7 +273,7 @@ public class Parser extends AbstractParser implements Loggable {
 
         try {
             stream = new TokenStream();
-            lexer  = new Lexer(source, startPos, len, stream, scripting && !env._no_syntax_extensions, reparsedFunction != null);
+            lexer  = new Lexer(source, startPos, len, stream, scripting && !env._no_syntax_extensions, env._es6, reparsedFunction != null);
             lexer.line = lexer.pendingLine = lineOffset + 1;
             line = lineOffset;
 
@@ -309,7 +309,7 @@ public class Parser extends AbstractParser implements Loggable {
     public List<IdentNode> parseFormalParameterList() {
         try {
             stream = new TokenStream();
-            lexer  = new Lexer(source, stream, scripting && !env._no_syntax_extensions);
+            lexer  = new Lexer(source, stream, scripting && !env._no_syntax_extensions, env._es6);
 
             // Set up first token (skips opening EOL.)
             k = -1;
@@ -333,7 +333,7 @@ public class Parser extends AbstractParser implements Loggable {
     public FunctionNode parseFunctionBody() {
         try {
             stream = new TokenStream();
-            lexer  = new Lexer(source, stream, scripting && !env._no_syntax_extensions);
+            lexer  = new Lexer(source, stream, scripting && !env._no_syntax_extensions, env._es6);
             final int functionLine = line;
 
             // Set up first token (skips opening EOL.)
@@ -716,7 +716,7 @@ loop:
 
         restoreBlock(body);
         body.setFlag(Block.NEEDS_SCOPE);
-        final Block programBody = new Block(functionToken, functionLine, body.getFlags() | Block.IS_SYNTHETIC, body.getStatements());
+        final Block programBody = new Block(functionToken, finish, body.getFlags() | Block.IS_SYNTHETIC, body.getStatements());
         lc.pop(script);
         script.setLastToken(token);
 
@@ -1216,11 +1216,10 @@ loop:
         final long forToken = token;
         final int forLine = line;
         // start position of this for statement. This is used
-        // for sort order for variables declared in the initialzer
+        // for sort order for variables declared in the initializer
         // part of this 'for' statement (if any).
         final int forStart = Token.descPosition(forToken);
         // When ES6 for-let is enabled we create a container block to capture the LET.
-        final int startLine = start;
         final ParserContextBlockNode outer = useBlockScope() ? newBlock() : null;
 
         // Create FOR node, capturing FOR token.
@@ -1341,22 +1340,24 @@ loop:
             body = getStatement();
         } finally {
             lc.pop(forNode);
-        }
 
-        if (vars != null) {
-            for (final VarNode var : vars) {
-                appendStatement(var);
+            if (vars != null) {
+                for (final VarNode var : vars) {
+                    appendStatement(var);
+                }
             }
-        }
-        if (body != null) {
-            appendStatement(new ForNode(forLine, forToken, body.getFinish(), body, (forNode.getFlags() | flags), init, test, modify));
-        }
-        if (outer != null) {
-            restoreBlock(outer);
-            appendStatement(new BlockStatement(startLine, new Block(
-                    outer.getToken(),
-                    body.getFinish(),
-                    outer.getStatements())));
+            if (body != null) {
+                appendStatement(new ForNode(forLine, forToken, body.getFinish(), body, (forNode.getFlags() | flags), init, test, modify));
+            }
+            if (outer != null) {
+                restoreBlock(outer);
+                if (body != null) {
+                    appendStatement(new BlockStatement(forLine, new Block(
+                                    outer.getToken(),
+                                    body.getFinish(),
+                                    outer.getStatements())));
+                }
+            }
         }
     }
 
@@ -1954,7 +1955,7 @@ loop:
             }
             detectSpecialProperty(ident);
             return ident;
-        case OCTAL:
+        case OCTAL_LEGACY:
             if (isStrictMode) {
                throw error(AbstractParser.message("strict.no.octal"), token);
             }
@@ -1962,6 +1963,8 @@ loop:
         case ESCSTRING:
         case DECIMAL:
         case HEXADECIMAL:
+        case OCTAL:
+        case BINARY_NUMBER:
         case FLOATING:
         case REGEX:
         case XML:
@@ -2053,13 +2056,13 @@ loop:
         // LBRACKET tested in caller.
         next();
 
-        // Prepare to accummulating elements.
+        // Prepare to accumulate elements.
         final List<Expression> elements = new ArrayList<>();
         // Track elisions.
         boolean elision = true;
 loop:
         while (true) {
-             switch (type) {
+            switch (type) {
             case RBRACKET:
                 next();
 
@@ -2223,7 +2226,7 @@ loop:
         switch (type) {
         case IDENT:
             return getIdent().setIsPropertyName();
-        case OCTAL:
+        case OCTAL_LEGACY:
             if (isStrictMode) {
                 throw error(AbstractParser.message("strict.no.octal"), token);
             }
@@ -2231,6 +2234,8 @@ loop:
         case ESCSTRING:
         case DECIMAL:
         case HEXADECIMAL:
+        case OCTAL:
+        case BINARY_NUMBER:
         case FLOATING:
             return getLiteral();
         default:
@@ -2284,7 +2289,7 @@ loop:
                 }
             }
 
-            propertyName =  createIdentNode(propertyToken, finish, ident).setIsPropertyName();
+            propertyName = createIdentNode(propertyToken, finish, ident).setIsPropertyName();
         } else {
             propertyName = propertyName();
         }
@@ -2553,7 +2558,7 @@ loop:
             final long callToken = token;
 
             switch (type) {
-            case LBRACKET:
+            case LBRACKET: {
                 next();
 
                 // Get array index.
@@ -2565,8 +2570,8 @@ loop:
                 lhs = new IndexNode(callToken, finish, lhs, index);
 
                 break;
-
-            case PERIOD:
+            }
+            case PERIOD: {
                 if (lhs == null) {
                     throw error(AbstractParser.message("expected.operand", type.getNameOrType()));
                 }
@@ -2579,7 +2584,7 @@ loop:
                 lhs = new AccessNode(callToken, finish, lhs, property.getName());
 
                 break;
-
+            }
             default:
                 break loop;
             }
@@ -3034,7 +3039,7 @@ loop:
         assert parserState != null;
 
         stream.reset();
-        lexer = parserState.createLexer(source, lexer, stream, scripting && !env._no_syntax_extensions);
+        lexer = parserState.createLexer(source, lexer, stream, scripting && !env._no_syntax_extensions, env._es6);
         line = parserState.line;
         linePosition = parserState.linePosition;
         // Doesn't really matter, but it's safe to treat it as if there were a semicolon before
@@ -3063,8 +3068,8 @@ loop:
             this.linePosition = linePosition;
         }
 
-        Lexer createLexer(final Source source, final Lexer lexer, final TokenStream stream, final boolean scripting) {
-            final Lexer newLexer = new Lexer(source, position, lexer.limit - position, stream, scripting, true);
+        Lexer createLexer(final Source source, final Lexer lexer, final TokenStream stream, final boolean scripting, final boolean es6) {
+            final Lexer newLexer = new Lexer(source, position, lexer.limit - position, stream, scripting, es6, true);
             newLexer.restoreState(new Lexer.State(position, Integer.MAX_VALUE, line, -1, linePosition, SEMICOLON));
             return newLexer;
         }
@@ -3107,15 +3112,6 @@ loop:
         return new RuntimeNode(lhs.getToken(), lhs.getFinish(), RuntimeNode.Request.REFERENCE_ERROR, args);
     }
 
-    /*
-     * parse LHS [a, b, ..., c].
-     *
-     * JavaScript 1.8.
-     */
-    //private Node destructureExpression() {
-    //    return null;
-    //}
-
     /**
      * PostfixExpression :
      *      LeftHandSideExpression
@@ -3127,7 +3123,7 @@ loop:
      * UnaryExpression :
      *      PostfixExpression
      *      delete UnaryExpression
-     *      Node UnaryExpression
+     *      void UnaryExpression
      *      typeof UnaryExpression
      *      ++ UnaryExpression
      *      -- UnaryExpression
@@ -3333,7 +3329,6 @@ loop:
         // This method is protected so that subclass can get details
         // at expression start point!
 
-        // TODO - Destructuring array.
         // Include commas in expression parsing.
         return expression(unaryExpression(), COMMARIGHT.getPrecedence(), false);
     }
@@ -3407,7 +3402,6 @@ loop:
         // This method is protected so that subclass can get details
         // at assignment expression start point!
 
-        // TODO - Handle decompose.
         // Exclude commas in expression parsing.
         return expression(unaryExpression(), ASSIGN.getPrecedence(), noIn);
     }
