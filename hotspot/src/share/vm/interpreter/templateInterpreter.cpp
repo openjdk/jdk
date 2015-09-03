@@ -397,34 +397,39 @@ void TemplateInterpreterGenerator::generate_all() {
 
       // all non-native method kinds
       method_entry(zerolocals)
-        method_entry(zerolocals_synchronized)
-        method_entry(empty)
-        method_entry(accessor)
-        method_entry(abstract)
-        method_entry(java_lang_math_sin  )
-        method_entry(java_lang_math_cos  )
-        method_entry(java_lang_math_tan  )
-        method_entry(java_lang_math_abs  )
-        method_entry(java_lang_math_sqrt )
-        method_entry(java_lang_math_log  )
-        method_entry(java_lang_math_log10)
-        method_entry(java_lang_math_exp  )
-        method_entry(java_lang_math_pow  )
-        method_entry(java_lang_ref_reference_get)
+      method_entry(zerolocals_synchronized)
+      method_entry(empty)
+      method_entry(accessor)
+      method_entry(abstract)
+      method_entry(java_lang_math_sin  )
+      method_entry(java_lang_math_cos  )
+      method_entry(java_lang_math_tan  )
+      method_entry(java_lang_math_abs  )
+      method_entry(java_lang_math_sqrt )
+      method_entry(java_lang_math_log  )
+      method_entry(java_lang_math_log10)
+      method_entry(java_lang_math_exp  )
+      method_entry(java_lang_math_pow  )
+      method_entry(java_lang_ref_reference_get)
 
-        if (UseCRC32Intrinsics) {
-          method_entry(java_util_zip_CRC32_update)
-            method_entry(java_util_zip_CRC32_updateBytes)
-            method_entry(java_util_zip_CRC32_updateByteBuffer)
-            }
+      if (UseCRC32Intrinsics) {
+        method_entry(java_util_zip_CRC32_update)
+        method_entry(java_util_zip_CRC32_updateBytes)
+        method_entry(java_util_zip_CRC32_updateByteBuffer)
+      }
+
+      method_entry(java_lang_Float_intBitsToFloat);
+      method_entry(java_lang_Float_floatToRawIntBits);
+      method_entry(java_lang_Double_longBitsToDouble);
+      method_entry(java_lang_Double_doubleToRawLongBits);
 
       initialize_method_handle_entries();
 
       // all native method kinds (must be one contiguous block)
       Interpreter::_native_entry_begin = Interpreter::code()->code_end();
       method_entry(native)
-        method_entry(native_synchronized)
-        Interpreter::_native_entry_end = Interpreter::code()->code_end();
+      method_entry(native_synchronized)
+      Interpreter::_native_entry_end = Interpreter::code()->code_end();
 
 #undef method_entry
 

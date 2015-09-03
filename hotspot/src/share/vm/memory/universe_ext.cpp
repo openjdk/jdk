@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,9 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_G1COLLECTORPOLICY_EXT_HPP
-#define SHARE_VM_GC_G1_G1COLLECTORPOLICY_EXT_HPP
+#include "precompiled.hpp"
+#include "memory/universe.hpp"
 
-#include "gc/g1/g1CollectorPolicy.hpp"
-
-class G1CollectorPolicyExt : public G1CollectorPolicy { };
-
-#endif // SHARE_VM_GC_G1_G1COLLECTORPOLICY_EXT_HPP
+CollectedHeap* Universe::create_heap_ext() {
+  return NULL;
+}

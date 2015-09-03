@@ -30,9 +30,9 @@
 #include "gc/shared/collectorPolicy.hpp"
 #include "gc/shared/generation.hpp"
 
-class FlexibleWorkGang;
 class StrongRootsScope;
 class SubTasksDone;
+class WorkGang;
 
 // A "GenCollectedHeap" is a CollectedHeap that uses generational
 // collection.  It has two generations, young and old.
@@ -90,7 +90,7 @@ private:
   // In block contents verification, the number of header words to skip
   NOT_PRODUCT(static size_t _skip_header_HeapWords;)
 
-  FlexibleWorkGang* _workers;
+  WorkGang* _workers;
 
 protected:
   // Helper functions for allocation
@@ -124,7 +124,7 @@ protected:
 public:
   GenCollectedHeap(GenCollectorPolicy *policy);
 
-  FlexibleWorkGang* workers() const { return _workers; }
+  WorkGang* workers() const { return _workers; }
 
   GCStats* gc_stats(Generation* generation) const;
 

@@ -343,8 +343,8 @@ void CompiledIC::set_to_clean() {
     // Kill any leftover stub we might have too
     clear_ic_stub();
     if (is_optimized()) {
-    set_ic_destination(entry);
-  } else {
+      set_ic_destination(entry);
+    } else {
       set_ic_destination_and_value(entry, (void*)NULL);
     }
   } else {

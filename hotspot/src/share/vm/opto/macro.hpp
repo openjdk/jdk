@@ -85,8 +85,8 @@ private:
                               Node* length,
                               const TypeFunc* slow_call_type,
                               address slow_call_address);
-  Node *value_from_mem(Node *mem, BasicType ft, const Type *ftype, const TypeOopPtr *adr_t, Node *alloc);
-  Node *value_from_mem_phi(Node *mem, BasicType ft, const Type *ftype, const TypeOopPtr *adr_t, Node *alloc, Node_Stack *value_phis, int level);
+  Node *value_from_mem(Node *mem, Node *ctl, BasicType ft, const Type *ftype, const TypeOopPtr *adr_t, AllocateNode *alloc);
+  Node *value_from_mem_phi(Node *mem, BasicType ft, const Type *ftype, const TypeOopPtr *adr_t, AllocateNode *alloc, Node_Stack *value_phis, int level);
 
   bool eliminate_boxing_node(CallStaticJavaNode *boxing);
   bool eliminate_allocate_node(AllocateNode *alloc);
@@ -199,6 +199,8 @@ private:
                             Node*& needgc_false, Node*& contended_phi_rawmem,
                             Node* old_eden_top, Node* new_eden_top,
                             Node* length);
+
+  Node* make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, Node* ctl, BasicType ft, const Type *ftype, AllocateNode *alloc);
 
 public:
   PhaseMacroExpand(PhaseIterGVN &igvn) : Phase(Macro_Expand), _igvn(igvn), _has_locks(false) {

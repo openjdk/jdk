@@ -653,6 +653,209 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
   return iff->in(1);
 }
 
+#ifdef ASSERT
+static void enqueue_cfg_uses(Node* m, Unique_Node_List& wq) {
+  for (DUIterator_Fast imax, i = m->fast_outs(imax); i < imax; i++) {
+    Node* u = m->fast_out(i);
+    if (u->is_CFG()) {
+      if (u->Opcode() == Op_NeverBranch) {
+        u = ((NeverBranchNode*)u)->proj_out(0);
+        enqueue_cfg_uses(u, wq);
+      } else {
+        wq.push(u);
+      }
+    }
+  }
+}
+#endif
+
+// Try moving a store out of a loop, right before the loop
+Node* PhaseIdealLoop::try_move_store_before_loop(Node* n, Node *n_ctrl) {
+  // Store has to be first in the loop body
+  IdealLoopTree *n_loop = get_loop(n_ctrl);
+  if (n->is_Store() && n_loop != _ltree_root && n_loop->is_loop()) {
+    assert(n->in(0), "store should have control set");
+    Node* address = n->in(MemNode::Address);
+    Node* value = n->in(MemNode::ValueIn);
+    Node* mem = n->in(MemNode::Memory);
+    IdealLoopTree* address_loop = get_loop(get_ctrl(address));
+    IdealLoopTree* value_loop = get_loop(get_ctrl(value));
+
+    // - address and value must be loop invariant
+    // - memory must be a memory Phi for the loop
+    // - Store must be the only store on this memory slice in the
+    // loop: if there's another store following this one then value
+    // written at iteration i by the second store could be overwritten
+    // at iteration i+n by the first store: it's not safe to move the
+    // first store out of the loop
+    // - nothing must observe the Phi memory: it guarantees no read
+    // before the store and no early exit out of the loop
+    // With those conditions, we are also guaranteed the store post
+    // dominates the loop head. Otherwise there would be extra Phi
+    // involved between the loop's Phi and the store.
+
+    if (!n_loop->is_member(address_loop) &&
+        !n_loop->is_member(value_loop) &&
+        mem->is_Phi() && mem->in(0) == n_loop->_head &&
+        mem->outcnt() == 1 &&
+        mem->in(LoopNode::LoopBackControl) == n) {
+
+#ifdef ASSERT
+      // Verify that store's control does post dominate loop entry and
+      // that there's no early exit of the loop before the store.
+      bool ctrl_ok = false;
+      {
+        // Follow control from loop head until n, we exit the loop or
+        // we reach the tail
+        ResourceMark rm;
+        Unique_Node_List wq;
+        wq.push(n_loop->_head);
+        assert(n_loop->_tail != NULL, "need a tail");
+        for (uint next = 0; next < wq.size(); ++next) {
+          Node *m = wq.at(next);
+          if (m == n->in(0)) {
+            ctrl_ok = true;
+            continue;
+          }
+          assert(!has_ctrl(m), "should be CFG");
+          if (!n_loop->is_member(get_loop(m)) || m == n_loop->_tail) {
+            ctrl_ok = false;
+            break;
+          }
+          enqueue_cfg_uses(m, wq);
+        }
+      }
+      assert(ctrl_ok, "bad control");
+#endif
+
+      // move the Store
+      _igvn.replace_input_of(mem, LoopNode::LoopBackControl, mem);
+      _igvn.replace_input_of(n, 0, n_loop->_head->in(LoopNode::EntryControl));
+      _igvn.replace_input_of(n, MemNode::Memory, mem->in(LoopNode::EntryControl));
+      // Disconnect the phi now. An empty phi can confuse other
+      // optimizations in this pass of loop opts.
+      _igvn.replace_node(mem, mem->in(LoopNode::EntryControl));
+      n_loop->_body.yank(mem);
+
+      IdealLoopTree* new_loop = get_loop(n->in(0));
+      set_ctrl_and_loop(n, n->in(0));
+
+      return n;
+    }
+  }
+  return NULL;
+}
+
+// Try moving a store out of a loop, right after the loop
+void PhaseIdealLoop::try_move_store_after_loop(Node* n) {
+  if (n->is_Store()) {
+    assert(n->in(0), "store should have control set");
+    Node *n_ctrl = get_ctrl(n);
+    IdealLoopTree *n_loop = get_loop(n_ctrl);
+    // Store must be in a loop
+    if (n_loop != _ltree_root && !n_loop->_irreducible) {
+      Node* address = n->in(MemNode::Address);
+      Node* value = n->in(MemNode::ValueIn);
+      IdealLoopTree* address_loop = get_loop(get_ctrl(address));
+      // address must be loop invariant
+      if (!n_loop->is_member(address_loop)) {
+        // Store must be last on this memory slice in the loop and
+        // nothing in the loop must observe it
+        Node* phi = NULL;
+        for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+          Node* u = n->fast_out(i);
+          if (has_ctrl(u)) { // control use?
+            IdealLoopTree *u_loop = get_loop(get_ctrl(u));
+            if (!n_loop->is_member(u_loop)) {
+              continue;
+            }
+            if (u->is_Phi() && u->in(0) == n_loop->_head) {
+              assert(_igvn.type(u) == Type::MEMORY, "bad phi");
+              assert(phi == NULL, "already found");
+              phi = u;
+              continue;
+            }
+          }
+          phi = NULL;
+          break;
+        }
+        if (phi != NULL) {
+          // Nothing in the loop before the store (next iteration)
+          // must observe the stored value
+          bool mem_ok = true;
+          {
+            ResourceMark rm;
+            Unique_Node_List wq;
+            wq.push(phi);
+            for (uint next = 0; next < wq.size() && mem_ok; ++next) {
+              Node *m = wq.at(next);
+              for (DUIterator_Fast imax, i = m->fast_outs(imax); i < imax && mem_ok; i++) {
+                Node* u = m->fast_out(i);
+                if (u->is_Store() || u->is_Phi()) {
+                  if (u != n) {
+                    wq.push(u);
+                    mem_ok = (wq.size() <= 10);
+                  }
+                } else {
+                  mem_ok = false;
+                  break;
+                }
+              }
+            }
+          }
+          if (mem_ok) {
+            // Move the Store out of the loop creating clones along
+            // all paths out of the loop that observe the stored value
+            _igvn.rehash_node_delayed(phi);
+            int count = phi->replace_edge(n, n->in(MemNode::Memory));
+            assert(count > 0, "inconsistent phi");
+            for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+              Node* u = n->fast_out(i);
+              Node* c = get_ctrl(u);
+
+              if (u->is_Phi()) {
+                c = u->in(0)->in(u->find_edge(n));
+              }
+              IdealLoopTree *u_loop = get_loop(c);
+              assert (!n_loop->is_member(u_loop), "only the phi should have been a use in the loop");
+              while(true) {
+                Node* next_c = find_non_split_ctrl(idom(c));
+                if (n_loop->is_member(get_loop(next_c))) {
+                  break;
+                }
+                c = next_c;
+              }
+
+              Node* st = n->clone();
+              st->set_req(0, c);
+              _igvn.register_new_node_with_optimizer(st);
+
+              set_ctrl(st, c);
+              IdealLoopTree* new_loop = get_loop(c);
+              assert(new_loop != n_loop, "should be moved out of loop");
+              if (new_loop->_child == NULL) new_loop->_body.push(st);
+
+              _igvn.replace_input_of(u, u->find_edge(n), st);
+              --imax;
+              --i;
+            }
+
+
+            assert(n->outcnt() == 0, "all uses should be gone");
+            _igvn.replace_input_of(n, MemNode::Memory, C->top());
+            // Disconnect the phi now. An empty phi can confuse other
+            // optimizations in this pass of loop opts..
+            if (phi->in(LoopNode::LoopBackControl) == phi) {
+              _igvn.replace_node(phi, phi->in(LoopNode::EntryControl));
+              n_loop->_body.yank(phi);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 //------------------------------split_if_with_blocks_pre-----------------------
 // Do the real work in a non-recursive function.  Data nodes want to be
 // cloned in the pre-order so they can feed each other nicely.
@@ -683,6 +886,11 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
   Node *n_ctrl = get_ctrl(n);
   if( !n_ctrl ) return n;       // Dead node
 
+  Node* res = try_move_store_before_loop(n, n_ctrl);
+  if (res != NULL) {
+    return n;
+  }
+
   // Attempt to remix address expressions for loop invariants
   Node *m = remix_address_expressions( n );
   if( m ) return m;
@@ -691,16 +899,18 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
   // Returns the block to clone thru.
   Node *n_blk = has_local_phi_input( n );
   if( !n_blk ) return n;
+
   // Do not clone the trip counter through on a CountedLoop
   // (messes up the canonical shape).
   if( n_blk->is_CountedLoop() && n->Opcode() == Op_AddI ) return n;
 
   // Check for having no control input; not pinned.  Allow
   // dominating control.
-  if( n->in(0) ) {
+  if (n->in(0)) {
     Node *dom = idom(n_blk);
-    if( dom_lca( n->in(0), dom ) != n->in(0) )
+    if (dom_lca(n->in(0), dom) != n->in(0)) {
       return n;
+    }
   }
   // Policy: when is it profitable.  You must get more wins than
   // policy before it is considered profitable.  Policy is usually 0,
@@ -1028,6 +1238,8 @@ void PhaseIdealLoop::split_if_with_blocks_post( Node *n ) {
       }
     }
   }
+
+  try_move_store_after_loop(n);
 
   // Check for Opaque2's who's loop has disappeared - who's input is in the
   // same loop nest as their output.  Remove 'em, they are no longer useful.

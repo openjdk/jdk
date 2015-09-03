@@ -42,7 +42,7 @@ instruct $2$1_reg_$4_reg(iReg$1NoSp dst,
               as_Register($src1$$reg),
               as_Register($src2$$reg),
               Assembler::$5,
-              $src3$$constant & 0x3f);
+              $src3$$constant & ifelse($1,I,0x1f,0x3f));
   %}
 
   ins_pipe(ialu_reg_reg_shift);
@@ -87,7 +87,7 @@ dnl into this canonical form.
               as_Register($src1$$reg),
               as_Register($src2$$reg),
               Assembler::$5,
-              $src3$$constant & 0x3f);
+              $src3$$constant & ifelse($1,I,0x1f,0x3f));
   %}
 
   ins_pipe(ialu_reg_reg_shift);
