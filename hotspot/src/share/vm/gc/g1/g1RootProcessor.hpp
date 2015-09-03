@@ -45,7 +45,7 @@ class SubTasksDone;
 // worker thread call the process_roots methods.
 class G1RootProcessor : public StackObj {
   G1CollectedHeap* _g1h;
-  SubTasksDone* _process_strong_tasks;
+  SubTasksDone _process_strong_tasks;
   StrongRootsScope _srs;
 
   // Used to implement the Thread work barrier.

@@ -115,7 +115,7 @@ void G1RootProcessor::wait_until_all_strong_classes_discovered() {
 
 G1RootProcessor::G1RootProcessor(G1CollectedHeap* g1h, uint n_workers) :
     _g1h(g1h),
-    _process_strong_tasks(new SubTasksDone(G1RP_PS_NumElements)),
+    _process_strong_tasks(G1RP_PS_NumElements),
     _srs(n_workers),
     _lock(Mutex::leaf, "G1 Root Scanning barrier lock", false, Monitor::_safepoint_check_never),
     _n_workers_discovered_strong_classes(0) {}
@@ -158,7 +158,7 @@ void G1RootProcessor::evacuate_roots(OopClosure* scan_non_heap_roots,
   {
     // Now the CM ref_processor roots.
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::CMRefRoots, worker_i);
-    if (!_process_strong_tasks->is_task_claimed(G1RP_PS_refProcessor_oops_do)) {
+    if (!_process_strong_tasks.is_task_claimed(G1RP_PS_refProcessor_oops_do)) {
       // We need to treat the discovered reference lists of the
       // concurrent mark ref processor as roots and keep entries
       // (which are added by the marking threads) on them live
@@ -201,12 +201,12 @@ void G1RootProcessor::evacuate_roots(OopClosure* scan_non_heap_roots,
   // as implicitly live).
   {
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::SATBFiltering, worker_i);
-    if (!_process_strong_tasks->is_task_claimed(G1RP_PS_filter_satb_buffers) && _g1h->collector_state()->mark_in_progress()) {
+    if (!_process_strong_tasks.is_task_claimed(G1RP_PS_filter_satb_buffers) && _g1h->collector_state()->mark_in_progress()) {
       JavaThread::satb_mark_queue_set().filter_thread_buffers();
     }
   }
 
-  _process_strong_tasks->all_tasks_completed(n_workers());
+  _process_strong_tasks.all_tasks_completed(n_workers());
 }
 
 void G1RootProcessor::process_strong_roots(OopClosure* oops,
@@ -216,7 +216,7 @@ void G1RootProcessor::process_strong_roots(OopClosure* oops,
   process_java_roots(oops, clds, clds, NULL, blobs, NULL, 0);
   process_vm_roots(oops, NULL, NULL, 0);
 
-  _process_strong_tasks->all_tasks_completed(n_workers());
+  _process_strong_tasks.all_tasks_completed(n_workers());
 }
 
 void G1RootProcessor::process_all_roots(OopClosure* oops,
@@ -226,11 +226,11 @@ void G1RootProcessor::process_all_roots(OopClosure* oops,
   process_java_roots(oops, NULL, clds, clds, NULL, NULL, 0);
   process_vm_roots(oops, oops, NULL, 0);
 
-  if (!_process_strong_tasks->is_task_claimed(G1RP_PS_CodeCache_oops_do)) {
+  if (!_process_strong_tasks.is_task_claimed(G1RP_PS_CodeCache_oops_do)) {
     CodeCache::blobs_do(blobs);
   }
 
-  _process_strong_tasks->all_tasks_completed(n_workers());
+  _process_strong_tasks.all_tasks_completed(n_workers());
 }
 
 void G1RootProcessor::process_java_roots(OopClosure* strong_roots,
@@ -246,7 +246,7 @@ void G1RootProcessor::process_java_roots(OopClosure* strong_roots,
   // let the thread process the weak CLDs and nmethods.
   {
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::CLDGRoots, worker_i);
-    if (!_process_strong_tasks->is_task_claimed(G1RP_PS_ClassLoaderDataGraph_oops_do)) {
+    if (!_process_strong_tasks.is_task_claimed(G1RP_PS_ClassLoaderDataGraph_oops_do)) {
       ClassLoaderDataGraph::roots_cld_do(strong_clds, weak_clds);
     }
   }
@@ -264,49 +264,49 @@ void G1RootProcessor::process_vm_roots(OopClosure* strong_roots,
                                        uint worker_i) {
   {
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::UniverseRoots, worker_i);
-    if (!_process_strong_tasks->is_task_claimed(G1RP_PS_Universe_oops_do)) {
+    if (!_process_strong_tasks.is_task_claimed(G1RP_PS_Universe_oops_do)) {
       Universe::oops_do(strong_roots);
     }
   }
 
   {
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::JNIRoots, worker_i);
-    if (!_process_strong_tasks->is_task_claimed(G1RP_PS_JNIHandles_oops_do)) {
+    if (!_process_strong_tasks.is_task_claimed(G1RP_PS_JNIHandles_oops_do)) {
       JNIHandles::oops_do(strong_roots);
     }
   }
 
   {
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::ObjectSynchronizerRoots, worker_i);
-    if (!_process_strong_tasks-> is_task_claimed(G1RP_PS_ObjectSynchronizer_oops_do)) {
+    if (!_process_strong_tasks.is_task_claimed(G1RP_PS_ObjectSynchronizer_oops_do)) {
       ObjectSynchronizer::oops_do(strong_roots);
     }
   }
 
   {
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::FlatProfilerRoots, worker_i);
-    if (!_process_strong_tasks->is_task_claimed(G1RP_PS_FlatProfiler_oops_do)) {
+    if (!_process_strong_tasks.is_task_claimed(G1RP_PS_FlatProfiler_oops_do)) {
       FlatProfiler::oops_do(strong_roots);
     }
   }
 
   {
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::ManagementRoots, worker_i);
-    if (!_process_strong_tasks->is_task_claimed(G1RP_PS_Management_oops_do)) {
+    if (!_process_strong_tasks.is_task_claimed(G1RP_PS_Management_oops_do)) {
       Management::oops_do(strong_roots);
     }
   }
 
   {
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::JVMTIRoots, worker_i);
-    if (!_process_strong_tasks->is_task_claimed(G1RP_PS_jvmti_oops_do)) {
+    if (!_process_strong_tasks.is_task_claimed(G1RP_PS_jvmti_oops_do)) {
       JvmtiExport::oops_do(strong_roots);
     }
   }
 
   {
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::SystemDictionaryRoots, worker_i);
-    if (!_process_strong_tasks->is_task_claimed(G1RP_PS_SystemDictionary_oops_do)) {
+    if (!_process_strong_tasks.is_task_claimed(G1RP_PS_SystemDictionary_oops_do)) {
       SystemDictionary::roots_oops_do(strong_roots, weak_roots);
     }
   }
