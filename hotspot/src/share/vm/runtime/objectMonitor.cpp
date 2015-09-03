@@ -405,9 +405,7 @@ void NOINLINE ObjectMonitor::enter(TRAPS) {
     event.commit();
   }
 
-  if (ObjectMonitor::_sync_ContendedLockAttempts != NULL) {
-    ObjectMonitor::_sync_ContendedLockAttempts->inc();
-  }
+  OM_PERFDATA_OP(ContendedLockAttempts, inc());
 }
 
 
@@ -574,9 +572,9 @@ void NOINLINE ObjectMonitor::EnterI(TRAPS) {
     // That is by design - we trade "lossy" counters which are exposed to
     // races during updates for a lower probe effect.
     TEVENT(Inflated enter - Futile wakeup);
-    if (ObjectMonitor::_sync_FutileWakeups != NULL) {
-      ObjectMonitor::_sync_FutileWakeups->inc();
-    }
+    // This PerfData object can be used in parallel with a safepoint.
+    // See the work around in PerfDataManager::destroy().
+    OM_PERFDATA_OP(FutileWakeups, inc());
     ++nWakeups;
 
     // Assuming this is not a spurious wakeup we'll normally find _succ == Self.
@@ -748,9 +746,9 @@ void NOINLINE ObjectMonitor::ReenterI(Thread * Self, ObjectWaiter * SelfNode) {
     // *must* retry  _owner before parking.
     OrderAccess::fence();
 
-    if (ObjectMonitor::_sync_FutileWakeups != NULL) {
-      ObjectMonitor::_sync_FutileWakeups->inc();
-    }
+    // This PerfData object can be used in parallel with a safepoint.
+    // See the work around in PerfDataManager::destroy().
+    OM_PERFDATA_OP(FutileWakeups, inc());
   }
 
   // Self has acquired the lock -- Unlink Self from the cxq or EntryList .
@@ -1302,9 +1300,7 @@ void ObjectMonitor::ExitEpilog(Thread * Self, ObjectWaiter * Wakee) {
   Trigger->unpark();
 
   // Maintain stats and report events to JVMTI
-  if (ObjectMonitor::_sync_Parks != NULL) {
-    ObjectMonitor::_sync_Parks->inc();
-  }
+  OM_PERFDATA_OP(Parks, inc());
 }
 
 
@@ -1765,9 +1761,7 @@ void ObjectMonitor::notify(TRAPS) {
   }
   DTRACE_MONITOR_PROBE(notify, this, object(), THREAD);
   INotify(THREAD);
-  if (ObjectMonitor::_sync_Notifications != NULL) {
-    ObjectMonitor::_sync_Notifications->inc(1);
-  }
+  OM_PERFDATA_OP(Notifications, inc(1));
 }
 
 
@@ -1792,9 +1786,7 @@ void ObjectMonitor::notifyAll(TRAPS) {
     INotify(THREAD);
   }
 
-  if (tally != 0 && ObjectMonitor::_sync_Notifications != NULL) {
-    ObjectMonitor::_sync_Notifications->inc(tally);
-  }
+  OM_PERFDATA_OP(Notifications, inc(tally));
 }
 
 // -----------------------------------------------------------------------------
