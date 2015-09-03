@@ -581,10 +581,8 @@ static bool set_bool_flag(char* name, bool value, Flag::Flags origin) {
 }
 
 static bool set_fp_numeric_flag(char* name, char* value, Flag::Flags origin) {
-  char* end;
-  errno = 0;
-  double v = strtod(value, &end);
-  if ((errno != 0) || (*end != 0)) {
+  double v;
+  if (sscanf(value, "%lf", &v) != 1) {
     return false;
   }
 
@@ -718,9 +716,9 @@ bool Arguments::parse_argument(const char* arg, Flag::Flags origin) {
     return set_string_flag(name, value, origin);
   }
 
-#define SIGNED_FP_NUMBER_RANGE "[-0123456789.eE+]"
+#define SIGNED_FP_NUMBER_RANGE "[-0123456789.]"
 #define SIGNED_NUMBER_RANGE    "[-0123456789]"
-#define        NUMBER_RANGE    "[0123456789eE+-]"
+#define        NUMBER_RANGE    "[0123456789]"
   char value[BUFLEN + 1];
   char value2[BUFLEN + 1];
   if (sscanf(arg, "%" XSTR(BUFLEN) NAME_RANGE "=" "%" XSTR(BUFLEN) SIGNED_NUMBER_RANGE "." "%" XSTR(BUFLEN) NUMBER_RANGE "%c", name, value, value2, &dummy) == 3) {
