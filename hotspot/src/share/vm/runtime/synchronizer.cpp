@@ -189,9 +189,7 @@ bool ObjectSynchronizer::quick_notify(oopDesc * obj, Thread * self, bool all) {
         mon->INotify(self);
         ++tally;
       } while (mon->first_waiter() != NULL && all);
-      if (ObjectMonitor::_sync_Notifications != NULL) {
-        ObjectMonitor::_sync_Notifications->inc(tally);
-      }
+      OM_PERFDATA_OP(Notifications, inc(tally));
     }
     return true;
   }
@@ -1413,7 +1411,7 @@ ObjectMonitor * NOINLINE ObjectSynchronizer::inflate(Thread * Self,
 
       // Hopefully the performance counters are allocated on distinct cache lines
       // to avoid false sharing on MP systems ...
-      if (ObjectMonitor::_sync_Inflations != NULL) ObjectMonitor::_sync_Inflations->inc();
+      OM_PERFDATA_OP(Inflations, inc());
       TEVENT(Inflate: overwrite stacklock);
       if (TraceMonitorInflation) {
         if (object->is_instance()) {
@@ -1461,7 +1459,7 @@ ObjectMonitor * NOINLINE ObjectSynchronizer::inflate(Thread * Self,
 
     // Hopefully the performance counters are allocated on distinct
     // cache lines to avoid false sharing on MP systems ...
-    if (ObjectMonitor::_sync_Inflations != NULL) ObjectMonitor::_sync_Inflations->inc();
+    OM_PERFDATA_OP(Inflations, inc());
     TEVENT(Inflate: overwrite neutral);
     if (TraceMonitorInflation) {
       if (object->is_instance()) {
@@ -1678,8 +1676,8 @@ void ObjectSynchronizer::deflate_idle_monitors() {
   }
   Thread::muxRelease(&gListLock);
 
-  if (ObjectMonitor::_sync_Deflations != NULL) ObjectMonitor::_sync_Deflations->inc(nScavenged);
-  if (ObjectMonitor::_sync_MonExtant  != NULL) ObjectMonitor::_sync_MonExtant ->set_value(nInCirculation);
+  OM_PERFDATA_OP(Deflations, inc(nScavenged));
+  OM_PERFDATA_OP(MonExtant, set_value(nInCirculation));
 
   // TODO: Add objectMonitor leak detection.
   // Audit/inventory the objectMonitors -- make sure they're all accounted for.
