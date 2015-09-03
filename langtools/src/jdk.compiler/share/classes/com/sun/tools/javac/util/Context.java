@@ -119,7 +119,7 @@ public class Context {
      * or
      * {@literal Key<T> -> Factory<T> }
      */
-    private final Map<Key<?>,Object> ht = new HashMap<>();
+    protected final Map<Key<?>,Object> ht = new HashMap<>();
 
     /** Set the factory for the key in this context. */
     public <T> void put(Key<T> key, Factory<T> fac) {
@@ -173,7 +173,7 @@ public class Context {
      */
     private final Map<Class<?>, Key<?>> kt = new HashMap<>();
 
-    private <T> Key<T> key(Class<T> clss) {
+    protected <T> Key<T> key(Class<T> clss) {
         checkState(kt);
         Key<T> k = uncheckedCast(kt.get(clss));
         if (k == null) {
