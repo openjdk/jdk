@@ -3129,8 +3129,10 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       jio_fprintf(defaultStream::output_stream(),
           "CreateMinidumpOnCrash is replaced by CreateCoredumpOnCrash: CreateCoredumpOnCrash is off\n");
     } else if (match_option(option, "-XX:", &tail)) { // -XX:xxxx
-      // Skip -XX:Flags= since that case has already been handled
-      if (strncmp(tail, "Flags=", strlen("Flags=")) != 0) {
+      // Skip -XX:Flags= and -XX:VMOptionsFile= since those cases have
+      // already been handled
+      if ((strncmp(tail, "Flags=", strlen("Flags=")) != 0) &&
+          (strncmp(tail, "VMOptionsFile=", strlen("VMOptionsFile=")) != 0)) {
         if (!process_argument(tail, args->ignoreUnrecognized, origin)) {
           return JNI_EINVAL;
         }
@@ -3382,6 +3384,7 @@ jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_req
 class ScopedVMInitArgs : public StackObj {
  private:
   JavaVMInitArgs _args;
+  bool           _is_set;
 
  public:
   ScopedVMInitArgs() {
@@ -3389,6 +3392,7 @@ class ScopedVMInitArgs : public StackObj {
     _args.nOptions = 0;
     _args.options = NULL;
     _args.ignoreUnrecognized = false;
+    _is_set = false;
   }
 
   // Populates the JavaVMInitArgs object represented by this
@@ -3397,6 +3401,7 @@ class ScopedVMInitArgs : public StackObj {
   // returns anything other than JNI_OK, then this object is in a
   // partially constructed state, and should be abandoned.
   jint set_args(GrowableArray<JavaVMOption>* options) {
+    _is_set = true;
     JavaVMOption* options_arr = NEW_C_HEAP_ARRAY_RETURN_NULL(
         JavaVMOption, options->length(), mtInternal);
     if (options_arr == NULL) {
@@ -3420,6 +3425,7 @@ class ScopedVMInitArgs : public StackObj {
   }
 
   JavaVMInitArgs* get() { return &_args; }
+  bool is_set()         { return _is_set; }
 
   ~ScopedVMInitArgs() {
     if (_args.options == NULL) return;
@@ -3427,6 +3433,35 @@ class ScopedVMInitArgs : public StackObj {
       os::free(_args.options[i].optionString);
     }
     FREE_C_HEAP_ARRAY(JavaVMOption, _args.options);
+  }
+
+  // Insert options into this option list, to replace option at
+  // vm_options_file_pos (-XX:VMOptionsFile)
+  jint insert(const JavaVMInitArgs* args,
+              const JavaVMInitArgs* args_to_insert,
+              const int vm_options_file_pos) {
+    assert(_args.options == NULL, "shouldn't be set yet");
+    assert(args_to_insert->nOptions != 0, "there should be args to insert");
+    assert(vm_options_file_pos != -1, "vm_options_file_pos should be set");
+
+    int length = args->nOptions + args_to_insert->nOptions - 1;
+    GrowableArray<JavaVMOption> *options = new (ResourceObj::C_HEAP, mtInternal)
+              GrowableArray<JavaVMOption>(length, true);    // Construct new option array
+    for (int i = 0; i < args->nOptions; i++) {
+      if (i == vm_options_file_pos) {
+        // insert the new options starting at the same place as the
+        // -XX:VMOptionsFile option
+        for (int j = 0; j < args_to_insert->nOptions; j++) {
+          options->push(args_to_insert->options[j]);
+        }
+      } else {
+        options->push(args->options[i]);
+      }
+    }
+    // make into options array
+    jint result = set_args(options);
+    delete options;
+    return result;
   }
 };
 
@@ -3452,54 +3487,137 @@ jint Arguments::parse_options_environment_variable(const char* name,
     return JNI_ENOMEM;
   }
 
+  int retcode = parse_options_buffer(name, buffer, strlen(buffer), vm_args);
+
+  os::free(buffer);
+  return retcode;
+}
+
+const int OPTION_BUFFER_SIZE = 1024;
+
+jint Arguments::parse_vm_options_file(const char* file_name, ScopedVMInitArgs* vm_args) {
+  // read file into buffer
+  int fd = ::open(file_name, O_RDONLY);
+  if (fd < 0) {
+    jio_fprintf(defaultStream::error_stream(),
+                "Could not open options file '%s'\n",
+                file_name);
+    return JNI_ERR;
+  }
+
+  // '+ 1' for NULL termination even with max bytes
+  int bytes_alloc = OPTION_BUFFER_SIZE + 1;
+
+  char *buf = NEW_C_HEAP_ARRAY_RETURN_NULL(char, bytes_alloc, mtInternal);
+  if (NULL == buf) {
+    jio_fprintf(defaultStream::error_stream(),
+                "Could not allocate read buffer for options file parse\n");
+    os::close(fd);
+    return JNI_ENOMEM;
+  }
+
+  memset(buf, 0, (unsigned)bytes_alloc);
+
+  // Fill buffer
+  // Use ::read() instead of os::read because os::read()
+  // might do a thread state transition
+  // and it is too early for that here
+
+  int bytes_read = ::read(fd, (void *)buf, (unsigned)bytes_alloc);
+  os::close(fd);
+  if (bytes_read < 0) {
+    FREE_C_HEAP_ARRAY(char, buf);
+    jio_fprintf(defaultStream::error_stream(),
+                "Could not read options file '%s'\n", file_name);
+    return JNI_ERR;
+  }
+
+  if (bytes_read == 0) {
+    // tell caller there is no option data and that is ok
+    FREE_C_HEAP_ARRAY(char, buf);
+    return JNI_OK;
+  }
+
+  // file is larger than OPTION_BUFFER_SIZE
+  if (bytes_read > bytes_alloc - 1) {
+    FREE_C_HEAP_ARRAY(char, buf);
+    jio_fprintf(defaultStream::error_stream(),
+                "Options file '%s' is larger than %d bytes.\n",
+                file_name, bytes_alloc - 1);
+    return JNI_EINVAL;
+  }
+
+  int retcode = parse_options_buffer(file_name, buf, bytes_read, vm_args);
+
+  FREE_C_HEAP_ARRAY(char, buf);
+  return retcode;
+}
+
+jint Arguments::parse_options_buffer(const char* name, char* buffer, const size_t buf_len, ScopedVMInitArgs* vm_args) {
   GrowableArray<JavaVMOption> *options = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<JavaVMOption>(2, true);    // Construct option array
-  jio_fprintf(defaultStream::error_stream(),
-              "Picked up %s: %s\n", name, buffer);
-  char* rd = buffer;                        // pointer to the input string (rd)
-  while (true) {                            // repeat for all options in the input string
-    while (isspace(*rd)) rd++;              // skip whitespace
-    if (*rd == 0) break;                    // we re done when the input string is read completely
 
-    // The output, option string, overwrites the input string.
-    // Because of quoting, the pointer to the option string (wrt) may lag the pointer to
-    // input string (rd).
-    char* wrt = rd;
+  // some pointers to help with parsing
+  char *buffer_end = buffer + buf_len;
+  char *opt_hd = buffer;
+  char *wrt = buffer;
+  char *rd = buffer;
 
-    JavaVMOption option;
-    option.optionString = wrt;
-    options->append(option);                // Fill in option
-    while (*rd != 0 && !isspace(*rd)) {     // unquoted strings terminate with a space or NULL
+  // parse all options
+  while (rd < buffer_end) {
+    // skip leading white space from the input string
+    while (rd < buffer_end && isspace(*rd)) {
+      rd++;
+    }
+
+    if (rd >= buffer_end) {
+      break;
+    }
+
+    // Remember this is where we found the head of the token.
+    opt_hd = wrt;
+
+    // Tokens are strings of non white space characters separated
+    // by one or more white spaces.
+    while (rd < buffer_end && !isspace(*rd)) {
       if (*rd == '\'' || *rd == '"') {      // handle a quoted string
         int quote = *rd;                    // matching quote to look for
         rd++;                               // don't copy open quote
-        while (*rd != quote) {              // include everything (even spaces) up until quote
-          if (*rd == 0) {                   // string termination means unmatched string
-            jio_fprintf(defaultStream::error_stream(),
-                        "Unmatched quote in %s\n", name);
-            delete options;
-            os::free(buffer);
-            return JNI_ERR;
-          }
+        while (rd < buffer_end && *rd != quote) {
+                                            // include everything (even spaces)
+                                            // up until the close quote
           *wrt++ = *rd++;                   // copy to option string
         }
-        rd++;                               // don't copy close quote
+
+        if (rd < buffer_end) {
+          rd++;                             // don't copy close quote
+        } else {
+                                            // did not see closing quote
+          jio_fprintf(defaultStream::error_stream(),
+                      "Unmatched quote in %s\n", name);
+          delete options;
+          return JNI_ERR;
+        }
       } else {
         *wrt++ = *rd++;                     // copy to option string
       }
     }
-    if (*rd != 0) {
-      // In this case, the assignment to wrt below will make *rd nul,
-      // which will interfere with the next loop iteration.
-      rd++;
-    }
-    *wrt = 0;                               // Zero terminate option
+
+    // steal a white space character and set it to NULL
+    *wrt++ = '\0';
+    // We now have a complete token
+
+    JavaVMOption option;
+    option.optionString = opt_hd;
+
+    options->append(option);                // Fill in option
+
+    rd++;  // Advance to next character
   }
 
   // Fill out JavaVMInitArgs structure.
   jint status = vm_args->set_args(options);
 
   delete options;
-  os::free(buffer);
   return status;
 }
 
@@ -3581,12 +3699,44 @@ static bool use_vm_log() {
 
   return false;
 }
+
 #endif // PRODUCT
 
-static jint match_special_option_and_act(const JavaVMInitArgs* args,
-                                        char** flags_file) {
+jint Arguments::insert_vm_options_file(const JavaVMInitArgs* args,
+                                       char** flags_file,
+                                       char** vm_options_file,
+                                       const int vm_options_file_pos,
+                                       ScopedVMInitArgs *vm_options_file_args,
+                                       ScopedVMInitArgs* args_out) {
+  jint code = parse_vm_options_file(*vm_options_file, vm_options_file_args);
+  if (code != JNI_OK) {
+    return code;
+  }
+
+  // Now set global settings from the vm_option file, giving an error if
+  // it has VMOptionsFile in it
+  code = match_special_option_and_act(vm_options_file_args->get(), flags_file,
+                                      NULL, NULL, NULL);
+  if (code != JNI_OK) {
+    return code;
+  }
+
+  if (vm_options_file_args->get()->nOptions < 1) {
+    return 0;
+  }
+
+  return args_out->insert(args, vm_options_file_args->get(),
+                          vm_options_file_pos);
+}
+
+jint Arguments::match_special_option_and_act(const JavaVMInitArgs* args,
+                                             char ** flags_file,
+                                             char ** vm_options_file,
+                                             ScopedVMInitArgs* vm_options_file_args,
+                                             ScopedVMInitArgs* args_out) {
   // Remaining part of option string
   const char* tail;
+  int   vm_options_file_pos = -1;
 
   for (int index = 0; index < args->nOptions; index++) {
     const JavaVMOption* option = args->options + index;
@@ -3595,6 +3745,35 @@ static jint match_special_option_and_act(const JavaVMInitArgs* args,
     }
     if (match_option(option, "-XX:Flags=", &tail)) {
       *flags_file = (char *) tail;
+      if (*flags_file == NULL) {
+        jio_fprintf(defaultStream::error_stream(),
+                    "Cannot copy flags_file name.\n");
+        return JNI_ENOMEM;
+      }
+      continue;
+    }
+    if (match_option(option, "-XX:VMOptionsFile=", &tail)) {
+      if (vm_options_file != NULL) {
+        // The caller accepts -XX:VMOptionsFile
+        if (*vm_options_file != NULL) {
+          jio_fprintf(defaultStream::error_stream(),
+                      "Only one VM Options file is supported "
+                      "on the command line\n");
+          return JNI_EINVAL;
+        }
+
+        *vm_options_file = (char *) tail;
+        vm_options_file_pos = index;  // save position of -XX:VMOptionsFile
+        if (*vm_options_file == NULL) {
+          jio_fprintf(defaultStream::error_stream(),
+                      "Cannot copy vm_options_file name.\n");
+          return JNI_ENOMEM;
+        }
+      } else {
+        jio_fprintf(defaultStream::error_stream(),
+                    "VM options file is only supported on the command line\n");
+        return JNI_EINVAL;
+      }
       continue;
     }
     if (match_option(option, "-XX:+PrintVMOptions")) {
@@ -3648,6 +3827,12 @@ static jint match_special_option_and_act(const JavaVMInitArgs* args,
     }
 #endif
   }
+
+  // If there's a VMOptionsFile, parse that (also can set flags_file)
+  if ((vm_options_file != NULL) && (*vm_options_file != NULL)) {
+    return insert_vm_options_file(args, flags_file, vm_options_file,
+                                  vm_options_file_pos, vm_options_file_args, args_out);
+  }
   return JNI_OK;
 }
 
@@ -3672,10 +3857,15 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   // If flag "-XX:Flags=flags-file" is used it will be the first option to be processed.
   const char* hotspotrc = ".hotspotrc";
   char* flags_file = NULL;
+  char* vm_options_file = NULL;
   bool settings_file_specified = false;
   bool needs_hotspotrc_warning = false;
   ScopedVMInitArgs java_tool_options_args;
   ScopedVMInitArgs java_options_args;
+  ScopedVMInitArgs modified_cmd_line_args;
+  // Pass in vm_options_file_args to keep memory for flags_file from being
+  // deallocated if found in the vm options file.
+  ScopedVMInitArgs vm_options_file_args;
 
   jint code =
       parse_java_tool_options_environment_variable(&java_tool_options_args);
@@ -3688,18 +3878,27 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     return code;
   }
 
-  code =
-      match_special_option_and_act(java_tool_options_args.get(), &flags_file);
+  code = match_special_option_and_act(java_tool_options_args.get(),
+                                      &flags_file, NULL, NULL, NULL);
   if (code != JNI_OK) {
     return code;
   }
 
-  code = match_special_option_and_act(args, &flags_file);
+  code = match_special_option_and_act(args, &flags_file, &vm_options_file,
+                                      &vm_options_file_args,
+                                      &modified_cmd_line_args);
   if (code != JNI_OK) {
     return code;
   }
 
-  code = match_special_option_and_act(java_options_args.get(), &flags_file);
+
+  // The command line arguments have been modified to include VMOptionsFile arguments.
+  if (modified_cmd_line_args.is_set()) {
+    args = modified_cmd_line_args.get();
+  }
+
+  code = match_special_option_and_act(java_options_args.get(), &flags_file,
+                                      NULL, NULL, NULL);
   if (code != JNI_OK) {
     return code;
   }
@@ -3740,7 +3939,8 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
 
   // Parse JavaVMInitArgs structure passed in, as well as JAVA_TOOL_OPTIONS and _JAVA_OPTIONS
   jint result = parse_vm_init_args(java_tool_options_args.get(),
-                                   java_options_args.get(), args);
+                                   java_options_args.get(),
+                                   args);   // command line arguments
 
   if (result != JNI_OK) {
     return result;
