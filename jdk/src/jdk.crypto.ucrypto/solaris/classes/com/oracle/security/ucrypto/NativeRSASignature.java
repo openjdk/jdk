@@ -43,9 +43,8 @@ import java.security.PublicKey;
 
 import java.security.*;
 import java.security.interfaces.*;
-import java.security.spec.RSAPrivateCrtKeySpec;
-import java.security.spec.RSAPublicKeySpec;
-import java.security.spec.InvalidKeySpecException;
+import java.security.spec.*;
+
 import sun.nio.ch.DirectBuffer;
 import java.nio.ByteBuffer;
 
@@ -192,25 +191,31 @@ class NativeRSASignature extends SignatureSpi {
         int newSigLength = sigLength;
         // Need to check RSA key length whenever a new private key is set
         if (privateKey != key) {
-            if (privateKey instanceof RSAPrivateCrtKey) {
-                RSAPrivateCrtKey rsaPrivKey = (RSAPrivateCrtKey) privateKey;
-                BigInteger mod = rsaPrivKey.getModulus();
-                newSigLength = checkRSAKeyLength(mod);
-                try {
+            if (!(privateKey instanceof RSAPrivateKey)) {
+                throw new InvalidKeyException("RSAPrivateKey required");
+            }
+            RSAPrivateKey rsaPrivKey = (RSAPrivateKey) privateKey;
+            BigInteger mod = rsaPrivKey.getModulus();
+            newSigLength = checkRSAKeyLength(mod);
+            BigInteger pe = rsaPrivKey.getPrivateExponent();
+            try {
+                if (rsaPrivKey instanceof RSAPrivateCrtKey) {
+                    RSAPrivateCrtKey rsaPrivCrtKey = (RSAPrivateCrtKey) rsaPrivKey;
                     newKey = (NativeKey) keyFactory.engineGeneratePrivate
                         (new RSAPrivateCrtKeySpec(mod,
-                                                  rsaPrivKey.getPublicExponent(),
-                                                  rsaPrivKey.getPrivateExponent(),
-                                                  rsaPrivKey.getPrimeP(),
-                                                  rsaPrivKey.getPrimeQ(),
-                                                  rsaPrivKey.getPrimeExponentP(),
-                                                  rsaPrivKey.getPrimeExponentQ(),
-                                                  rsaPrivKey.getCrtCoefficient()));
-                } catch (InvalidKeySpecException ikse) {
-                    throw new InvalidKeyException(ikse);
+                                                  rsaPrivCrtKey.getPublicExponent(),
+                                                  pe,
+                                                  rsaPrivCrtKey.getPrimeP(),
+                                                  rsaPrivCrtKey.getPrimeQ(),
+                                                  rsaPrivCrtKey.getPrimeExponentP(),
+                                                  rsaPrivCrtKey.getPrimeExponentQ(),
+                                                  rsaPrivCrtKey.getCrtCoefficient()));
+                } else {
+                    newKey = (NativeKey) keyFactory.engineGeneratePrivate
+                           (new RSAPrivateKeySpec(mod, pe));
                 }
-            } else {
-                throw new InvalidKeyException("RSAPrivateCrtKey required");
+            } catch (InvalidKeySpecException ikse) {
+                throw new InvalidKeyException(ikse);
             }
         }
         init(true, newKey, newSigLength);
