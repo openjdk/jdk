@@ -435,6 +435,11 @@ jint JavaCritical_com_oracle_security_ucrypto_NativeCipher_nativeFinal
   int rv = 0;
 
   context = (crypto_ctx_t *) pContext;
+  // Avoid null output buffer to workaround Solaris bug21481818 (fixed in S12)
+  if (bufOut == NULL) {
+    bufOut = (unsigned char *)(&outLen);
+    outLen = 0;
+  }
   rv = CipherFinal(context, encrypt, (unsigned char*)bufOut, outOfs, &outLen);
   free(context);
   if (rv) {
@@ -648,7 +653,8 @@ JNIEXPORT jint JNICALL Java_com_oracle_security_ucrypto_NativeCipher_nativeFinal
 
   // out is null when nativeFinal() is called solely for resource clean up
   if (out == NULL) {
-    bufOut = NULL;
+    // Avoid null output buffer to workaround Solaris bug21481818 (fixed in S12)
+    bufOut = (unsigned char *)(&outLen);
     outLen = 0;
   } else {
     outLen = (*env)->GetArrayLength(env, out) - outOfs;
@@ -661,10 +667,12 @@ JNIEXPORT jint JNICALL Java_com_oracle_security_ucrypto_NativeCipher_nativeFinal
   rv = CipherFinal(context, encrypt, bufOut, 0, &outLen);
   if (rv) {
     free(context);
-    free(bufOut);
+    if (outLen != 0) {
+      free(bufOut);
+    }
     return -rv;
   } else {
-    if (bufOut != NULL) {
+    if (bufOut != NULL && outLen != 0) {
       (*env)->SetByteArrayRegion(env, out, outOfs, outLen, (jbyte *)bufOut);
       free(bufOut);
     }
