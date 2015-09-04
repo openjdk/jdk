@@ -387,11 +387,6 @@ sun/tools/jstatd/TestJstatdExternalRegistry.java                generic-all
 # 6456333
 sun/tools/jps/TestJpsJarRelative.java				generic-all
 
-# 8134420
-sun/tools/jps/TestJpsClass.java				generic-all
-sun/tools/jps/TestJpsJar.java					generic-all
-sun/tools/jps/TestJpsSanity.java				generic-all
-
 # 6734748
 sun/tools/jinfo/JInfoRunningProcessFlagTest.java		generic-all
 
