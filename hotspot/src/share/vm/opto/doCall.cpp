@@ -49,7 +49,7 @@ void trace_type_profile(Compile* C, ciMethod *method, int depth, int bci, ciMeth
         method->print_short_name();
         tty->cr();
       }
-      CompileTask::print_inlining(prof_method, depth, bci);
+      CompileTask::print_inlining_tty(prof_method, depth, bci);
     } else {
       out = C->print_inlining_stream();
     }
