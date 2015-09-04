@@ -2923,9 +2923,9 @@ size_t G1CollectedHeap::tlab_used(Thread* ignored) const {
 }
 
 // For G1 TLABs should not contain humongous objects, so the maximum TLAB size
-// must be smaller than the humongous object limit.
+// must be equal to the humongous object limit.
 size_t G1CollectedHeap::max_tlab_size() const {
-  return align_size_down(_humongous_object_threshold_in_words - 1, MinObjAlignment);
+  return align_size_down(_humongous_object_threshold_in_words, MinObjAlignment);
 }
 
 size_t G1CollectedHeap::unsafe_max_tlab_alloc(Thread* ignored) const {
