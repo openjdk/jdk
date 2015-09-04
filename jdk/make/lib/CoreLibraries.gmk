@@ -238,6 +238,48 @@ TARGETS += $(BUILD_LIBZIP)
 
 ##########################################################################################
 
+$(eval $(call SetupNativeCompilation,BUILD_LIBJIMAGE, \
+    LIBRARY := jimage, \
+    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+    OPTIMIZATION := LOW, \
+    SRC := $(JDK_TOPDIR)/src/java.base/share/native/libjimage \
+        $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjimage, \
+    EXCLUDES := $(LIBJIMAGE_EXCLUDES), \
+    CFLAGS := $(CFLAGS_JDKLIB) \
+        $(JIMAGELIB_CPPFLAGS) \
+        -I$(JDK_TOPDIR)/src/java.base/share/native/libjava \
+        -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjava \
+        -I$(JDK_TOPDIR)/src/java.base/share/native/libjimage \
+        -I$(SUPPORT_OUTPUTDIR)/headers/java.base, \
+    CFLAGS_unix := -UDEBUG, \
+    MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjimage/mapfile-vers, \
+    LDFLAGS := $(LDFLAGS_JDKLIB) \
+        $(call SET_SHARED_LIBRARY_ORIGIN) \
+        $(EXPORT_JIMAGE_FUNCS), \
+    LDFLAGS_windows := -export:JIMAGE_Open -export:JIMAGE_Close \
+        -export:JIMAGE_PackageToModule \
+        -export:JIMAGE_FindResource -export:JIMAGE_GetResource \
+        -export:JIMAGE_ResourceIterator, \
+    LDFLAGS_SUFFIX_unix := -ljvm -ldl $(LIBCXX), \
+    LDFLAGS_SUFFIX_linux := , \
+    LDFLAGS_SUFFIX_solaris := -lc, \
+    LDFLAGS_SUFFIX_aix := ,\
+    LDFLAGS_SUFFIX_macosx := -lc++, \
+    LDFLAGS_SUFFIX_windows := jvm.lib, \
+    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
+    RC_FLAGS := $(RC_FLAGS) \
+        -D "JDK_FNAME=jimage.dll" \
+        -D "JDK_INTERNAL_NAME=jimage" \
+        -D "JDK_FTYPE=0x2L", \
+    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjimage, \
+    DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+
+$(BUILD_LIBJIMAGE): $(BUILD_LIBJAVA)
+
+TARGETS += $(BUILD_LIBJIMAGE)
+
+##########################################################################################
+
 LIBJLI_SRC_DIRS := $(call FindSrcDirsForLib, java.base, jli)
 
 LIBJLI_CFLAGS := $(CFLAGS_JDKLIB)
