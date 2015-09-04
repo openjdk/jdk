@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -694,6 +694,86 @@ void JavaCritical_com_oracle_security_ucrypto_NativeKey_nativeFree
 JNIEXPORT void JNICALL Java_com_oracle_security_ucrypto_NativeKey_nativeFree
   (JNIEnv *env, jclass jCls, jlong id, jint numOfComponents) {
   JavaCritical_com_oracle_security_ucrypto_NativeKey_nativeFree(id, numOfComponents);
+}
+
+/*
+ * Class:     com_oracle_security_ucrypto_NativeKey_RSAPrivate
+ * Method:    nativeInit
+ * Signature: ([B[B)J
+ */
+jlong JavaCritical_com_oracle_security_ucrypto_NativeKey_00024RSAPrivate_nativeInit
+(int modLen, jbyte* jMod, int privLen, jbyte* jPriv) {
+
+  unsigned char *mod, *priv;
+  crypto_object_attribute_t* pKey = NULL;
+
+  pKey = calloc(2, sizeof(crypto_object_attribute_t));
+  if (pKey == NULL) {
+    return 0L;
+  }
+  mod = priv = NULL;
+  mod = malloc(modLen);
+  priv = malloc(privLen);
+  if (mod == NULL || priv == NULL) {
+    free(pKey);
+    free(mod);
+    free(priv);
+    return 0L;
+  } else {
+    memcpy(mod, jMod, modLen);
+    memcpy(priv, jPriv, privLen);
+  }
+
+  // NOTE: numOfComponents should be 2
+  pKey[0].oa_type = SUN_CKA_MODULUS;
+  pKey[0].oa_value = (char*) mod;
+  pKey[0].oa_value_len = (size_t) modLen;
+  pKey[1].oa_type = SUN_CKA_PRIVATE_EXPONENT;
+  pKey[1].oa_value = (char*) priv;
+  pKey[1].oa_value_len = (size_t) privLen;
+
+  return (jlong) pKey;
+}
+
+JNIEXPORT jlong JNICALL
+Java_com_oracle_security_ucrypto_NativeKey_00024RSAPrivate_nativeInit
+  (JNIEnv *env, jclass jCls, jbyteArray jMod, jbyteArray jPriv) {
+
+  int modLen, privLen;
+  jbyte *bufMod, *bufPriv;
+  crypto_object_attribute_t* pKey = NULL;
+
+  bufMod = bufPriv = NULL;
+
+  modLen = (*env)->GetArrayLength(env, jMod);
+  bufMod = getBytes(env, jMod, 0, modLen);
+  if ((*env)->ExceptionCheck(env)) goto cleanup;
+
+  privLen = (*env)->GetArrayLength(env, jPriv);
+  bufPriv = getBytes(env, jPriv, 0, privLen);
+  if ((*env)->ExceptionCheck(env)) goto cleanup;
+
+  // proceed if no error; otherwise free allocated memory
+  pKey = calloc(2, sizeof(crypto_object_attribute_t));
+  if (pKey == NULL) {
+    throwOutOfMemoryError(env, NULL);
+    goto cleanup;
+  }
+
+  // NOTE: numOfComponents should be 2
+  pKey[0].oa_type = SUN_CKA_MODULUS;
+  pKey[0].oa_value = (char*) bufMod;
+  pKey[0].oa_value_len = (size_t) modLen;
+  pKey[1].oa_type = SUN_CKA_PRIVATE_EXPONENT;
+  pKey[1].oa_value = (char*) bufPriv;
+  pKey[1].oa_value_len = (size_t) privLen;
+  return (jlong) pKey;
+
+cleanup:
+  free(bufMod);
+  free(bufPriv);
+
+  return 0L;
 }
 
 /*
