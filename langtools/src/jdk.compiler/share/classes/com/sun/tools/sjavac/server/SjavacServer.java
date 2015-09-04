@@ -53,8 +53,10 @@ import com.sun.tools.sjavac.comp.SjavacImpl;
  */
 public class SjavacServer implements Terminable {
 
-    // Used in protocol to indicate which method to invoke
-    public final static String CMD_COMPILE = "compile";
+    // Used in protocol to tell the content of each line
+    public final static String LINE_TYPE_RC = "RC";
+    public final static String LINE_TYPE_STDOUT = "STDOUT";
+    public final static String LINE_TYPE_STDERR = "STDERR";
 
     final private String portfilename;
     final private String logfile;
