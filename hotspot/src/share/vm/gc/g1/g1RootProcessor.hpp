@@ -107,13 +107,6 @@ public:
                          CLDClosure* clds,
                          CodeBlobClosure* blobs);
 
-  // Apply scan_rs to all locations in the union of the remembered sets for all
-  // regions in the collection set
-  // (having done "set_region" to indicate the region in which the root resides),
-  void scan_remembered_sets(G1ParPushHeapRSClosure* scan_rs,
-                            OopClosure* scan_non_heap_weak_roots,
-                            uint worker_i);
-
   // Number of worker threads used by the root processor.
   uint n_workers() const;
 };

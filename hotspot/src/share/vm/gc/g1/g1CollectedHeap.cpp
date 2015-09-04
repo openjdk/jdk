@@ -4664,9 +4664,9 @@ public:
                                       worker_id);
 
       G1ParPushHeapRSClosure push_heap_rs_cl(_g1h, pss);
-      _root_processor->scan_remembered_sets(&push_heap_rs_cl,
-                                            weak_root_cl,
-                                            worker_id);
+      _g1h->g1_rem_set()->oops_into_collection_set_do(&push_heap_rs_cl,
+                                                      weak_root_cl,
+                                                      worker_id);
       double strong_roots_sec = os::elapsedTime() - start_strong_roots_sec;
 
       double term_sec = 0.0;
