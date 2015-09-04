@@ -1087,9 +1087,6 @@ public:
   product(bool, AlwaysRestoreFPU, false,                                    \
           "Restore the FPU control word after every JNI call (expensive)")  \
                                                                             \
-  product(bool, MemoryMapImage, false,                                      \
-          "Memory map entire runtime image")                                \
-                                                                            \
   diagnostic(bool, PrintCompilation2, false,                                \
           "Print additional statistics per compilation")                    \
                                                                             \
