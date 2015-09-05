@@ -184,7 +184,8 @@ static volatile int InitDone        = 0;
 //
 // * The monitor entry list operations avoid locks, but strictly speaking
 //   they're not lock-free.  Enter is lock-free, exit is not.
-//   See http://j2se.east/~dice/PERSIST/040825-LockFreeQueues.html
+//   For a description of 'Methods and apparatus providing non-blocking access
+//   to a resource,' see U.S. Pat. No. 7844973.
 //
 // * The cxq can have multiple concurrent "pushers" but only one concurrent
 //   detaching thread.  This mechanism is immune from the ABA corruption.
@@ -1808,7 +1809,8 @@ void ObjectMonitor::notifyAll(TRAPS) {
 // (duration) or we can fix the count at approximately the duration of
 // a context switch and vary the frequency.   Of course we could also
 // vary both satisfying K == Frequency * Duration, where K is adaptive by monitor.
-// See http://j2se.east/~dice/PERSIST/040824-AdaptiveSpinning.html.
+// For a description of 'Adaptive spin-then-block mutual exclusion in
+// multi-threaded processing,' see U.S. Pat. No. 8046758.
 //
 // This implementation varies the duration "D", where D varies with
 // the success rate of recent spin attempts. (D is capped at approximately
