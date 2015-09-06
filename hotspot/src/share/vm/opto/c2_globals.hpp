@@ -374,10 +374,10 @@
                                                                             \
   develop(intx, PrintIdealGraphLevel, 0,                                    \
           "Level of detail of the ideal graph printout. "                   \
-          "System-wide value, 0=nothing is printed, 3=all details printed. "\
+          "System-wide value, 0=nothing is printed, 4=all details printed. "\
           "Level of detail of printouts can be set on a per-method level "  \
           "as well by using CompileCommand=option.")                        \
-          range(0, 3)                                                       \
+          range(0, 4)                                                       \
                                                                             \
   develop(intx, PrintIdealGraphPort, 4444,                                  \
           "Ideal graph printer to network port")                            \
