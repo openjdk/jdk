@@ -816,7 +816,7 @@ public:
                                                                             \
   product(bool, UseSHA1Intrinsics, false,                                   \
           "Use intrinsics for SHA-1 crypto hash function. "                 \
-          "Requires that UseSHA is enabled.")                                \
+          "Requires that UseSHA is enabled.")                               \
                                                                             \
   product(bool, UseSHA256Intrinsics, false,                                 \
           "Use intrinsics for SHA-224 and SHA-256 crypto hash functions. "  \
@@ -1596,7 +1596,7 @@ public:
           "(ParallelGC only)")                                              \
                                                                             \
   product(bool, ScavengeBeforeFullGC, true,                                 \
-          "Scavenge youngest generation before each full GC.")              \
+          "Scavenge young generation before each full GC.")                 \
                                                                             \
   develop(bool, ScavengeWithObjectsInToSpace, false,                        \
           "Allow scavenges to occur when to-space contains objects")        \
@@ -2094,11 +2094,11 @@ public:
           "promotion failure")                                              \
                                                                             \
   notproduct(bool, PromotionFailureALot, false,                             \
-          "Use promotion failure handling on every youngest generation "    \
+          "Use promotion failure handling on every young generation "       \
           "collection")                                                     \
                                                                             \
   develop(uintx, PromotionFailureALotCount, 1000,                           \
-          "Number of promotion failures occurring at PLAB "     \
+          "Number of promotion failures occurring at PLAB "                 \
           "refill attempts (ParNew) or promotion attempts "                 \
           "(other young collectors)")                                       \
                                                                             \
