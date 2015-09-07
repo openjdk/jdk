@@ -28,5 +28,3 @@ import java.util.Map;
 public interface TestCase {
     Map.Entry<Boolean, String> runTest();
 }
-
-

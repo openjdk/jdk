@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.net.URLDecoder;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SeekableByteChannel;
@@ -69,6 +70,7 @@ import static java.nio.file.StandardCopyOption.*;
  * @test
  * @bug 6990846 7009092 7009085 7015391 7014948 7005986 7017840 7007596
  *      7157656 8002390 7012868 7012856 8015728 8038500 8040059 8069211
+ *      8131067
  * @summary Test Zip filesystem provider
  * @run main ZipFSTester
  * @run main/othervm/java.security.policy=test.policy ZipFSTester
@@ -91,6 +93,7 @@ public class ZipFSTester {
         }
         testTime(jarFile);
         test8069211();
+        test8131067();
     }
 
     static void test0(FileSystem fs)
@@ -441,11 +444,34 @@ public class ZipFSTester {
         }
     }
 
+    static void test8131067() throws Exception {
+        Map<String, Object> env = new HashMap<String, Object>();
+        env.put("create", "true");
+
+        // file name with space character for URI to quote it
+        File tmp = File.createTempFile("test zipfs", "zip");
+        tmp.delete();    // we need a clean path, no file
+        Path fsPath = tmp.toPath();
+        try (FileSystem fs = newZipFileSystem(fsPath, env);) {
+            Files.write(fs.getPath("/foo"), "hello".getBytes());
+            URI fooUri = fs.getPath("/foo").toUri();
+            if (!Arrays.equals(Files.readAllBytes(Paths.get(fooUri)),
+                               "hello".getBytes())) {
+                throw new RuntimeException("entry close() failed");
+            }
+        } finally {
+            Files.delete(fsPath);
+        }
+    }
+
     private static FileSystem newZipFileSystem(Path path, Map<String, ?> env)
         throws Exception
     {
+        // Use URLDecoder (for test only) to remove the double escaped space
+        // character
         return FileSystems.newFileSystem(
-            new URI("jar", path.toUri().toString(), null), env, null);
+            new URI("jar", URLDecoder.decode(path.toUri().toString(), "utf8"),
+                null), env, null);
     }
 
     private static Path getTempPath() throws IOException

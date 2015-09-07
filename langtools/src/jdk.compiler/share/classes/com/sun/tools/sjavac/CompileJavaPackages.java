@@ -32,12 +32,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
+import com.sun.tools.sjavac.comp.CompilationService;
 import com.sun.tools.sjavac.options.Options;
 import com.sun.tools.sjavac.pubapi.PubApi;
-import com.sun.tools.sjavac.server.CompilationResult;
-import com.sun.tools.sjavac.server.Sjavac;
+import com.sun.tools.sjavac.server.CompilationSubResult;
 import com.sun.tools.sjavac.server.SysInfo;
 
 /**
@@ -68,7 +69,7 @@ public class CompileJavaPackages implements Transformer {
         args = a;
     }
 
-    public boolean transform(final Sjavac sjavac,
+    public boolean transform(final CompilationService sjavac,
                              Map<String,Set<URI>> pkgSrcs,
                              final Set<URI>             visibleSources,
                              final Map<URI,Set<String>> visibleClasses,
@@ -91,16 +92,11 @@ public class CompileJavaPackages implements Transformer {
         boolean concurrentCompiles = true;
 
         // Fetch the id.
-        final String id = Util.extractStringOption("id", sjavac.serverSettings());
+        final String id = String.valueOf(new Random().nextInt());
         // Only keep portfile and sjavac settings..
         //String psServerSettings = Util.cleanSubOptions(Util.set("portfile","sjavac","background","keepalive"), sjavac.serverSettings());
 
-        // Get maximum heap size from the server!
         SysInfo sysinfo = sjavac.getSysInfo();
-        if (sysinfo == null) {
-            Log.error("Could not query server for sysinfo!");
-            return false;
-        }
         int numMBytes = (int)(sysinfo.maxMemory / ((long)(1024*1024)));
         Log.debug("Server reports "+numMBytes+"MiB of memory and "+sysinfo.numCores+" cores");
 
@@ -205,7 +201,7 @@ public class CompileJavaPackages implements Transformer {
         }
 
         // The return values for each chunked compile.
-        final CompilationResult[] rn = new CompilationResult[numCompiles];
+        final CompilationSubResult[] rn = new CompilationSubResult[numCompiles];
         // The requets, might or might not run as a background thread.
         final Thread[] requests  = new Thread[numCompiles];
 

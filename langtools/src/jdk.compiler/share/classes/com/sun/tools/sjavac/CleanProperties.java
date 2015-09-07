@@ -42,9 +42,9 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import com.sun.tools.sjavac.comp.CompilationService;
 import com.sun.tools.sjavac.options.Options;
 import com.sun.tools.sjavac.pubapi.PubApi;
-import com.sun.tools.sjavac.server.Sjavac;
 
 /**
  * The clean properties transform should not be necessary.
@@ -64,7 +64,7 @@ public class CleanProperties implements Transformer {
         // Any extra information is ignored for clean properties.
     }
 
-    public boolean transform(Sjavac sjavac,
+    public boolean transform(CompilationService sjavac,
                              Map<String,Set<URI>> pkgSrcs,
                              Set<URI>             visibleSrcs,
                              Map<URI,Set<String>> visibleClasses,

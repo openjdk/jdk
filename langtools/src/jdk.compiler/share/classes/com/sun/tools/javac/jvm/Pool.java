@@ -190,7 +190,11 @@ public class Pool {
 
         @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public boolean equals(Object any) {
-            if (!super.equals(any)) return false;
+            return equalsImpl(any, true);
+        }
+
+        protected boolean equalsImpl(Object any, boolean includeDynamicArgs) {
+            if (includeDynamicArgs && !super.equals(any)) return false;
             if (!(any instanceof DynamicMethod)) return false;
             DynamicMethodSymbol dm1 = (DynamicMethodSymbol)other;
             DynamicMethodSymbol dm2 = (DynamicMethodSymbol)((DynamicMethod)any).other;
@@ -202,7 +206,11 @@ public class Pool {
 
         @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public int hashCode() {
-            int hash = super.hashCode();
+            return hashCodeImpl(true);
+        }
+
+        protected int hashCodeImpl(boolean includeDynamicArgs) {
+            int hash = includeDynamicArgs ? super.hashCode() : 0;
             DynamicMethodSymbol dm = (DynamicMethodSymbol)other;
             hash += dm.bsmKind * 7 +
                     dm.bsm.hashCode() * 11;
@@ -222,6 +230,36 @@ public class Pool {
                 }
             }
             return result;
+        }
+
+        static class BootstrapMethodsKey extends DynamicMethod {
+            BootstrapMethodsKey(DynamicMethodSymbol m, Types types) {
+                super(m, types);
+            }
+
+            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            public boolean equals(Object any) {
+                return equalsImpl(any, false);
+            }
+
+            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            public int hashCode() {
+                return hashCodeImpl(false);
+            }
+
+            Object[] getUniqueArgs() {
+                return uniqueStaticArgs;
+            }
+        }
+
+        static class BootstrapMethodsValue {
+            final MethodHandle mh;
+            final int index;
+
+            public BootstrapMethodsValue(MethodHandle mh, int index) {
+                this.mh = mh;
+                this.index = index;
+            }
         }
     }
 

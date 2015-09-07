@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.util.concurrent.Semaphore;
 
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.sjavac.Log;
+import com.sun.tools.sjavac.client.PortFileInaccessibleException;
 
 /**
  * The PortFile class mediates access to a short binary file containing the tcp/ip port (for the localhost)
@@ -80,11 +81,16 @@ public class PortFile {
      * Create a new portfile.
      * @param fn is the path to the file.
      */
-    public PortFile(String fn) throws FileNotFoundException {
+    public PortFile(String fn) throws PortFileInaccessibleException {
         filename = fn;
         file = new File(filename);
         stopFile = new File(filename+".stop");
-        rwfile = new RandomAccessFile(file, "rw");
+        try {
+            rwfile = new RandomAccessFile(file, "rw");
+        } catch (FileNotFoundException e) {
+            // Reached if file for instance already exists and is a directory
+            throw new PortFileInaccessibleException(e);
+        }
         // The rwfile should only be readable by the owner of the process
         // and no other! How do we do that on a RandomAccessFile?
         channel = rwfile.getChannel();
