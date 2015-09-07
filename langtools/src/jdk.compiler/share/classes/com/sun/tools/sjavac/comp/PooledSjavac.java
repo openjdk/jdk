@@ -24,11 +24,7 @@
  */
 package com.sun.tools.sjavac.comp;
 
-import java.io.File;
-import java.net.URI;
-import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -36,7 +32,6 @@ import java.util.concurrent.TimeUnit;
 import com.sun.tools.sjavac.Log;
 import com.sun.tools.sjavac.server.CompilationResult;
 import com.sun.tools.sjavac.server.Sjavac;
-import com.sun.tools.sjavac.server.SysInfo;
 
 /**
  * An sjavac implementation that limits the number of concurrent calls by
@@ -59,30 +54,10 @@ public class PooledSjavac implements Sjavac {
     }
 
     @Override
-    public SysInfo getSysInfo() {
-        try {
-            return pool.submit(() -> delegate.getSysInfo()).get();
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("Error during getSysInfo", e);
-        }
-    }
-
-    @Override
-    public CompilationResult compile(final String protocolId,
-                                     final String invocationId,
-                                     final String[] args,
-                                     final List<File> explicitSources,
-                                     final Set<URI> sourcesToCompile,
-                                     final Set<URI> visibleSources) {
+    public CompilationResult compile(String[] args) {
         try {
             return pool.submit(() -> {
-                return delegate.compile(protocolId,
-                                        invocationId,
-                                        args,
-                                        explicitSources,
-                                        sourcesToCompile,
-                                        visibleSources);
+                return delegate.compile(args);
             }).get();
         } catch (Exception e) {
             e.printStackTrace();
@@ -112,8 +87,4 @@ public class PooledSjavac implements Sjavac {
         delegate.shutdown();
     }
 
-    @Override
-    public String serverSettings() {
-        return delegate.serverSettings();
-    }
 }

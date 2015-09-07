@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,16 +24,12 @@
  */
 package com.sun.tools.sjavac.server;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.Socket;
-import java.net.URI;
-import java.util.List;
-import java.util.Set;
 
 import com.sun.tools.sjavac.Log;
 
@@ -71,8 +67,7 @@ public class RequestHandler implements Runnable {
             String cmd = (String) oin.readObject();
             Log.info("Handling request, id: " + id + " cmd: " + cmd);
             switch (cmd) {
-            case SjavacServer.CMD_SYS_INFO: handleSysInfoRequest(oin, oout); break;
-            case SjavacServer.CMD_COMPILE:  handleCompileRequest(oin, oout); break;
+            case SjavacServer.CMD_COMPILE: handleCompileRequest(oin, oout); break;
             default: Log.error("Unknown command: " + cmd);
             }
         } catch (Exception ex) {
@@ -85,31 +80,15 @@ public class RequestHandler implements Runnable {
         }
     }
 
-    private void handleSysInfoRequest(ObjectInputStream oin,
-                                      ObjectOutputStream oout) throws IOException {
-        oout.writeObject(sjavac.getSysInfo());
-        oout.flush();
-    }
-
-    @SuppressWarnings("unchecked")
     private void handleCompileRequest(ObjectInputStream oin,
                                       ObjectOutputStream oout) throws IOException {
         try {
             // Read request arguments
-            String protocolId = (String) oin.readObject();
-            String invocationId = (String) oin.readObject();
             String[] args = (String[]) oin.readObject();
-            List<File> explicitSources = (List<File>) oin.readObject();
-            Set<URI> sourcesToCompile = (Set<URI>) oin.readObject();
-            Set<URI> visibleSources = (Set<URI>) oin.readObject();
 
             // Perform compilation
-            CompilationResult cr = sjavac.compile(protocolId,
-                                                  invocationId,
-                                                  args,
-                                                  explicitSources,
-                                                  sourcesToCompile,
-                                                  visibleSources);
+            CompilationResult cr = sjavac.compile(args);
+
             // Write request response
             oout.writeObject(cr);
             oout.flush();

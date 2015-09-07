@@ -887,7 +887,8 @@ ifndef BUILD_HEADLESS_ONLY
                 $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS), \
       DISABLED_WARNINGS_gcc := sign-compare type-limits unused-result maybe-uninitialized, \
       DISABLED_WARNINGS_clang := incompatible-pointer-types, \
-      DISABLED_WARNINGS_solstudio := E_NEWLINE_NOT_LAST E_DECLARATION_IN_CODE, \
+      DISABLED_WARNINGS_solstudio := E_NEWLINE_NOT_LAST E_DECLARATION_IN_CODE \
+          E_STATEMENT_NOT_REACHED, \
       DISABLED_WARNINGS_microsoft := 4018 4244 4267, \
       MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libsplashscreen/mapfile-vers, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \

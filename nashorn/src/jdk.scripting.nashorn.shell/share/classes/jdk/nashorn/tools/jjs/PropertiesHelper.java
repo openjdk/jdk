@@ -25,6 +25,7 @@
 
 package jdk.nashorn.tools.jjs;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -32,6 +33,7 @@ import java.util.List;
 import java.util.WeakHashMap;
 import java.util.stream.Collectors;
 import jdk.nashorn.internal.runtime.JSType;
+import jdk.nashorn.internal.runtime.NativeJavaPackage;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
@@ -41,19 +43,59 @@ import jdk.nashorn.internal.objects.NativeJava;
  * A helper class to get properties of a given object for source code completion.
  */
 final class PropertiesHelper {
-    private PropertiesHelper() {}
-
+    // Java package properties helper, may be null
+    private PackagesHelper pkgsHelper;
     // cached properties list
-    private static final WeakHashMap<Object, List<String>> propsCache = new WeakHashMap<>();
+    private final WeakHashMap<Object, List<String>> propsCache = new WeakHashMap<>();
 
-    // returns the list of properties of the given object
-    static List<String> getProperties(final Object obj) {
+    /**
+     * Construct a new PropertiesHelper.
+     *
+     * @param classPath Class path to compute properties of java package objects
+     */
+    PropertiesHelper(final String classPath) {
+        if (PackagesHelper.isAvailable()) {
+            try {
+                this.pkgsHelper = new PackagesHelper(classPath);
+            } catch (final IOException exp) {
+                if (Main.DEBUG) {
+                    exp.printStackTrace();
+                }
+                this.pkgsHelper = null;
+            }
+        }
+    }
+
+    void close() throws Exception {
+        propsCache.clear();
+        pkgsHelper.close();
+    }
+
+    /**
+     * returns the list of properties of the given object.
+     *
+     * @param obj object whose property list is returned
+     * @return the list of properties of the given object
+     */
+    List<String> getProperties(final Object obj) {
         assert obj != null && obj != ScriptRuntime.UNDEFINED;
 
+        // wrap JS primitives as objects before gettting properties
         if (JSType.isPrimitive(obj)) {
             return getProperties(JSType.toScriptObject(obj));
         }
 
+        // Handle Java package prefix case first. Should do it before checking
+        // for its super class ScriptObject!
+        if (obj instanceof NativeJavaPackage) {
+            if (pkgsHelper != null) {
+                return pkgsHelper.getPackageProperties(((NativeJavaPackage)obj).getName());
+            } else {
+                return Collections.<String>emptyList();
+            }
+        }
+
+        // script object - all inherited and non-enumerable, non-index properties
         if (obj instanceof ScriptObject) {
             final ScriptObject sobj = (ScriptObject)obj;
             final PropertyMap pmap = sobj.getMap();
@@ -71,6 +113,7 @@ final class PropertiesHelper {
             return props;
         }
 
+        // java class case - don't refer to StaticClass directly
         if (NativeJava.isType(ScriptRuntime.UNDEFINED, obj)) {
             if (propsCache.containsKey(obj)) {
                 return propsCache.get(obj);
@@ -82,6 +125,7 @@ final class PropertiesHelper {
             return props;
         }
 
+        // any other Java object
         final Class<?> clazz = obj.getClass();
         if (propsCache.containsKey(clazz)) {
             return propsCache.get(clazz);
@@ -94,8 +138,14 @@ final class PropertiesHelper {
         return props;
     }
 
-    // returns the list of properties of the given object that start with the given prefix
-    static List<String> getProperties(final Object obj, final String prefix) {
+    /**
+     * Returns the list of properties of the given object that start with the given prefix.
+     *
+     * @param obj object whose property list is returned
+     * @param prefix property prefix to be matched
+     * @return the list of properties of the given object
+     */
+    List<String> getProperties(final Object obj, final String prefix) {
         assert prefix != null && !prefix.isEmpty();
         return getProperties(obj).stream()
                    .filter(s -> s.startsWith(prefix))

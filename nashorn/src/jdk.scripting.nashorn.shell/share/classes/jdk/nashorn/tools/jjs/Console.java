@@ -34,6 +34,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import jdk.internal.jline.NoInterruptUnixTerminal;
+import jdk.internal.jline.Terminal;
+import jdk.internal.jline.TerminalFactory;
+import jdk.internal.jline.TerminalFactory.Flavor;
+import jdk.internal.jline.WindowsTerminal;
 import jdk.internal.jline.console.ConsoleReader;
 import jdk.internal.jline.console.completer.Completer;
 import jdk.internal.jline.console.history.FileHistory;
@@ -45,6 +50,8 @@ class Console implements AutoCloseable {
     Console(final InputStream cmdin, final PrintStream cmdout, final File historyFile,
             final Completer completer) throws IOException {
         in = new ConsoleReader(cmdin, cmdout);
+        TerminalFactory.registerFlavor(Flavor.WINDOWS, JJSWindowsTerminal :: new);
+        TerminalFactory.registerFlavor(Flavor.UNIX, JJSUnixTerminal :: new);
         in.setExpandEvents(false);
         in.setHandleUserInterrupt(true);
         in.setBellEnabled(true);
@@ -70,5 +77,61 @@ class Console implements AutoCloseable {
 
     FileHistory getHistory() {
         return (FileHistory) in.getHistory();
+    }
+
+    boolean terminalEditorRunning() {
+        Terminal terminal = in.getTerminal();
+        if (terminal instanceof JJSUnixTerminal) {
+            return ((JJSUnixTerminal) terminal).isRaw();
+        }
+        return false;
+    }
+
+    void suspend() {
+        try {
+            in.getTerminal().restore();
+        } catch (Exception ex) {
+            throw new IllegalStateException(ex);
+        }
+    }
+
+    void resume() {
+        try {
+            in.getTerminal().init();
+        } catch (Exception ex) {
+            throw new IllegalStateException(ex);
+        }
+    }
+
+    static final class JJSUnixTerminal extends NoInterruptUnixTerminal {
+        JJSUnixTerminal() throws Exception {
+        }
+
+        boolean isRaw() {
+            try {
+                return getSettings().get("-a").contains("-icanon");
+            } catch (IOException | InterruptedException ex) {
+                return false;
+            }
+        }
+
+        @Override
+        public void disableInterruptCharacter() {
+        }
+
+        @Override
+        public void enableInterruptCharacter() {
+        }
+    }
+
+    static final class JJSWindowsTerminal extends WindowsTerminal {
+        public JJSWindowsTerminal() throws Exception {
+        }
+
+        @Override
+        public void init() throws Exception {
+            super.init();
+            setAnsiSupported(false);
+        }
     }
 }
