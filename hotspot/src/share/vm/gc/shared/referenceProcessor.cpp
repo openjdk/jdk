@@ -1065,7 +1065,7 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
     // can mark through them now, rather than delaying that
     // to the reference-processing phase. Since all current
     // time-stamp policies advance the soft-ref clock only
-    // at a major collection cycle, this is always currently
+    // at a full collection cycle, this is always currently
     // accurate.
     if (!_current_soft_ref_policy->should_clear_reference(obj, _soft_ref_timestamp_clock)) {
       return false;

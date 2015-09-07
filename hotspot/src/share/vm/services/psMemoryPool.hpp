@@ -39,23 +39,23 @@
 
 class PSGenerationPool : public CollectedMemoryPool {
 private:
-  PSOldGen* _gen;
+  PSOldGen* _old_gen;
 
 public:
   PSGenerationPool(PSOldGen* pool, const char* name, PoolType type, bool support_usage_threshold);
 
   MemoryUsage get_memory_usage();
-  size_t used_in_bytes()              { return _gen->used_in_bytes(); }
-  size_t max_size() const             { return _gen->reserved().byte_size(); }
+  size_t used_in_bytes()              { return _old_gen->used_in_bytes(); }
+  size_t max_size() const             { return _old_gen->reserved().byte_size(); }
 };
 
 class EdenMutableSpacePool : public CollectedMemoryPool {
 private:
-  PSYoungGen*   _gen;
+  PSYoungGen*   _young_gen;
   MutableSpace* _space;
 
 public:
-  EdenMutableSpacePool(PSYoungGen* gen,
+  EdenMutableSpacePool(PSYoungGen* young_gen,
                        MutableSpace* space,
                        const char* name,
                        PoolType type,
@@ -66,16 +66,16 @@ public:
   size_t used_in_bytes()                    { return space()->used_in_bytes(); }
   size_t max_size() const {
     // Eden's max_size = max_size of Young Gen - the current committed size of survivor spaces
-    return _gen->max_size() - _gen->from_space()->capacity_in_bytes() - _gen->to_space()->capacity_in_bytes();
+    return _young_gen->max_size() - _young_gen->from_space()->capacity_in_bytes() - _young_gen->to_space()->capacity_in_bytes();
   }
 };
 
 class SurvivorMutableSpacePool : public CollectedMemoryPool {
 private:
-  PSYoungGen*   _gen;
+  PSYoungGen*   _young_gen;
 
 public:
-  SurvivorMutableSpacePool(PSYoungGen* gen,
+  SurvivorMutableSpacePool(PSYoungGen* young_gen,
                            const char* name,
                            PoolType type,
                            bool support_usage_threshold);
@@ -83,14 +83,14 @@ public:
   MemoryUsage get_memory_usage();
 
   size_t used_in_bytes() {
-    return _gen->from_space()->used_in_bytes();
+    return _young_gen->from_space()->used_in_bytes();
   }
   size_t committed_in_bytes() {
-    return _gen->from_space()->capacity_in_bytes();
+    return _young_gen->from_space()->capacity_in_bytes();
   }
   size_t max_size() const {
     // Return current committed size of the from-space
-    return _gen->from_space()->capacity_in_bytes();
+    return _young_gen->from_space()->capacity_in_bytes();
   }
 };
 
