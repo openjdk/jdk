@@ -347,6 +347,8 @@ public class X500Name implements GeneralNameInterface, Principal {
             for (int i = 0; i < names.length; i++) {
                 list.addAll(names[i].avas());
             }
+            list = Collections.unmodifiableList(list);
+            allAvaList = list;
         }
         return list;
     }
@@ -365,9 +367,6 @@ public class X500Name implements GeneralNameInterface, Principal {
      */
     public boolean isEmpty() {
         int n = names.length;
-        if (n == 0) {
-            return true;
-        }
         for (int i = 0; i < n; i++) {
             if (names[i].assertion.length != 0) {
                 return false;
@@ -1103,12 +1102,8 @@ public class X500Name implements GeneralNameInterface, Principal {
      * and speed recognition of common X.500 attributes.
      */
     static ObjectIdentifier intern(ObjectIdentifier oid) {
-        ObjectIdentifier interned = internedOIDs.get(oid);
-        if (interned != null) {
-            return interned;
-        }
-        internedOIDs.put(oid, oid);
-        return oid;
+        ObjectIdentifier interned = internedOIDs.putIfAbsent(oid, oid);
+        return (interned == null) ? oid : interned;
     }
 
     private static final Map<ObjectIdentifier,ObjectIdentifier> internedOIDs

@@ -28,6 +28,7 @@ package sun.security.x509;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import java.util.Collections;
 import java.util.*;
 
 import sun.security.util.DerOutputStream;
@@ -200,7 +201,8 @@ public class SubjectInfoAccessExtension extends Extension
      */
     public void delete(String name) throws IOException {
         if (name.equalsIgnoreCase(DESCRIPTIONS)) {
-            accessDescriptions = new ArrayList<AccessDescription>();
+            accessDescriptions =
+                Collections.<AccessDescription>emptyList();
         } else {
             throw new IOException("Attribute name [" + name +
                                 "] not recognized by " +
