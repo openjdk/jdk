@@ -53,7 +53,7 @@ public final class SwitchNode extends BreakableStatement {
     private final boolean uniqueInteger;
 
     /** Tag symbol. */
-    private Symbol tag;
+    private final Symbol tag;
 
     /**
      * Constructor
@@ -71,15 +71,16 @@ public final class SwitchNode extends BreakableStatement {
         this.cases            = cases;
         this.defaultCaseIndex = defaultCase == null ? -1 : cases.indexOf(defaultCase);
         this.uniqueInteger    = false;
+        this.tag = null;
     }
 
     private SwitchNode(final SwitchNode switchNode, final Expression expression, final List<CaseNode> cases,
-            final int defaultCaseIndex, final LocalVariableConversion conversion, final boolean uniqueInteger) {
+            final int defaultCaseIndex, final LocalVariableConversion conversion, final boolean uniqueInteger, final Symbol tag) {
         super(switchNode, conversion);
         this.expression       = expression;
         this.cases            = cases;
         this.defaultCaseIndex = defaultCaseIndex;
-        this.tag              = switchNode.getTag(); //TODO are symbols inherited as references?
+        this.tag              = tag;
         this.uniqueInteger    = uniqueInteger;
     }
 
@@ -89,7 +90,7 @@ public final class SwitchNode extends BreakableStatement {
         for (final CaseNode caseNode : cases) {
             newCases.add(new CaseNode(caseNode, caseNode.getTest(), caseNode.getBody(), caseNode.getLocalVariableConversion()));
         }
-        return Node.replaceInLexicalContext(lc, this, new SwitchNode(this, expression, newCases, defaultCaseIndex, conversion, uniqueInteger));
+        return Node.replaceInLexicalContext(lc, this, new SwitchNode(this, expression, newCases, defaultCaseIndex, conversion, uniqueInteger, tag));
     }
 
     @Override
@@ -157,7 +158,7 @@ public final class SwitchNode extends BreakableStatement {
         if (this.cases == cases) {
             return this;
         }
-        return Node.replaceInLexicalContext(lc, this, new SwitchNode(this, expression, cases, defaultCaseIndex, conversion, uniqueInteger));
+        return Node.replaceInLexicalContext(lc, this, new SwitchNode(this, expression, cases, defaultCaseIndex, conversion, uniqueInteger, tag));
     }
 
     /**
@@ -189,7 +190,7 @@ public final class SwitchNode extends BreakableStatement {
         if (this.expression == expression) {
             return this;
         }
-        return Node.replaceInLexicalContext(lc, this, new SwitchNode(this, expression, cases, defaultCaseIndex, conversion, uniqueInteger));
+        return Node.replaceInLexicalContext(lc, this, new SwitchNode(this, expression, cases, defaultCaseIndex, conversion, uniqueInteger, tag));
     }
 
     /**
@@ -204,10 +205,15 @@ public final class SwitchNode extends BreakableStatement {
     /**
      * Set the tag symbol for this switch. The tag symbol is where
      * the switch expression result is stored
+     * @param lc lexical context
      * @param tag a symbol
+     * @return a switch node with the symbol set
      */
-    public void setTag(final Symbol tag) {
-        this.tag = tag;
+    public SwitchNode setTag(final LexicalContext lc, final Symbol tag) {
+        if (this.tag == tag) {
+            return this;
+        }
+        return Node.replaceInLexicalContext(lc, this, new SwitchNode(this, expression, cases, defaultCaseIndex, conversion, uniqueInteger, tag));
     }
 
     /**
@@ -229,12 +235,12 @@ public final class SwitchNode extends BreakableStatement {
         if(this.uniqueInteger == uniqueInteger) {
             return this;
         }
-        return Node.replaceInLexicalContext(lc, this, new SwitchNode(this, expression, cases, defaultCaseIndex, conversion, uniqueInteger));
+        return Node.replaceInLexicalContext(lc, this, new SwitchNode(this, expression, cases, defaultCaseIndex, conversion, uniqueInteger, tag));
     }
 
     @Override
     JoinPredecessor setLocalVariableConversionChanged(final LexicalContext lc, final LocalVariableConversion conversion) {
-        return Node.replaceInLexicalContext(lc, this, new SwitchNode(this, expression, cases, defaultCaseIndex, conversion, uniqueInteger));
+        return Node.replaceInLexicalContext(lc, this, new SwitchNode(this, expression, cases, defaultCaseIndex, conversion, uniqueInteger, tag));
     }
 
 }

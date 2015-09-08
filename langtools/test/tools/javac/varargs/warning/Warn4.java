@@ -23,40 +23,39 @@
 
 /**
  * @test
- * @bug     6945418 6993978 8006694 7196160
+ * @bug     6945418 6993978 8006694 7196160 8129962
  * @summary Project Coin: Simplified Varargs Method Invocation
  *  temporarily workaround combo tests are causing time out in several platforms
- * @author  mcimadamore
- * @library ../../lib
- * @modules jdk.compiler
- * @build JavacTestingAbstractThreadedTest
- * @run main/othervm Warn4
+ * @library /tools/javac/lib
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.code
+ *          jdk.compiler/com.sun.tools.javac.comp
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.javac.tree
+ *          jdk.compiler/com.sun.tools.javac.util
+ * @build combo.ComboTestHelper
+ * @run main Warn4
  */
 
-// use /othervm to avoid jtreg timeout issues (CODETOOLS-7900047)
-// see JDK-8006746
-
-import java.net.URI;
-import java.util.Arrays;
+import java.io.IOException;
 import java.util.Set;
 import java.util.HashSet;
 import javax.tools.Diagnostic;
-import javax.tools.JavaCompiler;
+import javax.tools.Diagnostic.Kind;
 import javax.tools.JavaFileObject;
-import javax.tools.SimpleJavaFileObject;
-import javax.tools.ToolProvider;
-import com.sun.source.util.JavacTask;
 
-public class Warn4
-    extends JavacTestingAbstractThreadedTest
-    implements Runnable {
+import combo.ComboInstance;
+import combo.ComboParameter;
+import combo.ComboTask.Result;
+import combo.ComboTestHelper;
+
+public class Warn4 extends ComboInstance<Warn4> {
 
     final static Warning[] error = null;
     final static Warning[] none = new Warning[] {};
     final static Warning[] vararg = new Warning[] { Warning.VARARGS };
     final static Warning[] unchecked = new Warning[] { Warning.UNCHECKED };
-    final static Warning[] both =
-            new Warning[] { Warning.VARARGS, Warning.UNCHECKED };
+    final static Warning[] both = new Warning[] { Warning.VARARGS, Warning.UNCHECKED };
 
     enum Warning {
         UNCHECKED("generic.array.creation"),
@@ -105,7 +104,7 @@ public class Warn4
         }
     }
 
-    enum TrustMe {
+    enum TrustMe implements ComboParameter {
         DONT_TRUST(""),
         TRUST("@java.lang.SafeVarargs");
 
@@ -114,9 +113,14 @@ public class Warn4
         TrustMe(String anno) {
             this.anno = anno;
         }
+
+        @Override
+        public String expand(String optParameter) {
+            return anno;
+        }
     }
 
-    enum ModifierKind {
+    enum ModifierKind implements ComboParameter {
         NONE(" "),
         FINAL("final "),
         STATIC("static "),
@@ -127,9 +131,14 @@ public class Warn4
         ModifierKind(String mod) {
             this.mod = mod;
         }
+
+        @Override
+        public String expand(String optParameter) {
+            return mod;
+        }
     }
 
-    enum SuppressLevel {
+    enum SuppressLevel implements ComboParameter {
         NONE(""),
         UNCHECKED("unchecked");
 
@@ -139,21 +148,22 @@ public class Warn4
             this.lint = lint;
         }
 
-        String getSuppressAnno() {
+        @Override
+        public String expand(String optParameter) {
             return "@SuppressWarnings(\"" + lint + "\")";
         }
     }
 
-    enum Signature {
-        UNBOUND("void #name(List<?>#arity arg) { #body }",
+    enum Signature implements ComboParameter {
+        UNBOUND("void #NAME(List<?>#ARITY arg) { #BODY }",
             new Warning[][] {none, none, none, none, error}),
-        INVARIANT_TVAR("<Z> void #name(List<Z>#arity arg) { #body }",
+        INVARIANT_TVAR("<Z> void #NAME(List<Z>#ARITY arg) { #BODY }",
             new Warning[][] {both, both, error, both, error}),
-        TVAR("<Z> void #name(Z#arity arg) { #body }",
+        TVAR("<Z> void #NAME(Z#ARITY arg) { #BODY }",
             new Warning[][] {both, both, both, both, vararg}),
-        INVARIANT("void #name(List<String>#arity arg) { #body }",
+        INVARIANT("void #NAME(List<String>#ARITY arg) { #BODY }",
             new Warning[][] {error, error, error, both, error}),
-        UNPARAMETERIZED("void #name(String#arity arg) { #body }",
+        UNPARAMETERIZED("void #NAME(String#ARITY arg) { #BODY }",
             new Warning[][] {error, error, error, error, none});
 
         String template;
@@ -177,130 +187,85 @@ public class Warn4
             return warnings[other.ordinal()] == vararg ||
                     warnings[other.ordinal()] == both;
         }
-    }
 
-    public static void main(String... args) throws Exception {
-        for (SourceLevel sourceLevel : SourceLevel.values()) {
-            for (TrustMe trustMe : TrustMe.values()) {
-                for (SuppressLevel suppressLevelClient : SuppressLevel.values()) {
-                    for (SuppressLevel suppressLevelDecl : SuppressLevel.values()) {
-                        for (ModifierKind modKind : ModifierKind.values()) {
-                            for (Signature vararg_meth : Signature.values()) {
-                                for (Signature client_meth : Signature.values()) {
-                                    if (vararg_meth.isApplicableTo(client_meth)) {
-                                        pool.execute(new Warn4(sourceLevel,
-                                                trustMe,
-                                                suppressLevelClient,
-                                                suppressLevelDecl,
-                                                modKind,
-                                                vararg_meth,
-                                                client_meth));
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+        @Override
+        public String expand(String optParameter) {
+            if (optParameter.equals("CLIENT")) {
+                return template.replaceAll("#ARITY", "")
+                        .replaceAll("#NAME", "test")
+                        .replaceAll("#BODY", "m(arg)");
+            } else {
+                return template.replaceAll("#ARITY", "...")
+                        .replaceAll("#NAME", "m")
+                        .replaceAll("#BODY", "");
             }
         }
+    }
 
-        checkAfterExec();
+    public static void main(String... args) {
+        new ComboTestHelper<Warn4>()
+                .withFilter(Warn4::badTestFilter)
+                .withDimension("SOURCE", (x, level) -> x.sourceLevel = level, SourceLevel.values())
+                .withDimension("TRUSTME", (x, trustme) -> x.trustMe = trustme, TrustMe.values())
+                .withArrayDimension("SUPPRESS", (x, suppress, idx) -> x.suppress[idx] = suppress, 2, SuppressLevel.values())
+                .withDimension("MOD", (x, mod) -> x.modKind = mod, ModifierKind.values())
+                .withArrayDimension("MTH", (x, sig, idx) -> x.sigs[idx] = sig, 2, Signature.values())
+                .run(Warn4::new);
     }
 
     SourceLevel sourceLevel;
     TrustMe trustMe;
-    SuppressLevel suppressLevelClient;
-    SuppressLevel suppressLevelDecl;
+    SuppressLevel[] suppress = new SuppressLevel[2];
     ModifierKind modKind;
-    Signature vararg_meth;
-    Signature client_meth;
-    DiagnosticChecker diagChecker;
+    Signature[] sigs = new Signature[2];
 
-    public Warn4(SourceLevel sourceLevel, TrustMe trustMe,
-            SuppressLevel suppressLevelClient, SuppressLevel suppressLevelDecl,
-            ModifierKind modKind, Signature vararg_meth, Signature client_meth) {
-        this.sourceLevel = sourceLevel;
-        this.trustMe = trustMe;
-        this.suppressLevelClient = suppressLevelClient;
-        this.suppressLevelDecl = suppressLevelDecl;
-        this.modKind = modKind;
-        this.vararg_meth = vararg_meth;
-        this.client_meth = client_meth;
-        this.diagChecker = new DiagnosticChecker();
+    boolean badTestFilter() {
+        return sigs[0].isApplicableTo(sigs[1]);
     }
+
+    final String template = "import java.util.List;\n" +
+                            "class Test {\n" +
+                            "   #{TRUSTME} #{SUPPRESS[0]} #{MOD} #{MTH[0].VARARG}\n" +
+                            "   #{SUPPRESS[1]} #{MTH[1].CLIENT}\n" +
+                            "}";
 
     @Override
-    public void run() {
-        int id = checkCount.incrementAndGet();
-        final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
-        JavaSource source = new JavaSource(id);
-        JavacTask ct = (JavacTask)tool.getTask(null, fm.get(), diagChecker,
-                Arrays.asList("-Xlint:unchecked", "-source", sourceLevel.sourceKey),
-                null, Arrays.asList(source));
-        ct.call(); //to get mandatory notes
-        check(source, new boolean[] {vararg_meth.giveUnchecked(client_meth),
-                               vararg_meth.giveVarargs(client_meth)});
+    public void doWork() throws IOException {
+        check(newCompilationTask()
+                .withOption("-Xlint:unchecked")
+                .withOption("-source")
+                .withOption(sourceLevel.sourceKey)
+                .withSourceFromTemplate(template)
+                .analyze());
     }
 
-    void check(JavaSource source, boolean[] warnArr) {
+    void check(Result<?> res) {
+        boolean[] warnArr = new boolean[] {sigs[0].giveUnchecked(sigs[1]),
+                               sigs[0].giveVarargs(sigs[1])};
+
+        Set<Warning> warnings = new HashSet<>();
+        for (Diagnostic<? extends JavaFileObject> d : res.diagnosticsForKind(Kind.MANDATORY_WARNING)) {
+            if (d.getCode().contains(Warning.VARARGS.key)) {
+                    warnings.add(Warning.VARARGS);
+            } else if(d.getCode().contains(Warning.UNCHECKED.key)) {
+                warnings.add(Warning.UNCHECKED);
+            }
+        }
+
         boolean badOutput = false;
         for (Warning wkind : Warning.values()) {
             boolean isSuppressed = wkind.isSuppressed(trustMe, sourceLevel,
-                    suppressLevelClient, suppressLevelDecl, modKind);
+                    suppress[1], suppress[0], modKind);
             badOutput |= (warnArr[wkind.ordinal()] && !isSuppressed) !=
-                    diagChecker.warnings.contains(wkind);
+                    warnings.contains(wkind);
         }
         if (badOutput) {
-            throw new Error("invalid diagnostics for source:\n" +
-                    source.getCharContent(true) +
+            fail("invalid diagnostics for source:\n" +
+                    res.compilationInfo() +
                     "\nExpected unchecked warning: " + warnArr[0] +
                     "\nExpected unsafe vararg warning: " + warnArr[1] +
-                    "\nWarnings: " + diagChecker.warnings +
+                    "\nWarnings: " + warnings +
                     "\nSource level: " + sourceLevel);
         }
     }
-
-    class JavaSource extends SimpleJavaFileObject {
-
-        String source;
-
-        public JavaSource(int id) {
-            super(URI.create(String.format("myfo:/Test%d.java", id)),
-                    JavaFileObject.Kind.SOURCE);
-            String meth1 = vararg_meth.template.replace("#arity", "...");
-            meth1 = meth1.replace("#name", "m");
-            meth1 = meth1.replace("#body", "");
-            meth1 = trustMe.anno + "\n" + suppressLevelDecl.getSuppressAnno() +
-                    modKind.mod + meth1;
-            String meth2 = client_meth.template.replace("#arity", "");
-            meth2 = meth2.replace("#name", "test");
-            meth2 = meth2.replace("#body", "m(arg);");
-            meth2 = suppressLevelClient.getSuppressAnno() + meth2;
-            source = String.format("import java.util.List;\n" +
-                     "class Test%s {\n %s \n %s \n } \n", id, meth1, meth2);
-        }
-
-        @Override
-        public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-            return source;
-        }
-    }
-
-    static class DiagnosticChecker
-        implements javax.tools.DiagnosticListener<JavaFileObject> {
-
-        Set<Warning> warnings = new HashSet<>();
-
-        public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
-            if (diagnostic.getKind() == Diagnostic.Kind.MANDATORY_WARNING ||
-                    diagnostic.getKind() == Diagnostic.Kind.WARNING) {
-                if (diagnostic.getCode().contains(Warning.VARARGS.key)) {
-                    warnings.add(Warning.VARARGS);
-                } else if(diagnostic.getCode().contains(Warning.UNCHECKED.key)) {
-                    warnings.add(Warning.UNCHECKED);
-                }
-            }
-        }
-    }
-
 }

@@ -12,6 +12,3 @@ java WriteAddedSuperClass
 rm A.class AddedSuperClass.class
 javac ReadAddedSuperClass2.java
 java ReadAddedSuperClass2
-
-
-

@@ -87,7 +87,7 @@ import static javax.tools.StandardLocation.CLASS_OUTPUT;
  */
 public class JavaCompiler {
     /** The context key for the compiler. */
-    protected static final Context.Key<JavaCompiler> compilerKey = new Context.Key<>();
+    public static final Context.Key<JavaCompiler> compilerKey = new Context.Key<>();
 
     /** Get the JavaCompiler instance for this context. */
     public static JavaCompiler instance(Context context) {
@@ -821,7 +821,7 @@ public class JavaCompiler {
         // as a JavaCompiler can only be used once, throw an exception if
         // it has been used before.
         if (hasBeenUsed)
-            throw new AssertionError("attempt to reuse JavaCompiler");
+            checkReusable();
         hasBeenUsed = true;
 
         // forcibly set the equivalent of -Xlint:-options, so that no further
@@ -896,6 +896,10 @@ public class JavaCompiler {
             if (procEnvImpl != null)
                 procEnvImpl.close();
         }
+    }
+
+    protected void checkReusable() {
+        throw new AssertionError("attempt to reuse JavaCompiler");
     }
 
     /**

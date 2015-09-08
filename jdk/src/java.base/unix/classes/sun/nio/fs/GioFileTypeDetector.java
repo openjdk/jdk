@@ -35,13 +35,13 @@ import java.security.PrivilegedAction;
  * MIME type of a file.
  */
 
-public class GnomeFileTypeDetector
+public class GioFileTypeDetector
     extends AbstractFileTypeDetector
 {
     // true if GIO is available
     private final boolean gioAvailable;
 
-    public GnomeFileTypeDetector() {
+    public GioFileTypeDetector() {
         gioAvailable = initializeGio();
     }
 
@@ -67,6 +67,10 @@ public class GnomeFileTypeDetector
 
     // GIO
     private static native boolean initializeGio();
+    //
+    // The probeGIO() method is synchronized to avert potential problems
+    // such as crashes due to a suspected lack of thread safety in GIO.
+    //
     private static synchronized native byte[] probeGio(long pathAddress);
 
     static {
