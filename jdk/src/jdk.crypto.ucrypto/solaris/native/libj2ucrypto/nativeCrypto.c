@@ -430,17 +430,18 @@ jint JavaCritical_com_oracle_security_ucrypto_NativeCipher_nativeUpdate
  * Signature: (JZ[BI)I
  */
 jint JavaCritical_com_oracle_security_ucrypto_NativeCipher_nativeFinal
-  (jlong pContext, jboolean encrypt, int outLen, jbyte* bufOut, jint outOfs) {
+  (jlong pContext, jboolean encrypt, int outLen, jbyte* out, jint outOfs) {
   crypto_ctx_t *context;
   int rv = 0;
+  unsigned char* bufOut = (unsigned char*) out;
 
   context = (crypto_ctx_t *) pContext;
   // Avoid null output buffer to workaround Solaris bug21481818 (fixed in S12)
   if (bufOut == NULL) {
-    bufOut = (unsigned char *)(&outLen);
+    bufOut = (unsigned char*)(&outLen);
     outLen = 0;
   }
-  rv = CipherFinal(context, encrypt, (unsigned char*)bufOut, outOfs, &outLen);
+  rv = CipherFinal(context, encrypt, bufOut, outOfs, &outLen);
   free(context);
   if (rv) {
      return -rv; // use negative value to indicate error!
