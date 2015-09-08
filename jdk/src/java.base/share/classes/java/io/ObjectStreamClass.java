@@ -855,7 +855,6 @@ public class ObjectStreamClass implements Serializable {
      * types only.  Returns matching field, or null if no match found.
      */
     ObjectStreamField getField(String name, Class<?> type) {
-        requireInitialized();
         for (int i = 0; i < fields.length; i++) {
             ObjectStreamField f = fields[i];
             if (f.getName().equals(name)) {
