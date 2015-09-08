@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,16 +38,11 @@ import java.security.PublicKey;
 import java.security.PrivateKey;
 import java.security.KeyFactorySpi;
 
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.KeySpec;
-import java.security.spec.RSAPrivateCrtKeySpec;
-import java.security.spec.RSAPublicKeySpec;
+import java.security.spec.*;
 
 /**
  * Ucrypto-private KeyFactory class for generating native keys
- * needed for using ucrypto APIs. Given that it's not used
- * externally, it only needs to support RSAPrivateCrtKeySpec
- * and RSAPublicKeySpec objects.
+ * needed for using ucrypto APIs.
  *
  * @since 1.9
  */
@@ -56,7 +51,13 @@ public final class NativeRSAKeyFactory extends KeyFactorySpi {
     @Override
     protected PrivateKey engineGeneratePrivate(KeySpec keySpec)
         throws InvalidKeySpecException {
-        return new NativeKey.RSAPrivateCrt(keySpec);
+        if (keySpec instanceof RSAPrivateCrtKeySpec) {
+            return new NativeKey.RSAPrivateCrt(keySpec);
+        } else if (keySpec instanceof RSAPrivateKeySpec) {
+            return new NativeKey.RSAPrivate(keySpec);
+        } else {
+            throw new InvalidKeySpecException("Unsupported key spec");
+        }
     }
 
     @Override

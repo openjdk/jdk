@@ -42,6 +42,12 @@
   address generate_Reference_get_entry();
   address generate_CRC32_update_entry();
   address generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind);
+#ifndef _LP64
+  address generate_Float_intBitsToFloat_entry();
+  address generate_Float_floatToRawIntBits_entry();
+  address generate_Double_longBitsToDouble_entry();
+  address generate_Double_doubleToRawLongBits_entry();
+#endif
   void lock_method(void);
   void generate_stack_overflow_check(void);
 

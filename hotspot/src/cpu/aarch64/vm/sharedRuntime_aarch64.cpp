@@ -1774,6 +1774,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   const Register obj_reg  = r19;  // Will contain the oop
   const Register lock_reg = r13;  // Address of compiler lock object (BasicLock)
   const Register old_hdr  = r13;  // value of old header at unlock time
+  const Register tmp = c_rarg3;
 
   Label slow_path_lock;
   Label lock_done;
@@ -1795,7 +1796,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ ldr(obj_reg, Address(oop_handle_reg, 0));
 
     if (UseBiasedLocking) {
-      __ biased_locking_enter(lock_reg, obj_reg, swap_reg, rscratch2, false, lock_done, &slow_path_lock);
+      __ biased_locking_enter(lock_reg, obj_reg, swap_reg, tmp, false, lock_done, &slow_path_lock);
     }
 
     // Load (object->mark() | 1) into swap_reg %r0

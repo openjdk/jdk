@@ -620,7 +620,7 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
   // Support for parallelizing survivor space rescan
   if ((CMSParallelRemarkEnabled && CMSParallelSurvivorRemarkEnabled) || CMSParallelInitialMarkEnabled) {
     const size_t max_plab_samples =
-      _young_gen->max_survivor_size() / (ThreadLocalAllocBuffer::min_size() * HeapWordSize);
+      _young_gen->max_survivor_size() / (PLAB::min_size() * HeapWordSize);
 
     _survivor_plab_array  = NEW_C_HEAP_ARRAY(ChunkArray, ParallelGCThreads, mtGC);
     _survivor_chunk_array = NEW_C_HEAP_ARRAY(HeapWord*, max_plab_samples, mtGC);
@@ -3005,7 +3005,7 @@ void CMSCollector::checkpointRootsInitialWork() {
     COMPILER2_PRESENT(DerivedPointerTableDeactivate dpt_deact;)
     if (CMSParallelInitialMarkEnabled) {
       // The parallel version.
-      FlexibleWorkGang* workers = gch->workers();
+      WorkGang* workers = gch->workers();
       assert(workers != NULL, "Need parallel worker threads.");
       uint n_workers = workers->active_workers();
 
@@ -4488,7 +4488,7 @@ class CMSParRemarkTask: public CMSParMarkTask {
   // workers to be taken from the active workers in the work gang.
   CMSParRemarkTask(CMSCollector* collector,
                    CompactibleFreeListSpace* cms_space,
-                   uint n_workers, FlexibleWorkGang* workers,
+                   uint n_workers, WorkGang* workers,
                    OopTaskQueueSet* task_queues,
                    StrongRootsScope* strong_roots_scope):
     CMSParMarkTask("Rescan roots and grey objects in parallel",
@@ -5061,7 +5061,7 @@ initialize_sequential_subtasks_for_young_gen_rescan(int n_threads) {
 // Parallel version of remark
 void CMSCollector::do_remark_parallel() {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
-  FlexibleWorkGang* workers = gch->workers();
+  WorkGang* workers = gch->workers();
   assert(workers != NULL, "Need parallel worker threads.");
   // Choose to use the number of GC workers most recently set
   // into "active_workers".
@@ -5236,6 +5236,16 @@ void CMSCollector::do_remark_non_parallel() {
 ////////////////////////////////////////////////////////
 // Parallel Reference Processing Task Proxy Class
 ////////////////////////////////////////////////////////
+class AbstractGangTaskWOopQueues : public AbstractGangTask {
+  OopTaskQueueSet*       _queues;
+  ParallelTaskTerminator _terminator;
+ public:
+  AbstractGangTaskWOopQueues(const char* name, OopTaskQueueSet* queues, uint n_threads) :
+    AbstractGangTask(name), _queues(queues), _terminator(n_threads, _queues) {}
+  ParallelTaskTerminator* terminator() { return &_terminator; }
+  OopTaskQueueSet* queues() { return _queues; }
+};
+
 class CMSRefProcTaskProxy: public AbstractGangTaskWOopQueues {
   typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;
   CMSCollector*          _collector;
@@ -5372,7 +5382,7 @@ void CMSRefProcTaskProxy::do_work_steal(int i,
 void CMSRefProcTaskExecutor::execute(ProcessTask& task)
 {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
-  FlexibleWorkGang* workers = gch->workers();
+  WorkGang* workers = gch->workers();
   assert(workers != NULL, "Need parallel worker threads.");
   CMSRefProcTaskProxy rp_task(task, &_collector,
                               _collector.ref_processor()->span(),
@@ -5385,7 +5395,7 @@ void CMSRefProcTaskExecutor::execute(EnqueueTask& task)
 {
 
   GenCollectedHeap* gch = GenCollectedHeap::heap();
-  FlexibleWorkGang* workers = gch->workers();
+  WorkGang* workers = gch->workers();
   assert(workers != NULL, "Need parallel worker threads.");
   CMSRefEnqueueTaskProxy enq_task(task);
   workers->run_task(&enq_task);
@@ -5419,7 +5429,7 @@ void CMSCollector::refProcessingWork() {
       // balance_all_queues() and balance_queues()).
       GenCollectedHeap* gch = GenCollectedHeap::heap();
       uint active_workers = ParallelGCThreads;
-      FlexibleWorkGang* workers = gch->workers();
+      WorkGang* workers = gch->workers();
       if (workers != NULL) {
         active_workers = workers->active_workers();
         // The expectation is that active_workers will have already

@@ -26,6 +26,8 @@
 #define SHARE_VM_GC_G1_G1ALLOCREGION_HPP
 
 #include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1EvacStats.hpp"
+#include "gc/g1/g1InCSetState.hpp"
 
 class G1CollectedHeap;
 
@@ -102,16 +104,22 @@ private:
   static inline HeapWord* par_allocate(HeapRegion* alloc_region,
                                        size_t word_size,
                                        bool bot_updates);
+  // Perform a MT-safe allocation out of the given region, with the given
+  // minimum and desired size. Returns the actual size allocated (between
+  // minimum and desired size) in actual_word_size if the allocation has been
+  // successful.
+  static inline HeapWord* par_allocate(HeapRegion* alloc_region,
+                                       size_t min_word_size,
+                                       size_t desired_word_size,
+                                       size_t* actual_word_size,
+                                       bool bot_updates);
 
   // Ensure that the region passed as a parameter has been filled up
   // so that noone else can allocate out of it any more.
-  static void fill_up_remaining_space(HeapRegion* alloc_region,
-                                      bool bot_updates);
-
-  // Retire the active allocating region. If fill_up is true then make
-  // sure that the region is full before we retire it so that noone
-  // else can allocate out of it.
-  void retire(bool fill_up);
+  // Returns the number of bytes that have been wasted by filled up
+  // the space.
+  static size_t fill_up_remaining_space(HeapRegion* alloc_region,
+                                        bool bot_updates);
 
   // After a region is allocated by alloc_new_region, this
   // method is used to set it as the active alloc_region
@@ -126,6 +134,12 @@ private:
   void fill_in_ext_msg(ar_ext_msg* msg, const char* message);
 
 protected:
+  // Retire the active allocating region. If fill_up is true then make
+  // sure that the region is full before we retire it so that no one
+  // else can allocate out of it.
+  // Returns the number of bytes that have been filled up during retire.
+  virtual size_t retire(bool fill_up);
+
   // For convenience as subclasses use it.
   static G1CollectedHeap* _g1h;
 
@@ -154,7 +168,18 @@ public:
   // First-level allocation: Should be called without holding a
   // lock. It will try to allocate lock-free out of the active region,
   // or return NULL if it was unable to.
-  inline HeapWord* attempt_allocation(size_t word_size, bool bot_updates);
+  inline HeapWord* attempt_allocation(size_t word_size,
+                                      bool bot_updates);
+  // Perform an allocation out of the current allocation region, with the given
+  // minimum and desired size. Returns the actual size allocated (between
+  // minimum and desired size) in actual_word_size if the allocation has been
+  // successful.
+  // Should be called without holding a lock. It will try to allocate lock-free
+  // out of the active region, or return NULL if it was unable to.
+  inline HeapWord* attempt_allocation(size_t min_word_size,
+                                      size_t desired_word_size,
+                                      size_t* actual_word_size,
+                                      bool bot_updates);
 
   // Second-level allocation: Should be called while holding a
   // lock. It will try to first allocate lock-free out of the active
@@ -163,6 +188,14 @@ public:
   // appropriate lock before calling this so that it is easier to make
   // it conform to its locking protocol.
   inline HeapWord* attempt_allocation_locked(size_t word_size,
+                                             bool bot_updates);
+  // Same as attempt_allocation_locked(size_t, bool), but allowing specification
+  // of minimum word size of the block in min_word_size, and the maximum word
+  // size of the allocation in desired_word_size. The actual size of the block is
+  // returned in actual_word_size.
+  inline HeapWord* attempt_allocation_locked(size_t min_word_size,
+                                             size_t desired_word_size,
+                                             size_t* actual_word_size,
                                              bool bot_updates);
 
   // Should be called to allocate a new region even if the max of this
@@ -186,9 +219,17 @@ public:
   virtual HeapRegion* release();
 
 #if G1_ALLOC_REGION_TRACING
-  void trace(const char* str, size_t word_size = 0, HeapWord* result = NULL);
+  void trace(const char* str,
+             size_t min_word_size = 0,
+             size_t desired_word_size = 0,
+             size_t actual_word_size = 0,
+             HeapWord* result = NULL);
 #else // G1_ALLOC_REGION_TRACING
-  void trace(const char* str, size_t word_size = 0, HeapWord* result = NULL) { }
+  void trace(const char* str,
+             size_t min_word_size = 0,
+             size_t desired_word_size = 0,
+             size_t actual_word_size = 0,
+             HeapWord* result = NULL) { }
 #endif // G1_ALLOC_REGION_TRACING
 };
 
@@ -201,22 +242,33 @@ public:
     : G1AllocRegion("Mutator Alloc Region", false /* bot_updates */) { }
 };
 
-class SurvivorGCAllocRegion : public G1AllocRegion {
+// Common base class for allocation regions used during GC.
+class G1GCAllocRegion : public G1AllocRegion {
 protected:
+  G1EvacStats* _stats;
+  InCSetState::in_cset_state_t _purpose;
+
   virtual HeapRegion* allocate_new_region(size_t word_size, bool force);
   virtual void retire_region(HeapRegion* alloc_region, size_t allocated_bytes);
+
+  virtual size_t retire(bool fill_up);
 public:
-  SurvivorGCAllocRegion()
-  : G1AllocRegion("Survivor GC Alloc Region", false /* bot_updates */) { }
+  G1GCAllocRegion(const char* name, bool bot_updates, G1EvacStats* stats, InCSetState::in_cset_state_t purpose)
+  : G1AllocRegion(name, bot_updates), _stats(stats), _purpose(purpose) {
+    assert(stats != NULL, "Must pass non-NULL PLAB statistics");
+  }
 };
 
-class OldGCAllocRegion : public G1AllocRegion {
-protected:
-  virtual HeapRegion* allocate_new_region(size_t word_size, bool force);
-  virtual void retire_region(HeapRegion* alloc_region, size_t allocated_bytes);
+class SurvivorGCAllocRegion : public G1GCAllocRegion {
 public:
-  OldGCAllocRegion()
-  : G1AllocRegion("Old GC Alloc Region", true /* bot_updates */) { }
+  SurvivorGCAllocRegion(G1EvacStats* stats)
+  : G1GCAllocRegion("Survivor GC Alloc Region", false /* bot_updates */, stats, InCSetState::Young) { }
+};
+
+class OldGCAllocRegion : public G1GCAllocRegion {
+public:
+  OldGCAllocRegion(G1EvacStats* stats)
+  : G1GCAllocRegion("Old GC Alloc Region", true /* bot_updates */, stats, InCSetState::Old) { }
 
   // This specialization of release() makes sure that the last card that has
   // been allocated into has been completely filled by a dummy object.  This

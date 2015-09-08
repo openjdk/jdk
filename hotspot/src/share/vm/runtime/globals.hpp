@@ -372,19 +372,7 @@ struct Flag {
   void print_kind(outputStream* st);
   void print_as_flag(outputStream* st);
 
-  static const char* flag_error_str(Flag::Error error) {
-    switch (error) {
-      case Flag::MISSING_NAME: return "MISSING_NAME";
-      case Flag::MISSING_VALUE: return "MISSING_VALUE";
-      case Flag::NON_WRITABLE: return "NON_WRITABLE";
-      case Flag::OUT_OF_BOUNDS: return "OUT_OF_BOUNDS";
-      case Flag::VIOLATES_CONSTRAINT: return "VIOLATES_CONSTRAINT";
-      case Flag::INVALID_FLAG: return "INVALID_FLAG";
-      case Flag::ERR_OTHER: return "ERR_OTHER";
-      case Flag::SUCCESS: return "SUCCESS";
-      default: return "NULL";
-    }
-  }
+  static const char* flag_error_str(Flag::Error error);
 };
 
 // debug flags control various aspects of the VM and are global accessible
@@ -1564,6 +1552,10 @@ public:
   product(uint, ParallelGCThreads, 0,                                       \
           "Number of parallel threads parallel gc will use")                \
                                                                             \
+  diagnostic(bool, UseSemaphoreGCThreadsSynchronization, true,              \
+            "Use semaphore synchronization for the GC Threads, "            \
+            "instead of synchronization based on mutexes")                  \
+                                                                            \
   product(bool, UseDynamicNumberOfGCThreads, false,                         \
           "Dynamically choose the number of parallel threads "              \
           "parallel gc will use")                                           \
@@ -1575,7 +1567,7 @@ public:
   product(size_t, HeapSizePerGCThread, ScaleForWordSize(64*M),              \
           "Size of heap (bytes) per GC thread used in calculating the "     \
           "number of GC threads")                                           \
-          range((uintx)os::vm_page_size(), max_uintx)                       \
+          range((size_t)os::vm_page_size(), (size_t)max_uintx)              \
                                                                             \
   product(bool, TraceDynamicGCThreads, false,                               \
           "Trace the dynamic GC thread usage")                              \
@@ -1856,6 +1848,7 @@ public:
   product(size_t, MarkStackSize, NOT_LP64(32*K) LP64_ONLY(4*M),             \
           "Size of marking stack")                                          \
                                                                             \
+  /* where does the range max value of (max_jint - 1) come from? */         \
   product(size_t, MarkStackSizeMax, NOT_LP64(4*M) LP64_ONLY(512*M),         \
           "Maximum size of marking stack")                                  \
           range(1, (max_jint - 1))                                          \
@@ -2919,12 +2912,6 @@ public:
                                                                             \
   notproduct(bool, ICMissHistogram, false,                                  \
           "Produce histogram of IC misses")                                 \
-                                                                            \
-  notproduct(bool, PrintClassStatistics, false,                             \
-          "Print class statistics at end of run")                           \
-                                                                            \
-  notproduct(bool, PrintMethodStatistics, false,                            \
-          "Print method statistics at end of run")                          \
                                                                             \
   /* interpreter */                                                         \
   develop(bool, ClearInterpreterLocals, false,                              \
