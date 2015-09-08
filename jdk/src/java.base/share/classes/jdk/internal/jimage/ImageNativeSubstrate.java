@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,18 @@ import java.nio.ByteOrder;
 import sun.misc.JavaNioAccess;
 import sun.misc.SharedSecrets;
 
-final class ImageNativeSubstrate implements ImageSubstrate {
+public final class ImageNativeSubstrate implements ImageSubstrate {
+    static {
+        java.security.AccessController.doPrivileged(
+            new java.security.PrivilegedAction<Void>() {
+                @Override
+                public Void run() {
+                    System.loadLibrary("jimage");
+                    return null;
+                }
+            });
+     }
+
     private static final JavaNioAccess NIOACCESS =
             SharedSecrets.getJavaNioAccess();
 
@@ -51,6 +62,20 @@ final class ImageNativeSubstrate implements ImageSubstrate {
     native static long[] getAttributes(long id, int offset);
     native static long[] findAttributes(long id, byte[] path);
     native static int[] attributeOffsets(long id);
+
+    public native static long JIMAGE_Open(String path) throws IOException;
+    public native static void JIMAGE_Close(long jimageHandle);
+    public native static long JIMAGE_FindResource(long jimageHandle,
+                    String moduleName, String Version, String path,
+                    long[] size);
+    public native static long JIMAGE_GetResource(long jimageHandle,
+                    long locationHandle, byte[] buffer, long size);
+    // Get an array of names that match; return the count found upto array size
+    public native static int JIMAGE_Resources(long jimageHandle,
+                    String[] outputNames);
+    // Return the module name for the package
+    public native static String JIMAGE_PackageToModule(long imageHandle,
+                    String packageName);
 
     static ByteBuffer newDirectByteBuffer(long address, long capacity) {
         assert capacity < Integer.MAX_VALUE;
