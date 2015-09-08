@@ -39,23 +39,17 @@
 
 // ======= Concurrent Mark Sweep Thread ========
 
-// The CMS thread is created when Concurrent Mark Sweep is used in the
-// older of two generations in a generational memory system.
+ConcurrentMarkSweepThread* ConcurrentMarkSweepThread::_cmst = NULL;
+CMSCollector* ConcurrentMarkSweepThread::_collector         = NULL;
+bool ConcurrentMarkSweepThread::_should_terminate           = false;
+int  ConcurrentMarkSweepThread::_CMS_flag                   = CMS_nil;
 
-ConcurrentMarkSweepThread*
-     ConcurrentMarkSweepThread::_cmst     = NULL;
-CMSCollector* ConcurrentMarkSweepThread::_collector = NULL;
-bool ConcurrentMarkSweepThread::_should_terminate = false;
-int  ConcurrentMarkSweepThread::_CMS_flag         = CMS_nil;
+volatile jint ConcurrentMarkSweepThread::_pending_yields    = 0;
 
-volatile jint ConcurrentMarkSweepThread::_pending_yields      = 0;
-
-SurrogateLockerThread*
-     ConcurrentMarkSweepThread::_slt = NULL;
+SurrogateLockerThread* ConcurrentMarkSweepThread::_slt      = NULL;
 SurrogateLockerThread::SLT_msg_type
      ConcurrentMarkSweepThread::_sltBuffer = SurrogateLockerThread::empty;
-Monitor*
-     ConcurrentMarkSweepThread::_sltMonitor = NULL;
+Monitor* ConcurrentMarkSweepThread::_sltMonitor             = NULL;
 
 ConcurrentMarkSweepThread::ConcurrentMarkSweepThread(CMSCollector* collector)
   : ConcurrentGCThread() {

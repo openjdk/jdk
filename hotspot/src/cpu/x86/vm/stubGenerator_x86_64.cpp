@@ -367,16 +367,20 @@ class StubGenerator: public StubCodeGenerator {
 #ifdef ASSERT
     // verify that threads correspond
     {
-      Label L, S;
+     Label L1, L2, L3;
       __ cmpptr(r15_thread, thread);
-      __ jcc(Assembler::notEqual, S);
+      __ jcc(Assembler::equal, L1);
+      __ stop("StubRoutines::call_stub: r15_thread is corrupted");
+      __ bind(L1);
       __ get_thread(rbx);
+      __ cmpptr(r15_thread, thread);
+      __ jcc(Assembler::equal, L2);
+      __ stop("StubRoutines::call_stub: r15_thread is modified by call");
+      __ bind(L2);
       __ cmpptr(r15_thread, rbx);
-      __ jcc(Assembler::equal, L);
-      __ bind(S);
-      __ jcc(Assembler::equal, L);
+      __ jcc(Assembler::equal, L3);
       __ stop("StubRoutines::call_stub: threads must correspond");
-      __ bind(L);
+      __ bind(L3);
     }
 #endif
 
@@ -450,15 +454,20 @@ class StubGenerator: public StubCodeGenerator {
 #ifdef ASSERT
     // verify that threads correspond
     {
-      Label L, S;
+      Label L1, L2, L3;
       __ cmpptr(r15_thread, thread);
-      __ jcc(Assembler::notEqual, S);
+      __ jcc(Assembler::equal, L1);
+      __ stop("StubRoutines::catch_exception: r15_thread is corrupted");
+      __ bind(L1);
       __ get_thread(rbx);
+      __ cmpptr(r15_thread, thread);
+      __ jcc(Assembler::equal, L2);
+      __ stop("StubRoutines::catch_exception: r15_thread is modified by call");
+      __ bind(L2);
       __ cmpptr(r15_thread, rbx);
-      __ jcc(Assembler::equal, L);
-      __ bind(S);
+      __ jcc(Assembler::equal, L3);
       __ stop("StubRoutines::catch_exception: threads must correspond");
-      __ bind(L);
+      __ bind(L3);
     }
 #endif
 
@@ -1244,7 +1253,7 @@ class StubGenerator: public StubCodeGenerator {
            __ popa();
         }
          break;
-      case BarrierSet::CardTableModRef:
+      case BarrierSet::CardTableForRS:
       case BarrierSet::CardTableExtension:
       case BarrierSet::ModRef:
         break;
@@ -1284,7 +1293,7 @@ class StubGenerator: public StubCodeGenerator {
           __ popa();
         }
         break;
-      case BarrierSet::CardTableModRef:
+      case BarrierSet::CardTableForRS:
       case BarrierSet::CardTableExtension:
         {
           CardTableModRefBS* ct = barrier_set_cast<CardTableModRefBS>(bs);
