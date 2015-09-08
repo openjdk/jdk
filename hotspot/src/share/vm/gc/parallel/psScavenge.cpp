@@ -597,9 +597,9 @@ bool PSScavenge::invoke_no_policy() {
         // to allow resizes that may have been inhibited by the
         // relative location of the "to" and "from" spaces.
 
-        // Resizing the old gen at minor collects can cause increases
+        // Resizing the old gen at young collections can cause increases
         // that don't feed back to the generation sizing policy until
-        // a major collection.  Don't resize the old gen here.
+        // a full collection.  Don't resize the old gen here.
 
         heap->resize_young_gen(size_policy->calculated_eden_size_in_bytes(),
                         size_policy->calculated_survivor_size_in_bytes());

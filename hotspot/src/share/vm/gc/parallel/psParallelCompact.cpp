@@ -958,7 +958,7 @@ void PSParallelCompact::pre_compact(PreGCValues* pre_gc_values)
 {
   // Update the from & to space pointers in space_info, since they are swapped
   // at each young gen gc.  Do the update unconditionally (even though a
-  // promotion failure does not swap spaces) because an unknown number of minor
+  // promotion failure does not swap spaces) because an unknown number of young
   // collections will have swapped the spaces an unknown number of times.
   GCTraceTime tm("pre compact", print_phases(), true, &_gc_timer, _gc_tracer.gc_id());
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();

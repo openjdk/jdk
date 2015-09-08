@@ -1143,7 +1143,7 @@ void ConcurrentMark::scanRootRegion(HeapRegion* hr, uint worker_id) {
   while (curr < end) {
     Prefetch::read(curr, interval);
     oop obj = oop(curr);
-    int size = obj->oop_iterate(&cl);
+    int size = obj->oop_iterate_size(&cl);
     assert(size == obj->size(), "sanity");
     curr += size;
   }

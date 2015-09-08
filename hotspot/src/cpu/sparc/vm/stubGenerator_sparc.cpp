@@ -981,7 +981,7 @@ class StubGenerator: public StubCodeGenerator {
           __ restore();
         }
         break;
-      case BarrierSet::CardTableModRef:
+      case BarrierSet::CardTableForRS:
       case BarrierSet::CardTableExtension:
       case BarrierSet::ModRef:
         break;
@@ -1014,7 +1014,7 @@ class StubGenerator: public StubCodeGenerator {
           __ restore();
         }
         break;
-      case BarrierSet::CardTableModRef:
+      case BarrierSet::CardTableForRS:
       case BarrierSet::CardTableExtension:
         {
           CardTableModRefBS* ct = barrier_set_cast<CardTableModRefBS>(bs);

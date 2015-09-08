@@ -54,17 +54,46 @@ void G1EvacStats::adjust_desired_plab_sz() {
                      _allocated, _wasted, _region_end_waste, _unused, used()));
       _allocated = 1;
     }
-    // We account region end waste fully to PLAB allocation. This is not completely fair,
-    // but is a conservative assumption because PLABs may be sized flexibly while we
-    // cannot adjust direct allocations.
-    // In some cases, wasted_frac may become > 1 but that just reflects the problem
-    // with region_end_waste.
-    double wasted_frac    = (double)(_unused + _wasted + _region_end_waste) / (double)_allocated;
-    size_t target_refills = (size_t)((wasted_frac * TargetSurvivorRatio) / TargetPLABWastePct);
-    if (target_refills == 0) {
-      target_refills = 1;
-    }
-    size_t cur_plab_sz = used() / target_refills;
+    // The size of the PLAB caps the amount of space that can be wasted at the
+    // end of the collection. In the worst case the last PLAB could be completely
+    // empty.
+    // This allows us to calculate the new PLAB size to achieve the
+    // TargetPLABWastePct given the latest memory usage and that the last buffer
+    // will be G1LastPLABAverageOccupancy full.
+    //
+    // E.g. assume that if in the current GC 100 words were allocated and a
+    // TargetPLABWastePct of 10 had been set.
+    //
+    // So we could waste up to 10 words to meet that percentage. Given that we
+    // also assume that that buffer is typically half-full, the new desired PLAB
+    // size is set to 20 words.
+    //
+    // The amount of allocation performed should be independent of the number of
+    // threads, so should the maximum waste we can spend in total. So if
+    // we used n threads to allocate, each of them can spend maximum waste/n words in
+    // a first rough approximation. The number of threads only comes into play later
+    // when actually retrieving the actual desired PLAB size.
+    //
+    // After calculating this optimal PLAB size the algorithm applies the usual
+    // exponential decaying average over this value to guess the next PLAB size.
+    //
+    // We account region end waste fully to PLAB allocation (in the calculation of
+    // what we consider as "used_for_waste_calculation" below). This is not
+    // completely fair, but is a conservative assumption because PLABs may be sized
+    // flexibly while we cannot adjust inline allocations.
+    // Allocation during GC will try to minimize region end waste so this impact
+    // should be minimal.
+    //
+    // We need to cover overflow when calculating the amount of space actually used
+    // by objects in PLABs when subtracting the region end waste.
+    // Region end waste may be higher than actual allocation. This may occur if many
+    // threads do not allocate anything but a few rather large objects. In this
+    // degenerate case the PLAB size would simply quickly tend to minimum PLAB size,
+    // which is an okay reaction.
+    size_t const used_for_waste_calculation = used() > _region_end_waste ? used() - _region_end_waste : 0;
+
+    size_t const total_waste_allowed = used_for_waste_calculation * TargetPLABWastePct;
+    size_t const cur_plab_sz = (double)total_waste_allowed / G1LastPLABAverageOccupancy;
     // Take historical weighted average
     _filter.sample(cur_plab_sz);
     // Clip from above and below, and align to object boundary

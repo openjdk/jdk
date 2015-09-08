@@ -702,7 +702,7 @@ void FreeListSpace_DCTOC::walk_mem_region_with_cl_par(MemRegion mr,             
         !_cfls->CompactibleFreeListSpace::obj_allocated_since_save_marks(       \
                     oop(bottom)) &&                                             \
         !_collector->CMSCollector::is_dead_obj(oop(bottom))) {                  \
-      size_t word_sz = oop(bottom)->oop_iterate(cl, mr);                        \
+      size_t word_sz = oop(bottom)->oop_iterate_size(cl, mr);                   \
       bottom += _cfls->adjustObjectSize(word_sz);                               \
     } else {                                                                    \
       bottom += _cfls->CompactibleFreeListSpace::block_size(bottom);            \
@@ -729,7 +729,7 @@ void FreeListSpace_DCTOC::walk_mem_region_with_cl_nopar(MemRegion mr,           
         !_cfls->CompactibleFreeListSpace::obj_allocated_since_save_marks(       \
                     oop(bottom)) &&                                             \
         !_collector->CMSCollector::is_dead_obj(oop(bottom))) {                  \
-      size_t word_sz = oop(bottom)->oop_iterate(cl, mr);                        \
+      size_t word_sz = oop(bottom)->oop_iterate_size(cl, mr);                   \
       bottom += _cfls->adjustObjectSize(word_sz);                               \
     } else {                                                                    \
       bottom += _cfls->CompactibleFreeListSpace::block_size_nopar(bottom);      \
@@ -2989,7 +2989,7 @@ initialize_sequential_subtasks_for_marking(int n_threads,
   assert(task_size > CardTableModRefBS::card_size_in_words &&
          (task_size %  CardTableModRefBS::card_size_in_words == 0),
          "Otherwise arithmetic below would be incorrect");
-  MemRegion span = _gen->reserved();
+  MemRegion span = _old_gen->reserved();
   if (low != NULL) {
     if (span.contains(low)) {
       // Align low down to  a card boundary so that

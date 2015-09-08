@@ -60,7 +60,7 @@ class SystemProperty: public CHeapObj<mtInternal> {
   char* value() const                       { return _value; }
   SystemProperty* next() const              { return _next; }
   void set_next(SystemProperty* next)       { _next = next; }
-  bool set_value(char *value) {
+  bool set_value(const char *value) {
     if (writeable()) {
       if (_value != NULL) {
         FreeHeap(_value);
@@ -346,8 +346,6 @@ class Arguments : AllStatic {
   static julong limit_by_allocatable_memory(julong size);
   // Setup heap size
   static void set_heap_size();
-  // Set up runtime image flags
-  static void set_runtime_image_flags();
   // Based on automatic selection criteria, should the
   // low pause collector be used.
   static bool should_auto_select_low_pause_collector();
@@ -364,17 +362,31 @@ class Arguments : AllStatic {
   static bool add_property(const char* prop);
 
   // Aggressive optimization flags.
-  static void set_aggressive_opts_flags();
+  static jint set_aggressive_opts_flags();
 
   // Argument parsing
   static void do_pd_flag_adjustments();
   static bool parse_argument(const char* arg, Flag::Flags origin);
   static bool process_argument(const char* arg, jboolean ignore_unrecognized, Flag::Flags origin);
   static void process_java_launcher_argument(const char*, void*);
-  static void process_java_compiler_argument(char* arg);
+  static void process_java_compiler_argument(const char* arg);
   static jint parse_options_environment_variable(const char* name, ScopedVMInitArgs* vm_args);
   static jint parse_java_tool_options_environment_variable(ScopedVMInitArgs* vm_args);
   static jint parse_java_options_environment_variable(ScopedVMInitArgs* vm_args);
+  static jint parse_vm_options_file(const char* file_name, ScopedVMInitArgs* vm_args);
+  static jint parse_options_buffer(const char* name, char* buffer, const size_t buf_len, ScopedVMInitArgs* vm_args);
+  static jint insert_vm_options_file(const JavaVMInitArgs* args,
+                                     char** flags_file,
+                                     char** vm_options_file,
+                                     const int vm_options_file_pos,
+                                     ScopedVMInitArgs* vm_options_file_args,
+                                     ScopedVMInitArgs* args_out);
+  static jint match_special_option_and_act(const JavaVMInitArgs* args,
+                                           char** flags_file,
+                                           char** vm_options_file,
+                                           ScopedVMInitArgs* vm_options_file_args,
+                                           ScopedVMInitArgs* args_out);
+
   static jint parse_vm_init_args(const JavaVMInitArgs *java_tool_options_args,
                                  const JavaVMInitArgs *java_options_args,
                                  const JavaVMInitArgs *cmd_line_args);
@@ -561,22 +573,22 @@ class Arguments : AllStatic {
   // Property List manipulation
   static void PropertyList_add(SystemProperty *element);
   static void PropertyList_add(SystemProperty** plist, SystemProperty *element);
-  static void PropertyList_add(SystemProperty** plist, const char* k, char* v);
-  static void PropertyList_unique_add(SystemProperty** plist, const char* k, char* v) {
+  static void PropertyList_add(SystemProperty** plist, const char* k, const char* v);
+  static void PropertyList_unique_add(SystemProperty** plist, const char* k, const char* v) {
     PropertyList_unique_add(plist, k, v, false);
   }
-  static void PropertyList_unique_add(SystemProperty** plist, const char* k, char* v, jboolean append);
+  static void PropertyList_unique_add(SystemProperty** plist, const char* k, const char* v, jboolean append);
   static const char* PropertyList_get_value(SystemProperty* plist, const char* key);
   static int  PropertyList_count(SystemProperty* pl);
   static const char* PropertyList_get_key_at(SystemProperty* pl,int index);
   static char* PropertyList_get_value_at(SystemProperty* pl,int index);
 
   // Miscellaneous System property value getter and setters.
-  static void set_dll_dir(char *value) { _sun_boot_library_path->set_value(value); }
-  static void set_java_home(char *value) { _java_home->set_value(value); }
-  static void set_library_path(char *value) { _java_library_path->set_value(value); }
+  static void set_dll_dir(const char *value) { _sun_boot_library_path->set_value(value); }
+  static void set_java_home(const char *value) { _java_home->set_value(value); }
+  static void set_library_path(const char *value) { _java_library_path->set_value(value); }
   static void set_ext_dirs(char *value)     { _ext_dirs = os::strdup_check_oom(value); }
-  static void set_sysclasspath(char *value) { _sun_boot_class_path->set_value(value); }
+  static void set_sysclasspath(const char *value) { _sun_boot_class_path->set_value(value); }
   static void append_sysclasspath(const char *value) { _sun_boot_class_path->append_value(value); }
 
   static char* get_java_home() { return _java_home->value(); }

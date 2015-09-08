@@ -440,8 +440,10 @@ CallInst* SharkBuilder::CreateDump(Value* value) {
 // HotSpot memory barriers
 
 void SharkBuilder::CreateUpdateBarrierSet(BarrierSet* bs, Value* field) {
-  if (bs->kind() != BarrierSet::CardTableModRef)
+  if (bs->kind() != BarrierSet::CardTableForRS &&
+      bs->kind() != BarrierSet::CardTableExtension) {
     Unimplemented();
+  }
 
   CreateStore(
     LLVMValue::jbyte_constant(CardTableModRefBS::dirty_card_val()),

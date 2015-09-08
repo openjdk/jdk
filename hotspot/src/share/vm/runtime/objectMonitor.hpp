@@ -177,6 +177,19 @@ class ObjectMonitor {
 
  public:
   static void Initialize();
+
+  // Only perform a PerfData operation if the PerfData object has been
+  // allocated and if the PerfDataManager has not freed the PerfData
+  // objects which can happen at normal VM shutdown.
+  //
+  #define OM_PERFDATA_OP(f, op_str)              \
+    do {                                         \
+      if (ObjectMonitor::_sync_ ## f != NULL &&  \
+          PerfDataManager::has_PerfData()) {     \
+        ObjectMonitor::_sync_ ## f->op_str;      \
+      }                                          \
+    } while (0)
+
   static PerfCounter * _sync_ContendedLockAttempts;
   static PerfCounter * _sync_FutileWakeups;
   static PerfCounter * _sync_Parks;

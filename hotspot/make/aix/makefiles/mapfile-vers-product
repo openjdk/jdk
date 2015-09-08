@@ -139,18 +139,6 @@ SUNWprivate_1.1 {
                 JVM_Halt;
                 JVM_HoldsLock;
                 JVM_IHashCode;
-                JVM_ImageAttributeOffsets;
-                JVM_ImageAttributeOffsetsLength;
-                JVM_ImageClose;
-                JVM_ImageFindAttributes;
-                JVM_ImageGetAttributes;
-                JVM_ImageGetAttributesCount;
-                JVM_ImageGetDataAddress;
-                JVM_ImageGetIndexAddress;
-                JVM_ImageGetStringBytes;
-                JVM_ImageOpen;
-                JVM_ImageRead;
-                JVM_ImageReadCompressed;
                 JVM_InitAgentProperties;
                 JVM_InitProperties;
                 JVM_InternString;

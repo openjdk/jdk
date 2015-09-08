@@ -67,7 +67,6 @@ class InstanceRefKlass: public InstanceKlass {
   // GC specific object visitors
   //
   // Mark Sweep
-  void oop_ms_follow_contents(oop obj);
   int  oop_ms_adjust_pointers(oop obj);
 #if INCLUDE_ALL_GCS
   // Parallel Scavenge
@@ -88,19 +87,19 @@ class InstanceRefKlass: public InstanceKlass {
 private:
   // Iterate over all oop fields and metadata.
   template <bool nv, class OopClosureType>
-  inline int oop_oop_iterate(oop obj, OopClosureType* closure);
+  inline void oop_oop_iterate(oop obj, OopClosureType* closure);
 
   // Reverse iteration
 #if INCLUDE_ALL_GCS
   // Iterate over all oop fields and metadata.
   template <bool nv, class OopClosureType>
-  inline int oop_oop_iterate_reverse(oop obj, OopClosureType* closure);
+  inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure);
 #endif // INCLUDE_ALL_GCS
 
   // Bounded range iteration
   // Iterate over all oop fields and metadata.
   template <bool nv, class OopClosureType>
-  inline int oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
+  inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
 
   // Reference processing part of the iterators.
 

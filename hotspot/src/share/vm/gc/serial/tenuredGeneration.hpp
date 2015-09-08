@@ -42,10 +42,10 @@ class TenuredGeneration: public CardGeneration {
   friend class VM_PopulateDumpSharedSpace;
 
  protected:
-  ContiguousSpace*  _the_space;       // Actual space holding objects
+  ContiguousSpace*    _the_space;       // Actual space holding objects
 
-  GenerationCounters*   _gen_counters;
-  CSpaceCounters*       _space_counters;
+  GenerationCounters* _gen_counters;
+  CSpaceCounters*     _space_counters;
 
   // Allocation failure
   virtual bool expand(size_t bytes, size_t expand_bytes);
@@ -54,6 +54,7 @@ class TenuredGeneration: public CardGeneration {
   ContiguousSpace* space() const { return _the_space; }
 
   void assert_correct_size_change_locking();
+
  public:
   TenuredGeneration(ReservedSpace rs,
                     size_t initial_byte_size,
@@ -66,10 +67,9 @@ class TenuredGeneration: public CardGeneration {
   const char* short_name() const { return "Tenured"; }
 
   // Does a "full" (forced) collection invoked on this generation collect
-  // all younger generations as well? Note that this is a
-  // hack to allow the collection of the younger gen first if the flag is
-  // set.
-  virtual bool full_collects_younger_generations() const {
+  // the young generation as well? Note that this is a hack to allow the
+  // collection of the young gen first if the flag is set.
+  virtual bool full_collects_young_generation() const {
     return !ScavengeBeforeFullGC;
   }
 
@@ -99,15 +99,16 @@ class TenuredGeneration: public CardGeneration {
                        bool clear_all_soft_refs,
                        size_t size,
                        bool is_tlab);
+
   HeapWord* expand_and_allocate(size_t size,
                                 bool is_tlab,
                                 bool parallel = false);
 
   virtual void prepare_for_verify();
 
-
   virtual void gc_prologue(bool full);
   virtual void gc_epilogue(bool full);
+
   bool should_collect(bool   full,
                       size_t word_size,
                       bool   is_tlab);

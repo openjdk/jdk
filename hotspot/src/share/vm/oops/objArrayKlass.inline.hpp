@@ -85,46 +85,31 @@ void ObjArrayKlass::oop_oop_iterate_elements_bounded(objArrayOop a, OopClosureTy
 }
 
 template <bool nv, typename OopClosureType>
-int ObjArrayKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
+void ObjArrayKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
   assert (obj->is_array(), "obj must be array");
   objArrayOop a = objArrayOop(obj);
 
-  // Get size before changing pointers.
-  // Don't call size() or oop_size() since that is a virtual call.
-  int size = a->object_size();
   if (Devirtualizer<nv>::do_metadata(closure)) {
     Devirtualizer<nv>::do_klass(closure, obj->klass());
   }
 
   oop_oop_iterate_elements<nv>(a, closure);
-
-  return size;
 }
 
 template <bool nv, typename OopClosureType>
-int ObjArrayKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr) {
+void ObjArrayKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr) {
   assert(obj->is_array(), "obj must be array");
   objArrayOop a  = objArrayOop(obj);
-
-  // Get size before changing pointers.
-  // Don't call size() or oop_size() since that is a virtual call
-  int size = a->object_size();
 
   if (Devirtualizer<nv>::do_metadata(closure)) {
     Devirtualizer<nv>::do_klass(closure, a->klass());
   }
 
   oop_oop_iterate_elements_bounded<nv>(a, closure, mr);
-
-  return size;
 }
 
 template <bool nv, typename T, class OopClosureType>
 void ObjArrayKlass::oop_oop_iterate_range_specialized(objArrayOop a, OopClosureType* closure, int start, int end) {
-  if (Devirtualizer<nv>::do_metadata(closure)) {
-    Devirtualizer<nv>::do_klass(closure, a->klass());
-  }
-
   T* low = start == 0 ? cast_from_oop<T*>(a) : a->obj_at_addr<T>(start);
   T* high = (T*)a->base() + end;
 
@@ -134,21 +119,15 @@ void ObjArrayKlass::oop_oop_iterate_range_specialized(objArrayOop a, OopClosureT
 // Like oop_oop_iterate but only iterates over a specified range and only used
 // for objArrayOops.
 template <bool nv, class OopClosureType>
-int ObjArrayKlass::oop_oop_iterate_range(oop obj, OopClosureType* closure, int start, int end) {
+void ObjArrayKlass::oop_oop_iterate_range(oop obj, OopClosureType* closure, int start, int end) {
   assert(obj->is_array(), "obj must be array");
   objArrayOop a  = objArrayOop(obj);
-
-  // Get size before changing pointers.
-  // Don't call size() or oop_size() since that is a virtual call
-  int size = a->object_size();
 
   if (UseCompressedOops) {
     oop_oop_iterate_range_specialized<nv, narrowOop>(a, closure, start, end);
   } else {
     oop_oop_iterate_range_specialized<nv, oop>(a, closure, start, end);
   }
-
-  return size;
 }
 
 #define ALL_OBJ_ARRAY_KLASS_OOP_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)    \

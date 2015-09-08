@@ -31,13 +31,7 @@
 CardTableModRefBSForCTRS::CardTableModRefBSForCTRS(MemRegion whole_heap) :
   CardTableModRefBS(
     whole_heap,
-    // Concrete tag should be BarrierSet::CardTableForRS.
-    // That will presently break things in a bunch of places though.
-    // The concrete tag is used as a dispatch key in many places, and
-    // CardTableForRS does not correctly dispatch in some of those
-    // uses. This will be addressed as part of a reorganization of the
-    // BarrierSet hierarchy.
-    BarrierSet::FakeRtti(BarrierSet::CardTableModRef, 0).add_tag(BarrierSet::CardTableForRS)),
+    BarrierSet::FakeRtti(BarrierSet::CardTableForRS)),
   // LNC functionality
   _lowest_non_clean(NULL),
   _lowest_non_clean_chunk_size(NULL),

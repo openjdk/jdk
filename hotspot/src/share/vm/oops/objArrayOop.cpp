@@ -46,8 +46,8 @@ oop objArrayOopDesc::atomic_compare_exchange_oop(int index, oop exchange_value,
 
 #define ObjArrayOop_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)                    \
                                                                                    \
-int objArrayOopDesc::oop_iterate_range(OopClosureType* blk, int start, int end) {  \
-  return ((ObjArrayKlass*)klass())->oop_oop_iterate_range##nv_suffix(this, blk, start, end); \
+void objArrayOopDesc::oop_iterate_range(OopClosureType* blk, int start, int end) {  \
+  ((ObjArrayKlass*)klass())->oop_oop_iterate_range##nv_suffix(this, blk, start, end); \
 }
 
 ALL_OOP_OOP_ITERATE_CLOSURES_1(ObjArrayOop_OOP_ITERATE_DEFN)

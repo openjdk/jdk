@@ -266,22 +266,22 @@ void AdaptiveSizePolicy::minor_collection_end(GCCause::Cause gc_cause) {
     }
 
     // The policy does not have enough data until at least some
-    // minor collections have been done.
+    // young collections have been done.
     _young_gen_policy_is_ready =
       (_avg_minor_gc_cost->count() >= AdaptiveSizePolicyReadyThreshold);
 
     // Calculate variables used to estimate pause time vs. gen sizes
-    double eden_size_in_mbytes = ((double)_eden_size)/((double)M);
+    double eden_size_in_mbytes = ((double)_eden_size) / ((double)M);
     update_minor_pause_young_estimator(minor_pause_in_ms);
     update_minor_pause_old_estimator(minor_pause_in_ms);
 
     if (PrintAdaptiveSizePolicy && Verbose) {
       gclog_or_tty->print("AdaptiveSizePolicy::minor_collection_end: "
-        "minor gc cost: %f  average: %f", collection_cost,
-        _avg_minor_gc_cost->average());
+                          "minor gc cost: %f  average: %f", collection_cost,
+                          _avg_minor_gc_cost->average());
       gclog_or_tty->print_cr("  minor pause: %f minor period %f",
-        minor_pause_in_ms,
-        _latest_minor_mutator_interval_seconds * MILLIUNITS);
+                             minor_pause_in_ms,
+                             _latest_minor_mutator_interval_seconds * MILLIUNITS);
     }
 
     // Calculate variable used to estimate collection cost vs. gen sizes
@@ -295,8 +295,7 @@ void AdaptiveSizePolicy::minor_collection_end(GCCause::Cause gc_cause) {
   _minor_timer.start();
 }
 
-size_t AdaptiveSizePolicy::eden_increment(size_t cur_eden,
-                                            uint percent_change) {
+size_t AdaptiveSizePolicy::eden_increment(size_t cur_eden, uint percent_change) {
   size_t eden_heap_delta;
   eden_heap_delta = cur_eden / 100 * percent_change;
   return eden_heap_delta;
@@ -312,8 +311,7 @@ size_t AdaptiveSizePolicy::eden_decrement(size_t cur_eden) {
   return eden_heap_delta;
 }
 
-size_t AdaptiveSizePolicy::promo_increment(size_t cur_promo,
-                                             uint percent_change) {
+size_t AdaptiveSizePolicy::promo_increment(size_t cur_promo, uint percent_change) {
   size_t promo_heap_delta;
   promo_heap_delta = cur_promo / 100 * percent_change;
   return promo_heap_delta;

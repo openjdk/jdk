@@ -105,7 +105,7 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
       }
       break;
 #endif // INCLUDE_ALL_GCS
-    case BarrierSet::CardTableModRef:
+    case BarrierSet::CardTableForRS:
     case BarrierSet::CardTableExtension:
       {
         Label Lnull, Ldone;

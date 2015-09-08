@@ -58,6 +58,10 @@ public class TestHumongousShrinkHeap {
 
 
     public static void main(String[] args) {
+        if (HUMON_COUNT == 0) {
+            System.out.println("Skipped. Heap is too small");
+            return;
+        }
         System.out.format("Running with %s max heap size. "
                 + "Will allocate humongous object of %s size %d times.%n",
                 MemoryUsagePrinter.humanReadableByteCount(AVAILABLE_MEMORY, false),

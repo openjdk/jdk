@@ -57,8 +57,8 @@ inline void DefNewGeneration::KeepAliveClosure::do_oop_work(T* p) {
   // each generation, allowing them in turn to examine the modified
   // field.
   //
-  // We could check that p is also in an older generation, but
-  // dirty cards in the youngest gen are never scanned, so the
+  // We could check that p is also in the old generation, but
+  // dirty cards in the young gen are never scanned, so the
   // extra check probably isn't worthwhile.
   if (GenCollectedHeap::heap()->is_in_reserved(p)) {
     oop obj = oopDesc::load_decode_heap_oop_not_null(p);

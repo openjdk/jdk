@@ -50,11 +50,11 @@ inline void Par_MarkRefsIntoAndScanClosure::trim_queue(uint max) {
 
 inline void MetadataAwareOopsInGenClosure::do_klass_nv(Klass* k) {
   ClassLoaderData* cld = k->class_loader_data();
-  do_class_loader_data(cld);
+  do_cld_nv(cld);
 }
 inline void MetadataAwareOopsInGenClosure::do_klass(Klass* k) { do_klass_nv(k); }
 
-inline void MetadataAwareOopsInGenClosure::do_class_loader_data(ClassLoaderData* cld) {
+inline void MetadataAwareOopsInGenClosure::do_cld_nv(ClassLoaderData* cld) {
   assert(_klass_closure._oop_closure == this, "Must be");
 
   bool claim = true;  // Must claim the class loader data before processing.

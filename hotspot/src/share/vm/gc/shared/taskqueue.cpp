@@ -258,8 +258,8 @@ void ParallelTaskTerminator::reset_for_reuse() {
 
 #ifdef ASSERT
 bool ObjArrayTask::is_valid() const {
-  return _obj != NULL && _obj->is_objArray() && _index > 0 &&
-    _index < objArrayOop(_obj)->length();
+  return _obj != NULL && _obj->is_objArray() && _index >= 0 &&
+      _index < objArrayOop(_obj)->length();
 }
 #endif // ASSERT
 

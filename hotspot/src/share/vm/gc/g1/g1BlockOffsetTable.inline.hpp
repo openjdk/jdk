@@ -27,6 +27,7 @@
 
 #include "gc/g1/g1BlockOffsetTable.hpp"
 #include "gc/g1/heapRegion.hpp"
+#include "gc/shared/memset_with_concurrent_readers.hpp"
 #include "gc/shared/space.hpp"
 
 inline HeapWord* G1BlockOffsetTable::block_start(const void* addr) {
@@ -68,15 +69,7 @@ void G1BlockOffsetSharedArray::set_offset_array(size_t left, size_t right, u_cha
   check_index(right, "right index out of range");
   assert(left <= right, "indexes out of order");
   size_t num_cards = right - left + 1;
-  if (UseMemSetInBOT) {
-    memset(&_offset_array[left], offset, num_cards);
-  } else {
-    size_t i = left;
-    const size_t end = i + num_cards;
-    for (; i < end; i++) {
-      _offset_array[i] = offset;
-    }
-  }
+  memset_with_concurrent_readers(&_offset_array[left], offset, num_cards);
 }
 
 // Variant of index_for that does not check the index for validity.

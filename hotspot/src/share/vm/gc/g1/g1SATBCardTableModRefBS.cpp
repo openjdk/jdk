@@ -27,6 +27,7 @@
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/g1/satbQueue.hpp"
+#include "gc/shared/memset_with_concurrent_readers.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -108,15 +109,7 @@ void G1SATBCardTableModRefBS::g1_mark_as_young(const MemRegion& mr) {
   jbyte *const first = byte_for(mr.start());
   jbyte *const last = byte_after(mr.last());
 
-  // Below we may use an explicit loop instead of memset() because on
-  // certain platforms memset() can give concurrent readers phantom zeros.
-  if (UseMemSetInBOT) {
-    memset(first, g1_young_gen, last - first);
-  } else {
-    for (jbyte* i = first; i < last; i++) {
-      *i = g1_young_gen;
-    }
-  }
+  memset_with_concurrent_readers(first, g1_young_gen, last - first);
 }
 
 #ifndef PRODUCT
@@ -207,7 +200,7 @@ G1SATBCardTableLoggingModRefBS::write_ref_field_static(void* field,
   // Otherwise, log it.
   G1SATBCardTableLoggingModRefBS* g1_bs =
     barrier_set_cast<G1SATBCardTableLoggingModRefBS>(G1CollectedHeap::heap()->barrier_set());
-  g1_bs->write_ref_field_work(field, new_val);
+  g1_bs->write_ref_field_work(field, new_val, false);
 }
 
 void
