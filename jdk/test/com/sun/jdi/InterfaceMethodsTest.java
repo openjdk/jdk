@@ -442,6 +442,3 @@ public class InterfaceMethodsTest extends TestScaffold {
         }
     }
 }
-
-
-

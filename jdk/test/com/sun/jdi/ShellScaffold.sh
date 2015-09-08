@@ -1215,5 +1215,3 @@ runit()
     # Don't know how this arises
     debuggeeFailIfPresent "Internal exception"
 }
-
-

@@ -23,39 +23,40 @@
 
 /*
  * @test
- * @bug 7115050 8003280 8005852 8006694
+ * @bug 7115050 8003280 8005852 8006694 8129962
  * @summary Add lambda tests
  *  Add parser support for lambda expressions
  *  temporarily workaround combo tests are causing time out in several platforms
- * @library ../lib
- * @modules jdk.compiler
- * @build JavacTestingAbstractThreadedTest
- * @run main/othervm LambdaParserTest
+ * @library /tools/javac/lib
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.code
+ *          jdk.compiler/com.sun.tools.javac.comp
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.javac.tree
+ *          jdk.compiler/com.sun.tools.javac.util
+ * @build combo.ComboTestHelper
+
+ * @run main LambdaParserTest
  */
 
-// use /othervm to avoid jtreg timeout issues (CODETOOLS-7900047)
-// see JDK-8006746
+import java.io.IOException;
 
-import java.net.URI;
-import java.util.Arrays;
-import javax.tools.Diagnostic;
-import javax.tools.JavaFileObject;
-import javax.tools.SimpleJavaFileObject;
-import com.sun.source.util.JavacTask;
+import combo.ComboInstance;
+import combo.ComboParameter;
+import combo.ComboTask.Result;
+import combo.ComboTestHelper;
 
-public class LambdaParserTest
-    extends JavacTestingAbstractThreadedTest
-    implements Runnable {
+public class LambdaParserTest extends ComboInstance<LambdaParserTest> {
 
-    enum LambdaKind {
+    enum LambdaKind implements ComboParameter {
         NILARY_EXPR("()->x"),
         NILARY_STMT("()->{ return x; }"),
-        ONEARY_SHORT_EXPR("#PN->x"),
-        ONEARY_SHORT_STMT("#PN->{ return x; }"),
-        ONEARY_EXPR("(#M1 #T1 #PN)->x"),
-        ONEARY_STMT("(#M1 #T1 #PN)->{ return x; }"),
-        TWOARY_EXPR("(#M1 #T1 #PN, #M2 #T2 y)->x"),
-        TWOARY_STMT("(#M1 #T1 #PN, #M2 #T2 y)->{ return x; }");
+        ONEARY_SHORT_EXPR("#{NAME}->x"),
+        ONEARY_SHORT_STMT("#{NAME}->{ return x; }"),
+        ONEARY_EXPR("(#{MOD[0]} #{TYPE[0]} #{NAME})->x"),
+        ONEARY_STMT("(#{MOD[0]} #{TYPE[0]} #{NAME})->{ return x; }"),
+        TWOARY_EXPR("(#{MOD[0]} #{TYPE[0]} #{NAME}, #{MOD[1]} #{TYPE[1]} y)->x"),
+        TWOARY_STMT("(#{MOD[0]} #{TYPE[0]} #{NAME}, #{MOD[1]} #{TYPE[1]} y)->{ return x; }");
 
         String lambdaTemplate;
 
@@ -63,13 +64,9 @@ public class LambdaParserTest
             this.lambdaTemplate = lambdaTemplate;
         }
 
-        String getLambdaString(LambdaParameterKind pk1, LambdaParameterKind pk2,
-                ModifierKind mk1, ModifierKind mk2, LambdaParameterName pn) {
-            return lambdaTemplate.replaceAll("#M1", mk1.modifier)
-                    .replaceAll("#M2", mk2.modifier)
-                    .replaceAll("#T1", pk1.parameterType)
-                    .replaceAll("#T2", pk2.parameterType)
-                    .replaceAll("#PN", pn.nameStr);
+        @Override
+        public String expand(String optParameter) {
+            return lambdaTemplate;
         }
 
         int arity() {
@@ -92,7 +89,7 @@ public class LambdaParserTest
         }
     }
 
-    enum LambdaParameterName {
+    enum LambdaParameterName implements ComboParameter {
         IDENT("x"),
         UNDERSCORE("_");
 
@@ -101,9 +98,14 @@ public class LambdaParserTest
         LambdaParameterName(String nameStr) {
             this.nameStr = nameStr;
         }
+
+        @Override
+        public String expand(String optParameter) {
+            return nameStr;
+        }
     }
 
-    enum LambdaParameterKind {
+    enum LambdaParameterKind implements ComboParameter {
         IMPLICIT(""),
         EXPLIICT_SIMPLE("A"),
         EXPLIICT_SIMPLE_ARR1("A[]"),
@@ -129,9 +131,14 @@ public class LambdaParserTest
             return this == EXPLICIT_VARARGS ||
                     this == EXPLICIT_GENERIC2_VARARGS;
         }
+
+        @Override
+        public String expand(String optParameter) {
+            return parameterType;
+        }
     }
 
-    enum ModifierKind {
+    enum ModifierKind implements ComboParameter {
         NONE(""),
         FINAL("final"),
         PUBLIC("public");
@@ -150,15 +157,20 @@ public class LambdaParserTest
                 default: throw new AssertionError("Invalid modifier kind " + this);
             }
         }
+
+        @Override
+        public String expand(String optParameter) {
+            return modifier;
+        }
     }
 
-    enum ExprKind {
-        NONE("#L#S"),
-        SINGLE_PAREN1("(#L#S)"),
-        SINGLE_PAREN2("(#L)#S"),
-        DOUBLE_PAREN1("((#L#S))"),
-        DOUBLE_PAREN2("((#L)#S)"),
-        DOUBLE_PAREN3("((#L))#S");
+    enum ExprKind implements ComboParameter {
+        NONE("#{LAMBDA}#{SUBEXPR}"),
+        SINGLE_PAREN1("(#{LAMBDA}#{SUBEXPR})"),
+        SINGLE_PAREN2("(#{LAMBDA})#{SUBEXPR}"),
+        DOUBLE_PAREN1("((#{LAMBDA}#{SUBEXPR}))"),
+        DOUBLE_PAREN2("((#{LAMBDA})#{SUBEXPR})"),
+        DOUBLE_PAREN3("((#{LAMBDA}))#{SUBEXPR}");
 
         String expressionTemplate;
 
@@ -166,14 +178,13 @@ public class LambdaParserTest
             this.expressionTemplate = expressionTemplate;
         }
 
-        String expressionString(LambdaParameterKind pk1, LambdaParameterKind pk2,
-                ModifierKind mk1, ModifierKind mk2, LambdaKind lk, LambdaParameterName pn, SubExprKind sk) {
-            return expressionTemplate.replaceAll("#L", lk.getLambdaString(pk1, pk2, mk1, mk2, pn))
-                    .replaceAll("#S", sk.subExpression);
+        @Override
+        public String expand(String optParameter) {
+            return expressionTemplate;
         }
     }
 
-    enum SubExprKind {
+    enum SubExprKind implements ComboParameter {
         NONE(""),
         SELECT_FIELD(".f"),
         SELECT_METHOD(".f()"),
@@ -186,133 +197,78 @@ public class LambdaParserTest
         SubExprKind(String subExpression) {
             this.subExpression = subExpression;
         }
+
+        @Override
+        public String expand(String optParameter) {
+            return subExpression;
+        }
     }
 
     public static void main(String... args) throws Exception {
-        for (LambdaKind lk : LambdaKind.values()) {
-            for (LambdaParameterName pn : LambdaParameterName.values()) {
-                for (LambdaParameterKind pk1 : LambdaParameterKind.values()) {
-                    if (lk.arity() < 1 && pk1 != LambdaParameterKind.IMPLICIT)
-                        continue;
-                    for (LambdaParameterKind pk2 : LambdaParameterKind.values()) {
-                        if (lk.arity() < 2 && pk2 != LambdaParameterKind.IMPLICIT)
-                            continue;
-                        for (ModifierKind mk1 : ModifierKind.values()) {
-                            if (mk1 != ModifierKind.NONE && lk.isShort())
-                                continue;
-                            if (lk.arity() < 1 && mk1 != ModifierKind.NONE)
-                                continue;
-                            for (ModifierKind mk2 : ModifierKind.values()) {
-                                if (lk.arity() < 2 && mk2 != ModifierKind.NONE)
-                                    continue;
-                                for (SubExprKind sk : SubExprKind.values()) {
-                                    for (ExprKind ek : ExprKind.values()) {
-                                        pool.execute(
-                                            new LambdaParserTest(pk1, pk2, mk1,
-                                                                 mk2, lk, sk, ek, pn));
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        checkAfterExec();
+        new ComboTestHelper<LambdaParserTest>()
+                .withFilter(LambdaParserTest::redundantTestFilter)
+                .withFilter(LambdaParserTest::badImplicitFilter)
+                .withDimension("LAMBDA", (x, lk) -> x.lk = lk, LambdaKind.values())
+                .withDimension("NAME", (x, name) -> x.pn = name, LambdaParameterName.values())
+                .withArrayDimension("TYPE", (x, type, idx) -> x.pks[idx] = type, 2, LambdaParameterKind.values())
+                .withArrayDimension("MOD", (x, mod, idx) -> x.mks[idx] = mod, 2, ModifierKind.values())
+                .withDimension("EXPR", ExprKind.values())
+                .withDimension("SUBEXPR", SubExprKind.values())
+                .run(LambdaParserTest::new);
     }
 
-    LambdaParameterKind pk1;
-    LambdaParameterKind pk2;
-    ModifierKind mk1;
-    ModifierKind mk2;
+    LambdaParameterKind[] pks = new LambdaParameterKind[2];
+    ModifierKind[] mks = new ModifierKind[2];
     LambdaKind lk;
     LambdaParameterName pn;
-    SubExprKind sk;
-    ExprKind ek;
-    JavaSource source;
-    DiagnosticChecker diagChecker;
 
-    LambdaParserTest(LambdaParameterKind pk1, LambdaParameterKind pk2,
-            ModifierKind mk1, ModifierKind mk2, LambdaKind lk,
-            SubExprKind sk, ExprKind ek, LambdaParameterName pn) {
-        this.pk1 = pk1;
-        this.pk2 = pk2;
-        this.mk1 = mk1;
-        this.mk2 = mk2;
-        this.lk = lk;
-        this.pn = pn;
-        this.sk = sk;
-        this.ek = ek;
-        this.source = new JavaSource();
-        this.diagChecker = new DiagnosticChecker();
+    boolean badImplicitFilter() {
+        return !(mks[0] != ModifierKind.NONE && lk.isShort());
     }
 
-    class JavaSource extends SimpleJavaFileObject {
-
-        String template = "class Test {\n" +
-                          "   SAM s = #E;\n" +
-                          "}";
-
-        String source;
-
-        public JavaSource() {
-            super(URI.create("myfo:/Test.java"), JavaFileObject.Kind.SOURCE);
-            source = template.replaceAll("#E",
-                    ek.expressionString(pk1, pk2, mk1, mk2, lk, pn, sk));
+    boolean redundantTestFilter() {
+        for (int i = lk.arity(); i < mks.length ; i++) {
+            if (mks[i].ordinal() != 0) {
+                return false;
+            }
         }
-
-        @Override
-        public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-            return source;
+        for (int i = lk.arity(); i < pks.length ; i++) {
+            if (pks[i].ordinal() != 0) {
+                return false;
+            }
         }
+        return true;
     }
 
-    public void run() {
-        JavacTask ct = (JavacTask)comp.getTask(null, fm.get(), diagChecker,
-                null, null, Arrays.asList(source));
-        try {
-            ct.parse();
-        } catch (Throwable ex) {
-            processException(ex);
-            return;
-        }
-        check();
+    String template = "class Test {\n" +
+                      "   SAM s = #{EXPR};\n" +
+                      "}";
+
+    @Override
+    public void doWork() throws IOException {
+        check(newCompilationTask()
+                .withSourceFromTemplate(template)
+                .parse());
     }
 
-    void check() {
-        checkCount.incrementAndGet();
-
-        boolean errorExpected = (lk.arity() > 0 && !mk1.compatibleWith(pk1)) ||
-                (lk.arity() > 1 && !mk2.compatibleWith(pk2));
+    void check(Result<?> res) {
+        boolean errorExpected = (lk.arity() > 0 && !mks[0].compatibleWith(pks[0])) ||
+                (lk.arity() > 1 && !mks[1].compatibleWith(pks[1]));
 
         if (lk.arity() == 2 &&
-                (pk1.explicit() != pk2.explicit() ||
-                pk1.isVarargs())) {
+                (pks[0].explicit() != pks[1].explicit() ||
+                pks[0].isVarargs())) {
             errorExpected = true;
         }
 
         errorExpected |= pn == LambdaParameterName.UNDERSCORE &&
                 lk.arity() > 0;
 
-        if (errorExpected != diagChecker.errorFound) {
-            throw new Error("invalid diagnostics for source:\n" +
-                source.getCharContent(true) +
-                "\nFound error: " + diagChecker.errorFound +
+        if (errorExpected != res.hasErrors()) {
+            fail("invalid diagnostics for source:\n" +
+                res.compilationInfo() +
+                "\nFound error: " + res.hasErrors() +
                 "\nExpected error: " + errorExpected);
         }
     }
-
-    static class DiagnosticChecker
-        implements javax.tools.DiagnosticListener<JavaFileObject> {
-
-        boolean errorFound;
-
-        public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
-            if (diagnostic.getKind() == Diagnostic.Kind.ERROR) {
-                errorFound = true;
-            }
-        }
-    }
-
 }
