@@ -563,18 +563,19 @@ define SetupJavaCompilationBody
 	$(MKDIR) -p $$(@D) $$(dir $$($1_SJAVAC_PORTFILE))
 	$$(call ListPathsSafely,$1_SRCS,\n, >> $$($1_BIN)/_the.$1_batch.tmp)
 	$(ECHO) Compiling $1
-	($$($1_JVM) $$($1_SJAVAC) \
-	    $$($1_REMOTE) \
-	    -j 1 \
-	    --permit-unidentified-artifacts \
-	    --permit-sources-without-package \
-	    --compare-found-sources $$($1_BIN)/_the.$1_batch.tmp \
-	    --log=$(LOG_LEVEL) \
-	    $$($1_SJAVAC_ARGS) \
-	    $$($1_FLAGS) \
-	    $$($1_HEADERS_ARG) \
-	    -d $$($1_BIN) && \
-	$(MV) $$($1_BIN)/_the.$1_batch.tmp $$($1_BIN)/_the.$1_batch)
+	$(call LogFailures, $$($1_BIN)/_the.$1_batch.log, $1, \
+	    $$($1_JVM) $$($1_SJAVAC) \
+	        $$($1_REMOTE) \
+	        -j 1 \
+	        --permit-unidentified-artifacts \
+	        --permit-sources-without-package \
+	        --compare-found-sources $$($1_BIN)/_the.$1_batch.tmp \
+	        --log=$(LOG_LEVEL) \
+	        $$($1_SJAVAC_ARGS) \
+	        $$($1_FLAGS) \
+	        $$($1_HEADERS_ARG) \
+	        -d $$($1_BIN)) && \
+	$(MV) $$($1_BIN)/_the.$1_batch.tmp $$($1_BIN)/_the.$1_batch
         # Create a pubapi file that only changes when the pubapi changes. Dependent
         # compilations can use this file to only get recompiled when pubapi has changed.
         # Grep returns 1 if no matching lines are found. Do not fail for this.
@@ -619,11 +620,11 @@ define SetupJavaCompilationBody
 	$(RM) $$($1_BIN)/_the.$1_batch $$($1_BIN)/_the.$1_batch.tmp
 	$$(call ListPathsSafely,$1_SRCS,\n, >> $$($1_BIN)/_the.$1_batch.tmp)
 	$(ECHO) Compiling `$(WC) $$($1_BIN)/_the.$1_batch.tmp | $(TR) -s ' ' | $(CUT) -f 2 -d ' '` files for $1
-	($$($1_JVM) $$($1_JAVAC) $$($1_FLAGS) \
-	    -implicit:none \
-	    -d $$($1_BIN) $$($1_HEADERS_ARG) @$$($1_BIN)/_the.$1_batch.tmp && \
-	$(MV) $$($1_BIN)/_the.$1_batch.tmp $$($1_BIN)/_the.$1_batch)
-
+	$(call LogFailures, $$($1_BIN)/_the.$1_batch.log, $1, \
+	    $$($1_JVM) $$($1_JAVAC) $$($1_FLAGS) \
+	        -implicit:none \
+	        -d $$($1_BIN) $$($1_HEADERS_ARG) @$$($1_BIN)/_the.$1_batch.tmp) && \
+	$(MV) $$($1_BIN)/_the.$1_batch.tmp $$($1_BIN)/_the.$1_batch
   endif
 
   # Add all targets to main variable

@@ -79,5 +79,3 @@ public class LCDScale extends Component {
         }
     }
 }
-
-

@@ -23,30 +23,31 @@
 
 /*
  * @test
- * @bug 7030606 8006694
+ * @bug 7030606 8006694 8129962
  * @summary Project-coin: multi-catch types should be pairwise disjoint
  *  temporarily workaround combo tests are causing time out in several platforms
- * @library ../../lib
- * @modules jdk.compiler
- * @build JavacTestingAbstractThreadedTest
- * @run main/othervm DisjunctiveTypeWellFormednessTest
+ * @library /tools/javac/lib
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.code
+ *          jdk.compiler/com.sun.tools.javac.comp
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.javac.tree
+ *          jdk.compiler/com.sun.tools.javac.util
+ * @build combo.ComboTestHelper
+ * @run main DisjunctiveTypeWellFormednessTest
  */
 
-// use /othervm to avoid jtreg timeout issues (CODETOOLS-7900047)
-// see JDK-8006746
+import java.io.IOException;
 
-import java.net.URI;
-import java.util.Arrays;
-import javax.tools.Diagnostic;
-import javax.tools.JavaFileObject;
-import javax.tools.SimpleJavaFileObject;
-import com.sun.source.util.JavacTask;
+import combo.ComboInstance;
+import combo.ComboParameter;
+import combo.ComboTask.Result;
+import combo.ComboTestHelper;
 
-public class DisjunctiveTypeWellFormednessTest
-    extends JavacTestingAbstractThreadedTest
-    implements Runnable {
 
-    enum Alternative {
+public class DisjunctiveTypeWellFormednessTest extends ComboInstance<DisjunctiveTypeWellFormednessTest> {
+
+    enum Alternative implements ComboParameter {
         EXCEPTION("Exception"),
         RUNTIME_EXCEPTION("RuntimeException"),
         IO_EXCEPTION("java.io.IOException"),
@@ -55,19 +56,8 @@ public class DisjunctiveTypeWellFormednessTest
 
         String exceptionStr;
 
-        private Alternative(String exceptionStr) {
+        Alternative(String exceptionStr) {
             this.exceptionStr = exceptionStr;
-        }
-
-        static String makeDisjunctiveType(Alternative... alternatives) {
-            StringBuilder buf = new StringBuilder();
-            String sep = "";
-            for (Alternative alternative : alternatives) {
-                buf.append(sep);
-                buf.append(alternative.exceptionStr);
-                sep = "|";
-            }
-            return buf.toString();
         }
 
         boolean disjoint(Alternative that) {
@@ -82,135 +72,85 @@ public class DisjunctiveTypeWellFormednessTest
             /*FileNotFoundException*/    {  false,       true,               false,         false,                   true },
             /*IllegalArgumentException*/ {  false,       false,              true,          true,                    false }
         };
+
+        @Override
+        public String expand(String optParameter) {
+            return exceptionStr;
+        }
     }
 
-    enum Arity {
-        ONE(1),
-        TWO(2),
-        THREE(3),
-        FOUR(4),
-        FIVE(5);
+    enum Arity implements ComboParameter {
+        ONE(1, "#{TYPE[0]}"),
+        TWO(2, "#{TYPE[0]} | #{TYPE[1]}"),
+        THREE(3, "#{TYPE[0]} | #{TYPE[1]} | #{TYPE[2]}"),
+        FOUR(4, "#{TYPE[0]} | #{TYPE[1]} | #{TYPE[2]} | #{TYPE[3]}"),
+        FIVE(5, "#{TYPE[0]} | #{TYPE[1]} | #{TYPE[2]} | #{TYPE[3]} | #{TYPE[4]}");
 
         int n;
+        String arityTemplate;
 
-        private Arity(int n) {
+        Arity(int n, String arityTemplate) {
             this.n = n;
+            this.arityTemplate = arityTemplate;
+        }
+
+        @Override
+        public String expand(String optParameter) {
+            return arityTemplate;
         }
     }
 
     public static void main(String... args) throws Exception {
-        for (Arity arity : Arity.values()) {
-            for (Alternative a1 : Alternative.values()) {
-                if (arity == Arity.ONE) {
-                    pool.execute(new DisjunctiveTypeWellFormednessTest(a1));
-                    continue;
-                }
-                for (Alternative a2 : Alternative.values()) {
-                    if (arity == Arity.TWO) {
-                        pool.execute(new DisjunctiveTypeWellFormednessTest(a1, a2));
-                        continue;
-                    }
-                    for (Alternative a3 : Alternative.values()) {
-                        if (arity == Arity.THREE) {
-                            pool.execute(new DisjunctiveTypeWellFormednessTest(a1, a2, a3));
-                            continue;
-                        }
-                        for (Alternative a4 : Alternative.values()) {
-                            if (arity == Arity.FOUR) {
-                                pool.execute(new DisjunctiveTypeWellFormednessTest(a1, a2, a3, a4));
-                                continue;
-                            }
-                            for (Alternative a5 : Alternative.values()) {
-                                pool.execute(new DisjunctiveTypeWellFormednessTest(a1, a2, a3, a4, a5));
-                            }
-                        }
-                    }
-                }
+        new ComboTestHelper<DisjunctiveTypeWellFormednessTest>()
+                .withFilter(DisjunctiveTypeWellFormednessTest::arityFilter)
+                .withDimension("CTYPE", (x, arity) -> x.arity = arity, Arity.values())
+                .withArrayDimension("TYPE", (x, type, idx) -> x.alternatives[idx] = type, 5, Alternative.values())
+                .run(DisjunctiveTypeWellFormednessTest::new);
+    }
+
+    Arity arity;
+    Alternative[] alternatives = new Alternative[5];
+
+    boolean arityFilter() {
+        for (int i = arity.n; i < alternatives.length ; i++) {
+            if (alternatives[i].ordinal() != 0) {
+                return false;
             }
         }
-
-        checkAfterExec(false);
+        return true;
     }
 
-    Alternative[] alternatives;
-    JavaSource source;
-    DiagnosticChecker diagChecker;
-
-    DisjunctiveTypeWellFormednessTest(Alternative... alternatives) {
-        this.alternatives = alternatives;
-        this.source = new JavaSource();
-        this.diagChecker = new DiagnosticChecker();
-    }
-
-    class JavaSource extends SimpleJavaFileObject {
-
-        String template = "class Test {\n" +
-                              "void test() {\n" +
-                                 "try {} catch (#T e) {}\n" +
-                              "}\n" +
-                          "}\n";
-
-        String source;
-
-        public JavaSource() {
-            super(URI.create("myfo:/Test.java"), JavaFileObject.Kind.SOURCE);
-            source = template.replace("#T", Alternative.makeDisjunctiveType(alternatives));
-        }
-
-        @Override
-        public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-            return source;
-        }
-    }
+    String template = "class Test {\n" +
+                      "void test() {\n" +
+                      "try {} catch (#{CTYPE} e) {}\n" +
+                      "}\n" +
+                      "}\n";
 
     @Override
-    public void run() {
-        JavacTask ct = (JavacTask)comp.getTask(null, fm.get(), diagChecker,
-                null, null, Arrays.asList(source));
-        try {
-            ct.analyze();
-        } catch (Throwable t) {
-            processException(t);
-            return;
-        }
-        check();
+    public void doWork() throws IOException {
+        check(newCompilationTask()
+                .withSourceFromTemplate(template)
+                .analyze());
     }
 
-    void check() {
+    void check(Result<?> res) {
 
         int non_disjoint = 0;
-        int i = 0;
-        for (Alternative a1 : alternatives) {
-            int j = 0;
-            for (Alternative a2 : alternatives) {
-                if (i == j) continue;
-                if (!a1.disjoint(a2)) {
+        for (int i = 0 ; i < arity.n ; i++) {
+            for (int j = 0 ; j < i ; j++) {
+                if (!alternatives[i].disjoint(alternatives[j])) {
                     non_disjoint++;
                     break;
                 }
-                j++;
-            }
-            i++;
-        }
-
-        if (non_disjoint != diagChecker.errorsFound) {
-            throw new Error("invalid diagnostics for source:\n" +
-                source.getCharContent(true) +
-                "\nFound errors: " + diagChecker.errorsFound +
-                "\nExpected errors: " + non_disjoint);
-        }
-    }
-
-    static class DiagnosticChecker implements javax.tools.DiagnosticListener<JavaFileObject> {
-
-        int errorsFound;
-
-        public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
-            if (diagnostic.getKind() == Diagnostic.Kind.ERROR &&
-                    diagnostic.getCode().startsWith("compiler.err.multicatch.types.must.be.disjoint")) {
-                errorsFound++;
             }
         }
-    }
 
+        int foundErrs = res.diagnosticsForKey("compiler.err.multicatch.types.must.be.disjoint").size();
+        if (non_disjoint != foundErrs) {
+            fail("invalid diagnostics for source:\n" +
+                    res.compilationInfo() +
+                    "\nFound errors: " + foundErrs +
+                    "\nExpected errors: " + non_disjoint);
+        }
+    }
 }

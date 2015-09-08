@@ -3314,6 +3314,42 @@ void MacroAssembler::fpop() {
   fincstp();
 }
 
+void MacroAssembler::load_float(Address src) {
+  if (UseSSE >= 1) {
+    movflt(xmm0, src);
+  } else {
+    LP64_ONLY(ShouldNotReachHere());
+    NOT_LP64(fld_s(src));
+  }
+}
+
+void MacroAssembler::store_float(Address dst) {
+  if (UseSSE >= 1) {
+    movflt(dst, xmm0);
+  } else {
+    LP64_ONLY(ShouldNotReachHere());
+    NOT_LP64(fstp_s(dst));
+  }
+}
+
+void MacroAssembler::load_double(Address src) {
+  if (UseSSE >= 2) {
+    movdbl(xmm0, src);
+  } else {
+    LP64_ONLY(ShouldNotReachHere());
+    NOT_LP64(fld_d(src));
+  }
+}
+
+void MacroAssembler::store_double(Address dst) {
+  if (UseSSE >= 2) {
+    movdbl(dst, xmm0);
+  } else {
+    LP64_ONLY(ShouldNotReachHere());
+    NOT_LP64(fstp_d(dst));
+  }
+}
+
 void MacroAssembler::fremr(Register tmp) {
   save_rax(tmp);
   { Label L;

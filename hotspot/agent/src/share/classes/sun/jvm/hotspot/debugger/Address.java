@@ -209,4 +209,7 @@ public interface Address {
       returns the result as an Address. Returns null if the result was
       zero. */
   public Address    xorWithMask(long mask) throws UnsupportedOperationException;
+
+  // return address as long integer.
+  public long asLongValue();
 }
