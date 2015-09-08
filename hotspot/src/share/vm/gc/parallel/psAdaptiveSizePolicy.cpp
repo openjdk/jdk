@@ -299,7 +299,7 @@ void PSAdaptiveSizePolicy::compute_eden_space_size(
   // subtracted out.
   size_t eden_limit = max_eden_size;
 
-  const double gc_cost_limit = GCTimeLimit/100.0;
+  const double gc_cost_limit = GCTimeLimit / 100.0;
 
   // Which way should we go?
   // if pause requirement is not met

@@ -68,7 +68,7 @@ void HeapRegionDCTOC::walk_mem_region(MemRegion mr,
   // or it was allocated after marking finished, then we add it. Otherwise
   // we can safely ignore the object.
   if (!g1h->is_obj_dead(oop(cur), _hr)) {
-    oop_size = oop(cur)->oop_iterate(_rs_scan, mr);
+    oop_size = oop(cur)->oop_iterate_size(_rs_scan, mr);
   } else {
     oop_size = _hr->block_size(cur);
   }

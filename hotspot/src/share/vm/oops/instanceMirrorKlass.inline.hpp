@@ -53,30 +53,40 @@ void InstanceMirrorKlass::oop_oop_iterate_statics(oop obj, OopClosureType* closu
 }
 
 template <bool nv, class OopClosureType>
-int InstanceMirrorKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
+void InstanceMirrorKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
   InstanceKlass::oop_oop_iterate<nv>(obj, closure);
 
   if (Devirtualizer<nv>::do_metadata(closure)) {
     Klass* klass = java_lang_Class::as_Klass(obj);
     // We'll get NULL for primitive mirrors.
     if (klass != NULL) {
-      Devirtualizer<nv>::do_klass(closure, klass);
+      if (klass->oop_is_instance() && InstanceKlass::cast(klass)->is_anonymous()) {
+        // An anonymous class doesn't have its own class loader, so when handling
+        // the java mirror for an anonymous class we need to make sure its class
+        // loader data is claimed, this is done by calling do_cld explicitly.
+        // For non-anonymous classes the call to do_cld is made when the class
+        // loader itself is handled.
+        Devirtualizer<nv>::do_cld(closure, klass->class_loader_data());
+      } else {
+        Devirtualizer<nv>::do_klass(closure, klass);
+      }
+    } else {
+      // If klass is NULL then this a mirror for a primitive type.
+      // We don't have to follow them, since they are handled as strong
+      // roots in Universe::oops_do.
+      assert(java_lang_Class::is_primitive(obj), "Sanity check");
     }
   }
 
   oop_oop_iterate_statics<nv>(obj, closure);
-
-  return oop_size(obj);
 }
 
 #if INCLUDE_ALL_GCS
 template <bool nv, class OopClosureType>
-int InstanceMirrorKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure) {
+void InstanceMirrorKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure) {
   InstanceKlass::oop_oop_iterate_reverse<nv>(obj, closure);
 
   InstanceMirrorKlass::oop_oop_iterate_statics<nv>(obj, closure);
-
-  return oop_size(obj);
 }
 #endif
 
@@ -115,7 +125,7 @@ void InstanceMirrorKlass::oop_oop_iterate_statics_bounded(oop obj, OopClosureTyp
 }
 
 template <bool nv, class OopClosureType>
-int InstanceMirrorKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr) {
+void InstanceMirrorKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr) {
   InstanceKlass::oop_oop_iterate_bounded<nv>(obj, closure, mr);
 
   if (Devirtualizer<nv>::do_metadata(closure)) {
@@ -129,8 +139,6 @@ int InstanceMirrorKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closur
   }
 
   oop_oop_iterate_statics_bounded<nv>(obj, closure, mr);
-
-  return oop_size(obj);
 }
 
 #define ALL_INSTANCE_MIRROR_KLASS_OOP_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)  \

@@ -61,7 +61,7 @@ class ExtendedOopClosure : public OopClosure {
   //
   // 1) do_klass on the header klass pointer.
   // 2) do_klass on the klass pointer in the mirrors.
-  // 3) do_class_loader_data on the class loader data in class loaders.
+  // 3) do_cld   on the class loader data in class loaders.
   //
   // The virtual (without suffix) and the non-virtual (with _nv suffix) need
   // to be updated together, or else the devirtualization will break.
@@ -71,13 +71,14 @@ class ExtendedOopClosure : public OopClosure {
   // ExtendedOopClosures that don't need to walk the metadata.
   // Currently, only CMS and G1 need these.
 
-  virtual bool do_metadata() { return do_metadata_nv(); }
   bool do_metadata_nv()      { return false; }
+  virtual bool do_metadata() { return do_metadata_nv(); }
 
-  virtual void do_klass(Klass* k)   { do_klass_nv(k); }
-  void do_klass_nv(Klass* k)        { ShouldNotReachHere(); }
+  void do_klass_nv(Klass* k)      { ShouldNotReachHere(); }
+  virtual void do_klass(Klass* k) { do_klass_nv(k); }
 
-  virtual void do_class_loader_data(ClassLoaderData* cld) { ShouldNotReachHere(); }
+  void do_cld_nv(ClassLoaderData* cld)      { ShouldNotReachHere(); }
+  virtual void do_cld(ClassLoaderData* cld) { do_cld_nv(cld); }
 
   // True iff this closure may be safely applied more than once to an oop
   // location without an intervening "major reset" (like the end of a GC).
@@ -180,13 +181,14 @@ class MetadataAwareOopClosure: public ExtendedOopClosure {
     _klass_closure.initialize(this);
   }
 
-  virtual bool do_metadata()    { return do_metadata_nv(); }
-  inline  bool do_metadata_nv() { return true; }
+  bool do_metadata_nv()      { return true; }
+  virtual bool do_metadata() { return do_metadata_nv(); }
 
-  virtual void do_klass(Klass* k);
   void do_klass_nv(Klass* k);
+  virtual void do_klass(Klass* k) { do_klass_nv(k); }
 
-  virtual void do_class_loader_data(ClassLoaderData* cld);
+  void do_cld_nv(ClassLoaderData* cld);
+  virtual void do_cld(ClassLoaderData* cld) { do_cld_nv(cld); }
 };
 
 // ObjectClosure is used for iterating through an object space
@@ -370,6 +372,7 @@ template <> class Devirtualizer<true> {
  public:
   template <class OopClosureType, typename T> static void do_oop(OopClosureType* closure, T* p);
   template <class OopClosureType>             static void do_klass(OopClosureType* closure, Klass* k);
+  template <class OopClosureType>             static void do_cld(OopClosureType* closure, ClassLoaderData* cld);
   template <class OopClosureType>             static bool do_metadata(OopClosureType* closure);
 };
 
@@ -378,6 +381,7 @@ template <> class Devirtualizer<false> {
  public:
   template <class OopClosureType, typename T> static void do_oop(OopClosureType* closure, T* p);
   template <class OopClosureType>             static void do_klass(OopClosureType* closure, Klass* k);
+  template <class OopClosureType>             static void do_cld(OopClosureType* closure, ClassLoaderData* cld);
   template <class OopClosureType>             static bool do_metadata(OopClosureType* closure);
 };
 

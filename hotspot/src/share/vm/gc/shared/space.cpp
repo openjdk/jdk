@@ -237,7 +237,7 @@ void ContiguousSpaceDCTOC::walk_mem_region_with_cl(MemRegion mr,        \
                                                    HeapWord* bottom,    \
                                                    HeapWord* top,       \
                                                    ClosureType* cl) {   \
-  bottom += oop(bottom)->oop_iterate(cl, mr);                           \
+  bottom += oop(bottom)->oop_iterate_size(cl, mr);                      \
   if (bottom < top) {                                                   \
     HeapWord* next_obj = bottom + oop(bottom)->size();                  \
     while (next_obj < top) {                                            \
@@ -508,7 +508,7 @@ bool Space::obj_is_alive(const HeapWord* p) const {
     HeapWord* t = mr.end();                                                 \
     while (obj_addr < t) {                                                  \
       assert(oop(obj_addr)->is_oop(), "Should be an oop");                  \
-      obj_addr += oop(obj_addr)->oop_iterate(blk);                          \
+      obj_addr += oop(obj_addr)->oop_iterate_size(blk);                     \
     }                                                                       \
   }
 
@@ -523,7 +523,7 @@ void ContiguousSpace::oop_iterate(ExtendedOopClosure* blk) {
   HeapWord* t = top();
   // Could call objects iterate, but this is easier.
   while (obj_addr < t) {
-    obj_addr += oop(obj_addr)->oop_iterate(blk);
+    obj_addr += oop(obj_addr)->oop_iterate_size(blk);
   }
 }
 
@@ -578,7 +578,7 @@ oop_since_save_marks_iterate##nv_suffix(OopClosureType* blk) {            \
       Prefetch::write(p, interval);                                       \
       debug_only(HeapWord* prev = p);                                     \
       oop m = oop(p);                                                     \
-      p += m->oop_iterate(blk);                                           \
+      p += m->oop_iterate_size(blk);                                      \
     }                                                                     \
   } while (t < top());                                                    \
                                                                           \

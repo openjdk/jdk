@@ -66,7 +66,8 @@ class MetadataAwareOopsInGenClosure: public OopsInGenClosure {
   virtual void do_klass(Klass* k);
   void do_klass_nv(Klass* k);
 
-  virtual void do_class_loader_data(ClassLoaderData* cld);
+  virtual void do_cld(ClassLoaderData* cld) { do_cld_nv(cld); }
+  void do_cld_nv(ClassLoaderData* cld);
 };
 
 class MarkRefsIntoClosure: public MetadataAwareOopsInGenClosure {

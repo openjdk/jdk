@@ -60,7 +60,7 @@ CollectorCounters*  PSMarkSweep::_counters = NULL;
 
 void PSMarkSweep::initialize() {
   MemRegion mr = ParallelScavengeHeap::heap()->reserved_region();
-  _ref_processor = new ReferenceProcessor(mr);     // a vanilla ref proc
+  set_ref_processor(new ReferenceProcessor(mr));     // a vanilla ref proc
   _counters = new CollectorCounters("PSMarkSweep", 1);
 }
 

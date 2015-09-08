@@ -38,6 +38,8 @@
 // as the previous macro based implementation.
 #ifdef TARGET_COMPILER_visCPP
 #define INLINE __forceinline
+#elif defined(TARGET_COMPILER_sparcWorks)
+#define INLINE __attribute__((always_inline))
 #else
 #define INLINE inline
 #endif

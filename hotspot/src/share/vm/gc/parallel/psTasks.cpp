@@ -172,10 +172,10 @@ void StealTask::do_it(GCTaskManager* manager, uint which) {
 
 void OldToYoungRootsTask::do_it(GCTaskManager* manager, uint which) {
   // There are not old-to-young pointers if the old gen is empty.
-  assert(!_gen->object_space()->is_empty(),
+  assert(!_old_gen->object_space()->is_empty(),
     "Should not be called is there is no work");
-  assert(_gen != NULL, "Sanity");
-  assert(_gen->object_space()->contains(_gen_top) || _gen_top == _gen->object_space()->top(), "Sanity");
+  assert(_old_gen != NULL, "Sanity");
+  assert(_old_gen->object_space()->contains(_gen_top) || _gen_top == _old_gen->object_space()->top(), "Sanity");
   assert(_stripe_number < ParallelGCThreads, "Sanity");
 
   {
@@ -183,8 +183,8 @@ void OldToYoungRootsTask::do_it(GCTaskManager* manager, uint which) {
     CardTableExtension* card_table =
       barrier_set_cast<CardTableExtension>(ParallelScavengeHeap::heap()->barrier_set());
 
-    card_table->scavenge_contents_parallel(_gen->start_array(),
-                                           _gen->object_space(),
+    card_table->scavenge_contents_parallel(_old_gen->start_array(),
+                                           _old_gen->object_space(),
                                            _gen_top,
                                            pm,
                                            _stripe_number,

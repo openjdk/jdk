@@ -100,7 +100,6 @@ Mutex*   ProfilePrint_lock            = NULL;
 Mutex*   ExceptionCache_lock          = NULL;
 Monitor* ObjAllocPost_lock            = NULL;
 Mutex*   OsrList_lock                 = NULL;
-Mutex*   ImageFileReaderTable_lock    = NULL;
 
 #ifndef PRODUCT
 Mutex*   FullGCALot_lock              = NULL;
@@ -228,7 +227,6 @@ void mutex_init() {
   def(ProfilePrint_lock            , Mutex  , leaf,        false, Monitor::_safepoint_check_always);     // serial profile printing
   def(ExceptionCache_lock          , Mutex  , leaf,        false, Monitor::_safepoint_check_always);     // serial profile printing
   def(OsrList_lock                 , Mutex  , leaf,        true,  Monitor::_safepoint_check_never);
-  def(ImageFileReaderTable_lock    , Mutex  , nonleaf,     false, Monitor::_safepoint_check_always);     // synchronize image readers open/close
   def(Debug1_lock                  , Mutex  , leaf,        true,  Monitor::_safepoint_check_never);
 #ifndef PRODUCT
   def(FullGCALot_lock              , Mutex  , leaf,        false, Monitor::_safepoint_check_always);     // a lock to make FullGCALot MT safe

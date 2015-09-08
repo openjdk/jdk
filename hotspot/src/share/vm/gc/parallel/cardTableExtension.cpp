@@ -89,7 +89,7 @@ class CheckForUnmarkedObjects : public ObjectClosure {
     CheckForUnmarkedOops object_check(_young_gen, _card_table);
     obj->oop_iterate_no_header(&object_check);
     if (object_check.has_unmarked_oop()) {
-      assert(_card_table->addr_is_marked_imprecise(obj), "Found unmarked young_gen object");
+      guarantee(_card_table->addr_is_marked_imprecise(obj), "Found unmarked young_gen object");
     }
   }
 };

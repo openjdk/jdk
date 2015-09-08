@@ -303,7 +303,7 @@ public:
     // completed(), which is desirable since a region must be claimed before it
     // can be completed.
     bool available() const { return _dc_and_los < dc_one; }
-    bool claimed() const   { return _dc_and_los >= dc_claimed; }
+    bool claimed()   const { return _dc_and_los >= dc_claimed; }
     bool completed() const { return _dc_and_los >= dc_completed; }
 
     // These are not atomic.
@@ -978,7 +978,6 @@ class PSParallelCompact : AllStatic {
 #ifdef  ASSERT
   static bool   _dwl_initialized;
 #endif  // #ifdef ASSERT
-
 
  public:
   static ParallelOldTracer* gc_tracer() { return &_gc_tracer; }

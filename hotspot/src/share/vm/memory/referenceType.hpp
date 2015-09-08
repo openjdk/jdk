@@ -32,11 +32,15 @@
 enum ReferenceType {
   REF_NONE,      // Regular class
   REF_OTHER,     // Subclass of java/lang/ref/Reference, but not subclass of one of the classes below
+  ///////////////// Only the types below have their own discovered lists
   REF_SOFT,      // Subclass of java/lang/ref/SoftReference
   REF_WEAK,      // Subclass of java/lang/ref/WeakReference
   REF_FINAL,     // Subclass of java/lang/ref/FinalReference
   REF_PHANTOM,   // Subclass of java/lang/ref/PhantomReference
-  REF_CLEANER    // Subclass of sun/misc/Cleaner
+  REF_CLEANER,   // Subclass of sun/misc/Cleaner
+  ///////////////// Only the types in the above range have their own discovered lists
+  REF_JNI,        // JNI weak refs
+  REF_LISTS_COUNT = REF_CLEANER - REF_OTHER  // Number of discovered lists
 };
 
 #endif // SHARE_VM_MEMORY_REFERENCETYPE_HPP

@@ -147,6 +147,10 @@ class G1SATBCardTableLoggingModRefBS: public G1SATBCardTableModRefBS {
  private:
   G1SATBCardTableLoggingModRefBSChangedListener _listener;
   DirtyCardQueueSet& _dcqs;
+
+ protected:
+  virtual void write_ref_field_work(void* field, oop new_val, bool release);
+
  public:
   static size_t compute_size(size_t mem_region_size_in_words) {
     size_t number_of_slots = (mem_region_size_in_words / card_size_in_words);
@@ -164,8 +168,6 @@ class G1SATBCardTableLoggingModRefBS: public G1SATBCardTableModRefBS {
   virtual void initialize(G1RegionToSpaceMapper* mapper);
 
   virtual void resize_covered_region(MemRegion new_region) { ShouldNotReachHere(); }
-
-  void write_ref_field_work(void* field, oop new_val, bool release = false);
 
   // Can be called from static contexts.
   static void write_ref_field_static(void* field, oop new_val);

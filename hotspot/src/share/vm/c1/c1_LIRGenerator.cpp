@@ -1425,7 +1425,7 @@ void LIRGenerator::pre_barrier(LIR_Opr addr_opr, LIR_Opr pre_val,
       G1SATBCardTableModRef_pre_barrier(addr_opr, pre_val, do_load, patch, info);
       break;
 #endif // INCLUDE_ALL_GCS
-    case BarrierSet::CardTableModRef:
+    case BarrierSet::CardTableForRS:
     case BarrierSet::CardTableExtension:
       // No pre barriers
       break;
@@ -1445,7 +1445,7 @@ void LIRGenerator::post_barrier(LIR_OprDesc* addr, LIR_OprDesc* new_val) {
       G1SATBCardTableModRef_post_barrier(addr,  new_val);
       break;
 #endif // INCLUDE_ALL_GCS
-    case BarrierSet::CardTableModRef:
+    case BarrierSet::CardTableForRS:
     case BarrierSet::CardTableExtension:
       CardTableModRef_post_barrier(addr,  new_val);
       break;

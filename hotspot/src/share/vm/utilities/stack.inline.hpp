@@ -27,6 +27,17 @@
 
 #include "utilities/stack.hpp"
 
+// Stack is used by the GC code and in some hot paths a lot of the Stack
+// code gets inlined. This is generally good, but when too much code has
+// been inlined, no further inlining is allowed by GCC. Therefore we need
+// to prevent parts of the slow path in Stack to be inlined to allow other
+// code to be.
+#if defined(TARGET_COMPILER_gcc)
+#define NOINLINE __attribute__((noinline))
+#else
+#define NOINLINE
+#endif
+
 template <MEMFLAGS F> StackBase<F>::StackBase(size_t segment_size, size_t max_cache_size,
                      size_t max_size):
   _seg_size(segment_size),
@@ -141,7 +152,7 @@ void Stack<E, F>::free(E* addr, size_t bytes)
 }
 
 template <class E, MEMFLAGS F>
-void Stack<E, F>::push_segment()
+NOINLINE void Stack<E, F>::push_segment()
 {
   assert(this->_cur_seg_size == this->_seg_size, "current segment is not full");
   E* next;
@@ -268,5 +279,7 @@ E* StackIterator<E, F>::next_addr()
   }
   return _cur_seg + --_cur_seg_size;
 }
+
+#undef NOINLINE
 
 #endif // SHARE_VM_UTILITIES_STACK_INLINE_HPP

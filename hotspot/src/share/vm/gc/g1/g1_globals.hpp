@@ -82,6 +82,11 @@
           "If true, enable reference discovery during concurrent "          \
           "marking and reference processing at the end of remark.")         \
                                                                             \
+  experimental(double, G1LastPLABAverageOccupancy, 50.0,                    \
+               "The expected average occupancy of the last PLAB in "        \
+               "percent.")                                                  \
+               range(0.001, 100.0)                                          \
+                                                                            \
   product(size_t, G1SATBBufferSize, 1*K,                                    \
           "Number of entries in an SATB log buffer.")                       \
                                                                             \

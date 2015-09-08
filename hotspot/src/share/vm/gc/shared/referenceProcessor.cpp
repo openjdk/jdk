@@ -243,10 +243,13 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(
       process_discovered_reflist(_discoveredPhantomRefs, NULL, false,
                                  is_alive, keep_alive, complete_gc, task_executor);
 
-    // Process cleaners, but include them in phantom statistics.  We expect
-    // Cleaner references to be temporary, and don't want to deal with
-    // possible incompatibilities arising from making it more visible.
-    phantom_count +=
+  }
+
+  // Cleaners
+  size_t cleaner_count = 0;
+  {
+    GCTraceTime tt("Cleaners", trace_time, false, gc_timer, gc_id);
+    cleaner_count =
       process_discovered_reflist(_discoveredCleanerRefs, NULL, true,
                                  is_alive, keep_alive, complete_gc, task_executor);
   }
@@ -256,15 +259,17 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(
   // that is not how the JDK1.2 specification is. See #4126360. Native code can
   // thus use JNI weak references to circumvent the phantom references and
   // resurrect a "post-mortem" object.
+  size_t jni_weak_ref_count = 0;
   {
     GCTraceTime tt("JNI Weak Reference", trace_time, false, gc_timer, gc_id);
     if (task_executor != NULL) {
       task_executor->set_single_threaded_mode();
     }
-    process_phaseJNI(is_alive, keep_alive, complete_gc);
+    jni_weak_ref_count =
+      process_phaseJNI(is_alive, keep_alive, complete_gc);
   }
 
-  return ReferenceProcessorStats(soft_count, weak_count, final_count, phantom_count);
+  return ReferenceProcessorStats(soft_count, weak_count, final_count, phantom_count, cleaner_count, jni_weak_ref_count);
 }
 
 #ifndef PRODUCT
@@ -291,17 +296,17 @@ uint ReferenceProcessor::count_jni_refs() {
 }
 #endif
 
-void ReferenceProcessor::process_phaseJNI(BoolObjectClosure* is_alive,
-                                          OopClosure*        keep_alive,
-                                          VoidClosure*       complete_gc) {
-#ifndef PRODUCT
-  if (PrintGCDetails && PrintReferenceGC) {
-    unsigned int count = count_jni_refs();
-    gclog_or_tty->print(", %u refs", count);
-  }
-#endif
-  JNIHandles::weak_oops_do(is_alive, keep_alive);
+size_t ReferenceProcessor::process_phaseJNI(BoolObjectClosure* is_alive,
+                                            OopClosure*        keep_alive,
+                                            VoidClosure*       complete_gc) {
+  DEBUG_ONLY(size_t check_count = count_jni_refs();)
+  size_t count = JNIHandles::weak_oops_do(is_alive, keep_alive);
+  assert(count == check_count, "Counts didn't match");
   complete_gc->do_void();
+  if (PrintGCDetails && PrintReferenceGC) {
+    gclog_or_tty->print(", " SIZE_FORMAT " refs", count);
+  }
+  return count;
 }
 
 
@@ -941,9 +946,10 @@ inline DiscoveredList* ReferenceProcessor::get_discovered_list(ReferenceType rt)
       list = &_discoveredCleanerRefs[id];
       break;
     case REF_NONE:
+    case REF_JNI:
       // we should not reach here if we are an InstanceRefKlass
     default:
-      ShouldNotReachHere();
+      guarantee(false, err_msg("rt should not be %d", rt));
   }
   if (TraceReferenceGC && PrintGCDetails) {
     gclog_or_tty->print_cr("Thread %d gets list " INTPTR_FORMAT, id, p2i(list));
@@ -1059,7 +1065,7 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
     // can mark through them now, rather than delaying that
     // to the reference-processing phase. Since all current
     // time-stamp policies advance the soft-ref clock only
-    // at a major collection cycle, this is always currently
+    // at a full collection cycle, this is always currently
     // accurate.
     if (!_current_soft_ref_policy->should_clear_reference(obj, _soft_ref_timestamp_clock)) {
       return false;

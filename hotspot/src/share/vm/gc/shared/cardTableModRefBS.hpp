@@ -183,7 +183,7 @@ protected:
   // these functions here for performance.
 
   void write_ref_field_work(oop obj, size_t offset, oop newVal);
-  virtual void write_ref_field_work(void* field, oop newVal, bool release = false);
+  virtual void write_ref_field_work(void* field, oop newVal, bool release);
 public:
 
   bool has_write_ref_array_opt() { return true; }

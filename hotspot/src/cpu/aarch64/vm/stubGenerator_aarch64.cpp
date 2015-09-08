@@ -691,7 +691,7 @@ class StubGenerator: public StubCodeGenerator {
         __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_pre), 2);
         __ pop(RegSet::range(r0, r29), sp);         // integer registers except lr & sp        }
         break;
-      case BarrierSet::CardTableModRef:
+      case BarrierSet::CardTableForRS:
       case BarrierSet::CardTableExtension:
       case BarrierSet::ModRef:
         break;
@@ -731,7 +731,7 @@ class StubGenerator: public StubCodeGenerator {
           __ pop(RegSet::range(r0, r29), sp);         // integer registers except lr & sp        }
         }
         break;
-      case BarrierSet::CardTableModRef:
+      case BarrierSet::CardTableForRS:
       case BarrierSet::CardTableExtension:
         {
           CardTableModRefBS* ct = (CardTableModRefBS*)bs;

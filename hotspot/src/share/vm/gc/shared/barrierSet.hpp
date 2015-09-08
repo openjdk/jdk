@@ -132,6 +132,9 @@ public:
   // First the pre-write versions...
   template <class T> inline void write_ref_field_pre(T* field, oop new_val);
 private:
+  // Helper for write_ref_field_pre and friends, testing for specialized cases.
+  bool devirtualize_reference_writes() const;
+
   // Keep this private so as to catch violations at build time.
   virtual void write_ref_field_pre_work(     void* field, oop new_val) { guarantee(false, "Not needed"); };
 protected:
@@ -142,7 +145,7 @@ public:
   // ...then the post-write version.
   inline void write_ref_field(void* field, oop new_val, bool release = false);
 protected:
-  virtual void write_ref_field_work(void* field, oop new_val, bool release = false) = 0;
+  virtual void write_ref_field_work(void* field, oop new_val, bool release) = 0;
 public:
 
   // Invoke the barrier, if any, necessary when writing the "bytes"-byte

@@ -3869,6 +3869,7 @@ void TestG1BiasedArray_test();
 void TestBufferingOopClosure_test();
 void TestCodeCacheRemSet_test();
 void FreeRegionList_test();
+void test_memset_with_concurrent_readers();
 #endif
 
 void execute_internal_vm_tests() {
@@ -3910,6 +3911,7 @@ void execute_internal_vm_tests() {
     if (UseG1GC) {
       run_unit_test(FreeRegionList_test());
     }
+    run_unit_test(test_memset_with_concurrent_readers());
 #endif
     tty->print_cr("All internal VM tests passed");
   }

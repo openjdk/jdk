@@ -60,8 +60,8 @@ static Flag::Error MaxPLABSizeBounds(const char* name, size_t value, bool verbos
   if ((UseConcMarkSweepGC || UseG1GC) && (value > PLAB::max_size())) {
     CommandLineError::print(verbose,
                             "%s (" SIZE_FORMAT ") must be "
-                            "less than ergonomic PLAB maximum size (" SIZE_FORMAT ")\n",
-                            name, value, PLAB::min_size());
+                            "less than or equal to ergonomic PLAB maximum size (" SIZE_FORMAT ")\n",
+                            name, value, PLAB::max_size());
     return Flag::VIOLATES_CONSTRAINT;
   }
 #endif // INCLUDE_ALL_GCS

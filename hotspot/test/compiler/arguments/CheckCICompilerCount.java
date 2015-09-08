@@ -75,7 +75,7 @@ public class CheckCICompilerCount {
             "intx CICompilerCount                          := 1                                   {product}"
         },
         {
-            "CICompilerCount=0 must be at least 1",
+            "CICompilerCount (0) must be at least 1",
             "Improperly specified VM option 'CICompilerCount=0'"
         },
         {
@@ -130,7 +130,7 @@ public class CheckCICompilerCount {
             "intx CICompilerCount                          := 2                                   {product}"
         },
         {
-            "CICompilerCount=1 must be at least 2",
+            "CICompilerCount (1) must be at least 2",
             "Improperly specified VM option 'CICompilerCount=1'"
         },
         {

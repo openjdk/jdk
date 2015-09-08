@@ -486,12 +486,12 @@ void PSOldGen::verify() {
   object_space()->verify();
 }
 class VerifyObjectStartArrayClosure : public ObjectClosure {
-  PSOldGen* _gen;
+  PSOldGen* _old_gen;
   ObjectStartArray* _start_array;
 
  public:
-  VerifyObjectStartArrayClosure(PSOldGen* gen, ObjectStartArray* start_array) :
-    _gen(gen), _start_array(start_array) { }
+  VerifyObjectStartArrayClosure(PSOldGen* old_gen, ObjectStartArray* start_array) :
+    _old_gen(old_gen), _start_array(start_array) { }
 
   virtual void do_object(oop obj) {
     HeapWord* test_addr = (HeapWord*)obj + 1;

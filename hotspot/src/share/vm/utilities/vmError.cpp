@@ -231,7 +231,7 @@ char* VMError::error_string(char* buf, int buflen) {
 
   if (signame) {
     jio_snprintf(buf, buflen,
-                 "%s (0x%x) at pc=" PTR_FORMAT ", pid=%d, tid=" INTPTR_FORMAT,
+                 "%s (0x%x) at pc=" PTR_FORMAT ", pid=%d, tid=" UINTX_FORMAT,
                  signame, _id, _pc,
                  os::current_process_id(), os::current_thread_id());
   } else if (_filename != NULL && _lineno > 0) {
@@ -239,7 +239,7 @@ char* VMError::error_string(char* buf, int buflen) {
     char separator = os::file_separator()[0];
     const char *p = strrchr(_filename, separator);
     int n = jio_snprintf(buf, buflen,
-                         "Internal Error at %s:%d, pid=%d, tid=" INTPTR_FORMAT,
+                         "Internal Error at %s:%d, pid=%d, tid=" UINTX_FORMAT,
                          p ? p + 1 : _filename, _lineno,
                          os::current_process_id(), os::current_thread_id());
     if (n >= 0 && n < buflen && _message) {
@@ -253,7 +253,7 @@ char* VMError::error_string(char* buf, int buflen) {
     }
   } else {
     jio_snprintf(buf, buflen,
-                 "Internal Error (0x%x), pid=%d, tid=" INTPTR_FORMAT,
+                 "Internal Error (0x%x), pid=%d, tid=" UINTX_FORMAT,
                  _id, os::current_process_id(), os::current_thread_id());
   }
 
@@ -486,7 +486,7 @@ void VMError::report(outputStream* st) {
 
      // process id, thread id
      st->print(", pid=%d", os::current_process_id());
-     st->print(", tid=" INTPTR_FORMAT, os::current_thread_id());
+     st->print(", tid=" UINTX_FORMAT, os::current_thread_id());
      st->cr();
 
   STEP(80, "(printing error message)")
