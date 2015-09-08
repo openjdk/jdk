@@ -1021,7 +1021,6 @@ void nmethod::clear_ic_stubs() {
 
 
 void nmethod::cleanup_inline_caches() {
-
   assert_locked_or_safepoint(CompiledIC_lock);
 
   // If the method is not entrant or zombie then a JMP is plastered over the
@@ -1037,7 +1036,8 @@ void nmethod::cleanup_inline_caches() {
     // In fact, why are we bothering to look at oops in a non-entrant method??
   }
 
-  // Find all calls in an nmethod, and clear the ones that points to zombie methods
+  // Find all calls in an nmethod and clear the ones that point to non-entrant,
+  // zombie and unloaded nmethods.
   ResourceMark rm;
   RelocIterator iter(this, low_boundary);
   while(iter.next()) {
@@ -1049,7 +1049,7 @@ void nmethod::cleanup_inline_caches() {
         CodeBlob *cb = CodeCache::find_blob_unsafe(ic->ic_destination());
         if( cb != NULL && cb->is_nmethod() ) {
           nmethod* nm = (nmethod*)cb;
-          // Clean inline caches pointing to both zombie and not_entrant methods
+          // Clean inline caches pointing to zombie, non-entrant and unloaded methods
           if (!nm->is_in_use() || (nm->method()->code() != nm)) ic->set_to_clean();
         }
         break;
@@ -1059,7 +1059,7 @@ void nmethod::cleanup_inline_caches() {
         CodeBlob *cb = CodeCache::find_blob_unsafe(csc->destination());
         if( cb != NULL && cb->is_nmethod() ) {
           nmethod* nm = (nmethod*)cb;
-          // Clean inline caches pointing to both zombie and not_entrant methods
+          // Clean inline caches pointing to zombie, non-entrant and unloaded methods
           if (!nm->is_in_use() || (nm->method()->code() != nm)) csc->set_to_clean();
         }
         break;
@@ -2529,7 +2529,7 @@ void nmethod::verify() {
   // Hmm. OSR methods can be deopted but not marked as zombie or not_entrant
   // seems odd.
 
-  if( is_zombie() || is_not_entrant() )
+  if (is_zombie() || is_not_entrant() || is_unloaded())
     return;
 
   // Make sure all the entry points are correctly aligned for patching.

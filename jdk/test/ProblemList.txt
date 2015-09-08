@@ -136,9 +136,6 @@ java/lang/ClassLoader/deadlock/GetResource.java                 generic-all
 # 8133552
 java/lang/ProcessHandle/InfoTest.java                           generic-all
 
-# 8134677
-java/lang/SecurityManager/CheckPackageMatching.java             windows-all
-
 ############################################################################
 
 # jdk_instrument
@@ -322,6 +319,9 @@ javax/sound/midi/Gervill/SoftProvider/GetDevice.java            generic-all
 
 # jdk_time
 
+# 8134979
+java/time/tck/java/time/chrono/TCKJapaneseChronology.java       generic-all
+
 ############################################################################
 
 # jdk_tools
@@ -386,11 +386,6 @@ sun/tools/jstatd/TestJstatdExternalRegistry.java                generic-all
 
 # 6456333
 sun/tools/jps/TestJpsJarRelative.java				generic-all
-
-# 8134420
-sun/tools/jps/TestJpsClass.java				generic-all
-sun/tools/jps/TestJpsJar.java					generic-all
-sun/tools/jps/TestJpsSanity.java				generic-all
 
 # 6734748
 sun/tools/jinfo/JInfoRunningProcessFlagTest.java		generic-all

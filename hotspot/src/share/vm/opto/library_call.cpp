@@ -2730,7 +2730,22 @@ bool LibraryCallKit::inline_unsafe_load_store(BasicType type, LoadStoreKind kind
         load_store = _gvn.transform(new CompareAndSwapPNode(control(), mem, adr, newval, oldval));
       }
     }
-    post_barrier(control(), load_store, base, adr, alias_idx, newval, T_OBJECT, true);
+    if (kind == LS_cmpxchg) {
+      // Emit the post barrier only when the actual store happened.
+      // This makes sense to check only for compareAndSet that can fail to set the value.
+      // CAS success path is marked more likely since we anticipate this is a performance
+      // critical path, while CAS failure path can use the penalty for going through unlikely
+      // path as backoff. Which is still better than doing a store barrier there.
+      IdealKit ideal(this);
+      ideal.if_then(load_store, BoolTest::ne, ideal.ConI(0), PROB_STATIC_FREQUENT); {
+        sync_kit(ideal);
+        post_barrier(ideal.ctrl(), load_store, base, adr, alias_idx, newval, T_OBJECT, true);
+        ideal.sync_kit(this);
+      } ideal.end_if();
+      final_sync(ideal);
+    } else {
+      post_barrier(control(), load_store, base, adr, alias_idx, newval, T_OBJECT, true);
+    }
     break;
   default:
     fatal(err_msg_res("unexpected type %d: %s", type, type2name(type)));

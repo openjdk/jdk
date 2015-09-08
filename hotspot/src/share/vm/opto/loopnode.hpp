@@ -384,7 +384,7 @@ public:
   { }
 
   // Is 'l' a member of 'this'?
-  int is_member( const IdealLoopTree *l ) const; // Test for nested membership
+  bool is_member(const IdealLoopTree *l) const; // Test for nested membership
 
   // Set loop nesting depth.  Accumulate has_call bits.
   int set_nest( uint depth );
@@ -1086,6 +1086,8 @@ private:
   bool split_up( Node *n, Node *blk1, Node *blk2 );
   void sink_use( Node *use, Node *post_loop );
   Node *place_near_use( Node *useblock ) const;
+  Node* try_move_store_before_loop(Node* n, Node *n_ctrl);
+  void try_move_store_after_loop(Node* n);
 
   bool _created_loop_node;
 public:

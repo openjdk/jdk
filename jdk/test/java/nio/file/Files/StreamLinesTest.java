@@ -138,18 +138,25 @@ public class StreamLinesTest extends OpTestCase {
                                                StandardCharsets.ISO_8859_1,
                                                StandardCharsets.UTF_16);
         String[] lines = {"", "A", "AB", "ABC", "ABCD"};
-        int[] linesSizes = {1, 2, 3, 4, 16, 256, 1024};
+        int[] linesSizes = {0, 1, 2, 3, 4, 16, 256, 1024};
 
         for (Charset charset : charsets) {
-            for (String line : lines) {
-                for (int linesSize : linesSizes) {
-                    for (LineSeparator ls : EnumSet.complementOf(EnumSet.of(LineSeparator.NONE))) {
-                        String description = String.format("%d lines of \"%s\" with separator %s", linesSize, line, ls);
-                        l.add(of(description,
-                                 i -> line,
-                                 i -> ls,
-                                 linesSize, charset));
+            for (int linesSize : linesSizes) {
+                if (linesSize > 0) {
+                    for (String line : lines) {
+                        for (LineSeparator ls : EnumSet.complementOf(EnumSet.of(LineSeparator.NONE))) {
+                            String description = String.format("%d lines of \"%s\" with separator %s", linesSize, line, ls);
+                            l.add(of(description,
+                                    i -> line,
+                                    i -> ls,
+                                    linesSize, charset));
+                        }
                     }
+                } else {
+                    l.add(of("Empty file: 0 lines",
+                            i -> "",
+                            i -> LineSeparator.NONE,
+                            0, charset));
                 }
             }
         }

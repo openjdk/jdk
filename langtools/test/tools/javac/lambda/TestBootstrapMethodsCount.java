@@ -25,15 +25,12 @@
  * @test
  * @bug 8129547
  * @summary Excess entries in BootstrapMethods with the same (bsm, bsmKind, bsmStaticArgs), but different dynamicArgs
- * @library lib
+ * @library /tools/javac/lib
  * @modules jdk.jdeps/com.sun.tools.classfile
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.code
- *          jdk.compiler/com.sun.tools.javac.jvm
  *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util
- * @build JavacTestingAbstractThreadedTest
- * @run main/othervm TestBootstrapMethodsCount
  */
 
 import java.io.File;
@@ -43,8 +40,10 @@ import java.util.Arrays;
 import java.util.Locale;
 
 import javax.tools.Diagnostic;
+import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
+import javax.tools.ToolProvider;
 
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
@@ -69,14 +68,11 @@ import com.sun.tools.javac.util.Names;
 
 import static com.sun.tools.javac.jvm.ClassFile.*;
 
-public class TestBootstrapMethodsCount
-        extends JavacTestingAbstractThreadedTest
-        implements Runnable {
-
+public class TestBootstrapMethodsCount {
 
     public static void main(String... args) throws Exception {
-        pool.execute(new TestBootstrapMethodsCount());
-        checkAfterExec();
+        JavaCompiler comp = ToolProvider.getSystemJavaCompiler();
+        new TestBootstrapMethodsCount().run(comp);
     }
 
     DiagChecker dc;
@@ -85,10 +81,9 @@ public class TestBootstrapMethodsCount
         dc = new DiagChecker();
     }
 
-    public void run() {
-        int id = checkCount.incrementAndGet();
-        JavaSource source = new JavaSource(id);
-        JavacTaskImpl ct = (JavacTaskImpl)comp.getTask(null, fm.get(), dc,
+    public void run(JavaCompiler comp) {
+        JavaSource source = new JavaSource();
+        JavacTaskImpl ct = (JavacTaskImpl)comp.getTask(null, null, dc,
                 Arrays.asList("-g"), null, Arrays.asList(source));
         Context context = ct.getContext();
         Symtab syms = Symtab.instance(context);
@@ -108,11 +103,11 @@ public class TestBootstrapMethodsCount
                     String.format("Diags found when compiling following code\n%s\n\n%s",
                             source.source, dc.printDiags()));
         }
-        verifyBytecode(id);
+        verifyBytecode();
     }
 
-    void verifyBytecode(int id) {
-        File compiledTest = new File(String.format("Test%d.class", id));
+    void verifyBytecode() {
+        File compiledTest = new File("Test.class");
         try {
             ClassFile cf = ClassFile.read(compiledTest);
             BootstrapMethods_attribute bsm_attr =
@@ -131,14 +126,14 @@ public class TestBootstrapMethodsCount
 
     class JavaSource extends SimpleJavaFileObject {
 
-        static final String source_template = "import java.lang.invoke.*;\n" +
+        static final String source = "import java.lang.invoke.*;\n" +
                 "class Bootstrap {\n" +
                 "   public static CallSite bsm(MethodHandles.Lookup lookup, " +
                 "String name, MethodType methodType) {\n" +
                 "       return null;\n" +
                 "   }\n" +
                 "}\n" +
-                "class Test#ID {\n" +
+                "class Test {\n" +
                 "   void m1() { }\n" +
                 "   void m2(Object arg1) { }\n" +
                 "   void test1() {\n" +
@@ -151,11 +146,8 @@ public class TestBootstrapMethodsCount
                 "   }\n" +
                 "}";
 
-        String source;
-
-        JavaSource(int id) {
+        JavaSource() {
             super(URI.create("myfo:/Test.java"), JavaFileObject.Kind.SOURCE);
-            source = source_template.replace("#ID", String.valueOf(id));
         }
 
         @Override

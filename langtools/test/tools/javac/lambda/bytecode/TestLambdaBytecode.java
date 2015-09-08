@@ -23,17 +23,19 @@
 
 /*
  * @test
- * @bug 8009649
+ * @bug 8009649 8129962
  * @summary Lambda back-end should generate invokespecial for method handles referring to private instance methods
- * @library ../../lib
+ * @library /tools/javac/lib
  * @modules jdk.jdeps/com.sun.tools.classfile
  *          jdk.compiler/com.sun.tools.javac.api
- * @build JavacTestingAbstractThreadedTest
- * @run main/othervm TestLambdaBytecode
+ *          jdk.compiler/com.sun.tools.javac.code
+ *          jdk.compiler/com.sun.tools.javac.comp
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.javac.tree
+ *          jdk.compiler/com.sun.tools.javac.util
+ * @build combo.ComboTestHelper
+ * @run main TestLambdaBytecode
  */
-
-// use /othervm to avoid jtreg timeout issues (CODETOOLS-7900047)
-// see JDK-8006746
 
 import com.sun.tools.classfile.Attribute;
 import com.sun.tools.classfile.BootstrapMethods_attribute;
@@ -43,26 +45,22 @@ import com.sun.tools.classfile.ConstantPool.*;
 import com.sun.tools.classfile.Instruction;
 import com.sun.tools.classfile.Method;
 
-import com.sun.tools.javac.api.JavacTaskImpl;
+import java.io.IOException;
+import java.io.InputStream;
 
+import combo.ComboInstance;
+import combo.ComboParameter;
+import combo.ComboTask.Result;
+import combo.ComboTestHelper;
 
-import java.io.File;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Locale;
-
-import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
-import javax.tools.SimpleJavaFileObject;
 
-import static com.sun.tools.javac.jvm.ClassFile.*;
+public class TestLambdaBytecode extends ComboInstance<TestLambdaBytecode> {
 
-public class TestLambdaBytecode
-    extends JavacTestingAbstractThreadedTest
-    implements Runnable {
+    static final int MF_ARITY = 3;
+    static final String MH_SIG = "()V";
 
-    enum ClassKind {
+    enum ClassKind implements ComboParameter {
         CLASS("class"),
         INTERFACE("interface");
 
@@ -71,9 +69,14 @@ public class TestLambdaBytecode
         ClassKind(String classStr) {
             this.classStr = classStr;
         }
+
+        @Override
+        public String expand(String optParameter) {
+            return classStr;
+        }
     }
 
-    enum AccessKind {
+    enum AccessKind implements ComboParameter {
         PUBLIC("public"),
         PRIVATE("private");
 
@@ -82,9 +85,14 @@ public class TestLambdaBytecode
         AccessKind(String accessStr) {
             this.accessStr = accessStr;
         }
+
+        @Override
+        public String expand(String optParameter) {
+            return accessStr;
+        }
     }
 
-    enum StaticKind {
+    enum StaticKind implements ComboParameter {
         STATIC("static"),
         INSTANCE("");
 
@@ -93,9 +101,14 @@ public class TestLambdaBytecode
         StaticKind(String staticStr) {
             this.staticStr = staticStr;
         }
+
+        @Override
+        public String expand(String optParameter) {
+            return staticStr;
+        }
     }
 
-    enum DefaultKind {
+    enum DefaultKind implements ComboParameter {
         DEFAULT("default"),
         NO_DEFAULT("");
 
@@ -104,15 +117,10 @@ public class TestLambdaBytecode
         DefaultKind(String defaultStr) {
             this.defaultStr = defaultStr;
         }
-    }
 
-    enum ExprKind {
-        LAMBDA("Runnable r = ()->{ target(); };");
-
-        String exprString;
-
-        ExprKind(String exprString) {
-            this.exprString = exprString;
+        @Override
+        public String expand(String optParameter) {
+            return defaultStr;
         }
     }
 
@@ -155,83 +163,53 @@ public class TestLambdaBytecode
                 return true;
             }
         }
-
-        String mods() {
-            StringBuilder buf = new StringBuilder();
-            buf.append(ak.accessStr);
-            buf.append(' ');
-            buf.append(sk.staticStr);
-            buf.append(' ');
-            buf.append(dk.defaultStr);
-            return buf.toString();
-        }
     }
 
     public static void main(String... args) throws Exception {
-        for (ClassKind ck : ClassKind.values()) {
-            for (AccessKind ak1 : AccessKind.values()) {
-                for (StaticKind sk1 : StaticKind.values()) {
-                    for (DefaultKind dk1 : DefaultKind.values()) {
-                        for (AccessKind ak2 : AccessKind.values()) {
-                            for (StaticKind sk2 : StaticKind.values()) {
-                                for (DefaultKind dk2 : DefaultKind.values()) {
-                                    for (ExprKind ek : ExprKind.values()) {
-                                        pool.execute(new TestLambdaBytecode(ck, ak1, ak2, sk1, sk2, dk1, dk2, ek));
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        checkAfterExec();
+        new ComboTestHelper<TestLambdaBytecode>()
+                .withDimension("CLASSKIND", (x, ck) -> x.ck = ck, ClassKind.values())
+                .withArrayDimension("ACCESS", (x, acc, idx) -> x.accessKinds[idx] = acc, 2, AccessKind.values())
+                .withArrayDimension("STATIC", (x, sk, idx) -> x.staticKinds[idx] = sk, 2, StaticKind.values())
+                .withArrayDimension("DEFAULT", (x, dk, idx) -> x.defaultKinds[idx] = dk, 2, DefaultKind.values())
+                .run(TestLambdaBytecode::new, TestLambdaBytecode::init);
     }
 
+    ClassKind ck;
+    AccessKind[] accessKinds = new AccessKind[2];
+    StaticKind[] staticKinds = new StaticKind[2];
+    DefaultKind[] defaultKinds = new DefaultKind[2];
     MethodKind mk1, mk2;
-    ExprKind ek;
-    DiagChecker dc;
 
-    TestLambdaBytecode(ClassKind ck, AccessKind ak1, AccessKind ak2, StaticKind sk1,
-            StaticKind sk2, DefaultKind dk1, DefaultKind dk2, ExprKind ek) {
-        mk1 = new MethodKind(ck, ak1, sk1, dk1);
-        mk2 = new MethodKind(ck, ak2, sk2, dk2);
-        this.ek = ek;
-        dc = new DiagChecker();
+    void init() {
+        mk1 = new MethodKind(ck, accessKinds[0], staticKinds[0], defaultKinds[0]);
+        mk2 = new MethodKind(ck, accessKinds[1], staticKinds[1], defaultKinds[1]);
     }
 
-    public void run() {
-        int id = checkCount.incrementAndGet();
-        JavaSource source = new JavaSource(id);
-        JavacTaskImpl ct = (JavacTaskImpl)comp.getTask(null, fm.get(), dc,
-                null, null, Arrays.asList(source));
-        try {
-            ct.generate();
-        } catch (Throwable t) {
-            t.printStackTrace();
-            throw new AssertionError(
-                    String.format("Error thrown when compiling following code\n%s",
-                    source.source));
-        }
-        if (dc.diagFound) {
+    String source_template =
+                "#{CLASSKIND} Test {\n" +
+                "   #{ACCESS[0]} #{STATIC[0]} #{DEFAULT[0]} void test() { Runnable r = ()->{ target(); }; }\n" +
+                "   #{ACCESS[1]} #{STATIC[1]} #{DEFAULT[1]} void target() { }\n" +
+                "}\n";
+
+    @Override
+    public void doWork() throws IOException {
+        verifyBytecode(newCompilationTask()
+                .withSourceFromTemplate(source_template)
+                .generate());
+    }
+
+    void verifyBytecode(Result<Iterable<? extends JavaFileObject>> res) {
+        if (res.hasErrors()) {
             boolean errorExpected = !mk1.isOK() || !mk2.isOK();
             errorExpected |= mk1.isStatic() && !mk2.isStatic();
 
             if (!errorExpected) {
-                throw new AssertionError(
-                        String.format("Diags found when compiling following code\n%s\n\n%s",
-                        source.source, dc.printDiags()));
+                fail("Diags found when compiling instance; " + res.compilationInfo());
             }
             return;
         }
-        verifyBytecode(id, source);
-    }
-
-    void verifyBytecode(int id, JavaSource source) {
-        File compiledTest = new File(String.format("Test%d.class", id));
-        try {
-            ClassFile cf = ClassFile.read(compiledTest);
+        try (InputStream is = res.get().iterator().next().openInputStream()) {
+            ClassFile cf = ClassFile.read(is);
             Method testMethod = null;
             for (Method m : cf.methods) {
                 if (m.getName(cf.constant_pool).equals("test")) {
@@ -240,12 +218,14 @@ public class TestLambdaBytecode
                 }
             }
             if (testMethod == null) {
-                throw new Error("Test method not found");
+                fail("Test method not found");
+                return;
             }
             Code_attribute ea =
                     (Code_attribute)testMethod.attributes.get(Attribute.Code);
             if (testMethod == null) {
-                throw new Error("Code attribute for test() method not found");
+                fail("Code attribute for test() method not found");
+                return;
             }
 
             int bsmIdx = -1;
@@ -256,29 +236,34 @@ public class TestLambdaBytecode
                          (CONSTANT_InvokeDynamic_info)cf
                             .constant_pool.get(i.getShort(1));
                     bsmIdx = indyInfo.bootstrap_method_attr_index;
-                    if (!indyInfo.getNameAndTypeInfo().getType().equals(makeIndyType(id))) {
-                        throw new
-                            AssertionError("type mismatch for CONSTANT_InvokeDynamic_info " + source.source + "\n" + indyInfo.getNameAndTypeInfo().getType() + "\n" + makeIndyType(id));
+                    if (!indyInfo.getNameAndTypeInfo().getType().equals(makeIndyType())) {
+                        fail("type mismatch for CONSTANT_InvokeDynamic_info " +
+                                res.compilationInfo() + "\n" + indyInfo.getNameAndTypeInfo().getType() +
+                                "\n" + makeIndyType());
+                        return;
                     }
                 }
             }
             if (bsmIdx == -1) {
-                throw new Error("Missing invokedynamic in generated code");
+                fail("Missing invokedynamic in generated code");
+                return;
             }
 
             BootstrapMethods_attribute bsm_attr =
                     (BootstrapMethods_attribute)cf
                     .getAttribute(Attribute.BootstrapMethods);
             if (bsm_attr.bootstrap_method_specifiers.length != 1) {
-                throw new Error("Bad number of method specifiers " +
+                fail("Bad number of method specifiers " +
                         "in BootstrapMethods attribute");
+                return;
             }
             BootstrapMethods_attribute.BootstrapMethodSpecifier bsm_spec =
                     bsm_attr.bootstrap_method_specifiers[0];
 
             if (bsm_spec.bootstrap_arguments.length != MF_ARITY) {
-                throw new Error("Bad number of static invokedynamic args " +
+                fail("Bad number of static invokedynamic args " +
                         "in BootstrapMethod attribute");
+                return;
             }
 
             CONSTANT_MethodHandle_info mh =
@@ -294,74 +279,27 @@ public class TestLambdaBytecode
             }
 
             if (!kindOK) {
-                throw new Error("Bad invoke kind in implementation method handle");
+                fail("Bad invoke kind in implementation method handle");
+                return;
             }
 
             if (!mh.getCPRefInfo().getNameAndTypeInfo().getType().toString().equals(MH_SIG)) {
-                throw new Error("Type mismatch in implementation method handle");
+                fail("Type mismatch in implementation method handle");
+                return;
             }
         } catch (Exception e) {
             e.printStackTrace();
-            throw new Error("error reading " + compiledTest +": " + e);
+            fail("error reading " + res.compilationInfo() + ": " + e);
         }
     }
-    String makeIndyType(int id) {
+
+    String makeIndyType() {
         StringBuilder buf = new StringBuilder();
         buf.append("(");
         if (!mk2.isStatic()) {
-            buf.append(String.format("LTest%d;", id));
+            buf.append("LTest;");
         }
         buf.append(")Ljava/lang/Runnable;");
         return buf.toString();
     }
-
-    static final int MF_ARITY = 3;
-    static final String MH_SIG = "()V";
-
-    class JavaSource extends SimpleJavaFileObject {
-
-        static final String source_template =
-                "#CK Test#ID {\n" +
-                "   #MOD1 void test() { #EK }\n" +
-                "   #MOD2 void target() { }\n" +
-                "}\n";
-
-        String source;
-
-        JavaSource(int id) {
-            super(URI.create("myfo:/Test.java"), JavaFileObject.Kind.SOURCE);
-            source = source_template.replace("#CK", mk1.ck.classStr)
-                    .replace("#MOD1", mk1.mods())
-                    .replace("#MOD2", mk2.mods())
-                    .replace("#EK", ek.exprString)
-                    .replace("#ID", String.valueOf(id));
-        }
-
-        @Override
-        public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-            return source;
-        }
-    }
-
-    static class DiagChecker
-        implements javax.tools.DiagnosticListener<JavaFileObject> {
-
-        boolean diagFound;
-        ArrayList<String> diags = new ArrayList<>();
-
-        public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
-            diags.add(diagnostic.getMessage(Locale.getDefault()));
-            diagFound = true;
-        }
-
-        String printDiags() {
-            StringBuilder buf = new StringBuilder();
-            for (String s : diags) {
-                buf.append(s);
-                buf.append("\n");
-            }
-            return buf.toString();
-        }
-    }
-
 }

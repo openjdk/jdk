@@ -28,58 +28,25 @@
 #include "memory/allocation.inline.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "runtime/os.hpp"
+#include "runtime/semaphore.hpp"
+#include "runtime/thread.inline.hpp"
 
 // Definitions of WorkGang methods.
-
-AbstractWorkGang::AbstractWorkGang(const char* name,
-                                   bool  are_GC_task_threads,
-                                   bool  are_ConcurrentGC_threads) :
-  _name(name),
-  _are_GC_task_threads(are_GC_task_threads),
-  _are_ConcurrentGC_threads(are_ConcurrentGC_threads) {
-
-  assert(!(are_GC_task_threads && are_ConcurrentGC_threads),
-         "They cannot both be STW GC and Concurrent threads" );
-
-  // Other initialization.
-  _monitor = new Monitor(/* priority */       Mutex::leaf,
-                         /* name */           "WorkGroup monitor",
-                         /* allow_vm_block */ are_GC_task_threads,
-                                              Monitor::_safepoint_check_sometimes);
-  assert(monitor() != NULL, "Failed to allocate monitor");
-  _task = NULL;
-  _sequence_number = 0;
-  _started_workers = 0;
-  _finished_workers = 0;
-}
-
-WorkGang::WorkGang(const char* name,
-                   uint        workers,
-                   bool        are_GC_task_threads,
-                   bool        are_ConcurrentGC_threads) :
-  AbstractWorkGang(name, are_GC_task_threads, are_ConcurrentGC_threads) {
-  _total_workers = workers;
-}
-
-GangWorker* WorkGang::allocate_worker(uint which) {
-  GangWorker* new_worker = new GangWorker(this, which);
-  return new_worker;
-}
 
 // The current implementation will exit if the allocation
 // of any worker fails.  Still, return a boolean so that
 // a future implementation can possibly do a partial
 // initialization of the workers and report such to the
 // caller.
-bool WorkGang::initialize_workers() {
+bool AbstractWorkGang::initialize_workers() {
 
   if (TraceWorkGang) {
     tty->print_cr("Constructing work gang %s with %d threads",
                   name(),
                   total_workers());
   }
-  _gang_workers = NEW_C_HEAP_ARRAY(GangWorker*, total_workers(), mtInternal);
-  if (gang_workers() == NULL) {
+  _workers = NEW_C_HEAP_ARRAY(AbstractGangWorker*, total_workers(), mtInternal);
+  if (_workers == NULL) {
     vm_exit_out_of_memory(0, OOM_MALLOC_ERROR, "Cannot create GangWorker array.");
     return false;
   }
@@ -90,9 +57,9 @@ bool WorkGang::initialize_workers() {
     worker_type = os::pgc_thread;
   }
   for (uint worker = 0; worker < total_workers(); worker += 1) {
-    GangWorker* new_worker = allocate_worker(worker);
+    AbstractGangWorker* new_worker = allocate_worker(worker);
     assert(new_worker != NULL, "Failed to allocate GangWorker");
-    _gang_workers[worker] = new_worker;
+    _workers[worker] = new_worker;
     if (new_worker == NULL || !os::create_thread(new_worker, worker_type)) {
       vm_exit_out_of_memory(0, OOM_MALLOC_ERROR,
               "Cannot create worker GC thread. Out of system resources.");
@@ -105,110 +72,208 @@ bool WorkGang::initialize_workers() {
   return true;
 }
 
-GangWorker* AbstractWorkGang::gang_worker(uint i) const {
+AbstractGangWorker* AbstractWorkGang::worker(uint i) const {
   // Array index bounds checking.
-  GangWorker* result = NULL;
-  assert(gang_workers() != NULL, "No workers for indexing");
+  AbstractGangWorker* result = NULL;
+  assert(_workers != NULL, "No workers for indexing");
   assert(i < total_workers(), "Worker index out of bounds");
-  result = _gang_workers[i];
+  result = _workers[i];
   assert(result != NULL, "Indexing to null worker");
   return result;
 }
 
-void WorkGang::run_task(AbstractGangTask* task) {
-  run_task(task, total_workers());
-}
-
-void WorkGang::run_task(AbstractGangTask* task, uint no_of_parallel_workers) {
-  // This thread is executed by the VM thread which does not block
-  // on ordinary MutexLocker's.
-  MutexLockerEx ml(monitor(), Mutex::_no_safepoint_check_flag);
-  if (TraceWorkGang) {
-    tty->print_cr("Running work gang %s task %s", name(), task->name());
-  }
-  // Tell all the workers to run a task.
-  assert(task != NULL, "Running a null task");
-  // Initialize.
-  _task = task;
-  _sequence_number += 1;
-  _started_workers = 0;
-  _finished_workers = 0;
-  // Tell the workers to get to work.
-  monitor()->notify_all();
-  // Wait for them to be finished
-  while (finished_workers() < no_of_parallel_workers) {
-    if (TraceWorkGang) {
-      tty->print_cr("Waiting in work gang %s: %u/%u finished sequence %d",
-                    name(), finished_workers(), no_of_parallel_workers,
-                    _sequence_number);
-    }
-    monitor()->wait(/* no_safepoint_check */ true);
-  }
-  _task = NULL;
-  if (TraceWorkGang) {
-    tty->print_cr("\nFinished work gang %s: %u/%u sequence %d",
-                  name(), finished_workers(), no_of_parallel_workers,
-                  _sequence_number);
-    Thread* me = Thread::current();
-    tty->print_cr("  T: " PTR_FORMAT "  VM_thread: %d", p2i(me), me->is_VM_thread());
-  }
-}
-
-void FlexibleWorkGang::run_task(AbstractGangTask* task) {
-  // If active_workers() is passed, _finished_workers
-  // must only be incremented for workers that find non_null
-  // work (as opposed to all those that just check that the
-  // task is not null).
-  WorkGang::run_task(task, (uint) active_workers());
-}
-
-void AbstractWorkGang::internal_worker_poll(WorkData* data) const {
-  assert(monitor()->owned_by_self(), "worker_poll is an internal method");
-  assert(data != NULL, "worker data is null");
-  data->set_task(task());
-  data->set_sequence_number(sequence_number());
-}
-
-void AbstractWorkGang::internal_note_start() {
-  assert(monitor()->owned_by_self(), "note_finish is an internal method");
-  _started_workers += 1;
-}
-
-void AbstractWorkGang::internal_note_finish() {
-  assert(monitor()->owned_by_self(), "note_finish is an internal method");
-  _finished_workers += 1;
-}
-
 void AbstractWorkGang::print_worker_threads_on(outputStream* st) const {
-  uint    num_thr = total_workers();
-  for (uint i = 0; i < num_thr; i++) {
-    gang_worker(i)->print_on(st);
+  uint workers = total_workers();
+  for (uint i = 0; i < workers; i++) {
+    worker(i)->print_on(st);
     st->cr();
   }
 }
 
 void AbstractWorkGang::threads_do(ThreadClosure* tc) const {
   assert(tc != NULL, "Null ThreadClosure");
-  uint num_thr = total_workers();
-  for (uint i = 0; i < num_thr; i++) {
-    tc->do_thread(gang_worker(i));
+  uint workers = total_workers();
+  for (uint i = 0; i < workers; i++) {
+    tc->do_thread(worker(i));
   }
 }
 
-// GangWorker methods.
+// WorkGang dispatcher implemented with semaphores.
+//
+// Semaphores don't require the worker threads to re-claim the lock when they wake up.
+// This helps lowering the latency when starting and stopping the worker threads.
+class SemaphoreGangTaskDispatcher : public GangTaskDispatcher {
+  // The task currently being dispatched to the GangWorkers.
+  AbstractGangTask* _task;
 
-GangWorker::GangWorker(AbstractWorkGang* gang, uint id) {
+  volatile uint _started;
+  volatile uint _not_finished;
+
+  // Semaphore used to start the GangWorkers.
+  Semaphore* _start_semaphore;
+  // Semaphore used to notify the coordinator that all workers are done.
+  Semaphore* _end_semaphore;
+
+public:
+  SemaphoreGangTaskDispatcher() :
+      _task(NULL),
+      _started(0),
+      _not_finished(0),
+      _start_semaphore(new Semaphore()),
+      _end_semaphore(new Semaphore())
+{ }
+
+  ~SemaphoreGangTaskDispatcher() {
+    delete _start_semaphore;
+    delete _end_semaphore;
+  }
+
+  void coordinator_execute_on_workers(AbstractGangTask* task, uint num_workers) {
+    // No workers are allowed to read the state variables until they have been signaled.
+    _task         = task;
+    _not_finished = num_workers;
+
+    // Dispatch 'num_workers' number of tasks.
+    _start_semaphore->signal(num_workers);
+
+    // Wait for the last worker to signal the coordinator.
+    _end_semaphore->wait();
+
+    // No workers are allowed to read the state variables after the coordinator has been signaled.
+    assert(_not_finished == 0, err_msg("%d not finished workers?", _not_finished));
+    _task    = NULL;
+    _started = 0;
+
+  }
+
+  WorkData worker_wait_for_task() {
+    // Wait for the coordinator to dispatch a task.
+    _start_semaphore->wait();
+
+    uint num_started = (uint) Atomic::add(1, (volatile jint*)&_started);
+
+    // Subtract one to get a zero-indexed worker id.
+    uint worker_id = num_started - 1;
+
+    return WorkData(_task, worker_id);
+  }
+
+  void worker_done_with_task() {
+    // Mark that the worker is done with the task.
+    // The worker is not allowed to read the state variables after this line.
+    uint not_finished = (uint) Atomic::add(-1, (volatile jint*)&_not_finished);
+
+    // The last worker signals to the coordinator that all work is completed.
+    if (not_finished == 0) {
+      _end_semaphore->signal();
+    }
+  }
+};
+
+class MutexGangTaskDispatcher : public GangTaskDispatcher {
+  AbstractGangTask* _task;
+
+  volatile uint _started;
+  volatile uint _finished;
+  volatile uint _num_workers;
+
+  Monitor* _monitor;
+
+ public:
+  MutexGangTaskDispatcher()
+      : _task(NULL),
+        _monitor(new Monitor(Monitor::leaf, "WorkGang dispatcher lock", false, Monitor::_safepoint_check_never)),
+        _started(0),
+        _finished(0),
+        _num_workers(0) {}
+
+  ~MutexGangTaskDispatcher() {
+    delete _monitor;
+  }
+
+  void coordinator_execute_on_workers(AbstractGangTask* task, uint num_workers) {
+    MutexLockerEx ml(_monitor, Mutex::_no_safepoint_check_flag);
+
+    _task        = task;
+    _num_workers = num_workers;
+
+    // Tell the workers to get to work.
+    _monitor->notify_all();
+
+    // Wait for them to finish.
+    while (_finished < _num_workers) {
+      _monitor->wait(/* no_safepoint_check */ true);
+    }
+
+    _task        = NULL;
+    _num_workers = 0;
+    _started     = 0;
+    _finished    = 0;
+  }
+
+  WorkData worker_wait_for_task() {
+    MonitorLockerEx ml(_monitor, Mutex::_no_safepoint_check_flag);
+
+    while (_num_workers == 0 || _started == _num_workers) {
+      _monitor->wait(/* no_safepoint_check */ true);
+    }
+
+    _started++;
+
+    // Subtract one to get a zero-indexed worker id.
+    uint worker_id = _started - 1;
+
+    return WorkData(_task, worker_id);
+  }
+
+  void worker_done_with_task() {
+    MonitorLockerEx ml(_monitor, Mutex::_no_safepoint_check_flag);
+
+    _finished++;
+
+    if (_finished == _num_workers) {
+      // This will wake up all workers and not only the coordinator.
+      _monitor->notify_all();
+    }
+  }
+};
+
+static GangTaskDispatcher* create_dispatcher() {
+  if (UseSemaphoreGCThreadsSynchronization) {
+    return new SemaphoreGangTaskDispatcher();
+  }
+
+  return new MutexGangTaskDispatcher();
+}
+
+WorkGang::WorkGang(const char* name,
+                   uint  workers,
+                   bool  are_GC_task_threads,
+                   bool  are_ConcurrentGC_threads) :
+    AbstractWorkGang(name, workers, are_GC_task_threads, are_ConcurrentGC_threads),
+    _dispatcher(create_dispatcher())
+{ }
+
+AbstractGangWorker* WorkGang::allocate_worker(uint worker_id) {
+  return new GangWorker(this, worker_id);
+}
+
+void WorkGang::run_task(AbstractGangTask* task) {
+  _dispatcher->coordinator_execute_on_workers(task, active_workers());
+}
+
+AbstractGangWorker::AbstractGangWorker(AbstractWorkGang* gang, uint id) {
   _gang = gang;
   set_id(id);
   set_name("%s#%d", gang->name(), id);
 }
 
-void GangWorker::run() {
+void AbstractGangWorker::run() {
   initialize();
   loop();
 }
 
-void GangWorker::initialize() {
+void AbstractGangWorker::initialize() {
   this->initialize_thread_local_storage();
   this->record_stack_base_and_size();
   this->initialize_named_thread();
@@ -224,112 +289,59 @@ void GangWorker::initialize() {
          " of a work gang");
 }
 
-void GangWorker::loop() {
-  int previous_sequence_number = 0;
-  Monitor* gang_monitor = gang()->monitor();
-  for ( ; ; ) {
-    WorkData data;
-    int part;  // Initialized below.
-    {
-      // Grab the gang mutex.
-      MutexLocker ml(gang_monitor);
-      // Wait for something to do.
-      // Polling outside the while { wait } avoids missed notifies
-      // in the outer loop.
-      gang()->internal_worker_poll(&data);
-      if (TraceWorkGang) {
-        tty->print("Polled outside for work in gang %s worker %u",
-                   gang()->name(), id());
-        tty->print("  sequence: %d (prev: %d)",
-                   data.sequence_number(), previous_sequence_number);
-        if (data.task() != NULL) {
-          tty->print("  task: %s", data.task()->name());
-        } else {
-          tty->print("  task: NULL");
-        }
-        tty->cr();
-      }
-      for ( ; /* break */; ) {
-        // Check for new work.
-        if ((data.task() != NULL) &&
-            (data.sequence_number() != previous_sequence_number)) {
-          if (gang()->needs_more_workers()) {
-            gang()->internal_note_start();
-            gang_monitor->notify_all();
-            part = gang()->started_workers() - 1;
-            break;
-          }
-        }
-        // Nothing to do.
-        gang_monitor->wait(/* no_safepoint_check */ true);
-        gang()->internal_worker_poll(&data);
-        if (TraceWorkGang) {
-          tty->print("Polled inside for work in gang %s worker %u",
-                     gang()->name(), id());
-          tty->print("  sequence: %d (prev: %d)",
-                     data.sequence_number(), previous_sequence_number);
-          if (data.task() != NULL) {
-            tty->print("  task: %s", data.task()->name());
-          } else {
-            tty->print("  task: NULL");
-          }
-          tty->cr();
-        }
-      }
-      // Drop gang mutex.
-    }
-    if (TraceWorkGang) {
-      tty->print("Work for work gang %s id %u task %s part %d",
-                 gang()->name(), id(), data.task()->name(), part);
-    }
-    assert(data.task() != NULL, "Got null task");
-    data.task()->work(part);
-    {
-      if (TraceWorkGang) {
-        tty->print("Finish for work gang %s id %u task %s part %d",
-                   gang()->name(), id(), data.task()->name(), part);
-      }
-      // Grab the gang mutex.
-      MutexLocker ml(gang_monitor);
-      gang()->internal_note_finish();
-      // Tell the gang you are done.
-      gang_monitor->notify_all();
-      // Drop the gang mutex.
-    }
-    previous_sequence_number = data.sequence_number();
-  }
-}
-
-bool GangWorker::is_GC_task_thread() const {
+bool AbstractGangWorker::is_GC_task_thread() const {
   return gang()->are_GC_task_threads();
 }
 
-bool GangWorker::is_ConcurrentGC_thread() const {
+bool AbstractGangWorker::is_ConcurrentGC_thread() const {
   return gang()->are_ConcurrentGC_threads();
 }
 
-void GangWorker::print_on(outputStream* st) const {
+void AbstractGangWorker::print_on(outputStream* st) const {
   st->print("\"%s\" ", name());
   Thread::print_on(st);
   st->cr();
 }
 
-// Printing methods
-
-const char* AbstractWorkGang::name() const {
-  return _name;
+WorkData GangWorker::wait_for_task() {
+  return gang()->dispatcher()->worker_wait_for_task();
 }
 
-#ifndef PRODUCT
-
-const char* AbstractGangTask::name() const {
-  return _name;
+void GangWorker::signal_task_done() {
+  gang()->dispatcher()->worker_done_with_task();
 }
 
-#endif /* PRODUCT */
+void GangWorker::print_task_started(WorkData data) {
+  if (TraceWorkGang) {
+    tty->print_cr("Running work gang %s task %s worker %u", name(), data._task->name(), data._worker_id);
+  }
+}
 
-// FlexibleWorkGang
+void GangWorker::print_task_done(WorkData data) {
+  if (TraceWorkGang) {
+    tty->print_cr("\nFinished work gang %s task %s worker %u", name(), data._task->name(), data._worker_id);
+    Thread* me = Thread::current();
+    tty->print_cr("  T: " PTR_FORMAT "  VM_thread: %d", p2i(me), me->is_VM_thread());
+  }
+}
 
+void GangWorker::run_task(WorkData data) {
+  print_task_started(data);
+
+  data._task->work(data._worker_id);
+
+  print_task_done(data);
+}
+
+void GangWorker::loop() {
+  while (true) {
+    WorkData data = wait_for_task();
+
+    run_task(data);
+
+    signal_task_done();
+  }
+}
 
 // *** WorkGangBarrierSync
 

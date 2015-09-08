@@ -1707,10 +1707,10 @@ void TemplateInterpreterGenerator::set_vtos_entry_points(Template* t,
                                                          address& vep) {
   assert(t->is_valid() && t->tos_in() == vtos, "illegal template");
   Label L;
-  aep = __ pc();  __ push_ptr();  __ jmp(L);
-  fep = __ pc();  __ push_f();    __ jmp(L);
-  dep = __ pc();  __ push_d();    __ jmp(L);
-  lep = __ pc();  __ push_l();    __ jmp(L);
+  aep = __ pc();  __ push_ptr();   __ jmp(L);
+  fep = __ pc();  __ push_f(xmm0); __ jmp(L);
+  dep = __ pc();  __ push_d(xmm0); __ jmp(L);
+  lep = __ pc();  __ push_l();     __ jmp(L);
   bep = cep = sep =
   iep = __ pc();  __ push_i();
   vep = __ pc();

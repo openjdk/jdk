@@ -188,6 +188,9 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Logga
                 log.fine("Reviving scriptfunction ", quote(name), " as defined in previous (now lost) dynamic scope.");
                 newFunctionNode = newFunctionNode.setInDynamicContext(lc);
             }
+            if (newFunctionNode == lc.getOutermostFunction() && !newFunctionNode.hasApplyToCallSpecialization()) {
+                data.setCachedAst(newFunctionNode);
+            }
             return newFunctionNode;
         }
 
@@ -208,8 +211,7 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Logga
                 ObjectClassGenerator.createAllocationStrategy(newFunctionNode.getThisProperties(), compiler.getContext().useDualFields()),
                 nestedFunctions,
                 externalSymbolDepths.get(fnId),
-                internalSymbols.get(fnId),
-                compiler.removeSerializedAst(fnId));
+                internalSymbols.get(fnId));
 
         if (lc.getOutermostFunction() != newFunctionNode) {
             final FunctionNode parentFn = lc.getParentFunction(newFunctionNode);
