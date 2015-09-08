@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -32,38 +32,31 @@ include RmicCommon.gmk
 # Generate RMI stubs
 #
 
-# For RMI/IIOP call rmic a second time with -standardPackage option
-# so that *_tie classes are generated in package without the prefix
-# org.omg.stub (6375696)
 JMX_RMI_CLASSES := javax.management.remote.rmi.RMIConnectionImpl \
     javax.management.remote.rmi.RMIServerImpl
-GENRMIIIOPCLASSES :=
-ifneq ($(RMICONNECTOR_IIOP), false)
-  GENRMIIIOPCLASSES := $(RMICONNECTOR_IIOP)
-endif
-$(eval $(call SetupRMICompilation,RMI_IIOP, \
-    CLASSES := $(JMX_RMI_CLASSES), \
-    CLASSES_DIR := $(CLASSES_DIR)/java.management, \
-    STUB_CLASSES_DIR := $(STUB_CLASSES_DIR)/java.management, \
-    RUN_V12 := true, \
-    RUN_IIOP := $(GENRMIIIOPCLASSES), \
-    RUN_IIOP_STDPKG := $(GENRMIIIOPCLASSES)))
 
-# Keep generated RMI/JRMP Stub source files and copy them to RMIC_GENSRC_DIR
-# so that javadoc can include them in the API (4997471)
-$(eval $(call SetupRMICompilation,RMI_SRC, \
+# Generate into gensrc dir where sources get picked up for javadoc, then move the classes
+# into the stub classes dir.
+$(eval $(call SetupRMICompilation,RMI_GEN, \
     CLASSES := $(JMX_RMI_CLASSES), \
     CLASSES_DIR := $(CLASSES_DIR)/java.management, \
-    STUB_CLASSES_DIR := $(RMIC_GENSRC_DIR)/java.management, \
+    STUB_CLASSES_DIR := $(RMIC_GENSRC_DIR), \
     RUN_V12 := true, \
-    KEEP_GENERATED := true))
+    KEEP_GENERATED := true, \
+))
+
+# Find all classes generated and move them from the gensrc dir to the stub classes dir
+$(RMIC_GENSRC_DIR)/_classes.moved: $(RMI_GEN)
+	$(eval classfiles := $(shell $(FIND) $(RMIC_GENSRC_DIR) -name "*.class"))
+	$(foreach src, $(classfiles), \
+	    $(eval target := $(patsubst $(RMIC_GENSRC_DIR)/%, \
+	        $(STUB_CLASSES_DIR)/java.management/%, $(src))) \
+	    $(MKDIR) -p $(dir $(target)) ; \
+	    $(MV) $(src) $(target) $(NEWLINE))
+	$(TOUCH) $@
 
 ##########################################################################################
 
-$(RMIC_GENSRC_DIR)/_the.classes.removed: $(RMI_IIOP) $(RMI_SRC)
-	$(FIND) $(RMIC_GENSRC_DIR) -name "*.class" $(FIND_DELETE)
-	$(TOUCH) $@
-
-all: $(RMIC_GENSRC_DIR)/_the.classes.removed $(RMI_IIOP) $(RMI_SRC)
+all: $(RMIC_GENSRC_DIR)/_classes.moved $(RMI_GEN)
 
 .PHONY: all
