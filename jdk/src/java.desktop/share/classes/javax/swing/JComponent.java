@@ -377,7 +377,8 @@ public abstract class JComponent extends Container implements Serializable,
     /**
      * AA text hints.
      */
-    transient private Object aaTextInfo;
+    transient private Object aaHint;
+    transient private Object lcdRenderingHint;
 
     static Graphics safelyGetGraphics(Component c) {
         return safelyGetGraphics(c, SwingUtilities.getRoot(c));
@@ -616,6 +617,15 @@ public abstract class JComponent extends Container implements Serializable,
      */
     public void updateUI() {}
 
+    /**
+     * Returns the look and feel delegate that renders this component.
+     *
+     * @return the {@code ComponentUI} object that renders this component
+     * @since 1.9
+     */
+    public ComponentUI getUI() {
+        return ui;
+    }
 
     /**
      * Sets the look and feel delegate for this component.
@@ -655,8 +665,10 @@ public abstract class JComponent extends Container implements Serializable,
         uninstallUIAndProperties();
 
         // aaText shouldn't persist between look and feels, reset it.
-        aaTextInfo =
-            UIManager.getDefaults().get(SwingUtilities2.AA_TEXT_PROPERTY_KEY);
+        aaHint = UIManager.getDefaults().get(
+                RenderingHints.KEY_TEXT_ANTIALIASING);
+        lcdRenderingHint = UIManager.getDefaults().get(
+                RenderingHints.KEY_TEXT_LCD_CONTRAST);
         ComponentUI oldUI = ui;
         ui = newUI;
         if (ui != null) {
@@ -4048,8 +4060,10 @@ public abstract class JComponent extends Container implements Serializable,
      * @see #putClientProperty
      */
     public final Object getClientProperty(Object key) {
-        if (key == SwingUtilities2.AA_TEXT_PROPERTY_KEY) {
-            return aaTextInfo;
+        if (key == RenderingHints.KEY_TEXT_ANTIALIASING) {
+            return aaHint;
+        } else if (key == RenderingHints.KEY_TEXT_LCD_CONTRAST) {
+            return lcdRenderingHint;
         } else if (key == SwingUtilities2.COMPONENT_UI_PROPERTY_KEY) {
             return ui;
         }
@@ -4091,8 +4105,11 @@ public abstract class JComponent extends Container implements Serializable,
      * @see #addPropertyChangeListener
      */
     public final void putClientProperty(Object key, Object value) {
-        if (key == SwingUtilities2.AA_TEXT_PROPERTY_KEY) {
-            aaTextInfo = value;
+        if (key == RenderingHints.KEY_TEXT_ANTIALIASING) {
+            aaHint = value;
+            return;
+        } else if (key == RenderingHints.KEY_TEXT_LCD_CONTRAST) {
+            lcdRenderingHint = value;
             return;
         }
         if (value == null && clientProperties == null) {

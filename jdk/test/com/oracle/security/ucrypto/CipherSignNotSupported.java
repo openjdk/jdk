@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8029849
+ * @bug 8029849 8132082
  * @summary Make sure signing via encrypt and verifying via decrypt are not
  * supported by OracleUcrypto provider.
  * @author Anthony Scarpino
@@ -31,12 +31,10 @@
  */
 
 import java.util.Random;
-import java.security.KeyPairGenerator;
-import java.security.KeyPair;
+import java.security.*;
+import java.security.interfaces.*;
+import java.security.spec.RSAPrivateKeySpec;
 import javax.crypto.Cipher;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.Provider;
 
 public class CipherSignNotSupported extends UcryptoTest {
 
@@ -69,27 +67,43 @@ public class CipherSignNotSupported extends UcryptoTest {
         c.init(Cipher.ENCRYPT_MODE, kp.getPublic());
         ct = c.doFinal(pt);
         // Decryption
-        c.init(Cipher.DECRYPT_MODE, kp.getPrivate());
-        c.doFinal(ct);
-        // Sign
-        try {
-            c.init(Cipher.ENCRYPT_MODE, kp.getPrivate());
-            ct = c.doFinal(pt);
-            throw new RuntimeException("Encrypt operation should have failed.");
-        } catch (InvalidKeyException e) {
-            if (e.getMessage().compareTo("RSAPublicKey required for " +
-                    "encryption") != 0) {
-                System.out.println("Wrong exception thrown.");
-                throw e;
+        PrivateKey[] privKeys = new PrivateKey[2];
+        privKeys[0] = kp.getPrivate();
+        if (privKeys[0] instanceof RSAPrivateCrtKey) {
+            RSAPrivateCrtKey k = (RSAPrivateCrtKey) privKeys[0];
+            KeyFactory kf = KeyFactory.getInstance("RSA");
+            privKeys[1] = kf.generatePrivate
+                (new RSAPrivateKeySpec(k.getModulus(), k.getPrivateExponent()));
+        } else {
+            privKeys = new PrivateKey[] {privKeys[0]};
+        }
+
+        for (PrivateKey pk : privKeys) {
+            System.out.println("Testing " + pk);
+            c.init(Cipher.DECRYPT_MODE, pk);
+            c.doFinal(ct);
+
+            // Sign
+            try {
+                c.init(Cipher.ENCRYPT_MODE, pk);
+                ct = c.doFinal(pt);
+                throw new RuntimeException("Encrypt operation should have failed.");
+            } catch (InvalidKeyException e) {
+                if (e.getMessage().compareTo("RSAPublicKey required for " +
+                        "encryption") != 0) {
+                    System.out.println("Wrong exception thrown.");
+                    throw e;
+                }
             }
         }
+
         // Verify
         try {
             c.init(Cipher.DECRYPT_MODE, kp.getPublic());
             c.doFinal(ct);
             throw new RuntimeException("Decrypt operation should have failed.");
         } catch (InvalidKeyException e) {
-            if (e.getMessage().compareTo("RSAPrivateCrtKey required for " +
+            if (e.getMessage().compareTo("RSAPrivateKey required for " +
                     "decryption") != 0) {
                 System.out.println("Wrong exception thrown.");
                 throw e;

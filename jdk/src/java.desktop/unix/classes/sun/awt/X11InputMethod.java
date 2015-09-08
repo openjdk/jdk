@@ -293,7 +293,7 @@ public abstract class X11InputMethod extends InputMethodAdapter {
 
     /**
      * Query and then return the current composition state.
-     * @returns the composition state if isCompositionEnabled call
+     * @return the composition state if isCompositionEnabled call
      * is successful. Otherwise, it returns false.
      */
     private boolean getCompositionState() {

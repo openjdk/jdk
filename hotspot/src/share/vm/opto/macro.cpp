@@ -324,18 +324,28 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
         return in;
       } else if (in->is_Call()) {
         CallNode *call = in->as_Call();
-        if (!call->may_modify(tinst, phase)) {
-          mem = call->in(TypeFunc::Memory);
+        if (call->may_modify(tinst, phase)) {
+          assert(call->is_ArrayCopy(), "ArrayCopy is the only call node that doesn't make allocation escape");
+
+          if (call->as_ArrayCopy()->modifies(offset, offset, phase, false)) {
+            return in;
+          }
         }
         mem = in->in(TypeFunc::Memory);
       } else if (in->is_MemBar()) {
+        if (ArrayCopyNode::may_modify(tinst, in->as_MemBar(), phase)) {
+          assert(in->in(0)->is_Proj() && in->in(0)->in(0)->is_ArrayCopy(), "should be arraycopy");
+          ArrayCopyNode* ac = in->in(0)->in(0)->as_ArrayCopy();
+          assert(ac->is_clonebasic(), "Only basic clone is a non escaping clone");
+          return ac;
+        }
         mem = in->in(TypeFunc::Memory);
       } else {
         assert(false, "unexpected projection");
       }
     } else if (mem->is_Store()) {
       const TypePtr* atype = mem->as_Store()->adr_type();
-      int adr_idx = Compile::current()->get_alias_index(atype);
+      int adr_idx = phase->C->get_alias_index(atype);
       if (adr_idx == alias_idx) {
         assert(atype->isa_oopptr(), "address type must be oopptr");
         int adr_offset = atype->offset();
@@ -373,7 +383,7 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
         adr = mem->in(3); // Destination array
       }
       const TypePtr* atype = adr->bottom_type()->is_ptr();
-      int adr_idx = Compile::current()->get_alias_index(atype);
+      int adr_idx = phase->C->get_alias_index(atype);
       if (adr_idx == alias_idx) {
         assert(false, "Object is not scalar replaceable if a LoadStore node access its field");
         return NULL;
@@ -386,12 +396,63 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
   }
 }
 
+// Generate loads from source of the arraycopy for fields of
+// destination needed at a deoptimization point
+Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, Node* ctl, BasicType ft, const Type *ftype, AllocateNode *alloc) {
+  BasicType bt = ft;
+  const Type *type = ftype;
+  if (ft == T_NARROWOOP) {
+    bt = T_OBJECT;
+    type = ftype->make_oopptr();
+  }
+  Node* res = NULL;
+  if (ac->is_clonebasic()) {
+    Node* base = ac->in(ArrayCopyNode::Src)->in(AddPNode::Base);
+    Node* adr = _igvn.transform(new AddPNode(base, base, MakeConX(offset)));
+    const TypePtr* adr_type = _igvn.type(base)->is_ptr()->add_offset(offset);
+    Node* m = ac->in(TypeFunc::Memory);
+    while (m->is_MergeMem()) {
+      m = m->as_MergeMem()->memory_at(C->get_alias_index(adr_type));
+      if (m->is_Proj() && m->in(0)->is_MemBar()) {
+        m = m->in(0)->in(TypeFunc::Memory);
+      }
+    }
+    res = LoadNode::make(_igvn, ctl, m, adr, adr_type, type, bt, MemNode::unordered, LoadNode::Pinned);
+  } else {
+    if (ac->modifies(offset, offset, &_igvn, true)) {
+      assert(ac->in(ArrayCopyNode::Dest) == alloc->result_cast(), "arraycopy destination should be allocation's result");
+      uint shift  = exact_log2(type2aelembytes(bt));
+      Node* diff = _igvn.transform(new SubINode(ac->in(ArrayCopyNode::SrcPos), ac->in(ArrayCopyNode::DestPos)));
+#ifdef _LP64
+      diff = _igvn.transform(new ConvI2LNode(diff));
+#endif
+      diff = _igvn.transform(new LShiftXNode(diff, intcon(shift)));
+
+      Node* off = _igvn.transform(new AddXNode(MakeConX(offset), diff));
+      Node* base = ac->in(ArrayCopyNode::Src);
+      Node* adr = _igvn.transform(new AddPNode(base, base, off));
+      const TypePtr* adr_type = _igvn.type(base)->is_ptr()->add_offset(offset);
+      Node* m = ac->in(TypeFunc::Memory);
+      res = LoadNode::make(_igvn, ctl, m, adr, adr_type, type, bt, MemNode::unordered, LoadNode::Pinned);
+    }
+  }
+  if (res != NULL) {
+    res = _igvn.transform(res);
+    if (ftype->isa_narrowoop()) {
+      // PhaseMacroExpand::scalar_replacement adds DecodeN nodes
+      res = _igvn.transform(new EncodePNode(res, ftype));
+    }
+    return res;
+  }
+  return NULL;
+}
+
 //
 // Given a Memory Phi, compute a value Phi containing the values from stores
 // on the input paths.
-// Note: this function is recursive, its depth is limied by the "level" argument
+// Note: this function is recursive, its depth is limited by the "level" argument
 // Returns the computed Phi, or NULL if it cannot compute it.
-Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *phi_type, const TypeOopPtr *adr_t, Node *alloc, Node_Stack *value_phis, int level) {
+Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *phi_type, const TypeOopPtr *adr_t, AllocateNode *alloc, Node_Stack *value_phis, int level) {
   assert(mem->is_Phi(), "sanity");
   int alias_idx = C->get_alias_index(adr_t);
   int offset = adr_t->offset();
@@ -458,6 +519,12 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
         assert(val->in(0)->is_LoadStore() || val->in(0)->Opcode() == Op_EncodeISOArray, "sanity");
         assert(false, "Object is not scalar replaceable if a LoadStore node access its field");
         return NULL;
+      } else if (val->is_ArrayCopy()) {
+        Node* res = make_arraycopy_load(val->as_ArrayCopy(), offset, val->in(0), ft, phi_type, alloc);
+        if (res == NULL) {
+          return NULL;
+        }
+        values.at_put(j, res);
       } else {
 #ifdef ASSERT
         val->dump();
@@ -479,7 +546,7 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
 }
 
 // Search the last value stored into the object's field.
-Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, BasicType ft, const Type *ftype, const TypeOopPtr *adr_t, Node *alloc) {
+Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, Node *sfpt_ctl, BasicType ft, const Type *ftype, const TypeOopPtr *adr_t, AllocateNode *alloc) {
   assert(adr_t->is_known_instance_field(), "instance required");
   int instance_id = adr_t->instance_id();
   assert((uint)instance_id == alloc->_idx, "wrong allocation");
@@ -538,6 +605,8 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, BasicType ft, const Type 
       } else {
         done = true;
       }
+    } else if (mem->is_ArrayCopy()) {
+      done = true;
     } else {
       assert(false, "unexpected node");
     }
@@ -562,6 +631,13 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, BasicType ft, const Type 
           value_phis.pop();
         }
       }
+    } else if (mem->is_ArrayCopy()) {
+      Node* ctl = mem->in(0);
+      if (sfpt_ctl->is_Proj() && sfpt_ctl->as_Proj()->is_uncommon_trap_proj(Deoptimization::Reason_none)) {
+        // pin the loads in the uncommon trap path
+        ctl = sfpt_ctl;
+      }
+      return make_arraycopy_load(mem->as_ArrayCopy(), offset, ctl, ft, ftype, alloc);
     }
   }
   // Something go wrong.
@@ -738,6 +814,7 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
   while (safepoints.length() > 0) {
     SafePointNode* sfpt = safepoints.pop();
     Node* mem = sfpt->memory();
+    Node* ctl = sfpt->control();
     assert(sfpt->jvms() != NULL, "missed JVMS");
     // Fields of scalar objs are referenced only at the end
     // of regular debuginfo at the last (youngest) JVMS.
@@ -789,7 +866,7 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
 
       const TypeOopPtr *field_addr_type = res_type->add_offset(offset)->isa_oopptr();
 
-      Node *field_val = value_from_mem(mem, basic_elem_type, field_type, field_addr_type, alloc);
+      Node *field_val = value_from_mem(mem, ctl, basic_elem_type, field_type, field_addr_type, alloc);
       if (field_val == NULL) {
         // We weren't able to find a value for this field,
         // give up on eliminating this allocation.

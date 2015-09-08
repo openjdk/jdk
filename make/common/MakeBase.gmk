@@ -755,6 +755,20 @@ DependOnVariable = \
     $(call DependOnVariableHelper,$(strip $1),$(strip $2))
 
 ################################################################################
+# Failure logging support macros. These are supposed to be used by the Setup*
+# compilation macros.
+#
+# LogFailures will run a command and store a copy of output in a specified file.
+# If the command succeeds, the file is deleted, otherwise it is moved to the
+# failure-logs directory.
+# Param 1 - The log file of the failed command
+# Param 2 - A compact but representative name to describe this command
+# Param 3 - Command to run
+LogFailures = \
+  ( ($(BASH) $(SRC_ROOT)/common/bin/logger.sh $1 $3 && $(RM) $1) || \
+  (exitcode=$(DOLLAR)$(DOLLAR)? && $(MV) $1 $(MAKESUPPORT_OUTPUTDIR)/failure-logs/$(strip $2).log && exit $(DOLLAR)$(DOLLAR)exitcode) )
+
+################################################################################
 # Find lib dir for module
 # Param 1 - module name
 ifeq ($(OPENJDK_TARGET_OS_TYPE), unix)

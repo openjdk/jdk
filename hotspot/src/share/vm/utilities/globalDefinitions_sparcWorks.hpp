@@ -178,7 +178,7 @@ typedef unsigned long long julong;
 
 
 //----------------------------------------------------------------------------------------------------
-// Constant for jlong (specifying an long long constant is C++ compiler specific)
+// Constant for jlong (specifying a long long constant is C++ compiler specific)
 
 // Build a 64bit integer constant
 #define CONST64(x)  (x ## LL)

@@ -27,9 +27,10 @@
 
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/plab.hpp"
+#include "memory/allocation.inline.hpp"
+#include "runtime/atomic.inline.hpp"
 
-HeapWord* PLAB::allocate_aligned(size_t word_sz, unsigned short alignment_in_bytes) {
-
+inline HeapWord* PLAB::allocate_aligned(size_t word_sz, unsigned short alignment_in_bytes) {
   HeapWord* res = CollectedHeap::align_allocation_or_fail(_top, _end, alignment_in_bytes);
   if (res == NULL) {
     return NULL;
@@ -39,6 +40,22 @@ HeapWord* PLAB::allocate_aligned(size_t word_sz, unsigned short alignment_in_byt
   // can be used below.
   _top = res;
   return allocate(word_sz);
+}
+
+void PLABStats::add_allocated(size_t v) {
+  Atomic::add_ptr(v, &_allocated);
+}
+
+void PLABStats::add_unused(size_t v) {
+  Atomic::add_ptr(v, &_unused);
+}
+
+void PLABStats::add_wasted(size_t v) {
+  Atomic::add_ptr(v, &_wasted);
+}
+
+void PLABStats::add_undo_wasted(size_t v) {
+  Atomic::add_ptr(v, &_undo_wasted);
 }
 
 #endif // SHARE_VM_GC_SHARED_PLAB_INLINE_HPP

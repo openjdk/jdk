@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,13 +33,10 @@ import java.awt.image.DirectColorModel;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 import java.awt.peer.RobotPeer;
-import java.lang.reflect.InvocationTargetException;
-import java.security.AccessController;
 
 import sun.awt.AWTPermissions;
 import sun.awt.ComponentFactory;
 import sun.awt.SunToolkit;
-import sun.awt.OSInfo;
 import sun.awt.image.SunWritableRaster;
 
 /**
@@ -558,28 +555,8 @@ public class Robot {
      */
     public synchronized void waitForIdle() {
         checkNotDispatchThread();
-
-        try {
-            SunToolkit.flushPendingEvents();
-            // 7185258: realSync() call blocks all DnD tests on OS X
-            if (AccessController.doPrivileged(OSInfo.getOSTypeAction()) == OSInfo.OSType.MACOSX) {
-                // post a dummy event to the queue so we know when
-                // all the events before it have been processed
-                EventQueue.invokeAndWait( new Runnable() {
-                                                public void run() {
-                                                    // dummy implementation
-                                                }
-                                            } );
-            } else {
-                ((SunToolkit) Toolkit.getDefaultToolkit()).realSync();
-            }
-        } catch(InterruptedException ite) {
-            System.err.println("Robot.waitForIdle, non-fatal exception caught:");
-            ite.printStackTrace();
-        } catch(InvocationTargetException ine) {
-            System.err.println("Robot.waitForIdle, non-fatal exception caught:");
-            ine.printStackTrace();
-        }
+        SunToolkit.flushPendingEvents();
+        ((SunToolkit) Toolkit.getDefaultToolkit()).realSync();
     }
 
     private void checkNotDispatchThread() {
@@ -593,6 +570,7 @@ public class Robot {
      *
      * @return  the string representation.
      */
+    @Override
     public synchronized String toString() {
         String params = "autoDelay = "+getAutoDelay()+", "+"autoWaitForIdle = "+isAutoWaitForIdle();
         return getClass().getName() + "[ " + params + " ]";

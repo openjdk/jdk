@@ -25,25 +25,24 @@
 #include "precompiled.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/commandLineFlagConstraintsRuntime.hpp"
+#include "runtime/commandLineFlagRangeList.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/defaultStream.hpp"
 
-Flag::Error ObjectAlignmentInBytesConstraintFunc(bool verbose, intx* value) {
-  if (!is_power_of_2(*value)) {
-    if (verbose == true) {
-      jio_fprintf(defaultStream::error_stream(),
-                "ObjectAlignmentInBytes=" INTX_FORMAT " must be power of 2\n",
-                *value);
-    }
+Flag::Error ObjectAlignmentInBytesConstraintFunc(intx value, bool verbose) {
+  if (!is_power_of_2(value)) {
+    CommandLineError::print(verbose,
+                            "ObjectAlignmentInBytes (" INTX_FORMAT ") must be "
+                            "power of 2\n",
+                            value);
     return Flag::VIOLATES_CONSTRAINT;
   }
   // In case page size is very small.
-  if (*value >= (intx)os::vm_page_size()) {
-    if (verbose == true) {
-      jio_fprintf(defaultStream::error_stream(),
-                "ObjectAlignmentInBytes=" INTX_FORMAT " must be less than page size " INTX_FORMAT "\n",
-                *value, (intx)os::vm_page_size());
-    }
+  if (value >= (intx)os::vm_page_size()) {
+    CommandLineError::print(verbose,
+                            "ObjectAlignmentInBytes (" INTX_FORMAT ") must be "
+                            "less than page size " INTX_FORMAT "\n",
+                            value, (intx)os::vm_page_size());
     return Flag::VIOLATES_CONSTRAINT;
   }
   return Flag::SUCCESS;
@@ -51,13 +50,12 @@ Flag::Error ObjectAlignmentInBytesConstraintFunc(bool verbose, intx* value) {
 
 // Need to enforce the padding not to break the existing field alignments.
 // It is sufficient to check against the largest type size.
-Flag::Error ContendedPaddingWidthConstraintFunc(bool verbose, intx* value) {
-  if ((*value != 0) && ((*value % BytesPerLong) != 0)) {
-    if (verbose == true) {
-      jio_fprintf(defaultStream::error_stream(),
-                "ContendedPaddingWidth=" INTX_FORMAT " must be a multiple of %d\n",
-                *value, BytesPerLong);
-    }
+Flag::Error ContendedPaddingWidthConstraintFunc(intx value, bool verbose) {
+  if ((value != 0) && ((value % BytesPerLong) != 0)) {
+    CommandLineError::print(verbose,
+                            "ContendedPaddingWidth (" INTX_FORMAT ") must be "
+                            "a multiple of %d\n",
+                            value, BytesPerLong);
     return Flag::VIOLATES_CONSTRAINT;
   } else {
     return Flag::SUCCESS;

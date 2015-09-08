@@ -26,6 +26,7 @@
 package jdk.nashorn.internal.runtime;
 
 import static jdk.nashorn.internal.lookup.Lookup.MH;
+import static jdk.nashorn.internal.runtime.ECMAErrors.rangeError;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
@@ -69,6 +70,9 @@ public final class ScriptingFunctions {
 
     /** EXIT name - special property used by $EXEC API. */
     public static final String EXIT_NAME = "$EXIT";
+
+    /** THROW_ON_ERROR name - special property of the $EXEC function used by $EXEC API. */
+    public static final String THROW_ON_ERROR_NAME = "throwOnError";
 
     /** Names of special properties used by $ENV API. */
     public  static final String ENV_NAME  = "$ENV";
@@ -244,6 +248,19 @@ public final class ScriptingFunctions {
         for (final IOException element : exception) {
             if (element != null) {
                 throw element;
+            }
+        }
+
+        // if we got a non-zero exit code ("failure"), then we have to decide to throw error or not
+        if (exit != 0) {
+            // get the $EXEC function object from the global object
+            final Object exec = global.get(EXEC_NAME);
+            assert exec instanceof ScriptObject : EXEC_NAME + " is not a script object!";
+
+            // Check if the user has set $EXEC.throwOnError property to true. If so, throw RangeError
+            // If that property is not set or set to false, then silently proceed with the rest.
+            if (JSType.toBoolean(((ScriptObject)exec).get(THROW_ON_ERROR_NAME))) {
+                throw rangeError("exec.returned.non.zero", ScriptRuntime.safeToString(exit));
             }
         }
 

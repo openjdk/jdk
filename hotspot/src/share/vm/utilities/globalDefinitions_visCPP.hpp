@@ -148,9 +148,9 @@ inline int g_isfinite(jfloat  f)                 { return _finite(f); }
 inline int g_isfinite(jdouble f)                 { return _finite(f); }
 
 //----------------------------------------------------------------------------------------------------
-// Constant for jlong (specifying an long long constant is C++ compiler specific)
+// Constant for jlong (specifying a long long constant is C++ compiler specific)
 
-// Build a 64bit integer constant on with Visual C++
+// Build a 64bit integer constant with Visual C++
 #define  CONST64(x) (x ##  i64)
 #define UCONST64(x) (x ## ui64)
 
