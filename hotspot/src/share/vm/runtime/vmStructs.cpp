@@ -405,7 +405,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(ObjArrayKlass,               _element_klass,                                Klass*)                                \
   nonstatic_field(ObjArrayKlass,               _bottom_klass,                                 Klass*)                                \
   volatile_nonstatic_field(Symbol,             _refcount,                                     short)                                 \
-  nonstatic_field(Symbol,                      _identity_hash,                                int)                                   \
+  nonstatic_field(Symbol,                      _identity_hash,                                short)                                 \
   nonstatic_field(Symbol,                      _length,                                       unsigned short)                        \
   unchecked_nonstatic_field(Symbol,            _body,                                         sizeof(jbyte)) /* NOTE: no type */     \
   nonstatic_field(TypeArrayKlass,              _max_length,                                   int)                                   \
@@ -1565,6 +1565,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_toplevel_type(Generation*)                                      \
   declare_toplevel_type(GenerationSpec**)                                 \
   declare_toplevel_type(HeapWord*)                                        \
+  declare_toplevel_type(HeapWord* volatile)                               \
   declare_toplevel_type(MemRegion*)                                       \
   declare_toplevel_type(OffsetTableContigSpace*)                          \
   declare_toplevel_type(Space*)                                           \

@@ -355,8 +355,8 @@ void InterpreterMacroAssembler::load_earlyret_value(TosState state) {
     case ctos:                                   // fall through
     case stos:                                   // fall through
     case itos: movl(rax, val_addr);                 break;
-    case ftos: movflt(xmm0, val_addr);              break;
-    case dtos: movdbl(xmm0, val_addr);              break;
+    case ftos: load_float(val_addr);                break;
+    case dtos: load_double(val_addr);               break;
     case vtos: /* nothing to do */                  break;
     default  : ShouldNotReachHere();
   }
@@ -376,8 +376,8 @@ void InterpreterMacroAssembler::load_earlyret_value(TosState state) {
     case ctos:                                     // fall through
     case stos:                                     // fall through
     case itos: movl(rax, val_addr);                   break;
-    case ftos: fld_s(val_addr);                       break;
-    case dtos: fld_d(val_addr);                       break;
+    case ftos: load_float(val_addr);                  break;
+    case dtos: load_double(val_addr);                 break;
     case vtos: /* nothing to do */                    break;
     default  : ShouldNotReachHere();
   }
@@ -578,6 +578,26 @@ void InterpreterMacroAssembler::push_i(Register r) {
   push(r);
 }
 
+void InterpreterMacroAssembler::push_f(XMMRegister r) {
+  subptr(rsp, wordSize);
+  movflt(Address(rsp, 0), r);
+}
+
+void InterpreterMacroAssembler::pop_f(XMMRegister r) {
+  movflt(r, Address(rsp, 0));
+  addptr(rsp, wordSize);
+}
+
+void InterpreterMacroAssembler::push_d(XMMRegister r) {
+  subptr(rsp, 2 * wordSize);
+  movdbl(Address(rsp, 0), r);
+}
+
+void InterpreterMacroAssembler::pop_d(XMMRegister r) {
+  movdbl(r, Address(rsp, 0));
+  addptr(rsp, 2 * Interpreter::stackElementSize);
+}
+
 #ifdef _LP64
 void InterpreterMacroAssembler::pop_i(Register r) {
   // XXX can't use pop currently, upper half non clean
@@ -590,29 +610,9 @@ void InterpreterMacroAssembler::pop_l(Register r) {
   addptr(rsp, 2 * Interpreter::stackElementSize);
 }
 
-void InterpreterMacroAssembler::pop_f(XMMRegister r) {
-  movflt(r, Address(rsp, 0));
-  addptr(rsp, wordSize);
-}
-
-void InterpreterMacroAssembler::pop_d(XMMRegister r) {
-  movdbl(r, Address(rsp, 0));
-  addptr(rsp, 2 * Interpreter::stackElementSize);
-}
-
 void InterpreterMacroAssembler::push_l(Register r) {
   subptr(rsp, 2 * wordSize);
   movq(Address(rsp, 0), r);
-}
-
-void InterpreterMacroAssembler::push_f(XMMRegister r) {
-  subptr(rsp, wordSize);
-  movflt(Address(rsp, 0), r);
-}
-
-void InterpreterMacroAssembler::push_d(XMMRegister r) {
-  subptr(rsp, 2 * wordSize);
-  movdbl(Address(rsp, 0), r);
 }
 
 void InterpreterMacroAssembler::pop(TosState state) {
@@ -623,8 +623,8 @@ void InterpreterMacroAssembler::pop(TosState state) {
   case stos:
   case itos: pop_i();                   break;
   case ltos: pop_l();                   break;
-  case ftos: pop_f();                   break;
-  case dtos: pop_d();                   break;
+  case ftos: pop_f(xmm0);               break;
+  case dtos: pop_d(xmm0);               break;
   case vtos: /* nothing to do */        break;
   default:   ShouldNotReachHere();
   }
@@ -640,8 +640,8 @@ void InterpreterMacroAssembler::push(TosState state) {
   case stos:
   case itos: push_i();                  break;
   case ltos: push_l();                  break;
-  case ftos: push_f();                  break;
-  case dtos: push_d();                  break;
+  case ftos: push_f(xmm0);              break;
+  case dtos: push_d(xmm0);              break;
   case vtos: /* nothing to do */        break;
   default  : ShouldNotReachHere();
   }
@@ -675,8 +675,20 @@ void InterpreterMacroAssembler::pop(TosState state) {
     case stos:                                               // fall through
     case itos: pop_i(rax);                                   break;
     case ltos: pop_l(rax, rdx);                              break;
-    case ftos: pop_f();                                      break;
-    case dtos: pop_d();                                      break;
+    case ftos:
+      if (UseSSE >= 1) {
+        pop_f(xmm0);
+      } else {
+        pop_f();
+      }
+      break;
+    case dtos:
+      if (UseSSE >= 2) {
+        pop_d(xmm0);
+      } else {
+        pop_d();
+      }
+      break;
     case vtos: /* nothing to do */                           break;
     default  : ShouldNotReachHere();
   }
@@ -695,7 +707,7 @@ void InterpreterMacroAssembler::push_f() {
   fstp_s(Address(rsp, 0));
 }
 
-void InterpreterMacroAssembler::push_d(Register r) {
+void InterpreterMacroAssembler::push_d() {
   // Do not schedule for no AGI! Never write beyond rsp!
   subptr(rsp, 2 * wordSize);
   fstp_d(Address(rsp, 0));
@@ -711,8 +723,20 @@ void InterpreterMacroAssembler::push(TosState state) {
     case stos:                                               // fall through
     case itos: push_i(rax);                                    break;
     case ltos: push_l(rax, rdx);                               break;
-    case ftos: push_f();                                       break;
-    case dtos: push_d(rax);                                    break;
+    case ftos:
+      if (UseSSE >= 1) {
+        push_f(xmm0);
+      } else {
+        push_f();
+      }
+      break;
+    case dtos:
+      if (UseSSE >= 2) {
+        push_d(xmm0);
+      } else {
+        push_d();
+      }
+      break;
     case vtos: /* nothing to do */                             break;
     default  : ShouldNotReachHere();
   }
@@ -995,22 +1019,6 @@ void InterpreterMacroAssembler::remove_activation(
   leave();                           // remove frame anchor
   pop(ret_addr);                     // get return address
   mov(rsp, rbx);                     // set sp to sender sp
-#ifndef _LP64
-  if (UseSSE) {
-    // float and double are returned in xmm register in SSE-mode
-    if (state == ftos && UseSSE >= 1) {
-      subptr(rsp, wordSize);
-      fstp_s(Address(rsp, 0));
-      movflt(xmm0, Address(rsp, 0));
-      addptr(rsp, wordSize);
-    } else if (state == dtos && UseSSE >= 2) {
-      subptr(rsp, 2*wordSize);
-      fstp_d(Address(rsp, 0));
-      movdbl(xmm0, Address(rsp, 0));
-      addptr(rsp, 2*wordSize);
-    }
-  }
-#endif // _LP64
 }
 #endif // !CC_INTERP
 
@@ -1783,7 +1791,10 @@ void InterpreterMacroAssembler::verify_oop(Register reg, TosState state) {
 
 void InterpreterMacroAssembler::verify_FPU(int stack_depth, TosState state) {
 #ifndef _LP64
-  if (state == ftos || state == dtos) MacroAssembler::verify_FPU(stack_depth);
+  if ((state == ftos && UseSSE < 1) ||
+      (state == dtos && UseSSE < 2)) {
+    MacroAssembler::verify_FPU(stack_depth);
+  }
 #endif
 }
 

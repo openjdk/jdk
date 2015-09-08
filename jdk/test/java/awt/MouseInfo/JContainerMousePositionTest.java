@@ -144,5 +144,3 @@ public class JContainerMousePositionTest {
         frame1.setVisible(true);
     }
 }
-
-

@@ -46,10 +46,11 @@ void G1AllocRegion::setup(G1CollectedHeap* g1h, HeapRegion* dummy_region) {
   _dummy_region = dummy_region;
 }
 
-void G1AllocRegion::fill_up_remaining_space(HeapRegion* alloc_region,
-                                            bool bot_updates) {
+size_t G1AllocRegion::fill_up_remaining_space(HeapRegion* alloc_region,
+                                              bool bot_updates) {
   assert(alloc_region != NULL && alloc_region != _dummy_region,
          "pre-condition");
+  size_t result = 0;
 
   // Other threads might still be trying to allocate using a CAS out
   // of the region we are trying to retire, as they can do so without
@@ -73,6 +74,7 @@ void G1AllocRegion::fill_up_remaining_space(HeapRegion* alloc_region,
       // If the allocation was successful we should fill in the space.
       CollectedHeap::fill_with_object(dummy, free_word_size);
       alloc_region->set_pre_dummy_top(dummy);
+      result += free_word_size * HeapWordSize;
       break;
     }
 
@@ -81,12 +83,17 @@ void G1AllocRegion::fill_up_remaining_space(HeapRegion* alloc_region,
     // allocation and they fill up the region. In that case, we can
     // just get out of the loop.
   }
+  result += alloc_region->free();
+
   assert(alloc_region->free() / HeapWordSize < min_word_size_to_fill,
          "post-condition");
+  return result;
 }
 
-void G1AllocRegion::retire(bool fill_up) {
+size_t G1AllocRegion::retire(bool fill_up) {
   assert(_alloc_region != NULL, ar_ext_msg(this, "not initialized properly"));
+
+  size_t result = 0;
 
   trace("retiring");
   HeapRegion* alloc_region = _alloc_region;
@@ -98,7 +105,7 @@ void G1AllocRegion::retire(bool fill_up) {
            ar_ext_msg(this, "the alloc region should never be empty"));
 
     if (fill_up) {
-      fill_up_remaining_space(alloc_region, _bot_updates);
+      result = fill_up_remaining_space(alloc_region, _bot_updates);
     }
 
     assert(alloc_region->used() >= _used_bytes_before,
@@ -109,6 +116,8 @@ void G1AllocRegion::retire(bool fill_up) {
     _alloc_region = _dummy_region;
   }
   trace("retired");
+
+  return result;
 }
 
 HeapWord* G1AllocRegion::new_alloc_region_and_allocate(size_t word_size,
@@ -196,11 +205,11 @@ HeapRegion* G1AllocRegion::release() {
 }
 
 #if G1_ALLOC_REGION_TRACING
-void G1AllocRegion::trace(const char* str, size_t word_size, HeapWord* result) {
+void G1AllocRegion::trace(const char* str, size_t min_word_size, size_t desired_word_size, size_t actual_word_size, HeapWord* result) {
   // All the calls to trace that set either just the size or the size
   // and the result are considered part of level 2 tracing and are
   // skipped during level 1 tracing.
-  if ((word_size == 0 && result == NULL) || (G1_ALLOC_REGION_TRACING > 1)) {
+  if ((actual_word_size == 0 && result == NULL) || (G1_ALLOC_REGION_TRACING > 1)) {
     const size_t buffer_length = 128;
     char hr_buffer[buffer_length];
     char rest_buffer[buffer_length];
@@ -217,10 +226,10 @@ void G1AllocRegion::trace(const char* str, size_t word_size, HeapWord* result) {
 
     if (G1_ALLOC_REGION_TRACING > 1) {
       if (result != NULL) {
-        jio_snprintf(rest_buffer, buffer_length, SIZE_FORMAT " " PTR_FORMAT,
-                     word_size, result);
-      } else if (word_size != 0) {
-        jio_snprintf(rest_buffer, buffer_length, SIZE_FORMAT, word_size);
+        jio_snprintf(rest_buffer, buffer_length, "min " SIZE_FORMAT " desired " SIZE_FORMAT " actual " SIZE_FORMAT " " PTR_FORMAT,
+                     min_word_size, desired_word_size, actual_word_size, result);
+      } else if (min_word_size != 0) {
+        jio_snprintf(rest_buffer, buffer_length, "min " SIZE_FORMAT " desired " SIZE_FORMAT, min_word_size, desired_word_size);
       } else {
         jio_snprintf(rest_buffer, buffer_length, "");
       }
@@ -251,26 +260,25 @@ void MutatorAllocRegion::retire_region(HeapRegion* alloc_region,
   _g1h->retire_mutator_alloc_region(alloc_region, allocated_bytes);
 }
 
-HeapRegion* SurvivorGCAllocRegion::allocate_new_region(size_t word_size,
-                                                       bool force) {
+HeapRegion* G1GCAllocRegion::allocate_new_region(size_t word_size,
+                                                 bool force) {
   assert(!force, "not supported for GC alloc regions");
-  return _g1h->new_gc_alloc_region(word_size, count(), InCSetState::Young);
+  return _g1h->new_gc_alloc_region(word_size, count(), _purpose);
 }
 
-void SurvivorGCAllocRegion::retire_region(HeapRegion* alloc_region,
-                                          size_t allocated_bytes) {
-  _g1h->retire_gc_alloc_region(alloc_region, allocated_bytes, InCSetState::Young);
+void G1GCAllocRegion::retire_region(HeapRegion* alloc_region,
+                                    size_t allocated_bytes) {
+  _g1h->retire_gc_alloc_region(alloc_region, allocated_bytes, _purpose);
 }
 
-HeapRegion* OldGCAllocRegion::allocate_new_region(size_t word_size,
-                                                  bool force) {
-  assert(!force, "not supported for GC alloc regions");
-  return _g1h->new_gc_alloc_region(word_size, count(), InCSetState::Old);
-}
-
-void OldGCAllocRegion::retire_region(HeapRegion* alloc_region,
-                                     size_t allocated_bytes) {
-  _g1h->retire_gc_alloc_region(alloc_region, allocated_bytes, InCSetState::Old);
+size_t G1GCAllocRegion::retire(bool fill_up) {
+  HeapRegion* retired = get();
+  size_t end_waste = G1AllocRegion::retire(fill_up);
+  // Do not count retirement of the dummy allocation region.
+  if (retired != NULL) {
+    _stats->add_region_end_waste(end_waste / HeapWordSize);
+  }
+  return end_waste;
 }
 
 HeapRegion* OldGCAllocRegion::release() {

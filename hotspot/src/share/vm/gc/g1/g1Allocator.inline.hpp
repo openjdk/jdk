@@ -27,6 +27,7 @@
 
 #include "gc/g1/g1Allocator.hpp"
 #include "gc/g1/g1AllocRegion.inline.hpp"
+#include "gc/shared/plab.inline.hpp"
 
 HeapWord* G1Allocator::attempt_allocation(size_t word_size, AllocationContext_t context) {
   return mutator_alloc_region(context)->attempt_allocation(word_size, false /* bot_updates */);
@@ -41,6 +42,17 @@ HeapWord* G1Allocator::attempt_allocation_locked(size_t word_size, AllocationCon
 
 HeapWord* G1Allocator::attempt_allocation_force(size_t word_size, AllocationContext_t context) {
   return mutator_alloc_region(context)->attempt_allocation_force(word_size, false /* bot_updates */);
+}
+
+inline HeapWord* G1PLABAllocator::plab_allocate(InCSetState dest,
+                                                size_t word_sz,
+                                                AllocationContext_t context) {
+  G1PLAB* buffer = alloc_buffer(dest, context);
+  if (_survivor_alignment_bytes == 0 || !dest.is_young()) {
+    return buffer->allocate(word_sz);
+  } else {
+    return buffer->allocate_aligned(word_sz, _survivor_alignment_bytes);
+  }
 }
 
 #endif // SHARE_VM_GC_G1_G1ALLOCATOR_HPP

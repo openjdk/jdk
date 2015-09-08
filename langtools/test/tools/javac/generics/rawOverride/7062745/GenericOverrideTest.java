@@ -23,29 +23,29 @@
 
 /*
  * @test
- * @bug 7062745 8006694
+ * @bug 7062745 8006694 8129962
  * @summary  Regression: difference in overload resolution when two methods
  *  are maximally specific
  *  temporarily workaround combo tests are causing time out in several platforms
- * @library ../../../lib
- * @modules jdk.compiler
- * @build JavacTestingAbstractThreadedTest
- * @run main/othervm GenericOverrideTest
+ * @library /tools/javac/lib
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.code
+ *          jdk.compiler/com.sun.tools.javac.comp
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.javac.tree
+ *          jdk.compiler/com.sun.tools.javac.util
+ * @build combo.ComboTestHelper
+ * @run main GenericOverrideTest
  */
 
-// use /othervm to avoid jtreg timeout issues (CODETOOLS-7900047)
-// see JDK-8006746
+import java.io.IOException;
 
-import java.net.URI;
-import java.util.Arrays;
-import javax.tools.Diagnostic;
-import javax.tools.JavaFileObject;
-import javax.tools.SimpleJavaFileObject;
-import com.sun.source.util.JavacTask;
+import combo.ComboInstance;
+import combo.ComboParameter;
+import combo.ComboTask.Result;
+import combo.ComboTestHelper;
 
-public class GenericOverrideTest
-    extends JavacTestingAbstractThreadedTest
-    implements Runnable {
+public class GenericOverrideTest extends ComboInstance<GenericOverrideTest> {
 
     enum SourceLevel {
         SOURCE_7("-source", "7"),
@@ -58,24 +58,29 @@ public class GenericOverrideTest
         }
     }
 
-    enum SignatureKind {
+    enum SignatureKind implements ComboParameter {
         NON_GENERIC(""),
         GENERIC("<X>");
 
         String paramStr;
 
-        private SignatureKind(String paramStr) {
+        SignatureKind(String paramStr) {
             this.paramStr = paramStr;
+        }
+
+        @Override
+        public String expand(String optParameter) {
+            return paramStr;
         }
     }
 
-    enum ReturnTypeKind {
+    enum ReturnTypeKind implements ComboParameter {
         LIST("List"),
         ARRAYLIST("ArrayList");
 
         String retStr;
 
-        private ReturnTypeKind(String retStr) {
+        ReturnTypeKind(String retStr) {
             this.retStr = retStr;
         }
 
@@ -88,9 +93,14 @@ public class GenericOverrideTest
                 default: throw new AssertionError("Unexpected ret kind: " + this);
             }
         }
+
+        @Override
+        public String expand(String optParameter) {
+            return retStr;
+        }
     }
 
-    enum TypeArgumentKind {
+    enum TypeArgumentKind implements ComboParameter {
         NONE(""),
         UNBOUND("<?>"),
         INTEGER("<Number>"),
@@ -99,7 +109,7 @@ public class GenericOverrideTest
 
         String typeargStr;
 
-        private TypeArgumentKind(String typeargStr) {
+        TypeArgumentKind(String typeargStr) {
             this.typeargStr = typeargStr;
         }
 
@@ -141,136 +151,79 @@ public class GenericOverrideTest
                 default: throw new AssertionError("Unexpected typearg kind: " + this);
             }
         }
+
+        @Override
+        public String expand(String optParameter) {
+            return typeargStr;
+        }
     }
 
     public static void main(String... args) throws Exception {
-        for (SignatureKind sig1 : SignatureKind.values()) {
-            for (ReturnTypeKind rt1 : ReturnTypeKind.values()) {
-                for (TypeArgumentKind ta1 : TypeArgumentKind.values()) {
-                    if (!ta1.compatibleWith(sig1)) continue;
-                    for (SignatureKind sig2 : SignatureKind.values()) {
-                        for (ReturnTypeKind rt2 : ReturnTypeKind.values()) {
-                            for (TypeArgumentKind ta2 : TypeArgumentKind.values()) {
-                                if (!ta2.compatibleWith(sig2)) continue;
-                                for (ReturnTypeKind rt3 : ReturnTypeKind.values()) {
-                                    for (TypeArgumentKind ta3 : TypeArgumentKind.values()) {
-                                        if (!ta3.compatibleWith(SignatureKind.NON_GENERIC))
-                                            continue;
-                                        for (SourceLevel level : SourceLevel.values()) {
-                                            pool.execute(
-                                                    new GenericOverrideTest(sig1,
-                                                    rt1, ta1, sig2, rt2,
-                                                    ta2, rt3, ta3, level));
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        checkAfterExec();
+        new ComboTestHelper<GenericOverrideTest>()
+                .withFilter(GenericOverrideTest::argMismatchFilter)
+                .withDimension("SOURCE", (x, level) -> x.level = level, SourceLevel.values())
+                .withArrayDimension("SIG", (x, sig, idx) -> x.sigs[idx] = sig, 2, SignatureKind.values())
+                .withArrayDimension("TARG", (x, targ, idx) -> x.targs[idx] = targ, 3, TypeArgumentKind.values())
+                .withArrayDimension("RET", (x, ret, idx) -> x.rets[idx] = ret, 3, ReturnTypeKind.values())
+                .run(GenericOverrideTest::new);
     }
 
-    SignatureKind sig1, sig2;
-    ReturnTypeKind rt1, rt2, rt3;
-    TypeArgumentKind ta1, ta2, ta3;
+    SignatureKind[] sigs = new SignatureKind[2];
+    ReturnTypeKind[] rets = new ReturnTypeKind[3];
+    TypeArgumentKind[] targs = new TypeArgumentKind[3];
     SourceLevel level;
-    JavaSource source;
-    DiagnosticChecker diagChecker;
 
-    GenericOverrideTest(SignatureKind sig1, ReturnTypeKind rt1, TypeArgumentKind ta1,
-            SignatureKind sig2, ReturnTypeKind rt2, TypeArgumentKind ta2,
-            ReturnTypeKind rt3, TypeArgumentKind ta3, SourceLevel level) {
-        this.sig1 = sig1;
-        this.sig2 = sig2;
-        this.rt1 = rt1;
-        this.rt2 = rt2;
-        this.rt3 = rt3;
-        this.ta1 = ta1;
-        this.ta2 = ta2;
-        this.ta3 = ta3;
-        this.level = level;
-        this.source = new JavaSource();
-        this.diagChecker = new DiagnosticChecker();
+    boolean argMismatchFilter() {
+        return targs[0].compatibleWith(sigs[0]) &&
+                targs[1].compatibleWith(sigs[1]) &&
+                targs[2].compatibleWith(SignatureKind.NON_GENERIC);
     }
 
-    class JavaSource extends SimpleJavaFileObject {
-
-        String template = "import java.util.*;\n" +
-                          "interface A { #S1 #R1#TA1 m(); }\n" +
-                          "interface B { #S2 #R2#TA2 m(); }\n" +
-                          "interface AB extends A, B {}\n" +
-                          "class Test {\n" +
-                          "  void test(AB ab) { #R3#TA3 n = ab.m(); }\n" +
-                          "}";
-
-        String source;
-
-        public JavaSource() {
-            super(URI.create("myfo:/Test.java"), JavaFileObject.Kind.SOURCE);
-            source = template.replace("#S1", sig1.paramStr).
-                    replace("#S2", sig2.paramStr).
-                    replace("#R1", rt1.retStr).
-                    replace("#R2", rt2.retStr).
-                    replace("#R3", rt3.retStr).
-                    replace("#TA1", ta1.typeargStr).
-                    replace("#TA2", ta2.typeargStr).
-                    replace("#TA3", ta3.typeargStr);
-        }
-
-        @Override
-        public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-            return source;
-        }
-    }
+    String template = "import java.util.*;\n" +
+                      "interface A { #{SIG[0]} #{RET[0]}#{TARG[0]} m(); }\n" +
+                      "interface B { #{SIG[1]} #{RET[1]}#{TARG[1]} m(); }\n" +
+                      "interface AB extends A, B {}\n" +
+                      "class Test {\n" +
+                      "  void test(AB ab) { #{RET[2]}#{TARG[2]} n = ab.m(); }\n" +
+                      "}";
 
     @Override
-    public void run() {
-        JavacTask ct = (JavacTask)comp.getTask(null, fm.get(), diagChecker,
-                level.opts != null ? Arrays.asList(level.opts) : null,
-                null, Arrays.asList(source));
-        try {
-            ct.analyze();
-        } catch (Throwable ex) {
-            throw new AssertionError("Error thrown when compiling the following code:\n" +
-                    source.getCharContent(true));
-        }
-        check();
+    public void doWork() throws IOException {
+        check(newCompilationTask()
+                .withOption("-XDuseUnsharedTable") //this test relies on predictable name indexes!
+                .withOptions(level.opts)
+                .withSourceFromTemplate(template)
+                .analyze());
     }
 
-    void check() {
-        checkCount.incrementAndGet();
-
+    void check(Result<?> res) {
         boolean errorExpected = false;
         int mostSpecific = 0;
 
         //first check that either |R1| <: |R2| or |R2| <: |R1|
-        if (rt1 != rt2) {
-            if (!rt1.moreSpecificThan(rt2) &&
-                    !rt2.moreSpecificThan(rt1)) {
+        if (rets[0] != rets[1]) {
+            if (!rets[0].moreSpecificThan(rets[1]) &&
+                    !rets[1].moreSpecificThan(rets[0])) {
                 errorExpected = true;
             } else {
-                mostSpecific = rt1.moreSpecificThan(rt2) ? 1 : 2;
+                mostSpecific = rets[0].moreSpecificThan(rets[1]) ? 1 : 2;
             }
         }
 
         //check that either TA1 <= TA2 or TA2 <= TA1 (unless most specific return found above is raw)
         if (!errorExpected) {
-            if (ta1 != ta2) {
-                boolean useStrictCheck = ta1.moreSpecificThan(ta2, true) ||
-                        ta2.moreSpecificThan(ta1, true);
-                if (!ta1.moreSpecificThan(ta2, useStrictCheck) &&
-                        !ta2.moreSpecificThan(ta1, useStrictCheck)) {
+            if (targs[0] != targs[1]) {
+                boolean useStrictCheck = targs[0].moreSpecificThan(targs[1], true) ||
+                        targs[1].moreSpecificThan(targs[0], true);
+                if (!targs[0].moreSpecificThan(targs[1], useStrictCheck) &&
+                        !targs[1].moreSpecificThan(targs[0], useStrictCheck)) {
                     errorExpected = true;
                 } else {
-                    int mostSpecific2 = ta1.moreSpecificThan(ta2, useStrictCheck) ? 1 : 2;
+                    int mostSpecific2 = targs[0].moreSpecificThan(targs[1], useStrictCheck) ? 1 : 2;
                     if (mostSpecific != 0 && mostSpecific2 != mostSpecific) {
                         errorExpected = mostSpecific == 1 ?
-                                ta1 != TypeArgumentKind.NONE :
-                                ta2 != TypeArgumentKind.NONE;
+                                targs[0] != TypeArgumentKind.NONE :
+                                targs[1] != TypeArgumentKind.NONE;
                     } else {
                         mostSpecific = mostSpecific2;
                     }
@@ -284,34 +237,21 @@ public class GenericOverrideTest
 
         //finally, check that most specific return type is compatible with expected type
         if (!errorExpected) {
-            ReturnTypeKind msrt = mostSpecific == 1 ? rt1 : rt2;
-            TypeArgumentKind msta = mostSpecific == 1 ? ta1 : ta2;
-            SignatureKind mssig = mostSpecific == 1 ? sig1 : sig2;
+            ReturnTypeKind msrt = mostSpecific == 1 ? rets[0] : rets[1];
+            TypeArgumentKind msta = mostSpecific == 1 ? targs[0] : targs[1];
+            SignatureKind mssig = mostSpecific == 1 ? sigs[0] : sigs[1];
 
-            if (!msrt.moreSpecificThan(rt3) ||
-                    !msta.assignableTo(ta3, mssig, level)) {
+            if (!msrt.moreSpecificThan(rets[2]) ||
+                    !msta.assignableTo(targs[2], mssig, level)) {
                 errorExpected = true;
             }
         }
 
-        if (errorExpected != diagChecker.errorFound) {
-            throw new Error("invalid diagnostics for source:\n" +
-                source.getCharContent(true) +
-                "\nFound error: " + diagChecker.errorFound +
+        if (errorExpected != res.hasErrors()) {
+            fail("invalid diagnostics for source:\n" +
+                res.compilationInfo() +
+                "\nFound error: " + res.hasErrors() +
                 "\nExpected error: " + errorExpected);
         }
     }
-
-    static class DiagnosticChecker
-        implements javax.tools.DiagnosticListener<JavaFileObject> {
-
-        boolean errorFound;
-
-        public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
-            if (diagnostic.getKind() == Diagnostic.Kind.ERROR) {
-                errorFound = true;
-            }
-        }
-    }
-
 }

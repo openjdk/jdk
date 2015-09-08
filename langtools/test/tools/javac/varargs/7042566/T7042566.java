@@ -23,31 +23,25 @@
 
 /*
  * @test
- * @bug 7042566 8006694
+ * @bug 7042566 8006694 8129962
  * @summary Unambiguous varargs method calls flagged as ambiguous
  *  temporarily workaround combo tests are causing time out in several platforms
- * @library ../../lib
+ * @library /tools/javac/lib
  * @modules jdk.jdeps/com.sun.tools.classfile
+ *          jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.code
+ *          jdk.compiler/com.sun.tools.javac.comp
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util
- * @build JavacTestingAbstractThreadedTest
- * @run main/othervm T7042566
+ * @build combo.ComboTestHelper
+ * @run main T7042566
  */
 
-// use /othervm to avoid jtreg timeout issues (CODETOOLS-7900047)
-// see JDK-8006746
-
-import java.io.File;
-import java.net.URI;
-import java.util.Arrays;
-import java.util.Locale;
-import java.util.concurrent.atomic.AtomicInteger;
-import javax.tools.Diagnostic;
-import javax.tools.JavaCompiler;
+import java.io.IOException;
+import java.io.InputStream;
 import javax.tools.JavaFileObject;
-import javax.tools.SimpleJavaFileObject;
-import javax.tools.ToolProvider;
 
-import com.sun.source.util.JavacTask;
 import com.sun.tools.classfile.Instruction;
 import com.sun.tools.classfile.Attribute;
 import com.sun.tools.classfile.ClassFile;
@@ -56,145 +50,12 @@ import com.sun.tools.classfile.ConstantPool.*;
 import com.sun.tools.classfile.Method;
 import com.sun.tools.javac.util.List;
 
-public class T7042566
-    extends JavacTestingAbstractThreadedTest
-    implements Runnable {
+import combo.ComboInstance;
+import combo.ComboParameter;
+import combo.ComboTask.Result;
+import combo.ComboTestHelper;
 
-    VarargsMethod m1;
-    VarargsMethod m2;
-    TypeConfiguration actuals;
-
-    T7042566(TypeConfiguration m1_conf, TypeConfiguration m2_conf,
-            TypeConfiguration actuals) {
-        this.m1 = new VarargsMethod(m1_conf);
-        this.m2 = new VarargsMethod(m2_conf);
-        this.actuals = actuals;
-    }
-
-    @Override
-    public void run() {
-        int id = checkCount.incrementAndGet();
-        final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
-        JavaSource source = new JavaSource(id);
-        ErrorChecker ec = new ErrorChecker();
-        JavacTask ct = (JavacTask)tool.getTask(null, fm.get(), ec,
-                null, null, Arrays.asList(source));
-        ct.call();
-        check(source, ec, id);
-    }
-
-    void check(JavaSource source, ErrorChecker ec, int id) {
-        boolean resolutionError = false;
-        VarargsMethod selectedMethod = null;
-
-        boolean m1_applicable = m1.isApplicable(actuals);
-        boolean m2_applicable = m2.isApplicable(actuals);
-
-        if (!m1_applicable && !m2_applicable) {
-            resolutionError = true;
-        } else if (m1_applicable && m2_applicable) {
-            //most specific
-            boolean m1_moreSpecific = m1.isMoreSpecificThan(m2);
-            boolean m2_moreSpecific = m2.isMoreSpecificThan(m1);
-
-            resolutionError = m1_moreSpecific == m2_moreSpecific;
-            selectedMethod = m1_moreSpecific ? m1 : m2;
-        } else {
-            selectedMethod = m1_applicable ?
-                m1 : m2;
-        }
-
-        if (ec.errorFound != resolutionError) {
-            throw new Error("invalid diagnostics for source:\n" +
-                    source.getCharContent(true) +
-                    "\nExpected resolution error: " + resolutionError +
-                    "\nFound error: " + ec.errorFound +
-                    "\nCompiler diagnostics:\n" + ec.printDiags());
-        } else if (!resolutionError) {
-            verifyBytecode(selectedMethod, source, id);
-        }
-    }
-
-    void verifyBytecode(VarargsMethod selected, JavaSource source, int id) {
-        bytecodeCheckCount.incrementAndGet();
-        File compiledTest = new File(String.format("Test%d.class", id));
-        try {
-            ClassFile cf = ClassFile.read(compiledTest);
-            Method testMethod = null;
-            for (Method m : cf.methods) {
-                if (m.getName(cf.constant_pool).equals("test")) {
-                    testMethod = m;
-                    break;
-                }
-            }
-            if (testMethod == null) {
-                throw new Error("Test method not found");
-            }
-            Code_attribute ea =
-                (Code_attribute)testMethod.attributes.get(Attribute.Code);
-            if (testMethod == null) {
-                throw new Error("Code attribute for test() method not found");
-            }
-
-            for (Instruction i : ea.getInstructions()) {
-                if (i.getMnemonic().equals("invokevirtual")) {
-                    int cp_entry = i.getUnsignedShort(1);
-                    CONSTANT_Methodref_info methRef =
-                        (CONSTANT_Methodref_info)cf.constant_pool.get(cp_entry);
-                    String type = methRef.getNameAndTypeInfo().getType();
-                    String sig = selected.parameterTypes.bytecodeSigStr;
-                    if (!type.contains(sig)) {
-                        throw new Error("Unexpected type method call: " +
-                                        type + "" +
-                                        "\nfound: " + sig +
-                                        "\n" + source.getCharContent(true));
-                    }
-                    break;
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new Error("error reading " + compiledTest +": " + e);
-        }
-    }
-
-    class JavaSource extends SimpleJavaFileObject {
-
-        static final String source_template = "class Test#ID {\n" +
-                "   #V1\n" +
-                "   #V2\n" +
-                "   void test() { m(#E); }\n" +
-                "}";
-
-        String source;
-
-        public JavaSource(int id) {
-            super(URI.create(String.format("myfo:/Test%d.java", id)),
-                    JavaFileObject.Kind.SOURCE);
-            source = source_template.replaceAll("#V1", m1.toString())
-                    .replaceAll("#V2", m2.toString())
-                    .replaceAll("#E", actuals.expressionListStr)
-                    .replaceAll("#ID", String.valueOf(id));
-        }
-
-        @Override
-        public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-            return source;
-        }
-    }
-
-    public static void main(String... args) throws Exception {
-        for (TypeConfiguration tconf1 : TypeConfiguration.values()) {
-            for (TypeConfiguration tconf2 : TypeConfiguration.values()) {
-                for (TypeConfiguration tconf3 : TypeConfiguration.values()) {
-                    pool.execute(new T7042566(tconf1, tconf2, tconf3));
-                }
-            }
-        }
-
-        outWriter.println("Bytecode checks made: " + bytecodeCheckCount.get());
-        checkAfterExec();
-    }
+public class T7042566 extends ComboInstance<T7042566> {
 
     enum TypeKind {
         OBJECT("Object", "(Object)null", "Ljava/lang/Object;"),
@@ -216,7 +77,7 @@ public class T7042566
         }
     }
 
-    enum TypeConfiguration {
+    enum TypeConfiguration implements ComboParameter {
         A(TypeKind.OBJECT),
         B(TypeKind.STRING),
         AA(TypeKind.OBJECT, TypeKind.OBJECT),
@@ -237,7 +98,7 @@ public class T7042566
         String parameterListStr;
         String bytecodeSigStr;
 
-        private TypeConfiguration(TypeKind... typeKindList) {
+        TypeConfiguration(TypeKind... typeKindList) {
             this.typeKindList = List.from(typeKindList);
             expressionListStr = asExpressionList();
             parameterListStr = asParameterList();
@@ -283,6 +144,11 @@ public class T7042566
                 count++;
             }
             return buf.toString();
+        }
+
+        @Override
+        public String expand(String optParameter) {
+            return expressionListStr;
         }
     }
 
@@ -333,31 +199,119 @@ public class T7042566
         }
     }
 
-    static class ErrorChecker
-        implements javax.tools.DiagnosticListener<JavaFileObject> {
+    public static void main(String[] args) {
+        new ComboTestHelper<T7042566>()
+                .withArrayDimension("SIG", (x, sig, idx) -> x.methodSignatures[idx] = sig, 2, TypeConfiguration.values())
+                .withDimension("ACTUALS", (x, actuals) -> x.actuals = actuals, TypeConfiguration.values())
+                .run(T7042566::new, T7042566::setup);
+    }
 
-        boolean errorFound;
-        List<String> errDiags = List.nil();
+    VarargsMethod m1;
+    VarargsMethod m2;
+    TypeConfiguration[] methodSignatures = new TypeConfiguration[2];
+    TypeConfiguration actuals;
 
-        public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
-            if (diagnostic.getKind() == Diagnostic.Kind.ERROR) {
-                errDiags = errDiags
-                        .append(diagnostic.getMessage(Locale.getDefault()));
-                errorFound = true;
-            }
-        }
+    void setup() {
+        this.m1 = new VarargsMethod(methodSignatures[0]);
+        this.m2 = new VarargsMethod(methodSignatures[1]);
+    }
 
-        String printDiags() {
-            StringBuilder buf = new StringBuilder();
-            for (String s : errDiags) {
-                buf.append(s);
-                buf.append("\n");
-            }
-            return buf.toString();
+    final String source_template = "class Test {\n" +
+                "   #{METH.1}\n" +
+                "   #{METH.2}\n" +
+                "   void test() { m(#{ACTUALS}); }\n" +
+                "}";
+
+    @Override
+    public void doWork() throws IOException {
+        check(newCompilationTask()
+                .withSourceFromTemplate(source_template, this::getMethodDecl)
+                .generate());
+    }
+
+    ComboParameter getMethodDecl(String parameterName) {
+        switch (parameterName) {
+            case "METH": return optParameter -> {
+                return optParameter.equals("1") ?
+                        m1.toString() : m2.toString();
+            };
+            default:
+                return null;
         }
     }
 
-    //number of bytecode checks made while running combo tests
-    static AtomicInteger bytecodeCheckCount = new AtomicInteger();
+    void check(Result<Iterable<? extends JavaFileObject>> res) {
+        boolean resolutionError = false;
+        VarargsMethod selectedMethod = null;
 
+        boolean m1_applicable = m1.isApplicable(actuals);
+        boolean m2_applicable = m2.isApplicable(actuals);
+
+        if (!m1_applicable && !m2_applicable) {
+            resolutionError = true;
+        } else if (m1_applicable && m2_applicable) {
+            //most specific
+            boolean m1_moreSpecific = m1.isMoreSpecificThan(m2);
+            boolean m2_moreSpecific = m2.isMoreSpecificThan(m1);
+
+            resolutionError = m1_moreSpecific == m2_moreSpecific;
+            selectedMethod = m1_moreSpecific ? m1 : m2;
+        } else {
+            selectedMethod = m1_applicable ?
+                m1 : m2;
+        }
+
+        if (res.hasErrors() != resolutionError) {
+            fail("invalid diagnostics for source:\n" +
+                    res.compilationInfo() +
+                    "\nExpected resolution error: " + resolutionError +
+                    "\nFound error: " + res.hasErrors());
+        } else if (!resolutionError) {
+            verifyBytecode(res, selectedMethod);
+        }
+    }
+
+    void verifyBytecode(Result<Iterable<? extends JavaFileObject>> res, VarargsMethod selected) {
+        try (InputStream is = res.get().iterator().next().openInputStream()) {
+            ClassFile cf = ClassFile.read(is);
+            Method testMethod = null;
+            for (Method m : cf.methods) {
+                if (m.getName(cf.constant_pool).equals("test")) {
+                    testMethod = m;
+                    break;
+                }
+            }
+            if (testMethod == null) {
+                fail("Test method not found");
+                return;
+            }
+            Code_attribute ea =
+                (Code_attribute)testMethod.attributes.get(Attribute.Code);
+            if (testMethod == null) {
+                fail("Code attribute for test() method not found");
+                return;
+            }
+
+            for (Instruction i : ea.getInstructions()) {
+                if (i.getMnemonic().equals("invokevirtual")) {
+                    int cp_entry = i.getUnsignedShort(1);
+                    CONSTANT_Methodref_info methRef =
+                        (CONSTANT_Methodref_info)cf.constant_pool.get(cp_entry);
+                    String type = methRef.getNameAndTypeInfo().getType();
+                    String sig = selected.parameterTypes.bytecodeSigStr;
+                    if (!type.contains(sig)) {
+                        fail("Unexpected type method call: " +
+                                        type + "" +
+                                        "\nfound: " + sig +
+                                        "\n" + res.compilationInfo());
+                        return;
+                    }
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("error reading classfile; " + res.compilationInfo() +": " + e);
+        }
+    }
 }

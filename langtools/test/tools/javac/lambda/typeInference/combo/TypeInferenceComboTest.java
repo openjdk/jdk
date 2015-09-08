@@ -23,31 +23,31 @@
 
 /**
  * @test
- * @bug 8003280 8006694
+ * @bug 8003280 8006694 8129962
  * @summary Add lambda tests
  *  perform automated checks in type inference in lambda expressions
  *  in different contexts
  *  temporarily workaround combo tests are causing time out in several platforms
- * @library ../../../lib
- * @modules jdk.compiler
- * @build JavacTestingAbstractThreadedTest
+ * @library /tools/javac/lib
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.code
+ *          jdk.compiler/com.sun.tools.javac.comp
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.javac.tree
+ *          jdk.compiler/com.sun.tools.javac.util
+ * @build combo.ComboTestHelper
  * @compile  TypeInferenceComboTest.java
- * @run main/othervm/timeout=360 TypeInferenceComboTest
+ * @run main TypeInferenceComboTest
  */
 
-// use /othervm to avoid jtreg timeout issues (CODETOOLS-7900047)
-// see JDK-8006746
+import java.io.IOException;
 
-import java.net.URI;
-import java.util.Arrays;
-import javax.tools.Diagnostic;
-import javax.tools.JavaFileObject;
-import javax.tools.SimpleJavaFileObject;
-import com.sun.source.util.JavacTask;
+import combo.ComboInstance;
+import combo.ComboParameter;
+import combo.ComboTask.Result;
+import combo.ComboTestHelper;
 
-public class TypeInferenceComboTest
-    extends JavacTestingAbstractThreadedTest
-    implements Runnable {
+public class TypeInferenceComboTest extends ComboInstance<TypeInferenceComboTest> {
     enum Context {
         ASSIGNMENT("SAM#Type s = #LBody;"),
         METHOD_CALL("#GenericDeclKind void method1(SAM#Type s) { }\n" +
@@ -221,82 +221,21 @@ public class TypeInferenceComboTest
         }
     }
 
-    boolean checkTypeInference() {
-        if (parameterType == TypeKind.VOID) {
-            if (lambdaBodyType != LambdaBody.RETURN_VOID)
-                return false;
-        }
-        else if (lambdaBodyType != LambdaBody.RETURN_ARG)
-            return false;
-
-        return true;
-    }
-
-    String templateStr = "#C\n" +
-                         "interface SAM2 {\n" +
-                         "    SAM m();\n" +
-                         "}\n";
-    SourceFile samSourceFile = new SourceFile("Sam.java", templateStr) {
-        public String toString() {
-            return template.replaceAll("#C",
-                    samKind.getSam(parameterType, returnType));
-        }
-    };
-
-    SourceFile clientSourceFile = new SourceFile("Client.java",
-                                                 "class Client { \n" +
-                                                 "    #Context\n" +
-                                                 "}") {
-        public String toString() {
-            return template.replaceAll("#Context",
-                    context.getContext(samKind, samTargetType, keyword,
-                    parameterType, returnType, lambdaKind, parameterKind,
-                    genericDeclKind, lambdaBodyType));
-        }
-    };
-
-    public void run() {
-        DiagnosticChecker dc = new DiagnosticChecker();
-        JavacTask ct = (JavacTask)comp.getTask(null, fm.get(), dc,
-                null, null, Arrays.asList(samSourceFile, clientSourceFile));
-        try {
-            ct.analyze();
-        } catch (Throwable t) {
-            processException(t);
-        }
-        if (dc.errorFound == checkTypeInference()) {
-            throw new AssertionError(samSourceFile + "\n\n" +
-                    clientSourceFile + "\n" + parameterType + " " + returnType);
-        }
-    }
-
-    abstract class SourceFile extends SimpleJavaFileObject {
-
-        protected String template;
-
-        public SourceFile(String filename, String template) {
-            super(URI.create("myfo:/" + filename), JavaFileObject.Kind.SOURCE);
-            this.template = template;
-        }
-
-        @Override
-        public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-            return toString();
-        }
-
-        public abstract String toString();
-    }
-
-    static class DiagnosticChecker
-        implements javax.tools.DiagnosticListener<JavaFileObject> {
-
-        boolean errorFound = false;
-
-        public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
-            if (diagnostic.getKind() == Diagnostic.Kind.ERROR) {
-                errorFound = true;
-            }
-        }
+    public static void main(String[] args) {
+        new ComboTestHelper<TypeInferenceComboTest>()
+                .withFilter(TypeInferenceComboTest::badTestFilter)
+                .withFilter(TypeInferenceComboTest::redundantTestFilter)
+                .withDimension("SAM", (x, sam) -> x.samKind = sam, SamKind.values())
+                .withDimension("SAMTARGET", (x, target) -> x.samTargetType = target, TypeKind.values())
+                .withDimension("PARAMTYPE", (x, param) -> x.parameterType = param, TypeKind.values())
+                .withDimension("RETTYPE", (x, ret) -> x.returnType = ret, TypeKind.values())
+                .withDimension("CTX", (x, ctx) -> x.context = ctx, Context.values())
+                .withDimension("LAMBDABODY", (x, body) -> x.lambdaBodyType = body, LambdaBody.values())
+                .withDimension("LAMBDAKIND", (x, lambda) -> x.lambdaKind = lambda, LambdaKind.values())
+                .withDimension("PARAMKIND", (x, param) -> x.parameterKind = param, ParameterKind.values())
+                .withDimension("KEYWORD", (x, kw) -> x.keyword = kw, Keyword.values())
+                .withDimension("GENDECL", (x, gk) -> x.genericDeclKind = gk, GenericDeclKind.values())
+                .run(TypeInferenceComboTest::new);
     }
 
     SamKind samKind;
@@ -310,84 +249,75 @@ public class TypeInferenceComboTest
     Keyword keyword;
     GenericDeclKind genericDeclKind;
 
-    TypeInferenceComboTest(SamKind sk, TypeKind samTargetT, TypeKind parameterT,
-            TypeKind returnT, LambdaBody lb, Context c, LambdaKind lk,
-            ParameterKind pk, Keyword kw, GenericDeclKind gdk) {
-        samKind = sk;
-        samTargetType = samTargetT;
-        parameterType = parameterT;
-        returnType = returnT;
-        context = c;
-        lambdaKind = lk;
-        parameterKind = pk;
-        keyword = kw;
-        lambdaBodyType = lb;
-        genericDeclKind = gdk;
-    }
-
-    public static void main(String[] args) throws Exception {
-        for(Context ct : Context.values()) {
-            for (TypeKind returnT : TypeKind.values()) {
-                for (TypeKind parameterT : TypeKind.values()) {
-                    for(LambdaBody lb : LambdaBody.values()) {
-                        for (ParameterKind parameterK : ParameterKind.values()) {
-                            for(LambdaKind lambdaK : LambdaKind.values()) {
-                                for (SamKind sk : SamKind.values()) {
-                                    if (sk == SamKind.NON_GENERIC) {
-                                        generateNonGenericSAM(ct, returnT,
-                                                parameterT, lb, parameterK,
-                                                lambdaK, sk);
-                                    }
-                                    else if (sk == SamKind.GENERIC) {
-                                        generateGenericSAM(ct, returnT,
-                                                parameterT, lb, parameterK,
-                                                lambdaK, sk);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        checkAfterExec(false);
-    }
-
-    static void generateNonGenericSAM(Context ct, TypeKind returnT,
-            TypeKind parameterT, LambdaBody lb, ParameterKind parameterK,
-            LambdaKind lambdaK, SamKind sk) {
-        if(parameterT != TypeKind.GENERIC && returnT != TypeKind.GENERIC ) {
-            pool.execute(new TypeInferenceComboTest(sk, null, parameterT,
-                    returnT, lb, ct, lambdaK, parameterK, null, null));
+    boolean badTestFilter() {
+        if (samKind == SamKind.NON_GENERIC) {
+            return (parameterType != TypeKind.GENERIC && returnType != TypeKind.GENERIC);
+        } else {
+            return (samTargetType != TypeKind.VOID &&
+                   samTargetType != TypeKind.INT &&
+                   samTargetType != TypeKind.GENERIC &&
+                   (parameterType == TypeKind.GENERIC ||
+                   returnType == TypeKind.GENERIC));
         }
     }
 
-    static void generateGenericSAM(Context ct, TypeKind returnT,
-            TypeKind parameterT, LambdaBody lb, ParameterKind parameterK,
-            LambdaKind lambdaK, SamKind sk) {
-        for (Keyword kw : Keyword.values()) {
-            for (TypeKind samTargetT : TypeKind.values()) {
-                if(samTargetT != TypeKind.VOID &&
-                   samTargetT != TypeKind.INT &&
-                   samTargetT != TypeKind.GENERIC &&
-                   (parameterT == TypeKind.GENERIC ||
-                   returnT == TypeKind.GENERIC)) {
-                    if(ct != Context.METHOD_CALL) {
-                        pool.execute(
-                            new TypeInferenceComboTest(sk, samTargetT, parameterT,
-                                returnT, lb, ct, lambdaK, parameterK, kw, null));
-                    } else {//Context.METHOD_CALL
-                        for (GenericDeclKind gdk :
-                                GenericDeclKind.values())
-                            pool.execute(
-                                    new TypeInferenceComboTest(sk, samTargetT,
-                                    parameterT, returnT, lb, ct, lambdaK,
-                                    parameterK, kw, gdk));
-                    }
-                }
-            }
-         }
+    boolean redundantTestFilter() {
+        if (samKind == SamKind.NON_GENERIC) {
+            return keyword.ordinal() == 0 && samTargetType.ordinal() == 0 && genericDeclKind.ordinal() == 0;
+        } else {
+            return context == Context.METHOD_CALL || genericDeclKind.ordinal() == 0;
+        }
     }
 
+    String sam_template = "#{SAM}\n" +
+                         "interface SAM2 {\n" +
+                         "    SAM m();\n" +
+                         "}\n";
+
+
+    String client_template = "class Client { \n" +
+                             "    #{CONTEXT}\n" +
+                             "}";
+
+    @Override
+    public void doWork() throws IOException {
+        Result<?> res = newCompilationTask()
+                .withSourceFromTemplate("Sam", sam_template, this::samClass)
+                .withSourceFromTemplate("Client", client_template, this::clientContext)
+                .analyze();
+
+        if (res.hasErrors() == checkTypeInference()) {
+            fail("Unexpected compilation output when compiling instance: " + res.compilationInfo());
+        }
+    }
+
+    ComboParameter samClass(String parameterName) {
+        switch (parameterName) {
+            case "SAM":
+                return new ComboParameter.Constant<>(samKind.getSam(parameterType, returnType));
+            default:
+                return null;
+        }
+    }
+
+    ComboParameter clientContext(String parameterName) {
+        switch (parameterName) {
+            case "CONTEXT":
+                return new ComboParameter.Constant<>(context.getContext(samKind, samTargetType,
+                        keyword, parameterType, returnType, lambdaKind, parameterKind, genericDeclKind, lambdaBodyType));
+            default:
+                return null;
+        }
+    }
+
+    boolean checkTypeInference() {
+        if (parameterType == TypeKind.VOID) {
+            if (lambdaBodyType != LambdaBody.RETURN_VOID)
+                return false;
+        }
+        else if (lambdaBodyType != LambdaBody.RETURN_ARG)
+            return false;
+
+        return true;
+    }
 }
