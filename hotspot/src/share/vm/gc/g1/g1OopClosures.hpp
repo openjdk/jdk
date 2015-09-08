@@ -125,8 +125,7 @@ private:
   template <class T> void do_oop_work(T* p);
 
 public:
-  G1ParCopyClosure(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state,
-                   ReferenceProcessor* rp) :
+  G1ParCopyClosure(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state) :
       G1ParCopyHelper(g1, par_scan_state) {
     assert(_ref_processor == NULL, "sanity");
   }
@@ -141,7 +140,6 @@ public:
 
   G1CollectedHeap*      g1()  { return _g1; };
   G1ParScanThreadState* pss() { return _par_scan_state; }
-  ReferenceProcessor*   rp()  { return _ref_processor; };
 };
 
 typedef G1ParCopyClosure<G1BarrierNone,  G1MarkNone>             G1ParScanExtRootClosure;
