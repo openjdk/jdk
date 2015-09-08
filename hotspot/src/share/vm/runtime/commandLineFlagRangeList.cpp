@@ -32,6 +32,15 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
 
+void CommandLineError::print(bool verbose, const char* msg, ...) {
+  if (verbose) {
+    va_list listPointer;
+    va_start(listPointer, msg);
+    jio_vfprintf(defaultStream::error_stream(), msg, listPointer);
+    va_end(listPointer);
+  }
+}
+
 class CommandLineFlagRange_int : public CommandLineFlagRange {
   int _min;
   int _max;
@@ -44,11 +53,10 @@ public:
 
   Flag::Error check_int(int value, bool verbose = true) {
     if ((value < _min) || (value > _max)) {
-      if (verbose == true) {
-        jio_fprintf(defaultStream::error_stream(),
-                    "int %s=%d is outside the allowed range [ %d ... %d ]\n",
-                    name(), value, _min, _max);
-      }
+      CommandLineError::print(verbose,
+                              "int %s=%d is outside the allowed range "
+                              "[ %d ... %d ]\n",
+                              name(), value, _min, _max);
       return Flag::OUT_OF_BOUNDS;
     } else {
       return Flag::SUCCESS;
@@ -72,11 +80,10 @@ public:
 
   Flag::Error check_intx(intx value, bool verbose = true) {
     if ((value < _min) || (value > _max)) {
-      if (verbose == true) {
-        jio_fprintf(defaultStream::error_stream(),
-                    "intx %s=" INTX_FORMAT " is outside the allowed range [ " INTX_FORMAT " ... " INTX_FORMAT " ]\n",
-                    name(), value, _min, _max);
-      }
+      CommandLineError::print(verbose,
+                              "intx %s=" INTX_FORMAT " is outside the allowed range "
+                              "[ " INTX_FORMAT " ... " INTX_FORMAT " ]\n",
+                              name(), value, _min, _max);
       return Flag::OUT_OF_BOUNDS;
     } else {
       return Flag::SUCCESS;
@@ -100,11 +107,10 @@ public:
 
   Flag::Error check_uint(uint value, bool verbose = true) {
     if ((value < _min) || (value > _max)) {
-      if (verbose == true) {
-        jio_fprintf(defaultStream::error_stream(),
-                    "uintx %s=%u is outside the allowed range [ %u ... %u ]\n",
-                    name(), value, _min, _max);
-      }
+      CommandLineError::print(verbose,
+                              "uint %s=%u is outside the allowed range "
+                              "[ %u ... %u ]\n",
+                              name(), value, _min, _max);
       return Flag::OUT_OF_BOUNDS;
     } else {
       return Flag::SUCCESS;
@@ -128,11 +134,10 @@ public:
 
   Flag::Error check_uintx(uintx value, bool verbose = true) {
     if ((value < _min) || (value > _max)) {
-      if (verbose == true) {
-        jio_fprintf(defaultStream::error_stream(),
-                    "uintx %s=" UINTX_FORMAT " is outside the allowed range [ " UINTX_FORMAT " ... " UINTX_FORMAT " ]\n",
-                    name(), value, _min, _max);
-      }
+      CommandLineError::print(verbose,
+                              "uintx %s=" UINTX_FORMAT " is outside the allowed range "
+                              "[ " UINTX_FORMAT " ... " UINTX_FORMAT " ]\n",
+                              name(), value, _min, _max);
       return Flag::OUT_OF_BOUNDS;
     } else {
       return Flag::SUCCESS;
@@ -156,11 +161,10 @@ public:
 
   Flag::Error check_uint64_t(uint64_t value, bool verbose = true) {
     if ((value < _min) || (value > _max)) {
-      if (verbose == true) {
-        jio_fprintf(defaultStream::error_stream(),
-                    "uint64_t %s=" UINT64_FORMAT " is outside the allowed range [ " UINT64_FORMAT " ... " UINT64_FORMAT " ]\n",
-                    name(), value, _min, _max);
-      }
+      CommandLineError::print(verbose,
+                              "uint64_t %s=" UINT64_FORMAT " is outside the allowed range "
+                              "[ " UINT64_FORMAT " ... " UINT64_FORMAT " ]\n",
+                              name(), value, _min, _max);
       return Flag::OUT_OF_BOUNDS;
     } else {
       return Flag::SUCCESS;
@@ -184,11 +188,10 @@ public:
 
   Flag::Error check_size_t(size_t value, bool verbose = true) {
     if ((value < _min) || (value > _max)) {
-      if (verbose == true) {
-        jio_fprintf(defaultStream::error_stream(),
-                    "size_t %s=" SIZE_FORMAT " is outside the allowed range [ " SIZE_FORMAT " ... " SIZE_FORMAT " ]\n",
-                    name(), value, _min, _max);
-      }
+      CommandLineError::print(verbose,
+                              "size_t %s=" SIZE_FORMAT " is outside the allowed range "
+                              "[ " SIZE_FORMAT " ... " SIZE_FORMAT " ]\n",
+                              name(), value, _min, _max);
       return Flag::OUT_OF_BOUNDS;
     } else {
       return Flag::SUCCESS;
@@ -212,11 +215,10 @@ public:
 
   Flag::Error check_double(double value, bool verbose = true) {
     if ((value < _min) || (value > _max)) {
-      if (verbose == true) {
-        jio_fprintf(defaultStream::error_stream(),
-                    "double %s=%f is outside the allowed range [ %f ... %f ]\n",
-                    name(), value, _min, _max);
-      }
+      CommandLineError::print(verbose,
+                              "double %s=%f is outside the allowed range "
+                              "[ %f ... %f ]\n",
+                              name(), value, _min, _max);
       return Flag::OUT_OF_BOUNDS;
     } else {
       return Flag::SUCCESS;
@@ -300,48 +302,48 @@ void CommandLineFlagRangeList::init(void) {
   EMIT_RANGES_FOR_GLOBALS_EXT
 
   emit_range_no(NULL ARCH_FLAGS(EMIT_RANGE_DEVELOPER_FLAG,
-                                     EMIT_RANGE_PRODUCT_FLAG,
-                                     EMIT_RANGE_DIAGNOSTIC_FLAG,
-                                     EMIT_RANGE_EXPERIMENTAL_FLAG,
-                                     EMIT_RANGE_NOTPRODUCT_FLAG,
-                                     EMIT_RANGE_CHECK,
-                                     IGNORE_CONSTRAINT));
+                                EMIT_RANGE_PRODUCT_FLAG,
+                                EMIT_RANGE_DIAGNOSTIC_FLAG,
+                                EMIT_RANGE_EXPERIMENTAL_FLAG,
+                                EMIT_RANGE_NOTPRODUCT_FLAG,
+                                EMIT_RANGE_CHECK,
+                                IGNORE_CONSTRAINT));
 
 #ifdef COMPILER1
   emit_range_no(NULL C1_FLAGS(EMIT_RANGE_DEVELOPER_FLAG,
-                                   EMIT_RANGE_PD_DEVELOPER_FLAG,
-                                   EMIT_RANGE_PRODUCT_FLAG,
-                                   EMIT_RANGE_PD_PRODUCT_FLAG,
-                                   EMIT_RANGE_DIAGNOSTIC_FLAG,
-                                   EMIT_RANGE_NOTPRODUCT_FLAG,
-                                   EMIT_RANGE_CHECK,
-                                   IGNORE_CONSTRAINT));
+                              EMIT_RANGE_PD_DEVELOPER_FLAG,
+                              EMIT_RANGE_PRODUCT_FLAG,
+                              EMIT_RANGE_PD_PRODUCT_FLAG,
+                              EMIT_RANGE_DIAGNOSTIC_FLAG,
+                              EMIT_RANGE_NOTPRODUCT_FLAG,
+                              EMIT_RANGE_CHECK,
+                              IGNORE_CONSTRAINT));
 #endif // COMPILER1
 
 #ifdef COMPILER2
   emit_range_no(NULL C2_FLAGS(EMIT_RANGE_DEVELOPER_FLAG,
-                                   EMIT_RANGE_PD_DEVELOPER_FLAG,
-                                   EMIT_RANGE_PRODUCT_FLAG,
-                                   EMIT_RANGE_PD_PRODUCT_FLAG,
-                                   EMIT_RANGE_DIAGNOSTIC_FLAG,
-                                   EMIT_RANGE_EXPERIMENTAL_FLAG,
-                                   EMIT_RANGE_NOTPRODUCT_FLAG,
-                                   EMIT_RANGE_CHECK,
-                                   IGNORE_CONSTRAINT));
+                              EMIT_RANGE_PD_DEVELOPER_FLAG,
+                              EMIT_RANGE_PRODUCT_FLAG,
+                              EMIT_RANGE_PD_PRODUCT_FLAG,
+                              EMIT_RANGE_DIAGNOSTIC_FLAG,
+                              EMIT_RANGE_EXPERIMENTAL_FLAG,
+                              EMIT_RANGE_NOTPRODUCT_FLAG,
+                              EMIT_RANGE_CHECK,
+                              IGNORE_CONSTRAINT));
 #endif // COMPILER2
 
 #if INCLUDE_ALL_GCS
   emit_range_no(NULL G1_FLAGS(EMIT_RANGE_DEVELOPER_FLAG,
-                                   EMIT_RANGE_PD_DEVELOPER_FLAG,
-                                   EMIT_RANGE_PRODUCT_FLAG,
-                                   EMIT_RANGE_PD_PRODUCT_FLAG,
-                                   EMIT_RANGE_DIAGNOSTIC_FLAG,
-                                   EMIT_RANGE_EXPERIMENTAL_FLAG,
-                                   EMIT_RANGE_NOTPRODUCT_FLAG,
-                                   EMIT_RANGE_MANAGEABLE_FLAG,
-                                   EMIT_RANGE_PRODUCT_RW_FLAG,
-                                   EMIT_RANGE_CHECK,
-                                   IGNORE_CONSTRAINT));
+                              EMIT_RANGE_PD_DEVELOPER_FLAG,
+                              EMIT_RANGE_PRODUCT_FLAG,
+                              EMIT_RANGE_PD_PRODUCT_FLAG,
+                              EMIT_RANGE_DIAGNOSTIC_FLAG,
+                              EMIT_RANGE_EXPERIMENTAL_FLAG,
+                              EMIT_RANGE_NOTPRODUCT_FLAG,
+                              EMIT_RANGE_MANAGEABLE_FLAG,
+                              EMIT_RANGE_PRODUCT_RW_FLAG,
+                              EMIT_RANGE_CHECK,
+                              IGNORE_CONSTRAINT));
 #endif // INCLUDE_ALL_GCS
 }
 
@@ -367,45 +369,23 @@ void CommandLineFlagRangeList::print(const char* name, outputStream* st, bool un
 }
 
 bool CommandLineFlagRangeList::check_ranges() {
-//#define PRINT_RANGES_SIZES
-#ifdef PRINT_RANGES_SIZES
-  {
-    size_t size_ranges = sizeof(CommandLineFlagRangeList);
-    for (int i=0; i<length(); i++) {
-      size_ranges += sizeof(CommandLineFlagRange);
-      CommandLineFlagRange* range = at(i);
-      const char* name = range->name();
-      Flag* flag = Flag::find_flag(name, strlen(name), true, true);
-      if (flag->is_intx()) {
-        size_ranges += 2*sizeof(intx);
-        size_ranges += sizeof(CommandLineFlagRange*);
-      } else if (flag->is_uintx()) {
-        size_ranges += 2*sizeof(uintx);
-        size_ranges += sizeof(CommandLineFlagRange*);
-      } else if (flag->is_uint64_t()) {
-        size_ranges += 2*sizeof(uint64_t);
-        size_ranges += sizeof(CommandLineFlagRange*);
-      } else if (flag->is_size_t()) {
-        size_ranges += 2*sizeof(size_t);
-        size_ranges += sizeof(CommandLineFlagRange*);
-      } else if (flag->is_double()) {
-        size_ranges += 2*sizeof(double);
-        size_ranges += sizeof(CommandLineFlagRange*);
-      }
-    }
-    fprintf(stderr, "Size of %d ranges: " SIZE_FORMAT " bytes\n",
-            length(), size_ranges);
-  }
-#endif // PRINT_RANGES_SIZES
-
   // Check ranges.
   bool status = true;
   for (int i=0; i<length(); i++) {
     CommandLineFlagRange* range = at(i);
     const char* name = range->name();
     Flag* flag = Flag::find_flag(name, strlen(name), true, true);
+    // We must check for NULL here as lp64_product flags on 32 bit architecture
+    // can generate range check (despite that they are declared as constants),
+    // but they will not be returned by Flag::find_flag()
     if (flag != NULL) {
-      if (flag->is_intx()) {
+      if (flag->is_int()) {
+        int value = flag->get_int();
+        if (range->check_int(value, true) != Flag::SUCCESS) status = false;
+      } else if (flag->is_uint()) {
+        uint value = flag->get_uint();
+        if (range->check_uint(value, true) != Flag::SUCCESS) status = false;
+      } else if (flag->is_intx()) {
         intx value = flag->get_intx();
         if (range->check_intx(value, true) != Flag::SUCCESS) status = false;
       } else if (flag->is_uintx()) {

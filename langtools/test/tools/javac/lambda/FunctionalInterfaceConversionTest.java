@@ -23,35 +23,32 @@
 
 /**
  * @test
- * @bug 8003280 8004102 8006694
+ * @bug 8003280 8004102 8006694 8129962
  * @summary Add lambda tests
  *  perform several automated checks in lambda conversion, esp. around accessibility
  *  temporarily workaround combo tests are causing time out in several platforms
- * @author  Maurizio Cimadamore
- * @library ../lib
- * @modules jdk.compiler
- * @build JavacTestingAbstractThreadedTest
- * @run main/timeout=600/othervm FunctionalInterfaceConversionTest
+ * @library /tools/javac/lib
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.code
+ *          jdk.compiler/com.sun.tools.javac.comp
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.javac.tree
+ *          jdk.compiler/com.sun.tools.javac.util
+ * @build combo.ComboTestHelper
+ * @run main FunctionalInterfaceConversionTest
  */
 
-// use /othervm to avoid jtreg timeout issues (CODETOOLS-7900047)
-// see JDK-8006746
-
 import java.io.IOException;
-import java.net.URI;
-import java.util.Arrays;
-import javax.tools.Diagnostic;
-import javax.tools.JavaCompiler;
-import javax.tools.JavaFileObject;
-import javax.tools.SimpleJavaFileObject;
-import javax.tools.ToolProvider;
-import com.sun.source.util.JavacTask;
 
-public class FunctionalInterfaceConversionTest
-    extends JavacTestingAbstractThreadedTest
-    implements Runnable {
+import combo.ComboInstance;
+import combo.ComboParameter;
+import combo.ComboTask.Result;
+import combo.ComboTestHelper;
 
-    enum PackageKind {
+
+public class FunctionalInterfaceConversionTest extends ComboInstance<FunctionalInterfaceConversionTest> {
+
+    enum PackageKind implements ComboParameter {
         NO_PKG(""),
         PKG_A("a");
 
@@ -61,7 +58,8 @@ public class FunctionalInterfaceConversionTest
             this.pkg = pkg;
         }
 
-        String getPkgDecl() {
+        @Override
+        public String expand(String optParameter) {
             return this == NO_PKG ?
                 "" :
                 "package " + pkg + ";";
@@ -74,12 +72,12 @@ public class FunctionalInterfaceConversionTest
         }
     }
 
-    enum SamKind {
+    enum SamKind implements ComboParameter {
         CLASS("public class Sam {  }"),
         ABSTACT_CLASS("public abstract class Sam {  }"),
         ANNOTATION("public @interface Sam {  }"),
         ENUM("public enum Sam { }"),
-        INTERFACE("public interface Sam { \n #METH; \n }");
+        INTERFACE("public interface Sam { \n #{METH1}; \n }");
 
         String sam_str;
 
@@ -87,12 +85,13 @@ public class FunctionalInterfaceConversionTest
             this.sam_str = sam_str;
         }
 
-        String getSam(String methStr) {
-            return sam_str.replaceAll("#METH", methStr);
+        @Override
+        public String expand(String optParameter) {
+            return sam_str;
         }
     }
 
-    enum ModifierKind {
+    enum ModifierKind implements ComboParameter {
         PUBLIC("public"),
         PACKAGE("");
 
@@ -102,77 +101,73 @@ public class FunctionalInterfaceConversionTest
             this.modifier_str = modifier_str;
         }
 
-        boolean stricterThan(ModifierKind that) {
-            return this.ordinal() > that.ordinal();
+        @Override
+        public String expand(String optParameter) {
+            return modifier_str;
         }
     }
 
-    enum TypeKind {
+    enum TypeKind implements ComboParameter {
         EXCEPTION("Exception"),
         PKG_CLASS("PackageClass");
 
         String typeStr;
 
-        private TypeKind(String typeStr) {
+        TypeKind(String typeStr) {
             this.typeStr = typeStr;
+        }
+
+        @Override
+        public String expand(String optParameter) {
+            return typeStr;
         }
     }
 
-    enum ExprKind {
+    enum ExprKind implements ComboParameter {
         LAMBDA("x -> null"),
         MREF("this::m");
 
         String exprStr;
 
-        private ExprKind(String exprStr) {
+        ExprKind(String exprStr) {
             this.exprStr = exprStr;
+        }
+
+        @Override
+        public String expand(String optParameter) {
+            return exprStr;
         }
     }
 
-    enum MethodKind {
+    enum MethodKind implements ComboParameter {
         NONE(""),
-        NON_GENERIC("public abstract #R m(#ARG s) throws #T;"),
-        GENERIC("public abstract <X> #R m(#ARG s) throws #T;");
+        NON_GENERIC("public abstract #{RET} m(#{ARG} s) throws #{THROWN};"),
+        GENERIC("public abstract <X> #{RET} m(#{ARG} s) throws #{THROWN};");
 
         String methodTemplate;
 
-        private MethodKind(String methodTemplate) {
+        MethodKind(String methodTemplate) {
             this.methodTemplate = methodTemplate;
         }
 
-        String getMethod(TypeKind retType, TypeKind argType, TypeKind thrownType) {
-            return methodTemplate.replaceAll("#R", retType.typeStr).
-                    replaceAll("#ARG", argType.typeStr).
-                    replaceAll("#T", thrownType.typeStr);
+        @Override
+        public String expand(String optParameter) {
+            return methodTemplate;
         }
     }
 
     public static void main(String[] args) throws Exception {
-        for (PackageKind samPkg : PackageKind.values()) {
-            for (ModifierKind modKind : ModifierKind.values()) {
-                for (SamKind samKind : SamKind.values()) {
-                    for (MethodKind samMeth : MethodKind.values()) {
-                        for (MethodKind clientMeth : MethodKind.values()) {
-                            for (TypeKind retType : TypeKind.values()) {
-                                for (TypeKind argType : TypeKind.values()) {
-                                    for (TypeKind thrownType : TypeKind.values()) {
-                                        for (ExprKind exprKind : ExprKind.values()) {
-                                            pool.execute(
-                                                new FunctionalInterfaceConversionTest(
-                                                    samPkg, modKind, samKind,
-                                                    samMeth, clientMeth, retType,
-                                                    argType, thrownType, exprKind));
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        checkAfterExec(false);
+        new ComboTestHelper<FunctionalInterfaceConversionTest>()
+                .withDimension("PKG", (x, pkg) -> x.samPkg = pkg, PackageKind.values())
+                .withDimension("MOD", (x, mod) -> x.modKind = mod, ModifierKind.values())
+                .withDimension("CLAZZ", (x, sam) -> x.samKind = sam, SamKind.values())
+                .withDimension("METH1", (x, meth) -> x.samMeth = meth, MethodKind.values())
+                .withDimension("METH2", (x, meth) -> x.clientMeth = meth, MethodKind.values())
+                .withDimension("RET", (x, ret) -> x.retType = ret, TypeKind.values())
+                .withDimension("ARG", (x, arg) -> x.argType = arg, TypeKind.values())
+                .withDimension("THROWN", (x, thrown) -> x.thrownType = thrown, TypeKind.values())
+                .withDimension("EXPR", (x, expr) -> x.exprKind = expr, ExprKind.values())
+                .run(FunctionalInterfaceConversionTest::new);
     }
 
     PackageKind samPkg;
@@ -184,70 +179,32 @@ public class FunctionalInterfaceConversionTest
     TypeKind argType;
     TypeKind thrownType;
     ExprKind exprKind;
-    DiagnosticChecker dc;
 
-    SourceFile samSourceFile = new SourceFile("Sam.java", "#P \n #C") {
-        @Override
-        public String toString() {
-            return template.replaceAll("#P", samPkg.getPkgDecl()).
-                    replaceAll("#C", samKind.getSam(
-                    samMeth.getMethod(retType, argType, thrownType)));
-        }
-    };
-
-    SourceFile pkgClassSourceFile =
-            new SourceFile("PackageClass.java",
-                           "#P\n #M class PackageClass extends Exception { }") {
-        @Override
-        public String toString() {
-            return template.replaceAll("#P", samPkg.getPkgDecl()).
-                    replaceAll("#M", modKind.modifier_str);
-        }
-    };
-
-    SourceFile clientSourceFile =
-            new SourceFile("Client.java",
-                           "#I\n abstract class Client { \n" +
-                           "  Sam s = #E;\n" +
-                           "  #M \n }") {
-        @Override
-        public String toString() {
-            return template.replaceAll("#I", samPkg.getImportStat())
-                    .replaceAll("#E", exprKind.exprStr)
-                    .replaceAll("#M", clientMeth.getMethod(retType, argType, thrownType));
-        }
-    };
-
-    FunctionalInterfaceConversionTest(PackageKind samPkg, ModifierKind modKind,
-            SamKind samKind, MethodKind samMeth, MethodKind clientMeth,
-            TypeKind retType, TypeKind argType, TypeKind thrownType,
-            ExprKind exprKind) {
-        this.samPkg = samPkg;
-        this.modKind = modKind;
-        this.samKind = samKind;
-        this.samMeth = samMeth;
-        this.clientMeth = clientMeth;
-        this.retType = retType;
-        this.argType = argType;
-        this.thrownType = thrownType;
-        this.exprKind = exprKind;
-        this.dc = new DiagnosticChecker();
-    }
+    String samSource = "#{PKG} \n #{CLAZZ}";
+    String pkgClassSource = "#{PKG}\n #{MOD} class PackageClass extends Exception { }";
+    String clientSource = "#{IMP}\n abstract class Client { \n" +
+                           "  Sam s = #{EXPR};\n" +
+                           "  #{METH2} \n }";
 
     @Override
-    public void run() {
-        final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
+    public void doWork() throws IOException {
+        check(newCompilationTask()
+                .withSourceFromTemplate("Sam", samSource)
+                .withSourceFromTemplate("PackageClass", pkgClassSource)
+                .withSourceFromTemplate("Client", clientSource, this::importStmt)
+                .analyze());
+    }
 
-        JavacTask ct = (JavacTask)tool.getTask(null, fm.get(), dc, null, null,
-                Arrays.asList(samSourceFile, pkgClassSourceFile, clientSourceFile));
-        try {
-            ct.analyze();
-        } catch (IOException ex) {
-            throw new AssertionError("Test failing with cause", ex.getCause());
+    ComboParameter importStmt(String name) {
+        switch (name) {
+            case "IMP": return new ComboParameter.Constant<>(samPkg.getImportStat());
+            default: return null;
         }
-        if (dc.errorFound == checkSamConversion()) {
-            throw new AssertionError(samSourceFile + "\n\n" +
-                pkgClassSourceFile + "\n\n" + clientSourceFile);
+    }
+
+    void check(Result<?> res) {
+        if (res.hasErrors() == checkSamConversion()) {
+            fail("Unexpected compilation result; " + res.compilationInfo());
         }
     }
 
@@ -274,37 +231,6 @@ public class FunctionalInterfaceConversionTest
             return false;
         } else {
             return true;
-        }
-    }
-
-    abstract class SourceFile extends SimpleJavaFileObject {
-
-        protected String template;
-
-        public SourceFile(String filename, String template) {
-            super(URI.create("myfo:/" + filename), JavaFileObject.Kind.SOURCE);
-            this.template = template;
-        }
-
-        @Override
-        public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-            return toString();
-        }
-
-        @Override
-        public abstract String toString();
-    }
-
-    static class DiagnosticChecker
-        implements javax.tools.DiagnosticListener<JavaFileObject> {
-
-        boolean errorFound = false;
-
-        @Override
-        public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
-            if (diagnostic.getKind() == Diagnostic.Kind.ERROR) {
-                errorFound = true;
-            }
         }
     }
 }

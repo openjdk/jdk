@@ -76,15 +76,13 @@ public:
 
 class G1ParScanClosure : public G1ParClosureSuper {
 public:
-  G1ParScanClosure(G1CollectedHeap* g1, ReferenceProcessor* rp) :
-    G1ParClosureSuper(g1) {
-    assert(_ref_processor == NULL, "sanity");
-    _ref_processor = rp;
-  }
+  G1ParScanClosure(G1CollectedHeap* g1) : G1ParClosureSuper(g1) { }
 
   template <class T> void do_oop_nv(T* p);
   virtual void do_oop(oop* p)          { do_oop_nv(p); }
   virtual void do_oop(narrowOop* p)    { do_oop_nv(p); }
+
+  void set_ref_processor(ReferenceProcessor* ref_processor) { _ref_processor = ref_processor; }
 };
 
 // Add back base class for metadata
@@ -104,6 +102,7 @@ protected:
   void mark_forwarded_object(oop from_obj, oop to_obj);
  public:
   G1ParCopyHelper(G1CollectedHeap* g1,  G1ParScanThreadState* par_scan_state);
+  G1ParCopyHelper(G1CollectedHeap* g1);
 
   void set_scanned_klass(Klass* k) { _scanned_klass = k; }
   template <class T> void do_klass_barrier(T* p, oop new_obj);
@@ -129,6 +128,10 @@ public:
   G1ParCopyClosure(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state,
                    ReferenceProcessor* rp) :
       G1ParCopyHelper(g1, par_scan_state) {
+    assert(_ref_processor == NULL, "sanity");
+  }
+
+  G1ParCopyClosure(G1CollectedHeap* g1) : G1ParCopyHelper(g1) {
     assert(_ref_processor == NULL, "sanity");
   }
 

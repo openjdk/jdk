@@ -21,47 +21,30 @@
  * questions.
  */
 
-/**@test
- * @bug 8082311
+/*
+ * @test
+ * @bug 8082311 8129962
  * @summary Verify that bitwise operators don't allow to mix numeric and boolean operands.
  * @library ../lib
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.util
+ * @build combo.ComboTestHelper
+ * @run main BitWiseOperators
  */
 
 import com.sun.tools.javac.util.StringUtils;
-import java.net.URI;
-import java.util.Arrays;
-import java.util.List;
-import javax.tools.DiagnosticCollector;
-import javax.tools.JavaFileObject;
-import javax.tools.SimpleJavaFileObject;
 
-public class BitWiseOperators extends JavacTestingAbstractThreadedTest {
-    public static void main(String... args) {
-        new BitWiseOperators().run();
-    }
+import java.io.IOException;
 
-    void run() {
-        for (TYPE type1 : TYPE.values()) {
-            for (OPERATION op : OPERATION.values()) {
-                for (TYPE type2 : TYPE.values()) {
-                    runTest(type1, op, type2);
-                }
-            }
-        }
-    }
+import combo.ComboInstance;
+import combo.ComboParameter;
+import combo.ComboTask.Result;
+import combo.ComboTestHelper;
 
-    void runTest(TYPE type1, OPERATION op, TYPE type2) {
-        DiagnosticCollector<JavaFileObject> dc = new DiagnosticCollector<>();
-        List<JavaSource> files = Arrays.asList(new JavaSource(type1, op, type2));
-        comp.getTask(null, null, dc, null, null, files).call();
-        if (dc.getDiagnostics().isEmpty() ^ TYPE.compatible(type1, type2)) {
-            throw new AssertionError("Unexpected behavior. Type1: " + type1 +
-                                                        "; type2: " + type2 +
-                                                        "; diagnostics: " + dc.getDiagnostics());
-        }
-    }
 
-    enum TYPE {
+public class BitWiseOperators extends ComboInstance<BitWiseOperators> {
+
+    enum OperandType implements ComboParameter {
         BYTE,
         CHAR,
         SHORT,
@@ -69,45 +52,57 @@ public class BitWiseOperators extends JavacTestingAbstractThreadedTest {
         LONG,
         BOOLEAN;
 
-        public static boolean compatible(TYPE op1, TYPE op2) {
+        public static boolean compatible(OperandType op1, OperandType op2) {
             return !(op1 == BOOLEAN ^ op2 == BOOLEAN);
+        }
+
+        @Override
+        public String expand(String optParameter) {
+            return StringUtils.toLowerCase(name());
         }
     }
 
-    enum OPERATION {
+    enum OperatorKind implements ComboParameter {
         BITAND("&"),
         BITOR("|"),
         BITXOR("^");
 
         String op;
 
-        private OPERATION(String op) {
+        OperatorKind(String op) {
             this.op = op;
         }
 
-    }
-
-    class JavaSource extends SimpleJavaFileObject {
-
-        String template = "class Test {\n" +
-                          "    public Object test(#TYPE1 var1, #TYPE2 var2) {\n" +
-                          "        return var1 #OP var2;\n" +
-                          "    }\n" +
-                          "}";
-
-        String source;
-
-        public JavaSource(TYPE type1, OPERATION op, TYPE type2) {
-            super(URI.create("myfo:/Test.java"), JavaFileObject.Kind.SOURCE);
-            source = template.replaceAll("#TYPE1", StringUtils.toLowerCase(type1.name()))
-                             .replaceAll("#OP", StringUtils.toLowerCase(op.op))
-                             .replaceAll("#TYPE2", StringUtils.toLowerCase(type2.name()));
-        }
-
         @Override
-        public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-            return source;
+        public String expand(String optParameter) {
+            return op;
         }
     }
 
+    public static void main(String... args) {
+        new ComboTestHelper<BitWiseOperators>()
+                .withArrayDimension("TYPE", (x, type, idx) -> x.opTypes[idx] = type, 2, OperandType.values())
+                .withDimension("OP", OperatorKind.values())
+                .run(BitWiseOperators::new);
+    }
+
+    OperandType[] opTypes = new OperandType[2];
+
+    String template = "class Test {\n" +
+                      "    public Object test(#{TYPE[0]} var1, #{TYPE[1]} var2) {\n" +
+                      "        return var1 #{OP} var2;\n" +
+                      "    }\n" +
+                      "}";
+
+    @Override
+    public void doWork() throws IOException {
+        Result<?> res = newCompilationTask()
+                .withSourceFromTemplate(template)
+                .analyze();
+        if (res.hasErrors() == OperandType.compatible(opTypes[0], opTypes[1])) {
+            fail("Unexpected behavior. Type1: " + opTypes[0] +
+                    "; type2: " + opTypes[1] +
+                    "; " + res.compilationInfo());
+        }
+    }
 }

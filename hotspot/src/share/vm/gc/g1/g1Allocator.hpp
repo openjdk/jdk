@@ -38,23 +38,36 @@ class EvacuationInfo;
 // Also keeps track of retained regions across GCs.
 class G1Allocator : public CHeapObj<mtGC> {
   friend class VMStructs;
+private:
+  bool _survivor_is_full;
+  bool _old_is_full;
 protected:
   G1CollectedHeap* _g1h;
 
   virtual MutatorAllocRegion* mutator_alloc_region(AllocationContext_t context) = 0;
+
+  virtual bool survivor_is_full(AllocationContext_t context) const;
+  virtual bool old_is_full(AllocationContext_t context) const;
+
+  virtual void set_survivor_full(AllocationContext_t context);
+  virtual void set_old_full(AllocationContext_t context);
 
   // Accessors to the allocation regions.
   virtual SurvivorGCAllocRegion* survivor_gc_alloc_region(AllocationContext_t context) = 0;
   virtual OldGCAllocRegion* old_gc_alloc_region(AllocationContext_t context) = 0;
 
   // Allocation attempt during GC for a survivor object / PLAB.
-  inline HeapWord* survivor_attempt_allocation(size_t word_size,
+  inline HeapWord* survivor_attempt_allocation(size_t min_word_size,
+                                               size_t desired_word_size,
+                                               size_t* actual_word_size,
                                                AllocationContext_t context);
   // Allocation attempt during GC for an old object / PLAB.
-  inline HeapWord* old_attempt_allocation(size_t word_size,
+  inline HeapWord* old_attempt_allocation(size_t min_word_size,
+                                          size_t desired_word_size,
+                                          size_t* actual_word_size,
                                           AllocationContext_t context);
 public:
-  G1Allocator(G1CollectedHeap* heap) : _g1h(heap) { }
+  G1Allocator(G1CollectedHeap* heap) : _g1h(heap), _survivor_is_full(false), _old_is_full(false) { }
   virtual ~G1Allocator() { }
 
   static G1Allocator* create_allocator(G1CollectedHeap* g1h);
@@ -66,7 +79,7 @@ public:
   virtual void init_mutator_alloc_region() = 0;
   virtual void release_mutator_alloc_region() = 0;
 
-  virtual void init_gc_alloc_regions(EvacuationInfo& evacuation_info) = 0;
+  virtual void init_gc_alloc_regions(EvacuationInfo& evacuation_info);
   virtual void release_gc_alloc_regions(EvacuationInfo& evacuation_info) = 0;
   virtual void abandon_gc_alloc_regions() = 0;
 
@@ -93,6 +106,12 @@ public:
                                    size_t word_size,
                                    AllocationContext_t context);
 
+  HeapWord* par_allocate_during_gc(InCSetState dest,
+                                   size_t min_word_size,
+                                   size_t desired_word_size,
+                                   size_t* actual_word_size,
+                                   AllocationContext_t context);
+
   virtual size_t used_in_alloc_regions() = 0;
 };
 
@@ -114,7 +133,7 @@ protected:
 
   HeapRegion* _retained_old_gc_alloc_region;
 public:
-  G1DefaultAllocator(G1CollectedHeap* heap) : G1Allocator(heap), _retained_old_gc_alloc_region(NULL) { }
+  G1DefaultAllocator(G1CollectedHeap* heap);
 
   virtual void init_mutator_alloc_region();
   virtual void release_mutator_alloc_region();
@@ -163,8 +182,12 @@ public:
     guarantee(_retired, "Allocation buffer has not been retired");
   }
 
-  virtual void set_buf(HeapWord* buf) {
-    PLAB::set_buf(buf);
+  // The amount of space in words wasted within the PLAB including
+  // waste due to refills and alignment.
+  size_t wasted() const { return _wasted; }
+
+  virtual void set_buf(HeapWord* buf, size_t word_size) {
+    PLAB::set_buf(buf, word_size);
     _retired = false;
   }
 
@@ -198,7 +221,10 @@ protected:
   // architectures have a special compare against zero instructions.
   const uint _survivor_alignment_bytes;
 
-  virtual void retire_alloc_buffers() = 0;
+  // Number of words allocated directly (not counting PLAB allocation).
+  size_t _direct_allocated[InCSetState::Num];
+
+  virtual void flush_and_retire_stats() = 0;
   virtual G1PLAB* alloc_buffer(InCSetState dest, AllocationContext_t context) = 0;
 
   // Calculate the survivor space object alignment in bytes. Returns that or 0 if
@@ -215,6 +241,11 @@ protected:
     }
   }
 
+  HeapWord* allocate_new_plab(InCSetState dest,
+                              size_t word_sz,
+                              AllocationContext_t context);
+
+  bool may_throw_away_buffer(size_t const allocation_word_sz, size_t const buffer_size) const;
 public:
   G1PLABAllocator(G1Allocator* allocator);
   virtual ~G1PLABAllocator() { }
@@ -225,31 +256,28 @@ public:
 
   // Allocate word_sz words in dest, either directly into the regions or by
   // allocating a new PLAB. Returns the address of the allocated memory, NULL if
-  // not successful.
+  // not successful. Plab_refill_failed indicates whether an attempt to refill the
+  // PLAB failed or not.
   HeapWord* allocate_direct_or_new_plab(InCSetState dest,
                                         size_t word_sz,
-                                        AllocationContext_t context);
+                                        AllocationContext_t context,
+                                        bool* plab_refill_failed);
 
   // Allocate word_sz words in the PLAB of dest.  Returns the address of the
   // allocated memory, NULL if not successful.
-  HeapWord* plab_allocate(InCSetState dest,
-                          size_t word_sz,
-                          AllocationContext_t context) {
-    G1PLAB* buffer = alloc_buffer(dest, context);
-    if (_survivor_alignment_bytes == 0 || !dest.is_young()) {
-      return buffer->allocate(word_sz);
-    } else {
-      return buffer->allocate_aligned(word_sz, _survivor_alignment_bytes);
-    }
-  }
+  inline HeapWord* plab_allocate(InCSetState dest,
+                                 size_t word_sz,
+                                 AllocationContext_t context);
 
-  HeapWord* allocate(InCSetState dest, size_t word_sz,
-                     AllocationContext_t context) {
+  HeapWord* allocate(InCSetState dest,
+                     size_t word_sz,
+                     AllocationContext_t context,
+                     bool* refill_failed) {
     HeapWord* const obj = plab_allocate(dest, word_sz, context);
     if (obj != NULL) {
       return obj;
     }
-    return allocate_direct_or_new_plab(dest, word_sz, context);
+    return allocate_direct_or_new_plab(dest, word_sz, context, refill_failed);
   }
 
   void undo_allocation(InCSetState dest, HeapWord* obj, size_t word_sz, AllocationContext_t context);
@@ -273,7 +301,7 @@ public:
     return _alloc_buffers[dest.value()];
   }
 
-  virtual void retire_alloc_buffers();
+  virtual void flush_and_retire_stats();
 
   virtual void waste(size_t& wasted, size_t& undo_wasted);
 };

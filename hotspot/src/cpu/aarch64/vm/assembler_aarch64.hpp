@@ -1106,13 +1106,13 @@ public:
 
 #define INSN4(NAME, sz, op, o0) /* Four registers */                    \
   void NAME(Register Rs, Register Rt1, Register Rt2, Register Rn) {     \
-    assert(Rs != Rn, "unpredictable instruction");                  \
+    guarantee(Rs != Rn && Rs != Rt1 && Rs != Rt2, "unpredictable instruction"); \
     load_store_exclusive(Rs, Rt1, Rt2, Rn, sz, op, o0);                 \
   }
 
 #define INSN3(NAME, sz, op, o0) /* Three registers */                   \
   void NAME(Register Rs, Register Rt, Register Rn) {                    \
-    assert(Rs != Rn, "unpredictable instruction");                  \
+    guarantee(Rs != Rn && Rs != Rt, "unpredictable instruction");       \
     load_store_exclusive(Rs, Rt, (Register)0b11111, Rn, sz, op, o0);    \
   }
 
@@ -1124,6 +1124,7 @@ public:
 
 #define INSN_FOO(NAME, sz, op, o0) /* Three registers, encoded differently */ \
   void NAME(Register Rt1, Register Rt2, Register Rn) {                  \
+    guarantee(Rt1 != Rt2, "unpredictable instruction");                 \
     load_store_exclusive((Register)0b11111, Rt1, Rt2, Rn, sz, op, o0);  \
   }
 

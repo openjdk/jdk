@@ -68,7 +68,7 @@ public class Arguments {
     /**
      * The context key for the arguments.
      */
-    protected static final Context.Key<Arguments> argsKey = new Context.Key<>();
+    public static final Context.Key<Arguments> argsKey = new Context.Key<>();
 
     private String ownName;
     private Set<String> classNames;
