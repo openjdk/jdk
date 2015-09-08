@@ -34,27 +34,27 @@
  * an appropriate error value.
  */
 
-Flag::Error YoungPLABSizeConstraintFunc(bool verbose, size_t* value);
+Flag::Error YoungPLABSizeConstraintFunc(size_t value, bool verbose);
 
-Flag::Error MinHeapFreeRatioConstraintFunc(bool verbose, uintx* value);
-Flag::Error MaxHeapFreeRatioConstraintFunc(bool verbose, uintx* value);
+Flag::Error MinHeapFreeRatioConstraintFunc(uintx value, bool verbose);
+Flag::Error MaxHeapFreeRatioConstraintFunc(uintx value, bool verbose);
 
-Flag::Error MinMetaspaceFreeRatioConstraintFunc(bool verbose, uintx* value);
-Flag::Error MaxMetaspaceFreeRatioConstraintFunc(bool verbose, uintx* value);
+Flag::Error MinMetaspaceFreeRatioConstraintFunc(uintx value, bool verbose);
+Flag::Error MaxMetaspaceFreeRatioConstraintFunc(uintx value, bool verbose);
 
-Flag::Error InitialTenuringThresholdConstraintFunc(bool verbose, uintx* value);
-Flag::Error MaxTenuringThresholdConstraintFunc(bool verbose, uintx* value);
+Flag::Error InitialTenuringThresholdConstraintFunc(uintx value, bool verbose);
+Flag::Error MaxTenuringThresholdConstraintFunc(uintx value, bool verbose);
 
 #if INCLUDE_ALL_GCS
-Flag::Error G1NewSizePercentConstraintFunc(bool verbose, uintx* value);
-Flag::Error G1MaxNewSizePercentConstraintFunc(bool verbose, uintx* value);
+Flag::Error G1NewSizePercentConstraintFunc(uintx value, bool verbose);
+Flag::Error G1MaxNewSizePercentConstraintFunc(uintx value, bool verbose);
 #endif // INCLUDE_ALL_GCS
 
-Flag::Error CMSOldPLABMinConstraintFunc(bool verbose, size_t* value);
+Flag::Error CMSOldPLABMinConstraintFunc(size_t value, bool verbose);
 
-Flag::Error CMSPrecleanDenominatorConstraintFunc(bool verbose, uintx* value);
-Flag::Error CMSPrecleanNumeratorConstraintFunc(bool verbose, uintx* value);
+Flag::Error CMSPrecleanDenominatorConstraintFunc(uintx value, bool verbose);
+Flag::Error CMSPrecleanNumeratorConstraintFunc(uintx value, bool verbose);
 
-Flag::Error SurvivorAlignmentInBytesConstraintFunc(bool verbose, intx* value);
+Flag::Error SurvivorAlignmentInBytesConstraintFunc(intx value, bool verbose);
 
 #endif /* SHARE_VM_RUNTIME_COMMANDLINEFLAGCONSTRAINTSGC_HPP */

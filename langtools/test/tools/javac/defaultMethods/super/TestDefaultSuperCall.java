@@ -23,33 +23,32 @@
 
 /*
  * @test
- * @bug 7192246 8006694
+ * @bug 7192246 8006694 8129962
  * @summary Automatic test for checking correctness of default super/this resolution
  *  temporarily workaround combo tests are causing time out in several platforms
- * @library ../../lib
- * @modules jdk.compiler
- * @build JavacTestingAbstractThreadedTest
- * @run main/othervm TestDefaultSuperCall
+ * @library /tools/javac/lib
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.code
+ *          jdk.compiler/com.sun.tools.javac.comp
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.javac.tree
+ *          jdk.compiler/com.sun.tools.javac.util
+ * @build combo.ComboTestHelper
+ * @run main TestDefaultSuperCall
  */
 
-// use /othervm to avoid jtreg timeout issues (CODETOOLS-7900047)
-// see JDK-8006746
-
-import java.net.URI;
-import java.util.Arrays;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import javax.tools.Diagnostic;
-import javax.tools.JavaFileObject;
-import javax.tools.SimpleJavaFileObject;
 
-import com.sun.source.util.JavacTask;
+import combo.ComboInstance;
+import combo.ComboParameter;
+import combo.ComboTask.Result;
+import combo.ComboTestHelper;
 
-public class TestDefaultSuperCall
-    extends JavacTestingAbstractThreadedTest
-    implements Runnable {
+public class TestDefaultSuperCall extends ComboInstance<TestDefaultSuperCall> {
 
-    enum InterfaceKind {
+    enum InterfaceKind implements ComboParameter {
         DEFAULT("interface A extends B { default void m() { } }"),
         ABSTRACT("interface A extends B { void m(); }"),
         NONE("interface A extends B { }");
@@ -63,9 +62,14 @@ public class TestDefaultSuperCall
         boolean methodDefined() {
             return this == DEFAULT;
         }
+
+        @Override
+        public String expand(String optParameter) {
+            return interfaceStr;
+        }
     }
 
-    enum PruneKind {
+    enum PruneKind implements ComboParameter {
         NO_PRUNE("interface C { }"),
         PRUNE("interface C extends A { }");
 
@@ -79,29 +83,25 @@ public class TestDefaultSuperCall
         PruneKind(String interfaceStr) {
             this.interfaceStr = interfaceStr;
         }
+
+        @Override
+        public String expand(String optParameter) {
+            return interfaceStr;
+        }
     }
 
-    enum QualifierKind {
+    enum QualifierKind implements ComboParameter {
         DIRECT_1("C"),
         DIRECT_2("A"),
         INDIRECT("B"),
         UNRELATED("E"),
-        ENCLOSING_1(null),
-        ENCLOSING_2(null);
+        ENCLOSING_1("name0"),
+        ENCLOSING_2("name1");
 
         String qualifierStr;
 
         QualifierKind(String qualifierStr) {
             this.qualifierStr = qualifierStr;
-        }
-
-        String getQualifier(Shape sh) {
-            switch (this) {
-                case ENCLOSING_1: return sh.enclosingAt(0);
-                case ENCLOSING_2: return sh.enclosingAt(1);
-                default:
-                    return qualifierStr;
-            }
         }
 
         boolean isEnclosing() {
@@ -119,9 +119,14 @@ public class TestDefaultSuperCall
                     return false;
             }
         }
+
+        @Override
+        public String expand(String optParameter) {
+            return qualifierStr;
+        }
     }
 
-    enum ExprKind {
+    enum ExprKind implements ComboParameter {
         THIS("this"),
         SUPER("super");
 
@@ -130,19 +135,24 @@ public class TestDefaultSuperCall
         ExprKind(String exprStr) {
             this.exprStr = exprStr;
         }
+
+        @Override
+        public String expand(String optParameter) {
+            return exprStr;
+        }
     }
 
-    enum ElementKind {
-        INTERFACE("interface #N { #B }", true),
-        INTERFACE_EXTENDS("interface #N extends A, C { #B }", true),
-        CLASS("class #N { #B }", false),
-        CLASS_EXTENDS("abstract class #N implements A, C { #B }", false),
-        STATIC_CLASS("static class #N { #B }", true),
-        STATIC_CLASS_EXTENDS("abstract static class #N implements A, C { #B }", true),
-        ANON_CLASS("new Object() { #B };", false),
-        METHOD("void test() { #B }", false),
-        STATIC_METHOD("static void test() { #B }", true),
-        DEFAULT_METHOD("default void test() { #B }", false);
+    enum ElementKind implements ComboParameter {
+        INTERFACE("interface name#CURR { #BODY }", true),
+        INTERFACE_EXTENDS("interface name#CURR extends A, C { #BODY }", true),
+        CLASS("class name#CURR { #BODY }", false),
+        CLASS_EXTENDS("abstract class name#CURR implements A, C { #BODY }", false),
+        STATIC_CLASS("static class name#CURR { #BODY }", true),
+        STATIC_CLASS_EXTENDS("abstract static class name#CURR implements A, C { #BODY }", true),
+        ANON_CLASS("new Object() { #BODY };", false),
+        METHOD("void test() { #BODY }", false),
+        STATIC_METHOD("static void test() { #BODY }", true),
+        DEFAULT_METHOD("default void test() { #BODY }", false);
 
         String templateDecl;
         boolean isStatic;
@@ -207,11 +217,21 @@ public class TestDefaultSuperCall
                     this == STATIC_CLASS_EXTENDS ||
                     this == CLASS_EXTENDS;
         }
+
+        @Override
+        public String expand(String optParameter) {
+            int nextDepth = new Integer(optParameter) + 1;
+            String replStr = (nextDepth <= 4) ?
+                    String.format("#{ELEM[%d].%d}", nextDepth, nextDepth) :
+                    "#{QUAL}.#{EXPR}.#{METH}();";
+            return templateDecl
+                    .replaceAll("#CURR", optParameter)
+                    .replaceAll("#BODY", replStr);
+        }
     }
 
     static class Shape {
 
-        String shapeStr;
         List<ElementKind> enclosingElements;
         List<String> enclosingNames;
         List<String> elementsWithMethod;
@@ -234,114 +254,73 @@ public class TestDefaultSuperCall
                 } else {
                     elementsWithMethod.add(prevName);
                 }
-                String element = ek.templateDecl.replaceAll("#N", name);
-                shapeStr = shapeStr ==
-                        null ? element : shapeStr.replaceAll("#B", element);
                 prevName = name;
             }
-        }
-
-        String getShape(QualifierKind qk, ExprKind ek) {
-            String methName = ek == ExprKind.THIS ? "test" : "m";
-            String call = qk.getQualifier(this) + "." +
-                    ek.exprStr + "." + methName + "();";
-            return shapeStr.replaceAll("#B", call);
-        }
-
-        String enclosingAt(int index) {
-            return index < enclosingNames.size() ?
-                    enclosingNames.get(index) : "BAD";
         }
     }
 
     public static void main(String... args) throws Exception {
-        for (InterfaceKind ik : InterfaceKind.values()) {
-            for (PruneKind pk : PruneKind.values()) {
-                for (ElementKind ek1 : ElementKind.values()) {
-                    if (!ek1.isAllowedTop()) continue;
-                    for (ElementKind ek2 : ElementKind.values()) {
-                        if (!ek2.isAllowedEnclosing(ek1, true)) continue;
-                        for (ElementKind ek3 : ElementKind.values()) {
-                            if (!ek3.isAllowedEnclosing(ek2, false)) continue;
-                            for (ElementKind ek4 : ElementKind.values()) {
-                                if (!ek4.isAllowedEnclosing(ek3, false)) continue;
-                                for (ElementKind ek5 : ElementKind.values()) {
-                                    if (!ek5.isAllowedEnclosing(ek4, false) ||
-                                            ek5.isClassDecl()) continue;
-                                    for (QualifierKind qk : QualifierKind.values()) {
-                                        for (ExprKind ek : ExprKind.values()) {
-                                            pool.execute(
-                                                    new TestDefaultSuperCall(ik, pk,
-                                                    new Shape(ek1, ek2, ek3,
-                                                    ek4, ek5), qk, ek));
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        checkAfterExec();
+        new ComboTestHelper<TestDefaultSuperCall>()
+                .withFilter(TestDefaultSuperCall::filterBadTopElement)
+                .withFilter(TestDefaultSuperCall::filterBadIntermediateElement)
+                .withFilter(TestDefaultSuperCall::filterBadTerminalElement)
+                .withDimension("INTF1", (x, ik) -> x.ik = ik, InterfaceKind.values())
+                .withDimension("INTF2", (x, pk) -> x.pk = pk, PruneKind.values())
+                .withArrayDimension("ELEM", (x, elem, idx) -> x.elements[idx] = elem, 5, ElementKind.values())
+                .withDimension("QUAL", (x, qk) -> x.qk = qk, QualifierKind.values())
+                .withDimension("EXPR", (x, ek) -> x.ek = ek, ExprKind.values())
+                .run(TestDefaultSuperCall::new);
     }
 
     InterfaceKind ik;
     PruneKind pk;
-    Shape sh;
+    ElementKind[] elements = new ElementKind[5];
     QualifierKind qk;
     ExprKind ek;
-    JavaSource source;
-    DiagnosticChecker diagChecker;
 
-    TestDefaultSuperCall(InterfaceKind ik, PruneKind pk, Shape sh,
-            QualifierKind qk, ExprKind ek) {
-        this.ik = ik;
-        this.pk = pk;
-        this.sh = sh;
-        this.qk = qk;
-        this.ek = ek;
-        this.source = new JavaSource();
-        this.diagChecker = new DiagnosticChecker();
+    boolean filterBadTopElement() {
+        return elements[0].isAllowedTop();
     }
 
-    class JavaSource extends SimpleJavaFileObject {
-
-        String template = "interface E {}\n" +
-                          "interface B { }\n" +
-                          "#I\n" +
-                          "#P\n" +
-                          "#C";
-
-        String source;
-
-        public JavaSource() {
-            super(URI.create("myfo:/Test.java"), JavaFileObject.Kind.SOURCE);
-            source = template.replaceAll("#I", ik.interfaceStr)
-                    .replaceAll("#P", pk.interfaceStr)
-                    .replaceAll("#C", sh.getShape(qk, ek));
+    boolean filterBadIntermediateElement() {
+        for (int i = 1 ; i < 4 ; i++) {
+            if (!elements[i].isAllowedEnclosing(elements[i - 1], i == 1)) {
+                return false;
+            }
         }
+        return true;
+    }
 
-        @Override
-        public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-            return source;
+    boolean filterBadTerminalElement() {
+        return elements[4].isAllowedEnclosing(elements[3], false) && !elements[4].isClassDecl();
+    }
+
+    String template = "interface E {}\n" +
+                      "interface B { }\n" +
+                      "#{INTF1}\n" +
+                      "#{INTF2}\n" +
+                      "#{ELEM[0].0}";
+
+    @Override
+    public void doWork() throws IOException {
+        check(newCompilationTask()
+                .withSourceFromTemplate(template, this::methodName)
+                .analyze());
+    }
+
+    ComboParameter methodName(String parameterName) {
+        switch (parameterName) {
+            case "METH":
+                String methodName = ek == ExprKind.THIS ? "test" : "m";
+                return new ComboParameter.Constant<String>(methodName);
+            default:
+                return null;
         }
     }
 
-    public void run() {
-        JavacTask ct = (JavacTask)comp.getTask(null, fm.get(), diagChecker,
-                null, null, Arrays.asList(source));
-        try {
-            ct.analyze();
-        } catch (Throwable ex) {
-            processException(ex);
-            return;
-        }
-        check();
-    }
+    void check(Result<?> res) {
+        Shape sh = new Shape(elements);
 
-    void check() {
         boolean errorExpected = false;
 
         boolean badEnclosing = false;
@@ -364,7 +343,7 @@ public class TestDefaultSuperCall
             boolean found = false;
             for (int i = 0; i < sh.enclosingElements.size(); i++) {
                 if (sh.enclosingElements.get(i) == ElementKind.ANON_CLASS) continue;
-                if (sh.enclosingNames.get(i).equals(qk.getQualifier(sh))) {
+                if (sh.enclosingNames.get(i).equals(qk.qualifierStr)) {
                     found = sh.elementsWithMethod.contains(sh.enclosingNames.get(i));
                     break;
                 }
@@ -388,10 +367,9 @@ public class TestDefaultSuperCall
             }
         }
 
-        checkCount.incrementAndGet();
-        if (diagChecker.errorFound != errorExpected) {
-            throw new AssertionError("Problem when compiling source:\n" +
-                    source.getCharContent(true) +
+        if (res.hasErrors() != errorExpected) {
+            fail("Problem when compiling source:\n" +
+                    res.compilationInfo() +
                     "\nenclosingElems: " + sh.enclosingElements +
                     "\nenclosingNames: " + sh.enclosingNames +
                     "\nelementsWithMethod: " + sh.elementsWithMethod +
@@ -399,20 +377,7 @@ public class TestDefaultSuperCall
                     "\nbad this: " + badThis +
                     "\nbad super: " + badSuper +
                     "\nqual kind: " + qk +
-                    "\nfound error: " + diagChecker.errorFound);
+                    "\nfound error: " + res.hasErrors());
         }
     }
-
-    static class DiagnosticChecker
-        implements javax.tools.DiagnosticListener<JavaFileObject> {
-
-        boolean errorFound;
-
-        public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
-            if (diagnostic.getKind() == Diagnostic.Kind.ERROR) {
-                errorFound = true;
-            }
-        }
-    }
-
 }

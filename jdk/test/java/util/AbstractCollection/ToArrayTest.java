@@ -211,5 +211,3 @@ public class ToArrayTest {
         else {System.out.println(x + " not equal to " + y); fail(); }
     }
 }
-
-
