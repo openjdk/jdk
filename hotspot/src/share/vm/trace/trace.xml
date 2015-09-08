@@ -346,6 +346,29 @@ Declares a structure type that can be used in other events.
       <value type="BYTES64" field="totalSize" label="Total Size" />
     </event>
 
+    <struct id="G1EvacStats">
+      <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
+      <value type="BYTES64" field="allocated" label="Allocated" description="Total memory allocated by PLABs"/>
+      <value type="BYTES64" field="wasted" label="Wasted" description="Total memory wasted within PLABs due to alignment or refill"/>
+      <value type="BYTES64" field="used" label="Used" description="Total memory occupied by objects within PLABs"/>
+      <value type="BYTES64" field="undoWaste" label="Undo Wasted" description="Total memory wasted due to allocation undo within PLABs"/>
+      <value type="BYTES64" field="regionEndWaste" label="Region End Wasted" description="Total memory wasted at the end of regions due to refill"/>
+      <value type="UINT" field="regionsRefilled" label="Region Refills" description="Total memory wasted at the end of regions due to refill"/>
+      <value type="BYTES64" field="directAllocated" label="Allocated (direct)" description="Total memory allocated using direct allocation outside of PLABs"/>
+      <value type="BYTES64" field="failureUsed" label="Used (failure)" description="Total memory occupied by objects in regions where evacuation failed"/>
+      <value type="BYTES64" field="failureWaste" label="Wasted (failure)" description="Total memory left unused in regions where evacuation failed"/>
+    </struct>
+
+    <event id="GCG1EvacuationYoungStatistics" path="vm/gc/detailed/g1_evac_young_stats" label="G1 Evacuation Statistics for Young" is_instant="true"
+           description="Memory related evacuation statistics during GC for the young generation">
+      <structvalue type="G1EvacStats" field="stats" label="Evacuation statistics"/>
+    </event>
+
+    <event id="GCG1EvacuationOldStatistics" path="vm/gc/detailed/g1_evac_old_stats" label="G1 Evacuation Memory Statistics for Old" is_instant="true"
+           description="Memory related evacuation statistics during GC for the old generation">
+      <structvalue type="G1EvacStats" field="stats" label="Evacuation statistics"/>
+    </event>
+
     <!-- Promotion events, Supported GCs are Parallel Scavange, G1 and CMS with Parallel New. -->
     <event id="PromoteObjectInNewPLAB" path="vm/gc/detailed/object_promotion_in_new_PLAB" label="Promotion in new PLAB"
         description="Object survived scavenge and was copied to a new Promotion Local Allocation Buffer (PLAB). Supported GCs are Parallel Scavange, G1 and CMS with Parallel New. Due to promotion being done in parallel an object might be reported multiple times as the GC threads race to copy all objects." 

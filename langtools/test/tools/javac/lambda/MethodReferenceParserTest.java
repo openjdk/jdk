@@ -23,50 +23,44 @@
 
 /*
  * @test
- * @bug 7115052 8003280 8006694
+ * @bug 7115052 8003280 8006694 8129962
  * @summary Add lambda tests
  *  Add parser support for method references
  *  temporarily workaround combo tests are causing time out in several platforms
- * @library ../lib
- * @modules jdk.compiler
- * @build JavacTestingAbstractThreadedTest
- * @run main/othervm MethodReferenceParserTest
+ * @library /tools/javac/lib
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.code
+ *          jdk.compiler/com.sun.tools.javac.comp
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.javac.tree
+ *          jdk.compiler/com.sun.tools.javac.util
+ * @build combo.ComboTestHelper
+ * @run main MethodReferenceParserTest
  */
 
-// use /othervm to avoid jtreg timeout issues (CODETOOLS-7900047)
-// see JDK-8006746
+import java.io.IOException;
 
-import java.net.URI;
-import java.util.Arrays;
-import javax.tools.Diagnostic;
-import javax.tools.JavaFileObject;
-import javax.tools.SimpleJavaFileObject;
-import com.sun.source.util.JavacTask;
+import combo.ComboInstance;
+import combo.ComboParameter;
+import combo.ComboTask.Result;
+import combo.ComboTestHelper;
 
-public class MethodReferenceParserTest
-    extends JavacTestingAbstractThreadedTest
-    implements Runnable {
+public class MethodReferenceParserTest extends ComboInstance<MethodReferenceParserTest> {
 
-    enum ReferenceKind {
-        METHOD_REF("#Q::#Gm"),
-        CONSTRUCTOR_REF("#Q::#Gnew"),
+    enum ReferenceKind implements ComboParameter {
+        METHOD_REF("#{QUAL}::#{TARGS}m"),
+        CONSTRUCTOR_REF("#{QUAL}::#{TARGS}new"),
         FALSE_REF("min < max"),
-        ERR_SUPER("#Q::#Gsuper"),
-        ERR_METH0("#Q::#Gm()"),
-        ERR_METH1("#Q::#Gm(X)"),
-        ERR_CONSTR0("#Q::#Gnew()"),
-        ERR_CONSTR1("#Q::#Gnew(X)");
+        ERR_SUPER("#{QUAL}::#{TARGS}super"),
+        ERR_METH0("#{QUAL}::#{TARGS}m()"),
+        ERR_METH1("#{QUAL}::#{TARGS}m(X)"),
+        ERR_CONSTR0("#{QUAL}::#{TARGS}new()"),
+        ERR_CONSTR1("#{QUAL}::#{TARGS}new(X)");
 
         String referenceTemplate;
 
         ReferenceKind(String referenceTemplate) {
             this.referenceTemplate = referenceTemplate;
-        }
-
-        String getReferenceString(QualifierKind qk, GenericKind gk) {
-            return referenceTemplate
-                    .replaceAll("#Q", qk.qualifier)
-                    .replaceAll("#G", gk.typeParameters);
         }
 
         boolean erroneous() {
@@ -80,11 +74,16 @@ public class MethodReferenceParserTest
                 default: return false;
             }
         }
+
+        @Override
+        public String expand(String optParameter) {
+            return referenceTemplate;
+        }
     }
 
-    enum ContextKind {
-        ASSIGN("SAM s = #E;"),
-        METHOD("m(#E, i);");
+    enum ContextKind implements ComboParameter {
+        ASSIGN("SAM s = #{EXPR};"),
+        METHOD("m(#{EXPR}, i);");
 
         String contextTemplate;
 
@@ -92,13 +91,13 @@ public class MethodReferenceParserTest
             this.contextTemplate = contextTemplate;
         }
 
-        String contextString(ExprKind ek, ReferenceKind rk, QualifierKind qk,
-                GenericKind gk, SubExprKind sk) {
-            return contextTemplate.replaceAll("#E", ek.expressionString(rk, qk, gk, sk));
+        @Override
+        public String expand(String optParameter) {
+            return contextTemplate;
         }
     }
 
-    enum GenericKind {
+    enum GenericKind implements ComboParameter {
         NONE(""),
         ONE("<X>"),
         TWO("<X,Y>");
@@ -108,9 +107,14 @@ public class MethodReferenceParserTest
         GenericKind(String typeParameters) {
             this.typeParameters = typeParameters;
         }
+
+        @Override
+        public String expand(String optParameter) {
+            return typeParameters;
+        }
     }
 
-    enum QualifierKind {
+    enum QualifierKind implements ComboParameter {
         THIS("this"),
         SUPER("super"),
         NEW("new Foo()"),
@@ -131,15 +135,20 @@ public class MethodReferenceParserTest
         QualifierKind(String qualifier) {
             this.qualifier = qualifier;
         }
+
+        @Override
+        public String expand(String optParameter) {
+            return qualifier;
+        }
     }
 
-    enum ExprKind {
-        NONE("#R::S"),
-        SINGLE_PAREN1("(#R#S)"),
-        SINGLE_PAREN2("(#R)#S"),
-        DOUBLE_PAREN1("((#R#S))"),
-        DOUBLE_PAREN2("((#R)#S)"),
-        DOUBLE_PAREN3("((#R))#S");
+    enum ExprKind implements ComboParameter {
+        NONE("#{MREF}"),
+        SINGLE_PAREN1("(#{MREF}#{SUBEXPR})"),
+        SINGLE_PAREN2("(#{MREF})#{SUBEXPR}"),
+        DOUBLE_PAREN1("((#{MREF}#{SUBEXPR}))"),
+        DOUBLE_PAREN2("((#{MREF})#{SUBEXPR})"),
+        DOUBLE_PAREN3("((#{MREF}))#{SUBEXPR}");
 
         String expressionTemplate;
 
@@ -147,14 +156,13 @@ public class MethodReferenceParserTest
             this.expressionTemplate = expressionTemplate;
         }
 
-        String expressionString(ReferenceKind rk, QualifierKind qk, GenericKind gk, SubExprKind sk) {
-            return expressionTemplate
-                    .replaceAll("#R", rk.getReferenceString(qk, gk))
-                    .replaceAll("#S", sk.subExpression);
+        @Override
+        public String expand(String optParameter) {
+            return expressionTemplate;
         }
     }
 
-    enum SubExprKind {
+    enum SubExprKind implements ComboParameter {
         NONE(""),
         SELECT_FIELD(".f"),
         SELECT_METHOD(".f()"),
@@ -167,100 +175,45 @@ public class MethodReferenceParserTest
         SubExprKind(String subExpression) {
             this.subExpression = subExpression;
         }
+
+        @Override
+        public String expand(String optParameter) {
+            return subExpression;
+        }
     }
 
     public static void main(String... args) throws Exception {
-        for (ReferenceKind rk : ReferenceKind.values()) {
-            for (QualifierKind qk : QualifierKind.values()) {
-                for (GenericKind gk : GenericKind.values()) {
-                    for (SubExprKind sk : SubExprKind.values()) {
-                        for (ExprKind ek : ExprKind.values()) {
-                            for (ContextKind ck : ContextKind.values()) {
-                                pool.execute(new MethodReferenceParserTest(rk, qk, gk, sk, ek, ck));
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        checkAfterExec();
+        new ComboTestHelper<MethodReferenceParserTest>()
+                .withDimension("MREF", (x, ref) -> x.rk = ref, ReferenceKind.values())
+                .withDimension("QUAL", QualifierKind.values())
+                .withDimension("TARGS", GenericKind.values())
+                .withDimension("EXPR", ExprKind.values())
+                .withDimension("SUBEXPR", SubExprKind.values())
+                .withDimension("CTX", ContextKind.values())
+                .run(MethodReferenceParserTest::new);
     }
 
     ReferenceKind rk;
-    QualifierKind qk;
-    GenericKind gk;
-    SubExprKind sk;
-    ExprKind ek;
-    ContextKind ck;
-    JavaSource source;
-    DiagnosticChecker diagChecker;
 
-    MethodReferenceParserTest(ReferenceKind rk, QualifierKind qk, GenericKind gk, SubExprKind sk, ExprKind ek, ContextKind ck) {
-        this.rk = rk;
-        this.qk = qk;
-        this.gk = gk;
-        this.sk = sk;
-        this.ek = ek;
-        this.ck = ck;
-        this.source = new JavaSource();
-        this.diagChecker = new DiagnosticChecker();
-    }
-
-    class JavaSource extends SimpleJavaFileObject {
-
-        String template = "class Test {\n" +
-                          "   void test() {\n" +
-                          "      #C\n" +
-                          "   }" +
-                          "}";
-
-        String source;
-
-        public JavaSource() {
-            super(URI.create("myfo:/Test.java"), JavaFileObject.Kind.SOURCE);
-            source = template.replaceAll("#C", ck.contextString(ek, rk, qk, gk, sk));
-        }
-
-        @Override
-        public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-            return source;
-        }
-    }
+    String template = "class Test {\n" +
+                      "   void test() {\n" +
+                      "      #{CTX}\n" +
+                      "   }" +
+                      "}";
 
     @Override
-    public void run() {
-        JavacTask ct = (JavacTask)comp.getTask(null, fm.get(), diagChecker,
-                null, null, Arrays.asList(source));
-        try {
-            ct.parse();
-        } catch (Throwable ex) {
-            processException(ex);
-            return;
-        }
-        check();
+    public void doWork() throws IOException {
+        check(newCompilationTask()
+                .withSourceFromTemplate(template)
+                .parse());
     }
 
-    void check() {
-        checkCount.incrementAndGet();
-
-        if (diagChecker.errorFound != rk.erroneous()) {
-            throw new Error("invalid diagnostics for source:\n" +
-                source.getCharContent(true) +
-                "\nFound error: " + diagChecker.errorFound +
+    void check(Result<?> res) {
+        if (res.hasErrors() != rk.erroneous()) {
+            fail("invalid diagnostics for source:\n" +
+                res.compilationInfo() +
+                "\nFound error: " + res.hasErrors() +
                 "\nExpected error: " + rk.erroneous());
         }
     }
-
-    static class DiagnosticChecker implements javax.tools.DiagnosticListener<JavaFileObject> {
-
-        boolean errorFound;
-
-        public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
-            if (diagnostic.getKind() == Diagnostic.Kind.ERROR) {
-                errorFound = true;
-            }
-        }
-    }
-
 }

@@ -27,21 +27,18 @@ package jdk.nashorn.internal.codegen;
 
 import java.lang.invoke.MethodType;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.NoSuchElementException;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 
 /**
- * A data structure that maps one or several function nodes (by their unique id:s, not by
- * the FunctionNode object itself, due to copy on write changing it several times through
- * code generation.
+ * A tuple containing function id, parameter types, return type and needsCallee flag.
  */
-public class TypeMap {
-    private final Map<Integer, Type[]> paramTypeMap  = new HashMap<>();
-    private final Map<Integer, Type>   returnTypeMap = new HashMap<>();
+public final class TypeMap {
+    private final int functionNodeId;
+    private final Type[] paramTypes;
+    private final Type returnType;
     private final boolean needsCallee;
 
     /**
@@ -56,9 +53,10 @@ public class TypeMap {
         for (final Class<?> p : type.parameterArray()) {
             types[pos++] = Type.typeFor(p);
         }
-        paramTypeMap.put(functionNodeId, types);
-        returnTypeMap.put(functionNodeId, Type.typeFor(type.returnType()));
 
+        this.functionNodeId = functionNodeId;
+        this.paramTypes = types;
+        this.returnType = Type.typeFor(type.returnType());
         this.needsCallee = needsCallee;
     }
 
@@ -69,20 +67,14 @@ public class TypeMap {
      * @throws NoSuchElementException if the type map has no mapping for the requested function
      */
     public Type[] getParameterTypes(final int functionNodeId) {
-        final Type[] paramTypes = paramTypeMap.get(functionNodeId);
-        if (paramTypes == null) {
-            throw new NoSuchElementException(Integer.toString(functionNodeId));
-        }
+        assert this.functionNodeId == functionNodeId;
         return paramTypes.clone();
     }
 
     MethodType getCallSiteType(final FunctionNode functionNode) {
-        final Type[] types = paramTypeMap.get(functionNode.getId());
-        if (types == null) {
-            return null;
-        }
-
-        MethodType mt = MethodType.methodType(returnTypeMap.get(functionNode.getId()).getTypeClass());
+        assert this.functionNodeId == functionNode.getId();
+        final Type[] types = paramTypes;
+        MethodType mt = MethodType.methodType(returnType.getTypeClass());
         if (needsCallee) {
             mt = mt.appendParameterTypes(ScriptFunction.class);
         }
@@ -116,19 +108,13 @@ public class TypeMap {
      * @return parameter type for this callsite if known
      */
     Type get(final FunctionNode functionNode, final int pos) {
-        final Type[] types = paramTypeMap.get(functionNode.getId());
+        assert this.functionNodeId == functionNode.getId();
+        final Type[] types = paramTypes;
         assert types == null || pos < types.length : "fn = " + functionNode.getId() + " " + "types=" + Arrays.toString(types) + " || pos=" + pos + " >= length=" + types.length + " in " + this;
         if (types != null && pos < types.length) {
             return types[pos];
         }
         return null;
-    }
-
-    boolean has(final FunctionNode functionNode) {
-        final int id = functionNode.getId();
-        final Type[] paramTypes = paramTypeMap.get(id);
-        assert (paramTypes == null) == (returnTypeMap.get(id) == null) : "inconsistent param and return types in param map";
-        return paramTypes != null;
     }
 
     @Override
@@ -139,27 +125,16 @@ public class TypeMap {
     String toString(final String prefix) {
         final StringBuilder sb = new StringBuilder();
 
-        if (paramTypeMap.isEmpty()) {
-            sb.append(prefix).append("\t<empty>");
-            return sb.toString();
-        }
-
-        for (final Map.Entry<Integer, Type[]> entry : paramTypeMap.entrySet()) {
-            final int id = entry.getKey();
-            sb.append(prefix).append('\t');
-            sb.append("function ").append(id).append('\n');
-            sb.append(prefix).append("\t\tparamTypes=");
-            if (entry.getValue() == null) {
-                sb.append("[]");
-            } else {
-                sb.append(Arrays.toString(entry.getValue()));
-            }
-            sb.append('\n');
-            sb.append(prefix).append("\t\treturnType=");
-            final Type ret = returnTypeMap.get(id);
-            sb.append(ret == null ? "N/A" : ret);
-            sb.append('\n');
-        }
+        final int id = functionNodeId;
+        sb.append(prefix).append('\t');
+        sb.append("function ").append(id).append('\n');
+        sb.append(prefix).append("\t\tparamTypes=");
+        sb.append(Arrays.toString(paramTypes));
+        sb.append('\n');
+        sb.append(prefix).append("\t\treturnType=");
+        final Type ret = returnType;
+        sb.append(ret == null ? "N/A" : ret);
+        sb.append('\n');
 
         return sb.toString();
     }

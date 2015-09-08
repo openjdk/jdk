@@ -140,20 +140,20 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void push_ptr(Register r = rax);
   void push_i(Register r = rax);
 
+  void push_f(XMMRegister r);
+  void pop_f(XMMRegister r);
+  void pop_d(XMMRegister r);
+  void push_d(XMMRegister r);
 #ifdef _LP64
   void pop_l(Register r = rax);
-  void pop_f(XMMRegister r = xmm0);
-  void pop_d(XMMRegister r = xmm0);
   void push_l(Register r = rax);
-  void push_f(XMMRegister r = xmm0);
-  void push_d(XMMRegister r = xmm0);
 #else
   void pop_l(Register lo = rax, Register hi = rdx);
   void pop_f();
   void pop_d();
 
   void push_l(Register lo = rax, Register hi = rdx);
-  void push_d(Register r = rax);
+  void push_d();
   void push_f();
 #endif // _LP64
 

@@ -76,7 +76,7 @@ public class JavacTaskImpl extends BasicJavacTask {
     private final AtomicBoolean used = new AtomicBoolean();
     private Iterable<? extends Processor> processors;
 
-    JavacTaskImpl(Context context) {
+    protected JavacTaskImpl(Context context) {
         super(context, true);
         args = Arguments.instance(context);
         fileManager = context.get(JavaFileManager.class);

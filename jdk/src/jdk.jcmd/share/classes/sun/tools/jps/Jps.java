@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,11 @@ public class Jps {
                         errorString = " -- jvm args information unavailable";
                         String jvmArgs = MonitoredVmUtil.jvmArgs(vm);
                         if (jvmArgs != null && jvmArgs.length() > 0) {
-                          output.append(' ').append(jvmArgs);
+                          output.append(' ')
+                            .append(
+                                // multi-line args are permitted
+                                jvmArgs.replace("\n", "\\n").replace("\r", "\\r")
+                            );
                         }
                     }
                     if (arguments.showVmFlags()) {
