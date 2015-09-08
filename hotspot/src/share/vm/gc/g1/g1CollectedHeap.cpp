@@ -2397,6 +2397,10 @@ void G1CollectedHeap::ref_processing_init() {
                                 // (for efficiency/performance)
 }
 
+CollectorPolicy* G1CollectedHeap::collector_policy() const {
+  return g1_policy();
+}
+
 size_t G1CollectedHeap::capacity() const {
   return _hrm.length() * HeapRegion::GrainBytes;
 }

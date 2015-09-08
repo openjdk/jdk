@@ -172,8 +172,6 @@ char* GenCollectedHeap::allocate(size_t alignment,
 void GenCollectedHeap::post_initialize() {
   CollectedHeap::post_initialize();
   ref_processing_init();
-  GenCollectorPolicy *policy = (GenCollectorPolicy *)collector_policy();
-  guarantee(policy->is_generation_policy(), "Illegal policy type");
   assert((_young_gen->kind() == Generation::DefNew) ||
          (_young_gen->kind() == Generation::ParNew),
     "Wrong youngest generation type");
@@ -183,10 +181,10 @@ void GenCollectedHeap::post_initialize() {
          _old_gen->kind() == Generation::MarkSweepCompact,
     "Wrong generation kind");
 
-  policy->initialize_size_policy(def_new_gen->eden()->capacity(),
-                                 _old_gen->capacity(),
-                                 def_new_gen->from()->capacity());
-  policy->initialize_gc_policy_counters();
+  _gen_policy->initialize_size_policy(def_new_gen->eden()->capacity(),
+                                      _old_gen->capacity(),
+                                      def_new_gen->from()->capacity());
+  _gen_policy->initialize_gc_policy_counters();
 }
 
 void GenCollectedHeap::ref_processing_init() {
@@ -822,10 +820,11 @@ bool GenCollectedHeap::create_cms_collector() {
          "Unexpected generation kinds");
   // Skip two header words in the block content verification
   NOT_PRODUCT(_skip_header_HeapWords = CMSCollector::skip_header_HeapWords();)
-  CMSCollector* collector = new CMSCollector(
-    (ConcurrentMarkSweepGeneration*)_old_gen,
-    _rem_set->as_CardTableRS(),
-    (ConcurrentMarkSweepPolicy*) collector_policy());
+  assert(_gen_policy->is_concurrent_mark_sweep_policy(), "Unexpected policy type");
+  CMSCollector* collector =
+    new CMSCollector((ConcurrentMarkSweepGeneration*)_old_gen,
+                     _rem_set->as_CardTableRS(),
+                     _gen_policy->as_concurrent_mark_sweep_policy());
 
   if (collector == NULL || !collector->completed_initialization()) {
     if (collector) {

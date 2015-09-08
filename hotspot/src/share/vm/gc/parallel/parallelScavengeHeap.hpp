@@ -87,7 +87,7 @@ class ParallelScavengeHeap : public CollectedHeap {
     return CollectedHeap::ParallelScavengeHeap;
   }
 
-  virtual CollectorPolicy* collector_policy() const { return (CollectorPolicy*) _collector_policy; }
+  virtual CollectorPolicy* collector_policy() const { return _collector_policy; }
 
   static PSYoungGen* young_gen() { return _young_gen; }
   static PSOldGen* old_gen()     { return _old_gen; }

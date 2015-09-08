@@ -1057,7 +1057,7 @@ public:
   // The current policy object for the collector.
   G1CollectorPolicy* g1_policy() const { return _g1_policy; }
 
-  virtual CollectorPolicy* collector_policy() const { return (CollectorPolicy*) g1_policy(); }
+  virtual CollectorPolicy* collector_policy() const;
 
   // Adaptive size policy.  No such thing for g1.
   virtual AdaptiveSizePolicy* size_policy() { return NULL; }
