@@ -233,8 +233,7 @@ public class DistributionPointFetcher {
         }
         CertStore ucs = null;
         try {
-            ucs = URICertStore.getInstance
-                (new URICertStore.URICertStoreParameters(uri));
+            ucs = URICertStore.getInstance(new URICertStoreParameters(uri));
         } catch (InvalidAlgorithmParameterException |
                  NoSuchAlgorithmException e) {
             if (debug != null) {
