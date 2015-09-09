@@ -26,6 +26,6 @@
 
 #include "gc/g1/g1ParScanThreadState.hpp"
 
-G1ParScanThreadState* G1ParScanThreadStateSet::new_par_scan_state(uint worker_id) {
-  return new G1ParScanThreadState(_g1h, worker_id);
+G1ParScanThreadState* G1ParScanThreadStateSet::new_par_scan_state(uint worker_id, size_t young_cset_length) {
+  return new G1ParScanThreadState(_g1h, worker_id, young_cset_length);
 }

@@ -311,13 +311,7 @@ private:
 
   volatile unsigned _gc_time_stamp;
 
-  size_t* _surviving_young_words;
-
   G1HRPrinter _hr_printer;
-
-  void setup_surviving_young_words();
-  void update_surviving_young_words(size_t* surv_young_words);
-  void cleanup_surviving_young_words();
 
   // It decides whether an explicit GC should start a concurrent cycle
   // instead of doing a STW GC. Currently, a concurrent cycle is
@@ -832,7 +826,7 @@ protected:
 
   // After a collection pause, make the regions in the CS into free
   // regions.
-  void free_collection_set(HeapRegion* cs_head, EvacuationInfo& evacuation_info);
+  void free_collection_set(HeapRegion* cs_head, EvacuationInfo& evacuation_info, const size_t* surviving_young_words);
 
   // Abandon the current collection set without recording policy
   // statistics or updating free lists.
@@ -1609,7 +1603,6 @@ public:
 
 public:
   size_t pending_card_num();
-  size_t cards_scanned();
 
 protected:
   size_t _max_heap_capacity;

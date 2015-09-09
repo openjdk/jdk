@@ -62,9 +62,6 @@ protected:
 
   ConcurrentG1Refine*    _cg1r;
 
-  size_t*                _cards_scanned;
-  size_t                 _total_cards_scanned;
-
   // Used for caching the closure that is responsible for scanning
   // references into the collection set.
   G1ParPushHeapRSClosure** _cset_rs_update_cl;
@@ -94,9 +91,12 @@ public:
   // partitioning the work to be done. It should be the same as
   // the "i" passed to the calling thread's work(i) function.
   // In the sequential case this param will be ignored.
-  void oops_into_collection_set_do(G1ParPushHeapRSClosure* blk,
-                                   OopClosure* non_heap_roots,
-                                   uint worker_i);
+  //
+  // Returns the number of cards scanned while looking for pointers
+  // into the collection set.
+  size_t oops_into_collection_set_do(G1ParPushHeapRSClosure* blk,
+                                     OopClosure* non_heap_roots,
+                                     uint worker_i);
 
   // Prepare for and cleanup after an oops_into_collection_set_do
   // call.  Must call each of these once before and after (in sequential
@@ -106,14 +106,13 @@ public:
   void prepare_for_oops_into_collection_set_do();
   void cleanup_after_oops_into_collection_set_do();
 
-  void scanRS(G1ParPushHeapRSClosure* oc,
-              OopClosure* non_heap_roots,
-              uint worker_i);
+  size_t scanRS(G1ParPushHeapRSClosure* oc,
+                OopClosure* non_heap_roots,
+                uint worker_i);
 
   void updateRS(DirtyCardQueue* into_cset_dcq, uint worker_i);
 
   CardTableModRefBS* ct_bs() { return _ct_bs; }
-  size_t cardsScanned() { return _total_cards_scanned; }
 
   // Record, if necessary, the fact that *p (where "p" is in region "from",
   // which is required to be non-NULL) has changed to a new non-NULL value.
