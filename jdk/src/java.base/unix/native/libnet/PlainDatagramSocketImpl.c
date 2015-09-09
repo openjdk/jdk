@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,12 @@
 
 #ifdef __solaris__
 #include <fcntl.h>
+#include <unistd.h>
+#include <stropts.h>
+
+#ifndef BSD_COMP
+#define BSD_COMP
+#endif
 #endif
 #ifdef __linux__
 #include <unistd.h>
@@ -51,6 +57,8 @@
 #define IP_MULTICAST_ALL      49
 #endif
 #endif  //  __linux__
+
+#include <sys/ioctl.h>
 
 #ifndef IPTOS_TOS_MASK
 #define IPTOS_TOS_MASK 0x1e
@@ -2239,4 +2247,29 @@ Java_java_net_PlainDatagramSocketImpl_leave(JNIEnv *env, jobject this,
                                             jobject iaObj, jobject niObj)
 {
     mcast_join_leave(env, this, iaObj, niObj, JNI_FALSE);
+}
+
+/*
+ * Class:     java_net_PlainDatagramSocketImpl
+ * Method:    dataAvailable
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL
+Java_java_net_PlainDatagramSocketImpl_dataAvailable(JNIEnv *env, jobject this)
+{
+    int fd, retval;
+
+    jobject fdObj = (*env)->GetObjectField(env, this, pdsi_fdID);
+
+    if (IS_NULL(fdObj)) {
+        JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
+                        "Socket closed");
+        return -1;
+    }
+    fd = (*env)->GetIntField(env, fdObj, IO_fd_fdID);
+
+    if (ioctl(fd, FIONREAD, &retval) < 0) {
+        return -1;
+    }
+    return retval;
 }
