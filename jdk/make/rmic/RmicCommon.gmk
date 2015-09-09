@@ -31,8 +31,9 @@ include RMICompilation.gmk
 
 ##########################################################################################
 
-BTRMIC_CP := $(INTERIM_CORBA_JAR)$(PATH_SEP)$(BUILDTOOLS_OUTPUTDIR)/interim_rmic_classes$(PATH_SEP)$(INTERIM_LANGTOOLS_JAR)
-BTRMIC_ARGS := "-Xbootclasspath/p:$(BTRMIC_CP)" -cp "$(BTRMIC_CP)"
+BTRMIC_CP := $(call PathList, $(INTERIM_CORBA_JAR) \
+    $(BUILDTOOLS_OUTPUTDIR)/interim_rmic_classes $(INTERIM_LANGTOOLS_JAR))
+BTRMIC_ARGS := -Xbootclasspath/p:$(BTRMIC_CP) -cp $(BTRMIC_CP)
 RMIC := $(JAVA) $(BTRMIC_ARGS) sun.rmi.rmic.Main
 
 CLASSES_DIR := $(JDK_OUTPUTDIR)/modules
