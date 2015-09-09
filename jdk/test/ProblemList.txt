@@ -363,10 +363,6 @@ com/sun/jdi/GetLocalVariables4Test.sh				windows-all
 # 8062512
 java/util/spi/ResourceBundleControlProvider/UserDefaultControlTest.java generic-all
 
-# 8029453
-java/util/concurrent/locks/ReentrantLock/TimeoutLockLoops.java linux-all
-
-
 ############################################################################
 
 # jdk_instrument
