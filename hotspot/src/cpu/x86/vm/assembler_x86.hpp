@@ -1920,6 +1920,10 @@ private:
   void vdivpd(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void vdivps(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
 
+  // Sqrt Packed Floating-Point Values - Double precision only
+  void vsqrtpd(XMMRegister dst, XMMRegister src, int vector_len);
+  void vsqrtpd(XMMRegister dst, Address src, int vector_len);
+
   // Bitwise Logical AND of Packed Floating-Point Values
   void andpd(XMMRegister dst, XMMRegister src);
   void andps(XMMRegister dst, XMMRegister src);
