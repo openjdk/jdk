@@ -56,6 +56,7 @@ class HRRSCleanupTask;
 class GenerationSpec;
 class OopsInHeapRegionClosure;
 class G1ParScanThreadState;
+class G1ParScanThreadStateSet;
 class G1KlassScanClosure;
 class G1ParScanThreadState;
 class ObjectClosure;
@@ -192,6 +193,7 @@ class G1CollectedHeap : public CollectedHeap {
 
   // Closures used in implementation.
   friend class G1ParScanThreadState;
+  friend class G1ParScanThreadStateSet;
   friend class G1ParTask;
   friend class G1PLABAllocator;
   friend class G1PrepareCompactClosure;
@@ -584,11 +586,11 @@ protected:
 
   // Process any reference objects discovered during
   // an incremental evacuation pause.
-  void process_discovered_references(G1ParScanThreadState** per_thread_states);
+  void process_discovered_references(G1ParScanThreadStateSet* per_thread_states);
 
   // Enqueue any remaining discovered references
   // after processing.
-  void enqueue_discovered_references(G1ParScanThreadState** per_thread_states);
+  void enqueue_discovered_references(G1ParScanThreadStateSet* per_thread_states);
 
 public:
   WorkGang* workers() const { return _workers; }
@@ -682,9 +684,6 @@ public:
 
   // Allocates a new heap region instance.
   HeapRegion* new_heap_region(uint hrs_index, MemRegion mr);
-
-  // Allocates a new per thread par scan state for the given thread id.
-  G1ParScanThreadState* new_par_scan_state(uint worker_id);
 
   // Allocate the highest free region in the reserved heap. This will commit
   // regions as necessary.
@@ -799,7 +798,7 @@ protected:
   bool do_collection_pause_at_safepoint(double target_pause_time_ms);
 
   // Actually do the work of evacuating the collection set.
-  void evacuate_collection_set(EvacuationInfo& evacuation_info);
+  void evacuate_collection_set(EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* per_thread_states);
 
   // Print the header for the per-thread termination statistics.
   static void print_termination_stats_hdr(outputStream* const st);

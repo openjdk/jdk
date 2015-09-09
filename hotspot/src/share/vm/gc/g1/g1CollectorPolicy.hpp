@@ -865,8 +865,8 @@ public:
     return _recorded_survivor_regions;
   }
 
-  void record_thread_age_table(ageTable* age_table) {
-    _survivors_age_table.merge_par(age_table);
+  void record_age_table(ageTable* age_table) {
+    _survivors_age_table.merge(age_table);
   }
 
   void update_max_gc_locker_expansion();

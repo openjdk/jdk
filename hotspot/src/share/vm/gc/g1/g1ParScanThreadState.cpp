@@ -71,11 +71,16 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint worker_id)
   _dest[InCSetState::Old]          = InCSetState::Old;
 }
 
-G1ParScanThreadState::~G1ParScanThreadState() {
+// Pass locally gathered statistics to global state.
+void G1ParScanThreadState::flush() {
+  _dcq.flush();
   // Update allocation statistics.
   _plab_allocator->flush_and_retire_stats();
+  _g1h->g1_policy()->record_age_table(&_age_table);
+}
+
+G1ParScanThreadState::~G1ParScanThreadState() {
   delete _plab_allocator;
-  _g1h->g1_policy()->record_thread_age_table(&_age_table);
   // Update heap statistics.
   _g1h->update_surviving_young_words(_surviving_young_words);
   FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_base);
@@ -312,6 +317,25 @@ oop G1ParScanThreadState::copy_to_survivor_space(InCSetState const state,
     _plab_allocator->undo_allocation(dest_state, obj_ptr, word_sz, context);
     return forward_ptr;
   }
+}
+
+G1ParScanThreadState* G1ParScanThreadStateSet::state_for_worker(uint worker_id) {
+  assert(worker_id < _n_workers, "out of bounds access");
+  return _states[worker_id];
+}
+
+void G1ParScanThreadStateSet::flush() {
+  assert(!_flushed, "thread local state from the per thread states should be flushed once");
+
+  for (uint worker_index = 0; worker_index < _n_workers; ++worker_index) {
+    G1ParScanThreadState* pss = _states[worker_index];
+
+    pss->flush();
+
+    delete pss;
+    _states[worker_index] = NULL;
+  }
+  _flushed = true;
 }
 
 oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markOop m) {

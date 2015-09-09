@@ -4164,8 +4164,9 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         // Initialize the GC alloc regions.
         _allocator->init_gc_alloc_regions(evacuation_info);
 
+        G1ParScanThreadStateSet per_thread_states(this, workers()->active_workers());
         // Actually do the work...
-        evacuate_collection_set(evacuation_info);
+        evacuate_collection_set(evacuation_info, &per_thread_states);
 
         free_collection_set(g1_policy()->collection_set(), evacuation_info);
 
@@ -4545,15 +4546,15 @@ class G1KlassScanClosure : public KlassClosure {
 
 class G1ParTask : public AbstractGangTask {
 protected:
-  G1CollectedHeap*       _g1h;
-  G1ParScanThreadState** _pss;
-  RefToScanQueueSet*     _queues;
-  G1RootProcessor*       _root_processor;
-  ParallelTaskTerminator _terminator;
-  uint _n_workers;
+  G1CollectedHeap*         _g1h;
+  G1ParScanThreadStateSet* _pss;
+  RefToScanQueueSet*       _queues;
+  G1RootProcessor*         _root_processor;
+  ParallelTaskTerminator   _terminator;
+  uint                     _n_workers;
 
 public:
-  G1ParTask(G1CollectedHeap* g1h, G1ParScanThreadState** per_thread_states, RefToScanQueueSet *task_queues, G1RootProcessor* root_processor, uint n_workers)
+  G1ParTask(G1CollectedHeap* g1h, G1ParScanThreadStateSet* per_thread_states, RefToScanQueueSet *task_queues, G1RootProcessor* root_processor, uint n_workers)
     : AbstractGangTask("G1 collection"),
       _g1h(g1h),
       _pss(per_thread_states),
@@ -4611,7 +4612,7 @@ public:
 
       ReferenceProcessor*             rp = _g1h->ref_processor_stw();
 
-      G1ParScanThreadState*           pss = _pss[worker_id];
+      G1ParScanThreadState*           pss = _pss->state_for_worker(worker_id);
       pss->set_ref_processor(rp);
 
       bool only_young = _g1h->collector_state()->gcs_are_young();
@@ -5267,15 +5268,15 @@ public:
 
 class G1STWRefProcTaskExecutor: public AbstractRefProcTaskExecutor {
 private:
-  G1CollectedHeap*        _g1h;
-  G1ParScanThreadState**  _pss;
-  RefToScanQueueSet*      _queues;
-  WorkGang*               _workers;
-  uint                    _active_workers;
+  G1CollectedHeap*          _g1h;
+  G1ParScanThreadStateSet*  _pss;
+  RefToScanQueueSet*        _queues;
+  WorkGang*                 _workers;
+  uint                      _active_workers;
 
 public:
   G1STWRefProcTaskExecutor(G1CollectedHeap* g1h,
-                           G1ParScanThreadState** per_thread_states,
+                           G1ParScanThreadStateSet* per_thread_states,
                            WorkGang* workers,
                            RefToScanQueueSet *task_queues,
                            uint n_workers) :
@@ -5299,14 +5300,14 @@ class G1STWRefProcTaskProxy: public AbstractGangTask {
   typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;
   ProcessTask&     _proc_task;
   G1CollectedHeap* _g1h;
-  G1ParScanThreadState** _pss;
+  G1ParScanThreadStateSet* _pss;
   RefToScanQueueSet* _task_queues;
   ParallelTaskTerminator* _terminator;
 
 public:
   G1STWRefProcTaskProxy(ProcessTask& proc_task,
                         G1CollectedHeap* g1h,
-                        G1ParScanThreadState** per_thread_states,
+                        G1ParScanThreadStateSet* per_thread_states,
                         RefToScanQueueSet *task_queues,
                         ParallelTaskTerminator* terminator) :
     AbstractGangTask("Process reference objects in parallel"),
@@ -5324,7 +5325,7 @@ public:
 
     G1STWIsAliveClosure is_alive(_g1h);
 
-    G1ParScanThreadState*           pss = _pss[worker_id];
+    G1ParScanThreadState*          pss = _pss->state_for_worker(worker_id);
     pss->set_ref_processor(NULL);
 
     G1ParScanExtRootClosure        only_copy_non_heap_cl(_g1h, pss);
@@ -5403,14 +5404,14 @@ void G1STWRefProcTaskExecutor::execute(EnqueueTask& enq_task) {
 
 class G1ParPreserveCMReferentsTask: public AbstractGangTask {
 protected:
-  G1CollectedHeap*       _g1h;
-  G1ParScanThreadState** _pss;
-  RefToScanQueueSet*     _queues;
-  ParallelTaskTerminator _terminator;
-  uint _n_workers;
+  G1CollectedHeap*         _g1h;
+  G1ParScanThreadStateSet* _pss;
+  RefToScanQueueSet*       _queues;
+  ParallelTaskTerminator   _terminator;
+  uint                     _n_workers;
 
 public:
-  G1ParPreserveCMReferentsTask(G1CollectedHeap* g1h, G1ParScanThreadState** per_thread_states, int workers, RefToScanQueueSet *task_queues) :
+  G1ParPreserveCMReferentsTask(G1CollectedHeap* g1h, G1ParScanThreadStateSet* per_thread_states, int workers, RefToScanQueueSet *task_queues) :
     AbstractGangTask("ParPreserveCMReferents"),
     _g1h(g1h),
     _pss(per_thread_states),
@@ -5423,7 +5424,7 @@ public:
     ResourceMark rm;
     HandleMark   hm;
 
-    G1ParScanThreadState*          pss = _pss[worker_id];
+    G1ParScanThreadState*          pss = _pss->state_for_worker(worker_id);
     pss->set_ref_processor(NULL);
     assert(pss->queue_is_empty(), "both queue and overflow should be empty");
 
@@ -5484,7 +5485,7 @@ public:
 };
 
 // Weak Reference processing during an evacuation pause (part 1).
-void G1CollectedHeap::process_discovered_references(G1ParScanThreadState** per_thread_states) {
+void G1CollectedHeap::process_discovered_references(G1ParScanThreadStateSet* per_thread_states) {
   double ref_proc_start = os::elapsedTime();
 
   ReferenceProcessor* rp = _ref_processor_stw;
@@ -5529,7 +5530,7 @@ void G1CollectedHeap::process_discovered_references(G1ParScanThreadState** per_t
   // JNI refs.
 
   // Use only a single queue for this PSS.
-  G1ParScanThreadState*           pss = per_thread_states[0];
+  G1ParScanThreadState*          pss = per_thread_states->state_for_worker(0);
   pss->set_ref_processor(NULL);
   assert(pss->queue_is_empty(), "pre-condition");
 
@@ -5590,7 +5591,7 @@ void G1CollectedHeap::process_discovered_references(G1ParScanThreadState** per_t
 }
 
 // Weak Reference processing during an evacuation pause (part 2).
-void G1CollectedHeap::enqueue_discovered_references(G1ParScanThreadState** per_thread_states) {
+void G1CollectedHeap::enqueue_discovered_references(G1ParScanThreadStateSet* per_thread_states) {
   double ref_enq_start = os::elapsedTime();
 
   ReferenceProcessor* rp = _ref_processor_stw;
@@ -5625,7 +5626,7 @@ void G1CollectedHeap::enqueue_discovered_references(G1ParScanThreadState** per_t
   g1_policy()->phase_times()->record_ref_enq_time(ref_enq_time * 1000.0);
 }
 
-void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
+void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* per_thread_states) {
   _expand_heap_after_alloc_failure = true;
   _evacuation_failed = false;
 
@@ -5644,11 +5645,6 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
   assert(dirty_card_queue_set().completed_buffers_num() == 0, "Should be empty");
   double start_par_time_sec = os::elapsedTime();
   double end_par_time_sec;
-
-  G1ParScanThreadState** per_thread_states = NEW_C_HEAP_ARRAY(G1ParScanThreadState*, n_workers, mtGC);
-  for (uint i = 0; i < n_workers; i++) {
-    per_thread_states[i] = new_par_scan_state(i);
-  }
 
   {
     G1RootProcessor root_processor(this, n_workers);
@@ -5703,11 +5699,7 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
   _allocator->release_gc_alloc_regions(evacuation_info);
   g1_rem_set()->cleanup_after_oops_into_collection_set_do();
 
-  for (uint i = 0; i < n_workers; i++) {
-    G1ParScanThreadState* pss = per_thread_states[i];
-    delete pss;
-  }
-  FREE_C_HEAP_ARRAY(G1ParScanThreadState*, per_thread_states);
+  per_thread_states->flush();
 
   record_obj_copy_mem_stats();
 
