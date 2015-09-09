@@ -2125,7 +2125,11 @@ jint G1CollectedHeap::initialize() {
 
   _refine_cte_cl = new RefineCardTableEntryClosure();
 
-  _cg1r = new ConcurrentG1Refine(this, _refine_cte_cl);
+  jint ecode = JNI_OK;
+  _cg1r = ConcurrentG1Refine::create(this, _refine_cte_cl, &ecode);
+  if (_cg1r == NULL) {
+    return ecode;
+  }
 
   // Reserve the maximum.
 
