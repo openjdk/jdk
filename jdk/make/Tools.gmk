@@ -38,7 +38,9 @@ include SetupJavaCompilers.gmk
 
 $(eval $(call SetupJavaCompilation,BUILD_TOOLS_JDK, \
     SETUP := GENERATE_OLDBYTECODE, \
-    ADD_JAVAC_FLAGS := "-Xbootclasspath/p:$(BUILDTOOLS_OUTPUTDIR)/interim_jimage_classes$(PATH_SEP)$(BUILDTOOLS_OUTPUTDIR)/interim_cldrconverter_classes", \
+    ADD_JAVAC_FLAGS := -Xbootclasspath/p:$(call PathList, \
+        $(BUILDTOOLS_OUTPUTDIR)/interim_jimage_classes \
+        $(BUILDTOOLS_OUTPUTDIR)/interim_cldrconverter_classes), \
     SRC := $(JDK_TOPDIR)/make/src/classes $(BUILDTOOLS_OUTPUTDIR)/interim_cldrconverter_classes, \
     BIN := $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes, \
     COPY := boot.modules ext.modules))
@@ -126,11 +128,11 @@ TOOL_CLDRCONVERTER = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes
     build.tools.cldrconverter.CLDRConverter
 
 TOOL_GENMODULESXML = $(JAVA_SMALL) -Xbootclasspath/p:$(INTERIM_LANGTOOLS_JAR) \
-    -cp "$(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes$(PATH_SEP)$(JDK_OUTPUTDIR)" \
+    -cp $(call PathList, $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes $(JDK_OUTPUTDIR)) \
     build.tools.module.GenJdepsModulesXml
 
 TOOL_IMAGEBUILDER = $(JAVA_SMALL) -Xbootclasspath/p:$(BUILDTOOLS_OUTPUTDIR)/interim_jimage_classes \
-    -cp "$(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes$(PATH_SEP)$(JDK_OUTPUTDIR)" \
+    -cp $(call PathList, $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes $(JDK_OUTPUTDIR)) \
     build.tools.module.ImageBuilder
 
 ##########################################################################################
