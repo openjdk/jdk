@@ -634,7 +634,7 @@ public:
 
   // Record the start and end of an evacuation pause.
   void record_collection_pause_start(double start_time_sec);
-  void record_collection_pause_end(double pause_time_ms);
+  void record_collection_pause_end(double pause_time_ms, size_t cards_scanned);
 
   // Record the start and end of a full collection.
   void record_full_collection_start();

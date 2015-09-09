@@ -923,7 +923,7 @@ bool G1CollectorPolicy::need_to_start_conc_mark(const char* source, size_t alloc
 // Anything below that is considered to be zero
 #define MIN_TIMER_GRANULARITY 0.0000001
 
-void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms) {
+void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t cards_scanned) {
   double end_time_sec = os::elapsedTime();
   assert(_cur_collection_pause_used_regions_at_start >= cset_region_length(),
          "otherwise, the subtraction below does not make sense");
@@ -1051,8 +1051,6 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms) {
       cost_per_card_ms = phase_times()->average_time_ms(G1GCPhaseTimes::UpdateRS) / (double) _pending_cards;
       _cost_per_card_ms_seq->add(cost_per_card_ms);
     }
-
-    size_t cards_scanned = _g1->cards_scanned();
 
     double cost_per_entry_ms = 0.0;
     if (cards_scanned > 10) {
