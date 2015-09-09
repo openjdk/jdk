@@ -1691,6 +1691,10 @@ const bool Matcher::match_rule_supported(int opcode) {
       if (UseSSE < 1) // requires at least SSE
         return false;
     break;
+    case Op_SqrtVD:
+      if (UseAVX < 1) // enabled for AVX only
+        return false;
+    break;
     case Op_CompareAndSwapL:
 #ifdef _LP64
     case Op_CompareAndSwapP:
@@ -7470,6 +7474,75 @@ instruct vshiftcnt(vecS dst, rRegI cnt) %{
   format %{ "movd    $dst,$cnt\t! load shift count" %}
   ins_encode %{
     __ movdl($dst$$XMMRegister, $cnt$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// --------------------------------- Sqrt --------------------------------------
+
+// Floating point vector sqrt - double precision only
+instruct vsqrt2D_reg(vecX dst, vecX src) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (SqrtVD src));
+  format %{ "vsqrtpd  $dst,$src\t! sqrt packed2D" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vsqrtpd($dst$$XMMRegister, $src$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsqrt2D_mem(vecX dst, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (SqrtVD (LoadVector mem)));
+  format %{ "vsqrtpd  $dst,$mem\t! sqrt packed2D" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vsqrtpd($dst$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsqrt4D_reg(vecY dst, vecY src) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (SqrtVD src));
+  format %{ "vsqrtpd  $dst,$src\t! sqrt packed4D" %}
+  ins_encode %{
+    int vector_len = 1;
+    __ vsqrtpd($dst$$XMMRegister, $src$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsqrt4D_mem(vecY dst, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (SqrtVD (LoadVector mem)));
+  format %{ "vsqrtpd  $dst,$mem\t! sqrt packed4D" %}
+  ins_encode %{
+    int vector_len = 1;
+    __ vsqrtpd($dst$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsqrt8D_reg(vecZ dst, vecZ src) %{
+  predicate(UseAVX > 2 && n->as_Vector()->length() == 8);
+  match(Set dst (SqrtVD src));
+  format %{ "vsqrtpd  $dst,$src\t! sqrt packed8D" %}
+  ins_encode %{
+    int vector_len = 2;
+    __ vsqrtpd($dst$$XMMRegister, $src$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsqrt8D_mem(vecZ dst, memory mem) %{
+  predicate(UseAVX > 2 && n->as_Vector()->length() == 8);
+  match(Set dst (SqrtVD (LoadVector mem)));
+  format %{ "vsqrtpd  $dst,$mem\t! sqrt packed8D" %}
+  ins_encode %{
+    int vector_len = 2;
+    __ vsqrtpd($dst$$XMMRegister, $mem$$Address, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}

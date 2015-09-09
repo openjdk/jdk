@@ -3993,6 +3993,26 @@ void Assembler::vdivps(XMMRegister dst, XMMRegister nds, Address src, int vector
   emit_vex_arith(0x5E, dst, nds, src, VEX_SIMD_NONE, vector_len);
 }
 
+void Assembler::vsqrtpd(XMMRegister dst, XMMRegister src, int vector_len) {
+  assert(VM_Version::supports_avx(), "");
+  if (VM_Version::supports_evex()) {
+    emit_vex_arith_q(0x51, dst, xnoreg, src, VEX_SIMD_66, vector_len);
+  } else {
+    emit_vex_arith(0x51, dst, xnoreg, src, VEX_SIMD_66, vector_len);
+  }
+}
+
+void Assembler::vsqrtpd(XMMRegister dst, Address src, int vector_len) {
+  assert(VM_Version::supports_avx(), "");
+  if (VM_Version::supports_evex()) {
+    tuple_type = EVEX_FV;
+    input_size_in_bits = EVEX_64bit;
+    emit_vex_arith_q(0x51, dst, xnoreg, src, VEX_SIMD_66, vector_len);
+  } else {
+    emit_vex_arith(0x51, dst, xnoreg, src, VEX_SIMD_66, vector_len);
+  }
+}
+
 void Assembler::andpd(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
   if (VM_Version::supports_evex() && VM_Version::supports_avx512dq()) {
