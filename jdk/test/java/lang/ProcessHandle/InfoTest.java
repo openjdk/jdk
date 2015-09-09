@@ -203,8 +203,10 @@ public class InfoTest {
                                           "commandLine() should start with: " + expectedPath +
                                           " but starts with " + commandLineCmdPath);
 
+                        Assert.assertTrue(commandLine.contains(command.get()),
+                                "commandLine() must contain the command: " + command.get());
                         List<String> allArgs = p1.getArgs();
-                        for (int i = 0; i < allArgs.size(); i++) {
+                        for (int i = 1; i < allArgs.size(); i++) {
                             Assert.assertTrue(commandLine.contains(allArgs.get(i)),
                                               "commandLine() must contain argument: " + allArgs.get(i));
                         }
