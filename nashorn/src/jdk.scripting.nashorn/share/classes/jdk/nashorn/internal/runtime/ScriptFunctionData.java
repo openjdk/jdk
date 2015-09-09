@@ -397,7 +397,7 @@ public abstract class ScriptFunctionData implements Serializable {
 
     /**
      * This method is used to create the immutable portion of a bound function.
-     * See {@link ScriptFunction#makeBoundFunction(Object, Object[])}
+     * See {@link ScriptFunction#createBound(Object, Object[])}
      *
      * @param fn the original function being bound
      * @param self this reference to bind. Can be null.
