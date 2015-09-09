@@ -121,6 +121,8 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
     return _surviving_young_words + 1;
   }
 
+  void flush();
+
  private:
   #define G1_PARTIAL_ARRAY_MASK 0x2
 
@@ -187,6 +189,36 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
 
   // An attempt to evacuate "obj" has failed; take necessary steps.
   oop handle_evacuation_failure_par(oop obj, markOop m);
+};
+
+class G1ParScanThreadStateSet : public StackObj {
+  G1CollectedHeap* _g1h;
+  G1ParScanThreadState** _states;
+  uint _n_workers;
+  bool _flushed;
+
+ public:
+  G1ParScanThreadStateSet(G1CollectedHeap* g1h, uint n_workers) :
+      _g1h(g1h),
+      _states(NEW_C_HEAP_ARRAY(G1ParScanThreadState*, n_workers, mtGC)),
+      _n_workers(n_workers),
+      _flushed(false) {
+    for (uint i = 0; i < n_workers; ++i) {
+      _states[i] = new_par_scan_state(i);
+    }
+  }
+
+  ~G1ParScanThreadStateSet() {
+    assert(_flushed, "thread local state from the per thread states should have been flushed");
+    FREE_C_HEAP_ARRAY(G1ParScanThreadState*, _states);
+  }
+
+  void flush();
+
+  G1ParScanThreadState* state_for_worker(uint worker_id);
+
+ private:
+  G1ParScanThreadState* new_par_scan_state(uint worker_id);
 };
 
 #endif // SHARE_VM_GC_G1_G1PARSCANTHREADSTATE_HPP
