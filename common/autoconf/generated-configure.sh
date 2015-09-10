@@ -4438,7 +4438,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1436819493
+DATE_WHEN_GENERATED=1441868573
 
 ###############################################################################
 #
@@ -41521,7 +41521,7 @@ $as_echo "$tool_specified" >&6; }
         -D\"JDK_VERSION_STRING=\$(VERSION_STRING)\" \
         -D\"JDK_COMPANY=\$(COMPANY_NAME)\" \
         -D\"JDK_COMPONENT=\$(PRODUCT_NAME) \$(JDK_RC_PLATFORM_NAME) binary\" \
-        -D\"JDK_VER=\$(VERSION_NUMBER_FOUR_POSITIONS)\" \
+        -D\"JDK_VER=\$(VERSION_NUMBER)\" \
         -D\"JDK_COPYRIGHT=Copyright \xA9 $COPYRIGHT_YEAR\" \
         -D\"JDK_NAME=\$(PRODUCT_NAME) \$(JDK_RC_PLATFORM_NAME) \$(VERSION_MAJOR)\" \
         -D\"JDK_FVER=\$(subst .,\$(COMMA),\$(VERSION_NUMBER_FOUR_POSITIONS))\""
