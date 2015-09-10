@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,10 +163,10 @@ public:
 
 class SurvivorContiguousSpacePool : public CollectedMemoryPool {
 private:
-  DefNewGeneration* _gen;
+  DefNewGeneration* _young_gen;
 
 public:
-  SurvivorContiguousSpacePool(DefNewGeneration* gen,
+  SurvivorContiguousSpacePool(DefNewGeneration* young_gen,
                               const char* name,
                               PoolType type,
                               size_t max_size,
