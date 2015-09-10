@@ -167,7 +167,7 @@ public final class Context {
      * ContextCodeInstaller that has the privilege of installing classes in the Context.
      * Can only be instantiated from inside the context and is opaque to other classes
      */
-    public static class ContextCodeInstaller implements CodeInstaller<ScriptEnvironment> {
+    public static class ContextCodeInstaller implements CodeInstaller {
         private final Context      context;
         private final ScriptLoader loader;
         private final CodeSource   codeSource;
@@ -185,13 +185,9 @@ public final class Context {
             this.codeSource = codeSource;
         }
 
-        /**
-         * Return the script environment for this installer
-         * @return ScriptEnvironment
-         */
         @Override
-        public ScriptEnvironment getOwner() {
-            return context.env;
+        public Context getContext() {
+            return context;
         }
 
         @Override
@@ -254,7 +250,7 @@ public final class Context {
         }
 
         @Override
-        public CodeInstaller<ScriptEnvironment> withNewLoader() {
+        public CodeInstaller withNewLoader() {
             // Reuse this installer if we're within our limits.
             if (usageCount < MAX_USAGES && bytesDefined < MAX_BYTES_DEFINED) {
                 return this;
@@ -263,7 +259,7 @@ public final class Context {
         }
 
         @Override
-        public boolean isCompatibleWith(final CodeInstaller<ScriptEnvironment> other) {
+        public boolean isCompatibleWith(final CodeInstaller other) {
             if (other instanceof ContextCodeInstaller) {
                 final ContextCodeInstaller cci = (ContextCodeInstaller)other;
                 return cci.context == context && cci.codeSource == codeSource;
@@ -1300,14 +1296,12 @@ public final class Context {
         final URL          url    = source.getURL();
         final ScriptLoader loader = env._loader_per_compile ? createNewLoader() : scriptLoader;
         final CodeSource   cs     = new CodeSource(url, (CodeSigner[])null);
-        final CodeInstaller<ScriptEnvironment> installer = new ContextCodeInstaller(this, loader, cs);
+        final CodeInstaller installer = new ContextCodeInstaller(this, loader, cs);
 
         if (storedScript == null) {
             final CompilationPhases phases = Compiler.CompilationPhases.COMPILE_ALL;
 
-            final Compiler compiler = new Compiler(
-                    this,
-                    env,
+            final Compiler compiler = Compiler.forInitialCompilation(
                     installer,
                     source,
                     errMan,
