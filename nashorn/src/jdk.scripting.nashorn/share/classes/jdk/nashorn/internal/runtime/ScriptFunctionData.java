@@ -151,7 +151,7 @@ public abstract class ScriptFunctionData implements Serializable {
      * Is this a ScriptFunction generated with strict semantics?
      * @return true if strict, false otherwise
      */
-    public boolean isStrict() {
+    public final boolean isStrict() {
         return (flags & IS_STRICT) != 0;
     }
 
@@ -164,11 +164,11 @@ public abstract class ScriptFunctionData implements Serializable {
         return getName();
     }
 
-    boolean isBuiltin() {
+    final boolean isBuiltin() {
         return (flags & IS_BUILTIN) != 0;
     }
 
-    boolean isConstructor() {
+    final boolean isConstructor() {
         return (flags & IS_CONSTRUCTOR) != 0;
     }
 
@@ -179,7 +179,7 @@ public abstract class ScriptFunctionData implements Serializable {
      * according to ECMA 10.4.3.
      * @return true if this argument must be an object
      */
-    boolean needsWrappedThis() {
+    final boolean needsWrappedThis() {
         return (flags & USES_THIS) != 0 && (flags & IS_STRICT_OR_BUILTIN) == 0;
     }
 

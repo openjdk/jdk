@@ -203,12 +203,9 @@ public class ScriptFunction extends ScriptObject {
         // We have to fill user accessor functions late as these are stored
         // in this object rather than in the PropertyMap of this object.
         assert objectSpill == null;
-        final ScriptFunction typeErrorThrower = global.getTypeErrorThrower();
-        if (findProperty("arguments", true) != null) {
+        if (isStrict() || isBoundFunction()) {
+            final ScriptFunction typeErrorThrower = global.getTypeErrorThrower();
             initUserAccessors("arguments", Property.NOT_CONFIGURABLE | Property.NOT_ENUMERABLE, typeErrorThrower, typeErrorThrower);
-        }
-
-        if (findProperty("caller", true) != null) {
             initUserAccessors("caller", Property.NOT_CONFIGURABLE | Property.NOT_ENUMERABLE, typeErrorThrower, typeErrorThrower);
         }
     }
