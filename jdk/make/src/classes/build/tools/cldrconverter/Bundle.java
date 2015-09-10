@@ -27,15 +27,12 @@ package build.tools.cldrconverter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Enumeration;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.ResourceBundle;
 
 class Bundle {
     static enum Type {
@@ -117,6 +114,7 @@ class Bundle {
     private final String cldrPath;
     private final EnumSet<Type> bundleTypes;
     private final String currencies;
+    private Map<String, Object> targetMap;
 
     static Bundle getBundle(String id) {
         return bundles.get(id);
@@ -176,6 +174,10 @@ class Bundle {
      * visible for the bundle's locale
      */
     Map<String, Object> getTargetMap() throws Exception {
+        if (targetMap != null) {
+            return targetMap;
+        }
+
         String[] cldrBundles = getCLDRPath().split(",");
 
         // myMap contains resources for id.
@@ -398,6 +400,7 @@ class Bundle {
             }
         }
 
+        targetMap = myMap;
         return myMap;
     }
 
@@ -632,7 +635,7 @@ class Bundle {
         return null;
     }
 
-    static Object[][] jreTimeZoneNames = TimeZoneNames.getContents();
+    static List<Object[]> jreTimeZoneNames = Arrays.asList(TimeZoneNames.getContents());
     private void fillInJREs(String key, Map<String, String> map) {
         String tzid = null;
 
