@@ -67,7 +67,7 @@ void GenMarkSweep::invoke_at_safepoint(ReferenceProcessor* rp, bool clear_all_so
   // hook up weak ref data so it can be used during Mark-Sweep
   assert(ref_processor() == NULL, "no stomping");
   assert(rp != NULL, "should be non-NULL");
-  _ref_processor = rp;
+  set_ref_processor(rp);
   rp->setup_policy(clear_all_softrefs);
 
   GCTraceTime t1(GCCauseString("Full GC", gch->gc_cause()), PrintGC && !PrintGCDetails, true, NULL, _gc_tracer->gc_id());
@@ -136,7 +136,7 @@ void GenMarkSweep::invoke_at_safepoint(ReferenceProcessor* rp, bool clear_all_so
   }
 
   // refs processing: clean slate
-  _ref_processor = NULL;
+  set_ref_processor(NULL);
 
   // Update heap occupancy information which is used as
   // input to soft ref clearing policy at the next gc.

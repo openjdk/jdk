@@ -368,9 +368,17 @@ class Thread: public ThreadShadow {
   inline void clear_critical_native_unlock();
 
   // Support for Unhandled Oop detection
+  // Add the field for both, fastdebug and debug, builds to keep
+  // Thread's fields layout the same.
+  // Note: CHECK_UNHANDLED_OOPS is defined only for fastdebug build.
 #ifdef CHECK_UNHANDLED_OOPS
  private:
   UnhandledOops* _unhandled_oops;
+#elif defined(ASSERT)
+ private:
+  void* _unhandled_oops;
+#endif
+#ifdef CHECK_UNHANDLED_OOPS
  public:
   UnhandledOops* unhandled_oops() { return _unhandled_oops; }
   // Mark oop safe for gc.  It may be stack allocated but won't move.
@@ -383,12 +391,12 @@ class Thread: public ThreadShadow {
   }
 #endif // CHECK_UNHANDLED_OOPS
 
+ public:
 #ifndef PRODUCT
   bool skip_gcalot()           { return _skip_gcalot; }
   void set_skip_gcalot(bool v) { _skip_gcalot = v;    }
 #endif
 
- public:
   // Installs a pending exception to be inserted later
   static void send_async_exception(oop thread_oop, oop java_throwable);
 
