@@ -2211,9 +2211,13 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   }
 }
 
-const char* search_string = IA32_ONLY("model name") AMD64_ONLY("model name")
-                            IA64_ONLY("") SPARC_ONLY("cpu")
-                            ARM32_ONLY("Processor") PPC_ONLY("Processor") AARCH64_ONLY("Processor");
+#if defined(AMD64) || defined(IA32) || defined(X32)
+const char* search_string = "model name";
+#elif defined(SPARC)
+const char* search_string = "cpu";
+#else
+const char* search_string = "Processor";
+#endif
 
 // Parses the cpuinfo file for string representing the model name.
 void os::get_summary_cpu_info(char* cpuinfo, size_t length) {
@@ -2248,9 +2252,25 @@ void os::get_summary_cpu_info(char* cpuinfo, size_t length) {
   }
   // cpuinfo not found or parsing failed, just print generic string.  The entire
   // /proc/cpuinfo file will be printed later in the file (or enough of it for x86)
-  strncpy(cpuinfo, IA32_ONLY("x86_32") AMD64_ONLY("x86_32")
-                   IA64_ONLY("IA64") SPARC_ONLY("sparcv9")
-                   ARM32_ONLY("ARM") PPC_ONLY("PPC64") AARCH64_ONLY("AArch64"), length);
+#if defined(AMD64)
+  strncpy(cpuinfo, "x86_64", length);
+#elif defined(IA32)
+  strncpy(cpuinfo, "x86_32", length);
+#elif defined(IA64)
+  strncpy(cpuinfo, "IA64", length);
+#elif defined(SPARC)
+  strncpy(cpuinfo, "sparcv9", length);
+#elif defined(AARCH64)
+  strncpy(cpuinfo, "AArch64", length);
+#elif defined(ARM)
+  strncpy(cpuinfo, "ARM", length);
+#elif defined(PPC)
+  strncpy(cpuinfo, "PPC64", length);
+#elif defined(ZERO_LIBARCH)
+  strncpy(cpuinfo, ZERO_LIBARCH, length);
+#else
+  strncpy(cpuinfo, "unknown", length);
+#endif
 }
 
 void os::print_siginfo(outputStream* st, void* siginfo) {
