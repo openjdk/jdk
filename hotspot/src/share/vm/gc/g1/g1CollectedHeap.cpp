@@ -4102,7 +4102,8 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         g1_policy()->print_collection_set(g1_policy()->inc_cset_head(), gclog_or_tty);
 #endif // YOUNG_LIST_VERBOSE
 
-        g1_policy()->finalize_cset(target_pause_time_ms);
+        double time_remaining_ms = g1_policy()->finalize_young_cset_part(target_pause_time_ms);
+        g1_policy()->finalize_old_cset_part(time_remaining_ms);
 
         evacuation_info.set_collectionset_regions(g1_policy()->cset_region_length());
 
