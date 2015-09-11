@@ -244,7 +244,7 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
 
     /**
      * Creates a synthetic initializer for a variable (a var statement that doesn't occur in the source code). Typically
-     * used to create assignmnent of {@code :callee} to the function name symbol in self-referential function
+     * used to create assignment of {@code :callee} to the function name symbol in self-referential function
      * expressions as well as for assignment of {@code :arguments} to {@code arguments}.
      *
      * @param name the ident node identifying the variable to initialize

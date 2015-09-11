@@ -117,7 +117,7 @@ import jdk.internal.dynalink.support.RuntimeContextLinkRequestImpl;
  *         return factory.createLinker();
  *     }
  *
- *     public static CallSite bootstrap(MethodHandles.Lookup caller, String name, MethodType type) {
+ *     public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type) {
  *         return dynamicLinker.link(new MonomorphicCallSite(CallSiteDescriptorFactory.create(lookup, name, type)));
  *     }
  * }
