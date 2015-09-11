@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -258,7 +258,6 @@ public class DocCommentTester {
                     } catch (IOException e) {
                         source = "";
                     }
-
                     // remove existing gold by removing all block comments after the first '{'.
                     int start = source.indexOf("{");
                     while ((start = source.indexOf("\n/*\n", start)) != -1) {
@@ -663,8 +662,6 @@ public class DocCommentTester {
                 else
                     return s;
             }
-
-
         }
     }
 
@@ -763,17 +760,15 @@ public class DocCommentTester {
          * Normalize white space in places where the tree does not preserve it.
          */
         String normalize(String s) {
-            return s.trim()
-                    .replaceFirst("\\.\\s++([^@])", ". $1")
+            s = s.trim()
                     .replaceFirst("\\.\\s*\\n *@", ".\n@")
-                    .replaceFirst("\\s+<(/?p|pre|h[1-6])>", " <$1>")
                     .replaceAll("\\{@docRoot\\s+\\}", "{@docRoot}")
                     .replaceAll("\\{@inheritDoc\\s+\\}", "{@inheritDoc}")
                     .replaceAll("(\\{@value\\s+[^}]+)\\s+(\\})", "$1$2")
-                    .replaceAll("\n[ \t]+@", "\n@");
+                    .replaceAll("\n[ \t]+@", "\n@")
+                    .replaceAll("(\\{@code)(\\x20)(\\s+.*)", "$1$3");
+            return s;
         }
-
     }
-
 }
 
