@@ -473,7 +473,7 @@ private:
 
   // The number of bytes in the collection set before the pause. Set from
   // the incrementally built collection set at the start of an evacuation
-  // pause, and incremented in finalize_cset() when adding old regions
+  // pause, and incremented in finalize_old_cset_part() when adding old regions
   // (if any) to the collection set.
   size_t _collection_set_bytes_used_before;
 
@@ -689,7 +689,8 @@ public:
   // Choose a new collection set.  Marks the chosen regions as being
   // "in_collection_set", and links them together.  The head and number of
   // the collection set are available via access methods.
-  void finalize_cset(double target_pause_time_ms);
+  double finalize_young_cset_part(double target_pause_time_ms);
+  virtual void finalize_old_cset_part(double time_remaining_ms);
 
   // The head of the list (via "next_in_collection_set()") representing the
   // current collection set.
