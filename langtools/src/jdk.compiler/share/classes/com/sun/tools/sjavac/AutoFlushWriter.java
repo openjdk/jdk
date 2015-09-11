@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,38 +23,40 @@
  * questions.
  */
 
-package com.sun.tools.sjavac.server;
+package com.sun.tools.sjavac;
 
-import java.io.Serializable;
+import java.io.FilterWriter;
+import java.io.IOException;
+import java.io.Writer;
 
-/**
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
- */
-public class CompilationResult implements Serializable {
+public class AutoFlushWriter extends FilterWriter {
 
-    static final long serialVersionUID = 46739181113L;
-
-    // Return code constants
-    public final static int ERROR_FATAL = -1;
-
-    public String stdout;
-    public String stderr;
-    public int returnCode;
-
-    public CompilationResult(int returnCode) {
-        this(returnCode, "", "");
+    public AutoFlushWriter(Writer out) {
+        super(out);
     }
 
-    public CompilationResult(int returnCode, String stdout, String stderr) {
-        this.returnCode = returnCode;
-        this.stdout = stdout;
-        this.stderr = stderr;
+    @Override
+    public void write(int c) throws IOException {
+        super.write(c);
+        if (c == '\n' || c == '\r')
+            flush();
     }
 
-    public void setReturnCode(int returnCode) {
-        this.returnCode = returnCode;
+    @Override
+    public void write(String str, int off, int len) throws IOException {
+        super.write(str, off, len);
+        if (str.contains("\n") || str.contains("\r"))
+            flush();
+    }
+
+    @Override
+    public void write(char[] cbuf, int off, int len) throws IOException {
+        super.write(cbuf, off, len);
+        for (char c : cbuf) {
+            if (c == '\n' || c == '\r') {
+                flush();
+                break;
+            }
+        }
     }
 }

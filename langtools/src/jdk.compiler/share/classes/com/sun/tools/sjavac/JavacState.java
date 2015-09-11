@@ -31,7 +31,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintStream;
+import java.io.Writer;
 import java.net.URI;
 import java.nio.file.NoSuchFileException;
 import java.text.SimpleDateFormat;
@@ -131,12 +131,12 @@ public class JavacState {
     private CompileJavaPackages compileJavaPackages = new CompileJavaPackages();
 
     // Where to send stdout and stderr.
-    private PrintStream out, err;
+    private Writer out, err;
 
     // Command line options.
     private Options options;
 
-    JavacState(Options op, boolean removeJavacState, PrintStream o, PrintStream e) {
+    JavacState(Options op, boolean removeJavacState, Writer o, Writer e) {
         options = op;
         out = o;
         err = e;
@@ -311,7 +311,7 @@ public class JavacState {
     /**
      * Load a javac_state file.
      */
-    public static JavacState load(Options options, PrintStream out, PrintStream err) {
+    public static JavacState load(Options options, Writer out, Writer err) {
         JavacState db = new JavacState(options, false, out, err);
         Module  lastModule = null;
         Package lastPackage = null;
