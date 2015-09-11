@@ -25,11 +25,14 @@
 
 package com.sun.tools.sjavac.client;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.Writer;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -43,7 +46,6 @@ import com.sun.tools.sjavac.Util;
 import com.sun.tools.sjavac.options.OptionHelper;
 import com.sun.tools.sjavac.options.Options;
 import com.sun.tools.sjavac.server.CompilationSubResult;
-import com.sun.tools.sjavac.server.CompilationResult;
 import com.sun.tools.sjavac.server.PortFile;
 import com.sun.tools.sjavac.server.Sjavac;
 import com.sun.tools.sjavac.server.SjavacServer;
@@ -119,29 +121,47 @@ public class SjavacClient implements Sjavac {
     }
 
     @Override
-    public CompilationResult compile(String[] args) {
-        CompilationResult result;
+    public int compile(String[] args, Writer stdout, Writer stderr) {
+        int result = -1;
         try (Socket socket = tryConnect()) {
-            // The ObjectInputStream constructor will block until the
-            // corresponding ObjectOutputStream has written and flushed the
-            // header, so it is important that the ObjectOutputStreams on server
-            // and client are opened before the ObjectInputStreams.
-            ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-            ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
-            oos.writeObject(id);
-            oos.writeObject(SjavacServer.CMD_COMPILE);
-            oos.writeObject(args);
-            oos.flush();
-            result = (CompilationResult) ois.readObject();
-        } catch (IOException | ClassNotFoundException ex) {
-            Log.error("[CLIENT] Exception caught: " + ex);
-            result = new CompilationResult(CompilationSubResult.ERROR_FATAL);
-            result.stderr = Util.getStackTrace(ex);
+            PrintWriter out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+            // Send args array to server
+            out.println(args.length);
+            for (String arg : args)
+                out.println(arg);
+            out.flush();
+
+            // Read server response line by line
+            String line;
+            while (null != (line = in.readLine())) {
+                String[] typeAndContent = line.split(":", 2);
+                String type = typeAndContent[0];
+                String content = typeAndContent[1];
+                switch (type) {
+                case SjavacServer.LINE_TYPE_STDOUT:
+                    stdout.write(content);
+                    stdout.write('\n');
+                    break;
+                case SjavacServer.LINE_TYPE_STDERR:
+                    stderr.write(content);
+                    stderr.write('\n');
+                    break;
+                case SjavacServer.LINE_TYPE_RC:
+                    result = Integer.parseInt(content);
+                    break;
+                }
+            }
+        } catch (IOException ioe) {
+            Log.error("[CLIENT] Exception caught: " + ioe);
+            result = CompilationSubResult.ERROR_FATAL;
+            ioe.printStackTrace(new PrintWriter(stderr));
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt(); // Restore interrupt
             Log.error("[CLIENT] compile interrupted.");
-            result = new CompilationResult(CompilationSubResult.ERROR_FATAL);
-            result.stderr = Util.getStackTrace(ie);
+            result = CompilationSubResult.ERROR_FATAL;
+            ie.printStackTrace(new PrintWriter(stderr));
         }
         return result;
     }

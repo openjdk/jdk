@@ -31,7 +31,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.io.PrintStream;
 import java.io.Writer;
 import java.net.URI;
 import java.util.ArrayList;
@@ -78,8 +77,8 @@ public class CleanProperties implements Transformer {
                              int debugLevel,
                              boolean incremental,
                              int numCores,
-                             PrintStream out,
-                             PrintStream err) {
+                             Writer out,
+                             Writer err) {
         boolean rc = true;
         for (String pkgName : pkgSrcs.keySet()) {
             String pkgNameF = pkgName.replace('.',File.separatorChar);
