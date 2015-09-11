@@ -153,7 +153,7 @@ public final class Context {
      * Currently we are conservative and associate the name of a builtin class with all
      * its properties, so it's enough to invalidate a property to break all assumptions
      * about a prototype. This can be changed to a more fine grained approach, but no one
-     * ever needs this, given the very rare occurance of swapping out only parts of
+     * ever needs this, given the very rare occurrence of swapping out only parts of
      * a builtin v.s. the entire builtin object
      */
     private final Map<String, SwitchPoint> builtinSwitchPoints = new HashMap<>();
@@ -1475,7 +1475,7 @@ public final class Context {
      * @param level            log level
      * @param mh               method handle
      * @param paramStart       first parameter to print
-     * @param printReturnValue should we print the return vaulue?
+     * @param printReturnValue should we print the return value?
      * @param text             debug printout to add
      *
      * @return instrumented method handle, or null if logger not enabled
