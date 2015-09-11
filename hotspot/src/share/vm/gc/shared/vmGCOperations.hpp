@@ -213,15 +213,18 @@ class VM_CollectForMetadataAllocation: public VM_GC_Operation {
   size_t                   _size;     // size of object to be allocated
   Metaspace::MetadataType  _mdtype;
   ClassLoaderData*         _loader_data;
+
  public:
   VM_CollectForMetadataAllocation(ClassLoaderData* loader_data,
-                                  size_t size, Metaspace::MetadataType mdtype,
+                                  size_t size,
+                                  Metaspace::MetadataType mdtype,
                                   uint gc_count_before,
                                   uint full_gc_count_before,
                                   GCCause::Cause gc_cause)
     : VM_GC_Operation(gc_count_before, gc_cause, full_gc_count_before, true),
       _loader_data(loader_data), _size(size), _mdtype(mdtype), _result(NULL) {
   }
+
   virtual VMOp_Type type() const { return VMOp_CollectForMetadataAllocation; }
   virtual void doit();
   MetaWord* result() const       { return _result; }

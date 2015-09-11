@@ -3958,7 +3958,7 @@ void MacroAssembler::card_write_barrier_post(Register store_addr, Register new_v
   if (new_val == G0) return;
   CardTableModRefBS* bs =
     barrier_set_cast<CardTableModRefBS>(Universe::heap()->barrier_set());
-  assert(bs->kind() == BarrierSet::CardTableModRef ||
+  assert(bs->kind() == BarrierSet::CardTableForRS ||
          bs->kind() == BarrierSet::CardTableExtension, "wrong barrier");
   card_table_write(bs->byte_map_base, tmp, store_addr);
 }

@@ -80,5 +80,3 @@ struct Format3AnchorTable : AnchorTable
 
 U_NAMESPACE_END
 #endif
-
-

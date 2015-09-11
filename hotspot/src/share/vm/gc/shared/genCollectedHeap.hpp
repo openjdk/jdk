@@ -173,8 +173,7 @@ public:
 
   size_t max_capacity() const;
 
-  HeapWord* mem_allocate(size_t size,
-                         bool*  gc_overhead_limit_was_exceeded);
+  HeapWord* mem_allocate(size_t size, bool*  gc_overhead_limit_was_exceeded);
 
   // We may support a shared contiguous allocation area, if the youngest
   // generation does.
@@ -403,7 +402,7 @@ public:
 
   void gen_process_roots(StrongRootsScope* scope,
                          GenerationType type,
-                         bool younger_gens_as_roots,
+                         bool young_gen_as_roots,
                          ScanningOption so,
                          bool only_strong_roots,
                          OopsInGenClosure* not_older_gens,

@@ -160,17 +160,17 @@ class StealTask : public GCTask {
 
 class OldToYoungRootsTask : public GCTask {
  private:
-  PSOldGen* _gen;
+  PSOldGen* _old_gen;
   HeapWord* _gen_top;
   uint _stripe_number;
   uint _stripe_total;
 
  public:
-  OldToYoungRootsTask(PSOldGen *gen,
+  OldToYoungRootsTask(PSOldGen *old_gen,
                       HeapWord* gen_top,
                       uint stripe_number,
                       uint stripe_total) :
-    _gen(gen),
+    _old_gen(old_gen),
     _gen_top(gen_top),
     _stripe_number(stripe_number),
     _stripe_total(stripe_total) { }

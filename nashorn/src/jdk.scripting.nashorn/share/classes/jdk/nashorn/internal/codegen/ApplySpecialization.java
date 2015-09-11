@@ -283,17 +283,13 @@ public final class ApplySpecialization extends NodeVisitor<LexicalContext> imple
             start++;
         }
 
-        start++; //we always uses this
+        start++; // we always use this
 
-        final List<IdentNode> params    = functionNode.getParameters();
+        assert functionNode.getNumOfParams() == 0 : "apply2call on function with named paramaters!";
         final List<IdentNode> newParams = new ArrayList<>();
-        final long to = Math.max(params.size(), actualCallSiteType.parameterCount() - start);
+        final long to = actualCallSiteType.parameterCount() - start;
         for (int i = 0; i < to; i++) {
-            if (i >= params.size()) {
-                newParams.add(new IdentNode(functionNode.getToken(), functionNode.getFinish(), EXPLODED_ARGUMENT_PREFIX.symbolName() + (i)));
-            } else {
-                newParams.add(params.get(i));
-            }
+            newParams.add(new IdentNode(functionNode.getToken(), functionNode.getFinish(), EXPLODED_ARGUMENT_PREFIX.symbolName() + (i)));
         }
 
         callSiteTypes.push(actualCallSiteType);
@@ -313,6 +309,10 @@ public final class ApplySpecialization extends NodeVisitor<LexicalContext> imple
         }
 
         if (!compiler.isOnDemandCompilation()) {
+            return false;
+        }
+
+        if (functionNode.getNumOfParams() != 0) {
             return false;
         }
 

@@ -189,7 +189,7 @@ public final class Bootstrap {
      * @return true if the obj is an instance of @FunctionalInterface interface
      */
     public static boolean isFunctionalInterfaceObject(final Object obj) {
-        return !JSType.isPrimitive(obj) && (NashornBeansLinker.getFunctionalInterfaceMethod(obj.getClass()) != null);
+        return !JSType.isPrimitive(obj) && (NashornBeansLinker.getFunctionalInterfaceMethodName(obj.getClass()) != null);
     }
 
     /**

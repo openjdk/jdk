@@ -23,40 +23,41 @@
 
 /*
  * @test
- * @bug 8005166
+ * @bug 8005166 8129962
  * @summary Add support for static interface methods
  *          Smoke test for static interface method hiding
- * @modules jdk.compiler
- * @run main/timeout=600 InterfaceMethodHidingTest
+ * @library /tools/javac/lib
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.code
+ *          jdk.compiler/com.sun.tools.javac.comp
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.javac.tree
+ *          jdk.compiler/com.sun.tools.javac.util
+ * @build combo.ComboTestHelper
+ * @run main InterfaceMethodHidingTest
  */
 
-import com.sun.source.util.JavacTask;
-import java.net.URI;
-import java.util.Arrays;
-import javax.tools.Diagnostic;
-import javax.tools.JavaCompiler;
-import javax.tools.JavaFileObject;
-import javax.tools.SimpleJavaFileObject;
-import javax.tools.StandardJavaFileManager;
-import javax.tools.ToolProvider;
+import java.io.IOException;
 
+import combo.ComboInstance;
+import combo.ComboParameter;
+import combo.ComboTask.Result;
+import combo.ComboTestHelper;
 
-public class InterfaceMethodHidingTest {
+public class InterfaceMethodHidingTest extends ComboInstance<InterfaceMethodHidingTest> {
 
-    static int checkCount = 0;
-
-    enum SignatureKind {
-        VOID_INTEGER("void m(Integer s)", "return;"),
-        STRING_INTEGER("String m(Integer s)", "return null;"),
-        VOID_STRING("void m(String s)", "return;"),
-        STRING_STRING("String m(String s)", "return null;");
+    enum SignatureKind implements ComboParameter {
+        VOID_INTEGER("void m(Integer s)", false),
+        STRING_INTEGER("String m(Integer s)", true),
+        VOID_STRING("void m(String s)", false),
+        STRING_STRING("String m(String s)", true);
 
         String sigStr;
-        String retStr;
+        boolean needsReturn;
 
-        SignatureKind(String sigStr, String retStr) {
+        SignatureKind(String sigStr, boolean needsReturn) {
             this.sigStr = sigStr;
-            this.retStr = retStr;
+            this.needsReturn = needsReturn;
         }
 
         boolean overrideEquivalentWith(SignatureKind s2) {
@@ -71,18 +72,21 @@ public class InterfaceMethodHidingTest {
                     throw new AssertionError("bad signature kind");
             }
         }
+
+        @Override
+        public String expand(String optParameter) {
+            return sigStr;
+        }
     }
 
-    enum MethodKind {
-        VIRTUAL("", "#M #S;"),
-        STATIC("static", "#M #S { #BE; #R }"),
-        DEFAULT("default", "#M #S { #BE; #R }");
+    enum MethodKind implements ComboParameter {
+        VIRTUAL("#{SIG[#IDX]};"),
+        STATIC("static #{SIG[#IDX]} { #{BODY[#IDX]}; #{RET.#IDX} }"),
+        DEFAULT("default #{SIG[#IDX]} { #{BODY[#IDX]}; #{RET.#IDX} }");
 
-        String modStr;
         String methTemplate;
 
-        MethodKind(String modStr, String methTemplate) {
-            this.modStr = modStr;
+        MethodKind(String methTemplate) {
             this.methTemplate = methTemplate;
         }
 
@@ -96,15 +100,13 @@ public class InterfaceMethodHidingTest {
                     mk1 != STATIC;
         }
 
-        String getBody(BodyExpr be, SignatureKind sk) {
-            return methTemplate.replaceAll("#BE", be.bodyExprStr)
-                    .replaceAll("#R", sk.retStr)
-                    .replaceAll("#M", modStr)
-                    .replaceAll("#S", sk.sigStr);
+        @Override
+        public String expand(String optParameter) {
+            return methTemplate.replaceAll("#IDX", optParameter);
         }
     }
 
-    enum BodyExpr {
+    enum BodyExpr implements ComboParameter {
         NONE(""),
         THIS("Object o = this");
 
@@ -118,129 +120,78 @@ public class InterfaceMethodHidingTest {
             return this == NONE ||
                     mk != MethodKind.STATIC;
         }
+
+        @Override
+        public String expand(String optParameter) {
+            return bodyExprStr;
+        }
     }
 
     public static void main(String... args) throws Exception {
-
-        //create default shared JavaCompiler - reused across multiple compilations
-        JavaCompiler comp = ToolProvider.getSystemJavaCompiler();
-        try (StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null)) {
-
-            for (MethodKind mk1 : MethodKind.values()) {
-                for (SignatureKind sk1 : SignatureKind.values()) {
-                    for (BodyExpr be1 : BodyExpr.values()) {
-                        for (MethodKind mk2 : MethodKind.values()) {
-                            for (SignatureKind sk2 : SignatureKind.values()) {
-                                for (BodyExpr be2 : BodyExpr.values()) {
-                                    for (MethodKind mk3 : MethodKind.values()) {
-                                        for (SignatureKind sk3 : SignatureKind.values()) {
-                                            for (BodyExpr be3 : BodyExpr.values()) {
-                                                new InterfaceMethodHidingTest(mk1, mk2, mk3, sk1, sk2, sk3, be1, be2, be3).run(comp, fm);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            System.out.println("Total check executed: " + checkCount);
-        }
+        new ComboTestHelper<InterfaceMethodHidingTest>()
+                .withArrayDimension("SIG", (x, sig, idx) -> x.signatureKinds[idx] = sig, 3, SignatureKind.values())
+                .withArrayDimension("BODY", (x, body, idx) -> x.bodyExprs[idx] = body, 3, BodyExpr.values())
+                .withArrayDimension("MET", (x, meth, idx) -> x.methodKinds[idx] = meth, 3, MethodKind.values())
+                .run(InterfaceMethodHidingTest::new);
     }
 
-    MethodKind mk1, mk2, mk3;
-    SignatureKind sk1, sk2, sk3;
-    BodyExpr be1, be2, be3;
-    JavaSource source;
-    DiagnosticChecker diagChecker;
+    MethodKind[] methodKinds = new MethodKind[3];
+    SignatureKind[] signatureKinds = new SignatureKind[3];
+    BodyExpr[] bodyExprs = new BodyExpr[3];
 
-    InterfaceMethodHidingTest(MethodKind mk1, MethodKind mk2, MethodKind mk3,
-            SignatureKind sk1, SignatureKind sk2, SignatureKind sk3, BodyExpr be1, BodyExpr be2, BodyExpr be3) {
-        this.mk1 = mk1;
-        this.mk2 = mk2;
-        this.mk3 = mk3;
-        this.sk1 = sk1;
-        this.sk2 = sk2;
-        this.sk3 = sk3;
-        this.be1 = be1;
-        this.be2 = be2;
-        this.be3 = be3;
-        this.source = new JavaSource();
-        this.diagChecker = new DiagnosticChecker();
-    }
-
-    class JavaSource extends SimpleJavaFileObject {
-
-        String template = "interface Sup {\n" +
+    String template = "interface Sup {\n" +
                           "   default void sup() { }\n" +
                           "}\n" +
                           "interface A extends Sup {\n" +
-                          "   #M1\n" +
+                          "   #{MET[0].0}\n" +
                           "}\n" +
                           "interface B extends A, Sup {\n" +
-                          "   #M2\n" +
+                          "   #{MET[1].1}\n" +
                           "}\n" +
                           "interface C extends B, Sup {\n" +
-                          "   #M3\n" +
+                          "   #{MET[2].2}\n" +
                           "}\n";
 
-        String source;
+    @Override
+    public void doWork() throws IOException {
+        check(newCompilationTask()
+                .withOption("-XDallowStaticInterfaceMethods")
+                .withSourceFromTemplate(template, this::returnExpr)
+                .analyze());
+    }
 
-        public JavaSource() {
-            super(URI.create("myfo:/Test.java"), JavaFileObject.Kind.SOURCE);
-            source = template.replaceAll("#M1", mk1.getBody(be1, sk1))
-                    .replaceAll("#M2", mk2.getBody(be2, sk2))
-                    .replaceAll("#M3", mk3.getBody(be3, sk3));
-        }
-
-        @Override
-        public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-            return source;
+    ComboParameter returnExpr(String name) {
+        switch (name) {
+            case "RET":
+                return optParameter -> {
+                    int idx = new Integer(optParameter);
+                    return signatureKinds[idx].needsReturn ? "return null;" : "return;";
+                };
+            default:
+                return null;
         }
     }
 
-    void run(JavaCompiler tool, StandardJavaFileManager fm) throws Exception {
-        JavacTask ct = (JavacTask)tool.getTask(null, fm, diagChecker,
-                Arrays.asList("-XDallowStaticInterfaceMethods"), null, Arrays.asList(source));
-        try {
-            ct.analyze();
-        } catch (Throwable ex) {
-            throw new AssertionError("Error thrown when analyzing the following source:\n" + source.getCharContent(true));
-        }
-        check();
-    }
+    void check(Result<?> res) {
+        boolean errorExpected = !bodyExprs[0].allowed(methodKinds[0]) ||
+                !bodyExprs[1].allowed(methodKinds[1]) ||
+                !bodyExprs[2].allowed(methodKinds[2]);
 
-    void check() {
-        boolean errorExpected =
-                !be1.allowed(mk1) || !be2.allowed(mk2) || !be3.allowed(mk3);
-
-        if (mk1.inherithed()) {
-            errorExpected |=
-                    sk2.overrideEquivalentWith(sk1) && !MethodKind.overrides(mk2, sk2, mk1, sk1) ||
-                    sk3.overrideEquivalentWith(sk1) && !MethodKind.overrides(mk3, sk3, mk1, sk1);
+        if (methodKinds[0].inherithed()) {
+            errorExpected |= signatureKinds[1].overrideEquivalentWith(signatureKinds[0]) &&
+                    !MethodKind.overrides(methodKinds[1], signatureKinds[1], methodKinds[0], signatureKinds[0]) ||
+                    signatureKinds[2].overrideEquivalentWith(signatureKinds[0]) &&
+                    !MethodKind.overrides(methodKinds[2], signatureKinds[2], methodKinds[0], signatureKinds[0]);
         }
 
-        if (mk2.inherithed()) {
-            errorExpected |=
-                    sk3.overrideEquivalentWith(sk2) && !MethodKind.overrides(mk3, sk3, mk2, sk2);
+        if (methodKinds[1].inherithed()) {
+            errorExpected |= signatureKinds[2].overrideEquivalentWith(signatureKinds[1]) &&
+                    !MethodKind.overrides(methodKinds[2], signatureKinds[2], methodKinds[1], signatureKinds[1]);
         }
 
-        checkCount++;
-        if (diagChecker.errorFound != errorExpected) {
-            throw new AssertionError("Problem when compiling source:\n" + source.getCharContent(true) +
-                    "\nfound error: " + diagChecker.errorFound);
-        }
-    }
-
-    static class DiagnosticChecker implements javax.tools.DiagnosticListener<JavaFileObject> {
-
-        boolean errorFound;
-
-        public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
-            if (diagnostic.getKind() == Diagnostic.Kind.ERROR) {
-                errorFound = true;
-            }
+        if (res.hasErrors() != errorExpected) {
+            fail("Problem when compiling source:\n" + res.compilationInfo() +
+                    "\nfound error: " + res.hasErrors());
         }
     }
 }

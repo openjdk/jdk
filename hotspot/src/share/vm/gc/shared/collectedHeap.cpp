@@ -160,16 +160,20 @@ void CollectedHeap::trace_heap_after_gc(const GCTracer* gc_tracer) {
 // Memory state functions.
 
 
-CollectedHeap::CollectedHeap() {
+CollectedHeap::CollectedHeap() :
+  _barrier_set(NULL),
+  _is_gc_active(false),
+  _total_collections(0),
+  _total_full_collections(0),
+  _gc_cause(GCCause::_no_gc),
+  _gc_lastcause(GCCause::_no_gc),
+  _defer_initial_card_mark(false) // strengthened by subclass in pre_initialize() below.
+{
   const size_t max_len = size_t(arrayOopDesc::max_array_length(T_INT));
   const size_t elements_per_word = HeapWordSize / sizeof(jint);
   _filler_array_max_size = align_object_size(filler_array_hdr_size() +
                                              max_len / elements_per_word);
 
-  _barrier_set = NULL;
-  _is_gc_active = false;
-  _total_collections = _total_full_collections = 0;
-  _gc_cause = _gc_lastcause = GCCause::_no_gc;
   NOT_PRODUCT(_promotion_failure_alot_count = 0;)
   NOT_PRODUCT(_promotion_failure_alot_gc_number = 0;)
 
@@ -184,7 +188,7 @@ CollectedHeap::CollectedHeap() {
                 PerfDataManager::create_string_variable(SUN_GC, "lastCause",
                              80, GCCause::to_string(_gc_lastcause), CHECK);
   }
-  _defer_initial_card_mark = false; // strengthened by subclass in pre_initialize() below.
+
   // Create the ring log
   if (LogEvents) {
     _gc_heap_log = new GCHeapLog();
@@ -570,8 +574,8 @@ void CollectedHeap::resize_all_tlabs() {
 void CollectedHeap::pre_full_gc_dump(GCTimer* timer) {
   if (HeapDumpBeforeFullGC) {
     GCTraceTime tt("Heap Dump (before full gc): ", PrintGCDetails, false, timer, GCId::create());
-    // We are doing a "major" collection and a heap dump before
-    // major collection has been requested.
+    // We are doing a full collection and a heap dump before
+    // full collection has been requested.
     HeapDumper::dump_heap();
   }
   if (PrintClassHistogramBeforeFullGC) {

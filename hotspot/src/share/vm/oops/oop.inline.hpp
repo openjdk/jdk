@@ -695,10 +695,6 @@ inline intptr_t oopDesc::identity_hash() {
   }
 }
 
-inline void oopDesc::ms_follow_contents() {
-  klass()->oop_ms_follow_contents(this);
-}
-
 inline int oopDesc::ms_adjust_pointers() {
   debug_only(int check_size = size());
   int s = klass()->oop_ms_adjust_pointers(this);
@@ -730,34 +726,50 @@ inline void oopDesc::ps_push_contents(PSPromotionManager* pm) {
 }
 #endif
 
-#define OOP_ITERATE_DEFN(OopClosureType, nv_suffix)                   \
-                                                                      \
-inline int oopDesc::oop_iterate(OopClosureType* blk) {                \
-  return klass()->oop_oop_iterate##nv_suffix(this, blk);              \
-}                                                                     \
-                                                                      \
-inline int oopDesc::oop_iterate(OopClosureType* blk, MemRegion mr) {  \
-  return klass()->oop_oop_iterate_bounded##nv_suffix(this, blk, mr);  \
+#define OOP_ITERATE_DEFN(OopClosureType, nv_suffix)                    \
+                                                                       \
+inline void oopDesc::oop_iterate(OopClosureType* blk) {                \
+  klass()->oop_oop_iterate##nv_suffix(this, blk);                      \
+}                                                                      \
+                                                                       \
+inline void oopDesc::oop_iterate(OopClosureType* blk, MemRegion mr) {  \
+  klass()->oop_oop_iterate_bounded##nv_suffix(this, blk, mr);          \
 }
 
+#define OOP_ITERATE_SIZE_DEFN(OopClosureType, nv_suffix)               \
+                                                                       \
+inline int oopDesc::oop_iterate_size(OopClosureType* blk) {            \
+  Klass* k = klass();                                                  \
+  int size = size_given_klass(k);                                      \
+  k->oop_oop_iterate##nv_suffix(this, blk);                            \
+  return size;                                                         \
+}                                                                      \
+                                                                       \
+inline int oopDesc::oop_iterate_size(OopClosureType* blk,              \
+                                     MemRegion mr) {                   \
+  Klass* k = klass();                                                  \
+  int size = size_given_klass(k);                                      \
+  k->oop_oop_iterate_bounded##nv_suffix(this, blk, mr);                \
+  return size;                                                         \
+}
 
 inline int oopDesc::oop_iterate_no_header(OopClosure* blk) {
   // The NoHeaderExtendedOopClosure wraps the OopClosure and proxies all
   // the do_oop calls, but turns off all other features in ExtendedOopClosure.
   NoHeaderExtendedOopClosure cl(blk);
-  return oop_iterate(&cl);
+  return oop_iterate_size(&cl);
 }
 
 inline int oopDesc::oop_iterate_no_header(OopClosure* blk, MemRegion mr) {
   NoHeaderExtendedOopClosure cl(blk);
-  return oop_iterate(&cl, mr);
+  return oop_iterate_size(&cl, mr);
 }
 
 #if INCLUDE_ALL_GCS
 #define OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)       \
                                                                     \
-inline int oopDesc::oop_iterate_backwards(OopClosureType* blk) {    \
-  return klass()->oop_oop_iterate_backwards##nv_suffix(this, blk);  \
+inline void oopDesc::oop_iterate_backwards(OopClosureType* blk) {   \
+  klass()->oop_oop_iterate_backwards##nv_suffix(this, blk);         \
 }
 #else
 #define OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)
@@ -765,6 +777,7 @@ inline int oopDesc::oop_iterate_backwards(OopClosureType* blk) {    \
 
 #define ALL_OOPDESC_OOP_ITERATE(OopClosureType, nv_suffix)  \
   OOP_ITERATE_DEFN(OopClosureType, nv_suffix)               \
+  OOP_ITERATE_SIZE_DEFN(OopClosureType, nv_suffix)          \
   OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)
 
 ALL_OOP_OOP_ITERATE_CLOSURES_1(ALL_OOPDESC_OOP_ITERATE)
