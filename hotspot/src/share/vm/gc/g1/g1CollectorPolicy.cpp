@@ -2037,7 +2037,7 @@ void G1CollectorPolicy::finalize_old_cset_part(double time_remaining_ms) {
       // We will add this region to the CSet.
       time_remaining_ms = MAX2(time_remaining_ms - predicted_time_ms, 0.0);
       predicted_old_time_ms += predicted_time_ms;
-      cset_chooser->remove_and_move_to_next(hr);
+      cset_chooser->pop(); // already have region via peek()
       _g1->old_set_remove(hr);
       add_old_region_to_cset(hr);
 
