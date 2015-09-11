@@ -1494,7 +1494,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                     int argsCount;
                     @Override
                     void loadStack() {
-                        /**
+                        /*
                          * We want to load 'eval' to check if it is indeed global builtin eval.
                          * If this eval call is inside a 'with' statement, dyn:getMethod|getProp|getElem
                          * would be generated if ident is a "isFunction". But, that would result in a
@@ -4329,7 +4329,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         }
 
         private void prologue() {
-            /**
+            /*
              * This loads the parts of the target, e.g base and index. they are kept
              * on the stack throughout the store and used at the end to execute it
              */
@@ -4797,7 +4797,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
          * conversion has no side effects.
          * @param name the name of the property being get
          * @param flags call site flags
-         * @param isMethod whether we're preferrably retrieving a function
+         * @param isMethod whether we're preferably retrieving a function
          * @return the current method emitter
          */
         MethodEmitter dynamicGet(final String name, final int flags, final boolean isMethod, final boolean isIndex) {
@@ -5229,7 +5229,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         private Type returnValueType;
         // If we are in the middle of an object literal initialization, we need to update the map
         private PropertyMap objectLiteralMap;
-        // Object literal stack depth for object literal - not necessarly top if property is a tree
+        // Object literal stack depth for object literal - not necessarily top if property is a tree
         private int objectLiteralStackDepth = -1;
         // The line number at the continuation point
         private int lineNumber;
@@ -5394,7 +5394,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 method.load(lvarTypes.get(slot), slot);
                 method.convert(stackTypes[i]);
                 // stack: s0=object literal being initialized
-                // change map of s0 so that the property we are initilizing when we failed
+                // change map of s0 so that the property we are initializing when we failed
                 // is now ci.returnValueType
                 if (i == objectLiteralStackDepth) {
                     method.dup();

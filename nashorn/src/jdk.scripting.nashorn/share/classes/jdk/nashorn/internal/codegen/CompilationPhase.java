@@ -745,7 +745,7 @@ enum CompilationPhase {
     abstract FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode functionNode) throws CompilationException;
 
     /**
-     * Apply a transform to a function node, returning the transfored function node. If the transform is not
+     * Apply a transform to a function node, returning the transformed function node. If the transform is not
      * applicable, an exception is thrown. Every transform requires the function to have a certain number of
      * states to operate. It can have more states set, but not fewer. The state list, i.e. the constructor
      * arguments to any of the CompilationPhase enum entries, is a set of REQUIRED states.

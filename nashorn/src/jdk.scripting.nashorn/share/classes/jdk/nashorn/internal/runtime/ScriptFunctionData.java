@@ -318,7 +318,7 @@ public abstract class ScriptFunctionData implements Serializable {
      * Used to find an apply to call version that fits this callsite.
      * We cannot just, as in the normal matcher case, return e.g. (Object, Object, int)
      * for (Object, Object, int, int, int) or we will destroy the semantics and get
-     * a function that, when padded with undefineds, behaves differently
+     * a function that, when padded with undefined values, behaves differently
      * @param type actual call site type
      * @return apply to call that perfectly fits this callsite or null if none found
      */
