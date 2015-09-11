@@ -534,8 +534,7 @@ define SetupModuleCompilation
     ## Service types are required in the classpath when compiing module-info
     $1_CLASSPATH := $$($1_CLASSPATH) $$(addprefix $(JDK_OUTPUTDIR)/modules/,jdk.hotspot.agent)
   endif
-  $1_CLASSPATH := $$(subst $$(SPACE),$$(PATH_SEP),$$($1_CLASSPATH))
-  $1_JAVAC_FLAGS := -bootclasspath $(EMPTY_DIR) -extdirs $(EMPTY_DIR) -endorseddirs $(EMPTY_DIR) -classpath "$$($1_CLASSPATH)" $$($1_ADD_JAVAC_FLAGS)
+  $1_JAVAC_FLAGS := -bootclasspath $(EMPTY_DIR) -extdirs $(EMPTY_DIR) -endorseddirs $(EMPTY_DIR) $$($1_ADD_JAVAC_FLAGS)
 
   $$(eval $$(call SetupJavaCompilation,$1, \
       SETUP := $$(if $$($1_SETUP), $$($1_SETUP), GENERATE_JDKBYTECODE), \
@@ -543,6 +542,7 @@ define SetupModuleCompilation
       INCLUDES := $(JDK_USER_DEFINED_FILTER),\
       BIN := $$(if $$($1_BIN), $$($1_BIN), $(JDK_OUTPUTDIR)/modules/$1), \
       HEADERS := $(SUPPORT_OUTPUTDIR)/headers/$1, \
+      CLASSPATH := $$($1_CLASSPATH), \
       ADD_JAVAC_FLAGS := $$($1_ADD_JAVAC_FLAGS) $$($1_JAVAC_FLAGS)))
 
   $1: $$($1) $$($1_COPY_EXTRA)
