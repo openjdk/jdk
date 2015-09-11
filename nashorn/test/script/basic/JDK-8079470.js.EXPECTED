@@ -1,2 +1,2 @@
-TypeError: Can not create new object with constructor [jdk.internal.dynalink.beans.SimpleDynamicMethod File java.io.File.java.io.File(String,String)] with the passed arguments; they do not match any of its method signatures.
-TypeError: Can not create new object with constructor [jdk.internal.dynalink.beans.SimpleDynamicMethod Color java.awt.Color.java.awt.Color(int,int,int)] with the passed arguments; they do not match any of its method signatures.
+TypeError: Can not create new object with constructor [jdk.internal.dynalink.beans.SimpleDynamicMethod java.io.File(String,String)] with the passed arguments; they do not match any of its method signatures.
+TypeError: Can not create new object with constructor [jdk.internal.dynalink.beans.SimpleDynamicMethod java.awt.Color(int,int,int)] with the passed arguments; they do not match any of its method signatures.

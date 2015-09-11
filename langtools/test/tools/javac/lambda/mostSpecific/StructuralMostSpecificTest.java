@@ -23,34 +23,36 @@
 
 /*
  * @test
- * @bug 8003280 8006694
+ * @bug 8003280 8006694 8129962
  * @summary Add lambda tests
  *  Automatic test for checking correctness of structural most specific test routine
  *  temporarily workaround combo tests are causing time out in several platforms
- * @library ../../lib
+ * @library /tools/javac/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.code
+ *          jdk.compiler/com.sun.tools.javac.comp
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util
- * @build JavacTestingAbstractThreadedTest
- * @run main/othervm/timeout=600 StructuralMostSpecificTest
+ * @build combo.ComboTestHelper
+
+ * @run main StructuralMostSpecificTest
  */
 
-// use /othervm to avoid jtreg timeout issues (CODETOOLS-7900047)
-// see JDK-8006746
-
-import java.net.URI;
-import java.util.Arrays;
+import javax.lang.model.element.Element;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
-import javax.tools.SimpleJavaFileObject;
-import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.api.ClientCodeWrapper;
 import com.sun.tools.javac.util.JCDiagnostic;
+import com.sun.tools.javac.util.List;
+import combo.ComboInstance;
+import combo.ComboParameter;
+import combo.ComboTask.Result;
+import combo.ComboTestHelper;
 
-public class StructuralMostSpecificTest
-    extends JavacTestingAbstractThreadedTest
-    implements Runnable {
+public class StructuralMostSpecificTest extends ComboInstance<StructuralMostSpecificTest> {
 
-    enum RetTypeKind {
+    enum RetTypeKind implements ComboParameter {
         SHORT("short"),
         INT("int"),
         OBJECT("Object"),
@@ -76,9 +78,13 @@ public class StructuralMostSpecificTest
                 /* INTEGER */ { false , false , true   , true    , false , false },
                 /* VOID */    { false , false , false  , false   , true  , true  },
                 /* J_L_VOID */{ false , false , true   , false   , false , true  } };
+
+        public String expand(String optParameter) {
+            return retTypeStr;
+        }
     }
 
-    enum ArgTypeKind {
+    enum ArgTypeKind implements ComboParameter {
         SHORT("short"),
         INT("int"),
         BOOLEAN("boolean"),
@@ -91,9 +97,13 @@ public class StructuralMostSpecificTest
         ArgTypeKind(String typeStr) {
             this.argTypeStr = typeStr;
         }
+
+        public String expand(String optParameter) {
+            return argTypeStr;
+        }
     }
 
-    enum ExceptionKind {
+    enum ExceptionKind implements ComboParameter {
         NONE(""),
         EXCEPTION("throws Exception"),
         SQL_EXCEPTION("throws java.sql.SQLException"),
@@ -104,9 +114,13 @@ public class StructuralMostSpecificTest
         ExceptionKind(String exceptionStr) {
             this.exceptionStr = exceptionStr;
         }
+
+        public String expand(String optParameter) {
+            return exceptionStr;
+        }
     }
 
-    enum LambdaReturnKind {
+    enum LambdaReturnKind implements ComboParameter {
         VOID("return;"),
         SHORT("return (short)0;"),
         INT("return 0;"),
@@ -144,118 +158,72 @@ public class StructuralMostSpecificTest
                 /* INTEGER */ { false , false , true    , false   , false },
                 /* VOID */    { false , false , false   , false   , false },
                 /* J_L_VOID */{ true  , false , false   , false   , false } };
+
+        public String expand(String optParameter) {
+            return retStr;
+        }
     }
+
+    static final String sourceTemplate =
+            "interface SAM1 {\n" +
+            "   #{RET[0]} m(#{ARG[0]} a1) #{EX[0]};\n" +
+            "}\n" +
+            "interface SAM2 {\n" +
+            "   #{RET[1]} m(#{ARG[1]} a1) #{EX[1]};\n" +
+            "}\n" +
+            "class Test {\n" +
+            "   void m(SAM1 s) { }\n" +
+            "   void m(SAM2 s) { }\n" +
+            "   { m((#{ARG[0]} x)->{ #{EXPR} }); }\n" +
+            "}\n";
 
     public static void main(String... args) throws Exception {
-        for (LambdaReturnKind lrk : LambdaReturnKind.values()) {
-            for (RetTypeKind rk1 : RetTypeKind.values()) {
-                for (RetTypeKind rk2 : RetTypeKind.values()) {
-                    for (ExceptionKind ek1 : ExceptionKind.values()) {
-                        for (ExceptionKind ek2 : ExceptionKind.values()) {
-                            for (ArgTypeKind ak11 : ArgTypeKind.values()) {
-                                for (ArgTypeKind ak12 : ArgTypeKind.values()) {
-                                    pool.execute(
-                                        new StructuralMostSpecificTest(lrk, rk1,
-                                            rk2, ek1, ek2, ak11, ak12));
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        checkAfterExec();
+        new ComboTestHelper<StructuralMostSpecificTest>()
+                .withFilter(StructuralMostSpecificTest::hasSameArguments)
+                .withFilter(StructuralMostSpecificTest::hasCompatibleReturns)
+                .withFilter(StructuralMostSpecificTest::hasSameOverloadPhase)
+                .withDimension("EXPR", (x, expr) -> x.lambdaReturnKind = expr, LambdaReturnKind.values())
+                .withArrayDimension("RET", (x, ret, idx) -> x.returnType[idx] = ret, 2, RetTypeKind.values())
+                .withArrayDimension("EX", 2, ExceptionKind.values())
+                .withArrayDimension("ARG", (x, arg, idx) -> x.argumentKind[idx] = arg, 2, ArgTypeKind.values())
+                .run(StructuralMostSpecificTest::new);
     }
 
-    LambdaReturnKind lrk;
-    RetTypeKind rt1, rt2;
-    ArgTypeKind ak1, ak2;
-    ExceptionKind ek1, ek2;
-    JavaSource source;
-    DiagnosticChecker diagChecker;
+    LambdaReturnKind lambdaReturnKind;
+    RetTypeKind[] returnType = new RetTypeKind[2];
+    ArgTypeKind[] argumentKind = new ArgTypeKind[2];
 
-    StructuralMostSpecificTest(LambdaReturnKind lrk, RetTypeKind rt1, RetTypeKind rt2,
-            ExceptionKind ek1, ExceptionKind ek2, ArgTypeKind ak1, ArgTypeKind ak2) {
-        this.lrk = lrk;
-        this.rt1 = rt1;
-        this.rt2 = rt2;
-        this.ek1 = ek1;
-        this.ek2 = ek2;
-        this.ak1 = ak1;
-        this.ak2 = ak2;
-        this.source = new JavaSource();
-        this.diagChecker = new DiagnosticChecker();
+    boolean hasSameArguments() {
+        return argumentKind[0] == argumentKind[1];
     }
 
-    class JavaSource extends SimpleJavaFileObject {
-
-        String template = "interface SAM1 {\n" +
-                          "   #R1 m(#A1 a1) #E1;\n" +
-                          "}\n" +
-                          "interface SAM2 {\n" +
-                          "   #R2 m(#A2 a1) #E2;\n" +
-                          "}\n" +
-                          "class Test {\n" +
-                          "   void m(SAM1 s) { }\n" +
-                          "   void m(SAM2 s) { }\n" +
-                          "   { m((#A1 x)->{ #LR }); }\n" +
-                          "}\n";
-
-        String source;
-
-        public JavaSource() {
-            super(URI.create("myfo:/Test.java"), JavaFileObject.Kind.SOURCE);
-            source = template.replaceAll("#LR", lrk.retStr)
-                    .replaceAll("#R1", rt1.retTypeStr)
-                    .replaceAll("#R2", rt2.retTypeStr)
-                    .replaceAll("#A1", ak1.argTypeStr)
-                    .replaceAll("#A2", ak2.argTypeStr)
-                    .replaceAll("#E1", ek1.exceptionStr)
-                    .replaceAll("#E2", ek2.exceptionStr);
-        }
-
-        @Override
-        public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-            return source;
-        }
+    boolean hasCompatibleReturns() {
+        return lambdaReturnKind.compatibleWith(returnType[0]) &&
+                lambdaReturnKind.compatibleWith(returnType[1]);
     }
 
-    public void run() {
-        JavacTask ct = (JavacTask)comp.getTask(null, fm.get(), diagChecker,
-                Arrays.asList("-XDverboseResolution=all,-predef,-internal,-object-init"),
-                null, Arrays.asList(source));
-        try {
-            ct.analyze();
-        } catch (Throwable ex) {
-            throw new
-                AssertionError("Error thron when analyzing the following source:\n" +
-                    source.getCharContent(true));
-        }
-        check();
+    boolean hasSameOverloadPhase() {
+        return lambdaReturnKind.needsConversion(returnType[0]) == lambdaReturnKind.needsConversion(returnType[1]);
     }
 
-    void check() {
-        checkCount.incrementAndGet();
+    @Override
+    public void doWork() throws Throwable {
+        check(newCompilationTask()
+                .withSourceFromTemplate(sourceTemplate)
+                .withOption("-XDverboseResolution=all,-predef,-internal,-object-init")
+                .analyze());
+    }
 
-        if (ak1 != ak2)
-            return;
-
-        if (!lrk.compatibleWith(rt1) || !lrk.compatibleWith(rt2))
-            return;
-
-        if (lrk.needsConversion(rt1) != lrk.needsConversion(rt2))
-            return;
-
-        boolean m1MoreSpecific = rt1.moreSpecificThan(rt2);
-        boolean m2MoreSpecific = rt2.moreSpecificThan(rt1);
+    void check(Result<Iterable<? extends Element>> result) {
+        boolean m1MoreSpecific = returnType[0].moreSpecificThan(returnType[1]);
+        boolean m2MoreSpecific = returnType[1].moreSpecificThan(returnType[0]);
 
         boolean ambiguous = (m1MoreSpecific == m2MoreSpecific);
 
-        if (ambiguous != diagChecker.ambiguityFound) {
-            throw new Error("invalid diagnostics for source:\n" +
-                source.getCharContent(true) +
-                "\nAmbiguity found: " + diagChecker.ambiguityFound +
+        if (ambiguous != ambiguityFound(result)) {
+            fail("invalid diagnostics for combo:\n" +
+                result.compilationInfo() + "\n" +
+                "\nAmbiguity found: " + ambiguityFound(result) +
                 "\nm1 more specific: " + m1MoreSpecific +
                 "\nm2 more specific: " + m2MoreSpecific +
                 "\nexpected ambiguity: " + ambiguous);
@@ -263,44 +231,32 @@ public class StructuralMostSpecificTest
 
         if (!ambiguous) {
             String sigToCheck = m1MoreSpecific ? "m(SAM1)" : "m(SAM2)";
-            if (!sigToCheck.equals(diagChecker.mostSpecificSig)) {
-                throw new Error("invalid most specific method selected:\n" +
-                source.getCharContent(true) +
-                "\nMost specific found: " + diagChecker.mostSpecificSig +
-                "\nm1 more specific: " + m1MoreSpecific +
-                "\nm2 more specific: " + m2MoreSpecific);
+            if (!sigToCheck.equals(mostSpecificSignature(result))) {
+                fail("invalid most specific method selected:\n" +
+                        result.compilationInfo() + "\n" +
+                        "\nMost specific found: " + mostSpecificSignature(result) +
+                        "\nm1 more specific: " + m1MoreSpecific +
+                        "\nm2 more specific: " + m2MoreSpecific);
             }
         }
     }
 
-    static class DiagnosticChecker
-        implements javax.tools.DiagnosticListener<JavaFileObject> {
-
-        boolean ambiguityFound;
-        String mostSpecificSig;
-
-        public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
-            try {
-                if (diagnostic.getKind() == Diagnostic.Kind.ERROR &&
-                        diagnostic.getCode().equals("compiler.err.ref.ambiguous")) {
-                    ambiguityFound = true;
-                } else if (diagnostic.getKind() == Diagnostic.Kind.NOTE &&
-                        diagnostic.getCode()
-                        .equals("compiler.note.verbose.resolve.multi")) {
-                    ClientCodeWrapper.DiagnosticSourceUnwrapper dsu =
-                        (ClientCodeWrapper.DiagnosticSourceUnwrapper)diagnostic;
-                    JCDiagnostic.MultilineDiagnostic mdiag =
-                        (JCDiagnostic.MultilineDiagnostic)dsu.d;
-                    int mostSpecificIndex = (Integer)mdiag.getArgs()[2];
-                    mostSpecificSig =
-                        ((JCDiagnostic)mdiag.getSubdiagnostics()
-                            .get(mostSpecificIndex)).getArgs()[1].toString();
-                }
-            } catch (RuntimeException t) {
-                t.printStackTrace();
-                throw t;
-            }
-        }
+    boolean ambiguityFound(Result<Iterable<? extends Element>> result) {
+        return result.containsKey("compiler.err.ref.ambiguous");
     }
 
+    String mostSpecificSignature(Result<Iterable<? extends Element>> result) {
+        List<Diagnostic<? extends JavaFileObject>> rsDiag =
+                result.diagnosticsForKey("compiler.note.verbose.resolve.multi");
+        if (rsDiag.nonEmpty()) {
+            ClientCodeWrapper.DiagnosticSourceUnwrapper dsu =
+                        (ClientCodeWrapper.DiagnosticSourceUnwrapper)rsDiag.head;
+            JCDiagnostic.MultilineDiagnostic mdiag =
+                (JCDiagnostic.MultilineDiagnostic)dsu.d;
+            int mostSpecificIndex = (Integer)mdiag.getArgs()[2];
+            return mdiag.getSubdiagnostics().get(mostSpecificIndex).getArgs()[1].toString();
+        } else {
+            return null;
+        }
+    }
 }

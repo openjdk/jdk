@@ -26,6 +26,7 @@
 package com.sun.tools.javac.code;
 
 import com.sun.tools.javac.code.Kinds.Kind;
+import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.stream.Stream;
@@ -162,15 +163,49 @@ public abstract class Scope {
 
     /** A list of scopes to be notified if items are to be removed from this scope.
      */
-    List<ScopeListener> listeners = List.nil();
-
-    public void addScopeListener(ScopeListener sl) {
-        listeners = listeners.prepend(sl);
-    }
+    ScopeListenerList listeners = new ScopeListenerList();
 
     public interface ScopeListener {
-        public void symbolAdded(Symbol sym, Scope s);
-        public void symbolRemoved(Symbol sym, Scope s);
+        void symbolAdded(Symbol sym, Scope s);
+        void symbolRemoved(Symbol sym, Scope s);
+    }
+
+    /**
+     * A list of scope listeners; listeners are stored in weak references, to avoid memory leaks.
+     * When the listener list is scanned (upon notification), elements corresponding to GC-ed
+     * listeners are removed so that the listener list size is kept in check.
+     */
+    public static class ScopeListenerList {
+
+        List<WeakReference<ScopeListener>> listeners = List.nil();
+
+        void add(ScopeListener sl) {
+            listeners = listeners.prepend(new WeakReference<>(sl));
+        }
+
+        void symbolAdded(Symbol sym, Scope scope) {
+            walkReferences(sym, scope, false);
+        }
+
+        void symbolRemoved(Symbol sym, Scope scope) {
+            walkReferences(sym, scope, true);
+        }
+
+        private void walkReferences(Symbol sym, Scope scope, boolean isRemove) {
+            ListBuffer<WeakReference<ScopeListener>> newListeners = new ListBuffer<>();
+            for (WeakReference<ScopeListener> wsl : listeners) {
+                ScopeListener sl = wsl.get();
+                if (sl != null) {
+                    if (isRemove) {
+                        sl.symbolRemoved(sym, scope);
+                    } else {
+                        sl.symbolAdded(sym, scope);
+                    }
+                    newListeners.add(wsl);
+                }
+            }
+            listeners = newListeners.toList();
+        }
     }
 
     public enum LookupKind {
@@ -404,9 +439,7 @@ public abstract class Scope {
             elems = e;
 
             //notify listeners
-            for (List<ScopeListener> l = listeners; l.nonEmpty(); l = l.tail) {
-                l.head.symbolAdded(sym, this);
-            }
+            listeners.symbolAdded(sym, this);
         }
 
         /** Remove symbol from this scope.
@@ -442,9 +475,7 @@ public abstract class Scope {
             }
 
             //notify listeners
-            for (List<ScopeListener> l = listeners; l.nonEmpty(); l = l.tail) {
-                l.head.symbolRemoved(sym, this);
-            }
+            listeners.symbolRemoved(sym, this);
         }
 
         /** Enter symbol sym in this scope if not already there.
@@ -698,11 +729,12 @@ public abstract class Scope {
                         finalized.enter(sym);
                     }
 
-                    finalized.addScopeListener(new ScopeListener() {
+                    finalized.listeners.add(new ScopeListener() {
                         @Override
                         public void symbolAdded(Symbol sym, Scope s) {
                             Assert.error("The scope is sealed.");
                         }
+
                         @Override
                         public void symbolRemoved(Symbol sym, Scope s) {
                             Assert.error("The scope is sealed.");
@@ -929,26 +961,20 @@ public abstract class Scope {
         public void prependSubScope(Scope that) {
            if (that != null) {
                 subScopes = subScopes.prepend(that);
-                that.addScopeListener(this);
+                that.listeners.add(this);
                 mark++;
-                for (ScopeListener sl : listeners) {
-                    sl.symbolAdded(null, this); //propagate upwards in case of nested CompoundScopes
-                }
+                listeners.symbolAdded(null, this);
            }
         }
 
         public void symbolAdded(Symbol sym, Scope s) {
             mark++;
-            for (ScopeListener sl : listeners) {
-                sl.symbolAdded(sym, s);
-            }
+            listeners.symbolAdded(sym, s);
         }
 
         public void symbolRemoved(Symbol sym, Scope s) {
             mark++;
-            for (ScopeListener sl : listeners) {
-                sl.symbolRemoved(sym, s);
-            }
+            listeners.symbolRemoved(sym, s);
         }
 
         public int getMark() {

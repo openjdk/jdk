@@ -1406,5 +1406,3 @@ JNF_COCOA_EXIT(env);
     
     return underMouse;
 }
-
-

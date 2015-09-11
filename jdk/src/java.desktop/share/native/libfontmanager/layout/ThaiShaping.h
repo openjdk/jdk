@@ -129,5 +129,3 @@ inline ThaiShaping::StateTransition ThaiShaping::getTransition(le_uint8 state, l
 
 U_NAMESPACE_END
 #endif
-
-

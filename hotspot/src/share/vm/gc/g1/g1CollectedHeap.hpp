@@ -757,6 +757,12 @@ public:
   // alloc_archive_regions, and after class loading has occurred.
   void fill_archive_regions(MemRegion* range, size_t count);
 
+  // For each of the specified MemRegions, uncommit the containing G1 regions
+  // which had been allocated by alloc_archive_regions. This should be called
+  // rather than fill_archive_regions at JVM init time if the archive file
+  // mapping failed, with the same non-overlapping and sorted MemRegion array.
+  void dealloc_archive_regions(MemRegion* range, size_t count);
+
 protected:
 
   // Shrink the garbage-first heap by at most the given size (in bytes!).

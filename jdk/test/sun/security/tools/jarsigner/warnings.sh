@@ -115,5 +115,3 @@ else
     echo "ERR is $ERR"
     exit 1
 fi
-
-
