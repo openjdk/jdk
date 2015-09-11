@@ -1158,7 +1158,7 @@ public class MethodEmitter {
     /**
      * Pop a value from the stack and store it in a variable denoted by the given symbol. The variable should be either
      * a local variable, or a function parameter (and not a scoped variable). For local variables, this method will also
-     * do the bookeeping of the local variable table as well as mark values in all alternative slots for the symbol as
+     * do the bookkeeping of the local variable table as well as mark values in all alternative slots for the symbol as
      * dead. In this regard it differs from {@link #storeHidden(Type, int)}.
      *
      * @param symbol the symbol to store into.

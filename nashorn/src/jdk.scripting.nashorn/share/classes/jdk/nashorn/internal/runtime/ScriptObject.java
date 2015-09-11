@@ -64,6 +64,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.LongAdder;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
@@ -211,7 +212,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     */
     public ScriptObject(final PropertyMap map) {
         if (Context.DEBUG) {
-            ScriptObject.count++;
+            ScriptObject.count.increment();
         }
         this.arrayData = ArrayData.EMPTY_ARRAY;
         this.setMap(map == null ? PropertyMap.newMap() : map);
@@ -2316,7 +2317,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
                 MH.dropArguments(
                         MH.constant(
                                 ScriptFunction.class,
-                                func.makeBoundFunction(thiz, new Object[] { name })),
+                                func.createBound(thiz, new Object[] { name })),
                         0,
                         Object.class),
                 NashornGuards.combineGuards(
@@ -2422,7 +2423,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
             return UNDEFINED;
         }
 
-        return ((ScriptFunction)value).makeBoundFunction(this, new Object[] {name});
+        return ((ScriptFunction)value).createBound(this, new Object[] {name});
     }
 
     private GuardedInvocation createEmptyGetter(final CallSiteDescriptor desc, final boolean explicitInstanceOfCheck, final String name) {
@@ -3811,15 +3812,20 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     }
 
     /** This is updated only in debug mode - counts number of {@code ScriptObject} instances created */
-    private static int count;
+    private static LongAdder count;
 
+    static {
+        if (Context.DEBUG) {
+            count = new LongAdder();
+        }
+    }
     /**
      * Get number of {@code ScriptObject} instances created. If not running in debug
      * mode this is always 0
      *
      * @return number of ScriptObjects created
      */
-    public static int getCount() {
-        return count;
+    public static long getCount() {
+        return count.longValue();
     }
 }

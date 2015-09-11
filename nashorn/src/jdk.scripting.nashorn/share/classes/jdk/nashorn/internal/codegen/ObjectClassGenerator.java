@@ -786,7 +786,7 @@ public final class ObjectClassGenerator implements Loggable {
      * @param primitiveSetter   primitive setter for the current type with an element of the current type
      * @param objectSetter      the object setter
      *
-     * @return method handle that checks if the element to be set is of the currenttype, even though it's boxed
+     * @return method handle that checks if the element to be set is of the current type, even though it's boxed
      *  and instead of using the generic object setter, that would blow up the type and invalidate the map,
      *  unbox it and call the primitive setter instead
      */

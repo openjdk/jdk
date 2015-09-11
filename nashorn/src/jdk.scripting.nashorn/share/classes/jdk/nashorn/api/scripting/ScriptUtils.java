@@ -77,7 +77,7 @@ public final class ScriptUtils {
      * @return a synchronizing wrapper function
      */
     public static Object makeSynchronizedFunction(final ScriptFunction func, final Object sync) {
-        return func.makeSynchronizedFunction(unwrap(sync));
+        return func.createSynchronized(unwrap(sync));
     }
 
     /**
