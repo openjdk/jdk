@@ -438,7 +438,9 @@ class ArrayAddress VALUE_OBJ_CLASS_SPEC {
 
 };
 
-const int FPUStateSizeInWords = NOT_LP64(27) LP64_ONLY( 512*2 / wordSize);
+// 64-bit refect the fxsave size which is 512 bytes and the new xsave area on EVEX which is another 2176 bytes
+// See fxsave and xsave(EVEX enabled) documentation for layout
+const int FPUStateSizeInWords = NOT_LP64(27) LP64_ONLY(2688 / wordSize);
 
 // The Intel x86/Amd64 Assembler: Pure assembler doing NO optimizations on the instruction
 // level (e.g. mov rax, 0 is not translated into xor rax, rax!); i.e., what you write
@@ -594,11 +596,16 @@ class Assembler : public AbstractAssembler  {
 
 private:
 
-  int evex_encoding;
-  int input_size_in_bits;
-  int avx_vector_len;
-  int tuple_type;
-  bool is_evex_instruction;
+  int _evex_encoding;
+  int _input_size_in_bits;
+  int _avx_vector_len;
+  int _tuple_type;
+  bool _is_evex_instruction;
+  bool _legacy_mode_bw;
+  bool _legacy_mode_dq;
+  bool _legacy_mode_vl;
+  bool _legacy_mode_vlbw;
+  bool _instruction_uses_vl;
 
   // 64bit prefixes
   int prefix_and_encode(int reg_enc, bool byteinst = false);
@@ -972,11 +979,16 @@ private:
   // belong in macro assembler but there is no need for both varieties to exist
 
   void init_attributes(void) {
-    evex_encoding = 0;
-    input_size_in_bits = 0;
-    avx_vector_len = AVX_NoVec;
-    tuple_type = EVEX_ETUP;
-    is_evex_instruction = false;
+    _evex_encoding = 0;
+    _input_size_in_bits = 0;
+    _avx_vector_len = AVX_NoVec;
+    _tuple_type = EVEX_ETUP;
+    _is_evex_instruction = false;
+    _legacy_mode_bw = (VM_Version::supports_avx512bw() == false);
+    _legacy_mode_dq = (VM_Version::supports_avx512dq() == false);
+    _legacy_mode_vl = (VM_Version::supports_avx512vl() == false);
+    _legacy_mode_vlbw = (VM_Version::supports_avx512vlbw() == false);
+    _instruction_uses_vl = false;
   }
 
   void lea(Register dst, Address src);
@@ -1344,8 +1356,10 @@ private:
   void fxch(int i = 1);
 
   void fxrstor(Address src);
+  void xrstor(Address src);
 
   void fxsave(Address dst);
+  void xsave(Address dst);
 
   void fyl2x();
   void frndint();
@@ -1479,11 +1493,12 @@ private:
   void movb(Address dst, int imm8);
   void movb(Register dst, Address src);
 
-  void kmovq(KRegister dst, KRegister src);
+  void kmovql(KRegister dst, KRegister src);
   void kmovql(KRegister dst, Register src);
   void kmovdl(KRegister dst, Register src);
-  void kmovq(Address dst, KRegister src);
-  void kmovq(KRegister dst, Address src);
+  void kmovwl(KRegister dst, Register src);
+  void kmovql(Address dst, KRegister src);
+  void kmovql(KRegister dst, Address src);
 
   void movdl(XMMRegister dst, Register src);
   void movdl(Register dst, XMMRegister src);
@@ -1509,9 +1524,12 @@ private:
   void vmovdqu(XMMRegister dst, XMMRegister src);
 
    // Move Unaligned 512bit Vector
-  void evmovdqu(Address dst, XMMRegister src, int vector_len);
-  void evmovdqu(XMMRegister dst, Address src, int vector_len);
-  void evmovdqu(XMMRegister dst, XMMRegister src, int vector_len);
+  void evmovdqul(Address dst, XMMRegister src, int vector_len);
+  void evmovdqul(XMMRegister dst, Address src, int vector_len);
+  void evmovdqul(XMMRegister dst, XMMRegister src, int vector_len);
+  void evmovdquq(Address dst, XMMRegister src, int vector_len);
+  void evmovdquq(XMMRegister dst, Address src, int vector_len);
+  void evmovdquq(XMMRegister dst, XMMRegister src, int vector_len);
 
   // Move lower 64bit to high 64bit in 128bit register
   void movlhps(XMMRegister dst, XMMRegister src);
@@ -1643,6 +1661,7 @@ private:
 
   // Pemutation of 64bit words
   void vpermq(XMMRegister dst, XMMRegister src, int imm8, int vector_len);
+  void vpermq(XMMRegister dst, XMMRegister src, int imm8);
 
   void pause();
 
@@ -2061,6 +2080,9 @@ private:
   void vextracti64x2h(XMMRegister dst, XMMRegister src, int value);
   void vextractf64x2h(XMMRegister dst, XMMRegister src, int value);
   void vextractf32x4h(XMMRegister dst, XMMRegister src, int value);
+  void vextractf32x4h(Address dst, XMMRegister src, int value);
+  void vinsertf32x4h(XMMRegister dst, XMMRegister nds, XMMRegister src, int value);
+  void vinsertf32x4h(XMMRegister dst, Address src, int value);
 
   // duplicate 4-bytes integer data from src into 8 locations in dest
   void vpbroadcastd(XMMRegister dst, XMMRegister src);

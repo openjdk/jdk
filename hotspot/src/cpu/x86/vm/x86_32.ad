@@ -1004,10 +1004,10 @@ static int vec_stack_to_stack_helper(CodeBuffer *cbuf, bool do_size, int src_off
       __ vmovdqu(Address(rsp, dst_offset), xmm0);
       __ vmovdqu(xmm0, Address(rsp, -32));
     case Op_VecZ:
-      __ evmovdqu(Address(rsp, -64), xmm0, 2);
-      __ evmovdqu(xmm0, Address(rsp, src_offset), 2);
-      __ evmovdqu(Address(rsp, dst_offset), xmm0, 2);
-      __ evmovdqu(xmm0, Address(rsp, -64), 2);
+      __ evmovdqul(Address(rsp, -64), xmm0, 2);
+      __ evmovdqul(xmm0, Address(rsp, src_offset), 2);
+      __ evmovdqul(Address(rsp, dst_offset), xmm0, 2);
+      __ evmovdqul(xmm0, Address(rsp, -64), 2);
       break;
     default:
       ShouldNotReachHere();
