@@ -1661,50 +1661,55 @@ const bool Matcher::match_rule_supported(int opcode) {
   if (!has_match_rule(opcode))
     return false;
 
+  bool ret_value = true;
   switch (opcode) {
     case Op_PopCountI:
     case Op_PopCountL:
       if (!UsePopCountInstruction)
-        return false;
-    break;
+        ret_value = false;
+      break;
     case Op_MulVI:
       if ((UseSSE < 4) && (UseAVX < 1)) // only with SSE4_1 or AVX
-        return false;
-    break;
+        ret_value = false;
+      break;
     case Op_MulVL:
     case Op_MulReductionVL:
       if (VM_Version::supports_avx512dq() == false)
-        return false;
+        ret_value = false;
+      break;
     case Op_AddReductionVL:
       if (UseAVX < 3) // only EVEX : vector connectivity becomes an issue here
-        return false;
+        ret_value = false;
+      break;
     case Op_AddReductionVI:
       if (UseSSE < 3) // requires at least SSE3
-        return false;
+        ret_value = false;
+      break;
     case Op_MulReductionVI:
       if (UseSSE < 4) // requires at least SSE4
-        return false;
+        ret_value = false;
+      break;
     case Op_AddReductionVF:
     case Op_AddReductionVD:
     case Op_MulReductionVF:
     case Op_MulReductionVD:
       if (UseSSE < 1) // requires at least SSE
-        return false;
-    break;
+        ret_value = false;
+      break;
     case Op_SqrtVD:
       if (UseAVX < 1) // enabled for AVX only
-        return false;
-    break;
+        ret_value = false;
+      break;
     case Op_CompareAndSwapL:
 #ifdef _LP64
     case Op_CompareAndSwapP:
 #endif
       if (!VM_Version::supports_cx8())
-        return false;
-    break;
+        ret_value = false;
+      break;
   }
 
-  return true;  // Per default match rules are supported.
+  return ret_value;  // Per default match rules are supported.
 }
 
 // Max vector size in bytes. 0 if not supported.
@@ -1725,14 +1730,24 @@ const int Matcher::vector_width_in_bytes(BasicType bt) {
   case T_DOUBLE:
   case T_LONG:
     if (size < 16) return 0;
+    break;
   case T_FLOAT:
   case T_INT:
     if (size < 8) return 0;
+    break;
   case T_BOOLEAN:
-  case T_BYTE:
+    if (size < 4) return 0;
+    break;
   case T_CHAR:
+    if (size < 4) return 0;
+    break;
+  case T_BYTE:
+    if (size < 4) return 0;
+    if ((size > 32) && !VM_Version::supports_avx512bw()) return 0;
+    break;
   case T_SHORT:
     if (size < 4) return 0;
+    if ((size > 16) && !VM_Version::supports_avx512bw()) return 0;
     break;
   default:
     ShouldNotReachHere();
@@ -1804,7 +1819,7 @@ static int vec_mov_helper(CodeBuffer *cbuf, bool do_size, int src_lo, int dst_lo
       __ vmovdqu(as_XMMRegister(Matcher::_regEncode[dst_lo]), as_XMMRegister(Matcher::_regEncode[src_lo]));
       break;
     case Op_VecZ:
-      __ evmovdqu(as_XMMRegister(Matcher::_regEncode[dst_lo]), as_XMMRegister(Matcher::_regEncode[src_lo]), 2);
+      __ evmovdqul(as_XMMRegister(Matcher::_regEncode[dst_lo]), as_XMMRegister(Matcher::_regEncode[src_lo]), 2);
       break;
     default:
       ShouldNotReachHere();
@@ -1859,7 +1874,7 @@ static int vec_spill_helper(CodeBuffer *cbuf, bool do_size, bool is_load,
         __ vmovdqu(as_XMMRegister(Matcher::_regEncode[reg]), Address(rsp, stack_offset));
         break;
       case Op_VecZ:
-        __ evmovdqu(as_XMMRegister(Matcher::_regEncode[reg]), Address(rsp, stack_offset), 2);
+        __ evmovdqul(as_XMMRegister(Matcher::_regEncode[reg]), Address(rsp, stack_offset), 2);
         break;
       default:
         ShouldNotReachHere();
@@ -1879,7 +1894,7 @@ static int vec_spill_helper(CodeBuffer *cbuf, bool do_size, bool is_load,
         __ vmovdqu(Address(rsp, stack_offset), as_XMMRegister(Matcher::_regEncode[reg]));
         break;
       case Op_VecZ:
-        __ evmovdqu(Address(rsp, stack_offset), as_XMMRegister(Matcher::_regEncode[reg]), 2);
+        __ evmovdqul(Address(rsp, stack_offset), as_XMMRegister(Matcher::_regEncode[reg]), 2);
         break;
       default:
         ShouldNotReachHere();
@@ -1933,9 +1948,40 @@ static int vec_spill_helper(CodeBuffer *cbuf, bool do_size, bool is_load,
     }
 #endif
   }
-  int offset_size = (stack_offset == 0) ? 0 : ((stack_offset < 0x80) ? 1 : (UseAVX > 2) ? 6 : 4);
+  bool is_single_byte = false;
+  int vec_len = 0;
+  if ((UseAVX > 2) && (stack_offset != 0)) {
+    switch (ireg) {
+	case Op_VecS:
+    case Op_VecD:
+    case Op_VecX:
+	  break;
+	case Op_VecY:
+	  vec_len = 1;
+	  break;
+    case Op_VecZ:
+	  vec_len = 2;
+	  break;
+    }
+    is_single_byte = Assembler::query_compressed_disp_byte(stack_offset, true, vec_len, Assembler::EVEX_FVM, Assembler::EVEX_32bit, 0);
+  }
+  int offset_size = 0;
+  int size = 5;
+  if (UseAVX > 2 ) {
+    if ((VM_Version::supports_avx512vl() == false) && (vec_len == 2)) { 
+      offset_size = (stack_offset == 0) ? 0 : ((is_single_byte) ? 1 : 4);
+      size += 2; // Need an additional two bytes for EVEX encoding
+    } else if ((VM_Version::supports_avx512vl() == false) && (vec_len < 2)) { 
+      offset_size = (stack_offset == 0) ? 0 : ((stack_offset <= 127) ? 1 : 4);
+    } else {
+      offset_size = (stack_offset == 0) ? 0 : ((is_single_byte) ? 1 : 4);
+      size += 2; // Need an additional two bytes for EVEX encodding
+    }
+  } else {
+    offset_size = (stack_offset == 0) ? 0 : ((stack_offset <= 127) ? 1 : 4);
+  }
   // VEX_2bytes prefix is used if UseAVX > 0, so it takes the same 2 bytes as SIMD prefix.
-  return 5+offset_size;
+  return size+offset_size;
 }
 
 static inline jfloat replicate4_imm(int con, int width) {
@@ -2679,11 +2725,10 @@ instruct negF_reg_reg(regF dst, regF src) %{
   predicate(UseAVX > 0);
   match(Set dst (NegF src));
   ins_cost(150);
-  format %{ "vxorps  $dst, $src, [0x80000000]\t# neg float by sign flipping" %}
+  format %{ "vnegatess  $dst, $src, [0x80000000]\t# neg float by sign flipping" %}
   ins_encode %{
-    int vector_len = 0;
-    __ vxorps($dst$$XMMRegister, $src$$XMMRegister,
-              ExternalAddress(float_signflip()), vector_len);
+    __ vnegatess($dst$$XMMRegister, $src$$XMMRegister,
+                 ExternalAddress(float_signflip()));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2704,12 +2749,11 @@ instruct negD_reg_reg(regD dst, regD src) %{
   predicate(UseAVX > 0);
   match(Set dst (NegD src));
   ins_cost(150);
-  format %{ "vxorpd  $dst, $src, [0x8000000000000000]\t"
+  format %{ "vnegatess  $dst, $src, [0x8000000000000000]\t"
             "# neg double by sign flipping" %}
   ins_encode %{
-    int vector_len = 0;
-    __ vxorpd($dst$$XMMRegister, $src$$XMMRegister,
-              ExternalAddress(double_signflip()), vector_len);
+    __ vnegatesd($dst$$XMMRegister, $src$$XMMRegister,
+                 ExternalAddress(double_signflip()));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2842,7 +2886,7 @@ instruct loadV64(vecZ dst, memory mem) %{
   format %{ "vmovdqu $dst k0,$mem\t! load vector (64 bytes)" %}
   ins_encode %{
     int vector_len = 2;
-    __ evmovdqu($dst$$XMMRegister, $mem$$Address, vector_len);
+    __ evmovdqul($dst$$XMMRegister, $mem$$Address, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -2899,7 +2943,7 @@ instruct storeV64(memory mem, vecZ src) %{
   format %{ "vmovdqu $mem k0,$src\t! store vector (64 bytes)" %}
   ins_encode %{
     int vector_len = 2;
-    __ evmovdqu($mem$$Address, $src$$XMMRegister, vector_len);
+    __ evmovdqul($mem$$Address, $src$$XMMRegister, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -3319,6 +3363,37 @@ instruct Repl8F_mem(vecY dst, memory mem) %{
   ins_pipe( pipe_slow );
 %}
 
+instruct Repl2F_zero(vecD dst, immF0 zero) %{
+  predicate(n->as_Vector()->length() == 2 && UseAVX < 3);
+  match(Set dst (ReplicateF zero));
+  format %{ "xorps   $dst,$dst\t! replicate2F zero" %}
+  ins_encode %{
+    __ xorps($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+instruct Repl4F_zero(vecX dst, immF0 zero) %{
+  predicate(n->as_Vector()->length() == 4 && UseAVX < 3);
+  match(Set dst (ReplicateF zero));
+  format %{ "xorps   $dst,$dst\t! replicate4F zero" %}
+  ins_encode %{
+    __ xorps($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+instruct Repl8F_zero(vecY dst, immF0 zero) %{
+  predicate(n->as_Vector()->length() == 8 && UseAVX < 3);
+  match(Set dst (ReplicateF zero));
+  format %{ "vxorps  $dst,$dst,$dst\t! replicate8F zero" %}
+  ins_encode %{
+    int vector_len = 1;
+    __ vxorps($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vector_len);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
 instruct Repl2D_mem(vecX dst, memory mem) %{
   predicate(n->as_Vector()->length() == 2 && UseAVX > 0 && !VM_Version::supports_avx512vl());
   match(Set dst (ReplicateD (LoadD mem)));
@@ -3351,6 +3426,28 @@ instruct Repl4D_mem(vecY dst, memory mem) %{
     __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
+%}
+
+// Replicate double (8 byte) scalar zero to be vector
+instruct Repl2D_zero(vecX dst, immD0 zero) %{
+  predicate(n->as_Vector()->length() == 2 && UseAVX < 3);
+  match(Set dst (ReplicateD zero));
+  format %{ "xorpd   $dst,$dst\t! replicate2D zero" %}
+  ins_encode %{
+    __ xorpd($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+instruct Repl4D_zero(vecY dst, immD0 zero) %{
+  predicate(n->as_Vector()->length() == 4 && UseAVX < 3);
+  match(Set dst (ReplicateD zero));
+  format %{ "vxorpd  $dst,$dst,$dst,vect256\t! replicate4D zero" %}
+  ins_encode %{
+    int vector_len = 1;
+    __ vxorpd($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vector_len);
+  %}
+  ins_pipe( fpu_reg_reg );
 %}
 
 // ====================GENERIC REPLICATE==========================================
@@ -3684,38 +3781,6 @@ instruct Repl4F(vecX dst, regF src) %{
   ins_pipe( pipe_slow );
 %}
 
-// Replicate float (4 byte) scalar zero to be vector
-instruct Repl2F_zero(vecD dst, immF0 zero) %{
-  predicate(n->as_Vector()->length() == 2);
-  match(Set dst (ReplicateF zero));
-  format %{ "xorps   $dst,$dst\t! replicate2F zero" %}
-  ins_encode %{
-    __ xorps($dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-instruct Repl4F_zero(vecX dst, immF0 zero) %{
-  predicate(n->as_Vector()->length() == 4);
-  match(Set dst (ReplicateF zero));
-  format %{ "xorps   $dst,$dst\t! replicate4F zero" %}
-  ins_encode %{
-    __ xorps($dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-instruct Repl8F_zero(vecY dst, immF0 zero) %{
-  predicate(n->as_Vector()->length() == 8);
-  match(Set dst (ReplicateF zero));
-  format %{ "vxorps  $dst,$dst,$dst\t! replicate8F zero" %}
-  ins_encode %{
-    int vector_len = 1;
-    __ vxorps($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vector_len);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
 // Replicate double (8 bytes) scalar to be vector
 instruct Repl2D(vecX dst, regD src) %{
   predicate(n->as_Vector()->length() == 2);
@@ -3725,28 +3790,6 @@ instruct Repl2D(vecX dst, regD src) %{
     __ pshufd($dst$$XMMRegister, $src$$XMMRegister, 0x44);
   %}
   ins_pipe( pipe_slow );
-%}
-
-// Replicate double (8 byte) scalar zero to be vector
-instruct Repl2D_zero(vecX dst, immD0 zero) %{
-  predicate(n->as_Vector()->length() == 2);
-  match(Set dst (ReplicateD zero));
-  format %{ "xorpd   $dst,$dst\t! replicate2D zero" %}
-  ins_encode %{
-    __ xorpd($dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-instruct Repl4D_zero(vecY dst, immD0 zero) %{
-  predicate(n->as_Vector()->length() == 4);
-  match(Set dst (ReplicateD zero));
-  format %{ "vxorpd  $dst,$dst,$dst,vect256\t! replicate4D zero" %}
-  ins_encode %{
-    int vector_len = 1;
-    __ vxorpd($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vector_len);
-  %}
-  ins_pipe( fpu_reg_reg );
 %}
 
 // ====================EVEX REPLICATE=============================================
@@ -3818,7 +3861,7 @@ instruct Repl32B_mem_evex(vecY dst, memory mem) %{
 %}
 
 instruct Repl64B_evex(vecZ dst, rRegI src) %{
-  predicate(n->as_Vector()->length() == 64 && UseAVX > 2);
+  predicate(n->as_Vector()->length() == 64 && VM_Version::supports_avx512bw());
   match(Set dst (ReplicateB src));
   format %{ "vpbroadcastb $dst,$src\t! upper replicate64B" %}
   ins_encode %{
@@ -3829,7 +3872,7 @@ instruct Repl64B_evex(vecZ dst, rRegI src) %{
 %}
 
 instruct Repl64B_mem_evex(vecZ dst, memory mem) %{
-  predicate(n->as_Vector()->length() == 64 && VM_Version::supports_avx512vlbw());
+  predicate(n->as_Vector()->length() == 64 && VM_Version::supports_avx512bw());
   match(Set dst (ReplicateB (LoadB mem)));
   format %{ "vpbroadcastb  $dst,$mem\t! replicate64B" %}
   ins_encode %{
@@ -3866,7 +3909,7 @@ instruct Repl32B_imm_evex(vecY dst, immI con) %{
 %}
 
 instruct Repl64B_imm_evex(vecZ dst, immI con) %{
-  predicate(n->as_Vector()->length() == 64 && UseAVX > 2);
+  predicate(n->as_Vector()->length() == 64 && VM_Version::supports_avx512bw());
   match(Set dst (ReplicateB con));
   format %{ "movq    $dst,[$constantaddress]\n\t"
             "vpbroadcastb $dst,$dst\t! upper replicate64B" %}
@@ -3957,7 +4000,7 @@ instruct Repl16S_mem_evex(vecY dst, memory mem) %{
 %}
 
 instruct Repl32S_evex(vecZ dst, rRegI src) %{
-  predicate(n->as_Vector()->length() == 32 && UseAVX > 2);
+  predicate(n->as_Vector()->length() == 32 && VM_Version::supports_avx512bw());
   match(Set dst (ReplicateS src));
   format %{ "vpbroadcastw $dst,$src\t! replicate32S" %}
   ins_encode %{
@@ -3968,7 +4011,7 @@ instruct Repl32S_evex(vecZ dst, rRegI src) %{
 %}
 
 instruct Repl32S_mem_evex(vecZ dst, memory mem) %{
-  predicate(n->as_Vector()->length() == 32 && UseAVX > 2);
+  predicate(n->as_Vector()->length() == 32 && VM_Version::supports_avx512bw());
   match(Set dst (ReplicateS (LoadS mem)));
   format %{ "vpbroadcastw  $dst,$mem\t! replicate32S" %}
   ins_encode %{
@@ -4005,7 +4048,7 @@ instruct Repl16S_imm_evex(vecY dst, immI con) %{
 %}
 
 instruct Repl32S_imm_evex(vecZ dst, immI con) %{
-  predicate(n->as_Vector()->length() == 32 && UseAVX > 2);
+  predicate(n->as_Vector()->length() == 32 && VM_Version::supports_avx512bw());
   match(Set dst (ReplicateS con));
   format %{ "movq    $dst,[$constantaddress]\n\t"
             "vpbroadcastw $dst,$dst\t! replicate32S" %}
@@ -4322,13 +4365,50 @@ instruct Repl16F_mem_evex(vecZ dst, memory mem) %{
   ins_pipe( pipe_slow );
 %}
 
+instruct Repl2F_zero_evex(vecD dst, immF0 zero) %{
+  predicate(n->as_Vector()->length() == 2 && UseAVX > 2);
+  match(Set dst (ReplicateF zero));
+  format %{ "vpxor  $dst k0,$dst,$dst\t! replicate2F zero" %}
+  ins_encode %{
+    // Use vpxor in place of vxorps since EVEX has a constriant on dq for vxorps: this is a 512-bit operation
+    int vector_len = 2;
+    __ vpxor($dst$$XMMRegister,$dst$$XMMRegister, $dst$$XMMRegister, vector_len);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+instruct Repl4F_zero_evex(vecX dst, immF0 zero) %{
+  predicate(n->as_Vector()->length() == 4 && UseAVX > 2);
+  match(Set dst (ReplicateF zero));
+  format %{ "vpxor  $dst k0,$dst,$dst\t! replicate4F zero" %}
+  ins_encode %{
+    // Use vpxor in place of vxorps since EVEX has a constriant on dq for vxorps: this is a 512-bit operation
+    int vector_len = 2;
+    __ vpxor($dst$$XMMRegister,$dst$$XMMRegister, $dst$$XMMRegister, vector_len);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+instruct Repl8F_zero_evex(vecY dst, immF0 zero) %{
+  predicate(n->as_Vector()->length() == 8 && UseAVX > 2);
+  match(Set dst (ReplicateF zero));
+  format %{ "vpxor  $dst k0,$dst,$dst\t! replicate8F zero" %}
+  ins_encode %{
+    // Use vpxor in place of vxorps since EVEX has a constriant on dq for vxorps: this is a 512-bit operation
+    int vector_len = 2;
+    __ vpxor($dst$$XMMRegister,$dst$$XMMRegister, $dst$$XMMRegister, vector_len);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
 instruct Repl16F_zero_evex(vecZ dst, immF0 zero) %{
   predicate(n->as_Vector()->length() == 16 && UseAVX > 2);
   match(Set dst (ReplicateF zero));
-  format %{ "vxorps  $dst k0,$dst,$dst\t! replicate16F zero" %}
+  format %{ "vpxor  $dst k0,$dst,$dst\t! replicate16F zero" %}
   ins_encode %{
+    // Use vpxor in place of vxorps since EVEX has a constriant on dq for vxorps: this is a 512-bit operation
     int vector_len = 2;
-    __ vxorps($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vector_len);
+    __ vpxor($dst$$XMMRegister,$dst$$XMMRegister, $dst$$XMMRegister, vector_len);
   %}
   ins_pipe( fpu_reg_reg );
 %}
@@ -4377,13 +4457,38 @@ instruct Repl8D_mem_evex(vecZ dst, memory mem) %{
   ins_pipe( pipe_slow );
 %}
 
+instruct Repl2D_zero_evex(vecX dst, immD0 zero) %{
+  predicate(n->as_Vector()->length() == 2 && UseAVX > 2);
+  match(Set dst (ReplicateD zero));
+  format %{ "vpxor  $dst k0,$dst,$dst\t! replicate2D zero" %}
+  ins_encode %{
+    // Use vpxor in place of vxorpd since EVEX has a constriant on dq for vxorpd: this is a 512-bit operation
+    int vector_len = 2;
+    __ vpxor($dst$$XMMRegister,$dst$$XMMRegister, $dst$$XMMRegister, vector_len);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+instruct Repl4D_zero_evex(vecY dst, immD0 zero) %{
+  predicate(n->as_Vector()->length() == 4 && UseAVX > 2);
+  match(Set dst (ReplicateD zero));
+  format %{ "vpxor  $dst k0,$dst,$dst\t! replicate4D zero" %}
+  ins_encode %{
+    // Use vpxor in place of vxorpd since EVEX has a constriant on dq for vxorpd: this is a 512-bit operation
+    int vector_len = 2;
+    __ vpxor($dst$$XMMRegister,$dst$$XMMRegister, $dst$$XMMRegister, vector_len);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
 instruct Repl8D_zero_evex(vecZ dst, immD0 zero) %{
   predicate(n->as_Vector()->length() == 8 && UseAVX > 2);
   match(Set dst (ReplicateD zero));
-  format %{ "vxorpd  $dst k0,$dst,$dst,vect512\t! replicate8D zero" %}
+  format %{ "vpxor  $dst k0,$dst,$dst,vect512\t! replicate8D zero" %}
   ins_encode %{
+    // Use vpxor in place of vxorpd since EVEX has a constriant on dq for vxorpd: this is a 512-bit operation
     int vector_len = 2;
-    __ vxorpd($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vector_len);
+    __ vpxor($dst$$XMMRegister,$dst$$XMMRegister, $dst$$XMMRegister, vector_len);
   %}
   ins_pipe( fpu_reg_reg );
 %}
