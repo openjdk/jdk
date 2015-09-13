@@ -30,55 +30,55 @@ import org.omg.CORBA.portable.InputStream;
 import org.omg.CORBA.portable.OutputStream;
 
 /**
- * The Holder for <tt>String</tt>.  For more information on
+ * The Holder for {@code String}.  For more information on
  * Holder files, see <a href="doc-files/generatedfiles.html#holder">
  * "Generated Files: Holder Files"</a>.<P>
- * A Holder class for a <code>String</code>
+ * A Holder class for a {@code String}
  * that is used to store "out" and "inout" parameters in IDL operations.
- * If an IDL operation signature has an IDL <code>string</code> as an "out"
+ * If an IDL operation signature has an IDL {@code string} as an "out"
  * or "inout" parameter, the programmer must pass an instance of
- * <code>StringHolder</code> as the corresponding
+ * {@code StringHolder} as the corresponding
  * parameter in the method invocation; for "inout" parameters, the programmer
  * must also fill the "in" value to be sent to the server.
  * Before the method invocation returns, the ORB will fill in the
  * value corresponding to the "out" value returned from the server.
  * <P>
- * If <code>myStringHolder</code> is an instance of <code>StringHolder</code>,
- * the value stored in its <code>value</code> field can be accessed with
- * <code>myStringHolder.value</code>.
+ * If {@code myStringHolder} is an instance of {@code StringHolder},
+ * the value stored in its {@code value} field can be accessed with
+ * {@code myStringHolder.value}.
  *
  * @since       JDK1.2
  */
 public final class StringHolder implements Streamable {
 
     /**
-     * The <code>String</code> value held by this <code>StringHolder</code>
+     * The {@code String} value held by this {@code StringHolder}
      * object.
      */
     public String value;
 
     /**
-     * Constructs a new <code>StringHolder</code> object with its
-     * <code>value</code> field initialized to <code>null</code>.
+     * Constructs a new {@code StringHolder} object with its
+     * {@code value} field initialized to {@code null}.
      */
     public StringHolder() {
     }
 
     /**
-     * Constructs a new <code>StringHolder</code> object with its
-     * <code>value</code> field initialized to the given
-     * <code>String</code>.
-     * @param initial the <code>String</code> with which to initialize
-     *                the <code>value</code> field of the newly-created
-     *                <code>StringHolder</code> object
+     * Constructs a new {@code StringHolder} object with its
+     * {@code value} field initialized to the given
+     * {@code String}.
+     * @param initial the {@code String} with which to initialize
+     *                the {@code value} field of the newly-created
+     *                {@code StringHolder} object
      */
     public StringHolder(String initial) {
         value = initial;
     }
 
     /**
-     * Reads the unmarshalled data from <code>input</code> and assigns it to
-     * the <code>value</code> field of this <code>StringHolder</code> object.
+     * Reads the unmarshalled data from {@code input} and assigns it to
+     * the {@code value} field of this {@code StringHolder} object.
      *
      * @param input the InputStream containing CDR formatted data from the wire.
      */
@@ -87,8 +87,8 @@ public final class StringHolder implements Streamable {
     }
 
     /**
-     * Marshals the value held by this <code>StringHolder</code> object
-     * to the output stream  <code>output</code>.
+     * Marshals the value held by this {@code StringHolder} object
+     * to the output stream  {@code output}.
      *
      * @param output the OutputStream which will contain the CDR formatted data.
      */
@@ -97,10 +97,10 @@ public final class StringHolder implements Streamable {
     }
 
     /**
-     * Retrieves the <code>TypeCode</code> object that corresponds to
-     * the value held in this <code>StringHolder</code> object.
+     * Retrieves the {@code TypeCode} object that corresponds to
+     * the value held in this {@code StringHolder} object.
      *
-     * @return    the type code of the value held in this <code>StringHolder</code>
+     * @return    the type code of the value held in this {@code StringHolder}
      *            object
      */
     public org.omg.CORBA.TypeCode _type() {

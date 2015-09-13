@@ -26,8 +26,8 @@
 package org.omg.CORBA;
 
 /**
- * One of the <tt>PolicyErrorCode</tt>s which would be filled if
- * the requested <tt>Policy</tt> is understood to be valid by the
+ * One of the {@code PolicyErrorCode}s which would be filled if
+ * the requested {@code Policy} is understood to be valid by the
  * ORB, but is not currently supported.
  *
  * @author rip-dev
