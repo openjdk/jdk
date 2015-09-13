@@ -31,22 +31,22 @@ import org.omg.CORBA.portable.OutputStream;
 
 
 /**
- * The Holder for <tt>Principal</tt>.  For more information on
+ * The Holder for {@code Principal}. For more information on
  * Holder files, see <a href="doc-files/generatedfiles.html#holder">
  * "Generated Files: Holder Files"</a>.<P>
- * A container class for values of type <code>Principal</code>
+ * A container class for values of type {@code Principal}
  * that is used to store "out" and "inout" parameters in IDL methods.
- * If an IDL method signature has an IDL <code>Principal</code> as an "out"
+ * If an IDL method signature has an IDL {@code Principal} as an "out"
  * or "inout" parameter, the programmer must pass an instance of
- * <code>PrincipalHolder</code> as the corresponding
+ * {@code PrincipalHolder} as the corresponding
  * parameter in the method invocation; for "inout" parameters, the programmer
  * must also fill the "in" value to be sent to the server.
  * Before the method invocation returns, the ORB will fill in the
  * value corresponding to the "out" value returned from the server.
  * <P>
- * If <code>myPrincipalHolder</code> is an instance of <code>PrincipalHolder</code>,
- * the value stored in its <code>value</code> field can be accessed with
- * <code>myPrincipalHolder.value</code>.
+ * If {@code myPrincipalHolder} is an instance of {@code PrincipalHolder},
+ * the value stored in its {@code value} field can be accessed with
+ * {@code myPrincipalHolder.value}.
  *
  * @since       JDK1.2
  * @deprecated Deprecated by CORBA 2.2.
@@ -54,25 +54,25 @@ import org.omg.CORBA.portable.OutputStream;
 @Deprecated
 public final class PrincipalHolder implements Streamable {
     /**
-     * The <code>Principal</code> value held by this <code>PrincipalHolder</code>
+     * The {@code Principal} value held by this {@code PrincipalHolder}
      * object.
      */
     public Principal value;
 
     /**
-     * Constructs a new <code>PrincipalHolder</code> object with its
-     * <code>value</code> field initialized to <code>null</code>.
+     * Constructs a new {@code PrincipalHolder} object with its
+     * {@code value} field initialized to {@code null}.
      */
     public PrincipalHolder() {
     }
 
     /**
-     * Constructs a new <code>PrincipalHolder</code> object with its
-     * <code>value</code> field initialized to the given
-     * <code>Principal</code> object.
-     * @param initial the <code>Principal</code> with which to initialize
-     *                the <code>value</code> field of the newly-created
-     *                <code>PrincipalHolder</code> object
+     * Constructs a new {@code PrincipalHolder} object with its
+     * {@code value} field initialized to the given
+     * {@code Principal} object.
+     * @param initial the {@code Principal} with which to initialize
+     *                the {@code value} field of the newly-created
+     *                {@code PrincipalHolder} object
      */
     public PrincipalHolder(Principal initial) {
         value = initial;

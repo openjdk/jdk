@@ -99,8 +99,8 @@ module CosNaming
    * The BindingIterator interface allows a client to iterate through
    * the bindings using the next_one or next_n operations.
    * 
-   * The bindings iterator is obtained by using the <tt>list</tt>
-   * method on the <tt>NamingContext</tt>. 
+   * The bindings iterator is obtained by using the <code>list</code>
+   * method on the <code>NamingContext</code>.
    * @see org.omg.CosNaming.NamingContext#list
    */
   interface BindingIterator 
@@ -412,7 +412,7 @@ module CosNaming
  * contains a set of name bindings in which each name is unique and is
  * part of Interoperable Naming Service.
  * Different names can be bound to an object in the same or different
- * contexts at the same time. Using <tt>NamingContextExt</tt>, you can use
+ * contexts at the same time. Using <code>NamingContextExt</code>, you can use
  * URL-based names to bind and resolve.
  * 
  * See <a href="http://www.omg.org/technology/documents/formal/naming_service.htm">
