@@ -1611,8 +1611,13 @@ public class KeyStore {
      * First the keystore type is determined by probing the specified file.
      * Then a keystore object is instantiated and loaded using the data from
      * that file.
-     * A password may be supplied to unlock the keystore data or perform an
-     * integrity check.
+     *
+     * <p>
+     * A password may be given to unlock the keystore
+     * (e.g. the keystore resides on a hardware token device),
+     * or to check the integrity of the keystore data.
+     * If a password is not given for integrity checking,
+     * then integrity checking is not performed.
      *
      * <p>
      * This method traverses the list of registered security

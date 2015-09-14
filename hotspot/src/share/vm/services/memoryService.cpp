@@ -212,13 +212,13 @@ MemoryPool* MemoryService::add_space(ContiguousSpace* space,
   return (MemoryPool*) pool;
 }
 
-MemoryPool* MemoryService::add_survivor_spaces(DefNewGeneration* gen,
+MemoryPool* MemoryService::add_survivor_spaces(DefNewGeneration* young_gen,
                                                const char* name,
                                                bool is_heap,
                                                size_t max_size,
                                                bool support_usage_threshold) {
   MemoryPool::PoolType type = (is_heap ? MemoryPool::Heap : MemoryPool::NonHeap);
-  SurvivorContiguousSpacePool* pool = new SurvivorContiguousSpacePool(gen, name, type, max_size, support_usage_threshold);
+  SurvivorContiguousSpacePool* pool = new SurvivorContiguousSpacePool(young_gen, name, type, max_size, support_usage_threshold);
 
   _pools_list->append(pool);
   return (MemoryPool*) pool;
@@ -328,18 +328,18 @@ void MemoryService::add_generation_memory_pool(Generation* gen,
 
 
 #if INCLUDE_ALL_GCS
-void MemoryService::add_psYoung_memory_pool(PSYoungGen* gen, MemoryManager* major_mgr, MemoryManager* minor_mgr) {
+void MemoryService::add_psYoung_memory_pool(PSYoungGen* young_gen, MemoryManager* major_mgr, MemoryManager* minor_mgr) {
   assert(major_mgr != NULL && minor_mgr != NULL, "Should have two managers");
 
   // Add a memory pool for each space and young gen doesn't
   // support low memory detection as it is expected to get filled up.
-  EdenMutableSpacePool* eden = new EdenMutableSpacePool(gen,
-                                                        gen->eden_space(),
+  EdenMutableSpacePool* eden = new EdenMutableSpacePool(young_gen,
+                                                        young_gen->eden_space(),
                                                         "PS Eden Space",
                                                         MemoryPool::Heap,
                                                         false /* support_usage_threshold */);
 
-  SurvivorMutableSpacePool* survivor = new SurvivorMutableSpacePool(gen,
+  SurvivorMutableSpacePool* survivor = new SurvivorMutableSpacePool(young_gen,
                                                                     "PS Survivor Space",
                                                                     MemoryPool::Heap,
                                                                     false /* support_usage_threshold */);
@@ -352,13 +352,13 @@ void MemoryService::add_psYoung_memory_pool(PSYoungGen* gen, MemoryManager* majo
   _pools_list->append(survivor);
 }
 
-void MemoryService::add_psOld_memory_pool(PSOldGen* gen, MemoryManager* mgr) {
-  PSGenerationPool* old_gen = new PSGenerationPool(gen,
-                                                   "PS Old Gen",
-                                                   MemoryPool::Heap,
-                                                   true /* support_usage_threshold */);
-  mgr->add_pool(old_gen);
-  _pools_list->append(old_gen);
+void MemoryService::add_psOld_memory_pool(PSOldGen* old_gen, MemoryManager* mgr) {
+  PSGenerationPool* old_gen_pool = new PSGenerationPool(old_gen,
+                                                       "PS Old Gen",
+                                                       MemoryPool::Heap,
+                                                       true /* support_usage_threshold */);
+  mgr->add_pool(old_gen_pool);
+  _pools_list->append(old_gen_pool);
 }
 
 void MemoryService::add_g1YoungGen_memory_pool(G1CollectedHeap* g1h,
@@ -548,7 +548,7 @@ Handle MemoryService::create_MemoryUsage_obj(MemoryUsage usage, TRAPS) {
 }
 //
 // GC manager type depends on the type of Generation. Depending on the space
-// availablity and vm options the gc uses major gc manager or minor gc
+// availability and vm options the gc uses major gc manager or minor gc
 // manager or both. The type of gc manager depends on the generation kind.
 // For DefNew and ParNew generation doing scavenge gc uses minor gc manager (so
 // _fullGC is set to false ) and for other generation kinds doing

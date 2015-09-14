@@ -85,7 +85,7 @@ public:
   // invoked "blk->set_region" to set the "from" region correctly
   // beforehand.)
   //
-  // Invoke code_root_cl->do_code_blob on the unmarked nmethods
+  // Apply non_heap_roots on the oops of the unmarked nmethods
   // on the strong code roots list for each region in the
   // collection set.
   //
@@ -95,7 +95,7 @@ public:
   // the "i" passed to the calling thread's work(i) function.
   // In the sequential case this param will be ignored.
   void oops_into_collection_set_do(G1ParPushHeapRSClosure* blk,
-                                   CodeBlobClosure* code_root_cl,
+                                   OopClosure* non_heap_roots,
                                    uint worker_i);
 
   // Prepare for and cleanup after an oops_into_collection_set_do
@@ -107,7 +107,7 @@ public:
   void cleanup_after_oops_into_collection_set_do();
 
   void scanRS(G1ParPushHeapRSClosure* oc,
-              CodeBlobClosure* code_root_cl,
+              OopClosure* non_heap_roots,
               uint worker_i);
 
   void updateRS(DirtyCardQueue* into_cset_dcq, uint worker_i);

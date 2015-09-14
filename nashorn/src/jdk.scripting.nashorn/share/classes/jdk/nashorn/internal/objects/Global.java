@@ -2419,7 +2419,7 @@ public final class Global extends Scope {
     }
 
     private void initScripting(final ScriptEnvironment scriptEnv) {
-        Object value;
+        ScriptObject value;
         value = ScriptFunctionImpl.makeFunction("readLine", ScriptingFunctions.READLINE);
         addOwnProperty("readLine", Attribute.NOT_ENUMERABLE, value);
 
@@ -2428,11 +2428,13 @@ public final class Global extends Scope {
 
         final String execName = ScriptingFunctions.EXEC_NAME;
         value = ScriptFunctionImpl.makeFunction(execName, ScriptingFunctions.EXEC);
+        value.addOwnProperty(ScriptingFunctions.THROW_ON_ERROR_NAME, Attribute.NOT_ENUMERABLE, false);
+
         addOwnProperty(execName, Attribute.NOT_ENUMERABLE, value);
 
         // Nashorn extension: global.echo (scripting-mode-only)
         // alias for "print"
-        value = get("print");
+        value = (ScriptObject)get("print");
         addOwnProperty("echo", Attribute.NOT_ENUMERABLE, value);
 
         // Nashorn extension: global.$OPTIONS (scripting-mode-only)

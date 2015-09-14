@@ -3043,7 +3043,9 @@ void MacroAssembler::store_check(Register obj) {
   // register obj is destroyed afterwards.
 
   BarrierSet* bs = Universe::heap()->barrier_set();
-  assert(bs->kind() == BarrierSet::CardTableModRef, "Wrong barrier set kind");
+  assert(bs->kind() == BarrierSet::CardTableForRS ||
+         bs->kind() == BarrierSet::CardTableExtension,
+         "Wrong barrier set kind");
 
   CardTableModRefBS* ct = barrier_set_cast<CardTableModRefBS>(bs);
   assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");

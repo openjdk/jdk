@@ -4,7 +4,18 @@ typeof java.util.Vector evalutes to function
 typeof java.util.Map evalutes to function
 typeof java.util.HashMap evalutes to function
 var m = new java.util.HashMap(); m.put('foo', 42); m evalutes to {foo=42}
-java.lang.System.out.println evalutes to [jdk.internal.dynalink.beans.OverloadedDynamicMethod java.io.PrintStream.println]
+java.lang.System.out.println evalutes to [jdk.internal.dynalink.beans.OverloadedDynamicMethod
+ void java.io.PrintStream.println()
+ void java.io.PrintStream.println(boolean)
+ void java.io.PrintStream.println(char)
+ void java.io.PrintStream.println(char[])
+ void java.io.PrintStream.println(double)
+ void java.io.PrintStream.println(float)
+ void java.io.PrintStream.println(int)
+ void java.io.PrintStream.println(long)
+ void java.io.PrintStream.println(Object)
+ void java.io.PrintStream.println(String)
+]
 java.lang.System.exit evalutes to [jdk.internal.dynalink.beans.SimpleDynamicMethod void java.lang.System.exit(int)]
 new javax.script.SimpleBindings throws java.lang.RuntimeException: java.lang.ClassNotFoundException: javax.script.SimpleBindings
 Java.type('javax.script.ScriptContext') throws java.lang.RuntimeException: java.lang.ClassNotFoundException: javax.script.ScriptContext

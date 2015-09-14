@@ -193,7 +193,7 @@ protected:
 
   class FastEvacuateFollowersClosure: public VoidClosure {
     GenCollectedHeap* _gch;
-    DefNewGeneration* _gen;
+    DefNewGeneration* _young_gen;
     FastScanClosure* _scan_cur_or_nonheap;
     FastScanClosure* _scan_older;
   public:

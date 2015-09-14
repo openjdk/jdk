@@ -31,7 +31,7 @@
 
 enum platform_dependent_constants {
   code_size1 =  9000,           // simply increase if too small (assembler will crash if too small)
-  code_size2 = 22000            // simply increase if too small (assembler will crash if too small)
+  code_size2 = 30000            // simply increase if too small (assembler will crash if too small)
 };
 
 class x86 {

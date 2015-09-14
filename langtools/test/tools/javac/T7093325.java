@@ -23,38 +23,41 @@
 
 /*
  * @test
- * @bug 7093325 8006694
+ * @bug 7093325 8006694 8129962
  * @summary Redundant entry in bytecode exception table
  *  temporarily workaround combo tests are causing time out in several platforms
- * @library lib
+ * @library /tools/javac/lib
  * @modules jdk.jdeps/com.sun.tools.classfile
- * @build JavacTestingAbstractThreadedTest
- * @run main/othervm T7093325
+ *          jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.code
+ *          jdk.compiler/com.sun.tools.javac.comp
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.javac.tree
+ *          jdk.compiler/com.sun.tools.javac.util
+ * @build combo.ComboTestHelper
+ * @run main T7093325
  */
 
-// use /othervm to avoid jtreg timeout issues (CODETOOLS-7900047)
-// see JDK-8006746
+import java.io.IOException;
+import java.io.InputStream;
 
-import java.io.File;
-import java.net.URI;
-import java.util.Arrays;
-import javax.tools.JavaCompiler;
-import javax.tools.JavaFileObject;
-import javax.tools.SimpleJavaFileObject;
-import javax.tools.ToolProvider;
-
-import com.sun.source.util.JavacTask;
 import com.sun.tools.classfile.Attribute;
 import com.sun.tools.classfile.ClassFile;
 import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.ConstantPool.*;
+import com.sun.tools.classfile.ConstantPoolException;
 import com.sun.tools.classfile.Method;
 
-public class T7093325
-    extends JavacTestingAbstractThreadedTest
-    implements Runnable {
+import javax.tools.JavaFileObject;
 
-    enum StatementKind {
+import combo.ComboInstance;
+import combo.ComboParameter;
+import combo.ComboTask.Result;
+import combo.ComboTestHelper;
+
+public class T7093325 extends ComboInstance<T7093325> {
+
+    enum StatementKind implements ComboParameter {
+        NONE(null, false, false),
         THROW("throw new RuntimeException();", false, false),
         RETURN_NONEMPTY("System.out.println(); return;", true, false),
         RETURN_EMPTY("return;", true, true),
@@ -64,107 +67,79 @@ public class T7093325
         boolean canInline;
         boolean empty;
 
-        private StatementKind(String stmt, boolean canInline, boolean empty) {
+        StatementKind(String stmt, boolean canInline, boolean empty) {
             this.stmt = stmt;
             this.canInline = canInline;
             this.empty = empty;
         }
+
+        @Override
+        public String expand(String optParameter) {
+            return stmt;
+        }
     }
 
-    enum CatchArity {
+    enum CatchArity implements ComboParameter {
         NONE(""),
-        ONE("catch (A a) { #S1 }"),
-        TWO("catch (B b) { #S2 }"),
-        THREE("catch (C c) { #S3 }"),
-        FOUR("catch (D d) { #S4 }");
+        ONE("catch (A a) { #{STMT[1]} }"),
+        TWO("catch (B b) { #{STMT[2]} }"),
+        THREE("catch (C c) { #{STMT[3]} }"),
+        FOUR("catch (D d) { #{STMT[4]} }");
 
         String catchStr;
 
-        private CatchArity(String catchStr) {
+        CatchArity(String catchStr) {
             this.catchStr = catchStr;
         }
 
-        String catchers() {
+        @Override
+        public String expand(String optParameter) {
             if (this.ordinal() == 0) {
                 return catchStr;
             } else {
-                return CatchArity.values()[this.ordinal() - 1].catchers() +
+                return CatchArity.values()[this.ordinal() - 1].expand(optParameter) +
                         catchStr;
             }
         }
     }
 
     public static void main(String... args) throws Exception {
-        for (CatchArity ca : CatchArity.values()) {
-            for (StatementKind stmt0 : StatementKind.values()) {
-                if (ca.ordinal() == 0) {
-                    pool.execute(new T7093325(ca, stmt0));
-                    continue;
-                }
-                for (StatementKind stmt1 : StatementKind.values()) {
-                    if (ca.ordinal() == 1) {
-                        pool.execute(new T7093325(ca, stmt0, stmt1));
-                        continue;
-                    }
-                    for (StatementKind stmt2 : StatementKind.values()) {
-                        if (ca.ordinal() == 2) {
-                            pool.execute(new T7093325(ca, stmt0, stmt1, stmt2));
-                            continue;
-                        }
-                        for (StatementKind stmt3 : StatementKind.values()) {
-                            if (ca.ordinal() == 3) {
-                                pool.execute(
-                                    new T7093325(ca, stmt0, stmt1, stmt2, stmt3));
-                                continue;
-                            }
-                            for (StatementKind stmt4 : StatementKind.values()) {
-                                if (ca.ordinal() == 4) {
-                                    pool.execute(
-                                        new T7093325(ca, stmt0, stmt1,
-                                                     stmt2, stmt3, stmt4));
-                                    continue;
-                                }
-                                for (StatementKind stmt5 : StatementKind.values()) {
-                                    pool.execute(
-                                        new T7093325(ca, stmt0, stmt1, stmt2,
-                                                     stmt3, stmt4, stmt5));
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        checkAfterExec();
+        new ComboTestHelper<T7093325>()
+                .withFilter(T7093325::testFilter)
+                .withDimension("CATCH", (x, ca) -> x.ca = ca, CatchArity.values())
+                .withArrayDimension("STMT", (x, stmt, idx) -> x.stmts[idx] = stmt, 5, StatementKind.values())
+                .run(T7093325::new);
     }
 
     /** instance decls **/
 
     CatchArity ca;
-    StatementKind[] stmts;
+    StatementKind[] stmts = new StatementKind[5];
 
-    public T7093325(CatchArity ca, StatementKind... stmts) {
-        this.ca = ca;
-        this.stmts = stmts;
+    boolean testFilter() {
+        int lastPos = ca.ordinal() + 1;
+        for (int i = 0; i < stmts.length ; i++) {
+            boolean shouldBeSet = i < lastPos;
+            boolean isSet = stmts[i] != StatementKind.NONE;
+            if (shouldBeSet != isSet) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
-    public void run() {
-        int id = checkCount.incrementAndGet();
-        final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
-        JavaSource source = new JavaSource(id);
-        JavacTask ct = (JavacTask)tool.getTask(null, fm.get(), null,
-                null, null, Arrays.asList(source));
-        ct.call();
-        verifyBytecode(source, id);
+    public void doWork() throws IOException {
+        verifyBytecode(newCompilationTask()
+                .withSourceFromTemplate(source_template)
+                .generate());
     }
 
-    void verifyBytecode(JavaSource source, int id) {
+    void verifyBytecode(Result<Iterable<? extends JavaFileObject>> result) {
         boolean lastInlined = false;
         boolean hasCode = false;
         int gapsCount = 0;
-        for (int i = 0; i < stmts.length ; i++) {
+        for (int i = 0; i < ca.ordinal() + 1 ; i++) {
             lastInlined = stmts[i].canInline;
             hasCode = hasCode || !stmts[i].empty;
             if (lastInlined && hasCode) {
@@ -176,12 +151,11 @@ public class T7093325
             gapsCount++;
         }
 
-        File compiledTest = new File(String.format("Test%s.class", id));
-        try {
-            ClassFile cf = ClassFile.read(compiledTest);
+        try (InputStream is = result.get().iterator().next().openInputStream()) {
+            ClassFile cf = ClassFile.read(is);
             if (cf == null) {
-                throw new Error("Classfile not found: " +
-                                compiledTest.getName());
+                fail("Classfile not found: " + result.compilationInfo());
+                return;
             }
 
             Method test_method = null;
@@ -193,7 +167,8 @@ public class T7093325
             }
 
             if (test_method == null) {
-                throw new Error("Method test() not found in class Test");
+                fail("Method test() not found in class Test" + result.compilationInfo());
+                return;
             }
 
             Code_attribute code = null;
@@ -205,7 +180,8 @@ public class T7093325
             }
 
             if (code == null) {
-                throw new Error("Code attribute not found in method test()");
+                fail("Code attribute not found in method test()");
+                return;
             }
 
             int actualGapsCount = 0;
@@ -217,54 +193,28 @@ public class T7093325
             }
 
             if (actualGapsCount != gapsCount) {
-                throw new Error("Bad exception table for test()\n" +
+                fail("Bad exception table for test()\n" +
                             "expected gaps: " + gapsCount + "\n" +
                             "found gaps: " + actualGapsCount + "\n" +
-                            source);
+                        result.compilationInfo());
+                return;
             }
-        } catch (Exception e) {
+        } catch (IOException | ConstantPoolException e) {
             e.printStackTrace();
-            throw new Error("error reading " + compiledTest +": " + e);
+            fail("error reading classfile: " + e);
         }
 
     }
 
-    class JavaSource extends SimpleJavaFileObject {
-
-        static final String source_template =
+    static final String source_template =
+                "class Test {\n" +
+                "   void test() {\n" +
+                "   try { #{STMT[0]} } #{CATCH} finally { System.out.println(); }\n" +
+                "   }\n" +
+                "}\n" +
                 "class A extends RuntimeException {} \n" +
                 "class B extends RuntimeException {} \n" +
                 "class C extends RuntimeException {} \n" +
                 "class D extends RuntimeException {} \n" +
-                "class E extends RuntimeException {} \n" +
-                "class Test#ID {\n" +
-                "   void test() {\n" +
-                "   try { #S0 } #C finally { System.out.println(); }\n" +
-                "   }\n" +
-                "}";
-
-        String source;
-
-        public JavaSource(int id) {
-            super(URI.create(String.format("myfo:/Test%s.java", id)),
-                  JavaFileObject.Kind.SOURCE);
-            source = source_template.replace("#C", ca.catchers());
-            source = source.replace("#S0", stmts[0].stmt);
-            source = source.replace("#ID", String.valueOf(id));
-            for (int i = 1; i < ca.ordinal() + 1; i++) {
-                source = source.replace("#S" + i, stmts[i].stmt);
-            }
-        }
-
-        @Override
-        public String toString() {
-            return source;
-        }
-
-        @Override
-        public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-            return source;
-        }
-    }
-
+                "class E extends RuntimeException {}";
 }

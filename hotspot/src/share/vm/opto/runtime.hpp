@@ -331,6 +331,8 @@ private:
   static const TypeFunc* updateBytesCRC32_Type();
   static const TypeFunc* updateBytesCRC32C_Type();
 
+  static const TypeFunc* updateBytesAdler32_Type();
+
   // leaf on stack replacement interpreter accessor types
   static const TypeFunc* osr_end_Type();
 

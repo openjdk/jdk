@@ -139,6 +139,7 @@ address StubRoutines::_updateBytesCRC32 = NULL;
 address StubRoutines::_crc_table_adr = NULL;
 
 address StubRoutines::_updateBytesCRC32C = NULL;
+address StubRoutines::_updateBytesAdler32 = NULL;
 
 address StubRoutines::_multiplyToLen = NULL;
 address StubRoutines::_squareToLen = NULL;
