@@ -43,6 +43,7 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.LongAdder;
 import jdk.internal.dynalink.ChainedCallSite;
 import jdk.internal.dynalink.DynamicLinker;
 import jdk.internal.dynalink.linker.GuardedInvocation;
@@ -70,7 +71,7 @@ public class LinkerCallSite extends ChainedCallSite {
     LinkerCallSite(final NashornCallSiteDescriptor descriptor) {
         super(descriptor);
         if (Context.DEBUG) {
-            LinkerCallSite.count++;
+            LinkerCallSite.count.increment();
         }
     }
 
@@ -173,7 +174,7 @@ public class LinkerCallSite extends ChainedCallSite {
      * @return self reference
      */
     public static Object increaseMissCount(final String desc, final Object self) {
-        ++missCount;
+        missCount.increment();
         if (r.nextInt(100) < missSamplingPercentage) {
             final AtomicInteger i = missCounts.get(desc);
             if (i == null) {
@@ -509,11 +510,18 @@ public class LinkerCallSite extends ChainedCallSite {
     }
 
     // counters updated in debug mode
-    private static int count;
+    private static LongAdder count;
     private static final HashMap<String, AtomicInteger> missCounts = new HashMap<>();
-    private static int missCount;
+    private static LongAdder missCount;
     private static final Random r = new Random();
     private static final int missSamplingPercentage = Options.getIntProperty("nashorn.tcs.miss.samplePercent", 1);
+
+    static {
+        if (Context.DEBUG) {
+            count = new LongAdder();
+            missCount = new LongAdder();
+        }
+    }
 
     @Override
     protected int getMaxChainLength() {
@@ -524,16 +532,16 @@ public class LinkerCallSite extends ChainedCallSite {
      * Get the callsite count
      * @return the count
      */
-    public static int getCount() {
-        return count;
+    public static long getCount() {
+        return count.longValue();
     }
 
     /**
      * Get the callsite miss count
      * @return the missCount
      */
-    public static int getMissCount() {
-        return missCount;
+    public static long getMissCount() {
+        return missCount.longValue();
     }
 
     /**

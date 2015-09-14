@@ -24,14 +24,20 @@
  */
 package com.sun.tools.sjavac.server;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import static com.sun.tools.sjavac.server.SjavacServer.LINE_TYPE_RC;
+import static com.sun.tools.sjavac.server.SjavacServer.LINE_TYPE_STDERR;
+import static com.sun.tools.sjavac.server.SjavacServer.LINE_TYPE_STDOUT;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.Writer;
 import java.net.Socket;
 
+import com.sun.tools.sjavac.AutoFlushWriter;
 import com.sun.tools.sjavac.Log;
+
 
 /**
  * A RequestHandler handles requests performed over a socket. Specifically it
@@ -61,15 +67,26 @@ public class RequestHandler implements Runnable {
 
     @Override
     public void run() {
-        try (ObjectOutputStream oout = new ObjectOutputStream(socket.getOutputStream());
-             ObjectInputStream oin = new ObjectInputStream(socket.getInputStream())) {
-            String id = (String) oin.readObject();
-            String cmd = (String) oin.readObject();
-            Log.info("Handling request, id: " + id + " cmd: " + cmd);
-            switch (cmd) {
-            case SjavacServer.CMD_COMPILE: handleCompileRequest(oin, oout); break;
-            default: Log.error("Unknown command: " + cmd);
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+             PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
+
+            // Read argument array
+            int n = Integer.parseInt(in.readLine());
+            String[] args = new String[n];
+            for (int i = 0; i < n; i++) {
+                args[i] = in.readLine();
             }
+
+            // Perform compilation
+            Writer stdout = new LinePrefixFilterWriter(new AutoFlushWriter(out), LINE_TYPE_STDOUT + ":");
+            Writer stderr = new LinePrefixFilterWriter(new AutoFlushWriter(out), LINE_TYPE_STDERR + ":");
+            int rc = sjavac.compile(args, stdout, stderr);
+            stdout.flush();
+            stderr.flush();
+
+            // Send return code back to client
+            out.println(LINE_TYPE_RC + ":" + rc);
+
         } catch (Exception ex) {
             // Not much to be done at this point. The client side request
             // code will most likely throw an IOException and the
@@ -77,23 +94,6 @@ public class RequestHandler implements Runnable {
             StringWriter sw = new StringWriter();
             ex.printStackTrace(new PrintWriter(sw));
             Log.error(sw.toString());
-        }
-    }
-
-    private void handleCompileRequest(ObjectInputStream oin,
-                                      ObjectOutputStream oout) throws IOException {
-        try {
-            // Read request arguments
-            String[] args = (String[]) oin.readObject();
-
-            // Perform compilation
-            CompilationResult cr = sjavac.compile(args);
-
-            // Write request response
-            oout.writeObject(cr);
-            oout.flush();
-        } catch (ClassNotFoundException cnfe) {
-            throw new IOException(cnfe);
         }
     }
 }
