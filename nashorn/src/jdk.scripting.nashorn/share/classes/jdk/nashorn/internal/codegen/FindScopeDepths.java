@@ -34,7 +34,6 @@ import java.util.Map;
 import java.util.Set;
 import jdk.nashorn.internal.ir.Block;
 import jdk.nashorn.internal.ir.FunctionNode;
-import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.Node;
@@ -180,8 +179,7 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Logga
     @Override
     public Node leaveFunctionNode(final FunctionNode functionNode) {
         final String name = functionNode.getName();
-        FunctionNode newFunctionNode = functionNode.setState(lc, CompilationState.SCOPE_DEPTHS_COMPUTED);
-
+        FunctionNode newFunctionNode = functionNode;
         if (compiler.isOnDemandCompilation()) {
             final RecompilableScriptFunctionData data = compiler.getScriptFunctionData(newFunctionNode.getId());
             if (data.inDynamicContext()) {

@@ -591,7 +591,7 @@ public class ScriptFunction extends ScriptObject {
      *
      * @param newPrototype new prototype object
      */
-    public final void setPrototype(Object newPrototype) {
+    public final void setPrototype(final Object newPrototype) {
         if (newPrototype instanceof ScriptObject && newPrototype != this.prototype && allocatorMap != null) {
             // Replace our current allocator map with one that is associated with the new prototype.
             allocatorMap = allocatorMap.changeProto((ScriptObject) newPrototype);
