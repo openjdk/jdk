@@ -517,7 +517,7 @@ abstract class MultipleGradientPaintContext implements PaintContext {
      *
      * @param position the unmanipulated position, which will be mapped
      *                 into the range 0 to 1
-     * @returns integer color to display
+     * @return integer color to display
      */
     protected final int indexIntoGradientsArrays(float position) {
         // first, manipulate position value depending on the cycle method

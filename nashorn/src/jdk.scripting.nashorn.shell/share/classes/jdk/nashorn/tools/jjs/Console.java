@@ -49,9 +49,9 @@ class Console implements AutoCloseable {
 
     Console(final InputStream cmdin, final PrintStream cmdout, final File historyFile,
             final Completer completer) throws IOException {
+        TerminalFactory.registerFlavor(Flavor.WINDOWS, isCygwin()? JJSUnixTerminal::new : JJSWindowsTerminal::new);
+        TerminalFactory.registerFlavor(Flavor.UNIX, JJSUnixTerminal::new);
         in = new ConsoleReader(cmdin, cmdout);
-        TerminalFactory.registerFlavor(Flavor.WINDOWS, JJSWindowsTerminal :: new);
-        TerminalFactory.registerFlavor(Flavor.UNIX, JJSUnixTerminal :: new);
         in.setExpandEvents(false);
         in.setHandleUserInterrupt(true);
         in.setBellEnabled(true);
@@ -133,5 +133,9 @@ class Console implements AutoCloseable {
             super.init();
             setAnsiSupported(false);
         }
+    }
+
+    private static boolean isCygwin() {
+        return System.getenv("SHELL") != null;
     }
 }

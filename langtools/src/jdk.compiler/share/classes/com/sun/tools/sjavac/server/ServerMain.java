@@ -26,6 +26,7 @@
 package com.sun.tools.sjavac.server;
 
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 
 import com.sun.tools.sjavac.Log;
 
@@ -38,7 +39,8 @@ import com.sun.tools.sjavac.Log;
 public class ServerMain {
     public static int run(String[] args) {
 
-        Log.initializeLog(System.out, System.err);
+        Log.initializeLog(new OutputStreamWriter(System.out),
+                          new OutputStreamWriter(System.err));
 
         // Any options other than --startserver?
         if (args.length > 1) {
