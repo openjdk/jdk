@@ -122,13 +122,13 @@ class SimpleDynamicMethod extends SingleDynamicMethod {
      * @param constructor does this represent a constructor?
      */
     SimpleDynamicMethod(final MethodHandle target, final Class<?> clazz, final String name, final boolean constructor) {
-        super(getName(target, clazz, name));
+        super(getName(target, clazz, name, constructor));
         this.target = target;
         this.constructor = constructor;
     }
 
-    private static String getName(final MethodHandle target, final Class<?> clazz, final String name) {
-        return getMethodNameWithSignature(target.type(), getClassAndMethodName(clazz, name));
+    private static String getName(final MethodHandle target, final Class<?> clazz, final String name, final boolean constructor) {
+        return getMethodNameWithSignature(target.type(), constructor ? name : getClassAndMethodName(clazz, name), !constructor);
     }
 
     @Override

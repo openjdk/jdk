@@ -48,11 +48,13 @@ import java.util.Map.Entry;
 import java.util.Set;
 import jdk.nashorn.internal.AssertsEnabled;
 import jdk.nashorn.internal.codegen.Compiler.CompilationPhases;
+import jdk.nashorn.internal.ir.Block;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.Node;
+import jdk.nashorn.internal.ir.Symbol;
 import jdk.nashorn.internal.ir.debug.ASTWriter;
 import jdk.nashorn.internal.ir.debug.PrintVisitor;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
@@ -189,7 +191,7 @@ enum CompilationPhase {
         }
     },
 
-    SERIALIZE_SPLIT_PHASE(
+    CACHE_AST(
             EnumSet.of(
                     INITIALIZED,
                     PARSED,
@@ -199,20 +201,21 @@ enum CompilationPhase {
                     SPLIT)) {
         @Override
         FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
-            return transformFunction(fn, new NodeVisitor<LexicalContext>(new LexicalContext()) {
-                @Override
-                public boolean enterFunctionNode(final FunctionNode functionNode) {
-                    if (functionNode.isSplit()) {
-                        compiler.serializeAst(functionNode);
-                    }
-                    return true;
-                }
-            });
+            if (!compiler.isOnDemandCompilation()) {
+                // Only do this on initial preprocessing of the source code. For on-demand compilations from
+                // source, FindScopeDepths#leaveFunctionNode() calls data.setCachedAst() for the sole function
+                // being compiled.
+                transformFunction(fn, new CacheAst(compiler));
+            }
+            // NOTE: we're returning the original fn as we have destructively modified the cached functions by
+            // removing their bodies. This step is associating FunctionNode objects with
+            // RecompilableScriptFunctionData; it's not really modifying the AST.
+            return fn;
         }
 
         @Override
         public String toString() {
-            return "'Serialize Split Functions'";
+            return "'Cache ASTs'";
         }
     },
 
@@ -252,6 +255,51 @@ enum CompilationPhase {
         @Override
         public String toString() {
             return "'Scope Depth Computation'";
+        }
+    },
+
+    DECLARE_LOCAL_SYMBOLS_TO_COMPILER(
+            EnumSet.of(
+                    INITIALIZED,
+                    PARSED,
+                    CONSTANT_FOLDED,
+                    LOWERED,
+                    BUILTINS_TRANSFORMED,
+                    SPLIT,
+                    SYMBOLS_ASSIGNED,
+                    SCOPE_DEPTHS_COMPUTED)) {
+        @Override
+        FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
+            // It's not necessary to guard the marking of symbols as locals with this "if" condition for
+            // correctness, it's just an optimization -- runtime type calculation is not used when the compilation
+            // is not an on-demand optimistic compilation, so we can skip locals marking then.
+            if (compiler.useOptimisticTypes() && compiler.isOnDemandCompilation()) {
+                fn.getBody().accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+                    @Override
+                    public boolean enterFunctionNode(final FunctionNode functionNode) {
+                        // OTOH, we must not declare symbols from nested functions to be locals. As we're doing on-demand
+                        // compilation, and we're skipping parsing the function bodies for nested functions, this
+                        // basically only means their parameters. It'd be enough to mistakenly declare to be a local a
+                        // symbol in the outer function named the same as one of the parameters, though.
+                        return false;
+                    };
+                    @Override
+                    public boolean enterBlock(final Block block) {
+                        for (final Symbol symbol: block.getSymbols()) {
+                            if (!symbol.isScope()) {
+                                compiler.declareLocalSymbol(symbol.getName());
+                            }
+                        }
+                        return true;
+                    };
+                });
+            }
+            return fn;
+        }
+
+        @Override
+        public String toString() {
+            return "'Local Symbols Declaration'";
         }
     },
 
@@ -382,7 +430,7 @@ enum CompilationPhase {
         }
     },
 
-    REINITIALIZE_SERIALIZED(
+    REINITIALIZE_CACHED(
             EnumSet.of(
                     INITIALIZED,
                     PARSED,
@@ -430,7 +478,7 @@ enum CompilationPhase {
 
         @Override
         public String toString() {
-            return "'Deserialize'";
+            return "'Reinitialize cached'";
         }
     },
 

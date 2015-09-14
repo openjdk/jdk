@@ -83,7 +83,6 @@ void stubRoutines_init2(); // note: StubRoutines need 2-phase init
 // during VM shutdown
 void perfMemory_exit();
 void ostream_exit();
-bool image_decompressor_init();
 
 void vm_init_globals() {
   check_ThreadShadow();
@@ -122,9 +121,6 @@ jint init_globals() {
   templateTable_init();
   InterfaceSupport_init();
   SharedRuntime::generate_stubs();
-  if (!image_decompressor_init()) {
-    return JNI_ERR;
-  }
   universe2_init();  // dependent on codeCache_init and stubRoutines_init1
   referenceProcessor_init();
   jni_handles_init();

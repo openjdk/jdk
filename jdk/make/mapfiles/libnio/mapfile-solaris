@@ -130,8 +130,8 @@ SUNWprivate_1.1 {
 		Java_sun_nio_ch_SolarisEventPort_port_1get;
 		Java_sun_nio_ch_SolarisEventPort_port_1getn;
 		Java_sun_nio_ch_SolarisEventPort_port_1send;
-		Java_sun_nio_fs_GnomeFileTypeDetector_initializeGio;
-		Java_sun_nio_fs_GnomeFileTypeDetector_probeGio;
+		Java_sun_nio_fs_GioFileTypeDetector_initializeGio;
+		Java_sun_nio_fs_GioFileTypeDetector_probeGio;
 		Java_sun_nio_fs_UnixNativeDispatcher_init;
 		Java_sun_nio_fs_UnixNativeDispatcher_getcwd;
 		Java_sun_nio_fs_UnixNativeDispatcher_strerror;

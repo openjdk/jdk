@@ -75,7 +75,6 @@ class TypeArrayKlass : public ArrayKlass {
   // GC specific object visitors
   //
   // Mark Sweep
-  void oop_ms_follow_contents(oop obj);
   int  oop_ms_adjust_pointers(oop obj);
 #if INCLUDE_ALL_GCS
   // Parallel Scavenge
@@ -90,15 +89,15 @@ class TypeArrayKlass : public ArrayKlass {
 
  private:
   // The implementation used by all oop_oop_iterate functions in TypeArrayKlasses.
-  inline int oop_oop_iterate_impl(oop obj, ExtendedOopClosure* closure);
+  inline void oop_oop_iterate_impl(oop obj, ExtendedOopClosure* closure);
 
   // Wraps oop_oop_iterate_impl to conform to macros.
   template <bool nv, typename OopClosureType>
-  inline int oop_oop_iterate(oop obj, OopClosureType* closure);
+  inline void oop_oop_iterate(oop obj, OopClosureType* closure);
 
   // Wraps oop_oop_iterate_impl to conform to macros.
   template <bool nv, typename OopClosureType>
-  inline int oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
+  inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
 
  public:
 

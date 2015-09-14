@@ -848,10 +848,10 @@ void nmethod::print_on(outputStream* st, const char* msg) const {
   if (st != NULL) {
     ttyLocker ttyl;
     if (WizardMode) {
-      CompileTask::print_compilation(st, this, msg, /*short_form:*/ true);
+      CompileTask::print(st, this, msg, /*short_form:*/ true);
       st->print_cr(" (" INTPTR_FORMAT ")", this);
     } else {
-      CompileTask::print_compilation(st, this, msg, /*short_form:*/ false);
+      CompileTask::print(st, this, msg, /*short_form:*/ false);
     }
   }
 }
@@ -1050,7 +1050,7 @@ void nmethod::cleanup_inline_caches() {
         if( cb != NULL && cb->is_nmethod() ) {
           nmethod* nm = (nmethod*)cb;
           // Clean inline caches pointing to zombie, non-entrant and unloaded methods
-          if (!nm->is_in_use() || (nm->method()->code() != nm)) ic->set_to_clean();
+          if (!nm->is_in_use() || (nm->method()->code() != nm)) ic->set_to_clean(is_alive());
         }
         break;
       }
@@ -1150,7 +1150,7 @@ void nmethod::mark_as_seen_on_stack() {
 // Tell if a non-entrant method can be converted to a zombie (i.e.,
 // there are no activations on the stack, not in use by the VM,
 // and not in use by the ServiceThread)
-bool nmethod::can_not_entrant_be_converted() {
+bool nmethod::can_convert_to_zombie() {
   assert(is_not_entrant(), "must be a non-entrant method");
 
   // Since the nmethod sweeper only does partial sweep the sweeper's traversal

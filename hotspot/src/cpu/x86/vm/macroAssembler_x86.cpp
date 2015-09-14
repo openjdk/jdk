@@ -3751,8 +3751,31 @@ void MacroAssembler::pop_CPU_state() {
 }
 
 void MacroAssembler::pop_FPU_state() {
-  NOT_LP64(frstor(Address(rsp, 0));)
-  LP64_ONLY(fxrstor(Address(rsp, 0));)
+#ifndef _LP64
+  frstor(Address(rsp, 0));
+#else
+  // AVX will continue to use the fxsave area.
+  // EVEX needs to utilize the xsave area, which is under different
+  // management.
+  if(VM_Version::supports_evex()) {
+    // EDX:EAX describe the XSAVE header and
+    // are obtained while fetching info for XCR0 via cpuid.
+    // These two registers make up 64-bits in the header for which bits
+    // 62:10 are currently reserved for future implementations and unused.  Bit 63
+    // is unused for our implementation as we do not utilize
+    // compressed XSAVE areas.  Bits 9..8 are currently ignored as we do not use
+    // the functionality for PKRU state and MSR tracing.
+    // Ergo we are primarily concerned with bits 7..0, which define
+    // which ISA extensions and features are enabled for a given machine and are
+    // defined in XemXcr0Eax and is used to map the XSAVE area
+    // for restoring registers as described via XCR0.
+    movl(rdx,VM_Version::get_xsave_header_upper_segment());
+    movl(rax,VM_Version::get_xsave_header_lower_segment());
+    xrstor(Address(rsp, 0));
+  } else {
+    fxrstor(Address(rsp, 0));
+  }
+#endif
   addptr(rsp, FPUStateSizeInWords * wordSize);
 }
 
@@ -3769,13 +3792,49 @@ void MacroAssembler::push_CPU_state() {
   push_FPU_state();
 }
 
+#ifdef _LP64
+#define XSTATE_BV 0x200
+#endif
+
 void MacroAssembler::push_FPU_state() {
   subptr(rsp, FPUStateSizeInWords * wordSize);
 #ifndef _LP64
   fnsave(Address(rsp, 0));
   fwait();
 #else
-  fxsave(Address(rsp, 0));
+  // AVX will continue to use the fxsave area.
+  // EVEX needs to utilize the xsave area, which is under different
+  // management.
+  if(VM_Version::supports_evex()) {
+    // Save a copy of EAX and EDX
+    push(rax);
+    push(rdx);
+    // EDX:EAX describe the XSAVE header and
+    // are obtained while fetching info for XCR0 via cpuid.
+    // These two registers make up 64-bits in the header for which bits
+    // 62:10 are currently reserved for future implementations and unused.  Bit 63
+    // is unused for our implementation as we do not utilize
+    // compressed XSAVE areas.  Bits 9..8 are currently ignored as we do not use
+    // the functionality for PKRU state and MSR tracing.
+    // Ergo we are primarily concerned with bits 7..0, which define
+    // which ISA extensions and features are enabled for a given machine and are
+    // defined in XemXcr0Eax and is used to program XSAVE area
+    // for saving the required registers as defined in XCR0.
+    int xcr0_edx = VM_Version::get_xsave_header_upper_segment();
+    int xcr0_eax = VM_Version::get_xsave_header_lower_segment();
+    movl(rdx,xcr0_edx);
+    movl(rax,xcr0_eax);
+    xsave(Address(rsp, wordSize*2));
+    // now Apply control bits and clear bytes 8..23 in the header
+    pop(rdx);
+    pop(rax);
+    movl(Address(rsp, XSTATE_BV), xcr0_eax);
+    movl(Address(rsp, XSTATE_BV+4), xcr0_edx);
+    andq(Address(rsp, XSTATE_BV+8), 0);
+    andq(Address(rsp, XSTATE_BV+16), 0);
+  } else {
+    fxsave(Address(rsp, 0));
+  }
 #endif // LP64
 }
 
@@ -4082,6 +4141,84 @@ void MacroAssembler::vsubss(XMMRegister dst, XMMRegister nds, AddressLiteral src
   }
 }
 
+void MacroAssembler::vnegatess(XMMRegister dst, XMMRegister nds, AddressLiteral src) {
+  int nds_enc = nds->encoding();
+  int dst_enc = dst->encoding();
+  bool dst_upper_bank = (dst_enc > 15);
+  bool nds_upper_bank = (nds_enc > 15);
+  if (VM_Version::supports_avx512novl() &&
+      (nds_upper_bank || dst_upper_bank)) {
+    if (dst_upper_bank) {
+      subptr(rsp, 64);
+      evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+      movflt(xmm0, nds);
+      if (reachable(src)) {
+        vxorps(xmm0, xmm0, as_Address(src), Assembler::AVX_128bit);
+      } else {
+        lea(rscratch1, src);
+        vxorps(xmm0, xmm0, Address(rscratch1, 0), Assembler::AVX_128bit);
+      }
+      movflt(dst, xmm0);
+      evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
+      addptr(rsp, 64);
+    } else {
+      movflt(dst, nds);
+      if (reachable(src)) {
+        vxorps(dst, dst, as_Address(src), Assembler::AVX_128bit);
+      } else {
+        lea(rscratch1, src);
+        vxorps(dst, dst, Address(rscratch1, 0), Assembler::AVX_128bit);
+      }
+    }
+  } else {
+    if (reachable(src)) {
+      vxorps(dst, nds, as_Address(src), Assembler::AVX_128bit);
+    } else {
+      lea(rscratch1, src);
+      vxorps(dst, nds, Address(rscratch1, 0), Assembler::AVX_128bit);
+    }
+  }
+}
+
+void MacroAssembler::vnegatesd(XMMRegister dst, XMMRegister nds, AddressLiteral src) {
+  int nds_enc = nds->encoding();
+  int dst_enc = dst->encoding();
+  bool dst_upper_bank = (dst_enc > 15);
+  bool nds_upper_bank = (nds_enc > 15);
+  if (VM_Version::supports_avx512novl() &&
+      (nds_upper_bank || dst_upper_bank)) {
+    if (dst_upper_bank) {
+      subptr(rsp, 64);
+      evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+      movdbl(xmm0, nds);
+      if (reachable(src)) {
+        vxorps(xmm0, xmm0, as_Address(src), Assembler::AVX_128bit);
+      } else {
+        lea(rscratch1, src);
+        vxorps(xmm0, xmm0, Address(rscratch1, 0), Assembler::AVX_128bit);
+      }
+      movdbl(dst, xmm0);
+      evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
+      addptr(rsp, 64);
+    } else {
+      movdbl(dst, nds);
+      if (reachable(src)) {
+        vxorps(dst, dst, as_Address(src), Assembler::AVX_128bit);
+      } else {
+        lea(rscratch1, src);
+        vxorps(dst, dst, Address(rscratch1, 0), Assembler::AVX_128bit);
+      }
+    }
+  } else {
+    if (reachable(src)) {
+      vxorpd(dst, nds, as_Address(src), Assembler::AVX_128bit);
+    } else {
+      lea(rscratch1, src);
+      vxorpd(dst, nds, Address(rscratch1, 0), Assembler::AVX_128bit);
+    }
+  }
+}
+
 void MacroAssembler::vxorpd(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len) {
   if (reachable(src)) {
     vxorpd(dst, nds, as_Address(src), vector_len);
@@ -4318,9 +4455,10 @@ void MacroAssembler::store_check(Register obj, Address dst) {
 void MacroAssembler::store_check(Register obj) {
   // Does a store check for the oop in register obj. The content of
   // register obj is destroyed afterwards.
-
   BarrierSet* bs = Universe::heap()->barrier_set();
-  assert(bs->kind() == BarrierSet::CardTableModRef, "Wrong barrier set kind");
+  assert(bs->kind() == BarrierSet::CardTableForRS ||
+         bs->kind() == BarrierSet::CardTableExtension,
+         "Wrong barrier set kind");
 
   CardTableModRefBS* ct = barrier_set_cast<CardTableModRefBS>(bs);
   assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
@@ -4570,69 +4708,58 @@ void MacroAssembler::fp_runtime_fallback(address runtime_entry, int nb_args, int
 
   // if we are coming from c1, xmm registers may be live
   int off = 0;
+  int num_xmm_regs = LP64_ONLY(16) NOT_LP64(8);
+  if (UseAVX > 2) {
+    num_xmm_regs = LP64_ONLY(32) NOT_LP64(8);
+  }
+
   if (UseSSE == 1)  {
     subptr(rsp, sizeof(jdouble)*8);
-    movflt(Address(rsp,off++*sizeof(jdouble)),xmm0);
-    movflt(Address(rsp,off++*sizeof(jdouble)),xmm1);
-    movflt(Address(rsp,off++*sizeof(jdouble)),xmm2);
-    movflt(Address(rsp,off++*sizeof(jdouble)),xmm3);
-    movflt(Address(rsp,off++*sizeof(jdouble)),xmm4);
-    movflt(Address(rsp,off++*sizeof(jdouble)),xmm5);
-    movflt(Address(rsp,off++*sizeof(jdouble)),xmm6);
-    movflt(Address(rsp,off++*sizeof(jdouble)),xmm7);
+    for (int n = 0; n < 8; n++) {
+      movflt(Address(rsp, off++*sizeof(jdouble)), as_XMMRegister(n));
+    }
   } else if (UseSSE >= 2)  {
     if (UseAVX > 2) {
+      push(rbx);
       movl(rbx, 0xffff);
-#ifdef _LP64
-      kmovql(k1, rbx);
-#else
-      kmovdl(k1, rbx);
-#endif
+      kmovwl(k1, rbx);
+      pop(rbx);
     }
 #ifdef COMPILER2
     if (MaxVectorSize > 16) {
-      assert(UseAVX > 0, "256bit vectors are supported only with AVX");
+      if(UseAVX > 2) {
+        // Save upper half of ZMM registes
+        subptr(rsp, 32*num_xmm_regs);
+        for (int n = 0; n < num_xmm_regs; n++) {
+          vextractf64x4h(Address(rsp, off++*32), as_XMMRegister(n));
+        }
+        off = 0;
+      }
+      assert(UseAVX > 0, "256 bit vectors are supported only with AVX");
       // Save upper half of YMM registes
-      subptr(rsp, 16 * LP64_ONLY(16) NOT_LP64(8));
-      vextractf128h(Address(rsp,  0),xmm0);
-      vextractf128h(Address(rsp, 16),xmm1);
-      vextractf128h(Address(rsp, 32),xmm2);
-      vextractf128h(Address(rsp, 48),xmm3);
-      vextractf128h(Address(rsp, 64),xmm4);
-      vextractf128h(Address(rsp, 80),xmm5);
-      vextractf128h(Address(rsp, 96),xmm6);
-      vextractf128h(Address(rsp,112),xmm7);
-#ifdef _LP64
-      vextractf128h(Address(rsp,128),xmm8);
-      vextractf128h(Address(rsp,144),xmm9);
-      vextractf128h(Address(rsp,160),xmm10);
-      vextractf128h(Address(rsp,176),xmm11);
-      vextractf128h(Address(rsp,192),xmm12);
-      vextractf128h(Address(rsp,208),xmm13);
-      vextractf128h(Address(rsp,224),xmm14);
-      vextractf128h(Address(rsp,240),xmm15);
-#endif
+      subptr(rsp, 16*num_xmm_regs);
+      for (int n = 0; n < num_xmm_regs; n++) {
+        vextractf128h(Address(rsp, off++*16), as_XMMRegister(n));
+      }
     }
 #endif
-    // Save whole 128bit (16 bytes) XMM regiters
-    subptr(rsp, 16 * LP64_ONLY(16) NOT_LP64(8));
-    movdqu(Address(rsp,off++*16),xmm0);
-    movdqu(Address(rsp,off++*16),xmm1);
-    movdqu(Address(rsp,off++*16),xmm2);
-    movdqu(Address(rsp,off++*16),xmm3);
-    movdqu(Address(rsp,off++*16),xmm4);
-    movdqu(Address(rsp,off++*16),xmm5);
-    movdqu(Address(rsp,off++*16),xmm6);
-    movdqu(Address(rsp,off++*16),xmm7);
+    // Save whole 128bit (16 bytes) XMM registers
+    subptr(rsp, 16*num_xmm_regs);
+    off = 0;
 #ifdef _LP64
-    movdqu(Address(rsp,off++*16),xmm8);
-    movdqu(Address(rsp,off++*16),xmm9);
-    movdqu(Address(rsp,off++*16),xmm10);
-    movdqu(Address(rsp,off++*16),xmm11);
-    movdqu(Address(rsp,off++*16),xmm12);
-    movdqu(Address(rsp,off++*16),xmm13);
-    movdqu(Address(rsp,off++*16),xmm14);
-    movdqu(Address(rsp,off++*16),xmm15);
+    if (VM_Version::supports_avx512novl()) {
+      for (int n = 0; n < num_xmm_regs; n++) {
+        vextractf32x4h(Address(rsp, off++*16), as_XMMRegister(n), 0);
+      }
+    } else {
+      for (int n = 0; n < num_xmm_regs; n++) {
+        movdqu(Address(rsp, off++*16), as_XMMRegister(n));
+      }
+    }
+#else
+    for (int n = 0; n < num_xmm_regs; n++) {
+      movdqu(Address(rsp, off++*16), as_XMMRegister(n));
+    }
 #endif
   }
 
@@ -4687,7 +4814,7 @@ void MacroAssembler::fp_runtime_fallback(address runtime_entry, int nb_args, int
   movsd(Address(rsp, 0), xmm0);
   fld_d(Address(rsp, 0));
 #endif // _LP64
-  addptr(rsp, sizeof(jdouble) * nb_args);
+  addptr(rsp, sizeof(jdouble)*nb_args);
   if (num_fpu_regs_in_use > 1) {
     // Must save return value to stack and then restore entire FPU
     // stack except incoming arguments
@@ -4697,63 +4824,50 @@ void MacroAssembler::fp_runtime_fallback(address runtime_entry, int nb_args, int
       addptr(rsp, sizeof(jdouble));
     }
     fld_d(Address(rsp, (nb_args-1)*sizeof(jdouble)));
-    addptr(rsp, sizeof(jdouble) * nb_args);
+    addptr(rsp, sizeof(jdouble)*nb_args);
   }
 
   off = 0;
   if (UseSSE == 1)  {
-    movflt(xmm0, Address(rsp,off++*sizeof(jdouble)));
-    movflt(xmm1, Address(rsp,off++*sizeof(jdouble)));
-    movflt(xmm2, Address(rsp,off++*sizeof(jdouble)));
-    movflt(xmm3, Address(rsp,off++*sizeof(jdouble)));
-    movflt(xmm4, Address(rsp,off++*sizeof(jdouble)));
-    movflt(xmm5, Address(rsp,off++*sizeof(jdouble)));
-    movflt(xmm6, Address(rsp,off++*sizeof(jdouble)));
-    movflt(xmm7, Address(rsp,off++*sizeof(jdouble)));
+    for (int n = 0; n < 8; n++) {
+      movflt(as_XMMRegister(n), Address(rsp, off++*sizeof(jdouble)));
+    }
     addptr(rsp, sizeof(jdouble)*8);
   } else if (UseSSE >= 2)  {
     // Restore whole 128bit (16 bytes) XMM regiters
-    movdqu(xmm0, Address(rsp,off++*16));
-    movdqu(xmm1, Address(rsp,off++*16));
-    movdqu(xmm2, Address(rsp,off++*16));
-    movdqu(xmm3, Address(rsp,off++*16));
-    movdqu(xmm4, Address(rsp,off++*16));
-    movdqu(xmm5, Address(rsp,off++*16));
-    movdqu(xmm6, Address(rsp,off++*16));
-    movdqu(xmm7, Address(rsp,off++*16));
 #ifdef _LP64
-    movdqu(xmm8, Address(rsp,off++*16));
-    movdqu(xmm9, Address(rsp,off++*16));
-    movdqu(xmm10, Address(rsp,off++*16));
-    movdqu(xmm11, Address(rsp,off++*16));
-    movdqu(xmm12, Address(rsp,off++*16));
-    movdqu(xmm13, Address(rsp,off++*16));
-    movdqu(xmm14, Address(rsp,off++*16));
-    movdqu(xmm15, Address(rsp,off++*16));
+    if (VM_Version::supports_avx512novl()) {
+      for (int n = 0; n < num_xmm_regs; n++) {
+        vinsertf32x4h(as_XMMRegister(n), Address(rsp, off++*16), 0);
+      }
+    }
+    else {
+      for (int n = 0; n < num_xmm_regs; n++) {
+        movdqu(as_XMMRegister(n), Address(rsp, off++*16));
+      }
+    }
+#else
+    for (int n = 0; n < num_xmm_regs; n++) {
+      movdqu(as_XMMRegister(n), Address(rsp, off++ * 16));
+    }
 #endif
-    addptr(rsp, 16 * LP64_ONLY(16) NOT_LP64(8));
+    addptr(rsp, 16*num_xmm_regs);
+
 #ifdef COMPILER2
     if (MaxVectorSize > 16) {
       // Restore upper half of YMM registes.
-      vinsertf128h(xmm0, Address(rsp,  0));
-      vinsertf128h(xmm1, Address(rsp, 16));
-      vinsertf128h(xmm2, Address(rsp, 32));
-      vinsertf128h(xmm3, Address(rsp, 48));
-      vinsertf128h(xmm4, Address(rsp, 64));
-      vinsertf128h(xmm5, Address(rsp, 80));
-      vinsertf128h(xmm6, Address(rsp, 96));
-      vinsertf128h(xmm7, Address(rsp,112));
-#ifdef _LP64
-      vinsertf128h(xmm8, Address(rsp,128));
-      vinsertf128h(xmm9, Address(rsp,144));
-      vinsertf128h(xmm10, Address(rsp,160));
-      vinsertf128h(xmm11, Address(rsp,176));
-      vinsertf128h(xmm12, Address(rsp,192));
-      vinsertf128h(xmm13, Address(rsp,208));
-      vinsertf128h(xmm14, Address(rsp,224));
-      vinsertf128h(xmm15, Address(rsp,240));
-#endif
-      addptr(rsp, 16 * LP64_ONLY(16) NOT_LP64(8));
+      off = 0;
+      for (int n = 0; n < num_xmm_regs; n++) {
+        vinsertf128h(as_XMMRegister(n), Address(rsp, off++*16));
+      }
+      addptr(rsp, 16*num_xmm_regs);
+      if(UseAVX > 2) {
+        off = 0;
+        for (int n = 0; n < num_xmm_regs; n++) {
+          vinsertf64x4h(as_XMMRegister(n), Address(rsp, off++*32));
+        }
+        addptr(rsp, 32*num_xmm_regs);
+      }
     }
 #endif
   }
@@ -7093,11 +7207,7 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
       Label L_fill_32_bytes_loop, L_check_fill_8_bytes, L_fill_8_bytes_loop, L_fill_8_bytes;
       if (UseAVX > 2) {
         movl(rtmp, 0xffff);
-#ifdef _LP64
-        kmovql(k1, rtmp);
-#else
-        kmovdl(k1, rtmp);
-#endif
+        kmovwl(k1, rtmp);
       }
       movdl(xtmp, value);
       if (UseAVX > 2 && UseUnalignedLoadStores) {
@@ -7110,7 +7220,7 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
         align(16);
 
         BIND(L_fill_64_bytes_loop);
-        evmovdqu(Address(to, 0), xtmp, Assembler::AVX_512bit);
+        evmovdqul(Address(to, 0), xtmp, Assembler::AVX_512bit);
         addptr(to, 64);
         subl(count, 16 << shift);
         jcc(Assembler::greaterEqual, L_fill_64_bytes_loop);
@@ -7118,7 +7228,7 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
         BIND(L_check_fill_32_bytes);
         addl(count, 8 << shift);
         jccb(Assembler::less, L_check_fill_8_bytes);
-        evmovdqu(Address(to, 0), xtmp, Assembler::AVX_256bit);
+        evmovdqul(Address(to, 0), xtmp, Assembler::AVX_256bit);
         addptr(to, 32);
         subl(count, 8 << shift);
 
@@ -8396,6 +8506,14 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len, Regi
 
   Label L_tail, L_tail_restore, L_tail_loop, L_exit, L_align_loop, L_aligned;
   Label L_fold_tail, L_fold_128b, L_fold_512b, L_fold_512b_loop, L_fold_tail_loop;
+
+  // For EVEX with VL and BW, provide a standard mask, VL = 128 will guide the merge
+  // context for the registers used, where all instructions below are using 128-bit mode
+  // On EVEX without VL and BW, these instructions will all be AVX.
+  if (VM_Version::supports_avx512vlbw()) {
+    movl(tmp, 0xffff);
+    kmovwl(k1, tmp);
+  }
 
   lea(table, ExternalAddress(StubRoutines::crc_table_addr()));
   notl(crc); // ~crc

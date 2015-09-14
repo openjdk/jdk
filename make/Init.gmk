@@ -253,6 +253,7 @@ else # HAS_SPEC=true
   main: $(INIT_TARGETS)
         ifneq ($(SEQUENTIAL_TARGETS)$(PARALLEL_TARGETS), )
 	  $(call RotateLogFiles)
+	  $(call PrepareFailureLogs)
 	  $(BUILD_LOG_WRAPPER) $(PRINTF) "Building $(TARGET_DESCRIPTION)\n"
           ifneq ($(SEQUENTIAL_TARGETS), )
             # Don't touch build output dir since we might be cleaning. That
@@ -266,10 +267,13 @@ else # HAS_SPEC=true
 	    $(call PrepareSmartJavac)
 	    ( cd $(TOPDIR) && \
 	        $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) $(OUTPUT_SYNC_FLAG) \
-	        -j $(JOBS) -f make/Main.gmk $(USER_MAKE_VARS) \
-	        $(PARALLEL_TARGETS) || \
-	        ( exitcode=$$? && $(BUILD_LOG_WRAPPER) $(PRINTF) "\nERROR: Build failed for $(TARGET_DESCRIPTION) (exit code $$exitcode) \n" && \
-	        $(PRINTF) "Hint: If caused by a warning, try configure --disable-warnings-as-errors \n\n" && exit $$exitcode ) )
+	            -j $(JOBS) -f make/Main.gmk $(USER_MAKE_VARS) \
+	            $(PARALLEL_TARGETS) || \
+	        ( exitcode=$$? && $(BUILD_LOG_WRAPPER) \
+	        $(PRINTF) "\nERROR: Build failed for $(TARGET_DESCRIPTION) (exit code $$exitcode) \n" && \
+	        cd $(TOPDIR) && $(MAKE) $(MAKE_ARGS) -j 1 -f make/Init.gmk \
+	            HAS_SPEC=true on-failure ; \
+	        exit $$exitcode ) )
 	    $(call CleanupSmartJavac)
 	    $(call StopGlobalTimer)
 	    $(call ReportBuildTimes)
@@ -277,5 +281,25 @@ else # HAS_SPEC=true
 	  $(BUILD_LOG_WRAPPER) $(PRINTF) "Finished building $(TARGET_DESCRIPTION)\n"
         endif
 
-  .PHONY: print-targets print-modules reconfigure main
+    on-failure:
+        ifneq ($(wildcard $(MAKESUPPORT_OUTPUTDIR)/failure-logs/*), )
+	  $(PRINTF) "=== Output from failing command(s) repeated here ===\n"
+	  $(foreach logfile, $(sort $(wildcard $(MAKESUPPORT_OUTPUTDIR)/failure-logs/*)), \
+	      $(PRINTF) "* For target $(notdir $(basename $(logfile))):\n" $(NEWLINE) \
+	      $(CAT) $(logfile) | $(GREP) -v -e "^Note: including file:" $(NEWLINE) \
+	  )
+	  $(PRINTF) "=== End of repeated output ===\n"
+        endif
+	if $(GREP) -q "recipe for target .* failed" $(BUILD_LOG) 2> /dev/null; then  \
+	  $(PRINTF) "=== Make failure sequence repeated here ===\n" ; \
+	  $(GREP) "recipe for target .* failed" $(BUILD_LOG) ; \
+	  $(PRINTF) "=== End of repeated output ===\n" ; \
+	  $(PRINTF) "Hint: Try searching the build log for the name of the first failed target.\n" ; \
+	else \
+	  $(PRINTF) "No indication of failed target found.\n" ; \
+	  $(PRINTF) "Hint: Try searching the build log for '] Error'.\n" ; \
+	fi
+	$(PRINTF) "Hint: If caused by a warning, try configure --disable-warnings-as-errors.\n\n"
+
+  .PHONY: print-targets print-modules reconfigure main on-failure
 endif
