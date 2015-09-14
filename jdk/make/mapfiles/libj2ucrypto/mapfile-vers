@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ SUNWprivate_1.1 {
 		Java_com_oracle_security_ucrypto_NativeCipher_nativeUpdate;
 		Java_com_oracle_security_ucrypto_NativeCipher_nativeFinal;
                 Java_com_oracle_security_ucrypto_NativeKey_nativeFree;
+                Java_com_oracle_security_ucrypto_NativeKey_00024RSAPrivate_nativeInit;
                 Java_com_oracle_security_ucrypto_NativeKey_00024RSAPrivateCrt_nativeInit;
                 Java_com_oracle_security_ucrypto_NativeKey_00024RSAPublic_nativeInit;
 		Java_com_oracle_security_ucrypto_NativeRSASignature_nativeInit;
@@ -56,6 +57,7 @@ SUNWprivate_1.1 {
                 JavaCritical_com_oracle_security_ucrypto_NativeCipher_nativeUpdate;
                 JavaCritical_com_oracle_security_ucrypto_NativeCipher_nativeFinal;
                 JavaCritical_com_oracle_security_ucrypto_NativeKey_nativeFree;
+                JavaCritical_com_oracle_security_ucrypto_NativeKey_00024RSAPrivate_nativeInit;
                 JavaCritical_com_oracle_security_ucrypto_NativeKey_00024RSAPrivateCrt_nativeInit;
                 JavaCritical_com_oracle_security_ucrypto_NativeKey_00024RSAPublic_nativeInit;
 		JavaCritical_com_oracle_security_ucrypto_NativeRSASignature_nativeInit;

@@ -140,7 +140,7 @@ abstract class XDragSourceProtocol {
     /**
      * Processes the specified client message event.
      *
-     * @returns true if the event was successfully processed.
+     * @return true if the event was successfully processed.
      */
     public abstract boolean processClientMessage(XClientMessageEvent xclient)
       throws XException;

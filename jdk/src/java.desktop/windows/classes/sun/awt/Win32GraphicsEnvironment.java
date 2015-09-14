@@ -97,14 +97,14 @@ public final class Win32GraphicsEnvironment extends SunGraphicsEnvironment {
      * Returns the number of pixels per logical inch along the screen width.
      * In a system with multiple display monitors, this value is the same for
      * all monitors.
-     * @returns number of pixels per logical inch in X direction
+     * @return number of pixels per logical inch in X direction
      */
     public native int getXResolution();
     /**
      * Returns the number of pixels per logical inch along the screen height.
      * In a system with multiple display monitors, this value is the same for
      * all monitors.
-     * @returns number of pixels per logical inch in Y direction
+     * @return number of pixels per logical inch in Y direction
      */
     public native int getYResolution();
 

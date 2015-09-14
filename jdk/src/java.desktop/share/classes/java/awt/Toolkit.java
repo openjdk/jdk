@@ -448,7 +448,7 @@ public abstract class Toolkit {
      *
      * @param s the error message
      * @param e the original exception
-     * @throw the new AWTError including the cause (the original exception)
+     * @throws the new AWTError including the cause (the original exception)
      */
     private static void newAWTError(Throwable e, String s) {
         AWTError newAWTError = new AWTError(s);

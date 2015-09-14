@@ -79,14 +79,11 @@ public class OCSPNonceExtensionTests {
         Map<String, TestCase> testList =
                 new LinkedHashMap<String, TestCase>() {{
             put("CTOR Test (provide length)", testCtorByLength);
+            put("CTOR Test (provide nonce bytes)", testCtorByValue);
+            put("CTOR Test (set criticality forms)", testCtorCritForms);
             put("CTOR Test (provide extension DER encoding)",
                     testCtorSuperByDerValue);
-            put("Use set() call to provide random data", testResetValue);
-            put("Test get() method", testGet);
-            put("test set() method", testSet);
-            put("Test getElements() method", testGetElements);
             put("Test getName() method", testGetName);
-            put("Test delete() method", testDelete);
         }};
 
         System.out.println("============ Tests ============");
@@ -179,6 +176,20 @@ public class OCSPNonceExtensionTests {
             Boolean pass = Boolean.FALSE;
             String message = null;
             try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                // Try sending in a negative length
+                try {
+                    Extension negLenNonce = new OCSPNonceExtension(-8);
+                    throw new RuntimeException(
+                            "Accepted a negative length nonce");
+                } catch (IllegalArgumentException iae) { }
+
+                // How about a zero length?
+                try {
+                    Extension zeroLenNonce = new OCSPNonceExtension(0);
+                    throw new RuntimeException("Accepted a zero length nonce");
+                } catch (IllegalArgumentException iae) { }
+
+                // Valid input to constructor
                 Extension nonceByLen = new OCSPNonceExtension(32);
 
                 // Verify overall encoded extension structure
@@ -215,6 +226,82 @@ public class OCSPNonceExtensionTests {
             return new AbstractMap.SimpleEntry<>(pass, message);
         }
     };
+
+    public static final TestCase testCtorByValue = new TestCase() {
+        @Override
+        public Map.Entry<Boolean, String> runTest() {
+            Boolean pass = Boolean.FALSE;
+            String message = null;
+            try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+
+                // Try giving a null value for the nonce
+                try {
+                    Extension nullNonce = new OCSPNonceExtension(null);
+                    throw new RuntimeException("Accepted a null nonce");
+                } catch (NullPointerException npe) { }
+
+                // How about a zero-length byte array?
+                try {
+                    Extension zeroLenNonce =
+                            new OCSPNonceExtension(new byte[0]);
+                    throw new RuntimeException("Accepted a zero length nonce");
+                } catch (IllegalArgumentException iae) { }
+
+                OCSPNonceExtension nonceByValue =
+                        new OCSPNonceExtension(DEADBEEF_16);
+
+                // Verify overall encoded extension structure
+                nonceByValue.encode(baos);
+                verifyExtStructure(baos.toByteArray());
+
+                // Verify the name, elements, and data conform to
+                // expected values for this specific object.
+                boolean crit = nonceByValue.isCritical();
+                String oid = nonceByValue.getId();
+                byte[] nonceData = nonceByValue.getNonceValue();
+
+                if (crit) {
+                    message = "Extension incorrectly marked critical";
+                } else if (!oid.equals(OCSP_NONCE_OID)) {
+                    message = "Incorrect OID (Got " + oid + ", Expected " +
+                            OCSP_NONCE_OID + ")";
+                } else if (!Arrays.equals(nonceData, DEADBEEF_16)) {
+                    message = "Returned nonce value did not match input";
+                } else {
+                    pass = Boolean.TRUE;
+                }
+            } catch (Exception e) {
+                e.printStackTrace(System.out);
+                message = e.getClass().getName();
+            }
+
+            return new AbstractMap.SimpleEntry<>(pass, message);
+        }
+    };
+
+    public static final TestCase testCtorCritForms = new TestCase() {
+        @Override
+        public Map.Entry<Boolean, String> runTest() {
+            Boolean pass = Boolean.FALSE;
+            String message = null;
+            try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                Extension nonceByLength = new OCSPNonceExtension(true, 32);
+                Extension nonceByValue =
+                        new OCSPNonceExtension(true, DEADBEEF_16);
+                pass = nonceByLength.isCritical() && nonceByValue.isCritical();
+                if (!pass) {
+                    message = "nonceByLength or nonceByValue was not marked " +
+                            "critical as expected";
+                }
+            }  catch (Exception e) {
+                e.printStackTrace(System.out);
+                message = e.getClass().getName();
+            }
+
+            return new AbstractMap.SimpleEntry<>(pass, message);
+        }
+    };
+
 
     public static final TestCase testCtorSuperByDerValue = new TestCase() {
         @Override
@@ -260,145 +347,6 @@ public class OCSPNonceExtensionTests {
         }
     };
 
-    public static final TestCase testResetValue = new TestCase() {
-        @Override
-        public Map.Entry<Boolean, String> runTest() {
-            Boolean pass = Boolean.FALSE;
-            String message = null;
-            try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-                OCSPNonceExtension nonce = new OCSPNonceExtension(32);
-
-                // Reset the nonce data to reflect 16 bytes of DEADBEEF
-                nonce.set(OCSPNonceExtension.NONCE, (Object)DEADBEEF_16);
-
-                // Verify overall encoded extension content
-                nonce.encode(baos);
-                dumpHexBytes(OCSP_NONCE_DB16);
-                System.out.println();
-                dumpHexBytes(baos.toByteArray());
-
-                pass = Arrays.equals(baos.toByteArray(), OCSP_NONCE_DB16);
-            } catch (Exception e) {
-                e.printStackTrace(System.out);
-                message = e.getClass().getName();
-            }
-
-            return new AbstractMap.SimpleEntry<>(pass, message);
-        }
-    };
-
-    public static final TestCase testSet = new TestCase() {
-        @Override
-        public Map.Entry<Boolean, String> runTest() {
-            Boolean pass = Boolean.FALSE;
-            String message = null;
-            try {
-                OCSPNonceExtension nonceByLen = new OCSPNonceExtension(32);
-
-                // Set the nonce data to 16 bytes of DEADBEEF
-                nonceByLen.set(ELEMENT_NONCE, DEADBEEF_16);
-                byte[] nonceData = (byte[])nonceByLen.get(ELEMENT_NONCE);
-                if (!Arrays.equals(nonceData, DEADBEEF_16)) {
-                    throw new RuntimeException("Retuned nonce data does not " +
-                            "match expected result");
-                }
-
-                // Now try to set a value using an object that is not a byte
-                // array
-                int[] INT_DB_16 = {
-                    0xDEADBEEF, 0xDEADBEEF, 0xDEADBEEF, 0xDEADBEEF
-                };
-                try {
-                    nonceByLen.set(ELEMENT_NONCE, INT_DB_16);
-                    throw new RuntimeException("Accepted get() for " +
-                            "unsupported element name");
-                } catch (IOException ioe) { }     // Expected result
-
-                // And try setting a value using an unknown element name
-                try {
-                    nonceByLen.set("FOO", DEADBEEF_16);
-                    throw new RuntimeException("Accepted get() for " +
-                            "unsupported element name");
-                } catch (IOException ioe) { }     // Expected result
-
-                pass = Boolean.TRUE;
-            } catch (Exception e) {
-                e.printStackTrace(System.out);
-                message = e.getClass().getName();
-            }
-
-            return new AbstractMap.SimpleEntry<>(pass, message);
-        }
-    };
-
-        public static final TestCase testGet = new TestCase() {
-        @Override
-        public Map.Entry<Boolean, String> runTest() {
-            Boolean pass = Boolean.FALSE;
-            String message = null;
-            try {
-                OCSPNonceExtension nonceByLen = new OCSPNonceExtension(32);
-
-                // Grab the nonce data by its correct element name
-                byte[] nonceData = (byte[])nonceByLen.get(ELEMENT_NONCE);
-                if (nonceData == null || nonceData.length != 32) {
-                    throw new RuntimeException("Unexpected return value from " +
-                            "get() method: either null or incorrect length");
-                }
-
-                // Now try to get any kind of data using an element name that
-                // doesn't exist for this extension.
-                try {
-                    nonceByLen.get("FOO");
-                    throw new RuntimeException("Accepted get() for " +
-                            "unsupported element name");
-                } catch (IOException ioe) { }     // Expected result
-
-                pass = Boolean.TRUE;
-            } catch (Exception e) {
-                e.printStackTrace(System.out);
-                message = e.getClass().getName();
-            }
-
-            return new AbstractMap.SimpleEntry<>(pass, message);
-        }
-    };
-
-    public static final TestCase testGetElements = new TestCase() {
-        @Override
-        public Map.Entry<Boolean, String> runTest() {
-            Boolean pass = Boolean.FALSE;
-            String message = null;
-            try {
-                OCSPNonceExtension nonceByLen = new OCSPNonceExtension(32);
-
-                int elementCount = 0;
-                boolean foundElement = false;
-
-                // There should be exactly one element and its name should
-                // be "nonce"
-                for (Enumeration<String> elements = nonceByLen.getElements();
-                        elements.hasMoreElements(); elementCount++) {
-                    if (elements.nextElement().equals(ELEMENT_NONCE)) {
-                        foundElement = true;
-                    }
-                }
-
-                if (!foundElement || elementCount != 1) {
-                    throw new RuntimeException("Unexpected or missing " +
-                            "Enumeration element");
-                }
-
-                pass = Boolean.TRUE;
-            } catch (Exception e) {
-                e.printStackTrace(System.out);
-                message = e.getClass().getName();
-            }
-
-            return new AbstractMap.SimpleEntry<>(pass, message);
-        }
-    };
-
     public static final TestCase testGetName = new TestCase() {
         @Override
         public Map.Entry<Boolean, String> runTest() {
@@ -407,46 +355,6 @@ public class OCSPNonceExtensionTests {
             try {
                 OCSPNonceExtension nonceByLen = new OCSPNonceExtension(32);
                 pass = new Boolean(nonceByLen.getName().equals(EXT_NAME));
-            } catch (Exception e) {
-                e.printStackTrace(System.out);
-                message = e.getClass().getName();
-            }
-
-            return new AbstractMap.SimpleEntry<>(pass, message);
-        }
-    };
-
-    public static final TestCase testDelete = new TestCase() {
-        @Override
-        public Map.Entry<Boolean, String> runTest() {
-            Boolean pass = Boolean.FALSE;
-            String message = null;
-            try {
-                OCSPNonceExtension nonceByLen = new OCSPNonceExtension(32);
-
-                // First verify that there's data to begin with
-                byte[] nonceData = (byte[])nonceByLen.get(ELEMENT_NONCE);
-                if (nonceData == null || nonceData.length != 32) {
-                    throw new RuntimeException("Unexpected return value from " +
-                            "get() method: either null or incorrect length");
-                }
-
-                // Attempt to delete using an element name that doesn't exist
-                // for this extension.
-                try {
-                    nonceByLen.delete("FOO");
-                    throw new RuntimeException("Accepted delete() for " +
-                            "unsupported element name");
-                } catch (IOException ioe) { }     // Expected result
-
-                // Now attempt to properly delete the extension data
-                nonceByLen.delete(ELEMENT_NONCE);
-                nonceData = (byte[])nonceByLen.get(ELEMENT_NONCE);
-                if (nonceData != null) {
-                    throw new RuntimeException("Unexpected non-null return");
-                }
-
-                pass = Boolean.TRUE;
             } catch (Exception e) {
                 e.printStackTrace(System.out);
                 message = e.getClass().getName();

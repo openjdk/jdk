@@ -67,8 +67,8 @@ public abstract class ShellFolder extends File {
      * <code>java.io.File</code> instead. If not, then the object is most likely
      * depending on some internal (native) state and cannot be serialized.
      *
-     * @returns a <code>java.io.File</code> replacement object, or <code>null</code>
-     * if no suitable replacement can be found.
+     * @return a java.io.File replacement object, or null
+     *         if no suitable replacement can be found.
      */
     protected abstract Object writeReplace() throws java.io.ObjectStreamException;
 

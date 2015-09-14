@@ -176,6 +176,21 @@ final class ColorChooserPanel extends AbstractColorChooserPanel implements Prope
         return null;
     }
 
+    @Override
+    public void setColorTransparencySelectionEnabled(boolean b){
+        boolean oldValue = isColorTransparencySelectionEnabled();
+        if (b != oldValue) {
+            panel.setColorTransparencySelectionEnabled(b);
+            firePropertyChange(TRANSPARENCY_ENABLED_PROPERTY,
+                    oldValue, b);
+        }
+    }
+
+    @Override
+    public boolean isColorTransparencySelectionEnabled(){
+        return panel.isColorTransparencySelectionEnabled();
+    }
+
     public void propertyChange(PropertyChangeEvent event) {
         ColorSelectionModel model = getColorSelectionModel();
         if (model != null) {

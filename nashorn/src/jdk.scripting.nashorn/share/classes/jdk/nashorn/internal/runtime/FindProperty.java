@@ -297,4 +297,3 @@ public final class FindProperty {
     }
 
 }
-
