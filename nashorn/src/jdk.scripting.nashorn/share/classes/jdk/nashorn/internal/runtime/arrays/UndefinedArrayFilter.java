@@ -34,7 +34,7 @@ import jdk.nashorn.internal.runtime.UnwarrantedOptimismException;
  * This filter handles the presence of undefined array elements.
  */
 final class UndefinedArrayFilter extends ArrayFilter {
-    /** Bit vector tracking undefines. */
+    /** Bit vector tracking undefined slots. */
     private final BitVector undefined;
 
     UndefinedArrayFilter(final ArrayData underlying) {

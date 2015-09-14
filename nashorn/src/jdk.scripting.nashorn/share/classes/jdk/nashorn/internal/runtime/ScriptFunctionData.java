@@ -151,7 +151,7 @@ public abstract class ScriptFunctionData implements Serializable {
      * Is this a ScriptFunction generated with strict semantics?
      * @return true if strict, false otherwise
      */
-    public boolean isStrict() {
+    public final boolean isStrict() {
         return (flags & IS_STRICT) != 0;
     }
 
@@ -164,11 +164,11 @@ public abstract class ScriptFunctionData implements Serializable {
         return getName();
     }
 
-    boolean isBuiltin() {
+    final boolean isBuiltin() {
         return (flags & IS_BUILTIN) != 0;
     }
 
-    boolean isConstructor() {
+    final boolean isConstructor() {
         return (flags & IS_CONSTRUCTOR) != 0;
     }
 
@@ -179,7 +179,7 @@ public abstract class ScriptFunctionData implements Serializable {
      * according to ECMA 10.4.3.
      * @return true if this argument must be an object
      */
-    boolean needsWrappedThis() {
+    final boolean needsWrappedThis() {
         return (flags & USES_THIS) != 0 && (flags & IS_STRICT_OR_BUILTIN) == 0;
     }
 
@@ -318,7 +318,7 @@ public abstract class ScriptFunctionData implements Serializable {
      * Used to find an apply to call version that fits this callsite.
      * We cannot just, as in the normal matcher case, return e.g. (Object, Object, int)
      * for (Object, Object, int, int, int) or we will destroy the semantics and get
-     * a function that, when padded with undefineds, behaves differently
+     * a function that, when padded with undefined values, behaves differently
      * @param type actual call site type
      * @return apply to call that perfectly fits this callsite or null if none found
      */
@@ -397,7 +397,7 @@ public abstract class ScriptFunctionData implements Serializable {
 
     /**
      * This method is used to create the immutable portion of a bound function.
-     * See {@link ScriptFunction#makeBoundFunction(Object, Object[])}
+     * See {@link ScriptFunction#createBound(Object, Object[])}
      *
      * @param fn the original function being bound
      * @param self this reference to bind. Can be null.

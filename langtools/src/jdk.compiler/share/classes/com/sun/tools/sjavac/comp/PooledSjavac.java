@@ -24,13 +24,13 @@
  */
 package com.sun.tools.sjavac.comp;
 
+import java.io.Writer;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import com.sun.tools.sjavac.Log;
-import com.sun.tools.sjavac.server.CompilationResult;
 import com.sun.tools.sjavac.server.Sjavac;
 
 /**
@@ -54,10 +54,10 @@ public class PooledSjavac implements Sjavac {
     }
 
     @Override
-    public CompilationResult compile(String[] args) {
+    public int compile(String[] args, Writer out, Writer err) {
         try {
             return pool.submit(() -> {
-                return delegate.compile(args);
+                return delegate.compile(args, out, err);
             }).get();
         } catch (Exception e) {
             e.printStackTrace();

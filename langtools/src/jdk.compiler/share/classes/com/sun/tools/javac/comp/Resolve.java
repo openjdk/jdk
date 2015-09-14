@@ -1436,6 +1436,7 @@ public class Resolve {
         }
         Assert.check(!sym.kind.isResolutionError());
         try {
+            types.noWarnings.clear();
             Type mt = rawInstantiate(env, site, sym, null, argtypes, typeargtypes,
                                allowBoxing, useVarargs, types.noWarnings);
             currentResolutionContext.addApplicableCandidate(sym, mt);
