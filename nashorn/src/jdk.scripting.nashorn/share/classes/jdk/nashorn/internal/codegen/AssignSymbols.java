@@ -65,7 +65,6 @@ import jdk.nashorn.internal.ir.CatchNode;
 import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.ForNode;
 import jdk.nashorn.internal.ir.FunctionNode;
-import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IndexNode;
 import jdk.nashorn.internal.ir.LexicalContext;
@@ -828,7 +827,7 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
                        lc.applyTopFlags(functionNode))))
                        .setThisProperties(lc, thisProperties.pop().size()));
         }
-        return finalizedFunction.setState(lc, CompilationState.SYMBOLS_ASSIGNED);
+        return finalizedFunction;
     }
 
     @Override
