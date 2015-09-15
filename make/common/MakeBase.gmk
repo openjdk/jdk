@@ -567,15 +567,21 @@ else
 endif
 
 ################################################################################
-# Convenience functions for working around make's limitations with $(filter ).
-containing = \
-    $(strip $(foreach v,$(strip $2),$(if $(findstring $(strip $1),$v),$v)))
-not-containing = \
-    $(strip $(foreach v,$(strip $2),$(if $(findstring $(strip $1),$v),,$v)))
-
 # Filter out duplicate sub strings while preserving order. Keeps the first occurance.
 uniq = \
     $(if $1,$(firstword $1) $(call uniq,$(filter-out $(firstword $1),$1)))
+
+# Returns all whitespace-separated words in $2 where at least one of the
+# whitespace-separated words in $1 is a substring.
+containing = \
+    $(strip \
+        $(foreach v,$(strip $2),\
+          $(call uniq,$(foreach p,$(strip $1),$(if $(findstring $p,$v),$v)))))
+
+# Returns all whitespace-separated words in $2 where none of the
+# whitespace-separated words in $1 is a substring.
+not-containing = \
+    $(strip $(filter-out $(call containing,$1,$2),$2))
 
 # Return a list of all string elements that are duplicated in $1.
 dups = \
