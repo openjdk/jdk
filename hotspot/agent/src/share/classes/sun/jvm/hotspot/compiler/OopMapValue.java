@@ -49,7 +49,6 @@ public class OopMapValue {
   // Types of OopValues
   static int UNUSED_VALUE;
   static int OOP_VALUE;
-  static int VALUE_VALUE;
   static int NARROWOOP_VALUE;
   static int CALLEE_SAVED_VALUE;
   static int DERIVED_OOP_VALUE;
@@ -73,7 +72,6 @@ public class OopMapValue {
     REGISTER_MASK_IN_PLACE = db.lookupIntConstant("OopMapValue::register_mask_in_place").intValue();
     UNUSED_VALUE           = db.lookupIntConstant("OopMapValue::unused_value").intValue();
     OOP_VALUE              = db.lookupIntConstant("OopMapValue::oop_value").intValue();
-    VALUE_VALUE            = db.lookupIntConstant("OopMapValue::value_value").intValue();
     NARROWOOP_VALUE        = db.lookupIntConstant("OopMapValue::narrowoop_value").intValue();
     CALLEE_SAVED_VALUE     = db.lookupIntConstant("OopMapValue::callee_saved_value").intValue();
     DERIVED_OOP_VALUE      = db.lookupIntConstant("OopMapValue::derived_oop_value").intValue();
@@ -82,7 +80,6 @@ public class OopMapValue {
   public static abstract class OopTypes {
     public static final OopTypes UNUSED_VALUE       = new OopTypes() { int getValue() { return OopMapValue.UNUSED_VALUE;       }};
     public static final OopTypes OOP_VALUE          = new OopTypes() { int getValue() { return OopMapValue.OOP_VALUE;          }};
-    public static final OopTypes VALUE_VALUE        = new OopTypes() { int getValue() { return OopMapValue.VALUE_VALUE;        }};
     public static final OopTypes NARROWOOP_VALUE    = new OopTypes() { int getValue() { return OopMapValue.NARROWOOP_VALUE;         }};
     public static final OopTypes CALLEE_SAVED_VALUE = new OopTypes() { int getValue() { return OopMapValue.CALLEE_SAVED_VALUE; }};
     public static final OopTypes DERIVED_OOP_VALUE  = new OopTypes() { int getValue() { return OopMapValue.DERIVED_OOP_VALUE;  }};
@@ -105,7 +102,6 @@ public class OopMapValue {
 
   // Querying
   public boolean isOop()         { return (getValue() & TYPE_MASK_IN_PLACE) == OOP_VALUE;          }
-  public boolean isValue()       { return (getValue() & TYPE_MASK_IN_PLACE) == VALUE_VALUE;        }
   public boolean isNarrowOop()   { return (getValue() & TYPE_MASK_IN_PLACE) == NARROWOOP_VALUE;    }
   public boolean isCalleeSaved() { return (getValue() & TYPE_MASK_IN_PLACE) == CALLEE_SAVED_VALUE; }
   public boolean isDerivedOop()  { return (getValue() & TYPE_MASK_IN_PLACE) == DERIVED_OOP_VALUE;  }
@@ -117,7 +113,6 @@ public class OopMapValue {
     int which = (getValue() & TYPE_MASK_IN_PLACE);
          if (which == UNUSED_VALUE) return OopTypes.UNUSED_VALUE;
     else if (which == OOP_VALUE)    return OopTypes.OOP_VALUE;
-    else if (which == VALUE_VALUE)  return OopTypes.VALUE_VALUE;
     else if (which == NARROWOOP_VALUE)   return OopTypes.NARROWOOP_VALUE;
     else if (which == CALLEE_SAVED_VALUE) return OopTypes.CALLEE_SAVED_VALUE;
     else if (which == DERIVED_OOP_VALUE)  return OopTypes.DERIVED_OOP_VALUE;

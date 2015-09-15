@@ -167,25 +167,6 @@ void InterfaceSupport::walk_stack() {
   walk_stack_from(thread->last_java_vframe(&reg_map));
 }
 
-
-# ifdef ENABLE_ZAP_DEAD_LOCALS
-
-static int zap_traversals = 0;
-
-void InterfaceSupport::zap_dead_locals_old() {
-  JavaThread* thread = JavaThread::current();
-  if (zap_traversals == -1) // edit constant for debugging
-    warning("I am here");
-  int zap_frame_count = 0; // count frames to help debugging
-  for (StackFrameStream sfs(thread); !sfs.is_done(); sfs.next()) {
-    sfs.current()->zap_dead_locals(thread, sfs.register_map());
-    ++zap_frame_count;
-  }
-  ++zap_traversals;
-}
-
-# endif
-
 // invocation counter for InterfaceSupport::deoptimizeAll/zombieAll functions
 int deoptimizeAllCounter = 0;
 int zombieAllCounter = 0;
