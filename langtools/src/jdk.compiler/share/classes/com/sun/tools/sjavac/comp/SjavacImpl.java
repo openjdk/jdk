@@ -24,12 +24,9 @@
  */
 package com.sun.tools.sjavac.comp;
 
-import static com.sun.tools.sjavac.server.CompilationResult.ERROR_FATAL;
-import static java.nio.charset.StandardCharsets.UTF_8;
-
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -49,7 +46,6 @@ import com.sun.tools.sjavac.Transformer;
 import com.sun.tools.sjavac.Util;
 import com.sun.tools.sjavac.options.Options;
 import com.sun.tools.sjavac.options.SourceLocation;
-import com.sun.tools.sjavac.server.CompilationResult;
 import com.sun.tools.sjavac.server.Sjavac;
 
 /**
@@ -64,39 +60,33 @@ import com.sun.tools.sjavac.server.Sjavac;
 public class SjavacImpl implements Sjavac {
 
     @Override
-    public CompilationResult compile(String[] args) {
-
-        ByteArrayOutputStream outBaos = new ByteArrayOutputStream();
-        ByteArrayOutputStream errBaos = new ByteArrayOutputStream();
-        PrintStream out = new PrintStream(outBaos);
-        PrintStream err = new PrintStream(errBaos);
-
+    public int compile(String[] args, Writer out, Writer err) {
         Options options;
         try {
             options = Options.parseArgs(args);
         } catch (IllegalArgumentException e) {
             Log.error(e.getMessage());
-            return new CompilationResult(ERROR_FATAL);
+            return RC_FATAL;
         }
 
         Log.setLogLevel(options.getLogLevel());
 
         if (!validateOptions(options))
-            return new CompilationResult(ERROR_FATAL);
+            return RC_FATAL;
 
         if (!createIfMissing(options.getDestDir()))
-            return new CompilationResult(ERROR_FATAL);
+            return RC_FATAL;
 
         if (!createIfMissing(options.getStateDir()))
-            return new CompilationResult(ERROR_FATAL);
+            return RC_FATAL;
 
         Path gensrc = options.getGenSrcDir();
         if (gensrc != null && !createIfMissing(gensrc))
-            return new CompilationResult(ERROR_FATAL);
+            return RC_FATAL;
 
         Path hdrdir = options.getHeaderDir();
         if (hdrdir != null && !createIfMissing(hdrdir))
-            return new CompilationResult(ERROR_FATAL);
+            return RC_FATAL;
 
         // Load the prev build state database.
         JavacState javac_state = JavacState.load(options, out, err);
@@ -132,9 +122,7 @@ public class SjavacImpl implements Sjavac {
 
         if (sources.isEmpty()) {
             Log.error("Found nothing to compile!");
-            return new CompilationResult(CompilationResult.ERROR_FATAL,
-                                          new String(outBaos.toByteArray(), UTF_8),
-                                          new String(errBaos.toByteArray(), UTF_8));
+            return RC_FATAL;
         }
 
 
@@ -251,19 +239,13 @@ public class SjavacImpl implements Sjavac {
                 javac_state.removeSuperfluousArtifacts(recently_compiled);
             }
 
-            return new CompilationResult(rc[0] ? 0 : ERROR_FATAL,
-                                          new String(outBaos.toByteArray(), UTF_8),
-                                          new String(errBaos.toByteArray(), UTF_8));
+            return rc[0] ? RC_OK : RC_FATAL;
         } catch (ProblemException e) {
             Log.error(e.getMessage());
-            return new CompilationResult(ERROR_FATAL,
-                                          new String(outBaos.toByteArray(), UTF_8),
-                                          new String(errBaos.toByteArray(), UTF_8));
+            return RC_FATAL;
         } catch (Exception e) {
-            e.printStackTrace(err);
-            return new CompilationResult(ERROR_FATAL,
-                                          new String(outBaos.toByteArray(), UTF_8),
-                                          new String(errBaos.toByteArray(), UTF_8));
+            e.printStackTrace(new PrintWriter(err));
+            return RC_FATAL;
         }
     }
 

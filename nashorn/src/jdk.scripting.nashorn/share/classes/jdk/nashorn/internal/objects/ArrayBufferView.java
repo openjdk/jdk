@@ -192,7 +192,7 @@ public abstract class ArrayBufferView extends ScriptObject {
         /**
          * Factory method for array data
          *
-         * @param nb    underlying nativebuffer
+         * @param nb    underlying native buffer
          * @param start start element
          * @param end   end element
          *
