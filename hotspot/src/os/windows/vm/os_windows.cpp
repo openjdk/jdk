@@ -4877,6 +4877,26 @@ char* os::pd_remap_memory(int fd, const char* file_name, size_t file_offset,
 // Returns true=success, otherwise false.
 
 bool os::pd_unmap_memory(char* addr, size_t bytes) {
+  MEMORY_BASIC_INFORMATION mem_info;
+  if (VirtualQuery(addr, &mem_info, sizeof(mem_info)) == 0) {
+    if (PrintMiscellaneous && Verbose) {
+      DWORD err = GetLastError();
+      tty->print_cr("VirtualQuery() failed: GetLastError->%ld.", err);
+    }
+    return false;
+  }
+
+  // Executable memory was not mapped using CreateFileMapping/MapViewOfFileEx.
+  // Instead, executable region was allocated using VirtualAlloc(). See
+  // pd_map_memory() above.
+  //
+  // The following flags should match the 'exec_access' flages used for
+  // VirtualProtect() in pd_map_memory().
+  if (mem_info.Protect == PAGE_EXECUTE_READ ||
+      mem_info.Protect == PAGE_EXECUTE_READWRITE) {
+    return pd_release_memory(addr, bytes);
+  }
+
   BOOL result = UnmapViewOfFile(addr);
   if (result == 0) {
     if (PrintMiscellaneous && Verbose) {
