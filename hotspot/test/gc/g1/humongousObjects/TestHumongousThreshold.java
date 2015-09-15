@@ -56,11 +56,11 @@ import sun.hotspot.WhiteBox;
  * gc.g1.humongousObjects.TestHumongousThreshold
  *
  * @run main/othervm -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- * -XX:G1HeapRegionSize=16M
+ * -Xms128M -XX:G1HeapRegionSize=16M
  * gc.g1.humongousObjects.TestHumongousThreshold
  *
  * @run main/othervm -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- * -XX:G1HeapRegionSize=32M
+ * -Xms200M -XX:G1HeapRegionSize=32M
  * gc.g1.humongousObjects.TestHumongousThreshold
  *
  */

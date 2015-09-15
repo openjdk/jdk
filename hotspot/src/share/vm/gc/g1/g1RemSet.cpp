@@ -76,7 +76,6 @@ G1RemSet::G1RemSet(G1CollectedHeap* g1, CardTableModRefBS* ct_bs)
     _ct_bs(ct_bs), _g1p(_g1->g1_policy()),
     _cg1r(g1->concurrent_g1_refine()),
     _cset_rs_update_cl(NULL),
-    _cards_scanned(NULL), _total_cards_scanned(0),
     _prev_period_summary()
 {
   _cset_rs_update_cl = NEW_C_HEAP_ARRAY(G1ParPushHeapRSClosure*, n_workers(), mtGC);
@@ -228,9 +227,9 @@ public:
   size_t cards_looked_up() { return _cards;}
 };
 
-void G1RemSet::scanRS(G1ParPushHeapRSClosure* oc,
-                      OopClosure* non_heap_roots,
-                      uint worker_i) {
+size_t G1RemSet::scanRS(G1ParPushHeapRSClosure* oc,
+                        OopClosure* non_heap_roots,
+                        uint worker_i) {
   double rs_time_start = os::elapsedTime();
 
   G1CodeBlobClosure code_root_cl(non_heap_roots);
@@ -246,11 +245,10 @@ void G1RemSet::scanRS(G1ParPushHeapRSClosure* oc,
   double scan_rs_time_sec = (os::elapsedTime() - rs_time_start)
                             - scanRScl.strong_code_root_scan_time_sec();
 
-  assert(_cards_scanned != NULL, "invariant");
-  _cards_scanned[worker_i] = scanRScl.cards_done();
-
   _g1p->phase_times()->record_time_secs(G1GCPhaseTimes::ScanRS, worker_i, scan_rs_time_sec);
   _g1p->phase_times()->record_time_secs(G1GCPhaseTimes::CodeRoots, worker_i, scanRScl.strong_code_root_scan_time_sec());
+
+  return scanRScl.cards_done();
 }
 
 // Closure used for updating RSets and recording references that
@@ -298,9 +296,9 @@ void G1RemSet::cleanupHRRS() {
   HeapRegionRemSet::cleanup();
 }
 
-void G1RemSet::oops_into_collection_set_do(G1ParPushHeapRSClosure* oc,
-                                           OopClosure* non_heap_roots,
-                                           uint worker_i) {
+size_t G1RemSet::oops_into_collection_set_do(G1ParPushHeapRSClosure* oc,
+                                             OopClosure* non_heap_roots,
+                                             uint worker_i) {
 #if CARD_REPEAT_HISTO
   ct_freq_update_histo_and_reset();
 #endif
@@ -322,10 +320,11 @@ void G1RemSet::oops_into_collection_set_do(G1ParPushHeapRSClosure* oc,
   DirtyCardQueue into_cset_dcq(&_g1->into_cset_dirty_card_queue_set());
 
   updateRS(&into_cset_dcq, worker_i);
-  scanRS(oc, non_heap_roots, worker_i);
+  size_t cards_scanned = scanRS(oc, non_heap_roots, worker_i);
 
   // We now clear the cached values of _cset_rs_update_cl for this worker
   _cset_rs_update_cl[worker_i] = NULL;
+  return cards_scanned;
 }
 
 void G1RemSet::prepare_for_oops_into_collection_set_do() {
@@ -333,23 +332,9 @@ void G1RemSet::prepare_for_oops_into_collection_set_do() {
   _g1->set_refine_cte_cl_concurrency(false);
   DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
   dcqs.concatenate_logs();
-
-  guarantee( _cards_scanned == NULL, "invariant" );
-  _cards_scanned = NEW_C_HEAP_ARRAY(size_t, n_workers(), mtGC);
-  for (uint i = 0; i < n_workers(); ++i) {
-    _cards_scanned[i] = 0;
-  }
-  _total_cards_scanned = 0;
 }
 
 void G1RemSet::cleanup_after_oops_into_collection_set_do() {
-  guarantee( _cards_scanned != NULL, "invariant" );
-  _total_cards_scanned = 0;
-  for (uint i = 0; i < n_workers(); ++i) {
-    _total_cards_scanned += _cards_scanned[i];
-  }
-  FREE_C_HEAP_ARRAY(size_t, _cards_scanned);
-  _cards_scanned = NULL;
   // Cleanup after copy
   _g1->set_refine_cte_cl_concurrency(true);
   // Set all cards back to clean.
