@@ -1514,8 +1514,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
         flushUnreferenced(); // Remove old listeners
 
         boolean lafCond = SwingUtilities2.isLocalDisplay();
-        Object aaTextInfo = SwingUtilities2.AATextInfo.getAATextInfo(lafCond);
-        table.put(SwingUtilities2.AA_TEXT_PROPERTY_KEY, aaTextInfo);
+        SwingUtilities2.putAATextInfo(lafCond, table);
         new AATextListener(this);
     }
 
@@ -2204,9 +2203,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
             }
             UIDefaults defaults = UIManager.getLookAndFeelDefaults();
             boolean lafCond = SwingUtilities2.isLocalDisplay();
-            Object aaTextInfo =
-                SwingUtilities2.AATextInfo.getAATextInfo(lafCond);
-            defaults.put(SwingUtilities2.AA_TEXT_PROPERTY_KEY, aaTextInfo);
+            SwingUtilities2.putAATextInfo(lafCond, defaults);
             updateUI();
         }
 

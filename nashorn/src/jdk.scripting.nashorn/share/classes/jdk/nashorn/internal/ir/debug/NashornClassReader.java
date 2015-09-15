@@ -36,7 +36,7 @@ import jdk.internal.org.objectweb.asm.Label;
 import jdk.nashorn.internal.ir.debug.NashornTextifier.NashornLabel;
 
 /**
- * Subclass of the ASM classs reader that retains more info, such
+ * Subclass of the ASM class reader that retains more info, such
  * as bytecode offsets
  */
 public class NashornClassReader extends ClassReader {

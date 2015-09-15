@@ -90,7 +90,7 @@ public class LayerUI<V extends Component>
      * and set the layer event mask to {@code 0}
      * in {@link #uninstallUI(javax.swing.JComponent)} after that.
      * By default this  method calls the appropriate
-     * {@code process&lt;event&nbsp;type&gt;Event}
+     * {@code process<event}&nbsp;{@code type>Event}
      * method for the given class of event.
      * <p>
      * <b>Note:</b> Events are processed only for displayable {@code JLayer}s.

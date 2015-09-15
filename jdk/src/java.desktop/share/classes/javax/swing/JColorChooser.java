@@ -133,12 +133,41 @@ public class JColorChooser extends JComponent implements Accessible {
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
-    @SuppressWarnings("deprecation")
     public static Color showDialog(Component component,
-        String title, Color initialColor) throws HeadlessException {
+            String title, Color initialColor) throws HeadlessException {
+        return showDialog(component, title, initialColor, true);
+    }
+
+    /**
+     * Shows a modal color-chooser dialog and blocks until the
+     * dialog is hidden.  If the user presses the "OK" button, then
+     * this method hides/disposes the dialog and returns the selected color.
+     * If the user presses the "Cancel" button or closes the dialog without
+     * pressing "OK", then this method hides/disposes the dialog and returns
+     * <code>null</code>.
+     *
+     * @param component    the parent <code>Component</code> for the dialog
+     * @param title        the String containing the dialog's title
+     * @param initialColor the initial Color set when the color-chooser is shown
+     * @param colorTransparencySelectionEnabled true if the transparency of
+     *            a color can be selected
+     * @return the selected color or <code>null</code> if the user opted out
+     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * returns true.
+     * @see java.awt.GraphicsEnvironment#isHeadless
+     */
+    @SuppressWarnings("deprecation")
+    public static Color showDialog(Component component, String title,
+            Color initialColor, boolean colorTransparencySelectionEnabled)
+            throws HeadlessException {
 
         final JColorChooser pane = new JColorChooser(initialColor != null?
                                                initialColor : Color.white);
+
+        for (AbstractColorChooserPanel ccPanel : pane.getChooserPanels()) {
+            ccPanel.setColorTransparencySelectionEnabled(
+                    colorTransparencySelectionEnabled);
+        }
 
         ColorTracker ok = new ColorTracker(pane);
         JDialog dialog = createDialog(component, title, true, pane, ok, null);
@@ -149,7 +178,6 @@ public class JColorChooser extends JComponent implements Accessible {
 
         return ok.getColor();
     }
-
 
     /**
      * Creates and returns a new dialog containing the specified

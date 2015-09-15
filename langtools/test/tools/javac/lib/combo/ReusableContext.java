@@ -31,8 +31,12 @@ import com.sun.source.util.TaskEvent.Kind;
 import com.sun.source.util.TaskListener;
 import com.sun.source.util.TreeScanner;
 import com.sun.tools.javac.api.MultiTaskListener;
+import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symtab;
+import com.sun.tools.javac.code.Type;
+import com.sun.tools.javac.code.Type.ClassType;
+import com.sun.tools.javac.code.TypeTag;
 import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.comp.Check;
 import com.sun.tools.javac.comp.CompileStates;
@@ -93,22 +97,45 @@ class ReusableContext extends Context implements TaskListener {
 
             //find if any of the roots have redefined java.* classes
             Symtab syms = Symtab.instance(this);
-            new TreeScanner<Void, Void>() {
-                @Override
-                public Void visitClass(ClassTree node, Void aVoid) {
-                    Symbol sym = ((JCClassDecl)node).sym;
-                    if (sym != null) {
-                        syms.classes.remove(sym.flatName());
-                        if (sym.flatName().toString().startsWith("java.")) {
-                            polluted = true;
-                        }
-                    }
-                    return super.visitClass(node, aVoid);
-                }
-            }.scan(roots, null);
+            pollutionScanner.scan(roots, syms);
             roots.clear();
         }
     }
+
+    /**
+     * This scanner detects as to whether the shared context has been polluted. This happens
+     * whenever a compiled program redefines a core class (in 'java.*' package) or when
+     * (typically because of cyclic inheritance) the symbol kind of a core class has been touched.
+     */
+    TreeScanner<Void, Symtab> pollutionScanner = new TreeScanner<Void, Symtab>() {
+        @Override
+        public Void visitClass(ClassTree node, Symtab syms) {
+            Symbol sym = ((JCClassDecl)node).sym;
+            if (sym != null) {
+                syms.classes.remove(sym.flatName());
+                Type sup = supertype(sym);
+                if (isCoreClass(sym) ||
+                        (sup != null && isCoreClass(sup.tsym) && sup.tsym.kind != Kinds.Kind.TYP)) {
+                    polluted = true;
+                }
+            }
+            return super.visitClass(node, syms);
+        }
+
+        private boolean isCoreClass(Symbol s) {
+            return s.flatName().toString().startsWith("java.");
+        }
+
+        private Type supertype(Symbol s) {
+            if (s.type == null ||
+                    !s.type.hasTag(TypeTag.CLASS)) {
+                return null;
+            } else {
+                ClassType ct = (ClassType)s.type;
+                return ct.supertype_field;
+            }
+        }
+    };
 
     @Override
     public void finished(TaskEvent e) {

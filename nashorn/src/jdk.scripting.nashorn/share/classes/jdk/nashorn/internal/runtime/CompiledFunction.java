@@ -102,7 +102,7 @@ final class CompiledFunction {
             /*
              * An optimistic builtin with isOptimistic=true works like any optimistic generated function, i.e. it
              * can throw unwarranted optimism exceptions. As native functions trivially can't have parts of them
-             * regenerated as restof methods, this only works if the methods are atomic/functional in their behavior
+             * regenerated as "restOf" methods, this only works if the methods are atomic/functional in their behavior
              * and doesn't modify state before an UOE can be thrown. If they aren't, we can reexecute a wider version
              * of the same builtin in a recompilation handler for FinalScriptFunctionData. There are several
              * candidate methods in Native* that would benefit from this, but I haven't had time to implement any
@@ -567,7 +567,7 @@ final class CompiledFunction {
             return handle;
         }
 
-        // Otherwise, we need a new level of indirection; need to introduce a mutable call site that can relink itslef
+        // Otherwise, we need a new level of indirection; need to introduce a mutable call site that can relink itself
         // to the compiled function's changed target whenever the optimistic assumptions are invalidated.
         final CallSite cs = new MutableCallSite(handle.type());
         relinkComposableInvoker(cs, this, isConstructor);
