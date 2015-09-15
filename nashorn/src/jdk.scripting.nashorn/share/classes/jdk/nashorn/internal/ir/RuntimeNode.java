@@ -276,7 +276,7 @@ public class RuntimeNode extends Expression {
          *
          * @param request a request
          *
-         * @return the inverted rquest, or null if not applicable
+         * @return the inverted request, or null if not applicable
          */
         public static Request invert(final Request request) {
             switch (request) {

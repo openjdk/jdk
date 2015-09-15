@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,6 @@ class HotspotCompilation
     private LongCounter lastInvalidatedType;
 
     private class CompilerThreadInfo {
-        int index;
         String name;
         StringCounter method;
         LongCounter type;
@@ -85,14 +84,6 @@ class HotspotCompilation
         CompilerThreadInfo(String bname, int index) {
             String basename = bname + "." + index + ".";
             this.name = bname + "-" + index;
-            this.method = (StringCounter) lookup(basename + "method");
-            this.type = (LongCounter) lookup(basename + "type");
-            this.compiles = (LongCounter) lookup(basename + "compiles");
-            this.time = (LongCounter) lookup(basename + "time");
-        }
-        CompilerThreadInfo(String bname) {
-            String basename = bname + ".";
-            this.name = bname;
             this.method = (StringCounter) lookup(basename + "method");
             this.type = (LongCounter) lookup(basename + "type");
             this.compiles = (LongCounter) lookup(basename + "compiles");
@@ -109,7 +100,7 @@ class HotspotCompilation
                                           minfo);
         }
     }
-    private CompilerThreadInfo[] threads;
+    private List<CompilerThreadInfo> threads;
     private int numActiveThreads; // number of active compiler threads
 
     private Map<String, Counter> counters;
@@ -158,18 +149,12 @@ class HotspotCompilation
         numActiveThreads = (int) compilerThreads.longValue();
 
         // Allocate CompilerThreadInfo for compilerThread and adaptorThread
-        threads = new CompilerThreadInfo[numActiveThreads+1];
+        threads = new ArrayList<CompilerThreadInfo>();
 
-        // AdaptorThread has index 0
-        if (counters.containsKey(SUN_CI + "adapterThread.compiles")) {
-            threads[0] = new CompilerThreadInfo("adapterThread", 0);
-            numActiveThreads++;
-        } else {
-            threads[0] = null;
-        }
-
-        for (int i = 1; i < threads.length; i++) {
-            threads[i] = new CompilerThreadInfo("compilerThread", i-1);
+        for (int i = 0; i < numActiveThreads; i++) {
+            if (counters.containsKey(SUN_CI + "compilerThread." + i + ".method")) {
+                threads.add(new CompilerThreadInfo("compilerThread", i));
+            }
         }
     }
 
@@ -197,15 +182,10 @@ class HotspotCompilation
         return nmethodSize.longValue();
     }
 
-    public java.util.List<CompilerThreadStat> getCompilerThreadStats() {
-        List<CompilerThreadStat> list = new ArrayList<>(threads.length);
-        int i = 0;
-        if (threads[0] == null) {
-            // no adaptor thread
-            i = 1;
-        }
-        for (; i < threads.length; i++) {
-            list.add(threads[i].getCompilerThreadStat());
+    public List<CompilerThreadStat> getCompilerThreadStats() {
+        List<CompilerThreadStat> list = new ArrayList<>(threads.size());
+        for (CompilerThreadInfo info : threads) {
+            list.add(info.getCompilerThreadStat());
         }
         return list;
     }

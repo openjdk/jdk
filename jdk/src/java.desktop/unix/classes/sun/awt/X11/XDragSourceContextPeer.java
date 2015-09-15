@@ -379,7 +379,7 @@ public final class XDragSourceContextPeer
     /**
      * Updates the source action according to the specified state.
      *
-     * @returns true if the source
+     * @return true if the source
      */
     private boolean updateSourceAction(int state) {
         int action = SunDragSourceContextPeer.convertModifiersToDropAction(XWindow.getModifiers(state, 0, 0),
@@ -570,7 +570,7 @@ public final class XDragSourceContextPeer
     /**
      * The caller must own awtLock.
      *
-     * @returns true if the even was processed and shouldn't be passed along.
+     * @return true if the event was processed and shouldn't be passed along.
      */
     private boolean doProcessEvent(XEvent ev) {
         assert XToolkit.isAWTLockHeldByCurrentThread();

@@ -688,8 +688,7 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
 
         // enabled antialiasing depending on desktop settings
         flushUnreferenced();
-        Object aaTextInfo = getAATextInfo();
-        table.put(SwingUtilities2.AA_TEXT_PROPERTY_KEY, aaTextInfo);
+        SwingUtilities2.putAATextInfo(useLAFConditions(), table);
         new AATextListener(this);
 
         if (defaultsMap != null) {
@@ -794,7 +793,7 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
      *
      * @return the text antialiasing information associated to the desktop
      */
-    private static Object getAATextInfo() {
+    private static boolean useLAFConditions() {
         String language = Locale.getDefault().getLanguage();
         String desktop =
             AccessController.doPrivileged(new GetPropertyAction("sun.desktop"));
@@ -805,10 +804,7 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
         boolean isGnome = "gnome".equals(desktop);
         boolean isLocal = SwingUtilities2.isLocalDisplay();
 
-        boolean setAA = isLocal && (!isGnome || !isCjkLocale);
-
-        Object aaTextInfo = SwingUtilities2.AATextInfo.getAATextInfo(setAA);
-        return aaTextInfo;
+        return isLocal && (!isGnome || !isCjkLocale);
     }
 
     private static ReferenceQueue<LookAndFeel> queue = new ReferenceQueue<LookAndFeel>();
@@ -844,8 +840,7 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
                 return;
             }
 
-            Object aaTextInfo = getAATextInfo();
-            defaults.put(SwingUtilities2.AA_TEXT_PROPERTY_KEY, aaTextInfo);
+            SwingUtilities2.putAATextInfo(useLAFConditions(), defaults);
 
             updateUI();
         }

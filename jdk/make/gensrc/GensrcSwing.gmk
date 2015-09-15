@@ -77,9 +77,9 @@ $(BEANINFO_OUTPUTDIR)/_the.generated_beaninfo: $(BEANS_SRC) \
 	$(ECHO) Generating beaninfo
 	$(MKDIR) -p $(BEANINFO_OUTPUTDIR)/javax/swing
 	$(JAVA) -Djava.awt.headless=true $(NEW_JAVADOC) \
-	    -sourcepath "$(subst $(SPACE),$(PATH_SEP),\
+	    -sourcepath $(call PathList,\
 	        $(wildcard $(JDK_TOPDIR)/src/*/*/classes) \
-	        $(SUPPORT_OUTPUTDIR)/gensrc/java.base)" \
+	        $(SUPPORT_OUTPUTDIR)/gensrc/java.base) \
 	    -doclet build.tools.swingbeaninfo.GenDocletBeanInfo \
 	    -x $(SWINGBEAN_DEBUG_FLAG) -d $(BEANINFO_OUTPUTDIR)/javax/swing \
 	    -t $(DOCLET_DATA_DIR)/SwingBeanInfo.template \

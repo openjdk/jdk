@@ -41,6 +41,7 @@ import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.stream.Stream;
 import sun.util.locale.provider.JRELocaleProviderAdapter;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.LocaleDataMetaInfo;
@@ -148,11 +149,9 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
     private List<Locale> applyParentLocales(String baseName, List<Locale> candidates) {
         if (Objects.isNull(parentLocalesMap)) {
             Map<Locale, Locale> map = new HashMap<>();
-            Map<String, String> parentLocales = baseMetaInfo.parentLocales();
-            parentLocales.keySet().forEach(parent -> {
-                Arrays.asList(parentLocales.get(parent).split(" ")).stream().forEach(child -> {
-                    map.put(Locale.forLanguageTag(child),
-                        "root".equals(parent) ? Locale.ROOT : Locale.forLanguageTag(parent));
+            baseMetaInfo.parentLocales().forEach((parent, children) -> {
+                Stream.of(children).forEach(child -> {
+                    map.put(Locale.forLanguageTag(child), parent);
                 });
             });
             parentLocalesMap = Collections.unmodifiableMap(map);

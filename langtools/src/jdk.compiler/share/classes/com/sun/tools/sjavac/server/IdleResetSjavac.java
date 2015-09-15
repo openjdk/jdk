@@ -24,6 +24,7 @@
  */
 package com.sun.tools.sjavac.server;
 
+import java.io.Writer;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -60,10 +61,10 @@ public class IdleResetSjavac implements Sjavac {
     }
 
     @Override
-    public CompilationResult compile(String[] args) {
+    public int compile(String[] args, Writer out, Writer err) {
         startCall();
         try {
-            return delegate.compile(args);
+            return delegate.compile(args, out, err);
         } finally {
             endCall();
         }

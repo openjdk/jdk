@@ -203,8 +203,10 @@ public class InfoTest {
                                           "commandLine() should start with: " + expectedPath +
                                           " but starts with " + commandLineCmdPath);
 
+                        Assert.assertTrue(commandLine.contains(command.get()),
+                                "commandLine() must contain the command: " + command.get());
                         List<String> allArgs = p1.getArgs();
-                        for (int i = 0; i < allArgs.size(); i++) {
+                        for (int i = 1; i < allArgs.size(); i++) {
                             Assert.assertTrue(commandLine.contains(allArgs.get(i)),
                                               "commandLine() must contain argument: " + allArgs.get(i));
                         }
@@ -255,10 +257,15 @@ public class InfoTest {
                     }
                 }
             }
-            p1.waitFor(Utils.adjustTimeout(5), TimeUnit.SECONDS);
+            p1.sendAction("exit");
+            Assert.assertTrue(p1.waitFor(Utils.adjustTimeout(30L), TimeUnit.SECONDS),
+                    "timeout waiting for process to terminate");
         } catch (IOException | InterruptedException ie) {
             ie.printStackTrace(System.out);
             Assert.fail("unexpected exception", ie);
+        } finally {
+            // Destroy any children that still exist
+            ProcessUtil.destroyProcessTree(ProcessHandle.current());
         }
     }
 
@@ -268,8 +275,9 @@ public class InfoTest {
     @Test
     public static void test3() {
         try {
-            for (int sleepTime : Arrays.asList(1, 2)) {
+            for (long sleepTime : Arrays.asList(Utils.adjustTimeout(30), Utils.adjustTimeout(32))) {
                 Process p = spawn("sleep", String.valueOf(sleepTime));
+
                 ProcessHandle.Info info = p.info();
                 System.out.printf(" info: %s%n", info);
 
@@ -295,7 +303,9 @@ public class InfoTest {
                         Assert.assertEquals(args[0], String.valueOf(sleepTime));
                     }
                 }
-                Assert.assertTrue(p.waitFor(15, TimeUnit.SECONDS));
+                p.destroy();
+                Assert.assertTrue(p.waitFor(Utils.adjustTimeout(30), TimeUnit.SECONDS),
+                        "timeout waiting for process to terminate");
             }
         } catch (IOException | InterruptedException ex) {
             ex.printStackTrace(System.out);
