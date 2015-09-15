@@ -653,7 +653,6 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
   return iff->in(1);
 }
 
-#ifdef ASSERT
 static void enqueue_cfg_uses(Node* m, Unique_Node_List& wq) {
   for (DUIterator_Fast imax, i = m->fast_outs(imax); i < imax; i++) {
     Node* u = m->fast_out(i);
@@ -667,7 +666,6 @@ static void enqueue_cfg_uses(Node* m, Unique_Node_List& wq) {
     }
   }
 }
-#endif
 
 // Try moving a store out of a loop, right before the loop
 Node* PhaseIdealLoop::try_move_store_before_loop(Node* n, Node *n_ctrl) {
@@ -687,11 +685,15 @@ Node* PhaseIdealLoop::try_move_store_before_loop(Node* n, Node *n_ctrl) {
     // written at iteration i by the second store could be overwritten
     // at iteration i+n by the first store: it's not safe to move the
     // first store out of the loop
-    // - nothing must observe the Phi memory: it guarantees no read
-    // before the store and no early exit out of the loop
-    // With those conditions, we are also guaranteed the store post
-    // dominates the loop head. Otherwise there would be extra Phi
-    // involved between the loop's Phi and the store.
+    // - nothing must observe the memory Phi: it guarantees no read
+    // before the store, we are also guaranteed the store post
+    // dominates the loop head (ignoring a possible early
+    // exit). Otherwise there would be extra Phi involved between the
+    // loop's Phi and the store.
+    // - there must be no early exit from the loop before the Store
+    // (such an exit most of the time would be an extra use of the
+    // memory Phi but sometimes is a bottom memory Phi that takes the
+    // store as input).
 
     if (!n_loop->is_member(address_loop) &&
         !n_loop->is_member(value_loop) &&
@@ -699,9 +701,10 @@ Node* PhaseIdealLoop::try_move_store_before_loop(Node* n, Node *n_ctrl) {
         mem->outcnt() == 1 &&
         mem->in(LoopNode::LoopBackControl) == n) {
 
-#ifdef ASSERT
-      // Verify that store's control does post dominate loop entry and
-      // that there's no early exit of the loop before the store.
+      assert(n_loop->_tail != NULL, "need a tail");
+      assert(is_dominator(n_ctrl, n_loop->_tail), "store control must not be in a branch in the loop");
+
+      // Verify that there's no early exit of the loop before the store.
       bool ctrl_ok = false;
       {
         // Follow control from loop head until n, we exit the loop or
@@ -709,7 +712,7 @@ Node* PhaseIdealLoop::try_move_store_before_loop(Node* n, Node *n_ctrl) {
         ResourceMark rm;
         Unique_Node_List wq;
         wq.push(n_loop->_head);
-        assert(n_loop->_tail != NULL, "need a tail");
+
         for (uint next = 0; next < wq.size(); ++next) {
           Node *m = wq.at(next);
           if (m == n->in(0)) {
@@ -722,24 +725,27 @@ Node* PhaseIdealLoop::try_move_store_before_loop(Node* n, Node *n_ctrl) {
             break;
           }
           enqueue_cfg_uses(m, wq);
+          if (wq.size() > 10) {
+            ctrl_ok = false;
+            break;
+          }
         }
       }
-      assert(ctrl_ok, "bad control");
-#endif
+      if (ctrl_ok) {
+        // move the Store
+        _igvn.replace_input_of(mem, LoopNode::LoopBackControl, mem);
+        _igvn.replace_input_of(n, 0, n_loop->_head->in(LoopNode::EntryControl));
+        _igvn.replace_input_of(n, MemNode::Memory, mem->in(LoopNode::EntryControl));
+        // Disconnect the phi now. An empty phi can confuse other
+        // optimizations in this pass of loop opts.
+        _igvn.replace_node(mem, mem->in(LoopNode::EntryControl));
+        n_loop->_body.yank(mem);
 
-      // move the Store
-      _igvn.replace_input_of(mem, LoopNode::LoopBackControl, mem);
-      _igvn.replace_input_of(n, 0, n_loop->_head->in(LoopNode::EntryControl));
-      _igvn.replace_input_of(n, MemNode::Memory, mem->in(LoopNode::EntryControl));
-      // Disconnect the phi now. An empty phi can confuse other
-      // optimizations in this pass of loop opts.
-      _igvn.replace_node(mem, mem->in(LoopNode::EntryControl));
-      n_loop->_body.yank(mem);
+        IdealLoopTree* new_loop = get_loop(n->in(0));
+        set_ctrl_and_loop(n, n->in(0));
 
-      IdealLoopTree* new_loop = get_loop(n->in(0));
-      set_ctrl_and_loop(n, n->in(0));
-
-      return n;
+        return n;
+      }
     }
   }
   return NULL;
