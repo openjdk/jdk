@@ -75,8 +75,8 @@ class SimpleRuntimeFrame {
 // FIXME -- this is used by C1
 class RegisterSaver {
  public:
-  static OopMap* save_live_registers(MacroAssembler* masm, int additional_frame_words, int* total_frame_words);
-  static void restore_live_registers(MacroAssembler* masm);
+  static OopMap* save_live_registers(MacroAssembler* masm, int additional_frame_words, int* total_frame_words, bool save_vectors = false);
+  static void restore_live_registers(MacroAssembler* masm, bool restore_vectors = false);
 
   // Offsets into the register save area
   // Used by deoptimization when it is managing result register
@@ -108,7 +108,17 @@ class RegisterSaver {
 
 };
 
-OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_frame_words, int* total_frame_words) {
+OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_frame_words, int* total_frame_words, bool save_vectors) {
+#ifdef COMPILER2
+  if (save_vectors) {
+    // Save upper half of vector registers
+    int vect_words = 32 * 8 / wordSize;
+    additional_frame_words += vect_words;
+  }
+#else
+  assert(!save_vectors, "vectors are generated only by C2");
+#endif
+
   int frame_size_in_bytes = round_to(additional_frame_words*wordSize +
                                      reg_save_size*BytesPerInt, 16);
   // OopMap frame size is in compiler stack slots (jint's) not bytes or words
@@ -122,7 +132,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   // Save registers, fpu state, and flags.
 
   __ enter();
-  __ push_CPU_state();
+  __ push_CPU_state(save_vectors);
 
   // Set an oopmap for the call site.  This oopmap will map all
   // oop-registers and debug-info registers as callee-saved.  This
@@ -139,14 +149,14 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
                                     // register slots are 8 bytes
                                     // wide, 32 floating-point
                                     // registers
-      oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset),
+      oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset + additional_frame_slots),
                                 r->as_VMReg());
     }
   }
 
   for (int i = 0; i < FloatRegisterImpl::number_of_registers; i++) {
     FloatRegister r = as_FloatRegister(i);
-    int sp_offset = 2 * i;
+    int sp_offset = save_vectors ? (4 * i) : (2 * i);
     oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset),
                               r->as_VMReg());
   }
@@ -154,8 +164,11 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   return oop_map;
 }
 
-void RegisterSaver::restore_live_registers(MacroAssembler* masm) {
-  __ pop_CPU_state();
+void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_vectors) {
+#ifndef COMPILER2
+  assert(!restore_vectors, "vectors are generated only by C2");
+#endif
+  __ pop_CPU_state(restore_vectors);
   __ leave();
 }
 
@@ -177,9 +190,9 @@ void RegisterSaver::restore_result_registers(MacroAssembler* masm) {
 }
 
 // Is vector's size (in bytes) bigger than a size saved by default?
-// 16 bytes XMM registers are saved by default using fxsave/fxrstor instructions.
+// 8 bytes vector registers are saved by default on AArch64.
 bool SharedRuntime::is_wide_vector(int size) {
-  return size > 16;
+  return size > 8;
 }
 // The java_calling_convention describes stack locations as ideal slots on
 // a frame with no abi restrictions. Since we must observe abi restrictions
@@ -2742,7 +2755,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   bool save_vectors = (poll_type == POLL_AT_VECTOR_LOOP);
 
   // Save registers, fpu state, and flags
-  map = RegisterSaver::save_live_registers(masm, 0, &frame_size_in_words);
+  map = RegisterSaver::save_live_registers(masm, 0, &frame_size_in_words, save_vectors);
 
   // The following is basically a call_VM.  However, we need the precise
   // address of the call in order to generate an oopmap. Hence, we do all the
@@ -2793,7 +2806,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   __ bind(noException);
 
   // Normal exit, restore registers and exit.
-  RegisterSaver::restore_live_registers(masm);
+  RegisterSaver::restore_live_registers(masm, save_vectors);
 
   __ ret(lr);
 
