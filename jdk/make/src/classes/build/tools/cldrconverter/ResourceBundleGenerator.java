@@ -266,22 +266,47 @@ class ResourceBundleGenerator implements BundleGenerator {
             out.println((CLDRConverter.isBaseModule ? "package sun.util.cldr;\n\n" :
                                   "package sun.util.resources.cldr.provider;\n\n")
                       + "import java.util.HashMap;\n"
+                      + "import java.util.Locale;\n"
                       + "import java.util.Map;\n"
-                      + "import java.util.ListResourceBundle;\n"
                       + "import sun.util.locale.provider.LocaleProviderAdapter;\n"
                       + "import sun.util.locale.provider.LocaleDataMetaInfo;\n");
-            out.printf("public class %s extends ListResourceBundle implements LocaleDataMetaInfo {\n", className);
-            out.println("    @Override\n" +
-                        "    protected final Object[][] getContents() {\n" +
-                        "        final Object[][] data = new Object[][] {");
+            out.printf("public class %s implements LocaleDataMetaInfo {\n", className);
+            out.println("    private static final Map<String, String> resourceNameToLocales = new HashMap<>();\n" +
+                        (CLDRConverter.isBaseModule ?
+                        "    private static final Map<Locale, String[]> parentLocalesMap = new HashMap<>();\n\n" : "\n") +
+                        "    static {\n");
+
             for (String key : metaInfo.keySet()) {
-                out.printf("            { \"%s\",\n", key);
-                out.printf("              \"%s\" },\n",
+                if (key.startsWith(CLDRConverter.PARENT_LOCALE_PREFIX)) {
+                    String parentTag = key.substring(CLDRConverter.PARENT_LOCALE_PREFIX.length());
+                    if ("root".equals(parentTag)) {
+                        out.printf("        parentLocalesMap.put(Locale.ROOT,\n");
+                    } else {
+                        out.printf("        parentLocalesMap.put(Locale.forLanguageTag(\"%s\"),\n",
+                                   parentTag);
+                    }
+                    String[] childlen = toLocaleList(metaInfo.get(key), true).split(" ");
+                    out.printf("             new String[] {\n" +
+                               "                 ");
+                    int count = 0;
+                    for (int i = 0; i < childlen.length; i++) {
+                        String child = childlen[i];
+                        out.printf("\"%s\", ", child);
+                        count += child.length() + 4;
+                        if (i != childlen.length - 1 && count > 64) {
+                            out.printf("\n                 ");
+                            count = 0;
+                        }
+                    }
+                    out.printf("\n             });\n");
+                } else {
+                    out.printf("        resourceNameToLocales.put(\"%s\",\n", key);
+                    out.printf("              \"%s\");\n",
                     toLocaleList(key.equals("FormatData") ? metaInfo.get("AvailableLocales") :
-                                                            metaInfo.get(key),
-                                 key.startsWith(CLDRConverter.PARENT_LOCALE_PREFIX)));
+                                            metaInfo.get(key), false));
+                }
             }
-            out.println("        };\n        return data;\n    }\n\n");
+            out.println("    }\n\n");
 
             out.println("    @Override\n" +
                         "    public LocaleProviderAdapter.Type getType() {\n" +
@@ -290,19 +315,13 @@ class ResourceBundleGenerator implements BundleGenerator {
 
             out.println("    @Override\n" +
                         "    public String availableLanguageTags(String category) {\n" +
-                        "        return getString(category);\n" +
-                        "    };\n\n");
+                        "        return resourceNameToLocales.getOrDefault(category, \"\");\n" +
+                        "    }\n\n");
 
             if (CLDRConverter.isBaseModule) {
-                out.printf("    public Map<String, String> parentLocales() {\n" +
-                           "        Map<String, String> ret = new HashMap<>();\n" +
-                           "        keySet().stream()\n" +
-                           "            .filter(key -> key.startsWith(\"%s\"))\n" +
-                           "            .forEach(key -> ret.put(key.substring(%d), getString(key)));\n" +
-                           "        return ret.isEmpty() ? null : ret;\n" +
-                           "    };\n}",
-                           CLDRConverter.PARENT_LOCALE_PREFIX,
-                           CLDRConverter.PARENT_LOCALE_PREFIX.length());
+                out.printf("    public Map<Locale, String[]> parentLocales() {\n" +
+                           "        return parentLocalesMap;\n" +
+                           "    }\n}");
             } else {
                 out.println("}");
             }

@@ -148,8 +148,8 @@ public final class NativeError extends ScriptObject {
         initException(sobj);
         sobj.delete(STACK, false);
         if (! sobj.has("stack")) {
-            final ScriptFunction getStack = ScriptFunctionImpl.makeFunction("getStack", GET_STACK);
-            final ScriptFunction setStack = ScriptFunctionImpl.makeFunction("setStack", SET_STACK);
+            final ScriptFunction getStack = ScriptFunction.createBuiltin("getStack", GET_STACK);
+            final ScriptFunction setStack = ScriptFunction.createBuiltin("setStack", SET_STACK);
             sobj.addOwnProperty("stack", Attribute.NOT_ENUMERABLE, getStack, setStack);
         }
         return UNDEFINED;

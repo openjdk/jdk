@@ -36,6 +36,7 @@ import javax.swing.*;
  * @test
  * @bug 8024185
  * @summary Native Mac OS X full screen does not work after showing the splash
+ * @requires (os.family == "mac")
  * @library ../
  * @library ../../../../lib/testlibrary
  * @modules java.desktop/sun.awt

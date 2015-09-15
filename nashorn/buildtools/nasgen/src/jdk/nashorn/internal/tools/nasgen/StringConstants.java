@@ -31,10 +31,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import jdk.internal.org.objectweb.asm.Type;
-import jdk.nashorn.internal.objects.PrototypeObject;
-import jdk.nashorn.internal.objects.ScriptFunctionImpl;
 import jdk.nashorn.internal.runtime.AccessorProperty;
 import jdk.nashorn.internal.runtime.PropertyMap;
+import jdk.nashorn.internal.runtime.PrototypeObject;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.Specialization;
@@ -88,7 +87,6 @@ public interface StringConstants {
     static final Type TYPE_PROPERTYMAP        = Type.getType(PropertyMap.class);
     static final Type TYPE_PROTOTYPEOBJECT    = Type.getType(PrototypeObject.class);
     static final Type TYPE_SCRIPTFUNCTION     = Type.getType(ScriptFunction.class);
-    static final Type TYPE_SCRIPTFUNCTIONIMPL = Type.getType(ScriptFunctionImpl.class);
     static final Type TYPE_SCRIPTOBJECT       = Type.getType(ScriptObject.class);
 
     static final String PROTOTYPE_SUFFIX = "$Prototype";
@@ -122,17 +120,14 @@ public interface StringConstants {
     static final String SCRIPTFUNCTION_SETARITY_DESC = Type.getMethodDescriptor(Type.VOID_TYPE, Type.INT_TYPE);
     static final String SCRIPTFUNCTION_SETPROTOTYPE = "setPrototype";
     static final String SCRIPTFUNCTION_SETPROTOTYPE_DESC = Type.getMethodDescriptor(Type.VOID_TYPE, TYPE_OBJECT);
-
-    // ScriptFunctionImpl
-    static final String SCRIPTFUNCTIONIMPL_TYPE = TYPE_SCRIPTFUNCTIONIMPL.getInternalName();
-    static final String SCRIPTFUNCTIONIMPL_MAKEFUNCTION = "makeFunction";
-    static final String SCRIPTFUNCTIONIMPL_MAKEFUNCTION_DESC =
+    static final String SCRIPTFUNCTION_CREATEBUILTIN = "createBuiltin";
+    static final String SCRIPTFUNCTION_CREATEBUILTIN_DESC =
         Type.getMethodDescriptor(TYPE_SCRIPTFUNCTION, TYPE_STRING, TYPE_METHODHANDLE);
-    static final String SCRIPTFUNCTIONIMPL_MAKEFUNCTION_SPECS_DESC =
+    static final String SCRIPTFUNCTION_CREATEBUILTIN_SPECS_DESC =
         Type.getMethodDescriptor(TYPE_SCRIPTFUNCTION, TYPE_STRING, TYPE_METHODHANDLE, TYPE_SPECIALIZATION_ARRAY);
-    static final String SCRIPTFUNCTIONIMPL_INIT_DESC3 =
+    static final String SCRIPTFUNCTION_INIT_DESC3 =
         Type.getMethodDescriptor(Type.VOID_TYPE, TYPE_STRING, TYPE_METHODHANDLE, TYPE_SPECIALIZATION_ARRAY);
-    static final String SCRIPTFUNCTIONIMPL_INIT_DESC4 =
+    static final String SCRIPTFUNCTION_INIT_DESC4 =
         Type.getMethodDescriptor(Type.VOID_TYPE, TYPE_STRING, TYPE_METHODHANDLE, TYPE_PROPERTYMAP, TYPE_SPECIALIZATION_ARRAY);
 
     // ScriptObject

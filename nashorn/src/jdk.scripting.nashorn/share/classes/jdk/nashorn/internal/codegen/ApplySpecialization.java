@@ -298,25 +298,34 @@ public final class ApplySpecialization extends NodeVisitor<LexicalContext> imple
 
     @Override
     public boolean enterFunctionNode(final FunctionNode functionNode) {
-        if (!USE_APPLY2CALL) {
+        // Cheap tests first
+        if (!(
+                // is the transform globally enabled?
+                USE_APPLY2CALL
+
+                // Are we compiling lazily? We can't known the number and types of the actual parameters at
+                // the caller when compiling eagerly, so this only works with on-demand compilation.
+                && compiler.isOnDemandCompilation()
+
+                // Does the function even reference the "arguments" identifier (without redefining it)? If not,
+                // it trivially can't have an expression of form "f.apply(self, arguments)" that this transform
+                // is targeting.
+                && functionNode.needsArguments()
+
+                // Does the function have eval? If so, it can arbitrarily modify arguments so we can't touch it.
+                && !functionNode.hasEval()
+
+                // Finally, does the function declare any parameters explicitly? We don't support that. It could
+                // be done, but has some complications. Therefore only a function with no explicit parameters
+                // is considered.
+                && functionNode.getNumOfParams() == 0))
+        {
             return false;
         }
 
         if (!Global.isBuiltinFunctionPrototypeApply()) {
             log.fine("Apply transform disabled: apply/call overridden");
             assert !Global.isBuiltinFunctionPrototypeCall() : "call and apply should have the same SwitchPoint";
-            return false;
-        }
-
-        if (!compiler.isOnDemandCompilation()) {
-            return false;
-        }
-
-        if (functionNode.getNumOfParams() != 0) {
-            return false;
-        }
-
-        if (functionNode.hasEval()) {
             return false;
         }
 
