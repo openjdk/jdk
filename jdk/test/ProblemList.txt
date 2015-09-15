@@ -133,9 +133,6 @@ java/beans/Introspector/8132566/OverrideUserDefPropertyInfoTest.java generic-all
 # 8029891
 java/lang/ClassLoader/deadlock/GetResource.java                 generic-all
 
-# 8133552
-java/lang/ProcessHandle/InfoTest.java                           generic-all
-
 ############################################################################
 
 # jdk_instrument

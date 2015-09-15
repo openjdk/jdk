@@ -85,8 +85,8 @@ public class CompileProperties implements Transformer {
                              int debugLevel,
                              boolean incremental,
                              int numCores,
-                             PrintStream out,
-                             PrintStream err) {
+                             Writer out,
+                             Writer err) {
         boolean rc = true;
         for (String pkgName : pkgSrcs.keySet()) {
             String pkgNameF = Util.toFileSystemPath(pkgName);

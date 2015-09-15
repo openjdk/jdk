@@ -29,9 +29,9 @@
  * @build Wrapper
  * @run main Wrapper IdleShutdown
  */
+import java.io.Writer;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.sun.tools.sjavac.server.CompilationResult;
 import com.sun.tools.sjavac.server.IdleResetSjavac;
 import com.sun.tools.sjavac.server.Sjavac;
 import com.sun.tools.sjavac.server.Terminable;
@@ -65,11 +65,11 @@ public class IdleShutdown {
         // Use Sjavac object and wait less than TIMEOUT_MS in between calls
         Thread.sleep(TIMEOUT_MS - 1000);
         log("Compiling");
-        service.compile(new String[0]);
+        service.compile(new String[0], null, null);
 
         Thread.sleep(TIMEOUT_MS - 1000);
         log("Compiling");
-        service.compile(new String[0]);
+        service.compile(new String[0], null, null);
 
         if (timeoutTimestamp.get() != -1)
             throw new AssertionError("Premature timeout detected.");
@@ -103,13 +103,13 @@ public class IdleShutdown {
         public void shutdown() {
         }
         @Override
-        public CompilationResult compile(String[] args) {
+        public int compile(String[] args, Writer out, Writer err) {
             // Attempt to trigger idle timeout during a call by sleeping
             try {
                 Thread.sleep(TIMEOUT_MS + 1000);
             } catch (InterruptedException e) {
             }
-            return null;
+            return 0;
         }
     }
 }

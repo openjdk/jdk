@@ -159,28 +159,6 @@ $(eval $(call SetupCopyFiles,COPY_JIMAGE_SERVICE_PROVIDER, \
 
 ##########################################################################################
 
-# Tools needed on solaris because OBJCOPY is broken.
-
-ifeq ($(OPENJDK_TARGET_OS), solaris)
-  $(eval $(call SetupNativeCompilation,ADD_GNU_DEBUGLINK, \
-      SRC := $(JDK_TOPDIR)/make/src/native/add_gnu_debuglink, \
-      TOOLCHAIN := TOOLCHAIN_BUILD, \
-      LDFLAGS := -lelf, \
-      OBJECT_DIR := $(BUILDTOOLS_OUTPUTDIR)/objs/add_gnu_debuglink, \
-      OUTPUT_DIR := $(BUILDTOOLS_OUTPUTDIR)/bin, \
-      PROGRAM := add_gnu_debuglink))
-
-  $(eval $(call SetupNativeCompilation,FIX_EMPTY_SEC_HDR_FLAGS, \
-      SRC := $(JDK_TOPDIR)/make/src/native/fix_empty_sec_hdr_flags, \
-      TOOLCHAIN := TOOLCHAIN_BUILD, \
-      LDFLAGS := -lelf, \
-      OBJECT_DIR := $(BUILDTOOLS_OUTPUTDIR)/objs/fix_empty_sec_hdr_flags, \
-      OUTPUT_DIR := $(BUILDTOOLS_OUTPUTDIR)/bin, \
-      PROGRAM := fix_empty_sec_hdr_flags))
-
-  BUILD_TOOLS_JDK += $(ADD_GNU_DEBUGLINK) $(FIX_EMPTY_SEC_HDR_FLAGS)
-endif
-
 $(BUILD_TOOLS_JDK): $(BUILD_INTERIM_JIMAGE) $(COPY_JIMAGE_SERVICE_PROVIDER)
 
 java-tools: $(BUILD_TOOLS_JDK)

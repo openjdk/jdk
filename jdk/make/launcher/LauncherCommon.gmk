@@ -28,9 +28,6 @@ include NativeCompilation.gmk
 # Prepare the find cache.
 $(eval $(call FillCacheFind, $(JDK_TOPDIR)/src/java.base/share/native/launcher))
 
-# Build tools
-include Tools.gmk
-
 # When building a legacy overlay image (on solaris 64 bit), the launchers
 # need to be built with a different rpath and a different output dir.
 ifeq ($(OVERLAY_IMAGES), true)

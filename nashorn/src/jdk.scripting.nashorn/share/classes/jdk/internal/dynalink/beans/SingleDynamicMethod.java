@@ -98,7 +98,6 @@ import jdk.internal.dynalink.support.Lookup;
  * target method to a call site type (including mapping variable arity methods to a call site signature with different
  * arity).
  * @author Attila Szegedi
- * @version $Id: $
  */
 abstract class SingleDynamicMethod extends DynamicMethod {
 

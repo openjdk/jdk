@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,29 +23,40 @@
  * questions.
  */
 
-package jdk.nashorn.internal.objects;
+package com.sun.tools.sjavac;
 
-import jdk.nashorn.internal.runtime.ScriptFunction;
-import jdk.nashorn.internal.runtime.ScriptFunctionData;
-import jdk.nashorn.internal.runtime.ScriptObject;
-import jdk.nashorn.internal.runtime.ScriptRuntime;
+import java.io.FilterWriter;
+import java.io.IOException;
+import java.io.Writer;
 
-/**
- * A {@code ScriptFunctionImpl} subclass for functions created using {@code Function.prototype.bind}. Such functions
- * must track their {@code [[TargetFunction]]} property for purposes of correctly implementing {@code [[HasInstance]]};
- * see {@link ScriptFunction#isInstance(ScriptObject)}.
- */
-final class BoundScriptFunctionImpl extends ScriptFunctionImpl {
-    private final ScriptFunction targetFunction;
+public class AutoFlushWriter extends FilterWriter {
 
-    BoundScriptFunctionImpl(final ScriptFunctionData data, final ScriptFunction targetFunction) {
-        super(data, Global.instance());
-        setPrototype(ScriptRuntime.UNDEFINED);
-        this.targetFunction = targetFunction;
+    public AutoFlushWriter(Writer out) {
+        super(out);
     }
 
     @Override
-    protected ScriptFunction getTargetFunction() {
-        return targetFunction;
+    public void write(int c) throws IOException {
+        super.write(c);
+        if (c == '\n' || c == '\r')
+            flush();
+    }
+
+    @Override
+    public void write(String str, int off, int len) throws IOException {
+        super.write(str, off, len);
+        if (str.contains("\n") || str.contains("\r"))
+            flush();
+    }
+
+    @Override
+    public void write(char[] cbuf, int off, int len) throws IOException {
+        super.write(cbuf, off, len);
+        for (char c : cbuf) {
+            if (c == '\n' || c == '\r') {
+                flush();
+                break;
+            }
+        }
     }
 }
