@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,50 +22,39 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package sun.awt.image;
+package java.awt.image;
 
 import java.awt.Graphics;
 import java.awt.Image;
-import java.awt.image.*;
 
 /**
- * This class provides default implementations for the
- * <code>MultiResolutionImage</code> interface. The developer needs only
- * to subclass this abstract class and define the <code>getResolutionVariant</code>,
- * <code>getResolutionVariants</code>, and <code>getBaseImage</code> methods.
- *
+ * This class provides default implementations of several {@code Image} methods
+ * for classes that want to implement the {@MultiResolutionImage} interface.
  *
  * For example,
- * {@code
+ * <pre> {@code
  * public class CustomMultiResolutionImage extends AbstractMultiResolutionImage {
  *
- *     int baseImageIndex;
- *     Image[] resolutionVariants;
+ *     final Image[] resolutionVariants;
  *
- *     public CustomMultiResolutionImage(int baseImageIndex,
- *             Image... resolutionVariants) {
- *          this.baseImageIndex = baseImageIndex;
+ *     public CustomMultiResolutionImage(Image... resolutionVariants) {
  *          this.resolutionVariants = resolutionVariants;
  *     }
  *
- *     @Override
- *     public Image getResolutionVariant(float logicalDPIX, float logicalDPIY,
- *             float baseImageWidth, float baseImageHeight,
- *             float destImageWidth, float destImageHeight) {
- *         // return a resolution variant based on the given logical DPI,
- *         // base image size, or destination image size
+ *     public Image getResolutionVariant(
+ *             double destImageWidth, double destImageHeight) {
+ *         // return a resolution variant based on the given destination image size
  *     }
  *
- *     @Override
  *     public List<Image> getResolutionVariants() {
- *         return Arrays.asList(resolutionVariants);
+ *         return Collections.unmodifiableList(Arrays.asList(resolutionVariants));
  *     }
  *
  *     protected Image getBaseImage() {
- *         return resolutionVariants[baseImageIndex];
+ *         return resolutionVariants[0];
  *     }
  * }
- * }
+ * } </pre>
  *
  * @see java.awt.Image
  * @see java.awt.image.MultiResolutionImage
@@ -75,49 +64,39 @@ import java.awt.image.*;
 public abstract class AbstractMultiResolutionImage extends java.awt.Image
         implements MultiResolutionImage {
 
-    /**
-     * @inheritDoc
-     */
     @Override
     public int getWidth(ImageObserver observer) {
-        return getBaseImage().getWidth(null);
+        return getBaseImage().getWidth(observer);
     }
 
-    /**
-     * @inheritDoc
-     */
     @Override
     public int getHeight(ImageObserver observer) {
-        return getBaseImage().getHeight(null);
+        return getBaseImage().getHeight(observer);
     }
 
-    /**
-     * @inheritDoc
-     */
     @Override
     public ImageProducer getSource() {
         return getBaseImage().getSource();
     }
 
-    /**
-     * @inheritDoc
-     */
     @Override
     public Graphics getGraphics() {
-        return getBaseImage().getGraphics();
-
+        throw new UnsupportedOperationException("getGraphics() not supported"
+                + " on Multi-Resolution Images");
     }
 
-    /**
-     * @inheritDoc
-     */
     @Override
     public Object getProperty(String name, ImageObserver observer) {
         return getBaseImage().getProperty(name, observer);
     }
 
     /**
-     * @return base image
+     * Return the base image representing the best version of the image for
+     * rendering at the default width and height.
+     *
+     * @return the base image of the set of multi-resolution images
+     *
+     * @since 1.9
      */
     protected abstract Image getBaseImage();
 }

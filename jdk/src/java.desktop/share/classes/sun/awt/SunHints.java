@@ -257,8 +257,10 @@ public class SunHints {
      */
     @Native public static final int INTKEY_RESOLUTION_VARIANT = 9;
     @Native public static final int INTVAL_RESOLUTION_VARIANT_DEFAULT = 0;
-    @Native public static final int INTVAL_RESOLUTION_VARIANT_OFF = 1;
-    @Native public static final int INTVAL_RESOLUTION_VARIANT_ON = 2;
+    @Native public static final int INTVAL_RESOLUTION_VARIANT_BASE = 1;
+    @Native public static final int INTVAL_RESOLUTION_VARIANT_SIZE_FIT = 2;
+    @Native public static final int INTVAL_RESOLUTION_VARIANT_DPI_FIT = 3;
+
     /**
      * LCD text contrast control hint key.
      * Value is "100" to make discontiguous with the others which
@@ -466,15 +468,23 @@ public class SunHints {
     public static final Object VALUE_RESOLUTION_VARIANT_DEFAULT =
         new SunHints.Value(KEY_RESOLUTION_VARIANT,
                            SunHints.INTVAL_RESOLUTION_VARIANT_DEFAULT,
-                           "Choose image resolutions based on a default heuristic");
-    public static final Object VALUE_RESOLUTION_VARIANT_OFF =
+                           "Choose image resolutions based on a default"
+                                   + "heuristic");
+    public static final Object VALUE_RESOLUTION_VARIANT_BASE =
         new SunHints.Value(KEY_RESOLUTION_VARIANT,
-                           SunHints.INTVAL_RESOLUTION_VARIANT_OFF,
+                           SunHints.INTVAL_RESOLUTION_VARIANT_BASE,
                            "Use only the standard resolution of an image");
-    public static final Object VALUE_RESOLUTION_VARIANT_ON =
+    public static final Object VALUE_RESOLUTION_VARIANT_SIZE_FIT =
         new SunHints.Value(KEY_RESOLUTION_VARIANT,
-                           SunHints.INTVAL_RESOLUTION_VARIANT_ON,
-                           "Always use resolution-specific variants of images");
+                           SunHints.INTVAL_RESOLUTION_VARIANT_SIZE_FIT,
+                           "Choose image resolutions based on the DPI"
+                                   + "of the screen and transform"
+                                   + "in the Graphics2D context");
+    public static final Object VALUE_RESOLUTION_VARIANT_DPI_FIT =
+        new SunHints.Value(KEY_RESOLUTION_VARIANT,
+                           SunHints.INTVAL_RESOLUTION_VARIANT_DPI_FIT,
+                           "Choose image resolutions based only on the DPI"
+                                   + " of the screen");
 
     public static class LCDContrastKey extends Key {
 

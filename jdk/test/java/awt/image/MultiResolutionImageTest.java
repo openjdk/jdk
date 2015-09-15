@@ -33,10 +33,11 @@ import java.net.URL;
 import javax.imageio.ImageIO;
 import sun.awt.SunHints;
 import java.awt.MediaTracker;
+import java.awt.RenderingHints;
 import java.awt.image.ImageObserver;
 import javax.swing.JPanel;
 import jdk.testlibrary.Platform;
-import sun.awt.image.MultiResolutionImage;
+import java.awt.image.MultiResolutionImage;
 
 /**
  * @test @bug 8011059
@@ -339,8 +340,8 @@ public class MultiResolutionImageTest {
     static void setImageScalingHint(Graphics2D g2d,
         boolean enableImageScaling) {
         g2d.setRenderingHint(SunHints.KEY_RESOLUTION_VARIANT, enableImageScaling
-            ? SunHints.VALUE_RESOLUTION_VARIANT_ON
-            : SunHints.VALUE_RESOLUTION_VARIANT_OFF);
+            ? RenderingHints.VALUE_RESOLUTION_VARIANT_DEFAULT
+            : RenderingHints.VALUE_RESOLUTION_VARIANT_BASE);
     }
 
     static void checkColor(int rgb, boolean isImageScaled) {
