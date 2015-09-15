@@ -25,12 +25,13 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import sun.awt.SunHints;
 import java.awt.geom.AffineTransform;
 import java.util.Arrays;
 import java.util.List;
-import sun.awt.image.MultiResolutionImage;
+import java.awt.image.MultiResolutionImage;
 
 /**
  * @test @bug 8011059
@@ -173,8 +174,9 @@ public class MultiResolutionImageCommonTest {
         }
 
         @Override
-        public Image getResolutionVariant(int width, int height) {
-            return ((width <= getWidth() && height <= getHeight()))
+        public Image getResolutionVariant(
+                double destImageWidth, double destImageHeight) {
+            return ((destImageWidth <= getWidth() && destImageHeight <= getHeight()))
                     ? this : highResolutionImage;
         }
 
@@ -187,8 +189,8 @@ public class MultiResolutionImageCommonTest {
     static void setImageScalingHint(
             Graphics2D g2d, boolean enableImageScaling) {
         g2d.setRenderingHint(SunHints.KEY_RESOLUTION_VARIANT, enableImageScaling
-                ? SunHints.VALUE_RESOLUTION_VARIANT_ON
-                : SunHints.VALUE_RESOLUTION_VARIANT_OFF);
+                ? RenderingHints.VALUE_RESOLUTION_VARIANT_DEFAULT
+                : RenderingHints.VALUE_RESOLUTION_VARIANT_BASE);
     }
 
     static void checkColor(int rgb, boolean isImageScaled) {
