@@ -24,6 +24,8 @@
  */
 package com.sun.tools.sjavac.server;
 
+import java.io.Writer;
+
 
 /**
  * Interface of the SjavacImpl, the sjavac client and all wrappers such as
@@ -35,6 +37,10 @@ package com.sun.tools.sjavac.server;
  *  deletion without notice.</b>
  */
 public interface Sjavac {
-    CompilationResult compile(String[] args);
+
+    final static int RC_FATAL = -1;
+    final static int RC_OK = 0;
+
+    int compile(String[] args, Writer stdout, Writer stderr);
     void shutdown();
 }

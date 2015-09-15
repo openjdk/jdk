@@ -25,13 +25,14 @@
 
 package com.sun.tools.sjavac.client;
 
-import java.io.PrintStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 
+import com.sun.tools.sjavac.AutoFlushWriter;
 import com.sun.tools.sjavac.Log;
 import com.sun.tools.sjavac.Util;
 import com.sun.tools.sjavac.comp.SjavacImpl;
 import com.sun.tools.sjavac.options.Options;
-import com.sun.tools.sjavac.server.CompilationResult;
 import com.sun.tools.sjavac.server.Sjavac;
 
 /**
@@ -43,10 +44,12 @@ import com.sun.tools.sjavac.server.Sjavac;
 public class ClientMain {
 
     public static int run(String[] args) {
-        return run(args, System.out, System.err);
+        return run(args,
+                   new AutoFlushWriter(new OutputStreamWriter(System.out)),
+                   new AutoFlushWriter(new OutputStreamWriter(System.err)));
     }
 
-    public static int run(String[] args, PrintStream out, PrintStream err) {
+    public static int run(String[] args, Writer out, Writer err) {
 
         Log.initializeLog(out, err);
 
@@ -78,14 +81,11 @@ public class ClientMain {
             sjavac = new SjavacImpl();
         }
 
-        CompilationResult cr = sjavac.compile(args);
-
-        out.print(cr.stdout);
-        err.print(cr.stderr);
+        int rc = sjavac.compile(args, out, err);
 
         if (!background)
             sjavac.shutdown();
 
-        return cr.returnCode;
+        return rc;
     }
 }

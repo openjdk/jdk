@@ -53,13 +53,13 @@ interface ParserContextNode {
     public void setStatements(final List<Statement> statements);
 
     /**
-     * Adds a Statement at the end of the Statementlist
+     * Adds a statement at the end of the statement list
      * @param statement The statement to add
      */
     public void appendStatement(final Statement statement);
 
     /**
-     * Adds a statement at the begining of the statementlist
+     * Adds a statement at the beginning of the statement list
      * @param statement The statement to add
      */
     public void prependStatement(final Statement statement);

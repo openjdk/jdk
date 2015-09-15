@@ -191,7 +191,7 @@ public abstract class ContinuousArrayData extends ArrayData {
 
     /**
      * Return element setter for a {@link ContinuousArrayData}
-     * @param clazz        clazz for exact type guard
+     * @param clazz        class for exact type guard
      * @param setHas       set has guard
      * @param elementType  element type
      * @return method handle for element setter

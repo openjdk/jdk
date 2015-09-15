@@ -673,8 +673,7 @@ static void enqueue_cfg_uses(Node* m, Unique_Node_List& wq) {
 Node* PhaseIdealLoop::try_move_store_before_loop(Node* n, Node *n_ctrl) {
   // Store has to be first in the loop body
   IdealLoopTree *n_loop = get_loop(n_ctrl);
-  if (n->is_Store() && n_loop != _ltree_root && n_loop->is_loop()) {
-    assert(n->in(0), "store should have control set");
+  if (n->is_Store() && n_loop != _ltree_root && n_loop->is_loop() && n->in(0) != NULL) {
     Node* address = n->in(MemNode::Address);
     Node* value = n->in(MemNode::ValueIn);
     Node* mem = n->in(MemNode::Memory);
@@ -748,8 +747,7 @@ Node* PhaseIdealLoop::try_move_store_before_loop(Node* n, Node *n_ctrl) {
 
 // Try moving a store out of a loop, right after the loop
 void PhaseIdealLoop::try_move_store_after_loop(Node* n) {
-  if (n->is_Store()) {
-    assert(n->in(0), "store should have control set");
+  if (n->is_Store() && n->in(0) != NULL) {
     Node *n_ctrl = get_ctrl(n);
     IdealLoopTree *n_loop = get_loop(n_ctrl);
     // Store must be in a loop

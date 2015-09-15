@@ -56,6 +56,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -76,6 +77,7 @@ import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.FileObject;
+import javax.tools.JavaCompiler;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
@@ -88,7 +90,6 @@ import com.sun.tools.classfile.ConstantPoolException;
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
 import com.sun.tools.javac.platform.PlatformProvider;
-import com.sun.tools.javac.util.ServiceLoader;
 
 /**To generate the hash values for version N, invoke this class like:
  *
@@ -243,7 +244,11 @@ public class ElementStructureTest {
     }
 
     void run(Writer output, String version) throws Exception {
-        JavacTaskImpl task = (JavacTaskImpl) ToolProvider.getSystemJavaCompiler().getTask(null, null, null, Arrays.asList("-release", version), null, Arrays.asList(new ToolBox.JavaSource("Test", "")));
+        List<String> options = Arrays.asList("-release", version, "-classpath", "");
+        List<ToolBox.JavaSource> files = Arrays.asList(new ToolBox.JavaSource("Test", ""));
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        JavacTaskImpl task = (JavacTaskImpl) compiler.getTask(null, null, null, options, null, files);
+
         task.parse();
 
         JavaFileManager fm = task.getContext().get(JavaFileManager.class);

@@ -31,7 +31,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PrintStream;
+import java.io.Writer;
 import java.net.URI;
 import java.util.HashSet;
 import java.util.Map;
@@ -72,8 +72,8 @@ public class CopyFile implements Transformer {
                              int debugLevel,
                              boolean incremental,
                              int numCores,
-                             PrintStream out,
-                             PrintStream err)
+                             Writer out,
+                             Writer err)
     {
         boolean rc = true;
         String dest_filename;
