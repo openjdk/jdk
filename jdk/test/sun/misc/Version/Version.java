@@ -22,9 +22,10 @@
  */
 
 /* @test
- * @bug 6994413
+ * @bug 6994413, 8134365
  * @summary Check the JDK and JVM version returned by sun.misc.Version
- *          matches the versions defined in the system properties
+ *          matches the versions defined in the system properties.
+ *          Should use the API described in JDK-8136651 when available
  * @modules java.base/sun.misc
  * @compile -XDignore.symbol.file Version.java
  * @run main Version
@@ -90,12 +91,21 @@ public class Version {
 
         public String toString() {
             StringBuilder sb = new StringBuilder();
-            sb.append(major + "." + minor + "." + security);
+            // Do not include trailing zeros
             if (patch > 0) {
-                sb.append("." + patch);
+                sb.insert(0, "." + patch);
             }
+            if (security > 0 || sb.length() > 0) {
+                sb.insert(0, "." + security);
+            }
+            if (minor > 0 || sb.length() > 0) {
+                sb.insert(0, "." + minor);
+            }
+            sb.insert(0, major);
 
-            sb.append("+" + build);
+            if (build >= 0)
+                sb.append("+" + build);
+
             return sb.toString();
         }
     }
