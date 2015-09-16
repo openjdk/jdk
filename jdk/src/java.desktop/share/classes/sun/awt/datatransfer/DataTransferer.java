@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -938,15 +938,9 @@ search:
 
             try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
                 try (InputStream is = (InputStream)obj) {
-                    boolean eof = false;
-                    int avail = is.available();
-                    byte[] tmp = new byte[avail > 8192 ? avail : 8192];
-                    do {
-                        int aValue;
-                        if (!(eof = (aValue = is.read(tmp, 0, tmp.length)) == -1)) {
-                            bos.write(tmp, 0, aValue);
-                        }
-                    } while (!eof);
+                    is.mark(Integer.MAX_VALUE);
+                    is.transferTo(bos);
+                    is.reset();
                 }
 
                 if (DataFlavorUtil.isFlavorCharsetTextType(flavor) && isTextFormat(format)) {
