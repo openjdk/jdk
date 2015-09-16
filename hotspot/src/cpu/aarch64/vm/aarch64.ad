@@ -13814,6 +13814,25 @@ instruct cmpP_imm0_branch(cmpOp cmp, iRegP op1, immP0 op2, label labl, rFlagsReg
   ins_pipe(pipe_cmp_branch);
 %}
 
+instruct cmpP_narrowOop_imm0_branch(cmpOp cmp, iRegN oop, immP0 zero, label labl, rFlagsReg cr) %{
+  match(If cmp (CmpP (DecodeN oop) zero));
+  predicate(n->in(1)->as_Bool()->_test._test == BoolTest::ne
+            || n->in(1)->as_Bool()->_test._test == BoolTest::eq);
+  effect(USE labl);
+
+  ins_cost(BRANCH_COST);
+  format %{ "cb$cmp   $oop, $labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Condition cond = (Assembler::Condition)$cmp$$cmpcode;
+    if (cond == Assembler::EQ)
+      __ cbzw($oop$$Register, *L);
+    else
+      __ cbnzw($oop$$Register, *L);
+  %}
+  ins_pipe(pipe_cmp_branch);
+%}
+
 // Conditional Far Branch
 // Conditional Far Branch Unsigned
 // TODO: fixme
