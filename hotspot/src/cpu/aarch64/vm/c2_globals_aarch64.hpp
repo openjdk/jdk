@@ -72,6 +72,7 @@ define_pd_global(bool, OptoPeephole,                 true);
 define_pd_global(bool, UseCISCSpill,                 true);
 define_pd_global(bool, OptoScheduling,               false);
 define_pd_global(bool, OptoBundling,                 false);
+define_pd_global(bool, OptoRegScheduling,            false);
 
 define_pd_global(intx, ReservedCodeCacheSize,        48*M);
 define_pd_global(intx, NonProfiledCodeHeapSize,      21*M);

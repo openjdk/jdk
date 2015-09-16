@@ -3024,6 +3024,10 @@ const bool Matcher::match_rule_supported(int opcode) {
   return true;  // Per default match rules are supported.
 }
 
+const int Matcher::float_pressure(int default_pressure_threshold) {
+  return default_pressure_threshold;
+}
+
 int Matcher::regnum_to_fpu_offset(int regnum)
 {
   Unimplemented();
