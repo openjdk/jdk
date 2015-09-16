@@ -290,6 +290,9 @@
   product_pd(bool, OptoScheduling,                                          \
           "Instruction Scheduling after register allocation")               \
                                                                             \
+  product_pd(bool, OptoRegScheduling,                                       \
+          "Instruction Scheduling before register allocation for pressure") \
+                                                                            \
   product(bool, PartialPeelLoop, true,                                      \
           "Partial peel (rotate) loops")                                    \
                                                                             \

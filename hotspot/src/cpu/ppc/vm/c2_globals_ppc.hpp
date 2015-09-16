@@ -60,6 +60,7 @@ define_pd_global(intx, LoopUnrollLimit,              60);
 define_pd_global(bool, OptoPeephole,                 false);
 define_pd_global(bool, UseCISCSpill,                 false);
 define_pd_global(bool, OptoBundling,                 false);
+define_pd_global(bool, OptoRegScheduling,            false);
 // GL:
 // Detected a problem with unscaled compressed oops and
 // narrow_oop_use_complex_address() == false.
