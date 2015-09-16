@@ -102,6 +102,7 @@ import sun.security.jca.GetInstance.Instance;
  * following standard {@code Signature} algorithms:
  * <ul>
  * <li>{@code SHA1withDSA}</li>
+ * <li>{@code SHA256withDSA}</li>
  * <li>{@code SHA1withRSA}</li>
  * <li>{@code SHA256withRSA}</li>
  * </ul>
