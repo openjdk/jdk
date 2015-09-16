@@ -149,7 +149,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     /** Method handle to retrieve prototype of this object */
     public static final MethodHandle GETPROTO      = findOwnMH_V("getProto", ScriptObject.class);
 
-    static final MethodHandle MEGAMORPHIC_GET    = findOwnMH_V("megamorphicGet", Object.class, String.class, boolean.class);
+    static final MethodHandle MEGAMORPHIC_GET    = findOwnMH_V("megamorphicGet", Object.class, String.class, boolean.class, boolean.class);
     static final MethodHandle GLOBALFILTER       = findOwnMH_S("globalFilter", Object.class, Object.class);
     static final MethodHandle DECLARE_AND_SET    = findOwnMH_V("declareAndSet", void.class, String.class, Object.class);
 
@@ -2035,19 +2035,19 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
 
     private static GuardedInvocation findMegaMorphicGetMethod(final CallSiteDescriptor desc, final String name, final boolean isMethod) {
         Context.getContextTrusted().getLogger(ObjectClassGenerator.class).warning("Megamorphic getter: " + desc + " " + name + " " +isMethod);
-        final MethodHandle invoker = MH.insertArguments(MEGAMORPHIC_GET, 1, name, isMethod);
+        final MethodHandle invoker = MH.insertArguments(MEGAMORPHIC_GET, 1, name, isMethod, NashornCallSiteDescriptor.isScope(desc));
         final MethodHandle guard   = getScriptObjectGuard(desc.getMethodType(), true);
         return new GuardedInvocation(invoker, guard);
     }
 
     @SuppressWarnings("unused")
-    private Object megamorphicGet(final String key, final boolean isMethod) {
+    private Object megamorphicGet(final String key, final boolean isMethod, final boolean isScope) {
         final FindProperty find = findProperty(key, true);
         if (find != null) {
             return find.getObjectValue();
         }
 
-        return isMethod ? getNoSuchMethod(key, INVALID_PROGRAM_POINT) : invokeNoSuchProperty(key, INVALID_PROGRAM_POINT);
+        return isMethod ? getNoSuchMethod(key, isScope, INVALID_PROGRAM_POINT) : invokeNoSuchProperty(key, isScope, INVALID_PROGRAM_POINT);
     }
 
     // Marks a property as declared and sets its value. Used as slow path for block-scoped LET and CONST
@@ -2382,10 +2382,11 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     /**
      * Invoke fall back if a property is not found.
      * @param name Name of property.
+     * @param isScope is this a scope access?
      * @param programPoint program point
      * @return Result from call.
      */
-    protected Object invokeNoSuchProperty(final String name, final int programPoint) {
+    protected Object invokeNoSuchProperty(final String name, final boolean isScope, final int programPoint) {
         final FindProperty find = findProperty(NO_SUCH_PROPERTY_NAME, true);
 
         Object ret = UNDEFINED;
@@ -2394,7 +2395,9 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
             final Object func = find.getObjectValue();
 
             if (func instanceof ScriptFunction) {
-                ret = ScriptRuntime.apply((ScriptFunction)func, this, name);
+                final ScriptFunction sfunc = (ScriptFunction)func;
+                final Object self = isScope && sfunc.isStrict()? UNDEFINED : this;
+                ret = ScriptRuntime.apply(sfunc, self, name);
             }
         }
 
@@ -2409,13 +2412,14 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     /**
      * Get __noSuchMethod__ as a function bound to this object and {@code name} if it is defined.
      * @param name the method name
+     * @param isScope is this a scope access?
      * @return the bound function, or undefined
      */
-    private Object getNoSuchMethod(final String name, final int programPoint) {
+    private Object getNoSuchMethod(final String name, final boolean isScope, final int programPoint) {
         final FindProperty find = findProperty(NO_SUCH_METHOD_NAME, true);
 
         if (find == null) {
-            return invokeNoSuchProperty(name, programPoint);
+            return invokeNoSuchProperty(name, isScope, programPoint);
         }
 
         final Object value = find.getObjectValue();
@@ -2423,7 +2427,9 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
             return UNDEFINED;
         }
 
-        return ((ScriptFunction)value).createBound(this, new Object[] {name});
+        final ScriptFunction func = (ScriptFunction)value;
+        final Object self = isScope && func.isStrict()? UNDEFINED : this;
+        return func.createBound(self, new Object[] {name});
     }
 
     private GuardedInvocation createEmptyGetter(final CallSiteDescriptor desc, final boolean explicitInstanceOfCheck, final String name) {
@@ -2738,7 +2744,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
             }
         }
 
-        return JSType.toInt32(invokeNoSuchProperty(key, programPoint));
+        return JSType.toInt32(invokeNoSuchProperty(key, false, programPoint));
     }
 
     @Override
@@ -2820,7 +2826,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
             }
         }
 
-        return JSType.toLong(invokeNoSuchProperty(key, programPoint));
+        return JSType.toLong(invokeNoSuchProperty(key, false, programPoint));
     }
 
     @Override
@@ -2902,7 +2908,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
             }
         }
 
-        return JSType.toNumber(invokeNoSuchProperty(key, INVALID_PROGRAM_POINT));
+        return JSType.toNumber(invokeNoSuchProperty(key, false, INVALID_PROGRAM_POINT));
     }
 
     @Override
@@ -2983,7 +2989,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
             }
         }
 
-        return invokeNoSuchProperty(key, INVALID_PROGRAM_POINT);
+        return invokeNoSuchProperty(key, false, INVALID_PROGRAM_POINT);
     }
 
     @Override

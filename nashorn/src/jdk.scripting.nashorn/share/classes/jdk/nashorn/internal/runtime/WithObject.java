@@ -26,6 +26,7 @@
 package jdk.nashorn.internal.runtime;
 
 import static jdk.nashorn.internal.lookup.Lookup.MH;
+import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -209,16 +210,18 @@ public final class WithObject extends Scope {
     }
 
     @Override
-    protected Object invokeNoSuchProperty(final String name, final int programPoint) {
+    protected Object invokeNoSuchProperty(final String name, final boolean isScope, final int programPoint) {
         FindProperty find = expression.findProperty(NO_SUCH_PROPERTY_NAME, true);
         if (find != null) {
             final Object func = find.getObjectValue();
             if (func instanceof ScriptFunction) {
-                return ScriptRuntime.apply((ScriptFunction)func, expression, name);
+                final ScriptFunction sfunc = (ScriptFunction)func;
+                final Object self = isScope && sfunc.isStrict()? UNDEFINED : expression;
+                return ScriptRuntime.apply(sfunc, self, name);
             }
         }
 
-        return getProto().invokeNoSuchProperty(name, programPoint);
+        return getProto().invokeNoSuchProperty(name, isScope, programPoint);
     }
 
     @Override
