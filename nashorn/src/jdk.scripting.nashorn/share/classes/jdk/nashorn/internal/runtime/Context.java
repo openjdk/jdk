@@ -345,7 +345,6 @@ public final class Context {
             }
             final Class<?> newHostClass = context.createNewLoader().installClass(ANONYMOUS_HOST_CLASS_NAME, ANONYMOUS_HOST_CLASS_BYTES, codeSource);
             context.anonymousHostClasses.put(codeSource, new WeakReference<>(newHostClass));
-            final context.anonymousHostClasses.remo
             return newHostClass;
         }
 
