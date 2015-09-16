@@ -1551,7 +1551,7 @@ class JapaneseImperialCalendar extends Calendar {
      * The fixed date corresponding to jdate. If the value is
      * Long.MIN_VALUE, the fixed date value is unknown.
      */
-    transient private long cachedFixedDate = Long.MIN_VALUE;
+    private transient long cachedFixedDate = Long.MIN_VALUE;
 
     /**
      * Converts the time value (millisecond offset from the <a

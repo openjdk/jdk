@@ -145,7 +145,7 @@ class SuperIwithDefaultChild implements SuperIwithDefault {
 
 abstract class Base {
     @ExpectedModel(modifiers=PUBLIC|ABSTRACT, declaringClass=Base.class)
-    abstract public void baz();
+    public abstract void baz();
 
     @ExpectedModel(declaringClass=Base.class)
     public void quux() {;}

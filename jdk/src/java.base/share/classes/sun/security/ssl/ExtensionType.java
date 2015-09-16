@@ -62,46 +62,46 @@ final class ExtensionType {
     }
 
     // extensions defined in RFC 3546
-    final static ExtensionType EXT_SERVER_NAME =
+    static final ExtensionType EXT_SERVER_NAME =
             e(0x0000, "server_name");            // IANA registry value: 0
-    final static ExtensionType EXT_MAX_FRAGMENT_LENGTH =
+    static final ExtensionType EXT_MAX_FRAGMENT_LENGTH =
             e(0x0001, "max_fragment_length");    // IANA registry value: 1
-    final static ExtensionType EXT_CLIENT_CERTIFICATE_URL =
+    static final ExtensionType EXT_CLIENT_CERTIFICATE_URL =
             e(0x0002, "client_certificate_url"); // IANA registry value: 2
-    final static ExtensionType EXT_TRUSTED_CA_KEYS =
+    static final ExtensionType EXT_TRUSTED_CA_KEYS =
             e(0x0003, "trusted_ca_keys");        // IANA registry value: 3
-    final static ExtensionType EXT_TRUNCATED_HMAC =
+    static final ExtensionType EXT_TRUNCATED_HMAC =
             e(0x0004, "truncated_hmac");         // IANA registry value: 4
-    final static ExtensionType EXT_STATUS_REQUEST =
+    static final ExtensionType EXT_STATUS_REQUEST =
             e(0x0005, "status_request");         // IANA registry value: 5
 
     // extensions defined in RFC 4681
-    final static ExtensionType EXT_USER_MAPPING =
+    static final ExtensionType EXT_USER_MAPPING =
             e(0x0006, "user_mapping");           // IANA registry value: 6
 
     // extensions defined in RFC 5081
-    final static ExtensionType EXT_CERT_TYPE =
+    static final ExtensionType EXT_CERT_TYPE =
             e(0x0009, "cert_type");              // IANA registry value: 9
 
     // extensions defined in RFC 4492 (ECC)
-    final static ExtensionType EXT_ELLIPTIC_CURVES =
+    static final ExtensionType EXT_ELLIPTIC_CURVES =
             e(0x000A, "elliptic_curves");        // IANA registry value: 10
-    final static ExtensionType EXT_EC_POINT_FORMATS =
+    static final ExtensionType EXT_EC_POINT_FORMATS =
             e(0x000B, "ec_point_formats");       // IANA registry value: 11
 
     // extensions defined in RFC 5054
-    final static ExtensionType EXT_SRP =
+    static final ExtensionType EXT_SRP =
             e(0x000C, "srp");                    // IANA registry value: 12
 
     // extensions defined in RFC 5246
-    final static ExtensionType EXT_SIGNATURE_ALGORITHMS =
+    static final ExtensionType EXT_SIGNATURE_ALGORITHMS =
             e(0x000D, "signature_algorithms");   // IANA registry value: 13
 
     // extensions defined in RFC 6961
-    final static ExtensionType EXT_STATUS_REQUEST_V2 =
+    static final ExtensionType EXT_STATUS_REQUEST_V2 =
             e(0x0011, "status_request_v2");      // IANA registry value: 17
 
     // extensions defined in RFC 5746
-    final static ExtensionType EXT_RENEGOTIATION_INFO =
+    static final ExtensionType EXT_RENEGOTIATION_INFO =
             e(0xff01, "renegotiation_info");     // IANA registry value: 65281
 }

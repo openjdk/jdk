@@ -142,16 +142,16 @@ class GZIPInputStream extends InflaterInputStream {
     /**
      * GZIP header magic number.
      */
-    public final static int GZIP_MAGIC = 0x8b1f;
+    public static final int GZIP_MAGIC = 0x8b1f;
 
     /*
      * File header flags.
      */
-    private final static int FTEXT      = 1;    // Extra text
-    private final static int FHCRC      = 2;    // Header CRC
-    private final static int FEXTRA     = 4;    // Extra field
-    private final static int FNAME      = 8;    // File name
-    private final static int FCOMMENT   = 16;   // File comment
+    private static final int FTEXT      = 1;    // Extra text
+    private static final int FHCRC      = 2;    // Header CRC
+    private static final int FEXTRA     = 4;    // Extra field
+    private static final int FNAME      = 8;    // File name
+    private static final int FCOMMENT   = 16;   // File comment
 
     /*
      * Reads GZIP member header and returns the total byte number

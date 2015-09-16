@@ -53,7 +53,7 @@ import static sun.security.ssl.SunJSSE.cryptoProvider;
  */
 final class JsseJce {
 
-    private final static ProviderList fipsProviderList;
+    private static final ProviderList fipsProviderList;
 
     // Flag indicating whether EC crypto is available.
     // If null, then we have not checked yet.
@@ -62,7 +62,7 @@ final class JsseJce {
 
     // Flag indicating whether Kerberos crypto is available.
     // If true, then all the Kerberos-based crypto we need is available.
-    private final static boolean kerberosAvailable;
+    private static final boolean kerberosAvailable;
     static {
         ClientKeyExchangeService p =
                 ClientKeyExchangeService.find("KRB5");
@@ -119,68 +119,68 @@ final class JsseJce {
      * JCE transformation string for RSA with PKCS#1 v1.5 padding.
      * Can be used for encryption, decryption, signing, verifying.
      */
-    final static String CIPHER_RSA_PKCS1 = "RSA/ECB/PKCS1Padding";
+    static final String CIPHER_RSA_PKCS1 = "RSA/ECB/PKCS1Padding";
     /**
      * JCE transformation string for the stream cipher RC4.
      */
-    final static String CIPHER_RC4 = "RC4";
+    static final String CIPHER_RC4 = "RC4";
     /**
      * JCE transformation string for DES in CBC mode without padding.
      */
-    final static String CIPHER_DES = "DES/CBC/NoPadding";
+    static final String CIPHER_DES = "DES/CBC/NoPadding";
     /**
      * JCE transformation string for (3-key) Triple DES in CBC mode
      * without padding.
      */
-    final static String CIPHER_3DES = "DESede/CBC/NoPadding";
+    static final String CIPHER_3DES = "DESede/CBC/NoPadding";
     /**
      * JCE transformation string for AES in CBC mode
      * without padding.
      */
-    final static String CIPHER_AES = "AES/CBC/NoPadding";
+    static final String CIPHER_AES = "AES/CBC/NoPadding";
     /**
      * JCE transformation string for AES in GCM mode
      * without padding.
      */
-    final static String CIPHER_AES_GCM = "AES/GCM/NoPadding";
+    static final String CIPHER_AES_GCM = "AES/GCM/NoPadding";
     /**
      * JCA identifier string for DSA, i.e. a DSA with SHA-1.
      */
-    final static String SIGNATURE_DSA = "DSA";
+    static final String SIGNATURE_DSA = "DSA";
     /**
      * JCA identifier string for ECDSA, i.e. a ECDSA with SHA-1.
      */
-    final static String SIGNATURE_ECDSA = "SHA1withECDSA";
+    static final String SIGNATURE_ECDSA = "SHA1withECDSA";
     /**
      * JCA identifier string for Raw DSA, i.e. a DSA signature without
      * hashing where the application provides the SHA-1 hash of the data.
      * Note that the standard name is "NONEwithDSA" but we use "RawDSA"
      * for compatibility.
      */
-    final static String SIGNATURE_RAWDSA = "RawDSA";
+    static final String SIGNATURE_RAWDSA = "RawDSA";
     /**
      * JCA identifier string for Raw ECDSA, i.e. a DSA signature without
      * hashing where the application provides the SHA-1 hash of the data.
      */
-    final static String SIGNATURE_RAWECDSA = "NONEwithECDSA";
+    static final String SIGNATURE_RAWECDSA = "NONEwithECDSA";
     /**
      * JCA identifier string for Raw RSA, i.e. a RSA PKCS#1 v1.5 signature
      * without hashing where the application provides the hash of the data.
      * Used for RSA client authentication with a 36 byte hash.
      */
-    final static String SIGNATURE_RAWRSA = "NONEwithRSA";
+    static final String SIGNATURE_RAWRSA = "NONEwithRSA";
     /**
      * JCA identifier string for the SSL/TLS style RSA Signature. I.e.
      * an signature using RSA with PKCS#1 v1.5 padding signing a
      * concatenation of an MD5 and SHA-1 digest.
      */
-    final static String SIGNATURE_SSLRSA = "MD5andSHA1withRSA";
+    static final String SIGNATURE_SSLRSA = "MD5andSHA1withRSA";
 
     private JsseJce() {
         // no instantiation of this class
     }
 
-    synchronized static boolean isEcAvailable() {
+    static synchronized boolean isEcAvailable() {
         if (ecAvailable == null) {
             try {
                 JsseJce.getSignature(SIGNATURE_ECDSA);
@@ -196,7 +196,7 @@ final class JsseJce {
         return ecAvailable;
     }
 
-    synchronized static void clearEcAvailable() {
+    static synchronized void clearEcAvailable() {
         ecAvailable = null;
     }
 

@@ -60,18 +60,18 @@ import sun.security.action.GetPropertyAction;
  */
 public final class RSAKeyFactory extends KeyFactorySpi {
 
-    private final static Class<?> rsaPublicKeySpecClass =
+    private static final Class<?> rsaPublicKeySpecClass =
                                                 RSAPublicKeySpec.class;
-    private final static Class<?> rsaPrivateKeySpecClass =
+    private static final Class<?> rsaPrivateKeySpecClass =
                                                 RSAPrivateKeySpec.class;
-    private final static Class<?> rsaPrivateCrtKeySpecClass =
+    private static final Class<?> rsaPrivateCrtKeySpecClass =
                                                 RSAPrivateCrtKeySpec.class;
 
-    private final static Class<?> x509KeySpecClass  = X509EncodedKeySpec.class;
-    private final static Class<?> pkcs8KeySpecClass = PKCS8EncodedKeySpec.class;
+    private static final Class<?> x509KeySpecClass  = X509EncodedKeySpec.class;
+    private static final Class<?> pkcs8KeySpecClass = PKCS8EncodedKeySpec.class;
 
-    public final static int MIN_MODLEN = 512;
-    public final static int MAX_MODLEN = 16384;
+    public static final int MIN_MODLEN = 512;
+    public static final int MAX_MODLEN = 16384;
 
     /*
      * If the modulus length is above this value, restrict the size of
@@ -80,8 +80,8 @@ public final class RSAKeyFactory extends KeyFactorySpi {
      * this approach allows flexibility in case impls would like to use
      * larger module and exponent values.
      */
-    public final static int MAX_MODLEN_RESTRICT_EXP = 3072;
-    public final static int MAX_RESTRICTED_EXPLEN = 64;
+    public static final int MAX_MODLEN_RESTRICT_EXP = 3072;
+    public static final int MAX_RESTRICTED_EXPLEN = 64;
 
     private static final boolean restrictExpLen =
         "true".equalsIgnoreCase(AccessController.doPrivileged(
@@ -89,7 +89,7 @@ public final class RSAKeyFactory extends KeyFactorySpi {
                 "sun.security.rsa.restrictRSAExponent", "true")));
 
     // instance used for static translateKey();
-    private final static RSAKeyFactory INSTANCE = new RSAKeyFactory();
+    private static final RSAKeyFactory INSTANCE = new RSAKeyFactory();
 
     public RSAKeyFactory() {
         // empty

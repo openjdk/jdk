@@ -127,12 +127,12 @@ class Adler32 implements Checksum {
         return (long)adler & 0xffffffffL;
     }
 
-    private native static int update(int adler, int b);
+    private static native int update(int adler, int b);
 
     @HotSpotIntrinsicCandidate
-    private native static int updateBytes(int adler, byte[] b, int off,
+    private static native int updateBytes(int adler, byte[] b, int off,
                                           int len);
     @HotSpotIntrinsicCandidate
-    private native static int updateByteBuffer(int adler, long addr,
+    private static native int updateByteBuffer(int adler, long addr,
                                                int off, int len);
 }

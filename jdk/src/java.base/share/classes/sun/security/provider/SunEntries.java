@@ -310,12 +310,12 @@ final class SunEntries {
     }
 
     // name of the *System* property, takes precedence over PROP_RNDSOURCE
-    private final static String PROP_EGD = "java.security.egd";
+    private static final String PROP_EGD = "java.security.egd";
     // name of the *Security* property
-    private final static String PROP_RNDSOURCE = "securerandom.source";
+    private static final String PROP_RNDSOURCE = "securerandom.source";
 
-    final static String URL_DEV_RANDOM = "file:/dev/random";
-    final static String URL_DEV_URANDOM = "file:/dev/urandom";
+    static final String URL_DEV_RANDOM = "file:/dev/random";
+    static final String URL_DEV_URANDOM = "file:/dev/urandom";
 
     private static final String seedSource;
 

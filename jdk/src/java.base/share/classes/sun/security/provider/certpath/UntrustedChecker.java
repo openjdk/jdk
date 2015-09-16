@@ -41,7 +41,7 @@ import sun.security.util.UntrustedCertificates;
  * @see PKIXCertPathChecker
  * @see PKIXParameters
  */
-final public class UntrustedChecker extends PKIXCertPathChecker {
+public final class UntrustedChecker extends PKIXCertPathChecker {
 
     private static final Debug debug = Debug.getInstance("certpath");
 

@@ -35,7 +35,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 
 public class GetUnsafeTest {
-    final static String NAME = "sun.misc.Unsafe";
+    static final String NAME = "sun.misc.Unsafe";
 
     private static boolean isTestFailed = false;
 

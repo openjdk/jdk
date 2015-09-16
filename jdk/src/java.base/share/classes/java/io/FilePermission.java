@@ -101,32 +101,32 @@ public final class FilePermission extends Permission implements Serializable {
     /**
      * Execute action.
      */
-    private final static int EXECUTE = 0x1;
+    private static final int EXECUTE = 0x1;
     /**
      * Write action.
      */
-    private final static int WRITE   = 0x2;
+    private static final int WRITE   = 0x2;
     /**
      * Read action.
      */
-    private final static int READ    = 0x4;
+    private static final int READ    = 0x4;
     /**
      * Delete action.
      */
-    private final static int DELETE  = 0x8;
+    private static final int DELETE  = 0x8;
     /**
      * Read link action.
      */
-    private final static int READLINK    = 0x10;
+    private static final int READLINK    = 0x10;
 
     /**
      * All actions (read,write,execute,delete,readlink)
      */
-    private final static int ALL     = READ|WRITE|EXECUTE|DELETE|READLINK;
+    private static final int ALL     = READ|WRITE|EXECUTE|DELETE|READLINK;
     /**
      * No actions.
      */
-    private final static int NONE    = 0x0;
+    private static final int NONE    = 0x0;
 
     // the actions mask
     private transient int mask;

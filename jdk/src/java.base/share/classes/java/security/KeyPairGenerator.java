@@ -547,9 +547,9 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
 
         private Iterator<Service> serviceIterator;
 
-        private final static int I_NONE   = 1;
-        private final static int I_SIZE   = 2;
-        private final static int I_PARAMS = 3;
+        private static final int I_NONE   = 1;
+        private static final int I_SIZE   = 2;
+        private static final int I_PARAMS = 3;
 
         private int initType;
         private int initKeySize;

@@ -64,7 +64,7 @@ class Bits {                            // package-private
 
     // -- get/put char --
 
-    static private char makeChar(byte b1, byte b0) {
+    private static char makeChar(byte b1, byte b0) {
         return (char)((b1 << 8) | (b0 & 0xff));
     }
 
@@ -136,7 +136,7 @@ class Bits {                            // package-private
 
     // -- get/put short --
 
-    static private short makeShort(byte b1, byte b0) {
+    private static short makeShort(byte b1, byte b0) {
         return (short)((b1 << 8) | (b0 & 0xff));
     }
 
@@ -208,7 +208,7 @@ class Bits {                            // package-private
 
     // -- get/put int --
 
-    static private int makeInt(byte b3, byte b2, byte b1, byte b0) {
+    private static int makeInt(byte b3, byte b2, byte b1, byte b0) {
         return (((b3       ) << 24) |
                 ((b2 & 0xff) << 16) |
                 ((b1 & 0xff) <<  8) |
@@ -301,7 +301,7 @@ class Bits {                            // package-private
 
     // -- get/put long --
 
-    static private long makeLong(byte b7, byte b6, byte b5, byte b4,
+    private static long makeLong(byte b7, byte b6, byte b5, byte b4,
                                  byte b3, byte b2, byte b1, byte b0)
     {
         return ((((long)b7       ) << 56) |
