@@ -488,8 +488,9 @@ abstract class CompilationPhase {
             Class<?> rootClass = null;
             long length = 0L;
 
-            final CodeInstaller       codeInstaller = compiler.getCodeInstaller();
-            final Map<String, byte[]> bytecode      = compiler.getBytecode();
+            final CodeInstaller origCodeInstaller = compiler.getCodeInstaller();
+            final Map<String, byte[]> bytecode = compiler.getBytecode();
+            final CodeInstaller codeInstaller = bytecode.size() > 1 ? origCodeInstaller.getMultiClassCodeInstaller() : origCodeInstaller;
 
             for (final Entry<String, byte[]> entry : bytecode.entrySet()) {
                 final String className = entry.getKey();
