@@ -1413,14 +1413,6 @@ template<class T> static void swap(T& a, T& b) {
 #define UINTX_FORMAT_W(width) "%" #width PRIuPTR
 
 
-// Enable zap-a-lot if in debug version.
-
-# ifdef ASSERT
-# ifdef COMPILER2
-#   define ENABLE_ZAP_DEAD_LOCALS
-#endif /* COMPILER2 */
-# endif /* ASSERT */
-
 #define ARRAY_SIZE(array) (sizeof(array)/sizeof((array)[0]))
 
 // Dereference vptr
