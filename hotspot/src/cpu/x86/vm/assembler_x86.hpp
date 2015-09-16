@@ -506,7 +506,8 @@ class Assembler : public AbstractAssembler  {
 
     VEX_3bytes = 0xC4,
     VEX_2bytes = 0xC5,
-    EVEX_4bytes = 0x62
+    EVEX_4bytes = 0x62,
+    Prefix_EMPTY = 0x0
   };
 
   enum VexPrefix {
@@ -615,6 +616,8 @@ private:
   int prefixq_and_encode(int dst_enc, int src_enc);
 
   void prefix(Register reg);
+  void prefix(Register dst, Register src, Prefix p);
+  void prefix(Register dst, Address adr, Prefix p);
   void prefix(Address adr);
   void prefixq(Address adr);
 
@@ -1176,6 +1179,10 @@ private:
 
   // Identify processor type and features
   void cpuid();
+
+  // CRC32C
+  void crc32(Register crc, Register v, int8_t sizeInBytes);
+  void crc32(Register crc, Address adr, int8_t sizeInBytes);
 
   // Convert Scalar Double-Precision Floating-Point Value to Scalar Single-Precision Floating-Point Value
   void cvtsd2ss(XMMRegister dst, XMMRegister src);
@@ -1783,6 +1790,7 @@ private:
   void setb(Condition cc, Register dst);
 
   void shldl(Register dst, Register src);
+  void shldl(Register dst, Register src, int8_t imm8);
 
   void shll(Register dst, int imm8);
   void shll(Register dst);

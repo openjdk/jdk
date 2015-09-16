@@ -2991,6 +2991,63 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  /**
+  *  Arguments:
+  *
+  * Inputs:
+  *   rsp(4)   - int crc
+  *   rsp(8)   - byte* buf
+  *   rsp(12)  - int length
+  *   rsp(16)  - table_start - optional (present only when doing a library_calll,
+  *              not used by x86 algorithm)
+  *
+  * Ouput:
+  *       rax  - int crc result
+  */
+  address generate_updateBytesCRC32C(bool is_pclmulqdq_supported) {
+    assert(UseCRC32CIntrinsics, "need SSE4_2");
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "updateBytesCRC32C");
+    address start = __ pc();
+    const Register crc = rax;  // crc
+    const Register buf = rcx;  // source java byte array address
+    const Register len = rdx;  // length
+    const Register d = rbx;
+    const Register g = rsi;
+    const Register h = rdi;
+    const Register empty = 0; // will never be used, in order not
+                              // to change a signature for crc32c_IPL_Alg2_Alt2
+                              // between 64/32 I'm just keeping it here
+    assert_different_registers(crc, buf, len, d, g, h);
+
+    BLOCK_COMMENT("Entry:");
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+    Address crc_arg(rsp, 4 + 4 + 0); // ESP+4 +
+                                     // we need to add additional 4 because __ enter
+                                     // have just pushed ebp on a stack
+    Address buf_arg(rsp, 4 + 4 + 4);
+    Address len_arg(rsp, 4 + 4 + 8);
+      // Load up:
+      __ movl(crc, crc_arg);
+      __ movl(buf, buf_arg);
+      __ movl(len, len_arg);
+      __ push(d);
+      __ push(g);
+      __ push(h);
+      __ crc32c_ipl_alg2_alt2(crc, buf, len,
+                              d, g, h,
+                              empty, empty, empty,
+                              xmm0, xmm1, xmm2,
+                              is_pclmulqdq_supported);
+      __ pop(h);
+      __ pop(g);
+      __ pop(d);
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ ret(0);
+
+    return start;
+  }
+
   // Safefetch stubs.
   void generate_safefetch(const char* name, int size, address* entry,
                           address* fault_pc, address* continuation_pc) {
@@ -3203,6 +3260,13 @@ class StubGenerator: public StubCodeGenerator {
       // set table address before stub generation which use it
       StubRoutines::_crc_table_adr = (address)StubRoutines::x86::_crc_table;
       StubRoutines::_updateBytesCRC32 = generate_updateBytesCRC32();
+    }
+
+    if (UseCRC32CIntrinsics) {
+      bool supports_clmul = VM_Version::supports_clmul();
+      StubRoutines::x86::generate_CRC32C_table(supports_clmul);
+      StubRoutines::_crc32c_table_addr = (address)StubRoutines::x86::_crc32c_table;
+      StubRoutines::_updateBytesCRC32C = generate_updateBytesCRC32C(supports_clmul);
     }
   }
 

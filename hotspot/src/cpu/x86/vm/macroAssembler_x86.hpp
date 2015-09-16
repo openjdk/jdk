@@ -1278,9 +1278,42 @@ public:
                Register raxReg);
 #endif
 
-  // CRC32 code for java.util.zip.CRC32::updateBytes() instrinsic.
+  // CRC32 code for java.util.zip.CRC32::updateBytes() intrinsic.
   void update_byte_crc32(Register crc, Register val, Register table);
   void kernel_crc32(Register crc, Register buf, Register len, Register table, Register tmp);
+  // CRC32C code for java.util.zip.CRC32C::updateBytes() intrinsic
+  // Note on a naming convention:
+  // Prefix w = register only used on a Westmere+ architecture
+  // Prefix n = register only used on a Nehalem architecture
+#ifdef _LP64
+  void crc32c_ipl_alg4(Register in_out, uint32_t n,
+                       Register tmp1, Register tmp2, Register tmp3);
+#else
+  void crc32c_ipl_alg4(Register in_out, uint32_t n,
+                       Register tmp1, Register tmp2, Register tmp3,
+                       XMMRegister xtmp1, XMMRegister xtmp2);
+#endif
+  void crc32c_pclmulqdq(XMMRegister w_xtmp1,
+                        Register in_out,
+                        uint32_t const_or_pre_comp_const_index, bool is_pclmulqdq_supported,
+                        XMMRegister w_xtmp2,
+                        Register tmp1,
+                        Register n_tmp2, Register n_tmp3);
+  void crc32c_rec_alt2(uint32_t const_or_pre_comp_const_index_u1, uint32_t const_or_pre_comp_const_index_u2, bool is_pclmulqdq_supported, Register in_out, Register in1, Register in2,
+                       XMMRegister w_xtmp1, XMMRegister w_xtmp2, XMMRegister w_xtmp3,
+                       Register tmp1, Register tmp2,
+                       Register n_tmp3);
+  void crc32c_proc_chunk(uint32_t size, uint32_t const_or_pre_comp_const_index_u1, uint32_t const_or_pre_comp_const_index_u2, bool is_pclmulqdq_supported,
+                         Register in_out1, Register in_out2, Register in_out3,
+                         Register tmp1, Register tmp2, Register tmp3,
+                         XMMRegister w_xtmp1, XMMRegister w_xtmp2, XMMRegister w_xtmp3,
+                         Register tmp4, Register tmp5,
+                         Register n_tmp6);
+  void crc32c_ipl_alg2_alt2(Register in_out, Register in1, Register in2,
+                            Register tmp1, Register tmp2, Register tmp3,
+                            Register tmp4, Register tmp5, Register tmp6,
+                            XMMRegister w_xtmp1, XMMRegister w_xtmp2, XMMRegister w_xtmp3,
+                            bool is_pclmulqdq_supported);
   // Fold 128-bit data chunk
   void fold_128bit_crc32(XMMRegister xcrc, XMMRegister xK, XMMRegister xtmp, Register buf, int offset);
   void fold_128bit_crc32(XMMRegister xcrc, XMMRegister xK, XMMRegister xtmp, XMMRegister xbuf);

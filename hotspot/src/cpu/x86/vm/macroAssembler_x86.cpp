@@ -45,6 +45,7 @@
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/g1/heapRegion.hpp"
 #endif // INCLUDE_ALL_GCS
+#include "crc32c.h"
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
@@ -8636,6 +8637,471 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len, Regi
   notl(crc); // ~c
 }
 
+#ifdef _LP64
+// S. Gueron / Information Processing Letters 112 (2012) 184
+// Algorithm 4: Computing carry-less multiplication using a precomputed lookup table.
+// Input: A 32 bit value B = [byte3, byte2, byte1, byte0].
+// Output: the 64-bit carry-less product of B * CONST
+void MacroAssembler::crc32c_ipl_alg4(Register in, uint32_t n,
+                                     Register tmp1, Register tmp2, Register tmp3) {
+  lea(tmp3, ExternalAddress(StubRoutines::crc32c_table_addr()));
+  if (n > 0) {
+    addq(tmp3, n * 256 * 8);
+  }
+  //    Q1 = TABLEExt[n][B & 0xFF];
+  movl(tmp1, in);
+  andl(tmp1, 0x000000FF);
+  shll(tmp1, 3);
+  addq(tmp1, tmp3);
+  movq(tmp1, Address(tmp1, 0));
+
+  //    Q2 = TABLEExt[n][B >> 8 & 0xFF];
+  movl(tmp2, in);
+  shrl(tmp2, 8);
+  andl(tmp2, 0x000000FF);
+  shll(tmp2, 3);
+  addq(tmp2, tmp3);
+  movq(tmp2, Address(tmp2, 0));
+
+  shlq(tmp2, 8);
+  xorq(tmp1, tmp2);
+
+  //    Q3 = TABLEExt[n][B >> 16 & 0xFF];
+  movl(tmp2, in);
+  shrl(tmp2, 16);
+  andl(tmp2, 0x000000FF);
+  shll(tmp2, 3);
+  addq(tmp2, tmp3);
+  movq(tmp2, Address(tmp2, 0));
+
+  shlq(tmp2, 16);
+  xorq(tmp1, tmp2);
+
+  //    Q4 = TABLEExt[n][B >> 24 & 0xFF];
+  shrl(in, 24);
+  andl(in, 0x000000FF);
+  shll(in, 3);
+  addq(in, tmp3);
+  movq(in, Address(in, 0));
+
+  shlq(in, 24);
+  xorq(in, tmp1);
+  //    return Q1 ^ Q2 << 8 ^ Q3 << 16 ^ Q4 << 24;
+}
+
+void MacroAssembler::crc32c_pclmulqdq(XMMRegister w_xtmp1,
+                                      Register in_out,
+                                      uint32_t const_or_pre_comp_const_index, bool is_pclmulqdq_supported,
+                                      XMMRegister w_xtmp2,
+                                      Register tmp1,
+                                      Register n_tmp2, Register n_tmp3) {
+  if (is_pclmulqdq_supported) {
+    movdl(w_xtmp1, in_out); // modified blindly
+
+    movl(tmp1, const_or_pre_comp_const_index);
+    movdl(w_xtmp2, tmp1);
+    pclmulqdq(w_xtmp1, w_xtmp2, 0);
+
+    movdq(in_out, w_xtmp1);
+  } else {
+    crc32c_ipl_alg4(in_out, const_or_pre_comp_const_index, tmp1, n_tmp2, n_tmp3);
+  }
+}
+
+// Recombination Alternative 2: No bit-reflections
+// T1 = (CRC_A * U1) << 1
+// T2 = (CRC_B * U2) << 1
+// C1 = T1 >> 32
+// C2 = T2 >> 32
+// T1 = T1 & 0xFFFFFFFF
+// T2 = T2 & 0xFFFFFFFF
+// T1 = CRC32(0, T1)
+// T2 = CRC32(0, T2)
+// C1 = C1 ^ T1
+// C2 = C2 ^ T2
+// CRC = C1 ^ C2 ^ CRC_C
+void MacroAssembler::crc32c_rec_alt2(uint32_t const_or_pre_comp_const_index_u1, uint32_t const_or_pre_comp_const_index_u2, bool is_pclmulqdq_supported, Register in_out, Register in1, Register in2,
+                                     XMMRegister w_xtmp1, XMMRegister w_xtmp2, XMMRegister w_xtmp3,
+                                     Register tmp1, Register tmp2,
+                                     Register n_tmp3) {
+  crc32c_pclmulqdq(w_xtmp1, in_out, const_or_pre_comp_const_index_u1, is_pclmulqdq_supported, w_xtmp3, tmp1, tmp2, n_tmp3);
+  crc32c_pclmulqdq(w_xtmp2, in1, const_or_pre_comp_const_index_u2, is_pclmulqdq_supported, w_xtmp3, tmp1, tmp2, n_tmp3);
+  shlq(in_out, 1);
+  movl(tmp1, in_out);
+  shrq(in_out, 32);
+  xorl(tmp2, tmp2);
+  crc32(tmp2, tmp1, 4);
+  xorl(in_out, tmp2); // we don't care about upper 32 bit contents here
+  shlq(in1, 1);
+  movl(tmp1, in1);
+  shrq(in1, 32);
+  xorl(tmp2, tmp2);
+  crc32(tmp2, tmp1, 4);
+  xorl(in1, tmp2);
+  xorl(in_out, in1);
+  xorl(in_out, in2);
+}
+
+// Set N to predefined value
+// Subtract from a lenght of a buffer
+// execute in a loop:
+// CRC_A = 0xFFFFFFFF, CRC_B = 0, CRC_C = 0
+// for i = 1 to N do
+//  CRC_A = CRC32(CRC_A, A[i])
+//  CRC_B = CRC32(CRC_B, B[i])
+//  CRC_C = CRC32(CRC_C, C[i])
+// end for
+// Recombine
+void MacroAssembler::crc32c_proc_chunk(uint32_t size, uint32_t const_or_pre_comp_const_index_u1, uint32_t const_or_pre_comp_const_index_u2, bool is_pclmulqdq_supported,
+                                       Register in_out1, Register in_out2, Register in_out3,
+                                       Register tmp1, Register tmp2, Register tmp3,
+                                       XMMRegister w_xtmp1, XMMRegister w_xtmp2, XMMRegister w_xtmp3,
+                                       Register tmp4, Register tmp5,
+                                       Register n_tmp6) {
+  Label L_processPartitions;
+  Label L_processPartition;
+  Label L_exit;
+
+  bind(L_processPartitions);
+  cmpl(in_out1, 3 * size);
+  jcc(Assembler::less, L_exit);
+    xorl(tmp1, tmp1);
+    xorl(tmp2, tmp2);
+    movq(tmp3, in_out2);
+    addq(tmp3, size);
+
+    bind(L_processPartition);
+      crc32(in_out3, Address(in_out2, 0), 8);
+      crc32(tmp1, Address(in_out2, size), 8);
+      crc32(tmp2, Address(in_out2, size * 2), 8);
+      addq(in_out2, 8);
+      cmpq(in_out2, tmp3);
+      jcc(Assembler::less, L_processPartition);
+    crc32c_rec_alt2(const_or_pre_comp_const_index_u1, const_or_pre_comp_const_index_u2, is_pclmulqdq_supported, in_out3, tmp1, tmp2,
+            w_xtmp1, w_xtmp2, w_xtmp3,
+            tmp4, tmp5,
+            n_tmp6);
+    addq(in_out2, 2 * size);
+    subl(in_out1, 3 * size);
+    jmp(L_processPartitions);
+
+  bind(L_exit);
+}
+#else
+void MacroAssembler::crc32c_ipl_alg4(Register in_out, uint32_t n,
+                                     Register tmp1, Register tmp2, Register tmp3,
+                                     XMMRegister xtmp1, XMMRegister xtmp2) {
+  lea(tmp3, ExternalAddress(StubRoutines::crc32c_table_addr()));
+  if (n > 0) {
+    addl(tmp3, n * 256 * 8);
+  }
+  //    Q1 = TABLEExt[n][B & 0xFF];
+  movl(tmp1, in_out);
+  andl(tmp1, 0x000000FF);
+  shll(tmp1, 3);
+  addl(tmp1, tmp3);
+  movq(xtmp1, Address(tmp1, 0));
+
+  //    Q2 = TABLEExt[n][B >> 8 & 0xFF];
+  movl(tmp2, in_out);
+  shrl(tmp2, 8);
+  andl(tmp2, 0x000000FF);
+  shll(tmp2, 3);
+  addl(tmp2, tmp3);
+  movq(xtmp2, Address(tmp2, 0));
+
+  psllq(xtmp2, 8);
+  pxor(xtmp1, xtmp2);
+
+  //    Q3 = TABLEExt[n][B >> 16 & 0xFF];
+  movl(tmp2, in_out);
+  shrl(tmp2, 16);
+  andl(tmp2, 0x000000FF);
+  shll(tmp2, 3);
+  addl(tmp2, tmp3);
+  movq(xtmp2, Address(tmp2, 0));
+
+  psllq(xtmp2, 16);
+  pxor(xtmp1, xtmp2);
+
+  //    Q4 = TABLEExt[n][B >> 24 & 0xFF];
+  shrl(in_out, 24);
+  andl(in_out, 0x000000FF);
+  shll(in_out, 3);
+  addl(in_out, tmp3);
+  movq(xtmp2, Address(in_out, 0));
+
+  psllq(xtmp2, 24);
+  pxor(xtmp1, xtmp2); // Result in CXMM
+  //    return Q1 ^ Q2 << 8 ^ Q3 << 16 ^ Q4 << 24;
+}
+
+void MacroAssembler::crc32c_pclmulqdq(XMMRegister w_xtmp1,
+                                      Register in_out,
+                                      uint32_t const_or_pre_comp_const_index, bool is_pclmulqdq_supported,
+                                      XMMRegister w_xtmp2,
+                                      Register tmp1,
+                                      Register n_tmp2, Register n_tmp3) {
+  if (is_pclmulqdq_supported) {
+    movdl(w_xtmp1, in_out);
+
+    movl(tmp1, const_or_pre_comp_const_index);
+    movdl(w_xtmp2, tmp1);
+    pclmulqdq(w_xtmp1, w_xtmp2, 0);
+    // Keep result in XMM since GPR is 32 bit in length
+  } else {
+    crc32c_ipl_alg4(in_out, const_or_pre_comp_const_index, tmp1, n_tmp2, n_tmp3, w_xtmp1, w_xtmp2);
+  }
+}
+
+void MacroAssembler::crc32c_rec_alt2(uint32_t const_or_pre_comp_const_index_u1, uint32_t const_or_pre_comp_const_index_u2, bool is_pclmulqdq_supported, Register in_out, Register in1, Register in2,
+                                     XMMRegister w_xtmp1, XMMRegister w_xtmp2, XMMRegister w_xtmp3,
+                                     Register tmp1, Register tmp2,
+                                     Register n_tmp3) {
+  crc32c_pclmulqdq(w_xtmp1, in_out, const_or_pre_comp_const_index_u1, is_pclmulqdq_supported, w_xtmp3, tmp1, tmp2, n_tmp3);
+  crc32c_pclmulqdq(w_xtmp2, in1, const_or_pre_comp_const_index_u2, is_pclmulqdq_supported, w_xtmp3, tmp1, tmp2, n_tmp3);
+
+  psllq(w_xtmp1, 1);
+  movdl(tmp1, w_xtmp1);
+  psrlq(w_xtmp1, 32);
+  movdl(in_out, w_xtmp1);
+
+  xorl(tmp2, tmp2);
+  crc32(tmp2, tmp1, 4);
+  xorl(in_out, tmp2);
+
+  psllq(w_xtmp2, 1);
+  movdl(tmp1, w_xtmp2);
+  psrlq(w_xtmp2, 32);
+  movdl(in1, w_xtmp2);
+
+  xorl(tmp2, tmp2);
+  crc32(tmp2, tmp1, 4);
+  xorl(in1, tmp2);
+  xorl(in_out, in1);
+  xorl(in_out, in2);
+}
+
+void MacroAssembler::crc32c_proc_chunk(uint32_t size, uint32_t const_or_pre_comp_const_index_u1, uint32_t const_or_pre_comp_const_index_u2, bool is_pclmulqdq_supported,
+                                       Register in_out1, Register in_out2, Register in_out3,
+                                       Register tmp1, Register tmp2, Register tmp3,
+                                       XMMRegister w_xtmp1, XMMRegister w_xtmp2, XMMRegister w_xtmp3,
+                                       Register tmp4, Register tmp5,
+                                       Register n_tmp6) {
+  Label L_processPartitions;
+  Label L_processPartition;
+  Label L_exit;
+
+  bind(L_processPartitions);
+  cmpl(in_out1, 3 * size);
+  jcc(Assembler::less, L_exit);
+    xorl(tmp1, tmp1);
+    xorl(tmp2, tmp2);
+    movl(tmp3, in_out2);
+    addl(tmp3, size);
+
+    bind(L_processPartition);
+      crc32(in_out3, Address(in_out2, 0), 4);
+      crc32(tmp1, Address(in_out2, size), 4);
+      crc32(tmp2, Address(in_out2, size*2), 4);
+      crc32(in_out3, Address(in_out2, 0+4), 4);
+      crc32(tmp1, Address(in_out2, size+4), 4);
+      crc32(tmp2, Address(in_out2, size*2+4), 4);
+      addl(in_out2, 8);
+      cmpl(in_out2, tmp3);
+      jcc(Assembler::less, L_processPartition);
+
+        push(tmp3);
+        push(in_out1);
+        push(in_out2);
+        tmp4 = tmp3;
+        tmp5 = in_out1;
+        n_tmp6 = in_out2;
+
+      crc32c_rec_alt2(const_or_pre_comp_const_index_u1, const_or_pre_comp_const_index_u2, is_pclmulqdq_supported, in_out3, tmp1, tmp2,
+            w_xtmp1, w_xtmp2, w_xtmp3,
+            tmp4, tmp5,
+            n_tmp6);
+
+        pop(in_out2);
+        pop(in_out1);
+        pop(tmp3);
+
+    addl(in_out2, 2 * size);
+    subl(in_out1, 3 * size);
+    jmp(L_processPartitions);
+
+  bind(L_exit);
+}
+#endif //LP64
+
+#ifdef _LP64
+// Algorithm 2: Pipelined usage of the CRC32 instruction.
+// Input: A buffer I of L bytes.
+// Output: the CRC32C value of the buffer.
+// Notations:
+// Write L = 24N + r, with N = floor (L/24).
+// r = L mod 24 (0 <= r < 24).
+// Consider I as the concatenation of A|B|C|R, where A, B, C, each,
+// N quadwords, and R consists of r bytes.
+// A[j] = I [8j+7:8j], j= 0, 1, ..., N-1
+// B[j] = I [N + 8j+7:N + 8j], j= 0, 1, ..., N-1
+// C[j] = I [2N + 8j+7:2N + 8j], j= 0, 1, ..., N-1
+// if r > 0 R[j] = I [3N +j], j= 0, 1, ...,r-1
+void MacroAssembler::crc32c_ipl_alg2_alt2(Register in_out, Register in1, Register in2,
+                                          Register tmp1, Register tmp2, Register tmp3,
+                                          Register tmp4, Register tmp5, Register tmp6,
+                                          XMMRegister w_xtmp1, XMMRegister w_xtmp2, XMMRegister w_xtmp3,
+                                          bool is_pclmulqdq_supported) {
+  uint32_t const_or_pre_comp_const_index[CRC32C_NUM_PRECOMPUTED_CONSTANTS];
+  Label L_wordByWord;
+  Label L_byteByByteProlog;
+  Label L_byteByByte;
+  Label L_exit;
+
+  if (is_pclmulqdq_supported ) {
+    const_or_pre_comp_const_index[1] = *(uint32_t *)StubRoutines::_crc32c_table_addr;
+    const_or_pre_comp_const_index[0] = *((uint32_t *)StubRoutines::_crc32c_table_addr+1);
+
+    const_or_pre_comp_const_index[3] = *((uint32_t *)StubRoutines::_crc32c_table_addr + 2);
+    const_or_pre_comp_const_index[2] = *((uint32_t *)StubRoutines::_crc32c_table_addr + 3);
+
+    const_or_pre_comp_const_index[5] = *((uint32_t *)StubRoutines::_crc32c_table_addr + 4);
+    const_or_pre_comp_const_index[4] = *((uint32_t *)StubRoutines::_crc32c_table_addr + 5);
+    assert((CRC32C_NUM_PRECOMPUTED_CONSTANTS - 1 ) == 5, "Checking whether you declared all of the constants based on the number of \"chunks\"");
+  } else {
+    const_or_pre_comp_const_index[0] = 1;
+    const_or_pre_comp_const_index[1] = 0;
+
+    const_or_pre_comp_const_index[2] = 3;
+    const_or_pre_comp_const_index[3] = 2;
+
+    const_or_pre_comp_const_index[4] = 5;
+    const_or_pre_comp_const_index[5] = 4;
+   }
+  crc32c_proc_chunk(CRC32C_HIGH, const_or_pre_comp_const_index[0], const_or_pre_comp_const_index[1], is_pclmulqdq_supported,
+                    in2, in1, in_out,
+                    tmp1, tmp2, tmp3,
+                    w_xtmp1, w_xtmp2, w_xtmp3,
+                    tmp4, tmp5,
+                    tmp6);
+  crc32c_proc_chunk(CRC32C_MIDDLE, const_or_pre_comp_const_index[2], const_or_pre_comp_const_index[3], is_pclmulqdq_supported,
+                    in2, in1, in_out,
+                    tmp1, tmp2, tmp3,
+                    w_xtmp1, w_xtmp2, w_xtmp3,
+                    tmp4, tmp5,
+                    tmp6);
+  crc32c_proc_chunk(CRC32C_LOW, const_or_pre_comp_const_index[4], const_or_pre_comp_const_index[5], is_pclmulqdq_supported,
+                    in2, in1, in_out,
+                    tmp1, tmp2, tmp3,
+                    w_xtmp1, w_xtmp2, w_xtmp3,
+                    tmp4, tmp5,
+                    tmp6);
+  movl(tmp1, in2);
+  andl(tmp1, 0x00000007);
+  negl(tmp1);
+  addl(tmp1, in2);
+  addq(tmp1, in1);
+
+  BIND(L_wordByWord);
+  cmpq(in1, tmp1);
+  jcc(Assembler::greaterEqual, L_byteByByteProlog);
+    crc32(in_out, Address(in1, 0), 4);
+    addq(in1, 4);
+    jmp(L_wordByWord);
+
+  BIND(L_byteByByteProlog);
+  andl(in2, 0x00000007);
+  movl(tmp2, 1);
+
+  BIND(L_byteByByte);
+  cmpl(tmp2, in2);
+  jccb(Assembler::greater, L_exit);
+    crc32(in_out, Address(in1, 0), 1);
+    incq(in1);
+    incl(tmp2);
+    jmp(L_byteByByte);
+
+  BIND(L_exit);
+}
+#else
+void MacroAssembler::crc32c_ipl_alg2_alt2(Register in_out, Register in1, Register in2,
+                                          Register tmp1, Register  tmp2, Register tmp3,
+                                          Register tmp4, Register  tmp5, Register tmp6,
+                                          XMMRegister w_xtmp1, XMMRegister w_xtmp2, XMMRegister w_xtmp3,
+                                          bool is_pclmulqdq_supported) {
+  uint32_t const_or_pre_comp_const_index[CRC32C_NUM_PRECOMPUTED_CONSTANTS];
+  Label L_wordByWord;
+  Label L_byteByByteProlog;
+  Label L_byteByByte;
+  Label L_exit;
+
+  if (is_pclmulqdq_supported) {
+    const_or_pre_comp_const_index[1] = *(uint32_t *)StubRoutines::_crc32c_table_addr;
+    const_or_pre_comp_const_index[0] = *((uint32_t *)StubRoutines::_crc32c_table_addr + 1);
+
+    const_or_pre_comp_const_index[3] = *((uint32_t *)StubRoutines::_crc32c_table_addr + 2);
+    const_or_pre_comp_const_index[2] = *((uint32_t *)StubRoutines::_crc32c_table_addr + 3);
+
+    const_or_pre_comp_const_index[5] = *((uint32_t *)StubRoutines::_crc32c_table_addr + 4);
+    const_or_pre_comp_const_index[4] = *((uint32_t *)StubRoutines::_crc32c_table_addr + 5);
+  } else {
+    const_or_pre_comp_const_index[0] = 1;
+    const_or_pre_comp_const_index[1] = 0;
+
+    const_or_pre_comp_const_index[2] = 3;
+    const_or_pre_comp_const_index[3] = 2;
+
+    const_or_pre_comp_const_index[4] = 5;
+    const_or_pre_comp_const_index[5] = 4;
+  }
+  crc32c_proc_chunk(CRC32C_HIGH, const_or_pre_comp_const_index[0], const_or_pre_comp_const_index[1], is_pclmulqdq_supported,
+                    in2, in1, in_out,
+                    tmp1, tmp2, tmp3,
+                    w_xtmp1, w_xtmp2, w_xtmp3,
+                    tmp4, tmp5,
+                    tmp6);
+  crc32c_proc_chunk(CRC32C_MIDDLE, const_or_pre_comp_const_index[2], const_or_pre_comp_const_index[3], is_pclmulqdq_supported,
+                    in2, in1, in_out,
+                    tmp1, tmp2, tmp3,
+                    w_xtmp1, w_xtmp2, w_xtmp3,
+                    tmp4, tmp5,
+                    tmp6);
+  crc32c_proc_chunk(CRC32C_LOW, const_or_pre_comp_const_index[4], const_or_pre_comp_const_index[5], is_pclmulqdq_supported,
+                    in2, in1, in_out,
+                    tmp1, tmp2, tmp3,
+                    w_xtmp1, w_xtmp2, w_xtmp3,
+                    tmp4, tmp5,
+                    tmp6);
+  movl(tmp1, in2);
+  andl(tmp1, 0x00000007);
+  negl(tmp1);
+  addl(tmp1, in2);
+  addl(tmp1, in1);
+
+  BIND(L_wordByWord);
+  cmpl(in1, tmp1);
+  jcc(Assembler::greaterEqual, L_byteByByteProlog);
+    crc32(in_out, Address(in1,0), 4);
+    addl(in1, 4);
+    jmp(L_wordByWord);
+
+  BIND(L_byteByByteProlog);
+  andl(in2, 0x00000007);
+  movl(tmp2, 1);
+
+  BIND(L_byteByByte);
+  cmpl(tmp2, in2);
+  jccb(Assembler::greater, L_exit);
+    movb(tmp1, Address(in1, 0));
+    crc32(in_out, tmp1, 1);
+    incl(in1);
+    incl(tmp2);
+    jmp(L_byteByByte);
+
+  BIND(L_exit);
+}
+#endif // LP64
 #undef BIND
 #undef BLOCK_COMMENT
 
