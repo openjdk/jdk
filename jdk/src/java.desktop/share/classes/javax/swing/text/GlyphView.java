@@ -550,11 +550,6 @@ public class GlyphView extends View implements TabableView, Cloneable {
      */
     @Override
     public float getMinimumSpan(int axis) {
-        int w = getResizeWeight(axis);
-        if (w == 0) {
-            // can't resize
-            return getPreferredSpan(axis);
-        }
         switch (axis) {
             case View.X_AXIS:
                 if (minimumSpan < 0) {
