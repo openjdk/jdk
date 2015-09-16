@@ -368,8 +368,8 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
     }
 
     @Override
-    PropertyMap getAllocatorMap() {
-        return allocationStrategy.getAllocatorMap();
+    PropertyMap getAllocatorMap(final ScriptObject prototype) {
+        return allocationStrategy.getAllocatorMap(prototype);
     }
 
     @Override
