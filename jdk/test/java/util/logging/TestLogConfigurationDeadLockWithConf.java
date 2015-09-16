@@ -219,7 +219,7 @@ public class TestLogConfigurationDeadLockWithConf {
         }
     }
 
-    final static class ReadConf extends DaemonThread {
+    static final class ReadConf extends DaemonThread {
         @Override
         public void run() {
             while (goOn) {
@@ -234,7 +234,7 @@ public class TestLogConfigurationDeadLockWithConf {
         }
     }
 
-    final static class AddLogger extends DaemonThread {
+    static final class AddLogger extends DaemonThread {
         @Override
         public void run() {
             try {
@@ -254,7 +254,7 @@ public class TestLogConfigurationDeadLockWithConf {
         }
     }
 
-    final static class DeadlockDetector extends Thread {
+    static final class DeadlockDetector extends Thread {
 
         final Set<Long> deadlocked = Collections.synchronizedSet(new HashSet<Long>());
 

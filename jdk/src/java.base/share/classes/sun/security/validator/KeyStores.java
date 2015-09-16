@@ -48,10 +48,10 @@ public class KeyStores {
     // in the future, all accesses to the system cacerts keystore should
     // go through this class. but not right now.
 /*
-    private final static String javaHome =
+    private static final String javaHome =
         (String)AccessController.doPrivileged(new GetPropertyAction("java.home"));
 
-    private final static char SEP = File.separatorChar;
+    private static final char SEP = File.separatorChar;
 
     private static KeyStore caCerts;
 
@@ -79,7 +79,7 @@ public class KeyStores {
      * The file is only opened once per JVM invocation and the contents
      * cached subsequently.
      *
-    public synchronized static KeyStore getCaCerts() throws IOException {
+    public static synchronized KeyStore getCaCerts() throws IOException {
         if (caCerts != null) {
             return caCerts;
         }

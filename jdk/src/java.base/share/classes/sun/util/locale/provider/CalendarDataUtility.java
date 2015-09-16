@@ -39,8 +39,8 @@ import java.util.spi.CalendarNameProvider;
  * @author Naoto Sato
  */
 public class CalendarDataUtility {
-    public final static String FIRST_DAY_OF_WEEK = "firstDayOfWeek";
-    public final static String MINIMAL_DAYS_IN_FIRST_WEEK = "minimalDaysInFirstWeek";
+    public static final String FIRST_DAY_OF_WEEK = "firstDayOfWeek";
+    public static final String MINIMAL_DAYS_IN_FIRST_WEEK = "minimalDaysInFirstWeek";
 
     // No instantiation
     private CalendarDataUtility() {

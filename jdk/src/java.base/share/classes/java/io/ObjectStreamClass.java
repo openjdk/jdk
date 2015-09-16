@@ -1839,7 +1839,7 @@ public class ObjectStreamClass implements Serializable {
      * Returns true if the given class defines a static initializer method,
      * false otherwise.
      */
-    private native static boolean hasStaticInitializer(Class<?> cl);
+    private static native boolean hasStaticInitializer(Class<?> cl);
 
     /**
      * Class for computing and caching field/constructor/method signatures

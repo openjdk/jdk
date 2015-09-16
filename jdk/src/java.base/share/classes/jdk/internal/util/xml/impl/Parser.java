@@ -40,13 +40,13 @@ import jdk.internal.org.xml.sax.SAXException;
  */
 public abstract class Parser {
 
-    public final static String FAULT = "";
-    protected final static int BUFFSIZE_READER = 512;
-    protected final static int BUFFSIZE_PARSER = 128;
+    public static final String FAULT = "";
+    protected static final int BUFFSIZE_READER = 512;
+    protected static final int BUFFSIZE_PARSER = 128;
     /**
      * The end of stream character.
      */
-    public final static char EOS = 0xffff;
+    public static final char EOS = 0xffff;
     private Pair mNoNS; // there is no namespace
     private Pair mXml;  // the xml namespace
     private Map<String, Input> mEnt;  // the entities look up table
@@ -55,26 +55,26 @@ public abstract class Parser {
     protected boolean mIsSAloneSet;  // standalone is explicitely set
     protected boolean mIsNSAware;    // if true - namespace aware mode
     protected int mPh;  // current phase of document processing
-    protected final static int PH_BEFORE_DOC = -1;  // before parsing
-    protected final static int PH_DOC_START = 0;   // document start
-    protected final static int PH_MISC_DTD = 1;   // misc before DTD
-    protected final static int PH_DTD = 2;   // DTD
-    protected final static int PH_DTD_MISC = 3;   // misc after DTD
-    protected final static int PH_DOCELM = 4;   // document's element
-    protected final static int PH_DOCELM_MISC = 5;   // misc after element
-    protected final static int PH_AFTER_DOC = 6;   // after parsing
+    protected static final int PH_BEFORE_DOC = -1;  // before parsing
+    protected static final int PH_DOC_START = 0;   // document start
+    protected static final int PH_MISC_DTD = 1;   // misc before DTD
+    protected static final int PH_DTD = 2;   // DTD
+    protected static final int PH_DTD_MISC = 3;   // misc after DTD
+    protected static final int PH_DOCELM = 4;   // document's element
+    protected static final int PH_DOCELM_MISC = 5;   // misc after element
+    protected static final int PH_AFTER_DOC = 6;   // after parsing
     protected int mEvt;  // current event type
-    protected final static int EV_NULL = 0;   // unknown
-    protected final static int EV_ELM = 1;   // empty element
-    protected final static int EV_ELMS = 2;   // start element
-    protected final static int EV_ELME = 3;   // end element
-    protected final static int EV_TEXT = 4;   // textual content
-    protected final static int EV_WSPC = 5;   // white space content
-    protected final static int EV_PI = 6;   // processing instruction
-    protected final static int EV_CDAT = 7;   // character data
-    protected final static int EV_COMM = 8;   // comment
-    protected final static int EV_DTD = 9;   // document type definition
-    protected final static int EV_ENT = 10;  // skipped entity
+    protected static final int EV_NULL = 0;   // unknown
+    protected static final int EV_ELM = 1;   // empty element
+    protected static final int EV_ELMS = 2;   // start element
+    protected static final int EV_ELME = 3;   // end element
+    protected static final int EV_TEXT = 4;   // textual content
+    protected static final int EV_WSPC = 5;   // white space content
+    protected static final int EV_PI = 6;   // processing instruction
+    protected static final int EV_CDAT = 7;   // character data
+    protected static final int EV_COMM = 8;   // comment
+    protected static final int EV_DTD = 9;   // document type definition
+    protected static final int EV_ENT = 10;  // skipped entity
     private char mESt; // built-in entity recognizer state
     // mESt values:
     //   0x100   : the initial state
@@ -120,9 +120,9 @@ public abstract class Parser {
     /**
      * Default prefixes
      */
-    private final static char NONS[];
-    private final static char XML[];
-    private final static char XMLNS[];
+    private static final char NONS[];
+    private static final char XML[];
+    private static final char XMLNS[];
 
     static {
         NONS = new char[1];

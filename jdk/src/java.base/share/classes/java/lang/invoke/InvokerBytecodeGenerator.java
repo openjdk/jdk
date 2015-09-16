@@ -140,9 +140,9 @@ class InvokerBytecodeGenerator {
 
 
     /** instance counters for dumped classes */
-    private final static HashMap<String,Integer> DUMP_CLASS_FILES_COUNTERS;
+    private static final HashMap<String,Integer> DUMP_CLASS_FILES_COUNTERS;
     /** debugging flag for saving generated class files */
-    private final static File DUMP_CLASS_FILES_DIR;
+    private static final File DUMP_CLASS_FILES_DIR;
 
     static {
         if (DUMP_CLASS_FILES) {
@@ -771,7 +771,7 @@ class InvokerBytecodeGenerator {
         mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, MH, "invokeBasic", type.basicType().toMethodDescriptorString(), false);
     }
 
-    static private Class<?>[] STATICALLY_INVOCABLE_PACKAGES = {
+    private static Class<?>[] STATICALLY_INVOCABLE_PACKAGES = {
         // Sample classes from each package we are willing to bind to statically:
         java.lang.Object.class,
         java.util.Arrays.class,

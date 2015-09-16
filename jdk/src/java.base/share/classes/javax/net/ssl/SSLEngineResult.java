@@ -243,7 +243,7 @@ public class SSLEngineResult {
      *
      * @return  the return value
      */
-    final public Status getStatus() {
+    public final Status getStatus() {
         return status;
     }
 
@@ -253,7 +253,7 @@ public class SSLEngineResult {
      *
      * @return  the handshake status
      */
-    final public HandshakeStatus getHandshakeStatus() {
+    public final HandshakeStatus getHandshakeStatus() {
         return handshakeStatus;
     }
 
@@ -262,7 +262,7 @@ public class SSLEngineResult {
      *
      * @return  the number of bytes consumed.
      */
-    final public int bytesConsumed() {
+    public final int bytesConsumed() {
         return bytesConsumed;
     }
 
@@ -271,7 +271,7 @@ public class SSLEngineResult {
      *
      * @return  the number of bytes produced
      */
-    final public int bytesProduced() {
+    public final int bytesProduced() {
         return bytesProduced;
     }
 
@@ -306,7 +306,7 @@ public class SSLEngineResult {
      *
      * @since   9
      */
-    final public long sequenceNumber() {
+    public final long sequenceNumber() {
         return sequenceNumber;
     }
 

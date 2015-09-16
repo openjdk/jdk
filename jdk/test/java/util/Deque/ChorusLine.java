@@ -36,7 +36,7 @@ public class ChorusLine {
         void run(Deque<Integer> deq);
     }
 
-    private final static Tweaker[] tweakers = {
+    private static final Tweaker[] tweakers = {
         new Tweaker() { public void run(Deque<Integer> deq) {
             for (int i = 0; i < 7; i++)
                 deq.addLast(i);

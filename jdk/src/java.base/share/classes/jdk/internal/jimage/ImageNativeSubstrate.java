@@ -49,32 +49,32 @@ public final class ImageNativeSubstrate implements ImageSubstrate {
     private final long indexAddress;
     private final long dataAddress;
 
-    native static long openImage(String imagePath, boolean bigEndian);
-    native static void closeImage(long id);
-    native static long getIndexAddress(long id);
-    native static long getDataAddress(long id);
-    native static boolean readCompressed(long id, long offset,
+    static native long openImage(String imagePath, boolean bigEndian);
+    static native void closeImage(long id);
+    static native long getIndexAddress(long id);
+    static native long getDataAddress(long id);
+    static native boolean readCompressed(long id, long offset,
             ByteBuffer compressedBuffer, long compressedSize,
             ByteBuffer uncompressedBuffer, long uncompressedSize);
-    native static boolean read(long id, long offset,
+    static native boolean read(long id, long offset,
             ByteBuffer uncompressedBuffer, long uncompressedSize);
-    native static byte[] getStringBytes(long id, int offset);
-    native static long[] getAttributes(long id, int offset);
-    native static long[] findAttributes(long id, byte[] path);
-    native static int[] attributeOffsets(long id);
+    static native byte[] getStringBytes(long id, int offset);
+    static native long[] getAttributes(long id, int offset);
+    static native long[] findAttributes(long id, byte[] path);
+    static native int[] attributeOffsets(long id);
 
-    public native static long JIMAGE_Open(String path) throws IOException;
-    public native static void JIMAGE_Close(long jimageHandle);
-    public native static long JIMAGE_FindResource(long jimageHandle,
+    public static native long JIMAGE_Open(String path) throws IOException;
+    public static native void JIMAGE_Close(long jimageHandle);
+    public static native long JIMAGE_FindResource(long jimageHandle,
                     String moduleName, String Version, String path,
                     long[] size);
-    public native static long JIMAGE_GetResource(long jimageHandle,
+    public static native long JIMAGE_GetResource(long jimageHandle,
                     long locationHandle, byte[] buffer, long size);
     // Get an array of names that match; return the count found upto array size
-    public native static int JIMAGE_Resources(long jimageHandle,
+    public static native int JIMAGE_Resources(long jimageHandle,
                     String[] outputNames);
     // Return the module name for the package
-    public native static String JIMAGE_PackageToModule(long imageHandle,
+    public static native String JIMAGE_PackageToModule(long imageHandle,
                     String packageName);
 
     static ByteBuffer newDirectByteBuffer(long address, long capacity) {

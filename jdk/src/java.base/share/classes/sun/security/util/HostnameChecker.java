@@ -48,18 +48,18 @@ import sun.net.util.IPAddressUtil;
 public class HostnameChecker {
 
     // Constant for a HostnameChecker for TLS
-    public final static byte TYPE_TLS = 1;
-    private final static HostnameChecker INSTANCE_TLS =
+    public static final byte TYPE_TLS = 1;
+    private static final HostnameChecker INSTANCE_TLS =
                                         new HostnameChecker(TYPE_TLS);
 
     // Constant for a HostnameChecker for LDAP
-    public final static byte TYPE_LDAP = 2;
-    private final static HostnameChecker INSTANCE_LDAP =
+    public static final byte TYPE_LDAP = 2;
+    private static final HostnameChecker INSTANCE_LDAP =
                                         new HostnameChecker(TYPE_LDAP);
 
     // constants for subject alt names of type DNS and IP
-    private final static int ALTNAME_DNS = 2;
-    private final static int ALTNAME_IP  = 7;
+    private static final int ALTNAME_DNS = 2;
+    private static final int ALTNAME_IP  = 7;
 
     // the algorithm to follow to perform the check. Currently unused.
     private final byte checkType;

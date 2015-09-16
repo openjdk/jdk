@@ -32,7 +32,7 @@ import javax.net.ssl.SSLEngineResult.HandshakeStatus;
  * Plaintext
  */
 final class Plaintext {
-    final static Plaintext PLAINTEXT_NULL = new Plaintext();
+    static final Plaintext PLAINTEXT_NULL = new Plaintext();
 
     byte            contentType;
     byte            majorVersion;

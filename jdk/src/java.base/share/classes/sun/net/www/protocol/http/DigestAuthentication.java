@@ -54,7 +54,7 @@ class DigestAuthentication extends AuthenticationInfo {
 
     private String authMethod;
 
-    private final static String compatPropName = "http.auth.digest." +
+    private static final String compatPropName = "http.auth.digest." +
         "quoteParameters";
 
     // true if http.auth.digest.quoteParameters Net property is true
@@ -507,12 +507,12 @@ class DigestAuthentication extends AuthenticationInfo {
         return finalHash;
     }
 
-    private final static char charArray[] = {
+    private static final char charArray[] = {
         '0', '1', '2', '3', '4', '5', '6', '7',
         '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
     };
 
-    private final static String zeroPad[] = {
+    private static final String zeroPad[] = {
         // 0         1          2         3        4       5      6     7
         "00000000", "0000000", "000000", "00000", "0000", "000", "00", "0"
     };

@@ -61,9 +61,9 @@ import javax.net.ssl.X509ExtendedTrustManager;
 public final class SSLServerCertStore extends CertStoreSpi {
 
     private final URI uri;
-    private final static GetChainTrustManager trustManager;
-    private final static SSLSocketFactory socketFactory;
-    private final static HostnameVerifier hostnameVerifier;
+    private static final GetChainTrustManager trustManager;
+    private static final SSLSocketFactory socketFactory;
+    private static final HostnameVerifier hostnameVerifier;
 
     static {
         trustManager = new GetChainTrustManager();

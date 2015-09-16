@@ -37,28 +37,28 @@ public class ValidatorException extends CertificateException {
 
     private static final long serialVersionUID = -2836879718282292155L;
 
-    public final static Object T_NO_TRUST_ANCHOR =
+    public static final Object T_NO_TRUST_ANCHOR =
         "No trusted certificate found";
 
-    public final static Object T_EE_EXTENSIONS =
+    public static final Object T_EE_EXTENSIONS =
         "End entity certificate extension check failed";
 
-    public final static Object T_CA_EXTENSIONS =
+    public static final Object T_CA_EXTENSIONS =
         "CA certificate extension check failed";
 
-    public final static Object T_CERT_EXPIRED =
+    public static final Object T_CERT_EXPIRED =
         "Certificate expired";
 
-    public final static Object T_SIGNATURE_ERROR =
+    public static final Object T_SIGNATURE_ERROR =
         "Certificate signature validation failed";
 
-    public final static Object T_NAME_CHAINING =
+    public static final Object T_NAME_CHAINING =
         "Certificate chaining error";
 
-    public final static Object T_ALGORITHM_DISABLED =
+    public static final Object T_ALGORITHM_DISABLED =
         "Certificate signature algorithm disabled";
 
-    public final static Object T_UNTRUSTED_CERT =
+    public static final Object T_UNTRUSTED_CERT =
         "Untrusted certificate";
 
     private Object type;

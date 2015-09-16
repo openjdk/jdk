@@ -212,7 +212,7 @@ public final class CompactByteArray implements Cloneable {
      * @param len the length to compare.
      * The start indices and start+len must be valid.
      */
-    final static boolean arrayRegionMatches(byte[] source, int sourceStart,
+    static final boolean arrayRegionMatches(byte[] source, int sourceStart,
                                             byte[] target, int targetStart,
                                             int len)
     {

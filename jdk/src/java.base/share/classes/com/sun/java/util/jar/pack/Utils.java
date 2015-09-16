@@ -265,7 +265,7 @@ class Utils {
         }
     }
         // Wrapper to prevent closing of client-supplied stream.
-    static private
+    private static
     class NonCloser extends FilterOutputStream {
         NonCloser(OutputStream out) { super(out); }
         public void close() throws IOException { flush(); }

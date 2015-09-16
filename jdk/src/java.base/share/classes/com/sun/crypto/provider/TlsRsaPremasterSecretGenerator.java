@@ -41,7 +41,7 @@ import sun.security.internal.spec.TlsRsaPremasterSecretParameterSpec;
  */
 public final class TlsRsaPremasterSecretGenerator extends KeyGeneratorSpi {
 
-    private final static String MSG = "TlsRsaPremasterSecretGenerator must be "
+    private static final String MSG = "TlsRsaPremasterSecretGenerator must be "
         + "initialized using a TlsRsaPremasterSecretParameterSpec";
 
     @SuppressWarnings("deprecation")

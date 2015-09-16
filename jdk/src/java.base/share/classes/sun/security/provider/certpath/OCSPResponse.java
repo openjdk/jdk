@@ -760,7 +760,7 @@ public final class OCSPResponse {
     /*
      * A class representing a single OCSP response.
      */
-    public final static class SingleResponse implements OCSP.RevocationStatus {
+    public static final class SingleResponse implements OCSP.RevocationStatus {
         private final CertId certId;
         private final CertStatus certStatus;
         private final Date thisUpdate;

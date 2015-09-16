@@ -471,14 +471,14 @@ class Instruction  {
 
     /// Format definitions.
 
-    static private final byte[][] BC_LENGTH  = new byte[2][0x100];
-    static private final byte[][] BC_INDEX   = new byte[2][0x100];
-    static private final byte[][] BC_TAG     = new byte[2][0x100];
-    static private final byte[][] BC_BRANCH  = new byte[2][0x100];
-    static private final byte[][] BC_SLOT    = new byte[2][0x100];
-    static private final byte[][] BC_CON     = new byte[2][0x100];
-    static private final String[] BC_NAME    = new String[0x100]; // debug only
-    static private final String[][] BC_FORMAT  = new String[2][_bytecode_limit]; // debug only
+    private static final byte[][] BC_LENGTH  = new byte[2][0x100];
+    private static final byte[][] BC_INDEX   = new byte[2][0x100];
+    private static final byte[][] BC_TAG     = new byte[2][0x100];
+    private static final byte[][] BC_BRANCH  = new byte[2][0x100];
+    private static final byte[][] BC_SLOT    = new byte[2][0x100];
+    private static final byte[][] BC_CON     = new byte[2][0x100];
+    private static final String[] BC_NAME    = new String[0x100]; // debug only
+    private static final String[][] BC_FORMAT  = new String[2][_bytecode_limit]; // debug only
     static {
         for (int i = 0; i < _bytecode_limit; i++) {
             BC_LENGTH[0][i] = -1;

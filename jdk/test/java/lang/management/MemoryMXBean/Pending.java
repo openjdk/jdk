@@ -39,9 +39,9 @@
 import java.lang.management.*;
 
 public class Pending {
-    final static int NO_REF_COUNT = 600;
-    final static int REF_COUNT = 500;
-    final static int TOTAL_FINALIZABLE = (NO_REF_COUNT + REF_COUNT);
+    static final int NO_REF_COUNT = 600;
+    static final int REF_COUNT = 500;
+    static final int TOTAL_FINALIZABLE = (NO_REF_COUNT + REF_COUNT);
     private static int finalized = 0;
     private static MemoryMXBean mbean
         = ManagementFactory.getMemoryMXBean();

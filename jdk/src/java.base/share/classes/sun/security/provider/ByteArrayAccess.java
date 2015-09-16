@@ -71,7 +71,7 @@ final class ByteArrayAccess {
     // implemented using a software trap and therefore very slow)
     private static final boolean bigEndian;
 
-    private final static int byteArrayOfs = unsafe.arrayBaseOffset(byte[].class);
+    private static final int byteArrayOfs = unsafe.arrayBaseOffset(byte[].class);
 
     static {
         boolean scaleOK = ((unsafe.arrayIndexScale(byte[].class) == 1)

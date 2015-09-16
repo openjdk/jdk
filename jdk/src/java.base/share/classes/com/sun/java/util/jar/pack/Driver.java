@@ -376,7 +376,7 @@ class Driver {
         }
     }
 
-    static private
+    private static
     File createTempFile(String basefile, String suffix) throws IOException {
         File base = new File(basefile);
         String prefix = base.getName();
@@ -393,7 +393,7 @@ class Driver {
         return tmpfile.toFile();
     }
 
-    static private
+    private static
     void printUsage(boolean doPack, boolean full, PrintStream out) {
         String prog = doPack ? "pack200" : "unpack200";
         String[] packUsage = (String[])RESOURCE.getObject(DriverResource.PACK_HELP);
@@ -408,7 +408,7 @@ class Driver {
         }
     }
 
-    static private
+    private static
         String getZipComment(String jarfile) throws IOException {
         byte[] tail = new byte[1000];
         long filelen = new File(jarfile).length();
