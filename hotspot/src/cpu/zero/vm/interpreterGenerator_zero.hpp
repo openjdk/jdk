@@ -42,4 +42,5 @@
   // Not supported
   address generate_CRC32_update_entry() { return NULL; }
   address generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) { return NULL; }
+  address generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) { return NULL; }
 #endif // CPU_ZERO_VM_INTERPRETERGENERATOR_ZERO_HPP

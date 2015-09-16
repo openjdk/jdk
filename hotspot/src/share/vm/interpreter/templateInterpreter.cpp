@@ -418,6 +418,11 @@ void TemplateInterpreterGenerator::generate_all() {
         method_entry(java_util_zip_CRC32_updateByteBuffer)
       }
 
+      if (UseCRC32CIntrinsics) {
+        method_entry(java_util_zip_CRC32C_updateBytes)
+        method_entry(java_util_zip_CRC32C_updateDirectByteBuffer)
+      }
+
       method_entry(java_lang_Float_intBitsToFloat);
       method_entry(java_lang_Float_floatToRawIntBits);
       method_entry(java_lang_Double_longBitsToDouble);

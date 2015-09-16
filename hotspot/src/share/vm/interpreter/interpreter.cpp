@@ -234,6 +234,13 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(methodHandle m)
       case vmIntrinsics::_updateByteBufferCRC32  : return java_util_zip_CRC32_updateByteBuffer;
     }
   }
+  if (UseCRC32CIntrinsics) {
+    // Use optimized stub code for CRC32C methods.
+    switch (m->intrinsic_id()) {
+      case vmIntrinsics::_updateBytesCRC32C             : return java_util_zip_CRC32C_updateBytes;
+      case vmIntrinsics::_updateDirectByteBufferCRC32C  : return java_util_zip_CRC32C_updateDirectByteBuffer;
+    }
+  }
 
   switch(m->intrinsic_id()) {
   case vmIntrinsics::_intBitsToFloat:      return java_lang_Float_intBitsToFloat;
@@ -349,6 +356,8 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
     case java_util_zip_CRC32_update           : tty->print("java_util_zip_CRC32_update"); break;
     case java_util_zip_CRC32_updateBytes      : tty->print("java_util_zip_CRC32_updateBytes"); break;
     case java_util_zip_CRC32_updateByteBuffer : tty->print("java_util_zip_CRC32_updateByteBuffer"); break;
+    case java_util_zip_CRC32C_updateBytes     : tty->print("java_util_zip_CRC32C_updateBytes"); break;
+    case java_util_zip_CRC32C_updateDirectByteBuffer: tty->print("java_util_zip_CRC32C_updateDirectByteByffer"); break;
     default:
       if (kind >= method_handle_invoke_FIRST &&
           kind <= method_handle_invoke_LAST) {
@@ -567,6 +576,10 @@ address InterpreterGenerator::generate_method_entry(
                                            : // fall thru
   case Interpreter::java_util_zip_CRC32_updateByteBuffer
                                            : entry_point = generate_CRC32_updateBytes_entry(kind); break;
+  case Interpreter::java_util_zip_CRC32C_updateBytes
+                                           : // fall thru
+  case Interpreter::java_util_zip_CRC32C_updateDirectByteBuffer
+                                           : entry_point = generate_CRC32C_updateBytes_entry(kind); break;
 #if defined(TARGET_ARCH_x86) && !defined(_LP64)
   // On x86_32 platforms, a special entry is generated for the following four methods.
   // On other platforms the normal entry is used to enter these methods.
@@ -582,9 +595,9 @@ address InterpreterGenerator::generate_method_entry(
   case Interpreter::java_lang_Float_intBitsToFloat:
   case Interpreter::java_lang_Float_floatToRawIntBits:
   case Interpreter::java_lang_Double_longBitsToDouble:
-  case Interpreter::java_lang_Double_doubleToRawLongBits:
-    entry_point = generate_native_entry(false);
-    break;
+    case Interpreter::java_lang_Double_doubleToRawLongBits:
+        entry_point = generate_native_entry(false);
+            break;
 #endif // defined(TARGET_ARCH_x86) && !defined(_LP64)
 #endif // CC_INTERP
   default:

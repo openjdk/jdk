@@ -42,6 +42,7 @@
   address generate_Reference_get_entry();
   address generate_CRC32_update_entry();
   address generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind);
+  address generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind);
 #ifndef _LP64
   address generate_Float_intBitsToFloat_entry();
   address generate_Float_floatToRawIntBits_entry();

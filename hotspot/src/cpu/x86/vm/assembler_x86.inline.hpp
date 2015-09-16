@@ -37,6 +37,8 @@ inline int Assembler::prefix_and_encode(int dst_enc, int src_enc, bool byteinst)
 inline int Assembler::prefixq_and_encode(int dst_enc, int src_enc) { return dst_enc << 3 | src_enc; }
 
 inline void Assembler::prefix(Register reg) {}
+inline void Assembler::prefix(Register dst, Register src, Prefix p) {}
+inline void Assembler::prefix(Register dst, Address adr, Prefix p) {}
 inline void Assembler::prefix(Address adr) {}
 inline void Assembler::prefixq(Address adr) {}
 
