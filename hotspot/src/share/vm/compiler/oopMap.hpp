@@ -33,7 +33,6 @@
 // Interface for generating the frame map for compiled code.  A frame map
 // describes for a specific pc whether each register and frame stack slot is:
 //   Oop         - A GC root for current frame
-//   Value       - Live non-oop, non-float value: int, either half of double
 //   Dead        - Dead; can be Zapped for debugging
 //   CalleeXX    - Callee saved; also describes which caller register is saved
 //   DerivedXX   - A derived oop; original oop is described.
@@ -54,7 +53,7 @@ private:
 
 public:
   // Constants
-  enum { type_bits                = 5,
+  enum { type_bits                = 4,
          register_bits            = BitsPerShort - type_bits };
 
   enum { type_shift               = 0,
@@ -68,10 +67,9 @@ public:
   enum oop_types {              // must fit in type_bits
          unused_value =0,       // powers of 2, for masking OopMapStream
          oop_value = 1,
-         value_value = 2,
-         narrowoop_value = 4,
-         callee_saved_value = 8,
-         derived_oop_value= 16 };
+         narrowoop_value = 2,
+         callee_saved_value = 4,
+         derived_oop_value= 8 };
 
   // Constructors
   OopMapValue () { set_value(0); set_content_reg(VMRegImpl::Bad()); }
@@ -96,13 +94,11 @@ public:
 
   // Querying
   bool is_oop()               { return mask_bits(value(), type_mask_in_place) == oop_value; }
-  bool is_value()             { return mask_bits(value(), type_mask_in_place) == value_value; }
   bool is_narrowoop()           { return mask_bits(value(), type_mask_in_place) == narrowoop_value; }
   bool is_callee_saved()      { return mask_bits(value(), type_mask_in_place) == callee_saved_value; }
   bool is_derived_oop()       { return mask_bits(value(), type_mask_in_place) == derived_oop_value; }
 
   void set_oop()              { set_value((value() & register_mask_in_place) | oop_value); }
-  void set_value()            { set_value((value() & register_mask_in_place) | value_value); }
   void set_narrowoop()          { set_value((value() & register_mask_in_place) | narrowoop_value); }
   void set_callee_saved()     { set_value((value() & register_mask_in_place) | callee_saved_value); }
   void set_derived_oop()      { set_value((value() & register_mask_in_place) | derived_oop_value); }

@@ -331,14 +331,6 @@ void print_statistics() {
     BiasedLocking::print_counters();
   }
 
-#ifdef ENABLE_ZAP_DEAD_LOCALS
-#ifdef COMPILER2
-  if (ZapDeadCompiledLocals) {
-    tty->print_cr("Compile::CompiledZap_count = %d", Compile::CompiledZap_count);
-    tty->print_cr("OptoRuntime::ZapDeadCompiledLocals_count = %d", OptoRuntime::ZapDeadCompiledLocals_count);
-  }
-#endif // COMPILER2
-#endif // ENABLE_ZAP_DEAD_LOCALS
   // Native memory tracking data
   if (PrintNMTStatistics) {
     MemTracker::final_report(tty);
