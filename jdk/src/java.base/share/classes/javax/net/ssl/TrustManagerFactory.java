@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,19 @@ import sun.security.jca.GetInstance;
  * This class acts as a factory for trust managers based on a
  * source of trust material. Each trust manager manages a specific
  * type of trust material for use by secure sockets. The trust
- * material is based on a KeyStore and/or provider specific sources.
+ * material is based on a KeyStore and/or provider-specific sources.
+ *
+ * <p> Every implementation of the Java platform is required to support the
+ * following standard {@code TrustManagerFactory} algorithm:
+ * <ul>
+ * <li><tt>PKIX</tt></li>
+ * </ul>
+ * This algorithm is described in the <a href=
+ * "{@docRoot}/../technotes/guides/security/StandardNames.html#TrustManagerFactory">
+ * TrustManagerFactory section</a> of the
+ * Java Cryptography Architecture Standard Algorithm Name Documentation.
+ * Consult the release documentation for your implementation to see if any
+ * other algorithms are supported.
  *
  * @since 1.4
  * @see TrustManager
