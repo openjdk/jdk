@@ -65,13 +65,6 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
      */
     Applet applet;
 
-    /**
-     * Applet will allow initialization.  Should be
-     * set to false if loading a serialized applet
-     * that was pickled in the init=true state.
-     */
-    protected boolean doInit = true;
-
 
     /**
      * The classloader for the applet.
@@ -141,7 +134,6 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
     /* abstract classes */
     abstract protected String getCode();
     abstract protected String getJarFiles();
-    abstract protected String getSerializedObject();
 
     @Override
     abstract public int    getWidth();
@@ -430,13 +422,12 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
                           break;
                       }
                       applet.resize(defaultAppletSize);
-                      if (doInit) {
-                          if (PerformanceLogger.loggingEnabled()) {
-                              PerformanceLogger.setTime("Applet Init");
-                              PerformanceLogger.outputLog();
-                          }
-                          applet.init();
+
+                      if (PerformanceLogger.loggingEnabled()) {
+                          PerformanceLogger.setTime("Applet Init");
+                          PerformanceLogger.outputLog();
                       }
+                      applet.init();
 
                       //Need the default(fallback) font to be created in this AppContext
                       Font f = getFont();
@@ -445,8 +436,6 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
                           f.getSize() == 12 && f.getStyle() == Font.PLAIN) {
                           setFont(new Font(Font.DIALOG, Font.PLAIN, 12));
                       }
-
-                      doInit = true;    // allow restarts
 
                       // Validate the applet in event dispatch thread
                       // to avoid deadlock.
@@ -786,33 +775,16 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
 
     protected Applet createApplet(final AppletClassLoader loader) throws ClassNotFoundException,
                                                                          IllegalAccessException, IOException, InstantiationException, InterruptedException {
-        final String serName = getSerializedObject();
         String code = getCode();
 
-        if (code != null && serName != null) {
-            System.err.println(amh.getMessage("runloader.err"));
-//          return null;
-            throw new InstantiationException("Either \"code\" or \"object\" should be specified, but not both.");
-        }
-        if (code == null && serName == null) {
+        if (code != null) {
+            applet = (Applet)loader.loadCode(code).newInstance();
+        } else {
             String msg = "nocode";
             status = APPLET_ERROR;
             showAppletStatus(msg);
             showAppletLog(msg);
             repaint();
-        }
-        if (code != null) {
-            applet = (Applet)loader.loadCode(code).newInstance();
-            doInit = true;
-        } else {
-            // serName is not null;
-            try (InputStream is = AccessController.doPrivileged(
-                    (PrivilegedAction<InputStream>)() -> loader.getResourceAsStream(serName));
-                 ObjectInputStream ois = new AppletObjectInputStream(is, loader)) {
-
-                applet = (Applet) ois.readObject();
-                doInit = false; // skip over the first init
-            }
         }
 
         // Determine the JDK level that the applet targets.
