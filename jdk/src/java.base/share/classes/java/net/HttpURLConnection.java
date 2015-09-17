@@ -66,7 +66,7 @@ import java.util.Date;
  * @see     java.net.HttpURLConnection#disconnect()
  * @since 1.1
  */
-abstract public class HttpURLConnection extends URLConnection {
+public abstract class HttpURLConnection extends URLConnection {
     /* instance variables */
 
     /**

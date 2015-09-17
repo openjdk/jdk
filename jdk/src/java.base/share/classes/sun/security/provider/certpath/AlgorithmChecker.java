@@ -68,16 +68,16 @@ import sun.security.x509.AlgorithmId;
  * @see PKIXCertPathChecker
  * @see PKIXParameters
  */
-final public class AlgorithmChecker extends PKIXCertPathChecker {
+public final class AlgorithmChecker extends PKIXCertPathChecker {
 
     private final AlgorithmConstraints constraints;
     private final PublicKey trustedPubKey;
     private PublicKey prevPubKey;
 
-    private final static Set<CryptoPrimitive> SIGNATURE_PRIMITIVE_SET =
+    private static final Set<CryptoPrimitive> SIGNATURE_PRIMITIVE_SET =
         Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.SIGNATURE));
 
-    private final static DisabledAlgorithmConstraints
+    private static final DisabledAlgorithmConstraints
         certPathDefaultConstraints = new DisabledAlgorithmConstraints(
             DisabledAlgorithmConstraints.PROPERTY_CERTPATH_DISABLED_ALGS);
 

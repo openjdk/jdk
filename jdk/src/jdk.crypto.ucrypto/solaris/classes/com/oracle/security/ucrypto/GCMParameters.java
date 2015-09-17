@@ -90,7 +90,8 @@ public final class GCMParameters extends AlgorithmParametersSpi {
             return paramSpec.cast(new GCMParameterSpec(tLen*8, iv.clone()));
         } else {
             throw new InvalidParameterSpecException
-                ("Inappropriate parameter specification");
+                ("Inappropriate parameter specification. Received " +
+                paramSpec.getClass().getName());
         }
     }
 
@@ -98,7 +99,8 @@ public final class GCMParameters extends AlgorithmParametersSpi {
         throws InvalidParameterSpecException {
         if (!(paramSpec instanceof GCMParameterSpec)) {
             throw new InvalidParameterSpecException
-                ("Inappropriate parameter specification");
+                ("Inappropriate parameter specification. Received " +
+                paramSpec.getClass().getName());
         }
         GCMParameterSpec gcmSpec = (GCMParameterSpec) paramSpec;
         try {
@@ -114,7 +116,8 @@ public final class GCMParameters extends AlgorithmParametersSpi {
             val.data.reset();
             setValues(val.data.getOctetString(), val.data.getInteger());
         } else {
-            throw new IOException("GCM parameter parsing error: SEQ tag expected");
+            throw new IOException("GCM parameter parsing error: SEQ tag expected." +
+                " Received: " + val.tag);
         }
     }
 

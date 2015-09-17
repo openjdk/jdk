@@ -84,7 +84,7 @@ public abstract class ResolverConfiguration {
      * Options representing certain resolver variables of
      * a {@link ResolverConfiguration}.
      */
-    public static abstract class Options {
+    public abstract static class Options {
 
         /**
          * Returns the maximum number of attempts the resolver

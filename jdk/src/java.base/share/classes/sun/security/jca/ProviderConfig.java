@@ -43,7 +43,7 @@ import sun.security.util.PropertyExpander;
  */
 final class ProviderConfig {
 
-    private final static sun.security.util.Debug debug =
+    private static final sun.security.util.Debug debug =
         sun.security.util.Debug.getInstance("jca", "ProviderConfig");
 
     // suffix for identifying the SunPKCS11-Solaris provider
@@ -54,7 +54,7 @@ final class ProviderConfig {
         "${java.home}/conf/security/sunpkcs11-solaris.cfg";
 
     // maximum number of times to try loading a provider before giving up
-    private final static int MAX_LOAD_TRIES = 30;
+    private static final int MAX_LOAD_TRIES = 30;
 
     // could be provider name (module) or provider class name (legacy)
     private final String provName;

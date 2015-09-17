@@ -365,7 +365,7 @@ public abstract class URLConnection {
      * @see #getConnectTimeout()
      * @see #setConnectTimeout(int)
      */
-    abstract public void connect() throws IOException;
+    public abstract void connect() throws IOException;
 
     /**
      * Sets a specified timeout value, in milliseconds, to be used
@@ -1440,7 +1440,7 @@ public abstract class URLConnection {
      * @see        java.io.InputStream#markSupported()
      * @see        java.net.URLConnection#getContentType()
      */
-    static public String guessContentTypeFromStream(InputStream is)
+    public static String guessContentTypeFromStream(InputStream is)
                         throws IOException {
         // If we can't read ahead safely, just give up on guessing
         if (!is.markSupported())
@@ -1605,7 +1605,7 @@ public abstract class URLConnection {
      * method, the stream should have already been checked to be sure it
      * contains Microsoft Structured Storage data.
      */
-    static private boolean checkfpx(InputStream is) throws IOException {
+    private static boolean checkfpx(InputStream is) throws IOException {
 
         /* Test for FlashPix image data in Microsoft Structured Storage format.
          * In general, should do this with calls to an SS implementation.
@@ -1766,7 +1766,7 @@ public abstract class URLConnection {
      * Returns -1, If EOF is reached before len bytes are read, returns 0
      * otherwise
      */
-    static private int readBytes(int c[], int len, InputStream is)
+    private static int readBytes(int c[], int len, InputStream is)
                 throws IOException {
 
         byte buf[] = new byte[len];
@@ -1787,7 +1787,7 @@ public abstract class URLConnection {
      * until either EOF is reached, or the specified
      * number of bytes have been skipped
      */
-    static private long skipForward(InputStream is, long toSkip)
+    private static long skipForward(InputStream is, long toSkip)
                 throws IOException {
 
         long eachSkip = 0;

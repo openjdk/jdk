@@ -43,7 +43,7 @@ class UnixAsynchronousServerSocketChannelImpl
     extends AsynchronousServerSocketChannelImpl
     implements Port.PollableChannel
 {
-    private final static NativeDispatcher nd = new SocketDispatcher();
+    private static final NativeDispatcher nd = new SocketDispatcher();
 
     private final Port port;
     private final int fdVal;

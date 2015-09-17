@@ -34,7 +34,7 @@ import java.util.logging.Logger;
  */
 public class LoadItUp2 {
 
-    private final static boolean DEBUG = false;
+    private static final boolean DEBUG = false;
 
     public Boolean test(String rbName) throws Exception {
         // we should not be able to find the resource in this directory via

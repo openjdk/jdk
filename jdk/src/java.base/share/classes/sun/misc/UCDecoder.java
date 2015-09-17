@@ -95,7 +95,7 @@ public class UCDecoder extends CharacterDecoder {
     }
 
     /* this is the UCE mapping of 0-63 to characters .. */
-    private final static byte map_array[] = {
+    private static final byte map_array[] = {
         //     0         1         2         3         4         5         6         7
         (byte)'0',(byte)'1',(byte)'2',(byte)'3',(byte)'4',(byte)'5',(byte)'6',(byte)'7', // 0
         (byte)'8',(byte)'9',(byte)'A',(byte)'B',(byte)'C',(byte)'D',(byte)'E',(byte)'F', // 1

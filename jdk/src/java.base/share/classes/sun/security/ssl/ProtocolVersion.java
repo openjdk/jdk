@@ -54,33 +54,33 @@ import sun.security.ssl.CipherSuite.*;
 public final class ProtocolVersion implements Comparable<ProtocolVersion> {
 
     // The limit of maximum protocol version
-    final static int LIMIT_MAX_VALUE = 0xFFFF;
+    static final int LIMIT_MAX_VALUE = 0xFFFF;
 
     // The limit of minimum protocol version
-    final static int LIMIT_MIN_VALUE = 0x0000;
+    static final int LIMIT_MIN_VALUE = 0x0000;
 
     // Dummy protocol version value for invalid SSLSession
-    final static ProtocolVersion NONE = new ProtocolVersion(-1, "NONE");
+    static final ProtocolVersion NONE = new ProtocolVersion(-1, "NONE");
 
     // If enabled, send/accept SSLv2 hello messages
-    final static ProtocolVersion SSL20Hello =
+    static final ProtocolVersion SSL20Hello =
                                 new ProtocolVersion(0x0002, "SSLv2Hello");
 
     // SSL 3.0
-    final static ProtocolVersion SSL30 = new ProtocolVersion(0x0300, "SSLv3");
+    static final ProtocolVersion SSL30 = new ProtocolVersion(0x0300, "SSLv3");
 
     // TLS 1.0
-    final static ProtocolVersion TLS10 = new ProtocolVersion(0x0301, "TLSv1");
+    static final ProtocolVersion TLS10 = new ProtocolVersion(0x0301, "TLSv1");
 
     // TLS 1.1
-    final static ProtocolVersion TLS11 = new ProtocolVersion(0x0302, "TLSv1.1");
+    static final ProtocolVersion TLS11 = new ProtocolVersion(0x0302, "TLSv1.1");
 
     // TLS 1.2
-    final static ProtocolVersion TLS12 = new ProtocolVersion(0x0303, "TLSv1.2");
+    static final ProtocolVersion TLS12 = new ProtocolVersion(0x0303, "TLSv1.2");
 
     // DTLS 1.0
     // {254, 255}, the version value of DTLS 1.0.
-    final static ProtocolVersion DTLS10 =
+    static final ProtocolVersion DTLS10 =
                                 new ProtocolVersion(0xFEFF, "DTLSv1.0");
 
     // No DTLS 1.1, that version number was skipped in order to harmonize
@@ -88,30 +88,30 @@ public final class ProtocolVersion implements Comparable<ProtocolVersion> {
 
     // DTLS 1.2
     // {254, 253}, the version value of DTLS 1.2.
-    final static ProtocolVersion DTLS12 =
+    static final ProtocolVersion DTLS12 =
                                 new ProtocolVersion(0xFEFD, "DTLSv1.2");
 
     private static final boolean FIPS = SunJSSE.isFIPS();
 
     // minimum version we implement (SSL 3.0)
-    final static ProtocolVersion MIN = FIPS ? TLS10 : SSL30;
+    static final ProtocolVersion MIN = FIPS ? TLS10 : SSL30;
 
     // maximum version we implement (TLS 1.2)
-    final static ProtocolVersion MAX = TLS12;
+    static final ProtocolVersion MAX = TLS12;
 
     // SSL/TLS ProtocolVersion to use by default (TLS 1.2)
-    final static ProtocolVersion DEFAULT_TLS = TLS12;
+    static final ProtocolVersion DEFAULT_TLS = TLS12;
 
     // DTLS ProtocolVersion to use by default (TLS 1.2)
-    final static ProtocolVersion DEFAULT_DTLS = DTLS12;
+    static final ProtocolVersion DEFAULT_DTLS = DTLS12;
 
     // Default version for hello messages (SSLv2Hello)
-    final static ProtocolVersion DEFAULT_HELLO = FIPS ? TLS10 : SSL30;
+    static final ProtocolVersion DEFAULT_HELLO = FIPS ? TLS10 : SSL30;
 
     // Available protocols
     //
     // Including all supported protocols except the disabled ones.
-    final static Set<ProtocolVersion> availableProtocols;
+    static final Set<ProtocolVersion> availableProtocols;
 
     // version in 16 bit MSB format as it appears in records and
     // messages, i.e. 0x0301 for TLS 1.0

@@ -111,7 +111,7 @@ final class MethodTypeForm {
         return (entry != null) ? entry.get() : null;
     }
 
-    synchronized public MethodHandle setCachedMethodHandle(int which, MethodHandle mh) {
+    public synchronized MethodHandle setCachedMethodHandle(int which, MethodHandle mh) {
         // Simulate a CAS, to avoid racy duplication of results.
         SoftReference<MethodHandle> entry = methodHandles[which];
         if (entry != null) {
@@ -130,7 +130,7 @@ final class MethodTypeForm {
         return (entry != null) ? entry.get() : null;
     }
 
-    synchronized public LambdaForm setCachedLambdaForm(int which, LambdaForm form) {
+    public synchronized LambdaForm setCachedLambdaForm(int which, LambdaForm form) {
         // Simulate a CAS, to avoid racy duplication of results.
         SoftReference<LambdaForm> entry = lambdaForms[which];
         if (entry != null) {
