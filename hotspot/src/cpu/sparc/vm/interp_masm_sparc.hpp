@@ -80,6 +80,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
   InterpreterMacroAssembler(CodeBuffer* c)
     : MacroAssembler(c) {}
 
+  void jump_to_entry(address entry);
+
 #ifndef CC_INTERP
   virtual void load_earlyret_value(TosState state);
 

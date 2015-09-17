@@ -104,7 +104,10 @@ CodeletMark::~CodeletMark() {
   (*_masm)->flush();
 
   // Commit Codelet.
-  AbstractInterpreter::code()->commit((*_masm)->code()->pure_insts_size(), (*_masm)->code()->strings());
+  int committed_code_size = (*_masm)->code()->pure_insts_size();
+  if (committed_code_size) {
+    AbstractInterpreter::code()->commit(committed_code_size, (*_masm)->code()->strings());
+  }
   // Make sure nobody can use _masm outside a CodeletMark lifespan.
   *_masm = NULL;
 }
@@ -546,17 +549,18 @@ void AbstractInterpreterGenerator::initialize_method_handle_entries() {
 address InterpreterGenerator::generate_method_entry(
                                         AbstractInterpreter::MethodKind kind) {
   // determine code generation flags
+  bool native = false;
   bool synchronized = false;
   address entry_point = NULL;
 
   switch (kind) {
-  case Interpreter::zerolocals             :                                                      break;
-  case Interpreter::zerolocals_synchronized: synchronized = true;                                 break;
-  case Interpreter::native                 : entry_point = generate_native_entry(false); break;
-  case Interpreter::native_synchronized    : entry_point = generate_native_entry(true);  break;
-  case Interpreter::empty                  : entry_point = generate_empty_entry(); break;
+  case Interpreter::zerolocals             :                                          break;
+  case Interpreter::zerolocals_synchronized:                synchronized = true;      break;
+  case Interpreter::native                 : native = true;                           break;
+  case Interpreter::native_synchronized    : native = true; synchronized = true;      break;
+  case Interpreter::empty                  : entry_point = generate_empty_entry();    break;
   case Interpreter::accessor               : entry_point = generate_accessor_entry(); break;
-  case Interpreter::abstract               : entry_point = generate_abstract_entry();    break;
+  case Interpreter::abstract               : entry_point = generate_abstract_entry(); break;
 
   case Interpreter::java_lang_math_sin     : // fall thru
   case Interpreter::java_lang_math_cos     : // fall thru
@@ -571,11 +575,11 @@ address InterpreterGenerator::generate_method_entry(
                                            : entry_point = generate_Reference_get_entry(); break;
 #ifndef CC_INTERP
   case Interpreter::java_util_zip_CRC32_update
-                                           : entry_point = generate_CRC32_update_entry();  break;
+                                           : native = true; entry_point = generate_CRC32_update_entry();  break;
   case Interpreter::java_util_zip_CRC32_updateBytes
                                            : // fall thru
   case Interpreter::java_util_zip_CRC32_updateByteBuffer
-                                           : entry_point = generate_CRC32_updateBytes_entry(kind); break;
+                                           : native = true; entry_point = generate_CRC32_updateBytes_entry(kind); break;
   case Interpreter::java_util_zip_CRC32C_updateBytes
                                            : // fall thru
   case Interpreter::java_util_zip_CRC32C_updateDirectByteBuffer
@@ -584,20 +588,20 @@ address InterpreterGenerator::generate_method_entry(
   // On x86_32 platforms, a special entry is generated for the following four methods.
   // On other platforms the normal entry is used to enter these methods.
   case Interpreter::java_lang_Float_intBitsToFloat
-                                           : entry_point = generate_Float_intBitsToFloat_entry(); break;
+                                           : native = true; entry_point = generate_Float_intBitsToFloat_entry(); break;
   case Interpreter::java_lang_Float_floatToRawIntBits
-                                           : entry_point = generate_Float_floatToRawIntBits_entry(); break;
+                                           : native = true; entry_point = generate_Float_floatToRawIntBits_entry(); break;
   case Interpreter::java_lang_Double_longBitsToDouble
-                                           : entry_point = generate_Double_longBitsToDouble_entry(); break;
+                                           : native = true; entry_point = generate_Double_longBitsToDouble_entry(); break;
   case Interpreter::java_lang_Double_doubleToRawLongBits
-                                           : entry_point = generate_Double_doubleToRawLongBits_entry(); break;
+                                           : native = true; entry_point = generate_Double_doubleToRawLongBits_entry(); break;
 #else
   case Interpreter::java_lang_Float_intBitsToFloat:
   case Interpreter::java_lang_Float_floatToRawIntBits:
   case Interpreter::java_lang_Double_longBitsToDouble:
-    case Interpreter::java_lang_Double_doubleToRawLongBits:
-        entry_point = generate_native_entry(false);
-            break;
+  case Interpreter::java_lang_Double_doubleToRawLongBits:
+    native = true;
+    break;
 #endif // defined(TARGET_ARCH_x86) && !defined(_LP64)
 #endif // CC_INTERP
   default:
@@ -609,5 +613,18 @@ address InterpreterGenerator::generate_method_entry(
     return entry_point;
   }
 
-  return generate_normal_entry(synchronized);
+  // We expect the normal and native entry points to be generated first so we can reuse them.
+  if (native) {
+    entry_point = Interpreter::entry_for_kind(synchronized ? Interpreter::native_synchronized : Interpreter::native);
+    if (entry_point == NULL) {
+      entry_point = generate_native_entry(synchronized);
+    }
+  } else {
+    entry_point = Interpreter::entry_for_kind(synchronized ? Interpreter::zerolocals_synchronized : Interpreter::zerolocals);
+    if (entry_point == NULL) {
+      entry_point = generate_normal_entry(synchronized);
+    }
+  }
+
+  return entry_point;
 }
