@@ -808,7 +808,7 @@ loop:
                                 if (!oldStrictMode && directiveStmts != null) {
                                     // check that directives preceding this one do not violate strictness
                                     for (final Node statement : directiveStmts) {
-                                        // the get value will force unescape of preceeding
+                                        // the get value will force unescape of preceding
                                         // escaped string directives
                                         getValue(statement.getToken());
                                     }
@@ -2507,7 +2507,7 @@ loop:
         //         run: function() { println("run"); }
         //     };
         //
-        // The object literal following the "new Constructor()" expresssion
+        // The object literal following the "new Constructor()" expression
         // is passed as an additional (last) argument to the constructor.
         if (!env._no_syntax_extensions && type == LBRACE) {
             arguments.add(objectLiteral());

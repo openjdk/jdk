@@ -498,14 +498,9 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             // to be sure that there are no setBounds requests in the queue.
             LWCToolkit.flushNativeSelectors();
             this.normalBounds = peer.getBounds();
-
-            GraphicsConfiguration config = getPeer().getGraphicsConfiguration();
-            Insets i = ((CGraphicsDevice)config.getDevice()).getScreenInsets();
-            Rectangle toBounds = config.getBounds();
-            setBounds(toBounds.x + i.left,
-                      toBounds.y + i.top,
-                      toBounds.width - i.left - i.right,
-                      toBounds.height - i.top - i.bottom);
+            Rectangle maximizedBounds = peer.getMaximizedBounds();
+            setBounds(maximizedBounds.x, maximizedBounds.y,
+                    maximizedBounds.width, maximizedBounds.height);
         }
     }
 

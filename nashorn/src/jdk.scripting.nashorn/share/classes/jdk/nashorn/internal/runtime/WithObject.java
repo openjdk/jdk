@@ -352,7 +352,7 @@ public final class WithObject extends Scope {
     }
 
     private static Object bindToExpression(final ScriptFunction fn, final Object receiver) {
-        return fn.makeBoundFunction(withFilterExpression(receiver), ScriptRuntime.EMPTY_ARRAY);
+        return fn.createBound(withFilterExpression(receiver), ScriptRuntime.EMPTY_ARRAY);
     }
 
     private MethodHandle expressionGuard(final String name, final ScriptObject owner) {

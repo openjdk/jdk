@@ -41,6 +41,29 @@ endif
 # next make invocation.
 .DELETE_ON_ERROR:
 
+################################################################################
+# Definitions for special characters
+################################################################################
+
+# When calling macros, the spaces between arguments are
+# often semantically important! Sometimes we need to subst
+# spaces and commas, therefore we need the following macros.
+X:=
+SPACE:=$(X) $(X)
+COMMA:=,
+DOLLAR:=$$
+HASH:=\#
+LEFT_PAREN:=(
+RIGHT_PAREN:=)
+SQUOTE:='
+#'
+DQUOTE:="
+#"
+define NEWLINE
+
+
+endef
+
 ##############################
 # Functions
 ##############################
@@ -778,6 +801,14 @@ else
   FindLibDirForModule = \
       $(SUPPORT_OUTPUTDIR)/modules_libs/$(strip $1)
 endif
+
+################################################################################
+# Return a string suitable for use after a -classpath option. It will correct and safe to use
+# on all platforms. Arguments are given as space separate classpath entries.
+# param 1 : A space separated list of classpath entries
+# The surrounding strip is needed to keep additional whitespace out
+PathList = \
+  "$(subst $(SPACE),$(PATH_SEP),$(strip $1))"
 
 ################################################################################
 

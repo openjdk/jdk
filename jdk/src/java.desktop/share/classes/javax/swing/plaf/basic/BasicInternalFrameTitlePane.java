@@ -35,10 +35,10 @@ import javax.swing.event.InternalFrameEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyVetoException;
+import static java.awt.RenderingHints.KEY_TEXT_ANTIALIASING;
+import static java.awt.RenderingHints.KEY_TEXT_LCD_CONTRAST;
 
 import sun.swing.DefaultLookup;
-
-import static sun.swing.SwingUtilities2.AA_TEXT_PROPERTY_KEY;
 
 /**
  * The class that manages a basic title bar
@@ -217,8 +217,10 @@ public class BasicInternalFrameTitlePane extends JComponent
     }
 
     private void updateProperties() {
-        final Object aaTextInfo = frame.getClientProperty(AA_TEXT_PROPERTY_KEY);
-        putClientProperty(AA_TEXT_PROPERTY_KEY, aaTextInfo);
+        putClientProperty(KEY_TEXT_ANTIALIASING,
+                frame.getClientProperty(KEY_TEXT_ANTIALIASING));
+        putClientProperty(KEY_TEXT_LCD_CONTRAST,
+                frame.getClientProperty(KEY_TEXT_LCD_CONTRAST));
     }
 
     /**

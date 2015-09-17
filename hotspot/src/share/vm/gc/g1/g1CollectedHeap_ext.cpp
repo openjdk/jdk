@@ -38,7 +38,3 @@ HeapRegion* G1CollectedHeap::new_heap_region(uint hrs_index,
                                              MemRegion mr) {
   return new HeapRegion(hrs_index, bot_shared(), mr);
 }
-
-G1ParScanThreadState* G1CollectedHeap::new_par_scan_state(uint worker_id) {
-  return new G1ParScanThreadState(this, worker_id);
-}

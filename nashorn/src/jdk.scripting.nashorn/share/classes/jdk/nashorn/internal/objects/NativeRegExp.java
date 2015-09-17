@@ -728,7 +728,7 @@ public final class NativeRegExp extends ScriptObject {
          *
          * $$ -> $
          * $& -> the matched substring
-         * $` -> the portion of string that preceeds matched substring
+         * $` -> the portion of string that precedes matched substring
          * $' -> the portion of string that follows the matched substring
          * $n -> the nth capture, where n is [1-9] and $n is NOT followed by a decimal digit
          * $nn -> the nnth capture, where nn is a two digit decimal number [01-99].

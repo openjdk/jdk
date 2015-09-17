@@ -213,7 +213,7 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
   _max_eden_size = size - (2*_max_survivor_size);
 
   // allocate the performance counters
-  GenCollectorPolicy* gcp = (GenCollectorPolicy*)gch->collector_policy();
+  GenCollectorPolicy* gcp = gch->gen_policy();
 
   // Generation counters -- generation 0, 3 subspaces
   _gen_counters = new GenerationCounters("new", 0, 3,

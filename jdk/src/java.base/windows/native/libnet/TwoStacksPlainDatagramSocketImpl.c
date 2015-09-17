@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2562,4 +2562,45 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_leave(JNIEnv *env, jobject this,
                                             jobject iaObj, jobject niObj)
 {
     mcast_join_leave (env, this, iaObj, niObj, JNI_FALSE);
+}
+
+/*
+ * Class:     java_net_TwoStacksPlainDatagramSocketImpl
+ * Method:    dataAvailable
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_java_net_TwoStacksPlainDatagramSocketImpl_dataAvailable
+(JNIEnv *env, jobject this) {
+    SOCKET fd;
+    SOCKET fd1;
+    int  rv = -1, rv1 = -1;
+    jobject fdObj = (*env)->GetObjectField(env, this, pdsi_fdID);
+    jobject fd1Obj;
+
+    if (!IS_NULL(fdObj)) {
+        int retval = 0;
+        fd = (SOCKET)(*env)->GetIntField(env, fdObj, IO_fd_fdID);
+        rv = ioctlsocket(fd, FIONREAD, &retval);
+        if (retval > 0) {
+            return retval;
+        }
+    }
+
+    fd1Obj = (*env)->GetObjectField(env, this, pdsi_fd1ID);
+    if (!IS_NULL(fd1Obj)) {
+        int retval = 0;
+        fd1 = (SOCKET)(*env)->GetIntField(env, fd1Obj, IO_fd_fdID);
+        rv1 = ioctlsocket(fd1, FIONREAD, &retval);
+        if (retval > 0) {
+            return retval;
+        }
+    }
+
+    if (rv < 0 && rv1 < 0) {
+        JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
+                        "Socket closed");
+        return -1;
+    }
+
+    return 0;
 }
