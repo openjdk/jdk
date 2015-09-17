@@ -2402,17 +2402,15 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
      */
     protected Object invokeNoSuchProperty(final String name, final boolean isScope, final int programPoint) {
         final FindProperty find = findProperty(NO_SUCH_PROPERTY_NAME, true);
+        final Object func = (find != null)? find.getObjectValue() : null;
 
         Object ret = UNDEFINED;
-
-        if (find != null) {
-            final Object func = find.getObjectValue();
-
-            if (func instanceof ScriptFunction) {
-                final ScriptFunction sfunc = (ScriptFunction)func;
-                final Object self = isScope && sfunc.isStrict()? UNDEFINED : this;
-                ret = ScriptRuntime.apply(sfunc, self, name);
-            }
+        if (func instanceof ScriptFunction) {
+            final ScriptFunction sfunc = (ScriptFunction)func;
+            final Object self = isScope && sfunc.isStrict()? UNDEFINED : this;
+            ret = ScriptRuntime.apply(sfunc, self, name);
+        } else if (isScope) {
+            throw referenceError("not.defined", name);
         }
 
         if (isValid(programPoint)) {
@@ -2438,6 +2436,9 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
 
         final Object value = find.getObjectValue();
         if (!(value instanceof ScriptFunction)) {
+            if (isScope) {
+                throw referenceError("not.defined", name);
+            }
             return UNDEFINED;
         }
 
