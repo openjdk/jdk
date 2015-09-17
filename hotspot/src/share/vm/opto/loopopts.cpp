@@ -447,21 +447,21 @@ Node *PhaseIdealLoop::remix_address_expressions( Node *n ) {
     }
 
     // Replace (I1 +p (I2 + V)) with ((I1 +p I2) +p V)
-    if( n2_loop != n_loop && n3_loop == n_loop ) {
-      if( n->in(3)->Opcode() == Op_AddI ) {
+    if (n2_loop != n_loop && n3_loop == n_loop) {
+      if (n->in(3)->Opcode() == Op_AddX) {
         Node *V = n->in(3)->in(1);
         Node *I = n->in(3)->in(2);
-        if( is_member(n_loop,get_ctrl(V)) ) {
+        if (is_member(n_loop,get_ctrl(V))) {
         } else {
           Node *tmp = V; V = I; I = tmp;
         }
-        if( !is_member(n_loop,get_ctrl(I)) ) {
-          Node *add1 = new AddPNode( n->in(1), n->in(2), I );
+        if (!is_member(n_loop,get_ctrl(I))) {
+          Node *add1 = new AddPNode(n->in(1), n->in(2), I);
           // Stuff new AddP in the loop preheader
-          register_new_node( add1, n_loop->_head->in(LoopNode::EntryControl) );
-          Node *add2 = new AddPNode( n->in(1), add1, V );
-          register_new_node( add2, n_ctrl );
-          _igvn.replace_node( n, add2 );
+          register_new_node(add1, n_loop->_head->in(LoopNode::EntryControl));
+          Node *add2 = new AddPNode(n->in(1), add1, V);
+          register_new_node(add2, n_ctrl);
+          _igvn.replace_node(n, add2);
           return add2;
         }
       }
