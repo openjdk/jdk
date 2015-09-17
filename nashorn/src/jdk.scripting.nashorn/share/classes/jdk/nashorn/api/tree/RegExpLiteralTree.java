@@ -35,7 +35,7 @@ public interface RegExpLiteralTree extends Tree {
     /**
      * Regular expression pattern to match.
      *
-     * @return regular expression patten
+     * @return regular expression pattern
      */
     public String getPattern();
 

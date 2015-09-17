@@ -25,7 +25,7 @@
 
 package com.sun.tools.sjavac;
 
-import java.io.PrintStream;
+import java.io.Writer;
 import java.net.URI;
 import java.util.Map;
 import java.util.Set;
@@ -97,8 +97,8 @@ public interface Transformer {
                       int debugLevel,
                       boolean incremental,
                       int numCores,
-                      PrintStream out,
-                      PrintStream err);
+                      Writer out,
+                      Writer err);
 
     void setExtra(String e);
     void setExtra(Options args);

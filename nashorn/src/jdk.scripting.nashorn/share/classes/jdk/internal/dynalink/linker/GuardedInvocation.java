@@ -353,7 +353,7 @@ public class GuardedInvocation {
 
     /**
      * Applies argument filters to both the invocation and the guard (if there is one).
-     * @param pos the position of the first argumen being filtered
+     * @param pos the position of the first argument being filtered
      * @param filters the argument filters
      * @return a filtered invocation
      */

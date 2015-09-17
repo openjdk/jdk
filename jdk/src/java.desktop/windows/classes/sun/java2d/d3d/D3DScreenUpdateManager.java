@@ -201,8 +201,8 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
      *  - it's one of the classes likely to have custom rendering worth
      *    accelerating
      *
-     * @returns true if we can use a d3d surface for this peer's onscreen
-     *          rendering
+     * @return true if we can use a d3d surface for this peer's onscreen
+     *         rendering
      */
     public static boolean canUseD3DOnScreen(final WComponentPeer peer,
                                             final Win32GraphicsConfig gc,

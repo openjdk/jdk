@@ -80,7 +80,7 @@ public interface Parser {
     public CompilationUnitTree parse(final URL url, final DiagnosticListener listener) throws IOException, NashornException;
 
     /**
-     * Parses the readerand returns compilation unit tree
+     * Parses the reader and returns compilation unit tree
      *
      * @param name name of the source file to parse
      * @param reader from which source is read
@@ -133,7 +133,7 @@ public interface Parser {
      * <dt>"-strict"</dt><dd>enable ECMAScript strict mode</dd>
      * </dl>
      *
-     * @throws NullPointerException if options arrry or any of it's element is null
+     * @throws NullPointerException if options array or any of its element is null
      * @throws IllegalArgumentException on unsupported option value.
      * @return a new Parser instance.
      */

@@ -224,7 +224,7 @@ MimeTypeParameterList(rawdata.substring(semIndex));
      * Set the value to be associated with the given name, replacing
      * any previous association.
      *
-     * @throw IllegalArgumentException if parameter or value is illegal
+     * @throws IllegalArgumentException if parameter or value is illegal
      */
     public void setParameter(String name, String value) {
         parameters.set(name, value);
@@ -233,7 +233,7 @@ MimeTypeParameterList(rawdata.substring(semIndex));
     /**
      * Remove any value associated with the given name.
      *
-     * @throw IllegalArgumentException if parameter may not be deleted
+     * @throws IllegalArgumentException if parameter may not be deleted
      */
     public void removeParameter(String name) {
         parameters.remove(name);

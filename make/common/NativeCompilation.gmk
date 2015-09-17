@@ -624,28 +624,7 @@ define SetupNativeCompilationBody
             $1_DEBUGINFO_FILES := $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).pdb \
                 $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).map
 
-          else ifeq ($(OPENJDK_TARGET_OS), solaris)
-            $1_DEBUGINFO_FILES := $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).debuginfo
-            # Setup the command line creating debuginfo files, to be run after linking.
-            # It cannot be run separately since it updates the original target file
-            #
-            # gobjcopy crashes on "empty" section headers with the SHF_ALLOC flag set.
-            # Use $(FIX_EMPTY_SEC_HDR_FLAGS) to clear the SHF_ALLOC flag (if set) from
-            # empty section headers until a fixed $(OBJCOPY) is available.
-            # An empty section header has sh_addr == 0 and sh_size == 0.
-            # This problem has only been seen on Solaris X64, but we call this tool
-            # on all Solaris builds just in case.
-            #
-            # $(OBJCOPY) --add-gnu-debuglink=... corrupts SUNW_* sections.
-            # Use $(ADD_GNU_DEBUGLINK) until a fixed $(OBJCOPY) is available.
-            $1_CREATE_DEBUGINFO_CMDS := \
-                $(FIX_EMPTY_SEC_HDR_FLAGS) $(LOG_INFO) $$($1_TARGET) $$(NEWLINE) \
-                $(OBJCOPY) --only-keep-debug $$($1_TARGET) $$($1_DEBUGINFO_FILES) $$(NEWLINE) \
-                $(CD) $$($1_OUTPUT_DIR) && \
-                    $(ADD_GNU_DEBUGLINK) $(LOG_INFO) $$($1_DEBUGINFO_FILES) $$($1_TARGET)
-            $1_DEBUGINFO_EXTRA_DEPS := $(FIX_EMPTY_SEC_HDR_FLAGS) $(ADD_GNU_DEBUGLINK)
-
-          else ifeq ($(OPENJDK_TARGET_OS), linux)
+          else ifneq ($(findstring $(OPENJDK_TARGET_OS), linux solaris), )
             $1_DEBUGINFO_FILES := $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).debuginfo
             # Setup the command line creating debuginfo files, to be run after linking.
             # It cannot be run separately since it updates the original target file
@@ -653,7 +632,6 @@ define SetupNativeCompilationBody
                 $(OBJCOPY) --only-keep-debug $$($1_TARGET) $$($1_DEBUGINFO_FILES) $$(NEWLINE) \
                 $(CD) $$($1_OUTPUT_DIR) && \
                     $(OBJCOPY) --add-gnu-debuglink=$$($1_DEBUGINFO_FILES) $$($1_TARGET)
-
           endif # No MacOS X support
 
           # This dependency dance ensures that debug info files get rebuilt
@@ -694,7 +672,7 @@ define SetupNativeCompilationBody
         $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
 
     $$($1_TARGET): $$($1_EXPECTED_OBJS) $$($1_RES) $$($1_REAL_MAPFILE) \
-        $$($1_DEBUGINFO_EXTRA_DEPS) $$($1_VARDEPS_FILE)
+        $$($1_VARDEPS_FILE)
 		$(ECHO) $(LOG_INFO) "Linking $$($1_BASENAME)"
 		$(call LogFailures, $$($1_OBJECT_DIR)/$1_link.log, $1_link, \
 		    $$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $$($1_SYSROOT_LDFLAGS) \
@@ -735,7 +713,7 @@ define SetupNativeCompilationBody
         $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
 
     $$($1_TARGET): $$($1_EXPECTED_OBJS) $$($1_RES) $$($1_MANIFEST) \
-        $$($1_DEBUGINFO_EXTRA_DEPS) $$($1_VARDEPS_FILE)
+        $$($1_VARDEPS_FILE)
 		$(ECHO) $(LOG_INFO) "Linking executable $$($1_BASENAME)"
 		$(call LogFailures, $$($1_OBJECT_DIR)/$1_link.log, $1_link, \
 		    $$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $$($1_SYSROOT_LDFLAGS) \
