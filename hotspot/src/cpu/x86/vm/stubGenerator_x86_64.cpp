@@ -269,12 +269,16 @@ class StubGenerator: public StubCodeGenerator {
       __ kmovql(k1, rbx);
     }
 #ifdef _WIN64
+    int last_reg = 15;
     if (UseAVX > 2) {
-      for (int i = 6; i <= 31; i++) {
-        __ movdqu(xmm_save(i), as_XMMRegister(i));
+      last_reg = 31;
+    }
+    if (VM_Version::supports_avx512novl()) {
+      for (int i = xmm_save_first; i <= last_reg; i++) {
+        __ vextractf32x4h(xmm_save(i), as_XMMRegister(i), 0);
       }
     } else {
-      for (int i = 6; i <= 15; i++) {
+      for (int i = xmm_save_first; i <= last_reg; i++) {
         __ movdqu(xmm_save(i), as_XMMRegister(i));
       }
     }
@@ -386,13 +390,15 @@ class StubGenerator: public StubCodeGenerator {
 
     // restore regs belonging to calling function
 #ifdef _WIN64
-    int xmm_ub = 15;
-    if (UseAVX > 2) {
-      xmm_ub = 31;
-    }
     // emit the restores for xmm regs
-    for (int i = 6; i <= xmm_ub; i++) {
-      __ movdqu(as_XMMRegister(i), xmm_save(i));
+    if (VM_Version::supports_avx512novl()) {
+      for (int i = xmm_save_first; i <= last_reg; i++) {
+        __ vinsertf32x4h(as_XMMRegister(i), xmm_save(i), 0);
+      }
+    } else {
+      for (int i = xmm_save_first; i <= last_reg; i++) {
+        __ movdqu(as_XMMRegister(i), xmm_save(i));
+      }
     }
 #endif
     __ movptr(r15, r15_save);
@@ -1342,11 +1348,15 @@ class StubGenerator: public StubCodeGenerator {
     __ align(OptoLoopAlignment);
     if (UseUnalignedLoadStores) {
       Label L_end;
+      if (UseAVX > 2) {
+        __ movl(to, 0xffff);
+        __ kmovql(k1, to);
+      }
       // Copy 64-bytes per iteration
       __ BIND(L_loop);
       if (UseAVX > 2) {
-        __ evmovdqu(xmm0, Address(end_from, qword_count, Address::times_8, -56), Assembler::AVX_512bit);
-        __ evmovdqu(Address(end_to, qword_count, Address::times_8, -56), xmm0, Assembler::AVX_512bit);
+        __ evmovdqul(xmm0, Address(end_from, qword_count, Address::times_8, -56), Assembler::AVX_512bit);
+        __ evmovdqul(Address(end_to, qword_count, Address::times_8, -56), xmm0, Assembler::AVX_512bit);
       } else if (UseAVX == 2) {
         __ vmovdqu(xmm0, Address(end_from, qword_count, Address::times_8, -56));
         __ vmovdqu(Address(end_to, qword_count, Address::times_8, -56), xmm0);
@@ -1422,11 +1432,15 @@ class StubGenerator: public StubCodeGenerator {
     __ align(OptoLoopAlignment);
     if (UseUnalignedLoadStores) {
       Label L_end;
+      if (UseAVX > 2) {
+        __ movl(to, 0xffff);
+        __ kmovql(k1, to);
+      }
       // Copy 64-bytes per iteration
       __ BIND(L_loop);
       if (UseAVX > 2) {
-        __ evmovdqu(xmm0, Address(from, qword_count, Address::times_8, 32), Assembler::AVX_512bit);
-        __ evmovdqu(Address(dest, qword_count, Address::times_8, 32), xmm0, Assembler::AVX_512bit);
+        __ evmovdqul(xmm0, Address(from, qword_count, Address::times_8, 32), Assembler::AVX_512bit);
+        __ evmovdqul(Address(dest, qword_count, Address::times_8, 32), xmm0, Assembler::AVX_512bit);
       } else if (UseAVX == 2) {
         __ vmovdqu(xmm0, Address(from, qword_count, Address::times_8, 32));
         __ vmovdqu(Address(dest, qword_count, Address::times_8, 32), xmm0);
@@ -3106,6 +3120,14 @@ class StubGenerator: public StubCodeGenerator {
 
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
+    // For EVEX with VL and BW, provide a standard mask, VL = 128 will guide the merge
+    // context for the registers used, where all instructions below are using 128-bit mode
+    // On EVEX without VL and BW, these instructions will all be AVX.
+    if (VM_Version::supports_avx512vlbw()) {
+      __ movl(rax, 0xffff);
+      __ kmovql(k1, rax);
+    }
+
     // keylen could be only {11, 13, 15} * 4 = {44, 52, 60}
     __ movl(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
 
@@ -3199,6 +3221,14 @@ class StubGenerator: public StubCodeGenerator {
     const XMMRegister xmm_temp4  = xmm5;
 
     __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+    // For EVEX with VL and BW, provide a standard mask, VL = 128 will guide the merge
+    // context for the registers used, where all instructions below are using 128-bit mode
+    // On EVEX without VL and BW, these instructions will all be AVX.
+    if (VM_Version::supports_avx512vlbw()) {
+      __ movl(rax, 0xffff);
+      __ kmovql(k1, rax);
+    }
 
     // keylen could be only {11, 13, 15} * 4 = {44, 52, 60}
     __ movl(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
@@ -3311,6 +3341,14 @@ class StubGenerator: public StubCodeGenerator {
     const XMMRegister xmm_key13  = as_XMMRegister(XMM_REG_NUM_KEY_FIRST+13);
 
     __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+    // For EVEX with VL and BW, provide a standard mask, VL = 128 will guide the merge
+    // context for the registers used, where all instructions below are using 128-bit mode
+    // On EVEX without VL and BW, these instructions will all be AVX.
+    if (VM_Version::supports_avx512vlbw()) {
+      __ movl(rax, 0xffff);
+      __ kmovql(k1, rax);
+    }
 
 #ifdef _WIN64
     // on win64, fill len_reg from stack position
@@ -3507,6 +3545,14 @@ class StubGenerator: public StubCodeGenerator {
     const XMMRegister xmm_key_last  = as_XMMRegister(XMM_REG_NUM_KEY_LAST);
 
     __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+    // For EVEX with VL and BW, provide a standard mask, VL = 128 will guide the merge
+    // context for the registers used, where all instructions below are using 128-bit mode
+    // On EVEX without VL and BW, these instructions will all be AVX.
+    if (VM_Version::supports_avx512vlbw()) {
+      __ movl(rax, 0xffff);
+      __ kmovql(k1, rax);
+    }
 
 #ifdef _WIN64
     // on win64, fill len_reg from stack position
@@ -3745,6 +3791,14 @@ class StubGenerator: public StubCodeGenerator {
     const XMMRegister xmm_temp10 = xmm10;
 
     __ enter();
+
+    // For EVEX with VL and BW, provide a standard mask, VL = 128 will guide the merge
+    // context for the registers used, where all instructions below are using 128-bit mode
+    // On EVEX without VL and BW, these instructions will all be AVX.
+    if (VM_Version::supports_avx512vlbw()) {
+      __ movl(rax, 0xffff);
+      __ kmovql(k1, rax);
+    }
 
 #ifdef _WIN64
     // save the xmm registers which must be preserved 6-10
