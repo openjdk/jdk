@@ -677,15 +677,14 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
 
     // generate a vanilla interpreter entry as the slow path
     __ bind(slow_path);
-    (void) generate_normal_entry(false);
-
+    __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
     return entry;
   }
 #endif // INCLUDE_ALL_GCS
 
   // If G1 is not enabled then attempt to go through the accessor entry point
   // Reference.get is an accessor
-  return generate_jump_to_normal_entry();
+  return NULL;
 }
 
 /**
@@ -733,12 +732,10 @@ address InterpreterGenerator::generate_CRC32_update_entry() {
 
     // generate a vanilla native entry as the slow path
     __ bind(slow_path);
-
-    (void) generate_native_entry(false);
-
+    __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
     return entry;
   }
-  return generate_native_entry(false);
+  return NULL;
 }
 
 /**
@@ -796,12 +793,10 @@ address InterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpret
 
     // generate a vanilla native entry as the slow path
     __ bind(slow_path);
-
-    (void) generate_native_entry(false);
-
+    __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
     return entry;
   }
-  return generate_native_entry(false);
+  return NULL;
 }
 
 /**
@@ -852,7 +847,7 @@ address InterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpre
     return entry;
   }
 
-  return generate_native_entry(false);
+  return NULL;
 }
 
 // Interpreter stub for calling a native method. (asm interpreter)
