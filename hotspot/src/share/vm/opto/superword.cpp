@@ -3055,6 +3055,9 @@ bool SWPointer::offset_plus_k(Node* n, bool negate) {
     }
   }
   if (invariant(n)) {
+    if (opc == Op_ConvI2L) {
+      n = n->in(1);
+    }
     _negate_invar = negate;
     _invar = n;
     NOT_PRODUCT(_tracer.offset_plus_k_10(n, _invar, _negate_invar, _offset);)
