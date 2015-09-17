@@ -2690,15 +2690,25 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
 
 //----------------------------get_pre_loop_end---------------------------
 // Find pre loop end from main loop.  Returns null if none.
-CountedLoopEndNode* SuperWord::get_pre_loop_end(CountedLoopNode *cl) {
-  Node *ctrl = cl->in(LoopNode::EntryControl);
+CountedLoopEndNode* SuperWord::get_pre_loop_end(CountedLoopNode* cl) {
+  Node* ctrl = cl->in(LoopNode::EntryControl);
   if (!ctrl->is_IfTrue() && !ctrl->is_IfFalse()) return NULL;
-  Node *iffm = ctrl->in(0);
+  Node* iffm = ctrl->in(0);
   if (!iffm->is_If()) return NULL;
-  Node *p_f = iffm->in(0);
+  Node* bolzm = iffm->in(1);
+  if (!bolzm->is_Bool()) return NULL;
+  Node* cmpzm = bolzm->in(1);
+  if (!cmpzm->is_Cmp()) return NULL;
+  Node* opqzm = cmpzm->in(2);
+  // Can not optimize a loop if zero-trip Opaque1 node is optimized
+  // away and then another round of loop opts attempted.
+  if (opqzm->Opcode() != Op_Opaque1) {
+    return NULL;
+  }
+  Node* p_f = iffm->in(0);
   if (!p_f->is_IfFalse()) return NULL;
   if (!p_f->in(0)->is_CountedLoopEnd()) return NULL;
-  CountedLoopEndNode *pre_end = p_f->in(0)->as_CountedLoopEnd();
+  CountedLoopEndNode* pre_end = p_f->in(0)->as_CountedLoopEnd();
   CountedLoopNode* loop_node = pre_end->loopnode();
   if (loop_node == NULL || !loop_node->is_pre_loop()) return NULL;
   return pre_end;
