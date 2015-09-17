@@ -108,7 +108,7 @@ public final class UBiDiProps {
     }
 
     // implement ICUBinary.Authenticate
-    private final static class IsAcceptable implements ICUBinary.Authenticate {
+    private static final class IsAcceptable implements ICUBinary.Authenticate {
         public boolean isDataVersionAcceptable(byte version[]) {
             return version[0]==2;
         }

@@ -69,7 +69,7 @@ public class Proxy {
      * {@code Socket s = new Socket(Proxy.NO_PROXY);}
      *
      */
-    public final static Proxy NO_PROXY = new Proxy();
+    public static final Proxy NO_PROXY = new Proxy();
 
     // Creates the proxy that represents a {@code DIRECT} connection.
     private Proxy() {

@@ -71,7 +71,7 @@ public class FlaterCriticalArray {
     /*
      * Base class for individual test cases
      */
-    abstract static private class TestCase {
+    private abstract static class TestCase {
         protected String name;  // For information in debug messages
         protected byte data[];  // Data to be deflated and subsequently inflated
         protected int level;    // Compression level for deflater
@@ -110,9 +110,9 @@ public class FlaterCriticalArray {
             debug(name, inOut, duration, length);
         }
 
-        abstract protected byte[] deflate(byte data[], int level) throws Throwable;
+        protected abstract byte[] deflate(byte data[], int level) throws Throwable;
 
-        abstract protected byte[] inflate(byte deflated[]) throws Throwable;
+        protected abstract byte[] inflate(byte deflated[]) throws Throwable;
     }
 
     /*

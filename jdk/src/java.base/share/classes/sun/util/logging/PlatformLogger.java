@@ -408,7 +408,7 @@ public class PlatformLogger {
     /**
      * Abstract base class for logging support, defining the API and common field.
      */
-    private static abstract class LoggerProxy {
+    private abstract static class LoggerProxy {
         final String name;
 
         protected LoggerProxy(String name) {

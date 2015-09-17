@@ -169,7 +169,7 @@ public abstract class ATestCaseScaffold {
         assertEquals("Expected equality", expected, actual);
     }
 
-    public final static class
+    public static final class
     TestCaseScaffoldException extends RuntimeException {
         public
         TestCaseScaffoldException() {

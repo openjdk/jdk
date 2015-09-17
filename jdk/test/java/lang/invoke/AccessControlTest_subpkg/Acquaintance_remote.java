@@ -16,27 +16,27 @@ public class Acquaintance_remote {
     public static Lookup lookup_in_remote() {
         return MethodHandles.lookup();
     }
-    static public      void pub_in_remote() { }
-    static protected   void pro_in_remote() { }
+    public static      void pub_in_remote() { }
+    protected static   void pro_in_remote() { }
     static /*package*/ void pkg_in_remote() { }
-    static private     void pri_in_remote() { }
+    private static     void pri_in_remote() { }
 
-    static public class Remote_subclass extends AccessControlTest {
+    public static class Remote_subclass extends AccessControlTest {
         static Lookup lookup_in_subclass() {
             return MethodHandles.lookup();
         }
-        static public      void pub_in_subclass() { }
-        static protected   void pro_in_subclass() { }
+        public static      void pub_in_subclass() { }
+        protected static   void pro_in_subclass() { }
         static /*package*/ void pkg_in_subclass() { }
-        static private     void pri_in_subclass() { }
+        private static     void pri_in_subclass() { }
     }
     static /*package*/ class Remote_hidden {
         static Lookup lookup_in_hidden() {
             return MethodHandles.lookup();
         }
-        static public      void pub_in_hidden() { }
-        static protected   void pro_in_hidden() { }
+        public static      void pub_in_hidden() { }
+        protected static   void pro_in_hidden() { }
         static /*package*/ void pkg_in_hidden() { }
-        static private     void pri_in_hidden() { }
+        private static     void pri_in_hidden() { }
     }
 }

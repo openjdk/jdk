@@ -34,17 +34,17 @@ import static org.testng.Assert.*;
 
 @Test(groups = {"unit","string","lang","libs"})
 public class StringJoinTest {
-    private final static String DASH = "-";
-    private final static String BEGIN = "Hi there";
-    private final static String JIM = "Jim";
-    private final static String JOHN = "John";
-    private final static String AND_JOE = "and Joe";
-    private final static String BILL = "Bill";
-    private final static String BOB = "Bob";
-    private final static String AND_BO = "and Bo";
-    private final static String ZEKE = "Zeke";
-    private final static String ZACK = "Zack";
-    private final static String AND_ZOE = "and Zoe";
+    private static final String DASH = "-";
+    private static final String BEGIN = "Hi there";
+    private static final String JIM = "Jim";
+    private static final String JOHN = "John";
+    private static final String AND_JOE = "and Joe";
+    private static final String BILL = "Bill";
+    private static final String BOB = "Bob";
+    private static final String AND_BO = "and Bo";
+    private static final String ZEKE = "Zeke";
+    private static final String ZACK = "Zack";
+    private static final String AND_ZOE = "and Zoe";
 
     /**
      * Tests the join() methods on String

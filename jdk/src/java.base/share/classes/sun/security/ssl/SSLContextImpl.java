@@ -657,7 +657,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
      * @see SSLContext
      */
     private static class CustomizedSSLProtocols {
-        private final static String PROPERTY_NAME = "jdk.tls.client.protocols";
+        private static final String PROPERTY_NAME = "jdk.tls.client.protocols";
         static IllegalArgumentException reservedException = null;
         static ArrayList<ProtocolVersion>
                                 customizedProtocols = new ArrayList<>();
@@ -1028,7 +1028,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
      * @see SSLContext
      */
     public static final class DTLS10Context extends AbstractDTLSContext {
-        private final static SSLParameters defaultClientSSLParams;
+        private static final SSLParameters defaultClientSSLParams;
 
         static {
             // candidates for available protocols
@@ -1053,7 +1053,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
      * @see SSLContext
      */
     public static final class DTLS12Context extends AbstractDTLSContext {
-        private final static SSLParameters defaultClientSSLParams;
+        private static final SSLParameters defaultClientSSLParams;
 
         static {
             // candidates for available protocols
@@ -1079,7 +1079,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
      * @see SSLContext
      */
     private static class CustomizedDTLSContext extends AbstractDTLSContext {
-        private final static SSLParameters defaultClientSSLParams;
+        private static final SSLParameters defaultClientSSLParams;
         private static IllegalArgumentException reservedException = null;
 
         // Don't want a java.lang.LinkageError for illegal system property.

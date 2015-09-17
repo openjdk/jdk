@@ -106,7 +106,7 @@ public class HostLocaleProviderAdapterImpl {
         tmpSet.addAll(Control.getNoFallbackControl(Control.FORMAT_DEFAULT).getCandidateLocales("", l));
         supportedLocaleSet = Collections.unmodifiableSet(tmpSet);
     }
-    private final static Locale[] supportedLocale = supportedLocaleSet.toArray(new Locale[0]);
+    private static final Locale[] supportedLocale = supportedLocaleSet.toArray(new Locale[0]);
 
     @SuppressWarnings("fallthrough")
     private static Locale convertMacOSXLocaleToJavaLocale(String macosxloc) {

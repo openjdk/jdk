@@ -44,7 +44,7 @@ public class FinThreads {
         /* Instances are only created in an auxiliary thread, in order to
            guard against stray references from the current thread's stack
          */
-        static public void create(final boolean catchFinalizer)
+        public static void create(final boolean catchFinalizer)
             throws InterruptedException
         {
             Thread t = new Thread(new Runnable() {

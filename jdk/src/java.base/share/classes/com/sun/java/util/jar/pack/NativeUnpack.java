@@ -104,7 +104,7 @@ class NativeUnpack {
     }
 
     // for JNI callbacks
-    static private Object currentInstance() {
+    private static Object currentInstance() {
         UnpackerImpl p200 = (UnpackerImpl) Utils.getTLGlobals();
         return (p200 == null)? null: p200._nunp;
     }

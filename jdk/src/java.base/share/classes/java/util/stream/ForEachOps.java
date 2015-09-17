@@ -130,7 +130,7 @@ final class ForEachOps {
      *
      * @param <T> the output type of the stream pipeline
      */
-    static abstract class ForEachOp<T>
+    abstract static class ForEachOp<T>
             implements TerminalOp<T, Void>, TerminalSink<T, Void> {
         private final boolean ordered;
 

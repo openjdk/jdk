@@ -87,7 +87,7 @@ public class NTLMAuthSequence {
         return status.sequenceComplete;
     }
 
-    private native static void initFirst (Class<NTLMAuthSequence.Status> clazz);
+    private static native void initFirst (Class<NTLMAuthSequence.Status> clazz);
 
     private native long getCredentialsHandle (String user, String domain, String password);
 

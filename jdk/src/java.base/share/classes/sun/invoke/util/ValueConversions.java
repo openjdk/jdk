@@ -215,7 +215,7 @@ public class ValueConversions {
         return unbox(type, 3);
     }
 
-    static private final Integer ZERO_INT = 0, ONE_INT = 1;
+    private static final Integer ZERO_INT = 0, ONE_INT = 1;
 
     /// Primitive conversions
     /**

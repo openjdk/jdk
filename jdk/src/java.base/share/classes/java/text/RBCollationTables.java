@@ -258,7 +258,7 @@ final class RBCollationTables {
         }
     }
 
-    final static int getEntry(Vector<EntryPair> list, String name, boolean fwd) {
+    static final int getEntry(Vector<EntryPair> list, String name, boolean fwd) {
         for (int i = 0; i < list.size(); i++) {
             EntryPair pair = list.elementAt(i);
             if (pair.fwd == fwd && pair.entryName.equals(name)) {
@@ -272,17 +272,17 @@ final class RBCollationTables {
     // constants
     // ==============================================================
     //sherman/Todo: is the value big enough?????
-    final static int EXPANDCHARINDEX = 0x7E000000; // Expand index follows
-    final static int CONTRACTCHARINDEX = 0x7F000000;  // contract indexes follow
-    final static int UNMAPPED = 0xFFFFFFFF;
+    static final int EXPANDCHARINDEX = 0x7E000000; // Expand index follows
+    static final int CONTRACTCHARINDEX = 0x7F000000;  // contract indexes follow
+    static final int UNMAPPED = 0xFFFFFFFF;
 
-    final static int PRIMARYORDERMASK = 0xffff0000;
-    final static int SECONDARYORDERMASK = 0x0000ff00;
-    final static int TERTIARYORDERMASK = 0x000000ff;
-    final static int PRIMARYDIFFERENCEONLY = 0xffff0000;
-    final static int SECONDARYDIFFERENCEONLY = 0xffffff00;
-    final static int PRIMARYORDERSHIFT = 16;
-    final static int SECONDARYORDERSHIFT = 8;
+    static final int PRIMARYORDERMASK = 0xffff0000;
+    static final int SECONDARYORDERMASK = 0x0000ff00;
+    static final int TERTIARYORDERMASK = 0x000000ff;
+    static final int PRIMARYDIFFERENCEONLY = 0xffff0000;
+    static final int SECONDARYDIFFERENCEONLY = 0xffffff00;
+    static final int PRIMARYORDERSHIFT = 16;
+    static final int SECONDARYORDERSHIFT = 8;
 
     // ==============================================================
     // instance variables

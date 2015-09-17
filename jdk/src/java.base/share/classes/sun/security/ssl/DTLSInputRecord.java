@@ -77,7 +77,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
     }
 
     @Override
-    synchronized public void close() throws IOException {
+    public synchronized void close() throws IOException {
         if (!isClosed) {
             prevReadCipher.dispose();
             super.close();
