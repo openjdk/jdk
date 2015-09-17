@@ -227,14 +227,15 @@ public:
   union XemXcr0Eax {
     uint32_t value;
     struct {
-      uint32_t x87    : 1,
-               sse    : 1,
-               ymm    : 1,
-                      : 2,
-               opmask : 1,
-               zmm512 : 1,
-                zmm32 : 1,
-                      : 24;
+      uint32_t x87     : 1,
+               sse     : 1,
+               ymm     : 1,
+               bndregs : 1,
+               bndcsr  : 1,
+               opmask  : 1,
+               zmm512  : 1,
+               zmm32   : 1,
+                       : 24;
     } bits;
   };
 
@@ -703,6 +704,7 @@ public:
   static bool supports_avx512bw() { return (_cpuFeatures & CPU_AVX512BW) != 0; }
   static bool supports_avx512vl() { return (_cpuFeatures & CPU_AVX512VL) != 0; }
   static bool supports_avx512vlbw() { return (supports_avx512bw() && supports_avx512vl()); }
+  static bool supports_avx512novl() { return (supports_evex() && !supports_avx512vl()); }
   // Intel features
   static bool is_intel_family_core() { return is_intel() &&
                                        extended_cpu_family() == CPU_FAMILY_INTEL_CORE; }
@@ -816,6 +818,12 @@ public:
   static intx prefetch_fields_ahead() {
     intx count = PrefetchFieldsAhead;
     return count >= 0 ? count : 1;
+  }
+  static uint32_t get_xsave_header_lower_segment() {
+    return _cpuid_info.xem_xcr0_eax.value;
+  }
+  static uint32_t get_xsave_header_upper_segment() {
+    return _cpuid_info.xem_xcr0_edx;
   }
 };
 
