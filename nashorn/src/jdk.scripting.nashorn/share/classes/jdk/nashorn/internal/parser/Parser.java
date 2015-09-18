@@ -84,7 +84,6 @@ import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.ExpressionStatement;
 import jdk.nashorn.internal.ir.ForNode;
 import jdk.nashorn.internal.ir.FunctionNode;
-import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.IndexNode;
@@ -487,7 +486,6 @@ loop:
     }
 
     private FunctionNode createFunctionNode(final ParserContextFunctionNode function, final long startToken, final IdentNode ident, final List<IdentNode> parameters, final FunctionNode.Kind kind, final int functionLine, final Block body){
-        final CompilationState state = errors.hasErrors() ? CompilationState.PARSE_ERROR : CompilationState.PARSED;
         // Start new block.
         final FunctionNode functionNode =
             new FunctionNode(
@@ -504,7 +502,6 @@ loop:
                 kind,
                 function.getFlags(),
                 body,
-                state,
                 function.getEndParserState());
 
         printAST(functionNode);

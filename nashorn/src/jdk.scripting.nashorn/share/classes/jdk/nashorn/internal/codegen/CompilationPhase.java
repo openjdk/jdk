@@ -25,32 +25,17 @@
 
 package jdk.nashorn.internal.codegen;
 
-import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.BUILTINS_TRANSFORMED;
-import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.BYTECODE_GENERATED;
-import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.BYTECODE_INSTALLED;
-import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.CONSTANT_FOLDED;
-import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.INITIALIZED;
-import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.LOCAL_VARIABLE_TYPES_CALCULATED;
-import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.LOWERED;
-import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.OPTIMISTIC_TYPES_ASSIGNED;
-import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.PARSED;
-import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.SCOPE_DEPTHS_COMPUTED;
-import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.SPLIT;
-import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.SYMBOLS_ASSIGNED;
 import static jdk.nashorn.internal.runtime.logging.DebugLogger.quote;
 
 import java.io.PrintWriter;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import jdk.nashorn.internal.AssertsEnabled;
 import jdk.nashorn.internal.codegen.Compiler.CompilationPhases;
 import jdk.nashorn.internal.ir.Block;
 import jdk.nashorn.internal.ir.FunctionNode;
-import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.Node;
@@ -67,15 +52,9 @@ import jdk.nashorn.internal.runtime.logging.DebugLogger;
  * A compilation phase is a step in the processes of turning a JavaScript
  * FunctionNode into bytecode. It has an optional return value.
  */
-enum CompilationPhase {
-    /**
-     * Constant folding pass Simple constant folding that will make elementary
-     * constructs go away
-     */
-    CONSTANT_FOLDING_PHASE(
-            EnumSet.of(
-                INITIALIZED,
-                PARSED)) {
+abstract class CompilationPhase {
+
+    private static final class ConstantFoldingPhase extends CompilationPhase {
         @Override
         FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
             return transformFunction(fn, new FoldConstants(compiler));
@@ -85,20 +64,15 @@ enum CompilationPhase {
         public String toString() {
             return "'Constant Folding'";
         }
-    },
+    }
 
     /**
-     * Lower (Control flow pass) Finalizes the control flow. Clones blocks for
-     * finally constructs and similar things. Establishes termination criteria
-     * for nodes Guarantee return instructions to method making sure control
-     * flow cannot fall off the end. Replacing high level nodes with lower such
-     * as runtime nodes where applicable.
+     * Constant folding pass Simple constant folding that will make elementary
+     * constructs go away
      */
-    LOWERING_PHASE(
-            EnumSet.of(
-                INITIALIZED,
-                PARSED,
-                CONSTANT_FOLDED)) {
+    static final CompilationPhase CONSTANT_FOLDING_PHASE = new ConstantFoldingPhase();
+
+    private static final class LoweringPhase extends CompilationPhase {
         @Override
         FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
             return transformFunction(fn, new Lower(compiler));
@@ -108,42 +82,35 @@ enum CompilationPhase {
         public String toString() {
             return "'Control Flow Lowering'";
         }
-    },
+    }
 
     /**
-     * Phase used only when doing optimistic code generation. It assigns all potentially
-     * optimistic ops a program point so that an UnwarrantedException knows from where
-     * a guess went wrong when creating the continuation to roll back this execution
+     * Lower (Control flow pass) Finalizes the control flow. Clones blocks for
+     * finally constructs and similar things. Establishes termination criteria
+     * for nodes Guarantee return instructions to method making sure control
+     * flow cannot fall off the end. Replacing high level nodes with lower such
+     * as runtime nodes where applicable.
      */
-    TRANSFORM_BUILTINS_PHASE(
-            EnumSet.of(
-                    INITIALIZED,
-                    PARSED,
-                    CONSTANT_FOLDED,
-                    LOWERED)) {
-        //we only do this if we have a param type map, otherwise this is not a specialized recompile
+    static final CompilationPhase LOWERING_PHASE = new LoweringPhase();
+
+    private static final class ApplySpecializationPhase extends CompilationPhase {
         @Override
         FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
-            return setStates(transformFunction(fn, new ApplySpecialization(compiler)), BUILTINS_TRANSFORMED);
+            return transformFunction(fn, new ApplySpecialization(compiler));
         }
 
         @Override
         public String toString() {
             return "'Builtin Replacement'";
         }
-    },
+    };
 
     /**
-     * Splitter Split the AST into several compile units based on a heuristic size calculation.
-     * Split IR can lead to scope information being changed.
+     * Phase used to transform Function.prototype.apply.
      */
-    SPLITTING_PHASE(
-            EnumSet.of(
-                    INITIALIZED,
-                    PARSED,
-                    CONSTANT_FOLDED,
-                    LOWERED,
-                    BUILTINS_TRANSFORMED)) {
+    static final CompilationPhase APPLY_SPECIALIZATION_PHASE = new ApplySpecializationPhase();
+
+    private static final class SplittingPhase extends CompilationPhase {
         @Override
         FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
             final CompileUnit  outermostCompileUnit = compiler.addCompileUnit(0L);
@@ -170,16 +137,15 @@ enum CompilationPhase {
         public String toString() {
             return "'Code Splitting'";
         }
-    },
+    };
 
-    PROGRAM_POINT_PHASE(
-            EnumSet.of(
-                    INITIALIZED,
-                    PARSED,
-                    CONSTANT_FOLDED,
-                    LOWERED,
-                    BUILTINS_TRANSFORMED,
-                    SPLIT)) {
+    /**
+     * Splitter Split the AST into several compile units based on a heuristic size calculation.
+     * Split IR can lead to scope information being changed.
+     */
+    static final CompilationPhase SPLITTING_PHASE = new SplittingPhase();
+
+    private static final class ProgramPointPhase extends CompilationPhase {
         @Override
         FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
             return transformFunction(fn, new ProgramPoints());
@@ -189,16 +155,16 @@ enum CompilationPhase {
         public String toString() {
             return "'Program Point Calculation'";
         }
-    },
+    };
 
-    CACHE_AST(
-            EnumSet.of(
-                    INITIALIZED,
-                    PARSED,
-                    CONSTANT_FOLDED,
-                    LOWERED,
-                    BUILTINS_TRANSFORMED,
-                    SPLIT)) {
+    /**
+     * Phase used only when doing optimistic code generation. It assigns all potentially
+     * optimistic ops a program point so that an UnwarrantedException knows from where
+     * a guess went wrong when creating the continuation to roll back this execution
+     */
+    static final CompilationPhase PROGRAM_POINT_PHASE = new ProgramPointPhase();
+
+    private static final class CacheAstPhase extends CompilationPhase {
         @Override
         FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
             if (!compiler.isOnDemandCompilation()) {
@@ -217,16 +183,11 @@ enum CompilationPhase {
         public String toString() {
             return "'Cache ASTs'";
         }
-    },
+    };
 
-    SYMBOL_ASSIGNMENT_PHASE(
-            EnumSet.of(
-                    INITIALIZED,
-                    PARSED,
-                    CONSTANT_FOLDED,
-                    LOWERED,
-                    BUILTINS_TRANSFORMED,
-                    SPLIT)) {
+    static final CompilationPhase CACHE_AST_PHASE = new CacheAstPhase();
+
+    private static final class SymbolAssignmentPhase extends CompilationPhase {
         @Override
         FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
             return transformFunction(fn, new AssignSymbols(compiler));
@@ -236,17 +197,11 @@ enum CompilationPhase {
         public String toString() {
             return "'Symbol Assignment'";
         }
-    },
+    };
 
-    SCOPE_DEPTH_COMPUTATION_PHASE(
-            EnumSet.of(
-                    INITIALIZED,
-                    PARSED,
-                    CONSTANT_FOLDED,
-                    LOWERED,
-                    BUILTINS_TRANSFORMED,
-                    SPLIT,
-                    SYMBOLS_ASSIGNED)) {
+    static final CompilationPhase SYMBOL_ASSIGNMENT_PHASE = new SymbolAssignmentPhase();
+
+    private static final class ScopeDepthComputationPhase extends CompilationPhase {
         @Override
         FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
             return transformFunction(fn, new FindScopeDepths(compiler));
@@ -256,18 +211,11 @@ enum CompilationPhase {
         public String toString() {
             return "'Scope Depth Computation'";
         }
-    },
+    }
 
-    DECLARE_LOCAL_SYMBOLS_TO_COMPILER(
-            EnumSet.of(
-                    INITIALIZED,
-                    PARSED,
-                    CONSTANT_FOLDED,
-                    LOWERED,
-                    BUILTINS_TRANSFORMED,
-                    SPLIT,
-                    SYMBOLS_ASSIGNED,
-                    SCOPE_DEPTHS_COMPUTED)) {
+    static final CompilationPhase SCOPE_DEPTH_COMPUTATION_PHASE = new ScopeDepthComputationPhase();
+
+    private static final class DeclareLocalSymbolsPhase extends CompilationPhase {
         @Override
         FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
             // It's not necessary to guard the marking of symbols as locals with this "if" condition for
@@ -301,43 +249,28 @@ enum CompilationPhase {
         public String toString() {
             return "'Local Symbols Declaration'";
         }
-    },
+    };
 
-    OPTIMISTIC_TYPE_ASSIGNMENT_PHASE(
-            EnumSet.of(
-                    INITIALIZED,
-                    PARSED,
-                    CONSTANT_FOLDED,
-                    LOWERED,
-                    BUILTINS_TRANSFORMED,
-                    SPLIT,
-                    SYMBOLS_ASSIGNED,
-                    SCOPE_DEPTHS_COMPUTED)) {
+    static final CompilationPhase DECLARE_LOCAL_SYMBOLS_PHASE = new DeclareLocalSymbolsPhase();
+
+    private static final class OptimisticTypeAssignmentPhase extends CompilationPhase {
         @Override
         FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
             if (compiler.useOptimisticTypes()) {
                 return transformFunction(fn, new OptimisticTypesCalculator(compiler));
             }
-            return setStates(fn, OPTIMISTIC_TYPES_ASSIGNED);
+            return fn;
         }
 
         @Override
         public String toString() {
             return "'Optimistic Type Assignment'";
         }
-    },
+    }
 
-    LOCAL_VARIABLE_TYPE_CALCULATION_PHASE(
-            EnumSet.of(
-                    INITIALIZED,
-                    PARSED,
-                    CONSTANT_FOLDED,
-                    LOWERED,
-                    BUILTINS_TRANSFORMED,
-                    SPLIT,
-                    SYMBOLS_ASSIGNED,
-                    SCOPE_DEPTHS_COMPUTED,
-                    OPTIMISTIC_TYPES_ASSIGNED)) {
+    static final CompilationPhase OPTIMISTIC_TYPE_ASSIGNMENT_PHASE = new OptimisticTypeAssignmentPhase();
+
+    private static final class LocalVariableTypeCalculationPhase extends CompilationPhase {
         @Override
         FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
             final FunctionNode newFunctionNode = transformFunction(fn, new LocalVariableTypesCalculator(compiler));
@@ -362,25 +295,11 @@ enum CompilationPhase {
         public String toString() {
             return "'Local Variable Type Calculation'";
         }
-    },
+    };
 
+    static final CompilationPhase LOCAL_VARIABLE_TYPE_CALCULATION_PHASE = new LocalVariableTypeCalculationPhase();
 
-    /**
-     * Reuse compile units, if they are already present. We are using the same compiler
-     * to recompile stuff
-     */
-    REUSE_COMPILE_UNITS_PHASE(
-            EnumSet.of(
-                    INITIALIZED,
-                    PARSED,
-                    CONSTANT_FOLDED,
-                    LOWERED,
-                    BUILTINS_TRANSFORMED,
-                    SPLIT,
-                    SYMBOLS_ASSIGNED,
-                    SCOPE_DEPTHS_COMPUTED,
-                    OPTIMISTIC_TYPES_ASSIGNED,
-                    LOCAL_VARIABLE_TYPES_CALCULATED)) {
+    private static final class ReuseCompileUnitsPhase extends CompilationPhase {
         @Override
         FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
             assert phases.isRestOfCompilation() : "reuse compile units currently only used for Rest-Of methods";
@@ -428,16 +347,15 @@ enum CompilationPhase {
         public String toString() {
             return "'Reuse Compile Units'";
         }
-    },
+    }
 
-    REINITIALIZE_CACHED(
-            EnumSet.of(
-                    INITIALIZED,
-                    PARSED,
-                    CONSTANT_FOLDED,
-                    LOWERED,
-                    BUILTINS_TRANSFORMED,
-                    SPLIT)) {
+    /**
+     * Reuse compile units, if they are already present. We are using the same compiler
+     * to recompile stuff
+     */
+    static final CompilationPhase REUSE_COMPILE_UNITS_PHASE = new ReuseCompileUnitsPhase();
+
+    private static final class ReinitializeCachedPhase extends CompilationPhase {
         @Override
         FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
             final Set<CompileUnit> unitSet = CompileUnit.createCompileUnitSet();
@@ -480,26 +398,11 @@ enum CompilationPhase {
         public String toString() {
             return "'Reinitialize cached'";
         }
-    },
+    }
 
-    /**
-     * Bytecode generation:
-     *
-     * Generate the byte code class(es) resulting from the compiled FunctionNode
-     */
-    BYTECODE_GENERATION_PHASE(
-            EnumSet.of(
-                    INITIALIZED,
-                    PARSED,
-                    CONSTANT_FOLDED,
-                    LOWERED,
-                    BUILTINS_TRANSFORMED,
-                    SPLIT,
-                    SYMBOLS_ASSIGNED,
-                    SCOPE_DEPTHS_COMPUTED,
-                    OPTIMISTIC_TYPES_ASSIGNED,
-                    LOCAL_VARIABLE_TYPES_CALCULATED)) {
+    static final CompilationPhase REINITIALIZE_CACHED = new ReinitializeCachedPhase();
 
+    private static final class BytecodeGenerationPhase extends CompilationPhase {
         @Override
         FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
             final ScriptEnvironment senv = compiler.getScriptEnvironment();
@@ -517,7 +420,7 @@ enum CompilationPhase {
             try {
                 // Explicitly set BYTECODE_GENERATED here; it can not be set in case of skipping codegen for :program
                 // in the lazy + optimistic world. See CodeGenerator.skipFunction().
-                newFunctionNode = transformFunction(newFunctionNode, codegen).setState(null, BYTECODE_GENERATED);
+                newFunctionNode = transformFunction(newFunctionNode, codegen);
                 codegen.generateScopeCalls();
             } catch (final VerifyError e) {
                 if (senv._verify_code || senv._print_code) {
@@ -565,22 +468,16 @@ enum CompilationPhase {
         public String toString() {
             return "'Bytecode Generation'";
         }
-    },
+    }
 
-     INSTALL_PHASE(
-            EnumSet.of(
-                    INITIALIZED,
-                    PARSED,
-                    CONSTANT_FOLDED,
-                    LOWERED,
-                    BUILTINS_TRANSFORMED,
-                    SPLIT,
-                    SYMBOLS_ASSIGNED,
-                    SCOPE_DEPTHS_COMPUTED,
-                    OPTIMISTIC_TYPES_ASSIGNED,
-                    LOCAL_VARIABLE_TYPES_CALCULATED,
-                    BYTECODE_GENERATED)) {
+    /**
+     * Bytecode generation:
+     *
+     * Generate the byte code class(es) resulting from the compiled FunctionNode
+     */
+    static final CompilationPhase BYTECODE_GENERATION_PHASE = new BytecodeGenerationPhase();
 
+    private static final class InstallPhase extends CompilationPhase {
         @Override
         FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
             final DebugLogger log = compiler.getLogger();
@@ -591,8 +488,9 @@ enum CompilationPhase {
             Class<?> rootClass = null;
             long length = 0L;
 
-            final CodeInstaller       codeInstaller = compiler.getCodeInstaller();
-            final Map<String, byte[]> bytecode      = compiler.getBytecode();
+            final CodeInstaller origCodeInstaller = compiler.getCodeInstaller();
+            final Map<String, byte[]> bytecode = compiler.getBytecode();
+            final CodeInstaller codeInstaller = bytecode.size() > 1 ? origCodeInstaller.getMultiClassCodeInstaller() : origCodeInstaller;
 
             for (final Entry<String, byte[]> entry : bytecode.entrySet()) {
                 final String className = entry.getKey();
@@ -648,18 +546,16 @@ enum CompilationPhase {
                 log.fine(sb.toString());
             }
 
-            return setStates(fn.setRootClass(null, rootClass), BYTECODE_INSTALLED);
+            return fn.setRootClass(null, rootClass);
         }
 
         @Override
         public String toString() {
             return "'Class Installation'";
         }
+    }
 
-     };
-
-    /** pre conditions required for function node to which this transform is to be applied */
-    private final EnumSet<CompilationState> pre;
+    static final CompilationPhase INSTALL_PHASE = new InstallPhase();
 
     /** start time of transform - used for timing, see {@link jdk.nashorn.internal.runtime.Timing} */
     private long startTime;
@@ -670,21 +566,7 @@ enum CompilationPhase {
     /** boolean that is true upon transform completion */
     private boolean isFinished;
 
-    private CompilationPhase(final EnumSet<CompilationState> pre) {
-        this.pre = pre;
-    }
-
-    private static FunctionNode setStates(final FunctionNode functionNode, final CompilationState state) {
-        if (!AssertsEnabled.assertsEnabled()) {
-            return functionNode;
-        }
-        return transformFunction(functionNode, new NodeVisitor<LexicalContext>(new LexicalContext()) {
-            @Override
-            public Node leaveFunctionNode(final FunctionNode fn) {
-                return fn.setState(lc, state);
-           }
-        });
-    }
+    private CompilationPhase() {}
 
     /**
      * Start a compilation phase
@@ -694,23 +576,7 @@ enum CompilationPhase {
      */
     protected FunctionNode begin(final Compiler compiler, final FunctionNode functionNode) {
         compiler.getLogger().indent();
-
-        assert pre != null;
-
-        if (!functionNode.hasState(pre)) {
-            final StringBuilder sb = new StringBuilder("Compilation phase ");
-            sb.append(this).
-                append(" is not applicable to ").
-                append(quote(functionNode.getName())).
-                append("\n\tFunctionNode state = ").
-                append(functionNode.getState()).
-                append("\n\tRequired state     = ").
-                append(this.pre);
-
-            throw new CompilationException(sb.toString());
-         }
-
-         startTime = System.nanoTime();
+        startTime = System.nanoTime();
 
          return functionNode;
      }

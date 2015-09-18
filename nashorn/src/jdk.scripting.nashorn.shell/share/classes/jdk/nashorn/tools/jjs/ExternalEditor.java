@@ -49,13 +49,13 @@ final class ExternalEditor {
     private Path dir;
     private Path tmpfile;
 
-    ExternalEditor(Consumer<String> errorHandler, Consumer<String> saveHandler, Console input) {
+    ExternalEditor(final Consumer<String> errorHandler, final Consumer<String> saveHandler, final Console input) {
         this.errorHandler = errorHandler;
         this.saveHandler = saveHandler;
         this.input = input;
     }
 
-    private void edit(String cmd, String initialText) {
+    private void edit(final String cmd, final String initialText) {
         try {
             setupWatch(initialText);
             launch(cmd);
@@ -67,7 +67,7 @@ final class ExternalEditor {
     /**
      * Creates a WatchService and registers the given directory
      */
-    private void setupWatch(String initialText) throws IOException {
+    private void setupWatch(final String initialText) throws IOException {
         this.watcher = FileSystems.getDefault().newWatchService();
         this.dir = Files.createTempDirectory("REPL");
         this.tmpfile = Files.createTempFile(dir, null, ".js");
@@ -81,9 +81,9 @@ final class ExternalEditor {
                 WatchKey key;
                 try {
                     key = watcher.take();
-                } catch (ClosedWatchServiceException ex) {
+                } catch (final ClosedWatchServiceException ex) {
                     break;
-                } catch (InterruptedException ex) {
+                } catch (final InterruptedException ex) {
                     continue; // tolerate an intrupt
                 }
 
@@ -103,7 +103,7 @@ final class ExternalEditor {
         watchedThread.start();
     }
 
-    private void launch(String cmd) throws IOException {
+    private void launch(final String cmd) throws IOException {
         ProcessBuilder pb = new ProcessBuilder(cmd, tmpfile.toString());
         pb = pb.inheritIO();
 
@@ -111,9 +111,9 @@ final class ExternalEditor {
             input.suspend();
             Process process = pb.start();
             process.waitFor();
-        } catch (IOException ex) {
+        } catch (final IOException ex) {
             errorHandler.accept("process IO failure: " + ex.getMessage());
-        } catch (InterruptedException ex) {
+        } catch (final InterruptedException ex) {
             errorHandler.accept("process interrupt: " + ex.getMessage());
         } finally {
             try {
@@ -132,7 +132,7 @@ final class ExternalEditor {
         List<String> lines;
         try {
             lines = Files.readAllLines(tmpfile);
-        } catch (IOException ex) {
+        } catch (final IOException ex) {
             errorHandler.accept("Failure read edit file: " + ex.getMessage());
             return ;
         }
@@ -144,8 +144,8 @@ final class ExternalEditor {
         saveHandler.accept(sb.toString());
     }
 
-    static void edit(String cmd, Consumer<String> errorHandler, String initialText,
-            Consumer<String> saveHandler, Console input) {
+    static void edit(final String cmd, final Consumer<String> errorHandler, final String initialText,
+            final Consumer<String> saveHandler, final Console input) {
         ExternalEditor ed = new ExternalEditor(errorHandler,  saveHandler, input);
         ed.edit(cmd, initialText);
     }
