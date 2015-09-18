@@ -197,7 +197,7 @@ public class TestConfigurationLock {
         }
     }
 
-    final static class ResetConf extends Thread {
+    static final class ResetConf extends Thread {
 
         public ResetConf() {
             setDaemon(true);
@@ -228,7 +228,7 @@ public class TestConfigurationLock {
         }
     }
 
-    final static class ReadConf extends Thread {
+    static final class ReadConf extends Thread {
 
         public ReadConf() {
             setDaemon(true);
@@ -259,7 +259,7 @@ public class TestConfigurationLock {
         }
     }
 
-    final static class AddLogger extends Thread {
+    static final class AddLogger extends Thread {
 
         public AddLogger() {
             setDaemon(true);
@@ -293,7 +293,7 @@ public class TestConfigurationLock {
         }
     }
 
-    final static class DeadlockDetector extends Thread {
+    static final class DeadlockDetector extends Thread {
 
         @Override
         public void run() {

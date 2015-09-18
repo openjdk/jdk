@@ -49,12 +49,14 @@ import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
  * so we can't subclass!
  */
 public class AquaSpinnerUI extends SpinnerUI {
-    private static final RecyclableSingleton<? extends PropertyChangeListener> propertyChangeListener = new RecyclableSingletonFromDefaultConstructor<PropertyChangeHandler>(PropertyChangeHandler.class);
+    private static final RecyclableSingleton<? extends PropertyChangeListener> propertyChangeListener
+            = new RecyclableSingletonFromDefaultConstructor<>(PropertyChangeHandler.class);
     static PropertyChangeListener getPropertyChangeListener() {
         return propertyChangeListener.get();
     }
 
-    private static final RecyclableSingleton<ArrowButtonHandler> nextButtonHandler = new RecyclableSingleton<ArrowButtonHandler>() {
+    private static final RecyclableSingleton<ArrowButtonHandler> nextButtonHandler
+            = new RecyclableSingleton<ArrowButtonHandler>() {
         @Override
         protected ArrowButtonHandler getInstance() {
             return new ArrowButtonHandler("increment", true);
@@ -63,7 +65,8 @@ public class AquaSpinnerUI extends SpinnerUI {
     static ArrowButtonHandler getNextButtonHandler() {
         return nextButtonHandler.get();
     }
-    private static final RecyclableSingleton<ArrowButtonHandler> previousButtonHandler = new RecyclableSingleton<ArrowButtonHandler>() {
+    private static final RecyclableSingleton<ArrowButtonHandler> previousButtonHandler
+            = new RecyclableSingleton<ArrowButtonHandler>() {
         @Override
         protected ArrowButtonHandler getInstance() {
             return new ArrowButtonHandler("decrement", false);
@@ -73,8 +76,10 @@ public class AquaSpinnerUI extends SpinnerUI {
         return previousButtonHandler.get();
     }
 
-    JSpinner spinner;
-    SpinPainter spinPainter;
+    private JSpinner spinner;
+    private SpinPainter spinPainter;
+    private TransparentButton next;
+    private TransparentButton prev;
 
     public static ComponentUI createUI(final JComponent c) {
         return new AquaSpinnerUI();
@@ -87,12 +92,13 @@ public class AquaSpinnerUI extends SpinnerUI {
     }
 
     boolean wasOpaque;
+    @Override
     public void installUI(final JComponent c) {
         this.spinner = (JSpinner)c;
         installDefaults();
         installListeners();
-        final TransparentButton next = createNextButton();
-        final TransparentButton prev = createPreviousButton();
+        next = createNextButton();
+        prev = createPreviousButton();
         spinPainter = new SpinPainter(next, prev);
 
         maybeAdd(next, "Next");
@@ -111,11 +117,21 @@ public class AquaSpinnerUI extends SpinnerUI {
         spinner.setOpaque(false);
     }
 
+    @Override
     public void uninstallUI(final JComponent c) {
         uninstallDefaults();
         uninstallListeners();
         spinner.setOpaque(wasOpaque);
+        spinPainter = null;
         spinner = null;
+        // AquaButtonUI install some listeners to all parents, which means that
+        // we need to uninstall UI here to remove those listeners, because after
+        // we remove them from spinner we lost the latest reference to them,
+        // and our standard uninstallUI machinery will not call them.
+        next.getUI().uninstallUI(next);
+        prev.getUI().uninstallUI(prev);
+        next = null;
+        prev = null;
         c.removeAll();
     }
 
@@ -164,6 +180,7 @@ public class AquaSpinnerUI extends SpinnerUI {
     /**
      * {@inheritDoc}
      */
+    @Override
     public int getBaseline(JComponent c, int width, int height) {
         super.getBaseline(c, width, height);
         JComponent editor = spinner.getEditor();
@@ -182,6 +199,7 @@ public class AquaSpinnerUI extends SpinnerUI {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Component.BaselineResizeBehavior getBaselineResizeBehavior(
             JComponent c) {
         super.getBaselineResizeBehavior(c);
@@ -200,8 +218,10 @@ public class AquaSpinnerUI extends SpinnerUI {
             interceptRepaints = true;
         }
 
+        @Override
         public void paint(final Graphics g) {}
 
+        @Override
         public void repaint() {
             // only intercept repaints if we are after this has been initialized
             // otherwise we can't talk to our containing class
@@ -315,6 +335,7 @@ public class AquaSpinnerUI extends SpinnerUI {
             return (src instanceof JSpinner) ? (JSpinner)src : null;
         }
 
+        @Override
         public void actionPerformed(final ActionEvent e) {
             if (!(e.getSource() instanceof javax.swing.Timer)) {
                 // Most likely resulting from being in ActionMap.
@@ -423,6 +444,7 @@ public class AquaSpinnerUI extends SpinnerUI {
             return -1;
         }
 
+        @Override
         public void mousePressed(final MouseEvent e) {
             if (!SwingUtilities.isLeftMouseButton(e) || !e.getComponent().isEnabled()) return;
             spinner = eventToSpinner(e);
@@ -431,13 +453,17 @@ public class AquaSpinnerUI extends SpinnerUI {
             focusSpinnerIfNecessary();
         }
 
+        @Override
         public void mouseReleased(final MouseEvent e) {
             autoRepeatTimer.stop();
             spinner = null;
         }
 
+        @Override
         public void mouseClicked(final MouseEvent e) {}
+        @Override
         public void mouseEntered(final MouseEvent e) {}
+        @Override
         public void mouseExited(final MouseEvent e) {}
 
         /**
@@ -485,6 +511,7 @@ public class AquaSpinnerUI extends SpinnerUI {
             }
         }
 
+        @Override
         public void paint(final Graphics g) {
             if (spinner.isOpaque()) {
                 g.setColor(spinner.getBackground());
@@ -511,6 +538,7 @@ public class AquaSpinnerUI extends SpinnerUI {
             painter.paint(g, spinner, 0, 0, bounds.width, bounds.height);
         }
 
+        @Override
         public Dimension getPreferredSize() {
             final Size size = AquaUtilControlSize.getUserSizeFrom(this);
 
@@ -533,6 +561,7 @@ public class AquaSpinnerUI extends SpinnerUI {
         private Component editor = null;
         private Component painter = null;
 
+        @Override
         public void addLayoutComponent(final String name, final Component c) {
             if ("Next".equals(name)) {
                 nextButton = c;
@@ -545,6 +574,7 @@ public class AquaSpinnerUI extends SpinnerUI {
             }
         }
 
+        @Override
         public void removeLayoutComponent(Component c) {
             if (c == nextButton) {
                 c = null;
@@ -561,6 +591,7 @@ public class AquaSpinnerUI extends SpinnerUI {
             return (c == null) ? new Dimension(0, 0) : c.getPreferredSize();
         }
 
+        @Override
         public Dimension preferredLayoutSize(final Container parent) {
 //            Dimension nextD = preferredSize(nextButton);
 //            Dimension previousD = preferredSize(previousButton);
@@ -579,6 +610,7 @@ public class AquaSpinnerUI extends SpinnerUI {
             return size;
         }
 
+        @Override
         public Dimension minimumLayoutSize(final Container parent) {
             return preferredLayoutSize(parent);
         }
@@ -589,6 +621,7 @@ public class AquaSpinnerUI extends SpinnerUI {
             }
         }
 
+        @Override
         public void layoutContainer(final Container parent) {
             final Insets insets = parent.getInsets();
             final int availWidth = parent.getWidth() - (insets.left + insets.right);
@@ -629,6 +662,7 @@ public class AquaSpinnerUI extends SpinnerUI {
      * property changes are delegated to protected methods.
      */
     static class PropertyChangeHandler implements PropertyChangeListener {
+        @Override
         public void propertyChange(final PropertyChangeEvent e) {
             final String propertyName = e.getPropertyName();
             final JSpinner spinner = (JSpinner)(e.getSource());

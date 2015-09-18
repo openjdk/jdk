@@ -173,7 +173,7 @@ import java.util.Arrays;
 
 public final
 class Inet6Address extends InetAddress {
-    final static int INADDRSZ = 16;
+    static final int INADDRSZ = 16;
 
     /*
      * cached scope_id - for link-local address use only.
@@ -922,7 +922,7 @@ class Inet6Address extends InetAddress {
     }
 
     // Utilities
-    private final static int INT16SZ = 2;
+    private static final int INT16SZ = 2;
 
     /*
      * Convert IPv6 binary address into presentation (printable) format.

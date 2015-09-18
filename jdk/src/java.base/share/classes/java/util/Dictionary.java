@@ -60,7 +60,7 @@ class Dictionary<K,V> {
      *
      * @return  the number of keys in this dictionary.
      */
-    abstract public int size();
+    public abstract int size();
 
     /**
      * Tests if this dictionary maps no keys to value. The general contract
@@ -70,7 +70,7 @@ class Dictionary<K,V> {
      * @return  {@code true} if this dictionary maps no keys to values;
      *          {@code false} otherwise.
      */
-    abstract public boolean isEmpty();
+    public abstract boolean isEmpty();
 
     /**
      * Returns an enumeration of the keys in this dictionary. The general
@@ -82,7 +82,7 @@ class Dictionary<K,V> {
      * @see     java.util.Dictionary#elements()
      * @see     java.util.Enumeration
      */
-    abstract public Enumeration<K> keys();
+    public abstract Enumeration<K> keys();
 
     /**
      * Returns an enumeration of the values in this dictionary. The general
@@ -94,7 +94,7 @@ class Dictionary<K,V> {
      * @see     java.util.Dictionary#keys()
      * @see     java.util.Enumeration
      */
-    abstract public Enumeration<V> elements();
+    public abstract Enumeration<V> elements();
 
     /**
      * Returns the value to which the key is mapped in this dictionary.
@@ -109,7 +109,7 @@ class Dictionary<K,V> {
      * @exception NullPointerException if the {@code key} is {@code null}.
      * @see     java.util.Dictionary#put(java.lang.Object, java.lang.Object)
      */
-    abstract public V get(Object key);
+    public abstract V get(Object key);
 
     /**
      * Maps the specified {@code key} to the specified
@@ -138,7 +138,7 @@ class Dictionary<K,V> {
      * @see        java.lang.Object#equals(java.lang.Object)
      * @see        java.util.Dictionary#get(java.lang.Object)
      */
-    abstract public V put(K key, V value);
+    public abstract V put(K key, V value);
 
     /**
      * Removes the {@code key} (and its corresponding
@@ -151,5 +151,5 @@ class Dictionary<K,V> {
      *          mapping.
      * @exception NullPointerException if {@code key} is {@code null}.
      */
-    abstract public V remove(Object key);
+    public abstract V remove(Object key);
 }

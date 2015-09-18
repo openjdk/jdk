@@ -143,7 +143,7 @@ import java.lang.reflect.Modifier;
  * @see java.io.ext.AbstractObjectOutputStream
  * @since   JDK1.2
  */
-abstract public class AbstractObjectInputStream extends ObjectInputStream
+public abstract class AbstractObjectInputStream extends ObjectInputStream
 {
     protected InputStream in;
     /**
@@ -167,7 +167,7 @@ abstract public class AbstractObjectInputStream extends ObjectInputStream
             this.in = in;
         }
 
-    abstract public void close() throws IOException;
+    public abstract void close() throws IOException;
 
     /***************************************************************/
     /* Read an object from the stream. */
@@ -230,7 +230,7 @@ abstract public class AbstractObjectInputStream extends ObjectInputStream
      * @exception ClassNotFoundException if no corresponding local class can be
      *                                   found in the local JVM.
      */
-    abstract public void defaultReadObject()
+    public abstract void defaultReadObject()
         throws IOException, ClassNotFoundException, NotActiveException;
 
     /**
@@ -252,7 +252,7 @@ abstract public class AbstractObjectInputStream extends ObjectInputStream
      *            <STRONG>ofClass</STRONG>.
      * @exception InstantiationException  TBD.
      */
-    final protected native Object
+    protected final native Object
         allocateNewObject(Class ofClass, Class ctorClass)
         throws InstantiationException, IllegalAccessException;
 
@@ -270,7 +270,7 @@ abstract public class AbstractObjectInputStream extends ObjectInputStream
      * @exception IllegalAccessException  TBD.
      * @exception InstantiationException  TBD.
      */
-    final protected native Object
+    protected final native Object
         allocateNewArray(Class componentClass, int length)
         throws InstantiationException, IllegalAccessException;
 
@@ -283,12 +283,12 @@ abstract public class AbstractObjectInputStream extends ObjectInputStream
      * @exception IOException        if an I/O error occurs.
      * @exception NotActiveException if readObject() is not currently active.
      */
-    abstract public ObjectInputStream.GetField readFields()
+    public abstract ObjectInputStream.GetField readFields()
         throws IOException, ClassNotFoundException, NotActiveException;
 
-    abstract protected boolean enableResolveObject(boolean enable) throws SecurityException;
+    protected abstract boolean enableResolveObject(boolean enable) throws SecurityException;
 
-    abstract public void registerValidation(ObjectInputValidation obj,
+    public abstract void registerValidation(ObjectInputValidation obj,
                                             int prio)
         throws NotActiveException, InvalidObjectException;
 
@@ -297,25 +297,25 @@ abstract public class AbstractObjectInputStream extends ObjectInputStream
 
     /* Use DataInput methods to read primitive data from the stream. */
 
-    abstract public int read() throws IOException;
-    abstract public int read(byte[] data, int offset, int length)
+    public abstract int read() throws IOException;
+    public abstract int read(byte[] data, int offset, int length)
         throws IOException;
-    abstract public boolean readBoolean() throws IOException;
-    abstract public byte readByte() throws IOException;
-    abstract public int readUnsignedByte()  throws IOException;
-    abstract public short readShort()  throws IOException;
-    abstract public int readUnsignedShort() throws IOException;
-    abstract public char readChar()  throws IOException;
-    abstract public int readInt()  throws IOException;
-    abstract public long readLong()  throws IOException;
-    abstract public float readFloat() throws IOException;
-    abstract public double readDouble() throws IOException;
-    abstract public void readFully(byte[] data) throws IOException;
-    abstract public void readFully(byte[] data, int offset, int size) throws IOException;
-    abstract public String readUTF() throws IOException;
-    abstract public int available() throws IOException;
-    abstract public int skipBytes(int len) throws IOException;
+    public abstract boolean readBoolean() throws IOException;
+    public abstract byte readByte() throws IOException;
+    public abstract int readUnsignedByte()  throws IOException;
+    public abstract short readShort()  throws IOException;
+    public abstract int readUnsignedShort() throws IOException;
+    public abstract char readChar()  throws IOException;
+    public abstract int readInt()  throws IOException;
+    public abstract long readLong()  throws IOException;
+    public abstract float readFloat() throws IOException;
+    public abstract double readDouble() throws IOException;
+    public abstract void readFully(byte[] data) throws IOException;
+    public abstract void readFully(byte[] data, int offset, int size) throws IOException;
+    public abstract String readUTF() throws IOException;
+    public abstract int available() throws IOException;
+    public abstract int skipBytes(int len) throws IOException;
 
     /* @deprecated */
-    abstract public String readLine() throws IOException;
+    public abstract String readLine() throws IOException;
 };

@@ -26,9 +26,9 @@
 package sun.net.util;
 
 public class IPAddressUtil {
-    private final static int INADDR4SZ = 4;
-    private final static int INADDR16SZ = 16;
-    private final static int INT16SZ = 2;
+    private static final int INADDR4SZ = 4;
+    private static final int INADDR16SZ = 16;
+    private static final int INT16SZ = 2;
 
     /*
      * Converts IPv4 address in its textual presentation form

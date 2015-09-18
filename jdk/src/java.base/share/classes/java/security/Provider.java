@@ -998,9 +998,9 @@ public abstract class Provider extends Properties {
         return new String[] {type, alg};
     }
 
-    private final static String ALIAS_PREFIX = "Alg.Alias.";
-    private final static String ALIAS_PREFIX_LOWER = "alg.alias.";
-    private final static int ALIAS_LENGTH = ALIAS_PREFIX.length();
+    private static final String ALIAS_PREFIX = "Alg.Alias.";
+    private static final String ALIAS_PREFIX_LOWER = "alg.alias.";
+    private static final int ALIAS_LENGTH = ALIAS_PREFIX.length();
 
     private void parseLegacyPut(String name, String value) {
         if (name.toLowerCase(ENGLISH).startsWith(ALIAS_PREFIX_LOWER)) {

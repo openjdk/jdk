@@ -79,7 +79,7 @@ public final class Bug6204853 {
         return keyValueArray;
     }
 
-    public final static void main(String[] args) {
+    public static final void main(String[] args) {
         new Bug6204853();
     }
 }

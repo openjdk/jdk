@@ -35,7 +35,7 @@ import javax.swing.UIManager;
 
 /**
  * @test
- * @bug 8020708
+ * @bug 8020708 8032568
  * @author Alexander Scherbatiy
  * @summary NLS: mnemonics missing in SwingSet2/JInternalFrame demo
  * @library ../../regtesthelpers
@@ -111,8 +111,14 @@ public class bug8020708 {
 
         Util.hitKeys(robot, KeyEvent.VK_CONTROL, KeyEvent.VK_SPACE);
         robot.waitForIdle();
-
-        Util.hitKeys(robot, KeyEvent.VK_C);
+        int keyCode = KeyEvent.VK_C;
+        String mnemonic = UIManager
+                .getString("InternalFrameTitlePane.closeButton.mnemonic");
+        try {
+            keyCode = Integer.parseInt(mnemonic);
+        } catch (NumberFormatException e) {
+        }
+        Util.hitKeys(robot, keyCode);
         robot.waitForIdle();
         robot.delay(500);
 

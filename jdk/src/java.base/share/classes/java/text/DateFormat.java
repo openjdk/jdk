@@ -175,100 +175,100 @@ public abstract class DateFormat extends Format {
      * Useful constant for ERA field alignment.
      * Used in FieldPosition of date/time formatting.
      */
-    public final static int ERA_FIELD = 0;
+    public static final int ERA_FIELD = 0;
     /**
      * Useful constant for YEAR field alignment.
      * Used in FieldPosition of date/time formatting.
      */
-    public final static int YEAR_FIELD = 1;
+    public static final int YEAR_FIELD = 1;
     /**
      * Useful constant for MONTH field alignment.
      * Used in FieldPosition of date/time formatting.
      */
-    public final static int MONTH_FIELD = 2;
+    public static final int MONTH_FIELD = 2;
     /**
      * Useful constant for DATE field alignment.
      * Used in FieldPosition of date/time formatting.
      */
-    public final static int DATE_FIELD = 3;
+    public static final int DATE_FIELD = 3;
     /**
      * Useful constant for one-based HOUR_OF_DAY field alignment.
      * Used in FieldPosition of date/time formatting.
      * HOUR_OF_DAY1_FIELD is used for the one-based 24-hour clock.
      * For example, 23:59 + 01:00 results in 24:59.
      */
-    public final static int HOUR_OF_DAY1_FIELD = 4;
+    public static final int HOUR_OF_DAY1_FIELD = 4;
     /**
      * Useful constant for zero-based HOUR_OF_DAY field alignment.
      * Used in FieldPosition of date/time formatting.
      * HOUR_OF_DAY0_FIELD is used for the zero-based 24-hour clock.
      * For example, 23:59 + 01:00 results in 00:59.
      */
-    public final static int HOUR_OF_DAY0_FIELD = 5;
+    public static final int HOUR_OF_DAY0_FIELD = 5;
     /**
      * Useful constant for MINUTE field alignment.
      * Used in FieldPosition of date/time formatting.
      */
-    public final static int MINUTE_FIELD = 6;
+    public static final int MINUTE_FIELD = 6;
     /**
      * Useful constant for SECOND field alignment.
      * Used in FieldPosition of date/time formatting.
      */
-    public final static int SECOND_FIELD = 7;
+    public static final int SECOND_FIELD = 7;
     /**
      * Useful constant for MILLISECOND field alignment.
      * Used in FieldPosition of date/time formatting.
      */
-    public final static int MILLISECOND_FIELD = 8;
+    public static final int MILLISECOND_FIELD = 8;
     /**
      * Useful constant for DAY_OF_WEEK field alignment.
      * Used in FieldPosition of date/time formatting.
      */
-    public final static int DAY_OF_WEEK_FIELD = 9;
+    public static final int DAY_OF_WEEK_FIELD = 9;
     /**
      * Useful constant for DAY_OF_YEAR field alignment.
      * Used in FieldPosition of date/time formatting.
      */
-    public final static int DAY_OF_YEAR_FIELD = 10;
+    public static final int DAY_OF_YEAR_FIELD = 10;
     /**
      * Useful constant for DAY_OF_WEEK_IN_MONTH field alignment.
      * Used in FieldPosition of date/time formatting.
      */
-    public final static int DAY_OF_WEEK_IN_MONTH_FIELD = 11;
+    public static final int DAY_OF_WEEK_IN_MONTH_FIELD = 11;
     /**
      * Useful constant for WEEK_OF_YEAR field alignment.
      * Used in FieldPosition of date/time formatting.
      */
-    public final static int WEEK_OF_YEAR_FIELD = 12;
+    public static final int WEEK_OF_YEAR_FIELD = 12;
     /**
      * Useful constant for WEEK_OF_MONTH field alignment.
      * Used in FieldPosition of date/time formatting.
      */
-    public final static int WEEK_OF_MONTH_FIELD = 13;
+    public static final int WEEK_OF_MONTH_FIELD = 13;
     /**
      * Useful constant for AM_PM field alignment.
      * Used in FieldPosition of date/time formatting.
      */
-    public final static int AM_PM_FIELD = 14;
+    public static final int AM_PM_FIELD = 14;
     /**
      * Useful constant for one-based HOUR field alignment.
      * Used in FieldPosition of date/time formatting.
      * HOUR1_FIELD is used for the one-based 12-hour clock.
      * For example, 11:30 PM + 1 hour results in 12:30 AM.
      */
-    public final static int HOUR1_FIELD = 15;
+    public static final int HOUR1_FIELD = 15;
     /**
      * Useful constant for zero-based HOUR field alignment.
      * Used in FieldPosition of date/time formatting.
      * HOUR0_FIELD is used for the zero-based 12-hour clock.
      * For example, 11:30 PM + 1 hour results in 00:30 AM.
      */
-    public final static int HOUR0_FIELD = 16;
+    public static final int HOUR0_FIELD = 16;
     /**
      * Useful constant for TIMEZONE field alignment.
      * Used in FieldPosition of date/time formatting.
      */
-    public final static int TIMEZONE_FIELD = 17;
+    public static final int TIMEZONE_FIELD = 17;
 
     // Proclaim serial compatibility with 1.1 FCS
     private static final long serialVersionUID = 7218322306649953788L;
@@ -455,7 +455,7 @@ public abstract class DateFormat extends Format {
      * @see java.util.Locale.Category#FORMAT
      * @return a time formatter.
      */
-    public final static DateFormat getTimeInstance()
+    public static final DateFormat getTimeInstance()
     {
         return get(DEFAULT, 0, 1, Locale.getDefault(Locale.Category.FORMAT));
     }
@@ -472,7 +472,7 @@ public abstract class DateFormat extends Format {
      * SHORT for "h:mm a" in the US locale.
      * @return a time formatter.
      */
-    public final static DateFormat getTimeInstance(int style)
+    public static final DateFormat getTimeInstance(int style)
     {
         return get(style, 0, 1, Locale.getDefault(Locale.Category.FORMAT));
     }
@@ -485,7 +485,7 @@ public abstract class DateFormat extends Format {
      * @param aLocale the given locale.
      * @return a time formatter.
      */
-    public final static DateFormat getTimeInstance(int style,
+    public static final DateFormat getTimeInstance(int style,
                                                  Locale aLocale)
     {
         return get(style, 0, 1, aLocale);
@@ -501,7 +501,7 @@ public abstract class DateFormat extends Format {
      * @see java.util.Locale.Category#FORMAT
      * @return a date formatter.
      */
-    public final static DateFormat getDateInstance()
+    public static final DateFormat getDateInstance()
     {
         return get(0, DEFAULT, 2, Locale.getDefault(Locale.Category.FORMAT));
     }
@@ -518,7 +518,7 @@ public abstract class DateFormat extends Format {
      * SHORT for "M/d/yy" in the US locale.
      * @return a date formatter.
      */
-    public final static DateFormat getDateInstance(int style)
+    public static final DateFormat getDateInstance(int style)
     {
         return get(0, style, 2, Locale.getDefault(Locale.Category.FORMAT));
     }
@@ -531,7 +531,7 @@ public abstract class DateFormat extends Format {
      * @param aLocale the given locale.
      * @return a date formatter.
      */
-    public final static DateFormat getDateInstance(int style,
+    public static final DateFormat getDateInstance(int style,
                                                  Locale aLocale)
     {
         return get(0, style, 2, aLocale);
@@ -547,7 +547,7 @@ public abstract class DateFormat extends Format {
      * @see java.util.Locale.Category#FORMAT
      * @return a date/time formatter.
      */
-    public final static DateFormat getDateTimeInstance()
+    public static final DateFormat getDateTimeInstance()
     {
         return get(DEFAULT, DEFAULT, 3, Locale.getDefault(Locale.Category.FORMAT));
     }
@@ -566,7 +566,7 @@ public abstract class DateFormat extends Format {
      * SHORT for "h:mm a" in the US locale.
      * @return a date/time formatter.
      */
-    public final static DateFormat getDateTimeInstance(int dateStyle,
+    public static final DateFormat getDateTimeInstance(int dateStyle,
                                                        int timeStyle)
     {
         return get(timeStyle, dateStyle, 3, Locale.getDefault(Locale.Category.FORMAT));
@@ -580,7 +580,7 @@ public abstract class DateFormat extends Format {
      * @param aLocale the given locale.
      * @return a date/time formatter.
      */
-    public final static DateFormat
+    public static final DateFormat
         getDateTimeInstance(int dateStyle, int timeStyle, Locale aLocale)
     {
         return get(timeStyle, dateStyle, 3, aLocale);
@@ -592,7 +592,7 @@ public abstract class DateFormat extends Format {
      *
      * @return a date/time formatter
      */
-    public final static DateFormat getInstance() {
+    public static final DateFormat getInstance() {
         return getDateTimeInstance(SHORT, SHORT);
     }
 
@@ -934,107 +934,107 @@ public abstract class DateFormat extends Format {
         /**
          * Constant identifying the era field.
          */
-        public final static Field ERA = new Field("era", Calendar.ERA);
+        public static final Field ERA = new Field("era", Calendar.ERA);
 
         /**
          * Constant identifying the year field.
          */
-        public final static Field YEAR = new Field("year", Calendar.YEAR);
+        public static final Field YEAR = new Field("year", Calendar.YEAR);
 
         /**
          * Constant identifying the month field.
          */
-        public final static Field MONTH = new Field("month", Calendar.MONTH);
+        public static final Field MONTH = new Field("month", Calendar.MONTH);
 
         /**
          * Constant identifying the day of month field.
          */
-        public final static Field DAY_OF_MONTH = new
+        public static final Field DAY_OF_MONTH = new
                             Field("day of month", Calendar.DAY_OF_MONTH);
 
         /**
          * Constant identifying the hour of day field, where the legal values
          * are 1 to 24.
          */
-        public final static Field HOUR_OF_DAY1 = new Field("hour of day 1",-1);
+        public static final Field HOUR_OF_DAY1 = new Field("hour of day 1",-1);
 
         /**
          * Constant identifying the hour of day field, where the legal values
          * are 0 to 23.
          */
-        public final static Field HOUR_OF_DAY0 = new
+        public static final Field HOUR_OF_DAY0 = new
                Field("hour of day", Calendar.HOUR_OF_DAY);
 
         /**
          * Constant identifying the minute field.
          */
-        public final static Field MINUTE =new Field("minute", Calendar.MINUTE);
+        public static final Field MINUTE =new Field("minute", Calendar.MINUTE);
 
         /**
          * Constant identifying the second field.
          */
-        public final static Field SECOND =new Field("second", Calendar.SECOND);
+        public static final Field SECOND =new Field("second", Calendar.SECOND);
 
         /**
          * Constant identifying the millisecond field.
          */
-        public final static Field MILLISECOND = new
+        public static final Field MILLISECOND = new
                 Field("millisecond", Calendar.MILLISECOND);
 
         /**
          * Constant identifying the day of week field.
          */
-        public final static Field DAY_OF_WEEK = new
+        public static final Field DAY_OF_WEEK = new
                 Field("day of week", Calendar.DAY_OF_WEEK);
 
         /**
          * Constant identifying the day of year field.
          */
-        public final static Field DAY_OF_YEAR = new
+        public static final Field DAY_OF_YEAR = new
                 Field("day of year", Calendar.DAY_OF_YEAR);
 
         /**
          * Constant identifying the day of week field.
          */
-        public final static Field DAY_OF_WEEK_IN_MONTH =
+        public static final Field DAY_OF_WEEK_IN_MONTH =
                      new Field("day of week in month",
                                             Calendar.DAY_OF_WEEK_IN_MONTH);
 
         /**
          * Constant identifying the week of year field.
          */
-        public final static Field WEEK_OF_YEAR = new
+        public static final Field WEEK_OF_YEAR = new
               Field("week of year", Calendar.WEEK_OF_YEAR);
 
         /**
          * Constant identifying the week of month field.
          */
-        public final static Field WEEK_OF_MONTH = new
+        public static final Field WEEK_OF_MONTH = new
             Field("week of month", Calendar.WEEK_OF_MONTH);
 
         /**
          * Constant identifying the time of day indicator
          * (e.g. "a.m." or "p.m.") field.
          */
-        public final static Field AM_PM = new
+        public static final Field AM_PM = new
                             Field("am pm", Calendar.AM_PM);
 
         /**
          * Constant identifying the hour field, where the legal values are
          * 1 to 12.
          */
-        public final static Field HOUR1 = new Field("hour 1", -1);
+        public static final Field HOUR1 = new Field("hour 1", -1);
 
         /**
          * Constant identifying the hour field, where the legal values are
          * 0 to 11.
          */
-        public final static Field HOUR0 = new
+        public static final Field HOUR0 = new
                             Field("hour", Calendar.HOUR);
 
         /**
          * Constant identifying the time zone field.
          */
-        public final static Field TIME_ZONE = new Field("time zone", -1);
+        public static final Field TIME_ZONE = new Field("time zone", -1);
     }
 }

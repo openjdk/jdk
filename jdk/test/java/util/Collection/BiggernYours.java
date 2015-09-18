@@ -82,9 +82,9 @@ public class BiggernYours {
                            s2.tailSet(Integer.MIN_VALUE));
     }
 
-    static abstract class MapFrobber { abstract void frob(Map m); }
-    static abstract class SetFrobber { abstract void frob(Set s); }
-    static abstract class ColFrobber { abstract void frob(Collection c); }
+    abstract static class MapFrobber { abstract void frob(Map m); }
+    abstract static class SetFrobber { abstract void frob(Set s); }
+    abstract static class ColFrobber { abstract void frob(Collection c); }
 
     static ColFrobber adder(final int i) {
         return new ColFrobber() {void frob(Collection c) { c.add(i); }};
@@ -236,7 +236,7 @@ public class BiggernYours {
         try {realMain(args);} catch (Throwable t) {unexpected(t);}
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
         if (failed > 0) throw new AssertionError("Some tests failed");}
-    private static abstract class CheckedThread extends Thread {
+    private abstract static class CheckedThread extends Thread {
         abstract void realRun() throws Throwable;
         public void run() {
             try {realRun();} catch (Throwable t) {unexpected(t);}}}

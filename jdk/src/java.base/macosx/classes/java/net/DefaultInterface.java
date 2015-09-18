@@ -42,7 +42,7 @@ import java.io.IOException;
 
 class DefaultInterface {
 
-    private final static NetworkInterface defaultInterface =
+    private static final NetworkInterface defaultInterface =
         chooseDefaultInterface();
 
     static NetworkInterface getDefault() {

@@ -87,7 +87,7 @@ class TestObj {
         writer.println("In test().");
     }
 
-    synchronized public String toString() {
+    public synchronized String toString() {
         writer.println("Calling toString\n");
         return mStr;
     }

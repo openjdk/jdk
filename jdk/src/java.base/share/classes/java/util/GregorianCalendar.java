@@ -2282,7 +2282,7 @@ public class GregorianCalendar extends Calendar {
      * Long.MIN_VALUE, the fixed date value is unknown. Currently,
      * Julian calendar dates are not cached.
      */
-    transient private long cachedFixedDate = Long.MIN_VALUE;
+    private transient long cachedFixedDate = Long.MIN_VALUE;
 
     /**
      * Converts the time value (millisecond offset from the <a

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,11 @@ import java.security.ProtectionDomain;
     <p>A class loader that only knows how to define a limited number
     of classes, and load a limited number of other classes through
     delegation to another loader.  It is used to get around a problem
-    with Serialization, in particular as used by RMI (including
-    RMI/IIOP).  The JMX Remote API defines exactly what class loader
-    must be used to deserialize arguments on the server, and return
-    values on the client.  We communicate this class loader to RMI by
-    setting it as the context class loader.  RMI uses the context
-    class loader to load classes as it deserializes, which is what we
+    with Serialization, in particular as used by RMI. The JMX Remote API
+    defines exactly what class loader must be used to deserialize arguments on
+    the server, and return values on the client.  We communicate this class
+    loader to RMI by setting it as the context class loader.  RMI uses the
+    context class loader to load classes as it deserializes, which is what we
     want.  However, before consulting the context class loader, it
     looks up the call stack for a class with a non-null class loader,
     and uses that if it finds one.  So, in the standalone version of

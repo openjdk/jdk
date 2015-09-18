@@ -12,6 +12,7 @@ text: .text%isMetaName: OUTPUTDIR/zip_util.o;
 text: .text%addMetaName: OUTPUTDIR/zip_util.o;
 text: .text%ZIP_FindEntry;
 text: .text%ZIP_GetEntry;
+text: .text%ZIP_InflateFully;
 text: .text%ZIP_Lock;
 text: .text%ZIP_Unlock;
 text: .text%ZIP_FreeEntry;

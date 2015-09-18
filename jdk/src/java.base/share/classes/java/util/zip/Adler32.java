@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ package java.util.zip;
 
 import java.nio.ByteBuffer;
 import sun.nio.ch.DirectBuffer;
+
+import jdk.internal.HotSpotIntrinsicCandidate;
 
 /**
  * A class that can be used to compute the Adler-32 checksum of a data
@@ -125,9 +127,12 @@ class Adler32 implements Checksum {
         return (long)adler & 0xffffffffL;
     }
 
-    private native static int update(int adler, int b);
-    private native static int updateBytes(int adler, byte[] b, int off,
+    private static native int update(int adler, int b);
+
+    @HotSpotIntrinsicCandidate
+    private static native int updateBytes(int adler, byte[] b, int off,
                                           int len);
-    private native static int updateByteBuffer(int adler, long addr,
+    @HotSpotIntrinsicCandidate
+    private static native int updateByteBuffer(int adler, long addr,
                                                int off, int len);
 }

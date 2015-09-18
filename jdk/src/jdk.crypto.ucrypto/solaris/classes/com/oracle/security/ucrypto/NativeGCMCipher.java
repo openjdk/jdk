@@ -188,7 +188,8 @@ class NativeGCMCipher extends NativeCipher {
         byte[] ivBytes = null;
         if (params != null) {
             if (!(params instanceof GCMParameterSpec)) {
-                throw new InvalidAlgorithmParameterException("GCMParameterSpec required");
+                throw new InvalidAlgorithmParameterException("GCMParameterSpec required." +
+                    " Received: " + params.getClass().getName());
             } else {
                 tagLen = ((GCMParameterSpec) params).getTLen();
                 ivBytes = ((GCMParameterSpec) params).getIV();
@@ -264,9 +265,9 @@ class NativeGCMCipher extends NativeCipher {
             int outOfs) throws ShortBufferException {
         int len = getOutputSizeByOperation(inLen, false);
         if (out.length - outOfs < len) {
-            throw new ShortBufferException("Output buffer must be "
-                                           + "(at least) " + len
-                                           + " bytes long");
+            throw new ShortBufferException("Output buffer must be " +
+                 "(at least) " + len + " bytes long. Got: " +
+                 (out.length - outOfs));
         }
         if (aadBuffer != null && aadBuffer.size() > 0) {
             // init again with AAD data
@@ -365,8 +366,8 @@ class NativeGCMCipher extends NativeCipher {
         int len = getOutputSizeByOperation(inLen, true);
         if (out.length - outOfs < len) {
             throw new ShortBufferException("Output buffer must be "
-                                           + "(at least) " + len
-                                           + " bytes long");
+                + "(at least) " + len + " bytes long. Got: " +
+                (out.length - outOfs));
         }
         if (aadBuffer != null && aadBuffer.size() > 0) {
             // init again with AAD data
@@ -385,7 +386,8 @@ class NativeGCMCipher extends NativeCipher {
             if (inLen < tagLen/8) {
                 // Otherwise, Solaris lib will error out w/ CRYPTO_BUFFER_TOO_SMALL
                 // when ucrypto_decrypt_final() is called
-                throw new AEADBadTagException("Input too short - need tag");
+                throw new AEADBadTagException("Input too short - need tag." +
+                    " inLen: " + inLen + ". tagLen: " + tagLen);
             }
             // refresh 'in' to all buffered-up bytes
             in = ibuffer.toByteArray();

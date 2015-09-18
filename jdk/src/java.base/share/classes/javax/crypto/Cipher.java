@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -336,15 +336,15 @@ public class Cipher {
     }
 
     // Provider attribute name for supported chaining mode
-    private final static String ATTR_MODE = "SupportedModes";
+    private static final String ATTR_MODE = "SupportedModes";
     // Provider attribute name for supported padding names
-    private final static String ATTR_PAD  = "SupportedPaddings";
+    private static final String ATTR_PAD  = "SupportedPaddings";
 
     // constants indicating whether the provider supports
     // a given mode or padding
-    private final static int S_NO    = 0;       // does not support
-    private final static int S_MAYBE = 1;       // unable to determine
-    private final static int S_YES   = 2;       // does support
+    private static final int S_NO    = 0;       // does not support
+    private static final int S_MAYBE = 1;       // unable to determine
+    private static final int S_YES   = 2;       // does support
 
     /**
      * Nested class to deal with modes and paddings.
@@ -410,7 +410,7 @@ public class Cipher {
         }
 
         // ConcurrentMap<String,Pattern> for previously compiled patterns
-        private final static ConcurrentMap<String, Pattern> patternCache =
+        private static final ConcurrentMap<String, Pattern> patternCache =
             new ConcurrentHashMap<String, Pattern>();
 
         private static boolean matches(String regexp, String str) {
@@ -787,10 +787,10 @@ public class Cipher {
         }
     }
 
-    private final static int I_KEY       = 1;
-    private final static int I_PARAMSPEC = 2;
-    private final static int I_PARAMS    = 3;
-    private final static int I_CERT      = 4;
+    private static final int I_KEY       = 1;
+    private static final int I_PARAMSPEC = 2;
+    private static final int I_PARAMS    = 3;
+    private static final int I_CERT      = 4;
 
     private void implInit(CipherSpi thisSpi, int type, int opmode, Key key,
             AlgorithmParameterSpec paramSpec, AlgorithmParameters params,

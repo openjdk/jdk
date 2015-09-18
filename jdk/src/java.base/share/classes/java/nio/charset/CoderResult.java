@@ -191,7 +191,7 @@ public class CoderResult {
     public static final CoderResult OVERFLOW
         = new CoderResult(CR_OVERFLOW, 0);
 
-    private static abstract class Cache {
+    private abstract static class Cache {
 
         private Map<Integer,WeakReference<CoderResult>> cache = null;
 
