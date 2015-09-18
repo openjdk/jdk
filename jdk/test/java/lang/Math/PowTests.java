@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4984407 5033578
+ * @bug 4984407 5033578 8134795
  * @summary Tests for {Math, StrictMath}.pow
  * @author Joseph D. Darcy
  */
@@ -88,12 +88,19 @@ public class PowTests {
 /* > -oo */                     -Double.MAX_VALUE,
 /**/                            (double)Long.MIN_VALUE,
 /**/                            (double) -((1L<<53)+2L),
+                                -0x1.0p65,
+                                -0x1.0000000000001p64,
+                                -0x1.0p64,
 /**/                            (double) -((1L<<53)),
 /**/                            (double) -((1L<<53)-1L),
 /**/                            -((double)Integer.MAX_VALUE + 4.0),
 /**/                            (double)Integer.MIN_VALUE - 1.0,
 /**/                            (double)Integer.MIN_VALUE,
 /**/                            (double)Integer.MIN_VALUE + 1.0,
+                                -0x1.0p31 + 2.0,
+                                -0x1.0p31 + 1.0,
+                                -0x1.0000000000001p31,
+                                -0x1.0p31,
 /**/                            -Math.PI,
 /**/                            -3.0,
 /**/                            -Math.E,
@@ -103,6 +110,8 @@ public class PowTests {
                                 -1.0,
 /* > -1.0 */                    -0.9999999999999999, // nextAfter(-1.0, +oo)
 /* > -1.0 */                    -0.9999999999999998,
+                                -0x1.fffffp-1,
+                                -0x1.ffffeffffffffp-1,
 /**/                            -0.5,
 /**/                            -1.0/3.0,
 /* < 0.0 */                     -Double.MIN_VALUE,
@@ -111,6 +120,8 @@ public class PowTests {
 /* > 0.0 */                     +Double.MIN_VALUE,
 /**/                            +1.0/3.0,
 /**/                            +0.5,
+                                +0x1.ffffeffffffffp-1,
+                                +0x1.fffffp-1,
 /**/                            +0.9999999999999998,
 /* < +1.0 */                    +0.9999999999999999, // nextAfter(-1.0, +oo)
                                 +1.0,
@@ -120,6 +131,10 @@ public class PowTests {
 /**/                            +Math.E,
 /**/                            +3.0,
 /**/                            +Math.PI,
+                                0x1.0p31,
+                                0x1.0000000000001p31,
+                                0x1.0p31 + 1.0,
+                                0x1.0p31 + 2.0,
 /**/                            -(double)Integer.MIN_VALUE - 1.0,
 /**/                            -(double)Integer.MIN_VALUE,
 /**/                            -(double)Integer.MIN_VALUE + 1.0,
@@ -127,6 +142,9 @@ public class PowTests {
 /**/                            (double) ((1L<<53)-1L),
 /**/                            (double) ((1L<<53)),
 /**/                            (double) ((1L<<53)+2L),
+                                0x1.0p64,
+                                0x1.0000000000001p64,
+                                0x1.0p65,
 /**/                            -(double)Long.MIN_VALUE,
 /* < oo */                      Double.MAX_VALUE,
                                 Double.POSITIVE_INFINITY,
@@ -257,7 +275,7 @@ public class PowTests {
     }
 
     static boolean isFinite(double a) {
-        return (0.0*a  == 0);
+        return (0.0 * a  == 0);
     }
 
     /**
