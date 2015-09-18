@@ -61,15 +61,27 @@ public class TestAndnL {
         }
 
         public long longExpr(long src1, Expr.MemL src2) {
-            return ~src1 & src2.value;
+            if (src2 != null) {
+                return ~src1 & src2.value;
+            } else {
+                return 0;
+            }
         }
 
         public long longExpr(Expr.MemL src1, long src2) {
-            return ~src1.value & src2;
+            if (src1 != null) {
+                return ~src1.value & src2;
+            } else {
+                return 0;
+            }
         }
 
         public long longExpr(Expr.MemL src1, Expr.MemL src2) {
-            return ~src1.value & src2.value;
+            if (src1 != null && src2 != null) {
+                return ~src1.value & src2.value;
+            } else {
+                return 0;
+            }
         }
 
 
@@ -82,15 +94,27 @@ public class TestAndnL {
         }
 
         public long longExpr(long src1, Expr.MemL src2) {
-            return src1 & ~src2.value;
+            if (src2 != null) {
+                return src1 & ~src2.value;
+            } else {
+                return 0;
+            }
         }
 
         public long longExpr(Expr.MemL src1, long src2) {
-            return src1.value & ~src2;
+            if (src1 != null) {
+                return src1.value & ~src2;
+            } else {
+                return 0;
+            }
         }
 
         public long longExpr(Expr.MemL src1, Expr.MemL src2) {
-            return src1.value & ~src2.value;
+            if (src1 != null && src2 != null) {
+                return src1.value & ~src2.value;
+            } else {
+                return 0;
+            }
         }
 
     }

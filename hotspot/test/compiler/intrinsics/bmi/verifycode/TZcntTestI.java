@@ -50,6 +50,8 @@ public class TZcntTestI extends BmiIntrinsicBase.BmiTestCase_x64 {
     public static void main(String[] args) throws Exception {
         // j.l.Integer and Long should be loaded to allow a compilation of the methods that use their methods
         System.out.println("class java.lang.Integer should be loaded. Proof: " + Integer.class);
+        // Avoid uncommon traps.
+        System.out.println("Num trailing zeroes: " + new TestTzcntI.TzcntIExpr().intExpr(12341341));
         BmiIntrinsicBase.verifyTestCase(TZcntTestI::new, TestTzcntI.TzcntIExpr.class.getDeclaredMethods());
     }
 

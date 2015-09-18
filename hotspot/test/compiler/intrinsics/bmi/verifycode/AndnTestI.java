@@ -27,18 +27,18 @@
  * @library /testlibrary /test/lib /compiler/whitebox / ..
  * @modules java.base/sun.misc
  *          java.management
- * @build AddnTestI
+ * @build AndnTestI
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+UseBMI1Instructions AddnTestI
+ * @run main/bootclasspath -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                         -XX:+IgnoreUnrecognizedVMOptions -XX:+UseBMI1Instructions AndnTestI
  */
 
 import java.lang.reflect.Method;
 
-public class AddnTestI extends BmiIntrinsicBase.BmiTestCase {
+public class AndnTestI extends BmiIntrinsicBase.BmiTestCase {
 
-    protected AddnTestI(Method method) {
+    protected AndnTestI(Method method) {
         super(method);
         // from intel manual VEX.NDS.LZ.0F38.W0 F2 /r, example c4e260f2c2
         instrMask = new byte[]{
@@ -54,7 +54,7 @@ public class AddnTestI extends BmiIntrinsicBase.BmiTestCase {
     }
 
     public static void main(String[] args) throws Exception {
-        BmiIntrinsicBase.verifyTestCase(AddnTestI::new, TestAndnI.AndnIExpr.class.getDeclaredMethods());
-        BmiIntrinsicBase.verifyTestCase(AddnTestI::new, TestAndnI.AndnICommutativeExpr.class.getDeclaredMethods());
+        BmiIntrinsicBase.verifyTestCase(AndnTestI::new, TestAndnI.AndnIExpr.class.getDeclaredMethods());
+        BmiIntrinsicBase.verifyTestCase(AndnTestI::new, TestAndnI.AndnICommutativeExpr.class.getDeclaredMethods());
     }
 }

@@ -46,6 +46,8 @@ public class TZcntTestL extends TZcntTestI {
     public static void main(String[] args) throws Exception {
         // j.l.Integer and Long should be loaded to allow a compilation of the methods that use their methods
         System.out.println("classes java.lang.Long should be loaded. Proof: " + Long.class);
+        // Avoid uncommon traps.
+        System.out.println("Num trailing zeroes: " + new TestTzcntL.TzcntLExpr().longExpr(12341341));
         BmiIntrinsicBase.verifyTestCase(TZcntTestL::new, TestTzcntL.TzcntLExpr.class.getDeclaredMethods());
     }
 }
