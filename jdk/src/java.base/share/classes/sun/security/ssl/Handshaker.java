@@ -585,7 +585,7 @@ abstract class Handshaker {
      *
      * Does not check if the required server certificates are available.
      */
-    final static boolean isNegotiable(CipherSuiteList proposed, CipherSuite s) {
+    static final boolean isNegotiable(CipherSuiteList proposed, CipherSuite s) {
         return proposed.contains(s) && s.isNegotiable();
     }
 

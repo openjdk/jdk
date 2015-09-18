@@ -107,7 +107,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
     private Map<X509IssuerSerial,X509CRLEntry> revokedMap = new TreeMap<>();
     private List<X509CRLEntry> revokedList = new LinkedList<>();
     private CRLExtensions    extensions = null;
-    private final static boolean isExplicit = true;
+    private static final boolean isExplicit = true;
     private static final long YR_2050 = 2524636800000L;
 
     private boolean readOnly = false;
@@ -1286,7 +1286,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
     /**
      * Immutable X.509 Certificate Issuer DN and serial number pair
      */
-    private final static class X509IssuerSerial
+    private static final class X509IssuerSerial
             implements Comparable<X509IssuerSerial> {
         final X500Principal issuer;
         final BigInteger serial;

@@ -68,7 +68,7 @@ final class ServerNameExtension extends HelloExtension {
 
     // For backward compatibility, all future data structures associated with
     // new NameTypes MUST begin with a 16-bit length field.
-    final static int NAME_HEADER_LENGTH = 3;    // NameType: 1 byte
+    static final int NAME_HEADER_LENGTH = 3;    // NameType: 1 byte
                                                 // Name length: 2 bytes
     private Map<Integer, SNIServerName> sniMap;
     private int listLength;     // ServerNameList length

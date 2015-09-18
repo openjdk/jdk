@@ -425,7 +425,7 @@ public abstract class NumberFormat extends Format  {
      * @return the {@code NumberFormat} instance for general-purpose number
      * formatting
      */
-    public final static NumberFormat getInstance() {
+    public static final NumberFormat getInstance() {
         return getInstance(Locale.getDefault(Locale.Category.FORMAT), NUMBERSTYLE);
     }
 
@@ -454,7 +454,7 @@ public abstract class NumberFormat extends Format  {
      * @see java.util.Locale#getDefault(java.util.Locale.Category)
      * @see java.util.Locale.Category#FORMAT
      */
-    public final static NumberFormat getNumberInstance() {
+    public static final NumberFormat getNumberInstance() {
         return getInstance(Locale.getDefault(Locale.Category.FORMAT), NUMBERSTYLE);
     }
 
@@ -487,7 +487,7 @@ public abstract class NumberFormat extends Format  {
      * @return a number format for integer values
      * @since 1.4
      */
-    public final static NumberFormat getIntegerInstance() {
+    public static final NumberFormat getIntegerInstance() {
         return getInstance(Locale.getDefault(Locale.Category.FORMAT), INTEGERSTYLE);
     }
 
@@ -519,7 +519,7 @@ public abstract class NumberFormat extends Format  {
      * @see java.util.Locale#getDefault(java.util.Locale.Category)
      * @see java.util.Locale.Category#FORMAT
      */
-    public final static NumberFormat getCurrencyInstance() {
+    public static final NumberFormat getCurrencyInstance() {
         return getInstance(Locale.getDefault(Locale.Category.FORMAT), CURRENCYSTYLE);
     }
 
@@ -544,7 +544,7 @@ public abstract class NumberFormat extends Format  {
      * @see java.util.Locale#getDefault(java.util.Locale.Category)
      * @see java.util.Locale.Category#FORMAT
      */
-    public final static NumberFormat getPercentInstance() {
+    public static final NumberFormat getPercentInstance() {
         return getInstance(Locale.getDefault(Locale.Category.FORMAT), PERCENTSTYLE);
     }
 

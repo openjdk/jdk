@@ -411,7 +411,7 @@ public class ConstantPoolPatch {
         patchArray[index] = addSemis(className, memberName, signature);
     }
 
-    static private final int CONSTANT_MemberRef_MASK =
+    private static final int CONSTANT_MemberRef_MASK =
               CONSTANT_Fieldref
             | CONSTANT_Methodref
             | CONSTANT_InterfaceMethodref;

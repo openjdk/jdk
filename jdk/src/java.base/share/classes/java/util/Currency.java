@@ -110,13 +110,13 @@ public final class Currency implements Serializable {
      * Default fraction digits for this currency.
      * Set from currency data tables.
      */
-    transient private final int defaultFractionDigits;
+    private final transient int defaultFractionDigits;
 
     /**
      * ISO 4217 numeric code for this currency.
      * Set from currency data tables.
      */
-    transient private final int numericCode;
+    private final transient int numericCode;
 
 
     // class data: instance map

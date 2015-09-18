@@ -32,10 +32,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BufferForwarding {
-    private final static String A_STRING_BUFFER_VAL = "aStringBuffer";
-    private final static String A_STRING_BUILDER_VAL = "aStringBuilder";
-    private final static String A_STRING_VAL = "aString";
-    private final static String NON_EMPTY_VAL = "NonEmpty";
+    private static final String A_STRING_BUFFER_VAL = "aStringBuffer";
+    private static final String A_STRING_BUILDER_VAL = "aStringBuilder";
+    private static final String A_STRING_VAL = "aString";
+    private static final String NON_EMPTY_VAL = "NonEmpty";
 
     public BufferForwarding() {
         System.out.println( "Starting BufferForwarding");

@@ -46,16 +46,16 @@ import java.util.regex.Matcher;
 public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
 
     // the known security property, jdk.certpath.disabledAlgorithms
-    public final static String PROPERTY_CERTPATH_DISABLED_ALGS =
+    public static final String PROPERTY_CERTPATH_DISABLED_ALGS =
             "jdk.certpath.disabledAlgorithms";
 
     // the known security property, jdk.tls.disabledAlgorithms
-    public final static String PROPERTY_TLS_DISABLED_ALGS =
+    public static final String PROPERTY_TLS_DISABLED_ALGS =
             "jdk.tls.disabledAlgorithms";
 
-    private final static Map<String, String[]> disabledAlgorithmsMap =
+    private static final Map<String, String[]> disabledAlgorithmsMap =
                                                             new HashMap<>();
-    private final static Map<String, KeySizeConstraints> keySizeConstraintsMap =
+    private static final Map<String, KeySizeConstraints> keySizeConstraintsMap =
                                                             new HashMap<>();
 
     private final String[] disabledAlgorithms;
@@ -80,7 +80,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
     }
 
     @Override
-    final public boolean permits(Set<CryptoPrimitive> primitives,
+    public final boolean permits(Set<CryptoPrimitive> primitives,
             String algorithm, AlgorithmParameters parameters) {
 
         if (primitives == null || primitives.isEmpty()) {
@@ -92,12 +92,12 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
     }
 
     @Override
-    final public boolean permits(Set<CryptoPrimitive> primitives, Key key) {
+    public final boolean permits(Set<CryptoPrimitive> primitives, Key key) {
         return checkConstraints(primitives, "", key, null);
     }
 
     @Override
-    final public boolean permits(Set<CryptoPrimitive> primitives,
+    public final boolean permits(Set<CryptoPrimitive> primitives,
             String algorithm, Key key, AlgorithmParameters parameters) {
 
         if (algorithm == null || algorithm.length() == 0) {

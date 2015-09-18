@@ -24,7 +24,7 @@
 import java.util.HashMap;
 import java.util.Locale;
 
-final public class POSIX_Unicode {
+public final class POSIX_Unicode {
 
     public static boolean isAlpha(int ch) {
         return Character.isAlphabetic(ch);

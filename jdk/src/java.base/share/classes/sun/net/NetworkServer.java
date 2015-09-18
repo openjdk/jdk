@@ -62,7 +62,7 @@ public class NetworkServer implements Runnable, Cloneable {
         return clientSocket != null;
     }
 
-    final public void run() {
+    public final void run() {
         if (serverSocket != null) {
             Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
             // System.out.print("Server starts " + serverSocket + "\n");
@@ -106,7 +106,7 @@ public class NetworkServer implements Runnable, Cloneable {
 
     /** Start a server on port <i>port</i>.  It will call serviceRequest()
         for each new connection. */
-    final public void startServer(int port) throws IOException {
+    public final void startServer(int port) throws IOException {
         serverSocket = new ServerSocket(port, 50);
         serverInstance = new ManagedLocalsThread(this);
         serverInstance.start();

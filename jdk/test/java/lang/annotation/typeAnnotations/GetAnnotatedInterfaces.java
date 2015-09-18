@@ -76,5 +76,5 @@ public class GetAnnotatedInterfaces {
 
     interface If {}
 
-    static abstract class Clz {}
+    abstract static class Clz {}
 }

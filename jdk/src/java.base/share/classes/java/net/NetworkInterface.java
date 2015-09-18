@@ -400,16 +400,16 @@ public final class NetworkInterface {
                 false);
     }
 
-    private native static NetworkInterface[] getAll()
+    private static native NetworkInterface[] getAll()
         throws SocketException;
 
-    private native static NetworkInterface getByName0(String name)
+    private static native NetworkInterface getByName0(String name)
         throws SocketException;
 
-    private native static NetworkInterface getByIndex0(int index)
+    private static native NetworkInterface getByIndex0(int index)
         throws SocketException;
 
-    private native static NetworkInterface getByInetAddress0(InetAddress addr)
+    private static native NetworkInterface getByInetAddress0(InetAddress addr)
         throws SocketException;
 
     /**
@@ -525,12 +525,12 @@ public final class NetworkInterface {
         return virtual;
     }
 
-    private native static boolean isUp0(String name, int ind) throws SocketException;
-    private native static boolean isLoopback0(String name, int ind) throws SocketException;
-    private native static boolean supportsMulticast0(String name, int ind) throws SocketException;
-    private native static boolean isP2P0(String name, int ind) throws SocketException;
-    private native static byte[] getMacAddr0(byte[] inAddr, String name, int ind) throws SocketException;
-    private native static int getMTU0(String name, int ind) throws SocketException;
+    private static native boolean isUp0(String name, int ind) throws SocketException;
+    private static native boolean isLoopback0(String name, int ind) throws SocketException;
+    private static native boolean supportsMulticast0(String name, int ind) throws SocketException;
+    private static native boolean isP2P0(String name, int ind) throws SocketException;
+    private static native byte[] getMacAddr0(byte[] inAddr, String name, int ind) throws SocketException;
+    private static native int getMTU0(String name, int ind) throws SocketException;
 
     /**
      * Compares this object against the specified object.

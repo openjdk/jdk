@@ -111,7 +111,7 @@ public class Basic {
     // Convenience methods for creating threads that call arrive,
     // awaitAdvance, arriveAndAwaitAdvance, awaitAdvanceInterruptibly
     //----------------------------------------------------------------
-    private static abstract class Arriver extends Thread {
+    private abstract static class Arriver extends Thread {
         static AtomicInteger count = new AtomicInteger(1);
 
         Arriver() {
@@ -131,7 +131,7 @@ public class Basic {
         public int phase() { return this.phase; }
     }
 
-    private static abstract class Awaiter extends Arriver {
+    private abstract static class Awaiter extends Arriver {
         Awaiter() { super("Awaiter"); }
         Awaiter(String name) { super(name); }
     }

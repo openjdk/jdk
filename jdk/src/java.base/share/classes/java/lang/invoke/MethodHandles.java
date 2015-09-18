@@ -147,7 +147,7 @@ public class MethodHandles {
         return lookup.revealDirect(target).reflectAs(expected, lookup);
     }
     // Copied from AccessibleObject, as used by Method.setAccessible, etc.:
-    static final private java.security.Permission ACCESS_PERMISSION =
+    private static final java.security.Permission ACCESS_PERMISSION =
         new ReflectPermission("suppressAccessChecks");
 
     /**
@@ -1884,7 +1884,7 @@ return invoker;
      *                  or if the resulting method handle's type would have
      *          <a href="MethodHandle.html#maxarity">too many parameters</a>
      */
-    static public
+    public static
     MethodHandle spreadInvoker(MethodType type, int leadingArgCount) {
         if (leadingArgCount < 0 || leadingArgCount > type.parameterCount())
             throw newIllegalArgumentException("bad argument count", leadingArgCount);
@@ -1927,7 +1927,7 @@ return invoker;
      * @throws IllegalArgumentException if the resulting method handle's type would have
      *          <a href="MethodHandle.html#maxarity">too many parameters</a>
      */
-    static public
+    public static
     MethodHandle exactInvoker(MethodType type) {
         return type.invokers().exactInvoker();
     }
@@ -1966,7 +1966,7 @@ return invoker;
      * @throws IllegalArgumentException if the resulting method handle's type would have
      *          <a href="MethodHandle.html#maxarity">too many parameters</a>
      */
-    static public
+    public static
     MethodHandle invoker(MethodType type) {
         return type.invokers().genericInvoker();
     }
@@ -2322,7 +2322,7 @@ assert((int)twice.invokeExact(21) == 42);
         return MethodHandleImpl.makeIntrinsic(mtype, lform, Intrinsic.ZERO);
     }
 
-    synchronized private static MethodHandle setCachedMethodHandle(MethodHandle[] cache, int pos, MethodHandle value) {
+    private static synchronized MethodHandle setCachedMethodHandle(MethodHandle[] cache, int pos, MethodHandle value) {
         // Simulate a CAS, to avoid racy duplication of results.
         MethodHandle prev = cache[pos];
         if (prev != null) return prev;
