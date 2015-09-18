@@ -159,7 +159,9 @@ public class GSSNameElement implements GSSNameSpi {
             int atPos = krbName.lastIndexOf('@');
             if (atPos != -1) {
                 String atRealm = krbName.substring(atPos);
-                if (nameType.equals(GSSUtil.NT_GSS_KRB5_PRINCIPAL)
+                // getNativeNameType() can modify NT_GSS_KRB5_PRINCIPAL to null
+                if ((nameType == null
+                            || nameType.equals(GSSUtil.NT_GSS_KRB5_PRINCIPAL))
                         && new String(nameBytes).endsWith(atRealm)) {
                     // Created from Kerberos name with realm, no need to check
                 } else {
