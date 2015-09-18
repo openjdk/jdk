@@ -35,6 +35,7 @@ class CompilerOracle : AllStatic {
  private:
   static bool _quiet;
   static void print_tip();
+  static void print_parse_error(const char*&  error_msg, char* original_line);
 
  public:
 
