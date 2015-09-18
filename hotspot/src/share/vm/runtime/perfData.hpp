@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -668,6 +668,7 @@ class PerfDataManager : AllStatic {
     static PerfDataList* _sampled;
     static PerfDataList* _constants;
     static const char* _name_spaces[];
+    static volatile bool _has_PerfData;
 
     // add a PerfData item to the list(s) of know PerfData objects
     static void add_item(PerfData* p, bool sampled);
@@ -869,6 +870,7 @@ class PerfDataManager : AllStatic {
     }
 
     static void destroy();
+    static bool has_PerfData() { return _has_PerfData; }
 };
 
 // Useful macros to create the performance counters

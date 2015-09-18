@@ -633,9 +633,9 @@ create_jdk: copy_jdk update_jdk
 
 update_jdk: export_product_jdk export_fastdebug_jdk test_jdk
 
-copy_jdk: $(JDK_IMAGE_DIR)/jre/lib/rt.jar
+copy_jdk: $(JDK_IMAGE_DIR)/bin/java
 
-$(JDK_IMAGE_DIR)/jre/lib/rt.jar:
+$(JDK_IMAGE_DIR)/bin/java:
 	$(RM) -r $(JDK_IMAGE_DIR)
 	$(MKDIR) -p $(JDK_IMAGE_DIR)
 	($(CD) $(JDK_IMPORT_PATH) && \

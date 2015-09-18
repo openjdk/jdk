@@ -60,7 +60,7 @@ class JvmtiTagMap :  public CHeapObj<mtInternal> {
   inline Mutex* lock()                      { return &_lock; }
   inline JvmtiEnv* env() const              { return _env; }
 
-  void do_weak_oops(BoolObjectClosure* is_alive, OopClosure* f);
+  size_t do_weak_oops(BoolObjectClosure* is_alive, OopClosure* f);
 
   // iterate over all entries in this tag map
   void entry_iterate(JvmtiTagHashmapEntryClosure* closure);
@@ -122,8 +122,8 @@ class JvmtiTagMap :  public CHeapObj<mtInternal> {
                                    jint* count_ptr, jobject** object_result_ptr,
                                    jlong** tag_result_ptr);
 
-  static void weak_oops_do(
-      BoolObjectClosure* is_alive, OopClosure* f) NOT_JVMTI_RETURN;
+  static size_t weak_oops_do(BoolObjectClosure* is_alive,
+                             OopClosure* f) NOT_JVMTI_RETURN_(0);
 };
 
 #endif // SHARE_VM_PRIMS_JVMTITAGMAP_HPP

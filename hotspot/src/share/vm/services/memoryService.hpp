@@ -80,10 +80,10 @@ private:
   }
 
 
-  static void add_psYoung_memory_pool(PSYoungGen* gen,
+  static void add_psYoung_memory_pool(PSYoungGen* young_gen,
                                       MemoryManager* major_mgr,
                                       MemoryManager* minor_mgr);
-  static void add_psOld_memory_pool(PSOldGen* gen,
+  static void add_psOld_memory_pool(PSOldGen* old_gen,
                                     MemoryManager* mgr);
 
   static void add_g1YoungGen_memory_pool(G1CollectedHeap* g1h,
@@ -97,7 +97,7 @@ private:
                                bool is_heap,
                                size_t max_size,
                                bool support_usage_threshold);
-  static MemoryPool* add_survivor_spaces(DefNewGeneration* gen,
+  static MemoryPool* add_survivor_spaces(DefNewGeneration* young_gen,
                                          const char* name,
                                          bool is_heap,
                                          size_t max_size,
@@ -161,7 +161,6 @@ public:
                      bool recordAccumulatedGCTime,
                      bool recordGCEndTime, bool countCollection,
                      GCCause::Cause cause);
-
 
   static void oops_do(OopClosure* f);
 

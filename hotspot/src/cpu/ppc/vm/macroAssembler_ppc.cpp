@@ -2614,7 +2614,7 @@ void MacroAssembler::serialize_memory(Register thread, Register tmp1, Register t
 void MacroAssembler::card_write_barrier_post(Register Rstore_addr, Register Rnew_val, Register Rtmp) {
   CardTableModRefBS* bs =
     barrier_set_cast<CardTableModRefBS>(Universe::heap()->barrier_set());
-  assert(bs->kind() == BarrierSet::CardTableModRef ||
+  assert(bs->kind() == BarrierSet::CardTableForRS ||
          bs->kind() == BarrierSet::CardTableExtension, "wrong barrier");
 #ifdef ASSERT
   cmpdi(CCR0, Rnew_val, 0);
