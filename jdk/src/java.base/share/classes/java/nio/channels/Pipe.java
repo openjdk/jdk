@@ -56,7 +56,7 @@ public abstract class Pipe {
      *
      * @since 1.4
      */
-    public static abstract class SourceChannel
+    public abstract static class SourceChannel
         extends AbstractSelectableChannel
         implements ReadableByteChannel, ScatteringByteChannel
     {
@@ -90,7 +90,7 @@ public abstract class Pipe {
      *
      * @since 1.4
      */
-    public static abstract class SinkChannel
+    public abstract static class SinkChannel
         extends AbstractSelectableChannel
         implements WritableByteChannel, GatheringByteChannel
     {

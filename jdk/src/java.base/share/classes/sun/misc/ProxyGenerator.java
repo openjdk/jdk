@@ -305,13 +305,13 @@ public class ProxyGenerator {
     // end of constants copied from sun.tools.java.RuntimeConstants
 
     /** name of the superclass of proxy classes */
-    private final static String superclassName = "java/lang/reflect/Proxy";
+    private static final String superclassName = "java/lang/reflect/Proxy";
 
     /** name of field for storing a proxy instance's invocation handler */
-    private final static String handlerFieldName = "h";
+    private static final String handlerFieldName = "h";
 
     /** debugging flag for saving generated class files */
-    private final static boolean saveGeneratedFiles =
+    private static final boolean saveGeneratedFiles =
         java.security.AccessController.doPrivileged(
             new GetBooleanAction(
                 "sun.misc.ProxyGenerator.saveGeneratedFiles")).booleanValue();
@@ -1913,7 +1913,7 @@ public class ProxyGenerator {
          * that can be stored in the "pool" list; its purpose is to define a
          * common method for writing constant pool entries to a class file.
          */
-        private static abstract class Entry {
+        private abstract static class Entry {
             public abstract void write(DataOutputStream out)
                 throws IOException;
         }

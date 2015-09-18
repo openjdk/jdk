@@ -89,7 +89,7 @@ public class OfferRemoveLoops {
             protected boolean quittingTime(long i) {
                 return (i % 1024) == 0 && quittingTime();
             }
-            abstract protected void realRun();
+            protected abstract void realRun();
             public void run() {
                 try { realRun(); } catch (Throwable t) { unexpected(t); }
             }

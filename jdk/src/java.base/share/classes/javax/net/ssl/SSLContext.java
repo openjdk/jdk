@@ -37,11 +37,13 @@ import sun.security.jca.GetInstance;
  * secure random bytes.
  *
  * <p> Every implementation of the Java platform is required to support the
- * following standard {@code SSLContext} protocol:
+ * following standard {@code SSLContext} protocols:
  * <ul>
  * <li>{@code TLSv1}</li>
+ * <li>{@code TLSv1.1}</li>
+ * <li>{@code TLSv1.2}</li>
  * </ul>
- * This protocol is described in the <a href=
+ * These protocols are described in the <a href=
  * "{@docRoot}/../technotes/guides/security/StandardNames.html#SSLContext">
  * SSLContext section</a> of the
  * Java Cryptography Architecture Standard Algorithm Name Documentation.

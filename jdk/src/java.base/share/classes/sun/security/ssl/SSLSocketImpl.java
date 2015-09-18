@@ -64,7 +64,7 @@ import sun.misc.SharedSecrets;
  *
  * @author David Brownell
  */
-final public class SSLSocketImpl extends BaseSSLSocketImpl {
+public final class SSLSocketImpl extends BaseSSLSocketImpl {
 
     /*
      * ERROR HANDLING GUIDELINES
@@ -281,9 +281,9 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      * This is necessary so that processing of close_notify alerts
      * from the peer are handled properly.
      */
-    final private Object        handshakeLock = new Object();
+    private final Object        handshakeLock = new Object();
     final ReentrantLock         writeLock = new ReentrantLock();
-    final private Object        readLock = new Object();
+    private final Object        readLock = new Object();
 
     InputRecord                 inputRecord;
     OutputRecord                outputRecord;
@@ -673,11 +673,11 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
         initHandshaker();
     }
 
-    synchronized private int getConnectionState() {
+    private synchronized int getConnectionState() {
         return connectionState;
     }
 
-    synchronized private void setConnectionState(int state) {
+    private synchronized void setConnectionState(int state) {
         connectionState = state;
     }
 
@@ -1802,7 +1802,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      *          reserved for exceptions like timeout; otherwise, the socket
      *          will be closed, no further communications could be done.
      */
-    synchronized private void handleException(Exception e, boolean resumable)
+    private synchronized void handleException(Exception e, boolean resumable)
         throws IOException {
         if ((debug != null) && Debug.isOn("ssl")) {
             System.out.println(Thread.currentThread().getName() +
@@ -2114,7 +2114,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
     // Please NOTE that this method MUST be called before calling to
     // SSLSocket.setSSLParameters(). Otherwise, the {@code host} parameter
     // may override SNIHostName in the customized server name indication.
-    synchronized public void setHost(String host) {
+    public synchronized void setHost(String host) {
         this.host = host;
         this.serverNames =
             Utilities.addToSNIServerNameList(this.serverNames, this.host);
@@ -2126,7 +2126,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      * transit, and will usually have been confidentiality protected.
      */
     @Override
-    synchronized public InputStream getInputStream() throws IOException {
+    public synchronized InputStream getInputStream() throws IOException {
         if (isClosed()) {
             throw new SocketException("Socket is closed");
         }
@@ -2148,7 +2148,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      * will usually be confidentiality protected.
      */
     @Override
-    synchronized public OutputStream getOutputStream() throws IOException {
+    public synchronized OutputStream getOutputStream() throws IOException {
         if (isClosed()) {
             throw new SocketException("Socket is closed");
         }
@@ -2192,7 +2192,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
     }
 
     @Override
-    synchronized public SSLSession getHandshakeSession() {
+    public synchronized SSLSession getHandshakeSession() {
         return handshakeSession;
     }
 
@@ -2213,7 +2213,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      * we will need to wait for the next handshake.
      */
     @Override
-    synchronized public void setEnableSessionCreation(boolean flag) {
+    public synchronized void setEnableSessionCreation(boolean flag) {
         enableSessionCreation = flag;
 
         if ((handshaker != null) && !handshaker.activated()) {
@@ -2226,7 +2226,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      * sessions.
      */
     @Override
-    synchronized public boolean getEnableSessionCreation() {
+    public synchronized boolean getEnableSessionCreation() {
         return enableSessionCreation;
     }
 
@@ -2240,7 +2240,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      * we will need to wait for the next handshake.
      */
     @Override
-    synchronized public void setNeedClientAuth(boolean flag) {
+    public synchronized void setNeedClientAuth(boolean flag) {
         doClientAuth = (flag ? ClientAuthType.CLIENT_AUTH_REQUIRED :
                 ClientAuthType.CLIENT_AUTH_NONE);
 
@@ -2252,7 +2252,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
     }
 
     @Override
-    synchronized public boolean getNeedClientAuth() {
+    public synchronized boolean getNeedClientAuth() {
         return (doClientAuth == ClientAuthType.CLIENT_AUTH_REQUIRED);
     }
 
@@ -2265,7 +2265,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      * we will need to wait for the next handshake.
      */
     @Override
-    synchronized public void setWantClientAuth(boolean flag) {
+    public synchronized void setWantClientAuth(boolean flag) {
         doClientAuth = (flag ? ClientAuthType.CLIENT_AUTH_REQUESTED :
                 ClientAuthType.CLIENT_AUTH_NONE);
 
@@ -2277,7 +2277,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
     }
 
     @Override
-    synchronized public boolean getWantClientAuth() {
+    public synchronized boolean getWantClientAuth() {
         return (doClientAuth == ClientAuthType.CLIENT_AUTH_REQUESTED);
     }
 
@@ -2289,7 +2289,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      */
     @Override
     @SuppressWarnings("fallthrough")
-    synchronized public void setUseClientMode(boolean flag) {
+    public synchronized void setUseClientMode(boolean flag) {
         switch (connectionState) {
 
         case cs_START:
@@ -2363,7 +2363,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
     }
 
     @Override
-    synchronized public boolean getUseClientMode() {
+    public synchronized boolean getUseClientMode() {
         return !roleIsServer;
     }
 
@@ -2393,7 +2393,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      * @param suites Names of all the cipher suites to enable.
      */
     @Override
-    synchronized public void setEnabledCipherSuites(String[] suites) {
+    public synchronized void setEnabledCipherSuites(String[] suites) {
         enabledCipherSuites = new CipherSuiteList(suites);
         if ((handshaker != null) && !handshaker.activated()) {
             handshaker.setEnabledCipherSuites(enabledCipherSuites);
@@ -2411,7 +2411,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      * @return an array of cipher suite names
      */
     @Override
-    synchronized public String[] getEnabledCipherSuites() {
+    public synchronized String[] getEnabledCipherSuites() {
         return enabledCipherSuites.toStringArray();
     }
 
@@ -2436,7 +2436,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      *  named by the parameter is not supported.
      */
     @Override
-    synchronized public void setEnabledProtocols(String[] protocols) {
+    public synchronized void setEnabledProtocols(String[] protocols) {
         enabledProtocols = new ProtocolList(protocols);
         if ((handshaker != null) && !handshaker.activated()) {
             handshaker.setEnabledProtocols(enabledProtocols);
@@ -2444,7 +2444,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
     }
 
     @Override
-    synchronized public String[] getEnabledProtocols() {
+    public synchronized String[] getEnabledProtocols() {
         return enabledProtocols.toStringArray();
     }
 
@@ -2501,7 +2501,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      * Returns the SSLParameters in effect for this SSLSocket.
      */
     @Override
-    synchronized public SSLParameters getSSLParameters() {
+    public synchronized SSLParameters getSSLParameters() {
         SSLParameters params = super.getSSLParameters();
 
         // the super implementation does not handle the following parameters
@@ -2521,7 +2521,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      * Applies SSLParameters to this socket.
      */
     @Override
-    synchronized public void setSSLParameters(SSLParameters params) {
+    public synchronized void setSSLParameters(SSLParameters params) {
         super.setSSLParameters(params);
 
         // the super implementation does not handle the following parameters

@@ -51,7 +51,7 @@ public class ReferenceQueue<T> {
     static ReferenceQueue<Object> NULL = new Null<>();
     static ReferenceQueue<Object> ENQUEUED = new Null<>();
 
-    static private class Lock { };
+    private static class Lock { };
     private Lock lock = new Lock();
     private volatile Reference<? extends T> head = null;
     private long queueLength = 0;

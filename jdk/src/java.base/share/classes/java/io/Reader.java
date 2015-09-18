@@ -157,7 +157,7 @@ public abstract class Reader implements Readable, Closeable {
      *             If {@code off} is negative, or {@code len} is negative,
      *             or {@code len} is greater than {@code cbuf.length - off}
      */
-    abstract public int read(char cbuf[], int off, int len) throws IOException;
+    public abstract int read(char cbuf[], int off, int len) throws IOException;
 
     /** Maximum skip-buffer size */
     private static final int maxSkipBufferSize = 8192;
@@ -260,6 +260,6 @@ public abstract class Reader implements Readable, Closeable {
      *
      * @exception  IOException  If an I/O error occurs
      */
-     abstract public void close() throws IOException;
+     public abstract void close() throws IOException;
 
 }

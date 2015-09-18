@@ -116,10 +116,10 @@ public class KeyGenerator {
 
     // see java.security.KeyPairGenerator for failover notes
 
-    private final static int I_NONE   = 1;
-    private final static int I_RANDOM = 2;
-    private final static int I_PARAMS = 3;
-    private final static int I_SIZE   = 4;
+    private static final int I_NONE   = 1;
+    private static final int I_RANDOM = 2;
+    private static final int I_PARAMS = 3;
+    private static final int I_SIZE   = 4;
 
     // The provider
     private Provider provider;

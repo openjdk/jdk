@@ -61,7 +61,7 @@ public class AccessibleObject implements AnnotatedElement {
      * has sufficient privilege to defeat Java language access
      * control checks.
      */
-    static final private java.security.Permission ACCESS_PERMISSION =
+    private static final java.security.Permission ACCESS_PERMISSION =
         new ReflectPermission("suppressAccessChecks");
 
     /**

@@ -70,7 +70,7 @@ public class HttpClient extends NetworkClient {
     /** return default port number (subclasses may override) */
     protected int getDefaultPort () { return httpPortNumber; }
 
-    static private int getDefaultPort(String proto) {
+    private static int getDefaultPort(String proto) {
         if ("http".equalsIgnoreCase(proto))
             return 80;
         if ("https".equalsIgnoreCase(proto))
@@ -211,7 +211,7 @@ public class HttpClient extends NetworkClient {
         openServer();
     }
 
-    static protected Proxy newHttpProxy(String proxyHost, int proxyPort,
+    protected static Proxy newHttpProxy(String proxyHost, int proxyPort,
                                       String proto) {
         if (proxyHost == null || proto == null)
             return Proxy.NO_PROXY;

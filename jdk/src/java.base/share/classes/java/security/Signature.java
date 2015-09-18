@@ -102,6 +102,7 @@ import sun.security.jca.GetInstance.Instance;
  * following standard {@code Signature} algorithms:
  * <ul>
  * <li>{@code SHA1withDSA}</li>
+ * <li>{@code SHA256withDSA}</li>
  * <li>{@code SHA1withRSA}</li>
  * <li>{@code SHA256withRSA}</li>
  * </ul>
@@ -140,19 +141,19 @@ public abstract class Signature extends SignatureSpi {
      * Possible {@link #state} value, signifying that
      * this signature object has not yet been initialized.
      */
-    protected final static int UNINITIALIZED = 0;
+    protected static final int UNINITIALIZED = 0;
 
     /**
      * Possible {@link #state} value, signifying that
      * this signature object has been initialized for signing.
      */
-    protected final static int SIGN = 2;
+    protected static final int SIGN = 2;
 
     /**
      * Possible {@link #state} value, signifying that
      * this signature object has been initialized for verification.
      */
-    protected final static int VERIFY = 3;
+    protected static final int VERIFY = 3;
 
     /**
      * Current state of this signature object.
@@ -173,13 +174,13 @@ public abstract class Signature extends SignatureSpi {
     }
 
     // name of the special signature alg
-    private final static String RSA_SIGNATURE = "NONEwithRSA";
+    private static final String RSA_SIGNATURE = "NONEwithRSA";
 
     // name of the equivalent cipher alg
-    private final static String RSA_CIPHER = "RSA/ECB/PKCS1Padding";
+    private static final String RSA_CIPHER = "RSA/ECB/PKCS1Padding";
 
     // all the services we need to lookup for compatibility with Cipher
-    private final static List<ServiceId> rsaIds = Arrays.asList(
+    private static final List<ServiceId> rsaIds = Arrays.asList(
         new ServiceId[] {
             new ServiceId("Signature", "NONEwithRSA"),
             new ServiceId("Cipher", "RSA/ECB/PKCS1Padding"),
@@ -262,7 +263,7 @@ public abstract class Signature extends SignatureSpi {
         return sig;
     }
 
-    private final static Map<String,Boolean> signatureInfo;
+    private static final Map<String,Boolean> signatureInfo;
 
     static {
         signatureInfo = new ConcurrentHashMap<>();
@@ -1146,9 +1147,9 @@ public abstract class Signature extends SignatureSpi {
             }
         }
 
-        private final static int I_PUB     = 1;
-        private final static int I_PRIV    = 2;
-        private final static int I_PRIV_SR = 3;
+        private static final int I_PUB     = 1;
+        private static final int I_PRIV    = 2;
+        private static final int I_PRIV_SR = 3;
 
         private void init(SignatureSpi spi, int type, Key  key,
                 SecureRandom random) throws InvalidKeyException {

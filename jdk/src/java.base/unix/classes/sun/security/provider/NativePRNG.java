@@ -331,10 +331,10 @@ public final class NativePRNG extends SecureRandomSpi {
         // we buffer data we read from the "next" file for efficiency,
         // but we limit the lifetime to avoid using stale bits
         // lifetime in ms, currently 100 ms (0.1 s)
-        private final static long MAX_BUFFER_TIME = 100;
+        private static final long MAX_BUFFER_TIME = 100;
 
         // size of the "next" buffer
-        private final static int BUFFER_SIZE = 32;
+        private static final int BUFFER_SIZE = 32;
 
         // Holder for the seedFile.  Used if we ever add seed material.
         File seedFile;

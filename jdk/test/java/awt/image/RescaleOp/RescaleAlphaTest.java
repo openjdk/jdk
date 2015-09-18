@@ -22,8 +22,8 @@
  */
 /**
  * @test
- * @bug 8080287
- * @run RescaleAlphaTest
+ * @bug 8080287 8136354
+ * @run main RescaleAlphaTest
  * @summary RescaleOp with scaleFactor/alpha should copy alpha to destination
  * channel
  */

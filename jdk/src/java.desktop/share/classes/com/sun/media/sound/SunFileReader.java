@@ -52,10 +52,6 @@ abstract class SunFileReader extends AudioFileReader {
         try {
             return getAudioFileFormatImpl(stream);
         } finally {
-            // According to specification the following is not strictly
-            // necessary, if we got correct format. But it was implemented like
-            // that in 1.3.0 - 1.8. So I leave it as it was, but it seems
-            // specification should be updated.
             stream.reset();
         }
     }

@@ -51,7 +51,7 @@ public class StressTest {
         "U.S.A.", // StressOut_en_CA.properties is empty.
         "Korea"
     };
-    final static long startTime = System.currentTimeMillis();
+    static final long startTime = System.currentTimeMillis();
 
     // increment each element when one getBundle call is done.
     static AtomicIntegerArray counters;
