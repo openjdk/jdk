@@ -1157,7 +1157,7 @@ bool CompileBroker::compilation_is_prohibited(methodHandle method, int osr_bci, 
       method->print_short_name(tty);
       tty->cr();
     }
-    method->set_not_compilable(CompLevel_all, !quietly, "excluded by CompilerOracle");
+    method->set_not_compilable(CompLevel_all, !quietly, "excluded by CompileCommand");
   }
 
   return false;

@@ -3135,7 +3135,7 @@ public:
                                                                             \
   develop(intx, MaxForceInlineLevel, 100,                                   \
           "maximum number of nested calls that are forced for inlining "    \
-          "(using CompilerOracle or marked w/ @ForceInline)")               \
+          "(using CompileCommand or marked w/ @ForceInline)")               \
                                                                             \
   product_pd(intx, InlineSmallCode,                                         \
           "Only inline already compiled methods if their code size is "     \
