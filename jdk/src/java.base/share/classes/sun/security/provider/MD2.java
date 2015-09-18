@@ -109,7 +109,7 @@ public final class MD2 extends DigestBase {
     }
 
     // substitution table derived from Pi. Copied from the RFC.
-    private final static int[] S = new int[] {
+    private static final int[] S = new int[] {
         41, 46, 67, 201, 162, 216, 124, 1, 61, 54, 84, 161, 236, 240, 6,
         19, 98, 167, 5, 243, 192, 199, 115, 140, 152, 147, 43, 217, 188,
         76, 130, 202, 30, 155, 87, 60, 253, 212, 224, 22, 103, 66, 111, 24,
@@ -133,7 +133,7 @@ public final class MD2 extends DigestBase {
     // digest padding. 17 element array.
     // padding[0] is null
     // padding[i] is an array of i time the byte value i (i = 1..16)
-    private final static byte[][] PADDING;
+    private static final byte[][] PADDING;
 
     static {
         PADDING = new byte[17][];

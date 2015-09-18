@@ -31,7 +31,7 @@ import java.util.*;
 
 public class Bug6190861 {
 
-    static public void main(String[] args) {
+    public static void main(String[] args) {
         Locale reservedLocale = Locale.getDefault();
         try {
             Locale.setDefault(new Locale("en", "US"));

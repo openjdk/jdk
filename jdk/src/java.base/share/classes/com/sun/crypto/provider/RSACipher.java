@@ -66,23 +66,23 @@ import sun.security.util.KeyUtil;
 public final class RSACipher extends CipherSpi {
 
     // constant for an empty byte array
-    private final static byte[] B0 = new byte[0];
+    private static final byte[] B0 = new byte[0];
 
     // mode constant for public key encryption
-    private final static int MODE_ENCRYPT = 1;
+    private static final int MODE_ENCRYPT = 1;
     // mode constant for private key decryption
-    private final static int MODE_DECRYPT = 2;
+    private static final int MODE_DECRYPT = 2;
     // mode constant for private key encryption (signing)
-    private final static int MODE_SIGN    = 3;
+    private static final int MODE_SIGN    = 3;
     // mode constant for public key decryption (verifying)
-    private final static int MODE_VERIFY  = 4;
+    private static final int MODE_VERIFY  = 4;
 
     // constant for raw RSA
-    private final static String PAD_NONE  = "NoPadding";
+    private static final String PAD_NONE  = "NoPadding";
     // constant for PKCS#1 v1.5 RSA
-    private final static String PAD_PKCS1 = "PKCS1Padding";
+    private static final String PAD_PKCS1 = "PKCS1Padding";
     // constant for PKCS#2 v2.0 OAEP with MGF1
-    private final static String PAD_OAEP_MGF1  = "OAEP";
+    private static final String PAD_OAEP_MGF1  = "OAEP";
 
     // current mode, one of MODE_* above. Set when init() is called
     private int mode;

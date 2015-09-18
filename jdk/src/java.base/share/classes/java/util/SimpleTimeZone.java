@@ -1125,8 +1125,8 @@ public class SimpleTimeZone extends TimeZone {
      * be streamed out for compatibility with JDK 1.1.
      */
     private final byte monthLength[] = staticMonthLength;
-    private final static byte staticMonthLength[] = {31,28,31,30,31,30,31,31,30,31,30,31};
-    private final static byte staticLeapMonthLength[] = {31,29,31,30,31,30,31,31,30,31,30,31};
+    private static final byte staticMonthLength[] = {31,28,31,30,31,30,31,31,30,31,30,31};
+    private static final byte staticLeapMonthLength[] = {31,29,31,30,31,30,31,31,30,31,30,31};
 
     /**
      * Variables specifying the mode of the start rule.  Takes the following
@@ -1278,7 +1278,7 @@ public class SimpleTimeZone extends TimeZone {
      */
     private int serialVersionOnStream = currentSerialVersion;
 
-    synchronized private void invalidateCache() {
+    private synchronized void invalidateCache() {
         cacheYear = startYear - 1;
         cacheStart = cacheEnd = 0;
     }

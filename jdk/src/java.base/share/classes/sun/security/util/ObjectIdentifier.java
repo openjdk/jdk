@@ -50,7 +50,7 @@ import java.util.Arrays;
  * @author Hemma Prafullchandra
  */
 
-final public
+public final
 class ObjectIdentifier implements Serializable
 {
     /**
@@ -104,7 +104,7 @@ class ObjectIdentifier implements Serializable
     private int         componentLen = -1;            // how much is used.
 
     // Is the components field calculated?
-    transient private boolean   componentsCalculated = false;
+    private transient boolean   componentsCalculated = false;
 
     private void readObject(ObjectInputStream is)
             throws IOException, ClassNotFoundException {

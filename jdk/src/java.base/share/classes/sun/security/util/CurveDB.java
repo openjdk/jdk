@@ -40,10 +40,10 @@ import java.util.regex.Pattern;
  * @author  Andreas Sterbenz
  */
 public class CurveDB {
-    private final static int P  = 1; // prime curve
-    private final static int B  = 2; // binary curve
-    private final static int PD = 5; // prime curve, mark as default
-    private final static int BD = 6; // binary curve, mark as default
+    private static final int P  = 1; // prime curve
+    private static final int B  = 2; // binary curve
+    private static final int PD = 5; // prime curve, mark as default
+    private static final int BD = 6; // binary curve, mark as default
 
     private static final Map<String,NamedCurve> oidMap =
         new LinkedHashMap<String,NamedCurve>();

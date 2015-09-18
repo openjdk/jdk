@@ -36,8 +36,8 @@ import java.util.*;
 import java.security.*;
 
 public class CharsetMapping {
-    public final static char UNMAPPABLE_DECODING = '\uFFFD';
-    public final static int  UNMAPPABLE_ENCODING = 0xFFFD;
+    public static final char UNMAPPABLE_DECODING = '\uFFFD';
+    public static final int  UNMAPPABLE_ENCODING = 0xFFFD;
 
     char[] b2cSB;                //singlebyte b->c
     char[] b2cDB1;               //dobulebyte b->c /db1
@@ -195,13 +195,13 @@ public class CharsetMapping {
 
     /*****************************************************************************/
     // tags of different charset mapping tables
-    private final static int MAP_SINGLEBYTE      = 0x1; // 0..256  : c
-    private final static int MAP_DOUBLEBYTE1     = 0x2; // min..max: c
-    private final static int MAP_DOUBLEBYTE2     = 0x3; // min..max: c [DB2]
-    private final static int MAP_SUPPLEMENT      = 0x5; //           db,c
-    private final static int MAP_SUPPLEMENT_C2B  = 0x6; //           c,db
-    private final static int MAP_COMPOSITE       = 0x7; //           db,base,cc
-    private final static int MAP_INDEXC2B        = 0x8; // index table of c->bb
+    private static final int MAP_SINGLEBYTE      = 0x1; // 0..256  : c
+    private static final int MAP_DOUBLEBYTE1     = 0x2; // min..max: c
+    private static final int MAP_DOUBLEBYTE2     = 0x3; // min..max: c [DB2]
+    private static final int MAP_SUPPLEMENT      = 0x5; //           db,c
+    private static final int MAP_SUPPLEMENT_C2B  = 0x6; //           c,db
+    private static final int MAP_COMPOSITE       = 0x7; //           db,base,cc
+    private static final int MAP_INDEXC2B        = 0x8; // index table of c->bb
 
     private static final boolean readNBytes(InputStream in, byte[] bb, int N)
         throws IOException
