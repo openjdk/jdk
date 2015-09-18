@@ -277,6 +277,7 @@
       <to>jdk.jvmstat</to>
       <to>jdk.management.resource</to>
       <to>jdk.pack200</to>
+      <to>jdk.scripting.nashorn</to>
       <to>jdk.security.auth</to>
       <to>jdk.security.jgss</to>
       <to>jdk.snmp</to>
