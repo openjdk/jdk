@@ -26,7 +26,7 @@ package org.omg.CORBA;
 
 
 /**
-* The Stub for <tt>IDLType</tt>.  For more information on
+* The Stub for {@code IDLType}.  For more information on
 * Stub files, see <a href="doc-files/generatedfiles.html#stub">
 * "Generated Files: Stubs"</a>.<P>
 * org/omg/CORBA/_IDLTypeStub.java
@@ -38,9 +38,9 @@ package org.omg.CORBA;
 public class _IDLTypeStub extends org.omg.CORBA.portable.ObjectImpl implements org.omg.CORBA.IDLType
 {
   /**
-   * Constructs a default <code>_IDLTypeStub</code> object.
+   * Constructs a default {@code _IDLTypeStub} object.
    * NOTE:  If the default constructor is used, the
-   *        object is useless until the method <code>_set_delegate</code>
+   *        object is useless until the method {@code _set_delegate}
    *        has been called.
    */
   // NOTE: This constructor is not required according to the spec. Only JCK expects it now.
@@ -50,8 +50,8 @@ public class _IDLTypeStub extends org.omg.CORBA.portable.ObjectImpl implements o
   }
 
   /**
-   * Constructs an <code>_IDLTypeStub</code> object initialized
-   * with the given <code>Delegate</code> object.
+   * Constructs an {@code _IDLTypeStub} object initialized
+   * with the given {@code Delegate} object.
    *
    * @param delegate a Delegate object
    */
