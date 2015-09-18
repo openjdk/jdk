@@ -33,7 +33,7 @@ import java.util.logging.LogRecord;
  */
 public class HandlerImpl extends ConsoleHandler {
 
-    public final static List<String> received = new CopyOnWriteArrayList<>();
+    public static final List<String> received = new CopyOnWriteArrayList<>();
 
     public HandlerImpl() {
     }

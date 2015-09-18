@@ -119,7 +119,7 @@ public class Timer {
     /**
      * This ID is used to generate thread names.
      */
-    private final static AtomicInteger nextSerialNumber = new AtomicInteger(0);
+    private static final AtomicInteger nextSerialNumber = new AtomicInteger(0);
     private static int serialNumber() {
         return nextSerialNumber.getAndIncrement();
     }

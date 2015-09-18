@@ -47,11 +47,11 @@ import sun.security.ssl.CipherSuite.*;
  */
 final class SSLAlgorithmConstraints implements AlgorithmConstraints {
 
-    private final static AlgorithmConstraints tlsDisabledAlgConstraints =
+    private static final AlgorithmConstraints tlsDisabledAlgConstraints =
             new DisabledAlgorithmConstraints(PROPERTY_TLS_DISABLED_ALGS,
                     new SSLAlgorithmDecomposer());
 
-    private final static AlgorithmConstraints x509DisabledAlgConstraints =
+    private static final AlgorithmConstraints x509DisabledAlgConstraints =
             new DisabledAlgorithmConstraints(PROPERTY_CERTPATH_DISABLED_ALGS,
                     new SSLAlgorithmDecomposer(true));
 
@@ -61,11 +61,11 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
     private boolean enabledX509DisabledAlgConstraints = true;
 
     // the default algorithm constraints
-    final static AlgorithmConstraints DEFAULT =
+    static final AlgorithmConstraints DEFAULT =
                         new SSLAlgorithmConstraints(null);
 
     // the default SSL only algorithm constraints
-    final static AlgorithmConstraints DEFAULT_SSL_ONLY =
+    static final AlgorithmConstraints DEFAULT_SSL_ONLY =
                         new SSLAlgorithmConstraints((SSLSocket)null, false);
 
     SSLAlgorithmConstraints(AlgorithmConstraints algorithmConstraints) {
@@ -207,7 +207,7 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
     }
 
 
-    static private class SupportedSignatureAlgorithmConstraints
+    private static class SupportedSignatureAlgorithmConstraints
                                     implements AlgorithmConstraints {
         // supported signature algorithms
         private String[] supportedAlgorithms;
@@ -255,12 +255,12 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
         }
 
         @Override
-        final public boolean permits(Set<CryptoPrimitive> primitives, Key key) {
+        public final boolean permits(Set<CryptoPrimitive> primitives, Key key) {
             return true;
         }
 
         @Override
-        final public boolean permits(Set<CryptoPrimitive> primitives,
+        public final boolean permits(Set<CryptoPrimitive> primitives,
                 String algorithm, Key key, AlgorithmParameters parameters) {
 
             if (algorithm == null || algorithm.length() == 0) {

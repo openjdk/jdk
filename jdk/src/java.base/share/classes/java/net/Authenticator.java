@@ -119,7 +119,7 @@ class Authenticator {
      * @see SecurityManager#checkPermission
      * @see java.net.NetPermission
      */
-    public synchronized static void setDefault(Authenticator a) {
+    public static synchronized void setDefault(Authenticator a) {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             NetPermission setDefaultPermission

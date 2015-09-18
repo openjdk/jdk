@@ -24,25 +24,30 @@
 /**
  * @test
  * @bug 4313885 4926319 4927634 5032610 5032622 5049968 5059533 6223711 6277261 6269946 6288823
+ *      8072722
  * @summary Basic tests of java.util.Scanner methods
  * @key randomness
  * @run main/othervm ScanTest
  */
 
-import java.util.*;
-import java.text.*;
 import java.io.*;
-import java.nio.*;
-import java.util.regex.*;
 import java.math.*;
+import java.nio.*;
+import java.text.*;
+import java.util.*;
+import java.util.function.Consumer;
+import java.util.regex.*;
+import java.util.stream.*;
 
 public class ScanTest {
 
     private static boolean failure = false;
     private static int failCount = 0;
     private static int NUM_SOURCE_TYPES = 2;
+    private static File inputFile = new File(System.getProperty("test.src", "."), "input.txt");
 
     public static void main(String[] args) throws Exception {
+
         Locale reservedLocale = Locale.getDefault();
         String lang = reservedLocale.getLanguage();
         try {
@@ -70,8 +75,10 @@ public class ScanTest {
             cacheTest2();
             nonASCIITest();
             resetTest();
+            streamCloseTest();
+            streamComodTest();
 
-            for (int j=0; j<NUM_SOURCE_TYPES; j++) {
+            for (int j = 0; j < NUM_SOURCE_TYPES; j++) {
                 hasNextTest(j);
                 nextTest(j);
                 hasNextPatternTest(j);
@@ -115,149 +122,147 @@ public class ScanTest {
     }
 
     public static void useCase1() throws Exception {
-        File f = new File(System.getProperty("test.src", "."), "input.txt");
-        Scanner sc = new Scanner(f);
-        sc.findWithinHorizon("usage case 1", 0);
-        String[] names = new String[4];
-        for (int i=0; i<4; i++) {
-            while(sc.hasNextFloat())
-                sc.nextFloat();
-            names[i] = sc.next();
-            sc.nextLine();
+        try (Scanner sc = new Scanner(inputFile)) {
+            sc.findWithinHorizon("usage case 1", 0);
+            String[] names = new String[4];
+            for (int i=0; i<4; i++) {
+                while (sc.hasNextFloat())
+                    sc.nextFloat();
+                names[i] = sc.next();
+                sc.nextLine();
+            }
+            if (!names[0].equals("Frank"))
+                failCount++;
+            if (!names[1].equals("Joe"))
+                failCount++;
+            if (!names[2].equals("Mary"))
+                failCount++;
+            if (!names[3].equals("Michelle"))
+                failCount++;
         }
-        if (!names[0].equals("Frank"))
-            failCount++;
-        if (!names[1].equals("Joe"))
-            failCount++;
-        if (!names[2].equals("Mary"))
-            failCount++;
-        if (!names[3].equals("Michelle"))
-            failCount++;
-        sc.close();
         report("Use case 1");
     }
 
     public static void useCase2() throws Exception {
-        File f = new File(System.getProperty("test.src", "."), "input.txt");
-        Scanner sc = new Scanner(f).useDelimiter("-");
-        String testDataTag = sc.findWithinHorizon("usage case 2\n", 0);
-        if (!testDataTag.equals("usage case 2\n"))
-            failCount++;
-        if (!sc.next().equals("cat"))
-            failCount++;
-        if (sc.nextInt() != 9)
-            failCount++;
-        if (!sc.next().equals("dog"))
-            failCount++;
-        if (sc.nextInt() != 6)
-            failCount++;
-        if (!sc.next().equals("pig"))
-            failCount++;
-        if (sc.nextInt() != 2)
-            failCount++;
-        if (!sc.next().equals(""))
-            failCount++;
-        if (sc.nextInt() != 5)
-            failCount++;
-        sc.close();
+        try (Scanner sc = new Scanner(inputFile).useDelimiter("-")) {
+            String testDataTag = sc.findWithinHorizon("usage case 2\n", 0);
+            if (!testDataTag.equals("usage case 2\n"))
+                failCount++;
+            if (!sc.next().equals("cat"))
+                failCount++;
+            if (sc.nextInt() != 9)
+                failCount++;
+            if (!sc.next().equals("dog"))
+                failCount++;
+            if (sc.nextInt() != 6)
+                failCount++;
+            if (!sc.next().equals("pig"))
+                failCount++;
+            if (sc.nextInt() != 2)
+                failCount++;
+            if (!sc.next().equals(""))
+                failCount++;
+            if (sc.nextInt() != 5)
+                failCount++;
+        }
         report("Use case 2");
     }
 
     public static void useCase3() throws Exception {
-        File f = new File(System.getProperty("test.src", "."), "input.txt");
-        Scanner sc = new Scanner(f);
-        String testDataTag = sc.findWithinHorizon("usage case 3\n", 0);
-        if (!testDataTag.equals("usage case 3\n"))
-            failCount++;
-        Pattern tagPattern = Pattern.compile("@[a-z]+");
-        Pattern endPattern = Pattern.compile("\\*\\/");
-        String tag;
-        String end = sc.findInLine(endPattern);
+        try (Scanner sc = new Scanner(inputFile)) {
+            String testDataTag = sc.findWithinHorizon("usage case 3\n", 0);
+            if (!testDataTag.equals("usage case 3\n"))
+                failCount++;
+            Pattern tagPattern = Pattern.compile("@[a-z]+");
+            Pattern endPattern = Pattern.compile("\\*\\/");
+            String tag;
+            String end = sc.findInLine(endPattern);
 
-        while (end == null) {
-            if ((tag = sc.findInLine(tagPattern)) != null) {
-                String text = sc.nextLine();
-                text = text.substring(0, text.length() - 1);
-                //System.out.println(text);
-            } else {
-                sc.nextLine();
+            while (end == null) {
+                if ((tag = sc.findInLine(tagPattern)) != null) {
+                    String text = sc.nextLine();
+                    text = text.substring(0, text.length() - 1);
+                    //System.out.println(text);
+                } else {
+                    sc.nextLine();
+                }
+                end = sc.findInLine(endPattern);
             }
-            end = sc.findInLine(endPattern);
         }
         report("Use case 3");
     }
 
     public static void useCase4() throws Exception {
-        File f = new File(System.getProperty("test.src", "."), "input.txt");
-        Scanner sc = new Scanner(f);
-        String testDataTag = sc.findWithinHorizon("usage case 4\n", 0);
-        if (!testDataTag.equals("usage case 4\n"))
-            failCount++;
-
-        // Read some text parts of four hrefs
-        String[] expected = { "Diffs", "Sdiffs", "Old", "New" };
-        for (int i=0; i<4; i++) {
-            sc.findWithinHorizon("<a href", 1000);
-            sc.useDelimiter("[<>\n]+");
-            sc.next();
-            String textOfRef = sc.next();
-            if (!textOfRef.equals(expected[i]))
+        try (Scanner sc = new Scanner(inputFile)) {
+            String testDataTag = sc.findWithinHorizon("usage case 4\n", 0);
+            if (!testDataTag.equals("usage case 4\n"))
                 failCount++;
-        }
-        // Read some html tags using < and > as delimiters
-        if (!sc.next().equals("/a"))
-            failCount++;
-        if (!sc.next().equals("b"))
-            failCount++;
 
-        // Scan some html tags using skip and next
-        Pattern nonTagStart = Pattern.compile("[^<]+");
-        Pattern tag = Pattern.compile("<[^>]+?>");
-        Pattern spotAfterTag = Pattern.compile("(?<=>)");
-        String[] expected2 = { "</b>", "<p>", "<ul>", "<li>" };
-        sc.useDelimiter(spotAfterTag);
-        int tagsFound = 0;
-        while(tagsFound < 4) {
-            if (!sc.hasNext(tag)) {
-                // skip text between tags
-                sc.skip(nonTagStart);
+            // Read some text parts of four hrefs
+            String[] expected = { "Diffs", "Sdiffs", "Old", "New" };
+            for (int i=0; i<4; i++) {
+                sc.findWithinHorizon("<a href", 1000);
+                sc.useDelimiter("[<>\n]+");
+                sc.next();
+                String textOfRef = sc.next();
+                if (!textOfRef.equals(expected[i]))
+                    failCount++;
             }
-            String tagContents = sc.next(tag);
-            if (!tagContents.equals(expected2[tagsFound]))
+            // Read some html tags using < and > as delimiters
+            if (!sc.next().equals("/a"))
                 failCount++;
-            tagsFound++;
+            if (!sc.next().equals("b"))
+                failCount++;
+
+            // Scan some html tags using skip and next
+            Pattern nonTagStart = Pattern.compile("[^<]+");
+            Pattern tag = Pattern.compile("<[^>]+?>");
+            Pattern spotAfterTag = Pattern.compile("(?<=>)");
+            String[] expected2 = { "</b>", "<p>", "<ul>", "<li>" };
+            sc.useDelimiter(spotAfterTag);
+            int tagsFound = 0;
+            while (tagsFound < 4) {
+                if (!sc.hasNext(tag)) {
+                    // skip text between tags
+                    sc.skip(nonTagStart);
+                }
+                String tagContents = sc.next(tag);
+                if (!tagContents.equals(expected2[tagsFound]))
+                    failCount++;
+                tagsFound++;
+            }
         }
 
         report("Use case 4");
     }
 
     public static void useCase5() throws Exception {
-        File f = new File(System.getProperty("test.src", "."), "input.txt");
-        Scanner sc = new Scanner(f);
-        String testDataTag = sc.findWithinHorizon("usage case 5\n", 0);
-        if (!testDataTag.equals("usage case 5\n"))
-            failCount++;
-
-        sc.findWithinHorizon("Share Definitions", 0);
-        sc.nextLine();
-        sc.next("\\[([a-z]+)\\]");
-        String shareName = sc.match().group(1);
-        if (!shareName.equals("homes"))
-            failCount++;
-
-        String[] keys = { "comment", "browseable", "writable", "valid users" };
-        String[] vals = { "Home Directories", "no", "yes", "%S" };
-        for (int i=0; i<4; i++) {
-            sc.useDelimiter("=");
-            String key = sc.next().trim();
-            if (!key.equals(keys[i]))
+        try (Scanner sc = new Scanner(inputFile)) {
+            String testDataTag = sc.findWithinHorizon("usage case 5\n", 0);
+            if (!testDataTag.equals("usage case 5\n"))
                 failCount++;
-            sc.skip("[ =]+");
-            sc.useDelimiter("\n");
-            String value = sc.next();
-            if (!value.equals(vals[i]))
-                failCount++;
+
+            sc.findWithinHorizon("Share Definitions", 0);
             sc.nextLine();
+            sc.next("\\[([a-z]+)\\]");
+            String shareName = sc.match().group(1);
+            if (!shareName.equals("homes"))
+                failCount++;
+
+            String[] keys = { "comment", "browseable", "writable", "valid users" };
+            String[] vals = { "Home Directories", "no", "yes", "%S" };
+            for (int i=0; i<4; i++) {
+                sc.useDelimiter("=");
+                String key = sc.next().trim();
+                if (!key.equals(keys[i]))
+                    failCount++;
+                sc.skip("[ =]+");
+                sc.useDelimiter("\n");
+                String value = sc.next();
+                if (!value.equals(vals[i]))
+                    failCount++;
+                sc.nextLine();
+            }
         }
 
         report("Use case 5");
@@ -445,12 +450,12 @@ public class ScanTest {
         if (sc.hasNextLine()) failCount++;
 
         // Go through all the lines in a file
-        File f = new File(System.getProperty("test.src", "."), "input.txt");
-        sc = new Scanner(f);
-        String lastLine = "blah";
-        while(sc.hasNextLine())
-            lastLine = sc.nextLine();
-        if (!lastLine.equals("# Data for usage case 6")) failCount++;
+        try (Scanner sc2 = new Scanner(inputFile)) {
+            String lastLine = "blah";
+            while (sc2.hasNextLine())
+                lastLine = sc2.nextLine();
+            if (!lastLine.equals("# Data for usage case 6")) failCount++;
+        }
 
         report("Has next line test");
     }
@@ -629,48 +634,47 @@ public class ScanTest {
         sc.delimiter();
         sc.useDelimiter("blah");
         sc.useDelimiter(Pattern.compile("blah"));
-        for (int i=0; i<NUM_METHODS; i++) {
+
+        for (Consumer<Scanner> method : methodList) {
             try {
-                methodCall(sc, i);
+                method.accept(sc);
                 failCount++;
             } catch (IllegalStateException ise) {
                 // Correct
             }
         }
+
         report("Close test");
     }
 
-    private static int NUM_METHODS = 23;
-
-    private static void methodCall(Scanner sc, int i) {
-        switch(i) {
-            case 0: sc.hasNext(); break;
-            case 1: sc.next(); break;
-            case 2: sc.hasNext(Pattern.compile("blah")); break;
-            case 3: sc.next(Pattern.compile("blah")); break;
-            case 4: sc.hasNextBoolean(); break;
-            case 5: sc.nextBoolean(); break;
-            case 6: sc.hasNextByte(); break;
-            case 7: sc.nextByte(); break;
-            case 8: sc.hasNextShort(); break;
-            case 9: sc.nextShort(); break;
-            case 10: sc.hasNextInt(); break;
-            case 11: sc.nextInt(); break;
-            case 12: sc.hasNextLong(); break;
-            case 13: sc.nextLong(); break;
-            case 14: sc.hasNextFloat(); break;
-            case 15: sc.nextFloat(); break;
-            case 16: sc.hasNextDouble(); break;
-            case 17: sc.nextDouble(); break;
-            case 18: sc.hasNextBigInteger(); break;
-            case 19: sc.nextBigInteger(); break;
-            case 20: sc.hasNextBigDecimal(); break;
-            case 21: sc.nextBigDecimal(); break;
-            case 22: sc.hasNextLine(); break;
-            default:
-                break;
-        }
-    }
+    static List<Consumer<Scanner>> methodList = Arrays.asList(
+        Scanner::hasNext,
+        Scanner::next,
+        sc -> sc.hasNext(Pattern.compile("blah")),
+        sc -> sc.next(Pattern.compile("blah")),
+        Scanner::hasNextBoolean,
+        Scanner::nextBoolean,
+        Scanner::hasNextByte,
+        Scanner::nextByte,
+        Scanner::hasNextShort,
+        Scanner::nextShort,
+        Scanner::hasNextInt,
+        Scanner::nextInt,
+        Scanner::hasNextLong,
+        Scanner::nextLong,
+        Scanner::hasNextFloat,
+        Scanner::nextFloat,
+        Scanner::hasNextDouble,
+        Scanner::nextDouble,
+        Scanner::hasNextBigInteger,
+        Scanner::nextBigInteger,
+        Scanner::hasNextBigDecimal,
+        Scanner::nextBigDecimal,
+        Scanner::hasNextLine,
+        Scanner::tokens,
+        sc -> sc.findAll(Pattern.compile("blah")),
+        sc -> sc.findAll("blah")
+    );
 
     public static void removeTest() throws Exception {
         Scanner sc = new Scanner("testing");
@@ -864,19 +868,20 @@ public class ScanTest {
 
     public static void fromFileTest() throws Exception {
         File f = new File(System.getProperty("test.src", "."), "input.txt");
-        Scanner sc = new Scanner(f).useDelimiter("\n+");
-        String testDataTag = sc.findWithinHorizon("fromFileTest", 0);
-        if (!testDataTag.equals("fromFileTest"))
-            failCount++;
+        try (Scanner sc = new Scanner(f)) {
+            sc.useDelimiter("\n+");
+            String testDataTag = sc.findWithinHorizon("fromFileTest", 0);
+            if (!testDataTag.equals("fromFileTest"))
+                failCount++;
 
-        int count = 0;
-        while (sc.hasNextLong()) {
-            long blah = sc.nextLong();
-            count++;
+            int count = 0;
+            while (sc.hasNextLong()) {
+                long blah = sc.nextLong();
+                count++;
+            }
+            if (count != 7)
+                failCount++;
         }
-        if (count != 7)
-            failCount++;
-        sc.close();
         report("From file");
     }
 
@@ -884,7 +889,7 @@ public class ScanTest {
         Scanner s = new Scanner("1 fish 2 fish red fish blue fish");
         s.useDelimiter("\\s*fish\\s*");
         List <String> results = new ArrayList<String>();
-        while(s.hasNext())
+        while (s.hasNext())
             results.add(s.next());
         System.out.println(results);
     }
@@ -1472,14 +1477,112 @@ public class ScanTest {
         report("Reset test");
     }
 
+    /*
+     * Test that closing the stream also closes the underlying Scanner.
+     * The cases of attempting to open streams on a closed Scanner are
+     * covered by closeTest().
+     */
+    public static void streamCloseTest() throws Exception {
+        Scanner sc;
+
+        Scanner sc1 = new Scanner("xyzzy");
+        sc1.tokens().close();
+        try {
+            sc1.hasNext();
+            failCount++;
+        } catch (IllegalStateException ise) {
+            // Correct result
+        }
+
+        Scanner sc2 = new Scanner("a b c d e f");
+        try {
+            sc2.tokens()
+               .peek(s -> sc2.close())
+               .count();
+        } catch (IllegalStateException ise) {
+            // Correct result
+        }
+
+        Scanner sc3 = new Scanner("xyzzy");
+        sc3.findAll("q").close();
+        try {
+            sc3.hasNext();
+            failCount++;
+        } catch (IllegalStateException ise) {
+            // Correct result
+        }
+
+        try (Scanner sc4 = new Scanner(inputFile)) {
+            sc4.findAll("[0-9]+")
+               .peek(s -> sc4.close())
+               .count();
+            failCount++;
+        } catch (IllegalStateException ise) {
+            // Correct result
+        }
+
+        report("Streams Close test");
+    }
+
+    /*
+     * Test ConcurrentModificationException
+     */
+    public static void streamComodTest() {
+        try {
+            Scanner sc = new Scanner("a b c d e f");
+            sc.tokens()
+              .peek(s -> sc.hasNext())
+              .count();
+            failCount++;
+        } catch (ConcurrentModificationException cme) {
+            // Correct result
+        }
+
+        try {
+            Scanner sc = new Scanner("a b c d e f");
+            Iterator<String> it = sc.tokens().iterator();
+            it.next();
+            sc.next();
+            it.next();
+            failCount++;
+        } catch (ConcurrentModificationException cme) {
+            // Correct result
+        }
+
+        try {
+            String input = IntStream.range(0, 100)
+                                    .mapToObj(String::valueOf)
+                                    .collect(Collectors.joining(" "));
+            Scanner sc = new Scanner(input);
+            sc.findAll("[0-9]+")
+              .peek(s -> sc.hasNext())
+              .count();
+            failCount++;
+        } catch (ConcurrentModificationException cme) {
+            // Correct result
+        }
+
+        try {
+            String input = IntStream.range(0, 100)
+                                    .mapToObj(String::valueOf)
+                                    .collect(Collectors.joining(" "));
+            Scanner sc = new Scanner(input);
+            Iterator<MatchResult> it = sc.findAll("[0-9]+").iterator();
+            it.next();
+            sc.next();
+            it.next();
+            failCount++;
+        } catch (ConcurrentModificationException cme) {
+            // Correct result
+        }
+
+        report("Streams Comod test");
+    }
+
     private static void report(String testName) {
-        int spacesToAdd = 30 - testName.length();
-        StringBuffer paddedNameBuffer = new StringBuffer(testName);
-        for (int i=0; i<spacesToAdd; i++)
-            paddedNameBuffer.append(" ");
-        String paddedName = paddedNameBuffer.toString();
-        System.err.println(paddedName + ": " +
-                           (failCount==0 ? "Passed":"Failed("+failCount+")"));
+        System.err.printf("%-30s: %s%n", testName,
+                          (failCount == 0) ? "Passed" : String.format("Failed(%d)", failCount));
+
         if (failCount > 0)
             failure = true;
         failCount = 0;

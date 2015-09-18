@@ -492,15 +492,15 @@ public final class URI
 
     // The remaining fields may be computed on demand
 
-    private volatile transient String schemeSpecificPart;
-    private volatile transient int hash;        // Zero ==> undefined
+    private transient volatile String schemeSpecificPart;
+    private transient volatile int hash;        // Zero ==> undefined
 
-    private volatile transient String decodedUserInfo = null;
-    private volatile transient String decodedAuthority = null;
-    private volatile transient String decodedPath = null;
-    private volatile transient String decodedQuery = null;
-    private volatile transient String decodedFragment = null;
-    private volatile transient String decodedSchemeSpecificPart = null;
+    private transient volatile String decodedUserInfo = null;
+    private transient volatile String decodedAuthority = null;
+    private transient volatile String decodedPath = null;
+    private transient volatile String decodedQuery = null;
+    private transient volatile String decodedFragment = null;
+    private transient volatile String decodedSchemeSpecificPart = null;
 
     /**
      * The string form of this URI.
@@ -2175,7 +2175,7 @@ public final class URI
     // This method takes a string argument rather than a char array so that
     // this test can be performed without invoking path.toCharArray().
     //
-    static private int needsNormalization(String path) {
+    private static int needsNormalization(String path) {
         boolean normal = true;
         int ns = 0;                     // Number of segments
         int end = path.length() - 1;    // Index of last char in path
@@ -2232,7 +2232,7 @@ public final class URI
     //   All slashes in path replaced by '\0'
     //   segs[i] == Index of first char in segment i (0 <= i < segs.length)
     //
-    static private void split(char[] path, int[] segs) {
+    private static void split(char[] path, int[] segs) {
         int end = path.length - 1;      // Index of last char in path
         int p = 0;                      // Index of next char in path
         int i = 0;                      // Index of current segment
@@ -2281,7 +2281,7 @@ public final class URI
     // Postconditions:
     //   path[0] .. path[return value] == Resulting path
     //
-    static private int join(char[] path, int[] segs) {
+    private static int join(char[] path, int[] segs) {
         int ns = segs.length;           // Number of segments
         int end = path.length - 1;      // Index of last char in path
         int p = 0;                      // Index of next path char to write
@@ -2645,7 +2645,7 @@ public final class URI
 
     // -- Escaping and encoding --
 
-    private final static char[] hexDigits = {
+    private static final char[] hexDigits = {
         '0', '1', '2', '3', '4', '5', '6', '7',
         '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
     };

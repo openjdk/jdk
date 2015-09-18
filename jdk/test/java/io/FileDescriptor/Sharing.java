@@ -35,8 +35,8 @@ import java.util.concurrent.CountDownLatch;
 
 public class Sharing {
 
-    final static int numFiles = 10;
-    volatile static boolean fail;
+    static final int numFiles = 10;
+    static volatile boolean fail;
 
     public static void main(String[] args) throws Exception {
         TestFinalizer();

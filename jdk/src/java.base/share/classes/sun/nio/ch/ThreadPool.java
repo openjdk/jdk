@@ -91,7 +91,7 @@ public class ThreadPool {
     }
 
     private static class DefaultThreadPoolHolder {
-        final static ThreadPool defaultThreadPool = createDefault();
+        static final ThreadPool defaultThreadPool = createDefault();
     }
 
     // return the default (system-wide) thread pool

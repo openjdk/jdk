@@ -46,7 +46,7 @@ public class SingleByte
         return cr;
     }
 
-    final public static class Decoder extends CharsetDecoder
+    public static final class Decoder extends CharsetDecoder
                                       implements ArrayDecoder {
         private final char[] b2c;
 
@@ -131,7 +131,7 @@ public class SingleByte
         }
     }
 
-    final public static class Encoder extends CharsetEncoder
+    public static final class Encoder extends CharsetEncoder
                                       implements ArrayEncoder {
         private Surrogate.Parser sgp;
         private final char[] c2b;

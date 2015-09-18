@@ -49,7 +49,7 @@ import static sun.security.ssl.CipherSuite.MacAlg.*;
  */
 final class MAC extends Authenticator {
 
-    final static MAC TLS_NULL = new MAC(false);
+    static final MAC TLS_NULL = new MAC(false);
 
     // Value of the null MAC is fixed
     private static final byte[] nullMAC = new byte[0];

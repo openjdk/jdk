@@ -36,14 +36,14 @@ import static java.util.Calendar.*;
 import sun.util.locale.provider.CalendarDataUtility;
 
 public class Bug8007038 {
-    private final static String[] calTypes = {
+    private static final String[] calTypes = {
         "gregory",
         "buddhist",
         "japanese",
         "roc",
         "islamic",
     };
-    private final static int[][] eraMinMax = {
+    private static final int[][] eraMinMax = {
         {GregorianCalendar.BC, GregorianCalendar.AD},
         {0, 1},
         {0, 4},
@@ -51,7 +51,7 @@ public class Bug8007038 {
         {0, 1},
         {0, 1},
     };
-    private final static Locale[] testLocs = {
+    private static final Locale[] testLocs = {
         Locale.ROOT,
         Locale.forLanguageTag("ja-JP-u-ca-japanese"),
         Locale.forLanguageTag("th-TH"),

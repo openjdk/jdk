@@ -148,7 +148,7 @@ public class TestLogConfigurationDeadLock {
     }
 
 
-    final static class ReadConf extends Thread {
+    static final class ReadConf extends Thread {
         @Override
         public void run() {
             while (goOn) {
@@ -163,7 +163,7 @@ public class TestLogConfigurationDeadLock {
         }
     }
 
-    final static class AddLogger extends Thread {
+    static final class AddLogger extends Thread {
         @Override
         public void run() {
             try {
@@ -184,7 +184,7 @@ public class TestLogConfigurationDeadLock {
         }
     }
 
-    final static class DeadlockDetector extends Thread {
+    static final class DeadlockDetector extends Thread {
 
         @Override
         public void run() {

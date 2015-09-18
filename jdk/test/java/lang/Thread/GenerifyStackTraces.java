@@ -120,7 +120,7 @@ public class GenerifyStackTraces {
     }
 
 
-    static private void waitForDump() {
+    private static void waitForDump() {
         synchronized(go) {
             try {
                go.wait();
@@ -130,7 +130,7 @@ public class GenerifyStackTraces {
         }
     }
 
-    static private void finishDump() {
+    private static void finishDump() {
         synchronized(go) {
             try {
                go.notifyAll();
