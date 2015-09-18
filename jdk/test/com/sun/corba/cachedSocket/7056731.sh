@@ -64,12 +64,12 @@ ORB_PROC=$!
 sleep 2 #give orbd time to start
 echo "started orb"
 echo "starting server"
-${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -cp . HelloServer -ORBInitialPort $PORT -ORBInitialHost localhost &
+${JAVA} ${TESTVMOPTS} -cp . HelloServer -ORBInitialPort $PORT -ORBInitialHost localhost &
 SERVER_PROC=$!
 sleep 2 #give server time to start
 echo "started server"
 echo "starting client (debug mode)"
-${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -cp . -agentlib:jdwp=transport=dt_socket,server=y,address=8000 HelloClient -ORBInitialPort $PORT -ORBInitialHost localhost > client.$$ 2>&1 & 
+${JAVA} ${TESTVMOPTS} -cp . -agentlib:jdwp=transport=dt_socket,server=y,address=8000 HelloClient -ORBInitialPort $PORT -ORBInitialHost localhost > client.$$ 2>&1 & 
 JVM_PROC=$!
 sleep 2 #give jvm/debugger/client time to start
 
@@ -97,7 +97,7 @@ sleep 2;
 echo "clear com.sun.corba.se.impl.protocol.CorbaClientRequestDispatcherImpl.unregisterWaiter"
 sleep 2;
 echo "resume 1";
-)| ${TESTJAVA}${FS}bin${FS}jdb -connect com.sun.jdi.SocketAttach:hostname=localhost,port=8000
+)| ${COMPILEJAVA}${FS}bin${FS}jdb -connect com.sun.jdi.SocketAttach:hostname=localhost,port=8000
 
 sleep 5 # give time for Client to throw exception
 

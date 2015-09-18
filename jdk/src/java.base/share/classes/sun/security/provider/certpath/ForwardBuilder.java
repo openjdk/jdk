@@ -433,7 +433,7 @@ class ForwardBuilder extends Builder {
      */
     static class PKIXCertComparator implements Comparator<X509Certificate> {
 
-        final static String METHOD_NME = "PKIXCertComparator.compare()";
+        static final String METHOD_NME = "PKIXCertComparator.compare()";
 
         private final Set<X500Principal> trustedSubjectDNs;
 

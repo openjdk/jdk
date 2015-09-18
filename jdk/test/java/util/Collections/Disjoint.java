@@ -32,7 +32,7 @@
 import java.util.*;
 
 public class Disjoint {
-    final static int N = 20;
+    static final int N = 20;
 
     public static void main(String args[]) {
         // Make an array of lists each of which shares a single element

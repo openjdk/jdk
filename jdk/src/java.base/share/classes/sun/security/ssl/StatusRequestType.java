@@ -61,6 +61,6 @@ final class StatusRequestType {
     }
 
     // Status request types defined in RFC 6066 and 6961
-    final static StatusRequestType OCSP = e(0x01, "ocsp");
-    final static StatusRequestType OCSP_MULTI = e(0x02, "ocsp_multi");
+    static final StatusRequestType OCSP = e(0x01, "ocsp");
+    static final StatusRequestType OCSP_MULTI = e(0x02, "ocsp_multi");
 }

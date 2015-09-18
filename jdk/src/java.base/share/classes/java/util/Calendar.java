@@ -370,13 +370,13 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @see GregorianCalendar#AD
      * @see GregorianCalendar#BC
      */
-    public final static int ERA = 0;
+    public static final int ERA = 0;
 
     /**
      * Field number for <code>get</code> and <code>set</code> indicating the
      * year. This is a calendar-specific value; see subclass documentation.
      */
-    public final static int YEAR = 1;
+    public static final int YEAR = 1;
 
     /**
      * Field number for <code>get</code> and <code>set</code> indicating the
@@ -399,7 +399,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @see #DECEMBER
      * @see #UNDECIMBER
      */
-    public final static int MONTH = 2;
+    public static final int MONTH = 2;
 
     /**
      * Field number for <code>get</code> and <code>set</code> indicating the
@@ -412,7 +412,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @see #getFirstDayOfWeek
      * @see #getMinimalDaysInFirstWeek
      */
-    public final static int WEEK_OF_YEAR = 3;
+    public static final int WEEK_OF_YEAR = 3;
 
     /**
      * Field number for <code>get</code> and <code>set</code> indicating the
@@ -425,7 +425,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @see #getFirstDayOfWeek
      * @see #getMinimalDaysInFirstWeek
      */
-    public final static int WEEK_OF_MONTH = 4;
+    public static final int WEEK_OF_MONTH = 4;
 
     /**
      * Field number for <code>get</code> and <code>set</code> indicating the
@@ -434,7 +434,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *
      * @see #DAY_OF_MONTH
      */
-    public final static int DATE = 5;
+    public static final int DATE = 5;
 
     /**
      * Field number for <code>get</code> and <code>set</code> indicating the
@@ -443,13 +443,13 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *
      * @see #DATE
      */
-    public final static int DAY_OF_MONTH = 5;
+    public static final int DAY_OF_MONTH = 5;
 
     /**
      * Field number for <code>get</code> and <code>set</code> indicating the day
      * number within the current year.  The first day of the year has value 1.
      */
-    public final static int DAY_OF_YEAR = 6;
+    public static final int DAY_OF_YEAR = 6;
 
     /**
      * Field number for <code>get</code> and <code>set</code> indicating the day
@@ -465,7 +465,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @see #FRIDAY
      * @see #SATURDAY
      */
-    public final static int DAY_OF_WEEK = 7;
+    public static final int DAY_OF_WEEK = 7;
 
     /**
      * Field number for <code>get</code> and <code>set</code> indicating the
@@ -490,7 +490,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @see #DAY_OF_WEEK
      * @see #WEEK_OF_MONTH
      */
-    public final static int DAY_OF_WEEK_IN_MONTH = 8;
+    public static final int DAY_OF_WEEK_IN_MONTH = 8;
 
     /**
      * Field number for <code>get</code> and <code>set</code> indicating
@@ -501,7 +501,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @see #PM
      * @see #HOUR
      */
-    public final static int AM_PM = 9;
+    public static final int AM_PM = 9;
 
     /**
      * Field number for <code>get</code> and <code>set</code> indicating the
@@ -512,7 +512,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @see #AM_PM
      * @see #HOUR_OF_DAY
      */
-    public final static int HOUR = 10;
+    public static final int HOUR = 10;
 
     /**
      * Field number for <code>get</code> and <code>set</code> indicating the
@@ -521,28 +521,28 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *
      * @see #HOUR
      */
-    public final static int HOUR_OF_DAY = 11;
+    public static final int HOUR_OF_DAY = 11;
 
     /**
      * Field number for <code>get</code> and <code>set</code> indicating the
      * minute within the hour.
      * E.g., at 10:04:15.250 PM the <code>MINUTE</code> is 4.
      */
-    public final static int MINUTE = 12;
+    public static final int MINUTE = 12;
 
     /**
      * Field number for <code>get</code> and <code>set</code> indicating the
      * second within the minute.
      * E.g., at 10:04:15.250 PM the <code>SECOND</code> is 15.
      */
-    public final static int SECOND = 13;
+    public static final int SECOND = 13;
 
     /**
      * Field number for <code>get</code> and <code>set</code> indicating the
      * millisecond within the second.
      * E.g., at 10:04:15.250 PM the <code>MILLISECOND</code> is 250.
      */
-    public final static int MILLISECOND = 14;
+    public static final int MILLISECOND = 14;
 
     /**
      * Field number for <code>get</code> and <code>set</code>
@@ -553,7 +553,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * <code>TimeZone</code> implementation subclass supports
      * historical GMT offset changes.
      */
-    public final static int ZONE_OFFSET = 15;
+    public static final int ZONE_OFFSET = 15;
 
     /**
      * Field number for <code>get</code> and <code>set</code> indicating the
@@ -564,146 +564,146 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * <code>TimeZone</code> implementation subclass supports
      * historical Daylight Saving Time schedule changes.
      */
-    public final static int DST_OFFSET = 16;
+    public static final int DST_OFFSET = 16;
 
     /**
      * The number of distinct fields recognized by <code>get</code> and <code>set</code>.
      * Field numbers range from <code>0..FIELD_COUNT-1</code>.
      */
-    public final static int FIELD_COUNT = 17;
+    public static final int FIELD_COUNT = 17;
 
     /**
      * Value of the {@link #DAY_OF_WEEK} field indicating
      * Sunday.
      */
-    public final static int SUNDAY = 1;
+    public static final int SUNDAY = 1;
 
     /**
      * Value of the {@link #DAY_OF_WEEK} field indicating
      * Monday.
      */
-    public final static int MONDAY = 2;
+    public static final int MONDAY = 2;
 
     /**
      * Value of the {@link #DAY_OF_WEEK} field indicating
      * Tuesday.
      */
-    public final static int TUESDAY = 3;
+    public static final int TUESDAY = 3;
 
     /**
      * Value of the {@link #DAY_OF_WEEK} field indicating
      * Wednesday.
      */
-    public final static int WEDNESDAY = 4;
+    public static final int WEDNESDAY = 4;
 
     /**
      * Value of the {@link #DAY_OF_WEEK} field indicating
      * Thursday.
      */
-    public final static int THURSDAY = 5;
+    public static final int THURSDAY = 5;
 
     /**
      * Value of the {@link #DAY_OF_WEEK} field indicating
      * Friday.
      */
-    public final static int FRIDAY = 6;
+    public static final int FRIDAY = 6;
 
     /**
      * Value of the {@link #DAY_OF_WEEK} field indicating
      * Saturday.
      */
-    public final static int SATURDAY = 7;
+    public static final int SATURDAY = 7;
 
     /**
      * Value of the {@link #MONTH} field indicating the
      * first month of the year in the Gregorian and Julian calendars.
      */
-    public final static int JANUARY = 0;
+    public static final int JANUARY = 0;
 
     /**
      * Value of the {@link #MONTH} field indicating the
      * second month of the year in the Gregorian and Julian calendars.
      */
-    public final static int FEBRUARY = 1;
+    public static final int FEBRUARY = 1;
 
     /**
      * Value of the {@link #MONTH} field indicating the
      * third month of the year in the Gregorian and Julian calendars.
      */
-    public final static int MARCH = 2;
+    public static final int MARCH = 2;
 
     /**
      * Value of the {@link #MONTH} field indicating the
      * fourth month of the year in the Gregorian and Julian calendars.
      */
-    public final static int APRIL = 3;
+    public static final int APRIL = 3;
 
     /**
      * Value of the {@link #MONTH} field indicating the
      * fifth month of the year in the Gregorian and Julian calendars.
      */
-    public final static int MAY = 4;
+    public static final int MAY = 4;
 
     /**
      * Value of the {@link #MONTH} field indicating the
      * sixth month of the year in the Gregorian and Julian calendars.
      */
-    public final static int JUNE = 5;
+    public static final int JUNE = 5;
 
     /**
      * Value of the {@link #MONTH} field indicating the
      * seventh month of the year in the Gregorian and Julian calendars.
      */
-    public final static int JULY = 6;
+    public static final int JULY = 6;
 
     /**
      * Value of the {@link #MONTH} field indicating the
      * eighth month of the year in the Gregorian and Julian calendars.
      */
-    public final static int AUGUST = 7;
+    public static final int AUGUST = 7;
 
     /**
      * Value of the {@link #MONTH} field indicating the
      * ninth month of the year in the Gregorian and Julian calendars.
      */
-    public final static int SEPTEMBER = 8;
+    public static final int SEPTEMBER = 8;
 
     /**
      * Value of the {@link #MONTH} field indicating the
      * tenth month of the year in the Gregorian and Julian calendars.
      */
-    public final static int OCTOBER = 9;
+    public static final int OCTOBER = 9;
 
     /**
      * Value of the {@link #MONTH} field indicating the
      * eleventh month of the year in the Gregorian and Julian calendars.
      */
-    public final static int NOVEMBER = 10;
+    public static final int NOVEMBER = 10;
 
     /**
      * Value of the {@link #MONTH} field indicating the
      * twelfth month of the year in the Gregorian and Julian calendars.
      */
-    public final static int DECEMBER = 11;
+    public static final int DECEMBER = 11;
 
     /**
      * Value of the {@link #MONTH} field indicating the
      * thirteenth month of the year. Although <code>GregorianCalendar</code>
      * does not use this value, lunar calendars do.
      */
-    public final static int UNDECIMBER = 12;
+    public static final int UNDECIMBER = 12;
 
     /**
      * Value of the {@link #AM_PM} field indicating the
      * period of the day from midnight to just before noon.
      */
-    public final static int AM = 0;
+    public static final int AM = 0;
 
     /**
      * Value of the {@link #AM_PM} field indicating the
      * period of the day from noon to just before midnight.
      */
-    public final static int PM = 1;
+    public static final int PM = 1;
 
     /**
      * A style specifier for {@link #getDisplayNames(int, int, Locale)
@@ -856,7 +856,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * are two special values, UNSET and COMPUTED. Values from
      * MINIMUM_USER_SET to Integer.MAX_VALUE are legal user set values.
      */
-    transient private int   stamp[];
+    private transient int   stamp[];
 
     /**
      * The currently set time for this calendar, expressed in milliseconds after
@@ -911,7 +911,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     /**
      * <code>True</code> if zone references to a shared TimeZone object.
      */
-    transient private boolean sharedZone = false;
+    private transient boolean sharedZone = false;
 
     /**
      * The first day of the week, with possible values <code>SUNDAY</code>,
@@ -1003,24 +1003,24 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
 
     // Mask values for calendar fields
     @SuppressWarnings("PointlessBitwiseExpression")
-    final static int ERA_MASK           = (1 << ERA);
-    final static int YEAR_MASK          = (1 << YEAR);
-    final static int MONTH_MASK         = (1 << MONTH);
-    final static int WEEK_OF_YEAR_MASK  = (1 << WEEK_OF_YEAR);
-    final static int WEEK_OF_MONTH_MASK = (1 << WEEK_OF_MONTH);
-    final static int DAY_OF_MONTH_MASK  = (1 << DAY_OF_MONTH);
-    final static int DATE_MASK          = DAY_OF_MONTH_MASK;
-    final static int DAY_OF_YEAR_MASK   = (1 << DAY_OF_YEAR);
-    final static int DAY_OF_WEEK_MASK   = (1 << DAY_OF_WEEK);
-    final static int DAY_OF_WEEK_IN_MONTH_MASK  = (1 << DAY_OF_WEEK_IN_MONTH);
-    final static int AM_PM_MASK         = (1 << AM_PM);
-    final static int HOUR_MASK          = (1 << HOUR);
-    final static int HOUR_OF_DAY_MASK   = (1 << HOUR_OF_DAY);
-    final static int MINUTE_MASK        = (1 << MINUTE);
-    final static int SECOND_MASK        = (1 << SECOND);
-    final static int MILLISECOND_MASK   = (1 << MILLISECOND);
-    final static int ZONE_OFFSET_MASK   = (1 << ZONE_OFFSET);
-    final static int DST_OFFSET_MASK    = (1 << DST_OFFSET);
+    static final int ERA_MASK           = (1 << ERA);
+    static final int YEAR_MASK          = (1 << YEAR);
+    static final int MONTH_MASK         = (1 << MONTH);
+    static final int WEEK_OF_YEAR_MASK  = (1 << WEEK_OF_YEAR);
+    static final int WEEK_OF_MONTH_MASK = (1 << WEEK_OF_MONTH);
+    static final int DAY_OF_MONTH_MASK  = (1 << DAY_OF_MONTH);
+    static final int DATE_MASK          = DAY_OF_MONTH_MASK;
+    static final int DAY_OF_YEAR_MASK   = (1 << DAY_OF_YEAR);
+    static final int DAY_OF_WEEK_MASK   = (1 << DAY_OF_WEEK);
+    static final int DAY_OF_WEEK_IN_MONTH_MASK  = (1 << DAY_OF_WEEK_IN_MONTH);
+    static final int AM_PM_MASK         = (1 << AM_PM);
+    static final int HOUR_MASK          = (1 << HOUR);
+    static final int HOUR_OF_DAY_MASK   = (1 << HOUR_OF_DAY);
+    static final int MINUTE_MASK        = (1 << MINUTE);
+    static final int SECOND_MASK        = (1 << SECOND);
+    static final int MILLISECOND_MASK   = (1 << MILLISECOND);
+    static final int ZONE_OFFSET_MASK   = (1 << ZONE_OFFSET);
+    static final int DST_OFFSET_MASK    = (1 << DST_OFFSET);
 
     /**
      * {@code Calendar.Builder} is used for creating a {@code Calendar} from
@@ -2795,7 +2795,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @see #roll(int,int)
      * @see #set(int,int)
      */
-    abstract public void add(int field, int amount);
+    public abstract void add(int field, int amount);
 
     /**
      * Adds or subtracts (up/down) a single unit of time on the given time
@@ -2817,7 +2817,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @see Calendar#add(int,int)
      * @see Calendar#set(int,int)
      */
-    abstract public void roll(int field, boolean up);
+    public abstract void roll(int field, boolean up);
 
     /**
      * Adds the specified (signed) amount to the specified calendar field
@@ -3104,7 +3104,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @see #getActualMinimum(int)
      * @see #getActualMaximum(int)
      */
-    abstract public int getMinimum(int field);
+    public abstract int getMinimum(int field);
 
     /**
      * Returns the maximum value for the given calendar field of this
@@ -3121,7 +3121,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @see #getActualMinimum(int)
      * @see #getActualMaximum(int)
      */
-    abstract public int getMaximum(int field);
+    public abstract int getMaximum(int field);
 
     /**
      * Returns the highest minimum value for the given calendar field
@@ -3139,7 +3139,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @see #getActualMinimum(int)
      * @see #getActualMaximum(int)
      */
-    abstract public int getGreatestMinimum(int field);
+    public abstract int getGreatestMinimum(int field);
 
     /**
      * Returns the lowest maximum value for the given calendar field
@@ -3161,7 +3161,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @see #getActualMinimum(int)
      * @see #getActualMaximum(int)
      */
-    abstract public int getLeastMaximum(int field);
+    public abstract int getLeastMaximum(int field);
 
     /**
      * Returns the minimum value that the specified calendar field

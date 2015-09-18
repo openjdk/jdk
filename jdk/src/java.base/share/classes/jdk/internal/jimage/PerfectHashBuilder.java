@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.Map;
 
 public class PerfectHashBuilder<E> {
-    private final static int RETRY_LIMIT = 1000;
+    private static final int RETRY_LIMIT = 1000;
 
     private Class<?> entryComponent;
     private Class<?> bucketComponent;

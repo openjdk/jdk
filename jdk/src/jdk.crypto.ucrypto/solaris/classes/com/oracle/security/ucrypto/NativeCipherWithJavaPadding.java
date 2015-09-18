@@ -184,7 +184,7 @@ public class NativeCipherWithJavaPadding extends CipherSpi {
             if (padValue < 1 || padValue > blockSize) {
                 UcryptoProvider.debug("PKCS5Padding: unpad, lastData: " + Arrays.toString(lastData));
                 UcryptoProvider.debug("PKCS5Padding: unpad, padValue=" + padValue);
-                throw new BadPaddingException("Invalid pad value!");
+                throw new BadPaddingException("Invalid pad value: " + padValue);
             }
 
             // sanity check padding bytes
@@ -388,7 +388,7 @@ public class NativeCipherWithJavaPadding extends CipherSpi {
                 out = Arrays.copyOf(out, actualOut);
             }
         } catch (ShortBufferException sbe) {
-            throw new UcryptoException("Internal Error");
+            throw new UcryptoException("Internal Error", sbe);
         } finally {
             reset();
         }
@@ -404,7 +404,8 @@ public class NativeCipherWithJavaPadding extends CipherSpi {
         int estimatedOutLen = engineGetOutputSize(inLen);
 
         if (out.length - outOfs < estimatedOutLen) {
-            throw new ShortBufferException();
+            throw new ShortBufferException("Actual: " + (out.length - outOfs) +
+                ". Estimated Out Length: " + estimatedOutLen);
         }
         try {
             if (nc.encrypt) {

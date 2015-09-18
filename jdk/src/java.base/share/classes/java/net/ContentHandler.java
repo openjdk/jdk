@@ -81,7 +81,7 @@ import java.io.IOException;
  * @see     java.net.URLConnection#setContentHandlerFactory(java.net.ContentHandlerFactory)
  * @since   1.0
  */
-abstract public class ContentHandler {
+public abstract class ContentHandler {
 
     /**
      * Given a URL connect stream positioned at the beginning of the
@@ -92,7 +92,7 @@ abstract public class ContentHandler {
      * @return     the object read by the {@code ContentHandler}.
      * @exception  IOException  if an I/O error occurs while reading the object.
      */
-    abstract public Object getContent(URLConnection urlc) throws IOException;
+    public abstract Object getContent(URLConnection urlc) throws IOException;
 
     /**
      * Given a URL connect stream positioned at the beginning of the

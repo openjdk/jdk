@@ -32,7 +32,7 @@ import java.io.*;
 
 public class One {
 
-    private static abstract class Test {
+    private abstract static class Test {
 
         InputStreamReader isr;
         StringBuffer sb;

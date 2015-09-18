@@ -72,7 +72,7 @@ public class ExitValue
                        expectedExitValue);
     }
 
-    final static int EXIT_CODE = 5;
+    static final int EXIT_CODE = 5;
 
     public static void main(String[] args) throws Exception {
         if (! UnixCommands.isUnix) {

@@ -86,62 +86,62 @@ import java.security.cert.*;
  */
 public abstract class Validator {
 
-    final static X509Certificate[] CHAIN0 = {};
+    static final X509Certificate[] CHAIN0 = {};
 
     /**
      * Constant for a validator of type Simple.
      * @see #getInstance
      */
-    public final static String TYPE_SIMPLE = "Simple";
+    public static final String TYPE_SIMPLE = "Simple";
 
     /**
      * Constant for a validator of type PKIX.
      * @see #getInstance
      */
-    public final static String TYPE_PKIX = "PKIX";
+    public static final String TYPE_PKIX = "PKIX";
 
     /**
      * Constant for a Generic variant of a validator.
      * @see #getInstance
      */
-    public final static String VAR_GENERIC = "generic";
+    public static final String VAR_GENERIC = "generic";
 
     /**
      * Constant for a Code Signing variant of a validator.
      * @see #getInstance
      */
-    public final static String VAR_CODE_SIGNING = "code signing";
+    public static final String VAR_CODE_SIGNING = "code signing";
 
     /**
      * Constant for a JCE Code Signing variant of a validator.
      * @see #getInstance
      */
-    public final static String VAR_JCE_SIGNING = "jce signing";
+    public static final String VAR_JCE_SIGNING = "jce signing";
 
     /**
      * Constant for a TLS Client variant of a validator.
      * @see #getInstance
      */
-    public final static String VAR_TLS_CLIENT = "tls client";
+    public static final String VAR_TLS_CLIENT = "tls client";
 
     /**
      * Constant for a TLS Server variant of a validator.
      * @see #getInstance
      */
-    public final static String VAR_TLS_SERVER = "tls server";
+    public static final String VAR_TLS_SERVER = "tls server";
 
     /**
      * Constant for a TSA Server variant of a validator.
      * @see #getInstance
      */
-    public final static String VAR_TSA_SERVER = "tsa server";
+    public static final String VAR_TSA_SERVER = "tsa server";
 
     /**
      * Constant for a Code Signing variant of a validator for use by
      * the J2SE Plugin/WebStart code.
      * @see #getInstance
      */
-    public final static String VAR_PLUGIN_CODE_SIGNING = "plugin code signing";
+    public static final String VAR_PLUGIN_CODE_SIGNING = "plugin code signing";
 
     private final String type;
     final EndEntityChecker endEntityChecker;

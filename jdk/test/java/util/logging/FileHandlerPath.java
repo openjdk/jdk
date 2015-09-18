@@ -77,11 +77,11 @@ public class FileHandlerPath {
 
 
     // Use a random name provided by UUID to avoid collision with other tests
-    final static String logFile = FileHandlerPath.class.getSimpleName() + "_"
+    static final String logFile = FileHandlerPath.class.getSimpleName() + "_"
                 + UUID.randomUUID().toString() + ".log";
-    final static String tmpLogFile;
-    final static String userDir = System.getProperty("user.dir");
-    final static String tmpDir = System.getProperty("java.io.tmpdir");
+    static final String tmpLogFile;
+    static final String userDir = System.getProperty("user.dir");
+    static final String tmpDir = System.getProperty("java.io.tmpdir");
     private static final List<Properties> properties;
     static {
         tmpLogFile = new File(tmpDir, logFile).toString();
@@ -241,7 +241,7 @@ public class FileHandlerPath {
     }
 
 
-    final static class PermissionsBuilder {
+    static final class PermissionsBuilder {
         final Permissions perms;
         public PermissionsBuilder() {
             this(new Permissions());
