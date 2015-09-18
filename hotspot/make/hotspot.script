@@ -127,7 +127,7 @@ fi
 #     o		$JRE/lib/$ARCH
 # followed by the user's previous effective LD_LIBRARY_PATH, if
 # any.
-JRE=$JDK/jre
+JRE=$JDK
 JAVA_HOME=$JDK
 export JAVA_HOME
 

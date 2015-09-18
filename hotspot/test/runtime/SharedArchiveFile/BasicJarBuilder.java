@@ -35,14 +35,14 @@ import java.io.File;
 import java.util.ArrayList;
 import sun.tools.jar.Main;
 
+// Using JarBuilder requires that all to-be-jarred classes should be placed
+// in the current working directory, aka "."
 public class BasicJarBuilder {
     private static final String classDir = System.getProperty("test.classes");
 
-    public static void build(String jarName, String ...classNames)
-        throws Exception {
-
-        createSimpleJar(classDir, classDir + File.separator + jarName +
-            ".jar", classNames);
+    public static void build(String jarName, String ...classNames) throws Exception {
+        createSimpleJar(".", classDir + File.separator + jarName + ".jar",
+            classNames);
     }
 
     private static void createSimpleJar(String jarclassDir, String jarName,
@@ -71,7 +71,7 @@ public class BasicJarBuilder {
         }
     }
 
-    // helpers
+    // Get full path to the test jar
     public static String getTestJar(String jar) {
         File dir = new File(System.getProperty("test.classes", "."));
         File jarFile = new File(dir, jar);

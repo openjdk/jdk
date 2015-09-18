@@ -177,6 +177,12 @@ void VM_Version::get_processor_features() {
   if (UseCRC32 && (auxv & HWCAP_CRC32) == 0) {
     warning("UseCRC32 specified, but not supported on this CPU");
   }
+
+  if (UseAdler32Intrinsics) {
+    warning("Adler32Intrinsics not available on this CPU.");
+    FLAG_SET_DEFAULT(UseAdler32Intrinsics, false);
+  }
+
   if (auxv & HWCAP_AES) {
     UseAES = UseAES || FLAG_IS_DEFAULT(UseAES);
     UseAESIntrinsics =
