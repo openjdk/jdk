@@ -54,32 +54,36 @@ import jdk.nashorn.internal.scripts.JO;
  * All property maps are immutable. If a property is added, modified or removed, the mutator
  * will return a new map.
  */
-public final class PropertyMap implements Iterable<Object>, Serializable {
+public class PropertyMap implements Iterable<Object>, Serializable {
     /** Used for non extensible PropertyMaps, negative logic as the normal case is extensible. See {@link ScriptObject#preventExtensions()} */
-    public static final int NOT_EXTENSIBLE        = 0b0000_0001;
+    private static final int NOT_EXTENSIBLE         = 0b0000_0001;
     /** Does this map contain valid array keys? */
-    public static final int CONTAINS_ARRAY_KEYS   = 0b0000_0010;
+    private static final int CONTAINS_ARRAY_KEYS    = 0b0000_0010;
 
     /** Map status flags. */
-    private int flags;
+    private final int flags;
 
     /** Map of properties. */
     private transient PropertyHashMap properties;
 
     /** Number of fields in use. */
-    private int fieldCount;
+    private final int fieldCount;
 
     /** Number of fields available. */
     private final int fieldMaximum;
 
     /** Length of spill in use. */
-    private int spillLength;
+    private final int spillLength;
 
     /** Structure class name */
-    private String className;
+    private final String className;
+
+    /** A reference to the expected shared prototype property map. If this is set this
+     * property map should only be used if it the same as the actual prototype map. */
+    private transient SharedPropertyMap sharedProtoMap;
 
     /** {@link SwitchPoint}s for gets on inherited properties. */
-    private transient HashMap<String, SwitchPoint> protoGetSwitches;
+    private transient HashMap<String, SwitchPoint> protoSwitches;
 
     /** History of maps, used to limit map duplication. */
     private transient WeakHashMap<Property, SoftReference<PropertyMap>> history;
@@ -95,24 +99,21 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
     private static final long serialVersionUID = -7041836752008732533L;
 
     /**
-     * Constructor.
+     * Constructs a new property map.
      *
      * @param properties   A {@link PropertyHashMap} with initial contents.
      * @param fieldCount   Number of fields in use.
      * @param fieldMaximum Number of fields available.
      * @param spillLength  Number of spill slots used.
-     * @param containsArrayKeys True if properties contain numeric keys
      */
-    private PropertyMap(final PropertyHashMap properties, final String className, final int fieldCount,
-                        final int fieldMaximum, final int spillLength, final boolean containsArrayKeys) {
+    private PropertyMap(final PropertyHashMap properties, final int flags, final String className,
+                        final int fieldCount, final int fieldMaximum, final int spillLength) {
         this.properties   = properties;
         this.className    = className;
         this.fieldCount   = fieldCount;
         this.fieldMaximum = fieldMaximum;
         this.spillLength  = spillLength;
-        if (containsArrayKeys) {
-            setContainsArrayKeys();
-        }
+        this.flags        = flags;
 
         if (Context.DEBUG) {
             count.increment();
@@ -120,20 +121,22 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
     }
 
     /**
-     * Cloning constructor.
+     * Constructs a clone of {@code propertyMap} with changed properties, flags, or boundaries.
      *
      * @param propertyMap Existing property map.
      * @param properties  A {@link PropertyHashMap} with a new set of properties.
      */
-    private PropertyMap(final PropertyMap propertyMap, final PropertyHashMap properties) {
+    private PropertyMap(final PropertyMap propertyMap, final PropertyHashMap properties, final int flags, final int fieldCount, final int spillLength) {
         this.properties   = properties;
-        this.flags        = propertyMap.flags;
-        this.spillLength  = propertyMap.spillLength;
-        this.fieldCount   = propertyMap.fieldCount;
+        this.flags        = flags;
+        this.spillLength  = spillLength;
+        this.fieldCount   = fieldCount;
         this.fieldMaximum = propertyMap.fieldMaximum;
+        this.className    = propertyMap.className;
         // We inherit the parent property listeners instance. It will be cloned when a new listener is added.
         this.listeners    = propertyMap.listeners;
         this.freeSlots    = propertyMap.freeSlots;
+        this.sharedProtoMap = propertyMap.sharedProtoMap;
 
         if (Context.DEBUG) {
             count.increment();
@@ -142,12 +145,12 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
     }
 
     /**
-     * Cloning constructor.
+     * Constructs an exact clone of {@code propertyMap}.
      *
      * @param propertyMap Existing property map.
       */
-    private PropertyMap(final PropertyMap propertyMap) {
-        this(propertyMap, propertyMap.properties);
+    protected PropertyMap(final PropertyMap propertyMap) {
+        this(propertyMap, propertyMap.properties, propertyMap.flags, propertyMap.fieldCount, propertyMap.spillLength);
     }
 
     private void writeObject(final ObjectOutputStream out) throws IOException {
@@ -183,7 +186,7 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
      */
     public static PropertyMap newMap(final Collection<Property> properties, final String className, final int fieldCount, final int fieldMaximum,  final int spillLength) {
         final PropertyHashMap newProperties = EMPTY_HASHMAP.immutableAdd(properties);
-        return new PropertyMap(newProperties, className, fieldCount, fieldMaximum, spillLength, false);
+        return new PropertyMap(newProperties, 0, className, fieldCount, fieldMaximum, spillLength);
     }
 
     /**
@@ -205,7 +208,7 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
      * @return New empty {@link PropertyMap}.
      */
     public static PropertyMap newMap(final Class<? extends ScriptObject> clazz) {
-        return new PropertyMap(EMPTY_HASHMAP, clazz.getName(), 0, 0, 0, false);
+        return new PropertyMap(EMPTY_HASHMAP, 0, clazz.getName(), 0, 0, 0);
     }
 
     /**
@@ -227,12 +230,12 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
     }
 
     /**
-     * Get the listeners of this map, or null if none exists
+     * Get the number of listeners of this map
      *
-     * @return the listeners
+     * @return the number of listeners
      */
-    public PropertyListeners getListeners() {
-        return listeners;
+    public int getListenerCount() {
+        return listeners == null ? 0 : listeners.getListenerCount();
     }
 
     /**
@@ -253,9 +256,12 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
      * A new property is being added.
      *
      * @param property The new Property added.
+     * @param isSelf was the property added to this map?
      */
-    public void propertyAdded(final Property property) {
-        invalidateProtoGetSwitchPoint(property);
+    public void propertyAdded(final Property property, final boolean isSelf) {
+        if (!isSelf) {
+            invalidateProtoSwitchPoint(property.getKey());
+        }
         if (listeners != null) {
             listeners.propertyAdded(property);
         }
@@ -265,9 +271,12 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
      * An existing property is being deleted.
      *
      * @param property The property being deleted.
+     * @param isSelf was the property deleted from this map?
      */
-    public void propertyDeleted(final Property property) {
-        invalidateProtoGetSwitchPoint(property);
+    public void propertyDeleted(final Property property, final boolean isSelf) {
+        if (!isSelf) {
+            invalidateProtoSwitchPoint(property.getKey());
+        }
         if (listeners != null) {
             listeners.propertyDeleted(property);
         }
@@ -278,9 +287,12 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
      *
      * @param oldProperty The old property
      * @param newProperty The new property
+     * @param isSelf was the property modified on this map?
      */
-    public void propertyModified(final Property oldProperty, final Property newProperty) {
-        invalidateProtoGetSwitchPoint(oldProperty);
+    public void propertyModified(final Property oldProperty, final Property newProperty, final boolean isSelf) {
+        if (!isSelf) {
+            invalidateProtoSwitchPoint(oldProperty.getKey());
+        }
         if (listeners != null) {
             listeners.propertyModified(oldProperty, newProperty);
         }
@@ -288,9 +300,15 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
 
     /**
      * The prototype of an object associated with this {@link PropertyMap} is changed.
+     *
+     * @param isSelf was the prototype changed on the object using this map?
      */
-    public void protoChanged() {
-        invalidateAllProtoGetSwitchPoints();
+    public void protoChanged(final boolean isSelf) {
+        if (!isSelf) {
+            invalidateAllProtoSwitchPoints();
+        } else if (sharedProtoMap != null) {
+            sharedProtoMap.invalidateSwitchPoint();
+        }
         if (listeners != null) {
             listeners.protoChanged();
         }
@@ -303,14 +321,14 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
      * @return A shared {@link SwitchPoint} for the property.
      */
     public synchronized SwitchPoint getSwitchPoint(final String key) {
-        if (protoGetSwitches == null) {
-            protoGetSwitches = new HashMap<>();
+        if (protoSwitches == null) {
+            protoSwitches = new HashMap<>();
         }
 
-        SwitchPoint switchPoint = protoGetSwitches.get(key);
+        SwitchPoint switchPoint = protoSwitches.get(key);
         if (switchPoint == null) {
             switchPoint = new SwitchPoint();
-            protoGetSwitches.put(key, switchPoint);
+            protoSwitches.put(key, switchPoint);
         }
 
         return switchPoint;
@@ -319,19 +337,17 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
     /**
      * Indicate that a prototype property has changed.
      *
-     * @param property {@link Property} to invalidate.
+     * @param key {@link Property} key to invalidate.
      */
-    synchronized void invalidateProtoGetSwitchPoint(final Property property) {
-        if (protoGetSwitches != null) {
-
-            final String key = property.getKey();
-            final SwitchPoint sp = protoGetSwitches.get(key);
+    synchronized void invalidateProtoSwitchPoint(final String key) {
+        if (protoSwitches != null) {
+            final SwitchPoint sp = protoSwitches.get(key);
             if (sp != null) {
-                protoGetSwitches.remove(key);
+                protoSwitches.remove(key);
                 if (Context.DEBUG) {
                     protoInvalidations.increment();
                 }
-                SwitchPoint.invalidateAll(new SwitchPoint[] { sp });
+                SwitchPoint.invalidateAll(new SwitchPoint[]{sp});
             }
         }
     }
@@ -339,15 +355,15 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
     /**
      * Indicate that proto itself has changed in hierarchy somewhere.
      */
-    synchronized void invalidateAllProtoGetSwitchPoints() {
-        if (protoGetSwitches != null) {
-            final int size = protoGetSwitches.size();
+    synchronized void invalidateAllProtoSwitchPoints() {
+        if (protoSwitches != null) {
+            final int size = protoSwitches.size();
             if (size > 0) {
                 if (Context.DEBUG) {
                     protoInvalidations.add(size);
                 }
-                SwitchPoint.invalidateAll(protoGetSwitches.values().toArray(new SwitchPoint[size]));
-                protoGetSwitches.clear();
+                SwitchPoint.invalidateAll(protoSwitches.values().toArray(new SwitchPoint[size]));
+                protoSwitches.clear();
             }
         }
     }
@@ -363,7 +379,7 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
      * @return New {@link PropertyMap} with {@link Property} added.
      */
     PropertyMap addPropertyBind(final AccessorProperty property, final Object bindTo) {
-        // No need to store bound property in the history as bound properties can't be reused.
+        // We must not store bound property in the history as bound properties can't be reused.
         return addPropertyNoHistory(new AccessorProperty(property, bindTo));
     }
 
@@ -376,16 +392,16 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
         return property.isSpill() ? slot + fieldMaximum : slot;
     }
 
-    // Update boundaries and flags after a property has been added
-    private void updateFlagsAndBoundaries(final Property newProperty) {
-        if(newProperty.isSpill()) {
-            spillLength = Math.max(spillLength, newProperty.getSlot() + 1);
-        } else {
-            fieldCount = Math.max(fieldCount, newProperty.getSlot() + 1);
-        }
-        if (isValidArrayIndex(getArrayIndex(newProperty.getKey()))) {
-            setContainsArrayKeys();
-        }
+    private int newSpillLength(final Property newProperty) {
+        return newProperty.isSpill() ? Math.max(spillLength, newProperty.getSlot() + 1) : spillLength;
+    }
+
+    private int newFieldCount(final Property newProperty) {
+        return !newProperty.isSpill() ? Math.max(fieldCount, newProperty.getSlot() + 1) : fieldCount;
+    }
+
+    private int newFlags(final Property newProperty) {
+        return isValidArrayIndex(getArrayIndex(newProperty.getKey())) ? flags | CONTAINS_ARRAY_KEYS : flags;
     }
 
     // Update the free slots bitmap for a property that has been deleted and/or added. This method is not synchronized
@@ -420,13 +436,10 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
      * @param property {@link Property} being added.
      * @return New {@link PropertyMap} with {@link Property} added.
      */
-    public PropertyMap addPropertyNoHistory(final Property property) {
-        if (listeners != null) {
-            listeners.propertyAdded(property);
-        }
+    public final PropertyMap addPropertyNoHistory(final Property property) {
+        propertyAdded(property, true);
         final PropertyHashMap newProperties = properties.immutableAdd(property);
-        final PropertyMap newMap = new PropertyMap(this, newProperties);
-        newMap.updateFlagsAndBoundaries(property);
+        final PropertyMap newMap = new PropertyMap(this, newProperties, newFlags(property), newFieldCount(property), newSpillLength(property));
         newMap.updateFreeSlots(null, property);
 
         return newMap;
@@ -439,16 +452,13 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
      *
      * @return New {@link PropertyMap} with {@link Property} added.
      */
-    public synchronized PropertyMap addProperty(final Property property) {
-        if (listeners != null) {
-            listeners.propertyAdded(property);
-        }
+    public final synchronized PropertyMap addProperty(final Property property) {
+        propertyAdded(property, true);
         PropertyMap newMap = checkHistory(property);
 
         if (newMap == null) {
             final PropertyHashMap newProperties = properties.immutableAdd(property);
-            newMap = new PropertyMap(this, newProperties);
-            newMap.updateFlagsAndBoundaries(property);
+            newMap = new PropertyMap(this, newProperties, newFlags(property), newFieldCount(property), newSpillLength(property));
             newMap.updateFreeSlots(null, property);
             addToHistory(property, newMap);
         }
@@ -463,10 +473,8 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
      *
      * @return New {@link PropertyMap} with {@link Property} removed or {@code null} if not found.
      */
-    public synchronized PropertyMap deleteProperty(final Property property) {
-        if (listeners != null) {
-            listeners.propertyDeleted(property);
-        }
+    public final synchronized PropertyMap deleteProperty(final Property property) {
+        propertyDeleted(property, true);
         PropertyMap newMap = checkHistory(property);
         final String key = property.getKey();
 
@@ -477,13 +485,13 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
             // If deleted property was last field or spill slot we can make it reusable by reducing field/slot count.
             // Otherwise mark it as free in free slots bitset.
             if (isSpill && slot >= 0 && slot == spillLength - 1) {
-                newMap = new PropertyMap(newProperties, className, fieldCount, fieldMaximum, spillLength - 1, containsArrayKeys());
+                newMap = new PropertyMap(this, newProperties, flags, fieldCount, spillLength - 1);
                 newMap.freeSlots = freeSlots;
             } else if (!isSpill && slot >= 0 && slot == fieldCount - 1) {
-                newMap = new PropertyMap(newProperties, className, fieldCount - 1, fieldMaximum, spillLength, containsArrayKeys());
+                newMap = new PropertyMap(this, newProperties, flags, fieldCount - 1, spillLength);
                 newMap.freeSlots = freeSlots;
             } else {
-                newMap = new PropertyMap(this, newProperties);
+                newMap = new PropertyMap(this, newProperties, flags, fieldCount, spillLength);
                 newMap.updateFreeSlots(property, null);
             }
             addToHistory(property, newMap);
@@ -500,13 +508,8 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
      *
      * @return New {@link PropertyMap} with {@link Property} replaced.
      */
-    public PropertyMap replaceProperty(final Property oldProperty, final Property newProperty) {
-        if (listeners != null) {
-            listeners.propertyModified(oldProperty, newProperty);
-        }
-        // Add replaces existing property.
-        final PropertyHashMap newProperties = properties.immutableReplace(oldProperty, newProperty);
-        final PropertyMap newMap = new PropertyMap(this, newProperties);
+    public final PropertyMap replaceProperty(final Property oldProperty, final Property newProperty) {
+        propertyModified(oldProperty, newProperty, true);
         /*
          * See ScriptObject.modifyProperty and ScriptObject.setUserAccessors methods.
          *
@@ -528,14 +531,17 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
                 newProperty instanceof UserAccessorProperty :
             "arbitrary replaceProperty attempted " + sameType + " oldProperty=" + oldProperty.getClass() + " newProperty=" + newProperty.getClass() + " [" + oldProperty.getLocalType() + " => " + newProperty.getLocalType() + "]";
 
-        newMap.flags = flags;
-
         /*
          * spillLength remains same in case (1) and (2) because of slot reuse. Only for case (3), we need
          * to add spill count of the newly added UserAccessorProperty property.
          */
+        final int newSpillLength = sameType ? spillLength : Math.max(spillLength, newProperty.getSlot() + 1);
+
+        // Add replaces existing property.
+        final PropertyHashMap newProperties = properties.immutableReplace(oldProperty, newProperty);
+        final PropertyMap newMap = new PropertyMap(this, newProperties, flags, fieldCount, newSpillLength);
+
         if (!sameType) {
-            newMap.spillLength = Math.max(spillLength, newProperty.getSlot() + 1);
             newMap.updateFreeSlots(oldProperty, newProperty);
         }
         return newMap;
@@ -551,7 +557,7 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
      * @param propertyFlags attribute flags of the property
      * @return the newly created UserAccessorProperty
      */
-    public UserAccessorProperty newUserAccessors(final String key, final int propertyFlags) {
+    public final UserAccessorProperty newUserAccessors(final String key, final int propertyFlags) {
         return new UserAccessorProperty(key, propertyFlags, getFreeSpillSlot());
     }
 
@@ -562,7 +568,7 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
      *
      * @return {@link Property} matching key.
      */
-    public Property findProperty(final String key) {
+    public final Property findProperty(final String key) {
         return properties.find(key);
     }
 
@@ -573,12 +579,12 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
      *
      * @return New {@link PropertyMap} with added properties.
      */
-    public PropertyMap addAll(final PropertyMap other) {
+    public final PropertyMap addAll(final PropertyMap other) {
         assert this != other : "adding property map to itself";
         final Property[] otherProperties = other.properties.getProperties();
         final PropertyHashMap newProperties = properties.immutableAdd(otherProperties);
 
-        final PropertyMap newMap = new PropertyMap(this, newProperties);
+        final PropertyMap newMap = new PropertyMap(this, newProperties, flags, fieldCount, spillLength);
         for (final Property property : otherProperties) {
             // This method is only safe to use with non-slotted, native getter/setter properties
             assert property.getSlot() == -1;
@@ -593,7 +599,7 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
      *
      * @return Properties as an array.
      */
-    public Property[] getProperties() {
+    public final Property[] getProperties() {
         return properties.getProperties();
     }
 
@@ -602,7 +608,7 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
      *
      * @return class name of owner objects.
      */
-    public String getClassName() {
+    public final String getClassName() {
         return className;
     }
 
@@ -612,9 +618,7 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
      * @return New map with {@link #NOT_EXTENSIBLE} flag set.
      */
     PropertyMap preventExtensions() {
-        final PropertyMap newMap = new PropertyMap(this);
-        newMap.flags |= NOT_EXTENSIBLE;
-        return newMap;
+        return new PropertyMap(this, properties, flags | NOT_EXTENSIBLE, fieldCount, spillLength);
     }
 
     /**
@@ -630,10 +634,7 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
             newProperties = newProperties.immutableAdd(oldProperty.addFlags(Property.NOT_CONFIGURABLE));
         }
 
-        final PropertyMap newMap = new PropertyMap(this, newProperties);
-        newMap.flags |= NOT_EXTENSIBLE;
-
-        return newMap;
+        return new PropertyMap(this, newProperties, flags | NOT_EXTENSIBLE, fieldCount, spillLength);
     }
 
     /**
@@ -655,10 +656,7 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
             newProperties = newProperties.immutableAdd(oldProperty.addFlags(propertyFlags));
         }
 
-        final PropertyMap newMap = new PropertyMap(this, newProperties);
-        newMap.flags |= NOT_EXTENSIBLE;
-
-        return newMap;
+        return new PropertyMap(this, newProperties, flags | NOT_EXTENSIBLE, fieldCount, spillLength);
     }
 
     /**
@@ -830,13 +828,6 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
     }
 
     /**
-     * Flag this object as having array keys in defined properties
-     */
-    private void setContainsArrayKeys() {
-        flags |= CONTAINS_ARRAY_KEYS;
-    }
-
-    /**
      * Test to see if {@link PropertyMap} is extensible.
      *
      * @return {@code true} if {@link PropertyMap} can be added to.
@@ -914,12 +905,72 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
             setProtoNewMapCount.increment();
         }
 
-        final PropertyMap newMap = new PropertyMap(this);
+        final PropertyMap newMap = makeUnsharedCopy();
         addToProtoHistory(newProto, newMap);
 
         return newMap;
     }
 
+    /**
+     * Make a copy of this property map with the shared prototype field set to null. Note that this is
+     * only necessary for shared maps of top-level objects. Shared prototype maps represented by
+     * {@link SharedPropertyMap} are automatically converted to plain property maps when they evolve.
+     *
+     * @return a copy with the shared proto map unset
+     */
+    PropertyMap makeUnsharedCopy() {
+        final PropertyMap newMap = new PropertyMap(this);
+        newMap.sharedProtoMap = null;
+        return newMap;
+    }
+
+    /**
+     * Set a reference to the expected parent prototype map. This is used for class-like
+     * structures where we only want to use a top-level property map if all of the
+     * prototype property maps have not been modified.
+     *
+     * @param protoMap weak reference to the prototype property map
+     */
+    void setSharedProtoMap(final SharedPropertyMap protoMap) {
+        sharedProtoMap = protoMap;
+    }
+
+    /**
+     * Get the expected prototype property map if it is known, or null.
+     *
+     * @return parent map or null
+     */
+    public PropertyMap getSharedProtoMap() {
+        return sharedProtoMap;
+    }
+
+    /**
+     * Returns {@code true} if this map has been used as a shared prototype map (i.e. as a prototype
+     * for a JavaScript constructor function) and has not had properties added, deleted or replaced since then.
+     * @return true if this is a valid shared prototype map
+     */
+    boolean isValidSharedProtoMap() {
+        return false;
+    }
+
+    /**
+     * Returns the shared prototype switch point, or null if this is not a shared prototype map.
+     * @return the shared prototype switch point, or null
+     */
+    SwitchPoint getSharedProtoSwitchPoint() {
+        return null;
+    }
+
+    /**
+     * Return true if this map has a shared prototype map which has either been invalidated or does
+     * not match the map of {@code proto}.
+     * @param prototype the prototype object
+     * @return true if this is an invalid shared map for {@code prototype}
+     */
+    boolean isInvalidSharedMapFor(final ScriptObject prototype) {
+        return sharedProtoMap != null
+                && (!sharedProtoMap.isValidSharedProtoMap() || prototype == null || sharedProtoMap != prototype.getMap());
+    }
 
     /**
      * {@link PropertyMap} iterator.
