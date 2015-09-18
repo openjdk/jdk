@@ -48,15 +48,15 @@ supporting filtering).  Similarly, this facility enables the construction of an
 helpful for writing generic clients (bridges, browsers, debuggers, user interface tools).
 
 <P><code>Any</code> values can be dynamically interpreted (traversed) and constructed through
-<tt>DynAny</tt> objects.  A <tt>DynAny</tt> object is associated with a data
-value which corresponds to a copy of the value inserted into an <tt>Any</tt>.  A
-<tt>DynAny</tt> object may be viewed as an ordered collection of component 
-<tt>DynAny</tt>s. For <tt>DynAny</tt>s representing a basic type, such as <code>long</code>,
+<code>DynAny</code> objects.  A <code>DynAny</code> object is associated with a data
+value which corresponds to a copy of the value inserted into an <code>Any</code>.  A
+<code>DynAny</code> object may be viewed as an ordered collection of component 
+<code>DynAny</code>s. For <code>DynAny</code>s representing a basic type, such as <code>long</code>,
 or a type without components, such as an empty exception, the ordered collection of
 components is empty.
 
-<P>Each <tt>DynAny</tt> object maintains the notion of a current position into its collection
-of component <tt>DynAny</tt>s. The current position is identified by an index value that runs
+<P>Each <code>DynAny</code> object maintains the notion of a current position into its collection
+of component <code>DynAny</code>s. The current position is identified by an index value that runs
 from 0 to n-1, where <em>n</em> is the number of components.  The special index value -1
 indicates a current position that points nowhere.
  For values that cannot have a current position (such as an empty exception),
