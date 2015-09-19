@@ -1080,14 +1080,14 @@ search:
         return new File(filePath);
     }
 
-    private final static String[] DEPLOYMENT_CACHE_PROPERTIES = {
+    private static final String[] DEPLOYMENT_CACHE_PROPERTIES = {
         "deployment.system.cachedir",
         "deployment.user.cachedir",
         "deployment.javaws.cachedir",
         "deployment.javapi.cachedir"
     };
 
-    private final static ArrayList <File> deploymentCacheDirectoryList = new ArrayList<>();
+    private static final ArrayList <File> deploymentCacheDirectoryList = new ArrayList<>();
 
     private static boolean isFileInWebstartedCache(File f) {
 

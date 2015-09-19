@@ -31,7 +31,7 @@ import java.util.Comparator;
 import java.util.Arrays;
 
 public abstract class AreaOp {
-    public static abstract class CAGOp extends AreaOp {
+    public abstract static class CAGOp extends AreaOp {
         boolean inLeft;
         boolean inRight;
         boolean inResult;

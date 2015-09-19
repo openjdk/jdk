@@ -56,7 +56,7 @@ import sun.swing.ImageCache;
  */
 class GTKEngine {
 
-    final static GTKEngine INSTANCE = new GTKEngine();
+    static final GTKEngine INSTANCE = new GTKEngine();
 
     /** Size of the image cache */
     private static final int CACHE_SIZE = 50;
@@ -523,7 +523,7 @@ class GTKEngine {
         native_paint_background(widget, state, x - x0, y - y0, w, h);
     }
 
-    private final static ColorModel[] COLOR_MODELS = {
+    private static final ColorModel[] COLOR_MODELS = {
         // Transparency.OPAQUE
         new DirectColorModel(24, 0x00ff0000, 0x0000ff00, 0x000000ff, 0x00000000),
         // Transparency.BITMASK
@@ -532,7 +532,7 @@ class GTKEngine {
         ColorModel.getRGBdefault(),
     };
 
-    private final static int[][] BAND_OFFSETS = {
+    private static final int[][] BAND_OFFSETS = {
         { 0x00ff0000, 0x0000ff00, 0x000000ff },             // OPAQUE
         { 0x00ff0000, 0x0000ff00, 0x000000ff, 0x01000000 }, // BITMASK
         { 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000 }  // TRANSLUCENT

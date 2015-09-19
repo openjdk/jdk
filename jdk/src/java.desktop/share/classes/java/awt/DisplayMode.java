@@ -92,7 +92,7 @@ public final class DisplayMode {
      * display mode.
      * @see #getBitDepth
      */
-    @Native public final static int BIT_DEPTH_MULTI = -1;
+    @Native public static final int BIT_DEPTH_MULTI = -1;
 
     /**
      * Returns the bit depth of the display, in bits per pixel.  This may be
@@ -110,7 +110,7 @@ public final class DisplayMode {
      * Value of the refresh rate if not known.
      * @see #getRefreshRate
      */
-    @Native public final static int REFRESH_RATE_UNKNOWN = 0;
+    @Native public static final int REFRESH_RATE_UNKNOWN = 0;
 
     /**
      * Returns the refresh rate of the display, in hertz.  This may be

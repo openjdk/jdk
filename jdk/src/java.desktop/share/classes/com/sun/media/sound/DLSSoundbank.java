@@ -53,7 +53,7 @@ import javax.sound.sampled.AudioFormat.Encoding;
  */
 public final class DLSSoundbank implements Soundbank {
 
-    static private class DLSID {
+    private static class DLSID {
         long i1;
         int s1;
         int s2;

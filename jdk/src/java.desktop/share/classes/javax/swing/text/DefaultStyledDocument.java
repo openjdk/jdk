@@ -2650,7 +2650,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
         }
 
         /** Class-specific reference queues.  */
-        private final static Map<Class<?>, ReferenceQueue<DefaultStyledDocument>> queueMap
+        private static final Map<Class<?>, ReferenceQueue<DefaultStyledDocument>> queueMap
                 = new HashMap<Class<?>, ReferenceQueue<DefaultStyledDocument>>();
 
         /** A weak reference to the document object.  */

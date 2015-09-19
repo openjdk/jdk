@@ -54,7 +54,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
    * allow a smudge factor so that moving the mouse by a small
    * amount does not wipe out the multi-click state variables.
    */
-    private final static int AWT_MULTICLICK_SMUDGE = 4;
+    private static final int AWT_MULTICLICK_SMUDGE = 4;
     // ButtonXXX events stuff
     static int lastX = 0, lastY = 0;
     static long lastTime = 0;
@@ -123,7 +123,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
     native void getWMInsets(long window, long left, long top, long right, long bottom, long border);
     native long getTopWindow(long window, long rootWin);
     native void getWindowBounds(long window, long x, long y, long width, long height);
-    private native static void initIDs();
+    private static native void initIDs();
 
     static {
         initIDs();
@@ -441,7 +441,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
     // and one that does not get overridden. The problem is that in postInit
     // we call setBackground and we don't have all the stuff initialized to
     // do a full paint for most peers. So we cannot call setBackground in postInit.
-    final public void xSetBackground(Color c) {
+    public final void xSetBackground(Color c) {
         XToolkit.awtLock();
         try {
             winBackground(c);
@@ -1046,13 +1046,13 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
         return xEventType == XConstants.KeyPress ? java.awt.event.KeyEvent.KEY_PRESSED :
                xEventType == XConstants.KeyRelease ? java.awt.event.KeyEvent.KEY_RELEASED : 0;
     }
-    static private long xkeycodeToKeysym(XKeyEvent ev) {
+    private static long xkeycodeToKeysym(XKeyEvent ev) {
         return XKeysym.getKeysym( ev );
     }
     private long xkeycodeToPrimaryKeysym(XKeyEvent ev) {
         return XKeysym.xkeycode2primary_keysym( ev );
     }
-    static private int primaryUnicode2JavaKeycode(int uni) {
+    private static int primaryUnicode2JavaKeycode(int uni) {
         return (uni > 0? sun.awt.ExtendedKeyCodes.getExtendedKeyCodeForChar(uni) : 0);
         //return (uni > 0? uni + 0x01000000 : 0);
     }

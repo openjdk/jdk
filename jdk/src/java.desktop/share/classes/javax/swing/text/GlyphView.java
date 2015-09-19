@@ -1153,7 +1153,7 @@ public class GlyphView extends View implements TabableView, Cloneable {
      *
      * @since 1.3
      */
-    public static abstract class GlyphPainter {
+    public abstract static class GlyphPainter {
 
         /**
          * Determine the span the glyphs given a start location

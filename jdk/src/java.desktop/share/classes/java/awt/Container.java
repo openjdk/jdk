@@ -2975,7 +2975,7 @@ public class Container extends Component {
         }
     }
 
-    final static class WakingRunnable implements Runnable {
+    static final class WakingRunnable implements Runnable {
         public void run() {
         }
     }
@@ -3843,7 +3843,7 @@ public class Container extends Component {
          * Number of PropertyChangeListener objects registered. It's used
          * to add/remove ContainerListener to track target Container's state.
          */
-        private volatile transient int propertyListenersCount = 0;
+        private transient volatile int propertyListenersCount = 0;
 
         /**
          * The handler to fire {@code PropertyChange}

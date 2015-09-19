@@ -321,7 +321,7 @@ public class WindowsIconFactory implements Serializable
     @SuppressWarnings("serial") // Same-version serialization only
     private static class CheckBoxIcon implements Icon, Serializable
     {
-        final static int csize = 13;
+        static final int csize = 13;
         public void paintIcon(Component c, Graphics g, int x, int y) {
             JCheckBox cb = (JCheckBox) c;
             ButtonModel model = cb.getModel();

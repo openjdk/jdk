@@ -54,13 +54,13 @@ import javax.swing.text.html.CSS.Value;
 class CSSBorder extends AbstractBorder {
 
     /** Indices for the attribute groups.  */
-    final static int COLOR = 0, STYLE = 1, WIDTH = 2;
+    static final int COLOR = 0, STYLE = 1, WIDTH = 2;
 
     /** Indices for the box sides within the attribute group.  */
-    final static int TOP = 0, RIGHT = 1, BOTTOM = 2, LEFT = 3;
+    static final int TOP = 0, RIGHT = 1, BOTTOM = 2, LEFT = 3;
 
     /** The attribute groups.  */
-    final static Attribute[][] ATTRIBUTES = {
+    static final Attribute[][] ATTRIBUTES = {
         { Attribute.BORDER_TOP_COLOR, Attribute.BORDER_RIGHT_COLOR,
           Attribute.BORDER_BOTTOM_COLOR, Attribute.BORDER_LEFT_COLOR, },
         { Attribute.BORDER_TOP_STYLE, Attribute.BORDER_RIGHT_STYLE,
@@ -70,12 +70,12 @@ class CSSBorder extends AbstractBorder {
     };
 
     /** Parsers for the border properties.  */
-    final static CssValue PARSERS[] = {
+    static final CssValue PARSERS[] = {
         new ColorValue(), new BorderStyle(), new BorderWidthValue(null, 0),
     };
 
     /** Default values for the border properties.  */
-    final static Object[] DEFAULTS = {
+    static final Object[] DEFAULTS = {
         Attribute.BORDER_COLOR, // marker: value will be computed on request
         PARSERS[1].parseCssValue(Attribute.BORDER_STYLE.getDefaultValue()),
         PARSERS[2].parseCssValue(Attribute.BORDER_WIDTH.getDefaultValue()),

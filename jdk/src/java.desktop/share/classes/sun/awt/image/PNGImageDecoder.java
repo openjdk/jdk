@@ -650,13 +650,13 @@ public class PNGImageDecoder extends ImageDecoder
     }
   /* code changed to make it work with ImageDecoder architecture
     static int ThreadLimit = 10;
-    private synchronized static void waitTurn() {
+    private static synchronized void waitTurn() {
         try {
             while(ThreadLimit<=0) PNGImageDecoder.class.wait(1000);
         } catch(InterruptedException e){}
         ThreadLimit--;
     }
-    private synchronized static void endTurn() {
+    private static synchronized void endTurn() {
         if(ThreadLimit<=0) PNGImageDecoder.class.notify();
         ThreadLimit++;
     }
@@ -771,7 +771,7 @@ public class PNGImageDecoder extends ImageDecoder
     is the 1's complement of the final running CRC (see the
     crc() routine below)). */
 
-    static private int update_crc(int crc, byte[] buf, int offset, int len) {
+    private static int update_crc(int crc, byte[] buf, int offset, int len) {
         int c = crc;
         while (--len>=0)
             c = crc_table[(c ^ buf[offset++]) & 0xff] ^ (c >>> 8);
@@ -779,7 +779,7 @@ public class PNGImageDecoder extends ImageDecoder
     }
 
     /* Return the CRC of the bytes buf[0..len-1]. */
-    static private int crc(byte[] buf, int offset, int len) {
+    private static int crc(byte[] buf, int offset, int len) {
         return update_crc(0xffffffff, buf, offset, len) ^ 0xffffffff;
     }
     public static class Chromaticities {

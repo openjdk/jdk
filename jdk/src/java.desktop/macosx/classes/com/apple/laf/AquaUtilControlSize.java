@@ -40,8 +40,8 @@ import com.apple.laf.AquaUtils.RecyclableSingleton;
 import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 
 public class AquaUtilControlSize {
-    protected final static String CLIENT_PROPERTY_KEY = "JComponent.sizeVariant";
-    protected final static String SYSTEM_PROPERTY_KEY = "swing.component.sizevariant";
+    protected static final String CLIENT_PROPERTY_KEY = "JComponent.sizeVariant";
+    protected static final String SYSTEM_PROPERTY_KEY = "swing.component.sizevariant";
 
     interface Sizeable {
         void applySizeFor(final JComponent c, final Size size);
@@ -76,7 +76,7 @@ public class AquaUtilControlSize {
         return JRSUIConstants.Size.REGULAR;
     }
 
-    protected final static JRSUIConstants.Size defaultSize = getDefaultSize();
+    protected static final JRSUIConstants.Size defaultSize = getDefaultSize();
     protected static JRSUIConstants.Size getUserSizeFrom(final JComponent c) {
         final Object sizeProp = c.getClientProperty(CLIENT_PROPERTY_KEY);
         if (sizeProp == null) return defaultSize;
