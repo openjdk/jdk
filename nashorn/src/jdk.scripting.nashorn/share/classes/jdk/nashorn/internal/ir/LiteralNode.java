@@ -25,11 +25,9 @@
 
 package jdk.nashorn.internal.ir;
 
-import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import jdk.nashorn.internal.codegen.CompileUnit;
 import jdk.nashorn.internal.codegen.types.ArrayType;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Immutable;
@@ -583,6 +581,15 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
         return POSTSET_MARKER;
     }
 
+    /**
+     * Test whether {@code object} represents a constant value.
+     * @param object a node or value object
+     * @return true if object is a constant value
+     */
+    public static boolean isConstant(final Object object) {
+        return objectAsConstant(object) != POSTSET_MARKER;
+    }
+
     private static final class NullLiteralNode extends PrimitiveLiteralNode<Object> {
         private static final long serialVersionUID = 1L;
 
@@ -614,7 +621,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
      * Array literal node class.
      */
     @Immutable
-    public static final class ArrayLiteralNode extends LiteralNode<Expression[]> implements LexicalContextNode {
+    public static final class ArrayLiteralNode extends LiteralNode<Expression[]> implements LexicalContextNode, Splittable {
         private static final long serialVersionUID = 1L;
 
         /** Array element type. */
@@ -626,8 +633,8 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
         /** Indices of array elements requiring computed post sets. */
         private final int[] postsets;
 
-        /** Sub units with indexes ranges, in which to split up code generation, for large literals */
-        private final List<ArrayUnit> units;
+        /** Ranges for splitting up large literals in code generation */
+        private final List<Splittable.SplitRange> splitRanges;
 
         @Override
         public boolean isArray() {
@@ -635,64 +642,13 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
         }
 
 
-        /**
-         * An ArrayUnit is a range in an ArrayLiteral. ArrayLiterals can
-         * be split if they are too large, for bytecode generation reasons
-         */
-        public static final class ArrayUnit implements CompileUnitHolder, Serializable {
-            private static final long serialVersionUID = 1L;
-
-            /** Compile unit associated with the postsets range. */
-            private final CompileUnit compileUnit;
-
-            /** postsets range associated with the unit (hi not inclusive). */
-            private final int lo, hi;
-
-            /**
-             * Constructor
-             * @param compileUnit compile unit
-             * @param lo lowest array index in unit
-             * @param hi highest array index in unit + 1
-             */
-            public ArrayUnit(final CompileUnit compileUnit, final int lo, final int hi) {
-                this.compileUnit = compileUnit;
-                this.lo   = lo;
-                this.hi   = hi;
-            }
-
-            /**
-             * Get the high index position of the ArrayUnit (non inclusive)
-             * @return high index position
-             */
-            public int getHi() {
-                return hi;
-            }
-
-            /**
-             * Get the low index position of the ArrayUnit (inclusive)
-             * @return low index position
-             */
-            public int getLo() {
-                return lo;
-            }
-
-            /**
-             * The array compile unit
-             * @return array compile unit
-             */
-            @Override
-            public CompileUnit getCompileUnit() {
-                return compileUnit;
-            }
-        }
-
         private static final class ArrayLiteralInitializer {
 
             static ArrayLiteralNode initialize(final ArrayLiteralNode node) {
                 final Type elementType = computeElementType(node.value);
                 final int[] postsets = computePostsets(node.value);
                 final Object presets = computePresets(node.value, elementType, postsets);
-                return new ArrayLiteralNode(node, node.value, elementType, postsets, presets, node.units);
+                return new ArrayLiteralNode(node, node.value, elementType, postsets, presets, node.splitRanges);
             }
 
             private static Type computeElementType(final Expression[] value) {
@@ -725,7 +681,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
 
                 for (int i = 0; i < value.length; i++) {
                     final Expression element = value[i];
-                    if (element == null || objectAsConstant(element) == POSTSET_MARKER) {
+                    if (element == null || !isConstant(element)) {
                         computed[nComputed++] = i;
                     }
                 }
@@ -842,19 +798,19 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
             this.elementType = Type.UNKNOWN;
             this.presets     = null;
             this.postsets    = null;
-            this.units       = null;
+            this.splitRanges = null;
         }
 
         /**
          * Copy constructor
          * @param node source array literal node
          */
-        private ArrayLiteralNode(final ArrayLiteralNode node, final Expression[] value, final Type elementType, final int[] postsets, final Object presets, final List<ArrayUnit> units) {
+        private ArrayLiteralNode(final ArrayLiteralNode node, final Expression[] value, final Type elementType, final int[] postsets, final Object presets, final List<Splittable.SplitRange> splitRanges) {
             super(node, value);
             this.elementType = elementType;
             this.postsets    = postsets;
             this.presets     = presets;
-            this.units       = units;
+            this.splitRanges = splitRanges;
         }
 
         /**
@@ -946,26 +902,27 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
         }
 
         /**
-         * Get the array units that make up this ArrayLiteral
-         * @see ArrayUnit
-         * @return list of array units
+         * Get the split ranges for this ArrayLiteral, or null if this array does not have to be split.
+         * @see Splittable.SplitRange
+         * @return list of split ranges
          */
-        public List<ArrayUnit> getUnits() {
-            return units == null ? null : Collections.unmodifiableList(units);
+        @Override
+        public List<Splittable.SplitRange> getSplitRanges() {
+            return splitRanges == null ? null : Collections.unmodifiableList(splitRanges);
         }
 
         /**
-         * Set the ArrayUnits that make up this ArrayLiteral
+         * Set the SplitRanges that make up this ArrayLiteral
          * @param lc lexical context
-         * @see ArrayUnit
-         * @param units list of array units
-         * @return new or changed arrayliteralnode
+         * @see Splittable.SplitRange
+         * @param splitRanges list of split ranges
+         * @return new or changed node
          */
-        public ArrayLiteralNode setUnits(final LexicalContext lc, final List<ArrayUnit> units) {
-            if (this.units == units) {
+        public ArrayLiteralNode setSplitRanges(final LexicalContext lc, final List<Splittable.SplitRange> splitRanges) {
+            if (this.splitRanges == splitRanges) {
                 return this;
             }
-            return Node.replaceInLexicalContext(lc, this, new ArrayLiteralNode(this, value, elementType, postsets, presets, units));
+            return Node.replaceInLexicalContext(lc, this, new ArrayLiteralNode(this, value, elementType, postsets, presets, splitRanges));
         }
 
         @Override
@@ -987,7 +944,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
             if (this.value == value) {
                 return this;
             }
-            return Node.replaceInLexicalContext(lc, this, new ArrayLiteralNode(this, value, elementType, postsets, presets, units));
+            return Node.replaceInLexicalContext(lc, this, new ArrayLiteralNode(this, value, elementType, postsets, presets, splitRanges));
         }
 
         private ArrayLiteralNode setValue(final LexicalContext lc, final List<Expression> value) {
