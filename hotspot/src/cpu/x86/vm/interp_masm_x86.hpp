@@ -60,6 +60,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
     _locals_register(LP64_ONLY(r14) NOT_LP64(rdi)),
     _bcp_register(LP64_ONLY(r13) NOT_LP64(rsi)) {}
 
+  void jump_to_entry(address entry);
+
   void load_earlyret_value(TosState state);
 
 #ifdef CC_INTERP
