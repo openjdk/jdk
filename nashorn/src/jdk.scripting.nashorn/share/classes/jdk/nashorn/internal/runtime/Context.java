@@ -1034,6 +1034,16 @@ public final class Context {
     }
 
     /**
+     * Is {@code className} the name of a structure class?
+     *
+     * @param className a class name
+     * @return true if className is a structure class name
+     */
+    public static boolean isStructureClass(final String className) {
+        return StructureLoader.isStructureClass(className);
+    }
+
+    /**
      * Checks that the given Class can be accessed from no permissions context.
      *
      * @param clazz Class object
