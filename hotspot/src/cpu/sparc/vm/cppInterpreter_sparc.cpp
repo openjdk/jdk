@@ -468,7 +468,7 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
 
   // If G1 is not enabled then attempt to go through the accessor entry point
   // Reference.get is an accessor
-  return generate_jump_to_normal_entry();
+  return NULL;
 }
 
 //
