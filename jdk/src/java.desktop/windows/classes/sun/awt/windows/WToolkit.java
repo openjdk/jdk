@@ -832,7 +832,7 @@ public final class WToolkit extends SunToolkit implements Runnable {
      * Have Win32GraphicsEnvironment execute the display change code on the
      * Event thread.
      */
-    static public void displayChanged() {
+    public static void displayChanged() {
         EventQueue.invokeLater(new Runnable() {
             @Override
             public void run() {
@@ -1127,7 +1127,7 @@ public final class WToolkit extends SunToolkit implements Runnable {
         return areExtraMouseButtonsEnabled;
     }
 
-    private native synchronized int getNumberOfButtonsImpl();
+    private synchronized native int getNumberOfButtonsImpl();
 
     @Override
     public int getNumberOfButtons(){

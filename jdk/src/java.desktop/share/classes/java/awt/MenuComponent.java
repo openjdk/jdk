@@ -123,8 +123,8 @@ public abstract class MenuComponent implements java.io.Serializable {
     /*
      * Internal constants for serialization.
      */
-    final static String actionListenerK = Component.actionListenerK;
-    final static String itemListenerK = Component.itemListenerK;
+    static final String actionListenerK = Component.actionListenerK;
+    static final String itemListenerK = Component.itemListenerK;
 
     /*
      * JDK 1.1 serialVersionUID

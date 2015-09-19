@@ -558,9 +558,9 @@ class CAccessibility implements PropertyChangeListener {
 
     // Duplicated from JavaComponentAccessibility
     // Note that values >=0 are indexes into the child array
-    final static int JAVA_AX_ALL_CHILDREN = -1;
-    final static int JAVA_AX_SELECTED_CHILDREN = -2;
-    final static int JAVA_AX_VISIBLE_CHILDREN = -3;
+    static final int JAVA_AX_ALL_CHILDREN = -1;
+    static final int JAVA_AX_SELECTED_CHILDREN = -2;
+    static final int JAVA_AX_VISIBLE_CHILDREN = -3;
 
     // Each child takes up two entries in the array: one for itself and one for its role
     public static Object[] getChildrenAndRoles(final Accessible a, final Component c, final int whichChildren, final boolean allowIgnored) {

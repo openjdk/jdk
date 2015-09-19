@@ -119,14 +119,14 @@ public abstract class GraphicsPrimitive {
 
     private long pNativePrim;   // Native blit loop info
 
-    public synchronized static final int makePrimTypeID() {
+    public static final synchronized int makePrimTypeID() {
         if (unusedPrimID > 255) {
             throw new InternalError("primitive id overflow");
         }
         return unusedPrimID++;
     }
 
-    public synchronized static final int makeUniqueID(int primTypeID,
+    public static final synchronized int makeUniqueID(int primTypeID,
                                                       SurfaceType src,
                                                       CompositeType cmp,
                                                       SurfaceType dst)
@@ -456,7 +456,7 @@ public abstract class GraphicsPrimitive {
         }
     }
 
-    public synchronized static void tracePrimitive(Object prim) {
+    public static synchronized void tracePrimitive(Object prim) {
         if ((traceflags & TRACECOUNTS) != 0) {
             if (traceMap == null) {
                 traceMap = new HashMap<>();

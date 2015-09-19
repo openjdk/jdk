@@ -267,7 +267,7 @@ class TimerQueue implements Runnable
         }
 
 
-        final public long getDelay(TimeUnit unit) {
+        public final long getDelay(TimeUnit unit) {
             return  unit.convert(time - now(), TimeUnit.NANOSECONDS);
         }
 

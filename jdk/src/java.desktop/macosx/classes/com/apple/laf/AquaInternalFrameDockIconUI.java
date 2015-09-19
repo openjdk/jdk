@@ -229,9 +229,9 @@ public class AquaInternalFrameDockIconUI extends DesktopIconUI implements MouseL
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     class DockLabel extends JLabel {
-        final static int NUB_HEIGHT = 7;
-        final static int ROUND_ADDITIONAL_HEIGHT = 8;
-        final static int ROUND_ADDITIONAL_WIDTH = 12;
+        static final int NUB_HEIGHT = 7;
+        static final int ROUND_ADDITIONAL_HEIGHT = 8;
+        static final int ROUND_ADDITIONAL_WIDTH = 12;
 
         DockLabel(final String text) {
             super(text);

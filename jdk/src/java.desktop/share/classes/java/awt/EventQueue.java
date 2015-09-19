@@ -139,7 +139,7 @@ public class EventQueue {
      * Dummy runnable to wake up EDT from getNextEvent() after
      push/pop is performed
      */
-    private final static Runnable dummyRunnable = new Runnable() {
+    private static final Runnable dummyRunnable = new Runnable() {
         public void run() {
         }
     };

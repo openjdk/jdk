@@ -72,23 +72,23 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
     protected AppletClassLoader loader;
 
     /* applet event ids */
-    public final static int APPLET_DISPOSE = 0;
-    public final static int APPLET_LOAD = 1;
-    public final static int APPLET_INIT = 2;
-    public final static int APPLET_START = 3;
-    public final static int APPLET_STOP = 4;
-    public final static int APPLET_DESTROY = 5;
-    public final static int APPLET_QUIT = 6;
-    public final static int APPLET_ERROR = 7;
+    public static final int APPLET_DISPOSE = 0;
+    public static final int APPLET_LOAD = 1;
+    public static final int APPLET_INIT = 2;
+    public static final int APPLET_START = 3;
+    public static final int APPLET_STOP = 4;
+    public static final int APPLET_DESTROY = 5;
+    public static final int APPLET_QUIT = 6;
+    public static final int APPLET_ERROR = 7;
 
     /* send to the parent to force relayout */
-    public final static int APPLET_RESIZE = 51234;
+    public static final int APPLET_RESIZE = 51234;
 
     /* sent to a (distant) parent to indicate that the applet is being
      * loaded or as completed loading
      */
-    public final static int APPLET_LOADING = 51235;
-    public final static int APPLET_LOADING_COMPLETED = 51236;
+    public static final int APPLET_LOADING = 51235;
+    public static final int APPLET_LOADING_COMPLETED = 51236;
 
     /**
      * The current status. One of:
@@ -132,14 +132,14 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
     boolean loadAbortRequest = false;
 
     /* abstract classes */
-    abstract protected String getCode();
-    abstract protected String getJarFiles();
+    protected abstract String getCode();
+    protected abstract String getJarFiles();
 
     @Override
-    abstract public int    getWidth();
+    public abstract int    getWidth();
     @Override
-    abstract public int    getHeight();
-    abstract public boolean hasInitialFocus();
+    public abstract int    getHeight();
+    public abstract boolean hasInitialFocus();
 
     private static int threadGroupNumber = 0;
 
@@ -250,11 +250,11 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
     private Queue<Integer> queue = null;
 
 
-    synchronized public void addAppletListener(AppletListener l) {
+    public synchronized void addAppletListener(AppletListener l) {
         listeners = AppletEventMulticaster.add(listeners, l);
     }
 
-    synchronized public void removeAppletListener(AppletListener l) {
+    public synchronized void removeAppletListener(AppletListener l) {
         listeners = AppletEventMulticaster.remove(listeners, l);
     }
 
