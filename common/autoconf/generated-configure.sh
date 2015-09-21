@@ -4362,7 +4362,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1442820670
+DATE_WHEN_GENERATED=1442820958
 
 ###############################################################################
 #
@@ -13843,6 +13843,16 @@ $as_echo "$COMPILE_TYPE" >&6; }
 
   # Save the current directory this script was started from
   CURDIR="$PWD"
+
+  # We might need to rewrite ORIGINAL_PATH, if it includes "#", to quote them
+  # for make. We couldn't do this when we retrieved ORIGINAL_PATH, since SED
+  # was not available at that time.
+  REWRITTEN_PATH=`$ECHO "$ORIGINAL_PATH" | $SED -e 's/#/\\\\#/g'`
+  if test "x$REWRITTEN_PATH" != "x$ORIGINAL_PATH"; then
+    ORIGINAL_PATH="$REWRITTEN_PATH"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting ORIGINAL_PATH to $REWRITTEN_PATH" >&5
+$as_echo "$as_me: Rewriting ORIGINAL_PATH to $REWRITTEN_PATH" >&6;}
+  fi
 
   if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
     PATH_SEP=";"
