@@ -52,7 +52,8 @@ public class CompileWithAtFile extends SJavacTester {
                      "-if */alfa/omega/A.java\n" +
                      "-if */beta/B.java\n" +
                      GENSRC + "\n" +
-                     "-d " + BIN + "\n");
+                     "-d " + BIN + "\n" +
+                     "--state-dir=" + BIN + "\n");
         tb.writeFile(GENSRC.resolve("alfa/omega/A.java"),
                  "package alfa.omega; import beta.B; public class A { B b; }");
         tb.writeFile(GENSRC.resolve("beta/B.java"),
