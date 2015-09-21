@@ -35,7 +35,6 @@
  * @test
  * @bug 4486658 5031862
  * @run main TimeoutLockLoops
- * @key intermittent
  * @summary Checks for responsiveness of locks to timeouts.
  * Runs under the assumption that ITERS computations require more than
  * TIMEOUT msecs to complete, which seems to be a safe assumption for

@@ -152,7 +152,7 @@ abstract class FacetIntrospector {
     boolean isAccessible(final Member m) {
         final Class<?> declaring = m.getDeclaringClass();
         // (declaring == clazz) is just an optimization - we're calling this only from code that operates on a
-        // non-restriced class, so if the declaring class is identical to the class being inspected, then forego
+        // non-restricted class, so if the declaring class is identical to the class being inspected, then forego
         // a potentially expensive restricted-package check.
         return declaring == clazz || !CheckRestrictedPackage.isRestrictedClass(declaring);
     }

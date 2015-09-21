@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,8 @@
 
 package com.sun.tools.sjavac;
 
-import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.Writer;
 
 /**
  * Utility class only for sjavac logging.
@@ -37,7 +38,7 @@ import java.io.PrintStream;
  *  deletion without notice.</b>
  */
 public class Log {
-    private static PrintStream out, err;
+    private static PrintWriter out, err;
 
     public final static int WARN = 1;
     public final static int INFO = 2;
@@ -71,9 +72,9 @@ public class Log {
         err.println(msg);
     }
 
-    static public void initializeLog(PrintStream o, PrintStream e) {
-        out = o;
-        err = e;
+    static public void initializeLog(Writer o, Writer e) {
+        out = new PrintWriter(o);
+        err = new PrintWriter(e);
     }
 
     static public void setLogLevel(String l) {
