@@ -197,7 +197,9 @@ CodeRootSetTable* G1CodeRootSet::load_acquire_table() {
 }
 
 void G1CodeRootSet::allocate_small_table() {
-  _table = new CodeRootSetTable(SmallSize);
+  CodeRootSetTable* temp = new CodeRootSetTable(SmallSize);
+
+  OrderAccess::release_store_ptr(&_table, temp);
 }
 
 void CodeRootSetTable::purge_list_append(CodeRootSetTable* table) {
