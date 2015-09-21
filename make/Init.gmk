@@ -50,7 +50,8 @@ ifeq ($(HAS_SPEC),)
   include $(topdir)/make/Help.gmk
 
   # Targets provided by Init.gmk.
-  ALL_INIT_TARGETS := print-modules print-targets print-configuration reconfigure
+  ALL_INIT_TARGETS := print-modules print-targets print-configuration \
+      reconfigure pre-compare-build post-compare-build
 
   # CALLED_TARGETS is the list of targets that the user provided,
   # or "default" if unspecified.
@@ -163,25 +164,39 @@ ifeq ($(HAS_SPEC),)
 	      $(COMMAND_LINE_VARIABLES) $(MAKECMDGOALS))')
         endif
 
+    MAKE_INIT_WITH_SPEC_ARGUMENTS := ACTUAL_TOPDIR=$(topdir) \
+        USER_MAKE_VARS="$(USER_MAKE_VARS)" MAKE_LOG_FLAGS=$(MAKE_LOG_FLAGS) \
+        LOG_LEVEL=$(LOG_LEVEL) LOG_NOFILE=$(LOG_NOFILE) \
+        INIT_TARGETS="$(INIT_TARGETS)" \
+        SEQUENTIAL_TARGETS="$(SEQUENTIAL_TARGETS)" \
+        PARALLEL_TARGETS="$(PARALLEL_TARGETS)"
+
     # Now the init and main targets will be called, once for each SPEC. The
     # recipe will be run once for every target specified, but we only want to
     # execute the recipe a single time, hence the TARGET_DONE with a dummy
     # command if true.
+    # The COMPARE_BUILD part implements special support for makefile development.
     $(ALL_INIT_TARGETS) $(ALL_MAIN_TARGETS): make-info
 	@$(if $(TARGET_DONE), \
 	  true \
 	, \
+	  ( cd $(topdir) && \
 	  $(foreach spec, $(SPECS), \
-	    ( cd $(topdir) && \
 	    $(MAKE) $(MFLAGS) $(MAKE_LOG_FLAGS) -r -R -j 1 -f $(topdir)/make/Init.gmk \
-	        SPEC=$(spec) HAS_SPEC=true ACTUAL_TOPDIR=$(topdir) \
-	        USER_MAKE_VARS="$(USER_MAKE_VARS)" MAKE_LOG_FLAGS=$(MAKE_LOG_FLAGS) \
-	        LOG_LEVEL=$(LOG_LEVEL) LOG_NOFILE=$(LOG_NOFILE) \
-	        INIT_TARGETS="$(INIT_TARGETS)" \
-	        SEQUENTIAL_TARGETS="$(SEQUENTIAL_TARGETS)" \
-	        PARALLEL_TARGETS="$(PARALLEL_TARGETS)"  \
-	        main ) && \
-	  ) true \
+	        SPEC=$(spec) HAS_SPEC=true $(MAKE_INIT_WITH_SPEC_ARGUMENTS) \
+	        main && \
+	    $(if $(and $(COMPARE_BUILD), $(PARALLEL_TARGETS)), \
+	        $(MAKE) $(MFLAGS) $(MAKE_LOG_FLAGS) -r -R -f $(topdir)/make/Init.gmk \
+	            SPEC=$(spec) HAS_SPEC=true ACTUAL_TOPDIR=$(topdir) \
+	            COMPARE_BUILD="$(COMPARE_BUILD)" pre-compare-build && \
+	        $(MAKE) $(MFLAGS) $(MAKE_LOG_FLAGS) -r -R -j 1 -f $(topdir)/make/Init.gmk \
+	            SPEC=$(spec) HAS_SPEC=true $(MAKE_INIT_WITH_SPEC_ARGUMENTS) \
+	            COMPARE_BUILD="$(COMPARE_BUILD)" main && \
+	        $(MAKE) $(MFLAGS) $(MAKE_LOG_FLAGS) -r -R -f $(topdir)/make/Init.gmk \
+	            SPEC=$(spec) HAS_SPEC=true ACTUAL_TOPDIR=$(topdir) \
+	            COMPARE_BUILD="$(COMPARE_BUILD)" post-compare-build && \
+	    ) \
+	  ) true ) \
 	  $(eval TARGET_DONE=true) \
 	)
 
@@ -204,6 +219,9 @@ else # HAS_SPEC=true
 
   # Verify that the spec file we included seems okay.
   $(eval $(call CheckSpecSanity))
+
+  # Parse COMPARE_BUILD (for makefile development)
+  $(eval $(call ParseCompareBuild))
 
   ifeq ($(LOG_NOFILE), true)
     # Disable log wrapper if LOG=[level,]nofile was given
@@ -244,7 +262,7 @@ else # HAS_SPEC=true
   # The main target, for delegating into Main.gmk
   ##############################################################################
 
-  MAIN_TARGETS := $(SEQUENTIAL_TARGETS) $(PARALLEL_TARGETS)
+  MAIN_TARGETS := $(SEQUENTIAL_TARGETS) $(PARALLEL_TARGETS) $(COMPARE_BUILD_MAKE)
   TARGET_DESCRIPTION := target$(if $(word 2, $(MAIN_TARGETS)),s) \
       '$(strip $(MAIN_TARGETS))' in configuration '$(CONF_NAME)'
 
@@ -271,7 +289,7 @@ else # HAS_SPEC=true
 	    ( cd $(TOPDIR) && \
 	        $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) $(OUTPUT_SYNC_FLAG) \
 	            -j $(JOBS) -f make/Main.gmk $(USER_MAKE_VARS) \
-	            $(PARALLEL_TARGETS) || \
+	            $(PARALLEL_TARGETS) $(COMPARE_BUILD_MAKE) || \
 	        ( exitcode=$$? && $(BUILD_LOG_WRAPPER) \
 	        $(PRINTF) "\nERROR: Build failed for $(TARGET_DESCRIPTION) (exit code $$exitcode) \n" && \
 	        cd $(TOPDIR) && $(MAKE) $(MAKE_ARGS) -j 1 -f make/Init.gmk \
@@ -303,6 +321,27 @@ else # HAS_SPEC=true
 	  $(PRINTF) "Hint: Try searching the build log for '] Error'.\n" ; \
 	fi
 	$(PRINTF) "Hint: If caused by a warning, try configure --disable-warnings-as-errors.\n\n"
+
+    # Support targets for COMPARE_BUILD, used for makefile development
+    pre-compare-build:
+	$(ECHO) "Preparing for comparison rebuild"
+        # Apply patch, if any
+        ifneq ($(COMPARE_BUILD_PATCH), )
+	  $(PATCH) -p1 < $(COMPARE_BUILD_PATCH)
+        endif
+        # Move the first build away and re-create the output directory
+	( cd $(TOPDIR) && \
+	    $(MV) $(OUTPUT_ROOT) $(OUTPUT_ROOT).OLD && \
+	    $(MKDIR) -p $(OUTPUT_ROOT) )
+        # Re-run configure with the same arguments (and possibly some additional),
+	# must be done after patching.
+	( cd $(OUTPUT_ROOT) && PATH="$(ORIGINAL_PATH)" \
+	    $(BASH) $(TOPDIR)/configure $(CONFIGURE_COMMAND_LINE) $(COMPARE_BUILD_CONF))
+
+    post-compare-build:
+        # Compare first and second build. Ignore any error code from compare.sh.
+	$(ECHO) "Comparing between comparison rebuild (this/new) and baseline (other/old)"
+	+(cd $(OUTPUT_ROOT) && ./compare.sh $(COMPARE_BUILD_COMP_OPTS) -o $(OUTPUT_ROOT).OLD || true)
 
   .PHONY: print-targets print-modules reconfigure main on-failure
 endif

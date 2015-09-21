@@ -40,7 +40,7 @@ ifeq ($(HAS_SPEC),)
   ##############################################################################
 
   # Make control variables, handled by Init.gmk
-  INIT_CONTROL_VARIABLES := LOG CONF SPEC JOBS CONF_CHECK
+  INIT_CONTROL_VARIABLES := LOG CONF SPEC JOBS CONF_CHECK COMPARE_BUILD
 
   # All known make control variables
   MAKE_CONTROL_VARIABLES := $(INIT_CONTROL_VARIABLES) TEST JDK_FILTER
@@ -53,12 +53,14 @@ ifeq ($(HAS_SPEC),)
 
   # The variable MAKEOVERRIDES contains variable assignments from the command
   # line, but in reverse order to what the user entered.
+  # The '\#' <=> '\ 'dance is needed to keep values with space in them connected.
   COMMAND_LINE_VARIABLES := $(subst \#,\ , $(call reverse, $(subst \ ,\#,$(MAKEOVERRIDES))))
 
   # A list like FOO="val1" BAR="val2" containing all user-supplied make
   # variables that we should propagate.
-  USER_MAKE_VARS := $(filter-out $(addsuffix =%, $(INIT_CONTROL_VARIABLES)), \
-      $(MAKEOVERRIDES))
+  # The '\#' <=> '\ 'dance is needed to keep values with space in them connected.
+  USER_MAKE_VARS := $(subst \#,\ , $(filter-out $(addsuffix =%, $(INIT_CONTROL_VARIABLES)), \
+      $(subst \ ,\#,$(MAKEOVERRIDES))))
 
   # Setup information about available configurations, if any.
   build_dir=$(topdir)/build
@@ -304,6 +306,55 @@ else # $(HAS_SPEC)=true
           $$(info $$(ORIGINAL_TOPDIR))
           $$(info $$(CANONICAL_TOPDIR))
           $$(error Cannot continue)
+        endif
+      endif
+    endif
+  endef
+
+  # Parse COMPARE_BUILD into COMPARE_BUILD_*
+  # Syntax: COMPARE_BUILD=CONF=<configure options>:PATCH=<patch file>:
+  #         MAKE=<make targets>:COMP_OPTS=<compare script options>|<default>
+  # If neither CONF or PATCH is given, assume <default> means CONF if it
+  # begins with "--", otherwise assume it means PATCH.
+  # MAKE and COMP_OPTS can only be used with CONF and/or PATCH specified.
+  # If any value contains "+", it will be replaced by space.
+  define ParseCompareBuild
+    ifneq ($$(COMPARE_BUILD), )
+      ifneq ($$(findstring :, $$(COMPARE_BUILD)), )
+        $$(foreach part, $$(subst :, , $$(COMPARE_BUILD)), \
+          $$(if $$(filter PATCH=%, $$(part)), \
+            $$(eval COMPARE_BUILD_PATCH=$$(strip $$(patsubst PATCH=%, %, $$(part)))) \
+          ) \
+          $$(if $$(filter CONF=%, $$(part)), \
+            $$(eval COMPARE_BUILD_CONF=$$(strip $$(subst +, , $$(patsubst CONF=%, %, $$(part))))) \
+          ) \
+          $$(if $$(filter MAKE=%, $$(part)), \
+            $$(eval COMPARE_BUILD_MAKE=$$(strip $$(subst +, , $$(patsubst MAKE=%, %, $$(part))))) \
+          ) \
+          $$(if $$(filter COMP_OPTS=%, $$(part)), \
+            $$(eval COMPARE_BUILD_COMP_OPTS=$$(strip $$(subst +, , $$(patsubst COMP_OPTS=%, %, $$(part))))) \
+          ) \
+        )
+      else
+        # Separate handling for single field case, to allow for spaces in values.
+        ifneq ($$(filter PATCH=%, $$(COMPARE_BUILD)), )
+          COMPARE_BUILD_PATCH=$$(strip $$(patsubst PATCH=%, %, $$(COMPARE_BUILD)))
+        else ifneq ($$(filter CONF=%, $$(COMPARE_BUILD)), )
+          COMPARE_BUILD_CONF=$$(strip $$(subst +, , $$(patsubst CONF=%, %, $$(COMPARE_BUILD))))
+        else ifneq ($$(filter --%, $$(COMPARE_BUILD)), )
+          # Assume CONF if value begins with --
+          COMPARE_BUILD_CONF=$$(strip $$(subst +, , $$(COMPARE_BUILD)))
+        else
+          # Otherwise assume patch file
+          COMPARE_BUILD_PATCH=$$(strip $$(COMPARE_BUILD))
+        endif
+      endif
+      ifneq ($$(COMPARE_BUILD_PATCH), )
+        ifneq ($$(wildcard $$(TOPDIR)/$$(COMPARE_BUILD_PATCH)), )
+          # Assume relative path, if file exists
+          COMPARE_BUILD_PATCH := $$(wildcard $$(TOPDIR)/$$(COMPARE_BUILD_PATCH))
+        else ifeq ($$(wildcard $$(COMPARE_BUILD_PATCH)), )
+          $$(error Patch file $$(COMPARE_BUILD_PATCH) does not exist)
         endif
       endif
     endif
