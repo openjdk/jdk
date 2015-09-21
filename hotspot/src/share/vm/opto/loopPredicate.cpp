@@ -112,6 +112,13 @@ ProjNode* PhaseIdealLoop::create_new_if_for_predicate(ProjNode* cont_proj, Node*
     if (_idom != NULL) {
       set_idom(call, rgn, dom_depth(rgn));
     }
+    for (DUIterator_Fast imax, i = uncommon_proj->fast_outs(imax); i < imax; i++) {
+      Node* n = uncommon_proj->fast_out(i);
+      if (n->is_Load() || n->is_Store()) {
+        _igvn.replace_input_of(n, 0, rgn);
+        --i; --imax;
+      }
+    }
   } else {
     // Find region's edge corresponding to uncommon_proj
     for (; proj_index < rgn->req(); proj_index++)

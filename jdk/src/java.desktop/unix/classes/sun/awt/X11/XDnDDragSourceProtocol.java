@@ -68,7 +68,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
     /**
      * Performs protocol-specific drag initialization.
      *
-     * @returns true if the initialized successfully.
+     * @return true if the initialized successfully.
      */
     protected void initializeDragImpl(int actions, Transferable contents,
                                       Map<Long, DataFlavor> formatMap, long[] formats)

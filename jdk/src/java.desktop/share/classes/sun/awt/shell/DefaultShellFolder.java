@@ -50,7 +50,7 @@ class DefaultShellFolder extends ShellFolder {
      * this default implementation can always be represented with a
      * <code>java.io.File</code> object instead.
      *
-     * @returns a <code>java.io.File</code> replacement object.
+     * @return a java.io.File replacement object.
      */
     protected Object writeReplace() throws java.io.ObjectStreamException {
         return new File(getPath());

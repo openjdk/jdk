@@ -141,15 +141,19 @@ void os_getCmdlineAndUserInfo(JNIEnv *env, jobject jinfo, pid_t pid) {
     struct stat stat_buf;
 
     /*
-     * Try to open /proc/<pid>/cmdline
+     * Stat /proc/<pid> to get the user id
      */
-    snprintf(fn, sizeof fn, "/proc/%d/cmdline", pid);
-    if ((fd = open(fn, O_RDONLY)) < 0) {
-        return;
+    snprintf(fn, sizeof fn, "/proc/%d", pid);
+    if (stat(fn, &stat_buf) == 0) {
+        unix_getUserInfo(env, jinfo, stat_buf.st_uid);
     }
 
-    if (fstat(fd, &stat_buf) == 0) {
-        unix_getUserInfo(env, jinfo, stat_buf.st_uid);
+    /*
+     * Try to open /proc/<pid>/cmdline
+     */
+    strncat(fn, "/cmdline", sizeof fn - strnlen(fn, sizeof fn) - 1);
+    if ((fd = open(fn, O_RDONLY)) < 0) {
+        return;
     }
 
     do {                // Block to break out of on errors

@@ -42,8 +42,8 @@ import java.util.ResourceBundle;
 import jdk.nashorn.api.scripting.NashornException;
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.Compiler.CompilationPhases;
-import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.Expression;
+import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.debug.ASTWriter;
 import jdk.nashorn.internal.ir.debug.PrintVisitor;
 import jdk.nashorn.internal.objects.Global;
@@ -255,12 +255,9 @@ public class Shell implements PartialParser {
                     return COMPILATION_ERROR;
                 }
 
-                new Compiler(
+                Compiler.forNoInstallerCompilation(
                        context,
-                       env,
-                       null, //null - pass no code installer - this is compile only
                        functionNode.getSource(),
-                       context.getErrorManager(),
                        env._strict | functionNode.isStrict()).
                        compile(functionNode, CompilationPhases.COMPILE_ALL_NO_INSTALL);
 

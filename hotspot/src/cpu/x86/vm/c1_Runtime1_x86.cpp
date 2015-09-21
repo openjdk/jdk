@@ -401,11 +401,9 @@ static OopMap* generate_oop_map(StubAssembler* sasm, int num_rt_args,
 
     } else if (UseSSE == 1) {
       int xmm_off = xmm_regs_as_doubles_off;
-      for (int n = 0; n < FrameMap::nof_xmm_regs; n++) {
-        if (n < xmm_bypass_limit) {
-          VMReg xmm_name_0 = as_XMMRegister(n)->as_VMReg();
-          map->set_callee_saved(VMRegImpl::stack2reg(xmm_off + num_rt_args), xmm_name_0);
-        }
+      for (int n = 0; n < FrameMap::nof_fpu_regs; n++) {
+        VMReg xmm_name_0 = as_XMMRegister(n)->as_VMReg();
+        map->set_callee_saved(VMRegImpl::stack2reg(xmm_off + num_rt_args), xmm_name_0);
         xmm_off += 2;
       }
       assert(xmm_off == float_regs_as_doubles_off, "incorrect number of xmm registers");
@@ -452,14 +450,11 @@ static OopMap* save_live_registers(StubAssembler* sasm, int num_rt_args,
       __ frstor(Address(rsp, fpu_state_off * VMRegImpl::stack_slot_size));
 
       // Save the FPU registers in de-opt-able form
-      __ fstp_d(Address(rsp, float_regs_as_doubles_off * VMRegImpl::stack_slot_size +  0));
-      __ fstp_d(Address(rsp, float_regs_as_doubles_off * VMRegImpl::stack_slot_size +  8));
-      __ fstp_d(Address(rsp, float_regs_as_doubles_off * VMRegImpl::stack_slot_size + 16));
-      __ fstp_d(Address(rsp, float_regs_as_doubles_off * VMRegImpl::stack_slot_size + 24));
-      __ fstp_d(Address(rsp, float_regs_as_doubles_off * VMRegImpl::stack_slot_size + 32));
-      __ fstp_d(Address(rsp, float_regs_as_doubles_off * VMRegImpl::stack_slot_size + 40));
-      __ fstp_d(Address(rsp, float_regs_as_doubles_off * VMRegImpl::stack_slot_size + 48));
-      __ fstp_d(Address(rsp, float_regs_as_doubles_off * VMRegImpl::stack_slot_size + 56));
+      int offset = 0;
+      for (int n = 0; n < FrameMap::nof_fpu_regs; n++) {
+        __ fstp_d(Address(rsp, float_regs_as_doubles_off * VMRegImpl::stack_slot_size + offset));
+        offset += 8;
+      }
     }
 
     if (UseSSE >= 2) {
@@ -468,52 +463,26 @@ static OopMap* save_live_registers(StubAssembler* sasm, int num_rt_args,
       // so always save them as doubles.
       // note that float values are _not_ converted automatically, so for float values
       // the second word contains only garbage data.
-      __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size +  0), xmm0);
-      __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size +  8), xmm1);
-      __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 16), xmm2);
-      __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 24), xmm3);
-      __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 32), xmm4);
-      __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 40), xmm5);
-      __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 48), xmm6);
-      __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 56), xmm7);
+      int xmm_bypass_limit = FrameMap::nof_xmm_regs;
+      int offset = 0;
 #ifdef _LP64
-      __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 64), xmm8);
-      __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 72), xmm9);
-      __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 80), xmm10);
-      __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 88), xmm11);
-      __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 96), xmm12);
-      __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 104), xmm13);
-      __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 112), xmm14);
-      __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 120), xmm15);
-      if (UseAVX > 2) {
-        __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 128), xmm16);
-        __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 136), xmm17);
-        __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 144), xmm18);
-        __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 152), xmm19);
-        __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 160), xmm20);
-        __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 168), xmm21);
-        __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 176), xmm22);
-        __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 184), xmm23);
-        __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 192), xmm24);
-        __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 200), xmm25);
-        __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 208), xmm26);
-        __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 216), xmm27);
-        __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 224), xmm28);
-        __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 232), xmm29);
-        __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 240), xmm30);
-        __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 248), xmm31);
+      if (UseAVX < 3) {
+        xmm_bypass_limit = xmm_bypass_limit / 2;
       }
-#endif // _LP64
+#endif
+      for (int n = 0; n < xmm_bypass_limit; n++) {
+        XMMRegister xmm_name = as_XMMRegister(n);
+        __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + offset), xmm_name);
+        offset += 8;
+      }
     } else if (UseSSE == 1) {
-      // save XMM registers as float because double not supported without SSE2
-      __ movflt(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size +  0), xmm0);
-      __ movflt(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size +  8), xmm1);
-      __ movflt(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 16), xmm2);
-      __ movflt(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 24), xmm3);
-      __ movflt(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 32), xmm4);
-      __ movflt(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 40), xmm5);
-      __ movflt(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 48), xmm6);
-      __ movflt(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 56), xmm7);
+      // save XMM registers as float because double not supported without SSE2(num MMX == num fpu)
+      int offset = 0;
+      for (int n = 0; n < FrameMap::nof_fpu_regs; n++) {
+        XMMRegister xmm_name = as_XMMRegister(n);
+        __ movflt(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + offset), xmm_name);
+        offset += 8;
+      }
     }
   }
 
@@ -528,52 +497,26 @@ static void restore_fpu(StubAssembler* sasm, bool restore_fpu_registers = true) 
   if (restore_fpu_registers) {
     if (UseSSE >= 2) {
       // restore XMM registers
-      __ movdbl(xmm0, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size +  0));
-      __ movdbl(xmm1, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size +  8));
-      __ movdbl(xmm2, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 16));
-      __ movdbl(xmm3, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 24));
-      __ movdbl(xmm4, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 32));
-      __ movdbl(xmm5, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 40));
-      __ movdbl(xmm6, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 48));
-      __ movdbl(xmm7, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 56));
+      int xmm_bypass_limit = FrameMap::nof_xmm_regs;
 #ifdef _LP64
-      __ movdbl(xmm8, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 64));
-      __ movdbl(xmm9, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 72));
-      __ movdbl(xmm10, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 80));
-      __ movdbl(xmm11, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 88));
-      __ movdbl(xmm12, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 96));
-      __ movdbl(xmm13, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 104));
-      __ movdbl(xmm14, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 112));
-      __ movdbl(xmm15, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 120));
-      if (UseAVX > 2) {
-        __ movdbl(xmm16, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 128));
-        __ movdbl(xmm17, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 136));
-        __ movdbl(xmm18, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 144));
-        __ movdbl(xmm19, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 152));
-        __ movdbl(xmm20, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 160));
-        __ movdbl(xmm21, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 168));
-        __ movdbl(xmm22, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 176));
-        __ movdbl(xmm23, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 184));
-        __ movdbl(xmm24, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 192));
-        __ movdbl(xmm25, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 200));
-        __ movdbl(xmm26, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 208));
-        __ movdbl(xmm27, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 216));
-        __ movdbl(xmm28, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 224));
-        __ movdbl(xmm29, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 232));
-        __ movdbl(xmm30, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 240));
-        __ movdbl(xmm31, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 248));
+      if (UseAVX < 3) {
+        xmm_bypass_limit = xmm_bypass_limit / 2;
       }
-#endif // _LP64
+#endif
+      int offset = 0;
+      for (int n = 0; n < xmm_bypass_limit; n++) {
+        XMMRegister xmm_name = as_XMMRegister(n);
+        __ movdbl(xmm_name, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + offset));
+        offset += 8;
+      }
     } else if (UseSSE == 1) {
-      // restore XMM registers
-      __ movflt(xmm0, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size +  0));
-      __ movflt(xmm1, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size +  8));
-      __ movflt(xmm2, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 16));
-      __ movflt(xmm3, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 24));
-      __ movflt(xmm4, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 32));
-      __ movflt(xmm5, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 40));
-      __ movflt(xmm6, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 48));
-      __ movflt(xmm7, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + 56));
+      // restore XMM registers(num MMX == num fpu)
+      int offset = 0;
+      for (int n = 0; n < FrameMap::nof_fpu_regs; n++) {
+        XMMRegister xmm_name = as_XMMRegister(n);
+        __ movflt(xmm_name, Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + offset));
+        offset += 8;
+      }
     }
 
     if (UseSSE < 2) {

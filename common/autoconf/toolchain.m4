@@ -586,6 +586,43 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
     # Only call fixup if objcopy was found.
     if test -n "$OBJCOPY"; then
       BASIC_FIXUP_EXECUTABLE(OBJCOPY)
+      if test "x$OPENJDK_BUILD_OS" = xsolaris; then
+        # objcopy prior to 2.21.1 on solaris is broken and is not usable.
+        # Rewrite objcopy version output to VALID_VERSION or BAD_VERSION.
+        # - version number is last blank separate word on first line
+        # - version number formats that have been seen:
+        #   - <major>.<minor>
+        #   - <major>.<minor>.<micro>
+        OBJCOPY_VERSION=`$OBJCOPY --version | $HEAD -n 1`
+        # The outer [ ] is to prevent m4 from eating the [] in the sed expression.
+        [ OBJCOPY_VERSION_CHECK=`$ECHO $OBJCOPY_VERSION | $SED -n \
+              -e 's/.* //' \
+              -e '/^[01]\./b bad' \
+              -e '/^2\./{' \
+              -e '  s/^2\.//' \
+              -e '  /^[0-9]$/b bad' \
+              -e '  /^[0-9]\./b bad' \
+              -e '  /^1[0-9]$/b bad' \
+              -e '  /^1[0-9]\./b bad' \
+              -e '  /^20\./b bad' \
+              -e '  /^21\.0$/b bad' \
+              -e '  /^21\.0\./b bad' \
+              -e '}' \
+              -e ':good' \
+              -e 's/.*/VALID_VERSION/p' \
+              -e 'q' \
+              -e ':bad' \
+              -e 's/.*/BAD_VERSION/p' \
+              -e 'q'` ]
+        if test "x$OBJCOPY_VERSION_CHECK" = xBAD_VERSION; then
+          OBJCOPY=
+          AC_MSG_WARN([Ignoring found objcopy since it is broken (prior to 2.21.1). No debug symbols will be generated.])
+          AC_MSG_NOTICE([objcopy reports version $OBJCOPY_VERSION])
+          AC_MSG_NOTICE([Note: patch 149063-01 or newer contains the correct Solaris 10 SPARC version])
+          AC_MSG_NOTICE([Note: patch 149064-01 or newer contains the correct Solaris 10 X86 version])
+          AC_MSG_NOTICE([Note: Solaris 11 Update 1 contains the correct version])
+        fi
+      fi
     fi
   fi
 

@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.nashorn.internal.objects;
+package jdk.nashorn.internal.runtime;
 
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
@@ -31,17 +31,12 @@ import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
-import jdk.nashorn.internal.runtime.AccessorProperty;
-import jdk.nashorn.internal.runtime.Property;
-import jdk.nashorn.internal.runtime.PropertyMap;
-import jdk.nashorn.internal.runtime.ScriptFunction;
-import jdk.nashorn.internal.runtime.ScriptObject;
+import jdk.nashorn.internal.objects.Global;
 
 /**
  * Instances of this class serve as "prototype" object for script functions.
  * The purpose is to expose "constructor" property from "prototype". Also, nasgen
  * generated prototype classes extend from this class.
- *
  */
 public class PrototypeObject extends ScriptObject {
     private static final PropertyMap map$;
@@ -61,7 +56,10 @@ public class PrototypeObject extends ScriptObject {
         super(global.getObjectPrototype(), map != map$? map.addAll(map$) : map$);
     }
 
-    PrototypeObject() {
+    /**
+     * Prototype constructor
+     */
+    protected PrototypeObject() {
         this(Global.instance(), map$);
     }
 
@@ -70,11 +68,16 @@ public class PrototypeObject extends ScriptObject {
      *
      * @param map property map
      */
-    PrototypeObject(final PropertyMap map) {
+    protected PrototypeObject(final PropertyMap map) {
         this(Global.instance(), map);
     }
 
-    PrototypeObject(final ScriptFunction func) {
+    /**
+     * PropertyObject constructor
+     *
+     * @param func constructor function
+     */
+    protected PrototypeObject(final ScriptFunction func) {
         this(Global.instance(), map$);
         this.constructor = func;
     }
@@ -84,7 +87,7 @@ public class PrototypeObject extends ScriptObject {
      * @param self self reference
      * @return constructor, probably, but not necessarily, a {@link ScriptFunction}
      */
-    static Object getConstructor(final Object self) {
+    public static Object getConstructor(final Object self) {
         return (self instanceof PrototypeObject) ?
             ((PrototypeObject)self).getConstructor() :
             UNDEFINED;
@@ -95,7 +98,7 @@ public class PrototypeObject extends ScriptObject {
      * @param self self reference
      * @param constructor constructor, probably, but not necessarily, a {@link ScriptFunction}
      */
-    static void setConstructor(final Object self, final Object constructor) {
+    public static void setConstructor(final Object self, final Object constructor) {
         if (self instanceof PrototypeObject) {
             ((PrototypeObject)self).setConstructor(constructor);
         }
