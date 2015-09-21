@@ -60,6 +60,7 @@ public class IncCompileFullyQualifiedRef extends SJavacTester {
 
         compile(GENSRC.toString(),
                 "-d", BIN.toString(),
+                "--state-dir=" + BIN,
                 "-j", "1",
                 SERVER_ARG,
                 "--log=debug");
@@ -74,6 +75,7 @@ public class IncCompileFullyQualifiedRef extends SJavacTester {
 
         compile(GENSRC.toString(),
                 "-d", BIN.toString(),
+                "--state-dir=" + BIN,
                 "-j", "1",
                 SERVER_ARG,
                 "--log=debug");

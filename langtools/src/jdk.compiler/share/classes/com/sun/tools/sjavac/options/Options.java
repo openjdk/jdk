@@ -97,7 +97,7 @@ public class Options {
 
     /** Get the path for the state directory, defaults to destDir. */
     public Path getStateDir() {
-        return stateDir != null ? stateDir : destDir;
+        return stateDir;
     }
 
     /** Get all source locations for files to be compiled */
