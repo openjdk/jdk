@@ -315,31 +315,46 @@ class InferenceContext {
         return buf.toList();
     }
 
-    /**
-     * Restore the state of this inference context to the previous known checkpoint
-     */
+    /** Restore the state of this inference context to the previous known checkpoint.
+    *  Consider that the number of saved undetermined variables can be different to the current
+    *  amount. This is because new captured variables could have been added.
+    */
     void rollback(List<Type> saved_undet) {
-         Assert.check(saved_undet != null && saved_undet.length() == undetvars.length());
+        Assert.check(saved_undet != null);
         //restore bounds (note: we need to preserve the old instances)
-        for (Type t : undetvars) {
-            UndetVar uv = (UndetVar)t;
+        ListBuffer<Type> newUndetVars = new ListBuffer<>();
+        ListBuffer<Type> newInferenceVars = new ListBuffer<>();
+        while (saved_undet.nonEmpty() && undetvars.nonEmpty()) {
+            UndetVar uv = (UndetVar)undetvars.head;
             UndetVar uv_saved = (UndetVar)saved_undet.head;
-            for (InferenceBound ib : InferenceBound.values()) {
-                uv.setBounds(ib, uv_saved.getBounds(ib));
+            if (uv.qtype == uv_saved.qtype) {
+                for (InferenceBound ib : InferenceBound.values()) {
+                    uv.setBounds(ib, uv_saved.getBounds(ib));
+                }
+                uv.inst = uv_saved.inst;
+                undetvars = undetvars.tail;
+                saved_undet = saved_undet.tail;
+                newUndetVars.add(uv);
+                newInferenceVars.add(uv.qtype);
+            } else {
+                undetvars = undetvars.tail;
             }
-            uv.inst = uv_saved.inst;
-            saved_undet = saved_undet.tail;
         }
+        undetvars = newUndetVars.toList();
+        inferencevars = newInferenceVars.toList();
     }
 
     /**
      * Copy variable in this inference context to the given context
      */
     void dupTo(final InferenceContext that) {
-        that.inferencevars = that.inferencevars.appendList(
-                inferencevars.diff(that.inferencevars));
-        that.undetvars = that.undetvars.appendList(
-                undetvars.diff(that.undetvars));
+        dupTo(that, false);
+    }
+
+    void dupTo(final InferenceContext that, boolean clone) {
+        that.inferencevars = that.inferencevars.appendList(inferencevars.diff(that.inferencevars));
+        List<Type> undetsToPropagate = clone ? save() : undetvars;
+        that.undetvars = that.undetvars.appendList(undetsToPropagate.diff(that.undetvars)); //propagate cloned undet!!
         //set up listeners to notify original inference contexts as
         //propagated vars are inferred in new context
         for (Type t : inferencevars) {

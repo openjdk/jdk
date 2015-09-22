@@ -39,7 +39,7 @@ import java.util.Properties;
  */
 
 public class NetProperties {
-    static private Properties props = new Properties();
+    private static Properties props = new Properties();
     static {
         AccessController.doPrivileged(
             new PrivilegedAction<Void>() {
@@ -56,7 +56,7 @@ public class NetProperties {
      * Loads the default networking system properties
      * the file is in jre/lib/net.properties
      */
-    static private void loadDefaultProperties() {
+    private static void loadDefaultProperties() {
         String fname = System.getProperty("java.home");
         if (fname == null) {
             throw new Error("Can't find java.home ??");
@@ -86,7 +86,7 @@ public class NetProperties {
      * @return the <code>String</code> value for the property,
      *         or <code>null</code>
      */
-    static public String get(String key) {
+    public static String get(String key) {
         String def = props.getProperty(key);
         try {
             return System.getProperty(key, def);
@@ -108,7 +108,7 @@ public class NetProperties {
      * @return the <code>Integer</code> value for the property,
      *         or <code>null</code>
      */
-    static public Integer getInteger(String key, int defval) {
+    public static Integer getInteger(String key, int defval) {
         String val = null;
 
         try {
@@ -137,7 +137,7 @@ public class NetProperties {
      * @return the <code>Boolean</code> value for the property,
      *         or <code>null</code>
      */
-    static public Boolean getBoolean(String key) {
+    public static Boolean getBoolean(String key) {
         String val = null;
 
         try {

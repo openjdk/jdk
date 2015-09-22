@@ -49,7 +49,7 @@ abstract class DelegatingMethodHandle extends MethodHandle {
     }
 
     /** Define this to extract the delegated target which supplies the invocation behavior. */
-    abstract protected MethodHandle getTarget();
+    protected abstract MethodHandle getTarget();
 
     @Override
     abstract MethodHandle asTypeUncached(MethodType newType);

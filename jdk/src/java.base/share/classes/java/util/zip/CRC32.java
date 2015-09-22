@@ -127,7 +127,7 @@ class CRC32 implements Checksum {
     }
 
     @HotSpotIntrinsicCandidate
-    private native static int update(int crc, int b);
+    private static native int update(int crc, int b);
 
     private static int updateBytes(int crc, byte[] b, int off, int len) {
         updateBytesCheck(b, off, len);
@@ -135,7 +135,7 @@ class CRC32 implements Checksum {
     }
 
     @HotSpotIntrinsicCandidate
-    private native static int updateBytes0(int crc, byte[] b, int off, int len);
+    private static native int updateBytes0(int crc, byte[] b, int off, int len);
 
     private static void updateBytesCheck(byte[] b, int off, int len) {
         if (len <= 0) {
@@ -161,7 +161,7 @@ class CRC32 implements Checksum {
     }
 
     @HotSpotIntrinsicCandidate
-    private native static int updateByteBuffer0(int alder, long addr,
+    private static native int updateByteBuffer0(int alder, long addr,
                                                 int off, int len);
 
     private static void updateByteBufferCheck(long addr) {

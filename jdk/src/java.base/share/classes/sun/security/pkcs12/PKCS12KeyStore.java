@@ -51,6 +51,8 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.*;
 
 import java.security.AlgorithmParameters;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import javax.crypto.spec.PBEParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -2060,7 +2062,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                 }
 
                 if (!MessageDigest.isEqual(macData.getDigest(), macResult)) {
-                   throw new SecurityException("Failed PKCS12" +
+                   throw new UnrecoverableKeyException("Failed PKCS12" +
                                         " integrity checking");
                 }
            } catch (Exception e) {

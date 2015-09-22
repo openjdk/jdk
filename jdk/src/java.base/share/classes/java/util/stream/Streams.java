@@ -298,7 +298,7 @@ final class Streams {
         }
     }
 
-    private static abstract class AbstractStreamBuilderImpl<T, S extends Spliterator<T>> implements Spliterator<T> {
+    private abstract static class AbstractStreamBuilderImpl<T, S extends Spliterator<T>> implements Spliterator<T> {
         // >= 0 when building, < 0 when built
         // -1 == no elements
         // -2 == one element, held by first
@@ -782,7 +782,7 @@ final class Streams {
             }
         }
 
-        private static abstract class OfPrimitive<T, T_CONS, T_SPLITR extends Spliterator.OfPrimitive<T, T_CONS, T_SPLITR>>
+        private abstract static class OfPrimitive<T, T_CONS, T_SPLITR extends Spliterator.OfPrimitive<T, T_CONS, T_SPLITR>>
                 extends ConcatSpliterator<T, T_SPLITR>
                 implements Spliterator.OfPrimitive<T, T_CONS, T_SPLITR> {
             private OfPrimitive(T_SPLITR aSpliterator, T_SPLITR bSpliterator) {

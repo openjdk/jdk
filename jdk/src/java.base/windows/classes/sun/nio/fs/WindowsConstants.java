@@ -119,11 +119,11 @@ class WindowsConstants {
     public static final int FILE_NOTIFY_CHANGE_SECURITY    = 0x00000100;
 
     // notify actions
-    public final static int FILE_ACTION_ADDED              = 0x00000001;
-    public final static int FILE_ACTION_REMOVED            = 0x00000002;
-    public final static int FILE_ACTION_MODIFIED           = 0x00000003;
-    public final static int FILE_ACTION_RENAMED_OLD_NAME   = 0x00000004;
-    public final static int FILE_ACTION_RENAMED_NEW_NAME   = 0x00000005;
+    public static final int FILE_ACTION_ADDED              = 0x00000001;
+    public static final int FILE_ACTION_REMOVED            = 0x00000002;
+    public static final int FILE_ACTION_MODIFIED           = 0x00000003;
+    public static final int FILE_ACTION_RENAMED_OLD_NAME   = 0x00000004;
+    public static final int FILE_ACTION_RENAMED_NEW_NAME   = 0x00000005;
 
     // copy flags
     public static final int COPY_FILE_FAIL_IF_EXISTS       = 0x00000001;

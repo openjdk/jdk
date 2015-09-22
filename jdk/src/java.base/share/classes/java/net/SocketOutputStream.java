@@ -178,6 +178,6 @@ class SocketOutputStream extends FileOutputStream
     /**
      * Perform class load-time initializations.
      */
-    private native static void init();
+    private static native void init();
 
 }

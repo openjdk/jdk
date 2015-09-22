@@ -36,7 +36,7 @@ class Constants {
 
     private Constants(){}
 
-    public final static int JAVA_MAGIC = 0xCAFEBABE;
+    public static final int JAVA_MAGIC = 0xCAFEBABE;
 
     /*
         Java Class Version numbers history
@@ -48,93 +48,93 @@ class Constants {
         1.8 to 1.7.x 52,0
     */
 
-    public final static Package.Version JAVA_MIN_CLASS_VERSION =
+    public static final Package.Version JAVA_MIN_CLASS_VERSION =
             Package.Version.of(45, 03);
 
-    public final static Package.Version JAVA5_MAX_CLASS_VERSION =
+    public static final Package.Version JAVA5_MAX_CLASS_VERSION =
             Package.Version.of(49, 00);
 
-    public final static Package.Version JAVA6_MAX_CLASS_VERSION =
+    public static final Package.Version JAVA6_MAX_CLASS_VERSION =
             Package.Version.of(50, 00);
 
-    public final static Package.Version JAVA7_MAX_CLASS_VERSION =
+    public static final Package.Version JAVA7_MAX_CLASS_VERSION =
             Package.Version.of(51, 00);
 
-    public final static Package.Version JAVA8_MAX_CLASS_VERSION =
+    public static final Package.Version JAVA8_MAX_CLASS_VERSION =
             Package.Version.of(52, 00);
 
-    public final static int JAVA_PACKAGE_MAGIC = 0xCAFED00D;
+    public static final int JAVA_PACKAGE_MAGIC = 0xCAFED00D;
 
-    public final static Package.Version JAVA5_PACKAGE_VERSION =
+    public static final Package.Version JAVA5_PACKAGE_VERSION =
             Package.Version.of(150, 7);
 
-    public final static Package.Version JAVA6_PACKAGE_VERSION =
+    public static final Package.Version JAVA6_PACKAGE_VERSION =
             Package.Version.of(160, 1);
 
-    public final static Package.Version JAVA7_PACKAGE_VERSION =
+    public static final Package.Version JAVA7_PACKAGE_VERSION =
             Package.Version.of(170, 1);
 
-    public final static Package.Version JAVA8_PACKAGE_VERSION =
+    public static final Package.Version JAVA8_PACKAGE_VERSION =
             Package.Version.of(171, 0);
 
     // upper limit, should point to the latest class version
-    public final static Package.Version JAVA_MAX_CLASS_VERSION =
+    public static final Package.Version JAVA_MAX_CLASS_VERSION =
             JAVA8_MAX_CLASS_VERSION;
 
     // upper limit should point to the latest package version, for version info!.
-    public final static Package.Version MAX_PACKAGE_VERSION =
+    public static final Package.Version MAX_PACKAGE_VERSION =
             JAVA7_PACKAGE_VERSION;
 
-    public final static int CONSTANT_POOL_INDEX_LIMIT  = 0x10000;
-    public final static int CONSTANT_POOL_NARROW_LIMIT = 0x00100;
+    public static final int CONSTANT_POOL_INDEX_LIMIT  = 0x10000;
+    public static final int CONSTANT_POOL_NARROW_LIMIT = 0x00100;
 
-    public final static String JAVA_SIGNATURE_CHARS = "BSCIJFDZLV([";
+    public static final String JAVA_SIGNATURE_CHARS = "BSCIJFDZLV([";
 
-    public final static byte CONSTANT_Utf8 = 1;
-    public final static byte CONSTANT_unused2 = 2;  // unused, was Unicode
-    public final static byte CONSTANT_Integer = 3;
-    public final static byte CONSTANT_Float = 4;
-    public final static byte CONSTANT_Long = 5;
-    public final static byte CONSTANT_Double = 6;
-    public final static byte CONSTANT_Class = 7;
-    public final static byte CONSTANT_String = 8;
-    public final static byte CONSTANT_Fieldref = 9;
-    public final static byte CONSTANT_Methodref = 10;
-    public final static byte CONSTANT_InterfaceMethodref = 11;
-    public final static byte CONSTANT_NameandType = 12;
-    public final static byte CONSTANT_unused13 = 13;
-    public final static byte CONSTANT_unused14 = 14;
-    public final static byte CONSTANT_MethodHandle = 15;
-    public final static byte CONSTANT_MethodType = 16;
-    public final static byte CONSTANT_unused17 = 17;  // unused
-    public final static byte CONSTANT_InvokeDynamic = 18;
+    public static final byte CONSTANT_Utf8 = 1;
+    public static final byte CONSTANT_unused2 = 2;  // unused, was Unicode
+    public static final byte CONSTANT_Integer = 3;
+    public static final byte CONSTANT_Float = 4;
+    public static final byte CONSTANT_Long = 5;
+    public static final byte CONSTANT_Double = 6;
+    public static final byte CONSTANT_Class = 7;
+    public static final byte CONSTANT_String = 8;
+    public static final byte CONSTANT_Fieldref = 9;
+    public static final byte CONSTANT_Methodref = 10;
+    public static final byte CONSTANT_InterfaceMethodref = 11;
+    public static final byte CONSTANT_NameandType = 12;
+    public static final byte CONSTANT_unused13 = 13;
+    public static final byte CONSTANT_unused14 = 14;
+    public static final byte CONSTANT_MethodHandle = 15;
+    public static final byte CONSTANT_MethodType = 16;
+    public static final byte CONSTANT_unused17 = 17;  // unused
+    public static final byte CONSTANT_InvokeDynamic = 18;
 
     // pseudo-constants:
-    public final static byte CONSTANT_None = 0;
-    public final static byte CONSTANT_Signature = CONSTANT_unused13;
-    public final static byte CONSTANT_BootstrapMethod = CONSTANT_unused17; // used only in InvokeDynamic constants
-    public final static byte CONSTANT_Limit = 19;
+    public static final byte CONSTANT_None = 0;
+    public static final byte CONSTANT_Signature = CONSTANT_unused13;
+    public static final byte CONSTANT_BootstrapMethod = CONSTANT_unused17; // used only in InvokeDynamic constants
+    public static final byte CONSTANT_Limit = 19;
 
-    public final static byte CONSTANT_All = 50;  // combined global map
-    public final static byte CONSTANT_LoadableValue = 51; // used for 'KL' and qldc operands
-    public final static byte CONSTANT_AnyMember = 52; // union of refs to field or (interface) method
-    public final static byte CONSTANT_FieldSpecific = 53; // used only for 'KQ' ConstantValue attrs
-    public final static byte CONSTANT_GroupFirst = CONSTANT_All;
-    public final static byte CONSTANT_GroupLimit = CONSTANT_FieldSpecific+1;
+    public static final byte CONSTANT_All = 50;  // combined global map
+    public static final byte CONSTANT_LoadableValue = 51; // used for 'KL' and qldc operands
+    public static final byte CONSTANT_AnyMember = 52; // union of refs to field or (interface) method
+    public static final byte CONSTANT_FieldSpecific = 53; // used only for 'KQ' ConstantValue attrs
+    public static final byte CONSTANT_GroupFirst = CONSTANT_All;
+    public static final byte CONSTANT_GroupLimit = CONSTANT_FieldSpecific+1;
 
     // CONSTANT_MethodHandle reference kinds
-    public final static byte REF_getField = 1;
-    public final static byte REF_getStatic = 2;
-    public final static byte REF_putField = 3;
-    public final static byte REF_putStatic = 4;
-    public final static byte REF_invokeVirtual = 5;
-    public final static byte REF_invokeStatic = 6;
-    public final static byte REF_invokeSpecial = 7;
-    public final static byte REF_newInvokeSpecial = 8;
-    public final static byte REF_invokeInterface = 9;
+    public static final byte REF_getField = 1;
+    public static final byte REF_getStatic = 2;
+    public static final byte REF_putField = 3;
+    public static final byte REF_putStatic = 4;
+    public static final byte REF_invokeVirtual = 5;
+    public static final byte REF_invokeStatic = 6;
+    public static final byte REF_invokeSpecial = 7;
+    public static final byte REF_newInvokeSpecial = 8;
+    public static final byte REF_invokeInterface = 9;
 
     // pseudo-access bits
-    public final static int ACC_IC_LONG_FORM   = (1<<16); //for ic_flags
+    public static final int ACC_IC_LONG_FORM   = (1<<16); //for ic_flags
 
     // attribute "context types"
     public static final int ATTR_CONTEXT_CLASS  = 0;
@@ -199,14 +199,14 @@ class Constants {
     public static final int NO_MODTIME = 0;  // null modtime value
 
     // some comstantly empty containers
-    public final static int[]        noInts = {};
-    public final static byte[]       noBytes = {};
-    public final static Object[]     noValues = {};
-    public final static String[]     noStrings = {};
-    public final static List<Object> emptyList = Arrays.asList(noValues);
+    public static final int[]        noInts = {};
+    public static final byte[]       noBytes = {};
+    public static final Object[]     noValues = {};
+    public static final String[]     noStrings = {};
+    public static final List<Object> emptyList = Arrays.asList(noValues);
 
     // meta-coding
-    public final static int
+    public static final int
         _meta_default = 0,
         _meta_canon_min = 1,
         _meta_canon_max = 115,
@@ -216,7 +216,7 @@ class Constants {
         _meta_limit = 189;
 
     // bytecodes
-    public final static int
+    public static final int
         _nop                  =   0, // 0x00
         _aconst_null          =   1, // 0x01
         _iconst_m1            =   2, // 0x02
@@ -422,10 +422,10 @@ class Constants {
         _bytecode_limit       = 202; // 0xca
 
     // End marker, used to terminate bytecode sequences:
-    public final static int _end_marker = 255;
+    public static final int _end_marker = 255;
     // Escapes:
-    public final static int _byte_escape = 254;
-    public final static int _ref_escape = 253;
+    public static final int _byte_escape = 254;
+    public static final int _ref_escape = 253;
 
     // Self-relative pseudo-opcodes for better compression.
     // A "linker op" is a bytecode which links to a class member.
@@ -440,26 +440,26 @@ class Constants {
     // For simplicity, we define the full symmetric set of variants.
     // However, some of them are relatively useless.
     // Self linker ops are enabled by Pack.selfCallVariants (true).
-    public final static int _first_linker_op = _getstatic;
-    public final static int _last_linker_op  = _invokestatic;
-    public final static int _num_linker_ops  = (_last_linker_op - _first_linker_op) + 1;
-    public final static int _self_linker_op  = _bytecode_limit;
-    public final static int _self_linker_aload_flag = 1*_num_linker_ops;
-    public final static int _self_linker_super_flag = 2*_num_linker_ops;
-    public final static int _self_linker_limit = _self_linker_op + 4*_num_linker_ops;
+    public static final int _first_linker_op = _getstatic;
+    public static final int _last_linker_op  = _invokestatic;
+    public static final int _num_linker_ops  = (_last_linker_op - _first_linker_op) + 1;
+    public static final int _self_linker_op  = _bytecode_limit;
+    public static final int _self_linker_aload_flag = 1*_num_linker_ops;
+    public static final int _self_linker_super_flag = 2*_num_linker_ops;
+    public static final int _self_linker_limit = _self_linker_op + 4*_num_linker_ops;
     // An "invoke init" op is a variant of invokespecial which works
     // only with the method name "<init>".  There are variants which
     // link to the current class, the super class, or the class of the
     // immediately previous "newinstance" op.  There are 3 of these ops.
     // They all take method signature references as operands.
     // Invoke init ops are enabled by Pack.initCallVariants (true).
-    public final static int _invokeinit_op = _self_linker_limit;
-    public final static int _invokeinit_self_option = 0;
-    public final static int _invokeinit_super_option = 1;
-    public final static int _invokeinit_new_option = 2;
-    public final static int _invokeinit_limit = _invokeinit_op+3;
+    public static final int _invokeinit_op = _self_linker_limit;
+    public static final int _invokeinit_self_option = 0;
+    public static final int _invokeinit_super_option = 1;
+    public static final int _invokeinit_new_option = 2;
+    public static final int _invokeinit_limit = _invokeinit_op+3;
 
-    public final static int _pseudo_instruction_limit = _invokeinit_limit;
+    public static final int _pseudo_instruction_limit = _invokeinit_limit;
     // linker variant limit == 202+(7*4)+3 == 233
 
     // Ldc variants support strongly typed references to constants.
@@ -467,25 +467,25 @@ class Constants {
     // which is a great simplification.
     // Ldc variants gain us only 0.007% improvement in compression ratio,
     // but they simplify the file format greatly.
-    public final static int _xldc_op = _invokeinit_limit;
-    public final static int _sldc = _ldc;  // previously named _aldc
-    public final static int _cldc = _xldc_op+0;
-    public final static int _ildc = _xldc_op+1;
-    public final static int _fldc = _xldc_op+2;
-    public final static int _sldc_w = _ldc_w;  // previously named _aldc_w
-    public final static int _cldc_w = _xldc_op+3;
-    public final static int _ildc_w = _xldc_op+4;
-    public final static int _fldc_w = _xldc_op+5;
-    public final static int _lldc2_w = _ldc2_w;
-    public final static int _dldc2_w = _xldc_op+6;
+    public static final int _xldc_op = _invokeinit_limit;
+    public static final int _sldc = _ldc;  // previously named _aldc
+    public static final int _cldc = _xldc_op+0;
+    public static final int _ildc = _xldc_op+1;
+    public static final int _fldc = _xldc_op+2;
+    public static final int _sldc_w = _ldc_w;  // previously named _aldc_w
+    public static final int _cldc_w = _xldc_op+3;
+    public static final int _ildc_w = _xldc_op+4;
+    public static final int _fldc_w = _xldc_op+5;
+    public static final int _lldc2_w = _ldc2_w;
+    public static final int _dldc2_w = _xldc_op+6;
     // anything other than primitive, string, or class must be handled with qldc:
-    public final static int _qldc   = _xldc_op+7;
-    public final static int _qldc_w = _xldc_op+8;
-    public final static int _xldc_limit = _xldc_op+9;
+    public static final int _qldc   = _xldc_op+7;
+    public static final int _qldc_w = _xldc_op+8;
+    public static final int _xldc_limit = _xldc_op+9;
 
     // handling of InterfaceMethodRef
-    public final static int _invoke_int_op = _xldc_limit;
-    public final static int _invokespecial_int = _invoke_int_op+0;
-    public final static int _invokestatic_int = _invoke_int_op+1;
-    public final static int _invoke_int_limit = _invoke_int_op+2;
+    public static final int _invoke_int_op = _xldc_limit;
+    public static final int _invokespecial_int = _invoke_int_op+0;
+    public static final int _invokestatic_int = _invoke_int_op+1;
+    public static final int _invoke_int_limit = _invoke_int_op+2;
 }

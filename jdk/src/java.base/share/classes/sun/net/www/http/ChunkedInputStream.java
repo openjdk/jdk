@@ -128,7 +128,7 @@ class ChunkedInputStream extends InputStream implements Hurryable {
     /*
      * Maximum chunk header size of 2KB + 2 bytes for CRLF
      */
-    private final static int MAX_CHUNK_HEADER_SIZE = 2050;
+    private static final int MAX_CHUNK_HEADER_SIZE = 2050;
 
     /**
      * State to indicate that next field should be :-

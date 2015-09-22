@@ -195,7 +195,7 @@ abstract class OutputRecord extends ByteArrayOutputStream
     }
 
     @Override
-    synchronized public void close() throws IOException {
+    public synchronized void close() throws IOException {
         if (!isClosed) {
             isClosed = true;
             writeCipher.dispose();

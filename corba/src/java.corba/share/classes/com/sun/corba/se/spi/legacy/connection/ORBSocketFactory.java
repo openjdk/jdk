@@ -165,7 +165,7 @@ public interface ORBSocketFactory
      * If number is 0 then use an emphemeral port for the listener of
      * the associated type. <p>
      *
-     * If number is greater then 0 use that port number. <p>
+     * If number is greater than 0 use that port number. <p>
      *
      * An ORB creates a listener socket for each type
      * specified by the user by calling

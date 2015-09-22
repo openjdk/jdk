@@ -50,14 +50,14 @@ public class TlsRsaPremasterSecretParameterSpec
      * implementations) used to send the active negotiated version. The
      * system property below allows to toggle the behavior.
      */
-    private final static String PROP_NAME =
+    private static final String PROP_NAME =
                                 "com.sun.net.ssl.rsaPreMasterSecretFix";
 
     /*
      * Default is "false" (old behavior) for compatibility reasons in
      * SSLv3/TLSv1.  Later protocols (TLSv1.1+) do not use this property.
      */
-    private final static boolean rsaPreMasterSecretFix =
+    private static final boolean rsaPreMasterSecretFix =
             AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
                 public Boolean run() {
                     String value = System.getProperty(PROP_NAME);

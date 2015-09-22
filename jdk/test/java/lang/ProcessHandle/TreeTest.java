@@ -29,6 +29,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -67,8 +68,6 @@ public class TreeTest extends ProcessUtil {
 
             printf("self pid: %d%n", self.getPid());
             printDeep(self, "");
-            long count = getChildren(self).size();
-            Assert.assertEquals(count, 0, "Start with zero children");
 
             for (int i = 0; i < MAXCHILDREN; i++) {
                 // spawn and wait for instructions
@@ -124,8 +123,10 @@ public class TreeTest extends ProcessUtil {
             spawned.stream()
                     .map(Process::toHandle)
                     .filter(ProcessHandle::isAlive)
-                    .forEach(ph -> printDeep(ph, "test1 cleanup: "));
-            destroyProcessTree(ProcessHandle.current());
+                    .forEach(ph -> {
+                        printDeep(ph, "test1 cleanup: ");
+                        ph.destroyForcibly();
+                    });
         }
     }
 
@@ -135,17 +136,28 @@ public class TreeTest extends ProcessUtil {
     @Test
     public static void test2() {
         try {
+            ConcurrentHashMap<ProcessHandle, ProcessHandle> processes = new ConcurrentHashMap<>();
+
             ProcessHandle self = ProcessHandle.current();
             List<ProcessHandle> initialChildren = getChildren(self);
             long count = initialChildren.size();
             if (count > 0) {
                 initialChildren.forEach(p -> printDeep(p, "test2 initial unexpected: "));
-                Assert.assertEquals(count, 0, "Start with zero children (except Windows conhost.exe)");
             }
 
             JavaChild p1 = JavaChild.spawnJavaChild("stdin");
             ProcessHandle p1Handle = p1.toHandle();
             printf("  p1 pid: %d%n", p1.getPid());
+
+            // Gather the PIDs from the output of the spawing process
+            p1.forEachOutputLine((s) -> {
+                String[] split = s.trim().split(" ");
+                if (split.length == 3 && split[1].equals("spawn")) {
+                    Long child = Long.valueOf(split[2]);
+                    Long parent = Long.valueOf(split[0].split(":")[0]);
+                    processes.put(ProcessHandle.of(child).get(), ProcessHandle.of(parent).get());
+                }
+            });
 
             int spawnNew = 3;
             p1.sendAction("spawn", spawnNew, "stdin");
@@ -160,18 +172,33 @@ public class TreeTest extends ProcessUtil {
             int spawnNewSub = 2;
             p1.sendAction("child", "spawn", spawnNewSub, "stdin");
 
-            // For each spawned child, wait for its children
-            for (ProcessHandle p : subprocesses) {
-                List<ProcessHandle> grandChildren = waitForChildren(p, spawnNewSub);
+            // Poll until all 9 child processes exist or the timeout is reached
+            int expected = 9;
+            long timeout = jdk.testlibrary.Utils.adjustTimeout(10L);
+            Instant endTimeout = Instant.now().plusSeconds(timeout);
+            do {
+                Thread.sleep(200L);
+                printf(" subprocess count: %d, waiting for %d%n", processes.size(), expected);
+            } while (processes.size() < expected &&
+                    Instant.now().isBefore(endTimeout));
+
+            if (processes.size() < expected) {
+                printf("WARNING: not all children have been started. Can't complete test.%n");
+                printf("         You can try to increase the timeout or%n");
+                printf("         you can try to use a faster VM (i.e. not a debug version).%n");
             }
 
+            // show the complete list of children (for debug)
             List<ProcessHandle> allChildren = getAllChildren(p1Handle);
             printf(" allChildren:  %s%n",
                     allChildren.stream().map(p -> p.getPid())
                             .collect(Collectors.toList()));
-            for (ProcessHandle ph : allChildren) {
-                Assert.assertEquals(ph.isAlive(), true, "Child should be alive: " + ph);
-            }
+
+            // Verify that all spawned children show up in the allChildrenList
+            processes.forEach((p, parent) -> {
+                Assert.assertEquals(p.isAlive(), true, "Child should be alive: " + p);
+                Assert.assertTrue(allChildren.contains(p), "Spawned child should be listed in allChildren: " + p);
+            });
 
             // Closing JavaChild's InputStream will cause all children to exit
             p1.getOutputStream().close();
@@ -185,15 +212,12 @@ public class TreeTest extends ProcessUtil {
             }
             p1.waitFor();           // wait for spawned process to exit
 
-            List<ProcessHandle> remaining = getChildren(self);
-            remaining.forEach(ph -> Assert.assertFalse(ph.isAlive(),
+            // Verify spawned processes are no longer alive
+            processes.forEach((ph, parent) -> Assert.assertFalse(ph.isAlive(),
                             "process should not be alive: " + ph));
         } catch (IOException | InterruptedException t) {
             t.printStackTrace();
             throw new RuntimeException(t);
-        } finally {
-            // Cleanup any left over processes
-            destroyProcessTree(ProcessHandle.current());
         }
     }
 
@@ -202,6 +226,8 @@ public class TreeTest extends ProcessUtil {
      */
     @Test
     public static void test3() {
+        ConcurrentHashMap<ProcessHandle, ProcessHandle> processes = new ConcurrentHashMap<>();
+
         try {
             ProcessHandle self = ProcessHandle.current();
 
@@ -209,44 +235,53 @@ public class TreeTest extends ProcessUtil {
             ProcessHandle p1Handle = p1.toHandle();
             printf(" p1: %s%n", p1.getPid());
 
-            List<ProcessHandle> subprocesses = getChildren(self);
-            long count = subprocesses.size();
-            Assert.assertEquals(count, 1, "Wrong number of spawned children");
-
             int newChildren = 3;
             // Spawn children and have them wait
             p1.sendAction("spawn", newChildren, "stdin");
 
-            // Wait for the new processes and save the list
-            subprocesses = waitForAllChildren(p1Handle, newChildren);
-            Assert.assertEquals(subprocesses.size(), newChildren, "Wrong number of children");
-
-            p1.children().filter(TreeTest::isNotWindowsConsole)
-                    .forEach(ProcessHandle::destroyForcibly);
-
-            self.children().filter(TreeTest::isNotWindowsConsole)
-                    .forEach(ProcessHandle::destroyForcibly);
-
-            for (ProcessHandle p : subprocesses) {
-                while (p.isAlive()) {
-                    Thread.sleep(100L);  // It will happen but don't burn the cpu
+            // Gather the PIDs from the output of the spawing process
+            p1.forEachOutputLine((s) -> {
+                String[] split = s.trim().split(" ");
+                if (split.length == 3 && split[1].equals("spawn")) {
+                    Long child = Long.valueOf(split[2]);
+                    Long parent = Long.valueOf(split[0].split(":")[0]);
+                    processes.put(ProcessHandle.of(child).get(), ProcessHandle.of(parent).get());
                 }
-            }
+            });
+
+            // Wait for the new processes and save the list
+            List<ProcessHandle> allChildren = waitForAllChildren(p1Handle, newChildren);
+
+            // Verify that all spawned children are alive, show up in the allChildren list
+            // then destroy them
+            processes.forEach((p, parent) -> {
+                Assert.assertEquals(p.isAlive(), true, "Child should be alive: " + p);
+                Assert.assertTrue(allChildren.contains(p), "Spawned child should be listed in allChildren: " + p);
+                p.destroyForcibly();
+            });
+
+            processes.forEach((p, parent) ->  {
+                while (p.isAlive()) {
+                    try {
+                        Thread.sleep(100L);  // It will happen but don't burn the cpu
+                    } catch (InterruptedException ie) {
+                        // try again
+                    }
+                }
+            });
+            p1.destroyForcibly();
+            p1.waitFor();
 
             List<ProcessHandle> remaining = getAllChildren(self);
-            remaining.retainAll(subprocesses);
-            if (remaining.size() > 0) {
-                remaining.forEach(p -> printProcess(p, "     remaining: "));
-                Assert.fail("Subprocess(es) should have exited");
-            }
+            remaining = remaining.stream().filter(processes::contains).collect(Collectors.toList());
+            Assert.assertEquals(remaining.size(), 0, "Subprocess(es) should have exited: " + remaining);
 
         } catch (IOException ioe) {
             Assert.fail("Spawn of subprocess failed", ioe);
         } catch (InterruptedException inte) {
             Assert.fail("InterruptedException", inte);
         } finally {
-            // Cleanup any left over processes
-            destroyProcessTree(ProcessHandle.current());
+            processes.forEach((p, parent) -> p.destroyForcibly());
         }
     }
 
@@ -302,9 +337,10 @@ public class TreeTest extends ProcessUtil {
     @Test
     public static void test5() {
         int factor = 2;
+        JavaChild p1 = null;
         Instant start = Instant.now();
         try {
-            JavaChild p1 = JavaChild.spawnJavaChild("stdin");
+            p1 = JavaChild.spawnJavaChild("stdin");
             ProcessHandle p1Handle = p1.toHandle();
 
             printf("Spawning %d x %d x %d processes, pid: %d%n",
@@ -340,7 +376,9 @@ public class TreeTest extends ProcessUtil {
             Assert.fail("Unexpected Exception", ex);
         } finally {
             printf("Duration: %s%n", Duration.between(start, Instant.now()));
-            destroyProcessTree(ProcessHandle.current());
+            if (p1 != null) {
+                p1.destroyForcibly();
+            }
         }
     }
 

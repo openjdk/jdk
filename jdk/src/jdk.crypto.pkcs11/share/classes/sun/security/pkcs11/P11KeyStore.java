@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -750,6 +750,21 @@ final class P11KeyStore extends KeyStoreSpi {
             } else {
                 login(new PasswordCallbackHandler(password));
             }
+        } catch(LoginException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof PKCS11Exception) {
+                PKCS11Exception pe = (PKCS11Exception) cause;
+                if (pe.getErrorCode() == CKR_PIN_INCORRECT) {
+                    // if password is wrong, the cause of the IOException
+                    // should be an UnrecoverableKeyException
+                    throw new IOException("load failed",
+                            new UnrecoverableKeyException().initCause(e));
+                }
+            }
+            throw new IOException("load failed", e);
+        }
+
+        try {
             if (mapLabels() == true) {
                 // CKA_LABELs are shared by multiple certs
                 writeDisabled = true;
@@ -757,7 +772,7 @@ final class P11KeyStore extends KeyStoreSpi {
             if (debug != null) {
                 dumpTokenMap();
             }
-        } catch (LoginException | KeyStoreException | PKCS11Exception e) {
+        } catch (KeyStoreException | PKCS11Exception e) {
             throw new IOException("load failed", e);
         }
     }

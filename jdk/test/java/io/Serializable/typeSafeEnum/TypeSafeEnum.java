@@ -39,9 +39,9 @@ public class TypeSafeEnum implements Serializable, ObjectInputValidation {
         this.value = value;
     }
 
-    final public static TypeSafeEnum FIRST = new TypeSafeEnum("First");
-    final public static TypeSafeEnum SECOND = new TypeSafeEnum("Second");
-    final public static TypeSafeEnum THIRD = new TypeSafeEnum("Third");
+    public static final TypeSafeEnum FIRST = new TypeSafeEnum("First");
+    public static final TypeSafeEnum SECOND = new TypeSafeEnum("Second");
+    public static final TypeSafeEnum THIRD = new TypeSafeEnum("Third");
     static int numReadResolve = 0;
     static int numWriteReplace = 0;
     static boolean verbose = false;

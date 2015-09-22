@@ -33,9 +33,9 @@ import javax.net.ssl.SSLProtocolException;
 
 final class SupportedEllipticPointFormatsExtension extends HelloExtension {
 
-    final static int FMT_UNCOMPRESSED = 0;
-    final static int FMT_ANSIX962_COMPRESSED_PRIME = 1;
-    final static int FMT_ANSIX962_COMPRESSED_CHAR2 = 2;
+    static final int FMT_UNCOMPRESSED = 0;
+    static final int FMT_ANSIX962_COMPRESSED_PRIME = 1;
+    static final int FMT_ANSIX962_COMPRESSED_CHAR2 = 2;
 
     static final HelloExtension DEFAULT =
         new SupportedEllipticPointFormatsExtension(

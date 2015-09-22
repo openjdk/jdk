@@ -667,7 +667,7 @@ public class AttributedString {
     }
 
     // returns whether the two objects are either both null or equal
-    private final static boolean valuesMatch(Object value1, Object value2) {
+    private static final boolean valuesMatch(Object value1, Object value2) {
         if (value1 == null) {
             return value2 == null;
         } else {
@@ -732,7 +732,7 @@ public class AttributedString {
 
     // the iterator class associated with this string class
 
-    final private class AttributedStringIterator implements AttributedCharacterIterator {
+    private final class AttributedStringIterator implements AttributedCharacterIterator {
 
         // note on synchronization:
         // we don't synchronize on the iterator, assuming that an iterator is only used in one thread.
@@ -1045,7 +1045,7 @@ public class AttributedString {
 
     // the map class associated with this string class, giving access to the attributes of one run
 
-    final private class AttributeMap extends AbstractMap<Attribute,Object> {
+    private final class AttributeMap extends AbstractMap<Attribute,Object> {
 
         int runIndex;
         int beginIndex;

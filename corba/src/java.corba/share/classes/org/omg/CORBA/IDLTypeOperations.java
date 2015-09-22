@@ -25,10 +25,10 @@
 package org.omg.CORBA;
 
 /**
-* The interface for <tt>IDLType</tt>.  For more information on
-* Operations interfaces, see <a href="doc-files/generatedfiles.html#operations">
-* "Generated Files: Operations files"</a>.
-*/
+ * The interface for {@code IDLType}. For more information on
+ * Operations interfaces, see <a href="doc-files/generatedfiles.html#operations">
+ * "Generated Files: Operations files"</a>.
+ */
 
 /*
  tempout/org/omg/CORBA/IDLTypeOperations.java
@@ -51,8 +51,8 @@ public interface IDLTypeOperations  extends org.omg.CORBA.IRObjectOperations
 {
     /**
      * The type attribute describes the type defined by an object
-     * derived from <code>IDLType</code>.
-     * @return the <code>TypeCode</code> defined by this object.
+     * derived from {@code IDLType}.
+     * @return the {@code TypeCode} defined by this object.
      */
     org.omg.CORBA.TypeCode type ();
 } // interface IDLTypeOperations

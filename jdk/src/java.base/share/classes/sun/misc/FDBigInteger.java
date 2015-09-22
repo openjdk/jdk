@@ -144,7 +144,7 @@ public /*@ spec_bigint_math @*/ class FDBigInteger {
     }
 
     // Constant for casting an int to a long via bitwise AND.
-    private final static long LONG_MASK = 0xffffffffL;
+    private static final long LONG_MASK = 0xffffffffL;
 
     //@ spec_public non_null;
     private int data[];  // value: data[0] is least significant

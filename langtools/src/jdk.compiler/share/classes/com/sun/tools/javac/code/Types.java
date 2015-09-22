@@ -3152,10 +3152,20 @@ public class Types {
                 throw new IllegalArgumentException("Not a method type: " + t);
             }
             public Type visitMethodType(MethodType t, Type newReturn) {
-                return new MethodType(t.argtypes, newReturn, t.thrown, t.tsym);
+                return new MethodType(t.argtypes, newReturn, t.thrown, t.tsym) {
+                    @Override
+                    public Type baseType() {
+                        return t;
+                    }
+                };
             }
             public Type visitForAll(ForAll t, Type newReturn) {
-                return new ForAll(t.tvars, t.qtype.accept(this, newReturn));
+                return new ForAll(t.tvars, t.qtype.accept(this, newReturn)) {
+                    @Override
+                    public Type baseType() {
+                        return t;
+                    }
+                };
             }
         };
 

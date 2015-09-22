@@ -27,8 +27,9 @@
 package org.omg.CORBA;
 
 
-/** Represents a <tt>DynAny</tt> object associated
- *  with an array.
+/**
+ * Represents a {@code DynAny} object associated with an array.
+ *
  * @deprecated Use the new <a href="../DynamicAny/DynArray.html">DynArray</a> instead
  */
 @Deprecated

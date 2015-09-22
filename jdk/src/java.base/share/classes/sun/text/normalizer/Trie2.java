@@ -193,7 +193,7 @@ abstract class Trie2 implements Iterable<Trie2.Range> {
      * @param codePoint the code point
      * @return the value
      */
-    abstract public int get(int codePoint);
+    public abstract int get(int codePoint);
 
     /**
      * Get the trie value for a UTF-16 code unit.
@@ -230,7 +230,7 @@ abstract class Trie2 implements Iterable<Trie2.Range> {
      * @param c the code point or lead surrogate value.
      * @return the value
      */
-    abstract public int getFromU16SingleLead(char c);
+    public abstract int getFromU16SingleLead(char c);
 
     /**
      * When iterating over the contents of a Trie2, Elements of this type are produced.

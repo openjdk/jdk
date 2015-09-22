@@ -297,7 +297,7 @@ static final class ClientHello extends HandshakeMessage {
 
     HelloExtensions extensions = new HelloExtensions();
 
-    private final static byte[]  NULL_COMPRESSION = new byte[] {0};
+    private static final byte[]  NULL_COMPRESSION = new byte[] {0};
 
     ClientHello(SecureRandom generator, ProtocolVersion protocolVersion,
             SessionId sessionId, CipherSuiteList cipherSuites,
@@ -924,7 +924,7 @@ static final class CertificateStatus extends HandshakeMessage
  * exchange the premaster secret.  That's how RSA_EXPORT often works,
  * as well as how the DHE_* flavors work.
  */
-static abstract class ServerKeyExchange extends HandshakeMessage
+abstract static class ServerKeyExchange extends HandshakeMessage
 {
     @Override
     int messageType() { return ht_server_key_exchange; }
@@ -1077,7 +1077,7 @@ static final
 class DH_ServerKeyExchange extends ServerKeyExchange
 {
     // Fix message encoding, see 4348279
-    private final static boolean dhKeyExchangeFix =
+    private static final boolean dhKeyExchangeFix =
         Debug.getBooleanProperty("com.sun.net.ssl.dhKeyExchangeFix", true);
 
     private byte[]                dh_p;        // 1 to 2^16 - 1 bytes
@@ -1362,9 +1362,9 @@ static final
 class ECDH_ServerKeyExchange extends ServerKeyExchange {
 
     // constants for ECCurveType
-    private final static int CURVE_EXPLICIT_PRIME = 1;
-    private final static int CURVE_EXPLICIT_CHAR2 = 2;
-    private final static int CURVE_NAMED_CURVE    = 3;
+    private static final int CURVE_EXPLICIT_PRIME = 1;
+    private static final int CURVE_EXPLICIT_CHAR2 = 2;
+    private static final int CURVE_NAMED_CURVE    = 3;
 
     // id of the curve we are using
     private int curveId;
@@ -1660,8 +1660,8 @@ class CertificateRequest extends HandshakeMessage
     static final int    cct_rsa_fixed_ecdh   = 65;
     static final int    cct_ecdsa_fixed_ecdh = 66;
 
-    private final static byte[] TYPES_NO_ECC = { cct_rsa_sign, cct_dss_sign };
-    private final static byte[] TYPES_ECC =
+    private static final byte[] TYPES_NO_ECC = { cct_rsa_sign, cct_dss_sign };
+    private static final byte[] TYPES_ECC =
         { cct_rsa_sign, cct_dss_sign, cct_ecdsa_sign };
 
     byte[]                types;               // 1 to 255 types
@@ -2119,8 +2119,8 @@ static final class CertificateVerify extends HandshakeMessage {
         md.update(temp);
     }
 
-    private final static Class<?> delegate;
-    private final static Field spiField;
+    private static final Class<?> delegate;
+    private static final Field spiField;
 
     static {
         try {
@@ -2143,12 +2143,12 @@ static final class CertificateVerify extends HandshakeMessage {
     }
 
     // ConcurrentHashMap does not allow null values, use this marker object
-    private final static Object NULL_OBJECT = new Object();
+    private static final Object NULL_OBJECT = new Object();
 
     // cache Method objects per Spi class
     // Note that this will prevent the Spi classes from being GC'd. We assume
     // that is not a problem.
-    private final static Map<Class<?>,Object> methodCache =
+    private static final Map<Class<?>,Object> methodCache =
                                         new ConcurrentHashMap<>();
 
     private static void digestKey(MessageDigest md, SecretKey key) {
@@ -2241,10 +2241,10 @@ static final class CertificateVerify extends HandshakeMessage {
 static final class Finished extends HandshakeMessage {
 
     // constant for a Finished message sent by the client
-    final static int CLIENT = 1;
+    static final int CLIENT = 1;
 
     // constant for a Finished message sent by the server
-    final static int SERVER = 2;
+    static final int SERVER = 2;
 
     // enum Sender:  "CLNT" and "SRVR"
     private static final byte[] SSL_CLIENT = { 0x43, 0x4C, 0x4E, 0x54 };

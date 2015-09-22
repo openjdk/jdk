@@ -26,7 +26,7 @@ package org.omg.CORBA;
 
 
 /**
-* The Holder for <tt>ULongLongSeq</tt>.  For more information on
+* The Holder for {@code ULongLongSeq}. For more information on
 * Holder files, see <a href="doc-files/generatedfiles.html#holder">
 * "Generated Files: Holder Files"</a>.<P>
 * org/omg/CORBA/ULongLongSeqHolder.java

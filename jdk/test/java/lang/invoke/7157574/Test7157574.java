@@ -50,8 +50,8 @@ import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
 public class Test7157574 {
     interface Intf { void ig1(); void ig2(); void ig3(); void ig4(); void m1(); }
-    static abstract class Super implements Intf { public abstract void m2(); public int f2; }
-    static abstract class Sub extends Super { }
+    abstract static class Super implements Intf { public abstract void m2(); public int f2; }
+    abstract static class Sub extends Super { }
     public static void main(String... av) throws Throwable {
         MethodHandle m1 = lookup().findVirtual(Sub.class, "m1", methodType(void.class));
         System.out.println(m1);

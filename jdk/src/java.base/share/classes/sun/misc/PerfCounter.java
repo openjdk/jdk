@@ -52,10 +52,10 @@ public class PerfCounter {
         AccessController.doPrivileged(new Perf.GetPerfAction());
 
     // Must match values defined in hotspot/src/share/vm/runtime/perfdata.hpp
-    private final static int V_Constant  = 1;
-    private final static int V_Monotonic = 2;
-    private final static int V_Variable  = 3;
-    private final static int U_None      = 1;
+    private static final int V_Constant  = 1;
+    private static final int V_Monotonic = 2;
+    private static final int V_Variable  = 3;
+    private static final int U_None      = 1;
 
     private final String name;
     private final LongBuffer lb;

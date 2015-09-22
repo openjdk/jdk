@@ -25,6 +25,8 @@
  * JDK-8044750: megamorphic getter for scope objects does not call __noSuchProperty__ hook
  *
  * @test
+ * @fork
+ * @option -Dnashorn.unstable.relink.threshold=16
  * @run
  */
 
@@ -40,7 +42,9 @@ function func(obj) {
     }
 }
 
-for (var i = 0; i < 20; i++) {
+var LIMIT = 20; // should be more than megamorphic threshold set via @option
+
+for (var i = 0; i < LIMIT; i++) {
     var obj = {};
     obj.foo = i;
     obj[i] = i;
@@ -51,3 +55,30 @@ for (var i = 0; i < 20; i++) {
 // callsite inside func should see __noSuchProperty__
 // hook on global scope object.
 func({});
+
+function checkFoo() {
+    with({}) {
+        try {
+            foo;
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+}
+
+var oldNoSuchProperty = this.__noSuchProperty__;
+delete this.__noSuchProperty__;
+
+// keep deleting/restorting __noSuchProperty__ alternatively
+// to make "foo" access in checkFoo function megamorphic!
+
+for (var i = 0; i < LIMIT; i++) {
+    // no __noSuchProperty__ and 'with' scope object has no 'foo'
+    delete __noSuchProperty__;
+    Assert.assertFalse(checkFoo(), "Expected false in iteration " + i);
+
+    // __noSuchProperty__ is exists but 'with' scope object has no 'foo'
+    this.__noSuchProperty__ = oldNoSuchProperty;
+    Assert.assertTrue(checkFoo(), "Expected true in iteration " + i);
+}
