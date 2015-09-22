@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 6994413, 8134365
+ * @bug 6994413 8134365
  * @summary Check the JDK and JVM version returned by sun.misc.Version
  *          matches the versions defined in the system properties.
  *          Should use the API described in JDK-8136651 when available
