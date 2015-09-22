@@ -72,27 +72,27 @@ import static sun.security.ssl.JsseJce.*;
 final class CipherSuite implements Comparable<CipherSuite> {
 
     // minimum priority for supported CipherSuites
-    final static int SUPPORTED_SUITES_PRIORITY = 1;
+    static final int SUPPORTED_SUITES_PRIORITY = 1;
 
     // minimum priority for default enabled CipherSuites
-    final static int DEFAULT_SUITES_PRIORITY = 300;
+    static final int DEFAULT_SUITES_PRIORITY = 300;
 
     // Flag indicating if CipherSuite availability can change dynamically.
     // This is the case when we rely on a JCE cipher implementation that
     // may not be available in the installed JCE providers.
     // It is true because we might not have an ECC implementation.
-    final static boolean DYNAMIC_AVAILABILITY = true;
+    static final boolean DYNAMIC_AVAILABILITY = true;
 
-    private final static boolean ALLOW_ECC = Debug.getBooleanProperty
+    private static final boolean ALLOW_ECC = Debug.getBooleanProperty
         ("com.sun.net.ssl.enableECC", true);
 
     // Map Integer(id) -> CipherSuite
     // contains all known CipherSuites
-    private final static Map<Integer,CipherSuite> idMap;
+    private static final Map<Integer,CipherSuite> idMap;
 
     // Map String(name) -> CipherSuite
     // contains only supported CipherSuites (i.e. allowed == true)
-    private final static Map<String,CipherSuite> nameMap;
+    private static final Map<String,CipherSuite> nameMap;
 
     // Protocol defined CipherSuite name, e.g. SSL_RSA_WITH_RC4_128_MD5
     // we use TLS_* only for new CipherSuites, still SSL_* for old ones
@@ -474,7 +474,7 @@ final class CipherSuite implements Comparable<CipherSuite> {
         B_AES_256_GCM(CIPHER_AES_GCM, AEAD_CIPHER, 32, 12, 4, true);
 
         // Map BulkCipher -> Boolean(available)
-        private final static Map<BulkCipher,Boolean> availableCache =
+        private static final Map<BulkCipher,Boolean> availableCache =
                                             new HashMap<>(8);
 
         // descriptive name including key size, e.g. AES/128
@@ -518,7 +518,7 @@ final class CipherSuite implements Comparable<CipherSuite> {
         final int tagSize = 16;
 
         // The secure random used to detect the cipher availability.
-        private final static SecureRandom secureRandom;
+        private static final SecureRandom secureRandom;
 
         static {
             try {
@@ -1437,8 +1437,8 @@ final class CipherSuite implements Comparable<CipherSuite> {
     }
 
     // ciphersuite SSL_NULL_WITH_NULL_NULL
-    final static CipherSuite C_NULL = CipherSuite.valueOf(0, 0);
+    static final CipherSuite C_NULL = CipherSuite.valueOf(0, 0);
 
     // ciphersuite TLS_EMPTY_RENEGOTIATION_INFO_SCSV
-    final static CipherSuite C_SCSV = CipherSuite.valueOf(0x00, 0xff);
+    static final CipherSuite C_SCSV = CipherSuite.valueOf(0x00, 0xff);
 }

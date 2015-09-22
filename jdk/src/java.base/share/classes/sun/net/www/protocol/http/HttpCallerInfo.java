@@ -42,13 +42,13 @@ import java.net.URL;
  *
  * 2. Schemed: With the scheme field filled, can be used in JGSS-API calls.
  */
-final public class HttpCallerInfo {
+public final class HttpCallerInfo {
     // All info that an Authenticator needs.
-    final public URL url;
-    final public String host, protocol, prompt, scheme;
-    final public int port;
-    final public InetAddress addr;
-    final public RequestorType authType;
+    public final URL url;
+    public final String host, protocol, prompt, scheme;
+    public final int port;
+    public final InetAddress addr;
+    public final RequestorType authType;
 
     /**
      * Create a schemed object based on an un-schemed one.

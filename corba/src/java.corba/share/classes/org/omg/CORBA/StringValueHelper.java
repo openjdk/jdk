@@ -32,7 +32,7 @@
 package org.omg.CORBA;
 
 /**
-* The Helper for <tt>StringValue</tt>.  For more information on
+* The Helper for {@code StringValue}. For more information on
 * Helper files, see <a href="doc-files/generatedfiles.html#helper">
 * "Generated Files: Helper Files"</a>.<P>
 * org/omg/CORBA/StringValueHelper.java

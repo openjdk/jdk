@@ -170,7 +170,7 @@ public class ZoneInfo extends TimeZone {
     /**
      * True if the object has been modified after its instantiation.
      */
-    transient private boolean dirty = false;
+    private transient boolean dirty = false;
 
     private static final long serialVersionUID = 2653134537216586139L;
 

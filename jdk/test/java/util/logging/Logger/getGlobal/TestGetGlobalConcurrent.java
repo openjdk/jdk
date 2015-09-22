@@ -46,7 +46,7 @@ import java.util.logging.Logger;
  */
 public class TestGetGlobalConcurrent {
 
-    final static String[] messages = {
+    static final String[] messages = {
         "1. This message should not appear on the console.",
         "2. This message should appear on the console.",
         "3. This message should now appear on the console too.",
@@ -135,16 +135,16 @@ public class TestGetGlobalConcurrent {
           }
     }
 
-    final static class Run1 implements Runnable {
+    static final class Run1 implements Runnable {
         public void run() { test1(); }
     }
-    final static class Run2 implements Runnable {
+    static final class Run2 implements Runnable {
         public void run() { test2(); }
     }
-    final static class Run3 implements Runnable {
+    static final class Run3 implements Runnable {
         public void run() { test3(); }
     }
-    final static class Run4 implements Runnable {
+    static final class Run4 implements Runnable {
         public void run() { test4(); }
     }
 

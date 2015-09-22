@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -614,10 +614,12 @@ public class XMLEncoder extends Encoder implements AutoCloseable {
             }
 
             if (isArgument && target instanceof Field && methodName.equals("get")) {
-                Field f = (Field)target;
-                writeln("<object class=" + quote(f.getDeclaringClass().getName()) +
-                        " field=" + quote(f.getName()) + "/>");
-                return;
+                Field f = (Field) target;
+                if (Modifier.isStatic(f.getModifiers())) {
+                    writeln("<object class=" + quote(f.getDeclaringClass().getName()) +
+                            " field=" + quote(f.getName()) + "/>");
+                    return;
+                }
             }
 
             Class<?> primitiveType = primitiveTypeFor(value.getClass());

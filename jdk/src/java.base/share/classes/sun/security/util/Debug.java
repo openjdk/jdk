@@ -293,7 +293,7 @@ public class Debug {
         return null;
     }
 
-    private final static char[] hexDigits = "0123456789abcdef".toCharArray();
+    private static final char[] hexDigits = "0123456789abcdef".toCharArray();
 
     public static String toString(byte[] b) {
         if (b == null) {

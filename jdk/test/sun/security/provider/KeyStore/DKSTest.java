@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,37 @@ public class DKSTest {
                 new KeyStore.PasswordProtection("passphrase".toCharArray()));
         }};
 
+    private static final Map<String, KeyStore.ProtectionParameter>
+        WRONG_PASSWORDS = new HashMap<String, KeyStore.ProtectionParameter>() {{
+            put("policy_keystore",
+                new KeyStore.PasswordProtection(
+                    "wrong".toCharArray()));
+            put("pw_keystore",
+                new KeyStore.PasswordProtection("wrong".toCharArray()));
+            put("eckeystore1",
+                new KeyStore.PasswordProtection("wrong".toCharArray()));
+            put("eckeystore2",
+                new KeyStore.PasswordProtection("wrong".toCharArray()));
+        }};
+
     public static void main(String[] args) throws Exception {
+        /*
+         * domain keystore: keystores with wrong passwords
+         */
+        try {
+            URI config = new URI(CONFIG + "#keystores");
+            KeyStore ks = KeyStore.getInstance("DKS");
+            ks.load(new DomainLoadStoreParameter(config, WRONG_PASSWORDS));
+            throw new RuntimeException("Expected exception not thrown");
+        } catch (IOException e) {
+            System.out.println("Expected exception: " + e);
+            if (!causedBy(e, UnrecoverableKeyException.class)) {
+                e.printStackTrace(System.out);
+                throw new RuntimeException("Unexpected cause");
+            }
+            System.out.println("Expected cause: " + e);
+        }
+
         /*
          * domain keystore: system
          */
@@ -181,5 +211,16 @@ public class DKSTest {
                 CertificateFactory.getInstance("X.509");
             return factory.generateCertificate(certStream);
         }
+    }
+
+    // checks if an exception was caused by specified exception class
+    private static boolean causedBy(Exception e, Class klass) {
+        Throwable cause = e;
+        while ((cause = cause.getCause()) != null) {
+            if (cause.getClass().equals(klass)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

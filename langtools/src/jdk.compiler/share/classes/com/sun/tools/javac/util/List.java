@@ -419,13 +419,14 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
 
     @SuppressWarnings("unchecked")
     public <Z> List<Z> map(Function<A, Z> mapper) {
-        if (nonEmpty()) {
-            List<Z> tail1 = tail.map(mapper);
-            Z head1 = mapper.apply(head);
-            if (tail1 != tail || head1 != head)
-                return tail1.prepend(head1);
+        boolean changed = false;
+        ListBuffer<Z> buf = new ListBuffer<>();
+        for (A a : this) {
+            Z z = mapper.apply(a);
+            buf.append(z);
+            changed |= (z != a);
         }
-        return (List<Z>)this;
+        return changed ? buf.toList() : (List<Z>)this;
     }
 
     @SuppressWarnings("unchecked")

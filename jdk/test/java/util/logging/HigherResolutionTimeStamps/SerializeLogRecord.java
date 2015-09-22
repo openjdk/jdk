@@ -137,7 +137,7 @@ public class SerializeLogRecord {
      * different java version can be deserialized in the current java version.
      * (see Jdk8SerializedLog and Jdk9SerializedLog below)
      */
-    public static abstract class SerializedLog {
+    public abstract static class SerializedLog {
         public abstract String getBase64();
         public abstract String getString();
 

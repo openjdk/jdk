@@ -49,7 +49,7 @@ import sun.misc.SharedSecrets;
  */
 public class RootLevelInConfigFile {
 
-    public final static String CONFIG_FILE_KEY = "java.util.logging.config.file";
+    public static final String CONFIG_FILE_KEY = "java.util.logging.config.file";
 
     public static void main(String[] args) throws IOException {
         System.setProperty(CONFIG_FILE_KEY,

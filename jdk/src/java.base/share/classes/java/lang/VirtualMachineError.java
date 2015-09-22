@@ -33,7 +33,7 @@ package java.lang;
  * @author  Frank Yellin
  * @since   1.0
  */
-abstract public class VirtualMachineError extends Error {
+public abstract class VirtualMachineError extends Error {
     private static final long serialVersionUID = 4161983926571568670L;
 
     /**

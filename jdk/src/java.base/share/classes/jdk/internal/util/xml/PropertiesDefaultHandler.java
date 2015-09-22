@@ -135,8 +135,8 @@ public class PropertiesDefaultHandler extends DefaultHandler {
     ////////////////////////////////////////////////////////////////////
     // Validate while parsing
     ////////////////////////////////////////////////////////////////////
-    final static String ALLOWED_ELEMENTS = "properties, comment, entry";
-    final static String ALLOWED_COMMENT = "comment";
+    static final String ALLOWED_ELEMENTS = "properties, comment, entry";
+    static final String ALLOWED_COMMENT = "comment";
     ////////////////////////////////////////////////////////////////////
     // Handler methods
     ////////////////////////////////////////////////////////////////////

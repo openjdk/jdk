@@ -458,7 +458,7 @@ public final class ProcessBuilder
      *
      * @since 1.7
      */
-    public static abstract class Redirect {
+    public abstract static class Redirect {
         /**
          * The type of a {@link Redirect}.
          */

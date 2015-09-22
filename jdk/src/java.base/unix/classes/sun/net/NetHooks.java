@@ -45,7 +45,7 @@ public final class NetHooks {
      * <p> Concrete implementations of this class should define a zero-argument
      * constructor and implement the abstract methods specified below.
      */
-    public static abstract class Provider {
+    public abstract static class Provider {
         /**
          * Initializes a new instance of this class.
          */

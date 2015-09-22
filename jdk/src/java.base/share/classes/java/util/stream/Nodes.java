@@ -562,7 +562,7 @@ final class Nodes {
 
     // Implementations
 
-    private static abstract class EmptyNode<T, T_ARR, T_CONS> implements Node<T> {
+    private abstract static class EmptyNode<T, T_ARR, T_CONS> implements Node<T> {
         EmptyNode() { }
 
         @Override
@@ -750,7 +750,7 @@ final class Nodes {
     /**
      * Node class for an internal node with two or more children
      */
-    private static abstract class AbstractConcNode<T, T_NODE extends Node<T>> implements Node<T> {
+    private abstract static class AbstractConcNode<T, T_NODE extends Node<T>> implements Node<T> {
         protected final T_NODE left;
         protected final T_NODE right;
         private final long size;
@@ -932,7 +932,7 @@ final class Nodes {
     }
 
     /** Abstract class for spliterator for all internal node classes */
-    private static abstract class InternalNodeSpliterator<T,
+    private abstract static class InternalNodeSpliterator<T,
                                                           S extends Spliterator<T>,
                                                           N extends Node<T>>
             implements Spliterator<T> {
@@ -1114,7 +1114,7 @@ final class Nodes {
             }
         }
 
-        private static abstract class OfPrimitive<T, T_CONS, T_ARR,
+        private abstract static class OfPrimitive<T, T_CONS, T_ARR,
                                                   T_SPLITR extends Spliterator.OfPrimitive<T, T_CONS, T_SPLITR>,
                                                   N extends Node.OfPrimitive<T, T_CONS, T_ARR, T_SPLITR, N>>
                 extends InternalNodeSpliterator<T, T_SPLITR, N>
@@ -1827,7 +1827,7 @@ final class Nodes {
      * This and subclasses are not intended to be serializable
      */
     @SuppressWarnings("serial")
-    private static abstract class SizedCollectorTask<P_IN, P_OUT, T_SINK extends Sink<P_OUT>,
+    private abstract static class SizedCollectorTask<P_IN, P_OUT, T_SINK extends Sink<P_OUT>,
                                                      K extends SizedCollectorTask<P_IN, P_OUT, T_SINK, K>>
             extends CountedCompleter<Void>
             implements Sink<P_OUT> {
@@ -2030,7 +2030,7 @@ final class Nodes {
     }
 
     @SuppressWarnings("serial")
-    private static abstract class ToArrayTask<T, T_NODE extends Node<T>,
+    private abstract static class ToArrayTask<T, T_NODE extends Node<T>,
                                               K extends ToArrayTask<T, T_NODE, K>>
             extends CountedCompleter<Void> {
         protected final T_NODE node;

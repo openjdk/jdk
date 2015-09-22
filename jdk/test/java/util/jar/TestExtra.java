@@ -42,13 +42,13 @@ import java.util.zip.*;
  * TestJarExtra checks JAR files.
  */
 public class TestExtra {
-    final static int JAR_MAGIC = 0xcafe; // private IN JarOutputStream.java
-    final static int TEST_HEADER = 0xbabe;
+    static final int JAR_MAGIC = 0xcafe; // private IN JarOutputStream.java
+    static final int TEST_HEADER = 0xbabe;
 
-    final static Charset ascii = Charset.forName("ASCII");
+    static final Charset ascii = Charset.forName("ASCII");
 
     // ZipEntry extra data
-    final static byte[][] extra = new byte[][] {
+    static final byte[][] extra = new byte[][] {
         ascii.encode("hello, world").array(),
         ascii.encode("foo bar").array()
     };
