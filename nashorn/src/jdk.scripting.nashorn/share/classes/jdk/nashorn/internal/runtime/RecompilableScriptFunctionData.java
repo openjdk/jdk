@@ -368,8 +368,8 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
     }
 
     @Override
-    PropertyMap getAllocatorMap() {
-        return allocationStrategy.getAllocatorMap();
+    PropertyMap getAllocatorMap(final ScriptObject prototype) {
+        return allocationStrategy.getAllocatorMap(prototype);
     }
 
     @Override
@@ -649,7 +649,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
      */
     private CodeInstaller getInstallerForNewCode() {
         final ScriptEnvironment env = installer.getContext().getEnv();
-        return env._optimistic_types || env._loader_per_compile ? installer.withNewLoader() : installer;
+        return env._optimistic_types || env._loader_per_compile ? installer.getOnDemandCompilationInstaller() : installer;
     }
 
     Compiler getCompiler(final FunctionNode functionNode, final MethodType actualCallSiteType,

@@ -96,8 +96,6 @@ public class OnExitTest extends ProcessUtil {
             ConcurrentHashMap<ProcessHandle, ProcessHandle> processes = new ConcurrentHashMap<>();
             List<ProcessHandle> children = getChildren(ProcessHandle.current());
             children.forEach(ProcessUtil::printProcess);
-            Assert.assertEquals(children.size(), 0,
-                    "Expected to start with zero children; " + children);
 
             JavaChild proc = JavaChild.spawnJavaChild("stdin");
             procHandle = proc.toHandle();
@@ -186,10 +184,6 @@ public class OnExitTest extends ProcessUtil {
             children.forEach(p -> printProcess(p, "after onExit:"));
 
             Assert.assertEquals(proc.isAlive(), false, "destroyed process is alive:: %s%n" + proc);
-
-            List<ProcessHandle> children2 = getAllChildren(procHandle);
-            printf(" children2: %s%n", children2.toString());
-            Assert.assertEquals(children2.size(), 0, "After onExit, expected no children");
         } catch (IOException | InterruptedException ex) {
             Assert.fail(ex.getMessage());
         } finally {

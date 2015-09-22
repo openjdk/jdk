@@ -29,7 +29,6 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/debugInfo.hpp"
 #include "code/pcDesc.hpp"
-#include "compiler/compilerOracle.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"

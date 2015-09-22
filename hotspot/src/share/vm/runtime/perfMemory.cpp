@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "runtime/os.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/perfMemory.hpp"
+#include "runtime/safepoint.hpp"
 #include "runtime/statSampler.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -64,16 +65,20 @@ void perfMemory_exit() {
   if (!UsePerfData) return;
   if (!PerfMemory::is_initialized()) return;
 
-  // if the StatSampler is active, then we don't want to remove
-  // resources it may be dependent on. Typically, the StatSampler
-  // is disengaged from the watcher thread when this method is called,
-  // but it is not disengaged if this method is invoked during a
-  // VM abort.
+  // Only destroy PerfData objects if we're at a safepoint and the
+  // StatSampler is not active. Otherwise, we risk removing PerfData
+  // objects that are currently being used by running JavaThreads
+  // or the StatSampler. This method is invoked while we are not at
+  // a safepoint during a VM abort so leaving the PerfData objects
+  // around may also help diagnose the failure. In rare cases,
+  // PerfData objects are used in parallel with a safepoint. See
+  // the work around in PerfDataManager::destroy().
   //
-  if (!StatSampler::is_active())
+  if (SafepointSynchronize::is_at_safepoint() && !StatSampler::is_active()) {
     PerfDataManager::destroy();
+  }
 
-  // remove the persistent external resources, if any. this method
+  // Remove the persistent external resources, if any. This method
   // does not unmap or invalidate any virtual memory allocated during
   // initialization.
   //

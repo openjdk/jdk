@@ -29,6 +29,7 @@ import com.sun.source.tree.LambdaExpressionTree.BodyKind;
 import com.sun.source.tree.NewClassTree;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Type.TypeMapping;
+import com.sun.tools.javac.comp.ArgumentAttr.CachePolicy;
 import com.sun.tools.javac.comp.Resolve.ResolveError;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.tree.*;
@@ -36,7 +37,6 @@ import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.code.Symbol.*;
-import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.comp.Attr.ResultInfo;
 import com.sun.tools.javac.comp.Resolve.MethodResolutionPhase;
 import com.sun.tools.javac.tree.JCTree.*;
@@ -55,8 +55,6 @@ import java.util.function.Function;
 
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
-import static com.sun.tools.javac.code.Kinds.*;
-import static com.sun.tools.javac.code.Kinds.Kind.*;
 
 /**
  * This is an helper class that is used to perform deferred type-analysis.
@@ -73,6 +71,7 @@ public class DeferredAttr extends JCTree.Visitor {
     protected static final Context.Key<DeferredAttr> deferredAttrKey = new Context.Key<>();
 
     final Attr attr;
+    final ArgumentAttr argumentAttr;
     final Check chk;
     final JCDiagnostic.Factory diags;
     final Enter enter;
@@ -98,6 +97,7 @@ public class DeferredAttr extends JCTree.Visitor {
     protected DeferredAttr(Context context) {
         context.put(deferredAttrKey, this);
         attr = Attr.instance(context);
+        argumentAttr = ArgumentAttr.instance(context);
         chk = Check.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
         enter = Enter.instance(context);
@@ -255,6 +255,15 @@ public class DeferredAttr extends JCTree.Visitor {
             return e != null ? e.speculativeTree.type : Type.noType;
         }
 
+        JCTree speculativeTree(DeferredAttrContext deferredAttrContext) {
+            DeferredType.SpeculativeCache.Entry e = speculativeCache.get(deferredAttrContext.msym, deferredAttrContext.phase);
+            return e != null ? e.speculativeTree : stuckTree;
+        }
+
+        DeferredTypeCompleter completer() {
+            return basicCompleter;
+        }
+
         /**
          * Check a deferred type against a potential target-type. Depending on
          * the current attribution mode, a normal vs. speculative attribution
@@ -272,7 +281,7 @@ public class DeferredAttr extends JCTree.Visitor {
             } else {
                 deferredStuckPolicy = new CheckStuckPolicy(resultInfo, this);
             }
-            return check(resultInfo, deferredStuckPolicy, basicCompleter);
+            return check(resultInfo, deferredStuckPolicy, completer());
         }
 
         private Type check(ResultInfo resultInfo, DeferredStuckPolicy deferredStuckPolicy,
@@ -386,6 +395,42 @@ public class DeferredAttr extends JCTree.Visitor {
          * This is the plain type-checking mode. Produces side-effects on the underlying AST node
          */
         CHECK
+    }
+
+    /**
+     * Performs speculative attribution of a lambda body and returns the speculative lambda tree,
+     * in the absence of a target-type. Since {@link Attr#visitLambda(JCLambda)} cannot type-check
+     * lambda bodies w/o a suitable target-type, this routine 'unrolls' the lambda by turning it
+     * into a regular block, speculatively type-checks the block and then puts back the pieces.
+     */
+    JCLambda attribSpeculativeLambda(JCLambda that, Env<AttrContext> env, ResultInfo resultInfo) {
+        ListBuffer<JCStatement> stats = new ListBuffer<>();
+        stats.addAll(that.params);
+        if (that.getBodyKind() == JCLambda.BodyKind.EXPRESSION) {
+            stats.add(make.Return((JCExpression)that.body));
+        } else {
+            stats.add((JCBlock)that.body);
+        }
+        JCBlock lambdaBlock = make.Block(0, stats.toList());
+        Env<AttrContext> localEnv = attr.lambdaEnv(that, env);
+        try {
+            localEnv.info.returnResult = resultInfo;
+            JCBlock speculativeTree = (JCBlock)attribSpeculative(lambdaBlock, localEnv, resultInfo);
+            List<JCVariableDecl> args = speculativeTree.getStatements().stream()
+                    .filter(s -> s.hasTag(Tag.VARDEF))
+                    .map(t -> (JCVariableDecl)t)
+                    .collect(List.collector());
+            JCTree lambdaBody = speculativeTree.getStatements().last();
+            if (lambdaBody.hasTag(Tag.RETURN)) {
+                lambdaBody = ((JCReturn)lambdaBody).expr;
+            }
+            JCLambda speculativeLambda = make.Lambda(args, lambdaBody);
+            attr.preFlow(speculativeLambda);
+            flow.analyzeLambda(env, speculativeLambda, make, false);
+            return speculativeLambda;
+        } finally {
+            localEnv.info.scope.leave();
+        }
     }
 
     /**
@@ -572,7 +617,7 @@ public class DeferredAttr extends JCTree.Visitor {
             }
         }
 
-        private boolean insideOverloadPhase() {
+        public boolean insideOverloadPhase() {
             DeferredAttrContext dac = this;
             if (dac == emptyDeferredAttrContext) {
                 return false;
@@ -731,56 +776,16 @@ public class DeferredAttr extends JCTree.Visitor {
             }
 
             boolean canLambdaBodyCompleteNormally(JCLambda tree) {
-                JCLambda newTree = new TreeCopier<>(make).copy(tree);
-                /* attr.lambdaEnv will create a meaningful env for the
-                 * lambda expression. This is specially useful when the
-                 * lambda is used as the init of a field. But we need to
-                 * remove any added symbol.
-                 */
-                Env<AttrContext> localEnv = attr.lambdaEnv(newTree, env);
+                List<JCVariableDecl> oldParams = tree.params;
+                CachePolicy prevPolicy = argumentAttr.withCachePolicy(CachePolicy.NO_CACHE);
                 try {
-                    List<JCVariableDecl> tmpParams = newTree.params;
-                    while (tmpParams.nonEmpty()) {
-                        tmpParams.head.vartype = make.at(tmpParams.head).Type(syms.errType);
-                        tmpParams = tmpParams.tail;
-                    }
-
-                    attr.attribStats(newTree.params, localEnv);
-
-                    /* set pt to Type.noType to avoid generating any bound
-                     * which may happen if lambda's return type is an
-                     * inference variable
-                     */
-                    Attr.ResultInfo bodyResultInfo = attr.new ResultInfo(KindSelector.VAL, Type.noType);
-                    localEnv.info.returnResult = bodyResultInfo;
-
-                    // discard any log output
-                    Log.DiagnosticHandler diagHandler = new Log.DiscardDiagnosticHandler(log);
-                    try {
-                        JCBlock body = (JCBlock)newTree.body;
-                        /* we need to attribute the lambda body before
-                         * doing the aliveness analysis. This is because
-                         * constant folding occurs during attribution
-                         * and the reachability of some statements depends
-                         * on constant values, for example:
-                         *
-                         *     while (true) {...}
-                         */
-                        attr.attribStats(body.stats, localEnv);
-
-                        attr.preFlow(newTree);
-                        /* make an aliveness / reachability analysis of the lambda
-                         * to determine if it can complete normally
-                         */
-                        flow.analyzeLambda(localEnv, newTree, make, true);
-                    } finally {
-                        log.popDiagnosticHandler(diagHandler);
-                    }
-                    return newTree.canCompleteNormally;
+                    tree.params = tree.params.stream()
+                            .map(vd -> make.VarDef(vd.mods, vd.name, make.Erroneous(), null))
+                            .collect(List.collector());
+                    return attribSpeculativeLambda(tree, env, attr.unknownExprInfo).canCompleteNormally;
                 } finally {
-                    JCBlock body = (JCBlock)newTree.body;
-                    unenterScanner.scan(body.stats);
-                    localEnv.info.scope.leave();
+                    argumentAttr.withCachePolicy(prevPolicy);
+                    tree.params = oldParams;
                 }
             }
 
@@ -951,7 +956,7 @@ public class DeferredAttr extends JCTree.Visitor {
      * A special tree scanner that would only visit portions of a given tree.
      * The set of nodes visited by the scanner can be customized at construction-time.
      */
-    abstract static class FilterScanner extends TreeScanner {
+    abstract static class FilterScanner extends com.sun.tools.javac.tree.TreeScanner {
 
         final Filter<JCTree> treeFilter;
 
@@ -1148,330 +1153,4 @@ public class DeferredAttr extends JCTree.Visitor {
             }
         }
     }
-
-    /**
-     * Does the argument expression {@code expr} need speculative type-checking?
-     */
-    boolean isDeferred(Env<AttrContext> env, JCExpression expr) {
-        DeferredChecker dc = new DeferredChecker(env);
-        dc.scan(expr);
-        return dc.result.isPoly();
-    }
-
-    /**
-     * The kind of an argument expression. This is used by the analysis that
-     * determines as to whether speculative attribution is necessary.
-     */
-    enum ArgumentExpressionKind {
-
-        /** kind that denotes poly argument expression */
-        POLY,
-        /** kind that denotes a standalone expression */
-        NO_POLY,
-        /** kind that denotes a primitive/boxed standalone expression */
-        PRIMITIVE;
-
-        /**
-         * Does this kind denote a poly argument expression
-         */
-        public final boolean isPoly() {
-            return this == POLY;
-        }
-
-        /**
-         * Does this kind denote a primitive standalone expression
-         */
-        public final boolean isPrimitive() {
-            return this == PRIMITIVE;
-        }
-
-        /**
-         * Compute the kind of a standalone expression of a given type
-         */
-        static ArgumentExpressionKind standaloneKind(Type type, Types types) {
-            return types.unboxedTypeOrType(type).isPrimitive() ?
-                    ArgumentExpressionKind.PRIMITIVE :
-                    ArgumentExpressionKind.NO_POLY;
-        }
-
-        /**
-         * Compute the kind of a method argument expression given its symbol
-         */
-        static ArgumentExpressionKind methodKind(Symbol sym, Types types) {
-            Type restype = sym.type.getReturnType();
-            if (sym.type.hasTag(FORALL) &&
-                    restype.containsAny(((ForAll)sym.type).tvars)) {
-                return ArgumentExpressionKind.POLY;
-            } else {
-                return ArgumentExpressionKind.standaloneKind(restype, types);
-            }
-        }
-    }
-
-    /**
-     * Tree scanner used for checking as to whether an argument expression
-     * requires speculative attribution
-     */
-    final class DeferredChecker extends FilterScanner {
-
-        Env<AttrContext> env;
-        ArgumentExpressionKind result;
-
-        public DeferredChecker(Env<AttrContext> env) {
-            super(deferredCheckerTags);
-            this.env = env;
-        }
-
-        @Override
-        public void visitLambda(JCLambda tree) {
-            //a lambda is always a poly expression
-            result = ArgumentExpressionKind.POLY;
-        }
-
-        @Override
-        public void visitReference(JCMemberReference tree) {
-            //perform arity-based check
-            Env<AttrContext> localEnv = env.dup(tree);
-            JCExpression exprTree = (JCExpression)attribSpeculative(tree.getQualifierExpression(), localEnv,
-                    attr.memberReferenceQualifierResult(tree));
-            JCMemberReference mref2 = new TreeCopier<Void>(make).copy(tree);
-            mref2.expr = exprTree;
-            Symbol res =
-                    rs.getMemberReference(tree, localEnv, mref2,
-                        exprTree.type, tree.name);
-            tree.sym = res;
-            if (res.kind.isResolutionTargetError() ||
-                    res.type != null && res.type.hasTag(FORALL) ||
-                    (res.flags() & Flags.VARARGS) != 0 ||
-                    (TreeInfo.isStaticSelector(exprTree, tree.name.table.names) &&
-                    exprTree.type.isRaw())) {
-                tree.overloadKind = JCMemberReference.OverloadKind.OVERLOADED;
-            } else {
-                tree.overloadKind = JCMemberReference.OverloadKind.UNOVERLOADED;
-            }
-            //a method reference is always a poly expression
-            result = ArgumentExpressionKind.POLY;
-        }
-
-        @Override
-        public void visitTypeCast(JCTypeCast tree) {
-            //a cast is always a standalone expression
-            result = ArgumentExpressionKind.NO_POLY;
-        }
-
-        @Override
-        public void visitConditional(JCConditional tree) {
-            scan(tree.truepart);
-            if (!result.isPrimitive()) {
-                result = ArgumentExpressionKind.POLY;
-                return;
-            }
-            scan(tree.falsepart);
-            result = reduce(ArgumentExpressionKind.PRIMITIVE).isPrimitive() ?
-                    ArgumentExpressionKind.PRIMITIVE :
-                    ArgumentExpressionKind.POLY;
-
-        }
-
-        @Override
-        public void visitNewClass(JCNewClass tree) {
-            result = TreeInfo.isDiamond(tree) ?
-                    ArgumentExpressionKind.POLY : ArgumentExpressionKind.NO_POLY;
-        }
-
-        @Override
-        public void visitApply(JCMethodInvocation tree) {
-            Name name = TreeInfo.name(tree.meth);
-
-            //fast path
-            if (tree.typeargs.nonEmpty() ||
-                    name == name.table.names._this ||
-                    name == name.table.names._super) {
-                result = ArgumentExpressionKind.NO_POLY;
-                return;
-            }
-
-            //slow path
-            Symbol sym = quicklyResolveMethod(env, tree);
-
-            if (sym == null) {
-                result = ArgumentExpressionKind.POLY;
-                return;
-            }
-
-            result = analyzeCandidateMethods(sym, ArgumentExpressionKind.PRIMITIVE,
-                    argumentKindAnalyzer);
-        }
-        //where
-            private boolean isSimpleReceiver(JCTree rec) {
-                switch (rec.getTag()) {
-                    case IDENT:
-                        return true;
-                    case SELECT:
-                        return isSimpleReceiver(((JCFieldAccess)rec).selected);
-                    case TYPEAPPLY:
-                    case TYPEARRAY:
-                        return true;
-                    case ANNOTATED_TYPE:
-                        return isSimpleReceiver(((JCAnnotatedType)rec).underlyingType);
-                    case APPLY:
-                        return true;
-                    case NEWCLASS:
-                        JCNewClass nc = (JCNewClass) rec;
-                        return nc.encl == null && nc.def == null && !TreeInfo.isDiamond(nc);
-                    default:
-                        return false;
-                }
-            }
-            private ArgumentExpressionKind reduce(ArgumentExpressionKind kind) {
-                return argumentKindAnalyzer.reduce(result, kind);
-            }
-            MethodAnalyzer<ArgumentExpressionKind> argumentKindAnalyzer =
-                    new MethodAnalyzer<ArgumentExpressionKind>() {
-                @Override
-                public ArgumentExpressionKind process(MethodSymbol ms) {
-                    return ArgumentExpressionKind.methodKind(ms, types);
-                }
-                @Override
-                public ArgumentExpressionKind reduce(ArgumentExpressionKind kind1,
-                                                     ArgumentExpressionKind kind2) {
-                    switch (kind1) {
-                        case PRIMITIVE: return kind2;
-                        case NO_POLY: return kind2.isPoly() ? kind2 : kind1;
-                        case POLY: return kind1;
-                        default:
-                            Assert.error();
-                            return null;
-                    }
-                }
-                @Override
-                public boolean shouldStop(ArgumentExpressionKind result) {
-                    return result.isPoly();
-                }
-            };
-
-        @Override
-        public void visitLiteral(JCLiteral tree) {
-            Type litType = attr.litType(tree.typetag);
-            result = ArgumentExpressionKind.standaloneKind(litType, types);
-        }
-
-        @Override
-        void skip(JCTree tree) {
-            result = ArgumentExpressionKind.NO_POLY;
-        }
-
-        private Symbol quicklyResolveMethod(Env<AttrContext> env, final JCMethodInvocation tree) {
-            final JCExpression rec = tree.meth.hasTag(SELECT) ?
-                    ((JCFieldAccess)tree.meth).selected :
-                    null;
-
-            if (rec != null && !isSimpleReceiver(rec)) {
-                return null;
-            }
-
-            Type site;
-
-            if (rec != null) {
-                switch (rec.getTag()) {
-                    case APPLY:
-                        Symbol recSym = quicklyResolveMethod(env, (JCMethodInvocation) rec);
-                        if (recSym == null)
-                            return null;
-                        Symbol resolvedReturnType =
-                                analyzeCandidateMethods(recSym, syms.errSymbol, returnSymbolAnalyzer);
-                        if (resolvedReturnType == null)
-                            return null;
-                        site = resolvedReturnType.type;
-                        break;
-                    case NEWCLASS:
-                        JCNewClass nc = (JCNewClass) rec;
-                        site = attribSpeculative(nc.clazz, env, attr.unknownTypeExprInfo).type;
-                        break;
-                    default:
-                        site = attribSpeculative(rec, env, attr.unknownTypeExprInfo).type;
-                        break;
-                }
-            } else {
-                site = env.enclClass.sym.type;
-            }
-
-            site = types.skipTypeVars(site, true);
-
-            List<Type> args = rs.dummyArgs(tree.args.length());
-            Name name = TreeInfo.name(tree.meth);
-
-            Resolve.LookupHelper lh = rs.new LookupHelper(name, site, args, List.<Type>nil(), MethodResolutionPhase.VARARITY) {
-                @Override
-                Symbol lookup(Env<AttrContext> env, MethodResolutionPhase phase) {
-                    return rec == null ?
-                        rs.findFun(env, name, argtypes, typeargtypes, phase.isBoxingRequired(), phase.isVarargsRequired()) :
-                        rs.findMethod(env, site, name, argtypes, typeargtypes, phase.isBoxingRequired(), phase.isVarargsRequired());
-                }
-                @Override
-                Symbol access(Env<AttrContext> env, DiagnosticPosition pos, Symbol location, Symbol sym) {
-                    return sym;
-                }
-            };
-
-            return rs.lookupMethod(env, tree, site.tsym, rs.arityMethodCheck, lh);
-        }
-        //where:
-            MethodAnalyzer<Symbol> returnSymbolAnalyzer = new MethodAnalyzer<Symbol>() {
-                @Override
-                public Symbol process(MethodSymbol ms) {
-                    ArgumentExpressionKind kind = ArgumentExpressionKind.methodKind(ms, types);
-                    if (kind == ArgumentExpressionKind.POLY || ms.getReturnType().hasTag(TYPEVAR))
-                        return null;
-                    return ms.getReturnType().tsym;
-                }
-                @Override
-                public Symbol reduce(Symbol s1, Symbol s2) {
-                    return s1 == syms.errSymbol ? s2 : s1 == s2 ? s1 : null;
-                }
-                @Override
-                public boolean shouldStop(Symbol result) {
-                    return result == null;
-                }
-            };
-
-        /**
-         * Process the result of Resolve.lookupMethod. If sym is a method symbol, the result of
-         * MethodAnalyzer.process is returned. If sym is an ambiguous symbol, all the candidate
-         * methods are inspected one by one, using MethodAnalyzer.process. The outcomes are
-         * reduced using MethodAnalyzer.reduce (using defaultValue as the first value over which
-         * the reduction runs). MethodAnalyzer.shouldStop can be used to stop the inspection early.
-         */
-        <E> E analyzeCandidateMethods(Symbol sym, E defaultValue, MethodAnalyzer<E> analyzer) {
-            switch (sym.kind) {
-                case MTH:
-                    return analyzer.process((MethodSymbol) sym);
-                case AMBIGUOUS:
-                    Resolve.AmbiguityError err = (Resolve.AmbiguityError)sym.baseSymbol();
-                    E res = defaultValue;
-                    for (Symbol s : err.ambiguousSyms) {
-                        if (s.kind == MTH) {
-                            res = analyzer.reduce(res, analyzer.process((MethodSymbol) s));
-                            if (analyzer.shouldStop(res))
-                                return res;
-                        }
-                    }
-                    return res;
-                default:
-                    return defaultValue;
-            }
-        }
-    }
-
-    /** Analyzer for methods - used by analyzeCandidateMethods. */
-    interface MethodAnalyzer<E> {
-        E process(MethodSymbol ms);
-        E reduce(E e1, E e2);
-        boolean shouldStop(E result);
-    }
-
-    //where
-    private EnumSet<JCTree.Tag> deferredCheckerTags =
-            EnumSet.of(LAMBDA, REFERENCE, PARENS, TYPECAST,
-                    CONDEXPR, NEWCLASS, APPLY, LITERAL);
 }

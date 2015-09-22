@@ -23,15 +23,17 @@
 
 import java.awt.Image;
 import java.awt.Toolkit;
-import sun.awt.OSInfo;
-import sun.awt.image.MultiResolutionImage;
+import java.awt.image.MultiResolutionImage;
+import jdk.testlibrary.OSInfo;
+
 /*
  * @test
  * @bug 8033534 8035069
  * @summary [macosx] Get MultiResolution image from native system
  * @author Alexander Scherbatiy
- * @modules java.desktop/sun.awt
- *          java.desktop/sun.awt.image
+ * @modules java.desktop/sun.awt.image
+ * @library /lib/testlibrary
+ * @build jdk.testlibrary.OSInfo
  * @run main NSImageToMultiResolutionImageTest
  */
 

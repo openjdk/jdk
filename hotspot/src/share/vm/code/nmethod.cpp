@@ -848,10 +848,10 @@ void nmethod::print_on(outputStream* st, const char* msg) const {
   if (st != NULL) {
     ttyLocker ttyl;
     if (WizardMode) {
-      CompileTask::print_compilation(st, this, msg, /*short_form:*/ true);
+      CompileTask::print(st, this, msg, /*short_form:*/ true);
       st->print_cr(" (" INTPTR_FORMAT ")", this);
     } else {
-      CompileTask::print_compilation(st, this, msg, /*short_form:*/ false);
+      CompileTask::print(st, this, msg, /*short_form:*/ false);
     }
   }
 }
