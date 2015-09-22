@@ -86,10 +86,6 @@ void management_init() {
   ClassLoadingService::init();
 #else
   ThreadService::init();
-  // Make sure the VM version is initialized
-  // This is normally called by RuntimeService::init().
-  // Since that is conditionalized out, we need to call it here.
-  Abstract_VM_Version::initialize();
 #endif // INCLUDE_MANAGEMENT
 }
 

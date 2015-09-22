@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -177,24 +177,18 @@ JDK_INCLUDE_SUBDIR=win32
 # Library suffix
 LIBRARY_SUFFIX=dll
 
-# HOTSPOT_RELEASE_VERSION and HOTSPOT_BUILD_VERSION are defined
-# and added to MAKE_ARGS list in $(GAMMADIR)/make/defs.make.
-
 # next parameters are defined in $(GAMMADIR)/make/defs.make.
-MAKE_ARGS += JDK_MKTG_VERSION=$(JDK_MKTG_VERSION)
-MAKE_ARGS += JDK_MAJOR_VERSION=$(JDK_MAJOR_VERSION)
-MAKE_ARGS += JDK_MINOR_VERSION=$(JDK_MINOR_VERSION)
-MAKE_ARGS += JDK_MICRO_VERSION=$(JDK_MICRO_VERSION)
+MAKE_ARGS += VERSION_SHORT=$(VERSION_SHORT)
+MAKE_ARGS += VERSION_MAJOR=$(VERSION_MAJOR)
+MAKE_ARGS += VERSION_MINOR=$(VERSION_MINOR)
+MAKE_ARGS += VERSION_SECURITY=$(VERSION_SECURITY)
+MAKE_ARGS += VERSION_PATCH=$(VERSION_PATCH)
+MAKE_ARGS += VERSION_BUILD=$(VERSION_BUILD)
 
-ifdef COOKED_JDK_UPDATE_VERSION
-  MAKE_ARGS += JDK_UPDATE_VER=$(COOKED_JDK_UPDATE_VERSION)
-endif
-
-# COOKED_BUILD_NUMBER should only be set if we have a numeric
-# build number.  It must not be zero padded.
-ifdef COOKED_BUILD_NUMBER
-  MAKE_ARGS += JDK_BUILD_NUMBER=$(COOKED_BUILD_NUMBER)
-endif
+# JDK_DOTVER and JDK_VER are needed in Windows RC files
+COMMA:=,
+MAKE_ARGS += JDK_DOTVER=$(VERSION_NUMBER_FOUR_POSITIONS)
+MAKE_ARGS += JDK_VER=$(subst .,$(COMMA),$(VERSION_NUMBER_FOUR_POSITIONS))
 
 NMAKE= MAKEFLAGS= MFLAGS= EXTRA_CFLAGS="$(EXTRA_CFLAGS)" nmake -NOLOGO
 ifndef SYSTEM_UNAME
