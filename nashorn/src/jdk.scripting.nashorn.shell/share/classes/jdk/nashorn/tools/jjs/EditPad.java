@@ -49,8 +49,8 @@ final class EditPad extends JFrame implements Runnable {
     private final boolean[] closeLock;
     private final Consumer<String> saveHandler;
 
-    EditPad(Consumer<String> errorHandler, String initialText,
-            boolean[] closeLock, Consumer<String> saveHandler) {
+    EditPad(final Consumer<String> errorHandler, final String initialText,
+            final boolean[] closeLock, final Consumer<String> saveHandler) {
         super("Edit Pad (Experimental)");
         this.errorHandler = errorHandler;
         this.initialText = initialText;
@@ -62,7 +62,7 @@ final class EditPad extends JFrame implements Runnable {
     public void run() {
         addWindowListener(new WindowAdapter() {
             @Override
-            public void windowClosing(WindowEvent e) {
+            public void windowClosing(final WindowEvent e) {
                 EditPad.this.dispose();
                 notifyClose();
             }
@@ -77,7 +77,7 @@ final class EditPad extends JFrame implements Runnable {
         setVisible(true);
     }
 
-    private JPanel buttons(JTextArea textArea) {
+    private JPanel buttons(final JTextArea textArea) {
         FlowLayout flow = new FlowLayout();
         flow.setHgap(35);
         JPanel buttons = new JPanel(flow);
@@ -118,8 +118,8 @@ final class EditPad extends JFrame implements Runnable {
         }
     }
 
-    static void edit(Consumer<String> errorHandler, String initialText,
-            Consumer<String> saveHandler) {
+    static void edit(final Consumer<String> errorHandler, final String initialText,
+            final Consumer<String> saveHandler) {
         boolean[] closeLock = new boolean[1];
         SwingUtilities.invokeLater(
                 new EditPad(errorHandler, initialText, closeLock, saveHandler));
@@ -127,7 +127,7 @@ final class EditPad extends JFrame implements Runnable {
             while (!closeLock[0]) {
                 try {
                     closeLock.wait();
-                } catch (InterruptedException ex) {
+                } catch (final InterruptedException ex) {
                     // ignore and loop
                 }
             }

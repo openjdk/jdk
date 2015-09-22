@@ -4212,7 +4212,7 @@ void GraphBuilder::print_inlining(ciMethod* callee, const char* msg, bool succes
   if (!PrintInlining && !compilation()->method()->has_option("PrintInlining")) {
     return;
   }
-  CompileTask::print_inlining(callee, scope()->level(), bci(), msg);
+  CompileTask::print_inlining_tty(callee, scope()->level(), bci(), msg);
   if (success && CIPrintMethodCodes) {
     callee->print_codes();
   }

@@ -963,6 +963,7 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
                   strcmp(call->as_CallLeaf()->_name, "g1_wb_post") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "updateBytesCRC32") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "updateBytesCRC32C") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "updateBytesAdler32") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "aescrypt_encryptBlock") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "aescrypt_decryptBlock") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "cipherBlockChaining_encryptAESCrypt") == 0 ||
@@ -3241,7 +3242,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
     // Note 2: MergeMem may already contains instance memory slices added
     // during find_inst_mem() call when memory nodes were processed above.
     igvn->hash_delete(nmm);
-    uint nslices = nmm->req();
+    uint nslices = MIN2(nmm->req(), new_index_start);
     for (uint i = Compile::AliasIdxRaw+1; i < nslices; i++) {
       Node* mem = nmm->in(i);
       Node* cur = NULL;
