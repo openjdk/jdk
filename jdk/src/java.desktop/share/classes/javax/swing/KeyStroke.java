@@ -26,6 +26,7 @@ package javax.swing;
 
 import java.awt.AWTKeyStroke;
 import java.awt.event.KeyEvent;
+import sun.swing.SwingAccessor;
 
 /**
  * A KeyStroke represents a key action on the keyboard, or equivalent input
@@ -70,6 +71,16 @@ public class KeyStroke extends AWTKeyStroke {
      */
     private static final long serialVersionUID = -9060180771037902530L;
 
+    static {
+        SwingAccessor.setKeyStrokeAccessor(new SwingAccessor.KeyStrokeAccessor() {
+
+            @Override
+            public KeyStroke create() {
+                return new KeyStroke();
+            }
+        });
+    }
+
     private KeyStroke() {
     }
     private KeyStroke(char keyChar, int keyCode, int modifiers,
@@ -87,7 +98,6 @@ public class KeyStroke extends AWTKeyStroke {
      */
     public static KeyStroke getKeyStroke(char keyChar) {
         synchronized (AWTKeyStroke.class) {
-            registerSubclass(KeyStroke.class);
             return (KeyStroke)getAWTKeyStroke(keyChar);
         }
     }
@@ -148,7 +158,6 @@ public class KeyStroke extends AWTKeyStroke {
      */
     public static KeyStroke getKeyStroke(Character keyChar, int modifiers) {
         synchronized (AWTKeyStroke.class) {
-            registerSubclass(KeyStroke.class);
             return (KeyStroke)getAWTKeyStroke(keyChar, modifiers);
         }
     }
@@ -199,7 +208,6 @@ public class KeyStroke extends AWTKeyStroke {
     public static KeyStroke getKeyStroke(int keyCode, int modifiers,
                                          boolean onKeyRelease) {
         synchronized (AWTKeyStroke.class) {
-            registerSubclass(KeyStroke.class);
             return (KeyStroke)getAWTKeyStroke(keyCode, modifiers,
                                               onKeyRelease);
         }
@@ -247,7 +255,6 @@ public class KeyStroke extends AWTKeyStroke {
      */
     public static KeyStroke getKeyStroke(int keyCode, int modifiers) {
         synchronized (AWTKeyStroke.class) {
-            registerSubclass(KeyStroke.class);
             return (KeyStroke)getAWTKeyStroke(keyCode, modifiers);
         }
     }
@@ -266,7 +273,6 @@ public class KeyStroke extends AWTKeyStroke {
      */
     public static KeyStroke getKeyStrokeForEvent(KeyEvent anEvent) {
         synchronized (AWTKeyStroke.class) {
-            registerSubclass(KeyStroke.class);
             return (KeyStroke)getAWTKeyStrokeForEvent(anEvent);
         }
     }
@@ -307,7 +313,6 @@ public class KeyStroke extends AWTKeyStroke {
             return null;
         }
         synchronized (AWTKeyStroke.class) {
-            registerSubclass(KeyStroke.class);
             try {
                 return (KeyStroke)getAWTKeyStroke(s);
             } catch (IllegalArgumentException e) {
