@@ -45,7 +45,10 @@ public class SourceTargetTest extends Tester {
     @Test
     void testSourceTarget() throws IOException {
         String v = System.getProperty("java.specification.version");
-        String latest = v.substring(v.lastIndexOf(".") + 1);
+        String[] va = v.split("\\.");
+        int major = Integer.parseInt(va[0]);
+        boolean newVersion = major > 8;
+        String latest = (newVersion) ? va[0] : va[1];
         String prev = String.valueOf(Integer.valueOf(latest) - 1);
 
         writeFile("C.java", "class C { }");
