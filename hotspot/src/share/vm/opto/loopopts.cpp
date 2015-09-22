@@ -775,13 +775,15 @@ void PhaseIdealLoop::try_move_store_after_loop(Node* n) {
             }
             if (u->is_Phi() && u->in(0) == n_loop->_head) {
               assert(_igvn.type(u) == Type::MEMORY, "bad phi");
-              assert(phi == NULL, "already found");
+              // multiple phis on the same slice are possible
+              if (phi != NULL) {
+                return;
+              }
               phi = u;
               continue;
             }
           }
-          phi = NULL;
-          break;
+          return;
         }
         if (phi != NULL) {
           // Nothing in the loop before the store (next iteration)
