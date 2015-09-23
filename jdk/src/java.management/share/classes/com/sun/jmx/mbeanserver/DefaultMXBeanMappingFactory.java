@@ -60,6 +60,7 @@ import java.util.WeakHashMap;
 
 import javax.management.JMX;
 import javax.management.ObjectName;
+import javax.management.ConstructorProperties;
 import javax.management.openmbean.ArrayType;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataInvocationHandler;
@@ -1141,10 +1142,19 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
             super(targetClass, itemNames);
         }
 
-        String applicable(Method[] getters) throws InvalidObjectException {
-            if (!JavaBeansAccessor.isAvailable())
-                return "@ConstructorProperties annotation not available";
+        private String[] getConstPropValues(Constructor<?> ctr) {
+            // is constructor annotated by javax.management.ConstructorProperties ?
+            ConstructorProperties ctrProps = ctr.getAnnotation(ConstructorProperties.class);
+            if (ctrProps != null) {
+                return ctrProps.value();
+            } else {
+                // try the legacy java.beans.ConstructorProperties annotation
+                String[] vals = JavaBeansAccessor.getConstructorPropertiesValue(ctr);
+                return vals;
+            }
+        }
 
+        String applicable(Method[] getters) throws InvalidObjectException {
             Class<?> targetClass = getTargetClass();
             Constructor<?>[] constrs = targetClass.getConstructors();
 
@@ -1152,7 +1162,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
             List<Constructor<?>> annotatedConstrList = newList();
             for (Constructor<?> constr : constrs) {
                 if (Modifier.isPublic(constr.getModifiers())
-                        && JavaBeansAccessor.getConstructorPropertiesValue(constr) != null)
+                        && getConstPropValues(constr) != null)
                     annotatedConstrList.add(constr);
             }
 
@@ -1181,7 +1191,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
             // so we can test unambiguity.
             Set<BitSet> getterIndexSets = newSet();
             for (Constructor<?> constr : annotatedConstrList) {
-                String[] propertyNames = JavaBeansAccessor.getConstructorPropertiesValue(constr);
+                String[] propertyNames = getConstPropValues(constr);
 
                 Type[] paramTypes = constr.getGenericParameterTypes();
                 if (paramTypes.length != propertyNames.length) {

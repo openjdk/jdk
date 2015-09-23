@@ -26,15 +26,13 @@
  * @bug 6175517 6278707
  * @summary Test that ambiguous ConstructorProperties annotations are detected.
  * @author Eamonn McManus
- * @modules java.desktop
- *          java.management
+ * @modules java.management
  * @run clean AmbiguousConstructorTest
  * @run build AmbiguousConstructorTest
  * @run main AmbiguousConstructorTest
  */
 
-import java.beans.ConstructorProperties;
-import java.io.InvalidObjectException;
+import javax.management.ConstructorProperties;
 import javax.management.*;
 
 public class AmbiguousConstructorTest {
