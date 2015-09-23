@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,7 @@
  * questions.
  */
 
-import java.beans.ConstructorProperties;
+import javax.management.ConstructorParameters;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -42,7 +42,7 @@ import javax.management.openmbean.TabularType;
 public interface TigerMXBean {
 
     class Point {
-        @ConstructorProperties({"x", "y"})
+        @ConstructorParameters({"x", "y"})
         public Point(double x, double y) {
             this.x = x;
             this.y = y;
