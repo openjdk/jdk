@@ -168,8 +168,8 @@ public class MemoryUsage {
     <p>The definitions are the same in the two cases, except
       that with the MXBean, <code>MemoryUsage</code> no longer needs to
       be marked <code>Serializable</code> (though it can be).  On
-      the other hand, we have added a {@code @ConstructorProperties} annotation
-      to link the constructor parameters to the corresponding getters.
+      the other hand, we have added a {@link ConstructorProperties &#64;ConstructorProperties}
+      annotation to link the constructor parameters to the corresponding getters.
       We will see more about this below.</p>
 
     <p><code>MemoryUsage</code> is a <em>model-specific class</em>.
@@ -850,10 +850,16 @@ public interface ModuleMXBean {
         <em>J</em>.</p></li>
 
       <li><p>Otherwise, if <em>J</em> has at least one public
-        constructor with a {@link java.beans.ConstructorProperties
-        ConstructorProperties} annotation, then one
-        of those constructors (not necessarily always the same one)
-        will be called to reconstruct an instance of <em>J</em>.
+        constructor with either {@link javax.management.ConstructorProperties
+        &#64;javax.management.ConstructorProperties} or
+        {@code @java.beans.ConstructoProperties} annotation, then one of those
+        constructors (not necessarily always the same one) will be called to
+        reconstruct an instance of <em>J</em>.
+        If a constructor is annotated with both
+        {@code @javax.management.ConstructorProperties} and
+        {@code @java.beans.ConstructorProperties},
+        {@code @javax.management.ConstructorProperties} will be used and
+        {@code @java.beans.ConstructorProperties} will be ignored.
         Every such annotation must list as many strings as the
         constructor has parameters; each string must name a property
         corresponding to a getter of <em>J</em>; and the type of this
@@ -909,8 +915,9 @@ public interface ModuleMXBean {
       <li><p>Otherwise, <em>J</em> is not reconstructible.</p></li>
     </ol>
 
-    <p>Rule 2 is not applicable to subset Profiles of Java SE that do not
-    include the {@code java.beans} package. When targeting a runtime that does
+    <p>When {@code @java.beans.ConstructorProperties} is used then rule 2 is not
+    applicable to subset Profiles of Java SE that do not include the
+    {@code java.beans} package. When targeting a runtime that does
     not include the {@code java.beans} package, and where there is a mismatch
     between the compile-time and runtime environment whereby <em>J</em> is
     compiled with a public constructor and the {@code ConstructorProperties}
