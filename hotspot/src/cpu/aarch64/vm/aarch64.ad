@@ -15209,6 +15209,20 @@ instruct vdiv2D(vecX dst, vecX src1, vecX src2)
   ins_pipe(pipe_class_default);
 %}
 
+// --------------------------------- SQRT -------------------------------------
+
+instruct vsqrt2D(vecX dst, vecX src)
+%{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (SqrtVD src));
+  format %{ "fsqrt  $dst, $src\t# vector (2D)" %}
+  ins_encode %{
+    __ fsqrt(as_FloatRegister($dst$$reg), __ T2D,
+             as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 // --------------------------------- AND --------------------------------------
 
 instruct vand8B(vecD dst, vecD src1, vecD src2)
