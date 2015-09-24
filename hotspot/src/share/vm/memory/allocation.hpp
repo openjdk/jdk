@@ -154,8 +154,9 @@ enum MemoryType {
   mtChunk             = 0x0C,  // chunk that holds content of arenas
   mtTest              = 0x0D,  // Test type for verifying NMT
   mtTracing           = 0x0E,  // memory used for Tracing
-  mtNone              = 0x0F,  // undefined
-  mt_number_of_types  = 0x10   // number of memory types (mtDontTrack
+  mtLogging           = 0x0F,  // memory for logging
+  mtNone              = 0x10,  // undefined
+  mt_number_of_types  = 0x11   // number of memory types (mtDontTrack
                                  // is not included as validate type)
 };
 
