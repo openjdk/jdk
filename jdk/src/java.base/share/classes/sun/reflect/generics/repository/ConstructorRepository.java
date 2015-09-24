@@ -64,8 +64,8 @@ public class ConstructorRepository
      * that this repository is servicing
      * @param f - a factory that will provide instances of reflective
      * objects when this repository converts its AST
-     * @return a <tt>ConstructorRepository</tt> that manages the generic type
-     * information represented in the signature <tt>rawSig</tt>
+     * @return a {@code ConstructorRepository} that manages the generic type
+     * information represented in the signature {@code rawSig}
      */
     public static ConstructorRepository make(String rawSig, GenericsFactory f) {
         return new ConstructorRepository(rawSig, f);

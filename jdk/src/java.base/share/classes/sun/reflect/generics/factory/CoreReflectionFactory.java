@@ -70,20 +70,20 @@ public class CoreReflectionFactory implements GenericsFactory {
 
     /**
      * Factory for this class. Returns an instance of
-     * <tt>CoreReflectionFactory</tt> for the declaration and scope
+     * {@code CoreReflectionFactory} for the declaration and scope
      * provided.
      * This factory will produce reflective objects of the appropriate
      * kind. Classes produced will be those that would be loaded by the
-     * defining class loader of the declaration <tt>d</tt> (if <tt>d</tt>
+     * defining class loader of the declaration {@code d} (if {@code d}
      * is a type declaration, or by the defining loader of the declaring
-     * class of <tt>d</tt> otherwise.
+     * class of {@code d} otherwise.
      * <p> Type variables will be created or lookup as necessary in the
-     * scope <tt> s</tt>.
+     * scope {@code s}.
      * @param d - the generic declaration (class, interface, method or
      * constructor) that this factory services
      * @param s  the scope in which the factory will allocate and search for
      * type variables
-     * @return an instance of <tt>CoreReflectionFactory</tt>
+     * @return an instance of {@code CoreReflectionFactory}
      */
     public static CoreReflectionFactory make(GenericDeclaration d, Scope s) {
         return new CoreReflectionFactory(d, s);
