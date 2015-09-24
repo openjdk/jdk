@@ -23,7 +23,7 @@
 /*
  * @test
  * @bug 8048604
- * @library /lib/testlibrary/
+ * @library ../ /lib/testlibrary
  * @summary This test verifies the assertion "There should be no transformation
  *  on the plaintext/ciphertext in encryption/decryption mechanism" for
  *  feature "NullCipher".
