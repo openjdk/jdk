@@ -118,6 +118,10 @@ public:
   void start()
   { _timer.update_to(0); _begin_time = os::javaTimeMillis(); }
 
+  jlong begin_time() const {
+    return _begin_time;
+  }
+
   /**
    * Only call this if initialization completes successfully; it will
    * crash if PerfMemory_exit() has already been called (usually by

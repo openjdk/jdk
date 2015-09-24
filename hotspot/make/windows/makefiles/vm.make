@@ -163,6 +163,7 @@ VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/gc/serial
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/gc/cms
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/gc/g1
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/asm
+VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/logging
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/memory
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/oops
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/prims
@@ -250,6 +251,9 @@ bytecodeInterpreterWithChecks.obj: ..\generated\jvmtifiles\bytecodeInterpreterWi
 {$(COMMONSRC)\share\vm\asm}.cpp.obj::
         $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
+{$(COMMONSRC)\share\vm\logging}.cpp.obj::
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
+
 {$(COMMONSRC)\share\vm\memory}.cpp.obj::
         $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
@@ -328,6 +332,9 @@ bytecodeInterpreterWithChecks.obj: ..\generated\jvmtifiles\bytecodeInterpreterWi
         $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(ALTSRC)\share\vm\asm}.cpp.obj::
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
+
+{$(ALTSRC)\share\vm\logging}.cpp.obj::
         $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(ALTSRC)\share\vm\memory}.cpp.obj::
