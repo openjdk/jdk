@@ -40,10 +40,10 @@ final class GenericArrayTypeImpl implements GenericArrayType {
     }
 
     /**
-     * Returns  a <tt>Type</tt> object representing the component type
+     * Returns  a {@code Type} object representing the component type
      * of this array.
      *
-     * @return a <tt>Type</tt> object representing the component type
+     * @return a {@code Type} object representing the component type
      *         of this array
      * @since 1.5
      */

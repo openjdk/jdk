@@ -319,7 +319,7 @@ public final class Fiber implements Runnable, Cancelable, ComponentRegistry {
      * This method works like {@link Thread#start()}.
      *
      * @param tubeline           The first tube of the tubeline that will act on the packet.
-     * @param request            The request packet to be passed to <tt>startPoint.processRequest()</tt>.
+     * @param request            The request packet to be passed to {@code startPoint.processRequest()}.
      * @param completionCallback The callback to be invoked when the processing is finished and the
      *                           final response packet is available.
      * @see #runSync(Tube, Packet)
@@ -385,7 +385,7 @@ public final class Fiber implements Runnable, Cancelable, ComponentRegistry {
      * @param tubeline
      *      The first tube of the tubeline that will act on the packet.
      * @param request
-     *      The request packet to be passed to <tt>startPoint.processRequest()</tt>.
+     *      The request packet to be passed to {@code startPoint.processRequest()}.
      * @param completionCallback
      *      The callback to be invoked when the processing is finished and the
      *      final response packet is available.
@@ -835,8 +835,8 @@ public final class Fiber implements Runnable, Cancelable, ComponentRegistry {
      * </pre>
      *
      * @param tubeline The first tube of the tubeline that will act on the packet.
-     * @param request  The request packet to be passed to <tt>startPoint.processRequest()</tt>.
-     * @return The response packet to the <tt>request</tt>.
+     * @param request  The request packet to be passed to {@code startPoint.processRequest()}.
+     * @return The response packet to the {@code request}.
      * @see #start(Tube, Packet, CompletionCallback)
      */
     public

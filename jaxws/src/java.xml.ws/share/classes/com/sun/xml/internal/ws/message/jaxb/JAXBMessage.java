@@ -186,7 +186,7 @@ public final class JAXBMessage extends AbstractMessageImpl implements StreamingS
      * Creates a {@link Message} backed by a JAXB bean.
      *
      * @param bridge
-     *      Specify the payload tag name and how <tt>jaxbObject</tt> is bound.
+     *      Specify the payload tag name and how {@code jaxbObject} is bound.
      * @param jaxbObject
      */
     public static Message create(XMLBridge bridge, Object jaxbObject, SOAPVersion soapVer) {

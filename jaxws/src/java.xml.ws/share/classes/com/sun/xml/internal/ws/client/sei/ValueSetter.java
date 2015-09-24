@@ -57,14 +57,14 @@ public abstract class ValueSetter {
      * @param obj
      *      The unmarshalled object.
      * @param args
-     *      The arguments given to the Java method invocation. If <tt>obj</tt>
+     *      The arguments given to the Java method invocation. If {@code obj}
      *      is supposed to be returned as a {@link Holder} value, a suitable
-     *      {@link Holder} is obtained from this argument list and <tt>obj</tt>
+     *      {@link Holder} is obtained from this argument list and {@code obj}
      *      is set.
      *
      * @return
-     *      if <tt>obj</tt> is supposed to be returned as a return value
-     *      from the method, this method returns <tt>obj</tt>. Otherwise null.
+     *      if {@code obj} is supposed to be returned as a return value
+     *      from the method, this method returns {@code obj}. Otherwise null.
      */
     abstract Object put(Object obj, Object[] args);
 

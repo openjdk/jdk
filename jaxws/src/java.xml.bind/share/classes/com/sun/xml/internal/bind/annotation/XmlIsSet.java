@@ -58,9 +58,9 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * marshaller.marshal(new Foo());
  * </pre>
  * and you get:
- * <pre><xmp>
+ * <pre>{@code
  * <foo><x>0</x></foo>
- * </xmp></pre>
+ * }</pre>
  *
  * <p>
  * By creating a side boolean field/property that has this annotation,
@@ -81,14 +81,14 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *
  * marshaller.marshal(f);
  *
- * <xmp>
+ * {@code
  * <foo/>
- * </xmp>
+ * }
  *
  * f.xIsPresent = true;
- * <xmp>
+ * {@code
  * <foo><x>5</x></foo>
- * </xmp>
+ * }
  * </pre>
  *
  * <p>

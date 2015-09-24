@@ -177,7 +177,7 @@ import javax.xml.ws.handler.soap.SOAPHandler;
  *
  * <h3>VM-wide state</h3>
  * <p>
- * <tt>static</tt> is always there for you to use.
+ * {@code static} is always there for you to use.
  *
  *
  *
@@ -323,7 +323,7 @@ public interface Pipe {
      * that you delegate to.
      * <p>
      * For limited number of {@link Pipe}s that do not maintain any
-     * thread unsafe resource, it is allowed to simply return <tt>this</tt>
+     * thread unsafe resource, it is allowed to simply return {@code this}
      * from this method (notice that even if you are stateless, if you
      * got a delegating {@link Pipe} and that one isn't stateless, you
      * still have to copy yourself.)

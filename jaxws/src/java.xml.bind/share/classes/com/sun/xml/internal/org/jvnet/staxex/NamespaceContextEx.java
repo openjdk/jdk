@@ -42,19 +42,19 @@ public interface NamespaceContextEx extends NamespaceContext, Iterable<Namespace
      * <p>
      * This method enumerates all the active in-scope namespace bindings.
      * This does not include implicit bindings, such as
-     * <tt>"xml"->"http://www.w3.org/XML/1998/namespace"</tt>
-     * or <tt>""->""</tt> (the implicit default namespace URI.)
+     * {@code "xml"->"http://www.w3.org/XML/1998/namespace"}
+     * or {@code ""->""} (the implicit default namespace URI.)
      *
      * <p>
      * The returned iterator may not include the same prefix more than once.
-     * For example, the returned iterator may only contain <tt>f=ns2</tt>
+     * For example, the returned iterator may only contain {@code f=ns2}
      * if the document is as follows and this method is used at the bar element.
      *
-     * <pre><xmp>
+     * <pre>{@code
      * <foo xmlns:f='ns1'>
      *   <bar xmlns:f='ns2'>
      *     ...
-     * </xmp></pre>
+     * }</pre>
      *
      * <p>
      * The iteration may be done in no particular order.

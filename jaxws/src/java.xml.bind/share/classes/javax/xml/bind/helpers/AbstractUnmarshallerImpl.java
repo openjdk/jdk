@@ -53,7 +53,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 /**
- * Partial default <tt>Unmarshaller</tt> implementation.
+ * Partial default {@code Unmarshaller} implementation.
  *
  * <p>
  * This class provides a partial default implementation for the
@@ -246,7 +246,7 @@ public abstract class AbstractUnmarshallerImpl implements Unmarshaller
      * <p>
      * The validation event handler will be called by the JAXB Provider if any
      * validation errors are encountered during calls to any of the
-     * <tt>unmarshal</tt> methods.  If the client application does not register
+     * {@code unmarshal} methods.  If the client application does not register
      * a validation event handler before invoking the unmarshal methods, then
      * all validation events will be silently ignored and may result in
      * unexpected behaviour.
@@ -267,7 +267,7 @@ public abstract class AbstractUnmarshallerImpl implements Unmarshaller
 
     /**
      * Specifies whether or not the Unmarshaller should validate during
-     * unmarshal operations.  By default, the <tt>Unmarshaller</tt> does
+     * unmarshal operations. By default, the {@code Unmarshaller} does
      * not validate.
      * <p>
      * This method may only be invoked before or after calling one of the

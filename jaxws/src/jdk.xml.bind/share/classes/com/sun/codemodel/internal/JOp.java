@@ -77,7 +77,7 @@ abstract public class JOp {
     }
 
     /**
-     * Logical not <tt>'!x'</tt>.
+     * Logical not {@code '!x'}.
      */
     public static JExpression not(JExpression e) {
         if (e == JExpr.TRUE) return JExpr.FALSE;

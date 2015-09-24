@@ -59,10 +59,10 @@ public interface JavaCompiler {
      * @param additionalElementDecls
      *      Add element declarations for the specified element names to
      *      the XML types mapped from the corresponding {@link Reference}s.
-     *      Those {@link Reference}s must be included in the <tt>rootTypes</tt> parameter.
+     *      Those {@link Reference}s must be included in the {@code rootTypes} parameter.
      *      In this map, a {@link Reference} can be null, in which case the element name is
      *      declared to have an empty complex type.
-     *      (&lt;xs:element name='foo'>&lt;xs:complexType/>&lt;/xs:element>)
+     *      ({@code <xs:element name='foo'><xs:complexType/></xs:element>})
      *      This parameter can be null, in which case the method behaves as if the empty map is given.
      *
      * @param defaultNamespaceRemap
