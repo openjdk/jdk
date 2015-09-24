@@ -34,7 +34,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.function.BooleanSupplier;
@@ -379,6 +381,28 @@ public final class Utils {
     }
 
     /**
+     * Returns random element of non empty collection
+     *
+     * @param <T> a type of collection element
+     * @param collection collection of elements
+     * @return random element of collection
+     * @throws IllegalArgumentException if collection is empty
+     */
+    public static <T> T getRandomElement(Collection<T> collection)
+            throws IllegalArgumentException {
+        if (collection.isEmpty()) {
+            throw new IllegalArgumentException("Empty collection");
+        }
+        Random random = getRandomInstance();
+        int elementIndex = 1 + random.nextInt(collection.size() - 1);
+        Iterator<T> iterator = collection.iterator();
+        while (--elementIndex != 0) {
+            iterator.next();
+        }
+        return iterator.next();
+    }
+
+    /**
      * Wait for condition to be true
      *
      * @param condition, a condition to wait for
@@ -461,5 +485,41 @@ public final class Utils {
         }
     }
 
+    /**
+     * Converts to VM type signature
+     *
+     * @param type Java type to convert
+     * @return string representation of VM type
+     */
+    public static String toJVMTypeSignature(Class<?> type) {
+        if (type.isPrimitive()) {
+            if (type == boolean.class) {
+                return "Z";
+            } else if (type == byte.class) {
+                return "B";
+            } else if (type == char.class) {
+                return "C";
+            } else if (type == double.class) {
+                return "D";
+            } else if (type == float.class) {
+                return "F";
+            } else if (type == int.class) {
+                return "I";
+            } else if (type == long.class) {
+                return "J";
+            } else if (type == short.class) {
+                return "S";
+            } else if (type == void.class) {
+                return "V";
+            } else {
+                throw new Error("Unsupported type: " + type);
+            }
+        }
+        String result = type.getName().replaceAll("\\.", "/");
+        if (!type.isArray()) {
+            return "L" + result + ";";
+        }
+        return result;
+    }
 }
 
