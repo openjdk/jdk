@@ -4064,8 +4064,6 @@ public abstract class JComponent extends Container implements Serializable,
             return aaHint;
         } else if (key == RenderingHints.KEY_TEXT_LCD_CONTRAST) {
             return lcdRenderingHint;
-        } else if (key == SwingUtilities2.COMPONENT_UI_PROPERTY_KEY) {
-            return ui;
         }
          if(clientProperties == null) {
             return null;

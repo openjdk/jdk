@@ -135,13 +135,6 @@ public class SwingUtilities2 {
         }
     }
 
-    /**
-     * Key used in client properties used to indicate that the
-     * {@code ComponentUI} of the JComponent instance should be returned.
-     */
-    public static final Object COMPONENT_UI_PROPERTY_KEY =
-                            new StringBuffer("ComponentUIPropertyKey");
-
     /** Client Property key for the text maximal offsets for BasicMenuItemUI */
     public static final StringUIClientPropertyKey BASICMENUITEMUI_MAX_TEXT_OFFSET =
         new StringUIClientPropertyKey ("maxTextOffset");
