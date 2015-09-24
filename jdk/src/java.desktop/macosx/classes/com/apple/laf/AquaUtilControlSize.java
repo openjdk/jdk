@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package com.apple.laf;
 
 import java.awt.*;
 import java.beans.*;
-import java.lang.reflect.Method;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -38,6 +37,9 @@ import apple.laf.JRSUIConstants.*;
 
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
+import sun.security.action.GetPropertyAction;
+
+import static java.security.AccessController.*;
 
 public class AquaUtilControlSize {
     protected static final String CLIENT_PROPERTY_KEY = "JComponent.sizeVariant";
@@ -47,7 +49,8 @@ public class AquaUtilControlSize {
         void applySizeFor(final JComponent c, final Size size);
     }
 
-    protected static final RecyclableSingleton<PropertySizeListener> sizeListener = new RecyclableSingletonFromDefaultConstructor<PropertySizeListener>(PropertySizeListener.class);
+    protected static final RecyclableSingleton<PropertySizeListener> sizeListener
+            = new RecyclableSingletonFromDefaultConstructor<>(PropertySizeListener.class);
     protected static PropertySizeListener getSizeListener() {
         return sizeListener.get();
     }
@@ -70,7 +73,7 @@ public class AquaUtilControlSize {
     }
 
     private static Size getDefaultSize() {
-        final String sizeProperty = java.security.AccessController.doPrivileged(new sun.security.action.GetPropertyAction(SYSTEM_PROPERTY_KEY));
+        final String sizeProperty = doPrivileged(new GetPropertyAction(SYSTEM_PROPERTY_KEY));
         final JRSUIConstants.Size size = getSizeFromString(sizeProperty);
         if (size != null) return size;
         return JRSUIConstants.Size.REGULAR;
@@ -85,20 +88,32 @@ public class AquaUtilControlSize {
         return size;
     }
 
-    protected static JRSUIConstants.Size applySizeForControl(final JComponent c, final AquaPainter<? extends JRSUIState> painter) {
+    protected static JRSUIConstants.Size applySizeForControl(final JComponent c,
+                                                             final AquaPainter<? extends JRSUIState> painter) {
         final JRSUIConstants.Size sizeFromUser = getUserSizeFrom(c);
-        final JRSUIConstants.Size size = sizeFromUser == null ? JRSUIConstants.Size.REGULAR : sizeFromUser;
+        final JRSUIConstants.Size size = sizeFromUser == null
+                                         ? JRSUIConstants.Size.REGULAR
+                                         : sizeFromUser;
         painter.state.set(size);
         return size;
     }
 
-    protected static Font getFontForSize(final Component c, final JRSUIConstants.Size size) {
+    protected static Font getFontForSize(final Component c,
+                                         final JRSUIConstants.Size size) {
         final Font initialFont = c.getFont();
 
-        if (size == null || !(initialFont instanceof UIResource)) return initialFont;
+        if (size == null || !(initialFont instanceof UIResource)) {
+            return initialFont;
+        }
 
-        if (size == JRSUIConstants.Size.MINI) return initialFont.deriveFont(AquaFonts.getMiniControlTextFont().getSize2D());
-        if (size == JRSUIConstants.Size.SMALL) return initialFont.deriveFont(AquaFonts.getSmallControlTextFont().getSize2D());
+        if (size == JRSUIConstants.Size.MINI) {
+            return initialFont.deriveFont(
+                    AquaFonts.getMiniControlTextFont().getSize2D());
+        }
+        if (size == JRSUIConstants.Size.SMALL) {
+            return initialFont.deriveFont(
+                    AquaFonts.getSmallControlTextFont().getSize2D());
+        }
 
         return initialFont.deriveFont(AquaFonts.getControlTextFont().getSize2D());
     }
@@ -115,25 +130,8 @@ public class AquaUtilControlSize {
         c.setBorder(derivedBorder);
     }
 
-    // call JComponent.getUI() if it exists, then call Sizeable.applySizeFor() if the UI is "Sizeable"
-    // next best thing to -respondsToSelector: :-P
-    private static void applyUISizing(final JComponent c, final Size size) {
-        try {
-            // see if this component has a "getUI" method
-            final Class<? extends JComponent> clazz = c.getClass();
-            final Method getUIMethod = clazz.getMethod("getUI", new Class<?>[0]);
-
-            // see if that UI is one of ours that understands sizing
-            final Object ui = getUIMethod.invoke(c, new Object[0]);
-            if (!(ui instanceof Sizeable)) return;
-
-            // size it!
-            final Sizeable sizeable = (Sizeable)ui;
-            sizeable.applySizeFor(c, size);
-        } catch (final Throwable e) { return; }
-    }
-
     protected static class PropertySizeListener implements PropertyChangeListener {
+        @Override
         public void propertyChange(final PropertyChangeEvent evt) {
             final String key = evt.getPropertyName();
             if (!CLIENT_PROPERTY_KEY.equalsIgnoreCase(key)) return;
@@ -154,7 +152,10 @@ public class AquaUtilControlSize {
 
             applyBorderForSize(c, size);
 
-            applyUISizing(c, size);
+            final Object ui = c.getUI();
+            if (ui instanceof Sizeable) {
+                ((Sizeable) ui).applySizeFor(c, size);
+            }
 
             final Font priorFont = c.getFont();
             if (!(priorFont instanceof FontUIResource)) return;
@@ -200,6 +201,7 @@ public class AquaUtilControlSize {
             return regular;
         }
 
+        @Override
         public String toString() {
             return "regular[" + regular + "] small[" + small + "] mini[" + mini + "]";
         }
@@ -223,8 +225,14 @@ public class AquaUtilControlSize {
 
         public SizeVariant(final SizeVariant desc){
             this.size = desc.size;
-            this.insets = new InsetsUIResource(desc.insets.top, desc.insets.left, desc.insets.bottom, desc.insets.right);
-            this.margins = new InsetsUIResource(desc.margins.top, desc.margins.left, desc.margins.bottom, desc.margins.right);
+            this.insets = new InsetsUIResource(desc.insets.top,
+                                               desc.insets.left,
+                                               desc.insets.bottom,
+                                               desc.insets.right);
+            this.margins = new InsetsUIResource(desc.margins.top,
+                                                desc.margins.left,
+                                                desc.margins.bottom,
+                                                desc.margins.right);
             this.fontSize = desc.fontSize;
             this.w = desc.w;
             this.h = desc.h;
@@ -241,7 +249,8 @@ public class AquaUtilControlSize {
             return this;
         }
 
-        public SizeVariant alterInsets(final int top, final int left, final int bottom, final int right) {
+        public SizeVariant alterInsets(final int top, final int left,
+                                       final int bottom, final int right) {
             insets = generateInsets(insets, top, left, bottom, right);
             return this;
         }
@@ -251,7 +260,8 @@ public class AquaUtilControlSize {
             return this;
         }
 
-        public SizeVariant alterMargins(final int top, final int left, final int bottom, final int right) {
+        public SizeVariant alterMargins(final int top, final int left,
+                                        final int bottom, final int right) {
             margins = generateInsets(margins, top, left, bottom, right);
             return this;
         }
@@ -273,8 +283,12 @@ public class AquaUtilControlSize {
 //            return this;
 //        }
 
-        static Insets generateInsets(final Insets i, final int top, final int left, final int bottom, final int right) {
-            if (i == null) return new InsetsUIResource(top, left, bottom, right);
+        static Insets generateInsets(final Insets i, final int top,
+                                     final int left, final int bottom,
+                                     final int right) {
+            if (i == null) {
+                return new InsetsUIResource(top, left, bottom, right);
+            }
             i.top += top;
             i.left += left;
             i.bottom += bottom;
@@ -282,8 +296,10 @@ public class AquaUtilControlSize {
             return i;
         }
 
+        @Override
         public String toString() {
-            return "insets:" + insets + ", margins:" + margins + ", fontSize:" + fontSize;// + ", textBaseline:" + textBaseline;
+            return "insets:" + insets + ", margins:" + margins + ", fontSize:"
+                    + fontSize;// + ", textBaseline:" + textBaseline;
         }
     }
 }
