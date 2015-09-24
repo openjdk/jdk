@@ -93,7 +93,7 @@ void G1EvacStats::adjust_desired_plab_sz() {
     size_t const used_for_waste_calculation = used() > _region_end_waste ? used() - _region_end_waste : 0;
 
     size_t const total_waste_allowed = used_for_waste_calculation * TargetPLABWastePct;
-    size_t const cur_plab_sz = (double)total_waste_allowed / G1LastPLABAverageOccupancy;
+    size_t const cur_plab_sz = (size_t)((double)total_waste_allowed / G1LastPLABAverageOccupancy);
     // Take historical weighted average
     _filter.sample(cur_plab_sz);
     // Clip from above and below, and align to object boundary
