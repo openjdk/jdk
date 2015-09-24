@@ -37,6 +37,7 @@
 #include "interpreter/linkResolver.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
+#include "logging/logConfiguration.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/universe.inline.hpp"
@@ -3306,6 +3307,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Initialize the os module before using TLS
   os::init();
 
+  // Record VM creation timing statistics
+  TraceVmCreationTime create_vm_timer;
+  create_vm_timer.start();
+
   // Initialize system properties.
   Arguments::init_system_properties();
 
@@ -3314,6 +3319,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Update/Initialize System properties after JDK version number is known
   Arguments::init_version_specific_system_properties();
+
+  // Make sure to initialize log configuration *before* parsing arguments
+  LogConfiguration::initialize(create_vm_timer.begin_time());
 
   // Parse arguments
   jint parse_result = Arguments::parse(args);
@@ -3340,10 +3348,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   }
 
   HOTSPOT_VM_INIT_BEGIN();
-
-  // Record VM creation timing statistics
-  TraceVmCreationTime create_vm_timer;
-  create_vm_timer.start();
 
   // Timing (must come after argument parsing)
   TraceTime timer("Create VM", TraceStartupTime);
@@ -3492,6 +3496,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // debug stuff, that does not work until all basic classes have been initialized.
   set_init_completed();
 
+  LogConfiguration::post_initialize();
   Metaspace::post_initialize();
 
   HOTSPOT_VM_INIT_END();
@@ -3965,6 +3970,8 @@ bool Threads::destroy_vm() {
 
   // exit_globals() will delete tty
   exit_globals();
+
+  LogConfiguration::finalize();
 
   return true;
 }
