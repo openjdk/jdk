@@ -441,10 +441,11 @@ public final class Utils {
      * @param expectedException expected exception
      */
     public static void runAndCheckException(Runnable runnable, Class<? extends Throwable> expectedException) {
+        boolean expectedExceptionWasNotThrown = false;
         try {
             runnable.run();
             if (expectedException != null) {
-                throw new AssertionError("Didn't get expected exception " + expectedException.getSimpleName());
+                expectedExceptionWasNotThrown = true;
             }
         } catch (Throwable t) {
             if (expectedException == null) {
@@ -455,6 +456,10 @@ public final class Utils {
                         t.getClass().getSimpleName(), expectedException.getSimpleName()), t);
             }
         }
+        if (expectedExceptionWasNotThrown) {
+           throw new AssertionError("Didn't get expected exception " + expectedException.getSimpleName());
+        }
     }
 
 }
+
