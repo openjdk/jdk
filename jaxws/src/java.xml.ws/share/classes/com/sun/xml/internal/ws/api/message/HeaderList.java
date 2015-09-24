@@ -87,13 +87,13 @@ import java.util.Arrays;
  * There are two ways to mark a header as understood:
  *
  * <ol>
- *  <li>Use one of the <tt>getXXX</tt> methods that take a
- *      boolean <tt>markAsUnderstood</tt> parameter.
+ *  <li>Use one of the {@code getXXX} methods that take a
+ *      boolean {@code markAsUnderstood} parameter.
  *      Most often, a {@link Pipe} knows it's going to understand a header
  *      as long as it's present, so this is the easiest and thus the preferred way.
  *
  *      For example, if JAX-WSA looks for &lt;wsa:To>, then it can set
- *      <tt>markAsUnderstand</tt> to true, to do the obtaining of a header
+ *      {@code markAsUnderstand} to true, to do the obtaining of a header
  *      and marking at the same time.
  *
  *  <li>Call {@link #understood(int)}.
@@ -489,14 +489,14 @@ public class HeaderList extends ArrayList<Header> implements MessageHeaders {
     }
 
     /**
-     * Returns the value of WS-Addressing <code>To</code> header. The <code>version</code>
+     * Returns the value of WS-Addressing {@code To} header. The {@code version}
      * identifies the WS-Addressing version and the header returned is targeted at
      * the current implicit role. Caches the value for subsequent invocation.
-     * Duplicate <code>To</code> headers are detected earlier.
+     * Duplicate {@code To} headers are detected earlier.
      *
      * @param av WS-Addressing version
      * @param sv SOAP version
-     * @throws IllegalArgumentException if either <code>av</code> or <code>sv</code> is null.
+     * @throws IllegalArgumentException if either {@code av} or {@code sv} is null.
      * @return Value of WS-Addressing To header, anonymous URI if no header is present
      */
     public String getTo(AddressingVersion av, SOAPVersion sv) {
@@ -504,14 +504,14 @@ public class HeaderList extends ArrayList<Header> implements MessageHeaders {
     }
 
     /**
-     * Returns the value of WS-Addressing <code>Action</code> header. The <code>version</code>
+     * Returns the value of WS-Addressing {@code Action} header. The {@code version}
      * identifies the WS-Addressing version and the header returned is targeted at
      * the current implicit role. Caches the value for subsequent invocation.
-     * Duplicate <code>Action</code> headers are detected earlier.
+     * Duplicate {@code Action} headers are detected earlier.
      *
      * @param av WS-Addressing version
      * @param sv SOAP version
-     * @throws IllegalArgumentException if either <code>av</code> or <code>sv</code> is null.
+     * @throws IllegalArgumentException if either {@code av} or {@code sv} is null.
      * @return Value of WS-Addressing Action header, null if no header is present
      */
     public String getAction(@NotNull AddressingVersion av, @NotNull SOAPVersion sv) {
@@ -519,14 +519,14 @@ public class HeaderList extends ArrayList<Header> implements MessageHeaders {
     }
 
     /**
-     * Returns the value of WS-Addressing <code>ReplyTo</code> header. The <code>version</code>
+     * Returns the value of WS-Addressing {@code ReplyTo} header. The {@code version}
      * identifies the WS-Addressing version and the header returned is targeted at
      * the current implicit role. Caches the value for subsequent invocation.
-     * Duplicate <code>ReplyTo</code> headers are detected earlier.
+     * Duplicate {@code ReplyTo} headers are detected earlier.
      *
      * @param av WS-Addressing version
      * @param sv SOAP version
-     * @throws IllegalArgumentException if either <code>av</code> or <code>sv</code> is null.
+     * @throws IllegalArgumentException if either {@code av} or {@code sv} is null.
      * @return Value of WS-Addressing ReplyTo header, null if no header is present
      */
     public WSEndpointReference getReplyTo(@NotNull AddressingVersion av, @NotNull SOAPVersion sv) {
@@ -534,14 +534,14 @@ public class HeaderList extends ArrayList<Header> implements MessageHeaders {
     }
 
     /**
-     * Returns the value of WS-Addressing <code>FaultTo</code> header. The <code>version</code>
+     * Returns the value of WS-Addressing {@code FaultTo} header. The {@code version}
      * identifies the WS-Addressing version and the header returned is targeted at
      * the current implicit role. Caches the value for subsequent invocation.
-     * Duplicate <code>FaultTo</code> headers are detected earlier.
+     * Duplicate {@code FaultTo} headers are detected earlier.
      *
      * @param av WS-Addressing version
      * @param sv SOAP version
-     * @throws IllegalArgumentException if either <code>av</code> or <code>sv</code> is null.
+     * @throws IllegalArgumentException if either {@code av} or {@code sv} is null.
      * @return Value of WS-Addressing FaultTo header, null if no header is present
      */
     public WSEndpointReference getFaultTo(@NotNull AddressingVersion av, @NotNull SOAPVersion sv) {
@@ -549,14 +549,14 @@ public class HeaderList extends ArrayList<Header> implements MessageHeaders {
     }
 
     /**
-     * Returns the value of WS-Addressing <code>MessageID</code> header. The <code>version</code>
+     * Returns the value of WS-Addressing {@code MessageID} header. The {@code version}
      * identifies the WS-Addressing version and the header returned is targeted at
      * the current implicit role. Caches the value for subsequent invocation.
-     * Duplicate <code>MessageID</code> headers are detected earlier.
+     * Duplicate {@code MessageID} headers are detected earlier.
      *
      * @param av WS-Addressing version
      * @param sv SOAP version
-     * @throws WebServiceException if either <code>av</code> or <code>sv</code> is null.
+     * @throws WebServiceException if either {@code av} or {@code sv} is null.
      * @return Value of WS-Addressing MessageID header, null if no header is present
      */
     public String getMessageID(@NotNull AddressingVersion av, @NotNull SOAPVersion sv) {
@@ -564,14 +564,14 @@ public class HeaderList extends ArrayList<Header> implements MessageHeaders {
     }
 
     /**
-     * Returns the value of WS-Addressing <code>RelatesTo</code> header. The <code>version</code>
+     * Returns the value of WS-Addressing {@code RelatesTo} header. The {@code version}
      * identifies the WS-Addressing version and the header returned is targeted at
      * the current implicit role. Caches the value for subsequent invocation.
-     * Duplicate <code>RelatesTo</code> headers are detected earlier.
+     * Duplicate {@code RelatesTo} headers are detected earlier.
      *
      * @param av WS-Addressing version
      * @param sv SOAP version
-     * @throws WebServiceException if either <code>av</code> or <code>sv</code> is null.
+     * @throws WebServiceException if either {@code av} or {@code sv} is null.
      * @return Value of WS-Addressing RelatesTo header, null if no header is present
      */
     public String getRelatesTo(@NotNull AddressingVersion av, @NotNull SOAPVersion sv) {
@@ -803,14 +803,15 @@ public class HeaderList extends ArrayList<Header> implements MessageHeaders {
     /**
      * Removes a single instance of the specified element from this
      * header list, if it is present.  More formally,
-     * removes a header <tt>h</tt> such that <tt>(o==null ? h==null :
-     * o.equals(h))</tt>, if the header list contains one or more such
-     * headers.  Returns <tt>true</tt> if the list contained the
+     * removes a header {@code h} such that
+     * {@code (o==null ? h==null : o.equals(h))},
+     * if the header list contains one or more such
+     * headers.  Returns {@code true} if the list contained the
      * specified element (or equivalently, if the list changed as a
      * result of the call).<p>
      *
      * @param o element to be removed from this list, if present.
-     * @return <tt>true</tt> if the list contained the specified element.
+     * @return {@code true} if the list contained the specified element.
      * @see #remove(javax.xml.namespace.QName)
      */
     @Override

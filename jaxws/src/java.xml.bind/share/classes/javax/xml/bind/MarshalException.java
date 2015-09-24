@@ -30,7 +30,7 @@ package javax.xml.bind;
  * a marshal operation that the provider is unable to recover from.
  *
  * <p>
- * The <tt>ValidationEventHandler</tt> can cause this exception to be thrown
+ * The {@code ValidationEventHandler} can cause this exception to be thrown
  * during the marshal operations.  See
  * {@link ValidationEventHandler#handleEvent(ValidationEvent)
  * ValidationEventHandler.handleEvent(ValidationEvent)}.

@@ -36,9 +36,10 @@ import javax.activation.DataHandler;
  * understanding of the packaging format being used to a MIME-based
  * package processor that implements this abstract class.</p>
  *
- * <p>This abstract class identifies if a package requires XOP processing, {@link #isXOPPackage()} and provides retrieval of binary content stored as attachments by content-id.</p>
+ * <p>This abstract class identifies if a package requires XOP processing, {@link #isXOPPackage()}
+ * and provides retrieval of binary content stored as attachments by content-id.</p>
  *
- * <h2>Identifying the content-id, cid, to pass to <code>getAttachment*(String cid)</code></h2>
+ * <h2>Identifying the content-id, cid, to pass to {@code getAttachment*(String cid)}</h2>
  * <ul>
  * <li>
  * For XOP processing, the infoset representation of the cid is described
@@ -47,8 +48,9 @@ import javax.activation.DataHandler;
  * </li>
  * <li>
  * For WS-I AP 1.0, the cid is identified as an element or attribute of
- * type <code>ref:swaRef </code> specified in
- * <a href="http://www.ws-i.org/Profiles/AttachmentsProfile-1.0-2004-08-24.html#Referencing_Attachments_from_the_SOAP_Envelope">Section 4.4 Referencing Attachments from the SOAP Envelope</a>
+ * type {@code ref:swaRef} specified in
+ * <a href="http://www.ws-i.org/Profiles/AttachmentsProfile-1.0-2004-08-24.html#Referencing_Attachments_from_the_SOAP_Envelope">
+ * Section 4.4 Referencing Attachments from the SOAP Envelope</a>
  * </li>
  * </ul>
  *
@@ -66,9 +68,9 @@ import javax.activation.DataHandler;
  */
 public abstract class AttachmentUnmarshaller {
    /**
-    * <p>Lookup MIME content by content-id, <code>cid</code>, and return as a {@link DataHandler}.</p>
+    * <p>Lookup MIME content by content-id, {@code cid}, and return as a {@link DataHandler}.</p>
     *
-    * <p>The returned <code>DataHandler</code> instance must be configured
+    * <p>The returned {@code DataHandler} instance must be configured
     * to meet the following required mapping constaint.
     * <table summary="" border="2" rules="all" cellpadding="4">
     *   <thead>
@@ -81,8 +83,8 @@ public abstract class AttachmentUnmarshaller {
     *       <th>Java Type</th>
     *     </tr>
     *     <tr>
-    *       <th><code>DataHandler.getContentType()</code></th>
-    *       <th><code>instanceof DataHandler.getContent()</code></th>
+    *       <th>{@code DataHandler.getContentType()}</th>
+    *       <th>{@code instanceof DataHandler.getContent()}</th>
     *     </tr>
     *   </thead>
     *   <tbody>
@@ -103,8 +105,8 @@ public abstract class AttachmentUnmarshaller {
     * Note that it is allowable to support additional mappings.
     *
     * @param cid It is expected to be a valid lexical form of the XML Schema
-    * <code>xs:anyURI</code> datatype. If <code>{@link #isXOPPackage()}
-    * ==true</code>, it must be a valid URI per the <code>cid:</code> URI scheme (see <a href="http://www.ietf.org/rfc/rfc2387.txt">RFC 2387</a>)
+    * {@code xs:anyURI} datatype. If {@link #isXOPPackage()}{@code ==true},
+    * it must be a valid URI per the {@code cid:} URI scheme (see <a href="http://www.ietf.org/rfc/rfc2387.txt">RFC 2387</a>)
     *
     * @return
     *       a {@link DataHandler} that represents the MIME attachment.
@@ -114,11 +116,11 @@ public abstract class AttachmentUnmarshaller {
    public abstract DataHandler getAttachmentAsDataHandler(String cid);
 
     /**
-     * <p>Retrieve the attachment identified by content-id, <code>cid</code>,  as a <tt>byte[]</tt></p>.
+     * <p>Retrieve the attachment identified by content-id, {@code cid}, as a {@code byte[]}.
      *
      * @param cid It is expected to be a valid lexical form of the XML Schema
-     * <code>xs:anyURI</code> datatype. If <code>{@link #isXOPPackage()}
-     * ==true</code>, it must be a valid URI per the <code>cid:</code> URI scheme (see <a href="http://www.ietf.org/rfc/rfc2387.txt">RFC 2387</a>)
+     * {@code xs:anyURI} datatype. If {@link #isXOPPackage()}{@code ==true},
+     * it must be a valid URI per the {@code cid:} URI scheme (see <a href="http://www.ietf.org/rfc/rfc2387.txt">RFC 2387</a>)
      *
      * @return byte[] representation of attachment identified by cid.
      *
@@ -129,7 +131,7 @@ public abstract class AttachmentUnmarshaller {
     /**
      * <p>Read-only property that returns true if JAXB unmarshaller needs to perform XOP processing.</p>
      *
-     * <p>This method returns <code>true</code> when the constraints specified
+     * <p>This method returns {@code true} when the constraints specified
      * in  <a href="http://www.w3.org/TR/2005/REC-xop10-20050125/#identifying_xop_documents">Identifying XOP Documents</a> are met.
      * This value must not change during the unmarshalling process.</p>
      *

@@ -533,7 +533,7 @@ public final class JAXBContextImpl extends JAXBRIContext {
      * This method traverses the base classes of the given object.
      *
      * @return null
-     *      if <tt>c</tt> isn't a JAXB-bound class and <tt>fatal==false</tt>.
+     *      if {@code c} isn't a JAXB-bound class and {@code fatal==false}.
      */
     public final JaxBeanInfo getBeanInfo(Object o) {
         // don't allow xs:anyType beanInfo to handle all the unbound objects
@@ -577,7 +577,7 @@ public final class JAXBContextImpl extends JAXBRIContext {
      * This method doesn't look for base classes.
      *
      * @return null
-     *      if <tt>c</tt> isn't a JAXB-bound class and <tt>fatal==false</tt>.
+     *      if {@code c} isn't a JAXB-bound class and {@code fatal==false}.
      */
     public final <T> JaxBeanInfo<T> getBeanInfo(Class<T> clazz) {
         return (JaxBeanInfo<T>)beanInfoMap.get(clazz);

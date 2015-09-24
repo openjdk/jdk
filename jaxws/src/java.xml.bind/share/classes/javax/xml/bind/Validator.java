@@ -28,7 +28,7 @@ package javax.xml.bind;
 /**
  * As of JAXB 2.0, this class is deprecated and optional.
  * <p>
- * The <tt>Validator</tt> class is responsible for controlling the validation
+ * The {@code Validator} class is responsible for controlling the validation
  * of content trees during runtime.
  *
  * <p>
@@ -69,19 +69,19 @@ package javax.xml.bind;
  * </blockquote>
  *
  * <p>
- * The <tt>Validator</tt> class is responsible for managing On-Demand Validation.
- * The <tt>Unmarshaller</tt> class is responsible for managing Unmarshal-Time
+ * The {@code Validator} class is responsible for managing On-Demand Validation.
+ * The {@code Unmarshaller} class is responsible for managing Unmarshal-Time
  * Validation during the unmarshal operations.  Although there is no formal
  * method of enabling validation during the marshal operations, the
- * <tt>Marshaller</tt> may detect errors, which will be reported to the
- * <tt>ValidationEventHandler</tt> registered on it.
+ * {@code Marshaller} may detect errors, which will be reported to the
+ * {@code ValidationEventHandler} registered on it.
  *
  * <p>
  * <a name="defaulthandler"></a>
  * <b>Using the Default EventHandler</b><br>
  * <blockquote>
  *   If the client application does not set an event handler on their
- *   <tt>Validator</tt>, <tt>Unmarshaller</tt>, or <tt>Marshaller</tt> prior to
+ *   {@code Validator}, {@code Unmarshaller}, or {@code Marshaller} prior to
  *   calling the validate, unmarshal, or marshal methods, then a default event
  *   handler will receive notification of any errors or warnings encountered.
  *   The default event handler will cause the current operation to halt after
@@ -98,24 +98,24 @@ package javax.xml.bind;
  *    <dl>
  *        <dt>Use the default event handler</dt>
  *        <dd>The default event handler will be used if you do not specify one
- *            via the <tt>setEventHandler</tt> API's on <tt>Validator</tt>,
- *            <tt>Unmarshaller</tt>, or <tt>Marshaller</tt>.
+ *            via the {@code setEventHandler} API's on {@code Validator},
+ *            {@code Unmarshaller}, or {@code Marshaller}.
  *        </dd>
  *
  *        <dt>Implement and register a custom event handler</dt>
  *        <dd>Client applications that require sophisticated event processing
- *            can implement the <tt>ValidationEventHandler</tt> interface and
- *            register it with the <tt>Unmarshaller</tt> and/or
- *            <tt>Validator</tt>.
+ *            can implement the {@code ValidationEventHandler} interface and
+ *            register it with the {@code Unmarshaller} and/or
+ *            {@code Validator}.
  *        </dd>
  *
  *        <dt>Use the {@link javax.xml.bind.util.ValidationEventCollector ValidationEventCollector}
  *            utility</dt>
  *        <dd>For convenience, a specialized event handler is provided that
- *            simply collects any <tt>ValidationEvent</tt> objects created
+ *            simply collects any {@code ValidationEvent} objects created
  *            during the unmarshal, validate, and marshal operations and
  *            returns them to the client application as a
- *            <tt>java.util.Collection</tt>.
+ *            {@code java.util.Collection}.
  *        </dd>
  *    </dl>
  * </blockquote>
@@ -131,9 +131,9 @@ package javax.xml.bind;
  * cases, the JAXB Provider will set the severity of the ValidationEvent to
  * FATAL_ERROR to indicate that the unmarshal, validate, or marshal operations
  * should be terminated.  The default event handler and
- * <tt>ValidationEventCollector</tt> utility class must terminate processing
+ * {@code ValidationEventCollector} utility class must terminate processing
  * after being notified of a fatal error.  Client applications that supply their
- * own <tt>ValidationEventHandler</tt> should also terminate processing after
+ * own {@code ValidationEventHandler} should also terminate processing after
  * being notified of a fatal error.  If not, unexpected behaviour may occur.
  * </blockquote>
  *
@@ -195,7 +195,7 @@ public interface Validator {
         throws JAXBException;
 
     /**
-     * Validate the Java content tree starting at <tt>subrootObj</tt>.
+     * Validate the Java content tree starting at {@code subrootObj}.
      * <p>
      * Client applications can use this method to validate Java content trees
      * on-demand at runtime.  This method can be used to validate any arbitrary
@@ -206,19 +206,19 @@ public interface Validator {
      * @throws JAXBException if any unexpected problem occurs during validation
      * @throws ValidationException
      *     If the {@link ValidationEventHandler ValidationEventHandler}
-     *     returns false from its <tt>handleEvent</tt> method or the
-     *     <tt>Validator</tt> is unable to validate the content tree rooted
-     *     at <tt>subrootObj</tt>
+     *     returns false from its {@code handleEvent} method or the
+     *     {@code Validator} is unable to validate the content tree rooted
+     *     at {@code subrootObj}
      * @throws IllegalArgumentException
      *      If the subrootObj parameter is null
-     * @return true if the subtree rooted at <tt>subrootObj</tt> is valid, false
+     * @return true if the subtree rooted at {@code subrootObj} is valid, false
      *         otherwise
      * @deprecated since JAXB2.0
      */
     public boolean validate( Object subrootObj ) throws JAXBException;
 
     /**
-     * Validate the Java content tree rooted at <tt>rootObj</tt>.
+     * Validate the Java content tree rooted at {@code rootObj}.
      * <p>
      * Client applications can use this method to validate Java content trees
      * on-demand at runtime.  This method is used to validate an entire Java
@@ -229,12 +229,12 @@ public interface Validator {
      * @throws JAXBException if any unexpected problem occurs during validation
      * @throws ValidationException
      *     If the {@link ValidationEventHandler ValidationEventHandler}
-     *     returns false from its <tt>handleEvent</tt> method or the
-     *     <tt>Validator</tt> is unable to validate the content tree rooted
-     *     at <tt>rootObj</tt>
+     *     returns false from its {@code handleEvent} method or the
+     *     {@code Validator} is unable to validate the content tree rooted
+     *     at {@code rootObj}
      * @throws IllegalArgumentException
      *      If the rootObj parameter is null
-     * @return true if the tree rooted at <tt>rootObj</tt> is valid, false
+     * @return true if the tree rooted at {@code rootObj} is valid, false
      *         otherwise
      * @deprecated since JAXB2.0
      */
@@ -242,7 +242,7 @@ public interface Validator {
 
     /**
      * Set the particular property in the underlying implementation of
-     * <tt>Validator</tt>.  This method can only be used to set one of
+     * {@code Validator}.  This method can only be used to set one of
      * the standard JAXB defined properties above or a provider specific
      * property.  Attempting to set an undefined property will result in
      * a PropertyException being thrown.  See <a href="#supportedProps">
@@ -264,7 +264,7 @@ public interface Validator {
 
     /**
      * Get the particular property in the underlying implementation of
-     * <tt>Validator</tt>.  This method can only be used to get one of
+     * {@code Validator}.  This method can only be used to get one of
      * the standard JAXB defined properties above or a provider specific
      * property.  Attempting to get an undefined property will result in
      * a PropertyException being thrown.  See <a href="#supportedProps">

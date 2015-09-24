@@ -40,7 +40,7 @@ import static java.lang.annotation.ElementType.METHOD;
  *
  * <p> <b>Usage</b> </p>
  * <p>
- * The <tt>&#64;XmlAnyAttribute</tt> annotation can be used with the
+ * The {@code @XmlAnyAttribute} annotation can be used with the
  * following program elements:
  * <ul>
  *   <li> JavaBean property </li>
@@ -53,8 +53,8 @@ import static java.lang.annotation.ElementType.METHOD;
  * The usage is subject to the following constraints:
  * <ul>
  *   <li> At most one field or property in a class can be annotated
- *        with <tt>&#64;XmlAnyAttribute</tt>.  </li>
- *   <li> The type of the property or the field must <tt>java.util.Map</tt> </li>
+ *        with {@code @XmlAnyAttribute}.  </li>
+ *   <li> The type of the property or the field must {@code java.util.Map} </li>
  * </ul>
  *
  * <p>

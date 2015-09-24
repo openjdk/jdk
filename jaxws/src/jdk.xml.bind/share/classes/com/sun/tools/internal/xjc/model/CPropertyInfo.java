@@ -234,8 +234,8 @@ public abstract class CPropertyInfo implements PropertyInfo<NType,NClass>, CCust
      * <p>
      * In general, a property often has to be capable of representing null
      * to indicate the absence of the value. This requires properties
-     * to be generated as <tt>@XmlElement Float f</tt>, not as
-     * <tt>@XmlElement float f;</tt>. But this is slow.
+     * to be generated as {@code @XmlElement Float f}, not as
+     * {@code @XmlElement float f;}. But this is slow.
      *
      * <p>
      * Fortunately, there are cases where we know that the property can

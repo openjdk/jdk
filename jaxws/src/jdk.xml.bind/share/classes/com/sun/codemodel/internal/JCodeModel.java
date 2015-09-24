@@ -59,7 +59,7 @@ import com.sun.codemodel.internal.writer.ProgressCodeWriter;
  *
  * <p>
  * Every CodeModel node is always owned by one {@link JCodeModel} object
- * at any given time (which can be often accesesd by the <tt>owner()</tt> method.)
+ * at any given time (which can be often accesesd by the {@code owner()} method.)
  *
  * As such, when you generate Java code, most of the operation works
  * in a top-down fashion. For example, you create a class from {@link JCodeModel},
@@ -635,7 +635,7 @@ public final class JCodeModel {
 
     /**
      * Conversion from primitive type {@link Class} (such as {@link Integer#TYPE}
-     * to its boxed type (such as <tt>Integer.class</tt>)
+     * to its boxed type (such as {@code Integer.class})
      */
     public static final Map<Class<?>,Class<?>> primitiveToBox;
     /**

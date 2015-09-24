@@ -135,7 +135,7 @@ import javax.xml.ws.WebServiceException;
  * <p>
  * The JAX-WS RI locates the implementation of {@link WSDLParserExtension}s
  * by using the standard service look up mechanism, in particular looking for
- * <tt>META-INF/services/com.sun.xml.internal.ws.api.wsdl.parser.WSDLParserExtension</tt>
+ * {@code META-INF/services/com.sun.xml.internal.ws.api.wsdl.parser.WSDLParserExtension}
  *
  *
  * <h2>TODO</h2>

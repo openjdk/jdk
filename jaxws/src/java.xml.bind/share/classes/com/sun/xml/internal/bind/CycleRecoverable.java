@@ -55,7 +55,7 @@ public interface CycleRecoverable {
      *
      *
      * @return
-     *      the object to be marshalled instead of <tt>this</tt> object.
+     *      the object to be marshalled instead of {@code this} object.
      *      Or return null to indicate that the JAXB RI should behave
      *      just like when your object does not implement {@link CycleRecoverable}
      *      (IOW, cut the cycle arbitrarily and try to go on.)

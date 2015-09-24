@@ -551,7 +551,7 @@ public final class XmlSchemaGenerator<T,C,F,M> {
         /**
          * Process the given PropertyInfo looking for references to namespaces that
          * are foreign to the given namespace.  Any foreign namespace references
-         * found are added to the given namespaces dependency list and an &lt;import>
+         * found are added to the given namespaces dependency list and an {@code <import>}
          * is generated for it.
          *
          * @param p the PropertyInfo
@@ -1140,7 +1140,8 @@ public final class XmlSchemaGenerator<T,C,F,M> {
 
         /**
          * Checks if we can collapse
-         * &lt;element name='foo' type='t' /> to &lt;element ref='foo' />.
+         * {@code <element name='foo' type='t' />}
+         * to {@code <element ref='foo' />}.
          *
          * This is possible if we already have such declaration to begin with.
          */

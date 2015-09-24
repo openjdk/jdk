@@ -63,7 +63,7 @@ public abstract class ServerPipelineHook {
      *      eventually processes messages.
      *
      * @return
-     *      The default implementation just returns <tt>tail</tt>, which means
+     *      The default implementation just returns {@code tail}, which means
      *      no additional pipe is inserted. If the implementation adds
      *      new pipes, return the new head pipe.
      */
@@ -89,7 +89,7 @@ public abstract class ServerPipelineHook {
      *      eventually processes messages.
      *
      * @return
-     *      The default implementation just returns <tt>tail</tt>, which means
+     *      The default implementation just returns {@code tail}, which means
      *      no additional pipe is inserted. If the implementation adds
      *      new pipes, return the new head pipe.
      */

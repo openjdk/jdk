@@ -454,9 +454,9 @@ public final class BIGlobalBinding extends AbstractDeclarationImpl {
 
     /**
      * Used to unmarshal
-     * <xmp>
+     * <pre>{@code
      * <[element] name="className" />
-     * </xmp>
+     * }</pre>
      */
     static final class ClassNameBean {
         @XmlAttribute(required=true)

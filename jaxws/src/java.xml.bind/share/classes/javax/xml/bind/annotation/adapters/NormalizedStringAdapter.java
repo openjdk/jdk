@@ -28,7 +28,7 @@ package javax.xml.bind.annotation.adapters;
 
 
 /**
- * {@link XmlAdapter} to handle <tt>xs:normalizedString</tt>.
+ * {@link XmlAdapter} to handle {@code xs:normalizedString}.
  *
  * <p>
  * Replaces any tab, CR, and LF by a whitespace character ' ',

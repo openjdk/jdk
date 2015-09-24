@@ -36,7 +36,7 @@ import com.sun.tools.internal.xjc.reader.Const;
 import com.sun.tools.internal.xjc.reader.xmlschema.BGMBuilder;
 
 /**
- * Controls the <tt>ObjectFactory</tt> method name.
+ * Controls the {@code ObjectFactory} method name.
  *
  * @author Kohsuke Kawaguchi
  */

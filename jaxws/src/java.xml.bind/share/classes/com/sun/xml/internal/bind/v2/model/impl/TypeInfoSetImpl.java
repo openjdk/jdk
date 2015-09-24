@@ -119,7 +119,7 @@ class TypeInfoSetImpl<T,C,F,M> implements TypeInfoSet<T,C,F,M> {
         };
 
     /**
-     * {@link TypeInfo} for <tt>xs:anyType</tt>.
+     * {@link TypeInfo} for {@code xs:anyType}.
      *
      * anyType is the only {@link TypeInfo} that works with an interface,
      * and accordingly it requires a lot of special casing.
