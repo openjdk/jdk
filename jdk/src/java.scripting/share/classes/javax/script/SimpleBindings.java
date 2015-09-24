@@ -32,7 +32,7 @@ import java.util.Set;
 
 /**
  * A simple implementation of Bindings backed by
- * a <code>HashMap</code> or some other specified <code>Map</code>.
+ * a {@code HashMap} or some other specified {@code Map}.
  *
  * @author Mike Grogan
  * @since 1.6
@@ -40,13 +40,13 @@ import java.util.Set;
 public class SimpleBindings implements Bindings {
 
     /**
-     * The <code>Map</code> field stores the attributes.
+     * The {@code Map} field stores the attributes.
      */
     private Map<String,Object> map;
 
     /**
-     * Constructor uses an existing <code>Map</code> to store the values.
-     * @param m The <code>Map</code> backing this <code>SimpleBindings</code>.
+     * Constructor uses an existing {@code Map} to store the values.
+     * @param m The {@code Map} backing this {@code SimpleBindings}.
      * @throws NullPointerException if m is null
      */
     public SimpleBindings(Map<String,Object> m) {
@@ -57,14 +57,14 @@ public class SimpleBindings implements Bindings {
     }
 
     /**
-     * Default constructor uses a <code>HashMap</code>.
+     * Default constructor uses a {@code HashMap}.
      */
     public SimpleBindings() {
         this(new HashMap<String,Object>());
     }
 
     /**
-     * Sets the specified key/value in the underlying <code>map</code> field.
+     * Sets the specified key/value in the underlying {@code map} field.
      *
      * @param name Name of value
      * @param value Value to set.
@@ -81,9 +81,9 @@ public class SimpleBindings implements Bindings {
     }
 
     /**
-     * <code>putAll</code> is implemented using <code>Map.putAll</code>.
+     * {@code putAll} is implemented using {@code Map.putAll}.
      *
-     * @param toMerge The <code>Map</code> of values to add.
+     * @param toMerge The {@code Map} of values to add.
      *
      * @throws NullPointerException
      *         if toMerge map is null or if some key in the map is null.
@@ -107,14 +107,14 @@ public class SimpleBindings implements Bindings {
     }
 
     /**
-     * Returns <tt>true</tt> if this map contains a mapping for the specified
-     * key.  More formally, returns <tt>true</tt> if and only if
-     * this map contains a mapping for a key <tt>k</tt> such that
-     * <tt>(key==null ? k==null : key.equals(k))</tt>.  (There can be
+     * Returns {@code true} if this map contains a mapping for the specified
+     * key.  More formally, returns {@code true} if and only if
+     * this map contains a mapping for a key {@code k} such that
+     * {@code (key==null ? k==null : key.equals(k))}.  (There can be
      * at most one such mapping.)
      *
      * @param key key whose presence in this map is to be tested.
-     * @return <tt>true</tt> if this map contains a mapping for the specified
+     * @return {@code true} if this map contains a mapping for the specified
      *         key.
      *
      * @throws NullPointerException if key is null
@@ -138,20 +138,21 @@ public class SimpleBindings implements Bindings {
 
     /**
      * Returns the value to which this map maps the specified key.  Returns
-     * <tt>null</tt> if the map contains no mapping for this key.  A return
-     * value of <tt>null</tt> does not <i>necessarily</i> indicate that the
+     * {@code null} if the map contains no mapping for this key.  A return
+     * value of {@code null} does not <i>necessarily</i> indicate that the
      * map contains no mapping for the key; it's also possible that the map
-     * explicitly maps the key to <tt>null</tt>.  The <tt>containsKey</tt>
+     * explicitly maps the key to {@code null}.  The {@code containsKey}
      * operation may be used to distinguish these two cases.
      *
      * <p>More formally, if this map contains a mapping from a key
-     * <tt>k</tt> to a value <tt>v</tt> such that <tt>(key==null ? k==null :
-     * key.equals(k))</tt>, then this method returns <tt>v</tt>; otherwise
-     * it returns <tt>null</tt>.  (There can be at most one such mapping.)
+     * {@code k} to a value {@code v} such that
+     * {@code (key==null ? k==null : key.equals(k))},
+     * then this method returns {@code v}; otherwise
+     * it returns {@code null}.  (There can be at most one such mapping.)
      *
      * @param key key whose associated value is to be returned.
      * @return the value to which this map maps the specified key, or
-     *         <tt>null</tt> if the map contains no mapping for this key.
+     *         {@code null} if the map contains no mapping for this key.
      *
      * @throws NullPointerException if key is null
      * @throws ClassCastException if key is not String
@@ -175,19 +176,19 @@ public class SimpleBindings implements Bindings {
     /**
      * Removes the mapping for this key from this map if it is present
      * (optional operation).   More formally, if this map contains a mapping
-     * from key <tt>k</tt> to value <tt>v</tt> such that
-     * <code>(key==null ?  k==null : key.equals(k))</code>, that mapping
+     * from key {@code k} to value {@code v} such that
+     * {@code (key==null ?  k==null : key.equals(k))}, that mapping
      * is removed.  (The map can contain at most one such mapping.)
      *
      * <p>Returns the value to which the map previously associated the key, or
-     * <tt>null</tt> if the map contained no mapping for this key.  (A
-     * <tt>null</tt> return can also indicate that the map previously
-     * associated <tt>null</tt> with the specified key if the implementation
-     * supports <tt>null</tt> values.)  The map will not contain a mapping for
+     * {@code null} if the map contained no mapping for this key.  (A
+     * {@code null} return can also indicate that the map previously
+     * associated {@code null} with the specified key if the implementation
+     * supports {@code null} values.)  The map will not contain a mapping for
      * the specified  key once the call returns.
      *
      * @param key key whose mapping is to be removed from the map.
-     * @return previous value associated with specified key, or <tt>null</tt>
+     * @return previous value associated with specified key, or {@code null}
      *         if there was no mapping for key.
      *
      * @throws NullPointerException if key is null

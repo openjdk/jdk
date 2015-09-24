@@ -581,7 +581,7 @@ public class ProxyClient implements JConsoleContext {
 
     /**
      * Returns a map of MBeans with ObjectName as the key and MBeanInfo value
-     * of a given domain.  If domain is <tt>null</tt>, all MBeans
+     * of a given domain.  If domain is {@code null}, all MBeans
      * are returned.  If no MBean found, an empty map is returned.
      *
      */
