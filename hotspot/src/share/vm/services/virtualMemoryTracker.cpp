@@ -84,7 +84,10 @@ bool ReservedMemoryRegion::add_committed_region(address addr, size_t size, const
         return _committed_regions.insert_after(committed_rgn, node) != NULL;
       }
     }
-    assert(rgn->contain_region(addr, size), "Must cover this region");
+    // If we have reached this point, then we are trying to commit a region that overlaps with some existing committed regions.
+    remove_uncommitted_region(addr, size);
+    add_committed_region(committed_rgn);
+
     return true;
   } else {
     // New committed region
