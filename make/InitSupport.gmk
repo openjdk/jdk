@@ -313,7 +313,8 @@ else # $(HAS_SPEC)=true
 
   # Parse COMPARE_BUILD into COMPARE_BUILD_*
   # Syntax: COMPARE_BUILD=CONF=<configure options>:PATCH=<patch file>:
-  #         MAKE=<make targets>:COMP_OPTS=<compare script options>|<default>
+  #         MAKE=<make targets>:COMP_OPTS=<compare script options>:
+  #         COMP_DIR=<compare script base dir>|<default>
   # If neither CONF or PATCH is given, assume <default> means CONF if it
   # begins with "--", otherwise assume it means PATCH.
   # MAKE and COMP_OPTS can only be used with CONF and/or PATCH specified.
@@ -333,6 +334,9 @@ else # $(HAS_SPEC)=true
           ) \
           $$(if $$(filter COMP_OPTS=%, $$(part)), \
             $$(eval COMPARE_BUILD_COMP_OPTS=$$(strip $$(subst +, , $$(patsubst COMP_OPTS=%, %, $$(part))))) \
+          ) \
+          $$(if $$(filter COMP_DIR=%, $$(part)), \
+            $$(eval COMPARE_BUILD_COMP_DIR=$$(strip $$(subst +, , $$(patsubst COMP_DIR=%, %, $$(part))))) \
           ) \
         )
       else
