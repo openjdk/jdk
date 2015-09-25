@@ -341,7 +341,11 @@ else # HAS_SPEC=true
     post-compare-build:
         # Compare first and second build. Ignore any error code from compare.sh.
 	$(ECHO) "Comparing between comparison rebuild (this/new) and baseline (other/old)"
-	+(cd $(OUTPUT_ROOT) && ./compare.sh $(COMPARE_BUILD_COMP_OPTS) -o $(OUTPUT_ROOT).OLD || true)
+        ifneq ($(COMPARE_BUILD_COMP_DIR), )
+	  +(cd $(OUTPUT_ROOT) && ./compare.sh $(COMPARE_BUILD_COMP_OPTS) -2dirs $(OUTPUT_ROOT)/$(COMPARE_BUILD_COMP_DIR) $(OUTPUT_ROOT).OLD/$(COMPARE_BUILD_COMP_DIR) || true)
+        else
+	  +(cd $(OUTPUT_ROOT) && ./compare.sh $(COMPARE_BUILD_COMP_OPTS) -o $(OUTPUT_ROOT).OLD || true)
+        endif
 
   .PHONY: print-targets print-modules reconfigure main on-failure
 endif
